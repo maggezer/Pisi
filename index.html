@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>KEDI</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        #app-menu { position: absolute; background-color: #2d2d30; border: 1px solid #444; border-radius: 6px; padding: 5px 0; box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 3000; display: none; min-width: 150px; }
+        .app-menu-item { padding: 8px 20px; color: #d4d4d4; cursor: pointer; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+        .app-menu-item:hover { background-color: #094771; color: white; }
+        
+        #preferences-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 4000; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+        .pref-content { background-color: #252526; border: 1px solid #444; border-radius: 8px; padding: 20px; width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 15px; }
+        .pref-header { font-size: 16px; font-weight: bold; color: #f39c12; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .pref-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: #d4d4d4; margin-bottom: 10px; }
+        .pref-select { background: #1e1e1e; border: 1px solid #555; color: #d4d4d4; padding: 5px; border-radius: 4px; outline: none; }
+
+        #context-menu { position: absolute; background-color: #2d2d30; border: 1px solid #444; border-radius: 6px; padding: 5px 0; box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 5000; display: none; min-width: 120px; }
+        .context-menu-item { padding: 8px 20px; color: #d4d4d4; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 10px; }
+        .context-menu-item:hover { background-color: #e74c3c; color: white; }
+    </style>
+</head>
+<body>
+    
+    <div id="titlebar">
+        <div id="titlebar-left">
+            <div id="app-logo">🐱Kedi </div>
+        </div>
+        <div id="titlebar-right">
+            <button class="win-btn" id="win-min">—</button>
+            <button class="win-btn" id="win-max">🗖</button>
+            <button class="win-btn win-close" id="win-close">✖</button>
+        </div>
+    </div>
+
+<div id="app-menu">
+        <div class="app-menu-item" id="menu-file">📁 Dosya</div>
+        <div class="app-menu-item" id="menu-view">👁️ Görünüm</div>
+        <div style="height: 1px; background-color: #444; margin: 4px 0;"></div>
+        <div class="app-menu-item" id="menu-preferences">⚙️ Ayarlar (Preferences) <span style="color:#888; font-size:11px; margin-left: 15px;">Ctrl+,</span></div>
+    </div>
+
+    <div id="context-menu">
+        <div class="context-menu-item" id="ctx-delete-file">🗑️ Sil</div>
+    </div>
+
+    <div id="preferences-modal">
+        <div class="pref-content">
+            <div class="pref-header">KEDI Ayarları</div>
+            <div class="pref-row">
+                <span>Varsayılan Takvim Motoru:</span>
+                <select id="pref-cal-engine" class="pref-select">
+                    <option value="gregorian">Miladi Takvim</option>
+                    <option value="hijri">Hicri Takvim</option>
+                    <option value="lunar">Çin Takvimi (Lunar)</option>
+                </select>
+            </div>
+            <div class="pref-row" style="border-top: 1px dashed #444; padding-top: 15px;">
+                <span>Kendi Takvimini Yükle (Eklenti):</span>
+                <button id="pref-add-custom-cal" style="padding: 5px 10px; background: #2ecc71; color: #1e1e1e; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">+ JS Dosyası Seç</button>
+            </div>
+            <div id="custom-cal-status" style="font-size: 11px; color: #888; text-align: right;">Sistem Takvimi Kullanılıyor</div>
+            <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+                <button id="pref-close" style="padding: 6px 15px; background: #34ace0; color: #1e1e1e; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-body">
+        
+<div id="sidebar">
+            <div id="hive-header">
+                <div id="hive-title"><span>⬢</span><span id="hive-name">Çalışma Alanı Yok</span></div>
+                <div class="header-buttons" id="header-actions" style="display: none;">
+                    <button id="toggleCalendarBtn" class="cal-btn" title="Takvim">📅</button>
+                    <button id="addMdBtn" class="add-btn" title="Yeni Not Ekle">📄</button>
+                    <button id="addCanvasBtn" class="add-btn" title="Yeni Tuval Ekle">🌌</button>
+                </div>
+            </div>
+            
+            <div id="sidebar-controls" style="display: none;">
+                <button id="sort-btn" class="sort-btn">⇅ Sort</button>
+                <div class="sort-menu" id="sort-menu">
+                    <button class="sort-item active" data-sort="name">Sort by Name</button>
+                    <button class="sort-item" data-sort="created">Sort by Date Created</button>
+                    <button class="sort-item" data-sort="modified">Sort by Date Modified</button>
+                    <button class="sort-item" data-sort="manual">Custom Order</button>
+                </div>
+            </div>
+
+            <button id="createHiveBtn" class="btn-main">🐱 KEDI'yi Aç</button>
+            <ul id="file-list"><li style="color: #777; font-size: 13px;">Bir çalışma alanı seçin...</li></ul>
+        </div>
+        
+        <div id="editor-container">
+            <div id="rich-toolbar">
+                <div class="ribbon-left">
+                    <div class="ribbon-content">
+                        
+                        <div id="tab-knowledge" class="ribbon-panel active">
+                            <div class="toolbar-group">
+                                <button class="ribbon-btn add-node-btn" style="background-color: #f39c12; color: #000; font-weight: bold;">
+    ➕ Yeni Düğüm Ekle
+</button>
+                                <span class="tool-separator"></span>
+                                <button class="tool-btn" id="clearCanvasBtn" title="Tuvali Temizle" style="color: #888;">🗑️ Temizle</button>
+                            </div>
+                        </div>
+
+                        <div id="tab-editing" class="ribbon-panel">
+                            <div class="toolbar-group">
+                                <div class="format-grid">
+                                    <button class="tool-btn" onmousedown="event.preventDefault(); document.execCommand('bold', false, null);" style="font-weight: bold;">B</button>
+                                    <button class="tool-btn" onmousedown="event.preventDefault(); document.execCommand('italic', false, null);" style="font-style: italic;">I</button>
+                                    <button class="tool-btn" onmousedown="event.preventDefault(); document.execCommand('underline', false, null);" style="text-decoration: underline;">U</button>
+                                    
+                                    <div class="dropdown-wrapper" style="width: auto;">
+                                        <button class="tool-btn color-picker-btn" id="hnBtn" style="min-width: 60px;"><span>Hn</span> <span class="color-caret">▼</span></button>
+                                        <div class="dropdown-menu" id="hn-menu">
+                                            <button class="tool-btn hn-item" data-cmd="H1">H1</button>
+                                            <button class="tool-btn hn-item" data-cmd="H2">H2</button>
+                                            <button class="tool-btn hn-item" data-cmd="H3">H3</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="dropdown-wrapper" style="width: auto;">
+                                        <button class="tool-btn color-picker-btn" id="textColorBtn" style="min-width: 50px;"><span style="color: #ff5252; border-bottom: 3px solid #ff5252;">A</span> <span class="color-caret">▼</span></button>
+                                        <div class="dropdown-menu" id="text-color-menu">
+                                            <div class="color-palette-grid">
+                                                <div class="color-swatch" style="background-color: #ff5252;" data-color="#ff5252" data-cmd="foreColor"></div>
+                                                <div class="color-swatch" style="background-color: #34ace0;" data-color="#34ace0" data-cmd="foreColor"></div>
+                                                <div class="color-swatch" style="background-color: #d4d4d4;" data-color="#d4d4d4" data-cmd="foreColor"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="dropdown-wrapper" style="width: auto;">
+                                        <button class="tool-btn color-picker-btn" id="highlightBtn" style="min-width: 50px;"><span style="background-color: #f1c40f; color: #1e1e1e; padding: 0 2px; border-radius: 2px;">ab</span> <span class="color-caret">▼</span></button>
+                                        <div class="dropdown-menu" id="highlight-menu">
+                                            <div class="color-palette-grid">
+                                                <div class="color-swatch" style="background-color: #f1c40f;" data-color="#f1c40f" data-cmd="backColor"></div>
+                                                <div class="color-swatch" style="background-color: #33d9b2;" data-color="#33d9b2" data-cmd="backColor"></div>
+                                                <div class="color-swatch" style="background-color: transparent; border: 1px solid #666;" data-color="transparent" data-cmd="backColor"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="tab-data" class="ribbon-panel">
+                            <div class="toolbar-group">
+                                <span style="color:#888; font-size:12px;">Araçlar Knowledge sekmesine taşındı.</span>
+                            </div>
+                        </div>
+
+                        <div id="tab-insight" class="ribbon-panel">
+                            <div class="toolbar-group">
+                                <button class="tool-btn" title="Sunum Modu">📽️ Sunum</button>
+                                <button class="tool-btn" title="Metin Analizi">📊 Analiz</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="ribbon-tabs">
+                        <button class="ribbon-tab-btn active" data-target="tab-knowledge">Knowledge</button>
+                        <button class="ribbon-tab-btn" data-target="tab-editing">Editing</button>
+                        <button class="ribbon-tab-btn" data-target="tab-data">Data</button>
+                        <button class="ribbon-tab-btn" data-target="tab-insight">Insight</button>
+                    </div>
+                </div>
+
+                <div class="ribbon-global" style="justify-content: center; padding-right: 15px;">
+                    <span id="save-status" style="font-size: 13px; color: #888;">Bekliyor...</span>
+                </div>
+            </div>
+
+            <div id="welcome-screen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #888;">
+                <div style="font-size: 80px; margin-bottom: 20px;">🐱</div>
+                <h2 style="color: #f39c12; margin: 0 0 10px 0;">KEDI'ye Hoş Geldin!</h2>
+                <p>Sol taraftaki menüden yeni bir <b>Not (📄)</b> veya <b>Tuval (🌌)</b> oluşturarak başlayın.</p>
+            </div>
+
+            <div id="canvas-viewport" style="display: none;">
+                <div id="canvas-bg"></div>
+                <svg id="canvas-lines" width="100%" height="100%" style="position: absolute; top: 0; left: 0; pointer-events: none; z-index: 5;">
+                    <path id="temp-connection-line" class="connection-line temp-line" style="display: none; pointer-events: none;"></path>
+                </svg>
+                <div id="canvas-board"></div>
+            </div>
+            
+            <div id="classic-editor-container" style="display: none; flex-direction: column; flex-grow: 1; position: relative;">
+                <div class="pane-tabs" id="tabs-left" style="background-color: #1e1e1e; border-bottom: 1px solid #333; display: flex;"></div>
+                <div id="myEditor" class="editor-pane active-focus" contenteditable="false" placeholder="Yazmaya başla..." style="flex-grow: 1; box-sizing: border-box; overflow-y: auto;"></div>
+            </div>
+
+        </div>
+
+        <div id="right-sidebar">
+            <span class="placeholder-text" id="right-placeholder">Analiz & Grafikler<br>Çok Yakında</span>
+        </div>
+    </div>
+
+<div id="calendar-widget">
+        <div id="cal-header">
+            <button class="cal-nav" id="cal-prev">◀</button>
+            <div style="display:flex; flex-direction:column; align-items:center; flex-grow:1;">
+                <span id="cal-title">Takvim</span>
+            </div>
+            <button class="cal-nav" id="cal-next">▶</button>
+            <button id="cal-dock" style="background:none; border:none; color:#888; cursor:pointer; font-size:14px; margin-left:5px;" title="Sağ Panele Sabitle">📌</button>
+            <button id="cal-close" style="margin-left: 5px;">✖</button>
+        </div>
+        <div id="cal-body">
+            <div class="cal-weekdays"><span>Pt</span><span>Sa</span><span>Ça</span><span>Pe</span><span>Cu</span><span>Ct</span><span>Pz</span></div>
+            <div id="cal-days"></div>
+        </div>
+    </div>
+
+    
+    <script src="app.js"></script>
+
+    <script src="canvas-core.js"></script> 
+    <script src="node-engine.js"></script>
+    <script src="modal-manager.js"></script>
+    <script src="file-system.js"></script>
+    <script src="connection-engine.js"></script>
+    <script src="paint-engine.js"></script>
+    <script src="calendar.js"></script>
+
+</body>
+</html>
