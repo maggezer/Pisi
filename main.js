@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain, dialog, screen } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, dialog, screen, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -2057,7 +2057,7 @@ function findParentMapPathForNode(nodePath, nodeInfo = null) {
     return null;
 }
 
-function cleanupDeletedNodeFromParentMap(parentMapPath, deletedNodeId) {
+function cleanupDeletedNodeFromParentMap(parentMapPath, deletedNodeId, deletionTransaction = null) {
     if (!parentMapPath || !deletedNodeId || !fs.existsSync(parentMapPath)) {
         return {
             parentMapPath: null,
@@ -2091,7 +2091,11 @@ function cleanupDeletedNodeFromParentMap(parentMapPath, deletedNodeId) {
     });
 
     mapInfo.data.kedi.updatedAt = new Date().toISOString();
-    writeKediDocument(parentMapPath, mapInfo.data);
+    writeKediDeletionMetadata(
+        deletionTransaction,
+        parentMapPath,
+        mapInfo.data
+    );
 
     // Kalan node dosyalarının connectionTypes alanından silinen node id'sini düş.
     const sidecarPath = mapInfo.sidecarPath;
@@ -2117,7 +2121,11 @@ function cleanupDeletedNodeFromParentMap(parentMapPath, deletedNodeId) {
 
             if (before !== after) {
                 nodeInfo.data.kedi.updatedAt = new Date().toISOString();
-                writeKediDocument(nodePath, nodeInfo.data);
+                writeKediDeletionMetadata(
+                    deletionTransaction,
+                    nodePath,
+                    nodeInfo.data
+                );
             }
         }
     }
@@ -2128,7 +2136,136 @@ function cleanupDeletedNodeFromParentMap(parentMapPath, deletedNodeId) {
     };
 }
 
-function deleteKediFile(targetPath) {
+function writeKediDeletionMetadata(transaction, filePath, data) {
+    if (!transaction) {
+        writeKediDocument(filePath, data);
+        return;
+    }
+
+    let backup = transaction.metadataBackups.find((entry) => {
+        return normalizePathForCompare(entry.originalPath) ===
+            normalizePathForCompare(filePath);
+    });
+
+    if (!backup) {
+        const backupPath = path.join(
+            transaction.directoryPath,
+            `metadata-${transaction.metadataBackups.length}.bak`
+        );
+
+        fs.copyFileSync(filePath, backupPath);
+        backup = {
+            originalPath: filePath,
+            backupPath
+        };
+        transaction.metadataBackups.push(backup);
+    }
+
+    writeKediDocument(filePath, data);
+}
+
+function createKediDeletionTransaction(targetPath) {
+    const directoryPath = fs.mkdtempSync(
+        path.join(path.dirname(targetPath), '.kedi-delete-')
+    );
+
+    return {
+        directoryPath,
+        stagedPaths: [],
+        metadataBackups: []
+    };
+}
+
+function stageKediDeletionPath(transaction, originalPath) {
+    if (!originalPath || !fs.existsSync(originalPath)) {
+        return;
+    }
+
+    const stagedPath = path.join(
+        transaction.directoryPath,
+        path.basename(originalPath)
+    );
+
+    if (fs.existsSync(stagedPath)) {
+        throw new Error(`Geçici silme hedefi zaten var: ${stagedPath}`);
+    }
+
+    fs.renameSync(originalPath, stagedPath);
+    transaction.stagedPaths.push({
+        originalPath,
+        stagedPath
+    });
+}
+
+function rollbackKediDeletionTransaction(transaction) {
+    const rollbackErrors = [];
+
+    if (!fs.existsSync(transaction.directoryPath)) {
+        return [
+            'Geçici silme klasörü bulunamadığı için otomatik geri alma yapılamadı.'
+        ];
+    }
+
+    for (const backup of [...transaction.metadataBackups].reverse()) {
+        if (!fs.existsSync(backup.backupPath)) {
+            rollbackErrors.push(
+                `${backup.originalPath} için metadata yedeği bulunamadı.`
+            );
+            continue;
+        }
+
+        try {
+            fs.copyFileSync(backup.backupPath, backup.originalPath);
+            fs.unlinkSync(backup.backupPath);
+        } catch (error) {
+            rollbackErrors.push(
+                `${backup.originalPath} metadata geri yüklenemedi: ${error.message}`
+            );
+        }
+    }
+
+    for (const staged of [...transaction.stagedPaths].reverse()) {
+        if (!fs.existsSync(staged.stagedPath)) {
+            if (!fs.existsSync(staged.originalPath)) {
+                rollbackErrors.push(
+                    `${staged.originalPath} için geçici yedek bulunamadı.`
+                );
+            }
+            continue;
+        }
+
+        try {
+            if (fs.existsSync(staged.originalPath)) {
+                throw new Error('Orijinal yol yeniden oluşturulmuş.');
+            }
+
+            fs.renameSync(staged.stagedPath, staged.originalPath);
+        } catch (error) {
+            rollbackErrors.push(
+                `${staged.originalPath} geri taşınamadı: ${error.message}`
+            );
+        }
+    }
+
+    try {
+        if (
+            fs.existsSync(transaction.directoryPath) &&
+            fs.readdirSync(transaction.directoryPath).length === 0
+        ) {
+            fs.rmdirSync(transaction.directoryPath);
+        }
+    } catch (error) {
+        rollbackErrors.push(
+            `Geçici silme klasörü temizlenemedi: ${error.message}`
+        );
+    }
+
+    return rollbackErrors;
+}
+
+async function deleteKediFile(targetPath) {
+    let transaction = null;
+
     try {
         if (!targetPath || !fs.existsSync(targetPath)) {
             return {
@@ -2157,34 +2294,36 @@ function deleteKediFile(targetPath) {
             ? path.join(dir, info.metadata.sidecar)
             : null;
 
-        if (ext === '.map') {
-            if (sidecarPath && fs.existsSync(sidecarPath)) {
-                fs.rmSync(sidecarPath, { recursive: true, force: true });
-            }
+        const deletedNodeId = ext === '.node'
+            ? info.metadata.id
+            : null;
+        const parentMapPath = ext === '.node'
+            ? findParentMapPathForNode(targetPath, info)
+            : null;
 
-            fs.unlinkSync(targetPath);
+        transaction = createKediDeletionTransaction(targetPath);
+        stageKediDeletionPath(transaction, targetPath);
+        stageKediDeletionPath(transaction, sidecarPath);
+
+        if (ext === '.map') {
+            await shell.trashItem(path.resolve(transaction.directoryPath));
 
             return {
                 ok: true,
                 type: 'map',
                 deletedPath: targetPath,
-                deletedMapId: info.metadata.id
+                deletedMapId: info.metadata.id,
+                movedToTrash: true
             };
         }
 
-        const deletedNodeId = info.metadata.id;
-        const parentMapPath = findParentMapPathForNode(targetPath, info);
-
         const cleanupResult = cleanupDeletedNodeFromParentMap(
             parentMapPath,
-            deletedNodeId
+            deletedNodeId,
+            transaction
         );
 
-        if (sidecarPath && fs.existsSync(sidecarPath)) {
-            fs.rmSync(sidecarPath, { recursive: true, force: true });
-        }
-
-        fs.unlinkSync(targetPath);
+        await shell.trashItem(path.resolve(transaction.directoryPath));
 
         return {
             ok: true,
@@ -2192,12 +2331,20 @@ function deleteKediFile(targetPath) {
             deletedPath: targetPath,
             deletedNodeId,
             parentMapPath: cleanupResult.parentMapPath,
-            edges: cleanupResult.edges
+            edges: cleanupResult.edges,
+            movedToTrash: true
         };
     } catch (error) {
+        const rollbackErrors = transaction
+            ? rollbackKediDeletionTransaction(transaction)
+            : [];
+
         return {
             ok: false,
-            error: error.message
+            error: rollbackErrors.length > 0
+                ? `${error.message} Geri alma tamamlanamadı: ${rollbackErrors.join(' | ')}`
+                : error.message,
+            rolledBack: Boolean(transaction) && rollbackErrors.length === 0
         };
     }
 }
@@ -2223,6 +2370,13 @@ function safeListFolder(folderPath) {
         const items = entries
     .filter((entry) => {
         if (isKediManagedSidecarFolder(entry.name)) return false;
+
+        if (
+            entry.isDirectory() &&
+            entry.name.startsWith('.kedi-delete-')
+        ) {
+            return false;
+        }
 
         if (entry.isDirectory() && entry.name.toLowerCase() === 'diary') return false;
 
