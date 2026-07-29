@@ -1,7 +1,7 @@
 {
-  "name": "kedi",
+  "name": "pisi",
   "version": "1.0.0",
-  "description": "KEDI desktop knowledge mapping app",
+  "description": "Pisi desktop knowledge mapping app",
   "main": "main.js",
   "author": "Mumin Biyiklioglu",
   "license": "ISC",
@@ -18,8 +18,8 @@
     "dist:installer": "electron-builder --win nsis"
   },
   "build": {
-    "appId": "com.mumin.kedi",
-    "productName": "KEDI",
+    "appId": "com.mumin.pisi",
+    "productName": "Pisi",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "asar": true,
     "directories": {
@@ -33,6 +33,7 @@
       "style.css",
       "renderer/**/*",
       "assets/**/*",
+      "locales/**/*",
       "package.json"
     ],
     "win": {
@@ -59,7 +60,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "KEDI"
+      "shortcutName": "Pisi"
     }
   },
   "devDependencies": {

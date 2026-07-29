@@ -59,9 +59,8 @@ contextBridge.exposeInMainWorld('kediProject', {
     listDiaryDates: (projectFolder) => ipcRenderer.invoke('project:list-diary-dates', projectFolder),
     syncDiaryMissions: (projectFolder, entries) => ipcRenderer.invoke('project:sync-diary-missions', projectFolder, entries),
 
-
     listMapNodes: (mapPath) => ipcRenderer.invoke('project:list-map-nodes', mapPath),
-    saveMapLayout: (mapPath, nodeLayouts) => ipcRenderer.invoke('project:save-map-layout', mapPath, nodeLayouts),   
+    saveMapLayout: (mapPath, nodeLayouts) => ipcRenderer.invoke('project:save-map-layout', mapPath, nodeLayouts),
     saveNodeContent: (nodePath, content) => ipcRenderer.invoke('project:save-node-content', nodePath, content),
 
     getKediDocument: (filePath) => ipcRenderer.invoke('project:get-kedi-document', filePath),
@@ -84,5 +83,151 @@ contextBridge.exposeInMainWorld('kediProject', {
         return () => {
             ipcRenderer.removeListener('project:filesystem-changed', listener);
         };
+    }
+});
+
+const PISI_LANGUAGE_STORAGE_KEY = 'pisi.language';
+const pisiTextSources = new WeakMap();
+const pisiAttributeSources = new WeakMap();
+let pisiLocale = null;
+let pisiIcons = null;
+let pisiLanguage = 'tr';
+
+async function pisiLoadJson(relativePath) {
+    const response = await fetch(new URL(relativePath, window.location.href));
+    if (!response.ok) {
+        throw new Error(`Resource could not be loaded: ${relativePath}`);
+    }
+    return response.json();
+}
+
+function pisiTranslate(source) {
+    const cleanSource = String(source ?? '');
+    const exact = pisiLocale?.strings?.[cleanSource];
+    if (exact !== undefined) return exact;
+
+    return cleanSource
+        .replace(/KEDI/g, 'Pisi')
+        .replace(/Kedi/g, 'Pisi');
+}
+
+function pisiTranslateTextNode(node) {
+    if (!pisiTextSources.has(node)) {
+        pisiTextSources.set(node, node.nodeValue || '');
+    }
+    node.nodeValue = pisiTranslate(pisiTextSources.get(node));
+}
+
+function pisiTranslateAttributes(element) {
+    const translatableAttributes = ['title', 'aria-label', 'alt', 'placeholder'];
+    let sources = pisiAttributeSources.get(element);
+    if (!sources) {
+        sources = {};
+        pisiAttributeSources.set(element, sources);
+    }
+
+    for (const attribute of translatableAttributes) {
+        if (!element.hasAttribute(attribute)) continue;
+        if (!(attribute in sources)) sources[attribute] = element.getAttribute(attribute);
+        element.setAttribute(attribute, pisiTranslate(sources[attribute]));
+    }
+}
+
+function pisiApplyIcon(element, sourceText) {
+    if (!pisiIcons?.emoji || element.dataset.pisiIconized === '1') return;
+    const trimmed = String(sourceText || '').trim();
+    const match = Object.keys(pisiIcons.emoji).find((emoji) => trimmed.startsWith(emoji));
+    if (!match) return;
+
+    const image = document.createElement('img');
+    image.src = pisiIcons.emoji[match];
+    image.alt = '';
+    image.width = 16;
+    image.height = 16;
+    image.setAttribute('aria-hidden', 'true');
+
+    const label = trimmed.slice(match.length).trim();
+    element.replaceChildren(image);
+    if (label) element.append(document.createTextNode(` ${pisiTranslate(label)}`));
+    element.dataset.pisiIconized = '1';
+}
+
+function pisiApplyToRoot(root = document) {
+    if (!root) return;
+
+    if (root.nodeType === Node.TEXT_NODE) {
+        pisiTranslateTextNode(root);
+        return;
+    }
+
+    const elements = root.nodeType === Node.ELEMENT_NODE
+        ? [root, ...root.querySelectorAll('*')]
+        : [...document.querySelectorAll('*')];
+
+    for (const element of elements) {
+        pisiTranslateAttributes(element);
+        if (element.matches('button')) {
+            const source = element.textContent;
+            pisiApplyIcon(element, source);
+        }
+
+        for (const child of element.childNodes) {
+            if (child.nodeType === Node.TEXT_NODE) pisiTranslateTextNode(child);
+        }
+    }
+
+    document.documentElement.lang = pisiLanguage === 'eng' ? 'en' : 'tr';
+    document.title = 'Pisi';
+
+    const brandImages = document.querySelectorAll('#window-logo, .modal-logo-row img');
+    for (const image of brandImages) {
+        image.src = pisiIcons?.brand || 'assets/icons/pisi-logo.svg';
+        image.alt = 'Pisi';
+    }
+}
+
+async function pisiSetLanguage(language) {
+    pisiLanguage = language === 'eng' ? 'eng' : 'tr';
+    localStorage.setItem(PISI_LANGUAGE_STORAGE_KEY, pisiLanguage);
+    pisiLocale = await pisiLoadJson(`locales/lang-${pisiLanguage}.json`);
+    pisiApplyToRoot(document);
+
+    const toggle = document.getElementById('pisi-language-toggle');
+    if (toggle) {
+        toggle.textContent = pisiLanguage === 'tr' ? 'EN' : 'TR';
+        toggle.title = pisiLanguage === 'tr' ? 'Switch to English' : 'Türkçeye geç';
+    }
+}
+
+function pisiInstallLanguageToggle() {
+    if (document.getElementById('pisi-language-toggle')) return;
+    const controls = document.getElementById('window-controls');
+    if (!controls) return;
+
+    const button = document.createElement('button');
+    button.id = 'pisi-language-toggle';
+    button.type = 'button';
+    button.className = 'window-btn';
+    button.addEventListener('click', () => {
+        void pisiSetLanguage(pisiLanguage === 'tr' ? 'eng' : 'tr');
+    });
+    controls.prepend(button);
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+    try {
+        pisiIcons = await pisiLoadJson('assets/icons/icons.json');
+        pisiInstallLanguageToggle();
+        await pisiSetLanguage(localStorage.getItem(PISI_LANGUAGE_STORAGE_KEY) || 'tr');
+
+        const observer = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                for (const node of mutation.addedNodes) pisiApplyToRoot(node);
+            }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+    } catch (error) {
+        console.error('[Pisi] Localization could not be initialized:', error);
+        document.title = 'Pisi';
     }
 });
