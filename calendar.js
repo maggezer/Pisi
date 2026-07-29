@@ -1,209 +1,175 @@
-// ==========================================
-// KEDI TAKVİM MOTORU VE DOCK SİSTEMİ
-// ==========================================
+'use strict';
 
 const calWidget = document.getElementById('calendar-widget');
-let calNavData = { gregorian: moment(), hijri: moment(), lunar: { y: Lunar.fromDate(new Date()).getYear(), m: Lunar.fromDate(new Date()).getMonth() } };
+const calNavData = window.kedi.calendar.initialState();
 let isDocked = false;
 
 function saveCalendarState() {
     if (!calWidget) return;
-    const state = {
+    localStorage.setItem('kedi_cal_state', JSON.stringify({
         isOpen: calWidget.style.display === 'flex',
         left: calWidget.style.left,
         top: calWidget.style.top,
         docked: isDocked
-    };
-    localStorage.setItem('kedi_cal_state', JSON.stringify(state));
+    }));
 }
 
 function applyDockState(dockStatus) {
-    isDocked = dockStatus;
+    if (!calWidget) return;
+    isDocked = Boolean(dockStatus);
     const rightSidebar = document.getElementById('right-sidebar');
     const rightPlaceholder = document.getElementById('right-placeholder');
-    const calDockBtn = document.getElementById('cal-dock');
+    const dockButton = document.getElementById('cal-dock');
 
     if (isDocked && rightSidebar) {
         calWidget.classList.add('docked');
         rightSidebar.appendChild(calWidget);
-        if(rightPlaceholder) rightPlaceholder.style.display = 'none';
-        if(calDockBtn) { calDockBtn.innerText = '📍'; calDockBtn.title = "Serbest Bırak"; }
-        calWidget.style.display = 'flex'; // Sabitlendiğinde hep açık kalır
+        if (rightPlaceholder) rightPlaceholder.style.display = 'none';
+        if (dockButton) {
+            dockButton.textContent = '📍';
+            dockButton.title = 'Serbest Bırak';
+        }
+        calWidget.style.display = 'flex';
     } else {
         calWidget.classList.remove('docked');
         document.body.appendChild(calWidget);
-        if(rightPlaceholder) rightPlaceholder.style.display = 'block';
-        if(calDockBtn) { calDockBtn.innerText = '📌'; calDockBtn.title = "Sağ Panele Sabitle"; }
+        if (rightPlaceholder) rightPlaceholder.style.display = 'block';
+        if (dockButton) {
+            dockButton.textContent = '📌';
+            dockButton.title = 'Sağ Panele Sabitle';
+        }
     }
 }
 
 function restoreCalendarState() {
     if (!calWidget) return;
-    const savedStr = localStorage.getItem('kedi_cal_state');
-    if (savedStr) {
-        const state = JSON.parse(savedStr);
-        if (state.left && state.top) {
+    try {
+        const state = JSON.parse(localStorage.getItem('kedi_cal_state') || 'null');
+        if (!state || typeof state !== 'object') return;
+        if (/^-?\d+(?:\.\d+)?px$/.test(state.left || '') && /^-?\d+(?:\.\d+)?px$/.test(state.top || '')) {
             calWidget.style.left = state.left;
             calWidget.style.top = state.top;
             calWidget.style.right = 'auto';
         }
-        
-        if (state.docked) {
-            applyDockState(true);
-        } else if (state.isOpen) {
-            calWidget.style.display = 'flex';
-            try { renderCalendar(); } catch(e) { console.error(e); }
-        } else {
-            calWidget.style.display = 'none';
-        }
+        if (state.docked) applyDockState(true);
+        else calWidget.style.display = state.isOpen ? 'flex' : 'none';
+        if (state.isOpen || state.docked) renderCalendar();
+    } catch (error) {
+        console.error('Takvim durumu yüklenemedi:', error);
+        localStorage.removeItem('kedi_cal_state');
     }
 }
 
-// TAKVİM OLUŞTURMA (RENDER)
 function renderCalendar() {
     const calDays = document.getElementById('cal-days');
-    if(!calDays) return;
-    calDays.innerHTML = ''; 
-    if (!currentHivePath) return; 
-    
-    const journalFolder = path.join(currentHivePath, 'Journals');
-    let year, month, daysInMonth, firstDay, titleText, filePrefix; const today = new Date();
+    if (!calDays) return;
+    calDays.replaceChildren();
+    if (!window.currentHivePath) return;
 
-    if (currentCustomPlugin) {
-        const state = customStates[currentCustomPlugin.id]; const pluginData = currentCustomPlugin.getRenderData(state);
-        daysInMonth = pluginData.daysInMonth; firstDay = pluginData.firstDay; titleText = pluginData.title; year = pluginData.currentYear; month = pluginData.currentMonth; filePrefix = currentCustomPlugin.id;
-    } else if (currentCalendarType === 'gregorian') {
-        year = calNavData.gregorian.year(); month = calNavData.gregorian.month(); daysInMonth = calNavData.gregorian.daysInMonth();
-        let fd = calNavData.gregorian.clone().startOf('month').day(); firstDay = fd === 0 ? 6 : fd - 1; 
-        titleText = `${monthNames[month]} ${year}`; filePrefix = 'Miladi';
-    } else if (currentCalendarType === 'hijri') {
-        year = calNavData.hijri.iYear(); month = calNavData.hijri.iMonth(); daysInMonth = moment.iDaysInMonth(year, month);
-        let fd = moment(`${year}/${month+1}/1`, 'iYYYY/iM/iD').day(); firstDay = fd === 0 ? 6 : fd - 1; 
-        titleText = `${hijriMonthNames[month]} ${year}`; filePrefix = 'Hicri';
-    } else if (currentCalendarType === 'lunar') {
-        year = calNavData.lunar.y; month = calNavData.lunar.m; daysInMonth = LunarMonth.fromYm(year, month).getDayCount();
-        let fd = Lunar.fromYmd(year, month, 1).getSolar().getWeek(); firstDay = fd === 0 ? 6 : fd - 1;
-        let mText = month < 0 ? `Artık ${Math.abs(month)}. Ay` : `${month}. Ay`; titleText = `(Çin) ${mText} ${year}`; filePrefix = 'Cin';
+    const type = window.currentCalendarType;
+    const state = calNavData[type];
+    const monthData = window.kedi.calendar.monthData(type, state);
+    const journalFolder = window.kedi.path.join(window.currentHivePath, 'Journals');
+    const title = document.getElementById('cal-title');
+    if (title) title.textContent = monthData.title;
+
+    for (let index = 0; index < monthData.firstDay; index += 1) {
+        const emptyDay = document.createElement('div');
+        emptyDay.className = 'cal-day empty';
+        calDays.appendChild(emptyDay);
     }
 
-    const calTitle = document.getElementById('cal-title');
-    if(calTitle) calTitle.innerText = titleText;
-    
-    for (let i = 0; i < firstDay; i++) { calDays.appendChild(Object.assign(document.createElement('div'), {className: 'cal-day empty'})); }
+    for (let day = 1; day <= monthData.daysInMonth; day += 1) {
+        const dayElement = document.createElement('div');
+        dayElement.className = 'cal-day';
+        dayElement.textContent = String(day);
+        if (day === monthData.todayDay) dayElement.classList.add('today');
 
-    for (let i = 1; i <= daysInMonth; i++) {
-        const dayDiv = document.createElement('div'); dayDiv.className = 'cal-day'; dayDiv.innerText = i;
-        if (currentCustomPlugin) { if (currentCustomPlugin.getRenderData(customStates[currentCustomPlugin.id]).isToday(i)) dayDiv.classList.add('today'); 
-        } else if (currentCalendarType === 'gregorian') { if (i === today.getDate() && month === today.getMonth() && year === today.getFullYear()) dayDiv.classList.add('today'); 
-        } else if (currentCalendarType === 'hijri') { const tH = moment(); if (i === tH.iDate() && month === tH.iMonth() && year === tH.iYear()) dayDiv.classList.add('today'); 
-        } else if (currentCalendarType === 'lunar') { const tL = Lunar.fromDate(today); if (i === tL.getDay() && month === tL.getMonth() && year === tL.getYear()) dayDiv.classList.add('today'); }
+        const fileName = `${monthData.year}-${monthData.fileMonth}-${String(day).padStart(2, '0')}_${monthData.filePrefix}.md`;
+        const filePath = window.kedi.path.join(journalFolder, fileName);
+        if (window.kedi.fs.exists(filePath)) dayElement.classList.add('has-note');
 
-        const mStr = String(Math.abs(month) + 1).padStart(2, '0'); const dStr = String(i).padStart(2, '0');
-        const checkFileName = `${year}-${mStr}-${dStr}_${filePrefix}.md`; const checkFilePath = path.join(journalFolder, checkFileName);
-        if (fs.existsSync(checkFilePath)) dayDiv.classList.add('has-note');
-
-        dayDiv.addEventListener('click', () => {
-            if (!fs.existsSync(journalFolder)) fs.mkdirSync(journalFolder);
-            if (!fs.existsSync(checkFilePath)) { fs.writeFileSync(checkFilePath, `<h1>${i} ${titleText.split(' ')[0]} ${year} Günlüğü</h1>\n<br>`); }
-            refreshFileList(); loadFileToEditor(checkFilePath, checkFileName); renderCalendar();
+        dayElement.addEventListener('click', () => {
+            try {
+                if (!window.kedi.fs.exists(journalFolder)) window.kedi.fs.mkdir(journalFolder);
+                if (!window.kedi.fs.exists(filePath)) {
+                    const safeTitle = window.sanitizeRichHtml(
+                        `<h1>${day} ${monthData.title} Günlüğü</h1><br>`
+                    );
+                    window.kedi.fs.writeText(filePath, safeTitle);
+                }
+                window.refreshFileList?.();
+                window.loadFileToEditor?.(filePath, fileName);
+                renderCalendar();
+            } catch (error) {
+                window.alert(`Günlük açılamadı: ${error.message}`);
+            }
         });
-        calDays.appendChild(dayDiv);
+        calDays.appendChild(dayElement);
     }
 }
 
-// BAĞLAMALAR (EVENTS)
 document.addEventListener('DOMContentLoaded', () => {
     restoreCalendarState();
 
-    // Dock (Sabitle) Butonu
-    const calDockBtn = document.getElementById('cal-dock');
-    if (calDockBtn) {
-        calDockBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            applyDockState(!isDocked);
-            saveCalendarState();
-        });
-    }
-
-    // Aç/Kapat
-    const toggleCalBtn = document.getElementById('toggleCalendarBtn');
-    if (toggleCalBtn && calWidget) {
-        toggleCalBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); 
-            if (isDocked) return; // Sabitliyken bu buton işlevsizdir
-            if (calWidget.style.display === 'flex') {
-                calWidget.style.display = 'none';
-            } else {
-                calWidget.style.display = 'flex';
-                try { renderCalendar(); } catch (err) {}
-            }
-            saveCalendarState(); 
-        });
-    }
-
-    // Kapatma Çarpısı
-    const calCloseBtn = document.getElementById('cal-close');
-    if(calCloseBtn && calWidget) {
-        calCloseBtn.addEventListener('click', () => { 
-            if (isDocked) applyDockState(false); // Sabitliyse önce serbest bırak
-            calWidget.style.display = 'none'; 
-            saveCalendarState(); 
-        });
-    }
-
-    // Sürükle Bırak (Drag)
-    let isDraggingCal = false; 
-    let calOffsetX = 0, calOffsetY = 0;
-    const calHeader = document.getElementById('cal-header');
-
-    if (calHeader && calWidget) {
-        calHeader.addEventListener('mousedown', (e) => {
-            if (isDocked) return; // Sabitliyken sürüklenemez
-            if(e.target.tagName === 'BUTTON' || e.target.tagName === 'SPAN') return;
-            isDraggingCal = true;
-            const rect = calWidget.getBoundingClientRect();
-            calOffsetX = e.clientX - rect.left;
-            calOffsetY = e.clientY - rect.top;
-            calWidget.style.right = 'auto'; 
-        });
-    }
-
-    document.addEventListener('mousemove', (e) => {
-        if (!isDraggingCal || !calWidget) return;
-        calWidget.style.left = (e.clientX - calOffsetX) + 'px';
-        calWidget.style.top = (e.clientY - calOffsetY) + 'px';
+    document.getElementById('cal-dock')?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        applyDockState(!isDocked);
+        saveCalendarState();
     });
 
-    document.addEventListener('mouseup', () => {
-        if (isDraggingCal) {
-            isDraggingCal = false;
-            saveCalendarState(); 
-        }
+    document.getElementById('toggleCalendarBtn')?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        if (isDocked || !calWidget) return;
+        const opening = calWidget.style.display !== 'flex';
+        calWidget.style.display = opening ? 'flex' : 'none';
+        if (opening) renderCalendar();
+        saveCalendarState();
     });
 
-    // İleri / Geri Ay Geçişleri
-    const calPrev = document.getElementById('cal-prev');
-    if(calPrev) {
-        calPrev.addEventListener('click', () => { 
-            if (currentCustomPlugin) customStates[currentCustomPlugin.id] = currentCustomPlugin.prevMonth(customStates[currentCustomPlugin.id]);
-            else if (currentCalendarType === 'gregorian') calNavData.gregorian.subtract(1, 'months');
-            else if (currentCalendarType === 'hijri') calNavData.hijri.subtract(1, 'iMonth');
-            else { let lm = LunarMonth.fromYm(calNavData.lunar.y, calNavData.lunar.m).next(-1); calNavData.lunar.y = lm.getYear(); calNavData.lunar.m = lm.getMonth(); }
-            renderCalendar(); 
-        });
-    }
+    document.getElementById('cal-close')?.addEventListener('click', () => {
+        if (!calWidget) return;
+        if (isDocked) applyDockState(false);
+        calWidget.style.display = 'none';
+        saveCalendarState();
+    });
 
-    const calNext = document.getElementById('cal-next');
-    if(calNext) {
-        calNext.addEventListener('click', () => { 
-            if (currentCustomPlugin) customStates[currentCustomPlugin.id] = currentCustomPlugin.nextMonth(customStates[currentCustomPlugin.id]);
-            else if (currentCalendarType === 'gregorian') calNavData.gregorian.add(1, 'months');
-            else if (currentCalendarType === 'hijri') calNavData.hijri.add(1, 'iMonth');
-            else { let lm = LunarMonth.fromYm(calNavData.lunar.y, calNavData.lunar.m).next(1); calNavData.lunar.y = lm.getYear(); calNavData.lunar.m = lm.getMonth(); }
-            renderCalendar(); 
-        });
-    }
+    let dragging = false;
+    let offsetX = 0;
+    let offsetY = 0;
+    const header = document.getElementById('cal-header');
+    header?.addEventListener('pointerdown', (event) => {
+        if (isDocked || event.target.closest('button')) return;
+        dragging = true;
+        const rect = calWidget.getBoundingClientRect();
+        offsetX = event.clientX - rect.left;
+        offsetY = event.clientY - rect.top;
+        calWidget.style.right = 'auto';
+        header.setPointerCapture(event.pointerId);
+    });
+    header?.addEventListener('pointermove', (event) => {
+        if (!dragging || !calWidget) return;
+        calWidget.style.left = `${event.clientX - offsetX}px`;
+        calWidget.style.top = `${event.clientY - offsetY}px`;
+    });
+    header?.addEventListener('pointerup', (event) => {
+        if (!dragging) return;
+        dragging = false;
+        if (header.hasPointerCapture(event.pointerId)) header.releasePointerCapture(event.pointerId);
+        saveCalendarState();
+    });
+
+    document.getElementById('cal-prev')?.addEventListener('click', () => {
+        const type = window.currentCalendarType;
+        calNavData[type] = window.kedi.calendar.shiftMonth(type, calNavData[type], -1);
+        renderCalendar();
+    });
+    document.getElementById('cal-next')?.addEventListener('click', () => {
+        const type = window.currentCalendarType;
+        calNavData[type] = window.kedi.calendar.shiftMonth(type, calNavData[type], 1);
+        renderCalendar();
+    });
 });
 
-// Ayarlar değiştirildiğinde takvimi güncellemesi için bunu globale açıyoruz
 window.renderCalendar = renderCalendar;
+window.restoreCalendarState = restoreCalendarState;

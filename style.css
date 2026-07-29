@@ -81,6 +81,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100vh; font-fam
 #newFileInput { width: 100%; box-sizing: border-box; padding: 8px; background-color: #1e1e1e; border: 1px solid #f39c12; color: white; border-radius: 4px; outline: none; }
 
 #file-list { list-style: none; padding: 0; margin-top: 10px; overflow-y: auto; flex-grow: 1;}
+.file-list-nested { list-style: none; margin: 2px 0 2px 14px; padding-left: 8px; border-left: 1px solid #3a3a3a; }
 .file-item { display: flex; justify-content: space-between; align-items: center; padding: 6px; cursor: pointer; border-radius: 4px; font-size: 14px; margin-bottom: 2px; }
 .file-item:hover { background-color: #333; }
 .file-item.active { background-color: #3e3e3e; color: #f39c12; }
@@ -157,7 +158,7 @@ body { margin: 0; display: flex; flex-direction: column; height: 100vh; font-fam
 .port-bottom { bottom: -8px; left: calc(50% - 8px); }
 .port-left { top: calc(50% - 8px); left: -8px; }
 .port-right { top: calc(50% - 8px); right: -8px; }
-.connection-line { fill: none; stroke: #888; stroke-width: 3px; transition: stroke 0.3s; }
+.connection-line { fill: none; stroke: #888; stroke-width: 3px; transition: stroke 0.3s; pointer-events: stroke; }
 .connection-line:hover { stroke: #e74c3c; stroke-width: 5px; cursor: pointer; } 
 .temp-line { stroke: #2ecc71; stroke-dasharray: 5,5; }
 body.is-connecting .box-port { opacity: 1 !important; transform: scale(1.3); background-color: #f39c12; pointer-events: auto !important; }
@@ -180,6 +181,7 @@ body.is-connecting .canvas-box { pointer-events: none !important; }
 #super-modal-close { background: #333; border: 1px solid #444; color: #d4d4d4; font-size: 16px; cursor: pointer; padding: 5px 12px; border-radius: 6px; transition: all 0.2s; }
 #super-modal-close:hover { background: #e74c3c; color: white; }
 #super-node-modal-body { flex-grow: 1; overflow-y: auto; padding: 25px; background: #1e1e1e; }
+#super-node-modal-body > .box-content { width: 100%; min-height: 100%; box-sizing: border-box; }
 .super-box-section { background: #252526; border: 1px solid #333; border-radius: 8px; margin-bottom: 25px; overflow: hidden; }
 .super-box-section-title { background: #2d2d30; padding: 10px 15px; font-size: 13px; font-weight: bold; color: #888; border-bottom: 1px solid #333; }
 

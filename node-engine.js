@@ -1,25 +1,22 @@
-// ==========================================
-// KEDI NODE ENGINE (Blok Tabanlı Yapı)
-// ==========================================
+'use strict';
+
+const boundBlocks = new WeakSet();
 
 const NodeEngine = {
-    // Yeni bir blok (paragraf, kod, başlık vb.) oluşturur
     createBlock(type = 'text', content = '') {
         const block = document.createElement('div');
         block.className = `kedi-block block-${type}`;
         block.setAttribute('data-type', type);
         
-        // Blok içeriği (ContentEditable)
         const inner = document.createElement('div');
         inner.className = 'block-inner';
         inner.contentEditable = true;
-        inner.innerHTML = content || '';
+        inner.innerHTML = window.sanitizeRichHtml ? window.sanitizeRichHtml(content || '') : '';
         if(!content) inner.setAttribute('placeholder', 'Bir şeyler yazın veya "/" ile komut verin...');
         
-        // Sürükleme ve Blok Menüsü tutamacı (⠿)
         const handle = document.createElement('div');
         handle.className = 'block-handle';
-        handle.innerHTML = '⠿';
+        handle.textContent = '⠿';
         
         block.appendChild(handle);
         block.appendChild(inner);
@@ -29,10 +26,12 @@ const NodeEngine = {
     },
 
     bindBlockEvents(block) {
+        if (!block || boundBlocks.has(block)) return;
         const inner = block.querySelector('.block-inner');
+        if (!inner) return;
+        boundBlocks.add(block);
         
         inner.addEventListener('keydown', (e) => {
-            // ENTER: Yeni blok oluştur
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 const newBlock = this.createBlock('text');
@@ -40,15 +39,13 @@ const NodeEngine = {
                 newBlock.querySelector('.block-inner').focus();
             }
             
-            // BACKSPACE: Blok boşsa sil ve öncekine odaklan
             if (e.key === 'Backspace' && inner.innerText.length === 0) {
-                const prev = block.previousSibling;
+                const prev = block.previousElementSibling;
                 if (prev && prev.classList.contains('kedi-block')) {
                     e.preventDefault();
                     block.remove();
                     const prevInner = prev.querySelector('.block-inner');
                     prevInner.focus();
-                    // Cursor'ı metnin sonuna taşı
                     const range = document.createRange();
                     const sel = window.getSelection();
                     range.selectNodeContents(prevInner);
@@ -58,6 +55,11 @@ const NodeEngine = {
                 }
             }
         });
+    },
+
+    bindContainer(container) {
+        if (!container) return;
+        container.querySelectorAll('.kedi-block').forEach((block) => this.bindBlockEvents(block));
     }
 };
 

@@ -1,125 +1,217 @@
-// ==========================================
-// KEDI PAINT ENGINE (Kusursuz Sürüm)
-// ==========================================
+'use strict';
 
-function initPaintEngine(boxEl) {
-    const wrapper = boxEl.querySelector('.image-box-wrapper');
-    if (!wrapper) return;
+const paintCreationControlsBound = new WeakSet();
+const configuredCanvases = new WeakSet();
+const loadedCanvases = new WeakSet();
+const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
+const MAX_IMAGE_EDGE = 8192;
+const MAX_IMAGE_PIXELS = 40_000_000;
 
-    // Eğer içerde zaten bir canvas varsa (dosyadan yüklendiyse) fırçaları bağla
-    const existingCanvas = wrapper.querySelector('.draw-layer');
-    if (existingCanvas) {
-        setupImageTools(boxEl);
-        return;
-    }
-
-    // Butonları bul
-    const imgInput = boxEl.querySelector('.image-file-input');
-    const blankBtn = boxEl.querySelector('.blank-canvas-btn');
-
-    // 1. "Boş Tahta Aç" İşlemi
-    if (blankBtn) {
-        blankBtn.onclick = (e) => {
-            e.stopPropagation();
-            const w = wrapper.clientWidth > 50 ? wrapper.clientWidth : 600;
-            const h = wrapper.clientHeight > 50 ? wrapper.clientHeight : 400;
-            
-            wrapper.innerHTML = `<canvas class="draw-layer" width="${w}" height="${h}" style="width:100%; height:100%; background:#fff;"></canvas>`;
-            const canvas = wrapper.querySelector('.draw-layer');
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(0, 0, w, h);
-            
-            setupImageTools(boxEl);
-            if(window.triggerCanvasSave) window.triggerCanvasSave();
-        };
-    }
-
-    // 2. "Resim Yükle" İşlemi
-    if (imgInput) {
-        imgInput.onchange = (e) => {
-            if (e.target.files && e.target.files.length > 0) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        wrapper.innerHTML = `<canvas class="draw-layer" width="${img.width}" height="${img.height}" style="width:100%; height:100%; background:#fff;"></canvas>`;
-                        const canvas = wrapper.querySelector('.draw-layer');
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0);
-                        
-                        setupImageTools(boxEl);
-                        if(window.triggerCanvasSave) window.triggerCanvasSave();
-                    };
-                    img.src = event.target.result;
-                };
-                reader.readAsDataURL(e.target.files[0]);
-            }
-        };
-    }
+function createDrawingCanvas(width, height) {
+    const canvas = document.createElement('canvas');
+    canvas.className = 'draw-layer';
+    canvas.width = width;
+    canvas.height = height;
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.background = '#fff';
+    return canvas;
 }
 
-function setupImageTools(boxEl) {
-    const canvas = boxEl.querySelector('.draw-layer');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+function markCanvasModified(canvas) {
+    canvas.setAttribute('data-modified', 'true');
+}
 
-    // Kayıtlı resmi yükleme (fs ve path window üzerinden)
-    const savedFile = canvas.getAttribute('data-file');
-    if (savedFile && !canvas.dataset.loaded) {
-        canvas.dataset.loaded = "true";
-        const filePath = window.path.join(window.currentHivePath, 'images', savedFile);
-        if (window.fs.existsSync(filePath)) {
-            const img = new Image();
-            img.onload = () => ctx.drawImage(img, 0, 0);
-            img.src = `data:image/png;base64,${window.fs.readFileSync(filePath, 'base64')}`;
+function installCanvas(boxElement, wrapper, toolRoot, width, height, drawInitialContent) {
+    const canvas = createDrawingCanvas(width, height);
+    wrapper.replaceChildren(canvas);
+    const context = canvas.getContext('2d', { willReadFrequently: false });
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, width, height);
+    if (drawInitialContent) drawInitialContent(context, canvas);
+    markCanvasModified(canvas);
+    setupImageTools(boxElement, toolRoot);
+    window.triggerCanvasSave?.();
+    return canvas;
+}
+
+function initPaintEngine(boxElement) {
+    const wrapper = boxElement.querySelector('.image-box-wrapper');
+    if (!wrapper) return;
+    const toolRoot = wrapper.closest('.box-content') || boxElement;
+
+    const existingCanvas = wrapper.querySelector('.draw-layer');
+    if (existingCanvas) setupImageTools(boxElement, toolRoot);
+
+    if (paintCreationControlsBound.has(wrapper)) return;
+    paintCreationControlsBound.add(wrapper);
+
+    boxElement.querySelector('.blank-canvas-btn')?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const width = wrapper.clientWidth > 50 ? Math.round(wrapper.clientWidth) : 600;
+        const height = wrapper.clientHeight > 50 ? Math.round(wrapper.clientHeight) : 400;
+        installCanvas(boxElement, wrapper, toolRoot, width, height);
+    });
+
+    boxElement.querySelector('.image-file-input')?.addEventListener('change', (event) => {
+        const file = event.target.files?.[0];
+        event.target.value = '';
+        if (!file) return;
+        if (!/^image\/(?:png|jpeg|gif|webp)$/i.test(file.type) || file.size > MAX_UPLOAD_BYTES) {
+            window.alert('Yalnızca PNG, JPEG, GIF veya WebP (en fazla 20 MB) yüklenebilir.');
+            return;
         }
-    }
 
-    let isDrawing = false;
-    let drawMode = false;
-    const drawBtn = boxEl.querySelector('.draw-btn');
-    const colorPicker = boxEl.querySelector('.color-picker');
-    const brushSize = boxEl.querySelector('.brush-size');
-
-    if (drawBtn) {
-        drawBtn.onclick = (e) => {
-            e.stopPropagation();
-            drawMode = !drawMode;
-            drawBtn.style.background = drawMode ? "#f39c12" : "transparent";
-            drawBtn.style.color = drawMode ? "#000" : "#d4d4d4";
-            canvas.style.cursor = drawMode ? "crosshair" : "default";
-            canvas.style.pointerEvents = drawMode ? "auto" : "none";
+        const reader = new FileReader();
+        reader.onerror = () => window.alert('Görsel okunamadı.');
+        reader.onload = () => {
+            const image = new Image();
+            image.onerror = () => window.alert('Görsel çözümlenemedi.');
+            image.onload = () => {
+                if (image.width > MAX_IMAGE_EDGE
+                    || image.height > MAX_IMAGE_EDGE
+                    || image.width * image.height > MAX_IMAGE_PIXELS) {
+                    window.alert('Görsel boyutları çok büyük.');
+                    return;
+                }
+                installCanvas(boxElement, wrapper, toolRoot, image.width, image.height, (context) => {
+                    context.drawImage(image, 0, 0);
+                });
+            };
+            image.src = reader.result;
         };
-    }
-
-    // Çizim Olayları
-    canvas.onmousedown = (e) => {
-        if (!drawMode) return;
-        isDrawing = true;
-        const rect = canvas.getBoundingClientRect();
-        ctx.beginPath();
-        ctx.moveTo((e.clientX - rect.left) * (canvas.width / rect.width), (e.clientY - rect.top) * (canvas.height / rect.height));
-    };
-
-    canvas.onmousemove = (e) => {
-        if (!isDrawing || !drawMode) return;
-        const rect = canvas.getBoundingClientRect();
-        ctx.strokeStyle = colorPicker.value;
-        ctx.lineWidth = brushSize.value;
-        ctx.lineCap = "round";
-        ctx.lineTo((e.clientX - rect.left) * (canvas.width / rect.width), (e.clientY - rect.top) * (canvas.height / rect.height));
-        ctx.stroke();
-        canvas.setAttribute('data-modified', 'true');
-    };
-
-    window.addEventListener('mouseup', () => {
-        if (isDrawing) {
-            isDrawing = false;
-            if(window.triggerCanvasSave) window.triggerCanvasSave();
-        }
+        reader.readAsDataURL(file);
     });
 }
 
-// Global'e aç
+function loadSavedImage(canvas, context) {
+    if (loadedCanvases.has(canvas)) return;
+    loadedCanvases.add(canvas);
+    const savedFile = canvas.getAttribute('data-file');
+    if (!savedFile || !/^[A-Za-z0-9._-]{1,180}$/.test(savedFile) || !window.currentHivePath) return;
+
+    const filePath = window.kedi.path.join(window.currentHivePath, 'images', savedFile);
+    if (!window.kedi.fs.exists(filePath)) return;
+    try {
+        const image = new Image();
+        image.onerror = () => console.error(`Kayıtlı görsel çözümlenemedi: ${savedFile}`);
+        image.onload = () => {
+            if (canvas.getAttribute('data-modified') === 'true') return;
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        };
+        image.src = `data:image/png;base64,${window.kedi.fs.readBase64(filePath)}`;
+    } catch (error) {
+        console.error('Kayıtlı görsel yüklenemedi:', error);
+    }
+}
+
+function pointerPosition(canvas, event) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+        x: (event.clientX - rect.left) * (canvas.width / rect.width),
+        y: (event.clientY - rect.top) * (canvas.height / rect.height)
+    };
+}
+
+function setupImageTools(boxElement, toolRoot = boxElement) {
+    const canvas = toolRoot.querySelector('.draw-layer');
+    if (!canvas) return;
+    const context = canvas.getContext('2d');
+    loadSavedImage(canvas, context);
+    if (configuredCanvases.has(canvas)) return;
+    configuredCanvases.add(canvas);
+
+    let isDrawing = false;
+    let drawMode = false;
+    const drawButton = toolRoot.querySelector('.draw-btn');
+    const colorPicker = toolRoot.querySelector('.color-picker');
+    const brushSize = toolRoot.querySelector('.brush-size');
+    const rotateButton = toolRoot.querySelector('.rotate-btn');
+    const clearButton = toolRoot.querySelector('.clear-draw-btn');
+
+    canvas.style.pointerEvents = 'none';
+    if (drawButton) {
+        drawButton.onclick = (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            drawMode = !drawMode;
+            drawButton.classList.toggle('active', drawMode);
+            drawButton.style.background = drawMode ? '#f39c12' : 'transparent';
+            drawButton.style.color = drawMode ? '#000' : '#d4d4d4';
+            canvas.style.cursor = drawMode ? 'crosshair' : 'default';
+            canvas.style.pointerEvents = drawMode ? 'auto' : 'none';
+        };
+    }
+
+    canvas.addEventListener('pointerdown', (event) => {
+        if (!drawMode || event.button !== 0) return;
+        event.preventDefault();
+        event.stopPropagation();
+        isDrawing = true;
+        canvas.setPointerCapture(event.pointerId);
+        const point = pointerPosition(canvas, event);
+        context.beginPath();
+        context.moveTo(point.x, point.y);
+    });
+
+    canvas.addEventListener('pointermove', (event) => {
+        if (!isDrawing || !drawMode) return;
+        const point = pointerPosition(canvas, event);
+        context.strokeStyle = colorPicker?.value || '#ff5252';
+        context.lineWidth = Number(brushSize?.value) || 3;
+        context.lineCap = 'round';
+        context.lineJoin = 'round';
+        context.lineTo(point.x, point.y);
+        context.stroke();
+        markCanvasModified(canvas);
+    });
+
+    const finishDrawing = (event) => {
+        if (!isDrawing) return;
+        isDrawing = false;
+        context.closePath();
+        if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+        window.triggerCanvasSave?.();
+    };
+    canvas.addEventListener('pointerup', finishDrawing);
+    canvas.addEventListener('pointercancel', finishDrawing);
+
+    if (rotateButton) {
+        rotateButton.onclick = (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const snapshot = document.createElement('canvas');
+            snapshot.width = canvas.width;
+            snapshot.height = canvas.height;
+            snapshot.getContext('2d').drawImage(canvas, 0, 0);
+            const previousWidth = canvas.width;
+            const previousHeight = canvas.height;
+            canvas.width = previousHeight;
+            canvas.height = previousWidth;
+            const rotatedContext = canvas.getContext('2d');
+            rotatedContext.translate(canvas.width, 0);
+            rotatedContext.rotate(Math.PI / 2);
+            rotatedContext.drawImage(snapshot, 0, 0);
+            markCanvasModified(canvas);
+            window.triggerCanvasSave?.();
+        };
+    }
+
+    if (clearButton) {
+        clearButton.onclick = (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (!window.confirm('Çizim temizlensin mi?')) return;
+            context.save();
+            context.setTransform(1, 0, 0, 1, 0, 0);
+            context.fillStyle = '#ffffff';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            context.restore();
+            markCanvasModified(canvas);
+            window.triggerCanvasSave?.();
+        };
+    }
+}
+
 window.initPaintEngine = initPaintEngine;

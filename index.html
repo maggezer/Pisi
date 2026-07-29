@@ -2,6 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' data:; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; frame-src 'none'">
     <title>KEDI</title>
     <link rel="stylesheet" href="style.css">
     <style>
@@ -55,11 +56,9 @@
                     <option value="lunar">Çin Takvimi (Lunar)</option>
                 </select>
             </div>
-            <div class="pref-row" style="border-top: 1px dashed #444; padding-top: 15px;">
-                <span>Kendi Takvimini Yükle (Eklenti):</span>
-                <button id="pref-add-custom-cal" style="padding: 5px 10px; background: #2ecc71; color: #1e1e1e; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;">+ JS Dosyası Seç</button>
+            <div class="pref-row" style="border-top: 1px dashed #444; padding-top: 15px; color:#888;">
+                Yerel JavaScript takvim eklentileri güvenlik nedeniyle devre dışıdır.
             </div>
-            <div id="custom-cal-status" style="font-size: 11px; color: #888; text-align: right;">Sistem Takvimi Kullanılıyor</div>
             <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
                 <button id="pref-close" style="padding: 6px 15px; background: #34ace0; color: #1e1e1e; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Kapat</button>
             </div>
@@ -110,9 +109,9 @@
                         <div id="tab-editing" class="ribbon-panel">
                             <div class="toolbar-group">
                                 <div class="format-grid">
-                                    <button class="tool-btn" onmousedown="event.preventDefault(); document.execCommand('bold', false, null);" style="font-weight: bold;">B</button>
-                                    <button class="tool-btn" onmousedown="event.preventDefault(); document.execCommand('italic', false, null);" style="font-style: italic;">I</button>
-                                    <button class="tool-btn" onmousedown="event.preventDefault(); document.execCommand('underline', false, null);" style="text-decoration: underline;">U</button>
+                                    <button class="tool-btn" data-format-command="bold" style="font-weight: bold;">B</button>
+                                    <button class="tool-btn" data-format-command="italic" style="font-style: italic;">I</button>
+                                    <button class="tool-btn" data-format-command="underline" style="text-decoration: underline;">U</button>
                                     
                                     <div class="dropdown-wrapper" style="width: auto;">
                                         <button class="tool-btn color-picker-btn" id="hnBtn" style="min-width: 60px;"><span>Hn</span> <span class="color-caret">▼</span></button>
@@ -198,6 +197,16 @@
 
         <div id="right-sidebar">
             <span class="placeholder-text" id="right-placeholder">Analiz & Grafikler<br>Çok Yakında</span>
+        </div>
+    </div>
+
+    <div id="super-node-modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="super-modal-title">
+        <div id="super-node-modal">
+            <div id="super-node-modal-header">
+                <input id="super-modal-title" type="text" maxlength="160" aria-label="Düğüm başlığı">
+                <button id="super-modal-close" type="button" aria-label="Düğüm editörünü kapat">✖</button>
+            </div>
+            <div id="super-node-modal-body"></div>
         </div>
     </div>
 

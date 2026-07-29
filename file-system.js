@@ -1,184 +1,356 @@
-// ==========================================
-// DOSYA SİSTEMİ VE KLASİK EDİTÖR MOTORU (file-system.js)
-// ==========================================
+'use strict';
 
-// Global değişkenleri window üzerinden alıyoruz (app.js'de tanımlandılar)
 const classicEditorContainer = document.getElementById('classic-editor-container');
 const myEditor = document.getElementById('myEditor');
 const tabsDivLeft = document.getElementById('tabs-left');
-const contextMenu = document.getElementById('context-menu');
-const ctxDeleteFile = document.getElementById('ctx-delete-file');
-
 let openTabs = [];
-let targetCreatePath = null;
-let fileToDelete = null;
+let nodeToRename = null;
 
-// Hafıza Değişkenleri - Sadece bu dosyaya özel
-let currentSortMode = 'name'; 
-let manualOrder = JSON.parse(localStorage.getItem('kedi_manual_order') || '{}');
-let nodeToRename = null; 
+function blankCanvasDocument() {
+    return {
+        schemaVersion: 2,
+        board: '',
+        connections: [],
+        camera: { x: 0, y: 0, zoom: 1 },
+        counter: 1
+    };
+}
 
-function hideWelcome() { 
+function hideWelcome() {
     const welcomeScreen = document.getElementById('welcome-screen');
-    if(welcomeScreen) welcomeScreen.style.display = 'none'; 
+    if (welcomeScreen) welcomeScreen.style.display = 'none';
 }
 
-function showClassicEditor() { 
-    hideWelcome(); 
-    const viewport = document.getElementById('canvas-viewport');
-    if(viewport) viewport.style.display = 'none'; 
-    if(classicEditorContainer) classicEditorContainer.style.display = 'flex'; 
+function showClassicEditor() {
+    if (window.currentCanvasFile && window.flushCanvasSave?.() === false) return false;
+    window.closeNodeEditor?.({ save: false });
+    window.cancelCanvasSave?.();
+    window.currentCanvasFile = null;
+    hideWelcome();
+    const canvasViewport = document.getElementById('canvas-viewport');
+    if (canvasViewport) canvasViewport.style.display = 'none';
+    if (classicEditorContainer) classicEditorContainer.style.display = 'flex';
     const saveStatus = document.getElementById('save-status');
-    if(saveStatus) saveStatus.innerText = "Klasik Düzenleyici"; 
-    window.currentCanvasFile = null; 
+    if (saveStatus) {
+        saveStatus.textContent = 'Klasik Düzenleyici';
+        saveStatus.style.color = '#888';
+    }
+    return true;
 }
 
-function showCanvasView() { 
-    hideWelcome(); 
-    if(classicEditorContainer) classicEditorContainer.style.display = 'none'; 
-    const viewport = document.getElementById('canvas-viewport');
-    if(viewport) viewport.style.display = 'block'; 
-    if(typeof window.updateCanvas === 'function') window.updateCanvas(); 
+function showCanvasView() {
+    hideWelcome();
+    if (classicEditorContainer) classicEditorContainer.style.display = 'none';
+    const canvasViewport = document.getElementById('canvas-viewport');
+    if (canvasViewport) canvasViewport.style.display = 'block';
     const saveStatus = document.getElementById('save-status');
-    if(saveStatus) saveStatus.innerText = "Tuval Modu"; 
+    if (saveStatus) {
+        saveStatus.textContent = 'Tuval Modu';
+        saveStatus.style.color = '#888';
+    }
 }
 
 function loadFileToEditor(fullPath, fileName) {
-    showClassicEditor();
-    if (!openTabs.find(t => t.fullPath === fullPath)) { openTabs.push({ fullPath, fileName }); }
-    if(myEditor) {
-        myEditor.innerHTML = window.fs.readFileSync(fullPath, 'utf-8');
-        myEditor.setAttribute('contenteditable', 'true'); myEditor.setAttribute('data-path', fullPath); 
+    if (!showClassicEditor()) return;
+    try {
+        const cleanHtml = window.sanitizeRichHtml(window.kedi.fs.readText(fullPath));
+        if (!openTabs.some((tab) => tab.fullPath === fullPath)) {
+            openTabs.push({ fullPath, fileName });
+        }
+        if (myEditor) {
+            myEditor.innerHTML = cleanHtml;
+            myEditor.setAttribute('contenteditable', 'true');
+            myEditor.setAttribute('data-path', fullPath);
+        }
+        renderClassicTabs();
+    } catch (error) {
+        console.error('Not yüklenemedi:', error);
+        window.alert(`Not yüklenemedi: ${error.message}`);
     }
-    renderClassicTabs();
+}
+
+function parseCanvasDocument(content) {
+    if (content.trim() === '') {
+        return { data: blankCanvasDocument(), migrated: true };
+    }
+
+    const parsed = JSON.parse(content);
+    if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
+        throw new Error('Tuvalin kök verisi bir nesne olmalı.');
+    }
+
+    const camera = parsed.camera && typeof parsed.camera === 'object' ? parsed.camera : {};
+    const normalized = {
+        schemaVersion: 2,
+        board: typeof parsed.board === 'string' ? parsed.board : '',
+        connections: Array.isArray(parsed.connections) ? parsed.connections : [],
+        camera: {
+            x: Number.isFinite(camera.x) ? camera.x : 0,
+            y: Number.isFinite(camera.y) ? camera.y : 0,
+            zoom: Number.isFinite(camera.zoom) ? Math.min(3, Math.max(0.2, camera.zoom)) : 1
+        },
+        counter: Number.isInteger(parsed.counter) && parsed.counter >= 1 ? parsed.counter : 1
+    };
+    return { data: normalized, migrated: parsed.schemaVersion !== 2 };
+}
+
+function normalizeLoadedConnections(connections, boxIds) {
+    const positions = new Set(['top', 'right', 'bottom', 'left']);
+    return connections
+        .filter((connection) => connection
+            && boxIds.has(connection.sourceBox)
+            && boxIds.has(connection.targetBox)
+            && positions.has(connection.sourcePos)
+            && positions.has(connection.targetPos))
+        .map((connection, index) => ({
+            id: typeof connection.id === 'string' && /^[A-Za-z0-9_-]{1,100}$/.test(connection.id)
+                ? connection.id
+                : `connection-loaded-${index}`,
+            sourceBox: connection.sourceBox,
+            sourcePos: connection.sourcePos,
+            targetBox: connection.targetBox,
+            targetPos: connection.targetPos
+        }));
+}
+
+function applyCanvasDocument(fullPath, data) {
+    const canvasBoard = document.getElementById('canvas-board');
+    if (!canvasBoard) throw new Error('Tuval alanı bulunamadı.');
+
+    window.closeNodeEditor?.({ save: false });
+    window.cancelCanvasSave?.();
+    window.resetConnectionEngine?.();
+    canvasBoard.replaceChildren();
+    canvasBoard.innerHTML = window.sanitizeBoardHtml(data.board);
+
+    const seenIds = new Set();
+    let highestBoxNumber = 1;
+    canvasBoard.querySelectorAll('.canvas-box').forEach((box, index) => {
+        if (!box.id || seenIds.has(box.id)) box.id = `box-recovered-${index + 1}`;
+        seenIds.add(box.id);
+        const numericId = /^box-(\d+)$/.exec(box.id);
+        if (numericId) highestBoxNumber = Math.max(highestBoxNumber, Number(numericId[1]));
+        window.bindBoxEvents?.(box);
+    });
+
+    window.connections = normalizeLoadedConnections(data.connections, seenIds);
+    window.camera = data.camera;
+    window.boxIdCounter = Math.max(data.counter, highestBoxNumber);
+    window.currentCanvasFile = fullPath;
+    showCanvasView();
+    window.updateCanvas?.();
+    window.drawAllConnections?.();
 }
 
 function loadFileToCanvas(fullPath) {
-    window.currentCanvasFile = fullPath; showCanvasView();
-    const board = document.getElementById('canvas-board');
-    const svgLayer = document.getElementById('canvas-lines');
-    
-    try {
-        const content = window.fs.readFileSync(fullPath, 'utf-8');
-        if (content && board) {
-            const data = JSON.parse(content);
-            board.innerHTML = data.board; 
-            window.connections = data.connections || []; 
-            window.camera = data.camera || {x:0,y:0,zoom:1}; 
-            window.boxIdCounter = data.counter || 1;
-            
-            if(svgLayer) svgLayer.innerHTML = '<path id="temp-connection-line" class="connection-line temp-line" style="display: none; pointer-events: none;"></path>';
-            board.querySelectorAll('.canvas-box').forEach(box => {
-                if(typeof window.bindBoxEvents === 'function') window.bindBoxEvents(box);
-            }); 
+    if (window.currentCanvasFile && window.flushCanvasSave?.() === false) return;
 
-            board.querySelectorAll('.image-box-wrapper').forEach(wrapper => {
-                const boxEl = wrapper.closest('.canvas-box');
-                if (wrapper.querySelector('.draw-layer') && typeof initPaintEngine === 'function') {
-                    initPaintEngine(boxEl);
-                }
-            });
+    let parsedDocument;
+    try {
+        const content = window.kedi.fs.readText(fullPath);
+        parsedDocument = parseCanvasDocument(content);
+    } catch (error) {
+        console.error('Tuval yükleme hatası:', error);
+        const saveStatus = document.getElementById('save-status');
+        if (saveStatus) {
+            saveStatus.textContent = 'Bozuk tuval açılmadı';
+            saveStatus.style.color = '#e74c3c';
         }
-    } catch(e) { console.error("Canvas yükleme hatası:", e); }
-    if(typeof window.updateCanvas === 'function') window.updateCanvas();
+        window.alert(`Tuval açılamadı ve dosyaya dokunulmadı:\n${error.message}`);
+        return;
+    }
+
+    try {
+        applyCanvasDocument(fullPath, parsedDocument.data);
+        if (parsedDocument.migrated) window.triggerCanvasSave?.(true);
+    } catch (error) {
+        console.error('Tuval uygulanamadı:', error);
+        window.alert(`Tuval görüntülenemedi: ${error.message}`);
+    }
 }
 
 function renderClassicTabs() {
-    if(!tabsDivLeft) return;
-    tabsDivLeft.innerHTML = '';
-    openTabs.forEach(tabData => {
-        const tabDiv = document.createElement('div'); tabDiv.className = 'tab'; 
-        if(myEditor && myEditor.getAttribute('data-path') === tabData.fullPath) tabDiv.classList.add('active');
-        const titleSpan = document.createElement('span'); titleSpan.innerText = tabData.fileName.replace('.md', '');
-        const closeBtn = document.createElement('button'); closeBtn.className = 'tab-close'; closeBtn.innerText = '✖';
-        titleSpan.onclick = () => loadFileToEditor(tabData.fullPath, tabData.fileName);
-        closeBtn.onclick = (e) => { e.stopPropagation(); closeClassicTab(tabData.fullPath); };
-        tabDiv.appendChild(titleSpan); tabDiv.appendChild(closeBtn); tabsDivLeft.appendChild(tabDiv);
+    if (!tabsDivLeft) return;
+    tabsDivLeft.replaceChildren();
+    openTabs.forEach((tabData) => {
+        const tab = document.createElement('div');
+        tab.className = 'tab';
+        if (myEditor?.getAttribute('data-path') === tabData.fullPath) tab.classList.add('active');
+
+        const title = document.createElement('span');
+        title.textContent = tabData.fileName.replace(/\.md$/i, '');
+        title.addEventListener('click', () => loadFileToEditor(tabData.fullPath, tabData.fileName));
+
+        const closeButton = document.createElement('button');
+        closeButton.className = 'tab-close';
+        closeButton.type = 'button';
+        closeButton.textContent = '✖';
+        closeButton.addEventListener('click', (event) => {
+            event.stopPropagation();
+            closeClassicTab(tabData.fullPath);
+        });
+
+        tab.append(title, closeButton);
+        tabsDivLeft.appendChild(tab);
     });
 }
 
 function closeClassicTab(fullPath) {
-    openTabs = openTabs.filter(t => t.fullPath !== fullPath);
-    if (myEditor && myEditor.getAttribute('data-path') === fullPath) { 
-        myEditor.innerHTML = ''; myEditor.removeAttribute('data-path'); myEditor.setAttribute('contenteditable', 'false'); 
+    openTabs = openTabs.filter((tab) => tab.fullPath !== fullPath);
+    if (myEditor?.getAttribute('data-path') === fullPath) {
+        myEditor.replaceChildren();
+        myEditor.removeAttribute('data-path');
+        myEditor.setAttribute('contenteditable', 'false');
     }
     renderClassicTabs();
 }
 
-function refreshFileList() { 
-    const fileListEl = document.getElementById('file-list');
-    if(!fileListEl || !window.currentHivePath) return; 
-    fileListEl.innerHTML = ''; 
+function refreshFileList() {
+    const fileList = document.getElementById('file-list');
+    if (!fileList || !window.currentHivePath) return;
+    fileList.replaceChildren();
     const sidebarControls = document.getElementById('sidebar-controls');
-    if(sidebarControls) sidebarControls.style.display = 'flex';
-    buildFileTree(window.currentHivePath, fileListEl); 
+    if (sidebarControls) sidebarControls.style.display = 'flex';
+    buildFileTree(window.currentHivePath, fileList);
 }
 
-function createInstantFile(dirPath, ext = '.md') {
-    if(!dirPath) return;
-    let baseName = "New Note";
-    let fileName = baseName + ext;
+function createInstantFile(dirPath, extension = '.md') {
+    if (!dirPath || !['.md', '.canvas'].includes(extension)) return;
+    let fileName = `New Note${extension}`;
     let counter = 1;
-    while(window.fs.existsSync(window.path.join(dirPath, fileName))) {
-        fileName = `${baseName} (${counter})${ext}`;
-        counter++;
+    while (window.kedi.fs.exists(window.kedi.path.join(dirPath, fileName))) {
+        fileName = `New Note (${counter})${extension}`;
+        counter += 1;
     }
-    const fullPath = window.path.join(dirPath, fileName);
-    window.fs.writeFileSync(fullPath, ext === '.md' ? "<h1>Yeni Not</h1><br>" : "");
-    nodeToRename = fullPath;
-    refreshFileList();
+
+    const fullPath = window.kedi.path.join(dirPath, fileName);
+    const content = extension === '.md'
+        ? '<h1>Yeni Not</h1><br>'
+        : JSON.stringify(blankCanvasDocument(), null, 2);
+    try {
+        window.kedi.fs.writeText(fullPath, content);
+        nodeToRename = fullPath;
+        refreshFileList();
+    } catch (error) {
+        window.alert(`Dosya oluşturulamadı: ${error.message}`);
+    }
 }
 
-function handleRename(oldPath, newName, isDir) {
-    if (!newName.trim()) { nodeToRename = null; return refreshFileList(); }
-    const dir = window.path.dirname(oldPath);
-    const ext = isDir ? '' : window.path.extname(oldPath);
-    let finalName = newName.endsWith(ext) ? newName : newName + ext;
-    const newPath = window.path.join(dir, finalName);
-    if (oldPath !== newPath && !window.fs.existsSync(newPath)) {
-        window.fs.renameSync(oldPath, newPath);
+function handleRename(oldPath, newName, isDirectory) {
+    const trimmedName = newName.trim();
+    if (!trimmedName || trimmedName.includes('/') || trimmedName.includes('\\')) {
+        nodeToRename = null;
+        refreshFileList();
+        return;
+    }
+
+    const directory = window.kedi.path.dirname(oldPath);
+    const extension = isDirectory ? '' : window.kedi.path.extname(oldPath);
+    const finalName = extension && !trimmedName.toLowerCase().endsWith(extension.toLowerCase())
+        ? `${trimmedName}${extension}`
+        : trimmedName;
+    const newPath = window.kedi.path.join(directory, finalName);
+
+    try {
+        if (oldPath !== newPath && !window.kedi.fs.exists(newPath)) {
+            window.kedi.fs.rename(oldPath, newPath);
+        }
+    } catch (error) {
+        window.alert(`Yeniden adlandırma başarısız: ${error.message}`);
     }
     nodeToRename = null;
     refreshFileList();
 }
 
-function buildFileTree(dirPath, containerElement) {
+function buildFileTree(dirPath, container) {
     let items;
-    try { items = window.fs.readdirSync(dirPath, { withFileTypes: true }); } catch(e) { return; }
-    
-    let folders = items.filter(item => item.isDirectory() && item.name !== 'images' && item.name !== 'Journals');
-    let validFiles = items.filter(item => item.isFile() && (item.name.endsWith('.md') || item.name.endsWith('.canvas')));
-    
-    folders.forEach(f => renderItem(f, dirPath, containerElement, true));
-    validFiles.forEach(f => renderItem(f, dirPath, containerElement, false));
+    try {
+        items = window.kedi.fs.listDirectory(dirPath);
+    } catch (error) {
+        console.error('Klasör listelenemedi:', error);
+        return;
+    }
+
+    const folders = items
+        .filter((item) => item.type === 'directory' && !['images', 'Journals'].includes(item.name))
+        .sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+    const files = items
+        .filter((item) => item.type === 'file' && /\.(?:md|canvas)$/i.test(item.name))
+        .sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+
+    folders.forEach((item) => renderItem(item, dirPath, container, true));
+    files.forEach((item) => renderItem(item, dirPath, container, false));
 }
 
-function renderItem(item, dirPath, containerElement, isFolder) {
-    const fullPath = window.path.join(dirPath, item.name);
-    const isCanvas = !isFolder && item.name.endsWith('.canvas');
-    const baseName = item.name.replace(isFolder ? '' : (isCanvas ? '.canvas' : '.md'), '');
-    const li = document.createElement('li'); li.className = 'tree-node';
-    const itemDiv = document.createElement('div'); itemDiv.className = 'file-item'; 
-    itemDiv.draggable = true;
+function renderItem(item, dirPath, container, isDirectory) {
+    const fullPath = window.kedi.path.join(dirPath, item.name);
+    const isCanvas = !isDirectory && /\.canvas$/i.test(item.name);
+    const baseName = isDirectory ? item.name : item.name.replace(/\.(?:canvas|md)$/i, '');
+    const listItem = document.createElement('li');
+    listItem.className = 'tree-node';
+    const itemRow = document.createElement('div');
+    itemRow.className = 'file-item';
 
     if (nodeToRename === fullPath) {
         const input = document.createElement('input');
-        input.className = 'rename-input'; input.value = baseName;
-        input.addEventListener('blur', () => handleRename(fullPath, input.value, isFolder));
-        itemDiv.appendChild(input);
-        setTimeout(() => { input.focus(); input.select(); }, 50);
+        input.className = 'rename-input';
+        input.value = baseName;
+        input.addEventListener('click', (event) => event.stopPropagation());
+        input.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') input.blur();
+            if (event.key === 'Escape') {
+                nodeToRename = null;
+                refreshFileList();
+            }
+        });
+        input.addEventListener('blur', () => handleRename(fullPath, input.value, isDirectory));
+        itemRow.appendChild(input);
+        window.setTimeout(() => {
+            input.focus();
+            input.select();
+        }, 50);
     } else {
-        itemDiv.innerHTML = `<div class="file-item-left"><span>${isFolder ? '▶' : (isCanvas ? '🌌' : '📄')}</span><span>${baseName}</span></div>`;
-        itemDiv.addEventListener('click', () => {
-            if (isFolder) { /* Klasör açma mantığı buraya */ }
-            else if (isCanvas) loadFileToCanvas(fullPath);
+        const left = document.createElement('div');
+        left.className = 'file-item-left';
+        const icon = document.createElement('span');
+        icon.textContent = isDirectory ? '▶' : (isCanvas ? '🌌' : '📄');
+        const label = document.createElement('span');
+        label.textContent = baseName;
+        left.append(icon, label);
+        itemRow.appendChild(left);
+
+        if (isDirectory) {
+            const children = document.createElement('ul');
+            children.className = 'file-list-nested';
+            children.style.display = 'none';
+            listItem.append(itemRow, children);
+            let loaded = false;
+            itemRow.addEventListener('click', () => {
+                if (!loaded) {
+                    buildFileTree(fullPath, children);
+                    loaded = true;
+                }
+                const opening = children.style.display === 'none';
+                children.style.display = opening ? 'block' : 'none';
+                icon.textContent = opening ? '▼' : '▶';
+            });
+            container.appendChild(listItem);
+            return;
+        }
+
+        itemRow.addEventListener('click', () => {
+            if (isCanvas) loadFileToCanvas(fullPath);
             else loadFileToEditor(fullPath, item.name);
         });
     }
-    li.appendChild(itemDiv);
-    containerElement.appendChild(li);
+
+    listItem.appendChild(itemRow);
+    container.appendChild(listItem);
 }
 
-// Window'a bağla ki app.js erişebilsin
+window.showClassicEditor = showClassicEditor;
+window.showCanvasView = showCanvasView;
+window.loadFileToEditor = loadFileToEditor;
+window.loadFileToCanvas = loadFileToCanvas;
 window.refreshFileList = refreshFileList;
 window.createInstantFile = createInstantFile;

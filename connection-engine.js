@@ -1,151 +1,210 @@
-// 3. BAĞLANTI MOTORU (YÜKSEK PERFORMANS)
-// ==========================================
-let connections = []; 
-let isDraggingPort = false; let startPortInfo = null; 
-let pathElements = []; 
+'use strict';
 
-function drawAllConnections() {
-    connections.forEach((conn, index) => {
-        const start = fastGetPortCenter(conn.sourceBox, conn.sourcePos); 
-        const end = fastGetPortCenter(conn.targetBox, conn.targetPos);
-        if (!start || !end) return;
+let startPortInfo = null;
+const boundPorts = new WeakSet();
 
-        const pathData = getBezierPath(start.x, start.y, end.x, end.y, conn.sourcePos, conn.targetPos);
-
-        let pathEl = pathElements[index];
-        if (!pathEl) {
-            pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            pathEl.setAttribute('class', 'connection-line');
-            pathEl.addEventListener('mousedown', (e) => {
-                e.stopPropagation();
-                if(confirm("Bağlantıyı koparmak istiyor musunuz?")) { 
-                    connections.splice(index, 1); 
-                    pathElements.splice(index, 1);
-                    e.target.remove();
-                    drawAllConnections(); 
-                    triggerCanvasSave(); 
-                }
-            });
-            if(svgLayer) svgLayer.appendChild(pathEl);
-            pathElements[index] = pathEl;
-        }
-        pathEl.setAttribute('d', pathData);
-    });
-
-    while (pathElements.length > connections.length) {
-        const popped = pathElements.pop();
-        if (popped && popped.parentNode) popped.parentNode.removeChild(popped);
-    }
+function getSvgLayer() {
+    return document.getElementById('canvas-lines');
 }
 
-function drawSpecificConnections(boxId) {
-    connections.forEach((conn, index) => {
-        if (conn.sourceBox === boxId || conn.targetBox === boxId) {
-            const start = fastGetPortCenter(conn.sourceBox, conn.sourcePos); 
-            const end = fastGetPortCenter(conn.targetBox, conn.targetPos);
-            if (!start || !end) return;
+function ensureTempLine() {
+    const svg = getSvgLayer();
+    if (!svg) return null;
+    let tempLine = document.getElementById('temp-connection-line');
+    if (!tempLine) {
+        tempLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        tempLine.id = 'temp-connection-line';
+        tempLine.setAttribute('class', 'connection-line temp-line');
+        tempLine.style.display = 'none';
+        tempLine.style.pointerEvents = 'none';
+        svg.appendChild(tempLine);
+    }
+    return tempLine;
+}
 
-            const pathData = getBezierPath(start.x, start.y, end.x, end.y, conn.sourcePos, conn.targetPos);
-            if (pathElements[index]) {
-                pathElements[index].setAttribute('d', pathData);
-            }
-        }
+function createConnectionId() {
+    return `connection-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+}
+
+function drawAllConnections() {
+    const svg = getSvgLayer();
+    if (!svg) return;
+    svg.querySelectorAll('[data-connection-id]').forEach((pathElement) => pathElement.remove());
+    const tempLine = ensureTempLine();
+
+    (Array.isArray(window.connections) ? window.connections : []).forEach((connection) => {
+        const start = fastGetPortCenter(connection.sourceBox, connection.sourcePos);
+        const end = fastGetPortCenter(connection.targetBox, connection.targetPos);
+        if (!start || !end) return;
+
+        if (!connection.id) connection.id = createConnectionId();
+        const pathElement = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        pathElement.setAttribute('class', 'connection-line');
+        pathElement.dataset.connectionId = connection.id;
+        pathElement.style.pointerEvents = 'stroke';
+        pathElement.setAttribute(
+            'd',
+            getBezierPath(start.x, start.y, end.x, end.y, connection.sourcePos, connection.targetPos)
+        );
+        pathElement.addEventListener('mousedown', (event) => {
+            event.stopPropagation();
+            if (!window.confirm('Bağlantıyı koparmak istiyor musunuz?')) return;
+            window.connections = window.connections.filter((item) => item.id !== connection.id);
+            drawAllConnections();
+            window.triggerCanvasSave?.();
+        });
+        svg.insertBefore(pathElement, tempLine);
     });
-}   
+}
 
-function fastGetPortCenter(boxId, posStr) {
-    const boxEl = document.getElementById(boxId); if (!boxEl) return null;
+function drawSpecificConnections() {
+    drawAllConnections();
+}
 
-    const left = parseFloat(boxEl.style.left) || 0;
-    const top = parseFloat(boxEl.style.top) || 0;
-    const width = boxEl.offsetWidth;
-    const height = boxEl.offsetHeight;
+function fastGetPortCenter(boxId, position) {
+    const box = document.getElementById(boxId);
+    if (!box) return null;
 
-    let localX = left; let localY = top;
+    const left = Number.parseFloat(box.style.left) || 0;
+    const top = Number.parseFloat(box.style.top) || 0;
+    const width = box.offsetWidth;
+    const height = box.offsetHeight;
+    let localX = left;
+    let localY = top;
 
-    if (posStr === 'top') { localX += width / 2; }
-    else if (posStr === 'bottom') { localX += width / 2; localY += height; }
-    else if (posStr === 'left') { localY += height / 2; }
-    else if (posStr === 'right') { localX += width; localY += height / 2; }
+    if (position === 'top') localX += width / 2;
+    else if (position === 'bottom') {
+        localX += width / 2;
+        localY += height;
+    } else if (position === 'left') localY += height / 2;
+    else if (position === 'right') {
+        localX += width;
+        localY += height / 2;
+    }
 
     return {
-        x: (localX * camera.zoom) + camera.x,
-        y: (localY * camera.zoom) + camera.y
+        x: localX * window.camera.zoom + window.camera.x,
+        y: localY * window.camera.zoom + window.camera.y
     };
 }
 
-function attachPortListeners(boxEl) {
-    boxEl.querySelectorAll('.box-port').forEach(port => {
-      port.addEventListener('mousedown', (e) => {
-            if (focusedBox) return; 
-            e.stopPropagation(); isDraggingPort = true; port.classList.add('active-port');
-            startPortInfo = { boxId: boxEl.id, pos: port.getAttribute('data-pos'), element: port };
-            
-            const currentTempLine = document.getElementById('temp-connection-line');
-            if (currentTempLine) currentTempLine.style.display = 'block'; 
-            
-            updateTempLine(e.clientX, e.clientY);
+function attachPortListeners(boxElement) {
+    boxElement.querySelectorAll('.box-port').forEach((port) => {
+        if (boundPorts.has(port)) return;
+        boundPorts.add(port);
+
+        port.addEventListener('mousedown', (event) => {
+            if (window.focusedBox || event.button !== 0) return;
+            event.preventDefault();
+            event.stopPropagation();
+            window.isDraggingPort = true;
+            port.classList.add('active-port');
+            startPortInfo = {
+                boxId: boxElement.id,
+                pos: port.dataset.pos,
+                element: port
+            };
+            const tempLine = ensureTempLine();
+            if (tempLine) tempLine.style.display = 'block';
+            updateTempLine(event.clientX, event.clientY);
             document.body.classList.add('is-connecting');
         });
-        
-        port.addEventListener('mouseup', (e) => {
-            if (isDraggingPort && startPortInfo && startPortInfo.boxId !== boxEl.id) {
-                const targetPos = port.getAttribute('data-pos');
-                const exists = connections.some(c => (c.sourceBox === startPortInfo.boxId && c.targetBox === boxEl.id) || (c.targetBox === startPortInfo.boxId && c.sourceBox === boxEl.id));
-                if (!exists) {
-                    connections.push({ sourceBox: startPortInfo.boxId, sourcePos: startPortInfo.pos, targetBox: boxEl.id, targetPos: targetPos });
-                    drawAllConnections(); triggerCanvasSave();
-                }
+
+        port.addEventListener('mouseup', (event) => {
+            if (!window.isDraggingPort || !startPortInfo || startPortInfo.boxId === boxElement.id) return;
+            event.preventDefault();
+            event.stopPropagation();
+            const targetPosition = port.dataset.pos;
+            const duplicate = window.connections.some((connection) =>
+                (connection.sourceBox === startPortInfo.boxId && connection.targetBox === boxElement.id)
+                || (connection.targetBox === startPortInfo.boxId && connection.sourceBox === boxElement.id));
+            if (!duplicate) {
+                window.connections.push({
+                    id: createConnectionId(),
+                    sourceBox: startPortInfo.boxId,
+                    sourcePos: startPortInfo.pos,
+                    targetBox: boxElement.id,
+                    targetPos: targetPosition
+                });
+                drawAllConnections();
+                window.triggerCanvasSave?.();
             }
         });
     });
 }
 
-if(viewport) {
-    viewport.addEventListener('mousemove', (e) => { if (isDraggingPort) updateTempLine(e.clientX, e.clientY); });
-}
+function getBezierPath(startX, startY, endX, endY, startPosition, targetPosition) {
+    const distance = Math.hypot(endX - startX, endY - startY);
+    const curveOffset = Math.max(distance * 0.4, 40);
+    let firstControlX = startX;
+    let firstControlY = startY;
+    let secondControlX = endX;
+    let secondControlY = endY;
 
-window.addEventListener('mouseup', () => {
-    if (isDraggingPort) {
-        isDraggingPort = false; 
-        if(startPortInfo) startPortInfo.element.classList.remove('active-port');
-        startPortInfo = null; 
-        
-        const currentTempLine = document.getElementById('temp-connection-line');
-        if (currentTempLine) currentTempLine.style.display = 'none';
-        
-        document.body.classList.remove('is-connecting');
-    }
-});
+    if (startPosition === 'right') firstControlX += curveOffset;
+    else if (startPosition === 'left') firstControlX -= curveOffset;
+    else if (startPosition === 'bottom') firstControlY += curveOffset;
+    else if (startPosition === 'top') firstControlY -= curveOffset;
 
-function getBezierPath(startX, startY, endX, endY, startPos, targetPos) {
-    const distance = Math.sqrt(Math.pow(endX - startX, 2) + Math.pow(endY - startY, 2));
-    const curveOffset = Math.max(distance * 0.4, 40); 
-    let cp1x = startX, cp1y = startY; let cp2x = endX, cp2y = endY;
+    if (targetPosition === 'right') secondControlX += curveOffset;
+    else if (targetPosition === 'left') secondControlX -= curveOffset;
+    else if (targetPosition === 'bottom') secondControlY += curveOffset;
+    else if (targetPosition === 'top') secondControlY -= curveOffset;
 
-    if (startPos === 'right') cp1x += curveOffset; else if (startPos === 'left') cp1x -= curveOffset;
-    else if (startPos === 'bottom') cp1y += curveOffset; else if (startPos === 'top') cp1y -= curveOffset;
-
-    if (targetPos === 'right') cp2x += curveOffset; else if (targetPos === 'left') cp2x -= curveOffset;
-    else if (targetPos === 'bottom') cp2y += curveOffset; else if (targetPos === 'top') cp2y -= curveOffset;
-
-    return `M ${startX},${startY} C ${cp1x},${cp1y} ${cp2x},${cp2y} ${endX},${endY}`;
+    return `M ${startX},${startY} C ${firstControlX},${firstControlY} ${secondControlX},${secondControlY} ${endX},${endY}`;
 }
 
 function updateTempLine(mouseX, mouseY) {
-    if (!startPortInfo || !viewport) return;
-    const start = fastGetPortCenter(startPortInfo.boxId, startPortInfo.pos); if (!start) return;
-    const vRect = viewport.getBoundingClientRect(); 
-    const endX = mouseX - vRect.left; const endY = mouseY - vRect.top;
-    
-    const currentTempLine = document.getElementById('temp-connection-line');
-    if (currentTempLine) {
-        currentTempLine.setAttribute('d', getBezierPath(start.x, start.y, endX, endY, startPortInfo.pos, null));
-    }
+    if (!startPortInfo) return;
+    const canvasViewport = document.getElementById('canvas-viewport');
+    const start = fastGetPortCenter(startPortInfo.boxId, startPortInfo.pos);
+    if (!canvasViewport || !start) return;
+    const viewportRect = canvasViewport.getBoundingClientRect();
+    const tempLine = ensureTempLine();
+    tempLine?.setAttribute(
+        'd',
+        getBezierPath(
+            start.x,
+            start.y,
+            mouseX - viewportRect.left,
+            mouseY - viewportRect.top,
+            startPortInfo.pos,
+            null
+        )
+    );
 }
 
-function removeBoxConnections(boxId) { 
-    connections = connections.filter(c => c.sourceBox !== boxId && c.targetBox !== boxId); 
-    pathElements.forEach(p => { if (p && p.parentNode) p.parentNode.removeChild(p); });
-    pathElements = [];
+function finishConnectionDrag() {
+    if (!window.isDraggingPort) return;
+    window.isDraggingPort = false;
+    startPortInfo?.element.classList.remove('active-port');
+    startPortInfo = null;
+    const tempLine = ensureTempLine();
+    if (tempLine) tempLine.style.display = 'none';
+    document.body.classList.remove('is-connecting');
 }
+
+function removeBoxConnections(boxId) {
+    window.connections = window.connections.filter((connection) =>
+        connection.sourceBox !== boxId && connection.targetBox !== boxId);
+    drawAllConnections();
+}
+
+function resetConnectionEngine() {
+    finishConnectionDrag();
+    const svg = getSvgLayer();
+    svg?.querySelectorAll('[data-connection-id]').forEach((pathElement) => pathElement.remove());
+    ensureTempLine();
+}
+
+document.addEventListener('mousemove', (event) => {
+    if (window.isDraggingPort) updateTempLine(event.clientX, event.clientY);
+});
+window.addEventListener('mouseup', finishConnectionDrag);
+
+window.drawAllConnections = drawAllConnections;
+window.drawSpecificConnections = drawSpecificConnections;
+window.attachPortListeners = attachPortListeners;
+window.removeBoxConnections = removeBoxConnections;
+window.resetConnectionEngine = resetConnectionEngine;
+window.updateTempLine = updateTempLine;
