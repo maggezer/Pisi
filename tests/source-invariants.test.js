@@ -19,12 +19,21 @@ test('renderer formülleri eval veya Function constructor kullanmaz', () => {
 
 test('Electron güvenlik sınırları üretim ayarlarında korunur', () => {
     const source = read('main.js');
+    const html = read('index.html');
     assert.match(source, /sandbox:\s*true/);
     assert.match(source, /nodeIntegration:\s*false/);
     assert.match(source, /contextIsolation:\s*true/);
     assert.match(source, /setWindowOpenHandler/);
     assert.match(source, /will-navigate/);
     assert.match(source, /setPermissionRequestHandler/);
+    assert.match(
+        html,
+        /style-src 'self'; style-src-attr 'unsafe-inline'; script-src 'self'/
+    );
+    assert.doesNotMatch(
+        html,
+        /script-src[^;]*(?:'unsafe-inline'|'unsafe-eval')/
+    );
 });
 
 test('Paint geçici yükleme nitelikleri kalıcı HTML içine yazılmaz', () => {
@@ -37,6 +46,17 @@ test('Paint geçici yükleme nitelikleri kalıcı HTML içine yazılmaz', () => 
         workspace,
         /globallyAllowedAttributes[\s\S]{0,500}data-image-loaded/
     );
+});
+
+test('Paint PNG zemini ve ağaç yenilemesi görünür regresyon üretmez', () => {
+    const app = read('app.js');
+    const tree = read('renderer/kedi-tree.js');
+
+    assert.match(app, /function resetKediCanvasToWhite\(/);
+    assert.match(app, /function ensureKediCanvasWhiteBackground\(/);
+    assert.doesNotMatch(app, /globalCompositeOperation\s*=\s*['"]destination-out['"]/);
+    assert.match(tree, /document\.createDocumentFragment\(\)/);
+    assert.match(tree, /treeEl\.replaceChildren\(/);
 });
 
 test('preload API anahtarları ve kritik DOM kontrolleri tekildir', () => {

@@ -432,8 +432,7 @@ function runKediPaintAction(toolbar, action) {
         if (!canvas) return;
         if (kediPendingPaintImages.has(canvas)) return;
 
-        const context = canvas.getContext('2d');
-        context.clearRect(0, 0, canvas.width, canvas.height);
+        resetKediCanvasToWhite(canvas);
         kediDirtyPaintCanvases.add(canvas);
         saveKediCanvasData(canvas);
         notifyKediEditorChanged(getEditorForKediElement(canvas));
@@ -545,6 +544,29 @@ const kediLoadedPaintImages = new WeakMap();
 const kediPendingPaintImages = new WeakMap();
 const kediDirtyPaintCanvases = new WeakSet();
 
+function resetKediCanvasToWhite(canvas) {
+    const context = canvas?.getContext?.('2d');
+    if (!context) return;
+
+    context.save();
+    context.globalCompositeOperation = 'source-over';
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.restore();
+}
+
+function ensureKediCanvasWhiteBackground(canvas) {
+    const context = canvas?.getContext?.('2d');
+    if (!context) return;
+
+    context.save();
+    context.globalCompositeOperation = 'destination-over';
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.restore();
+}
+
 function hydrateKediPaintCanvases(root = document) {
     root.querySelectorAll('canvas[data-kedi-canvas]').forEach((canvas) => {
         canvas.removeAttribute('data-kedi-canvas-bound');
@@ -559,6 +581,7 @@ function hydrateKediPaintCanvases(root = document) {
         if (!storedImage) {
             kediLoadedPaintImages.delete(canvas);
             kediPendingPaintImages.delete(canvas);
+            resetKediCanvasToWhite(canvas);
             return;
         }
 
@@ -576,8 +599,11 @@ function hydrateKediPaintCanvases(root = document) {
             if (kediPendingPaintImages.get(canvas) !== storedImage) return;
 
             const context = canvas.getContext('2d');
-            context.clearRect(0, 0, canvas.width, canvas.height);
+            resetKediCanvasToWhite(canvas);
+            context.save();
+            context.globalCompositeOperation = 'source-over';
             context.drawImage(image, 0, 0, canvas.width, canvas.height);
+            context.restore();
 
             kediLoadedPaintImages.set(canvas, storedImage);
             kediPendingPaintImages.delete(canvas);
@@ -641,7 +667,7 @@ function bindKediCanvas(canvas) {
             context.lineJoin = 'round';
             context.lineWidth = state.size;
             context.strokeStyle = state.tool === 'eraser' ? '#ffffff' : state.color;
-            context.globalCompositeOperation = state.tool === 'eraser' ? 'destination-out' : 'source-over';
+            context.globalCompositeOperation = 'source-over';
             context.lineTo(point.x, point.y);
             context.stroke();
             context.globalCompositeOperation = 'source-over';
@@ -736,6 +762,7 @@ function saveKediCanvasData(canvas) {
             return storedImage;
         }
 
+        ensureKediCanvasWhiteBackground(canvas);
         const imageData = canvas.toDataURL('image/png');
         canvas.dataset.image = imageData;
 

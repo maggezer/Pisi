@@ -227,3 +227,74 @@ test('normal kullanıcı diary klasörü marker eklenmeden korunur', (t) => {
         false
     );
 });
+
+test('watcher KEDI kaydını dış değişiklikten dosya imzasıyla ayırır', (t) => {
+    const folder = fs.mkdtempSync(
+        path.join(os.tmpdir(), 'kedi-watcher-')
+    );
+    const filePath = path.join(folder, 'not.node');
+    t.after(() => {
+        fs.rmSync(folder, { recursive: true, force: true });
+    });
+
+    const functionNames = [
+        'normalizePathForCompare',
+        'isSameOrInsidePath',
+        'getInternalFileChangeSignature',
+        'pruneExpiredInternalFileChanges',
+        'markInternalFileChange',
+        'sealInternalFileChange',
+        'isRecentInternalFileChange',
+        'hasRecentInternalFileChangeInside'
+    ];
+    const source = `
+        const recentInternalFileChanges = new Map();
+        const KEDI_INTERNAL_CHANGE_TTL_MS = 6000;
+        ${functionNames
+            .map((name) => extractFunction(mainSource, name))
+            .join('\n')}
+        globalThis.watcherApi = {
+            markInternalFileChange,
+            sealInternalFileChange,
+            isRecentInternalFileChange,
+            hasRecentInternalFileChangeInside
+        };
+    `;
+    const context = {
+        Date,
+        fs,
+        Map,
+        path,
+        process
+    };
+    vm.createContext(context);
+    vm.runInContext(source, context);
+
+    context.watcherApi.markInternalFileChange(filePath);
+    fs.writeFileSync(filePath, 'KEDI kaydı', 'utf8');
+    context.watcherApi.sealInternalFileChange(filePath);
+
+    assert.equal(
+        context.watcherApi.isRecentInternalFileChange(filePath),
+        true
+    );
+    assert.equal(
+        context.watcherApi.hasRecentInternalFileChangeInside(folder),
+        true
+    );
+
+    fs.writeFileSync(
+        filePath,
+        'KEDI dışındaki daha yeni ve farklı kayıt',
+        'utf8'
+    );
+
+    assert.equal(
+        context.watcherApi.isRecentInternalFileChange(filePath),
+        false
+    );
+    assert.equal(
+        context.watcherApi.hasRecentInternalFileChangeInside(folder),
+        false
+    );
+});

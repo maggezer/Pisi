@@ -165,7 +165,7 @@ paketleme ve dokümantasyon başlıklarında yeniden denetlendi.
   `npm ci --ignore-scripts` ardından doğrulama çalıştırıyor. Formül, edge,
   layout/kamera, diary sanitizer, Paint kalıcılığı, Electron sınırları, KEDI
   kimliği, normal diary klasörü koruması ve proje yolu için 16 otomatik test
-  var.
+  vardı; watcher/CSP/Paint/tree regresyonlarıyla toplam sayı 18’e çıktı.
 - **105:** Windows NSIS ve portable hedefleri x64 yanında ARM64 üretiyor;
   artifact adı ürün, sürüm, işletim sistemi ve mimariyi içeriyor.
 - **111–115:** README ve `kedi-definition.md` gerçek uygulama/dosya yapısına
@@ -199,3 +199,30 @@ paketleme ve dokümantasyon başlıklarında yeniden denetlendi.
 `@panzoom/panzoom`, `lunar-javascript`, `moment` ve `moment-hijri` paketleri
 kaynak kodun hiçbir yerinde kullanılmıyordu; map, takvim, Paint, Excel, Tags,
 Missions, diary ve sağ panel özellikleri korunuyor.
+
+## 29-07-2026-5
+
+- CSP’de yalnızca dinamik stil nitelikleri için `style-src-attr
+  'unsafe-inline'` açıldı. Harici stiller hâlâ yalnızca uygulama kaynağından
+  yükleniyor; script tarafında `unsafe-inline` ve `unsafe-eval` açılmadı.
+  Böylece özelleştirme renkleri, tree girintileri, map konumları ve güvenlik
+  temizleyicisinden geçen zengin metin stilleri konsol ihlali üretmeden
+  çalışıyor.
+- Sol Explorer ağacı yenilenirken eski DOM artık baştan boşaltılıp düğümler
+  tek tek ekranda gösterilmiyor. Yeni ağaç, genişletilmiş dallarıyla birlikte
+  bağlantısız bir DOM parçasında hazırlanıp tek işlemde değiştiriliyor; mevcut
+  scroll konumu korunuyor.
+- KEDI’nin kendi atomik dosya kayıtları watcher tarafında dosya
+  boyutu/zaman imzasıyla takip ediliyor. Gecikmiş veya yinelenen Windows
+  filesystem olayları altı saniyelik güvenli pencere içinde ayırt ediliyor;
+  aynı dosya gerçekten başka bir program tarafından değiştirilirse imza
+  farklı olduğu için dış değişiklik uyarısı yine gösteriliyor.
+- Paint tuvalinin beyaz zemini yalnızca CSS görünümü olmaktan çıkarılıp gerçek
+  canvas/PNG verisine işlendi. Yeni, temizlenen ve eski şeffaf Paint
+  tuvallerinin zemini center editor ile modalda aynı biçimde beyaz kalıyor;
+  silgi beyaza çizerek şeffaf/gri alan üretmiyor.
+- Watcher imzası, CSP sınırı, Paint zemini ve atomik tree render davranışı için
+  regresyon kontrolleri eklendi.
+
+**Özellik kaldırma durumu:** Bu düzeltmede hiçbir uygulama özelliği veya
+biçimlendirme seçeneği kaldırılmadı.

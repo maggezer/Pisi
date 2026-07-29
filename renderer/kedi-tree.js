@@ -196,8 +196,8 @@ async function renderFolderTree(rootPath) {
     const treeEl = document.getElementById('file-tree');
     if (!treeEl) return;
     const renderId = ++kediTreeRootRenderId;
-
-    treeEl.innerHTML = '';
+    const previousScrollTop = treeEl.scrollTop;
+    const nextTree = document.createElement('div');
 
     updateKediProjectTitle(rootPath);
 
@@ -205,10 +205,18 @@ async function renderFolderTree(rootPath) {
 
     bindFileTreeRootDropZone(treeEl);
 
-    await loadFolderChildren(rootPath, treeEl, 0, {
+    await loadFolderChildren(rootPath, nextTree, 0, {
         renderId,
         rootPath
     });
+
+    if (!isCurrentKediTreeRootRender(renderId, rootPath)) {
+        return false;
+    }
+
+    treeEl.replaceChildren(...Array.from(nextTree.childNodes));
+    treeEl.scrollTop = previousScrollTop;
+    return true;
 }
 
 function getKediTreeDragStateItem() {
@@ -1497,26 +1505,30 @@ async function loadFolderChildren(
     };
 
     if (!rootRenderIsCurrent()) return false;
-    containerEl.innerHTML = '';
 
     const result = await window.kediProject?.listFolder?.(folderPath);
     if (!rootRenderIsCurrent()) return false;
 
     if (!result || !result.ok) {
+        const fragment = document.createDocumentFragment();
         const errorRow = document.createElement('div');
         errorRow.className = 'tree-row';
         errorRow.style.paddingLeft = `${level * 14 + 6}px`;
         errorRow.textContent = '⚠️ ' + (result?.error || 'Klasör okunamadı');
-        containerEl.appendChild(errorRow);
+        fragment.appendChild(errorRow);
+        containerEl.replaceChildren(fragment);
         return false;
     }
+
+    const fragment = document.createDocumentFragment();
 
     for (const item of result.items) {
         const childNode = await createTreeNode(item, level);
         if (!rootRenderIsCurrent()) return false;
-        containerEl.appendChild(childNode);
+        fragment.appendChild(childNode);
     }
 
+    containerEl.replaceChildren(fragment);
     return true;
 }
 
@@ -1673,12 +1685,14 @@ function buildMapNodeTreeItems(nodes = [], edges = []) {
 }
 
 async function loadSyntheticTreeChildren(items, containerEl, level) {
-    containerEl.innerHTML = '';
+    const fragment = document.createDocumentFragment();
 
     for (const item of items) {
         const childNode = await createTreeNode(item, level);
-        containerEl.appendChild(childNode);
+        fragment.appendChild(childNode);
     }
+
+    containerEl.replaceChildren(fragment);
 }
 
 async function loadMapTreeChildren(mapPath, containerEl, level) {
@@ -1686,14 +1700,14 @@ async function loadMapTreeChildren(mapPath, containerEl, level) {
         const result = await window.kediProject?.listMapNodes?.(mapPath);
 
         if (!result || !result.ok) {
-            containerEl.innerHTML = '';
-
+            const fragment = document.createDocumentFragment();
             const errorRow = document.createElement('div');
             errorRow.className = 'tree-row';
             errorRow.style.paddingLeft = `${level * 14 + 6}px`;
             errorRow.textContent = '⚠️ ' + (result?.error || 'Map node listesi okunamadı');
 
-            containerEl.appendChild(errorRow);
+            fragment.appendChild(errorRow);
+            containerEl.replaceChildren(fragment);
             return;
         }
 
@@ -1702,24 +1716,24 @@ async function loadMapTreeChildren(mapPath, containerEl, level) {
             result.edges || []
         );
 
-        // Buraya kadar hata yoksa eski görünümü temizle.
-        containerEl.innerHTML = '';
+        const fragment = document.createDocumentFragment();
 
         for (const item of treeItems) {
             const childNode = await createTreeNode(item, level);
-            containerEl.appendChild(childNode);
+            fragment.appendChild(childNode);
         }
 
+        containerEl.replaceChildren(fragment);
     } catch (error) {
         console.error('[KEDI] Map tree yüklenirken hata:', error);
 
-        containerEl.innerHTML = '';
-
+        const fragment = document.createDocumentFragment();
         const errorRow = document.createElement('div');
         errorRow.className = 'tree-row';
         errorRow.style.paddingLeft = `${level * 14 + 6}px`;
         errorRow.textContent = '⚠️ Map tree hatası: ' + error.message;
 
-        containerEl.appendChild(errorRow);
+        fragment.appendChild(errorRow);
+        containerEl.replaceChildren(fragment);
     }
 }
