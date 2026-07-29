@@ -128,6 +128,7 @@ function toggleHubConnectionsFromPort(nodeId, port) {
 
     drawMapConnections();
     syncHubPortCollapseVisuals();
+    saveActiveMapCameraSoon();
     return true;
 }
 
@@ -316,7 +317,7 @@ function applyMapCamera() {
         canvas.style.backgroundPosition = `${activeMapCamera.x}px ${activeMapCamera.y}px`;
     }
 
-    drawMapConnections();
+    scheduleDrawMapConnections();
 }
 
 function clampMapZoom(zoom) {
@@ -373,23 +374,45 @@ function saveActiveMapCameraSoon() {
     if (!activeMapPath) return;
 
     clearTimeout(mapCameraSaveTimer);
+    const mapPath = activeMapPath;
+    const camera = {
+        ...activeMapCamera,
+        collapsedHubs: Array.from(getCollapsedHubPortSet())
+    };
 
-    mapCameraSaveTimer = setTimeout(() => {
+    mapCameraSaveTimer = setTimeout(async () => {
+        mapCameraSaveTimer = null;
         window.kediProject?.saveMapCamera?.(
-            activeMapPath,
-            activeMapCamera
+            mapPath,
+            camera
         );
     }, 350);
 }
 
 function scheduleMapCameraSave() {
+    saveActiveMapCameraSoon();
+}
+
+async function flushActiveMapCameraSave() {
     clearTimeout(mapCameraSaveTimer);
+    mapCameraSaveTimer = null;
 
-    mapCameraSaveTimer = setTimeout(() => {
-        if (!activeMapPath) return;
+    if (!activeMapPath) return true;
 
-        window.kediProject?.saveMapCamera?.(activeMapPath, activeMapCamera);
-    }, 500);
+    try {
+        const result = await window.kediProject?.saveMapCamera?.(
+            activeMapPath,
+            {
+                ...activeMapCamera,
+                collapsedHubs: Array.from(getCollapsedHubPortSet())
+            }
+        );
+
+        return Boolean(result?.ok);
+    } catch (error) {
+        console.error('[KEDI] Map kamerası kaydedilemedi:', error);
+        return false;
+    }
 }
 
 
@@ -693,6 +716,73 @@ function setupMapCanvasPan() {
     });
 }
 
+async function persistKediMapConnection(edgePayload) {
+    suppressNextFileSystemRefresh(1500);
+
+    let result = await window.kediProject?.upsertMapConnection?.(
+        activeMapPath,
+        edgePayload
+    );
+
+    if (result?.code === 'SECOND_PARENT_CONFIRM_REQUIRED') {
+        const confirmed = typeof kediConfirm === 'function'
+            ? await kediConfirm(
+                'Bu node zaten bir parent’a sahip. Yeni bağlantı hiyerarşi yerine stream ilişkisi olarak kaydedilsin mi?',
+                {
+                    title: 'İkinci parent',
+                    confirmText: 'Stream olarak ekle',
+                    cancelText: 'Vazgeç'
+                }
+            )
+            : confirm(
+                'Bu node zaten bir parent’a sahip. Yeni bağlantı stream olarak kaydedilsin mi?'
+            );
+
+        if (!confirmed) {
+            return {
+                ok: false,
+                cancelled: true
+            };
+        }
+
+        result = await window.kediProject?.upsertMapConnection?.(
+            activeMapPath,
+            {
+                ...(result.suggestedEdge || edgePayload),
+                confirmSecondParentAsStream: true
+            }
+        );
+    }
+
+    if (!result?.ok) return result;
+
+    activeMapEdges = result.edges || activeMapEdges;
+    drawMapConnections();
+    await refreshActiveMapTreeBranch();
+    return result;
+}
+
+let kediKeyboardConnectionSource = null;
+
+function resetKediMapConnectionInteractions() {
+    kediKeyboardConnectionSource?.portEl?.classList.remove(
+        'connecting-source'
+    );
+    kediKeyboardConnectionSource = null;
+
+    const sourcePort = currentConnectionDrag?.sourcePort;
+    if (sourcePort) {
+        currentConnectionDrag.sourceBox
+            ?.querySelector?.(`.map-port.${CSS.escape(sourcePort)}`)
+            ?.classList?.remove('connecting-source');
+    }
+    currentConnectionDrag = null;
+
+    currentMapBoxSelection?.element?.remove?.();
+    currentMapBoxSelection = null;
+    clearTempEdgePath();
+}
+
 function bindMapPortEvents(box) {
     const ports = box.querySelectorAll('.map-port');
 
@@ -723,8 +813,95 @@ currentConnectionDrag = {
             temp.setAttribute('d', makeTempConnectionPath(box, sourcePort, mouse));
         }
         });
+
+        portEl.addEventListener('keydown', async (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return;
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (!kediKeyboardConnectionSource) {
+                kediKeyboardConnectionSource = {
+                    box,
+                    portEl,
+                    sourceId: box.dataset.nodeId,
+                    sourcePort: portEl.dataset.port,
+                    ...getConnectionDataFromEvent(event)
+                };
+                portEl.classList.add('connecting-source');
+                portEl.setAttribute(
+                    'aria-label',
+                    'Bağlantı kaynağı seçildi; hedef portta Enter’a bas'
+                );
+                return;
+            }
+
+            const source = kediKeyboardConnectionSource;
+            source.portEl.classList.remove('connecting-source');
+            source.portEl.setAttribute(
+                'aria-label',
+                `${source.sourcePort} bağlantı portu`
+            );
+            kediKeyboardConnectionSource = null;
+
+            if (source.box === box && source.portEl === portEl) {
+                toggleHubConnectionsFromPort(
+                    source.sourceId,
+                    source.sourcePort
+                );
+                return;
+            }
+
+            if (source.sourceId === box.dataset.nodeId) return;
+
+            const result = await persistKediMapConnection({
+                sourceId: source.sourceId,
+                targetId: box.dataset.nodeId,
+                sourcePort: source.sourcePort,
+                targetPort: portEl.dataset.port,
+                type: source.type,
+                sourceRole: source.sourceRole,
+                targetRole: source.targetRole
+            });
+
+            if (!result?.ok && !result?.cancelled) {
+                alert(result?.error || 'Bağlantı kaydedilemedi.');
+            }
+        });
     });
 }
+
+window.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+
+    let cancelled = false;
+
+    if (kediKeyboardConnectionSource) {
+        kediKeyboardConnectionSource.portEl?.classList.remove(
+            'connecting-source'
+        );
+        kediKeyboardConnectionSource.portEl?.setAttribute(
+            'aria-label',
+            `${kediKeyboardConnectionSource.sourcePort} bağlantı portu`
+        );
+        kediKeyboardConnectionSource = null;
+        cancelled = true;
+    }
+
+    if (currentConnectionDrag) {
+        const sourcePortEl = currentConnectionDrag.sourceBox?.querySelector(
+            `.map-port.${currentConnectionDrag.sourcePort}`
+        );
+        sourcePortEl?.classList.remove('connecting-source');
+        currentConnectionDrag = null;
+        clearTempEdgePath();
+        cancelled = true;
+    }
+
+    if (cancelled) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+});
 
 window.addEventListener('mousemove', (event) => {
     if (!currentConnectionDrag) return;
@@ -802,29 +979,19 @@ let edgePayload = {
     targetRole: currentConnectionDrag.targetRole
 };
 
-edgePayload = enforceSingleParentForTarget(edgePayload, activeMapEdges);
-
-    suppressNextFileSystemRefresh(1500);
-
-    const result = await window.kediProject?.upsertMapConnection?.(
-        activeMapPath,
-        edgePayload
-    );
+    const result = await persistKediMapConnection(edgePayload);
 
     if (!result || !result.ok) {
-    alert(result?.error || 'Bağlantı kaydedilemedi.');
+        if (!result?.cancelled) {
+            alert(result?.error || 'Bağlantı kaydedilemedi.');
+        }
         currentConnectionDrag = null;
         clearTempEdgePath();
-    return;
+        return;
     }
-
-    activeMapEdges = result.edges || activeMapEdges;
 
     currentConnectionDrag = null;
     clearTempEdgePath();
-
-    drawMapConnections();
-    await refreshActiveMapTreeBranch();
 
 });
 
@@ -866,26 +1033,12 @@ async function deleteMapEdge(edgeId) {
 function createMapEdgeDeleteButton(edge, pathData) {
     if (!edge?.id || !pathData) return null;
 
-    const tempPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    tempPath.setAttribute('d', pathData);
-
-    let point;
-
-    try {
-        const length = tempPath.getTotalLength();
-        point = tempPath.getPointAtLength(length / 2);
-    } catch (error) {
-        console.warn('[KEDI] Bağlantı silme butonu konumu hesaplanamadı:', error);
-        return null;
-    }
+    const point = getMapEdgePathMidpoint(pathData);
+    if (!point) return null;
 
     const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     group.classList.add('map-edge-delete');
     group.dataset.edgeId = edge.id;
-
-    // DİKKAT:
-    // Bu transform SVG attribute olarak kalmalı.
-    // CSS tarafında .map-edge-delete üzerine transform vermiyoruz.
     group.setAttribute('transform', `translate(${point.x}, ${point.y})`);
 
     const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -915,15 +1068,43 @@ function createMapEdgeDeleteButton(edge, pathData) {
     return group;
 }
 
+function getMapEdgePathMidpoint(pathData) {
+    const tempPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    tempPath.setAttribute('d', pathData);
+
+    try {
+        const length = tempPath.getTotalLength();
+        return tempPath.getPointAtLength(length / 2);
+    } catch (error) {
+        console.warn('[KEDI] Bağlantı silme butonu konumu hesaplanamadı:', error);
+        return null;
+    }
+}
+
+function updateMapEdgeDeleteButtonPosition(group, pathData) {
+    if (!group) return;
+    const point = getMapEdgePathMidpoint(pathData);
+    if (!point) return;
+    group.setAttribute('transform', `translate(${point.x}, ${point.y})`);
+}
+
+let kediConnectionDrawFrame = null;
+
+function scheduleDrawMapConnections() {
+    if (kediConnectionDrawFrame !== null) return;
+
+    kediConnectionDrawFrame = requestAnimationFrame(() => {
+        kediConnectionDrawFrame = null;
+        drawMapConnections();
+    });
+}
+
 function drawMapConnections() {
     const svg = document.getElementById('map-connections');
 
     if (!svg) return;
 
-    svg.querySelectorAll('.map-edge-group').forEach((el) => el.remove());
-    svg.querySelectorAll('.map-edge').forEach((el) => el.remove());
-    svg.querySelectorAll('.map-edge-hit').forEach((el) => el.remove());
-    svg.querySelectorAll('.map-edge-delete').forEach((el) => el.remove());
+    const liveEdgeIds = new Set();
 
     for (const edge of activeMapEdges) {
         if (isHubEdgeCollapsed(edge)) {
@@ -951,31 +1132,53 @@ function drawMapConnections() {
             edge.type
         );
 
-        const groupEl = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        groupEl.classList.add('map-edge-group');
-        groupEl.dataset.edgeId = edge.id;
+        liveEdgeIds.add(edge.id);
+        let groupEl = svg.querySelector(
+            `.map-edge-group[data-edge-id="${CSS.escape(edge.id)}"]`
+        );
+        let hitPathEl = groupEl?.querySelector('.map-edge-hit') || null;
+        let pathEl = groupEl?.querySelector('.map-edge') || null;
+        let deleteEl = groupEl?.querySelector('.map-edge-delete') || null;
 
-        // Görünmez kalın path: hover/click alanını büyütür.
-        const hitPathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        hitPathEl.classList.add('map-edge-hit');
-        hitPathEl.dataset.edgeId = edge.id;
-        hitPathEl.setAttribute('d', pathData);
+        if (!groupEl) {
+            groupEl = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            groupEl.classList.add('map-edge-group');
+            groupEl.dataset.edgeId = edge.id;
 
-        // Görünen gerçek çizgi.
-        const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        pathEl.classList.add('map-edge', getConnectionClass(edge));
-        pathEl.dataset.edgeId = edge.id;
-        pathEl.setAttribute('d', pathData);
+            hitPathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            hitPathEl.classList.add('map-edge-hit');
+            hitPathEl.dataset.edgeId = edge.id;
 
-        const deleteEl = createMapEdgeDeleteButton(edge, pathData);
+            pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            pathEl.dataset.edgeId = edge.id;
 
-        groupEl.appendChild(hitPathEl);
-        groupEl.appendChild(pathEl);
+            deleteEl = createMapEdgeDeleteButton(edge, pathData);
 
-        if (deleteEl) {
-            groupEl.appendChild(deleteEl);
+            groupEl.appendChild(hitPathEl);
+            groupEl.appendChild(pathEl);
+
+            if (deleteEl) {
+                groupEl.appendChild(deleteEl);
+            }
+
+            svg.appendChild(groupEl);
         }
 
-        svg.appendChild(groupEl);
+        hitPathEl.setAttribute('d', pathData);
+        pathEl.setAttribute(
+            'class',
+            `map-edge ${getConnectionClass(edge)}`
+        );
+        pathEl.setAttribute('d', pathData);
+
+        if (deleteEl) {
+            updateMapEdgeDeleteButtonPosition(deleteEl, pathData);
+        }
     }
+
+    svg.querySelectorAll('.map-edge-group').forEach((group) => {
+        if (!liveEdgeIds.has(group.dataset.edgeId)) {
+            group.remove();
+        }
+    });
 }

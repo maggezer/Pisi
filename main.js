@@ -1,13 +1,51 @@
 const { app, BrowserWindow, Menu, ipcMain, dialog, screen, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 let mainWindow = null;
+let allowWindowClose = false;
+let closeRequestInFlight = false;
+let closeRequestTimer = null;
+const recentInternalFileChanges = new Map();
+
+function markInternalFileChange(...filePaths) {
+    const expiresAt = Date.now() + 1500;
+
+    for (const filePath of filePaths) {
+        if (!filePath) continue;
+        recentInternalFileChanges.set(
+            normalizePathForCompare(filePath),
+            expiresAt
+        );
+    }
+}
+
+function isRecentInternalFileChange(filePath) {
+    const now = Date.now();
+    const normalizedPath = normalizePathForCompare(filePath);
+
+    for (const [key, expiresAt] of recentInternalFileChanges) {
+        if (expiresAt <= now) {
+            recentInternalFileChanges.delete(key);
+        }
+    }
+
+    return Boolean(
+        normalizedPath &&
+        (recentInternalFileChanges.get(normalizedPath) || 0) > now
+    );
+}
+
+function renamePathInternal(oldPath, newPath) {
+    markInternalFileChange(oldPath, newPath);
+    fs.renameSync(oldPath, newPath);
+}
 
 const appIconPath = path.join(__dirname, 'assets', 'kedi.ico');
 
 if (process.platform === 'win32') {
-    app.setAppUserModelId('com.kedi.app');
+    app.setAppUserModelId('com.mumin.kedi');
 }
 
 function getSettingsPath() {
@@ -34,7 +72,11 @@ function writeSettings(settings) {
     const settingsPath = getSettingsPath();
 
     try {
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf-8');
+        writeFileAtomic(
+            settingsPath,
+            JSON.stringify(settings, null, 2),
+            { backup: false }
+        );
     } catch (error) {
         console.error('[KEDI] Settings yazılamadı:', error);
     }
@@ -170,8 +212,7 @@ function isKediManagedSidecarFolder(folderName) {
 
     return (
         folderName === '.kedi.lock' ||
-        folderName.startsWith('inv_') ||
-        folderName.startsWith('nd_')
+        /^(?:inv|nd)_.+__(?:node|map)_[A-Za-z0-9_-]{1,96}$/.test(folderName)
     );
 }
 
@@ -197,11 +238,17 @@ function getKediSidecarPrefix(ext) {
 }
 
 function sanitizeKediBaseName(name) {
-    const cleaned = String(name || '')
+    let cleaned = String(name || '')
         .trim()
         .replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')
         .replace(/\s+/g, ' ')
-        .replace(/[. ]+$/g, '');
+        .replace(/[. ]+$/g, '')
+        .slice(0, 120);
+
+    const windowsStem = cleaned.split('.')[0].toUpperCase();
+    if (/^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/.test(windowsStem)) {
+        cleaned = `_${cleaned}`;
+    }
 
     return cleaned || 'Yeni Dosya';
 }
@@ -268,9 +315,25 @@ function sanitizeForSidecarName(name) {
 
 function generateKediId(ext) {
     const prefix = ext === '.map' ? 'map' : 'node';
-    const stamp = Date.now().toString(36);
-    const random = Math.random().toString(36).slice(2, 8);
-    return `${prefix}_${stamp}_${random}`;
+    return `${prefix}_${crypto.randomUUID()}`;
+}
+
+function normalizeKediId(value, ext = '') {
+    const id = String(value || '').trim();
+    const expectedPrefix = ext === '.map'
+        ? 'map_'
+        : (ext === '.node' ? 'node_' : '');
+
+    if (
+        !id ||
+        id.length > 101 ||
+        !/^(?:map|node)_[A-Za-z0-9_-]+$/.test(id) ||
+        (expectedPrefix && !id.startsWith(expectedPrefix))
+    ) {
+        return null;
+    }
+
+    return id;
 }
 
 function getDefaultNodeConnectionTypes() {
@@ -347,43 +410,54 @@ function getEdgeVisualTypeFromRoles(sourceRole, targetRole) {
 }
 
 function normalizeMapEdge(edge) {
-    if (!edge || !edge.sourceId || !edge.targetId) {
+    const sourceId = normalizeKediId(edge?.sourceId, '.node');
+    const targetId = normalizeKediId(edge?.targetId, '.node');
+
+    if (!sourceId || !targetId || sourceId === targetId) {
         return null;
     }
 
-    let type = edge.type || 'down-hub';
+    let type = String(edge.type || 'down-hub');
 
     if (type === 'colevel') {
         type = 'co-level';
     }
 
+    if (!['down-hub', 'stream', 'co-level'].includes(type)) {
+        type = 'down-hub';
+    }
+
     let sourceRole = normalizeConnectionRole(edge.sourceRole);
     let targetRole = normalizeConnectionRole(edge.targetRole);
 
-    // Eski kayıtlar için fallback.
-    // Burada portlara bakmıyoruz. Type neyse roller ondan çıkar.
-    if (!sourceRole || !targetRole) {
-        if (type === 'co-level') {
-            sourceRole = 'co-level';
-            targetRole = 'co-level';
-        } else if (type === 'stream') {
-            sourceRole = 'downstream';
-            targetRole = 'upstream';
-        } else {
-            type = 'down-hub';
-            sourceRole = 'down-hub';
-            targetRole = 'up-hub';
-        }
+    // Portlar yalnızca geometriyi belirler. İlişki türü ile rollerin
+    // çelişmesine izin vermeyerek elle düzenlenmiş eski dosyaları onar.
+    if (type === 'co-level') {
+        sourceRole = 'co-level';
+        targetRole = 'co-level';
+    } else if (type === 'stream') {
+        sourceRole = 'downstream';
+        targetRole = 'upstream';
+    } else {
+        type = 'down-hub';
+        sourceRole = 'down-hub';
+        targetRole = 'up-hub';
     }
 
+    const ports = new Set(['top', 'right', 'bottom', 'left']);
+    const sourcePort = ports.has(edge.sourcePort) ? edge.sourcePort : 'bottom';
+    const targetPort = ports.has(edge.targetPort) ? edge.targetPort : 'top';
+
     return {
-        id: edge.id || `edge_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
-        sourceId: edge.sourceId,
-        targetId: edge.targetId,
+        id: /^edge_[A-Za-z0-9_-]{1,101}$/.test(String(edge.id || ''))
+            ? String(edge.id)
+            : `edge_${crypto.randomUUID()}`,
+        sourceId,
+        targetId,
 
         // Bunlar sadece çizgi geometrisi.
-        sourcePort: edge.sourcePort || 'bottom',
-        targetPort: edge.targetPort || 'top',
+        sourcePort,
+        targetPort,
 
         // Bunlar semantik ilişki.
         type,
@@ -437,16 +511,116 @@ function enforceSingleParentForTargetInMap(newEdge, existingEdges = []) {
     return convertEdgeToStream(newEdge);
 }
 
+function getKediEdgeSemanticKey(edge) {
+    const normalized = normalizeMapEdge(edge);
+    if (!normalized) return '';
+
+    if (normalized.type === 'co-level') {
+        const pair = [normalized.sourceId, normalized.targetId].sort();
+        return `co-level:${pair[0]}:${pair[1]}`;
+    }
+
+    return [
+        normalized.type,
+        normalized.sourceId,
+        normalized.targetId,
+        normalized.sourceRole,
+        normalized.targetRole
+    ].join(':');
+}
+
+function wouldCreateKediHierarchyCycle(parentByChild, parentId, childId) {
+    let current = parentId;
+    const visited = new Set();
+
+    while (current && !visited.has(current)) {
+        if (current === childId) return true;
+        visited.add(current);
+        current = parentByChild.get(current) || null;
+    }
+
+    return false;
+}
+
+function normalizeKediMapEdges(rawEdges = [], validNodeIds = null) {
+    const cleanEdges = [];
+    const seenSemanticEdges = new Set();
+    const parentByChild = new Map();
+    const warnings = [];
+
+    for (const rawEdge of Array.isArray(rawEdges) ? rawEdges : []) {
+        let edge = normalizeMapEdge(rawEdge);
+        if (!edge) {
+            warnings.push('Geçersiz veya self-loop bağlantı atlandı.');
+            continue;
+        }
+
+        if (
+            validNodeIds &&
+            (
+                !validNodeIds.has(edge.sourceId) ||
+                !validNodeIds.has(edge.targetId)
+            )
+        ) {
+            warnings.push(`Eksik node referanslı bağlantı atlandı: ${edge.id}`);
+            continue;
+        }
+
+        if (isHierarchyEdge(edge)) {
+            const existingParentId = parentByChild.get(edge.targetId);
+
+            if (
+                existingParentId &&
+                existingParentId !== edge.sourceId
+            ) {
+                edge = convertEdgeToStream(edge);
+                warnings.push(
+                    `İkinci parent bağlantısı stream olarak kurtarıldı: ${edge.id}`
+                );
+            } else if (
+                !existingParentId &&
+                wouldCreateKediHierarchyCycle(
+                    parentByChild,
+                    edge.sourceId,
+                    edge.targetId
+                )
+            ) {
+                edge = convertEdgeToStream(edge);
+                warnings.push(
+                    `Döngü oluşturan bağlantı stream olarak kurtarıldı: ${edge.id}`
+                );
+            } else if (!existingParentId) {
+                parentByChild.set(edge.targetId, edge.sourceId);
+            }
+        }
+
+        const semanticKey = getKediEdgeSemanticKey(edge);
+        if (!semanticKey || seenSemanticEdges.has(semanticKey)) {
+            warnings.push(`Tekrarlanan bağlantı atlandı: ${edge.id}`);
+            continue;
+        }
+
+        seenSemanticEdges.add(semanticKey);
+        cleanEdges.push(edge);
+    }
+
+    return {
+        edges: cleanEdges,
+        warnings
+    };
+}
+
 function resetNodeConnectionTypes(metadata) {
     metadata.connectionTypes = getDefaultNodeConnectionTypes();
 }
 
 function getKediSidecarName(title, ext, id) {
     const prefix = getKediSidecarPrefix(ext);
-    if (!prefix || !id) return null;
+    const safeId = normalizeKediId(id, ext);
+    if (!prefix || !safeId) return null;
 
     const safeTitle = sanitizeForSidecarName(title);
-    return `${prefix}${safeTitle}__${id}`;
+    return `${prefix}${safeTitle}__${safeId}`;
 }
 
 function createKediDocumentData({ ext, title, id, parentMap = 'none' }) {
@@ -490,75 +664,252 @@ function createKediDocumentData({ ext, title, id, parentMap = 'none' }) {
     return base;
 }
 
-function readJsonFileSafe(filePath) {
+function readJsonFileResult(filePath) {
     try {
         const raw = fs.readFileSync(filePath, 'utf-8');
 
         if (!raw || !raw.trim()) {
-            return null;
+            return {
+                ok: false,
+                raw,
+                error: 'Dosya boş.'
+            };
         }
 
-        return JSON.parse(raw);
+        return {
+            ok: true,
+            raw,
+            data: JSON.parse(raw)
+        };
+    } catch (error) {
+        return {
+            ok: false,
+            raw: null,
+            error: error.message
+        };
+    }
+}
+
+function readJsonFileSafe(filePath) {
+    const result = readJsonFileResult(filePath);
+    return result.ok ? result.data : null;
+}
+
+function fsyncDirectoryBestEffort(directoryPath) {
+    if (process.platform === 'win32') return;
+
+    let descriptor = null;
+
+    try {
+        descriptor = fs.openSync(directoryPath, 'r');
+        fs.fsyncSync(descriptor);
     } catch {
-        return null;
+        // Bazı dosya sistemleri klasör fsync işlemini desteklemez.
+    } finally {
+        if (descriptor !== null) {
+            fs.closeSync(descriptor);
+        }
+    }
+}
+
+function writeFileAtomic(filePath, content, options = {}) {
+    const targetPath = path.resolve(filePath);
+    const directoryPath = path.dirname(targetPath);
+    const baseName = path.basename(targetPath);
+    const tempPath = path.join(
+        directoryPath,
+        `.${baseName}.${process.pid}.${crypto.randomUUID()}.tmp`
+    );
+    const backupPath = `${targetPath}.kedi-backup`;
+    let descriptor = null;
+    markInternalFileChange(targetPath, tempPath, backupPath);
+
+    try {
+        descriptor = fs.openSync(tempPath, 'wx', 0o600);
+        fs.writeFileSync(descriptor, content, 'utf-8');
+        fs.fsyncSync(descriptor);
+        fs.closeSync(descriptor);
+        descriptor = null;
+
+        if (options.backup !== false && fs.existsSync(targetPath)) {
+            const backupTempPath = `${backupPath}.${crypto.randomUUID()}.tmp`;
+            markInternalFileChange(backupTempPath);
+            fs.copyFileSync(targetPath, backupTempPath);
+            renamePathInternal(backupTempPath, backupPath);
+        }
+
+        renamePathInternal(tempPath, targetPath);
+        fsyncDirectoryBestEffort(directoryPath);
+    } catch (error) {
+        if (descriptor !== null) {
+            try {
+                fs.closeSync(descriptor);
+            } catch {}
+        }
+
+        try {
+            if (fs.existsSync(tempPath)) {
+                fs.unlinkSync(tempPath);
+            }
+        } catch {}
+
+        throw error;
     }
 }
 
 function writeKediDocument(filePath, data) {
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+    writeFileAtomic(filePath, JSON.stringify(data, null, 2));
+}
+
+function writeKediDocumentsTransaction(changes = []) {
+    const uniqueChanges = [];
+    const seenPaths = new Set();
+
+    for (const change of changes) {
+        if (!change?.filePath || !change.data) continue;
+        const normalizedPath = normalizePathForCompare(change.filePath);
+        if (!normalizedPath || seenPaths.has(normalizedPath)) continue;
+        seenPaths.add(normalizedPath);
+        uniqueChanges.push(change);
+    }
+
+    const originals = uniqueChanges.map((change) => ({
+        filePath: change.filePath,
+        existed: fs.existsSync(change.filePath),
+        content: fs.existsSync(change.filePath)
+            ? fs.readFileSync(change.filePath, 'utf-8')
+            : null
+    }));
+    const written = [];
+
+    try {
+        for (const change of uniqueChanges) {
+            writeKediDocument(change.filePath, change.data);
+            written.push(change.filePath);
+        }
+    } catch (error) {
+        const rollbackErrors = [];
+
+        for (const original of originals.reverse()) {
+            if (!written.some((writtenPath) => {
+                return normalizePathForCompare(writtenPath) ===
+                    normalizePathForCompare(original.filePath);
+            })) {
+                continue;
+            }
+
+            try {
+                if (original.existed) {
+                    writeFileAtomic(
+                        original.filePath,
+                        original.content,
+                        { backup: false }
+                    );
+                } else if (fs.existsSync(original.filePath)) {
+                    fs.unlinkSync(original.filePath);
+                }
+            } catch (rollbackError) {
+                rollbackErrors.push(
+                    `${original.filePath}: ${rollbackError.message}`
+                );
+            }
+        }
+
+        if (rollbackErrors.length) {
+            throw new Error(
+                `${error.message} Geri alma tamamlanamadı: ${rollbackErrors.join(' | ')}`
+            );
+        }
+
+        throw error;
+    }
+}
+
+function backupCorruptKediFile(filePath) {
+    try {
+        const raw = fs.readFileSync(filePath);
+        const digest = crypto
+            .createHash('sha256')
+            .update(raw)
+            .digest('hex')
+            .slice(0, 12);
+        const backupPath = `${filePath}.corrupt-${digest}.bak`;
+
+        if (!fs.existsSync(backupPath)) {
+            fs.copyFileSync(filePath, backupPath, fs.constants.COPYFILE_EXCL);
+        }
+
+        return backupPath;
+    } catch {
+        return null;
+    }
 }
 
 function findExistingSidecarById(dir, ext, id) {
-    if (!id || !fs.existsSync(dir)) return null;
+    const safeId = normalizeKediId(id, ext);
+    if (!safeId || !fs.existsSync(dir)) return null;
 
     const prefix = getKediSidecarPrefix(ext);
     if (!prefix) return null;
 
-    const suffix = `__${id}`;
+    const suffix = `__${safeId}`;
 
     try {
         const entries = fs.readdirSync(dir, { withFileTypes: true });
-
-        for (const entry of entries) {
-            if (
+        const matches = entries.filter((entry) => {
+            return (
                 entry.isDirectory() &&
                 entry.name.startsWith(prefix) &&
                 entry.name.endsWith(suffix)
-            ) {
-                return path.join(dir, entry.name);
-            }
+            );
+        });
+
+        if (matches.length > 1) {
+            throw new Error(
+                `Aynı kimliğe bağlı birden fazla yan klasör bulundu: ${safeId}`
+            );
         }
-    } catch {
+
+        return matches.length === 1
+            ? path.join(dir, matches[0].name)
+            : null;
+    } catch (error) {
+        if (String(error.message || '').includes('birden fazla yan klasör')) {
+            throw error;
+        }
         return null;
     }
-
-    return null;
 }
 
 function ensureKediSidecar(filePath, metadata) {
     const ext = getKediFileExt(filePath);
-    if (!ext || !metadata?.id) return null;
+    const safeId = normalizeKediId(metadata?.id, ext);
+    if (!ext || !safeId) return null;
 
     const dir = path.dirname(filePath);
-    const desiredName = getKediSidecarName(metadata.title, ext, metadata.id);
+    const desiredName = getKediSidecarName(metadata.title, ext, safeId);
+    if (!desiredName) return null;
     const desiredPath = path.join(dir, desiredName);
 
-    const existingById = findExistingSidecarById(dir, ext, metadata.id);
+    const existingById = findExistingSidecarById(dir, ext, safeId);
 
-    if (existingById && normalizePathForCompare(existingById) !== normalizePathForCompare(desiredPath)) {
+        if (existingById && normalizePathForCompare(existingById) !== normalizePathForCompare(desiredPath)) {
         if (!fs.existsSync(desiredPath)) {
-            fs.renameSync(existingById, desiredPath);
+            renamePathInternal(existingById, desiredPath);
         }
     }
 
     if (!fs.existsSync(desiredPath)) {
+        markInternalFileChange(desiredPath);
         fs.mkdirSync(desiredPath, { recursive: true });
     }
 
     return desiredPath;
 }
 
-function ensureKediFileMetadata(filePath) {
+function ensureKediFileMetadata(filePath, options = {}) {
+    const persist = options.persist !== false;
+    const ensureSidecar = options.ensureSidecar !== false;
     const ext = getKediFileExt(filePath);
 
     if (!ext) {
@@ -568,18 +919,33 @@ function ensureKediFileMetadata(filePath) {
         };
     }
 
-    const dir = path.dirname(filePath);
     const type = getKediTypeFromExt(ext);
-
-    let data = readJsonFileSafe(filePath);
+    const readResult = readJsonFileResult(filePath);
     let changed = false;
 
-    if (!data || typeof data !== 'object') {
-        const id = generateKediId(ext);
-        const title = sanitizeKediBaseName(visibleTitle);
-        data = createKediDocumentData({ ext, title, id });
-        changed = true;
+    if (
+        !readResult.ok ||
+        !readResult.data ||
+        typeof readResult.data !== 'object' ||
+        Array.isArray(readResult.data)
+    ) {
+        const backupPath = persist
+            ? backupCorruptKediFile(filePath)
+            : null;
+
+        return {
+            ok: false,
+            corrupt: true,
+            recoverable: true,
+            filePath,
+            backupPath,
+            error: backupPath
+                ? `Dosya bozuk veya boş. Üzerine yazılmadı; kurtarma kopyası oluşturuldu: ${backupPath}`
+                : `Dosya bozuk veya boş. Üzerine yazılmadı: ${readResult.error || 'Geçersiz JSON.'}`
+        };
     }
+
+    const data = readResult.data;
 
     if (!data.kedi || typeof data.kedi !== 'object') {
         data.kedi = {};
@@ -599,14 +965,25 @@ function ensureKediFileMetadata(filePath) {
     if (!data.kedi.id) {
         data.kedi.id = generateKediId(ext);
         changed = true;
+    } else if (!normalizeKediId(data.kedi.id, ext)) {
+        return {
+            ok: false,
+            unsafeId: true,
+            filePath,
+            error: 'Dosyadaki KEDI kimliği güvenli biçimde değil. Dosya değiştirilmedi.'
+        };
     }
 
-    // Windows üzerinden dosya adı değişirse görünen başlık dosya adından alınır.
-    const cleanVisibleTitle = getVisibleTitleFromFilePath(filePath, ext, data.kedi.id);
+    const diaryDate = ext === '.node'
+        ? normalizeKediDiaryIsoDate(data.kedi.diaryDate)
+        : null;
+    const cleanVisibleTitle = diaryDate
+        ? makeKediDiaryNodeTitle(diaryDate)
+        : getVisibleTitleFromFilePath(filePath, ext, data.kedi.id);
 
     if (data.kedi.title !== cleanVisibleTitle) {
-    data.kedi.title = cleanVisibleTitle;
-    changed = true;
+        data.kedi.title = cleanVisibleTitle;
+        changed = true;
     }
 
     const desiredSidecar = getKediSidecarName(data.kedi.title, ext, data.kedi.id);
@@ -621,32 +998,35 @@ function ensureKediFileMetadata(filePath) {
         changed = true;
     }
 
-    data.kedi.updatedAt = new Date().toISOString();
+    if (!data.kedi.updatedAt) {
+        data.kedi.updatedAt = data.kedi.createdAt;
+        changed = true;
+    }
 
     if (ext === '.node') {
-    if (typeof data.content !== 'string') {
-        data.content = '';
-        changed = true;
+        if (typeof data.content !== 'string') {
+            data.content = '';
+            changed = true;
+        }
+
+        if (!data.kedi.parentMap) {
+            data.kedi.parentMap = diaryDate ? 'diary' : 'none';
+            changed = true;
+        }
+
+        const normalizedConnections = normalizeNodeConnectionTypes(
+            data.kedi.connectionTypes
+        );
+
+        if (
+            JSON.stringify(data.kedi.connectionTypes) !==
+            JSON.stringify(normalizedConnections)
+        ) {
+            data.kedi.connectionTypes = normalizedConnections;
+            changed = true;
+        }
     }
 
-    // parentMap sadece .node dosyalarında bulunur.
-    // none = herhangi bir map içinde değil.
-    // ileride map altında oluşturulursa burada map id tutulacak.
-    if (!data.kedi.parentMap) {
-        data.kedi.parentMap = 'none';
-        changed = true;
-    }
-
-    // connectionTypes sadece .node dosyalarında bulunur.
-    // Her alan bağlantılı node id listesi tutar.
-    const normalizedConnections = normalizeNodeConnectionTypes(data.kedi.connectionTypes);
-
-    if (JSON.stringify(data.kedi.connectionTypes) !== JSON.stringify(normalizedConnections)) {
-        data.kedi.connectionTypes = normalizedConnections;
-        changed = true;
-    }
-}
-    
     if (ext === '.map' && (!data.map || typeof data.map !== 'object')) {
         data.map = {
             nodes: [],
@@ -657,20 +1037,38 @@ function ensureKediFileMetadata(filePath) {
     }
 
     if (ext === '.map') {
-    if ('parentMap' in data.kedi) {
-        delete data.kedi.parentMap;
-        changed = true;
+        if ('parentMap' in data.kedi) {
+            delete data.kedi.parentMap;
+            changed = true;
+        }
+
+        if ('connectionTypes' in data.kedi) {
+            delete data.kedi.connectionTypes;
+            changed = true;
+        }
     }
 
-    if ('connectionTypes' in data.kedi) {
-        delete data.kedi.connectionTypes;
-        changed = true;
-    }
-}
+    const desiredSidecarName = getKediSidecarName(
+        data.kedi.title,
+        ext,
+        data.kedi.id
+    );
+    const desiredSidecarPath = desiredSidecarName
+        ? path.join(path.dirname(filePath), desiredSidecarName)
+        : null;
+    const sidecarPath = ensureSidecar
+        ? ensureKediSidecar(filePath, data.kedi)
+        : (
+            desiredSidecarPath && fs.existsSync(desiredSidecarPath)
+                ? desiredSidecarPath
+                : findExistingSidecarById(
+                    path.dirname(filePath),
+                    ext,
+                    data.kedi.id
+                )
+        );
 
-    const sidecarPath = ensureKediSidecar(filePath, data.kedi);
-
-    if (changed) {
+    if (changed && persist) {
         writeKediDocument(filePath, data);
     }
 
@@ -679,7 +1077,9 @@ function ensureKediFileMetadata(filePath) {
         filePath,
         metadata: data.kedi,
         sidecarPath,
-        data
+        data,
+        changed,
+        persisted: changed && persist
     };
 }
 
@@ -774,7 +1174,28 @@ function ensureKediDiaryFolder(projectFolder) {
     }
 
     const diaryFolder = path.join(projectFolder, 'diary');
+    const markerPath = path.join(diaryFolder, '.kedi-diary');
+
+    if (
+        fs.existsSync(diaryFolder) &&
+        !isKediManagedDiaryFolder(diaryFolder)
+    ) {
+        return {
+            ok: false,
+            error: 'Projedeki mevcut "diary" klasörü KEDI tarafından yönetilmiyor. Kullanıcı klasörünü korumak için işlem durduruldu.'
+        };
+    }
+
+    markInternalFileChange(diaryFolder);
     fs.mkdirSync(diaryFolder, { recursive: true });
+
+    if (!fs.existsSync(markerPath)) {
+        writeFileAtomic(
+            markerPath,
+            'Bu klasör KEDI diary özelliği tarafından yönetilir.\n',
+            { backup: false }
+        );
+    }
 
     return {
         ok: true,
@@ -830,11 +1251,28 @@ function getOrCreateDiaryNode(projectFolder, isoDate) {
 
         if (!ensured.ok) return ensured;
 
-        if (ensured.data?.kedi && ensured.data.kedi.diaryDate !== normalizedDate) {
+        if (
+            ensured.data?.kedi &&
+            (
+                ensured.data.kedi.diaryDate !== normalizedDate ||
+                ensured.data.kedi.parentMap !== 'diary' ||
+                ensured.data.kedi.title !== makeKediDiaryNodeTitle(normalizedDate)
+            )
+        ) {
             ensured.data.kedi.diaryDate = normalizedDate;
             ensured.data.kedi.parentMap = 'diary';
+            ensured.data.kedi.title = makeKediDiaryNodeTitle(normalizedDate);
             ensured.data.kedi.updatedAt = new Date().toISOString();
+            const repairedSidecarPath = ensureKediSidecar(
+                nodePath,
+                ensured.data.kedi
+            );
+            ensured.data.kedi.sidecar = repairedSidecarPath
+                ? path.basename(repairedSidecarPath)
+                : ensured.data.kedi.sidecar;
             writeKediDocument(nodePath, ensured.data);
+            ensured.metadata = ensured.data.kedi;
+            ensured.sidecarPath = repairedSidecarPath;
         }
 
         return {
@@ -866,7 +1304,7 @@ function stripKediDiaryManagedSection(content = '') {
     const escapedEnd = KEDI_DIARY_MANAGED_END.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(`${escapedStart}[\\s\\S]*?${escapedEnd}`, 'g');
 
-    return String(content || '').replace(regex, '').trim();
+    return String(content || '').replace(regex, '');
 }
 
 function escapeHtmlForKediDiary(value = '') {
@@ -882,35 +1320,59 @@ function sanitizeKediDiaryBlockHtml(html = '') {
     return String(html || '')
         .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
         .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, '')
+        .replace(/<(iframe|object|embed|link|meta|base|form)\b[\s\S]*?<\/\1\s*>/gi, '')
+        .replace(/<(iframe|object|embed|link|meta|base|form)\b[^>]*\/?>/gi, '')
         .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '')
         .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '')
-        .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '');
+        .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '')
+        .replace(
+            /\s(href|src|xlink:href|formaction)\s*=\s*(["'])\s*(?:javascript|vbscript|data\s*:\s*text\/html)[\s\S]*?\2/gi,
+            ''
+        )
+        .replace(
+            /\s(href|src|xlink:href|formaction)\s*=\s*(?:javascript|vbscript|data\s*:\s*text\/html)[^\s>]*/gi,
+            ''
+        )
+        .replace(/\sstyle\s*=\s*(["'])[\s\S]*?(?:expression\s*\(|url\s*\(\s*["']?\s*(?:javascript|vbscript|data\s*:\s*text\/html))[\s\S]*?\1/gi, '')
+        .replace(/\sstyle\s*=\s*[^\s>]*(?:expression\s*\(|url\s*\()[^\s>]*/gi, '');
 }
 
 function normalizeKediDiarySyncEntry(entry) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return null;
+
     const date = normalizeKediDiaryIsoDate(entry?.date);
 
     if (!date) return null;
 
-    const nodePath = String(entry?.nodePath || '').trim();
-    const blockId = String(entry?.blockId || '').trim();
-    const tag = String(entry?.tag || '').trim();
-    const text = String(entry?.text || '').trim();
+    const nodePath = String(entry.nodePath || '').trim().slice(0, 32768);
+    const blockId = String(entry.blockId || '').trim().slice(0, 500);
+    const tag = String(entry.tag || '').trim().slice(0, 200);
+    const text = String(entry.text || '').trim().slice(0, 250000);
 
     if (!nodePath || !tag) return null;
 
-    const sourceKey = [nodePath, blockId || text, tag].join('::');
+    const sourceIdentity = blockId || crypto
+        .createHash('sha256')
+        .update(text)
+        .digest('hex');
+    const sourceKey = [nodePath, sourceIdentity, tag].join('::');
+    const rawPriority = Number(entry.priority);
+    const priority = Number.isFinite(rawPriority)
+        ? Math.max(-1000000, Math.min(1000000, rawPriority))
+        : 0;
 
     return {
         date,
         sourceKey,
         nodePath,
-        nodeTitle: String(entry?.nodeTitle || 'Node'),
+        nodeTitle: String(entry.nodeTitle || 'Node').slice(0, 500),
         blockId,
         tag,
-        priority: Number(entry?.priority || 0),
+        priority,
         text,
-        html: sanitizeKediDiaryBlockHtml(entry?.html || '')
+        html: sanitizeKediDiaryBlockHtml(
+            String(entry.html || '').slice(0, 2000000)
+        )
     };
 }
 
@@ -960,7 +1422,10 @@ function listKediDiaryDates(projectFolder) {
 
         const diaryFolder = path.join(projectFolder, 'diary');
 
-        if (!fs.existsSync(diaryFolder)) {
+        if (
+            !fs.existsSync(diaryFolder) ||
+            !isKediManagedDiaryFolder(diaryFolder)
+        ) {
             return {
                 ok: true,
                 dates: []
@@ -995,19 +1460,61 @@ function listKediDiaryDates(projectFolder) {
     }
 }
 
-function syncDiaryMissions(projectFolder, rawEntries = []) {
+function syncDiaryMissions(projectFolder, payload = {}) {
     try {
-        const folderResult = ensureKediDiaryFolder(projectFolder);
+        const isEnvelope = payload && !Array.isArray(payload);
+        const rawEntries = isEnvelope ? payload.entries : payload;
+        const indexComplete = isEnvelope ? payload.complete === true : false;
 
-        if (!folderResult.ok) return folderResult;
+        if (!indexComplete) {
+            return {
+                ok: false,
+                error: 'Diary eşitlemesi tamamlanmış bir görev indeksi gerektiriyor.'
+            };
+        }
+
+        if (!Array.isArray(rawEntries)) {
+            return {
+                ok: false,
+                error: 'Diary eşitleme girdisi geçerli bir görev listesi olmalı.'
+            };
+        }
+
+        const diaryFolderPath = path.join(projectFolder, 'diary');
+        const entriesInput = rawEntries;
+
+        if (entriesInput.length > 50000) {
+            return {
+                ok: false,
+                error: 'Diary eşitleme girdisi 50.000 görev sınırını aşıyor.'
+            };
+        }
+
+        if (
+            !entriesInput.length &&
+            (
+                !fs.existsSync(diaryFolderPath) ||
+                !isKediManagedDiaryFolder(diaryFolderPath)
+            )
+        ) {
+            return {
+                ok: true,
+                updatedCount: 0,
+                dateCount: 0
+            };
+        }
 
         const entriesByDate = new Map();
         const seenByDate = new Map();
+        let invalidEntryCount = 0;
 
-        for (const rawEntry of Array.isArray(rawEntries) ? rawEntries : []) {
+        for (const rawEntry of entriesInput) {
             const entry = normalizeKediDiarySyncEntry(rawEntry);
 
-            if (!entry) continue;
+            if (!entry) {
+                invalidEntryCount++;
+                continue;
+            }
 
             if (!entriesByDate.has(entry.date)) {
                 entriesByDate.set(entry.date, []);
@@ -1022,6 +1529,17 @@ function syncDiaryMissions(projectFolder, rawEntries = []) {
             entriesByDate.get(entry.date).push(entry);
         }
 
+        if (invalidEntryCount > 0) {
+            return {
+                ok: false,
+                error: `${invalidEntryCount} geçersiz görev girdisi nedeniyle diary eşitlemesi durduruldu.`
+            };
+        }
+
+        const folderResult = ensureKediDiaryFolder(projectFolder);
+
+        if (!folderResult.ok) return folderResult;
+
         for (const date of entriesByDate.keys()) {
             const createResult = getOrCreateDiaryNode(projectFolder, date);
 
@@ -1032,6 +1550,7 @@ function syncDiaryMissions(projectFolder, rawEntries = []) {
 
         const allDiaryNodes = listKediDiaryNodePaths(projectFolder);
         let updatedCount = 0;
+        const diaryChanges = [];
 
         for (const nodePath of allDiaryNodes) {
             const ensured = ensureKediFileMetadata(nodePath);
@@ -1047,19 +1566,24 @@ function syncDiaryMissions(projectFolder, rawEntries = []) {
             const manualContent = stripKediDiaryManagedSection(ensured.data.content || '');
             const entries = entriesByDate.get(fileDate) || [];
             const managedSection = buildKediDiaryManagedSection(fileDate, entries);
-            const nextContent = [manualContent, managedSection]
-                .filter(Boolean)
-                .join('\n\n');
+            const nextContent = managedSection
+                ? `${manualContent}${managedSection}`
+                : manualContent;
 
             if (nextContent !== String(ensured.data.content || '')) {
                 ensured.data.content = nextContent;
                 ensured.data.kedi.parentMap = 'diary';
                 ensured.data.kedi.diaryDate = fileDate;
                 ensured.data.kedi.updatedAt = new Date().toISOString();
-                writeKediDocument(nodePath, ensured.data);
+                diaryChanges.push({
+                    filePath: nodePath,
+                    data: ensured.data
+                });
                 updatedCount++;
             }
         }
+
+        writeKediDocumentsTransaction(diaryChanges);
 
         return {
             ok: true,
@@ -1134,6 +1658,13 @@ function createNodeUnderMap(mapPath) {
 }
 
 function renameKediFile(oldPath, newBaseName) {
+    let newPath = null;
+    let oldSidecarPath = null;
+    let newSidecarPath = null;
+    let fileMoved = false;
+    let sidecarMoved = false;
+    let originalContent = null;
+
     try {
         if (!oldPath || !fs.existsSync(oldPath)) {
             return {
@@ -1156,6 +1687,11 @@ function renameKediFile(oldPath, newBaseName) {
 
         const dir = path.dirname(oldPath);
         const id = ensuredBefore.metadata.id;
+        originalContent = fs.readFileSync(oldPath, 'utf-8');
+        oldSidecarPath = ensuredBefore.sidecarPath &&
+            fs.existsSync(ensuredBefore.sidecarPath)
+            ? ensuredBefore.sidecarPath
+            : null;
 
         let cleanTitle = sanitizeKediBaseName(newBaseName);
 
@@ -1166,25 +1702,52 @@ function renameKediFile(oldPath, newBaseName) {
 
         // Aynı görünen title'a izin veriyoruz.
         // Eğer plain dosya adı doluysa gerçek dosya adı title__id.ext olur.
-        const newPath = getUniqueKediPhysicalPath(
+        newPath = getUniqueKediPhysicalPath(
             dir,
             cleanTitle,
             ext,
             id,
             oldPath
         );
+        const newSidecarName = getKediSidecarName(cleanTitle, ext, id);
+        newSidecarPath = newSidecarName
+            ? path.join(dir, newSidecarName)
+            : null;
 
-        if (normalizePathForCompare(oldPath) !== normalizePathForCompare(newPath)) {
-            fs.renameSync(oldPath, newPath);
+        if (
+            oldSidecarPath &&
+            newSidecarPath &&
+            fs.existsSync(newSidecarPath) &&
+            normalizePathForCompare(oldSidecarPath) !==
+                normalizePathForCompare(newSidecarPath)
+        ) {
+            return {
+                ok: false,
+                error: 'Yeni başlıkla eşleşen yan klasör zaten var.'
+            };
         }
 
-        // Dosya rename sonrası metadata title'ı görünür title olarak ayarla.
-        const data = readJsonFileSafe(newPath) || ensuredBefore.data;
+        if (normalizePathForCompare(oldPath) !== normalizePathForCompare(newPath)) {
+            renamePathInternal(oldPath, newPath);
+            fileMoved = true;
+        }
+
+        if (
+            oldSidecarPath &&
+            newSidecarPath &&
+            normalizePathForCompare(oldSidecarPath) !==
+                normalizePathForCompare(newSidecarPath)
+        ) {
+            renamePathInternal(oldSidecarPath, newSidecarPath);
+            sidecarMoved = true;
+        }
+
+        const data = structuredClone(ensuredBefore.data);
 
         if (!data.kedi) data.kedi = {};
 
         data.kedi.title = cleanTitle;
-        data.kedi.sidecar = getKediSidecarName(cleanTitle, ext, id);
+        data.kedi.sidecar = newSidecarName;
         data.kedi.updatedAt = new Date().toISOString();
 
         writeKediDocument(newPath, data);
@@ -1197,12 +1760,61 @@ function renameKediFile(oldPath, newBaseName) {
             fileName: path.basename(newPath),
             displayName: ensuredAfter.metadata.title,
             metadata: ensuredAfter.metadata,
-            sidecarPath: ensuredAfter.sidecarPath
+            sidecarPath: ensuredAfter.sidecarPath,
+            oldSidecarPath,
+            pathChanges: [
+                {
+                    oldPath,
+                    newPath
+                },
+                ...(oldSidecarPath && ensuredAfter.sidecarPath
+                    ? [{
+                        oldPath: oldSidecarPath,
+                        newPath: ensuredAfter.sidecarPath
+                    }]
+                    : [])
+            ]
         };
     } catch (error) {
+        const rollbackErrors = [];
+
+        try {
+            if (
+                sidecarMoved &&
+                newSidecarPath &&
+                oldSidecarPath &&
+                fs.existsSync(newSidecarPath) &&
+                !fs.existsSync(oldSidecarPath)
+            ) {
+                renamePathInternal(newSidecarPath, oldSidecarPath);
+            }
+        } catch (rollbackError) {
+            rollbackErrors.push(rollbackError.message);
+        }
+
+        try {
+            if (
+                fileMoved &&
+                newPath &&
+                fs.existsSync(newPath) &&
+                !fs.existsSync(oldPath)
+            ) {
+                renamePathInternal(newPath, oldPath);
+            }
+
+            if (originalContent !== null && fs.existsSync(oldPath)) {
+                writeFileAtomic(oldPath, originalContent, { backup: false });
+            }
+        } catch (rollbackError) {
+            rollbackErrors.push(rollbackError.message);
+        }
+
         return {
             ok: false,
-            error: error.message
+            error: rollbackErrors.length
+                ? `${error.message} Geri alma tamamlanamadı: ${rollbackErrors.join(' | ')}`
+                : error.message,
+            rolledBack: rollbackErrors.length === 0
         };
     }
 }
@@ -1234,6 +1846,14 @@ function isPathInsideDirectory(childPath, parentPath) {
 }
 
 function moveKediItem(sourcePath, destinationFolderPath, options = {}) {
+    let movedPath = null;
+    let movedSidecarPath = null;
+    let originalSidecarPath = null;
+    let originalContent = null;
+    let sourceWasDirectory = false;
+    let fileMoved = false;
+    let sidecarMoved = false;
+
     try {
         if (!sourcePath || !fs.existsSync(sourcePath)) {
             return {
@@ -1271,6 +1891,7 @@ function moveKediItem(sourcePath, destinationFolderPath, options = {}) {
         }
 
         if (sourceStat.isDirectory()) {
+            sourceWasDirectory = true;
             if (
                 normalizePathForCompare(sourcePath) === normalizePathForCompare(destinationFolderPath) ||
                 isPathInsideDirectory(destinationFolderPath, sourcePath)
@@ -1282,7 +1903,9 @@ function moveKediItem(sourcePath, destinationFolderPath, options = {}) {
             }
 
             const newDirPath = getUniqueDirectoryPath(destinationFolderPath, path.basename(sourcePath));
-            fs.renameSync(sourcePath, newDirPath);
+            renamePathInternal(sourcePath, newDirPath);
+            movedPath = newDirPath;
+            fileMoved = true;
 
             return {
                 ok: true,
@@ -1290,6 +1913,10 @@ function moveKediItem(sourcePath, destinationFolderPath, options = {}) {
                 oldPath: sourcePath,
                 fullPath: newDirPath,
                 fileName: path.basename(newDirPath),
+                pathChanges: [{
+                    oldPath: sourcePath,
+                    newPath: newDirPath
+                }],
                 isDirectory: true,
                 isFile: false
             };
@@ -1306,6 +1933,7 @@ function moveKediItem(sourcePath, destinationFolderPath, options = {}) {
 
         const info = ensureKediFileMetadata(sourcePath);
         if (!info.ok) return info;
+        originalContent = fs.readFileSync(sourcePath, 'utf-8');
 
         const id = info.metadata.id;
         const title = sanitizeKediBaseName(info.metadata.title || getVisibleTitleFromFilePath(sourcePath, ext, id));
@@ -1313,6 +1941,7 @@ function moveKediItem(sourcePath, destinationFolderPath, options = {}) {
         const oldSidecarPath = info.sidecarPath && fs.existsSync(info.sidecarPath)
             ? info.sidecarPath
             : null;
+        originalSidecarPath = oldSidecarPath;
         const desiredSidecarName = getKediSidecarName(title, ext, id);
         const desiredSidecarPath = desiredSidecarName
             ? path.join(destinationFolderPath, desiredSidecarName)
@@ -1334,7 +1963,9 @@ function moveKediItem(sourcePath, destinationFolderPath, options = {}) {
         }
 
         if (normalizePathForCompare(sourcePath) !== normalizePathForCompare(newPath)) {
-            fs.renameSync(sourcePath, newPath);
+            renamePathInternal(sourcePath, newPath);
+            movedPath = newPath;
+            fileMoved = true;
         }
 
         if (
@@ -1342,7 +1973,9 @@ function moveKediItem(sourcePath, destinationFolderPath, options = {}) {
             desiredSidecarPath &&
             normalizePathForCompare(oldSidecarPath) !== normalizePathForCompare(desiredSidecarPath)
         ) {
-            fs.renameSync(oldSidecarPath, desiredSidecarPath);
+            renamePathInternal(oldSidecarPath, desiredSidecarPath);
+            movedSidecarPath = desiredSidecarPath;
+            sidecarMoved = true;
         }
 
         const data = readJsonFileSafe(newPath) || info.data;
@@ -1385,16 +2018,73 @@ function moveKediItem(sourcePath, destinationFolderPath, options = {}) {
             displayName: ensuredAfter.metadata.title,
             metadata: ensuredAfter.metadata,
             sidecarPath: ensuredAfter.sidecarPath,
+            oldSidecarPath,
             oldParentMapPath,
             parentMapPath: options.parentMapPath || null,
             oldParentMapEdges: cleanupResult?.edges || null,
+            pathChanges: [
+                {
+                    oldPath: sourcePath,
+                    newPath
+                },
+                ...(oldSidecarPath && ensuredAfter.sidecarPath
+                    ? [{
+                        oldPath: oldSidecarPath,
+                        newPath: ensuredAfter.sidecarPath
+                    }]
+                    : [])
+            ],
             isDirectory: false,
             isFile: true
         };
     } catch (error) {
+        const rollbackErrors = [];
+
+        try {
+            if (
+                sidecarMoved &&
+                movedSidecarPath &&
+                originalSidecarPath &&
+                fs.existsSync(movedSidecarPath) &&
+                !fs.existsSync(originalSidecarPath)
+            ) {
+                renamePathInternal(movedSidecarPath, originalSidecarPath);
+            }
+        } catch (rollbackError) {
+            rollbackErrors.push(rollbackError.message);
+        }
+
+        try {
+            if (
+                fileMoved &&
+                movedPath &&
+                fs.existsSync(movedPath) &&
+                !fs.existsSync(sourcePath)
+            ) {
+                renamePathInternal(movedPath, sourcePath);
+            }
+
+            if (
+                !sourceWasDirectory &&
+                originalContent !== null &&
+                fs.existsSync(sourcePath)
+            ) {
+                writeFileAtomic(
+                    sourcePath,
+                    originalContent,
+                    { backup: false }
+                );
+            }
+        } catch (rollbackError) {
+            rollbackErrors.push(rollbackError.message);
+        }
+
         return {
             ok: false,
-            error: error.message
+            error: rollbackErrors.length
+                ? `${error.message} Geri alma tamamlanamadı: ${rollbackErrors.join(' | ')}`
+                : error.message,
+            rolledBack: rollbackErrors.length === 0
         };
     }
 }
@@ -1432,7 +2122,8 @@ function stripPreviewText(value = '') {
     return String(value)
         .replace(/<[^>]+>/g, ' ')
         .replace(/\s+/g, ' ')
-        .trim();
+        .trim()
+        .slice(0, 600);
 }
 
 function getDefaultNodeLayout(index) {
@@ -1444,6 +2135,29 @@ function getDefaultNodeLayout(index) {
         y: 80 + row * 150,
         width: 220,
         height: 92
+    };
+}
+
+function finiteNumberInRange(value, fallback, min, max) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return fallback;
+    return Math.min(max, Math.max(min, number));
+}
+
+function normalizeKediNodeLayout(layout = {}, fallback = {}) {
+    return {
+        x: finiteNumberInRange(layout.x, fallback.x ?? 80, -1000000, 1000000),
+        y: finiteNumberInRange(layout.y, fallback.y ?? 80, -1000000, 1000000),
+        width: finiteNumberInRange(layout.width, fallback.width ?? 220, 150, 4000),
+        height: finiteNumberInRange(layout.height, fallback.height ?? 92, 74, 4000)
+    };
+}
+
+function normalizeKediMapCamera(camera = {}) {
+    return {
+        x: finiteNumberInRange(camera.x, 0, -1000000, 1000000),
+        y: finiteNumberInRange(camera.y, 0, -1000000, 1000000),
+        zoom: finiteNumberInRange(camera.zoom, 1, 0.1, 3)
     };
 }
 
@@ -1485,9 +2199,11 @@ function listNodesForMap(mapPath) {
         const entries = fs.readdirSync(sidecarPath, { withFileTypes: true });
         const nodeFiles = entries
             .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.node'))
+            .sort((a, b) => a.name.localeCompare(b.name, 'tr'))
             .map((entry) => path.join(sidecarPath, entry.name));
 
         let changed = false;
+        const seenNodeIds = new Set();
 
         const nodes = nodeFiles.map((nodePath, index) => {
             const nodeInfo = ensureKediFileMetadata(nodePath);
@@ -1497,6 +2213,14 @@ function listNodesForMap(mapPath) {
             }
 
             const nodeId = nodeInfo.metadata.id;
+
+            if (seenNodeIds.has(nodeId)) {
+                throw new Error(
+                    `Map içinde aynı KEDI kimliğine sahip iki node bulundu: ${nodeId}`
+                );
+            }
+
+            seenNodeIds.add(nodeId);
 
             let layout = mapInfo.data.map.nodes.find((item) => item.id === nodeId);
 
@@ -1510,6 +2234,22 @@ function listNodesForMap(mapPath) {
                 changed = true;
             }
 
+            const fallbackLayout = getDefaultNodeLayout(index);
+            const normalizedLayout = normalizeKediNodeLayout(
+                layout,
+                fallbackLayout
+            );
+
+            if (
+                layout.x !== normalizedLayout.x ||
+                layout.y !== normalizedLayout.y ||
+                layout.width !== normalizedLayout.width ||
+                layout.height !== normalizedLayout.height
+            ) {
+                Object.assign(layout, normalizedLayout);
+                changed = true;
+            }
+
             return {
                 id: nodeId,
                 fullPath: nodePath,
@@ -1517,16 +2257,30 @@ function listNodesForMap(mapPath) {
                 metadata: nodeInfo.metadata,
                 content: nodeInfo.data.content || '',
                 preview: stripPreviewText(nodeInfo.data.content || ''),
-                layout: {
-                    x: Number(layout.x ?? 80),
-                    y: Number(layout.y ?? 80),
-                    width: Number(layout.width ?? 220),
-                    height: Number(layout.height ?? 92)
-                }
+                layout: normalizedLayout
             };
         }).filter(Boolean);
 
+        const previousLayouts = mapInfo.data.map.nodes;
+        mapInfo.data.map.nodes = previousLayouts.filter((layout) => {
+            return layout?.id && seenNodeIds.has(layout.id);
+        });
+
+        if (mapInfo.data.map.nodes.length !== previousLayouts.length) {
+            changed = true;
+        }
+
+        const normalizedCamera = normalizeKediMapCamera(mapInfo.data.map.camera);
+        if (
+            JSON.stringify(normalizedCamera) !==
+            JSON.stringify(mapInfo.data.map.camera)
+        ) {
+            mapInfo.data.map.camera = normalizedCamera;
+            changed = true;
+        }
+
         if (changed) {
+            mapInfo.data.kedi.updatedAt = new Date().toISOString();
             writeKediDocument(mapPath, mapInfo.data);
         }
 
@@ -1567,20 +2321,31 @@ function saveMapNodeLayout(mapPath, nodeLayouts = []) {
             mapInfo.data.map.nodes = [];
         }
 
-        for (const incoming of nodeLayouts) {
-            if (!incoming || !incoming.id) continue;
+        const knownNodeIds = new Set(
+            mapInfo.data.map.nodes
+                .map((item) => item?.id)
+                .filter(Boolean)
+        );
 
-            let stored = mapInfo.data.map.nodes.find((item) => item.id === incoming.id);
+        for (const incoming of Array.isArray(nodeLayouts)
+            ? nodeLayouts.slice(0, 5000)
+            : []) {
+            const incomingId = normalizeKediId(incoming?.id, '.node');
+            if (!incomingId || !knownNodeIds.has(incomingId)) continue;
+
+            let stored = mapInfo.data.map.nodes.find(
+                (item) => item.id === incomingId
+            );
 
             if (!stored) {
-                stored = { id: incoming.id };
+                stored = { id: incomingId };
                 mapInfo.data.map.nodes.push(stored);
             }
 
-            stored.x = Number(incoming.x ?? stored.x ?? 80);
-            stored.y = Number(incoming.y ?? stored.y ?? 80);
-            stored.width = Number(incoming.width ?? stored.width ?? 220);
-            stored.height = Number(incoming.height ?? stored.height ?? 92);
+            Object.assign(
+                stored,
+                normalizeKediNodeLayout(incoming, stored)
+            );
         }
 
         mapInfo.data.kedi.updatedAt = new Date().toISOString();
@@ -1612,11 +2377,19 @@ function saveMapCamera(mapPath, camera = {}) {
             };
         }
 
-        mapInfo.data.map.camera = {
-            x: Number(camera.x ?? 0),
-            y: Number(camera.y ?? 0),
-            zoom: Number(camera.zoom ?? 1)
-        };
+        mapInfo.data.map.camera = normalizeKediMapCamera(camera);
+
+        if (Array.isArray(camera.collapsedHubs)) {
+            mapInfo.data.map.collapsedHubs = Array.from(
+                new Set(
+                    camera.collapsedHubs
+                        .map((value) => String(value || ''))
+                        .filter((value) => {
+                            return /^(?:node_[A-Za-z0-9_-]+)::(?:top|right|bottom|left)$/.test(value);
+                        })
+                )
+            ).slice(0, 10000);
+        }
 
         mapInfo.data.kedi.updatedAt = new Date().toISOString();
 
@@ -1712,6 +2485,15 @@ function getAllNodeDocsInMap(mapPath) {
         const nodeInfo = ensureKediFileMetadata(nodePath);
 
         if (nodeInfo.ok && nodeInfo.metadata?.id) {
+            if (nodesById.has(nodeInfo.metadata.id)) {
+                return {
+                    ok: false,
+                    error: `Map içinde aynı KEDI kimliğine sahip iki node bulundu: ${nodeInfo.metadata.id}`,
+                    mapInfo,
+                    nodesById
+                };
+            }
+
             nodesById.set(nodeInfo.metadata.id, nodeInfo);
         }
     }
@@ -1757,22 +2539,15 @@ function syncMapConnectionMetadata(mapPath) {
         resetNodeConnectionTypes(nodeInfo.data.kedi);
     }
 
-    const cleanEdges = [];
+    const normalizedEdges = normalizeKediMapEdges(
+        mapInfo.data.map.edges,
+        new Set(nodesById.keys())
+    );
+    const cleanEdges = normalizedEdges.edges;
 
-    for (const rawEdge of mapInfo.data.map.edges) {
-        const edge = normalizeMapEdge(rawEdge);
-
-        if (!edge) continue;
-
+    for (const edge of cleanEdges) {
         const sourceInfo = nodesById.get(edge.sourceId);
         const targetInfo = nodesById.get(edge.targetId);
-
-        // Eğer node dosyası yoksa bu edge artık ölüdür.
-        if (!sourceInfo || !targetInfo) {
-            continue;
-        }
-
-        cleanEdges.push(edge);
 
         addUniqueConnectionType(
             sourceInfo.data.kedi,
@@ -1791,13 +2566,16 @@ function syncMapConnectionMetadata(mapPath) {
 
     const newEdgesJson = JSON.stringify(cleanEdges);
 
+    const documentChanges = [];
+
     if (oldEdgesJson !== newEdgesJson) {
         mapInfo.data.kedi.updatedAt = new Date().toISOString();
-        writeKediDocument(mapPath, mapInfo.data);
+        documentChanges.push({
+            filePath: mapPath,
+            data: mapInfo.data
+        });
     }
 
-    // Kritik düzeltme:
-    // Node dosyalarını sadece connectionTypes gerçekten değiştiyse yaz.
     for (const nodeInfo of nodesById.values()) {
         const oldConnectionTypesJson = oldConnectionTypesByPath.get(nodeInfo.filePath);
         const newConnectionTypesJson = JSON.stringify(
@@ -1806,14 +2584,20 @@ function syncMapConnectionMetadata(mapPath) {
 
         if (oldConnectionTypesJson !== newConnectionTypesJson) {
             nodeInfo.data.kedi.updatedAt = new Date().toISOString();
-            writeKediDocument(nodeInfo.filePath, nodeInfo.data);
+            documentChanges.push({
+                filePath: nodeInfo.filePath,
+                data: nodeInfo.data
+            });
         }
     }
+
+    writeKediDocumentsTransaction(documentChanges);
 
     return {
         ok: true,
         edges: cleanEdges,
-        nodesById
+        nodesById,
+        warnings: normalizedEdges.warnings
     };
 }
 
@@ -1877,12 +2661,11 @@ function upsertMapConnection(mapPath, edge) {
             };
         }
 
-        let normalizedEdge = normalizeMapEdge(edge);
+        const originalMapContent = fs.readFileSync(mapPath, 'utf-8');
+        const nodeDocsResult = getAllNodeDocsInMap(mapPath);
+        if (!nodeDocsResult.ok) return nodeDocsResult;
 
-        normalizedEdge = enforceSingleParentForTargetInMap(
-         normalizedEdge,
-         mapInfo.data.map.edges
-        );
+        let normalizedEdge = normalizeMapEdge(edge);
 
         if (!normalizedEdge) {
             return {
@@ -1891,18 +2674,75 @@ function upsertMapConnection(mapPath, edge) {
             };
         }
 
-        // İki node arasında tek aktif bağlantı olsun.
-        // Aynı iki node arasında eski bağlantı varsa kaldırıyoruz.
+        if (
+            !nodeDocsResult.nodesById.has(normalizedEdge.sourceId) ||
+            !nodeDocsResult.nodesById.has(normalizedEdge.targetId)
+        ) {
+            return {
+                ok: false,
+                error: 'Bağlantının source veya target node dosyası bulunamadı.'
+            };
+        }
+
+        const normalizedExisting = normalizeKediMapEdges(
+            mapInfo.data.map.edges,
+            new Set(nodeDocsResult.nodesById.keys())
+        ).edges;
+
+        if (isHierarchyEdge(normalizedEdge)) {
+            const existingParent = normalizedExisting.find((existing) => {
+                return (
+                    isHierarchyEdge(existing) &&
+                    existing.targetId === normalizedEdge.targetId &&
+                    existing.sourceId !== normalizedEdge.sourceId
+                );
+            });
+
+            if (existingParent && edge.confirmSecondParentAsStream !== true) {
+                return {
+                    ok: false,
+                    code: 'SECOND_PARENT_CONFIRM_REQUIRED',
+                    requiresConfirmation: true,
+                    error: 'Hedef node zaten bir parent bağlantısına sahip.',
+                    suggestedEdge: convertEdgeToStream(normalizedEdge)
+                };
+            }
+
+            if (existingParent) {
+                normalizedEdge = convertEdgeToStream(normalizedEdge);
+            } else {
+                const parentByChild = new Map();
+                normalizedExisting
+                    .filter(isHierarchyEdge)
+                    .forEach((existing) => {
+                        parentByChild.set(
+                            existing.targetId,
+                            existing.sourceId
+                        );
+                    });
+
+                if (
+                    wouldCreateKediHierarchyCycle(
+                        parentByChild,
+                        normalizedEdge.sourceId,
+                        normalizedEdge.targetId
+                    )
+                ) {
+                    return {
+                        ok: false,
+                        code: 'HIERARCHY_CYCLE',
+                        error: 'Bu bağlantı hiyerarşide döngü oluşturur.'
+                    };
+                }
+            }
+        }
+
+        const semanticKey = getKediEdgeSemanticKey(normalizedEdge);
         mapInfo.data.map.edges = mapInfo.data.map.edges.filter((existing) => {
-            const sameDirection =
-                existing.sourceId === normalizedEdge.sourceId &&
-                existing.targetId === normalizedEdge.targetId;
-
-            const reverseDirection =
-                existing.sourceId === normalizedEdge.targetId &&
-                existing.targetId === normalizedEdge.sourceId;
-
-            return !(sameDirection || reverseDirection);
+            return (
+                existing.id !== normalizedEdge.id &&
+                getKediEdgeSemanticKey(existing) !== semanticKey
+            );
         });
 
         mapInfo.data.map.edges.push(normalizedEdge);
@@ -1913,6 +2753,11 @@ function upsertMapConnection(mapPath, edge) {
         const syncResult = syncMapConnectionMetadata(mapPath);
 
         if (!syncResult.ok) {
+            writeFileAtomic(
+                mapPath,
+                originalMapContent,
+                { backup: false }
+            );
             return syncResult;
         }
 
@@ -1944,6 +2789,7 @@ function deleteMapConnection(mapPath, edgeId) {
             };
         }
 
+        const originalMapContent = fs.readFileSync(mapPath, 'utf-8');
         const beforeCount = mapInfo.data.map.edges.length;
 
         mapInfo.data.map.edges = mapInfo.data.map.edges.filter((edge) => {
@@ -1968,12 +2814,110 @@ function deleteMapConnection(mapPath, edgeId) {
         const syncResult = syncMapConnectionMetadata(mapPath);
 
         if (!syncResult.ok) {
+            writeFileAtomic(
+                mapPath,
+                originalMapContent,
+                { backup: false }
+            );
             return syncResult;
         }
 
         return {
             ok: true,
             deletedEdgeId: edgeId,
+            edges: syncResult.edges
+        };
+    } catch (error) {
+        return {
+            ok: false,
+            error: error.message
+        };
+    }
+}
+
+function reparentMapNode(mapPath, childId, parentId) {
+    try {
+        const safeChildId = normalizeKediId(childId, '.node');
+        const safeParentId = normalizeKediId(parentId, '.node');
+
+        if (!safeChildId || !safeParentId || safeChildId === safeParentId) {
+            return {
+                ok: false,
+                error: 'Geçersiz parent veya child kimliği.'
+            };
+        }
+
+        const nodeDocsResult = getAllNodeDocsInMap(mapPath);
+        if (!nodeDocsResult.ok) return nodeDocsResult;
+
+        if (
+            !nodeDocsResult.nodesById.has(safeChildId) ||
+            !nodeDocsResult.nodesById.has(safeParentId)
+        ) {
+            return {
+                ok: false,
+                error: 'Parent veya child node map içinde bulunamadı.'
+            };
+        }
+
+        const mapInfo = nodeDocsResult.mapInfo;
+        const originalMapContent = fs.readFileSync(mapPath, 'utf-8');
+        const existingEdges = normalizeKediMapEdges(
+            mapInfo.data.map?.edges || [],
+            new Set(nodeDocsResult.nodesById.keys())
+        ).edges;
+        const withoutOldParents = existingEdges.filter((edge) => {
+            return !(isHierarchyEdge(edge) && edge.targetId === safeChildId);
+        });
+        const parentByChild = new Map();
+
+        withoutOldParents
+            .filter(isHierarchyEdge)
+            .forEach((edge) => {
+                parentByChild.set(edge.targetId, edge.sourceId);
+            });
+
+        if (
+            wouldCreateKediHierarchyCycle(
+                parentByChild,
+                safeParentId,
+                safeChildId
+            )
+        ) {
+            return {
+                ok: false,
+                code: 'HIERARCHY_CYCLE',
+                error: 'Bu taşıma hiyerarşide döngü oluşturur.'
+            };
+        }
+
+        const replacement = normalizeMapEdge({
+            sourceId: safeParentId,
+            targetId: safeChildId,
+            sourcePort: 'bottom',
+            targetPort: 'top',
+            type: 'down-hub',
+            sourceRole: 'down-hub',
+            targetRole: 'up-hub'
+        });
+
+        mapInfo.data.map.edges = [...withoutOldParents, replacement];
+        mapInfo.data.kedi.updatedAt = new Date().toISOString();
+        writeKediDocument(mapPath, mapInfo.data);
+
+        const syncResult = syncMapConnectionMetadata(mapPath);
+        if (!syncResult.ok) {
+            writeFileAtomic(
+                mapPath,
+                originalMapContent,
+                { backup: false }
+            );
+            return syncResult;
+        }
+
+        return {
+            ok: true,
+            edge: replacement,
             edges: syncResult.edges
         };
     } catch (error) {
@@ -2021,42 +2965,6 @@ function findParentMapPathForNode(nodePath, nodeInfo = null) {
     return null;
 }
 
-function findParentMapPathForNode(nodePath, nodeInfo = null) {
-    const nodeDir = path.dirname(nodePath);
-    const possibleMapDir = path.dirname(nodeDir);
-    const sidecarFolderName = path.basename(nodeDir);
-
-    if (!fs.existsSync(possibleMapDir)) {
-        return null;
-    }
-
-    const entries = fs.readdirSync(possibleMapDir, { withFileTypes: true });
-
-    for (const entry of entries) {
-        if (!entry.isFile() || !entry.name.toLowerCase().endsWith('.map')) {
-            continue;
-        }
-
-        const mapPath = path.join(possibleMapDir, entry.name);
-        const mapInfo = ensureKediFileMetadata(mapPath);
-
-        if (!mapInfo.ok) continue;
-
-        const sameSidecar = mapInfo.metadata.sidecar === sidecarFolderName;
-
-        const sameParentId =
-            nodeInfo?.metadata?.parentMap &&
-            nodeInfo.metadata.parentMap !== 'none' &&
-            mapInfo.metadata.id === nodeInfo.metadata.parentMap;
-
-        if (sameSidecar || sameParentId) {
-            return mapPath;
-        }
-    }
-
-    return null;
-}
-
 function cleanupDeletedNodeFromParentMap(parentMapPath, deletedNodeId, deletionTransaction = null) {
     if (!parentMapPath || !deletedNodeId || !fs.existsSync(parentMapPath)) {
         return {
@@ -2090,12 +2998,21 @@ function cleanupDeletedNodeFromParentMap(parentMapPath, deletedNodeId, deletionT
         return edge.sourceId !== deletedNodeId && edge.targetId !== deletedNodeId;
     });
 
+    const pendingDocumentChanges = [];
     mapInfo.data.kedi.updatedAt = new Date().toISOString();
-    writeKediDeletionMetadata(
-        deletionTransaction,
-        parentMapPath,
-        mapInfo.data
-    );
+
+    if (deletionTransaction) {
+        writeKediDeletionMetadata(
+            deletionTransaction,
+            parentMapPath,
+            mapInfo.data
+        );
+    } else {
+        pendingDocumentChanges.push({
+            filePath: parentMapPath,
+            data: mapInfo.data
+        });
+    }
 
     // Kalan node dosyalarının connectionTypes alanından silinen node id'sini düş.
     const sidecarPath = mapInfo.sidecarPath;
@@ -2121,13 +3038,25 @@ function cleanupDeletedNodeFromParentMap(parentMapPath, deletedNodeId, deletionT
 
             if (before !== after) {
                 nodeInfo.data.kedi.updatedAt = new Date().toISOString();
-                writeKediDeletionMetadata(
-                    deletionTransaction,
-                    nodePath,
-                    nodeInfo.data
-                );
+
+                if (deletionTransaction) {
+                    writeKediDeletionMetadata(
+                        deletionTransaction,
+                        nodePath,
+                        nodeInfo.data
+                    );
+                } else {
+                    pendingDocumentChanges.push({
+                        filePath: nodePath,
+                        data: nodeInfo.data
+                    });
+                }
             }
         }
+    }
+
+    if (!deletionTransaction) {
+        writeKediDocumentsTransaction(pendingDocumentChanges);
     }
 
     return {
@@ -2168,6 +3097,7 @@ function createKediDeletionTransaction(targetPath) {
     const directoryPath = fs.mkdtempSync(
         path.join(path.dirname(targetPath), '.kedi-delete-')
     );
+    markInternalFileChange(directoryPath);
 
     return {
         directoryPath,
@@ -2190,7 +3120,7 @@ function stageKediDeletionPath(transaction, originalPath) {
         throw new Error(`Geçici silme hedefi zaten var: ${stagedPath}`);
     }
 
-    fs.renameSync(originalPath, stagedPath);
+    renamePathInternal(originalPath, stagedPath);
     transaction.stagedPaths.push({
         originalPath,
         stagedPath
@@ -2239,7 +3169,7 @@ function rollbackKediDeletionTransaction(transaction) {
                 throw new Error('Orijinal yol yeniden oluşturulmuş.');
             }
 
-            fs.renameSync(staged.stagedPath, staged.originalPath);
+            renamePathInternal(staged.stagedPath, staged.originalPath);
         } catch (error) {
             rollbackErrors.push(
                 `${staged.originalPath} geri taşınamadı: ${error.message}`
@@ -2300,6 +3230,19 @@ async function deleteKediFile(targetPath) {
         const parentMapPath = ext === '.node'
             ? findParentMapPathForNode(targetPath, info)
             : null;
+        const childNodePaths = [];
+
+        if (ext === '.map' && sidecarPath && fs.existsSync(sidecarPath)) {
+            const entries = fs.readdirSync(sidecarPath, { withFileTypes: true });
+            for (const entry of entries) {
+                if (
+                    entry.isFile() &&
+                    entry.name.toLowerCase().endsWith('.node')
+                ) {
+                    childNodePaths.push(path.join(sidecarPath, entry.name));
+                }
+            }
+        }
 
         transaction = createKediDeletionTransaction(targetPath);
         stageKediDeletionPath(transaction, targetPath);
@@ -2313,6 +3256,9 @@ async function deleteKediFile(targetPath) {
                 type: 'map',
                 deletedPath: targetPath,
                 deletedMapId: info.metadata.id,
+                deletedSidecarPath: sidecarPath,
+                childNodePaths,
+                childNodeCount: childNodePaths.length,
                 movedToTrash: true
             };
         }
@@ -2353,6 +3299,51 @@ function deleteNodeFromMap(nodePath) {
     return deleteKediFile(nodePath);
 }
 
+async function deleteProjectPath(targetPath) {
+    if (!targetPath || !fs.existsSync(targetPath)) {
+        return {
+            ok: false,
+            error: 'Silinecek yol bulunamadı.'
+        };
+    }
+
+    await shell.trashItem(path.resolve(targetPath));
+
+    return {
+        ok: true,
+        deletedPath: targetPath,
+        movedToTrash: true
+    };
+}
+
+function isKediManagedDiaryFolder(folderPath) {
+    if (!folderPath || path.basename(folderPath).toLowerCase() !== 'diary') {
+        return false;
+    }
+
+    if (fs.existsSync(path.join(folderPath, '.kedi-diary'))) {
+        return true;
+    }
+
+    try {
+        const entries = fs.readdirSync(folderPath, { withFileTypes: true });
+
+        return entries.some((entry) => {
+            if (!entry.isFile() || !entry.name.toLowerCase().endsWith('.node')) {
+                return false;
+            }
+
+            const result = readJsonFileResult(path.join(folderPath, entry.name));
+            return Boolean(
+                result.ok &&
+                normalizeKediDiaryIsoDate(result.data?.kedi?.diaryDate)
+            );
+        });
+    } catch {
+        return false;
+    }
+}
+
 function safeListFolder(folderPath) {
     try {
         if (!folderPath || !fs.existsSync(folderPath)) {
@@ -2368,50 +3359,65 @@ function safeListFolder(folderPath) {
 
 
         const items = entries
-    .filter((entry) => {
-        if (isKediManagedSidecarFolder(entry.name)) return false;
+            .filter((entry) => {
+                if (isKediManagedSidecarFolder(entry.name)) return false;
 
-        if (
-            entry.isDirectory() &&
-            entry.name.startsWith('.kedi-delete-')
-        ) {
-            return false;
-        }
+                if (
+                    entry.isDirectory() &&
+                    (
+                        entry.name.startsWith('.kedi-delete-') ||
+                        entry.name.startsWith('.kedi-transaction-')
+                    )
+                ) {
+                    return false;
+                }
 
-        if (entry.isDirectory() && entry.name.toLowerCase() === 'diary') return false;
+                const fullPath = path.join(folderPath, entry.name);
+                if (entry.isDirectory() && isKediManagedDiaryFolder(fullPath)) {
+                    return false;
+                }
 
-        if (entry.isDirectory()) return true;
+                if (entry.isDirectory()) return true;
+                return isKediVisibleFile(entry.name);
+            })
+            .map((entry) => {
+                const fullPath = path.join(folderPath, entry.name);
+                let metadata = null;
+                let sidecarPath = null;
+                let itemError = null;
+                let recoveryPath = null;
 
-        return isKediVisibleFile(entry.name);
-    })
+                if (entry.isFile() && isKediVisibleFile(entry.name)) {
+                    try {
+                        const inspected = ensureKediFileMetadata(fullPath, {
+                            persist: false,
+                            ensureSidecar: false
+                        });
 
-    .map((entry) => {
-    
-        const fullPath = path.join(folderPath, entry.name);
+                        if (inspected?.ok) {
+                            metadata = inspected.metadata;
+                            sidecarPath = inspected.sidecarPath;
+                        } else {
+                            itemError = inspected?.error || 'Dosya okunamadı.';
+                            recoveryPath = inspected?.backupPath || null;
+                        }
+                    } catch (error) {
+                        itemError = error.message;
+                    }
+                }
 
-        let metadata = null;
-        let sidecarPath = null;
-
-        if (entry.isFile() && isKediVisibleFile(entry.name)) {
-        const ensured = ensureKediFileMetadata(fullPath);
-
-        if (ensured && ensured.ok) {
-            metadata = ensured.metadata;
-            sidecarPath = ensured.sidecarPath;
-        }
-        }
-
-        return {
-        name: entry.name,
-        fullPath,
-        type: entry.isDirectory() ? 'folder' : 'file',
-        isDirectory: entry.isDirectory(),
-        isFile: entry.isFile(),
-        metadata,
-        sidecarPath
-        };
-    
-    });
+                return {
+                    name: entry.name,
+                    fullPath,
+                    type: entry.isDirectory() ? 'folder' : 'file',
+                    isDirectory: entry.isDirectory(),
+                    isFile: entry.isFile(),
+                    metadata,
+                    sidecarPath,
+                    error: itemError,
+                    recoveryPath
+                };
+            });
 
         items.sort((a, b) => {
             if (a.type !== b.type) {
@@ -2435,35 +3441,139 @@ function safeListFolder(folderPath) {
 }
 
 let activeProjectFolder = null;
+let activeProjectLockPath = null;
+const kediInstanceId = crypto.randomUUID();
 
-let projectWatcher = null;
+const projectWatchers = new Map();
 let projectWatchTimer = null;
+let projectWatcherRescanTimer = null;
+const pendingProjectChangedPaths = new Set();
 
 function stopProjectWatcher() {
-    if (projectWatcher) {
+    for (const watcher of projectWatchers.values()) {
         try {
-            projectWatcher.close();
+            watcher.close();
         } catch (error) {
             console.warn('[KEDI] Watcher kapatılamadı:', error.message);
         }
     }
 
-    projectWatcher = null;
+    projectWatchers.clear();
     clearTimeout(projectWatchTimer);
     projectWatchTimer = null;
+    clearTimeout(projectWatcherRescanTimer);
+    projectWatcherRescanTimer = null;
+    pendingProjectChangedPaths.clear();
 }
 
-function notifyProjectChanged(reason = 'changed') {
+function notifyProjectChanged(reason = 'changed', changedPath = null) {
     if (!mainWindow || mainWindow.isDestroyed()) return;
+
+    if (changedPath) {
+        pendingProjectChangedPaths.add(path.resolve(changedPath));
+    }
 
     clearTimeout(projectWatchTimer);
 
     projectWatchTimer = setTimeout(() => {
         mainWindow.webContents.send('project:filesystem-changed', {
             reason,
-            folderPath: activeProjectFolder
+            folderPath: activeProjectFolder,
+            changedPaths: Array.from(pendingProjectChangedPaths)
         });
+        pendingProjectChangedPaths.clear();
     }, 250);
+}
+
+function shouldWatchProjectDirectory(directoryPath) {
+    const name = path.basename(directoryPath).toLowerCase();
+    return !['.git', 'node_modules', 'dist', 'coverage'].includes(name);
+}
+
+function collectProjectDirectories(rootPath) {
+    const directories = [];
+    const queue = [rootPath];
+
+    while (queue.length) {
+        const directoryPath = queue.shift();
+        if (!shouldWatchProjectDirectory(directoryPath)) continue;
+        directories.push(directoryPath);
+
+        let entries = [];
+        try {
+            entries = fs.readdirSync(directoryPath, { withFileTypes: true });
+        } catch {
+            continue;
+        }
+
+        for (const entry of entries) {
+            if (!entry.isDirectory() || entry.isSymbolicLink()) continue;
+            queue.push(path.join(directoryPath, entry.name));
+        }
+    }
+
+    return directories;
+}
+
+function syncProjectWatchers(folderPath) {
+    if (!folderPath || !fs.existsSync(folderPath)) return;
+
+    const wantedDirectories = new Set(
+        collectProjectDirectories(folderPath).map(normalizePathForCompare)
+    );
+
+    for (const [directoryKey, watcher] of projectWatchers) {
+        if (!wantedDirectories.has(directoryKey)) {
+            try {
+                watcher.close();
+            } catch {}
+            projectWatchers.delete(directoryKey);
+        }
+    }
+
+    for (const directoryPath of collectProjectDirectories(folderPath)) {
+        const directoryKey = normalizePathForCompare(directoryPath);
+        if (projectWatchers.has(directoryKey)) continue;
+
+        try {
+            const watcher = fs.watch(
+                directoryPath,
+                { recursive: false },
+                (eventType, fileName) => {
+                    const changedPath = fileName
+                        ? path.join(directoryPath, String(fileName))
+                        : directoryPath;
+                    if (!isRecentInternalFileChange(changedPath)) {
+                        notifyProjectChanged(
+                            eventType || 'filesystem',
+                            changedPath
+                        );
+                    }
+
+                    clearTimeout(projectWatcherRescanTimer);
+                    projectWatcherRescanTimer = setTimeout(() => {
+                        if (activeProjectFolder) {
+                            syncProjectWatchers(activeProjectFolder);
+                        }
+                    }, 350);
+                }
+            );
+
+            watcher.on('error', (error) => {
+                console.warn(
+                    `[KEDI] Watcher hatası (${directoryPath}):`,
+                    error.message
+                );
+            });
+
+            projectWatchers.set(directoryKey, watcher);
+        } catch (error) {
+            console.warn(
+                `[KEDI] Klasör izlenemedi (${directoryPath}):`,
+                error.message
+            );
+        }
+    }
 }
 
 function startProjectWatcher(folderPath) {
@@ -2473,19 +3583,8 @@ function startProjectWatcher(folderPath) {
         return;
     }
 
-    try {
-        projectWatcher = fs.watch(
-            folderPath,
-            { recursive: process.platform === 'win32' },
-            () => {
-                notifyProjectChanged('filesystem');
-            }
-        );
-
-        console.log('[KEDI] Proje klasörü izleniyor:', folderPath);
-    } catch (error) {
-        console.warn('[KEDI] Proje klasörü izlenemedi:', error.message);
-    }
+    syncProjectWatchers(folderPath);
+    console.log('[KEDI] Proje klasörü izleniyor:', folderPath);
 }
 
 function folderExistsAndIsDirectory(folderPath) {
@@ -2503,10 +3602,128 @@ function folderExistsAndIsDirectory(folderPath) {
 function normalizePathForCompare(targetPath) {
     if (!targetPath) return '';
 
-    return path
+    const normalized = path
         .resolve(targetPath)
-        .replace(/[\\/]+/g, '/')
-        .toLowerCase();
+        .replace(/[\\/]+/g, '/');
+
+    return process.platform === 'win32'
+        ? normalized.toLowerCase()
+        : normalized;
+}
+
+function isSameOrInsidePath(candidatePath, parentPath) {
+    const candidate = normalizePathForCompare(candidatePath);
+    const parent = normalizePathForCompare(parentPath);
+
+    if (!candidate || !parent) return false;
+    if (candidate === parent) return true;
+    return candidate.startsWith(`${parent}/`);
+}
+
+function assertNoSymbolicLinksBetween(rootPath, targetPath) {
+    const relative = path.relative(rootPath, targetPath);
+    if (!relative || relative === '.') return;
+
+    let current = rootPath;
+
+    for (const segment of relative.split(path.sep)) {
+        current = path.join(current, segment);
+        if (!fs.existsSync(current)) break;
+
+        const stat = fs.lstatSync(current);
+        if (stat.isSymbolicLink()) {
+            throw new Error('Proje işlemlerinde symlink/junction kullanılamaz.');
+        }
+    }
+}
+
+function assertProjectPath(inputPath, options = {}) {
+    if (!activeProjectFolder) {
+        throw new Error('Aktif proje klasörü yok.');
+    }
+
+    if (typeof inputPath !== 'string' || !inputPath.trim()) {
+        throw new Error('Geçerli bir proje yolu gerekli.');
+    }
+
+    const projectRoot = fs.realpathSync.native(activeProjectFolder);
+    const resolvedPath = path.resolve(inputPath);
+
+    if (!isSameOrInsidePath(resolvedPath, projectRoot)) {
+        throw new Error('İstenen yol aktif proje klasörünün dışında.');
+    }
+
+    assertNoSymbolicLinksBetween(projectRoot, resolvedPath);
+
+    const mustExist = options.mustExist !== false;
+    if (mustExist && !fs.existsSync(resolvedPath)) {
+        throw new Error('İstenen proje yolu bulunamadı.');
+    }
+
+    if (fs.existsSync(resolvedPath)) {
+        const realPath = fs.realpathSync.native(resolvedPath);
+        if (!isSameOrInsidePath(realPath, projectRoot)) {
+            throw new Error('Yol bir bağlantı üzerinden proje dışına çıkıyor.');
+        }
+
+        const stat = fs.statSync(realPath);
+        if (options.type === 'file' && !stat.isFile()) {
+            throw new Error('İstenen yol bir dosya değil.');
+        }
+        if (options.type === 'directory' && !stat.isDirectory()) {
+            throw new Error('İstenen yol bir klasör değil.');
+        }
+    } else {
+        let ancestorPath = path.dirname(resolvedPath);
+
+        while (
+            !fs.existsSync(ancestorPath) &&
+            isSameOrInsidePath(ancestorPath, projectRoot) &&
+            ancestorPath !== path.dirname(ancestorPath)
+        ) {
+            ancestorPath = path.dirname(ancestorPath);
+        }
+
+        if (!fs.existsSync(ancestorPath)) {
+            throw new Error('Hedef yolun üst klasörü bulunamadı.');
+        }
+
+        const realAncestor = fs.realpathSync.native(ancestorPath);
+        if (!isSameOrInsidePath(realAncestor, projectRoot)) {
+            throw new Error('Hedef yol bir bağlantı üzerinden proje dışına çıkıyor.');
+        }
+    }
+
+    if (Array.isArray(options.extensions)) {
+        const ext = getKediFileExt(resolvedPath);
+        if (!options.extensions.includes(ext)) {
+            throw new Error('Bu işlem için geçersiz dosya türü.');
+        }
+    }
+
+    return resolvedPath;
+}
+
+function projectOperation(operation) {
+    try {
+        return operation();
+    } catch (error) {
+        return {
+            ok: false,
+            error: error.message
+        };
+    }
+}
+
+async function asyncProjectOperation(operation) {
+    try {
+        return await operation();
+    } catch (error) {
+        return {
+            ok: false,
+            error: error.message
+        };
+    }
 }
 
 function hideFileOnWindows(filePath) {
@@ -2520,21 +3737,73 @@ function hideFileOnWindows(filePath) {
     }
 }
 
-function ensureProjectLockMarker(folderPath) {
-    try {
-        const lockPath = path.join(folderPath, '.kedi.lock');
+function isProcessAlive(pid) {
+    if (!Number.isInteger(pid) || pid <= 0) return false;
 
-        if (!fs.existsSync(lockPath)) {
-            fs.writeFileSync(
-                lockPath,
-                'KEDI bu klasörü aktif proje klasörü olarak kullanıyor.\nUygulama açıkken klasörü silmeyin.\n',
-                'utf-8'
-            );
+    try {
+        process.kill(pid, 0);
+        return true;
+    } catch (error) {
+        return error.code === 'EPERM';
+    }
+}
+
+function acquireProjectLock(folderPath) {
+    const lockPath = path.join(folderPath, '.kedi.lock');
+
+    try {
+        if (fs.existsSync(lockPath)) {
+            let existingLock = null;
+
+            try {
+                existingLock = JSON.parse(
+                    fs.readFileSync(lockPath, 'utf-8')
+                );
+            } catch {}
+
+            if (
+                existingLock?.instanceId === kediInstanceId &&
+                existingLock?.pid === process.pid
+            ) {
+                return {
+                    ok: true,
+                    lockPath
+                };
+            }
+
+            if (existingLock?.pid && isProcessAlive(Number(existingLock.pid))) {
+                return {
+                    ok: false,
+                    error: `Bu proje başka bir KEDI süreci tarafından kullanılıyor (PID ${existingLock.pid}).`
+                };
+            }
+
+            fs.unlinkSync(lockPath);
         }
 
+        const descriptor = fs.openSync(lockPath, 'wx', 0o600);
+        fs.writeFileSync(
+            descriptor,
+            JSON.stringify({
+                pid: process.pid,
+                instanceId: kediInstanceId,
+                openedAt: new Date().toISOString()
+            }, null, 2),
+            'utf-8'
+        );
+        fs.fsyncSync(descriptor);
+        fs.closeSync(descriptor);
         hideFileOnWindows(lockPath);
+
+        return {
+            ok: true,
+            lockPath
+        };
     } catch (error) {
-        console.warn('[KEDI] Lock marker oluşturulamadı:', error.message);
+        return {
+            ok: false,
+            error: `Proje kilidi alınamadı: ${error.message}`
+        };
     }
 }
 
@@ -2544,20 +3813,42 @@ function lockProjectFolder(folderPath) {
             return false;
         }
 
-        const stat = fs.statSync(folderPath);
+        const realFolderPath = fs.realpathSync.native(folderPath);
+        const stat = fs.statSync(realFolderPath);
         if (!stat.isDirectory()) {
             return false;
         }
 
-        // KRİTİK KISIM:
-        // Windows, çalışan process'in current working directory'sini silmeye izin vermez.
-        process.chdir(folderPath);
+        if (
+            activeProjectFolder &&
+            normalizePathForCompare(activeProjectFolder) ===
+                normalizePathForCompare(realFolderPath)
+        ) {
+            return true;
+        }
 
-        activeProjectFolder = folderPath;
-        ensureProjectLockMarker(folderPath);
-        startProjectWatcher(folderPath);
+        const lockResult = acquireProjectLock(realFolderPath);
+        if (!lockResult.ok) {
+            console.error('[KEDI]', lockResult.error);
+            return false;
+        }
 
-        console.log('[KEDI] Proje klasörü kilitlendi:', folderPath);
+        const oldLockPath = activeProjectLockPath;
+
+        activeProjectFolder = realFolderPath;
+        activeProjectLockPath = lockResult.lockPath;
+        startProjectWatcher(realFolderPath);
+
+        if (oldLockPath && oldLockPath !== activeProjectLockPath) {
+            try {
+                const oldLock = JSON.parse(fs.readFileSync(oldLockPath, 'utf-8'));
+                if (oldLock.instanceId === kediInstanceId) {
+                    fs.unlinkSync(oldLockPath);
+                }
+            } catch {}
+        }
+
+        console.log('[KEDI] Proje klasörü kilitlendi:', realFolderPath);
         return true;
     } catch (error) {
         console.error('[KEDI] Proje klasörü kilitlenemedi:', error);
@@ -2568,13 +3859,22 @@ function lockProjectFolder(folderPath) {
 function unlockProjectFolder() {
     stopProjectWatcher();
 
-    try {
-        process.chdir(app.getPath('home'));
-    } catch (error) {
-        console.warn('[KEDI] Proje klasörü kilidi bırakılırken hata:', error.message);
+    if (activeProjectLockPath && fs.existsSync(activeProjectLockPath)) {
+        try {
+            const lockData = JSON.parse(
+                fs.readFileSync(activeProjectLockPath, 'utf-8')
+            );
+
+            if (lockData.instanceId === kediInstanceId) {
+                fs.unlinkSync(activeProjectLockPath);
+            }
+        } catch (error) {
+            console.warn('[KEDI] Proje kilidi kaldırılamadı:', error.message);
+        }
     }
 
     activeProjectFolder = null;
+    activeProjectLockPath = null;
 }
 
 function createWindow() {
@@ -2599,16 +3899,31 @@ function createWindow() {
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
-            sandbox: false,
+            sandbox: true,
             preload: path.join(__dirname, 'preload.js')
         }
     });
 
     Menu.setApplicationMenu(null);
 
+    mainWindow.webContents.setWindowOpenHandler(() => {
+        return { action: 'deny' };
+    });
+
+    mainWindow.webContents.on('will-navigate', (event) => {
+        event.preventDefault();
+    });
+
+    mainWindow.webContents.session.setPermissionCheckHandler(() => false);
+    mainWindow.webContents.session.setPermissionRequestHandler(
+        (_webContents, _permission, callback) => callback(false)
+    );
+
     mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
-    mainWindow.webContents.openDevTools({ mode: 'detach' });
+    if (!app.isPackaged && process.env.KEDI_OPEN_DEVTOOLS === '1') {
+        mainWindow.webContents.openDevTools({ mode: 'detach' });
+    }
 
     mainWindow.on('maximize', () => {
         saveWindowState();
@@ -2636,8 +3951,28 @@ function createWindow() {
         scheduleWindowStateSave();
     });
 
-    mainWindow.on('close', () => {
+    mainWindow.on('close', (event) => {
         saveWindowState();
+
+        if (allowWindowClose) return;
+
+        event.preventDefault();
+        if (closeRequestInFlight) return;
+
+        closeRequestInFlight = true;
+        mainWindow.webContents.send('window:request-close');
+
+        clearTimeout(closeRequestTimer);
+        closeRequestTimer = setTimeout(() => {
+            closeRequestInFlight = false;
+            closeRequestTimer = null;
+            dialog.showMessageBox(mainWindow, {
+                type: 'warning',
+                title: 'KEDI kapatılamadı',
+                message: 'Bekleyen kayıtların tamamlandığı doğrulanamadı.',
+                detail: 'Veri kaybını önlemek için pencere açık bırakıldı.'
+            }).catch(() => {});
+        }, 30000);
     });
 
     mainWindow.once('ready-to-show', () => {
@@ -2672,6 +4007,19 @@ ipcMain.on('window:close', () => {
     if (mainWindow) mainWindow.close();
 });
 
+ipcMain.on('window:close-ready', (_event, result) => {
+    clearTimeout(closeRequestTimer);
+    closeRequestTimer = null;
+    closeRequestInFlight = false;
+
+    if (!result?.ok || !mainWindow || mainWindow.isDestroyed()) {
+        return;
+    }
+
+    allowWindowClose = true;
+    mainWindow.close();
+});
+
 ipcMain.on('window:focus-renderer', () => {
     if (!mainWindow) return;
 
@@ -2690,67 +4038,215 @@ ipcMain.handle('window:is-maximized', () => {
 // Project handlers
 
 ipcMain.handle('project:save-map-camera', (_event, mapPath, camera) => {
-    return saveMapCamera(mapPath, camera);
+    return projectOperation(() => {
+        const safeMapPath = assertProjectPath(mapPath, {
+            type: 'file',
+            extensions: ['.map']
+        });
+        return saveMapCamera(safeMapPath, camera);
+    });
 });
 
 ipcMain.handle('project:upsert-map-connection', (_event, mapPath, edge) => {
-    return upsertMapConnection(mapPath, edge);
+    return projectOperation(() => {
+        const safeMapPath = assertProjectPath(mapPath, {
+            type: 'file',
+            extensions: ['.map']
+        });
+        return upsertMapConnection(safeMapPath, edge);
+    });
 });
 
 ipcMain.handle('project:delete-map-connection', (_event, mapPath, edgeId) => {
-    return deleteMapConnection(mapPath, edgeId);
+    return projectOperation(() => {
+        const safeMapPath = assertProjectPath(mapPath, {
+            type: 'file',
+            extensions: ['.map']
+        });
+        return deleteMapConnection(safeMapPath, String(edgeId || ''));
+    });
+});
+
+ipcMain.handle('project:reparent-map-node', (_event, mapPath, childId, parentId) => {
+    return projectOperation(() => {
+        const safeMapPath = assertProjectPath(mapPath, {
+            type: 'file',
+            extensions: ['.map']
+        });
+        return reparentMapNode(safeMapPath, childId, parentId);
+    });
 });
 
 ipcMain.handle('project:get-kedi-document', (_event, filePath) => {
-    return getKediDocument(filePath);
+    return projectOperation(() => {
+        const safeFilePath = assertProjectPath(filePath, {
+            type: 'file',
+            extensions: ['.map', '.node']
+        });
+        return getKediDocument(safeFilePath);
+    });
 });
 
 ipcMain.handle('project:list-map-nodes', (_event, mapPath) => {
-    return listNodesForMap(mapPath);
+    return projectOperation(() => {
+        const safeMapPath = assertProjectPath(mapPath, {
+            type: 'file',
+            extensions: ['.map']
+        });
+        return listNodesForMap(safeMapPath);
+    });
 });
 
 ipcMain.handle('project:save-map-layout', (_event, mapPath, nodeLayouts) => {
-    return saveMapNodeLayout(mapPath, nodeLayouts);
+    return projectOperation(() => {
+        const safeMapPath = assertProjectPath(mapPath, {
+            type: 'file',
+            extensions: ['.map']
+        });
+        return saveMapNodeLayout(safeMapPath, nodeLayouts);
+    });
 });
 
 ipcMain.handle('project:save-node-content', (_event, nodePath, content) => {
-    return saveNodeContent(nodePath, content);
+    return projectOperation(() => {
+        const safeNodePath = assertProjectPath(nodePath, {
+            type: 'file',
+            extensions: ['.node']
+        });
+        return saveNodeContent(safeNodePath, content);
+    });
 });
 
 ipcMain.handle('project:delete-node-from-map', (_event, nodePath) => {
-    return deleteNodeFromMap(nodePath);
+    return asyncProjectOperation(async () => {
+        const safeNodePath = assertProjectPath(nodePath, {
+            type: 'file',
+            extensions: ['.node']
+        });
+        return deleteNodeFromMap(safeNodePath);
+    });
 });
 
 ipcMain.handle('project:delete-kedi-file', (_event, targetPath) => {
-    return deleteKediFile(targetPath);
+    return asyncProjectOperation(async () => {
+        const safeTargetPath = assertProjectPath(targetPath, {
+            type: 'file',
+            extensions: ['.map', '.node']
+        });
+        return deleteKediFile(safeTargetPath);
+    });
+});
+
+ipcMain.handle('project:delete-path', (_event, targetPath) => {
+    return asyncProjectOperation(async () => {
+        const safeTargetPath = assertProjectPath(targetPath);
+
+        if (
+            normalizePathForCompare(safeTargetPath) ===
+            normalizePathForCompare(activeProjectFolder)
+        ) {
+            throw new Error('Aktif proje kökü bu işlemle silinemez.');
+        }
+
+        return deleteProjectPath(safeTargetPath);
+    });
 });
 
 ipcMain.handle('project:create-node-under-map', (_event, mapPath) => {
-    return createNodeUnderMap(mapPath);
+    return projectOperation(() => {
+        const safeMapPath = assertProjectPath(mapPath, {
+            type: 'file',
+            extensions: ['.map']
+        });
+        return createNodeUnderMap(safeMapPath);
+    });
 });
 
 ipcMain.handle('project:get-or-create-diary-node', (_event, projectFolder, isoDate) => {
-    return getOrCreateDiaryNode(projectFolder, isoDate);
+    return projectOperation(() => {
+        const safeProjectFolder = assertProjectPath(projectFolder, {
+            type: 'directory'
+        });
+
+        if (
+            normalizePathForCompare(safeProjectFolder) !==
+            normalizePathForCompare(activeProjectFolder)
+        ) {
+            throw new Error('Diary yalnızca aktif proje kökünde kullanılabilir.');
+        }
+
+        return getOrCreateDiaryNode(safeProjectFolder, isoDate);
+    });
 });
 
 ipcMain.handle('project:list-diary-dates', (_event, projectFolder) => {
-    return listKediDiaryDates(projectFolder);
+    return projectOperation(() => {
+        const safeProjectFolder = assertProjectPath(projectFolder, {
+            type: 'directory'
+        });
+        return listKediDiaryDates(safeProjectFolder);
+    });
 });
 
-ipcMain.handle('project:sync-diary-missions', (_event, projectFolder, entries) => {
-    return syncDiaryMissions(projectFolder, entries);
+ipcMain.handle('project:sync-diary-missions', (_event, projectFolder, payload) => {
+    return projectOperation(() => {
+        const safeProjectFolder = assertProjectPath(projectFolder, {
+            type: 'directory'
+        });
+        return syncDiaryMissions(safeProjectFolder, payload);
+    });
 });
 
 ipcMain.handle('project:rename-kedi-file', (_event, oldPath, newBaseName) => {
-    return renameKediFile(oldPath, newBaseName);
+    return projectOperation(() => {
+        const safeOldPath = assertProjectPath(oldPath, {
+            type: 'file',
+            extensions: ['.map', '.node']
+        });
+        return renameKediFile(safeOldPath, newBaseName);
+    });
 });
 
 ipcMain.handle('project:move-kedi-item', (_event, sourcePath, destinationFolderPath, options) => {
-    return moveKediItem(sourcePath, destinationFolderPath, options || {});
+    return projectOperation(() => {
+        const safeSourcePath = assertProjectPath(sourcePath);
+        const safeDestinationPath = assertProjectPath(destinationFolderPath, {
+            type: 'directory'
+        });
+
+        if (
+            normalizePathForCompare(safeSourcePath) ===
+            normalizePathForCompare(activeProjectFolder)
+        ) {
+            throw new Error('Aktif proje kökü taşınamaz.');
+        }
+
+        const safeOptions = { ...(options || {}) };
+        if (safeOptions.parentMapPath) {
+            safeOptions.parentMapPath = assertProjectPath(
+                safeOptions.parentMapPath,
+                {
+                    type: 'file',
+                    extensions: ['.map']
+                }
+            );
+        }
+
+        return moveKediItem(
+            safeSourcePath,
+            safeDestinationPath,
+            safeOptions
+        );
+    });
 });
 
 ipcMain.handle('project:create-kedi-file', (_event, folderPath, ext) => {
-    return createUniqueKediFile(folderPath, ext);
+    return projectOperation(() => {
+        const safeFolderPath = assertProjectPath(folderPath, {
+            type: 'directory'
+        });
+        return createUniqueKediFile(safeFolderPath, ext);
+    });
 });
 
 ipcMain.handle('project:get-last-folder', () => {
@@ -2761,9 +4257,11 @@ ipcMain.handle('project:get-last-folder', () => {
         return null;
     }
 
-    lockProjectFolder(lastProjectFolder);
+    if (!lockProjectFolder(lastProjectFolder)) {
+        return null;
+    }
 
-    return lastProjectFolder;
+    return activeProjectFolder;
 });
 
 ipcMain.handle('project:choose-folder', async () => {
@@ -2778,41 +4276,92 @@ ipcMain.handle('project:choose-folder', async () => {
 
     const selectedFolder = result.filePaths[0];
 
+    if (!lockProjectFolder(selectedFolder)) {
+        await dialog.showMessageBox(mainWindow, {
+            type: 'error',
+            title: 'Proje açılamadı',
+            message: 'Seçilen proje klasörü kilitlenemedi.',
+            detail: 'Klasör başka bir KEDI sürecinde açık olabilir veya erişim izni olmayabilir.'
+        });
+        return null;
+    }
+
     const settings = readSettings();
-    settings.lastProjectFolder = selectedFolder;
+    settings.lastProjectFolder = activeProjectFolder;
     writeSettings(settings);
 
-    lockProjectFolder(selectedFolder);
-
-    return selectedFolder;
+    return activeProjectFolder;
 });
 
 ipcMain.handle('project:set-last-folder', (_event, folderPath) => {
-    const settings = readSettings();
-    settings.lastProjectFolder = folderPath || null;
-    writeSettings(settings);
-    return true;
-});
+    return projectOperation(() => {
+        if (folderPath) {
+            const safeFolderPath = assertProjectPath(folderPath, {
+                type: 'directory'
+            });
 
-ipcMain.handle('project:list-folder', (_event, folderPath) => {
-    return safeListFolder(folderPath);
-});
-
-ipcMain.handle('project:folder-exists', (_event, folderPath) => {
-    return folderExistsAndIsDirectory(folderPath);
-});
-
-app.whenReady().then(() => {
-    createWindow();
-
-    app.on('activate', () => {
-        if (BrowserWindow.getAllWindows().length === 0) {
-            createWindow();
+            if (
+                normalizePathForCompare(safeFolderPath) !==
+                normalizePathForCompare(activeProjectFolder)
+            ) {
+                throw new Error('Yalnızca aktif proje son proje olarak kaydedilebilir.');
+            }
         }
+
+        const settings = readSettings();
+        settings.lastProjectFolder = folderPath || null;
+        writeSettings(settings);
+        return {
+            ok: true
+        };
     });
 });
 
-app.on('before-quit', () => {
+ipcMain.handle('project:list-folder', (_event, folderPath) => {
+    return projectOperation(() => {
+        const safeFolderPath = assertProjectPath(folderPath, {
+            type: 'directory'
+        });
+        return safeListFolder(safeFolderPath);
+    });
+});
+
+ipcMain.handle('project:folder-exists', (_event, folderPath) => {
+    try {
+        const safeFolderPath = assertProjectPath(folderPath, {
+            type: 'directory'
+        });
+        return folderExistsAndIsDirectory(safeFolderPath);
+    } catch {
+        return false;
+    }
+});
+
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
+
+if (!hasSingleInstanceLock) {
+    app.quit();
+} else {
+    app.on('second-instance', () => {
+        if (!mainWindow || mainWindow.isDestroyed()) return;
+        if (mainWindow.isMinimized()) mainWindow.restore();
+        mainWindow.show();
+        mainWindow.focus();
+    });
+
+    app.whenReady().then(() => {
+        createWindow();
+
+        app.on('activate', () => {
+            if (BrowserWindow.getAllWindows().length === 0) {
+                allowWindowClose = false;
+                createWindow();
+            }
+        });
+    });
+}
+
+app.on('will-quit', () => {
     unlockProjectFolder();
 });
 

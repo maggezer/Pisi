@@ -1,5 +1,9 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
+contextBridge.exposeInMainWorld('kediEnvironment', {
+    platform: process.platform
+});
+
 contextBridge.exposeInMainWorld('electronWindow', {
     minimize: () => ipcRenderer.send('window:minimize'),
     toggleMaximize: () => ipcRenderer.send('window:toggle-maximize'),
@@ -8,11 +12,34 @@ contextBridge.exposeInMainWorld('electronWindow', {
     isMaximized: () => ipcRenderer.invoke('window:is-maximized'),
 
     onMaximized: (callback) => {
-        ipcRenderer.on('window:maximized', () => callback());
+        const listener = () => callback();
+        ipcRenderer.on('window:maximized', listener);
+        return () => ipcRenderer.removeListener('window:maximized', listener);
     },
 
     onUnmaximized: (callback) => {
-        ipcRenderer.on('window:unmaximized', () => callback());
+        const listener = () => callback();
+        ipcRenderer.on('window:unmaximized', listener);
+        return () => ipcRenderer.removeListener('window:unmaximized', listener);
+    },
+
+    onCloseRequested: (callback) => {
+        const listener = async () => {
+            try {
+                const result = await callback();
+                ipcRenderer.send('window:close-ready', {
+                    ok: result !== false
+                });
+            } catch (error) {
+                ipcRenderer.send('window:close-ready', {
+                    ok: false,
+                    error: error.message
+                });
+            }
+        };
+
+        ipcRenderer.on('window:request-close', listener);
+        return () => ipcRenderer.removeListener('window:request-close', listener);
     }
 });
 
@@ -41,16 +68,21 @@ contextBridge.exposeInMainWorld('kediProject', {
     deleteNodeFromMap: (nodePath) => ipcRenderer.invoke('project:delete-node-from-map', nodePath),
 
     upsertMapConnection: (mapPath, edge) => ipcRenderer.invoke('project:upsert-map-connection', mapPath, edge),
+    reparentMapNode: (mapPath, childId, parentId) => ipcRenderer.invoke('project:reparent-map-node', mapPath, childId, parentId),
 
     deleteMapConnection: (mapPath, edgeId) => ipcRenderer.invoke('project:delete-map-connection', mapPath, edgeId),
     saveMapCamera: (mapPath, camera) => ipcRenderer.invoke('project:save-map-camera', mapPath, camera),
 
     deleteKediFile: (targetPath) => ipcRenderer.invoke('project:delete-kedi-file', targetPath),
-    deleteNodeFromMap: (nodePath) => ipcRenderer.invoke('project:delete-node-from-map', nodePath),
 
     onFileSystemChanged: (callback) => {
-        ipcRenderer.on('project:filesystem-changed', (_event, payload) => {
+        const listener = (_event, payload) => {
             callback(payload);
-        });
+        };
+
+        ipcRenderer.on('project:filesystem-changed', listener);
+        return () => {
+            ipcRenderer.removeListener('project:filesystem-changed', listener);
+        };
     }
 });

@@ -56,16 +56,62 @@ async function validateCurrentProject() {
     return true;
 }
 
-async function refreshCurrentProjectTree() {
+let kediProjectRefreshSequence = 0;
+let kediProjectRefreshTail = Promise.resolve();
+const kediProjectRefreshWaiters = [];
+
+function resolveKediProjectRefreshWaiters(completedSequence, result) {
+    for (let index = kediProjectRefreshWaiters.length - 1; index >= 0; index -= 1) {
+        const waiter = kediProjectRefreshWaiters[index];
+        if (waiter.sequence > completedSequence) continue;
+
+        kediProjectRefreshWaiters.splice(index, 1);
+        waiter.resolve(result);
+    }
+}
+
+function refreshCurrentProjectTree() {
     clearTimeout(projectRefreshTimer);
+    const sequence = ++kediProjectRefreshSequence;
+    const resultPromise = new Promise((resolve) => {
+        kediProjectRefreshWaiters.push({
+            sequence,
+            resolve
+        });
+    });
 
-    projectRefreshTimer = setTimeout(async () => {
-        const valid = await validateCurrentProject();
+    projectRefreshTimer = setTimeout(() => {
+        const batchSequence = sequence;
 
-        if (valid && window.currentProjectFolder) {
-            await renderFolderTree(window.currentProjectFolder);
-        }
+        kediProjectRefreshTail = kediProjectRefreshTail
+            .catch(() => false)
+            .then(async () => {
+                const valid = await validateCurrentProject();
+
+                if (valid && window.currentProjectFolder) {
+                    await renderFolderTree(window.currentProjectFolder);
+                }
+
+                return valid;
+            })
+            .then((result) => {
+                resolveKediProjectRefreshWaiters(
+                    batchSequence,
+                    result
+                );
+                return result;
+            })
+            .catch((error) => {
+                console.error('[KEDI] Proje ağacı yenilenemedi:', error);
+                resolveKediProjectRefreshWaiters(
+                    batchSequence,
+                    false
+                );
+                return false;
+            });
     }, 250);
+
+    return resultPromise;
 }
 
 function showProjectModal() {
@@ -79,6 +125,11 @@ function hideProjectModal() {
 }
 
 async function chooseAndLoadProject() {
+    if (typeof flushKediPendingSaves === 'function') {
+        const saved = await flushKediPendingSaves();
+        if (!saved) return;
+    }
+
     const selectedFolder = await window.kediProject?.chooseFolder?.();
 
     if (!selectedFolder) {
@@ -93,8 +144,22 @@ async function chooseAndLoadProject() {
 }
 
 async function loadProject(folderPath) {
+    const previousProjectFolder = window.currentProjectFolder;
+
     window.currentProjectFolder = folderPath;
     updateKediProjectTitle(folderPath);
+
+    clearTimeout(centerNodeSaveTimer);
+    clearTimeout(mapSaveTimer);
+    clearTimeout(mapCameraSaveTimer);
+
+    if (typeof clearCenterNodeEditor === 'function') {
+        clearCenterNodeEditor();
+    }
+
+    if (typeof closeNodeModalWithoutSaving === 'function') {
+        closeNodeModalWithoutSaving();
+    }
 
     if (typeof resetKediOpenTabs === 'function') {
         resetKediOpenTabs();
@@ -104,12 +169,33 @@ async function loadProject(folderPath) {
         clearMapWorkspace();
     }
 
+    if (
+        typeof resetKediTagsForProject === 'function' &&
+        previousProjectFolder !== folderPath
+    ) {
+        resetKediTagsForProject();
+    }
+
+    if (typeof resetKediCalendarForProject === 'function') {
+        resetKediCalendarForProject(folderPath);
+    }
+
     await renderFolderTree(folderPath);
+}
+
+let kediTreeRootRenderId = 0;
+
+function isCurrentKediTreeRootRender(renderId, rootPath) {
+    return (
+        renderId === kediTreeRootRenderId &&
+        sameClientPath(window.currentProjectFolder, rootPath)
+    );
 }
 
 async function renderFolderTree(rootPath) {
     const treeEl = document.getElementById('file-tree');
     if (!treeEl) return;
+    const renderId = ++kediTreeRootRenderId;
 
     treeEl.innerHTML = '';
 
@@ -119,7 +205,10 @@ async function renderFolderTree(rootPath) {
 
     bindFileTreeRootDropZone(treeEl);
 
-    await loadFolderChildren(rootPath, treeEl, 0);
+    await loadFolderChildren(rootPath, treeEl, 0, {
+        renderId,
+        rootPath
+    });
 }
 
 function getKediTreeDragStateItem() {
@@ -155,7 +244,7 @@ function cloneKediTreeDragItem(item) {
 }
 
 function getClientPathBaseName(filePath = '') {
-    const parts = String(filePath || '').split(/[\/]/).filter(Boolean);
+    const parts = String(filePath || '').split(/[\\/]/).filter(Boolean);
     return parts[parts.length - 1] || '';
 }
 
@@ -228,37 +317,13 @@ async function reparentMapNodeFromTreeDrop(childItem, parentItem, mapItem) {
     const childId = childItem.metadata.id;
     const parentId = parentItem.metadata.id;
 
-    const listResult = await window.kediProject?.listMapNodes?.(mapItem.fullPath);
-
-    if (!listResult?.ok) {
-        alert(listResult?.error || 'Map bağlantıları okunamadı.');
-        return;
-    }
-
-    const edges = Array.isArray(listResult.edges) ? listResult.edges : [];
-    const oldHubParents = edges.filter((edge) => {
-        return typeof isHierarchyEdge === 'function' &&
-            isHierarchyEdge(edge) &&
-            edge.targetId === childId;
-    });
-
     suppressNextFileSystemRefresh(3000);
 
-    for (const edge of oldHubParents) {
-        if (edge.id) {
-            await window.kediProject?.deleteMapConnection?.(mapItem.fullPath, edge.id);
-        }
-    }
-
-    const result = await window.kediProject?.upsertMapConnection?.(mapItem.fullPath, {
-        sourceId: parentId,
-        targetId: childId,
-        sourcePort: 'bottom',
-        targetPort: 'top',
-        type: 'down-hub',
-        sourceRole: 'down-hub',
-        targetRole: 'up-hub'
-    });
+    const result = await window.kediProject?.reparentMapNode?.(
+        mapItem.fullPath,
+        childId,
+        parentId
+    );
 
     if (!result?.ok) {
         alert(result?.error || 'Node taşınamadı.');
@@ -277,6 +342,11 @@ async function reparentMapNodeFromTreeDrop(childItem, parentItem, mapItem) {
 async function moveTreeItemToFolder(sourceItem, destinationFolderPath, options = {}) {
     if (!sourceItem?.fullPath || !destinationFolderPath) return;
 
+    if (typeof flushKediPendingSaves === 'function') {
+        const saved = await flushKediPendingSaves();
+        if (!saved) return false;
+    }
+
     suppressNextFileSystemRefresh(5000);
 
     const result = await window.kediProject?.moveKediItem?.(
@@ -287,11 +357,16 @@ async function moveTreeItemToFolder(sourceItem, destinationFolderPath, options =
 
     if (!result?.ok) {
         alert(result?.error || 'Öğe taşınamadı.');
-        return;
+        return false;
     }
 
     if (typeof updateKediOpenTabAfterRename === 'function' && result.isFile) {
         updateKediOpenTabAfterRename(sourceItem.fullPath, result);
+    } else if (
+        Array.isArray(result.pathChanges) &&
+        typeof applyKediPathChanges === 'function'
+    ) {
+        applyKediPathChanges(result.pathChanges);
     }
 
     if (
@@ -324,6 +399,8 @@ async function moveTreeItemToFolder(sourceItem, destinationFolderPath, options =
 
         await openMapInWorkspace(mapItem);
     }
+
+    return true;
 }
 
 async function handleTreeDrop(sourceItem, targetItem, targetNode) {
@@ -474,12 +551,17 @@ async function createTreeNode(item, level = 0, isRoot = false) {
     row.className = isRoot ? 'tree-row tree-root-row' : 'tree-row';
     row.style.paddingLeft = `${level * 14 + 6}px`;
     row.title = isRoot ? '' : item.fullPath;
+    row.setAttribute('role', 'treeitem');
+    row.tabIndex = isRoot ? -1 : 0;
 
     const isMapFile = item.isFile && isMapFileName(item.name);
     const isNodeFile = item.isFile && isNodeFileName(item.name);
     const hasSyntheticChildren = Array.isArray(item.children) && item.children.length > 0;
 
     const canHaveChildren = item.isDirectory || isMapFile || hasSyntheticChildren;
+    if (canHaveChildren) {
+        row.setAttribute('aria-expanded', 'false');
+    }
 
     const name = document.createElement('span');
     name.className = isRoot ? 'tree-name tree-root-name' : 'tree-name';
@@ -557,6 +639,7 @@ async function createTreeNode(item, level = 0, isRoot = false) {
             if (willExpand) {
                 node.classList.add('expanded');
                 expandedTreePaths.add(item.fullPath);
+                row.setAttribute('aria-expanded', 'true');
 
              if (children.dataset.loaded !== '1') {
             
@@ -574,7 +657,43 @@ async function createTreeNode(item, level = 0, isRoot = false) {
 
                 node.classList.remove('expanded');
                 expandedTreePaths.delete(item.fullPath);
+                row.setAttribute('aria-expanded', 'false');
             }
+        }
+
+        if (!isRoot) {
+            row.addEventListener('keydown', async (event) => {
+                if (event.target.closest('button, input')) return;
+
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    row.click();
+                    return;
+                }
+
+                if (event.key === 'ArrowRight' && !node.classList.contains('expanded')) {
+                    event.preventDefault();
+                    await toggleChildren();
+                    return;
+                }
+
+                if (event.key === 'ArrowLeft' && node.classList.contains('expanded')) {
+                    event.preventDefault();
+                    await toggleChildren();
+                    return;
+                }
+
+                if (event.key === 'F2' && !item.isDirectory) {
+                    event.preventDefault();
+                    startRenameTreeFile(item, row);
+                    return;
+                }
+
+                if (event.key === 'Delete' && (isMapFile || isNodeFile)) {
+                    event.preventDefault();
+                    await deleteTreeKediItem(item, node);
+                }
+            });
         }
 
         if (!isRoot) {
@@ -614,6 +733,7 @@ if (!isRoot) {
         if (isRoot || expandedTreePaths.has(item.fullPath)) {
             node.classList.add('expanded');
             expandedTreePaths.add(item.fullPath);
+            row.setAttribute('aria-expanded', 'true');
 
             if (isMapFile) {
             await loadMapTreeChildren(item.fullPath, children, level + 1);
@@ -665,7 +785,26 @@ async function deleteTreeKediItem(item, treeNode) {
     if (!isMapFile && !isNodeFile) return;
 
     const visibleName = getTreeItemDisplayName(item);
-    const ok = confirm(`"${visibleName}" silinsin mi?`);
+    let childNodeCount = 0;
+
+    if (isMapFile) {
+        const listResult = await window.kediProject?.listMapNodes?.(item.fullPath);
+        childNodeCount = Array.isArray(listResult?.nodes)
+            ? listResult.nodes.length
+            : 0;
+    }
+
+    const confirmationMessage = isMapFile
+        ? `"${visibleName}" map'i ve içindeki ${childNodeCount} node Çöp Kutusu'na taşınsın mı?`
+        : `"${visibleName}" node'u Çöp Kutusu'na taşınsın mı?`;
+    const ok = typeof kediConfirm === 'function'
+        ? await kediConfirm(confirmationMessage, {
+            title: isMapFile ? 'Map sil' : 'Node sil',
+            confirmText: 'Çöp Kutusu’na taşı',
+            cancelText: 'Vazgeç',
+            danger: true
+        })
+        : confirm(confirmationMessage);
 
     if (!ok) return;
 
@@ -680,7 +819,7 @@ async function deleteTreeKediItem(item, treeNode) {
         }
 
         if (isMapFile) {
-            await handleDeletedMapFromTree(item, treeNode);
+            await handleDeletedMapFromTree(item, treeNode, result);
             return;
         }
 
@@ -693,21 +832,27 @@ async function deleteTreeKediItem(item, treeNode) {
     }
 }
 
-async function handleDeletedMapFromTree(item, treeNode) {
+async function handleDeletedMapFromTree(item, treeNode, result = {}) {
     expandedTreePaths.delete(item.fullPath);
 
-    if (selectedTreeItem?.item?.fullPath === item.fullPath) {
+    if (sameClientPath(selectedTreeItem?.item?.fullPath, item.fullPath)) {
         selectedTreeItem = null;
     }
 
     treeNode?.remove();
 
-    if (typeof removeKediOpenTabByPath === 'function') {
-        await removeKediOpenTabByPath(item.fullPath);
+    if (typeof removeKediOpenTabsForDeletedPaths === 'function') {
+        await removeKediOpenTabsForDeletedPaths([
+            item.fullPath,
+            result.deletedSidecarPath || item.sidecarPath,
+            ...(Array.isArray(result.childNodePaths)
+                ? result.childNodePaths
+                : [])
+        ]);
         return;
     }
 
-    if (activeMapPath === item.fullPath) {
+    if (sameClientPath(activeMapPath, item.fullPath)) {
         clearMapWorkspace();
     }
 }
@@ -716,17 +861,24 @@ async function handleDeletedNodeFromTree(item, treeNode, result) {
     const deletedNodeId = result.deletedNodeId || item.metadata?.id || treeNode?.dataset.kediId;
     const parentMapPath = result.parentMapPath || null;
 
-    if (selectedTreeItem?.item?.fullPath === item.fullPath) {
+    if (sameClientPath(selectedTreeItem?.item?.fullPath, item.fullPath)) {
         selectedTreeItem = null;
+    }
+
+    if (typeof removeKediOpenTabsForDeletedPaths === 'function') {
+        await removeKediOpenTabsForDeletedPaths([item.fullPath]);
     }
 
     // Eğer bu node şu an açık map'in içindeyse orta alanı da güncelle.
     const belongsToActiveMap =
         activeMapPath &&
         (
-            parentMapPath === activeMapPath ||
+            sameClientPath(parentMapPath, activeMapPath) ||
             activeMapNodes.some((node) => {
-                return node.fullPath === item.fullPath || node.id === deletedNodeId;
+                return (
+                    sameClientPath(node.fullPath, item.fullPath) ||
+                    node.id === deletedNodeId
+                );
             })
         );
 
@@ -740,7 +892,10 @@ async function handleDeletedNodeFromTree(item, treeNode, result) {
         }
 
         activeMapNodes = activeMapNodes.filter((node) => {
-            return node.fullPath !== item.fullPath && node.id !== deletedNodeId;
+            return (
+                !sameClientPath(node.fullPath, item.fullPath) &&
+                node.id !== deletedNodeId
+            );
         });
 
         activeMapEdges = result.edges || activeMapEdges.filter((edge) => {
@@ -750,11 +905,9 @@ async function handleDeletedNodeFromTree(item, treeNode, result) {
         drawMapConnections();
 
         await refreshActiveMapTreeBranch();
-        return;
+    } else {
+        treeNode?.remove();
     }
-
-    // Standalone node ise veya aktif map içinde değilse sadece satırı kaldır.
-    treeNode?.remove();
 }
 
 function findTreeNodeByPath(targetPath) {
@@ -832,12 +985,6 @@ function findTreeNodeByKediId(kediId) {
     return document.querySelector(
         `.tree-node[data-kedi-id="${CSS.escape(kediId)}"]`
     );
-}
-
-function getDirectTreeChildrenContainer(treeNode) {
-    return Array.from(treeNode.children).find((child) => {
-        return child.classList.contains('tree-children');
-    });
 }
 
 function ensureTreeChildrenContainer(treeNode) {
@@ -927,27 +1074,6 @@ function updateTreeAfterSavedConnection(edge) {
     }
 }
 
-async function refreshActiveMapTreeBranch() {
-    if (!activeMapPath) return;
-
-    const mapTreeNode = findTreeNodeByPath(activeMapPath);
-    if (!mapTreeNode) return;
-
-    const children = mapTreeNode.querySelector('.tree-children');
-    if (!children) return;
-
-    const mapLevel = Number(mapTreeNode.dataset.level || 0);
-
-    // Map kapalıysa boşuna açıp çizme.
-    if (!mapTreeNode.classList.contains('expanded')) {
-        children.dataset.loaded = '0';
-        return;
-    }
-
-    await loadMapTreeChildren(activeMapPath, children, mapLevel + 1);
-    children.dataset.loaded = '1';
-}
-
 function animateTreeRow(row) {
     if (!row) return;
 
@@ -1031,7 +1157,7 @@ function updateTreeItemAfterRename(oldPath, result) {
 
     treeNode.__kediItem = currentItem;
 
-    if (selectedTreeItem?.item?.fullPath === oldPath) {
+    if (sameClientPath(selectedTreeItem?.item?.fullPath, oldPath)) {
         selectedTreeItem.item = currentItem;
         selectedTreeItem.row = row || selectedTreeItem.row;
     }
@@ -1040,9 +1166,12 @@ function updateTreeItemAfterRename(oldPath, result) {
 }
 
 function normalizeClientPath(filePath) {
-    return String(filePath || '')
-        .replace(/[\\/]+/g, '/')
-        .toLowerCase();
+    const normalized = String(filePath || '')
+        .replace(/[\\/]+/g, '/');
+
+    return window.kediEnvironment?.platform === 'win32'
+        ? normalized.toLowerCase()
+        : normalized;
 }
 
 function sameClientPath(a, b) {
@@ -1273,10 +1402,19 @@ function startRenameTreeFile(item, row) {
                 return;
             }
 
+            if (typeof flushKediPendingSaves === 'function') {
+                const saved = await flushKediPendingSaves();
+                if (!saved) {
+                    restoreName(oldName);
+                    return;
+                }
+            }
+
+            const renameSourcePath = item.fullPath || oldPath;
             suppressNextFileSystemRefresh(1500);
 
             const result = await window.kediProject?.renameKediFile?.(
-                oldPath,
+                renameSourcePath,
                 newBaseName
             );
 
@@ -1301,11 +1439,11 @@ function startRenameTreeFile(item, row) {
 
             restoreName(result.metadata?.title || result.displayName || result.fileName);
             
-            updateTreeItemAfterRename(oldPath, result);
-            updateOpenMapNodeAfterRename(oldPath, result);
+            updateTreeItemAfterRename(renameSourcePath, result);
+            updateOpenMapNodeAfterRename(renameSourcePath, result);
 
             if (typeof updateKediOpenTabAfterRename === 'function') {
-            updateKediOpenTabAfterRename(oldPath, result);
+            updateKediOpenTabAfterRename(renameSourcePath, result);
             }
 
             animateTreeRow(row);
@@ -1342,10 +1480,27 @@ document.addEventListener('keydown', (event) => {
     }
 });
 
-async function loadFolderChildren(folderPath, containerEl, level) {
+async function loadFolderChildren(
+    folderPath,
+    containerEl,
+    level,
+    rootRender = null
+) {
+    const rootRenderIsCurrent = () => {
+        return (
+            !rootRender ||
+            isCurrentKediTreeRootRender(
+                rootRender.renderId,
+                rootRender.rootPath
+            )
+        );
+    };
+
+    if (!rootRenderIsCurrent()) return false;
     containerEl.innerHTML = '';
 
     const result = await window.kediProject?.listFolder?.(folderPath);
+    if (!rootRenderIsCurrent()) return false;
 
     if (!result || !result.ok) {
         const errorRow = document.createElement('div');
@@ -1353,13 +1508,16 @@ async function loadFolderChildren(folderPath, containerEl, level) {
         errorRow.style.paddingLeft = `${level * 14 + 6}px`;
         errorRow.textContent = '⚠️ ' + (result?.error || 'Klasör okunamadı');
         containerEl.appendChild(errorRow);
-        return;
+        return false;
     }
 
     for (const item of result.items) {
         const childNode = await createTreeNode(item, level);
+        if (!rootRenderIsCurrent()) return false;
         containerEl.appendChild(childNode);
     }
+
+    return true;
 }
 
 function makeTreeItemFromMapNode(mapNode, children = []) {
@@ -1452,6 +1610,24 @@ function buildMapNodeTreeItems(nodes = [], edges = []) {
             continue;
         }
 
+        let ancestorId = parentId;
+        const ancestorGuard = new Set();
+        let createsCycle = false;
+
+        while (ancestorId && !ancestorGuard.has(ancestorId)) {
+            if (ancestorId === childId) {
+                createsCycle = true;
+                break;
+            }
+
+            ancestorGuard.add(ancestorId);
+            ancestorId = parentByChildId.get(ancestorId) || null;
+        }
+
+        if (createsCycle) {
+            continue;
+        }
+
         parentByChildId.set(childId, parentId);
 
         const children = childrenByParentId.get(parentId);
@@ -1463,12 +1639,14 @@ function buildMapNodeTreeItems(nodes = [], edges = []) {
         childIds.add(childId);
     }
 
+    const renderedIds = new Set();
     const makeItemRecursive = (nodeId, visited = new Set()) => {
         if (visited.has(nodeId)) {
             return null;
         }
 
         visited.add(nodeId);
+        renderedIds.add(nodeId);
 
         const node = nodeById.get(nodeId);
         if (!node) return null;
@@ -1480,10 +1658,18 @@ function buildMapNodeTreeItems(nodes = [], edges = []) {
         return makeTreeItemFromMapNode(node, childItems);
     };
 
-    return nodes
+    const roots = nodes
         .filter((node) => node?.id && !childIds.has(node.id))
         .map((node) => makeItemRecursive(node.id))
         .filter(Boolean);
+
+    for (const node of nodes) {
+        if (!node?.id || renderedIds.has(node.id)) continue;
+        const fallbackItem = makeItemRecursive(node.id);
+        if (fallbackItem) roots.push(fallbackItem);
+    }
+
+    return roots;
 }
 
 async function loadSyntheticTreeChildren(items, containerEl, level) {

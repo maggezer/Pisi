@@ -27,13 +27,32 @@ function bindNodeModalControls() {
         document.body.dataset.nodeModalEscBound = '1';
 
         document.addEventListener('keydown', async (event) => {
-            if (event.key !== 'Escape') return;
-
             const modalOverlay = document.getElementById('node-modal-overlay');
 
             if (!modalOverlay?.classList.contains('visible')) {
                 return;
             }
+
+            if (event.key === 'Tab') {
+                const focusable = Array.from(
+                    modalOverlay.querySelectorAll(
+                        'button:not([disabled]), input:not([disabled]), [contenteditable="true"], [tabindex]:not([tabindex="-1"])'
+                    )
+                ).filter((element) => !element.hidden);
+
+                if (focusable.length) {
+                    const currentIndex = focusable.indexOf(document.activeElement);
+                    const nextIndex = event.shiftKey
+                        ? (currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1)
+                        : (currentIndex + 1) % focusable.length;
+
+                    event.preventDefault();
+                    focusable[nextIndex].focus();
+                }
+                return;
+            }
+
+            if (event.key !== 'Escape') return;
 
             // Eğer tag menüsü açıksa ESC önce tag menüsünü kapatsın,
             // modalı kapatmasın.

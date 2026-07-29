@@ -2,3 +2,28 @@ kedi-android-mobile/
 node_modules/
 dist/
 .env
+
+# Test ve analiz çıktıları
+coverage/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# İşletim sistemi dosyaları
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editör ve geçici dosyalar
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Build önbellekleri
+.cache/
+.eslintcache
+out/
+release/

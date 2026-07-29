@@ -1,60 +1,170 @@
-KEDI adında bir not alma uygulaması geliştiriyorum.
+# KEDI veri ve davranış tanımı
 
-Ana amaç not almak, bu notları düzenlemek ve bağlamlandırmak, bağlamlardan hedef oluşturmak ve bu hedeflere giden planlı bir akış içinde görev listeleri oluşturmak.
+## Amaç
 
-Yazılım şu an için 6 ekran öğesinden ve 2 temel yapıdan oluşuyor.
+KEDI; not alma, notları bağlamlandırma, bağlamlardan hedef çıkarma ve
+hedefleri tarihli görevlere dönüştürme amacıyla geliştirilmiş yerel bir
+masaüstü uygulamasıdır.
 
-1-Üst logo çubuğu.
+Uygulamanın iki temel belge türü vardır:
 
-Burada logoya tıklayınca açılan menüden tercih ve ayarlar yapılıyor.
+- `.node`: Not içeriği ve node metadata’sı
+- `.map`: Node yerleşimleri, bağlantılar, kamera ve görünüm durumu
 
-2-Sol alan
+Her iki dosya da UTF-8 JSON’dur. Eski dokümanda geçen `.md` ve `_res` biçimi
+mevcut uygulama tarafından kullanılmaz.
 
-Burası kullanılan / oluşturulan dosyaların bulunduğu yer. İki temel dosya türü var. Canva yani zihin haritaları ve nodelar yani notlar. Düğümler sadece canva içinde oluşturulabilir.
+## Arayüz
 
-3-orta üst araç çubuğu
+1. Üst çubuk: logo, pencere kontrolleri ve uygulama araçları.
+2. Sol panel: proje klasörleri, `.map` ve `.node` belgeleri.
+3. Orta araç çubukları: metin, Paint, Excel-benzeri tablo ve etiket araçları.
+4. Orta çalışma alanı: map veya sekmeli node editorü.
+5. Sağ panel: görevler, etiket araması ve görünüm özelleştirmeleri.
+6. Takvim: sol/sağ panele dock edilebilir veya ekranda float olarak taşınabilir.
 
-Burası kullanılacak özelliklerin barındırıldığı yer
+## `.node` dosyası
 
-4-orta alan
+Basitleştirilmiş örnek:
 
-burası dosyaların görüntülendiği yer.
+```json
+{
+  "kedi": {
+    "version": 1,
+    "type": "node",
+    "id": "node_00000000-0000-4000-8000-000000000000",
+    "title": "Örnek Node",
+    "sidecar": "inv_Örnek Node__node_00000000-0000-4000-8000-000000000000",
+    "createdAt": "2026-07-29T12:00:00.000Z",
+    "updatedAt": "2026-07-29T12:00:00.000Z",
+    "parentMap": "none",
+    "connectionTypes": {
+      "up-hub": [],
+      "down-hub": [],
+      "co-level": [],
+      "upstream": [],
+      "downstream": []
+    }
+  },
+  "content": "<div class=\"kedi-editor-block\">Not içeriği</div>"
+}
+```
 
-canva üzerine eklenen not sol alanda ortaya çıkmalı ve sol alanda yapılan değişiklik.
+`content`, allowlist ile temizlenen editör HTML’idir. Paint tuvalları şu anda
+bu HTML içindeki `canvas[data-kedi-canvas][data-image]` alanında tek bir
+base64 PNG taşır. Excel-benzeri tablolar `table[data-kedi-sheet]` ve hücre
+metadata’larıyla saklanır.
 
-5-sağ alan
+Standalone node için `parentMap` değeri `none`, günlük node’u için `diary`,
+map altındaki node için parent map kimliğidir.
 
-burası ileride bağlam için kullanılacak
+## `.map` dosyası
 
-6-takvim
+Basitleştirilmiş örnek:
 
-sağ veya sol alanın altında yada float özelliği olan bir takvim. 
+```json
+{
+  "kedi": {
+    "version": 1,
+    "type": "map",
+    "id": "map_00000000-0000-4000-8000-000000000000",
+    "title": "Örnek Map",
+    "sidecar": "nd_Örnek Map__map_00000000-0000-4000-8000-000000000000",
+    "createdAt": "2026-07-29T12:00:00.000Z",
+    "updatedAt": "2026-07-29T12:00:00.000Z"
+  },
+  "map": {
+    "nodes": [
+      {
+        "id": "node_00000000-0000-4000-8000-000000000000",
+        "x": 80,
+        "y": 80,
+        "width": 220,
+        "height": 92
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge_00000000-0000-4000-8000-000000000000",
+        "sourceId": "node_...",
+        "targetId": "node_...",
+        "sourcePort": "bottom",
+        "targetPort": "top",
+        "type": "down-hub",
+        "sourceRole": "down-hub",
+        "targetRole": "up-hub"
+      }
+    ],
+    "camera": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    },
+    "collapsedHubs": []
+  }
+}
+```
 
+Bağlantı türleri:
 
-Canva tipi dosyaların 3 temel özelliği var.
+- `down-hub`: parent–child hiyerarşisi; child sol ağaçta parent altında görünür.
+- `co-level`: denk bağlam ilişkisi.
+- `stream`: süreç/zaman akışı; hiyerarşik parent oluşturmaz.
 
-1-Infocard
+Bir child yalnızca bir hiyerarşik parent taşır. İkinci parent isteği kullanıcı
+onayıyla `stream` ilişkisine çevrilebilir. Self-loop, bozuk ID, duplicate edge
+ve hiyerarşi döngüleri kabul edilmez veya güvenli biçimde normalize edilir.
 
-burada dosyayla ilgili temel notlar tutuluyor.
+## Sidecar klasörleri
 
-2-Tag searcher
+- Map sidecar’ı: `nd_<başlık>__<map-id>`
+- Node sidecar’ı: `inv_<başlık>__<node-id>`
 
-dosya içerisindeki nodeların taglarına göre aratılıp sıralanabilmesi ve erişilmesi sağlanıyor.
+Map altında oluşturulan `.node` dosyaları map sidecar klasöründe bulunur.
+Node sidecar’ı da node dosyasıyla aynı klasörde oluşturulur. Klasör adı
+başlık değişiminde aynı transaction içinde güncellenir.
 
-Node tipi dosyalar ise notların tutulduğu bir dosya.
+KEDI yalnızca tam sidecar desenine uyan klasörleri Explorer’da gizler; sadece
+`inv_` veya `nd_` ile başlayan normal kullanıcı klasörleri gizlenmez.
 
-Node dosyası iki temel özelliğe sahip.
+## Günlük ve takvim
 
-3-bağlamlar
+KEDI tarafından yönetilen günlük klasörü proje kökündeki `diary/` klasörüdür
+ve `.kedi-diary` marker dosyası taşır. Tarihli node dosya adı
+`YYYY-MM-DD.node`, görünen başlığı `DD-MM-YYYY` biçimindedir.
 
-canva içerisinde nodelar birbirine bağlanabilir. Bu alt-üst ilişkisi, karşılıklı bağlamlık veya süreç ilişkisi şeklinde olabilir. alt-üst ilişkisinde sol alanda node birbirinin altında gözükürken, karşılıklı bağlamlıkta seviyeleri denktir. süreç ilişkisinde ise alt node sol alanda gözükmez. Çünkü bir sonraki zaman adımıdır.
+Görevlerden üretilen günlük kopyaları iki marker arasında yönetilir:
 
-1-.md dosyası, bu .md dosyasında yazılan kaydedilen veriler saklanıyor.
+```text
+<!--KEDI_DIARY_MANAGED_START-->
+...
+<!--KEDI_DIARY_MANAGED_END-->
+```
 
-2.res klasörü, her md dosyasının ilgili dosya_adi_res adında bir klasörü var. bu klasörde gerekli resim, tablo vs saklanıyor.
+Marker dışındaki kullanıcı içeriği eşitleme sırasında korunur. Eksik veya
+başarısız proje taraması “tam indeks” sayılmaz ve günlükteki managed alanları
+silmek için kullanılmaz.
 
-.md dosyasında ileride geliştirilecek dil sayesinde res klasöründeki kaynaklar uygulamada gösterilebilecek.
+Görev etiketi:
 
-Takvim
+```text
+..todo.<öncelik>.<GG>-<AA>-<YY>
+..todo.<öncelik>.<GG>-<AA>-<YYYY>
+```
 
-İlgili güne tıklandığında daily canvası altında o gününün notunu oluşturuyor. Bu not bir taşıyıcı not. Yani bu nota yazılanlar etiketlendirilerek başka canvalardaki notlara gönderilebiliyor Aynı zamanda başka canvada o gün yapılanlar o tarihli diary notuna ekleniyor. ama bu not hard code eklemek yerine ilgili gün etiketlerini okuyarak yapıyor.
+Öncelik `1–9` aralığındadır. Tamamlanma işareti bloktaki tüm görevleri değil,
+ilgili todo etiketini hedefler; tamamlanan görev sağ panelden yeniden
+açılabilir.
+
+## Veri güvenliği kuralları
+
+- Renderer yalnızca aktif projenin gerçek yolu altında işlem yapabilir.
+- Symlink/junction üzerinden proje dışına çıkılamaz.
+- KEDI kimlikleri katı `map_...` veya `node_...` deseninde olmalıdır.
+- Yazımlar geçici dosya, `fsync` ve atomik rename ile yapılır.
+- Rename, move, bağlantı metadata’sı ve silme akışları hata halinde geri alma
+  uygular.
+- Map/node silme işlemi dosya ve sidecar’ı birlikte sistem çöp kutusuna taşır.
+- Bozuk/boş JSON otomatik olarak yeni boş dokümanla değiştirilmez.
+- Uygulama kapanmadan ve proje değişmeden önce bekleyen editor kayıtları
+  tamamlanır.

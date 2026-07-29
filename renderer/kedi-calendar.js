@@ -7,11 +7,58 @@
     const WEEKDAY_NAMES = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 
     let calendarDragState = null;
-    let lastDiarySyncSignature = '';
+    let calendarStateProjectKey = null;
+    const lastDiarySyncSignatureByProject = new Map();
     let diarySyncInProgress = false;
-    let diaryDatesRefreshInProgress = false;
+    let pendingDiarySyncRequest = null;
+    let diaryDatesRefreshRequestId = 0;
+
+    function normalizeCalendarProjectKey(folderPath) {
+        const normalized = String(folderPath || '')
+            .replace(/[\\/]+/g, '/')
+            .replace(/\/+$/g, '');
+
+        if (window.kediEnvironment?.platform === 'win32') {
+            return normalized.toLowerCase();
+        }
+
+        return normalized;
+    }
+
+    function getCurrentCalendarProjectKey() {
+        return normalizeCalendarProjectKey(window.currentProjectFolder);
+    }
+
+    function getCalendarStorageKey() {
+        const projectKey = calendarStateProjectKey || 'no-project';
+        return `kediCalendarState:${encodeURIComponent(projectKey)}`;
+    }
+
+    function activateCalendarProjectState(folderPath = window.currentProjectFolder) {
+        const nextProjectKey = normalizeCalendarProjectKey(folderPath);
+
+        if (calendarStateProjectKey === nextProjectKey) {
+            return;
+        }
+
+        calendarStateProjectKey = nextProjectKey;
+        diaryDatesRefreshRequestId += 1;
+        pendingDiarySyncRequest = null;
+
+        if (!window.Kedi) {
+            window.Kedi = { state: {}, calendar: {} };
+        }
+
+        if (!window.Kedi.state) {
+            window.Kedi.state = {};
+        }
+
+        window.Kedi.state.kediCalendarState = null;
+    }
 
     function getCalendarState() {
+        activateCalendarProjectState();
+
         if (!window.Kedi) {
             window.Kedi = { state: {}, calendar: {} };
         }
@@ -44,7 +91,9 @@
 
     function readCalendarStateFromStorage() {
         try {
-            return JSON.parse(localStorage.getItem('kediCalendarState') || 'null');
+            return JSON.parse(
+                localStorage.getItem(getCalendarStorageKey()) || 'null'
+            );
         } catch {
             return null;
         }
@@ -55,7 +104,7 @@
             const state = getCalendarState();
 
             localStorage.setItem(
-                'kediCalendarState',
+                getCalendarStorageKey(),
                 JSON.stringify({
                     dock: state.dock,
                     x: state.x,
@@ -239,8 +288,25 @@
 
         document.body.appendChild(calendar);
         calendar.classList.add('floating');
-        calendar.style.left = `${Math.max(8, Number(state.x || 360))}px`;
-        calendar.style.top = `${Math.max(40, Number(state.y || 140))}px`;
+        clampFloatingCalendarPosition(calendar, state);
+        calendar.style.left = `${state.x}px`;
+        calendar.style.top = `${state.y}px`;
+    }
+
+    function clampFloatingCalendarPosition(
+        calendar = ensureCalendarDom(),
+        state = getCalendarState()
+    ) {
+        if (!calendar || state.dock !== 'float') return;
+
+        const rect = calendar.getBoundingClientRect();
+        const width = Math.max(1, rect.width || calendar.offsetWidth || 222);
+        const height = Math.max(1, rect.height || calendar.offsetHeight || 300);
+        const maxX = Math.max(8, window.innerWidth - width - 8);
+        const maxY = Math.max(40, window.innerHeight - height - 8);
+
+        state.x = Math.max(8, Math.min(maxX, Number(state.x || 360)));
+        state.y = Math.max(40, Math.min(maxY, Number(state.y || 140)));
     }
 
     function startCalendarDrag(event, calendar) {
@@ -277,9 +343,12 @@
             const calendar = ensureCalendarDom();
             const nextX = calendarDragState.startX + event.clientX - calendarDragState.startClientX;
             const nextY = calendarDragState.startY + event.clientY - calendarDragState.startClientY;
+            const rect = calendar.getBoundingClientRect();
+            const maxX = Math.max(8, window.innerWidth - rect.width - 8);
+            const maxY = Math.max(40, window.innerHeight - rect.height - 8);
 
-            state.x = Math.max(8, Math.min(window.innerWidth - 80, nextX));
-            state.y = Math.max(40, Math.min(window.innerHeight - 60, nextY));
+            state.x = Math.max(8, Math.min(maxX, nextX));
+            state.y = Math.max(40, Math.min(maxY, nextY));
 
             calendar.style.left = `${state.x}px`;
             calendar.style.top = `${state.y}px`;
@@ -309,6 +378,17 @@
                 : null;
 
             currentZone?.classList.add('has-calendar');
+            saveCalendarStateToStorage();
+        });
+
+        window.addEventListener('resize', () => {
+            const state = getCalendarState();
+            if (state.dock !== 'float') return;
+
+            const calendar = ensureCalendarDom();
+            clampFloatingCalendarPosition(calendar, state);
+            calendar.style.left = `${state.x}px`;
+            calendar.style.top = `${state.y}px`;
             saveCalendarStateToStorage();
         });
     }
@@ -440,35 +520,41 @@
     }
 
     async function refreshKediCalendarDates() {
-        if (diaryDatesRefreshInProgress) return null;
-
+        const projectFolder = window.currentProjectFolder;
+        const projectKey = getCurrentCalendarProjectKey();
+        const requestId = ++diaryDatesRefreshRequestId;
         const state = getCalendarState();
 
-        if (!window.currentProjectFolder || !window.kediProject?.listDiaryDates) {
+        if (!projectFolder || !window.kediProject?.listDiaryDates) {
             state.diaryDates = [];
             renderCalendar();
             return null;
         }
 
-        diaryDatesRefreshInProgress = true;
-
         try {
-            const result = await window.kediProject.listDiaryDates(window.currentProjectFolder);
+            const result = await window.kediProject.listDiaryDates(projectFolder);
+            const requestIsCurrent =
+                requestId === diaryDatesRefreshRequestId &&
+                projectKey === getCurrentCalendarProjectKey();
 
-            if (result?.ok) {
+            if (requestIsCurrent && result?.ok) {
                 state.diaryDates = Array.isArray(result.dates) ? result.dates : [];
                 renderCalendar();
             }
 
-            return result;
+            return requestIsCurrent
+                ? result
+                : {
+                    ok: false,
+                    stale: true,
+                    error: 'Eski projeye ait takvim yanıtı yok sayıldı.'
+                };
         } catch (error) {
             console.error('[KEDI] Diary tarihleri okunamadı:', error);
             return {
                 ok: false,
                 error: error.message
             };
-        } finally {
-            diaryDatesRefreshInProgress = false;
         }
     }
 
@@ -526,9 +612,72 @@
         return toIsoDate(date);
     }
 
-    async function syncKediDiaryFromMissionIndex(index) {
-        if (!window.currentProjectFolder || !window.kediProject?.syncDiaryMissions) {
+    async function runKediDiarySync(request) {
+        if (!request || diarySyncInProgress) {
             return null;
+        }
+
+        diarySyncInProgress = true;
+
+        try {
+            const result = await window.kediProject.syncDiaryMissions(
+                request.projectFolder,
+                {
+                    entries: request.entries,
+                    complete: true
+                }
+            );
+
+            if (result?.ok) {
+                lastDiarySyncSignatureByProject.set(
+                    request.projectKey,
+                    request.signature
+                );
+
+                if (request.projectKey === getCurrentCalendarProjectKey()) {
+                    await refreshKediCalendarDates();
+                }
+            }
+
+            return result;
+        } catch (error) {
+            console.error('[KEDI] Diary sync hatası:', error);
+            return {
+                ok: false,
+                error: error.message
+            };
+        } finally {
+            diarySyncInProgress = false;
+
+            const nextRequest = pendingDiarySyncRequest;
+            pendingDiarySyncRequest = null;
+
+            if (
+                nextRequest &&
+                nextRequest.signature !==
+                    lastDiarySyncSignatureByProject.get(nextRequest.projectKey)
+            ) {
+                queueMicrotask(() => {
+                    runKediDiarySync(nextRequest);
+                });
+            }
+        }
+    }
+
+    async function syncKediDiaryFromMissionIndex(index, options = {}) {
+        const projectFolder = window.currentProjectFolder;
+        const projectKey = getCurrentCalendarProjectKey();
+
+        if (!projectFolder || !window.kediProject?.syncDiaryMissions) {
+            return null;
+        }
+
+        if (options.complete !== true) {
+            return {
+                ok: false,
+                incomplete: true,
+                error: 'Eksik görev indeksi diary ile eşitlenmedi.'
+            };
         }
 
         const sourceIndex = Array.isArray(index)
@@ -539,9 +688,12 @@
 
         for (const block of sourceIndex) {
             const tags = Array.isArray(block.tags) ? block.tags : [];
-            const hasDone = tags.some((tag) => normalizeKediUserTag(tag) === 'done');
-
-            if (hasDone) continue;
+            const doneFor = new Set(
+                Array.isArray(block.doneFor)
+                    ? block.doneFor.map(normalizeKediUserTag)
+                    : []
+            );
+            const hasLegacyDone = block.legacyDone === true;
 
             for (const tag of tags) {
                 if (typeof parseKediTodoTag !== 'function') continue;
@@ -549,6 +701,7 @@
                 const todo = parseKediTodoTag(tag);
 
                 if (!todo) continue;
+                if (hasLegacyDone || doneFor.has(todo.tag)) continue;
 
                 const date = formatMissionDateForDiary(todo.finishDate);
 
@@ -575,32 +728,38 @@
             text: entry.text
         })));
 
-        if (signature === lastDiarySyncSignature || diarySyncInProgress) {
+        if (
+            signature === lastDiarySyncSignatureByProject.get(projectKey)
+        ) {
             return null;
         }
 
-        lastDiarySyncSignature = signature;
-        diarySyncInProgress = true;
+        const request = {
+            projectFolder,
+            projectKey,
+            entries,
+            signature
+        };
 
-        try {
-            const result = await window.kediProject.syncDiaryMissions(
-                window.currentProjectFolder,
-                entries
-            );
-
-            if (result?.ok) {
-                await refreshKediCalendarDates();
-            }
-
-            return result;
-        } catch (error) {
-            console.error('[KEDI] Diary sync hatası:', error);
+        if (diarySyncInProgress) {
+            pendingDiarySyncRequest = request;
             return {
-                ok: false,
-                error: error.message
+                ok: true,
+                queued: true
             };
-        } finally {
-            diarySyncInProgress = false;
+        }
+
+        return runKediDiarySync(request);
+    }
+
+    function resetKediCalendarForProject(folderPath) {
+        calendarStateProjectKey = null;
+        activateCalendarProjectState(folderPath);
+
+        const calendar = document.getElementById('kedi-calendar');
+        if (calendar) {
+            renderCalendar();
+            refreshKediCalendarDates();
         }
     }
 
@@ -622,6 +781,7 @@
     window.refreshKediCalendarDates = refreshKediCalendarDates;
     window.syncKediDiaryFromMissionIndex = syncKediDiaryFromMissionIndex;
     window.setKediCalendarDock = setCalendarDock;
+    window.resetKediCalendarForProject = resetKediCalendarForProject;
 
     if (!window.Kedi) {
         window.Kedi = { state: {}, calendar: {} };
@@ -632,7 +792,8 @@
         refresh: refreshKediCalendar,
         refreshDates: refreshKediCalendarDates,
         syncFromMissionIndex: syncKediDiaryFromMissionIndex,
-        setDock: setCalendarDock
+        setDock: setCalendarDock,
+        resetForProject: resetKediCalendarForProject
     };
 
     document.addEventListener('DOMContentLoaded', () => {

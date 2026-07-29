@@ -114,6 +114,12 @@ function getKediBlockElementsFromContainer(container) {
     });
 }
 
+function createKediInertHtmlTemplate(html = '') {
+    const template = document.createElement('template');
+    template.innerHTML = String(html || '');
+    return template;
+}
+
 function extractKediTagsFromBlock(block) {
     return Array.from(block.querySelectorAll('.kedi-user-tag[data-kedi-tag]'))
         .map((tagEl) => normalizeKediUserTag(tagEl.dataset.kediTag || tagEl.textContent || ''))
@@ -126,7 +132,31 @@ function refreshKediTagsPanelSoon() {
     kediTagsPanelRefreshTimer = setTimeout(async () => {
         kediTagsPanelRefreshTimer = null;
         await refreshKediTagsPanel();
-    }, 250);
+    }, 1000);
+}
+
+function resetKediTagsForProject() {
+    clearTimeout(kediTagsPanelRefreshTimer);
+    kediTagsPanelRefreshTimer = null;
+
+    if (KEDI_USER_TAG_CACHE instanceof Set) {
+        KEDI_USER_TAG_CACHE.clear();
+    }
+
+    kediTagsPanelState = {
+        selectedTag: null,
+        dropdownOpen: false,
+        index: [],
+        missionIndex: [],
+        showCompletedMissions: false
+    };
+
+    if (typeof closeKediTagMenu === 'function') {
+        closeKediTagMenu();
+    }
+
+    renderKediTagsPanel();
+    renderKediMissionsPanel();
 }
 
 async function refreshKediTagsPanel() {
@@ -144,13 +174,28 @@ async function refreshKediTagsPanel() {
             missionsPageIsActive ||
             !Array.isArray(kediTagsPanelState.missionIndex)
         ) {
-            const missionIndex = await buildKediMissionBlockIndex();
-            kediTagsPanelState.missionIndex = Array.isArray(missionIndex)
-                ? missionIndex
+            const missionIndexResult = await buildKediMissionBlockIndex();
+            kediTagsPanelState.missionIndex = Array.isArray(
+                missionIndexResult?.blocks
+            )
+                ? missionIndexResult.blocks
                 : [];
+            kediTagsPanelState.missionIndexComplete =
+                missionIndexResult?.complete === true;
 
-            if (typeof syncKediDiaryFromMissionIndex === 'function') {
-                await syncKediDiaryFromMissionIndex(kediTagsPanelState.missionIndex);
+            if (
+                typeof syncKediDiaryFromMissionIndex === 'function' &&
+                kediTagsPanelState.missionIndexComplete
+            ) {
+                await syncKediDiaryFromMissionIndex(
+                    kediTagsPanelState.missionIndex,
+                    { complete: true }
+                );
+            } else if (!kediTagsPanelState.missionIndexComplete) {
+                console.warn(
+                    '[KEDI] Görev indeksi eksik kaldığı için diary eşitlemesi yapılmadı:',
+                    missionIndexResult?.errors || []
+                );
             }
         }
 
@@ -165,9 +210,12 @@ async function refreshKediTagsPanel() {
 }
 
 function normalizeClientPathForTags(filePath) {
-    return String(filePath || '')
-        .replace(/[\/]+/g, '/')
-        .toLowerCase();
+    const normalized = String(filePath || '')
+        .replace(/[\\/]+/g, '/');
+
+    return window.kediEnvironment?.platform === 'win32'
+        ? normalized.toLowerCase()
+        : normalized;
 }
 
 function sameKediPathForTags(a, b) {
@@ -292,13 +340,24 @@ async function extractKediTagBlocksForNodeItem(node) {
         nodeTitle = doc.metadata?.title || fallbackTitle;
     }
 
-    const blocks = extractKediTagBlocksFromHtml({
+    const detailed = extractKediTagBlocksFromHtmlDetailed({
         html,
         nodePath,
         nodeTitle: node.isDiaryNode ? `Günlük · ${nodeTitle}` : nodeTitle
     });
 
-    return blocks.map((block) => ({
+    if (
+        !sameKediPathForTags(activeCenterNode?.path, nodePath) &&
+        !sameKediPathForTags(activeModalNode?.path, nodePath)
+    ) {
+        await persistKediAssignedBlockIds({
+            nodePath,
+            detailed,
+            originalHtml: html
+        });
+    }
+
+    return detailed.blocks.map((block) => ({
         ...block,
         fileName: node.fileName || node.name || '',
         isDiaryNode: Boolean(node.isDiaryNode)
@@ -334,7 +393,8 @@ function makeKediMissionNodeItem(item) {
 
 async function collectKediMissionNodeItemsFromFolder(
     folderPath,
-    seenPaths = new Set()
+    seenPaths = new Set(),
+    scanState = { complete: true, errors: [] }
 ) {
     const nodes = [];
 
@@ -343,6 +403,10 @@ async function collectKediMissionNodeItemsFromFolder(
     const result = await window.kediProject?.listFolder?.(folderPath);
 
     if (!result?.ok || !Array.isArray(result.items)) {
+        scanState.complete = false;
+        scanState.errors.push(
+            result?.error || `Klasör listelenemedi: ${folderPath}`
+        );
         return nodes;
     }
 
@@ -351,7 +415,8 @@ async function collectKediMissionNodeItemsFromFolder(
             nodes.push(
                 ...(await collectKediMissionNodeItemsFromFolder(
                     item.fullPath,
-                    seenPaths
+                    seenPaths,
+                    scanState
                 ))
             );
             continue;
@@ -361,9 +426,12 @@ async function collectKediMissionNodeItemsFromFolder(
 
         if (isKediMissionNodeFileName(item.name || item.fileName)) {
             const nodeItem = makeKediMissionNodeItem(item);
+            const normalizedNodePath = normalizeClientPathForTags(
+                nodeItem?.fullPath
+            );
 
-            if (nodeItem && !seenPaths.has(nodeItem.fullPath)) {
-                seenPaths.add(nodeItem.fullPath);
+            if (nodeItem && !seenPaths.has(normalizedNodePath)) {
+                seenPaths.add(normalizedNodePath);
                 nodes.push(nodeItem);
             }
 
@@ -379,11 +447,22 @@ async function collectKediMissionNodeItemsFromFolder(
                 ? mapNodesResult.nodes
                 : [];
 
+            if (!mapNodesResult?.ok) {
+                scanState.complete = false;
+                scanState.errors.push(
+                    mapNodesResult?.error ||
+                    `Map node listesi okunamadı: ${item.fullPath}`
+                );
+            }
+
             for (const mapNode of mapNodes) {
                 const nodeItem = makeKediMissionNodeItem(mapNode);
+                const normalizedNodePath = normalizeClientPathForTags(
+                    nodeItem?.fullPath
+                );
 
-                if (nodeItem && !seenPaths.has(nodeItem.fullPath)) {
-                    seenPaths.add(nodeItem.fullPath);
+                if (nodeItem && !seenPaths.has(normalizedNodePath)) {
+                    seenPaths.add(normalizedNodePath);
                     nodes.push(nodeItem);
                 }
             }
@@ -396,17 +475,31 @@ async function collectKediMissionNodeItemsFromFolder(
 async function buildKediMissionBlockIndex() {
     const results = [];
     const projectFolder = window.currentProjectFolder;
+    const scanState = {
+        complete: true,
+        errors: []
+    };
 
-    if (!projectFolder) return results;
+    if (!projectFolder) {
+        return {
+            blocks: results,
+            complete: false,
+            errors: ['Aktif proje klasörü yok.']
+        };
+    }
 
-    const nodeItems = await collectKediMissionNodeItemsFromFolder(projectFolder);
+    const nodeItems = await collectKediMissionNodeItemsFromFolder(
+        projectFolder,
+        new Set(),
+        scanState
+    );
 
     for (const node of nodeItems) {
         const nodePath = node.fullPath;
 
         if (!nodePath) continue;
 
-        if (activeCenterNode?.path === nodePath) {
+        if (sameKediPathForTags(activeCenterNode?.path, nodePath)) {
             const editor = document.getElementById('center-node-editor-content');
 
             ensureKediEditorBlocks(editor);
@@ -426,7 +519,7 @@ async function buildKediMissionBlockIndex() {
             continue;
         }
 
-        if (activeModalNode?.path === nodePath) {
+        if (sameKediPathForTags(activeModalNode?.path, nodePath)) {
             const editor = document.getElementById('node-modal-content');
 
             ensureKediEditorBlocks(editor);
@@ -448,10 +541,17 @@ async function buildKediMissionBlockIndex() {
 
         const doc = await window.kediProject?.getKediDocument?.(nodePath);
 
-        if (!doc?.ok) continue;
+        if (!doc?.ok) {
+            scanState.complete = false;
+            scanState.errors.push(
+                doc?.error || `Node okunamadı: ${nodePath}`
+            );
+            continue;
+        }
 
-        results.push(...extractKediTagBlocksFromHtml({
-            html: doc.data?.content || '',
+        const originalHtml = doc.data?.content || '';
+        const detailed = extractKediTagBlocksFromHtmlDetailed({
+            html: originalHtml,
             nodePath,
             nodeTitle:
                 doc.metadata?.title ||
@@ -460,10 +560,28 @@ async function buildKediMissionBlockIndex() {
                 node.fileName ||
                 node.name ||
                 'Node'
-        }));
+        });
+
+        results.push(...detailed.blocks);
+        const idsPersisted = await persistKediAssignedBlockIds({
+            nodePath,
+            detailed,
+            originalHtml
+        });
+
+        if (!idsPersisted) {
+            scanState.complete = false;
+            scanState.errors.push(
+                `Block kimlikleri kaydedilemedi: ${nodePath}`
+            );
+        }
     }
 
-    return results;
+    return {
+        blocks: results,
+        complete: scanState.complete,
+        errors: scanState.errors
+    };
 }
 
 async function buildKediTagBlockIndex() {
@@ -475,10 +593,26 @@ async function buildKediTagBlockIndex() {
     const mapPath = getKediTagsActiveMapPath();
     const mapNodes = await getKediTagsActiveMapNodes(mapPath);
     const diaryNodes = await collectKediDiaryTagNodeItems();
+    const standaloneNode = (
+        activeCenterNode?.path &&
+        (!mapPath || !Array.isArray(mapNodes) || !mapNodes.some((node) => {
+            return sameKediPathForTags(node?.fullPath, activeCenterNode.path);
+        }))
+    )
+        ? [{
+            ...(activeCenterNode.item || {}),
+            fullPath: activeCenterNode.path,
+            metadata: activeCenterNode.metadata || activeCenterNode.item?.metadata || {},
+            isFile: true,
+            isDirectory: false,
+            type: 'file'
+        }]
+        : [];
 
     const allNodes = [
         ...(Array.isArray(mapNodes) ? mapNodes : []),
-        ...(Array.isArray(diaryNodes) ? diaryNodes : [])
+        ...(Array.isArray(diaryNodes) ? diaryNodes : []),
+        ...standaloneNode
     ];
 
     for (const node of allNodes) {
@@ -494,17 +628,44 @@ async function buildKediTagBlockIndex() {
     return results;
 }
 
-function extractKediTagBlocksFromHtml({ html, nodePath, nodeTitle }) {
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = sanitizeKediEditorHtml(String(html || ''));
+function extractKediTagBlocksFromHtmlDetailed({ html, nodePath, nodeTitle }) {
+    const template = createKediInertHtmlTemplate(html);
+    const container = template.content;
 
-    const blocks = getKediBlockElementsFromContainer(wrapper);
+    const blocks = getKediBlockElementsFromContainer(container);
     const results = [];
+    let assignedMissingBlockId = false;
 
     for (const block of blocks) {
+        if (
+            block.classList.contains('kedi-diary-managed-block') ||
+            block.closest('.kedi-diary-managed-block')
+        ) {
+            continue;
+        }
+
+        if (!block.dataset.kediBlockId) {
+            assignedMissingBlockId = true;
+        }
+
         decorateKediEditorBlock(block);
 
         const tags = Array.from(new Set(extractKediTagsFromBlock(block)));
+        const doneTagElements = Array.from(
+            block.querySelectorAll('.kedi-user-tag[data-kedi-tag]')
+        );
+        const doneFor = doneTagElements
+            .filter((tagEl) => {
+                return normalizeKediUserTag(
+                    tagEl.dataset.kediTag || tagEl.textContent || ''
+                ) === 'done' && Boolean(tagEl.dataset.kediDoneFor);
+            })
+            .map((tagEl) => {
+                return normalizeKediUserTag(
+                    tagEl.dataset.kediDoneFor || ''
+                );
+            })
+            .filter(Boolean);
 
         if (!tags.length) continue;
 
@@ -517,12 +678,66 @@ function extractKediTagBlocksFromHtml({ html, nodePath, nodeTitle }) {
             nodePath,
             nodeTitle,
             tags,
+            doneFor: Array.from(new Set(doneFor)),
+            legacyDone: doneTagElements.some((tagEl) => {
+                return (
+                    normalizeKediUserTag(
+                        tagEl.dataset.kediTag || tagEl.textContent || ''
+                    ) === 'done' &&
+                    !tagEl.dataset.kediDoneFor
+                );
+            }),
             text,
-            html: block.outerHTML
+            html: sanitizeKediEditorHtml(block.outerHTML)
         });
     }
 
-    return results;
+    return {
+        blocks: results,
+        html: template.innerHTML,
+        assignedMissingBlockId
+    };
+}
+
+function extractKediTagBlocksFromHtml(options) {
+    return extractKediTagBlocksFromHtmlDetailed(options).blocks;
+}
+
+async function persistKediAssignedBlockIds({
+    nodePath,
+    detailed,
+    originalHtml
+}) {
+    if (!detailed?.assignedMissingBlockId || !nodePath) {
+        return true;
+    }
+
+    if (
+        sameKediPathForTags(activeCenterNode?.path, nodePath) ||
+        sameKediPathForTags(activeModalNode?.path, nodePath)
+    ) {
+        return true;
+    }
+
+    const normalizedOriginal = String(originalHtml || '');
+    if (detailed.html === normalizedOriginal) {
+        return true;
+    }
+
+    const result = await window.kediProject?.saveNodeContent?.(
+        nodePath,
+        detailed.html
+    );
+
+    if (!result?.ok) {
+        console.warn(
+            `[KEDI] Block kimlikleri kalıcılaştırılamadı (${nodePath}):`,
+            result?.error || 'Bilinmeyen kayıt hatası'
+        );
+        return false;
+    }
+
+    return true;
 }
 
 function ensureKediTagsPanelDom() {
@@ -713,14 +928,18 @@ const tags = Array.from(counts.keys()).sort((a, b) => {
 function parseKediTodoTag(tag) {
     const normalized = normalizeKediUserTag(tag);
 
-    const match = normalized.match(/^todo\.([1-9])\.(\d{2})-(\d{2})-(\d{2})$/);
+    const match = normalized.match(
+        /^todo\.([1-9])\.(\d{2})-(\d{2})-(\d{2}|\d{4})$/
+    );
 
     if (!match) return null;
 
     const priority = Number(match[1]);
     const day = Number(match[2]);
     const month = Number(match[3]);
-    const year = 2000 + Number(match[4]);
+    const year = match[4].length === 2
+        ? 2000 + Number(match[4])
+        : Number(match[4]);
 
     const finishDate = new Date(year, month - 1, day);
 
@@ -755,13 +974,14 @@ function parseKediTodoTag(tag) {
 function formatKediMissionDate(date) {
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = String(date.getFullYear()).slice(-2);
+    const year = String(date.getFullYear());
 
     return `${day}-${month}-${year}`;
 }
 
-function getKediMissionsFromIndex() {
+function getKediMissionsFromIndex(options = {}) {
     const missions = [];
+    const includeCompleted = options.includeCompleted === true;
 
     const sourceIndex = Array.isArray(kediTagsPanelState.missionIndex)
         ? kediTagsPanelState.missionIndex
@@ -769,17 +989,20 @@ function getKediMissionsFromIndex() {
 
     for (const block of sourceIndex) {
         const tags = Array.isArray(block.tags) ? block.tags : [];
+        const doneFor = new Set(
+            Array.isArray(block.doneFor)
+                ? block.doneFor.map(normalizeKediUserTag)
+                : []
+        );
 
-        const hasDone = tags.some((tag) => {
-            return normalizeKediUserTag(tag) === 'done';
-        });
-
-        if (hasDone) continue;
+        const hasLegacyDone = block.legacyDone === true;
 
         for (const tag of tags) {
             const todo = parseKediTodoTag(tag);
 
             if (!todo) continue;
+            const completed = hasLegacyDone || doneFor.has(todo.tag);
+            if (completed && !includeCompleted) continue;
 
             missions.push({
                 ...block,
@@ -787,7 +1010,8 @@ function getKediMissionsFromIndex() {
                 priority: todo.priority,
                 finishDate: todo.finishDate,
                 daysLeft: todo.daysLeft,
-                workorder: todo.workorder
+                workorder: todo.workorder,
+                completed
             });
         }
     }
@@ -828,7 +1052,7 @@ function getKediMissionDisplayText(mission) {
     }
 
     text = text.replace(
-        /(^|\s)(?:#|\.\.)?todo\.[1-9]\.\d{2}-\d{2}-\d{2}(?=\s|$)/gi,
+        /(^|\s)(?:#|\.\.)?todo\.[1-9]\.\d{2}-\d{2}-(?:\d{2}|\d{4})(?=\s|$)/gi,
         ' '
     );
 
@@ -838,11 +1062,20 @@ function getKediMissionDisplayText(mission) {
 }
 
 function renderKediMissionsPanel() {
+    const panelEl = document.getElementById('kedi-missions-panel');
     const listEl = document.getElementById('kedi-missions-list');
 
-    if (!listEl) return;
+    if (!panelEl || !listEl) return;
+
+    let toolbarEl = panelEl.querySelector('.kedi-missions-toolbar');
+    if (!toolbarEl) {
+        toolbarEl = document.createElement('div');
+        toolbarEl.className = 'kedi-missions-toolbar';
+        panelEl.insertBefore(toolbarEl, listEl);
+    }
 
     if (!window.currentProjectFolder) {
+    toolbarEl.innerHTML = '';
     listEl.innerHTML = `
         <div class="right-panel-empty">
             Missions için önce bir proje klasörü seç.
@@ -851,12 +1084,38 @@ function renderKediMissionsPanel() {
     return;
 }
 
-    const missions = getKediMissionsFromIndex();
+    const allMissions = getKediMissionsFromIndex({
+        includeCompleted: true
+    });
+    const completedCount = allMissions.filter((mission) => {
+        return mission.completed;
+    }).length;
+    const showCompleted = kediTagsPanelState.showCompletedMissions === true;
+    const missions = showCompleted
+        ? allMissions
+        : allMissions.filter((mission) => !mission.completed);
+
+    toolbarEl.innerHTML = '';
+    const completedToggle = document.createElement('button');
+    completedToggle.type = 'button';
+    completedToggle.className = 'kedi-missions-completed-toggle';
+    completedToggle.setAttribute('aria-pressed', showCompleted ? 'true' : 'false');
+    completedToggle.textContent = showCompleted
+        ? `Tamamlananları gizle (${completedCount})`
+        : `Tamamlananları göster (${completedCount})`;
+    completedToggle.disabled = completedCount === 0;
+    completedToggle.addEventListener('click', () => {
+        kediTagsPanelState.showCompletedMissions = !showCompleted;
+        renderKediMissionsPanel();
+    });
+    toolbarEl.appendChild(completedToggle);
 
     if (!missions.length) {
         listEl.innerHTML = `
             <div class="right-panel-empty">
-                Bu map içinde açık görev yok.
+                ${showCompleted
+                    ? 'Bu projede görev yok.'
+                    : 'Bu projede açık görev yok.'}
             </div>
         `;
         return;
@@ -867,6 +1126,7 @@ function renderKediMissionsPanel() {
     for (const mission of missions) {
         const item = document.createElement('div');
         item.className = 'kedi-mission-card';
+        item.classList.toggle('completed', mission.completed === true);
 
         const isLate = mission.daysLeft < 0;
 
@@ -899,17 +1159,31 @@ function renderKediMissionsPanel() {
         const checkbox = item.querySelector('.kedi-mission-check');
         const mainButton = item.querySelector('.kedi-mission-main');
 
+        if (checkbox) {
+            checkbox.checked = mission.completed === true;
+            checkbox.title = mission.completed
+                ? 'Görevi yeniden aç'
+                : 'Tamamlandı olarak işaretle';
+        }
+
         checkbox?.addEventListener('click', async (event) => {
     event.stopPropagation();
 
     checkbox.disabled = true;
 
-    const result = await markKediMissionDone(mission);
+    const result = checkbox.checked
+        ? await markKediMissionDone(mission)
+        : await reopenKediMission(mission);
 
     if (!result?.ok) {
-        checkbox.checked = false;
+        checkbox.checked = mission.completed === true;
         checkbox.disabled = false;
-        alert(result?.error || 'Görev tamamlandı olarak işaretlenemedi.');
+        alert(
+            result?.error ||
+            (mission.completed
+                ? 'Görev yeniden açılamadı.'
+                : 'Görev tamamlandı olarak işaretlenemedi.')
+        );
         return;
     }
 
@@ -930,23 +1204,38 @@ function normalizeKediBlockText(value) {
         .trim();
 }
 
-function createKediDoneTagElement() {
+function createKediDoneTagElement(todoTag) {
     const tagEl = document.createElement('span');
+    const normalizedTodoTag = normalizeKediUserTag(todoTag);
 
     tagEl.className = 'kedi-user-tag';
     tagEl.dataset.kediTag = 'done';
+    if (normalizedTodoTag) {
+        tagEl.dataset.kediDoneFor = normalizedTodoTag;
+    }
     tagEl.contentEditable = 'false';
     tagEl.textContent = 'done';
 
     return tagEl;
 }
 
-function blockHasKediDoneTag(block) {
+function blockHasKediDoneTag(block, todoTag = null) {
+    const normalizedTodoTag = normalizeKediUserTag(todoTag);
+
     return Array.from(block.querySelectorAll('.kedi-user-tag[data-kedi-tag]'))
         .some((tagEl) => {
-            return normalizeKediUserTag(
+            const isDone = normalizeKediUserTag(
                 tagEl.dataset.kediTag || tagEl.textContent || ''
             ) === 'done';
+
+            if (!isDone) return false;
+            if (!normalizedTodoTag) return true;
+
+            const doneFor = normalizeKediUserTag(
+                tagEl.dataset.kediDoneFor || ''
+            );
+
+            return !doneFor || doneFor === normalizedTodoTag;
         });
 }
 
@@ -961,16 +1250,44 @@ function blockHasKediTag(block, targetTag) {
         });
 }
 
-function appendKediDoneTagToBlock(block) {
-    if (!block || blockHasKediDoneTag(block)) return false;
+function appendKediDoneTagToBlock(block, todoTag) {
+    if (!block || blockHasKediDoneTag(block, todoTag)) return false;
 
     decorateKediEditorBlock(block);
 
     block.appendChild(document.createTextNode(' '));
-    block.appendChild(createKediDoneTagElement());
+    block.appendChild(createKediDoneTagElement(todoTag));
     block.appendChild(document.createTextNode(' '));
 
     return true;
+}
+
+function removeKediDoneTagFromBlock(block, todoTag) {
+    if (!block) return false;
+
+    const normalizedTodoTag = normalizeKediUserTag(todoTag);
+    let removed = false;
+
+    Array.from(
+        block.querySelectorAll('.kedi-user-tag[data-kedi-tag]')
+    ).forEach((tagEl) => {
+        const isDone = normalizeKediUserTag(
+            tagEl.dataset.kediTag || tagEl.textContent || ''
+        ) === 'done';
+        const doneFor = normalizeKediUserTag(
+            tagEl.dataset.kediDoneFor || ''
+        );
+
+        if (
+            isDone &&
+            (!doneFor || !normalizedTodoTag || doneFor === normalizedTodoTag)
+        ) {
+            tagEl.remove();
+            removed = true;
+        }
+    });
+
+    return removed;
 }
 
 function findKediMissionBlockInContainer(container, mission) {
@@ -1014,7 +1331,36 @@ function findKediMissionBlockInContainer(container, mission) {
     return textFallback || tagFallback;
 }
 
-async function markKediMissionDone(mission) {
+function setKediMissionCompletionInBlock(block, mission, completed) {
+    if (!block) {
+        return {
+            changed: false,
+            previousHtml: ''
+        };
+    }
+
+    const previousHtml = block.innerHTML;
+    const changed = completed
+        ? appendKediDoneTagToBlock(block, mission.todoTag)
+        : removeKediDoneTagFromBlock(block, mission.todoTag);
+
+    return {
+        changed,
+        previousHtml
+    };
+}
+
+function rollbackKediMissionBlock(block, previousHtml) {
+    if (!block) return;
+
+    block.innerHTML = previousHtml;
+
+    if (typeof initializeKediAdvancedEditorContent === 'function') {
+        initializeKediAdvancedEditorContent(block);
+    }
+}
+
+async function setKediMissionCompletion(mission, completed) {
     if (!mission?.nodePath) {
         return {
             ok: false,
@@ -1023,8 +1369,8 @@ async function markKediMissionDone(mission) {
     }
 
     try {
-        // 1) Görev şu an center editor içinde açıksa önce DOM'u güncelle.
-        if (activeCenterNode?.path === mission.nodePath) {
+        // 1) Görev şu an center editor içindeyse DOM ve disk birlikte güncellenir.
+        if (sameKediPathForTags(activeCenterNode?.path, mission.nodePath)) {
             const editor = document.getElementById('center-node-editor-content');
 
             const block = findKediMissionBlockInContainer(editor, mission);
@@ -1036,33 +1382,52 @@ async function markKediMissionDone(mission) {
                 };
             }
 
-            appendKediDoneTagToBlock(block);
+            const change = setKediMissionCompletionInBlock(
+                block,
+                mission,
+                completed
+            );
+
+            if (!change.changed) {
+                return {
+                    ok: true,
+                    unchanged: true
+                };
+            }
 
             editor.dispatchEvent(new Event('input', {
                 bubbles: true
             }));
 
+            let saveSucceeded = false;
+            let saveError = 'Node kaydedilemedi.';
+
             if (typeof saveCurrentCenterNodeEditor === 'function') {
-                await saveCurrentCenterNodeEditor();
+                saveSucceeded = await saveCurrentCenterNodeEditor();
             } else {
                 const saveResult = await window.kediProject?.saveNodeContent?.(
                     mission.nodePath,
                     getKediEditorContent(editor)
                 );
 
-                if (!saveResult?.ok) {
-                    return {
-                        ok: false,
-                        error: saveResult?.error || 'Node kaydedilemedi.'
-                    };
-                }
+                saveSucceeded = saveResult?.ok === true;
+                saveError = saveResult?.error || saveError;
+            }
+
+            if (!saveSucceeded) {
+                rollbackKediMissionBlock(block, change.previousHtml);
+                refreshKediTagsPanelSoon();
+                return {
+                    ok: false,
+                    error: saveError
+                };
             }
 
             return { ok: true };
         }
 
-        // 2) Görev modal içinde açıksa modal DOM'unu güncelle.
-        if (activeModalNode?.path === mission.nodePath) {
+        // 2) Görev modal içindeyse başarısız kayıtta DOM geri alınır.
+        if (sameKediPathForTags(activeModalNode?.path, mission.nodePath)) {
             const editor = document.getElementById('node-modal-content');
 
             const block = findKediMissionBlockInContainer(editor, mission);
@@ -1074,7 +1439,18 @@ async function markKediMissionDone(mission) {
                 };
             }
 
-            appendKediDoneTagToBlock(block);
+            const change = setKediMissionCompletionInBlock(
+                block,
+                mission,
+                completed
+            );
+
+            if (!change.changed) {
+                return {
+                    ok: true,
+                    unchanged: true
+                };
+            }
 
             editor.dispatchEvent(new Event('input', {
                 bubbles: true
@@ -1086,12 +1462,17 @@ async function markKediMissionDone(mission) {
             );
 
             if (!saveResult?.ok) {
+                rollbackKediMissionBlock(block, change.previousHtml);
+                refreshKediTagsPanelSoon();
                 return {
                     ok: false,
                     error: saveResult?.error || 'Node kaydedilemedi.'
                 };
             }
 
+            if (activeModalNode) {
+                activeModalNode.dirty = false;
+            }
             return { ok: true };
         }
 
@@ -1105,10 +1486,12 @@ async function markKediMissionDone(mission) {
             };
         }
 
-        const wrapper = document.createElement('div');
-        wrapper.innerHTML = sanitizeKediEditorHtml(doc.data?.content || '');
+        const template = createKediInertHtmlTemplate(doc.data?.content || '');
 
-        const block = findKediMissionBlockInContainer(wrapper, mission);
+        const block = findKediMissionBlockInContainer(
+            template.content,
+            mission
+        );
 
         if (!block) {
             return {
@@ -1117,11 +1500,22 @@ async function markKediMissionDone(mission) {
             };
         }
 
-        appendKediDoneTagToBlock(block);
+        const change = setKediMissionCompletionInBlock(
+            block,
+            mission,
+            completed
+        );
+
+        if (!change.changed) {
+            return {
+                ok: true,
+                unchanged: true
+            };
+        }
 
         const saveResult = await window.kediProject?.saveNodeContent?.(
             mission.nodePath,
-            sanitizeKediEditorHtml(wrapper.innerHTML)
+            template.innerHTML
         );
 
         if (!saveResult?.ok) {
@@ -1133,13 +1527,25 @@ async function markKediMissionDone(mission) {
 
         return { ok: true };
     } catch (error) {
-        console.error('[KEDI] Mission done işaretleme hatası:', error);
+        console.error('[KEDI] Mission durum işaretleme hatası:', error);
 
         return {
             ok: false,
-            error: error.message || 'Görev tamamlandı olarak işaretlenemedi.'
+            error:
+                error.message ||
+                (completed
+                    ? 'Görev tamamlandı olarak işaretlenemedi.'
+                    : 'Görev yeniden açılamadı.')
         };
     }
+}
+
+async function markKediMissionDone(mission) {
+    return setKediMissionCompletion(mission, true);
+}
+
+async function reopenKediMission(mission) {
+    return setKediMissionCompletion(mission, false);
 }
 
 async function openKediTagBlockResult(block) {
@@ -1194,10 +1600,15 @@ function highlightKediEditorBlock(blockId) {
 
     if (!block) return;
 
+    block.classList.add('kedi-block-highlight');
     block.scrollIntoView({
         block: 'center',
         behavior: 'smooth'
     });
+
+    setTimeout(() => {
+        block.classList.remove('kedi-block-highlight');
+    }, 2200);
 }
 
 const KEDI_SYSTEM_TAGS = [
@@ -1802,4 +2213,3 @@ function kediEscapeHtml(value) {
 function escapeHtml(value) {
     return kediEscapeHtml(value);
 }
-

@@ -24,12 +24,56 @@ function getFileIcon(fileName = '') {
     return '📦';
 }
 
+function sameKediWorkspacePath(a, b) {
+    if (!a || !b) return false;
+
+    if (typeof kediSameTabPath === 'function') {
+        return kediSameTabPath(a, b);
+    }
+
+    const normalize = (value) => String(value).replace(/[\\/]+/g, '/');
+    const normalizedA = normalize(a);
+    const normalizedB = normalize(b);
+
+    return window.kediEnvironment?.platform === 'win32'
+        ? normalizedA.toLowerCase() === normalizedB.toLowerCase()
+        : normalizedA === normalizedB;
+}
+
 
 async function openMapInWorkspace(mapItem) {
-    if (!mapItem || !isMapFileName(mapItem.name)) return;
+    if (!mapItem || !isMapFileName(mapItem.name || mapItem.fileName)) {
+        return false;
+    }
 
     if (typeof saveCurrentCenterNodeEditor === 'function' && activeCenterNode) {
-        await saveCurrentCenterNodeEditor();
+        const saved = await saveCurrentCenterNodeEditor();
+        if (!saved) return false;
+    }
+
+    if (
+        activeMapPath &&
+        !sameKediWorkspacePath(activeMapPath, mapItem.fullPath) &&
+        typeof saveCurrentMapLayout === 'function'
+    ) {
+        const layoutSaved = await saveCurrentMapLayout();
+        if (!layoutSaved) return false;
+    }
+
+    const result = await window.kediProject?.listMapNodes?.(mapItem.fullPath);
+
+    if (!result || !result.ok) {
+        alert(result?.error || 'Map yüklenemedi.');
+        return false;
+    }
+
+    const placeholder = document.getElementById('workspace-placeholder');
+    const canvas = document.getElementById('map-canvas');
+    const board = document.getElementById('map-board');
+
+    if (!canvas || !board) {
+        console.error('[KEDI] Harita çalışma alanı DOM öğeleri bulunamadı.');
+        return false;
     }
 
     if (typeof clearCenterNodeEditor === 'function') {
@@ -50,26 +94,19 @@ async function openMapInWorkspace(mapItem) {
 
     activeMapPath = mapItem.fullPath;
 
-    const placeholder = document.getElementById('workspace-placeholder');
-    const canvas = document.getElementById('map-canvas');
-    const board = document.getElementById('map-board');
-
-    if (!canvas || !board) return;
-
     if (placeholder) placeholder.style.display = 'none';
+    canvas.hidden = false;
     canvas.style.display = 'block';
     board.innerHTML = '';
-
-    const result = await window.kediProject?.listMapNodes?.(activeMapPath);
-
-    if (!result || !result.ok) {
-        alert(result?.error || 'Map yüklenemedi.');
-        return;
-    }
 
     activeMapCamera =
     result.map?.data?.map?.camera ||
     { x: 0, y: 0, zoom: 1 };
+    collapsedHubPorts = new Set(
+        Array.isArray(result.map?.data?.map?.collapsedHubs)
+            ? result.map.data.map.collapsedHubs
+            : []
+    );
 
     applyMapCamera();
     setupMapCanvasPan();
@@ -86,9 +123,12 @@ async function openMapInWorkspace(mapItem) {
     }
 
     drawMapConnections();
+    if (typeof syncHubPortCollapseVisuals === 'function') {
+        syncHubPortCollapseVisuals();
+    }
 
     refreshKediTagsPanelSoon();
-  
+    return true;
 }
 
 function clearMapWorkspace() {
@@ -96,10 +136,20 @@ function clearMapWorkspace() {
     const canvas = document.getElementById('map-canvas');
     const board = document.getElementById('map-board');
 
+    clearTimeout(mapSaveTimer);
+    clearTimeout(mapCameraSaveTimer);
+    mapSaveTimer = null;
+    mapCameraSaveTimer = null;
+
+    if (typeof resetKediMapConnectionInteractions === 'function') {
+        resetKediMapConnectionInteractions();
+    }
+
     activeMapPath = null;
     activeMapNodes = [];
     activeMapEdges = [];
     activeMapCamera = { x: 0, y: 0, zoom: 1 };
+    collapsedHubPorts = new Set();
 
     if (board) {
         board.innerHTML = '';
@@ -108,6 +158,7 @@ function clearMapWorkspace() {
     drawMapConnections();
 
     if (canvas) {
+        canvas.hidden = true;
         canvas.style.display = 'none';
     }
 
@@ -280,15 +331,18 @@ function createMapNodeBox(node) {
 
     const title = node.metadata?.title || node.fileName.replace(/\.node$/i, '');
     const preview = node.preview || '';
+    box.tabIndex = 0;
+    box.setAttribute('role', 'group');
+    box.setAttribute('aria-label', `${title} node`);
 
     box.innerHTML = `
         <button class="map-node-btn map-node-delete" title="Node sil">×</button>
         <button class="map-node-btn map-node-open" title="Node düzenle">↗</button>
 
-        <div class="map-port top" data-port="top"></div>
-        <div class="map-port right" data-port="right"></div>
-        <div class="map-port bottom" data-port="bottom"></div>
-        <div class="map-port left" data-port="left"></div>
+        <div class="map-port top" data-port="top" role="button" tabindex="0" aria-label="Üst bağlantı portu"></div>
+        <div class="map-port right" data-port="right" role="button" tabindex="0" aria-label="Sağ bağlantı portu"></div>
+        <div class="map-port bottom" data-port="bottom" role="button" tabindex="0" aria-label="Alt bağlantı portu"></div>
+        <div class="map-port left" data-port="left" role="button" tabindex="0" aria-label="Sol bağlantı portu"></div>
 
         <div class="map-node-title" title="${escapeHtml(title)}">${escapeHtml(title)}</div>
         <div class="map-node-preview">${escapeHtml(preview)}</div>
@@ -333,6 +387,18 @@ function bindMapNodeBoxEvents(box, node) {
     bindMapNodeResize(box, resizeHandle);
 
     bindMapPortEvents(box);
+
+    box.addEventListener('keydown', (event) => {
+        if (event.target !== box) return;
+
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            openNodeModalFromBox(box);
+        } else if (event.key === 'Delete') {
+            event.preventDefault();
+            deleteBtn?.click();
+        }
+    });
 
     titleEl?.addEventListener('dblclick', (event) => {
         event.preventDefault();
@@ -381,6 +447,10 @@ function bindMapNodeBoxEvents(box, node) {
             return;
         }
 
+        if (typeof removeKediOpenTabsForDeletedPaths === 'function') {
+            await removeKediOpenTabsForDeletedPaths([node.fullPath]);
+        }
+
         box.remove();
 
         activeMapEdges = Array.isArray(result.edges)
@@ -414,12 +484,6 @@ function bindMapNodeBoxEvents(box, node) {
 }
 
 function bindMapNodeDrag(box) {
-    let dragging = false;
-    let startX = 0;
-    let startY = 0;
-    let dragZoom = 1;
-    let draggedBoxes = [];
-
     box.addEventListener('mousedown', (event) => {
         if (event.button !== 0) return;
 
@@ -438,13 +502,11 @@ function bindMapNodeDrag(box) {
             box.classList.add('selected');
         }
 
-        dragging = true;
+        const startX = event.clientX;
+        const startY = event.clientY;
+        const dragZoom = activeMapCamera?.zoom || 1;
 
-        startX = event.clientX;
-        startY = event.clientY;
-        dragZoom = activeMapCamera?.zoom || 1;
-
-        draggedBoxes = getSelectedMapNodeBoxes().map((selectedBox) => {
+        const draggedBoxes = getSelectedMapNodeBoxes().map((selectedBox) => {
             selectedBox.classList.add('dragging');
 
             return {
@@ -454,78 +516,77 @@ function bindMapNodeDrag(box) {
             };
         });
 
+        const onMouseMove = (moveEvent) => {
+            const dx = (moveEvent.clientX - startX) / dragZoom;
+            const dy = (moveEvent.clientY - startY) / dragZoom;
+
+            for (const item of draggedBoxes) {
+                item.box.style.left = `${item.x + dx}px`;
+                item.box.style.top = `${item.y + dy}px`;
+            }
+
+            if (typeof scheduleDrawMapConnections === 'function') {
+                scheduleDrawMapConnections();
+            } else {
+                drawMapConnections();
+            }
+        };
+
+        const onMouseUp = () => {
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+
+            for (const item of draggedBoxes) {
+                item.box.classList.remove('dragging');
+            }
+
+            scheduleMapLayoutSave();
+        };
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp, { once: true });
         event.preventDefault();
-    });
-
-    window.addEventListener('mousemove', (event) => {
-        if (!dragging) return;
-
-        const dx = (event.clientX - startX) / dragZoom;
-        const dy = (event.clientY - startY) / dragZoom;
-
-        for (const item of draggedBoxes) {
-            item.box.style.left = `${item.x + dx}px`;
-            item.box.style.top = `${item.y + dy}px`;
-        }
-
-        drawMapConnections();
-    });
-
-    window.addEventListener('mouseup', () => {
-        if (!dragging) return;
-
-        dragging = false;
-
-        for (const item of draggedBoxes) {
-            item.box.classList.remove('dragging');
-        }
-
-        draggedBoxes = [];
-
-        scheduleMapLayoutSave();
     });
 }
 
 function bindMapNodeResize(box, handle) {
     if (!handle) return;
 
-    let resizing = false;
-    let startX = 0;
-    let startY = 0;
-    let startW = 0;
-    let startH = 0;
-
     handle.addEventListener('mousedown', (event) => {
-        resizing = true;
-        startX = event.clientX;
-        startY = event.clientY;
-        startW = box.offsetWidth;
-        startH = box.offsetHeight;
+        const startX = event.clientX;
+        const startY = event.clientY;
+        const startW = box.offsetWidth;
+        const startH = box.offsetHeight;
+        const resizeZoom = activeMapCamera?.zoom || 1;
+
+        const onMouseMove = (moveEvent) => {
+            const dx = (moveEvent.clientX - startX) / resizeZoom;
+            const dy = (moveEvent.clientY - startY) / resizeZoom;
+
+            const newW = Math.max(150, startW + dx);
+            const newH = Math.max(74, startH + dy);
+
+            box.style.width = `${newW}px`;
+            box.style.height = `${newH}px`;
+
+            if (typeof scheduleDrawMapConnections === 'function') {
+                scheduleDrawMapConnections();
+            } else {
+                drawMapConnections();
+            }
+        };
+
+        const onMouseUp = () => {
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+            scheduleMapLayoutSave();
+        };
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp, { once: true });
 
         event.preventDefault();
         event.stopPropagation();
-    });
-
-    window.addEventListener('mousemove', (event) => {
-        if (!resizing) return;
-
-        const dx = event.clientX - startX;
-        const dy = event.clientY - startY;
-
-        const newW = Math.max(150, startW + dx);
-        const newH = Math.max(74, startH + dy);
-
-        box.style.width = `${newW}px`;
-        box.style.height = `${newH}px`;
-
-        drawMapConnections();
-    });
-
-    window.addEventListener('mouseup', () => {
-        if (!resizing) return;
-
-        resizing = false;
-        scheduleMapLayoutSave();
     });
 }
 
@@ -548,11 +609,24 @@ function scheduleMapLayoutSave() {
 }
 
 async function saveCurrentMapLayout() {
-    if (!activeMapPath) return;
+    if (!activeMapPath) return true;
 
+    clearTimeout(mapSaveTimer);
+    mapSaveTimer = null;
+    const mapPath = activeMapPath;
     const layout = collectMapLayout();
 
-    await window.kediProject?.saveMapLayout?.(activeMapPath, layout);
+    try {
+        const result = await window.kediProject?.saveMapLayout?.(
+            mapPath,
+            layout
+        );
+
+        return Boolean(result?.ok);
+    } catch (error) {
+        console.error('[KEDI] Map yerleşimi kaydedilemedi:', error);
+        return false;
+    }
 }
 
 async function startMapNodeTitleEdit(box, node) {
@@ -750,18 +824,151 @@ function sanitizeKediEditorHtml(html = '') {
     const wrapper = document.createElement('div');
     wrapper.innerHTML = String(html || '');
 
-    wrapper.querySelectorAll('script, style, iframe, object, embed, link').forEach((el) => {
-        el.remove();
-    });
+    const allowedTags = new Set([
+        'A', 'B', 'BLOCKQUOTE', 'BR', 'CANVAS', 'CODE', 'DIV', 'EM',
+        'FONT', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'I', 'IMG', 'LI',
+        'OL', 'P', 'PRE', 'S', 'SPAN', 'STRONG', 'SUB', 'SUP', 'TABLE',
+        'TBODY', 'TD', 'TH', 'THEAD', 'TR', 'U', 'UL'
+    ]);
+    const globallyAllowedAttributes = new Set([
+        'class',
+        'title',
+        'contenteditable',
+        'data-kedi-block-id',
+        'data-kedi-tag',
+        'data-kedi-done-for',
+        'data-kedi-diary-source'
+    ]);
+    const allowedStyleProperties = new Set([
+        'background-color',
+        'color',
+        'font-family',
+        'font-size',
+        'font-style',
+        'font-weight',
+        'text-align',
+        'text-decoration'
+    ]);
 
-    wrapper.querySelectorAll('*').forEach((el) => {
-        Array.from(el.attributes).forEach((attr) => {
-            const name = attr.name.toLowerCase();
+    wrapper
+        .querySelectorAll('script, style, iframe, object, embed, link, meta, base, form, input, button')
+        .forEach((element) => element.remove());
 
-            if (name.startsWith('on')) {
-                el.removeAttribute(attr.name);
+    Array.from(wrapper.querySelectorAll('*')).forEach((element) => {
+        if (!allowedTags.has(element.tagName)) {
+            element.replaceWith(...Array.from(element.childNodes));
+            return;
+        }
+
+        Array.from(element.attributes).forEach((attribute) => {
+            const name = attribute.name.toLowerCase();
+            const value = String(attribute.value || '');
+            let allowed = globallyAllowedAttributes.has(name);
+
+            if (name === 'style') {
+                const safeDeclarations = value
+                    .split(';')
+                    .map((declaration) => declaration.trim())
+                    .filter(Boolean)
+                    .map((declaration) => {
+                        const separatorIndex = declaration.indexOf(':');
+                        if (separatorIndex < 1) return '';
+
+                        const property = declaration
+                            .slice(0, separatorIndex)
+                            .trim()
+                            .toLowerCase();
+                        const propertyValue = declaration
+                            .slice(separatorIndex + 1)
+                            .trim();
+
+                        if (
+                            !allowedStyleProperties.has(property) ||
+                            /url\s*\(|expression\s*\(|@import/i.test(propertyValue)
+                        ) {
+                            return '';
+                        }
+
+                        return `${property}: ${propertyValue}`;
+                    })
+                    .filter(Boolean);
+
+                if (safeDeclarations.length) {
+                    element.setAttribute('style', safeDeclarations.join('; '));
+                } else {
+                    element.removeAttribute('style');
+                }
+                return;
+            }
+
+            if (element.tagName === 'A' && name === 'href') {
+                allowed = /^(?:https?:|mailto:)/i.test(value);
+            }
+
+            if (element.tagName === 'IMG') {
+                if (name === 'src') {
+                    allowed = /^(?:data:image\/(?:png|jpeg|gif|webp);base64,|\.{0,2}\/?assets\/)/i.test(value);
+                } else if (['alt', 'width', 'height'].includes(name)) {
+                    allowed = true;
+                }
+            }
+
+            if (element.tagName === 'FONT') {
+                allowed = ['color', 'face', 'size'].includes(name);
+            }
+
+            if (element.tagName === 'CANVAS') {
+                allowed = [
+                    'width',
+                    'height',
+                    'data-kedi-canvas',
+                    'data-image'
+                ].includes(name);
+
+                if (name === 'data-image') {
+                    allowed = /^data:image\/png;base64,/i.test(value);
+                }
+            }
+
+            if (['TABLE', 'TD'].includes(element.tagName)) {
+                allowed = allowed || [
+                    'data-kedi-sheet',
+                    'data-formula',
+                    'data-cell',
+                    'data-row',
+                    'data-col'
+                ].includes(name);
+            }
+
+            if (!allowed || name.startsWith('on')) {
+                element.removeAttribute(attribute.name);
             }
         });
+
+        if (element.hasAttribute('class')) {
+            const safeClasses = Array.from(element.classList).filter((name) => {
+                return /^kedi-[A-Za-z0-9_-]+$/.test(name);
+            });
+            element.className = safeClasses.join(' ');
+        }
+
+        if (element.tagName === 'CANVAS') {
+            const width = Math.min(1600, Math.max(1, Number(element.getAttribute('width')) || 520));
+            const height = Math.min(1200, Math.max(1, Number(element.getAttribute('height')) || 320));
+            element.setAttribute('width', String(width));
+            element.setAttribute('height', String(height));
+            element.setAttribute('data-kedi-canvas', '1');
+            element.removeAttribute('data-kedi-canvas-bound');
+            element.removeAttribute('data-image-loaded');
+        }
+
+        if (element.hasAttribute('contenteditable')) {
+            const value = element.getAttribute('contenteditable');
+            element.setAttribute(
+                'contenteditable',
+                value === 'false' ? 'false' : 'true'
+            );
+        }
     });
 
     return wrapper.innerHTML;
@@ -774,13 +981,16 @@ async function openNodeModalFromBox(box) {
 
     if (!result || !result.ok) {
         alert(result?.error || 'Node açılamadı.');
-        return;
+        return false;
     }
 
     activeModalNode = {
         box,
         path: nodePath,
-        metadata: result.metadata
+        metadata: result.metadata,
+        returnFocus: document.activeElement,
+        dirty: false,
+        revision: 0
     };
 
     const overlay = document.getElementById('node-modal-overlay');
@@ -789,17 +999,38 @@ async function openNodeModalFromBox(box) {
 
     if (titleInput) {
         titleInput.value = result.metadata.title || '';
+
+        if (titleInput.dataset.modalDirtyBound !== '1') {
+            titleInput.dataset.modalDirtyBound = '1';
+            titleInput.addEventListener('input', () => {
+                if (!activeModalNode) return;
+                activeModalNode.dirty = true;
+                activeModalNode.revision =
+                    Number(activeModalNode.revision || 0) + 1;
+            });
+        }
     }
 
     if (contentInput) {
-    setKediEditorContent(contentInput, result.data.content || '');
-    refreshKediTagsPanelSoon();
+        if (contentInput.dataset.modalDirtyBound !== '1') {
+            contentInput.dataset.modalDirtyBound = '1';
+            contentInput.addEventListener('input', () => {
+                if (!activeModalNode) return;
+                activeModalNode.dirty = true;
+                activeModalNode.revision =
+                    Number(activeModalNode.revision || 0) + 1;
+            });
+        }
+
+        setKediEditorContent(contentInput, result.data.content || '');
+        refreshKediTagsPanelSoon();
     }
 
     closeKediTagMenu();
 
     overlay?.classList.add('visible');
     contentInput?.focus();
+    return true;
 }
 
 async function closeNodeModalAndSave() {
@@ -809,7 +1040,7 @@ async function closeNodeModalAndSave() {
 
     if (!activeModalNode) {
         overlay?.classList.remove('visible');
-        return;
+        return true;
     }
 
     try {
@@ -845,7 +1076,7 @@ async function closeNodeModalAndSave() {
 
                 // Rename başarısızsa modal kapanmasın; kullanıcı düzeltebilsin.
                 titleInput?.focus();
-                return;
+                return false;
             }
         }
 
@@ -856,7 +1087,7 @@ async function closeNodeModalAndSave() {
 
         if (!saveResult || !saveResult.ok) {
             alert(saveResult?.error || 'Node kaydedilemedi.');
-            return;
+            return false;
         }
 
         const titleEl = activeModalNode.box.querySelector('.map-node-title');
@@ -876,12 +1107,30 @@ async function closeNodeModalAndSave() {
         closeKediTagMenu();
         refreshKediTagsPanelSoon();
 
+        const returnFocus = activeModalNode.returnFocus;
         overlay?.classList.remove('visible');
         activeModalNode = null;
+        returnFocus?.focus?.({ preventScroll: true });
+        return true;
     } catch (error) {
         console.error('[KEDI] Modal kaydetme/kapatma hatası:', error);
         alert('Modal kapatılırken hata oluştu: ' + error.message);
+        return false;
     }
+}
+
+function closeNodeModalWithoutSaving() {
+    const overlay = document.getElementById('node-modal-overlay');
+    const contentInput = document.getElementById('node-modal-content');
+    const titleInput = document.getElementById('node-modal-title');
+
+    const returnFocus = activeModalNode?.returnFocus;
+    overlay?.classList.remove('visible');
+    if (contentInput) contentInput.innerHTML = '';
+    if (titleInput) titleInput.value = '';
+    activeModalNode = null;
+    closeKediTagMenu();
+    returnFocus?.focus?.({ preventScroll: true });
 }
 
 function getCenterNodeEditorElements() {
@@ -912,6 +1161,14 @@ function bindCenterNodeEditorControls() {
     if (titleInput && titleInput.dataset.bound !== '1') {
         titleInput.dataset.bound = '1';
 
+        titleInput.addEventListener('input', () => {
+            if (!activeCenterNode) return;
+            activeCenterNode.dirty = true;
+            activeCenterNode.revision =
+                Number(activeCenterNode.revision || 0) + 1;
+            scheduleCenterNodeEditorSave();
+        });
+
         titleInput.addEventListener('keydown', async (event) => {
             if (event.key === 'Enter') {
                 event.preventDefault();
@@ -929,6 +1186,11 @@ function bindCenterNodeEditorControls() {
         contentEditor.dataset.centerNodeSaveBound = '1';
 
         contentEditor.addEventListener('input', () => {
+            if (activeCenterNode) {
+                activeCenterNode.dirty = true;
+                activeCenterNode.revision =
+                    Number(activeCenterNode.revision || 0) + 1;
+            }
             refreshKediTagsPanelSoon();
             scheduleCenterNodeEditorSave();
         });
@@ -955,22 +1217,27 @@ async function openCenterNodeEditor(nodeItem) {
 
     bindCenterNodeEditorControls();
 
-    if (activeCenterNode?.path && activeCenterNode.path !== nodeItem.fullPath) {
-        await saveCurrentCenterNodeEditor();
+    if (
+        activeCenterNode?.path &&
+        !sameKediWorkspacePath(activeCenterNode.path, nodeItem.fullPath)
+    ) {
+        const saved = await saveCurrentCenterNodeEditor();
+        if (!saved) return false;
     }
 
     if (activeMapPath) {
-        await saveCurrentMapLayout();
+        const layoutSaved = await saveCurrentMapLayout();
+        if (!layoutSaved) return false;
     }
-
-    clearMapWorkspace();
 
     const result = await window.kediProject?.getKediDocument?.(nodeItem.fullPath);
 
     if (!result || !result.ok) {
         alert(result?.error || 'Node açılamadı.');
-        return;
+        return false;
     }
+
+    clearMapWorkspace();
 
     const {
         wrapper,
@@ -985,6 +1252,7 @@ async function openCenterNodeEditor(nodeItem) {
     }
 
     if (mapCanvas) {
+        mapCanvas.hidden = true;
         mapCanvas.style.display = 'none';
     }
 
@@ -995,7 +1263,9 @@ async function openCenterNodeEditor(nodeItem) {
     activeCenterNode = {
         path: nodeItem.fullPath,
         item: nodeItem,
-        metadata: result.metadata || {}
+        metadata: result.metadata || {},
+        dirty: false,
+        revision: 0
     };
 
     if (titleInput) {
@@ -1022,14 +1292,32 @@ async function openCenterNodeEditor(nodeItem) {
     setTimeout(() => {
         contentEditor?.focus({ preventScroll: true });
     }, 0);
+
+    return true;
 }
 
-async function saveCurrentCenterNodeEditor() {
-    if (!activeCenterNode?.path) return;
+let kediCenterSaveTail = Promise.resolve(true);
+
+function saveCurrentCenterNodeEditor() {
+    if (!activeCenterNode?.path) return true;
+
+    const saveTask = kediCenterSaveTail
+        .catch(() => false)
+        .then(() => performCurrentCenterNodeEditorSave());
+
+    kediCenterSaveTail = saveTask;
+    return saveTask;
+}
+
+async function performCurrentCenterNodeEditorSave() {
+    if (!activeCenterNode?.path) return true;
 
     const { titleInput, contentEditor, saveBtn } = getCenterNodeEditorElements();
+    const saveRevision = Number(activeCenterNode.revision || 0);
 
     try {
+        clearTimeout(centerNodeSaveTimer);
+        centerNodeSaveTimer = null;
         saveBtn?.classList.add('saving');
 
         let nodePath = activeCenterNode.path;
@@ -1049,7 +1337,7 @@ async function saveCurrentCenterNodeEditor() {
             if (!renameResult || !renameResult.ok) {
                 alert(renameResult?.error || 'Node başlığı değiştirilemedi.');
                 titleInput?.focus();
-                return;
+                return false;
             }
 
             nodePath = renameResult.fullPath;
@@ -1083,19 +1371,24 @@ async function saveCurrentCenterNodeEditor() {
 
         if (!saveResult || !saveResult.ok) {
             alert(saveResult?.error || 'Node kaydedilemedi.');
-            return;
+            return false;
         }
 
         activeCenterNode.metadata = saveResult.metadata || activeCenterNode.metadata;
+        if (Number(activeCenterNode.revision || 0) === saveRevision) {
+            activeCenterNode.dirty = false;
+        }
 
         if (typeof refreshActiveMapTreeBranch === 'function') {
             await refreshActiveMapTreeBranch();
         }
 
         refreshKediTagsPanelSoon();
+        return true;
     } catch (error) {
         console.error('[KEDI] Center node editor kaydetme hatası:', error);
         alert('Node kaydedilirken hata oluştu: ' + error.message);
+        return false;
     } finally {
         saveBtn?.classList.remove('saving');
     }
@@ -1126,3 +1419,33 @@ function clearCenterNodeEditor() {
     closeKediTagMenu();
 }
 
+async function flushKediPendingSaves() {
+    clearTimeout(centerNodeSaveTimer);
+    clearTimeout(mapSaveTimer);
+    clearTimeout(mapCameraSaveTimer);
+    centerNodeSaveTimer = null;
+    mapSaveTimer = null;
+    mapCameraSaveTimer = null;
+
+    if (activeModalNode) {
+        const modalSaved = await closeNodeModalAndSave();
+        if (!modalSaved) return false;
+    }
+
+    if (activeCenterNode) {
+        const centerSaved = await saveCurrentCenterNodeEditor();
+        if (!centerSaved) return false;
+    }
+
+    if (activeMapPath) {
+        const layoutSaved = await saveCurrentMapLayout();
+        if (!layoutSaved) return false;
+
+        if (typeof flushActiveMapCameraSave === 'function') {
+            const cameraSaved = await flushActiveMapCameraSave();
+            if (!cameraSaved) return false;
+        }
+    }
+
+    return true;
+}

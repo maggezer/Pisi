@@ -612,7 +612,10 @@ function bindKediCanvas(canvas) {
         const context = canvas.getContext('2d');
         drawing = true;
         start = getKediCanvasPoint(canvas, event);
-        snapshot = context.getImageData(0, 0, canvas.width, canvas.height);
+        const paintTool = getKediPaintState().tool;
+        snapshot = ['line', 'rect', 'ellipse'].includes(paintTool)
+            ? context.getImageData(0, 0, canvas.width, canvas.height)
+            : null;
         kediDirtyPaintCanvases.add(canvas);
 
         if (canvas.setPointerCapture) {
@@ -645,7 +648,9 @@ function bindKediCanvas(canvas) {
             return;
         }
 
-        context.putImageData(snapshot, 0, 0);
+        if (snapshot) {
+            context.putImageData(snapshot, 0, 0);
+        }
         drawKediCanvasShape(context, state, start, point);
     });
 
@@ -810,12 +815,20 @@ function buildKediSheetHtml(rows, cols) {
     return `<table class="kedi-sheet-table" data-kedi-sheet="1">${head}${body}</table>`;
 }
 
+const KEDI_SHEET_MAX_ROWS = 80;
+const KEDI_SHEET_MAX_COLS = 26;
+const KEDI_SHEET_MAX_RANGE_CELLS =
+    KEDI_SHEET_MAX_ROWS * KEDI_SHEET_MAX_COLS;
+const kediBoundSheets = new WeakSet();
+const kediEditedSheetCells = new WeakSet();
+
 function hydrateKediSheets(root = document) {
     root.querySelectorAll('table[data-kedi-sheet]').forEach((table) => {
+        table.removeAttribute('data-kedi-sheet-bound');
         refreshKediSheetCellMetadata(table);
 
-        if (table.dataset.kediSheetBound === '1') return;
-        table.dataset.kediSheetBound = '1';
+        if (kediBoundSheets.has(table)) return;
+        kediBoundSheets.add(table);
 
         table.addEventListener('focusin', (event) => {
             const cell = event.target.closest('td[data-cell]');
@@ -837,6 +850,12 @@ function hydrateKediSheets(root = document) {
                 event.preventDefault();
                 cell.blur();
             }
+        });
+
+        table.addEventListener('input', (event) => {
+            const cell = event.target.closest('td[data-cell]');
+            if (!cell) return;
+            kediEditedSheetCells.add(cell);
         });
 
         table.addEventListener('blur', (event) => {
@@ -899,12 +918,18 @@ function applyKediSheetFormula(table, formula) {
 
 function commitKediSheetCell(cell) {
     const value = cell.textContent.trim();
+    const wasEdited = kediEditedSheetCells.has(cell);
 
     if (value.startsWith('=')) {
         cell.dataset.formula = value;
+    } else if (wasEdited) {
+        delete cell.dataset.formula;
+        cell.textContent = value;
     } else if (!cell.dataset.formula) {
         cell.textContent = value;
     }
+
+    kediEditedSheetCells.delete(cell);
 }
 
 function recalcKediSheet(table) {
@@ -926,67 +951,278 @@ function evaluateKediSheetFormula(table, formula, stack = new Set()) {
     let expression = String(formula || '').trim();
     if (expression.startsWith('=')) expression = expression.slice(1);
 
+    let formulaError = false;
+
     expression = expression.replace(/\b(SUM|AVG|MIN|MAX|COUNT)\(([A-Z]+\d+)(?::([A-Z]+\d+))?\)/gi, (_, fn, startRef, endRef) => {
-        const values = getKediSheetRangeValues(table, startRef, endRef || startRef, stack);
-        if (!values.length) return '0';
+        const range = getKediSheetRangeValues(
+            table,
+            startRef,
+            endRef || startRef,
+            stack
+        );
+
+        if (range.error) {
+            formulaError = true;
+            return '0';
+        }
+
+        const values = range.values;
         const upper = fn.toUpperCase();
+
         if (upper === 'SUM') return String(values.reduce((a, b) => a + b, 0));
+        if (upper === 'COUNT') return String(values.length);
+
+        if (!values.length) {
+            formulaError = true;
+            return '0';
+        }
+
         if (upper === 'AVG') return String(values.reduce((a, b) => a + b, 0) / values.length);
         if (upper === 'MIN') return String(Math.min(...values));
         if (upper === 'MAX') return String(Math.max(...values));
-        if (upper === 'COUNT') return String(values.length);
         return '0';
     });
 
     expression = expression.replace(/\b([A-Z]+\d+)\b/g, (_, ref) => {
-        return String(getKediSheetCellNumericValue(table, ref.toUpperCase(), stack));
+        const value = getKediSheetCellNumericValue(
+            table,
+            ref.toUpperCase(),
+            stack
+        );
+
+        if (!Number.isFinite(value)) {
+            formulaError = true;
+            return '0';
+        }
+
+        return String(value);
     });
 
-    if (!/^[0-9+\-*/().\s]+$/.test(expression)) {
+    if (
+        formulaError ||
+        !/^[0-9+\-*/().\s]+$/.test(expression)
+    ) {
         return NaN;
     }
 
-    try {
-        // The expression is reduced to numbers and arithmetic operators only.
-        return Function(`"use strict"; return (${expression});`)();
-    } catch (error) {
-        return NaN;
+    return evaluateKediArithmeticExpression(expression);
+}
+
+function evaluateKediArithmeticExpression(expression) {
+    const input = String(expression || '');
+    let index = 0;
+
+    function skipWhitespace() {
+        while (/\s/.test(input[index] || '')) index += 1;
     }
+
+    function parseNumber() {
+        skipWhitespace();
+        const match = input.slice(index).match(/^(?:\d+(?:\.\d*)?|\.\d+)/);
+        if (!match) return NaN;
+        index += match[0].length;
+        return Number(match[0]);
+    }
+
+    function parsePrimary() {
+        skipWhitespace();
+
+        if (input[index] === '(') {
+            index += 1;
+            const value = parseExpression();
+            skipWhitespace();
+
+            if (input[index] !== ')') return NaN;
+            index += 1;
+            return value;
+        }
+
+        return parseNumber();
+    }
+
+    function parseFactor() {
+        skipWhitespace();
+
+        if (input[index] === '+' || input[index] === '-') {
+            const sign = input[index];
+            index += 1;
+            const value = parseFactor();
+            return sign === '-' ? -value : value;
+        }
+
+        return parsePrimary();
+    }
+
+    function parseTerm() {
+        let value = parseFactor();
+
+        while (Number.isFinite(value)) {
+            skipWhitespace();
+            const operator = input[index];
+            if (operator !== '*' && operator !== '/') break;
+            index += 1;
+
+            const right = parseFactor();
+            if (!Number.isFinite(right)) return NaN;
+            if (operator === '/' && right === 0) return NaN;
+            value = operator === '*' ? value * right : value / right;
+        }
+
+        return value;
+    }
+
+    function parseExpression() {
+        let value = parseTerm();
+
+        while (Number.isFinite(value)) {
+            skipWhitespace();
+            const operator = input[index];
+            if (operator !== '+' && operator !== '-') break;
+            index += 1;
+
+            const right = parseTerm();
+            if (!Number.isFinite(right)) return NaN;
+            value = operator === '+' ? value + right : value - right;
+        }
+
+        return value;
+    }
+
+    const result = parseExpression();
+    skipWhitespace();
+
+    return Number.isFinite(result) && index === input.length
+        ? result
+        : NaN;
 }
 
 function getKediSheetCellNumericValue(table, ref, stack = new Set()) {
-    const cell = table.querySelector(`td[data-cell="${ref}"]`);
-    if (!cell) return 0;
+    const result = getKediSheetCellValue(table, ref, stack);
+    return result.error ? NaN : result.value;
+}
 
-    if (cell.dataset.formula) {
-        if (stack.has(ref)) return NaN;
-        const nextStack = new Set(stack);
-        nextStack.add(ref);
-        return evaluateKediSheetFormula(table, cell.dataset.formula, nextStack);
+function getKediSheetCellValue(table, ref, stack = new Set()) {
+    const cell = table.querySelector(`td[data-cell="${ref}"]`);
+    if (!cell) {
+        return {
+            value: NaN,
+            numeric: false,
+            error: true
+        };
     }
 
-    const numeric = Number(String(cell.textContent || '').replace(',', '.'));
-    return Number.isFinite(numeric) ? numeric : 0;
+    if (cell.dataset.formula) {
+        if (stack.has(ref)) {
+            return {
+                value: NaN,
+                numeric: false,
+                error: true
+            };
+        }
+
+        const nextStack = new Set(stack);
+        nextStack.add(ref);
+        const value = evaluateKediSheetFormula(
+            table,
+            cell.dataset.formula,
+            nextStack
+        );
+
+        return {
+            value,
+            numeric: Number.isFinite(value),
+            error: !Number.isFinite(value)
+        };
+    }
+
+    const text = String(cell.textContent || '').trim();
+
+    if (!text) {
+        return {
+            value: 0,
+            numeric: false,
+            error: false
+        };
+    }
+
+    const numeric = Number(text.replace(',', '.'));
+
+    return {
+        value: Number.isFinite(numeric) ? numeric : 0,
+        numeric: Number.isFinite(numeric),
+        error: false
+    };
 }
 
 function getKediSheetRangeValues(table, startRef, endRef, stack = new Set()) {
     const start = parseKediCellRef(startRef);
     const end = parseKediCellRef(endRef);
-    if (!start || !end) return [];
+    const rows = table.querySelectorAll('tbody tr');
+    const rowCount = rows.length;
+    const colCount = Math.max(
+        0,
+        ...Array.from(rows).map((row) => row.querySelectorAll('td').length)
+    );
+
+    if (
+        !start ||
+        !end ||
+        start.row < 0 ||
+        end.row < 0 ||
+        start.col < 0 ||
+        end.col < 0 ||
+        start.row >= rowCount ||
+        end.row >= rowCount ||
+        start.col >= colCount ||
+        end.col >= colCount
+    ) {
+        return {
+            values: [],
+            error: true
+        };
+    }
 
     const values = [];
     const rowMin = Math.min(start.row, end.row);
     const rowMax = Math.max(start.row, end.row);
     const colMin = Math.min(start.col, end.col);
     const colMax = Math.max(start.col, end.col);
+    const rangeSize =
+        (rowMax - rowMin + 1) *
+        (colMax - colMin + 1);
+
+    if (rangeSize > KEDI_SHEET_MAX_RANGE_CELLS) {
+        return {
+            values: [],
+            error: true
+        };
+    }
 
     for (let row = rowMin; row <= rowMax; row += 1) {
         for (let col = colMin; col <= colMax; col += 1) {
-            values.push(getKediSheetCellNumericValue(table, `${kediColumnName(col)}${row + 1}`, stack));
+            const result = getKediSheetCellValue(
+                table,
+                `${kediColumnName(col)}${row + 1}`,
+                stack
+            );
+
+            if (result.error) {
+                return {
+                    values: [],
+                    error: true
+                };
+            }
+
+            if (result.numeric) {
+                values.push(result.value);
+            }
         }
     }
 
-    return values.filter((value) => Number.isFinite(value));
+    return {
+        values,
+        error: false
+    };
 }
 
 function parseKediCellRef(ref) {
@@ -1060,19 +1296,26 @@ function refreshKediSheetCellMetadata(table) {
 
 function addKediSheetRow(table) {
     const tbody = table.querySelector('tbody') || table.appendChild(document.createElement('tbody'));
+    if (tbody.querySelectorAll('tr').length >= KEDI_SHEET_MAX_ROWS) return false;
+
     const colCount = Math.max(1, table.querySelector('tbody tr')?.querySelectorAll('td').length || 1);
     const row = document.createElement('tr');
     row.innerHTML = '<th></th>' + Array.from({ length: colCount }, () => '<td contenteditable="true"></td>').join('');
     tbody.appendChild(row);
     refreshKediSheetCellMetadata(table);
+    return true;
 }
 
 function addKediSheetColumn(table) {
     const tbody = table.querySelector('tbody') || table.appendChild(document.createElement('tbody'));
+    const currentColCount =
+        tbody.querySelector('tr')?.querySelectorAll('td').length || 0;
+
+    if (currentColCount >= KEDI_SHEET_MAX_COLS) return false;
 
     if (!tbody.querySelector('tr')) {
         addKediSheetRow(table);
-        return;
+        return true;
     }
 
     tbody.querySelectorAll('tr').forEach((row) => {
@@ -1082,6 +1325,7 @@ function addKediSheetColumn(table) {
     });
 
     refreshKediSheetCellMetadata(table);
+    return true;
 }
 
 function setupWindowControls() {
@@ -1133,7 +1377,26 @@ function setupWindowControls() {
     window.electronWindow?.isMaximized?.().then((isMaximized) => {
         setMaximizedIcon(Boolean(isMaximized));
     });
+
+    if (!setupWindowControls.closeUnsubscribe) {
+        setupWindowControls.closeUnsubscribe =
+            window.electronWindow?.onCloseRequested?.(async () => {
+                if (typeof flushKediPendingSaves !== 'function') {
+                    return true;
+                }
+
+                const saved = await flushKediPendingSaves();
+                if (!saved) {
+                    alert(
+                        'KEDI kapatılmadı: bekleyen değişikliklerden en az biri kaydedilemedi.'
+                    );
+                }
+                return saved;
+            }) || null;
+    }
 }
+
+setupWindowControls.closeUnsubscribe = null;
 
 function bindRightPanelTabs() {
     const tabButtons = Array.from(document.querySelectorAll('.right-panel-tab'));
@@ -1336,19 +1599,20 @@ function ensureKediOpenTab(item) {
 async function openKediFileTab(item) {
     const tab = ensureKediOpenTab(item);
 
-    if (!tab) return;
+    if (!tab) return false;
 
-    await activateKediOpenTab(tab.path);
+    return activateKediOpenTab(tab.path);
 }
 
 async function activateKediOpenTab(path) {
     const state = getKediOpenTabsState();
+    const previousActiveTabPath = state.activeTabPath;
 
     const tab = state.openTabs.find((existingTab) => {
         return kediSameTabPath(existingTab.path, path);
     });
 
-    if (!tab) return;
+    if (!tab) return false;
 
     const alreadyActive =
         state.activeTabPath &&
@@ -1364,7 +1628,7 @@ async function activateKediOpenTab(path) {
 
     if (alreadyActive && alreadyLoaded) {
         selectKediTreeFileByPath(tab.path);
-        return;
+        return true;
     }
 
     if (
@@ -1372,7 +1636,12 @@ async function activateKediOpenTab(path) {
     activeCenterNode &&
     (!activeCenterNode.path || !kediSameTabPath(activeCenterNode.path, tab.path))
     ) {
-    await saveCurrentCenterNodeEditor();
+    const saved = await saveCurrentCenterNodeEditor();
+    if (!saved) {
+        state.activeTabPath = previousActiveTabPath;
+        renderKediOpenTabs();
+        return false;
+    }
     }
 
     if (
@@ -1381,18 +1650,34 @@ async function activateKediOpenTab(path) {
         activeMapPath &&
         !kediSameTabPath(activeMapPath, tab.path)
     ) {
-        await saveCurrentMapLayout();
+        const layoutSaved = await saveCurrentMapLayout();
+        if (!layoutSaved) {
+            state.activeTabPath = previousActiveTabPath;
+            renderKediOpenTabs();
+            return false;
+        }
     }
 
     if (tab.type === 'map' && typeof openMapInWorkspace === 'function') {
-        await openMapInWorkspace(tab.item);
+        const opened = await openMapInWorkspace(tab.item);
+        if (!opened) {
+            state.activeTabPath = previousActiveTabPath;
+            renderKediOpenTabs();
+            return false;
+        }
     }
 
     if (tab.type === 'node' && typeof openCenterNodeEditor === 'function') {
-    await openCenterNodeEditor(tab.item);
+        const opened = await openCenterNodeEditor(tab.item);
+        if (!opened) {
+            state.activeTabPath = previousActiveTabPath;
+            renderKediOpenTabs();
+            return false;
+        }
     }
 
     selectKediTreeFileByPath(tab.path);
+    return true;
 }
 
 async function closeKediOpenTab(path, event) {
@@ -1410,7 +1695,8 @@ async function closeKediOpenTab(path, event) {
         typeof saveCurrentCenterNodeEditor === 'function' &&
         activeCenterNode
     ) {
-        await saveCurrentCenterNodeEditor();
+        const saved = await saveCurrentCenterNodeEditor();
+        if (!saved) return false;
     }
 
     if (
@@ -1419,10 +1705,12 @@ async function closeKediOpenTab(path, event) {
         typeof activeMapPath !== 'undefined' &&
         activeMapPath
     ) {
-        await saveCurrentMapLayout();
+        const layoutSaved = await saveCurrentMapLayout();
+        if (!layoutSaved) return false;
     }
 
     await removeKediOpenTabByPath(path);
+    return true;
 }
 
 async function removeKediOpenTabByPath(path) {
@@ -1495,24 +1783,24 @@ function updateKediOpenTabAfterRename(oldPath, result) {
         return kediSameTabPath(existingTab.path, oldPath);
     });
 
-    if (!tab) return;
+    if (tab) {
+        tab.path = result.fullPath;
+        tab.title =
+            result.metadata?.title ||
+            String(result.fileName || '').replace(/\.(map|node)$/i, '');
 
-    tab.path = result.fullPath;
-    tab.title =
-        result.metadata?.title ||
-        String(result.fileName || '').replace(/\.(map|node)$/i, '');
-
-    tab.item = {
-        ...tab.item,
-        name: result.fileName,
-        fileName: result.fileName,
-        fullPath: result.fullPath,
-        displayName: result.metadata?.title || result.fileName,
-        metadata: {
-            ...(result.metadata || {})
-        },
-        sidecarPath: result.sidecarPath || tab.item?.sidecarPath
-    };
+        tab.item = {
+            ...tab.item,
+            name: result.fileName,
+            fileName: result.fileName,
+            fullPath: result.fullPath,
+            displayName: result.metadata?.title || result.fileName,
+            metadata: {
+                ...(result.metadata || {})
+            },
+            sidecarPath: result.sidecarPath || tab.item?.sidecarPath
+        };
+    }
 
     if (state.activeTabPath && kediSameTabPath(state.activeTabPath, oldPath)) {
         state.activeTabPath = result.fullPath;
@@ -1526,7 +1814,331 @@ function updateKediOpenTabAfterRename(oldPath, result) {
         activeMapPath = result.fullPath;
     }
 
+    if (Array.isArray(result.pathChanges)) {
+        applyKediPathChanges(result.pathChanges);
+    }
+
     renderKediOpenTabs();
+}
+
+function replaceKediClientPathPrefix(targetPath, oldPrefix, newPrefix) {
+    if (!targetPath || !oldPrefix || !newPrefix) return targetPath;
+
+    const normalizedTarget = String(targetPath).replace(/[\\/]+/g, '/');
+    const normalizedOld = String(oldPrefix).replace(/[\\/]+/g, '/').replace(/\/+$/g, '');
+    const normalizedNew = String(newPrefix).replace(/[\\/]+/g, '/').replace(/\/+$/g, '');
+    const caseInsensitive = window.kediEnvironment?.platform === 'win32';
+    const comparableTarget = caseInsensitive
+        ? normalizedTarget.toLowerCase()
+        : normalizedTarget;
+    const comparableOld = caseInsensitive
+        ? normalizedOld.toLowerCase()
+        : normalizedOld;
+
+    if (
+        comparableTarget !== comparableOld &&
+        !comparableTarget.startsWith(`${comparableOld}/`)
+    ) {
+        return targetPath;
+    }
+
+    return `${normalizedNew}${normalizedTarget.slice(normalizedOld.length)}`;
+}
+
+function applyKediPathChanges(pathChanges = []) {
+    const changes = pathChanges
+        .filter((change) => change?.oldPath && change?.newPath)
+        .sort((a, b) => String(b.oldPath).length - String(a.oldPath).length);
+
+    if (!changes.length) return;
+
+    const replacePath = (targetPath) => {
+        let nextPath = targetPath;
+        for (const change of changes) {
+            nextPath = replaceKediClientPathPrefix(
+                nextPath,
+                change.oldPath,
+                change.newPath
+            );
+        }
+        return nextPath;
+    };
+    const state = getKediOpenTabsState();
+
+    state.openTabs.forEach((tab) => {
+        tab.path = replacePath(tab.path);
+        if (tab.item?.fullPath) {
+            tab.item.fullPath = replacePath(tab.item.fullPath);
+        }
+        if (tab.item?.sidecarPath) {
+            tab.item.sidecarPath = replacePath(tab.item.sidecarPath);
+        }
+    });
+
+    if (state.activeTabPath) {
+        state.activeTabPath = replacePath(state.activeTabPath);
+    }
+
+    if (typeof activeMapPath !== 'undefined' && activeMapPath) {
+        activeMapPath = replacePath(activeMapPath);
+    }
+
+    if (Array.isArray(activeMapNodes)) {
+        activeMapNodes.forEach((node) => {
+            node.fullPath = replacePath(node.fullPath);
+        });
+    }
+
+    document.querySelectorAll('.map-node-box[data-node-path]').forEach((box) => {
+        box.dataset.nodePath = replacePath(box.dataset.nodePath);
+    });
+
+    if (activeCenterNode?.path) {
+        activeCenterNode.path = replacePath(activeCenterNode.path);
+        if (activeCenterNode.item?.fullPath) {
+            activeCenterNode.item.fullPath = replacePath(
+                activeCenterNode.item.fullPath
+            );
+        }
+        if (activeCenterNode.item?.sidecarPath) {
+            activeCenterNode.item.sidecarPath = replacePath(
+                activeCenterNode.item.sidecarPath
+            );
+        }
+    }
+
+    if (activeModalNode?.path) {
+        activeModalNode.path = replacePath(activeModalNode.path);
+        if (activeModalNode.box?.dataset.nodePath) {
+            activeModalNode.box.dataset.nodePath = replacePath(
+                activeModalNode.box.dataset.nodePath
+            );
+        }
+    }
+
+    renderKediOpenTabs();
+}
+
+function isKediPathAtOrBelow(targetPath, prefixPath) {
+    return replaceKediClientPathPrefix(
+        targetPath,
+        prefixPath,
+        '__KEDI_MATCH__'
+    ) !== targetPath;
+}
+
+async function removeKediOpenTabsForDeletedPaths(paths = []) {
+    const prefixes = paths.filter(Boolean);
+    if (!prefixes.length) return;
+
+    const isDeletedPath = (targetPath) => {
+        return prefixes.some((prefix) => {
+            return isKediPathAtOrBelow(targetPath, prefix);
+        });
+    };
+    const state = getKediOpenTabsState();
+    const activeWasDeleted = isDeletedPath(state.activeTabPath);
+
+    state.openTabs = state.openTabs.filter((tab) => {
+        return !isDeletedPath(tab.path);
+    });
+
+    if (activeCenterNode?.path && isDeletedPath(activeCenterNode.path)) {
+        if (typeof clearCenterNodeEditor === 'function') {
+            clearCenterNodeEditor();
+        }
+    }
+
+    if (activeModalNode?.path && isDeletedPath(activeModalNode.path)) {
+        if (typeof closeNodeModalWithoutSaving === 'function') {
+            closeNodeModalWithoutSaving();
+        }
+    }
+
+    if (
+        typeof activeMapPath !== 'undefined' &&
+        activeMapPath &&
+        isDeletedPath(activeMapPath)
+    ) {
+        if (typeof clearMapWorkspace === 'function') {
+            clearMapWorkspace();
+        }
+    }
+
+    if (activeWasDeleted) {
+        state.activeTabPath = null;
+        const nextTab = state.openTabs[0] || null;
+        if (nextTab) {
+            await activateKediOpenTab(nextTab.path);
+            return;
+        }
+    }
+
+    renderKediOpenTabs();
+}
+
+function kediClientPathsOverlap(firstPath, secondPath) {
+    if (!firstPath || !secondPath) return false;
+
+    return (
+        isKediPathAtOrBelow(firstPath, secondPath) ||
+        isKediPathAtOrBelow(secondPath, firstPath)
+    );
+}
+
+function getActiveMapTabItemForReload() {
+    if (typeof activeMapPath === 'undefined' || !activeMapPath) {
+        return null;
+    }
+
+    const state = getKediOpenTabsState();
+    const tab = state.openTabs.find((item) => {
+        return kediSameTabPath(item.path, activeMapPath);
+    });
+    const fileName = String(activeMapPath).split(/[\\/]/).pop() || 'Map.map';
+
+    return {
+        ...(tab?.item || {}),
+        name: tab?.item?.name || fileName,
+        fileName: tab?.item?.fileName || fileName,
+        fullPath: activeMapPath,
+        metadata: tab?.item?.metadata || null,
+        sidecarPath: tab?.item?.sidecarPath || null,
+        isFile: true,
+        isDirectory: false,
+        type: 'file'
+    };
+}
+
+function isExternalChangeRelevantToActiveMap(changedPaths) {
+    if (
+        typeof activeMapPath === 'undefined' ||
+        !activeMapPath ||
+        !Array.isArray(changedPaths)
+    ) {
+        return false;
+    }
+
+    const mapItem = getActiveMapTabItemForReload();
+    const relevantPaths = [
+        activeMapPath,
+        mapItem?.sidecarPath,
+        ...(Array.isArray(activeMapNodes)
+            ? activeMapNodes.map((node) => node?.fullPath)
+            : [])
+    ].filter(Boolean);
+
+    return changedPaths.some((changedPath) => {
+        return relevantPaths.some((relevantPath) => {
+            return kediClientPathsOverlap(changedPath, relevantPath);
+        });
+    });
+}
+
+async function confirmKediExternalReload(message) {
+    if (typeof kediConfirm === 'function') {
+        return kediConfirm(message, {
+            title: 'Dış değişiklik algılandı',
+            confirmText: 'Diskten yeniden yükle',
+            cancelText: 'Ekrandaki sürümü koru'
+        });
+    }
+
+    return confirm(message);
+}
+
+async function reloadKediWorkspaceAfterExternalChange(changedPaths) {
+    if (!Array.isArray(changedPaths) || !changedPaths.length) return;
+
+    if (
+        activeCenterNode?.path &&
+        changedPaths.some((changedPath) => {
+            return kediClientPathsOverlap(
+                changedPath,
+                activeCenterNode.path
+            );
+        })
+    ) {
+        if (activeCenterNode.dirty) {
+            const reload = await confirmKediExternalReload(
+                'Açık node hem KEDI içinde değiştirilmiş hem de diskten güncellenmiş. Diskteki sürüm yüklensin mi? Ekrandaki kaydedilmemiş değişiklikler korunmayacak.'
+            );
+            if (!reload) return;
+        }
+
+        const item = {
+            ...(activeCenterNode.item || {}),
+            fullPath: activeCenterNode.path
+        };
+        clearTimeout(centerNodeSaveTimer);
+        centerNodeSaveTimer = null;
+        activeCenterNode.dirty = false;
+        await openCenterNodeEditor(item);
+        return;
+    }
+
+    if (!isExternalChangeRelevantToActiveMap(changedPaths)) return;
+
+    const mapItem = getActiveMapTabItemForReload();
+    if (!mapItem || typeof openMapInWorkspace !== 'function') return;
+
+    const modalPath = activeModalNode?.path || null;
+    const modalWasAffected = modalPath && changedPaths.some((changedPath) => {
+        return kediClientPathsOverlap(changedPath, modalPath);
+    });
+    const hasPendingMapSave = Boolean(mapSaveTimer || mapCameraSaveTimer);
+    const hasUnsavedWork =
+        hasPendingMapSave ||
+        (modalWasAffected && activeModalNode?.dirty);
+
+    if (hasUnsavedWork) {
+        const reload = await confirmKediExternalReload(
+            'Açık map veya node dışarıdan değiştirildi. Diskteki sürüm yüklensin mi? Henüz diske yazılmamış ekrandaki değişiklikler korunmayacak.'
+        );
+        if (!reload) return;
+    }
+
+    clearTimeout(mapSaveTimer);
+    clearTimeout(mapCameraSaveTimer);
+    mapSaveTimer = null;
+    mapCameraSaveTimer = null;
+
+    if (modalWasAffected && typeof closeNodeModalWithoutSaving === 'function') {
+        closeNodeModalWithoutSaving();
+    }
+
+    const reloaded = await openMapInWorkspace(mapItem);
+
+    if (reloaded && modalWasAffected && modalPath) {
+        const escapedPath = CSS.escape(modalPath);
+        const newBox = document.querySelector(
+            `.map-node-box[data-node-path="${escapedPath}"]`
+        );
+
+        if (newBox && typeof openNodeModalFromBox === 'function') {
+            await openNodeModalFromBox(newBox);
+        }
+    }
+}
+
+let kediFileSystemRefreshTail = Promise.resolve();
+
+function handleKediExternalFileSystemChange(payload = {}) {
+    const changedPaths = Array.isArray(payload?.changedPaths)
+        ? payload.changedPaths.filter(Boolean)
+        : [];
+
+    kediFileSystemRefreshTail = kediFileSystemRefreshTail
+        .catch(() => undefined)
+        .then(async () => {
+            await refreshCurrentProjectTree();
+            await reloadKediWorkspaceAfterExternalChange(changedPaths);
+        })
+        .catch((error) => {
+            console.error('[KEDI] Dış dosya değişikliği yenilenemedi:', error);
+        });
+
+    return kediFileSystemRefreshTail;
 }
 
 
@@ -1544,7 +2156,11 @@ async function renameKediOpenTabTitle(tab, newTitle) {
             activeCenterNode?.path &&
             kediSameTabPath(activeCenterNode.path, tab.path)
         ) {
-            await saveCurrentCenterNodeEditor();
+            const centerSaved = await saveCurrentCenterNodeEditor();
+            if (!centerSaved) {
+                renderKediOpenTabs();
+                return false;
+            }
         }
 
         if (
@@ -1553,7 +2169,12 @@ async function renameKediOpenTabTitle(tab, newTitle) {
             activeMapPath &&
             kediSameTabPath(activeMapPath, tab.path)
         ) {
-            await saveCurrentMapLayout();
+            const layoutSaved = await saveCurrentMapLayout();
+            if (!layoutSaved) {
+                alert('Map yerleşimi kaydedilemedi; başlık değiştirilmedi.');
+                renderKediOpenTabs();
+                return false;
+            }
         }
 
         suppressNextFileSystemRefresh(3000);
@@ -1564,7 +2185,7 @@ async function renameKediOpenTabTitle(tab, newTitle) {
         if (!result || !result.ok) {
             alert(result?.error || 'Sekme başlığı değiştirilemedi.');
             renderKediOpenTabs();
-            return;
+            return false;
         }
 
         if (
@@ -1602,10 +2223,12 @@ async function renameKediOpenTabTitle(tab, newTitle) {
         }
 
         selectKediTreeFileByPath(result.fullPath);
+        return true;
     } catch (error) {
         console.error('[KEDI] Sekme başlığı değiştirme hatası:', error);
         alert('Sekme başlığı değiştirilirken hata oluştu: ' + error.message);
         renderKediOpenTabs();
+        return false;
     }
 }
 
@@ -1767,19 +2390,9 @@ async function setupProjectStartup() {
     const addMapBtn = document.getElementById('add-map-btn');
     const addNodeBtn = document.getElementById('add-node-btn');
 
-window.kediProject?.onFileSystemChanged?.(() => {
-    if (shouldSuppressFileSystemRefresh()) {
-        return;
-    }
-
-    // Aktif map açıkken connection/node metadata yazımları fs.watch tetikliyor.
-    // Bu sırada full refresh yapmak sol paneli bozukmuş gibi zıplatıyor.
-    if (activeMapPath) {
-        return;
-    }
-
-    refreshCurrentProjectTree();
-});
+    window.kediProject?.onFileSystemChanged?.((payload) => {
+        handleKediExternalFileSystemChange(payload);
+    });
    
 
     modalChooseBtn?.addEventListener('click', async () => {
@@ -1922,6 +2535,10 @@ function resetKediKeyboardAndPointerState() {
         }
     } catch (error) {}
 
+    if (typeof resetKediMapConnectionInteractions === 'function') {
+        resetKediMapConnectionInteractions();
+    }
+
     if (!document.body.hasAttribute('tabindex')) {
         document.body.setAttribute('tabindex', '-1');
     }
@@ -1933,6 +2550,7 @@ function resetKediKeyboardAndPointerState() {
 function kediConfirm(message, options = {}) {
     return new Promise((resolve) => {
         document.getElementById('kedi-confirm-overlay')?.remove();
+        const previouslyFocused = document.activeElement;
 
         const overlay = document.createElement('div');
         overlay.id = 'kedi-confirm-overlay';
@@ -1943,7 +2561,13 @@ function kediConfirm(message, options = {}) {
         const cancelText = escapeKediConfirmText(options.cancelText || 'Vazgeç');
 
         overlay.innerHTML = `
-            <div id="kedi-confirm-card">
+            <div
+                id="kedi-confirm-card"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="kedi-confirm-title"
+                aria-describedby="kedi-confirm-message"
+            >
                 <div id="kedi-confirm-title">${title}</div>
                 <div id="kedi-confirm-message">${text}</div>
 
@@ -1974,6 +2598,13 @@ function kediConfirm(message, options = {}) {
             overlay.remove();
 
             resetKediKeyboardAndPointerState();
+            if (
+                previouslyFocused &&
+                previouslyFocused.isConnected &&
+                typeof previouslyFocused.focus === 'function'
+            ) {
+                previouslyFocused.focus({ preventScroll: true });
+            }
 
             resolve(value);
         }
@@ -1986,10 +2617,31 @@ function kediConfirm(message, options = {}) {
                 return;
             }
 
-            if (event.key === 'Enter') {
+            if (event.key === 'Enter' && event.target === okBtn) {
                 event.preventDefault();
                 event.stopPropagation();
                 close(true);
+                return;
+            }
+
+            if (event.key === 'Enter' && event.target === cancelBtn) {
+                event.preventDefault();
+                event.stopPropagation();
+                close(false);
+                return;
+            }
+
+            if (event.key === 'Tab') {
+                const focusable = [cancelBtn, okBtn].filter(Boolean);
+                if (!focusable.length) return;
+
+                const currentIndex = focusable.indexOf(document.activeElement);
+                const nextIndex = event.shiftKey
+                    ? (currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1)
+                    : (currentIndex + 1) % focusable.length;
+
+                event.preventDefault();
+                focusable[nextIndex].focus();
             }
         }
 

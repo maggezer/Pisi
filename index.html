@@ -58,7 +58,7 @@
                       Bir map seçildiğinde zihin haritası burada görünecek.
                     </div>
 
-                    <div id="map-canvas" style="display:none;">
+                    <div id="map-canvas" hidden>
                         <svg id="map-connections">
                             <defs>
     <!-- Tek yönlü ok: çizgi okun tabanında biter, ok ileri doğru uzar -->
@@ -126,7 +126,15 @@
                         <div id="map-board"></div>
                         </div>
 
-                    <div id="center-node-editor" class="center-node-editor" hidden>
+                <div id="center-node-editor" class="center-node-editor" hidden>
+                    <div id="center-node-editor-header">
+                        <input
+                            id="center-node-editor-title"
+                            type="text"
+                            aria-label="Node başlığı"
+                        >
+                        <button id="center-node-editor-save" type="button">Kaydet</button>
+                    </div>
                     <div
                         class="kedi-word-toolbar kedi-editor-toolbar"
                         data-editor-target="center-node-editor-content"
@@ -151,14 +159,32 @@
                     id="center-node-editor-content"
                     class="kedi-rich-editor"
                     contenteditable="true"
-                    spellcheck="false"
+                    spellcheck="true"
                     ></div>
                 </div>
                 
                     </div>
 
                 <div id="node-modal-overlay">
-                    <div id="node-modal">
+                    <div
+                        id="node-modal"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="node-modal-title"
+                    >
+                        <div id="node-modal-header">
+                            <input
+                                id="node-modal-title"
+                                type="text"
+                                aria-label="Node başlığı"
+                            >
+                            <button
+                                id="node-modal-close"
+                                type="button"
+                                aria-label="Kaydedip kapat"
+                                title="Kaydedip kapat"
+                            >×</button>
+                        </div>
                         <div
                             class="kedi-word-toolbar kedi-editor-toolbar"
                             data-editor-target="node-modal-content"
@@ -179,7 +205,8 @@
                             </div>
                         </div>
 
-                    <div id="node-modal-content" class="kedi-rich-editor" contenteditable="true" spellcheck="false"></div>                    </div>
+                    <div id="node-modal-content" class="kedi-rich-editor" contenteditable="true" spellcheck="true"></div>
+                    </div>
                 </div>
 
                 <div id="kedi-tag-menu" class="kedi-tag-menu" hidden></div>
