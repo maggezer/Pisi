@@ -8,38 +8,114 @@ let allowWindowClose = false;
 let closeRequestInFlight = false;
 let closeRequestTimer = null;
 const recentInternalFileChanges = new Map();
+const KEDI_INTERNAL_CHANGE_TTL_MS = 6000;
+
+function getInternalFileChangeSignature(filePath) {
+    try {
+        const stats = fs.statSync(filePath);
+        return [
+            stats.isDirectory() ? 'directory' : 'file',
+            stats.size,
+            stats.mtimeMs,
+            stats.ctimeMs
+        ].join(':');
+    } catch (error) {
+        return error?.code === 'ENOENT' ? 'missing' : null;
+    }
+}
+
+function pruneExpiredInternalFileChanges(now = Date.now()) {
+    for (const [key, entry] of recentInternalFileChanges) {
+        if (!entry || entry.expiresAt <= now) {
+            recentInternalFileChanges.delete(key);
+        }
+    }
+}
 
 function markInternalFileChange(...filePaths) {
-    const expiresAt = Date.now() + 1500;
+    const expiresAt = Date.now() + KEDI_INTERNAL_CHANGE_TTL_MS;
 
     for (const filePath of filePaths) {
         if (!filePath) continue;
-        recentInternalFileChanges.set(
-            normalizePathForCompare(filePath),
-            expiresAt
-        );
+        const normalizedPath = normalizePathForCompare(filePath);
+        if (!normalizedPath) continue;
+        recentInternalFileChanges.set(normalizedPath, {
+            expiresAt,
+            signature: null
+        });
+    }
+}
+
+function sealInternalFileChange(...filePaths) {
+    const expiresAt = Date.now() + KEDI_INTERNAL_CHANGE_TTL_MS;
+
+    for (const filePath of filePaths) {
+        if (!filePath) continue;
+        const normalizedPath = normalizePathForCompare(filePath);
+        if (!normalizedPath) continue;
+        recentInternalFileChanges.set(normalizedPath, {
+            expiresAt,
+            signature: getInternalFileChangeSignature(filePath)
+        });
     }
 }
 
 function isRecentInternalFileChange(filePath) {
     const now = Date.now();
     const normalizedPath = normalizePathForCompare(filePath);
+    pruneExpiredInternalFileChanges(now);
 
-    for (const [key, expiresAt] of recentInternalFileChanges) {
-        if (expiresAt <= now) {
-            recentInternalFileChanges.delete(key);
-        }
+    if (!normalizedPath) return false;
+
+    const entry = recentInternalFileChanges.get(normalizedPath);
+    if (!entry) return false;
+
+    if (entry.signature === null) {
+        return true;
     }
 
-    return Boolean(
-        normalizedPath &&
-        (recentInternalFileChanges.get(normalizedPath) || 0) > now
-    );
+    const currentSignature = getInternalFileChangeSignature(filePath);
+    if (currentSignature === entry.signature) {
+        return true;
+    }
+
+    recentInternalFileChanges.delete(normalizedPath);
+    return false;
+}
+
+function hasRecentInternalFileChangeInside(directoryPath) {
+    const now = Date.now();
+    const normalizedDirectory = normalizePathForCompare(directoryPath);
+    pruneExpiredInternalFileChanges(now);
+
+    if (!normalizedDirectory) return false;
+
+    for (const [changedPath, entry] of recentInternalFileChanges) {
+        if (!entry || !isSameOrInsidePath(changedPath, normalizedDirectory)) {
+            continue;
+        }
+
+        if (entry.signature === null) {
+            return true;
+        }
+
+        if (
+            getInternalFileChangeSignature(changedPath) ===
+            entry.signature
+        ) {
+            return true;
+        }
+
+        recentInternalFileChanges.delete(changedPath);
+    }
+
+    return false;
 }
 
 function renamePathInternal(oldPath, newPath) {
     markInternalFileChange(oldPath, newPath);
     fs.renameSync(oldPath, newPath);
+    sealInternalFileChange(oldPath, newPath);
 }
 
 const appIconPath = path.join(__dirname, 'assets', 'kedi.ico');
@@ -740,6 +816,7 @@ function writeFileAtomic(filePath, content, options = {}) {
 
         renamePathInternal(tempPath, targetPath);
         fsyncDirectoryBestEffort(directoryPath);
+        sealInternalFileChange(targetPath, tempPath, backupPath);
     } catch (error) {
         if (descriptor !== null) {
             try {
@@ -752,6 +829,7 @@ function writeFileAtomic(filePath, content, options = {}) {
                 fs.unlinkSync(tempPath);
             }
         } catch {}
+        sealInternalFileChange(tempPath);
 
         throw error;
     }
@@ -902,6 +980,7 @@ function ensureKediSidecar(filePath, metadata) {
     if (!fs.existsSync(desiredPath)) {
         markInternalFileChange(desiredPath);
         fs.mkdirSync(desiredPath, { recursive: true });
+        sealInternalFileChange(desiredPath);
     }
 
     return desiredPath;
@@ -1188,6 +1267,7 @@ function ensureKediDiaryFolder(projectFolder) {
 
     markInternalFileChange(diaryFolder);
     fs.mkdirSync(diaryFolder, { recursive: true });
+    sealInternalFileChange(diaryFolder);
 
     if (!fs.existsSync(markerPath)) {
         writeFileAtomic(
@@ -3543,7 +3623,11 @@ function syncProjectWatchers(folderPath) {
                     const changedPath = fileName
                         ? path.join(directoryPath, String(fileName))
                         : directoryPath;
-                    if (!isRecentInternalFileChange(changedPath)) {
+                    const isInternalChange = fileName
+                        ? isRecentInternalFileChange(changedPath)
+                        : hasRecentInternalFileChangeInside(directoryPath);
+
+                    if (!isInternalChange) {
                         notifyProjectChanged(
                             eventType || 'filesystem',
                             changedPath
