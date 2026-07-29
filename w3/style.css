@@ -1,0 +1,2463 @@
+#window-frame {
+    height: 32px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #181818;
+    border-bottom: 1px solid #333;
+    -webkit-app-region: drag;
+    user-select: none;
+}
+
+#window-title {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-left: 12px;
+    color: #d4d4d4;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+#window-logo {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    display: block;
+}
+
+#window-controls {
+    height: 100%;
+    display: flex;
+    -webkit-app-region: no-drag;
+}
+
+.window-btn {
+    width: 46px;
+    height: 100%;
+    border: none;
+    background: transparent;
+    color: #d4d4d4;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.window-btn img {
+    width: 12px;
+    height: 12px;
+    object-fit: contain;
+    opacity: 0.85;
+    pointer-events: none;
+}
+
+.window-btn:hover {
+    background: #333;
+}
+
+.window-btn:hover img {
+    opacity: 1;
+}
+
+.window-btn.close:hover {
+    background: #e81123;
+}
+
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: "Segoe UI", Tahoma, sans-serif;
+    background: #1e1e1e;
+    color: #d4d4d4;
+}
+
+#kedi-app {
+    width: 100vw;
+    height: calc(100vh - 32px);
+    display: flex;
+    background: #1e1e1e;
+}
+
+/* ANA BÖLÜNMÜŞ ARAYÜZ */
+#main-layout {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 280px minmax(300px, 1fr) 280px;
+    background: #1e1e1e;
+}
+
+.panel {
+    min-width: 0;
+    padding: 18px;
+    background: #252526;
+}
+
+#left-panel {
+    border-right: 1px solid #333;
+}
+
+#right-panel {
+    border-left: 1px solid #333;
+}
+
+.panel-title {
+    color: #f39c12;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+
+.panel-placeholder {
+    min-height: 120px;
+    border: 1px dashed #444;
+    border-radius: 8px;
+    padding: 16px;
+    color: #666;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* ORTA ALAN */
+#center-panel {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    background: #1e1e1e;
+}
+
+#center-toolbar {
+    height: 56px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    padding: 0 18px;
+    border-bottom: 1px solid #333;
+    background: #252526;
+    color: #888;
+    font-size: 13px;
+}
+
+#workspace {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(#333 1px, transparent 1px),
+        #1e1e1e;
+    background-size: 28px 28px;
+}
+
+.workspace-placeholder {
+    position: absolute;
+    inset: 24px;
+    border: 1px dashed #333;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #555;
+    font-size: 15px;
+}
+
+/* DAR EKRAN */
+@media (max-width: 1000px) {
+    #main-layout {
+        grid-template-columns: 220px minmax(260px, 1fr) 220px;
+    }
+}
+
+/* PROJE SOL PANEL */
+#project-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+
+
+#change-project-btn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #444;
+    background: #2d2d30;
+    color: #d4d4d4;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+#change-project-btn:hover {
+    background: #333;
+    border-color: #f39c12;
+}
+
+#file-tree {
+    height: calc(100% - 64px);
+    overflow: auto;
+    padding-right: 4px;
+    font-size: 13px;
+}
+
+.tree-row {
+    min-height: 26px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+    border-radius: 5px;
+    cursor: default;
+    user-select: none;
+    color: #d4d4d4;
+}
+
+.tree-row:hover {
+    background: #333;
+}
+
+.tree-toggle {
+    width: 14px;
+    color: #888;
+    font-size: 10px;
+    display: inline-flex;
+    justify-content: center;
+}
+
+.tree-icon {
+    width: 18px;
+    display: inline-flex;
+    justify-content: center;
+}
+
+.tree-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tree-children {
+    display: none;
+}
+
+.tree-node.expanded > .tree-children {
+    display: block;
+}
+
+.tree-node.expanded > .tree-row .tree-toggle {
+    transform: rotate(90deg);
+    color: #f39c12;
+}
+
+/* PROJE SEÇİM POPUP */
+#project-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.68);
+    backdrop-filter: blur(4px);
+}
+
+#project-modal.visible {
+    display: flex;
+}
+
+#project-modal-card {
+    width: 420px;
+    max-width: calc(100vw - 40px);
+    background: #252526;
+    border: 1px solid #444;
+    border-radius: 14px;
+    padding: 24px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.modal-logo-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.modal-logo-row img {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+}
+
+.modal-logo-row h2 {
+    margin: 0;
+    color: #f39c12;
+    font-size: 20px;
+}
+
+#project-modal-card p {
+    color: #aaa;
+    font-size: 14px;
+    line-height: 1.55;
+    margin: 0 0 20px 0;
+}
+
+#modal-choose-project-btn {
+    width: 100%;
+    height: 42px;
+    border: none;
+    border-radius: 8px;
+    background: #f39c12;
+    color: #1e1e1e;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+#modal-choose-project-btn:hover {
+    filter: brightness(1.08);
+}
+#project-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.project-action-btn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #444;
+    background: #2d2d30;
+    color: #d4d4d4;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.project-action-btn:hover {
+    background: #333;
+    border-color: #f39c12;
+}
+
+.tree-row.selected {
+    background: #3e3e3e;
+    color: #f39c12;
+}
+
+.tree-rename-input {
+    width: 100%;
+    min-width: 0;
+    height: 22px;
+    background: #1e1e1e;
+    color: #f39c12;
+    border: 1px solid #f39c12;
+    border-radius: 4px;
+    outline: none;
+    padding: 2px 6px;
+    font: inherit;
+}
+
+
+.tree-name {
+    flex: 1;
+}
+
+
+.tree-inline-action-btn:hover {
+    background: #333;
+    border-color: #f39c12;
+}
+
+.tree-action-img[src=""],
+.tree-action-img:not([src]) {
+    display: none;
+}
+
+/* Map satırındaki + butonu hover sırasında satır yüksekliğini değiştirmesin */
+.tree-row {
+    height: 28px;
+    min-height: 28px;
+    padding-top: 0;
+    padding-bottom: 0;
+    overflow: hidden;
+}
+
+.tree-row-actions {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 22px;
+    min-width: 22px;
+    margin-left: auto;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+}
+
+.tree-row:hover .tree-row-actions {
+    visibility: visible;
+    opacity: 1;
+}
+
+.tree-inline-action-btn {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+    padding: 0;
+}
+
+.tree-action-img {
+    width: 12px;
+    height: 12px;
+    display: block;
+    object-fit: contain;
+}
+
+.tree-action-fallback {
+    display: none;
+}
+
+.tree-row.just-created {
+    animation: kediNewItemPulse 900ms ease-out;
+}
+
+@keyframes kediNewItemPulse {
+    0% {
+        background: rgba(243, 156, 18, 0.38);
+        box-shadow: inset 3px 0 0 #f39c12;
+    }
+
+    55% {
+        background: rgba(243, 156, 18, 0.16);
+        box-shadow: inset 3px 0 0 #f39c12;
+    }
+
+    100% {
+        background: transparent;
+        box-shadow: inset 0 0 0 transparent;
+    }
+}
+
+/* MAP CANVAS */
+#map-canvas {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    background:
+        radial-gradient(#333 1px, transparent 1px),
+        #1e1e1e;
+    background-size: 28px 28px;
+}
+
+#map-board {
+    position: absolute;
+    inset: 0;
+    transform-origin: 0 0;
+}
+
+.map-node-box {
+    position: absolute;
+    min-width: 150px;
+    min-height: 74px;
+    width: 220px;
+    height: 92px;
+    background: #252526;
+    border: 1px solid #444;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    color: #d4d4d4;
+    overflow: visible;
+    user-select: none;
+    z-index: 4;
+    pointer-events: auto;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.map-node-box.selected {
+    border-color: #f39c12;
+    box-shadow: 0 0 0 2px rgba(243,156,18,0.25), 0 8px 24px rgba(0,0,0,0.35);
+}
+
+.map-node-title {
+    flex: 0 0 30px;
+    height: 30px;
+    padding: 7px 34px 4px 34px;
+    color: #f39c12;
+    font-weight: 700;
+    font-size: var(--kedi-map-node-title-size);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: default;
+    border-bottom: 1px solid #333;
+}
+
+.map-node-preview {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 8px 12px 10px 12px;
+    font-size: var(--kedi-map-node-text-size);
+    line-height: 1.35;
+    color: #aaa;
+    overflow: hidden;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.map-node-btn {
+    position: absolute;
+    top: -9px;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 5;
+    font-size: 12px;
+    font-weight: 700;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.45);
+}
+
+.map-node-box:hover .map-node-btn {
+    display: flex;
+}
+
+.map-node-delete {
+    left: -9px;
+    background: #e74c3c;
+    color: white;
+}
+
+.map-node-open {
+    right: -9px;
+    background: #f39c12;
+    color: #1e1e1e;
+}
+
+.map-port {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: #888;
+    border: 2px solid #252526;
+    border-radius: 50%;
+    opacity: 0;
+    z-index: 4;
+}
+
+.map-node-box:hover .map-port {
+    opacity: 1;
+}
+
+.map-port.top {
+    top: -7px;
+    left: calc(50% - 7px);
+}
+
+.map-port.right {
+    right: -7px;
+    top: calc(50% - 7px);
+}
+
+.map-port.bottom {
+    bottom: -7px;
+    left: calc(50% - 7px);
+}
+
+.map-port.left {
+    left: -7px;
+    top: calc(50% - 7px);
+}
+
+.map-node-resize {
+    position: absolute;
+    right: -1px;
+    bottom: -1px;
+    width: 16px;
+    height: 16px;
+    cursor: nwse-resize;
+    border-right: 2px solid #666;
+    border-bottom: 2px solid #666;
+    border-bottom-right-radius: 8px;
+    opacity: 0;
+}
+
+.map-node-box:hover .map-node-resize {
+    opacity: 1;
+}
+
+/* NODE MODAL */
+#node-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 8000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.62);
+    backdrop-filter: blur(4px);
+}
+
+#node-modal-overlay.visible {
+    display: flex;
+}
+
+#node-modal {
+    width: min(900px, calc(100vw - 80px));
+    height: min(620px, calc(100vh - 80px));
+    background: #1e1e1e;
+    border: 1px solid #444;
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.65);
+}
+
+#node-modal-header {
+    height: 52px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 14px;
+    background: #252526;
+    border-bottom: 1px solid #333;
+}
+
+#node-modal-title {
+    flex: 1;
+    height: 32px;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #f39c12;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+#node-modal-close {
+    width: 34px;
+    height: 34px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background: #2d2d30;
+    color: #d4d4d4;
+    cursor: pointer;
+}
+
+#node-modal-close:hover {
+    background: #e74c3c;
+    color: white;
+}
+
+#node-modal-content {
+    flex: 1;
+    border: none;
+    outline: none;
+    resize: none;
+    padding: 24px;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    font-family: "Segoe UI", Tahoma, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+}
+
+.map-node-box.just-updated {
+    animation: kediMapNodePulse 650ms ease-out;
+}
+
+@keyframes kediMapNodePulse {
+    0% {
+        border-color: #f39c12;
+        box-shadow: 0 0 0 3px rgba(243,156,18,0.28), 0 8px 24px rgba(0,0,0,0.35);
+    }
+
+    100% {
+        border-color: #444;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+}
+
+.map-node-title-input {
+    width: 100%;
+    height: 22px;
+    border: 1px solid #f39c12;
+    border-radius: 4px;
+    background: #1e1e1e;
+    color: #f39c12;
+    outline: none;
+    padding: 1px 6px;
+    font: inherit;
+    font-size: var(--kedi-map-node-title-size);
+    font-weight: 700;
+}
+
+#map-connections {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+    z-index: 1;
+}
+
+#map-board {
+    z-index: 2;
+    pointer-events: none;
+}
+
+.map-node-box {
+    pointer-events: auto;
+}
+
+.map-edge {
+    fill: none;
+    stroke-width: 2.5px;
+    pointer-events: stroke;
+}
+
+.map-edge.down-hub {
+    stroke: #f39c12;
+    marker-end: url(#arrow-downhub);
+}
+
+.map-edge.co-level {
+    stroke: #34ace0;
+    marker-start: url(#arrow-colevel-start);
+    marker-end: url(#arrow-colevel);
+}
+
+.map-edge.stream {
+    stroke: #2ecc71;
+    marker-end: url(#arrow-stream);
+}
+
+#arrow-downhub path {
+    fill: #f39c12;
+}
+
+#arrow-colevel path {
+    fill: #34ace0;
+}
+
+#arrow-colevel-start path {
+    fill: #34ace0;
+}
+
+#arrow-stream path {
+    fill: #2ecc71;
+}
+
+.map-temp-edge {
+    fill: none;
+    stroke: #aaa;
+    stroke-width: 2px;
+    stroke-dasharray: 6 5;
+    pointer-events: none;
+}
+
+.map-port {
+    cursor: crosshair;
+}
+
+.map-port.connecting-source {
+    opacity: 1 !important;
+    background: #f39c12;
+    transform: scale(1.25);
+}
+
+#map-connections {
+    overflow: visible;
+}
+
+#map-connections marker {
+    overflow: visible;
+}
+
+.map-edge {
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.map-temp-edge {
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* MAP PAN / DRAG CURSORS */
+#map-canvas {
+    cursor: default;
+}
+
+#map-canvas.panning {
+    cursor: grabbing;
+}
+
+.map-node-box {
+    cursor: default;
+}
+
+.map-node-box.dragging {
+    cursor: grabbing;
+}
+
+.map-node-title {
+    cursor: default;
+}
+
+.map-node-box.dragging .map-node-title {
+    cursor: grabbing;
+}
+
+.map-node-title[contenteditable="true"],
+.map-node-title-input {
+    cursor: text;
+}
+
+/* MAP ZOOM CONTROLS */
+#map-zoom-controls {
+    position: absolute;
+    right: 18px;
+    bottom: 18px;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    opacity: 0.45;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+#map-zoom-controls:hover {
+    opacity: 1;
+    transform: translateY(-1px);
+}
+
+.map-zoom-btn {
+    width: 38px;
+    height: 38px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 10px;
+    background: rgba(45, 45, 48, 0.72);
+    color: #f39c12;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.38);
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        transform 0.08s ease;
+}
+
+.map-zoom-btn:hover {
+    background: rgba(45, 45, 48, 0.96);
+    border-color: #f39c12;
+}
+
+.map-zoom-btn:active {
+    transform: scale(0.94);
+}
+
+/* CONNECTION DELETE BUTTON */
+.map-edge-delete {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+.map-edge-hit {
+    fill: none;
+    stroke: transparent;
+    stroke-width: 18px;
+    pointer-events: stroke;
+    cursor: default;
+}
+
+.map-edge {
+    pointer-events: none;
+}
+
+.map-edge-group:hover .map-edge-delete {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.map-edge-delete-hit {
+    fill: rgba(231, 76, 60, 0.92);
+    stroke: rgba(255, 255, 255, 0.75);
+    stroke-width: 1.5px;
+    cursor: pointer;
+}
+
+.map-edge-delete-x {
+    fill: white;
+    font-size: 15px;
+    font-weight: 800;
+    text-anchor: middle;
+    dominant-baseline: central;
+    pointer-events: none;
+    user-select: none;
+}
+
+.map-edge-delete:hover .map-edge-delete-hit {
+    fill: rgba(231, 76, 60, 1);
+    stroke: rgba(255, 255, 255, 1);
+}
+
+.map-edge-group:hover .map-edge {
+    stroke-width: 4px;
+}
+
+.delete-tree-item-btn {
+    color: #e74c3c;
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.delete-tree-item-btn:hover {
+    background: rgba(231, 76, 60, 0.16);
+    border-color: #e74c3c;
+    color: #ff6b6b;
+}
+
+/* MAP MULTI-SELECTION BOX */
+.map-selection-box {
+    position: absolute;
+    z-index: 18;
+    pointer-events: none;
+    border: 1px solid rgba(243, 156, 18, 0.95);
+    background: rgba(243, 156, 18, 0.08);
+    border-radius: 2px;
+}
+
+.map-selection-box.right-to-left {
+    border-color: rgba(52, 172, 224, 0.95);
+    background: rgba(52, 172, 224, 0.07);
+    border-style: dashed;
+}
+
+.map-selection-box.left-to-right {
+    border-color: rgba(243, 156, 18, 0.95);
+    background: rgba(243, 156, 18, 0.08);
+    border-style: solid;
+}
+
+/* RIGHT PANEL TABS */
+#right-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* RIGHT PANEL TABS */
+#right-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding-top: 0;
+}
+
+#right-panel-tabs {
+    height: 42px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    margin: 0 -18px 14px -18px;
+    padding: 6px 8px 0 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background: #252526;
+    border-bottom: 1px solid #333;
+
+    /* Prevent tab borders from visually sticking out past the header when the strip is scrollable */
+    position: relative;
+    overflow: hidden;
+}
+
+
+#right-panel-tabs::-webkit-scrollbar {
+    height: 4px;
+}
+
+#right-panel-tabs::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 999px;
+}
+
+.right-panel-tab {
+    height: 32px;
+
+    /* Let the tab size be driven by its content, but never wider than the viewport */
+    min-width: fit-content;
+    max-width: 100%;
+    flex: 0 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #333;
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    background: #2d2d30;
+    color: #aaa;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: default;
+    user-select: none;
+}
+
+
+.right-panel-tab:hover {
+    background: #333;
+    color: #d4d4d4;
+}
+
+.right-panel-tab.active {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    border-color: #444;
+    box-shadow: inset 0 2px 0 #f39c12;
+}
+
+
+.right-tab-page {
+    display: none;
+}
+
+.right-tab-page.active {
+    display: block;
+}
+
+.right-panel-section-title {
+    color: #f39c12;
+    font-size: 13px;
+    font-weight: 800;
+    margin-bottom: 10px;
+}
+
+
+
+.right-panel-empty {
+    border: 1px dashed #444;
+    border-radius: 8px;
+    padding: 14px;
+    color: #777;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+/* KEDI TAG MENU */
+.kedi-tag-menu {
+    position: fixed;
+    z-index: 9500;
+    min-width: 190px;
+    max-width: 260px;
+    padding: 6px;
+    border: 1px solid #444;
+    border-radius: 10px;
+    background: #252526;
+    box-shadow: 0 14px 38px rgba(0,0,0,0.58);
+}
+
+.kedi-tag-menu[hidden] {
+    display: none !important;
+}
+
+.kedi-tag-option {
+    width: 100%;
+    min-height: 34px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: #d4d4d4;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 9px;
+    text-align: left;
+}
+
+.kedi-tag-option:hover,
+.kedi-tag-option.active {
+    background: #333;
+}
+
+.kedi-tag-option-code {
+    color: #f39c12;
+    font-family: Consolas, monospace;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.kedi-tag-option-desc {
+    color: #888;
+    font-size: 12px;
+}
+
+/* RICH NODE EDITOR */
+#node-modal-content {
+    overflow: auto;
+    white-space: normal;
+}
+
+#node-modal-content:focus {
+    outline: none;
+}
+
+#node-modal-content h2,
+#node-modal-content h3,
+#node-modal-content h4,
+#node-modal-content h5 {
+    color: #f39c12;
+    margin: 0.55em 0 0.35em 0;
+    line-height: 1.25;
+    font-weight: 800;
+}
+
+#node-modal-content h2 {
+    font-size: 26px;
+}
+
+#node-modal-content h3 {
+    font-size: 22px;
+}
+
+#node-modal-content h4 {
+    font-size: 18px;
+}
+
+#node-modal-content h5 {
+    font-size: 15px;
+}
+
+#node-modal-content div {
+    min-height: 1.45em;
+}
+
+#node-modal-content:empty::before {
+    content: "Node içeriği...";
+    color: #555;
+    pointer-events: none;
+}
+
+/* USER TAG CHIPS */
+.kedi-user-tag {
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    padding: 2px 7px;
+    margin: 0 2px;
+    border-radius: 999px;
+    background: rgba(31, 84, 145, 0.88);
+    color: #dcecff;
+    font-size: 0.92em;
+    font-weight: 700;
+    line-height: 1.45;
+    white-space: nowrap;
+    cursor: default;
+    user-select: none;
+}
+
+.kedi-user-tag::before {
+    content: "#";
+    opacity: 0.65;
+    margin-right: 2px;
+}
+
+.kedi-tag-option.user .kedi-tag-option-code,
+.kedi-tag-option.new-user .kedi-tag-option-code {
+    color: #5dade2;
+}
+
+.kedi-tag-option.new-user .kedi-tag-option-desc {
+    color: #7fb3d5;
+}
+
+/* TAGS PANEL */
+#kedi-tags-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.kedi-tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.kedi-tag-filter-chip {
+    border: 1px solid rgba(93, 173, 226, 0.45);
+    border-radius: 999px;
+    background: rgba(31, 84, 145, 0.5);
+    color: #dcecff;
+    padding: 5px 9px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.kedi-tag-filter-chip:hover,
+.kedi-tag-filter-chip.active {
+    background: rgba(31, 84, 145, 0.95);
+    border-color: #5dade2;
+}
+
+.kedi-tag-count {
+    opacity: 0.72;
+    margin-left: 4px;
+    font-weight: 600;
+}
+
+.kedi-tag-block-results {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.kedi-tag-result-card {
+    border: 1px solid #3a3a3a;
+    border-radius: 9px;
+    background: #2a2a2c;
+    padding: 9px;
+    cursor: pointer;
+}
+
+.kedi-tag-result-card:hover {
+    border-color: #5dade2;
+    background: #303034;
+}
+
+.kedi-tag-result-node {
+    color: #f39c12;
+    font-size: 12px;
+    font-weight: 800;
+    margin-bottom: 5px;
+}
+
+.kedi-tag-result-text {
+    color: #d4d4d4;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.kedi-tag-result-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 7px;
+}
+
+.kedi-editor-block {
+    position: relative;
+}
+
+.kedi-editor-block.kedi-block-highlight {
+    outline: 2px solid rgba(93, 173, 226, 0.9);
+    outline-offset: 4px;
+    border-radius: 6px;
+    background: rgba(93, 173, 226, 0.08);
+}
+
+/* KEDI CUSTOM CONFIRM */
+#kedi-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 12000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.62);
+    backdrop-filter: blur(4px);
+}
+
+#kedi-confirm-card {
+    width: 360px;
+    max-width: calc(100vw - 48px);
+    background: #252526;
+    border: 1px solid #444;
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.65);
+}
+
+#kedi-confirm-title {
+    color: #f39c12;
+    font-size: 15px;
+    font-weight: 800;
+    margin-bottom: 10px;
+}
+
+#kedi-confirm-message {
+    color: #d4d4d4;
+    font-size: 13px;
+    line-height: 1.45;
+    margin-bottom: 18px;
+}
+
+#kedi-confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+#kedi-confirm-actions button {
+    min-width: 86px;
+    height: 32px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background: #2d2d30;
+    color: #d4d4d4;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+#kedi-confirm-actions button:hover {
+    border-color: #f39c12;
+}
+
+#kedi-confirm-ok {
+    background: #f39c12 !important;
+    color: #1e1e1e !important;
+    border-color: #f39c12 !important;
+}
+
+#kedi-confirm-ok.danger {
+    background: #e74c3c !important;
+    color: white !important;
+    border-color: #e74c3c !important;
+}
+
+/* CENTER FILE TABS */
+#center-toolbar {
+    height: 42px;
+    padding: 0;
+    overflow: hidden;
+}
+
+.center-tabs {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 6px 8px 0 8px;
+    background: #252526;
+}
+
+.center-tabs::-webkit-scrollbar {
+    height: 4px;
+}
+
+.center-tabs::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 999px;
+}
+
+.center-tabs-empty {
+    height: 30px;
+    display: flex;
+    align-items: center;
+    color: #666;
+    font-size: 12px;
+    padding: 0 10px;
+}
+
+.center-tab {
+    height: 32px;
+
+    /* İsim kısa ise kısa, uzun ise belli limite kadar geniş olsun */
+    min-width: 0;
+    width: fit-content;
+    max-width: 240px;
+    flex: 0 1 auto;
+
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 7px 0 10px;
+    border: 1px solid #333;
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    background: #2d2d30;
+    color: #aaa;
+    cursor: default;
+    user-select: none;
+}
+
+.center-tab:hover {
+    background: #333;
+    color: #d4d4d4;
+}
+
+.center-tab.active {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    border-color: #444;
+    box-shadow: inset 0 2px 0 #f39c12;
+}
+
+.center-tab-icon {
+    flex: 0 0 auto;
+    font-size: 13px;
+}
+
+.center-tab-title {
+    min-width: 0;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.center-tab-close {
+    flex: 0 0 auto;
+    width: 19px;
+    height: 19px;
+    border: none;
+    border-radius: 5px;
+    background: transparent;
+    color: #888;
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 17px;
+    padding: 0;
+}
+
+.center-tab-close:hover {
+    background: #3e3e42;
+    color: #fff;
+}
+
+.center-tab.active .center-tab-close:hover {
+    background: #4a4a4a;
+}
+
+/* TAGS DROPDOWN PANEL */
+#right-tab-tags.active {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    min-height: 0;
+}
+
+#kedi-tags-panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 12px;
+    width: 100%;
+}
+
+.kedi-tag-picker {
+    position: relative;
+    z-index: 80;
+    width: 100%;
+    flex: 0 0 auto;
+}
+
+#kedi-tag-picker-button {
+    width: 100%;
+    min-height: 36px;
+    border: 1px solid #444;
+    border-radius: 9px;
+    background: #2d2d30;
+    color: #d4d4d4;
+    padding: 0 34px 0 11px;
+    font-size: 12px;
+    font-weight: 800;
+    text-align: left;
+    cursor: pointer;
+    position: relative;
+}
+
+#kedi-tag-picker-button::after {
+    content: "⌄";
+    position: absolute;
+    right: 11px;
+    top: 50%;
+    transform: translateY(-54%);
+    color: #f39c12;
+    font-size: 15px;
+}
+
+#kedi-tag-picker-button:hover {
+    border-color: #f39c12;
+    background: #333;
+}
+
+#kedi-tag-picker-button:disabled {
+    opacity: 0.55;
+    cursor: default;
+    border-color: #3a3a3a;
+}
+
+.kedi-tag-picker-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    z-index: 100;
+    max-height: 260px;
+    overflow: auto;
+    padding: 6px;
+    border: 1px solid #444;
+    border-radius: 10px;
+    background: #252526;
+    box-shadow: 0 14px 38px rgba(0,0,0,0.58);
+}
+
+.kedi-tag-picker-menu[hidden] {
+    display: none !important;
+}
+
+.kedi-tag-picker-option {
+    width: 100%;
+    min-height: 34px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: #d4d4d4;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 9px;
+    text-align: left;
+}
+
+.kedi-tag-picker-option:hover,
+.kedi-tag-picker-option.active {
+    background: #333;
+}
+
+.kedi-tag-picker-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #b9ddff;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.kedi-tag-picker-count {
+    flex: 0 0 auto;
+    min-width: 22px;
+    height: 20px;
+    border-radius: 999px;
+    background: rgba(31, 84, 145, 0.78);
+    color: #dcecff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 7px;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+/* CENTER NODE EDITOR */
+.center-node-editor {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    background: #1e1e1e;
+}
+
+.center-node-editor[hidden] {
+    display: none !important;
+}
+
+#center-node-editor-header {
+    height: 52px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    background: #252526;
+    border-bottom: 1px solid #333;
+}
+
+#center-node-editor-title {
+    flex: 1;
+    height: 32px;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #f39c12;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+#center-node-editor-save {
+    height: 32px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background: #2d2d30;
+    color: #d4d4d4;
+    padding: 0 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+#center-node-editor-save:hover {
+    border-color: #f39c12;
+    color: #f39c12;
+}
+
+#center-node-editor-content {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    border: none;
+    outline: none;
+    resize: none;
+    padding: 24px;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    font-family: "Segoe UI", Tahoma, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    white-space: normal;
+}
+
+#center-node-editor-content:focus {
+    outline: none;
+}
+
+#center-node-editor-content h2,
+#center-node-editor-content h3,
+#center-node-editor-content h4,
+#center-node-editor-content h5 {
+    color: #f39c12;
+    margin: 0.55em 0 0.35em 0;
+    line-height: 1.25;
+    font-weight: 800;
+}
+
+#center-node-editor-content h2 {
+    font-size: 26px;
+}
+
+#center-node-editor-content h3 {
+    font-size: 22px;
+}
+
+#center-node-editor-content h4 {
+    font-size: 18px;
+}
+
+#center-node-editor-content h5 {
+    font-size: 15px;
+}
+
+#center-node-editor-content div {
+    min-height: 1.45em;
+}
+
+#center-node-editor-content:empty::before {
+    content: "Node içeriği...";
+    color: #555;
+    pointer-events: none;
+}
+
+/* KEDI CUSTOMIZATION VARIABLES */
+:root {
+    --kedi-map-downhub-color: #f39c12;
+    --kedi-map-colevel-color: #34ace0;
+    --kedi-map-stream-color: #2ecc71;
+    --kedi-map-node-box-color: #252526;
+    --kedi-map-node-title-color: #f39c12;
+
+    --kedi-map-node-title-size: 13px;
+    --kedi-map-node-text-size: 12px;
+
+    --kedi-node-header-color: #f39c12;
+}
+
+/* MAP CONNECTION TYPE COLORS */
+.map-edge.down-hub {
+    stroke: var(--kedi-map-downhub-color);
+}
+
+.map-edge.co-level {
+    stroke: var(--kedi-map-colevel-color);
+}
+
+.map-edge.stream {
+    stroke: var(--kedi-map-stream-color);
+}
+
+#arrow-downhub path {
+    fill: var(--kedi-map-downhub-color);
+}
+
+#arrow-colevel path,
+#arrow-colevel-start path {
+    fill: var(--kedi-map-colevel-color);
+}
+
+#arrow-stream path {
+    fill: var(--kedi-map-stream-color);
+}
+
+/* Geçici bağlantı çizgisi genel olarak hub rengini kullansın */
+.map-temp-edge {
+    stroke: var(--kedi-map-downhub-color);
+}
+
+.map-port.connecting-source {
+    background: var(--kedi-map-downhub-color);
+}
+
+.map-node-box {
+    background: var(--kedi-map-node-box-color);
+}
+
+.map-node-title,
+.map-node-title-input {
+    color: var(--kedi-map-node-title-color);
+}
+
+/* NODE EDITOR CUSTOM COLORS */
+#node-modal-content h2,
+#node-modal-content h3,
+#node-modal-content h4,
+#node-modal-content h5,
+#center-node-editor-content h2,
+#center-node-editor-content h3,
+#center-node-editor-content h4,
+#center-node-editor-content h5 {
+    color: var(--kedi-node-header-color);
+}
+
+/* CUSTOMIZE PANEL */
+#kedi-customize-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.kedi-customize-group {
+    border: 1px solid #3a3a3a;
+    border-radius: 10px;
+    background: #2a2a2c;
+    overflow: hidden;
+}
+
+.kedi-customize-group summary {
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    padding: 0 11px;
+    color: #f39c12;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+}
+
+.kedi-customize-group summary::-webkit-details-marker {
+    display: none;
+}
+
+.kedi-customize-group summary::after {
+    content: "⌄";
+    margin-left: auto;
+    color: #888;
+    transition: transform 0.14s ease;
+}
+
+.kedi-customize-group[open] summary::after {
+    transform: rotate(180deg);
+}
+
+.kedi-customize-row {
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 11px;
+    border-top: 1px solid #333;
+}
+
+.kedi-customize-row label {
+    min-width: 0;
+    color: #d4d4d4;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.kedi-color-input {
+    width: 34px;
+    height: 28px;
+    flex: 0 0 auto;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background: #1e1e1e;
+    padding: 2px;
+    cursor: pointer;
+}
+
+.kedi-color-input:hover {
+    border-color: #f39c12;
+}
+
+.kedi-color-input::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.kedi-color-input::-webkit-color-swatch {
+    border: none;
+    border-radius: 6px;
+}
+
+#kedi-customize-reset {
+    min-height: 34px;
+    border: 1px solid #444;
+    border-radius: 9px;
+    background: #2d2d30;
+    color: #aaa;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+#kedi-customize-reset:hover {
+    border-color: #f39c12;
+    color: #f39c12;
+}
+
+/* FIX: RIGHT PANEL TAB VISIBILITY AND TAGS POSITION */
+#right-panel-content {
+   
+    min-height: 0;
+    display: block;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Bütün sağ panel sayfaları varsayılan olarak kapalı */
+.right-tab-page {
+    display: none !important;
+    height: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+}
+
+/* Sadece aktif sayfa görünsün */
+.right-tab-page.active {
+    display: block !important;
+}
+
+/* Tags aktif değilse kesinlikle görünmesin */
+#right-tab-tags:not(.active) {
+    display: none !important;
+}
+
+/* Tags aktifken normal block akışında üstten başlasın */
+#right-tab-tags.active {
+    display: block !important;
+    height: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+}
+
+#right-tab-tags .right-panel-section-title {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+/* Tags içeriği yukarıdan aşağıya normal aksın */
+#right-tab-tags #kedi-tags-panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 12px;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+}
+
+/* Choose tag üstte sabit kalsın, alta/yukarı yapışmasın */
+#right-tab-tags .kedi-tag-picker {
+    position: relative;
+    top: auto;
+    bottom: auto;
+    z-index: 80;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    flex: 0 0 auto;
+    background: transparent;
+}
+
+/* Menü butonun ALTINA açılsın */
+#right-tab-tags .kedi-tag-picker-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    bottom: auto;
+    left: 0;
+    right: 0;
+    transform: none;
+    z-index: 100;
+    max-height: 260px;
+    overflow: auto;
+}
+
+#right-tab-tags #kedi-tag-block-results {
+    margin-top: 0;
+    flex: 0 0 auto;
+}
+
+/* MISSIONS PANEL */
+#kedi-missions-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.kedi-missions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.kedi-mission-card {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 8px;
+    align-items: stretch;
+    border: 1px solid #3a3a3a;
+    border-radius: 10px;
+    background: #2a2a2c;
+    padding: 8px;
+}
+
+.kedi-mission-card:hover {
+    border-color: #f39c12;
+    background: #303034;
+}
+
+.kedi-mission-check-wrap {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 4px;
+}
+
+.kedi-mission-check {
+    width: 16px;
+    height: 16px;
+    accent-color: #f39c12;
+    cursor: pointer;
+}
+
+.kedi-mission-main {
+    min-width: 0;
+    border: none;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    padding: 0;
+}
+
+.kedi-mission-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 5px;
+}
+
+
+.kedi-mission-text {
+    color: #d4d4d4;
+    font-size: 12px;
+    line-height: 1.4;
+    margin-bottom: 7px;
+
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    word-break: break-word;
+}
+
+.kedi-mission-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    color: #888;
+    font-size: 11px;
+    margin-bottom: 5px;
+}
+
+.kedi-mission-meta .late {
+    color: #ff6b6b;
+    font-weight: 800;
+}
+
+.kedi-mission-node {
+    color: #5dade2;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+/* KEDI CALENDAR */
+#left-panel,
+#right-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+#left-panel {
+    padding-bottom: 12px;
+}
+
+#right-panel {
+    padding-bottom: 12px;
+}
+
+#left-panel #file-tree {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+}
+
+#right-panel #right-panel-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.kedi-calendar-dock-zone {
+    flex: 0 0 300px;
+    width: 100%;
+    height: 300px;
+    min-height: 300px;
+    margin-top: 10px;
+
+    border: none;
+    border-radius: 0;
+    background: transparent;
+
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+
+    overflow: hidden;
+}
+
+.kedi-calendar-dock-zone.has-calendar {
+    flex: 0 0 300px;
+    height: 300px;
+    min-height: 300px;
+
+    border: none;
+    background: transparent;
+
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+
+    overflow: hidden;
+}
+
+.kedi-calendar-dock-zone.active-drop-target,
+body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover {
+    border: none;
+    background: transparent;
+}
+
+.kedi-calendar-dock-zone-label {
+    display: none;
+}
+
+.kedi-calendar-dock-zone.has-calendar .kedi-calendar-dock-zone-label {
+    display: none;
+}
+
+
+.kedi-calendar {
+    width: 222px;
+    max-width: 100%;
+    border: 1px solid #3f3f46;
+    border-radius: 12px;
+    background: rgba(37, 37, 38, 0.985);
+    color: #d4d4d4;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5);
+    z-index: 6000;
+    overflow: hidden;
+    user-select: none;
+}
+
+.kedi-calendar.docked {
+    position: static;
+    width: 100%;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.32);
+}
+
+.kedi-calendar.floating {
+    position: fixed;
+}
+
+
+.kedi-calendar-icon-btn {
+    width: 23px;
+    height: 23px;
+    flex: 0 0 auto;
+    border: 1px solid #444;
+    border-radius: 7px;
+    background: #2d2d30;
+    color: #d4d4d4;
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.kedi-calendar-icon-btn:hover {
+    border-color: #f39c12;
+    color: #f39c12;
+    background: #333;
+}
+
+.kedi-calendar-body {
+    padding: 7px;
+}
+
+.kedi-calendar-month-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 5px;
+}
+
+.kedi-calendar-month-label {
+    flex: 1;
+    min-height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #f1f1f1;
+    font-size: 12px;
+    font-weight: 850;
+    text-align: center;
+    border-radius: 7px;
+    cursor: grab;
+    user-select: none;
+}
+
+.kedi-calendar-month-label:hover {
+    background: #2d2d30;
+    color: #f39c12;
+}
+
+.kedi-calendar.dragging .kedi-calendar-month-label {
+    cursor: grabbing;
+}
+
+.kedi-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.kedi-calendar-weekday {
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #8d8d8d;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.kedi-calendar-day {
+    position: relative;
+    height: 25px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: transparent;
+    color: #d4d4d4;
+    font-size: 11px;
+    font-weight: 750;
+    cursor: pointer;
+    padding: 0 0 4px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.kedi-calendar-day-number {
+    pointer-events: none;
+    line-height: 1;
+}
+
+.kedi-calendar-day:hover {
+    background: #333;
+    border-color: #555;
+}
+
+.kedi-calendar-day.other-month {
+    color: #5f5f5f;
+}
+
+.kedi-calendar-day.today {
+    color: #1e1e1e;
+    background: #f39c12;
+    border-color: #f39c12;
+}
+
+.kedi-calendar-day.selected:not(.today) {
+    border-color: #f39c12;
+    color: #f39c12;
+}
+
+.kedi-calendar-day.has-diary-node::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 3px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #2ecc71;
+    transform: translateX(-50%);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.28);
+}
+
+.kedi-calendar-day.today.has-diary-node::after {
+    background: #145a32;
+}
+
+.kedi-calendar-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.kedi-calendar-today-btn {
+    flex: 1;
+    height: 25px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background: #2d2d30;
+    color: #d4d4d4;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.kedi-calendar-today-btn:hover {
+    border-color: #f39c12;
+    color: #f39c12;
+    background: #333;
+}
+
+.kedi-diary-managed-meta {
+    margin: 8px 0 3px 0;
+    color: #888;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.kedi-diary-managed-block {
+    margin: 8px 0;
+    padding: 8px 10px;
+    border-left: 3px solid #f39c12;
+    border-radius: 8px;
+    background: rgba(243, 156, 18, 0.07);
+}
+
+/* CALENDAR DOCK DROP HIGHLIGHT */
+
+/* Normalde dock alanı görünmez kalır */
+.kedi-calendar-dock-zone {
+    position: relative;
+}
+
+/* Takvim sürüklenirken dock alanının üstüne gelince parlasın */
+.kedi-calendar-dock-zone.active-drop-target,
+body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover {
+    background: rgba(46, 204, 113, 0.08) !important;
+    outline: 2px solid rgba(46, 204, 113, 0.95);
+    outline-offset: -3px;
+    box-shadow:
+        inset 0 0 0 1px rgba(46, 204, 113, 0.55),
+        inset 0 0 24px rgba(46, 204, 113, 0.18),
+        0 0 18px rgba(46, 204, 113, 0.28);
+    border-radius: 12px;
+}
+
+/* Parlama efekti */
+.kedi-calendar-dock-zone.active-drop-target::after,
+body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
+    content: "";
+    position: absolute;
+    inset: 10px;
+    border: 1px dashed rgba(46, 204, 113, 0.95);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(46, 204, 113, 0.95);
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    pointer-events: none;
+    animation: kediCalendarDockPulse 0.9s ease-in-out infinite;
+}
+
+@keyframes kediCalendarDockPulse {
+    0% {
+        opacity: 0.45;
+        transform: scale(0.985);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    100% {
+        opacity: 0.45;
+        transform: scale(0.985);
+    }
+}
+
+/* CALENDAR WHEN DOCKED */
+
+/* Dock alanında takvimi alta hizala */
+.kedi-calendar-dock-zone.has-calendar {
+    display: flex !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+/* Dock içindeki takvim artık ayrı pencere gibi görünmesin */
+.kedi-calendar-dock-zone.has-calendar > .kedi-calendar {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+
+    background: transparent !important;
+}
+
+/* Dock olmuş takvimde iç boşluk daha doğal dursun */
+.kedi-calendar-dock-zone.has-calendar .kedi-calendar-body {
+    padding: 6px 0 0 0 !important;
+}
+
+/* Dock olmuş takvimde ay satırı panele gömülü gibi dursun */
+.kedi-calendar-dock-zone.has-calendar .kedi-calendar-month-row {
+    margin-bottom: 6px;
+}
+
+/* Dock olmuş takvimde gün kutuları alanın içinde daha temiz hizalansın */
+.kedi-calendar-dock-zone.has-calendar .kedi-calendar-grid {
+    width: 100%;
+}
+
+/* Dock olmuş takvimde hover/drag hissi yine kalsın ama pencere hissi vermesin */
+.kedi-calendar-dock-zone.has-calendar .kedi-calendar-month-label:hover {
+    background: rgba(243, 156, 18, 0.08);
+}
+
+/* ROOT PROJECT NAME IN LEFT TREE */
+
+.tree-root-row:hover {
+    background: transparent !important;
+}
+
+.kedi-number-input {
+    width: 58px;
+    height: 28px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 2px 6px;
+    font-size: 12px;
+    font-weight: 800;
+    outline: none;
+}
+
+.kedi-number-input:hover,
+.kedi-number-input:focus {
+    border-color: #f39c12;
+}
+
+.kedi-number-input::-webkit-inner-spin-button,
+.kedi-number-input::-webkit-outer-spin-button {
+    opacity: 1;
+}

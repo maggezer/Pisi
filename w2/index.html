@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        http-equiv="Content-Security-Policy"
+        content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self';"
+    >
+    <title>KEDI</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="window-frame">
+        <div id="window-title">
+            <img id="window-logo" src="assets/kedi.png" alt="KEDI">
+            <span>KEDI</span>
+        </div>
+
+        <div id="window-controls">
+            <button class="window-btn" id="win-min" title="Küçült">
+                <img src="assets/win-min.png" alt="Küçült">
+            </button>
+
+            <button class="window-btn" id="win-max" title="Büyüt">
+                <img id="win-max-icon" src="assets/win-max.png" alt="Büyüt">
+            </button>
+
+            <button class="window-btn close" id="win-close" title="Kapat">
+                <img src="assets/win-close.png" alt="Kapat">
+            </button>
+        </div>
+    </div>
+
+    <div id="kedi-app">
+        <main id="main-layout">
+            <aside id="left-panel" class="panel">
+                <div id="project-header">
+                <div class="panel-title">Explorer</div>
+
+                    <div id="project-actions">
+                    <button id="add-map-btn" class="project-action-btn" title="Yeni Map oluştur">🗺️</button>
+                    <button id="add-node-btn" class="project-action-btn" title="Yeni Node oluştur">📄</button>
+                    <button id="change-project-btn" class="project-action-btn" title="Proje klasörü değiştir">📁</button>
+                    </div>
+                </div>
+
+                <div id="file-tree"></div>
+            </aside>
+
+            <section id="center-panel">
+                <div id="center-toolbar">
+                    <div id="center-tabs" class="center-tabs"></div>
+                </div>
+
+                
+                <div id="workspace">
+                    <div class="workspace-placeholder" id="workspace-placeholder">
+                      Bir map seçildiğinde zihin haritası burada görünecek.
+                    </div>
+
+                    <div id="map-canvas" style="display:none;">
+                        <svg id="map-connections">
+                            <defs>
+    <!-- Tek yönlü ok: çizgi okun tabanında biter, ok ileri doğru uzar -->
+    <marker
+        id="arrow-downhub"
+        viewBox="0 -5 10 10"
+        refX="0"
+        refY="0"
+        markerWidth="7"
+        markerHeight="7"
+        orient="auto"
+        markerUnits="strokeWidth"
+    >
+        <path d="M 0 -5 L 10 0 L 0 5 z"></path>
+    </marker>
+
+    <marker
+        id="arrow-stream"
+        viewBox="0 -5 10 10"
+        refX="0"
+        refY="0"
+        markerWidth="7"
+        markerHeight="7"
+        orient="auto"
+        markerUnits="strokeWidth"
+    >
+        <path d="M 0 -5 L 10 0 L 0 5 z"></path>
+    </marker>
+
+    <!-- Co-level bitiş oku -->
+    <marker
+        id="arrow-colevel"
+        viewBox="0 -5 10 10"
+        refX="0"
+        refY="0"
+        markerWidth="7"
+        markerHeight="7"
+        orient="auto"
+        markerUnits="strokeWidth"
+    >
+        <path d="M 0 -5 L 10 0 L 0 5 z"></path>
+    </marker>
+
+    <!-- Co-level başlangıç oku: çizginin başlangıcından geriye doğru uzar -->
+    <marker
+        id="arrow-colevel-start"
+        viewBox="-10 -5 10 10"
+        refX="0"
+        refY="0"
+        markerWidth="7"
+        markerHeight="7"
+        orient="auto"
+        markerUnits="strokeWidth"
+    >
+        <path d="M 0 -5 L -10 0 L 0 5 z"></path>
+    </marker>
+        </defs>
+                        </svg>
+
+                        <div id="map-zoom-controls">
+        <button id="map-zoom-in" class="map-zoom-btn" title="Zoom in">＋</button>
+        <button id="map-zoom-out" class="map-zoom-btn" title="Zoom out">−</button>
+                        </div>
+
+                        <div id="map-board"></div>
+                        </div>
+
+                    <div id="center-node-editor" class="center-node-editor" hidden>
+                    <div id="center-node-editor-header">
+                        <input id="center-node-editor-title" type="text">
+                        <button id="center-node-editor-save" type="button">Kaydet</button>
+                    </div>
+
+                    <div
+                    id="center-node-editor-content"
+                    class="kedi-rich-editor"
+                    contenteditable="true"
+                    spellcheck="false"
+                    ></div>
+                </div>
+                
+                    </div>
+
+                <div id="node-modal-overlay">
+                    <div id="node-modal">
+                        <div id="node-modal-header">
+                           <input id="node-modal-title" type="text">
+                           <button id="node-modal-close" title="Kaydet ve kapat">✖</button>
+                        </div>
+
+                    <div id="node-modal-content" contenteditable="true" spellcheck="false"></div>                    </div>
+                </div>
+
+                <div id="kedi-tag-menu" class="kedi-tag-menu" hidden></div>
+
+              
+            </section>
+
+            <aside id="right-panel" class="panel">
+                <div id="right-panel-tabs">
+                    <button class="right-panel-tab active" data-right-tab="missions">
+                        Missions
+                    </button>
+
+                    <button class="right-panel-tab" data-right-tab="customizations">
+                        Customize
+                    </button>
+
+                    <button class="right-panel-tab" data-right-tab="tags">
+                        Tags
+                    </button>
+                </div>
+
+                <div id="right-panel-content">
+                    <section id="right-tab-missions" class="right-tab-page active">
+                        <div class="right-panel-section-title">Missions</div>
+
+                        <div id="kedi-missions-panel">
+                            <div id="kedi-missions-list" class="kedi-missions-list">
+                                <div class="right-panel-empty">
+                                    Missions için önce orta alanda bir map aç.
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="right-tab-customizations" class="right-tab-page">
+                        <div class="right-panel-section-title">Customize</div>
+
+                        <div id="kedi-customize-panel">
+                            <details class="kedi-customize-group" open>
+                                <summary>Map</summary>
+
+                                <div class="kedi-customize-row">
+                                    <label for="custom-map-downhub-color">Hub bağlantı</label>
+                                    <input
+                                        id="custom-map-downhub-color"
+                                        class="kedi-color-input"
+                                        type="color"
+                                        data-kedi-custom-color="mapDownHubColor"
+                                    >
+                                </div>
+
+                                <div class="kedi-customize-row">
+                                    <label for="custom-map-colevel-color">Co-level bağlantı</label>
+                                    <input
+                                        id="custom-map-colevel-color"
+                                        class="kedi-color-input"
+                                        type="color"
+                                        data-kedi-custom-color="mapCoLevelColor"
+                                    >
+                                </div>
+
+                                <div class="kedi-customize-row">
+                                    <label for="custom-map-stream-color">Stream bağlantı</label>
+                                    <input
+                                        id="custom-map-stream-color"
+                                        class="kedi-color-input"
+                                        type="color"
+                                        data-kedi-custom-color="mapStreamColor"
+                                    >
+                                </div>
+
+                                <div class="kedi-customize-row">
+                                    <label for="custom-map-node-box-color">Node box</label>
+                                    <input
+                                        id="custom-map-node-box-color"
+                                        class="kedi-color-input"
+                                        type="color"
+                                        data-kedi-custom-color="mapNodeBoxColor"
+                                    >
+                                </div>
+
+                                <div class="kedi-customize-row">
+                                    <label for="custom-map-node-title-color">Node box title</label>
+                                    <input
+                                        id="custom-map-node-title-color"
+                                        class="kedi-color-input"
+                                        type="color"
+                                        data-kedi-custom-color="mapNodeTitleColor"
+                                    >
+                                </div>
+                            </details>
+
+                            <details class="kedi-customize-group">
+                                <summary>Node</summary>
+
+                                <div class="kedi-customize-row">
+                                    <label for="custom-node-header-color">Headerlar</label>
+                                    <input
+                                        id="custom-node-header-color"
+                                        class="kedi-color-input"
+                                        type="color"
+                                        data-kedi-custom-color="nodeHeaderColor"
+                                    >
+                                </div>
+                            </details>
+
+                            <button id="kedi-customize-reset" type="button">
+                                Varsayılan renklere dön
+                            </button>
+                        </div>
+                    </section>
+
+                    <section id="right-tab-tags" class="right-tab-page">
+                        <div class="right-panel-section-title">Tags</div>
+
+                        <div id="kedi-tags-panel">
+                            <div class="kedi-tag-picker">
+                                <button id="kedi-tag-picker-button" type="button">
+                                    Choose tag
+                                </button>
+
+                                <div
+                                    id="kedi-tag-picker-menu"
+                                    class="kedi-tag-picker-menu"
+                                    hidden
+                                ></div>
+                            </div>
+
+                            <div id="kedi-tag-block-results" class="kedi-tag-block-results"></div>
+                        </div>
+                    </section>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <div id="project-modal">
+        <div id="project-modal-card">
+            <div class="modal-logo-row">
+                <img src="assets/kedi.ico" alt="KEDI">
+                <h2>KEDI Proje Klasörü</h2>
+            </div>
+
+            <p>
+                Başlamak için notlarının tutulacağı bir proje klasörü seç.
+                KEDI bu klasörü hatırlayacak ve sonraki açılışlarda doğrudan buradan başlayacak.
+            </p>
+
+            <button id="modal-choose-project-btn">
+                📁 Proje Klasörü Seç
+            </button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="renderer/kedi-tree.js"></script>
+    <script src="renderer/kedi-map-workspace.js"></script>
+    <script src="renderer/kedi-tags.js"></script>
+    <script src="renderer/kedi-node-modal.js"></script>
+    <script src="renderer/kedi-map-connections.js"></script>
+
+
+</body>
+</html>
