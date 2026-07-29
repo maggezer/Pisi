@@ -430,9 +430,11 @@ function runKediPaintAction(toolbar, action) {
     if (action === 'clearCanvas') {
         const canvas = getKediPaintState().activeCanvas;
         if (!canvas) return;
+        if (kediPendingPaintImages.has(canvas)) return;
 
         const context = canvas.getContext('2d');
         context.clearRect(0, 0, canvas.width, canvas.height);
+        kediDirtyPaintCanvases.add(canvas);
         saveKediCanvasData(canvas);
         notifyKediEditorChanged(getEditorForKediElement(canvas));
     }
@@ -538,27 +540,64 @@ function initializeKediAdvancedEditorContent(editor) {
     hydrateKediSheets(editor);
 }
 
+const kediBoundPaintCanvases = new WeakSet();
+const kediLoadedPaintImages = new WeakMap();
+const kediPendingPaintImages = new WeakMap();
+const kediDirtyPaintCanvases = new WeakSet();
+
 function hydrateKediPaintCanvases(root = document) {
     root.querySelectorAll('canvas[data-kedi-canvas]').forEach((canvas) => {
-        if (canvas.dataset.kediCanvasBound !== '1') {
+        canvas.removeAttribute('data-kedi-canvas-bound');
+        canvas.removeAttribute('data-image-loaded');
+
+        if (!kediBoundPaintCanvases.has(canvas)) {
             bindKediCanvas(canvas);
         }
 
-        if (canvas.dataset.image && canvas.dataset.imageLoaded !== canvas.dataset.image) {
-            const image = new Image();
-            image.onload = () => {
-                const context = canvas.getContext('2d');
-                context.clearRect(0, 0, canvas.width, canvas.height);
-                context.drawImage(image, 0, 0, canvas.width, canvas.height);
-                canvas.dataset.imageLoaded = canvas.dataset.image;
-            };
-            image.src = canvas.dataset.image;
+        const storedImage = canvas.dataset.image || '';
+
+        if (!storedImage) {
+            kediLoadedPaintImages.delete(canvas);
+            kediPendingPaintImages.delete(canvas);
+            return;
         }
+
+        if (
+            kediLoadedPaintImages.get(canvas) === storedImage ||
+            kediPendingPaintImages.get(canvas) === storedImage
+        ) {
+            return;
+        }
+
+        const image = new Image();
+        kediPendingPaintImages.set(canvas, storedImage);
+
+        image.onload = () => {
+            if (kediPendingPaintImages.get(canvas) !== storedImage) return;
+
+            const context = canvas.getContext('2d');
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+            kediLoadedPaintImages.set(canvas, storedImage);
+            kediPendingPaintImages.delete(canvas);
+            kediDirtyPaintCanvases.delete(canvas);
+        };
+
+        image.onerror = () => {
+            if (kediPendingPaintImages.get(canvas) === storedImage) {
+                kediPendingPaintImages.delete(canvas);
+            }
+        };
+
+        image.src = storedImage;
     });
 }
 
 function bindKediCanvas(canvas) {
-    canvas.dataset.kediCanvasBound = '1';
+    if (kediBoundPaintCanvases.has(canvas)) return;
+
+    kediBoundPaintCanvases.add(canvas);
     let drawing = false;
     let start = null;
     let snapshot = null;
@@ -568,10 +607,13 @@ function bindKediCanvas(canvas) {
         event.stopPropagation();
 
         selectKediCanvas(canvas);
+        if (kediPendingPaintImages.has(canvas)) return;
+
         const context = canvas.getContext('2d');
         drawing = true;
         start = getKediCanvasPoint(canvas, event);
         snapshot = context.getImageData(0, 0, canvas.width, canvas.height);
+        kediDirtyPaintCanvases.add(canvas);
 
         if (canvas.setPointerCapture) {
             canvas.setPointerCapture(event.pointerId);
@@ -674,11 +716,32 @@ function drawKediCanvasShape(context, state, start, point) {
 }
 
 function saveKediCanvasData(canvas) {
+    canvas.removeAttribute('data-kedi-canvas-bound');
+    canvas.removeAttribute('data-image-loaded');
+
     try {
-        canvas.dataset.image = canvas.toDataURL('image/png');
-        canvas.dataset.imageLoaded = canvas.dataset.image;
+        const storedImage = canvas.dataset.image || '';
+        const loadedImage = kediLoadedPaintImages.get(canvas) || '';
+
+        if (
+            storedImage &&
+            loadedImage !== storedImage &&
+            !kediDirtyPaintCanvases.has(canvas)
+        ) {
+            return storedImage;
+        }
+
+        const imageData = canvas.toDataURL('image/png');
+        canvas.dataset.image = imageData;
+
+        kediLoadedPaintImages.set(canvas, imageData);
+        kediPendingPaintImages.delete(canvas);
+        kediDirtyPaintCanvases.delete(canvas);
+
+        return imageData;
     } catch (error) {
         console.warn('[KEDI] Tuval görüntüsü kaydedilemedi:', error);
+        return canvas.dataset.image || '';
     }
 }
 
