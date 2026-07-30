@@ -13,6 +13,8 @@ const mainSource = [read('main.js'), readMainSource(), read('main/runtime.js')].
 const treeSource = readMany(collect('renderer/tree', '.mjs'));
 const mapSource = readMany(collect('renderer/map', '.mjs'));
 const editorSource = readMany(collect('renderer/editor', '.mjs'));
+const tagIndexSource = read('renderer/tags/pisi-tag-index.mjs');
+const mapWorkspaceSource = read('renderer/map/pisi-map-workspace.mjs');
 
 test('renderer formülleri eval veya Function constructor kullanmaz', () => {
     assert.doesNotMatch(rendererSource, /\beval\s*\(/);
@@ -49,6 +51,26 @@ test('Electron giriş dosyaları uygulama kökünden yüklenir', () => {
         electronIpc,
         /path\.join\(__dirname, '(?:preload\.js|index\.html)'\)/
     );
+});
+
+test('editör normalizasyonu caret konumunu korur', () => {
+    assert.match(tagIndexSource, /function capturePisiEditorSelection\(/);
+    assert.match(tagIndexSource, /function restorePisiEditorSelection\(/);
+    assert.match(
+        tagIndexSource,
+        /const selectionSnapshot = preserveSelection[\s\S]*?restorePisiEditorSelection\(editor, selectionSnapshot\)/
+    );
+
+    const contentFunction = mapWorkspaceSource.match(
+        /function getPisiEditorContent\(editor\) \{[\s\S]*?\n\}/
+    )?.[0] || '';
+
+    assert.match(contentFunction, /const normalizedEditor = editor\.cloneNode\(true\)/);
+    assert.match(
+        contentFunction,
+        /ensurePisiEditorBlocks\(normalizedEditor, \{[\s\S]*?preserveSelection: false/
+    );
+    assert.doesNotMatch(contentFunction, /ensurePisiEditorBlocks\(editor\)/);
 });
 
 test('Paint geçici yükleme nitelikleri kalıcı HTML içine yazılmaz', () => {

@@ -772,8 +772,6 @@ function setPisiEditorContent(editor, content = '') {
 function getPisiEditorContent(editor) {
     if (!editor) return '';
 
-    ensurePisiEditorBlocks(editor);
-
     if (typeof hydratePisiPaintCanvases === 'function') {
         hydratePisiPaintCanvases(editor);
     }
@@ -788,7 +786,14 @@ function getPisiEditorContent(editor) {
         hydratePisiSheets(editor);
     }
 
-    return sanitizePisiEditorHtml(editor.innerHTML || '');
+    // Kayıt normalizasyonu canlı contenteditable DOM'u değiştirmemeli.
+    // Aksi halde Chromium selection/caret konumunu sıfırlar.
+    const normalizedEditor = editor.cloneNode(true);
+    ensurePisiEditorBlocks(normalizedEditor, {
+        preserveSelection: false
+    });
+
+    return sanitizePisiEditorHtml(normalizedEditor.innerHTML || '');
 }
 
 function markdownTextToPisiEditorHtml(text = '') {
