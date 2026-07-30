@@ -65,45 +65,144 @@ function decoratePisiEditorBlock(element) {
     }
 }
 
-function ensurePisiEditorBlocks(editor) {
-    if (!editor) return;
+function capturePisiEditorSelection(editor) {
+    const selection = window.getSelection?.();
 
-    const childNodes = Array.from(editor.childNodes);
+    if (!selection || selection.rangeCount === 0) return null;
 
-    if (!childNodes.length) {
-        const block = document.createElement('div');
-        block.innerHTML = '<br>';
-        decoratePisiEditorBlock(block);
-        editor.appendChild(block);
-        return;
+    const range = selection.getRangeAt(0);
+
+    if (
+        !editor.contains(range.startContainer) ||
+        !editor.contains(range.endContainer)
+    ) {
+        return null;
     }
 
-    for (const node of childNodes) {
-        if (node.nodeType === Node.TEXT_NODE) {
-            if (!node.textContent.trim()) {
-                node.remove();
-                continue;
-            }
+    const getTextOffset = (container, offset) => {
+        const prefix = range.cloneRange();
+        prefix.selectNodeContents(editor);
+        prefix.setEnd(container, offset);
+        return prefix.toString().length;
+    };
 
-            const block = document.createElement('div');
-            block.textContent = node.textContent;
-            decoratePisiEditorBlock(block);
-            node.replaceWith(block);
-            continue;
+    return {
+        start: getTextOffset(range.startContainer, range.startOffset),
+        end: getTextOffset(range.endContainer, range.endOffset)
+    };
+}
+
+function resolvePisiEditorTextPosition(editor, targetOffset) {
+    const walker = document.createTreeWalker(
+        editor,
+        NodeFilter.SHOW_TEXT
+    );
+    let remaining = Math.max(0, Number(targetOffset) || 0);
+    let lastTextNode = null;
+
+    while (walker.nextNode()) {
+        const textNode = walker.currentNode;
+        const length = textNode.nodeValue?.length || 0;
+        lastTextNode = textNode;
+
+        if (remaining <= length) {
+            return {
+                node: textNode,
+                offset: remaining
+            };
         }
 
-        if (node.nodeType === Node.ELEMENT_NODE) {
-            if (node.tagName === 'BR') {
+        remaining -= length;
+    }
+
+    if (lastTextNode) {
+        return {
+            node: lastTextNode,
+            offset: lastTextNode.nodeValue?.length || 0
+        };
+    }
+
+    const fallback =
+        editor.querySelector?.('.pisi-editor-block') ||
+        editor.firstElementChild ||
+        editor;
+
+    return {
+        node: fallback,
+        offset: 0
+    };
+}
+
+function restorePisiEditorSelection(editor, snapshot) {
+    if (!snapshot) return;
+
+    const selection = window.getSelection?.();
+    if (!selection) return;
+
+    const start = resolvePisiEditorTextPosition(editor, snapshot.start);
+    const end = resolvePisiEditorTextPosition(editor, snapshot.end);
+    const range = document.createRange();
+
+    try {
+        range.setStart(start.node, start.offset);
+        range.setEnd(end.node, end.offset);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    } catch (error) {
+        console.warn('[PISI] Editör imleci geri yüklenemedi:', error);
+    }
+}
+
+function ensurePisiEditorBlocks(editor, options = {}) {
+    if (!editor) return;
+
+    const preserveSelection = options.preserveSelection !== false;
+    const selectionSnapshot = preserveSelection
+        ? capturePisiEditorSelection(editor)
+        : null;
+
+    try {
+        const childNodes = Array.from(editor.childNodes);
+
+        if (!childNodes.length) {
+            const block = document.createElement('div');
+            block.innerHTML = '<br>';
+            decoratePisiEditorBlock(block);
+            editor.appendChild(block);
+            return;
+        }
+
+        for (const node of childNodes) {
+            if (node.nodeType === Node.TEXT_NODE) {
+                if (!node.textContent.trim()) {
+                    node.remove();
+                    continue;
+                }
+
                 const block = document.createElement('div');
-                block.innerHTML = '<br>';
+                block.textContent = node.textContent;
                 decoratePisiEditorBlock(block);
                 node.replaceWith(block);
                 continue;
             }
 
-            if (isPisiEditorBlockElement(node)) {
-                decoratePisiEditorBlock(node);
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                if (node.tagName === 'BR') {
+                    const block = document.createElement('div');
+                    block.innerHTML = '<br>';
+                    decoratePisiEditorBlock(block);
+                    node.replaceWith(block);
+                    continue;
+                }
+
+                if (isPisiEditorBlockElement(node)) {
+                    decoratePisiEditorBlock(node);
+                }
             }
+        }
+    } finally {
+        if (selectionSnapshot) {
+            restorePisiEditorSelection(editor, selectionSnapshot);
         }
     }
 }
