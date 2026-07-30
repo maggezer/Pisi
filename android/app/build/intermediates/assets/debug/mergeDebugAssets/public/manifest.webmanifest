@@ -1,0 +1,18 @@
+{
+  "name": "KEDI",
+  "short_name": "KEDI",
+  "description": "Not, çizim, tablo, zihin haritası ve günlük uygulaması",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#171310",
+  "theme_color": "#171310",
+  "lang": "tr",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

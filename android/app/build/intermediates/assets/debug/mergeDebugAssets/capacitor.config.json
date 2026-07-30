@@ -1,0 +1,11 @@
+{
+	"appId": "com.maggezer.kedi",
+	"appName": "KEDI",
+	"webDir": "dist",
+	"backgroundColor": "#171310",
+	"android": {
+		"allowMixedContent": false,
+		"captureInput": true,
+		"webContentsDebuggingEnabled": false
+	}
+}

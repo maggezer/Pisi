@@ -1,0 +1,158 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.maggezer.kedi"
+4    android:versionCode="2"
+5    android:versionName="2.0.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="24"
+9        android:targetSdkVersion="36" />
+10
+11    <uses-permission android:name="android.permission.VIBRATE" />
+11-->[:capacitor-haptics] C:\Users\mumin\Desktop\Kedi\node_modules\@capacitor\haptics\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:7:5-66
+11-->[:capacitor-haptics] C:\Users\mumin\Desktop\Kedi\node_modules\@capacitor\haptics\android\build\intermediates\merged_manifest\debug\processDebugManifest\AndroidManifest.xml:7:22-63
+12
+13    <permission
+13-->[androidx.core:core:1.17.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\11094a199bb7945826b161d8a9c17beb\transformed\core-1.17.0\AndroidManifest.xml:22:5-24:47
+14        android:name="com.maggezer.kedi.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+14-->[androidx.core:core:1.17.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\11094a199bb7945826b161d8a9c17beb\transformed\core-1.17.0\AndroidManifest.xml:23:9-81
+15        android:protectionLevel="signature" />
+15-->[androidx.core:core:1.17.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\11094a199bb7945826b161d8a9c17beb\transformed\core-1.17.0\AndroidManifest.xml:24:9-44
+16
+17    <uses-permission android:name="com.maggezer.kedi.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+17-->[androidx.core:core:1.17.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\11094a199bb7945826b161d8a9c17beb\transformed\core-1.17.0\AndroidManifest.xml:26:5-97
+17-->[androidx.core:core:1.17.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\11094a199bb7945826b161d8a9c17beb\transformed\core-1.17.0\AndroidManifest.xml:26:22-94
+18
+19    <application
+19-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:3:5-32:19
+20        android:allowBackup="false"
+20-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:4:9-36
+21        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+21-->[androidx.core:core:1.17.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\11094a199bb7945826b161d8a9c17beb\transformed\core-1.17.0\AndroidManifest.xml:28:18-86
+22        android:debuggable="true"
+23        android:extractNativeLibs="false"
+24        android:icon="@mipmap/ic_launcher"
+24-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:5:9-43
+25        android:label="@string/app_name"
+25-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:6:9-41
+26        android:roundIcon="@mipmap/ic_launcher_round"
+26-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:7:9-54
+27        android:supportsRtl="true"
+27-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:8:9-35
+28        android:testOnly="true"
+29        android:theme="@style/AppTheme"
+29-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:9:9-40
+30        android:usesCleartextTraffic="false" >
+30-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:10:9-45
+31        <activity
+31-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:11:9-23:20
+32            android:name="com.maggezer.kedi.MainActivity"
+32-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:13:13-41
+33            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
+33-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:12:13-148
+34            android:exported="true"
+34-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:18:13-36
+35            android:label="@string/title_activity_main"
+35-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:14:13-56
+36            android:launchMode="singleTask"
+36-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:16:13-44
+37            android:theme="@style/AppTheme.NoActionBarLaunch"
+37-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:15:13-62
+38            android:windowSoftInputMode="adjustResize" >
+38-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:17:13-55
+39            <intent-filter>
+39-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:19:13-22:29
+40                <action android:name="android.intent.action.MAIN" />
+40-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:20:17-69
+40-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:20:25-66
+41
+42                <category android:name="android.intent.category.LAUNCHER" />
+42-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:21:17-77
+42-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:21:27-74
+43            </intent-filter>
+44        </activity>
+45
+46        <provider
+47            android:name="androidx.core.content.FileProvider"
+47-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:26:13-62
+48            android:authorities="com.maggezer.kedi.fileprovider"
+48-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:27:13-64
+49            android:exported="false"
+49-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:28:13-37
+50            android:grantUriPermissions="true" >
+50-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:29:13-47
+51            <meta-data
+51-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:30:13-112
+52                android:name="android.support.FILE_PROVIDER_PATHS"
+52-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:30:24-74
+53                android:resource="@xml/file_paths" />
+53-->C:\Users\mumin\Desktop\Kedi\android\app\src\main\AndroidManifest.xml:30:75-109
+54        </provider>
+55        <provider
+55-->[androidx.emoji2:emoji2:1.3.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\353d69426d62513a7e19e841051a3a44\transformed\emoji2-1.3.0\AndroidManifest.xml:24:9-32:20
+56            android:name="androidx.startup.InitializationProvider"
+56-->[androidx.emoji2:emoji2:1.3.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\353d69426d62513a7e19e841051a3a44\transformed\emoji2-1.3.0\AndroidManifest.xml:25:13-67
+57            android:authorities="com.maggezer.kedi.androidx-startup"
+57-->[androidx.emoji2:emoji2:1.3.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\353d69426d62513a7e19e841051a3a44\transformed\emoji2-1.3.0\AndroidManifest.xml:26:13-68
+58            android:exported="false" >
+58-->[androidx.emoji2:emoji2:1.3.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\353d69426d62513a7e19e841051a3a44\transformed\emoji2-1.3.0\AndroidManifest.xml:27:13-37
+59            <meta-data
+59-->[androidx.emoji2:emoji2:1.3.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\353d69426d62513a7e19e841051a3a44\transformed\emoji2-1.3.0\AndroidManifest.xml:29:13-31:52
+60                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+60-->[androidx.emoji2:emoji2:1.3.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\353d69426d62513a7e19e841051a3a44\transformed\emoji2-1.3.0\AndroidManifest.xml:30:17-75
+61                android:value="androidx.startup" />
+61-->[androidx.emoji2:emoji2:1.3.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\353d69426d62513a7e19e841051a3a44\transformed\emoji2-1.3.0\AndroidManifest.xml:31:17-49
+62            <meta-data
+62-->[androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\mumin\.gradle\caches\8.14.3\transforms\14a3b51da1167f75215e7e32d2231e74\transformed\lifecycle-process-2.6.2\AndroidManifest.xml:29:13-31:52
+63                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+63-->[androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\mumin\.gradle\caches\8.14.3\transforms\14a3b51da1167f75215e7e32d2231e74\transformed\lifecycle-process-2.6.2\AndroidManifest.xml:30:17-78
+64                android:value="androidx.startup" />
+64-->[androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\mumin\.gradle\caches\8.14.3\transforms\14a3b51da1167f75215e7e32d2231e74\transformed\lifecycle-process-2.6.2\AndroidManifest.xml:31:17-49
+65            <meta-data
+65-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:29:13-31:52
+66                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+66-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:30:17-85
+67                android:value="androidx.startup" />
+67-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:31:17-49
+68        </provider>
+69
+70        <receiver
+70-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:34:9-52:20
+71            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+71-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:35:13-76
+72            android:directBootAware="false"
+72-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:36:13-44
+73            android:enabled="true"
+73-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:37:13-35
+74            android:exported="true"
+74-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:38:13-36
+75            android:permission="android.permission.DUMP" >
+75-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:39:13-57
+76            <intent-filter>
+76-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:40:13-42:29
+77                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+77-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:41:17-91
+77-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:41:25-88
+78            </intent-filter>
+79            <intent-filter>
+79-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:43:13-45:29
+80                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+80-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:44:17-85
+80-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:44:25-82
+81            </intent-filter>
+82            <intent-filter>
+82-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:46:13-48:29
+83                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+83-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:47:17-88
+83-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:47:25-85
+84            </intent-filter>
+85            <intent-filter>
+85-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:49:13-51:29
+86                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+86-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:50:17-95
+86-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\mumin\.gradle\caches\8.14.3\transforms\f95ab50c54d3211c648684c462933e30\transformed\profileinstaller-1.4.0\AndroidManifest.xml:50:25-92
+87            </intent-filter>
+88        </receiver>
+89    </application>
+90
+91</manifest>
