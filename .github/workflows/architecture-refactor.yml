@@ -85,6 +85,36 @@ jobs:
           if count != 1:
               raise SystemExit(f'Expected one multiline test template, replaced {count}.')
 
+          duplicate_guard = """    const duplicates = [...remainingDuplicates.entries()].filter(([, count]) => count > 1);
+              if (duplicates.length) {
+                  throw new Error(`CSS duplicate selectors remain: ${JSON.stringify(duplicates)}`);
+              }
+          """
+          duplicate_merge = """    const duplicates = [...remainingDuplicates.entries()].filter(([, count]) => count > 1);
+              if (duplicates.length) {
+                  css = mergeCssSelectors(
+                      css,
+                      duplicates.map(([selector]) => selector)
+                  );
+              }
+
+              const unresolvedDuplicates = new Map();
+              for (const block of scanRootBlocks(css)) {
+                  if (!block.selector || block.selector.startsWith('@')) continue;
+                  unresolvedDuplicates.set(
+                      block.selector,
+                      (unresolvedDuplicates.get(block.selector) || 0) + 1
+                  );
+              }
+              const unresolved = [...unresolvedDuplicates.entries()].filter(([, count]) => count > 1);
+              if (unresolved.length) {
+                  throw new Error('CSS duplicate selectors remain: ' + JSON.stringify(unresolved));
+              }
+          """
+          if duplicate_guard not in source:
+              raise SystemExit('CSS duplicate guard fragment was not found.')
+          source = source.replace(duplicate_guard, duplicate_merge)
+
           path.write_text(source, encoding='utf-8')
           PY
           node --check scripts/refactor-architecture.js
