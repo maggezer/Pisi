@@ -252,49 +252,78 @@
     transform: scale(1.18);
 }
 
-/* PISI EDITOR TOOLBAR TABS + WORD / PAINT / EXCEL */
+/* PISI EDITOR TOOLBAR MODE RAIL + WORD / PAINT / EXCEL */
 .pisi-editor-toolbar {
     min-height: 86px;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 42px;
+    grid-template-rows: minmax(84px, auto);
     align-items: stretch;
     gap: 0;
     padding: 0;
-    overflow: visible;
+    overflow: hidden;
 }
 
-.pisi-editor-toolbar-tabs {
-    height: 30px;
-    flex: 0 0 30px;
+.pisi-editor-toolbar-modes {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 42px;
     display: flex;
-    align-items: flex-end;
-    gap: 2px;
-    padding: 4px 8px 0 8px;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: stretch;
     background: #202020;
-    border-bottom: 1px solid #333;
+    border-left: 1px solid #333;
 }
 
 .pisi-editor-toolbar-tab {
-    height: 26px;
-    min-width: 64px;
-    border: 1px solid #333;
-    border-bottom: none;
-    border-radius: 7px 7px 0 0;
+    width: 42px;
+    min-height: 28px;
+    flex: 1 1 0;
+    border: none;
+    border-left: 2px solid transparent;
+    border-bottom: 1px solid #333;
     background: #2d2d30;
     color: #aaa;
-    font-size: 12px;
-    font-weight: 800;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
 }
 
-.pisi-editor-toolbar-tab:hover,
+.pisi-editor-toolbar-tab:last-child {
+    border-bottom: none;
+}
+
+.pisi-editor-toolbar-tab:hover {
+    background: #333;
+}
+
 .pisi-editor-toolbar-tab.active {
     background: #1e1e1e;
-    color: #f39c12;
-    border-color: #444;
+    border-left-color: #f39c12;
+}
+
+.pisi-editor-toolbar-tab img {
+    width: 18px;
+    height: 18px;
+    display: block;
+    object-fit: contain;
+    opacity: 0.72;
+    pointer-events: none;
+}
+
+.pisi-editor-toolbar-tab:hover img,
+.pisi-editor-toolbar-tab.active img {
+    opacity: 1;
 }
 
 .pisi-editor-toolbar-panel {
-    min-height: 54px;
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+    min-height: 84px;
     display: none;
     align-items: center;
     gap: 6px;

@@ -152,3 +152,29 @@ test('kullanılmayan production paketleri geri eklenmez', () => {
     assert.equal(packageJson.devDependencies.electron, '^43.2.0');
     assert.equal(packageJson.devDependencies['electron-builder'], '^26.15.7');
 });
+
+
+test('editör modları toolbarın sağında dikey ikon rayı olarak görünür', () => {
+    const html = read('index.html');
+    const css = read('styles/60-customization.css');
+    const toolbarSource = read('renderer/editor/pisi-editor-paint.mjs');
+
+    assert.equal((html.match(/class="pisi-editor-toolbar-modes"/g) || []).length, 2);
+    assert.equal((html.match(/data-pisi-toolbar-tab=/g) || []).length, 6);
+    assert.doesNotMatch(html, /class="pisi-editor-toolbar-tabs"/);
+    assert.doesNotMatch(html, />\s*(?:Word|Paint|Excel)\s*<\/button>/);
+    assert.match(html, /assets\/editor-text\.svg/);
+    assert.match(html, /assets\/editor-paint\.svg/);
+    assert.match(html, /assets\/editor-table\.svg/);
+    assert.match(css, /grid-template-columns:\s*minmax\(0, 1fr\) 42px/);
+    assert.match(css, /\.pisi-editor-toolbar-modes \{[\s\S]*?flex-direction:\s*column/);
+    assert.match(toolbarSource, /setAttribute\('aria-selected'/);
+
+    for (const asset of [
+        'assets/editor-text.svg',
+        'assets/editor-paint.svg',
+        'assets/editor-table.svg'
+    ]) {
+        assert.ok(fs.existsSync(path.join(root, asset)), 'Eksik editör modu ikonu: ' + asset);
+    }
+});
