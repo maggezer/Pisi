@@ -42,12 +42,12 @@ function collectJavaScriptFiles(directoryPath) {
 const files = collectJavaScriptFiles(projectRoot).sort();
 const classicRendererFiles = [
     'app.js',
-    'renderer/kedi-tree.js',
-    'renderer/kedi-map-workspace.js',
-    'renderer/kedi-tags.js',
-    'renderer/kedi-calendar.js',
-    'renderer/kedi-node-modal.js',
-    'renderer/kedi-map-connections.js'
+    'renderer/pisi-tree.js',
+    'renderer/pisi-map-workspace.js',
+    'renderer/pisi-tags.js',
+    'renderer/pisi-calendar.js',
+    'renderer/pisi-node-modal.js',
+    'renderer/pisi-map-connections.js'
 ].map((filePath) => path.join(projectRoot, filePath));
 let failed = false;
 

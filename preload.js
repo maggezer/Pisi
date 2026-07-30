@@ -1,6 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('kediEnvironment', {
+contextBridge.exposeInMainWorld('pisiEnvironment', {
     platform: process.platform
 });
 
@@ -43,7 +43,7 @@ contextBridge.exposeInMainWorld('electronWindow', {
     }
 });
 
-contextBridge.exposeInMainWorld('kediProject', {
+contextBridge.exposeInMainWorld('pisiProject', {
     getLastFolder: () => ipcRenderer.invoke('project:get-last-folder'),
     chooseFolder: () => ipcRenderer.invoke('project:choose-folder'),
     setLastFolder: (folderPath) => ipcRenderer.invoke('project:set-last-folder', folderPath),
@@ -51,9 +51,9 @@ contextBridge.exposeInMainWorld('kediProject', {
     deletePath: (targetPath) => ipcRenderer.invoke('project:delete-path', targetPath),
     folderExists: (folderPath) => ipcRenderer.invoke('project:folder-exists', folderPath),
 
-    createKediFile: (folderPath, ext) => ipcRenderer.invoke('project:create-kedi-file', folderPath, ext),
-    renameKediFile: (oldPath, newBaseName) => ipcRenderer.invoke('project:rename-kedi-file', oldPath, newBaseName),
-    moveKediItem: (sourcePath, destinationFolderPath, options) => ipcRenderer.invoke('project:move-kedi-item', sourcePath, destinationFolderPath, options || {}),
+    createPisiFile: (folderPath, ext) => ipcRenderer.invoke('project:create-pisi-file', folderPath, ext),
+    renamePisiFile: (oldPath, newBaseName) => ipcRenderer.invoke('project:rename-pisi-file', oldPath, newBaseName),
+    movePisiItem: (sourcePath, destinationFolderPath, options) => ipcRenderer.invoke('project:move-pisi-item', sourcePath, destinationFolderPath, options || {}),
     createNodeUnderMap: (mapPath) => ipcRenderer.invoke('project:create-node-under-map', mapPath),
     getOrCreateDiaryNode: (projectFolder, isoDate) => ipcRenderer.invoke('project:get-or-create-diary-node', projectFolder, isoDate),
     listDiaryDates: (projectFolder) => ipcRenderer.invoke('project:list-diary-dates', projectFolder),
@@ -63,7 +63,7 @@ contextBridge.exposeInMainWorld('kediProject', {
     saveMapLayout: (mapPath, nodeLayouts) => ipcRenderer.invoke('project:save-map-layout', mapPath, nodeLayouts),
     saveNodeContent: (nodePath, content) => ipcRenderer.invoke('project:save-node-content', nodePath, content),
 
-    getKediDocument: (filePath) => ipcRenderer.invoke('project:get-kedi-document', filePath),
+    getPisiDocument: (filePath) => ipcRenderer.invoke('project:get-pisi-document', filePath),
     deleteNodeFromMap: (nodePath) => ipcRenderer.invoke('project:delete-node-from-map', nodePath),
 
     upsertMapConnection: (mapPath, edge) => ipcRenderer.invoke('project:upsert-map-connection', mapPath, edge),
@@ -72,7 +72,7 @@ contextBridge.exposeInMainWorld('kediProject', {
     deleteMapConnection: (mapPath, edgeId) => ipcRenderer.invoke('project:delete-map-connection', mapPath, edgeId),
     saveMapCamera: (mapPath, camera) => ipcRenderer.invoke('project:save-map-camera', mapPath, camera),
 
-    deleteKediFile: (targetPath) => ipcRenderer.invoke('project:delete-kedi-file', targetPath),
+    deletePisiFile: (targetPath) => ipcRenderer.invoke('project:delete-pisi-file', targetPath),
 
     onFileSystemChanged: (callback) => {
         const listener = (_event, payload) => {
@@ -107,8 +107,8 @@ function pisiTranslate(source) {
     if (exact !== undefined) return exact;
 
     return cleanSource
-        .replace(/KEDI/g, 'Pisi')
-        .replace(/Kedi/g, 'Pisi');
+        .replace(/PISI/g, 'Pisi')
+        .replace(/Pisi/g, 'Pisi');
 }
 
 function pisiIsEditableNode(node) {

@@ -1,9 +1,9 @@
-# KEDI Güncelleme Takip Dosyası
+# PISI Güncelleme Takip Dosyası
 
 ## 29-07-2026-1
 
 - `w1`, `w2` ve `w3` silindi.
-- `kedi-error.md` ile hata takibi başlatıldı.
+- `pisi-error.md` ile hata takibi başlatıldı.
 
 ## 29-07-2026-2
 
@@ -22,7 +22,7 @@
 
 ## 29-07-2026-4
 
-`kedi-error.md` içindeki kalan bulgular veri kaybı, güvenlik, eşzamanlı kayıt,
+`pisi-error.md` içindeki kalan bulgular veri kaybı, güvenlik, eşzamanlı kayıt,
 map bağlantıları, diary/calendar, tags/missions, performans, erişilebilirlik,
 paketleme ve dokümantasyon başlıklarında yeniden denetlendi.
 
@@ -51,11 +51,11 @@ paketleme ve dokümantasyon başlıklarında yeniden denetlendi.
 - **25:** Map silme onayı, map ile birlikte Çöp Kutusu’na taşınacak child node
   sayısını açıkça gösteriyor.
 - **37–39:** Dış dosya değişiklikleri map açıkken de işleniyor. Global süreli
-  bastırma yerine yalnızca KEDI’nin gerçekten yazdığı yollar kısa süreli
+  bastırma yerine yalnızca PISI’nin gerçekten yazdığı yollar kısa süreli
   filtreleniyor. Alt klasörler Windows, Linux ve macOS’ta ayrı watcher’larla
   izleniyor.
 - **71–73:** Yol karşılaştırması yalnızca Windows’ta küçük harfe çevriliyor;
-  Windows reserved dosya adları temizleniyor; yalnızca gerçek KEDI sidecar ve
+  Windows reserved dosya adları temizleniyor; yalnızca gerçek PISI sidecar ve
   marker/metadata taşıyan diary klasörleri gizleniyor. Aynı adlı normal
   kullanıcı klasörüne marker eklemek yerine işlem güvenli biçimde duruyor.
 - **77, 78:** Explorer listelemesi metadata’yı salt-okunur inceliyor; yalnızca
@@ -136,7 +136,7 @@ paketleme ve dokümantasyon başlıklarında yeniden denetlendi.
 - **53–56:** Standalone center node etiket indeksine katılıyor; diary managed
   kopyaları tekrar sayılmıyor; eski bloklara verilen kimlikler node’a
   kaydediliyor; sonuç vurgusu gerçekten CSS sınıfını ekleyip kaldırıyor.
-- **57–60:** Tamamlanma durumu todo etiketi başına `data-kedi-done-for` ile
+- **57–60:** Tamamlanma durumu todo etiketi başına `data-pisi-done-for` ile
   tutuluyor. Başarısız kayıtta editor DOM’u geri alınıyor. Tamamlanan görevler
   gösterilip yeniden açılabiliyor. Todo tarihi iki veya dört basamaklı yıl
   kabul ediyor.
@@ -159,16 +159,16 @@ paketleme ve dokümantasyon başlıklarında yeniden denetlendi.
   `overflow:hidden` override’ı kaldırıldı.
 - **102, 103, 106:** Electron `43.2.0`, electron-builder `26.15.7` ve ESLint
   `10.8.0` sürümlerine taşındı. Kullanılmayan dört production paketi
-  kaldırıldı; runtime/build app ID `com.mumin.kedi` olarak birleştirildi.
+  kaldırıldı; runtime/build app ID `com.mumin.pisi` olarak birleştirildi.
 - **104:** `check:syntax`, ESLint, Node test runner ve birleşik `validate`
   komutları eklendi. GitHub Actions her `main` push ve pull request’te
   `npm ci --ignore-scripts` ardından doğrulama çalıştırıyor. Formül, edge,
-  layout/kamera, diary sanitizer, Paint kalıcılığı, Electron sınırları, KEDI
+  layout/kamera, diary sanitizer, Paint kalıcılığı, Electron sınırları, PISI
   kimliği, normal diary klasörü koruması ve proje yolu için 16 otomatik test
   vardı; watcher/CSP/Paint/tree regresyonlarıyla toplam sayı 18’e çıktı.
 - **105:** Windows NSIS ve portable hedefleri x64 yanında ARM64 üretiyor;
   artifact adı ürün, sürüm, işletim sistemi ve mimariyi içeriyor.
-- **111–115:** README ve `kedi-definition.md` gerçek uygulama/dosya yapısına
+- **111–115:** README ve `pisi-definition.md` gerçek uygulama/dosya yapısına
   göre yenilendi; ISC `LICENSE` eklendi; `.gitignore` test, log, işletim
   sistemi, editör ve build cache çıktılarını kapsayacak biçimde genişletildi.
 
@@ -214,7 +214,7 @@ Missions, diary ve sağ panel özellikleri korunuyor.
   tek tek ekranda gösterilmiyor. Yeni ağaç, genişletilmiş dallarıyla birlikte
   bağlantısız bir DOM parçasında hazırlanıp tek işlemde değiştiriliyor; mevcut
   scroll konumu korunuyor.
-- KEDI’nin kendi atomik dosya kayıtları watcher tarafında dosya
+- PISI’nin kendi atomik dosya kayıtları watcher tarafında dosya
   boyutu/zaman imzasıyla takip ediliyor. Gecikmiş veya yinelenen Windows
   filesystem olayları altı saniyelik güvenli pencere içinde ayırt ediliyor;
   aynı dosya gerçekten başka bir program tarafından değiştirilirse imza

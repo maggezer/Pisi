@@ -20,13 +20,13 @@ const binaryExtensions = new Set([
     '.png', '.so', '.tar', '.webp', '.woff', '.woff2', '.zip'
 ]);
 const utf8Decoder = new TextDecoder('utf-8', { fatal: true });
-const oldBrandPattern = /kedi/i;
+const oldBrandPattern = /pisi/i;
 
 function replaceBrand(value) {
     return String(value)
-        .replace(/KEDI/g, 'PISI')
-        .replace(/Kedi/g, 'Pisi')
-        .replace(/kedi/g, 'pisi');
+        .replace(/PISI/g, 'PISI')
+        .replace(/Pisi/g, 'Pisi')
+        .replace(/pisi/g, 'pisi');
 }
 
 function isIgnored(relativePath) {
@@ -161,7 +161,7 @@ function commitAndPush() {
         return;
     }
 
-    runGit(['commit', '-m', 'Rename all Kedi internals to Pisi']);
+    runGit(['commit', '-m', 'Rename all Pisi internals to Pisi']);
     runGit(['push', '-u', 'origin', branch]);
 }
 

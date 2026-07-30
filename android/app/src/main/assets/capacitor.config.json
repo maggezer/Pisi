@@ -1,6 +1,6 @@
 {
-	"appId": "com.maggezer.kedi",
-	"appName": "KEDI",
+	"appId": "com.maggezer.pisi",
+	"appName": "PISI",
 	"webDir": "dist",
 	"backgroundColor": "#171310",
 	"android": {

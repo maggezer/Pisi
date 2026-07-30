@@ -3,7 +3,7 @@ const MAP_ZOOM_MIN = 0.1;
 const MAP_ZOOM_MAX = 3;
 const MAP_ZOOM_HOLD_INTERVAL = 400;
 
-function getKediProjectTitleFromPath(folderPath) {
+function getPisiProjectTitleFromPath(folderPath) {
     if (!folderPath) return 'Explorer';
 
     const parts = String(folderPath)
@@ -13,11 +13,11 @@ function getKediProjectTitleFromPath(folderPath) {
     return parts[parts.length - 1] || 'Explorer';
 }
 
-function updateKediProjectTitle(folderPath) {
+function updatePisiProjectTitle(folderPath) {
     const titleEl = document.getElementById('project-title');
     if (!titleEl) return;
 
-    titleEl.textContent = getKediProjectTitleFromPath(folderPath);
+    titleEl.textContent = getPisiProjectTitleFromPath(folderPath);
     titleEl.title = folderPath || '';
 }
 
@@ -38,11 +38,11 @@ async function validateCurrentProject() {
         return false;
     }
 
-    const exists = await window.kediProject?.folderExists?.(folderPath);
+    const exists = await window.pisiProject?.folderExists?.(folderPath);
 
     if (!exists) {
         window.currentProjectFolder = null;
-        updateKediProjectTitle(null);
+        updatePisiProjectTitle(null);
 
         const treeEl = document.getElementById('file-tree');
         if (treeEl) {
@@ -56,25 +56,25 @@ async function validateCurrentProject() {
     return true;
 }
 
-let kediProjectRefreshSequence = 0;
-let kediProjectRefreshTail = Promise.resolve();
-const kediProjectRefreshWaiters = [];
+let pisiProjectRefreshSequence = 0;
+let pisiProjectRefreshTail = Promise.resolve();
+const pisiProjectRefreshWaiters = [];
 
-function resolveKediProjectRefreshWaiters(completedSequence, result) {
-    for (let index = kediProjectRefreshWaiters.length - 1; index >= 0; index -= 1) {
-        const waiter = kediProjectRefreshWaiters[index];
+function resolvePisiProjectRefreshWaiters(completedSequence, result) {
+    for (let index = pisiProjectRefreshWaiters.length - 1; index >= 0; index -= 1) {
+        const waiter = pisiProjectRefreshWaiters[index];
         if (waiter.sequence > completedSequence) continue;
 
-        kediProjectRefreshWaiters.splice(index, 1);
+        pisiProjectRefreshWaiters.splice(index, 1);
         waiter.resolve(result);
     }
 }
 
 function refreshCurrentProjectTree() {
     clearTimeout(projectRefreshTimer);
-    const sequence = ++kediProjectRefreshSequence;
+    const sequence = ++pisiProjectRefreshSequence;
     const resultPromise = new Promise((resolve) => {
-        kediProjectRefreshWaiters.push({
+        pisiProjectRefreshWaiters.push({
             sequence,
             resolve
         });
@@ -83,7 +83,7 @@ function refreshCurrentProjectTree() {
     projectRefreshTimer = setTimeout(() => {
         const batchSequence = sequence;
 
-        kediProjectRefreshTail = kediProjectRefreshTail
+        pisiProjectRefreshTail = pisiProjectRefreshTail
             .catch(() => false)
             .then(async () => {
                 const valid = await validateCurrentProject();
@@ -95,15 +95,15 @@ function refreshCurrentProjectTree() {
                 return valid;
             })
             .then((result) => {
-                resolveKediProjectRefreshWaiters(
+                resolvePisiProjectRefreshWaiters(
                     batchSequence,
                     result
                 );
                 return result;
             })
             .catch((error) => {
-                console.error('[KEDI] Proje ağacı yenilenemedi:', error);
-                resolveKediProjectRefreshWaiters(
+                console.error('[PISI] Proje ağacı yenilenemedi:', error);
+                resolvePisiProjectRefreshWaiters(
                     batchSequence,
                     false
                 );
@@ -125,12 +125,12 @@ function hideProjectModal() {
 }
 
 async function chooseAndLoadProject() {
-    if (typeof flushKediPendingSaves === 'function') {
-        const saved = await flushKediPendingSaves();
+    if (typeof flushPisiPendingSaves === 'function') {
+        const saved = await flushPisiPendingSaves();
         if (!saved) return;
     }
 
-    const selectedFolder = await window.kediProject?.chooseFolder?.();
+    const selectedFolder = await window.pisiProject?.chooseFolder?.();
 
     if (!selectedFolder) {
         // Kullanıcı seçim penceresinde geri/iptal yaptıysa bile
@@ -147,7 +147,7 @@ async function loadProject(folderPath) {
     const previousProjectFolder = window.currentProjectFolder;
 
     window.currentProjectFolder = folderPath;
-    updateKediProjectTitle(folderPath);
+    updatePisiProjectTitle(folderPath);
 
     clearTimeout(centerNodeSaveTimer);
     clearTimeout(mapSaveTimer);
@@ -161,8 +161,8 @@ async function loadProject(folderPath) {
         closeNodeModalWithoutSaving();
     }
 
-    if (typeof resetKediOpenTabs === 'function') {
-        resetKediOpenTabs();
+    if (typeof resetPisiOpenTabs === 'function') {
+        resetPisiOpenTabs();
     }
 
     if (typeof clearMapWorkspace === 'function') {
@@ -170,24 +170,24 @@ async function loadProject(folderPath) {
     }
 
     if (
-        typeof resetKediTagsForProject === 'function' &&
+        typeof resetPisiTagsForProject === 'function' &&
         previousProjectFolder !== folderPath
     ) {
-        resetKediTagsForProject();
+        resetPisiTagsForProject();
     }
 
-    if (typeof resetKediCalendarForProject === 'function') {
-        resetKediCalendarForProject(folderPath);
+    if (typeof resetPisiCalendarForProject === 'function') {
+        resetPisiCalendarForProject(folderPath);
     }
 
     await renderFolderTree(folderPath);
 }
 
-let kediTreeRootRenderId = 0;
+let pisiTreeRootRenderId = 0;
 
-function isCurrentKediTreeRootRender(renderId, rootPath) {
+function isCurrentPisiTreeRootRender(renderId, rootPath) {
     return (
-        renderId === kediTreeRootRenderId &&
+        renderId === pisiTreeRootRenderId &&
         sameClientPath(window.currentProjectFolder, rootPath)
     );
 }
@@ -195,11 +195,11 @@ function isCurrentKediTreeRootRender(renderId, rootPath) {
 async function renderFolderTree(rootPath) {
     const treeEl = document.getElementById('file-tree');
     if (!treeEl) return;
-    const renderId = ++kediTreeRootRenderId;
+    const renderId = ++pisiTreeRootRenderId;
     const previousScrollTop = treeEl.scrollTop;
     const nextTree = document.createElement('div');
 
-    updateKediProjectTitle(rootPath);
+    updatePisiProjectTitle(rootPath);
 
     expandedTreePaths.add(rootPath);
 
@@ -210,7 +210,7 @@ async function renderFolderTree(rootPath) {
         rootPath
     });
 
-    if (!isCurrentKediTreeRootRender(renderId, rootPath)) {
+    if (!isCurrentPisiTreeRootRender(renderId, rootPath)) {
         return false;
     }
 
@@ -219,23 +219,23 @@ async function renderFolderTree(rootPath) {
     return true;
 }
 
-function getKediTreeDragStateItem() {
-    return window.Kedi?.state?.treeDragItem || null;
+function getPisiTreeDragStateItem() {
+    return window.Pisi?.state?.treeDragItem || null;
 }
 
-function setKediTreeDragStateItem(item) {
-    if (!window.Kedi) {
-        window.Kedi = { state: {} };
+function setPisiTreeDragStateItem(item) {
+    if (!window.Pisi) {
+        window.Pisi = { state: {} };
     }
 
-    if (!window.Kedi.state) {
-        window.Kedi.state = {};
+    if (!window.Pisi.state) {
+        window.Pisi.state = {};
     }
 
-    window.Kedi.state.treeDragItem = item || null;
+    window.Pisi.state.treeDragItem = item || null;
 }
 
-function cloneKediTreeDragItem(item) {
+function clonePisiTreeDragItem(item) {
     if (!item) return null;
 
     return {
@@ -268,7 +268,7 @@ function getAncestorMapItemForTreeNode(treeNode) {
     let current = treeNode;
 
     while (current) {
-        const item = current.__kediItem;
+        const item = current.__pisiItem;
 
         if (item?.isFile && isMapFileName(item.name || item.fileName)) {
             return item;
@@ -327,7 +327,7 @@ async function reparentMapNodeFromTreeDrop(childItem, parentItem, mapItem) {
 
     suppressNextFileSystemRefresh(3000);
 
-    const result = await window.kediProject?.reparentMapNode?.(
+    const result = await window.pisiProject?.reparentMapNode?.(
         mapItem.fullPath,
         childId,
         parentId
@@ -350,14 +350,14 @@ async function reparentMapNodeFromTreeDrop(childItem, parentItem, mapItem) {
 async function moveTreeItemToFolder(sourceItem, destinationFolderPath, options = {}) {
     if (!sourceItem?.fullPath || !destinationFolderPath) return;
 
-    if (typeof flushKediPendingSaves === 'function') {
-        const saved = await flushKediPendingSaves();
+    if (typeof flushPisiPendingSaves === 'function') {
+        const saved = await flushPisiPendingSaves();
         if (!saved) return false;
     }
 
     suppressNextFileSystemRefresh(5000);
 
-    const result = await window.kediProject?.moveKediItem?.(
+    const result = await window.pisiProject?.movePisiItem?.(
         sourceItem.fullPath,
         destinationFolderPath,
         options
@@ -368,13 +368,13 @@ async function moveTreeItemToFolder(sourceItem, destinationFolderPath, options =
         return false;
     }
 
-    if (typeof updateKediOpenTabAfterRename === 'function' && result.isFile) {
-        updateKediOpenTabAfterRename(sourceItem.fullPath, result);
+    if (typeof updatePisiOpenTabAfterRename === 'function' && result.isFile) {
+        updatePisiOpenTabAfterRename(sourceItem.fullPath, result);
     } else if (
         Array.isArray(result.pathChanges) &&
-        typeof applyKediPathChanges === 'function'
+        typeof applyPisiPathChanges === 'function'
     ) {
-        applyKediPathChanges(result.pathChanges);
+        applyPisiPathChanges(result.pathChanges);
     }
 
     if (
@@ -397,7 +397,7 @@ async function moveTreeItemToFolder(sourceItem, destinationFolderPath, options =
     if (affectedOpenMap && typeof openMapInWorkspace === 'function') {
         const mapPath = activeMapPath;
         const mapTreeNode = findTreeNodeByPath(mapPath);
-        const mapItem = mapTreeNode?.__kediItem || {
+        const mapItem = mapTreeNode?.__pisiItem || {
             name: getClientPathBaseName(mapPath),
             fullPath: mapPath,
             isFile: true,
@@ -454,18 +454,18 @@ function bindTreeRowDragAndDrop(row, node, item, isRoot = false) {
             return;
         }
 
-        const payload = cloneKediTreeDragItem(node.__kediItem || item);
-        setKediTreeDragStateItem(payload);
+        const payload = clonePisiTreeDragItem(node.__pisiItem || item);
+        setPisiTreeDragStateItem(payload);
 
         event.dataTransfer.effectAllowed = 'move';
-        event.dataTransfer.setData('application/x-kedi-tree-item', JSON.stringify(payload));
+        event.dataTransfer.setData('application/x-pisi-tree-item', JSON.stringify(payload));
         event.dataTransfer.setData('text/plain', payload.fullPath || '');
 
         row.classList.add('dragging');
     });
 
     row.addEventListener('dragend', () => {
-        setKediTreeDragStateItem(null);
+        setPisiTreeDragStateItem(null);
         row.classList.remove('dragging');
         document.querySelectorAll('.tree-row.drag-over').forEach((el) => {
             el.classList.remove('drag-over');
@@ -474,8 +474,8 @@ function bindTreeRowDragAndDrop(row, node, item, isRoot = false) {
     });
 
     row.addEventListener('dragover', (event) => {
-        const sourceItem = getKediTreeDragStateItem();
-        const targetItem = node.__kediItem || item;
+        const sourceItem = getPisiTreeDragStateItem();
+        const targetItem = node.__pisiItem || item;
 
         if (!canDropTreeItemOnTarget(sourceItem, targetItem, node)) return;
 
@@ -491,8 +491,8 @@ function bindTreeRowDragAndDrop(row, node, item, isRoot = false) {
     });
 
     row.addEventListener('drop', async (event) => {
-        const sourceItem = getKediTreeDragStateItem();
-        const targetItem = node.__kediItem || item;
+        const sourceItem = getPisiTreeDragStateItem();
+        const targetItem = node.__pisiItem || item;
 
         if (!canDropTreeItemOnTarget(sourceItem, targetItem, node)) return;
 
@@ -510,7 +510,7 @@ function bindFileTreeRootDropZone(treeEl) {
     treeEl.dataset.rootDropBound = '1';
 
     treeEl.addEventListener('dragover', (event) => {
-        const sourceItem = getKediTreeDragStateItem();
+        const sourceItem = getPisiTreeDragStateItem();
 
         if (!sourceItem?.fullPath || !window.currentProjectFolder) return;
         if (event.target.closest('.tree-row')) return;
@@ -527,7 +527,7 @@ function bindFileTreeRootDropZone(treeEl) {
     });
 
     treeEl.addEventListener('drop', async (event) => {
-        const sourceItem = getKediTreeDragStateItem();
+        const sourceItem = getPisiTreeDragStateItem();
 
         if (!sourceItem?.fullPath || !window.currentProjectFolder) return;
         if (event.target.closest('.tree-row')) return;
@@ -549,10 +549,10 @@ async function createTreeNode(item, level = 0, isRoot = false) {
     node.dataset.path = item.fullPath;
     node.dataset.level = String(level);
 
-    node.__kediItem = item;
+    node.__pisiItem = item;
 
     if (item.metadata?.id) {
-    node.dataset.kediId = item.metadata.id;
+    node.dataset.pisiId = item.metadata.id;
     }
 
     const row = document.createElement('div');
@@ -623,7 +623,7 @@ async function createTreeNode(item, level = 0, isRoot = false) {
         event.preventDefault();
         event.stopPropagation();
 
-        await deleteTreeKediItem(item, node);
+        await deleteTreePisiItem(item, node);
     });
 
     actions.appendChild(deleteBtn);
@@ -699,7 +699,7 @@ async function createTreeNode(item, level = 0, isRoot = false) {
 
                 if (event.key === 'Delete' && (isMapFile || isNodeFile)) {
                     event.preventDefault();
-                    await deleteTreeKediItem(item, node);
+                    await deleteTreePisiItem(item, node);
                 }
             });
         }
@@ -712,8 +712,8 @@ async function createTreeNode(item, level = 0, isRoot = false) {
         if (!item.isDirectory) {
             selectTreeFile(item, row);
 
-            if (typeof openKediFileTab === 'function') {
-                await openKediFileTab(item);
+            if (typeof openPisiFileTab === 'function') {
+                await openPisiFileTab(item);
             } else if (isMapFile) {
                 await openMapInWorkspace(item);
             }
@@ -764,8 +764,8 @@ if (!isRoot) {
 
             selectTreeFile(item, row);
         
-             if (!item.isDirectory && typeof openKediFileTab === 'function') {
-                 await openKediFileTab(item);
+             if (!item.isDirectory && typeof openPisiFileTab === 'function') {
+                 await openPisiFileTab(item);
                 }
         });
 
@@ -784,7 +784,7 @@ if (!isRoot) {
     return node;
 }
 
-async function deleteTreeKediItem(item, treeNode) {
+async function deleteTreePisiItem(item, treeNode) {
     if (!item || item.isDirectory) return;
 
     const isMapFile = isMapFileName(item.name);
@@ -796,7 +796,7 @@ async function deleteTreeKediItem(item, treeNode) {
     let childNodeCount = 0;
 
     if (isMapFile) {
-        const listResult = await window.kediProject?.listMapNodes?.(item.fullPath);
+        const listResult = await window.pisiProject?.listMapNodes?.(item.fullPath);
         childNodeCount = Array.isArray(listResult?.nodes)
             ? listResult.nodes.length
             : 0;
@@ -805,8 +805,8 @@ async function deleteTreeKediItem(item, treeNode) {
     const confirmationMessage = isMapFile
         ? `"${visibleName}" map'i ve içindeki ${childNodeCount} node Çöp Kutusu'na taşınsın mı?`
         : `"${visibleName}" node'u Çöp Kutusu'na taşınsın mı?`;
-    const ok = typeof kediConfirm === 'function'
-        ? await kediConfirm(confirmationMessage, {
+    const ok = typeof pisiConfirm === 'function'
+        ? await pisiConfirm(confirmationMessage, {
             title: isMapFile ? 'Map sil' : 'Node sil',
             confirmText: 'Çöp Kutusu’na taşı',
             cancelText: 'Vazgeç',
@@ -819,7 +819,7 @@ async function deleteTreeKediItem(item, treeNode) {
     try {
         suppressNextFileSystemRefresh(8000);
 
-        const result = await window.kediProject?.deleteKediFile?.(item.fullPath);
+        const result = await window.pisiProject?.deletePisiFile?.(item.fullPath);
 
         if (!result || !result.ok) {
             alert(result?.error || 'Dosya silinemedi.');
@@ -835,7 +835,7 @@ async function deleteTreeKediItem(item, treeNode) {
             await handleDeletedNodeFromTree(item, treeNode, result);
         }
     } catch (error) {
-        console.error('[KEDI] Sol ağaç silme hatası:', error);
+        console.error('[PISI] Sol ağaç silme hatası:', error);
         alert('Silme sırasında hata oluştu: ' + error.message);
     }
 }
@@ -849,8 +849,8 @@ async function handleDeletedMapFromTree(item, treeNode, result = {}) {
 
     treeNode?.remove();
 
-    if (typeof removeKediOpenTabsForDeletedPaths === 'function') {
-        await removeKediOpenTabsForDeletedPaths([
+    if (typeof removePisiOpenTabsForDeletedPaths === 'function') {
+        await removePisiOpenTabsForDeletedPaths([
             item.fullPath,
             result.deletedSidecarPath || item.sidecarPath,
             ...(Array.isArray(result.childNodePaths)
@@ -866,15 +866,15 @@ async function handleDeletedMapFromTree(item, treeNode, result = {}) {
 }
 
 async function handleDeletedNodeFromTree(item, treeNode, result) {
-    const deletedNodeId = result.deletedNodeId || item.metadata?.id || treeNode?.dataset.kediId;
+    const deletedNodeId = result.deletedNodeId || item.metadata?.id || treeNode?.dataset.pisiId;
     const parentMapPath = result.parentMapPath || null;
 
     if (sameClientPath(selectedTreeItem?.item?.fullPath, item.fullPath)) {
         selectedTreeItem = null;
     }
 
-    if (typeof removeKediOpenTabsForDeletedPaths === 'function') {
-        await removeKediOpenTabsForDeletedPaths([item.fullPath]);
+    if (typeof removePisiOpenTabsForDeletedPaths === 'function') {
+        await removePisiOpenTabsForDeletedPaths([item.fullPath]);
     }
 
     // Eğer bu node şu an açık map'in içindeyse orta alanı da güncelle.
@@ -958,14 +958,14 @@ async function refreshActiveMapTreeBranch() {
     const mapTreeNode = findTreeNodeByPath(activeMapPath);
 
     if (!mapTreeNode) {
-        console.warn('[KEDI] Aktif map sol ağaçta bulunamadı.');
+        console.warn('[PISI] Aktif map sol ağaçta bulunamadı.');
         return;
     }
 
     const children = getDirectTreeChildrenContainer(mapTreeNode);
 
     if (!children) {
-        console.warn('[KEDI] Aktif map için tree-children bulunamadı.');
+        console.warn('[PISI] Aktif map için tree-children bulunamadı.');
         return;
     }
 
@@ -987,11 +987,11 @@ async function refreshActiveMapTreeBranch() {
     children.dataset.loaded = '1';
 }
 
-function findTreeNodeByKediId(kediId) {
-    if (!kediId) return null;
+function findTreeNodeByPisiId(pisiId) {
+    if (!pisiId) return null;
 
     return document.querySelector(
-        `.tree-node[data-kedi-id="${CSS.escape(kediId)}"]`
+        `.tree-node[data-pisi-id="${CSS.escape(pisiId)}"]`
     );
 }
 
@@ -1031,9 +1031,9 @@ function setTreeNodeLevelRecursive(treeNode, level) {
     }
 }
 
-function dedupeTreeNodeByKediId(kediId, keepNode) {
+function dedupeTreeNodeByPisiId(pisiId, keepNode) {
     const duplicates = document.querySelectorAll(
-        `.tree-node[data-kedi-id="${CSS.escape(kediId)}"]`
+        `.tree-node[data-pisi-id="${CSS.escape(pisiId)}"]`
     );
 
     duplicates.forEach((node) => {
@@ -1044,8 +1044,8 @@ function dedupeTreeNodeByKediId(kediId, keepNode) {
 }
 
 function moveTreeNodeUnderParent(parentId, childId) {
-    const parentTreeNode = findTreeNodeByKediId(parentId);
-    const childTreeNode = findTreeNodeByKediId(childId);
+    const parentTreeNode = findTreeNodeByPisiId(parentId);
+    const childTreeNode = findTreeNodeByPisiId(childId);
 
     if (!parentTreeNode || !childTreeNode) {
         return false;
@@ -1060,7 +1060,7 @@ function moveTreeNodeUnderParent(parentId, childId) {
     children.appendChild(childTreeNode);
 
     setTreeNodeLevelRecursive(childTreeNode, parentLevel + 1);
-    dedupeTreeNodeByKediId(childId, childTreeNode);
+    dedupeTreeNodeByPisiId(childId, childTreeNode);
 
     return true;
 }
@@ -1078,7 +1078,7 @@ function updateTreeAfterSavedConnection(edge) {
     // Eğer DOM node henüz yoksa hiçbir şey yapma.
     // Bir sonraki manuel/normal ağaç açılışında zaten doğru kurulacak.
     if (!moved) {
-        console.warn('[KEDI] Tree node DOM içinde bulunamadı. Full refresh yapılmadı.');
+        console.warn('[PISI] Tree node DOM içinde bulunamadı. Full refresh yapılmadı.');
     }
 }
 
@@ -1136,7 +1136,7 @@ function updateTreeItemAfterRename(oldPath, result) {
     treeNode.dataset.path = result.fullPath;
 
     if (result.metadata?.id) {
-        treeNode.dataset.kediId = result.metadata.id;
+        treeNode.dataset.pisiId = result.metadata.id;
     }
 
     const row = treeNode.querySelector('.tree-row');
@@ -1152,7 +1152,7 @@ function updateTreeItemAfterRename(oldPath, result) {
 
     // Asıl düzeltme burada:
     // Sol ağaç satırının yaşayan item objesini de güncelliyoruz.
-    const currentItem = treeNode.__kediItem || {};
+    const currentItem = treeNode.__pisiItem || {};
 
     currentItem.name = result.fileName;
     currentItem.displayName = displayName;
@@ -1163,7 +1163,7 @@ function updateTreeItemAfterRename(oldPath, result) {
     currentItem.isFile = true;
     currentItem.isDirectory = false;
 
-    treeNode.__kediItem = currentItem;
+    treeNode.__pisiItem = currentItem;
 
     if (sameClientPath(selectedTreeItem?.item?.fullPath, oldPath)) {
         selectedTreeItem.item = currentItem;
@@ -1177,7 +1177,7 @@ function normalizeClientPath(filePath) {
     const normalized = String(filePath || '')
         .replace(/[\\/]+/g, '/');
 
-    return window.kediEnvironment?.platform === 'win32'
+    return window.pisiEnvironment?.platform === 'win32'
         ? normalized.toLowerCase()
         : normalized;
 }
@@ -1273,7 +1273,7 @@ async function createNodeUnderMapFromTree(mapItem, mapNodeEl) {
 
     suppressNextFileSystemRefresh(1500);
 
-    const result = await window.kediProject?.createNodeUnderMap?.(mapItem.fullPath);
+    const result = await window.pisiProject?.createNodeUnderMap?.(mapItem.fullPath);
 
     if (!result || !result.ok) {
         alert(result?.error || 'Map altında node oluşturulamadı.');
@@ -1338,8 +1338,8 @@ function startRenameTreeFile(item, row) {
 
     // Eğer bu satır daha önce rename ile güncellendiyse,
     // event listener içindeki eski item yerine DOM'a bağlı güncel item'ı kullan.
-    if (treeNode?.__kediItem) {
-        item = treeNode.__kediItem;
+    if (treeNode?.__pisiItem) {
+        item = treeNode.__pisiItem;
     }
 
     if (!item || item.isDirectory) return;
@@ -1351,7 +1351,7 @@ function startRenameTreeFile(item, row) {
     row.dataset.renaming = '1';
 
     const oldPath = item.fullPath;
-    console.log('[KEDI] Rename input title:', getTreeItemDisplayName(item), item);
+    console.log('[PISI] Rename input title:', getTreeItemDisplayName(item), item);
     const oldBaseName = getTreeItemDisplayName(item);
     const oldName = oldBaseName;
 
@@ -1410,8 +1410,8 @@ function startRenameTreeFile(item, row) {
                 return;
             }
 
-            if (typeof flushKediPendingSaves === 'function') {
-                const saved = await flushKediPendingSaves();
+            if (typeof flushPisiPendingSaves === 'function') {
+                const saved = await flushPisiPendingSaves();
                 if (!saved) {
                     restoreName(oldName);
                     return;
@@ -1421,7 +1421,7 @@ function startRenameTreeFile(item, row) {
             const renameSourcePath = item.fullPath || oldPath;
             suppressNextFileSystemRefresh(1500);
 
-            const result = await window.kediProject?.renameKediFile?.(
+            const result = await window.pisiProject?.renamePisiFile?.(
                 renameSourcePath,
                 newBaseName
             );
@@ -1450,13 +1450,13 @@ function startRenameTreeFile(item, row) {
             updateTreeItemAfterRename(renameSourcePath, result);
             updateOpenMapNodeAfterRename(renameSourcePath, result);
 
-            if (typeof updateKediOpenTabAfterRename === 'function') {
-            updateKediOpenTabAfterRename(renameSourcePath, result);
+            if (typeof updatePisiOpenTabAfterRename === 'function') {
+            updatePisiOpenTabAfterRename(renameSourcePath, result);
             }
 
             animateTreeRow(row);
         } catch (error) {
-            console.error('[KEDI] Rename sırasında hata:', error);
+            console.error('[PISI] Rename sırasında hata:', error);
             alert('İsim değiştirilemedi: ' + error.message);
             restoreName(oldName);
         } finally {
@@ -1497,7 +1497,7 @@ async function loadFolderChildren(
     const rootRenderIsCurrent = () => {
         return (
             !rootRender ||
-            isCurrentKediTreeRootRender(
+            isCurrentPisiTreeRootRender(
                 rootRender.renderId,
                 rootRender.rootPath
             )
@@ -1506,7 +1506,7 @@ async function loadFolderChildren(
 
     if (!rootRenderIsCurrent()) return false;
 
-    const result = await window.kediProject?.listFolder?.(folderPath);
+    const result = await window.pisiProject?.listFolder?.(folderPath);
     if (!rootRenderIsCurrent()) return false;
 
     if (!result || !result.ok) {
@@ -1697,7 +1697,7 @@ async function loadSyntheticTreeChildren(items, containerEl, level) {
 
 async function loadMapTreeChildren(mapPath, containerEl, level) {
     try {
-        const result = await window.kediProject?.listMapNodes?.(mapPath);
+        const result = await window.pisiProject?.listMapNodes?.(mapPath);
 
         if (!result || !result.ok) {
             const fragment = document.createDocumentFragment();
@@ -1725,7 +1725,7 @@ async function loadMapTreeChildren(mapPath, containerEl, level) {
 
         containerEl.replaceChildren(fragment);
     } catch (error) {
-        console.error('[KEDI] Map tree yüklenirken hata:', error);
+        console.error('[PISI] Map tree yüklenirken hata:', error);
 
         const fragment = document.createDocumentFragment();
         const errorRow = document.createElement('div');

@@ -8,7 +8,7 @@ function bindNodeModalControls() {
             event.preventDefault();
             event.stopPropagation();
             const saved = await closeNodeModalAndSave();
-            if (saved) refreshAllKediMapNodePreviewsFromDisk();
+            if (saved) refreshAllPisiMapNodePreviewsFromDisk();
         });
     }
 
@@ -17,7 +17,7 @@ function bindNodeModalControls() {
         overlay.addEventListener('mousedown', async (event) => {
             if (event.target !== overlay) return;
             const saved = await closeNodeModalAndSave();
-            if (saved) refreshAllKediMapNodePreviewsFromDisk();
+            if (saved) refreshAllPisiMapNodePreviewsFromDisk();
         });
     }
 
@@ -45,9 +45,9 @@ function bindNodeModalControls() {
 
             if (event.key !== 'Escape') return;
 
-            const tagMenu = document.getElementById('kedi-tag-menu');
+            const tagMenu = document.getElementById('pisi-tag-menu');
             if (tagMenu && !tagMenu.hidden) {
-                closeKediTagMenu();
+                closePisiTagMenu();
                 event.preventDefault();
                 event.stopPropagation();
                 return;
@@ -56,32 +56,32 @@ function bindNodeModalControls() {
             event.preventDefault();
             event.stopPropagation();
             const saved = await closeNodeModalAndSave();
-            if (saved) refreshAllKediMapNodePreviewsFromDisk();
+            if (saved) refreshAllPisiMapNodePreviewsFromDisk();
         });
     }
 }
 
-const KEDI_NODE_PREVIEW_DELAY_MS = 1500;
-let kediNodePreviewTimer = null;
-let kediNodePreviewRequest = 0;
+const PISI_NODE_PREVIEW_DELAY_MS = 1500;
+let pisiNodePreviewTimer = null;
+let pisiNodePreviewRequest = 0;
 
-function hideKediCanvasHints(root = document) {
-    if (root.matches?.('.kedi-canvas-toolbar-hint')) root.hidden = true;
-    root.querySelectorAll?.('.kedi-canvas-toolbar-hint').forEach((hint) => {
+function hidePisiCanvasHints(root = document) {
+    if (root.matches?.('.pisi-canvas-toolbar-hint')) root.hidden = true;
+    root.querySelectorAll?.('.pisi-canvas-toolbar-hint').forEach((hint) => {
         hint.hidden = true;
         hint.style.display = 'none';
     });
 }
 
-function parseKediNodePreviewContent(content = '') {
+function parsePisiNodePreviewContent(content = '') {
     const wrapper = document.createElement('div');
     wrapper.innerHTML = String(content || '');
     wrapper.querySelectorAll('script, style, iframe, object, embed').forEach((item) => item.remove());
 
-    const firstCanvas = wrapper.querySelector('canvas[data-kedi-canvas][data-image]');
+    const firstCanvas = wrapper.querySelector('canvas[data-pisi-canvas][data-image]');
     const rawImage = firstCanvas?.getAttribute('data-image') || '';
 
-    wrapper.querySelectorAll('.kedi-canvas-toolbar-hint, canvas, table').forEach((item) => item.remove());
+    wrapper.querySelectorAll('.pisi-canvas-toolbar-hint, canvas, table').forEach((item) => item.remove());
     const text = (wrapper.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 720);
 
     return {
@@ -90,13 +90,13 @@ function parseKediNodePreviewContent(content = '') {
     };
 }
 
-function findKediMapNodeForBox(box) {
+function findPisiMapNodeForBox(box) {
     const nodeId = box?.dataset?.nodeId;
     if (!nodeId || !Array.isArray(window.activeMapNodes)) return null;
     return window.activeMapNodes.find((node) => String(node.id) === String(nodeId)) || null;
 }
 
-function styleKediCanvasThumbnail(image) {
+function stylePisiCanvasThumbnail(image) {
     Object.assign(image.style, {
         width: '100%',
         height: '100%',
@@ -109,15 +109,15 @@ function styleKediCanvasThumbnail(image) {
     });
 }
 
-function refreshKediMapNodeCanvasPreview(box, content = null) {
+function refreshPisiMapNodeCanvasPreview(box, content = null) {
     if (!box?.isConnected) return;
 
-    const node = findKediMapNodeForBox(box);
-    const parsed = parseKediNodePreviewContent(content ?? node?.content ?? '');
+    const node = findPisiMapNodeForBox(box);
+    const parsed = parsePisiNodePreviewContent(content ?? node?.content ?? '');
     const preview = box.querySelector('.map-node-preview');
     if (!preview) return;
 
-    preview.querySelector('.kedi-map-node-canvas-preview')?.remove();
+    preview.querySelector('.pisi-map-node-canvas-preview')?.remove();
     preview.style.padding = '';
 
     if (!parsed.image) {
@@ -126,42 +126,42 @@ function refreshKediMapNodeCanvasPreview(box, content = null) {
     }
 
     const image = document.createElement('img');
-    image.className = 'kedi-map-node-canvas-preview';
+    image.className = 'pisi-map-node-canvas-preview';
     image.alt = '';
     image.src = parsed.image;
-    styleKediCanvasThumbnail(image);
+    stylePisiCanvasThumbnail(image);
 
     preview.textContent = '';
     preview.style.padding = '5px 7px 7px';
     preview.appendChild(image);
 }
 
-async function refreshKediMapNodePreviewFromDisk(box) {
+async function refreshPisiMapNodePreviewFromDisk(box) {
     if (!box?.isConnected || !box.dataset.nodePath) return;
 
     try {
-        const result = await window.kediProject?.getKediDocument?.(box.dataset.nodePath);
+        const result = await window.pisiProject?.getPisiDocument?.(box.dataset.nodePath);
         if (!result?.ok || !box.isConnected) return;
 
         const content = result.data?.content || result.content || '';
-        const node = findKediMapNodeForBox(box);
+        const node = findPisiMapNodeForBox(box);
         if (node) {
             node.content = content;
             node.metadata = result.metadata || node.metadata;
         }
-        refreshKediMapNodeCanvasPreview(box, content);
+        refreshPisiMapNodeCanvasPreview(box, content);
     } catch (error) {
-        console.warn('[KEDI] Node küçük önizlemesi yenilenemedi:', error);
+        console.warn('[PISI] Node küçük önizlemesi yenilenemedi:', error);
     }
 }
 
-function refreshAllKediMapNodePreviewsFromDisk() {
+function refreshAllPisiMapNodePreviewsFromDisk() {
     document.querySelectorAll('.map-node-box').forEach((box) => {
-        refreshKediMapNodePreviewFromDisk(box);
+        refreshPisiMapNodePreviewFromDisk(box);
     });
 }
 
-function styleKediHoverLayer(layer) {
+function stylePisiHoverLayer(layer) {
     Object.assign(layer.style, {
         position: 'fixed',
         zIndex: '12000',
@@ -178,32 +178,32 @@ function styleKediHoverLayer(layer) {
     });
 }
 
-function getKediNodePreviewLayer() {
-    let layer = document.getElementById('kedi-node-hover-preview');
+function getPisiNodePreviewLayer() {
+    let layer = document.getElementById('pisi-node-hover-preview');
     if (layer) return layer;
 
     layer = document.createElement('aside');
-    layer.id = 'kedi-node-hover-preview';
+    layer.id = 'pisi-node-hover-preview';
     layer.hidden = true;
     layer.setAttribute('aria-live', 'polite');
-    styleKediHoverLayer(layer);
+    stylePisiHoverLayer(layer);
     document.body.appendChild(layer);
     return layer;
 }
 
-function hideKediNodeHoverPreview() {
-    clearTimeout(kediNodePreviewTimer);
-    kediNodePreviewTimer = null;
-    kediNodePreviewRequest += 1;
+function hidePisiNodeHoverPreview() {
+    clearTimeout(pisiNodePreviewTimer);
+    pisiNodePreviewTimer = null;
+    pisiNodePreviewRequest += 1;
 
-    const layer = document.getElementById('kedi-node-hover-preview');
+    const layer = document.getElementById('pisi-node-hover-preview');
     if (layer) {
         layer.hidden = true;
         layer.innerHTML = '';
     }
 }
 
-function positionKediNodeHoverPreview(layer, box) {
+function positionPisiNodeHoverPreview(layer, box) {
     const boxRect = box.getBoundingClientRect();
     const layerRect = layer.getBoundingClientRect();
     const gap = 12;
@@ -222,12 +222,12 @@ function positionKediNodeHoverPreview(layer, box) {
     layer.style.top = `${Math.max(8, top)}px`;
 }
 
-function appendKediHoverPreviewContent(layer, title, parsed) {
+function appendPisiHoverPreviewContent(layer, title, parsed) {
     const heading = document.createElement('h3');
     heading.textContent = title;
     Object.assign(heading.style, {
         margin: '0 0 9px',
-        color: 'var(--kedi-map-node-title-color, #f39c12)',
+        color: 'var(--pisi-map-node-title-color, #f39c12)',
         fontSize: '15px',
         fontWeight: '800',
         whiteSpace: 'nowrap',
@@ -269,17 +269,17 @@ function appendKediHoverPreviewContent(layer, title, parsed) {
     layer.appendChild(text);
 }
 
-async function showKediNodeHoverPreview(box) {
+async function showPisiNodeHoverPreview(box) {
     if (!box?.isConnected || box.classList.contains('dragging')) return;
 
-    const requestId = ++kediNodePreviewRequest;
-    let node = findKediMapNodeForBox(box);
+    const requestId = ++pisiNodePreviewRequest;
+    let node = findPisiMapNodeForBox(box);
     let title = node?.metadata?.title || node?.fileName?.replace(/\.node$/i, '') || 'Node';
     let content = node?.content || '';
 
     try {
-        const result = await window.kediProject?.getKediDocument?.(box.dataset.nodePath);
-        if (requestId !== kediNodePreviewRequest || !box.matches(':hover')) return;
+        const result = await window.pisiProject?.getPisiDocument?.(box.dataset.nodePath);
+        if (requestId !== pisiNodePreviewRequest || !box.matches(':hover')) return;
 
         if (result?.ok) {
             title = result.metadata?.title || title;
@@ -288,86 +288,86 @@ async function showKediNodeHoverPreview(box) {
                 node.content = content;
                 node.metadata = result.metadata || node.metadata;
             }
-            refreshKediMapNodeCanvasPreview(box, content);
+            refreshPisiMapNodeCanvasPreview(box, content);
         }
     } catch (error) {
-        console.warn('[KEDI] Node önizlemesi yüklenemedi:', error);
+        console.warn('[PISI] Node önizlemesi yüklenemedi:', error);
     }
 
-    if (requestId !== kediNodePreviewRequest || !box.matches(':hover')) return;
+    if (requestId !== pisiNodePreviewRequest || !box.matches(':hover')) return;
 
-    const layer = getKediNodePreviewLayer();
+    const layer = getPisiNodePreviewLayer();
     layer.innerHTML = '';
-    appendKediHoverPreviewContent(layer, title, parseKediNodePreviewContent(content));
+    appendPisiHoverPreviewContent(layer, title, parsePisiNodePreviewContent(content));
     layer.hidden = false;
-    positionKediNodeHoverPreview(layer, box);
+    positionPisiNodeHoverPreview(layer, box);
 }
 
-function scheduleKediNodeHoverPreview(box) {
-    hideKediNodeHoverPreview();
-    const requestId = kediNodePreviewRequest;
+function schedulePisiNodeHoverPreview(box) {
+    hidePisiNodeHoverPreview();
+    const requestId = pisiNodePreviewRequest;
 
-    kediNodePreviewTimer = setTimeout(() => {
-        if (requestId !== kediNodePreviewRequest || !box.matches(':hover')) return;
-        showKediNodeHoverPreview(box);
-    }, KEDI_NODE_PREVIEW_DELAY_MS);
+    pisiNodePreviewTimer = setTimeout(() => {
+        if (requestId !== pisiNodePreviewRequest || !box.matches(':hover')) return;
+        showPisiNodeHoverPreview(box);
+    }, PISI_NODE_PREVIEW_DELAY_MS);
 }
 
-function processKediPreviewAddedNode(addedNode) {
+function processPisiPreviewAddedNode(addedNode) {
     if (!(addedNode instanceof Element)) return;
-    hideKediCanvasHints(addedNode);
+    hidePisiCanvasHints(addedNode);
 
     if (addedNode.matches('.map-node-box')) {
-        refreshKediMapNodeCanvasPreview(addedNode);
+        refreshPisiMapNodeCanvasPreview(addedNode);
     }
     addedNode.querySelectorAll?.('.map-node-box').forEach((box) => {
-        refreshKediMapNodeCanvasPreview(box);
+        refreshPisiMapNodeCanvasPreview(box);
     });
 }
 
-function bindKediMapNodePreviewEvents() {
-    if (document.body.dataset.kediNodePreviewBound === '1') return;
-    document.body.dataset.kediNodePreviewBound = '1';
+function bindPisiMapNodePreviewEvents() {
+    if (document.body.dataset.pisiNodePreviewBound === '1') return;
+    document.body.dataset.pisiNodePreviewBound = '1';
 
     document.addEventListener('mouseover', (event) => {
         const box = event.target.closest?.('.map-node-box');
         if (!box || box.contains(event.relatedTarget)) return;
-        scheduleKediNodeHoverPreview(box);
+        schedulePisiNodeHoverPreview(box);
     });
 
     document.addEventListener('mouseout', (event) => {
         const box = event.target.closest?.('.map-node-box');
         if (!box || box.contains(event.relatedTarget)) return;
-        hideKediNodeHoverPreview();
+        hidePisiNodeHoverPreview();
     });
 
-    document.addEventListener('mousedown', hideKediNodeHoverPreview, true);
-    window.addEventListener('blur', hideKediNodeHoverPreview);
-    window.addEventListener('resize', hideKediNodeHoverPreview);
+    document.addEventListener('mousedown', hidePisiNodeHoverPreview, true);
+    window.addEventListener('blur', hidePisiNodeHoverPreview);
+    window.addEventListener('resize', hidePisiNodeHoverPreview);
 
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
-            mutation.addedNodes.forEach(processKediPreviewAddedNode);
+            mutation.addedNodes.forEach(processPisiPreviewAddedNode);
         });
     });
     observer.observe(document.body, { childList: true, subtree: true });
 
-    hideKediCanvasHints();
+    hidePisiCanvasHints();
     document.querySelectorAll('.map-node-box').forEach((box) => {
-        refreshKediMapNodeCanvasPreview(box);
+        refreshPisiMapNodeCanvasPreview(box);
     });
 }
 
-function setupKediNodePreviews() {
-    bindKediMapNodePreviewEvents();
+function setupPisiNodePreviews() {
+    bindPisiMapNodePreviewEvents();
 }
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         bindNodeModalControls();
-        setupKediNodePreviews();
+        setupPisiNodePreviews();
     });
 } else {
     bindNodeModalControls();
-    setupKediNodePreviews();
+    setupPisiNodePreviews();
 }

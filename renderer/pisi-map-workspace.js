@@ -24,18 +24,18 @@ function getFileIcon(fileName = '') {
     return '📦';
 }
 
-function sameKediWorkspacePath(a, b) {
+function samePisiWorkspacePath(a, b) {
     if (!a || !b) return false;
 
-    if (typeof kediSameTabPath === 'function') {
-        return kediSameTabPath(a, b);
+    if (typeof pisiSameTabPath === 'function') {
+        return pisiSameTabPath(a, b);
     }
 
     const normalize = (value) => String(value).replace(/[\\/]+/g, '/');
     const normalizedA = normalize(a);
     const normalizedB = normalize(b);
 
-    return window.kediEnvironment?.platform === 'win32'
+    return window.pisiEnvironment?.platform === 'win32'
         ? normalizedA.toLowerCase() === normalizedB.toLowerCase()
         : normalizedA === normalizedB;
 }
@@ -53,14 +53,14 @@ async function openMapInWorkspace(mapItem) {
 
     if (
         activeMapPath &&
-        !sameKediWorkspacePath(activeMapPath, mapItem.fullPath) &&
+        !samePisiWorkspacePath(activeMapPath, mapItem.fullPath) &&
         typeof saveCurrentMapLayout === 'function'
     ) {
         const layoutSaved = await saveCurrentMapLayout();
         if (!layoutSaved) return false;
     }
 
-    const result = await window.kediProject?.listMapNodes?.(mapItem.fullPath);
+    const result = await window.pisiProject?.listMapNodes?.(mapItem.fullPath);
 
     if (!result || !result.ok) {
         alert(result?.error || 'Map yüklenemedi.');
@@ -72,7 +72,7 @@ async function openMapInWorkspace(mapItem) {
     const board = document.getElementById('map-board');
 
     if (!canvas || !board) {
-        console.error('[KEDI] Harita çalışma alanı DOM öğeleri bulunamadı.');
+        console.error('[PISI] Harita çalışma alanı DOM öğeleri bulunamadı.');
         return false;
     }
 
@@ -80,16 +80,16 @@ async function openMapInWorkspace(mapItem) {
         clearCenterNodeEditor();
     }
 
-    if (typeof ensureKediOpenTab === 'function') {
-        ensureKediOpenTab(mapItem);
+    if (typeof ensurePisiOpenTab === 'function') {
+        ensurePisiOpenTab(mapItem);
     }
 
-    if (window.Kedi?.state) {
-        window.Kedi.state.activeTabPath = mapItem.fullPath;
+    if (window.Pisi?.state) {
+        window.Pisi.state.activeTabPath = mapItem.fullPath;
     }
 
-    if (typeof renderKediOpenTabs === 'function') {
-        renderKediOpenTabs();
+    if (typeof renderPisiOpenTabs === 'function') {
+        renderPisiOpenTabs();
     }
 
     activeMapPath = mapItem.fullPath;
@@ -127,7 +127,7 @@ async function openMapInWorkspace(mapItem) {
         syncHubPortCollapseVisuals();
     }
 
-    refreshKediTagsPanelSoon();
+    refreshPisiTagsPanelSoon();
     return true;
 }
 
@@ -141,8 +141,8 @@ function clearMapWorkspace() {
     mapSaveTimer = null;
     mapCameraSaveTimer = null;
 
-    if (typeof resetKediMapConnectionInteractions === 'function') {
-        resetKediMapConnectionInteractions();
+    if (typeof resetPisiMapConnectionInteractions === 'function') {
+        resetPisiMapConnectionInteractions();
     }
 
     activeMapPath = null;
@@ -166,7 +166,7 @@ function clearMapWorkspace() {
         placeholder.style.display = 'flex';
     }
 
-    refreshKediTagsPanelSoon();
+    refreshPisiTagsPanelSoon();
 }
 
 function getMapWorldPointFromClient(clientX, clientY) {
@@ -192,7 +192,7 @@ function isMapBlankEventTarget(event) {
         event.target.closest?.('.map-edge-hit') ||
         event.target.closest?.('.map-edge-delete') ||
         event.target.closest?.('#map-zoom-controls') ||
-        event.target.closest?.('.kedi-map-context-menu')
+        event.target.closest?.('.pisi-map-context-menu')
     );
 }
 
@@ -203,7 +203,7 @@ async function createMapNodeBoxAtClientPoint(clientX, clientY) {
 
     suppressNextFileSystemRefresh(3000);
 
-    const result = await window.kediProject?.createNodeUnderMap?.(activeMapPath);
+    const result = await window.pisiProject?.createNodeUnderMap?.(activeMapPath);
 
     if (!result || !result.ok) {
         alert(result?.error || 'Node box oluşturulamadı.');
@@ -236,32 +236,32 @@ async function createMapNodeBoxAtClientPoint(clientX, clientY) {
         await refreshActiveMapTreeBranch();
     }
 
-    refreshKediTagsPanelSoon();
+    refreshPisiTagsPanelSoon();
 }
 
-function hideKediMapContextMenu() {
-    document.getElementById('kedi-map-context-menu')?.remove();
+function hidePisiMapContextMenu() {
+    document.getElementById('pisi-map-context-menu')?.remove();
 }
 
-function showKediMapContextMenu(clientX, clientY) {
-    hideKediMapContextMenu();
+function showPisiMapContextMenu(clientX, clientY) {
+    hidePisiMapContextMenu();
 
     const menu = document.createElement('div');
-    menu.id = 'kedi-map-context-menu';
-    menu.className = 'kedi-map-context-menu';
+    menu.id = 'pisi-map-context-menu';
+    menu.className = 'pisi-map-context-menu';
     menu.style.left = `${clientX}px`;
     menu.style.top = `${clientY}px`;
 
     const createBtn = document.createElement('button');
     createBtn.type = 'button';
-    createBtn.className = 'kedi-map-context-menu-item';
+    createBtn.className = 'pisi-map-context-menu-item';
     createBtn.textContent = '📄 Node box oluştur';
 
     createBtn.addEventListener('click', async (event) => {
         event.preventDefault();
         event.stopPropagation();
 
-        hideKediMapContextMenu();
+        hidePisiMapContextMenu();
         await createMapNodeBoxAtClientPoint(clientX, clientY);
     });
 
@@ -289,7 +289,7 @@ function bindMapCreationEvents() {
         event.preventDefault();
         event.stopPropagation();
 
-        hideKediMapContextMenu();
+        hidePisiMapContextMenu();
         await createMapNodeBoxAtClientPoint(event.clientX, event.clientY);
     });
 
@@ -306,16 +306,16 @@ function bindMapCreationEvents() {
         event.preventDefault();
         event.stopPropagation();
 
-        showKediMapContextMenu(event.clientX, event.clientY);
+        showPisiMapContextMenu(event.clientX, event.clientY);
     });
 
     document.addEventListener('mousedown', (event) => {
-        if (!event.target.closest?.('.kedi-map-context-menu')) {
-            hideKediMapContextMenu();
+        if (!event.target.closest?.('.pisi-map-context-menu')) {
+            hidePisiMapContextMenu();
         }
     });
 
-    window.addEventListener('blur', hideKediMapContextMenu);
+    window.addEventListener('blur', hidePisiMapContextMenu);
 }
 
 function createMapNodeBox(node) {
@@ -425,30 +425,30 @@ function bindMapNodeBoxEvents(box, node) {
         event.preventDefault();
         event.stopPropagation();
 
-        resetKediKeyboardAndPointerState();
+        resetPisiKeyboardAndPointerState();
 
-        const ok = await kediConfirm('Bu node dosyası silinsin mi?', {
+        const ok = await pisiConfirm('Bu node dosyası silinsin mi?', {
         title: 'Node sil',
         confirmText: 'Sil',
         cancelText: 'Vazgeç',
         danger: true
         });
 
-        resetKediKeyboardAndPointerState();
+        resetPisiKeyboardAndPointerState();
 
     if (!ok) return;
 
     suppressNextFileSystemRefresh(3000);
 
-        const result = await window.kediProject?.deleteNodeFromMap?.(node.fullPath);
+        const result = await window.pisiProject?.deleteNodeFromMap?.(node.fullPath);
 
         if (!result || !result.ok) {
             alert(result?.error || 'Node silinemedi.');
             return;
         }
 
-        if (typeof removeKediOpenTabsForDeletedPaths === 'function') {
-            await removeKediOpenTabsForDeletedPaths([node.fullPath]);
+        if (typeof removePisiOpenTabsForDeletedPaths === 'function') {
+            await removePisiOpenTabsForDeletedPaths([node.fullPath]);
         }
 
         box.remove();
@@ -470,14 +470,14 @@ function bindMapNodeBoxEvents(box, node) {
         await refreshActiveMapTreeBranch();
         }
 
-        refreshKediTagsPanelSoon();
+        refreshPisiTagsPanelSoon();
 
-        resetKediKeyboardAndPointerState();
+        resetPisiKeyboardAndPointerState();
 
-        refocusKediRenderer();
+        refocusPisiRenderer();
 
         setTimeout(() => {
-        refocusKediRenderer();
+        refocusPisiRenderer();
         }, 80);
 
     });
@@ -617,14 +617,14 @@ async function saveCurrentMapLayout() {
     const layout = collectMapLayout();
 
     try {
-        const result = await window.kediProject?.saveMapLayout?.(
+        const result = await window.pisiProject?.saveMapLayout?.(
             mapPath,
             layout
         );
 
         return Boolean(result?.ok);
     } catch (error) {
-        console.error('[KEDI] Map yerleşimi kaydedilemedi:', error);
+        console.error('[PISI] Map yerleşimi kaydedilemedi:', error);
         return false;
     }
 }
@@ -667,7 +667,7 @@ async function startMapNodeTitleEdit(box, node) {
     event.stopPropagation();
     });
 
-    focusKediTextInput(input, true);
+    focusPisiTextInput(input, true);
 
     let finished = false;
 
@@ -692,7 +692,7 @@ async function startMapNodeTitleEdit(box, node) {
 
             suppressNextFileSystemRefresh(3000);
 
-            const result = await window.kediProject?.renameKediFile?.(
+            const result = await window.pisiProject?.renamePisiFile?.(
                 oldPath,
                 newTitle
             );
@@ -728,7 +728,7 @@ async function startMapNodeTitleEdit(box, node) {
                 animateMapBox(box);
             }
         } catch (error) {
-            console.error('[KEDI] Map node rename hatası:', error);
+            console.error('[PISI] Map node rename hatası:', error);
             alert('Node adı değiştirilemedi: ' + error.message);
 
             restoreTitle(oldTitle);
@@ -756,50 +756,50 @@ async function startMapNodeTitleEdit(box, node) {
     });
 }
 
-function setKediEditorContent(editor, content = '') {
+function setPisiEditorContent(editor, content = '') {
     if (!editor) return;
 
     const value = String(content || '');
 
     if (/<[a-z][\s\S]*>/i.test(value)) {
-        editor.innerHTML = sanitizeKediEditorHtml(value);
-        ensureKediEditorBlocks(editor);
-        if (typeof initializeKediAdvancedEditorContent === 'function') {
-            initializeKediAdvancedEditorContent(editor);
+        editor.innerHTML = sanitizePisiEditorHtml(value);
+        ensurePisiEditorBlocks(editor);
+        if (typeof initializePisiAdvancedEditorContent === 'function') {
+            initializePisiAdvancedEditorContent(editor);
         }
         return;
     }
 
-    editor.innerHTML = markdownTextToKediEditorHtml(value);
-    ensureKediEditorBlocks(editor);
-    if (typeof initializeKediAdvancedEditorContent === 'function') {
-        initializeKediAdvancedEditorContent(editor);
+    editor.innerHTML = markdownTextToPisiEditorHtml(value);
+    ensurePisiEditorBlocks(editor);
+    if (typeof initializePisiAdvancedEditorContent === 'function') {
+        initializePisiAdvancedEditorContent(editor);
     }
 }
 
-function getKediEditorContent(editor) {
+function getPisiEditorContent(editor) {
     if (!editor) return '';
 
-    ensureKediEditorBlocks(editor);
+    ensurePisiEditorBlocks(editor);
 
-    if (typeof hydrateKediPaintCanvases === 'function') {
-        hydrateKediPaintCanvases(editor);
+    if (typeof hydratePisiPaintCanvases === 'function') {
+        hydratePisiPaintCanvases(editor);
     }
 
-    editor.querySelectorAll?.('canvas[data-kedi-canvas]')?.forEach?.((canvas) => {
-        if (typeof saveKediCanvasData === 'function') {
-            saveKediCanvasData(canvas);
+    editor.querySelectorAll?.('canvas[data-pisi-canvas]')?.forEach?.((canvas) => {
+        if (typeof savePisiCanvasData === 'function') {
+            savePisiCanvasData(canvas);
         }
     });
 
-    if (typeof hydrateKediSheets === 'function') {
-        hydrateKediSheets(editor);
+    if (typeof hydratePisiSheets === 'function') {
+        hydratePisiSheets(editor);
     }
 
-    return sanitizeKediEditorHtml(editor.innerHTML || '');
+    return sanitizePisiEditorHtml(editor.innerHTML || '');
 }
 
-function markdownTextToKediEditorHtml(text = '') {
+function markdownTextToPisiEditorHtml(text = '') {
     const lines = String(text || '').split('\n');
 
     return lines.map((line) => {
@@ -820,7 +820,7 @@ function markdownTextToKediEditorHtml(text = '') {
     }).join('');
 }
 
-function sanitizeKediEditorHtml(html = '') {
+function sanitizePisiEditorHtml(html = '') {
     const wrapper = document.createElement('div');
     wrapper.innerHTML = String(html || '');
 
@@ -834,10 +834,10 @@ function sanitizeKediEditorHtml(html = '') {
         'class',
         'title',
         'contenteditable',
-        'data-kedi-block-id',
-        'data-kedi-tag',
-        'data-kedi-done-for',
-        'data-kedi-diary-source'
+        'data-pisi-block-id',
+        'data-pisi-tag',
+        'data-pisi-done-for',
+        'data-pisi-diary-source'
     ]);
     const allowedStyleProperties = new Set([
         'background-color',
@@ -921,7 +921,7 @@ function sanitizeKediEditorHtml(html = '') {
                 allowed = [
                     'width',
                     'height',
-                    'data-kedi-canvas',
+                    'data-pisi-canvas',
                     'data-image'
                 ].includes(name);
 
@@ -932,7 +932,7 @@ function sanitizeKediEditorHtml(html = '') {
 
             if (['TABLE', 'TD'].includes(element.tagName)) {
                 allowed = allowed || [
-                    'data-kedi-sheet',
+                    'data-pisi-sheet',
                     'data-formula',
                     'data-cell',
                     'data-row',
@@ -947,7 +947,7 @@ function sanitizeKediEditorHtml(html = '') {
 
         if (element.hasAttribute('class')) {
             const safeClasses = Array.from(element.classList).filter((name) => {
-                return /^kedi-[A-Za-z0-9_-]+$/.test(name);
+                return /^pisi-[A-Za-z0-9_-]+$/.test(name);
             });
             element.className = safeClasses.join(' ');
         }
@@ -957,8 +957,8 @@ function sanitizeKediEditorHtml(html = '') {
             const height = Math.min(1200, Math.max(1, Number(element.getAttribute('height')) || 320));
             element.setAttribute('width', String(width));
             element.setAttribute('height', String(height));
-            element.setAttribute('data-kedi-canvas', '1');
-            element.removeAttribute('data-kedi-canvas-bound');
+            element.setAttribute('data-pisi-canvas', '1');
+            element.removeAttribute('data-pisi-canvas-bound');
             element.removeAttribute('data-image-loaded');
         }
 
@@ -977,7 +977,7 @@ function sanitizeKediEditorHtml(html = '') {
 async function openNodeModalFromBox(box) {
     const nodePath = box.dataset.nodePath;
 
-    const result = await window.kediProject?.getKediDocument?.(nodePath);
+    const result = await window.pisiProject?.getPisiDocument?.(nodePath);
 
     if (!result || !result.ok) {
         alert(result?.error || 'Node açılamadı.');
@@ -1022,11 +1022,11 @@ async function openNodeModalFromBox(box) {
             });
         }
 
-        setKediEditorContent(contentInput, result.data.content || '');
-        refreshKediTagsPanelSoon();
+        setPisiEditorContent(contentInput, result.data.content || '');
+        refreshPisiTagsPanelSoon();
     }
 
-    closeKediTagMenu();
+    closePisiTagMenu();
 
     overlay?.classList.add('visible');
     contentInput?.focus();
@@ -1048,12 +1048,12 @@ async function closeNodeModalAndSave() {
         const oldPath = nodePath;
         const oldTitle = activeModalNode.metadata?.title || '';
         const title = titleInput?.value?.trim() || oldTitle;
-        const content = getKediEditorContent(contentInput);
+        const content = getPisiEditorContent(contentInput);
 
         if (title && title !== oldTitle) {
             suppressNextFileSystemRefresh(1500);
 
-            const renameResult = await window.kediProject?.renameKediFile?.(
+            const renameResult = await window.pisiProject?.renamePisiFile?.(
                 nodePath,
                 title
             );
@@ -1080,7 +1080,7 @@ async function closeNodeModalAndSave() {
             }
         }
 
-        const saveResult = await window.kediProject?.saveNodeContent?.(
+        const saveResult = await window.pisiProject?.saveNodeContent?.(
             nodePath,
             content
         );
@@ -1104,8 +1104,8 @@ async function closeNodeModalAndSave() {
 
         animateMapBox(activeModalNode.box);
 
-        closeKediTagMenu();
-        refreshKediTagsPanelSoon();
+        closePisiTagMenu();
+        refreshPisiTagsPanelSoon();
 
         const returnFocus = activeModalNode.returnFocus;
         overlay?.classList.remove('visible');
@@ -1113,7 +1113,7 @@ async function closeNodeModalAndSave() {
         returnFocus?.focus?.({ preventScroll: true });
         return true;
     } catch (error) {
-        console.error('[KEDI] Modal kaydetme/kapatma hatası:', error);
+        console.error('[PISI] Modal kaydetme/kapatma hatası:', error);
         alert('Modal kapatılırken hata oluştu: ' + error.message);
         return false;
     }
@@ -1129,7 +1129,7 @@ function closeNodeModalWithoutSaving() {
     if (contentInput) contentInput.innerHTML = '';
     if (titleInput) titleInput.value = '';
     activeModalNode = null;
-    closeKediTagMenu();
+    closePisiTagMenu();
     returnFocus?.focus?.({ preventScroll: true });
 }
 
@@ -1191,7 +1191,7 @@ function bindCenterNodeEditorControls() {
                 activeCenterNode.revision =
                     Number(activeCenterNode.revision || 0) + 1;
             }
-            refreshKediTagsPanelSoon();
+            refreshPisiTagsPanelSoon();
             scheduleCenterNodeEditorSave();
         });
 
@@ -1219,7 +1219,7 @@ async function openCenterNodeEditor(nodeItem) {
 
     if (
         activeCenterNode?.path &&
-        !sameKediWorkspacePath(activeCenterNode.path, nodeItem.fullPath)
+        !samePisiWorkspacePath(activeCenterNode.path, nodeItem.fullPath)
     ) {
         const saved = await saveCurrentCenterNodeEditor();
         if (!saved) return false;
@@ -1230,7 +1230,7 @@ async function openCenterNodeEditor(nodeItem) {
         if (!layoutSaved) return false;
     }
 
-    const result = await window.kediProject?.getKediDocument?.(nodeItem.fullPath);
+    const result = await window.pisiProject?.getPisiDocument?.(nodeItem.fullPath);
 
     if (!result || !result.ok) {
         alert(result?.error || 'Node açılamadı.');
@@ -1276,17 +1276,17 @@ async function openCenterNodeEditor(nodeItem) {
     }
 
     if (contentEditor) {
-        setKediEditorContent(contentEditor, result.data?.content || '');
+        setPisiEditorContent(contentEditor, result.data?.content || '');
     }
 
-    closeKediTagMenu();
+    closePisiTagMenu();
 
-    if (typeof bindKediTagControls === 'function') {
-        bindKediTagControls();
+    if (typeof bindPisiTagControls === 'function') {
+        bindPisiTagControls();
     }
 
-    if (typeof bindKediBlockIndexControls === 'function') {
-        bindKediBlockIndexControls();
+    if (typeof bindPisiBlockIndexControls === 'function') {
+        bindPisiBlockIndexControls();
     }
 
     setTimeout(() => {
@@ -1296,16 +1296,16 @@ async function openCenterNodeEditor(nodeItem) {
     return true;
 }
 
-let kediCenterSaveTail = Promise.resolve(true);
+let pisiCenterSaveTail = Promise.resolve(true);
 
 function saveCurrentCenterNodeEditor() {
     if (!activeCenterNode?.path) return true;
 
-    const saveTask = kediCenterSaveTail
+    const saveTask = pisiCenterSaveTail
         .catch(() => false)
         .then(() => performCurrentCenterNodeEditorSave());
 
-    kediCenterSaveTail = saveTask;
+    pisiCenterSaveTail = saveTask;
     return saveTask;
 }
 
@@ -1324,12 +1324,12 @@ async function performCurrentCenterNodeEditorSave() {
         const oldPath = nodePath;
         const oldTitle = activeCenterNode.metadata?.title || '';
         const title = titleInput?.value?.trim() || oldTitle;
-        const content = getKediEditorContent(contentEditor);
+        const content = getPisiEditorContent(contentEditor);
 
         if (title && title !== oldTitle) {
             suppressNextFileSystemRefresh(3000);
 
-            const renameResult = await window.kediProject?.renameKediFile?.(
+            const renameResult = await window.pisiProject?.renamePisiFile?.(
                 nodePath,
                 title
             );
@@ -1359,12 +1359,12 @@ async function performCurrentCenterNodeEditorSave() {
             updateTreeItemAfterRename(oldPath, renameResult);
             updateOpenMapNodeAfterRename(oldPath, renameResult);
 
-            if (typeof updateKediOpenTabAfterRename === 'function') {
-                updateKediOpenTabAfterRename(oldPath, renameResult);
+            if (typeof updatePisiOpenTabAfterRename === 'function') {
+                updatePisiOpenTabAfterRename(oldPath, renameResult);
             }
         }
 
-        const saveResult = await window.kediProject?.saveNodeContent?.(
+        const saveResult = await window.pisiProject?.saveNodeContent?.(
             nodePath,
             content
         );
@@ -1383,10 +1383,10 @@ async function performCurrentCenterNodeEditorSave() {
             await refreshActiveMapTreeBranch();
         }
 
-        refreshKediTagsPanelSoon();
+        refreshPisiTagsPanelSoon();
         return true;
     } catch (error) {
-        console.error('[KEDI] Center node editor kaydetme hatası:', error);
+        console.error('[PISI] Center node editor kaydetme hatası:', error);
         alert('Node kaydedilirken hata oluştu: ' + error.message);
         return false;
     } finally {
@@ -1416,10 +1416,10 @@ function clearCenterNodeEditor() {
     }
 
     activeCenterNode = null;
-    closeKediTagMenu();
+    closePisiTagMenu();
 }
 
-async function flushKediPendingSaves() {
+async function flushPisiPendingSaves() {
     clearTimeout(centerNodeSaveTimer);
     clearTimeout(mapSaveTimer);
     clearTimeout(mapCameraSaveTimer);

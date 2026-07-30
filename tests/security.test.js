@@ -15,9 +15,9 @@ const mainSource = fs.readFileSync(
 
 function loadValidationApi(projectFolder) {
     const functionNames = [
-        'getKediFileExt',
-        'sanitizeKediBaseName',
-        'normalizeKediId',
+        'getPisiFileExt',
+        'sanitizePisiBaseName',
+        'normalizePisiId',
         'normalizePathForCompare',
         'isSameOrInsidePath',
         'assertNoSymbolicLinksBetween',
@@ -28,9 +28,9 @@ function loadValidationApi(projectFolder) {
         ${functionNames
             .map((name) => extractFunction(mainSource, name))
             .join('\n')}
-        globalThis.kediValidationApi = {
-            sanitizeKediBaseName,
-            normalizeKediId,
+        globalThis.pisiValidationApi = {
+            sanitizePisiBaseName,
+            normalizePisiId,
             assertProjectPath
         };
     `;
@@ -41,29 +41,29 @@ function loadValidationApi(projectFolder) {
     };
     vm.createContext(context);
     vm.runInContext(source, context);
-    return context.kediValidationApi;
+    return context.pisiValidationApi;
 }
 
-test('KEDI kimlikleri yol parçaları ve yanlış tür öneklerini reddeder', () => {
+test('PISI kimlikleri yol parçaları ve yanlış tür öneklerini reddeder', () => {
     const api = loadValidationApi(process.cwd());
 
-    assert.equal(api.normalizeKediId('node_safe-123', '.node'), 'node_safe-123');
-    assert.equal(api.normalizeKediId('../outside', '.node'), null);
-    assert.equal(api.normalizeKediId('node_..\\outside', '.node'), null);
-    assert.equal(api.normalizeKediId('map_safe', '.node'), null);
+    assert.equal(api.normalizePisiId('node_safe-123', '.node'), 'node_safe-123');
+    assert.equal(api.normalizePisiId('../outside', '.node'), null);
+    assert.equal(api.normalizePisiId('node_..\\outside', '.node'), null);
+    assert.equal(api.normalizePisiId('map_safe', '.node'), null);
 });
 
 test('Windows reserved adları güvenli dosya adına dönüştürülür', () => {
     const api = loadValidationApi(process.cwd());
 
-    assert.equal(api.sanitizeKediBaseName('CON'), '_CON');
-    assert.equal(api.sanitizeKediBaseName('LPT1.txt'), '_LPT1.txt');
-    assert.equal(api.sanitizeKediBaseName('../not:allowed'), '.._not_allowed');
+    assert.equal(api.sanitizePisiBaseName('CON'), '_CON');
+    assert.equal(api.sanitizePisiBaseName('LPT1.txt'), '_LPT1.txt');
+    assert.equal(api.sanitizePisiBaseName('../not:allowed'), '.._not_allowed');
 });
 
 test('proje yolu sınırı dış erişimi ve symlink kaçışını engeller', (t) => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'kedi-security-'));
-    const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'kedi-outside-'));
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-security-'));
+    const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-outside-'));
 
     t.after(() => {
         fs.rmSync(root, { recursive: true, force: true });

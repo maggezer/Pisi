@@ -12,7 +12,10 @@ module.exports = [
     {
         ignores: [
             'dist/**',
-            'node_modules/**'
+            'node_modules/**',
+    'android/**/build/**',
+    'android/.gradle/**',
+    '.gradle/**'
         ]
     },
     {
@@ -37,7 +40,14 @@ module.exports = [
                 process: 'readonly',
                 require: 'readonly',
                 setTimeout: 'readonly',
-                structuredClone: 'readonly'
+                structuredClone: 'readonly',
+        document: 'readonly',
+        fetch: 'readonly',
+        localStorage: 'readonly',
+        MutationObserver: 'readonly',
+        Node: 'readonly',
+        URL: 'readonly',
+        window: 'readonly'
             }
         },
         rules: {

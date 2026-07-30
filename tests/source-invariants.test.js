@@ -38,7 +38,7 @@ test('Electron güvenlik sınırları üretim ayarlarında korunur', () => {
 
 test('Paint geçici yükleme nitelikleri kalıcı HTML içine yazılmaz', () => {
     const app = read('app.js');
-    const workspace = read('renderer/kedi-map-workspace.js');
+    const workspace = read('renderer/pisi-map-workspace.js');
 
     assert.match(app, /removeAttribute\('data-image-loaded'\)/);
     assert.match(workspace, /removeAttribute\('data-image-loaded'\)/);
@@ -50,10 +50,10 @@ test('Paint geçici yükleme nitelikleri kalıcı HTML içine yazılmaz', () => 
 
 test('Paint PNG zemini ve ağaç yenilemesi görünür regresyon üretmez', () => {
     const app = read('app.js');
-    const tree = read('renderer/kedi-tree.js');
+    const tree = read('renderer/pisi-tree.js');
 
-    assert.match(app, /function resetKediCanvasToWhite\(/);
-    assert.match(app, /function ensureKediCanvasWhiteBackground\(/);
+    assert.match(app, /function resetPisiCanvasToWhite\(/);
+    assert.match(app, /function ensurePisiCanvasWhiteBackground\(/);
     assert.doesNotMatch(app, /globalCompositeOperation\s*=\s*['"]destination-out['"]/);
     assert.match(tree, /document\.createDocumentFragment\(\)/);
     assert.match(tree, /treeEl\.replaceChildren\(/);

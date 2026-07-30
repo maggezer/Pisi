@@ -54,7 +54,7 @@
           ]
         }
       ],
-      "icon": "assets/kedi.ico"
+      "icon": "assets/pisi.ico"
     },
     "nsis": {
       "oneClick": false,
