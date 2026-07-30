@@ -4,13 +4,18 @@ on:
   push:
     branches:
       - agent/pisi-full-rename-final
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
 
 jobs:
   rename:
-    if: github.event.head_commit.message == 'Trigger full Pisi rename'
+    if: >-
+      (github.event_name == 'push' && github.event.head_commit.message == 'Trigger full Pisi rename') ||
+      (github.event_name == 'pull_request' && github.head_ref == 'agent/pisi-full-rename-final')
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
