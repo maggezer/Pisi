@@ -1,4 +1,10 @@
 import { registerModule } from "../core/module-registry.mjs";
+import {
+    PISI_TODO_PRIORITY_OPTIONS,
+    formatPisiTodoTag,
+    getPisiTodoPriorityOption,
+    getPisiTodayIsoDate
+} from "./pisi-todo-utils.mjs";
 
 async function markPisiMissionDone(mission) {
     return setPisiMissionCompletion(mission, true);
@@ -78,6 +84,128 @@ const PISI_SYSTEM_TAGS = [
     { id: 'h5', label: 'h5', description: 'Heading 5', headingLevel: 5 }
 ];
 
+function isPisiTodoCommand(command) {
+    return String(command?.body || '').trim().toLowerCase() === 'todo';
+}
+
+function buildPisiTodoPriorityItems() {
+    return PISI_TODO_PRIORITY_OPTIONS.map((option) => ({
+        kind: 'todo-priority',
+        id: `todo-priority-${option.value}`,
+        label: String(option.value),
+        typedToken: String(option.value),
+        description: option.label,
+        priority: option.value
+    }));
+}
+
+function openPisiTodoPriorityMenu(editor, commandOverride = null) {
+    const command =
+        commandOverride ||
+        pisiTagMenuState.command ||
+        getPisiEditorCommandAtCaret(editor);
+
+    if (!command) return;
+
+    openPisiTagMenuForEditor(editor, {
+        ...command,
+        mode: 'todo-priority',
+        items: buildPisiTodoPriorityItems()
+    });
+}
+
+function openPisiTodoDateMenu(editor, priorityValue, commandOverride = null) {
+    const menu = document.getElementById('pisi-tag-menu');
+    const priority = getPisiTodoPriorityOption(priorityValue);
+    const command = commandOverride || pisiTagMenuState.command;
+
+    if (!menu || !priority || !command) return;
+
+    pisiTagMenuState = {
+        active: true,
+        mode: 'todo-date',
+        editor,
+        command,
+        selectedIndex: 0,
+        items: [],
+        todoPriority: priority.value
+    };
+
+    menu.innerHTML = `
+        <div class="pisi-todo-picker">
+            <div class="pisi-todo-picker-title">Finish date</div>
+            <div class="pisi-todo-priority-summary">
+                ${priority.value} — ${pisiEscapeHtml(priority.label)}
+            </div>
+            <input
+                class="pisi-todo-date-input"
+                type="date"
+                value="${getPisiTodayIsoDate()}"
+                aria-label="Todo finish date"
+            >
+            <div class="pisi-todo-picker-actions">
+                <button class="pisi-todo-back" type="button">Back</button>
+                <button class="pisi-todo-apply" type="button">Add</button>
+            </div>
+        </div>
+    `;
+
+    const dateInput = menu.querySelector('.pisi-todo-date-input');
+    const backButton = menu.querySelector('.pisi-todo-back');
+    const applyButton = menu.querySelector('.pisi-todo-apply');
+
+    const commitTodo = () => {
+        const todoTag = formatPisiTodoTag(priority.value, dateInput?.value);
+
+        if (!todoTag) {
+            dateInput?.setCustomValidity('Choose a valid date.');
+            dateInput?.reportValidity();
+            return;
+        }
+
+        dateInput.setCustomValidity('');
+        applyPisiUserTagToEditor(editor, todoTag, command);
+    };
+
+    dateInput?.addEventListener('mousedown', (event) => {
+        event.stopPropagation();
+    });
+    dateInput?.addEventListener('change', commitTodo);
+    dateInput?.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            commitTodo();
+        } else if (event.key === 'Escape') {
+            event.preventDefault();
+            closePisiTagMenu();
+            editor.focus();
+        }
+    });
+
+    backButton?.addEventListener('mousedown', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        openPisiTodoPriorityMenu(editor, command);
+    });
+
+    applyButton?.addEventListener('mousedown', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        commitTodo();
+    });
+
+    menu.hidden = false;
+    positionPisiTagMenuAtSelection();
+
+    dateInput?.focus({ preventScroll: true });
+    try {
+        dateInput?.showPicker?.();
+    } catch {
+        // Native picker may require a direct user gesture; the input remains usable.
+    }
+}
+
+
 function bindPisiTagControls() {
     const menu = document.getElementById('pisi-tag-menu');
 
@@ -147,6 +275,12 @@ function bindPisiTagControlsForEditor(editor) {
         if (event.key === ' ') {
             const command = getPisiEditorCommandAtCaret(editor);
 
+            if (isPisiTodoCommand(command)) {
+                event.preventDefault();
+                openPisiTodoPriorityMenu(editor, command);
+                return;
+            }
+
             if (command && command.body && !getExactPisiSystemTag(command.body)) {
                 event.preventDefault();
                 applyPisiUserTagToEditor(editor, command.body, command);
@@ -197,6 +331,11 @@ function updatePisiTagMenuForEditor(editor, allowExactTransform) {
 
     if (!command) {
         closePisiTagMenu();
+        return;
+    }
+
+    if (isPisiTodoCommand(command)) {
+        openPisiTodoPriorityMenu(editor, command);
         return;
     }
 
@@ -273,6 +412,16 @@ function buildPisiTagMenuItems(command) {
     const lowerBody = body.toLowerCase();
     const items = [];
 
+    if (!body.includes('.') && 'todo'.startsWith(lowerBody)) {
+        items.push({
+            kind: 'todo-start',
+            id: 'todo',
+            label: 'todo',
+            typedToken: `${command.trigger}todo`,
+            description: 'Task'
+        });
+    }
+
     const systemItems = PISI_SYSTEM_TAGS
         .filter((item) => {
             if (body.includes('.')) return false;
@@ -290,6 +439,7 @@ function buildPisiTagMenuItems(command) {
     items.push(...systemItems);
 
     const userItems = collectPisiUserTagSuggestions(command.editor)
+        .filter((tag) => !/^todo(?:\.|$)/i.test(tag))
         .filter((tag) => {
             if (!body) return true;
             return tag.toLowerCase().startsWith(lowerBody);
@@ -363,10 +513,12 @@ function openPisiTagMenuForEditor(editor, command) {
 
     pisiTagMenuState = {
         active: true,
+        mode: command.mode || 'tags',
         editor,
         command,
         selectedIndex: 0,
-        items: command.items
+        items: command.items,
+        todoPriority: null
     };
 
     menu.innerHTML = '';
@@ -403,6 +555,18 @@ function openPisiTagMenuForEditor(editor, command) {
 function applyPisiTagMenuItem(editor, item) {
     if (!item) return;
 
+    const command = pisiTagMenuState.command;
+
+    if (item.kind === 'todo-start') {
+        openPisiTodoPriorityMenu(editor, command);
+        return;
+    }
+
+    if (item.kind === 'todo-priority') {
+        openPisiTodoDateMenu(editor, item.priority, command);
+        return;
+    }
+
     if (item.kind === 'system') {
         applyPisiSystemTagToEditor(editor, item);
         return;
@@ -421,10 +585,12 @@ function closePisiTagMenu() {
 
     pisiTagMenuState = {
         active: false,
+        mode: null,
         editor: null,
         command: null,
         selectedIndex: 0,
-        items: []
+        items: [],
+        todoPriority: null
     };
 }
 

@@ -59,10 +59,12 @@
             pisiTagMenuState:
                 previousState.pisiTagMenuState ?? {
                     active: false,
-                    command: '',
-                    range: null,
+                    mode: null,
+                    editor: null,
+                    command: null,
                     items: [],
-                    selectedIndex: 0
+                    selectedIndex: 0,
+                    todoPriority: null
                 },
 
             openTabs: Array.isArray(previousState.openTabs)

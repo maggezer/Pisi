@@ -1,4 +1,5 @@
 import { registerModule } from "../core/module-registry.mjs";
+import { parsePisiTodoTagValue } from "./pisi-todo-utils.mjs";
 
 function ensurePisiTagsPanelDom() {
     const panel = document.getElementById('pisi-tags-panel');
@@ -186,49 +187,7 @@ const tags = Array.from(counts.keys()).sort((a, b) => {
 }
 
 function parsePisiTodoTag(tag) {
-    const normalized = normalizePisiUserTag(tag);
-
-    const match = normalized.match(
-        /^todo\.([1-9])\.(\d{2})-(\d{2})-(\d{2}|\d{4})$/
-    );
-
-    if (!match) return null;
-
-    const priority = Number(match[1]);
-    const day = Number(match[2]);
-    const month = Number(match[3]);
-    const year = match[4].length === 2
-        ? 2000 + Number(match[4])
-        : Number(match[4]);
-
-    const finishDate = new Date(year, month - 1, day);
-
-    if (
-        finishDate.getFullYear() !== year ||
-        finishDate.getMonth() !== month - 1 ||
-        finishDate.getDate() !== day
-    ) {
-        return null;
-    }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    finishDate.setHours(0, 0, 0, 0);
-
-    const daysLeft = Math.floor(
-        (finishDate.getTime() - today.getTime()) / 86400000
-    );
-
-    const workorder = daysLeft / priority;
-
-    return {
-        tag: normalized,
-        priority,
-        finishDate,
-        daysLeft,
-        workorder
-    };
+    return parsePisiTodoTagValue(normalizePisiUserTag(tag));
 }
 
 function formatPisiMissionDate(date) {
@@ -268,6 +227,8 @@ function getPisiMissionsFromIndex(options = {}) {
                 ...block,
                 todoTag: todo.tag,
                 priority: todo.priority,
+                priorityLabel: todo.priorityLabel,
+                rawPriority: todo.rawPriority,
                 finishDate: todo.finishDate,
                 daysLeft: todo.daysLeft,
                 workorder: todo.workorder,
@@ -406,6 +367,9 @@ function renderPisiMissionsPanel() {
                 <div class="pisi-mission-meta">
                     <span class="${isLate ? 'late' : ''}">
                         ${formatPisiMissionDate(mission.finishDate)}
+                    </span>
+                    <span class="pisi-mission-priority" data-priority="${mission.priority}">
+                        priority: ${mission.priority} ${escapeHtml(mission.priorityLabel)}
                     </span>
                     <span>workorder: ${mission.workorder.toFixed(2)}</span>
                 </div>
