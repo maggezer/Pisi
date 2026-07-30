@@ -301,14 +301,24 @@ function ensurePisiDiaryFolder(projectFolder) {
     const diaryFolder = path.join(projectFolder, 'diary');
     const markerPath = path.join(diaryFolder, '.pisi-diary');
 
-    if (
-        fs.existsSync(diaryFolder) &&
-        !isPisiManagedDiaryFolder(diaryFolder)
-    ) {
-        return {
-            ok: false,
-            error: 'Projedeki mevcut "diary" klasörü PISI tarafından yönetilmiyor. Kullanıcı klasörünü korumak için işlem durduruldu.'
-        };
+    if (fs.existsSync(diaryFolder)) {
+        const diaryStat = fs.statSync(diaryFolder);
+
+        if (!diaryStat.isDirectory()) {
+            return {
+                ok: false,
+                error: 'Projedeki mevcut "diary" yolu bir klasör değil. Kullanıcı verisini korumak için işlem durduruldu.'
+            };
+        }
+
+        const diaryFolderIsEmpty = fs.readdirSync(diaryFolder).length === 0;
+
+        if (!diaryFolderIsEmpty && !isPisiManagedDiaryFolder(diaryFolder)) {
+            return {
+                ok: false,
+                error: 'Projedeki mevcut "diary" klasörü PISI tarafından yönetilmiyor. Kullanıcı klasörünü korumak için işlem durduruldu.'
+            };
+        }
     }
 
     markInternalFileChange(diaryFolder);
