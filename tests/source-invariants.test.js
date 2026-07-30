@@ -31,6 +31,26 @@ test('Electron güvenlik sınırları üretim ayarlarında korunur', () => {
     assert.doesNotMatch(html, /script-src[^;]*(?:'unsafe-inline'|'unsafe-eval')/);
 });
 
+test('Electron giriş dosyaları uygulama kökünden yüklenir', () => {
+    const electronIpc = read('main/functions/electron-ipc.js');
+    assert.match(
+        electronIpc,
+        /const PISI_APP_ROOT = path\.resolve\(__dirname, '\.\.', '\.\.'\);/
+    );
+    assert.match(
+        electronIpc,
+        /preload: path\.join\(PISI_APP_ROOT, 'preload\.js'\)/
+    );
+    assert.match(
+        electronIpc,
+        /loadFile\(path\.join\(PISI_APP_ROOT, 'index\.html'\)\)/
+    );
+    assert.doesNotMatch(
+        electronIpc,
+        /path\.join\(__dirname, '(?:preload\.js|index\.html)'\)/
+    );
+});
+
 test('Paint geçici yükleme nitelikleri kalıcı HTML içine yazılmaz', () => {
     const paintLoadCleanupCount = (
         rendererSource.match(/removeAttribute\('data-image-loaded'\)/g) || []
@@ -44,13 +64,13 @@ test('Paint PNG zemini ve ağaç yenilemesi görünür regresyon üretmez', () =
     assert.match(editorSource, /function ensurePisiCanvasWhiteBackground\(/);
     assert.doesNotMatch(editorSource, /globalCompositeOperation\s*=\s*['"]destination-out['"]/);
     assert.match(treeSource, /document\.createDocumentFragment\(\)/);
-    assert.match(treeSource, /treeEl\.replaceChildren\(/);
+    assert.match(treeSource, /treeEl\.replaceChildren\(\)/);
 });
 
 test('renderer yalnızca tek ES module bootstrap üzerinden yüklenir', () => {
     const html = read('index.html');
     assert.match(html, /<script type="module" src="renderer\/bootstrap\.mjs"><\/script>/);
-    assert.doesNotMatch(html, /<script src="(?:app|renderer\/[^"]+)\.js"><\/script>/);
+    assert.doesNotMatch(html, /<script src="(?:app|renderer\/[^\"]+)\.js"><\/script>/);
 });
 
 test('preload API anahtarları ve kritik DOM kontrolleri tekildir', () => {
