@@ -42,6 +42,23 @@ for file_name, file_replacements in repairs.items():
         text = text.replace(old, new)
     file_path.write_text(text, encoding='utf-8')
 
+test_path = Path('tests/source-invariants.test.js')
+test_source = test_path.read_text(encoding='utf-8')
+old_paint_assertions = """    assert.match(editorSource, /removeAttribute\\('data-image-loaded'\\)/);
+    assert.match(mapSource, /removeAttribute\\('data-image-loaded'\\)/);
+"""
+new_paint_assertions = """    const paintLoadCleanupCount = (
+        rendererSource.match(/removeAttribute\\('data-image-loaded'\\)/g) || []
+    ).length;
+    assert.ok(paintLoadCleanupCount >= 2);
+"""
+if old_paint_assertions not in test_source:
+    raise SystemExit('Paint source invariant fragment was not found.')
+test_path.write_text(
+    test_source.replace(old_paint_assertions, new_paint_assertions),
+    encoding='utf-8'
+)
+
 eslint_template = Path('scripts/eslint-config-template.txt')
 if not eslint_template.exists():
     raise SystemExit('ESLint template is missing.')
