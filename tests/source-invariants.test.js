@@ -15,6 +15,7 @@ const mapSource = readMany(collect('renderer/map', '.mjs'));
 const editorSource = readMany(collect('renderer/editor', '.mjs'));
 const tagIndexSource = read('renderer/tags/pisi-tag-index.mjs');
 const mapWorkspaceSource = read('renderer/map/pisi-map-workspace.mjs');
+const nodeEditorSource = read('renderer/editor/pisi-node-editor.mjs');
 
 test('renderer formülleri eval veya Function constructor kullanmaz', () => {
     assert.doesNotMatch(rendererSource, /\beval\s*\(/);
@@ -71,6 +72,17 @@ test('editör normalizasyonu caret konumunu korur', () => {
         /ensurePisiEditorBlocks\(normalizedEditor, \{[\s\S]*?preserveSelection: false/
     );
     assert.doesNotMatch(contentFunction, /ensurePisiEditorBlocks\(editor\)/);
+});
+
+test('Enter ile boş satır korunur ve belge sonunda açılır', () => {
+    assert.match(tagIndexSource, /function getPisiEditorNodePath\(/);
+    assert.match(tagIndexSource, /function resolvePisiEditorNodePath\(/);
+    assert.match(tagIndexSource, /nodePath: getPisiEditorNodePath\(editor, container\)/);
+    assert.match(tagIndexSource, /function resolvePisiEditorSelectionPoint\(/);
+    assert.match(nodeEditorSource, /function focusPisiEditorAtEnd\(/);
+    assert.match(nodeEditorSource, /range\.collapse\(false\)/);
+    assert.match(nodeEditorSource, /focusPisiEditorAtEnd\(contentInput\)/);
+    assert.match(nodeEditorSource, /focusPisiEditorAtEnd\(contentEditor\)/);
 });
 
 test('Paint geçici yükleme nitelikleri kalıcı HTML içine yazılmaz', () => {

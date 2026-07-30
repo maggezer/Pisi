@@ -65,84 +65,95 @@ function decoratePisiEditorBlock(element) {
     }
 }
 
+function getPisiEditorNodePath(editor, node) {
+    const nodePath = [];
+    let current = node;
+    while (current && current !== editor) {
+        const parent = current.parentNode;
+        if (!parent) return null;
+        const index = Array.prototype.indexOf.call(parent.childNodes, current);
+        if (index < 0) return null;
+        nodePath.unshift(index);
+        current = parent;
+    }
+    return current === editor ? nodePath : null;
+}
+
+function resolvePisiEditorNodePath(editor, nodePath) {
+    if (!Array.isArray(nodePath)) return null;
+    let current = editor;
+    for (const index of nodePath) {
+        if (!current?.childNodes || index < 0 || index >= current.childNodes.length) return null;
+        current = current.childNodes[index];
+    }
+    return current;
+}
+
 function capturePisiEditorSelection(editor) {
     const selection = window.getSelection?.();
-
     if (!selection || selection.rangeCount === 0) return null;
-
     const range = selection.getRangeAt(0);
+    if (!editor.contains(range.startContainer) || !editor.contains(range.endContainer)) return null;
 
-    if (
-        !editor.contains(range.startContainer) ||
-        !editor.contains(range.endContainer)
-    ) {
-        return null;
-    }
-
-    const getTextOffset = (container, offset) => {
+    const makePoint = (container, offset) => {
         const prefix = range.cloneRange();
         prefix.selectNodeContents(editor);
         prefix.setEnd(container, offset);
-        return prefix.toString().length;
+        return {
+            nodePath: getPisiEditorNodePath(editor, container),
+            offset,
+            textOffset: prefix.toString().length
+        };
     };
-
     return {
-        start: getTextOffset(range.startContainer, range.startOffset),
-        end: getTextOffset(range.endContainer, range.endOffset)
+        start: makePoint(range.startContainer, range.startOffset),
+        end: makePoint(range.endContainer, range.endOffset)
     };
 }
 
 function resolvePisiEditorTextPosition(editor, targetOffset) {
-    const walker = document.createTreeWalker(
-        editor,
-        NodeFilter.SHOW_TEXT
-    );
+    const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
     let remaining = Math.max(0, Number(targetOffset) || 0);
     let lastTextNode = null;
-
     while (walker.nextNode()) {
         const textNode = walker.currentNode;
         const length = textNode.nodeValue?.length || 0;
         lastTextNode = textNode;
-
-        if (remaining <= length) {
-            return {
-                node: textNode,
-                offset: remaining
-            };
-        }
-
+        if (remaining <= length) return { node: textNode, offset: remaining };
         remaining -= length;
     }
-
     if (lastTextNode) {
-        return {
-            node: lastTextNode,
-            offset: lastTextNode.nodeValue?.length || 0
-        };
+        return { node: lastTextNode, offset: lastTextNode.nodeValue?.length || 0 };
     }
-
-    const fallback =
-        editor.querySelector?.('.pisi-editor-block') ||
-        editor.firstElementChild ||
-        editor;
-
     return {
-        node: fallback,
+        node: editor.querySelector?.('.pisi-editor-block') || editor.firstElementChild || editor,
         offset: 0
     };
 }
 
+function isValidPisiEditorRangeOffset(node, offset) {
+    if (!node || !Number.isInteger(offset) || offset < 0) return false;
+    const limit = node.nodeType === Node.TEXT_NODE
+        ? node.nodeValue?.length || 0
+        : node.childNodes?.length || 0;
+    return offset <= limit;
+}
+
+function resolvePisiEditorSelectionPoint(editor, point) {
+    const pathNode = resolvePisiEditorNodePath(editor, point?.nodePath);
+    if (isValidPisiEditorRangeOffset(pathNode, point?.offset)) {
+        return { node: pathNode, offset: point.offset };
+    }
+    return resolvePisiEditorTextPosition(editor, point?.textOffset);
+}
+
 function restorePisiEditorSelection(editor, snapshot) {
     if (!snapshot) return;
-
     const selection = window.getSelection?.();
     if (!selection) return;
-
-    const start = resolvePisiEditorTextPosition(editor, snapshot.start);
-    const end = resolvePisiEditorTextPosition(editor, snapshot.end);
+    const start = resolvePisiEditorSelectionPoint(editor, snapshot.start);
+    const end = resolvePisiEditorSelectionPoint(editor, snapshot.end);
     const range = document.createRange();
-
     try {
         range.setStart(start.node, start.offset);
         range.setEnd(end.node, end.offset);
