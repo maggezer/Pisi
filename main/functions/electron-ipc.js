@@ -179,10 +179,35 @@ function isProcessAlive(pid) {
     }
 }
 
+function migrateLegacyProjectLock(folderPath) {
+    const legacyLockPath = path.join(folderPath, '.kedi.lock');
+    if (!fs.existsSync(legacyLockPath)) return { ok: true };
+
+    let legacyLock = null;
+    try {
+        legacyLock = JSON.parse(fs.readFileSync(legacyLockPath, 'utf-8'));
+    } catch {}
+
+    if (legacyLock?.pid && isProcessAlive(Number(legacyLock.pid))) {
+        return {
+            ok: false,
+            error: `Bu proje eski uygulamanın çalışan bir süreci tarafından kullanılıyor (PID ${legacyLock.pid}).`
+        };
+    }
+
+    markInternalFileChange(legacyLockPath);
+    fs.unlinkSync(legacyLockPath);
+    sealInternalFileChange(legacyLockPath);
+    return { ok: true };
+}
+
 function acquireProjectLock(folderPath) {
     const lockPath = path.join(folderPath, '.pisi.lock');
 
     try {
+        const legacyLockResult = migrateLegacyProjectLock(folderPath);
+        if (!legacyLockResult.ok) return legacyLockResult;
+
         if (fs.existsSync(lockPath)) {
             let existingLock = null;
 

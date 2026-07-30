@@ -60,6 +60,9 @@ function addLegacyNameErrors(file, content) {
     let checked = content;
     checked = countCompatibility('Eski diary klasör işaretçisi (.kedi-diary)', checked, /\.kedi-diary/gi);
     checked = countCompatibility('Eski diary metadata alanı (kedi.diaryDate)', checked, /\bkedi\.diaryDate\b/gi);
+    checked = countCompatibility('Eski belge metadata alanı (data.kedi)', checked, /\bdata\.kedi\b/gi);
+    checked = countCompatibility('Eski ayar dosyası (kedi-settings.json)', checked, /kedi-settings\.json/gi);
+    checked = countCompatibility('Eski proje kilidi (.kedi.lock)', checked, /\.kedi\.lock/gi);
     checked = checked.replace(/https?:\/\/github\.com\/maggezer\/Kedi\b/gi, '');
 
     const lines = checked.split(/\r?\n/);
