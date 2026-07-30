@@ -1,0 +1,45 @@
+name: Fix editor caret regression
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.event.pull_request.head.ref == 'agent/fix-editor-caret-regression'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout fix branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/fix-editor-caret-regression
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Apply caret fix
+        run: node scripts/fix-editor-caret-regression.cjs
+
+      - name: Validate project
+        run: npm run validate
+
+      - name: Remove one-time files
+        run: |
+          rm -f scripts/fix-editor-caret-regression.cjs
+          rm -f .github/caret-fix-trigger
+          rm -f .github/workflows/fix-editor-caret.yml
+
+      - name: Commit fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add renderer/tags/pisi-tag-index.mjs renderer/map/pisi-map-workspace.mjs tests/source-invariants.test.js scripts .github
+          git commit -m "Preserve caret during editor normalization"
+          git push origin HEAD:agent/fix-editor-caret-regression
