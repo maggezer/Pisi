@@ -14,7 +14,6 @@ import "./editor/pisi-node-editor.mjs";
 import "./tags/pisi-tag-index.mjs";
 import "./tags/pisi-tag-panels.mjs";
 import "./tags/pisi-tag-editor.mjs";
-import "./calendar/pisi-calendar.mjs";
 import "./editor/pisi-node-preview.mjs";
 import "./map/pisi-map-interactions.mjs";
 import "./map/pisi-map-edges.mjs";
