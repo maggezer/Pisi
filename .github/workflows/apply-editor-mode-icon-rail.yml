@@ -21,6 +21,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Normalize codemod template quoting
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          path = Path('scripts/apply-editor-mode-icon-rail.js')
+          source = path.read_text(encoding='utf-8')
+          source = source.replace(
+              "assert.ok(fs.existsSync(path.join(root, asset)), `Eksik editör modu ikonu: ${asset}`);",
+              "assert.ok(fs.existsSync(path.join(root, asset)), 'Eksik editör modu ikonu: ' + asset);"
+          )
+          path.write_text(source, encoding='utf-8')
+          PY
+          node --check scripts/apply-editor-mode-icon-rail.js
+
       - name: Apply editor mode rail
         run: node scripts/apply-editor-mode-icon-rail.js
 
