@@ -31,76 +31,59 @@ jobs:
           from pathlib import Path
 
           operations_path = Path('main/functions/project-operations.js')
-          operations = operations_path.read_text(encoding='utf-8')
-          old_marker_check = """    if (fs.existsSync(path.join(folderPath, '.pisi-diary'))) {
-                  return true;
-              }
-          """
-          new_marker_check = """    if (
-                  fs.existsSync(path.join(folderPath, '.pisi-diary')) ||
-                  fs.existsSync(path.join(folderPath, '.kedi-diary'))
-              ) {
-                  return true;
-              }
-          """
-          if old_marker_check not in operations:
-              raise SystemExit('Diary marker check fragment was not found.')
-          operations = operations.replace(old_marker_check, new_marker_check, 1)
+          operations = operations_path.read_text(encoding='utf-8').replace('\r\n', '\n')
+          old_expression = "fs.existsSync(path.join(folderPath, '.pisi-diary'))"
+          new_expression = """fs.existsSync(path.join(folderPath, '.pisi-diary')) ||
+                  fs.existsSync(path.join(folderPath, '.kedi-diary'))"""
+          if new_expression not in operations:
+              if old_expression not in operations:
+                  raise SystemExit('Diary marker expression was not found.')
+              operations = operations.replace(old_expression, new_expression, 1)
           operations_path.write_text(operations, encoding='utf-8')
 
           store_path = Path('main/functions/document-store.js')
-          store = store_path.read_text(encoding='utf-8')
-          old_guard = """    if (
-                  fs.existsSync(diaryFolder) &&
-                  !isPisiManagedDiaryFolder(diaryFolder)
-              ) {
+          store = store_path.read_text(encoding='utf-8').replace('\r\n', '\n')
+          new_guard = """    if (fs.existsSync(diaryFolder)) {
+              const diaryStat = fs.statSync(diaryFolder);
+
+              if (!diaryStat.isDirectory()) {
+                  return {
+                      ok: false,
+                      error: 'Projedeki mevcut \"diary\" yolu bir klasör değil. Kullanıcı verisini korumak için işlem durduruldu.'
+                  };
+              }
+
+              const diaryFolderIsEmpty = fs.readdirSync(diaryFolder).length === 0;
+
+              if (!diaryFolderIsEmpty && !isPisiManagedDiaryFolder(diaryFolder)) {
                   return {
                       ok: false,
                       error: 'Projedeki mevcut \"diary\" klasörü PISI tarafından yönetilmiyor. Kullanıcı klasörünü korumak için işlem durduruldu.'
                   };
               }
-          """
-          new_guard = """    if (fs.existsSync(diaryFolder)) {
-                  const diaryStat = fs.statSync(diaryFolder);
-
-                  if (!diaryStat.isDirectory()) {
-                      return {
-                          ok: false,
-                          error: 'Projedeki mevcut \"diary\" yolu bir klasör değil. Kullanıcı verisini korumak için işlem durduruldu.'
-                      };
-                  }
-
-                  const diaryFolderIsEmpty = fs.readdirSync(diaryFolder).length === 0;
-
-                  if (!diaryFolderIsEmpty && !isPisiManagedDiaryFolder(diaryFolder)) {
-                      return {
-                          ok: false,
-                          error: 'Projedeki mevcut \"diary\" klasörü PISI tarafından yönetilmiyor. Kullanıcı klasörünü korumak için işlem durduruldu.'
-                      };
-                  }
-              }
-          """
-          if old_guard not in store:
-              raise SystemExit('Diary safety guard fragment was not found.')
-          store = store.replace(old_guard, new_guard, 1)
+          }"""
+          if 'const diaryFolderIsEmpty = fs.readdirSync(diaryFolder).length === 0;' not in store:
+              start = store.find("    if (\n        fs.existsSync(diaryFolder) &&")
+              end_marker = "\n\n    markInternalFileChange(diaryFolder);"
+              end = store.find(end_marker, start)
+              if start == -1 or end == -1:
+                  raise SystemExit('Diary safety guard boundaries were not found.')
+              store = store[:start] + new_guard + store[end:]
           store_path.write_text(store, encoding='utf-8')
 
           tests_path = Path('tests/data-integrity.test.js')
-          tests = tests_path.read_text(encoding='utf-8')
-          old_context = """        markInternalFileChange() {},
-                  writeFileAtomic(filePath, content) {
-          """
-          new_context = """        markInternalFileChange() {},
-                  sealInternalFileChange() {},
-                  writeFileAtomic(filePath, content) {
-          """
-          if old_context not in tests:
-              raise SystemExit('Test helper context fragment was not found.')
-          tests = tests.replace(old_context, new_context, 1)
+          tests = tests_path.read_text(encoding='utf-8').replace('\r\n', '\n')
+          old_context = "        markInternalFileChange() {},\n        writeFileAtomic(filePath, content) {"
+          new_context = "        markInternalFileChange() {},\n        sealInternalFileChange() {},\n        writeFileAtomic(filePath, content) {"
+          if 'sealInternalFileChange() {}' not in tests:
+              if old_context not in tests:
+                  raise SystemExit('Test helper context fragment was not found.')
+              tests = tests.replace(old_context, new_context, 1)
 
-          insertion_point = """test('watcher PISI kaydını dış değişiklikten dosya imzasıyla ayırır', (t) => {
-          """
-          migration_test = r"""test('boş ve eski işaretçili diary klasörleri güvenle Pisi yönetimine alınır', (t) => {
+          test_name = "boş ve eski işaretçili diary klasörleri güvenle Pisi yönetimine alınır"
+          if test_name not in tests:
+              insertion_point = "test('watcher PISI kaydını dış değişiklikten dosya imzasıyla ayırır', (t) => {"
+              migration_test = r"""test('boş ve eski işaretçili diary klasörleri güvenle Pisi yönetimine alınır', (t) => {
               const projectFolders = [];
               t.after(() => {
                   for (const folder of projectFolders) {
@@ -156,9 +139,9 @@ jobs:
           });
 
           """
-          if insertion_point not in tests:
-              raise SystemExit('Diary migration test insertion point was not found.')
-          tests = tests.replace(insertion_point, migration_test + insertion_point, 1)
+              if insertion_point not in tests:
+                  raise SystemExit('Diary migration test insertion point was not found.')
+              tests = tests.replace(insertion_point, migration_test + insertion_point, 1)
           tests_path.write_text(tests, encoding='utf-8')
           PY
 
@@ -176,5 +159,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add main/functions/project-operations.js main/functions/document-store.js tests/data-integrity.test.js .github
+          if git diff --cached --quiet; then
+            exit 0
+          fi
           git commit -m "Migrate safe legacy diary folders"
           git push origin HEAD:agent/fix-diary-migration
