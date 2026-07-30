@@ -31,6 +31,10 @@ fs.writeFileSync(cssPath, css, 'utf8');
 
 const testPath = 'tests/source-invariants.test.js';
 let tests = fs.readFileSync(testPath, 'utf8');
+tests = tests
+    .replace(/\n\s*assert\.match\(html, \/id="center-node-editor-title"\/\);/, '')
+    .replace(/\n\s*assert\.match\(html, \/id="center-node-editor-save"\/\);/, '');
+
 const cleanupTest = `test('merkez node editöründe başlık ve kaydet şeridi bulunmaz', () => {
     const html = read('index.html');
     const editorCss = read('styles/40-editor.css');
