@@ -85,6 +85,20 @@ test('Enter ile boş satır korunur ve belge sonunda açılır', () => {
     assert.match(nodeEditorSource, /focusPisiEditorAtEnd\(contentEditor\)/);
 });
 
+test('merkez node editöründe başlık ve kaydet şeridi bulunmaz', () => {
+    const html = read('index.html');
+    const editorCss = read('styles/40-editor.css');
+
+    assert.doesNotMatch(
+        html,
+        /center-node-editor-(?:header|title|save)/
+    );
+    assert.doesNotMatch(
+        editorCss,
+        /#center-node-editor-(?:header|title|save)/
+    );
+});
+
 test('Paint geçici yükleme nitelikleri kalıcı HTML içine yazılmaz', () => {
     const paintLoadCleanupCount = (
         rendererSource.match(/removeAttribute\('data-image-loaded'\)/g) || []
@@ -130,8 +144,6 @@ test('preload API anahtarları ve kritik DOM kontrolleri tekildir', () => {
     assert.equal((preload.match(/deleteNodeFromMap\s*:/g) || []).length, 1);
     assert.match(html, /id="node-modal-close"/);
     assert.match(html, /id="node-modal-title"/);
-    assert.match(html, /id="center-node-editor-title"/);
-    assert.match(html, /id="center-node-editor-save"/);
 });
 
 test('kullanılmayan production paketleri geri eklenmez', () => {
