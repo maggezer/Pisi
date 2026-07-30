@@ -1,5 +1,6 @@
 'use strict';
 
+// Keeps module ownership, file-size limits and CSS cascade rules enforceable in CI.
 const fs = require('fs');
 const path = require('path');
 const root = path.resolve(__dirname, '..');
@@ -59,7 +60,7 @@ const moduleScripts = [...html.matchAll(/<script[^>]+type="module"[^>]+src="([^"
 if (moduleScripts.length !== 1 || moduleScripts[0] !== 'renderer/bootstrap.mjs') {
     errors.push('Expected one renderer module bootstrap, found: ' + moduleScripts.join(', '));
 }
-if (/<script[^>]+src="(?:app|renderer\/[^"]+)\.js"/.test(html)) {
+if (/<script[^>]+src="(?:app|renderer\/[^\"]+)\.js"/.test(html)) {
     errors.push('Classic renderer scripts remain in index.html.');
 }
 
