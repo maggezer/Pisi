@@ -105,10 +105,7 @@ jobs:
           """
           duplicate_merge = """    const duplicates = [...remainingDuplicates.entries()].filter(([, count]) => count > 1);
               if (duplicates.length) {
-                  css = mergeCssSelectors(
-                      css,
-                      duplicates.map(([selector]) => selector)
-                  );
+                  css = mergeCssSelectors(css, duplicates.map(([selector]) => selector));
               }
 
               const unresolvedDuplicates = new Map();
@@ -181,6 +178,90 @@ jobs:
                       raise SystemExit(f'Generated newline fragment not found in {file_name}.')
                   text = text.replace(old, new)
               file_path.write_text(text, encoding='utf-8')
+
+          eslint_config = r"""'use strict';
+
+const fs = require('fs');
+const path = require('path');
+
+const correctnessRules = {
+    'no-constant-binary-expression': 'error',
+    'no-dupe-keys': 'error',
+    'no-redeclare': 'error',
+    'no-unreachable': 'error',
+    'no-unsafe-finally': 'error'
+};
+
+function loadManifestGlobals(relativePath) {
+    const filePath = path.join(__dirname, relativePath);
+    if (!fs.existsSync(filePath)) return {};
+    const manifest = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    return Object.fromEntries(
+        manifest.flatMap((entry) => entry.bindings || [])
+            .map((name) => [name, 'writable'])
+    );
+}
+
+const nodeGlobals = {
+    Buffer: 'readonly',
+    __dirname: 'readonly',
+    clearTimeout: 'readonly',
+    console: 'readonly',
+    exports: 'readonly',
+    globalThis: 'readonly',
+    module: 'readonly',
+    process: 'readonly',
+    require: 'readonly',
+    setTimeout: 'readonly',
+    structuredClone: 'readonly'
+};
+
+const preloadBrowserGlobals = {
+    document: 'readonly',
+    fetch: 'readonly',
+    localStorage: 'readonly',
+    MutationObserver: 'readonly',
+    Node: 'readonly',
+    URL: 'readonly',
+    window: 'readonly'
+};
+
+module.exports = [
+    {
+        ignores: [
+            'dist/**', 'node_modules/**', 'android/**/build/**',
+            'android/.gradle/**', '.gradle/**'
+        ]
+    },
+    {
+        files: ['eslint.config.js', 'preload.js', 'scripts/**/*.js', 'tests/**/*.js'],
+        languageOptions: {
+            ecmaVersion: 'latest',
+            sourceType: 'commonjs',
+            globals: { ...nodeGlobals, ...preloadBrowserGlobals }
+        },
+        rules: { ...correctnessRules, 'no-undef': 'error' }
+    },
+    {
+        files: ['main.js', 'main/**/*.js'],
+        languageOptions: {
+            ecmaVersion: 'latest',
+            sourceType: 'commonjs',
+            globals: {
+                ...nodeGlobals,
+                ...loadManifestGlobals('main/module-manifest.json')
+            }
+        },
+        rules: { ...correctnessRules, 'no-undef': 'error' }
+    },
+    {
+        files: ['renderer/**/*.mjs'],
+        languageOptions: { ecmaVersion: 'latest', sourceType: 'module' },
+        rules: correctnessRules
+    }
+];
+"""
+          Path('eslint.config.js').write_text(eslint_config, encoding='utf-8')
           PY
 
       - name: Remove one-time files
