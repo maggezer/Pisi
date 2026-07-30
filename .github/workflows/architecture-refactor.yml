@@ -22,6 +22,62 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
+      - name: Repair and verify one-time codemod
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          path = Path('scripts/refactor-architecture.js')
+          source = path.read_text(encoding='utf-8')
+          replacements = {
+              "throw new Error(`[PISI] Renderer module already registered: ${moduleName}`);":
+                  "throw new Error('[PISI] Renderer module already registered: ' + moduleName);",
+              "`[PISI] Renderer binding collision: ${key} (${previousOwner} / ${moduleName})`":
+                  "'[PISI] Renderer binding collision: ' + key + ' (' + previousOwner + ' / ' + moduleName + ')'",
+              "throw new Error(`[PISI] Renderer global already exists: ${key}`);":
+                  "throw new Error('[PISI] Renderer global already exists: ' + key);",
+              "throw new TypeError(`[PISI] Read-only renderer binding: ${key}`);":
+                  "throw new TypeError('[PISI] Read-only renderer binding: ' + key);",
+              "`[PISI] Main binding collision: ${key} (${previousOwner} / ${moduleName})`":
+                  "'[PISI] Main binding collision: ' + key + ' (' + previousOwner + ' / ' + moduleName + ')'",
+              "throw new Error(`[PISI] Main binding registered twice: ${moduleName}.${key}`);":
+                  "throw new Error('[PISI] Main binding registered twice: ' + moduleName + '.' + key);",
+              "throw new Error(`[PISI] Main global already exists: ${key}`);":
+                  "throw new Error('[PISI] Main global already exists: ' + key);",
+              "throw new TypeError(`[PISI] Read-only main binding: ${key}`);":
+                  "throw new TypeError('[PISI] Read-only main binding: ' + key);",
+              "else console.log(`${files.length} JavaScript/ES module dosyası sözdizimi kontrolünden geçti.`);":
+                  "else console.log(files.length + ' JavaScript/ES module dosyası sözdizimi kontrolünden geçti.');",
+              "errors.push(`Expected one renderer module bootstrap, found: ${moduleScripts.join(', ')}`);":
+                  "errors.push('Expected one renderer module bootstrap, found: ' + moduleScripts.join(', '));",
+              "errors.push(`Legacy renderer file remains: ${oldFile}`);":
+                  "errors.push('Legacy renderer file remains: ' + oldFile);",
+              "errors.push(`Duplicate module binding ${binding}: ${owners.get(binding)} / ${module.module}`);":
+                  "errors.push('Duplicate module binding ' + binding + ': ' + owners.get(binding) + ' / ' + module.module);",
+              "errors.push(`Renderer module too large (${lines}): ${file}`);":
+                  "errors.push('Renderer module too large (' + lines + '): ' + file);",
+              "if (lines > 1100) errors.push(`Main domain module too large (${lines}): ${file}`);":
+                  "if (lines > 1100) errors.push('Main domain module too large (' + lines + '): ' + file);",
+              "if (/!important\\b/.test(css)) errors.push(`!important remains in ${file}`);":
+                  "if (/!important\\b/.test(css)) errors.push('!important remains in ' + file);",
+              "errors.push(`Duplicate CSS selector ${selector}: ${selectorOwners.get(selector)} / ${file}`);":
+                  "errors.push('Duplicate CSS selector ' + selector + ': ' + selectorOwners.get(selector) + ' / ' + file);",
+              "const mainSource = `${read('main.js')}\\n${readMainSource()}\\n${read('main/runtime.js')}`;":
+                  "const mainSource = [read('main.js'), readMainSource(), read('main/runtime.js')].join('\\n');",
+          }
+
+          missing = [old for old in replacements if old not in source]
+          if missing:
+              raise SystemExit('Expected codemod fragments were not found:\n' + '\n'.join(missing))
+
+          for old, new in replacements.items():
+              source = source.replace(old, new)
+
+          path.write_text(source, encoding='utf-8')
+          PY
+          node --check scripts/refactor-architecture.js
+
       - name: Apply architecture refactor
         run: node scripts/refactor-architecture.js
 
