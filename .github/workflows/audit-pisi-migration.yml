@@ -1,0 +1,76 @@
+name: Audit Pisi migration
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  audit-and-fix:
+    if: github.event.pull_request.head.ref == 'agent/audit-pisi-migration'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout audit branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/audit-pisi-migration
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Report current migration state
+        run: node scripts/check-pisi-migration.js --report-only
+
+      - name: Repair icon root and enable permanent audit
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+
+          const runtimePath = 'main/runtime.js';
+          let runtime = fs.readFileSync(runtimePath, 'utf8');
+          const oldIcon = "const appIconPath = path.join(__dirname, 'assets', 'pisi.ico');";
+          const newIcon = "const appIconPath = path.join(app.getAppPath(), 'assets', 'pisi.ico');";
+          if (!runtime.includes(newIcon)) {
+            if (!runtime.includes(oldIcon)) {
+              throw new Error('Beklenen eski appIconPath tanımı bulunamadı.');
+            }
+            runtime = runtime.replace(oldIcon, newIcon);
+          }
+          fs.writeFileSync(runtimePath, runtime, 'utf8');
+
+          const packagePath = 'package.json';
+          const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+          packageJson.scripts['check:migration'] = 'node scripts/check-pisi-migration.js';
+          const validationSteps = [
+            'npm run check:syntax',
+            'npm run check:architecture',
+            'npm run check:migration',
+            'npm run lint',
+            'npm test'
+          ];
+          packageJson.scripts.validate = validationSteps.join(' && ');
+          fs.writeFileSync(packagePath, JSON.stringify(packageJson, null, 2) + '\n', 'utf8');
+          NODE
+
+      - name: Run strict migration audit
+        run: npm run check:migration
+
+      - name: Validate project
+        run: npm run validate
+
+      - name: Remove one-time workflow
+        run: rm -f .github/workflows/audit-pisi-migration.yml
+
+      - name: Commit verified migration fixes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add main/runtime.js package.json scripts/check-pisi-migration.js .github
+          git commit -m "Fix Pisi icon path and audit migration leftovers"
+          git push origin HEAD:agent/audit-pisi-migration
