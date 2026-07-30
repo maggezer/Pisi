@@ -1,0 +1,643 @@
+'use strict';
+
+const { registerMainModule } = require('./module-registry');
+
+const { app, BrowserWindow, Menu, ipcMain, dialog, screen, shell } = require('electron');
+
+const path = require('path');
+
+const fs = require('fs');
+
+const crypto = require('crypto');
+
+let mainWindow = null;
+
+
+const moduleApi1 = {};
+Object.defineProperties(moduleApi1, {
+    "mainWindow": {
+        enumerable: true,
+        get() { return mainWindow; },
+        set(value) { mainWindow = value; }
+    }
+});
+registerMainModule("main.runtime", moduleApi1);
+
+
+let allowWindowClose = false;
+
+
+const moduleApi2 = {};
+Object.defineProperties(moduleApi2, {
+    "allowWindowClose": {
+        enumerable: true,
+        get() { return allowWindowClose; },
+        set(value) { allowWindowClose = value; }
+    }
+});
+registerMainModule("main.runtime", moduleApi2);
+
+
+let closeRequestInFlight = false;
+
+
+const moduleApi3 = {};
+Object.defineProperties(moduleApi3, {
+    "closeRequestInFlight": {
+        enumerable: true,
+        get() { return closeRequestInFlight; },
+        set(value) { closeRequestInFlight = value; }
+    }
+});
+registerMainModule("main.runtime", moduleApi3);
+
+
+let closeRequestTimer = null;
+
+
+const moduleApi4 = {};
+Object.defineProperties(moduleApi4, {
+    "closeRequestTimer": {
+        enumerable: true,
+        get() { return closeRequestTimer; },
+        set(value) { closeRequestTimer = value; }
+    }
+});
+registerMainModule("main.runtime", moduleApi4);
+
+
+const recentInternalFileChanges = new Map();
+
+
+const moduleApi5 = {};
+Object.defineProperties(moduleApi5, {
+    "recentInternalFileChanges": {
+        enumerable: true,
+        get() { return recentInternalFileChanges; }
+    }
+});
+registerMainModule("main.runtime", moduleApi5);
+
+
+const PISI_INTERNAL_CHANGE_TTL_MS = 6000;
+
+
+const moduleApi6 = {};
+Object.defineProperties(moduleApi6, {
+    "PISI_INTERNAL_CHANGE_TTL_MS": {
+        enumerable: true,
+        get() { return PISI_INTERNAL_CHANGE_TTL_MS; }
+    }
+});
+registerMainModule("main.runtime", moduleApi6);
+
+
+const appIconPath = path.join(__dirname, 'assets', 'pisi.ico');
+
+
+const moduleApi7 = {};
+Object.defineProperties(moduleApi7, {
+    "appIconPath": {
+        enumerable: true,
+        get() { return appIconPath; }
+    }
+});
+registerMainModule("main.runtime", moduleApi7);
+
+
+if (process.platform === 'win32') {
+    app.setAppUserModelId('com.mumin.pisi');
+}
+
+scheduleWindowStateSave.timer = null;
+
+const PISI_CONNECTION_KEYS = [
+    'up-hub',
+    'down-hub',
+    'co-level',
+    'upstream',
+    'downstream'
+];
+
+
+const moduleApi8 = {};
+Object.defineProperties(moduleApi8, {
+    "PISI_CONNECTION_KEYS": {
+        enumerable: true,
+        get() { return PISI_CONNECTION_KEYS; }
+    }
+});
+registerMainModule("main.runtime", moduleApi8);
+
+
+const PISI_DIARY_MANAGED_START = '<!--PISI_DIARY_MANAGED_START-->';
+
+
+const moduleApi9 = {};
+Object.defineProperties(moduleApi9, {
+    "PISI_DIARY_MANAGED_START": {
+        enumerable: true,
+        get() { return PISI_DIARY_MANAGED_START; }
+    }
+});
+registerMainModule("main.runtime", moduleApi9);
+
+
+const PISI_DIARY_MANAGED_END = '<!--PISI_DIARY_MANAGED_END-->';
+
+
+const moduleApi10 = {};
+Object.defineProperties(moduleApi10, {
+    "PISI_DIARY_MANAGED_END": {
+        enumerable: true,
+        get() { return PISI_DIARY_MANAGED_END; }
+    }
+});
+registerMainModule("main.runtime", moduleApi10);
+
+
+let activeProjectFolder = null;
+
+
+const moduleApi11 = {};
+Object.defineProperties(moduleApi11, {
+    "activeProjectFolder": {
+        enumerable: true,
+        get() { return activeProjectFolder; },
+        set(value) { activeProjectFolder = value; }
+    }
+});
+registerMainModule("main.runtime", moduleApi11);
+
+
+let activeProjectLockPath = null;
+
+
+const moduleApi12 = {};
+Object.defineProperties(moduleApi12, {
+    "activeProjectLockPath": {
+        enumerable: true,
+        get() { return activeProjectLockPath; },
+        set(value) { activeProjectLockPath = value; }
+    }
+});
+registerMainModule("main.runtime", moduleApi12);
+
+
+const pisiInstanceId = crypto.randomUUID();
+
+
+const moduleApi13 = {};
+Object.defineProperties(moduleApi13, {
+    "pisiInstanceId": {
+        enumerable: true,
+        get() { return pisiInstanceId; }
+    }
+});
+registerMainModule("main.runtime", moduleApi13);
+
+
+const projectWatchers = new Map();
+
+
+const moduleApi14 = {};
+Object.defineProperties(moduleApi14, {
+    "projectWatchers": {
+        enumerable: true,
+        get() { return projectWatchers; }
+    }
+});
+registerMainModule("main.runtime", moduleApi14);
+
+
+let projectWatchTimer = null;
+
+
+const moduleApi15 = {};
+Object.defineProperties(moduleApi15, {
+    "projectWatchTimer": {
+        enumerable: true,
+        get() { return projectWatchTimer; },
+        set(value) { projectWatchTimer = value; }
+    }
+});
+registerMainModule("main.runtime", moduleApi15);
+
+
+let projectWatcherRescanTimer = null;
+
+
+const moduleApi16 = {};
+Object.defineProperties(moduleApi16, {
+    "projectWatcherRescanTimer": {
+        enumerable: true,
+        get() { return projectWatcherRescanTimer; },
+        set(value) { projectWatcherRescanTimer = value; }
+    }
+});
+registerMainModule("main.runtime", moduleApi16);
+
+
+const pendingProjectChangedPaths = new Set();
+
+
+const moduleApi17 = {};
+Object.defineProperties(moduleApi17, {
+    "pendingProjectChangedPaths": {
+        enumerable: true,
+        get() { return pendingProjectChangedPaths; }
+    }
+});
+registerMainModule("main.runtime", moduleApi17);
+
+
+ipcMain.on('window:minimize', () => {
+    if (mainWindow) mainWindow.minimize();
+});
+
+ipcMain.on('window:toggle-maximize', () => {
+    if (!mainWindow) return;
+
+    if (mainWindow.isMaximized()) {
+        mainWindow.unmaximize();
+    } else {
+        mainWindow.maximize();
+    }
+});
+
+ipcMain.on('window:close', () => {
+    if (mainWindow) mainWindow.close();
+});
+
+ipcMain.on('window:close-ready', (_event, result) => {
+    clearTimeout(closeRequestTimer);
+    closeRequestTimer = null;
+    closeRequestInFlight = false;
+
+    if (!result?.ok || !mainWindow || mainWindow.isDestroyed()) {
+        return;
+    }
+
+    allowWindowClose = true;
+    mainWindow.close();
+});
+
+ipcMain.on('window:focus-renderer', () => {
+    if (!mainWindow) return;
+
+    if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+    }
+
+    mainWindow.focus();
+    mainWindow.webContents?.focus?.();
+});
+
+ipcMain.handle('window:is-maximized', () => {
+    return mainWindow ? mainWindow.isMaximized() : false;
+});
+
+ipcMain.handle('project:save-map-camera', (_event, mapPath, camera) => {
+    return projectOperation(() => {
+        const safeMapPath = assertProjectPath(mapPath, {
+            type: 'file',
+            extensions: ['.map']
+        });
+        return saveMapCamera(safeMapPath, camera);
+    });
+});
+
+ipcMain.handle('project:upsert-map-connection', (_event, mapPath, edge) => {
+    return projectOperation(() => {
+        const safeMapPath = assertProjectPath(mapPath, {
+            type: 'file',
+            extensions: ['.map']
+        });
+        return upsertMapConnection(safeMapPath, edge);
+    });
+});
+
+ipcMain.handle('project:delete-map-connection', (_event, mapPath, edgeId) => {
+    return projectOperation(() => {
+        const safeMapPath = assertProjectPath(mapPath, {
+            type: 'file',
+            extensions: ['.map']
+        });
+        return deleteMapConnection(safeMapPath, String(edgeId || ''));
+    });
+});
+
+ipcMain.handle('project:reparent-map-node', (_event, mapPath, childId, parentId) => {
+    return projectOperation(() => {
+        const safeMapPath = assertProjectPath(mapPath, {
+            type: 'file',
+            extensions: ['.map']
+        });
+        return reparentMapNode(safeMapPath, childId, parentId);
+    });
+});
+
+ipcMain.handle('project:get-pisi-document', (_event, filePath) => {
+    return projectOperation(() => {
+        const safeFilePath = assertProjectPath(filePath, {
+            type: 'file',
+            extensions: ['.map', '.node']
+        });
+        return getPisiDocument(safeFilePath);
+    });
+});
+
+ipcMain.handle('project:list-map-nodes', (_event, mapPath) => {
+    return projectOperation(() => {
+        const safeMapPath = assertProjectPath(mapPath, {
+            type: 'file',
+            extensions: ['.map']
+        });
+        return listNodesForMap(safeMapPath);
+    });
+});
+
+ipcMain.handle('project:save-map-layout', (_event, mapPath, nodeLayouts) => {
+    return projectOperation(() => {
+        const safeMapPath = assertProjectPath(mapPath, {
+            type: 'file',
+            extensions: ['.map']
+        });
+        return saveMapNodeLayout(safeMapPath, nodeLayouts);
+    });
+});
+
+ipcMain.handle('project:save-node-content', (_event, nodePath, content) => {
+    return projectOperation(() => {
+        const safeNodePath = assertProjectPath(nodePath, {
+            type: 'file',
+            extensions: ['.node']
+        });
+        return saveNodeContent(safeNodePath, content);
+    });
+});
+
+ipcMain.handle('project:delete-node-from-map', (_event, nodePath) => {
+    return asyncProjectOperation(async () => {
+        const safeNodePath = assertProjectPath(nodePath, {
+            type: 'file',
+            extensions: ['.node']
+        });
+        return deleteNodeFromMap(safeNodePath);
+    });
+});
+
+ipcMain.handle('project:delete-pisi-file', (_event, targetPath) => {
+    return asyncProjectOperation(async () => {
+        const safeTargetPath = assertProjectPath(targetPath, {
+            type: 'file',
+            extensions: ['.map', '.node']
+        });
+        return deletePisiFile(safeTargetPath);
+    });
+});
+
+ipcMain.handle('project:delete-path', (_event, targetPath) => {
+    return asyncProjectOperation(async () => {
+        const safeTargetPath = assertProjectPath(targetPath);
+
+        if (
+            normalizePathForCompare(safeTargetPath) ===
+            normalizePathForCompare(activeProjectFolder)
+        ) {
+            throw new Error('Aktif proje kökü bu işlemle silinemez.');
+        }
+
+        return deleteProjectPath(safeTargetPath);
+    });
+});
+
+ipcMain.handle('project:create-node-under-map', (_event, mapPath) => {
+    return projectOperation(() => {
+        const safeMapPath = assertProjectPath(mapPath, {
+            type: 'file',
+            extensions: ['.map']
+        });
+        return createNodeUnderMap(safeMapPath);
+    });
+});
+
+ipcMain.handle('project:get-or-create-diary-node', (_event, projectFolder, isoDate) => {
+    return projectOperation(() => {
+        const safeProjectFolder = assertProjectPath(projectFolder, {
+            type: 'directory'
+        });
+
+        if (
+            normalizePathForCompare(safeProjectFolder) !==
+            normalizePathForCompare(activeProjectFolder)
+        ) {
+            throw new Error('Diary yalnızca aktif proje kökünde kullanılabilir.');
+        }
+
+        return getOrCreateDiaryNode(safeProjectFolder, isoDate);
+    });
+});
+
+ipcMain.handle('project:list-diary-dates', (_event, projectFolder) => {
+    return projectOperation(() => {
+        const safeProjectFolder = assertProjectPath(projectFolder, {
+            type: 'directory'
+        });
+        return listPisiDiaryDates(safeProjectFolder);
+    });
+});
+
+ipcMain.handle('project:sync-diary-missions', (_event, projectFolder, payload) => {
+    return projectOperation(() => {
+        const safeProjectFolder = assertProjectPath(projectFolder, {
+            type: 'directory'
+        });
+        return syncDiaryMissions(safeProjectFolder, payload);
+    });
+});
+
+ipcMain.handle('project:rename-pisi-file', (_event, oldPath, newBaseName) => {
+    return projectOperation(() => {
+        const safeOldPath = assertProjectPath(oldPath, {
+            type: 'file',
+            extensions: ['.map', '.node']
+        });
+        return renamePisiFile(safeOldPath, newBaseName);
+    });
+});
+
+ipcMain.handle('project:move-pisi-item', (_event, sourcePath, destinationFolderPath, options) => {
+    return projectOperation(() => {
+        const safeSourcePath = assertProjectPath(sourcePath);
+        const safeDestinationPath = assertProjectPath(destinationFolderPath, {
+            type: 'directory'
+        });
+
+        if (
+            normalizePathForCompare(safeSourcePath) ===
+            normalizePathForCompare(activeProjectFolder)
+        ) {
+            throw new Error('Aktif proje kökü taşınamaz.');
+        }
+
+        const safeOptions = { ...(options || {}) };
+        if (safeOptions.parentMapPath) {
+            safeOptions.parentMapPath = assertProjectPath(
+                safeOptions.parentMapPath,
+                {
+                    type: 'file',
+                    extensions: ['.map']
+                }
+            );
+        }
+
+        return movePisiItem(
+            safeSourcePath,
+            safeDestinationPath,
+            safeOptions
+        );
+    });
+});
+
+ipcMain.handle('project:create-pisi-file', (_event, folderPath, ext) => {
+    return projectOperation(() => {
+        const safeFolderPath = assertProjectPath(folderPath, {
+            type: 'directory'
+        });
+        return createUniquePisiFile(safeFolderPath, ext);
+    });
+});
+
+ipcMain.handle('project:get-last-folder', () => {
+    const settings = readSettings();
+    const lastProjectFolder = settings.lastProjectFolder || null;
+
+    if (!lastProjectFolder || !fs.existsSync(lastProjectFolder)) {
+        return null;
+    }
+
+    if (!lockProjectFolder(lastProjectFolder)) {
+        return null;
+    }
+
+    return activeProjectFolder;
+});
+
+ipcMain.handle('project:choose-folder', async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+        title: 'PISI proje klasörü seç',
+        properties: ['openDirectory']
+    });
+
+    if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
+        return null;
+    }
+
+    const selectedFolder = result.filePaths[0];
+
+    if (!lockProjectFolder(selectedFolder)) {
+        await dialog.showMessageBox(mainWindow, {
+            type: 'error',
+            title: 'Proje açılamadı',
+            message: 'Seçilen proje klasörü kilitlenemedi.',
+            detail: 'Klasör başka bir PISI sürecinde açık olabilir veya erişim izni olmayabilir.'
+        });
+        return null;
+    }
+
+    const settings = readSettings();
+    settings.lastProjectFolder = activeProjectFolder;
+    writeSettings(settings);
+
+    return activeProjectFolder;
+});
+
+ipcMain.handle('project:set-last-folder', (_event, folderPath) => {
+    return projectOperation(() => {
+        if (folderPath) {
+            const safeFolderPath = assertProjectPath(folderPath, {
+                type: 'directory'
+            });
+
+            if (
+                normalizePathForCompare(safeFolderPath) !==
+                normalizePathForCompare(activeProjectFolder)
+            ) {
+                throw new Error('Yalnızca aktif proje son proje olarak kaydedilebilir.');
+            }
+        }
+
+        const settings = readSettings();
+        settings.lastProjectFolder = folderPath || null;
+        writeSettings(settings);
+        return {
+            ok: true
+        };
+    });
+});
+
+ipcMain.handle('project:list-folder', (_event, folderPath) => {
+    return projectOperation(() => {
+        const safeFolderPath = assertProjectPath(folderPath, {
+            type: 'directory'
+        });
+        return safeListFolder(safeFolderPath);
+    });
+});
+
+ipcMain.handle('project:folder-exists', (_event, folderPath) => {
+    try {
+        const safeFolderPath = assertProjectPath(folderPath, {
+            type: 'directory'
+        });
+        return folderExistsAndIsDirectory(safeFolderPath);
+    } catch {
+        return false;
+    }
+});
+
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
+
+
+const moduleApi18 = {};
+Object.defineProperties(moduleApi18, {
+    "hasSingleInstanceLock": {
+        enumerable: true,
+        get() { return hasSingleInstanceLock; }
+    }
+});
+registerMainModule("main.runtime", moduleApi18);
+
+
+if (!hasSingleInstanceLock) {
+    app.quit();
+} else {
+    app.on('second-instance', () => {
+        if (!mainWindow || mainWindow.isDestroyed()) return;
+        if (mainWindow.isMinimized()) mainWindow.restore();
+        mainWindow.show();
+        mainWindow.focus();
+    });
+
+    app.whenReady().then(() => {
+        createWindow();
+
+        app.on('activate', () => {
+            if (BrowserWindow.getAllWindows().length === 0) {
+                allowWindowClose = false;
+                createWindow();
+            }
+        });
+    });
+}
+
+app.on('will-quit', () => {
+    unlockProjectFolder();
+});
+
+app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') {
+        app.quit();
+    }
+});

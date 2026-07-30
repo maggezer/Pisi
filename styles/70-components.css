@@ -1,0 +1,97 @@
+
+
+.pisi-canvas-block {
+    display: inline-block;
+    max-width: 100%;
+    margin: 12px 0;
+    padding: 9px;
+    border: 1px solid #3a3a3a;
+    border-radius: 10px;
+    background: #242424;
+    overflow: auto;
+}
+
+.pisi-canvas-toolbar-hint {
+    color: #888;
+    font-size: 11px;
+    font-weight: 800;
+    margin-bottom: 6px;
+    user-select: none;
+}
+
+.pisi-paint-canvas {
+    display: block;
+    max-width: 100%;
+    background: #ffffff;
+    border: 1px solid #555;
+    border-radius: 6px;
+    cursor: crosshair;
+    touch-action: none;
+}
+
+.pisi-paint-canvas.selected {
+    outline: 2px solid #f39c12;
+    outline-offset: 3px;
+}
+
+.pisi-sheet-block {
+    max-width: 100%;
+    margin: 12px 0;
+    overflow: auto;
+    border: 1px solid #3a3a3a;
+    border-radius: 10px;
+    background: #242424;
+    padding: 8px;
+}
+
+.pisi-sheet-table {
+    border-collapse: collapse;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    font-size: 12px;
+    min-width: 420px;
+}
+
+.pisi-sheet-table th,
+.pisi-sheet-table td {
+    min-width: 84px;
+    height: 28px;
+    border: 1px solid #444;
+    padding: 4px 6px;
+}
+
+.pisi-sheet-table th {
+    min-width: 34px;
+    background: #2d2d30;
+    color: #f39c12;
+    text-align: center;
+    font-weight: 900;
+    user-select: none;
+}
+
+.pisi-sheet-table td {
+    background: #1f1f20;
+    outline: none;
+    font-family: Consolas, monospace;
+}
+
+.pisi-sheet-table td:focus,
+.pisi-sheet-cell-selected {
+    box-shadow: inset 0 0 0 2px #f39c12;
+    background: #26231d;
+}
+
+.pisi-sheet-table td[data-formula] {
+    color: #b9ddff;
+}
+
+#node-modal .pisi-editor-toolbar,
+.center-node-editor .pisi-editor-toolbar {
+    border-bottom: 1px solid #333;
+}
+
+#node-modal-content,
+#center-node-editor-content {
+    flex: 1;
+    min-height: 0;
+}

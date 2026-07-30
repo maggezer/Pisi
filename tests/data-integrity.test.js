@@ -9,10 +9,8 @@ const test = require('node:test');
 const vm = require('node:vm');
 const { extractFunction } = require('./source-helper');
 
-const mainSource = fs.readFileSync(
-    path.resolve(__dirname, '..', 'main.js'),
-    'utf8'
-);
+const { readMainSource } = require('./source-bundle');
+const mainSource = readMainSource();
 
 function loadMainHelpers(functionNames, exports) {
     const source = `

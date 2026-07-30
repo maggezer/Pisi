@@ -8,7 +8,7 @@ const vm = require('node:vm');
 const { extractFunction } = require('./source-helper');
 
 const appSource = fs.readFileSync(
-    path.resolve(__dirname, '..', 'app.js'),
+    path.resolve(__dirname, '..', 'renderer/editor/pisi-editor-sheet.mjs'),
     'utf8'
 );
 const formulaFunctionNames = [

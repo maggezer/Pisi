@@ -1,0 +1,383 @@
+
+
+/* Dock içindeki takvim artık ayrı pencere gibi görünmesin */
+.pisi-calendar-dock-zone.has-calendar > .pisi-calendar {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+
+    background: transparent;
+}
+
+/* Dock olmuş takvimde iç boşluk daha doğal dursun */
+.pisi-calendar-dock-zone.has-calendar .pisi-calendar-body {
+    padding: 6px 0 0 0;
+}
+
+/* Dock olmuş takvimde ay satırı panele gömülü gibi dursun */
+.pisi-calendar-dock-zone.has-calendar .pisi-calendar-month-row {
+    margin-bottom: 6px;
+}
+
+/* Dock olmuş takvimde gün kutuları alanın içinde daha temiz hizalansın */
+.pisi-calendar-dock-zone.has-calendar .pisi-calendar-grid {
+    width: 100%;
+}
+
+/* Dock olmuş takvimde hover/drag hissi yine kalsın ama pencere hissi vermesin */
+.pisi-calendar-dock-zone.has-calendar .pisi-calendar-month-label:hover {
+    background: rgba(243, 156, 18, 0.08);
+}
+
+/* ROOT PROJECT NAME IN LEFT TREE */
+
+.tree-root-row:hover {
+    background: transparent;
+}
+
+.pisi-number-input {
+    width: 58px;
+    height: 28px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 2px 6px;
+    font-size: 12px;
+    font-weight: 800;
+    outline: none;
+}
+
+.pisi-number-input:hover,
+.pisi-number-input:focus {
+    border-color: #f39c12;
+}
+
+.pisi-number-input::-webkit-inner-spin-button,
+.pisi-number-input::-webkit-outer-spin-button {
+    opacity: 1;
+}
+/* PISI WORD-STYLE TOOLBAR */
+.pisi-word-toolbar {
+    min-height: 58px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: #252526;
+    border-bottom: 1px solid #333;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.pisi-word-title-input {
+    width: 190px;
+    min-width: 150px;
+    height: 34px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    outline: none;
+    background: #1e1e1e;
+    color: #f39c12;
+    font-size: 15px;
+    font-weight: 800;
+    padding: 0 10px;
+}
+
+.pisi-word-title-input:focus {
+    border-color: #f39c12;
+}
+
+.pisi-word-toolbar-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: max-content;
+}
+
+.pisi-word-select,
+.pisi-word-btn,
+.pisi-word-primary-btn,
+.pisi-word-close-btn,
+.pisi-word-color {
+    height: 32px;
+    border: 1px solid #444;
+    border-radius: 7px;
+    background: #2d2d30;
+    color: #d4d4d4;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.pisi-word-select {
+    min-width: 108px;
+    padding: 0 8px;
+    outline: none;
+}
+
+.pisi-word-size-select {
+    min-width: 86px;
+}
+
+.pisi-word-btn {
+    min-width: 32px;
+    padding: 0 9px;
+    cursor: pointer;
+}
+
+.pisi-word-btn:hover,
+.pisi-word-primary-btn:hover,
+.pisi-word-close-btn:hover,
+.pisi-word-color:hover,
+.pisi-word-select:hover {
+    border-color: #f39c12;
+    color: #f39c12;
+}
+
+.pisi-word-primary-btn {
+    min-width: 72px;
+    padding: 0 12px;
+    cursor: pointer;
+}
+
+.pisi-word-close-btn {
+    width: 34px;
+    flex: 0 0 34px;
+    cursor: pointer;
+}
+
+.pisi-word-close-btn:hover {
+    background: #e74c3c;
+    border-color: #e74c3c;
+    color: white;
+}
+
+.pisi-word-color {
+    min-width: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    color: #f39c12;
+    font-weight: 900;
+}
+
+.pisi-word-color input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.pisi-word-separator {
+    width: 1px;
+    height: 26px;
+    background: #3a3a3a;
+    margin: 0 2px;
+}
+
+#center-node-editor-header,
+#node-modal-header {
+    height: auto;
+}
+
+#center-node-editor-content,
+#node-modal-content {
+    flex: 1;
+    min-height: 0;
+}
+
+/* TREE DRAG AND DROP */
+.tree-row[draggable="true"] {
+    cursor: grab;
+}
+
+.tree-row.dragging {
+    opacity: 0.52;
+}
+
+.tree-row.drag-over {
+    background: rgba(243, 156, 18, 0.18);
+    box-shadow: inset 3px 0 0 #f39c12;
+}
+
+#file-tree.drag-over-root {
+    outline: 1px dashed rgba(243, 156, 18, 0.85);
+    outline-offset: -4px;
+    background: rgba(243, 156, 18, 0.05);
+}
+
+/* MAP CONTEXT MENU */
+.pisi-map-context-menu {
+    position: fixed;
+    z-index: 9600;
+    min-width: 190px;
+    padding: 6px;
+    border: 1px solid #444;
+    border-radius: 10px;
+    background: #252526;
+    box-shadow: 0 14px 38px rgba(0,0,0,0.58);
+}
+
+.pisi-map-context-menu-item {
+    width: 100%;
+    min-height: 34px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: #d4d4d4;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 9px;
+    text-align: left;
+    font-weight: 700;
+}
+
+.pisi-map-context-menu-item:hover {
+    background: #333;
+    color: #f39c12;
+}
+
+.map-port.hub-collapsed {
+    opacity: 1;
+    background: #e74c3c;
+    transform: scale(1.18);
+}
+
+/* PISI EDITOR TOOLBAR TABS + WORD / PAINT / EXCEL */
+.pisi-editor-toolbar {
+    min-height: 86px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 0;
+    overflow: visible;
+}
+
+.pisi-editor-toolbar-tabs {
+    height: 30px;
+    flex: 0 0 30px;
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    padding: 4px 8px 0 8px;
+    background: #202020;
+    border-bottom: 1px solid #333;
+}
+
+.pisi-editor-toolbar-tab {
+    height: 26px;
+    min-width: 64px;
+    border: 1px solid #333;
+    border-bottom: none;
+    border-radius: 7px 7px 0 0;
+    background: #2d2d30;
+    color: #aaa;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.pisi-editor-toolbar-tab:hover,
+.pisi-editor-toolbar-tab.active {
+    background: #1e1e1e;
+    color: #f39c12;
+    border-color: #444;
+}
+
+.pisi-editor-toolbar-panel {
+    min-height: 54px;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.pisi-editor-toolbar-panel.active {
+    display: flex;
+}
+
+.pisi-editor-toolbar-panel .pisi-word-toolbar-controls,
+.pisi-paint-toolbar-controls,
+.pisi-excel-toolbar-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: max-content;
+}
+
+.pisi-toolbar-field {
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0 8px;
+    border: 1px solid #444;
+    border-radius: 7px;
+    background: #2d2d30;
+    color: #aaa;
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.pisi-toolbar-number {
+    width: 58px;
+    height: 23px;
+    border: 1px solid #3d3d3d;
+    border-radius: 5px;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    font-size: 12px;
+    font-weight: 800;
+    padding: 0 5px;
+    outline: none;
+}
+
+.pisi-toolbar-number:focus,
+.pisi-excel-formula-input:focus {
+    border-color: #f39c12;
+}
+
+.pisi-word-btn.active {
+    color: #1e1e1e;
+    background: #f39c12;
+    border-color: #f39c12;
+}
+
+.pisi-excel-formula-input {
+    width: 230px;
+    height: 32px;
+    border: 1px solid #444;
+    border-radius: 7px;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 0 9px;
+    font-size: 12px;
+    font-family: Consolas, monospace;
+    outline: none;
+}
+
+.center-tab-rename-input {
+    width: 150px;
+    height: 22px;
+    border: 1px solid #f39c12;
+    border-radius: 5px;
+    background: #1e1e1e;
+    color: #f39c12;
+    padding: 0 6px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    outline: none;
+}

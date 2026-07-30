@@ -1,3 +1,5 @@
+import { registerModule } from "../core/module-registry.mjs";
+
 function bindNodeModalControls() {
     const closeModalBtn = document.getElementById('node-modal-close');
     const overlay = document.getElementById('node-modal-overlay');
@@ -62,7 +64,9 @@ function bindNodeModalControls() {
 }
 
 const PISI_NODE_PREVIEW_DELAY_MS = 1500;
+
 let pisiNodePreviewTimer = null;
+
 let pisiNodePreviewRequest = 0;
 
 function hidePisiCanvasHints(root = document) {
@@ -362,12 +366,93 @@ function setupPisiNodePreviews() {
     bindPisiMapNodePreviewEvents();
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        bindNodeModalControls();
-        setupPisiNodePreviews();
-    });
-} else {
-    bindNodeModalControls();
-    setupPisiNodePreviews();
-}
+const moduleApi = {};
+Object.defineProperties(moduleApi, {
+    "bindNodeModalControls": {
+        enumerable: true,
+        get() { return bindNodeModalControls; }
+    },
+    "PISI_NODE_PREVIEW_DELAY_MS": {
+        enumerable: true,
+        get() { return PISI_NODE_PREVIEW_DELAY_MS; }
+    },
+    "pisiNodePreviewTimer": {
+        enumerable: true,
+        get() { return pisiNodePreviewTimer; },
+        set(value) { pisiNodePreviewTimer = value; }
+    },
+    "pisiNodePreviewRequest": {
+        enumerable: true,
+        get() { return pisiNodePreviewRequest; },
+        set(value) { pisiNodePreviewRequest = value; }
+    },
+    "hidePisiCanvasHints": {
+        enumerable: true,
+        get() { return hidePisiCanvasHints; }
+    },
+    "parsePisiNodePreviewContent": {
+        enumerable: true,
+        get() { return parsePisiNodePreviewContent; }
+    },
+    "findPisiMapNodeForBox": {
+        enumerable: true,
+        get() { return findPisiMapNodeForBox; }
+    },
+    "stylePisiCanvasThumbnail": {
+        enumerable: true,
+        get() { return stylePisiCanvasThumbnail; }
+    },
+    "refreshPisiMapNodeCanvasPreview": {
+        enumerable: true,
+        get() { return refreshPisiMapNodeCanvasPreview; }
+    },
+    "refreshPisiMapNodePreviewFromDisk": {
+        enumerable: true,
+        get() { return refreshPisiMapNodePreviewFromDisk; }
+    },
+    "refreshAllPisiMapNodePreviewsFromDisk": {
+        enumerable: true,
+        get() { return refreshAllPisiMapNodePreviewsFromDisk; }
+    },
+    "stylePisiHoverLayer": {
+        enumerable: true,
+        get() { return stylePisiHoverLayer; }
+    },
+    "getPisiNodePreviewLayer": {
+        enumerable: true,
+        get() { return getPisiNodePreviewLayer; }
+    },
+    "hidePisiNodeHoverPreview": {
+        enumerable: true,
+        get() { return hidePisiNodeHoverPreview; }
+    },
+    "positionPisiNodeHoverPreview": {
+        enumerable: true,
+        get() { return positionPisiNodeHoverPreview; }
+    },
+    "appendPisiHoverPreviewContent": {
+        enumerable: true,
+        get() { return appendPisiHoverPreviewContent; }
+    },
+    "showPisiNodeHoverPreview": {
+        enumerable: true,
+        get() { return showPisiNodeHoverPreview; }
+    },
+    "schedulePisiNodeHoverPreview": {
+        enumerable: true,
+        get() { return schedulePisiNodeHoverPreview; }
+    },
+    "processPisiPreviewAddedNode": {
+        enumerable: true,
+        get() { return processPisiPreviewAddedNode; }
+    },
+    "bindPisiMapNodePreviewEvents": {
+        enumerable: true,
+        get() { return bindPisiMapNodePreviewEvents; }
+    },
+    "setupPisiNodePreviews": {
+        enumerable: true,
+        get() { return setupPisiNodePreviews; }
+    }
+});
+registerModule("editor.preview", moduleApi);
