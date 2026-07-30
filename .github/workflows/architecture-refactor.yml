@@ -69,8 +69,21 @@ jobs:
           missing = [old for old in replacements if old not in source]
           if missing:
               raise SystemExit('Expected codemod fragments were not found:\n' + '\n'.join(missing))
-
           for old, new in replacements.items():
+              source = source.replace(old, new)
+
+          structural_replacements = {
+              "if (line <= 2407) return ['renderer/shell/pisi-tabs.mjs', 'shell.tabs'];":
+                  "if (line <= 2250) return ['renderer/shell/pisi-tabs.mjs', 'shell.tabs'];",
+              "if (line <= 900) return ['main/functions/filesystem-core.js', 'main.filesystemCore'];":
+                  "if (line <= 450) return ['main/functions/path-security.js', 'main.pathSecurity'];\n    if (line <= 900) return ['main/functions/filesystem-core.js', 'main.filesystemCore'];",
+              "    const requires = [\n        './main/functions/filesystem-core',":
+                  "    const requires = [\n        './main/functions/path-security',\n        './main/functions/filesystem-core',",
+          }
+          missing_structural = [old for old in structural_replacements if old not in source]
+          if missing_structural:
+              raise SystemExit('Expected structural fragments were not found:\n' + '\n'.join(missing_structural))
+          for old, new in structural_replacements.items():
               source = source.replace(old, new)
 
           pattern = re.compile(
@@ -160,10 +173,10 @@ jobs:
                   (".join('" + "\n" + "');", r".join('\n');"),
               ],
           }
-          for file_name, replacements in repairs.items():
+          for file_name, file_replacements in repairs.items():
               file_path = Path(file_name)
               text = file_path.read_text(encoding='utf-8')
-              for old, new in replacements:
+              for old, new in file_replacements:
                   if old not in text:
                       raise SystemExit(f'Generated newline fragment not found in {file_name}.')
                   text = text.replace(old, new)
