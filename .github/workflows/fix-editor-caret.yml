@@ -21,6 +21,42 @@ jobs:
           ref: agent/fix-editor-caret-regression
           fetch-depth: 0
 
+      - name: Repair codemod literal matching
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          script_path = Path('scripts/fix-editor-caret-regression.cjs')
+          source = script_path.read_text(encoding='utf-8')
+          old = """function replaceOnce(source, pattern, replacement, label) {
+              const matches = source.match(pattern);
+              if (!matches) {
+                  throw new Error(`${label} fragment was not found.`);
+              }
+              return source.replace(pattern, replacement);
+          }
+          """
+          new = """function replaceOnce(source, pattern, replacement, label) {
+              if (typeof pattern === 'string') {
+                  if (!source.includes(pattern)) {
+                      throw new Error(`${label} fragment was not found.`);
+                  }
+                  return source.replace(pattern, replacement);
+              }
+
+              if (!pattern.test(source)) {
+                  throw new Error(`${label} fragment was not found.`);
+              }
+
+              return source.replace(pattern, replacement);
+          }
+          """
+          if old not in source:
+              raise SystemExit('replaceOnce helper was not found.')
+          script_path.write_text(source.replace(old, new, 1), encoding='utf-8')
+          PY
+
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
