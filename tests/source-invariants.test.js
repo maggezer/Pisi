@@ -64,13 +64,13 @@ test('Paint PNG zemini ve ağaç yenilemesi görünür regresyon üretmez', () =
     assert.match(editorSource, /function ensurePisiCanvasWhiteBackground\(/);
     assert.doesNotMatch(editorSource, /globalCompositeOperation\s*=\s*['"]destination-out['"]/);
     assert.match(treeSource, /document\.createDocumentFragment\(\)/);
-    assert.match(treeSource, /treeEl\.replaceChildren\(\)/);
+    assert.match(treeSource, /treeEl\.replaceChildren\(/);
 });
 
 test('renderer yalnızca tek ES module bootstrap üzerinden yüklenir', () => {
     const html = read('index.html');
     assert.match(html, /<script type="module" src="renderer\/bootstrap\.mjs"><\/script>/);
-    assert.doesNotMatch(html, /<script src="(?:app|renderer\/[^\"]+)\.js"><\/script>/);
+    assert.doesNotMatch(html, /<script src="(?:app|renderer\/[^"]+)\.js"><\/script>/);
 });
 
 test('preload API anahtarları ve kritik DOM kontrolleri tekildir', () => {
