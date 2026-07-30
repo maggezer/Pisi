@@ -27,6 +27,7 @@ jobs:
         run: |
           python3 <<'PY'
           from pathlib import Path
+          import re
 
           path = Path('scripts/refactor-architecture.js')
           source = path.read_text(encoding='utf-8')
@@ -63,8 +64,6 @@ jobs:
                   r"if (/!important\\b/.test(css)) errors.push('!important remains in ' + file);",
               "errors.push(`Duplicate CSS selector ${selector}: ${selectorOwners.get(selector)} / ${file}`);":
                   "errors.push('Duplicate CSS selector ' + selector + ': ' + selectorOwners.get(selector) + ' / ' + file);",
-              "const mainSource = `${read('main.js')}\n${readMainSource()}\n${read('main/runtime.js')}`;":
-                  "const mainSource = [read('main.js'), readMainSource(), read('main/runtime.js')].join('\n');",
           }
 
           missing = [old for old in replacements if old not in source]
@@ -73,6 +72,18 @@ jobs:
 
           for old, new in replacements.items():
               source = source.replace(old, new)
+
+          pattern = re.compile(
+              r"const mainSource = `\$\{read\('main\.js'\)\}(?:\\n|\n)"
+              r"\$\{readMainSource\(\)\}(?:\\n|\n)"
+              r"\$\{read\('main/runtime\.js'\)\}`;"
+          )
+          source, count = pattern.subn(
+              "const mainSource = [read('main.js'), readMainSource(), read('main/runtime.js')].join('\\\\n');",
+              source
+          )
+          if count != 1:
+              raise SystemExit(f'Expected one multiline test template, replaced {count}.')
 
           path.write_text(source, encoding='utf-8')
           PY
