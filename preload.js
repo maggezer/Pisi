@@ -111,7 +111,23 @@ function pisiTranslate(source) {
         .replace(/Kedi/g, 'Pisi');
 }
 
+function pisiIsEditableNode(node) {
+    const element = node?.nodeType === Node.ELEMENT_NODE
+        ? node
+        : node?.parentElement;
+
+    if (!element) return false;
+
+    return Boolean(element.closest(
+        'input, textarea, select, [contenteditable="true"], [contenteditable="plaintext-only"]'
+    ));
+}
+
 function pisiTranslateTextNode(node) {
+    // Kullanıcının yazdığı metne dokunmak caret/selection konumunu sıfırlar.
+    // Editör, modal ve form alanları çeviri gözlemcisinin dışında kalmalıdır.
+    if (pisiIsEditableNode(node)) return;
+
     if (!pisiTextSources.has(node)) {
         pisiTextSources.set(node, node.nodeValue || '');
     }
@@ -166,6 +182,11 @@ function pisiApplyToRoot(root = document) {
 
     for (const element of elements) {
         pisiTranslateAttributes(element);
+
+        // Düzenlenebilir alanların metin düğümlerini veya çocuklarını yeniden
+        // yazmak imleci başa taşır. Sadece güvenli öznitelikler çevrilir.
+        if (pisiIsEditableNode(element)) continue;
+
         if (element.matches('button')) {
             const source = element.textContent;
             pisiApplyIcon(element, source);
