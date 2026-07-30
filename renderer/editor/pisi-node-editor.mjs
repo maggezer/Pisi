@@ -154,6 +154,19 @@ function sanitizePisiEditorHtml(html = '') {
     return wrapper.innerHTML;
 }
 
+function focusPisiEditorAtEnd(editor) {
+    if (!editor) return;
+    editor.focus({ preventScroll: true });
+    const selection = window.getSelection?.();
+    if (!selection) return;
+    const range = document.createRange();
+    range.selectNodeContents(editor);
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    editor.scrollTop = editor.scrollHeight;
+}
+
 async function openNodeModalFromBox(box) {
     const nodePath = box.dataset.nodePath;
 
@@ -209,7 +222,9 @@ async function openNodeModalFromBox(box) {
     closePisiTagMenu();
 
     overlay?.classList.add('visible');
-    contentInput?.focus();
+    requestAnimationFrame(() => {
+        focusPisiEditorAtEnd(contentInput);
+    });
     return true;
 }
 
@@ -470,7 +485,7 @@ async function openCenterNodeEditor(nodeItem) {
     }
 
     setTimeout(() => {
-        contentEditor?.focus({ preventScroll: true });
+        focusPisiEditorAtEnd(contentEditor);
     }, 0);
 
     return true;
