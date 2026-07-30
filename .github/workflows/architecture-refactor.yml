@@ -59,12 +59,12 @@ jobs:
                   "errors.push('Renderer module too large (' + lines + '): ' + file);",
               "if (lines > 1100) errors.push(`Main domain module too large (${lines}): ${file}`);":
                   "if (lines > 1100) errors.push('Main domain module too large (' + lines + '): ' + file);",
-              "if (/!important\\b/.test(css)) errors.push(`!important remains in ${file}`);":
-                  "if (/!important\\b/.test(css)) errors.push('!important remains in ' + file);",
+              r"if (/!important\\b/.test(css)) errors.push(`!important remains in ${file}`);":
+                  r"if (/!important\\b/.test(css)) errors.push('!important remains in ' + file);",
               "errors.push(`Duplicate CSS selector ${selector}: ${selectorOwners.get(selector)} / ${file}`);":
                   "errors.push('Duplicate CSS selector ' + selector + ': ' + selectorOwners.get(selector) + ' / ' + file);",
-              "const mainSource = `${read('main.js')}\\n${readMainSource()}\\n${read('main/runtime.js')}`;":
-                  "const mainSource = [read('main.js'), readMainSource(), read('main/runtime.js')].join('\\n');",
+              "const mainSource = `${read('main.js')}\n${readMainSource()}\n${read('main/runtime.js')}`;":
+                  "const mainSource = [read('main.js'), readMainSource(), read('main/runtime.js')].join('\n');",
           }
 
           missing = [old for old in replacements if old not in source]
