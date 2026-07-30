@@ -459,32 +459,6 @@ function normalizeConnectionRole(role) {
     return null;
 }
 
-function getConnectionRoleFromPort(port) {
-    if (port === 'top') return 'up-hub';
-    if (port === 'bottom') return 'down-hub';
-    if (port === 'left') return 'upstream';
-    if (port === 'right') return 'downstream';
-
-    return null;
-}
-
-function getEdgeVisualTypeFromRoles(sourceRole, targetRole) {
-    if (sourceRole === 'co-level' || targetRole === 'co-level') {
-        return 'co-level';
-    }
-
-    if (
-        sourceRole === 'upstream' ||
-        sourceRole === 'downstream' ||
-        targetRole === 'upstream' ||
-        targetRole === 'downstream'
-    ) {
-        return 'stream';
-    }
-
-    return 'down-hub';
-}
-
 function normalizeMapEdge(edge) {
     const sourceId = normalizePisiId(edge?.sourceId, '.node');
     const targetId = normalizePisiId(edge?.targetId, '.node');
@@ -1211,7 +1185,6 @@ function createUniquePisiFile(folderPath, ext, options = {}) {
         metadata: data.pisi
     };
 }
-
 
 function normalizePisiDiaryIsoDate(value) {
     const raw = String(value || '').trim();
@@ -2518,29 +2491,6 @@ function saveNodeContent(nodePath, content = '') {
     }
 }
 
-function getNodeDocByIdInMap(mapPath, nodeId) {
-    const mapInfo = ensurePisiFileMetadata(mapPath);
-
-    if (!mapInfo.ok || !mapInfo.sidecarPath || !fs.existsSync(mapInfo.sidecarPath)) {
-        return null;
-    }
-
-    const entries = fs.readdirSync(mapInfo.sidecarPath, { withFileTypes: true });
-
-    for (const entry of entries) {
-        if (!entry.isFile() || !entry.name.toLowerCase().endsWith('.node')) continue;
-
-        const nodePath = path.join(mapInfo.sidecarPath, entry.name);
-        const nodeInfo = ensurePisiFileMetadata(nodePath);
-
-        if (nodeInfo.ok && nodeInfo.metadata.id === nodeId) {
-            return nodeInfo;
-        }
-    }
-
-    return null;
-}
-
 function getAllNodeDocsInMap(mapPath) {
     const mapInfo = ensurePisiFileMetadata(mapPath);
 
@@ -3435,8 +3385,6 @@ function safeListFolder(folderPath) {
         }
 
         const entries = fs.readdirSync(folderPath, { withFileTypes: true });
-
-
 
         const items = entries
             .filter((entry) => {

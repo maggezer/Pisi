@@ -1,11 +1,4 @@
-function getBaseName(folderPath) {
-    if (!folderPath) return '';
 
-    const normalized = folderPath.replace(/[\\/]+$/g, '');
-    const parts = normalized.split(/[\\/]/);
-
-    return parts[parts.length - 1] || folderPath;
-}
 
 function isMapFileName(fileName = '') {
     return fileName.toLowerCase().endsWith('.map');
@@ -39,7 +32,6 @@ function samePisiWorkspacePath(a, b) {
         ? normalizedA.toLowerCase() === normalizedB.toLowerCase()
         : normalizedA === normalizedB;
 }
-
 
 async function openMapInWorkspace(mapItem) {
     if (!mapItem || !isMapFileName(mapItem.name || mapItem.fileName)) {
