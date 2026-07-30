@@ -29,7 +29,6 @@ function shouldSuppressFileSystemRefresh() {
     return Date.now() < suppressFileSystemRefreshUntil;
 }
 
-
 async function validateCurrentProject() {
     const folderPath = window.currentProjectFolder;
 
@@ -254,14 +253,6 @@ function clonePisiTreeDragItem(item) {
 function getClientPathBaseName(filePath = '') {
     const parts = String(filePath || '').split(/[\\/]/).filter(Boolean);
     return parts[parts.length - 1] || '';
-}
-
-function getDirectTreeRow(treeNode) {
-    if (!treeNode) return null;
-
-    return Array.from(treeNode.children).find((child) => {
-        return child.classList?.contains('tree-row');
-    });
 }
 
 function getAncestorMapItemForTreeNode(treeNode) {
@@ -1065,23 +1056,6 @@ function moveTreeNodeUnderParent(parentId, childId) {
     return true;
 }
 
-function updateTreeAfterSavedConnection(edge) {
-    if (!edge) return;
-
-    // Sadece hiyerarşik ilişki sol ağaçta hareket üretir.
-    if (!isHierarchyEdge(edge)) {
-        return;
-    }
-
-    const moved = moveTreeNodeUnderParent(edge.sourceId, edge.targetId);
-
-    // Eğer DOM node henüz yoksa hiçbir şey yapma.
-    // Bir sonraki manuel/normal ağaç açılışında zaten doğru kurulacak.
-    if (!moved) {
-        console.warn('[PISI] Tree node DOM içinde bulunamadı. Full refresh yapılmadı.');
-    }
-}
-
 function animateTreeRow(row) {
     if (!row) return;
 
@@ -1238,21 +1212,6 @@ function updateOpenMapNodeAfterRename(oldPath, result) {
     }
 }
 
-function updateMapBoxAfterRename(box, result) {
-    if (!box || !result || !result.ok) return;
-
-    box.dataset.nodePath = result.fullPath;
-
-    const titleEl = box.querySelector('.map-node-title');
-
-    if (titleEl) {
-        titleEl.textContent = result.metadata?.title || result.fileName.replace(/\.node$/i, '');
-        titleEl.title = titleEl.textContent;
-    }
-
-    animateTreeRow(box);
-}
-
 function appendMapNodeBox(node) {
     const board = document.getElementById('map-board');
     if (!board || !node) return;
@@ -1311,20 +1270,6 @@ function selectTreeFile(item, row) {
         item,
         row
     };
-}
-
-function getEditableBaseName(fileName) {
-    const lower = fileName.toLowerCase();
-
-    if (lower.endsWith('.node')) {
-        return fileName.slice(0, -'.node'.length);
-    }
-
-    if (lower.endsWith('.map')) {
-        return fileName.slice(0, -'.map'.length);
-    }
-
-    return fileName;
 }
 
 function startRenameSelectedTreeFile() {
