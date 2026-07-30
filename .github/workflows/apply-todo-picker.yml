@@ -24,6 +24,19 @@ jobs:
       - name: Apply todo picker changes
         run: node scripts/apply-todo-picker.js
 
+      - name: Normalize regression assertion
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const filePath = 'tests/todo-tag.test.js';
+          let source = fs.readFileSync(filePath, 'utf8');
+          source = source.replace(
+            "assert.match(editorSource, /isPisiTodoCommand(command)/);",
+            "assert.ok(editorSource.includes('isPisiTodoCommand(command)'));"
+          );
+          fs.writeFileSync(filePath, source, 'utf8');
+          NODE
+
       - name: Validate project
         run: npm run validate
 
