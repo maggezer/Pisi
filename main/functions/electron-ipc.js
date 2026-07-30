@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const { registerMainModule } = require('../module-registry');
+const PISI_APP_ROOT = path.resolve(__dirname, '..', '..');
 
 function startProjectWatcher(folderPath) {
     stopProjectWatcher();
@@ -330,7 +331,7 @@ function createWindow() {
             nodeIntegration: false,
             contextIsolation: true,
             sandbox: true,
-            preload: path.join(__dirname, 'preload.js')
+            preload: path.join(PISI_APP_ROOT, 'preload.js')
         }
     });
 
@@ -349,7 +350,7 @@ function createWindow() {
         (_webContents, _permission, callback) => callback(false)
     );
 
-    mainWindow.loadFile(path.join(__dirname, 'index.html'));
+    mainWindow.loadFile(path.join(PISI_APP_ROOT, 'index.html'));
 
     if (!app.isPackaged && process.env.PISI_OPEN_DEVTOOLS === '1') {
         mainWindow.webContents.openDevTools({ mode: 'detach' });
