@@ -70,7 +70,24 @@ test('Paint PNG zemini ve ağaç yenilemesi görünür regresyon üretmez', () =
 test('renderer yalnızca tek ES module bootstrap üzerinden yüklenir', () => {
     const html = read('index.html');
     assert.match(html, /<script type="module" src="renderer\/bootstrap\.mjs"><\/script>/);
-    assert.doesNotMatch(html, /<script src="(?:app|renderer\/[^"]+)\.js"><\/script>/);
+    assert.doesNotMatch(html, /<script src="(?:app|renderer\/[^\"]+)\.js"><\/script>/);
+});
+
+test('renderer bootstrap yalnızca mevcut modülleri import eder', () => {
+    const bootstrapPath = path.join(root, 'renderer', 'bootstrap.mjs');
+    const bootstrapSource = fs.readFileSync(bootstrapPath, 'utf8');
+    const imports = [...bootstrapSource.matchAll(/^import\s+["'](.+?)["'];/gm)]
+        .map((match) => match[1]);
+
+    assert.ok(imports.length > 0, 'Renderer bootstrap import listesi boş olamaz.');
+
+    for (const modulePath of imports) {
+        const resolvedPath = path.resolve(path.dirname(bootstrapPath), modulePath);
+        assert.ok(
+            fs.existsSync(resolvedPath),
+            `Renderer bootstrap eksik modül import ediyor: ${modulePath}`
+        );
+    }
 });
 
 test('preload API anahtarları ve kritik DOM kontrolleri tekildir', () => {
