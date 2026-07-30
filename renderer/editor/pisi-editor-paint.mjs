@@ -214,7 +214,9 @@ function setupPisiRichToolbars() {
 
 function switchPisiToolbarTab(toolbar, tabName) {
     toolbar.querySelectorAll('[data-pisi-toolbar-tab]').forEach((button) => {
-        button.classList.toggle('active', button.dataset.pisiToolbarTab === tabName);
+        const isActive = button.dataset.pisiToolbarTab === tabName;
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-selected', isActive ? 'true' : 'false');
     });
 
     toolbar.querySelectorAll('[data-pisi-toolbar-panel]').forEach((panel) => {
