@@ -1,5 +1,0 @@
-<resources>
-    <style name="Theme.Pisi" parent="android:style/Theme.Material.Light.NoActionBar">
-        <item name="android:fontFamily">sans</item><item name="android:windowLightStatusBar">true</item><item name="android:statusBarColor">@color/pisi_cream</item><item name="android:navigationBarColor">@color/pisi_surface</item><item name="android:colorAccent">@color/pisi_accent</item><item name="android:windowNoTitle">true</item>
-    </style>
-</resources>

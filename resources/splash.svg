@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2732" height="2732" viewBox="0 0 2732 2732">
+  <rect width="2732" height="2732" fill="#171310"/>
+  <g transform="translate(854 742)">
+    <rect width="1024" height="1024" rx="228" fill="#f3a83b"/>
+    <path d="M266 424 214 196l207 125a393 393 0 0 1 182 0l207-125-52 228c52 57 72 130 57 208-30 157-157 255-303 255S239 789 209 632c-15-78 5-151 57-208Z" fill="#211a15"/>
+    <path d="M357 551h76M591 551h76" stroke="#f3a83b" stroke-width="47" stroke-linecap="round"/>
+    <path d="M458 675c35 31 73 31 108 0" fill="none" stroke="#f3a83b" stroke-width="38" stroke-linecap="round"/>
+  </g>
+  <text x="1366" y="2000" text-anchor="middle" fill="#f5ede4" font-family="sans-serif" font-size="180" font-weight="700" letter-spacing="38">KEDI</text>
+</svg>

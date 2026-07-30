@@ -1,7 +1,11 @@
-.gradle/
-.idea/
-local.properties
-build/
-app/build/
-*.iml
+node_modules/
+dist/
 .DS_Store
+*.log
+.vite/
+.idea/
+.vscode/
+android/local.properties
+android/.gradle/
+android/build/
+android/app/build/
