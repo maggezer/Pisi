@@ -308,6 +308,8 @@ function getPisiDocument(filePath) {
 function stripPreviewText(value = '') {
     return String(value)
         .replace(/<[^>]+>/g, ' ')
+        .replace(/&(?:nbsp|#160|#x0*a0);/gi, ' ')
+        .replace(/\u00a0/g, ' ')
         .replace(/\s+/g, ' ')
         .trim()
         .slice(0, 600);

@@ -135,6 +135,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-align: center;
     cursor: default;
     border-bottom: 1px solid #333;
 }
@@ -345,6 +346,7 @@
     font: inherit;
     font-size: var(--pisi-map-node-title-size);
     font-weight: 700;
+    text-align: center;
 }
 
 #map-connections {
