@@ -72,9 +72,27 @@ function ensurePisiFileMetadata(filePath, options = {}) {
     }
 
     const data = readResult.data;
+    const legacyMetadata =
+        data.kedi &&
+        typeof data.kedi === 'object' &&
+        !Array.isArray(data.kedi)
+            ? data.kedi
+            : null;
 
     if (!data.pisi || typeof data.pisi !== 'object') {
-        data.pisi = {};
+        data.pisi = legacyMetadata ? { ...legacyMetadata } : {};
+        changed = true;
+    } else if (legacyMetadata) {
+        for (const [key, value] of Object.entries(legacyMetadata)) {
+            if (data.pisi[key] === undefined) {
+                data.pisi[key] = value;
+                changed = true;
+            }
+        }
+    }
+
+    if (legacyMetadata) {
+        delete data.kedi;
         changed = true;
     }
 
