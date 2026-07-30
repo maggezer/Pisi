@@ -8,7 +8,7 @@ let allowWindowClose = false;
 let closeRequestInFlight = false;
 let closeRequestTimer = null;
 const recentInternalFileChanges = new Map();
-const KEDI_INTERNAL_CHANGE_TTL_MS = 6000;
+const PISI_INTERNAL_CHANGE_TTL_MS = 6000;
 
 function getInternalFileChangeSignature(filePath) {
     try {
@@ -33,7 +33,7 @@ function pruneExpiredInternalFileChanges(now = Date.now()) {
 }
 
 function markInternalFileChange(...filePaths) {
-    const expiresAt = Date.now() + KEDI_INTERNAL_CHANGE_TTL_MS;
+    const expiresAt = Date.now() + PISI_INTERNAL_CHANGE_TTL_MS;
 
     for (const filePath of filePaths) {
         if (!filePath) continue;
@@ -47,7 +47,7 @@ function markInternalFileChange(...filePaths) {
 }
 
 function sealInternalFileChange(...filePaths) {
-    const expiresAt = Date.now() + KEDI_INTERNAL_CHANGE_TTL_MS;
+    const expiresAt = Date.now() + PISI_INTERNAL_CHANGE_TTL_MS;
 
     for (const filePath of filePaths) {
         if (!filePath) continue;
@@ -118,14 +118,14 @@ function renamePathInternal(oldPath, newPath) {
     sealInternalFileChange(oldPath, newPath);
 }
 
-const appIconPath = path.join(__dirname, 'assets', 'kedi.ico');
+const appIconPath = path.join(__dirname, 'assets', 'pisi.ico');
 
 if (process.platform === 'win32') {
-    app.setAppUserModelId('com.mumin.kedi');
+    app.setAppUserModelId('com.mumin.pisi');
 }
 
 function getSettingsPath() {
-    return path.join(app.getPath('userData'), 'kedi-settings.json');
+    return path.join(app.getPath('userData'), 'pisi-settings.json');
 }
 
 function readSettings() {
@@ -139,7 +139,7 @@ function readSettings() {
         const raw = fs.readFileSync(settingsPath, 'utf-8');
         return JSON.parse(raw || '{}');
     } catch (error) {
-        console.error('[KEDI] Settings okunamadı:', error);
+        console.error('[PISI] Settings okunamadı:', error);
         return {};
     }
 }
@@ -154,7 +154,7 @@ function writeSettings(settings) {
             { backup: false }
         );
     } catch (error) {
-        console.error('[KEDI] Settings yazılamadı:', error);
+        console.error('[PISI] Settings yazılamadı:', error);
     }
 }
 
@@ -278,21 +278,21 @@ function scheduleWindowStateSave() {
 
 scheduleWindowStateSave.timer = null;
 
-function isKediVisibleFile(fileName) {
+function isPisiVisibleFile(fileName) {
     const lower = fileName.toLowerCase();
     return lower.endsWith('.map') || lower.endsWith('.node');
 }
 
-function isKediManagedSidecarFolder(folderName) {
+function isPisiManagedSidecarFolder(folderName) {
     if (!folderName) return false;
 
     return (
-        folderName === '.kedi.lock' ||
+        folderName === '.pisi.lock' ||
         /^(?:inv|nd)_.+__(?:node|map)_[A-Za-z0-9_-]{1,96}$/.test(folderName)
     );
 }
 
-function getKediFileExt(fileNameOrPath) {
+function getPisiFileExt(fileNameOrPath) {
     const lower = fileNameOrPath.toLowerCase();
 
     if (lower.endsWith('.node')) return '.node';
@@ -301,19 +301,19 @@ function getKediFileExt(fileNameOrPath) {
     return '';
 }
 
-function getKediTypeFromExt(ext) {
+function getPisiTypeFromExt(ext) {
     if (ext === '.node') return 'node';
     if (ext === '.map') return 'map';
     return '';
 }
 
-function getKediSidecarPrefix(ext) {
+function getPisiSidecarPrefix(ext) {
     if (ext === '.node') return 'inv_';
     if (ext === '.map') return 'nd_';
     return '';
 }
 
-function sanitizeKediBaseName(name) {
+function sanitizePisiBaseName(name) {
     let cleaned = String(name || '')
         .trim()
         .replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')
@@ -329,7 +329,7 @@ function sanitizeKediBaseName(name) {
     return cleaned || 'Yeni Dosya';
 }
 
-function stripKediIdSuffix(baseName, id) {
+function stripPisiIdSuffix(baseName, id) {
     if (!baseName || !id) return baseName;
 
     const suffix = `__${id}`;
@@ -343,11 +343,11 @@ function stripKediIdSuffix(baseName, id) {
 
 function getVisibleTitleFromFilePath(filePath, ext, id = '') {
     const rawBaseName = path.basename(filePath, ext);
-    return sanitizeKediBaseName(stripKediIdSuffix(rawBaseName, id));
+    return sanitizePisiBaseName(stripPisiIdSuffix(rawBaseName, id));
 }
 
-function getUniqueKediPhysicalPath(dir, wantedTitle, ext, id, currentPath = null) {
-    const cleanTitle = sanitizeKediBaseName(wantedTitle);
+function getUniquePisiPhysicalPath(dir, wantedTitle, ext, id, currentPath = null) {
+    const cleanTitle = sanitizePisiBaseName(wantedTitle);
 
     const plainPath = path.join(dir, cleanTitle + ext);
 
@@ -384,17 +384,17 @@ function getUniqueKediPhysicalPath(dir, wantedTitle, ext, id, currentPath = null
 }
 
 function sanitizeForSidecarName(name) {
-    return sanitizeKediBaseName(name)
+    return sanitizePisiBaseName(name)
         .replace(/\s+/g, ' ')
         .slice(0, 80);
 }
 
-function generateKediId(ext) {
+function generatePisiId(ext) {
     const prefix = ext === '.map' ? 'map' : 'node';
     return `${prefix}_${crypto.randomUUID()}`;
 }
 
-function normalizeKediId(value, ext = '') {
+function normalizePisiId(value, ext = '') {
     const id = String(value || '').trim();
     const expectedPrefix = ext === '.map'
         ? 'map_'
@@ -438,7 +438,7 @@ function normalizeNodeConnectionTypes(value) {
     };
 }
 
-const KEDI_CONNECTION_KEYS = [
+const PISI_CONNECTION_KEYS = [
     'up-hub',
     'down-hub',
     'co-level',
@@ -452,7 +452,7 @@ function normalizeConnectionRole(role) {
     if (value === 'colevel') return 'co-level';
     if (value === 'co-level') return 'co-level';
 
-    if (KEDI_CONNECTION_KEYS.includes(value)) {
+    if (PISI_CONNECTION_KEYS.includes(value)) {
         return value;
     }
 
@@ -486,8 +486,8 @@ function getEdgeVisualTypeFromRoles(sourceRole, targetRole) {
 }
 
 function normalizeMapEdge(edge) {
-    const sourceId = normalizeKediId(edge?.sourceId, '.node');
-    const targetId = normalizeKediId(edge?.targetId, '.node');
+    const sourceId = normalizePisiId(edge?.sourceId, '.node');
+    const targetId = normalizePisiId(edge?.targetId, '.node');
 
     if (!sourceId || !targetId || sourceId === targetId) {
         return null;
@@ -587,7 +587,7 @@ function enforceSingleParentForTargetInMap(newEdge, existingEdges = []) {
     return convertEdgeToStream(newEdge);
 }
 
-function getKediEdgeSemanticKey(edge) {
+function getPisiEdgeSemanticKey(edge) {
     const normalized = normalizeMapEdge(edge);
     if (!normalized) return '';
 
@@ -605,7 +605,7 @@ function getKediEdgeSemanticKey(edge) {
     ].join(':');
 }
 
-function wouldCreateKediHierarchyCycle(parentByChild, parentId, childId) {
+function wouldCreatePisiHierarchyCycle(parentByChild, parentId, childId) {
     let current = parentId;
     const visited = new Set();
 
@@ -618,7 +618,7 @@ function wouldCreateKediHierarchyCycle(parentByChild, parentId, childId) {
     return false;
 }
 
-function normalizeKediMapEdges(rawEdges = [], validNodeIds = null) {
+function normalizePisiMapEdges(rawEdges = [], validNodeIds = null) {
     const cleanEdges = [];
     const seenSemanticEdges = new Set();
     const parentByChild = new Map();
@@ -655,7 +655,7 @@ function normalizeKediMapEdges(rawEdges = [], validNodeIds = null) {
                 );
             } else if (
                 !existingParentId &&
-                wouldCreateKediHierarchyCycle(
+                wouldCreatePisiHierarchyCycle(
                     parentByChild,
                     edge.sourceId,
                     edge.targetId
@@ -670,7 +670,7 @@ function normalizeKediMapEdges(rawEdges = [], validNodeIds = null) {
             }
         }
 
-        const semanticKey = getKediEdgeSemanticKey(edge);
+        const semanticKey = getPisiEdgeSemanticKey(edge);
         if (!semanticKey || seenSemanticEdges.has(semanticKey)) {
             warnings.push(`Tekrarlanan bağlantı atlandı: ${edge.id}`);
             continue;
@@ -690,22 +690,22 @@ function resetNodeConnectionTypes(metadata) {
     metadata.connectionTypes = getDefaultNodeConnectionTypes();
 }
 
-function getKediSidecarName(title, ext, id) {
-    const prefix = getKediSidecarPrefix(ext);
-    const safeId = normalizeKediId(id, ext);
+function getPisiSidecarName(title, ext, id) {
+    const prefix = getPisiSidecarPrefix(ext);
+    const safeId = normalizePisiId(id, ext);
     if (!prefix || !safeId) return null;
 
     const safeTitle = sanitizeForSidecarName(title);
     return `${prefix}${safeTitle}__${safeId}`;
 }
 
-function createKediDocumentData({ ext, title, id, parentMap = 'none' }) {
+function createPisiDocumentData({ ext, title, id, parentMap = 'none' }) {
     const now = new Date().toISOString();
-    const type = getKediTypeFromExt(ext);
-    const sidecar = getKediSidecarName(title, ext, id);
+    const type = getPisiTypeFromExt(ext);
+    const sidecar = getPisiSidecarName(title, ext, id);
 
     const base = {
-        kedi: {
+        pisi: {
             version: 1,
             type,
             id,
@@ -717,8 +717,8 @@ function createKediDocumentData({ ext, title, id, parentMap = 'none' }) {
     };
 
     if (ext === '.node') {
-        base.kedi.parentMap = parentMap || 'none';
-        base.kedi.connectionTypes = getDefaultNodeConnectionTypes();
+        base.pisi.parentMap = parentMap || 'none';
+        base.pisi.connectionTypes = getDefaultNodeConnectionTypes();
 
         return {
             ...base,
@@ -796,7 +796,7 @@ function writeFileAtomic(filePath, content, options = {}) {
         directoryPath,
         `.${baseName}.${process.pid}.${crypto.randomUUID()}.tmp`
     );
-    const backupPath = `${targetPath}.kedi-backup`;
+    const backupPath = `${targetPath}.pisi-backup`;
     let descriptor = null;
     markInternalFileChange(targetPath, tempPath, backupPath);
 
@@ -835,11 +835,11 @@ function writeFileAtomic(filePath, content, options = {}) {
     }
 }
 
-function writeKediDocument(filePath, data) {
+function writePisiDocument(filePath, data) {
     writeFileAtomic(filePath, JSON.stringify(data, null, 2));
 }
 
-function writeKediDocumentsTransaction(changes = []) {
+function writePisiDocumentsTransaction(changes = []) {
     const uniqueChanges = [];
     const seenPaths = new Set();
 
@@ -862,7 +862,7 @@ function writeKediDocumentsTransaction(changes = []) {
 
     try {
         for (const change of uniqueChanges) {
-            writeKediDocument(change.filePath, change.data);
+            writePisiDocument(change.filePath, change.data);
             written.push(change.filePath);
         }
     } catch (error) {
@@ -903,7 +903,7 @@ function writeKediDocumentsTransaction(changes = []) {
     }
 }
 
-function backupCorruptKediFile(filePath) {
+function backupCorruptPisiFile(filePath) {
     try {
         const raw = fs.readFileSync(filePath);
         const digest = crypto
@@ -924,10 +924,10 @@ function backupCorruptKediFile(filePath) {
 }
 
 function findExistingSidecarById(dir, ext, id) {
-    const safeId = normalizeKediId(id, ext);
+    const safeId = normalizePisiId(id, ext);
     if (!safeId || !fs.existsSync(dir)) return null;
 
-    const prefix = getKediSidecarPrefix(ext);
+    const prefix = getPisiSidecarPrefix(ext);
     if (!prefix) return null;
 
     const suffix = `__${safeId}`;
@@ -959,13 +959,13 @@ function findExistingSidecarById(dir, ext, id) {
     }
 }
 
-function ensureKediSidecar(filePath, metadata) {
-    const ext = getKediFileExt(filePath);
-    const safeId = normalizeKediId(metadata?.id, ext);
+function ensurePisiSidecar(filePath, metadata) {
+    const ext = getPisiFileExt(filePath);
+    const safeId = normalizePisiId(metadata?.id, ext);
     if (!ext || !safeId) return null;
 
     const dir = path.dirname(filePath);
-    const desiredName = getKediSidecarName(metadata.title, ext, safeId);
+    const desiredName = getPisiSidecarName(metadata.title, ext, safeId);
     if (!desiredName) return null;
     const desiredPath = path.join(dir, desiredName);
 
@@ -986,19 +986,19 @@ function ensureKediSidecar(filePath, metadata) {
     return desiredPath;
 }
 
-function ensureKediFileMetadata(filePath, options = {}) {
+function ensurePisiFileMetadata(filePath, options = {}) {
     const persist = options.persist !== false;
     const ensureSidecar = options.ensureSidecar !== false;
-    const ext = getKediFileExt(filePath);
+    const ext = getPisiFileExt(filePath);
 
     if (!ext) {
         return {
             ok: false,
-            error: 'KEDI dosyası değil.'
+            error: 'PISI dosyası değil.'
         };
     }
 
-    const type = getKediTypeFromExt(ext);
+    const type = getPisiTypeFromExt(ext);
     const readResult = readJsonFileResult(filePath);
     let changed = false;
 
@@ -1009,7 +1009,7 @@ function ensureKediFileMetadata(filePath, options = {}) {
         Array.isArray(readResult.data)
     ) {
         const backupPath = persist
-            ? backupCorruptKediFile(filePath)
+            ? backupCorruptPisiFile(filePath)
             : null;
 
         return {
@@ -1026,59 +1026,59 @@ function ensureKediFileMetadata(filePath, options = {}) {
 
     const data = readResult.data;
 
-    if (!data.kedi || typeof data.kedi !== 'object') {
-        data.kedi = {};
+    if (!data.pisi || typeof data.pisi !== 'object') {
+        data.pisi = {};
         changed = true;
     }
 
-    if (!data.kedi.version) {
-        data.kedi.version = 1;
+    if (!data.pisi.version) {
+        data.pisi.version = 1;
         changed = true;
     }
 
-    if (data.kedi.type !== type) {
-        data.kedi.type = type;
+    if (data.pisi.type !== type) {
+        data.pisi.type = type;
         changed = true;
     }
 
-    if (!data.kedi.id) {
-        data.kedi.id = generateKediId(ext);
+    if (!data.pisi.id) {
+        data.pisi.id = generatePisiId(ext);
         changed = true;
-    } else if (!normalizeKediId(data.kedi.id, ext)) {
+    } else if (!normalizePisiId(data.pisi.id, ext)) {
         return {
             ok: false,
             unsafeId: true,
             filePath,
-            error: 'Dosyadaki KEDI kimliği güvenli biçimde değil. Dosya değiştirilmedi.'
+            error: 'Dosyadaki PISI kimliği güvenli biçimde değil. Dosya değiştirilmedi.'
         };
     }
 
     const diaryDate = ext === '.node'
-        ? normalizeKediDiaryIsoDate(data.kedi.diaryDate)
+        ? normalizePisiDiaryIsoDate(data.pisi.diaryDate)
         : null;
     const cleanVisibleTitle = diaryDate
-        ? makeKediDiaryNodeTitle(diaryDate)
-        : getVisibleTitleFromFilePath(filePath, ext, data.kedi.id);
+        ? makePisiDiaryNodeTitle(diaryDate)
+        : getVisibleTitleFromFilePath(filePath, ext, data.pisi.id);
 
-    if (data.kedi.title !== cleanVisibleTitle) {
-        data.kedi.title = cleanVisibleTitle;
+    if (data.pisi.title !== cleanVisibleTitle) {
+        data.pisi.title = cleanVisibleTitle;
         changed = true;
     }
 
-    const desiredSidecar = getKediSidecarName(data.kedi.title, ext, data.kedi.id);
+    const desiredSidecar = getPisiSidecarName(data.pisi.title, ext, data.pisi.id);
 
-    if (data.kedi.sidecar !== desiredSidecar) {
-        data.kedi.sidecar = desiredSidecar;
+    if (data.pisi.sidecar !== desiredSidecar) {
+        data.pisi.sidecar = desiredSidecar;
         changed = true;
     }
 
-    if (!data.kedi.createdAt) {
-        data.kedi.createdAt = new Date().toISOString();
+    if (!data.pisi.createdAt) {
+        data.pisi.createdAt = new Date().toISOString();
         changed = true;
     }
 
-    if (!data.kedi.updatedAt) {
-        data.kedi.updatedAt = data.kedi.createdAt;
+    if (!data.pisi.updatedAt) {
+        data.pisi.updatedAt = data.pisi.createdAt;
         changed = true;
     }
 
@@ -1088,20 +1088,20 @@ function ensureKediFileMetadata(filePath, options = {}) {
             changed = true;
         }
 
-        if (!data.kedi.parentMap) {
-            data.kedi.parentMap = diaryDate ? 'diary' : 'none';
+        if (!data.pisi.parentMap) {
+            data.pisi.parentMap = diaryDate ? 'diary' : 'none';
             changed = true;
         }
 
         const normalizedConnections = normalizeNodeConnectionTypes(
-            data.kedi.connectionTypes
+            data.pisi.connectionTypes
         );
 
         if (
-            JSON.stringify(data.kedi.connectionTypes) !==
+            JSON.stringify(data.pisi.connectionTypes) !==
             JSON.stringify(normalizedConnections)
         ) {
-            data.kedi.connectionTypes = normalizedConnections;
+            data.pisi.connectionTypes = normalizedConnections;
             changed = true;
         }
     }
@@ -1116,45 +1116,45 @@ function ensureKediFileMetadata(filePath, options = {}) {
     }
 
     if (ext === '.map') {
-        if ('parentMap' in data.kedi) {
-            delete data.kedi.parentMap;
+        if ('parentMap' in data.pisi) {
+            delete data.pisi.parentMap;
             changed = true;
         }
 
-        if ('connectionTypes' in data.kedi) {
-            delete data.kedi.connectionTypes;
+        if ('connectionTypes' in data.pisi) {
+            delete data.pisi.connectionTypes;
             changed = true;
         }
     }
 
-    const desiredSidecarName = getKediSidecarName(
-        data.kedi.title,
+    const desiredSidecarName = getPisiSidecarName(
+        data.pisi.title,
         ext,
-        data.kedi.id
+        data.pisi.id
     );
     const desiredSidecarPath = desiredSidecarName
         ? path.join(path.dirname(filePath), desiredSidecarName)
         : null;
     const sidecarPath = ensureSidecar
-        ? ensureKediSidecar(filePath, data.kedi)
+        ? ensurePisiSidecar(filePath, data.pisi)
         : (
             desiredSidecarPath && fs.existsSync(desiredSidecarPath)
                 ? desiredSidecarPath
                 : findExistingSidecarById(
                     path.dirname(filePath),
                     ext,
-                    data.kedi.id
+                    data.pisi.id
                 )
         );
 
     if (changed && persist) {
-        writeKediDocument(filePath, data);
+        writePisiDocument(filePath, data);
     }
 
     return {
         ok: true,
         filePath,
-        metadata: data.kedi,
+        metadata: data.pisi,
         sidecarPath,
         data,
         changed,
@@ -1162,7 +1162,7 @@ function ensureKediFileMetadata(filePath, options = {}) {
     };
 }
 
-function createUniqueKediFile(folderPath, ext, options = {}) {
+function createUniquePisiFile(folderPath, ext, options = {}) {
     if (!folderPath || !fs.existsSync(folderPath)) {
         return {
             ok: false,
@@ -1173,7 +1173,7 @@ function createUniqueKediFile(folderPath, ext, options = {}) {
     if (ext !== '.map' && ext !== '.node') {
         return {
             ok: false,
-            error: 'Geçersiz KEDI dosya türü.'
+            error: 'Geçersiz PISI dosya türü.'
         };
     }
 
@@ -1190,30 +1190,30 @@ function createUniqueKediFile(folderPath, ext, options = {}) {
     }
 
     const title = path.basename(fileName, ext);
-    const id = generateKediId(ext);
+    const id = generatePisiId(ext);
 
-    const data = createKediDocumentData({
+    const data = createPisiDocumentData({
         ext,
         title,
         id,
         parentMap: options.parentMap || 'none'
     });
 
-    writeKediDocument(fullPath, data);
+    writePisiDocument(fullPath, data);
 
-    const sidecarPath = ensureKediSidecar(fullPath, data.kedi);
+    const sidecarPath = ensurePisiSidecar(fullPath, data.pisi);
 
     return {
         ok: true,
         fileName,
         fullPath,
         sidecarPath,
-        metadata: data.kedi
+        metadata: data.pisi
     };
 }
 
 
-function normalizeKediDiaryIsoDate(value) {
+function normalizePisiDiaryIsoDate(value) {
     const raw = String(value || '').trim();
     const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
 
@@ -1235,7 +1235,7 @@ function normalizeKediDiaryIsoDate(value) {
     return raw;
 }
 
-function ensureKediDiaryFolder(projectFolder) {
+function ensurePisiDiaryFolder(projectFolder) {
     if (!projectFolder || !fs.existsSync(projectFolder)) {
         return {
             ok: false,
@@ -1253,15 +1253,15 @@ function ensureKediDiaryFolder(projectFolder) {
     }
 
     const diaryFolder = path.join(projectFolder, 'diary');
-    const markerPath = path.join(diaryFolder, '.kedi-diary');
+    const markerPath = path.join(diaryFolder, '.pisi-diary');
 
     if (
         fs.existsSync(diaryFolder) &&
-        !isKediManagedDiaryFolder(diaryFolder)
+        !isPisiManagedDiaryFolder(diaryFolder)
     ) {
         return {
             ok: false,
-            error: 'Projedeki mevcut "diary" klasörü KEDI tarafından yönetilmiyor. Kullanıcı klasörünü korumak için işlem durduruldu.'
+            error: 'Projedeki mevcut "diary" klasörü PISI tarafından yönetilmiyor. Kullanıcı klasörünü korumak için işlem durduruldu.'
         };
     }
 
@@ -1272,7 +1272,7 @@ function ensureKediDiaryFolder(projectFolder) {
     if (!fs.existsSync(markerPath)) {
         writeFileAtomic(
             markerPath,
-            'Bu klasör KEDI diary özelliği tarafından yönetilir.\n',
+            'Bu klasör PISI diary özelliği tarafından yönetilir.\n',
             { backup: false }
         );
     }
@@ -1283,18 +1283,18 @@ function ensureKediDiaryFolder(projectFolder) {
     };
 }
 
-function makeKediDiaryNodeTitle(isoDate) {
+function makePisiDiaryNodeTitle(isoDate) {
     const [year, month, day] = String(isoDate).split('-');
     return `${day}-${month}-${year}`;
 }
 
-function getKediDiaryNodePath(projectFolder, isoDate) {
+function getPisiDiaryNodePath(projectFolder, isoDate) {
     return path.join(projectFolder, 'diary', `${isoDate}.node`);
 }
 
 function getOrCreateDiaryNode(projectFolder, isoDate) {
     try {
-        const normalizedDate = normalizeKediDiaryIsoDate(isoDate);
+        const normalizedDate = normalizePisiDiaryIsoDate(isoDate);
 
         if (!normalizedDate) {
             return {
@@ -1303,55 +1303,55 @@ function getOrCreateDiaryNode(projectFolder, isoDate) {
             };
         }
 
-        const folderResult = ensureKediDiaryFolder(projectFolder);
+        const folderResult = ensurePisiDiaryFolder(projectFolder);
 
         if (!folderResult.ok) return folderResult;
 
-        const nodePath = getKediDiaryNodePath(projectFolder, normalizedDate);
+        const nodePath = getPisiDiaryNodePath(projectFolder, normalizedDate);
 
         if (!fs.existsSync(nodePath)) {
-            const id = generateKediId('.node');
-            const title = makeKediDiaryNodeTitle(normalizedDate);
+            const id = generatePisiId('.node');
+            const title = makePisiDiaryNodeTitle(normalizedDate);
 
-            const data = createKediDocumentData({
+            const data = createPisiDocumentData({
                 ext: '.node',
                 title,
                 id,
                 parentMap: 'diary'
             });
 
-            data.kedi.diaryDate = normalizedDate;
-            data.content = `<h2>${escapeHtmlForKediDiary(title)}</h2><div><br></div>`;
+            data.pisi.diaryDate = normalizedDate;
+            data.content = `<h2>${escapeHtmlForPisiDiary(title)}</h2><div><br></div>`;
 
-            writeKediDocument(nodePath, data);
-            ensureKediSidecar(nodePath, data.kedi);
+            writePisiDocument(nodePath, data);
+            ensurePisiSidecar(nodePath, data.pisi);
         }
 
-        const ensured = ensureKediFileMetadata(nodePath);
+        const ensured = ensurePisiFileMetadata(nodePath);
 
         if (!ensured.ok) return ensured;
 
         if (
-            ensured.data?.kedi &&
+            ensured.data?.pisi &&
             (
-                ensured.data.kedi.diaryDate !== normalizedDate ||
-                ensured.data.kedi.parentMap !== 'diary' ||
-                ensured.data.kedi.title !== makeKediDiaryNodeTitle(normalizedDate)
+                ensured.data.pisi.diaryDate !== normalizedDate ||
+                ensured.data.pisi.parentMap !== 'diary' ||
+                ensured.data.pisi.title !== makePisiDiaryNodeTitle(normalizedDate)
             )
         ) {
-            ensured.data.kedi.diaryDate = normalizedDate;
-            ensured.data.kedi.parentMap = 'diary';
-            ensured.data.kedi.title = makeKediDiaryNodeTitle(normalizedDate);
-            ensured.data.kedi.updatedAt = new Date().toISOString();
-            const repairedSidecarPath = ensureKediSidecar(
+            ensured.data.pisi.diaryDate = normalizedDate;
+            ensured.data.pisi.parentMap = 'diary';
+            ensured.data.pisi.title = makePisiDiaryNodeTitle(normalizedDate);
+            ensured.data.pisi.updatedAt = new Date().toISOString();
+            const repairedSidecarPath = ensurePisiSidecar(
                 nodePath,
-                ensured.data.kedi
+                ensured.data.pisi
             );
-            ensured.data.kedi.sidecar = repairedSidecarPath
+            ensured.data.pisi.sidecar = repairedSidecarPath
                 ? path.basename(repairedSidecarPath)
-                : ensured.data.kedi.sidecar;
-            writeKediDocument(nodePath, ensured.data);
-            ensured.metadata = ensured.data.kedi;
+                : ensured.data.pisi.sidecar;
+            writePisiDocument(nodePath, ensured.data);
+            ensured.metadata = ensured.data.pisi;
             ensured.sidecarPath = repairedSidecarPath;
         }
 
@@ -1363,7 +1363,7 @@ function getOrCreateDiaryNode(projectFolder, isoDate) {
             type: 'file',
             isDirectory: false,
             isFile: true,
-            displayName: ensured.metadata?.title || makeKediDiaryNodeTitle(normalizedDate),
+            displayName: ensured.metadata?.title || makePisiDiaryNodeTitle(normalizedDate),
             metadata: ensured.metadata,
             sidecarPath: ensured.sidecarPath,
             data: ensured.data
@@ -1376,18 +1376,18 @@ function getOrCreateDiaryNode(projectFolder, isoDate) {
     }
 }
 
-const KEDI_DIARY_MANAGED_START = '<!--KEDI_DIARY_MANAGED_START-->';
-const KEDI_DIARY_MANAGED_END = '<!--KEDI_DIARY_MANAGED_END-->';
+const PISI_DIARY_MANAGED_START = '<!--PISI_DIARY_MANAGED_START-->';
+const PISI_DIARY_MANAGED_END = '<!--PISI_DIARY_MANAGED_END-->';
 
-function stripKediDiaryManagedSection(content = '') {
-    const escapedStart = KEDI_DIARY_MANAGED_START.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const escapedEnd = KEDI_DIARY_MANAGED_END.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function stripPisiDiaryManagedSection(content = '') {
+    const escapedStart = PISI_DIARY_MANAGED_START.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escapedEnd = PISI_DIARY_MANAGED_END.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(`${escapedStart}[\\s\\S]*?${escapedEnd}`, 'g');
 
     return String(content || '').replace(regex, '');
 }
 
-function escapeHtmlForKediDiary(value = '') {
+function escapeHtmlForPisiDiary(value = '') {
     return String(value || '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -1396,7 +1396,7 @@ function escapeHtmlForKediDiary(value = '') {
         .replace(/'/g, '&#039;');
 }
 
-function sanitizeKediDiaryBlockHtml(html = '') {
+function sanitizePisiDiaryBlockHtml(html = '') {
     return String(html || '')
         .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
         .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, '')
@@ -1417,10 +1417,10 @@ function sanitizeKediDiaryBlockHtml(html = '') {
         .replace(/\sstyle\s*=\s*[^\s>]*(?:expression\s*\(|url\s*\()[^\s>]*/gi, '');
 }
 
-function normalizeKediDiarySyncEntry(entry) {
+function normalizePisiDiarySyncEntry(entry) {
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return null;
 
-    const date = normalizeKediDiaryIsoDate(entry?.date);
+    const date = normalizePisiDiaryIsoDate(entry?.date);
 
     if (!date) return null;
 
@@ -1450,37 +1450,37 @@ function normalizeKediDiarySyncEntry(entry) {
         tag,
         priority,
         text,
-        html: sanitizeKediDiaryBlockHtml(
+        html: sanitizePisiDiaryBlockHtml(
             String(entry.html || '').slice(0, 2000000)
         )
     };
 }
 
-function buildKediDiaryManagedSection(isoDate, entries = []) {
+function buildPisiDiaryManagedSection(isoDate, entries = []) {
     if (!entries.length) return '';
 
-    const safeDate = escapeHtmlForKediDiary(isoDate);
+    const safeDate = escapeHtmlForPisiDiary(isoDate);
     const blocks = entries.map((entry) => {
-        const safeSourceKey = escapeHtmlForKediDiary(entry.sourceKey);
-        const safeNodeTitle = escapeHtmlForKediDiary(entry.nodeTitle || 'Node');
-        const safeTag = escapeHtmlForKediDiary(entry.tag || '');
-        const safeText = escapeHtmlForKediDiary(entry.text || '');
+        const safeSourceKey = escapeHtmlForPisiDiary(entry.sourceKey);
+        const safeNodeTitle = escapeHtmlForPisiDiary(entry.nodeTitle || 'Node');
+        const safeTag = escapeHtmlForPisiDiary(entry.tag || '');
+        const safeText = escapeHtmlForPisiDiary(entry.text || '');
         const blockHtml = entry.html || `<div>${safeText || '(boş blok)'}</div>`;
 
         return `
-<div class="kedi-diary-managed-block" data-kedi-diary-source="${safeSourceKey}">
-    <div class="kedi-diary-managed-meta">${safeNodeTitle} · ..${safeTag}</div>
+<div class="pisi-diary-managed-block" data-pisi-diary-source="${safeSourceKey}">
+    <div class="pisi-diary-managed-meta">${safeNodeTitle} · ..${safeTag}</div>
     ${blockHtml}
 </div>`;
     }).join('\n');
 
-    return `${KEDI_DIARY_MANAGED_START}
+    return `${PISI_DIARY_MANAGED_START}
 <h3>Görevler · ${safeDate}</h3>
 ${blocks}
-${KEDI_DIARY_MANAGED_END}`;
+${PISI_DIARY_MANAGED_END}`;
 }
 
-function listKediDiaryNodePaths(projectFolder) {
+function listPisiDiaryNodePaths(projectFolder) {
     const diaryFolder = path.join(projectFolder, 'diary');
 
     if (!fs.existsSync(diaryFolder)) return [];
@@ -1490,7 +1490,7 @@ function listKediDiaryNodePaths(projectFolder) {
         .map((entry) => path.join(diaryFolder, entry.name));
 }
 
-function listKediDiaryDates(projectFolder) {
+function listPisiDiaryDates(projectFolder) {
     try {
         if (!projectFolder || !fs.existsSync(projectFolder)) {
             return {
@@ -1504,7 +1504,7 @@ function listKediDiaryDates(projectFolder) {
 
         if (
             !fs.existsSync(diaryFolder) ||
-            !isKediManagedDiaryFolder(diaryFolder)
+            !isPisiManagedDiaryFolder(diaryFolder)
         ) {
             return {
                 ok: true,
@@ -1514,12 +1514,12 @@ function listKediDiaryDates(projectFolder) {
 
         const dates = new Set();
 
-        for (const nodePath of listKediDiaryNodePaths(projectFolder)) {
-            let date = normalizeKediDiaryIsoDate(path.basename(nodePath, '.node'));
+        for (const nodePath of listPisiDiaryNodePaths(projectFolder)) {
+            let date = normalizePisiDiaryIsoDate(path.basename(nodePath, '.node'));
 
             if (!date) {
-                const ensured = ensureKediFileMetadata(nodePath);
-                date = normalizeKediDiaryIsoDate(ensured?.data?.kedi?.diaryDate);
+                const ensured = ensurePisiFileMetadata(nodePath);
+                date = normalizePisiDiaryIsoDate(ensured?.data?.pisi?.diaryDate);
             }
 
             if (date) {
@@ -1574,7 +1574,7 @@ function syncDiaryMissions(projectFolder, payload = {}) {
             !entriesInput.length &&
             (
                 !fs.existsSync(diaryFolderPath) ||
-                !isKediManagedDiaryFolder(diaryFolderPath)
+                !isPisiManagedDiaryFolder(diaryFolderPath)
             )
         ) {
             return {
@@ -1589,7 +1589,7 @@ function syncDiaryMissions(projectFolder, payload = {}) {
         let invalidEntryCount = 0;
 
         for (const rawEntry of entriesInput) {
-            const entry = normalizeKediDiarySyncEntry(rawEntry);
+            const entry = normalizePisiDiarySyncEntry(rawEntry);
 
             if (!entry) {
                 invalidEntryCount++;
@@ -1616,7 +1616,7 @@ function syncDiaryMissions(projectFolder, payload = {}) {
             };
         }
 
-        const folderResult = ensureKediDiaryFolder(projectFolder);
+        const folderResult = ensurePisiDiaryFolder(projectFolder);
 
         if (!folderResult.ok) return folderResult;
 
@@ -1628,33 +1628,33 @@ function syncDiaryMissions(projectFolder, payload = {}) {
             }
         }
 
-        const allDiaryNodes = listKediDiaryNodePaths(projectFolder);
+        const allDiaryNodes = listPisiDiaryNodePaths(projectFolder);
         let updatedCount = 0;
         const diaryChanges = [];
 
         for (const nodePath of allDiaryNodes) {
-            const ensured = ensureKediFileMetadata(nodePath);
+            const ensured = ensurePisiFileMetadata(nodePath);
 
             if (!ensured.ok || ensured.metadata?.type !== 'node') continue;
 
             const fileDate =
-                normalizeKediDiaryIsoDate(ensured.data?.kedi?.diaryDate) ||
-                normalizeKediDiaryIsoDate(path.basename(nodePath, '.node'));
+                normalizePisiDiaryIsoDate(ensured.data?.pisi?.diaryDate) ||
+                normalizePisiDiaryIsoDate(path.basename(nodePath, '.node'));
 
             if (!fileDate) continue;
 
-            const manualContent = stripKediDiaryManagedSection(ensured.data.content || '');
+            const manualContent = stripPisiDiaryManagedSection(ensured.data.content || '');
             const entries = entriesByDate.get(fileDate) || [];
-            const managedSection = buildKediDiaryManagedSection(fileDate, entries);
+            const managedSection = buildPisiDiaryManagedSection(fileDate, entries);
             const nextContent = managedSection
                 ? `${manualContent}${managedSection}`
                 : manualContent;
 
             if (nextContent !== String(ensured.data.content || '')) {
                 ensured.data.content = nextContent;
-                ensured.data.kedi.parentMap = 'diary';
-                ensured.data.kedi.diaryDate = fileDate;
-                ensured.data.kedi.updatedAt = new Date().toISOString();
+                ensured.data.pisi.parentMap = 'diary';
+                ensured.data.pisi.diaryDate = fileDate;
+                ensured.data.pisi.updatedAt = new Date().toISOString();
                 diaryChanges.push({
                     filePath: nodePath,
                     data: ensured.data
@@ -1663,7 +1663,7 @@ function syncDiaryMissions(projectFolder, payload = {}) {
             }
         }
 
-        writeKediDocumentsTransaction(diaryChanges);
+        writePisiDocumentsTransaction(diaryChanges);
 
         return {
             ok: true,
@@ -1687,7 +1687,7 @@ function createNodeUnderMap(mapPath) {
             };
         }
 
-        const ext = getKediFileExt(mapPath);
+        const ext = getPisiFileExt(mapPath);
 
         if (ext !== '.map') {
             return {
@@ -1696,7 +1696,7 @@ function createNodeUnderMap(mapPath) {
             };
         }
 
-        const mapInfo = ensureKediFileMetadata(mapPath);
+        const mapInfo = ensurePisiFileMetadata(mapPath);
 
         if (!mapInfo.ok) {
             return mapInfo;
@@ -1712,7 +1712,7 @@ function createNodeUnderMap(mapPath) {
             };
         }
 
-        const nodeInfo = createUniqueKediFile(mapSidecarPath, '.node', {
+        const nodeInfo = createUniquePisiFile(mapSidecarPath, '.node', {
             parentMap: mapId
         });
 
@@ -1737,7 +1737,7 @@ function createNodeUnderMap(mapPath) {
     }
 }
 
-function renameKediFile(oldPath, newBaseName) {
+function renamePisiFile(oldPath, newBaseName) {
     let newPath = null;
     let oldSidecarPath = null;
     let newSidecarPath = null;
@@ -1753,7 +1753,7 @@ function renameKediFile(oldPath, newBaseName) {
             };
         }
 
-        const ext = getKediFileExt(oldPath);
+        const ext = getPisiFileExt(oldPath);
 
         if (ext !== '.node' && ext !== '.map') {
             return {
@@ -1762,7 +1762,7 @@ function renameKediFile(oldPath, newBaseName) {
             };
         }
 
-        const ensuredBefore = ensureKediFileMetadata(oldPath);
+        const ensuredBefore = ensurePisiFileMetadata(oldPath);
         if (!ensuredBefore.ok) return ensuredBefore;
 
         const dir = path.dirname(oldPath);
@@ -1773,23 +1773,23 @@ function renameKediFile(oldPath, newBaseName) {
             ? ensuredBefore.sidecarPath
             : null;
 
-        let cleanTitle = sanitizeKediBaseName(newBaseName);
+        let cleanTitle = sanitizePisiBaseName(newBaseName);
 
         if (cleanTitle.toLowerCase().endsWith(ext)) {
             cleanTitle = cleanTitle.slice(0, -ext.length);
-            cleanTitle = sanitizeKediBaseName(cleanTitle);
+            cleanTitle = sanitizePisiBaseName(cleanTitle);
         }
 
         // Aynı görünen title'a izin veriyoruz.
         // Eğer plain dosya adı doluysa gerçek dosya adı title__id.ext olur.
-        newPath = getUniqueKediPhysicalPath(
+        newPath = getUniquePisiPhysicalPath(
             dir,
             cleanTitle,
             ext,
             id,
             oldPath
         );
-        const newSidecarName = getKediSidecarName(cleanTitle, ext, id);
+        const newSidecarName = getPisiSidecarName(cleanTitle, ext, id);
         newSidecarPath = newSidecarName
             ? path.join(dir, newSidecarName)
             : null;
@@ -1824,15 +1824,15 @@ function renameKediFile(oldPath, newBaseName) {
 
         const data = structuredClone(ensuredBefore.data);
 
-        if (!data.kedi) data.kedi = {};
+        if (!data.pisi) data.pisi = {};
 
-        data.kedi.title = cleanTitle;
-        data.kedi.sidecar = newSidecarName;
-        data.kedi.updatedAt = new Date().toISOString();
+        data.pisi.title = cleanTitle;
+        data.pisi.sidecar = newSidecarName;
+        data.pisi.updatedAt = new Date().toISOString();
 
-        writeKediDocument(newPath, data);
+        writePisiDocument(newPath, data);
 
-        const ensuredAfter = ensureKediFileMetadata(newPath);
+        const ensuredAfter = ensurePisiFileMetadata(newPath);
 
         return {
             ok: true,
@@ -1900,7 +1900,7 @@ function renameKediFile(oldPath, newBaseName) {
 }
 
 function getUniqueDirectoryPath(destinationFolder, wantedName) {
-    const cleanName = sanitizeKediBaseName(wantedName || 'Yeni Klasör');
+    const cleanName = sanitizePisiBaseName(wantedName || 'Yeni Klasör');
     let candidate = path.join(destinationFolder, cleanName);
 
     if (!fs.existsSync(candidate)) {
@@ -1925,7 +1925,7 @@ function isPathInsideDirectory(childPath, parentPath) {
     return Boolean(relative) && !relative.startsWith('..') && !path.isAbsolute(relative);
 }
 
-function moveKediItem(sourcePath, destinationFolderPath, options = {}) {
+function movePisiItem(sourcePath, destinationFolderPath, options = {}) {
     let movedPath = null;
     let movedSidecarPath = null;
     let originalSidecarPath = null;
@@ -2002,7 +2002,7 @@ function moveKediItem(sourcePath, destinationFolderPath, options = {}) {
             };
         }
 
-        const ext = getKediFileExt(sourcePath);
+        const ext = getPisiFileExt(sourcePath);
 
         if (ext !== '.node' && ext !== '.map') {
             return {
@@ -2011,18 +2011,18 @@ function moveKediItem(sourcePath, destinationFolderPath, options = {}) {
             };
         }
 
-        const info = ensureKediFileMetadata(sourcePath);
+        const info = ensurePisiFileMetadata(sourcePath);
         if (!info.ok) return info;
         originalContent = fs.readFileSync(sourcePath, 'utf-8');
 
         const id = info.metadata.id;
-        const title = sanitizeKediBaseName(info.metadata.title || getVisibleTitleFromFilePath(sourcePath, ext, id));
-        const newPath = getUniqueKediPhysicalPath(destinationFolderPath, title, ext, id);
+        const title = sanitizePisiBaseName(info.metadata.title || getVisibleTitleFromFilePath(sourcePath, ext, id));
+        const newPath = getUniquePisiPhysicalPath(destinationFolderPath, title, ext, id);
         const oldSidecarPath = info.sidecarPath && fs.existsSync(info.sidecarPath)
             ? info.sidecarPath
             : null;
         originalSidecarPath = oldSidecarPath;
-        const desiredSidecarName = getKediSidecarName(title, ext, id);
+        const desiredSidecarName = getPisiSidecarName(title, ext, id);
         const desiredSidecarPath = desiredSidecarName
             ? path.join(destinationFolderPath, desiredSidecarName)
             : null;
@@ -2038,7 +2038,7 @@ function moveKediItem(sourcePath, destinationFolderPath, options = {}) {
         ) {
             return {
                 ok: false,
-                error: 'Hedefte aynı KEDI yan klasörü zaten var.'
+                error: 'Hedefte aynı PISI yan klasörü zaten var.'
             };
         }
 
@@ -2060,24 +2060,24 @@ function moveKediItem(sourcePath, destinationFolderPath, options = {}) {
 
         const data = readJsonFileSafe(newPath) || info.data;
 
-        if (!data.kedi) data.kedi = {};
+        if (!data.pisi) data.pisi = {};
 
-        data.kedi.title = title;
-        data.kedi.sidecar = desiredSidecarName;
-        data.kedi.updatedAt = new Date().toISOString();
+        data.pisi.title = title;
+        data.pisi.sidecar = desiredSidecarName;
+        data.pisi.updatedAt = new Date().toISOString();
 
         if (ext === '.node') {
-            data.kedi.parentMap = options.parentMapId || 'none';
+            data.pisi.parentMap = options.parentMapId || 'none';
         }
 
         if (ext === '.map') {
-            delete data.kedi.parentMap;
-            delete data.kedi.connectionTypes;
+            delete data.pisi.parentMap;
+            delete data.pisi.connectionTypes;
         }
 
-        writeKediDocument(newPath, data);
+        writePisiDocument(newPath, data);
 
-        const ensuredAfter = ensureKediFileMetadata(newPath);
+        const ensuredAfter = ensurePisiFileMetadata(newPath);
 
         let cleanupResult = null;
 
@@ -2091,7 +2091,7 @@ function moveKediItem(sourcePath, destinationFolderPath, options = {}) {
 
         return {
             ok: true,
-            type: getKediTypeFromExt(ext),
+            type: getPisiTypeFromExt(ext),
             oldPath: sourcePath,
             fullPath: newPath,
             fileName: path.basename(newPath),
@@ -2169,7 +2169,7 @@ function moveKediItem(sourcePath, destinationFolderPath, options = {}) {
     }
 }
 
-function getKediDocument(filePath) {
+function getPisiDocument(filePath) {
     try {
         if (!filePath || !fs.existsSync(filePath)) {
             return {
@@ -2178,7 +2178,7 @@ function getKediDocument(filePath) {
             };
         }
 
-        const ensured = ensureKediFileMetadata(filePath);
+        const ensured = ensurePisiFileMetadata(filePath);
 
         if (!ensured.ok) return ensured;
 
@@ -2224,7 +2224,7 @@ function finiteNumberInRange(value, fallback, min, max) {
     return Math.min(max, Math.max(min, number));
 }
 
-function normalizeKediNodeLayout(layout = {}, fallback = {}) {
+function normalizePisiNodeLayout(layout = {}, fallback = {}) {
     return {
         x: finiteNumberInRange(layout.x, fallback.x ?? 80, -1000000, 1000000),
         y: finiteNumberInRange(layout.y, fallback.y ?? 80, -1000000, 1000000),
@@ -2233,7 +2233,7 @@ function normalizeKediNodeLayout(layout = {}, fallback = {}) {
     };
 }
 
-function normalizeKediMapCamera(camera = {}) {
+function normalizePisiMapCamera(camera = {}) {
     return {
         x: finiteNumberInRange(camera.x, 0, -1000000, 1000000),
         y: finiteNumberInRange(camera.y, 0, -1000000, 1000000),
@@ -2243,7 +2243,7 @@ function normalizeKediMapCamera(camera = {}) {
 
 function listNodesForMap(mapPath) {
     try {
-        const mapInfo = ensureKediFileMetadata(mapPath);
+        const mapInfo = ensurePisiFileMetadata(mapPath);
 
         if (!mapInfo.ok) return mapInfo;
 
@@ -2286,7 +2286,7 @@ function listNodesForMap(mapPath) {
         const seenNodeIds = new Set();
 
         const nodes = nodeFiles.map((nodePath, index) => {
-            const nodeInfo = ensureKediFileMetadata(nodePath);
+            const nodeInfo = ensurePisiFileMetadata(nodePath);
 
             if (!nodeInfo.ok) {
                 return null;
@@ -2296,7 +2296,7 @@ function listNodesForMap(mapPath) {
 
             if (seenNodeIds.has(nodeId)) {
                 throw new Error(
-                    `Map içinde aynı KEDI kimliğine sahip iki node bulundu: ${nodeId}`
+                    `Map içinde aynı PISI kimliğine sahip iki node bulundu: ${nodeId}`
                 );
             }
 
@@ -2315,7 +2315,7 @@ function listNodesForMap(mapPath) {
             }
 
             const fallbackLayout = getDefaultNodeLayout(index);
-            const normalizedLayout = normalizeKediNodeLayout(
+            const normalizedLayout = normalizePisiNodeLayout(
                 layout,
                 fallbackLayout
             );
@@ -2350,7 +2350,7 @@ function listNodesForMap(mapPath) {
             changed = true;
         }
 
-        const normalizedCamera = normalizeKediMapCamera(mapInfo.data.map.camera);
+        const normalizedCamera = normalizePisiMapCamera(mapInfo.data.map.camera);
         if (
             JSON.stringify(normalizedCamera) !==
             JSON.stringify(mapInfo.data.map.camera)
@@ -2360,8 +2360,8 @@ function listNodesForMap(mapPath) {
         }
 
         if (changed) {
-            mapInfo.data.kedi.updatedAt = new Date().toISOString();
-            writeKediDocument(mapPath, mapInfo.data);
+            mapInfo.data.pisi.updatedAt = new Date().toISOString();
+            writePisiDocument(mapPath, mapInfo.data);
         }
 
         const syncResult = syncMapConnectionMetadata(mapPath);
@@ -2385,7 +2385,7 @@ function listNodesForMap(mapPath) {
 
 function saveMapNodeLayout(mapPath, nodeLayouts = []) {
     try {
-        const mapInfo = ensureKediFileMetadata(mapPath);
+        const mapInfo = ensurePisiFileMetadata(mapPath);
 
         if (!mapInfo.ok) return mapInfo;
 
@@ -2410,7 +2410,7 @@ function saveMapNodeLayout(mapPath, nodeLayouts = []) {
         for (const incoming of Array.isArray(nodeLayouts)
             ? nodeLayouts.slice(0, 5000)
             : []) {
-            const incomingId = normalizeKediId(incoming?.id, '.node');
+            const incomingId = normalizePisiId(incoming?.id, '.node');
             if (!incomingId || !knownNodeIds.has(incomingId)) continue;
 
             let stored = mapInfo.data.map.nodes.find(
@@ -2424,13 +2424,13 @@ function saveMapNodeLayout(mapPath, nodeLayouts = []) {
 
             Object.assign(
                 stored,
-                normalizeKediNodeLayout(incoming, stored)
+                normalizePisiNodeLayout(incoming, stored)
             );
         }
 
-        mapInfo.data.kedi.updatedAt = new Date().toISOString();
+        mapInfo.data.pisi.updatedAt = new Date().toISOString();
 
-        writeKediDocument(mapPath, mapInfo.data);
+        writePisiDocument(mapPath, mapInfo.data);
 
         return {
             ok: true
@@ -2445,7 +2445,7 @@ function saveMapNodeLayout(mapPath, nodeLayouts = []) {
 
 function saveMapCamera(mapPath, camera = {}) {
     try {
-        const mapInfo = ensureKediFileMetadata(mapPath);
+        const mapInfo = ensurePisiFileMetadata(mapPath);
 
         if (!mapInfo.ok) return mapInfo;
 
@@ -2457,7 +2457,7 @@ function saveMapCamera(mapPath, camera = {}) {
             };
         }
 
-        mapInfo.data.map.camera = normalizeKediMapCamera(camera);
+        mapInfo.data.map.camera = normalizePisiMapCamera(camera);
 
         if (Array.isArray(camera.collapsedHubs)) {
             mapInfo.data.map.collapsedHubs = Array.from(
@@ -2471,9 +2471,9 @@ function saveMapCamera(mapPath, camera = {}) {
             ).slice(0, 10000);
         }
 
-        mapInfo.data.kedi.updatedAt = new Date().toISOString();
+        mapInfo.data.pisi.updatedAt = new Date().toISOString();
 
-        writeKediDocument(mapPath, mapInfo.data);
+        writePisiDocument(mapPath, mapInfo.data);
 
         return { ok: true };
     } catch (error) {
@@ -2486,7 +2486,7 @@ function saveMapCamera(mapPath, camera = {}) {
 
 function saveNodeContent(nodePath, content = '') {
     try {
-        const nodeInfo = ensureKediFileMetadata(nodePath);
+        const nodeInfo = ensurePisiFileMetadata(nodePath);
 
         if (!nodeInfo.ok) return nodeInfo;
 
@@ -2498,15 +2498,15 @@ function saveNodeContent(nodePath, content = '') {
         }
 
         nodeInfo.data.content = String(content || '');
-        nodeInfo.data.kedi.updatedAt = new Date().toISOString();
+        nodeInfo.data.pisi.updatedAt = new Date().toISOString();
 
-        writeKediDocument(nodePath, nodeInfo.data);
+        writePisiDocument(nodePath, nodeInfo.data);
 
         return {
             ok: true,
             fullPath: nodePath,
             fileName: path.basename(nodePath),
-            metadata: nodeInfo.data.kedi,
+            metadata: nodeInfo.data.pisi,
             content: nodeInfo.data.content,
             preview: stripPreviewText(nodeInfo.data.content)
         };
@@ -2519,7 +2519,7 @@ function saveNodeContent(nodePath, content = '') {
 }
 
 function getNodeDocByIdInMap(mapPath, nodeId) {
-    const mapInfo = ensureKediFileMetadata(mapPath);
+    const mapInfo = ensurePisiFileMetadata(mapPath);
 
     if (!mapInfo.ok || !mapInfo.sidecarPath || !fs.existsSync(mapInfo.sidecarPath)) {
         return null;
@@ -2531,7 +2531,7 @@ function getNodeDocByIdInMap(mapPath, nodeId) {
         if (!entry.isFile() || !entry.name.toLowerCase().endsWith('.node')) continue;
 
         const nodePath = path.join(mapInfo.sidecarPath, entry.name);
-        const nodeInfo = ensureKediFileMetadata(nodePath);
+        const nodeInfo = ensurePisiFileMetadata(nodePath);
 
         if (nodeInfo.ok && nodeInfo.metadata.id === nodeId) {
             return nodeInfo;
@@ -2542,7 +2542,7 @@ function getNodeDocByIdInMap(mapPath, nodeId) {
 }
 
 function getAllNodeDocsInMap(mapPath) {
-    const mapInfo = ensureKediFileMetadata(mapPath);
+    const mapInfo = ensurePisiFileMetadata(mapPath);
 
     if (!mapInfo.ok || !mapInfo.sidecarPath || !fs.existsSync(mapInfo.sidecarPath)) {
         return {
@@ -2562,13 +2562,13 @@ function getAllNodeDocsInMap(mapPath) {
         }
 
         const nodePath = path.join(mapInfo.sidecarPath, entry.name);
-        const nodeInfo = ensureKediFileMetadata(nodePath);
+        const nodeInfo = ensurePisiFileMetadata(nodePath);
 
         if (nodeInfo.ok && nodeInfo.metadata?.id) {
             if (nodesById.has(nodeInfo.metadata.id)) {
                 return {
                     ok: false,
-                    error: `Map içinde aynı KEDI kimliğine sahip iki node bulundu: ${nodeInfo.metadata.id}`,
+                    error: `Map içinde aynı PISI kimliğine sahip iki node bulundu: ${nodeInfo.metadata.id}`,
                     mapInfo,
                     nodesById
                 };
@@ -2613,13 +2613,13 @@ function syncMapConnectionMetadata(mapPath) {
     for (const nodeInfo of nodesById.values()) {
         oldConnectionTypesByPath.set(
             nodeInfo.filePath,
-            JSON.stringify(normalizeNodeConnectionTypes(nodeInfo.data.kedi.connectionTypes))
+            JSON.stringify(normalizeNodeConnectionTypes(nodeInfo.data.pisi.connectionTypes))
         );
 
-        resetNodeConnectionTypes(nodeInfo.data.kedi);
+        resetNodeConnectionTypes(nodeInfo.data.pisi);
     }
 
-    const normalizedEdges = normalizeKediMapEdges(
+    const normalizedEdges = normalizePisiMapEdges(
         mapInfo.data.map.edges,
         new Set(nodesById.keys())
     );
@@ -2630,13 +2630,13 @@ function syncMapConnectionMetadata(mapPath) {
         const targetInfo = nodesById.get(edge.targetId);
 
         addUniqueConnectionType(
-            sourceInfo.data.kedi,
+            sourceInfo.data.pisi,
             edge.sourceRole,
             edge.targetId
         );
 
         addUniqueConnectionType(
-            targetInfo.data.kedi,
+            targetInfo.data.pisi,
             edge.targetRole,
             edge.sourceId
         );
@@ -2649,7 +2649,7 @@ function syncMapConnectionMetadata(mapPath) {
     const documentChanges = [];
 
     if (oldEdgesJson !== newEdgesJson) {
-        mapInfo.data.kedi.updatedAt = new Date().toISOString();
+        mapInfo.data.pisi.updatedAt = new Date().toISOString();
         documentChanges.push({
             filePath: mapPath,
             data: mapInfo.data
@@ -2659,11 +2659,11 @@ function syncMapConnectionMetadata(mapPath) {
     for (const nodeInfo of nodesById.values()) {
         const oldConnectionTypesJson = oldConnectionTypesByPath.get(nodeInfo.filePath);
         const newConnectionTypesJson = JSON.stringify(
-            normalizeNodeConnectionTypes(nodeInfo.data.kedi.connectionTypes)
+            normalizeNodeConnectionTypes(nodeInfo.data.pisi.connectionTypes)
         );
 
         if (oldConnectionTypesJson !== newConnectionTypesJson) {
-            nodeInfo.data.kedi.updatedAt = new Date().toISOString();
+            nodeInfo.data.pisi.updatedAt = new Date().toISOString();
             documentChanges.push({
                 filePath: nodeInfo.filePath,
                 data: nodeInfo.data
@@ -2671,7 +2671,7 @@ function syncMapConnectionMetadata(mapPath) {
         }
     }
 
-    writeKediDocumentsTransaction(documentChanges);
+    writePisiDocumentsTransaction(documentChanges);
 
     return {
         ok: true,
@@ -2711,7 +2711,7 @@ function addUniqueConnectionType(metadata, type, otherNodeId) {
 
 function upsertMapConnection(mapPath, edge) {
     try {
-        const mapInfo = ensureKediFileMetadata(mapPath);
+        const mapInfo = ensurePisiFileMetadata(mapPath);
 
         if (!mapInfo.ok) return mapInfo;
 
@@ -2764,7 +2764,7 @@ function upsertMapConnection(mapPath, edge) {
             };
         }
 
-        const normalizedExisting = normalizeKediMapEdges(
+        const normalizedExisting = normalizePisiMapEdges(
             mapInfo.data.map.edges,
             new Set(nodeDocsResult.nodesById.keys())
         ).edges;
@@ -2802,7 +2802,7 @@ function upsertMapConnection(mapPath, edge) {
                     });
 
                 if (
-                    wouldCreateKediHierarchyCycle(
+                    wouldCreatePisiHierarchyCycle(
                         parentByChild,
                         normalizedEdge.sourceId,
                         normalizedEdge.targetId
@@ -2817,18 +2817,18 @@ function upsertMapConnection(mapPath, edge) {
             }
         }
 
-        const semanticKey = getKediEdgeSemanticKey(normalizedEdge);
+        const semanticKey = getPisiEdgeSemanticKey(normalizedEdge);
         mapInfo.data.map.edges = mapInfo.data.map.edges.filter((existing) => {
             return (
                 existing.id !== normalizedEdge.id &&
-                getKediEdgeSemanticKey(existing) !== semanticKey
+                getPisiEdgeSemanticKey(existing) !== semanticKey
             );
         });
 
         mapInfo.data.map.edges.push(normalizedEdge);
-        mapInfo.data.kedi.updatedAt = new Date().toISOString();
+        mapInfo.data.pisi.updatedAt = new Date().toISOString();
 
-        writeKediDocument(mapPath, mapInfo.data);
+        writePisiDocument(mapPath, mapInfo.data);
 
         const syncResult = syncMapConnectionMetadata(mapPath);
 
@@ -2856,7 +2856,7 @@ function upsertMapConnection(mapPath, edge) {
 
 function deleteMapConnection(mapPath, edgeId) {
     try {
-        const mapInfo = ensureKediFileMetadata(mapPath);
+        const mapInfo = ensurePisiFileMetadata(mapPath);
 
         if (!mapInfo.ok) {
             return mapInfo;
@@ -2885,8 +2885,8 @@ function deleteMapConnection(mapPath, edgeId) {
             };
         }
 
-        mapInfo.data.kedi.updatedAt = new Date().toISOString();
-        writeKediDocument(mapPath, mapInfo.data);
+        mapInfo.data.pisi.updatedAt = new Date().toISOString();
+        writePisiDocument(mapPath, mapInfo.data);
 
         // Kritik kısım:
         // Edge silindikten sonra bütün node connectionTypes alanları
@@ -2917,8 +2917,8 @@ function deleteMapConnection(mapPath, edgeId) {
 
 function reparentMapNode(mapPath, childId, parentId) {
     try {
-        const safeChildId = normalizeKediId(childId, '.node');
-        const safeParentId = normalizeKediId(parentId, '.node');
+        const safeChildId = normalizePisiId(childId, '.node');
+        const safeParentId = normalizePisiId(parentId, '.node');
 
         if (!safeChildId || !safeParentId || safeChildId === safeParentId) {
             return {
@@ -2942,7 +2942,7 @@ function reparentMapNode(mapPath, childId, parentId) {
 
         const mapInfo = nodeDocsResult.mapInfo;
         const originalMapContent = fs.readFileSync(mapPath, 'utf-8');
-        const existingEdges = normalizeKediMapEdges(
+        const existingEdges = normalizePisiMapEdges(
             mapInfo.data.map?.edges || [],
             new Set(nodeDocsResult.nodesById.keys())
         ).edges;
@@ -2958,7 +2958,7 @@ function reparentMapNode(mapPath, childId, parentId) {
             });
 
         if (
-            wouldCreateKediHierarchyCycle(
+            wouldCreatePisiHierarchyCycle(
                 parentByChild,
                 safeParentId,
                 safeChildId
@@ -2982,8 +2982,8 @@ function reparentMapNode(mapPath, childId, parentId) {
         });
 
         mapInfo.data.map.edges = [...withoutOldParents, replacement];
-        mapInfo.data.kedi.updatedAt = new Date().toISOString();
-        writeKediDocument(mapPath, mapInfo.data);
+        mapInfo.data.pisi.updatedAt = new Date().toISOString();
+        writePisiDocument(mapPath, mapInfo.data);
 
         const syncResult = syncMapConnectionMetadata(mapPath);
         if (!syncResult.ok) {
@@ -3025,7 +3025,7 @@ function findParentMapPathForNode(nodePath, nodeInfo = null) {
         }
 
         const mapPath = path.join(possibleMapDir, entry.name);
-        const mapInfo = ensureKediFileMetadata(mapPath);
+        const mapInfo = ensurePisiFileMetadata(mapPath);
 
         if (!mapInfo.ok) continue;
 
@@ -3053,7 +3053,7 @@ function cleanupDeletedNodeFromParentMap(parentMapPath, deletedNodeId, deletionT
         };
     }
 
-    const mapInfo = ensureKediFileMetadata(parentMapPath);
+    const mapInfo = ensurePisiFileMetadata(parentMapPath);
 
     if (!mapInfo.ok || !mapInfo.data.map) {
         return {
@@ -3079,10 +3079,10 @@ function cleanupDeletedNodeFromParentMap(parentMapPath, deletedNodeId, deletionT
     });
 
     const pendingDocumentChanges = [];
-    mapInfo.data.kedi.updatedAt = new Date().toISOString();
+    mapInfo.data.pisi.updatedAt = new Date().toISOString();
 
     if (deletionTransaction) {
-        writeKediDeletionMetadata(
+        writePisiDeletionMetadata(
             deletionTransaction,
             parentMapPath,
             mapInfo.data
@@ -3106,21 +3106,21 @@ function cleanupDeletedNodeFromParentMap(parentMapPath, deletedNodeId, deletionT
             }
 
             const nodePath = path.join(sidecarPath, entry.name);
-            const nodeInfo = ensureKediFileMetadata(nodePath);
+            const nodeInfo = ensurePisiFileMetadata(nodePath);
 
             if (!nodeInfo.ok) continue;
 
-            const before = JSON.stringify(nodeInfo.data.kedi.connectionTypes);
+            const before = JSON.stringify(nodeInfo.data.pisi.connectionTypes);
 
-            removeNodeRelationship(nodeInfo.data.kedi, deletedNodeId);
+            removeNodeRelationship(nodeInfo.data.pisi, deletedNodeId);
 
-            const after = JSON.stringify(nodeInfo.data.kedi.connectionTypes);
+            const after = JSON.stringify(nodeInfo.data.pisi.connectionTypes);
 
             if (before !== after) {
-                nodeInfo.data.kedi.updatedAt = new Date().toISOString();
+                nodeInfo.data.pisi.updatedAt = new Date().toISOString();
 
                 if (deletionTransaction) {
-                    writeKediDeletionMetadata(
+                    writePisiDeletionMetadata(
                         deletionTransaction,
                         nodePath,
                         nodeInfo.data
@@ -3136,7 +3136,7 @@ function cleanupDeletedNodeFromParentMap(parentMapPath, deletedNodeId, deletionT
     }
 
     if (!deletionTransaction) {
-        writeKediDocumentsTransaction(pendingDocumentChanges);
+        writePisiDocumentsTransaction(pendingDocumentChanges);
     }
 
     return {
@@ -3145,9 +3145,9 @@ function cleanupDeletedNodeFromParentMap(parentMapPath, deletedNodeId, deletionT
     };
 }
 
-function writeKediDeletionMetadata(transaction, filePath, data) {
+function writePisiDeletionMetadata(transaction, filePath, data) {
     if (!transaction) {
-        writeKediDocument(filePath, data);
+        writePisiDocument(filePath, data);
         return;
     }
 
@@ -3170,12 +3170,12 @@ function writeKediDeletionMetadata(transaction, filePath, data) {
         transaction.metadataBackups.push(backup);
     }
 
-    writeKediDocument(filePath, data);
+    writePisiDocument(filePath, data);
 }
 
-function createKediDeletionTransaction(targetPath) {
+function createPisiDeletionTransaction(targetPath) {
     const directoryPath = fs.mkdtempSync(
-        path.join(path.dirname(targetPath), '.kedi-delete-')
+        path.join(path.dirname(targetPath), '.pisi-delete-')
     );
     markInternalFileChange(directoryPath);
 
@@ -3186,7 +3186,7 @@ function createKediDeletionTransaction(targetPath) {
     };
 }
 
-function stageKediDeletionPath(transaction, originalPath) {
+function stagePisiDeletionPath(transaction, originalPath) {
     if (!originalPath || !fs.existsSync(originalPath)) {
         return;
     }
@@ -3207,7 +3207,7 @@ function stageKediDeletionPath(transaction, originalPath) {
     });
 }
 
-function rollbackKediDeletionTransaction(transaction) {
+function rollbackPisiDeletionTransaction(transaction) {
     const rollbackErrors = [];
 
     if (!fs.existsSync(transaction.directoryPath)) {
@@ -3273,7 +3273,7 @@ function rollbackKediDeletionTransaction(transaction) {
     return rollbackErrors;
 }
 
-async function deleteKediFile(targetPath) {
+async function deletePisiFile(targetPath) {
     let transaction = null;
 
     try {
@@ -3284,7 +3284,7 @@ async function deleteKediFile(targetPath) {
             };
         }
 
-        const ext = getKediFileExt(targetPath);
+        const ext = getPisiFileExt(targetPath);
 
         if (ext !== '.map' && ext !== '.node') {
             return {
@@ -3293,7 +3293,7 @@ async function deleteKediFile(targetPath) {
             };
         }
 
-        const info = ensureKediFileMetadata(targetPath);
+        const info = ensurePisiFileMetadata(targetPath);
 
         if (!info.ok) {
             return info;
@@ -3324,9 +3324,9 @@ async function deleteKediFile(targetPath) {
             }
         }
 
-        transaction = createKediDeletionTransaction(targetPath);
-        stageKediDeletionPath(transaction, targetPath);
-        stageKediDeletionPath(transaction, sidecarPath);
+        transaction = createPisiDeletionTransaction(targetPath);
+        stagePisiDeletionPath(transaction, targetPath);
+        stagePisiDeletionPath(transaction, sidecarPath);
 
         if (ext === '.map') {
             await shell.trashItem(path.resolve(transaction.directoryPath));
@@ -3362,7 +3362,7 @@ async function deleteKediFile(targetPath) {
         };
     } catch (error) {
         const rollbackErrors = transaction
-            ? rollbackKediDeletionTransaction(transaction)
+            ? rollbackPisiDeletionTransaction(transaction)
             : [];
 
         return {
@@ -3376,7 +3376,7 @@ async function deleteKediFile(targetPath) {
 }
 
 function deleteNodeFromMap(nodePath) {
-    return deleteKediFile(nodePath);
+    return deletePisiFile(nodePath);
 }
 
 async function deleteProjectPath(targetPath) {
@@ -3396,12 +3396,12 @@ async function deleteProjectPath(targetPath) {
     };
 }
 
-function isKediManagedDiaryFolder(folderPath) {
+function isPisiManagedDiaryFolder(folderPath) {
     if (!folderPath || path.basename(folderPath).toLowerCase() !== 'diary') {
         return false;
     }
 
-    if (fs.existsSync(path.join(folderPath, '.kedi-diary'))) {
+    if (fs.existsSync(path.join(folderPath, '.pisi-diary'))) {
         return true;
     }
 
@@ -3416,7 +3416,7 @@ function isKediManagedDiaryFolder(folderPath) {
             const result = readJsonFileResult(path.join(folderPath, entry.name));
             return Boolean(
                 result.ok &&
-                normalizeKediDiaryIsoDate(result.data?.kedi?.diaryDate)
+                normalizePisiDiaryIsoDate(result.data?.pisi?.diaryDate)
             );
         });
     } catch {
@@ -3440,25 +3440,25 @@ function safeListFolder(folderPath) {
 
         const items = entries
             .filter((entry) => {
-                if (isKediManagedSidecarFolder(entry.name)) return false;
+                if (isPisiManagedSidecarFolder(entry.name)) return false;
 
                 if (
                     entry.isDirectory() &&
                     (
-                        entry.name.startsWith('.kedi-delete-') ||
-                        entry.name.startsWith('.kedi-transaction-')
+                        entry.name.startsWith('.pisi-delete-') ||
+                        entry.name.startsWith('.pisi-transaction-')
                     )
                 ) {
                     return false;
                 }
 
                 const fullPath = path.join(folderPath, entry.name);
-                if (entry.isDirectory() && isKediManagedDiaryFolder(fullPath)) {
+                if (entry.isDirectory() && isPisiManagedDiaryFolder(fullPath)) {
                     return false;
                 }
 
                 if (entry.isDirectory()) return true;
-                return isKediVisibleFile(entry.name);
+                return isPisiVisibleFile(entry.name);
             })
             .map((entry) => {
                 const fullPath = path.join(folderPath, entry.name);
@@ -3467,9 +3467,9 @@ function safeListFolder(folderPath) {
                 let itemError = null;
                 let recoveryPath = null;
 
-                if (entry.isFile() && isKediVisibleFile(entry.name)) {
+                if (entry.isFile() && isPisiVisibleFile(entry.name)) {
                     try {
-                        const inspected = ensureKediFileMetadata(fullPath, {
+                        const inspected = ensurePisiFileMetadata(fullPath, {
                             persist: false,
                             ensureSidecar: false
                         });
@@ -3522,7 +3522,7 @@ function safeListFolder(folderPath) {
 
 let activeProjectFolder = null;
 let activeProjectLockPath = null;
-const kediInstanceId = crypto.randomUUID();
+const pisiInstanceId = crypto.randomUUID();
 
 const projectWatchers = new Map();
 let projectWatchTimer = null;
@@ -3534,7 +3534,7 @@ function stopProjectWatcher() {
         try {
             watcher.close();
         } catch (error) {
-            console.warn('[KEDI] Watcher kapatılamadı:', error.message);
+            console.warn('[PISI] Watcher kapatılamadı:', error.message);
         }
     }
 
@@ -3645,7 +3645,7 @@ function syncProjectWatchers(folderPath) {
 
             watcher.on('error', (error) => {
                 console.warn(
-                    `[KEDI] Watcher hatası (${directoryPath}):`,
+                    `[PISI] Watcher hatası (${directoryPath}):`,
                     error.message
                 );
             });
@@ -3653,7 +3653,7 @@ function syncProjectWatchers(folderPath) {
             projectWatchers.set(directoryKey, watcher);
         } catch (error) {
             console.warn(
-                `[KEDI] Klasör izlenemedi (${directoryPath}):`,
+                `[PISI] Klasör izlenemedi (${directoryPath}):`,
                 error.message
             );
         }
@@ -3668,7 +3668,7 @@ function startProjectWatcher(folderPath) {
     }
 
     syncProjectWatchers(folderPath);
-    console.log('[KEDI] Proje klasörü izleniyor:', folderPath);
+    console.log('[PISI] Proje klasörü izleniyor:', folderPath);
 }
 
 function folderExistsAndIsDirectory(folderPath) {
@@ -3779,7 +3779,7 @@ function assertProjectPath(inputPath, options = {}) {
     }
 
     if (Array.isArray(options.extensions)) {
-        const ext = getKediFileExt(resolvedPath);
+        const ext = getPisiFileExt(resolvedPath);
         if (!options.extensions.includes(ext)) {
             throw new Error('Bu işlem için geçersiz dosya türü.');
         }
@@ -3817,7 +3817,7 @@ function hideFileOnWindows(filePath) {
         const { execFile } = require('child_process');
         execFile('attrib', ['+H', filePath], () => {});
     } catch (error) {
-        console.warn('[KEDI] Lock dosyası gizlenemedi:', error.message);
+        console.warn('[PISI] Lock dosyası gizlenemedi:', error.message);
     }
 }
 
@@ -3833,7 +3833,7 @@ function isProcessAlive(pid) {
 }
 
 function acquireProjectLock(folderPath) {
-    const lockPath = path.join(folderPath, '.kedi.lock');
+    const lockPath = path.join(folderPath, '.pisi.lock');
 
     try {
         if (fs.existsSync(lockPath)) {
@@ -3846,7 +3846,7 @@ function acquireProjectLock(folderPath) {
             } catch {}
 
             if (
-                existingLock?.instanceId === kediInstanceId &&
+                existingLock?.instanceId === pisiInstanceId &&
                 existingLock?.pid === process.pid
             ) {
                 return {
@@ -3858,7 +3858,7 @@ function acquireProjectLock(folderPath) {
             if (existingLock?.pid && isProcessAlive(Number(existingLock.pid))) {
                 return {
                     ok: false,
-                    error: `Bu proje başka bir KEDI süreci tarafından kullanılıyor (PID ${existingLock.pid}).`
+                    error: `Bu proje başka bir PISI süreci tarafından kullanılıyor (PID ${existingLock.pid}).`
                 };
             }
 
@@ -3870,7 +3870,7 @@ function acquireProjectLock(folderPath) {
             descriptor,
             JSON.stringify({
                 pid: process.pid,
-                instanceId: kediInstanceId,
+                instanceId: pisiInstanceId,
                 openedAt: new Date().toISOString()
             }, null, 2),
             'utf-8'
@@ -3913,7 +3913,7 @@ function lockProjectFolder(folderPath) {
 
         const lockResult = acquireProjectLock(realFolderPath);
         if (!lockResult.ok) {
-            console.error('[KEDI]', lockResult.error);
+            console.error('[PISI]', lockResult.error);
             return false;
         }
 
@@ -3926,16 +3926,16 @@ function lockProjectFolder(folderPath) {
         if (oldLockPath && oldLockPath !== activeProjectLockPath) {
             try {
                 const oldLock = JSON.parse(fs.readFileSync(oldLockPath, 'utf-8'));
-                if (oldLock.instanceId === kediInstanceId) {
+                if (oldLock.instanceId === pisiInstanceId) {
                     fs.unlinkSync(oldLockPath);
                 }
             } catch {}
         }
 
-        console.log('[KEDI] Proje klasörü kilitlendi:', realFolderPath);
+        console.log('[PISI] Proje klasörü kilitlendi:', realFolderPath);
         return true;
     } catch (error) {
-        console.error('[KEDI] Proje klasörü kilitlenemedi:', error);
+        console.error('[PISI] Proje klasörü kilitlenemedi:', error);
         return false;
     }
 }
@@ -3949,11 +3949,11 @@ function unlockProjectFolder() {
                 fs.readFileSync(activeProjectLockPath, 'utf-8')
             );
 
-            if (lockData.instanceId === kediInstanceId) {
+            if (lockData.instanceId === pisiInstanceId) {
                 fs.unlinkSync(activeProjectLockPath);
             }
         } catch (error) {
-            console.warn('[KEDI] Proje kilidi kaldırılamadı:', error.message);
+            console.warn('[PISI] Proje kilidi kaldırılamadı:', error.message);
         }
     }
 
@@ -3975,7 +3975,7 @@ function createWindow() {
         minWidth: 900,
         minHeight: 600,
 
-        title: 'KEDI',
+        title: 'PISI',
         icon: appIconPath,
         frame: false,
         backgroundColor: '#1e1e1e',
@@ -4005,7 +4005,7 @@ function createWindow() {
 
     mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
-    if (!app.isPackaged && process.env.KEDI_OPEN_DEVTOOLS === '1') {
+    if (!app.isPackaged && process.env.PISI_OPEN_DEVTOOLS === '1') {
         mainWindow.webContents.openDevTools({ mode: 'detach' });
     }
 
@@ -4052,7 +4052,7 @@ function createWindow() {
             closeRequestTimer = null;
             dialog.showMessageBox(mainWindow, {
                 type: 'warning',
-                title: 'KEDI kapatılamadı',
+                title: 'PISI kapatılamadı',
                 message: 'Bekleyen kayıtların tamamlandığı doğrulanamadı.',
                 detail: 'Veri kaybını önlemek için pencere açık bırakıldı.'
             }).catch(() => {});
@@ -4161,13 +4161,13 @@ ipcMain.handle('project:reparent-map-node', (_event, mapPath, childId, parentId)
     });
 });
 
-ipcMain.handle('project:get-kedi-document', (_event, filePath) => {
+ipcMain.handle('project:get-pisi-document', (_event, filePath) => {
     return projectOperation(() => {
         const safeFilePath = assertProjectPath(filePath, {
             type: 'file',
             extensions: ['.map', '.node']
         });
-        return getKediDocument(safeFilePath);
+        return getPisiDocument(safeFilePath);
     });
 });
 
@@ -4211,13 +4211,13 @@ ipcMain.handle('project:delete-node-from-map', (_event, nodePath) => {
     });
 });
 
-ipcMain.handle('project:delete-kedi-file', (_event, targetPath) => {
+ipcMain.handle('project:delete-pisi-file', (_event, targetPath) => {
     return asyncProjectOperation(async () => {
         const safeTargetPath = assertProjectPath(targetPath, {
             type: 'file',
             extensions: ['.map', '.node']
         });
-        return deleteKediFile(safeTargetPath);
+        return deletePisiFile(safeTargetPath);
     });
 });
 
@@ -4268,7 +4268,7 @@ ipcMain.handle('project:list-diary-dates', (_event, projectFolder) => {
         const safeProjectFolder = assertProjectPath(projectFolder, {
             type: 'directory'
         });
-        return listKediDiaryDates(safeProjectFolder);
+        return listPisiDiaryDates(safeProjectFolder);
     });
 });
 
@@ -4281,17 +4281,17 @@ ipcMain.handle('project:sync-diary-missions', (_event, projectFolder, payload) =
     });
 });
 
-ipcMain.handle('project:rename-kedi-file', (_event, oldPath, newBaseName) => {
+ipcMain.handle('project:rename-pisi-file', (_event, oldPath, newBaseName) => {
     return projectOperation(() => {
         const safeOldPath = assertProjectPath(oldPath, {
             type: 'file',
             extensions: ['.map', '.node']
         });
-        return renameKediFile(safeOldPath, newBaseName);
+        return renamePisiFile(safeOldPath, newBaseName);
     });
 });
 
-ipcMain.handle('project:move-kedi-item', (_event, sourcePath, destinationFolderPath, options) => {
+ipcMain.handle('project:move-pisi-item', (_event, sourcePath, destinationFolderPath, options) => {
     return projectOperation(() => {
         const safeSourcePath = assertProjectPath(sourcePath);
         const safeDestinationPath = assertProjectPath(destinationFolderPath, {
@@ -4316,7 +4316,7 @@ ipcMain.handle('project:move-kedi-item', (_event, sourcePath, destinationFolderP
             );
         }
 
-        return moveKediItem(
+        return movePisiItem(
             safeSourcePath,
             safeDestinationPath,
             safeOptions
@@ -4324,12 +4324,12 @@ ipcMain.handle('project:move-kedi-item', (_event, sourcePath, destinationFolderP
     });
 });
 
-ipcMain.handle('project:create-kedi-file', (_event, folderPath, ext) => {
+ipcMain.handle('project:create-pisi-file', (_event, folderPath, ext) => {
     return projectOperation(() => {
         const safeFolderPath = assertProjectPath(folderPath, {
             type: 'directory'
         });
-        return createUniqueKediFile(safeFolderPath, ext);
+        return createUniquePisiFile(safeFolderPath, ext);
     });
 });
 
@@ -4350,7 +4350,7 @@ ipcMain.handle('project:get-last-folder', () => {
 
 ipcMain.handle('project:choose-folder', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
-        title: 'KEDI proje klasörü seç',
+        title: 'PISI proje klasörü seç',
         properties: ['openDirectory']
     });
 
@@ -4365,7 +4365,7 @@ ipcMain.handle('project:choose-folder', async () => {
             type: 'error',
             title: 'Proje açılamadı',
             message: 'Seçilen proje klasörü kilitlenemedi.',
-            detail: 'Klasör başka bir KEDI sürecinde açık olabilir veya erişim izni olmayabilir.'
+            detail: 'Klasör başka bir PISI sürecinde açık olabilir veya erişim izni olmayabilir.'
         });
         return null;
     }

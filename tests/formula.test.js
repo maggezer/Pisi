@@ -12,23 +12,23 @@ const appSource = fs.readFileSync(
     'utf8'
 );
 const formulaFunctionNames = [
-    'evaluateKediSheetFormula',
-    'evaluateKediArithmeticExpression',
-    'getKediSheetCellNumericValue',
-    'getKediSheetCellValue',
-    'getKediSheetRangeValues',
-    'parseKediCellRef',
-    'kediColumnName',
-    'kediColumnIndex'
+    'evaluatePisiSheetFormula',
+    'evaluatePisiArithmeticExpression',
+    'getPisiSheetCellNumericValue',
+    'getPisiSheetCellValue',
+    'getPisiSheetRangeValues',
+    'parsePisiCellRef',
+    'pisiColumnName',
+    'pisiColumnIndex'
 ];
 const formulaSource = `
-    const KEDI_SHEET_MAX_RANGE_CELLS = 80 * 26;
+    const PISI_SHEET_MAX_RANGE_CELLS = 80 * 26;
     ${formulaFunctionNames
         .map((name) => extractFunction(appSource, name))
         .join('\n')}
-    globalThis.kediFormulaTestApi = {
-        evaluateKediSheetFormula,
-        evaluateKediArithmeticExpression
+    globalThis.pisiFormulaTestApi = {
+        evaluatePisiSheetFormula,
+        evaluatePisiArithmeticExpression
     };
 `;
 const formulaContext = {};
@@ -36,9 +36,9 @@ vm.createContext(formulaContext);
 vm.runInContext(formulaSource, formulaContext);
 
 const {
-    evaluateKediSheetFormula,
-    evaluateKediArithmeticExpression
-} = formulaContext.kediFormulaTestApi;
+    evaluatePisiSheetFormula,
+    evaluatePisiArithmeticExpression
+} = formulaContext.pisiFormulaTestApi;
 
 function makeTable(values, rowCount = 2, colCount = 2) {
     const cells = new Map(
@@ -82,12 +82,12 @@ function makeTable(values, rowCount = 2, colCount = 2) {
 }
 
 test('aritmetik ayrıştırıcı öncelik ve parantezleri güvenli hesaplar', () => {
-    assert.equal(evaluateKediArithmeticExpression('2 + 3 * 4'), 14);
-    assert.equal(evaluateKediArithmeticExpression('(2 + 3) * -4'), -20);
-    assert.ok(Number.isNaN(evaluateKediArithmeticExpression('1 / 0')));
+    assert.equal(evaluatePisiArithmeticExpression('2 + 3 * 4'), 14);
+    assert.equal(evaluatePisiArithmeticExpression('(2 + 3) * -4'), -20);
+    assert.ok(Number.isNaN(evaluatePisiArithmeticExpression('1 / 0')));
     assert.ok(
         Number.isNaN(
-            evaluateKediArithmeticExpression('globalThis.process')
+            evaluatePisiArithmeticExpression('globalThis.process')
         )
     );
 });
@@ -100,9 +100,9 @@ test('SUM, COUNT ve AVG boş hücreleri doğru ele alır', () => {
         B2: 'metin'
     });
 
-    assert.equal(evaluateKediSheetFormula(table, '=SUM(A1:B2)'), 6);
-    assert.equal(evaluateKediSheetFormula(table, '=COUNT(A1:B2)'), 2);
-    assert.equal(evaluateKediSheetFormula(table, '=AVG(A1:B2)'), 3);
+    assert.equal(evaluatePisiSheetFormula(table, '=SUM(A1:B2)'), 6);
+    assert.equal(evaluatePisiSheetFormula(table, '=COUNT(A1:B2)'), 2);
+    assert.equal(evaluatePisiSheetFormula(table, '=AVG(A1:B2)'), 3);
 });
 
 test('döngüsel formül ve tablo dışı dev aralık hata üretir', () => {
@@ -121,7 +121,7 @@ test('döngüsel formül ve tablo dışı dev aralık hata üretir', () => {
 
     assert.ok(
         Number.isNaN(
-            evaluateKediSheetFormula(
+            evaluatePisiSheetFormula(
                 cyclicTable,
                 '=B1',
                 new Set(['A1'])
@@ -130,7 +130,7 @@ test('döngüsel formül ve tablo dışı dev aralık hata üretir', () => {
     );
     assert.ok(
         Number.isNaN(
-            evaluateKediSheetFormula(
+            evaluatePisiSheetFormula(
                 smallTable,
                 '=SUM(A1:ZZZ999999)'
             )

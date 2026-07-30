@@ -6,14 +6,14 @@
         http-equiv="Content-Security-Policy"
         content="default-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; script-src 'self'; img-src 'self' data:;"
     >
-    <title>KEDI</title>
+    <title>PISI</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="window-frame">
         <div id="window-title">
-            <img id="window-logo" src="assets/kedi.png" alt="KEDI">
-            <span>KEDI</span>
+            <img id="window-logo" src="assets/pisi.png" alt="PISI">
+            <span>PISI</span>
         </div>
 
         <div id="window-controls">
@@ -31,7 +31,7 @@
         </div>
     </div>
 
-    <div id="kedi-app">
+    <div id="pisi-app">
         <main id="main-layout">
             <aside id="left-panel" class="panel">
                 <div id="project-header">
@@ -136,28 +136,28 @@
                         <button id="center-node-editor-save" type="button">Kaydet</button>
                     </div>
                     <div
-                        class="kedi-word-toolbar kedi-editor-toolbar"
+                        class="pisi-word-toolbar pisi-editor-toolbar"
                         data-editor-target="center-node-editor-content"
                     >
-                        <div class="kedi-editor-toolbar-tabs">
-                            <button class="kedi-editor-toolbar-tab active" data-kedi-toolbar-tab="word" type="button">Word</button>
-                            <button class="kedi-editor-toolbar-tab" data-kedi-toolbar-tab="paint" type="button">Paint</button>
-                            <button class="kedi-editor-toolbar-tab" data-kedi-toolbar-tab="excel" type="button">Excel</button>
+                        <div class="pisi-editor-toolbar-tabs">
+                            <button class="pisi-editor-toolbar-tab active" data-pisi-toolbar-tab="word" type="button">Word</button>
+                            <button class="pisi-editor-toolbar-tab" data-pisi-toolbar-tab="paint" type="button">Paint</button>
+                            <button class="pisi-editor-toolbar-tab" data-pisi-toolbar-tab="excel" type="button">Excel</button>
                         </div>
-                        <div class="kedi-editor-toolbar-panel active" data-kedi-toolbar-panel="word">
-                            <div class="kedi-word-toolbar-controls"></div>
+                        <div class="pisi-editor-toolbar-panel active" data-pisi-toolbar-panel="word">
+                            <div class="pisi-word-toolbar-controls"></div>
                         </div>
-                        <div class="kedi-editor-toolbar-panel" data-kedi-toolbar-panel="paint">
-                            <div class="kedi-paint-toolbar-controls"></div>
+                        <div class="pisi-editor-toolbar-panel" data-pisi-toolbar-panel="paint">
+                            <div class="pisi-paint-toolbar-controls"></div>
                         </div>
-                        <div class="kedi-editor-toolbar-panel" data-kedi-toolbar-panel="excel">
-                            <div class="kedi-excel-toolbar-controls"></div>
+                        <div class="pisi-editor-toolbar-panel" data-pisi-toolbar-panel="excel">
+                            <div class="pisi-excel-toolbar-controls"></div>
                         </div>
                     </div>
 
                     <div
                     id="center-node-editor-content"
-                    class="kedi-rich-editor"
+                    class="pisi-rich-editor"
                     contenteditable="true"
                     spellcheck="true"
                     ></div>
@@ -186,30 +186,30 @@
                             >×</button>
                         </div>
                         <div
-                            class="kedi-word-toolbar kedi-editor-toolbar"
+                            class="pisi-word-toolbar pisi-editor-toolbar"
                             data-editor-target="node-modal-content"
                         >
-                            <div class="kedi-editor-toolbar-tabs">
-                                <button class="kedi-editor-toolbar-tab active" data-kedi-toolbar-tab="word" type="button">Word</button>
-                                <button class="kedi-editor-toolbar-tab" data-kedi-toolbar-tab="paint" type="button">Paint</button>
-                                <button class="kedi-editor-toolbar-tab" data-kedi-toolbar-tab="excel" type="button">Excel</button>
+                            <div class="pisi-editor-toolbar-tabs">
+                                <button class="pisi-editor-toolbar-tab active" data-pisi-toolbar-tab="word" type="button">Word</button>
+                                <button class="pisi-editor-toolbar-tab" data-pisi-toolbar-tab="paint" type="button">Paint</button>
+                                <button class="pisi-editor-toolbar-tab" data-pisi-toolbar-tab="excel" type="button">Excel</button>
                             </div>
-                            <div class="kedi-editor-toolbar-panel active" data-kedi-toolbar-panel="word">
-                                <div class="kedi-word-toolbar-controls"></div>
+                            <div class="pisi-editor-toolbar-panel active" data-pisi-toolbar-panel="word">
+                                <div class="pisi-word-toolbar-controls"></div>
                             </div>
-                            <div class="kedi-editor-toolbar-panel" data-kedi-toolbar-panel="paint">
-                                <div class="kedi-paint-toolbar-controls"></div>
+                            <div class="pisi-editor-toolbar-panel" data-pisi-toolbar-panel="paint">
+                                <div class="pisi-paint-toolbar-controls"></div>
                             </div>
-                            <div class="kedi-editor-toolbar-panel" data-kedi-toolbar-panel="excel">
-                                <div class="kedi-excel-toolbar-controls"></div>
+                            <div class="pisi-editor-toolbar-panel" data-pisi-toolbar-panel="excel">
+                                <div class="pisi-excel-toolbar-controls"></div>
                             </div>
                         </div>
 
-                    <div id="node-modal-content" class="kedi-rich-editor" contenteditable="true" spellcheck="true"></div>
+                    <div id="node-modal-content" class="pisi-rich-editor" contenteditable="true" spellcheck="true"></div>
                     </div>
                 </div>
 
-                <div id="kedi-tag-menu" class="kedi-tag-menu" hidden></div>
+                <div id="pisi-tag-menu" class="pisi-tag-menu" hidden></div>
 
               
             </section>
@@ -235,8 +235,8 @@
                     <section id="right-tab-missions" class="right-tab-page active">
                         <div class="right-panel-section-title">ToDo</div>
 
-                        <div id="kedi-missions-panel">
-                            <div id="kedi-missions-list" class="kedi-missions-list">
+                        <div id="pisi-missions-panel">
+                            <div id="pisi-missions-list" class="pisi-missions-list">
                                 <div class="right-panel-empty">
                                     Missions için önce orta alanda bir map aç.
                                 </div>
@@ -247,102 +247,102 @@
                     <section id="right-tab-customizations" class="right-tab-page">
                         <div class="right-panel-section-title">Customize</div>
 
-                        <div id="kedi-customize-panel">
-                            <details class="kedi-customize-group" open>
+                        <div id="pisi-customize-panel">
+                            <details class="pisi-customize-group" open>
                                 <summary>Map</summary>
 
-                                <div class="kedi-customize-row">
+                                <div class="pisi-customize-row">
                                     <label for="custom-map-downhub-color">Hub bağlantı</label>
                                     <input
                                         id="custom-map-downhub-color"
-                                        class="kedi-color-input"
+                                        class="pisi-color-input"
                                         type="color"
-                                        data-kedi-custom-color="mapDownHubColor"
+                                        data-pisi-custom-color="mapDownHubColor"
                                     >
                                 </div>
 
-                                <div class="kedi-customize-row">
+                                <div class="pisi-customize-row">
                                     <label for="custom-map-colevel-color">Co-level bağlantı</label>
                                     <input
                                         id="custom-map-colevel-color"
-                                        class="kedi-color-input"
+                                        class="pisi-color-input"
                                         type="color"
-                                        data-kedi-custom-color="mapCoLevelColor"
+                                        data-pisi-custom-color="mapCoLevelColor"
                                     >
                                 </div>
 
-                                <div class="kedi-customize-row">
+                                <div class="pisi-customize-row">
                                     <label for="custom-map-stream-color">Stream bağlantı</label>
                                     <input
                                         id="custom-map-stream-color"
-                                        class="kedi-color-input"
+                                        class="pisi-color-input"
                                         type="color"
-                                        data-kedi-custom-color="mapStreamColor"
+                                        data-pisi-custom-color="mapStreamColor"
                                     >
                                 </div>
 
-                                <div class="kedi-customize-row">
+                                <div class="pisi-customize-row">
                                     <label for="custom-map-node-box-color">Node box</label>
                                     <input
                                         id="custom-map-node-box-color"
-                                        class="kedi-color-input"
+                                        class="pisi-color-input"
                                         type="color"
-                                        data-kedi-custom-color="mapNodeBoxColor"
+                                        data-pisi-custom-color="mapNodeBoxColor"
                                     >
                                 </div>
 
-                                <div class="kedi-customize-row">
+                                <div class="pisi-customize-row">
                                     <label for="custom-map-node-title-color">Node box title</label>
                                     <input
                                         id="custom-map-node-title-color"
-                                        class="kedi-color-input"
+                                        class="pisi-color-input"
                                         type="color"
-                                        data-kedi-custom-color="mapNodeTitleColor"
+                                        data-pisi-custom-color="mapNodeTitleColor"
                                     >
                                 </div>
 
-                                <div class="kedi-customize-row">
+                                <div class="pisi-customize-row">
     <label for="custom-map-node-title-size">Nodebox title size</label>
     <input
         id="custom-map-node-title-size"
-        class="kedi-number-input"
+        class="pisi-number-input"
         type="number"
         min="9"
         max="28"
         step="1"
-        data-kedi-custom-size="mapNodeTitleSize"
+        data-pisi-custom-size="mapNodeTitleSize"
     >
 </div>
 
-<div class="kedi-customize-row">
+<div class="pisi-customize-row">
     <label for="custom-map-node-text-size">Nodebox text size</label>
     <input
         id="custom-map-node-text-size"
-        class="kedi-number-input"
+        class="pisi-number-input"
         type="number"
         min="9"
         max="24"
         step="1"
-        data-kedi-custom-size="mapNodeTextSize"
+        data-pisi-custom-size="mapNodeTextSize"
     >
 </div>
                             </details>
 
-                            <details class="kedi-customize-group">
+                            <details class="pisi-customize-group">
                                 <summary>Node</summary>
 
-                                <div class="kedi-customize-row">
+                                <div class="pisi-customize-row">
                                     <label for="custom-node-header-color">Headerlar</label>
                                     <input
                                         id="custom-node-header-color"
-                                        class="kedi-color-input"
+                                        class="pisi-color-input"
                                         type="color"
-                                        data-kedi-custom-color="nodeHeaderColor"
+                                        data-pisi-custom-color="nodeHeaderColor"
                                     >
                                 </div>
                             </details>
 
-                            <button id="kedi-customize-reset" type="button">
+                            <button id="pisi-customize-reset" type="button">
                                 Varsayılan renklere dön
                             </button>
                         </div>
@@ -351,20 +351,20 @@
                     <section id="right-tab-tags" class="right-tab-page">
                         <div class="right-panel-section-title">Tags</div>
 
-                        <div id="kedi-tags-panel">
-                            <div class="kedi-tag-picker">
-                                <button id="kedi-tag-picker-button" type="button">
+                        <div id="pisi-tags-panel">
+                            <div class="pisi-tag-picker">
+                                <button id="pisi-tag-picker-button" type="button">
                                     Choose tag
                                 </button>
 
                                 <div
-                                    id="kedi-tag-picker-menu"
-                                    class="kedi-tag-picker-menu"
+                                    id="pisi-tag-picker-menu"
+                                    class="pisi-tag-picker-menu"
                                     hidden
                                 ></div>
                             </div>
 
-                            <div id="kedi-tag-block-results" class="kedi-tag-block-results"></div>
+                            <div id="pisi-tag-block-results" class="pisi-tag-block-results"></div>
                         </div>
                     </section>
                 </div>
@@ -375,13 +375,13 @@
     <div id="project-modal">
         <div id="project-modal-card">
             <div class="modal-logo-row">
-                <img src="assets/kedi.ico" alt="KEDI">
-                <h2>KEDI Proje Klasörü</h2>
+                <img src="assets/pisi.ico" alt="PISI">
+                <h2>PISI Proje Klasörü</h2>
             </div>
 
             <p>
                 Başlamak için notlarının tutulacağı bir proje klasörü seç.
-                KEDI bu klasörü hatırlayacak ve sonraki açılışlarda doğrudan buradan başlayacak.
+                PISI bu klasörü hatırlayacak ve sonraki açılışlarda doğrudan buradan başlayacak.
             </p>
 
             <button id="modal-choose-project-btn">
@@ -391,12 +391,12 @@
     </div>
 
     <script src="app.js"></script>
-    <script src="renderer/kedi-tree.js"></script>
-    <script src="renderer/kedi-map-workspace.js"></script>
-    <script src="renderer/kedi-tags.js"></script>
-    <script src="renderer/kedi-calendar.js"></script>
-    <script src="renderer/kedi-node-modal.js"></script>
-    <script src="renderer/kedi-map-connections.js"></script>
+    <script src="renderer/pisi-tree.js"></script>
+    <script src="renderer/pisi-map-workspace.js"></script>
+    <script src="renderer/pisi-tags.js"></script>
+    <script src="renderer/pisi-calendar.js"></script>
+    <script src="renderer/pisi-node-modal.js"></script>
+    <script src="renderer/pisi-map-connections.js"></script>
 
 
 </body>
