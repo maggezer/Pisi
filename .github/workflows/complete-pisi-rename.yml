@@ -113,6 +113,40 @@ jobs:
               print(f'  {item}')
           PY
 
+      - name: Align lint configuration with Electron preload
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          config_path = Path('eslint.config.js')
+          text = config_path.read_text(encoding='utf-8')
+
+          ignore_needle = "            'node_modules/**'"
+          ignore_replacement = """            'node_modules/**',
+              'android/**/build/**',
+              'android/.gradle/**',
+              '.gradle/**'"""
+          if ignore_needle not in text:
+              raise RuntimeError('ESLint ignore list could not be updated.')
+          text = text.replace(ignore_needle, ignore_replacement, 1)
+
+          globals_needle = "                structuredClone: 'readonly'"
+          globals_replacement = """                structuredClone: 'readonly',
+                  document: 'readonly',
+                  fetch: 'readonly',
+                  localStorage: 'readonly',
+                  MutationObserver: 'readonly',
+                  Node: 'readonly',
+                  URL: 'readonly',
+                  window: 'readonly'"""
+          if globals_needle not in text:
+              raise RuntimeError('ESLint preload globals could not be updated.')
+          text = text.replace(globals_needle, globals_replacement, 1)
+
+          config_path.write_text(text, encoding='utf-8', newline='\n')
+          PY
+
       - name: Remove one-time automation files
         shell: bash
         run: |
