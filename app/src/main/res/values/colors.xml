@@ -1,0 +1,10 @@
+<resources>
+    <color name="pisi_cream">#FFF8EE</color>
+    <color name="pisi_surface">#FFFFFFFF</color>
+    <color name="pisi_ink">#2C2825</color>
+    <color name="pisi_muted">#766E67</color>
+    <color name="pisi_accent">#E98B52</color>
+    <color name="pisi_accent_soft">#FCE1CF</color>
+    <color name="pisi_line">#E8DDD4</color>
+    <color name="pisi_success">#4D8C67</color>
+</resources>
