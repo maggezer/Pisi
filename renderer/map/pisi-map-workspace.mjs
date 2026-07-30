@@ -1,4 +1,4 @@
-
+import { registerModule } from "../core/module-registry.mjs";
 
 function isMapFileName(fileName = '') {
     return fileName.toLowerCase().endsWith('.map');
@@ -812,632 +812,99 @@ function markdownTextToPisiEditorHtml(text = '') {
     }).join('');
 }
 
-function sanitizePisiEditorHtml(html = '') {
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = String(html || '');
-
-    const allowedTags = new Set([
-        'A', 'B', 'BLOCKQUOTE', 'BR', 'CANVAS', 'CODE', 'DIV', 'EM',
-        'FONT', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'I', 'IMG', 'LI',
-        'OL', 'P', 'PRE', 'S', 'SPAN', 'STRONG', 'SUB', 'SUP', 'TABLE',
-        'TBODY', 'TD', 'TH', 'THEAD', 'TR', 'U', 'UL'
-    ]);
-    const globallyAllowedAttributes = new Set([
-        'class',
-        'title',
-        'contenteditable',
-        'data-pisi-block-id',
-        'data-pisi-tag',
-        'data-pisi-done-for',
-        'data-pisi-diary-source'
-    ]);
-    const allowedStyleProperties = new Set([
-        'background-color',
-        'color',
-        'font-family',
-        'font-size',
-        'font-style',
-        'font-weight',
-        'text-align',
-        'text-decoration'
-    ]);
-
-    wrapper
-        .querySelectorAll('script, style, iframe, object, embed, link, meta, base, form, input, button')
-        .forEach((element) => element.remove());
-
-    Array.from(wrapper.querySelectorAll('*')).forEach((element) => {
-        if (!allowedTags.has(element.tagName)) {
-            element.replaceWith(...Array.from(element.childNodes));
-            return;
-        }
-
-        Array.from(element.attributes).forEach((attribute) => {
-            const name = attribute.name.toLowerCase();
-            const value = String(attribute.value || '');
-            let allowed = globallyAllowedAttributes.has(name);
-
-            if (name === 'style') {
-                const safeDeclarations = value
-                    .split(';')
-                    .map((declaration) => declaration.trim())
-                    .filter(Boolean)
-                    .map((declaration) => {
-                        const separatorIndex = declaration.indexOf(':');
-                        if (separatorIndex < 1) return '';
-
-                        const property = declaration
-                            .slice(0, separatorIndex)
-                            .trim()
-                            .toLowerCase();
-                        const propertyValue = declaration
-                            .slice(separatorIndex + 1)
-                            .trim();
-
-                        if (
-                            !allowedStyleProperties.has(property) ||
-                            /url\s*\(|expression\s*\(|@import/i.test(propertyValue)
-                        ) {
-                            return '';
-                        }
-
-                        return `${property}: ${propertyValue}`;
-                    })
-                    .filter(Boolean);
-
-                if (safeDeclarations.length) {
-                    element.setAttribute('style', safeDeclarations.join('; '));
-                } else {
-                    element.removeAttribute('style');
-                }
-                return;
-            }
-
-            if (element.tagName === 'A' && name === 'href') {
-                allowed = /^(?:https?:|mailto:)/i.test(value);
-            }
-
-            if (element.tagName === 'IMG') {
-                if (name === 'src') {
-                    allowed = /^(?:data:image\/(?:png|jpeg|gif|webp);base64,|\.{0,2}\/?assets\/)/i.test(value);
-                } else if (['alt', 'width', 'height'].includes(name)) {
-                    allowed = true;
-                }
-            }
-
-            if (element.tagName === 'FONT') {
-                allowed = ['color', 'face', 'size'].includes(name);
-            }
-
-            if (element.tagName === 'CANVAS') {
-                allowed = [
-                    'width',
-                    'height',
-                    'data-pisi-canvas',
-                    'data-image'
-                ].includes(name);
-
-                if (name === 'data-image') {
-                    allowed = /^data:image\/png;base64,/i.test(value);
-                }
-            }
-
-            if (['TABLE', 'TD'].includes(element.tagName)) {
-                allowed = allowed || [
-                    'data-pisi-sheet',
-                    'data-formula',
-                    'data-cell',
-                    'data-row',
-                    'data-col'
-                ].includes(name);
-            }
-
-            if (!allowed || name.startsWith('on')) {
-                element.removeAttribute(attribute.name);
-            }
-        });
-
-        if (element.hasAttribute('class')) {
-            const safeClasses = Array.from(element.classList).filter((name) => {
-                return /^pisi-[A-Za-z0-9_-]+$/.test(name);
-            });
-            element.className = safeClasses.join(' ');
-        }
-
-        if (element.tagName === 'CANVAS') {
-            const width = Math.min(1600, Math.max(1, Number(element.getAttribute('width')) || 520));
-            const height = Math.min(1200, Math.max(1, Number(element.getAttribute('height')) || 320));
-            element.setAttribute('width', String(width));
-            element.setAttribute('height', String(height));
-            element.setAttribute('data-pisi-canvas', '1');
-            element.removeAttribute('data-pisi-canvas-bound');
-            element.removeAttribute('data-image-loaded');
-        }
-
-        if (element.hasAttribute('contenteditable')) {
-            const value = element.getAttribute('contenteditable');
-            element.setAttribute(
-                'contenteditable',
-                value === 'false' ? 'false' : 'true'
-            );
-        }
-    });
-
-    return wrapper.innerHTML;
-}
-
-async function openNodeModalFromBox(box) {
-    const nodePath = box.dataset.nodePath;
-
-    const result = await window.pisiProject?.getPisiDocument?.(nodePath);
-
-    if (!result || !result.ok) {
-        alert(result?.error || 'Node açılamadı.');
-        return false;
+const moduleApi = {};
+Object.defineProperties(moduleApi, {
+    "isMapFileName": {
+        enumerable: true,
+        get() { return isMapFileName; }
+    },
+    "isNodeFileName": {
+        enumerable: true,
+        get() { return isNodeFileName; }
+    },
+    "getFileIcon": {
+        enumerable: true,
+        get() { return getFileIcon; }
+    },
+    "samePisiWorkspacePath": {
+        enumerable: true,
+        get() { return samePisiWorkspacePath; }
+    },
+    "openMapInWorkspace": {
+        enumerable: true,
+        get() { return openMapInWorkspace; }
+    },
+    "clearMapWorkspace": {
+        enumerable: true,
+        get() { return clearMapWorkspace; }
+    },
+    "getMapWorldPointFromClient": {
+        enumerable: true,
+        get() { return getMapWorldPointFromClient; }
+    },
+    "isMapBlankEventTarget": {
+        enumerable: true,
+        get() { return isMapBlankEventTarget; }
+    },
+    "createMapNodeBoxAtClientPoint": {
+        enumerable: true,
+        get() { return createMapNodeBoxAtClientPoint; }
+    },
+    "hidePisiMapContextMenu": {
+        enumerable: true,
+        get() { return hidePisiMapContextMenu; }
+    },
+    "showPisiMapContextMenu": {
+        enumerable: true,
+        get() { return showPisiMapContextMenu; }
+    },
+    "bindMapCreationEvents": {
+        enumerable: true,
+        get() { return bindMapCreationEvents; }
+    },
+    "createMapNodeBox": {
+        enumerable: true,
+        get() { return createMapNodeBox; }
+    },
+    "bindMapNodeBoxEvents": {
+        enumerable: true,
+        get() { return bindMapNodeBoxEvents; }
+    },
+    "bindMapNodeDrag": {
+        enumerable: true,
+        get() { return bindMapNodeDrag; }
+    },
+    "bindMapNodeResize": {
+        enumerable: true,
+        get() { return bindMapNodeResize; }
+    },
+    "collectMapLayout": {
+        enumerable: true,
+        get() { return collectMapLayout; }
+    },
+    "scheduleMapLayoutSave": {
+        enumerable: true,
+        get() { return scheduleMapLayoutSave; }
+    },
+    "saveCurrentMapLayout": {
+        enumerable: true,
+        get() { return saveCurrentMapLayout; }
+    },
+    "startMapNodeTitleEdit": {
+        enumerable: true,
+        get() { return startMapNodeTitleEdit; }
+    },
+    "setPisiEditorContent": {
+        enumerable: true,
+        get() { return setPisiEditorContent; }
+    },
+    "getPisiEditorContent": {
+        enumerable: true,
+        get() { return getPisiEditorContent; }
+    },
+    "markdownTextToPisiEditorHtml": {
+        enumerable: true,
+        get() { return markdownTextToPisiEditorHtml; }
     }
-
-    activeModalNode = {
-        box,
-        path: nodePath,
-        metadata: result.metadata,
-        returnFocus: document.activeElement,
-        dirty: false,
-        revision: 0
-    };
-
-    const overlay = document.getElementById('node-modal-overlay');
-    const titleInput = document.getElementById('node-modal-title');
-    const contentInput = document.getElementById('node-modal-content');
-
-    if (titleInput) {
-        titleInput.value = result.metadata.title || '';
-
-        if (titleInput.dataset.modalDirtyBound !== '1') {
-            titleInput.dataset.modalDirtyBound = '1';
-            titleInput.addEventListener('input', () => {
-                if (!activeModalNode) return;
-                activeModalNode.dirty = true;
-                activeModalNode.revision =
-                    Number(activeModalNode.revision || 0) + 1;
-            });
-        }
-    }
-
-    if (contentInput) {
-        if (contentInput.dataset.modalDirtyBound !== '1') {
-            contentInput.dataset.modalDirtyBound = '1';
-            contentInput.addEventListener('input', () => {
-                if (!activeModalNode) return;
-                activeModalNode.dirty = true;
-                activeModalNode.revision =
-                    Number(activeModalNode.revision || 0) + 1;
-            });
-        }
-
-        setPisiEditorContent(contentInput, result.data.content || '');
-        refreshPisiTagsPanelSoon();
-    }
-
-    closePisiTagMenu();
-
-    overlay?.classList.add('visible');
-    contentInput?.focus();
-    return true;
-}
-
-async function closeNodeModalAndSave() {
-    const overlay = document.getElementById('node-modal-overlay');
-    const titleInput = document.getElementById('node-modal-title');
-    const contentInput = document.getElementById('node-modal-content');
-
-    if (!activeModalNode) {
-        overlay?.classList.remove('visible');
-        return true;
-    }
-
-    try {
-        let nodePath = activeModalNode.path;
-        const oldPath = nodePath;
-        const oldTitle = activeModalNode.metadata?.title || '';
-        const title = titleInput?.value?.trim() || oldTitle;
-        const content = getPisiEditorContent(contentInput);
-
-        if (title && title !== oldTitle) {
-            suppressNextFileSystemRefresh(1500);
-
-            const renameResult = await window.pisiProject?.renamePisiFile?.(
-                nodePath,
-                title
-            );
-
-            if (renameResult && renameResult.ok) {
-                nodePath = renameResult.fullPath;
-                activeModalNode.path = nodePath;
-                activeModalNode.box.dataset.nodePath = nodePath;
-                activeModalNode.metadata = renameResult.metadata;
-
-                updateTreeItemAfterRename(oldPath, renameResult);
-                updateOpenMapNodeAfterRename(oldPath, renameResult);
-
-                if (typeof refreshActiveMapTreeBranch === 'function') {
-                await refreshActiveMapTreeBranch();
-                }
-
-            } else {
-                alert(renameResult?.error || 'Node başlığı değiştirilemedi.');
-
-                // Rename başarısızsa modal kapanmasın; kullanıcı düzeltebilsin.
-                titleInput?.focus();
-                return false;
-            }
-        }
-
-        const saveResult = await window.pisiProject?.saveNodeContent?.(
-            nodePath,
-            content
-        );
-
-        if (!saveResult || !saveResult.ok) {
-            alert(saveResult?.error || 'Node kaydedilemedi.');
-            return false;
-        }
-
-        const titleEl = activeModalNode.box.querySelector('.map-node-title');
-        const previewEl = activeModalNode.box.querySelector('.map-node-preview');
-
-        if (titleEl) {
-            titleEl.textContent = saveResult.metadata.title;
-            titleEl.title = saveResult.metadata.title;
-        }
-
-        if (previewEl) {
-            previewEl.textContent = saveResult.preview || '';
-        }
-
-        animateMapBox(activeModalNode.box);
-
-        closePisiTagMenu();
-        refreshPisiTagsPanelSoon();
-
-        const returnFocus = activeModalNode.returnFocus;
-        overlay?.classList.remove('visible');
-        activeModalNode = null;
-        returnFocus?.focus?.({ preventScroll: true });
-        return true;
-    } catch (error) {
-        console.error('[PISI] Modal kaydetme/kapatma hatası:', error);
-        alert('Modal kapatılırken hata oluştu: ' + error.message);
-        return false;
-    }
-}
-
-function closeNodeModalWithoutSaving() {
-    const overlay = document.getElementById('node-modal-overlay');
-    const contentInput = document.getElementById('node-modal-content');
-    const titleInput = document.getElementById('node-modal-title');
-
-    const returnFocus = activeModalNode?.returnFocus;
-    overlay?.classList.remove('visible');
-    if (contentInput) contentInput.innerHTML = '';
-    if (titleInput) titleInput.value = '';
-    activeModalNode = null;
-    closePisiTagMenu();
-    returnFocus?.focus?.({ preventScroll: true });
-}
-
-function getCenterNodeEditorElements() {
-    return {
-        wrapper: document.getElementById('center-node-editor'),
-        titleInput: document.getElementById('center-node-editor-title'),
-        contentEditor: document.getElementById('center-node-editor-content'),
-        saveBtn: document.getElementById('center-node-editor-save'),
-        placeholder: document.getElementById('workspace-placeholder'),
-        mapCanvas: document.getElementById('map-canvas')
-    };
-}
-
-function bindCenterNodeEditorControls() {
-    const { titleInput, contentEditor, saveBtn } = getCenterNodeEditorElements();
-
-    if (saveBtn && saveBtn.dataset.bound !== '1') {
-        saveBtn.dataset.bound = '1';
-
-        saveBtn.addEventListener('click', async (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-
-            await saveCurrentCenterNodeEditor();
-        });
-    }
-
-    if (titleInput && titleInput.dataset.bound !== '1') {
-        titleInput.dataset.bound = '1';
-
-        titleInput.addEventListener('input', () => {
-            if (!activeCenterNode) return;
-            activeCenterNode.dirty = true;
-            activeCenterNode.revision =
-                Number(activeCenterNode.revision || 0) + 1;
-            scheduleCenterNodeEditorSave();
-        });
-
-        titleInput.addEventListener('keydown', async (event) => {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                await saveCurrentCenterNodeEditor();
-            }
-
-            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
-                event.preventDefault();
-                await saveCurrentCenterNodeEditor();
-            }
-        });
-    }
-
-    if (contentEditor && contentEditor.dataset.centerNodeSaveBound !== '1') {
-        contentEditor.dataset.centerNodeSaveBound = '1';
-
-        contentEditor.addEventListener('input', () => {
-            if (activeCenterNode) {
-                activeCenterNode.dirty = true;
-                activeCenterNode.revision =
-                    Number(activeCenterNode.revision || 0) + 1;
-            }
-            refreshPisiTagsPanelSoon();
-            scheduleCenterNodeEditorSave();
-        });
-
-        contentEditor.addEventListener('keydown', async (event) => {
-            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
-                event.preventDefault();
-                await saveCurrentCenterNodeEditor();
-            }
-        });
-    }
-}
-
-function scheduleCenterNodeEditorSave() {
-    clearTimeout(centerNodeSaveTimer);
-
-    centerNodeSaveTimer = setTimeout(() => {
-        saveCurrentCenterNodeEditor();
-    }, 800);
-}
-
-async function openCenterNodeEditor(nodeItem) {
-    if (!nodeItem?.fullPath) return;
-
-    bindCenterNodeEditorControls();
-
-    if (
-        activeCenterNode?.path &&
-        !samePisiWorkspacePath(activeCenterNode.path, nodeItem.fullPath)
-    ) {
-        const saved = await saveCurrentCenterNodeEditor();
-        if (!saved) return false;
-    }
-
-    if (activeMapPath) {
-        const layoutSaved = await saveCurrentMapLayout();
-        if (!layoutSaved) return false;
-    }
-
-    const result = await window.pisiProject?.getPisiDocument?.(nodeItem.fullPath);
-
-    if (!result || !result.ok) {
-        alert(result?.error || 'Node açılamadı.');
-        return false;
-    }
-
-    clearMapWorkspace();
-
-    const {
-        wrapper,
-        titleInput,
-        contentEditor,
-        placeholder,
-        mapCanvas
-    } = getCenterNodeEditorElements();
-
-    if (placeholder) {
-        placeholder.style.display = 'none';
-    }
-
-    if (mapCanvas) {
-        mapCanvas.hidden = true;
-        mapCanvas.style.display = 'none';
-    }
-
-    if (wrapper) {
-        wrapper.hidden = false;
-    }
-
-    activeCenterNode = {
-        path: nodeItem.fullPath,
-        item: nodeItem,
-        metadata: result.metadata || {},
-        dirty: false,
-        revision: 0
-    };
-
-    if (titleInput) {
-        titleInput.value =
-            result.metadata?.title ||
-            nodeItem.metadata?.title ||
-            String(nodeItem.fileName || nodeItem.name || '').replace(/\.node$/i, '');
-    }
-
-    if (contentEditor) {
-        setPisiEditorContent(contentEditor, result.data?.content || '');
-    }
-
-    closePisiTagMenu();
-
-    if (typeof bindPisiTagControls === 'function') {
-        bindPisiTagControls();
-    }
-
-    if (typeof bindPisiBlockIndexControls === 'function') {
-        bindPisiBlockIndexControls();
-    }
-
-    setTimeout(() => {
-        contentEditor?.focus({ preventScroll: true });
-    }, 0);
-
-    return true;
-}
-
-let pisiCenterSaveTail = Promise.resolve(true);
-
-function saveCurrentCenterNodeEditor() {
-    if (!activeCenterNode?.path) return true;
-
-    const saveTask = pisiCenterSaveTail
-        .catch(() => false)
-        .then(() => performCurrentCenterNodeEditorSave());
-
-    pisiCenterSaveTail = saveTask;
-    return saveTask;
-}
-
-async function performCurrentCenterNodeEditorSave() {
-    if (!activeCenterNode?.path) return true;
-
-    const { titleInput, contentEditor, saveBtn } = getCenterNodeEditorElements();
-    const saveRevision = Number(activeCenterNode.revision || 0);
-
-    try {
-        clearTimeout(centerNodeSaveTimer);
-        centerNodeSaveTimer = null;
-        saveBtn?.classList.add('saving');
-
-        let nodePath = activeCenterNode.path;
-        const oldPath = nodePath;
-        const oldTitle = activeCenterNode.metadata?.title || '';
-        const title = titleInput?.value?.trim() || oldTitle;
-        const content = getPisiEditorContent(contentEditor);
-
-        if (title && title !== oldTitle) {
-            suppressNextFileSystemRefresh(3000);
-
-            const renameResult = await window.pisiProject?.renamePisiFile?.(
-                nodePath,
-                title
-            );
-
-            if (!renameResult || !renameResult.ok) {
-                alert(renameResult?.error || 'Node başlığı değiştirilemedi.');
-                titleInput?.focus();
-                return false;
-            }
-
-            nodePath = renameResult.fullPath;
-
-            activeCenterNode.path = nodePath;
-            activeCenterNode.metadata = renameResult.metadata || {};
-            activeCenterNode.item = {
-                ...activeCenterNode.item,
-                name: renameResult.fileName,
-                fileName: renameResult.fileName,
-                fullPath: renameResult.fullPath,
-                displayName: renameResult.metadata?.title || renameResult.fileName,
-                metadata: {
-                    ...(renameResult.metadata || {})
-                },
-                sidecarPath: renameResult.sidecarPath || activeCenterNode.item?.sidecarPath
-            };
-
-            updateTreeItemAfterRename(oldPath, renameResult);
-            updateOpenMapNodeAfterRename(oldPath, renameResult);
-
-            if (typeof updatePisiOpenTabAfterRename === 'function') {
-                updatePisiOpenTabAfterRename(oldPath, renameResult);
-            }
-        }
-
-        const saveResult = await window.pisiProject?.saveNodeContent?.(
-            nodePath,
-            content
-        );
-
-        if (!saveResult || !saveResult.ok) {
-            alert(saveResult?.error || 'Node kaydedilemedi.');
-            return false;
-        }
-
-        activeCenterNode.metadata = saveResult.metadata || activeCenterNode.metadata;
-        if (Number(activeCenterNode.revision || 0) === saveRevision) {
-            activeCenterNode.dirty = false;
-        }
-
-        if (typeof refreshActiveMapTreeBranch === 'function') {
-            await refreshActiveMapTreeBranch();
-        }
-
-        refreshPisiTagsPanelSoon();
-        return true;
-    } catch (error) {
-        console.error('[PISI] Center node editor kaydetme hatası:', error);
-        alert('Node kaydedilirken hata oluştu: ' + error.message);
-        return false;
-    } finally {
-        saveBtn?.classList.remove('saving');
-    }
-}
-
-function clearCenterNodeEditor() {
-    clearTimeout(centerNodeSaveTimer);
-
-    const {
-        wrapper,
-        titleInput,
-        contentEditor
-    } = getCenterNodeEditorElements();
-
-    if (titleInput) {
-        titleInput.value = '';
-    }
-
-    if (contentEditor) {
-        contentEditor.innerHTML = '';
-    }
-
-    if (wrapper) {
-        wrapper.hidden = true;
-    }
-
-    activeCenterNode = null;
-    closePisiTagMenu();
-}
-
-async function flushPisiPendingSaves() {
-    clearTimeout(centerNodeSaveTimer);
-    clearTimeout(mapSaveTimer);
-    clearTimeout(mapCameraSaveTimer);
-    centerNodeSaveTimer = null;
-    mapSaveTimer = null;
-    mapCameraSaveTimer = null;
-
-    if (activeModalNode) {
-        const modalSaved = await closeNodeModalAndSave();
-        if (!modalSaved) return false;
-    }
-
-    if (activeCenterNode) {
-        const centerSaved = await saveCurrentCenterNodeEditor();
-        if (!centerSaved) return false;
-    }
-
-    if (activeMapPath) {
-        const layoutSaved = await saveCurrentMapLayout();
-        if (!layoutSaved) return false;
-
-        if (typeof flushActiveMapCameraSave === 'function') {
-            const cameraSaved = await flushActiveMapCameraSave();
-            if (!cameraSaved) return false;
-        }
-    }
-
-    return true;
-}
+});
+registerModule("map.workspace", moduleApi);

@@ -1,3 +1,5 @@
+import { registerModule } from "../core/module-registry.mjs";
+
 function getTreeItemDisplayName(item) {
     if (!item) return '';
 
@@ -415,7 +417,6 @@ async function flushActiveMapCameraSave() {
     }
 }
 
-
 function bindMapZoomEvents() {
     if (mapZoomEventsBound) return;
 
@@ -440,7 +441,6 @@ function bindMapZoomEvents() {
         );
     }, { passive: false });
 }
-
 
 function bindMapZoomControls() {
     if (mapZoomControlsBound) return;
@@ -716,469 +716,167 @@ function setupMapCanvasPan() {
     });
 }
 
-async function persistPisiMapConnection(edgePayload) {
-    suppressNextFileSystemRefresh(1500);
-
-    let result = await window.pisiProject?.upsertMapConnection?.(
-        activeMapPath,
-        edgePayload
-    );
-
-    if (result?.code === 'SECOND_PARENT_CONFIRM_REQUIRED') {
-        const confirmed = typeof pisiConfirm === 'function'
-            ? await pisiConfirm(
-                'Bu node zaten bir parent’a sahip. Yeni bağlantı hiyerarşi yerine stream ilişkisi olarak kaydedilsin mi?',
-                {
-                    title: 'İkinci parent',
-                    confirmText: 'Stream olarak ekle',
-                    cancelText: 'Vazgeç'
-                }
-            )
-            : confirm(
-                'Bu node zaten bir parent’a sahip. Yeni bağlantı stream olarak kaydedilsin mi?'
-            );
-
-        if (!confirmed) {
-            return {
-                ok: false,
-                cancelled: true
-            };
-        }
-
-        result = await window.pisiProject?.upsertMapConnection?.(
-            activeMapPath,
-            {
-                ...(result.suggestedEdge || edgePayload),
-                confirmSecondParentAsStream: true
-            }
-        );
-    }
-
-    if (!result?.ok) return result;
-
-    activeMapEdges = result.edges || activeMapEdges;
-    drawMapConnections();
-    await refreshActiveMapTreeBranch();
-    return result;
-}
-
-let pisiKeyboardConnectionSource = null;
-
-function resetPisiMapConnectionInteractions() {
-    pisiKeyboardConnectionSource?.portEl?.classList.remove(
-        'connecting-source'
-    );
-    pisiKeyboardConnectionSource = null;
-
-    const sourcePort = currentConnectionDrag?.sourcePort;
-    if (sourcePort) {
-        currentConnectionDrag.sourceBox
-            ?.querySelector?.(`.map-port.${CSS.escape(sourcePort)}`)
-            ?.classList?.remove('connecting-source');
-    }
-    currentConnectionDrag = null;
-
-    currentMapBoxSelection?.element?.remove?.();
-    currentMapBoxSelection = null;
-    clearTempEdgePath();
-}
-
-function bindMapPortEvents(box) {
-    const ports = box.querySelectorAll('.map-port');
-
-    ports.forEach((portEl) => {
-        portEl.addEventListener('mousedown', (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-
-const sourcePort = portEl.dataset.port;
-const sourceId = box.dataset.nodeId;
-const connectionData = getConnectionDataFromEvent(event);
-
-currentConnectionDrag = {
-    sourceBox: box,
-    sourceId,
-    sourcePort,
-    startClientX: event.clientX,
-    startClientY: event.clientY,
-    ...connectionData
-};
-
-            portEl.classList.add('connecting-source');
-
-        const mouse = getMousePointInCanvas(event);
-        const temp = ensureTempEdgePath();
-
-        if (temp) {
-            temp.setAttribute('d', makeTempConnectionPath(box, sourcePort, mouse));
-        }
-        });
-
-        portEl.addEventListener('keydown', async (event) => {
-            if (event.key !== 'Enter' && event.key !== ' ') return;
-            event.preventDefault();
-            event.stopPropagation();
-
-            if (!pisiKeyboardConnectionSource) {
-                pisiKeyboardConnectionSource = {
-                    box,
-                    portEl,
-                    sourceId: box.dataset.nodeId,
-                    sourcePort: portEl.dataset.port,
-                    ...getConnectionDataFromEvent(event)
-                };
-                portEl.classList.add('connecting-source');
-                portEl.setAttribute(
-                    'aria-label',
-                    'Bağlantı kaynağı seçildi; hedef portta Enter’a bas'
-                );
-                return;
-            }
-
-            const source = pisiKeyboardConnectionSource;
-            source.portEl.classList.remove('connecting-source');
-            source.portEl.setAttribute(
-                'aria-label',
-                `${source.sourcePort} bağlantı portu`
-            );
-            pisiKeyboardConnectionSource = null;
-
-            if (source.box === box && source.portEl === portEl) {
-                toggleHubConnectionsFromPort(
-                    source.sourceId,
-                    source.sourcePort
-                );
-                return;
-            }
-
-            if (source.sourceId === box.dataset.nodeId) return;
-
-            const result = await persistPisiMapConnection({
-                sourceId: source.sourceId,
-                targetId: box.dataset.nodeId,
-                sourcePort: source.sourcePort,
-                targetPort: portEl.dataset.port,
-                type: source.type,
-                sourceRole: source.sourceRole,
-                targetRole: source.targetRole
-            });
-
-            if (!result?.ok && !result?.cancelled) {
-                alert(result?.error || 'Bağlantı kaydedilemedi.');
-            }
-        });
-    });
-}
-
-window.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape') return;
-
-    let cancelled = false;
-
-    if (pisiKeyboardConnectionSource) {
-        pisiKeyboardConnectionSource.portEl?.classList.remove(
-            'connecting-source'
-        );
-        pisiKeyboardConnectionSource.portEl?.setAttribute(
-            'aria-label',
-            `${pisiKeyboardConnectionSource.sourcePort} bağlantı portu`
-        );
-        pisiKeyboardConnectionSource = null;
-        cancelled = true;
-    }
-
-    if (currentConnectionDrag) {
-        const sourcePortEl = currentConnectionDrag.sourceBox?.querySelector(
-            `.map-port.${currentConnectionDrag.sourcePort}`
-        );
-        sourcePortEl?.classList.remove('connecting-source');
-        currentConnectionDrag = null;
-        clearTempEdgePath();
-        cancelled = true;
-    }
-
-    if (cancelled) {
-        event.preventDefault();
-        event.stopPropagation();
+const moduleApi = {};
+Object.defineProperties(moduleApi, {
+    "getTreeItemDisplayName": {
+        enumerable: true,
+        get() { return getTreeItemDisplayName; }
+    },
+    "getConnectionDataFromEvent": {
+        enumerable: true,
+        get() { return getConnectionDataFromEvent; }
+    },
+    "isHierarchyEdge": {
+        enumerable: true,
+        get() { return isHierarchyEdge; }
+    },
+    "getCollapsedHubPortSet": {
+        enumerable: true,
+        get() { return getCollapsedHubPortSet; }
+    },
+    "makeCollapsedHubPortKey": {
+        enumerable: true,
+        get() { return makeCollapsedHubPortKey; }
+    },
+    "hasOutgoingHubEdgesFromPort": {
+        enumerable: true,
+        get() { return hasOutgoingHubEdgesFromPort; }
+    },
+    "isHubEdgeCollapsed": {
+        enumerable: true,
+        get() { return isHubEdgeCollapsed; }
+    },
+    "syncHubPortCollapseVisuals": {
+        enumerable: true,
+        get() { return syncHubPortCollapseVisuals; }
+    },
+    "toggleHubConnectionsFromPort": {
+        enumerable: true,
+        get() { return toggleHubConnectionsFromPort; }
+    },
+    "convertEdgeToStream": {
+        enumerable: true,
+        get() { return convertEdgeToStream; }
+    },
+    "targetAlreadyHasUpHub": {
+        enumerable: true,
+        get() { return targetAlreadyHasUpHub; }
+    },
+    "enforceSingleParentForTarget": {
+        enumerable: true,
+        get() { return enforceSingleParentForTarget; }
+    },
+    "getConnectionClass": {
+        enumerable: true,
+        get() { return getConnectionClass; }
+    },
+    "getPortPoint": {
+        enumerable: true,
+        get() { return getPortPoint; }
+    },
+    "getMousePointInCanvas": {
+        enumerable: true,
+        get() { return getMousePointInCanvas; }
+    },
+    "getPortDirection": {
+        enumerable: true,
+        get() { return getPortDirection; }
+    },
+    "offsetPoint": {
+        enumerable: true,
+        get() { return offsetPoint; }
+    },
+    "getDistance": {
+        enumerable: true,
+        get() { return getDistance; }
+    },
+    "makeConnectionPathFromBoxes": {
+        enumerable: true,
+        get() { return makeConnectionPathFromBoxes; }
+    },
+    "makeTempConnectionPath": {
+        enumerable: true,
+        get() { return makeTempConnectionPath; }
+    },
+    "ensureTempEdgePath": {
+        enumerable: true,
+        get() { return ensureTempEdgePath; }
+    },
+    "clearTempEdgePath": {
+        enumerable: true,
+        get() { return clearTempEdgePath; }
+    },
+    "applyMapCamera": {
+        enumerable: true,
+        get() { return applyMapCamera; }
+    },
+    "clampMapZoom": {
+        enumerable: true,
+        get() { return clampMapZoom; }
+    },
+    "zoomMapAtClientPoint": {
+        enumerable: true,
+        get() { return zoomMapAtClientPoint; }
+    },
+    "zoomMapFromCenter": {
+        enumerable: true,
+        get() { return zoomMapFromCenter; }
+    },
+    "saveActiveMapCameraSoon": {
+        enumerable: true,
+        get() { return saveActiveMapCameraSoon; }
+    },
+    "scheduleMapCameraSave": {
+        enumerable: true,
+        get() { return scheduleMapCameraSave; }
+    },
+    "flushActiveMapCameraSave": {
+        enumerable: true,
+        get() { return flushActiveMapCameraSave; }
+    },
+    "bindMapZoomEvents": {
+        enumerable: true,
+        get() { return bindMapZoomEvents; }
+    },
+    "bindMapZoomControls": {
+        enumerable: true,
+        get() { return bindMapZoomControls; }
+    },
+    "bindHoldZoomButton": {
+        enumerable: true,
+        get() { return bindHoldZoomButton; }
+    },
+    "clearSelectedMapNodes": {
+        enumerable: true,
+        get() { return clearSelectedMapNodes; }
+    },
+    "getSelectedMapNodeBoxes": {
+        enumerable: true,
+        get() { return getSelectedMapNodeBoxes; }
+    },
+    "getClientSelectionRect": {
+        enumerable: true,
+        get() { return getClientSelectionRect; }
+    },
+    "rectsIntersect": {
+        enumerable: true,
+        get() { return rectsIntersect; }
+    },
+    "rectContainsRect": {
+        enumerable: true,
+        get() { return rectContainsRect; }
+    },
+    "applyMapBoxSelection": {
+        enumerable: true,
+        get() { return applyMapBoxSelection; }
+    },
+    "updateMapSelectionBoxVisual": {
+        enumerable: true,
+        get() { return updateMapSelectionBoxVisual; }
+    },
+    "setupMapCanvasPan": {
+        enumerable: true,
+        get() { return setupMapCanvasPan; }
     }
 });
-
-window.addEventListener('mousemove', (event) => {
-    if (!currentConnectionDrag) return;
-
-    const mouse = getMousePointInCanvas(event);
-    const temp = ensureTempEdgePath();
-
-    if (temp) {
-    temp.setAttribute(
-        'd',
-        makeTempConnectionPath(
-            currentConnectionDrag.sourceBox,
-            currentConnectionDrag.sourcePort,
-            mouse
-        )
-    );
-    }
-});
-
-window.addEventListener('mouseup', async (event) => {
-    if (!currentConnectionDrag) return;
-
-    const targetPortEl = event.target.closest?.('.map-port');
-    const sourcePortEl = currentConnectionDrag.sourceBox.querySelector(
-        `.map-port.${currentConnectionDrag.sourcePort}`
-    );
-
-    sourcePortEl?.classList.remove('connecting-source');
-
-    const clickDistance = Math.abs(event.clientX - (currentConnectionDrag.startClientX || event.clientX)) +
-        Math.abs(event.clientY - (currentConnectionDrag.startClientY || event.clientY));
-
-    if (targetPortEl === sourcePortEl && clickDistance <= 4 && currentConnectionDrag.type === 'down-hub') {
-        toggleHubConnectionsFromPort(
-            currentConnectionDrag.sourceId,
-            currentConnectionDrag.sourcePort
-        );
-
-        currentConnectionDrag = null;
-        clearTempEdgePath();
-        return;
-    }
-
-    if (!targetPortEl) {
-        currentConnectionDrag = null;
-        clearTempEdgePath();
-        return;
-    }
-
-    const targetBox = targetPortEl.closest('.map-node-box');
-
-    if (!targetBox) {
-        currentConnectionDrag = null;
-        clearTempEdgePath();
-        return;
-    }
-
-    const targetId = targetBox.dataset.nodeId;
-    const targetPort = targetPortEl.dataset.port;
-
-    if (targetId === currentConnectionDrag.sourceId) {
-        currentConnectionDrag = null;
-        clearTempEdgePath();
-        return;
-    }
-
-let edgePayload = {
-    sourceId: currentConnectionDrag.sourceId,
-    targetId,
-    sourcePort: currentConnectionDrag.sourcePort,
-    targetPort,
-
-    type: currentConnectionDrag.type,
-    sourceRole: currentConnectionDrag.sourceRole,
-    targetRole: currentConnectionDrag.targetRole
-};
-
-    const result = await persistPisiMapConnection(edgePayload);
-
-    if (!result || !result.ok) {
-        if (!result?.cancelled) {
-            alert(result?.error || 'Bağlantı kaydedilemedi.');
-        }
-        currentConnectionDrag = null;
-        clearTempEdgePath();
-        return;
-    }
-
-    currentConnectionDrag = null;
-    clearTempEdgePath();
-
-});
-
-async function deleteMapEdge(edgeId) {
-    if (!activeMapPath || !edgeId) return;
-
-    const ok = confirm('Bu bağlantı silinsin mi?');
-
-    if (!ok) return;
-
-    try {
-        suppressNextFileSystemRefresh(8000);
-
-        const result = await window.pisiProject?.deleteMapConnection?.(
-            activeMapPath,
-            edgeId
-        );
-
-        if (!result || !result.ok) {
-            alert(result?.error || 'Bağlantı silinemedi.');
-            return;
-        }
-
-        activeMapEdges = result.edges || activeMapEdges.filter((edge) => {
-            return edge.id !== edgeId;
-        });
-
-        drawMapConnections();
-
-        if (typeof refreshActiveMapTreeBranch === 'function') {
-            await refreshActiveMapTreeBranch();
-        }
-    } catch (error) {
-        console.error('[PISI] Bağlantı silme hatası:', error);
-        alert('Bağlantı silinirken hata oluştu: ' + error.message);
-    }
-}
-
-function createMapEdgeDeleteButton(edge, pathData) {
-    if (!edge?.id || !pathData) return null;
-
-    const point = getMapEdgePathMidpoint(pathData);
-    if (!point) return null;
-
-    const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    group.classList.add('map-edge-delete');
-    group.dataset.edgeId = edge.id;
-    group.setAttribute('transform', `translate(${point.x}, ${point.y})`);
-
-    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    circle.classList.add('map-edge-delete-hit');
-    circle.setAttribute('r', '10');
-
-    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    text.classList.add('map-edge-delete-x');
-    text.textContent = '×';
-    text.setAttribute('y', '-0.5');
-
-    group.appendChild(circle);
-    group.appendChild(text);
-
-    group.addEventListener('mousedown', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-    });
-
-    group.addEventListener('click', async (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-
-        await deleteMapEdge(edge.id);
-    });
-
-    return group;
-}
-
-function getMapEdgePathMidpoint(pathData) {
-    const tempPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    tempPath.setAttribute('d', pathData);
-
-    try {
-        const length = tempPath.getTotalLength();
-        return tempPath.getPointAtLength(length / 2);
-    } catch (error) {
-        console.warn('[PISI] Bağlantı silme butonu konumu hesaplanamadı:', error);
-        return null;
-    }
-}
-
-function updateMapEdgeDeleteButtonPosition(group, pathData) {
-    if (!group) return;
-    const point = getMapEdgePathMidpoint(pathData);
-    if (!point) return;
-    group.setAttribute('transform', `translate(${point.x}, ${point.y})`);
-}
-
-let pisiConnectionDrawFrame = null;
-
-function scheduleDrawMapConnections() {
-    if (pisiConnectionDrawFrame !== null) return;
-
-    pisiConnectionDrawFrame = requestAnimationFrame(() => {
-        pisiConnectionDrawFrame = null;
-        drawMapConnections();
-    });
-}
-
-function drawMapConnections() {
-    const svg = document.getElementById('map-connections');
-
-    if (!svg) return;
-
-    const liveEdgeIds = new Set();
-
-    for (const edge of activeMapEdges) {
-        if (isHubEdgeCollapsed(edge)) {
-            continue;
-        }
-
-        const sourceBox = document.querySelector(
-            `.map-node-box[data-node-id="${CSS.escape(edge.sourceId)}"]`
-        );
-
-        const targetBox = document.querySelector(
-            `.map-node-box[data-node-id="${CSS.escape(edge.targetId)}"]`
-        );
-
-        if (!sourceBox || !targetBox) continue;
-
-        const sourcePort = edge.sourcePort || 'right';
-        const targetPort = edge.targetPort || 'left';
-
-        const pathData = makeConnectionPathFromBoxes(
-            sourceBox,
-            sourcePort,
-            targetBox,
-            targetPort,
-            edge.type
-        );
-
-        liveEdgeIds.add(edge.id);
-        let groupEl = svg.querySelector(
-            `.map-edge-group[data-edge-id="${CSS.escape(edge.id)}"]`
-        );
-        let hitPathEl = groupEl?.querySelector('.map-edge-hit') || null;
-        let pathEl = groupEl?.querySelector('.map-edge') || null;
-        let deleteEl = groupEl?.querySelector('.map-edge-delete') || null;
-
-        if (!groupEl) {
-            groupEl = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-            groupEl.classList.add('map-edge-group');
-            groupEl.dataset.edgeId = edge.id;
-
-            hitPathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            hitPathEl.classList.add('map-edge-hit');
-            hitPathEl.dataset.edgeId = edge.id;
-
-            pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            pathEl.dataset.edgeId = edge.id;
-
-            deleteEl = createMapEdgeDeleteButton(edge, pathData);
-
-            groupEl.appendChild(hitPathEl);
-            groupEl.appendChild(pathEl);
-
-            if (deleteEl) {
-                groupEl.appendChild(deleteEl);
-            }
-
-            svg.appendChild(groupEl);
-        }
-
-        hitPathEl.setAttribute('d', pathData);
-        pathEl.setAttribute(
-            'class',
-            `map-edge ${getConnectionClass(edge)}`
-        );
-        pathEl.setAttribute('d', pathData);
-
-        if (deleteEl) {
-            updateMapEdgeDeleteButtonPosition(deleteEl, pathData);
-        }
-    }
-
-    svg.querySelectorAll('.map-edge-group').forEach((group) => {
-        if (!liveEdgeIds.has(group.dataset.edgeId)) {
-            group.remove();
-        }
-    });
-}
+registerModule("map.interactions", moduleApi);
