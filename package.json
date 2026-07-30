@@ -10,13 +10,14 @@
     "check:syntax": "node scripts/check-syntax.js",
     "lint": "eslint .",
     "test": "node --test",
-    "validate": "npm run check:syntax && npm run check:architecture && npm run lint && npm test",
+    "validate": "npm run check:syntax && npm run check:architecture && npm run check:migration && npm run lint && npm test",
     "audit": "npm audit --audit-level=high",
     "dist": "electron-builder",
     "dist:win": "electron-builder --win",
     "dist:portable": "electron-builder --win portable",
     "dist:installer": "electron-builder --win nsis",
-    "check:architecture": "node scripts/check-architecture.js"
+    "check:architecture": "node scripts/check-architecture.js",
+    "check:migration": "node scripts/check-pisi-migration.js"
   },
   "build": {
     "appId": "com.mumin.pisi",
