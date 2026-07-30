@@ -83,7 +83,7 @@ body {
     color: #d4d4d4;
 }
 
-#kedi-app {
+#pisi-app {
     width: 100vw;
     height: calc(100vh - 32px);
     display: flex;
@@ -434,10 +434,10 @@ body {
 }
 
 .tree-row.just-created {
-    animation: kediNewItemPulse 900ms ease-out;
+    animation: pisiNewItemPulse 900ms ease-out;
 }
 
-@keyframes kediNewItemPulse {
+@keyframes pisiNewItemPulse {
     0% {
         background: rgba(243, 156, 18, 0.38);
         box-shadow: inset 3px 0 0 #f39c12;
@@ -502,7 +502,7 @@ body {
     padding: 7px 34px 4px 34px;
     color: #f39c12;
     font-weight: 700;
-    font-size: var(--kedi-map-node-title-size);
+    font-size: var(--pisi-map-node-title-size);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -514,7 +514,7 @@ body {
     flex: 1 1 auto;
     min-height: 0;
     padding: 8px 12px 10px 12px;
-    font-size: var(--kedi-map-node-text-size);
+    font-size: var(--pisi-map-node-text-size);
     line-height: 1.35;
     color: #aaa;
     overflow: hidden;
@@ -686,10 +686,10 @@ body {
 }
 
 .map-node-box.just-updated {
-    animation: kediMapNodePulse 650ms ease-out;
+    animation: pisiMapNodePulse 650ms ease-out;
 }
 
-@keyframes kediMapNodePulse {
+@keyframes pisiMapNodePulse {
     0% {
         border-color: #f39c12;
         box-shadow: 0 0 0 3px rgba(243,156,18,0.28), 0 8px 24px rgba(0,0,0,0.35);
@@ -711,7 +711,7 @@ body {
     outline: none;
     padding: 1px 6px;
     font: inherit;
-    font-size: var(--kedi-map-node-title-size);
+    font-size: var(--pisi-map-node-title-size);
     font-weight: 700;
 }
 
@@ -1072,8 +1072,8 @@ body {
     line-height: 1.45;
 }
 
-/* KEDI TAG MENU */
-.kedi-tag-menu {
+/* PISI TAG MENU */
+.pisi-tag-menu {
     position: fixed;
     z-index: 9500;
     min-width: 190px;
@@ -1085,11 +1085,11 @@ body {
     box-shadow: 0 14px 38px rgba(0,0,0,0.58);
 }
 
-.kedi-tag-menu[hidden] {
+.pisi-tag-menu[hidden] {
     display: none !important;
 }
 
-.kedi-tag-option {
+.pisi-tag-option {
     width: 100%;
     min-height: 34px;
     border: none;
@@ -1105,19 +1105,19 @@ body {
     text-align: left;
 }
 
-.kedi-tag-option:hover,
-.kedi-tag-option.active {
+.pisi-tag-option:hover,
+.pisi-tag-option.active {
     background: #333;
 }
 
-.kedi-tag-option-code {
+.pisi-tag-option-code {
     color: #f39c12;
     font-family: Consolas, monospace;
     font-size: 12px;
     font-weight: 800;
 }
 
-.kedi-tag-option-desc {
+.pisi-tag-option-desc {
     color: #888;
     font-size: 12px;
 }
@@ -1169,7 +1169,7 @@ body {
 }
 
 /* USER TAG CHIPS */
-.kedi-user-tag {
+.pisi-user-tag {
     display: inline-flex;
     align-items: center;
     max-width: 100%;
@@ -1186,35 +1186,35 @@ body {
     user-select: none;
 }
 
-.kedi-user-tag::before {
+.pisi-user-tag::before {
     content: "#";
     opacity: 0.65;
     margin-right: 2px;
 }
 
-.kedi-tag-option.user .kedi-tag-option-code,
-.kedi-tag-option.new-user .kedi-tag-option-code {
+.pisi-tag-option.user .pisi-tag-option-code,
+.pisi-tag-option.new-user .pisi-tag-option-code {
     color: #5dade2;
 }
 
-.kedi-tag-option.new-user .kedi-tag-option-desc {
+.pisi-tag-option.new-user .pisi-tag-option-desc {
     color: #7fb3d5;
 }
 
 /* TAGS PANEL */
-#kedi-tags-panel {
+#pisi-tags-panel {
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
-.kedi-tags-list {
+.pisi-tags-list {
     display: flex;
     flex-wrap: wrap;
     gap: 7px;
 }
 
-.kedi-tag-filter-chip {
+.pisi-tag-filter-chip {
     border: 1px solid rgba(93, 173, 226, 0.45);
     border-radius: 999px;
     background: rgba(31, 84, 145, 0.5);
@@ -1225,25 +1225,25 @@ body {
     cursor: pointer;
 }
 
-.kedi-tag-filter-chip:hover,
-.kedi-tag-filter-chip.active {
+.pisi-tag-filter-chip:hover,
+.pisi-tag-filter-chip.active {
     background: rgba(31, 84, 145, 0.95);
     border-color: #5dade2;
 }
 
-.kedi-tag-count {
+.pisi-tag-count {
     opacity: 0.72;
     margin-left: 4px;
     font-weight: 600;
 }
 
-.kedi-tag-block-results {
+.pisi-tag-block-results {
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
-.kedi-tag-result-card {
+.pisi-tag-result-card {
     border: 1px solid #3a3a3a;
     border-radius: 9px;
     background: #2a2a2c;
@@ -1251,44 +1251,44 @@ body {
     cursor: pointer;
 }
 
-.kedi-tag-result-card:hover {
+.pisi-tag-result-card:hover {
     border-color: #5dade2;
     background: #303034;
 }
 
-.kedi-tag-result-node {
+.pisi-tag-result-node {
     color: #f39c12;
     font-size: 12px;
     font-weight: 800;
     margin-bottom: 5px;
 }
 
-.kedi-tag-result-text {
+.pisi-tag-result-text {
     color: #d4d4d4;
     font-size: 12px;
     line-height: 1.45;
 }
 
-.kedi-tag-result-tags {
+.pisi-tag-result-tags {
     display: flex;
     flex-wrap: wrap;
     gap: 5px;
     margin-top: 7px;
 }
 
-.kedi-editor-block {
+.pisi-editor-block {
     position: relative;
 }
 
-.kedi-editor-block.kedi-block-highlight {
+.pisi-editor-block.pisi-block-highlight {
     outline: 2px solid rgba(93, 173, 226, 0.9);
     outline-offset: 4px;
     border-radius: 6px;
     background: rgba(93, 173, 226, 0.08);
 }
 
-/* KEDI CUSTOM CONFIRM */
-#kedi-confirm-overlay {
+/* PISI CUSTOM CONFIRM */
+#pisi-confirm-overlay {
     position: fixed;
     inset: 0;
     z-index: 12000;
@@ -1299,7 +1299,7 @@ body {
     backdrop-filter: blur(4px);
 }
 
-#kedi-confirm-card {
+#pisi-confirm-card {
     width: 360px;
     max-width: calc(100vw - 48px);
     background: #252526;
@@ -1309,27 +1309,27 @@ body {
     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.65);
 }
 
-#kedi-confirm-title {
+#pisi-confirm-title {
     color: #f39c12;
     font-size: 15px;
     font-weight: 800;
     margin-bottom: 10px;
 }
 
-#kedi-confirm-message {
+#pisi-confirm-message {
     color: #d4d4d4;
     font-size: 13px;
     line-height: 1.45;
     margin-bottom: 18px;
 }
 
-#kedi-confirm-actions {
+#pisi-confirm-actions {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
 }
 
-#kedi-confirm-actions button {
+#pisi-confirm-actions button {
     min-width: 86px;
     height: 32px;
     border: 1px solid #444;
@@ -1340,17 +1340,17 @@ body {
     cursor: pointer;
 }
 
-#kedi-confirm-actions button:hover {
+#pisi-confirm-actions button:hover {
     border-color: #f39c12;
 }
 
-#kedi-confirm-ok {
+#pisi-confirm-ok {
     background: #f39c12 !important;
     color: #1e1e1e !important;
     border-color: #f39c12 !important;
 }
 
-#kedi-confirm-ok.danger {
+#pisi-confirm-ok.danger {
     background: #e74c3c !important;
     color: white !important;
     border-color: #e74c3c !important;
@@ -1474,7 +1474,7 @@ body {
     min-height: 0;
 }
 
-#kedi-tags-panel {
+#pisi-tags-panel {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -1484,14 +1484,14 @@ body {
     width: 100%;
 }
 
-.kedi-tag-picker {
+.pisi-tag-picker {
     position: relative;
     z-index: 80;
     width: 100%;
     flex: 0 0 auto;
 }
 
-#kedi-tag-picker-button {
+#pisi-tag-picker-button {
     width: 100%;
     min-height: 36px;
     border: 1px solid #444;
@@ -1506,7 +1506,7 @@ body {
     position: relative;
 }
 
-#kedi-tag-picker-button::after {
+#pisi-tag-picker-button::after {
     content: "⌄";
     position: absolute;
     right: 11px;
@@ -1516,18 +1516,18 @@ body {
     font-size: 15px;
 }
 
-#kedi-tag-picker-button:hover {
+#pisi-tag-picker-button:hover {
     border-color: #f39c12;
     background: #333;
 }
 
-#kedi-tag-picker-button:disabled {
+#pisi-tag-picker-button:disabled {
     opacity: 0.55;
     cursor: default;
     border-color: #3a3a3a;
 }
 
-.kedi-tag-picker-menu {
+.pisi-tag-picker-menu {
     position: absolute;
     top: calc(100% + 6px);
     left: 0;
@@ -1542,11 +1542,11 @@ body {
     box-shadow: 0 14px 38px rgba(0,0,0,0.58);
 }
 
-.kedi-tag-picker-menu[hidden] {
+.pisi-tag-picker-menu[hidden] {
     display: none !important;
 }
 
-.kedi-tag-picker-option {
+.pisi-tag-picker-option {
     width: 100%;
     min-height: 34px;
     border: none;
@@ -1562,12 +1562,12 @@ body {
     text-align: left;
 }
 
-.kedi-tag-picker-option:hover,
-.kedi-tag-picker-option.active {
+.pisi-tag-picker-option:hover,
+.pisi-tag-picker-option.active {
     background: #333;
 }
 
-.kedi-tag-picker-name {
+.pisi-tag-picker-name {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1577,7 +1577,7 @@ body {
     font-weight: 800;
 }
 
-.kedi-tag-picker-count {
+.pisi-tag-picker-count {
     flex: 0 0 auto;
     min-width: 22px;
     height: 20px;
@@ -1700,62 +1700,62 @@ body {
     pointer-events: none;
 }
 
-/* KEDI CUSTOMIZATION VARIABLES */
+/* PISI CUSTOMIZATION VARIABLES */
 :root {
-    --kedi-map-downhub-color: #f39c12;
-    --kedi-map-colevel-color: #34ace0;
-    --kedi-map-stream-color: #2ecc71;
-    --kedi-map-node-box-color: #252526;
-    --kedi-map-node-title-color: #f39c12;
+    --pisi-map-downhub-color: #f39c12;
+    --pisi-map-colevel-color: #34ace0;
+    --pisi-map-stream-color: #2ecc71;
+    --pisi-map-node-box-color: #252526;
+    --pisi-map-node-title-color: #f39c12;
 
-    --kedi-map-node-title-size: 13px;
-    --kedi-map-node-text-size: 12px;
+    --pisi-map-node-title-size: 13px;
+    --pisi-map-node-text-size: 12px;
 
-    --kedi-node-header-color: #f39c12;
+    --pisi-node-header-color: #f39c12;
 }
 
 /* MAP CONNECTION TYPE COLORS */
 .map-edge.down-hub {
-    stroke: var(--kedi-map-downhub-color);
+    stroke: var(--pisi-map-downhub-color);
 }
 
 .map-edge.co-level {
-    stroke: var(--kedi-map-colevel-color);
+    stroke: var(--pisi-map-colevel-color);
 }
 
 .map-edge.stream {
-    stroke: var(--kedi-map-stream-color);
+    stroke: var(--pisi-map-stream-color);
 }
 
 #arrow-downhub path {
-    fill: var(--kedi-map-downhub-color);
+    fill: var(--pisi-map-downhub-color);
 }
 
 #arrow-colevel path,
 #arrow-colevel-start path {
-    fill: var(--kedi-map-colevel-color);
+    fill: var(--pisi-map-colevel-color);
 }
 
 #arrow-stream path {
-    fill: var(--kedi-map-stream-color);
+    fill: var(--pisi-map-stream-color);
 }
 
 /* Geçici bağlantı çizgisi genel olarak hub rengini kullansın */
 .map-temp-edge {
-    stroke: var(--kedi-map-downhub-color);
+    stroke: var(--pisi-map-downhub-color);
 }
 
 .map-port.connecting-source {
-    background: var(--kedi-map-downhub-color);
+    background: var(--pisi-map-downhub-color);
 }
 
 .map-node-box {
-    background: var(--kedi-map-node-box-color);
+    background: var(--pisi-map-node-box-color);
 }
 
 .map-node-title,
 .map-node-title-input {
-    color: var(--kedi-map-node-title-color);
+    color: var(--pisi-map-node-title-color);
 }
 
 /* NODE EDITOR CUSTOM COLORS */
@@ -1767,24 +1767,24 @@ body {
 #center-node-editor-content h3,
 #center-node-editor-content h4,
 #center-node-editor-content h5 {
-    color: var(--kedi-node-header-color);
+    color: var(--pisi-node-header-color);
 }
 
 /* CUSTOMIZE PANEL */
-#kedi-customize-panel {
+#pisi-customize-panel {
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
 
-.kedi-customize-group {
+.pisi-customize-group {
     border: 1px solid #3a3a3a;
     border-radius: 10px;
     background: #2a2a2c;
     overflow: hidden;
 }
 
-.kedi-customize-group summary {
+.pisi-customize-group summary {
     min-height: 36px;
     display: flex;
     align-items: center;
@@ -1797,22 +1797,22 @@ body {
     list-style: none;
 }
 
-.kedi-customize-group summary::-webkit-details-marker {
+.pisi-customize-group summary::-webkit-details-marker {
     display: none;
 }
 
-.kedi-customize-group summary::after {
+.pisi-customize-group summary::after {
     content: "⌄";
     margin-left: auto;
     color: #888;
     transition: transform 0.14s ease;
 }
 
-.kedi-customize-group[open] summary::after {
+.pisi-customize-group[open] summary::after {
     transform: rotate(180deg);
 }
 
-.kedi-customize-row {
+.pisi-customize-row {
     min-height: 38px;
     display: flex;
     align-items: center;
@@ -1822,14 +1822,14 @@ body {
     border-top: 1px solid #333;
 }
 
-.kedi-customize-row label {
+.pisi-customize-row label {
     min-width: 0;
     color: #d4d4d4;
     font-size: 12px;
     font-weight: 700;
 }
 
-.kedi-color-input {
+.pisi-color-input {
     width: 34px;
     height: 28px;
     flex: 0 0 auto;
@@ -1840,20 +1840,20 @@ body {
     cursor: pointer;
 }
 
-.kedi-color-input:hover {
+.pisi-color-input:hover {
     border-color: #f39c12;
 }
 
-.kedi-color-input::-webkit-color-swatch-wrapper {
+.pisi-color-input::-webkit-color-swatch-wrapper {
     padding: 0;
 }
 
-.kedi-color-input::-webkit-color-swatch {
+.pisi-color-input::-webkit-color-swatch {
     border: none;
     border-radius: 6px;
 }
 
-#kedi-customize-reset {
+#pisi-customize-reset {
     min-height: 34px;
     border: 1px solid #444;
     border-radius: 9px;
@@ -1864,7 +1864,7 @@ body {
     cursor: pointer;
 }
 
-#kedi-customize-reset:hover {
+#pisi-customize-reset:hover {
     border-color: #f39c12;
     color: #f39c12;
 }
@@ -1912,7 +1912,7 @@ body {
 }
 
 /* Tags içeriği yukarıdan aşağıya normal aksın */
-#right-tab-tags #kedi-tags-panel {
+#right-tab-tags #pisi-tags-panel {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -1927,7 +1927,7 @@ body {
 }
 
 /* Choose tag üstte sabit kalsın, alta/yukarı yapışmasın */
-#right-tab-tags .kedi-tag-picker {
+#right-tab-tags .pisi-tag-picker {
     position: relative;
     top: auto;
     bottom: auto;
@@ -1942,7 +1942,7 @@ body {
 }
 
 /* Menü butonun ALTINA açılsın */
-#right-tab-tags .kedi-tag-picker-menu {
+#right-tab-tags .pisi-tag-picker-menu {
     position: absolute;
     top: calc(100% + 6px);
     bottom: auto;
@@ -1954,30 +1954,30 @@ body {
     overflow: auto;
 }
 
-#right-tab-tags #kedi-tag-block-results {
+#right-tab-tags #pisi-tag-block-results {
     margin-top: 0;
     flex: 0 0 auto;
 }
 
 /* MISSIONS PANEL */
-#kedi-missions-panel {
+#pisi-missions-panel {
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
 
-.kedi-missions-list {
+.pisi-missions-list {
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
-.kedi-missions-toolbar {
+.pisi-missions-toolbar {
     display: flex;
     justify-content: flex-end;
 }
 
-.kedi-missions-completed-toggle {
+.pisi-missions-completed-toggle {
     min-height: 30px;
     border: 1px solid #444;
     border-radius: 8px;
@@ -1989,17 +1989,17 @@ body {
     cursor: pointer;
 }
 
-.kedi-missions-completed-toggle:hover:not(:disabled) {
+.pisi-missions-completed-toggle:hover:not(:disabled) {
     border-color: #5dade2;
     background: #333;
 }
 
-.kedi-missions-completed-toggle:disabled {
+.pisi-missions-completed-toggle:disabled {
     opacity: 0.5;
     cursor: default;
 }
 
-.kedi-mission-card {
+.pisi-mission-card {
     display: grid;
     grid-template-columns: 28px 1fr;
     gap: 8px;
@@ -2010,34 +2010,34 @@ body {
     padding: 8px;
 }
 
-.kedi-mission-card.completed {
+.pisi-mission-card.completed {
     opacity: 0.68;
 }
 
-.kedi-mission-card.completed .kedi-mission-text {
+.pisi-mission-card.completed .pisi-mission-text {
     text-decoration: line-through;
 }
 
-.kedi-mission-card:hover {
+.pisi-mission-card:hover {
     border-color: #f39c12;
     background: #303034;
 }
 
-.kedi-mission-check-wrap {
+.pisi-mission-check-wrap {
     display: flex;
     align-items: flex-start;
     justify-content: center;
     padding-top: 4px;
 }
 
-.kedi-mission-check {
+.pisi-mission-check {
     width: 16px;
     height: 16px;
     accent-color: #f39c12;
     cursor: pointer;
 }
 
-.kedi-mission-main {
+.pisi-mission-main {
     min-width: 0;
     border: none;
     background: transparent;
@@ -2047,7 +2047,7 @@ body {
     padding: 0;
 }
 
-.kedi-mission-top {
+.pisi-mission-top {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -2056,7 +2056,7 @@ body {
 }
 
 
-.kedi-mission-text {
+.pisi-mission-text {
     color: #d4d4d4;
     font-size: 12px;
     line-height: 1.4;
@@ -2071,7 +2071,7 @@ body {
     word-break: break-word;
 }
 
-.kedi-mission-meta {
+.pisi-mission-meta {
     display: flex;
     flex-wrap: wrap;
     gap: 7px;
@@ -2080,18 +2080,18 @@ body {
     margin-bottom: 5px;
 }
 
-.kedi-mission-meta .late {
+.pisi-mission-meta .late {
     color: #ff6b6b;
     font-weight: 800;
 }
 
-.kedi-mission-node {
+.pisi-mission-node {
     color: #5dade2;
     font-size: 11px;
     font-weight: 700;
 }
 
-/* KEDI CALENDAR */
+/* PISI CALENDAR */
 #left-panel,
 #right-panel {
     display: flex;
@@ -2121,7 +2121,7 @@ body {
     overflow-x: hidden;
 }
 
-.kedi-calendar-dock-zone {
+.pisi-calendar-dock-zone {
     flex: 0 1 300px;
     width: 100%;
     height: min(300px, 35vh);
@@ -2139,7 +2139,7 @@ body {
     overflow: hidden;
 }
 
-.kedi-calendar-dock-zone.has-calendar {
+.pisi-calendar-dock-zone.has-calendar {
     flex: 0 1 300px;
     height: min(300px, 35vh);
     min-height: 180px;
@@ -2154,22 +2154,22 @@ body {
     overflow: hidden;
 }
 
-.kedi-calendar-dock-zone.active-drop-target,
-body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover {
+.pisi-calendar-dock-zone.active-drop-target,
+body.pisi-calendar-is-dragging .pisi-calendar-dock-zone:hover {
     border: none;
     background: transparent;
 }
 
-.kedi-calendar-dock-zone-label {
+.pisi-calendar-dock-zone-label {
     display: none;
 }
 
-.kedi-calendar-dock-zone.has-calendar .kedi-calendar-dock-zone-label {
+.pisi-calendar-dock-zone.has-calendar .pisi-calendar-dock-zone-label {
     display: none;
 }
 
 
-.kedi-calendar {
+.pisi-calendar {
     width: 222px;
     max-width: 100%;
     border: 1px solid #3f3f46;
@@ -2182,18 +2182,18 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover {
     user-select: none;
 }
 
-.kedi-calendar.docked {
+.pisi-calendar.docked {
     position: static;
     width: 100%;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.32);
 }
 
-.kedi-calendar.floating {
+.pisi-calendar.floating {
     position: fixed;
 }
 
 
-.kedi-calendar-icon-btn {
+.pisi-calendar-icon-btn {
     width: 23px;
     height: 23px;
     flex: 0 0 auto;
@@ -2210,24 +2210,24 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover {
     padding: 0;
 }
 
-.kedi-calendar-icon-btn:hover {
+.pisi-calendar-icon-btn:hover {
     border-color: #f39c12;
     color: #f39c12;
     background: #333;
 }
 
-.kedi-calendar-body {
+.pisi-calendar-body {
     padding: 7px;
 }
 
-.kedi-calendar-month-row {
+.pisi-calendar-month-row {
     display: flex;
     align-items: center;
     gap: 6px;
     margin-bottom: 5px;
 }
 
-.kedi-calendar-month-label {
+.pisi-calendar-month-label {
     flex: 1;
     min-height: 24px;
     display: flex;
@@ -2242,22 +2242,22 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover {
     user-select: none;
 }
 
-.kedi-calendar-month-label:hover {
+.pisi-calendar-month-label:hover {
     background: #2d2d30;
     color: #f39c12;
 }
 
-.kedi-calendar.dragging .kedi-calendar-month-label {
+.pisi-calendar.dragging .pisi-calendar-month-label {
     cursor: grabbing;
 }
 
-.kedi-calendar-grid {
+.pisi-calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 2px;
 }
 
-.kedi-calendar-weekday {
+.pisi-calendar-weekday {
     height: 20px;
     display: flex;
     align-items: center;
@@ -2267,7 +2267,7 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover {
     font-weight: 800;
 }
 
-.kedi-calendar-day {
+.pisi-calendar-day {
     position: relative;
     height: 25px;
     border: 1px solid transparent;
@@ -2283,32 +2283,32 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover {
     justify-content: center;
 }
 
-.kedi-calendar-day-number {
+.pisi-calendar-day-number {
     pointer-events: none;
     line-height: 1;
 }
 
-.kedi-calendar-day:hover {
+.pisi-calendar-day:hover {
     background: #333;
     border-color: #555;
 }
 
-.kedi-calendar-day.other-month {
+.pisi-calendar-day.other-month {
     color: #5f5f5f;
 }
 
-.kedi-calendar-day.today {
+.pisi-calendar-day.today {
     color: #1e1e1e;
     background: #f39c12;
     border-color: #f39c12;
 }
 
-.kedi-calendar-day.selected:not(.today) {
+.pisi-calendar-day.selected:not(.today) {
     border-color: #f39c12;
     color: #f39c12;
 }
 
-.kedi-calendar-day.has-diary-node::after {
+.pisi-calendar-day.has-diary-node::after {
     content: "";
     position: absolute;
     left: 50%;
@@ -2321,11 +2321,11 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover {
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.28);
 }
 
-.kedi-calendar-day.today.has-diary-node::after {
+.pisi-calendar-day.today.has-diary-node::after {
     background: #145a32;
 }
 
-.kedi-calendar-footer {
+.pisi-calendar-footer {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -2333,7 +2333,7 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover {
     margin-top: 6px;
 }
 
-.kedi-calendar-today-btn {
+.pisi-calendar-today-btn {
     flex: 1;
     height: 25px;
     border: 1px solid #444;
@@ -2345,20 +2345,20 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover {
     cursor: pointer;
 }
 
-.kedi-calendar-today-btn:hover {
+.pisi-calendar-today-btn:hover {
     border-color: #f39c12;
     color: #f39c12;
     background: #333;
 }
 
-.kedi-diary-managed-meta {
+.pisi-diary-managed-meta {
     margin: 8px 0 3px 0;
     color: #888;
     font-size: 12px;
     font-weight: 800;
 }
 
-.kedi-diary-managed-block {
+.pisi-diary-managed-block {
     margin: 8px 0;
     padding: 8px 10px;
     border-left: 3px solid #f39c12;
@@ -2369,13 +2369,13 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover {
 /* CALENDAR DOCK DROP HIGHLIGHT */
 
 /* Normalde dock alanı görünmez kalır */
-.kedi-calendar-dock-zone {
+.pisi-calendar-dock-zone {
     position: relative;
 }
 
 /* Takvim sürüklenirken dock alanının üstüne gelince parlasın */
-.kedi-calendar-dock-zone.active-drop-target,
-body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover {
+.pisi-calendar-dock-zone.active-drop-target,
+body.pisi-calendar-is-dragging .pisi-calendar-dock-zone:hover {
     background: rgba(46, 204, 113, 0.08) !important;
     outline: 2px solid rgba(46, 204, 113, 0.95);
     outline-offset: -3px;
@@ -2387,8 +2387,8 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover {
 }
 
 /* Parlama efekti */
-.kedi-calendar-dock-zone.active-drop-target::after,
-body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
+.pisi-calendar-dock-zone.active-drop-target::after,
+body.pisi-calendar-is-dragging .pisi-calendar-dock-zone:hover::after {
     content: "";
     position: absolute;
     inset: 10px;
@@ -2403,10 +2403,10 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
     letter-spacing: 0.08em;
     text-transform: uppercase;
     pointer-events: none;
-    animation: kediCalendarDockPulse 0.9s ease-in-out infinite;
+    animation: pisiCalendarDockPulse 0.9s ease-in-out infinite;
 }
 
-@keyframes kediCalendarDockPulse {
+@keyframes pisiCalendarDockPulse {
     0% {
         opacity: 0.45;
         transform: scale(0.985);
@@ -2426,7 +2426,7 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
 /* CALENDAR WHEN DOCKED */
 
 /* Dock alanında takvimi alta hizala */
-.kedi-calendar-dock-zone.has-calendar {
+.pisi-calendar-dock-zone.has-calendar {
     display: flex !important;
     align-items: flex-end !important;
     justify-content: center !important;
@@ -2435,7 +2435,7 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
 }
 
 /* Dock içindeki takvim artık ayrı pencere gibi görünmesin */
-.kedi-calendar-dock-zone.has-calendar > .kedi-calendar {
+.pisi-calendar-dock-zone.has-calendar > .pisi-calendar {
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
@@ -2448,22 +2448,22 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
 }
 
 /* Dock olmuş takvimde iç boşluk daha doğal dursun */
-.kedi-calendar-dock-zone.has-calendar .kedi-calendar-body {
+.pisi-calendar-dock-zone.has-calendar .pisi-calendar-body {
     padding: 6px 0 0 0 !important;
 }
 
 /* Dock olmuş takvimde ay satırı panele gömülü gibi dursun */
-.kedi-calendar-dock-zone.has-calendar .kedi-calendar-month-row {
+.pisi-calendar-dock-zone.has-calendar .pisi-calendar-month-row {
     margin-bottom: 6px;
 }
 
 /* Dock olmuş takvimde gün kutuları alanın içinde daha temiz hizalansın */
-.kedi-calendar-dock-zone.has-calendar .kedi-calendar-grid {
+.pisi-calendar-dock-zone.has-calendar .pisi-calendar-grid {
     width: 100%;
 }
 
 /* Dock olmuş takvimde hover/drag hissi yine kalsın ama pencere hissi vermesin */
-.kedi-calendar-dock-zone.has-calendar .kedi-calendar-month-label:hover {
+.pisi-calendar-dock-zone.has-calendar .pisi-calendar-month-label:hover {
     background: rgba(243, 156, 18, 0.08);
 }
 
@@ -2473,7 +2473,7 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
     background: transparent !important;
 }
 
-.kedi-number-input {
+.pisi-number-input {
     width: 58px;
     height: 28px;
     border: 1px solid #444;
@@ -2486,17 +2486,17 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
     outline: none;
 }
 
-.kedi-number-input:hover,
-.kedi-number-input:focus {
+.pisi-number-input:hover,
+.pisi-number-input:focus {
     border-color: #f39c12;
 }
 
-.kedi-number-input::-webkit-inner-spin-button,
-.kedi-number-input::-webkit-outer-spin-button {
+.pisi-number-input::-webkit-inner-spin-button,
+.pisi-number-input::-webkit-outer-spin-button {
     opacity: 1;
 }
-/* KEDI WORD-STYLE TOOLBAR */
-.kedi-word-toolbar {
+/* PISI WORD-STYLE TOOLBAR */
+.pisi-word-toolbar {
     min-height: 58px;
     flex-shrink: 0;
     display: flex;
@@ -2509,7 +2509,7 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
     overflow-y: hidden;
 }
 
-.kedi-word-title-input {
+.pisi-word-title-input {
     width: 190px;
     min-width: 150px;
     height: 34px;
@@ -2523,22 +2523,22 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
     padding: 0 10px;
 }
 
-.kedi-word-title-input:focus {
+.pisi-word-title-input:focus {
     border-color: #f39c12;
 }
 
-.kedi-word-toolbar-controls {
+.pisi-word-toolbar-controls {
     display: flex;
     align-items: center;
     gap: 6px;
     min-width: max-content;
 }
 
-.kedi-word-select,
-.kedi-word-btn,
-.kedi-word-primary-btn,
-.kedi-word-close-btn,
-.kedi-word-color {
+.pisi-word-select,
+.pisi-word-btn,
+.pisi-word-primary-btn,
+.pisi-word-close-btn,
+.pisi-word-color {
     height: 32px;
     border: 1px solid #444;
     border-radius: 7px;
@@ -2548,50 +2548,50 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
     font-weight: 700;
 }
 
-.kedi-word-select {
+.pisi-word-select {
     min-width: 108px;
     padding: 0 8px;
     outline: none;
 }
 
-.kedi-word-size-select {
+.pisi-word-size-select {
     min-width: 86px;
 }
 
-.kedi-word-btn {
+.pisi-word-btn {
     min-width: 32px;
     padding: 0 9px;
     cursor: pointer;
 }
 
-.kedi-word-btn:hover,
-.kedi-word-primary-btn:hover,
-.kedi-word-close-btn:hover,
-.kedi-word-color:hover,
-.kedi-word-select:hover {
+.pisi-word-btn:hover,
+.pisi-word-primary-btn:hover,
+.pisi-word-close-btn:hover,
+.pisi-word-color:hover,
+.pisi-word-select:hover {
     border-color: #f39c12;
     color: #f39c12;
 }
 
-.kedi-word-primary-btn {
+.pisi-word-primary-btn {
     min-width: 72px;
     padding: 0 12px;
     cursor: pointer;
 }
 
-.kedi-word-close-btn {
+.pisi-word-close-btn {
     width: 34px;
     flex: 0 0 34px;
     cursor: pointer;
 }
 
-.kedi-word-close-btn:hover {
+.pisi-word-close-btn:hover {
     background: #e74c3c;
     border-color: #e74c3c;
     color: white;
 }
 
-.kedi-word-color {
+.pisi-word-color {
     min-width: 34px;
     display: inline-flex;
     align-items: center;
@@ -2602,14 +2602,14 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
     font-weight: 900;
 }
 
-.kedi-word-color input {
+.pisi-word-color input {
     position: absolute;
     inset: 0;
     opacity: 0;
     cursor: pointer;
 }
 
-.kedi-word-separator {
+.pisi-word-separator {
     width: 1px;
     height: 26px;
     background: #3a3a3a;
@@ -2648,7 +2648,7 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
 }
 
 /* MAP CONTEXT MENU */
-.kedi-map-context-menu {
+.pisi-map-context-menu {
     position: fixed;
     z-index: 9600;
     min-width: 190px;
@@ -2659,7 +2659,7 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
     box-shadow: 0 14px 38px rgba(0,0,0,0.58);
 }
 
-.kedi-map-context-menu-item {
+.pisi-map-context-menu-item {
     width: 100%;
     min-height: 34px;
     border: none;
@@ -2675,7 +2675,7 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
     font-weight: 700;
 }
 
-.kedi-map-context-menu-item:hover {
+.pisi-map-context-menu-item:hover {
     background: #333;
     color: #f39c12;
 }
@@ -2686,8 +2686,8 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
     transform: scale(1.18);
 }
 
-/* KEDI EDITOR TOOLBAR TABS + WORD / PAINT / EXCEL */
-.kedi-editor-toolbar {
+/* PISI EDITOR TOOLBAR TABS + WORD / PAINT / EXCEL */
+.pisi-editor-toolbar {
     min-height: 86px;
     flex-direction: column;
     align-items: stretch;
@@ -2696,7 +2696,7 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
     overflow: visible;
 }
 
-.kedi-editor-toolbar-tabs {
+.pisi-editor-toolbar-tabs {
     height: 30px;
     flex: 0 0 30px;
     display: flex;
@@ -2707,7 +2707,7 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
     border-bottom: 1px solid #333;
 }
 
-.kedi-editor-toolbar-tab {
+.pisi-editor-toolbar-tab {
     height: 26px;
     min-width: 64px;
     border: 1px solid #333;
@@ -2720,14 +2720,14 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
     cursor: pointer;
 }
 
-.kedi-editor-toolbar-tab:hover,
-.kedi-editor-toolbar-tab.active {
+.pisi-editor-toolbar-tab:hover,
+.pisi-editor-toolbar-tab.active {
     background: #1e1e1e;
     color: #f39c12;
     border-color: #444;
 }
 
-.kedi-editor-toolbar-panel {
+.pisi-editor-toolbar-panel {
     min-height: 54px;
     display: none;
     align-items: center;
@@ -2737,20 +2737,20 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
     overflow-y: hidden;
 }
 
-.kedi-editor-toolbar-panel.active {
+.pisi-editor-toolbar-panel.active {
     display: flex;
 }
 
-.kedi-editor-toolbar-panel .kedi-word-toolbar-controls,
-.kedi-paint-toolbar-controls,
-.kedi-excel-toolbar-controls {
+.pisi-editor-toolbar-panel .pisi-word-toolbar-controls,
+.pisi-paint-toolbar-controls,
+.pisi-excel-toolbar-controls {
     display: flex;
     align-items: center;
     gap: 6px;
     min-width: max-content;
 }
 
-.kedi-toolbar-field {
+.pisi-toolbar-field {
     height: 32px;
     display: inline-flex;
     align-items: center;
@@ -2765,7 +2765,7 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
     white-space: nowrap;
 }
 
-.kedi-toolbar-number {
+.pisi-toolbar-number {
     width: 58px;
     height: 23px;
     border: 1px solid #3d3d3d;
@@ -2778,18 +2778,18 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
     outline: none;
 }
 
-.kedi-toolbar-number:focus,
-.kedi-excel-formula-input:focus {
+.pisi-toolbar-number:focus,
+.pisi-excel-formula-input:focus {
     border-color: #f39c12;
 }
 
-.kedi-word-btn.active {
+.pisi-word-btn.active {
     color: #1e1e1e;
     background: #f39c12;
     border-color: #f39c12;
 }
 
-.kedi-excel-formula-input {
+.pisi-excel-formula-input {
     width: 230px;
     height: 32px;
     border: 1px solid #444;
@@ -2816,7 +2816,7 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
     outline: none;
 }
 
-.kedi-canvas-block {
+.pisi-canvas-block {
     display: inline-block;
     max-width: 100%;
     margin: 12px 0;
@@ -2827,7 +2827,7 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
     overflow: auto;
 }
 
-.kedi-canvas-toolbar-hint {
+.pisi-canvas-toolbar-hint {
     color: #888;
     font-size: 11px;
     font-weight: 800;
@@ -2835,7 +2835,7 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
     user-select: none;
 }
 
-.kedi-paint-canvas {
+.pisi-paint-canvas {
     display: block;
     max-width: 100%;
     background: #ffffff;
@@ -2845,12 +2845,12 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
     touch-action: none;
 }
 
-.kedi-paint-canvas.selected {
+.pisi-paint-canvas.selected {
     outline: 2px solid #f39c12;
     outline-offset: 3px;
 }
 
-.kedi-sheet-block {
+.pisi-sheet-block {
     max-width: 100%;
     margin: 12px 0;
     overflow: auto;
@@ -2860,7 +2860,7 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
     padding: 8px;
 }
 
-.kedi-sheet-table {
+.pisi-sheet-table {
     border-collapse: collapse;
     background: #1e1e1e;
     color: #d4d4d4;
@@ -2868,15 +2868,15 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
     min-width: 420px;
 }
 
-.kedi-sheet-table th,
-.kedi-sheet-table td {
+.pisi-sheet-table th,
+.pisi-sheet-table td {
     min-width: 84px;
     height: 28px;
     border: 1px solid #444;
     padding: 4px 6px;
 }
 
-.kedi-sheet-table th {
+.pisi-sheet-table th {
     min-width: 34px;
     background: #2d2d30;
     color: #f39c12;
@@ -2885,24 +2885,24 @@ body.kedi-calendar-is-dragging .kedi-calendar-dock-zone:hover::after {
     user-select: none;
 }
 
-.kedi-sheet-table td {
+.pisi-sheet-table td {
     background: #1f1f20;
     outline: none;
     font-family: Consolas, monospace;
 }
 
-.kedi-sheet-table td:focus,
-.kedi-sheet-cell-selected {
+.pisi-sheet-table td:focus,
+.pisi-sheet-cell-selected {
     box-shadow: inset 0 0 0 2px #f39c12;
     background: #26231d !important;
 }
 
-.kedi-sheet-table td[data-formula] {
+.pisi-sheet-table td[data-formula] {
     color: #b9ddff;
 }
 
-#node-modal .kedi-editor-toolbar,
-.center-node-editor .kedi-editor-toolbar {
+#node-modal .pisi-editor-toolbar,
+.center-node-editor .pisi-editor-toolbar {
     border-bottom: 1px solid #333;
 }
 

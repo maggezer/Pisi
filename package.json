@@ -7,7 +7,6 @@
   "license": "ISC",
   "scripts": {
     "start": "electron .",
-    "rename:pisi": "node scripts/complete-pisi-rename.js",
     "check:syntax": "node scripts/check-syntax.js",
     "lint": "eslint .",
     "test": "node --test",
@@ -54,7 +53,7 @@
           ]
         }
       ],
-      "icon": "assets/kedi.ico"
+      "icon": "assets/pisi.ico"
     },
     "nsis": {
       "oneClick": false,

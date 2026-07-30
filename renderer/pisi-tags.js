@@ -1,45 +1,45 @@
-function bindKediBlockIndexControls() {
+function bindPisiBlockIndexControls() {
     const editors = [
         document.getElementById('node-modal-content'),
         document.getElementById('center-node-editor-content')
     ].filter(Boolean);
 
     for (const editor of editors) {
-        if (editor.dataset.kediBlockIndexBound === '1') continue;
+        if (editor.dataset.pisiBlockIndexBound === '1') continue;
 
-        editor.dataset.kediBlockIndexBound = '1';
+        editor.dataset.pisiBlockIndexBound = '1';
 
         editor.addEventListener('input', () => {
-            ensureKediEditorBlocks(editor);
-            refreshKediTagsPanelSoon();
+            ensurePisiEditorBlocks(editor);
+            refreshPisiTagsPanelSoon();
         });
     }
 
-    if (typeof bindKediTagPickerOutsideClose === 'function') {
-        bindKediTagPickerOutsideClose();
+    if (typeof bindPisiTagPickerOutsideClose === 'function') {
+        bindPisiTagPickerOutsideClose();
     }
 
-    refreshKediTagsPanelSoon();
+    refreshPisiTagsPanelSoon();
 }
 
-function bindKediTagPickerOutsideClose() {
-    if (window.__kediTagPickerOutsideCloseBound === true) return;
+function bindPisiTagPickerOutsideClose() {
+    if (window.__pisiTagPickerOutsideCloseBound === true) return;
 
-    window.__kediTagPickerOutsideCloseBound = true;
+    window.__pisiTagPickerOutsideCloseBound = true;
 
     document.addEventListener('mousedown', (event) => {
-        if (!kediTagsPanelState?.dropdownOpen) return;
+        if (!pisiTagsPanelState?.dropdownOpen) return;
 
-        if (event.target.closest('#kedi-tags-panel')) {
+        if (event.target.closest('#pisi-tags-panel')) {
             return;
         }
 
-        kediTagsPanelState.dropdownOpen = false;
-        renderKediTagsPanel();
+        pisiTagsPanelState.dropdownOpen = false;
+        renderPisiTagsPanel();
     });
 }
 
-function makeKediBlockId() {
+function makePisiBlockId() {
     if (window.crypto?.randomUUID) {
         return `blk_${window.crypto.randomUUID()}`;
     }
@@ -47,23 +47,23 @@ function makeKediBlockId() {
     return `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
 
-function isKediEditorBlockElement(element) {
+function isPisiEditorBlockElement(element) {
     if (!element || element.nodeType !== Node.ELEMENT_NODE) return false;
 
     return /^(DIV|P|H2|H3|H4|H5|H6)$/i.test(element.tagName);
 }
 
-function decorateKediEditorBlock(element) {
-    if (!isKediEditorBlockElement(element)) return;
+function decoratePisiEditorBlock(element) {
+    if (!isPisiEditorBlockElement(element)) return;
 
-    element.classList.add('kedi-editor-block');
+    element.classList.add('pisi-editor-block');
 
-    if (!element.dataset.kediBlockId) {
-        element.dataset.kediBlockId = makeKediBlockId();
+    if (!element.dataset.pisiBlockId) {
+        element.dataset.pisiBlockId = makePisiBlockId();
     }
 }
 
-function ensureKediEditorBlocks(editor) {
+function ensurePisiEditorBlocks(editor) {
     if (!editor) return;
 
     const childNodes = Array.from(editor.childNodes);
@@ -71,7 +71,7 @@ function ensureKediEditorBlocks(editor) {
     if (!childNodes.length) {
         const block = document.createElement('div');
         block.innerHTML = '<br>';
-        decorateKediEditorBlock(block);
+        decoratePisiEditorBlock(block);
         editor.appendChild(block);
         return;
     }
@@ -85,7 +85,7 @@ function ensureKediEditorBlocks(editor) {
 
             const block = document.createElement('div');
             block.textContent = node.textContent;
-            decorateKediEditorBlock(block);
+            decoratePisiEditorBlock(block);
             node.replaceWith(block);
             continue;
         }
@@ -94,56 +94,56 @@ function ensureKediEditorBlocks(editor) {
             if (node.tagName === 'BR') {
                 const block = document.createElement('div');
                 block.innerHTML = '<br>';
-                decorateKediEditorBlock(block);
+                decoratePisiEditorBlock(block);
                 node.replaceWith(block);
                 continue;
             }
 
-            if (isKediEditorBlockElement(node)) {
-                decorateKediEditorBlock(node);
+            if (isPisiEditorBlockElement(node)) {
+                decoratePisiEditorBlock(node);
             }
         }
     }
 }
 
-function getKediBlockElementsFromContainer(container) {
+function getPisiBlockElementsFromContainer(container) {
     if (!container) return [];
 
     return Array.from(container.children).filter((element) => {
-        return isKediEditorBlockElement(element);
+        return isPisiEditorBlockElement(element);
     });
 }
 
-function createKediInertHtmlTemplate(html = '') {
+function createPisiInertHtmlTemplate(html = '') {
     const template = document.createElement('template');
     template.innerHTML = String(html || '');
     return template;
 }
 
-function extractKediTagsFromBlock(block) {
-    return Array.from(block.querySelectorAll('.kedi-user-tag[data-kedi-tag]'))
-        .map((tagEl) => normalizeKediUserTag(tagEl.dataset.kediTag || tagEl.textContent || ''))
+function extractPisiTagsFromBlock(block) {
+    return Array.from(block.querySelectorAll('.pisi-user-tag[data-pisi-tag]'))
+        .map((tagEl) => normalizePisiUserTag(tagEl.dataset.pisiTag || tagEl.textContent || ''))
         .filter(Boolean);
 }
 
-function refreshKediTagsPanelSoon() {
-    clearTimeout(kediTagsPanelRefreshTimer);
+function refreshPisiTagsPanelSoon() {
+    clearTimeout(pisiTagsPanelRefreshTimer);
 
-    kediTagsPanelRefreshTimer = setTimeout(async () => {
-        kediTagsPanelRefreshTimer = null;
-        await refreshKediTagsPanel();
+    pisiTagsPanelRefreshTimer = setTimeout(async () => {
+        pisiTagsPanelRefreshTimer = null;
+        await refreshPisiTagsPanel();
     }, 1000);
 }
 
-function resetKediTagsForProject() {
-    clearTimeout(kediTagsPanelRefreshTimer);
-    kediTagsPanelRefreshTimer = null;
+function resetPisiTagsForProject() {
+    clearTimeout(pisiTagsPanelRefreshTimer);
+    pisiTagsPanelRefreshTimer = null;
 
-    if (KEDI_USER_TAG_CACHE instanceof Set) {
-        KEDI_USER_TAG_CACHE.clear();
+    if (PISI_USER_TAG_CACHE instanceof Set) {
+        PISI_USER_TAG_CACHE.clear();
     }
 
-    kediTagsPanelState = {
+    pisiTagsPanelState = {
         selectedTag: null,
         dropdownOpen: false,
         index: [],
@@ -151,19 +151,19 @@ function resetKediTagsForProject() {
         showCompletedMissions: false
     };
 
-    if (typeof closeKediTagMenu === 'function') {
-        closeKediTagMenu();
+    if (typeof closePisiTagMenu === 'function') {
+        closePisiTagMenu();
     }
 
-    renderKediTagsPanel();
-    renderKediMissionsPanel();
+    renderPisiTagsPanel();
+    renderPisiMissionsPanel();
 }
 
-async function refreshKediTagsPanel() {
+async function refreshPisiTagsPanel() {
     try {
-        const index = await buildKediTagBlockIndex();
+        const index = await buildPisiTagBlockIndex();
 
-        kediTagsPanelState.index = Array.isArray(index) ? index : [];
+        pisiTagsPanelState.index = Array.isArray(index) ? index : [];
 
         const missionsPageIsActive = document
             .getElementById('right-tab-missions')
@@ -172,40 +172,40 @@ async function refreshKediTagsPanel() {
 
         if (
             missionsPageIsActive ||
-            !Array.isArray(kediTagsPanelState.missionIndex)
+            !Array.isArray(pisiTagsPanelState.missionIndex)
         ) {
-            const missionIndexResult = await buildKediMissionBlockIndex();
-            kediTagsPanelState.missionIndex = Array.isArray(
+            const missionIndexResult = await buildPisiMissionBlockIndex();
+            pisiTagsPanelState.missionIndex = Array.isArray(
                 missionIndexResult?.blocks
             )
                 ? missionIndexResult.blocks
                 : [];
-            kediTagsPanelState.missionIndexComplete =
+            pisiTagsPanelState.missionIndexComplete =
                 missionIndexResult?.complete === true;
 
             if (
-                typeof syncKediDiaryFromMissionIndex === 'function' &&
-                kediTagsPanelState.missionIndexComplete
+                typeof syncPisiDiaryFromMissionIndex === 'function' &&
+                pisiTagsPanelState.missionIndexComplete
             ) {
-                await syncKediDiaryFromMissionIndex(
-                    kediTagsPanelState.missionIndex,
+                await syncPisiDiaryFromMissionIndex(
+                    pisiTagsPanelState.missionIndex,
                     { complete: true }
                 );
-            } else if (!kediTagsPanelState.missionIndexComplete) {
+            } else if (!pisiTagsPanelState.missionIndexComplete) {
                 console.warn(
-                    '[KEDI] Görev indeksi eksik kaldığı için diary eşitlemesi yapılmadı:',
+                    '[PISI] Görev indeksi eksik kaldığı için diary eşitlemesi yapılmadı:',
                     missionIndexResult?.errors || []
                 );
             }
         }
 
-        renderKediTagsPanel();
+        renderPisiTagsPanel();
 
-        if (typeof renderKediMissionsPanel === 'function') {
-            renderKediMissionsPanel();
+        if (typeof renderPisiMissionsPanel === 'function') {
+            renderPisiMissionsPanel();
         }
     } catch (error) {
-        console.error('[KEDI] Tags/Missions refresh hatası:', error);
+        console.error('[PISI] Tags/Missions refresh hatası:', error);
     }
 }
 
@@ -213,34 +213,34 @@ function normalizeClientPathForTags(filePath) {
     const normalized = String(filePath || '')
         .replace(/[\\/]+/g, '/');
 
-    return window.kediEnvironment?.platform === 'win32'
+    return window.pisiEnvironment?.platform === 'win32'
         ? normalized.toLowerCase()
         : normalized;
 }
 
-function sameKediPathForTags(a, b) {
+function samePisiPathForTags(a, b) {
     if (!a || !b) return false;
 
-    if (typeof kediSameTabPath === 'function') {
-        return kediSameTabPath(a, b);
+    if (typeof pisiSameTabPath === 'function') {
+        return pisiSameTabPath(a, b);
     }
 
     return String(a) === String(b);
 }
 
-function getKediTagsActiveMapPath() {
+function getPisiTagsActiveMapPath() {
     if (activeMapPath) {
         return activeMapPath;
     }
 
-    const state = window.Kedi?.state;
+    const state = window.Pisi?.state;
 
     if (!state?.activeTabPath || !Array.isArray(state.openTabs)) {
         return null;
     }
 
     const activeTab = state.openTabs.find((tab) => {
-        return sameKediPathForTags(tab.path, state.activeTabPath);
+        return samePisiPathForTags(tab.path, state.activeTabPath);
     });
 
     if (activeTab?.type === 'map') {
@@ -250,19 +250,19 @@ function getKediTagsActiveMapPath() {
     return null;
 }
 
-async function getKediTagsActiveMapNodes(mapPath) {
+async function getPisiTagsActiveMapNodes(mapPath) {
     if (!mapPath) return [];
 
     if (
         activeMapPath &&
-        sameKediPathForTags(activeMapPath, mapPath) &&
+        samePisiPathForTags(activeMapPath, mapPath) &&
         Array.isArray(activeMapNodes) &&
         activeMapNodes.length
     ) {
         return activeMapNodes;
     }
 
-    const result = await window.kediProject?.listMapNodes?.(mapPath);
+    const result = await window.pisiProject?.listMapNodes?.(mapPath);
 
     if (!result?.ok) {
         return [];
@@ -271,19 +271,19 @@ async function getKediTagsActiveMapNodes(mapPath) {
     return Array.isArray(result.nodes) ? result.nodes : [];
 }
 
-async function collectKediDiaryTagNodeItems() {
+async function collectPisiDiaryTagNodeItems() {
     const projectFolder = window.currentProjectFolder;
 
-    if (!projectFolder || !window.kediProject?.listDiaryDates) {
+    if (!projectFolder || !window.pisiProject?.listDiaryDates) {
         return [];
     }
 
-    const datesResult = await window.kediProject.listDiaryDates(projectFolder);
+    const datesResult = await window.pisiProject.listDiaryDates(projectFolder);
     const dates = Array.isArray(datesResult?.dates) ? datesResult.dates : [];
     const nodes = [];
 
     for (const date of dates) {
-        const result = await window.kediProject?.getOrCreateDiaryNode?.(projectFolder, date);
+        const result = await window.pisiProject?.getOrCreateDiaryNode?.(projectFolder, date);
 
         if (!result?.ok || !result.fullPath) continue;
 
@@ -304,7 +304,7 @@ async function collectKediDiaryTagNodeItems() {
     return nodes;
 }
 
-async function extractKediTagBlocksForNodeItem(node) {
+async function extractPisiTagBlocksForNodeItem(node) {
     const nodePath = node?.fullPath;
 
     if (!nodePath) return [];
@@ -319,20 +319,20 @@ async function extractKediTagBlocksForNodeItem(node) {
     let html = '';
     let nodeTitle = fallbackTitle;
 
-    if (activeCenterNode?.path && sameKediPathForTags(activeCenterNode.path, nodePath)) {
+    if (activeCenterNode?.path && samePisiPathForTags(activeCenterNode.path, nodePath)) {
         const editor = document.getElementById('center-node-editor-content');
-        ensureKediEditorBlocks(editor);
+        ensurePisiEditorBlocks(editor);
 
         html = editor?.innerHTML || '';
         nodeTitle = activeCenterNode.metadata?.title || fallbackTitle;
-    } else if (activeModalNode?.path && sameKediPathForTags(activeModalNode.path, nodePath)) {
+    } else if (activeModalNode?.path && samePisiPathForTags(activeModalNode.path, nodePath)) {
         const editor = document.getElementById('node-modal-content');
-        ensureKediEditorBlocks(editor);
+        ensurePisiEditorBlocks(editor);
 
         html = editor?.innerHTML || '';
         nodeTitle = activeModalNode.metadata?.title || fallbackTitle;
     } else {
-        const doc = await window.kediProject?.getKediDocument?.(nodePath);
+        const doc = await window.pisiProject?.getPisiDocument?.(nodePath);
 
         if (!doc?.ok) return [];
 
@@ -340,17 +340,17 @@ async function extractKediTagBlocksForNodeItem(node) {
         nodeTitle = doc.metadata?.title || fallbackTitle;
     }
 
-    const detailed = extractKediTagBlocksFromHtmlDetailed({
+    const detailed = extractPisiTagBlocksFromHtmlDetailed({
         html,
         nodePath,
         nodeTitle: node.isDiaryNode ? `Günlük · ${nodeTitle}` : nodeTitle
     });
 
     if (
-        !sameKediPathForTags(activeCenterNode?.path, nodePath) &&
-        !sameKediPathForTags(activeModalNode?.path, nodePath)
+        !samePisiPathForTags(activeCenterNode?.path, nodePath) &&
+        !samePisiPathForTags(activeModalNode?.path, nodePath)
     ) {
-        await persistKediAssignedBlockIds({
+        await persistPisiAssignedBlockIds({
             nodePath,
             detailed,
             originalHtml: html
@@ -364,15 +364,15 @@ async function extractKediTagBlocksForNodeItem(node) {
     }));
 }
 
-function isKediMissionNodeFileName(fileName = '') {
+function isPisiMissionNodeFileName(fileName = '') {
     return String(fileName || '').toLowerCase().endsWith('.node');
 }
 
-function isKediMissionMapFileName(fileName = '') {
+function isPisiMissionMapFileName(fileName = '') {
     return String(fileName || '').toLowerCase().endsWith('.map');
 }
 
-function makeKediMissionNodeItem(item) {
+function makePisiMissionNodeItem(item) {
     if (!item?.fullPath) return null;
 
     return {
@@ -391,7 +391,7 @@ function makeKediMissionNodeItem(item) {
     };
 }
 
-async function collectKediMissionNodeItemsFromFolder(
+async function collectPisiMissionNodeItemsFromFolder(
     folderPath,
     seenPaths = new Set(),
     scanState = { complete: true, errors: [] }
@@ -400,7 +400,7 @@ async function collectKediMissionNodeItemsFromFolder(
 
     if (!folderPath) return nodes;
 
-    const result = await window.kediProject?.listFolder?.(folderPath);
+    const result = await window.pisiProject?.listFolder?.(folderPath);
 
     if (!result?.ok || !Array.isArray(result.items)) {
         scanState.complete = false;
@@ -413,7 +413,7 @@ async function collectKediMissionNodeItemsFromFolder(
     for (const item of result.items) {
         if (item?.isDirectory) {
             nodes.push(
-                ...(await collectKediMissionNodeItemsFromFolder(
+                ...(await collectPisiMissionNodeItemsFromFolder(
                     item.fullPath,
                     seenPaths,
                     scanState
@@ -424,8 +424,8 @@ async function collectKediMissionNodeItemsFromFolder(
 
         if (!item?.isFile || !item.fullPath) continue;
 
-        if (isKediMissionNodeFileName(item.name || item.fileName)) {
-            const nodeItem = makeKediMissionNodeItem(item);
+        if (isPisiMissionNodeFileName(item.name || item.fileName)) {
+            const nodeItem = makePisiMissionNodeItem(item);
             const normalizedNodePath = normalizeClientPathForTags(
                 nodeItem?.fullPath
             );
@@ -438,8 +438,8 @@ async function collectKediMissionNodeItemsFromFolder(
             continue;
         }
 
-        if (isKediMissionMapFileName(item.name || item.fileName)) {
-            const mapNodesResult = await window.kediProject?.listMapNodes?.(
+        if (isPisiMissionMapFileName(item.name || item.fileName)) {
+            const mapNodesResult = await window.pisiProject?.listMapNodes?.(
                 item.fullPath
             );
 
@@ -456,7 +456,7 @@ async function collectKediMissionNodeItemsFromFolder(
             }
 
             for (const mapNode of mapNodes) {
-                const nodeItem = makeKediMissionNodeItem(mapNode);
+                const nodeItem = makePisiMissionNodeItem(mapNode);
                 const normalizedNodePath = normalizeClientPathForTags(
                     nodeItem?.fullPath
                 );
@@ -472,7 +472,7 @@ async function collectKediMissionNodeItemsFromFolder(
     return nodes;
 }
 
-async function buildKediMissionBlockIndex() {
+async function buildPisiMissionBlockIndex() {
     const results = [];
     const projectFolder = window.currentProjectFolder;
     const scanState = {
@@ -488,7 +488,7 @@ async function buildKediMissionBlockIndex() {
         };
     }
 
-    const nodeItems = await collectKediMissionNodeItemsFromFolder(
+    const nodeItems = await collectPisiMissionNodeItemsFromFolder(
         projectFolder,
         new Set(),
         scanState
@@ -499,12 +499,12 @@ async function buildKediMissionBlockIndex() {
 
         if (!nodePath) continue;
 
-        if (sameKediPathForTags(activeCenterNode?.path, nodePath)) {
+        if (samePisiPathForTags(activeCenterNode?.path, nodePath)) {
             const editor = document.getElementById('center-node-editor-content');
 
-            ensureKediEditorBlocks(editor);
+            ensurePisiEditorBlocks(editor);
 
-            results.push(...extractKediTagBlocksFromHtml({
+            results.push(...extractPisiTagBlocksFromHtml({
                 html: editor?.innerHTML || '',
                 nodePath,
                 nodeTitle:
@@ -519,12 +519,12 @@ async function buildKediMissionBlockIndex() {
             continue;
         }
 
-        if (sameKediPathForTags(activeModalNode?.path, nodePath)) {
+        if (samePisiPathForTags(activeModalNode?.path, nodePath)) {
             const editor = document.getElementById('node-modal-content');
 
-            ensureKediEditorBlocks(editor);
+            ensurePisiEditorBlocks(editor);
 
-            results.push(...extractKediTagBlocksFromHtml({
+            results.push(...extractPisiTagBlocksFromHtml({
                 html: editor?.innerHTML || '',
                 nodePath,
                 nodeTitle:
@@ -539,7 +539,7 @@ async function buildKediMissionBlockIndex() {
             continue;
         }
 
-        const doc = await window.kediProject?.getKediDocument?.(nodePath);
+        const doc = await window.pisiProject?.getPisiDocument?.(nodePath);
 
         if (!doc?.ok) {
             scanState.complete = false;
@@ -550,7 +550,7 @@ async function buildKediMissionBlockIndex() {
         }
 
         const originalHtml = doc.data?.content || '';
-        const detailed = extractKediTagBlocksFromHtmlDetailed({
+        const detailed = extractPisiTagBlocksFromHtmlDetailed({
             html: originalHtml,
             nodePath,
             nodeTitle:
@@ -563,7 +563,7 @@ async function buildKediMissionBlockIndex() {
         });
 
         results.push(...detailed.blocks);
-        const idsPersisted = await persistKediAssignedBlockIds({
+        const idsPersisted = await persistPisiAssignedBlockIds({
             nodePath,
             detailed,
             originalHtml
@@ -584,19 +584,19 @@ async function buildKediMissionBlockIndex() {
     };
 }
 
-async function buildKediTagBlockIndex() {
+async function buildPisiTagBlockIndex() {
     const results = [];
     const seenPaths = new Set();
 
     // Tags paneli aktif map'i ve günlük notları birlikte tarar.
     // activeMapPath boşsa aktif tab üzerinden map yolunu bulur.
-    const mapPath = getKediTagsActiveMapPath();
-    const mapNodes = await getKediTagsActiveMapNodes(mapPath);
-    const diaryNodes = await collectKediDiaryTagNodeItems();
+    const mapPath = getPisiTagsActiveMapPath();
+    const mapNodes = await getPisiTagsActiveMapNodes(mapPath);
+    const diaryNodes = await collectPisiDiaryTagNodeItems();
     const standaloneNode = (
         activeCenterNode?.path &&
         (!mapPath || !Array.isArray(mapNodes) || !mapNodes.some((node) => {
-            return sameKediPathForTags(node?.fullPath, activeCenterNode.path);
+            return samePisiPathForTags(node?.fullPath, activeCenterNode.path);
         }))
     )
         ? [{
@@ -622,47 +622,47 @@ async function buildKediTagBlockIndex() {
         if (seenPaths.has(normalizedPath)) continue;
         seenPaths.add(normalizedPath);
 
-        results.push(...(await extractKediTagBlocksForNodeItem(node)));
+        results.push(...(await extractPisiTagBlocksForNodeItem(node)));
     }
 
     return results;
 }
 
-function extractKediTagBlocksFromHtmlDetailed({ html, nodePath, nodeTitle }) {
-    const template = createKediInertHtmlTemplate(html);
+function extractPisiTagBlocksFromHtmlDetailed({ html, nodePath, nodeTitle }) {
+    const template = createPisiInertHtmlTemplate(html);
     const container = template.content;
 
-    const blocks = getKediBlockElementsFromContainer(container);
+    const blocks = getPisiBlockElementsFromContainer(container);
     const results = [];
     let assignedMissingBlockId = false;
 
     for (const block of blocks) {
         if (
-            block.classList.contains('kedi-diary-managed-block') ||
-            block.closest('.kedi-diary-managed-block')
+            block.classList.contains('pisi-diary-managed-block') ||
+            block.closest('.pisi-diary-managed-block')
         ) {
             continue;
         }
 
-        if (!block.dataset.kediBlockId) {
+        if (!block.dataset.pisiBlockId) {
             assignedMissingBlockId = true;
         }
 
-        decorateKediEditorBlock(block);
+        decoratePisiEditorBlock(block);
 
-        const tags = Array.from(new Set(extractKediTagsFromBlock(block)));
+        const tags = Array.from(new Set(extractPisiTagsFromBlock(block)));
         const doneTagElements = Array.from(
-            block.querySelectorAll('.kedi-user-tag[data-kedi-tag]')
+            block.querySelectorAll('.pisi-user-tag[data-pisi-tag]')
         );
         const doneFor = doneTagElements
             .filter((tagEl) => {
-                return normalizeKediUserTag(
-                    tagEl.dataset.kediTag || tagEl.textContent || ''
-                ) === 'done' && Boolean(tagEl.dataset.kediDoneFor);
+                return normalizePisiUserTag(
+                    tagEl.dataset.pisiTag || tagEl.textContent || ''
+                ) === 'done' && Boolean(tagEl.dataset.pisiDoneFor);
             })
             .map((tagEl) => {
-                return normalizeKediUserTag(
-                    tagEl.dataset.kediDoneFor || ''
+                return normalizePisiUserTag(
+                    tagEl.dataset.pisiDoneFor || ''
                 );
             })
             .filter(Boolean);
@@ -674,21 +674,21 @@ function extractKediTagBlocksFromHtmlDetailed({ html, nodePath, nodeTitle }) {
             .trim();
 
         results.push({
-            blockId: block.dataset.kediBlockId,
+            blockId: block.dataset.pisiBlockId,
             nodePath,
             nodeTitle,
             tags,
             doneFor: Array.from(new Set(doneFor)),
             legacyDone: doneTagElements.some((tagEl) => {
                 return (
-                    normalizeKediUserTag(
-                        tagEl.dataset.kediTag || tagEl.textContent || ''
+                    normalizePisiUserTag(
+                        tagEl.dataset.pisiTag || tagEl.textContent || ''
                     ) === 'done' &&
-                    !tagEl.dataset.kediDoneFor
+                    !tagEl.dataset.pisiDoneFor
                 );
             }),
             text,
-            html: sanitizeKediEditorHtml(block.outerHTML)
+            html: sanitizePisiEditorHtml(block.outerHTML)
         });
     }
 
@@ -699,11 +699,11 @@ function extractKediTagBlocksFromHtmlDetailed({ html, nodePath, nodeTitle }) {
     };
 }
 
-function extractKediTagBlocksFromHtml(options) {
-    return extractKediTagBlocksFromHtmlDetailed(options).blocks;
+function extractPisiTagBlocksFromHtml(options) {
+    return extractPisiTagBlocksFromHtmlDetailed(options).blocks;
 }
 
-async function persistKediAssignedBlockIds({
+async function persistPisiAssignedBlockIds({
     nodePath,
     detailed,
     originalHtml
@@ -713,8 +713,8 @@ async function persistKediAssignedBlockIds({
     }
 
     if (
-        sameKediPathForTags(activeCenterNode?.path, nodePath) ||
-        sameKediPathForTags(activeModalNode?.path, nodePath)
+        samePisiPathForTags(activeCenterNode?.path, nodePath) ||
+        samePisiPathForTags(activeModalNode?.path, nodePath)
     ) {
         return true;
     }
@@ -724,14 +724,14 @@ async function persistKediAssignedBlockIds({
         return true;
     }
 
-    const result = await window.kediProject?.saveNodeContent?.(
+    const result = await window.pisiProject?.saveNodeContent?.(
         nodePath,
         detailed.html
     );
 
     if (!result?.ok) {
         console.warn(
-            `[KEDI] Block kimlikleri kalıcılaştırılamadı (${nodePath}):`,
+            `[PISI] Block kimlikleri kalıcılaştırılamadı (${nodePath}):`,
             result?.error || 'Bilinmeyen kayıt hatası'
         );
         return false;
@@ -740,35 +740,35 @@ async function persistKediAssignedBlockIds({
     return true;
 }
 
-function ensureKediTagsPanelDom() {
-    const panel = document.getElementById('kedi-tags-panel');
+function ensurePisiTagsPanelDom() {
+    const panel = document.getElementById('pisi-tags-panel');
 
     if (!panel) return null;
 
-    let pickerButton = document.getElementById('kedi-tag-picker-button');
-    let pickerMenu = document.getElementById('kedi-tag-picker-menu');
-    let resultsEl = document.getElementById('kedi-tag-block-results');
+    let pickerButton = document.getElementById('pisi-tag-picker-button');
+    let pickerMenu = document.getElementById('pisi-tag-picker-menu');
+    let resultsEl = document.getElementById('pisi-tag-block-results');
 
     if (!pickerButton || !pickerMenu || !resultsEl) {
         panel.innerHTML = `
-            <div class="kedi-tag-picker">
-                <button id="kedi-tag-picker-button" type="button">
+            <div class="pisi-tag-picker">
+                <button id="pisi-tag-picker-button" type="button">
                     Choose tag
                 </button>
 
                 <div
-                    id="kedi-tag-picker-menu"
-                    class="kedi-tag-picker-menu"
+                    id="pisi-tag-picker-menu"
+                    class="pisi-tag-picker-menu"
                     hidden
                 ></div>
             </div>
 
-            <div id="kedi-tag-block-results" class="kedi-tag-block-results"></div>
+            <div id="pisi-tag-block-results" class="pisi-tag-block-results"></div>
         `;
 
-        pickerButton = document.getElementById('kedi-tag-picker-button');
-        pickerMenu = document.getElementById('kedi-tag-picker-menu');
-        resultsEl = document.getElementById('kedi-tag-block-results');
+        pickerButton = document.getElementById('pisi-tag-picker-button');
+        pickerMenu = document.getElementById('pisi-tag-picker-menu');
+        resultsEl = document.getElementById('pisi-tag-block-results');
     }
 
     if (!pickerButton || !pickerMenu || !resultsEl) return null;
@@ -780,11 +780,11 @@ function ensureKediTagsPanelDom() {
     };
 }
 
-function renderKediTagsPanel() {
-    const dom = ensureKediTagsPanelDom();
+function renderPisiTagsPanel() {
+    const dom = ensurePisiTagsPanelDom();
 
     if (!dom) {
-        console.error('[KEDI] Tags panel DOM bulunamadı.');
+        console.error('[PISI] Tags panel DOM bulunamadı.');
         return;
     }
 
@@ -794,8 +794,8 @@ function renderKediTagsPanel() {
         resultsEl
     } = dom;
 
-    const index = Array.isArray(kediTagsPanelState.index)
-        ? kediTagsPanelState.index
+    const index = Array.isArray(pisiTagsPanelState.index)
+        ? pisiTagsPanelState.index
         : [];
 
     const counts = new Map();
@@ -804,11 +804,11 @@ for (const block of index) {
     const blockTags = Array.isArray(block.tags) ? block.tags : [];
 
     for (const tag of blockTags) {
-        const normalizedTag = normalizeKediUserTag(tag);
+        const normalizedTag = normalizePisiUserTag(tag);
 
         // Missions'a özel ..todo.priority.finishdate etiketleri
         // Tags sekmesinde listelenmesin.
-        if (parseKediTodoTag(normalizedTag)) {
+        if (parsePisiTodoTag(normalizedTag)) {
             continue;
         }
 
@@ -821,8 +821,8 @@ const tags = Array.from(counts.keys()).sort((a, b) => {
 });
 
     if (!tags.length) {
-        kediTagsPanelState.selectedTag = null;
-        kediTagsPanelState.dropdownOpen = false;
+        pisiTagsPanelState.selectedTag = null;
+        pisiTagsPanelState.dropdownOpen = false;
 
         pickerButton.disabled = true;
         pickerButton.textContent = 'Choose tag';
@@ -839,54 +839,54 @@ const tags = Array.from(counts.keys()).sort((a, b) => {
     }
 
     if (
-        kediTagsPanelState.selectedTag &&
-        !counts.has(kediTagsPanelState.selectedTag)
+        pisiTagsPanelState.selectedTag &&
+        !counts.has(pisiTagsPanelState.selectedTag)
     ) {
-        kediTagsPanelState.selectedTag = null;
+        pisiTagsPanelState.selectedTag = null;
     }
 
-    const selectedTag = kediTagsPanelState.selectedTag || tags[0];
+    const selectedTag = pisiTagsPanelState.selectedTag || tags[0];
 
-    kediTagsPanelState.selectedTag = selectedTag;
+    pisiTagsPanelState.selectedTag = selectedTag;
 
     pickerButton.disabled = false;
     pickerButton.textContent = `#${selectedTag} (${counts.get(selectedTag)})`;
     pickerButton.setAttribute(
         'aria-expanded',
-        kediTagsPanelState.dropdownOpen ? 'true' : 'false'
+        pisiTagsPanelState.dropdownOpen ? 'true' : 'false'
     );
 
     pickerButton.onclick = (event) => {
         event.preventDefault();
         event.stopPropagation();
 
-        kediTagsPanelState.dropdownOpen = !kediTagsPanelState.dropdownOpen;
-        renderKediTagsPanel();
+        pisiTagsPanelState.dropdownOpen = !pisiTagsPanelState.dropdownOpen;
+        renderPisiTagsPanel();
     };
 
-    pickerMenu.hidden = !kediTagsPanelState.dropdownOpen;
+    pickerMenu.hidden = !pisiTagsPanelState.dropdownOpen;
     pickerMenu.innerHTML = '';
 
     for (const tag of tags) {
         const option = document.createElement('button');
 
         option.type = 'button';
-        option.className = 'kedi-tag-picker-option';
+        option.className = 'pisi-tag-picker-option';
         option.classList.toggle('active', tag === selectedTag);
 
         option.innerHTML = `
-            <span class="kedi-tag-picker-name">#${escapeHtml(tag)}</span>
-            <span class="kedi-tag-picker-count">${counts.get(tag)}</span>
+            <span class="pisi-tag-picker-name">#${escapeHtml(tag)}</span>
+            <span class="pisi-tag-picker-count">${counts.get(tag)}</span>
         `;
 
         option.addEventListener('click', (event) => {
             event.preventDefault();
             event.stopPropagation();
 
-            kediTagsPanelState.selectedTag = tag;
-            kediTagsPanelState.dropdownOpen = false;
+            pisiTagsPanelState.selectedTag = tag;
+            pisiTagsPanelState.dropdownOpen = false;
 
-            renderKediTagsPanel();
+            renderPisiTagsPanel();
         });
 
         pickerMenu.appendChild(option);
@@ -895,7 +895,7 @@ const tags = Array.from(counts.keys()).sort((a, b) => {
    const matchingBlocks = index.filter((block) => {
     return Array.isArray(block.tags) &&
         block.tags.some((tag) => {
-            return normalizeKediUserTag(tag) === selectedTag;
+            return normalizePisiUserTag(tag) === selectedTag;
         });
     });
 
@@ -905,28 +905,28 @@ const tags = Array.from(counts.keys()).sort((a, b) => {
         const card = document.createElement('button');
 
         card.type = 'button';
-        card.className = 'kedi-tag-result-card';
+        card.className = 'pisi-tag-result-card';
 
         card.innerHTML = `
-            <div class="kedi-tag-result-node">
+            <div class="pisi-tag-result-node">
                 ${escapeHtml(block.nodeTitle || 'Node')}
             </div>
 
-            <div class="kedi-tag-result-text">
+            <div class="pisi-tag-result-text">
                 ${escapeHtml(block.text || '(boş blok)')}
             </div>
         `;
 
         card.addEventListener('click', async () => {
-            await openKediTagBlockResult(block);
+            await openPisiTagBlockResult(block);
         });
 
         resultsEl.appendChild(card);
     }
 }
 
-function parseKediTodoTag(tag) {
-    const normalized = normalizeKediUserTag(tag);
+function parsePisiTodoTag(tag) {
+    const normalized = normalizePisiUserTag(tag);
 
     const match = normalized.match(
         /^todo\.([1-9])\.(\d{2})-(\d{2})-(\d{2}|\d{4})$/
@@ -971,7 +971,7 @@ function parseKediTodoTag(tag) {
     };
 }
 
-function formatKediMissionDate(date) {
+function formatPisiMissionDate(date) {
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = String(date.getFullYear());
@@ -979,26 +979,26 @@ function formatKediMissionDate(date) {
     return `${day}-${month}-${year}`;
 }
 
-function getKediMissionsFromIndex(options = {}) {
+function getPisiMissionsFromIndex(options = {}) {
     const missions = [];
     const includeCompleted = options.includeCompleted === true;
 
-    const sourceIndex = Array.isArray(kediTagsPanelState.missionIndex)
-        ? kediTagsPanelState.missionIndex
+    const sourceIndex = Array.isArray(pisiTagsPanelState.missionIndex)
+        ? pisiTagsPanelState.missionIndex
         : [];
 
     for (const block of sourceIndex) {
         const tags = Array.isArray(block.tags) ? block.tags : [];
         const doneFor = new Set(
             Array.isArray(block.doneFor)
-                ? block.doneFor.map(normalizeKediUserTag)
+                ? block.doneFor.map(normalizePisiUserTag)
                 : []
         );
 
         const hasLegacyDone = block.legacyDone === true;
 
         for (const tag of tags) {
-            const todo = parseKediTodoTag(tag);
+            const todo = parsePisiTodoTag(tag);
 
             if (!todo) continue;
             const completed = hasLegacyDone || doneFor.has(todo.tag);
@@ -1031,11 +1031,11 @@ function getKediMissionsFromIndex(options = {}) {
     return missions;
 }
 
-function escapeKediMissionRegExp(value = '') {
+function escapePisiMissionRegExp(value = '') {
     return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function getKediMissionDisplayText(mission) {
+function getPisiMissionDisplayText(mission) {
     let text = String(mission?.text || '')
         .replace(/\s+/g, ' ')
         .trim();
@@ -1044,7 +1044,7 @@ function getKediMissionDisplayText(mission) {
 
     if (todoTag) {
         const todoTagPattern = new RegExp(
-            `(^|\\s)(?:#|\\.\\.)?${escapeKediMissionRegExp(todoTag)}(?=\\s|$)`,
+            `(^|\\s)(?:#|\\.\\.)?${escapePisiMissionRegExp(todoTag)}(?=\\s|$)`,
             'gi'
         );
 
@@ -1061,16 +1061,16 @@ function getKediMissionDisplayText(mission) {
         .trim();
 }
 
-function renderKediMissionsPanel() {
-    const panelEl = document.getElementById('kedi-missions-panel');
-    const listEl = document.getElementById('kedi-missions-list');
+function renderPisiMissionsPanel() {
+    const panelEl = document.getElementById('pisi-missions-panel');
+    const listEl = document.getElementById('pisi-missions-list');
 
     if (!panelEl || !listEl) return;
 
-    let toolbarEl = panelEl.querySelector('.kedi-missions-toolbar');
+    let toolbarEl = panelEl.querySelector('.pisi-missions-toolbar');
     if (!toolbarEl) {
         toolbarEl = document.createElement('div');
-        toolbarEl.className = 'kedi-missions-toolbar';
+        toolbarEl.className = 'pisi-missions-toolbar';
         panelEl.insertBefore(toolbarEl, listEl);
     }
 
@@ -1084,13 +1084,13 @@ function renderKediMissionsPanel() {
     return;
 }
 
-    const allMissions = getKediMissionsFromIndex({
+    const allMissions = getPisiMissionsFromIndex({
         includeCompleted: true
     });
     const completedCount = allMissions.filter((mission) => {
         return mission.completed;
     }).length;
-    const showCompleted = kediTagsPanelState.showCompletedMissions === true;
+    const showCompleted = pisiTagsPanelState.showCompletedMissions === true;
     const missions = showCompleted
         ? allMissions
         : allMissions.filter((mission) => !mission.completed);
@@ -1098,15 +1098,15 @@ function renderKediMissionsPanel() {
     toolbarEl.innerHTML = '';
     const completedToggle = document.createElement('button');
     completedToggle.type = 'button';
-    completedToggle.className = 'kedi-missions-completed-toggle';
+    completedToggle.className = 'pisi-missions-completed-toggle';
     completedToggle.setAttribute('aria-pressed', showCompleted ? 'true' : 'false');
     completedToggle.textContent = showCompleted
         ? `Tamamlananları gizle (${completedCount})`
         : `Tamamlananları göster (${completedCount})`;
     completedToggle.disabled = completedCount === 0;
     completedToggle.addEventListener('click', () => {
-        kediTagsPanelState.showCompletedMissions = !showCompleted;
-        renderKediMissionsPanel();
+        pisiTagsPanelState.showCompletedMissions = !showCompleted;
+        renderPisiMissionsPanel();
     });
     toolbarEl.appendChild(completedToggle);
 
@@ -1125,39 +1125,39 @@ function renderKediMissionsPanel() {
 
     for (const mission of missions) {
         const item = document.createElement('div');
-        item.className = 'kedi-mission-card';
+        item.className = 'pisi-mission-card';
         item.classList.toggle('completed', mission.completed === true);
 
         const isLate = mission.daysLeft < 0;
 
         item.innerHTML = `
-            <label class="kedi-mission-check-wrap" title="Tamamlandı olarak işaretle">
-                <input class="kedi-mission-check" type="checkbox">
+            <label class="pisi-mission-check-wrap" title="Tamamlandı olarak işaretle">
+                <input class="pisi-mission-check" type="checkbox">
             </label>
 
-            <button class="kedi-mission-main" type="button">
-                <div class="kedi-mission-top">
+            <button class="pisi-mission-main" type="button">
+                <div class="pisi-mission-top">
                 </div>
 
-                <div class="kedi-mission-text">
-                    ${escapeHtml(getKediMissionDisplayText(mission) || '(boş blok)')}
+                <div class="pisi-mission-text">
+                    ${escapeHtml(getPisiMissionDisplayText(mission) || '(boş blok)')}
                 </div>
 
-                <div class="kedi-mission-meta">
+                <div class="pisi-mission-meta">
                     <span class="${isLate ? 'late' : ''}">
-                        ${formatKediMissionDate(mission.finishDate)}
+                        ${formatPisiMissionDate(mission.finishDate)}
                     </span>
                     <span>workorder: ${mission.workorder.toFixed(2)}</span>
                 </div>
 
-                <div class="kedi-mission-node">
+                <div class="pisi-mission-node">
                     ${escapeHtml(mission.nodeTitle)}
                 </div>
             </button>
         `;
 
-        const checkbox = item.querySelector('.kedi-mission-check');
-        const mainButton = item.querySelector('.kedi-mission-main');
+        const checkbox = item.querySelector('.pisi-mission-check');
+        const mainButton = item.querySelector('.pisi-mission-main');
 
         if (checkbox) {
             checkbox.checked = mission.completed === true;
@@ -1172,8 +1172,8 @@ function renderKediMissionsPanel() {
     checkbox.disabled = true;
 
     const result = checkbox.checked
-        ? await markKediMissionDone(mission)
-        : await reopenKediMission(mission);
+        ? await markPisiMissionDone(mission)
+        : await reopenPisiMission(mission);
 
     if (!result?.ok) {
         checkbox.checked = mission.completed === true;
@@ -1187,31 +1187,31 @@ function renderKediMissionsPanel() {
         return;
     }
 
-    refreshKediTagsPanelSoon();
+    refreshPisiTagsPanelSoon();
     });
 
         mainButton?.addEventListener('click', async () => {
-            await openKediTagBlockResult(mission);
+            await openPisiTagBlockResult(mission);
         });
 
         listEl.appendChild(item);
     }
 }
 
-function normalizeKediBlockText(value) {
+function normalizePisiBlockText(value) {
     return String(value || '')
         .replace(/\s+/g, ' ')
         .trim();
 }
 
-function createKediDoneTagElement(todoTag) {
+function createPisiDoneTagElement(todoTag) {
     const tagEl = document.createElement('span');
-    const normalizedTodoTag = normalizeKediUserTag(todoTag);
+    const normalizedTodoTag = normalizePisiUserTag(todoTag);
 
-    tagEl.className = 'kedi-user-tag';
-    tagEl.dataset.kediTag = 'done';
+    tagEl.className = 'pisi-user-tag';
+    tagEl.dataset.pisiTag = 'done';
     if (normalizedTodoTag) {
-        tagEl.dataset.kediDoneFor = normalizedTodoTag;
+        tagEl.dataset.pisiDoneFor = normalizedTodoTag;
     }
     tagEl.contentEditable = 'false';
     tagEl.textContent = 'done';
@@ -1219,63 +1219,63 @@ function createKediDoneTagElement(todoTag) {
     return tagEl;
 }
 
-function blockHasKediDoneTag(block, todoTag = null) {
-    const normalizedTodoTag = normalizeKediUserTag(todoTag);
+function blockHasPisiDoneTag(block, todoTag = null) {
+    const normalizedTodoTag = normalizePisiUserTag(todoTag);
 
-    return Array.from(block.querySelectorAll('.kedi-user-tag[data-kedi-tag]'))
+    return Array.from(block.querySelectorAll('.pisi-user-tag[data-pisi-tag]'))
         .some((tagEl) => {
-            const isDone = normalizeKediUserTag(
-                tagEl.dataset.kediTag || tagEl.textContent || ''
+            const isDone = normalizePisiUserTag(
+                tagEl.dataset.pisiTag || tagEl.textContent || ''
             ) === 'done';
 
             if (!isDone) return false;
             if (!normalizedTodoTag) return true;
 
-            const doneFor = normalizeKediUserTag(
-                tagEl.dataset.kediDoneFor || ''
+            const doneFor = normalizePisiUserTag(
+                tagEl.dataset.pisiDoneFor || ''
             );
 
             return !doneFor || doneFor === normalizedTodoTag;
         });
 }
 
-function blockHasKediTag(block, targetTag) {
-    const normalizedTarget = normalizeKediUserTag(targetTag);
+function blockHasPisiTag(block, targetTag) {
+    const normalizedTarget = normalizePisiUserTag(targetTag);
 
-    return Array.from(block.querySelectorAll('.kedi-user-tag[data-kedi-tag]'))
+    return Array.from(block.querySelectorAll('.pisi-user-tag[data-pisi-tag]'))
         .some((tagEl) => {
-            return normalizeKediUserTag(
-                tagEl.dataset.kediTag || tagEl.textContent || ''
+            return normalizePisiUserTag(
+                tagEl.dataset.pisiTag || tagEl.textContent || ''
             ) === normalizedTarget;
         });
 }
 
-function appendKediDoneTagToBlock(block, todoTag) {
-    if (!block || blockHasKediDoneTag(block, todoTag)) return false;
+function appendPisiDoneTagToBlock(block, todoTag) {
+    if (!block || blockHasPisiDoneTag(block, todoTag)) return false;
 
-    decorateKediEditorBlock(block);
+    decoratePisiEditorBlock(block);
 
     block.appendChild(document.createTextNode(' '));
-    block.appendChild(createKediDoneTagElement(todoTag));
+    block.appendChild(createPisiDoneTagElement(todoTag));
     block.appendChild(document.createTextNode(' '));
 
     return true;
 }
 
-function removeKediDoneTagFromBlock(block, todoTag) {
+function removePisiDoneTagFromBlock(block, todoTag) {
     if (!block) return false;
 
-    const normalizedTodoTag = normalizeKediUserTag(todoTag);
+    const normalizedTodoTag = normalizePisiUserTag(todoTag);
     let removed = false;
 
     Array.from(
-        block.querySelectorAll('.kedi-user-tag[data-kedi-tag]')
+        block.querySelectorAll('.pisi-user-tag[data-pisi-tag]')
     ).forEach((tagEl) => {
-        const isDone = normalizeKediUserTag(
-            tagEl.dataset.kediTag || tagEl.textContent || ''
+        const isDone = normalizePisiUserTag(
+            tagEl.dataset.pisiTag || tagEl.textContent || ''
         ) === 'done';
-        const doneFor = normalizeKediUserTag(
-            tagEl.dataset.kediDoneFor || ''
+        const doneFor = normalizePisiUserTag(
+            tagEl.dataset.pisiDoneFor || ''
         );
 
         if (
@@ -1290,35 +1290,35 @@ function removeKediDoneTagFromBlock(block, todoTag) {
     return removed;
 }
 
-function findKediMissionBlockInContainer(container, mission) {
+function findPisiMissionBlockInContainer(container, mission) {
     if (!container || !mission) return null;
 
-    ensureKediEditorBlocks(container);
+    ensurePisiEditorBlocks(container);
 
-    const blocks = getKediBlockElementsFromContainer(container);
-    const targetTodoTag = normalizeKediUserTag(mission.todoTag);
-    const targetText = normalizeKediBlockText(mission.text);
+    const blocks = getPisiBlockElementsFromContainer(container);
+    const targetTodoTag = normalizePisiUserTag(mission.todoTag);
+    const targetText = normalizePisiBlockText(mission.text);
 
     let textFallback = null;
     let tagFallback = null;
 
     for (const block of blocks) {
-        decorateKediEditorBlock(block);
+        decoratePisiEditorBlock(block);
 
-        const hasTodo = blockHasKediTag(block, targetTodoTag);
+        const hasTodo = blockHasPisiTag(block, targetTodoTag);
 
         if (!hasTodo) continue;
 
         if (
             mission.blockId &&
-            block.dataset.kediBlockId === mission.blockId
+            block.dataset.pisiBlockId === mission.blockId
         ) {
             return block;
         }
 
         if (
             !textFallback &&
-            normalizeKediBlockText(block.textContent) === targetText
+            normalizePisiBlockText(block.textContent) === targetText
         ) {
             textFallback = block;
         }
@@ -1331,7 +1331,7 @@ function findKediMissionBlockInContainer(container, mission) {
     return textFallback || tagFallback;
 }
 
-function setKediMissionCompletionInBlock(block, mission, completed) {
+function setPisiMissionCompletionInBlock(block, mission, completed) {
     if (!block) {
         return {
             changed: false,
@@ -1341,8 +1341,8 @@ function setKediMissionCompletionInBlock(block, mission, completed) {
 
     const previousHtml = block.innerHTML;
     const changed = completed
-        ? appendKediDoneTagToBlock(block, mission.todoTag)
-        : removeKediDoneTagFromBlock(block, mission.todoTag);
+        ? appendPisiDoneTagToBlock(block, mission.todoTag)
+        : removePisiDoneTagFromBlock(block, mission.todoTag);
 
     return {
         changed,
@@ -1350,17 +1350,17 @@ function setKediMissionCompletionInBlock(block, mission, completed) {
     };
 }
 
-function rollbackKediMissionBlock(block, previousHtml) {
+function rollbackPisiMissionBlock(block, previousHtml) {
     if (!block) return;
 
     block.innerHTML = previousHtml;
 
-    if (typeof initializeKediAdvancedEditorContent === 'function') {
-        initializeKediAdvancedEditorContent(block);
+    if (typeof initializePisiAdvancedEditorContent === 'function') {
+        initializePisiAdvancedEditorContent(block);
     }
 }
 
-async function setKediMissionCompletion(mission, completed) {
+async function setPisiMissionCompletion(mission, completed) {
     if (!mission?.nodePath) {
         return {
             ok: false,
@@ -1370,10 +1370,10 @@ async function setKediMissionCompletion(mission, completed) {
 
     try {
         // 1) Görev şu an center editor içindeyse DOM ve disk birlikte güncellenir.
-        if (sameKediPathForTags(activeCenterNode?.path, mission.nodePath)) {
+        if (samePisiPathForTags(activeCenterNode?.path, mission.nodePath)) {
             const editor = document.getElementById('center-node-editor-content');
 
-            const block = findKediMissionBlockInContainer(editor, mission);
+            const block = findPisiMissionBlockInContainer(editor, mission);
 
             if (!block) {
                 return {
@@ -1382,7 +1382,7 @@ async function setKediMissionCompletion(mission, completed) {
                 };
             }
 
-            const change = setKediMissionCompletionInBlock(
+            const change = setPisiMissionCompletionInBlock(
                 block,
                 mission,
                 completed
@@ -1405,9 +1405,9 @@ async function setKediMissionCompletion(mission, completed) {
             if (typeof saveCurrentCenterNodeEditor === 'function') {
                 saveSucceeded = await saveCurrentCenterNodeEditor();
             } else {
-                const saveResult = await window.kediProject?.saveNodeContent?.(
+                const saveResult = await window.pisiProject?.saveNodeContent?.(
                     mission.nodePath,
-                    getKediEditorContent(editor)
+                    getPisiEditorContent(editor)
                 );
 
                 saveSucceeded = saveResult?.ok === true;
@@ -1415,8 +1415,8 @@ async function setKediMissionCompletion(mission, completed) {
             }
 
             if (!saveSucceeded) {
-                rollbackKediMissionBlock(block, change.previousHtml);
-                refreshKediTagsPanelSoon();
+                rollbackPisiMissionBlock(block, change.previousHtml);
+                refreshPisiTagsPanelSoon();
                 return {
                     ok: false,
                     error: saveError
@@ -1427,10 +1427,10 @@ async function setKediMissionCompletion(mission, completed) {
         }
 
         // 2) Görev modal içindeyse başarısız kayıtta DOM geri alınır.
-        if (sameKediPathForTags(activeModalNode?.path, mission.nodePath)) {
+        if (samePisiPathForTags(activeModalNode?.path, mission.nodePath)) {
             const editor = document.getElementById('node-modal-content');
 
-            const block = findKediMissionBlockInContainer(editor, mission);
+            const block = findPisiMissionBlockInContainer(editor, mission);
 
             if (!block) {
                 return {
@@ -1439,7 +1439,7 @@ async function setKediMissionCompletion(mission, completed) {
                 };
             }
 
-            const change = setKediMissionCompletionInBlock(
+            const change = setPisiMissionCompletionInBlock(
                 block,
                 mission,
                 completed
@@ -1456,14 +1456,14 @@ async function setKediMissionCompletion(mission, completed) {
                 bubbles: true
             }));
 
-            const saveResult = await window.kediProject?.saveNodeContent?.(
+            const saveResult = await window.pisiProject?.saveNodeContent?.(
                 mission.nodePath,
-                getKediEditorContent(editor)
+                getPisiEditorContent(editor)
             );
 
             if (!saveResult?.ok) {
-                rollbackKediMissionBlock(block, change.previousHtml);
-                refreshKediTagsPanelSoon();
+                rollbackPisiMissionBlock(block, change.previousHtml);
+                refreshPisiTagsPanelSoon();
                 return {
                     ok: false,
                     error: saveResult?.error || 'Node kaydedilemedi.'
@@ -1477,7 +1477,7 @@ async function setKediMissionCompletion(mission, completed) {
         }
 
         // 3) Görev kapalı node içindeyse dosyayı oku, HTML içinde bul, kaydet.
-        const doc = await window.kediProject?.getKediDocument?.(mission.nodePath);
+        const doc = await window.pisiProject?.getPisiDocument?.(mission.nodePath);
 
         if (!doc?.ok) {
             return {
@@ -1486,9 +1486,9 @@ async function setKediMissionCompletion(mission, completed) {
             };
         }
 
-        const template = createKediInertHtmlTemplate(doc.data?.content || '');
+        const template = createPisiInertHtmlTemplate(doc.data?.content || '');
 
-        const block = findKediMissionBlockInContainer(
+        const block = findPisiMissionBlockInContainer(
             template.content,
             mission
         );
@@ -1500,7 +1500,7 @@ async function setKediMissionCompletion(mission, completed) {
             };
         }
 
-        const change = setKediMissionCompletionInBlock(
+        const change = setPisiMissionCompletionInBlock(
             block,
             mission,
             completed
@@ -1513,7 +1513,7 @@ async function setKediMissionCompletion(mission, completed) {
             };
         }
 
-        const saveResult = await window.kediProject?.saveNodeContent?.(
+        const saveResult = await window.pisiProject?.saveNodeContent?.(
             mission.nodePath,
             template.innerHTML
         );
@@ -1527,7 +1527,7 @@ async function setKediMissionCompletion(mission, completed) {
 
         return { ok: true };
     } catch (error) {
-        console.error('[KEDI] Mission durum işaretleme hatası:', error);
+        console.error('[PISI] Mission durum işaretleme hatası:', error);
 
         return {
             ok: false,
@@ -1540,15 +1540,15 @@ async function setKediMissionCompletion(mission, completed) {
     }
 }
 
-async function markKediMissionDone(mission) {
-    return setKediMissionCompletion(mission, true);
+async function markPisiMissionDone(mission) {
+    return setPisiMissionCompletion(mission, true);
 }
 
-async function reopenKediMission(mission) {
-    return setKediMissionCompletion(mission, false);
+async function reopenPisiMission(mission) {
+    return setPisiMissionCompletion(mission, false);
 }
 
-async function openKediTagBlockResult(block) {
+async function openPisiTagBlockResult(block) {
     if (!block?.nodePath) return;
 
     const escapedPath = CSS.escape(block.nodePath);
@@ -1556,8 +1556,8 @@ async function openKediTagBlockResult(block) {
 
     if (box) {
     await openNodeModalFromBox(box);
-} else if (typeof openKediFileTab === 'function') {
-    await openKediFileTab({
+} else if (typeof openPisiFileTab === 'function') {
+    await openPisiFileTab({
         name: block.fileName || `${block.nodeTitle || 'Node'}.node`,
         fileName: block.fileName || `${block.nodeTitle || 'Node'}.node`,
         fullPath: block.nodePath,
@@ -1572,11 +1572,11 @@ async function openKediTagBlockResult(block) {
 }
 
 setTimeout(() => {
-    highlightKediEditorBlock(block.blockId);
+    highlightPisiEditorBlock(block.blockId);
 }, 120);
 }
 
-function highlightKediEditorBlock(blockId) {
+function highlightPisiEditorBlock(blockId) {
     if (!blockId) return;
 
     const centerEditor = document.getElementById('center-node-editor-content');
@@ -1590,36 +1590,36 @@ function highlightKediEditorBlock(blockId) {
 
     if (!editor) return;
 
-    editor.querySelectorAll('.kedi-block-highlight').forEach((block) => {
-        block.classList.remove('kedi-block-highlight');
+    editor.querySelectorAll('.pisi-block-highlight').forEach((block) => {
+        block.classList.remove('pisi-block-highlight');
     });
 
     const block = editor.querySelector(
-        `.kedi-editor-block[data-kedi-block-id="${CSS.escape(blockId)}"]`
+        `.pisi-editor-block[data-pisi-block-id="${CSS.escape(blockId)}"]`
     );
 
     if (!block) return;
 
-    block.classList.add('kedi-block-highlight');
+    block.classList.add('pisi-block-highlight');
     block.scrollIntoView({
         block: 'center',
         behavior: 'smooth'
     });
 
     setTimeout(() => {
-        block.classList.remove('kedi-block-highlight');
+        block.classList.remove('pisi-block-highlight');
     }, 2200);
 }
 
-const KEDI_SYSTEM_TAGS = [
+const PISI_SYSTEM_TAGS = [
     { id: 'h2', label: 'h2', description: 'Heading 2', headingLevel: 2 },
     { id: 'h3', label: 'h3', description: 'Heading 3', headingLevel: 3 },
     { id: 'h4', label: 'h4', description: 'Heading 4', headingLevel: 4 },
     { id: 'h5', label: 'h5', description: 'Heading 5', headingLevel: 5 }
 ];
 
-function bindKediTagControls() {
-    const menu = document.getElementById('kedi-tag-menu');
+function bindPisiTagControls() {
+    const menu = document.getElementById('pisi-tag-menu');
 
     if (!menu) return;
 
@@ -1629,41 +1629,41 @@ function bindKediTagControls() {
     ].filter(Boolean);
 
     for (const editor of editors) {
-        bindKediTagControlsForEditor(editor);
+        bindPisiTagControlsForEditor(editor);
     }
 
-    if (document.body.dataset.kediTagOutsideBound === '1') return;
+    if (document.body.dataset.pisiTagOutsideBound === '1') return;
 
-    document.body.dataset.kediTagOutsideBound = '1';
+    document.body.dataset.pisiTagOutsideBound = '1';
 
     document.addEventListener('mousedown', (event) => {
-        if (!kediTagMenuState.active) return;
+        if (!pisiTagMenuState.active) return;
 
-        const activeEditor = kediTagMenuState.editor;
+        const activeEditor = pisiTagMenuState.editor;
 
         if (
-            event.target.closest('#kedi-tag-menu') ||
+            event.target.closest('#pisi-tag-menu') ||
             event.target === activeEditor ||
             activeEditor?.contains(event.target)
         ) {
             return;
         }
 
-        closeKediTagMenu();
+        closePisiTagMenu();
     });
 }
 
-function bindKediTagControlsForEditor(editor) {
+function bindPisiTagControlsForEditor(editor) {
     if (!editor) return;
-    if (editor.dataset.kediTagsBound === '1') return;
+    if (editor.dataset.pisiTagsBound === '1') return;
 
-    editor.dataset.kediTagsBound = '1';
+    editor.dataset.pisiTagsBound = '1';
 
     editor.addEventListener('input', () => {
-        ensureKediEditorBlocks(editor);
-        collectKediUserTagsFromEditor(editor);
-        updateKediTagMenuForEditor(editor, true);
-        refreshKediTagsPanelSoon();
+        ensurePisiEditorBlocks(editor);
+        collectPisiUserTagsFromEditor(editor);
+        updatePisiTagMenuForEditor(editor, true);
+        refreshPisiTagsPanelSoon();
     });
 
     editor.addEventListener('keyup', (event) => {
@@ -1678,44 +1678,44 @@ function bindKediTagControlsForEditor(editor) {
             return;
         }
 
-        updateKediTagMenuForEditor(editor, false);
+        updatePisiTagMenuForEditor(editor, false);
     });
 
     editor.addEventListener('keydown', (event) => {
         // Kullanıcı tagı boşlukla biter.
         // Örnek: ..hayvan[space] => mavi tag chip.
         if (event.key === ' ') {
-            const command = getKediEditorCommandAtCaret(editor);
+            const command = getPisiEditorCommandAtCaret(editor);
 
-            if (command && command.body && !getExactKediSystemTag(command.body)) {
+            if (command && command.body && !getExactPisiSystemTag(command.body)) {
                 event.preventDefault();
-                applyKediUserTagToEditor(editor, command.body, command);
+                applyPisiUserTagToEditor(editor, command.body, command);
                 return;
             }
         }
 
-        if (!kediTagMenuState.active) return;
-        if (kediTagMenuState.editor !== editor) return;
+        if (!pisiTagMenuState.active) return;
+        if (pisiTagMenuState.editor !== editor) return;
 
         if (event.key === 'ArrowDown') {
             event.preventDefault();
-            moveKediTagSelection(1);
+            movePisiTagSelection(1);
             return;
         }
 
         if (event.key === 'ArrowUp') {
             event.preventDefault();
-            moveKediTagSelection(-1);
+            movePisiTagSelection(-1);
             return;
         }
 
         if (event.key === 'Enter' || event.key === 'Tab') {
             event.preventDefault();
 
-            const selectedItem = kediTagMenuState.items[kediTagMenuState.selectedIndex];
+            const selectedItem = pisiTagMenuState.items[pisiTagMenuState.selectedIndex];
 
             if (selectedItem) {
-                applyKediTagMenuItem(editor, selectedItem);
+                applyPisiTagMenuItem(editor, selectedItem);
             }
 
             return;
@@ -1723,44 +1723,44 @@ function bindKediTagControlsForEditor(editor) {
 
         if (event.key === 'Escape') {
             event.preventDefault();
-            closeKediTagMenu();
+            closePisiTagMenu();
         }
     });
 
     editor.addEventListener('click', () => {
-        updateKediTagMenuForEditor(editor, false);
+        updatePisiTagMenuForEditor(editor, false);
     });
 }
 
-function updateKediTagMenuForEditor(editor, allowExactTransform) {
-    const command = getKediEditorCommandAtCaret(editor);
+function updatePisiTagMenuForEditor(editor, allowExactTransform) {
+    const command = getPisiEditorCommandAtCaret(editor);
 
     if (!command) {
-        closeKediTagMenu();
+        closePisiTagMenu();
         return;
     }
 
-    const exactSystem = getExactKediSystemTag(command.body);
+    const exactSystem = getExactPisiSystemTag(command.body);
 
     if (allowExactTransform && exactSystem) {
-        applyKediSystemTagToEditor(editor, exactSystem, command);
+        applyPisiSystemTagToEditor(editor, exactSystem, command);
         return;
     }
 
-    const items = buildKediTagMenuItems(command);
+    const items = buildPisiTagMenuItems(command);
 
     if (!items.length) {
-        closeKediTagMenu();
+        closePisiTagMenu();
         return;
     }
 
-    openKediTagMenuForEditor(editor, {
+    openPisiTagMenuForEditor(editor, {
         ...command,
         items
     });
 }
 
-function getKediEditorCommandAtCaret(editor) {
+function getPisiEditorCommandAtCaret(editor) {
     const selection = window.getSelection();
 
     if (!selection || selection.rangeCount === 0 || !selection.isCollapsed) {
@@ -1773,7 +1773,7 @@ function getKediEditorCommandAtCaret(editor) {
         return null;
     }
 
-    const block = getKediCurrentEditorBlock(editor, range.startContainer);
+    const block = getPisiCurrentEditorBlock(editor, range.startContainer);
 
     if (!block) return null;
 
@@ -1808,12 +1808,12 @@ function getKediEditorCommandAtCaret(editor) {
     };
 }
 
-function buildKediTagMenuItems(command) {
-    const body = normalizeKediUserTag(command.body);
+function buildPisiTagMenuItems(command) {
+    const body = normalizePisiUserTag(command.body);
     const lowerBody = body.toLowerCase();
     const items = [];
 
-    const systemItems = KEDI_SYSTEM_TAGS
+    const systemItems = PISI_SYSTEM_TAGS
         .filter((item) => {
             if (body.includes('.')) return false;
             return item.label.toLowerCase().startsWith(lowerBody);
@@ -1829,7 +1829,7 @@ function buildKediTagMenuItems(command) {
 
     items.push(...systemItems);
 
-    const userItems = collectKediUserTagSuggestions(command.editor)
+    const userItems = collectPisiUserTagSuggestions(command.editor)
         .filter((tag) => {
             if (!body) return true;
             return tag.toLowerCase().startsWith(lowerBody);
@@ -1852,7 +1852,7 @@ function buildKediTagMenuItems(command) {
         return item.label.toLowerCase() === lowerBody;
     });
 
-    if (body && !existsAsUser && !existsAsSystem && isValidKediUserTag(body)) {
+    if (body && !existsAsUser && !existsAsSystem && isValidPisiUserTag(body)) {
         items.unshift({
             kind: 'new-user',
             id: body,
@@ -1865,43 +1865,43 @@ function buildKediTagMenuItems(command) {
     return items;
 }
 
-function getExactKediSystemTag(body) {
+function getExactPisiSystemTag(body) {
     const normalized = String(body || '').toLowerCase();
 
     if (normalized.includes('.')) return null;
 
-    return KEDI_SYSTEM_TAGS.find((item) => {
+    return PISI_SYSTEM_TAGS.find((item) => {
         return item.label.toLowerCase() === normalized;
     }) || null;
 }
 
-function collectKediUserTagsFromEditor(editor) {
+function collectPisiUserTagsFromEditor(editor) {
     if (!editor) return;
 
-    editor.querySelectorAll('.kedi-user-tag[data-kedi-tag]').forEach((tagEl) => {
-        const tag = normalizeKediUserTag(
-            tagEl.dataset.kediTag || tagEl.textContent || ''
+    editor.querySelectorAll('.pisi-user-tag[data-pisi-tag]').forEach((tagEl) => {
+        const tag = normalizePisiUserTag(
+            tagEl.dataset.pisiTag || tagEl.textContent || ''
         );
 
         if (tag) {
-            KEDI_USER_TAG_CACHE.add(tag);
+            PISI_USER_TAG_CACHE.add(tag);
         }
     });
 }
 
-function collectKediUserTagSuggestions(editor) {
-    collectKediUserTagsFromEditor(editor);
+function collectPisiUserTagSuggestions(editor) {
+    collectPisiUserTagsFromEditor(editor);
 
-    return Array.from(KEDI_USER_TAG_CACHE).sort((a, b) => {
+    return Array.from(PISI_USER_TAG_CACHE).sort((a, b) => {
         return a.localeCompare(b, 'tr');
     });
 }
 
-function openKediTagMenuForEditor(editor, command) {
-    const menu = document.getElementById('kedi-tag-menu');
+function openPisiTagMenuForEditor(editor, command) {
+    const menu = document.getElementById('pisi-tag-menu');
     if (!menu) return;
 
-    kediTagMenuState = {
+    pisiTagMenuState = {
         active: true,
         editor,
         command,
@@ -1914,52 +1914,52 @@ function openKediTagMenuForEditor(editor, command) {
     command.items.forEach((item, index) => {
         const option = document.createElement('button');
         option.type = 'button';
-        option.className = `kedi-tag-option ${item.kind}`;
+        option.className = `pisi-tag-option ${item.kind}`;
 
         if (index === 0) {
             option.classList.add('active');
         }
 
         option.innerHTML = `
-            <span class="kedi-tag-option-code">${kediEscapeHtml(item.typedToken)}</span>
-            <span class="kedi-tag-option-desc">${kediEscapeHtml(item.description)}</span>
+            <span class="pisi-tag-option-code">${pisiEscapeHtml(item.typedToken)}</span>
+            <span class="pisi-tag-option-desc">${pisiEscapeHtml(item.description)}</span>
         `;
 
         option.addEventListener('mousedown', (event) => {
             event.preventDefault();
             event.stopPropagation();
 
-            kediTagMenuState.selectedIndex = index;
-            applyKediTagMenuItem(editor, item);
+            pisiTagMenuState.selectedIndex = index;
+            applyPisiTagMenuItem(editor, item);
         });
 
         menu.appendChild(option);
     });
 
     menu.hidden = false;
-    positionKediTagMenuAtSelection();
+    positionPisiTagMenuAtSelection();
 }
 
-function applyKediTagMenuItem(editor, item) {
+function applyPisiTagMenuItem(editor, item) {
     if (!item) return;
 
     if (item.kind === 'system') {
-        applyKediSystemTagToEditor(editor, item);
+        applyPisiSystemTagToEditor(editor, item);
         return;
     }
 
-    applyKediUserTagToEditor(editor, item.label);
+    applyPisiUserTagToEditor(editor, item.label);
 }
 
-function closeKediTagMenu() {
-    const menu = document.getElementById('kedi-tag-menu');
+function closePisiTagMenu() {
+    const menu = document.getElementById('pisi-tag-menu');
 
     if (menu) {
         menu.hidden = true;
         menu.innerHTML = '';
     }
 
-    kediTagMenuState = {
+    pisiTagMenuState = {
         active: false,
         editor: null,
         command: null,
@@ -1968,31 +1968,31 @@ function closeKediTagMenu() {
     };
 }
 
-function moveKediTagSelection(delta) {
-    if (!kediTagMenuState.active || !kediTagMenuState.items.length) return;
+function movePisiTagSelection(delta) {
+    if (!pisiTagMenuState.active || !pisiTagMenuState.items.length) return;
 
-    const count = kediTagMenuState.items.length;
+    const count = pisiTagMenuState.items.length;
 
-    kediTagMenuState.selectedIndex =
-        (kediTagMenuState.selectedIndex + delta + count) % count;
+    pisiTagMenuState.selectedIndex =
+        (pisiTagMenuState.selectedIndex + delta + count) % count;
 
-    const menu = document.getElementById('kedi-tag-menu');
+    const menu = document.getElementById('pisi-tag-menu');
 
-    menu?.querySelectorAll('.kedi-tag-option').forEach((option, index) => {
+    menu?.querySelectorAll('.pisi-tag-option').forEach((option, index) => {
         option.classList.toggle(
             'active',
-            index === kediTagMenuState.selectedIndex
+            index === pisiTagMenuState.selectedIndex
         );
     });
 }
 
-function applyKediSystemTagToEditor(editor, item, commandOverride = null) {
-    const command = commandOverride || kediTagMenuState.command;
+function applyPisiSystemTagToEditor(editor, item, commandOverride = null) {
+    const command = commandOverride || pisiTagMenuState.command;
 
     if (!command || !item?.headingLevel) return;
 
-    applyKediHeadingTagToEditor(editor, item.headingLevel, command);
-    closeKediTagMenu();
+    applyPisiHeadingTagToEditor(editor, item.headingLevel, command);
+    closePisiTagMenu();
 
     editor.focus();
 
@@ -2001,7 +2001,7 @@ function applyKediSystemTagToEditor(editor, item, commandOverride = null) {
     }));
 }
 
-function applyKediHeadingTagToEditor(editor, headingLevel, command) {
+function applyPisiHeadingTagToEditor(editor, headingLevel, command) {
     const block = command.block;
     const fullText = block.textContent || '';
 
@@ -2030,15 +2030,15 @@ function applyKediHeadingTagToEditor(editor, headingLevel, command) {
     placeCaretAtEnd(heading);
 }
 
-function applyKediUserTagToEditor(editor, rawTag, commandOverride = null) {
+function applyPisiUserTagToEditor(editor, rawTag, commandOverride = null) {
     const command =
         commandOverride ||
-        kediTagMenuState.command ||
-        getKediEditorCommandAtCaret(editor);
+        pisiTagMenuState.command ||
+        getPisiEditorCommandAtCaret(editor);
 
-    const tag = normalizeKediUserTag(rawTag);
+    const tag = normalizePisiUserTag(rawTag);
 
-    if (!command || !tag || !isValidKediUserTag(tag)) return;
+    if (!command || !tag || !isValidPisiUserTag(tag)) return;
 
     const range = makeRangeInElementByTextOffsets(
         command.block,
@@ -2049,8 +2049,8 @@ function applyKediUserTagToEditor(editor, rawTag, commandOverride = null) {
     if (!range) return;
 
     const tagEl = document.createElement('span');
-    tagEl.className = 'kedi-user-tag';
-    tagEl.dataset.kediTag = tag;
+    tagEl.className = 'pisi-user-tag';
+    tagEl.dataset.pisiTag = tag;
     tagEl.contentEditable = 'false';
     tagEl.textContent = tag;
 
@@ -2060,7 +2060,7 @@ function applyKediUserTagToEditor(editor, rawTag, commandOverride = null) {
     range.insertNode(trailingSpace);
     range.insertNode(tagEl);
 
-    KEDI_USER_TAG_CACHE.add(tag);
+    PISI_USER_TAG_CACHE.add(tag);
 
     const afterSpaceRange = document.createRange();
     afterSpaceRange.setStartAfter(trailingSpace);
@@ -2070,7 +2070,7 @@ function applyKediUserTagToEditor(editor, rawTag, commandOverride = null) {
     selection.removeAllRanges();
     selection.addRange(afterSpaceRange);
 
-    closeKediTagMenu();
+    closePisiTagMenu();
     editor.focus();
 
     editor.dispatchEvent(new Event('input', {
@@ -2078,7 +2078,7 @@ function applyKediUserTagToEditor(editor, rawTag, commandOverride = null) {
     }));
 }
 
-function normalizeKediUserTag(value) {
+function normalizePisiUserTag(value) {
     return String(value || '')
         .trim()
         .replace(/^\.\./, '')
@@ -2087,7 +2087,7 @@ function normalizeKediUserTag(value) {
         .replace(/^\.|\.$/g, '');
 }
 
-function isValidKediUserTag(value) {
+function isValidPisiUserTag(value) {
     const tagChars = 'A-Za-z0-9ğüşöçıİĞÜŞÖÇ_-';
     const tagRegex = new RegExp(`^[${tagChars}]+(?:\\.[${tagChars}]+)*$`);
 
@@ -2130,7 +2130,7 @@ function makeRangeInElementByTextOffsets(root, startOffset, endOffset) {
     return range;
 }
 
-function getKediCurrentEditorBlock(editor, node) {
+function getPisiCurrentEditorBlock(editor, node) {
     let el = node.nodeType === Node.ELEMENT_NODE
         ? node
         : node.parentElement;
@@ -2157,8 +2157,8 @@ function placeCaretAtEnd(element) {
     selection.addRange(range);
 }
 
-function positionKediTagMenuAtSelection() {
-    const menu = document.getElementById('kedi-tag-menu');
+function positionPisiTagMenuAtSelection() {
+    const menu = document.getElementById('pisi-tag-menu');
 
     if (!menu || menu.hidden) return;
 
@@ -2201,7 +2201,7 @@ function getSelectionClientRect() {
     return rect;
 }
 
-function kediEscapeHtml(value) {
+function pisiEscapeHtml(value) {
     return String(value ?? '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -2211,5 +2211,5 @@ function kediEscapeHtml(value) {
 }
 
 function escapeHtml(value) {
-    return kediEscapeHtml(value);
+    return pisiEscapeHtml(value);
 }

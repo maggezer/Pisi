@@ -1,6 +1,6 @@
-# KEDI
+# PISI
 
-KEDI, notları JSON tabanlı yerel dosyalarda tutan bir Electron masaüstü
+PISI, notları JSON tabanlı yerel dosyalarda tutan bir Electron masaüstü
 uygulamasıdır. Notlar `.node`, bilgi haritaları `.map` dosyalarıdır. Uygulama;
 zengin metin, Paint tuvali, hesap tablosu/formül, etiket, görev, günlük ve
 takvim işlevlerini tek bir proje klasöründe birleştirir.
@@ -24,17 +24,17 @@ takvim işlevlerini tek bir proje klasöründe birleştirir.
 main.js                              Electron ana süreci, dosya/IPC işlemleri
 preload.js                           Sınırlı renderer köprüsü
 app.js                               Başlangıç, sekmeler ve editör araçları
-renderer/kedi-tree.js                Explorer ve proje yenileme
-renderer/kedi-map-workspace.js       Map/node çalışma alanı ve editör kayıtları
-renderer/kedi-map-connections.js     Bağlantılar, kamera, pan/zoom ve seçim
-renderer/kedi-tags.js                Blok, etiket ve görev sistemi
-renderer/kedi-calendar.js            Takvim ve günlük eşitlemesi
-renderer/kedi-node-modal.js          Modal klavye/focus davranışı
+renderer/pisi-tree.js                Explorer ve proje yenileme
+renderer/pisi-map-workspace.js       Map/node çalışma alanı ve editör kayıtları
+renderer/pisi-map-connections.js     Bağlantılar, kamera, pan/zoom ve seçim
+renderer/pisi-tags.js                Blok, etiket ve görev sistemi
+renderer/pisi-calendar.js            Takvim ve günlük eşitlemesi
+renderer/pisi-node-modal.js          Modal klavye/focus davranışı
 style.css                            Uygulama stilleri
 tests/                               Formül, yol güvenliği ve regresyon testleri
 ```
 
-Ortak çalışma durumu `window.Kedi.state` altında tutulur. Eski global adlar,
+Ortak çalışma durumu `window.Pisi.state` altında tutulur. Eski global adlar,
 mevcut özelliklerin uyumluluğu için bu state’e köprülenmiştir.
 
 ## Çalıştırma
@@ -73,12 +73,12 @@ güncelleme için ayrıca yayın sertifikası ile güncelleme sunucusu gerekir.
 
 ## Proje verileri
 
-KEDI, kullanıcı notlarını uygulama veritabanına taşımadan seçilen proje
+PISI, kullanıcı notlarını uygulama veritabanına taşımadan seçilen proje
 klasöründe tutar. `.map` ve `.node` biçimlerinin tam tanımı
-[`kedi-definition.md`](kedi-definition.md) dosyasındadır.
+[`pisi-definition.md`](pisi-definition.md) dosyasındadır.
 
 Dosya silme işlemleri sistem çöp kutusuna gider. JSON yazımları aynı klasörde
-geçici dosya ve rename ile yapılır; önceki sürüm `.kedi-backup` olarak
+geçici dosya ve rename ile yapılır; önceki sürüm `.pisi-backup` olarak
 korunabilir. Bozuk JSON otomatik olarak boş içerikle ezilmez.
 
 ## Mevcut sınırlar

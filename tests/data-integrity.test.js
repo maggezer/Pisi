@@ -28,15 +28,15 @@ function loadMainHelpers(functionNames, exports) {
         Map,
         path,
         Set,
-        KEDI_CONNECTION_KEYS: [
+        PISI_CONNECTION_KEYS: [
             'up-hub',
             'down-hub',
             'co-level',
             'upstream',
             'downstream'
         ],
-        KEDI_DIARY_MANAGED_START: '<!--KEDI_DIARY_MANAGED_START-->',
-        KEDI_DIARY_MANAGED_END: '<!--KEDI_DIARY_MANAGED_END-->',
+        PISI_DIARY_MANAGED_START: '<!--PISI_DIARY_MANAGED_START-->',
+        PISI_DIARY_MANAGED_END: '<!--PISI_DIARY_MANAGED_END-->',
         markInternalFileChange() {},
         writeFileAtomic(filePath, content) {
             fs.writeFileSync(filePath, content, 'utf8');
@@ -54,17 +54,17 @@ function plain(value) {
 
 test('edge onarımı self-loop, tekrar, ikinci parent ve döngüyü güvenli temizler', () => {
     const api = loadMainHelpers([
-        'normalizeKediId',
+        'normalizePisiId',
         'normalizeConnectionRole',
         'normalizeMapEdge',
         'isHierarchyEdge',
         'convertEdgeToStream',
-        'getKediEdgeSemanticKey',
-        'wouldCreateKediHierarchyCycle',
-        'normalizeKediMapEdges'
+        'getPisiEdgeSemanticKey',
+        'wouldCreatePisiHierarchyCycle',
+        'normalizePisiMapEdges'
     ], [
         'normalizeMapEdge',
-        'normalizeKediMapEdges'
+        'normalizePisiMapEdges'
     ]);
     const hierarchy = (id, sourceId, targetId) => ({
         id,
@@ -75,7 +75,7 @@ test('edge onarımı self-loop, tekrar, ikinci parent ve döngüyü güvenli tem
         targetRole: 'up-hub'
     });
     const validIds = new Set(['node_a', 'node_b', 'node_c']);
-    const normalized = api.normalizeKediMapEdges([
+    const normalized = api.normalizePisiMapEdges([
         hierarchy('edge_ab', 'node_a', 'node_b'),
         hierarchy('edge_ab_copy', 'node_a', 'node_b'),
         hierarchy('edge_cb', 'node_c', 'node_b'),
@@ -119,15 +119,15 @@ test('edge onarımı self-loop, tekrar, ikinci parent ve döngüyü güvenli tem
 test('layout ve kamera sayıları güvenli aralıklara sıkıştırılır', () => {
     const api = loadMainHelpers([
         'finiteNumberInRange',
-        'normalizeKediNodeLayout',
-        'normalizeKediMapCamera'
+        'normalizePisiNodeLayout',
+        'normalizePisiMapCamera'
     ], [
-        'normalizeKediNodeLayout',
-        'normalizeKediMapCamera'
+        'normalizePisiNodeLayout',
+        'normalizePisiMapCamera'
     ]);
 
     assert.deepEqual(
-        plain(api.normalizeKediMapCamera({
+        plain(api.normalizePisiMapCamera({
             x: Infinity,
             y: -5000000,
             zoom: 50
@@ -139,7 +139,7 @@ test('layout ve kamera sayıları güvenli aralıklara sıkıştırılır', () =
         }
     );
     assert.deepEqual(
-        plain(api.normalizeKediNodeLayout({
+        plain(api.normalizePisiNodeLayout({
             x: NaN,
             y: 12,
             width: -10,
@@ -156,11 +156,11 @@ test('layout ve kamera sayıları güvenli aralıklara sıkıştırılır', () =
 
 test('diary temizleyicisi çalıştırılabilir HTML özelliklerini kaldırır', () => {
     const api = loadMainHelpers([
-        'sanitizeKediDiaryBlockHtml'
+        'sanitizePisiDiaryBlockHtml'
     ], [
-        'sanitizeKediDiaryBlockHtml'
+        'sanitizePisiDiaryBlockHtml'
     ]);
-    const sanitized = api.sanitizeKediDiaryBlockHtml(`
+    const sanitized = api.sanitizePisiDiaryBlockHtml(`
         <div onclick="steal()" style="color:red">
             güvenli
             <a href="javascript:steal()">bağlantı</a>
@@ -177,27 +177,27 @@ test('diary temizleyicisi çalıştırılabilir HTML özelliklerini kaldırır',
 
 test('diary managed alanı çıkarılırken manuel boşluklar korunur', () => {
     const api = loadMainHelpers([
-        'stripKediDiaryManagedSection'
+        'stripPisiDiaryManagedSection'
     ], [
-        'stripKediDiaryManagedSection'
+        'stripPisiDiaryManagedSection'
     ]);
     const content = [
         '  manuel başlangıç\n',
-        '<!--KEDI_DIARY_MANAGED_START-->',
+        '<!--PISI_DIARY_MANAGED_START-->',
         '<div>otomatik görev</div>',
-        '<!--KEDI_DIARY_MANAGED_END-->',
+        '<!--PISI_DIARY_MANAGED_END-->',
         '\nmanuel son  '
     ].join('');
 
     assert.equal(
-        api.stripKediDiaryManagedSection(content),
+        api.stripPisiDiaryManagedSection(content),
         '  manuel başlangıç\n\nmanuel son  '
     );
 });
 
 test('normal kullanıcı diary klasörü marker eklenmeden korunur', (t) => {
     const projectFolder = fs.mkdtempSync(
-        path.join(os.tmpdir(), 'kedi-diary-guard-')
+        path.join(os.tmpdir(), 'pisi-diary-guard-')
     );
     const diaryFolder = path.join(projectFolder, 'diary');
     fs.mkdirSync(diaryFolder);
@@ -211,26 +211,26 @@ test('normal kullanıcı diary klasörü marker eklenmeden korunur', (t) => {
     });
 
     const api = loadMainHelpers([
-        'normalizeKediDiaryIsoDate',
+        'normalizePisiDiaryIsoDate',
         'readJsonFileResult',
-        'isKediManagedDiaryFolder',
-        'ensureKediDiaryFolder'
+        'isPisiManagedDiaryFolder',
+        'ensurePisiDiaryFolder'
     ], [
-        'ensureKediDiaryFolder'
+        'ensurePisiDiaryFolder'
     ]);
-    const result = api.ensureKediDiaryFolder(projectFolder);
+    const result = api.ensurePisiDiaryFolder(projectFolder);
 
     assert.equal(result.ok, false);
     assert.match(result.error, /kullanıcı klasörünü korumak/i);
     assert.equal(
-        fs.existsSync(path.join(diaryFolder, '.kedi-diary')),
+        fs.existsSync(path.join(diaryFolder, '.pisi-diary')),
         false
     );
 });
 
-test('watcher KEDI kaydını dış değişiklikten dosya imzasıyla ayırır', (t) => {
+test('watcher PISI kaydını dış değişiklikten dosya imzasıyla ayırır', (t) => {
     const folder = fs.mkdtempSync(
-        path.join(os.tmpdir(), 'kedi-watcher-')
+        path.join(os.tmpdir(), 'pisi-watcher-')
     );
     const filePath = path.join(folder, 'not.node');
     t.after(() => {
@@ -249,7 +249,7 @@ test('watcher KEDI kaydını dış değişiklikten dosya imzasıyla ayırır', (
     ];
     const source = `
         const recentInternalFileChanges = new Map();
-        const KEDI_INTERNAL_CHANGE_TTL_MS = 6000;
+        const PISI_INTERNAL_CHANGE_TTL_MS = 6000;
         ${functionNames
             .map((name) => extractFunction(mainSource, name))
             .join('\n')}
@@ -271,7 +271,7 @@ test('watcher KEDI kaydını dış değişiklikten dosya imzasıyla ayırır', (
     vm.runInContext(source, context);
 
     context.watcherApi.markInternalFileChange(filePath);
-    fs.writeFileSync(filePath, 'KEDI kaydı', 'utf8');
+    fs.writeFileSync(filePath, 'PISI kaydı', 'utf8');
     context.watcherApi.sealInternalFileChange(filePath);
 
     assert.equal(
@@ -285,7 +285,7 @@ test('watcher KEDI kaydını dış değişiklikten dosya imzasıyla ayırır', (
 
     fs.writeFileSync(
         filePath,
-        'KEDI dışındaki daha yeni ve farklı kayıt',
+        'PISI dışındaki daha yeni ve farklı kayıt',
         'utf8'
     );
 

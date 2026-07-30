@@ -56,19 +56,19 @@ function isHierarchyEdge(edge) {
 }
 
 function getCollapsedHubPortSet() {
-    if (!window.Kedi) {
-        window.Kedi = { state: {} };
+    if (!window.Pisi) {
+        window.Pisi = { state: {} };
     }
 
-    if (!window.Kedi.state) {
-        window.Kedi.state = {};
+    if (!window.Pisi.state) {
+        window.Pisi.state = {};
     }
 
-    if (!(window.Kedi.state.collapsedHubPorts instanceof Set)) {
-        window.Kedi.state.collapsedHubPorts = new Set();
+    if (!(window.Pisi.state.collapsedHubPorts instanceof Set)) {
+        window.Pisi.state.collapsedHubPorts = new Set();
     }
 
-    return window.Kedi.state.collapsedHubPorts;
+    return window.Pisi.state.collapsedHubPorts;
 }
 
 function makeCollapsedHubPortKey(nodeId, port) {
@@ -160,7 +160,7 @@ function enforceSingleParentForTarget(edge, edges = []) {
 
     if (targetAlreadyHasUpHub(edge.targetId, edges, edge.sourceId)) {
         console.warn(
-            '[KEDI] Hedef node zaten bir up-hub bağlantısına sahip. Yeni bağlantı stream olarak kaydedildi.'
+            '[PISI] Hedef node zaten bir up-hub bağlantısına sahip. Yeni bağlantı stream olarak kaydedildi.'
         );
 
         return convertEdgeToStream(edge);
@@ -382,7 +382,7 @@ function saveActiveMapCameraSoon() {
 
     mapCameraSaveTimer = setTimeout(async () => {
         mapCameraSaveTimer = null;
-        window.kediProject?.saveMapCamera?.(
+        window.pisiProject?.saveMapCamera?.(
             mapPath,
             camera
         );
@@ -400,7 +400,7 @@ async function flushActiveMapCameraSave() {
     if (!activeMapPath) return true;
 
     try {
-        const result = await window.kediProject?.saveMapCamera?.(
+        const result = await window.pisiProject?.saveMapCamera?.(
             activeMapPath,
             {
                 ...activeMapCamera,
@@ -410,7 +410,7 @@ async function flushActiveMapCameraSave() {
 
         return Boolean(result?.ok);
     } catch (error) {
-        console.error('[KEDI] Map kamerası kaydedilemedi:', error);
+        console.error('[PISI] Map kamerası kaydedilemedi:', error);
         return false;
     }
 }
@@ -716,17 +716,17 @@ function setupMapCanvasPan() {
     });
 }
 
-async function persistKediMapConnection(edgePayload) {
+async function persistPisiMapConnection(edgePayload) {
     suppressNextFileSystemRefresh(1500);
 
-    let result = await window.kediProject?.upsertMapConnection?.(
+    let result = await window.pisiProject?.upsertMapConnection?.(
         activeMapPath,
         edgePayload
     );
 
     if (result?.code === 'SECOND_PARENT_CONFIRM_REQUIRED') {
-        const confirmed = typeof kediConfirm === 'function'
-            ? await kediConfirm(
+        const confirmed = typeof pisiConfirm === 'function'
+            ? await pisiConfirm(
                 'Bu node zaten bir parent’a sahip. Yeni bağlantı hiyerarşi yerine stream ilişkisi olarak kaydedilsin mi?',
                 {
                     title: 'İkinci parent',
@@ -745,7 +745,7 @@ async function persistKediMapConnection(edgePayload) {
             };
         }
 
-        result = await window.kediProject?.upsertMapConnection?.(
+        result = await window.pisiProject?.upsertMapConnection?.(
             activeMapPath,
             {
                 ...(result.suggestedEdge || edgePayload),
@@ -762,13 +762,13 @@ async function persistKediMapConnection(edgePayload) {
     return result;
 }
 
-let kediKeyboardConnectionSource = null;
+let pisiKeyboardConnectionSource = null;
 
-function resetKediMapConnectionInteractions() {
-    kediKeyboardConnectionSource?.portEl?.classList.remove(
+function resetPisiMapConnectionInteractions() {
+    pisiKeyboardConnectionSource?.portEl?.classList.remove(
         'connecting-source'
     );
-    kediKeyboardConnectionSource = null;
+    pisiKeyboardConnectionSource = null;
 
     const sourcePort = currentConnectionDrag?.sourcePort;
     if (sourcePort) {
@@ -819,8 +819,8 @@ currentConnectionDrag = {
             event.preventDefault();
             event.stopPropagation();
 
-            if (!kediKeyboardConnectionSource) {
-                kediKeyboardConnectionSource = {
+            if (!pisiKeyboardConnectionSource) {
+                pisiKeyboardConnectionSource = {
                     box,
                     portEl,
                     sourceId: box.dataset.nodeId,
@@ -835,13 +835,13 @@ currentConnectionDrag = {
                 return;
             }
 
-            const source = kediKeyboardConnectionSource;
+            const source = pisiKeyboardConnectionSource;
             source.portEl.classList.remove('connecting-source');
             source.portEl.setAttribute(
                 'aria-label',
                 `${source.sourcePort} bağlantı portu`
             );
-            kediKeyboardConnectionSource = null;
+            pisiKeyboardConnectionSource = null;
 
             if (source.box === box && source.portEl === portEl) {
                 toggleHubConnectionsFromPort(
@@ -853,7 +853,7 @@ currentConnectionDrag = {
 
             if (source.sourceId === box.dataset.nodeId) return;
 
-            const result = await persistKediMapConnection({
+            const result = await persistPisiMapConnection({
                 sourceId: source.sourceId,
                 targetId: box.dataset.nodeId,
                 sourcePort: source.sourcePort,
@@ -875,15 +875,15 @@ window.addEventListener('keydown', (event) => {
 
     let cancelled = false;
 
-    if (kediKeyboardConnectionSource) {
-        kediKeyboardConnectionSource.portEl?.classList.remove(
+    if (pisiKeyboardConnectionSource) {
+        pisiKeyboardConnectionSource.portEl?.classList.remove(
             'connecting-source'
         );
-        kediKeyboardConnectionSource.portEl?.setAttribute(
+        pisiKeyboardConnectionSource.portEl?.setAttribute(
             'aria-label',
-            `${kediKeyboardConnectionSource.sourcePort} bağlantı portu`
+            `${pisiKeyboardConnectionSource.sourcePort} bağlantı portu`
         );
-        kediKeyboardConnectionSource = null;
+        pisiKeyboardConnectionSource = null;
         cancelled = true;
     }
 
@@ -979,7 +979,7 @@ let edgePayload = {
     targetRole: currentConnectionDrag.targetRole
 };
 
-    const result = await persistKediMapConnection(edgePayload);
+    const result = await persistPisiMapConnection(edgePayload);
 
     if (!result || !result.ok) {
         if (!result?.cancelled) {
@@ -1005,7 +1005,7 @@ async function deleteMapEdge(edgeId) {
     try {
         suppressNextFileSystemRefresh(8000);
 
-        const result = await window.kediProject?.deleteMapConnection?.(
+        const result = await window.pisiProject?.deleteMapConnection?.(
             activeMapPath,
             edgeId
         );
@@ -1025,7 +1025,7 @@ async function deleteMapEdge(edgeId) {
             await refreshActiveMapTreeBranch();
         }
     } catch (error) {
-        console.error('[KEDI] Bağlantı silme hatası:', error);
+        console.error('[PISI] Bağlantı silme hatası:', error);
         alert('Bağlantı silinirken hata oluştu: ' + error.message);
     }
 }
@@ -1076,7 +1076,7 @@ function getMapEdgePathMidpoint(pathData) {
         const length = tempPath.getTotalLength();
         return tempPath.getPointAtLength(length / 2);
     } catch (error) {
-        console.warn('[KEDI] Bağlantı silme butonu konumu hesaplanamadı:', error);
+        console.warn('[PISI] Bağlantı silme butonu konumu hesaplanamadı:', error);
         return null;
     }
 }
@@ -1088,13 +1088,13 @@ function updateMapEdgeDeleteButtonPosition(group, pathData) {
     group.setAttribute('transform', `translate(${point.x}, ${point.y})`);
 }
 
-let kediConnectionDrawFrame = null;
+let pisiConnectionDrawFrame = null;
 
 function scheduleDrawMapConnections() {
-    if (kediConnectionDrawFrame !== null) return;
+    if (pisiConnectionDrawFrame !== null) return;
 
-    kediConnectionDrawFrame = requestAnimationFrame(() => {
-        kediConnectionDrawFrame = null;
+    pisiConnectionDrawFrame = requestAnimationFrame(() => {
+        pisiConnectionDrawFrame = null;
         drawMapConnections();
     });
 }
