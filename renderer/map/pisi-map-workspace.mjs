@@ -782,6 +782,10 @@ function getPisiEditorContent(editor) {
         }
     });
 
+    if (typeof savePisiDocumentInkForEditor === 'function') {
+        savePisiDocumentInkForEditor(editor);
+    }
+
     if (typeof hydratePisiSheets === 'function') {
         hydratePisiSheets(editor);
     }

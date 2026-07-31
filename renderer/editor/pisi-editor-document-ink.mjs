@@ -17,7 +17,7 @@ const pisiPendingDocumentInkImages = new WeakMap();
 const pisiDirtyDocumentInkCanvases = new WeakSet();
 const pisiDocumentInkObservers = new WeakMap();
 
-let pisiActiveDocumentInkEditor = null;
+let pisiActiveInkSurface = null;
 let pisiLastDocumentInkShapeToolbar = null;
 
 function getPisiDocumentInkLayer(editor) {
@@ -420,7 +420,7 @@ function clearPisiDocumentInkToolHighlight(editor) {
 }
 
 function deactivatePisiDocumentInk(editor = null, options = {}) {
-    const targetEditor = editor || pisiActiveDocumentInkEditor;
+    const targetEditor = editor || pisiActiveInkSurface;
     if (!targetEditor) return;
 
     targetEditor.classList.remove('pisi-document-ink-active');
@@ -429,8 +429,8 @@ function deactivatePisiDocumentInk(editor = null, options = {}) {
         clearPisiDocumentInkToolHighlight(targetEditor);
     }
 
-    if (pisiActiveDocumentInkEditor === targetEditor) {
-        pisiActiveDocumentInkEditor = null;
+    if (pisiActiveInkSurface === targetEditor) {
+        pisiActiveInkSurface = null;
     }
 }
 
@@ -448,11 +448,11 @@ function activatePisiDocumentInk(toolbar) {
     }
 
     if (
-        pisiActiveDocumentInkEditor &&
-        pisiActiveDocumentInkEditor !== editor
+        pisiActiveInkSurface &&
+        pisiActiveInkSurface !== editor
     ) {
         deactivatePisiDocumentInk(
-            pisiActiveDocumentInkEditor,
+            pisiActiveInkSurface,
             { clearToolHighlight: true }
         );
     }
@@ -464,7 +464,7 @@ function activatePisiDocumentInk(toolbar) {
     hydratePisiDocumentInk(editor);
     resizePisiDocumentInkCanvas(editor, canvas);
     editor.classList.add('pisi-document-ink-active');
-    pisiActiveDocumentInkEditor = editor;
+    pisiActiveInkSurface = editor;
     return true;
 }
 
@@ -480,7 +480,7 @@ function syncPisiDocumentInkForPaintTool(toolbar) {
     return activatePisiDocumentInk(toolbar);
 }
 
-function bindPisiDocumentInkEditor(editor) {
+function bindPisiInkSurface(editor) {
     if (!editor || pisiDocumentInkObservers.has(editor)) return;
 
     const observer = new MutationObserver(() => {
@@ -501,10 +501,10 @@ function bindPisiDocumentInkEditor(editor) {
     hydratePisiDocumentInk(editor);
 }
 
-function bindPisiDocumentInkEditors() {
+function bindPisiInkSurfaces() {
     document
         .querySelectorAll('.pisi-rich-editor')
-        .forEach((editor) => bindPisiDocumentInkEditor(editor));
+        .forEach((editor) => bindPisiInkSurface(editor));
 }
 
 function handlePisiDocumentInkToolbarClick(event) {
@@ -559,7 +559,7 @@ function handlePisiDocumentInkToolbarClick(event) {
 }
 
 function setupPisiDocumentInkRuntime() {
-    bindPisiDocumentInkEditors();
+    bindPisiInkSurfaces();
 
     document.addEventListener(
         'click',
@@ -569,7 +569,7 @@ function setupPisiDocumentInkRuntime() {
     document.addEventListener('keydown', (event) => {
         if (event.key !== 'Escape') return;
         deactivatePisiDocumentInk(
-            pisiActiveDocumentInkEditor,
+            pisiActiveInkSurface,
             { clearToolHighlight: true }
         );
     });
@@ -658,9 +658,9 @@ Object.defineProperties(moduleApi, {
         enumerable: true,
         get() { return syncPisiDocumentInkForPaintTool; }
     },
-    bindPisiDocumentInkEditors: {
+    bindPisiInkSurfaces: {
         enumerable: true,
-        get() { return bindPisiDocumentInkEditors; }
+        get() { return bindPisiInkSurfaces; }
     }
 });
 registerModule('editor.documentInk', moduleApi);

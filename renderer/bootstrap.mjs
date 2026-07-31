@@ -3,6 +3,7 @@ import "./editor/pisi-editor-sheet.mjs";
 import "./editor/pisi-editor-sheet-interactions.mjs";
 import "./editor/pisi-editor-sheet-structure.mjs";
 import "./editor/pisi-editor-paint.mjs";
+import "./editor/pisi-editor-document-ink.mjs";
 import "./editor/pisi-editor-toolbar-popovers.mjs";
 import "./editor/pisi-editor-toolbar-menus.mjs";
 import "./editor/pisi-editor-unified-toolbar.mjs";
