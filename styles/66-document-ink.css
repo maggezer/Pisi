@@ -1,3 +1,4 @@
+/* Transparent document-level ink layer used when no embedded canvas exists. */
 .pisi-rich-editor:has(> .pisi-document-ink-layer) {
     position: relative;
     isolation: isolate;
