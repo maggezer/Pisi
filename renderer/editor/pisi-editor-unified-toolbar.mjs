@@ -10,6 +10,12 @@ const PISI_FONT_SIZE_LABELS = {
     '7': '32'
 };
 
+const PISI_TOOLBAR_ICON_ROOT = 'assets/toolbar';
+
+function pisiToolbarIcon(name) {
+    return `<img class="pisi-toolbar-icon" src="${PISI_TOOLBAR_ICON_ROOT}/${name}.svg" alt="" aria-hidden="true">`;
+}
+
 function buildPisiUnifiedToolbarMarkup() {
     return `
         <div class="pisi-unified-toolbar" data-pisi-unified-toolbar>
@@ -23,7 +29,7 @@ function buildPisiUnifiedToolbarMarkup() {
                         <option value="Georgia">Georgia</option>
                         <option value="Consolas">Consolas</option>
                     </select>
-                     <select class="pisi-office-select pisi-font-size-select" data-pisi-unified-command="fontSize" title="Font size" aria-label="Font size">
+                    <select class="pisi-office-select pisi-font-size-select" data-pisi-unified-command="fontSize" title="Font size" aria-label="Font size">
                         <option value="1">8</option>
                         <option value="2">10</option>
                         <option value="3" selected>12</option>
@@ -34,19 +40,18 @@ function buildPisiUnifiedToolbarMarkup() {
                     </select>
                 </div>
                 <div class="pisi-toolbar-section-row">
-                    <button type="button" class="pisi-ribbon-btn" data-pisi-unified-command="bold" title="Bold"><b>B</b></button>
-                    <button type="button" class="pisi-ribbon-btn" data-pisi-unified-command="italic" title="Italic"><i>I</i></button>
-                    <button type="button" class="pisi-ribbon-btn" data-pisi-unified-command="strikeThrough" title="Strikethrough"><s>ab</s></button>
-                    <button type="button" class="pisi-ribbon-btn" data-pisi-unified-command="underline" title="Underline"><u>U</u></button>
-                   
+                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="bold" title="Bold">${pisiToolbarIcon('bold')}</button>
+                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="italic" title="Italic">${pisiToolbarIcon('italic')}</button>
+                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="strikeThrough" title="Strikethrough">${pisiToolbarIcon('strike')}</button>
+                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="underline" title="Underline">${pisiToolbarIcon('underline')}</button>
                 </div>
                 <div class="pisi-toolbar-section-row">
-                    <button type="button" class="pisi-ribbon-btn" data-pisi-unified-command="justifyLeft" title="Sola yasla">L</button>
-                    <button type="button" class="pisi-ribbon-btn" data-pisi-unified-command="justifyCenter" title="Ortala">M</button>
-                    <button type="button" class="pisi-ribbon-btn" data-pisi-unified-command="justifyRight" title="Sağa yasla">R</button>
-                    <button type="button" class="pisi-ribbon-btn pisi-ribbon-dropdown" data-pisi-color-trigger="font" title="Font color">FC</button>
-                    <button type="button" class="pisi-ribbon-btn pisi-ribbon-dropdown" data-pisi-color-trigger="highlight" title="Highlight; tabloda hücre rengi">H</button>
-                    <button type="button" class="pisi-ribbon-btn pisi-ribbon-dropdown" data-pisi-symbol-trigger title="Insert symbol">S</button>
+                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="justifyLeft" title="Sola yasla">${pisiToolbarIcon('align-left')}</button>
+                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="justifyCenter" title="Ortala">${pisiToolbarIcon('align-center')}</button>
+                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="justifyRight" title="Sağa yasla">${pisiToolbarIcon('align-right')}</button>
+                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn pisi-ribbon-dropdown" data-pisi-color-trigger="font" title="Font color">${pisiToolbarIcon('font-color')}</button>
+                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn pisi-ribbon-dropdown" data-pisi-color-trigger="highlight" title="Highlight; tabloda hücre rengi">${pisiToolbarIcon('highlight')}</button>
+                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn pisi-ribbon-dropdown" data-pisi-symbol-trigger title="Insert symbol">${pisiToolbarIcon('symbol')}</button>
                 </div>
             </section>
 
@@ -62,32 +67,32 @@ function buildPisiUnifiedToolbarMarkup() {
                     </select>
                 </div>
                 <div class="pisi-toolbar-section-row pisi-toolbar-style-grid">
-                    <button type="button" class="pisi-ribbon-btn" data-pisi-unified-command="subscript" title="Subscript">S<sub>s</sub></button>
-                    <button type="button" class="pisi-ribbon-btn" data-pisi-unified-command="insertUnorderedList" title="Bullet point">BP</button>
-                    <button type="button" class="pisi-ribbon-btn" data-pisi-unified-command="superscript" title="Superscript">s<sup>S</sup></button>
-                    <button type="button" class="pisi-ribbon-btn" data-pisi-unified-command="insertOrderedList" title="Numbering">N</button>
+                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="subscript" title="Subscript">${pisiToolbarIcon('subscript')}</button>
+                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="insertUnorderedList" title="Bullet point">${pisiToolbarIcon('bullet-list')}</button>
+                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="superscript" title="Superscript">${pisiToolbarIcon('superscript')}</button>
+                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="insertOrderedList" title="Numbering">${pisiToolbarIcon('number-list')}</button>
                 </div>
             </section>
 
-            <section class="pisi-toolbar-section pisi-toolbar-section-table" aria-label="Tablo ve formül araçları">
+            <section class="pisi-toolbar-section pisi-toolbar-section-table" aria-label="Formül araçları">
                 <div class="pisi-toolbar-section-row pisi-toolbar-formula-row">
-                    <button type="button" class="pisi-ribbon-btn pisi-ribbon-dropdown pisi-formula-btn" data-pisi-formula-trigger="logical" title="Logical formulas">F1</button>
-                    <button type="button" class="pisi-ribbon-btn pisi-ribbon-dropdown pisi-formula-btn" data-pisi-formula-trigger="text" title="Text formulas">F2</button>
+                    <button type="button" class="pisi-ribbon-btn pisi-formula-btn pisi-ribbon-dropdown" data-pisi-formula-trigger="logical" title="Logical formulas">${pisiToolbarIcon('formula-logical')}<span>F1</span></button>
+                    <button type="button" class="pisi-ribbon-btn pisi-formula-btn pisi-ribbon-dropdown" data-pisi-formula-trigger="text" title="Text formulas">${pisiToolbarIcon('formula-text')}<span>F2</span></button>
                 </div>
-               <div class="pisi-toolbar-section-row pisi-toolbar-table-actions">
-                    <button type="button" class="pisi-ribbon-btn pisi-ribbon-dropdown pisi-formula-btn" data-pisi-formula-trigger="math" title="Math formulas">F3</button>
-                    <button type="button" class="pisi-ribbon-btn pisi-ribbon-dropdown pisi-formula-btn" data-pisi-formula-trigger="personal" title="Personal formulas">F4</button>
+                <div class="pisi-toolbar-section-row pisi-toolbar-formula-row">
+                    <button type="button" class="pisi-ribbon-btn pisi-formula-btn pisi-ribbon-dropdown" data-pisi-formula-trigger="math" title="Math formulas">${pisiToolbarIcon('formula-math')}<span>F3</span></button>
+                    <button type="button" class="pisi-ribbon-btn pisi-formula-btn pisi-ribbon-dropdown" data-pisi-formula-trigger="personal" title="Personal formulas">${pisiToolbarIcon('formula-personal')}<span>F4</span></button>
                 </div>
             </section>
 
-            <section class="pisi-toolbar-section pisi-toolbar-section-excel" aria-label="Excel araçları">
-                   <button type="button" class="pisi-ribbon-btn pisi-ribbon-btn-large pisi-ribbon-dropdown" data-pisi-table-trigger title="Tablo ekle">Table</button>
+            <section class="pisi-toolbar-section pisi-toolbar-section-excel" aria-label="Tablo araçları">
+                <button type="button" class="pisi-ribbon-btn pisi-ribbon-btn-large pisi-icon-tile pisi-ribbon-dropdown" data-pisi-table-trigger title="Tablo ekle">${pisiToolbarIcon('table')}<span>Table</span></button>
             </section>
 
             <section class="pisi-toolbar-section pisi-toolbar-section-drawing" aria-label="Çizim araçları">
                 <div class="pisi-toolbar-drawing-layout">
                     <div class="pisi-toolbar-canvas-column">
-                        <button type="button" class="pisi-ribbon-btn pisi-ribbon-btn-canvas" data-pisi-paint-action="createCanvas" draggable="true" title="Canvas oluştur">Canva</button>
+                        <button type="button" class="pisi-ribbon-btn pisi-ribbon-btn-canvas pisi-icon-tile" data-pisi-paint-action="createCanvas" draggable="true" title="Canvas oluştur">${pisiToolbarIcon('canvas')}<span>Canvas</span></button>
                         <div class="pisi-toolbar-dimension-row">
                             <label class="pisi-ribbon-number" title="Canvas eni">x<input type="number" min="80" max="1600" step="10" value="520" data-pisi-paint-width></label>
                             <label class="pisi-ribbon-number" title="Canvas boyu">y<input type="number" min="60" max="1200" step="10" value="320" data-pisi-paint-height></label>
@@ -95,21 +100,21 @@ function buildPisiUnifiedToolbarMarkup() {
                     </div>
                     <div class="pisi-toolbar-draw-grid">
                         <div class="pisi-ribbon-split">
-                            <button type="button" class="pisi-ribbon-btn active" data-pisi-paint-tool="pencil" title="Pen">P</button>
-                            <button type="button" class="pisi-ribbon-split-arrow" data-pisi-size-trigger="Pen" data-pisi-size-tool="pencil" aria-label="Pen boyutu">⌄</button>
+                            <button type="button" class="pisi-ribbon-btn pisi-icon-btn active" data-pisi-paint-tool="pencil" title="Pen">${pisiToolbarIcon('pen')}</button>
+                            <button type="button" class="pisi-ribbon-split-arrow" data-pisi-size-trigger="Pen" data-pisi-size-tool="pencil" aria-label="Pen boyutu">${pisiToolbarIcon('chevron-down')}</button>
                         </div>
                         <div class="pisi-ribbon-split">
-                            <button type="button" class="pisi-ribbon-btn" data-pisi-shape-trigger data-pisi-paint-tool="rect" title="Shape: Dikdörtgen">Sh</button>
-                            <button type="button" class="pisi-ribbon-split-arrow" data-pisi-shape-menu aria-label="Shape seç">⌄</button>
+                            <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-shape-trigger data-pisi-paint-tool="rect" title="Shape: Dikdörtgen">${pisiToolbarIcon('shape')}</button>
+                            <button type="button" class="pisi-ribbon-split-arrow" data-pisi-shape-menu aria-label="Shape seç">${pisiToolbarIcon('chevron-down')}</button>
                         </div>
                         <div class="pisi-ribbon-split">
-                            <button type="button" class="pisi-ribbon-btn" data-pisi-paint-tool="brush" title="Brush">B</button>
-                            <button type="button" class="pisi-ribbon-split-arrow" data-pisi-size-trigger="Brush" data-pisi-size-tool="brush" aria-label="Brush boyutu">⌄</button>
+                            <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-paint-tool="brush" title="Brush">${pisiToolbarIcon('brush')}</button>
+                            <button type="button" class="pisi-ribbon-split-arrow" data-pisi-size-trigger="Brush" data-pisi-size-tool="brush" aria-label="Brush boyutu">${pisiToolbarIcon('chevron-down')}</button>
                         </div>
-                        <button type="button" class="pisi-ribbon-btn" data-pisi-lasso-tool disabled title="Kement seçimi sonraki çizim aşamasında etkinleştirilecek">K</button>
+                        <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-lasso-tool disabled title="Kement seçimi sonraki çizim aşamasında etkinleştirilecek">${pisiToolbarIcon('lasso')}</button>
                         <div class="pisi-ribbon-split">
-                            <button type="button" class="pisi-ribbon-btn" data-pisi-paint-tool="eraser" title="Erase">E</button>
-                            <button type="button" class="pisi-ribbon-split-arrow" data-pisi-size-trigger="Erase" data-pisi-size-tool="eraser" aria-label="Silgi boyutu">⌄</button>
+                            <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-paint-tool="eraser" title="Erase">${pisiToolbarIcon('eraser')}</button>
+                            <button type="button" class="pisi-ribbon-split-arrow" data-pisi-size-trigger="Erase" data-pisi-size-tool="eraser" aria-label="Silgi boyutu">${pisiToolbarIcon('chevron-down')}</button>
                         </div>
                     </div>
                     <input type="hidden" value="4" data-pisi-paint-size>

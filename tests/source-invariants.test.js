@@ -155,7 +155,7 @@ test('kullanılmayan production paketleri geri eklenmez', () => {
 
 
 
-test('editör iki görünümde tek beş bölümlü toolbar kullanır', () => {
+test('editör iki görünümde güncel altı bölümlü toolbarı kullanır', () => {
     const html = read('index.html');
     const css = read('styles/65-unified-toolbar.css');
     const toolbarSource = read('renderer/editor/pisi-editor-unified-toolbar.mjs');
@@ -163,16 +163,13 @@ test('editör iki görünümde tek beş bölümlü toolbar kullanır', () => {
     assert.equal((html.match(/pisi-unified-toolbar-root/g) || []).length, 2);
     assert.doesNotMatch(html, /pisi-editor-toolbar-modes/);
     assert.doesNotMatch(html, /data-pisi-toolbar-tab=/);
-    assert.ok(
-        css.includes(
-            'grid-template-columns: 225px 145px 335px 335px'
-        )
-    );
+    assert.ok(css.includes('grid-template-columns: 232px 148px 104px 76px 244px'));
 
     for (const section of [
         'pisi-toolbar-section-text',
         'pisi-toolbar-section-styles',
         'pisi-toolbar-section-table',
+        'pisi-toolbar-section-excel',
         'pisi-toolbar-section-drawing',
         'pisi-toolbar-section-reserved'
     ]) {
