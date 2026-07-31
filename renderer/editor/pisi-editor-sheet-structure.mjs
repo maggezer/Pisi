@@ -341,6 +341,52 @@ function applyPisiSheetCellFormat(
         cells.forEach((cell) => {
             cell.style.fontStyle = enable ? 'italic' : '';
         });
+    } else if (action === 'toggleUnderline') {
+        const enable = !cells.every((cell) => {
+            return cell.style.textDecorationLine
+                .split(/\s+/)
+                .includes('underline');
+        });
+        cells.forEach((cell) => {
+            const values = new Set(
+                cell.style.textDecorationLine.split(/\s+/).filter(Boolean)
+            );
+            if (enable) values.add('underline');
+            else values.delete('underline');
+            cell.style.textDecorationLine = [...values].join(' ');
+        });
+    } else if (action === 'toggleStrikeThrough') {
+        const enable = !cells.every((cell) => {
+            return cell.style.textDecorationLine
+                .split(/\s+/)
+                .includes('line-through');
+        });
+        cells.forEach((cell) => {
+            const values = new Set(
+                cell.style.textDecorationLine.split(/\s+/).filter(Boolean)
+            );
+            if (enable) values.add('line-through');
+            else values.delete('line-through');
+            cell.style.textDecorationLine = [...values].join(' ');
+        });
+    } else if (action === 'fontFamily' && value) {
+        cells.forEach((cell) => {
+            cell.style.fontFamily = value;
+        });
+    } else if (action === 'fontSize' && value) {
+        const sizes = {
+            '1': '8px',
+            '2': '10px',
+            '3': '12px',
+            '4': '14px',
+            '5': '18px',
+            '6': '24px',
+            '7': '32px'
+        };
+        const size = sizes[String(value)] || String(value);
+        cells.forEach((cell) => {
+            cell.style.fontSize = size;
+        });
     } else if (action === 'alignLeft') {
         cells.forEach((cell) => {
             cell.style.textAlign = 'left';
@@ -365,6 +411,9 @@ function applyPisiSheetCellFormat(
         cells.forEach((cell) => {
             cell.style.fontWeight = '';
             cell.style.fontStyle = '';
+            cell.style.textDecorationLine = '';
+            cell.style.fontFamily = '';
+            cell.style.fontSize = '';
             cell.style.textAlign = '';
             cell.style.color = '';
             cell.style.backgroundColor = '';

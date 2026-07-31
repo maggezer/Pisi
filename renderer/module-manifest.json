@@ -38,6 +38,47 @@
     ]
   },
   {
+    "module": "editor.toolbarPopovers",
+    "path": "renderer/editor/pisi-editor-toolbar-popovers.mjs",
+    "bindings": [
+      "PISI_TOOLBAR_COLORS",
+      "PISI_TOOLBAR_SYMBOLS",
+      "closePisiToolbarPopover",
+      "positionPisiToolbarPopover",
+      "createPisiToolbarPopover",
+      "openPisiToolbarColorPopover",
+      "openPisiToolbarSymbolPopover",
+      "openPisiToolbarTablePopover"
+    ]
+  },
+  {
+    "module": "editor.toolbarMenus",
+    "path": "renderer/editor/pisi-editor-toolbar-menus.mjs",
+    "bindings": [
+      "PISI_TOOLBAR_FORMULA_GROUPS",
+      "getPisiPersonalFormulas",
+      "savePisiPersonalFormula",
+      "applyPisiToolbarFormula",
+      "openPisiToolbarFormulaPopover",
+      "openPisiToolbarSizePopover",
+      "openPisiToolbarShapePopover"
+    ]
+  },
+  {
+    "module": "editor.unifiedToolbar",
+    "path": "renderer/editor/pisi-editor-unified-toolbar.mjs",
+    "bindings": [
+      "PISI_FONT_SIZE_LABELS",
+      "buildPisiUnifiedToolbarMarkup",
+      "getPisiUnifiedToolbarActiveTable",
+      "runPisiUnifiedTextCommand",
+      "insertPisiToolbarSymbol",
+      "syncPisiUnifiedToolbarContext",
+      "bindPisiUnifiedToolbarEvents",
+      "setupPisiUnifiedToolbar"
+    ]
+  },
+  {
     "module": "editor.sheet",
     "path": "renderer/editor/pisi-editor-sheet.mjs",
     "bindings": [

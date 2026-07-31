@@ -88,6 +88,10 @@ function runPisiExcelAction(toolbar, action, actionValue = null) {
         [
             'toggleBold',
             'toggleItalic',
+            'toggleUnderline',
+            'toggleStrikeThrough',
+            'fontFamily',
+            'fontSize',
             'alignLeft',
             'alignCenter',
             'alignRight',

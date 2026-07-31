@@ -5,4 +5,5 @@
 @import url("./styles/40-editor.css") layer(pisi);
 @import url("./styles/50-tags-and-missions.css") layer(pisi);
 @import url("./styles/60-customization.css") layer(pisi);
+@import url("./styles/65-unified-toolbar.css") layer(pisi);
 @import url("./styles/70-components.css") layer(pisi);

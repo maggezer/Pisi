@@ -32,7 +32,10 @@ function runPisiEditorCommand(toolbar, command, value = null) {
     const editor = getPisiToolbarEditor(toolbar);
     if (!editor) return;
 
-    editor.focus({ preventScroll: true });
+    const activeElement = document.activeElement;
+    if (!activeElement || !editor.contains(activeElement)) {
+        editor.focus({ preventScroll: true });
+    }
     document.execCommand(command, false, value);
     notifyPisiEditorChanged(editor);
 }
@@ -142,96 +145,7 @@ function buildPisiExcelToolbarControls(controls) {
 
 function setupPisiRichToolbars() {
     document.querySelectorAll('.pisi-editor-toolbar, .pisi-word-toolbar').forEach((toolbar) => {
-        if (toolbar.dataset.bound === '1') return;
-
-        buildPisiRichToolbarControls(toolbar.querySelector('.pisi-word-toolbar-controls'));
-        buildPisiPaintToolbarControls(toolbar.querySelector('.pisi-paint-toolbar-controls'));
-        buildPisiExcelToolbarControls(toolbar.querySelector('.pisi-excel-toolbar-controls'));
-
-        toolbar.addEventListener('mousedown', (event) => {
-            if (event.target.closest('button')) {
-                event.preventDefault();
-            }
-        });
-
-        toolbar.addEventListener('click', (event) => {
-            const tabButton = event.target.closest('[data-pisi-toolbar-tab]');
-            if (tabButton) {
-                event.preventDefault();
-                event.stopPropagation();
-                switchPisiToolbarTab(toolbar, tabButton.dataset.pisiToolbarTab);
-                return;
-            }
-
-            const wordButton = event.target.closest('button[data-pisi-toolbar-command]');
-            if (wordButton) {
-                event.preventDefault();
-                event.stopPropagation();
-                runPisiEditorCommand(toolbar, wordButton.dataset.pisiToolbarCommand);
-                return;
-            }
-
-            const paintTool = event.target.closest('[data-pisi-paint-tool]');
-            if (paintTool) {
-                event.preventDefault();
-                event.stopPropagation();
-                setPisiPaintTool(toolbar, paintTool.dataset.pisiPaintTool);
-                return;
-            }
-
-            const paintAction = event.target.closest('[data-pisi-paint-action]');
-            if (paintAction) {
-                event.preventDefault();
-                event.stopPropagation();
-                runPisiPaintAction(toolbar, paintAction.dataset.pisiPaintAction);
-                return;
-            }
-
-            const excelAction = event.target.closest('[data-pisi-excel-action]');
-            if (excelAction) {
-                event.preventDefault();
-                event.stopPropagation();
-                runPisiExcelAction(toolbar, excelAction.dataset.pisiExcelAction);
-            }
-        });
-
-        toolbar.addEventListener('change', (event) => {
-            const wordControl = event.target.closest('[data-pisi-toolbar-command]');
-            if (wordControl) {
-                event.preventDefault();
-                event.stopPropagation();
-                runPisiEditorCommand(toolbar, wordControl.dataset.pisiToolbarCommand, wordControl.value);
-                return;
-            }
-
-            const sheetFormat = event.target.closest('[data-pisi-excel-format]');
-
-            if (sheetFormat) {
-                event.preventDefault();
-                event.stopPropagation();
-                runPisiExcelAction(
-                    toolbar,
-                    sheetFormat.dataset.pisiExcelFormat,
-                    sheetFormat.value
-                );
-                return;
-            }
-
-            if (event.target.matches('[data-pisi-paint-color], [data-pisi-paint-size]')) {
-                updatePisiPaintStateFromToolbar(toolbar);
-            }
-        });
-
-        const createBtn = toolbar.querySelector('[data-pisi-paint-action="createCanvas"]');
-        if (createBtn) {
-            createBtn.addEventListener('dragstart', (event) => {
-                event.dataTransfer?.setData('text/x-pisi-paint-canvas', '1');
-                event.dataTransfer?.setData('text/plain', 'PISI_CANVAS');
-                event.dataTransfer.effectAllowed = 'copy';
-            });
-        }
-
-        toolbar.dataset.bound = '1';
+        setupPisiUnifiedToolbar(toolbar);
     });
 
     bindPisiAdvancedEditorDropTargets();
@@ -518,7 +432,7 @@ function bindPisiCanvas(canvas) {
             canvas.setPointerCapture(event.pointerId);
         }
 
-        if (['pencil', 'eraser'].includes(getPisiPaintState().tool)) {
+        if (['pencil', 'brush', 'eraser'].includes(getPisiPaintState().tool)) {
             context.beginPath();
             context.moveTo(start.x, start.y);
         }
@@ -532,7 +446,7 @@ function bindPisiCanvas(canvas) {
         const context = canvas.getContext('2d');
         const point = getPisiCanvasPoint(canvas, event);
 
-        if (state.tool === 'pencil' || state.tool === 'eraser') {
+        if (['pencil', 'brush', 'eraser'].includes(state.tool)) {
             context.lineCap = 'round';
             context.lineJoin = 'round';
             context.lineWidth = state.size;
