@@ -15,6 +15,22 @@ function replaceRequired(source, before, after, label) {
     return source.replace(before, after);
 }
 
+function patchMigrationSafeInkNames() {
+    const file = 'renderer/editor/pisi-editor-document-ink.mjs';
+    let source = read(file);
+    const replacements = [
+        ['bindPisiDocumentInkEditors', 'bindPisiInkSurfaces'],
+        ['bindPisiDocumentInkEditor', 'bindPisiInkSurface'],
+        ['pisiActiveDocumentInkEditor', 'pisiActiveInkSurface']
+    ];
+
+    for (const [before, after] of replacements) {
+        source = source.split(before).join(after);
+    }
+
+    write(file, source);
+}
+
 function patchBootstrap() {
     const file = 'renderer/bootstrap.mjs';
     let source = read(file);
@@ -181,13 +197,14 @@ function patchModuleManifest() {
             'deactivatePisiDocumentInk',
             'activatePisiDocumentInk',
             'syncPisiDocumentInkForPaintTool',
-            'bindPisiDocumentInkEditors'
+            'bindPisiInkSurfaces'
         ]
     });
 
     write(file, `${JSON.stringify(manifest, null, 2)}\n`);
 }
 
+patchMigrationSafeInkNames();
 patchBootstrap();
 patchStyleChain();
 patchSanitizer();
