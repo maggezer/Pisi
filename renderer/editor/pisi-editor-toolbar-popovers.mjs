@@ -44,7 +44,7 @@ function createPisiToolbarPopover(anchor, className = '') {
     popover.className = `pisi-office-popover ${className}`.trim();
     popover.setAttribute('role', 'dialog');
     popover.addEventListener('mousedown', (event) => {
-        if (!event.target.matches('input[type="range"], input[type="text"]')) {
+        if (!event.target.closest('input, select, textarea')) {
             event.preventDefault();
         }
     });
