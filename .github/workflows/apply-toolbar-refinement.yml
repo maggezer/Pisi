@@ -1,0 +1,52 @@
+name: Apply toolbar refinement
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout refinement branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/refine-toolbar-separators-alignment
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Validate codemod syntax
+        run: node --check scripts/apply-toolbar-refinement.js
+
+      - name: Install dependencies without Electron binary
+        run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+      - name: Apply toolbar refinement
+        run: node scripts/apply-toolbar-refinement.js
+
+      - name: Validate source
+        run: npm run validate
+
+      - name: Remove one-time automation
+        run: |
+          rm scripts/apply-toolbar-refinement.js
+          rm .github/workflows/apply-toolbar-refinement.yml
+
+      - name: Commit refined toolbar
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Refine toolbar separators and alignment controls"
+          git push origin agent/refine-toolbar-separators-alignment
