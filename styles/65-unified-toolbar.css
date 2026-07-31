@@ -186,7 +186,7 @@
     padding: 0;
 }
 
-.pisi-sheet-toolbar-status {
+.pisi-toolbar-table-actions .pisi-sheet-toolbar-status {
     align-self: flex-end;
     min-width: 50px;
     padding: 3px 5px;

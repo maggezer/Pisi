@@ -154,27 +154,28 @@ test('kullanılmayan production paketleri geri eklenmez', () => {
 });
 
 
-test('editör modları toolbarın sağında dikey ikon rayı olarak görünür', () => {
+
+test('editör iki görünümde tek beş bölümlü toolbar kullanır', () => {
     const html = read('index.html');
-    const css = read('styles/60-customization.css');
-    const toolbarSource = read('renderer/editor/pisi-editor-paint.mjs');
+    const css = read('styles/65-unified-toolbar.css');
+    const toolbarSource = read('renderer/editor/pisi-editor-unified-toolbar.mjs');
 
-    assert.equal((html.match(/class="pisi-editor-toolbar-modes"/g) || []).length, 2);
-    assert.equal((html.match(/data-pisi-toolbar-tab=/g) || []).length, 6);
-    assert.doesNotMatch(html, /class="pisi-editor-toolbar-tabs"/);
-    assert.doesNotMatch(html, />\s*(?:Word|Paint|Excel)\s*<\/button>/);
-    assert.match(html, /assets\/editor-text\.svg/);
-    assert.match(html, /assets\/editor-paint\.svg/);
-    assert.match(html, /assets\/editor-table\.svg/);
-    assert.match(css, /grid-template-columns:\s*minmax\(0, 1fr\) 42px/);
-    assert.match(css, /\.pisi-editor-toolbar-modes \{[\s\S]*?flex-direction:\s*column/);
-    assert.match(toolbarSource, /setAttribute\('aria-selected'/);
+    assert.equal((html.match(/pisi-unified-toolbar-root/g) || []).length, 2);
+    assert.doesNotMatch(html, /pisi-editor-toolbar-modes/);
+    assert.doesNotMatch(html, /data-pisi-toolbar-tab=/);
+    assert.ok(
+        css.includes(
+            'grid-template-columns: 225px 145px 335px 335px'
+        )
+    );
 
-    for (const asset of [
-        'assets/editor-text.svg',
-        'assets/editor-paint.svg',
-        'assets/editor-table.svg'
+    for (const section of [
+        'pisi-toolbar-section-text',
+        'pisi-toolbar-section-styles',
+        'pisi-toolbar-section-table',
+        'pisi-toolbar-section-drawing',
+        'pisi-toolbar-section-reserved'
     ]) {
-        assert.ok(fs.existsSync(path.join(root, asset)), 'Eksik editör modu ikonu: ' + asset);
+        assert.match(toolbarSource, new RegExp(section));
     }
 });
