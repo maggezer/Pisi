@@ -1,0 +1,187 @@
+/*
+ * Pisi Text Toolbar Lab
+ *
+ * Bu dosya yalnızca geliştirme laboratuvarı içindir.
+ * Gerçek uygulama stilleri ../style.css üzerinden yüklenir.
+ */
+
+body.toolbar-lab-body {
+    min-height: 100vh;
+    height: auto;
+    margin: 0;
+    overflow: auto;
+    background:
+        radial-gradient(circle at top left, rgba(243, 156, 18, 0.11), transparent 30rem),
+        #151515;
+    color: #d4d4d4;
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.toolbar-lab-shell {
+    width: min(1500px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 24px 0 48px;
+}
+
+.toolbar-lab-header,
+.toolbar-lab-notes {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 18px 20px;
+    border: 1px solid #333;
+    border-radius: 12px;
+    background: rgba(37, 37, 38, 0.94);
+    box-shadow: 0 18px 46px rgba(0, 0, 0, 0.32);
+}
+
+.toolbar-lab-header h1,
+.toolbar-lab-notes h2 {
+    margin: 0 0 8px;
+    color: #f39c12;
+}
+
+.toolbar-lab-header p,
+.toolbar-lab-notes p {
+    max-width: 760px;
+    margin: 0;
+    color: #aaa;
+    line-height: 1.55;
+}
+
+.toolbar-lab-kicker {
+    margin-bottom: 6px;
+    color: #777;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.16em;
+}
+
+.toolbar-lab-size-picker {
+    min-width: 260px;
+    margin: 0;
+    padding: 10px 12px 12px;
+    border: 1px solid #444;
+    border-radius: 9px;
+    background: #1e1e1e;
+}
+
+.toolbar-lab-size-picker legend {
+    padding: 0 6px;
+    color: #f39c12;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.toolbar-lab-size-picker label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-right: 10px;
+    color: #ccc;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.toolbar-lab-size-picker input {
+    accent-color: #f39c12;
+}
+
+.toolbar-lab-stage {
+    width: 100%;
+    margin: 20px 0;
+    padding: 24px;
+    overflow: auto;
+    border: 1px dashed #3f3f3f;
+    border-radius: 14px;
+    background:
+        linear-gradient(45deg, #181818 25%, transparent 25%),
+        linear-gradient(-45deg, #181818 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #181818 75%),
+        linear-gradient(-45deg, transparent 75%, #181818 75%),
+        #1b1b1b;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+    background-size: 16px 16px;
+}
+
+.toolbar-lab-window {
+    width: 1280px;
+    min-width: 620px;
+    margin: 0 auto;
+    overflow: hidden;
+    border: 1px solid #3a3a3a;
+    border-radius: 11px;
+    background: #1e1e1e;
+    box-shadow: 0 22px 70px rgba(0, 0, 0, 0.55);
+    transition: width 160ms ease;
+}
+
+body[data-preview-width="normal"] .toolbar-lab-window {
+    width: 960px;
+}
+
+body[data-preview-width="compact"] .toolbar-lab-window {
+    width: 720px;
+}
+
+.toolbar-lab-window-title {
+    height: 36px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    border-bottom: 1px solid #333;
+    background: #202020;
+    color: #888;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.toolbar-lab-target {
+    width: 100%;
+}
+
+/*
+ * Grup sarmalayıcıları DOM ağacında sürüklenebilir kalır,
+ * fakat görünümde çocuklar doğrudan toolbar flex alanındaymış gibi davranır.
+ */
+.toolbar-lab-group {
+    display: contents;
+}
+
+.toolbar-lab-editor {
+    min-height: 320px;
+    padding: 28px 34px;
+    border: none;
+    background: #1e1e1e;
+}
+
+.toolbar-lab-editor h2 {
+    margin-top: 0;
+    color: #f39c12;
+}
+
+.toolbar-lab-editor p,
+.toolbar-lab-editor li {
+    color: #c8c8c8;
+    line-height: 1.65;
+}
+
+.toolbar-lab-notes {
+    display: block;
+}
+
+.toolbar-lab-notes code {
+    padding: 2px 5px;
+    border-radius: 4px;
+    background: #161616;
+    color: #f1c27d;
+}
+
+/* ================================================================
+ * USER DESIGN AREA
+ * Pinegrow Style panelinden oluşan deneysel kuralları buraya taşı.
+ * Üretim stilleri tasarım tamamlandıktan sonra ayrıca güncellenecek.
+ * ================================================================ */
+
