@@ -1,3 +1,4 @@
+// Pure reference transformation keeps structural edits testable without a DOM.
 function pisiSheetColumnName(index) {
     let name = '';
     let value = Number(index) + 1;
