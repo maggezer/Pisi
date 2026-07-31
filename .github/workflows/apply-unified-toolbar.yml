@@ -6,6 +6,7 @@ on:
       - agent/unified-office-toolbar
     paths:
       - scripts/apply-unified-toolbar.js
+      - scripts/fix-unified-toolbar-css.js
       - .github/workflows/apply-unified-toolbar.yml
   pull_request:
     branches:
@@ -36,7 +37,9 @@ jobs:
           ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
 
       - name: Apply unified toolbar changes
-        run: node scripts/apply-unified-toolbar.js
+        run: |
+          node scripts/apply-unified-toolbar.js
+          node scripts/fix-unified-toolbar-css.js
 
       - name: Validate source
         run: npm run validate
@@ -44,6 +47,7 @@ jobs:
       - name: Remove one-time automation
         run: |
           rm scripts/apply-unified-toolbar.js
+          rm scripts/fix-unified-toolbar-css.js
           rm .github/workflows/apply-unified-toolbar.yml
 
       - name: Commit generated source
