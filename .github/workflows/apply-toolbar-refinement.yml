@@ -46,6 +46,18 @@ jobs:
       - name: Apply toolbar refinement
         run: node scripts/apply-toolbar-refinement.js
 
+      - name: Update toolbar source invariant
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('tests/source-invariants.test.js')
+          source = path.read_text(encoding='utf-8')
+          source = source.replace(
+              'grid-template-columns: 232px 148px 104px 76px 244px',
+              'grid-template-columns: 250px 118px 104px 76px 282px'
+          )
+          path.write_text(source, encoding='utf-8')
+
       - name: Validate source
         run: npm run validate
 
