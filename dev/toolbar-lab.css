@@ -118,11 +118,11 @@ body.toolbar-lab-body {
     transition: width 160ms ease;
 }
 
-body[data-preview-width="normal"] .toolbar-lab-window {
+.toolbar-lab-shell:has(input[value="normal"]:checked) .toolbar-lab-window {
     width: 960px;
 }
 
-body[data-preview-width="compact"] .toolbar-lab-window {
+.toolbar-lab-shell:has(input[value="compact"]:checked) .toolbar-lab-window {
     width: 720px;
 }
 
