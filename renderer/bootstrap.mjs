@@ -1,6 +1,8 @@
 import "./core/state.mjs";
-import "./editor/pisi-editor-paint.mjs";
 import "./editor/pisi-editor-sheet.mjs";
+import "./editor/pisi-editor-sheet-interactions.mjs";
+import "./editor/pisi-editor-sheet-structure.mjs";
+import "./editor/pisi-editor-paint.mjs";
 import "./shell/pisi-window.mjs";
 import "./shell/pisi-tabs.mjs";
 import "./shell/pisi-startup.mjs";

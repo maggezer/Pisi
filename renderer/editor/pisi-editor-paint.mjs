@@ -115,14 +115,26 @@ function buildPisiExcelToolbarControls(controls) {
 
     controls.dataset.rendered = '1';
     controls.innerHTML = `
-        <button type="button" class="pisi-word-btn" data-pisi-excel-action="insertTable" title="Tablo ekle">📊 Tablo</button>
+        <button type="button" class="pisi-word-btn" data-pisi-excel-action="insertTable" title="Tablo ekle">▦ Tablo</button>
         <label class="pisi-toolbar-field">Satır <input class="pisi-toolbar-number" type="number" min="1" max="80" step="1" value="5" data-pisi-excel-rows></label>
         <label class="pisi-toolbar-field">Sütun <input class="pisi-toolbar-number" type="number" min="1" max="26" step="1" value="5" data-pisi-excel-cols></label>
         <span class="pisi-word-separator"></span>
-        <button type="button" class="pisi-word-btn" data-pisi-excel-action="addRow">+ Satır</button>
-        <button type="button" class="pisi-word-btn" data-pisi-excel-action="addCol">+ Sütun</button>
-        <button type="button" class="pisi-word-btn" data-pisi-excel-action="recalc">Hesapla</button>
+        <button type="button" class="pisi-word-btn" data-pisi-excel-action="addRow" title="Seçili satırın altına satır ekle">+ Satır</button>
+        <button type="button" class="pisi-word-btn" data-pisi-excel-action="deleteRow" title="Seçili satırları sil">− Satır</button>
+        <button type="button" class="pisi-word-btn" data-pisi-excel-action="addCol" title="Seçili sütunun sağına sütun ekle">+ Sütun</button>
+        <button type="button" class="pisi-word-btn" data-pisi-excel-action="deleteCol" title="Seçili sütunları sil">− Sütun</button>
+        <span class="pisi-sheet-toolbar-status" data-pisi-sheet-status>0 × 0</span>
         <span class="pisi-word-separator"></span>
+        <button type="button" class="pisi-word-btn" data-pisi-excel-action="toggleBold" title="Kalın"><b>B</b></button>
+        <button type="button" class="pisi-word-btn" data-pisi-excel-action="toggleItalic" title="İtalik"><i>I</i></button>
+        <button type="button" class="pisi-word-btn" data-pisi-excel-action="alignLeft" title="Sola hizala">☰</button>
+        <button type="button" class="pisi-word-btn" data-pisi-excel-action="alignCenter" title="Ortala">☷</button>
+        <button type="button" class="pisi-word-btn" data-pisi-excel-action="alignRight" title="Sağa hizala">☱</button>
+        <label class="pisi-word-color" title="Hücre yazı rengi">A<input type="color" value="#d4d4d4" data-pisi-excel-format="textColor"></label>
+        <label class="pisi-word-color pisi-sheet-fill-color" title="Hücre dolgu rengi">■<input type="color" value="#1f1f20" data-pisi-excel-format="fillColor"></label>
+        <button type="button" class="pisi-word-btn" data-pisi-excel-action="clearFormat" title="Biçimi temizle">Temizle</button>
+        <span class="pisi-word-separator"></span>
+        <button type="button" class="pisi-word-btn" data-pisi-excel-action="recalc">Hesapla</button>
         <input class="pisi-excel-formula-input" type="text" placeholder="=SUM(A1:B2), =A1+B1" data-pisi-excel-formula>
         <button type="button" class="pisi-word-btn" data-pisi-excel-action="applyFormula">Uygula</button>
     `;
@@ -189,6 +201,19 @@ function setupPisiRichToolbars() {
                 event.preventDefault();
                 event.stopPropagation();
                 runPisiEditorCommand(toolbar, wordControl.dataset.pisiToolbarCommand, wordControl.value);
+                return;
+            }
+
+            const sheetFormat = event.target.closest('[data-pisi-excel-format]');
+
+            if (sheetFormat) {
+                event.preventDefault();
+                event.stopPropagation();
+                runPisiExcelAction(
+                    toolbar,
+                    sheetFormat.dataset.pisiExcelFormat,
+                    sheetFormat.value
+                );
                 return;
             }
 

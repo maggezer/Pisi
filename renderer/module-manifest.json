@@ -49,8 +49,6 @@
       "PISI_SHEET_MAX_RANGE_CELLS",
       "pisiBoundSheets",
       "pisiEditedSheetCells",
-      "hydratePisiSheets",
-      "selectPisiSheetCell",
       "getActivePisiSheetForEditor",
       "applyPisiSheetFormula",
       "commitPisiSheetCell",
@@ -63,10 +61,48 @@
       "parsePisiCellRef",
       "pisiColumnName",
       "pisiColumnIndex",
-      "formatPisiSheetNumber",
+      "formatPisiSheetNumber"
+    ]
+  },
+  {
+    "module": "editor.sheetInteractions",
+    "path": "renderer/editor/pisi-editor-sheet-interactions.mjs",
+    "bindings": [
+      "pisiSheetSelections",
+      "pisiSheetNotifyTimers",
+      "hydratePisiSheets",
+      "getPisiSheetDimensions",
+      "getPisiSheetCellPosition",
+      "getPisiSheetCell",
+      "getPisiSheetSelectionRect",
+      "getPisiSelectedSheetCells",
+      "renderPisiSheetSelection",
+      "selectPisiSheetCell",
+      "selectPisiSheetRow",
+      "selectPisiSheetColumn",
+      "focusPisiSheetCell",
+      "syncPisiSheetFormulaInput",
+      "extendPisiSheetSelectionByKeyboard",
+      "movePisiSheetCellFocus"
+    ]
+  },
+  {
+    "module": "editor.sheetStructure",
+    "path": "renderer/editor/pisi-editor-sheet-structure.mjs",
+    "bindings": [
       "refreshPisiSheetCellMetadata",
+      "getPisiSheetMutationFocus",
+      "updatePisiSheetFormulaReferences",
       "addPisiSheetRow",
-      "addPisiSheetColumn"
+      "addPisiSheetColumn",
+      "deletePisiSheetRows",
+      "deletePisiSheetColumns",
+      "applyPisiSheetCellFormat",
+      "clearPisiSheetSelectedCells",
+      "schedulePisiSheetEditorNotification",
+      "setPisiSheetToolbarStatus",
+      "syncPisiSheetToolbarForTable",
+      "syncPisiSheetToolbarState"
     ]
   },
   {

@@ -1,31 +1,113 @@
 import { registerModule } from "../core/module-registry.mjs";
 
-function runPisiExcelAction(toolbar, action) {
+function runPisiExcelAction(toolbar, action, actionValue = null) {
     const editor = getPisiToolbarEditor(toolbar);
     if (!editor) return;
 
     if (action === 'insertTable') {
-        const rows = Math.max(1, Math.min(80, getPisiToolbarNumber(toolbar, '[data-pisi-excel-rows]', 5)));
-        const cols = Math.max(1, Math.min(26, getPisiToolbarNumber(toolbar, '[data-pisi-excel-cols]', 5)));
+        const rows = Math.max(
+            1,
+            Math.min(
+                PISI_SHEET_MAX_ROWS,
+                getPisiToolbarNumber(
+                    toolbar,
+                    '[data-pisi-excel-rows]',
+                    5
+                )
+            )
+        );
+        const cols = Math.max(
+            1,
+            Math.min(
+                PISI_SHEET_MAX_COLS,
+                getPisiToolbarNumber(
+                    toolbar,
+                    '[data-pisi-excel-cols]',
+                    5
+                )
+            )
+        );
+
         insertPisiSheet(editor, rows, cols);
         return;
     }
 
     const table = getActivePisiSheetForEditor(editor);
-    if (!table) return;
-
-    if (action === 'addRow') {
-        addPisiSheetRow(table);
-    } else if (action === 'addCol') {
-        addPisiSheetColumn(table);
-    } else if (action === 'recalc') {
-        recalcPisiSheet(table);
-    } else if (action === 'applyFormula') {
-        const input = toolbar.querySelector('[data-pisi-excel-formula]');
-        applyPisiSheetFormula(table, input?.value || '');
+    if (!table) {
+        setPisiSheetToolbarStatus(
+            toolbar,
+            'Önce bir tablo veya hücre seç.'
+        );
+        return;
     }
 
-    notifyPisiEditorChanged(editor);
+    let changed = false;
+
+    if (action === 'addRow') {
+        changed = addPisiSheetRow(table);
+        if (!changed) {
+            setPisiSheetToolbarStatus(
+                toolbar,
+                `${PISI_SHEET_MAX_ROWS} satır sınırına ulaşıldı.`
+            );
+        }
+    } else if (action === 'deleteRow') {
+        changed = deletePisiSheetRows(table);
+        if (!changed) {
+            setPisiSheetToolbarStatus(
+                toolbar,
+                'Tabloda en az bir satır kalmalı.'
+            );
+        }
+    } else if (action === 'addCol') {
+        changed = addPisiSheetColumn(table);
+        if (!changed) {
+            setPisiSheetToolbarStatus(
+                toolbar,
+                `${PISI_SHEET_MAX_COLS} sütun sınırına ulaşıldı.`
+            );
+        }
+    } else if (action === 'deleteCol') {
+        changed = deletePisiSheetColumns(table);
+        if (!changed) {
+            setPisiSheetToolbarStatus(
+                toolbar,
+                'Tabloda en az bir sütun kalmalı.'
+            );
+        }
+    } else if (action === 'recalc') {
+        recalcPisiSheet(table);
+        changed = true;
+    } else if (action === 'applyFormula') {
+        const input = toolbar.querySelector(
+            '[data-pisi-excel-formula]'
+        );
+        applyPisiSheetFormula(table, input?.value || '');
+        changed = true;
+    } else if (
+        [
+            'toggleBold',
+            'toggleItalic',
+            'alignLeft',
+            'alignCenter',
+            'alignRight',
+            'clearFormat',
+            'textColor',
+            'fillColor'
+        ].includes(action)
+    ) {
+        changed = applyPisiSheetCellFormat(
+            table,
+            action,
+            actionValue
+        );
+    }
+
+    syncPisiSheetToolbarState(toolbar, table);
+
+    if (changed) {
+        schedulePisiSheetEditorNotification(table);
+    }
 }
 
 function insertPisiSheet(editor, rows = 5, cols = 5) {
@@ -71,69 +153,6 @@ const PISI_SHEET_MAX_RANGE_CELLS =
 const pisiBoundSheets = new WeakSet();
 
 const pisiEditedSheetCells = new WeakSet();
-
-function hydratePisiSheets(root = document) {
-    root.querySelectorAll('table[data-pisi-sheet]').forEach((table) => {
-        table.removeAttribute('data-pisi-sheet-bound');
-        refreshPisiSheetCellMetadata(table);
-
-        if (pisiBoundSheets.has(table)) return;
-        pisiBoundSheets.add(table);
-
-        table.addEventListener('focusin', (event) => {
-            const cell = event.target.closest('td[data-cell]');
-            if (!cell) return;
-            selectPisiSheetCell(cell);
-        });
-
-        table.addEventListener('click', (event) => {
-            const cell = event.target.closest('td[data-cell]');
-            if (!cell) return;
-            selectPisiSheetCell(cell);
-        });
-
-        table.addEventListener('keydown', (event) => {
-            const cell = event.target.closest('td[data-cell]');
-            if (!cell) return;
-
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                cell.blur();
-            }
-        });
-
-        table.addEventListener('input', (event) => {
-            const cell = event.target.closest('td[data-cell]');
-            if (!cell) return;
-            pisiEditedSheetCells.add(cell);
-        });
-
-        table.addEventListener('blur', (event) => {
-            const cell = event.target.closest('td[data-cell]');
-            if (!cell) return;
-
-            commitPisiSheetCell(cell);
-            recalcPisiSheet(table);
-            notifyPisiEditorChanged(getEditorForPisiElement(table));
-        }, true);
-    });
-}
-
-function selectPisiSheetCell(cell) {
-    document.querySelectorAll('.pisi-sheet-cell-selected').forEach((existing) => {
-        existing.classList.remove('pisi-sheet-cell-selected');
-    });
-
-    cell.classList.add('pisi-sheet-cell-selected');
-    window.__pisiActiveSheetCell = cell;
-
-    const toolbar = document.querySelector(`.pisi-editor-toolbar[data-editor-target="${getEditorForPisiElement(cell)?.id}"]`);
-    const formulaInput = toolbar?.querySelector('[data-pisi-excel-formula]');
-
-    if (formulaInput) {
-        formulaInput.value = cell.dataset.formula || cell.textContent.trim();
-    }
-}
 
 function getActivePisiSheetForEditor(editor) {
     const activeCell = window.__pisiActiveSheetCell;
@@ -191,8 +210,19 @@ function recalcPisiSheet(table) {
 
     for (const cell of cells) {
         if (cell.dataset.formula) {
-            const value = evaluatePisiSheetFormula(table, cell.dataset.formula, new Set([cell.dataset.cell]));
-            cell.textContent = Number.isFinite(value) ? formatPisiSheetNumber(value) : '#ERR';
+            if (cell.dataset.formula.includes('#REF!')) {
+                cell.textContent = '#REF!';
+                continue;
+            }
+
+            const value = evaluatePisiSheetFormula(
+                table,
+                cell.dataset.formula,
+                new Set([cell.dataset.cell])
+            );
+            cell.textContent = Number.isFinite(value)
+                ? formatPisiSheetNumber(value)
+                : '#ERR';
         }
     }
 }
@@ -510,74 +540,6 @@ function formatPisiSheetNumber(value) {
     return String(Math.round(value * 1000000) / 1000000);
 }
 
-function refreshPisiSheetCellMetadata(table) {
-    const rows = Array.from(table.querySelectorAll('tbody tr'));
-    rows.forEach((row, rowIndex) => {
-        let rowHeader = row.querySelector('th');
-        if (!rowHeader) {
-            rowHeader = document.createElement('th');
-            row.prepend(rowHeader);
-        }
-        rowHeader.textContent = String(rowIndex + 1);
-
-        Array.from(row.querySelectorAll('td')).forEach((cell, colIndex) => {
-            cell.setAttribute('contenteditable', 'true');
-            cell.dataset.row = String(rowIndex);
-            cell.dataset.col = String(colIndex);
-            cell.dataset.cell = `${pisiColumnName(colIndex)}${rowIndex + 1}`;
-        });
-    });
-
-    const colCount = Math.max(0, ...rows.map((row) => row.querySelectorAll('td').length));
-    let thead = table.querySelector('thead');
-    if (!thead) {
-        thead = document.createElement('thead');
-        table.prepend(thead);
-    }
-
-    let headerRow = thead.querySelector('tr');
-    if (!headerRow) {
-        headerRow = document.createElement('tr');
-        thead.appendChild(headerRow);
-    }
-
-    headerRow.innerHTML = '<th></th>' + Array.from({ length: colCount }, (_, index) => `<th>${pisiColumnName(index)}</th>`).join('');
-}
-
-function addPisiSheetRow(table) {
-    const tbody = table.querySelector('tbody') || table.appendChild(document.createElement('tbody'));
-    if (tbody.querySelectorAll('tr').length >= PISI_SHEET_MAX_ROWS) return false;
-
-    const colCount = Math.max(1, table.querySelector('tbody tr')?.querySelectorAll('td').length || 1);
-    const row = document.createElement('tr');
-    row.innerHTML = '<th></th>' + Array.from({ length: colCount }, () => '<td contenteditable="true"></td>').join('');
-    tbody.appendChild(row);
-    refreshPisiSheetCellMetadata(table);
-    return true;
-}
-
-function addPisiSheetColumn(table) {
-    const tbody = table.querySelector('tbody') || table.appendChild(document.createElement('tbody'));
-    const currentColCount =
-        tbody.querySelector('tr')?.querySelectorAll('td').length || 0;
-
-    if (currentColCount >= PISI_SHEET_MAX_COLS) return false;
-
-    if (!tbody.querySelector('tr')) {
-        addPisiSheetRow(table);
-        return true;
-    }
-
-    tbody.querySelectorAll('tr').forEach((row) => {
-        const cell = document.createElement('td');
-        cell.setAttribute('contenteditable', 'true');
-        row.appendChild(cell);
-    });
-
-    refreshPisiSheetCellMetadata(table);
-    return true;
-}
-
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
     "runPisiExcelAction": {
@@ -611,14 +573,6 @@ Object.defineProperties(moduleApi, {
     "pisiEditedSheetCells": {
         enumerable: true,
         get() { return pisiEditedSheetCells; }
-    },
-    "hydratePisiSheets": {
-        enumerable: true,
-        get() { return hydratePisiSheets; }
-    },
-    "selectPisiSheetCell": {
-        enumerable: true,
-        get() { return selectPisiSheetCell; }
     },
     "getActivePisiSheetForEditor": {
         enumerable: true,
@@ -671,18 +625,6 @@ Object.defineProperties(moduleApi, {
     "formatPisiSheetNumber": {
         enumerable: true,
         get() { return formatPisiSheetNumber; }
-    },
-    "refreshPisiSheetCellMetadata": {
-        enumerable: true,
-        get() { return refreshPisiSheetCellMetadata; }
-    },
-    "addPisiSheetRow": {
-        enumerable: true,
-        get() { return addPisiSheetRow; }
-    },
-    "addPisiSheetColumn": {
-        enumerable: true,
-        get() { return addPisiSheetColumn; }
     }
 });
 registerModule("editor.sheet", moduleApi);
