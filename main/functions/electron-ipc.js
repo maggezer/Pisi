@@ -360,6 +360,24 @@ function createWindow() {
         }
     });
 
+    if (!app.isPackaged) {
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+        const key = String(input.key || '').toLowerCase();
+
+        const isDevToolsShortcut =
+            input.type === 'keyDown' &&
+            (
+                key === 'f12' ||
+                (input.control && input.shift && key === 'i')
+            );
+
+        if (!isDevToolsShortcut) return;
+
+        event.preventDefault();
+        mainWindow.webContents.toggleDevTools();
+    });
+}
+
     Menu.setApplicationMenu(null);
 
     mainWindow.webContents.setWindowOpenHandler(() => {

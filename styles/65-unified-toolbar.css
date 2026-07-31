@@ -1,22 +1,22 @@
 .pisi-editor-toolbar {
-    min-height: 118px;
+    min-height: 80px;
     display: block;
     padding: 0;
     overflow-x: auto;
     overflow-y: hidden;
     background: #202124;
-    border-bottom: 1px solid #34363a;
+    border-bottom: 1px solid #252526;
 }
 
 .pisi-unified-toolbar {
-    min-width: 1120px;
-    min-height: 116px;
+    min-width: 960px;
+    min-height: 80px;
     display: grid;
-    grid-template-columns: 225px 145px 335px 335px minmax(90px, 1fr);
+    grid-template-columns: 205px 145px 80px 100px 200px minmax(90px, 1fr);
     align-items: stretch;
     gap: 5px;
     padding: 5px 7px;
-    background: #202124;
+    background: #252526;
 }
 
 .pisi-toolbar-section {
@@ -24,30 +24,26 @@
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    gap: 5px;
-    padding: 6px;
-    border: 1px solid #3b3d42;
-    border-radius: 5px;
-    background: #292b30;
+    background: #252526;
 }
 
 .pisi-toolbar-section-reserved {
-    background: #25272b;
+    background: #252526;
 }
 
 .pisi-toolbar-section-row {
     display: flex;
     align-items: center;
     gap: 4px;
-    min-height: 28px;
+    min-height: 30px;
 }
 
 .pisi-toolbar-section-row-top {
-    min-height: 32px;
+    min-height: 30px;
 }
 
 .pisi-office-select {
-    height: 30px;
+    height: 25px;
     min-width: 0;
     border: 1px solid #666a72;
     border-radius: 4px;
@@ -70,9 +66,9 @@
 }
 
 .pisi-font-size-select {
-    width: 52px;
+    width: 40px;
     padding-left: 6px;
-    padding-right: 17px;
+    padding-right: 6px;
 }
 
 .pisi-style-select {
@@ -81,14 +77,14 @@
 
 .pisi-ribbon-btn,
 .pisi-ribbon-split-arrow {
-    height: 28px;
-    min-width: 28px;
+    height: 16px;
+    width: 16px;
     border: 1px solid #4b4f57;
     border-radius: 4px;
-    background: #171b2f;
+    background: #252526;
     color: #f2f2f2;
-    padding: 0 7px;
-    font-size: 12px;
+    padding: 7px;
+    font-size: 9px;
     font-weight: 800;
     line-height: 1;
     cursor: pointer;
@@ -119,7 +115,7 @@
 
 .pisi-ribbon-dropdown {
     position: relative;
-    padding-right: 14px;
+    padding-left: 3px;
 }
 
 .pisi-ribbon-dropdown::after {
@@ -151,7 +147,7 @@
 }
 
 .pisi-formula-btn {
-    min-width: 50px;
+    min-width: 40px;
     background: #f7f7f7;
     color: #202124;
     border-color: #b7bbc3;
@@ -168,8 +164,8 @@
 }
 
 .pisi-ribbon-btn-large {
-    min-width: 62px;
-    height: 61px;
+    min-width: 40px;
+    height: 40px;
     font-size: 14px;
 }
 
@@ -181,14 +177,14 @@
 }
 
 .pisi-toolbar-action-grid .pisi-ribbon-btn {
-    width: 34px;
-    min-width: 34px;
+    width: 20px;
+    min-width: 20px;
     padding: 0;
 }
 
 .pisi-toolbar-table-actions .pisi-sheet-toolbar-status {
     align-self: flex-end;
-    min-width: 50px;
+    min-width: 30px;
     padding: 3px 5px;
     border-radius: 3px;
     color: #aeb2bb;
@@ -210,8 +206,8 @@
 }
 
 .pisi-ribbon-btn-canvas {
-    width: 58px;
-    height: 59px;
+    width: 40px;
+    height: 40px;
     padding: 0;
 }
 
@@ -222,7 +218,7 @@
 }
 
 .pisi-ribbon-number {
-    height: 27px;
+    height: 20px;
     display: grid;
     grid-template-columns: 15px 1fr;
     align-items: center;
@@ -237,8 +233,8 @@
 
 .pisi-ribbon-number input {
     width: 100%;
-    min-width: 0;
-    height: 25px;
+    min-width: 20;
+    height: 20px;
     border: none;
     border-left: 1px solid #3f4350;
     background: #f8f8f8;
@@ -287,7 +283,7 @@
 .pisi-office-popover {
     position: fixed;
     z-index: 12000;
-    min-width: 190px;
+    min-width: 120px;
     max-width: min(420px, calc(100vw - 16px));
     padding: 8px;
     border: 1px solid #aeb2b8;
@@ -314,8 +310,8 @@
 }
 
 .pisi-office-color-swatch {
-    width: 25px;
-    height: 25px;
+    width: 20px;
+    height: 20px;
     border: 1px solid #979ba2;
     border-radius: 2px;
     cursor: pointer;
@@ -328,7 +324,7 @@
 }
 
 .pisi-office-custom-color {
-    min-height: 31px;
+    min-height: 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -478,9 +474,9 @@
 }
 
 .pisi-office-shape-item {
-    min-height: 34px;
+    min-height: 20px;
     display: grid;
-    grid-template-columns: 34px 1fr;
+    grid-template-columns: 20px 1fr;
     align-items: center;
     padding: 3px 7px;
     text-align: left;
@@ -493,6 +489,6 @@
 
 @media (max-width: 1200px) {
     .pisi-unified-toolbar {
-        grid-template-columns: 225px 145px 335px 300px 90px;
+        grid-template-columns: 225px 145px 335px 300px 10px;
     }
 }

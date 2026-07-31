@@ -23,13 +23,7 @@ function buildPisiUnifiedToolbarMarkup() {
                         <option value="Georgia">Georgia</option>
                         <option value="Consolas">Consolas</option>
                     </select>
-                </div>
-                <div class="pisi-toolbar-section-row">
-                    <button type="button" class="pisi-ribbon-btn" data-pisi-unified-command="bold" title="Bold"><b>B</b></button>
-                    <button type="button" class="pisi-ribbon-btn" data-pisi-unified-command="italic" title="Italic"><i>I</i></button>
-                    <button type="button" class="pisi-ribbon-btn" data-pisi-unified-command="strikeThrough" title="Strikethrough"><s>ab</s></button>
-                    <button type="button" class="pisi-ribbon-btn" data-pisi-unified-command="underline" title="Underline"><u>U</u></button>
-                    <select class="pisi-office-select pisi-font-size-select" data-pisi-unified-command="fontSize" title="Font size" aria-label="Font size">
+                     <select class="pisi-office-select pisi-font-size-select" data-pisi-unified-command="fontSize" title="Font size" aria-label="Font size">
                         <option value="1">8</option>
                         <option value="2">10</option>
                         <option value="3" selected>12</option>
@@ -38,6 +32,13 @@ function buildPisiUnifiedToolbarMarkup() {
                         <option value="6">24</option>
                         <option value="7">32</option>
                     </select>
+                </div>
+                <div class="pisi-toolbar-section-row">
+                    <button type="button" class="pisi-ribbon-btn" data-pisi-unified-command="bold" title="Bold"><b>B</b></button>
+                    <button type="button" class="pisi-ribbon-btn" data-pisi-unified-command="italic" title="Italic"><i>I</i></button>
+                    <button type="button" class="pisi-ribbon-btn" data-pisi-unified-command="strikeThrough" title="Strikethrough"><s>ab</s></button>
+                    <button type="button" class="pisi-ribbon-btn" data-pisi-unified-command="underline" title="Underline"><u>U</u></button>
+                   
                 </div>
                 <div class="pisi-toolbar-section-row">
                     <button type="button" class="pisi-ribbon-btn" data-pisi-unified-command="justifyLeft" title="Sola yasla">L</button>
@@ -72,20 +73,15 @@ function buildPisiUnifiedToolbarMarkup() {
                 <div class="pisi-toolbar-section-row pisi-toolbar-formula-row">
                     <button type="button" class="pisi-ribbon-btn pisi-ribbon-dropdown pisi-formula-btn" data-pisi-formula-trigger="logical" title="Logical formulas">F1</button>
                     <button type="button" class="pisi-ribbon-btn pisi-ribbon-dropdown pisi-formula-btn" data-pisi-formula-trigger="text" title="Text formulas">F2</button>
+                </div>
+               <div class="pisi-toolbar-section-row pisi-toolbar-table-actions">
                     <button type="button" class="pisi-ribbon-btn pisi-ribbon-dropdown pisi-formula-btn" data-pisi-formula-trigger="math" title="Math formulas">F3</button>
-                    <button type="button" class="pisi-ribbon-btn pisi-ribbon-dropdown pisi-formula-btn" data-pisi-formula-trigger="financial" title="Financial formulas">F4</button>
-                    <button type="button" class="pisi-ribbon-btn pisi-ribbon-dropdown pisi-formula-btn" data-pisi-formula-trigger="personal" title="Personal formulas">F5</button>
+                    <button type="button" class="pisi-ribbon-btn pisi-ribbon-dropdown pisi-formula-btn" data-pisi-formula-trigger="personal" title="Personal formulas">F4</button>
                 </div>
-                <div class="pisi-toolbar-section-row pisi-toolbar-table-actions">
-                    <button type="button" class="pisi-ribbon-btn pisi-ribbon-btn-large pisi-ribbon-dropdown" data-pisi-table-trigger title="Tablo ekle">Table</button>
-                    <div class="pisi-toolbar-action-grid">
-                        <button type="button" class="pisi-ribbon-btn" data-pisi-excel-action="addRow" title="Add row">Ar</button>
-                        <button type="button" class="pisi-ribbon-btn" data-pisi-excel-action="deleteRow" title="Delete row">Dr</button>
-                        <button type="button" class="pisi-ribbon-btn" data-pisi-excel-action="addCol" title="Add column">Ac</button>
-                        <button type="button" class="pisi-ribbon-btn" data-pisi-excel-action="deleteCol" title="Delete column">Dc</button>
-                    </div>
-                    <span class="pisi-sheet-toolbar-status" data-pisi-sheet-status>0 × 0</span>
-                </div>
+            </section>
+
+            <section class="pisi-toolbar-section pisi-toolbar-section-excel" aria-label="Excel araçları">
+                   <button type="button" class="pisi-ribbon-btn pisi-ribbon-btn-large pisi-ribbon-dropdown" data-pisi-table-trigger title="Tablo ekle">Table</button>
             </section>
 
             <section class="pisi-toolbar-section pisi-toolbar-section-drawing" aria-label="Çizim araçları">
