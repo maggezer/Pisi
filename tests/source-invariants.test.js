@@ -163,7 +163,7 @@ test('editör iki görünümde güncel altı bölümlü toolbarı kullanır', ()
     assert.equal((html.match(/pisi-unified-toolbar-root/g) || []).length, 2);
     assert.doesNotMatch(html, /pisi-editor-toolbar-modes/);
     assert.doesNotMatch(html, /data-pisi-toolbar-tab=/);
-    assert.ok(css.includes('grid-template-columns: 232px 148px 104px 76px 244px'));
+    assert.ok(css.includes('grid-template-columns: 250px 118px 104px 76px 282px'));
 
     for (const section of [
         'pisi-toolbar-section-text',
