@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pisi Toolbar Designer</title>
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="toolbar-designer.css">
+</head>
+<body class="toolbar-designer-body">
+    <main class="toolbar-designer-shell">
+        <header class="toolbar-designer-header">
+            <div>
+                <p class="toolbar-designer-kicker">PISI DEVELOPMENT TOOL</p>
+                <h1>Text Toolbar Designer</h1>
+                <p>
+                    Turuncu tutamacı sürükleyerek araçları sırala. Sürüklemek
+                    istemediğinde kartın altındaki okları kullan.
+                </p>
+            </div>
+            <div class="toolbar-designer-actions">
+                <button type="button" data-designer-reset>Varsayılana dön</button>
+                <button type="button" class="primary" data-designer-copy>Düzeni kopyala</button>
+            </div>
+        </header>
+
+        <section class="toolbar-designer-settings" aria-label="Önizleme ayarları">
+            <label>Toolbar yüksekliği
+                <input type="range" min="58" max="140" value="86" data-setting="toolbarHeight">
+                <output data-output="toolbarHeight">86 px</output>
+            </label>
+            <label>Buton yüksekliği
+                <input type="range" min="26" max="48" value="32" data-setting="controlHeight">
+                <output data-output="controlHeight">32 px</output>
+            </label>
+            <label>Araç aralığı
+                <input type="range" min="0" max="20" value="6" data-setting="gap">
+                <output data-output="gap">6 px</output>
+            </label>
+            <label>Select genişliği
+                <input type="range" min="80" max="180" value="108" data-setting="selectWidth">
+                <output data-output="selectWidth">108 px</output>
+            </label>
+        </section>
+
+        <section class="toolbar-designer-stage">
+            <div class="toolbar-designer-window">
+                <div class="toolbar-designer-window-title">Canlı Pisi önizlemesi</div>
+                <div class="toolbar-designer-toolbar pisi-word-toolbar">
+                    <div class="toolbar-designer-list pisi-word-toolbar-controls" data-designer-list></div>
+                </div>
+                <article class="toolbar-designer-editor" contenteditable="true">
+                    <h2>Metin önizlemesi</h2>
+                    <p>
+                        Kontroller gerçek Pisi sınıflarını kullanır. Buradaki
+                        sıra ve ölçüler daha sonra uygulamanın toolbarına aktarılır.
+                    </p>
+                </article>
+            </div>
+        </section>
+
+        <section class="toolbar-designer-export">
+            <div>
+                <h2>Dışa aktarım</h2>
+                <p>
+                    Düzeni kopyalayıp sohbete yapıştırman yeterli. Tarayıcı
+                    kapanırsa son düzen bu bilgisayarda otomatik korunur.
+                </p>
+            </div>
+            <textarea readonly data-designer-export aria-label="Dışa aktarılan düzen"></textarea>
+        </section>
+    </main>
+    <script src="toolbar-designer.js"></script>
+</body>
+</html>
