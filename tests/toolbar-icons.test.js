@@ -19,6 +19,7 @@ const iconNames = [
     "align-left",
     "align-center",
     "align-right",
+    "align-justify",
     "font-color",
     "highlight",
     "symbol",

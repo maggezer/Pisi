@@ -399,6 +399,10 @@ function applyPisiSheetCellFormat(
         cells.forEach((cell) => {
             cell.style.textAlign = 'right';
         });
+    } else if (action === 'alignJustify') {
+        cells.forEach((cell) => {
+            cell.style.textAlign = 'justify';
+        });
     } else if (action === 'textColor' && value) {
         cells.forEach((cell) => {
             cell.style.color = value;

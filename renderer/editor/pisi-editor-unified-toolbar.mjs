@@ -39,19 +39,26 @@ function buildPisiUnifiedToolbarMarkup() {
                         <option value="7">32</option>
                     </select>
                 </div>
-                <div class="pisi-toolbar-section-row">
-                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="bold" title="Bold">${pisiToolbarIcon('bold')}</button>
-                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="italic" title="Italic">${pisiToolbarIcon('italic')}</button>
-                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="strikeThrough" title="Strikethrough">${pisiToolbarIcon('strike')}</button>
-                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="underline" title="Underline">${pisiToolbarIcon('underline')}</button>
-                </div>
-                <div class="pisi-toolbar-section-row">
-                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="justifyLeft" title="Sola yasla">${pisiToolbarIcon('align-left')}</button>
-                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="justifyCenter" title="Ortala">${pisiToolbarIcon('align-center')}</button>
-                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="justifyRight" title="Sağa yasla">${pisiToolbarIcon('align-right')}</button>
-                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn pisi-ribbon-dropdown" data-pisi-color-trigger="font" title="Font color">${pisiToolbarIcon('font-color')}</button>
-                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn pisi-ribbon-dropdown" data-pisi-color-trigger="highlight" title="Highlight; tabloda hücre rengi">${pisiToolbarIcon('highlight')}</button>
-                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn pisi-ribbon-dropdown" data-pisi-symbol-trigger title="Insert symbol">${pisiToolbarIcon('symbol')}</button>
+                <div class="pisi-toolbar-text-controls">
+                    <div class="pisi-toolbar-align-grid" aria-label="Paragraf hizalama">
+                        <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="justifyLeft" title="Sola yasla">${pisiToolbarIcon('align-left')}</button>
+                        <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="justifyRight" title="Sağa yasla">${pisiToolbarIcon('align-right')}</button>
+                        <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="justifyCenter" title="Ortala">${pisiToolbarIcon('align-center')}</button>
+                        <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="justifyFull" title="İki yana yasla">${pisiToolbarIcon('align-justify')}</button>
+                    </div>
+                    <div class="pisi-toolbar-text-action-stack">
+                        <div class="pisi-toolbar-section-row">
+                            <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="bold" title="Bold">${pisiToolbarIcon('bold')}</button>
+                            <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="italic" title="Italic">${pisiToolbarIcon('italic')}</button>
+                            <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="strikeThrough" title="Strikethrough">${pisiToolbarIcon('strike')}</button>
+                            <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="underline" title="Underline">${pisiToolbarIcon('underline')}</button>
+                        </div>
+                        <div class="pisi-toolbar-section-row">
+                            <button type="button" class="pisi-ribbon-btn pisi-icon-btn pisi-ribbon-dropdown" data-pisi-color-trigger="font" title="Font color">${pisiToolbarIcon('font-color')}</button>
+                            <button type="button" class="pisi-ribbon-btn pisi-icon-btn pisi-ribbon-dropdown" data-pisi-color-trigger="highlight" title="Highlight; tabloda hücre rengi">${pisiToolbarIcon('highlight')}</button>
+                            <button type="button" class="pisi-ribbon-btn pisi-icon-btn pisi-ribbon-dropdown" data-pisi-symbol-trigger title="Insert symbol">${pisiToolbarIcon('symbol')}</button>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -145,6 +152,7 @@ function runPisiUnifiedTextCommand(toolbar, command, value = null) {
         justifyLeft: 'alignLeft',
         justifyCenter: 'alignCenter',
         justifyRight: 'alignRight',
+        justifyFull: 'alignJustify',
         foreColor: 'textColor',
         hiliteColor: 'fillColor',
         fontName: 'fontFamily',
