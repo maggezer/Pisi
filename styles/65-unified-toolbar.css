@@ -1,0 +1,498 @@
+.pisi-editor-toolbar {
+    min-height: 118px;
+    display: block;
+    padding: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background: #202124;
+    border-bottom: 1px solid #34363a;
+}
+
+.pisi-unified-toolbar {
+    min-width: 1120px;
+    min-height: 116px;
+    display: grid;
+    grid-template-columns: 225px 145px 335px 335px minmax(90px, 1fr);
+    align-items: stretch;
+    gap: 5px;
+    padding: 5px 7px;
+    background: #202124;
+}
+
+.pisi-toolbar-section {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 5px;
+    padding: 6px;
+    border: 1px solid #3b3d42;
+    border-radius: 5px;
+    background: #292b30;
+}
+
+.pisi-toolbar-section-reserved {
+    background: #25272b;
+}
+
+.pisi-toolbar-section-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 28px;
+}
+
+.pisi-toolbar-section-row-top {
+    min-height: 32px;
+}
+
+.pisi-office-select {
+    height: 30px;
+    min-width: 0;
+    border: 1px solid #666a72;
+    border-radius: 4px;
+    background: #f8f8f8;
+    color: #1d1d1d;
+    padding: 0 25px 0 8px;
+    font-size: 12px;
+    outline: none;
+    cursor: pointer;
+}
+
+.pisi-office-select:hover,
+.pisi-office-select:focus {
+    border-color: #f39c12;
+    box-shadow: 0 0 0 1px rgba(243, 156, 18, 0.24);
+}
+
+.pisi-font-family-select {
+    width: 100%;
+}
+
+.pisi-font-size-select {
+    width: 52px;
+    padding-left: 6px;
+    padding-right: 17px;
+}
+
+.pisi-style-select {
+    width: 100%;
+}
+
+.pisi-ribbon-btn,
+.pisi-ribbon-split-arrow {
+    height: 28px;
+    min-width: 28px;
+    border: 1px solid #4b4f57;
+    border-radius: 4px;
+    background: #171b2f;
+    color: #f2f2f2;
+    padding: 0 7px;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+    user-select: none;
+}
+
+.pisi-ribbon-btn:hover:not(:disabled),
+.pisi-ribbon-split-arrow:hover:not(:disabled),
+.pisi-ribbon-btn:focus-visible,
+.pisi-ribbon-split-arrow:focus-visible {
+    border-color: #f39c12;
+    background: #29304b;
+    color: #ffb84d;
+}
+
+.pisi-ribbon-btn.active,
+.pisi-ribbon-btn[aria-pressed="true"] {
+    border-color: #f39c12;
+    background: #f39c12;
+    color: #171717;
+}
+
+.pisi-ribbon-btn:disabled,
+.pisi-ribbon-split-arrow:disabled {
+    opacity: 0.36;
+    cursor: default;
+}
+
+.pisi-ribbon-dropdown {
+    position: relative;
+    padding-right: 14px;
+}
+
+.pisi-ribbon-dropdown::after {
+    content: "";
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    width: 0;
+    height: 0;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 4px solid currentColor;
+    transform: translateY(-20%);
+    opacity: 0.8;
+}
+
+.pisi-toolbar-style-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+}
+
+.pisi-toolbar-style-grid .pisi-ribbon-btn {
+    width: 100%;
+}
+
+.pisi-toolbar-formula-row {
+    justify-content: space-between;
+}
+
+.pisi-formula-btn {
+    min-width: 50px;
+    background: #f7f7f7;
+    color: #202124;
+    border-color: #b7bbc3;
+    font-weight: 700;
+}
+
+.pisi-formula-btn:hover:not(:disabled) {
+    background: #ffffff;
+    color: #9b5b00;
+}
+
+.pisi-toolbar-table-actions {
+    align-items: stretch;
+}
+
+.pisi-ribbon-btn-large {
+    min-width: 62px;
+    height: 61px;
+    font-size: 14px;
+}
+
+.pisi-toolbar-action-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 34px);
+    grid-template-rows: repeat(2, 28px);
+    gap: 4px;
+}
+
+.pisi-toolbar-action-grid .pisi-ribbon-btn {
+    width: 34px;
+    min-width: 34px;
+    padding: 0;
+}
+
+.pisi-sheet-toolbar-status {
+    align-self: flex-end;
+    min-width: 50px;
+    padding: 3px 5px;
+    border-radius: 3px;
+    color: #aeb2bb;
+    font: 10px/1.2 Consolas, monospace;
+    text-align: center;
+}
+
+.pisi-toolbar-drawing-layout {
+    display: grid;
+    grid-template-columns: 58px 1fr;
+    gap: 7px;
+    height: 100%;
+}
+
+.pisi-toolbar-canvas-column {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.pisi-ribbon-btn-canvas {
+    width: 58px;
+    height: 59px;
+    padding: 0;
+}
+
+.pisi-toolbar-dimension-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+}
+
+.pisi-ribbon-number {
+    height: 27px;
+    display: grid;
+    grid-template-columns: 15px 1fr;
+    align-items: center;
+    border: 1px solid #4b4f57;
+    border-radius: 4px;
+    background: #171b2f;
+    color: #f2f2f2;
+    font-size: 11px;
+    font-weight: 800;
+    overflow: hidden;
+}
+
+.pisi-ribbon-number input {
+    width: 100%;
+    min-width: 0;
+    height: 25px;
+    border: none;
+    border-left: 1px solid #3f4350;
+    background: #f8f8f8;
+    color: #171717;
+    padding: 0 2px;
+    font-size: 10px;
+    outline: none;
+    appearance: textfield;
+}
+
+.pisi-ribbon-number input::-webkit-inner-spin-button,
+.pisi-ribbon-number input::-webkit-outer-spin-button {
+    appearance: none;
+    margin: 0;
+}
+
+.pisi-toolbar-draw-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(48px, 1fr));
+    grid-auto-rows: 29px;
+    gap: 5px;
+    align-content: start;
+}
+
+.pisi-ribbon-split {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(30px, 1fr) 16px;
+}
+
+.pisi-ribbon-split .pisi-ribbon-btn {
+    min-width: 0;
+    width: 100%;
+    border-radius: 4px 0 0 4px;
+}
+
+.pisi-ribbon-split-arrow {
+    min-width: 16px;
+    width: 16px;
+    padding: 0;
+    border-left: none;
+    border-radius: 0 4px 4px 0;
+    font-size: 10px;
+}
+
+.pisi-office-popover {
+    position: fixed;
+    z-index: 12000;
+    min-width: 190px;
+    max-width: min(420px, calc(100vw - 16px));
+    padding: 8px;
+    border: 1px solid #aeb2b8;
+    border-radius: 5px;
+    background: #f7f7f8;
+    color: #202124;
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.38);
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.pisi-office-popover-title {
+    margin-bottom: 7px;
+    padding: 2px 3px 6px;
+    border-bottom: 1px solid #d7d9dd;
+    color: #2a2c31;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.pisi-office-color-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 25px);
+    gap: 4px;
+}
+
+.pisi-office-color-swatch {
+    width: 25px;
+    height: 25px;
+    border: 1px solid #979ba2;
+    border-radius: 2px;
+    cursor: pointer;
+}
+
+.pisi-office-color-swatch:hover,
+.pisi-office-color-swatch:focus-visible {
+    outline: 2px solid #f39c12;
+    outline-offset: 1px;
+}
+
+.pisi-office-custom-color {
+    min-height: 31px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    padding: 5px 7px;
+    border-top: 1px solid #d7d9dd;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.pisi-office-custom-color input {
+    width: 42px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid #aeb2b8;
+    background: white;
+}
+
+.pisi-office-symbol-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 34px);
+    gap: 3px;
+}
+
+.pisi-office-symbol-item,
+.pisi-office-shape-item {
+    border: 1px solid transparent;
+    border-radius: 3px;
+    background: transparent;
+    color: #202124;
+    cursor: pointer;
+}
+
+.pisi-office-symbol-item {
+    width: 34px;
+    height: 32px;
+    font-size: 17px;
+}
+
+.pisi-office-symbol-item:hover,
+.pisi-office-shape-item:hover {
+    border-color: #f39c12;
+    background: #fff1dc;
+}
+
+.pisi-office-table-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 19px);
+    gap: 3px;
+}
+
+.pisi-office-table-cell {
+    width: 19px;
+    height: 19px;
+    padding: 0;
+    border: 1px solid #9da1a8;
+    background: #ffffff;
+    cursor: pointer;
+}
+
+.pisi-office-table-cell.selected {
+    border-color: #d47800;
+    background: #ffd99f;
+}
+
+.pisi-office-formula-list {
+    min-width: 275px;
+    display: grid;
+    gap: 3px;
+}
+
+.pisi-office-formula-item,
+.pisi-office-formula-save {
+    width: 100%;
+    min-height: 40px;
+    display: grid;
+    grid-template-columns: 58px 1fr;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    background: transparent;
+    color: #202124;
+    text-align: left;
+    cursor: pointer;
+}
+
+.pisi-office-formula-item span {
+    font: 11px Consolas, monospace;
+    color: #555b65;
+}
+
+.pisi-office-formula-item em {
+    grid-column: 1 / -1;
+    color: #8a5d1b;
+    font-size: 10px;
+}
+
+.pisi-office-formula-item:hover:not(:disabled),
+.pisi-office-formula-save:hover {
+    border-color: #f39c12;
+    background: #fff1dc;
+}
+
+.pisi-office-formula-item:disabled {
+    opacity: 0.58;
+    cursor: default;
+}
+
+.pisi-office-formula-empty {
+    padding: 10px 6px;
+    color: #737780;
+    font-size: 12px;
+}
+
+.pisi-office-formula-save {
+    grid-template-columns: 1fr;
+    margin-top: 6px;
+    border-top: 1px solid #d7d9dd;
+    font-weight: 700;
+}
+
+.pisi-office-size-control {
+    min-width: 235px;
+    display: grid;
+    grid-template-columns: 1fr 55px;
+    align-items: center;
+    gap: 9px;
+}
+
+.pisi-office-size-control input {
+    accent-color: #f39c12;
+}
+
+.pisi-office-size-control output {
+    color: #444951;
+    font: 11px Consolas, monospace;
+    text-align: right;
+}
+
+.pisi-office-shape-grid {
+    min-width: 190px;
+    display: grid;
+    gap: 3px;
+}
+
+.pisi-office-shape-item {
+    min-height: 34px;
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    align-items: center;
+    padding: 3px 7px;
+    text-align: left;
+}
+
+.pisi-office-shape-item span {
+    font-size: 21px;
+    text-align: center;
+}
+
+@media (max-width: 1200px) {
+    .pisi-unified-toolbar {
+        grid-template-columns: 225px 145px 335px 300px 90px;
+    }
+}
