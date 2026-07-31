@@ -47,6 +47,15 @@ jobs:
       - name: Apply toolbar polish
         run: node scripts/apply-current-toolbar-polish.js
 
+      - name: Normalize generated toolbar template
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('renderer/editor/pisi-editor-unified-toolbar.mjs')
+          source = path.read_text(encoding='utf-8')
+          source = source.replace('\\`', '`').replace('\\${', '${')
+          path.write_text(source, encoding='utf-8')
+
       - name: Validate source
         run: npm run validate
 
