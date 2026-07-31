@@ -7,6 +7,7 @@ on:
     paths:
       - scripts/apply-unified-toolbar.js
       - scripts/fix-unified-toolbar-css.js
+      - scripts/fix-unified-toolbar-test.js
       - .github/workflows/apply-unified-toolbar.yml
   pull_request:
     branches:
@@ -40,6 +41,7 @@ jobs:
         run: |
           node scripts/apply-unified-toolbar.js
           node scripts/fix-unified-toolbar-css.js
+          node scripts/fix-unified-toolbar-test.js
 
       - name: Validate source
         run: npm run validate
@@ -48,6 +50,7 @@ jobs:
         run: |
           rm scripts/apply-unified-toolbar.js
           rm scripts/fix-unified-toolbar-css.js
+          rm scripts/fix-unified-toolbar-test.js
           rm .github/workflows/apply-unified-toolbar.yml
 
       - name: Commit generated source
