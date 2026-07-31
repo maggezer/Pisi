@@ -102,6 +102,7 @@ function sanitizePisiEditorHtml(html = '') {
                     'width',
                     'height',
                     'data-pisi-canvas',
+                    'data-pisi-document-ink',
                     'data-image'
                 ].includes(name);
 
@@ -133,11 +134,39 @@ function sanitizePisiEditorHtml(html = '') {
         }
 
         if (element.tagName === 'CANVAS') {
-            const width = Math.min(1600, Math.max(1, Number(element.getAttribute('width')) || 520));
-            const height = Math.min(1200, Math.max(1, Number(element.getAttribute('height')) || 320));
+            const isDocumentInk = element.hasAttribute(
+                'data-pisi-document-ink'
+            );
+            const maxWidth = isDocumentInk ? 4096 : 1600;
+            const maxHeight = isDocumentInk ? 4096 : 1200;
+            const fallbackWidth = isDocumentInk ? 1 : 520;
+            const fallbackHeight = isDocumentInk ? 1 : 320;
+            const width = Math.min(
+                maxWidth,
+                Math.max(
+                    1,
+                    Number(element.getAttribute('width')) || fallbackWidth
+                )
+            );
+            const height = Math.min(
+                maxHeight,
+                Math.max(
+                    1,
+                    Number(element.getAttribute('height')) || fallbackHeight
+                )
+            );
+
             element.setAttribute('width', String(width));
             element.setAttribute('height', String(height));
-            element.setAttribute('data-pisi-canvas', '1');
+
+            if (isDocumentInk) {
+                element.setAttribute('data-pisi-document-ink', '1');
+                element.removeAttribute('data-pisi-canvas');
+            } else {
+                element.setAttribute('data-pisi-canvas', '1');
+                element.removeAttribute('data-pisi-document-ink');
+            }
+
             element.removeAttribute('data-pisi-canvas-bound');
             element.removeAttribute('data-image-loaded');
         }

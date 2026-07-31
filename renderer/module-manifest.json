@@ -38,6 +38,28 @@
     ]
   },
   {
+    "module": "editor.documentInk",
+    "path": "renderer/editor/pisi-editor-document-ink.mjs",
+    "bindings": [
+      "PISI_DOCUMENT_INK_MAX_WIDTH",
+      "PISI_DOCUMENT_INK_MAX_HEIGHT",
+      "getPisiDocumentInkLayer",
+      "getPisiDocumentInkCanvas",
+      "hasPisiEmbeddedPaintCanvas",
+      "getPisiDocumentInkExtent",
+      "resizePisiDocumentInkCanvas",
+      "ensurePisiDocumentInkLayer",
+      "savePisiDocumentInkData",
+      "savePisiDocumentInkForEditor",
+      "hydratePisiDocumentInk",
+      "bindPisiDocumentInkCanvas",
+      "deactivatePisiDocumentInk",
+      "activatePisiDocumentInk",
+      "syncPisiDocumentInkForPaintTool",
+      "bindPisiInkSurfaces"
+    ]
+  },
+  {
     "module": "editor.toolbarPopovers",
     "path": "renderer/editor/pisi-editor-toolbar-popovers.mjs",
     "bindings": [
