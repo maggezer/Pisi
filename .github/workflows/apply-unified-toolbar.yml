@@ -50,3 +50,5 @@ jobs:
           git add -A
           git commit -m "Implement unified Office-style toolbar"
           git push origin agent/unified-office-toolbar
+
+# Triggered after all toolbar source modules were staged.
