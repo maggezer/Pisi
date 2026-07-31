@@ -1,0 +1,33 @@
+.pisi-rich-editor:has(> .pisi-document-ink-layer) {
+    position: relative;
+    isolation: isolate;
+}
+
+.pisi-document-ink-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 6;
+    display: block;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.pisi-document-ink-canvas {
+    display: block;
+    background: transparent;
+    cursor: crosshair;
+    pointer-events: none;
+    touch-action: none;
+}
+
+.pisi-rich-editor.pisi-document-ink-active > .pisi-document-ink-layer,
+.pisi-rich-editor.pisi-document-ink-active .pisi-document-ink-canvas {
+    pointer-events: auto;
+}
+
+.pisi-rich-editor.pisi-document-ink-active {
+    caret-color: transparent;
+    cursor: crosshair;
+    user-select: none;
+}
