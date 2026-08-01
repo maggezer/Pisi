@@ -25,6 +25,12 @@ test('toolbar sections use separators and alignment controls use a fixed 2x2 gri
     ].map((command) => toolbar.indexOf(`data-pisi-unified-command="${command}"`));
     assert.ok(order.every((position) => position >= 0));
     assert.deepEqual([...order].sort((a, b) => a - b), order);
+
+    const actionStack = toolbar.indexOf('pisi-toolbar-text-action-stack');
+    const alignGrid = toolbar.indexOf('pisi-toolbar-align-grid');
+    assert.ok(actionStack >= 0 && alignGrid > actionStack);
+    assert.doesNotMatch(toolbar, /pisi-toolbar-section-reserved/);
+    assert.match(css, /grid-template-columns: minmax\(0, 1fr\) 56px/);
 });
 
 test('table cells support justify and compact style buttons stay fixed width', () => {

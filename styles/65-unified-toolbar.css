@@ -11,10 +11,10 @@
 }
 
 .pisi-unified-toolbar {
-    min-width: 982px;
+    min-width: 870px;
     min-height: 102px;
     display: grid;
-    grid-template-columns: 250px 118px 104px 76px 282px minmax(40px, 1fr);
+    grid-template-columns: 250px 118px 104px 76px minmax(282px, 1fr);
     align-items: stretch;
     gap: 6px;
     padding: 6px 8px;
@@ -35,10 +35,8 @@
     box-shadow: none;
 }
 
-.pisi-toolbar-section-reserved {
+.pisi-toolbar-section:last-child {
     border-right: 0;
-    background: transparent;
-    box-shadow: none;
 }
 
 .pisi-toolbar-section-row {
@@ -54,7 +52,7 @@
 
 .pisi-toolbar-text-controls {
     display: grid;
-    grid-template-columns: 56px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 56px;
     align-items: start;
     gap: 7px;
 }
