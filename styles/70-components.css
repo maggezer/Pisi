@@ -136,3 +136,35 @@
     flex: 1;
     min-height: 0;
 }
+
+/* Final toolbar sizing refinements. */
+.pisi-toolbar-section-text .pisi-toolbar-section-row-top {
+    justify-content: flex-start;
+}
+
+.pisi-font-family-select {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.pisi-toolbar-draw-grid {
+    grid-template-columns: repeat(2, 44px);
+    justify-content: start;
+}
+
+.pisi-ribbon-split {
+    width: 44px;
+    min-width: 44px;
+    grid-template-columns: 26px 18px;
+}
+
+.pisi-ribbon-split .pisi-ribbon-btn {
+    width: 26px;
+    min-width: 26px;
+}
+
+.pisi-toolbar-draw-grid > .pisi-icon-btn {
+    width: 26px;
+    min-width: 26px;
+    justify-self: start;
+}
