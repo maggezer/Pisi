@@ -36,6 +36,16 @@
     ]
   },
   {
+    "module": "main.i18n",
+    "path": "main/functions/i18n.js",
+    "bindings": [
+      "normalizePisiLanguage",
+      "getPisiLanguage",
+      "setPisiLanguage",
+      "translatePisiMain"
+    ]
+  },
+  {
     "module": "main.filesystemCore",
     "path": "main/functions/filesystem-core.js",
     "bindings": [

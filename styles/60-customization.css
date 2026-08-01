@@ -265,3 +265,38 @@
     font-weight: 800;
     outline: none;
 }
+
+/* Language selection */
+.pisi-language-select {
+    min-width: 112px;
+    height: 29px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background: #252526;
+    color: #d4d4d4;
+    padding: 0 28px 0 9px;
+    font-size: 12px;
+    font-weight: 700;
+    outline: none;
+    cursor: pointer;
+}
+
+.pisi-language-select:hover,
+.pisi-language-select:focus {
+    border-color: #f39c12;
+}
+
+.pisi-customize-note {
+    padding: 0 11px 9px;
+    color: #858585;
+    font-size: 11px;
+    line-height: 1.35;
+}
+
+#pisi-language-toggle {
+    color: #f39c12;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
