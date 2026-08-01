@@ -35,6 +35,18 @@ jobs:
             i18n-audit-summary.json
           retention-days: 3
 
+      - name: Upload source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: pisi-source-snapshot
+          path: |
+            .
+            !node_modules/**
+            !.git/**
+            !dist/**
+          include-hidden-files: true
+          retention-days: 3
+
       - name: Commit inventory
         run: |
           git config user.name "github-actions[bot]"
