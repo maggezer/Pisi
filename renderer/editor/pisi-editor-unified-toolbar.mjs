@@ -40,12 +40,6 @@ function buildPisiUnifiedToolbarMarkup() {
                     </select>
                 </div>
                 <div class="pisi-toolbar-text-controls">
-                    <div class="pisi-toolbar-align-grid" aria-label="Paragraf hizalama">
-                        <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="justifyLeft" title="Sola yasla">${pisiToolbarIcon('align-left')}</button>
-                        <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="justifyRight" title="Sağa yasla">${pisiToolbarIcon('align-right')}</button>
-                        <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="justifyCenter" title="Ortala">${pisiToolbarIcon('align-center')}</button>
-                        <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="justifyFull" title="İki yana yasla">${pisiToolbarIcon('align-justify')}</button>
-                    </div>
                     <div class="pisi-toolbar-text-action-stack">
                         <div class="pisi-toolbar-section-row">
                             <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="bold" title="Bold">${pisiToolbarIcon('bold')}</button>
@@ -58,6 +52,12 @@ function buildPisiUnifiedToolbarMarkup() {
                             <button type="button" class="pisi-ribbon-btn pisi-icon-btn pisi-ribbon-dropdown" data-pisi-color-trigger="highlight" title="Highlight; tabloda hücre rengi">${pisiToolbarIcon('highlight')}</button>
                             <button type="button" class="pisi-ribbon-btn pisi-icon-btn pisi-ribbon-dropdown" data-pisi-symbol-trigger title="Insert symbol">${pisiToolbarIcon('symbol')}</button>
                         </div>
+                    </div>
+                    <div class="pisi-toolbar-align-grid" aria-label="Paragraf hizalama">
+                        <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="justifyLeft" title="Sola yasla">${pisiToolbarIcon('align-left')}</button>
+                        <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="justifyRight" title="Sağa yasla">${pisiToolbarIcon('align-right')}</button>
+                        <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="justifyCenter" title="Ortala">${pisiToolbarIcon('align-center')}</button>
+                        <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="justifyFull" title="İki yana yasla">${pisiToolbarIcon('align-justify')}</button>
                     </div>
                 </div>
             </section>
@@ -129,7 +129,6 @@ function buildPisiUnifiedToolbarMarkup() {
                 </div>
             </section>
 
-            <section class="pisi-toolbar-section pisi-toolbar-section-reserved" aria-label="Ayrılmış toolbar alanı"></section>
         </div>
     `;
 }
