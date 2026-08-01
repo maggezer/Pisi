@@ -58,14 +58,14 @@ test('font selector stays left aligned and paint split buttons use fixed widths'
     );
     assert.match(
         css,
-        /pisi-toolbar-draw-grid[\s\S]*grid-template-columns: repeat\(2, 44px\)/
+        /pisi-toolbar-section-drawing \.pisi-toolbar-draw-grid[\s\S]*grid-template-columns: repeat\(2, 44px\)/
     );
     assert.match(
         css,
-        /pisi-ribbon-split[\s\S]*grid-template-columns: 26px 18px/
+        /pisi-toolbar-section-drawing \.pisi-ribbon-split[\s\S]*grid-template-columns: 26px 18px/
     );
     assert.match(
         css,
-        /pisi-ribbon-split \.pisi-ribbon-btn[\s\S]*width: 26px/
+        /pisi-toolbar-section-drawing \.pisi-ribbon-split \.pisi-ribbon-btn[\s\S]*width: 26px/
     );
 });
