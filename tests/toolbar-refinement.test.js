@@ -30,7 +30,10 @@ test('toolbar sections use separators and alignment controls use a fixed 2x2 gri
     const alignGrid = toolbar.indexOf('pisi-toolbar-align-grid');
     assert.ok(actionStack >= 0 && alignGrid > actionStack);
     assert.doesNotMatch(toolbar, /pisi-toolbar-section-reserved/);
+    assert.doesNotMatch(css, /pisi-toolbar-section-reserved/);
+    assert.match(css, /pisi-toolbar-section:last-child[\s\S]*border-right: 0/);
     assert.match(css, /grid-template-columns: minmax\(0, 1fr\) 56px/);
+    assert.match(css, /grid-template-columns: 250px 118px 104px 76px minmax\(282px, 1fr\)/);
 });
 
 test('table cells support justify and compact style buttons stay fixed width', () => {
