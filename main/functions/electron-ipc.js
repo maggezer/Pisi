@@ -442,9 +442,9 @@ function createWindow() {
             closeRequestTimer = null;
             dialog.showMessageBox(mainWindow, {
                 type: 'warning',
-                title: 'PISI kapatılamadı',
-                message: 'Bekleyen kayıtların tamamlandığı doğrulanamadı.',
-                detail: 'Veri kaybını önlemek için pencere açık bırakıldı.'
+                title: translatePisiMain('PISI kapatılamadı'),
+                message: translatePisiMain('Bekleyen kayıtların tamamlandığı doğrulanamadı.'),
+                detail: translatePisiMain('Veri kaybını önlemek için pencere açık bırakıldı.')
             }).catch(() => {});
         }, 30000);
     });

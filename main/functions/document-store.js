@@ -242,7 +242,9 @@ function createUniquePisiFile(folderPath, ext, options = {}) {
         };
     }
 
-    const baseName = ext === '.map' ? 'Yeni Map' : 'Yeni Node';
+    const baseName = ext === '.map'
+        ? translatePisiMain('Yeni Map')
+        : translatePisiMain('Yeni Node');
 
     let fileName = baseName + ext;
     let fullPath = path.join(folderPath, fileName);

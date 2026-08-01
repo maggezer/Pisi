@@ -1,3 +1,4 @@
+import "./core/i18n.mjs";
 import "./core/state.mjs";
 import "./editor/pisi-editor-sheet.mjs";
 import "./editor/pisi-editor-sheet-interactions.mjs";

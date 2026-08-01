@@ -297,6 +297,14 @@ ipcMain.handle('window:is-maximized', () => {
     return mainWindow ? mainWindow.isMaximized() : false;
 });
 
+ipcMain.handle('app:get-language', () => {
+    return getPisiLanguage();
+});
+
+ipcMain.handle('app:set-language', (_event, language) => {
+    return setPisiLanguage(language);
+});
+
 ipcMain.handle('project:save-map-camera', (_event, mapPath, camera) => {
     return projectOperation(() => {
         const safeMapPath = assertProjectPath(mapPath, {
@@ -526,7 +534,7 @@ ipcMain.handle('project:get-last-folder', () => {
 
 ipcMain.handle('project:choose-folder', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
-        title: 'PISI proje klasörü seç',
+        title: translatePisiMain('PISI proje klasörü seç'),
         properties: ['openDirectory']
     });
 
@@ -539,9 +547,9 @@ ipcMain.handle('project:choose-folder', async () => {
     if (!lockProjectFolder(selectedFolder)) {
         await dialog.showMessageBox(mainWindow, {
             type: 'error',
-            title: 'Proje açılamadı',
-            message: 'Seçilen proje klasörü kilitlenemedi.',
-            detail: 'Klasör başka bir PISI sürecinde açık olabilir veya erişim izni olmayabilir.'
+            title: translatePisiMain('Proje açılamadı'),
+            message: translatePisiMain('Seçilen proje klasörü kilitlenemedi.'),
+            detail: translatePisiMain('Klasör başka bir PISI sürecinde açık olabilir veya erişim izni olmayabilir.')
         });
         return null;
     }

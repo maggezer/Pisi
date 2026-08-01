@@ -80,6 +80,7 @@ const nodeGlobals = {
 };
 
 const preloadBrowserGlobals = {
+    CustomEvent: 'readonly',
     document: 'readonly',
     fetch: 'readonly',
     localStorage: 'readonly',

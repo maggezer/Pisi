@@ -87,11 +87,38 @@ contextBridge.exposeInMainWorld('pisiProject', {
 });
 
 const PISI_LANGUAGE_STORAGE_KEY = 'pisi.language';
+const PISI_TRANSLATABLE_ATTRIBUTES = ['title', 'aria-label', 'alt', 'placeholder'];
+const PISI_USER_CONTENT_SELECTOR = [
+    'input',
+    'textarea',
+    '[contenteditable="true"]',
+    '[contenteditable="plaintext-only"]',
+    '.pisi-rich-editor',
+    '.map-node-title',
+    '.map-node-preview',
+    '.tree-name',
+    '.center-tab-title',
+    '.pisi-tag-result-text',
+    '.pisi-tag-result-node',
+    '.pisi-mission-text',
+    '.pisi-mission-node',
+    '[data-pisi-user-content]'
+].join(', ');
+
 const pisiTextSources = new WeakMap();
 const pisiAttributeSources = new WeakMap();
+const pisiLanguageListeners = new Set();
 let pisiLocale = null;
 let pisiIcons = null;
 let pisiLanguage = 'tr';
+let pisiTemplateTranslations = [];
+let pisiPrefixTranslations = [];
+let pisiLocalizationObserver = null;
+let pisiApplyingTranslations = false;
+
+function pisiNormalizeLanguage(language) {
+    return language === 'eng' || language === 'en' ? 'eng' : 'tr';
+}
 
 async function pisiLoadJson(relativePath) {
     const response = await fetch(new URL(relativePath, window.location.href));
@@ -101,51 +128,117 @@ async function pisiLoadJson(relativePath) {
     return response.json();
 }
 
-function pisiTranslate(source) {
+function pisiEscapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function pisiBuildTemplateTranslations(strings = {}) {
+    const templates = [];
+    const prefixes = [];
+
+    for (const [source, translated] of Object.entries(strings)) {
+        if (source.includes('{value}')) {
+            const pieces = source.split('{value}').map(pisiEscapeRegExp);
+            templates.push({
+                source,
+                translated,
+                regexp: new RegExp(`^${pieces.join('(.+?)')}$`, 'u')
+            });
+            continue;
+        }
+
+        if (source.endsWith(':') || source.endsWith(': ')) {
+            prefixes.push({ source, translated });
+        }
+    }
+
+    templates.sort((a, b) => b.source.length - a.source.length);
+    prefixes.sort((a, b) => b.source.length - a.source.length);
+    pisiTemplateTranslations = templates;
+    pisiPrefixTranslations = prefixes;
+}
+
+function pisiTranslateCore(source) {
     const cleanSource = String(source ?? '');
     const exact = pisiLocale?.strings?.[cleanSource];
     if (exact !== undefined) return exact;
 
-    return cleanSource
-        .replace(/PISI/g, 'Pisi')
-        .replace(/Pisi/g, 'Pisi');
+    for (const template of pisiTemplateTranslations) {
+        const match = cleanSource.match(template.regexp);
+        if (!match) continue;
+        let captureIndex = 1;
+        return template.translated.replace(/\{value\}/g, () => {
+            const value = match[captureIndex] ?? '';
+            captureIndex += 1;
+            return value;
+        });
+    }
+
+    for (const prefix of pisiPrefixTranslations) {
+        if (!cleanSource.startsWith(prefix.source)) continue;
+        return prefix.translated + cleanSource.slice(prefix.source.length);
+    }
+
+    return cleanSource.replace(/PISI/g, 'Pisi');
 }
 
-function pisiIsEditableNode(node) {
+function pisiTranslate(source) {
+    const raw = String(source ?? '');
+    if (!raw) return raw;
+
+    const leading = raw.match(/^\s*/u)?.[0] || '';
+    const trailing = raw.match(/\s*$/u)?.[0] || '';
+    const endIndex = Math.max(leading.length, raw.length - trailing.length);
+    const core = raw.slice(leading.length, endIndex).replace(/\s+/gu, ' ');
+    if (!core) return raw;
+
+    const translated = pisiTranslateCore(core);
+    if (translated === core && core === raw) return raw;
+    return `${leading}${translated}${trailing}`;
+}
+
+function pisiIsUserContentNode(node) {
     const element = node?.nodeType === Node.ELEMENT_NODE
         ? node
         : node?.parentElement;
-
-    if (!element) return false;
-
-    return Boolean(element.closest(
-        'input, textarea, select, [contenteditable="true"], [contenteditable="plaintext-only"]'
-    ));
+    return Boolean(element?.closest(PISI_USER_CONTENT_SELECTOR));
 }
 
-function pisiTranslateTextNode(node) {
-    // Kullanıcının yazdığı metne dokunmak caret/selection konumunu sıfırlar.
-    // Editör, modal ve form alanları çeviri gözlemcisinin dışında kalmalıdır.
-    if (pisiIsEditableNode(node)) return;
+function pisiTranslateTextNode(node, force = false) {
+    if (!node || node.nodeType !== Node.TEXT_NODE) return;
+    if (!force && pisiIsUserContentNode(node)) return;
 
-    if (!pisiTextSources.has(node)) {
-        pisiTextSources.set(node, node.nodeValue || '');
+    const current = node.nodeValue || '';
+    let record = pisiTextSources.get(node);
+    if (!record || (current !== record.rendered && current !== record.source)) {
+        record = { source: current, rendered: current };
+        pisiTextSources.set(node, record);
     }
-    node.nodeValue = pisiTranslate(pisiTextSources.get(node));
+
+    const rendered = pisiTranslate(record.source);
+    record.rendered = rendered;
+    if (current !== rendered) node.nodeValue = rendered;
 }
 
 function pisiTranslateAttributes(element) {
-    const translatableAttributes = ['title', 'aria-label', 'alt', 'placeholder'];
-    let sources = pisiAttributeSources.get(element);
-    if (!sources) {
-        sources = {};
-        pisiAttributeSources.set(element, sources);
+    if (!element || element.nodeType !== Node.ELEMENT_NODE) return;
+    let records = pisiAttributeSources.get(element);
+    if (!records) {
+        records = Object.create(null);
+        pisiAttributeSources.set(element, records);
     }
 
-    for (const attribute of translatableAttributes) {
+    for (const attribute of PISI_TRANSLATABLE_ATTRIBUTES) {
         if (!element.hasAttribute(attribute)) continue;
-        if (!(attribute in sources)) sources[attribute] = element.getAttribute(attribute);
-        element.setAttribute(attribute, pisiTranslate(sources[attribute]));
+        const current = element.getAttribute(attribute) || '';
+        let record = records[attribute];
+        if (!record || (current !== record.rendered && current !== record.source)) {
+            record = { source: current, rendered: current };
+            records[attribute] = record;
+        }
+        const rendered = pisiTranslate(record.source);
+        record.rendered = rendered;
+        if (current !== rendered) element.setAttribute(attribute, rendered);
     }
 }
 
@@ -164,89 +257,171 @@ function pisiApplyIcon(element, sourceText) {
 
     const label = trimmed.slice(match.length).trim();
     element.replaceChildren(image);
-    if (label) element.append(document.createTextNode(` ${pisiTranslate(label)}`));
+    if (label) element.append(document.createTextNode(` ${label}`));
     element.dataset.pisiIconized = '1';
 }
 
 function pisiApplyToRoot(root = document) {
-    if (!root) return;
-
-    if (root.nodeType === Node.TEXT_NODE) {
-        pisiTranslateTextNode(root);
-        return;
-    }
-
-    const elements = root.nodeType === Node.ELEMENT_NODE
-        ? [root, ...root.querySelectorAll('*')]
-        : [...document.querySelectorAll('*')];
-
-    for (const element of elements) {
-        pisiTranslateAttributes(element);
-
-        // Düzenlenebilir alanların metin düğümlerini veya çocuklarını yeniden
-        // yazmak imleci başa taşır. Sadece güvenli öznitelikler çevrilir.
-        if (pisiIsEditableNode(element)) continue;
-
-        if (element.matches('button')) {
-            const source = element.textContent;
-            pisiApplyIcon(element, source);
+    if (!root || !pisiLocale) return;
+    pisiApplyingTranslations = true;
+    try {
+        if (root.nodeType === Node.TEXT_NODE) {
+            pisiTranslateTextNode(root);
+            return;
         }
 
-        for (const child of element.childNodes) {
-            if (child.nodeType === Node.TEXT_NODE) pisiTranslateTextNode(child);
+        const elements = root.nodeType === Node.ELEMENT_NODE
+            ? [root, ...root.querySelectorAll('*')]
+            : [...document.querySelectorAll('*')];
+
+        for (const element of elements) {
+            pisiTranslateAttributes(element);
+            if (element.matches('button')) pisiApplyIcon(element, element.textContent);
+            for (const child of element.childNodes) {
+                if (child.nodeType === Node.TEXT_NODE) pisiTranslateTextNode(child);
+            }
         }
-    }
 
-    document.documentElement.lang = pisiLanguage === 'eng' ? 'en' : 'tr';
-    document.title = 'Pisi';
+        document.documentElement.lang = pisiLanguage === 'eng' ? 'en' : 'tr';
+        document.title = 'Pisi';
 
-    const brandImages = document.querySelectorAll('#window-logo, .modal-logo-row img');
-    for (const image of brandImages) {
-        image.src = pisiIcons?.brand || 'assets/icons/pisi-logo.svg';
-        image.alt = 'Pisi';
+        for (const image of document.querySelectorAll('#window-logo, .modal-logo-row img')) {
+            image.src = pisiIcons?.brand || 'assets/pisi.png';
+            image.alt = 'Pisi';
+        }
+    } finally {
+        pisiApplyingTranslations = false;
     }
 }
 
-async function pisiSetLanguage(language) {
-    pisiLanguage = language === 'eng' ? 'eng' : 'tr';
-    localStorage.setItem(PISI_LANGUAGE_STORAGE_KEY, pisiLanguage);
-    pisiLocale = await pisiLoadJson(`locales/lang-${pisiLanguage}.json`);
-    pisiApplyToRoot(document);
-
+function pisiSyncLanguageControls() {
     const toggle = document.getElementById('pisi-language-toggle');
     if (toggle) {
         toggle.textContent = pisiLanguage === 'tr' ? 'EN' : 'TR';
-        toggle.title = pisiLanguage === 'tr' ? 'Switch to English' : 'Türkçeye geç';
+        toggle.title = pisiLanguage === 'tr'
+            ? pisiTranslateCore('İngilizceye geç')
+            : pisiTranslateCore('Türkçeye geç');
+        toggle.setAttribute('aria-label', toggle.title);
     }
+
+    const select = document.getElementById('pisi-language-select');
+    if (select && select.value !== pisiLanguage) select.value = pisiLanguage;
 }
 
-function pisiInstallLanguageToggle() {
-    if (document.getElementById('pisi-language-toggle')) return;
+async function pisiSetLanguage(language, options = {}) {
+    const nextLanguage = pisiNormalizeLanguage(language);
+    const nextLocale = await pisiLoadJson(`locales/lang-${nextLanguage}.json`);
+
+    pisiLanguage = nextLanguage;
+    pisiLocale = nextLocale;
+    pisiBuildTemplateTranslations(nextLocale?.strings || {});
+    localStorage.setItem(PISI_LANGUAGE_STORAGE_KEY, pisiLanguage);
+
+    if (options.persist !== false) {
+        try {
+            await ipcRenderer.invoke('app:set-language', pisiLanguage);
+        } catch (error) {
+            console.warn('[Pisi] Language setting could not be persisted:', error);
+        }
+    }
+
+    pisiApplyToRoot(document);
+    pisiSyncLanguageControls();
+
+    const detail = { language: pisiLanguage };
+    document.dispatchEvent(new CustomEvent('pisi:language-changed', { detail }));
+    for (const listener of pisiLanguageListeners) {
+        try { listener(detail); } catch (error) { console.error(error); }
+    }
+
+    return pisiLanguage;
+}
+
+function pisiInstallLanguageControls() {
     const controls = document.getElementById('window-controls');
-    if (!controls) return;
+    if (controls && !document.getElementById('pisi-language-toggle')) {
+        const button = document.createElement('button');
+        button.id = 'pisi-language-toggle';
+        button.type = 'button';
+        button.className = 'window-btn';
+        button.addEventListener('click', () => {
+            void pisiSetLanguage(pisiLanguage === 'tr' ? 'eng' : 'tr');
+        });
+        controls.prepend(button);
+    }
 
-    const button = document.createElement('button');
-    button.id = 'pisi-language-toggle';
-    button.type = 'button';
-    button.className = 'window-btn';
-    button.addEventListener('click', () => {
-        void pisiSetLanguage(pisiLanguage === 'tr' ? 'eng' : 'tr');
-    });
-    controls.prepend(button);
+    const select = document.getElementById('pisi-language-select');
+    if (select && select.dataset.bound !== '1') {
+        select.dataset.bound = '1';
+        select.addEventListener('change', () => {
+            void pisiSetLanguage(select.value);
+        });
+    }
+
+    pisiSyncLanguageControls();
 }
+
+function pisiInstallObserver() {
+    if (pisiLocalizationObserver || !document.body) return;
+    pisiLocalizationObserver = new MutationObserver((mutations) => {
+        if (pisiApplyingTranslations) return;
+        for (const mutation of mutations) {
+            if (mutation.type === 'characterData') {
+                pisiTranslateTextNode(mutation.target);
+                continue;
+            }
+            if (mutation.type === 'attributes') {
+                pisiTranslateAttributes(mutation.target);
+                continue;
+            }
+            for (const node of mutation.addedNodes) pisiApplyToRoot(node);
+        }
+    });
+    pisiLocalizationObserver.observe(document.body, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+        attributes: true,
+        attributeFilter: PISI_TRANSLATABLE_ATTRIBUTES
+    });
+}
+
+const pisiLocalizationReady = (async () => {
+    let configuredLanguage = localStorage.getItem(PISI_LANGUAGE_STORAGE_KEY) || 'tr';
+    try {
+        configuredLanguage = await ipcRenderer.invoke('app:get-language') || configuredLanguage;
+    } catch {
+        // Older builds may not expose the language IPC yet.
+    }
+
+    try {
+        pisiIcons = await pisiLoadJson('assets/icons/icons.json');
+    } catch {
+        pisiIcons = null;
+    }
+
+    await pisiSetLanguage(configuredLanguage, { persist: false });
+    return pisiLanguage;
+})();
+
+contextBridge.exposeInMainWorld('pisiI18n', {
+    ready: () => pisiLocalizationReady,
+    getLanguage: () => pisiLanguage,
+    translate: (source) => pisiTranslate(source),
+    setLanguage: (language) => pisiSetLanguage(language),
+    onLanguageChanged: (callback) => {
+        if (typeof callback !== 'function') return () => {};
+        pisiLanguageListeners.add(callback);
+        return () => pisiLanguageListeners.delete(callback);
+    }
+});
 
 window.addEventListener('DOMContentLoaded', async () => {
     try {
-        pisiIcons = await pisiLoadJson('assets/icons/icons.json');
-        pisiInstallLanguageToggle();
-        await pisiSetLanguage(localStorage.getItem(PISI_LANGUAGE_STORAGE_KEY) || 'tr');
-
-        const observer = new MutationObserver((mutations) => {
-            for (const mutation of mutations) {
-                for (const node of mutation.addedNodes) pisiApplyToRoot(node);
-            }
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
+        await pisiLocalizationReady;
+        pisiInstallLanguageControls();
+        pisiApplyToRoot(document);
+        pisiInstallObserver();
     } catch (error) {
         console.error('[Pisi] Localization could not be initialized:', error);
         document.title = 'Pisi';

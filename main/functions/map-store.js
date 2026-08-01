@@ -7,7 +7,7 @@ const crypto = require('crypto');
 const { registerMainModule } = require('../module-registry');
 
 function getUniqueDirectoryPath(destinationFolder, wantedName) {
-    const cleanName = sanitizePisiBaseName(wantedName || 'Yeni Klasör');
+    const cleanName = sanitizePisiBaseName(wantedName || translatePisiMain('Yeni Klasör'));
     let candidate = path.join(destinationFolder, cleanName);
 
     if (!fs.existsSync(candidate)) {
