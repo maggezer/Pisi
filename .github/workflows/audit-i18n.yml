@@ -30,7 +30,8 @@ jobs:
             scripts/.i18n-payload-00 \
             scripts/.i18n-payload-01 \
             scripts/.i18n-payload-02 \
-            scripts/.i18n-payload-03 \
+            scripts/.i18n-payload-03a \
+            scripts/.i18n-payload-03b \
             scripts/.i18n-payload-04 \
             | base64 --decode > /tmp/i18n-payload.tar.gz
           echo "353a1d426c4fd7f6b65da55a2b7efb6f4e4385e0e017eca01000ffbb3e9fffb3  /tmp/i18n-payload.tar.gz" | sha256sum -c -
@@ -51,7 +52,8 @@ jobs:
           rm -f scripts/.i18n-payload-00
           rm -f scripts/.i18n-payload-01
           rm -f scripts/.i18n-payload-02
-          rm -f scripts/.i18n-payload-03
+          rm -f scripts/.i18n-payload-03a
+          rm -f scripts/.i18n-payload-03b
           rm -f scripts/.i18n-payload-04
           rm -f .github/workflows/audit-i18n.yml
 
