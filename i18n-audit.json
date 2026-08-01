@@ -1,0 +1,4277 @@
+{
+  "count": 712,
+  "candidates": [
+    {
+      "file": "index.html",
+      "line": 7,
+      "kind": "js:string",
+      "value": "default-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; script-src 'self'; img-src 'self' data:;"
+    },
+    {
+      "file": "index.html",
+      "line": 20,
+      "kind": "html:title",
+      "value": "Küçült"
+    },
+    {
+      "file": "index.html",
+      "line": 21,
+      "kind": "html:alt",
+      "value": "Küçült"
+    },
+    {
+      "file": "index.html",
+      "line": 24,
+      "kind": "html:title",
+      "value": "Büyüt"
+    },
+    {
+      "file": "index.html",
+      "line": 25,
+      "kind": "html:alt",
+      "value": "Büyüt"
+    },
+    {
+      "file": "index.html",
+      "line": 28,
+      "kind": "js:string",
+      "value": "window-btn close"
+    },
+    {
+      "file": "index.html",
+      "line": 41,
+      "kind": "html:title",
+      "value": "Yeni Map oluştur"
+    },
+    {
+      "file": "index.html",
+      "line": 42,
+      "kind": "html:title",
+      "value": "Yeni Node oluştur"
+    },
+    {
+      "file": "index.html",
+      "line": 43,
+      "kind": "html:title",
+      "value": "Proje klasörü değiştir"
+    },
+    {
+      "file": "index.html",
+      "line": 57,
+      "kind": "html:text",
+      "value": "Bir map seçildiğinde zihin haritası burada görünecek."
+    },
+    {
+      "file": "index.html",
+      "line": 75,
+      "kind": "js:string",
+      "value": "M 0 -5 L 10 0 L 0 5 z"
+    },
+    {
+      "file": "index.html",
+      "line": 88,
+      "kind": "js:string",
+      "value": "M 0 -5 L 10 0 L 0 5 z"
+    },
+    {
+      "file": "index.html",
+      "line": 102,
+      "kind": "js:string",
+      "value": "M 0 -5 L 10 0 L 0 5 z"
+    },
+    {
+      "file": "index.html",
+      "line": 116,
+      "kind": "js:string",
+      "value": "M 0 -5 L -10 0 L 0 5 z"
+    },
+    {
+      "file": "index.html",
+      "line": 122,
+      "kind": "html:title",
+      "value": "Zoom in"
+    },
+    {
+      "file": "index.html",
+      "line": 123,
+      "kind": "html:title",
+      "value": "Zoom out"
+    },
+    {
+      "file": "index.html",
+      "line": 158,
+      "kind": "html:aria-label",
+      "value": "Node başlığı"
+    },
+    {
+      "file": "index.html",
+      "line": 163,
+      "kind": "html:aria-label",
+      "value": "Kaydedip kapat"
+    },
+    {
+      "file": "index.html",
+      "line": 164,
+      "kind": "html:title",
+      "value": "Kaydedip kapat"
+    },
+    {
+      "file": "index.html",
+      "line": 206,
+      "kind": "html:text",
+      "value": "Missions için önce orta alanda bir map aç."
+    },
+    {
+      "file": "index.html",
+      "line": 221,
+      "kind": "html:text",
+      "value": "Hub bağlantı"
+    },
+    {
+      "file": "index.html",
+      "line": 231,
+      "kind": "html:text",
+      "value": "Co-level bağlantı"
+    },
+    {
+      "file": "index.html",
+      "line": 241,
+      "kind": "html:text",
+      "value": "Stream bağlantı"
+    },
+    {
+      "file": "index.html",
+      "line": 251,
+      "kind": "html:text",
+      "value": "Node box"
+    },
+    {
+      "file": "index.html",
+      "line": 261,
+      "kind": "html:text",
+      "value": "Node box title"
+    },
+    {
+      "file": "index.html",
+      "line": 271,
+      "kind": "html:text",
+      "value": "Nodebox title size"
+    },
+    {
+      "file": "index.html",
+      "line": 284,
+      "kind": "html:text",
+      "value": "Nodebox text size"
+    },
+    {
+      "file": "index.html",
+      "line": 311,
+      "kind": "html:text",
+      "value": "Varsayılan renklere dön"
+    },
+    {
+      "file": "index.html",
+      "line": 322,
+      "kind": "html:text",
+      "value": "Choose tag"
+    },
+    {
+      "file": "index.html",
+      "line": 345,
+      "kind": "html:text",
+      "value": "PISI Proje Klasörü"
+    },
+    {
+      "file": "index.html",
+      "line": 348,
+      "kind": "html:text",
+      "value": "Başlamak için notlarının tutulacağı bir proje klasörü seç. PISI bu klasörü hatırlayacak ve sonraki açılışlarda doğrudan buradan başlayacak."
+    },
+    {
+      "file": "index.html",
+      "line": 353,
+      "kind": "html:text",
+      "value": "📁 Proje Klasörü Seç"
+    },
+    {
+      "file": "main.js",
+      "line": 1,
+      "kind": "js:string",
+      "value": "use strict"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 1,
+      "kind": "js:string",
+      "value": "use strict"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 44,
+      "kind": "js:string",
+      "value": "PISI dosyası değil."
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 69,
+      "kind": "js:template",
+      "value": "Dosya bozuk veya boş. Üzerine yazılmadı; kurtarma kopyası oluşturuldu: {value}"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 70,
+      "kind": "js:template",
+      "value": "Dosya bozuk veya boş. Üzerine yazılmadı: {value}"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 117,
+      "kind": "js:string",
+      "value": "Dosyadaki PISI kimliği güvenli biçimde değil. Dosya değiştirilmedi."
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 234,
+      "kind": "js:string",
+      "value": "Aktif klasör bulunamadı."
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 241,
+      "kind": "js:string",
+      "value": "Geçersiz PISI dosya türü."
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 245,
+      "kind": "js:string",
+      "value": "Yeni Map"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 245,
+      "kind": "js:string",
+      "value": "Yeni Node"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 252,
+      "kind": "js:template",
+      "value": "{value} {value}{value}"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 306,
+      "kind": "js:string",
+      "value": "Proje klasörü bulunamadı."
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 315,
+      "kind": "js:string",
+      "value": "Geçerli bir proje klasörü değil."
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 328,
+      "kind": "js:string",
+      "value": "Projedeki mevcut \"diary\" yolu bir klasör değil. Kullanıcı verisini korumak için işlem durduruldu."
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 337,
+      "kind": "js:string",
+      "value": "Projedeki mevcut \"diary\" klasörü PISI tarafından yönetilmiyor. Kullanıcı klasörünü korumak için işlem durduruldu."
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 349,
+      "kind": "js:string",
+      "value": "Bu klasör PISI diary özelliği tarafından yönetilir."
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 376,
+      "kind": "js:string",
+      "value": "Geçersiz diary tarihi. Beklenen format: YYYY-MM-DD."
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 477,
+      "kind": "js:string",
+      "value": ") .replace(/\\son[a-z]+\\s*=\\s*[^\\s>]+/gi,"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 478,
+      "kind": "js:string",
+      "value": ") .replace( /\\s(href|src|xlink:href|formaction)\\s*=\\s*([\""
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 487,
+      "kind": "js:string",
+      "value": ") .replace(/\\sstyle\\s*=\\s*[^\\s>]*(?:expression\\s*\\(|url\\s*\\()[^\\s>]*/gi,"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 488,
+      "kind": "js:string",
+      "value": "); } function normalizePisiDiarySyncEntry(entry) { if (!entry || typeof entry !=="
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 492,
+      "kind": "js:string",
+      "value": "|| Array.isArray(entry)) return null; const date = normalizePisiDiaryIsoDate(entry?.date); if (!date) return null; const nodePath = String(entry.nodePath ||"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 498,
+      "kind": "js:string",
+      "value": ").trim().slice(0, 32768); const blockId = String(entry.blockId ||"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 499,
+      "kind": "js:string",
+      "value": ").trim().slice(0, 500); const tag = String(entry.tag ||"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 500,
+      "kind": "js:string",
+      "value": ").trim().slice(0, 200); const text = String(entry.text ||"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 501,
+      "kind": "js:string",
+      "value": ").trim().slice(0, 250000); if (!nodePath || !tag) return null; const sourceIdentity = blockId || crypto .createHash("
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 506,
+      "kind": "js:string",
+      "value": ") .update(text) .digest("
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 508,
+      "kind": "js:string",
+      "value": "); const sourceKey = [nodePath, sourceIdentity, tag].join("
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 509,
+      "kind": "js:string",
+      "value": "); const rawPriority = Number(entry.priority); const priority = Number.isFinite(rawPriority) ? Math.max(-1000000, Math.min(1000000, rawPriority)) : 0; return { date, sourceKey, nodePath, nodeTitle: String(entry.nodeTitle ||"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 519,
+      "kind": "js:string",
+      "value": ").slice(0, 500), blockId, tag, priority, text, html: sanitizePisiDiaryBlockHtml( String(entry.html ||"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 525,
+      "kind": "js:string",
+      "value": ").slice(0, 2000000) ) }; } function buildPisiDiaryManagedSection(isoDate, entries = []) { if (!entries.length) return"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 531,
+      "kind": "js:string",
+      "value": "; const safeDate = escapeHtmlForPisiDiary(isoDate); const blocks = entries.map((entry) => { const safeSourceKey = escapeHtmlForPisiDiary(entry.sourceKey); const safeNodeTitle = escapeHtmlForPisiDiary(entry.nodeTitle ||"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 536,
+      "kind": "js:string",
+      "value": "); const safeTag = escapeHtmlForPisiDiary(entry.tag ||"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 537,
+      "kind": "js:string",
+      "value": "); const safeText = escapeHtmlForPisiDiary(entry.text ||"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 538,
+      "kind": "js:string",
+      "value": "); const blockHtml = entry.html || `<div>${safeText ||"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 539,
+      "kind": "js:string",
+      "value": "}</div>`; return ` <div class=\"pisi-diary-managed-block\" data-pisi-diary-source=\"${safeSourceKey}\"> <div class=\"pisi-diary-managed-meta\">${safeNodeTitle} · ..${safeTag}</div> ${blockHtml} </div>`; }).join("
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 546,
+      "kind": "js:string",
+      "value": "); return `${PISI_DIARY_MANAGED_START} <h3>Görevler · ${safeDate}</h3> ${blocks} ${PISI_DIARY_MANAGED_END}`; } function listPisiDiaryNodePaths(projectFolder) { const diaryFolder = path.join(projectFolder,"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 555,
+      "kind": "js:string",
+      "value": "); if (!fs.existsSync(diaryFolder)) return []; return fs.readdirSync(diaryFolder, { withFileTypes: true }) .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith("
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 560,
+      "kind": "js:string",
+      "value": ")) .map((entry) => path.join(diaryFolder, entry.name)); } function listPisiDiaryDates(projectFolder) { try { if (!projectFolder || !fs.existsSync(projectFolder)) { return { ok: false, error:"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 569,
+      "kind": "js:string",
+      "value": ", dates: [] }; } const diaryFolder = path.join(projectFolder,"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 623,
+      "kind": "js:string",
+      "value": "}; } if (!Array.isArray(rawEntries)) { return { ok: false, error:"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 630,
+      "kind": "js:string",
+      "value": "}; } const diaryFolderPath = path.join(projectFolder,"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 634,
+      "kind": "js:string",
+      "value": "); const entriesInput = rawEntries; if (entriesInput.length > 50000) { return { ok: false, error:"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 709,
+      "kind": "js:string",
+      "value": ") continue; const fileDate = normalizePisiDiaryIsoDate(ensured.data?.pisi?.diaryDate) || normalizePisiDiaryIsoDate(path.basename(nodePath,"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 713,
+      "kind": "js:string",
+      "value": ")); if (!fileDate) continue; const manualContent = stripPisiDiaryManagedSection(ensured.data.content ||"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 724,
+      "kind": "js:string",
+      "value": ")) { ensured.data.content = nextContent; ensured.data.pisi.parentMap ="
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 757,
+      "kind": "js:string",
+      "value": "}; } const ext = getPisiFileExt(mapPath); if (ext !=="
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 763,
+      "kind": "js:string",
+      "value": ") { return { ok: false, error:"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 782,
+      "kind": "js:string",
+      "value": "}; } const nodeInfo = createUniquePisiFile(mapSidecarPath,"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 823,
+      "kind": "js:string",
+      "value": "}; } const ext = getPisiFileExt(oldPath); if (ext !=="
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 829,
+      "kind": "js:string",
+      "value": ") { return { ok: false, error:"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 829,
+      "kind": "js:string",
+      "value": "&& ext !=="
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 832,
+      "kind": "js:string",
+      "value": "}; } const ensuredBefore = ensurePisiFileMetadata(oldPath); if (!ensuredBefore.ok) return ensuredBefore; const dir = path.dirname(oldPath); const id = ensuredBefore.metadata.id; originalContent = fs.readFileSync(oldPath,"
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 877,
+      "kind": "js:string",
+      "value": "Yeni başlıkla eşleşen yan klasör zaten var."
+    },
+    {
+      "file": "main/functions/document-store.js",
+      "line": 966,
+      "kind": "js:template",
+      "value": "{value} Geri alma tamamlanamadı: {value}"
+    },
+    {
+      "file": "main/functions/electron-ipc.js",
+      "line": 1,
+      "kind": "js:string",
+      "value": "use strict"
+    },
+    {
+      "file": "main/functions/electron-ipc.js",
+      "line": 18,
+      "kind": "js:string",
+      "value": "[PISI] Proje klasörü izleniyor:"
+    },
+    {
+      "file": "main/functions/electron-ipc.js",
+      "line": 66,
+      "kind": "js:string",
+      "value": "Proje işlemlerinde symlink/junction kullanılamaz."
+    },
+    {
+      "file": "main/functions/electron-ipc.js",
+      "line": 73,
+      "kind": "js:string",
+      "value": "Aktif proje klasörü yok."
+    },
+    {
+      "file": "main/functions/electron-ipc.js",
+      "line": 77,
+      "kind": "js:string",
+      "value": "Geçerli bir proje yolu gerekli."
+    },
+    {
+      "file": "main/functions/electron-ipc.js",
+      "line": 84,
+      "kind": "js:string",
+      "value": "İstenen yol aktif proje klasörünün dışında."
+    },
+    {
+      "file": "main/functions/electron-ipc.js",
+      "line": 91,
+      "kind": "js:string",
+      "value": "İstenen proje yolu bulunamadı."
+    },
+    {
+      "file": "main/functions/electron-ipc.js",
+      "line": 97,
+      "kind": "js:string",
+      "value": "Yol bir bağlantı üzerinden proje dışına çıkıyor."
+    },
+    {
+      "file": "main/functions/electron-ipc.js",
+      "line": 102,
+      "kind": "js:string",
+      "value": "İstenen yol bir dosya değil."
+    },
+    {
+      "file": "main/functions/electron-ipc.js",
+      "line": 105,
+      "kind": "js:string",
+      "value": "İstenen yol bir klasör değil."
+    },
+    {
+      "file": "main/functions/electron-ipc.js",
+      "line": 119,
+      "kind": "js:string",
+      "value": "Hedef yolun üst klasörü bulunamadı."
+    },
+    {
+      "file": "main/functions/electron-ipc.js",
+      "line": 124,
+      "kind": "js:string",
+      "value": "Hedef yol bir bağlantı üzerinden proje dışına çıkıyor."
+    },
+    {
+      "file": "main/functions/electron-ipc.js",
+      "line": 131,
+      "kind": "js:string",
+      "value": "Bu işlem için geçersiz dosya türü."
+    },
+    {
+      "file": "main/functions/electron-ipc.js",
+      "line": 167,
+      "kind": "js:string",
+      "value": "[PISI] Lock dosyası gizlenemedi:"
+    },
+    {
+      "file": "main/functions/electron-ipc.js",
+      "line": 194,
+      "kind": "js:template",
+      "value": "Bu proje eski uygulamanın çalışan bir süreci tarafından kullanılıyor (PID {value})."
+    },
+    {
+      "file": "main/functions/electron-ipc.js",
+      "line": 233,
+      "kind": "js:template",
+      "value": "Bu proje başka bir PISI süreci tarafından kullanılıyor (PID {value})."
+    },
+    {
+      "file": "main/functions/electron-ipc.js",
+      "line": 261,
+      "kind": "js:template",
+      "value": "Proje kilidi alınamadı: {value}"
+    },
+    {
+      "file": "main/functions/electron-ipc.js",
+      "line": 307,
+      "kind": "js:string",
+      "value": "[PISI] Proje klasörü kilitlendi:"
+    },
+    {
+      "file": "main/functions/electron-ipc.js",
+      "line": 310,
+      "kind": "js:string",
+      "value": "[PISI] Proje klasörü kilitlenemedi:"
+    },
+    {
+      "file": "main/functions/electron-ipc.js",
+      "line": 328,
+      "kind": "js:string",
+      "value": "[PISI] Proje kilidi kaldırılamadı:"
+    },
+    {
+      "file": "main/functions/electron-ipc.js",
+      "line": 445,
+      "kind": "js:string",
+      "value": "PISI kapatılamadı"
+    },
+    {
+      "file": "main/functions/electron-ipc.js",
+      "line": 446,
+      "kind": "js:string",
+      "value": "Bekleyen kayıtların tamamlandığı doğrulanamadı."
+    },
+    {
+      "file": "main/functions/electron-ipc.js",
+      "line": 447,
+      "kind": "js:string",
+      "value": "Veri kaybını önlemek için pencere açık bırakıldı."
+    },
+    {
+      "file": "main/functions/filesystem-core.js",
+      "line": 1,
+      "kind": "js:string",
+      "value": "use strict"
+    },
+    {
+      "file": "main/functions/filesystem-core.js",
+      "line": 151,
+      "kind": "js:string",
+      "value": "Geçersiz veya self-loop bağlantı atlandı."
+    },
+    {
+      "file": "main/functions/filesystem-core.js",
+      "line": 162,
+      "kind": "js:template",
+      "value": "Eksik node referanslı bağlantı atlandı: {value}"
+    },
+    {
+      "file": "main/functions/filesystem-core.js",
+      "line": 175,
+      "kind": "js:template",
+      "value": "İkinci parent bağlantısı stream olarak kurtarıldı: {value}"
+    },
+    {
+      "file": "main/functions/filesystem-core.js",
+      "line": 187,
+      "kind": "js:template",
+      "value": "Döngü oluşturan bağlantı stream olarak kurtarıldı: {value}"
+    },
+    {
+      "file": "main/functions/filesystem-core.js",
+      "line": 196,
+      "kind": "js:template",
+      "value": "Tekrarlanan bağlantı atlandı: {value}"
+    },
+    {
+      "file": "main/functions/filesystem-core.js",
+      "line": 272,
+      "kind": "js:string",
+      "value": "Dosya boş."
+    },
+    {
+      "file": "main/functions/filesystem-core.js",
+      "line": 412,
+      "kind": "js:template",
+      "value": "{value}: {value}"
+    },
+    {
+      "file": "main/functions/filesystem-core.js",
+      "line": 419,
+      "kind": "js:template",
+      "value": "{value} Geri alma tamamlanamadı: {value}"
+    },
+    {
+      "file": "main/functions/filesystem-core.js",
+      "line": 468,
+      "kind": "js:template",
+      "value": "Aynı kimliğe bağlı birden fazla yan klasör bulundu: {value}"
+    },
+    {
+      "file": "main/functions/filesystem-core.js",
+      "line": 476,
+      "kind": "js:string",
+      "value": "birden fazla yan klasör"
+    },
+    {
+      "file": "main/functions/map-store.js",
+      "line": 1,
+      "kind": "js:string",
+      "value": "use strict"
+    },
+    {
+      "file": "main/functions/map-store.js",
+      "line": 10,
+      "kind": "js:string",
+      "value": "Yeni Klasör"
+    },
+    {
+      "file": "main/functions/map-store.js",
+      "line": 20,
+      "kind": "js:template",
+      "value": "{value} {value}"
+    },
+    {
+      "file": "main/functions/map-store.js",
+      "line": 48,
+      "kind": "js:string",
+      "value": "Taşınacak öğe bulunamadı."
+    },
+    {
+      "file": "main/functions/map-store.js",
+      "line": 55,
+      "kind": "js:string",
+      "value": "Hedef klasör bulunamadı."
+    },
+    {
+      "file": "main/functions/map-store.js",
+      "line": 64,
+      "kind": "js:string",
+      "value": "Hedef bir klasör olmalı."
+    },
+    {
+      "file": "main/functions/map-store.js",
+      "line": 88,
+      "kind": "js:string",
+      "value": "Bir klasör kendi içine taşınamaz."
+    },
+    {
+      "file": "main/functions/map-store.js",
+      "line": 117,
+      "kind": "js:string",
+      "value": "Sadece .node, .map ve klasörler taşınabilir."
+    },
+    {
+      "file": "main/functions/map-store.js",
+      "line": 148,
+      "kind": "js:string",
+      "value": "Hedefte aynı PISI yan klasörü zaten var."
+    },
+    {
+      "file": "main/functions/map-store.js",
+      "line": 272,
+      "kind": "js:template",
+      "value": "{value} Geri alma tamamlanamadı: {value}"
+    },
+    {
+      "file": "main/functions/map-store.js",
+      "line": 284,
+      "kind": "js:string",
+      "value": "Dosya bulunamadı."
+    },
+    {
+      "file": "main/functions/map-store.js",
+      "line": 362,
+      "kind": "js:string",
+      "value": "Bu dosya bir map değil."
+    },
+    {
+      "file": "main/functions/map-store.js",
+      "line": 408,
+      "kind": "js:template",
+      "value": "Map içinde aynı PISI kimliğine sahip iki node bulundu: {value}"
+    },
+    {
+      "file": "main/functions/map-store.js",
+      "line": 605,
+      "kind": "js:string",
+      "value": "Bu dosya bir node değil."
+    },
+    {
+      "file": "main/functions/map-store.js",
+      "line": 636,
+      "kind": "js:string",
+      "value": "Map node klasörü bulunamadı."
+    },
+    {
+      "file": "main/functions/map-store.js",
+      "line": 657,
+      "kind": "js:template",
+      "value": "Map içinde aynı PISI kimliğine sahip iki node bulundu: {value}"
+    },
+    {
+      "file": "main/functions/map-store.js",
+      "line": 819,
+      "kind": "js:string",
+      "value": "Bağlantı için sourceId ve targetId gerekli."
+    },
+    {
+      "file": "main/functions/map-store.js",
+      "line": 826,
+      "kind": "js:string",
+      "value": "Bir node kendisine bağlanamaz."
+    },
+    {
+      "file": "main/functions/map-store.js",
+      "line": 839,
+      "kind": "js:string",
+      "value": "Bağlantı normalize edilemedi."
+    },
+    {
+      "file": "main/functions/map-store.js",
+      "line": 849,
+      "kind": "js:string",
+      "value": "Bağlantının source veya target node dosyası bulunamadı."
+    },
+    {
+      "file": "main/functions/map-store.js",
+      "line": 872,
+      "kind": "js:string",
+      "value": "Hedef node zaten bir parent bağlantısına sahip."
+    },
+    {
+      "file": "main/functions/map-store.js",
+      "line": 900,
+      "kind": "js:string",
+      "value": "Bu bağlantı hiyerarşide döngü oluşturur."
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 1,
+      "kind": "js:string",
+      "value": "use strict"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 151,
+      "kind": "js:string",
+      "value": "[PISI] Settings okunamadı:"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 166,
+      "kind": "js:string",
+      "value": "[PISI] Settings yazılamadı:"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 428,
+      "kind": "js:string",
+      "value": ": [] }; } function normalizeNodeConnectionTypes(value) { const defaults = getDefaultNodeConnectionTypes(); if (!value || typeof value !== 'object' || Array.isArray(value)) { return defaults; } return {"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 440,
+      "kind": "js:string",
+      "value": ": Array.isArray(value["
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 440,
+      "kind": "js:string",
+      "value": "]) ? value["
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 441,
+      "kind": "js:string",
+      "value": ": Array.isArray(value["
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 441,
+      "kind": "js:string",
+      "value": "]) ? value["
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 442,
+      "kind": "js:string",
+      "value": ": Array.isArray(value["
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 442,
+      "kind": "js:string",
+      "value": "]) ? value["
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 443,
+      "kind": "js:string",
+      "value": ": Array.isArray(value["
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 443,
+      "kind": "js:string",
+      "value": "]) ? value["
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 444,
+      "kind": "js:string",
+      "value": ": Array.isArray(value["
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 444,
+      "kind": "js:string",
+      "value": "]) ? value["
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 463,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return getInternalFileChangeSignature; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 467,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return pruneExpiredInternalFileChanges; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 471,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return markInternalFileChange; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 475,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return sealInternalFileChange; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 479,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return isRecentInternalFileChange; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 483,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return hasRecentInternalFileChangeInside; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 487,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return renamePathInternal; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 491,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return getSettingsPath; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 495,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return readSettings; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 499,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return writeSettings; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 503,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return getDefaultWindowState; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 507,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return getSavedWindowState; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 511,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return keepWindowStateInsideDisplay; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 515,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return saveWindowState; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 519,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return scheduleWindowStateSave; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 523,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return isPisiVisibleFile; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 527,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return isPisiManagedSidecarFolder; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 531,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return getPisiFileExt; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 535,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return getPisiTypeFromExt; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 539,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return getPisiSidecarPrefix; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 543,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return sanitizePisiBaseName; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 547,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return stripPisiIdSuffix; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 551,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return getVisibleTitleFromFilePath; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 555,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return getUniquePisiPhysicalPath; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 559,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return sanitizeForSidecarName; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 563,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return generatePisiId; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 567,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return normalizePisiId; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 571,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return getDefaultNodeConnectionTypes; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 575,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return normalizeNodeConnectionTypes; } },"
+    },
+    {
+      "file": "main/functions/path-security.js",
+      "line": 579,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return normalizeConnectionRole; } } }); registerMainModule("
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 1,
+      "kind": "js:string",
+      "value": "use strict"
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 20,
+      "kind": "js:string",
+      "value": "Bu map içinde bağlantı listesi bulunamadı."
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 36,
+      "kind": "js:string",
+      "value": "Silinecek bağlantı bulunamadı."
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 78,
+      "kind": "js:string",
+      "value": "Geçersiz parent veya child kimliği."
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 91,
+      "kind": "js:string",
+      "value": "Parent veya child node map içinde bulunamadı."
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 122,
+      "kind": "js:string",
+      "value": "Bu taşıma hiyerarşide döngü oluşturur."
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 435,
+      "kind": "js:string",
+      "value": "}; } const ext = getPisiFileExt(targetPath); if (ext !=="
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 441,
+      "kind": "js:string",
+      "value": ") { return { ok: false, error:"
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 441,
+      "kind": "js:string",
+      "value": "&& ext !=="
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 459,
+      "kind": "js:string",
+      "value": "? info.metadata.id : null; const parentMapPath = ext ==="
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 462,
+      "kind": "js:string",
+      "value": "? findParentMapPathForNode(targetPath, info) : null; const childNodePaths = []; if (ext ==="
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 467,
+      "kind": "js:string",
+      "value": "&& sidecarPath && fs.existsSync(sidecarPath)) { const entries = fs.readdirSync(sidecarPath, { withFileTypes: true }); for (const entry of entries) { if ( entry.isFile() && entry.name.toLowerCase().endsWith("
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 472,
+      "kind": "js:string",
+      "value": ") ) { childNodePaths.push(path.join(sidecarPath, entry.name)); } } } transaction = createPisiDeletionTransaction(targetPath); stagePisiDeletionPath(transaction, targetPath); stagePisiDeletionPath(transaction, sidecarPath); if (ext ==="
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 483,
+      "kind": "js:string",
+      "value": ") { await shell.trashItem(path.resolve(transaction.directoryPath)); return { ok: true, type:"
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 538,
+      "kind": "js:string",
+      "value": "}; } await shell.trashItem(path.resolve(targetPath)); return { ok: true, deletedPath: targetPath, movedToTrash: true }; } function isPisiManagedDiaryFolder(folderPath) { if (!folderPath || path.basename(folderPath).toLowerCase() !=="
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 552,
+      "kind": "js:string",
+      "value": ") { return false; } if ( fs.existsSync(path.join(folderPath,"
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 557,
+      "kind": "js:string",
+      "value": ")) || fs.existsSync(path.join(folderPath,"
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 558,
+      "kind": "js:string",
+      "value": ")) ) { return true; } try { const entries = fs.readdirSync(folderPath, { withFileTypes: true }); return entries.some((entry) => { if (!entry.isFile() || !entry.name.toLowerCase().endsWith("
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 587,
+      "kind": "js:string",
+      "value": ", items: [] }; } const entries = fs.readdirSync(folderPath, { withFileTypes: true }); const items = entries .filter((entry) => { if (isPisiManagedSidecarFolder(entry.name)) return false; if ( entry.isDirectory() && ( entry.name.startsWith("
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 601,
+      "kind": "js:string",
+      "value": ") || entry.name.startsWith("
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 634,
+      "kind": "js:string",
+      "value": "; recoveryPath = inspected?.backupPath || null; } } catch (error) { itemError = error.message; } } return { name: entry.name, fullPath, type: entry.isDirectory() ?"
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 645,
+      "kind": "js:string",
+      "value": ", isDirectory: entry.isDirectory(), isFile: entry.isFile(), metadata, sidecarPath, error: itemError, recoveryPath }; }); items.sort((a, b) => { if (a.type !== b.type) { return a.type ==="
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 657,
+      "kind": "js:string",
+      "value": "? -1 : 1; } return a.name.localeCompare(b.name,"
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 776,
+      "kind": "js:string",
+      "value": ", changedPath ); } clearTimeout(projectWatcherRescanTimer); projectWatcherRescanTimer = setTimeout(() => { if (activeProjectFolder) { syncProjectWatchers(activeProjectFolder); } }, 350); } ); watcher.on("
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 792,
+      "kind": "js:template",
+      "value": "[PISI] Watcher hatası ({value}):"
+    },
+    {
+      "file": "main/functions/project-operations.js",
+      "line": 800,
+      "kind": "js:template",
+      "value": "[PISI] Klasör izlenemedi ({value}):"
+    },
+    {
+      "file": "main/module-registry.js",
+      "line": 1,
+      "kind": "js:string",
+      "value": "use strict"
+    },
+    {
+      "file": "main/module-registry.js",
+      "line": 16,
+      "kind": "js:string",
+      "value": "[PISI] Main binding collision:"
+    },
+    {
+      "file": "main/module-registry.js",
+      "line": 20,
+      "kind": "js:string",
+      "value": "[PISI] Main binding registered twice:"
+    },
+    {
+      "file": "main/module-registry.js",
+      "line": 28,
+      "kind": "js:string",
+      "value": "[PISI] Main global already exists:"
+    },
+    {
+      "file": "main/module-registry.js",
+      "line": 38,
+      "kind": "js:string",
+      "value": "[PISI] Read-only main binding:"
+    },
+    {
+      "file": "main/runtime.js",
+      "line": 1,
+      "kind": "js:string",
+      "value": "use strict"
+    },
+    {
+      "file": "main/runtime.js",
+      "line": 408,
+      "kind": "js:string",
+      "value": "Aktif proje kökü bu işlemle silinemez."
+    },
+    {
+      "file": "main/runtime.js",
+      "line": 435,
+      "kind": "js:string",
+      "value": "Diary yalnızca aktif proje kökünde kullanılabilir."
+    },
+    {
+      "file": "main/runtime.js",
+      "line": 481,
+      "kind": "js:string",
+      "value": "Aktif proje kökü taşınamaz."
+    },
+    {
+      "file": "main/runtime.js",
+      "line": 529,
+      "kind": "js:string",
+      "value": "PISI proje klasörü seç"
+    },
+    {
+      "file": "main/runtime.js",
+      "line": 542,
+      "kind": "js:string",
+      "value": "Proje açılamadı"
+    },
+    {
+      "file": "main/runtime.js",
+      "line": 543,
+      "kind": "js:string",
+      "value": "Seçilen proje klasörü kilitlenemedi."
+    },
+    {
+      "file": "main/runtime.js",
+      "line": 544,
+      "kind": "js:string",
+      "value": "Klasör başka bir PISI sürecinde açık olabilir veya erişim izni olmayabilir."
+    },
+    {
+      "file": "main/runtime.js",
+      "line": 567,
+      "kind": "js:string",
+      "value": "Yalnızca aktif proje son proje olarak kaydedilebilir."
+    },
+    {
+      "file": "preload.js",
+      "line": 99,
+      "kind": "js:template",
+      "value": "Resource could not be loaded: {value}"
+    },
+    {
+      "file": "preload.js",
+      "line": 122,
+      "kind": "js:string",
+      "value": "input, textarea, select, [contenteditable=\"true\"], [contenteditable=\"plaintext-only\"]"
+    },
+    {
+      "file": "preload.js",
+      "line": 203,
+      "kind": "js:string",
+      "value": "#window-logo, .modal-logo-row img"
+    },
+    {
+      "file": "preload.js",
+      "line": 219,
+      "kind": "js:string",
+      "value": "Switch to English"
+    },
+    {
+      "file": "preload.js",
+      "line": 219,
+      "kind": "js:string",
+      "value": "Türkçeye geç"
+    },
+    {
+      "file": "preload.js",
+      "line": 251,
+      "kind": "js:string",
+      "value": "[Pisi] Localization could not be initialized:"
+    },
+    {
+      "file": "renderer/core/module-registry.mjs",
+      "line": 16,
+      "kind": "js:string",
+      "value": "[PISI] Renderer module already registered:"
+    },
+    {
+      "file": "renderer/core/module-registry.mjs",
+      "line": 30,
+      "kind": "js:string",
+      "value": "[PISI] Renderer binding collision:"
+    },
+    {
+      "file": "renderer/core/module-registry.mjs",
+      "line": 36,
+      "kind": "js:string",
+      "value": "[PISI] Renderer global already exists:"
+    },
+    {
+      "file": "renderer/core/module-registry.mjs",
+      "line": 48,
+      "kind": "js:string",
+      "value": "[PISI] Read-only renderer binding:"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-document-ink.mjs",
+      "line": 171,
+      "kind": "js:string",
+      "value": "[PISI] Belge çizimi kaydedilemedi:"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-paint.mjs",
+      "line": 147,
+      "kind": "js:string",
+      "value": ".pisi-editor-toolbar, .pisi-word-toolbar"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-paint.mjs",
+      "line": 559,
+      "kind": "js:string",
+      "value": "[PISI] Tuval görüntüsü kaydedilemedi:"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-sheet-interactions.mjs",
+      "line": 29,
+      "kind": "js:string",
+      "value": "tbody th[data-row-header]"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-sheet-interactions.mjs",
+      "line": 32,
+      "kind": "js:string",
+      "value": "thead th[data-col-header]"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-sheet-interactions.mjs",
+      "line": 175,
+      "kind": "js:string",
+      "value": "tbody tr"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-sheet-interactions.mjs",
+      "line": 243,
+      "kind": "js:string",
+      "value": ".pisi-sheet-cell-selected, .pisi-sheet-cell-range"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-sheet-structure.mjs",
+      "line": 5,
+      "kind": "js:string",
+      "value": "tbody tr"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-sheet-structure.mjs",
+      "line": 51,
+      "kind": "js:string",
+      "value": "<th data-pisi-sheet-corner=\"1\"></th>"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-sheet-structure.mjs",
+      "line": 53,
+      "kind": "js:template",
+      "value": "<th data-col-header=\"{value}\">{value}</th>"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-sheet-structure.mjs",
+      "line": 125,
+      "kind": "js:string",
+      "value": "<td contenteditable=\"true\" tabindex=\"0\"></td>"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-sheet-structure.mjs",
+      "line": 176,
+      "kind": "js:string",
+      "value": "<th></th><td contenteditable=\"true\" tabindex=\"0\"></td>"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-sheet-structure.mjs",
+      "line": 241,
+      "kind": "js:string",
+      "value": "tbody tr"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-sheet-structure.mjs",
+      "line": 292,
+      "kind": "js:string",
+      "value": "tbody tr"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-sheet-structure.mjs",
+      "line": 527,
+      "kind": "js:template",
+      "value": "{value} × {value}"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-sheet.mjs",
+      "line": 39,
+      "kind": "js:string",
+      "value": "Önce bir tablo veya hücre seç."
+    },
+    {
+      "file": "renderer/editor/pisi-editor-sheet.mjs",
+      "line": 51,
+      "kind": "js:template",
+      "value": "{value} satır sınırına ulaşıldı."
+    },
+    {
+      "file": "renderer/editor/pisi-editor-sheet.mjs",
+      "line": 59,
+      "kind": "js:string",
+      "value": "Tabloda en az bir satır kalmalı."
+    },
+    {
+      "file": "renderer/editor/pisi-editor-sheet.mjs",
+      "line": 67,
+      "kind": "js:template",
+      "value": "{value} sütun sınırına ulaşıldı."
+    },
+    {
+      "file": "renderer/editor/pisi-editor-sheet.mjs",
+      "line": 75,
+      "kind": "js:string",
+      "value": "Tabloda en az bir sütun kalmalı."
+    },
+    {
+      "file": "renderer/editor/pisi-editor-sheet.mjs",
+      "line": 118,
+      "kind": "js:template",
+      "value": "<div class=\"pisi-sheet-block\" contenteditable=\"false\" data-pisi-sheet-block=\"1\"> {value} </div> <div><br></div>"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-sheet.mjs",
+      "line": 141,
+      "kind": "js:template",
+      "value": "<td contenteditable=\"true\" data-row=\"{value}\" data-col=\"{value}\" data-cell=\"{value}{value}\"></td>"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-sheet.mjs",
+      "line": 147,
+      "kind": "js:template",
+      "value": "<table class=\"pisi-sheet-table\" data-pisi-sheet=\"1\">{value}{value}</table>"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-sheet.mjs",
+      "line": 444,
+      "kind": "js:string",
+      "value": "tbody tr"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-menus.mjs",
+      "line": 60,
+      "kind": "js:string",
+      "value": "Önce bir tablo hücresi seç."
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-menus.mjs",
+      "line": 72,
+      "kind": "js:string",
+      "value": "Logical formulas"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-menus.mjs",
+      "line": 73,
+      "kind": "js:string",
+      "value": "Text formulas"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-menus.mjs",
+      "line": 74,
+      "kind": "js:string",
+      "value": "Math formulas"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-menus.mjs",
+      "line": 75,
+      "kind": "js:string",
+      "value": "Financial formulas"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-menus.mjs",
+      "line": 76,
+      "kind": "js:string",
+      "value": "Personal formulas"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-menus.mjs",
+      "line": 78,
+      "kind": "js:template",
+      "value": "<div class=\"pisi-office-popover-title\">{value}</div> <div class=\"pisi-office-formula-list\"></div>"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-menus.mjs",
+      "line": 92,
+      "kind": "js:template",
+      "value": "<strong>{value}</strong> <span>{value}</span> {value}"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-menus.mjs",
+      "line": 110,
+      "kind": "js:string",
+      "value": "Henüz kişisel formül yok."
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-menus.mjs",
+      "line": 116,
+      "kind": "js:string",
+      "value": "Seçili hücrenin formülünü kaydet"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-menus.mjs",
+      "line": 120,
+      "kind": "js:string",
+      "value": "Seçili hücrede kaydedilecek formül yok."
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-menus.mjs",
+      "line": 124,
+      "kind": "js:string",
+      "value": "Formül adı:"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-menus.mjs",
+      "line": 124,
+      "kind": "js:string",
+      "value": "My Formula"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-menus.mjs",
+      "line": 126,
+      "kind": "js:string",
+      "value": "Kişisel formül kaydedildi."
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-menus.mjs",
+      "line": 138,
+      "kind": "js:template",
+      "value": "<div class=\"pisi-office-popover-title\">{value} boyutu</div> <label class=\"pisi-office-size-control\"> <input type=\"range\" min=\"1\" max=\"80\" step=\"1\" value=\"{value}\"> <output>{value} px</output> </label>"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-menus.mjs",
+      "line": 149,
+      "kind": "js:template",
+      "value": "{value} px"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-menus.mjs",
+      "line": 158,
+      "kind": "js:string",
+      "value": "Çizgi"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-menus.mjs",
+      "line": 159,
+      "kind": "js:string",
+      "value": "Dikdörtgen"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-menus.mjs",
+      "line": 162,
+      "kind": "js:string",
+      "value": "<div class=\"pisi-office-popover-title\">Shape</div><div class=\"pisi-office-shape-grid\"></div>"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-menus.mjs",
+      "line": 174,
+      "kind": "js:template",
+      "value": "Shape: {value}"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-popovers.mjs",
+      "line": 47,
+      "kind": "js:string",
+      "value": "input, select, textarea"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-popovers.mjs",
+      "line": 60,
+      "kind": "js:template",
+      "value": "<div class=\"pisi-office-popover-title\">{value}</div> <div class=\"pisi-office-color-grid\"></div> <label class=\"pisi-office-custom-color\">Özel renk<input type=\"color\" value=\"#f39c12\"></label>"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-popovers.mjs",
+      "line": 91,
+      "kind": "js:string",
+      "value": "<div class=\"pisi-office-popover-title\">Simge ekle</div><div class=\"pisi-office-symbol-grid\"></div>"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-popovers.mjs",
+      "line": 109,
+      "kind": "js:string",
+      "value": "<div class=\"pisi-office-popover-title\" data-pisi-table-grid-label>Tablo ekle</div> <div class=\"pisi-office-table-grid\"></div>"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-popovers.mjs",
+      "line": 123,
+      "kind": "js:template",
+      "value": "{value} satır, {value} sütun"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-toolbar-popovers.mjs",
+      "line": 125,
+      "kind": "js:template",
+      "value": "{value} × {value} tablo"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-unified-toolbar.mjs",
+      "line": 16,
+      "kind": "js:template",
+      "value": "<img class=\"pisi-toolbar-icon\" src=\"{value}/{value}.svg\" alt=\"\" aria-hidden=\"true\">"
+    },
+    {
+      "file": "renderer/editor/pisi-editor-unified-toolbar.mjs",
+      "line": 281,
+      "kind": "js:string",
+      "value": "[data-pisi-paint-width], [data-pisi-paint-height]"
+    },
+    {
+      "file": "renderer/editor/pisi-node-editor.mjs",
+      "line": 34,
+      "kind": "js:string",
+      "value": "script, style, iframe, object, embed, link, meta, base, form, input, button"
+    },
+    {
+      "file": "renderer/editor/pisi-node-editor.mjs",
+      "line": 72,
+      "kind": "js:template",
+      "value": "{value}: {value}"
+    },
+    {
+      "file": "renderer/editor/pisi-node-editor.mjs",
+      "line": 205,
+      "kind": "js:string",
+      "value": "Node açılamadı."
+    },
+    {
+      "file": "renderer/editor/pisi-node-editor.mjs",
+      "line": 299,
+      "kind": "js:string",
+      "value": "Node başlığı değiştirilemedi."
+    },
+    {
+      "file": "renderer/editor/pisi-node-editor.mjs",
+      "line": 313,
+      "kind": "js:string",
+      "value": "Node kaydedilemedi."
+    },
+    {
+      "file": "renderer/editor/pisi-node-editor.mjs",
+      "line": 340,
+      "kind": "js:string",
+      "value": "[PISI] Modal kaydetme/kapatma hatası:"
+    },
+    {
+      "file": "renderer/editor/pisi-node-editor.mjs",
+      "line": 341,
+      "kind": "js:string",
+      "value": "Modal kapatılırken hata oluştu:"
+    },
+    {
+      "file": "renderer/editor/pisi-node-editor.mjs",
+      "line": 460,
+      "kind": "js:string",
+      "value": "Node açılamadı."
+    },
+    {
+      "file": "renderer/editor/pisi-node-editor.mjs",
+      "line": 562,
+      "kind": "js:string",
+      "value": "Node başlığı değiştirilemedi."
+    },
+    {
+      "file": "renderer/editor/pisi-node-editor.mjs",
+      "line": 597,
+      "kind": "js:string",
+      "value": "Node kaydedilemedi."
+    },
+    {
+      "file": "renderer/editor/pisi-node-editor.mjs",
+      "line": 613,
+      "kind": "js:string",
+      "value": "[PISI] Center node editor kaydetme hatası:"
+    },
+    {
+      "file": "renderer/editor/pisi-node-editor.mjs",
+      "line": 614,
+      "kind": "js:string",
+      "value": "Node kaydedilirken hata oluştu:"
+    },
+    {
+      "file": "renderer/editor/pisi-node-preview.mjs",
+      "line": 34,
+      "kind": "js:string",
+      "value": "button:not([disabled]), input:not([disabled]), [contenteditable=\"true\"], [tabindex]:not([tabindex=\"-1\"])"
+    },
+    {
+      "file": "renderer/editor/pisi-node-preview.mjs",
+      "line": 83,
+      "kind": "js:string",
+      "value": "script, style, iframe, object, embed"
+    },
+    {
+      "file": "renderer/editor/pisi-node-preview.mjs",
+      "line": 88,
+      "kind": "js:string",
+      "value": ".pisi-canvas-toolbar-hint, canvas, table"
+    },
+    {
+      "file": "renderer/editor/pisi-node-preview.mjs",
+      "line": 139,
+      "kind": "js:string",
+      "value": "5px 7px 7px"
+    },
+    {
+      "file": "renderer/editor/pisi-node-preview.mjs",
+      "line": 158,
+      "kind": "js:string",
+      "value": "[PISI] Node küçük önizlemesi yenilenemedi:"
+    },
+    {
+      "file": "renderer/editor/pisi-node-preview.mjs",
+      "line": 172,
+      "kind": "js:string",
+      "value": "min(380px, calc(100vw - 24px))"
+    },
+    {
+      "file": "renderer/editor/pisi-node-preview.mjs",
+      "line": 173,
+      "kind": "js:string",
+      "value": "min(520px, calc(100vh - 24px))"
+    },
+    {
+      "file": "renderer/editor/pisi-node-preview.mjs",
+      "line": 176,
+      "kind": "js:string",
+      "value": "1px solid #555"
+    },
+    {
+      "file": "renderer/editor/pisi-node-preview.mjs",
+      "line": 178,
+      "kind": "js:string",
+      "value": "rgba(37, 37, 38, 0.98)"
+    },
+    {
+      "file": "renderer/editor/pisi-node-preview.mjs",
+      "line": 180,
+      "kind": "js:string",
+      "value": "0 18px 48px rgba(0, 0, 0, 0.58)"
+    },
+    {
+      "file": "renderer/editor/pisi-node-preview.mjs",
+      "line": 233,
+      "kind": "js:string",
+      "value": "0 0 9px"
+    },
+    {
+      "file": "renderer/editor/pisi-node-preview.mjs",
+      "line": 234,
+      "kind": "js:string",
+      "value": "var(--pisi-map-node-title-color, #f39c12)"
+    },
+    {
+      "file": "renderer/editor/pisi-node-preview.mjs",
+      "line": 245,
+      "kind": "js:template",
+      "value": "{value} tuval önizlemesi"
+    },
+    {
+      "file": "renderer/editor/pisi-node-preview.mjs",
+      "line": 252,
+      "kind": "js:string",
+      "value": "0 0 10px"
+    },
+    {
+      "file": "renderer/editor/pisi-node-preview.mjs",
+      "line": 261,
+      "kind": "js:string",
+      "value": "Bu node yalnızca bir tuval içeriyor."
+    },
+    {
+      "file": "renderer/editor/pisi-node-preview.mjs",
+      "line": 262,
+      "kind": "js:string",
+      "value": "Bu node henüz boş."
+    },
+    {
+      "file": "renderer/editor/pisi-node-preview.mjs",
+      "line": 298,
+      "kind": "js:string",
+      "value": "[PISI] Node önizlemesi yüklenemedi:"
+    },
+    {
+      "file": "renderer/map/pisi-map-edges.mjs",
+      "line": 14,
+      "kind": "js:string",
+      "value": "Bu node zaten bir parent’a sahip. Yeni bağlantı hiyerarşi yerine stream ilişkisi olarak kaydedilsin mi?"
+    },
+    {
+      "file": "renderer/map/pisi-map-edges.mjs",
+      "line": 16,
+      "kind": "js:string",
+      "value": "İkinci parent"
+    },
+    {
+      "file": "renderer/map/pisi-map-edges.mjs",
+      "line": 17,
+      "kind": "js:string",
+      "value": "Stream olarak ekle"
+    },
+    {
+      "file": "renderer/map/pisi-map-edges.mjs",
+      "line": 18,
+      "kind": "js:string",
+      "value": "Vazgeç"
+    },
+    {
+      "file": "renderer/map/pisi-map-edges.mjs",
+      "line": 22,
+      "kind": "js:string",
+      "value": "Bu node zaten bir parent’a sahip. Yeni bağlantı stream olarak kaydedilsin mi?"
+    },
+    {
+      "file": "renderer/map/pisi-map-edges.mjs",
+      "line": 117,
+      "kind": "js:string",
+      "value": "Bağlantı kaynağı seçildi; hedef portta Enter’a bas"
+    },
+    {
+      "file": "renderer/map/pisi-map-edges.mjs",
+      "line": 126,
+      "kind": "js:template",
+      "value": "{value} bağlantı portu"
+    },
+    {
+      "file": "renderer/map/pisi-map-edges.mjs",
+      "line": 151,
+      "kind": "js:string",
+      "value": "Bağlantı kaydedilemedi."
+    },
+    {
+      "file": "renderer/map/pisi-map-edges.mjs",
+      "line": 160,
+      "kind": "js:string",
+      "value": "Bu bağlantı silinsin mi?"
+    },
+    {
+      "file": "renderer/map/pisi-map-edges.mjs",
+      "line": 173,
+      "kind": "js:string",
+      "value": "Bağlantı silinemedi."
+    },
+    {
+      "file": "renderer/map/pisi-map-edges.mjs",
+      "line": 187,
+      "kind": "js:string",
+      "value": "[PISI] Bağlantı silme hatası:"
+    },
+    {
+      "file": "renderer/map/pisi-map-edges.mjs",
+      "line": 188,
+      "kind": "js:string",
+      "value": "Bağlantı silinirken hata oluştu:"
+    },
+    {
+      "file": "renderer/map/pisi-map-edges.mjs",
+      "line": 201,
+      "kind": "js:template",
+      "value": "translate({value}, {value})"
+    },
+    {
+      "file": "renderer/map/pisi-map-edges.mjs",
+      "line": 238,
+      "kind": "js:string",
+      "value": "[PISI] Bağlantı silme butonu konumu hesaplanamadı:"
+    },
+    {
+      "file": "renderer/map/pisi-map-edges.mjs",
+      "line": 247,
+      "kind": "js:template",
+      "value": "translate({value}, {value})"
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 107,
+      "kind": "js:template",
+      "value": ".map-node-box[data-node-id=\"{value}\"] .map-port.{value}"
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 112,
+      "kind": "js:string",
+      "value": "Hub bağlantıları kapalı. Tekrar açmak için tıkla."
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 165,
+      "kind": "js:string",
+      "value": "[PISI] Hedef node zaten bir up-hub bağlantısına sahip. Yeni bağlantı stream olarak kaydedildi."
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 268,
+      "kind": "js:template",
+      "value": "M {value} {value} C {value} {value}, {value} {value}, {value} {value}"
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 286,
+      "kind": "js:template",
+      "value": "M {value} {value} C {value} {value}, {value} {value}, {value} {value}"
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 316,
+      "kind": "js:template",
+      "value": "translate({value}px, {value}px) scale({value})"
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 319,
+      "kind": "js:template",
+      "value": "{value}px {value}px"
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 415,
+      "kind": "js:string",
+      "value": ", error); return false; } } function bindMapZoomEvents() { if (mapZoomEventsBound) return; const canvas = document.getElementById("
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 423,
+      "kind": "js:string",
+      "value": "); if (!canvas) return; mapZoomEventsBound = true; canvas.addEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 448,
+      "kind": "js:string",
+      "value": "); const zoomOutBtn = document.getElementById("
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 484,
+      "kind": "js:string",
+      "value": ", stopHolding); button.addEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 485,
+      "kind": "js:string",
+      "value": ", stopHolding); window.addEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 487,
+      "kind": "js:string",
+      "value": ", stopHolding); button.addEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 489,
+      "kind": "js:string",
+      "value": ", (event) => { event.preventDefault(); event.stopPropagation(); }); } function clearSelectedMapNodes() { document.querySelectorAll("
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 496,
+      "kind": "js:string",
+      "value": ").forEach((box) => { box.classList.remove("
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 497,
+      "kind": "js:string",
+      "value": "); }); } function getSelectedMapNodeBoxes() { return Array.from(document.querySelectorAll("
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 538,
+      "kind": "js:string",
+      "value": ")); for (const box of boxes) { const boxRect = box.getBoundingClientRect(); const normalizedBoxRect = { left: boxRect.left, right: boxRect.right, top: boxRect.top, bottom: boxRect.bottom }; const shouldSelect = selectionRect.direction ==="
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 551,
+      "kind": "js:string",
+      "value": "? rectsIntersect(selectionRect, normalizedBoxRect) : rectContainsRect(selectionRect, normalizedBoxRect); if (shouldSelect) { box.classList.add("
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 556,
+      "kind": "js:string",
+      "value": "); } } } function updateMapSelectionBoxVisual(selectionState, event) { const canvas = document.getElementById("
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 583,
+      "kind": "js:string",
+      "value": ", selectionRect.direction ==="
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 584,
+      "kind": "js:string",
+      "value": "); selectionState.element.classList.toggle("
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 588,
+      "kind": "js:string",
+      "value": ", selectionRect.direction ==="
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 589,
+      "kind": "js:string",
+      "value": "); } function setupMapCanvasPan() { if (mapCanvasPanBound) return; mapCanvasPanBound = true; const canvas = document.getElementById("
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 597,
+      "kind": "js:string",
+      "value": "); if (!canvas) return; let isPanning = false; let startX = 0; let startY = 0; let startCameraX = 0; let startCameraY = 0; canvas.addEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 606,
+      "kind": "js:string",
+      "value": ", (event) => { if (currentMapBoxSelection) { event.preventDefault(); } }); canvas.addEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 612,
+      "kind": "js:string",
+      "value": ", (event) => { if ( event.target.closest("
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 614,
+      "kind": "js:string",
+      "value": ") || event.target.closest("
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 615,
+      "kind": "js:string",
+      "value": ") || event.target.closest("
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 616,
+      "kind": "js:string",
+      "value": ") || event.target.closest("
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 617,
+      "kind": "js:string",
+      "value": ") || event.target.closest("
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 618,
+      "kind": "js:string",
+      "value": ") || event.target.closest("
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 633,
+      "kind": "js:string",
+      "value": "); event.preventDefault(); return; } // Sağ tık basılı tutup sürükleme: toplu seçim çerçevesi. if (event.button === 2) { const selectionEl = document.createElement("
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 641,
+      "kind": "js:string",
+      "value": "); selectionEl.className ="
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 642,
+      "kind": "js:string",
+      "value": "; canvas.appendChild(selectionEl); currentMapBoxSelection = { startX: event.clientX, startY: event.clientY, lastX: event.clientX, lastY: event.clientY, hasMoved: false, direction:"
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 652,
+      "kind": "js:string",
+      "value": ", element: selectionEl }; updateMapSelectionBoxVisual(currentMapBoxSelection, event); event.preventDefault(); } }); window.addEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-interactions.mjs",
+      "line": 700,
+      "kind": "js:string",
+      "value": "; } selectionState.element?.remove(); currentMapBoxSelection = null; event.preventDefault(); return; } if (!isPanning) return; isPanning = false; canvas.classList.remove("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 58,
+      "kind": "js:string",
+      "value": "Map yüklenemedi."
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 67,
+      "kind": "js:string",
+      "value": "[PISI] Harita çalışma alanı DOM öğeleri bulunamadı."
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 201,
+      "kind": "js:string",
+      "value": "Node box oluşturulamadı."
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 208,
+      "kind": "js:string",
+      "value": "Node oluşturuldu ama map içine eklenemedi. Map’i yeniden açmayı dene."
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 250,
+      "kind": "js:string",
+      "value": "📄 Node box oluştur"
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 328,
+      "kind": "js:template",
+      "value": "{value} node"
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 371,
+      "kind": "js:string",
+      "value": "lardan birini sol tıkla sürükleyince grup birlikte taşınır. if (!box.classList.contains("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 372,
+      "kind": "js:string",
+      "value": ")) { clearSelectedMapNodes(); box.classList.add("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 374,
+      "kind": "js:string",
+      "value": "); } }); bindMapNodeDrag(box); bindMapNodeResize(box, resizeHandle); bindMapPortEvents(box); box.addEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 383,
+      "kind": "js:string",
+      "value": ", (event) => { if (event.target !== box) return; if (event.key ==="
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 386,
+      "kind": "js:string",
+      "value": ") { event.preventDefault(); openNodeModalFromBox(box); } else if (event.key ==="
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 389,
+      "kind": "js:string",
+      "value": ") { event.preventDefault(); deleteBtn?.click(); } }); titleEl?.addEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 395,
+      "kind": "js:string",
+      "value": ", (event) => { event.preventDefault(); event.stopPropagation(); startMapNodeTitleEdit(box, node); }); previewEl?.addEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 402,
+      "kind": "js:string",
+      "value": ", (event) => { event.preventDefault(); event.stopPropagation(); openNodeModalFromBox(box); }); openBtn?.addEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 409,
+      "kind": "js:string",
+      "value": ", (event) => { event.preventDefault(); event.stopPropagation(); openNodeModalFromBox(box); }); deleteBtn?.addEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 416,
+      "kind": "js:string",
+      "value": ", async (event) => { event.preventDefault(); event.stopPropagation(); resetPisiKeyboardAndPointerState(); const ok = await pisiConfirm("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 422,
+      "kind": "js:string",
+      "value": ", { title:"
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 423,
+      "kind": "js:string",
+      "value": ", confirmText:"
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 424,
+      "kind": "js:string",
+      "value": ", cancelText:"
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 425,
+      "kind": "js:string",
+      "value": ", danger: true }); resetPisiKeyboardAndPointerState(); if (!ok) return; suppressNextFileSystemRefresh(3000); const result = await window.pisiProject?.deleteNodeFromMap?.(node.fullPath); if (!result || !result.ok) { alert(result?.error ||"
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 438,
+      "kind": "js:string",
+      "value": "); return; } if (typeof removePisiOpenTabsForDeletedPaths ==="
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 460,
+      "kind": "js:string",
+      "value": ") { await refreshActiveMapTreeBranch(); } refreshPisiTagsPanelSoon(); resetPisiKeyboardAndPointerState(); refocusPisiRenderer(); setTimeout(() => { refocusPisiRenderer(); }, 80); }); } function bindMapNodeDrag(box) { box.addEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 479,
+      "kind": "js:string",
+      "value": ", (event) => { if (event.button !== 0) return; if ( event.target.closest("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 483,
+      "kind": "js:string",
+      "value": ") || event.target.closest("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 484,
+      "kind": "js:string",
+      "value": ") || event.target.closest("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 485,
+      "kind": "js:string",
+      "value": ") || event.target.closest("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 486,
+      "kind": "js:string",
+      "value": ") || event.target.closest("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 487,
+      "kind": "js:string",
+      "value": ") ) { return; } if (!box.classList.contains("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 492,
+      "kind": "js:string",
+      "value": ")) { clearSelectedMapNodes(); box.classList.add("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 494,
+      "kind": "js:string",
+      "value": "); } const startX = event.clientX; const startY = event.clientY; const dragZoom = activeMapCamera?.zoom || 1; const draggedBoxes = getSelectedMapNodeBoxes().map((selectedBox) => { selectedBox.classList.add("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 502,
+      "kind": "js:string",
+      "value": "); return { box: selectedBox, x: parseFloat(selectedBox.style.left ||"
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 506,
+      "kind": "js:string",
+      "value": "), y: parseFloat(selectedBox.style.top ||"
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 520,
+      "kind": "js:string",
+      "value": ") { scheduleDrawMapConnections(); } else { drawMapConnections(); } }; const onMouseUp = () => { window.removeEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 528,
+      "kind": "js:string",
+      "value": ", onMouseMove); window.removeEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 529,
+      "kind": "js:string",
+      "value": ", onMouseUp); for (const item of draggedBoxes) { item.box.classList.remove("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 532,
+      "kind": "js:string",
+      "value": "); } scheduleMapLayoutSave(); }; window.addEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 538,
+      "kind": "js:string",
+      "value": ", onMouseMove); window.addEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 539,
+      "kind": "js:string",
+      "value": ", onMouseUp, { once: true }); event.preventDefault(); }); } function bindMapNodeResize(box, handle) { if (!handle) return; handle.addEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 564,
+      "kind": "js:string",
+      "value": ") { scheduleDrawMapConnections(); } else { drawMapConnections(); } }; const onMouseUp = () => { window.removeEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 572,
+      "kind": "js:string",
+      "value": ", onMouseMove); window.removeEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 573,
+      "kind": "js:string",
+      "value": ", onMouseUp); scheduleMapLayoutSave(); }; window.addEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 577,
+      "kind": "js:string",
+      "value": ", onMouseMove); window.addEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 578,
+      "kind": "js:string",
+      "value": ", onMouseUp, { once: true }); event.preventDefault(); event.stopPropagation(); }); } function collectMapLayout() { return Array.from(document.querySelectorAll("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 586,
+      "kind": "js:string",
+      "value": ")).map((box) => ({ id: box.dataset.nodeId, x: parseFloat(box.style.left ||"
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 588,
+      "kind": "js:string",
+      "value": "), y: parseFloat(box.style.top ||"
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 619,
+      "kind": "js:string",
+      "value": ", error); return false; } } async function startMapNodeTitleEdit(box, node) { const titleEl = box.querySelector("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 625,
+      "kind": "js:string",
+      "value": "); if (!titleEl) return; if (box.dataset.renaming ==="
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 628,
+      "kind": "js:string",
+      "value": ") return; box.dataset.renaming ="
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 630,
+      "kind": "js:string",
+      "value": "; const oldTitle = titleEl.textContent.trim(); const oldPath = node.fullPath; const input = document.createElement("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 635,
+      "kind": "js:string",
+      "value": "); input.className ="
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 636,
+      "kind": "js:string",
+      "value": "; input.value = oldTitle; titleEl.textContent ="
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 639,
+      "kind": "js:string",
+      "value": "; titleEl.appendChild(input); input.addEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 642,
+      "kind": "js:string",
+      "value": ", (event) => { event.stopPropagation(); }); input.addEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 646,
+      "kind": "js:string",
+      "value": ", (event) => { event.stopPropagation(); }); input.addEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 650,
+      "kind": "js:string",
+      "value": ", (event) => { event.stopPropagation(); }); input.addEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 654,
+      "kind": "js:string",
+      "value": ", (event) => { event.stopPropagation(); }); input.addEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 658,
+      "kind": "js:string",
+      "value": ", (event) => { event.stopPropagation(); }); focusPisiTextInput(input, true); let finished = false; function restoreTitle(title) { titleEl.textContent = title; titleEl.title = title; box.dataset.renaming ="
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 708,
+      "kind": "js:string",
+      "value": "); restoreTitle(cleanTitle); updateTreeItemAfterRename(oldPath, result); updateOpenMapNodeAfterRename(oldPath, result); if (typeof refreshActiveMapTreeBranch ==="
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 715,
+      "kind": "js:string",
+      "value": ") { await refreshActiveMapTreeBranch(); } if (typeof animateMapBox ==="
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 719,
+      "kind": "js:string",
+      "value": ") { animateMapBox(box); } } catch (error) { console.error("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 723,
+      "kind": "js:string",
+      "value": ", error); alert("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 724,
+      "kind": "js:string",
+      "value": "+ error.message); restoreTitle(oldTitle); } finally { box.dataset.renaming ="
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 728,
+      "kind": "js:string",
+      "value": "; } } input.addEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 732,
+      "kind": "js:string",
+      "value": ", async (event) => { if (event.key ==="
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 733,
+      "kind": "js:string",
+      "value": ") { event.preventDefault(); await finish(true); } if (event.key ==="
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 738,
+      "kind": "js:string",
+      "value": ") { event.preventDefault(); await finish(false); } }); input.addEventListener("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 744,
+      "kind": "js:string",
+      "value": ", () => { setTimeout(() => { finish(true); }, 0); }); } function setPisiEditorContent(editor, content ="
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 751,
+      "kind": "js:string",
+      "value": ") { if (!editor) return; const value = String(content ||"
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 754,
+      "kind": "js:string",
+      "value": "); if (/<[a-z][\\s\\S]*>/i.test(value)) { editor.innerHTML = sanitizePisiEditorHtml(value); ensurePisiEditorBlocks(editor); if (typeof initializePisiAdvancedEditorContent ==="
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 759,
+      "kind": "js:string",
+      "value": ") { initializePisiAdvancedEditorContent(editor); } return; } editor.innerHTML = markdownTextToPisiEditorHtml(value); ensurePisiEditorBlocks(editor); if (typeof initializePisiAdvancedEditorContent ==="
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 767,
+      "kind": "js:string",
+      "value": ") { initializePisiAdvancedEditorContent(editor); } } function getPisiEditorContent(editor) { if (!editor) return"
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 773,
+      "kind": "js:string",
+      "value": "; if (typeof hydratePisiPaintCanvases ==="
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 775,
+      "kind": "js:string",
+      "value": ") { hydratePisiPaintCanvases(editor); } editor.querySelectorAll?.("
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 779,
+      "kind": "js:string",
+      "value": ")?.forEach?.((canvas) => { if (typeof savePisiCanvasData ==="
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 780,
+      "kind": "js:string",
+      "value": ") { savePisiCanvasData(canvas); } }); if (typeof savePisiDocumentInkForEditor ==="
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 785,
+      "kind": "js:string",
+      "value": ") { savePisiDocumentInkForEditor(editor); } if (typeof hydratePisiSheets ==="
+    },
+    {
+      "file": "renderer/map/pisi-map-workspace.mjs",
+      "line": 789,
+      "kind": "js:string",
+      "value": ") { hydratePisiSheets(editor); } // Kayıt normalizasyonu canlı contenteditable DOM"
+    },
+    {
+      "file": "renderer/runtime.mjs",
+      "line": 3,
+      "kind": "js:string",
+      "value": "[PISI] Temiz arayüz yüklendi."
+    },
+    {
+      "file": "renderer/runtime.mjs",
+      "line": 35,
+      "kind": "js:string",
+      "value": "Mayıs"
+    },
+    {
+      "file": "renderer/runtime.mjs",
+      "line": 35,
+      "kind": "js:string",
+      "value": "Şubat"
+    },
+    {
+      "file": "renderer/runtime.mjs",
+      "line": 36,
+      "kind": "js:string",
+      "value": "Ağustos"
+    },
+    {
+      "file": "renderer/runtime.mjs",
+      "line": 36,
+      "kind": "js:string",
+      "value": "Aralık"
+    },
+    {
+      "file": "renderer/runtime.mjs",
+      "line": 36,
+      "kind": "js:string",
+      "value": "Eylül"
+    },
+    {
+      "file": "renderer/runtime.mjs",
+      "line": 36,
+      "kind": "js:string",
+      "value": "Kasım"
+    },
+    {
+      "file": "renderer/runtime.mjs",
+      "line": 39,
+      "kind": "js:string",
+      "value": "Çar"
+    },
+    {
+      "file": "renderer/runtime.mjs",
+      "line": 225,
+      "kind": "js:string",
+      "value": "<div class=\"pisi-calendar-dock-zone-label\">Calendar dock</div>"
+    },
+    {
+      "file": "renderer/runtime.mjs",
+      "line": 495,
+      "kind": "js:template",
+      "value": "{value} {value}"
+    },
+    {
+      "file": "renderer/runtime.mjs",
+      "line": 500,
+      "kind": "js:template",
+      "value": "<div class=\"pisi-calendar-weekday\">{value}</div>"
+    },
+    {
+      "file": "renderer/runtime.mjs",
+      "line": 523,
+      "kind": "js:template",
+      "value": "{value} · diary node var"
+    },
+    {
+      "file": "renderer/runtime.mjs",
+      "line": 526,
+      "kind": "js:template",
+      "value": "<span class=\"pisi-calendar-day-number\">{value}</span>"
+    },
+    {
+      "file": "renderer/runtime.mjs",
+      "line": 582,
+      "kind": "js:string",
+      "value": "Eski projeye ait takvim yanıtı yok sayıldı."
+    },
+    {
+      "file": "renderer/runtime.mjs",
+      "line": 585,
+      "kind": "js:string",
+      "value": "[PISI] Diary tarihleri okunamadı:"
+    },
+    {
+      "file": "renderer/runtime.mjs",
+      "line": 617,
+      "kind": "js:string",
+      "value": "Diary node oluşturulamadı."
+    },
+    {
+      "file": "renderer/runtime.mjs",
+      "line": 676,
+      "kind": "js:string",
+      "value": "[PISI] Diary sync hatası:"
+    },
+    {
+      "file": "renderer/runtime.mjs",
+      "line": 711,
+      "kind": "js:string",
+      "value": "Eksik görev indeksi diary ile eşitlenmedi."
+    },
+    {
+      "file": "renderer/runtime.mjs",
+      "line": 859,
+      "kind": "js:template",
+      "value": "{value} bağlantı portu"
+    },
+    {
+      "file": "renderer/runtime.mjs",
+      "line": 963,
+      "kind": "js:string",
+      "value": "Bağlantı kaydedilemedi."
+    },
+    {
+      "file": "renderer/shell/pisi-customizations.mjs",
+      "line": 52,
+      "kind": "js:string",
+      "value": "[PISI] Customize ayarları okunamadı:"
+    },
+    {
+      "file": "renderer/shell/pisi-customizations.mjs",
+      "line": 64,
+      "kind": "js:string",
+      "value": "[PISI] Customize ayarları kaydedilemedi:"
+    },
+    {
+      "file": "renderer/shell/pisi-dialogs.mjs",
+      "line": 14,
+      "kind": "js:string",
+      "value": "Vazgeç"
+    },
+    {
+      "file": "renderer/shell/pisi-startup.mjs",
+      "line": 97,
+      "kind": "js:string",
+      "value": "Açık dosya yok"
+    },
+    {
+      "file": "renderer/shell/pisi-startup.mjs",
+      "line": 117,
+      "kind": "js:string",
+      "value": "Yeniden adlandırmak için çift tıkla"
+    },
+    {
+      "file": "renderer/shell/pisi-startup.mjs",
+      "line": 129,
+      "kind": "js:string",
+      "value": "Sekmeyi kapat"
+    },
+    {
+      "file": "renderer/shell/pisi-startup.mjs",
+      "line": 205,
+      "kind": "js:string",
+      "value": "Dosya oluşturulamadı."
+    },
+    {
+      "file": "renderer/shell/pisi-tabs.mjs",
+      "line": 551,
+      "kind": "js:string",
+      "value": "Dış değişiklik algılandı"
+    },
+    {
+      "file": "renderer/shell/pisi-tabs.mjs",
+      "line": 552,
+      "kind": "js:string",
+      "value": "Diskten yeniden yükle"
+    },
+    {
+      "file": "renderer/shell/pisi-tabs.mjs",
+      "line": 553,
+      "kind": "js:string",
+      "value": "Ekrandaki sürümü koru"
+    },
+    {
+      "file": "renderer/shell/pisi-tabs.mjs",
+      "line": 574,
+      "kind": "js:string",
+      "value": "Açık node hem PISI içinde değiştirilmiş hem de diskten güncellenmiş. Diskteki sürüm yüklensin mi? Ekrandaki kaydedilmemiş değişiklikler korunmayacak."
+    },
+    {
+      "file": "renderer/shell/pisi-tabs.mjs",
+      "line": 606,
+      "kind": "js:string",
+      "value": "Açık map veya node dışarıdan değiştirildi. Diskteki sürüm yüklensin mi? Henüz diske yazılmamış ekrandaki değişiklikler korunmayacak."
+    },
+    {
+      "file": "renderer/shell/pisi-tabs.mjs",
+      "line": 648,
+      "kind": "js:string",
+      "value": "[PISI] Dış dosya değişikliği yenilenemedi:"
+    },
+    {
+      "file": "renderer/shell/pisi-tabs.mjs",
+      "line": 683,
+      "kind": "js:string",
+      "value": "Map yerleşimi kaydedilemedi; başlık değiştirilmedi."
+    },
+    {
+      "file": "renderer/shell/pisi-tabs.mjs",
+      "line": 695,
+      "kind": "js:string",
+      "value": "Sekme başlığı değiştirilemedi."
+    },
+    {
+      "file": "renderer/shell/pisi-tabs.mjs",
+      "line": 737,
+      "kind": "js:string",
+      "value": "[PISI] Sekme başlığı değiştirme hatası:"
+    },
+    {
+      "file": "renderer/shell/pisi-tabs.mjs",
+      "line": 738,
+      "kind": "js:string",
+      "value": "Sekme başlığı değiştirilirken hata oluştu:"
+    },
+    {
+      "file": "renderer/shell/pisi-window.mjs",
+      "line": 16,
+      "kind": "js:string",
+      "value": "Büyüt"
+    },
+    {
+      "file": "renderer/shell/pisi-window.mjs",
+      "line": 16,
+      "kind": "js:string",
+      "value": "Geri Al"
+    },
+    {
+      "file": "renderer/shell/pisi-window.mjs",
+      "line": 19,
+      "kind": "js:string",
+      "value": "Büyüt"
+    },
+    {
+      "file": "renderer/shell/pisi-window.mjs",
+      "line": 19,
+      "kind": "js:string",
+      "value": "Geri Al"
+    },
+    {
+      "file": "renderer/shell/pisi-window.mjs",
+      "line": 63,
+      "kind": "js:string",
+      "value": "PISI kapatılmadı: bekleyen değişikliklerden en az biri kaydedilemedi."
+    },
+    {
+      "file": "renderer/shell/pisi-window.mjs",
+      "line": 143,
+      "kind": "js:string",
+      "value": "<div id=\"center-tabs\" class=\"center-tabs\"></div>"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 81,
+      "kind": "js:string",
+      "value": "Heading 2"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 82,
+      "kind": "js:string",
+      "value": "Heading 3"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 83,
+      "kind": "js:string",
+      "value": "Heading 4"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 84,
+      "kind": "js:string",
+      "value": "Heading 5"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 161,
+      "kind": "js:string",
+      "value": "Choose a valid date."
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 385,
+      "kind": "js:string",
+      "value": "A-Za-z0-9ğüşöçıİĞÜŞÖÇ_-"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 452,
+      "kind": "js:string",
+      "value": "Kullanıcı etiketi"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 471,
+      "kind": "js:string",
+      "value": "Yeni kullanıcı etiketi"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 535,
+      "kind": "js:template",
+      "value": "<span class=\"pisi-tag-option-code\">{value}</span> <span class=\"pisi-tag-option-desc\">{value}</span>"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 717,
+      "kind": "js:string",
+      "value": "A-Za-z0-9ğüşöçıİĞÜŞÖÇ_-"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 765,
+      "kind": "js:string",
+      "value": "div, p, h1, h2, h3, h4, h5, h6"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 835,
+      "kind": "js:string",
+      "value": "/g, '&quot;') .replace(/'/g, '&#039;'); } function escapeHtml(value) { return pisiEscapeHtml(value); } const moduleApi = {}; Object.defineProperties(moduleApi, {"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 845,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return markPisiMissionDone; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 849,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return reopenPisiMission; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 853,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return openPisiTagBlockResult; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 857,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return highlightPisiEditorBlock; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 861,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return PISI_SYSTEM_TAGS; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 865,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return bindPisiTagControls; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 869,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return bindPisiTagControlsForEditor; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 873,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return updatePisiTagMenuForEditor; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 877,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return getPisiEditorCommandAtCaret; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 881,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return buildPisiTagMenuItems; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 885,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return getExactPisiSystemTag; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 889,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return collectPisiUserTagsFromEditor; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 893,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return collectPisiUserTagSuggestions; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 897,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return openPisiTagMenuForEditor; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 901,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return applyPisiTagMenuItem; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 905,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return closePisiTagMenu; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 909,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return movePisiTagSelection; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 913,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return applyPisiSystemTagToEditor; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 917,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return applyPisiHeadingTagToEditor; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 921,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return applyPisiUserTagToEditor; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 925,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return normalizePisiUserTag; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 929,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return isValidPisiUserTag; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 933,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return makeRangeInElementByTextOffsets; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 937,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return getPisiCurrentEditorBlock; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 941,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return placeCaretAtEnd; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 945,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return positionPisiTagMenuAtSelection; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 949,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return getSelectionClientRect; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 953,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return pisiEscapeHtml; } },"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-editor.mjs",
+      "line": 957,
+      "kind": "js:string",
+      "value": ": { enumerable: true, get() { return escapeHtml; } } }); registerModule("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-index.mjs",
+      "line": 163,
+      "kind": "js:string",
+      "value": "[PISI] Editör imleci geri yüklenemedi:"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-index.mjs",
+      "line": 308,
+      "kind": "js:string",
+      "value": "[PISI] Görev indeksi eksik kaldığı için diary eşitlemesi yapılmadı:"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-index.mjs",
+      "line": 320,
+      "kind": "js:string",
+      "value": "[PISI] Tags/Missions refresh hatası:"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-index.mjs",
+      "line": 458,
+      "kind": "js:template",
+      "value": "Günlük · {value}"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-index.mjs",
+      "line": 520,
+      "kind": "js:template",
+      "value": "Klasör listelenemedi: {value}"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-index.mjs",
+      "line": 566,
+      "kind": "js:template",
+      "value": "Map node listesi okunamadı: {value}"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-index.mjs",
+      "line": 599,
+      "kind": "js:string",
+      "value": "Aktif proje klasörü yok."
+    },
+    {
+      "file": "renderer/tags/pisi-tag-index.mjs",
+      "line": 659,
+      "kind": "js:template",
+      "value": "Node okunamadı: {value}"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-index.mjs",
+      "line": 687,
+      "kind": "js:template",
+      "value": "Block kimlikleri kaydedilemedi: {value}"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-index.mjs",
+      "line": 753,
+      "kind": "js:string",
+      "value": ") || block.closest("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-index.mjs",
+      "line": 767,
+      "kind": "js:string",
+      "value": ") ); const doneFor = doneTagElements .filter((tagEl) => { return normalizePisiUserTag( tagEl.dataset.pisiTag || tagEl.textContent ||"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-index.mjs",
+      "line": 773,
+      "kind": "js:string",
+      "value": "&& Boolean(tagEl.dataset.pisiDoneFor); }) .map((tagEl) => { return normalizePisiUserTag( tagEl.dataset.pisiDoneFor ||"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-index.mjs",
+      "line": 777,
+      "kind": "js:string",
+      "value": "); }) .filter(Boolean); if (!tags.length) continue; const text = block.textContent .replace(/\\s+/g,"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 48,
+      "kind": "js:string",
+      "value": "[PISI] Tags panel DOM bulunamadı."
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 81,
+      "kind": "js:string",
+      "value": "); }); if (!tags.length) { pisiTagsPanelState.selectedTag = null; pisiTagsPanelState.dropdownOpen = false; pickerButton.disabled = true; pickerButton.textContent ="
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 89,
+      "kind": "js:string",
+      "value": "; pickerMenu.hidden = true; pickerMenu.innerHTML ="
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 116,
+      "kind": "js:string",
+      "value": ", pisiTagsPanelState.dropdownOpen ?"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 129,
+      "kind": "js:string",
+      "value": "; for (const tag of tags) { const option = document.createElement("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 132,
+      "kind": "js:string",
+      "value": "); option.type ="
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 134,
+      "kind": "js:string",
+      "value": "; option.className ="
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 135,
+      "kind": "js:string",
+      "value": "; option.classList.toggle("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 136,
+      "kind": "js:string",
+      "value": ", tag === selectedTag); option.innerHTML = ` <span class=\"pisi-tag-picker-name\">#${escapeHtml(tag)}</span> <span class=\"pisi-tag-picker-count\">${counts.get(tag)}</span> `; option.addEventListener("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 163,
+      "kind": "js:string",
+      "value": "; for (const block of matchingBlocks) { const card = document.createElement("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 166,
+      "kind": "js:string",
+      "value": "); card.type ="
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 168,
+      "kind": "js:string",
+      "value": "; card.className ="
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 169,
+      "kind": "js:string",
+      "value": "; card.innerHTML = ` <div class=\"pisi-tag-result-node\"> ${escapeHtml(block.nodeTitle ||"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 173,
+      "kind": "js:string",
+      "value": ")} </div> <div class=\"pisi-tag-result-text\"> ${escapeHtml(block.text ||"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 177,
+      "kind": "js:string",
+      "value": ")} </div> `; card.addEventListener("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 194,
+      "kind": "js:string",
+      "value": "); const month = String(date.getMonth() + 1).padStart(2,"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 255,
+      "kind": "js:string",
+      "value": ") { return String(value).replace(/[.*+?^${}()|[\\]\\\\]/g,"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 256,
+      "kind": "js:string",
+      "value": "); } function getPisiMissionDisplayText(mission) { let text = String(mission?.text ||"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 260,
+      "kind": "js:string",
+      "value": ") .replace(/\\s+/g,"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 261,
+      "kind": "js:string",
+      "value": ") .trim(); const todoTag = String(mission?.todoTag ||"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 264,
+      "kind": "js:string",
+      "value": ").trim(); if (todoTag) { const todoTagPattern = new RegExp( `(^|\\\\s)(?:#|\\\\.\\\\.)?${escapePisiMissionRegExp(todoTag)}(?=\\\\s|$)`,"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 269,
+      "kind": "js:string",
+      "value": "); text = text.replace(todoTagPattern,"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 272,
+      "kind": "js:string",
+      "value": "); } text = text.replace( /(^|\\s)(?:#|\\.\\.)?todo\\.[1-9]\\.\\d{2}-\\d{2}-(?:\\d{2}|\\d{4})(?=\\s|$)/gi,"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 277,
+      "kind": "js:string",
+      "value": "); return text .replace(/\\s+/g,"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 281,
+      "kind": "js:string",
+      "value": ") .trim(); } function renderPisiMissionsPanel() { const panelEl = document.getElementById("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 286,
+      "kind": "js:string",
+      "value": "); const listEl = document.getElementById("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 287,
+      "kind": "js:string",
+      "value": "); if (!panelEl || !listEl) return; let toolbarEl = panelEl.querySelector("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 291,
+      "kind": "js:string",
+      "value": "); if (!toolbarEl) { toolbarEl = document.createElement("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 293,
+      "kind": "js:string",
+      "value": "); toolbarEl.className ="
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 294,
+      "kind": "js:string",
+      "value": "; panelEl.insertBefore(toolbarEl, listEl); } if (!window.currentProjectFolder) { toolbarEl.innerHTML ="
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 319,
+      "kind": "js:string",
+      "value": "; const completedToggle = document.createElement("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 320,
+      "kind": "js:string",
+      "value": "); completedToggle.type ="
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 321,
+      "kind": "js:string",
+      "value": "; completedToggle.className ="
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 322,
+      "kind": "js:string",
+      "value": "; completedToggle.setAttribute("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 323,
+      "kind": "js:string",
+      "value": ", showCompleted ?"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 323,
+      "kind": "js:string",
+      "value": "); completedToggle.textContent = showCompleted ? `Tamamlananları gizle (${completedCount})` : `Tamamlananları göster (${completedCount})`; completedToggle.disabled = completedCount === 0; completedToggle.addEventListener("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 328,
+      "kind": "js:string",
+      "value": ", () => { pisiTagsPanelState.showCompletedMissions = !showCompleted; renderPisiMissionsPanel(); }); toolbarEl.appendChild(completedToggle); if (!missions.length) { listEl.innerHTML = ` <div class=\"right-panel-empty\"> ${showCompleted ?"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 339,
+      "kind": "js:string",
+      "value": "} </div> `; return; } listEl.innerHTML ="
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 345,
+      "kind": "js:string",
+      "value": "; for (const mission of missions) { const item = document.createElement("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 348,
+      "kind": "js:string",
+      "value": "); item.className ="
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 349,
+      "kind": "js:string",
+      "value": "; item.classList.toggle("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 364,
+      "kind": "js:string",
+      "value": ")} </div> <div class=\"pisi-mission-meta\"> <span class=\"${isLate ?"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 383,
+      "kind": "js:string",
+      "value": "); const mainButton = item.querySelector("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 384,
+      "kind": "js:string",
+      "value": "); if (checkbox) { checkbox.checked = mission.completed === true; checkbox.title = mission.completed ?"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 390,
+      "kind": "js:string",
+      "value": "; } checkbox?.addEventListener("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 409,
+      "kind": "js:string",
+      "value": ") ); return; } refreshPisiTagsPanelSoon(); }); mainButton?.addEventListener("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 417,
+      "kind": "js:string",
+      "value": ", async () => { await openPisiTagBlockResult(mission); }); listEl.appendChild(item); } } function normalizePisiBlockText(value) { return String(value ||"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 426,
+      "kind": "js:string",
+      "value": ") .replace(/\\s+/g,"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 427,
+      "kind": "js:string",
+      "value": ") .trim(); } function createPisiDoneTagElement(todoTag) { const tagEl = document.createElement("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 432,
+      "kind": "js:string",
+      "value": "); const normalizedTodoTag = normalizePisiUserTag(todoTag); tagEl.className ="
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 435,
+      "kind": "js:string",
+      "value": "; tagEl.dataset.pisiTag ="
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 436,
+      "kind": "js:string",
+      "value": "; if (normalizedTodoTag) { tagEl.dataset.pisiDoneFor = normalizedTodoTag; } tagEl.contentEditable ="
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 440,
+      "kind": "js:string",
+      "value": "; tagEl.textContent ="
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 441,
+      "kind": "js:string",
+      "value": "; return tagEl; } function blockHasPisiDoneTag(block, todoTag = null) { const normalizedTodoTag = normalizePisiUserTag(todoTag); return Array.from(block.querySelectorAll("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 449,
+      "kind": "js:string",
+      "value": ")) .some((tagEl) => { const isDone = normalizePisiUserTag( tagEl.dataset.pisiTag || tagEl.textContent ||"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 453,
+      "kind": "js:string",
+      "value": "; if (!isDone) return false; if (!normalizedTodoTag) return true; const doneFor = normalizePisiUserTag( tagEl.dataset.pisiDoneFor ||"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 459,
+      "kind": "js:string",
+      "value": "); return !doneFor || doneFor === normalizedTodoTag; }); } function blockHasPisiTag(block, targetTag) { const normalizedTarget = normalizePisiUserTag(targetTag); return Array.from(block.querySelectorAll("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 469,
+      "kind": "js:string",
+      "value": ")) .some((tagEl) => { return normalizePisiUserTag( tagEl.dataset.pisiTag || tagEl.textContent ||"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 472,
+      "kind": "js:string",
+      "value": ") === normalizedTarget; }); } function appendPisiDoneTagToBlock(block, todoTag) { if (!block || blockHasPisiDoneTag(block, todoTag)) return false; decoratePisiEditorBlock(block); block.appendChild(document.createTextNode("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 482,
+      "kind": "js:string",
+      "value": ")); block.appendChild(createPisiDoneTagElement(todoTag)); block.appendChild(document.createTextNode("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 484,
+      "kind": "js:string",
+      "value": ")); return true; } function removePisiDoneTagFromBlock(block, todoTag) { if (!block) return false; const normalizedTodoTag = normalizePisiUserTag(todoTag); let removed = false; Array.from( block.querySelectorAll("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 496,
+      "kind": "js:string",
+      "value": ") ).forEach((tagEl) => { const isDone = normalizePisiUserTag( tagEl.dataset.pisiTag || tagEl.textContent ||"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 500,
+      "kind": "js:string",
+      "value": "; const doneFor = normalizePisiUserTag( tagEl.dataset.pisiDoneFor ||"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 582,
+      "kind": "js:string",
+      "value": ") { initializePisiAdvancedEditorContent(block); } } async function setPisiMissionCompletion(mission, completed) { if (!mission?.nodePath) { return { ok: false, error:"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 591,
+      "kind": "js:string",
+      "value": "}; } try { // 1) Görev şu an center editor içindeyse DOM ve disk birlikte güncellenir. if (samePisiPathForTags(activeCenterNode?.path, mission.nodePath)) { const editor = document.getElementById("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 598,
+      "kind": "js:string",
+      "value": "); const block = findPisiMissionBlockInContainer(editor, mission); if (!block) { return { ok: false, error:"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 605,
+      "kind": "js:string",
+      "value": "}; } const change = setPisiMissionCompletionInBlock( block, mission, completed ); if (!change.changed) { return { ok: true, unchanged: true }; } editor.dispatchEvent(new Event("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 622,
+      "kind": "js:string",
+      "value": ", { bubbles: true })); let saveSucceeded = false; let saveError ="
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 627,
+      "kind": "js:string",
+      "value": "; if (typeof saveCurrentCenterNodeEditor ==="
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 655,
+      "kind": "js:string",
+      "value": "); const block = findPisiMissionBlockInContainer(editor, mission); if (!block) { return { ok: false, error:"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 662,
+      "kind": "js:string",
+      "value": "}; } const change = setPisiMissionCompletionInBlock( block, mission, completed ); if (!change.changed) { return { ok: true, unchanged: true }; } editor.dispatchEvent(new Event("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 709,
+      "kind": "js:string",
+      "value": "}; } const template = createPisiInertHtmlTemplate(doc.data?.content ||"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 713,
+      "kind": "js:string",
+      "value": "); const block = findPisiMissionBlockInContainer( template.content, mission ); if (!block) { return { ok: false, error:"
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 748,
+      "kind": "js:string",
+      "value": "}; } return { ok: true }; } catch (error) { console.error("
+    },
+    {
+      "file": "renderer/tags/pisi-tag-panels.mjs",
+      "line": 754,
+      "kind": "js:string",
+      "value": ", error); return { ok: false, error: error.message || (completed ?"
+    },
+    {
+      "file": "renderer/tags/pisi-todo-utils.mjs",
+      "line": 2,
+      "kind": "js:string",
+      "value": "very low"
+    },
+    {
+      "file": "renderer/tags/pisi-todo-utils.mjs",
+      "line": 6,
+      "kind": "js:string",
+      "value": "very high"
+    },
+    {
+      "file": "renderer/tree/pisi-project.mjs",
+      "line": 111,
+      "kind": "js:string",
+      "value": "[PISI] Proje ağacı yenilenemedi:"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-dnd.mjs",
+      "line": 110,
+      "kind": "js:string",
+      "value": "Node taşınamadı."
+    },
+    {
+      "file": "renderer/tree/pisi-tree-dnd.mjs",
+      "line": 140,
+      "kind": "js:string",
+      "value": "Öğe taşınamadı."
+    },
+    {
+      "file": "renderer/tree/pisi-tree-dnd.mjs",
+      "line": 332,
+      "kind": "js:string",
+      "value": "tree-row tree-root-row"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-dnd.mjs",
+      "line": 348,
+      "kind": "js:string",
+      "value": "tree-name tree-root-name"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-dnd.mjs",
+      "line": 372,
+      "kind": "js:string",
+      "value": "tree-inline-action-btn add-node-under-map-btn"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-dnd.mjs",
+      "line": 373,
+      "kind": "js:string",
+      "value": "Bu map altında node oluştur"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-dnd.mjs",
+      "line": 375,
+      "kind": "js:string",
+      "value": "<img src=\"assets/add-node.png\" alt=\"+\" class=\"tree-action-img\"> <span class=\"tree-action-fallback\">+</span>"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-dnd.mjs",
+      "line": 391,
+      "kind": "js:string",
+      "value": "tree-inline-action-btn delete-tree-item-btn"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-dnd.mjs",
+      "line": 392,
+      "kind": "js:string",
+      "value": "Map sil"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-dnd.mjs",
+      "line": 392,
+      "kind": "js:string",
+      "value": "Node sil"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-dnd.mjs",
+      "line": 393,
+      "kind": "js:string",
+      "value": "<span class=\"tree-action-fallback\">×</span>"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-dnd.mjs",
+      "line": 447,
+      "kind": "js:string",
+      "value": "button, input"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-dnd.mjs",
+      "line": 579,
+      "kind": "js:template",
+      "value": "\"{value}\" map'i ve içindeki {value} node Çöp Kutusu'na taşınsın mı?"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-dnd.mjs",
+      "line": 580,
+      "kind": "js:template",
+      "value": "\"{value}\" node'u Çöp Kutusu'na taşınsın mı?"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-dnd.mjs",
+      "line": 583,
+      "kind": "js:string",
+      "value": "Map sil"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-dnd.mjs",
+      "line": 583,
+      "kind": "js:string",
+      "value": "Node sil"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-dnd.mjs",
+      "line": 584,
+      "kind": "js:string",
+      "value": "Çöp Kutusu’na taşı"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-dnd.mjs",
+      "line": 585,
+      "kind": "js:string",
+      "value": "Vazgeç"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-dnd.mjs",
+      "line": 598,
+      "kind": "js:string",
+      "value": "Dosya silinemedi."
+    },
+    {
+      "file": "renderer/tree/pisi-tree-dnd.mjs",
+      "line": 611,
+      "kind": "js:string",
+      "value": "[PISI] Sol ağaç silme hatası:"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-dnd.mjs",
+      "line": 612,
+      "kind": "js:string",
+      "value": "Silme sırasında hata oluştu:"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 74,
+      "kind": "js:string",
+      "value": "); }); } function rememberExpandedPathsUnder(containerEl) { if (!containerEl) return; const expandedNodes = containerEl.querySelectorAll("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 96,
+      "kind": "js:string",
+      "value": "); return; } const children = getDirectTreeChildrenContainer(mapTreeNode); if (!children) { console.warn("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 103,
+      "kind": "js:string",
+      "value": "); return; } const mapLevel = Number(mapTreeNode.dataset.level || 0); // Map kapalıysa şimdi açmaya çalışma. // Sadece \"sonraki açılışta yeniden yükle\" işareti koy. if (!mapTreeNode.classList.contains("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 111,
+      "kind": "js:string",
+      "value": ")) { children.dataset.loaded ="
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 112,
+      "kind": "js:string",
+      "value": "; return; } // Alt dallarda açık olan node"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 119,
+      "kind": "js:string",
+      "value": "in altındaki node ağacını yeniden kur. await loadMapTreeChildren(activeMapPath, children, mapLevel + 1); children.dataset.loaded ="
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 137,
+      "kind": "js:string",
+      "value": "); children.className ="
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 206,
+      "kind": "js:string",
+      "value": "); // Animasyonu yeniden tetiklemek için reflow. void row.offsetWidth; row.classList.add("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 211,
+      "kind": "js:string",
+      "value": "); setTimeout(() => { row.classList.remove("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 214,
+      "kind": "js:string",
+      "value": "); }, 950); } async function appendTreeItemToContainer(containerEl, item, level) { if (!containerEl) return null; const childNode = await createTreeNode(item, level); containerEl.appendChild(childNode); const row = childNode.querySelector("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 224,
+      "kind": "js:string",
+      "value": "); animateTreeRow(row); return childNode; } function makeTreeItemFromCreateResult(result) { return { name: result.fileName, displayName: result.metadata?.title || result.displayName || result.fileName, fullPath: result.fullPath, type:"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 260,
+      "kind": "js:string",
+      "value": "); const nameEl = treeNode.querySelector("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 295,
+      "kind": "js:string",
+      "value": ") .replace(/[\\\\/]+/g,"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 296,
+      "kind": "js:string",
+      "value": "); return window.pisiEnvironment?.platform ==="
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 298,
+      "kind": "js:string",
+      "value": "? normalized.toLowerCase() : normalized; } function sameClientPath(a, b) { return normalizeClientPath(a) === normalizeClientPath(b); } function findMapNodeBoxByPath(nodePath) { const boxes = document.querySelectorAll("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 308,
+      "kind": "js:string",
+      "value": "); for (const box of boxes) { if (sameClientPath(box.dataset.nodePath, nodePath)) { return box; } } return null; } function animateMapBox(box) { if (!box) return; box.classList.remove("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 322,
+      "kind": "js:string",
+      "value": "); void box.offsetWidth; box.classList.add("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 324,
+      "kind": "js:string",
+      "value": "); setTimeout(() => { box.classList.remove("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 327,
+      "kind": "js:string",
+      "value": "); }, 700); } function updateOpenMapNodeAfterRename(oldPath, result) { if (!result || !result.ok) return; const box = findMapNodeBoxByPath(oldPath); if (box) { box.dataset.nodePath = result.fullPath; const titleEl = box.querySelector("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 339,
+      "kind": "js:string",
+      "value": "); if (titleEl) { const title = result.metadata?.title || result.fileName.replace(/\\.node$/i,"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 360,
+      "kind": "js:string",
+      "value": "); if (!board || !node) return; const box = createMapNodeBox(node); board.appendChild(box); box.classList.add("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 366,
+      "kind": "js:string",
+      "value": "); setTimeout(() => box.classList.remove("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 382,
+      "kind": "js:string",
+      "value": "); return; } expandedTreePaths.add(mapItem.fullPath); const children = mapNodeEl.querySelector("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 388,
+      "kind": "js:string",
+      "value": "); const mapLevel = Number(mapNodeEl.dataset.level || 0); if (children) { mapNodeEl.classList.add("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 392,
+      "kind": "js:string",
+      "value": "); await loadMapTreeChildren(mapItem.fullPath, children, mapLevel + 1); children.dataset.loaded ="
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 407,
+      "kind": "js:string",
+      "value": ").forEach((el) => { el.classList.remove("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 408,
+      "kind": "js:string",
+      "value": "); }); row.classList.add("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 426,
+      "kind": "js:string",
+      "value": "); // Eğer bu satır daha önce rename ile güncellendiyse, // event listener içindeki eski item yerine DOM"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 429,
+      "kind": "js:string",
+      "value": "ı kullan. if (treeNode?.__pisiItem) { item = treeNode.__pisiItem; } if (!item || item.isDirectory) return; const nameSpan = row.querySelector("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 436,
+      "kind": "js:string",
+      "value": "); if (!nameSpan) return; if (row.dataset.renaming ==="
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 439,
+      "kind": "js:string",
+      "value": ") return; row.dataset.renaming ="
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 440,
+      "kind": "js:string",
+      "value": "; const oldPath = item.fullPath; console.log("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 443,
+      "kind": "js:string",
+      "value": ", getTreeItemDisplayName(item), item); const oldBaseName = getTreeItemDisplayName(item); const oldName = oldBaseName; const input = document.createElement("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 447,
+      "kind": "js:string",
+      "value": "); input.className ="
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 448,
+      "kind": "js:string",
+      "value": "; input.value = oldBaseName; nameSpan.replaceWith(input); input.addEventListener("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 453,
+      "kind": "js:string",
+      "value": ", (event) => { event.stopPropagation(); }); input.addEventListener("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 457,
+      "kind": "js:string",
+      "value": ", (event) => { event.stopPropagation(); }); input.addEventListener("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 461,
+      "kind": "js:string",
+      "value": ", (event) => { event.stopPropagation(); }); input.addEventListener("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 465,
+      "kind": "js:string",
+      "value": ", (event) => { event.stopPropagation(); }); input.addEventListener("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 469,
+      "kind": "js:string",
+      "value": ", (event) => { event.stopPropagation(); }); input.focus(); input.select(); let finished = false; function restoreName(text = oldName) { const span = document.createElement("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 479,
+      "kind": "js:string",
+      "value": "); span.className ="
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 480,
+      "kind": "js:string",
+      "value": "; span.textContent = text; if (input.isConnected) { input.replaceWith(span); } row.dataset.renaming ="
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 542,
+      "kind": "js:string",
+      "value": ") { updatePisiOpenTabAfterRename(renameSourcePath, result); } animateTreeRow(row); } catch (error) { console.error("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 548,
+      "kind": "js:string",
+      "value": ", error); alert("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 549,
+      "kind": "js:string",
+      "value": "+ error.message); restoreName(oldName); } finally { row.dataset.renaming ="
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 552,
+      "kind": "js:string",
+      "value": "; } } input.addEventListener("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 556,
+      "kind": "js:string",
+      "value": ", async (event) => { if (event.key ==="
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 557,
+      "kind": "js:string",
+      "value": ") { event.preventDefault(); await finishRename(true); } if (event.key ==="
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 562,
+      "kind": "js:string",
+      "value": ") { event.preventDefault(); await finishRename(false); } }); input.addEventListener("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 596,
+      "kind": "js:string",
+      "value": "); errorRow.className ="
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 597,
+      "kind": "js:string",
+      "value": "; errorRow.style.paddingLeft = `${level * 14 + 6}px`; errorRow.textContent ="
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 599,
+      "kind": "js:string",
+      "value": "+ (result?.error ||"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 620,
+      "kind": "js:string",
+      "value": "), fullPath: mapNode.fullPath, type:"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 640,
+      "kind": "js:string",
+      "value": ") { return { sourceRole:"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 640,
+      "kind": "js:string",
+      "value": "|| edge.type ==="
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 642,
+      "kind": "js:string",
+      "value": ", targetRole:"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 643,
+      "kind": "js:string",
+      "value": "}; } if (edge.type ==="
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 647,
+      "kind": "js:string",
+      "value": ") { return { sourceRole:"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 649,
+      "kind": "js:string",
+      "value": ", targetRole:"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 650,
+      "kind": "js:string",
+      "value": "}; } return { sourceRole:"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 655,
+      "kind": "js:string",
+      "value": ", targetRole:"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 680,
+      "kind": "js:string",
+      "value": ") { parentId = edge.sourceId; childId = edge.targetId; } // Eski/ters kayıtlar için güvenlik. if (sourceRole ==="
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 680,
+      "kind": "js:string",
+      "value": "&& targetRole ==="
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 686,
+      "kind": "js:string",
+      "value": "&& targetRole ==="
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 786,
+      "kind": "js:string",
+      "value": "); errorRow.className ="
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 787,
+      "kind": "js:string",
+      "value": "; errorRow.style.paddingLeft = `${level * 14 + 6}px`; errorRow.textContent ="
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 789,
+      "kind": "js:string",
+      "value": "+ (result?.error ||"
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 810,
+      "kind": "js:string",
+      "value": ", error); const fragment = document.createDocumentFragment(); const errorRow = document.createElement("
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 813,
+      "kind": "js:string",
+      "value": "); errorRow.className ="
+    },
+    {
+      "file": "renderer/tree/pisi-tree-view.mjs",
+      "line": 814,
+      "kind": "js:string",
+      "value": "; errorRow.style.paddingLeft = `${level * 14 + 6}px`; errorRow.textContent ="
+    }
+  ]
+}
