@@ -24,15 +24,36 @@ jobs:
           node-version: 24
           cache: npm
 
-      - name: Apply staged i18n payload
+      - name: Verify and apply staged i18n payload
         run: |
+          verify_segment() {
+            file="$1"
+            expected_length="$2"
+            expected_hash="$3"
+            clean="/tmp/$(basename "$file").clean"
+            tr -d '\r\n\t ' < "$file" > "$clean"
+            actual_length="$(wc -c < "$clean" | tr -d ' ')"
+            test "$actual_length" = "$expected_length" || {
+              echo "$file length mismatch: $actual_length != $expected_length"
+              exit 1
+            }
+            echo "$expected_hash  $clean" | sha256sum -c -
+          }
+
+          verify_segment scripts/.i18n-payload-00 12000 a62f75c30da606027d7cb0698e93da58f85615f4a3f3ac3b2390f1459fe91f80
+          verify_segment scripts/.i18n-payload-01 12000 8f9c8b328a5609622e07721d599e5221b8213a88160c206743eb9b2ef04442f7
+          verify_segment scripts/.i18n-payload-02 12000 b1536d3b82c7668846ab19119173267f4519bda2e9699979a8667a2ba328726b
+          verify_segment scripts/.i18n-payload-03a 6000 f4773511f4e2fed90c910ca0dc8c18e3757ba937f25b56017e83128d54dc1731
+          verify_segment scripts/.i18n-payload-03b 6000 7e3b8f82a08d2f8b3821d19c5865ad50c43961ba6ffe2bbde00b8f7bebc290be
+          verify_segment scripts/.i18n-payload-04 7692 1ec6d3515e19a5f2eea576821958b5f666505c28e6bc3acb1836bf896e6ea26d
+
           cat \
-            scripts/.i18n-payload-00 \
-            scripts/.i18n-payload-01 \
-            scripts/.i18n-payload-02 \
-            scripts/.i18n-payload-03a \
-            scripts/.i18n-payload-03b \
-            scripts/.i18n-payload-04 \
+            /tmp/.i18n-payload-00.clean \
+            /tmp/.i18n-payload-01.clean \
+            /tmp/.i18n-payload-02.clean \
+            /tmp/.i18n-payload-03a.clean \
+            /tmp/.i18n-payload-03b.clean \
+            /tmp/.i18n-payload-04.clean \
             | base64 --decode > /tmp/i18n-payload.tar.gz
           echo "353a1d426c4fd7f6b65da55a2b7efb6f4e4385e0e017eca01000ffbb3e9fffb3  /tmp/i18n-payload.tar.gz" | sha256sum -c -
           tar -xzf /tmp/i18n-payload.tar.gz
