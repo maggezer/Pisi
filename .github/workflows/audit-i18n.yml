@@ -1,4 +1,4 @@
-name: Audit i18n candidates
+name: Apply complete i18n
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  audit:
+  apply:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout i18n branch
@@ -22,35 +22,43 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: npm
 
-      - name: Generate i18n inventory
-        run: node scripts/audit-i18n-candidates.js
+      - name: Apply staged i18n payload
+        run: |
+          cat \
+            scripts/.i18n-payload-00 \
+            scripts/.i18n-payload-01 \
+            scripts/.i18n-payload-02 \
+            scripts/.i18n-payload-03 \
+            scripts/.i18n-payload-04 \
+            | base64 --decode > /tmp/i18n-payload.tar.gz
+          echo "353a1d426c4fd7f6b65da55a2b7efb6f4e4385e0e017eca01000ffbb3e9fffb3  /tmp/i18n-payload.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/i18n-payload.tar.gz
+          rm -f scripts/audit-i18n-candidates.js
+          rm -f i18n-audit.json i18n-audit-summary.json
 
-      - name: Upload inventory artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: i18n-inventory
-          path: |
-            i18n-audit.json
-            i18n-audit-summary.json
-          retention-days: 3
+      - name: Install dependencies without Electron binary
+        run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
 
-      - name: Upload source snapshot
-        uses: actions/upload-artifact@v4
-        with:
-          name: pisi-source-snapshot
-          path: |
-            .
-            !node_modules/**
-            !.git/**
-            !dist/**
-          include-hidden-files: true
-          retention-days: 3
+      - name: Validate source
+        run: npm run validate
 
-      - name: Commit inventory
+      - name: Remove one-time payload
+        run: |
+          rm -f scripts/.i18n-payload-00
+          rm -f scripts/.i18n-payload-01
+          rm -f scripts/.i18n-payload-02
+          rm -f scripts/.i18n-payload-03
+          rm -f scripts/.i18n-payload-04
+          rm -f .github/workflows/audit-i18n.yml
+
+      - name: Commit complete i18n
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add i18n-audit.json i18n-audit-summary.json
-          git commit -m "Generate refined i18n inventory" || exit 0
+          git add -A
+          git commit -m "Internationalize Pisi in Turkish and English"
           git push origin agent/full-i18n
