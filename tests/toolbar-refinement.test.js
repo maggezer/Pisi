@@ -49,3 +49,23 @@ test('canvas dimensions provide four-digit input space', () => {
     assert.match(css, /pisi-toolbar-dimension-row[\s\S]*repeat\(2, 52px\)/);
     assert.match(css, /pisi-ribbon-number[\s\S]*min-width: 52px/);
 });
+
+test('font selector stays left aligned and paint split buttons use fixed widths', () => {
+    const css = read('styles/70-components.css');
+    assert.match(
+        css,
+        /pisi-toolbar-section-text \.pisi-toolbar-section-row-top[\s\S]*justify-content: flex-start/
+    );
+    assert.match(
+        css,
+        /pisi-toolbar-section-drawing \.pisi-toolbar-draw-grid[\s\S]*grid-template-columns: repeat\(2, 44px\)/
+    );
+    assert.match(
+        css,
+        /pisi-toolbar-section-drawing \.pisi-ribbon-split[\s\S]*grid-template-columns: 26px 18px/
+    );
+    assert.match(
+        css,
+        /pisi-toolbar-section-drawing \.pisi-ribbon-split \.pisi-ribbon-btn[\s\S]*width: 26px/
+    );
+});
