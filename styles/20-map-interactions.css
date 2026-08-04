@@ -449,6 +449,11 @@
     background: #333;
 }
 
+.pisi-todo-picker-actions .pisi-todo-undated {
+    border-color: #5dade2;
+    color: #b9ddff;
+}
+
 .pisi-todo-picker-actions .pisi-todo-apply {
     border-color: #2ecc71;
     background: #247a49;

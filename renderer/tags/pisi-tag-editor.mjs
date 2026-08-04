@@ -5,21 +5,16 @@ import {
     getPisiTodoPriorityOption,
     getPisiTodayIsoDate
 } from "./pisi-todo-utils.mjs";
-
 async function markPisiMissionDone(mission) {
     return setPisiMissionCompletion(mission, true);
 }
-
 async function reopenPisiMission(mission) {
     return setPisiMissionCompletion(mission, false);
 }
-
 async function openPisiTagBlockResult(block) {
     if (!block?.nodePath) return;
-
     const escapedPath = CSS.escape(block.nodePath);
     const box = document.querySelector(`.map-node-box[data-node-path="${escapedPath}"]`);
-
     if (box) {
     await openNodeModalFromBox(box);
 } else if (typeof openPisiFileTab === 'function') {
@@ -36,15 +31,12 @@ async function openPisiTagBlockResult(block) {
         }
     });
 }
-
 setTimeout(() => {
-    highlightPisiEditorBlock(block.blockId);
+    highlightPisiEditorBlock(block.blockId, block.todoTag);
 }, 120);
 }
-
-function highlightPisiEditorBlock(blockId) {
+function highlightPisiEditorBlock(blockId, todoTag = null) {
     if (!blockId) return;
-
     const centerEditor = document.getElementById('center-node-editor-content');
     const modalEditor = document.getElementById('node-modal-content');
 
@@ -56,8 +48,8 @@ function highlightPisiEditorBlock(blockId) {
 
     if (!editor) return;
 
-    editor.querySelectorAll('.pisi-block-highlight').forEach((block) => {
-        block.classList.remove('pisi-block-highlight');
+    editor.querySelectorAll('.pisi-block-highlight, .pisi-todo-source-highlight').forEach((element) => {
+        element.classList.remove('pisi-block-highlight', 'pisi-todo-source-highlight');
     });
 
     const block = editor.querySelector(
@@ -67,13 +59,27 @@ function highlightPisiEditorBlock(blockId) {
     if (!block) return;
 
     block.classList.add('pisi-block-highlight');
-    block.scrollIntoView({
+
+    const normalizedTodoTag = normalizePisiUserTag(todoTag).toLowerCase();
+    const source = normalizedTodoTag
+        ? Array.from(
+            block.querySelectorAll('.pisi-todo-source[data-pisi-todo-for]')
+        ).find((element) => {
+            return normalizePisiUserTag(
+                element.dataset.pisiTodoFor || ''
+            ).toLowerCase() === normalizedTodoTag;
+        })
+        : null;
+
+    source?.classList.add('pisi-todo-source-highlight');
+    (source || block).scrollIntoView({
         block: 'center',
         behavior: 'smooth'
     });
 
     setTimeout(() => {
         block.classList.remove('pisi-block-highlight');
+        source?.classList.remove('pisi-todo-source-highlight');
     }, 2200);
 }
 
@@ -145,6 +151,7 @@ function openPisiTodoDateMenu(editor, priorityValue, commandOverride = null) {
             >
             <div class="pisi-todo-picker-actions">
                 <button class="pisi-todo-back" type="button">Back</button>
+                <button class="pisi-todo-undated" type="button">Tarihsiz</button>
                 <button class="pisi-todo-apply" type="button">Add</button>
             </div>
         </div>
@@ -152,10 +159,11 @@ function openPisiTodoDateMenu(editor, priorityValue, commandOverride = null) {
 
     const dateInput = menu.querySelector('.pisi-todo-date-input');
     const backButton = menu.querySelector('.pisi-todo-back');
+    const undatedButton = menu.querySelector('.pisi-todo-undated');
     const applyButton = menu.querySelector('.pisi-todo-apply');
 
-    const commitTodo = () => {
-        const todoTag = formatPisiTodoTag(priority.value, dateInput?.value);
+    const commitTodo = (dateValue = dateInput?.value) => {
+        const todoTag = formatPisiTodoTag(priority.value, dateValue);
 
         if (!todoTag) {
             dateInput?.setCustomValidity('Choose a valid date.');
@@ -163,8 +171,13 @@ function openPisiTodoDateMenu(editor, priorityValue, commandOverride = null) {
             return;
         }
 
-        dateInput.setCustomValidity('');
-        applyPisiUserTagToEditor(editor, todoTag, command);
+        dateInput?.setCustomValidity('');
+
+        if (command.sourceSelection === true) {
+            applyPisiTodoSelectionToEditor(editor, todoTag, command);
+        } else {
+            applyPisiUserTagToEditor(editor, todoTag, command);
+        }
     };
 
     dateInput?.addEventListener('mousedown', (event) => {
@@ -186,6 +199,12 @@ function openPisiTodoDateMenu(editor, priorityValue, commandOverride = null) {
         event.preventDefault();
         event.stopPropagation();
         openPisiTodoPriorityMenu(editor, command);
+    });
+
+    undatedButton?.addEventListener('mousedown', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        commitTodo('none');
     });
 
     applyButton?.addEventListener('mousedown', (event) => {
@@ -323,6 +342,15 @@ function bindPisiTagControlsForEditor(editor) {
 
     editor.addEventListener('click', () => {
         updatePisiTagMenuForEditor(editor, false);
+    });
+
+    editor.addEventListener('contextmenu', (event) => {
+        const command = capturePisiTodoSelection(editor);
+        if (!command) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        openPisiTodoPriorityMenu(editor, command);
     });
 }
 
@@ -523,6 +551,13 @@ function openPisiTagMenuForEditor(editor, command) {
 
     menu.innerHTML = '';
 
+    if (command.sourceSelection === true) {
+        const heading = document.createElement('div');
+        heading.className = 'pisi-todo-selection-heading';
+        heading.textContent = 'Seçili metni göreve dönüştür';
+        menu.appendChild(heading);
+    }
+
     command.items.forEach((item, index) => {
         const option = document.createElement('button');
         option.type = 'button';
@@ -674,11 +709,7 @@ function applyPisiUserTagToEditor(editor, rawTag, commandOverride = null) {
 
     if (!range) return;
 
-    const tagEl = document.createElement('span');
-    tagEl.className = 'pisi-user-tag';
-    tagEl.dataset.pisiTag = tag;
-    tagEl.contentEditable = 'false';
-    tagEl.textContent = tag;
+    const tagEl = createPisiUserTagElement(tag);
 
     const trailingSpace = document.createTextNode(' ');
 

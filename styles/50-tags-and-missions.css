@@ -381,3 +381,132 @@ body.pisi-calendar-is-dragging .pisi-calendar-dock-zone:hover::after {
         transform: scale(0.985);
     }
 }
+
+/* TODO FIRST RELEASE */
+.pisi-missions-filter-bar {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+}
+
+.pisi-missions-filter {
+    min-width: 0;
+    min-height: 28px;
+    border: 1px solid #3f3f46;
+    border-radius: 7px;
+    background: #252526;
+    color: #a9a9ad;
+    padding: 3px 5px;
+    font-size: 10px;
+    font-weight: 750;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pisi-missions-filter:hover,
+.pisi-missions-filter.active {
+    border-color: #f39c12;
+    color: #f5c16c;
+    background: #303034;
+}
+
+.pisi-mission-content {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.pisi-mission-status {
+    width: 126px;
+    max-width: 100%;
+    height: 25px;
+    border: 1px solid #444;
+    border-radius: 7px;
+    outline: none;
+    background: #232325;
+    color: #d4d4d4;
+    padding: 0 22px 0 7px;
+    font-size: 10px;
+    font-weight: 750;
+    color-scheme: dark;
+    cursor: pointer;
+}
+
+.pisi-mission-status:focus {
+    border-color: #f39c12;
+    box-shadow: 0 0 0 2px rgba(243, 156, 18, 0.14);
+}
+
+.pisi-mission-card[data-status="doing"] {
+    border-left: 3px solid #5dade2;
+}
+
+.pisi-mission-card[data-status="waiting"] {
+    border-left: 3px solid #f1c40f;
+}
+
+.pisi-mission-card[data-status="blocked"] {
+    border-left: 3px solid #e74c3c;
+}
+
+.pisi-mission-card[data-date-bucket="overdue"] {
+    box-shadow: inset 0 0 0 1px rgba(231, 76, 60, 0.12);
+}
+
+.pisi-todo-selection-heading {
+    padding: 7px 9px;
+    border-bottom: 1px solid #3f3f46;
+    color: #f39c12;
+    font-size: 11px;
+    font-weight: 850;
+}
+
+.pisi-todo-source {
+    border-radius: 3px;
+    box-shadow: inset 0 -2px 0 rgba(243, 156, 18, 0.65);
+}
+
+.pisi-todo-source-highlight {
+    background: rgba(243, 156, 18, 0.28);
+    outline: 2px solid rgba(243, 156, 18, 0.72);
+    outline-offset: 1px;
+}
+
+.pisi-mission-node-badge {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: #f39c12;
+    color: #1e1e1e;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.38);
+    pointer-events: none;
+}
+
+.map-node-box > .pisi-mission-node-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 8;
+}
+
+.pisi-mission-tree-badge-host {
+    margin-left: auto;
+    padding-left: 6px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.pisi-mission-tree-badge-host .pisi-mission-node-badge {
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+}
