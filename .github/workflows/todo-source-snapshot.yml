@@ -1,0 +1,28 @@
+name: Todo source snapshot
+
+on:
+  push:
+    branches:
+      - agent/todo-first-release
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Todo branch
+        uses: actions/checkout@v4
+
+      - name: Upload source snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: pisi-todo-source
+          path: |
+            .
+            !node_modules/**
+            !.git/**
+            !dist/**
+          include-hidden-files: true
+          retention-days: 3
