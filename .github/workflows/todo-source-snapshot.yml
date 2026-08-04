@@ -1,15 +1,92 @@
-name: Todo first release staging
+name: Apply Todo first release
 
 on:
   push:
     branches:
-      - agent/todo-staging-disabled
+      - agent/todo-first-release
 
 permissions:
   contents: write
 
 jobs:
-  staging:
+  apply:
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Todo payload staging is paused."
+      - name: Checkout Todo branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/todo-first-release
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Verify and apply Todo payload
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          verify_segment() {
+            file="$1"
+            expected_length="$2"
+            expected_hash="$3"
+            clean="/tmp/$(basename "$file").clean"
+            tr -d '\r\n\t ' < "$file" > "$clean"
+            actual_length="$(wc -c < "$clean" | tr -d ' ')"
+            test "$actual_length" = "$expected_length" || {
+              echo "$file length mismatch: $actual_length != $expected_length"
+              exit 1
+            }
+            echo "$expected_hash  $clean" | sha256sum -c -
+          }
+
+          verify_segment scripts/.todo-release-00 7000 353b0ef486d5152f3782e261015148ea56c89eee93d1b0e4c19cc1f6daf99314
+          verify_segment scripts/.todo-release-01 7000 b831c96dfd50f0852c4354820659755b1600a7daf3297cedfca184c08d32a995
+          verify_segment scripts/.todo-release-02 7000 c27bed2276edd0ae64d91c5821e4c0529c7b62b2de3b49f1c9b520c3863cd814
+          verify_segment scripts/.todo-release-03 10300 af80f34a9f0522682f23995e421366ddb34f7730e8c0c8edbbed840c4adc8153
+          verify_segment scripts/.todo-release-04 10300 c9c997ca111e3a82d97696a821c5e0d3ca525e0feb33fe13748bb9674e7e55ba
+          verify_segment scripts/.todo-release-05 10300 15617ca676d24d281fd4ad66627806893d6541b38b22feaecc6283fe79846193
+          verify_segment scripts/.todo-release-06 10300 63ef8dbfd44d89b7af9fcfc0b651b1407ccd7e7ea775f77b0960d6cf39eec812
+
+          cat \
+            /tmp/.todo-release-00.clean \
+            /tmp/.todo-release-01.clean \
+            /tmp/.todo-release-02.clean \
+            /tmp/.todo-release-03.clean \
+            /tmp/.todo-release-04.clean \
+            /tmp/.todo-release-05.clean \
+            /tmp/.todo-release-06.clean \
+            | base64 --decode > /tmp/todo-first-release.tar.gz
+
+          echo "5f750e2a1af34a3e42563b7e250c82f0ed36d0bd8f4b7fc74ecfeac2d6e7503a  /tmp/todo-first-release.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/todo-first-release.tar.gz
+
+      - name: Install dependencies without Electron binary
+        run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+      - name: Validate source
+        run: npm run validate
+
+      - name: Remove temporary payload
+        run: |
+          rm -f scripts/.todo-release-00
+          rm -f scripts/.todo-release-01
+          rm -f scripts/.todo-release-02
+          rm -f scripts/.todo-release-03
+          rm -f scripts/.todo-release-04
+          rm -f scripts/.todo-release-05
+          rm -f scripts/.todo-release-06
+          rm -f .github/workflows/todo-source-snapshot.yml
+
+      - name: Commit Todo first release
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Build Todo first release"
+          git push origin agent/todo-first-release
