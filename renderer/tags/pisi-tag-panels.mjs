@@ -191,65 +191,11 @@ function parsePisiTodoTag(tag) {
 }
 
 function formatPisiMissionDate(date) {
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = String(date.getFullYear());
-
-    return `${day}-${month}-${year}`;
+    return formatPisiMissionDateFirstRelease(date);
 }
 
 function getPisiMissionsFromIndex(options = {}) {
-    const missions = [];
-    const includeCompleted = options.includeCompleted === true;
-
-    const sourceIndex = Array.isArray(pisiTagsPanelState.missionIndex)
-        ? pisiTagsPanelState.missionIndex
-        : [];
-
-    for (const block of sourceIndex) {
-        const tags = Array.isArray(block.tags) ? block.tags : [];
-        const doneFor = new Set(
-            Array.isArray(block.doneFor)
-                ? block.doneFor.map(normalizePisiUserTag)
-                : []
-        );
-
-        const hasLegacyDone = block.legacyDone === true;
-
-        for (const tag of tags) {
-            const todo = parsePisiTodoTag(tag);
-
-            if (!todo) continue;
-            const completed = hasLegacyDone || doneFor.has(todo.tag);
-            if (completed && !includeCompleted) continue;
-
-            missions.push({
-                ...block,
-                todoTag: todo.tag,
-                priority: todo.priority,
-                priorityLabel: todo.priorityLabel,
-                rawPriority: todo.rawPriority,
-                finishDate: todo.finishDate,
-                daysLeft: todo.daysLeft,
-                workorder: todo.workorder,
-                completed
-            });
-        }
-    }
-
-    missions.sort((a, b) => {
-        if (a.workorder !== b.workorder) {
-            return a.workorder - b.workorder;
-        }
-
-        if (a.finishDate.getTime() !== b.finishDate.getTime()) {
-            return a.finishDate.getTime() - b.finishDate.getTime();
-        }
-
-        return b.priority - a.priority;
-    });
-
-    return missions;
+    return getPisiMissionsFromIndexFirstRelease(options);
 }
 
 function escapePisiMissionRegExp(value = '') {
@@ -257,169 +203,11 @@ function escapePisiMissionRegExp(value = '') {
 }
 
 function getPisiMissionDisplayText(mission) {
-    let text = String(mission?.text || '')
-        .replace(/\s+/g, ' ')
-        .trim();
-
-    const todoTag = String(mission?.todoTag || '').trim();
-
-    if (todoTag) {
-        const todoTagPattern = new RegExp(
-            `(^|\\s)(?:#|\\.\\.)?${escapePisiMissionRegExp(todoTag)}(?=\\s|$)`,
-            'gi'
-        );
-
-        text = text.replace(todoTagPattern, ' ');
-    }
-
-    text = text.replace(
-        /(^|\s)(?:#|\.\.)?todo\.[1-9]\.\d{2}-\d{2}-(?:\d{2}|\d{4})(?=\s|$)/gi,
-        ' '
-    );
-
-    return text
-        .replace(/\s+/g, ' ')
-        .trim();
+    return getPisiMissionDisplayTextFirstRelease(mission);
 }
 
 function renderPisiMissionsPanel() {
-    const panelEl = document.getElementById('pisi-missions-panel');
-    const listEl = document.getElementById('pisi-missions-list');
-
-    if (!panelEl || !listEl) return;
-
-    let toolbarEl = panelEl.querySelector('.pisi-missions-toolbar');
-    if (!toolbarEl) {
-        toolbarEl = document.createElement('div');
-        toolbarEl.className = 'pisi-missions-toolbar';
-        panelEl.insertBefore(toolbarEl, listEl);
-    }
-
-    if (!window.currentProjectFolder) {
-    toolbarEl.innerHTML = '';
-    listEl.innerHTML = `
-        <div class="right-panel-empty">
-            Missions için önce bir proje klasörü seç.
-        </div>
-    `;
-    return;
-}
-
-    const allMissions = getPisiMissionsFromIndex({
-        includeCompleted: true
-    });
-    const completedCount = allMissions.filter((mission) => {
-        return mission.completed;
-    }).length;
-    const showCompleted = pisiTagsPanelState.showCompletedMissions === true;
-    const missions = showCompleted
-        ? allMissions
-        : allMissions.filter((mission) => !mission.completed);
-
-    toolbarEl.innerHTML = '';
-    const completedToggle = document.createElement('button');
-    completedToggle.type = 'button';
-    completedToggle.className = 'pisi-missions-completed-toggle';
-    completedToggle.setAttribute('aria-pressed', showCompleted ? 'true' : 'false');
-    completedToggle.textContent = showCompleted
-        ? `Tamamlananları gizle (${completedCount})`
-        : `Tamamlananları göster (${completedCount})`;
-    completedToggle.disabled = completedCount === 0;
-    completedToggle.addEventListener('click', () => {
-        pisiTagsPanelState.showCompletedMissions = !showCompleted;
-        renderPisiMissionsPanel();
-    });
-    toolbarEl.appendChild(completedToggle);
-
-    if (!missions.length) {
-        listEl.innerHTML = `
-            <div class="right-panel-empty">
-                ${showCompleted
-                    ? 'Bu projede görev yok.'
-                    : 'Bu projede açık görev yok.'}
-            </div>
-        `;
-        return;
-    }
-
-    listEl.innerHTML = '';
-
-    for (const mission of missions) {
-        const item = document.createElement('div');
-        item.className = 'pisi-mission-card';
-        item.classList.toggle('completed', mission.completed === true);
-
-        const isLate = mission.daysLeft < 0;
-
-        item.innerHTML = `
-            <label class="pisi-mission-check-wrap" title="Tamamlandı olarak işaretle">
-                <input class="pisi-mission-check" type="checkbox">
-            </label>
-
-            <button class="pisi-mission-main" type="button">
-                <div class="pisi-mission-top">
-                </div>
-
-                <div class="pisi-mission-text">
-                    ${escapeHtml(getPisiMissionDisplayText(mission) || '(boş blok)')}
-                </div>
-
-                <div class="pisi-mission-meta">
-                    <span class="${isLate ? 'late' : ''}">
-                        ${formatPisiMissionDate(mission.finishDate)}
-                    </span>
-                    <span class="pisi-mission-priority" data-priority="${mission.priority}">
-                        priority: ${mission.priority} ${escapeHtml(mission.priorityLabel)}
-                    </span>
-                    <span>workorder: ${mission.workorder.toFixed(2)}</span>
-                </div>
-
-                <div class="pisi-mission-node">
-                    ${escapeHtml(mission.nodeTitle)}
-                </div>
-            </button>
-        `;
-
-        const checkbox = item.querySelector('.pisi-mission-check');
-        const mainButton = item.querySelector('.pisi-mission-main');
-
-        if (checkbox) {
-            checkbox.checked = mission.completed === true;
-            checkbox.title = mission.completed
-                ? 'Görevi yeniden aç'
-                : 'Tamamlandı olarak işaretle';
-        }
-
-        checkbox?.addEventListener('click', async (event) => {
-    event.stopPropagation();
-
-    checkbox.disabled = true;
-
-    const result = checkbox.checked
-        ? await markPisiMissionDone(mission)
-        : await reopenPisiMission(mission);
-
-    if (!result?.ok) {
-        checkbox.checked = mission.completed === true;
-        checkbox.disabled = false;
-        alert(
-            result?.error ||
-            (mission.completed
-                ? 'Görev yeniden açılamadı.'
-                : 'Görev tamamlandı olarak işaretlenemedi.')
-        );
-        return;
-    }
-
-    refreshPisiTagsPanelSoon();
-    });
-
-        mainButton?.addEventListener('click', async () => {
-            await openPisiTagBlockResult(mission);
-        });
-
-        listEl.appendChild(item);
-    }
+    return renderPisiMissionsPanelFirstRelease();
 }
 
 function normalizePisiBlockText(value) {

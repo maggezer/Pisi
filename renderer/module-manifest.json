@@ -470,6 +470,28 @@
     ]
   },
   {
+    "module": "tags.todoFirstRelease",
+    "path": "renderer/tags/pisi-todo-first-release.mjs",
+    "bindings": [
+      "pisiTodoTranslateFirstRelease",
+      "formatPisiMissionDateFirstRelease",
+      "getPisiMissionsFromIndexFirstRelease",
+      "getPisiMissionDisplayTextFirstRelease",
+      "getPisiMissionFilterCountsFirstRelease",
+      "removePisiMissionBadgesFirstRelease",
+      "syncPisiMissionBadgesFirstRelease",
+      "renderPisiMissionsPanelFirstRelease",
+      "createPisiUserTagElement",
+      "getPisiSelectionTextOffset",
+      "capturePisiTodoSelection",
+      "applyPisiTodoSelectionToEditor",
+      "findPisiMissionTodoTagElementFirstRelease",
+      "setPisiMissionStatusInBlockFirstRelease",
+      "savePisiMissionMutationFirstRelease",
+      "setPisiMissionStatusFirstRelease"
+    ]
+  },
+  {
     "module": "editor.preview",
     "path": "renderer/editor/pisi-node-preview.mjs",
     "bindings": [

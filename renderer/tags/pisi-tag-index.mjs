@@ -1,32 +1,25 @@
 import { registerModule } from "../core/module-registry.mjs";
-
+import { extractPisiTodoMetadataFromBlock } from "./pisi-todo-utils.mjs";
 function bindPisiBlockIndexControls() {
     const editors = [
         document.getElementById('node-modal-content'),
         document.getElementById('center-node-editor-content')
     ].filter(Boolean);
-
     for (const editor of editors) {
         if (editor.dataset.pisiBlockIndexBound === '1') continue;
-
         editor.dataset.pisiBlockIndexBound = '1';
-
         editor.addEventListener('input', () => {
             ensurePisiEditorBlocks(editor);
             refreshPisiTagsPanelSoon();
         });
     }
-
     if (typeof bindPisiTagPickerOutsideClose === 'function') {
         bindPisiTagPickerOutsideClose();
     }
-
     refreshPisiTagsPanelSoon();
 }
-
 function bindPisiTagPickerOutsideClose() {
     if (window.__pisiTagPickerOutsideCloseBound === true) return;
-
     window.__pisiTagPickerOutsideCloseBound = true;
 
     document.addEventListener('mousedown', (event) => {
@@ -260,7 +253,8 @@ function resetPisiTagsForProject() {
         dropdownOpen: false,
         index: [],
         missionIndex: [],
-        showCompletedMissions: false
+        showCompletedMissions: false,
+        missionFilter: 'all'
     };
 
     if (typeof closePisiTagMenu === 'function') {
@@ -484,7 +478,7 @@ function isPisiMissionMapFileName(fileName = '') {
     return String(fileName || '').toLowerCase().endsWith('.map');
 }
 
-function makePisiMissionNodeItem(item) {
+function makePisiMissionNodeItem(item, context = {}) {
     if (!item?.fullPath) return null;
 
     return {
@@ -495,6 +489,8 @@ function makePisiMissionNodeItem(item) {
         isDirectory: false,
         isFile: true,
         metadata: item.metadata || null,
+        mapPath: context.mapPath || item.mapPath || null,
+        mapTitle: context.mapTitle || item.mapTitle || '',
         displayName:
             item.displayName ||
             item.metadata?.title ||
@@ -567,8 +563,17 @@ async function collectPisiMissionNodeItemsFromFolder(
                 );
             }
 
+            const mapTitle =
+                item.metadata?.title ||
+                item.displayName ||
+                String(item.fileName || item.name || '').replace(/\.map$/i, '') ||
+                'Map';
+
             for (const mapNode of mapNodes) {
-                const nodeItem = makePisiMissionNodeItem(mapNode);
+                const nodeItem = makePisiMissionNodeItem(mapNode, {
+                    mapPath: item.fullPath,
+                    mapTitle
+                });
                 const normalizedNodePath = normalizeClientPathForTags(
                     nodeItem?.fullPath
                 );
@@ -576,6 +581,14 @@ async function collectPisiMissionNodeItemsFromFolder(
                 if (nodeItem && !seenPaths.has(normalizedNodePath)) {
                     seenPaths.add(normalizedNodePath);
                     nodes.push(nodeItem);
+                } else if (nodeItem) {
+                    const existing = nodes.find((candidate) => {
+                        return normalizeClientPathForTags(candidate?.fullPath) === normalizedNodePath;
+                    });
+                    if (existing) {
+                        existing.mapPath = nodeItem.mapPath;
+                        existing.mapTitle = nodeItem.mapTitle;
+                    }
                 }
             }
         }
@@ -619,6 +632,8 @@ async function buildPisiMissionBlockIndex() {
             results.push(...extractPisiTagBlocksFromHtml({
                 html: editor?.innerHTML || '',
                 nodePath,
+                mapPath: node.mapPath || null,
+                mapTitle: node.mapTitle || '',
                 nodeTitle:
                     activeCenterNode.metadata?.title ||
                     node.metadata?.title ||
@@ -639,6 +654,8 @@ async function buildPisiMissionBlockIndex() {
             results.push(...extractPisiTagBlocksFromHtml({
                 html: editor?.innerHTML || '',
                 nodePath,
+                mapPath: node.mapPath || null,
+                mapTitle: node.mapTitle || '',
                 nodeTitle:
                     activeModalNode.metadata?.title ||
                     node.metadata?.title ||
@@ -665,6 +682,8 @@ async function buildPisiMissionBlockIndex() {
         const detailed = extractPisiTagBlocksFromHtmlDetailed({
             html: originalHtml,
             nodePath,
+            mapPath: node.mapPath || null,
+            mapTitle: node.mapTitle || '',
             nodeTitle:
                 doc.metadata?.title ||
                 node.metadata?.title ||
@@ -740,7 +759,7 @@ async function buildPisiTagBlockIndex() {
     return results;
 }
 
-function extractPisiTagBlocksFromHtmlDetailed({ html, nodePath, nodeTitle }) {
+function extractPisiTagBlocksFromHtmlDetailed({ html, nodePath, nodeTitle, mapPath = null, mapTitle = '' }) {
     const template = createPisiInertHtmlTemplate(html);
     const container = template.content;
 
@@ -762,9 +781,14 @@ function extractPisiTagBlocksFromHtmlDetailed({ html, nodePath, nodeTitle }) {
 
         decoratePisiEditorBlock(block);
 
-        const tags = Array.from(new Set(extractPisiTagsFromBlock(block)));
-        const doneTagElements = Array.from(
+        const tagElements = Array.from(
             block.querySelectorAll('.pisi-user-tag[data-pisi-tag]')
+        );
+        const tags = Array.from(new Set(extractPisiTagsFromBlock(block)));
+        const doneTagElements = tagElements;
+        const { todoStates, todoSources } = extractPisiTodoMetadataFromBlock(
+            block,
+            normalizePisiUserTag
         );
         const doneFor = doneTagElements
             .filter((tagEl) => {
@@ -789,7 +813,11 @@ function extractPisiTagBlocksFromHtmlDetailed({ html, nodePath, nodeTitle }) {
             blockId: block.dataset.pisiBlockId,
             nodePath,
             nodeTitle,
+            mapPath,
+            mapTitle,
             tags,
+            todoStates,
+            todoSources,
             doneFor: Array.from(new Set(doneFor)),
             legacyDone: doneTagElements.some((tagEl) => {
                 return (

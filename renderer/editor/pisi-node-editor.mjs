@@ -17,7 +17,9 @@ function sanitizePisiEditorHtml(html = '') {
         'data-pisi-block-id',
         'data-pisi-tag',
         'data-pisi-done-for',
-        'data-pisi-diary-source'
+        'data-pisi-diary-source',
+        'data-pisi-todo-status',
+        'data-pisi-todo-for'
     ]);
     const allowedStyleProperties = new Set([
         'background-color',
