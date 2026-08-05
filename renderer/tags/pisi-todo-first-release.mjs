@@ -146,6 +146,37 @@ function syncPisiMissionBadgesFirstRelease(missions = []) {
     });
 }
 
+function closePisiMissionFilterMenuFirstRelease() {
+    pisiTagsPanelState.missionFilterOpen = false;
+
+    const trigger = document.querySelector(
+        '.pisi-missions-filter-trigger'
+    );
+    const popover = document.querySelector(
+        '.pisi-missions-filter-popover'
+    );
+
+    trigger?.setAttribute('aria-expanded', 'false');
+    if (popover) popover.hidden = true;
+}
+
+function bindPisiMissionFilterOutsideCloseFirstRelease() {
+    if (window.__pisiMissionFilterOutsideBound === true) return;
+    window.__pisiMissionFilterOutsideBound = true;
+
+    document.addEventListener('mousedown', (event) => {
+        if (!pisiTagsPanelState?.missionFilterOpen) return;
+        if (event.target.closest('.pisi-missions-filter-menu')) return;
+        closePisiMissionFilterMenuFirstRelease();
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') return;
+        if (!pisiTagsPanelState?.missionFilterOpen) return;
+        closePisiMissionFilterMenuFirstRelease();
+    });
+}
+
 function renderPisiMissionsPanelFirstRelease() {
     const panel = document.getElementById('pisi-missions-panel');
     const list = document.getElementById('pisi-missions-list');
@@ -159,6 +190,7 @@ function renderPisiMissionsPanelFirstRelease() {
 
     if (!window.currentProjectFolder) {
         toolbar.innerHTML = '';
+        pisiTagsPanelState.missionFilterOpen = false;
         list.innerHTML = '<div class="right-panel-empty">Missions için önce bir proje klasörü seç.</div>';
         removePisiMissionBadgesFirstRelease();
         return;
@@ -180,22 +212,65 @@ function renderPisiMissionsPanelFirstRelease() {
     });
 
     toolbar.innerHTML = '';
-    const filterBar = document.createElement('div');
-    filterBar.className = 'pisi-missions-filter-bar';
+    bindPisiMissionFilterOutsideCloseFirstRelease();
+
+    const toolbarRow = document.createElement('div');
+    toolbarRow.className = 'pisi-missions-toolbar-row';
+
+    const activeFilterOption = PISI_TODO_FILTER_OPTIONS.find((option) => {
+        return option.value === filter;
+    }) || PISI_TODO_FILTER_OPTIONS[0];
+    const filterMenu = document.createElement('div');
+    filterMenu.className = 'pisi-missions-filter-menu';
+
+    const filterTrigger = document.createElement('button');
+    filterTrigger.type = 'button';
+    filterTrigger.className = 'pisi-missions-filter-trigger';
+    filterTrigger.setAttribute('aria-haspopup', 'menu');
+    filterTrigger.setAttribute(
+        'aria-expanded',
+        pisiTagsPanelState.missionFilterOpen === true ? 'true' : 'false'
+    );
+    filterTrigger.innerHTML =         `<span>${pisiTodoTranslateFirstRelease(activeFilterOption.label)}</span>` +
+        `<span class="pisi-missions-filter-trigger-count">${counts.get(filter) || 0}</span>`;
+
+    const filterPopover = document.createElement('div');
+    filterPopover.className = 'pisi-missions-filter-popover';
+    filterPopover.setAttribute('role', 'menu');
+    filterPopover.hidden = pisiTagsPanelState.missionFilterOpen !== true;
+
     for (const option of PISI_TODO_FILTER_OPTIONS) {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'pisi-missions-filter';
-        button.classList.toggle('active', option.value === filter);
-        button.setAttribute('aria-pressed', option.value === filter ? 'true' : 'false');
-        button.textContent = `${pisiTodoTranslateFirstRelease(option.label)} ${counts.get(option.value) || 0}`;
-        button.addEventListener('click', () => {
+        const optionButton = document.createElement('button');
+        const isActive = option.value === filter;
+        optionButton.type = 'button';
+        optionButton.className = 'pisi-missions-filter-option';
+        optionButton.classList.toggle('active', isActive);
+        optionButton.setAttribute('role', 'menuitemradio');
+        optionButton.setAttribute('aria-checked', isActive ? 'true' : 'false');
+        optionButton.innerHTML =             `<span class="pisi-missions-filter-check">${isActive ? '✓' : ''}</span>` +
+            `<span class="pisi-missions-filter-label">${pisiTodoTranslateFirstRelease(option.label)}</span>` +
+            `<span class="pisi-missions-filter-count">${counts.get(option.value) || 0}</span>`;
+        optionButton.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
             pisiTagsPanelState.missionFilter = option.value;
+            pisiTagsPanelState.missionFilterOpen = false;
             renderPisiMissionsPanelFirstRelease();
         });
-        filterBar.appendChild(button);
+        filterPopover.appendChild(optionButton);
     }
-    toolbar.appendChild(filterBar);
+
+    filterTrigger.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const open = pisiTagsPanelState.missionFilterOpen !== true;
+        pisiTagsPanelState.missionFilterOpen = open;
+        filterTrigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+        filterPopover.hidden = !open;
+    });
+
+    filterMenu.append(filterTrigger, filterPopover);
+    toolbarRow.appendChild(filterMenu);
 
     const completedToggle = document.createElement('button');
     completedToggle.type = 'button';
@@ -207,9 +282,11 @@ function renderPisiMissionsPanelFirstRelease() {
     completedToggle.disabled = completedCount === 0;
     completedToggle.addEventListener('click', () => {
         pisiTagsPanelState.showCompletedMissions = !showCompleted;
+        pisiTagsPanelState.missionFilterOpen = false;
         renderPisiMissionsPanelFirstRelease();
     });
-    toolbar.appendChild(completedToggle);
+    toolbarRow.appendChild(completedToggle);
+    toolbar.appendChild(toolbarRow);
     syncPisiMissionBadgesFirstRelease(allMissions);
 
     if (!missions.length) {

@@ -20,6 +20,7 @@ import "./map/pisi-map-workspace.mjs";
 import "./editor/pisi-node-editor.mjs";
 import "./tags/pisi-tag-index.mjs";
 import "./tags/pisi-tag-panels.mjs";
+import "./tags/pisi-todo-navigation.mjs";
 import "./tags/pisi-tag-editor.mjs";
 import "./tags/pisi-todo-first-release.mjs";
 import "./editor/pisi-node-preview.mjs";

@@ -435,13 +435,20 @@
     ]
   },
   {
+    "module": "tags.todoNavigation",
+    "path": "renderer/tags/pisi-todo-navigation.mjs",
+    "bindings": [
+      "openPisiTagBlockResult",
+      "highlightPisiEditorBlock",
+      "bindPisiMissionHighlightSanitizer"
+    ]
+  },
+  {
     "module": "tags.editor",
     "path": "renderer/tags/pisi-tag-editor.mjs",
     "bindings": [
       "markPisiMissionDone",
       "reopenPisiMission",
-      "openPisiTagBlockResult",
-      "highlightPisiEditorBlock",
       "PISI_SYSTEM_TAGS",
       "bindPisiTagControls",
       "bindPisiTagControlsForEditor",

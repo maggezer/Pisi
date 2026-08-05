@@ -11,78 +11,6 @@ async function markPisiMissionDone(mission) {
 async function reopenPisiMission(mission) {
     return setPisiMissionCompletion(mission, false);
 }
-async function openPisiTagBlockResult(block) {
-    if (!block?.nodePath) return;
-    const escapedPath = CSS.escape(block.nodePath);
-    const box = document.querySelector(`.map-node-box[data-node-path="${escapedPath}"]`);
-    if (box) {
-    await openNodeModalFromBox(box);
-} else if (typeof openPisiFileTab === 'function') {
-    await openPisiFileTab({
-        name: block.fileName || `${block.nodeTitle || 'Node'}.node`,
-        fileName: block.fileName || `${block.nodeTitle || 'Node'}.node`,
-        fullPath: block.nodePath,
-        type: 'file',
-        isDirectory: false,
-        isFile: true,
-        metadata: {
-            type: 'node',
-            title: block.nodeTitle || 'Node'
-        }
-    });
-}
-setTimeout(() => {
-    highlightPisiEditorBlock(block.blockId, block.todoTag);
-}, 120);
-}
-function highlightPisiEditorBlock(blockId, todoTag = null) {
-    if (!blockId) return;
-    const centerEditor = document.getElementById('center-node-editor-content');
-    const modalEditor = document.getElementById('node-modal-content');
-
-    const centerVisible =
-        centerEditor &&
-        !document.getElementById('center-node-editor')?.hidden;
-
-    const editor = centerVisible ? centerEditor : modalEditor;
-
-    if (!editor) return;
-
-    editor.querySelectorAll('.pisi-block-highlight, .pisi-todo-source-highlight').forEach((element) => {
-        element.classList.remove('pisi-block-highlight', 'pisi-todo-source-highlight');
-    });
-
-    const block = editor.querySelector(
-        `.pisi-editor-block[data-pisi-block-id="${CSS.escape(blockId)}"]`
-    );
-
-    if (!block) return;
-
-    block.classList.add('pisi-block-highlight');
-
-    const normalizedTodoTag = normalizePisiUserTag(todoTag).toLowerCase();
-    const source = normalizedTodoTag
-        ? Array.from(
-            block.querySelectorAll('.pisi-todo-source[data-pisi-todo-for]')
-        ).find((element) => {
-            return normalizePisiUserTag(
-                element.dataset.pisiTodoFor || ''
-            ).toLowerCase() === normalizedTodoTag;
-        })
-        : null;
-
-    source?.classList.add('pisi-todo-source-highlight');
-    (source || block).scrollIntoView({
-        block: 'center',
-        behavior: 'smooth'
-    });
-
-    setTimeout(() => {
-        block.classList.remove('pisi-block-highlight');
-        source?.classList.remove('pisi-todo-source-highlight');
-    }, 2200);
-}
-
 const PISI_SYSTEM_TAGS = [
     { id: 'h2', label: 'h2', description: 'Heading 2', headingLevel: 2 },
     { id: 'h3', label: 'h3', description: 'Heading 3', headingLevel: 3 },
@@ -265,6 +193,7 @@ function bindPisiTagControlsForEditor(editor) {
     if (editor.dataset.pisiTagsBound === '1') return;
 
     editor.dataset.pisiTagsBound = '1';
+    bindPisiMissionHighlightSanitizer(editor);
 
     editor.addEventListener('input', () => {
         ensurePisiEditorBlocks(editor);
@@ -880,14 +809,6 @@ Object.defineProperties(moduleApi, {
     "reopenPisiMission": {
         enumerable: true,
         get() { return reopenPisiMission; }
-    },
-    "openPisiTagBlockResult": {
-        enumerable: true,
-        get() { return openPisiTagBlockResult; }
-    },
-    "highlightPisiEditorBlock": {
-        enumerable: true,
-        get() { return highlightPisiEditorBlock; }
     },
     "PISI_SYSTEM_TAGS": {
         enumerable: true,
