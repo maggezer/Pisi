@@ -26,5 +26,11 @@ replaceLine(
     'Map node selector template'
 );
 
+replaceLine(
+    (line) => line.startsWith('write(testPath, `'),
+    'write(testPath, String.raw`',
+    'Raw test template'
+);
+
 fs.writeFileSync(file, lines.join('\n'));
-console.log('Fixed Todo codemod selector templates.');
+console.log('Fixed Todo codemod templates and test escaping.');
