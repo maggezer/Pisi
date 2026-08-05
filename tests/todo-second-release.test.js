@@ -16,7 +16,8 @@ const utilsPromise = import(
 test('tekrarlayan görev tarihleri günlük, hafta içi, haftalık ve aylık ilerler', async () => {
     const {
         PISI_TODO_REPEAT_OPTIONS,
-        getNextPisiTodoDate
+        getNextPisiTodoDate,
+        getPisiTodayIsoDate
     } = await utilsPromise;
 
     assert.deepEqual(
@@ -24,19 +25,27 @@ test('tekrarlayan görev tarihleri günlük, hafta içi, haftalık ve aylık ile
         ['none', 'daily', 'weekdays', 'weekly', 'monthly']
     );
     assert.equal(
-        getNextPisiTodoDate(new Date(2026, 7, 5), 'daily').toISOString().slice(0, 10),
+        getPisiTodayIsoDate(
+            getNextPisiTodoDate(new Date(2026, 7, 5), 'daily')
+        ),
         '2026-08-06'
     );
     assert.equal(
-        getNextPisiTodoDate(new Date(2026, 7, 7), 'weekdays').toISOString().slice(0, 10),
+        getPisiTodayIsoDate(
+            getNextPisiTodoDate(new Date(2026, 7, 7), 'weekdays')
+        ),
         '2026-08-10'
     );
     assert.equal(
-        getNextPisiTodoDate(new Date(2026, 7, 5), 'weekly').toISOString().slice(0, 10),
+        getPisiTodayIsoDate(
+            getNextPisiTodoDate(new Date(2026, 7, 5), 'weekly')
+        ),
         '2026-08-12'
     );
     assert.equal(
-        getNextPisiTodoDate(new Date(2026, 0, 31), 'monthly').toISOString().slice(0, 10),
+        getPisiTodayIsoDate(
+            getNextPisiTodoDate(new Date(2026, 0, 31), 'monthly')
+        ),
         '2026-02-28'
     );
 });
