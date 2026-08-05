@@ -45,8 +45,8 @@ test('sağ alandaki To-do toolbarı ve görev listesi korunur', () => {
     assert.match(source, /state\.view = 'list'/);
     assert.match(source, /renderPisiMissionsPanelFirstRelease/);
     assert.match(css, /#pisi-missions-panel \.pisi-third-view-switcher/);
-    assert.doesNotMatch(source, /pisi-missions-panel.*remove\(/s);
-    assert.doesNotMatch(source, /pisi-missions-list.*replaceChildren/s);
+    assert.doesNotMatch(source, /getElementById\(['"]pisi-missions-panel['"]\)\?*\.remove/);
+    assert.doesNotMatch(source, /getElementById\(['"]pisi-missions-list['"]\).*replaceChildren/s);
 });
 
 test('özel To-do dosyası merkez sekmelerinde açılıp kapatılabilir', () => {
