@@ -1,0 +1,105 @@
+'use strict';
+
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const test = require('node:test');
+const { pathToFileURL } = require('node:url');
+
+const root = path.resolve(__dirname, '..');
+const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+const readJson = (file) => JSON.parse(read(file));
+const utilsPromise = import(
+    pathToFileURL(path.join(root, 'renderer/tags/pisi-todo-utils.mjs')).href
+);
+
+test('tekrarlayan görev tarihleri günlük, hafta içi, haftalık ve aylık ilerler', async () => {
+    const {
+        PISI_TODO_REPEAT_OPTIONS,
+        getNextPisiTodoDate
+    } = await utilsPromise;
+
+    assert.deepEqual(
+        PISI_TODO_REPEAT_OPTIONS.map((option) => option.value),
+        ['none', 'daily', 'weekdays', 'weekly', 'monthly']
+    );
+    assert.equal(
+        getNextPisiTodoDate(new Date(2026, 7, 5), 'daily').toISOString().slice(0, 10),
+        '2026-08-06'
+    );
+    assert.equal(
+        getNextPisiTodoDate(new Date(2026, 7, 7), 'weekdays').toISOString().slice(0, 10),
+        '2026-08-10'
+    );
+    assert.equal(
+        getNextPisiTodoDate(new Date(2026, 7, 5), 'weekly').toISOString().slice(0, 10),
+        '2026-08-12'
+    );
+    assert.equal(
+        getNextPisiTodoDate(new Date(2026, 0, 31), 'monthly').toISOString().slice(0, 10),
+        '2026-02-28'
+    );
+});
+
+test('alt görev, tekrar ve manuel sıra metadata alanları indeks ve sanitizer zincirinde korunur', () => {
+    const utils = read('renderer/tags/pisi-todo-utils.mjs');
+    const index = read('renderer/tags/pisi-tag-index.mjs');
+    const editor = read('renderer/editor/pisi-node-editor.mjs');
+
+    for (const token of [
+        'data-pisi-todo-parent',
+        'data-pisi-todo-repeat',
+        'data-pisi-todo-order'
+    ]) {
+        assert.match(editor, new RegExp(token));
+    }
+    assert.match(utils, /todoParents/);
+    assert.match(utils, /todoRepeats/);
+    assert.match(utils, /todoOrders/);
+    assert.match(index, /todoParents/);
+    assert.match(index, /todoRepeats/);
+    assert.match(index, /todoOrders/);
+});
+
+test('ikinci sürüm paneli alt görev, tekrar, durum filtresi ve sürükle bırak sağlar', () => {
+    const source = read('renderer/tags/pisi-todo-second-release.mjs');
+    const firstRelease = read('renderer/tags/pisi-todo-first-release.mjs');
+    const css = read('styles/50-tags-and-missions.css');
+
+    assert.match(source, /addPisiSubtaskSecondRelease/);
+    assert.match(source, /createNextPisiRecurringMissionSecondRelease/);
+    assert.match(source, /togglePisiMissionCompletionSecondRelease/);
+    assert.match(source, /pisi-mission-drag-handle/);
+    assert.match(source, /missionStatusFilter/);
+    assert.match(firstRelease, /enhancePisiMissionSecondRelease/);
+    assert.match(firstRelease, /matchesPisiMissionStatusFilterSecondRelease/);
+    assert.match(firstRelease, /togglePisiMissionCompletionSecondRelease/);
+    assert.match(css, /TODO SECOND RELEASE/);
+    assert.match(css, /pisi-mission-child-progress/);
+    assert.match(css, /pisi-mission-card\.drag-over/);
+});
+
+test('günlük node eşitlemesi durum, tekrar ve alt görev bilgisini taşır', () => {
+    const runtime = read('renderer/runtime.mjs');
+    const store = read('main/functions/document-store.js');
+
+    assert.match(runtime, /status: String\(block\.todoStates/);
+    assert.match(runtime, /repeat: String\(block\.todoRepeats/);
+    assert.match(runtime, /parentId: String\(block\.todoParents/);
+    assert.match(store, /data-pisi-diary-status/);
+    assert.match(store, /data-pisi-diary-parent/);
+    assert.match(store, /pisi-diary-managed-block\$\{parentClass\}/);
+});
+
+test('ikinci sürüm modülü bootstrap, manifest ve dil kataloglarına bağlıdır', () => {
+    const bootstrap = read('renderer/bootstrap.mjs');
+    const manifest = readJson('renderer/module-manifest.json');
+    const tr = readJson('locales/lang-tr.json');
+    const eng = readJson('locales/lang-eng.json');
+
+    assert.match(bootstrap, /pisi-todo-second-release\.mjs/);
+    assert.ok(manifest.some((entry) => entry.module === 'tags.todoSecondRelease'));
+    assert.equal(tr.strings['Alt görev ekle'], 'Alt görev ekle');
+    assert.equal(eng.strings['Alt görev ekle'], 'Add subtask');
+    assert.equal(eng.strings['Manuel sıra'], 'Manual order');
+});
