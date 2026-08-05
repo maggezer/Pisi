@@ -67,7 +67,8 @@ test('To-do çalışma alanı opaktır ve arkadaki merkez yüzeylerini kilitler'
     assert.match(css, /background-color: #1e1e1e/);
     assert.match(css, /background-image: none/);
     assert.match(css, /#workspace\.pisi-todo-workspace-active > :not\(\.pisi-todo-workspace\)/);
-    assert.match(css, /pointer-events: none !important/);
+    assert.match(css, /pointer-events: none;/);
+    assert.doesNotMatch(css, /!important/);
     assert.match(shield, /pisi-todo-workspace-active/);
     assert.match(shield, /event\.stopPropagation\(\)/);
     assert.match(shield, /'pointerdown'/);
