@@ -22,6 +22,7 @@ import "./tags/pisi-tag-index.mjs";
 import "./tags/pisi-tag-panels.mjs";
 import "./tags/pisi-todo-navigation.mjs";
 import "./tags/pisi-tag-editor.mjs";
+import "./tags/pisi-todo-second-release.mjs";
 import "./tags/pisi-todo-first-release.mjs";
 import "./editor/pisi-node-preview.mjs";
 import "./map/pisi-map-interactions.mjs";

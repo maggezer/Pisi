@@ -494,14 +494,12 @@ function normalizePisiDiarySyncEntry(entry) {
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return null;
 
     const date = normalizePisiDiaryIsoDate(entry?.date);
-
     if (!date) return null;
 
     const nodePath = String(entry.nodePath || '').trim().slice(0, 32768);
     const blockId = String(entry.blockId || '').trim().slice(0, 500);
     const tag = String(entry.tag || '').trim().slice(0, 200);
     const text = String(entry.text || '').trim().slice(0, 250000);
-
     if (!nodePath || !tag) return null;
 
     const sourceIdentity = blockId || crypto
@@ -513,6 +511,11 @@ function normalizePisiDiarySyncEntry(entry) {
     const priority = Number.isFinite(rawPriority)
         ? Math.max(-1000000, Math.min(1000000, rawPriority))
         : 0;
+    const allowedStatuses = new Set(['todo', 'doing', 'waiting', 'blocked']);
+    const allowedRepeats = new Set(['none', 'daily', 'weekdays', 'weekly', 'monthly']);
+    const status = String(entry.status || 'todo').toLowerCase();
+    const repeat = String(entry.repeat || 'none').toLowerCase();
+    const rawOrder = Number(entry.manualOrder);
 
     return {
         date,
@@ -522,27 +525,58 @@ function normalizePisiDiarySyncEntry(entry) {
         blockId,
         tag,
         priority,
+        status: allowedStatuses.has(status) ? status : 'todo',
+        repeat: allowedRepeats.has(repeat) ? repeat : 'none',
+        parentId: String(entry.parentId || '').slice(0, 2000),
+        manualOrder: Number.isFinite(rawOrder)
+            ? Math.max(0, Math.min(1000000, rawOrder))
+            : null,
         text,
         html: sanitizePisiDiaryBlockHtml(
             String(entry.html || '').slice(0, 2000000)
         )
     };
 }
-
 function buildPisiDiaryManagedSection(isoDate, entries = []) {
     if (!entries.length) return '';
 
     const safeDate = escapeHtmlForPisiDiary(isoDate);
-    const blocks = entries.map((entry) => {
+    const statusLabels = {
+        todo: 'Yapılacak',
+        doing: 'Devam ediyor',
+        waiting: 'Beklemede',
+        blocked: 'Engellendi'
+    };
+    const repeatLabels = {
+        none: '',
+        daily: 'Her gün',
+        weekdays: 'Hafta içi',
+        weekly: 'Her hafta',
+        monthly: 'Her ay'
+    };
+    const blocks = entries
+        .slice()
+        .sort((a, b) => {
+            const aOrder = Number.isFinite(a.manualOrder) ? a.manualOrder : Number.POSITIVE_INFINITY;
+            const bOrder = Number.isFinite(b.manualOrder) ? b.manualOrder : Number.POSITIVE_INFINITY;
+            if (aOrder !== bOrder) return aOrder - bOrder;
+            return b.priority - a.priority;
+        })
+        .map((entry) => {
         const safeSourceKey = escapeHtmlForPisiDiary(entry.sourceKey);
         const safeNodeTitle = escapeHtmlForPisiDiary(entry.nodeTitle || 'Node');
         const safeTag = escapeHtmlForPisiDiary(entry.tag || '');
         const safeText = escapeHtmlForPisiDiary(entry.text || '');
+        const safeStatus = escapeHtmlForPisiDiary(statusLabels[entry.status] || statusLabels.todo);
+        const safeRepeat = escapeHtmlForPisiDiary(repeatLabels[entry.repeat] || '');
+        const safeParent = escapeHtmlForPisiDiary(entry.parentId || '');
+        const parentClass = entry.parentId ? ' has-parent' : '';
+        const repeatMeta = safeRepeat ? ` · ${safeRepeat}` : '';
         const blockHtml = entry.html || `<div>${safeText || '(boş blok)'}</div>`;
 
         return `
-<div class="pisi-diary-managed-block" data-pisi-diary-source="${safeSourceKey}">
-    <div class="pisi-diary-managed-meta">${safeNodeTitle} · ..${safeTag}</div>
+<div class="pisi-diary-managed-block${parentClass}" data-pisi-diary-source="${safeSourceKey}" data-pisi-diary-status="${entry.status}" data-pisi-diary-parent="${safeParent}">
+    <div class="pisi-diary-managed-meta">${safeNodeTitle} · ..${safeTag} · ${safeStatus}${repeatMeta}</div>
     ${blockHtml}
 </div>`;
     }).join('\n');
@@ -552,7 +586,6 @@ function buildPisiDiaryManagedSection(isoDate, entries = []) {
 ${blocks}
 ${PISI_DIARY_MANAGED_END}`;
 }
-
 function listPisiDiaryNodePaths(projectFolder) {
     const diaryFolder = path.join(projectFolder, 'diary');
 
