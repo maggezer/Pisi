@@ -28,10 +28,14 @@ jobs:
         run: node scripts/fix-todo-codemod-syntax.js
 
       - name: Check codemod syntax
-        run: node --check scripts/apply-todo-navigation-filter-fix.js
+        run: |
+          node --check scripts/apply-todo-navigation-filter-fix.js
+          node --check scripts/refactor-todo-navigation-module.js
 
       - name: Apply source changes
-        run: node scripts/apply-todo-navigation-filter-fix.js
+        run: |
+          node scripts/apply-todo-navigation-filter-fix.js
+          node scripts/refactor-todo-navigation-module.js
 
       - name: Install dependencies without Electron binary
         run: npm ci
@@ -45,6 +49,7 @@ jobs:
         run: |
           rm -f scripts/apply-todo-navigation-filter-fix.js
           rm -f scripts/fix-todo-codemod-syntax.js
+          rm -f scripts/refactor-todo-navigation-module.js
           rm -f .github/workflows/apply-todo-navigation-filter-fix.yml
 
       - name: Commit Todo fix
