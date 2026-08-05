@@ -151,7 +151,7 @@ test('görev indeksi node ve map kaynağı ile durum/kaynak metnini taşır', ()
 
 test('görev kartına tıklama kaynağı açar ve node badge sayıları gösterilir', () => {
     const firstRelease = read('renderer/tags/pisi-todo-first-release.mjs');
-    const editor = read('renderer/tags/pisi-tag-editor.mjs');
+    const navigation = read('renderer/tags/pisi-todo-navigation.mjs');
     const css = read('styles/50-tags-and-missions.css');
 
     assert.match(firstRelease, /openPisiTagBlockResult\(mission\)/);
@@ -160,7 +160,9 @@ test('görev kartına tıklama kaynağı açar ve node badge sayıları gösteri
     assert.match(firstRelease, /tree-node\[data-path\]/);
     assert.match(firstRelease, /pisi-mission-node-badge/);
     assert.match(firstRelease, /syncPisiMissionBadgesFirstRelease\(allMissions\)/);
-    assert.match(editor, /highlightPisiEditorBlock\(block\.blockId, block\.todoTag\)/);
+    assert.match(navigation, /await highlightPisiEditorBlock\(block\)/);
+    assert.match(navigation, /samePisiPathForTags\(activeModalNode\?\.path, mission\?\.nodePath\)/);
+    assert.match(navigation, /pisiMissionBlockContainsTodo/);
     assert.match(css, /pisi-mission-node-badge/);
 });
 
