@@ -477,6 +477,25 @@
     ]
   },
   {
+    "module": "tags.todoSecondRelease",
+    "path": "renderer/tags/pisi-todo-second-release.mjs",
+    "bindings": [
+      "pisiTodoSecondReleaseState",
+      "makePisiMissionIdSecondRelease",
+      "enhancePisiMissionSecondRelease",
+      "sortPisiMissionsSecondRelease",
+      "matchesPisiMissionStatusFilterSecondRelease",
+      "appendPisiMissionSecondReleaseToolbar",
+      "enhancePisiMissionCardSecondRelease",
+      "setPisiMissionRepeatSecondRelease",
+      "setPisiMissionOrderSecondRelease",
+      "addPisiSubtaskSecondRelease",
+      "createNextPisiRecurringMissionSecondRelease",
+      "togglePisiMissionCompletionSecondRelease",
+      "persistPisiMissionManualOrderSecondRelease"
+    ]
+  },
+  {
     "module": "tags.todoFirstRelease",
     "path": "renderer/tags/pisi-todo-first-release.mjs",
     "bindings": [

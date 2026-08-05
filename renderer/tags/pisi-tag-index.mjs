@@ -253,8 +253,9 @@ function resetPisiTagsForProject() {
         dropdownOpen: false,
         index: [],
         missionIndex: [],
-        showCompletedMissions: false,
-        missionFilter: 'all'
+        showCompletedMissions: false, missionFilter: 'all',
+        missionFilterOpen: false,
+        missionStatusFilter: 'all', missionSort: 'smart'
     };
 
     if (typeof closePisiTagMenu === 'function') {
@@ -786,10 +787,8 @@ function extractPisiTagBlocksFromHtmlDetailed({ html, nodePath, nodeTitle, mapPa
         );
         const tags = Array.from(new Set(extractPisiTagsFromBlock(block)));
         const doneTagElements = tagElements;
-        const { todoStates, todoSources } = extractPisiTodoMetadataFromBlock(
-            block,
-            normalizePisiUserTag
-        );
+        const { todoStates, todoSources, todoParents, todoRepeats, todoOrders } =
+            extractPisiTodoMetadataFromBlock(block, normalizePisiUserTag);
         const doneFor = doneTagElements
             .filter((tagEl) => {
                 return normalizePisiUserTag(
@@ -816,8 +815,8 @@ function extractPisiTagBlocksFromHtmlDetailed({ html, nodePath, nodeTitle, mapPa
             mapPath,
             mapTitle,
             tags,
-            todoStates,
-            todoSources,
+            todoStates, todoSources, todoParents,
+            todoRepeats, todoOrders,
             doneFor: Array.from(new Set(doneFor)),
             legacyDone: doneTagElements.some((tagEl) => {
                 return (

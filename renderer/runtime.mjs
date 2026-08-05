@@ -743,6 +743,10 @@ document.addEventListener('keydown', (event) => {
                     date,
                     tag: todo.tag,
                     priority: todo.priority,
+                    status: String(block.todoStates?.[todo.tag] || 'todo'),
+                    repeat: String(block.todoRepeats?.[todo.tag] || 'none'),
+                    parentId: String(block.todoParents?.[todo.tag] || ''),
+                    manualOrder: Number(block.todoOrders?.[todo.tag]),
                     nodePath: block.nodePath,
                     nodeTitle: block.nodeTitle,
                     blockId: block.blockId,
@@ -757,7 +761,11 @@ document.addEventListener('keydown', (event) => {
             tag: entry.tag,
             nodePath: entry.nodePath,
             blockId: entry.blockId,
-            text: entry.text
+            text: entry.text,
+            status: entry.status,
+            repeat: entry.repeat,
+            parentId: entry.parentId,
+            manualOrder: entry.manualOrder
         })));
 
         if (

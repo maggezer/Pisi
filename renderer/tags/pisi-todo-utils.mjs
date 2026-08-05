@@ -21,6 +21,27 @@ export const PISI_TODO_FILTER_OPTIONS = Object.freeze([
     Object.freeze({ value: 'undated', label: 'Tarihsiz' })
 ]);
 
+export const PISI_TODO_REPEAT_OPTIONS = Object.freeze([
+    Object.freeze({ value: 'none', label: 'Tekrarlama yok' }),
+    Object.freeze({ value: 'daily', label: 'Her gün' }),
+    Object.freeze({ value: 'weekdays', label: 'Hafta içi' }),
+    Object.freeze({ value: 'weekly', label: 'Her hafta' }),
+    Object.freeze({ value: 'monthly', label: 'Her ay' })
+]);
+
+export const PISI_TODO_SORT_OPTIONS = Object.freeze([
+    Object.freeze({ value: 'smart', label: 'Akıllı sıra' }),
+    Object.freeze({ value: 'date', label: 'Tarihe göre' }),
+    Object.freeze({ value: 'priority', label: 'Önceliğe göre' }),
+    Object.freeze({ value: 'status', label: 'Duruma göre' }),
+    Object.freeze({ value: 'manual', label: 'Manuel sıra' })
+]);
+
+export const PISI_TODO_STATUS_FILTER_OPTIONS = Object.freeze([
+    Object.freeze({ value: 'all', label: 'Tüm durumlar' }),
+    ...PISI_TODO_STATUS_OPTIONS
+]);
+
 export function getPisiTodoPriorityOption(value) {
     const priority = Number(value);
     return PISI_TODO_PRIORITY_OPTIONS.find((item) => item.value === priority) || null;
@@ -36,6 +57,24 @@ export function getPisiTodoFilterOption(value) {
     const normalized = String(value || '').trim().toLowerCase();
     return PISI_TODO_FILTER_OPTIONS.find((item) => item.value === normalized) ||
         PISI_TODO_FILTER_OPTIONS[0];
+}
+
+export function getPisiTodoRepeatOption(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+    return PISI_TODO_REPEAT_OPTIONS.find((item) => item.value === normalized) ||
+        PISI_TODO_REPEAT_OPTIONS[0];
+}
+
+export function getPisiTodoSortOption(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+    return PISI_TODO_SORT_OPTIONS.find((item) => item.value === normalized) ||
+        PISI_TODO_SORT_OPTIONS[0];
+}
+
+export function getPisiTodoStatusFilterOption(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+    return PISI_TODO_STATUS_FILTER_OPTIONS.find((item) => item.value === normalized) ||
+        PISI_TODO_STATUS_FILTER_OPTIONS[0];
 }
 
 function normalizePisiTodoTagValue(value) {
@@ -97,6 +136,45 @@ export function formatPisiTodoTag(priorityValue, isoDate) {
     return `todo.${priority}.${day}-${month}-${year}`;
 }
 
+export function getNextPisiTodoDate(finishDate, repeatValue, now = new Date()) {
+    const repeat = getPisiTodoRepeatOption(repeatValue).value;
+    if (repeat === 'none') return null;
+
+    const base = finishDate instanceof Date && !Number.isNaN(finishDate.getTime())
+        ? new Date(finishDate)
+        : new Date(now);
+    base.setHours(0, 0, 0, 0);
+
+    if (repeat === 'daily') {
+        base.setDate(base.getDate() + 1);
+        return base;
+    }
+
+    if (repeat === 'weekdays') {
+        do {
+            base.setDate(base.getDate() + 1);
+        } while (base.getDay() === 0 || base.getDay() === 6);
+        return base;
+    }
+
+    if (repeat === 'weekly') {
+        base.setDate(base.getDate() + 7);
+        return base;
+    }
+
+    if (repeat === 'monthly') {
+        const day = base.getDate();
+        const targetYear = base.getMonth() === 11
+            ? base.getFullYear() + 1
+            : base.getFullYear();
+        const targetMonth = (base.getMonth() + 1) % 12;
+        const lastDay = new Date(targetYear, targetMonth + 1, 0).getDate();
+        return new Date(targetYear, targetMonth, Math.min(day, lastDay));
+    }
+
+    return null;
+}
+
 export function getPisiTodoDateBucket(finishDate, now = new Date()) {
     if (!(finishDate instanceof Date) || Number.isNaN(finishDate.getTime())) {
         return 'undated';
@@ -121,11 +199,21 @@ export function matchesPisiTodoFilter(todo, filterValue, now = new Date()) {
     return getPisiTodoDateBucket(todo?.finishDate, now) === filter;
 }
 
-
 export function extractPisiTodoMetadataFromBlock(block, normalizeTag = normalizePisiTodoTagValue) {
     const todoStates = {};
     const todoSources = {};
-    if (!block?.querySelectorAll) return { todoStates, todoSources };
+    const todoParents = {};
+    const todoRepeats = {};
+    const todoOrders = {};
+    if (!block?.querySelectorAll) {
+        return {
+            todoStates,
+            todoSources,
+            todoParents,
+            todoRepeats,
+            todoOrders
+        };
+    }
 
     const normalize = (value) => String(normalizeTag(value) || '').toLowerCase();
     const sourceElements = Array.from(
@@ -141,6 +229,17 @@ export function extractPisiTodoMetadataFromBlock(block, normalizeTag = normalize
         todoStates[normalizedTag] = String(
             tagEl.dataset.pisiTodoStatus || 'todo'
         ).toLowerCase();
+        todoParents[normalizedTag] = String(
+            tagEl.dataset.pisiTodoParent || ''
+        );
+        todoRepeats[normalizedTag] = getPisiTodoRepeatOption(
+            tagEl.dataset.pisiTodoRepeat
+        ).value;
+
+        const rawOrder = Number(tagEl.dataset.pisiTodoOrder);
+        if (Number.isFinite(rawOrder)) {
+            todoOrders[normalizedTag] = Math.max(0, Math.min(1000000, rawOrder));
+        }
 
         const sourceEl = sourceElements.find((candidate) => {
             return normalize(candidate.dataset.pisiTodoFor || '') === normalizedTag;
@@ -152,7 +251,13 @@ export function extractPisiTodoMetadataFromBlock(block, normalizeTag = normalize
         }
     }
 
-    return { todoStates, todoSources };
+    return {
+        todoStates,
+        todoSources,
+        todoParents,
+        todoRepeats,
+        todoOrders
+    };
 }
 
 export function parsePisiTodoTagValue(tag, now = new Date()) {

@@ -19,7 +19,10 @@ function sanitizePisiEditorHtml(html = '') {
         'data-pisi-done-for',
         'data-pisi-diary-source',
         'data-pisi-todo-status',
-        'data-pisi-todo-for'
+        'data-pisi-todo-for',
+        'data-pisi-todo-parent',
+        'data-pisi-todo-repeat',
+        'data-pisi-todo-order'
     ]);
     const allowedStyleProperties = new Set([
         'background-color',
