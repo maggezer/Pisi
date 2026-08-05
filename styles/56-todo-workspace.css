@@ -1,0 +1,153 @@
+/* DEDICATED TODO WORKSPACE */
+
+#pisi-missions-panel .pisi-third-view-switcher {
+    display: none;
+}
+
+.pisi-todo-workspace-open {
+    width: 100%;
+    padding: 7px 9px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--accent-color) 10%, var(--panel-bg));
+    color: var(--text-color);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+    text-align: left;
+}
+
+.pisi-todo-workspace-open:hover {
+    border-color: var(--accent-color);
+    background: color-mix(in srgb, var(--accent-color) 17%, var(--panel-bg));
+}
+
+.pisi-todo-center-tab .center-tab-icon {
+    color: var(--accent-color);
+    font-weight: 800;
+}
+
+.pisi-todo-workspace {
+    position: absolute;
+    inset: 0;
+    z-index: 8;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
+    background: var(--panel-bg);
+    color: var(--text-color);
+}
+
+.pisi-todo-workspace[hidden] {
+    display: none;
+}
+
+.pisi-todo-workspace-header {
+    display: grid;
+    gap: 14px;
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--border-color);
+    background: color-mix(in srgb, var(--panel-bg) 96%, var(--text-color));
+}
+
+.pisi-todo-workspace-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.pisi-todo-workspace-heading h2 {
+    margin: 0;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+}
+
+.pisi-todo-workspace-subtitle {
+    overflow: hidden;
+    color: var(--muted-text-color);
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pisi-todo-workspace-navigation {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.pisi-todo-workspace-view {
+    min-height: 34px;
+    padding: 6px 13px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--panel-bg);
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.pisi-todo-workspace-view:hover,
+.pisi-todo-workspace-view.active {
+    border-color: var(--accent-color);
+    background: color-mix(in srgb, var(--accent-color) 15%, var(--panel-bg));
+}
+
+.pisi-todo-workspace-content {
+    min-width: 0;
+    min-height: 0;
+    padding: 18px 22px 24px;
+    overflow: auto;
+}
+
+.pisi-todo-workspace-content > .pisi-third-kanban,
+.pisi-todo-workspace-content > .pisi-third-calendar,
+.pisi-todo-workspace-content > .pisi-third-timeline,
+.pisi-todo-workspace-content > .pisi-third-stats {
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+}
+
+.pisi-todo-workspace-content .pisi-third-kanban {
+    grid-template-columns: repeat(4, minmax(220px, 1fr));
+}
+
+.pisi-todo-workspace-content .pisi-third-kanban-column {
+    min-height: 420px;
+}
+
+.pisi-todo-workspace-content .pisi-third-calendar-grid {
+    grid-template-columns: repeat(7, minmax(110px, 1fr));
+}
+
+.pisi-todo-workspace-content .pisi-third-calendar-day {
+    min-height: 120px;
+}
+
+.pisi-todo-workspace-content .pisi-third-stat-cards {
+    grid-template-columns: repeat(5, minmax(130px, 1fr));
+}
+
+.pisi-todo-workspace-empty {
+    display: grid;
+    min-height: 240px;
+    place-items: center;
+    border: 1px dashed var(--border-color);
+    border-radius: 12px;
+    color: var(--muted-text-color);
+    text-align: center;
+}
+
+@media (max-width: 1100px) {
+    .pisi-todo-workspace-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .pisi-todo-workspace-content .pisi-third-stat-cards {
+        grid-template-columns: repeat(2, minmax(130px, 1fr));
+    }
+}

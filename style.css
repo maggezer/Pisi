@@ -5,6 +5,7 @@
 @import url("./styles/40-editor.css") layer(pisi);
 @import url("./styles/50-tags-and-missions.css") layer(pisi);
 @import url("./styles/55-todo-third-release.css") layer(pisi);
+@import url("./styles/56-todo-workspace.css") layer(pisi);
 @import url("./styles/60-customization.css") layer(pisi);
 @import url("./styles/65-unified-toolbar.css") layer(pisi);
 @import url("./styles/66-document-ink.css") layer(pisi);
