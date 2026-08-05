@@ -50,32 +50,33 @@ test('tekrarlayan görev tarihleri günlük, hafta içi, haftalık ve aylık ile
     );
 });
 
-test('alt görev, tekrar ve manuel sıra metadata alanları indeks ve sanitizer zincirinde korunur', () => {
+test('tekrar ve manuel sıra metadata alanları indeks ve sanitizer zincirinde korunur', () => {
     const utils = read('renderer/tags/pisi-todo-utils.mjs');
     const index = read('renderer/tags/pisi-tag-index.mjs');
     const editor = read('renderer/editor/pisi-node-editor.mjs');
 
     for (const token of [
-        'data-pisi-todo-parent',
         'data-pisi-todo-repeat',
         'data-pisi-todo-order'
     ]) {
         assert.match(editor, new RegExp(token));
     }
-    assert.match(utils, /todoParents/);
     assert.match(utils, /todoRepeats/);
     assert.match(utils, /todoOrders/);
-    assert.match(index, /todoParents/);
     assert.match(index, /todoRepeats/);
     assert.match(index, /todoOrders/);
 });
 
-test('ikinci sürüm paneli alt görev, tekrar, durum filtresi ve sürükle bırak sağlar', () => {
+test('ikinci sürüm paneli alt görev arayüzü olmadan tekrar, filtre ve sürükle bırak sağlar', () => {
     const source = read('renderer/tags/pisi-todo-second-release.mjs');
     const firstRelease = read('renderer/tags/pisi-todo-first-release.mjs');
     const css = read('styles/50-tags-and-missions.css');
 
-    assert.match(source, /addPisiSubtaskSecondRelease/);
+    assert.doesNotMatch(source, /pisi-mission-add-child/);
+    assert.doesNotMatch(source, /pisi-mission-child-progress/);
+    assert.doesNotMatch(source, /childCount|completedChildren|mission\.depth/);
+    assert.doesNotMatch(source, /block\.todoParents/);
+    assert.match(source, /Alt görev sistemi kaldırıldı/);
     assert.match(source, /createNextPisiRecurringMissionSecondRelease/);
     assert.match(source, /getPisiTodayIsoDate\(nextDate\)/);
     assert.doesNotMatch(source, /nextDate\.toISOString\(\)\.slice/);
@@ -86,31 +87,34 @@ test('ikinci sürüm paneli alt görev, tekrar, durum filtresi ve sürükle bır
     assert.match(firstRelease, /matchesPisiMissionStatusFilterSecondRelease/);
     assert.match(firstRelease, /togglePisiMissionCompletionSecondRelease/);
     assert.match(css, /TODO SECOND RELEASE/);
-    assert.match(css, /pisi-mission-child-progress/);
     assert.match(css, /pisi-mission-card\.drag-over/);
 });
 
-test('günlük node eşitlemesi durum, tekrar ve alt görev bilgisini taşır', () => {
+test('manuel sıralama artık görevleri parent hiyerarşisine göre kısıtlamaz', () => {
+    const source = read('renderer/tags/pisi-todo-second-release.mjs');
+
+    assert.doesNotMatch(source, /dragged\.parentId/);
+    assert.doesNotMatch(source, /dataset\.parentId/);
+    assert.match(source, /list\.querySelectorAll\('\.pisi-mission-card'\)/);
+    assert.match(source, /persistPisiMissionManualOrderSecondRelease\(ordered\)/);
+});
+
+test('günlük node eşitlemesi durum ve tekrar bilgisini taşır', () => {
     const runtime = read('renderer/runtime.mjs');
     const store = read('main/functions/document-store.js');
 
     assert.match(runtime, /status: String\(block\.todoStates/);
     assert.match(runtime, /repeat: String\(block\.todoRepeats/);
-    assert.match(runtime, /parentId: String\(block\.todoParents/);
     assert.match(store, /data-pisi-diary-status/);
-    assert.match(store, /data-pisi-diary-parent/);
-    assert.match(store, /pisi-diary-managed-block\$\{parentClass\}/);
 });
 
 test('ikinci sürüm modülü bootstrap, manifest ve dil kataloglarına bağlıdır', () => {
     const bootstrap = read('renderer/bootstrap.mjs');
     const manifest = readJson('renderer/module-manifest.json');
-    const tr = readJson('locales/lang-tr.json');
     const eng = readJson('locales/lang-eng.json');
 
     assert.match(bootstrap, /pisi-todo-second-release\.mjs/);
     assert.ok(manifest.some((entry) => entry.module === 'tags.todoSecondRelease'));
-    assert.equal(tr.strings['Alt görev ekle'], 'Alt görev ekle');
-    assert.equal(eng.strings['Alt görev ekle'], 'Add subtask');
     assert.equal(eng.strings['Manuel sıra'], 'Manual order');
+    assert.equal(eng.strings['Tekrarlama'], 'Repeat');
 });

@@ -87,7 +87,6 @@ function enhancePisiMissionSecondRelease(mission, block = {}) {
     const rawOrder = Number(block.todoOrders?.[mission.todoTag]);
     const enhanced = {
         ...mission,
-        parentId: String(block.todoParents?.[mission.todoTag] || ''),
         repeat: getPisiTodoRepeatOption(
             block.todoRepeats?.[mission.todoTag]
         ).value,
@@ -154,50 +153,13 @@ function getPisiMissionComparatorSecondRelease(sortMode) {
 
 function sortPisiMissionsSecondRelease(missions = []) {
     const state = ensurePisiTodoSecondPreferences();
-    const items = missions.map((mission) => ({
+    const sorted = missions.map((mission) => ({
         ...mission,
-        missionId: mission.missionId || makePisiMissionIdSecondRelease(mission),
-        depth: 0,
-        childCount: 0,
-        completedChildren: 0
-    }));
-    const byId = new Map(items.map((mission) => [mission.missionId, mission]));
-    const children = new Map();
+        missionId: mission.missionId || makePisiMissionIdSecondRelease(mission)
+    })).sort(getPisiMissionComparatorSecondRelease(state.missionSort));
 
-    for (const mission of items) {
-        if (!mission.parentId || mission.parentId === mission.missionId || !byId.has(mission.parentId)) {
-            mission.parentId = '';
-            continue;
-        }
-        if (!children.has(mission.parentId)) children.set(mission.parentId, []);
-        children.get(mission.parentId).push(mission);
-    }
-
-    for (const mission of items) {
-        const directChildren = children.get(mission.missionId) || [];
-        mission.childCount = directChildren.length;
-        mission.completedChildren = directChildren.filter((child) => child.completed).length;
-    }
-
-    const compare = getPisiMissionComparatorSecondRelease(state.missionSort);
-    const roots = items.filter((mission) => !mission.parentId).sort(compare);
-    const flattened = [];
-    const visited = new Set();
-
-    const appendMission = (mission, depth) => {
-        if (!mission || visited.has(mission.missionId)) return;
-        visited.add(mission.missionId);
-        mission.depth = Math.min(6, Math.max(0, depth));
-        flattened.push(mission);
-        const directChildren = (children.get(mission.missionId) || []).sort(compare);
-        for (const child of directChildren) appendMission(child, depth + 1);
-    };
-
-    for (const mission of roots) appendMission(mission, 0);
-    for (const mission of items.sort(compare)) appendMission(mission, 0);
-
-    pisiTodoSecondReleaseState.currentMissions = flattened;
-    return flattened;
+    pisiTodoSecondReleaseState.currentMissions = sorted;
+    return sorted;
 }
 
 function matchesPisiMissionStatusFilterSecondRelease(mission) {
@@ -290,10 +252,14 @@ async function mutatePisiMissionDocumentSecondRelease(mission, mutate) {
     };
 
     const applyEditor = async (editor, save) => {
-        if (!editor) return { ok: false, error: pisiTodoSecondTranslate('Görev editörü bulunamadı.') };
+        if (!editor) {
+            return { ok: false, error: pisiTodoSecondTranslate('Görev editörü bulunamadı.') };
+        }
         const previousHtml = editor.innerHTML;
         const block = findPisiMissionBlockSecondRelease(editor, mission);
-        if (!block) return { ok: false, error: pisiTodoSecondTranslate('Görev bloğu bulunamadı.') };
+        if (!block) {
+            return { ok: false, error: pisiTodoSecondTranslate('Görev bloğu bulunamadı.') };
+        }
         const changed = mutate(block, editor) !== false;
         if (!changed) return { ok: true, unchanged: true };
         editor.dispatchEvent(new Event('input', { bubbles: true }));
@@ -301,7 +267,10 @@ async function mutatePisiMissionDocumentSecondRelease(mission, mutate) {
         if (!result?.ok) {
             editor.innerHTML = previousHtml;
             editor.dispatchEvent(new Event('input', { bubbles: true }));
-            return { ok: false, error: result?.error || pisiTodoSecondTranslate('Node kaydedilemedi.') };
+            return {
+                ok: false,
+                error: result?.error || pisiTodoSecondTranslate('Node kaydedilemedi.')
+            };
         }
         return { ok: true };
     };
@@ -311,7 +280,10 @@ async function mutatePisiMissionDocumentSecondRelease(mission, mutate) {
         return applyEditor(editor, async () => {
             if (typeof window.saveCurrentCenterNodeEditor === 'function') {
                 const ok = await window.saveCurrentCenterNodeEditor();
-                return { ok, error: ok ? '' : pisiTodoSecondTranslate('Node kaydedilemedi.') };
+                return {
+                    ok,
+                    error: ok ? '' : pisiTodoSecondTranslate('Node kaydedilemedi.')
+                };
             }
             return window.pisiProject?.saveNodeContent?.(
                 mission.nodePath,
@@ -337,11 +309,18 @@ async function mutatePisiMissionDocumentSecondRelease(mission, mutate) {
     }
 
     const doc = await window.pisiProject?.getPisiDocument?.(mission.nodePath);
-    if (!doc?.ok) return { ok: false, error: doc?.error || pisiTodoSecondTranslate('Node okunamadı.') };
+    if (!doc?.ok) {
+        return {
+            ok: false,
+            error: doc?.error || pisiTodoSecondTranslate('Node okunamadı.')
+        };
+    }
     const template = document.createElement('template');
     template.innerHTML = String(doc.data?.content || '');
     const block = findPisiMissionBlockSecondRelease(template.content, mission);
-    if (!block) return { ok: false, error: pisiTodoSecondTranslate('Görev bloğu bulunamadı.') };
+    if (!block) {
+        return { ok: false, error: pisiTodoSecondTranslate('Görev bloğu bulunamadı.') };
+    }
     const changed = mutate(block, template.content) !== false;
     if (!changed) return { ok: true, unchanged: true };
     const result = await window.pisiProject?.saveNodeContent?.(
@@ -350,7 +329,10 @@ async function mutatePisiMissionDocumentSecondRelease(mission, mutate) {
     );
     return result?.ok
         ? { ok: true }
-        : { ok: false, error: result?.error || pisiTodoSecondTranslate('Node kaydedilemedi.') };
+        : {
+            ok: false,
+            error: result?.error || pisiTodoSecondTranslate('Node kaydedilemedi.')
+        };
 }
 
 async function setPisiMissionRepeatSecondRelease(mission, repeatValue) {
@@ -359,7 +341,9 @@ async function setPisiMissionRepeatSecondRelease(mission, repeatValue) {
         mission,
         (block) => {
             const tag = findPisiMissionTagSecondRelease(block, mission);
-            if (!tag) return { changed: false, missing: true, previousHtml: block.innerHTML };
+            if (!tag) {
+                return { changed: false, missing: true, previousHtml: block.innerHTML };
+            }
             const previousHtml = block.innerHTML;
             if ((tag.dataset.pisiTodoRepeat || 'none') === repeat) {
                 return { changed: false, unchanged: true, previousHtml };
@@ -368,7 +352,10 @@ async function setPisiMissionRepeatSecondRelease(mission, repeatValue) {
             return { changed: true, previousHtml };
         }
     );
-    return result || { ok: false, error: pisiTodoSecondTranslate('Tekrar ayarı kaydedilemedi.') };
+    return result || {
+        ok: false,
+        error: pisiTodoSecondTranslate('Tekrar ayarı kaydedilemedi.')
+    };
 }
 
 async function setPisiMissionOrderSecondRelease(mission, order) {
@@ -377,60 +364,26 @@ async function setPisiMissionOrderSecondRelease(mission, order) {
         mission,
         (block) => {
             const tag = findPisiMissionTagSecondRelease(block, mission);
-            if (!tag) return { changed: false, missing: true, previousHtml: block.innerHTML };
+            if (!tag) {
+                return { changed: false, missing: true, previousHtml: block.innerHTML };
+            }
             const previousHtml = block.innerHTML;
             tag.dataset.pisiTodoOrder = String(normalizedOrder);
             return { changed: true, previousHtml };
         }
     );
-    return result || { ok: false, error: pisiTodoSecondTranslate('Görev sırası kaydedilemedi.') };
+    return result || {
+        ok: false,
+        error: pisiTodoSecondTranslate('Görev sırası kaydedilemedi.')
+    };
 }
 
-function createPisiTodoTagElementSecondRelease(doc, todoTag, options = {}) {
-    const tag = doc.createElement('span');
-    tag.className = 'pisi-user-tag';
-    tag.dataset.pisiTag = todoTag;
-    tag.dataset.pisiTodoStatus = options.status || 'todo';
-    tag.dataset.pisiTodoRepeat = options.repeat || 'none';
-    if (options.parentId) tag.dataset.pisiTodoParent = options.parentId;
-    if (Number.isFinite(options.order)) {
-        tag.dataset.pisiTodoOrder = String(options.order);
-    }
-    tag.contentEditable = 'false';
-    tag.textContent = todoTag;
-    return tag;
-}
-
-async function addPisiSubtaskSecondRelease(mission) {
-    const result = await mutatePisiMissionDocumentSecondRelease(
-        mission,
-        (block) => {
-            const doc = block.ownerDocument;
-            const child = doc.createElement('div');
-            child.className = 'pisi-editor-block';
-            child.dataset.pisiBlockId = typeof window.makePisiBlockId === 'function'
-                ? window.makePisiBlockId()
-                : `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-
-            const source = doc.createElement('span');
-            source.className = 'pisi-todo-source';
-            source.dataset.pisiTodoFor = mission.todoTag;
-            source.textContent = pisiTodoSecondTranslate('Yeni alt görev');
-            child.append(source, doc.createTextNode(' '));
-            child.appendChild(createPisiTodoTagElementSecondRelease(doc, mission.todoTag, {
-                parentId: mission.missionId,
-                order: Number.isFinite(mission.manualOrder)
-                    ? mission.manualOrder + 1
-                    : Date.now()
-            }));
-            child.appendChild(doc.createTextNode(' '));
-            block.after(child);
-            return true;
-        }
-    );
-
-    if (result?.ok) window.refreshPisiTagsPanelSoon?.();
-    return result;
+async function addPisiSubtaskSecondRelease() {
+    return {
+        ok: false,
+        removed: true,
+        error: 'Alt görev sistemi kaldırıldı; bunun yerine alt node içinde görev oluşturun.'
+    };
 }
 
 async function createNextPisiRecurringMissionSecondRelease(mission) {
@@ -438,12 +391,22 @@ async function createNextPisiRecurringMissionSecondRelease(mission) {
     if (repeat === 'none') return { ok: true, skipped: true };
     const todo = parsePisiTodoTagValue(mission.todoTag);
     const nextDate = getNextPisiTodoDate(todo?.finishDate, repeat, new Date());
-    if (!nextDate) return { ok: false, error: pisiTodoSecondTranslate('Sonraki tekrar tarihi hesaplanamadı.') };
+    if (!nextDate) {
+        return {
+            ok: false,
+            error: pisiTodoSecondTranslate('Sonraki tekrar tarihi hesaplanamadı.')
+        };
+    }
     const nextTag = formatPisiTodoTag(
         mission.priority,
         getPisiTodayIsoDate(nextDate)
     );
-    if (!nextTag) return { ok: false, error: pisiTodoSecondTranslate('Sonraki görev etiketi oluşturulamadı.') };
+    if (!nextTag) {
+        return {
+            ok: false,
+            error: pisiTodoSecondTranslate('Sonraki görev etiketi oluşturulamadı.')
+        };
+    }
 
     return mutatePisiMissionDocumentSecondRelease(mission, (block) => {
         const clone = block.cloneNode(true);
@@ -468,6 +431,7 @@ async function createNextPisiRecurringMissionSecondRelease(mission) {
                         ? mission.manualOrder + 1
                         : Date.now()
                 );
+                delete tag.dataset.pisiTodoParent;
                 tag.textContent = nextTag;
             }
         });
@@ -503,9 +467,8 @@ async function togglePisiMissionCompletionSecondRelease(mission, completed) {
 
 async function persistPisiMissionManualOrderSecondRelease(missions = []) {
     for (let index = 0; index < missions.length; index += 1) {
-        const mission = missions[index];
         const result = await setPisiMissionOrderSecondRelease(
-            mission,
+            missions[index],
             (index + 1) * 100
         );
         if (!result?.ok) return result;
@@ -537,10 +500,7 @@ function bindPisiMissionDragSecondRelease({ card, mission, list }) {
     });
 
     card.addEventListener('dragover', (event) => {
-        const dragged = pisiTodoSecondReleaseState.currentMissions.find((item) => {
-            return item.missionId === pisiTodoSecondReleaseState.draggedMissionId;
-        });
-        if (!dragged || dragged.parentId !== mission.parentId) return;
+        if (!pisiTodoSecondReleaseState.draggedMissionId) return;
         event.preventDefault();
         event.dataTransfer.dropEffect = 'move';
         card.classList.add('drag-over');
@@ -552,23 +512,21 @@ function bindPisiMissionDragSecondRelease({ card, mission, list }) {
         const draggedId = pisiTodoSecondReleaseState.draggedMissionId;
         const draggedCard = Array.from(list.querySelectorAll('.pisi-mission-card'))
             .find((item) => item.dataset.missionId === draggedId);
-        const dragged = pisiTodoSecondReleaseState.currentMissions.find((item) => {
-            return item.missionId === draggedId;
-        });
-        if (!draggedCard || !dragged || dragged.parentId !== mission.parentId) return;
+        if (!draggedCard || draggedCard === card) return;
 
         const rect = card.getBoundingClientRect();
         const before = event.clientY < rect.top + rect.height / 2;
         list.insertBefore(draggedCard, before ? card : card.nextSibling);
 
         const ordered = Array.from(list.querySelectorAll('.pisi-mission-card'))
-            .filter((item) => item.dataset.parentId === (mission.parentId || ''))
             .map((item) => pisiTodoSecondReleaseState.currentMissions.find((candidate) => {
                 return candidate.missionId === item.dataset.missionId;
             }))
             .filter(Boolean);
         const result = await persistPisiMissionManualOrderSecondRelease(ordered);
-        if (!result?.ok) alert(result?.error || pisiTodoSecondTranslate('Görev sırası kaydedilemedi.'));
+        if (!result?.ok) {
+            alert(result?.error || pisiTodoSecondTranslate('Görev sırası kaydedilemedi.'));
+        }
     });
 }
 
@@ -576,9 +534,6 @@ function enhancePisiMissionCardSecondRelease({ card, mission, list }) {
     if (!card || !mission) return;
     const state = ensurePisiTodoSecondPreferences();
     card.dataset.missionId = mission.missionId;
-    card.dataset.parentId = mission.parentId || '';
-    card.dataset.depth = String(mission.depth || 0);
-    card.style.setProperty('--pisi-mission-depth', String(mission.depth || 0));
 
     const top = card.querySelector('.pisi-mission-top');
     if (!top) return;
@@ -603,34 +558,7 @@ function enhancePisiMissionCardSecondRelease({ card, mission, list }) {
         }
         window.refreshPisiTagsPanelSoon?.();
     });
-
-    const addChild = document.createElement('button');
-    addChild.type = 'button';
-    addChild.className = 'pisi-mission-add-child';
-    addChild.title = pisiTodoSecondTranslate('Alt görev ekle');
-    addChild.setAttribute('aria-label', addChild.title);
-    addChild.textContent = '+';
-    addChild.disabled = mission.completed === true;
-    addChild.addEventListener('click', async (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        addChild.disabled = true;
-        const result = await addPisiSubtaskSecondRelease(mission);
-        if (!result?.ok) {
-            addChild.disabled = false;
-            alert(result?.error || pisiTodoSecondTranslate('Alt görev eklenemedi.'));
-        }
-    });
-
-    actions.append(repeat, addChild);
-
-    if (mission.childCount > 0) {
-        const progress = document.createElement('span');
-        progress.className = 'pisi-mission-child-progress';
-        progress.title = pisiTodoSecondTranslate('Alt görev ilerlemesi');
-        progress.textContent = `${mission.completedChildren}/${mission.childCount}`;
-        actions.appendChild(progress);
-    }
+    actions.appendChild(repeat);
 
     if (state.missionSort === 'manual') {
         const handle = document.createElement('button');
