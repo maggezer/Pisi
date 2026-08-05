@@ -27,15 +27,28 @@
     font-weight: 800;
 }
 
+#workspace.pisi-todo-workspace-active {
+    background: #1e1e1e;
+}
+
+#workspace.pisi-todo-workspace-active > :not(.pisi-todo-workspace) {
+    pointer-events: none !important;
+    user-select: none;
+}
+
 .pisi-todo-workspace {
     position: absolute;
     inset: 0;
-    z-index: 8;
+    z-index: 50;
+    isolation: isolate;
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
     overflow: hidden;
-    background: var(--panel-bg);
+    background-color: #1e1e1e;
+    background-image: none;
     color: var(--text-color);
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .pisi-todo-workspace[hidden] {
@@ -47,7 +60,7 @@
     gap: 14px;
     padding: 18px 22px 14px;
     border-bottom: 1px solid var(--border-color);
-    background: color-mix(in srgb, var(--panel-bg) 96%, var(--text-color));
+    background: #252526;
 }
 
 .pisi-todo-workspace-heading {
@@ -100,6 +113,7 @@
     min-height: 0;
     padding: 18px 22px 24px;
     overflow: auto;
+    background: #1e1e1e;
 }
 
 .pisi-todo-workspace-content > .pisi-third-kanban,
@@ -137,6 +151,7 @@
     place-items: center;
     border: 1px dashed var(--border-color);
     border-radius: 12px;
+    background: #1e1e1e;
     color: var(--muted-text-color);
     text-align: center;
 }
