@@ -68,6 +68,8 @@ test('ikinci sürüm paneli alt görev, tekrar, durum filtresi ve sürükle bır
 
     assert.match(source, /addPisiSubtaskSecondRelease/);
     assert.match(source, /createNextPisiRecurringMissionSecondRelease/);
+    assert.match(source, /getPisiTodayIsoDate\(nextDate\)/);
+    assert.doesNotMatch(source, /nextDate\.toISOString\(\)\.slice/);
     assert.match(source, /togglePisiMissionCompletionSecondRelease/);
     assert.match(source, /pisi-mission-drag-handle/);
     assert.match(source, /missionStatusFilter/);

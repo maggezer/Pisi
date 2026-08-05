@@ -5,6 +5,7 @@ import {
     PISI_TODO_STATUS_FILTER_OPTIONS,
     formatPisiTodoTag,
     getNextPisiTodoDate,
+    getPisiTodayIsoDate,
     getPisiTodoRepeatOption,
     getPisiTodoSortOption,
     getPisiTodoStatusFilterOption,
@@ -438,7 +439,10 @@ async function createNextPisiRecurringMissionSecondRelease(mission) {
     const todo = parsePisiTodoTagValue(mission.todoTag);
     const nextDate = getNextPisiTodoDate(todo?.finishDate, repeat, new Date());
     if (!nextDate) return { ok: false, error: pisiTodoSecondTranslate('Sonraki tekrar tarihi hesaplanamadı.') };
-    const nextTag = formatPisiTodoTag(mission.priority, nextDate.toISOString().slice(0, 10));
+    const nextTag = formatPisiTodoTag(
+        mission.priority,
+        getPisiTodayIsoDate(nextDate)
+    );
     if (!nextTag) return { ok: false, error: pisiTodoSecondTranslate('Sonraki görev etiketi oluşturulamadı.') };
 
     return mutatePisiMissionDocumentSecondRelease(mission, (block) => {
