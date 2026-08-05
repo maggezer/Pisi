@@ -115,17 +115,41 @@ manifest.splice(editorIndex, 0, {
 });
 write(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 
-const testPath = 'tests/todo-navigation-filter-regression.test.js';
-let testSource = read(testPath);
-testSource = testSource.replace(
+const regressionTestPath = 'tests/todo-navigation-filter-regression.test.js';
+let regressionTest = read(regressionTestPath);
+regressionTest = regressionTest.replace(
     "const source = read('renderer/tags/pisi-tag-editor.mjs');",
     "const source = read('renderer/tags/pisi-todo-navigation.mjs');"
 );
-testSource = testSource.replace(
+regressionTest = regressionTest.replace(
     "    assert.match(source, /target\\.animate\\(/);",
     "    assert.match(source, /target\\.animate\\(/);\n" +
     "    assert.match(read('renderer/bootstrap.mjs'), /pisi-todo-navigation\\.mjs/);"
 );
-write(testPath, testSource);
+write(regressionTestPath, regressionTest);
+
+const existingTodoTestPath = 'tests/todo-tag.test.js';
+let existingTodoTest = read(existingTodoTestPath);
+const oldTestSetup =
+    "    const firstRelease = read('renderer/tags/pisi-todo-first-release.mjs');\n" +
+    "    const editor = read('renderer/tags/pisi-tag-editor.mjs');\n" +
+    "    const css = read('styles/50-tags-and-missions.css');";
+const newTestSetup =
+    "    const firstRelease = read('renderer/tags/pisi-todo-first-release.mjs');\n" +
+    "    const navigation = read('renderer/tags/pisi-todo-navigation.mjs');\n" +
+    "    const css = read('styles/50-tags-and-missions.css');";
+
+if (!existingTodoTest.includes(oldTestSetup)) {
+    throw new Error('Existing Todo navigation test setup was not found.');
+}
+
+existingTodoTest = existingTodoTest.replace(oldTestSetup, newTestSetup);
+existingTodoTest = existingTodoTest.replace(
+    "    assert.match(editor, /highlightPisiEditorBlock\\(block\\.blockId, block\\.todoTag\\)/);",
+    "    assert.match(navigation, /await highlightPisiEditorBlock\\(block\\)/);\n" +
+    "    assert.match(navigation, /samePisiPathForTags\\(activeModalNode\\?\\.path, mission\\?\\.nodePath\\)/);\n" +
+    "    assert.match(navigation, /pisiMissionBlockContainsTodo/);"
+);
+write(existingTodoTestPath, existingTodoTest);
 
 console.log('Moved Todo navigation into a dedicated renderer module.');
