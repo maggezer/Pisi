@@ -27,6 +27,7 @@ import "./tags/pisi-todo-first-release.mjs";
 import "./tags/pisi-todo-third-release.mjs";
 import "./tags/pisi-todo-third-release-guard.mjs";
 import "./tags/pisi-todo-workspace.mjs";
+import "./tags/pisi-todo-workspace-shield.mjs";
 import "./editor/pisi-node-preview.mjs";
 import "./map/pisi-map-interactions.mjs";
 import "./map/pisi-map-edges.mjs";
