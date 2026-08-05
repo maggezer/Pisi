@@ -26,10 +26,14 @@ jobs:
           cache: npm
 
       - name: Check integration script syntax
-        run: node --check scripts/apply-todo-second-release.js
+        run: |
+          node --check scripts/apply-todo-second-release.js
+          node --check scripts/refine-todo-second-release.js
 
       - name: Apply Todo second release integration
-        run: node scripts/apply-todo-second-release.js
+        run: |
+          node scripts/apply-todo-second-release.js
+          node scripts/refine-todo-second-release.js
 
       - name: Install dependencies without Electron binary
         run: npm ci
@@ -42,6 +46,7 @@ jobs:
       - name: Remove one-time integration files
         run: |
           rm -f scripts/apply-todo-second-release.js
+          rm -f scripts/refine-todo-second-release.js
           rm -f .github/workflows/apply-todo-second-release.yml
 
       - name: Commit Todo second release
