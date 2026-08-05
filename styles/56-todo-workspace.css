@@ -32,7 +32,7 @@
 }
 
 #workspace.pisi-todo-workspace-active > :not(.pisi-todo-workspace) {
-    pointer-events: none !important;
+    pointer-events: none;
     user-select: none;
 }
 
