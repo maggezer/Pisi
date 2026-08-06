@@ -90,6 +90,9 @@ function enhancePisiMissionSecondRelease(mission, block = {}) {
         repeat: getPisiTodoRepeatOption(
             block.todoRepeats?.[mission.todoTag]
         ).value,
+        completionOffsetDays: Number(
+            block.todoCompletionOffsets?.[mission.todoTag]
+        ) || null,
         manualOrder: Number.isFinite(rawOrder)
             ? rawOrder
             : Number.POSITIVE_INFINITY
@@ -390,7 +393,12 @@ async function createNextPisiRecurringMissionSecondRelease(mission) {
     const repeat = getPisiTodoRepeatOption(mission.repeat).value;
     if (repeat === 'none') return { ok: true, skipped: true };
     const todo = parsePisiTodoTagValue(mission.todoTag);
-    const nextDate = getNextPisiTodoDate(todo?.finishDate, repeat, new Date());
+    const nextDate = getNextPisiTodoDate(
+        todo?.finishDate,
+        repeat,
+        new Date(),
+        mission.completionOffsetDays
+    );
     if (!nextDate) {
         return {
             ok: false,
@@ -426,6 +434,7 @@ async function createNextPisiRecurringMissionSecondRelease(mission) {
                 tag.dataset.pisiTag = nextTag;
                 tag.dataset.pisiTodoStatus = 'todo';
                 tag.dataset.pisiTodoRepeat = repeat;
+                tag.dataset.pisiTodoScheduledAt = getPisiTodayIsoDate(nextDate);
                 tag.dataset.pisiTodoOrder = String(
                     Number.isFinite(mission.manualOrder)
                         ? mission.manualOrder + 1
