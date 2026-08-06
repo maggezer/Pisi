@@ -315,6 +315,8 @@ function createMapNodeBox(node) {
     box.className = 'map-node-box';
     box.dataset.nodeId = node.id;
     box.dataset.nodePath = node.fullPath;
+    box.dataset.pisiReference = node.isReference ? 'true' : 'false';
+    box.classList.toggle('pisi-map-reference-node', node.isReference === true);
 
     box.style.left = `${node.layout.x}px`;
     box.style.top = `${node.layout.y}px`;
@@ -341,6 +343,15 @@ function createMapNodeBox(node) {
 
         <div class="map-node-resize"></div>
     `;
+
+    if (node.isReference) {
+        const deleteButton = box.querySelector('.map-node-delete');
+        if (deleteButton) deleteButton.title = 'Map referansını kaldır';
+        box.querySelectorAll('.map-port').forEach((port) => {
+            port.hidden = true;
+            port.tabIndex = -1;
+        });
+    }
 
     bindMapNodeBoxEvents(box, node);
 
@@ -419,11 +430,13 @@ function bindMapNodeBoxEvents(box, node) {
 
         resetPisiKeyboardAndPointerState();
 
-        const ok = await pisiConfirm('Bu node dosyası silinsin mi?', {
-        title: 'Node sil',
-        confirmText: 'Sil',
+        const isReference = node.isReference === true;
+        const ok = await pisiConfirm(
+        isReference ? 'Bu node yalnızca map görünümünden kaldırılsın mı?' : 'Bu node dosyası silinsin mi?', {
+        title: isReference ? 'Map referansını kaldır' : 'Node sil',
+        confirmText: isReference ? 'Kaldır' : 'Sil',
         cancelText: 'Vazgeç',
-        danger: true
+        danger: !isReference
         });
 
         resetPisiKeyboardAndPointerState();
@@ -432,14 +445,16 @@ function bindMapNodeBoxEvents(box, node) {
 
     suppressNextFileSystemRefresh(3000);
 
-        const result = await window.pisiProject?.deleteNodeFromMap?.(node.fullPath);
+        const result = isReference
+            ? await window.pisiProject?.detachMapReference?.(activeMapPath, node.id)
+            : await window.pisiProject?.deleteNodeFromMap?.(node.fullPath);
 
         if (!result || !result.ok) {
             alert(result?.error || 'Node silinemedi.');
             return;
         }
 
-        if (typeof removePisiOpenTabsForDeletedPaths === 'function') {
+        if (!isReference && typeof removePisiOpenTabsForDeletedPaths === 'function') {
             await removePisiOpenTabsForDeletedPaths([node.fullPath]);
         }
 
