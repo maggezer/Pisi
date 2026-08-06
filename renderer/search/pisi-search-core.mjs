@@ -8,6 +8,8 @@ const PISI_SEARCH_FIELD_WEIGHTS = Object.freeze({
     path: 38
 });
 
+const pisiPreparedSearchFields = new WeakMap();
+
 function replaceTurkishSearchCharacters(value) {
     return value
         .replace(/[ıİ]/g, 'i')
@@ -33,8 +35,12 @@ export function tokenizePisiSearchQuery(query = '') {
 }
 
 function getRecordFields(record) {
+    if (record && typeof record === 'object' && pisiPreparedSearchFields.has(record)) {
+        return pisiPreparedSearchFields.get(record);
+    }
+    let fields;
     if (Array.isArray(record?.searchFields)) {
-        return record.searchFields
+        fields = record.searchFields
             .map((field) => ({
                 kind: field?.kind || 'content',
                 value: String(field?.value || ''),
@@ -44,18 +50,96 @@ function getRecordFields(record) {
                     PISI_SEARCH_FIELD_WEIGHTS.content
             }))
             .filter((field) => field.normalized);
+    } else {
+        fields = [
+            { kind: 'title', value: record?.title || '' },
+            { kind: 'content', value: record?.text || '' },
+            { kind: 'map', value: record?.mapTitle || '' },
+            { kind: 'path', value: record?.relativePath || record?.path || '' }
+        ].map((field) => ({
+            ...field,
+            normalized: normalizePisiSearchText(field.value),
+            weight: PISI_SEARCH_FIELD_WEIGHTS[field.kind]
+        })).filter((field) => field.normalized);
     }
+    if (record && typeof record === 'object') pisiPreparedSearchFields.set(record, fields);
+    return fields;
+}
 
-    return [
-        { kind: 'title', value: record?.title || '' },
-        { kind: 'content', value: record?.text || '' },
-        { kind: 'map', value: record?.mapTitle || '' },
-        { kind: 'path', value: record?.relativePath || record?.path || '' }
-    ].map((field) => ({
-        ...field,
-        normalized: normalizePisiSearchText(field.value),
-        weight: PISI_SEARCH_FIELD_WEIGHTS[field.kind]
-    })).filter((field) => field.normalized);
+function makePisiSearchTrigrams(value = '') {
+    const normalized = normalizePisiSearchText(value).replace(/\s+/g, ' ');
+    if (normalized.length < 3) return [];
+    const grams = new Set();
+    for (let index = 0; index <= normalized.length - 3; index += 1) {
+        grams.add(normalized.slice(index, index + 3));
+    }
+    return Array.from(grams);
+}
+
+function buildPisiSearchAccelerator(records = []) {
+    const preparedRecords = Array.isArray(records) ? records : [];
+    const postings = new Map();
+    preparedRecords.forEach((record, index) => {
+        const fields = getRecordFields(record);
+        const grams = new Set();
+        for (const field of fields) {
+            for (const gram of makePisiSearchTrigrams(field.normalized.slice(0, 6000))) {
+                grams.add(gram);
+            }
+        }
+        for (const gram of grams) {
+            if (!postings.has(gram)) postings.set(gram, []);
+            postings.get(gram).push(index);
+        }
+    });
+    return {
+        version: 1,
+        records: preparedRecords,
+        postings,
+        recordCount: preparedRecords.length,
+        gramCount: postings.size
+    };
+}
+
+function intersectPisiPostingLists(lists) {
+    if (!lists.length) return null;
+    const ordered = lists.slice().sort((a, b) => a.length - b.length);
+    let result = ordered[0].slice();
+    for (const list of ordered.slice(1)) {
+        const next = [];
+        let left = 0;
+        let right = 0;
+        while (left < result.length && right < list.length) {
+            if (result[left] === list[right]) {
+                next.push(result[left]);
+                left += 1;
+                right += 1;
+            } else if (result[left] < list[right]) {
+                left += 1;
+            } else {
+                right += 1;
+            }
+        }
+        result = next;
+        if (!result.length) break;
+    }
+    return result;
+}
+
+function getPisiSearchCandidates(accelerator, query = '') {
+    if (!accelerator?.postings || !Array.isArray(accelerator.records)) return null;
+    const grams = tokenizePisiSearchQuery(query)
+        .filter((token) => token.length >= 3)
+        .flatMap(makePisiSearchTrigrams);
+    if (!grams.length) return null;
+    const lists = [];
+    for (const gram of new Set(grams)) {
+        const posting = accelerator.postings.get(gram);
+        if (!posting) return [];
+        lists.push(posting);
+    }
+    const indexes = intersectPisiPostingLists(lists) || [];
+    return indexes.map((index) => accelerator.records[index]).filter(Boolean);
 }
 
 export function scorePisiSearchRecord(record, query = '') {
@@ -140,6 +224,15 @@ export function searchPisiRecords(records = [], query = '', options = {}) {
             score,
             matchedField
         }));
+}
+
+export function searchPisiIndex(index, query = '', options = {}) {
+    const accelerator = index?.accelerator;
+    const candidates = getPisiSearchCandidates(accelerator, query);
+    const records = candidates === null
+        ? (accelerator?.records || index?.records || [])
+        : candidates;
+    return searchPisiRecords(records, query, options);
 }
 
 export function pisiSearchPathKey(value = '') {
@@ -350,4 +443,9 @@ export function buildPisiRelationshipModel(index, targetPath) {
     };
 }
 
-export { PISI_SEARCH_FIELD_WEIGHTS };
+export {
+    PISI_SEARCH_FIELD_WEIGHTS,
+    buildPisiSearchAccelerator,
+    getPisiSearchCandidates,
+    makePisiSearchTrigrams
+};
