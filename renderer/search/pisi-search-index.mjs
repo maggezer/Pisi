@@ -90,6 +90,12 @@ function extractPisiDirectTitles(container, plainText) {
     return Array.from(new Set(titles));
 }
 
+function extractPisiDirectPaths(container) {
+    return Array.from(container.querySelectorAll('[data-pisi-citation-source]'))
+        .map((element) => String(element.dataset.pisiCitationSource || '').trim())
+        .filter(Boolean);
+}
+
 function extractPisiUnlinkedText(container, plainText) {
     const clone = container.cloneNode(true);
     clone.querySelectorAll('a').forEach((anchor) => anchor.remove());
@@ -217,6 +223,7 @@ function createPisiSearchDocumentRecord(rawNode, projectFolder) {
             getPisiSearchFileName(path),
         title,
         metadata: rawNode.metadata || rawNode.item?.metadata || {},
+        properties: rawNode.properties || rawNode.item?.properties || {},
         nodeItem: {
             ...(rawNode.item || {}),
             name: rawNode.item?.name || getPisiSearchFileName(path),
@@ -231,6 +238,7 @@ function createPisiSearchDocumentRecord(rawNode, projectFolder) {
         plainText,
         unlinkedText: extractPisiUnlinkedText(container, plainText),
         directTitles: extractPisiDirectTitles(container, plainText),
+        directPaths: extractPisiDirectPaths(container),
         contentBlocks: extractPisiSearchContentBlocks(container),
         tables: extractPisiSearchTables(container),
         tags: tags.map(({ value, blockId }) => ({ value, blockId })),
@@ -358,6 +366,7 @@ function makePisiRawNode(item, content = '', metadata = null) {
         item,
         content: String(content || ''),
         metadata: metadata || item.metadata || {},
+        properties: item.properties || {},
         memberships: []
     };
 }
@@ -376,6 +385,7 @@ function upsertPisiRawNode(rawNodes, item, content, metadata, membership) {
             node.content = String(content || '');
         }
         node.metadata = metadata || node.metadata || {};
+        node.properties = item.properties || node.properties || {};
     }
 
     if (
@@ -507,9 +517,11 @@ async function hydratePisiStandaloneNodes(rawNodes, context) {
             }
             node.content = String(result.data?.content || '');
             node.metadata = result.metadata || node.metadata || {};
+            node.properties = result.data?.properties || {};
             node.item = {
                 ...node.item,
-                metadata: node.metadata
+                metadata: node.metadata,
+                properties: node.properties
             };
         });
     }
