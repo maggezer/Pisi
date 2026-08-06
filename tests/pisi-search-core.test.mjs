@@ -2,10 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+    buildPisiSearchAccelerator,
     buildPisiRelationshipModel,
     containsPisiTitleMention,
     normalizePisiSearchText,
     pisiSearchPathKey,
+    getPisiSearchCandidates,
+    searchPisiIndex,
     searchPisiRecords
 } from '../renderer/search/pisi-search-core.mjs';
 
@@ -20,6 +23,25 @@ test('Türkçe karakterler aksansız sorgularla eşleşir', () => {
             'Deney Planı'
         ),
         true
+    );
+});
+
+test('üçlü-karakter indeksi büyük kayıt kümesinde güvenli aday daraltır', () => {
+    const records = Array.from({ length: 5000 }, (_value, index) => ({
+        id: `record-${index}`,
+        kind: 'content',
+        title: `Belge ${index}`,
+        searchFields: [{
+            kind: 'content',
+            value: index === 4321 ? 'benzersiz kuantum pusulası' : `sıradan içerik ${index}`
+        }]
+    }));
+    const accelerator = buildPisiSearchAccelerator(records);
+    const candidates = getPisiSearchCandidates(accelerator, 'kuantum pusulası');
+    assert.ok(candidates.length < records.length / 100);
+    assert.deepEqual(
+        searchPisiIndex({ records, accelerator }, 'kuantum pusulası').map((item) => item.id),
+        ['record-4321']
     );
 });
 
