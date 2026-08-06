@@ -230,6 +230,19 @@
     ]
   },
   {
+    "module": "shell.commandCenter",
+    "path": "renderer/shell/pisi-command-center.mjs",
+    "bindings": [
+      "pisiCommandCenterState",
+      "ensurePisiCommandCenter",
+      "registerPisiCommandCenterPage",
+      "renderPisiCommandCenterPage",
+      "openPisiCommandCenter",
+      "closePisiCommandCenter",
+      "initializePisiCommandCenter"
+    ]
+  },
+  {
     "module": "shell.customizations",
     "path": "renderer/shell/pisi-customizations.mjs",
     "bindings": [
@@ -548,6 +561,56 @@
       "installPisiLinksPanel",
       "refreshPisiLinksPanel",
       "schedulePisiLinksPanelRefresh"
+    ]
+  },
+  {
+    "module": "productivity.quickCapture",
+    "path": "renderer/productivity/pisi-quick-capture.mjs",
+    "bindings": [
+      "PISI_TASK_HUB_FILTERS",
+      "PISI_POSTPONE_PRESETS",
+      "pisiQuickCaptureState",
+      "collectPisiGlobalTasks",
+      "matchesPisiTaskHubFilter",
+      "formatPisiTaskMinutes",
+      "renderPisiTasksPage",
+      "postponePisiTask",
+      "initializePisiQuickCapture"
+    ]
+  },
+  {
+    "module": "data.structuredViews",
+    "path": "renderer/data/pisi-structured-views.mjs",
+    "bindings": [
+      "pisiStructuredViewState",
+      "createPisiPropertyRow",
+      "collectPisiPropertyRows",
+      "renderPisiNodeProperties",
+      "renderPisiBases",
+      "renderPisiStructuredPage",
+      "initializePisiStructuredViews"
+    ]
+  },
+  {
+    "module": "portability.panel",
+    "path": "renderer/portability/pisi-portability-panel.mjs",
+    "bindings": [
+      "makePisiSimpleDiff",
+      "showPisiHistoryPreview",
+      "renderPisiHistory",
+      "renderPisiPortabilityPage",
+      "initializePisiPortabilityPanel"
+    ]
+  },
+  {
+    "module": "research.panel",
+    "path": "renderer/research/pisi-research-panel.mjs",
+    "bindings": [
+      "getPisiResearchSourceDocuments",
+      "getPisiSelectedBlockReference",
+      "insertPisiResearchHtml",
+      "renderPisiResearchPage",
+      "initializePisiResearchPanel"
     ]
   },
   {
