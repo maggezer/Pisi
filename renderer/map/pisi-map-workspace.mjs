@@ -808,6 +808,9 @@ function getPisiEditorContent(editor) {
     // Kayıt normalizasyonu canlı contenteditable DOM'u değiştirmemeli.
     // Aksi halde Chromium selection/caret konumunu sıfırlar.
     const normalizedEditor = editor.cloneNode(true);
+    normalizedEditor.querySelectorAll('.pisi-block-active').forEach((block) => {
+        block.classList.remove('pisi-block-active');
+    });
     ensurePisiEditorBlocks(normalizedEditor, {
         preserveSelection: false
     });
