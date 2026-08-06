@@ -50,6 +50,28 @@ function pisiHtmlToPlainText(html = '') {
 
 function pisiHtmlToMarkdown(html = '') {
     let value = stripPisiUnsafeExportHtml(html);
+    value = value.replace(
+        /<span\b[^>]*data-pisi-block-ref=["']([^"']+)["'][^>]*>[\s\S]*?<\/span>/gi,
+        (_all, reference) => `[[${decodePisiHtmlEntities(reference)}]]`
+    );
+    value = value.replace(
+        /<(div|p|blockquote|pre)\b[^>]*data-pisi-block-type=["'](bullet|number|task|quote|code)["'][^>]*>([\s\S]*?)<\/\1>/gi,
+        (_all, _tag, type, body) => {
+            const cleanBody = String(body || '').replace(
+                /<span\b[^>]*class=["'][^"']*pisi-block-task-marker[^"']*["'][^>]*>[\s\S]*?<\/span>/gi,
+                ''
+            ).trim();
+            if (type === 'bullet') return `\n- ${cleanBody}\n`;
+            if (type === 'number') return `\n1. ${cleanBody}\n`;
+            if (type === 'task') {
+                const checked = /[☑✓]/.test(body);
+                return `\n- [${checked ? 'x' : ' '}] ${cleanBody}\n`;
+            }
+            if (type === 'quote') return `\n> ${pisiHtmlToPlainText(cleanBody)}\n`;
+            if (type === 'code') return `\n\`\`\`\n${pisiHtmlToPlainText(cleanBody)}\n\`\`\`\n`;
+            return cleanBody;
+        }
+    );
     value = value.replace(/<h([1-6])\b[^>]*>([\s\S]*?)<\/h\1>/gi, (_all, level, text) => {
         return `\n${'#'.repeat(Number(level))} ${pisiHtmlToPlainText(text)}\n`;
     });
