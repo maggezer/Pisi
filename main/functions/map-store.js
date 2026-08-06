@@ -444,11 +444,23 @@ function listNodesForMap(mapPath) {
                 fullPath: nodePath,
                 fileName: path.basename(nodePath),
                 metadata: nodeInfo.metadata,
+                properties: nodeInfo.data.properties || {},
                 content: nodeInfo.data.content || '',
                 preview: stripPreviewText(nodeInfo.data.content || ''),
-                layout: normalizedLayout
+                layout: normalizedLayout,
+                isReference: false
             };
         }).filter(Boolean);
+
+        if (typeof globalThis.collectPisiMapReferenceNodes === 'function') {
+            const referenceResult = globalThis.collectPisiMapReferenceNodes(
+                mapInfo,
+                seenNodeIds,
+                nodes.length
+            );
+            nodes.push(...referenceResult.nodes);
+            changed = changed || referenceResult.changed;
+        }
 
         const previousLayouts = mapInfo.data.map.nodes;
         mapInfo.data.map.nodes = previousLayouts.filter((layout) => {
