@@ -75,7 +75,10 @@ map altındaki node için parent map kimliğidir.
 
 `properties` alanı proje geneli sorgulama içindir ve editör içindeki sheet
 tablosundan ayrıdır. Desteklenen türler `text`, `number`, `date`, `select`,
-`multiselect`, `node` ve `checkbox` değerleridir. Her özellik kararlı bir `id`,
+`multiselect`, `node`, `checkbox`, `relation` ve `rollup` değerleridir. Relation
+birden çok node kimliği/yolu tutar; rollup bir relation özellik kimliği, hedef
+özellik kimliği ve aggregate (`count`, `sum`, `average`, `min`, `max`, `unique`,
+`join`, `checked-percent`) tanımlar. Her özellik kararlı bir `id`,
 görünen `name`, `type` ve normalize edilmiş `value` taşır.
 
 ## `.map` dosyası
@@ -153,7 +156,9 @@ sidecar’larındaki node’ları kapsar. Aranabilen alanlar:
 - proje köküne göre dosya yolu.
 
 İndeks türetilmiş ve geçicidir; kullanıcı dosyalarının yanında ayrı bir indeks
-dosyası oluşturmaz. Dosya sistemi değişikliğinde geçersiz sayılır. Map içindeki
+dosyası oluşturmaz. Dosya sistemi değişikliğinde yalnız değişen yolun ayrıştırma
+önbelleği atılır; belge imzası değişmeyen kayıtlar ve üçlü-karakter postings
+indeksi yeniden kullanılır. Map içindeki
 bir sonuç açıldığında önce map yüklenir, kamera node’u merkezler ve node modalı
 map bağlamı korunarak açılır. `Alt+Enter` yalnız map odağını uygular.
 
@@ -219,8 +224,9 @@ Quick Add görev etiketi üzerinde aşağıdaki birbirinden ayrı alanları sakl
 
 Node seçilmeden yakalanan görevler `pisi.systemRole = "inbox"` olan proje
 kökü Inbox node’una eklenir. `biweekly` ve `after-completion` tekrar türleri
-mevcut günlük/haftalık/aylık türlerle birlikte desteklenir. Alt görev sistemi
-geri getirilmez; ayrıştırma ve planlama normal görev bloklarında çalışır.
+mevcut günlük/haftalık/aylık türlerle birlikte desteklenir. Alt görevler aynı
+todo etiketi üzerinde `data-pisi-todo-parent="subtask:<mission-id>"` biçiminde
+saklanır; `dep:` önekli görev bağımlılıklarından ayrı yorumlanır.
 
 ## Yerel geçmiş ve taşınabilirlik
 
@@ -249,8 +255,12 @@ erişim tarihi, yazar, yayın tarihi, DOI, atıf anahtarı ve bibliyografya node
 özelliklerinde kalır. Sayfadan alınamayan metadata kullanıcı alanlarıyla
 tamamlanabilir; ağ hatası seçili metinle kaynak oluşturmayı engellemez.
 
-Editörün Word-benzeri davranışı korunurken üst seviye içerik blokları
-`data-pisi-block-id` alır. Bir referans `göreli/yol.node#block-id` biçimindedir.
+Editörün Word-benzeri davranışı korunurken içerik blokları kararlı
+`data-pisi-block-id` ve `data-pisi-block-type` alır. Paragraf, başlık, alıntı,
+kod, madde, numaralı madde ve görev blokları WYSIWYG görünüm ile Markdown kaynak
+görünümü arasında dönüştürülebilir. Bir referans `göreli/yol.node#block-id`
+biçimindedir; `[[Node#^block-id]]` linkleri ve `((block-id))` mention ifadeleri
+blok ilişki indeksine dahil edilir.
 Alıntı blokları `data-pisi-citation-source`, `data-pisi-citation-key` ve
 isteğe bağlı `data-pisi-block-ref` taşır; kaynak yolu backlink indeksine dahil
 edilir.
