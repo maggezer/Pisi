@@ -20,7 +20,8 @@ mevcut uygulama tarafından kullanılmaz.
 2. Sol panel: proje klasörleri, `.map` ve `.node` belgeleri.
 3. Orta araç çubukları: metin, Paint, Excel-benzeri tablo ve etiket araçları.
 4. Orta çalışma alanı: map veya sekmeli node editorü.
-5. Sağ panel: görevler, etiket araması ve görünüm özelleştirmeleri.
+5. Sağ panel: görevler, etiket araması, node bağlantıları ve görünüm
+   özelleştirmeleri.
 6. Takvim: sol/sağ panele dock edilebilir veya ekranda float olarak taşınabilir.
 
 ## `.node` dosyası
@@ -114,6 +115,33 @@ Bağlantı türleri:
 Bir child yalnızca bir hiyerarşik parent taşır. İkinci parent isteği kullanıcı
 onayıyla `stream` ilişkisine çevrilebilir. Self-loop, bozuk ID, duplicate edge
 ve hiyerarşi döngüleri kabul edilmez veya güvenli biçimde normalize edilir.
+
+## Global arama ve node ilişkileri
+
+Global indeks proje içindeki görünür klasörleri, standalone node’ları ve map
+sidecar’larındaki node’ları kapsar. Aranabilen alanlar:
+
+- node ve map başlığı,
+- editör blok metni,
+- görev kaynak metni ve görev etiketi,
+- kullanıcı etiketi,
+- tablo hücre metni,
+- proje köküne göre dosya yolu.
+
+İndeks türetilmiş ve geçicidir; kullanıcı dosyalarının yanında ayrı bir indeks
+dosyası oluşturmaz. Dosya sistemi değişikliğinde geçersiz sayılır. Map içindeki
+bir sonuç açıldığında önce map yüklenir, kamera node’u merkezler ve node modalı
+map bağlamı korunarak açılır. `Alt+Enter` yalnız map odağını uygular.
+
+Bağlantılar paneli üç ilişki kaynağını birleştirir:
+
+1. `[[Node Başlığı]]` biçimindeki doğrudan metin referansı,
+2. `.map` içindeki yönlü veya co-level bağlantı,
+3. node içindeki görev kaynağı.
+
+Başlığı düz metinde geçen fakat `[[...]]` referansı bulunmayan node’lar
+“bağlantısız bahsetme” olarak listelenir. İlişki indeksi kaynak `.node` ve
+`.map` belgelerini değiştirmez.
 
 ## Sidecar klasörleri
 
