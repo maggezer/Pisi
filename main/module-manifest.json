@@ -159,12 +159,18 @@
     "path": "main/functions/structured-nodes.js",
     "bindings": [
       "normalizePisiPropertyId",
+      "normalizePisiPropertyReference",
       "normalizePisiPropertyValue",
       "normalizePisiProperties",
       "savePisiNodeProperties",
       "readPisiSavedViews",
       "savePisiSavedView",
       "deletePisiSavedView",
+      "normalizePisiDatabaseTemplate",
+      "readPisiDatabaseTemplates",
+      "savePisiDatabaseTemplate",
+      "deletePisiDatabaseTemplate",
+      "applyPisiDatabaseTemplate",
       "createPisiPropertyMap",
       "resolvePisiMapReference",
       "collectPisiMapReferenceNodes",
@@ -224,6 +230,19 @@
       "lockProjectFolder",
       "unlockProjectFolder",
       "createWindow"
+    ]
+  },
+  {
+    "module": "main.teamApi",
+    "path": "main/functions/team-api.js",
+    "bindings": [
+      "normalizePisiTeamMember",
+      "normalizePisiTeamConfig",
+      "readPisiTeamConfig",
+      "savePisiTeamConfig",
+      "readPisiTeamEvents",
+      "appendPisiTeamEvent",
+      "getPisiTeamCapabilities"
     ]
   }
 ]
