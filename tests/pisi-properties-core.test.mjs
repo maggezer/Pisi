@@ -1,8 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+    aggregatePisiRollupValues,
     collectPisiPropertyColumns,
     filterPisiPropertyDocuments,
+    materializePisiDatabaseDocuments,
     matchesPisiPropertyQuery,
     parsePisiPropertyQuery
 } from '../renderer/data/pisi-properties-core.mjs';
@@ -40,6 +42,32 @@ test('özellik sorgusunu operatörlü koşullara ayırır', () => {
             { field: 'Öncelik', operator: '>=', value: '4' }
         ]
     );
+});
+
+test('relation kayıtları rollup toplamı ve sayısına dönüştürülür', () => {
+    const related = [
+        {
+            title: 'A', path: '/project/A.node', relativePath: 'A.node',
+            properties: { effort: { id: 'effort', name: 'Efor', type: 'number', value: 3 } }
+        },
+        {
+            title: 'B', path: '/project/B.node', relativePath: 'B.node',
+            properties: { effort: { id: 'effort', name: 'Efor', type: 'number', value: 5 } }
+        }
+    ];
+    const database = [{
+        title: 'Proje', path: '/project/Proje.node', relativePath: 'Proje.node',
+        properties: {
+            tasks: { id: 'tasks', name: 'Görevler', type: 'relation', value: ['A.node', 'B.node'] },
+            effort_total: {
+                id: 'effort_total', name: 'Toplam efor', type: 'rollup',
+                value: { relationProperty: 'tasks', targetProperty: 'effort', aggregate: 'sum' }
+            }
+        }
+    }, ...related];
+    const result = materializePisiDatabaseDocuments(database);
+    assert.equal(result[0].properties.effort_total.value, 8);
+    assert.equal(aggregatePisiRollupValues([true, false, true], 'checked-percent'), 67);
 });
 
 test('metin, sayı, onay kutusu ve etiket alanlarını filtreler', () => {
