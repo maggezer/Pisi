@@ -17,17 +17,20 @@ test('arama modülleri bootstrap ve stil zincirine bağlıdır', () => {
     assert.match(bootstrap, /search\/pisi-search-index\.mjs/);
     assert.match(bootstrap, /search\/pisi-global-search\.mjs/);
     assert.match(bootstrap, /search\/pisi-links-panel\.mjs/);
+    assert.match(bootstrap, /search\/pisi-block-graph\.mjs/);
     assert.match(styles, /57-search-and-links\.css/);
+    assert.match(styles, /59-platform-system\.css/);
 });
 
 test('hızlı geçiş klavye ve map odağı davranışlarını taşır', () => {
     const source = read('renderer/search/pisi-global-search.mjs');
+    const commands = read('renderer/core/pisi-command-registry.mjs');
 
-    assert.match(source, /event\.key\.toLocaleLowerCase\('en-US'\) === 'p'/);
+    assert.match(source, /defaultShortcut: 'Mod\+P'/);
     assert.match(source, /mapOnly: event\.altKey/);
     assert.match(source, /focusPisiSearchMapBox/);
     assert.match(source, /openNodeModalFromBox/);
-    assert.match(source, /event\.stopPropagation\(\)/);
+    assert.match(commands, /event\.stopImmediatePropagation\(\)/);
 });
 
 test('indeks bütün istenen içerik türlerini ayrı kayıtlar olarak üretir', () => {
@@ -47,6 +50,9 @@ test('indeks bütün istenen içerik türlerini ayrı kayıtlar olarak üretir',
     assert.match(source, /listMapNodes/);
     assert.match(source, /getPisiDocument/);
     assert.match(source, /onFileSystemChanged/);
+    assert.match(source, /buildPisiSearchAccelerator/);
+    assert.match(source, /pisiSearchDocumentCache/);
+    assert.match(source, /changedPaths/);
 });
 
 test('aktif node olayı ve proje değişimi ilişki indeksini yeniler', () => {
