@@ -363,6 +363,7 @@
     "path": "renderer/editor/pisi-node-editor.mjs",
     "bindings": [
       "sanitizePisiEditorHtml",
+      "dispatchPisiActiveNodeChanged",
       "openNodeModalFromBox",
       "closeNodeModalAndSave",
       "closeNodeModalWithoutSaving",
@@ -515,6 +516,38 @@
       "setPisiMissionStatusInBlockFirstRelease",
       "savePisiMissionMutationFirstRelease",
       "setPisiMissionStatusFirstRelease"
+    ]
+  },
+  {
+    "module": "search.index",
+    "path": "renderer/search/pisi-search-index.mjs",
+    "bindings": [
+      "ensurePisiSearchIndex",
+      "invalidatePisiSearchIndex",
+      "refreshPisiSearchIndex",
+      "createPisiSearchDocumentRecord",
+      "getPisiSearchCurrentNodePath",
+      "getPisiSearchLiveIndex"
+    ]
+  },
+  {
+    "module": "search.global",
+    "path": "renderer/search/pisi-global-search.mjs",
+    "bindings": [
+      "openPisiGlobalSearch",
+      "closePisiGlobalSearch",
+      "openPisiSearchResult",
+      "focusPisiSearchMapBox",
+      "highlightPisiSearchEditorTarget"
+    ]
+  },
+  {
+    "module": "search.linksPanel",
+    "path": "renderer/search/pisi-links-panel.mjs",
+    "bindings": [
+      "installPisiLinksPanel",
+      "refreshPisiLinksPanel",
+      "schedulePisiLinksPanelRefresh"
     ]
   },
   {
