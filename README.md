@@ -13,6 +13,9 @@ takvim işlevlerini tek bir proje klasöründe birleştirir.
 - Sekmeli center editor ve map içi node modalı
 - Zengin metin, Paint ve Excel-benzeri tablo/formül araçları
 - Kullanıcı etiketleri, proje görev indeksi ve görev başına tamamlanma durumu
+- `Ctrl+P` ile node, içerik, görev, etiket, map, tablo ve dosya yolu araması
+- Metin/map/görev ilişkilerini birleştiren backlink ve bağlantısız bahsetme paneli
+- Arama sonucundaki node’u kendi map’inde merkezleme ve vurgulama
 - Günlük node’larıyla eşitlenen görevler ve sürüklenebilir/dock edilebilir takvim
 - Proje dışı yol erişimini engelleyen IPC sınırı ve HTML allowlist sanitizer
 - Atomik yazma, proje kilidi, kapanışta kayıt kuyruğunu boşaltma ve silmede
@@ -30,6 +33,10 @@ renderer/pisi-map-connections.js     Bağlantılar, kamera, pan/zoom ve seçim
 renderer/pisi-tags.js                Blok, etiket ve görev sistemi
 renderer/pisi-calendar.js            Takvim ve günlük eşitlemesi
 renderer/pisi-node-modal.js          Modal klavye/focus davranışı
+renderer/search/pisi-search-core.mjs Arama puanlama ve ilişki modeli
+renderer/search/pisi-search-index.mjs Yerel proje arama indeksi
+renderer/search/pisi-global-search.mjs Hızlı geçiş penceresi ve map odağı
+renderer/search/pisi-links-panel.mjs Backlink/ilişki sağ paneli
 style.css                            Uygulama stilleri
 tests/                               Formül, yol güvenliği ve regresyon testleri
 ```
@@ -59,6 +66,18 @@ npm run audit
 `npm run validate`, bütün JavaScript dosyalarının sözdizimini, doğruluk odaklı
 ESLint kurallarını ve otomatik regresyon testlerini çalıştırır. Aynı doğrulama
 `main` push’larında GitHub Actions üzerinde de çalışır.
+
+## Arama ve bağlantılar
+
+`Ctrl+P`, projenin yerel `.node` ve `.map` dosyalarından üretilen hızlı geçiş
+penceresini açar. Sonuçlarda ok tuşlarıyla gezinilir, `Enter` içeriği açar,
+`Alt+Enter` ise map içindeki node’u açmadan yalnızca konumuna odaklanır.
+İndeks diske ayrı bir veritabanı olarak yazılmaz; proje değiştiğinde veya dosya
+sistemi güncellendiğinde güvenli biçimde yeniden oluşturulur.
+
+Sağ paneldeki **Bağlantılar** sekmesi doğrudan `[[Node Başlığı]]` metin
+referanslarını, map oklarını, bağlantıya dönüştürülmemiş başlık bahsetmelerini,
+node görevlerini ve ortak map üyeliklerini birlikte gösterir.
 
 ## Paketleme
 
