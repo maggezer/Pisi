@@ -381,7 +381,186 @@ ipcMain.handle('project:save-node-content', (_event, nodePath, content) => {
             type: 'file',
             extensions: ['.node']
         });
-        return saveNodeContent(safeNodePath, content);
+        return saveNodeContentWithHistory(safeNodePath, content, {
+            reason: 'editor-save'
+        });
+    });
+});
+
+ipcMain.handle('project:quick-add-task', (_event, projectFolder, payload) => {
+    return projectOperation(() => {
+        const safeProjectFolder = assertProjectPath(projectFolder, {
+            type: 'directory'
+        });
+        const safePayload = { ...(payload || {}) };
+        if (safePayload.nodePath) {
+            safePayload.nodePath = assertProjectPath(safePayload.nodePath, {
+                type: 'file',
+                extensions: ['.node']
+            });
+        }
+        return quickAddPisiTask(safeProjectFolder, safePayload);
+    });
+});
+
+ipcMain.handle('project:save-node-properties', (_event, nodePath, properties) => {
+    return projectOperation(() => {
+        const safeNodePath = assertProjectPath(nodePath, {
+            type: 'file',
+            extensions: ['.node']
+        });
+        return savePisiNodeProperties(safeNodePath, properties);
+    });
+});
+
+ipcMain.handle('project:list-saved-views', (_event, projectFolder) => {
+    return projectOperation(() => {
+        const safeProjectFolder = assertProjectPath(projectFolder, {
+            type: 'directory'
+        });
+        return readPisiSavedViews(safeProjectFolder);
+    });
+});
+
+ipcMain.handle('project:save-view', (_event, projectFolder, view) => {
+    return projectOperation(() => {
+        const safeProjectFolder = assertProjectPath(projectFolder, {
+            type: 'directory'
+        });
+        return savePisiSavedView(safeProjectFolder, view);
+    });
+});
+
+ipcMain.handle('project:delete-view', (_event, projectFolder, viewId) => {
+    return projectOperation(() => {
+        const safeProjectFolder = assertProjectPath(projectFolder, {
+            type: 'directory'
+        });
+        return deletePisiSavedView(safeProjectFolder, viewId);
+    });
+});
+
+ipcMain.handle('project:create-property-map', (_event, projectFolder, options) => {
+    return projectOperation(() => {
+        const safeProjectFolder = assertProjectPath(projectFolder, {
+            type: 'directory'
+        });
+        const safeOptions = { ...(options || {}) };
+        safeOptions.nodePaths = (Array.isArray(safeOptions.nodePaths)
+            ? safeOptions.nodePaths
+            : []).map((nodePath) => assertProjectPath(nodePath, {
+            type: 'file',
+            extensions: ['.node']
+        }));
+        return createPisiPropertyMap(safeProjectFolder, safeOptions);
+    });
+});
+
+ipcMain.handle('project:detach-map-reference', (_event, mapPath, nodeId) => {
+    return projectOperation(() => {
+        const safeMapPath = assertProjectPath(mapPath, {
+            type: 'file',
+            extensions: ['.map']
+        });
+        return detachPisiMapReference(safeMapPath, nodeId);
+    });
+});
+
+ipcMain.handle('project:export-node', (_event, nodePath, format) => {
+    return asyncProjectOperation(async () => {
+        const safeNodePath = assertProjectPath(nodePath, {
+            type: 'file',
+            extensions: ['.node']
+        });
+        return exportPisiNodeDocument(safeNodePath, format);
+    });
+});
+
+ipcMain.handle('project:export-markdown', (_event, projectFolder) => {
+    return asyncProjectOperation(async () => {
+        const safeProjectFolder = assertProjectPath(projectFolder, {
+            type: 'directory'
+        });
+        return exportPisiProjectMarkdown(safeProjectFolder);
+    });
+});
+
+ipcMain.handle('project:import-markdown', (_event, projectFolder) => {
+    return asyncProjectOperation(async () => {
+        const safeProjectFolder = assertProjectPath(projectFolder, {
+            type: 'directory'
+        });
+        return importPisiMarkdownFolder(safeProjectFolder);
+    });
+});
+
+ipcMain.handle('project:list-node-history', (_event, nodePath) => {
+    return projectOperation(() => {
+        const safeNodePath = assertProjectPath(nodePath, {
+            type: 'file',
+            extensions: ['.node']
+        });
+        return listPisiNodeHistory(safeNodePath);
+    });
+});
+
+ipcMain.handle('project:get-node-history-version', (_event, nodePath, historyId) => {
+    return projectOperation(() => {
+        const safeNodePath = assertProjectPath(nodePath, {
+            type: 'file',
+            extensions: ['.node']
+        });
+        return getPisiNodeHistoryVersion(safeNodePath, historyId);
+    });
+});
+
+ipcMain.handle('project:restore-node-history', (_event, nodePath, historyId) => {
+    return projectOperation(() => {
+        const safeNodePath = assertProjectPath(nodePath, {
+            type: 'file',
+            extensions: ['.node']
+        });
+        return restorePisiNodeHistoryVersion(safeNodePath, historyId);
+    });
+});
+
+ipcMain.handle('project:audit-integrity', (_event, projectFolder) => {
+    return projectOperation(() => {
+        const safeProjectFolder = assertProjectPath(projectFolder, {
+            type: 'directory'
+        });
+        return auditPisiProjectIntegrity(safeProjectFolder);
+    });
+});
+
+ipcMain.handle('project:list-backups', (_event, projectFolder, filePath) => {
+    return projectOperation(() => {
+        const safeProjectFolder = assertProjectPath(projectFolder, {
+            type: 'directory'
+        });
+        const safeFilePath = filePath ? assertProjectPath(filePath, {
+            type: 'file',
+            extensions: ['.node', '.map']
+        }) : null;
+        return listPisiAtomicBackups(safeProjectFolder, safeFilePath);
+    });
+});
+
+ipcMain.handle('project:restore-backup', (_event, projectFolder, backupId) => {
+    return projectOperation(() => {
+        const safeProjectFolder = assertProjectPath(projectFolder, {
+            type: 'directory'
+        });
+        return restorePisiAtomicBackup(safeProjectFolder, backupId);
+    });
+});
+
+ipcMain.handle('project:capture-web-source', (_event, projectFolder, payload) => {
+    return asyncProjectOperation(async () => {
+        const safeProjectFolder = assertProjectPath(projectFolder, {
+            type: 'directory'
+        });
+        return capturePisiWebSource(safeProjectFolder, payload || {});
     });
 });
 

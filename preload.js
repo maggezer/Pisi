@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, clipboard } = require('electron');
 
 contextBridge.exposeInMainWorld('pisiEnvironment', {
     platform: process.platform
@@ -62,6 +62,24 @@ contextBridge.exposeInMainWorld('pisiProject', {
     listMapNodes: (mapPath) => ipcRenderer.invoke('project:list-map-nodes', mapPath),
     saveMapLayout: (mapPath, nodeLayouts) => ipcRenderer.invoke('project:save-map-layout', mapPath, nodeLayouts),
     saveNodeContent: (nodePath, content) => ipcRenderer.invoke('project:save-node-content', nodePath, content),
+    quickAddTask: (projectFolder, payload) => ipcRenderer.invoke('project:quick-add-task', projectFolder, payload),
+    saveNodeProperties: (nodePath, properties) => ipcRenderer.invoke('project:save-node-properties', nodePath, properties),
+    listSavedViews: (projectFolder) => ipcRenderer.invoke('project:list-saved-views', projectFolder),
+    saveView: (projectFolder, view) => ipcRenderer.invoke('project:save-view', projectFolder, view),
+    deleteView: (projectFolder, viewId) => ipcRenderer.invoke('project:delete-view', projectFolder, viewId),
+    createPropertyMap: (projectFolder, options) => ipcRenderer.invoke('project:create-property-map', projectFolder, options),
+    detachMapReference: (mapPath, nodeId) => ipcRenderer.invoke('project:detach-map-reference', mapPath, nodeId),
+
+    exportNode: (nodePath, format) => ipcRenderer.invoke('project:export-node', nodePath, format),
+    exportProjectMarkdown: (projectFolder) => ipcRenderer.invoke('project:export-markdown', projectFolder),
+    importMarkdownFolder: (projectFolder) => ipcRenderer.invoke('project:import-markdown', projectFolder),
+    listNodeHistory: (nodePath) => ipcRenderer.invoke('project:list-node-history', nodePath),
+    getNodeHistoryVersion: (nodePath, historyId) => ipcRenderer.invoke('project:get-node-history-version', nodePath, historyId),
+    restoreNodeHistory: (nodePath, historyId) => ipcRenderer.invoke('project:restore-node-history', nodePath, historyId),
+    auditIntegrity: (projectFolder) => ipcRenderer.invoke('project:audit-integrity', projectFolder),
+    listBackups: (projectFolder, filePath) => ipcRenderer.invoke('project:list-backups', projectFolder, filePath || null),
+    restoreBackup: (projectFolder, backupId) => ipcRenderer.invoke('project:restore-backup', projectFolder, backupId),
+    captureWebSource: (projectFolder, payload) => ipcRenderer.invoke('project:capture-web-source', projectFolder, payload),
 
     getPisiDocument: (filePath) => ipcRenderer.invoke('project:get-pisi-document', filePath),
     deleteNodeFromMap: (nodePath) => ipcRenderer.invoke('project:delete-node-from-map', nodePath),
@@ -84,6 +102,11 @@ contextBridge.exposeInMainWorld('pisiProject', {
             ipcRenderer.removeListener('project:filesystem-changed', listener);
         };
     }
+});
+
+contextBridge.exposeInMainWorld('pisiClipboard', {
+    writeText: (value) => clipboard.writeText(String(value || '')),
+    readText: () => clipboard.readText()
 });
 
 const PISI_LANGUAGE_STORAGE_KEY = 'pisi.language';

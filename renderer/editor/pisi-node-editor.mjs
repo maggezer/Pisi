@@ -1,5 +1,19 @@
 import { registerModule } from "../core/module-registry.mjs";
 
+function dispatchPisiActiveNodeChanged(reason = 'update') {
+    const activeNode = activeModalNode || activeCenterNode || null;
+    document.dispatchEvent(new CustomEvent('pisi:active-node-changed', {
+        detail: {
+            reason,
+            path: activeNode?.path || null,
+            metadata: activeNode?.metadata || null,
+            source: activeModalNode
+                ? 'modal'
+                : (activeCenterNode ? 'center' : null)
+        }
+    }));
+}
+
 function sanitizePisiEditorHtml(html = '') {
     const wrapper = document.createElement('div');
     wrapper.innerHTML = String(html || '');
@@ -22,7 +36,17 @@ function sanitizePisiEditorHtml(html = '') {
         'data-pisi-todo-for',
         'data-pisi-todo-parent',
         'data-pisi-todo-repeat',
-        'data-pisi-todo-order'
+        'data-pisi-todo-order',
+        'data-pisi-todo-scheduled-at',
+        'data-pisi-todo-deadline',
+        'data-pisi-todo-reminder-at',
+        'data-pisi-todo-duration-minutes',
+        'data-pisi-todo-actual-minutes',
+        'data-pisi-todo-completion-offset-days',
+        'data-pisi-citation-source',
+        'data-pisi-citation-key',
+        'data-pisi-block-ref',
+        'data-pisi-node-title'
     ]);
     const allowedStyleProperties = new Set([
         'background-color',
@@ -256,6 +280,7 @@ async function openNodeModalFromBox(box) {
     closePisiTagMenu();
 
     overlay?.classList.add('visible');
+    dispatchPisiActiveNodeChanged('modal-open');
     requestAnimationFrame(() => {
         focusPisiEditorAtEnd(contentInput);
     });
@@ -339,6 +364,7 @@ async function closeNodeModalAndSave() {
         const returnFocus = activeModalNode.returnFocus;
         overlay?.classList.remove('visible');
         activeModalNode = null;
+        dispatchPisiActiveNodeChanged('modal-close');
         returnFocus?.focus?.({ preventScroll: true });
         return true;
     } catch (error) {
@@ -358,6 +384,7 @@ function closeNodeModalWithoutSaving() {
     if (contentInput) contentInput.innerHTML = '';
     if (titleInput) titleInput.value = '';
     activeModalNode = null;
+    dispatchPisiActiveNodeChanged('modal-close-without-save');
     closePisiTagMenu();
     returnFocus?.focus?.({ preventScroll: true });
 }
@@ -508,6 +535,7 @@ async function openCenterNodeEditor(nodeItem) {
         setPisiEditorContent(contentEditor, result.data?.content || '');
     }
 
+    dispatchPisiActiveNodeChanged('center-open');
     closePisiTagMenu();
 
     if (typeof bindPisiTagControls === 'function') {
@@ -607,6 +635,7 @@ async function performCurrentCenterNodeEditorSave() {
         if (Number(activeCenterNode.revision || 0) === saveRevision) {
             activeCenterNode.dirty = false;
         }
+        dispatchPisiActiveNodeChanged('center-save');
 
         if (typeof refreshActiveMapTreeBranch === 'function') {
             await refreshActiveMapTreeBranch();
@@ -645,6 +674,7 @@ function clearCenterNodeEditor() {
     }
 
     activeCenterNode = null;
+    dispatchPisiActiveNodeChanged('center-clear');
     closePisiTagMenu();
 }
 
@@ -684,6 +714,10 @@ Object.defineProperties(moduleApi, {
     "sanitizePisiEditorHtml": {
         enumerable: true,
         get() { return sanitizePisiEditorHtml; }
+    },
+    "dispatchPisiActiveNodeChanged": {
+        enumerable: true,
+        get() { return dispatchPisiActiveNodeChanged; }
     },
     "openNodeModalFromBox": {
         enumerable: true,

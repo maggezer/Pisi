@@ -26,6 +26,8 @@ export const PISI_TODO_REPEAT_OPTIONS = Object.freeze([
     Object.freeze({ value: 'daily', label: 'Her gün' }),
     Object.freeze({ value: 'weekdays', label: 'Hafta içi' }),
     Object.freeze({ value: 'weekly', label: 'Her hafta' }),
+    Object.freeze({ value: 'biweekly', label: 'İki haftada bir' }),
+    Object.freeze({ value: 'after-completion', label: 'Tamamlandıktan sonra' }),
     Object.freeze({ value: 'monthly', label: 'Her ay' })
 ]);
 
@@ -136,7 +138,12 @@ export function formatPisiTodoTag(priorityValue, isoDate) {
     return `todo.${priority}.${day}-${month}-${year}`;
 }
 
-export function getNextPisiTodoDate(finishDate, repeatValue, now = new Date()) {
+export function getNextPisiTodoDate(
+    finishDate,
+    repeatValue,
+    now = new Date(),
+    completionOffsetDays = 1
+) {
     const repeat = getPisiTodoRepeatOption(repeatValue).value;
     if (repeat === 'none') return null;
 
@@ -160,6 +167,20 @@ export function getNextPisiTodoDate(finishDate, repeatValue, now = new Date()) {
     if (repeat === 'weekly') {
         base.setDate(base.getDate() + 7);
         return base;
+    }
+
+    if (repeat === 'biweekly') {
+        base.setDate(base.getDate() + 14);
+        return base;
+    }
+
+    if (repeat === 'after-completion') {
+        const completionBase = new Date(now);
+        completionBase.setHours(0, 0, 0, 0);
+        completionBase.setDate(
+            completionBase.getDate() + Math.max(1, Number(completionOffsetDays) || 1)
+        );
+        return completionBase;
     }
 
     if (repeat === 'monthly') {
@@ -205,13 +226,15 @@ export function extractPisiTodoMetadataFromBlock(block, normalizeTag = normalize
     const todoParents = {};
     const todoRepeats = {};
     const todoOrders = {};
+    const todoCompletionOffsets = {};
     if (!block?.querySelectorAll) {
         return {
             todoStates,
             todoSources,
             todoParents,
             todoRepeats,
-            todoOrders
+            todoOrders,
+            todoCompletionOffsets
         };
     }
 
@@ -240,6 +263,10 @@ export function extractPisiTodoMetadataFromBlock(block, normalizeTag = normalize
         if (Number.isFinite(rawOrder)) {
             todoOrders[normalizedTag] = Math.max(0, Math.min(1000000, rawOrder));
         }
+        const rawOffset = Number(tagEl.dataset.pisiTodoCompletionOffsetDays);
+        if (Number.isFinite(rawOffset) && rawOffset > 0) {
+            todoCompletionOffsets[normalizedTag] = Math.max(1, Math.min(3650, rawOffset));
+        }
 
         const sourceEl = sourceElements.find((candidate) => {
             return normalize(candidate.dataset.pisiTodoFor || '') === normalizedTag;
@@ -256,7 +283,8 @@ export function extractPisiTodoMetadataFromBlock(block, normalizeTag = normalize
         todoSources,
         todoParents,
         todoRepeats,
-        todoOrders
+        todoOrders,
+        todoCompletionOffsets
     };
 }
 

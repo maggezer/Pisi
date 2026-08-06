@@ -787,8 +787,14 @@ function extractPisiTagBlocksFromHtmlDetailed({ html, nodePath, nodeTitle, mapPa
         );
         const tags = Array.from(new Set(extractPisiTagsFromBlock(block)));
         const doneTagElements = tagElements;
-        const { todoStates, todoSources, todoParents, todoRepeats, todoOrders } =
-            extractPisiTodoMetadataFromBlock(block, normalizePisiUserTag);
+        const {
+            todoStates,
+            todoSources,
+            todoParents,
+            todoRepeats,
+            todoOrders,
+            todoCompletionOffsets
+        } = extractPisiTodoMetadataFromBlock(block, normalizePisiUserTag);
         const doneFor = doneTagElements
             .filter((tagEl) => {
                 return normalizePisiUserTag(
@@ -816,7 +822,7 @@ function extractPisiTagBlocksFromHtmlDetailed({ html, nodePath, nodeTitle, mapPa
             mapTitle,
             tags,
             todoStates, todoSources, todoParents,
-            todoRepeats, todoOrders,
+            todoRepeats, todoOrders, todoCompletionOffsets,
             doneFor: Array.from(new Set(doneFor)),
             legacyDone: doneTagElements.some((tagEl) => {
                 return (

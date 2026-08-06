@@ -153,6 +153,12 @@ async function loadProject(folderPath) {
     const previousProjectFolder = window.currentProjectFolder;
 
     window.currentProjectFolder = folderPath;
+    if (
+        typeof invalidatePisiSearchIndex === 'function' &&
+        previousProjectFolder !== folderPath
+    ) {
+        invalidatePisiSearchIndex('project-change');
+    }
     updatePisiProjectTitle(folderPath);
 
     clearTimeout(centerNodeSaveTimer);

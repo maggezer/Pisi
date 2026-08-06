@@ -230,6 +230,19 @@
     ]
   },
   {
+    "module": "shell.commandCenter",
+    "path": "renderer/shell/pisi-command-center.mjs",
+    "bindings": [
+      "pisiCommandCenterState",
+      "ensurePisiCommandCenter",
+      "registerPisiCommandCenterPage",
+      "renderPisiCommandCenterPage",
+      "openPisiCommandCenter",
+      "closePisiCommandCenter",
+      "initializePisiCommandCenter"
+    ]
+  },
+  {
     "module": "shell.customizations",
     "path": "renderer/shell/pisi-customizations.mjs",
     "bindings": [
@@ -363,6 +376,7 @@
     "path": "renderer/editor/pisi-node-editor.mjs",
     "bindings": [
       "sanitizePisiEditorHtml",
+      "dispatchPisiActiveNodeChanged",
       "openNodeModalFromBox",
       "closeNodeModalAndSave",
       "closeNodeModalWithoutSaving",
@@ -515,6 +529,88 @@
       "setPisiMissionStatusInBlockFirstRelease",
       "savePisiMissionMutationFirstRelease",
       "setPisiMissionStatusFirstRelease"
+    ]
+  },
+  {
+    "module": "search.index",
+    "path": "renderer/search/pisi-search-index.mjs",
+    "bindings": [
+      "ensurePisiSearchIndex",
+      "invalidatePisiSearchIndex",
+      "refreshPisiSearchIndex",
+      "createPisiSearchDocumentRecord",
+      "getPisiSearchCurrentNodePath",
+      "getPisiSearchLiveIndex"
+    ]
+  },
+  {
+    "module": "search.global",
+    "path": "renderer/search/pisi-global-search.mjs",
+    "bindings": [
+      "openPisiGlobalSearch",
+      "closePisiGlobalSearch",
+      "openPisiSearchResult",
+      "focusPisiSearchMapBox",
+      "highlightPisiSearchEditorTarget"
+    ]
+  },
+  {
+    "module": "search.linksPanel",
+    "path": "renderer/search/pisi-links-panel.mjs",
+    "bindings": [
+      "installPisiLinksPanel",
+      "refreshPisiLinksPanel",
+      "schedulePisiLinksPanelRefresh"
+    ]
+  },
+  {
+    "module": "productivity.quickCapture",
+    "path": "renderer/productivity/pisi-quick-capture.mjs",
+    "bindings": [
+      "PISI_TASK_HUB_FILTERS",
+      "PISI_POSTPONE_PRESETS",
+      "pisiQuickCaptureState",
+      "collectPisiGlobalTasks",
+      "matchesPisiTaskHubFilter",
+      "formatPisiTaskMinutes",
+      "renderPisiTasksPage",
+      "postponePisiTask",
+      "initializePisiQuickCapture"
+    ]
+  },
+  {
+    "module": "data.structuredViews",
+    "path": "renderer/data/pisi-structured-views.mjs",
+    "bindings": [
+      "pisiStructuredViewState",
+      "createPisiPropertyRow",
+      "collectPisiPropertyRows",
+      "renderPisiNodeProperties",
+      "renderPisiBases",
+      "renderPisiStructuredPage",
+      "initializePisiStructuredViews"
+    ]
+  },
+  {
+    "module": "portability.panel",
+    "path": "renderer/portability/pisi-portability-panel.mjs",
+    "bindings": [
+      "makePisiSimpleDiff",
+      "showPisiHistoryPreview",
+      "renderPisiHistory",
+      "renderPisiPortabilityPage",
+      "initializePisiPortabilityPanel"
+    ]
+  },
+  {
+    "module": "research.panel",
+    "path": "renderer/research/pisi-research-panel.mjs",
+    "bindings": [
+      "getPisiResearchSourceDocuments",
+      "getPisiSelectedBlockReference",
+      "insertPisiResearchHtml",
+      "renderPisiResearchPage",
+      "initializePisiResearchPanel"
     ]
   },
   {

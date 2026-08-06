@@ -1,0 +1,61 @@
+'use strict';
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const Module = require('node:module');
+
+const originalLoad = Module._load;
+Module._load = function pisiTestElectronStub(request, parent, isMain) {
+    if (request === 'electron') {
+        return {
+            BrowserWindow: class BrowserWindow {},
+            dialog: {},
+            net: { fetch: async () => ({ ok: false, status: 500 }) }
+        };
+    }
+    return originalLoad.call(this, request, parent, isMain);
+};
+
+require('../main/functions/task-capture');
+require('../main/functions/structured-nodes');
+require('../main/functions/portability');
+require('../main/functions/research');
+
+Module._load = originalLoad;
+
+test('portability helpers emit Markdown and a real ZIP-based DOCX', () => {
+    assert.match(
+        globalThis.pisiHtmlToMarkdown('<h2>Başlık</h2><p><strong>Kalın</strong> metin</p>'),
+        /## Başlık[\s\S]*\*\*Kalın\*\*/
+    );
+    const docx = globalThis.makePisiDocxBuffer({
+        metadata: { title: 'Deneme' },
+        data: { content: '<p>İçerik</p>' }
+    });
+    assert.equal(Buffer.isBuffer(docx), true);
+    assert.equal(docx.subarray(0, 4).toString('hex'), '504b0304');
+    assert.ok(docx.includes(Buffer.from('word/document.xml')));
+});
+
+test('web metadata extracts source title, author, date and DOI', () => {
+    const meta = globalThis.extractPisiWebMeta(`
+        <html><head>
+        <title>Makale</title>
+        <meta name="author" content="Ada Lovelace">
+        <meta name="citation_publication_date" content="2026-08-06">
+        <meta name="citation_doi" content="10.1234/pisi.2026">
+        </head><body><p>Özet</p></body></html>
+    `, 'https://example.com');
+    assert.equal(meta.title, 'Makale');
+    assert.equal(meta.author, 'Ada Lovelace');
+    assert.equal(meta.publicationDate, '2026-08-06');
+    assert.equal(meta.doi, '10.1234/pisi.2026');
+});
+
+test('main roadmap domains register unique public bindings', () => {
+    const { modules } = require('../main/module-registry');
+    assert.ok(modules['main.taskCapture'].quickAddPisiTask);
+    assert.ok(modules['main.structuredNodes'].createPisiPropertyMap);
+    assert.ok(modules['main.portability'].restorePisiAtomicBackup);
+    assert.ok(modules['main.research'].capturePisiWebSource);
+});

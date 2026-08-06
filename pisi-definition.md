@@ -20,7 +20,8 @@ mevcut uygulama tarafından kullanılmaz.
 2. Sol panel: proje klasörleri, `.map` ve `.node` belgeleri.
 3. Orta araç çubukları: metin, Paint, Excel-benzeri tablo ve etiket araçları.
 4. Orta çalışma alanı: map veya sekmeli node editorü.
-5. Sağ panel: görevler, etiket araması ve görünüm özelleştirmeleri.
+5. Sağ panel: görevler, etiket araması, node bağlantıları ve görünüm
+   özelleştirmeleri.
 6. Takvim: sol/sağ panele dock edilebilir veya ekranda float olarak taşınabilir.
 
 ## `.node` dosyası
@@ -46,6 +47,20 @@ Basitleştirilmiş örnek:
       "downstream": []
     }
   },
+  "properties": {
+    "status": {
+      "id": "status",
+      "name": "Durum",
+      "type": "select",
+      "value": "Devam ediyor"
+    },
+    "priority": {
+      "id": "priority",
+      "name": "Öncelik",
+      "type": "number",
+      "value": 4
+    }
+  },
   "content": "<div class=\"pisi-editor-block\">Not içeriği</div>"
 }
 ```
@@ -57,6 +72,11 @@ metadata’larıyla saklanır.
 
 Standalone node için `parentMap` değeri `none`, günlük node’u için `diary`,
 map altındaki node için parent map kimliğidir.
+
+`properties` alanı proje geneli sorgulama içindir ve editör içindeki sheet
+tablosundan ayrıdır. Desteklenen türler `text`, `number`, `date`, `select`,
+`multiselect`, `node` ve `checkbox` değerleridir. Her özellik kararlı bir `id`,
+görünen `name`, `type` ve normalize edilmiş `value` taşır.
 
 ## `.map` dosyası
 
@@ -105,6 +125,11 @@ Basitleştirilmiş örnek:
 }
 ```
 
+Özellik görünümünden üretilen map’ler ayrıca proje köküne göre güvenli bağıl
+node yolları tutan `map.references` dizisine sahiptir. Bu girdiler görünüm
+referansıdır; map’ten kaldırılmaları kaynak `.node` dosyasını silmez. Map
+bağlantı portları referans node’larında kapalıdır.
+
 Bağlantı türleri:
 
 - `down-hub`: parent–child hiyerarşisi; child sol ağaçta parent altında görünür.
@@ -114,6 +139,33 @@ Bağlantı türleri:
 Bir child yalnızca bir hiyerarşik parent taşır. İkinci parent isteği kullanıcı
 onayıyla `stream` ilişkisine çevrilebilir. Self-loop, bozuk ID, duplicate edge
 ve hiyerarşi döngüleri kabul edilmez veya güvenli biçimde normalize edilir.
+
+## Global arama ve node ilişkileri
+
+Global indeks proje içindeki görünür klasörleri, standalone node’ları ve map
+sidecar’larındaki node’ları kapsar. Aranabilen alanlar:
+
+- node ve map başlığı,
+- editör blok metni,
+- görev kaynak metni ve görev etiketi,
+- kullanıcı etiketi,
+- tablo hücre metni,
+- proje köküne göre dosya yolu.
+
+İndeks türetilmiş ve geçicidir; kullanıcı dosyalarının yanında ayrı bir indeks
+dosyası oluşturmaz. Dosya sistemi değişikliğinde geçersiz sayılır. Map içindeki
+bir sonuç açıldığında önce map yüklenir, kamera node’u merkezler ve node modalı
+map bağlamı korunarak açılır. `Alt+Enter` yalnız map odağını uygular.
+
+Bağlantılar paneli üç ilişki kaynağını birleştirir:
+
+1. `[[Node Başlığı]]` biçimindeki doğrudan metin referansı,
+2. `.map` içindeki yönlü veya co-level bağlantı,
+3. node içindeki görev kaynağı.
+
+Başlığı düz metinde geçen fakat `[[...]]` referansı bulunmayan node’lar
+“bağlantısız bahsetme” olarak listelenir. İlişki indeksi kaynak `.node` ve
+`.map` belgelerini değiştirmez.
 
 ## Sidecar klasörleri
 
@@ -156,6 +208,53 @@ Görev etiketi:
 ilgili todo etiketini hedefler; tamamlanan görev sağ panelden yeniden
 açılabilir.
 
+Quick Add görev etiketi üzerinde aşağıdaki birbirinden ayrı alanları saklar:
+
+- `data-pisi-todo-scheduled-at`: planlanan yerel tarih veya tarih-saat,
+- `data-pisi-todo-deadline`: son tarih,
+- `data-pisi-todo-reminder-at`: hatırlatma anı,
+- `data-pisi-todo-duration-minutes`: tahmini süre,
+- `data-pisi-todo-actual-minutes`: gerçek harcanan süre,
+- `data-pisi-todo-completion-offset-days`: tamamlanmaya bağlı tekrar aralığı.
+
+Node seçilmeden yakalanan görevler `pisi.systemRole = "inbox"` olan proje
+kökü Inbox node’una eklenir. `biweekly` ve `after-completion` tekrar türleri
+mevcut günlük/haftalık/aylık türlerle birlikte desteklenir. Alt görev sistemi
+geri getirilmez; ayrıştırma ve planlama normal görev bloklarında çalışır.
+
+## Yerel geçmiş ve taşınabilirlik
+
+Node kaydından önce tam JSON sürümü aşağıdaki yapıda tutulur:
+
+```text
+.pisi-history/
+  <node-id>/
+    <epoch>-<iso-zaman>-<içerik-hash>.json
+```
+
+Aynı hash tekrar kaydedilmez ve node başına son 50 sürüm korunur. Geri yükleme
+öncesinde mevcut sürüm `before-restore` nedeni ile ayrıca yakalanır. Atomik
+`<belge>.pisi-backup` dosyası da kimlik doğrulamasından sonra aynı arayüzden
+geri yüklenebilir.
+
+Markdown klasörü içe aktarma klasör hiyerarşisini koruyarak yeni `.node`
+dosyaları oluşturur. Proje dışa aktarma node’ları frontmatter özellikleriyle
+Markdown’a, map verisini JSON’a yazar. Açık node ayrıca HTML, PDF ve gerçek
+OOXML/ZIP tabanlı DOCX olarak dışa aktarılabilir.
+
+## Kaynak node’ları ve blok referansları
+
+Web yakalama ile oluşturulan node `pisi.systemRole = "source"` taşır. URL,
+erişim tarihi, yazar, yayın tarihi, DOI, atıf anahtarı ve bibliyografya node
+özelliklerinde kalır. Sayfadan alınamayan metadata kullanıcı alanlarıyla
+tamamlanabilir; ağ hatası seçili metinle kaynak oluşturmayı engellemez.
+
+Editörün Word-benzeri davranışı korunurken üst seviye içerik blokları
+`data-pisi-block-id` alır. Bir referans `göreli/yol.node#block-id` biçimindedir.
+Alıntı blokları `data-pisi-citation-source`, `data-pisi-citation-key` ve
+isteğe bağlı `data-pisi-block-ref` taşır; kaynak yolu backlink indeksine dahil
+edilir.
+
 ## Veri güvenliği kuralları
 
 - Renderer yalnızca aktif projenin gerçek yolu altında işlem yapabilir.
@@ -166,5 +265,7 @@ açılabilir.
   uygular.
 - Map/node silme işlemi dosya ve sidecar’ı birlikte sistem çöp kutusuna taşır.
 - Bozuk/boş JSON otomatik olarak yeni boş dokümanla değiştirilmez.
+- Bütünlük denetimi bozuk JSON, yinelenen kimlik, eksik sidecar, kopuk map
+  referansı/yerleşimi ve bulunamayan edge uçlarını raporlar.
 - Uygulama kapanmadan ve proje değişmeden önce bekleyen editor kayıtları
   tamamlanır.
