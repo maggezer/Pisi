@@ -16,6 +16,19 @@ takvim işlevlerini tek bir proje klasöründe birleştirir.
 - `Ctrl+P` ile node, içerik, görev, etiket, map, tablo ve dosya yolu araması
 - Metin/map/görev ilişkilerini birleştiren backlink ve bağlantısız bahsetme paneli
 - Arama sonucundaki node’u kendi map’inde merkezleme ve vurgulama
+- `Ctrl+Shift+A` ile Global Quick Add, otomatik Inbox ve proje geneli
+  Inbox/Bugün/Yaklaşan/Geciken/Tarihsiz/Engellenen görünümleri
+- Türkçe doğal tarih ayrıştırma, hızlı erteleme, planlanan zaman, deadline,
+  hatırlatma ve tahmini/gerçek görev süresi
+- Metin, sayı, tarih, seçim, çoklu seçim, node bağlantısı ve onay kutusu
+  türlerinde node özellikleri
+- Özellikleri sorgulayan tablo/kart görünümleri, kaydedilebilir filtreler ve
+  sonuçlardan kaynak node’ları silmeden map üretme
+- Markdown klasörü içe aktarma; Markdown, HTML, PDF ve DOCX dışa aktarma
+- Son 50 node sürümünü tutan yerel geçmiş, önizleme/karşılaştırma, bütünlük
+  denetimi ve görünür yedek geri yükleme
+- URL metadata’sı, seçili metin ve ekran görüntüsünden Kaynak node’u; DOI,
+  bibliyografya, blok referansı ve içerik alıntısı
 - Günlük node’larıyla eşitlenen görevler ve sürüklenebilir/dock edilebilir takvim
 - Proje dışı yol erişimini engelleyen IPC sınırı ve HTML allowlist sanitizer
 - Atomik yazma, proje kilidi, kapanışta kayıt kuyruğunu boşaltma ve silmede
@@ -24,19 +37,21 @@ takvim işlevlerini tek bir proje klasöründe birleştirir.
 ## Kaynak yapısı
 
 ```text
-main.js                              Electron ana süreci, dosya/IPC işlemleri
-preload.js                           Sınırlı renderer köprüsü
-app.js                               Başlangıç, sekmeler ve editör araçları
-renderer/pisi-tree.js                Explorer ve proje yenileme
-renderer/pisi-map-workspace.js       Map/node çalışma alanı ve editör kayıtları
-renderer/pisi-map-connections.js     Bağlantılar, kamera, pan/zoom ve seçim
-renderer/pisi-tags.js                Blok, etiket ve görev sistemi
-renderer/pisi-calendar.js            Takvim ve günlük eşitlemesi
-renderer/pisi-node-modal.js          Modal klavye/focus davranışı
+main.js                              İnce Electron bootstrap
+main/functions/                      Dosya, görev, özellik, geçmiş ve IPC domainleri
+preload.js                           Sınırlı ve doğrulanmış renderer köprüsü
+renderer/bootstrap.mjs               Renderer ES module başlangıcı
+renderer/editor/                     Node, zengin metin, Paint ve sheet araçları
+renderer/map/                        Map çalışma alanı ve bağlantı davranışları
+renderer/tags/                       Blok, etiket ve görev sistemi
 renderer/search/pisi-search-core.mjs Arama puanlama ve ilişki modeli
 renderer/search/pisi-search-index.mjs Yerel proje arama indeksi
 renderer/search/pisi-global-search.mjs Hızlı geçiş penceresi ve map odağı
 renderer/search/pisi-links-panel.mjs Backlink/ilişki sağ paneli
+renderer/productivity/               Quick Add ve Türkçe tarih ayrıştırma
+renderer/data/                       Node özellikleri ve Bases-lite görünümleri
+renderer/portability/                Geçmiş, dışa aktarma ve kurtarma arayüzü
+renderer/research/                   Web yakalama, blok referansı ve alıntı akışı
 style.css                            Uygulama stilleri
 tests/                               Formül, yol güvenliği ve regresyon testleri
 ```
@@ -77,7 +92,37 @@ sistemi güncellendiğinde güvenli biçimde yeniden oluşturulur.
 
 Sağ paneldeki **Bağlantılar** sekmesi doğrudan `[[Node Başlığı]]` metin
 referanslarını, map oklarını, bağlantıya dönüştürülmemiş başlık bahsetmelerini,
-node görevlerini ve ortak map üyeliklerini birlikte gösterir.
+node görevlerini, kaynak alıntılarını ve ortak map üyeliklerini birlikte gösterir.
+
+## Çalışma merkezi
+
+Explorer başlığındaki pusula düğmesi veya `Ctrl+Shift+P`, dört sayfalı çalışma
+merkezini açar: **Görevler**, **Özellikler**, **Taşınabilirlik** ve
+**Araştırma**. `Ctrl+Shift+A` doğrudan Quick Add alanına gider. Bir node
+seçilmeden eklenen görev proje kökündeki sistem rollü `Inbox.node` dosyasına
+yazılır.
+
+Türkçe ayrıştırıcı; `yarın 14:00`, `cuma saat 3`, `her pazartesi`, `ayın son
+iş günü`, `iki haftada bir`, `görev tamamlandıktan üç gün sonra`, `15
+Ağustos’a kadar` ve `gelecek hafta ertele` gibi ifadeleri plan, deadline ve
+tekrar alanlarına ayırır.
+
+Özellik filtreleri `Durum:"Devam ediyor" Öncelik:>=4` gibi sorguları kabul
+eder. Filtreler proje kökündeki `.pisi-views.json` dosyasına kaydedilir.
+Filtre sonucundan üretilen map, kaynak node dosyalarını kopyalamaz; güvenli
+referanslar kullanır ve map’ten kaldırma kaynak node’u silmez.
+
+## Taşınabilirlik ve araştırma
+
+Her içerik değişikliğinden önce node’un tam JSON sürümü
+`.pisi-history/<node-id>/` altında saklanır ve son 50 sürüm korunur. Atomik
+`.pisi-backup` dosyaları çalışma merkezinden geri yüklenebilir. Geri yükleme
+öncesinde mevcut node ayrıca geçmişe alınır.
+
+Araştırma sayfası bir URL’den başlık, açıklama, yazar, yayın tarihi ve DOI
+metadata’sını alabilir; seçili metin ile isteğe bağlı ekran görüntüsünü aynı
+Kaynak node’una yazar. Editör blok kimlikleri görünmeden korunur ve
+`Node.node#block-id` referansları ile kaynak anahtarlı alıntılar eklenebilir.
 
 ## Paketleme
 
@@ -106,5 +151,5 @@ korunabilir. Bozuk JSON otomatik olarak boş içerikle ezilmez.
   tutulur; sidecar’a harici kaynak taşıma henüz yapılmamıştır.
 - macOS/Linux paket hedefleri, platform ikonları ve imzalama altyapısı henüz
   yapılandırılmamıştır.
-- Ana scriptler klasik global script olarak yüklenir; domain dosyalarına
-  ayrılmış olsalar da tam ES module dönüşümü tamamlanmamıştır.
+- Electron ana süreç domainleri CommonJS, renderer domainleri ES module olarak
+  çalışır; tek bir paket formatına tam dönüşüm yapılmamıştır.
