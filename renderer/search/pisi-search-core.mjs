@@ -217,9 +217,12 @@ export function buildPisiRelationshipModel(index, targetPath) {
         const directTitles = new Set(
             (documentRecord.directTitles || []).map(normalizePisiSearchText)
         );
+        const directPaths = new Set(
+            (documentRecord.directPaths || []).map(pisiSearchPathKey)
+        );
         const membership = documentRecord.memberships?.[0] || null;
 
-        if (directTitles.has(targetTitleKey)) {
+        if (directTitles.has(targetTitleKey) || directPaths.has(targetKey)) {
             addRelationship(
                 inbound,
                 documentKey,
@@ -260,6 +263,21 @@ export function buildPisiRelationshipModel(index, targetPath) {
                 linkedDocument,
                 linkedDocument.memberships?.[0],
                 ['text']
+            )
+        );
+    }
+
+    for (const directPath of targetDocument.directPaths || []) {
+        const linkedDocument = documents.get(pisiSearchPathKey(directPath));
+        if (!linkedDocument || linkedDocument.path === targetDocument.path) continue;
+        const linkedKey = pisiSearchPathKey(linkedDocument.path);
+        addRelationship(
+            outbound,
+            linkedKey,
+            makeNodeRelationship(
+                linkedDocument,
+                linkedDocument.memberships?.[0] || null,
+                ['citation']
             )
         );
     }
