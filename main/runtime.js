@@ -440,6 +440,47 @@ ipcMain.handle('project:delete-view', (_event, projectFolder, viewId) => {
     });
 });
 
+ipcMain.handle('project:list-database-templates', (_event, projectFolder) => {
+    return projectOperation(() => {
+        const safeProjectFolder = assertProjectPath(projectFolder, {
+            type: 'directory'
+        });
+        return readPisiDatabaseTemplates(safeProjectFolder);
+    });
+});
+
+ipcMain.handle('project:save-database-template', (_event, projectFolder, template) => {
+    return projectOperation(() => {
+        const safeProjectFolder = assertProjectPath(projectFolder, {
+            type: 'directory'
+        });
+        return savePisiDatabaseTemplate(safeProjectFolder, template || {});
+    });
+});
+
+ipcMain.handle('project:delete-database-template', (_event, projectFolder, templateId) => {
+    return projectOperation(() => {
+        const safeProjectFolder = assertProjectPath(projectFolder, {
+            type: 'directory'
+        });
+        return deletePisiDatabaseTemplate(safeProjectFolder, templateId);
+    });
+});
+
+ipcMain.handle('project:apply-database-template', (_event, nodePath, templateId, options) => {
+    return projectOperation(() => {
+        const safeNodePath = assertProjectPath(nodePath, {
+            type: 'file',
+            extensions: ['.node']
+        });
+        return applyPisiDatabaseTemplate(
+            safeNodePath,
+            templateId,
+            options || {}
+        );
+    });
+});
+
 ipcMain.handle('project:create-property-map', (_event, projectFolder, options) => {
     return projectOperation(() => {
         const safeProjectFolder = assertProjectPath(projectFolder, {
@@ -561,6 +602,42 @@ ipcMain.handle('project:capture-web-source', (_event, projectFolder, payload) =>
             type: 'directory'
         });
         return capturePisiWebSource(safeProjectFolder, payload || {});
+    });
+});
+
+ipcMain.handle('team:get-config', (_event, projectFolder) => {
+    return projectOperation(() => {
+        const safeProjectFolder = assertProjectPath(projectFolder, {
+            type: 'directory'
+        });
+        return readPisiTeamConfig(safeProjectFolder);
+    });
+});
+
+ipcMain.handle('team:save-config', (_event, projectFolder, config, options) => {
+    return projectOperation(() => {
+        const safeProjectFolder = assertProjectPath(projectFolder, {
+            type: 'directory'
+        });
+        return savePisiTeamConfig(safeProjectFolder, config || {}, options || {});
+    });
+});
+
+ipcMain.handle('team:list-events', (_event, projectFolder, options) => {
+    return projectOperation(() => {
+        const safeProjectFolder = assertProjectPath(projectFolder, {
+            type: 'directory'
+        });
+        return readPisiTeamEvents(safeProjectFolder, options || {});
+    });
+});
+
+ipcMain.handle('team:append-event', (_event, projectFolder, event) => {
+    return projectOperation(() => {
+        const safeProjectFolder = assertProjectPath(projectFolder, {
+            type: 'directory'
+        });
+        return appendPisiTeamEvent(safeProjectFolder, event || {});
     });
 });
 
