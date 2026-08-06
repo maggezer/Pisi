@@ -36,7 +36,17 @@ function sanitizePisiEditorHtml(html = '') {
         'data-pisi-todo-for',
         'data-pisi-todo-parent',
         'data-pisi-todo-repeat',
-        'data-pisi-todo-order'
+        'data-pisi-todo-order',
+        'data-pisi-todo-scheduled-at',
+        'data-pisi-todo-deadline',
+        'data-pisi-todo-reminder-at',
+        'data-pisi-todo-duration-minutes',
+        'data-pisi-todo-actual-minutes',
+        'data-pisi-todo-completion-offset-days',
+        'data-pisi-citation-source',
+        'data-pisi-citation-key',
+        'data-pisi-block-ref',
+        'data-pisi-node-title'
     ]);
     const allowedStyleProperties = new Set([
         'background-color',
