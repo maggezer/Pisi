@@ -142,6 +142,71 @@
     ]
   },
   {
+    "module": "main.taskCapture",
+    "path": "main/functions/task-capture.js",
+    "bindings": [
+      "escapePisiTaskHtml",
+      "normalizePisiTaskIso",
+      "pisiTodoTagFromCapture",
+      "findPisiInboxNode",
+      "getOrCreatePisiInboxNode",
+      "makePisiTaskCaptureBlock",
+      "quickAddPisiTask"
+    ]
+  },
+  {
+    "module": "main.structuredNodes",
+    "path": "main/functions/structured-nodes.js",
+    "bindings": [
+      "normalizePisiPropertyId",
+      "normalizePisiPropertyValue",
+      "normalizePisiProperties",
+      "savePisiNodeProperties",
+      "readPisiSavedViews",
+      "savePisiSavedView",
+      "deletePisiSavedView",
+      "createPisiPropertyMap",
+      "resolvePisiMapReference",
+      "collectPisiMapReferenceNodes",
+      "detachPisiMapReference"
+    ]
+  },
+  {
+    "module": "main.portability",
+    "path": "main/functions/portability.js",
+    "bindings": [
+      "decodePisiHtmlEntities",
+      "pisiHtmlToPlainText",
+      "pisiHtmlToMarkdown",
+      "pisiMarkdownToHtml",
+      "snapshotPisiNodeVersion",
+      "saveNodeContentWithHistory",
+      "listPisiNodeHistory",
+      "getPisiNodeHistoryVersion",
+      "restorePisiNodeHistoryVersion",
+      "makePisiDocxBuffer",
+      "exportPisiNodeDocument",
+      "exportPisiProjectMarkdown",
+      "importPisiMarkdownFolder",
+      "auditPisiProjectIntegrity",
+      "listPisiAtomicBackups",
+      "restorePisiAtomicBackup"
+    ]
+  },
+  {
+    "module": "main.research",
+    "path": "main/functions/research.js",
+    "bindings": [
+      "normalizePisiResearchUrl",
+      "extractPisiWebMeta",
+      "makePisiCitationKey",
+      "makePisiBibliography",
+      "makePisiSourceProperties",
+      "buildPisiSourceNodeContent",
+      "capturePisiWebSource"
+    ]
+  },
+  {
     "module": "main.electronIpc",
     "path": "main/functions/electron-ipc.js",
     "bindings": [
