@@ -1,6 +1,7 @@
 import { registerModule } from "../core/module-registry.mjs";
 import {
     PISI_SEARCH_FIELD_WEIGHTS,
+    buildPisiSearchAccelerator,
     pisiSearchPathKey
 } from "./pisi-search-core.mjs";
 
@@ -8,6 +9,38 @@ let pisiSearchIndexCache = null;
 let pisiSearchBuildPromise = null;
 let pisiSearchIndexGeneration = 0;
 let pisiSearchFileSystemUnsubscribe = null;
+const pisiSearchDocumentCache = new Map();
+
+function getPisiSearchMetadataSignature(rawNode = {}) {
+    const metadata = rawNode.metadata || rawNode.item?.metadata || {};
+    return [
+        metadata.id || '',
+        metadata.updatedAt || '',
+        metadata.title || '',
+        JSON.stringify(rawNode.properties || rawNode.item?.properties || {}).length
+    ].join('|');
+}
+
+function getPisiSearchDocumentSignature(rawNode = {}) {
+    const content = String(rawNode.content || '');
+    let sampleHash = 2166136261;
+    const step = Math.max(1, Math.floor(content.length / 512));
+    for (let index = 0; index < content.length; index += step) {
+        sampleHash ^= content.charCodeAt(index);
+        sampleHash = Math.imul(sampleHash, 16777619);
+    }
+    return `${getPisiSearchMetadataSignature(rawNode)}|${content.length}|${sampleHash >>> 0}`;
+}
+
+function yieldPisiSearchBuild() {
+    return new Promise((resolve) => {
+        if (typeof requestIdleCallback === 'function') {
+            requestIdleCallback(resolve, { timeout: 24 });
+        } else {
+            setTimeout(resolve, 0);
+        }
+    });
+}
 
 function cleanPisiSearchText(value = '') {
     return String(value || '').replace(/\s+/g, ' ').trim();
@@ -164,7 +197,37 @@ function extractPisiSearchContentBlocks(container) {
         ));
     }
 
-    const blocks = elements.slice(0, 1000).map((element, index) => {
+    const blocks = elements.slice(0, 5000).map((element, index) => {
+        const references = [];
+        element.querySelectorAll('[data-pisi-block-ref]').forEach((reference) => {
+            const raw = String(reference.dataset.pisiBlockRef || '').trim();
+            const separator = raw.lastIndexOf('#');
+            if (separator > 0 && separator < raw.length - 1) {
+                references.push({
+                    raw,
+                    target: raw.slice(0, separator),
+                    blockId: raw.slice(separator + 1).replace(/^\^/, ''),
+                    kind: 'reference'
+                });
+            }
+        });
+        const sourceText = String(element.textContent || '');
+        for (const match of sourceText.matchAll(/\[\[([^\]\n#]+)#\^?([^\]\n]+)\]\]/g)) {
+            references.push({
+                raw: match[0],
+                target: cleanPisiSearchText(match[1]),
+                blockId: cleanPisiSearchText(match[2]),
+                kind: 'link'
+            });
+        }
+        for (const match of sourceText.matchAll(/\(\((blk_[A-Za-z0-9_-]+)\)\)/g)) {
+            references.push({
+                raw: match[0],
+                target: '',
+                blockId: match[1],
+                kind: 'mention'
+            });
+        }
         const clone = element.cloneNode(true);
         clone.querySelectorAll(
             'table, canvas, .pisi-user-tag, .pisi-todo-source'
@@ -172,6 +235,9 @@ function extractPisiSearchContentBlocks(container) {
         return {
             text: cleanPisiSearchText(clone.textContent || ''),
             blockId: element.getAttribute('data-pisi-block-id') || null,
+            blockType: element.getAttribute('data-pisi-block-type') ||
+                element.tagName.toLowerCase(),
+            references,
             order: index
         };
     }).filter((block) => block.text);
@@ -495,9 +561,21 @@ async function scanPisiSearchFolder(folderPath, context) {
 }
 
 async function hydratePisiStandaloneNodes(rawNodes, context) {
-    const pending = Array.from(rawNodes.values()).filter((node) => {
-        return !node.content && !node.memberships.length;
-    });
+    const pending = [];
+    for (const node of rawNodes.values()) {
+        if (node.content || node.memberships.length) continue;
+        const cached = pisiSearchDocumentCache.get(pisiSearchPathKey(node.path));
+        if (
+            cached &&
+            cached.metadataSignature === getPisiSearchMetadataSignature(node)
+        ) {
+            node.content = cached.document.html;
+            node.metadata = cached.document.metadata;
+            node.properties = cached.document.properties;
+        } else {
+            pending.push(node);
+        }
+    }
 
     for (let offset = 0; offset < pending.length; offset += 12) {
         if (context.generation !== pisiSearchIndexGeneration) return;
@@ -534,7 +612,9 @@ async function buildPisiSearchIndex(projectFolder, generation) {
         rawNodes: new Map(),
         maps: [],
         complete: true,
-        errors: []
+        errors: [],
+        parsedDocuments: 0,
+        reusedDocuments: 0
     };
 
     await scanPisiSearchFolder(projectFolder, context);
@@ -568,14 +648,51 @@ async function buildPisiSearchIndex(projectFolder, generation) {
         });
     }
 
+    let documentOffset = 0;
+    const seenDocumentKeys = new Set();
     for (const rawNode of context.rawNodes.values()) {
-        const documentRecord = createPisiSearchDocumentRecord(
-            rawNode,
-            projectFolder
-        );
+        const key = pisiSearchPathKey(rawNode.path);
+        seenDocumentKeys.add(key);
+        const signature = getPisiSearchDocumentSignature(rawNode);
+        const cached = pisiSearchDocumentCache.get(key);
+        let documentRecord;
+        if (cached?.signature === signature) {
+            documentRecord = {
+                ...cached.document,
+                metadata: rawNode.metadata || cached.document.metadata,
+                properties: rawNode.properties || cached.document.properties,
+                nodeItem: {
+                    ...cached.document.nodeItem,
+                    ...(rawNode.item || {})
+                },
+                memberships: Array.isArray(rawNode.memberships)
+                    ? rawNode.memberships
+                    : []
+            };
+            context.reusedDocuments += 1;
+        } else {
+            documentRecord = createPisiSearchDocumentRecord(rawNode, projectFolder);
+            context.parsedDocuments += 1;
+        }
+        pisiSearchDocumentCache.set(key, {
+            signature,
+            metadataSignature: getPisiSearchMetadataSignature(rawNode),
+            document: documentRecord
+        });
         documents.set(pisiSearchPathKey(documentRecord.path), documentRecord);
         records.push(...createPisiSearchRecordsForDocument(documentRecord));
+        documentOffset += 1;
+        if (documentOffset % 120 === 0) await yieldPisiSearchBuild();
+        if (generation !== pisiSearchIndexGeneration) return null;
     }
+
+    if (context.complete) {
+        for (const key of pisiSearchDocumentCache.keys()) {
+            if (!seenDocumentKeys.has(key)) pisiSearchDocumentCache.delete(key);
+        }
+    }
+
+    const accelerator = buildPisiSearchAccelerator(records);
 
     return {
         projectFolder,
@@ -585,7 +702,14 @@ async function buildPisiSearchIndex(projectFolder, generation) {
         errors: context.errors,
         maps: context.maps,
         documents,
-        records
+        records,
+        accelerator,
+        performance: {
+            parsedDocuments: context.parsedDocuments,
+            reusedDocuments: context.reusedDocuments,
+            recordCount: records.length,
+            gramCount: accelerator.gramCount
+        }
     };
 }
 
@@ -635,13 +759,26 @@ async function ensurePisiSearchIndex(options = {}) {
     return promise;
 }
 
-function invalidatePisiSearchIndex(reason = 'filesystem') {
+function invalidatePisiSearchIndex(reason = 'filesystem', changedPaths = []) {
+    const paths = Array.isArray(changedPaths) ? changedPaths.filter(Boolean) : [];
+    if (reason === 'project') {
+        pisiSearchDocumentCache.clear();
+    } else {
+        for (const changedPath of paths) {
+            const changedKey = pisiSearchPathKey(changedPath);
+            for (const key of pisiSearchDocumentCache.keys()) {
+                if (key === changedKey || key.startsWith(changedKey + '/')) {
+                    pisiSearchDocumentCache.delete(key);
+                }
+            }
+        }
+    }
     pisiSearchIndexGeneration += 1;
     pisiSearchIndexCache = null;
     pisiSearchBuildPromise = null;
     document.dispatchEvent(new CustomEvent(
         'pisi:search-index-invalidated',
-        { detail: { reason } }
+        { detail: { reason, changedPaths: paths } }
     ));
 }
 
@@ -697,15 +834,32 @@ function getPisiSearchLiveIndex(index, targetPath) {
     return {
         ...index,
         documents,
-        records
+        records,
+        accelerator: buildPisiSearchAccelerator(records)
+    };
+}
+
+function getPisiSearchCacheStats() {
+    return {
+        documents: pisiSearchDocumentCache.size,
+        generation: pisiSearchIndexGeneration,
+        building: Boolean(pisiSearchBuildPromise)
     };
 }
 
 function bindPisiSearchIndexInvalidation() {
     if (pisiSearchFileSystemUnsubscribe) return;
     pisiSearchFileSystemUnsubscribe =
-        window.pisiProject?.onFileSystemChanged?.(() => {
-            invalidatePisiSearchIndex('filesystem');
+        window.pisiProject?.onFileSystemChanged?.((payload = {}) => {
+            const paths = Array.isArray(payload.changedPaths)
+                ? payload.changedPaths.filter(Boolean)
+                : [];
+            const relevant = paths.filter((changedPath) => {
+                const extension = String(changedPath).match(/\.[A-Za-z0-9]+$/)?.[0]?.toLowerCase();
+                return !extension || extension === '.node' || extension === '.map';
+            });
+            if (paths.length && !relevant.length) return;
+            invalidatePisiSearchIndex('filesystem', relevant);
         }) || null;
 }
 
@@ -738,6 +892,18 @@ Object.defineProperties(moduleApi, {
     getPisiSearchLiveIndex: {
         enumerable: true,
         get() { return getPisiSearchLiveIndex; }
+    },
+    getPisiSearchCacheStats: {
+        enumerable: true,
+        get() { return getPisiSearchCacheStats; }
+    },
+    getPisiSearchMetadataSignature: {
+        enumerable: true,
+        get() { return getPisiSearchMetadataSignature; }
+    },
+    getPisiSearchDocumentSignature: {
+        enumerable: true,
+        get() { return getPisiSearchDocumentSignature; }
     }
 });
 registerModule('search.index', moduleApi);
@@ -748,5 +914,8 @@ export {
     refreshPisiSearchIndex,
     createPisiSearchDocumentRecord,
     getPisiSearchCurrentNodePath,
-    getPisiSearchLiveIndex
+    getPisiSearchLiveIndex,
+    getPisiSearchCacheStats,
+    getPisiSearchMetadataSignature,
+    getPisiSearchDocumentSignature
 };
