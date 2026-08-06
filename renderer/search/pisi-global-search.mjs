@@ -332,11 +332,13 @@ function setPisiSearchSelectedIndex(state, nextIndex, scroll = true) {
 function handlePisiSearchInputKeydown(state, event) {
     if (event.key === 'ArrowDown') {
         event.preventDefault();
+        event.stopPropagation();
         setPisiSearchSelectedIndex(state, state.selectedIndex + 1);
         return;
     }
     if (event.key === 'ArrowUp') {
         event.preventDefault();
+        event.stopPropagation();
         setPisiSearchSelectedIndex(state, state.selectedIndex - 1);
         return;
     }
@@ -344,6 +346,7 @@ function handlePisiSearchInputKeydown(state, event) {
         const result = state.matches[state.selectedIndex];
         if (!result) return;
         event.preventDefault();
+        event.stopPropagation();
         void openPisiSearchResult(result, {
             mapOnly: event.altKey
         });
@@ -351,6 +354,7 @@ function handlePisiSearchInputKeydown(state, event) {
     }
     if (event.key === 'Escape') {
         event.preventDefault();
+        event.stopPropagation();
         closePisiGlobalSearch();
     }
 }
