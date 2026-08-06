@@ -20,6 +20,7 @@ require('../main/functions/task-capture');
 require('../main/functions/structured-nodes');
 require('../main/functions/portability');
 require('../main/functions/research');
+require('../main/functions/team-api');
 
 Module._load = originalLoad;
 
@@ -35,6 +36,12 @@ test('portability helpers emit Markdown and a real ZIP-based DOCX', () => {
     assert.equal(Buffer.isBuffer(docx), true);
     assert.equal(docx.subarray(0, 4).toString('hex'), '504b0304');
     assert.ok(docx.includes(Buffer.from('word/document.xml')));
+    assert.match(
+        globalThis.pisiHtmlToMarkdown(
+            '<div class="pisi-editor-block" data-pisi-block-type="task"><span class="pisi-block-task-marker">☑</span> Bitir</div>'
+        ),
+        /- \[x\] Bitir/
+    );
 });
 
 test('web metadata extracts source title, author, date and DOI', () => {
@@ -58,4 +65,32 @@ test('main roadmap domains register unique public bindings', () => {
     assert.ok(modules['main.structuredNodes'].createPisiPropertyMap);
     assert.ok(modules['main.portability'].restorePisiAtomicBackup);
     assert.ok(modules['main.research'].capturePisiWebSource);
+    assert.ok(modules['main.structuredNodes'].applyPisiDatabaseTemplate);
+    assert.ok(modules['main.teamApi'].appendPisiTeamEvent);
+});
+
+test('relation, rollup ve team verileri sınırlı biçimde normalize edilir', () => {
+    assert.deepEqual(
+        globalThis.normalizePisiPropertyValue('relation', ['A.node', 'A.node', 'B.node']),
+        ['A.node', 'B.node']
+    );
+    assert.deepEqual(
+        globalThis.normalizePisiPropertyValue('rollup', {
+            relationProperty: 'Görevler',
+            targetProperty: 'Efor',
+            aggregate: 'sum'
+        }),
+        {
+            relationProperty: 'gorevler',
+            targetProperty: 'efor',
+            aggregate: 'sum',
+            separator: ', '
+        }
+    );
+    const config = globalThis.normalizePisiTeamConfig({
+        name: 'Araştırma',
+        members: [{ name: 'Ada', role: 'editor' }]
+    });
+    assert.equal(config.members[0].name, 'Ada');
+    assert.equal(globalThis.getPisiTeamCapabilities().realtimeSync, false);
 });
