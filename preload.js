@@ -67,6 +67,10 @@ contextBridge.exposeInMainWorld('pisiProject', {
     listSavedViews: (projectFolder) => ipcRenderer.invoke('project:list-saved-views', projectFolder),
     saveView: (projectFolder, view) => ipcRenderer.invoke('project:save-view', projectFolder, view),
     deleteView: (projectFolder, viewId) => ipcRenderer.invoke('project:delete-view', projectFolder, viewId),
+    listDatabaseTemplates: (projectFolder) => ipcRenderer.invoke('project:list-database-templates', projectFolder),
+    saveDatabaseTemplate: (projectFolder, template) => ipcRenderer.invoke('project:save-database-template', projectFolder, template),
+    deleteDatabaseTemplate: (projectFolder, templateId) => ipcRenderer.invoke('project:delete-database-template', projectFolder, templateId),
+    applyDatabaseTemplate: (nodePath, templateId, options) => ipcRenderer.invoke('project:apply-database-template', nodePath, templateId, options || {}),
     createPropertyMap: (projectFolder, options) => ipcRenderer.invoke('project:create-property-map', projectFolder, options),
     detachMapReference: (mapPath, nodeId) => ipcRenderer.invoke('project:detach-map-reference', mapPath, nodeId),
 
@@ -107,6 +111,26 @@ contextBridge.exposeInMainWorld('pisiProject', {
 contextBridge.exposeInMainWorld('pisiClipboard', {
     writeText: (value) => clipboard.writeText(String(value || '')),
     readText: () => clipboard.readText()
+});
+
+contextBridge.exposeInMainWorld('pisiTeamTransport', {
+    getConfig: (projectFolder) => ipcRenderer.invoke('team:get-config', projectFolder),
+    saveConfig: (projectFolder, config, options) => ipcRenderer.invoke(
+        'team:save-config',
+        projectFolder,
+        config,
+        options || {}
+    ),
+    listEvents: (projectFolder, options) => ipcRenderer.invoke(
+        'team:list-events',
+        projectFolder,
+        options || {}
+    ),
+    appendEvent: (projectFolder, event) => ipcRenderer.invoke(
+        'team:append-event',
+        projectFolder,
+        event
+    )
 });
 
 const PISI_LANGUAGE_STORAGE_KEY = 'pisi.language';
