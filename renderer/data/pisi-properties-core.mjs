@@ -5,7 +5,20 @@ const PISI_NODE_PROPERTY_TYPES = Object.freeze([
     Object.freeze({ value: 'select', label: 'Seçim' }),
     Object.freeze({ value: 'multiselect', label: 'Çoklu seçim' }),
     Object.freeze({ value: 'node', label: 'Node bağlantısı' }),
-    Object.freeze({ value: 'checkbox', label: 'Onay kutusu' })
+    Object.freeze({ value: 'checkbox', label: 'Onay kutusu' }),
+    Object.freeze({ value: 'relation', label: 'Relation' }),
+    Object.freeze({ value: 'rollup', label: 'Rollup' })
+]);
+
+const PISI_ROLLUP_AGGREGATES = Object.freeze([
+    Object.freeze({ value: 'count', label: 'Kayıt sayısı' }),
+    Object.freeze({ value: 'sum', label: 'Toplam' }),
+    Object.freeze({ value: 'average', label: 'Ortalama' }),
+    Object.freeze({ value: 'min', label: 'En küçük' }),
+    Object.freeze({ value: 'max', label: 'En büyük' }),
+    Object.freeze({ value: 'unique', label: 'Benzersiz değerler' }),
+    Object.freeze({ value: 'join', label: 'Birleştir' }),
+    Object.freeze({ value: 'checked-percent', label: 'İşaretli yüzdesi' })
 ]);
 
 function normalizePisiPropertySearch(value = '') {
@@ -34,6 +47,122 @@ function normalizePisiPropertyCollection(properties = {}) {
         value: property?.value,
         system: property?.system === true
     })).filter((property) => property.id && property.name);
+}
+
+function pisiPropertyPathKey(value = '') {
+    return String(value || '')
+        .replace(/[\\/]+/g, '/')
+        .replace(/\/+$/g, '')
+        .toLocaleLowerCase('en-US');
+}
+
+function resolvePisiRelationDocuments(property, documents = []) {
+    if (property?.type !== 'relation') return [];
+    const values = Array.isArray(property.value)
+        ? property.value
+        : String(property.value || '').split(',');
+    const records = Array.from(documents || []);
+    const resolved = [];
+    const seen = new Set();
+    for (const rawValue of values) {
+        const value = String(rawValue || '').trim();
+        if (!value) continue;
+        const pathKey = pisiPropertyPathKey(value);
+        const textKey = normalizePisiPropertySearch(value.replace(/\.node$/i, ''));
+        const match = records.find((documentRecord) => {
+            return [
+                documentRecord.path,
+                documentRecord.relativePath,
+                documentRecord.fileName,
+                documentRecord.metadata?.id
+            ].some((candidate) => pisiPropertyPathKey(candidate) === pathKey) ||
+                normalizePisiPropertySearch(documentRecord.title) === textKey;
+        });
+        if (match && !seen.has(pisiPropertyPathKey(match.path))) {
+            seen.add(pisiPropertyPathKey(match.path));
+            resolved.push(match);
+        }
+    }
+    return resolved;
+}
+
+function getPisiRollupTargetValues(relatedDocuments, targetProperty) {
+    const target = normalizePisiPropertySearch(targetProperty);
+    const values = [];
+    for (const documentRecord of relatedDocuments) {
+        const property = normalizePisiPropertyCollection(documentRecord.properties)
+            .find((item) => {
+                return normalizePisiPropertySearch(item.id) === target ||
+                    normalizePisiPropertySearch(item.name) === target;
+            });
+        if (!property) continue;
+        if (Array.isArray(property.value)) values.push(...property.value);
+        else values.push(property.value);
+    }
+    return values.filter((value) => value !== null && value !== undefined && value !== '');
+}
+
+function aggregatePisiRollupValues(values = [], aggregate = 'count', separator = ', ') {
+    if (aggregate === 'count') return values.length;
+    if (aggregate === 'checked-percent') {
+        if (!values.length) return 0;
+        return Math.round((values.filter((value) => value === true || value === 'true').length / values.length) * 100);
+    }
+    if (aggregate === 'unique') {
+        return Array.from(new Set(values.map((value) => String(value))));
+    }
+    if (aggregate === 'join') return values.map(String).join(separator || ', ');
+    const numbers = values.map(Number).filter(Number.isFinite);
+    if (!numbers.length) return null;
+    if (aggregate === 'sum') return numbers.reduce((sum, value) => sum + value, 0);
+    if (aggregate === 'average') {
+        return numbers.reduce((sum, value) => sum + value, 0) / numbers.length;
+    }
+    if (aggregate === 'min') return Math.min(...numbers);
+    if (aggregate === 'max') return Math.max(...numbers);
+    return values.length;
+}
+
+function computePisiRollupValue(documentRecord, property, documents = []) {
+    if (property?.type !== 'rollup') return property?.value;
+    const config = property.value && typeof property.value === 'object'
+        ? property.value
+        : {};
+    const relationId = normalizePisiPropertySearch(config.relationProperty || '');
+    const relation = normalizePisiPropertyCollection(documentRecord?.properties)
+        .find((item) => {
+            return item.type === 'relation' && (
+                normalizePisiPropertySearch(item.id) === relationId ||
+                normalizePisiPropertySearch(item.name) === relationId
+            );
+        });
+    if (!relation) return null;
+    const related = resolvePisiRelationDocuments(relation, documents);
+    if (config.aggregate === 'count' && !config.targetProperty) return related.length;
+    const values = getPisiRollupTargetValues(related, config.targetProperty || '');
+    return aggregatePisiRollupValues(
+        values,
+        config.aggregate || 'count',
+        config.separator || ', '
+    );
+}
+
+function materializePisiDatabaseDocuments(documents = []) {
+    const records = Array.from(documents || []);
+    return records.map((documentRecord) => {
+        const properties = Object.fromEntries(
+            normalizePisiPropertyCollection(documentRecord.properties).map((property) => {
+                if (property.type !== 'rollup') return [property.id, property];
+                return [property.id, {
+                    ...property,
+                    rollup: property.value,
+                    value: computePisiRollupValue(documentRecord, property, records),
+                    derived: true
+                }];
+            })
+        );
+        return { ...documentRecord, properties };
+    });
 }
 
 function parsePisiPropertyQuery(query = '') {
@@ -151,12 +280,17 @@ function collectPisiPropertyColumns(documents = []) {
 
 export {
     PISI_NODE_PROPERTY_TYPES,
+    PISI_ROLLUP_AGGREGATES,
+    aggregatePisiRollupValues,
     collectPisiPropertyColumns,
+    computePisiRollupValue,
     filterPisiPropertyDocuments,
     getPisiDocumentPropertyValue,
     matchesPisiPropertyClause,
     matchesPisiPropertyQuery,
+    materializePisiDatabaseDocuments,
     normalizePisiPropertyCollection,
     normalizePisiPropertySearch,
-    parsePisiPropertyQuery
+    parsePisiPropertyQuery,
+    resolvePisiRelationDocuments
 };
