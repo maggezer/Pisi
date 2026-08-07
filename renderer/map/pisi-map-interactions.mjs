@@ -1,4 +1,10 @@
 import { registerModule } from "../core/module-registry.mjs";
+import {
+    collectPisiCollapsedHubNodeIds,
+    isPisiHierarchyEdge,
+    isPisiMapEdgeHiddenByCollapsedHub,
+    makePisiCollapsedHubPortKey
+} from "./pisi-map-collapse-core.mjs";
 
 function getTreeItemDisplayName(item) {
     if (!item) return '';
@@ -50,11 +56,7 @@ function getConnectionDataFromEvent(event) {
 }
 
 function isHierarchyEdge(edge) {
-    return (
-        edge?.type === 'down-hub' &&
-        edge?.sourceRole === 'down-hub' &&
-        edge?.targetRole === 'up-hub'
-    );
+    return isPisiHierarchyEdge(edge);
 }
 
 function getCollapsedHubPortSet() {
@@ -74,7 +76,7 @@ function getCollapsedHubPortSet() {
 }
 
 function makeCollapsedHubPortKey(nodeId, port) {
-    return `${nodeId || ''}::${port || 'right'}`;
+    return makePisiCollapsedHubPortKey(nodeId, port);
 }
 
 function hasOutgoingHubEdgesFromPort(nodeId, port) {
@@ -85,11 +87,36 @@ function hasOutgoingHubEdgesFromPort(nodeId, port) {
     });
 }
 
-function isHubEdgeCollapsed(edge) {
-    if (!isHierarchyEdge(edge)) return false;
+function collectCollapsedHubNodeIds() {
+    return collectPisiCollapsedHubNodeIds(
+        activeMapEdges,
+        getCollapsedHubPortSet()
+    );
+}
 
-    return getCollapsedHubPortSet().has(
-        makeCollapsedHubPortKey(edge.sourceId, edge.sourcePort || 'right')
+function syncCollapsedHubNodeVisibility() {
+    const hiddenNodeIds = collectCollapsedHubNodeIds();
+
+    document.querySelectorAll('.map-node-box[data-node-id]').forEach((box) => {
+        const shouldHide = hiddenNodeIds.has(String(box.dataset.nodeId || ''));
+        box.classList.toggle('pisi-hub-descendant-hidden', shouldHide);
+
+        if (shouldHide) {
+            box.classList.remove('selected', 'dragging');
+            box.setAttribute('aria-hidden', 'true');
+        } else {
+            box.removeAttribute('aria-hidden');
+        }
+    });
+
+    return hiddenNodeIds;
+}
+
+function isHubEdgeCollapsed(edge, hiddenNodeIds = collectCollapsedHubNodeIds()) {
+    return isPisiMapEdgeHiddenByCollapsedHub(
+        edge,
+        hiddenNodeIds,
+        getCollapsedHubPortSet()
     );
 }
 
@@ -535,7 +562,9 @@ function rectContainsRect(outer, inner) {
 function applyMapBoxSelection(selectionRect) {
     clearSelectedMapNodes();
 
-    const boxes = Array.from(document.querySelectorAll('.map-node-box'));
+    const boxes = Array.from(document.querySelectorAll(
+        '.map-node-box:not(.pisi-hub-descendant-hidden)'
+    ));
 
     for (const box of boxes) {
         const boxRect = box.getBoundingClientRect();
@@ -741,6 +770,14 @@ Object.defineProperties(moduleApi, {
     "hasOutgoingHubEdgesFromPort": {
         enumerable: true,
         get() { return hasOutgoingHubEdgesFromPort; }
+    },
+    "collectCollapsedHubNodeIds": {
+        enumerable: true,
+        get() { return collectCollapsedHubNodeIds; }
+    },
+    "syncCollapsedHubNodeVisibility": {
+        enumerable: true,
+        get() { return syncCollapsedHubNodeVisibility; }
     },
     "isHubEdgeCollapsed": {
         enumerable: true,
