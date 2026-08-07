@@ -38,6 +38,10 @@ document.addEventListener('keydown', (event) => {
 
     const WEEKDAY_NAMES = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 
+    function translatePisiCalendarText(value) {
+        return window.pisiI18n?.translate?.(value) ?? String(value ?? '');
+    }
+
     let calendarDragState = null;
     let calendarStateProjectKey = null;
     const lastDiarySyncSignatureByProject = new Map();
@@ -109,7 +113,7 @@ document.addEventListener('keydown', (event) => {
                 y: Number(saved?.y ?? 140),
                 month: Number(saved?.month ?? today.getMonth()),
                 year: Number(saved?.year ?? today.getFullYear()),
-                selectedDate: saved?.selectedDate || toIsoDate(today),
+                selectedDate: null,
                 diaryDates: []
             };
         }
@@ -142,8 +146,7 @@ document.addEventListener('keydown', (event) => {
                     x: state.x,
                     y: state.y,
                     month: state.month,
-                    year: state.year,
-                    selectedDate: state.selectedDate
+                    year: state.year
                 })
             );
         } catch {
@@ -488,18 +491,37 @@ document.addEventListener('keydown', (event) => {
         const monthLabel = calendar.querySelector('.pisi-calendar-month-label');
         const weekdaysEl = calendar.querySelector('.pisi-calendar-weekdays');
         const daysEl = calendar.querySelector('.pisi-calendar-days');
+        const previousButton = calendar.querySelector('[data-calendar-action="prev"]');
+        const nextButton = calendar.querySelector('[data-calendar-action="next"]');
+        const todayButton = calendar.querySelector('[data-calendar-action="today"]');
         const diaryDates = new Set(Array.isArray(state.diaryDates) ? state.diaryDates : []);
 
-
-        if (monthLabel) {
-            monthLabel.textContent = `${MONTH_NAMES[state.month]} ${state.year}`;
+        if (previousButton) {
+            previousButton.title = translatePisiCalendarText('Önceki ay');
         }
 
-        if (weekdaysEl && weekdaysEl.dataset.rendered !== '1') {
-            weekdaysEl.innerHTML = WEEKDAY_NAMES
-                .map((name) => `<div class="pisi-calendar-weekday">${name}</div>`)
-                .join('');
-            weekdaysEl.dataset.rendered = '1';
+        if (nextButton) {
+            nextButton.title = translatePisiCalendarText('Sonraki ay');
+        }
+
+        if (todayButton) {
+            todayButton.textContent = translatePisiCalendarText('Bugün');
+        }
+
+        if (monthLabel) {
+            const monthName = MONTH_NAMES[state.month] || '';
+            monthLabel.textContent = `${translatePisiCalendarText(monthName)} ${state.year}`.trim();
+        }
+
+        if (weekdaysEl) {
+            const weekdayElements = WEEKDAY_NAMES.map((name) => {
+                const weekday = document.createElement('div');
+                weekday.className = 'pisi-calendar-weekday';
+                weekday.textContent = translatePisiCalendarText(name);
+                return weekday;
+            });
+
+            weekdaysEl.replaceChildren(...weekdayElements);
         }
 
         if (!daysEl) return;
@@ -632,10 +654,20 @@ document.addEventListener('keydown', (event) => {
             sidecarPath: result.sidecarPath || null
         };
 
+        let opened = false;
+
         if (typeof openPisiFileTab === 'function') {
             await openPisiFileTab(nodeItem);
+            opened = true;
         } else if (typeof openCenterNodeEditor === 'function') {
             await openCenterNodeEditor(nodeItem);
+            opened = true;
+        }
+
+        if (opened && getCalendarState() === state && state.selectedDate === isoDate) {
+            state.selectedDate = null;
+            saveCalendarStateToStorage();
+            renderCalendar();
         }
     }
 
@@ -838,6 +870,12 @@ document.addEventListener('keydown', (event) => {
 
     document.addEventListener('DOMContentLoaded', () => {
         setupPisiCalendar();
+    });
+
+    document.addEventListener('pisi:language-changed', () => {
+        if (document.getElementById('pisi-calendar')) {
+            renderCalendar();
+        }
     });
 })();
 
