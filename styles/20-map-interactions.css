@@ -28,6 +28,16 @@
     transform: scale(1.25);
 }
 
+.map-node-box .map-port.hub-collapsed {
+    opacity: 1;
+    background: var(--pisi-map-downhub-color);
+    box-shadow: 0 0 0 3px rgba(243, 156, 18, 0.28);
+}
+
+.map-node-box.pisi-hub-descendant-hidden {
+    display: none;
+}
+
 #map-connections marker {
     overflow: visible;
 }

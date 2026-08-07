@@ -619,8 +619,8 @@ function collectMapLayout() {
         id: box.dataset.nodeId,
         x: parseFloat(box.style.left || '0'),
         y: parseFloat(box.style.top || '0'),
-        width: box.offsetWidth,
-        height: box.offsetHeight
+        width: box.offsetWidth || parseFloat(box.style.width || '220'),
+        height: box.offsetHeight || parseFloat(box.style.height || '92')
     }));
 }
 
