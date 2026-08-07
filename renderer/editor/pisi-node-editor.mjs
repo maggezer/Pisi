@@ -213,17 +213,24 @@ function sanitizePisiEditorHtml(html = '') {
     return wrapper.innerHTML;
 }
 
-function focusPisiEditorAtEnd(editor) {
+function clearPisiEditorCaret(editor) {
     if (!editor) return;
-    editor.focus({ preventScroll: true });
+
+    const activeElement = document.activeElement;
+    if (activeElement === editor || editor.contains(activeElement)) {
+        activeElement?.blur?.();
+    }
+
     const selection = window.getSelection?.();
-    if (!selection) return;
-    const range = document.createRange();
-    range.selectNodeContents(editor);
-    range.collapse(false);
-    selection.removeAllRanges();
-    selection.addRange(range);
-    editor.scrollTop = editor.scrollHeight;
+    if (!selection?.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    if (
+        editor.contains(range.startContainer) ||
+        editor.contains(range.endContainer)
+    ) {
+        selection.removeAllRanges();
+    }
 }
 
 async function openNodeModalFromBox(box) {
@@ -275,6 +282,7 @@ async function openNodeModalFromBox(box) {
         }
 
         setPisiEditorContent(contentInput, result.data.content || '');
+        clearPisiEditorCaret(contentInput);
         refreshPisiTagsPanelSoon();
     }
 
@@ -282,9 +290,6 @@ async function openNodeModalFromBox(box) {
 
     overlay?.classList.add('visible');
     dispatchPisiActiveNodeChanged('modal-open');
-    requestAnimationFrame(() => {
-        focusPisiEditorAtEnd(contentInput);
-    });
     return true;
 }
 
@@ -335,6 +340,7 @@ async function closeNodeModalAndSave() {
             }
         }
 
+        suppressNextFileSystemRefresh(3000);
         const saveResult = await window.pisiProject?.saveNodeContent?.(
             nodePath,
             content
@@ -534,6 +540,7 @@ async function openCenterNodeEditor(nodeItem) {
 
     if (contentEditor) {
         setPisiEditorContent(contentEditor, result.data?.content || '');
+        clearPisiEditorCaret(contentEditor);
     }
 
     dispatchPisiActiveNodeChanged('center-open');
@@ -546,10 +553,6 @@ async function openCenterNodeEditor(nodeItem) {
     if (typeof bindPisiBlockIndexControls === 'function') {
         bindPisiBlockIndexControls();
     }
-
-    setTimeout(() => {
-        focusPisiEditorAtEnd(contentEditor);
-    }, 0);
 
     return true;
 }
@@ -622,6 +625,7 @@ async function performCurrentCenterNodeEditorSave() {
             }
         }
 
+        suppressNextFileSystemRefresh(3000);
         const saveResult = await window.pisiProject?.saveNodeContent?.(
             nodePath,
             content
