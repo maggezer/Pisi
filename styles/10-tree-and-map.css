@@ -369,7 +369,7 @@
 
 .map-edge {
     fill: none;
-    stroke-width: 2.5px;
+    stroke-width: var(--pisi-map-edge-stroke-width, 2.5px);
     pointer-events: none;
     stroke-linecap: round;
     stroke-linejoin: round;
