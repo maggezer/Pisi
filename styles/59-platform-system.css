@@ -47,12 +47,43 @@
 
 .pisi-block-task-marker {
     display: inline-grid;
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     place-items: center;
-    color: var(--accent-color);
+    vertical-align: -3px;
+    color: transparent;
+    background: color-mix(in srgb, var(--panel-bg) 86%, black);
+    border: 1px solid color-mix(in srgb, var(--muted-text-color) 70%, transparent);
+    border-radius: 5px;
+    font-size: 0;
     cursor: pointer;
     user-select: none;
+}
+
+.pisi-block-task-marker[aria-checked="true"] {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.pisi-block-task-marker[aria-checked="true"]::after {
+    content: "✓";
+    color: #fff;
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.pisi-block-task-marker:hover,
+.pisi-block-task-marker:focus-visible {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 20%, transparent);
+    outline: none;
+}
+
+.pisi-user-tag.pisi-task-metadata,
+.pisi-user-tag[data-pisi-tag="done"],
+.pisi-user-tag[data-pisi-tag^="todo."] {
+    display: none;
 }
 
 .pisi-block-slash-menu {

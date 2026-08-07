@@ -147,6 +147,21 @@
     margin-right: 0;
 }
 
+.pisi-toolbar-section-styles .pisi-toolbar-style-grid {
+    grid-template-columns: repeat(3, 26px);
+}
+
+.pisi-toolbar-todo-icon {
+    width: 16px;
+    height: 16px;
+    display: grid;
+    place-items: center;
+    color: #f39c12;
+    font-size: 17px;
+    line-height: 1;
+    pointer-events: none;
+}
+
 .pisi-toolbar-section-drawing .pisi-toolbar-draw-grid {
     grid-template-columns: repeat(2, 44px);
     justify-content: start;

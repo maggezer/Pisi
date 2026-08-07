@@ -220,12 +220,13 @@ function createPisiDoneTagElement(todoTag) {
     const tagEl = document.createElement('span');
     const normalizedTodoTag = normalizePisiUserTag(todoTag);
 
-    tagEl.className = 'pisi-user-tag';
+    tagEl.className = 'pisi-user-tag pisi-task-metadata';
     tagEl.dataset.pisiTag = 'done';
     if (normalizedTodoTag) {
         tagEl.dataset.pisiDoneFor = normalizedTodoTag;
     }
     tagEl.contentEditable = 'false';
+    tagEl.setAttribute('aria-hidden', 'true');
     tagEl.textContent = 'done';
 
     return tagEl;
@@ -356,6 +357,8 @@ function setPisiMissionCompletionInBlock(block, mission, completed) {
         ? appendPisiDoneTagToBlock(block, mission.todoTag)
         : removePisiDoneTagFromBlock(block, mission.todoTag);
 
+    window.syncPisiTodoBlockMarkers?.(block);
+
     return {
         changed,
         previousHtml
@@ -370,6 +373,7 @@ function rollbackPisiMissionBlock(block, previousHtml) {
     if (typeof initializePisiAdvancedEditorContent === 'function') {
         initializePisiAdvancedEditorContent(block);
     }
+    window.syncPisiTodoBlockMarkers?.(block);
 }
 
 async function setPisiMissionCompletion(mission, completed) {

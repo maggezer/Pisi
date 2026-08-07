@@ -95,6 +95,7 @@
       "getPisiUnifiedToolbarActiveTable",
       "runPisiUnifiedTextCommand",
       "insertPisiToolbarSymbol",
+      "openPisiToolbarTodo",
       "syncPisiUnifiedToolbarContext",
       "bindPisiUnifiedToolbarEvents",
       "setupPisiUnifiedToolbar"
@@ -464,6 +465,11 @@
       "markPisiMissionDone",
       "reopenPisiMission",
       "PISI_SYSTEM_TAGS",
+      "isPisiTodoCommand",
+      "isPisiDoneCommand",
+      "buildPisiTodoPriorityItems",
+      "openPisiTodoPriorityMenu",
+      "openPisiTodoDateMenu",
       "bindPisiTagControls",
       "bindPisiTagControlsForEditor",
       "updatePisiTagMenuForEditor",
@@ -530,6 +536,22 @@
       "setPisiMissionStatusInBlockFirstRelease",
       "savePisiMissionMutationFirstRelease",
       "setPisiMissionStatusFirstRelease"
+    ]
+  },
+  {
+    "module": "tags.todoBlocks",
+    "path": "renderer/tags/pisi-todo-blocks.mjs",
+    "bindings": [
+      "normalizePisiTodoBlockTag",
+      "getPisiTodoTagFromBlock",
+      "isPisiTodoBlockCompleted",
+      "ensurePisiTodoBlockMarker",
+      "syncPisiTodoBlockMarkers",
+      "setPisiTodoBlockCompletion",
+      "applyPisiTodoTagToEditor",
+      "createPisiTodoBlockCommand",
+      "openPisiTodoPickerForEditor",
+      "applyPisiDoneCommandToEditor"
     ]
   },
   {
@@ -757,12 +779,14 @@
     "path": "renderer/editor/pisi-block-editor.mjs",
     "bindings": [
       "PISI_BLOCK_TYPES",
+      "PISI_BLOCK_SLASH_COMMANDS",
       "pisiBlocksEditorState",
       "pisiBlockMarkdownToHtml",
       "pisiBlockHtmlToMarkdown",
       "getPisiBlockType",
       "getPisiActiveBlocksEditor",
       "getPisiActiveBlock",
+      "hydratePisiBlockTaskMarker",
       "decoratePisiBlockTypes",
       "applyPisiBlockType",
       "movePisiBlock",

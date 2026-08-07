@@ -3,7 +3,8 @@ import {
     PISI_TODO_PRIORITY_OPTIONS,
     formatPisiTodoTag,
     getPisiTodoPriorityOption,
-    getPisiTodayIsoDate
+    getPisiTodayIsoDate,
+    parsePisiTodoTagValue
 } from "./pisi-todo-utils.mjs";
 async function markPisiMissionDone(mission) {
     return setPisiMissionCompletion(mission, true);
@@ -20,6 +21,10 @@ const PISI_SYSTEM_TAGS = [
 
 function isPisiTodoCommand(command) {
     return String(command?.body || '').trim().toLowerCase() === 'todo';
+}
+
+function isPisiDoneCommand(command) {
+    return String(command?.body || '').trim().toLowerCase() === 'done';
 }
 
 function buildPisiTodoPriorityItems() {
@@ -101,9 +106,14 @@ function openPisiTodoDateMenu(editor, priorityValue, commandOverride = null) {
 
         dateInput?.setCustomValidity('');
 
-        if (command.sourceSelection === true) {
+        const applied = window.applyPisiTodoTagToEditor?.(
+            editor,
+            todoTag,
+            command
+        );
+        if (!applied && command.sourceSelection === true) {
             applyPisiTodoSelectionToEditor(editor, todoTag, command);
-        } else {
+        } else if (!applied) {
             applyPisiUserTagToEditor(editor, todoTag, command);
         }
     };
@@ -222,10 +232,23 @@ function bindPisiTagControlsForEditor(editor) {
         // Örnek: ..hayvan[space] => mavi tag chip.
         if (event.key === ' ') {
             const command = getPisiEditorCommandAtCaret(editor);
+            const parsedTodo = parsePisiTodoTagValue(command?.body);
+
+            if (parsedTodo) {
+                event.preventDefault();
+                window.applyPisiTodoTagToEditor?.(editor, parsedTodo.tag, command);
+                return;
+            }
 
             if (isPisiTodoCommand(command)) {
                 event.preventDefault();
                 openPisiTodoPriorityMenu(editor, command);
+                return;
+            }
+
+            if (isPisiDoneCommand(command)) {
+                event.preventDefault();
+                window.applyPisiDoneCommandToEditor?.(editor, command);
                 return;
             }
 
@@ -293,6 +316,20 @@ function updatePisiTagMenuForEditor(editor, allowExactTransform) {
 
     if (isPisiTodoCommand(command)) {
         openPisiTodoPriorityMenu(editor, command);
+        return;
+    }
+
+    if (isPisiDoneCommand(command)) {
+        openPisiTagMenuForEditor(editor, {
+            ...command,
+            items: [{
+                kind: 'todo-done',
+                id: 'done',
+                label: 'done',
+                typedToken: `${command.trigger}done`,
+                description: 'Görevi tamamla'
+            }]
+        });
         return;
     }
 
@@ -379,6 +416,16 @@ function buildPisiTagMenuItems(command) {
         });
     }
 
+    if (!body.includes('.') && 'done'.startsWith(lowerBody)) {
+        items.push({
+            kind: 'todo-done',
+            id: 'done',
+            label: 'done',
+            typedToken: `${command.trigger}done`,
+            description: 'Görevi tamamla'
+        });
+    }
+
     const systemItems = PISI_SYSTEM_TAGS
         .filter((item) => {
             if (body.includes('.')) return false;
@@ -396,7 +443,7 @@ function buildPisiTagMenuItems(command) {
     items.push(...systemItems);
 
     const userItems = collectPisiUserTagSuggestions(command.editor)
-        .filter((tag) => !/^todo(?:\.|$)/i.test(tag))
+        .filter((tag) => !/^(?:todo(?:\.|$)|done$)/i.test(tag))
         .filter((tag) => {
             if (!body) return true;
             return tag.toLowerCase().startsWith(lowerBody);
@@ -528,6 +575,11 @@ function applyPisiTagMenuItem(editor, item) {
 
     if (item.kind === 'todo-priority') {
         openPisiTodoDateMenu(editor, item.priority, command);
+        return;
+    }
+
+    if (item.kind === 'todo-done') {
+        window.applyPisiDoneCommandToEditor?.(editor, command);
         return;
     }
 
@@ -813,6 +865,26 @@ Object.defineProperties(moduleApi, {
     "PISI_SYSTEM_TAGS": {
         enumerable: true,
         get() { return PISI_SYSTEM_TAGS; }
+    },
+    "isPisiTodoCommand": {
+        enumerable: true,
+        get() { return isPisiTodoCommand; }
+    },
+    "isPisiDoneCommand": {
+        enumerable: true,
+        get() { return isPisiDoneCommand; }
+    },
+    "buildPisiTodoPriorityItems": {
+        enumerable: true,
+        get() { return buildPisiTodoPriorityItems; }
+    },
+    "openPisiTodoPriorityMenu": {
+        enumerable: true,
+        get() { return openPisiTodoPriorityMenu; }
+    },
+    "openPisiTodoDateMenu": {
+        enumerable: true,
+        get() { return openPisiTodoDateMenu; }
     },
     "bindPisiTagControls": {
         enumerable: true,

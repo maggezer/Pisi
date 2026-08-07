@@ -38,9 +38,15 @@ test('portability helpers emit Markdown and a real ZIP-based DOCX', () => {
     assert.ok(docx.includes(Buffer.from('word/document.xml')));
     assert.match(
         globalThis.pisiHtmlToMarkdown(
-            '<div class="pisi-editor-block" data-pisi-block-type="task"><span class="pisi-block-task-marker">☑</span> Bitir</div>'
+            '<div class="pisi-editor-block" data-pisi-block-type="task"><span class="pisi-block-task-marker">☑</span> Bitir<span class="pisi-user-tag pisi-task-metadata" data-pisi-tag="todo.4.07-08-2026">todo.4.07-08-2026</span><span class="pisi-user-tag pisi-task-metadata" data-pisi-tag="done">done</span></div>'
         ),
         /- \[x\] Bitir/
+    );
+    assert.doesNotMatch(
+        globalThis.pisiHtmlToMarkdown(
+            '<p>Bitir<span class="pisi-user-tag" data-pisi-tag="todo.4.07-08-2026">todo.4.07-08-2026</span></p>'
+        ),
+        /todo\.4|done/
     );
 });
 
