@@ -186,3 +186,19 @@ test('map ok uçları ve çizgileri node zoom oranını izler', () => {
     );
     assert.match(html, /markerUnits="strokeWidth"/);
 });
+
+test('günlük takvimi açılan günü seçili bırakmaz ve dil değişikliğini izler', () => {
+    const runtime = read('renderer/runtime.mjs');
+    const styles = read('styles/50-tags-and-missions.css');
+
+    assert.match(runtime, /function translatePisiCalendarText\(value\)/);
+    assert.match(runtime, /monthLabel\.textContent = `\$\{translatePisiCalendarText\(monthName\)\} \$\{state\.year\}`/);
+    assert.match(runtime, /weekday\.textContent = translatePisiCalendarText\(name\)/);
+    assert.match(runtime, /todayButton\.textContent = translatePisiCalendarText\('Bugün'\)/);
+    assert.match(runtime, /document\.addEventListener\('pisi:language-changed'/);
+    assert.match(runtime, /opened && getCalendarState\(\) === state && state\.selectedDate === isoDate/);
+    assert.match(runtime, /state\.selectedDate = null;\s*saveCalendarStateToStorage\(\);\s*renderCalendar\(\);/);
+    assert.doesNotMatch(runtime, /selectedDate: state\.selectedDate/);
+    assert.match(styles, /\.pisi-calendar-footer \{[\s\S]*?justify-content: center;/);
+    assert.match(styles, /\.pisi-calendar-today-btn \{[\s\S]*?flex: 0 0 auto;[\s\S]*?width: fit-content;/);
+});
