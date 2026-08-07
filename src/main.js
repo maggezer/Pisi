@@ -16,8 +16,11 @@ import {
   getCalendarMonth,
   shiftCalendarCursor
 } from './calendar-utils.js';
-import { columnName, evaluateSheet } from './spreadsheet.js';
+import { columnName, evaluateSheet, FORMULA_CATALOG } from './spreadsheet.js';
 import { escapeHtml, htmlToText, sanitizeRichHtml } from './sanitize.js';
+import { bindPisiBlocks, insertTodoAtSelection, serializeBlocks } from './blocks.js';
+import { PlatformController } from './platform-ui.js';
+import { parseTurkishDate } from './date-parser.js';
 import {
   initializeNativeShell,
   lightHaptic,
@@ -33,11 +36,15 @@ const root = document.querySelector('#app');
 const NAV_ITEMS = [
   { id: 'notes', icon: '⌂', label: 'Notlar' },
   { id: 'maps', icon: '⌘', label: 'Haritalar' },
+  { id: 'tasks', icon: '✓', label: 'Görevler' },
   { id: 'calendar', icon: '□', label: 'Takvim' },
   { id: 'settings', icon: '◉', label: 'Ayarlar' }
 ];
 
-const WEEKDAYS = ['Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct', 'Pz'];
+const WEEKDAYS = {
+  tr: ['Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct', 'Pz'],
+  en: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
+};
 
 function normalizeDocument(document) {
   const sheet = document.sheet || {};
@@ -46,6 +53,11 @@ function normalizeDocument(document) {
     ...createDocument(document.kind || 'note'),
     ...document,
     content: sanitizeRichHtml(document.content || '<p><br></p>'),
+    blocks: Array.isArray(document.blocks) ? document.blocks : [],
+    tags: Array.isArray(document.tags) ? document.tags : [],
+    properties: document.properties && typeof document.properties === 'object' ? document.properties : {},
+    relations: Array.isArray(document.relations) ? document.relations : [],
+    sources: Array.isArray(document.sources) ? document.sources : [],
     sheet: {
       rows: Math.max(6, Number(sheet.rows) || 12),
       cols: Math.max(4, Number(sheet.cols) || 6),
@@ -54,6 +66,7 @@ function normalizeDocument(document) {
     canvas: {
       nodes: Array.isArray(canvas.nodes) ? canvas.nodes : [],
       edges: Array.isArray(canvas.edges) ? canvas.edges : [],
+      collapsedAnchors: Array.isArray(canvas.collapsedAnchors) ? canvas.collapsedAnchors : [],
       camera: {
         x: Number(canvas.camera?.x) || 0,
         y: Number(canvas.camera?.y) || 0,
@@ -66,15 +79,18 @@ function normalizeDocument(document) {
 function formatDate(value) {
   const date = new Date(value);
   const today = new Date();
+  const locale = document.documentElement.lang === 'en' ? 'en-US' : 'tr-TR';
   if (date.toDateString() === today.toDateString()) {
-    return date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
   }
-  return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+  return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
 }
 
 function kindLabel(kind) {
   if (kind === 'journal') return 'Günlük';
   if (kind === 'canvas') return 'Harita';
+  if (kind === 'source') return 'Kaynak';
+  if (kind === 'database') return 'Veritabanı';
   return 'Not';
 }
 
@@ -99,7 +115,7 @@ function debounce(callback, delay = 450) {
   return wrapped;
 }
 
-class KediApp {
+class PisiApp {
   constructor() {
     this.route = 'notes';
     this.returnRoute = 'notes';
@@ -109,6 +125,7 @@ class KediApp {
     this.editorTab = 'write';
     this.theme = 'system';
     this.calendarType = 'gregorian';
+    this.locale = 'tr';
     this.calendarCursor = createCalendarCursor('gregorian');
     this.selectedMapNode = null;
     this.connectFrom = null;
@@ -117,6 +134,7 @@ class KediApp {
     this.drawTool = 'pen';
     this.drawColor = '#e99a2e';
     this.drawWidth = 4;
+    this.platform = new PlatformController(this);
     this.saveActiveDebounced = debounce(() => this.saveActive(), 500);
   }
 
@@ -124,10 +142,13 @@ class KediApp {
     try {
       this.theme = await getSetting('theme', 'system');
       this.calendarType = await getSetting('calendarType', 'gregorian');
+      this.locale = await getSetting('locale', 'tr');
+      document.documentElement.lang = this.locale;
       this.calendarCursor = createCalendarCursor(this.calendarType);
       this.applyTheme();
       await initializeNativeShell(resolveTheme(this.theme));
       this.documents = (await seedDatabase()).map(normalizeDocument);
+      await this.platform.init();
       await this.bindNativeBack();
       this.render();
     } catch (error) {
@@ -135,7 +156,7 @@ class KediApp {
       root.innerHTML = `
         <main class="fatal-screen">
           <div class="cat-orbit">!</div>
-          <h1>KEDI açılamadı</h1>
+          <h1>Pisi açılamadı</h1>
           <p>${escapeHtml(error?.message || 'Bilinmeyen bir hata oluştu.')}</p>
           <button class="primary-button" onclick="location.reload()">Yeniden dene</button>
         </main>
@@ -194,6 +215,7 @@ class KediApp {
     this.editorTab = 'write';
     this.sheetSelection = 'A1';
     this.route = found.kind === 'canvas' ? 'map' : 'editor';
+    await this.platform.prepareDocument(id);
     this.render();
   }
 
@@ -207,7 +229,8 @@ class KediApp {
     if (!this.activeDocument) return;
     this.activeDocument.updatedAt = new Date().toISOString();
     this.activeDocument.content = sanitizeRichHtml(this.activeDocument.content);
-    await putDocument(structuredClone(this.activeDocument));
+    this.activeDocument = normalizeDocument(await putDocument(structuredClone(this.activeDocument)));
+    await this.platform.syncDocumentTasks(this.activeDocument);
 
     const index = this.documents.findIndex(({ id }) => id === this.activeDocument.id);
     if (index >= 0) this.documents[index] = normalizeDocument(structuredClone(this.activeDocument));
@@ -237,6 +260,8 @@ class KediApp {
     if (this.route === 'editor') return this.renderEditor();
     if (this.route === 'map') return this.renderMapEditor();
     if (this.route === 'maps') return this.renderMaps();
+    if (this.route === 'tasks') return this.platform.renderTasks();
+    if (this.route === 'data') return this.platform.renderData();
     if (this.route === 'calendar') return this.renderCalendar();
     if (this.route === 'settings') return this.renderSettings();
     return this.renderNotes();
@@ -244,6 +269,8 @@ class KediApp {
 
   shell({ title, eyebrow = '', actions = '', content, fab = '', route = this.route }) {
     root.innerHTML = `
+      <div class="responsive-layout">
+        ${this.platform.railTemplate(route)}
       <div class="app-shell">
         <header class="page-header">
           <div>
@@ -263,6 +290,8 @@ class KediApp {
           `).join('')}
         </nav>
       </div>
+      ${this.platform.inspectorTemplate(route)}
+      </div>
     `;
     this.bindShell();
   }
@@ -274,6 +303,7 @@ class KediApp {
         this.navigate(button.dataset.route);
       });
     });
+    this.platform.bindChrome();
   }
 
   renderNotes() {
@@ -296,9 +326,9 @@ class KediApp {
       `;
 
     this.shell({
-      title: 'KEDI',
+      title: 'Pisi',
       eyebrow: 'Sessizce düzenle',
-      actions: '<button class="round-button" data-route="settings" aria-label="Ayarlar">◉</button>',
+      actions: '<button class="round-button" data-platform-search aria-label="Global arama">⌕</button><button class="round-button" data-route="settings" aria-label="Ayarlar">◉</button>',
       content: `
         <section class="welcome-strip">
           <div>
@@ -459,7 +489,7 @@ class KediApp {
     this.bindDocumentCards('maps');
   }
 
-  async createMap() {
+  async createMap(options = {}) {
     const centerNode = {
       id: makeId('node'),
       title: 'Ana fikir',
@@ -468,27 +498,30 @@ class KediApp {
       y: 440
     };
     const document = normalizeDocument(createDocument('canvas', {
-      canvas: {
+      title: options.title || 'Yeni Fikir Haritası',
+      canvas: options.canvas || {
         nodes: [centerNode],
         edges: [],
+        collapsedAnchors: [],
         camera: { x: -500, y: -330, zoom: 1 }
       }
     }));
     await putDocument(document);
     this.documents.unshift(document);
     await successHaptic();
-    this.openDocument(document.id, 'maps');
+    if (options.open !== false) this.openDocument(document.id, 'maps');
+    return document;
   }
 
   renderCalendar() {
     let month;
     try {
-      month = getCalendarMonth(this.calendarType, this.calendarCursor);
+      month = getCalendarMonth(this.calendarType, this.calendarCursor, this.locale);
     } catch (error) {
       console.error(error);
       this.calendarType = 'gregorian';
       this.calendarCursor = createCalendarCursor('gregorian');
-      month = getCalendarMonth('gregorian', this.calendarCursor);
+      month = getCalendarMonth('gregorian', this.calendarCursor, this.locale);
     }
     const journalDates = new Set(
       this.documents.filter(({ kind }) => kind === 'journal').map(({ dateKey }) => dateKey)
@@ -525,7 +558,7 @@ class KediApp {
             <h2>${escapeHtml(month.title)}</h2>
             <button id="month-next" aria-label="Sonraki ay">›</button>
           </div>
-          <div class="weekdays">${WEEKDAYS.map((day) => `<span>${day}</span>`).join('')}</div>
+          <div class="weekdays">${WEEKDAYS[this.locale].map((day) => `<span>${day}</span>`).join('')}</div>
           <div class="calendar-grid">${blanks}${days}</div>
           <p class="calendar-hint"><i></i> Noktalı günlerde bir günlük notu var.</p>
         </section>
@@ -597,7 +630,7 @@ class KediApp {
       content: `
         <section class="settings-profile">
           <div class="settings-logo"><span></span><i></i></div>
-          <div><strong>KEDI Mobile</strong><span>Yerel, sakin ve çevrimdışı.</span></div>
+          <div><strong>Pisi Mobile</strong><span>Yerel, sakin ve çevrimdışı.</span></div>
         </section>
         <section class="settings-group">
           <h2>Görünüm</h2>
@@ -612,6 +645,13 @@ class KediApp {
           </div>
         </section>
         <section class="settings-group">
+          <h2>Dil / Language</h2>
+          <div class="segmented-control language-control">
+            <button class="${this.locale === 'tr' ? 'active' : ''}" data-locale="tr">Türkçe</button>
+            <button class="${this.locale === 'en' ? 'active' : ''}" data-locale="en">English</button>
+          </div>
+        </section>
+        <section class="settings-group">
           <h2>Varsayılan takvim</h2>
           <label class="setting-row">
             <span><strong>Takvim motoru</strong><small>Günlük ekranında ilk açılacak takvim</small></span>
@@ -621,6 +661,14 @@ class KediApp {
               <option value="lunar" ${this.calendarType === 'lunar' ? 'selected' : ''}>Çin</option>
             </select>
           </label>
+        </section>
+        <section class="settings-group">
+          <h2>Çalışma alanı</h2>
+          <button class="setting-action standalone" data-route="data">
+            <span class="setting-icon">▦</span>
+            <span><strong>Veri, araştırma ve API</strong><small>Özellikler, görünümler, kaynaklar, dışa aktarma, eklentiler ve Team</small></span>
+            <b>›</b>
+          </button>
         </section>
         <section class="settings-group">
           <h2>Verilerin</h2>
@@ -635,14 +683,14 @@ class KediApp {
           </button>
           <button class="setting-action" id="import-button">
             <span class="setting-icon">⇩</span>
-            <span><strong>Yedeği geri yükle</strong><small>Bir KEDI yedek dosyası seç</small></span>
+            <span><strong>Yedeği geri yükle</strong><small>Bir Pisi 3 yedek dosyası seç</small></span>
             <b>›</b>
           </button>
           <input id="backup-file" type="file" accept="application/json,.json" hidden />
         </section>
         <section class="settings-group about-group">
           <h2>Hakkında</h2>
-          <p>KEDI 2.0 · Android mobil sürüm</p>
+          <p>Pisi 3.0 · Android telefon ve tablet sürümü</p>
           <p>Notların bu cihazda saklanır; sen dışa aktarmadıkça başka yere gönderilmez.</p>
         </section>
       `
@@ -650,6 +698,15 @@ class KediApp {
 
     document.querySelectorAll('[data-theme]').forEach((button) => {
       button.addEventListener('click', () => this.setTheme(button.dataset.theme));
+    });
+    document.querySelectorAll('[data-locale]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        this.locale = button.dataset.locale;
+        document.documentElement.lang = this.locale;
+        await setSetting('locale', this.locale);
+        this.calendarCursor = createCalendarCursor(this.calendarType);
+        this.renderSettings();
+      });
     });
     document.querySelector('#calendar-setting')?.addEventListener('change', async (event) => {
       this.calendarType = event.target.value;
@@ -678,7 +735,7 @@ class KediApp {
     if (!file) return;
     try {
       const backup = JSON.parse(await file.text());
-      if (!confirm('Mevcut KEDI verileri bu yedekle değiştirilsin mi?')) return;
+      if (!confirm('Mevcut Pisi verileri bu yedekle değiştirilsin mi?')) return;
       await importDatabase(backup, { replace: true });
       await this.reloadDocuments();
       await successHaptic();
@@ -694,14 +751,16 @@ class KediApp {
     if (!note) return this.navigate('notes');
     const isJournal = note.kind === 'journal';
     root.innerHTML = `
+      <div class="responsive-layout detail-layout">
+      ${this.platform.railTemplate('editor')}
       <div class="detail-shell">
         <header class="detail-header">
           <button class="back-button" id="detail-back" aria-label="Geri">‹</button>
           <div class="detail-title-wrap">
-            <span>${isJournal ? 'Günlük' : 'Not'}</span>
+            <span>${isJournal ? 'Günlük' : note.kind === 'source' ? 'Kaynak' : note.kind === 'database' ? 'Veritabanı' : 'Not'}</span>
             <input id="note-title" value="${escapeHtml(note.title)}" aria-label="Not başlığı" />
           </div>
-          <button class="round-button danger-quiet" id="delete-note" aria-label="Notu sil">×</button>
+          <div class="detail-actions"><button class="round-button" id="document-tools" aria-label="Belge araçları">•••</button><button class="round-button danger-quiet" id="delete-note" aria-label="Notu sil">×</button></div>
         </header>
         <div class="editor-mode-tabs">
           <button class="${this.editorTab === 'write' ? 'active' : ''}" data-editor-tab="write">
@@ -723,6 +782,8 @@ class KediApp {
         </main>
         <div id="save-state" class="save-state">Kaydedildi</div>
       </div>
+      ${this.platform.documentInspectorTemplate(note)}
+      </div>
     `;
     this.bindEditor();
   }
@@ -738,10 +799,14 @@ class KediApp {
           <button data-block="H1">H1</button>
           <button data-block="H2">H2</button>
           <button data-command="insertUnorderedList" aria-label="Liste">≡</button>
+          <button data-todo-button aria-label="Görev ekle" title="Görev /todo">☐</button>
+          <button data-command="formatBlock" data-command-value="BLOCKQUOTE" aria-label="Alıntı">❞</button>
+          <button data-command="createLink" data-link-button aria-label="Bağlantı">⌁</button>
           <label class="color-tool" aria-label="Yazı rengi">
             <input type="color" id="text-color" value="#e99a2e" />
             <i>A</i>
           </label>
+          ${this.platform.toolbarExtensionsTemplate()}
         </div>
         <article id="rich-editor" class="rich-editor" contenteditable="true" spellcheck="true"
           data-placeholder="Yazmaya başla…">${sanitizeRichHtml(this.activeDocument.content)}</article>
@@ -803,7 +868,9 @@ class KediApp {
         <div class="sheet-actions">
           <button id="add-sheet-row">＋ Satır</button>
           <button id="add-sheet-column">＋ Sütun</button>
-          <span>SUM · AVERAGE · MIN · MAX</span>
+          <details class="formula-catalog"><summary>Formüller</summary>
+            ${Object.entries(FORMULA_CATALOG).map(([group, formulas]) => `<div><strong>${group}</strong>${formulas.map((formula) => `<button type="button" data-formula-name="${formula}">${formula}</button>`).join('')}</div>`).join('')}
+          </details>
         </div>
       </section>
     `;
@@ -811,6 +878,7 @@ class KediApp {
 
   bindEditor() {
     document.querySelector('#detail-back')?.addEventListener('click', () => this.leaveDetail());
+    document.querySelector('#document-tools')?.addEventListener('click', () => this.platform.openDocumentPanel());
     document.querySelector('#note-title')?.addEventListener('input', (event) => {
       this.activeDocument.title = event.target.value;
       this.scheduleSave();
@@ -827,34 +895,81 @@ class KediApp {
     if (this.editorTab === 'write') this.bindWritingEditor();
     if (this.editorTab === 'draw') this.bindDrawingEditor();
     if (this.editorTab === 'sheet') this.bindSheetEditor();
+    this.platform.bindChrome();
+    this.platform.bindToolbarExtensions();
   }
 
   async captureEditorState() {
     const editor = document.querySelector('#rich-editor');
-    if (editor) this.activeDocument.content = sanitizeRichHtml(editor.innerHTML);
+    if (editor) {
+      this.activeDocument.blocks = serializeBlocks(editor);
+      this.activeDocument.content = sanitizeRichHtml(editor.innerHTML);
+    }
     await this.saveActiveDebounced.flush();
   }
 
   bindWritingEditor() {
     const editor = document.querySelector('#rich-editor');
-    editor?.addEventListener('input', () => {
-      this.activeDocument.content = editor.innerHTML;
-      this.scheduleSave();
+    if (!editor) return;
+    this.blockBinding = bindPisiBlocks(editor, {
+      onChange: (blocks) => {
+        this.activeDocument.blocks = blocks;
+        this.activeDocument.content = editor.innerHTML;
+        this.scheduleSave();
+      },
+      onTaskToggle: () => lightHaptic()
     });
     document.querySelectorAll('[data-command], [data-block]').forEach((button) => {
       button.addEventListener('pointerdown', (event) => {
         event.preventDefault();
-        editor?.focus();
+        editor.focus();
         if (button.dataset.block) document.execCommand('formatBlock', false, button.dataset.block);
-        else document.execCommand(button.dataset.command, false);
-        this.activeDocument.content = editor?.innerHTML || '';
+        else if (button.dataset.linkButton !== undefined) {
+          const value = prompt('Bağlantı adresi veya [[Node adı]]');
+          if (!value) return;
+          if (value.startsWith('[[')) document.execCommand('insertText', false, value);
+          else if (/^(https?:\/\/|mailto:)/i.test(value)) document.execCommand('createLink', false, value);
+          else this.toast('Bağlantı http, https, mailto veya [[Node]] olmalı.', 'error');
+        } else document.execCommand(button.dataset.command, false, button.dataset.commandValue || null);
+        this.activeDocument.blocks = serializeBlocks(editor);
+        this.activeDocument.content = editor.innerHTML;
         this.scheduleSave();
       });
     });
+    document.querySelector('[data-todo-button]')?.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      const selection = getSelection();
+      const selectedText = selection?.toString().trim() || '';
+      const savedRange = selection?.rangeCount ? selection.getRangeAt(0).cloneRange() : null;
+      document.querySelector('#todo-options-overlay')?.remove();
+      document.body.insertAdjacentHTML('beforeend', `<div id="todo-options-overlay" class="platform-overlay todo-options-overlay"><form class="todo-options-card"><header><strong>Görev ayrıntıları</strong><button type="button" data-todo-cancel>×</button></header><label>Önem<select name="importance"><option value="normal">Normal</option><option value="high">Yüksek</option><option value="urgent">Acil</option><option value="low">Düşük</option></select></label><label>Tarih<input name="date" placeholder="yarın, cuma 14:00"></label><button class="primary-button">Checkbox ekle</button></form></div>`);
+      const overlay = document.querySelector('#todo-options-overlay');
+      overlay.querySelector('[data-todo-cancel]').addEventListener('click', () => overlay.remove());
+      overlay.querySelector('form').addEventListener('submit', (submitEvent) => {
+        submitEvent.preventDefault();
+        const values = Object.fromEntries(new FormData(submitEvent.currentTarget));
+        if (savedRange) {
+          selection.removeAllRanges();
+          selection.addRange(savedRange);
+        }
+        const parsed = parseTurkishDate(values.date);
+        insertTodoAtSelection(editor, {
+          text: selectedText || undefined,
+          importance: values.importance,
+          scheduledAt: parsed.scheduledAt,
+          deadline: parsed.deadline,
+          durationMinutes: parsed.durationMinutes,
+          repeat: parsed.repeat
+        });
+        editor.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
+        overlay.remove();
+      });
+    });
     document.querySelector('#text-color')?.addEventListener('input', (event) => {
-      editor?.focus();
+      editor.focus();
       document.execCommand('foreColor', false, event.target.value);
-      this.activeDocument.content = editor?.innerHTML || '';
+      this.activeDocument.blocks = serializeBlocks(editor);
+      this.activeDocument.content = editor.innerHTML;
       this.scheduleSave();
     });
   }
@@ -995,6 +1110,24 @@ class KediApp {
     });
     formulaInput?.addEventListener('blur', () => refreshValues(false));
 
+    document.querySelectorAll('[data-formula-name]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const name = button.dataset.formulaName;
+        const suggestions = {
+          IF: '=IF(A1>0,"Evet","Hayır")', AND: '=AND(A1>0,B1>0)', OR: '=OR(A1>0,B1>0)',
+          NOT: '=NOT(A1>0)', XOR: '=XOR(A1>0,B1>0)', IFERROR: '=IFERROR(A1/B1,0)',
+          CONCAT: '=CONCAT(A1," ",B1)', TEXTJOIN: '=TEXTJOIN(", ",TRUE,A1:A5)',
+          SUM: '=SUM(A1:A5)', AVERAGE: '=AVERAGE(A1:A5)', PI: '=PI()'
+        };
+        const value = suggestions[name] || `=${name}(A1)`;
+        this.activeDocument.sheet.cells[this.sheetSelection] = value;
+        if (formulaInput) { formulaInput.value = value; formulaInput.focus(); }
+        const cell = document.querySelector(`[data-cell="${this.sheetSelection}"]`);
+        if (cell) cell.value = value;
+        this.scheduleSave();
+      });
+    });
+
     document.querySelector('#add-sheet-row')?.addEventListener('click', async () => {
       this.activeDocument.sheet.rows += 1;
       await this.saveActive();
@@ -1019,11 +1152,52 @@ class KediApp {
     this.navigate(this.returnRoute || 'notes');
   }
 
+  visibleMapGraph() {
+    const canvas = this.activeDocument?.canvas || { nodes: [], edges: [], collapsedAnchors: [] };
+    const hidden = new Set();
+    const outgoing = new Map();
+    canvas.edges.forEach((edge) => {
+      if (!outgoing.has(edge.from)) outgoing.set(edge.from, []);
+      outgoing.get(edge.from).push(edge);
+    });
+    const hideBranch = (nodeId, visited = new Set()) => {
+      if (visited.has(nodeId)) return;
+      visited.add(nodeId);
+      hidden.add(nodeId);
+      (outgoing.get(nodeId) || []).forEach((edge) => hideBranch(edge.to, visited));
+    };
+    (canvas.collapsedAnchors || []).forEach((key) => {
+      const separator = key.lastIndexOf(':');
+      const nodeId = key.slice(0, separator);
+      const anchor = key.slice(separator + 1);
+      (outgoing.get(nodeId) || [])
+        .filter((edge) => (edge.fromAnchor || 'right') === anchor)
+        .forEach((edge) => hideBranch(edge.to, new Set([nodeId])));
+    });
+    return {
+      nodes: canvas.nodes.filter(({ id }) => !hidden.has(id)),
+      edges: canvas.edges.filter(({ from, to }) => !hidden.has(from) && !hidden.has(to)),
+      hidden
+    };
+  }
+
+  toggleMapAnchor(key) {
+    const collapsed = this.activeDocument.canvas.collapsedAnchors ||= [];
+    const index = collapsed.indexOf(key);
+    if (index >= 0) collapsed.splice(index, 1);
+    else collapsed.push(key);
+    this.scheduleSave();
+    this.renderMapEditor();
+  }
+
   renderMapEditor() {
     const map = this.activeDocument;
     if (!map) return this.navigate('maps');
     const canvas = map.canvas;
+    const graph = this.visibleMapGraph();
     root.innerHTML = `
+      <div class="responsive-layout map-layout">
+      ${this.platform.railTemplate('map')}
       <div class="map-detail-shell">
         <header class="map-header">
           <button class="back-button" id="map-back" aria-label="Geri">‹</button>
@@ -1034,13 +1208,13 @@ class KediApp {
           <div id="map-world" class="map-world">
             <svg id="map-lines" class="map-lines" width="3000" height="2400" aria-hidden="true"></svg>
             <div id="map-nodes">
-              ${canvas.nodes.map((node) => `
+              ${graph.nodes.map((node) => `
                 <article class="map-node ${this.selectedMapNode === node.id ? 'selected' : ''}"
                   data-node-id="${node.id}" style="left:${Number(node.x) || 0}px;top:${Number(node.y) || 0}px">
                   <button class="node-edit" data-edit-node="${node.id}" aria-label="Düğümü düzenle">✎</button>
                   <h3>${escapeHtml(node.title || 'Başlıksız')}</h3>
                   <p>${escapeHtml(htmlToText(node.content || '').slice(0, 90) || 'Ayrıntı ekle')}</p>
-                  <i class="node-anchor"></i>
+                  ${['top', 'right', 'bottom', 'left'].map((anchor) => `<button type="button" class="node-anchor anchor-${anchor} ${canvas.collapsedAnchors.includes(`${node.id}:${anchor}`) ? 'collapsed' : ''}" data-map-anchor="${node.id}:${anchor}" aria-label="${anchor} alt dalını aç veya kapat"></button>`).join('')}
                 </article>
               `).join('')}
             </div>
@@ -1060,9 +1234,12 @@ class KediApp {
         ${this.mapEditingNode ? this.mapNodeSheetTemplate() : ''}
         <div id="save-state" class="save-state">Kaydedildi</div>
       </div>
+      ${this.platform.inspectorTemplate('map')}
+      </div>
     `;
     this.applyMapTransform();
     this.bindMapEditor();
+    this.platform.bindChrome();
     requestAnimationFrame(() => this.drawMapLines());
   }
 
@@ -1109,6 +1286,14 @@ class KediApp {
         event.stopPropagation();
         this.mapEditingNode = button.dataset.editNode;
         this.renderMapEditor();
+      });
+    });
+    document.querySelectorAll('[data-map-anchor]').forEach((button) => {
+      button.addEventListener('pointerdown', (event) => event.stopPropagation());
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.toggleMapAnchor(button.dataset.mapAnchor);
       });
     });
 
@@ -1217,7 +1402,7 @@ class KediApp {
       if (!node) return;
 
       element.addEventListener('pointerdown', (event) => {
-        if (event.target.closest('.node-edit')) return;
+        if (event.target.closest('.node-edit, .node-anchor')) return;
         event.preventDefault();
         event.stopPropagation();
         element.setPointerCapture(event.pointerId);
@@ -1260,7 +1445,14 @@ class KediApp {
         || (edge.to === this.connectFrom && edge.from === id)
       );
       if (!duplicate) {
-        this.activeDocument.canvas.edges.push({ id: makeId('edge'), from: this.connectFrom, to: id });
+        const fromNode = this.activeDocument.canvas.nodes.find((node) => node.id === this.connectFrom);
+        const toNode = this.activeDocument.canvas.nodes.find((node) => node.id === id);
+        const dx = (Number(toNode?.x) || 0) - (Number(fromNode?.x) || 0);
+        const dy = (Number(toNode?.y) || 0) - (Number(fromNode?.y) || 0);
+        const horizontal = Math.abs(dx) >= Math.abs(dy);
+        const fromAnchor = horizontal ? (dx >= 0 ? 'right' : 'left') : (dy >= 0 ? 'bottom' : 'top');
+        const toAnchor = horizontal ? (dx >= 0 ? 'left' : 'right') : (dy >= 0 ? 'top' : 'bottom');
+        this.activeDocument.canvas.edges.push({ id: makeId('edge'), from: this.connectFrom, to: id, fromAnchor, toAnchor });
         this.scheduleSave();
         successHaptic();
       }
@@ -1277,6 +1469,25 @@ class KediApp {
       button.disabled = false;
     });
     lightHaptic();
+  }
+
+  focusMapNode(id) {
+    const node = this.activeDocument?.canvas?.nodes?.find((item) => item.id === id);
+    if (!node) return;
+    this.selectedMapNode = id;
+    if (this.visibleMapGraph().hidden.has(id)) {
+      this.activeDocument.canvas.collapsedAnchors = [];
+    }
+    this.renderMapEditor();
+    requestAnimationFrame(() => {
+      const viewport = document.querySelector('#map-viewport');
+      if (!viewport) return;
+      const camera = this.activeDocument.canvas.camera;
+      camera.x = viewport.clientWidth / 2 - ((Number(node.x) || 0) + 105) * camera.zoom;
+      camera.y = viewport.clientHeight / 2 - ((Number(node.y) || 0) + 52) * camera.zoom;
+      this.applyMapTransform();
+      this.scheduleSave();
+    });
   }
 
   addMapNode() {
@@ -1350,23 +1561,37 @@ class KediApp {
   drawMapLines() {
     const svg = document.querySelector('#map-lines');
     if (!svg || !this.activeDocument) return;
-    svg.innerHTML = this.activeDocument.canvas.edges.map((edge) => {
+    const point = (element, anchor = 'right') => {
+      const left = element.offsetLeft;
+      const top = element.offsetTop;
+      if (anchor === 'left') return { x: left, y: top + element.offsetHeight / 2 };
+      if (anchor === 'top') return { x: left + element.offsetWidth / 2, y: top };
+      if (anchor === 'bottom') return { x: left + element.offsetWidth / 2, y: top + element.offsetHeight };
+      return { x: left + element.offsetWidth, y: top + element.offsetHeight / 2 };
+    };
+    const paths = this.visibleMapGraph().edges.map((edge) => {
       const from = document.querySelector(`[data-node-id="${CSS.escape(edge.from)}"]`);
       const to = document.querySelector(`[data-node-id="${CSS.escape(edge.to)}"]`);
       if (!from || !to) return '';
-      const x1 = from.offsetLeft + from.offsetWidth / 2;
-      const y1 = from.offsetTop + from.offsetHeight / 2;
-      const x2 = to.offsetLeft + to.offsetWidth / 2;
-      const y2 = to.offsetTop + to.offsetHeight / 2;
-      const bend = Math.max(70, Math.abs(x2 - x1) * 0.45);
-      const direction = x2 >= x1 ? 1 : -1;
-      return `<path d="M${x1},${y1} C${x1 + bend * direction},${y1} ${x2 - bend * direction},${y2} ${x2},${y2}" />`;
+      const start = point(from, edge.fromAnchor || 'right');
+      const end = point(to, edge.toAnchor || 'left');
+      const horizontal = ['left', 'right'].includes(edge.fromAnchor || 'right');
+      const bend = Math.max(70, horizontal ? Math.abs(end.x - start.x) * 0.45 : Math.abs(end.y - start.y) * 0.45);
+      const sx = (edge.fromAnchor || 'right') === 'left' ? -1 : 1;
+      const sy = (edge.fromAnchor || 'right') === 'top' ? -1 : 1;
+      const ex = (edge.toAnchor || 'left') === 'left' ? -1 : 1;
+      const ey = (edge.toAnchor || 'left') === 'top' ? -1 : 1;
+      const control1 = horizontal ? `${start.x + bend * sx},${start.y}` : `${start.x},${start.y + bend * sy}`;
+      const targetHorizontal = ['left', 'right'].includes(edge.toAnchor || 'left');
+      const control2 = targetHorizontal ? `${end.x + bend * ex},${end.y}` : `${end.x},${end.y + bend * ey}`;
+      return `<path d="M${start.x},${start.y} C${control1} ${control2} ${end.x},${end.y}" marker-end="url(#pisi-map-arrow)" />`;
     }).join('');
+    svg.innerHTML = `<defs><marker id="pisi-map-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0 0L10 5L0 10Z" class="map-arrow-head" /></marker></defs>${paths}`;
   }
 
   fitMap() {
     const viewport = document.querySelector('#map-viewport');
-    const nodes = this.activeDocument.canvas.nodes;
+    const nodes = this.visibleMapGraph().nodes;
     if (!viewport || !nodes.length) return;
     const minX = Math.min(...nodes.map((node) => Number(node.x) || 0));
     const maxX = Math.max(...nodes.map((node) => (Number(node.x) || 0) + 210));
@@ -1407,7 +1632,7 @@ class KediApp {
   }
 }
 
-const application = new KediApp();
+const application = new PisiApp();
 application.init();
 
 matchMedia('(prefers-color-scheme: light)').addEventListener('change', () => {

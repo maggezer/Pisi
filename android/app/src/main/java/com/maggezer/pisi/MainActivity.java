@@ -1,4 +1,4 @@
-package com.maggezer.kedi;
+package com.maggezer.pisi;
 
 import com.getcapacitor.BridgeActivity;
 

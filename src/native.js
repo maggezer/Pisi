@@ -42,7 +42,7 @@ export async function successHaptic() {
 export async function shareBackup(backup) {
   const json = JSON.stringify(backup, null, 2);
   const date = new Date().toISOString().slice(0, 10);
-  const fileName = `KEDI-yedek-${date}.json`;
+  const fileName = `Pisi-yedek-${date}.json`;
 
   if (isNative) {
     const saved = await Filesystem.writeFile({
@@ -52,8 +52,8 @@ export async function shareBackup(backup) {
       encoding: Encoding.UTF8
     });
     await Share.share({
-      title: 'KEDI yedeği',
-      text: 'KEDI not ve harita yedeği',
+      title: 'Pisi yedeği',
+      text: 'Pisi çalışma alanı yedeği',
       files: [saved.uri],
       dialogTitle: 'Yedeği kaydet veya paylaş'
     });
@@ -66,6 +66,40 @@ export async function shareBackup(backup) {
   anchor.download = fileName;
   anchor.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+export async function saveAndShareFile(fileName, data, mimeType = 'application/octet-stream') {
+  const blob = data instanceof Blob ? data : new Blob([data], { type: mimeType });
+  if (isNative) {
+    const saved = await Filesystem.writeFile({
+      path: fileName,
+      data: await blobToBase64(blob),
+      directory: Directory.Cache
+    });
+    await Share.share({
+      title: fileName,
+      text: 'Pisi dışa aktarımı',
+      files: [saved.uri],
+      dialogTitle: 'Dosyayı kaydet veya paylaş'
+    });
+    return saved.uri;
+  }
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = fileName;
+  anchor.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+  return fileName;
 }
 
 export async function onHardwareBack(callback) {
