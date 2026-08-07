@@ -14,6 +14,22 @@ const PISI_BLOCK_TYPES = Object.freeze([
     Object.freeze({ id: 'task', label: 'Görev bloğu', tag: 'div' })
 ]);
 
+const PISI_BLOCK_SLASH_COMMANDS = Object.freeze([
+    ...PISI_BLOCK_TYPES.map((record) => Object.freeze({
+        ...record,
+        slash: record.id === 'task' ? 'todo' : record.id,
+        action: record.id === 'task' ? 'todo' : 'block'
+    })),
+    Object.freeze({
+        id: 'done',
+        label: 'Tamamlanmış görev',
+        slash: 'done',
+        action: 'done'
+    })
+]);
+
+const pisiHydratedTaskMarkers = new WeakSet();
+
 const pisiBlocksEditorState = {
     editor: null,
     block: null,
@@ -109,6 +125,13 @@ function pisiInlineHtmlToMarkdown(element) {
         if (node.nodeType !== Node.ELEMENT_NODE) return '';
         const body = Array.from(node.childNodes).map(visit).join('');
         if (node.matches('.pisi-block-task-marker')) return '';
+        if (
+            node.matches('.pisi-task-metadata') ||
+            node.matches('.pisi-user-tag[data-pisi-tag="done"]') ||
+            node.matches('.pisi-user-tag[data-pisi-tag^="todo."]')
+        ) {
+            return '';
+        }
         if (node.tagName === 'BR') return '\n';
         if (['STRONG', 'B'].includes(node.tagName)) return `**${body}**`;
         if (['EM', 'I'].includes(node.tagName)) return `*${body}*`;
@@ -174,10 +197,59 @@ function getPisiActiveBlock() {
     return block && block !== editor ? block : editor.querySelector('.pisi-editor-block');
 }
 
+function setPisiBlockTaskMarkerState(marker, checked) {
+    if (!marker) return;
+    marker.contentEditable = 'false';
+    marker.textContent = checked ? '☑' : '☐';
+    marker.setAttribute('role', 'checkbox');
+    marker.setAttribute('aria-checked', String(Boolean(checked)));
+    marker.setAttribute(
+        'aria-label',
+        checked ? 'Görevi yeniden aç' : 'Görevi tamamla'
+    );
+    marker.tabIndex = 0;
+}
+
+function hydratePisiBlockTaskMarker(block, markerOverride = null) {
+    const marker = markerOverride || block?.querySelector?.('.pisi-block-task-marker');
+    if (!block || !marker) return null;
+    const checked = marker.getAttribute('aria-checked') === 'true' ||
+        marker.textContent === '☑';
+    setPisiBlockTaskMarkerState(marker, checked);
+    if (pisiHydratedTaskMarkers.has(marker)) return marker;
+    pisiHydratedTaskMarkers.add(marker);
+
+    const toggle = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const nextChecked = marker.getAttribute('aria-checked') !== 'true';
+        if (
+            marker.dataset.pisiTodoCheckbox &&
+            typeof window.setPisiTodoBlockCompletion === 'function'
+        ) {
+            window.setPisiTodoBlockCompletion(block, nextChecked, {
+                todoTag: marker.dataset.pisiTodoCheckbox
+            });
+            return;
+        }
+        setPisiBlockTaskMarkerState(marker, nextChecked);
+        block.closest('.pisi-rich-editor')?.dispatchEvent(
+            new Event('input', { bubbles: true })
+        );
+    };
+    marker.addEventListener('click', toggle);
+    marker.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') toggle(event);
+    });
+    return marker;
+}
+
 function decoratePisiBlockTypes(editor) {
     window.ensurePisiEditorBlocks?.(editor);
+    window.syncPisiTodoBlockMarkers?.(editor);
     editor?.querySelectorAll?.('.pisi-editor-block').forEach((block) => {
         if (!block.dataset.pisiBlockType) block.dataset.pisiBlockType = getPisiBlockType(block);
+        if (getPisiBlockType(block) === 'task') hydratePisiBlockTaskMarker(block);
     });
 }
 
@@ -206,14 +278,10 @@ function applyPisiBlockType(block, type) {
     if (record.id === 'task' && !next.querySelector('.pisi-block-task-marker')) {
         const marker = document.createElement('span');
         marker.className = 'pisi-block-task-marker';
-        marker.contentEditable = 'false';
-        marker.textContent = '☐';
-        marker.addEventListener('click', () => {
-            marker.textContent = marker.textContent === '☑' ? '☐' : '☑';
-            editor?.dispatchEvent(new Event('input', { bubbles: true }));
-        });
+        setPisiBlockTaskMarkerState(marker, false);
         next.prepend(marker, document.createTextNode(' '));
     }
+    if (record.id === 'task') hydratePisiBlockTaskMarker(next);
     pisiBlocksEditorState.block = next;
     editor?.dispatchEvent(new Event('input', { bubbles: true }));
     selectPisiBlock(editor, next);
@@ -303,20 +371,41 @@ function ensurePisiSlashMenu() {
 function renderPisiSlashMenu(block) {
     const menu = ensurePisiSlashMenu();
     const fragment = document.createDocumentFragment();
-    PISI_BLOCK_TYPES.forEach((record, index) => {
+    PISI_BLOCK_SLASH_COMMANDS.forEach((record, index) => {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'pisi-block-slash-item';
         button.classList.toggle('selected', index === pisiBlocksEditorState.slashIndex);
-        button.textContent = `${pisiBlockTranslate(record.label)} · /${record.id}`;
+        button.textContent = `${pisiBlockTranslate(record.label)} · /${record.slash}`;
         button.addEventListener('mousedown', (event) => event.preventDefault());
         button.addEventListener('click', () => {
-            applyPisiBlockType(block, record.id)?.focus?.();
-            closePisiSlashMenu();
+            runPisiBlockSlashCommand(block, record);
         });
         fragment.appendChild(button);
     });
     menu.replaceChildren(fragment);
+}
+
+function runPisiBlockSlashCommand(block, record) {
+    if (!block || !record) return false;
+    const editor = block.closest('.pisi-rich-editor');
+    closePisiSlashMenu();
+    if (record.action === 'todo') {
+        return window.openPisiTodoPickerForEditor?.(editor, {
+            block,
+            captureSelection: false
+        }) || false;
+    }
+    if (record.action === 'done') {
+        return window.applyPisiDoneCommandToEditor?.(editor, {
+            editor,
+            block,
+            sourceSelection: false,
+            completeAfterApply: true
+        }) || false;
+    }
+    applyPisiBlockType(block, record.id)?.focus?.();
+    return true;
 }
 
 function openPisiSlashMenu(block) {
@@ -371,15 +460,17 @@ function handlePisiBlocksEditorKeydown(editor, event) {
             event.preventDefault();
             const delta = event.key === 'ArrowDown' ? 1 : -1;
             pisiBlocksEditorState.slashIndex = (
-                pisiBlocksEditorState.slashIndex + delta + PISI_BLOCK_TYPES.length
-            ) % PISI_BLOCK_TYPES.length;
+                pisiBlocksEditorState.slashIndex + delta + PISI_BLOCK_SLASH_COMMANDS.length
+            ) % PISI_BLOCK_SLASH_COMMANDS.length;
             renderPisiSlashMenu(block);
             return;
         }
         if (event.key === 'Enter') {
             event.preventDefault();
-            applyPisiBlockType(block, PISI_BLOCK_TYPES[pisiBlocksEditorState.slashIndex].id);
-            closePisiSlashMenu();
+            runPisiBlockSlashCommand(
+                block,
+                PISI_BLOCK_SLASH_COMMANDS[pisiBlocksEditorState.slashIndex]
+            );
             return;
         }
         if (event.key === 'Escape') {
@@ -575,12 +666,14 @@ function initializePisiBlocksEditor() {
 
 const moduleApi = {
     PISI_BLOCK_TYPES,
+    PISI_BLOCK_SLASH_COMMANDS,
     pisiBlocksEditorState,
     pisiBlockMarkdownToHtml,
     pisiBlockHtmlToMarkdown,
     getPisiBlockType,
     getPisiActiveBlocksEditor,
     getPisiActiveBlock,
+    hydratePisiBlockTaskMarker,
     decoratePisiBlockTypes,
     applyPisiBlockType,
     movePisiBlock,
@@ -599,6 +692,7 @@ initializePisiBlocksEditor();
 
 export {
     PISI_BLOCK_TYPES,
+    PISI_BLOCK_SLASH_COMMANDS,
     addPisiBlockBelow,
     applyPisiBlockType,
     bindPisiBlocksEditor,
@@ -610,6 +704,7 @@ export {
     getPisiActiveBlock,
     getPisiActiveBlocksEditor,
     getPisiBlockType,
+    hydratePisiBlockTaskMarker,
     movePisiBlock,
     openPisiMarkdownSource,
     pisiBlocksEditorState,
