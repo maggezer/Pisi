@@ -36,4 +36,3 @@ export function documentMatchesTag(document, tag) {
   const wanted = normalizeTag(tag).toLocaleLowerCase('tr-TR');
   return !wanted || normalizeTags(document?.tags).some((item) => item.toLocaleLowerCase('tr-TR') === wanted);
 }
-

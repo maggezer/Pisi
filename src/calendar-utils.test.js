@@ -28,4 +28,3 @@ describe('calendar helpers', () => {
   });
 });
 
-
