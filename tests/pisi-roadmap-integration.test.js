@@ -125,3 +125,28 @@ test('Pisi geçmişi gizlenir ve yeniden adlandırma alanları klavyeyi korur', 
     assert.match(styles, /\.pisi-rename-input/);
     assert.match(styles, /user-select: text/);
 });
+
+test('map seçimi, ağaç tıklamaları ve node yazma odağı birbirine karışmaz', () => {
+    const treeDnd = read('renderer/tree/pisi-tree-dnd.mjs');
+    const treeView = read('renderer/tree/pisi-tree-view.mjs');
+    const map = read('renderer/map/pisi-map-workspace.mjs');
+    const nodeEditor = read('renderer/editor/pisi-node-editor.mjs');
+    const editorStyles = read('styles/40-editor.css');
+
+    assert.match(treeDnd, /PISI_TREE_FILE_CLICK_DELAY_MS/);
+    assert.match(treeDnd, /if \(event\.detail > 1\) \{\s*cancelPendingPisiTreeFileClick\(\)/);
+    assert.match(
+        treeDnd,
+        /row\.addEventListener\('dblclick'[\s\S]*?cancelPendingPisiTreeFileClick\(\);[\s\S]*?startRenameTreeFile/
+    );
+    assert.equal((treeDnd.match(/await openPisiFileTab/g) || []).length, 1);
+    assert.match(
+        map,
+        /const moved = hasDragged[\s\S]*?if \(moved\) \{\s*clearSelectedMapNodes\(\);/
+    );
+    assert.match(treeView, /result\.items\.filter\(\(item\) => !isPisiInternalTreeItem\(item\)\)/);
+    assert.match(treeView, /return name === '\.pisi-history'/);
+    assert.match(nodeEditor, /function ensurePisiEditorWritable\(editor\)/);
+    assert.match(nodeEditor, /editor\.contentEditable = 'true'/);
+    assert.match(editorStyles, /\.pisi-rich-editor \{[\s\S]*?user-select: text;[\s\S]*?pointer-events: auto;/);
+});
