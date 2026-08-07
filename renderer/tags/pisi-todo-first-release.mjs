@@ -185,6 +185,121 @@ function bindPisiMissionFilterOutsideCloseFirstRelease() {
     });
 }
 
+function refreshPisiMissionsFirstRelease(reason = 'manual') {
+    if (typeof window.refreshPisiMissionIndex === 'function') {
+        return window.refreshPisiMissionIndex({ force: true, reason });
+    }
+    window.refreshPisiTagsPanelSoon?.();
+    return Promise.resolve(null);
+}
+
+function formatPisiMissionSyncTimeFirstRelease(value) {
+    const date = new Date(Number(value));
+    if (Number.isNaN(date.getTime())) return '';
+    const locale = document.documentElement.lang === 'en' ? 'en-US' : 'tr-TR';
+    return date.toLocaleTimeString(locale, {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function createPisiMissionsOverviewFirstRelease(allMissions) {
+    const overview = document.createElement('section');
+    overview.className = 'pisi-missions-overview';
+
+    const completed = allMissions.filter((mission) => mission.completed).length;
+    const open = allMissions.length - completed;
+    const today = allMissions.filter((mission) => {
+        return !mission.completed && mission.dateBucket === 'today';
+    }).length;
+    const overdue = allMissions.filter((mission) => {
+        return !mission.completed && mission.dateBucket === 'overdue';
+    }).length;
+    const progress = allMissions.length
+        ? Math.round((completed / allMissions.length) * 100)
+        : 0;
+
+    const heading = document.createElement('div');
+    heading.className = 'pisi-missions-overview-heading';
+    const headingCopy = document.createElement('div');
+    const eyebrow = document.createElement('span');
+    eyebrow.className = 'pisi-missions-overview-eyebrow';
+    eyebrow.textContent = pisiTodoTranslateFirstRelease('GÖREV MERKEZİ');
+    const title = document.createElement('strong');
+    title.textContent = pisiTodoTranslateFirstRelease('Odak görünümü');
+    headingCopy.append(eyebrow, title);
+
+    const refresh = document.createElement('button');
+    refresh.type = 'button';
+    refresh.className = 'pisi-missions-sync-button';
+    refresh.textContent = '↻';
+    refresh.title = pisiTodoTranslateFirstRelease('Görevleri şimdi eşitle');
+    refresh.setAttribute('aria-label', refresh.title);
+    refresh.disabled = pisiTagsPanelState.missionLoading === true;
+    refresh.addEventListener('click', async () => {
+        refresh.disabled = true;
+        await refreshPisiMissionsFirstRelease('manual');
+    });
+    heading.append(headingCopy, refresh);
+
+    const stats = document.createElement('div');
+    stats.className = 'pisi-missions-overview-stats';
+    [
+        ['Açık', open, 'open'],
+        ['Bugün', today, 'today'],
+        ['Geciken', overdue, 'overdue'],
+        ['Tamam', completed, 'completed']
+    ].forEach(([label, value, tone]) => {
+        const stat = document.createElement('div');
+        stat.className = 'pisi-missions-overview-stat';
+        stat.dataset.tone = tone;
+        const count = document.createElement('strong');
+        count.textContent = String(value);
+        const caption = document.createElement('span');
+        caption.textContent = pisiTodoTranslateFirstRelease(label);
+        stat.append(count, caption);
+        stats.appendChild(stat);
+    });
+
+    const progressRow = document.createElement('div');
+    progressRow.className = 'pisi-missions-overview-progress';
+    const progressLabel = document.createElement('span');
+    progressLabel.textContent = pisiTodoTranslateFirstRelease('Tamamlanma');
+    const progressValue = document.createElement('strong');
+    progressValue.textContent = `${progress}%`;
+    const progressTrack = document.createElement('div');
+    progressTrack.className = 'pisi-missions-overview-progress-track';
+    progressTrack.setAttribute('role', 'progressbar');
+    progressTrack.setAttribute('aria-valuemin', '0');
+    progressTrack.setAttribute('aria-valuemax', '100');
+    progressTrack.setAttribute('aria-valuenow', String(progress));
+    const progressFill = document.createElement('span');
+    progressFill.style.width = `${progress}%`;
+    progressTrack.appendChild(progressFill);
+    progressRow.append(progressLabel, progressValue, progressTrack);
+
+    const syncStatus = document.createElement('div');
+    syncStatus.className = 'pisi-missions-sync-status';
+    if (pisiTagsPanelState.missionLoading === true) {
+        syncStatus.classList.add('loading');
+        syncStatus.textContent = pisiTodoTranslateFirstRelease('Görevler eşitleniyor…');
+    } else if (pisiTagsPanelState.missionError) {
+        syncStatus.classList.add('error');
+        syncStatus.textContent = pisiTodoTranslateFirstRelease('Bazı görevler eşitlenemedi');
+        syncStatus.title = pisiTagsPanelState.missionError;
+    } else if (pisiTagsPanelState.missionLastSyncedAt) {
+        const time = formatPisiMissionSyncTimeFirstRelease(
+            pisiTagsPanelState.missionLastSyncedAt
+        );
+        syncStatus.textContent = `${pisiTodoTranslateFirstRelease('Son eşitleme')} · ${time}`;
+    } else {
+        syncStatus.textContent = pisiTodoTranslateFirstRelease('Eşitleme bekleniyor');
+    }
+
+    overview.append(heading, stats, progressRow, syncStatus);
+    return overview;
+}
+
 function renderPisiMissionsPanelFirstRelease() {
     const panel = document.getElementById('pisi-missions-panel');
     const list = document.getElementById('pisi-missions-list');
@@ -222,6 +337,7 @@ function renderPisiMissionsPanelFirstRelease() {
     });
 
     toolbar.innerHTML = '';
+    toolbar.appendChild(createPisiMissionsOverviewFirstRelease(allMissions));
     bindPisiMissionFilterOutsideCloseFirstRelease();
 
     const toolbarRow = document.createElement('div');
@@ -307,6 +423,28 @@ function renderPisiMissionsPanelFirstRelease() {
     syncPisiMissionBadgesFirstRelease(allMissions);
 
     if (!missions.length) {
+        if (pisiTagsPanelState.missionLoading === true) {
+            list.innerHTML = '<div class="right-panel-empty pisi-missions-loading">Görevler eşitleniyor…</div>';
+            return;
+        }
+        if (pisiTagsPanelState.missionError && !allMissions.length) {
+            list.innerHTML = '';
+            const error = document.createElement('div');
+            error.className = 'right-panel-empty pisi-missions-sync-error';
+            const message = document.createElement('span');
+            message.textContent = pisiTodoTranslateFirstRelease(
+                'Görevler okunamadı. Yeniden eşitlemeyi deneyin.'
+            );
+            const retry = document.createElement('button');
+            retry.type = 'button';
+            retry.textContent = pisiTodoTranslateFirstRelease('Yeniden dene');
+            retry.addEventListener('click', () => {
+                void refreshPisiMissionsFirstRelease('retry');
+            });
+            error.append(message, retry);
+            list.appendChild(error);
+            return;
+        }
         const message = filter === 'all'
             ? (showCompleted ? 'Bu projede görev yok.' : 'Bu projede açık görev yok.')
             : 'Bu filtrede görev yok.';
@@ -389,7 +527,7 @@ function renderPisiMissionsPanelFirstRelease() {
                     : 'Görev tamamlandı olarak işaretlenemedi.'));
                 return;
             }
-            refreshPisiTagsPanelSoon();
+            await refreshPisiMissionsFirstRelease('completion-change');
         });
 
         statusSelect.addEventListener('click', (event) => event.stopPropagation());
@@ -404,7 +542,7 @@ function renderPisiMissionsPanelFirstRelease() {
                 alert(result?.error || 'Görev durumu değiştirilemedi.');
                 return;
             }
-            refreshPisiTagsPanelSoon();
+            await refreshPisiMissionsFirstRelease('status-change');
         });
         mainButton.addEventListener('click', () => openPisiTagBlockResult(mission));
         list.appendChild(card);
@@ -513,7 +651,7 @@ async function savePisiMissionMutationFirstRelease(mission, mutateBlock) {
         const result = await save();
         if (!result?.ok) {
             rollbackPisiMissionBlock(block, change.previousHtml);
-            refreshPisiTagsPanelSoon();
+            await refreshPisiMissionsFirstRelease('mutation-rollback');
             return { ok: false, error: result?.error || 'Node kaydedilemedi.' };
         }
         return { ok: true };

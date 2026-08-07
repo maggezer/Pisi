@@ -78,7 +78,7 @@ function bindRightPanelTabs() {
         if (button.dataset.bound === '1') continue;
         button.dataset.bound = '1';
 
-        button.addEventListener('click', () => {
+        button.addEventListener('click', async () => {
     const target = button.dataset.rightTab;
 
     tabButtons.forEach((item) => {
@@ -104,11 +104,20 @@ function bindRightPanelTabs() {
         activePage.scrollTop = 0;
     }
 
-    if (
-    (target === 'missions' || target === 'tags') &&
-    typeof refreshPisiTagsPanelSoon === 'function'
+    if (target === 'missions') {
+        if (typeof window.refreshPisiMissionIndex === 'function') {
+            await window.refreshPisiMissionIndex({
+                force: true,
+                reason: 'right-panel-open'
+            });
+        } else if (typeof window.refreshPisiTagsPanel === 'function') {
+            await window.refreshPisiTagsPanel();
+        }
+    } else if (
+        target === 'tags' &&
+        typeof window.refreshPisiTagsPanel === 'function'
     ) {
-    refreshPisiTagsPanelSoon();
+        await window.refreshPisiTagsPanel();
     }
 
     if (target === 'tags') {

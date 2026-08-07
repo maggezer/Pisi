@@ -75,7 +75,20 @@ function ensurePisiTodoWorkspaceOpenButton() {
     button.id = 'pisi-todo-workspace-open';
     button.type = 'button';
     button.className = 'pisi-todo-workspace-open';
-    button.textContent = pisiTodoWorkspaceTranslate('To-do');
+    const icon = document.createElement('span');
+    icon.className = 'pisi-todo-workspace-open-icon';
+    icon.textContent = '✓';
+    const copy = document.createElement('span');
+    copy.className = 'pisi-todo-workspace-open-copy';
+    const label = document.createElement('strong');
+    label.textContent = pisiTodoWorkspaceTranslate('To-do');
+    const hint = document.createElement('small');
+    hint.textContent = pisiTodoWorkspaceTranslate('Görev merkezini aç');
+    copy.append(label, hint);
+    const arrow = document.createElement('span');
+    arrow.className = 'pisi-todo-workspace-open-arrow';
+    arrow.textContent = '›';
+    button.append(icon, copy, arrow);
     button.title = pisiTodoWorkspaceTranslate('To-do çalışma alanını aç');
     button.setAttribute('aria-label', button.title);
     button.addEventListener('click', openPisiTodoWorkspace);
@@ -306,7 +319,7 @@ function ensurePisiTodoVirtualTab() {
     return tab;
 }
 
-function openPisiTodoWorkspace() {
+async function openPisiTodoWorkspace() {
     forcePisiRightTodoListView();
     loadPisiTodoWorkspaceView();
     const workspace = ensurePisiTodoWorkspaceDom();
@@ -319,6 +332,13 @@ function openPisiTodoWorkspace() {
     workspace.hidden = false;
     ensurePisiTodoVirtualTab();
     renderPisiTodoWorkspace();
+
+    if (typeof window.refreshPisiMissionIndex === 'function') {
+        await window.refreshPisiMissionIndex({
+            reason: 'todo-workspace-open'
+        });
+        if (pisiTodoWorkspaceState.open) renderPisiTodoWorkspace();
+    }
     return true;
 }
 
@@ -378,6 +398,10 @@ function initializePisiTodoWorkspace() {
     ensurePisiTodoWorkspaceDom();
     bindPisiTodoWorkspaceTabs();
     bindPisiTodoWorkspaceMissionRefresh();
+    document.addEventListener(
+        'pisi:mission-index-updated',
+        schedulePisiTodoWorkspaceRender
+    );
 
     document.addEventListener('dblclick', (event) => {
         if (!pisiTodoWorkspaceState.open) return;
