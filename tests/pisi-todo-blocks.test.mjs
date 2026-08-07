@@ -38,6 +38,9 @@ test('todo ve done bütün editör girişlerinden aynı blok görev modeline ba�
     assert.match(sanitizer, /data-pisi-todo-checkbox/);
     assert.match(styles, /pisi-user-tag\.pisi-task-metadata/);
     assert.match(styles, /pisi-block-task-marker\[aria-checked="true"\]/);
+    assert.match(styles, /vertical-align: middle/);
+    assert.match(styles, /transform: translateY\(-1px\)/);
+    assert.match(styles, /border: 1px solid #fff/);
 });
 
 test('Markdown çıktısı görünmez todo ve done etiketlerini dışarı sızdırmaz', () => {
