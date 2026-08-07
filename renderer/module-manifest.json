@@ -496,6 +496,7 @@
     "bindings": [
       "pisiTodoSecondReleaseState",
       "makePisiMissionIdSecondRelease",
+      "getPisiSubtaskParentIdSecondRelease",
       "enhancePisiMissionSecondRelease",
       "sortPisiMissionsSecondRelease",
       "matchesPisiMissionStatusFilterSecondRelease",
@@ -540,7 +541,10 @@
       "refreshPisiSearchIndex",
       "createPisiSearchDocumentRecord",
       "getPisiSearchCurrentNodePath",
-      "getPisiSearchLiveIndex"
+      "getPisiSearchLiveIndex",
+      "getPisiSearchCacheStats",
+      "getPisiSearchMetadataSignature",
+      "getPisiSearchDocumentSignature"
     ]
   },
   {
@@ -585,6 +589,7 @@
       "pisiStructuredViewState",
       "createPisiPropertyRow",
       "collectPisiPropertyRows",
+      "readPisiPropertyControlValue",
       "renderPisiNodeProperties",
       "renderPisiBases",
       "renderPisiStructuredPage",
@@ -701,6 +706,101 @@
       "pisiConnectionDrawFrame",
       "scheduleDrawMapConnections",
       "drawMapConnections"
+    ]
+  },
+  {
+    "module": "core.commands",
+    "path": "renderer/core/pisi-command-registry.mjs",
+    "bindings": [
+      "PISI_SHORTCUT_STORAGE_KEY",
+      "normalizePisiShortcut",
+      "getPisiEventShortcut",
+      "registerPisiCommand",
+      "listPisiCommands",
+      "runPisiCommand",
+      "getPisiCommandShortcut",
+      "findPisiShortcutConflict",
+      "setPisiCommandShortcut",
+      "resetPisiCommandShortcut",
+      "openPisiCommandPalette",
+      "closePisiCommandPalette",
+      "renderPisiShortcutSettings",
+      "initializePisiCommandRegistry"
+    ]
+  },
+  {
+    "module": "core.extensions",
+    "path": "renderer/core/pisi-extension-api.mjs",
+    "bindings": [
+      "PISI_EXTENSION_API_VERSION",
+      "PISI_EXTENSION_POINTS",
+      "registerPisiExtension",
+      "unregisterPisiExtension",
+      "listPisiExtensions",
+      "getPisiExtension",
+      "invokePisiExtension",
+      "registerPisiPlugin",
+      "deactivatePisiPlugin",
+      "listPisiPlugins",
+      "mountPisiToolbarExtensions",
+      "installPisiRightPanelExtensions",
+      "renderPisiExtensionsPage",
+      "initializePisiExtensionApi"
+    ]
+  },
+  {
+    "module": "editor.blocks",
+    "path": "renderer/editor/pisi-block-editor.mjs",
+    "bindings": [
+      "PISI_BLOCK_TYPES",
+      "pisiBlocksEditorState",
+      "pisiBlockMarkdownToHtml",
+      "pisiBlockHtmlToMarkdown",
+      "getPisiBlockType",
+      "getPisiActiveBlocksEditor",
+      "getPisiActiveBlock",
+      "decoratePisiBlockTypes",
+      "applyPisiBlockType",
+      "movePisiBlock",
+      "duplicatePisiBlock",
+      "deletePisiBlock",
+      "copyPisiBlockReference",
+      "bindPisiBlocksEditor",
+      "openPisiMarkdownSource",
+      "closePisiMarkdownSource",
+      "addPisiBlockBelow",
+      "initializePisiBlocksEditor"
+    ]
+  },
+  {
+    "module": "search.blockGraph",
+    "path": "renderer/search/pisi-block-graph.mjs",
+    "bindings": [
+      "getPisiBlockGraphKey",
+      "collectPisiBlockGraphData",
+      "buildPisiBlockRelationshipModel",
+      "renderPisiBlockGraphSvg",
+      "renderPisiBlockGraphPage",
+      "renderPisiBlockRelationshipPanel",
+      "initializePisiBlockGraph"
+    ]
+  },
+  {
+    "module": "team.api",
+    "path": "renderer/team/pisi-team-api.mjs",
+    "bindings": [
+      "PISI_TEAM_API_VERSION",
+      "registerPisiTeamProvider",
+      "listPisiTeamProviders",
+      "setPisiTeamProvider",
+      "getPisiTeamProvider",
+      "getPisiTeamConfig",
+      "savePisiTeamConfig",
+      "listPisiTeamEvents",
+      "appendPisiTeamEvent",
+      "subscribePisiTeam",
+      "renderPisiTeamPage",
+      "initializePisiTeamApi"
     ]
   }
 ]

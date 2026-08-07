@@ -10,5 +10,6 @@ require("./main/functions/task-capture");
 require("./main/functions/structured-nodes");
 require("./main/functions/portability");
 require("./main/functions/research");
+require("./main/functions/team-api");
 require("./main/functions/electron-ipc");
 require("./main/runtime");

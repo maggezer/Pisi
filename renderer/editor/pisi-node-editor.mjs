@@ -29,6 +29,7 @@ function sanitizePisiEditorHtml(html = '') {
         'title',
         'contenteditable',
         'data-pisi-block-id',
+        'data-pisi-block-type',
         'data-pisi-tag',
         'data-pisi-done-for',
         'data-pisi-diary-source',

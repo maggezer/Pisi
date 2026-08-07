@@ -1,4 +1,6 @@
 import { registerModule } from "../core/module-registry.mjs";
+import { registerPisiCommand } from "../core/pisi-command-registry.mjs";
+import { registerPisiExtension } from "../core/pisi-extension-api.mjs";
 import { registerPisiCommandCenterPage, openPisiCommandCenter } from "../shell/pisi-command-center.mjs";
 import { ensurePisiSearchIndex, invalidatePisiSearchIndex } from "../search/pisi-search-index.mjs";
 import {
@@ -456,12 +458,25 @@ function initializePisiQuickCapture() {
         render: renderPisiTasksPage
     });
     installPisiQuickAddButton();
-    document.addEventListener('keydown', (event) => {
-        if (event.ctrlKey && event.shiftKey && event.key.toLowerCase() === 'a') {
-            event.preventDefault();
-            openPisiCommandCenter('tasks');
-        }
+    registerPisiCommand({
+        id: 'pisi.quick-add',
+        label: 'Global Quick Add',
+        description: 'Inbox’a veya seçili node’a hızlı görev ekler.',
+        category: 'Görevler',
+        defaultShortcut: 'Mod+Shift+A',
+        allowInInput: true,
+        handler: () => openPisiCommandCenter('tasks')
     });
+    for (const view of PISI_TASK_HUB_FILTERS) {
+        registerPisiExtension('taskView', {
+            id: `core.${view.value}`,
+            label: view.label,
+            run: () => {
+                pisiQuickCaptureState.filter = view.value;
+                return openPisiCommandCenter('tasks');
+            }
+        });
+    }
     const panel = document.getElementById('pisi-missions-panel');
     if (panel) {
         pisiQuickCaptureState.observer = new MutationObserver(enhancePisiExistingMissionCards);

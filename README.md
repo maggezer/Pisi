@@ -12,7 +12,11 @@ takvim işlevlerini tek bir proje klasöründe birleştirir.
 - Hiyerarşi, süreç ve denk bağlam bağlantıları
 - Sekmeli center editor ve map içi node modalı
 - Zengin metin, Paint ve Excel-benzeri tablo/formül araçları
+- Kalıcı kimlikli WYSIWYG Markdown blokları, `/` menüsü, sürükleme, blok türü,
+  Markdown kaynak görünümü ve blok düzeyi ilişki grafiği
 - Kullanıcı etiketleri, proje görev indeksi ve görev başına tamamlanma durumu
+- Hiyerarşik alt görevler, alt görev ilerleme sayacı ve bağımlılıklardan ayrı
+  `subtask:` ilişki alanı
 - `Ctrl+P` ile node, içerik, görev, etiket, map, tablo ve dosya yolu araması
 - Metin/map/görev ilişkilerini birleştiren backlink ve bağlantısız bahsetme paneli
 - Arama sonucundaki node’u kendi map’inde merkezleme ve vurgulama
@@ -20,15 +24,20 @@ takvim işlevlerini tek bir proje klasöründe birleştirir.
   Inbox/Bugün/Yaklaşan/Geciken/Tarihsiz/Engellenen görünümleri
 - Türkçe doğal tarih ayrıştırma, hızlı erteleme, planlanan zaman, deadline,
   hatırlatma ve tahmini/gerçek görev süresi
-- Metin, sayı, tarih, seçim, çoklu seçim, node bağlantısı ve onay kutusu
-  türlerinde node özellikleri
+- Metin, sayı, tarih, seçim, çoklu seçim, node bağlantısı, onay kutusu,
+  relation ve rollup türlerinde node özellikleri
 - Özellikleri sorgulayan tablo/kart görünümleri, kaydedilebilir filtreler ve
-  sonuçlardan kaynak node’ları silmeden map üretme
+  sonuçlardan kaynak node’ları silmeden map üretme; proje düzeyi şablonlar
 - Markdown klasörü içe aktarma; Markdown, HTML, PDF ve DOCX dışa aktarma
 - Son 50 node sürümünü tutan yerel geçmiş, önizleme/karşılaştırma, bütünlük
   denetimi ve görünür yedek geri yükleme
 - URL metadata’sı, seçili metin ve ekran görüntüsünden Kaynak node’u; DOI,
   bibliyografya, blok referansı ve içerik alıntısı
+- `Ctrl+K` komut paleti, değiştirilebilir/çakışma denetimli kısayollar
+- Sürümlü eklenti API’si; özel node türü, dışa aktarıcı, görev görünümü,
+  toolbar aracı, map yerleşimi ve özel sağ panel uzantı noktaları
+- Yerel Team API; üye ayarları, revision çakışma kontrolü, olay günlüğü ve
+  gerçek zamanlı sağlayıcı eklentileri için provider arayüzü
 - Günlük node’larıyla eşitlenen görevler ve sürüklenebilir/dock edilebilir takvim
 - Proje dışı yol erişimini engelleyen IPC sınırı ve HTML allowlist sanitizer
 - Atomik yazma, proje kilidi, kapanışta kayıt kuyruğunu boşaltma ve silmede
@@ -48,8 +57,10 @@ renderer/search/pisi-search-core.mjs Arama puanlama ve ilişki modeli
 renderer/search/pisi-search-index.mjs Yerel proje arama indeksi
 renderer/search/pisi-global-search.mjs Hızlı geçiş penceresi ve map odağı
 renderer/search/pisi-links-panel.mjs Backlink/ilişki sağ paneli
+renderer/search/pisi-block-graph.mjs Blok backlink/mention grafiği
 renderer/productivity/               Quick Add ve Türkçe tarih ayrıştırma
 renderer/data/                       Node özellikleri ve Bases-lite görünümleri
+renderer/team/                       Yerel Team API ve provider arayüzü
 renderer/portability/                Geçmiş, dışa aktarma ve kurtarma arayüzü
 renderer/research/                   Web yakalama, blok referansı ve alıntı akışı
 style.css                            Uygulama stilleri
@@ -87,8 +98,10 @@ ESLint kurallarını ve otomatik regresyon testlerini çalıştırır. Aynı do�
 `Ctrl+P`, projenin yerel `.node` ve `.map` dosyalarından üretilen hızlı geçiş
 penceresini açar. Sonuçlarda ok tuşlarıyla gezinilir, `Enter` içeriği açar,
 `Alt+Enter` ise map içindeki node’u açmadan yalnızca konumuna odaklanır.
-İndeks diske ayrı bir veritabanı olarak yazılmaz; proje değiştiğinde veya dosya
-sistemi güncellendiğinde güvenli biçimde yeniden oluşturulur.
+İndeks diske ayrı bir veritabanı olarak yazılmaz. Dosya sistemi değişiklikleri
+değişen node yollarını önbellekten düşürür; değişmeyen belgelerin ayrıştırılmış
+kayıtları yeniden kullanılır. Üçlü-karakter postings indeksi büyük projelerde
+her tuşta tüm kayıtların yeniden normalize edilmesini önler.
 
 Sağ paneldeki **Bağlantılar** sekmesi doğrudan `[[Node Başlığı]]` metin
 referanslarını, map oklarını, bağlantıya dönüştürülmemiş başlık bahsetmelerini,
@@ -96,9 +109,9 @@ node görevlerini, kaynak alıntılarını ve ortak map üyeliklerini birlikte g
 
 ## Çalışma merkezi
 
-Explorer başlığındaki pusula düğmesi veya `Ctrl+Shift+P`, dört sayfalı çalışma
-merkezini açar: **Görevler**, **Özellikler**, **Taşınabilirlik** ve
-**Araştırma**. `Ctrl+Shift+A` doğrudan Quick Add alanına gider. Bir node
+Explorer başlığındaki pusula düğmesi veya `Ctrl+Shift+P`, çalışma merkezini
+açar. Görevler, özellik/veritabanı, blok grafiği, taşınabilirlik, araştırma,
+eklentiler, Team ve kısayol sayfaları buradadır. `Ctrl+Shift+A` doğrudan Quick Add alanına gider. Bir node
 seçilmeden eklenen görev proje kökündeki sistem rollü `Inbox.node` dosyasına
 yazılır.
 
@@ -134,6 +147,16 @@ npm run dist:portable
 Windows NSIS ve portable çıktıları x64 ile ARM64 için üretilir. Çıktı adı
 ürün, sürüm, işletim sistemi ve mimariyi içerir. Code signing ve otomatik
 güncelleme için ayrıca yayın sertifikası ile güncelleme sunucusu gerekir.
+
+## Eklenti ve Team API
+
+Kısa vadeli API yüzeyi bilinçli olarak altı dar uzantı noktasıyla sınırlıdır.
+Eklenti kodu proje klasöründen kendiliğinden çalıştırılmaz; uygulama içine
+alınmış güvenilen modüller `window.Pisi.extensions.registerPlugin(...)` ile
+etkinleştirilir. Team API’nin yerel günlüğü hazırdır; gerçek zamanlı ağ ve
+presence davranışı `window.Pisi.team.registerProvider(...)` ile eklenir.
+Ayrıntılı sözleşme ve örnekler [`docs/pisi-platform-api.md`](docs/pisi-platform-api.md)
+dosyasındadır.
 
 ## Proje verileri
 

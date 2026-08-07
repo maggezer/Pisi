@@ -45,7 +45,7 @@ function makePisiBlockId() {
 function isPisiEditorBlockElement(element) {
     if (!element || element.nodeType !== Node.ELEMENT_NODE) return false;
 
-    return /^(DIV|P|H2|H3|H4|H5|H6)$/i.test(element.tagName);
+    return /^(DIV|P|H1|H2|H3|H4|H5|H6|BLOCKQUOTE|PRE|LI)$/i.test(element.tagName);
 }
 
 function decoratePisiEditorBlock(element) {
@@ -204,13 +204,13 @@ function ensurePisiEditorBlocks(editor, options = {}) {
                 }
             }
         }
+        editor.querySelectorAll('h1,h2,h3,h4,h5,h6,p,li,blockquote,pre').forEach(decoratePisiEditorBlock);
     } finally {
         if (selectionSnapshot) {
             restorePisiEditorSelection(editor, selectionSnapshot);
         }
     }
 }
-
 function getPisiBlockElementsFromContainer(container) {
     if (!container) return [];
 

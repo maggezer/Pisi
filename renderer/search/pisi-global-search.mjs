@@ -1,5 +1,6 @@
 import { registerModule } from "../core/module-registry.mjs";
-import { searchPisiRecords, pisiSearchPathKey } from "./pisi-search-core.mjs";
+import { registerPisiCommand } from "../core/pisi-command-registry.mjs";
+import { searchPisiIndex, pisiSearchPathKey } from "./pisi-search-core.mjs";
 import {
     ensurePisiSearchIndex,
     getPisiSearchCurrentNodePath,
@@ -200,8 +201,8 @@ function renderPisiSearchResults(state) {
     }
 
     const query = state.input.value;
-    state.matches = searchPisiRecords(
-        state.index.records,
+    state.matches = searchPisiIndex(
+        state.index,
         query,
         { limit: PISI_SEARCH_RESULT_LIMIT }
     );
@@ -656,16 +657,15 @@ function installPisiSearchTrigger() {
 function bindPisiSearchKeyboardShortcut() {
     if (document.body.dataset.pisiSearchShortcutBound === '1') return;
     document.body.dataset.pisiSearchShortcutBound = '1';
-    document.addEventListener('keydown', (event) => {
-        const isSearchShortcut =
-            (event.ctrlKey || event.metaKey) &&
-            !event.shiftKey &&
-            event.key.toLocaleLowerCase('en-US') === 'p';
-        if (!isSearchShortcut) return;
-        event.preventDefault();
-        event.stopPropagation();
-        void openPisiGlobalSearch();
-    }, true);
+    registerPisiCommand({
+        id: 'pisi.global-search',
+        label: 'Global arama ve hızlı geçiş',
+        description: 'Node, blok, görev, etiket, tablo ve map sonuçlarını arar.',
+        category: 'Gezinme',
+        defaultShortcut: 'Mod+P',
+        allowInInput: true,
+        handler: () => openPisiGlobalSearch()
+    });
 }
 
 function refreshOpenPisiSearchAfterInvalidation() {

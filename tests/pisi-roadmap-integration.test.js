@@ -8,7 +8,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('1.2–1.5 modülleri bootstrap ve preload köprüsünde kayıtlıdır', () => {
+test('1.2–platform modülleri bootstrap ve preload köprüsünde kayıtlıdır', () => {
     const bootstrap = read('renderer/bootstrap.mjs');
     const preload = read('preload.js');
     const runtime = read('main/runtime.js');
@@ -16,19 +16,25 @@ test('1.2–1.5 modülleri bootstrap ve preload köprüsünde kayıtlıdır', ()
         'productivity/pisi-quick-capture.mjs',
         'data/pisi-structured-views.mjs',
         'portability/pisi-portability-panel.mjs',
-        'research/pisi-research-panel.mjs'
+        'research/pisi-research-panel.mjs',
+        'editor/pisi-block-editor.mjs',
+        'search/pisi-block-graph.mjs',
+        'team/pisi-team-api.mjs'
     ]) assert.ok(bootstrap.includes(marker), marker);
     for (const marker of [
         'quickAddTask', 'saveNodeProperties', 'createPropertyMap',
         'exportProjectMarkdown', 'listNodeHistory', 'auditIntegrity',
-        'restoreBackup', 'captureWebSource'
+        'restoreBackup', 'captureWebSource', 'listDatabaseTemplates',
+        'applyDatabaseTemplate', 'pisiTeamTransport'
     ]) assert.ok(preload.includes(marker), marker);
     for (const channel of [
         'project:quick-add-task', 'project:save-node-properties',
         'project:create-property-map', 'project:export-node',
         'project:import-markdown', 'project:list-node-history',
         'project:audit-integrity', 'project:restore-backup',
-        'project:capture-web-source'
+        'project:capture-web-source', 'project:list-database-templates',
+        'project:apply-database-template', 'team:get-config',
+        'team:append-event'
     ]) assert.ok(runtime.includes(channel), channel);
 });
 
@@ -40,12 +46,34 @@ test('görev süreleri, alıntılar ve blok referansları sanitizer tarafından 
         'data-pisi-todo-duration-minutes',
         'data-pisi-todo-actual-minutes',
         'data-pisi-citation-source',
-        'data-pisi-block-ref'
+        'data-pisi-block-ref',
+        'data-pisi-block-type'
     ]) assert.ok(editor.includes(attribute), attribute);
 });
 
-test('alt görev sistemi geri getirilmemiştir', () => {
+test('alt görev sistemi bağımlılıklardan ayrı bir ilişkiyle geri getirilmiştir', () => {
     const todo = read('renderer/tags/pisi-todo-second-release.mjs');
-    assert.match(todo, /Alt görev sistemi kaldırıldı/);
-    assert.doesNotMatch(read('renderer/productivity/pisi-quick-capture.mjs'), /subtask/i);
+    assert.match(todo, /subtask:/);
+    assert.match(todo, /addPisiSubtaskSecondRelease\(mission\)/);
+    assert.match(todo, /completedChildren/);
+    assert.match(todo, /pisi-mission-add-child/);
+    assert.doesNotMatch(todo, /Alt görev sistemi kaldırıldı/);
+    assert.match(read('renderer/tags/pisi-todo-third-release.mjs'), /startsWith\('dep:'\)/);
+});
+
+test('blok, eklenti, team ve kısayol API yüzeyleri sürümlüdür', () => {
+    const extensions = read('renderer/core/pisi-extension-api.mjs');
+    const commands = read('renderer/core/pisi-command-registry.mjs');
+    const blocks = read('renderer/editor/pisi-block-editor.mjs');
+    const team = read('renderer/team/pisi-team-api.mjs');
+    for (const point of [
+        'nodeType', 'exporter', 'taskView', 'toolbarTool', 'mapLayout', 'rightPanel'
+    ]) assert.match(extensions, new RegExp(`'${point}'`));
+    assert.match(extensions, /registerPisiPlugin/);
+    assert.match(commands, /findPisiShortcutConflict/);
+    assert.match(commands, /Mod\+K/);
+    assert.match(blocks, /pisiBlockMarkdownToHtml/);
+    assert.match(blocks, /data-pisi-block-type/);
+    assert.match(team, /registerPisiTeamProvider/);
+    assert.match(team, /optimisticRevision/);
 });

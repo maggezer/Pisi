@@ -6,7 +6,11 @@ const crypto = require('crypto');
 const { registerMainModule } = require('../module-registry');
 
 const PISI_PROPERTY_TYPES = new Set([
-    'text', 'number', 'date', 'select', 'multiselect', 'node', 'checkbox'
+    'text', 'number', 'date', 'select', 'multiselect', 'node', 'checkbox',
+    'relation', 'rollup'
+]);
+const PISI_ROLLUP_AGGREGATES = new Set([
+    'count', 'sum', 'average', 'min', 'max', 'unique', 'join', 'checked-percent'
 ]);
 
 function normalizePisiPropertyId(value = '') {
@@ -20,16 +24,36 @@ function normalizePisiPropertyId(value = '') {
     return normalized || `property-${crypto.randomUUID().slice(0, 8)}`;
 }
 
+function normalizePisiPropertyReference(value = '') {
+    return String(value || '').trim() ? normalizePisiPropertyId(value) : '';
+}
+
 function normalizePisiPropertyValue(type, value) {
     if (type === 'checkbox') return value === true || value === 'true';
     if (type === 'number') {
         const number = Number(value);
         return Number.isFinite(number) ? number : null;
     }
-    if (type === 'multiselect') {
+    if (type === 'multiselect' || type === 'relation') {
         const values = Array.isArray(value) ? value : String(value || '').split(',');
         return Array.from(new Set(values.map((item) => String(item).trim()).filter(Boolean)))
-            .slice(0, 100);
+            .slice(0, type === 'relation' ? 500 : 100)
+            .map((item) => item.slice(0, type === 'relation' ? 2048 : 240));
+    }
+    if (type === 'rollup') {
+        const rollup = value && typeof value === 'object' ? value : {};
+        return {
+            relationProperty: normalizePisiPropertyReference(
+                rollup.relationProperty || rollup.relationPropertyId || ''
+            ),
+            targetProperty: normalizePisiPropertyReference(
+                rollup.targetProperty || rollup.targetPropertyId || ''
+            ),
+            aggregate: PISI_ROLLUP_AGGREGATES.has(String(rollup.aggregate || ''))
+                ? String(rollup.aggregate)
+                : 'count',
+            separator: String(rollup.separator || ', ').slice(0, 20)
+        };
     }
     return String(value ?? '').trim().slice(0, 10000);
 }
@@ -138,6 +162,121 @@ function deletePisiSavedView(projectFolder, viewId) {
             JSON.stringify({ version: 1, views }, null, 2)
         );
         return { ok: true, views };
+    } catch (error) {
+        return { ok: false, error: error.message };
+    }
+}
+
+function getPisiTemplatesPath(projectFolder) {
+    return path.join(projectFolder, '.pisi-templates.json');
+}
+
+function normalizePisiDatabaseTemplate(template = {}) {
+    const id = /^template_[A-Za-z0-9_-]+$/.test(String(template.id || ''))
+        ? String(template.id)
+        : `template_${crypto.randomUUID()}`;
+    const name = String(template.name || '').trim().slice(0, 120);
+    if (!name) return null;
+    return {
+        id,
+        name,
+        nodeType: String(template.nodeType || 'note').trim().slice(0, 80),
+        description: String(template.description || '').trim().slice(0, 500),
+        content: String(template.content || '').slice(0, 2000000),
+        properties: normalizePisiProperties(template.properties || {}),
+        updatedAt: /^\d{4}-\d{2}-\d{2}T/.test(String(template.updatedAt || ''))
+            ? String(template.updatedAt)
+            : new Date().toISOString()
+    };
+}
+
+function readPisiDatabaseTemplates(projectFolder) {
+    const filePath = getPisiTemplatesPath(projectFolder);
+    if (!fs.existsSync(filePath)) return { ok: true, templates: [] };
+    const result = readJsonFileResult(filePath);
+    if (!result.ok) return { ok: false, error: result.error, templates: [] };
+    const templates = (Array.isArray(result.data?.templates)
+        ? result.data.templates
+        : []).map((template) => normalizePisiDatabaseTemplate(template))
+        .filter(Boolean)
+        .slice(0, 200);
+    return { ok: true, templates };
+}
+
+function savePisiDatabaseTemplate(projectFolder, template = {}) {
+    try {
+        const current = readPisiDatabaseTemplates(projectFolder);
+        if (!current.ok) return current;
+        const clean = normalizePisiDatabaseTemplate(template);
+        if (!clean) return { ok: false, error: 'Şablon adı gerekli.' };
+        clean.updatedAt = new Date().toISOString();
+        const templates = current.templates.filter((item) => item.id !== clean.id);
+        templates.push(clean);
+        writeFileAtomic(
+            getPisiTemplatesPath(projectFolder),
+            JSON.stringify({ version: 1, templates }, null, 2)
+        );
+        return { ok: true, template: clean, templates };
+    } catch (error) {
+        return { ok: false, error: error.message };
+    }
+}
+
+function deletePisiDatabaseTemplate(projectFolder, templateId) {
+    try {
+        const current = readPisiDatabaseTemplates(projectFolder);
+        if (!current.ok) return current;
+        const templates = current.templates.filter((item) => {
+            return item.id !== String(templateId || '');
+        });
+        writeFileAtomic(
+            getPisiTemplatesPath(projectFolder),
+            JSON.stringify({ version: 1, templates }, null, 2)
+        );
+        return { ok: true, templates };
+    } catch (error) {
+        return { ok: false, error: error.message };
+    }
+}
+
+function applyPisiDatabaseTemplate(nodePath, templateId, options = {}) {
+    try {
+        const projectFolder = globalThis.activeProjectFolder || path.dirname(nodePath);
+        const current = readPisiDatabaseTemplates(projectFolder);
+        if (!current.ok) return current;
+        const template = current.templates.find((item) => {
+            return item.id === String(templateId || '');
+        });
+        if (!template) return { ok: false, error: 'Şablon bulunamadı.' };
+        const nodeInfo = ensurePisiFileMetadata(nodePath);
+        if (!nodeInfo.ok || nodeInfo.metadata.type !== 'node') {
+            return { ok: false, error: 'Şablon yalnızca node dosyasına uygulanabilir.' };
+        }
+        if (typeof globalThis.snapshotPisiNodeVersion === 'function') {
+            const snapshot = globalThis.snapshotPisiNodeVersion(nodePath, 'template-apply');
+            if (!snapshot.ok) return snapshot;
+        }
+        const existing = normalizePisiProperties(nodeInfo.data.properties || {});
+        nodeInfo.data.properties = options.replaceProperties === true
+            ? template.properties
+            : { ...existing, ...template.properties };
+        if (options.applyContent === true && template.content) {
+            const currentContent = String(nodeInfo.data.content || '');
+            nodeInfo.data.content = options.contentMode === 'replace'
+                ? template.content
+                : `${currentContent}${currentContent ? '\n' : ''}${template.content}`;
+        }
+        nodeInfo.data.pisi.nodeType = template.nodeType || nodeInfo.data.pisi.nodeType || 'note';
+        nodeInfo.data.pisi.updatedAt = new Date().toISOString();
+        writePisiDocument(nodePath, nodeInfo.data);
+        return {
+            ok: true,
+            fullPath: nodePath,
+            template,
+            metadata: nodeInfo.data.pisi,
+            properties: nodeInfo.data.properties,
+            content: nodeInfo.data.content || ''
+        };
     } catch (error) {
         return { ok: false, error: error.message };
     }
@@ -280,12 +419,18 @@ function detachPisiMapReference(mapPath, nodeId) {
 
 const moduleApi = {
     normalizePisiPropertyId,
+    normalizePisiPropertyReference,
     normalizePisiPropertyValue,
     normalizePisiProperties,
     savePisiNodeProperties,
     readPisiSavedViews,
     savePisiSavedView,
     deletePisiSavedView,
+    normalizePisiDatabaseTemplate,
+    readPisiDatabaseTemplates,
+    savePisiDatabaseTemplate,
+    deletePisiDatabaseTemplate,
+    applyPisiDatabaseTemplate,
     createPisiPropertyMap,
     resolvePisiMapReference,
     collectPisiMapReferenceNodes,
