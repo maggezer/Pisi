@@ -634,6 +634,13 @@ async function reloadPisiWorkspaceAfterExternalChange(changedPaths) {
 let pisiFileSystemRefreshTail = Promise.resolve();
 
 function handlePisiExternalFileSystemChange(payload = {}) {
+    if (
+        typeof shouldSuppressFileSystemRefresh === 'function' &&
+        shouldSuppressFileSystemRefresh()
+    ) {
+        return pisiFileSystemRefreshTail;
+    }
+
     const changedPaths = Array.isArray(payload?.changedPaths)
         ? payload.changedPaths.filter(Boolean)
         : [];
