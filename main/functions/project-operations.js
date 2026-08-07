@@ -597,6 +597,13 @@ function safeListFolder(folderPath) {
 
                 if (
                     entry.isDirectory() &&
+                    entry.name.toLowerCase() === '.pisi-history'
+                ) {
+                    return false;
+                }
+
+                if (
+                    entry.isDirectory() &&
                     (
                         entry.name.startsWith('.pisi-delete-') ||
                         entry.name.startsWith('.pisi-transaction-')
@@ -711,7 +718,13 @@ function notifyProjectChanged(reason = 'changed', changedPath = null) {
 
 function shouldWatchProjectDirectory(directoryPath) {
     const name = path.basename(directoryPath).toLowerCase();
-    return !['.git', 'node_modules', 'dist', 'coverage'].includes(name);
+    return ![
+        '.git',
+        '.pisi-history',
+        'node_modules',
+        'dist',
+        'coverage'
+    ].includes(name);
 }
 
 function collectProjectDirectories(rootPath) {
