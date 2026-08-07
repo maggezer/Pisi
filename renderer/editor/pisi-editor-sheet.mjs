@@ -1,4 +1,5 @@
 import { registerModule } from "../core/module-registry.mjs";
+import { evaluatePisiFormulaExpression } from "./pisi-editor-sheet-formula-core.mjs";
 
 function runPisiExcelAction(toolbar, action, actionValue = null) {
     const editor = getPisiToolbarEditor(toolbar);
@@ -219,170 +220,71 @@ function recalcPisiSheet(table) {
                 continue;
             }
 
-            const value = evaluatePisiSheetFormula(
+            const result = evaluatePisiSheetFormulaResult(
                 table,
                 cell.dataset.formula,
                 new Set([cell.dataset.cell])
             );
-            cell.textContent = Number.isFinite(value)
-                ? formatPisiSheetNumber(value)
-                : '#ERR';
+            cell.textContent = result.ok
+                ? formatPisiSheetValue(result.value)
+                : result.error;
         }
     }
+}
+
+function getPisiSheetFormulaLocale() {
+    return window.pisiI18n?.getLanguage?.() === 'tr'
+        ? 'tr-TR'
+        : 'en-US';
+}
+
+function evaluatePisiSheetFormulaResult(table, formula, stack = new Set()) {
+    return evaluatePisiFormulaExpression(formula, {
+        locale: getPisiSheetFormulaLocale(),
+        resolveCell(ref) {
+            const result = getPisiSheetCellValue(table, ref, stack);
+            return result.error
+                ? { ok: false, error: '#ERR' }
+                : { ok: true, value: result.value };
+        },
+        resolveRange(startRef, endRef) {
+            const range = getPisiSheetRangeCellValues(
+                table,
+                startRef,
+                endRef,
+                stack
+            );
+            return range.error
+                ? { ok: false, error: '#ERR' }
+                : { ok: true, values: range.values };
+        }
+    });
 }
 
 function evaluatePisiSheetFormula(table, formula, stack = new Set()) {
-    let expression = String(formula || '').trim();
-    if (expression.startsWith('=')) expression = expression.slice(1);
-
-    let formulaError = false;
-
-    expression = expression.replace(/\b(SUM|AVG|MIN|MAX|COUNT)\(([A-Z]+\d+)(?::([A-Z]+\d+))?\)/gi, (_, fn, startRef, endRef) => {
-        const range = getPisiSheetRangeValues(
-            table,
-            startRef,
-            endRef || startRef,
-            stack
-        );
-
-        if (range.error) {
-            formulaError = true;
-            return '0';
-        }
-
-        const values = range.values;
-        const upper = fn.toUpperCase();
-
-        if (upper === 'SUM') return String(values.reduce((a, b) => a + b, 0));
-        if (upper === 'COUNT') return String(values.length);
-
-        if (!values.length) {
-            formulaError = true;
-            return '0';
-        }
-
-        if (upper === 'AVG') return String(values.reduce((a, b) => a + b, 0) / values.length);
-        if (upper === 'MIN') return String(Math.min(...values));
-        if (upper === 'MAX') return String(Math.max(...values));
-        return '0';
-    });
-
-    expression = expression.replace(/\b([A-Z]+\d+)\b/g, (_, ref) => {
-        const value = getPisiSheetCellNumericValue(
-            table,
-            ref.toUpperCase(),
-            stack
-        );
-
-        if (!Number.isFinite(value)) {
-            formulaError = true;
-            return '0';
-        }
-
-        return String(value);
-    });
-
-    if (
-        formulaError ||
-        !/^[0-9+\-*/().\s]+$/.test(expression)
-    ) {
-        return NaN;
-    }
-
-    return evaluatePisiArithmeticExpression(expression);
+    const result = evaluatePisiSheetFormulaResult(table, formula, stack);
+    return result.ok ? result.value : NaN;
 }
 
 function evaluatePisiArithmeticExpression(expression) {
-    const input = String(expression || '');
-    let index = 0;
-
-    function skipWhitespace() {
-        while (/\s/.test(input[index] || '')) index += 1;
-    }
-
-    function parseNumber() {
-        skipWhitespace();
-        const match = input.slice(index).match(/^(?:\d+(?:\.\d*)?|\.\d+)/);
-        if (!match) return NaN;
-        index += match[0].length;
-        return Number(match[0]);
-    }
-
-    function parsePrimary() {
-        skipWhitespace();
-
-        if (input[index] === '(') {
-            index += 1;
-            const value = parseExpression();
-            skipWhitespace();
-
-            if (input[index] !== ')') return NaN;
-            index += 1;
-            return value;
-        }
-
-        return parseNumber();
-    }
-
-    function parseFactor() {
-        skipWhitespace();
-
-        if (input[index] === '+' || input[index] === '-') {
-            const sign = input[index];
-            index += 1;
-            const value = parseFactor();
-            return sign === '-' ? -value : value;
-        }
-
-        return parsePrimary();
-    }
-
-    function parseTerm() {
-        let value = parseFactor();
-
-        while (Number.isFinite(value)) {
-            skipWhitespace();
-            const operator = input[index];
-            if (operator !== '*' && operator !== '/') break;
-            index += 1;
-
-            const right = parseFactor();
-            if (!Number.isFinite(right)) return NaN;
-            if (operator === '/' && right === 0) return NaN;
-            value = operator === '*' ? value * right : value / right;
-        }
-
-        return value;
-    }
-
-    function parseExpression() {
-        let value = parseTerm();
-
-        while (Number.isFinite(value)) {
-            skipWhitespace();
-            const operator = input[index];
-            if (operator !== '+' && operator !== '-') break;
-            index += 1;
-
-            const right = parseTerm();
-            if (!Number.isFinite(right)) return NaN;
-            value = operator === '+' ? value + right : value - right;
-        }
-
-        return value;
-    }
-
-    const result = parseExpression();
-    skipWhitespace();
-
-    return Number.isFinite(result) && index === input.length
-        ? result
+    const result = evaluatePisiFormulaExpression(expression);
+    return result.ok && typeof result.value === 'number'
+        ? result.value
         : NaN;
+}
+
+function formatPisiSheetValue(value) {
+    if (typeof value === 'number') return formatPisiSheetNumber(value);
+    if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE';
+    if (typeof value === 'string') return value;
+    if (value === null || value === undefined) return '';
+    return '#ERR';
 }
 
 function getPisiSheetCellNumericValue(table, ref, stack = new Set()) {
     const result = getPisiSheetCellValue(table, ref, stack);
-    return result.error ? NaN : result.value;
+    if (result.error) return NaN;
+    return result.numeric ? result.value : 0;
 }
 
 function getPisiSheetCellValue(table, ref, stack = new Set()) {
@@ -406,16 +308,16 @@ function getPisiSheetCellValue(table, ref, stack = new Set()) {
 
         const nextStack = new Set(stack);
         nextStack.add(ref);
-        const value = evaluatePisiSheetFormula(
+        const result = evaluatePisiSheetFormulaResult(
             table,
             cell.dataset.formula,
             nextStack
         );
 
         return {
-            value,
-            numeric: Number.isFinite(value),
-            error: !Number.isFinite(value)
+            value: result.ok ? result.value : null,
+            numeric: result.ok && typeof result.value === 'number',
+            error: !result.ok
         };
     }
 
@@ -423,7 +325,7 @@ function getPisiSheetCellValue(table, ref, stack = new Set()) {
 
     if (!text) {
         return {
-            value: 0,
+            value: '',
             numeric: false,
             error: false
         };
@@ -432,13 +334,13 @@ function getPisiSheetCellValue(table, ref, stack = new Set()) {
     const numeric = Number(text.replace(',', '.'));
 
     return {
-        value: Number.isFinite(numeric) ? numeric : 0,
+        value: Number.isFinite(numeric) ? numeric : text,
         numeric: Number.isFinite(numeric),
         error: false
     };
 }
 
-function getPisiSheetRangeValues(table, startRef, endRef, stack = new Set()) {
+function getPisiSheetRangeCellValues(table, startRef, endRef, stack = new Set()) {
     const start = parsePisiCellRef(startRef);
     const end = parsePisiCellRef(endRef);
     const rows = table.querySelectorAll('tbody tr');
@@ -497,14 +399,30 @@ function getPisiSheetRangeValues(table, startRef, endRef, stack = new Set()) {
                 };
             }
 
-            if (result.numeric) {
-                values.push(result.value);
-            }
+            values.push(result.value);
         }
     }
 
     return {
         values,
+        error: false
+    };
+}
+
+function getPisiSheetRangeValues(table, startRef, endRef, stack = new Set()) {
+    const range = getPisiSheetRangeCellValues(
+        table,
+        startRef,
+        endRef,
+        stack
+    );
+
+    if (range.error) return range;
+
+    return {
+        values: range.values.filter((value) => {
+            return typeof value === 'number' && Number.isFinite(value);
+        }),
         error: false
     };
 }
