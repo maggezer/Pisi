@@ -512,6 +512,7 @@ function bindMapNodeDrag(box) {
         const startX = event.clientX;
         const startY = event.clientY;
         const dragZoom = activeMapCamera?.zoom || 1;
+        let hasDragged = false;
 
         const draggedBoxes = getSelectedMapNodeBoxes().map((selectedBox) => {
             selectedBox.classList.add('dragging');
@@ -527,6 +528,13 @@ function bindMapNodeDrag(box) {
             const dx = (moveEvent.clientX - startX) / dragZoom;
             const dy = (moveEvent.clientY - startY) / dragZoom;
 
+            if (
+                Math.abs(moveEvent.clientX - startX) +
+                Math.abs(moveEvent.clientY - startY) > 4
+            ) {
+                hasDragged = true;
+            }
+
             for (const item of draggedBoxes) {
                 item.box.style.left = `${item.x + dx}px`;
                 item.box.style.top = `${item.y + dy}px`;
@@ -539,12 +547,21 @@ function bindMapNodeDrag(box) {
             }
         };
 
-        const onMouseUp = () => {
+        const onMouseUp = (upEvent) => {
             window.removeEventListener('mousemove', onMouseMove);
             window.removeEventListener('mouseup', onMouseUp);
 
             for (const item of draggedBoxes) {
                 item.box.classList.remove('dragging');
+            }
+
+            const moved = hasDragged || (
+                Math.abs(upEvent.clientX - startX) +
+                Math.abs(upEvent.clientY - startY) > 4
+            );
+
+            if (moved) {
+                clearSelectedMapNodes();
             }
 
             scheduleMapLayoutSave();
