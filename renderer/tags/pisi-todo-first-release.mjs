@@ -419,6 +419,8 @@ function createPisiUserTagElement(rawTag, options = {}) {
     element.contentEditable = 'false';
     element.textContent = tag;
     if (/^todo\./i.test(tag)) {
+        element.classList.add('pisi-task-metadata');
+        element.setAttribute('aria-hidden', 'true');
         element.dataset.pisiTodoStatus = String(options.status || 'todo').toLowerCase();
         element.dataset.pisiTodoRepeat = String(options.repeat || 'none').toLowerCase();
     }
