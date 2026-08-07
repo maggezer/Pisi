@@ -17,7 +17,6 @@ const PISI_BLOCK_TYPES = Object.freeze([
 const pisiBlocksEditorState = {
     editor: null,
     block: null,
-    toolbar: null,
     slashMenu: null,
     slashIndex: 0,
     draggedBlockId: null,
@@ -266,68 +265,6 @@ function copyPisiBlockReference(block = getPisiActiveBlock()) {
     return reference;
 }
 
-function ensurePisiBlockToolbar() {
-    if (pisiBlocksEditorState.toolbar?.isConnected) return pisiBlocksEditorState.toolbar;
-    const toolbar = document.createElement('div');
-    toolbar.className = 'pisi-block-toolbar';
-    toolbar.hidden = true;
-    const handle = document.createElement('button');
-    handle.type = 'button';
-    handle.className = 'pisi-block-drag-handle';
-    handle.textContent = '⋮⋮';
-    handle.title = pisiBlockTranslate('Bloğu sürükle');
-    handle.draggable = true;
-    handle.addEventListener('dragstart', (event) => {
-        const block = getPisiActiveBlock();
-        if (!block) return;
-        pisiBlocksEditorState.draggedBlockId = block.dataset.pisiBlockId;
-        event.dataTransfer.effectAllowed = 'move';
-        event.dataTransfer.setData('text/x-pisi-block', block.dataset.pisiBlockId);
-    });
-    const type = document.createElement('select');
-    type.className = 'pisi-block-type-select';
-    for (const record of PISI_BLOCK_TYPES) {
-        const option = document.createElement('option');
-        option.value = record.id;
-        option.textContent = pisiBlockTranslate(record.label);
-        type.appendChild(option);
-    }
-    type.addEventListener('change', () => applyPisiBlockType(getPisiActiveBlock(), type.value));
-    const makeAction = (label, title, action) => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.textContent = label;
-        button.title = pisiBlockTranslate(title);
-        button.addEventListener('click', () => action(getPisiActiveBlock()));
-        return button;
-    };
-    toolbar.append(
-        handle,
-        type,
-        makeAction('↑', 'Bloğu yukarı taşı', (block) => movePisiBlock(block, -1)),
-        makeAction('↓', 'Bloğu aşağı taşı', (block) => movePisiBlock(block, 1)),
-        makeAction('⧉', 'Bloğu çoğalt', duplicatePisiBlock),
-        makeAction('↗', 'Blok referansını kopyala', copyPisiBlockReference),
-        makeAction('×', 'Bloğu sil', deletePisiBlock)
-    );
-    document.body.appendChild(toolbar);
-    pisiBlocksEditorState.toolbar = toolbar;
-    return toolbar;
-}
-
-function positionPisiBlockToolbar(block) {
-    const toolbar = ensurePisiBlockToolbar();
-    if (!block?.isConnected) {
-        toolbar.hidden = true;
-        return;
-    }
-    const rect = block.getBoundingClientRect();
-    toolbar.hidden = false;
-    toolbar.querySelector('.pisi-block-type-select').value = getPisiBlockType(block);
-    toolbar.style.left = `${Math.max(8, rect.left - toolbar.offsetWidth - 8)}px`;
-    toolbar.style.top = `${Math.max(8, rect.top)}px`;
-}
-
 function selectPisiBlock(editor, block) {
     if (!editor || !block || !editor.contains(block)) return null;
     pisiBlocksEditorState.editor?.querySelectorAll('.pisi-block-active')
@@ -335,7 +272,6 @@ function selectPisiBlock(editor, block) {
     pisiBlocksEditorState.editor = editor;
     pisiBlocksEditorState.block = block;
     block.classList.add('pisi-block-active');
-    positionPisiBlockToolbar(block);
     document.dispatchEvent(new CustomEvent('pisi:block-selected', {
         detail: {
             nodePath: editor.id === 'node-modal-content'
@@ -397,6 +333,13 @@ function closePisiSlashMenu() {
     if (pisiBlocksEditorState.slashMenu) pisiBlocksEditorState.slashMenu.hidden = true;
 }
 
+function isPisiSlashMenuOpen() {
+    return Boolean(
+        pisiBlocksEditorState.slashMenu &&
+        !pisiBlocksEditorState.slashMenu.hidden
+    );
+}
+
 function applyPisiMarkdownBlockShortcut(event, block) {
     if (event.key !== ' ' || event.ctrlKey || event.metaKey || event.altKey) return false;
     const marker = String(block.textContent || '').trim();
@@ -423,7 +366,7 @@ function applyPisiMarkdownBlockShortcut(event, block) {
 function handlePisiBlocksEditorKeydown(editor, event) {
     const block = getPisiBlockAtEvent(editor, event.target) || getPisiActiveBlock();
     if (!block) return;
-    if (!pisiBlocksEditorState.slashMenu?.hidden) {
+    if (isPisiSlashMenuOpen()) {
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
             event.preventDefault();
             const delta = event.key === 'ArrowDown' ? 1 : -1;
@@ -584,8 +527,6 @@ function initializePisiBlocksEditor() {
         const editor = getPisiActiveBlocksEditor();
         if (editor) decoratePisiBlockTypes(editor);
     });
-    window.addEventListener('resize', () => positionPisiBlockToolbar(getPisiActiveBlock()));
-    window.addEventListener('scroll', () => positionPisiBlockToolbar(getPisiActiveBlock()), true);
     registerPisiCommand({
         id: 'pisi.block.markdown-source',
         label: 'Markdown kaynak görünümünü aç',

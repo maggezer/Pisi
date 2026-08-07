@@ -55,49 +55,6 @@
     user-select: none;
 }
 
-.pisi-block-toolbar {
-    position: fixed;
-    z-index: 12500;
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    padding: 4px;
-    color: var(--text-color);
-    background: color-mix(in srgb, var(--panel-bg) 96%, #000);
-    border: 1px solid var(--border-color);
-    border-radius: 9px;
-    box-shadow: 0 8px 24px rgb(0 0 0 / 28%);
-}
-
-.pisi-block-toolbar[hidden] {
-    display: none;
-}
-
-.pisi-block-toolbar button,
-.pisi-block-toolbar select {
-    min-height: 28px;
-    padding: 3px 6px;
-    color: inherit;
-    background: transparent;
-    border: 0;
-    border-radius: 5px;
-    font: inherit;
-}
-
-.pisi-block-toolbar button:hover,
-.pisi-block-toolbar select:hover {
-    background: color-mix(in srgb, var(--accent-color) 16%, transparent);
-}
-
-.pisi-block-drag-handle {
-    cursor: grab;
-}
-
-.pisi-block-type-select {
-    max-width: 105px;
-    font-size: 11px;
-}
-
 .pisi-block-slash-menu {
     position: fixed;
     z-index: 12600;
