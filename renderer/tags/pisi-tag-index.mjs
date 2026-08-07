@@ -511,7 +511,7 @@ async function getPisiTagsActiveMapNodes(mapPath) {
     return Array.isArray(result.nodes) ? result.nodes : [];
 }
 
-async function collectPisiDiaryTagNodeItems() {
+async function collectPisiDiaryTagNodeItems(scanState = null) {
     const projectFolder = window.currentProjectFolder;
 
     if (!projectFolder || !window.pisiProject?.listDiaryDates) {
@@ -519,13 +519,32 @@ async function collectPisiDiaryTagNodeItems() {
     }
 
     const datesResult = await window.pisiProject.listDiaryDates(projectFolder);
+
+    if (!datesResult?.ok) {
+        if (scanState) {
+            scanState.complete = false;
+            scanState.errors.push(
+                datesResult?.error || 'Günlük notları listelenemedi.'
+            );
+        }
+        return [];
+    }
+
     const dates = Array.isArray(datesResult?.dates) ? datesResult.dates : [];
     const nodes = [];
 
     for (const date of dates) {
         const result = await window.pisiProject?.getOrCreateDiaryNode?.(projectFolder, date);
 
-        if (!result?.ok || !result.fullPath) continue;
+        if (!result?.ok || !result.fullPath) {
+            if (scanState) {
+                scanState.complete = false;
+                scanState.errors.push(
+                    result?.error || `Günlük notu okunamadı: ${date}`
+                );
+            }
+            continue;
+        }
 
         nodes.push({
             name: result.name || result.fileName || `${date}.node`,
@@ -747,11 +766,26 @@ async function buildPisiMissionBlockIndex() {
         };
     }
 
+    const seenPaths = new Set();
     const nodeItems = await collectPisiMissionNodeItemsFromFolder(
         projectFolder,
-        new Set(),
+        seenPaths,
         scanState
     );
+    const diaryNodeItems = await collectPisiDiaryTagNodeItems(scanState);
+
+    for (const diaryNode of diaryNodeItems) {
+        const normalizedDiaryPath = normalizeClientPathForTags(
+            diaryNode?.fullPath
+        );
+
+        if (!normalizedDiaryPath || seenPaths.has(normalizedDiaryPath)) {
+            continue;
+        }
+
+        seenPaths.add(normalizedDiaryPath);
+        nodeItems.push(diaryNode);
+    }
 
     for (const node of nodeItems) {
         const nodePath = node.fullPath;

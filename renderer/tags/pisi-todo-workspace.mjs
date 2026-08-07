@@ -75,20 +75,7 @@ function ensurePisiTodoWorkspaceOpenButton() {
     button.id = 'pisi-todo-workspace-open';
     button.type = 'button';
     button.className = 'pisi-todo-workspace-open';
-    const icon = document.createElement('span');
-    icon.className = 'pisi-todo-workspace-open-icon';
-    icon.textContent = '✓';
-    const copy = document.createElement('span');
-    copy.className = 'pisi-todo-workspace-open-copy';
-    const label = document.createElement('strong');
-    label.textContent = pisiTodoWorkspaceTranslate('To-do');
-    const hint = document.createElement('small');
-    hint.textContent = pisiTodoWorkspaceTranslate('Görev merkezini aç');
-    copy.append(label, hint);
-    const arrow = document.createElement('span');
-    arrow.className = 'pisi-todo-workspace-open-arrow';
-    arrow.textContent = '›';
-    button.append(icon, copy, arrow);
+    button.textContent = pisiTodoWorkspaceTranslate('To-do');
     button.title = pisiTodoWorkspaceTranslate('To-do çalışma alanını aç');
     button.setAttribute('aria-label', button.title);
     button.addEventListener('click', openPisiTodoWorkspace);
@@ -403,11 +390,10 @@ function initializePisiTodoWorkspace() {
         schedulePisiTodoWorkspaceRender
     );
 
-    document.addEventListener('dblclick', (event) => {
+    document.addEventListener('pisi:active-node-changed', (event) => {
         if (!pisiTodoWorkspaceState.open) return;
-        if (event.target.closest('.tree-row')) {
-            closePisiTodoWorkspace({ restore: false });
-        }
+        if (event.detail?.reason !== 'center-open') return;
+        closePisiTodoWorkspace({ restore: false });
     });
 }
 
