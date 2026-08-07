@@ -168,3 +168,21 @@ test('map portu kendi alt node ağacını ve bu ağa bağlı çizgileri daraltı
         /width: box\.offsetWidth \|\| parseFloat\(box\.style\.width/
     );
 });
+
+test('map ok uçları ve çizgileri node zoom oranını izler', () => {
+    const interactions = read('renderer/map/pisi-map-interactions.mjs');
+    const edges = read('renderer/map/pisi-map-edges.mjs');
+    const mapStyles = read('styles/10-tree-and-map.css');
+    const interactionStyles = read('styles/20-map-interactions.css');
+    const html = read('index.html');
+
+    assert.match(interactions, /getPisiMapConnectionMetrics\(activeMapCamera\?\.zoom\)/);
+    assert.match(interactions, /syncMapConnectionZoomStyles\(\)/);
+    assert.match(edges, /syncMapConnectionZoomStyles\(svg\)/);
+    assert.match(mapStyles, /stroke-width: var\(--pisi-map-edge-stroke-width, 2\.5px\)/);
+    assert.match(
+        interactionStyles,
+        /stroke-width: var\(--pisi-map-temp-edge-stroke-width, 2px\)/
+    );
+    assert.match(html, /markerUnits="strokeWidth"/);
+});
