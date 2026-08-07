@@ -445,7 +445,7 @@ function startRenameTreeFile(item, row) {
     const oldName = oldBaseName;
 
     const input = document.createElement('input');
-    input.className = 'tree-rename-input';
+    input.className = 'tree-rename-input pisi-rename-input';
     input.value = oldBaseName;
 
     nameSpan.replaceWith(input);
@@ -470,8 +470,7 @@ function startRenameTreeFile(item, row) {
     event.stopPropagation();
     });
 
-    input.focus();
-    input.select();
+    focusPisiTextInput(input, true);
 
     let finished = false;
 
