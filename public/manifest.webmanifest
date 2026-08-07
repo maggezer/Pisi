@@ -1,7 +1,7 @@
 {
-  "name": "KEDI",
-  "short_name": "KEDI",
-  "description": "Not, çizim, tablo, zihin haritası ve günlük uygulaması",
+  "name": "Pisi",
+  "short_name": "Pisi",
+  "description": "Bağlantılı not, görev, blok, tablo, kaynak ve zihin haritası çalışma alanı",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#171310",

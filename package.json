@@ -1,9 +1,9 @@
 {
-  "name": "kedi-mobile",
-  "version": "2.0.0",
+  "name": "pisi-mobile",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
-  "description": "KEDI mobile-first note, canvas and journal app for Android",
+  "description": "Pisi responsive phone and tablet knowledge workspace for Android",
   "engines": {
     "node": ">=22.12"
   },
@@ -26,7 +26,10 @@
     "@capacitor/keyboard": "^8.0.5",
     "@capacitor/share": "^8.0.1",
     "@capacitor/status-bar": "^8.0.3",
+    "docx": "^9.7.1",
+    "jspdf": "^4.2.1",
     "lunar-javascript": "^1.7.7",
+    "marked": "^18.0.9",
     "moment": "^2.30.1",
     "moment-hijri": "^3.0.0"
   },

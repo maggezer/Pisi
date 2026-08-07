@@ -35,5 +35,21 @@ describe('spreadsheet helpers', () => {
     expect(result.A1).toBe('#DÖNGÜ');
     expect(result.C1).toBe('#HATA');
   });
+
+  it('evaluates logical, text, math and scientific formulas safely', () => {
+    const result = evaluateSheet({
+      A1: '9', A2: 'Pisi',
+      B1: '=IF(AND(A1>5,A1<10),"uygun","değil")',
+      B2: '=UPPER(CONCAT(A2," mobile"))',
+      C1: '=ROUND(SQRT(A1)+SIN(PI()/2),2)',
+      C2: '=IFERROR(A1/0,42)',
+      C3: '=TEXTJOIN("-",TRUE,A1:A2)'
+    });
+    expect(result.B1).toBe('uygun');
+    expect(result.B2).toBe('PİSİ MOBİLE');
+    expect(result.C1).toBe('4');
+    expect(result.C2).toBe('42');
+    expect(result.C3).toBe('9-Pisi');
+  });
 });
 
