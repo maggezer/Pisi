@@ -202,3 +202,20 @@ test('günlük takvimi açılan günü seçili bırakmaz ve dil değişikliğini
     assert.match(styles, /\.pisi-calendar-footer \{[\s\S]*?justify-content: center;/);
     assert.match(styles, /\.pisi-calendar-today-btn \{[\s\S]*?flex: 0 0 auto;[\s\S]*?width: fit-content;/);
 });
+
+test('mantıksal, metin ve bilimsel tablo formülleri etkin hesap motoruna bağlıdır', () => {
+    const sheet = read('renderer/editor/pisi-editor-sheet.mjs');
+    const formulaCore = read('renderer/editor/pisi-editor-sheet-formula-core.mjs');
+    const menus = read('renderer/editor/pisi-editor-toolbar-menus.mjs');
+    const styles = read('styles/65-unified-toolbar.css');
+
+    assert.match(sheet, /import \{ evaluatePisiFormulaExpression \}/);
+    assert.match(sheet, /formatPisiSheetValue\(result\.value\)/);
+    assert.match(formulaCore, /name === 'IF'/);
+    assert.match(formulaCore, /name === 'CONCAT'/);
+    assert.match(formulaCore, /SIN: Math\.sin/);
+    assert.match(formulaCore, /name === 'LOG'/);
+    assert.match(menus, /PISI_TOOLBAR_FORMULA_GROUPS = PISI_FORMULA_CATALOG/);
+    assert.doesNotMatch(menus, /hesap motoru desteği hazırlanıyor/);
+    assert.match(styles, /\.pisi-office-formula-list \{[\s\S]*?overflow-y: auto;/);
+});
