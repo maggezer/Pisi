@@ -36,8 +36,15 @@ function decodePisiHtmlEntities(value = '') {
         .replace(/&amp;/gi, '&');
 }
 
+function stripPisiTaskMetadataHtml(value = '') {
+    return String(value || '').replace(
+        /<span\b(?=[^>]*(?:class=["'][^"']*pisi-task-metadata[^"']*["']|data-pisi-tag=["'](?:todo\.[^"']+|done)["']))[^>]*>[\s\S]*?<\/span>/gi,
+        ''
+    );
+}
+
 function pisiHtmlToPlainText(html = '') {
-    return decodePisiHtmlEntities(stripPisiUnsafeExportHtml(html)
+    return decodePisiHtmlEntities(stripPisiTaskMetadataHtml(stripPisiUnsafeExportHtml(html))
         .replace(/<br\s*\/?>/gi, '\n')
         .replace(/<\/(?:p|div|h[1-6]|li|blockquote|tr|table)>/gi, '\n')
         .replace(/<[^>]+>/g, ' '))
@@ -49,7 +56,7 @@ function pisiHtmlToPlainText(html = '') {
 }
 
 function pisiHtmlToMarkdown(html = '') {
-    let value = stripPisiUnsafeExportHtml(html);
+    let value = stripPisiTaskMetadataHtml(stripPisiUnsafeExportHtml(html));
     value = value.replace(
         /<span\b[^>]*data-pisi-block-ref=["']([^"']+)["'][^>]*>[\s\S]*?<\/span>/gi,
         (_all, reference) => `[[${decodePisiHtmlEntities(reference)}]]`
@@ -301,7 +308,10 @@ function pisiPropertiesFrontmatter(properties = {}) {
 
 function pisiExportHtmlDocument(info) {
     const title = escapePisiPortableHtml(info.metadata.title || 'Pisi');
-    return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>${title}</title><style>body{font:16px/1.6 system-ui;max-width:900px;margin:40px auto;padding:0 24px;color:#202124}table{border-collapse:collapse}td,th{border:1px solid #bbb;padding:6px}img,canvas{max-width:100%}blockquote{border-left:3px solid #888;padding-left:16px;color:#555}</style></head><body><h1>${title}</h1>${stripPisiUnsafeExportHtml(info.data.content || '')}</body></html>`;
+    const content = stripPisiTaskMetadataHtml(
+        stripPisiUnsafeExportHtml(info.data.content || '')
+    );
+    return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>${title}</title><style>body{font:16px/1.6 system-ui;max-width:900px;margin:40px auto;padding:0 24px;color:#202124}table{border-collapse:collapse}td,th{border:1px solid #bbb;padding:6px}img,canvas{max-width:100%}blockquote{border-left:3px solid #888;padding-left:16px;color:#555}</style></head><body><h1>${title}</h1>${content}</body></html>`;
 }
 
 let pisiCrcTable = null;
