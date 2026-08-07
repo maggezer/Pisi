@@ -1,31 +1,7 @@
 import { registerModule } from "../core/module-registry.mjs";
+import { PISI_FORMULA_CATALOG } from "./pisi-editor-sheet-formula-core.mjs";
 
-const PISI_TOOLBAR_FORMULA_GROUPS = {
-    logical: [
-        { label: 'IF', formula: '=IF(A1>0,1,0)', disabled: true },
-        { label: 'AND', formula: '=AND(A1>0,B1>0)', disabled: true },
-        { label: 'OR', formula: '=OR(A1>0,B1>0)', disabled: true },
-        { label: 'NOT', formula: '=NOT(A1>0)', disabled: true }
-    ],
-    text: [
-        { label: 'CONCAT', formula: '=CONCAT(A1,B1)', disabled: true },
-        { label: 'LEN', formula: '=LEN(A1)', disabled: true },
-        { label: 'LEFT', formula: '=LEFT(A1,3)', disabled: true },
-        { label: 'RIGHT', formula: '=RIGHT(A1,3)', disabled: true }
-    ],
-    math: [
-        { label: 'SUM', formula: '=SUM(A1:A5)' },
-        { label: 'AVG', formula: '=AVG(A1:A5)' },
-        { label: 'MIN', formula: '=MIN(A1:A5)' },
-        { label: 'MAX', formula: '=MAX(A1:A5)' },
-        { label: 'COUNT', formula: '=COUNT(A1:A5)' }
-    ],
-    financial: [
-        { label: 'PMT', formula: '=PMT(rate,nper,pv)', disabled: true },
-        { label: 'FV', formula: '=FV(rate,nper,pmt)', disabled: true },
-        { label: 'PV', formula: '=PV(rate,nper,pmt)', disabled: true }
-    ]
-};
+const PISI_TOOLBAR_FORMULA_GROUPS = PISI_FORMULA_CATALOG;
 
 const PISI_PERSONAL_FORMULAS_KEY = 'pisi.personalFormulas.v1';
 
@@ -88,17 +64,13 @@ function openPisiToolbarFormulaPopover(toolbar, anchor, groupName) {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'pisi-office-formula-item';
-        button.disabled = Boolean(item.disabled);
         button.innerHTML = `
             <strong>${item.label || item.name}</strong>
             <span>${item.formula}</span>
-            ${item.disabled ? '<em>hesap motoru desteği hazırlanıyor</em>' : ''}
         `;
         button.addEventListener('click', () => {
-            if (!item.disabled) {
-                applyPisiToolbarFormula(toolbar, item.formula);
-                closePisiToolbarPopover();
-            }
+            applyPisiToolbarFormula(toolbar, item.formula);
+            closePisiToolbarPopover();
         });
         list.appendChild(button);
     });

@@ -466,8 +466,12 @@
 
 .pisi-office-formula-list {
     min-width: 275px;
+    max-height: min(520px, calc(100vh - 110px));
     display: grid;
     gap: 3px;
+    padding-right: 2px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
 }
 
 .pisi-office-formula-item,
