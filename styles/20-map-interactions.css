@@ -15,7 +15,7 @@
 .map-temp-edge {
     fill: none;
     stroke: var(--pisi-map-downhub-color);
-    stroke-width: 2px;
+    stroke-width: var(--pisi-map-temp-edge-stroke-width, 2px);
     stroke-dasharray: 6 5;
     pointer-events: none;
     stroke-linecap: round;
@@ -148,7 +148,7 @@
 }
 
 .map-edge-group:hover .map-edge {
-    stroke-width: 4px;
+    stroke-width: var(--pisi-map-edge-hover-stroke-width, 4px);
 }
 
 .delete-tree-item-btn {
