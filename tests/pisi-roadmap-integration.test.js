@@ -100,3 +100,28 @@ test('editör imleci otomatik kayıtta korunur ve Enter yeni satıra bırakılı
     assert.doesNotMatch(blocks, /pisi-block-toolbar/);
     assert.doesNotMatch(platformStyles, /\.pisi-block-toolbar/);
 });
+
+test('Pisi geçmişi gizlenir ve yeniden adlandırma alanları klavyeyi korur', () => {
+    const operations = read('main/functions/project-operations.js');
+    const startup = read('renderer/shell/pisi-startup.mjs');
+    const tree = read('renderer/tree/pisi-tree-view.mjs');
+    const map = read('renderer/map/pisi-map-workspace.mjs');
+    const commands = read('renderer/core/pisi-command-registry.mjs');
+    const styles = read('styles/10-tree-and-map.css');
+    const focusHelper = startup.match(
+        /function focusPisiTextInput\(input, shouldSelect = true\) \{[\s\S]*?\n\}/
+    )?.[0] || '';
+
+    assert.match(operations, /entry\.name\.toLowerCase\(\) === '\.pisi-history'/);
+    assert.match(operations, /'\.pisi-history',[\s\S]*'node_modules'/);
+    assert.match(startup, /center-tab-rename-input pisi-rename-input/);
+    assert.match(tree, /tree-rename-input pisi-rename-input/);
+    assert.match(tree, /focusPisiTextInput\(input, true\)/);
+    assert.match(map, /map-node-title-input pisi-rename-input/);
+    assert.match(commands, /closest\?\.\('\.pisi-rename-input'\)/);
+    assert.match(focusHelper, /beforeinput/);
+    assert.match(focusHelper, /pisiUserEdited/);
+    assert.doesNotMatch(focusHelper, /focusRenderer/);
+    assert.match(styles, /\.pisi-rename-input/);
+    assert.match(styles, /user-select: text/);
+});
