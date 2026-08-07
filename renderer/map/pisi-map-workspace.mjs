@@ -648,7 +648,7 @@ async function startMapNodeTitleEdit(box, node) {
     const oldPath = node.fullPath;
 
     const input = document.createElement('input');
-    input.className = 'map-node-title-input';
+    input.className = 'map-node-title-input pisi-rename-input';
     input.value = oldTitle;
 
     titleEl.textContent = '';
