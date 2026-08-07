@@ -76,6 +76,7 @@ function buildPisiUnifiedToolbarMarkup() {
                 <div class="pisi-toolbar-section-row pisi-toolbar-style-grid">
                     <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="subscript" title="Subscript">${pisiToolbarIcon('subscript')}</button>
                     <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="insertUnorderedList" title="Bullet point">${pisiToolbarIcon('bullet-list')}</button>
+                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-todo-trigger title="Görev" aria-label="Görev"><span class="pisi-toolbar-todo-icon" aria-hidden="true">☐</span></button>
                     <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="superscript" title="Superscript">${pisiToolbarIcon('superscript')}</button>
                     <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-unified-command="insertOrderedList" title="Numbering">${pisiToolbarIcon('number-list')}</button>
                 </div>
@@ -182,6 +183,12 @@ function insertPisiToolbarSymbol(toolbar, symbol) {
     notifyPisiEditorChanged(editor);
 }
 
+function openPisiToolbarTodo(toolbar) {
+    const editor = getPisiToolbarEditor(toolbar);
+    if (!editor) return false;
+    return window.openPisiTodoPickerForEditor?.(editor) || false;
+}
+
 function syncPisiUnifiedToolbarContext(toolbar) {
     const table = getPisiUnifiedToolbarActiveTable(toolbar);
     toolbar.classList.toggle('pisi-table-context', Boolean(table));
@@ -194,6 +201,12 @@ function bindPisiUnifiedToolbarEvents(toolbar) {
     });
 
     toolbar.addEventListener('click', (event) => {
+        const todoTrigger = event.target.closest('[data-pisi-todo-trigger]');
+        if (todoTrigger) {
+            openPisiToolbarTodo(toolbar);
+            return;
+        }
+
         const command = event.target.closest('button[data-pisi-unified-command]');
         if (command) {
             runPisiUnifiedTextCommand(toolbar, command.dataset.pisiUnifiedCommand);
@@ -339,6 +352,7 @@ Object.defineProperties(moduleApi, {
     getPisiUnifiedToolbarActiveTable: { enumerable: true, get() { return getPisiUnifiedToolbarActiveTable; } },
     runPisiUnifiedTextCommand: { enumerable: true, get() { return runPisiUnifiedTextCommand; } },
     insertPisiToolbarSymbol: { enumerable: true, get() { return insertPisiToolbarSymbol; } },
+    openPisiToolbarTodo: { enumerable: true, get() { return openPisiToolbarTodo; } },
     syncPisiUnifiedToolbarContext: { enumerable: true, get() { return syncPisiUnifiedToolbarContext; } },
     bindPisiUnifiedToolbarEvents: { enumerable: true, get() { return bindPisiUnifiedToolbarEvents; } },
     setupPisiUnifiedToolbar: { enumerable: true, get() { return setupPisiUnifiedToolbar; } }
