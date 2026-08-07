@@ -259,6 +259,7 @@ function scheduleDrawMapConnections() {
 }
 
 function drawMapConnections() {
+    const hiddenNodeIds = syncCollapsedHubNodeVisibility();
     const svg = document.getElementById('map-connections');
 
     if (!svg) return;
@@ -266,7 +267,7 @@ function drawMapConnections() {
     const liveEdgeIds = new Set();
 
     for (const edge of activeMapEdges) {
-        if (isHubEdgeCollapsed(edge)) {
+        if (isHubEdgeCollapsed(edge, hiddenNodeIds)) {
             continue;
         }
 
