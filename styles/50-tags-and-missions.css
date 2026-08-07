@@ -741,3 +741,234 @@ body.pisi-calendar-is-dragging .pisi-calendar-dock-zone:hover::after {
 .pisi-diary-managed-block[data-pisi-diary-status="blocked"] {
     border-left-color: #e74c3c;
 }
+
+/* TODO PANEL SYNC + VISUAL REFRESH */
+.pisi-missions-toolbar {
+    display: grid;
+    gap: 10px;
+    padding: 10px;
+}
+
+.pisi-missions-overview {
+    position: relative;
+    display: grid;
+    gap: 10px;
+    overflow: hidden;
+    padding: 12px;
+    border: 1px solid color-mix(in srgb, var(--accent-color) 30%, var(--border-color));
+    border-radius: 13px;
+    background:
+        radial-gradient(circle at 100% 0, rgba(243, 156, 18, 0.2), transparent 44%),
+        linear-gradient(145deg, #2c2926 0%, #242426 58%, #222329 100%);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+}
+
+.pisi-missions-overview::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    pointer-events: none;
+}
+
+.pisi-missions-overview-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.pisi-missions-overview-heading > div {
+    display: grid;
+    gap: 2px;
+}
+
+.pisi-missions-overview-heading strong {
+    color: #f2f2f3;
+    font-size: 14px;
+    letter-spacing: -0.01em;
+}
+
+.pisi-missions-overview-eyebrow {
+    color: #f0ae4d;
+    font-size: 9px;
+    font-weight: 850;
+    letter-spacing: 0.13em;
+}
+
+.pisi-missions-sync-button {
+    position: relative;
+    z-index: 1;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid rgba(243, 156, 18, 0.34);
+    border-radius: 9px;
+    background: rgba(243, 156, 18, 0.1);
+    color: #f5bb68;
+    cursor: pointer;
+    font-size: 17px;
+    line-height: 1;
+    transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.pisi-missions-sync-button:hover:not(:disabled) {
+    border-color: #f39c12;
+    background: rgba(243, 156, 18, 0.2);
+    transform: rotate(18deg);
+}
+
+.pisi-missions-sync-button:disabled {
+    cursor: wait;
+    opacity: 0.58;
+    animation: pisiMissionSyncSpin 0.9s linear infinite;
+}
+
+@keyframes pisiMissionSyncSpin {
+    to { transform: rotate(360deg); }
+}
+
+.pisi-missions-overview-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.pisi-missions-overview-stat {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 6px;
+    min-width: 0;
+    padding: 7px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.055);
+    border-radius: 9px;
+    background: rgba(10, 10, 12, 0.22);
+}
+
+.pisi-missions-overview-stat strong {
+    color: #efeff0;
+    font-size: 16px;
+}
+
+.pisi-missions-overview-stat span {
+    overflow: hidden;
+    color: #9d9da2;
+    font-size: 9px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pisi-missions-overview-stat[data-tone="today"] strong {
+    color: #72b7e6;
+}
+
+.pisi-missions-overview-stat[data-tone="overdue"] strong {
+    color: #ef7777;
+}
+
+.pisi-missions-overview-stat[data-tone="completed"] strong {
+    color: #72c98f;
+}
+
+.pisi-missions-overview-progress {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 5px 8px;
+    color: #a7a7ac;
+    font-size: 9px;
+}
+
+.pisi-missions-overview-progress > strong {
+    color: #d8d8da;
+}
+
+.pisi-missions-overview-progress-track {
+    grid-column: 1 / -1;
+    height: 5px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.pisi-missions-overview-progress-track > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #d98217, #f4bd65);
+    box-shadow: 0 0 10px rgba(243, 156, 18, 0.35);
+    transition: width 0.25s ease;
+}
+
+.pisi-missions-sync-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #85858b;
+    font-size: 9px;
+}
+
+.pisi-missions-sync-status::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: #6fbd86;
+    box-shadow: 0 0 0 3px rgba(111, 189, 134, 0.1);
+}
+
+.pisi-missions-sync-status.loading::before {
+    background: #e5a647;
+    box-shadow: 0 0 0 3px rgba(229, 166, 71, 0.12);
+}
+
+.pisi-missions-sync-status.error::before {
+    background: #e66d6d;
+    box-shadow: 0 0 0 3px rgba(230, 109, 109, 0.12);
+}
+
+.pisi-missions-list {
+    padding: 0 10px 12px;
+}
+
+.pisi-missions-list > .pisi-mission-card {
+    border-radius: 11px;
+    background: linear-gradient(145deg, #29292c, #242426);
+    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.15);
+}
+
+.pisi-missions-list > .pisi-mission-card:hover {
+    background: linear-gradient(145deg, #303033, #29292c);
+    box-shadow: 0 7px 18px rgba(0, 0, 0, 0.22);
+    transform: translateY(-1px);
+}
+
+.pisi-missions-loading::before {
+    content: "";
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    border: 2px solid rgba(243, 156, 18, 0.2);
+    border-top-color: #f39c12;
+    border-radius: 50%;
+    animation: pisiMissionSyncSpin 0.8s linear infinite;
+}
+
+.pisi-missions-sync-error {
+    display: grid;
+    gap: 9px;
+}
+
+.pisi-missions-sync-error button {
+    justify-self: center;
+    padding: 6px 10px;
+    border: 1px solid rgba(230, 109, 109, 0.42);
+    border-radius: 8px;
+    background: rgba(230, 109, 109, 0.1);
+    color: #ef9292;
+    cursor: pointer;
+}

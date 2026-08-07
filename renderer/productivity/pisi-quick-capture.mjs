@@ -192,7 +192,10 @@ async function submitPisiQuickAdd(form, parsePreview) {
     if (!result?.ok) throw new Error(result?.error || pisiQuickTranslate('Görev eklenemedi.'));
     invalidatePisiSearchIndex();
     await ensurePisiSearchIndex({ force: true });
-    window.refreshPisiTagsPanelSoon?.();
+    await window.refreshPisiMissionIndex?.({
+        force: true,
+        reason: 'quick-add'
+    });
     form.reset();
     pisiQuickCaptureState.filter = result.inbox ? 'inbox' : 'all';
     await window.renderPisiCommandCenterPage?.();
@@ -304,7 +307,10 @@ function makePisiPostponeSelect(task) {
         }
         invalidatePisiSearchIndex();
         await ensurePisiSearchIndex({ force: true });
-        window.refreshPisiTagsPanelSoon?.();
+        await window.refreshPisiMissionIndex?.({
+            force: true,
+            reason: 'postpone'
+        });
         await window.renderPisiCommandCenterPage?.();
     });
     return select;

@@ -5,21 +5,67 @@
 }
 
 .pisi-todo-workspace-open {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 9px;
     width: 100%;
-    padding: 7px 9px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--accent-color) 10%, var(--panel-bg));
+    padding: 9px 10px;
+    border: 1px solid color-mix(in srgb, var(--accent-color) 34%, var(--border-color));
+    border-radius: 11px;
+    background:
+        radial-gradient(circle at 100% 0, rgba(243, 156, 18, 0.18), transparent 48%),
+        color-mix(in srgb, var(--accent-color) 8%, var(--panel-bg));
     color: var(--text-color);
     cursor: pointer;
     font: inherit;
-    font-weight: 700;
     text-align: left;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
+    transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 
 .pisi-todo-workspace-open:hover {
     border-color: var(--accent-color);
     background: color-mix(in srgb, var(--accent-color) 17%, var(--panel-bg));
+    transform: translateY(-1px);
+}
+
+.pisi-todo-workspace-open-icon {
+    display: grid;
+    width: 30px;
+    height: 30px;
+    place-items: center;
+    border-radius: 9px;
+    background: linear-gradient(145deg, #f5b750, #d98118);
+    color: #21170c;
+    font-size: 16px;
+    font-weight: 900;
+    box-shadow: 0 5px 12px rgba(217, 129, 24, 0.25);
+}
+
+.pisi-todo-workspace-open-copy {
+    display: grid;
+    min-width: 0;
+    gap: 1px;
+}
+
+.pisi-todo-workspace-open-copy strong {
+    font-size: 12px;
+}
+
+.pisi-todo-workspace-open-copy small {
+    overflow: hidden;
+    color: var(--muted-text-color);
+    font-size: 9px;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pisi-todo-workspace-open-arrow {
+    color: var(--accent-color);
+    font-size: 22px;
+    line-height: 1;
 }
 
 .pisi-todo-center-tab .center-tab-icon {
@@ -45,7 +91,9 @@
     grid-template-rows: auto minmax(0, 1fr);
     overflow: hidden;
     background-color: #1e1e1e;
-    background-image: none;
+    background-image:
+        radial-gradient(circle at 88% -8%, rgba(243, 156, 18, 0.1), transparent 32%),
+        radial-gradient(circle at 18% 110%, rgba(93, 173, 226, 0.07), transparent 34%);
     color: var(--text-color);
     opacity: 1;
     pointer-events: auto;
@@ -60,7 +108,10 @@
     gap: 14px;
     padding: 18px 22px 14px;
     border-bottom: 1px solid var(--border-color);
-    background: #252526;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent),
+        #252526;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
 }
 
 .pisi-todo-workspace-heading {
@@ -74,6 +125,9 @@
     margin: 0;
     font-size: 22px;
     letter-spacing: -0.02em;
+    background: linear-gradient(90deg, #f3f3f3, #f1b55f);
+    background-clip: text;
+    color: transparent;
 }
 
 .pisi-todo-workspace-subtitle {
@@ -94,7 +148,7 @@
     min-height: 34px;
     padding: 6px 13px;
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: 999px;
     background: var(--panel-bg);
     color: var(--text-color);
     cursor: pointer;
@@ -108,12 +162,38 @@
     background: color-mix(in srgb, var(--accent-color) 15%, var(--panel-bg));
 }
 
+.pisi-todo-workspace-view.active {
+    box-shadow: 0 5px 14px rgba(243, 156, 18, 0.13);
+}
+
 .pisi-todo-workspace-content {
     min-width: 0;
     min-height: 0;
     padding: 18px 22px 24px;
     overflow: auto;
-    background: #1e1e1e;
+    background: transparent;
+}
+
+.pisi-todo-workspace-content .pisi-third-kanban-column,
+.pisi-todo-workspace-content .pisi-third-stat-card,
+.pisi-todo-workspace-content .pisi-third-completion,
+.pisi-todo-workspace-content .pisi-third-stat-distributions > section {
+    border-color: rgba(255, 255, 255, 0.075);
+    background: linear-gradient(150deg, #29292c, #232325);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+}
+
+.pisi-todo-workspace-content .pisi-third-kanban-card {
+    border-color: rgba(255, 255, 255, 0.075);
+    background: linear-gradient(145deg, #303034, #29292c);
+    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.14);
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pisi-todo-workspace-content .pisi-third-kanban-card:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+    transform: translateY(-2px);
 }
 
 .pisi-todo-workspace-content > .pisi-third-kanban,
