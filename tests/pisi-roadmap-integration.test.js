@@ -150,3 +150,21 @@ test('map seçimi, ağaç tıklamaları ve node yazma odağı birbirine karışm
     assert.match(nodeEditor, /editor\.contentEditable = 'true'/);
     assert.match(editorStyles, /\.pisi-rich-editor \{[\s\S]*?user-select: text;[\s\S]*?pointer-events: auto;/);
 });
+
+test('map portu kendi alt node ağacını ve bu ağa bağlı çizgileri daraltır', () => {
+    const interactions = read('renderer/map/pisi-map-interactions.mjs');
+    const edges = read('renderer/map/pisi-map-edges.mjs');
+    const styles = read('styles/20-map-interactions.css');
+
+    assert.match(interactions, /collectPisiCollapsedHubNodeIds/);
+    assert.match(interactions, /pisi-hub-descendant-hidden/);
+    assert.match(edges, /syncCollapsedHubNodeVisibility\(\)/);
+    assert.match(edges, /isHubEdgeCollapsed\(edge, hiddenNodeIds\)/);
+    assert.match(styles, /\.map-node-box\.pisi-hub-descendant-hidden \{\s*display: none;/);
+    assert.match(styles, /\.map-port\.hub-collapsed/);
+    assert.match(interactions, /\.map-node-box:not\(\.pisi-hub-descendant-hidden\)/);
+    assert.match(
+        read('renderer/map/pisi-map-workspace.mjs'),
+        /width: box\.offsetWidth \|\| parseFloat\(box\.style\.width/
+    );
+});
