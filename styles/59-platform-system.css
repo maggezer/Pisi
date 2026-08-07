@@ -49,11 +49,13 @@
     display: inline-grid;
     width: 18px;
     height: 18px;
+    box-sizing: border-box;
     place-items: center;
-    vertical-align: -3px;
+    vertical-align: middle;
+    transform: translateY(-1px);
     color: transparent;
     background: color-mix(in srgb, var(--panel-bg) 86%, black);
-    border: 1px solid color-mix(in srgb, var(--muted-text-color) 70%, transparent);
+    border: 1px solid #fff;
     border-radius: 5px;
     font-size: 0;
     cursor: pointer;
@@ -62,7 +64,7 @@
 
 .pisi-block-task-marker[aria-checked="true"] {
     background: var(--accent-color);
-    border-color: var(--accent-color);
+    border-color: #fff;
 }
 
 .pisi-block-task-marker[aria-checked="true"]::after {
@@ -75,7 +77,7 @@
 
 .pisi-block-task-marker:hover,
 .pisi-block-task-marker:focus-visible {
-    border-color: var(--accent-color);
+    border-color: #fff;
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 20%, transparent);
     outline: none;
 }
