@@ -77,3 +77,26 @@ test('blok, eklenti, team ve kısayol API yüzeyleri sürümlüdür', () => {
     assert.match(team, /registerPisiTeamProvider/);
     assert.match(team, /optimisticRevision/);
 });
+
+test('editör imleci otomatik kayıtta korunur ve Enter yeni satıra bırakılır', () => {
+    const nodeEditor = read('renderer/editor/pisi-node-editor.mjs');
+    const blocks = read('renderer/editor/pisi-block-editor.mjs');
+    const tabs = read('renderer/shell/pisi-tabs.mjs');
+    const platformStyles = read('styles/59-platform-system.css');
+
+    assert.match(nodeEditor, /clearPisiEditorCaret/);
+    assert.doesNotMatch(nodeEditor, /focusPisiEditorAtEnd/);
+    assert.equal(
+        (
+            nodeEditor.match(
+                /suppressNextFileSystemRefresh\(3000\);\s*const saveResult = await window\.pisiProject\?\.saveNodeContent/g
+            ) || []
+        ).length,
+        2
+    );
+    assert.match(tabs, /shouldSuppressFileSystemRefresh\(\)/);
+    assert.match(blocks, /function isPisiSlashMenuOpen\(\)/);
+    assert.match(blocks, /if \(isPisiSlashMenuOpen\(\)\)/);
+    assert.doesNotMatch(blocks, /pisi-block-toolbar/);
+    assert.doesNotMatch(platformStyles, /\.pisi-block-toolbar/);
+});
