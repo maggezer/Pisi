@@ -669,6 +669,8 @@
       "getPortDirection",
       "offsetPoint",
       "getDistance",
+      "getMapConnectionVisualMetrics",
+      "syncMapConnectionZoomStyles",
       "makeConnectionPathFromBoxes",
       "makeTempConnectionPath",
       "ensureTempEdgePath",

@@ -264,6 +264,7 @@ function drawMapConnections() {
 
     if (!svg) return;
 
+    syncMapConnectionZoomStyles(svg);
     const liveEdgeIds = new Set();
 
     for (const edge of activeMapEdges) {
