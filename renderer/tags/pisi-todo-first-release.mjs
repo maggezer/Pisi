@@ -248,7 +248,7 @@ function createPisiMissionsOverviewFirstRelease(allMissions) {
         ['Açık', open, 'open'],
         ['Bugün', today, 'today'],
         ['Geciken', overdue, 'overdue'],
-        ['Tamam', completed, 'completed']
+        ['Tamamlanan', completed, 'completed']
     ].forEach(([label, value, tone]) => {
         const stat = document.createElement('div');
         stat.className = 'pisi-missions-overview-stat';

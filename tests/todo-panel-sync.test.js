@@ -59,3 +59,23 @@ test('To-do paneli eşitleme durumu, özet sayaçları ve görsel ilerleme sunar
     assert.match(workspaceCss, /pisi-todo-workspace-open-icon/);
     assert.match(workspaceCss, /pisi-third-kanban-card:hover/);
 });
+
+test('yeni To-do durum metinleri Türkçe ve İngilizce sözlüklerde bulunur', () => {
+    const tr = JSON.parse(read('locales/lang-tr.json')).strings;
+    const eng = JSON.parse(read('locales/lang-eng.json')).strings;
+    const keys = [
+        'GÖREV MERKEZİ',
+        'Görevleri şimdi eşitle',
+        'Görevler eşitleniyor…',
+        'Bazı görevler eşitlenemedi',
+        'Son eşitleme',
+        'Tamamlanan',
+        'Yeniden dene'
+    ];
+
+    for (const key of keys) {
+        assert.equal(typeof tr[key], 'string', `Türkçe anahtar eksik: ${key}`);
+        assert.equal(typeof eng[key], 'string', `İngilizce anahtar eksik: ${key}`);
+    }
+    assert.equal(eng.Tamamlanan, 'Completed');
+});
