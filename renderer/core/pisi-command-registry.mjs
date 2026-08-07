@@ -174,6 +174,7 @@ function isPisiEditableTarget(target) {
 
 function handlePisiCommandShortcut(event) {
     if (event.defaultPrevented || event.isComposing || event.repeat) return;
+    if (event.target?.closest?.('.pisi-rename-input')) return;
     if (event.target?.classList?.contains('capturing')) return;
     const shortcut = getPisiEventShortcut(event);
     if (!shortcut) return;
