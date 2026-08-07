@@ -65,7 +65,7 @@ test('To-do çalışma alanı opaktır ve arkadaki merkez yüzeylerini kilitler'
     const shield = read('renderer/tags/pisi-todo-workspace-shield.mjs');
 
     assert.match(css, /background-color: #1e1e1e/);
-    assert.match(css, /background-image:[\s\S]*radial-gradient/);
+    assert.match(css, /background-image: none/);
     assert.match(css, /#workspace\.pisi-todo-workspace-active > :not\(\.pisi-todo-workspace\)/);
     assert.match(css, /pointer-events: none;/);
     assert.doesNotMatch(css, /!important/);
