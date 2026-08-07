@@ -233,6 +233,15 @@ function clearPisiEditorCaret(editor) {
     }
 }
 
+function ensurePisiEditorWritable(editor) {
+    if (!editor) return;
+
+    editor.contentEditable = 'true';
+    editor.setAttribute('contenteditable', 'true');
+    editor.removeAttribute('aria-readonly');
+    editor.removeAttribute('inert');
+}
+
 async function openNodeModalFromBox(box) {
     const nodePath = box.dataset.nodePath;
 
@@ -271,6 +280,8 @@ async function openNodeModalFromBox(box) {
     }
 
     if (contentInput) {
+        ensurePisiEditorWritable(contentInput);
+
         if (contentInput.dataset.modalDirtyBound !== '1') {
             contentInput.dataset.modalDirtyBound = '1';
             contentInput.addEventListener('input', () => {
@@ -539,6 +550,7 @@ async function openCenterNodeEditor(nodeItem) {
     }
 
     if (contentEditor) {
+        ensurePisiEditorWritable(contentEditor);
         setPisiEditorContent(contentEditor, result.data?.content || '');
         clearPisiEditorCaret(contentEditor);
     }
