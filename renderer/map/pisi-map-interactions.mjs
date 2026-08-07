@@ -5,6 +5,7 @@ import {
     isPisiMapEdgeHiddenByCollapsedHub,
     makePisiCollapsedHubPortKey
 } from "./pisi-map-collapse-core.mjs";
+import { getPisiMapConnectionMetrics } from "./pisi-map-zoom-core.mjs";
 
 function getTreeItemDisplayName(item) {
     if (!item) return '';
@@ -258,14 +259,39 @@ function getDistance(a, b) {
     return Math.sqrt(dx * dx + dy * dy);
 }
 
+function getMapConnectionVisualMetrics() {
+    return getPisiMapConnectionMetrics(activeMapCamera?.zoom);
+}
+
+function syncMapConnectionZoomStyles(svg = document.getElementById('map-connections')) {
+    const metrics = getMapConnectionVisualMetrics();
+    if (!svg) return metrics;
+
+    svg.style.setProperty(
+        '--pisi-map-edge-stroke-width',
+        `${metrics.edgeStrokeWidth}px`
+    );
+    svg.style.setProperty(
+        '--pisi-map-edge-hover-stroke-width',
+        `${metrics.edgeHoverStrokeWidth}px`
+    );
+    svg.style.setProperty(
+        '--pisi-map-temp-edge-stroke-width',
+        `${metrics.tempEdgeStrokeWidth}px`
+    );
+
+    return metrics;
+}
+
 function makeConnectionPathFromBoxes(sourceBox, sourcePort, targetBox, targetPort, edgeType = 'down-hub') {
     const hasStartArrow = edgeType === 'co-level';
     const hasEndArrow = true;
+    const metrics = getMapConnectionVisualMetrics();
 
     // Ok olmayan çıkış tarafı kutuya yakın başlasın.
     // Ok olan taraflarda çizgi ok tabanında bitsin, ok kutuya doğru uzasın.
-    const plainLineGap = 6;
-    const arrowGap = 24;
+    const plainLineGap = metrics.plainLineGap;
+    const arrowGap = metrics.arrowGap;
 
     const sourceOffset = hasStartArrow ? arrowGap : plainLineGap;
     const targetOffset = hasEndArrow ? arrowGap : plainLineGap;
@@ -280,7 +306,10 @@ function makeConnectionPathFromBoxes(sourceBox, sourcePort, targetBox, targetPor
     const end = offsetPoint(targetBase, targetDir, targetOffset);
 
     const distance = getDistance(start, end);
-    const control = Math.max(60, Math.min(190, distance * 0.38));
+    const control = Math.max(
+        metrics.connectionControlMin,
+        Math.min(metrics.connectionControlMax, distance * 0.38)
+    );
 
     const c1 = {
         x: start.x + sourceDir.x * control,
@@ -296,14 +325,18 @@ function makeConnectionPathFromBoxes(sourceBox, sourcePort, targetBox, targetPor
 }
 
 function makeTempConnectionPath(sourceBox, sourcePort, mousePoint) {
-    const endpointOffset = 14;
+    const metrics = getMapConnectionVisualMetrics();
+    const endpointOffset = metrics.tempEndpointOffset;
 
     const sourceBase = getPortPoint(sourceBox, sourcePort);
     const sourceDir = getPortDirection(sourcePort);
 
     const start = offsetPoint(sourceBase, sourceDir, endpointOffset);
     const distance = getDistance(start, mousePoint);
-    const control = Math.max(60, Math.min(170, distance * 0.35));
+    const control = Math.max(
+        metrics.tempControlMin,
+        Math.min(metrics.tempControlMax, distance * 0.35)
+    );
 
     const c1 = {
         x: start.x + sourceDir.x * control,
@@ -346,6 +379,7 @@ function applyMapCamera() {
         canvas.style.backgroundPosition = `${activeMapCamera.x}px ${activeMapCamera.y}px`;
     }
 
+    syncMapConnectionZoomStyles();
     scheduleDrawMapConnections();
 }
 
@@ -826,6 +860,14 @@ Object.defineProperties(moduleApi, {
     "getDistance": {
         enumerable: true,
         get() { return getDistance; }
+    },
+    "getMapConnectionVisualMetrics": {
+        enumerable: true,
+        get() { return getMapConnectionVisualMetrics; }
+    },
+    "syncMapConnectionZoomStyles": {
+        enumerable: true,
+        get() { return syncMapConnectionZoomStyles; }
     },
     "makeConnectionPathFromBoxes": {
         enumerable: true,
