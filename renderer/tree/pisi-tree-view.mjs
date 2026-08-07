@@ -1,5 +1,17 @@
 import { registerModule } from "../core/module-registry.mjs";
 
+function isPisiInternalTreeItem(item) {
+    const pathName = String(item?.fullPath || '')
+        .split(/[\\/]/)
+        .filter(Boolean)
+        .pop();
+    const name = String(item?.name || item?.fileName || pathName || '')
+        .trim()
+        .toLowerCase();
+
+    return name === '.pisi-history';
+}
+
 async function handleDeletedNodeFromTree(item, treeNode, result) {
     const deletedNodeId = result.deletedNodeId || item.metadata?.id || treeNode?.dataset.pisiId;
     const parentMapPath = result.parentMapPath || null;
@@ -445,7 +457,7 @@ function startRenameTreeFile(item, row) {
     const oldName = oldBaseName;
 
     const input = document.createElement('input');
-    input.className = 'tree-rename-input';
+    input.className = 'tree-rename-input pisi-rename-input';
     input.value = oldBaseName;
 
     nameSpan.replaceWith(input);
@@ -470,8 +482,7 @@ function startRenameTreeFile(item, row) {
     event.stopPropagation();
     });
 
-    input.focus();
-    input.select();
+    focusPisiTextInput(input, true);
 
     let finished = false;
 
@@ -604,7 +615,11 @@ async function loadFolderChildren(
 
     const fragment = document.createDocumentFragment();
 
-    for (const item of result.items) {
+    const visibleItems = Array.isArray(result.items)
+        ? result.items.filter((item) => !isPisiInternalTreeItem(item))
+        : [];
+
+    for (const item of visibleItems) {
         const childNode = await createTreeNode(item, level);
         if (!rootRenderIsCurrent()) return false;
         fragment.appendChild(childNode);

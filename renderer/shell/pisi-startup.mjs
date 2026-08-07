@@ -6,7 +6,7 @@ function beginPisiOpenTabTitleRename(tab, titleEl) {
     titleEl.dataset.renaming = '1';
 
     const input = document.createElement('input');
-    input.className = 'center-tab-rename-input';
+    input.className = 'center-tab-rename-input pisi-rename-input';
     input.type = 'text';
     input.value = tab.title || 'Untitled';
 
@@ -29,16 +29,16 @@ function beginPisiOpenTabTitleRename(tab, titleEl) {
     }
 
     input.addEventListener('click', (event) => {
-        event.preventDefault();
         event.stopPropagation();
     });
 
     input.addEventListener('dblclick', (event) => {
-        event.preventDefault();
         event.stopPropagation();
     });
 
     input.addEventListener('keydown', async (event) => {
+        event.stopPropagation();
+
         if (event.key === 'Enter') {
             event.preventDefault();
             await finish(true);
@@ -56,10 +56,7 @@ function beginPisiOpenTabTitleRename(tab, titleEl) {
         }, 0);
     });
 
-    setTimeout(() => {
-        input.focus();
-        input.select();
-    }, 0);
+    focusPisiTextInput(input, true);
 }
 
 function selectPisiTreeFileByPath(path) {
@@ -242,24 +239,36 @@ function refocusPisiRenderer() {
 function focusPisiTextInput(input, shouldSelect = true) {
     if (!input) return;
 
-    window.electronWindow?.focusRenderer?.();
+    input.disabled = false;
+    input.readOnly = false;
+    input.draggable = false;
+    input.autocomplete = 'off';
+    input.classList.add('pisi-rename-input');
+
+    if (input.dataset.pisiTextInputBound !== '1') {
+        input.dataset.pisiTextInputBound = '1';
+        input.addEventListener('beforeinput', () => {
+            input.dataset.pisiUserEdited = '1';
+        });
+        input.addEventListener('dragstart', (event) => {
+            event.preventDefault();
+        });
+    }
+
     window.focus();
 
-    requestAnimationFrame(() => {
+    const focusInput = () => {
+        if (!input.isConnected) return;
         input.focus({ preventScroll: true });
 
-        if (shouldSelect) {
+        if (shouldSelect && input.dataset.pisiUserEdited !== '1') {
             input.select?.();
         }
-    });
+    };
 
-    setTimeout(() => {
-        input.focus({ preventScroll: true });
-
-        if (shouldSelect) {
-            input.select?.();
-        }
-    }, 60);
+    focusInput();
+    requestAnimationFrame(focusInput);
+    setTimeout(focusInput, 60);
 }
 
 function escapePisiConfirmText(value = '') {

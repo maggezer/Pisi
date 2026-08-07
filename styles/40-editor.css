@@ -29,6 +29,14 @@
     display: none;
 }
 
+.pisi-rich-editor {
+    -webkit-app-region: no-drag;
+    -webkit-user-select: text;
+    user-select: text;
+    pointer-events: auto;
+    cursor: text;
+}
+
 
 #center-node-editor-content {
     flex: 1;

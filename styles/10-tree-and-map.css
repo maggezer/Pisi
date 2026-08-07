@@ -1,5 +1,13 @@
 
 
+.pisi-rename-input {
+    -webkit-app-region: no-drag;
+    -webkit-user-select: text;
+    user-select: text;
+    pointer-events: auto;
+    cursor: text;
+}
+
 .tree-rename-input {
     width: 100%;
     min-width: 0;

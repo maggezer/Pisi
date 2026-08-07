@@ -1,5 +1,61 @@
 import { registerModule } from "../core/module-registry.mjs";
 
+const PISI_TREE_FILE_CLICK_DELAY_MS = 280;
+let pendingPisiTreeFileClick = null;
+
+function cancelPendingPisiTreeFileClick() {
+    if (!pendingPisiTreeFileClick) return false;
+
+    clearTimeout(pendingPisiTreeFileClick.timer);
+    pendingPisiTreeFileClick = null;
+    return true;
+}
+
+function schedulePisiTreeFileClick(item, row, afterOpen = null) {
+    cancelPendingPisiTreeFileClick();
+
+    const pending = {
+        row,
+        timer: null
+    };
+
+    pending.timer = setTimeout(async () => {
+        if (pendingPisiTreeFileClick !== pending) return;
+        pendingPisiTreeFileClick = null;
+
+        const treeNode = row?.closest?.('.tree-node');
+        const currentItem = treeNode?.__pisiItem || item;
+
+        if (
+            !row?.isConnected ||
+            row.dataset.renaming === '1' ||
+            !currentItem ||
+            currentItem.isDirectory
+        ) {
+            return;
+        }
+
+        try {
+            let opened = true;
+            selectTreeFile(currentItem, row);
+
+            if (typeof openPisiFileTab === 'function') {
+                opened = await openPisiFileTab(currentItem);
+            } else if (isMapFileName(currentItem.name || currentItem.fileName)) {
+                opened = await openMapInWorkspace(currentItem);
+            }
+
+            if (opened !== false && typeof afterOpen === 'function') {
+                await afterOpen();
+            }
+        } catch (error) {
+            console.error('[PISI] Ağaç öğesi açılamadı:', error);
+        }
+    }, PISI_TREE_FILE_CLICK_DELAY_MS);
+
+    pendingPisiTreeFileClick = pending;
+}
+
 function getPisiTreeDragStateItem() {
     return window.Pisi?.state?.treeDragItem || null;
 }
@@ -466,6 +522,7 @@ async function createTreeNode(item, level = 0, isRoot = false) {
 
                 if (event.key === 'F2' && !item.isDirectory) {
                     event.preventDefault();
+                    cancelPendingPisiTreeFileClick();
                     startRenameTreeFile(item, row);
                     return;
                 }
@@ -482,14 +539,19 @@ async function createTreeNode(item, level = 0, isRoot = false) {
         if (event.target.closest('.tree-rename-input')) return;
         if (event.target.closest('.tree-row-actions')) return;
 
+        event.preventDefault();
+        event.stopPropagation();
+
         if (!item.isDirectory) {
             selectTreeFile(item, row);
 
-            if (typeof openPisiFileTab === 'function') {
-                await openPisiFileTab(item);
-            } else if (isMapFile) {
-                await openMapInWorkspace(item);
+            if (event.detail > 1) {
+                cancelPendingPisiTreeFileClick();
+                return;
             }
+
+            schedulePisiTreeFileClick(item, row, toggleChildren);
+            return;
         }
 
         await toggleChildren();
@@ -503,6 +565,7 @@ if (!isRoot) {
 
         event.preventDefault();
         event.stopPropagation();
+        cancelPendingPisiTreeFileClick();
 
         if (!item.isDirectory) {
             selectTreeFile(item, row);
@@ -536,10 +599,13 @@ if (!isRoot) {
             event.stopPropagation();
 
             selectTreeFile(item, row);
-        
-             if (!item.isDirectory && typeof openPisiFileTab === 'function') {
-                 await openPisiFileTab(item);
-                }
+
+            if (event.detail > 1) {
+                cancelPendingPisiTreeFileClick();
+                return;
+            }
+
+            schedulePisiTreeFileClick(item, row);
         });
 
         row.addEventListener('dblclick', (event) => {
@@ -548,6 +614,7 @@ if (!isRoot) {
 
             event.preventDefault();
             event.stopPropagation();
+            cancelPendingPisiTreeFileClick();
 
             selectTreeFile(item, row);
             startRenameTreeFile(item, row);
