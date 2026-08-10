@@ -1,0 +1,92 @@
+#window-frame {
+    position: relative;
+    z-index: 20000;
+}
+
+#pisi-app-menu {
+    position: relative;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    -webkit-app-region: no-drag;
+}
+
+#pisi-app-menu-button {
+    width: 34px;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    -webkit-app-region: no-drag;
+}
+
+#pisi-app-menu-button:hover,
+#pisi-app-menu-button:focus-visible,
+#pisi-app-menu-button[aria-expanded="true"] {
+    background: #333;
+    outline: none;
+}
+
+#pisi-app-menu-button:focus-visible {
+    box-shadow: inset 0 0 0 1px #f39c12;
+}
+
+#pisi-app-menu-button #window-logo {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+#pisi-app-menu-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 20001;
+    min-width: 196px;
+    padding: 6px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background: #252526;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.42);
+    -webkit-app-region: no-drag;
+}
+
+#pisi-app-menu-dropdown[hidden] {
+    display: none;
+}
+
+.pisi-app-menu-item {
+    width: 100%;
+    min-height: 32px;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: #d4d4d4;
+    display: flex;
+    align-items: center;
+    text-align: left;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.pisi-app-menu-item:hover,
+.pisi-app-menu-item:focus-visible {
+    background: #333;
+    color: #fff;
+    outline: none;
+}
+
+.pisi-app-menu-item[data-pisi-app-menu-action="quit"] {
+    margin-top: 5px;
+    border-top: 1px solid #3b3b3b;
+    border-radius: 0 0 5px 5px;
+    padding-top: 9px;
+}
