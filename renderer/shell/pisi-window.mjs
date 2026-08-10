@@ -1,6 +1,189 @@
 import { registerModule } from "../core/module-registry.mjs";
 
+const PISI_APP_MENU_LABELS = {
+    tr: {
+        menu: 'Pisi menüsü',
+        settings: 'Ayarlar',
+        preferences: 'Tercihler',
+        guide: 'Kullanma Kılavuzu',
+        feedback: 'Geri Bildirim',
+        quit: 'Kapat'
+    },
+    eng: {
+        menu: 'Pisi menu',
+        settings: 'Settings',
+        preferences: 'Preferences',
+        guide: 'User Guide',
+        feedback: 'Feedback',
+        quit: 'Quit'
+    }
+};
+
+function getPisiAppMenuLabels() {
+    const language = window.pisiI18n?.getLanguage?.() === 'eng' ? 'eng' : 'tr';
+    return PISI_APP_MENU_LABELS[language];
+}
+
+function closePisiAppMenu() {
+    const button = document.getElementById('pisi-app-menu-button');
+    const menu = document.getElementById('pisi-app-menu-dropdown');
+
+    if (!button || !menu) return;
+
+    button.setAttribute('aria-expanded', 'false');
+    menu.hidden = true;
+}
+
+function setPisiAppMenuOpen(open) {
+    const button = document.getElementById('pisi-app-menu-button');
+    const menu = document.getElementById('pisi-app-menu-dropdown');
+
+    if (!button || !menu) return;
+
+    const shouldOpen = Boolean(open);
+    button.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+    menu.hidden = !shouldOpen;
+
+    if (shouldOpen) {
+        menu.querySelector('.pisi-app-menu-item')?.focus();
+    }
+}
+
+function activatePisiCustomizationTab(options = {}) {
+    const tab = document.querySelector('.right-panel-tab[data-right-tab="customizations"]');
+    if (!tab) return false;
+
+    tab.click();
+
+    if (options.focusLanguage) {
+        requestAnimationFrame(() => {
+            document.getElementById('pisi-language-select')?.focus();
+        });
+    }
+
+    return true;
+}
+
+function handlePisiAppMenuAction(action) {
+    closePisiAppMenu();
+
+    if (action === 'settings') {
+        activatePisiCustomizationTab();
+        return;
+    }
+
+    if (action === 'preferences') {
+        activatePisiCustomizationTab({ focusLanguage: true });
+        return;
+    }
+
+    if (action === 'quit') {
+        window.electronWindow?.close();
+        return;
+    }
+
+    if (action === 'guide') {
+        window.dispatchEvent(new CustomEvent('pisi:open-user-guide'));
+        return;
+    }
+
+    if (action === 'feedback') {
+        window.dispatchEvent(new CustomEvent('pisi:open-feedback'));
+    }
+}
+
+function syncPisiAppMenuLabels() {
+    const labels = getPisiAppMenuLabels();
+    const button = document.getElementById('pisi-app-menu-button');
+
+    if (button) {
+        button.title = labels.menu;
+        button.setAttribute('aria-label', labels.menu);
+    }
+
+    document.querySelectorAll('[data-pisi-app-menu-action]').forEach((item) => {
+        const action = item.dataset.pisiAppMenuAction;
+        if (labels[action]) item.textContent = labels[action];
+    });
+}
+
+function setupPisiAppMenu() {
+    const title = document.getElementById('window-title');
+    const logo = document.getElementById('window-logo');
+
+    if (!title || !logo) return;
+
+    let host = document.getElementById('pisi-app-menu');
+
+    if (!host) {
+        host = document.createElement('div');
+        host.id = 'pisi-app-menu';
+
+        const button = document.createElement('button');
+        button.id = 'pisi-app-menu-button';
+        button.type = 'button';
+        button.setAttribute('aria-haspopup', 'menu');
+        button.setAttribute('aria-expanded', 'false');
+        button.appendChild(logo);
+
+        const menu = document.createElement('div');
+        menu.id = 'pisi-app-menu-dropdown';
+        menu.setAttribute('role', 'menu');
+        menu.hidden = true;
+
+        for (const action of ['settings', 'preferences', 'guide', 'feedback', 'quit']) {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'pisi-app-menu-item';
+            item.dataset.pisiAppMenuAction = action;
+            item.setAttribute('role', 'menuitem');
+            item.addEventListener('click', () => handlePisiAppMenuAction(action));
+            menu.appendChild(item);
+        }
+
+        button.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setPisiAppMenuOpen(menu.hidden);
+        });
+
+        host.append(button, menu);
+        title.prepend(host);
+    }
+
+    syncPisiAppMenuLabels();
+
+    if (host.dataset.bound !== '1') {
+        host.dataset.bound = '1';
+
+        document.addEventListener('pointerdown', (event) => {
+            if (!host.contains(event.target)) closePisiAppMenu();
+        });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key !== 'Escape') return;
+            const menu = document.getElementById('pisi-app-menu-dropdown');
+            if (menu?.hidden !== false) return;
+
+            event.preventDefault();
+            closePisiAppMenu();
+            document.getElementById('pisi-app-menu-button')?.focus();
+        });
+
+        window.addEventListener('blur', closePisiAppMenu);
+    }
+
+    if (!setupPisiAppMenu.languageUnsubscribe) {
+        setupPisiAppMenu.languageUnsubscribe =
+            window.pisiI18n?.onLanguageChanged?.(() => {
+                syncPisiAppMenuLabels();
+            }) || null;
+    }
+}
+
 function setupWindowControls() {
+    setupPisiAppMenu();
+
     const minBtn = document.getElementById('win-min');
     const maxBtn = document.getElementById('win-max');
     const closeBtn = document.getElementById('win-close');
@@ -171,6 +354,10 @@ function setupCenterFileTabs() {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
+    "setupPisiAppMenu": {
+        enumerable: true,
+        get() { return setupPisiAppMenu; }
+    },
     "setupWindowControls": {
         enumerable: true,
         get() { return setupWindowControls; }
