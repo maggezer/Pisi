@@ -13,7 +13,7 @@ const utilsPromise = import(
     pathToFileURL(path.join(root, 'renderer/tags/pisi-todo-utils.mjs')).href
 );
 
-test('tekrarlayan görev tarihleri günlük, hafta içi, haftalık ve aylık ilerler', async () => {
+test('tekrarlayan görev tarihleri tüm desteklenen tekrar türlerinde ilerler', async () => {
     const {
         PISI_TODO_REPEAT_OPTIONS,
         getNextPisiTodoDate,
@@ -22,7 +22,15 @@ test('tekrarlayan görev tarihleri günlük, hafta içi, haftalık ve aylık ile
 
     assert.deepEqual(
         PISI_TODO_REPEAT_OPTIONS.map((option) => option.value),
-        ['none', 'daily', 'weekdays', 'weekly', 'monthly']
+        [
+            'none',
+            'daily',
+            'weekdays',
+            'weekly',
+            'biweekly',
+            'after-completion',
+            'monthly'
+        ]
     );
     assert.equal(
         getPisiTodayIsoDate(
@@ -41,6 +49,23 @@ test('tekrarlayan görev tarihleri günlük, hafta içi, haftalık ve aylık ile
             getNextPisiTodoDate(new Date(2026, 7, 5), 'weekly')
         ),
         '2026-08-12'
+    );
+    assert.equal(
+        getPisiTodayIsoDate(
+            getNextPisiTodoDate(new Date(2026, 7, 5), 'biweekly')
+        ),
+        '2026-08-19'
+    );
+    assert.equal(
+        getPisiTodayIsoDate(
+            getNextPisiTodoDate(
+                new Date(2026, 7, 5),
+                'after-completion',
+                new Date(2026, 7, 20),
+                3
+            )
+        ),
+        '2026-08-23'
     );
     assert.equal(
         getPisiTodayIsoDate(
