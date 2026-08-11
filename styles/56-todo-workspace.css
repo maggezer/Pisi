@@ -117,6 +117,7 @@
 }
 
 .pisi-todo-workspace-content .pisi-third-kanban-column {
+    min-height: 420px;
     border-color: rgba(255, 255, 255, 0.075);
     background: linear-gradient(150deg, #29292c, #232325);
     box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
@@ -146,10 +147,6 @@
 
 .pisi-todo-workspace-content .pisi-third-kanban {
     grid-template-columns: repeat(4, minmax(220px, 1fr));
-}
-
-.pisi-todo-workspace-content .pisi-third-kanban-column {
-    min-height: 420px;
 }
 
 .pisi-todo-workspace-content .pisi-third-calendar-grid {
