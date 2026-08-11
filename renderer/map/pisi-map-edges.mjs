@@ -157,9 +157,29 @@ currentConnectionDrag = {
 async function deleteMapEdge(edgeId) {
     if (!activeMapPath || !edgeId) return;
 
-    const ok = confirm('Bu bağlantı silinsin mi?');
+    if (typeof resetPisiKeyboardAndPointerState === 'function') {
+        resetPisiKeyboardAndPointerState();
+    }
 
-    if (!ok) return;
+    const ok = typeof pisiConfirm === 'function'
+        ? await pisiConfirm('Bu bağlantı silinsin mi?', {
+            title: 'Bağlantıyı sil',
+            confirmText: 'Sil',
+            cancelText: 'Vazgeç',
+            danger: true
+        })
+        : confirm('Bu bağlantı silinsin mi?');
+
+    if (typeof resetPisiKeyboardAndPointerState === 'function') {
+        resetPisiKeyboardAndPointerState();
+    }
+
+    if (!ok) {
+        if (typeof refocusPisiRenderer === 'function') {
+            refocusPisiRenderer();
+        }
+        return;
+    }
 
     try {
         suppressNextFileSystemRefresh(8000);
@@ -186,6 +206,17 @@ async function deleteMapEdge(edgeId) {
     } catch (error) {
         console.error('[PISI] Bağlantı silme hatası:', error);
         alert('Bağlantı silinirken hata oluştu: ' + error.message);
+    } finally {
+        if (typeof resetPisiKeyboardAndPointerState === 'function') {
+            resetPisiKeyboardAndPointerState();
+        }
+
+        if (typeof refocusPisiRenderer === 'function') {
+            refocusPisiRenderer();
+            setTimeout(() => {
+                refocusPisiRenderer();
+            }, 80);
+        }
     }
 }
 
