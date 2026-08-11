@@ -16,16 +16,30 @@ test('interaction regression layer is loaded by renderer bootstrap', () => {
     );
 });
 
-test('map edge deletion restores renderer interaction state', () => {
-    const source = read('renderer/shell/pisi-interaction-regressions.mjs');
+test('map edge deletion has one canonical handler and does not steal editor focus', () => {
+    const edges = read('renderer/map/pisi-map-edges.mjs');
+    const regressions = read('renderer/shell/pisi-interaction-regressions.mjs');
 
-    assert.match(source, /closest\?\.\('\.map-edge-delete'\)/);
-    assert.match(source, /window\.pisiConfirm/);
-    assert.match(source, /deleteMapConnection/);
-    assert.match(source, /resetPisiMapConnectionInteractions/);
-    assert.match(source, /resetPisiKeyboardAndPointerState/);
-    assert.match(source, /refocusPisiRenderer/);
-    assert.match(source, /stopImmediatePropagation/);
+    assert.match(edges, /async function deleteMapEdge\(edgeId\)/);
+    assert.match(edges, /pisiConfirm\('Bu bağlantı silinsin mi\?'/);
+    assert.match(edges, /deleteMapConnection/);
+    assert.match(edges, /resetPisiMapConnectionInteractions\(\)/);
+
+    // A delayed renderer/body refocus can blur a rename input or editor that
+    // the user opens immediately after deleting an edge.
+    assert.doesNotMatch(
+        edges,
+        /setTimeout\([\s\S]{0,160}refocusPisiRenderer/
+    );
+    assert.doesNotMatch(edges, /resetPisiKeyboardAndPointerState\(\)/);
+
+    // Deletion must not be duplicated by the regression capture layer.
+    assert.doesNotMatch(regressions, /deletePisiMapEdgeSafely/);
+    assert.doesNotMatch(regressions, /handlePisiMapEdgeDeleteCapture/);
+    assert.doesNotMatch(
+        regressions,
+        /addEventListener\('click',\s*handlePisiMapEdgeDeleteCapture/
+    );
 });
 
 test('map rename closes outside and finishes before node modal opens', () => {
