@@ -9,8 +9,24 @@ const pisiCommandCenterState = {
     body: null
 };
 
+const PISI_APPLICATION_PAGE_LABELS = {
+    tr: {
+        settings: 'Ayarlar',
+        preferences: 'Tercihler'
+    },
+    eng: {
+        settings: 'Settings',
+        preferences: 'Preferences'
+    }
+};
+
 function pisiCommandTranslate(value) {
     return window.pisiT?.(value) ?? String(value ?? '');
+}
+
+function getPisiApplicationPageLabel(pageId) {
+    const language = window.pisiI18n?.getLanguage?.() === 'eng' ? 'eng' : 'tr';
+    return PISI_APPLICATION_PAGE_LABELS[language]?.[pageId] || pageId;
 }
 
 function ensurePisiCommandCenter() {
@@ -65,18 +81,25 @@ function registerPisiCommandCenterPage(page) {
         id: page.id,
         label: page.label || page.id,
         order: Number(page.order) || 0,
+        requiresProject: page.requiresProject !== false,
         render: page.render
     });
     if (pisiCommandCenterState.tabs) renderPisiCommandCenterNavigation();
+}
+
+function getVisiblePisiCommandCenterPages() {
+    return Array.from(pisiCommandCenterState.pages.values())
+        .filter((page) => window.currentProjectFolder || !page.requiresProject)
+        .sort((a, b) => a.order - b.order);
 }
 
 function renderPisiCommandCenterNavigation() {
     const tabs = pisiCommandCenterState.tabs;
     if (!tabs) return;
     tabs.replaceChildren();
-    const pages = Array.from(pisiCommandCenterState.pages.values())
-        .sort((a, b) => a.order - b.order);
-    if (!pisiCommandCenterState.pages.has(pisiCommandCenterState.activePage)) {
+    const pages = getVisiblePisiCommandCenterPages();
+    const activePageIsVisible = pages.some((page) => page.id === pisiCommandCenterState.activePage);
+    if (!activePageIsVisible) {
         pisiCommandCenterState.activePage = pages[0]?.id || '';
     }
     for (const page of pages) {
@@ -86,7 +109,8 @@ function renderPisiCommandCenterNavigation() {
         button.dataset.page = page.id;
         button.classList.toggle('active', page.id === pisiCommandCenterState.activePage);
         button.setAttribute('aria-pressed', page.id === pisiCommandCenterState.activePage ? 'true' : 'false');
-        button.textContent = pisiCommandTranslate(page.label);
+        const rawLabel = typeof page.label === 'function' ? page.label() : page.label;
+        button.textContent = pisiCommandTranslate(rawLabel);
         button.addEventListener('click', () => {
             pisiCommandCenterState.activePage = page.id;
             renderPisiCommandCenterNavigation();
@@ -115,7 +139,12 @@ async function renderPisiCommandCenterPage() {
 }
 
 async function openPisiCommandCenter(pageId = null) {
-    if (!window.currentProjectFolder) {
+    const requestedPage = pageId ? pisiCommandCenterState.pages.get(pageId) : null;
+    if (!window.currentProjectFolder && requestedPage?.requiresProject !== false) {
+        alert(pisiCommandTranslate('Önce bir proje açın.'));
+        return false;
+    }
+    if (!window.currentProjectFolder && !requestedPage) {
         alert(pisiCommandTranslate('Önce bir proje açın.'));
         return false;
     }
@@ -149,8 +178,39 @@ function installPisiCommandCenterButton() {
     actions.prepend(button);
 }
 
+function registerPisiApplicationPages() {
+    registerPisiCommandCenterPage({
+        id: 'settings',
+        label: () => getPisiApplicationPageLabel('settings'),
+        order: 900,
+        requiresProject: false,
+        render: async () => {}
+    });
+
+    registerPisiCommandCenterPage({
+        id: 'preferences',
+        label: () => getPisiApplicationPageLabel('preferences'),
+        order: 910,
+        requiresProject: false,
+        render: async () => {}
+    });
+}
+
 function initializePisiCommandCenter() {
     installPisiCommandCenterButton();
+
+    if (!initializePisiCommandCenter.languageUnsubscribe) {
+        initializePisiCommandCenter.languageUnsubscribe =
+            window.pisiI18n?.onLanguageChanged?.(() => {
+                if (!pisiCommandCenterState.overlay?.isConnected) return;
+                renderPisiCommandCenterNavigation();
+                pisiCommandCenterState.dialog?.setAttribute(
+                    'aria-label',
+                    pisiCommandTranslate('Pisi çalışma merkezi')
+                );
+            }) || null;
+    }
+
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape' && !pisiCommandCenterState.overlay?.hidden) {
             event.preventDefault();
@@ -173,6 +233,7 @@ const moduleApi = {
     initializePisiCommandCenter
 };
 
+registerPisiApplicationPages();
 registerModule('shell.commandCenter', moduleApi);
 initializePisiCommandCenter();
 
