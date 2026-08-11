@@ -3,6 +3,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { pathToFileURL } = require('node:url');
 const test = require('node:test');
 const vm = require('node:vm');
 const { extractFunction } = require('./source-helper');
@@ -11,34 +12,51 @@ const appSource = fs.readFileSync(
     path.resolve(__dirname, '..', 'renderer/editor/pisi-editor-sheet.mjs'),
     'utf8'
 );
+const formulaCorePath = path.resolve(
+    __dirname,
+    '..',
+    'renderer/editor/pisi-editor-sheet-formula-core.mjs'
+);
 const formulaFunctionNames = [
+    'getPisiSheetFormulaLocale',
+    'evaluatePisiSheetFormulaResult',
     'evaluatePisiSheetFormula',
     'evaluatePisiArithmeticExpression',
     'getPisiSheetCellNumericValue',
     'getPisiSheetCellValue',
+    'getPisiSheetRangeCellValues',
     'getPisiSheetRangeValues',
     'parsePisiCellRef',
     'pisiColumnName',
     'pisiColumnIndex'
 ];
-const formulaSource = `
-    const PISI_SHEET_MAX_RANGE_CELLS = 80 * 26;
-    ${formulaFunctionNames
-        .map((name) => extractFunction(appSource, name))
-        .join('\n')}
-    globalThis.pisiFormulaTestApi = {
-        evaluatePisiSheetFormula,
-        evaluatePisiArithmeticExpression
-    };
-`;
-const formulaContext = {};
-vm.createContext(formulaContext);
-vm.runInContext(formulaSource, formulaContext);
 
-const {
-    evaluatePisiSheetFormula,
-    evaluatePisiArithmeticExpression
-} = formulaContext.pisiFormulaTestApi;
+const formulaTestApiPromise = import(pathToFileURL(formulaCorePath).href)
+    .then(({ evaluatePisiFormulaExpression }) => {
+        const formulaSource = `
+            const PISI_SHEET_MAX_RANGE_CELLS = 80 * 26;
+            ${formulaFunctionNames
+                .map((name) => extractFunction(appSource, name))
+                .join('\n')}
+            globalThis.pisiFormulaTestApi = {
+                evaluatePisiSheetFormula,
+                evaluatePisiArithmeticExpression
+            };
+        `;
+        const formulaContext = {
+            evaluatePisiFormulaExpression,
+            window: {
+                pisiI18n: {
+                    getLanguage() {
+                        return 'eng';
+                    }
+                }
+            }
+        };
+        vm.createContext(formulaContext);
+        vm.runInContext(formulaSource, formulaContext);
+        return formulaContext.pisiFormulaTestApi;
+    });
 
 function makeTable(values, rowCount = 2, colCount = 2) {
     const cells = new Map(
@@ -81,7 +99,9 @@ function makeTable(values, rowCount = 2, colCount = 2) {
     };
 }
 
-test('aritmetik ayrıştırıcı öncelik ve parantezleri güvenli hesaplar', () => {
+test('aritmetik ayrıştırıcı öncelik ve parantezleri güvenli hesaplar', async () => {
+    const { evaluatePisiArithmeticExpression } = await formulaTestApiPromise;
+
     assert.equal(evaluatePisiArithmeticExpression('2 + 3 * 4'), 14);
     assert.equal(evaluatePisiArithmeticExpression('(2 + 3) * -4'), -20);
     assert.ok(Number.isNaN(evaluatePisiArithmeticExpression('1 / 0')));
@@ -92,7 +112,8 @@ test('aritmetik ayrıştırıcı öncelik ve parantezleri güvenli hesaplar', ()
     );
 });
 
-test('SUM, COUNT ve AVG boş hücreleri doğru ele alır', () => {
+test('SUM, COUNT ve AVG boş hücreleri doğru ele alır', async () => {
+    const { evaluatePisiSheetFormula } = await formulaTestApiPromise;
     const table = makeTable({
         A1: '2',
         A2: '',
@@ -105,7 +126,8 @@ test('SUM, COUNT ve AVG boş hücreleri doğru ele alır', () => {
     assert.equal(evaluatePisiSheetFormula(table, '=AVG(A1:B2)'), 3);
 });
 
-test('döngüsel formül ve tablo dışı dev aralık hata üretir', () => {
+test('döngüsel formül ve tablo dışı dev aralık hata üretir', async () => {
+    const { evaluatePisiSheetFormula } = await formulaTestApiPromise;
     const cyclicTable = makeTable({
         A1: { formula: '=B1' },
         B1: { formula: '=A1' },
