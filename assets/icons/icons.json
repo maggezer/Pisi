@@ -8,7 +8,8 @@
   },
   "actions": {
     "createNode": "assets/icons/create-node.svg",
-    "deleteNode": "assets/icons/delete-node.svg"
+    "deleteNode": "assets/icons/delete-node.svg",
+    "deleteMap": "assets/icons/delete-map.svg"
   },
   "emoji": {
     "🗺️": "assets/icons/map.svg",
