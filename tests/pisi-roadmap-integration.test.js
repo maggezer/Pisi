@@ -51,14 +51,18 @@ test('görev süreleri, alıntılar ve blok referansları sanitizer tarafından 
     ]) assert.ok(editor.includes(attribute), attribute);
 });
 
-test('alt görev sistemi bağımlılıklardan ayrı bir ilişkiyle geri getirilmiştir', () => {
-    const todo = read('renderer/tags/pisi-todo-second-release.mjs');
-    assert.match(todo, /subtask:/);
-    assert.match(todo, /addPisiSubtaskSecondRelease\(mission\)/);
-    assert.match(todo, /completedChildren/);
-    assert.match(todo, /pisi-mission-add-child/);
-    assert.doesNotMatch(todo, /Alt görev sistemi kaldırıldı/);
-    assert.match(read('renderer/tags/pisi-todo-third-release.mjs'), /startsWith\('dep:'\)/);
+test('alt görev hiyerarşisi kaldırılmış, görev bağımlılıkları korunmuştur', () => {
+    const secondRelease = read('renderer/tags/pisi-todo-second-release.mjs');
+    const utils = read('renderer/tags/pisi-todo-utils.mjs');
+    const thirdRelease = read('renderer/tags/pisi-todo-third-release.mjs');
+
+    assert.doesNotMatch(secondRelease, /subtask:/);
+    assert.doesNotMatch(secondRelease, /pisi-mission-add-child/);
+    assert.doesNotMatch(secondRelease, /completedChildren|mission\.depth|block\.todoParents/);
+    assert.match(secondRelease, /Alt görev sistemi kaldırıldı/);
+    assert.match(utils, /todoParents/);
+    assert.match(thirdRelease, /startsWith\('dep:'\)/);
+    assert.match(thirdRelease, /pisiTodoParent/);
 });
 
 test('blok, eklenti, team ve kısayol API yüzeyleri sürümlüdür', () => {
