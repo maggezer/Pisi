@@ -58,6 +58,7 @@ function setPisiThemePreference(theme) {
     } catch (error) {
         console.warn('[PISI] Tema tercihi kaydedilemedi:', error);
     }
+    applyPisiCustomizationSettings(loadPisiCustomizationSettings());
     document.dispatchEvent(new CustomEvent('pisi:theme-changed', {
         detail: { theme: normalized }
     }));
@@ -127,9 +128,17 @@ function applyPisiCustomizationSettings(settings) {
             continue;
         }
 
-        const value = isValidPisiHexColor(settings?.[key])
+        let value = isValidPisiHexColor(settings?.[key])
             ? settings[key]
             : fallback;
+
+        if (
+            key === 'mapNodeBoxColor' &&
+            value.toLowerCase() === PISI_DEFAULT_CUSTOMIZATION.mapNodeBoxColor &&
+            getPisiThemePreference() === 'light'
+        ) {
+            value = '#ffffff';
+        }
 
         root.style.setProperty(cssVariable, value);
     }
@@ -224,6 +233,7 @@ function setupPisiCustomizations() {
 }
 
 applyPisiTheme(getPisiThemePreference());
+applyPisiCustomizationSettings(loadPisiCustomizationSettings());
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
