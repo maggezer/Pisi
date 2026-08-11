@@ -13,7 +13,7 @@ const mainSource = [read('main.js'), readMainSource(), read('main/runtime.js')].
 const treeSource = readMany(collect('renderer/tree', '.mjs'));
 const mapSource = readMany(collect('renderer/map', '.mjs'));
 const editorSource = readMany(collect('renderer/editor', '.mjs'));
-const tagIndexSource = read('renderer/tags/pisi-tag-index.mjs');
+const editorBlocksSource = read('renderer/tags/pisi-editor-blocks.mjs');
 const mapWorkspaceSource = read('renderer/map/pisi-map-workspace.mjs');
 const nodeEditorSource = read('renderer/editor/pisi-node-editor.mjs');
 
@@ -55,10 +55,10 @@ test('Electron giriş dosyaları uygulama kökünden yüklenir', () => {
 });
 
 test('editör normalizasyonu caret konumunu korur', () => {
-    assert.match(tagIndexSource, /function capturePisiEditorSelection\(/);
-    assert.match(tagIndexSource, /function restorePisiEditorSelection\(/);
+    assert.match(editorBlocksSource, /function capturePisiEditorSelection\(/);
+    assert.match(editorBlocksSource, /function restorePisiEditorSelection\(/);
     assert.match(
-        tagIndexSource,
+        editorBlocksSource,
         /const selectionSnapshot = preserveSelection[\s\S]*?restorePisiEditorSelection\(editor, selectionSnapshot\)/
     );
 
@@ -75,10 +75,10 @@ test('editör normalizasyonu caret konumunu korur', () => {
 });
 
 test('Enter ile boş satır korunur ve belge sonunda açılır', () => {
-    assert.match(tagIndexSource, /function getPisiEditorNodePath\(/);
-    assert.match(tagIndexSource, /function resolvePisiEditorNodePath\(/);
-    assert.match(tagIndexSource, /nodePath: getPisiEditorNodePath\(editor, container\)/);
-    assert.match(tagIndexSource, /function resolvePisiEditorSelectionPoint\(/);
+    assert.match(editorBlocksSource, /function getPisiEditorNodePath\(/);
+    assert.match(editorBlocksSource, /function resolvePisiEditorNodePath\(/);
+    assert.match(editorBlocksSource, /nodePath: getPisiEditorNodePath\(editor, container\)/);
+    assert.match(editorBlocksSource, /function resolvePisiEditorSelectionPoint\(/);
     assert.match(nodeEditorSource, /function focusPisiEditorAtEnd\(/);
     assert.match(nodeEditorSource, /range\.collapse\(false\)/);
     assert.match(nodeEditorSource, /focusPisiEditorAtEnd\(contentInput\)/);
@@ -152,7 +152,6 @@ test('kullanılmayan production paketleri geri eklenmez', () => {
     assert.equal(packageJson.devDependencies.electron, '^43.2.0');
     assert.equal(packageJson.devDependencies['electron-builder'], '^26.15.7');
 });
-
 
 
 test('editör iki görünümde güncel beş bölümlü toolbarı kullanır', () => {
