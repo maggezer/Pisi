@@ -74,15 +74,15 @@ test('editör normalizasyonu caret konumunu korur', () => {
     assert.doesNotMatch(contentFunction, /ensurePisiEditorBlocks\(editor\)/);
 });
 
-test('Enter ile boş satır korunur ve belge sonunda açılır', () => {
+test('Enter ile boş satır korunur ve node açılışı odağı çalmaz', () => {
     assert.match(editorBlocksSource, /function getPisiEditorNodePath\(/);
     assert.match(editorBlocksSource, /function resolvePisiEditorNodePath\(/);
     assert.match(editorBlocksSource, /nodePath: getPisiEditorNodePath\(editor, container\)/);
     assert.match(editorBlocksSource, /function resolvePisiEditorSelectionPoint\(/);
-    assert.match(nodeEditorSource, /function focusPisiEditorAtEnd\(/);
-    assert.match(nodeEditorSource, /range\.collapse\(false\)/);
-    assert.match(nodeEditorSource, /focusPisiEditorAtEnd\(contentInput\)/);
-    assert.match(nodeEditorSource, /focusPisiEditorAtEnd\(contentEditor\)/);
+    assert.match(nodeEditorSource, /function clearPisiEditorCaret\(/);
+    assert.doesNotMatch(nodeEditorSource, /function focusPisiEditorAtEnd\(/);
+    assert.match(nodeEditorSource, /clearPisiEditorCaret\(contentInput\)/);
+    assert.match(nodeEditorSource, /clearPisiEditorCaret\(contentEditor\)/);
 });
 
 test('merkez node editöründe başlık ve kaydet şeridi bulunmaz', () => {
