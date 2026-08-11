@@ -1,4 +1,8 @@
 import { registerModule } from "../core/module-registry.mjs";
+import {
+    getPisiThemePreference,
+    setPisiThemePreference
+} from "./pisi-customizations.mjs";
 
 const pisiCommandCenterState = {
     pages: new Map(),
@@ -12,11 +16,23 @@ const pisiCommandCenterState = {
 const PISI_APPLICATION_PAGE_LABELS = {
     tr: {
         settings: 'Ayarlar',
-        preferences: 'Tercihler'
+        preferences: 'Tercihler',
+        appearance: 'Görünüm',
+        appearanceDescription: 'Pisi arayüzü için kullanmak istediğiniz renk paletini seçin.',
+        dark: 'Koyu',
+        darkDescription: 'Mevcut koyu Pisi paleti.',
+        light: 'Açık',
+        lightDescription: 'Açık yüzeyler ve koyu metinlerle aydınlık Pisi paleti.'
     },
     eng: {
         settings: 'Settings',
-        preferences: 'Preferences'
+        preferences: 'Preferences',
+        appearance: 'Appearance',
+        appearanceDescription: 'Choose the color palette used by the Pisi interface.',
+        dark: 'Dark',
+        darkDescription: 'The current dark Pisi palette.',
+        light: 'Light',
+        lightDescription: 'A bright Pisi palette with light surfaces and dark text.'
     }
 };
 
@@ -24,9 +40,9 @@ function pisiCommandTranslate(value) {
     return window.pisiT?.(value) ?? String(value ?? '');
 }
 
-function getPisiApplicationPageLabel(pageId) {
+function getPisiApplicationText(key) {
     const language = window.pisiI18n?.getLanguage?.() === 'eng' ? 'eng' : 'tr';
-    return PISI_APPLICATION_PAGE_LABELS[language]?.[pageId] || pageId;
+    return PISI_APPLICATION_PAGE_LABELS[language]?.[key] || key;
 }
 
 function ensurePisiCommandCenter() {
@@ -178,10 +194,89 @@ function installPisiCommandCenterButton() {
     actions.prepend(button);
 }
 
+function makePisiThemeOption(theme, label, description, activeTheme, onSelect) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'pisi-theme-option';
+    button.dataset.theme = theme;
+    button.setAttribute('aria-pressed', theme === activeTheme ? 'true' : 'false');
+
+    const preview = document.createElement('span');
+    preview.className = `pisi-theme-preview ${theme}`;
+    preview.setAttribute('aria-hidden', 'true');
+    preview.append(
+        document.createElement('span'),
+        document.createElement('span'),
+        document.createElement('span')
+    );
+
+    const copy = document.createElement('span');
+    copy.className = 'pisi-theme-option-copy';
+    const title = document.createElement('strong');
+    title.textContent = label;
+    const detail = document.createElement('span');
+    detail.textContent = description;
+    copy.append(title, detail);
+    button.append(preview, copy);
+    button.addEventListener('click', () => onSelect(theme));
+    return button;
+}
+
+function renderPisiPreferencesPage(container) {
+    const page = document.createElement('section');
+    page.className = 'pisi-preferences-page';
+
+    const heading = document.createElement('div');
+    heading.className = 'pisi-preferences-heading';
+    const title = document.createElement('h2');
+    title.textContent = getPisiApplicationText('appearance');
+    const description = document.createElement('p');
+    description.textContent = getPisiApplicationText('appearanceDescription');
+    heading.append(title, description);
+
+    const options = document.createElement('div');
+    options.className = 'pisi-theme-options';
+
+    const syncThemeOptions = (activeTheme) => {
+        options.querySelectorAll('.pisi-theme-option').forEach((button) => {
+            button.setAttribute(
+                'aria-pressed',
+                button.dataset.theme === activeTheme ? 'true' : 'false'
+            );
+        });
+    };
+
+    const selectTheme = (theme) => {
+        const activeTheme = setPisiThemePreference(theme);
+        syncThemeOptions(activeTheme);
+    };
+
+    const activeTheme = getPisiThemePreference();
+    options.append(
+        makePisiThemeOption(
+            'dark',
+            getPisiApplicationText('dark'),
+            getPisiApplicationText('darkDescription'),
+            activeTheme,
+            selectTheme
+        ),
+        makePisiThemeOption(
+            'light',
+            getPisiApplicationText('light'),
+            getPisiApplicationText('lightDescription'),
+            activeTheme,
+            selectTheme
+        )
+    );
+
+    page.append(heading, options);
+    container.appendChild(page);
+}
+
 function registerPisiApplicationPages() {
     registerPisiCommandCenterPage({
         id: 'settings',
-        label: () => getPisiApplicationPageLabel('settings'),
+        label: () => getPisiApplicationText('settings'),
         order: 900,
         requiresProject: false,
         render: async () => {}
@@ -189,10 +284,10 @@ function registerPisiApplicationPages() {
 
     registerPisiCommandCenterPage({
         id: 'preferences',
-        label: () => getPisiApplicationPageLabel('preferences'),
+        label: () => getPisiApplicationText('preferences'),
         order: 910,
         requiresProject: false,
-        render: async () => {}
+        render: async (container) => renderPisiPreferencesPage(container)
     });
 }
 
@@ -208,6 +303,9 @@ function initializePisiCommandCenter() {
                     'aria-label',
                     pisiCommandTranslate('Pisi çalışma merkezi')
                 );
+                if (!pisiCommandCenterState.overlay?.hidden) {
+                    renderPisiCommandCenterPage();
+                }
             }) || null;
     }
 
