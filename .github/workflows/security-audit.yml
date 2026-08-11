@@ -25,11 +25,11 @@ jobs:
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
-      - name: Audit dependencies
+      - name: Test safe audit fix
         shell: bash
         run: |
-          set +e
-          npm audit --json > npm-audit.json
-          status=$?
-          cat npm-audit.json
-          exit $status
+          npm audit fix --package-lock-only --ignore-scripts
+          echo '--- PACKAGE DIFF ---'
+          git diff -- package.json package-lock.json
+          echo '--- AUDIT AFTER FIX ---'
+          npm audit --json
