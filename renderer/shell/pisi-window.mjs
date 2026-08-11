@@ -49,31 +49,11 @@ function setPisiAppMenuOpen(open) {
     }
 }
 
-function activatePisiCustomizationTab(options = {}) {
-    const tab = document.querySelector('.right-panel-tab[data-right-tab="customizations"]');
-    if (!tab) return false;
-
-    tab.click();
-
-    if (options.focusLanguage) {
-        requestAnimationFrame(() => {
-            document.getElementById('pisi-language-select')?.focus();
-        });
-    }
-
-    return true;
-}
-
 function handlePisiAppMenuAction(action) {
     closePisiAppMenu();
 
-    if (action === 'settings') {
-        activatePisiCustomizationTab();
-        return;
-    }
-
-    if (action === 'preferences') {
-        activatePisiCustomizationTab({ focusLanguage: true });
+    if (action === 'settings' || action === 'preferences') {
+        window.openPisiCommandCenter?.(action);
         return;
     }
 
