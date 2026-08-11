@@ -1,6 +1,8 @@
 import { registerModule } from "../core/module-registry.mjs";
 
 const PISI_CUSTOMIZATION_STORAGE_KEY = 'pisi.customization.v1';
+const PISI_THEME_STORAGE_KEY = 'pisi.theme.v1';
+const PISI_THEME_VALUES = new Set(['dark', 'light']);
 
 const PISI_DEFAULT_CUSTOMIZATION = {
     mapDownHubColor: '#f39c12',
@@ -28,6 +30,40 @@ const PISI_CUSTOMIZATION_CSS_VARIABLES = {
     nodeHeaderColor: '--pisi-node-header-color'
 };
 
+function normalizePisiTheme(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+    return PISI_THEME_VALUES.has(normalized) ? normalized : 'dark';
+}
+
+function getPisiThemePreference() {
+    try {
+        return normalizePisiTheme(localStorage.getItem(PISI_THEME_STORAGE_KEY));
+    } catch {
+        return 'dark';
+    }
+}
+
+function applyPisiTheme(theme) {
+    const normalized = normalizePisiTheme(theme);
+    const root = document.documentElement;
+    root.dataset.pisiTheme = normalized;
+    root.style.colorScheme = normalized;
+    return normalized;
+}
+
+function setPisiThemePreference(theme) {
+    const normalized = applyPisiTheme(theme);
+    try {
+        localStorage.setItem(PISI_THEME_STORAGE_KEY, normalized);
+    } catch (error) {
+        console.warn('[PISI] Tema tercihi kaydedilemedi:', error);
+    }
+    document.dispatchEvent(new CustomEvent('pisi:theme-changed', {
+        detail: { theme: normalized }
+    }));
+    return normalized;
+}
+
 function loadPisiCustomizationSettings() {
     try {
         const raw = localStorage.getItem(PISI_CUSTOMIZATION_STORAGE_KEY);
@@ -36,18 +72,18 @@ function loadPisiCustomizationSettings() {
             return { ...PISI_DEFAULT_CUSTOMIZATION };
         }
 
-const parsed = JSON.parse(raw) || {};
+        const parsed = JSON.parse(raw) || {};
 
-if (parsed.mapConnectionColor && !parsed.mapDownHubColor) {
-    parsed.mapDownHubColor = parsed.mapConnectionColor;
-}
+        if (parsed.mapConnectionColor && !parsed.mapDownHubColor) {
+            parsed.mapDownHubColor = parsed.mapConnectionColor;
+        }
 
-delete parsed.mapConnectionColor;
+        delete parsed.mapConnectionColor;
 
-return {
-    ...PISI_DEFAULT_CUSTOMIZATION,
-    ...parsed
-};
+        return {
+            ...PISI_DEFAULT_CUSTOMIZATION,
+            ...parsed
+        };
     } catch (error) {
         console.warn('[PISI] Customize ayarları okunamadı:', error);
         return { ...PISI_DEFAULT_CUSTOMIZATION };
@@ -128,48 +164,48 @@ function setupPisiCustomizations() {
     syncPisiCustomizationInputs(settings);
 
     panel.querySelectorAll('[data-pisi-custom-color]').forEach((input) => {
-    if (input.dataset.bound === '1') return;
-    input.dataset.bound = '1';
+        if (input.dataset.bound === '1') return;
+        input.dataset.bound = '1';
 
-    input.addEventListener('input', () => {
-        const key = input.dataset.pisiCustomColor;
-        const value = input.value;
+        input.addEventListener('input', () => {
+            const key = input.dataset.pisiCustomColor;
+            const value = input.value;
 
-        if (!PISI_DEFAULT_CUSTOMIZATION[key]) return;
-        if (!isValidPisiHexColor(value)) return;
+            if (!PISI_DEFAULT_CUSTOMIZATION[key]) return;
+            if (!isValidPisiHexColor(value)) return;
 
-        settings = {
-            ...settings,
-            [key]: value
-        };
+            settings = {
+                ...settings,
+                [key]: value
+            };
 
-        applyPisiCustomizationSettings(settings);
-        savePisiCustomizationSettings(settings);
+            applyPisiCustomizationSettings(settings);
+            savePisiCustomizationSettings(settings);
+        });
     });
-});
 
     panel.querySelectorAll('[data-pisi-custom-size]').forEach((input) => {
-    if (input.dataset.bound === '1') return;
-    input.dataset.bound = '1';
+        if (input.dataset.bound === '1') return;
+        input.dataset.bound = '1';
 
-    input.addEventListener('input', () => {
-        const key = input.dataset.pisiCustomSize;
+        input.addEventListener('input', () => {
+            const key = input.dataset.pisiCustomSize;
 
-        if (!Object.prototype.hasOwnProperty.call(PISI_DEFAULT_CUSTOMIZATION, key)) return;
+            if (!Object.prototype.hasOwnProperty.call(PISI_DEFAULT_CUSTOMIZATION, key)) return;
 
-        const fallback = PISI_DEFAULT_CUSTOMIZATION[key];
-        const value = normalizePisiSizeValue(input.value, fallback, 8, 32);
+            const fallback = PISI_DEFAULT_CUSTOMIZATION[key];
+            const value = normalizePisiSizeValue(input.value, fallback, 8, 32);
 
-        settings = {
-            ...settings,
-            [key]: value
-        };
+            settings = {
+                ...settings,
+                [key]: value
+            };
 
-        input.value = value;
+            input.value = value;
 
-        applyPisiCustomizationSettings(settings);
-        savePisiCustomizationSettings(settings);
-    });
+            applyPisiCustomizationSettings(settings);
+            savePisiCustomizationSettings(settings);
+        });
     });
 
     const resetBtn = document.getElementById('pisi-customize-reset');
@@ -186,6 +222,8 @@ function setupPisiCustomizations() {
         });
     }
 }
+
+applyPisiTheme(getPisiThemePreference());
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
@@ -231,3 +269,10 @@ Object.defineProperties(moduleApi, {
     }
 });
 registerModule("shell.customizations", moduleApi);
+
+export {
+    applyPisiTheme,
+    getPisiThemePreference,
+    normalizePisiTheme,
+    setPisiThemePreference
+};
