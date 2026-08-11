@@ -157,9 +157,9 @@ currentConnectionDrag = {
 async function deleteMapEdge(edgeId) {
     if (!activeMapPath || !edgeId) return;
 
-    if (typeof resetPisiKeyboardAndPointerState === 'function') {
-        resetPisiKeyboardAndPointerState();
-    }
+    // Bağlantı sürükleme/seçim durumunu temizle; global focus'u body'ye
+    // taşımıyoruz. Confirm diyaloğu kendi focus yaşam döngüsünü yönetiyor.
+    resetPisiMapConnectionInteractions();
 
     const ok = typeof pisiConfirm === 'function'
         ? await pisiConfirm('Bu bağlantı silinsin mi?', {
@@ -170,14 +170,8 @@ async function deleteMapEdge(edgeId) {
         })
         : confirm('Bu bağlantı silinsin mi?');
 
-    if (typeof resetPisiKeyboardAndPointerState === 'function') {
-        resetPisiKeyboardAndPointerState();
-    }
-
     if (!ok) {
-        if (typeof refocusPisiRenderer === 'function') {
-            refocusPisiRenderer();
-        }
+        resetPisiMapConnectionInteractions();
         return;
     }
 
@@ -207,16 +201,9 @@ async function deleteMapEdge(edgeId) {
         console.error('[PISI] Bağlantı silme hatası:', error);
         alert('Bağlantı silinirken hata oluştu: ' + error.message);
     } finally {
-        if (typeof resetPisiKeyboardAndPointerState === 'function') {
-            resetPisiKeyboardAndPointerState();
-        }
-
-        if (typeof refocusPisiRenderer === 'function') {
-            refocusPisiRenderer();
-            setTimeout(() => {
-                refocusPisiRenderer();
-            }, 80);
-        }
+        // Burada yalnızca map bağlantı etkileşim durumunu temizliyoruz.
+        // Gecikmeli refocus, yeni açılan rename input/editor odağını çalıyordu.
+        resetPisiMapConnectionInteractions();
     }
 }
 
