@@ -1,7 +1,7 @@
-/* Dedicated Pisi node action assets. */
+/* Dedicated Pisi node and map action assets. */
 #add-node-btn,
 .add-node-under-map-btn,
-.tree-row-actions:not(:has(.add-node-under-map-btn)) .delete-tree-item-btn {
+.delete-tree-item-btn {
     background-position: center;
     background-repeat: no-repeat;
     background-size: 17px 17px;
@@ -16,6 +16,10 @@
     background-image: url("../assets/icons/delete-node.svg");
 }
 
+.tree-row-actions:has(.add-node-under-map-btn) .delete-tree-item-btn {
+    background-image: url("../assets/icons/delete-map.svg");
+}
+
 #add-node-btn {
     font-size: 0;
 }
@@ -23,12 +27,12 @@
 #add-node-btn > img,
 .add-node-under-map-btn .tree-action-img,
 .add-node-under-map-btn .tree-action-fallback,
-.tree-row-actions:not(:has(.add-node-under-map-btn)) .delete-tree-item-btn .tree-action-fallback {
+.delete-tree-item-btn .tree-action-fallback {
     display: none;
 }
 
 .add-node-under-map-btn,
-.tree-row-actions:not(:has(.add-node-under-map-btn)) .delete-tree-item-btn {
+.delete-tree-item-btn {
     width: 22px;
     height: 22px;
     flex-basis: 22px;
