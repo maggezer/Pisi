@@ -1,0 +1,8 @@
+/* Node modal must own the entire application surface, including the titlebar. */
+html body #pisi-app-menu {
+    z-index: 7000;
+}
+
+html body #pisi-app-menu-dropdown {
+    z-index: 7001;
+}
