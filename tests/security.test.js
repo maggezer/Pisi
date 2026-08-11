@@ -62,15 +62,17 @@ test('Windows reserved adları güvenli dosya adına dönüştürülür', () => 
 test('proje yolu sınırı dış erişimi ve symlink kaçışını engeller', (t) => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-security-'));
     const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-outside-'));
+    const projectRoot = fs.realpathSync.native(root);
+    const outsideRoot = fs.realpathSync.native(outside);
 
     t.after(() => {
         fs.rmSync(root, { recursive: true, force: true });
         fs.rmSync(outside, { recursive: true, force: true });
     });
 
-    const nodePath = path.join(root, 'safe.node');
+    const nodePath = path.join(projectRoot, 'safe.node');
     fs.writeFileSync(nodePath, '{}', 'utf8');
-    const api = loadValidationApi(root);
+    const api = loadValidationApi(projectRoot);
 
     assert.equal(
         api.assertProjectPath(nodePath, {
@@ -80,13 +82,13 @@ test('proje yolu sınırı dış erişimi ve symlink kaçışını engeller', (t
         path.resolve(nodePath)
     );
     assert.throws(
-        () => api.assertProjectPath(path.join(outside, 'escape.node')),
+        () => api.assertProjectPath(path.join(outsideRoot, 'escape.node')),
         /dışında|bulunamadı/
     );
 
-    const linkPath = path.join(root, 'outside-link');
+    const linkPath = path.join(projectRoot, 'outside-link');
     try {
-        fs.symlinkSync(outside, linkPath, 'dir');
+        fs.symlinkSync(outsideRoot, linkPath, 'dir');
     } catch (error) {
         t.skip(`Symlink oluşturulamıyor: ${error.message}`);
         return;
