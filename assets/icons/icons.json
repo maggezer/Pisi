@@ -6,6 +6,10 @@
     "restore": "assets/win-restore.png",
     "close": "assets/win-close.png"
   },
+  "actions": {
+    "createNode": "assets/icons/create-node.svg",
+    "deleteNode": "assets/icons/delete-node.svg"
+  },
   "emoji": {
     "🗺️": "assets/icons/map.svg",
     "📄": "assets/icons/note.svg",
