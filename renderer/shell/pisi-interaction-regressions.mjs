@@ -1,92 +1,6 @@
 const PISI_EDITOR_TAB_TEXT = '\u00a0'.repeat(4);
 const PISI_MAP_RENAME_WAIT_MS = 5000;
 
-function refocusPisiAfterMapInteraction() {
-    window.resetPisiMapConnectionInteractions?.();
-    window.resetPisiKeyboardAndPointerState?.();
-    window.refocusPisiRenderer?.();
-
-    setTimeout(() => {
-        window.refocusPisiRenderer?.();
-    }, 80);
-}
-
-async function deletePisiMapEdgeSafely(edgeId) {
-    const mapPath = window.activeMapPath;
-    if (!mapPath || !edgeId) return false;
-
-    window.resetPisiMapConnectionInteractions?.();
-    window.resetPisiKeyboardAndPointerState?.();
-
-    const confirmed = typeof window.pisiConfirm === 'function'
-        ? await window.pisiConfirm('Bu bağlantı silinsin mi?', {
-            title: 'Bağlantıyı sil',
-            confirmText: 'Sil',
-            cancelText: 'Vazgeç',
-            danger: true
-        })
-        : window.confirm('Bu bağlantı silinsin mi?');
-
-    window.resetPisiKeyboardAndPointerState?.();
-
-    if (!confirmed) {
-        refocusPisiAfterMapInteraction();
-        return false;
-    }
-
-    try {
-        window.suppressNextFileSystemRefresh?.(8000);
-
-        const result = await window.pisiProject?.deleteMapConnection?.(
-            mapPath,
-            edgeId
-        );
-
-        if (!result?.ok) {
-            window.alert(result?.error || 'Bağlantı silinemedi.');
-            return false;
-        }
-
-        const currentEdges = Array.isArray(window.activeMapEdges)
-            ? window.activeMapEdges
-            : [];
-
-        window.activeMapEdges = Array.isArray(result.edges)
-            ? result.edges
-            : currentEdges.filter((edge) => edge.id !== edgeId);
-
-        window.drawMapConnections?.();
-
-        if (typeof window.refreshActiveMapTreeBranch === 'function') {
-            await window.refreshActiveMapTreeBranch();
-        }
-
-        return true;
-    } catch (error) {
-        console.error('[PISI] Bağlantı silme hatası:', error);
-        window.alert('Bağlantı silinirken hata oluştu: ' + error.message);
-        return false;
-    } finally {
-        refocusPisiAfterMapInteraction();
-    }
-}
-
-function handlePisiMapEdgeDeleteCapture(event) {
-    const deleteControl = event.target?.closest?.('.map-edge-delete');
-    if (!deleteControl) return;
-
-    const edgeId = deleteControl.dataset.edgeId ||
-        deleteControl.closest?.('[data-edge-id]')?.dataset.edgeId;
-
-    if (!edgeId) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-    event.stopImmediatePropagation();
-
-    void deletePisiMapEdgeSafely(edgeId);
-}
-
 function getActivePisiMapRenameInput() {
     return document.querySelector('.map-node-title-input');
 }
@@ -225,7 +139,8 @@ function installPisiInteractionRegressionFixes() {
     queueMicrotask(removePisiTitlebarLanguageToggle);
     setTimeout(removePisiTitlebarLanguageToggle, 0);
 
-    document.addEventListener('click', handlePisiMapEdgeDeleteCapture, true);
+    // Edge deletion is deliberately not intercepted here. The canonical
+    // map.edges handler owns deletion so focus/reset behavior cannot diverge.
     document.addEventListener('mousedown', finishPisiMapRenameOnOutsidePointer, true);
     document.addEventListener('dblclick', handlePisiMapOpenWhileRenaming, true);
     document.addEventListener('click', handlePisiMapOpenWhileRenaming, true);
