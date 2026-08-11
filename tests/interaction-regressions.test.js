@@ -43,7 +43,7 @@ test('Tab inserts indentation into rich text instead of leaving editor', () => {
 
     assert.match(source, /'\\u00a0'\.repeat\(4\)/);
     assert.match(source, /event\.key !== 'Tab'/);
-    assert.match(source, /\.pisi-rich-editor\[contenteditable=\\"true\\"\]/);
+    assert.ok(source.includes('.pisi-rich-editor[contenteditable="true"]'));
     assert.match(source, /range\.insertNode\(tabNode\)/);
     assert.match(source, /new Event\('input', \{ bubbles: true \}\)/);
 });
