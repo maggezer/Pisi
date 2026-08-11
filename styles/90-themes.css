@@ -1,8 +1,9 @@
-:root {
+html[data-pisi-theme="dark"] {
     --pisi-theme-accent: #f39c12;
 }
 
 html[data-pisi-theme="light"] {
+    --pisi-theme-accent: #f39c12;
     --pisi-theme-bg: #f4f5f7;
     --pisi-theme-surface: #ffffff;
     --pisi-theme-surface-alt: #f8f9fb;
