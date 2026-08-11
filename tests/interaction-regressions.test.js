@@ -42,35 +42,76 @@ test('map edge deletion has one canonical handler and does not steal editor focu
     );
 });
 
-test('map rename closes outside and finishes before node modal opens', () => {
+test('map rename closes outside without leaking the same pointer event', () => {
     const source = read('renderer/shell/pisi-interaction-regressions.mjs');
 
     assert.match(source, /querySelector\('\.map-node-title-input'\)/);
-    assert.match(source, /document\.addEventListener\('mousedown', finishPisiMapRenameOnOutsidePointer, true\)/);
+    assert.match(
+        source,
+        /document\.addEventListener\('mousedown', finishPisiMapRenameOnOutsidePointer, true\)/
+    );
+    assert.match(
+        source,
+        /document\.addEventListener\('contextmenu', finishPisiMapRenameOnOutsideContextMenu, true\)/
+    );
+    assert.match(source, /event\.preventDefault\(\)/);
+    assert.match(source, /event\.stopImmediatePropagation\(\)/);
+    assert.match(source, /input\.blur\(\)/);
+});
+
+test('map rename finishes before the same node opens in modal', () => {
+    const source = read('renderer/shell/pisi-interaction-regressions.mjs');
+
     assert.match(source, /box\.querySelector\('\.map-node-title-input'\)\?\.blur/);
     assert.match(source, /waitForPisiMapRename/);
+    assert.match(source, /preview && event\.type !== 'dblclick'/);
+    assert.match(source, /openButton && event\.type !== 'click'/);
     assert.match(source, /window\.openNodeModalFromBox/);
 });
 
-test('Tab inserts indentation into rich text instead of leaving editor', () => {
+test('Tab inserts indentation into rich text blocks instead of leaving editor', () => {
     const source = read('renderer/shell/pisi-interaction-regressions.mjs');
 
     assert.match(source, /'\\u00a0'\.repeat\(4\)/);
     assert.match(source, /event\.key !== 'Tab'/);
     assert.ok(source.includes('.pisi-rich-editor[contenteditable="true"]'));
+    assert.match(source, /const nestedEditable = event\.target\?\.closest\?\.\('\[contenteditable="true"\]'\)/);
+    assert.match(source, /nestedEditable && nestedEditable !== editor/);
+    assert.doesNotMatch(source, /event\.target !== editor/);
     assert.match(source, /range\.insertNode\(tabNode\)/);
     assert.match(source, /new Event\('input', \{ bubbles: true \}\)/);
 });
 
-test('node modal covers Pisi menu and titlebar language toggle is removed', () => {
+test('visible node modal owns Escape before background rename handlers', () => {
+    const source = read('renderer/shell/pisi-interaction-regressions.mjs');
+
+    assert.match(source, /async function handlePisiNodeModalEscapeCapture/);
+    assert.match(source, /modalOverlay\?\.classList\.contains\('visible'\)/);
+    assert.match(source, /event\.stopImmediatePropagation\(\)/);
+    assert.match(source, /window\.closeNodeModalAndSave\?\.\(\)/);
+    assert.match(
+        source,
+        /document\.addEventListener\('keydown', handlePisiNodeModalEscapeCapture, true\)/
+    );
+});
+
+test('node modal blocks Pisi menu and titlebar language toggle is removed', () => {
     const source = read('renderer/shell/pisi-interaction-regressions.mjs');
     const styleIndex = read('style.css');
     const styles = read('styles/92-interaction-fixes.css');
 
     assert.match(source, /getElementById\('pisi-language-toggle'\)\?\.remove/);
+    assert.match(source, /new MutationObserver/);
+    assert.match(source, /pisiTitlebarLanguageObserver\.observe\(controls, \{ childList: true \}\)/);
+    assert.match(source, /appMenuButton\.disabled = Boolean\(modalVisible\)/);
+    assert.match(source, /closePisiAppMenuForModal\(\)/);
+
     assert.match(styleIndex, /92-interaction-fixes\.css/);
     assert.match(styles, /html body #pisi-app-menu \{/);
     assert.match(styles, /z-index: 7000/);
     assert.match(styles, /html body #pisi-app-menu-dropdown \{/);
-    assert.doesNotMatch(styles, /z-index:\s*(?:8\d{3}|[1-9]\d{4,})/);
+    assert.match(styles, /html body #node-modal-overlay \{/);
+    assert.match(styles, /z-index: 30000/);
+    assert.match(styles, /backdrop-filter: blur\(6px\)/);
+    assert.match(styles, /pointer-events: auto/);
 });
