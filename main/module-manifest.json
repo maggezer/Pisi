@@ -227,6 +227,7 @@
       "hideFileOnWindows",
       "isProcessAlive",
       "acquireProjectLock",
+      "tryLockProjectFolder",
       "lockProjectFolder",
       "unlockProjectFolder",
       "createWindow"

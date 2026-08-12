@@ -130,26 +130,124 @@ function hideProjectModal() {
     projectModal?.classList.remove('visible');
 }
 
+function normalizePisiProjectSelection(selection) {
+    if (typeof selection === 'string' && selection.trim()) {
+        return {
+            ok: true,
+            folderPath: selection
+        };
+    }
+
+    if (
+        selection?.ok === true &&
+        typeof selection.folderPath === 'string' &&
+        selection.folderPath.trim()
+    ) {
+        return {
+            ok: true,
+            folderPath: selection.folderPath
+        };
+    }
+
+    if (!selection || selection.cancelled === true) {
+        return {
+            ok: false,
+            cancelled: true
+        };
+    }
+
+    return {
+        ok: false,
+        code: selection.code || 'PROJECT_OPEN_FAILED',
+        error: selection.error || 'Proje klasörü açılamadı.',
+        reported: selection.reported === true
+    };
+}
+
+function reportPisiProjectLoadError(error) {
+    const message = String(error || 'Proje klasörü yüklenemedi.');
+    console.error('[PISI] Proje yüklenemedi:', message);
+    alert(message);
+}
+
 async function chooseAndLoadProject() {
     if (typeof flushPisiPendingSaves === 'function') {
         const saved = await flushPisiPendingSaves();
-        if (!saved) return;
+        if (!saved) return false;
     }
 
-    const selectedFolder = await window.pisiProject?.chooseFolder?.();
+    let selectionResult = null;
 
-    if (!selectedFolder) {
+    try {
+        selectionResult = await window.pisiProject?.chooseFolder?.();
+    } catch (error) {
+        reportPisiProjectLoadError(error.message);
+        showProjectModal();
+        return false;
+    }
+
+    const selection = normalizePisiProjectSelection(selectionResult);
+
+    if (selection.cancelled) {
         // Kullanıcı seçim penceresinde geri/iptal yaptıysa bile
         // mevcut proje hâlâ geçerli mi kontrol et ve ağacı yenile.
-        await refreshCurrentProjectTree();
-        return;
+        if (window.currentProjectFolder) {
+            await refreshCurrentProjectTree();
+        } else {
+            showProjectModal();
+        }
+        return false;
     }
 
-    await loadProject(selectedFolder);
-    hideProjectModal();
+    if (!selection.ok) {
+        if (!selection.reported) {
+            reportPisiProjectLoadError(selection.error);
+        }
+
+        if (window.currentProjectFolder) {
+            await refreshCurrentProjectTree();
+        } else {
+            showProjectModal();
+        }
+        return false;
+    }
+
+    const loaded = await loadProject(selection.folderPath);
+
+    if (loaded) {
+        hideProjectModal();
+    } else {
+        showProjectModal();
+    }
+
+    return loaded;
 }
 
 async function loadProject(folderPath) {
+    if (typeof folderPath !== 'string' || !folderPath.trim()) {
+        reportPisiProjectLoadError('Geçerli bir proje klasörü seçilmedi.');
+        showProjectModal();
+        return false;
+    }
+
+    let folderResult = null;
+
+    try {
+        folderResult = await window.pisiProject?.listFolder?.(folderPath);
+    } catch (error) {
+        reportPisiProjectLoadError(error.message);
+        showProjectModal();
+        return false;
+    }
+
+    if (!folderResult?.ok) {
+        reportPisiProjectLoadError(
+            folderResult?.error || 'Proje klasörü okunamadı.'
+        );
+        showProjectModal();
+        return false;
+    }
+
     const previousProjectFolder = window.currentProjectFolder;
 
     window.currentProjectFolder = folderPath;
@@ -192,7 +290,15 @@ async function loadProject(folderPath) {
         resetPisiCalendarForProject(folderPath);
     }
 
-    await renderFolderTree(folderPath);
+    const rendered = await renderFolderTree(folderPath);
+
+    if (!rendered) {
+        reportPisiProjectLoadError('Proje dosya ağacı yüklenemedi.');
+        showProjectModal();
+        return false;
+    }
+
+    return true;
 }
 
 let pisiTreeRootRenderId = 0;
@@ -206,7 +312,7 @@ function isCurrentPisiTreeRootRender(renderId, rootPath) {
 
 async function renderFolderTree(rootPath) {
     const treeEl = document.getElementById('file-tree');
-    if (!treeEl) return;
+    if (!treeEl) return false;
     const renderId = ++pisiTreeRootRenderId;
     const previousScrollTop = treeEl.scrollTop;
     const nextTree = document.createElement('div');
@@ -217,7 +323,7 @@ async function renderFolderTree(rootPath) {
 
     bindFileTreeRootDropZone(treeEl);
 
-    await loadFolderChildren(rootPath, nextTree, 0, {
+    const loaded = await loadFolderChildren(rootPath, nextTree, 0, {
         renderId,
         rootPath
     });
@@ -228,7 +334,7 @@ async function renderFolderTree(rootPath) {
 
     treeEl.replaceChildren(...Array.from(nextTree.childNodes));
     treeEl.scrollTop = previousScrollTop;
-    return true;
+    return loaded;
 }
 
 const moduleApi = {};

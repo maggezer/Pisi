@@ -26,7 +26,9 @@ test('eski proje kilidi canlı süreç varsa korunur, bayatsa kaldırılır', ()
     const source = read('main/functions/electron-ipc.js');
     assert.match(source, /function migrateLegacyProjectLock\(/);
     assert.match(source, /\.kedi\.lock/);
-    assert.match(source, /isProcessAlive\(Number\(legacyLock\.pid\)\)/);
-    assert.match(source, /fs\.unlinkSync\(legacyLockPath\)/);
+    assert.match(source, /function isProjectLockHeldByAnotherProcess\(/);
+    assert.match(source, /lockPid === process\.pid/);
+    assert.match(source, /isProjectLockHeldByAnotherProcess\(legacyLock\)/);
+    assert.match(source, /removeProjectLockFile\(legacyLockPath\)/);
     assert.match(source, /migrateLegacyProjectLock\(folderPath\)/);
 });

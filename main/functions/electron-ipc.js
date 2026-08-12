@@ -179,6 +179,94 @@ function isProcessAlive(pid) {
     }
 }
 
+function normalizeProjectLockPid(value) {
+    const pid = Number(value);
+    return Number.isInteger(pid) && pid > 0 ? pid : null;
+}
+
+function isProjectLockOwnedByCurrentInstance(lockData) {
+    return Boolean(
+        lockData &&
+        lockData.instanceId === pisiInstanceId &&
+        normalizeProjectLockPid(lockData.pid) === process.pid
+    );
+}
+
+function isProjectLockHeldByAnotherProcess(lockData) {
+    const lockPid = normalizeProjectLockPid(lockData?.pid);
+
+    if (!lockPid || lockPid === process.pid) {
+        return false;
+    }
+
+    return isProcessAlive(lockPid);
+}
+
+function removeProjectLockFile(lockPath) {
+    markInternalFileChange(lockPath);
+
+    try {
+        fs.unlinkSync(lockPath);
+    } catch (error) {
+        if (!['EACCES', 'EPERM'].includes(error?.code)) {
+            throw error;
+        }
+
+        fs.chmodSync(lockPath, 0o600);
+        fs.unlinkSync(lockPath);
+    }
+
+    sealInternalFileChange(lockPath);
+}
+
+function inspectProjectFolder(folderPath) {
+    if (typeof folderPath !== 'string' || !folderPath.trim()) {
+        return {
+            ok: false,
+            code: 'INVALID_PROJECT_FOLDER',
+            error: 'Geçerli bir proje klasörü seçilmedi.'
+        };
+    }
+
+    try {
+        const realFolderPath = fs.realpathSync.native(folderPath);
+        const stat = fs.statSync(realFolderPath);
+
+        if (!stat.isDirectory()) {
+            return {
+                ok: false,
+                code: 'NOT_A_DIRECTORY',
+                error: 'Seçilen yol bir klasör değil.'
+            };
+        }
+
+        // Kilidi almadan önce kökün gerçekten okunabildiğini doğrula.
+        fs.readdirSync(realFolderPath);
+
+        return {
+            ok: true,
+            folderPath: realFolderPath
+        };
+    } catch (error) {
+        const code = String(error?.code || 'PROJECT_ACCESS_FAILED');
+        let message = `Proje klasörü açılamadı: ${error.message}`;
+
+        if (code === 'ENOENT') {
+            message = 'Seçilen proje klasörü bulunamadı.';
+        } else if (code === 'EACCES' || code === 'EPERM') {
+            message = 'PISI bu klasöre erişemiyor. Klasörün okuma ve yazma izinlerini kontrol edin.';
+        } else if (code === 'EBUSY') {
+            message = 'Proje klasörü başka bir uygulama tarafından kullanılıyor.';
+        }
+
+        return {
+            ok: false,
+            code,
+            error: message
+        };
+    }
+}
+
 function migrateLegacyProjectLock(folderPath) {
     const legacyLockPath = path.join(folderPath, '.kedi.lock');
     if (!fs.existsSync(legacyLockPath)) return { ok: true };
@@ -188,21 +276,21 @@ function migrateLegacyProjectLock(folderPath) {
         legacyLock = JSON.parse(fs.readFileSync(legacyLockPath, 'utf-8'));
     } catch {}
 
-    if (legacyLock?.pid && isProcessAlive(Number(legacyLock.pid))) {
+    if (isProjectLockHeldByAnotherProcess(legacyLock)) {
         return {
             ok: false,
+            code: 'LEGACY_PROJECT_IN_USE',
             error: `Bu proje eski uygulamanın çalışan bir süreci tarafından kullanılıyor (PID ${legacyLock.pid}).`
         };
     }
 
-    markInternalFileChange(legacyLockPath);
-    fs.unlinkSync(legacyLockPath);
-    sealInternalFileChange(legacyLockPath);
+    removeProjectLockFile(legacyLockPath);
     return { ok: true };
 }
 
 function acquireProjectLock(folderPath) {
     const lockPath = path.join(folderPath, '.pisi.lock');
+    let lockCreated = false;
 
     try {
         const legacyLockResult = migrateLegacyProjectLock(folderPath);
@@ -217,38 +305,52 @@ function acquireProjectLock(folderPath) {
                 );
             } catch {}
 
-            if (
-                existingLock?.instanceId === pisiInstanceId &&
-                existingLock?.pid === process.pid
-            ) {
+            if (isProjectLockOwnedByCurrentInstance(existingLock)) {
                 return {
                     ok: true,
                     lockPath
                 };
             }
 
-            if (existingLock?.pid && isProcessAlive(Number(existingLock.pid))) {
+            if (isProjectLockHeldByAnotherProcess(existingLock)) {
                 return {
                     ok: false,
+                    code: 'PROJECT_IN_USE',
                     error: `Bu proje başka bir PISI süreci tarafından kullanılıyor (PID ${existingLock.pid}).`
                 };
             }
 
-            fs.unlinkSync(lockPath);
+            // Aynı PID farklı instance kimliği taşıyorsa işletim sistemi PID'yi
+            // yeniden kullanmıştır. Bu kilit çalışan sürece ait olamaz.
+            removeProjectLockFile(lockPath);
         }
 
-        const descriptor = fs.openSync(lockPath, 'wx', 0o600);
-        fs.writeFileSync(
-            descriptor,
-            JSON.stringify({
-                pid: process.pid,
-                instanceId: pisiInstanceId,
-                openedAt: new Date().toISOString()
-            }, null, 2),
-            'utf-8'
-        );
-        fs.fsyncSync(descriptor);
-        fs.closeSync(descriptor);
+        let descriptor = null;
+
+        try {
+            markInternalFileChange(lockPath);
+            descriptor = fs.openSync(lockPath, 'wx', 0o600);
+            lockCreated = true;
+            fs.writeFileSync(
+                descriptor,
+                JSON.stringify({
+                    pid: process.pid,
+                    instanceId: pisiInstanceId,
+                    openedAt: new Date().toISOString()
+                }, null, 2),
+                'utf-8'
+            );
+            fs.fsyncSync(descriptor);
+        } finally {
+            if (descriptor !== null) {
+                fs.closeSync(descriptor);
+            }
+
+            if (lockCreated) {
+                sealInternalFileChange(lockPath);
+            }
+        }
+
         hideFileOnWindows(lockPath);
 
         return {
@@ -256,60 +358,109 @@ function acquireProjectLock(folderPath) {
             lockPath
         };
     } catch (error) {
+        if (lockCreated && fs.existsSync(lockPath)) {
+            try {
+                removeProjectLockFile(lockPath);
+            } catch (cleanupError) {
+                console.warn(
+                    '[PISI] Yarım kalan proje kilidi temizlenemedi:',
+                    cleanupError.message
+                );
+            }
+        }
+
         return {
             ok: false,
+            code: String(error?.code || 'PROJECT_LOCK_FAILED'),
             error: `Proje kilidi alınamadı: ${error.message}`
         };
     }
 }
 
-function lockProjectFolder(folderPath) {
+function tryLockProjectFolder(folderPath) {
+    const inspected = inspectProjectFolder(folderPath);
+    if (!inspected.ok) return inspected;
+
+    const realFolderPath = inspected.folderPath;
+
     try {
-        if (!folderPath || !fs.existsSync(folderPath)) {
-            return false;
-        }
-
-        const realFolderPath = fs.realpathSync.native(folderPath);
-        const stat = fs.statSync(realFolderPath);
-        if (!stat.isDirectory()) {
-            return false;
-        }
-
         if (
             activeProjectFolder &&
             normalizePathForCompare(activeProjectFolder) ===
                 normalizePathForCompare(realFolderPath)
         ) {
-            return true;
+            let currentLock = null;
+
+            try {
+                currentLock = JSON.parse(
+                    fs.readFileSync(activeProjectLockPath, 'utf-8')
+                );
+            } catch {}
+
+            if (isProjectLockOwnedByCurrentInstance(currentLock)) {
+                return {
+                    ok: true,
+                    folderPath: realFolderPath
+                };
+            }
         }
 
         const lockResult = acquireProjectLock(realFolderPath);
         if (!lockResult.ok) {
             console.error('[PISI]', lockResult.error);
-            return false;
+            return lockResult;
         }
 
+        const oldProjectFolder = activeProjectFolder;
         const oldLockPath = activeProjectLockPath;
 
-        activeProjectFolder = realFolderPath;
-        activeProjectLockPath = lockResult.lockPath;
-        startProjectWatcher(realFolderPath);
+        try {
+            activeProjectFolder = realFolderPath;
+            activeProjectLockPath = lockResult.lockPath;
+            startProjectWatcher(realFolderPath);
+        } catch (error) {
+            activeProjectFolder = oldProjectFolder;
+            activeProjectLockPath = oldLockPath;
+
+            try {
+                removeProjectLockFile(lockResult.lockPath);
+            } catch {}
+
+            if (oldProjectFolder) {
+                try {
+                    startProjectWatcher(oldProjectFolder);
+                } catch {}
+            }
+
+            throw error;
+        }
 
         if (oldLockPath && oldLockPath !== activeProjectLockPath) {
             try {
                 const oldLock = JSON.parse(fs.readFileSync(oldLockPath, 'utf-8'));
-                if (oldLock.instanceId === pisiInstanceId) {
-                    fs.unlinkSync(oldLockPath);
+                if (isProjectLockOwnedByCurrentInstance(oldLock)) {
+                    removeProjectLockFile(oldLockPath);
                 }
             } catch {}
         }
 
         console.log('[PISI] Proje klasörü kilitlendi:', realFolderPath);
-        return true;
+        return {
+            ok: true,
+            folderPath: realFolderPath
+        };
     } catch (error) {
         console.error('[PISI] Proje klasörü kilitlenemedi:', error);
-        return false;
+        return {
+            ok: false,
+            code: String(error?.code || 'PROJECT_LOCK_FAILED'),
+            error: `Proje klasörü kilitlenemedi: ${error.message}`
+        };
     }
+}
+
+function lockProjectFolder(folderPath) {
+    return tryLockProjectFolder(folderPath).ok;
 }
 
 function unlockProjectFolder() {
@@ -321,8 +472,8 @@ function unlockProjectFolder() {
                 fs.readFileSync(activeProjectLockPath, 'utf-8')
             );
 
-            if (lockData.instanceId === pisiInstanceId) {
-                fs.unlinkSync(activeProjectLockPath);
+            if (isProjectLockOwnedByCurrentInstance(lockData)) {
+                removeProjectLockFile(activeProjectLockPath);
             }
         } catch (error) {
             console.warn('[PISI] Proje kilidi kaldırılamadı:', error.message);
@@ -507,6 +658,10 @@ Object.defineProperties(moduleApi, {
     "acquireProjectLock": {
         enumerable: true,
         get() { return acquireProjectLock; }
+    },
+    "tryLockProjectFolder": {
+        enumerable: true,
+        get() { return tryLockProjectFolder; }
     },
     "lockProjectFolder": {
         enumerable: true,
