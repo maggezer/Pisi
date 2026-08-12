@@ -11,10 +11,50 @@ const PISI_FONT_SIZE_LABELS = {
 };
 
 const PISI_TOOLBAR_ICON_ROOT = 'assets/toolbar';
+const PISI_TOOLBAR_LIGHT_ICON_ROOT = `${PISI_TOOLBAR_ICON_ROOT}/light`;
+
+function normalizePisiToolbarIconTheme(theme) {
+    return String(theme || '').trim().toLowerCase() === 'light'
+        ? 'light'
+        : 'dark';
+}
+
+function getPisiToolbarIconPath(name, theme = document.documentElement.dataset.pisiTheme) {
+    const normalized = normalizePisiToolbarIconTheme(theme);
+    const root = normalized === 'light'
+        ? PISI_TOOLBAR_LIGHT_ICON_ROOT
+        : PISI_TOOLBAR_ICON_ROOT;
+    return `${root}/${name}.svg`;
+}
 
 function pisiToolbarIcon(name) {
-    return `<img class="pisi-toolbar-icon" src="${PISI_TOOLBAR_ICON_ROOT}/${name}.svg" alt="" aria-hidden="true">`;
+    const iconPath = getPisiToolbarIconPath(name);
+    return `<img class="pisi-toolbar-icon" src="${iconPath}" data-pisi-toolbar-icon="${name}" alt="" aria-hidden="true">`;
 }
+
+function syncPisiToolbarIconTheme(
+    root = document,
+    theme = document.documentElement.dataset.pisiTheme
+) {
+    const normalized = normalizePisiToolbarIconTheme(theme);
+
+    root.querySelectorAll('[data-pisi-toolbar-icon]').forEach((icon) => {
+        const nextSrc = getPisiToolbarIconPath(
+            icon.dataset.pisiToolbarIcon,
+            normalized
+        );
+
+        if (icon.getAttribute('src') !== nextSrc) {
+            icon.setAttribute('src', nextSrc);
+        }
+
+        icon.dataset.pisiToolbarTheme = normalized;
+    });
+}
+
+document.addEventListener('pisi:theme-changed', (event) => {
+    syncPisiToolbarIconTheme(document, event.detail?.theme);
+});
 
 function buildPisiUnifiedToolbarMarkup() {
     return `
@@ -339,6 +379,7 @@ function bindPisiUnifiedToolbarEvents(toolbar) {
 function setupPisiUnifiedToolbar(toolbar) {
     if (!toolbar || toolbar.dataset.unifiedBound === '1') return;
     toolbar.innerHTML = buildPisiUnifiedToolbarMarkup();
+    syncPisiToolbarIconTheme(toolbar);
     bindPisiUnifiedToolbarEvents(toolbar);
     toolbar.dataset.unifiedBound = '1';
     window.mountPisiToolbarExtensions?.(toolbar);
@@ -348,6 +389,8 @@ function setupPisiUnifiedToolbar(toolbar) {
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
     PISI_FONT_SIZE_LABELS: { enumerable: true, get() { return PISI_FONT_SIZE_LABELS; } },
+    getPisiToolbarIconPath: { enumerable: true, get() { return getPisiToolbarIconPath; } },
+    syncPisiToolbarIconTheme: { enumerable: true, get() { return syncPisiToolbarIconTheme; } },
     buildPisiUnifiedToolbarMarkup: { enumerable: true, get() { return buildPisiUnifiedToolbarMarkup; } },
     getPisiUnifiedToolbarActiveTable: { enumerable: true, get() { return getPisiUnifiedToolbarActiveTable; } },
     runPisiUnifiedTextCommand: { enumerable: true, get() { return runPisiUnifiedTextCommand; } },
