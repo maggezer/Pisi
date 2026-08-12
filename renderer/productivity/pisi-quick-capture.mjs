@@ -633,8 +633,6 @@ function initializePisiQuickCapture() {
         render: renderPisiTasksPage
     });
     installPisiQuickAddButton();
-    window.openPisiQuickAddModal = openPisiQuickAddModal;
-    window.closePisiQuickAddModal = closePisiQuickAddModal;
     document.addEventListener('pisi:quick-add-requested', openPisiQuickAddModal);
     registerPisiCommand({
         id: 'pisi.quick-add',
