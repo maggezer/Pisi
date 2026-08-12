@@ -85,10 +85,7 @@ function ensurePisiTodoWorkspaceOpenButton() {
         icon.className =
             'pisi-todo-panel-action-icon pisi-todo-panel-workspace-icon';
         icon.setAttribute('aria-hidden', 'true');
-        const label = document.createElement('span');
-        label.className = 'pisi-todo-panel-action-label';
-        label.textContent = pisiTodoWorkspaceTranslate('To-do');
-        workspaceButton.append(icon, label);
+        workspaceButton.appendChild(icon);
         workspaceButton.title = pisiTodoWorkspaceTranslate(
             'To-do çalışma alanını aç'
         );
@@ -109,10 +106,7 @@ function ensurePisiTodoWorkspaceOpenButton() {
         icon.className =
             'pisi-todo-panel-action-icon pisi-todo-quick-add-icon';
         icon.setAttribute('aria-hidden', 'true');
-        const label = document.createElement('span');
-        label.className = 'pisi-todo-panel-action-label';
-        label.textContent = pisiTodoWorkspaceTranslate('Görev ekle');
-        quickAddButton.append(icon, label);
+        quickAddButton.appendChild(icon);
         quickAddButton.title = pisiTodoWorkspaceTranslate(
             'Görev ekleme penceresini aç (Ctrl+M)'
         );

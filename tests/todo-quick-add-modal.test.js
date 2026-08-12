@@ -8,7 +8,7 @@ const test = require('node:test');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('sağ To-do başlığı kompakt çalışma alanı ve görev ekleme eylemlerini taşır', () => {
+test('sağ To-do başlığı eşit kare, sağa yaslı ve yalnız ikonlu eylemleri taşır', () => {
     const workspace = read('renderer/tags/pisi-todo-workspace.mjs');
     const css = read('styles/56-todo-workspace.css');
 
@@ -16,7 +16,12 @@ test('sağ To-do başlığı kompakt çalışma alanı ve görev ekleme eylemler
     assert.match(workspace, /id = 'pisi-todo-quick-add'/);
     assert.match(workspace, /'pisi:quick-add-requested'/);
     assert.match(workspace, /aria-keyshortcuts', 'Control\+M'/);
-    assert.match(css, /grid-template-columns: minmax\(0, 0\.9fr\) minmax\(0, 1\.1fr\)/);
+    assert.doesNotMatch(workspace, /pisi-todo-panel-action-label/);
+    assert.match(workspace, /workspaceButton\.appendChild\(icon\)/);
+    assert.match(workspace, /quickAddButton\.appendChild\(icon\)/);
+    assert.match(css, /\.pisi-todo-panel-actions \{[\s\S]*justify-content: flex-end/);
+    assert.match(css, /\.pisi-todo-panel-action \{[\s\S]*width: 38px;[\s\S]*height: 38px/);
+    assert.doesNotMatch(css, /\.pisi-todo-panel-action-label/);
     assert.match(css, /assets\/todo\/workspace\.svg/);
     assert.match(css, /assets\/todo\/add-task\.svg/);
     assert.ok(read('assets/todo/workspace.svg').includes('<svg'));
@@ -65,6 +70,8 @@ test('Ctrl+M görev ekleme modalını açar ve kısayol sayfasında okunur gör�
     assert.match(capture, /id: 'pisi\.quick-add'/);
     assert.match(capture, /defaultShortcut: 'Mod\+M'/);
     assert.match(capture, /handler: openPisiQuickAddModal/);
+    assert.doesNotMatch(capture, /installPisiQuickAddButton/);
+    assert.doesNotMatch(capture, /pisi-quick-add-button/);
     assert.doesNotMatch(capture, /Mod\+Shift\+A/);
     assert.match(commands, /function formatPisiShortcutForDisplay/);
     assert.match(commands, /\? '⌘' : 'Ctrl'/);

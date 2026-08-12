@@ -243,7 +243,18 @@ function installPisiRightPanelExtensions() {
             button.type = 'button';
             button.className = 'right-panel-tab';
             button.dataset.rightTab = `extension-${panel.id}`;
-            button.textContent = window.pisiT?.(panel.label) || panel.label;
+            const label = window.pisiT?.(panel.label) || panel.label;
+            button.title = label;
+            button.setAttribute('aria-label', label);
+            const iconName = String(panel.icon || '');
+            if (/^[a-z][a-z0-9-]*$/.test(iconName)) {
+                const icon = document.createElement('span');
+                icon.className = `pisi-right-tab-icon pisi-right-tab-icon-${iconName}`;
+                icon.setAttribute('aria-hidden', 'true');
+                button.appendChild(icon);
+            } else {
+                button.textContent = label;
+            }
             tabs.appendChild(button);
         }
         let page = document.getElementById(pageId);

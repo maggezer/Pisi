@@ -362,6 +362,7 @@ function initializePisiBlockGraph() {
     registerPisiExtension('rightPanel', {
         id: 'core.block-relations',
         label: 'Bloklar',
+        icon: 'blocks',
         render: renderPisiBlockRelationshipPanel
     });
 }
