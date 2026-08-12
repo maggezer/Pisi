@@ -54,8 +54,7 @@ html[data-pisi-theme="light"] body .pisi-quick-field select,
 html[data-pisi-theme="light"] body .pisi-property-row input,
 html[data-pisi-theme="light"] body .pisi-property-row select,
 html[data-pisi-theme="light"] body .pisi-bases-toolbar input,
-html[data-pisi-theme="light"] body .pisi-saved-view-controls select,
-html[data-pisi-theme="light"] body .pisi-task-postpone-select {
+html[data-pisi-theme="light"] body .pisi-saved-view-controls select {
     background: var(--pisi-theme-surface-alt);
 }
 

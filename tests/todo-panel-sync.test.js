@@ -37,11 +37,11 @@ test('To-do sekmesi ve merkez çalışma alanı güncel görev indeksini bekler'
     assert.match(workspace, /pisi:mission-index-updated/);
 });
 
-test('Quick Add ve hızlı erteleme sağ panel indeksini doğrudan eşitler', () => {
+test('Quick Add sağ panel indeksini doğrudan eşitler', () => {
     const capture = read('renderer/productivity/pisi-quick-capture.mjs');
 
     assert.match(capture, /reason: 'quick-add'/);
-    assert.match(capture, /reason: 'postpone'/);
+    assert.doesNotMatch(capture, /reason: 'postpone'/);
     assert.match(capture, /await window\.refreshPisiMissionIndex/);
 });
 

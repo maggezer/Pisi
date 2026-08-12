@@ -6,7 +6,7 @@ import {
 
 const pisiCommandCenterState = {
     pages: new Map(),
-    activePage: 'tasks',
+    activePage: '',
     overlay: null,
     dialog: null,
     tabs: null,
