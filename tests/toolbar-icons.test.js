@@ -41,15 +41,34 @@ const iconNames = [
     "chevron-down"
 ];
 
-test('toolbar uses the Pisi SVG icon set', () => {
+test('toolbar uses complete dark and light Pisi SVG icon sets', () => {
     assert.match(toolbar, /PISI_TOOLBAR_ICON_ROOT = 'assets\/toolbar'/);
+    assert.match(toolbar, /PISI_TOOLBAR_LIGHT_ICON_ROOT/);
     assert.match(toolbar, /class="pisi-toolbar-icon"/);
+
     for (const name of iconNames) {
-        const iconPath = path.join(root, 'assets', 'toolbar', name + '.svg');
-        assert.equal(fs.existsSync(iconPath), true, name + ' icon is missing');
-        const svg = fs.readFileSync(iconPath, 'utf8');
-        assert.match(svg, /<svg[\s\S]*viewBox="0 0 24 24"/);
+        const darkIconPath = path.join(root, 'assets', 'toolbar', name + '.svg');
+        const lightIconPath = path.join(root, 'assets', 'toolbar', 'light', name + '.svg');
+
+        assert.equal(fs.existsSync(darkIconPath), true, name + ' dark icon is missing');
+        assert.equal(fs.existsSync(lightIconPath), true, name + ' light icon is missing');
+
+        const darkSvg = fs.readFileSync(darkIconPath, 'utf8');
+        const lightSvg = fs.readFileSync(lightIconPath, 'utf8');
+
+        assert.match(darkSvg, /<svg[\s\S]*viewBox="0 0 24 24"/);
+        assert.match(lightSvg, /<svg[\s\S]*viewBox="0 0 24 24"/);
+        assert.match(lightSvg, /#2d3136/i, name + ' light icon needs dark ink');
+        assert.doesNotMatch(lightSvg, /#d8d8da/i);
     }
+});
+
+test('toolbar icon sources follow live theme changes', () => {
+    assert.match(toolbar, /data-pisi-toolbar-icon="\$\{name\}"/);
+    assert.match(toolbar, /normalizePisiToolbarIconTheme/);
+    assert.match(toolbar, /document\.addEventListener\('pisi:theme-changed'/);
+    assert.match(toolbar, /syncPisiToolbarIconTheme\(document, event\.detail\?\.theme\)/);
+    assert.match(toolbar, /syncPisiToolbarIconTheme\(toolbar\)/);
 });
 
 test('removed toolbar controls stay removed', () => {
