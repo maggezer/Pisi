@@ -781,11 +781,14 @@ ipcMain.handle('project:get-last-folder', () => {
         return null;
     }
 
-    if (!lockProjectFolder(lastProjectFolder)) {
+    const lockResult = tryLockProjectFolder(lastProjectFolder);
+
+    if (!lockResult.ok) {
+        console.error('[PISI] Son proje açılamadı:', lockResult.error);
         return null;
     }
 
-    return activeProjectFolder;
+    return lockResult.folderPath;
 });
 
 ipcMain.handle('project:choose-folder', async () => {
@@ -795,26 +798,41 @@ ipcMain.handle('project:choose-folder', async () => {
     });
 
     if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
-        return null;
+        return {
+            ok: false,
+            cancelled: true
+        };
     }
 
     const selectedFolder = result.filePaths[0];
+    const lockResult = tryLockProjectFolder(selectedFolder);
 
-    if (!lockProjectFolder(selectedFolder)) {
+    if (!lockResult.ok) {
         await dialog.showMessageBox(mainWindow, {
             type: 'error',
             title: translatePisiMain('Proje açılamadı'),
             message: translatePisiMain('Seçilen proje klasörü kilitlenemedi.'),
-            detail: translatePisiMain('Klasör başka bir PISI sürecinde açık olabilir veya erişim izni olmayabilir.')
+            detail: [
+                lockResult.error,
+                translatePisiMain('Klasör başka bir PISI sürecinde açık olabilir veya erişim izni olmayabilir.')
+            ].filter(Boolean).join('\n\n')
         });
-        return null;
+        return {
+            ok: false,
+            code: lockResult.code || 'PROJECT_OPEN_FAILED',
+            error: lockResult.error,
+            reported: true
+        };
     }
 
     const settings = readSettings();
-    settings.lastProjectFolder = activeProjectFolder;
+    settings.lastProjectFolder = lockResult.folderPath;
     writeSettings(settings);
 
-    return activeProjectFolder;
+    return {
+        ok: true,
+        folderPath: lockResult.folderPath
+    };
 });
 
 ipcMain.handle('project:set-last-folder', (_event, folderPath) => {

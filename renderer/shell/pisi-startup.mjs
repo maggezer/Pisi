@@ -179,7 +179,13 @@ async function setupProjectStartup() {
     const lastFolder = await window.pisiProject?.getLastFolder?.();
 
     if (lastFolder) {
-        await loadProject(lastFolder);
+        const loaded = await loadProject(lastFolder);
+
+        if (loaded) {
+            hideProjectModal();
+        } else {
+            showProjectModal();
+        }
     } else {
         showProjectModal();
     }
