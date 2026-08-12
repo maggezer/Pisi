@@ -428,6 +428,9 @@ function listNodesForMap(mapPath) {
                 layout,
                 fallbackLayout
             );
+            const normalizedCustomization = normalizePisiMapNodeCustomization(
+                layout.customization
+            );
 
             if (
                 layout.x !== normalizedLayout.x ||
@@ -436,6 +439,19 @@ function listNodesForMap(mapPath) {
                 layout.height !== normalizedLayout.height
             ) {
                 Object.assign(layout, normalizedLayout);
+                changed = true;
+            }
+
+            if (Object.keys(normalizedCustomization).length) {
+                if (
+                    JSON.stringify(layout.customization || {}) !==
+                    JSON.stringify(normalizedCustomization)
+                ) {
+                    layout.customization = normalizedCustomization;
+                    changed = true;
+                }
+            } else if (Object.prototype.hasOwnProperty.call(layout, 'customization')) {
+                delete layout.customization;
                 changed = true;
             }
 
@@ -448,6 +464,7 @@ function listNodesForMap(mapPath) {
                 content: nodeInfo.data.content || '',
                 preview: stripPreviewText(nodeInfo.data.content || ''),
                 layout: normalizedLayout,
+                customization: normalizedCustomization,
                 isReference: false
             };
         }).filter(Boolean);
@@ -547,6 +564,15 @@ function saveMapNodeLayout(mapPath, nodeLayouts = []) {
                 stored,
                 normalizePisiNodeLayout(incoming, stored)
             );
+
+            const customization = normalizePisiMapNodeCustomization(
+                incoming.customization
+            );
+            if (Object.keys(customization).length) {
+                stored.customization = customization;
+            } else {
+                delete stored.customization;
+            }
         }
 
         mapInfo.data.pisi.updatedAt = new Date().toISOString();

@@ -138,6 +138,9 @@ async function activatePisiOpenTab(path) {
 
     if (alreadyActive && alreadyLoaded) {
         selectPisiTreeFileByPath(tab.path);
+        document.dispatchEvent(new CustomEvent(
+            'pisi:map-customization-context-changed'
+        ));
         return true;
     }
 
@@ -187,6 +190,9 @@ async function activatePisiOpenTab(path) {
     }
 
     selectPisiTreeFileByPath(tab.path);
+    document.dispatchEvent(new CustomEvent(
+        'pisi:map-customization-context-changed'
+    ));
     return true;
 }
 

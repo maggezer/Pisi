@@ -97,18 +97,26 @@ function collectCollapsedHubNodeIds() {
 
 function syncCollapsedHubNodeVisibility() {
     const hiddenNodeIds = collectCollapsedHubNodeIds();
+    let selectionChanged = false;
 
     document.querySelectorAll('.map-node-box[data-node-id]').forEach((box) => {
         const shouldHide = hiddenNodeIds.has(String(box.dataset.nodeId || ''));
         box.classList.toggle('pisi-hub-descendant-hidden', shouldHide);
 
         if (shouldHide) {
+            selectionChanged = selectionChanged || box.classList.contains('selected');
             box.classList.remove('selected', 'dragging');
             box.setAttribute('aria-hidden', 'true');
         } else {
             box.removeAttribute('aria-hidden');
         }
     });
+
+    if (selectionChanged) {
+        document.dispatchEvent(new CustomEvent(
+            'pisi:map-customization-context-changed'
+        ));
+    }
 
     return hiddenNodeIds;
 }
@@ -554,9 +562,16 @@ function bindHoldZoomButton(button, direction) {
 }
 
 function clearSelectedMapNodes() {
+    let changed = false;
     document.querySelectorAll('.map-node-box.selected').forEach((box) => {
+        changed = true;
         box.classList.remove('selected');
     });
+    if (changed) {
+        document.dispatchEvent(new CustomEvent(
+            'pisi:map-customization-context-changed'
+        ));
+    }
 }
 
 function getSelectedMapNodeBoxes() {
@@ -595,6 +610,10 @@ function rectContainsRect(outer, inner) {
 
 function applyMapBoxSelection(selectionRect) {
     clearSelectedMapNodes();
+    selectedMapEdgeId = null;
+    document.querySelectorAll('.map-edge-group.selected').forEach((group) => {
+        group.classList.remove('selected');
+    });
 
     const boxes = Array.from(document.querySelectorAll(
         '.map-node-box:not(.pisi-hub-descendant-hidden)'
@@ -619,6 +638,9 @@ function applyMapBoxSelection(selectionRect) {
             box.classList.add('selected');
         }
     }
+    document.dispatchEvent(new CustomEvent(
+        'pisi:map-customization-context-changed'
+    ));
 }
 
 function updateMapSelectionBoxVisual(selectionState, event) {
@@ -686,6 +708,13 @@ function setupMapCanvasPan() {
 
         // Sol tık: mevcut pan davranışı aynen korunuyor.
         if (event.button === 0) {
+            clearSelectedMapNodes();
+            selectedMapEdgeId = null;
+            document.querySelectorAll('.map-edge-group.selected')
+                .forEach((group) => group.classList.remove('selected'));
+            document.dispatchEvent(new CustomEvent(
+                'pisi:map-customization-context-changed'
+            ));
             isPanning = true;
 
             startX = event.clientX;

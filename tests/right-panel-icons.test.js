@@ -46,6 +46,7 @@ test('sağ panel sekmeleri kare, sıralı ve ortalanmıştır', () => {
     assert.match(css, /\.pisi-right-tab-icon \{[\s\S]*background: currentColor/);
     assert.match(css, /data-right-tab="links"\] \{ order: 50; \}/);
     assert.match(css, /data-right-tab="search"\] \{ order: 60; \}/);
+    assert.match(css, /data-right-tab="customizations"\] \{ order: 70; \}/);
     for (const name of iconNames) {
         assert.match(css, new RegExp(`assets/right-tabs/${name}\\.svg`));
     }

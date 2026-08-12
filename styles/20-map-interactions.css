@@ -151,6 +151,16 @@
     stroke-width: var(--pisi-map-edge-hover-stroke-width, 4px);
 }
 
+.map-edge-group.selected .map-edge {
+    stroke-width: var(--pisi-map-edge-hover-stroke-width, 4px);
+    filter: drop-shadow(0 0 4px rgba(243, 156, 18, 0.75));
+}
+
+.map-edge-group.selected .map-edge-delete {
+    opacity: 1;
+    pointer-events: auto;
+}
+
 .delete-tree-item-btn {
     color: #e74c3c;
     font-size: 17px;
@@ -282,10 +292,10 @@
 
 .right-panel-tab[data-right-tab="missions"] { order: 10; }
 .right-panel-tab[data-right-tab="tags"] { order: 20; }
-.right-panel-tab[data-right-tab="customizations"] { order: 30; }
 .right-panel-tab[data-right-tab^="extension-"] { order: 40; }
 .right-panel-tab[data-right-tab="links"] { order: 50; }
 .right-panel-tab[data-right-tab="search"] { order: 60; }
+.right-panel-tab[data-right-tab="customizations"] { order: 70; }
 
 
 .right-panel-tab:hover {
@@ -308,6 +318,22 @@
 .right-panel-tab:focus-visible {
     outline: 2px solid #f39c12;
     outline-offset: 1px;
+}
+
+.right-panel-tab:disabled,
+.right-panel-tab[aria-disabled="true"] {
+    opacity: 0.34;
+    color: #737373;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.right-panel-tab:disabled:hover,
+.right-panel-tab[aria-disabled="true"]:hover {
+    background: transparent;
+    color: #737373;
+    border-color: transparent;
+    transform: none;
 }
 
 

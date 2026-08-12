@@ -233,7 +233,13 @@ function setupWindowControls() {
 
 async function activatePisiRightPanelTab(button) {
     const target = button?.dataset.rightTab;
-    if (!target) return false;
+    if (
+        !target ||
+        button.disabled ||
+        button.getAttribute('aria-disabled') === 'true'
+    ) {
+        return false;
+    }
 
     document.querySelectorAll('.right-panel-tab[data-right-tab]')
         .forEach((item) => {

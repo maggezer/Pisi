@@ -28,9 +28,10 @@ test('Turkish and English catalogs have matching complete keys', () => {
 test('language selection is persisted and the live DOM translator watches changes', () => {
     const preload = read('preload.js');
     const runtime = read('main/runtime.js');
-    const html = read('index.html');
+    const customizations = read('renderer/shell/pisi-customizations.mjs');
 
-    assert.match(html, /id="pisi-language-select"/);
+    assert.match(customizations, /language\.id = 'pisi-language-select'/);
+    assert.match(customizations, /pisiI18n\?\.setLanguage/);
     assert.match(preload, /contextBridge\.exposeInMainWorld\('pisiI18n'/);
     assert.match(preload, /ipcRenderer\.invoke\('app:get-language'\)/);
     assert.match(preload, /ipcRenderer\.invoke\('app:set-language'/);

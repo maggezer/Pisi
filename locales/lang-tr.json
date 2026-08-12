@@ -689,6 +689,19 @@
     "Team olayı kaydedilemedi.": "Team olayı kaydedilemedi.",
     "Henüz team olayı yok.": "Henüz team olayı yok.",
     "yerel": "yerel",
-    "Yerel provider": "Yerel provider"
+    "Yerel provider": "Yerel provider",
+    "Uygulama ve varsayılanlar": "Uygulama ve varsayılanlar",
+    "Bu değerler tüm map ve not kartları için varsayılan görünümü belirler.": "Bu değerler tüm map ve not kartları için varsayılan görünümü belirler.",
+    "Bağlantı rengi": "Bağlantı rengi",
+    "Bağlantı": "Bağlantı",
+    "Bağlantı rengi kaydedilemedi.": "Bağlantı rengi kaydedilemedi.",
+    "Bu öğenin özelleştirmesini kaldır": "Bu öğenin özelleştirmesini kaldır",
+    "Seçili not kartı": "Seçili not kartı",
+    "Bu renkler yalnızca seçili not kartına uygulanır ve varsayılanların önüne geçer.": "Bu renkler yalnızca seçili not kartına uygulanır ve varsayılanların önüne geçer.",
+    "Seçili bağlantı": "Seçili bağlantı",
+    "Bu renk yalnızca seçili bağlantıya uygulanır ve varsayılan rengin önüne geçer.": "Bu renk yalnızca seçili bağlantıya uygulanır ve varsayılan rengin önüne geçer.",
+    "Özelleştirmek için orta alanda bir map aç.": "Özelleştirmek için orta alanda bir map aç.",
+    "Tek bir not kartı seç.": "Tek bir not kartı seç.",
+    "Bir not kartı veya bağlantı seç.": "Bir not kartı veya bağlantı seç."
   }
 }

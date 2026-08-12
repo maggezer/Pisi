@@ -1,6 +1,7 @@
 import { registerModule } from "../core/module-registry.mjs";
 import {
     getPisiThemePreference,
+    renderPisiCustomizationPreferences,
     setPisiThemePreference
 } from "./pisi-customizations.mjs";
 
@@ -17,6 +18,7 @@ const PISI_APPLICATION_PAGE_LABELS = {
     tr: {
         settings: 'Ayarlar',
         preferences: 'Tercihler',
+        preferencesDescription: 'Uygulama davranışını ve tüm içerikler için kullanılan varsayılan görünümü yönetin.',
         appearance: 'Görünüm',
         appearanceDescription: 'Pisi arayüzü için kullanmak istediğiniz renk paletini seçin.',
         dark: 'Koyu',
@@ -27,6 +29,7 @@ const PISI_APPLICATION_PAGE_LABELS = {
     eng: {
         settings: 'Settings',
         preferences: 'Preferences',
+        preferencesDescription: 'Manage application behavior and the default appearance used by all content.',
         appearance: 'Appearance',
         appearanceDescription: 'Choose the color palette used by the Pisi interface.',
         dark: 'Dark',
@@ -229,10 +232,20 @@ function renderPisiPreferencesPage(container) {
     const heading = document.createElement('div');
     heading.className = 'pisi-preferences-heading';
     const title = document.createElement('h2');
-    title.textContent = getPisiApplicationText('appearance');
+    title.textContent = getPisiApplicationText('preferences');
     const description = document.createElement('p');
-    description.textContent = getPisiApplicationText('appearanceDescription');
+    description.textContent = getPisiApplicationText('preferencesDescription');
     heading.append(title, description);
+
+    const appearanceHeading = document.createElement('div');
+    appearanceHeading.className = 'pisi-preferences-subheading';
+    const appearanceTitle = document.createElement('h3');
+    appearanceTitle.textContent = getPisiApplicationText('appearance');
+    const appearanceDescription = document.createElement('p');
+    appearanceDescription.textContent = getPisiApplicationText(
+        'appearanceDescription'
+    );
+    appearanceHeading.append(appearanceTitle, appearanceDescription);
 
     const options = document.createElement('div');
     options.className = 'pisi-theme-options';
@@ -269,7 +282,8 @@ function renderPisiPreferencesPage(container) {
         )
     );
 
-    page.append(heading, options);
+    page.append(heading, appearanceHeading, options);
+    renderPisiCustomizationPreferences(page);
     container.appendChild(page);
 }
 

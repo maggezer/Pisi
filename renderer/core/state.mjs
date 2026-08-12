@@ -25,6 +25,7 @@
 
             currentConnectionDrag: previousState.currentConnectionDrag ?? null,
             currentMapBoxSelection: previousState.currentMapBoxSelection ?? null,
+            selectedMapEdgeId: previousState.selectedMapEdgeId ?? null,
 
             collapsedHubPorts:
                 previousState.collapsedHubPorts instanceof Set
@@ -120,6 +121,7 @@
 
         'currentConnectionDrag',
         'currentMapBoxSelection',
+        'selectedMapEdgeId',
         'collapsedHubPorts',
 
         'projectRefreshTimer',

@@ -374,6 +374,21 @@ function collectPisiMapReferenceNodes(mapInfo, seenNodeIds, startIndex = 0) {
             changed = true;
         }
         const normalizedLayout = normalizePisiNodeLayout(layout, getDefaultNodeLayout(index));
+        const normalizedCustomization = normalizePisiMapNodeCustomization(
+            layout.customization
+        );
+        if (Object.keys(normalizedCustomization).length) {
+            if (
+                JSON.stringify(layout.customization || {}) !==
+                JSON.stringify(normalizedCustomization)
+            ) {
+                layout.customization = normalizedCustomization;
+                changed = true;
+            }
+        } else if (Object.prototype.hasOwnProperty.call(layout, 'customization')) {
+            delete layout.customization;
+            changed = true;
+        }
         nodes.push({
             id: reference.id,
             fullPath: nodePath,
@@ -383,6 +398,7 @@ function collectPisiMapReferenceNodes(mapInfo, seenNodeIds, startIndex = 0) {
             content: nodeInfo.data.content || '',
             preview: stripPreviewText(nodeInfo.data.content || ''),
             layout: normalizedLayout,
+            customization: normalizedCustomization,
             isReference: true
         });
     }

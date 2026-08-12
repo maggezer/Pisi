@@ -85,6 +85,7 @@ async function openMapInWorkspace(mapItem) {
     }
 
     activeMapPath = mapItem.fullPath;
+    selectedMapEdgeId = null;
 
     if (placeholder) placeholder.style.display = 'none';
     canvas.hidden = false;
@@ -119,6 +120,10 @@ async function openMapInWorkspace(mapItem) {
         syncHubPortCollapseVisuals();
     }
 
+    document.dispatchEvent(new CustomEvent(
+        'pisi:map-customization-context-changed'
+    ));
+
     refreshPisiTagsPanelSoon();
     return true;
 }
@@ -141,6 +146,7 @@ function clearMapWorkspace() {
     activeMapNodes = [];
     activeMapEdges = [];
     activeMapCamera = { x: 0, y: 0, zoom: 1 };
+    selectedMapEdgeId = null;
     collapsedHubPorts = new Set();
 
     if (board) {
@@ -157,6 +163,10 @@ function clearMapWorkspace() {
     if (placeholder) {
         placeholder.style.display = 'flex';
     }
+
+    document.dispatchEvent(new CustomEvent(
+        'pisi:map-customization-context-changed'
+    ));
 
     refreshPisiTagsPanelSoon();
 }
@@ -322,6 +332,9 @@ function createMapNodeBox(node) {
     box.style.top = `${node.layout.y}px`;
     box.style.width = `${node.layout.width}px`;
     box.style.height = `${node.layout.height}px`;
+    if (typeof applyPisiMapNodeCustomization === 'function') {
+        applyPisiMapNodeCustomization(box, node);
+    }
 
     const title = node.metadata?.title || node.fileName.replace(/\.node$/i, '');
     const preview = node.preview || '';
@@ -380,10 +393,17 @@ function bindMapNodeBoxEvents(box, node) {
 
     // Seçili grubun içindeysek seçimi bozma.
     // Böylece seçili node'lardan birini sol tıkla sürükleyince grup birlikte taşınır.
+    selectedMapEdgeId = null;
+    document.querySelectorAll('.map-edge-group.selected').forEach((group) => {
+        group.classList.remove('selected');
+    });
     if (!box.classList.contains('selected')) {
         clearSelectedMapNodes();
         box.classList.add('selected');
     }
+    document.dispatchEvent(new CustomEvent(
+        'pisi:map-customization-context-changed'
+    ));
     });
 
     bindMapNodeDrag(box);
@@ -469,6 +489,10 @@ function bindMapNodeBoxEvents(box, node) {
         drawMapConnections();
 
         activeMapNodes = activeMapNodes.filter((item) => item.id !== node.id);
+
+        document.dispatchEvent(new CustomEvent(
+            'pisi:map-customization-context-changed'
+        ));
 
         await saveCurrentMapLayout();
 
@@ -615,13 +639,19 @@ function bindMapNodeResize(box, handle) {
 }
 
 function collectMapLayout() {
-    return Array.from(document.querySelectorAll('.map-node-box')).map((box) => ({
-        id: box.dataset.nodeId,
-        x: parseFloat(box.style.left || '0'),
-        y: parseFloat(box.style.top || '0'),
-        width: box.offsetWidth || parseFloat(box.style.width || '220'),
-        height: box.offsetHeight || parseFloat(box.style.height || '92')
-    }));
+    return Array.from(document.querySelectorAll('.map-node-box')).map((box) => {
+        const node = activeMapNodes.find((item) => (
+            item?.id === box.dataset.nodeId
+        ));
+        return {
+            id: box.dataset.nodeId,
+            x: parseFloat(box.style.left || '0'),
+            y: parseFloat(box.style.top || '0'),
+            width: box.offsetWidth || parseFloat(box.style.width || '220'),
+            height: box.offsetHeight || parseFloat(box.style.height || '92'),
+            customization: { ...(node?.customization || {}) }
+        };
+    });
 }
 
 function scheduleMapLayoutSave() {
@@ -740,6 +770,10 @@ async function startMapNodeTitleEdit(box, node) {
                 result.fileName.replace(/\.node$/i, '');
 
             restoreTitle(cleanTitle);
+
+            document.dispatchEvent(new CustomEvent(
+                'pisi:map-customization-context-changed'
+            ));
 
             updateTreeItemAfterRename(oldPath, result);
             updateOpenMapNodeAfterRename(oldPath, result);

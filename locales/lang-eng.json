@@ -689,6 +689,19 @@
     "Team olayı kaydedilemedi.": "The team event could not be saved.",
     "Henüz team olayı yok.": "No team events yet.",
     "yerel": "local",
-    "Yerel provider": "Local provider"
+    "Yerel provider": "Local provider",
+    "Uygulama ve varsayılanlar": "Application and defaults",
+    "Bu değerler tüm map ve not kartları için varsayılan görünümü belirler.": "These values define the default appearance for all maps and note cards.",
+    "Bağlantı rengi": "Connection color",
+    "Bağlantı": "Connection",
+    "Bağlantı rengi kaydedilemedi.": "The connection color could not be saved.",
+    "Bu öğenin özelleştirmesini kaldır": "Remove this item's customization",
+    "Seçili not kartı": "Selected note card",
+    "Bu renkler yalnızca seçili not kartına uygulanır ve varsayılanların önüne geçer.": "These colors apply only to the selected note card and override the defaults.",
+    "Seçili bağlantı": "Selected connection",
+    "Bu renk yalnızca seçili bağlantıya uygulanır ve varsayılan rengin önüne geçer.": "This color applies only to the selected connection and overrides its default color.",
+    "Özelleştirmek için orta alanda bir map aç.": "Open a map in the center to customize it.",
+    "Tek bir not kartı seç.": "Select a single note card.",
+    "Bir not kartı veya bağlantı seç.": "Select a note card or connection."
   }
 }

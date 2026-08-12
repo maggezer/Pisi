@@ -49,6 +49,9 @@
     "module": "main.filesystemCore",
     "path": "main/functions/filesystem-core.js",
     "bindings": [
+      "normalizePisiCustomizationColor",
+      "normalizePisiMapNodeCustomization",
+      "normalizePisiMapEdgeCustomization",
       "normalizeMapEdge",
       "isHierarchyEdge",
       "convertEdgeToStream",

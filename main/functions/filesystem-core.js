@@ -6,6 +6,26 @@ const fs = require('fs');
 const crypto = require('crypto');
 const { registerMainModule } = require('../module-registry');
 
+function normalizePisiCustomizationColor(value) {
+    const color = String(value || '').trim();
+    return /^#[0-9a-fA-F]{6}$/.test(color) ? color.toLowerCase() : null;
+}
+
+function normalizePisiMapNodeCustomization(customization = {}) {
+    const normalized = {};
+    const cardColor = normalizePisiCustomizationColor(customization.cardColor);
+    const titleColor = normalizePisiCustomizationColor(customization.titleColor);
+
+    if (cardColor) normalized.cardColor = cardColor;
+    if (titleColor) normalized.titleColor = titleColor;
+    return normalized;
+}
+
+function normalizePisiMapEdgeCustomization(customization = {}) {
+    const color = normalizePisiCustomizationColor(customization.color);
+    return color ? { color } : {};
+}
+
 function normalizeMapEdge(edge) {
     const sourceId = normalizePisiId(edge?.sourceId, '.node');
     const targetId = normalizePisiId(edge?.targetId, '.node');
@@ -45,7 +65,7 @@ function normalizeMapEdge(edge) {
     const sourcePort = ports.has(edge.sourcePort) ? edge.sourcePort : 'bottom';
     const targetPort = ports.has(edge.targetPort) ? edge.targetPort : 'top';
 
-    return {
+    const normalizedEdge = {
         id: /^edge_[A-Za-z0-9_-]{1,101}$/.test(String(edge.id || ''))
             ? String(edge.id)
             : `edge_${crypto.randomUUID()}`,
@@ -61,6 +81,15 @@ function normalizeMapEdge(edge) {
         sourceRole,
         targetRole
     };
+
+    const customization = normalizePisiMapEdgeCustomization(
+        edge.customization
+    );
+    if (Object.keys(customization).length) {
+        normalizedEdge.customization = customization;
+    }
+
+    return normalizedEdge;
 }
 
 function isHierarchyEdge(edge) {
@@ -482,6 +511,18 @@ function findExistingSidecarById(dir, ext, id) {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
+    "normalizePisiCustomizationColor": {
+        enumerable: true,
+        get() { return normalizePisiCustomizationColor; }
+    },
+    "normalizePisiMapNodeCustomization": {
+        enumerable: true,
+        get() { return normalizePisiMapNodeCustomization; }
+    },
+    "normalizePisiMapEdgeCustomization": {
+        enumerable: true,
+        get() { return normalizePisiMapEdgeCustomization; }
+    },
     "normalizeMapEdge": {
         enumerable: true,
         get() { return normalizeMapEdge; }

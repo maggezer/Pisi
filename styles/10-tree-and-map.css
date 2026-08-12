@@ -137,7 +137,7 @@
     flex: 0 0 30px;
     height: 30px;
     padding: 7px 34px 4px 34px;
-    color: #f39c12;
+    color: var(--pisi-map-node-title-color);
     font-weight: 700;
     font-size: var(--pisi-map-node-title-size);
     white-space: nowrap;

@@ -254,8 +254,15 @@
       "savePisiCustomizationSettings",
       "isValidPisiHexColor",
       "normalizePisiSizeValue",
+      "resolvePisiCustomizationValue",
       "applyPisiCustomizationSettings",
       "syncPisiCustomizationInputs",
+      "renderPisiCustomizationPreferences",
+      "applyPisiMapNodeCustomization",
+      "getPisiMapEdgeCustomizationColor",
+      "getPisiMapCustomizationContext",
+      "renderPisiMapCustomizationPanel",
+      "syncPisiMapCustomizationTab",
       "setupPisiCustomizations"
     ]
   },
@@ -731,6 +738,8 @@
     "bindings": [
       "persistPisiMapConnection",
       "pisiKeyboardConnectionSource",
+      "notifyPisiMapCustomizationContextChanged",
+      "selectPisiMapEdge",
       "resetPisiMapConnectionInteractions",
       "bindMapPortEvents",
       "deleteMapEdge",
@@ -738,6 +747,10 @@
       "getMapEdgePathMidpoint",
       "updateMapEdgeDeleteButtonPosition",
       "pisiConnectionDrawFrame",
+      "getPisiMapEdgeMarkerId",
+      "ensurePisiMapEdgeMarker",
+      "applyPisiMapEdgeCustomization",
+      "bindPisiMapEdgeSelection",
       "scheduleDrawMapConnections",
       "drawMapConnections"
     ]
