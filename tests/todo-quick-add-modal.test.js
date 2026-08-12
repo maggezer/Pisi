@@ -39,6 +39,14 @@ test('Global Quick Add çalışma merkezinden çıkar ve ortak modalda açılır
     assert.match(tasksPage, /renderPisiTaskHub/);
 });
 
+test('quick add modülü kayıt sisteminin salt-okunur global bağlarını ezmez', () => {
+    const capture = read('renderer/productivity/pisi-quick-capture.mjs');
+
+    assert.match(capture, /registerModule\('productivity\.quickCapture', moduleApi\)/);
+    assert.doesNotMatch(capture, /window\.openPisiQuickAddModal\s*=/);
+    assert.doesNotMatch(capture, /window\.closePisiQuickAddModal\s*=/);
+});
+
 test('Ctrl+M görev ekleme modalını açar ve kısayol sayfasında okunur görünür', () => {
     const capture = read('renderer/productivity/pisi-quick-capture.mjs');
     const commands = read('renderer/core/pisi-command-registry.mjs');
