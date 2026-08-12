@@ -189,10 +189,11 @@
     height: 42px;
     flex-shrink: 0;
     display: flex;
-    align-items: flex-end;
-    gap: 2px;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
     margin: 0 -18px 14px -18px;
-    padding: 6px 8px 0 8px;
+    padding: 5px 10px;
     overflow-x: auto;
     overflow-y: hidden;
     background: #252526;
@@ -213,38 +214,88 @@
 }
 
 .right-panel-tab {
+    width: 32px;
     height: 32px;
-
-    /* Let the tab size be driven by its content, but never wider than the viewport */
-    min-width: fit-content;
-    max-width: 100%;
-    flex: 0 0 auto;
+    min-width: 32px;
+    max-width: 32px;
+    flex: 0 0 32px;
 
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid #333;
-    border-bottom: none;
-    border-radius: 8px 8px 0 0;
-    background: #2d2d30;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
     color: #aaa;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: default;
+    cursor: pointer;
     user-select: none;
+    transition:
+        color 140ms ease,
+        background-color 140ms ease,
+        border-color 140ms ease,
+        transform 140ms ease;
+}
+
+.pisi-right-tab-icon {
+    width: 19px;
+    height: 19px;
+    flex: 0 0 19px;
+    background: currentColor;
+    -webkit-mask-position: center;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    mask-position: center;
+    mask-repeat: no-repeat;
+    mask-size: contain;
+}
+
+.pisi-right-tab-icon-todo {
+    -webkit-mask-image: url("../assets/right-tabs/todo.svg");
+    mask-image: url("../assets/right-tabs/todo.svg");
+}
+
+.pisi-right-tab-icon-tags {
+    -webkit-mask-image: url("../assets/right-tabs/tags.svg");
+    mask-image: url("../assets/right-tabs/tags.svg");
+}
+
+.pisi-right-tab-icon-customize {
+    -webkit-mask-image: url("../assets/right-tabs/customize.svg");
+    mask-image: url("../assets/right-tabs/customize.svg");
+}
+
+.pisi-right-tab-icon-blocks {
+    -webkit-mask-image: url("../assets/right-tabs/blocks.svg");
+    mask-image: url("../assets/right-tabs/blocks.svg");
+}
+
+.pisi-right-tab-icon-links {
+    -webkit-mask-image: url("../assets/right-tabs/links.svg");
+    mask-image: url("../assets/right-tabs/links.svg");
 }
 
 
 .right-panel-tab:hover {
     background: #333;
     color: #d4d4d4;
+    transform: translateY(-1px);
 }
 
 .right-panel-tab.active {
     background: #1e1e1e;
     color: #d4d4d4;
     border-color: #444;
-    box-shadow: inset 0 2px 0 #f39c12;
+    box-shadow: inset 0 -2px 0 #f39c12;
+}
+
+.right-panel-tab:active {
+    transform: translateY(0);
+}
+
+.right-panel-tab:focus-visible {
+    outline: 2px solid #f39c12;
+    outline-offset: 1px;
 }
 
 

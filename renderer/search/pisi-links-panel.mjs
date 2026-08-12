@@ -29,12 +29,19 @@ function installPisiLinksPanel() {
     if (!document.getElementById('pisi-links-tab-button')) {
         const button = makePisiLinksElement(
             'button',
-            'right-panel-tab',
-            pisiLinksTranslate('Bağlantılar')
+            'right-panel-tab'
         );
         button.id = 'pisi-links-tab-button';
         button.type = 'button';
         button.dataset.rightTab = 'links';
+        button.title = pisiLinksTranslate('Bağlantılar');
+        button.setAttribute('aria-label', button.title);
+        const icon = makePisiLinksElement(
+            'span',
+            'pisi-right-tab-icon pisi-right-tab-icon-links'
+        );
+        icon.setAttribute('aria-hidden', 'true');
+        button.appendChild(icon);
         tabs.appendChild(button);
     }
 

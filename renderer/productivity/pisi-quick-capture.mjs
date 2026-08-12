@@ -355,22 +355,7 @@ function enhancePisiExistingMissionCards() {
     }
 }
 
-function installPisiQuickAddButton() {
-    const actions = document.getElementById('project-actions');
-    if (!actions || document.getElementById('pisi-quick-add-button')) return;
-    const button = document.createElement('button');
-    button.id = 'pisi-quick-add-button';
-    button.type = 'button';
-    button.className = 'project-action-btn';
-    button.textContent = '＋';
-    button.title = pisiQuickTranslate('Görev ekleme penceresini aç (Ctrl+M)');
-    button.setAttribute('aria-label', button.title);
-    button.addEventListener('click', openPisiQuickAddModal);
-    actions.prepend(button);
-}
-
 function initializePisiQuickCapture() {
-    installPisiQuickAddButton();
     document.addEventListener('pisi:quick-add-requested', openPisiQuickAddModal);
     registerPisiCommand({
         id: 'pisi.quick-add',
