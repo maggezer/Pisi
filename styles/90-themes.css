@@ -497,7 +497,6 @@ html[data-pisi-theme="light"] .pisi-command-center-tabs {
 
 html[data-pisi-theme="light"] .pisi-command-center-close:hover,
 html[data-pisi-theme="light"] .pisi-secondary-button,
-html[data-pisi-theme="light"] .pisi-task-hub-filter,
 html[data-pisi-theme="light"] .pisi-base-layout-button {
     background: var(--pisi-theme-hover);
     border-color: var(--pisi-theme-border);
@@ -510,7 +509,6 @@ html[data-pisi-theme="light"] .pisi-command-center-tab.active {
 }
 
 html[data-pisi-theme="light"] .pisi-quick-add-form,
-html[data-pisi-theme="light"] .pisi-task-hub-card,
 html[data-pisi-theme="light"] .pisi-properties-editor,
 html[data-pisi-theme="light"] .pisi-bases,
 html[data-pisi-theme="light"] .pisi-portable-section,
@@ -526,8 +524,7 @@ html[data-pisi-theme="light"] .pisi-quick-field select,
 html[data-pisi-theme="light"] .pisi-property-row input,
 html[data-pisi-theme="light"] .pisi-property-row select,
 html[data-pisi-theme="light"] .pisi-bases-toolbar input,
-html[data-pisi-theme="light"] .pisi-saved-view-controls select,
-html[data-pisi-theme="light"] .pisi-task-postpone-select {
+html[data-pisi-theme="light"] .pisi-saved-view-controls select {
     color: var(--pisi-theme-text);
     background: #ffffff;
     border-color: var(--pisi-theme-border-strong);

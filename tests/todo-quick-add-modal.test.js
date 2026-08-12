@@ -23,11 +23,14 @@ test('sağ To-do başlığı kompakt çalışma alanı ve görev ekleme eylemler
     assert.ok(read('assets/todo/add-task.svg').includes('<svg'));
 });
 
-test('Global Quick Add çalışma merkezinden çıkar ve ortak modalda açılır', () => {
+test('Tasks sekmesi çalışma merkezinden tamamen kaldırılır ve Quick Add modalda kalır', () => {
     const capture = read('renderer/productivity/pisi-quick-capture.mjs');
-    const start = capture.indexOf('async function renderPisiTasksPage');
-    const end = capture.indexOf('function enhancePisiExistingMissionCards', start);
-    const tasksPage = capture.slice(start, end);
+    const commandCenter = read('renderer/shell/pisi-command-center.mjs');
+    const css = [
+        read('styles/58-roadmap-workspace.css'),
+        read('styles/90-themes.css'),
+        read('styles/91-light-theme-tuning.css')
+    ].join('\n');
 
     assert.match(capture, /function ensurePisiQuickAddModal/);
     assert.match(capture, /async function openPisiQuickAddModal/);
@@ -35,8 +38,16 @@ test('Global Quick Add çalışma merkezinden çıkar ve ortak modalda açılır
     assert.match(capture, /setAttribute\('aria-modal', 'true'\)/);
     assert.match(capture, /event\.key === 'Escape'/);
     assert.match(capture, /getPisiQuickAddFocusableElements/);
-    assert.doesNotMatch(tasksPage, /buildPisiQuickAddForm/);
-    assert.match(tasksPage, /renderPisiTaskHub/);
+    assert.doesNotMatch(capture, /id: 'tasks'/);
+    assert.doesNotMatch(capture, /renderPisiTasksPage/);
+    assert.doesNotMatch(capture, /openPisiCommandCenter\('tasks'\)/);
+    assert.doesNotMatch(capture, /registerPisiExtension\('taskView'/);
+    assert.doesNotMatch(capture, /renderPisiCommandCenterPage/);
+    assert.match(commandCenter, /activePage: ''/);
+    assert.doesNotMatch(commandCenter, /activePage: 'tasks'/);
+    assert.match(commandCenter, /pages\[0\]\?\.id \|\| ''/);
+    assert.doesNotMatch(css, /pisi-task-hub/);
+    assert.doesNotMatch(css, /pisi-task-postpone-select/);
 });
 
 test('quick add modülü kayıt sisteminin salt-okunur global bağlarını ezmez', () => {
