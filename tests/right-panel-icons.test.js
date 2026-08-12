@@ -7,15 +7,16 @@ const test = require('node:test');
 
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
-const iconNames = ['todo', 'tags', 'customize', 'blocks', 'links'];
+const iconNames = ['todo', 'tags', 'customize', 'blocks', 'links', 'search'];
 
-test('beş ana sağ panel sekmesi yalnız özel ikonlarla gösterilir', () => {
+test('altı ana sağ panel sekmesi yalnız özel ikonlarla gösterilir', () => {
     const html = read('index.html');
     const tr = JSON.parse(read('locales/lang-tr.json')).strings;
     const eng = JSON.parse(read('locales/lang-eng.json')).strings;
     const extensions = read('renderer/core/pisi-extension-api.mjs');
     const blocks = read('renderer/search/pisi-block-graph.mjs');
     const links = read('renderer/search/pisi-links-panel.mjs');
+    const search = read('renderer/search/pisi-search-panel.mjs');
 
     for (const name of ['todo', 'tags', 'customize']) {
         assert.match(html, new RegExp(`pisi-right-tab-icon-${name}`));
@@ -33,14 +34,18 @@ test('beş ana sağ panel sekmesi yalnız özel ikonlarla gösterilir', () => {
     assert.match(extensions, /button\.setAttribute\('aria-label', label\)/);
     assert.match(links, /pisi-right-tab-icon-links/);
     assert.match(links, /button\.setAttribute\('aria-label', button\.title\)/);
+    assert.match(search, /pisi-right-tab-icon-search/);
+    assert.match(search, /button\.dataset\.rightTab = 'search'/);
 });
 
-test('sağ panel sekmeleri kare ve sağa yaslıdır', () => {
+test('sağ panel sekmeleri kare, sıralı ve ortalanmıştır', () => {
     const css = read('styles/20-map-interactions.css');
 
-    assert.match(css, /#right-panel-tabs \{[\s\S]*justify-content: flex-end/);
+    assert.match(css, /#right-panel-tabs \{[\s\S]*justify-content: center/);
     assert.match(css, /\.right-panel-tab \{[\s\S]*width: 32px;[\s\S]*height: 32px/);
     assert.match(css, /\.pisi-right-tab-icon \{[\s\S]*background: currentColor/);
+    assert.match(css, /data-right-tab="links"\] \{ order: 50; \}/);
+    assert.match(css, /data-right-tab="search"\] \{ order: 60; \}/);
     for (const name of iconNames) {
         assert.match(css, new RegExp(`assets/right-tabs/${name}\\.svg`));
     }

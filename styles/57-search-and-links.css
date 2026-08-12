@@ -260,6 +260,196 @@
     transition: background 180ms ease, box-shadow 180ms ease;
 }
 
+.pisi-search-page {
+    min-height: 0;
+}
+
+.pisi-right-search-panel {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 4px 14px;
+}
+
+.pisi-right-search-input-row {
+    min-height: 40px;
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px;
+    border: 1px solid #555d68;
+    border-radius: 9px;
+    background: #191b1f;
+    transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.pisi-right-search-input-row:focus-within {
+    border-color: #f39c12;
+    box-shadow: 0 0 0 3px rgba(243, 156, 18, 0.16);
+}
+
+.pisi-right-search-input-icon {
+    width: 18px;
+    height: 18px;
+    background: #efab45;
+    -webkit-mask-image: url("../assets/right-tabs/search.svg");
+    -webkit-mask-position: center;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    mask-image: url("../assets/right-tabs/search.svg");
+    mask-position: center;
+    mask-repeat: no-repeat;
+    mask-size: contain;
+}
+
+.pisi-right-search-input {
+    min-width: 0;
+    height: 38px;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #f2f3f5;
+    font: inherit;
+    font-size: 11px;
+}
+
+.pisi-right-search-input::placeholder {
+    color: #858c96;
+}
+
+.pisi-right-search-input::-webkit-search-cancel-button {
+    filter: invert(0.82);
+}
+
+.pisi-right-search-status {
+    min-height: 22px;
+    padding: 2px 3px;
+    color: #aeb4bd;
+    font-size: 9px;
+}
+
+.pisi-right-search-status[data-mode="warning"] {
+    color: #f0c36a;
+}
+
+.pisi-right-search-status[data-mode="empty"] {
+    color: #d99a9a;
+}
+
+.pisi-right-search-results {
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.pisi-right-search-result {
+    width: 100%;
+    min-height: 54px;
+    display: grid;
+    grid-template-columns: 27px minmax(0, 1fr);
+    align-items: start;
+    gap: 7px;
+    padding: 8px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.pisi-right-search-result:hover,
+.pisi-right-search-result.selected {
+    border-color: #4f657c;
+    background: #293a49;
+}
+
+.pisi-right-search-result:focus-visible {
+    border-color: #f39c12;
+    outline: 2px solid rgba(243, 156, 18, 0.72);
+    outline-offset: -2px;
+}
+
+.pisi-right-search-result-icon {
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    border-radius: 7px;
+    background: #343941;
+    color: #efab45;
+    font: 700 13px/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.pisi-right-search-result-body,
+.pisi-right-search-result-title-row {
+    min-width: 0;
+    display: flex;
+}
+
+.pisi-right-search-result-body {
+    flex-direction: column;
+    gap: 3px;
+}
+
+.pisi-right-search-result-title-row {
+    align-items: center;
+    gap: 5px;
+}
+
+.pisi-right-search-result-title {
+    min-width: 0;
+    overflow: hidden;
+    color: #eceef1;
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pisi-right-search-result-kind {
+    flex: 0 0 auto;
+    padding: 1px 4px;
+    border-radius: 999px;
+    background: #3a3e45;
+    color: #c4c8ce;
+    font-size: 7px;
+    font-weight: 750;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.pisi-right-search-result-preview,
+.pisi-right-search-result-context {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pisi-right-search-result-preview {
+    color: #bcc1c8;
+    font-size: 9px;
+}
+
+.pisi-right-search-result-context {
+    color: #858c95;
+    font-size: 8px;
+}
+
+.pisi-right-search-empty {
+    min-height: 110px;
+    display: grid;
+    place-items: center;
+    padding: 18px 10px;
+    color: #9298a1;
+    font-size: 9px;
+    line-height: 1.45;
+    text-align: center;
+}
+
 .pisi-links-page {
     min-height: 0;
 }

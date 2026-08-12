@@ -581,6 +581,14 @@
     ]
   },
   {
+    "module": "search.rightPanel",
+    "path": "renderer/search/pisi-search-panel.mjs",
+    "bindings": [
+      "installPisiRightSearchPanel",
+      "activatePisiRightSearchPanel"
+    ]
+  },
+  {
     "module": "search.linksPanel",
     "path": "renderer/search/pisi-links-panel.mjs",
     "bindings": [

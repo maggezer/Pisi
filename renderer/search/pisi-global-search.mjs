@@ -632,28 +632,6 @@ async function openPisiSearchResult(result, options = {}) {
     return openPisiNodeSearchResult(result);
 }
 
-function installPisiSearchTrigger() {
-    const actions = document.getElementById('project-actions');
-    if (!actions || document.getElementById('pisi-global-search-button')) {
-        return;
-    }
-    const button = makePisiSearchElement(
-        'button',
-        'project-action-btn pisi-global-search-button',
-        '⌕'
-    );
-    button.id = 'pisi-global-search-button';
-    button.type = 'button';
-    button.title = pisiSearchTranslate(
-        'Global arama ve hızlı geçiş (Ctrl+P)'
-    );
-    button.setAttribute('aria-label', button.title);
-    button.addEventListener('click', () => {
-        void openPisiGlobalSearch();
-    });
-    actions.prepend(button);
-}
-
 function bindPisiSearchKeyboardShortcut() {
     if (document.body.dataset.pisiSearchShortcutBound === '1') return;
     document.body.dataset.pisiSearchShortcutBound = '1';
@@ -676,7 +654,7 @@ function refreshOpenPisiSearchAfterInvalidation() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    installPisiSearchTrigger();
+    document.getElementById('pisi-global-search-button')?.remove();
     bindPisiSearchKeyboardShortcut();
 });
 document.addEventListener(
@@ -688,7 +666,6 @@ document.addEventListener('pisi:language-changed', () => {
     if (!state) return;
     state.overlay.remove();
     pisiSearchOverlayState = null;
-    installPisiSearchTrigger();
 });
 
 const moduleApi = {};

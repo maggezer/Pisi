@@ -231,24 +231,18 @@ function setupWindowControls() {
     }
 }
 
-function bindRightPanelTabs() {
-    const tabButtons = Array.from(document.querySelectorAll('.right-panel-tab'));
-    const tabPages = Array.from(document.querySelectorAll('.right-tab-page'));
+async function activatePisiRightPanelTab(button) {
+    const target = button?.dataset.rightTab;
+    if (!target) return false;
 
-    if (!tabButtons.length || !tabPages.length) return;
+    document.querySelectorAll('.right-panel-tab[data-right-tab]')
+        .forEach((item) => {
+            const selected = item === button;
+            item.classList.toggle('active', selected);
+            item.setAttribute('aria-selected', selected ? 'true' : 'false');
+        });
 
-    for (const button of tabButtons) {
-        if (button.dataset.bound === '1') continue;
-        button.dataset.bound = '1';
-
-        button.addEventListener('click', async () => {
-    const target = button.dataset.rightTab;
-
-    tabButtons.forEach((item) => {
-        item.classList.toggle('active', item === button);
-    });
-
-    tabPages.forEach((page) => {
+    document.querySelectorAll('.right-tab-page').forEach((page) => {
         page.classList.toggle(
             'active',
             page.id === `right-tab-${target}`
@@ -256,16 +250,10 @@ function bindRightPanelTabs() {
     });
 
     const rightPanelContent = document.getElementById('right-panel-content');
-
-    if (rightPanelContent) {
-        rightPanelContent.scrollTop = 0;
-    }
-
     const activePage = document.getElementById(`right-tab-${target}`);
 
-    if (activePage) {
-        activePage.scrollTop = 0;
-    }
+    if (rightPanelContent) rightPanelContent.scrollTop = 0;
+    if (activePage) activePage.scrollTop = 0;
 
     if (target === 'missions') {
         if (typeof window.refreshPisiMissionIndex === 'function') {
@@ -284,24 +272,36 @@ function bindRightPanelTabs() {
     }
 
     if (target === 'tags') {
-    const resetRightPanelScroll = () => {
-        const rightPanelContent = document.getElementById('right-panel-content');
-        const tagsPage = document.getElementById('right-tab-tags');
-
-        if (rightPanelContent) {
-            rightPanelContent.scrollTop = 0;
-        }
-
-        if (tagsPage) {
-            tagsPage.scrollTop = 0;
-        }
-    };
-
-    resetRightPanelScroll();
-    requestAnimationFrame(resetRightPanelScroll);
-    setTimeout(resetRightPanelScroll, 50);
+        const resetRightPanelScroll = () => {
+            const content = document.getElementById('right-panel-content');
+            const tagsPage = document.getElementById('right-tab-tags');
+            if (content) content.scrollTop = 0;
+            if (tagsPage) tagsPage.scrollTop = 0;
+        };
+        resetRightPanelScroll();
+        requestAnimationFrame(resetRightPanelScroll);
+        setTimeout(resetRightPanelScroll, 50);
+    }
+    return Boolean(activePage);
 }
-});
+
+function bindRightPanelTabs() {
+    const tabButtons = Array.from(document.querySelectorAll(
+        '.right-panel-tab[data-right-tab]'
+    ));
+    if (!tabButtons.length || !document.querySelector('.right-tab-page')) return;
+
+    for (const button of tabButtons) {
+        button.setAttribute('role', 'tab');
+        button.setAttribute(
+            'aria-selected',
+            button.classList.contains('active') ? 'true' : 'false'
+        );
+        if (button.dataset.bound === '1') continue;
+        button.dataset.bound = '1';
+        button.addEventListener('click', () => {
+            void activatePisiRightPanelTab(button);
+        });
     }
 }
 

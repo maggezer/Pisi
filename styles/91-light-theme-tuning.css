@@ -104,6 +104,42 @@ html[data-pisi-theme="light"] body #right-panel-content .right-panel-section-tit
     color: #a85f00;
 }
 
+html[data-pisi-theme="light"] body .pisi-right-search-input-row {
+    border-color: var(--pisi-theme-border-strong);
+    background: var(--pisi-theme-surface-alt);
+}
+
+html[data-pisi-theme="light"] body .pisi-right-search-input {
+    color: var(--pisi-theme-text);
+}
+
+html[data-pisi-theme="light"] body .pisi-right-search-input::placeholder,
+html[data-pisi-theme="light"] body .pisi-right-search-status,
+html[data-pisi-theme="light"] body .pisi-right-search-result-context,
+html[data-pisi-theme="light"] body .pisi-right-search-empty {
+    color: var(--pisi-theme-muted);
+}
+
+html[data-pisi-theme="light"] body .pisi-right-search-result-title {
+    color: var(--pisi-theme-text);
+}
+
+html[data-pisi-theme="light"] body .pisi-right-search-result-preview {
+    color: #4d5661;
+}
+
+html[data-pisi-theme="light"] body .pisi-right-search-result-icon,
+html[data-pisi-theme="light"] body .pisi-right-search-result-kind {
+    background: var(--pisi-theme-surface-strong);
+    color: #9a5900;
+}
+
+html[data-pisi-theme="light"] body .pisi-right-search-result:hover,
+html[data-pisi-theme="light"] body .pisi-right-search-result.selected {
+    border-color: var(--pisi-theme-border-strong);
+    background: var(--pisi-theme-hover);
+}
+
 html[data-pisi-theme="light"] body .pisi-links-summary,
 html[data-pisi-theme="light"] body .pisi-links-section,
 html[data-pisi-theme="light"] body .pisi-block-relation-section,
