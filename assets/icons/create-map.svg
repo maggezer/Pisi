@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="map-card" x1="13" y1="8" x2="48" y2="50" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFDF8"/>
+      <stop offset="1" stop-color="#FFE9BE"/>
+    </linearGradient>
+    <linearGradient id="map-accent" x1="38" y1="35" x2="57" y2="57" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFC13A"/>
+      <stop offset="1" stop-color="#FF641A"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="10" width="44" height="40" rx="10" fill="#FF8A18" opacity=".9"/>
+  <rect x="10" y="7" width="44" height="40" rx="10" fill="url(#map-card)" stroke="#252A34" stroke-width="3"/>
+  <path d="M21 20.5 31.5 27l11-7M31.5 27 42 36.5" stroke="#FF9418" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="20.5" cy="20.5" r="5" fill="#FFF" stroke="#252A34" stroke-width="3"/>
+  <circle cx="43" cy="19.5" r="5" fill="#FFF" stroke="#252A34" stroke-width="3"/>
+  <circle cx="31.5" cy="27" r="5.5" fill="#FFC13A" stroke="#252A34" stroke-width="3"/>
+  <circle cx="42.5" cy="37" r="5" fill="#FFF" stroke="#252A34" stroke-width="3"/>
+  <circle cx="48" cy="47" r="13" fill="url(#map-accent)" stroke="#252A34" stroke-width="3"/>
+  <path d="M48 40v14M41 47h14" stroke="#FFF" stroke-width="4.5" stroke-linecap="round"/>
+</svg>

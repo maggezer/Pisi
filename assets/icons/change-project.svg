@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="folder-body" x1="10" y1="14" x2="47" y2="51" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE495"/>
+      <stop offset="1" stop-color="#FFAD26"/>
+    </linearGradient>
+    <linearGradient id="folder-accent" x1="37" y1="34" x2="58" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFC13A"/>
+      <stop offset="1" stop-color="#FF641A"/>
+    </linearGradient>
+  </defs>
+  <path d="M8 16.5A6.5 6.5 0 0 1 14.5 10H27l5.5 6H49a6 6 0 0 1 6 6v24a7 7 0 0 1-7 7H15a7 7 0 0 1-7-7V16.5Z" fill="#FF8A18" opacity=".9"/>
+  <path d="M10 15.5A5.5 5.5 0 0 1 15.5 10H27l5.5 6H48a5 5 0 0 1 5 5v23a7 7 0 0 1-7 7H17a7 7 0 0 1-7-7V15.5Z" fill="url(#folder-body)" stroke="#252A34" stroke-width="3"/>
+  <path d="M10 24h43" stroke="#252A34" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="47" cy="46.5" r="13.5" fill="url(#folder-accent)" stroke="#252A34" stroke-width="3"/>
+  <path d="M39.5 43h12l-3.2-3.2M54.5 50h-12l3.2 3.2" stroke="#FFF" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

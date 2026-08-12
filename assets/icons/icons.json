@@ -7,7 +7,9 @@
     "close": "assets/win-close.png"
   },
   "actions": {
+    "createMap": "assets/icons/create-map.svg",
     "createNode": "assets/icons/create-node.svg",
+    "changeProject": "assets/icons/change-project.svg",
     "deleteNode": "assets/icons/delete-node.svg",
     "deleteMap": "assets/icons/delete-map.svg"
   },

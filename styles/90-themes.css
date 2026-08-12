@@ -227,7 +227,6 @@ html[data-pisi-theme="light"] .panel-placeholder {
     border-color: var(--pisi-theme-border);
 }
 
-html[data-pisi-theme="light"] #change-project-btn,
 html[data-pisi-theme="light"] .project-action-btn,
 html[data-pisi-theme="light"] #node-modal-close,
 html[data-pisi-theme="light"] #pisi-customize-reset {
@@ -236,9 +235,11 @@ html[data-pisi-theme="light"] #pisi-customize-reset {
     border-color: var(--pisi-theme-border-strong);
 }
 
-html[data-pisi-theme="light"] #change-project-btn:hover,
 html[data-pisi-theme="light"] .project-action-btn:hover {
-    background: var(--pisi-theme-hover);
+    background: linear-gradient(180deg, #ffffff 0%, var(--pisi-theme-hover) 100%);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 85%),
+        0 4px 12px var(--pisi-theme-shadow);
 }
 
 html[data-pisi-theme="light"] .tree-row {
