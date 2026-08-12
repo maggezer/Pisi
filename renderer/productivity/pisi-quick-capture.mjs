@@ -35,7 +35,10 @@ const PISI_POSTPONE_PRESETS = Object.freeze([
 const pisiQuickCaptureState = {
     filter: 'inbox',
     observer: null,
-    applyingEnhancements: false
+    applyingEnhancements: false,
+    modal: null,
+    modalOpenSequence: 0,
+    modalReturnFocus: null
 };
 
 function pisiQuickTranslate(value) {
@@ -145,6 +148,7 @@ function formatPisiTaskMinutes(value) {
 function makePisiQuickField(labelText, control) {
     const label = document.createElement('label');
     label.className = 'pisi-quick-field';
+    label.dataset.field = control.name || '';
     const caption = document.createElement('span');
     caption.textContent = pisiQuickTranslate(labelText);
     label.append(caption, control);
@@ -201,11 +205,9 @@ async function submitPisiQuickAdd(form, parsePreview) {
     await window.renderPisiCommandCenterPage?.();
 }
 
-function buildPisiQuickAddForm(container, index) {
+function buildPisiQuickAddForm(container, index, options = {}) {
     const form = document.createElement('form');
     form.className = 'pisi-quick-add-form';
-    const heading = document.createElement('h2');
-    heading.textContent = pisiQuickTranslate('Global Quick Add');
     const text = makePisiQuickInput('text', 'text', 'Görev nedir?');
     text.required = true;
     const dateExpression = makePisiQuickInput(
@@ -262,24 +264,191 @@ function buildPisiQuickAddForm(container, index) {
     );
     const submit = document.createElement('button');
     submit.type = 'submit';
-    submit.className = 'pisi-primary-button';
-    submit.textContent = pisiQuickTranslate('Görevi yakala');
+    submit.className = 'pisi-primary-button pisi-quick-add-submit';
+    submit.textContent = pisiQuickTranslate('Görevi ekle');
+    const cancel = document.createElement('button');
+    cancel.type = 'button';
+    cancel.className = 'pisi-secondary-button pisi-quick-add-cancel';
+    cancel.textContent = pisiQuickTranslate('Vazgeç');
+    cancel.addEventListener('click', () => options.onCancel?.());
     const status = document.createElement('div');
     status.className = 'pisi-command-inline-status';
+    status.setAttribute('role', 'status');
+    status.setAttribute('aria-live', 'polite');
+    const actions = document.createElement('div');
+    actions.className = 'pisi-quick-add-actions';
+    actions.append(status, cancel, submit);
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
         submit.disabled = true;
         status.textContent = pisiQuickTranslate('Kaydediliyor…');
         try {
             await submitPisiQuickAdd(form, parsePreview);
+            options.onSuccess?.();
         } catch (error) {
             status.textContent = error.message;
             submit.disabled = false;
         }
     });
-    form.append(heading, grid, parsePreview, submit, status);
+    form.append(grid, parsePreview, actions);
     container.appendChild(form);
     queueMicrotask(() => text.focus());
+    return form;
+}
+
+function closePisiQuickAddModal() {
+    const state = pisiQuickCaptureState.modal;
+    if (!state || state.overlay.hidden) return false;
+    pisiQuickCaptureState.modalOpenSequence += 1;
+    state.overlay.hidden = true;
+    state.body.removeAttribute('aria-busy');
+    const returnFocus = pisiQuickCaptureState.modalReturnFocus;
+    pisiQuickCaptureState.modalReturnFocus = null;
+    returnFocus?.focus?.({ preventScroll: true });
+    return true;
+}
+
+function getPisiQuickAddFocusableElements(dialog) {
+    return Array.from(dialog.querySelectorAll(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), ' +
+        'textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    )).filter((element) => !element.hidden && element.offsetParent !== null);
+}
+
+function handlePisiQuickAddModalKeydown(event) {
+    const state = pisiQuickCaptureState.modal;
+    if (!state || state.overlay.hidden) return;
+    if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        closePisiQuickAddModal();
+        return;
+    }
+    if (event.key !== 'Tab') return;
+    const focusable = getPisiQuickAddFocusableElements(state.dialog);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+    }
+}
+
+function ensurePisiQuickAddModal() {
+    if (pisiQuickCaptureState.modal?.overlay?.isConnected) {
+        return pisiQuickCaptureState.modal;
+    }
+
+    const overlay = document.createElement('div');
+    overlay.id = 'pisi-quick-add-overlay';
+    overlay.className = 'pisi-quick-add-overlay';
+    overlay.hidden = true;
+
+    const dialog = document.createElement('section');
+    dialog.className = 'pisi-quick-add-dialog';
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+    dialog.setAttribute('aria-labelledby', 'pisi-quick-add-title');
+
+    const header = document.createElement('header');
+    header.className = 'pisi-quick-add-header';
+    const heading = document.createElement('div');
+    heading.className = 'pisi-quick-add-heading';
+    const icon = document.createElement('span');
+    icon.className = 'pisi-quick-add-heading-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    const copy = document.createElement('div');
+    const title = document.createElement('h2');
+    title.id = 'pisi-quick-add-title';
+    title.textContent = pisiQuickTranslate('Görev ekle');
+    const description = document.createElement('p');
+    description.textContent = pisiQuickTranslate(
+        'Inbox’a veya seçili node’a hızlı görev ekler.'
+    );
+    copy.append(title, description);
+    heading.append(icon, copy);
+
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'pisi-quick-add-close';
+    close.textContent = '×';
+    close.title = pisiQuickTranslate('Kapat');
+    close.setAttribute('aria-label', close.title);
+    close.addEventListener('click', closePisiQuickAddModal);
+    header.append(heading, close);
+
+    const body = document.createElement('div');
+    body.className = 'pisi-quick-add-body';
+    dialog.append(header, body);
+    overlay.appendChild(dialog);
+    overlay.addEventListener('click', (event) => {
+        if (event.target === overlay) closePisiQuickAddModal();
+    });
+    overlay.addEventListener('keydown', handlePisiQuickAddModalKeydown);
+    document.body.appendChild(overlay);
+
+    pisiQuickCaptureState.modal = { overlay, dialog, body, close };
+    return pisiQuickCaptureState.modal;
+}
+
+async function openPisiQuickAddModal() {
+    const state = ensurePisiQuickAddModal();
+    if (!state.overlay.hidden) {
+        state.dialog.querySelector('input[name="text"]')?.focus();
+        return true;
+    }
+    const requestId = ++pisiQuickCaptureState.modalOpenSequence;
+    pisiQuickCaptureState.modalReturnFocus = document.activeElement;
+    state.overlay.hidden = false;
+    state.body.setAttribute('aria-busy', 'true');
+    state.body.replaceChildren();
+
+    if (!window.currentProjectFolder) {
+        const empty = document.createElement('div');
+        empty.className = 'pisi-quick-add-empty';
+        empty.textContent = pisiQuickTranslate(
+            'Görev eklemek için önce bir proje klasörü seçin.'
+        );
+        state.body.replaceChildren(empty);
+        state.body.removeAttribute('aria-busy');
+        state.close.focus();
+        return false;
+    }
+
+    const loading = document.createElement('div');
+    loading.className = 'pisi-quick-add-loading';
+    loading.textContent = pisiQuickTranslate('Yükleniyor…');
+    state.body.appendChild(loading);
+
+    try {
+        const index = await ensurePisiSearchIndex();
+        if (
+            requestId !== pisiQuickCaptureState.modalOpenSequence ||
+            state.overlay.hidden
+        ) {
+            return false;
+        }
+        state.body.replaceChildren();
+        buildPisiQuickAddForm(state.body, index, {
+            onCancel: closePisiQuickAddModal,
+            onSuccess: closePisiQuickAddModal
+        });
+        state.body.removeAttribute('aria-busy');
+        return true;
+    } catch (error) {
+        if (requestId !== pisiQuickCaptureState.modalOpenSequence) return false;
+        const failure = document.createElement('div');
+        failure.className = 'pisi-quick-add-error';
+        failure.textContent = error.message || pisiQuickTranslate('Görev eklenemedi.');
+        state.body.replaceChildren(failure);
+        state.body.removeAttribute('aria-busy');
+        state.close.focus();
+        return false;
+    }
 }
 
 function makePisiPostponeSelect(task) {
@@ -412,7 +581,6 @@ function renderPisiTaskHub(container, tasks) {
 
 async function renderPisiTasksPage(container) {
     const index = await ensurePisiSearchIndex();
-    buildPisiQuickAddForm(container, index);
     renderPisiTaskHub(container, collectPisiGlobalTasks(index));
 }
 
@@ -451,8 +619,9 @@ function installPisiQuickAddButton() {
     button.type = 'button';
     button.className = 'project-action-btn';
     button.textContent = '＋';
-    button.title = pisiQuickTranslate('Global Quick Add (Ctrl+Shift+A)');
-    button.addEventListener('click', () => openPisiCommandCenter('tasks'));
+    button.title = pisiQuickTranslate('Görev ekleme penceresini aç (Ctrl+M)');
+    button.setAttribute('aria-label', button.title);
+    button.addEventListener('click', openPisiQuickAddModal);
     actions.prepend(button);
 }
 
@@ -464,14 +633,17 @@ function initializePisiQuickCapture() {
         render: renderPisiTasksPage
     });
     installPisiQuickAddButton();
+    window.openPisiQuickAddModal = openPisiQuickAddModal;
+    window.closePisiQuickAddModal = closePisiQuickAddModal;
+    document.addEventListener('pisi:quick-add-requested', openPisiQuickAddModal);
     registerPisiCommand({
         id: 'pisi.quick-add',
-        label: 'Global Quick Add',
+        label: 'Görev ekle',
         description: 'Inbox’a veya seçili node’a hızlı görev ekler.',
         category: 'Görevler',
-        defaultShortcut: 'Mod+Shift+A',
+        defaultShortcut: 'Mod+M',
         allowInInput: true,
-        handler: () => openPisiCommandCenter('tasks')
+        handler: openPisiQuickAddModal
     });
     for (const view of PISI_TASK_HUB_FILTERS) {
         registerPisiExtension('taskView', {
@@ -498,6 +670,8 @@ const moduleApi = {
     collectPisiGlobalTasks,
     matchesPisiTaskHubFilter,
     formatPisiTaskMinutes,
+    openPisiQuickAddModal,
+    closePisiQuickAddModal,
     renderPisiTasksPage,
     postponePisiTask,
     initializePisiQuickCapture
@@ -510,8 +684,10 @@ export {
     PISI_POSTPONE_PRESETS,
     PISI_TASK_HUB_FILTERS,
     collectPisiGlobalTasks,
+    closePisiQuickAddModal,
     formatPisiTaskMinutes,
     matchesPisiTaskHubFilter,
+    openPisiQuickAddModal,
     postponePisiTask,
     renderPisiTasksPage
 };

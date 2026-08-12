@@ -75,6 +75,19 @@ function getPisiCommandShortcut(commandOrId) {
         : normalizePisiShortcut(override || command.defaultShortcut || '');
 }
 
+function formatPisiShortcutForDisplay(shortcut) {
+    const normalized = normalizePisiShortcut(shortcut);
+    if (!normalized) return '';
+    const platform = String(
+        globalThis.navigator?.userAgentData?.platform ||
+        globalThis.navigator?.platform ||
+        globalThis.navigator?.userAgent ||
+        ''
+    );
+    const modifier = /mac|iphone|ipad|ipod/i.test(platform) ? '⌘' : 'Ctrl';
+    return normalized.replace(/\bMod\b/g, modifier);
+}
+
 function findPisiShortcutConflict(shortcut, exceptId = '') {
     const normalized = normalizePisiShortcut(shortcut);
     if (!normalized) return null;
@@ -256,7 +269,9 @@ function renderPisiCommandPalette(state = ensurePisiCommandPalette()) {
         const label = document.createElement('span');
         label.textContent = window.pisiT?.(command.label) || command.label;
         const shortcut = document.createElement('kbd');
-        shortcut.textContent = getPisiCommandShortcut(command);
+        shortcut.textContent = formatPisiShortcutForDisplay(
+            getPisiCommandShortcut(command)
+        );
         button.append(label, shortcut);
         button.addEventListener('click', () => {
             closePisiCommandPalette();
@@ -303,7 +318,9 @@ function renderPisiShortcutSettings(container) {
         const key = document.createElement('button');
         key.type = 'button';
         key.className = 'pisi-shortcut-capture';
-        key.textContent = getPisiCommandShortcut(command) || (window.pisiT?.('Atanmamış') || 'Atanmamış');
+        key.textContent = formatPisiShortcutForDisplay(
+            getPisiCommandShortcut(command)
+        ) || (window.pisiT?.('Atanmamış') || 'Atanmamış');
         key.addEventListener('click', () => {
             key.textContent = window.pisiT?.('Yeni kısayola basın…') || 'Yeni kısayola basın…';
             key.classList.add('capturing');
@@ -315,7 +332,9 @@ function renderPisiShortcutSettings(container) {
             event.stopImmediatePropagation();
             if (event.key === 'Escape') {
                 key.classList.remove('capturing');
-                key.textContent = getPisiCommandShortcut(command) || 'Atanmamış';
+                key.textContent = formatPisiShortcutForDisplay(
+                    getPisiCommandShortcut(command)
+                ) || 'Atanmamış';
                 return;
             }
             const shortcut = getPisiEventShortcut(event);
@@ -405,6 +424,7 @@ const moduleApi = {
     listPisiCommands,
     runPisiCommand,
     getPisiCommandShortcut,
+    formatPisiShortcutForDisplay,
     findPisiShortcutConflict,
     setPisiCommandShortcut,
     resetPisiCommandShortcut,
@@ -421,6 +441,7 @@ export {
     PISI_SHORTCUT_STORAGE_KEY,
     closePisiCommandPalette,
     findPisiShortcutConflict,
+    formatPisiShortcutForDisplay,
     getPisiCommandShortcut,
     getPisiEventShortcut,
     listPisiCommands,

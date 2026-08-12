@@ -17,12 +17,18 @@ test('özel To-do çalışma alanı bootstrap ve stil zincirine bağlıdır', ()
     assert.match(styles, /56-todo-workspace\.css/);
 });
 
-test('sağ paneldeki To-do başlığı çalışma alanını açan düğmeye dönüşür', () => {
+test('sağ paneldeki To-do başlığı iki kompakt eylem düğmesine dönüşür', () => {
     const source = read('renderer/tags/pisi-todo-workspace.mjs');
+    const css = read('styles/56-todo-workspace.css');
 
     assert.match(source, /#right-tab-missions > \.right-panel-section-title/);
+    assert.match(source, /pisi-todo-panel-actions/);
     assert.match(source, /pisi-todo-workspace-open/);
+    assert.match(source, /pisi-todo-quick-add/);
     assert.match(source, /openPisiTodoWorkspace/);
+    assert.match(source, /pisi:quick-add-requested/);
+    assert.match(css, /\.pisi-todo-panel-actions/);
+    assert.match(css, /\.pisi-todo-quick-add/);
 });
 
 test('genel görünümler merkezdeki özel çalışma alanına aktarılır', () => {

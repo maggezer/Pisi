@@ -696,3 +696,345 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Global Quick Add modal */
+.pisi-quick-add-overlay {
+    --pisi-quick-modal-bg: #20242b;
+    --pisi-quick-modal-surface: #272c34;
+    --pisi-quick-modal-field: #171a20;
+    --pisi-quick-modal-border: #464e5a;
+    --pisi-quick-modal-border-strong: #626d7c;
+    --pisi-quick-modal-text: #f3f5f8;
+    --pisi-quick-modal-muted: #b8c0cb;
+    --pisi-quick-modal-accent: #f3a11a;
+    --pisi-quick-modal-accent-hover: #ffb63b;
+    --pisi-quick-modal-shadow: rgb(0 0 0 / 48%);
+    position: fixed;
+    inset: 0;
+    z-index: 18000;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgb(7 10 15 / 70%);
+    backdrop-filter: blur(6px);
+    color-scheme: dark;
+}
+
+.pisi-quick-add-overlay[hidden] {
+    display: none;
+}
+
+.pisi-quick-add-dialog {
+    width: min(760px, calc(100vw - 32px));
+    max-height: min(780px, calc(100vh - 40px));
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
+    border: 1px solid var(--pisi-quick-modal-border-strong);
+    border-radius: 17px;
+    background: var(--pisi-quick-modal-bg);
+    color: var(--pisi-quick-modal-text);
+    box-shadow: 0 28px 90px var(--pisi-quick-modal-shadow);
+}
+
+.pisi-quick-add-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 17px 19px;
+    border-bottom: 1px solid var(--pisi-quick-modal-border);
+    background: var(--pisi-quick-modal-surface);
+}
+
+.pisi-quick-add-heading {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.pisi-quick-add-heading-icon {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    display: grid;
+    place-items: center;
+    border: 1px solid color-mix(
+        in srgb,
+        var(--pisi-quick-modal-accent) 48%,
+        var(--pisi-quick-modal-border)
+    );
+    border-radius: 11px;
+    background: color-mix(
+        in srgb,
+        var(--pisi-quick-modal-accent) 14%,
+        var(--pisi-quick-modal-surface)
+    );
+}
+
+.pisi-quick-add-heading-icon::before {
+    width: 21px;
+    height: 21px;
+    content: "";
+    background: var(--pisi-quick-modal-accent);
+    -webkit-mask-image: url("../assets/todo/add-task.svg");
+    -webkit-mask-position: center;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    mask-image: url("../assets/todo/add-task.svg");
+    mask-position: center;
+    mask-repeat: no-repeat;
+    mask-size: contain;
+}
+
+.pisi-quick-add-heading > div {
+    min-width: 0;
+}
+
+.pisi-quick-add-heading h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 760;
+    letter-spacing: -0.01em;
+}
+
+.pisi-quick-add-heading p {
+    margin: 3px 0 0;
+    overflow: hidden;
+    color: var(--pisi-quick-modal-muted);
+    font-size: 12px;
+    line-height: 1.4;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pisi-quick-add-close {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--pisi-quick-modal-muted);
+    cursor: pointer;
+    font-size: 24px;
+    line-height: 1;
+}
+
+.pisi-quick-add-close:hover,
+.pisi-quick-add-close:focus-visible {
+    border-color: var(--pisi-quick-modal-border);
+    background: color-mix(
+        in srgb,
+        var(--pisi-quick-modal-text) 8%,
+        transparent
+    );
+    color: var(--pisi-quick-modal-text);
+    outline: none;
+}
+
+.pisi-quick-add-body {
+    min-height: 0;
+    padding: 19px;
+    overflow: auto;
+    scrollbar-color: var(--pisi-quick-modal-border-strong) var(--pisi-quick-modal-bg);
+}
+
+.pisi-quick-add-dialog .pisi-quick-add-form {
+    gap: 14px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.pisi-quick-add-dialog .pisi-quick-add-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.pisi-quick-add-dialog .pisi-quick-field[data-field="text"],
+.pisi-quick-add-dialog .pisi-quick-field[data-field="dateExpression"] {
+    grid-column: 1 / -1;
+}
+
+.pisi-quick-add-dialog .pisi-quick-field {
+    gap: 6px;
+    color: var(--pisi-quick-modal-muted);
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.pisi-quick-add-dialog .pisi-quick-field input,
+.pisi-quick-add-dialog .pisi-quick-field select {
+    min-height: 40px;
+    padding: 8px 10px;
+    border-color: var(--pisi-quick-modal-border);
+    background: var(--pisi-quick-modal-field);
+    color: var(--pisi-quick-modal-text);
+    font: inherit;
+}
+
+.pisi-quick-add-dialog .pisi-quick-field input:hover,
+.pisi-quick-add-dialog .pisi-quick-field select:hover {
+    border-color: var(--pisi-quick-modal-border-strong);
+}
+
+.pisi-quick-add-dialog .pisi-quick-field input:focus,
+.pisi-quick-add-dialog .pisi-quick-field select:focus {
+    border-color: var(--pisi-quick-modal-accent);
+    box-shadow: 0 0 0 3px color-mix(
+        in srgb,
+        var(--pisi-quick-modal-accent) 18%,
+        transparent
+    );
+    outline: none;
+}
+
+.pisi-quick-add-dialog .pisi-date-parse-preview {
+    border: 1px solid color-mix(
+        in srgb,
+        var(--pisi-quick-modal-accent) 30%,
+        var(--pisi-quick-modal-border)
+    );
+    background: color-mix(
+        in srgb,
+        var(--pisi-quick-modal-accent) 10%,
+        var(--pisi-quick-modal-surface)
+    );
+    color: var(--pisi-quick-modal-text);
+}
+
+.pisi-quick-add-dialog .pisi-date-parse-preview.empty {
+    border-style: dashed;
+    background: transparent;
+    color: var(--pisi-quick-modal-muted);
+}
+
+.pisi-quick-add-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 9px;
+    padding-top: 2px;
+}
+
+.pisi-quick-add-actions .pisi-command-inline-status {
+    color: var(--pisi-quick-modal-muted);
+}
+
+.pisi-quick-add-cancel,
+.pisi-quick-add-submit {
+    min-width: 104px;
+    min-height: 38px;
+    font-weight: 720;
+}
+
+.pisi-quick-add-cancel {
+    border-color: var(--pisi-quick-modal-border);
+    background: var(--pisi-quick-modal-surface);
+    color: var(--pisi-quick-modal-text);
+}
+
+.pisi-quick-add-submit {
+    border-color: #d98208;
+    background: linear-gradient(
+        180deg,
+        var(--pisi-quick-modal-accent-hover) 0%,
+        var(--pisi-quick-modal-accent) 100%
+    );
+    color: #2b1900;
+    box-shadow: 0 4px 12px color-mix(
+        in srgb,
+        var(--pisi-quick-modal-accent) 25%,
+        transparent
+    );
+}
+
+.pisi-quick-add-submit:hover:not(:disabled) {
+    filter: brightness(1.06);
+}
+
+.pisi-quick-add-loading,
+.pisi-quick-add-empty,
+.pisi-quick-add-error {
+    min-height: 180px;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    border: 1px dashed var(--pisi-quick-modal-border);
+    border-radius: 12px;
+    color: var(--pisi-quick-modal-muted);
+    line-height: 1.5;
+    text-align: center;
+}
+
+.pisi-quick-add-error {
+    border-color: #9e5555;
+    color: #ffbaba;
+}
+
+html[data-pisi-theme="light"] .pisi-quick-add-overlay {
+    --pisi-quick-modal-bg: #ffffff;
+    --pisi-quick-modal-surface: #f6f7f9;
+    --pisi-quick-modal-field: #ffffff;
+    --pisi-quick-modal-border: #d7dce3;
+    --pisi-quick-modal-border-strong: #b9c1cc;
+    --pisi-quick-modal-text: #242a31;
+    --pisi-quick-modal-muted: #616b77;
+    --pisi-quick-modal-accent: #ed930b;
+    --pisi-quick-modal-accent-hover: #ffb53a;
+    --pisi-quick-modal-shadow: rgb(31 38 48 / 22%);
+    background: rgb(28 35 45 / 34%);
+    color-scheme: light;
+}
+
+html[data-pisi-theme="light"] .pisi-quick-add-dialog .pisi-quick-add-form {
+    border: 0;
+    background: transparent;
+}
+
+html[data-pisi-theme="light"] .pisi-quick-add-error {
+    color: #9a3030;
+}
+
+@media (max-width: 640px) {
+    .pisi-quick-add-overlay {
+        padding: 10px;
+    }
+
+    .pisi-quick-add-dialog {
+        width: calc(100vw - 20px);
+        max-height: calc(100vh - 20px);
+        border-radius: 13px;
+    }
+
+    .pisi-quick-add-header,
+    .pisi-quick-add-body {
+        padding: 14px;
+    }
+
+    .pisi-quick-add-heading p {
+        white-space: normal;
+    }
+
+    .pisi-quick-add-dialog .pisi-quick-add-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pisi-quick-add-dialog .pisi-quick-field[data-field] {
+        grid-column: 1;
+    }
+
+    .pisi-quick-add-actions {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .pisi-quick-add-actions .pisi-command-inline-status {
+        grid-column: 1 / -1;
+    }
+}

@@ -4,50 +4,136 @@
     display: none;
 }
 
-.pisi-todo-workspace-open {
+.pisi-todo-panel-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 8px;
     width: 100%;
-    padding: 8px 10px;
+}
+
+.pisi-todo-panel-action {
+    min-width: 0;
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 7px 9px;
     border: 1px solid var(--border-color, #4a5059);
-    border-radius: 8px;
+    border-radius: 9px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 750;
+    line-height: 1;
+    transition:
+        transform 140ms ease,
+        border-color 140ms ease,
+        background-color 140ms ease,
+        box-shadow 140ms ease;
+}
+
+.pisi-todo-panel-action-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pisi-todo-panel-action-icon {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+    background: currentColor;
+    -webkit-mask-position: center;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    mask-position: center;
+    mask-repeat: no-repeat;
+    mask-size: contain;
+}
+
+.pisi-todo-panel-workspace-icon {
+    -webkit-mask-image: url("../assets/todo/workspace.svg");
+    mask-image: url("../assets/todo/workspace.svg");
+}
+
+.pisi-todo-quick-add-icon {
+    -webkit-mask-image: url("../assets/todo/add-task.svg");
+    mask-image: url("../assets/todo/add-task.svg");
+}
+
+.pisi-todo-workspace-open {
     background: color-mix(
         in srgb,
-        var(--accent-color, #f39c12) 12%,
+        var(--accent-color, #f39c12) 9%,
         var(--panel-bg, #252526)
     );
     color: var(--text-color, #f2f4f7);
     box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
-    cursor: pointer;
-    font: inherit;
-    font-weight: 750;
-    text-align: left;
 }
 
-.pisi-todo-workspace-open:hover,
-.pisi-todo-workspace-open:focus-visible {
+.pisi-todo-quick-add {
+    border-color: #d98208;
+    background: linear-gradient(180deg, #ffb63b 0%, #f39c12 100%);
+    color: #2b1900;
+    box-shadow:
+        0 3px 9px rgb(0 0 0 / 24%),
+        inset 0 1px 0 rgb(255 255 255 / 38%);
+}
+
+.pisi-todo-workspace-open:hover {
     border-color: var(--accent-color, #f39c12);
     background: color-mix(
         in srgb,
-        var(--accent-color, #f39c12) 19%,
+        var(--accent-color, #f39c12) 18%,
         var(--panel-bg, #252526)
     );
-    outline: none;
+    transform: translateY(-1px);
+}
+
+.pisi-todo-quick-add:hover {
+    border-color: #f6b34d;
+    background: linear-gradient(180deg, #ffc258 0%, #f6a51f 100%);
+    box-shadow:
+        0 5px 13px rgb(0 0 0 / 30%),
+        inset 0 1px 0 rgb(255 255 255 / 44%);
+    transform: translateY(-1px);
+}
+
+.pisi-todo-panel-action:active {
+    transform: translateY(0);
+}
+
+.pisi-todo-panel-action:focus-visible {
+    border-color: var(--accent-color, #f39c12);
+    outline: 2px solid color-mix(
+        in srgb,
+        var(--accent-color, #f39c12) 72%,
+        white
+    );
+    outline-offset: 2px;
 }
 
 html[data-pisi-theme="light"] .pisi-todo-workspace-open {
     border-color: var(--pisi-theme-border-strong);
-    background: color-mix(
-        in srgb,
-        var(--pisi-theme-accent) 11%,
-        var(--pisi-theme-surface)
-    );
+    background: var(--pisi-theme-surface-alt);
     color: var(--pisi-theme-text);
-    box-shadow: 0 1px 2px var(--pisi-theme-shadow);
+    box-shadow: 0 2px 6px var(--pisi-theme-shadow);
 }
 
-html[data-pisi-theme="light"] .pisi-todo-workspace-open:hover,
-html[data-pisi-theme="light"] .pisi-todo-workspace-open:focus-visible {
-    border-color: #a85f00;
-    background: #fff0d5;
+html[data-pisi-theme="light"] .pisi-todo-workspace-open:hover {
+    border-color: #b66b00;
+    background: #fff4e1;
+}
+
+html[data-pisi-theme="light"] .pisi-todo-quick-add {
+    border-color: #c87300;
+    background: linear-gradient(180deg, #ffb53a 0%, #ed930b 100%);
+    color: #2b1900;
+    box-shadow:
+        0 3px 9px rgb(104 65 10 / 20%),
+        inset 0 1px 0 rgb(255 255 255 / 48%);
 }
 
 .pisi-todo-center-tab .center-tab-icon {

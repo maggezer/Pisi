@@ -61,7 +61,7 @@ test('takvim günlükleri normal klasör taramasından ayrı olarak görev indek
     assert.match(missionBuilder, /nodeItems\.push\(diaryNode\)/);
 });
 
-test('node açıldığında To-do katmanı kapanır ve yalnız Kanban görsel iyileştirmesi kalır', () => {
+test('node açıldığında To-do katmanı kapanır ve tema okunabilirliği korunur', () => {
     const panel = read('renderer/tags/pisi-todo-first-release.mjs');
     const panelCss = read('styles/50-tags-and-missions.css');
     const workspace = read('renderer/tags/pisi-todo-workspace.mjs');
@@ -73,7 +73,9 @@ test('node açıldığında To-do katmanı kapanır ve yalnız Kanban görsel iy
     assert.doesNotMatch(workspace, /pisi-todo-workspace-open-icon/);
     assert.doesNotMatch(panel, /createPisiMissionsOverviewFirstRelease/);
     assert.doesNotMatch(panelCss, /pisi-missions-overview/);
-    assert.doesNotMatch(workspaceCss, /\.pisi-third-stat-card,/);
+    assert.match(workspaceCss, /--pisi-todo-text: #f2f4f7/);
+    assert.match(workspaceCss, /--pisi-todo-text: #20252c/);
+    assert.match(workspaceCss, /\.pisi-third-stat-card,/);
     assert.match(workspaceCss, /pisi-third-kanban-column/);
     assert.match(workspaceCss, /pisi-third-kanban-card:hover/);
 });
