@@ -11,6 +11,8 @@ const iconNames = ['todo', 'tags', 'customize', 'blocks', 'links'];
 
 test('beş ana sağ panel sekmesi yalnız özel ikonlarla gösterilir', () => {
     const html = read('index.html');
+    const tr = JSON.parse(read('locales/lang-tr.json')).strings;
+    const eng = JSON.parse(read('locales/lang-eng.json')).strings;
     const extensions = read('renderer/core/pisi-extension-api.mjs');
     const blocks = read('renderer/search/pisi-block-graph.mjs');
     const links = read('renderer/search/pisi-links-panel.mjs');
@@ -18,6 +20,10 @@ test('beş ana sağ panel sekmesi yalnız özel ikonlarla gösterilir', () => {
     for (const name of ['todo', 'tags', 'customize']) {
         assert.match(html, new RegExp(`pisi-right-tab-icon-${name}`));
     }
+    assert.match(html, /title="ToDo"/);
+    assert.match(html, /aria-label="ToDo"/);
+    assert.equal(typeof tr.ToDo, 'string');
+    assert.equal(typeof eng.ToDo, 'string');
     assert.doesNotMatch(
         html,
         /data-right-tab="(?:missions|tags|customizations)"[^>]*>\s*(?:ToDo|Tags|Customize)\s*</s
