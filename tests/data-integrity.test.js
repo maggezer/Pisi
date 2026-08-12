@@ -55,6 +55,8 @@ test('edge onarımı self-loop, tekrar, ikinci parent ve döngüyü güvenli tem
     const api = loadMainHelpers([
         'normalizePisiId',
         'normalizeConnectionRole',
+        'normalizePisiCustomizationColor',
+        'normalizePisiMapEdgeCustomization',
         'normalizeMapEdge',
         'isHierarchyEdge',
         'convertEdgeToStream',
@@ -100,7 +102,10 @@ test('edge onarımı self-loop, tekrar, ikinci parent ve döngüyü güvenli tem
             targetId: 'node_b',
             type: 'co-level',
             sourceRole: 'downstream',
-            targetRole: 'upstream'
+            targetRole: 'upstream',
+            customization: {
+                color: '#ABCDEF'
+            }
         })),
         {
             id: 'edge_mismatch',
@@ -110,7 +115,10 @@ test('edge onarımı self-loop, tekrar, ikinci parent ve döngüyü güvenli tem
             targetPort: 'top',
             type: 'co-level',
             sourceRole: 'co-level',
-            targetRole: 'co-level'
+            targetRole: 'co-level',
+            customization: {
+                color: '#abcdef'
+            }
         }
     );
 });
