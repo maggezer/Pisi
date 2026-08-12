@@ -67,20 +67,66 @@ function ensurePisiTodoWorkspaceOpenButton() {
     );
     if (!title) return null;
 
-    let button = title.querySelector('#pisi-todo-workspace-open');
-    if (button) return button;
+    let actions = title.querySelector('.pisi-todo-panel-actions');
+    if (!actions) {
+        actions = document.createElement('div');
+        actions.className = 'pisi-todo-panel-actions';
+        title.replaceChildren(actions);
+    }
 
-    title.textContent = '';
-    button = document.createElement('button');
-    button.id = 'pisi-todo-workspace-open';
-    button.type = 'button';
-    button.className = 'pisi-todo-workspace-open';
-    button.textContent = pisiTodoWorkspaceTranslate('To-do');
-    button.title = pisiTodoWorkspaceTranslate('To-do çalışma alanını aç');
-    button.setAttribute('aria-label', button.title);
-    button.addEventListener('click', openPisiTodoWorkspace);
-    title.appendChild(button);
-    return button;
+    let workspaceButton = actions.querySelector('#pisi-todo-workspace-open');
+    if (!workspaceButton) {
+        workspaceButton = document.createElement('button');
+        workspaceButton.id = 'pisi-todo-workspace-open';
+        workspaceButton.type = 'button';
+        workspaceButton.className =
+            'pisi-todo-panel-action pisi-todo-workspace-open';
+        const icon = document.createElement('span');
+        icon.className =
+            'pisi-todo-panel-action-icon pisi-todo-panel-workspace-icon';
+        icon.setAttribute('aria-hidden', 'true');
+        const label = document.createElement('span');
+        label.className = 'pisi-todo-panel-action-label';
+        label.textContent = pisiTodoWorkspaceTranslate('To-do');
+        workspaceButton.append(icon, label);
+        workspaceButton.title = pisiTodoWorkspaceTranslate(
+            'To-do çalışma alanını aç'
+        );
+        workspaceButton.setAttribute('aria-label', workspaceButton.title);
+        workspaceButton.addEventListener('click', openPisiTodoWorkspace);
+        actions.appendChild(workspaceButton);
+    }
+
+    let quickAddButton = actions.querySelector('#pisi-todo-quick-add');
+    if (!quickAddButton) {
+        quickAddButton = document.createElement('button');
+        quickAddButton.id = 'pisi-todo-quick-add';
+        quickAddButton.type = 'button';
+        quickAddButton.className =
+            'pisi-todo-panel-action pisi-todo-quick-add';
+        quickAddButton.setAttribute('aria-keyshortcuts', 'Control+M');
+        const icon = document.createElement('span');
+        icon.className =
+            'pisi-todo-panel-action-icon pisi-todo-quick-add-icon';
+        icon.setAttribute('aria-hidden', 'true');
+        const label = document.createElement('span');
+        label.className = 'pisi-todo-panel-action-label';
+        label.textContent = pisiTodoWorkspaceTranslate('Görev ekle');
+        quickAddButton.append(icon, label);
+        quickAddButton.title = pisiTodoWorkspaceTranslate(
+            'Görev ekleme penceresini aç (Ctrl+M)'
+        );
+        quickAddButton.setAttribute('aria-label', quickAddButton.title);
+        quickAddButton.addEventListener('click', () => {
+            document.dispatchEvent(new CustomEvent(
+                'pisi:quick-add-requested',
+                { detail: { source: 'todo-panel' } }
+            ));
+        });
+        actions.appendChild(quickAddButton);
+    }
+
+    return workspaceButton;
 }
 
 function ensurePisiTodoWorkspaceDom() {
