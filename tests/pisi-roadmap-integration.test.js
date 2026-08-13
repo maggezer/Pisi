@@ -22,13 +22,14 @@ test('1.2–platform modülleri bootstrap ve preload köprüsünde kayıtlıdır
         'team/pisi-team-api.mjs'
     ]) assert.ok(bootstrap.includes(marker), marker);
     for (const marker of [
-        'quickAddTask', 'saveNodeProperties', 'createPropertyMap',
+        'quickAddTask', 'saveNodeProperties', 'getNodePropertyContext', 'createPropertyMap',
         'exportProjectMarkdown', 'listNodeHistory', 'auditIntegrity',
         'restoreBackup', 'captureWebSource', 'listDatabaseTemplates',
         'applyDatabaseTemplate', 'pisiTeamTransport'
     ]) assert.ok(preload.includes(marker), marker);
     for (const channel of [
         'project:quick-add-task', 'project:save-node-properties',
+        'project:get-node-property-context',
         'project:create-property-map', 'project:export-node',
         'project:import-markdown', 'project:list-node-history',
         'project:audit-integrity', 'project:restore-backup',

@@ -624,8 +624,12 @@
     "path": "renderer/data/pisi-structured-views.mjs",
     "bindings": [
       "pisiStructuredViewState",
+      "appendPisiPropertyRow",
+      "collectPisiMapPropertyDefinitions",
       "createPisiPropertyRow",
       "collectPisiPropertyRows",
+      "getPisiNodePropertyMapContext",
+      "getPisiActiveMapPropertyContext",
       "readPisiPropertyControlValue",
       "renderPisiNodeProperties",
       "renderPisiBases",
@@ -638,6 +642,7 @@
     "path": "renderer/data/pisi-node-properties-ui.mjs",
     "bindings": [
       "pisiNodePropertiesUiState",
+      "addPisiToolbarRollup",
       "installPisiNodePropertyDrawers",
       "togglePisiNodePropertiesDrawer",
       "renderPisiNodePropertiesInfo",

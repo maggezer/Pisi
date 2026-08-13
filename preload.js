@@ -60,6 +60,11 @@ contextBridge.exposeInMainWorld('pisiProject', {
     syncDiaryMissions: (projectFolder, entries) => ipcRenderer.invoke('project:sync-diary-missions', projectFolder, entries),
 
     listMapNodes: (mapPath) => ipcRenderer.invoke('project:list-map-nodes', mapPath),
+    getNodePropertyContext: (nodePath, preferredMapPath) => ipcRenderer.invoke(
+        'project:get-node-property-context',
+        nodePath,
+        preferredMapPath || null
+    ),
     saveMapLayout: (mapPath, nodeLayouts) => ipcRenderer.invoke('project:save-map-layout', mapPath, nodeLayouts),
     saveNodeContent: (nodePath, content) => ipcRenderer.invoke('project:save-node-content', nodePath, content),
     quickAddTask: (projectFolder, payload) => ipcRenderer.invoke('project:quick-add-task', projectFolder, payload),

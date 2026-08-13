@@ -365,6 +365,57 @@ ipcMain.handle('project:list-map-nodes', (_event, mapPath) => {
     });
 });
 
+ipcMain.handle('project:get-node-property-context', (_event, nodePath, preferredMapPath) => {
+    return projectOperation(() => {
+        const safeNodePath = assertProjectPath(nodePath, {
+            type: 'file',
+            extensions: ['.node']
+        });
+        const nodeInfo = getPisiDocument(safeNodePath);
+        if (!nodeInfo?.ok) return nodeInfo;
+
+        let mapPath = null;
+        let mapResult = null;
+
+        if (preferredMapPath) {
+            const safePreferredMapPath = assertProjectPath(preferredMapPath, {
+                type: 'file',
+                extensions: ['.map']
+            });
+            const preferredResult = listNodesForMap(safePreferredMapPath);
+            const belongsToPreferredMap = preferredResult?.ok &&
+                preferredResult.nodes.some((node) => {
+                    return node.id === nodeInfo.metadata?.id ||
+                        normalizePathForCompare(node.fullPath) ===
+                            normalizePathForCompare(safeNodePath);
+                });
+            if (belongsToPreferredMap) {
+                mapPath = safePreferredMapPath;
+                mapResult = preferredResult;
+            }
+        }
+
+        if (!mapPath) {
+            mapPath = findParentMapPathForNode(safeNodePath, nodeInfo);
+            if (mapPath) mapResult = listNodesForMap(mapPath);
+        }
+
+        if (!mapPath) {
+            return {
+                ok: true,
+                mapPath: null,
+                nodes: []
+            };
+        }
+        if (!mapResult?.ok) return mapResult;
+
+        return {
+            ...mapResult,
+            mapPath
+        };
+    });
+});
+
 ipcMain.handle('project:save-map-layout', (_event, mapPath, nodeLayouts) => {
     return projectOperation(() => {
         const safeMapPath = assertProjectPath(mapPath, {

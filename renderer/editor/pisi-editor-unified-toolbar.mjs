@@ -134,7 +134,8 @@ function buildPisiUnifiedToolbarMarkup() {
             </section>
 
             <section class="pisi-toolbar-section pisi-toolbar-section-excel" aria-label="Tablo araçları">
-                <button type="button" class="pisi-ribbon-btn pisi-ribbon-btn-large pisi-icon-tile pisi-ribbon-dropdown" data-pisi-table-trigger title="Tablo ekle">${pisiToolbarIcon('table')}<span>Table</span></button>
+                <button type="button" class="pisi-ribbon-btn pisi-toolbar-data-btn pisi-ribbon-dropdown" data-pisi-table-trigger title="Tablo ekle">${pisiToolbarIcon('table')}<span>Table</span></button>
+                <button type="button" class="pisi-ribbon-btn pisi-toolbar-data-btn" data-pisi-rollup-trigger title="Rollup ekle">${pisiToolbarIcon('rollup')}<span>Roll</span></button>
             </section>
 
             <section class="pisi-toolbar-section pisi-toolbar-section-drawing" aria-label="Çizim araçları">
@@ -272,6 +273,16 @@ function bindPisiUnifiedToolbarEvents(toolbar) {
         const tableTrigger = event.target.closest('[data-pisi-table-trigger]');
         if (tableTrigger) {
             openPisiToolbarTablePopover(toolbar, tableTrigger);
+            return;
+        }
+
+        const rollupTrigger = event.target.closest('[data-pisi-rollup-trigger]');
+        if (rollupTrigger) {
+            document.dispatchEvent(new CustomEvent('pisi:property-rollup-request', {
+                detail: {
+                    editorTarget: toolbar.dataset.editorTarget || null
+                }
+            }));
             return;
         }
 

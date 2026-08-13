@@ -1,7 +1,6 @@
 import { registerModule } from "../core/module-registry.mjs";
 import { registerPisiCommandCenterPage } from "../shell/pisi-command-center.mjs";
 import {
-    ensurePisiSearchIndex,
     getPisiSearchCurrentNodePath,
     invalidatePisiSearchIndex
 } from "../search/pisi-search-index.mjs";
@@ -53,13 +52,277 @@ function makePisiRollupField(labelText, control) {
     return field;
 }
 
-function makePisiPropertyValueControl(property) {
+function pisiPropertyPathKey(value = '') {
+    return String(value || '')
+        .replace(/[\\/]+/g, '/')
+        .replace(/\/+$/g, '')
+        .toLocaleLowerCase('en-US');
+}
+
+function pisiPropertyNameKey(value = '') {
+    return String(value || '')
+        .trim()
+        .toLocaleLowerCase('tr-TR');
+}
+
+function getPisiActivePropertyMapPath(nodePath = '') {
+    const targetKey = pisiPropertyPathKey(nodePath);
+    for (const activeNode of [window.activeModalNode, window.activeCenterNode]) {
+        if (
+            activeNode?.mapPath &&
+            (!targetKey || pisiPropertyPathKey(activeNode.path) === targetKey)
+        ) {
+            return activeNode.mapPath;
+        }
+    }
+    return window.activeMapPath || null;
+}
+
+function collectPisiMapPropertyDefinitions(nodes = []) {
+    const definitions = new Map();
+    for (const node of nodes) {
+        for (const property of normalizePisiPropertyCollection(node?.properties)) {
+            const key = pisiPropertyNameKey(property.name);
+            if (!key || definitions.has(key)) continue;
+            definitions.set(key, {
+                id: property.id,
+                name: property.name,
+                type: property.type,
+                system: property.system === true
+            });
+        }
+    }
+    return Array.from(definitions.values()).sort((a, b) => {
+        return a.name.localeCompare(b.name, 'tr');
+    });
+}
+
+async function getPisiNodePropertyMapContext(nodePath) {
+    const preferredMapPath = getPisiActivePropertyMapPath(nodePath);
+    const result = typeof window.pisiProject?.getNodePropertyContext === 'function'
+        ? await window.pisiProject.getNodePropertyContext(nodePath, preferredMapPath)
+        : (preferredMapPath
+            ? await window.pisiProject?.listMapNodes?.(preferredMapPath)
+            : { ok: true, nodes: [] });
+    if (!result?.ok) {
+        throw new Error(result?.error || 'Map özellikleri yüklenemedi.');
+    }
+    const nodes = Array.isArray(result.nodes) ? result.nodes : [];
+    return {
+        mapPath: result.mapPath || preferredMapPath || null,
+        nodes,
+        propertyDefinitions: collectPisiMapPropertyDefinitions(nodes),
+        nodePath
+    };
+}
+
+async function getPisiActiveMapPropertyContext() {
+    const nodePath = getPisiSearchCurrentNodePath();
+    if (nodePath) return getPisiNodePropertyMapContext(nodePath);
+    const mapPath = window.activeMapPath || null;
+    if (!mapPath) {
+        return {
+            mapPath: null,
+            nodes: [],
+            propertyDefinitions: [],
+            nodePath: null
+        };
+    }
+    const result = await window.pisiProject?.listMapNodes?.(mapPath);
+    if (!result?.ok) {
+        throw new Error(result?.error || 'Map özellikleri yüklenemedi.');
+    }
+    const nodes = Array.isArray(result.nodes) ? result.nodes : [];
+    return {
+        mapPath,
+        nodes,
+        propertyDefinitions: collectPisiMapPropertyDefinitions(nodes),
+        nodePath: null
+    };
+}
+
+function makePisiMapDatabaseDocuments(context) {
+    return (context?.nodes || []).map((node) => ({
+        ...node,
+        path: node.fullPath,
+        relativePath: node.fileName || node.fullPath,
+        title: getPisiMapNodeLabel(node),
+        nodeItem: {
+            ...node,
+            name: node.fileName,
+            type: 'file',
+            isFile: true,
+            isDirectory: false,
+            mapPath: context.mapPath
+        },
+        memberships: context.mapPath
+            ? [{ mapPath: context.mapPath }]
+            : []
+    }));
+}
+
+function getPisiPropertyTypeLabel(type) {
+    return PISI_NODE_PROPERTY_TYPES.find((item) => item.value === type)?.label || type;
+}
+
+function makePisiPropertyIconButton(label, iconName) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'pisi-property-icon-button';
+    button.title = pisiStructuredTranslate(label);
+    button.setAttribute('aria-label', pisiStructuredTranslate(label));
+    const icon = document.createElement('span');
+    icon.className = `pisi-property-action-icon pisi-property-action-icon-${iconName}`;
+    icon.setAttribute('aria-hidden', 'true');
+    button.appendChild(icon);
+    return button;
+}
+
+function getPisiMapNodeLabel(node) {
+    return node?.metadata?.title ||
+        String(node?.fileName || '').replace(/\.node$/i, '') ||
+        node?.fullPath ||
+        pisiStructuredTranslate('Node');
+}
+
+function pisiMapNodeMatchesValue(node, value) {
+    const text = String(value || '').trim();
+    if (!text) return false;
+    const pathKey = pisiPropertyPathKey(text);
+    return [node?.fullPath, node?.fileName, node?.id, node?.metadata?.id]
+        .some((candidate) => pisiPropertyPathKey(candidate) === pathKey) ||
+        pisiPropertyNameKey(getPisiMapNodeLabel(node)) === pisiPropertyNameKey(text);
+}
+
+function makePisiNodePropertySelect(property, context) {
+    const select = document.createElement('select');
+    select.className = 'pisi-property-value-select';
+    select.dataset.propertyValue = 'true';
+    const empty = document.createElement('option');
+    empty.value = '';
+    empty.textContent = pisiStructuredTranslate('Node seçin');
+    select.appendChild(empty);
+
+    const currentValue = String(property.value || '').trim();
+    let selected = false;
+    for (const node of context.nodes || []) {
+        const option = document.createElement('option');
+        option.value = node.fullPath;
+        option.textContent = getPisiMapNodeLabel(node);
+        option.selected = pisiMapNodeMatchesValue(node, currentValue);
+        selected = selected || option.selected;
+        select.appendChild(option);
+    }
+    if (currentValue && !selected) {
+        const legacy = document.createElement('option');
+        legacy.value = currentValue;
+        legacy.textContent = currentValue;
+        legacy.selected = true;
+        select.appendChild(legacy);
+    }
+    return select;
+}
+
+function makePisiRelationPropertyPicker(property, context) {
+    const picker = document.createElement('details');
+    picker.className = 'pisi-property-node-picker';
+    picker.dataset.propertyValue = 'true';
+    const summary = document.createElement('summary');
+    const menu = document.createElement('div');
+    menu.className = 'pisi-property-node-picker-menu';
+    const rawValues = Array.isArray(property.value)
+        ? property.value.map(String)
+        : String(property.value || '').split(',').map((item) => item.trim()).filter(Boolean);
+    const consumed = new Set();
+
+    const updateSummary = () => {
+        const labels = Array.from(menu.querySelectorAll('input:checked'))
+            .map((input) => input.dataset.nodeLabel || input.value);
+        summary.textContent = labels.length
+            ? labels.join(', ')
+            : pisiStructuredTranslate('Node seçin');
+        summary.title = summary.textContent;
+    };
+    const appendOption = (value, label, checked, legacy = false) => {
+        const option = document.createElement('label');
+        option.className = 'pisi-property-node-picker-option';
+        if (legacy) option.dataset.legacy = 'true';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = value;
+        checkbox.checked = checked;
+        checkbox.dataset.nodeLabel = label;
+        checkbox.addEventListener('change', updateSummary);
+        const text = document.createElement('span');
+        text.textContent = label;
+        option.append(checkbox, text);
+        menu.appendChild(option);
+    };
+
+    for (const node of context.nodes || []) {
+        const matchedIndexes = rawValues
+            .map((value, index) => pisiMapNodeMatchesValue(node, value) ? index : -1)
+            .filter((index) => index >= 0);
+        matchedIndexes.forEach((index) => consumed.add(index));
+        appendOption(
+            node.fullPath,
+            getPisiMapNodeLabel(node),
+            matchedIndexes.length > 0
+        );
+    }
+    rawValues.forEach((value, index) => {
+        if (!consumed.has(index)) appendOption(value, value, true, true);
+    });
+    if (!menu.children.length) {
+        const empty = document.createElement('div');
+        empty.className = 'pisi-property-node-picker-empty';
+        empty.textContent = pisiStructuredTranslate('Bu mapte seçilebilir node yok.');
+        menu.appendChild(empty);
+    }
+    picker.append(summary, menu);
+    updateSummary();
+    return picker;
+}
+
+function makePisiRollupReferenceSelect(definitions, selectedValue, placeholder) {
+    const select = document.createElement('select');
+    const empty = document.createElement('option');
+    empty.value = '';
+    empty.textContent = pisiStructuredTranslate(placeholder);
+    select.appendChild(empty);
+    let selected = false;
+    for (const definition of definitions) {
+        const option = document.createElement('option');
+        option.value = definition.id;
+        option.textContent = definition.name;
+        option.selected = [definition.id, definition.name]
+            .some((value) => pisiPropertyNameKey(value) === pisiPropertyNameKey(selectedValue));
+        selected = selected || option.selected;
+        select.appendChild(option);
+    }
+    if (selectedValue && !selected) {
+        const legacy = document.createElement('option');
+        legacy.value = selectedValue;
+        legacy.textContent = selectedValue;
+        legacy.selected = true;
+        select.appendChild(legacy);
+    }
+    return select;
+}
+
+function makePisiPropertyValueControl(property, context = {}) {
     if (property.type === 'checkbox') {
         const input = document.createElement('input');
         input.type = 'checkbox';
         input.checked = property.value === true;
         input.dataset.propertyValue = 'true';
         return input;
+    }
+    if (property.type === 'node') {
+        return makePisiNodePropertySelect(property, context);
+    }
+    if (property.type === 'relation') {
+        return makePisiRelationPropertyPicker(property, context);
     }
     if (property.type === 'rollup') {
         const host = document.createElement('div');
@@ -68,16 +331,18 @@ function makePisiPropertyValueControl(property) {
         const config = property.value && typeof property.value === 'object'
             ? property.value
             : {};
-        const relation = document.createElement('input');
-        relation.type = 'text';
+        const relation = makePisiRollupReferenceSelect(
+            (context.propertyDefinitions || []).filter((item) => item.type === 'relation'),
+            config.relationProperty || '',
+            'Relation adı veya kimliği'
+        );
         relation.dataset.rollupRelation = 'true';
-        relation.placeholder = pisiStructuredTranslate('Relation adı veya kimliği');
-        relation.value = config.relationProperty || '';
-        const target = document.createElement('input');
-        target.type = 'text';
+        const target = makePisiRollupReferenceSelect(
+            (context.propertyDefinitions || []).filter((item) => item.type !== 'rollup'),
+            config.targetProperty || '',
+            'Hedef özellik adı veya kimliği'
+        );
         target.dataset.rollupTarget = 'true';
-        target.placeholder = pisiStructuredTranslate('Hedef özellik adı veya kimliği');
-        target.value = config.targetProperty || '';
         const aggregate = document.createElement('select');
         aggregate.dataset.rollupAggregate = 'true';
         for (const item of PISI_ROLLUP_AGGREGATES) {
@@ -108,19 +373,28 @@ function makePisiPropertyValueControl(property) {
         ? property.value.join(', ')
         : String(property.value ?? '');
     input.dataset.propertyValue = 'true';
-    if (property.type === 'multiselect' || property.type === 'relation') {
+    if (property.type === 'multiselect') {
         input.placeholder = pisiStructuredTranslate('Virgülle ayırın');
-    }
-    if (property.type === 'node') {
-        input.placeholder = pisiStructuredTranslate('Node yolu veya başlığı');
-    }
-    if (property.type === 'relation') {
-        input.placeholder = pisiStructuredTranslate('Node yollarını veya kimliklerini virgülle ayırın');
     }
     return input;
 }
 
-function createPisiPropertyRow(property = {}) {
+function makePisiBlankPropertyValue(type) {
+    if (type === 'checkbox') return false;
+    if (type === 'multiselect' || type === 'relation') return [];
+    if (type === 'number') return null;
+    if (type === 'rollup') {
+        return {
+            relationProperty: '',
+            targetProperty: '',
+            aggregate: 'count',
+            separator: ', '
+        };
+    }
+    return '';
+}
+
+function createPisiPropertyRow(property = {}, context = {}) {
     const normalized = {
         id: property.id || '',
         name: property.name || '',
@@ -140,6 +414,19 @@ function createPisiPropertyRow(property = {}) {
     name.placeholder = pisiStructuredTranslate('Özellik adı');
     name.disabled = normalized.system;
 
+    const nameControl = document.createElement('div');
+    nameControl.className = 'pisi-property-name-control';
+    const suggestionToggle = document.createElement('button');
+    suggestionToggle.type = 'button';
+    suggestionToggle.className = 'pisi-property-name-toggle';
+    suggestionToggle.title = pisiStructuredTranslate('Var olan özellikleri göster');
+    suggestionToggle.setAttribute('aria-label', suggestionToggle.title);
+    suggestionToggle.setAttribute('aria-expanded', 'false');
+    suggestionToggle.disabled = normalized.system || !context.propertyDefinitions?.length;
+    const suggestions = document.createElement('div');
+    suggestions.className = 'pisi-property-suggestions';
+    suggestions.hidden = true;
+
     const type = document.createElement('select');
     type.className = 'pisi-property-type';
     type.disabled = normalized.system;
@@ -151,23 +438,83 @@ function createPisiPropertyRow(property = {}) {
         type.appendChild(option);
     }
 
-    let value = makePisiPropertyValueControl(normalized);
+    let value = makePisiPropertyValueControl(normalized, context);
     const valueHost = document.createElement('div');
     valueHost.className = 'pisi-property-value-host';
     valueHost.appendChild(value);
-    type.addEventListener('change', () => {
-        const previous = readPisiPropertyControlValue(value, normalized.type);
-        normalized.type = type.value;
-        normalized.value = previous;
-        value = makePisiPropertyValueControl(normalized);
+    const replaceValue = (nextValue) => {
+        normalized.value = nextValue;
+        value = makePisiPropertyValueControl(normalized, context);
         valueHost.replaceChildren(value);
+    };
+    type.addEventListener('change', () => {
+        normalized.type = type.value;
+        replaceValue(makePisiBlankPropertyValue(normalized.type));
     });
+
+    const hideSuggestions = () => {
+        suggestions.hidden = true;
+        suggestionToggle.setAttribute('aria-expanded', 'false');
+    };
+    const applyDefinition = (definition) => {
+        normalized.id = definition.id;
+        normalized.name = definition.name;
+        normalized.type = definition.type;
+        row.dataset.propertyId = definition.id;
+        name.value = definition.name;
+        type.value = definition.type;
+        replaceValue(makePisiBlankPropertyValue(definition.type));
+        hideSuggestions();
+    };
+    const showSuggestions = (filter = '') => {
+        const needle = pisiPropertyNameKey(filter);
+        const matches = (context.propertyDefinitions || []).filter((definition) => {
+            return !needle || pisiPropertyNameKey(definition.name).includes(needle);
+        });
+        suggestions.replaceChildren();
+        for (const definition of matches) {
+            const option = document.createElement('button');
+            option.type = 'button';
+            option.className = 'pisi-property-suggestion';
+            const label = document.createElement('strong');
+            label.textContent = definition.name;
+            const typeLabel = document.createElement('span');
+            typeLabel.textContent = pisiStructuredTranslate(
+                getPisiPropertyTypeLabel(definition.type)
+            );
+            option.append(label, typeLabel);
+            option.addEventListener('pointerdown', (event) => event.preventDefault());
+            option.addEventListener('click', () => applyDefinition(definition));
+            suggestions.appendChild(option);
+        }
+        suggestions.hidden = matches.length === 0;
+        suggestionToggle.setAttribute('aria-expanded', matches.length ? 'true' : 'false');
+    };
+    name.addEventListener('click', () => showSuggestions(name.value));
+    name.addEventListener('focus', () => showSuggestions(name.value));
+    name.addEventListener('input', () => showSuggestions(name.value));
+    name.addEventListener('change', () => {
+        const exact = (context.propertyDefinitions || []).find((definition) => {
+            return pisiPropertyNameKey(definition.name) === pisiPropertyNameKey(name.value);
+        });
+        if (exact) applyDefinition(exact);
+    });
+    suggestionToggle.addEventListener('click', () => {
+        if (suggestions.hidden) showSuggestions('');
+        else hideSuggestions();
+    });
+    nameControl.addEventListener('focusout', () => {
+        setTimeout(() => {
+            if (!nameControl.contains(document.activeElement)) hideSuggestions();
+        }, 0);
+    });
+    nameControl.append(name, suggestionToggle, suggestions);
 
     const remove = makePisiStructuredButton('×', 'pisi-property-remove');
     remove.title = pisiStructuredTranslate('Özelliği kaldır');
     remove.disabled = normalized.system;
     remove.addEventListener('click', () => row.remove());
-    row.append(name, type, valueHost, remove);
+    row.append(nameControl, type, valueHost, remove);
     return row;
 }
 
@@ -181,6 +528,11 @@ function readPisiPropertyControlValue(control, type) {
             separator: ', '
         };
     }
+    if (type === 'relation') {
+        return Array.from(control?.querySelectorAll?.('input:checked') || [])
+            .map((input) => input.value)
+            .filter(Boolean);
+    }
     return control?.value ?? '';
 }
 
@@ -192,8 +544,8 @@ function collectPisiPropertyRows(host) {
         const type = row.querySelector('.pisi-property-type')?.value || 'text';
         const control = row.querySelector('[data-property-value]');
         let value = readPisiPropertyControlValue(control, type);
-        if (type === 'number') value = Number(value);
-        if (type === 'multiselect' || type === 'relation') {
+        if (type === 'number') value = value === '' ? null : Number(value);
+        if (type === 'multiselect') {
             value = String(value || '').split(',').map((item) => item.trim()).filter(Boolean);
         }
         properties.push({
@@ -207,8 +559,8 @@ function collectPisiPropertyRows(host) {
     return properties;
 }
 
-function appendPisiPropertyRow(rows, property = {}) {
-    const row = createPisiPropertyRow(property);
+function appendPisiPropertyRow(rows, property = {}, context = rows?.pisiPropertyContext || {}) {
+    const row = createPisiPropertyRow(property, context);
     rows.appendChild(row);
     row.querySelector('.pisi-property-name')?.focus();
     return row;
@@ -217,12 +569,6 @@ function appendPisiPropertyRow(rows, property = {}) {
 async function renderPisiNodeProperties(container) {
     const section = document.createElement('section');
     section.className = 'pisi-properties-editor';
-    const heading = document.createElement('div');
-    heading.className = 'pisi-command-section-heading';
-    const title = document.createElement('h2');
-    title.textContent = pisiStructuredTranslate('Node özellikleri');
-    heading.appendChild(title);
-    section.appendChild(heading);
 
     const nodePath = getPisiSearchCurrentNodePath();
     if (!nodePath) {
@@ -233,41 +579,23 @@ async function renderPisiNodeProperties(container) {
         container.appendChild(section);
         return;
     }
-    const documentResult = await window.pisiProject?.getPisiDocument?.(nodePath);
+    const [documentResult, propertyContext] = await Promise.all([
+        window.pisiProject?.getPisiDocument?.(nodePath),
+        getPisiNodePropertyMapContext(nodePath)
+    ]);
     if (!documentResult?.ok) throw new Error(documentResult?.error || 'Node okunamadı.');
-    const subtitle = document.createElement('div');
-    subtitle.className = 'pisi-property-node-title';
-    subtitle.textContent = documentResult.metadata?.title || nodePath;
     const rows = document.createElement('div');
     rows.className = 'pisi-property-rows';
+    rows.pisiPropertyContext = propertyContext;
     normalizePisiPropertyCollection(documentResult.data?.properties)
-        .forEach((property) => rows.appendChild(createPisiPropertyRow(property)));
+        .forEach((property) => {
+            rows.appendChild(createPisiPropertyRow(property, propertyContext));
+        });
     const controls = document.createElement('div');
     controls.className = 'pisi-property-actions';
-    const add = makePisiStructuredButton('Özellik ekle', 'pisi-secondary-button');
+    const add = makePisiPropertyIconButton('Özellik ekle', 'add');
     add.addEventListener('click', () => appendPisiPropertyRow(rows));
-    const addRelation = makePisiStructuredButton(
-        'Relation ekle',
-        'pisi-secondary-button pisi-relation-add'
-    );
-    addRelation.addEventListener('click', () => appendPisiPropertyRow(rows, {
-        type: 'relation',
-        value: []
-    }));
-    const addRollup = makePisiStructuredButton(
-        'Rollup ekle',
-        'pisi-secondary-button pisi-rollup-add'
-    );
-    addRollup.addEventListener('click', () => appendPisiPropertyRow(rows, {
-        type: 'rollup',
-        value: {
-            relationProperty: '',
-            targetProperty: '',
-            aggregate: 'count',
-            separator: ', '
-        }
-    }));
-    const save = makePisiStructuredButton('Özellikleri kaydet', 'pisi-primary-button');
+    const save = makePisiPropertyIconButton('Özellikleri kaydet', 'save');
     const status = document.createElement('span');
     status.className = 'pisi-command-inline-status';
     save.addEventListener('click', async () => {
@@ -284,7 +612,6 @@ async function renderPisiNodeProperties(container) {
             return;
         }
         invalidatePisiSearchIndex();
-        await ensurePisiSearchIndex({ force: true });
         status.textContent = pisiStructuredTranslate('Özellikler kaydedildi.');
         save.disabled = false;
         dispatchPisiNodePropertiesChanged(nodePath, 'save', { properties });
@@ -333,7 +660,6 @@ async function renderPisiNodeProperties(container) {
         );
         if (!result?.ok) return alert(result?.error || pisiStructuredTranslate('Şablon uygulanamadı.'));
         invalidatePisiSearchIndex('template');
-        await ensurePisiSearchIndex({ force: true });
         dispatchPisiNodePropertiesChanged(nodePath, 'template-apply', {
             refreshEditor: true
         });
@@ -351,8 +677,8 @@ async function renderPisiNodeProperties(container) {
         });
     });
     templateControls.append(templateSelect, saveTemplate, applyTemplate, deleteTemplate);
-    controls.append(add, addRelation, addRollup, save, status);
-    section.append(subtitle, controls, rows, templateControls);
+    controls.append(add, save, status);
+    section.append(controls, rows, templateControls);
     container.appendChild(section);
 }
 
@@ -490,7 +816,10 @@ async function renderPisiBases(container) {
     section.className = 'pisi-bases';
     const title = document.createElement('h2');
     title.textContent = pisiStructuredTranslate('Bases-lite');
-    const index = await ensurePisiSearchIndex();
+    const propertyContext = await getPisiActiveMapPropertyContext();
+    const mapDocuments = materializePisiDatabaseDocuments(
+        makePisiMapDatabaseDocuments(propertyContext)
+    );
     await loadPisiSavedViews();
     const toolbar = document.createElement('div');
     toolbar.className = 'pisi-bases-toolbar';
@@ -509,7 +838,7 @@ async function renderPisiBases(container) {
         tableButton.classList.toggle('active', pisiStructuredViewState.layout === 'table');
         cardsButton.classList.toggle('active', pisiStructuredViewState.layout === 'cards');
         const documents = filterPisiPropertyDocuments(
-            materializePisiDatabaseDocuments(index?.documents?.values?.() || []),
+            mapDocuments,
             pisiStructuredViewState.query
         );
         results.replaceChildren();
@@ -532,7 +861,7 @@ async function renderPisiBases(container) {
     const createMap = makePisiStructuredButton('Sonuçlardan map üret', 'pisi-primary-button');
     createMap.addEventListener('click', async () => {
         const documents = filterPisiPropertyDocuments(
-            materializePisiDatabaseDocuments(index?.documents?.values?.() || []),
+            mapDocuments,
             pisiStructuredViewState.query
         );
         const titleValue = prompt(
@@ -580,8 +909,12 @@ function initializePisiStructuredViews() {
 
 const moduleApi = {
     pisiStructuredViewState,
+    appendPisiPropertyRow,
+    collectPisiMapPropertyDefinitions,
     createPisiPropertyRow,
     collectPisiPropertyRows,
+    getPisiNodePropertyMapContext,
+    getPisiActiveMapPropertyContext,
     readPisiPropertyControlValue,
     renderPisiNodeProperties,
     renderPisiBases,
@@ -593,8 +926,12 @@ registerModule('data.structuredViews', moduleApi);
 initializePisiStructuredViews();
 
 export {
+    appendPisiPropertyRow,
+    collectPisiMapPropertyDefinitions,
     collectPisiPropertyRows,
     createPisiPropertyRow,
+    getPisiNodePropertyMapContext,
+    getPisiActiveMapPropertyContext,
     pisiStructuredViewState,
     renderPisiBases,
     renderPisiNodeProperties,

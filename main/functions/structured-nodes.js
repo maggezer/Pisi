@@ -31,6 +31,9 @@ function normalizePisiPropertyReference(value = '') {
 function normalizePisiPropertyValue(type, value) {
     if (type === 'checkbox') return value === true || value === 'true';
     if (type === 'number') {
+        if (value === null || value === undefined || String(value).trim() === '') {
+            return null;
+        }
         const number = Number(value);
         return Number.isFinite(number) ? number : null;
     }

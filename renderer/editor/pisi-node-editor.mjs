@@ -6,6 +6,7 @@ function dispatchPisiActiveNodeChanged(reason = 'update') {
         detail: {
             reason,
             path: activeNode?.path || null,
+            mapPath: activeNode?.mapPath || null,
             metadata: activeNode?.metadata || null,
             source: activeModalNode
                 ? 'modal'
@@ -250,6 +251,7 @@ function ensurePisiEditorWritable(editor) {
 
 async function openNodeModalFromBox(box) {
     const nodePath = box.dataset.nodePath;
+    const propertyMapPath = activeMapPath || null;
 
     const result = await window.pisiProject?.getPisiDocument?.(nodePath);
 
@@ -261,6 +263,7 @@ async function openNodeModalFromBox(box) {
     activeModalNode = {
         box,
         path: nodePath,
+        mapPath: propertyMapPath,
         metadata: result.metadata,
         returnFocus: document.activeElement,
         dirty: false,
@@ -495,6 +498,8 @@ function scheduleCenterNodeEditorSave() {
 async function openCenterNodeEditor(nodeItem) {
     if (!nodeItem?.fullPath) return;
 
+    const propertyMapPath = nodeItem.mapPath || activeMapPath || null;
+
     bindCenterNodeEditorControls();
 
     if (
@@ -542,7 +547,11 @@ async function openCenterNodeEditor(nodeItem) {
 
     activeCenterNode = {
         path: nodeItem.fullPath,
-        item: nodeItem,
+        mapPath: propertyMapPath,
+        item: {
+            ...nodeItem,
+            ...(propertyMapPath ? { mapPath: propertyMapPath } : {})
+        },
         metadata: result.metadata || {},
         dirty: false,
         revision: 0

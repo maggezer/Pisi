@@ -1,14 +1,15 @@
 import { registerModule } from "../core/module-registry.mjs";
-import {
-    ensurePisiSearchIndex,
-    getPisiSearchCurrentNodePath
-} from "../search/pisi-search-index.mjs";
+import { getPisiSearchCurrentNodePath } from "../search/pisi-search-index.mjs";
 import {
     PISI_NODE_PROPERTY_TYPES,
     materializePisiDatabaseDocuments,
     normalizePisiPropertyCollection
 } from "./pisi-properties-core.mjs";
-import { renderPisiNodeProperties } from "./pisi-structured-views.mjs";
+import {
+    appendPisiPropertyRow,
+    getPisiNodePropertyMapContext,
+    renderPisiNodeProperties
+} from "./pisi-structured-views.mjs";
 
 const pisiNodePropertiesUiState = {
     bound: false,
@@ -183,19 +184,23 @@ function getPisiNodePropertyTypeLabel(type) {
 }
 
 async function getPisiNodePropertiesSnapshot(nodePath) {
-    const [documentResult, index] = await Promise.all([
+    const [documentResult, propertyContext] = await Promise.all([
         window.pisiProject?.getPisiDocument?.(nodePath),
-        ensurePisiSearchIndex().catch(() => null)
+        getPisiNodePropertyMapContext(nodePath)
     ]);
     if (!documentResult?.ok) {
         throw new Error(documentResult?.error || 'Node okunamadı.');
     }
 
     const targetKey = pisiNodePropertiesPathKey(nodePath);
-    const indexedDocuments = index?.documents instanceof Map
-        ? Array.from(index.documents.values())
-        : [];
-    const indexedRecord = indexedDocuments.find((item) => {
+    const mapDocuments = (propertyContext.nodes || []).map((item) => ({
+        ...item,
+        path: item.fullPath,
+        title: item.metadata?.title ||
+            String(item.fileName || '').replace(/\.node$/i, '') ||
+            item.fullPath
+    }));
+    const indexedRecord = mapDocuments.find((item) => {
         return pisiNodePropertiesPathKey(item?.path) === targetKey;
     });
     const currentRecord = {
@@ -206,13 +211,13 @@ async function getPisiNodePropertiesSnapshot(nodePath) {
         properties: documentResult.data?.properties || {}
     };
     const databaseDocuments = indexedRecord
-        ? indexedDocuments.map((item) => (
+        ? mapDocuments.map((item) => (
             pisiNodePropertiesPathKey(item?.path) === targetKey
                 ? currentRecord
                 : item
         ))
-        : [...indexedDocuments, currentRecord];
-    const materialized = indexedDocuments.length
+        : [...mapDocuments, currentRecord];
+    const materialized = databaseDocuments.length
         ? materializePisiDatabaseDocuments(databaseDocuments)
             .find((item) => pisiNodePropertiesPathKey(item?.path) === targetKey)
         : null;
@@ -224,6 +229,37 @@ async function getPisiNodePropertiesSnapshot(nodePath) {
             materialized?.properties || currentRecord.properties
         )
     };
+}
+
+async function addPisiToolbarRollup(editorTarget) {
+    let record = resolvePisiNodePropertiesDrawer(editorTarget);
+    if (!record) {
+        const activeSource = window.activeModalNode
+            ? 'modal'
+            : (window.activeCenterNode ? 'center' : null);
+        record = Array.from(pisiNodePropertiesUiState.drawers.values())
+            .find((item) => item.source === activeSource) || null;
+    }
+    if (!record || !getPisiSearchCurrentNodePath()) return false;
+
+    closePisiNodePropertiesDrawers(record);
+    if (!record.open) {
+        setPisiNodePropertiesDrawerOpen(record, true);
+        const rendered = await renderPisiNodePropertiesDrawer(record);
+        if (!rendered) return false;
+    }
+    const rows = record.drawer.querySelector('.pisi-property-rows');
+    if (!rows) return false;
+    appendPisiPropertyRow(rows, {
+        type: 'rollup',
+        value: {
+            relationProperty: '',
+            targetProperty: '',
+            aggregate: 'count',
+            separator: ', '
+        }
+    });
+    return true;
 }
 
 async function renderPisiNodePropertiesInfo() {
@@ -383,11 +419,16 @@ function initializePisiNodePropertiesUi() {
         }
     });
 
+    document.addEventListener('pisi:property-rollup-request', (event) => {
+        void addPisiToolbarRollup(event.detail?.editorTarget || null);
+    });
+
     syncPisiNodePropertiesTab();
 }
 
 const moduleApi = {
     pisiNodePropertiesUiState,
+    addPisiToolbarRollup,
     installPisiNodePropertyDrawers,
     togglePisiNodePropertiesDrawer,
     renderPisiNodePropertiesInfo,
@@ -406,6 +447,7 @@ if (document.readyState === 'loading') {
 }
 
 export {
+    addPisiToolbarRollup,
     initializePisiNodePropertiesUi,
     installPisiNodePropertyDrawers,
     pisiNodePropertiesUiState,

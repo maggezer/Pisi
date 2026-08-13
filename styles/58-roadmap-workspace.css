@@ -236,8 +236,10 @@
 }
 
 .pisi-property-row {
+    position: relative;
     display: grid;
     grid-template-columns: minmax(140px, 1fr) 150px minmax(180px, 2fr) 34px;
+    align-items: start;
     gap: 7px;
 }
 
@@ -250,10 +252,236 @@
     background: rgb(0 0 0 / 16%);
     border: 1px solid rgb(255 255 255 / 12%);
     border-radius: 7px;
+    color-scheme: dark;
+}
+
+.pisi-property-row select {
+    appearance: none;
+    padding-right: 30px;
+    background-image: url("../assets/properties/chevron-down.svg");
+    background-repeat: no-repeat;
+    background-position: right 9px center;
+    background-size: 12px 12px;
+    cursor: pointer;
+}
+
+.pisi-property-name-control {
+    position: relative;
+    min-width: 0;
+}
+
+.pisi-property-name-control .pisi-property-name {
+    padding-right: 31px;
+}
+
+.pisi-property-name-toggle {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    color: #ffc15a;
+    background: transparent;
+    border: 0;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.pisi-property-name-toggle::before {
+    content: "";
+    position: absolute;
+    top: 7px;
+    left: 7px;
+    width: 7px;
+    height: 7px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg);
+}
+
+.pisi-property-name-toggle:hover:not(:disabled),
+.pisi-property-name-toggle:focus-visible {
+    background: rgb(243 156 18 / 16%);
+    outline: 1px solid rgb(243 156 18 / 45%);
+}
+
+.pisi-property-name-toggle:disabled {
+    opacity: 0.28;
+    cursor: default;
+}
+
+.pisi-property-suggestions {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 45;
+    min-width: 100%;
+    max-height: 190px;
+    padding: 5px;
+    overflow: auto;
+    color: #f1f3f5;
+    background: #25272c;
+    border: 1px solid #5a5e67;
+    border-radius: 8px;
+    box-shadow: 0 12px 28px rgb(0 0 0 / 38%);
+}
+
+.pisi-property-suggestions[hidden] {
+    display: none;
+}
+
+.pisi-property-suggestion {
+    width: 100%;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 8px;
+    color: inherit;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.pisi-property-suggestion:hover,
+.pisi-property-suggestion:focus-visible {
+    background: rgb(243 156 18 / 16%);
+    outline: none;
+}
+
+.pisi-property-suggestion > strong {
+    overflow: hidden;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pisi-property-suggestion > span {
+    flex: 0 0 auto;
+    color: #c8cbd1;
+    font-size: 10px;
 }
 
 .pisi-property-value-host {
     min-width: 0;
+}
+
+.pisi-property-value-host > input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    min-height: 0;
+    margin: 8px;
+    padding: 0;
+    accent-color: #f39c12;
+}
+
+.pisi-property-node-picker {
+    position: relative;
+    min-width: 0;
+    color-scheme: dark;
+}
+
+.pisi-property-node-picker > summary {
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    padding: 6px 32px 6px 9px;
+    overflow: hidden;
+    color: inherit;
+    background: rgb(0 0 0 / 16%);
+    border: 1px solid rgb(255 255 255 / 16%);
+    border-radius: 7px;
+    cursor: pointer;
+    list-style: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pisi-property-node-picker > summary::-webkit-details-marker {
+    display: none;
+}
+
+.pisi-property-node-picker > summary::after {
+    content: "";
+    position: absolute;
+    top: 11px;
+    right: 11px;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid #ffc15a;
+    border-bottom: 2px solid #ffc15a;
+    transform: rotate(45deg);
+    transition: transform 120ms ease;
+}
+
+.pisi-property-node-picker[open] > summary {
+    border-color: #f39c12;
+    box-shadow: 0 0 0 1px rgb(243 156 18 / 18%);
+}
+
+.pisi-property-node-picker[open] > summary::after {
+    transform: translateY(4px) rotate(225deg);
+}
+
+.pisi-property-node-picker-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    left: 0;
+    z-index: 44;
+    max-height: 210px;
+    padding: 5px;
+    overflow: auto;
+    color: #f1f3f5;
+    background: #25272c;
+    border: 1px solid #5a5e67;
+    border-radius: 8px;
+    box-shadow: 0 12px 28px rgb(0 0 0 / 38%);
+}
+
+.pisi-property-node-picker-option {
+    min-height: 31px;
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    align-items: center;
+    gap: 7px;
+    padding: 5px 7px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.pisi-property-node-picker-option:hover {
+    background: rgb(243 156 18 / 14%);
+}
+
+.pisi-property-node-picker-option input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    accent-color: #f39c12;
+}
+
+.pisi-property-node-picker-option > span {
+    overflow: hidden;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pisi-property-node-picker-option[data-legacy="true"] > span {
+    color: #f5be74;
+}
+
+.pisi-property-node-picker-empty {
+    padding: 8px;
+    color: #c8cbd1;
+    font-size: 11px;
 }
 
 .pisi-property-remove {
@@ -265,10 +493,59 @@
 }
 
 .pisi-property-actions {
+    min-height: 34px;
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
+}
+
+.pisi-property-icon-button {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    color: #ffc15a;
+    background: linear-gradient(180deg, #393b41 0%, #292b30 100%);
+    border: 1px solid #565a63;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 120ms ease, background 120ms ease, transform 80ms ease;
+}
+
+.pisi-property-icon-button:hover:not(:disabled),
+.pisi-property-icon-button:focus-visible {
+    background: linear-gradient(180deg, #493b29 0%, #342d24 100%);
+    border-color: #f39c12;
+    outline: none;
+}
+
+.pisi-property-icon-button:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+.pisi-property-icon-button:disabled {
+    opacity: 0.45;
+    cursor: wait;
+}
+
+.pisi-property-action-icon {
+    width: 19px;
+    height: 19px;
+    display: block;
+    background: currentColor;
+    mask-position: center;
+    mask-repeat: no-repeat;
+    mask-size: contain;
+}
+
+.pisi-property-action-icon-add {
+    mask-image: url("../assets/properties/add.svg");
+}
+
+.pisi-property-action-icon-save {
+    mask-image: url("../assets/properties/save.svg");
 }
 
 .pisi-bases h2,

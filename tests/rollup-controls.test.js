@@ -8,23 +8,18 @@ const test = require('node:test');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('Properties sayfası Relation ve Rollup için doğrudan ekleme butonları sunar', () => {
+test('Relation ve Rollup ekleme metin butonları kaldırılır; Rollup ana toolbar üzerinden eklenir', () => {
     const structured = read('renderer/data/pisi-structured-views.mjs');
+    const toolbar = read('renderer/editor/pisi-editor-unified-toolbar.mjs');
+    const propertiesUi = read('renderer/data/pisi-node-properties-ui.mjs');
 
-    assert.match(structured, /makePisiStructuredButton\(\s*'Relation ekle'/);
-    assert.match(structured, /makePisiStructuredButton\(\s*'Rollup ekle'/);
-    assert.match(
-        structured,
-        /addRollup\.addEventListener\('click',[\s\S]*type: 'rollup'[\s\S]*aggregate: 'count'/
-    );
-    assert.match(
-        structured,
-        /controls\.append\(add, addRelation, addRollup, save, status\)/
-    );
-    assert.match(
-        structured,
-        /section\.append\(subtitle, controls, rows, templateControls\)/
-    );
+    assert.doesNotMatch(structured, /makePisiStructuredButton\(\s*'Relation ekle'/);
+    assert.doesNotMatch(structured, /makePisiStructuredButton\(\s*'Rollup ekle'/);
+    assert.match(toolbar, /data-pisi-table-trigger[\s\S]*data-pisi-rollup-trigger/);
+    assert.match(toolbar, /pisi:property-rollup-request/);
+    assert.match(propertiesUi, /appendPisiPropertyRow\(rows,[\s\S]*type: 'rollup'/);
+    assert.match(structured, /controls\.append\(add, save, status\)/);
+    assert.match(structured, /section\.append\(controls, rows, templateControls\)/);
 });
 
 test('Rollup ayarları açık etiket ve açıklamalarla gösterilir', () => {
@@ -42,7 +37,7 @@ test('Rollup ayarları açık etiket ve açıklamalarla gösterilir', () => {
     }
     assert.match(styles, /\.pisi-rollup-field/);
     assert.match(styles, /\.pisi-rollup-help/);
-    assert.match(styles, /\.pisi-rollup-add/);
+    assert.match(styles, /\.pisi-rollup-field/);
 });
 
 test('Rollup kontrollerinin Türkçe ve İngilizce metinleri eşleşir', () => {

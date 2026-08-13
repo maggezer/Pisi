@@ -20,10 +20,10 @@
 }
 
 .pisi-unified-toolbar {
-    min-width: 870px;
+    min-width: 898px;
     min-height: 98px;
     display: grid;
-    grid-template-columns: 250px 118px 104px 76px 236px;
+    grid-template-columns: 250px 118px 104px 104px 236px;
     align-items: stretch;
     gap: 6px;
     padding: 4px 8px 1px;
@@ -239,8 +239,38 @@
 }
 
 .pisi-toolbar-section-excel {
+    flex-direction: row;
     align-items: center;
     justify-content: center;
+    gap: 6px;
+    padding-right: 6px;
+}
+
+.pisi-toolbar-data-btn {
+    width: 42px;
+    height: 38px;
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    align-items: center;
+    gap: 2px;
+    padding: 4px 5px;
+}
+
+.pisi-toolbar-data-btn.pisi-ribbon-dropdown {
+    padding-right: 11px;
+}
+
+.pisi-toolbar-data-btn .pisi-toolbar-icon {
+    width: 17px;
+    height: 17px;
+}
+
+.pisi-toolbar-data-btn span {
+    overflow: hidden;
+    color: #b9bbc0;
+    font-size: 7px;
+    font-weight: 700;
+    text-overflow: clip;
 }
 
 .pisi-ribbon-btn-large,

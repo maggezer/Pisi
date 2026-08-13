@@ -528,7 +528,8 @@ html[data-pisi-theme="light"] .pisi-ribbon-btn[aria-pressed="true"] {
     background: linear-gradient(180deg, #ffedc9 0%, #f5d696 100%);
 }
 
-html[data-pisi-theme="light"] .pisi-formula-btn span {
+html[data-pisi-theme="light"] .pisi-formula-btn span,
+html[data-pisi-theme="light"] .pisi-toolbar-data-btn span {
     color: var(--pisi-theme-muted);
 }
 
@@ -581,6 +582,10 @@ html[data-pisi-theme="light"] .pisi-saved-view-controls select {
     background: #ffffff;
     border-color: var(--pisi-theme-border-strong);
     color-scheme: light;
+}
+
+html[data-pisi-theme="light"] .pisi-property-row select {
+    background-image: url("../assets/properties/light/chevron-down.svg");
 }
 
 html[data-pisi-theme="light"] .pisi-base-table th,

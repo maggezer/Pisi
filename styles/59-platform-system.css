@@ -382,15 +382,6 @@
     line-height: 1.4;
 }
 
-.pisi-relation-add {
-    border-color: color-mix(in srgb, #5dade2 58%, transparent);
-}
-
-.pisi-rollup-add {
-    border-color: color-mix(in srgb, var(--pisi-theme-accent, #f39c12) 68%, transparent);
-    background: color-mix(in srgb, var(--pisi-theme-accent, #f39c12) 10%, transparent);
-}
-
 .pisi-node-toolbar-frame {
     position: relative;
     min-width: 0;

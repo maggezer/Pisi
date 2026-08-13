@@ -446,6 +446,7 @@ function getPisiSearchNodeItem(result) {
         name: fileName,
         fileName,
         fullPath: result.nodePath,
+        mapPath: result.mapPath || null,
         type: 'file',
         isFile: true,
         isDirectory: false,
