@@ -1,5 +1,5 @@
 .pisi-editor-toolbar {
-    min-height: 104px;
+    min-height: 102px;
     display: block;
     padding: 0;
     overflow-x: auto;
@@ -21,12 +21,12 @@
 
 .pisi-unified-toolbar {
     min-width: 870px;
-    min-height: 100px;
+    min-height: 98px;
     display: grid;
     grid-template-columns: 250px 118px 104px 76px 236px;
     align-items: stretch;
     gap: 6px;
-    padding: 4px 8px 2px;
+    padding: 4px 8px 1px;
     background: linear-gradient(180deg, #26272a 0%, #202124 100%);
 }
 
@@ -36,7 +36,7 @@
     flex-direction: column;
     justify-content: flex-start;
     gap: 4px;
-    padding: 4px 10px 2px 6px;
+    padding: 4px 10px 1px 6px;
     border: 0;
     border-right: 1px solid #3a3b40;
     border-radius: 0;
