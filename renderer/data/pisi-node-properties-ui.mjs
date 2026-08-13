@@ -269,6 +269,17 @@ async function getPisiNodePropertiesSnapshot(nodePath) {
     };
 }
 
+function getPisiVisibleNodeProperties(snapshot = {}) {
+    return [
+        ...(snapshot.systemProperties || []),
+        ...(snapshot.properties || [])
+    ].filter((property) => {
+        return property.system !== true &&
+            property.type !== 'system' &&
+            property.type !== 'relation';
+    });
+}
+
 async function renderPisiNodePropertiesInfo() {
     const host = document.getElementById('pisi-node-properties-info');
     if (!host) return false;
@@ -306,9 +317,18 @@ async function renderPisiNodePropertiesInfo() {
         badge.textContent = pisiNodePropertiesTranslate('Salt okunur');
         header.append(title, badge);
 
+        const visibleProperties = getPisiVisibleNodeProperties(snapshot);
+        if (!visibleProperties.length) {
+            host.replaceChildren(
+                header,
+                makePisiNodePropertiesEmpty('Bu node için özellik tanımlanmamış.')
+            );
+            return true;
+        }
+
         const list = document.createElement('div');
         list.className = 'pisi-properties-info-list';
-        for (const property of [...snapshot.systemProperties, ...snapshot.properties]) {
+        for (const property of visibleProperties) {
             const row = document.createElement('div');
             row.className = 'pisi-properties-info-row';
             row.dataset.system = property.system === true ? 'true' : 'false';
