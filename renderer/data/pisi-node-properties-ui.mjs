@@ -6,7 +6,6 @@ import {
     normalizePisiPropertyCollection
 } from "./pisi-properties-core.mjs";
 import {
-    appendPisiPropertyRow,
     getPisiNodePropertyMapContext,
     renderPisiNodeProperties
 } from "./pisi-structured-views.mjs";
@@ -270,37 +269,6 @@ async function getPisiNodePropertiesSnapshot(nodePath) {
     };
 }
 
-async function addPisiToolbarRollup(editorTarget) {
-    let record = resolvePisiNodePropertiesDrawer(editorTarget);
-    if (!record) {
-        const activeSource = window.activeModalNode
-            ? 'modal'
-            : (window.activeCenterNode ? 'center' : null);
-        record = Array.from(pisiNodePropertiesUiState.drawers.values())
-            .find((item) => item.source === activeSource) || null;
-    }
-    if (!record || !getPisiSearchCurrentNodePath()) return false;
-
-    closePisiNodePropertiesDrawers(record);
-    if (!record.open) {
-        setPisiNodePropertiesDrawerOpen(record, true);
-        const rendered = await renderPisiNodePropertiesDrawer(record);
-        if (!rendered) return false;
-    }
-    const rows = record.drawer.querySelector('.pisi-property-rows');
-    if (!rows) return false;
-    appendPisiPropertyRow(rows, {
-        type: 'rollup',
-        value: {
-            relationProperty: '',
-            targetProperty: '',
-            aggregate: 'count',
-            separator: ', '
-        }
-    });
-    return true;
-}
-
 async function renderPisiNodePropertiesInfo() {
     const host = document.getElementById('pisi-node-properties-info');
     if (!host) return false;
@@ -451,16 +419,11 @@ function initializePisiNodePropertiesUi() {
         }
     });
 
-    document.addEventListener('pisi:property-rollup-request', (event) => {
-        void addPisiToolbarRollup(event.detail?.editorTarget || null);
-    });
-
     syncPisiNodePropertiesTab();
 }
 
 const moduleApi = {
     pisiNodePropertiesUiState,
-    addPisiToolbarRollup,
     installPisiNodePropertyDrawers,
     togglePisiNodePropertiesDrawer,
     renderPisiNodePropertiesInfo,
@@ -479,7 +442,6 @@ if (document.readyState === 'loading') {
 }
 
 export {
-    addPisiToolbarRollup,
     initializePisiNodePropertiesUi,
     installPisiNodePropertyDrawers,
     pisiNodePropertiesUiState,

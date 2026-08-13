@@ -10,11 +10,12 @@ const PISI_BLOCK_TYPES = Object.freeze([
     Object.freeze({ id: 'code', label: 'Kod', tag: 'pre' }),
     Object.freeze({ id: 'bullet', label: 'Madde işareti', tag: 'div' }),
     Object.freeze({ id: 'number', label: 'Numaralı madde', tag: 'div' }),
-    Object.freeze({ id: 'task', label: 'Görev bloğu', tag: 'div' })
+    Object.freeze({ id: 'task', label: 'Görev bloğu', tag: 'div' }),
+    Object.freeze({ id: 'rollup', label: 'Rollup bloğu', tag: 'div' })
 ]);
 
 const PISI_BLOCK_SLASH_COMMANDS = Object.freeze([
-    ...PISI_BLOCK_TYPES.map((record) => Object.freeze({
+    ...PISI_BLOCK_TYPES.filter((record) => record.id !== 'rollup').map((record) => Object.freeze({
         ...record,
         slash: record.id === 'task' ? 'todo' : record.id,
         action: record.id === 'task' ? 'todo' : 'block'
@@ -76,6 +77,28 @@ function makePisiBlockHtml(type, content) {
     return `<${record.tag} class="pisi-editor-block" data-pisi-block-id="${blockId}" data-pisi-block-type="${record.id}">${content || '<br>'}</${record.tag}>`;
 }
 
+function encodePisiRollupMarkdownValue(value = '') {
+    return encodeURIComponent(String(value || ''));
+}
+
+function decodePisiRollupMarkdownValue(value = '') {
+    try {
+        return decodeURIComponent(String(value || ''));
+    } catch (_error) {
+        return '';
+    }
+}
+
+function makePisiRollupBlockHtml(config = {}) {
+    const blockId = window.makePisiBlockId?.() || `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    const relation = escapePisiBlockHtml(config.relationProperty || '');
+    const target = escapePisiBlockHtml(config.targetProperty || '');
+    const aggregate = /^(?:count|sum|average|min|max|unique|join)$/.test(config.aggregate)
+        ? config.aggregate
+        : 'count';
+    return `<div class="pisi-editor-block pisi-rollup-block" data-pisi-block-id="${blockId}" data-pisi-block-type="rollup" data-pisi-rollup-relation="${relation}" data-pisi-rollup-target="${target}" data-pisi-rollup-aggregate="${aggregate}" contenteditable="false"><div class="pisi-rollup-block-loading">Rollup</div></div>`;
+}
+
 function pisiBlockMarkdownToHtml(markdown = '') {
     const lines = String(markdown || '').replace(/\r\n?/g, '\n').split('\n');
     const output = [];
@@ -94,12 +117,19 @@ function pisiBlockMarkdownToHtml(markdown = '') {
             codeLines.push(rawLine);
             continue;
         }
+        const rollup = rawLine.match(/^\{\{pisi-rollup:([^:]*):([^:]*):(count|sum|average|min|max|unique|join)\}\}$/);
         const heading = rawLine.match(/^(#{1,3})\s+(.+)$/);
         const task = rawLine.match(/^[-*]\s+\[([ xX])\]\s*(.*)$/);
         const bullet = rawLine.match(/^[-*+]\s+(.+)$/);
         const number = rawLine.match(/^\d+[.)]\s+(.+)$/);
         const quote = rawLine.match(/^>\s?(.*)$/);
-        if (heading) {
+        if (rollup) {
+            output.push(makePisiRollupBlockHtml({
+                relationProperty: decodePisiRollupMarkdownValue(rollup[1]),
+                targetProperty: decodePisiRollupMarkdownValue(rollup[2]),
+                aggregate: rollup[3]
+            }));
+        } else if (heading) {
             output.push(makePisiBlockHtml(`heading${heading[1].length}`, pisiInlineMarkdownToHtml(heading[2])));
         } else if (task) {
             const checked = task[1].toLowerCase() === 'x';
@@ -163,6 +193,18 @@ function pisiBlockHtmlToMarkdown(editor) {
     });
     return blocks.map((block, index) => {
         const type = getPisiBlockType(block);
+        if (type === 'rollup') {
+            const relation = encodePisiRollupMarkdownValue(
+                block.dataset.pisiRollupRelation || ''
+            );
+            const target = encodePisiRollupMarkdownValue(
+                block.dataset.pisiRollupTarget || ''
+            );
+            const aggregate = /^(?:count|sum|average|min|max|unique|join)$/.test(
+                block.dataset.pisiRollupAggregate
+            ) ? block.dataset.pisiRollupAggregate : 'count';
+            return `{{pisi-rollup:${relation}:${target}:${aggregate}}}`;
+        }
         const text = pisiInlineHtmlToMarkdown(block);
         if (type.startsWith('heading')) return `${'#'.repeat(Number(type.slice(-1)))} ${text}`;
         if (type === 'quote') return `> ${text}`;
@@ -673,6 +715,7 @@ const moduleApi = {
     duplicatePisiBlock,
     deletePisiBlock,
     copyPisiBlockReference,
+    selectPisiBlock,
     bindPisiBlocksEditor,
     openPisiMarkdownSource,
     closePisiMarkdownSource,
@@ -702,6 +745,6 @@ export {
     openPisiMarkdownSource,
     pisiBlocksEditorState,
     pisiBlockHtmlToMarkdown,
-    pisiBlockMarkdownToHtml
+    pisiBlockMarkdownToHtml,
+    selectPisiBlock
 };
-

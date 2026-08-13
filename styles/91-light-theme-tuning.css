@@ -85,6 +85,82 @@ html[data-pisi-theme="light"] body .pisi-properties-info-row[data-system="true"]
     border-color: #e7c992;
 }
 
+html[data-pisi-theme="light"] body .pisi-block-system > .pisi-rollup-block {
+    color: #26303d;
+    background:
+        radial-gradient(circle at 92% 12%, rgb(216 132 0 / 12%), transparent 35%),
+        linear-gradient(145deg, #fff 0%, #f4f6f8 100%);
+    border-color: #c7cdd5;
+    box-shadow: 0 7px 18px rgb(31 38 48 / 9%);
+}
+
+html[data-pisi-theme="light"] body .pisi-block-system > .pisi-rollup-block.pisi-block-active,
+html[data-pisi-theme="light"] body .pisi-block-system > .pisi-rollup-block:focus-visible {
+    background:
+        radial-gradient(circle at 92% 12%, rgb(216 132 0 / 17%), transparent 37%),
+        linear-gradient(145deg, #fff 0%, #f7f2e9 100%);
+    border-color: #d38a15;
+}
+
+html[data-pisi-theme="light"] body .pisi-rollup-block-header,
+html[data-pisi-theme="light"] body .pisi-rollup-block-value {
+    color: #202a36;
+}
+
+html[data-pisi-theme="light"] body .pisi-rollup-block-detail,
+html[data-pisi-theme="light"] body .pisi-rollup-block-loading,
+html[data-pisi-theme="light"] body .pisi-rollup-block-empty {
+    color: #65707d;
+}
+
+html[data-pisi-theme="light"] body .pisi-rollup-block-badge {
+    color: #8a5000;
+    background: #fff2d9;
+    border-color: #e6c17d;
+}
+
+html[data-pisi-theme="light"] body .pisi-rollup-block-dialog {
+    color: #26303d;
+    background: linear-gradient(160deg, #fff 0%, #eef1f4 100%);
+    border-color: #b9c0c8;
+    box-shadow: 0 24px 70px rgb(31 38 48 / 26%);
+}
+
+html[data-pisi-theme="light"] body .pisi-rollup-block-dialog > header {
+    background: #f5f6f7;
+    border-color: #d2d7dd;
+}
+
+html[data-pisi-theme="light"] body .pisi-rollup-block-dialog > header strong {
+    color: #222c38;
+}
+
+html[data-pisi-theme="light"] body .pisi-rollup-block-dialog-close {
+    color: #626c78;
+}
+
+html[data-pisi-theme="light"] body .pisi-rollup-block-dialog-close:hover,
+html[data-pisi-theme="light"] body .pisi-rollup-block-dialog-close:focus-visible {
+    color: #202a36;
+    background: #e1e5e9;
+}
+
+html[data-pisi-theme="light"] body .pisi-rollup-block-editor-field > span,
+html[data-pisi-theme="light"] body .pisi-rollup-block-dialog-loading {
+    color: #56616e;
+}
+
+html[data-pisi-theme="light"] body .pisi-rollup-block-editor-field > select {
+    color: #202a36;
+    background-color: #fff;
+    border-color: #adb5bf;
+    color-scheme: light;
+}
+
+html[data-pisi-theme="light"] body .pisi-rollup-block-editor-status {
+    color: #8a5000;
+}
+
 html[data-pisi-theme="light"] body .pisi-properties-readonly-badge {
     color: #8a5100;
     background: #fff1d7;

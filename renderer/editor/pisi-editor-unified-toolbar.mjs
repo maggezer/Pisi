@@ -278,7 +278,7 @@ function bindPisiUnifiedToolbarEvents(toolbar) {
 
         const rollupTrigger = event.target.closest('[data-pisi-rollup-trigger]');
         if (rollupTrigger) {
-            document.dispatchEvent(new CustomEvent('pisi:property-rollup-request', {
+            document.dispatchEvent(new CustomEvent('pisi:rollup-block-request', {
                 detail: {
                     editorTarget: toolbar.dataset.editorTarget || null
                 }

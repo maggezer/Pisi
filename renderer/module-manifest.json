@@ -646,11 +646,22 @@
     ]
   },
   {
+    "module": "data.rollupBlocks",
+    "path": "renderer/data/pisi-rollup-blocks.mjs",
+    "bindings": [
+      "pisiRollupBlockState",
+      "hydratePisiRollupBlocks",
+      "insertPisiRollupBlock",
+      "openPisiRollupDialog",
+      "renderPisiRollupBlock",
+      "initializePisiRollupBlocks"
+    ]
+  },
+  {
     "module": "data.nodePropertiesUi",
     "path": "renderer/data/pisi-node-properties-ui.mjs",
     "bindings": [
       "pisiNodePropertiesUiState",
-      "addPisiToolbarRollup",
       "installPisiNodePropertyDrawers",
       "togglePisiNodePropertiesDrawer",
       "renderPisiNodePropertiesInfo",
@@ -839,6 +850,7 @@
       "duplicatePisiBlock",
       "deletePisiBlock",
       "copyPisiBlockReference",
+      "selectPisiBlock",
       "bindPisiBlocksEditor",
       "openPisiMarkdownSource",
       "closePisiMarkdownSource",

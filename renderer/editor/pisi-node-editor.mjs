@@ -54,7 +54,10 @@ function sanitizePisiEditorHtml(html = '') {
         'data-pisi-citation-source',
         'data-pisi-citation-key',
         'data-pisi-block-ref',
-        'data-pisi-node-title'
+        'data-pisi-node-title',
+        'data-pisi-rollup-relation',
+        'data-pisi-rollup-target',
+        'data-pisi-rollup-aggregate'
     ]);
     const allowedStyleProperties = new Set([
         'background-color',
@@ -156,6 +159,14 @@ function sanitizePisiEditorHtml(html = '') {
                     'data-row',
                     'data-col'
                 ].includes(name);
+            }
+
+            if (['data-pisi-rollup-relation', 'data-pisi-rollup-target'].includes(name)) {
+                allowed = allowed && value.length <= 160 && !/[\u0000-\u001f\u007f]/.test(value);
+            }
+
+            if (name === 'data-pisi-rollup-aggregate') {
+                allowed = /^(?:count|sum|average|min|max|unique|join)$/.test(value);
             }
 
             if (!allowed || name.startsWith('on')) {
