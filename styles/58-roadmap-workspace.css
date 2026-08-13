@@ -492,24 +492,29 @@
     cursor: pointer;
 }
 
-.pisi-property-actions {
-    min-height: 34px;
+.pisi-property-footer {
+    min-height: 29px;
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     flex-wrap: wrap;
     gap: 6px;
 }
 
+.pisi-property-footer > .pisi-command-inline-status {
+    margin-right: auto;
+}
+
 .pisi-property-icon-button {
-    width: 34px;
-    height: 34px;
+    width: 29px;
+    height: 29px;
     display: grid;
     place-items: center;
     padding: 0;
     color: #ffc15a;
     background: linear-gradient(180deg, #393b41 0%, #292b30 100%);
     border: 1px solid #565a63;
-    border-radius: 8px;
+    border-radius: 7px;
     cursor: pointer;
     transition: border-color 120ms ease, background 120ms ease, transform 80ms ease;
 }
@@ -531,8 +536,8 @@
 }
 
 .pisi-property-action-icon {
-    width: 19px;
-    height: 19px;
+    width: 16px;
+    height: 16px;
     display: block;
     background: currentColor;
     mask-position: center;
@@ -546,6 +551,116 @@
 
 .pisi-property-action-icon-save {
     mask-image: url("../assets/properties/save.svg");
+}
+
+.pisi-property-template-picker {
+    position: relative;
+}
+
+.pisi-property-template-trigger {
+    min-height: 29px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4px 9px 4px 8px;
+    color: #e8d2ac;
+    background: linear-gradient(180deg, #34363c 0%, #292b30 100%);
+    border: 1px solid #535761;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 680;
+}
+
+.pisi-property-template-trigger:hover:not(:disabled),
+.pisi-property-template-trigger:focus-visible,
+.pisi-property-template-trigger[aria-expanded="true"] {
+    color: #ffc766;
+    background: linear-gradient(180deg, #493b29 0%, #342d24 100%);
+    border-color: #f39c12;
+    outline: none;
+}
+
+.pisi-property-template-trigger:disabled {
+    opacity: 0.48;
+    cursor: not-allowed;
+}
+
+.pisi-property-template-icon {
+    width: 15px;
+    height: 15px;
+    flex: 0 0 15px;
+    background: currentColor;
+    mask: url("../assets/properties/template.svg") center / contain no-repeat;
+}
+
+.pisi-property-template-chevron {
+    width: 6px;
+    height: 6px;
+    margin: 0 1px 3px 3px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(45deg);
+}
+
+.pisi-property-template-menu {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 7px);
+    z-index: 12;
+    width: max-content;
+    min-width: 220px;
+    max-width: min(320px, 70vw);
+    max-height: 220px;
+    display: grid;
+    gap: 3px;
+    padding: 5px;
+    overflow: auto;
+    color: #edf0f5;
+    background: #222429;
+    border: 1px solid #555a64;
+    border-radius: 9px;
+    box-shadow: 0 14px 30px rgb(0 0 0 / 38%);
+}
+
+.pisi-property-template-menu[hidden] {
+    display: none;
+}
+
+.pisi-property-template-option {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 7px 9px;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: left;
+}
+
+.pisi-property-template-option:hover,
+.pisi-property-template-option:focus-visible {
+    background: rgb(243 156 18 / 16%);
+    outline: none;
+}
+
+.pisi-property-template-option > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pisi-property-template-option > small {
+    min-width: 22px;
+    padding: 2px 5px;
+    color: #ffc766;
+    background: rgb(243 156 18 / 13%);
+    border-radius: 999px;
+    text-align: center;
 }
 
 .pisi-bases h2,
@@ -658,6 +773,201 @@
 
 .pisi-base-card div span {
     color: color-mix(in srgb, currentColor 62%, transparent);
+}
+
+.pisi-property-templates-page {
+    display: grid;
+    gap: 16px;
+}
+
+.pisi-property-templates-heading h2,
+.pisi-property-template-section h3 {
+    margin: 0;
+}
+
+.pisi-property-templates-heading p,
+.pisi-property-template-section > header p {
+    margin: 5px 0 0;
+    color: color-mix(in srgb, currentColor 62%, transparent);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.pisi-property-template-section {
+    display: grid;
+    gap: 14px;
+    padding: 16px;
+    background: rgb(255 255 255 / 3%);
+    border: 1px solid rgb(255 255 255 / 9%);
+    border-radius: 12px;
+}
+
+.pisi-property-template-workspace {
+    display: grid;
+    grid-template-columns: minmax(280px, 0.78fr) minmax(340px, 1.22fr);
+    align-items: start;
+    gap: 14px;
+}
+
+.pisi-property-template-form {
+    display: grid;
+    gap: 10px;
+    padding: 13px;
+    background: rgb(0 0 0 / 13%);
+    border: 1px solid rgb(255 255 255 / 9%);
+    border-radius: 10px;
+}
+
+.pisi-property-template-field {
+    display: grid;
+    gap: 5px;
+    color: color-mix(in srgb, currentColor 72%, transparent);
+    font-size: 11px;
+    font-weight: 680;
+}
+
+.pisi-property-template-field input,
+.pisi-property-template-field textarea {
+    width: 100%;
+    min-height: 36px;
+    padding: 7px 9px;
+    resize: vertical;
+    color: inherit;
+    background: rgb(0 0 0 / 17%);
+    border: 1px solid rgb(255 255 255 / 13%);
+    border-radius: 8px;
+    font: inherit;
+    font-weight: 450;
+}
+
+.pisi-property-template-field input:focus,
+.pisi-property-template-field textarea:focus {
+    border-color: var(--pisi-theme-accent, #f39c12);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--pisi-theme-accent, #f39c12) 16%, transparent);
+    outline: none;
+}
+
+.pisi-property-template-source {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 3px 8px;
+    padding: 9px 10px;
+    background: rgb(243 156 18 / 8%);
+    border: 1px solid rgb(243 156 18 / 19%);
+    border-radius: 8px;
+}
+
+.pisi-property-template-source > span {
+    grid-column: 1 / -1;
+    color: color-mix(in srgb, currentColor 58%, transparent);
+    font-size: 10px;
+}
+
+.pisi-property-template-source > strong {
+    overflow: hidden;
+    color: #ffd28a;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pisi-property-template-source > small {
+    color: color-mix(in srgb, currentColor 62%, transparent);
+    white-space: nowrap;
+}
+
+.pisi-property-template-create {
+    justify-self: end;
+}
+
+.pisi-property-template-status {
+    min-height: 16px;
+}
+
+.pisi-property-template-list {
+    min-height: 150px;
+    display: grid;
+    align-content: start;
+    gap: 8px;
+}
+
+.pisi-property-template-list[aria-busy="true"] {
+    opacity: 0.62;
+}
+
+.pisi-property-template-card {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 12px;
+    background: rgb(0 0 0 / 13%);
+    border: 1px solid rgb(255 255 255 / 9%);
+    border-radius: 9px;
+}
+
+.pisi-property-template-card-copy {
+    min-width: 0;
+    display: grid;
+    gap: 4px;
+}
+
+.pisi-property-template-card-copy > strong,
+.pisi-property-template-card-copy > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pisi-property-template-card-copy > strong {
+    color: #f1f3f7;
+    font-size: 12px;
+}
+
+.pisi-property-template-card-copy > span {
+    color: color-mix(in srgb, currentColor 57%, transparent);
+    font-size: 11px;
+}
+
+.pisi-property-template-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: color-mix(in srgb, currentColor 62%, transparent);
+    font-size: 10px;
+}
+
+.pisi-property-template-delete {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    color: #ffaaaa;
+    background: transparent;
+    border: 1px solid rgb(255 93 93 / 25%);
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.pisi-property-template-delete:hover:not(:disabled),
+.pisi-property-template-delete:focus-visible {
+    background: rgb(255 93 93 / 12%);
+    border-color: rgb(255 93 93 / 55%);
+    outline: none;
+}
+
+.pisi-property-template-empty {
+    min-height: 150px;
+    display: grid;
+    place-items: center;
+    padding: 18px;
+    color: color-mix(in srgb, currentColor 58%, transparent);
+    border: 1px dashed rgb(255 255 255 / 12%);
+    border-radius: 9px;
+    font-size: 12px;
+    text-align: center;
 }
 
 .pisi-map-reference-node {
@@ -1223,5 +1533,9 @@ html[data-pisi-theme="light"] .pisi-quick-add-error {
 
     .pisi-quick-add-actions .pisi-command-inline-status {
         grid-column: 1 / -1;
+    }
+
+    .pisi-property-template-workspace {
+        grid-template-columns: 1fr;
     }
 }

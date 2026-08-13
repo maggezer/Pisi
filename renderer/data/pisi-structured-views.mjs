@@ -566,6 +566,87 @@ function appendPisiPropertyRow(rows, property = {}, context = rows?.pisiProperty
     return row;
 }
 
+function makePisiPropertyTemplatePicker(templates, nodePath, status) {
+    const picker = document.createElement('div');
+    picker.className = 'pisi-property-template-picker';
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'pisi-property-template-trigger';
+    trigger.setAttribute('aria-haspopup', 'menu');
+    trigger.setAttribute('aria-expanded', 'false');
+    const icon = document.createElement('span');
+    icon.className = 'pisi-property-template-icon';
+    icon.setAttribute('aria-hidden', 'true');
+    const label = document.createElement('span');
+    label.textContent = pisiStructuredTranslate('Şablon seç');
+    const chevron = document.createElement('span');
+    chevron.className = 'pisi-property-template-chevron';
+    chevron.setAttribute('aria-hidden', 'true');
+    trigger.append(icon, label, chevron);
+
+    const menu = document.createElement('div');
+    menu.className = 'pisi-property-template-menu';
+    menu.setAttribute('role', 'menu');
+    menu.hidden = true;
+    for (const template of templates) {
+        const option = document.createElement('button');
+        option.type = 'button';
+        option.className = 'pisi-property-template-option';
+        option.setAttribute('role', 'menuitem');
+        const name = document.createElement('span');
+        name.textContent = template.name;
+        const count = document.createElement('small');
+        count.textContent = String(normalizePisiPropertyCollection(template.properties).length);
+        option.append(name, count);
+        option.addEventListener('click', async () => {
+            menu.hidden = true;
+            trigger.setAttribute('aria-expanded', 'false');
+            trigger.disabled = true;
+            status.textContent = pisiStructuredTranslate('Şablon uygulanıyor…');
+            const result = await window.pisiProject?.applyDatabaseTemplate?.(
+                nodePath,
+                template.id,
+                { replaceProperties: false, applyContent: false }
+            );
+            if (!result?.ok) {
+                status.textContent = result?.error || pisiStructuredTranslate('Şablon uygulanamadı.');
+                trigger.disabled = false;
+                return;
+            }
+            status.textContent = pisiStructuredTranslate('Şablon uygulandı.');
+            invalidatePisiSearchIndex('template');
+            dispatchPisiNodePropertiesChanged(nodePath, 'template-apply', {
+                refreshEditor: true
+            });
+        });
+        menu.appendChild(option);
+    }
+    trigger.disabled = templates.length === 0;
+    if (!templates.length) {
+        trigger.title = pisiStructuredTranslate('Kaydedilmiş property şablonu yok.');
+    }
+    trigger.addEventListener('click', () => {
+        menu.hidden = !menu.hidden;
+        trigger.setAttribute('aria-expanded', menu.hidden ? 'false' : 'true');
+        if (!menu.hidden) menu.querySelector('button')?.focus();
+    });
+    picker.addEventListener('focusout', () => {
+        setTimeout(() => {
+            if (picker.contains(document.activeElement)) return;
+            menu.hidden = true;
+            trigger.setAttribute('aria-expanded', 'false');
+        }, 0);
+    });
+    picker.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') return;
+        menu.hidden = true;
+        trigger.setAttribute('aria-expanded', 'false');
+        trigger.focus();
+    });
+    picker.append(trigger, menu);
+    return picker;
+}
+
 async function renderPisiNodeProperties(container) {
     const section = document.createElement('section');
     section.className = 'pisi-properties-editor';
@@ -579,9 +660,10 @@ async function renderPisiNodeProperties(container) {
         container.appendChild(section);
         return;
     }
-    const [documentResult, propertyContext] = await Promise.all([
+    const [documentResult, propertyContext, templateResult] = await Promise.all([
         window.pisiProject?.getPisiDocument?.(nodePath),
-        getPisiNodePropertyMapContext(nodePath)
+        getPisiNodePropertyMapContext(nodePath),
+        window.pisiProject?.listDatabaseTemplates?.(window.currentProjectFolder)
     ]);
     if (!documentResult?.ok) throw new Error(documentResult?.error || 'Node okunamadı.');
     const rows = document.createElement('div');
@@ -591,8 +673,8 @@ async function renderPisiNodeProperties(container) {
         .forEach((property) => {
             rows.appendChild(createPisiPropertyRow(property, propertyContext));
         });
-    const controls = document.createElement('div');
-    controls.className = 'pisi-property-actions';
+    const controls = document.createElement('footer');
+    controls.className = 'pisi-property-footer';
     const add = makePisiPropertyIconButton('Özellik ekle', 'add');
     add.addEventListener('click', () => appendPisiPropertyRow(rows));
     const save = makePisiPropertyIconButton('Özellikleri kaydet', 'save');
@@ -616,69 +698,10 @@ async function renderPisiNodeProperties(container) {
         save.disabled = false;
         dispatchPisiNodePropertiesChanged(nodePath, 'save', { properties });
     });
-    const templateControls = document.createElement('div');
-    templateControls.className = 'pisi-template-controls';
-    const templateResult = await window.pisiProject?.listDatabaseTemplates?.(
-        window.currentProjectFolder
-    );
     const templates = templateResult?.ok ? templateResult.templates : [];
-    const templateSelect = document.createElement('select');
-    const templateEmpty = document.createElement('option');
-    templateEmpty.value = '';
-    templateEmpty.textContent = pisiStructuredTranslate('Veritabanı şablonları');
-    templateSelect.appendChild(templateEmpty);
-    templates.forEach((template) => {
-        const option = document.createElement('option');
-        option.value = template.id;
-        option.textContent = template.name;
-        templateSelect.appendChild(option);
-    });
-    const saveTemplate = makePisiStructuredButton('Şablon olarak kaydet', 'pisi-secondary-button');
-    saveTemplate.addEventListener('click', async () => {
-        const name = prompt(pisiStructuredTranslate('Şablon adı'));
-        if (!name) return;
-        const result = await window.pisiProject?.saveDatabaseTemplate?.(
-            window.currentProjectFolder,
-            {
-                name,
-                nodeType: documentResult.data?.pisi?.nodeType || 'note',
-                properties: collectPisiPropertyRows(rows)
-            }
-        );
-        if (!result?.ok) return alert(result?.error || pisiStructuredTranslate('Şablon kaydedilemedi.'));
-        dispatchPisiNodePropertiesChanged(nodePath, 'template-save', {
-            refreshEditor: true
-        });
-    });
-    const applyTemplate = makePisiStructuredButton('Şablonu uygula', 'pisi-secondary-button');
-    applyTemplate.addEventListener('click', async () => {
-        if (!templateSelect.value) return;
-        const result = await window.pisiProject?.applyDatabaseTemplate?.(
-            nodePath,
-            templateSelect.value,
-            { replaceProperties: false, applyContent: false }
-        );
-        if (!result?.ok) return alert(result?.error || pisiStructuredTranslate('Şablon uygulanamadı.'));
-        invalidatePisiSearchIndex('template');
-        dispatchPisiNodePropertiesChanged(nodePath, 'template-apply', {
-            refreshEditor: true
-        });
-    });
-    const deleteTemplate = makePisiStructuredButton('Şablonu sil', 'pisi-secondary-button');
-    deleteTemplate.addEventListener('click', async () => {
-        if (!templateSelect.value) return;
-        const result = await window.pisiProject?.deleteDatabaseTemplate?.(
-            window.currentProjectFolder,
-            templateSelect.value
-        );
-        if (!result?.ok) return alert(result?.error || pisiStructuredTranslate('Şablon silinemedi.'));
-        dispatchPisiNodePropertiesChanged(nodePath, 'template-delete', {
-            refreshEditor: true
-        });
-    });
-    templateControls.append(templateSelect, saveTemplate, applyTemplate, deleteTemplate);
-    controls.append(add, save, status);
-    section.append(controls, rows, templateControls);
+    const templatePicker = makePisiPropertyTemplatePicker(templates, nodePath, status);
+    controls.append(status, templatePicker, add, save);
+    section.append(rows, controls);
     container.appendChild(section);
 }
 

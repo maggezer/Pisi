@@ -142,6 +142,61 @@ html[data-pisi-theme="light"] body .pisi-property-icon-button:focus-visible {
     border-color: #c97800;
 }
 
+html[data-pisi-theme="light"] body .pisi-property-template-trigger {
+    color: #704300;
+    background: linear-gradient(180deg, #ffffff 0%, #e3e7eb 100%);
+    border-color: #9da5af;
+}
+
+html[data-pisi-theme="light"] body .pisi-property-template-trigger:hover:not(:disabled),
+html[data-pisi-theme="light"] body .pisi-property-template-trigger:focus-visible,
+html[data-pisi-theme="light"] body .pisi-property-template-trigger[aria-expanded="true"] {
+    color: #6f4100;
+    background: linear-gradient(180deg, #fff9ef 0%, #f3dfba 100%);
+    border-color: #c97800;
+}
+
+html[data-pisi-theme="light"] body .pisi-property-template-menu {
+    color: var(--pisi-theme-text);
+    background: #ffffff;
+    border-color: var(--pisi-theme-border-strong);
+    box-shadow: 0 12px 28px rgb(31 38 48 / 17%);
+}
+
+html[data-pisi-theme="light"] body .pisi-property-template-option:hover,
+html[data-pisi-theme="light"] body .pisi-property-template-option:focus-visible {
+    background: #fff0d6;
+}
+
+html[data-pisi-theme="light"] body .pisi-property-template-section,
+html[data-pisi-theme="light"] body .pisi-property-template-form,
+html[data-pisi-theme="light"] body .pisi-property-template-card {
+    background: var(--pisi-theme-surface-alt);
+    border-color: var(--pisi-theme-border);
+}
+
+html[data-pisi-theme="light"] body .pisi-property-template-field input,
+html[data-pisi-theme="light"] body .pisi-property-template-field textarea {
+    color: var(--pisi-theme-text);
+    background: #ffffff;
+    border-color: var(--pisi-theme-border-strong);
+    color-scheme: light;
+}
+
+html[data-pisi-theme="light"] body .pisi-property-template-source {
+    background: #fff7e8;
+    border-color: #e8c789;
+}
+
+html[data-pisi-theme="light"] body .pisi-property-template-source > strong,
+html[data-pisi-theme="light"] body .pisi-property-template-card-copy > strong {
+    color: var(--pisi-theme-text);
+}
+
+html[data-pisi-theme="light"] body .pisi-property-template-empty {
+    border-color: var(--pisi-theme-border-strong);
+}
+
 html[data-pisi-theme="light"] body .pisi-ribbon-btn,
 html[data-pisi-theme="light"] body .pisi-ribbon-split-arrow {
     background: linear-gradient(180deg, #ffffff 0%, #dfe3e7 100%);

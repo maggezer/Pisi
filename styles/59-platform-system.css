@@ -587,23 +587,6 @@
     white-space: pre-wrap;
 }
 
-.pisi-template-controls {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 7px;
-    padding-top: 10px;
-    border-top: 1px solid rgb(255 255 255 / 8%);
-}
-
-.pisi-template-controls select {
-    min-width: 210px;
-    min-height: 34px;
-    color: inherit;
-    background: rgb(0 0 0 / 16%);
-    border: 1px solid var(--border-color);
-    border-radius: 7px;
-}
-
 .pisi-block-graph-host {
     min-height: 430px;
     margin: 14px 0;

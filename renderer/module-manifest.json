@@ -638,6 +638,14 @@
     ]
   },
   {
+    "module": "data.propertyTemplates",
+    "path": "renderer/data/pisi-property-templates.mjs",
+    "bindings": [
+      "renderPisiPropertyTemplatesPage",
+      "initializePisiPropertyTemplates"
+    ]
+  },
+  {
     "module": "data.nodePropertiesUi",
     "path": "renderer/data/pisi-node-properties-ui.mjs",
     "bindings": [

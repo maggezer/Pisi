@@ -18,8 +18,8 @@ test('Relation ve Rollup ekleme metin butonları kaldırılır; Rollup ana toolb
     assert.match(toolbar, /data-pisi-table-trigger[\s\S]*data-pisi-rollup-trigger/);
     assert.match(toolbar, /pisi:property-rollup-request/);
     assert.match(propertiesUi, /appendPisiPropertyRow\(rows,[\s\S]*type: 'rollup'/);
-    assert.match(structured, /controls\.append\(add, save, status\)/);
-    assert.match(structured, /section\.append\(controls, rows, templateControls\)/);
+    assert.match(structured, /controls\.append\(status, templatePicker, add, save\)/);
+    assert.match(structured, /section\.append\(rows, controls\)/);
 });
 
 test('Rollup ayarları açık etiket ve açıklamalarla gösterilir', () => {
