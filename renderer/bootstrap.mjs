@@ -42,6 +42,7 @@ import "./search/pisi-links-panel.mjs";
 import "./search/pisi-block-graph.mjs";
 import "./productivity/pisi-quick-capture.mjs";
 import "./data/pisi-structured-views.mjs";
+import "./data/pisi-node-properties-ui.mjs";
 import "./portability/pisi-portability-panel.mjs";
 import "./research/pisi-research-panel.mjs";
 import "./team/pisi-team-api.mjs";

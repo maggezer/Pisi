@@ -634,6 +634,18 @@
     ]
   },
   {
+    "module": "data.nodePropertiesUi",
+    "path": "renderer/data/pisi-node-properties-ui.mjs",
+    "bindings": [
+      "pisiNodePropertiesUiState",
+      "installPisiNodePropertyDrawers",
+      "togglePisiNodePropertiesDrawer",
+      "renderPisiNodePropertiesInfo",
+      "syncPisiNodePropertiesTab",
+      "initializePisiNodePropertiesUi"
+    ]
+  },
+  {
     "module": "portability.panel",
     "path": "renderer/portability/pisi-portability-panel.mjs",
     "bindings": [

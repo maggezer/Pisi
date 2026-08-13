@@ -229,6 +229,21 @@
 
                     <button
                         class="right-panel-tab"
+                        data-right-tab="properties"
+                        title="Özellikler"
+                        aria-label="Özellikler"
+                        aria-controls="right-tab-properties"
+                        aria-disabled="true"
+                        disabled
+                    >
+                        <span
+                            class="pisi-right-tab-icon pisi-right-tab-icon-properties"
+                            aria-hidden="true"
+                        ></span>
+                    </button>
+
+                    <button
+                        class="right-panel-tab"
                         data-right-tab="customizations"
                         title="Customize"
                         aria-label="Customize"
@@ -252,6 +267,15 @@
                                 <div class="right-panel-empty">
                                     Missions için önce orta alanda bir map aç.
                                 </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="right-tab-properties" class="right-tab-page">
+                        <div class="right-panel-section-title">Özellikler</div>
+                        <div id="pisi-node-properties-info" class="pisi-node-properties-info">
+                            <div class="right-panel-empty">
+                                Özellikleri görmek için bir node aç.
                             </div>
                         </div>
                     </section>

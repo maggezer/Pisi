@@ -7,9 +7,17 @@ const test = require('node:test');
 
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
-const iconNames = ['todo', 'tags', 'customize', 'blocks', 'links', 'search'];
+const iconNames = [
+    'todo',
+    'tags',
+    'customize',
+    'blocks',
+    'links',
+    'search',
+    'properties'
+];
 
-test('altı ana sağ panel sekmesi yalnız özel ikonlarla gösterilir', () => {
+test('yedi ana sağ panel sekmesi yalnız özel ikonlarla gösterilir', () => {
     const html = read('index.html');
     const tr = JSON.parse(read('locales/lang-tr.json')).strings;
     const eng = JSON.parse(read('locales/lang-eng.json')).strings;
@@ -18,7 +26,7 @@ test('altı ana sağ panel sekmesi yalnız özel ikonlarla gösterilir', () => {
     const links = read('renderer/search/pisi-links-panel.mjs');
     const search = read('renderer/search/pisi-search-panel.mjs');
 
-    for (const name of ['todo', 'tags', 'customize']) {
+    for (const name of ['todo', 'tags', 'customize', 'properties']) {
         assert.match(html, new RegExp(`pisi-right-tab-icon-${name}`));
     }
     assert.match(html, /title="ToDo"/);
@@ -46,6 +54,7 @@ test('sağ panel sekmeleri kare, sıralı ve ortalanmıştır', () => {
     assert.match(css, /\.pisi-right-tab-icon \{[\s\S]*background: currentColor/);
     assert.match(css, /data-right-tab="links"\] \{ order: 50; \}/);
     assert.match(css, /data-right-tab="search"\] \{ order: 60; \}/);
+    assert.match(css, /data-right-tab="properties"\] \{ order: 65; \}/);
     assert.match(css, /data-right-tab="customizations"\] \{ order: 70; \}/);
     for (const name of iconNames) {
         assert.match(css, new RegExp(`assets/right-tabs/${name}\\.svg`));

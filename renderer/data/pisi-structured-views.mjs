@@ -25,6 +25,17 @@ function pisiStructuredTranslate(value) {
     return window.pisiT?.(value) ?? String(value ?? '');
 }
 
+function dispatchPisiNodePropertiesChanged(path, reason, options = {}) {
+    document.dispatchEvent(new CustomEvent('pisi:node-properties-changed', {
+        detail: {
+            path,
+            reason,
+            properties: options.properties || null,
+            refreshEditor: options.refreshEditor === true
+        }
+    }));
+}
+
 function makePisiStructuredButton(label, className = '') {
     const button = document.createElement('button');
     button.type = 'button';
@@ -262,9 +273,10 @@ async function renderPisiNodeProperties(container) {
     save.addEventListener('click', async () => {
         save.disabled = true;
         status.textContent = pisiStructuredTranslate('Kaydediliyor…');
+        const properties = collectPisiPropertyRows(rows);
         const result = await window.pisiProject?.saveNodeProperties?.(
             nodePath,
-            collectPisiPropertyRows(rows)
+            properties
         );
         if (!result?.ok) {
             status.textContent = result?.error || pisiStructuredTranslate('Özellikler kaydedilemedi.');
@@ -275,6 +287,7 @@ async function renderPisiNodeProperties(container) {
         await ensurePisiSearchIndex({ force: true });
         status.textContent = pisiStructuredTranslate('Özellikler kaydedildi.');
         save.disabled = false;
+        dispatchPisiNodePropertiesChanged(nodePath, 'save', { properties });
     });
     const templateControls = document.createElement('div');
     templateControls.className = 'pisi-template-controls';
@@ -306,7 +319,9 @@ async function renderPisiNodeProperties(container) {
             }
         );
         if (!result?.ok) return alert(result?.error || pisiStructuredTranslate('Şablon kaydedilemedi.'));
-        await window.renderPisiCommandCenterPage?.();
+        dispatchPisiNodePropertiesChanged(nodePath, 'template-save', {
+            refreshEditor: true
+        });
     });
     const applyTemplate = makePisiStructuredButton('Şablonu uygula', 'pisi-secondary-button');
     applyTemplate.addEventListener('click', async () => {
@@ -319,7 +334,9 @@ async function renderPisiNodeProperties(container) {
         if (!result?.ok) return alert(result?.error || pisiStructuredTranslate('Şablon uygulanamadı.'));
         invalidatePisiSearchIndex('template');
         await ensurePisiSearchIndex({ force: true });
-        await window.renderPisiCommandCenterPage?.();
+        dispatchPisiNodePropertiesChanged(nodePath, 'template-apply', {
+            refreshEditor: true
+        });
     });
     const deleteTemplate = makePisiStructuredButton('Şablonu sil', 'pisi-secondary-button');
     deleteTemplate.addEventListener('click', async () => {
@@ -329,7 +346,9 @@ async function renderPisiNodeProperties(container) {
             templateSelect.value
         );
         if (!result?.ok) return alert(result?.error || pisiStructuredTranslate('Şablon silinemedi.'));
-        await window.renderPisiCommandCenterPage?.();
+        dispatchPisiNodePropertiesChanged(nodePath, 'template-delete', {
+            refreshEditor: true
+        });
     });
     templateControls.append(templateSelect, saveTemplate, applyTemplate, deleteTemplate);
     controls.append(add, addRelation, addRollup, save, status);
@@ -547,14 +566,13 @@ async function renderPisiBases(container) {
 }
 
 async function renderPisiStructuredPage(container) {
-    await renderPisiNodeProperties(container);
     await renderPisiBases(container);
 }
 
 function initializePisiStructuredViews() {
     registerPisiCommandCenterPage({
         id: 'data',
-        label: 'Özellikler',
+        label: 'Bases-lite',
         order: 20,
         render: renderPisiStructuredPage
     });
