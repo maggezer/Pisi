@@ -1,6 +1,5 @@
 import { registerModule } from "../core/module-registry.mjs";
 import { registerPisiCommand } from "../core/pisi-command-registry.mjs";
-import { registerPisiExtension } from "../core/pisi-extension-api.mjs";
 
 const PISI_BLOCK_TYPES = Object.freeze([
     Object.freeze({ id: 'paragraph', label: 'Paragraf', tag: 'div' }),
@@ -656,12 +655,6 @@ function initializePisiBlocksEditor() {
         when: () => Boolean(getPisiActiveBlock()),
         handler: () => movePisiBlock(getPisiActiveBlock(), 1)
     });
-    registerPisiExtension('toolbarTool', {
-        id: 'core.markdown-source',
-        label: 'Markdown kaynak görünümü',
-        icon: 'MD',
-        run: () => openPisiMarkdownSource()
-    });
 }
 
 const moduleApi = {
@@ -711,3 +704,4 @@ export {
     pisiBlockHtmlToMarkdown,
     pisiBlockMarkdownToHtml
 };
+
