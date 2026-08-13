@@ -11,16 +11,18 @@ const iconNames = [
     'todo',
     'tags',
     'customize',
+    'blocks',
     'links',
     'search',
     'properties'
 ];
 
-test('altı ana sağ panel sekmesi yalnız özel ikonlarla gösterilir', () => {
+test('yedi ana sağ panel sekmesi yalnız özel ikonlarla gösterilir', () => {
     const html = read('index.html');
     const tr = JSON.parse(read('locales/lang-tr.json')).strings;
     const eng = JSON.parse(read('locales/lang-eng.json')).strings;
     const extensions = read('renderer/core/pisi-extension-api.mjs');
+    const blocks = read('renderer/search/pisi-block-graph.mjs');
     const links = read('renderer/search/pisi-links-panel.mjs');
     const search = read('renderer/search/pisi-search-panel.mjs');
 
@@ -35,24 +37,13 @@ test('altı ana sağ panel sekmesi yalnız özel ikonlarla gösterilir', () => {
         html,
         /data-right-tab="(?:missions|tags|customizations)"[^>]*>\s*(?:ToDo|Tags|Customize)\s*</s
     );
+    assert.match(blocks, /icon: 'blocks'/);
     assert.match(extensions, /pisi-right-tab-icon-\$\{iconName\}/);
     assert.match(extensions, /button\.setAttribute\('aria-label', label\)/);
     assert.match(links, /pisi-right-tab-icon-links/);
     assert.match(links, /button\.setAttribute\('aria-label', button\.title\)/);
     assert.match(search, /pisi-right-tab-icon-search/);
     assert.match(search, /button\.dataset\.rightTab = 'search'/);
-});
-
-test('blok grafiği sağ panelden ve Workspace Centerdan tamamen kaldırılmıştır', () => {
-    const bootstrap = read('renderer/bootstrap.mjs');
-    const manifest = read('renderer/module-manifest.json');
-    const css = read('styles/20-map-interactions.css');
-
-    assert.doesNotMatch(bootstrap, /pisi-block-graph/);
-    assert.doesNotMatch(manifest, /search\.blockGraph|pisi-block-graph/);
-    assert.doesNotMatch(css, /pisi-right-tab-icon-blocks|blocks\.svg/);
-    assert.equal(fs.existsSync(path.join(root, 'renderer/search/pisi-block-graph.mjs')), false);
-    assert.equal(fs.existsSync(path.join(root, 'assets/right-tabs/blocks.svg')), false);
 });
 
 test('sağ panel sekmeleri kare, sıralı ve ortalanmıştır', () => {

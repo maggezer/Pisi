@@ -39,6 +39,7 @@ import "./search/pisi-search-index.mjs";
 import "./search/pisi-global-search.mjs";
 import "./search/pisi-search-panel.mjs";
 import "./search/pisi-links-panel.mjs";
+import "./search/pisi-block-graph.mjs";
 import "./productivity/pisi-quick-capture.mjs";
 import "./data/pisi-structured-views.mjs";
 import "./data/pisi-bases-dialog.mjs";

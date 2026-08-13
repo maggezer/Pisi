@@ -17,7 +17,7 @@ test('arama modülleri bootstrap ve stil zincirine bağlıdır', () => {
     assert.match(bootstrap, /search\/pisi-search-index\.mjs/);
     assert.match(bootstrap, /search\/pisi-global-search\.mjs/);
     assert.match(bootstrap, /search\/pisi-links-panel\.mjs/);
-    assert.doesNotMatch(bootstrap, /search\/pisi-block-graph\.mjs/);
+    assert.match(bootstrap, /search\/pisi-block-graph\.mjs/);
     assert.match(styles, /57-search-and-links\.css/);
     assert.match(styles, /59-platform-system\.css/);
 });
