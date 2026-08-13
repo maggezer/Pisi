@@ -312,11 +312,6 @@
     mask-image: url("../assets/right-tabs/customize.svg");
 }
 
-.pisi-right-tab-icon-blocks {
-    -webkit-mask-image: url("../assets/right-tabs/blocks.svg");
-    mask-image: url("../assets/right-tabs/blocks.svg");
-}
-
 .pisi-right-tab-icon-links {
     -webkit-mask-image: url("../assets/right-tabs/links.svg");
     mask-image: url("../assets/right-tabs/links.svg");

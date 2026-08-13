@@ -871,19 +871,6 @@
     ]
   },
   {
-    "module": "search.blockGraph",
-    "path": "renderer/search/pisi-block-graph.mjs",
-    "bindings": [
-      "getPisiBlockGraphKey",
-      "collectPisiBlockGraphData",
-      "buildPisiBlockRelationshipModel",
-      "renderPisiBlockGraphSvg",
-      "renderPisiBlockGraphPage",
-      "renderPisiBlockRelationshipPanel",
-      "initializePisiBlockGraph"
-    ]
-  },
-  {
     "module": "team.api",
     "path": "renderer/team/pisi-team-api.mjs",
     "bindings": [

@@ -18,7 +18,6 @@ test('1.2–platform modülleri bootstrap ve preload köprüsünde kayıtlıdır
         'portability/pisi-portability-panel.mjs',
         'research/pisi-research-panel.mjs',
         'editor/pisi-block-editor.mjs',
-        'search/pisi-block-graph.mjs',
         'team/pisi-team-api.mjs'
     ]) assert.ok(bootstrap.includes(marker), marker);
     for (const marker of [
