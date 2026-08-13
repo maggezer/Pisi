@@ -16,6 +16,8 @@ test('Properties düzenleyicisi node toolbarının açılır alanında yaşar', 
     assert.match(bootstrap, /\.\/data\/pisi-node-properties-ui\.mjs/);
     assert.match(source, /\.pisi-editor-toolbar\[data-editor-target\]/);
     assert.match(source, /className = 'pisi-node-properties-toggle'/);
+    assert.match(source, /className = 'pisi-node-properties-toggle-rail'/);
+    assert.match(source, /frame\.append\(toolbar, toggleRail, drawer\)/);
     assert.match(source, /record\.drawer\.hidden = !open/);
     assert.match(source, /renderPisiNodeProperties\(staging\)/);
     assert.match(source, /aria-expanded/);
@@ -57,6 +59,9 @@ test('Properties yüzeyleri koyu ve açık tema ile özel sekme ikonuna sahiptir
 
     assert.match(systemCss, /\.pisi-node-properties-drawer/);
     assert.match(systemCss, /\.pisi-node-properties-toggle-icon/);
+    assert.match(systemCss, /\.pisi-node-properties-toggle-rail/);
+    assert.match(systemCss, /border-radius: 50%/);
+    assert.match(systemCss, /transform: translateY\(-50%\)/);
     assert.match(systemCss, /\.pisi-properties-info-row/);
     assert.match(lightCss, /data-pisi-theme="light"[^\n]*\.pisi-node-properties-drawer/);
     assert.match(tabCss, /assets\/right-tabs\/properties\.svg/);

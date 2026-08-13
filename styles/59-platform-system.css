@@ -405,22 +405,32 @@
     flex: 0 0 auto;
 }
 
+.pisi-node-properties-toggle-rail {
+    position: relative;
+    z-index: 11;
+    height: 0;
+    flex: 0 0 0;
+    pointer-events: none;
+}
+
 .pisi-node-properties-toggle {
     position: absolute;
-    top: 72px;
+    top: 0;
     right: 9px;
     z-index: 12;
-    width: 30px;
-    height: 25px;
+    width: 28px;
+    height: 28px;
     display: grid;
     place-items: center;
     padding: 0;
     color: #f5b041;
     background: linear-gradient(180deg, #3a3b40 0%, #292a2e 100%);
     border: 1px solid #56585f;
-    border-radius: 7px;
+    border-radius: 50%;
     box-shadow: 0 2px 8px rgb(0 0 0 / 30%);
     cursor: pointer;
+    pointer-events: auto;
+    transform: translateY(-50%);
     transition:
         color 140ms ease,
         background-color 140ms ease,
@@ -438,7 +448,7 @@
 }
 
 .pisi-node-properties-toggle:active {
-    transform: translateY(1px);
+    transform: translateY(calc(-50% + 1px));
 }
 
 .pisi-node-properties-toggle-icon {
@@ -464,11 +474,11 @@
 .pisi-node-properties-drawer {
     min-height: 92px;
     max-height: min(320px, 38vh);
-    padding: 10px;
+    padding: 18px 10px 10px;
     overflow: auto;
     color: var(--pisi-theme-text, #e5e7eb);
     background: var(--pisi-theme-surface, #181a1f);
-    border-top: 1px solid var(--pisi-theme-border, #3a3d45);
+    border-top: 0;
     border-bottom: 1px solid var(--pisi-theme-border, #3a3d45);
     box-shadow: inset 0 8px 18px rgb(0 0 0 / 12%);
 }

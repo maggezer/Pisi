@@ -10,14 +10,23 @@
     scrollbar-color: #4b4c50 #202124;
 }
 
+.pisi-editor-toolbar::-webkit-scrollbar {
+    height: 4px;
+}
+
+.pisi-editor-toolbar::-webkit-scrollbar-thumb {
+    background: #4b4c50;
+    border-radius: 999px;
+}
+
 .pisi-unified-toolbar {
     min-width: 870px;
-    min-height: 102px;
+    min-height: 100px;
     display: grid;
-    grid-template-columns: 250px 118px 104px 76px minmax(282px, 1fr);
+    grid-template-columns: 250px 118px 104px 76px 236px;
     align-items: stretch;
     gap: 6px;
-    padding: 6px 8px;
+    padding: 4px 8px 2px;
     background: linear-gradient(180deg, #26272a 0%, #202124 100%);
 }
 
@@ -27,7 +36,7 @@
     flex-direction: column;
     justify-content: flex-start;
     gap: 4px;
-    padding: 6px 10px 6px 6px;
+    padding: 4px 10px 2px 6px;
     border: 0;
     border-right: 1px solid #3a3b40;
     border-radius: 0;
@@ -35,8 +44,12 @@
     box-shadow: none;
 }
 
-.pisi-toolbar-section:last-child {
+.pisi-toolbar-section:not(.pisi-toolbar-section-drawing):last-child {
     border-right: 0;
+}
+
+.pisi-unified-toolbar > .pisi-toolbar-section-drawing {
+    border-right: 1px solid #3a3b40;
 }
 
 .pisi-toolbar-section-row {

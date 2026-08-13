@@ -142,8 +142,12 @@ function installPisiNodePropertyDrawers() {
         icon.setAttribute('aria-hidden', 'true');
         button.appendChild(icon);
 
+        const toggleRail = document.createElement('div');
+        toggleRail.className = 'pisi-node-properties-toggle-rail';
+        toggleRail.appendChild(button);
+
         toolbar.before(frame);
-        frame.append(toolbar, button, drawer);
+        frame.append(toolbar, toggleRail, drawer);
 
         const record = {
             button,
@@ -152,7 +156,8 @@ function installPisiNodePropertyDrawers() {
             frame,
             open: false,
             renderGeneration: 0,
-            source: editorTarget === 'node-modal-content' ? 'modal' : 'center'
+            source: editorTarget === 'node-modal-content' ? 'modal' : 'center',
+            toggleRail
         };
         pisiNodePropertiesUiState.drawers.set(editorTarget, record);
         setPisiNodePropertiesDrawerOpen(record, false);

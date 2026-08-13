@@ -31,9 +31,19 @@ test('toolbar sections use separators and alignment controls use a fixed 2x2 gri
     assert.ok(actionStack >= 0 && alignGrid > actionStack);
     assert.doesNotMatch(toolbar, /pisi-toolbar-section-reserved/);
     assert.doesNotMatch(css, /pisi-toolbar-section-reserved/);
-    assert.match(css, /pisi-toolbar-section:last-child[\s\S]*border-right: 0/);
+    assert.match(
+        css,
+        /pisi-toolbar-section:not\(\.pisi-toolbar-section-drawing\):last-child[\s\S]*border-right: 0/
+    );
+    assert.match(
+        css,
+        /pisi-unified-toolbar > \.pisi-toolbar-section-drawing[\s\S]*border-right: 1px solid #3a3b40/
+    );
     assert.match(css, /grid-template-columns: minmax\(0, 1fr\) 56px/);
-    assert.match(css, /grid-template-columns: 250px 118px 104px 76px minmax\(282px, 1fr\)/);
+    assert.match(css, /grid-template-columns: 250px 118px 104px 76px 236px/);
+    assert.match(css, /pisi-unified-toolbar[\s\S]*min-height: 100px/);
+    assert.match(css, /pisi-unified-toolbar[\s\S]*padding: 4px 8px 2px/);
+    assert.match(css, /pisi-toolbar-section[\s\S]*padding: 4px 10px 2px 6px/);
 });
 
 test('table cells support justify and compact style buttons stay fixed width', () => {
