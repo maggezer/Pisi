@@ -33,6 +33,15 @@ function makePisiStructuredButton(label, className = '') {
     return button;
 }
 
+function makePisiRollupField(labelText, control) {
+    const field = document.createElement('label');
+    field.className = 'pisi-rollup-field';
+    const label = document.createElement('span');
+    label.textContent = pisiStructuredTranslate(labelText);
+    field.append(label, control);
+    return field;
+}
+
 function makePisiPropertyValueControl(property) {
     if (property.type === 'checkbox') {
         const input = document.createElement('input');
@@ -51,12 +60,12 @@ function makePisiPropertyValueControl(property) {
         const relation = document.createElement('input');
         relation.type = 'text';
         relation.dataset.rollupRelation = 'true';
-        relation.placeholder = pisiStructuredTranslate('Relation özellik kimliği');
+        relation.placeholder = pisiStructuredTranslate('Relation adı veya kimliği');
         relation.value = config.relationProperty || '';
         const target = document.createElement('input');
         target.type = 'text';
         target.dataset.rollupTarget = 'true';
-        target.placeholder = pisiStructuredTranslate('Hedef özellik kimliği');
+        target.placeholder = pisiStructuredTranslate('Hedef özellik adı veya kimliği');
         target.value = config.targetProperty || '';
         const aggregate = document.createElement('select');
         aggregate.dataset.rollupAggregate = 'true';
@@ -67,7 +76,17 @@ function makePisiPropertyValueControl(property) {
             option.selected = item.value === (config.aggregate || 'count');
             aggregate.appendChild(option);
         }
-        host.append(relation, target, aggregate);
+        const help = document.createElement('div');
+        help.className = 'pisi-rollup-help';
+        help.textContent = pisiStructuredTranslate(
+            'Rollup, Relation alanındaki node\'ların hedef özelliğini hesaplar.'
+        );
+        host.append(
+            makePisiRollupField('Relation özelliği', relation),
+            makePisiRollupField('Hedef özellik', target),
+            makePisiRollupField('Hesaplama', aggregate),
+            help
+        );
         return host;
     }
     const input = document.createElement('input');
@@ -177,6 +196,13 @@ function collectPisiPropertyRows(host) {
     return properties;
 }
 
+function appendPisiPropertyRow(rows, property = {}) {
+    const row = createPisiPropertyRow(property);
+    rows.appendChild(row);
+    row.querySelector('.pisi-property-name')?.focus();
+    return row;
+}
+
 async function renderPisiNodeProperties(container) {
     const section = document.createElement('section');
     section.className = 'pisi-properties-editor';
@@ -208,11 +234,28 @@ async function renderPisiNodeProperties(container) {
     const controls = document.createElement('div');
     controls.className = 'pisi-property-actions';
     const add = makePisiStructuredButton('Özellik ekle', 'pisi-secondary-button');
-    add.addEventListener('click', () => {
-        const row = createPisiPropertyRow();
-        rows.appendChild(row);
-        row.querySelector('.pisi-property-name')?.focus();
-    });
+    add.addEventListener('click', () => appendPisiPropertyRow(rows));
+    const addRelation = makePisiStructuredButton(
+        'Relation ekle',
+        'pisi-secondary-button pisi-relation-add'
+    );
+    addRelation.addEventListener('click', () => appendPisiPropertyRow(rows, {
+        type: 'relation',
+        value: []
+    }));
+    const addRollup = makePisiStructuredButton(
+        'Rollup ekle',
+        'pisi-secondary-button pisi-rollup-add'
+    );
+    addRollup.addEventListener('click', () => appendPisiPropertyRow(rows, {
+        type: 'rollup',
+        value: {
+            relationProperty: '',
+            targetProperty: '',
+            aggregate: 'count',
+            separator: ', '
+        }
+    }));
     const save = makePisiStructuredButton('Özellikleri kaydet', 'pisi-primary-button');
     const status = document.createElement('span');
     status.className = 'pisi-command-inline-status';
@@ -289,8 +332,8 @@ async function renderPisiNodeProperties(container) {
         await window.renderPisiCommandCenterPage?.();
     });
     templateControls.append(templateSelect, saveTemplate, applyTemplate, deleteTemplate);
-    controls.append(add, save, status);
-    section.append(subtitle, rows, controls, templateControls);
+    controls.append(add, addRelation, addRollup, save, status);
+    section.append(subtitle, controls, rows, templateControls);
     container.appendChild(section);
 }
 

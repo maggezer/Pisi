@@ -362,6 +362,35 @@
     min-width: 0;
 }
 
+.pisi-rollup-field {
+    min-width: 0;
+    display: grid;
+    gap: 4px;
+    color: inherit;
+}
+
+.pisi-rollup-field > span {
+    color: color-mix(in srgb, currentColor 72%, transparent);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.pisi-rollup-help {
+    grid-column: 1 / -1;
+    color: color-mix(in srgb, currentColor 62%, transparent);
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.pisi-relation-add {
+    border-color: color-mix(in srgb, #5dade2 58%, transparent);
+}
+
+.pisi-rollup-add {
+    border-color: color-mix(in srgb, var(--pisi-theme-accent, #f39c12) 68%, transparent);
+    background: color-mix(in srgb, var(--pisi-theme-accent, #f39c12) 10%, transparent);
+}
+
 .pisi-template-controls {
     display: flex;
     flex-wrap: wrap;
