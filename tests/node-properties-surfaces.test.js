@@ -21,11 +21,7 @@ test('Properties düzenleyicisi node toolbarının açılır alanında yaşar', 
     assert.match(source, /record\.drawer\.hidden = !open/);
     assert.match(source, /renderPisiNodeProperties\(staging\)/);
     assert.match(source, /aria-expanded/);
-    assert.match(
-        structured,
-        /async function renderPisiStructuredPage\(container\) \{\s*await renderPisiBases\(container\);\s*\}/
-    );
-    assert.match(structured, /id: 'data',[\s\S]*label: 'Bases-lite'/);
+    assert.doesNotMatch(structured, /registerPisiCommandCenterPage|id: 'data'/);
 });
 
 test('sağ Properties sekmesi yalnız aktif node bilgisini gösterir', () => {

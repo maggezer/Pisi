@@ -77,9 +77,32 @@
     transform: translateY(-1px);
 }
 
-.map-zoom-btn {
+#pisi-bases-map-control {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    z-index: 20;
+    opacity: 0.55;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+#pisi-bases-map-control[hidden] {
+    display: none;
+}
+
+#pisi-bases-map-control:hover,
+#pisi-bases-map-control:focus-within {
+    opacity: 1;
+    transform: translateY(-1px);
+}
+
+.map-zoom-btn,
+.pisi-map-bases-trigger {
     width: 38px;
     height: 38px;
+    display: grid;
+    place-items: center;
+    padding: 0;
     border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 10px;
     background: rgba(45, 45, 48, 0.72);
@@ -96,13 +119,27 @@
         transform 0.08s ease;
 }
 
-.map-zoom-btn:hover {
+.map-zoom-btn:hover,
+.pisi-map-bases-trigger:hover,
+.pisi-map-bases-trigger:focus-visible {
     background: rgba(45, 45, 48, 0.96);
     border-color: #f39c12;
+    outline: none;
 }
 
-.map-zoom-btn:active {
+.map-zoom-btn:active,
+.pisi-map-bases-trigger:active {
     transform: scale(0.94);
+}
+
+.pisi-map-bases-icon {
+    width: 21px;
+    height: 21px;
+    display: inline-block;
+    flex: 0 0 auto;
+    background: currentColor;
+    -webkit-mask: url("../assets/icons/bases-lite.svg") center / contain no-repeat;
+    mask: url("../assets/icons/bases-lite.svg") center / contain no-repeat;
 }
 
 /* CONNECTION DELETE BUTTON */

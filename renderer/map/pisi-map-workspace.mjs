@@ -194,6 +194,7 @@ function isMapBlankEventTarget(event) {
         event.target.closest?.('.map-edge-hit') ||
         event.target.closest?.('.map-edge-delete') ||
         event.target.closest?.('#map-zoom-controls') ||
+        event.target.closest?.('.pisi-map-overlay-control') ||
         event.target.closest?.('.pisi-map-context-menu')
     );
 }

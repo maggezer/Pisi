@@ -167,6 +167,59 @@ html[data-pisi-theme="light"] body .pisi-properties-readonly-badge {
     border-color: #e2b45f;
 }
 
+html[data-pisi-theme="light"] body .pisi-map-bases-trigger {
+    color: #9a5a00;
+    background: rgb(255 255 255 / 88%);
+    border-color: #aab2bc;
+    box-shadow:
+        0 4px 14px rgb(31 38 48 / 15%),
+        inset 0 1px 0 rgb(255 255 255 / 90%);
+}
+
+html[data-pisi-theme="light"] body .pisi-map-bases-trigger:hover,
+html[data-pisi-theme="light"] body .pisi-map-bases-trigger:focus-visible {
+    color: #754400;
+    background: #ffffff;
+    border-color: #d88400;
+}
+
+html[data-pisi-theme="light"] body .pisi-bases-dialog-overlay {
+    background: rgb(31 38 48 / 36%);
+}
+
+html[data-pisi-theme="light"] body .pisi-bases-dialog {
+    color: var(--pisi-theme-text);
+    background: var(--pisi-theme-surface);
+    border-color: var(--pisi-theme-border-strong);
+    box-shadow: 0 28px 90px rgb(31 38 48 / 24%);
+}
+
+html[data-pisi-theme="light"] body .pisi-bases-dialog-header {
+    background: var(--pisi-theme-surface-alt);
+    border-color: var(--pisi-theme-border);
+}
+
+html[data-pisi-theme="light"] body .pisi-bases-dialog-header strong,
+html[data-pisi-theme="light"] body .pisi-bases-dialog-close {
+    color: var(--pisi-theme-text);
+}
+
+html[data-pisi-theme="light"] body .pisi-bases-dialog-close:hover,
+html[data-pisi-theme="light"] body .pisi-bases-dialog-close:focus-visible {
+    background: var(--pisi-theme-hover);
+}
+
+html[data-pisi-theme="light"] body .pisi-bases-dialog-loading {
+    color: var(--pisi-theme-muted);
+    border-color: var(--pisi-theme-border);
+}
+
+html[data-pisi-theme="light"] body .pisi-bases-dialog-error {
+    color: #9a3030;
+    background: #fff2f2;
+    border-color: #e2b5b5;
+}
+
 html[data-pisi-theme="light"] body .pisi-office-select,
 html[data-pisi-theme="light"] body .pisi-office-select option,
 html[data-pisi-theme="light"] body .pisi-quick-field input,

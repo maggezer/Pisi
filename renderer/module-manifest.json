@@ -632,9 +632,21 @@
       "getPisiActiveMapPropertyContext",
       "readPisiPropertyControlValue",
       "renderPisiNodeProperties",
-      "renderPisiBases",
-      "renderPisiStructuredPage",
-      "initializePisiStructuredViews"
+      "renderPisiBases"
+    ]
+  },
+  {
+    "module": "data.basesDialog",
+    "path": "renderer/data/pisi-bases-dialog.mjs",
+    "bindings": [
+      "pisiBasesDialogState",
+      "closePisiBasesDialog",
+      "ensurePisiBasesDialog",
+      "initializePisiBasesDialog",
+      "installPisiBasesMapTrigger",
+      "openPisiBasesDialog",
+      "renderPisiBasesDialogBody",
+      "syncPisiBasesMapTrigger"
     ]
   },
   {

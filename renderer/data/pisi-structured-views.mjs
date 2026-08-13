@@ -1,5 +1,4 @@
 import { registerModule } from "../core/module-registry.mjs";
-import { registerPisiCommandCenterPage } from "../shell/pisi-command-center.mjs";
 import {
     getPisiSearchCurrentNodePath,
     invalidatePisiSearchIndex
@@ -686,13 +685,16 @@ function formatPisiPropertyValue(value) {
 
 function makePisiBaseOpenButton(documentRecord) {
     const button = makePisiStructuredButton(documentRecord.title, 'pisi-base-open');
-    button.addEventListener('click', () => openPisiSearchResult({
-        kind: 'node',
-        nodePath: documentRecord.path,
-        nodeTitle: documentRecord.title,
-        nodeItem: documentRecord.nodeItem,
-        mapPath: documentRecord.memberships?.[0]?.mapPath || null
-    }));
+    button.addEventListener('click', () => {
+        window.closePisiBasesDialog?.();
+        openPisiSearchResult({
+            kind: 'node',
+            nodePath: documentRecord.path,
+            nodeTitle: documentRecord.title,
+            nodeItem: documentRecord.nodeItem,
+            mapPath: documentRecord.memberships?.[0]?.mapPath || null
+        });
+    });
     return button;
 }
 
@@ -807,7 +809,7 @@ function renderPisiSavedViewControls(host, rerender) {
     host.append(select, save, remove);
 }
 
-async function renderPisiBases(container) {
+async function renderPisiBases(container, options = {}) {
     const section = document.createElement('section');
     section.className = 'pisi-bases';
     const title = document.createElement('h2');
@@ -853,7 +855,10 @@ async function renderPisiBases(container) {
     });
     const savedHost = document.createElement('div');
     savedHost.className = 'pisi-saved-view-controls';
-    renderPisiSavedViewControls(savedHost, () => window.renderPisiCommandCenterPage?.());
+    renderPisiSavedViewControls(savedHost, () => {
+        container.replaceChildren();
+        void renderPisiBases(container, options);
+    });
     const createMap = makePisiStructuredButton('Sonuçlardan map üret', 'pisi-primary-button');
     createMap.addEventListener('click', async () => {
         const documents = filterPisiPropertyDocuments(
@@ -885,22 +890,10 @@ async function renderPisiBases(container) {
     });
     toolbar.append(query, tableButton, cardsButton);
     actions.append(savedHost, createMap);
-    section.append(title, toolbar, actions, results);
+    if (options.showTitle !== false) section.appendChild(title);
+    section.append(toolbar, actions, results);
     container.appendChild(section);
     rerenderResults();
-}
-
-async function renderPisiStructuredPage(container) {
-    await renderPisiBases(container);
-}
-
-function initializePisiStructuredViews() {
-    registerPisiCommandCenterPage({
-        id: 'data',
-        label: 'Bases-lite',
-        order: 20,
-        render: renderPisiStructuredPage
-    });
 }
 
 const moduleApi = {
@@ -913,13 +906,10 @@ const moduleApi = {
     getPisiActiveMapPropertyContext,
     readPisiPropertyControlValue,
     renderPisiNodeProperties,
-    renderPisiBases,
-    renderPisiStructuredPage,
-    initializePisiStructuredViews
+    renderPisiBases
 };
 
 registerModule('data.structuredViews', moduleApi);
-initializePisiStructuredViews();
 
 export {
     appendPisiPropertyRow,
@@ -930,6 +920,5 @@ export {
     getPisiActiveMapPropertyContext,
     pisiStructuredViewState,
     renderPisiBases,
-    renderPisiNodeProperties,
-    renderPisiStructuredPage
+    renderPisiNodeProperties
 };

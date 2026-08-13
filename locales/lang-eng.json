@@ -535,6 +535,8 @@
     "Özellikler kaydedilemedi.": "Properties could not be saved.",
     "Özellikler kaydedildi.": "Properties saved.",
     "Bases-lite": "Bases-lite",
+    "Bases-lite'ı aç": "Open Bases-lite",
+    "Bases-lite yüklenemedi.": "Bases-lite could not be loaded.",
     "Durum:\"Devam ediyor\" Öncelik:>=4": "Status:\"In progress\" Priority:>=4",
     "Kaydedilmiş filtreler": "Saved filters",
     "Filtreyi kaydet": "Save filter",

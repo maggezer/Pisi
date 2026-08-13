@@ -701,7 +701,8 @@ function setupMapCanvasPan() {
             event.target.closest('.map-edge-hit') ||
             event.target.closest('.map-edge-delete') ||
             event.target.closest('.map-port') ||
-            event.target.closest('#map-zoom-controls')
+            event.target.closest('#map-zoom-controls') ||
+            event.target.closest('.pisi-map-overlay-control')
         ) {
             return;
         }
