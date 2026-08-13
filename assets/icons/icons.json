@@ -7,6 +7,8 @@
     "close": "assets/win-close.png"
   },
   "actions": {
+    "workspaceCenter": "assets/icons/workspace-center.svg",
+    "properties": "assets/icons/properties.svg",
     "createMap": "assets/icons/create-map.svg",
     "createNode": "assets/icons/create-node.svg",
     "changeProject": "assets/icons/change-project.svg",

@@ -560,6 +560,16 @@ html[data-pisi-theme="light"] .pisi-command-center-tab.active {
     border-color: #b8c8f7;
 }
 
+html[data-pisi-theme="light"] .pisi-command-home-action {
+    background: var(--pisi-theme-surface-alt);
+    border-color: var(--pisi-theme-border);
+}
+
+html[data-pisi-theme="light"] .pisi-command-home-action:hover:not(:disabled) {
+    background: var(--pisi-theme-hover);
+    border-color: var(--pisi-theme-accent);
+}
+
 html[data-pisi-theme="light"] .pisi-quick-add-form,
 html[data-pisi-theme="light"] .pisi-properties-editor,
 html[data-pisi-theme="light"] .pisi-bases,

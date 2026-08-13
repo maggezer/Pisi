@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="properties-card" x1="12" y1="7" x2="49" y2="55" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFDF8"/>
+      <stop offset="1" stop-color="#FFE9BE"/>
+    </linearGradient>
+    <linearGradient id="properties-accent" x1="39" y1="36" x2="58" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFC13A"/>
+      <stop offset="1" stop-color="#FF641A"/>
+    </linearGradient>
+  </defs>
+  <rect x="9" y="9" width="43" height="47" rx="10" fill="#FF8A18" opacity=".9"/>
+  <rect x="11" y="6" width="43" height="47" rx="10" fill="url(#properties-card)" stroke="#252A34" stroke-width="3"/>
+  <path d="M20 18h24M20 28h24M20 38h16" stroke="#B7AEA5" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="27" cy="18" r="4.5" fill="#FFC13A" stroke="#252A34" stroke-width="2.5"/>
+  <circle cx="39" cy="28" r="4.5" fill="#FFF" stroke="#252A34" stroke-width="2.5"/>
+  <circle cx="25" cy="38" r="4.5" fill="#FFF" stroke="#252A34" stroke-width="2.5"/>
+  <circle cx="48" cy="47" r="13" fill="url(#properties-accent)" stroke="#252A34" stroke-width="3"/>
+  <path d="M48 40v14M41 47h14" stroke="#FFF" stroke-width="4.5" stroke-linecap="round"/>
+</svg>

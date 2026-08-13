@@ -109,6 +109,9 @@ body {
 #left-panel {
     border-right: 1px solid #333;
     padding-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 #right-panel {
@@ -191,16 +194,20 @@ body {
 
 /* PROJE SOL PANEL */
 #project-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
     margin-bottom: 14px;
 }
 
+#project-header .panel-title {
+    margin-bottom: 0;
+}
 
 #file-tree {
-    height: calc(100% - 64px);
+    flex: 1;
+    min-height: 0;
+    height: auto;
     overflow: auto;
     padding-right: 4px;
     font-size: 13px;
@@ -329,7 +336,9 @@ body {
 #project-actions {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 6px;
+    width: 100%;
 }
 
 .project-action-btn {
@@ -372,6 +381,13 @@ body {
 .project-action-btn:focus-visible {
     outline: 2px solid #f39c12;
     outline-offset: 2px;
+}
+
+.project-action-btn[aria-pressed="true"],
+#pisi-command-center-button[aria-expanded="true"] {
+    background: color-mix(in srgb, #f39c12 18%, #292a2e);
+    border-color: #f39c12;
+    box-shadow: inset 0 0 0 1px rgb(243 156 18 / 24%);
 }
 
 .tree-row.selected {

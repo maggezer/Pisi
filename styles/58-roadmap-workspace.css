@@ -58,6 +58,9 @@
 }
 
 .pisi-command-center-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
     padding: 8px 13px;
     color: color-mix(in srgb, currentColor 72%, transparent);
     background: transparent;
@@ -67,10 +70,86 @@
     white-space: nowrap;
 }
 
+.pisi-command-center-tab-icon {
+    width: 17px;
+    height: 17px;
+    display: block;
+    flex: 0 0 17px;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+.pisi-command-center-tab-icon-properties {
+    background-image: url("../assets/icons/properties.svg");
+}
+
+.pisi-command-center-tab-icon-workspace {
+    background-image: url("../assets/icons/workspace-center.svg");
+}
+
 .pisi-command-center-tab.active {
     color: #fff;
     background: rgb(94 129 244 / 22%);
     border-color: rgb(114 147 255 / 38%);
+}
+
+.pisi-command-home {
+    display: grid;
+    gap: 18px;
+    max-width: 680px;
+}
+
+.pisi-command-home-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.pisi-command-home-action {
+    min-height: 92px;
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 14px;
+    color: inherit;
+    text-align: left;
+    background: rgb(255 255 255 / 4%);
+    border: 1px solid rgb(255 255 255 / 12%);
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.pisi-command-home-action:hover:not(:disabled) {
+    border-color: var(--pisi-theme-accent, #f39c12);
+    background: rgb(255 255 255 / 7%);
+}
+
+.pisi-command-home-action:disabled {
+    cursor: not-allowed;
+    opacity: .48;
+}
+
+.pisi-command-home-icon {
+    width: 42px;
+    height: 42px;
+    display: block;
+    flex: 0 0 42px;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+}
+
+.pisi-command-home-icon-properties {
+    background-image: url("../assets/icons/properties.svg");
+}
+
+.pisi-command-home-icon-preferences {
+    background-color: currentColor;
+    background-image: none;
+    opacity: .78;
+    -webkit-mask: url("../assets/right-tabs/customize.svg") center / contain no-repeat;
+    mask: url("../assets/right-tabs/customize.svg") center / contain no-repeat;
 }
 
 .pisi-command-center-body {

@@ -36,6 +36,14 @@
     background-image: url("../assets/icons/create-map.svg");
 }
 
+.pisi-project-action-icon-workspace {
+    background-image: url("../assets/icons/workspace-center.svg");
+}
+
+.pisi-project-action-icon-properties {
+    background-image: url("../assets/icons/properties.svg");
+}
+
 .pisi-project-action-icon-node {
     background-image: url("../assets/icons/create-node.svg");
 }
