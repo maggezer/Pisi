@@ -6,9 +6,14 @@ const crypto = require('crypto');
 const { registerMainModule } = require('../module-registry');
 
 const PISI_PROPERTY_TYPES = new Set([
-    'text', 'number', 'date', 'select', 'multiselect', 'node', 'checkbox',
-    'relation', 'rollup'
+    'text', 'number', 'multiselect', 'relation', 'rollup'
 ]);
+const PISI_LEGACY_PROPERTY_TYPE_ALIASES = Object.freeze({
+    date: 'text',
+    select: 'multiselect',
+    node: 'relation',
+    checkbox: 'multiselect'
+});
 const PISI_ROLLUP_AGGREGATES = new Set([
     'count', 'sum', 'average', 'min', 'max', 'unique', 'join', 'checked-percent'
 ]);
@@ -29,7 +34,6 @@ function normalizePisiPropertyReference(value = '') {
 }
 
 function normalizePisiPropertyValue(type, value) {
-    if (type === 'checkbox') return value === true || value === 'true';
     if (type === 'number') {
         if (value === null || value === undefined || String(value).trim() === '') {
             return null;
@@ -71,8 +75,10 @@ function normalizePisiProperties(properties = {}) {
         const name = String(raw.name || rawId || '').trim().slice(0, 120);
         if (!name) continue;
         const id = normalizePisiPropertyId(raw.id || rawId || name);
-        const type = PISI_PROPERTY_TYPES.has(String(raw.type || '').toLowerCase())
-            ? String(raw.type).toLowerCase()
+        const sourceType = String(raw.type || '').toLowerCase();
+        const resolvedType = PISI_LEGACY_PROPERTY_TYPE_ALIASES[sourceType] || sourceType;
+        const type = PISI_PROPERTY_TYPES.has(resolvedType)
+            ? resolvedType
             : 'text';
         result[id] = {
             id,

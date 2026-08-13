@@ -179,8 +179,46 @@ function formatPisiNodePropertyValue(property) {
 }
 
 function getPisiNodePropertyTypeLabel(type) {
+    if (type === 'system') return pisiNodePropertiesTranslate('Sistem');
+    if (type === 'rollup') return pisiNodePropertiesTranslate('Rollup');
     const record = PISI_NODE_PROPERTY_TYPES.find((item) => item.value === type);
     return pisiNodePropertiesTranslate(record?.label || type || 'Metin');
+}
+
+function formatPisiNodeSystemDate(value) {
+    const date = new Date(value);
+    if (!value || Number.isNaN(date.getTime())) return '—';
+    const locale = window.pisiI18n?.getLanguage?.() === 'eng' ? 'en-GB' : 'tr-TR';
+    return new Intl.DateTimeFormat(locale, {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+    }).format(date);
+}
+
+function getPisiNodeSystemProperties(metadata = {}) {
+    return [
+        {
+            id: 'pisi-node-id',
+            name: pisiNodePropertiesTranslate('Node ID'),
+            type: 'system',
+            value: metadata.id || '—',
+            system: true
+        },
+        {
+            id: 'pisi-created-at',
+            name: pisiNodePropertiesTranslate('Oluşturulma tarihi'),
+            type: 'system',
+            value: formatPisiNodeSystemDate(metadata.createdAt),
+            system: true
+        },
+        {
+            id: 'pisi-updated-at',
+            name: pisiNodePropertiesTranslate('Değiştirilme tarihi'),
+            type: 'system',
+            value: formatPisiNodeSystemDate(metadata.updatedAt),
+            system: true
+        }
+    ];
 }
 
 async function getPisiNodePropertiesSnapshot(nodePath) {
@@ -225,6 +263,7 @@ async function getPisiNodePropertiesSnapshot(nodePath) {
     return {
         path: nodePath,
         title: currentRecord.title,
+        systemProperties: getPisiNodeSystemProperties(currentRecord.metadata),
         properties: normalizePisiPropertyCollection(
             materialized?.properties || currentRecord.properties
         )
@@ -299,19 +338,12 @@ async function renderPisiNodePropertiesInfo() {
         badge.textContent = pisiNodePropertiesTranslate('Salt okunur');
         header.append(title, badge);
 
-        if (!snapshot.properties.length) {
-            host.replaceChildren(
-                header,
-                makePisiNodePropertiesEmpty('Bu node için özellik tanımlanmamış.')
-            );
-            return true;
-        }
-
         const list = document.createElement('div');
         list.className = 'pisi-properties-info-list';
-        for (const property of snapshot.properties) {
+        for (const property of [...snapshot.systemProperties, ...snapshot.properties]) {
             const row = document.createElement('div');
             row.className = 'pisi-properties-info-row';
+            row.dataset.system = property.system === true ? 'true' : 'false';
             const rowHeading = document.createElement('div');
             rowHeading.className = 'pisi-properties-info-row-heading';
             const name = document.createElement('strong');

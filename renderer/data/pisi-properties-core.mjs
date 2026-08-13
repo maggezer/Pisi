@@ -1,14 +1,16 @@
 const PISI_NODE_PROPERTY_TYPES = Object.freeze([
     Object.freeze({ value: 'text', label: 'Metin' }),
     Object.freeze({ value: 'number', label: 'Sayı' }),
-    Object.freeze({ value: 'date', label: 'Tarih' }),
-    Object.freeze({ value: 'select', label: 'Seçim' }),
-    Object.freeze({ value: 'multiselect', label: 'Çoklu seçim' }),
-    Object.freeze({ value: 'node', label: 'Node bağlantısı' }),
-    Object.freeze({ value: 'checkbox', label: 'Onay kutusu' }),
-    Object.freeze({ value: 'relation', label: 'Relation' }),
-    Object.freeze({ value: 'rollup', label: 'Rollup' })
+    Object.freeze({ value: 'multiselect', label: 'Tags' }),
+    Object.freeze({ value: 'relation', label: 'Relation' })
 ]);
+
+const PISI_LEGACY_PROPERTY_TYPE_ALIASES = Object.freeze({
+    date: 'text',
+    select: 'multiselect',
+    node: 'relation',
+    checkbox: 'multiselect'
+});
 
 const PISI_ROLLUP_AGGREGATES = Object.freeze([
     Object.freeze({ value: 'count', label: 'Kayıt sayısı' }),
@@ -17,9 +19,13 @@ const PISI_ROLLUP_AGGREGATES = Object.freeze([
     Object.freeze({ value: 'min', label: 'En küçük' }),
     Object.freeze({ value: 'max', label: 'En büyük' }),
     Object.freeze({ value: 'unique', label: 'Benzersiz değerler' }),
-    Object.freeze({ value: 'join', label: 'Birleştir' }),
-    Object.freeze({ value: 'checked-percent', label: 'İşaretli yüzdesi' })
+    Object.freeze({ value: 'join', label: 'Birleştir' })
 ]);
+
+function normalizePisiNodePropertyType(type = 'text') {
+    const source = String(type || 'text').toLowerCase();
+    return PISI_LEGACY_PROPERTY_TYPE_ALIASES[source] || source;
+}
 
 function normalizePisiPropertySearch(value = '') {
     return String(value ?? '')
@@ -43,7 +49,7 @@ function normalizePisiPropertyCollection(properties = {}) {
     return entries.map(([id, property]) => ({
         id: String(property?.id || id || ''),
         name: String(property?.name || id || ''),
-        type: String(property?.type || 'text'),
+        type: normalizePisiNodePropertyType(property?.type),
         value: property?.value,
         system: property?.system === true
     })).filter((property) => property.id && property.name);

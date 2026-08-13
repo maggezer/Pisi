@@ -194,35 +194,6 @@ function pisiMapNodeMatchesValue(node, value) {
         pisiPropertyNameKey(getPisiMapNodeLabel(node)) === pisiPropertyNameKey(text);
 }
 
-function makePisiNodePropertySelect(property, context) {
-    const select = document.createElement('select');
-    select.className = 'pisi-property-value-select';
-    select.dataset.propertyValue = 'true';
-    const empty = document.createElement('option');
-    empty.value = '';
-    empty.textContent = pisiStructuredTranslate('Node seçin');
-    select.appendChild(empty);
-
-    const currentValue = String(property.value || '').trim();
-    let selected = false;
-    for (const node of context.nodes || []) {
-        const option = document.createElement('option');
-        option.value = node.fullPath;
-        option.textContent = getPisiMapNodeLabel(node);
-        option.selected = pisiMapNodeMatchesValue(node, currentValue);
-        selected = selected || option.selected;
-        select.appendChild(option);
-    }
-    if (currentValue && !selected) {
-        const legacy = document.createElement('option');
-        legacy.value = currentValue;
-        legacy.textContent = currentValue;
-        legacy.selected = true;
-        select.appendChild(legacy);
-    }
-    return select;
-}
-
 function makePisiRelationPropertyPicker(property, context) {
     const picker = document.createElement('details');
     picker.className = 'pisi-property-node-picker';
@@ -311,16 +282,6 @@ function makePisiRollupReferenceSelect(definitions, selectedValue, placeholder) 
 }
 
 function makePisiPropertyValueControl(property, context = {}) {
-    if (property.type === 'checkbox') {
-        const input = document.createElement('input');
-        input.type = 'checkbox';
-        input.checked = property.value === true;
-        input.dataset.propertyValue = 'true';
-        return input;
-    }
-    if (property.type === 'node') {
-        return makePisiNodePropertySelect(property, context);
-    }
     if (property.type === 'relation') {
         return makePisiRelationPropertyPicker(property, context);
     }
@@ -366,21 +327,18 @@ function makePisiPropertyValueControl(property, context = {}) {
         return host;
     }
     const input = document.createElement('input');
-    input.type = property.type === 'number'
-        ? 'number'
-        : (property.type === 'date' ? 'date' : 'text');
+    input.type = property.type === 'number' ? 'number' : 'text';
     input.value = Array.isArray(property.value)
         ? property.value.join(', ')
         : String(property.value ?? '');
     input.dataset.propertyValue = 'true';
     if (property.type === 'multiselect') {
-        input.placeholder = pisiStructuredTranslate('Virgülle ayırın');
+        input.placeholder = pisiStructuredTranslate('Etiketleri virgülle ayırın');
     }
     return input;
 }
 
 function makePisiBlankPropertyValue(type) {
-    if (type === 'checkbox') return false;
     if (type === 'multiselect' || type === 'relation') return [];
     if (type === 'number') return null;
     if (type === 'rollup') {
@@ -405,6 +363,7 @@ function createPisiPropertyRow(property = {}, context = {}) {
     const row = document.createElement('div');
     row.className = 'pisi-property-row';
     row.dataset.propertyId = normalized.id;
+    row.dataset.propertyType = normalized.type;
     row.dataset.propertySystem = normalized.system ? 'true' : 'false';
 
     const name = document.createElement('input');
@@ -422,20 +381,25 @@ function createPisiPropertyRow(property = {}, context = {}) {
     suggestionToggle.title = pisiStructuredTranslate('Var olan özellikleri göster');
     suggestionToggle.setAttribute('aria-label', suggestionToggle.title);
     suggestionToggle.setAttribute('aria-expanded', 'false');
-    suggestionToggle.disabled = normalized.system || !context.propertyDefinitions?.length;
+    const isRollup = normalized.type === 'rollup';
+    suggestionToggle.disabled = normalized.system || isRollup || !context.propertyDefinitions?.length;
     const suggestions = document.createElement('div');
     suggestions.className = 'pisi-property-suggestions';
     suggestions.hidden = true;
 
-    const type = document.createElement('select');
-    type.className = 'pisi-property-type';
-    type.disabled = normalized.system;
-    for (const optionRecord of PISI_NODE_PROPERTY_TYPES) {
-        const option = document.createElement('option');
-        option.value = optionRecord.value;
-        option.textContent = pisiStructuredTranslate(optionRecord.label);
-        option.selected = optionRecord.value === normalized.type;
-        type.appendChild(option);
+    const type = document.createElement(isRollup ? 'span' : 'select');
+    type.className = isRollup ? 'pisi-property-type-readonly' : 'pisi-property-type';
+    if (isRollup) {
+        type.textContent = pisiStructuredTranslate('Rollup');
+    } else {
+        type.disabled = normalized.system;
+        for (const optionRecord of PISI_NODE_PROPERTY_TYPES) {
+            const option = document.createElement('option');
+            option.value = optionRecord.value;
+            option.textContent = pisiStructuredTranslate(optionRecord.label);
+            option.selected = optionRecord.value === normalized.type;
+            type.appendChild(option);
+        }
     }
 
     let value = makePisiPropertyValueControl(normalized, context);
@@ -447,10 +411,13 @@ function createPisiPropertyRow(property = {}, context = {}) {
         value = makePisiPropertyValueControl(normalized, context);
         valueHost.replaceChildren(value);
     };
-    type.addEventListener('change', () => {
-        normalized.type = type.value;
-        replaceValue(makePisiBlankPropertyValue(normalized.type));
-    });
+    if (!isRollup) {
+        type.addEventListener('change', () => {
+            normalized.type = type.value;
+            row.dataset.propertyType = normalized.type;
+            replaceValue(makePisiBlankPropertyValue(normalized.type));
+        });
+    }
 
     const hideSuggestions = () => {
         suggestions.hidden = true;
@@ -461,15 +428,18 @@ function createPisiPropertyRow(property = {}, context = {}) {
         normalized.name = definition.name;
         normalized.type = definition.type;
         row.dataset.propertyId = definition.id;
+        row.dataset.propertyType = definition.type;
         name.value = definition.name;
         type.value = definition.type;
         replaceValue(makePisiBlankPropertyValue(definition.type));
         hideSuggestions();
     };
     const showSuggestions = (filter = '') => {
+        if (isRollup) return;
         const needle = pisiPropertyNameKey(filter);
         const matches = (context.propertyDefinitions || []).filter((definition) => {
-            return !needle || pisiPropertyNameKey(definition.name).includes(needle);
+            return definition.type !== 'rollup' &&
+                (!needle || pisiPropertyNameKey(definition.name).includes(needle));
         });
         suggestions.replaceChildren();
         for (const definition of matches) {
@@ -494,8 +464,10 @@ function createPisiPropertyRow(property = {}, context = {}) {
     name.addEventListener('focus', () => showSuggestions(name.value));
     name.addEventListener('input', () => showSuggestions(name.value));
     name.addEventListener('change', () => {
+        if (isRollup) return;
         const exact = (context.propertyDefinitions || []).find((definition) => {
-            return pisiPropertyNameKey(definition.name) === pisiPropertyNameKey(name.value);
+            return definition.type !== 'rollup' &&
+                pisiPropertyNameKey(definition.name) === pisiPropertyNameKey(name.value);
         });
         if (exact) applyDefinition(exact);
     });
@@ -519,7 +491,6 @@ function createPisiPropertyRow(property = {}, context = {}) {
 }
 
 function readPisiPropertyControlValue(control, type) {
-    if (type === 'checkbox') return control?.checked === true;
     if (type === 'rollup') {
         return {
             relationProperty: control?.querySelector?.('[data-rollup-relation]')?.value.trim() || '',
@@ -541,7 +512,9 @@ function collectPisiPropertyRows(host) {
     host.querySelectorAll('.pisi-property-row').forEach((row) => {
         const name = row.querySelector('.pisi-property-name')?.value.trim();
         if (!name) return;
-        const type = row.querySelector('.pisi-property-type')?.value || 'text';
+        const type = row.dataset.propertyType ||
+            row.querySelector('.pisi-property-type')?.value ||
+            'text';
         const control = row.querySelector('[data-property-value]');
         let value = readPisiPropertyControlValue(control, type);
         if (type === 'number') value = value === '' ? null : Number(value);

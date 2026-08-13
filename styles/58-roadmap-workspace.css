@@ -265,6 +265,19 @@
     cursor: pointer;
 }
 
+.pisi-property-type-readonly {
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    padding: 6px 9px;
+    color: #ffc766;
+    background: rgb(243 156 18 / 9%);
+    border: 1px solid rgb(243 156 18 / 28%);
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
 .pisi-property-name-control {
     position: relative;
     min-width: 0;

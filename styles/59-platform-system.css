@@ -556,6 +556,11 @@
     border-radius: 9px;
 }
 
+.pisi-properties-info-row[data-system="true"] {
+    background: color-mix(in srgb, var(--pisi-theme-accent, #f39c12) 6%, var(--pisi-theme-surface-alt, #26272b));
+    border-color: color-mix(in srgb, var(--pisi-theme-accent, #f39c12) 18%, var(--pisi-theme-border, #3a3c42));
+}
+
 .pisi-properties-info-row-heading {
     min-width: 0;
     display: flex;

@@ -16,9 +16,9 @@ const documents = [
         relativePath: 'Deney A.node',
         tags: [{ value: 'makale' }],
         properties: {
-            status: { id: 'status', name: 'Durum', type: 'select', value: 'Devam ediyor' },
+            status: { id: 'status', name: 'Durum', type: 'multiselect', value: ['Devam ediyor'] },
             priority: { id: 'priority', name: 'Öncelik', type: 'number', value: 5 },
-            done: { id: 'done', name: 'Tamamlandı', type: 'checkbox', value: false }
+            labels: { id: 'labels', name: 'Etiketler', type: 'multiselect', value: ['aktif'] }
         }
     },
     {
@@ -27,9 +27,9 @@ const documents = [
         relativePath: 'Deney B.node',
         tags: [{ value: 'arşiv' }],
         properties: {
-            status: { id: 'status', name: 'Durum', type: 'select', value: 'Bitti' },
+            status: { id: 'status', name: 'Durum', type: 'multiselect', value: ['Bitti'] },
             priority: { id: 'priority', name: 'Öncelik', type: 'number', value: 2 },
-            done: { id: 'done', name: 'Tamamlandı', type: 'checkbox', value: true }
+            labels: { id: 'labels', name: 'Etiketler', type: 'multiselect', value: ['tamamlandı'] }
         }
     }
 ];
@@ -67,13 +67,13 @@ test('relation kayıtları rollup toplamı ve sayısına dönüştürülür', ()
     }, ...related];
     const result = materializePisiDatabaseDocuments(database);
     assert.equal(result[0].properties.effort_total.value, 8);
-    assert.equal(aggregatePisiRollupValues([true, false, true], 'checked-percent'), 67);
+    assert.deepEqual(aggregatePisiRollupValues(['A', 'A', 'B'], 'unique'), ['A', 'B']);
 });
 
-test('metin, sayı, onay kutusu ve etiket alanlarını filtreler', () => {
+test('metin, sayı ve Tags alanlarını filtreler', () => {
     assert.equal(matchesPisiPropertyQuery(documents[0], 'Durum:"Devam ediyor"'), true);
     assert.equal(matchesPisiPropertyQuery(documents[0], 'Öncelik:>=4'), true);
-    assert.equal(matchesPisiPropertyQuery(documents[1], 'Tamamlandı=true'), true);
+    assert.equal(matchesPisiPropertyQuery(documents[1], 'Etiketler:tamamlandı'), true);
     assert.equal(matchesPisiPropertyQuery(documents[0], 'etiket:makale'), true);
     assert.deepEqual(
         filterPisiPropertyDocuments(documents, 'Öncelik:>=4').map((item) => item.title),
@@ -84,6 +84,6 @@ test('metin, sayı, onay kutusu ve etiket alanlarını filtreler', () => {
 test('tablo ve kart görünümü için özellik sütunlarını tekilleştirir', () => {
     assert.deepEqual(
         collectPisiPropertyColumns(documents).map((item) => item.id),
-        ['status', 'priority', 'done']
+        ['status', 'priority', 'labels']
     );
 });

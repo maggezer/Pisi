@@ -21,7 +21,7 @@ test('property şeması ve node seçenekleri yalnız aktif node mapinden alını
     assert.match(editor, /mapPath: propertyMapPath/);
     assert.match(structured, /getPisiNodePropertyMapContext/);
     assert.match(structured, /collectPisiMapPropertyDefinitions\(nodes\)/);
-    assert.match(structured, /makePisiNodePropertySelect/);
+    assert.doesNotMatch(structured, /makePisiNodePropertySelect/);
     assert.match(structured, /makePisiRelationPropertyPicker/);
     assert.match(structured, /context\.propertyDefinitions/);
     assert.match(structured, /getPisiActiveMapPropertyContext/);
