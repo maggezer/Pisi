@@ -100,6 +100,7 @@ function registerPisiCommandCenterPage(page) {
         id: page.id,
         label: page.label || page.id,
         order: Number(page.order) || 0,
+        hidden: page.hidden === true,
         requiresProject: page.requiresProject !== false,
         render: page.render
     });
@@ -108,7 +109,10 @@ function registerPisiCommandCenterPage(page) {
 
 function getVisiblePisiCommandCenterPages() {
     return Array.from(pisiCommandCenterState.pages.values())
-        .filter((page) => window.currentProjectFolder || !page.requiresProject)
+        .filter((page) => (
+            !page.hidden &&
+            (window.currentProjectFolder || !page.requiresProject)
+        ))
         .sort((a, b) => a.order - b.order);
 }
 
@@ -117,8 +121,13 @@ function renderPisiCommandCenterNavigation() {
     if (!tabs) return;
     tabs.replaceChildren();
     const pages = getVisiblePisiCommandCenterPages();
-    const activePageIsVisible = pages.some((page) => page.id === pisiCommandCenterState.activePage);
-    if (!activePageIsVisible) {
+    const activePage = pisiCommandCenterState.pages.get(
+        pisiCommandCenterState.activePage
+    );
+    const activePageIsAvailable = Boolean(activePage) && (
+        window.currentProjectFolder || !activePage.requiresProject
+    );
+    if (!activePageIsAvailable) {
         pisiCommandCenterState.activePage = pages[0]?.id || '';
     }
     for (const page of pages) {
@@ -170,6 +179,12 @@ async function openPisiCommandCenter(pageId = null) {
     ensurePisiCommandCenter();
     if (pageId && pisiCommandCenterState.pages.has(pageId)) {
         pisiCommandCenterState.activePage = pageId;
+    } else if (
+        !pageId &&
+        pisiCommandCenterState.pages.get(pisiCommandCenterState.activePage)?.hidden
+    ) {
+        pisiCommandCenterState.activePage =
+            getVisiblePisiCommandCenterPages()[0]?.id || '';
     }
     renderPisiCommandCenterNavigation();
     pisiCommandCenterState.overlay.hidden = false;

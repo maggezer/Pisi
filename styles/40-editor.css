@@ -229,7 +229,7 @@
     color: #f39c12;
 }
 
-/* FIX: RIGHT PANEL TAB VISIBILITY AND TAGS POSITION */
+/* RIGHT PANEL CONTENT */
 #right-panel-content {
    
     min-height: 0;
@@ -238,48 +238,7 @@
     overflow-x: hidden;
 }
 
-/* Tags aktif değilse kesinlikle görünmesin */
-#right-tab-tags:not(.active) {
-    display: none;
-}
-
-#right-tab-tags .right-panel-section-title {
-    margin-top: 0;
-    margin-bottom: 10px;
-}
-
-/* Tags içeriği yukarıdan aşağıya normal aksın */
-#right-tab-tags #pisi-tags-panel {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: flex-start;
-    gap: 12px;
-    width: 100%;
-    height: auto;
-    min-height: 0;
-    margin: 0;
-    padding: 0;
-}
-
-/* Choose tag üstte sabit kalsın, alta/yukarı yapışmasın */
-#right-tab-tags .pisi-tag-picker {
-    position: relative;
-    top: auto;
-    bottom: auto;
-    z-index: 80;
-    width: 100%;
-    height: auto;
-    min-height: 0;
-    margin: 0;
-    padding: 0;
-    flex: 0 0 auto;
-    background: transparent;
-}
-
-/* Menü butonun ALTINA açılsın */
-#right-tab-tags .pisi-tag-picker-menu {
+.pisi-tag-explorer-page .pisi-tag-picker-menu {
     position: absolute;
     top: calc(100% + 6px);
     bottom: auto;
@@ -291,7 +250,7 @@
     overflow: auto;
 }
 
-#right-tab-tags #pisi-tag-block-results {
+.pisi-tag-explorer-page #pisi-tag-block-results {
     margin-top: 0;
     flex: 0 0 auto;
 }

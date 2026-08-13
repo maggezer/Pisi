@@ -369,7 +369,14 @@ function copyPisiBlockReference(block = getPisiActiveBlock()) {
         ? window.activeModalNode?.path
         : window.activeCenterNode?.path;
     if (!block?.dataset.pisiBlockId || !nodePath) return false;
-    const reference = `${nodePath}#${block.dataset.pisiBlockId}`;
+    const metadata = editor?.id === 'node-modal-content'
+        ? window.activeModalNode?.metadata
+        : window.activeCenterNode?.metadata;
+    const fallbackTitle = String(nodePath).split(/[\\/]/).pop()?.replace(/\.node$/i, '');
+    const nodeTitle = String(metadata?.title || fallbackTitle || 'Node')
+        .replace(/[\]#\n\r]/g, ' ')
+        .trim();
+    const reference = `[[${nodeTitle}#^${block.dataset.pisiBlockId}]]`;
     window.pisiClipboard?.writeText?.(reference);
     return reference;
 }

@@ -6,9 +6,11 @@ import {
     getPisiSearchLiveIndex
 } from "./pisi-search-index.mjs";
 import { openPisiSearchResult } from "./pisi-global-search.mjs";
+import { renderPisiBlockRelationshipPanel } from "./pisi-block-graph.mjs";
 
 let pisiLinksRefreshTimer = null;
 let pisiLinksRefreshRequest = 0;
+let pisiConnectionsView = 'node';
 
 function pisiLinksTranslate(value) {
     return window.pisiI18n?.translate?.(value) || value;
@@ -26,48 +28,76 @@ function installPisiLinksPanel() {
     const content = document.getElementById('right-panel-content');
     if (!tabs || !content) return false;
 
-    if (!document.getElementById('pisi-links-tab-button')) {
+    if (!document.getElementById('pisi-connections-tab-button')) {
         const button = makePisiLinksElement(
             'button',
             'right-panel-tab'
         );
-        button.id = 'pisi-links-tab-button';
+        button.id = 'pisi-connections-tab-button';
         button.type = 'button';
-        button.dataset.rightTab = 'links';
+        button.dataset.rightTab = 'connections';
         button.title = pisiLinksTranslate('Bağlantılar');
         button.setAttribute('aria-label', button.title);
         const icon = makePisiLinksElement(
             'span',
-            'pisi-right-tab-icon pisi-right-tab-icon-links'
+            'pisi-right-tab-icon pisi-right-tab-icon-connections'
         );
         icon.setAttribute('aria-hidden', 'true');
         button.appendChild(icon);
         tabs.appendChild(button);
     }
 
-    if (!document.getElementById('right-tab-links')) {
+    if (!document.getElementById('right-tab-connections')) {
         const page = makePisiLinksElement(
             'section',
-            'right-tab-page pisi-links-page'
+            'right-tab-page pisi-connections-page'
         );
-        page.id = 'right-tab-links';
+        page.id = 'right-tab-connections';
 
         const title = makePisiLinksElement(
             'div',
             'right-panel-section-title',
             pisiLinksTranslate('Bağlantılar')
         );
-        const body = makePisiLinksElement(
+        const switcher = makePisiLinksElement(
             'div',
-            'pisi-links-panel'
+            'pisi-connections-switcher'
         );
-        body.id = 'pisi-links-panel';
-        page.append(title, body);
+        switcher.setAttribute('role', 'group');
+        switcher.setAttribute(
+            'aria-label',
+            pisiLinksTranslate('Bağlantı türü')
+        );
+        for (const [view, label] of [
+            ['node', 'Node bağlantıları'],
+            ['blocks', 'Blok referansları']
+        ]) {
+            const option = makePisiLinksElement(
+                'button',
+                'pisi-connections-switcher-button',
+                pisiLinksTranslate(label)
+            );
+            option.type = 'button';
+            option.dataset.connectionsView = view;
+            option.addEventListener('click', () => {
+                void setPisiConnectionsView(view);
+            });
+            switcher.appendChild(option);
+        }
+        const nodePanel = makePisiLinksElement('div', 'pisi-links-panel');
+        nodePanel.id = 'pisi-connections-node-panel';
+        const blockPanel = makePisiLinksElement(
+            'div',
+            'pisi-connections-block-panel'
+        );
+        blockPanel.id = 'pisi-connections-block-panel';
+        page.append(title, switcher, nodePanel, blockPanel);
         content.appendChild(page);
+        syncPisiConnectionsView();
     }
 
     window.bindRightPanelTabs?.();
-    const tab = document.getElementById('pisi-links-tab-button');
+    const tab = document.getElementById('pisi-connections-tab-button');
     if (tab && tab.dataset.pisiLinksRefreshBound !== '1') {
         tab.dataset.pisiLinksRefreshBound = '1';
         tab.addEventListener('click', () => {
@@ -78,7 +108,7 @@ function installPisiLinksPanel() {
 }
 
 function renderPisiLinksMessage(message, mode = '') {
-    const panel = document.getElementById('pisi-links-panel');
+    const panel = document.getElementById('pisi-connections-node-panel');
     if (!panel) return;
     const element = makePisiLinksElement(
         'div',
@@ -278,7 +308,7 @@ function makePisiLinksSection(title, items, itemFactory) {
 }
 
 function renderPisiLinksModel(index, model) {
-    const panel = document.getElementById('pisi-links-panel');
+    const panel = document.getElementById('pisi-connections-node-panel');
     if (!panel) return;
     if (!model.target) {
         renderPisiLinksMessage(
@@ -366,6 +396,48 @@ async function refreshPisiLinksPanel() {
     const liveIndex = getPisiSearchLiveIndex(index, targetPath);
     const model = buildPisiRelationshipModel(liveIndex, targetPath);
     renderPisiLinksModel(liveIndex, model);
+    if (pisiConnectionsView === 'blocks') {
+        await refreshPisiBlockConnectionsPanel();
+    }
+    return true;
+}
+
+function syncPisiConnectionsView() {
+    const nodePanel = document.getElementById('pisi-connections-node-panel');
+    const blockPanel = document.getElementById('pisi-connections-block-panel');
+    document.querySelectorAll('[data-connections-view]').forEach((button) => {
+        const active = button.dataset.connectionsView === pisiConnectionsView;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    if (nodePanel) nodePanel.hidden = pisiConnectionsView !== 'node';
+    if (blockPanel) blockPanel.hidden = pisiConnectionsView !== 'blocks';
+}
+
+async function refreshPisiBlockConnectionsPanel() {
+    const panel = document.getElementById('pisi-connections-block-panel');
+    if (!panel) return false;
+    await renderPisiBlockRelationshipPanel(panel, { showTitle: false });
+    return true;
+}
+
+async function setPisiConnectionsView(view = 'node') {
+    pisiConnectionsView = view === 'blocks' ? 'blocks' : 'node';
+    syncPisiConnectionsView();
+    if (pisiConnectionsView === 'blocks') {
+        await refreshPisiBlockConnectionsPanel();
+    } else {
+        schedulePisiLinksPanelRefresh(0);
+    }
+    return pisiConnectionsView;
+}
+
+async function openPisiBlockConnections() {
+    installPisiLinksPanel();
+    const tab = document.getElementById('pisi-connections-tab-button');
+    if (!tab || tab.disabled) return false;
+    tab.click();
+    await setPisiConnectionsView('blocks');
     return true;
 }
 
@@ -402,7 +474,7 @@ document.addEventListener('pisi:search-index-ready', () => {
     schedulePisiLinksPanelRefresh(0);
 });
 document.addEventListener('pisi:search-index-invalidated', () => {
-    const page = document.getElementById('right-tab-links');
+    const page = document.getElementById('right-tab-connections');
     if (page?.classList.contains('active')) {
         schedulePisiLinksPanelRefresh(220);
     }
@@ -421,12 +493,22 @@ Object.defineProperties(moduleApi, {
     schedulePisiLinksPanelRefresh: {
         enumerable: true,
         get() { return schedulePisiLinksPanelRefresh; }
+    },
+    setPisiConnectionsView: {
+        enumerable: true,
+        get() { return setPisiConnectionsView; }
+    },
+    openPisiBlockConnections: {
+        enumerable: true,
+        get() { return openPisiBlockConnections; }
     }
 });
 registerModule('search.linksPanel', moduleApi);
 
 export {
     installPisiLinksPanel,
+    openPisiBlockConnections,
     refreshPisiLinksPanel,
-    schedulePisiLinksPanelRefresh
+    schedulePisiLinksPanelRefresh,
+    setPisiConnectionsView
 };

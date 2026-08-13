@@ -42,7 +42,7 @@ test('Customize yalnız görünür bir map varken etkinleşir ve en sağdadır',
     assert.match(windowSource, /button\.disabled/);
     assert.match(
         css,
-        /data-right-tab="customizations"\] \{ order: 70; \}/
+        /data-right-tab="customizations"\] \{ order: 50; \}/
     );
 });
 

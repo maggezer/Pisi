@@ -270,23 +270,6 @@ async function activatePisiRightPanelTab(button) {
         } else if (typeof window.refreshPisiTagsPanel === 'function') {
             await window.refreshPisiTagsPanel();
         }
-    } else if (
-        target === 'tags' &&
-        typeof window.refreshPisiTagsPanel === 'function'
-    ) {
-        await window.refreshPisiTagsPanel();
-    }
-
-    if (target === 'tags') {
-        const resetRightPanelScroll = () => {
-            const content = document.getElementById('right-panel-content');
-            const tagsPage = document.getElementById('right-tab-tags');
-            if (content) content.scrollTop = 0;
-            if (tagsPage) tagsPage.scrollTop = 0;
-        };
-        resetRightPanelScroll();
-        requestAnimationFrame(resetRightPanelScroll);
-        setTimeout(resetRightPanelScroll, 50);
     }
     return Boolean(activePage);
 }

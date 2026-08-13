@@ -29,7 +29,7 @@ test('arama soldan kaldırılır ve gerçek sağ panel sekmesine taşınır', ()
     )));
 });
 
-test('Links dahil dinamik sekmeler her tıklamada güncel durumdan seçilir', () => {
+test('Bağlantılar dahil dinamik sekmeler her tıklamada güncel durumdan seçilir', () => {
     const source = read('renderer/shell/pisi-window.mjs');
 
     assert.match(source, /async function activatePisiRightPanelTab/);

@@ -24,11 +24,11 @@ test('Properties düzenleyicisi node toolbarının açılır alanında yaşar', 
     assert.doesNotMatch(structured, /registerPisiCommandCenterPage|id: 'data'/);
 });
 
-test('sağ Properties sekmesi yalnız aktif node bilgisini gösterir', () => {
+test('sağ Detaylar sekmesi aktif node özelliklerini ve etiketlerini gösterir', () => {
     const html = read('index.html');
     const source = read('renderer/data/pisi-node-properties-ui.mjs');
     const section = html.slice(
-        html.indexOf('<section id="right-tab-properties"'),
+        html.indexOf('<section id="right-tab-details"'),
         html.indexOf('<section id="right-tab-customizations"')
     );
     const infoRenderer = source.slice(
@@ -36,20 +36,24 @@ test('sağ Properties sekmesi yalnız aktif node bilgisini gösterir', () => {
         source.indexOf('function syncPisiNodePropertiesTab')
     );
 
-    assert.match(html, /data-right-tab="properties"/);
-    assert.match(html, /id="pisi-node-properties-info"/);
+    assert.match(html, /data-right-tab="details"/);
+    assert.match(html, /id="pisi-node-details-info"/);
     assert.match(source, /pisi:active-node-changed/);
+    assert.match(source, /pisi:tags-index-updated/);
+    assert.match(source, /getPisiNodeDetailTags/);
+    assert.match(source, /getPisiNodeBlockTagCounts/);
+    assert.match(source, /openPisiTagExplorer/);
     assert.match(source, /button\.disabled = !enabled/);
     assert.doesNotMatch(section, /<(?:button|input|select)\b/i);
-    assert.doesNotMatch(infoRenderer, /createElement\('(?:button|input|select)'\)/);
+    assert.doesNotMatch(infoRenderer, /createElement\('(?:input|select)'\)/);
     assert.doesNotMatch(infoRenderer, /renderPisiNodeProperties\(/);
 });
 
-test('Properties yüzeyleri koyu ve açık tema ile özel sekme ikonuna sahiptir', () => {
+test('Properties ve Detaylar yüzeyleri koyu ve açık tema ile özel ikona sahiptir', () => {
     const systemCss = read('styles/59-platform-system.css');
     const lightCss = read('styles/91-light-theme-tuning.css');
     const tabCss = read('styles/20-map-interactions.css');
-    const icon = read('assets/right-tabs/properties.svg');
+    const icon = read('assets/right-tabs/details.svg');
     const tr = JSON.parse(read('locales/lang-tr.json')).strings;
     const eng = JSON.parse(read('locales/lang-eng.json')).strings;
 
@@ -59,14 +63,19 @@ test('Properties yüzeyleri koyu ve açık tema ile özel sekme ikonuna sahiptir
     assert.match(systemCss, /border-radius: 50%/);
     assert.match(systemCss, /transform: translateY\(-50%\)/);
     assert.match(systemCss, /\.pisi-properties-info-row/);
+    assert.match(systemCss, /\.pisi-node-details-tag/);
     assert.match(lightCss, /data-pisi-theme="light"[^\n]*\.pisi-node-properties-drawer/);
-    assert.match(tabCss, /assets\/right-tabs\/properties\.svg/);
+    assert.match(lightCss, /data-pisi-theme="light"[^\n]*\.pisi-node-details-tag/);
+    assert.match(tabCss, /assets\/right-tabs\/details\.svg/);
     assert.match(icon, /viewBox="0 0 24 24"/);
     assert.doesNotMatch(icon, /<script\b/i);
     for (const key of [
         'Özellikleri göster',
         'Özellikleri gizle',
         'Salt okunur',
+        'Detaylar',
+        'Node etiketleri',
+        'Blok etiketleri',
         'Bu node için özellik tanımlanmamış.'
     ]) {
         assert.equal(typeof tr[key], 'string', key);

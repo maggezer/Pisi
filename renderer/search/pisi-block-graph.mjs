@@ -1,6 +1,5 @@
 import { registerModule } from "../core/module-registry.mjs";
 import { registerPisiCommand } from "../core/pisi-command-registry.mjs";
-import { registerPisiExtension } from "../core/pisi-extension-api.mjs";
 import { registerPisiCommandCenterPage } from "../shell/pisi-command-center.mjs";
 import { normalizePisiSearchText, pisiSearchPathKey } from "./pisi-search-core.mjs";
 import {
@@ -179,7 +178,15 @@ function makePisiBlockRelationList(title, items) {
         const preview = document.createElement('span');
         preview.textContent = item.text;
         const meta = document.createElement('small');
-        meta.textContent = `${item.blockId} · ${item.relationKind}`;
+        const relationLabel = {
+            reference: 'Referans',
+            link: 'Bağlantı',
+            mention: 'Bahsetme'
+        }[item.relationKind] || 'Referans';
+        meta.textContent = [
+            pisiBlockGraphTranslate(relationLabel),
+            item.membership?.mapTitle
+        ].filter(Boolean).join(' · ');
         button.append(titleElement, preview, meta);
         button.addEventListener('click', () => void openPisiSearchResult(makePisiBlockResult(item)));
         section.appendChild(button);
@@ -300,14 +307,16 @@ async function renderPisiBlockGraphPage(container) {
     );
 }
 
-async function renderPisiBlockRelationshipPanel(container) {
+async function renderPisiBlockRelationshipPanel(container, options = {}) {
     container.classList.add('pisi-block-relationship-panel');
     const refresh = async () => {
         container.replaceChildren();
-        const title = document.createElement('div');
-        title.className = 'right-panel-section-title';
-        title.textContent = pisiBlockGraphTranslate('Blok ilişkileri');
-        container.appendChild(title);
+        if (options.showTitle !== false) {
+            const title = document.createElement('div');
+            title.className = 'right-panel-section-title';
+            title.textContent = pisiBlockGraphTranslate('Blok referansları');
+            container.appendChild(title);
+        }
         const model = await getPisiCurrentBlockModel();
         if (!model) {
             const empty = document.createElement('div');
@@ -319,19 +328,19 @@ async function renderPisiBlockRelationshipPanel(container) {
         const summary = document.createElement('div');
         summary.className = 'pisi-block-relation-summary';
         summary.textContent = model.target
-            ? `${model.target.nodeTitle} · ${model.target.blockId}`
+            ? `${model.target.nodeTitle} · ${String(model.target.text || pisiBlockGraphTranslate('(boş blok)')).slice(0, 90)}`
             : pisiBlockGraphTranslate('Node içindeki bloklar');
         const openGraph = document.createElement('button');
         openGraph.type = 'button';
         openGraph.className = 'pisi-secondary-button';
-        openGraph.textContent = pisiBlockGraphTranslate('Grafiği aç');
+        openGraph.textContent = pisiBlockGraphTranslate('Gelişmiş grafiği aç');
         openGraph.addEventListener('click', () => window.openPisiCommandCenter?.('block-graph'));
         container.append(
             summary,
             openGraph,
-            makePisiBlockRelationList('Blok backlinkleri', model.inbound),
-            makePisiBlockRelationList('Blok bağlantıları', model.outbound),
-            makePisiBlockRelationList('Blok mention kayıtları', model.mentions)
+            makePisiBlockRelationList('Bu bloğa referans verenler', model.inbound),
+            makePisiBlockRelationList('Bu bloğun referansları', model.outbound),
+            makePisiBlockRelationList('Bahsetmeler', model.mentions)
         );
     };
     if (container.dataset.pisiBlockGraphBound !== '1') {
@@ -348,22 +357,17 @@ function initializePisiBlockGraph() {
         id: 'block-graph',
         label: 'Blok grafiği',
         order: 25,
+        hidden: true,
         render: renderPisiBlockGraphPage
     });
     registerPisiCommand({
         id: 'pisi.block.graph',
         label: 'Blok ilişki grafiğini aç',
         description: 'Aktif blok için backlink, mention ve referans grafiğini gösterir.',
-        category: 'Bloklar',
+        category: 'Bağlantılar',
         defaultShortcut: 'Mod+Shift+G',
         allowInInput: true,
         handler: () => window.openPisiCommandCenter?.('block-graph')
-    });
-    registerPisiExtension('rightPanel', {
-        id: 'core.block-relations',
-        label: 'Bloklar',
-        icon: 'blocks',
-        render: renderPisiBlockRelationshipPanel
     });
 }
 
