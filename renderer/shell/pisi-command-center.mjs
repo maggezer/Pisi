@@ -99,9 +99,6 @@ function registerPisiCommandCenterPage(page) {
     pisiCommandCenterState.pages.set(page.id, {
         id: page.id,
         label: page.label || page.id,
-        icon: /^[a-z0-9-]+$/.test(String(page.icon || ''))
-            ? String(page.icon)
-            : '',
         order: Number(page.order) || 0,
         requiresProject: page.requiresProject !== false,
         render: page.render
@@ -132,15 +129,7 @@ function renderPisiCommandCenterNavigation() {
         button.classList.toggle('active', page.id === pisiCommandCenterState.activePage);
         button.setAttribute('aria-pressed', page.id === pisiCommandCenterState.activePage ? 'true' : 'false');
         const rawLabel = typeof page.label === 'function' ? page.label() : page.label;
-        if (page.icon) {
-            const icon = document.createElement('span');
-            icon.className = `pisi-command-center-tab-icon pisi-command-center-tab-icon-${page.icon}`;
-            icon.setAttribute('aria-hidden', 'true');
-            button.appendChild(icon);
-        }
-        const label = document.createElement('span');
-        label.textContent = pisiCommandTranslate(rawLabel);
-        button.appendChild(label);
+        button.textContent = pisiCommandTranslate(rawLabel);
         button.addEventListener('click', () => {
             pisiCommandCenterState.activePage = page.id;
             renderPisiCommandCenterNavigation();
@@ -148,7 +137,6 @@ function renderPisiCommandCenterNavigation() {
         });
         tabs.appendChild(button);
     }
-    syncPisiCommandCenterLaunchers();
 }
 
 async function renderPisiCommandCenterPage() {
@@ -175,6 +163,10 @@ async function openPisiCommandCenter(pageId = null) {
         alert(pisiCommandTranslate('Önce bir proje açın.'));
         return false;
     }
+    if (!window.currentProjectFolder && !requestedPage) {
+        alert(pisiCommandTranslate('Önce bir proje açın.'));
+        return false;
+    }
     ensurePisiCommandCenter();
     if (pageId && pisiCommandCenterState.pages.has(pageId)) {
         pisiCommandCenterState.activePage = pageId;
@@ -182,7 +174,6 @@ async function openPisiCommandCenter(pageId = null) {
     renderPisiCommandCenterNavigation();
     pisiCommandCenterState.overlay.hidden = false;
     document.body.classList.add('pisi-command-center-open');
-    syncPisiCommandCenterLaunchers();
     await renderPisiCommandCenterPage();
     pisiCommandCenterState.dialog.querySelector('input, button, select')?.focus();
     return true;
@@ -191,66 +182,19 @@ async function openPisiCommandCenter(pageId = null) {
 function closePisiCommandCenter() {
     if (pisiCommandCenterState.overlay) pisiCommandCenterState.overlay.hidden = true;
     document.body.classList.remove('pisi-command-center-open');
-    syncPisiCommandCenterLaunchers();
-}
-
-function ensurePisiCommandCenterLauncher(id, title, iconName, onClick) {
-    const actions = document.getElementById('project-actions');
-    if (!actions) return null;
-    let button = document.getElementById(id);
-    if (!button) {
-        button = document.createElement('button');
-        button.id = id;
-        actions.prepend(button);
-    }
-    button.type = 'button';
-    button.className = 'project-action-btn';
-    button.title = pisiCommandTranslate(title);
-    button.setAttribute('aria-label', button.title);
-    button.setAttribute('aria-haspopup', 'dialog');
-    button.setAttribute('aria-controls', 'pisi-command-center-overlay');
-    let icon = button.querySelector('.pisi-project-action-icon');
-    if (!icon) {
-        icon = document.createElement('span');
-        icon.setAttribute('aria-hidden', 'true');
-        button.replaceChildren(icon);
-    }
-    icon.className = `pisi-project-action-icon pisi-project-action-icon-${iconName}`;
-    if (button.dataset.pisiCommandCenterBound !== 'true') {
-        button.addEventListener('click', onClick);
-        button.dataset.pisiCommandCenterBound = 'true';
-    }
-    return button;
-}
-
-function syncPisiCommandCenterLaunchers() {
-    const isOpen = Boolean(
-        pisiCommandCenterState.overlay &&
-        !pisiCommandCenterState.overlay.hidden
-    );
-    document.getElementById('pisi-command-center-button')
-        ?.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-    document.getElementById('pisi-properties-button')?.setAttribute(
-        'aria-pressed',
-        isOpen && pisiCommandCenterState.activePage === 'data'
-            ? 'true'
-            : 'false'
-    );
 }
 
 function installPisiCommandCenterButton() {
-    ensurePisiCommandCenterLauncher(
-        'pisi-command-center-button',
-        'Pisi çalışma merkezi',
-        'workspace',
-        () => openPisiCommandCenter()
-    )?.setAttribute('aria-expanded', 'false');
-    ensurePisiCommandCenterLauncher(
-        'pisi-properties-button',
-        'Özellikler',
-        'properties',
-        () => openPisiCommandCenter('data')
-    )?.setAttribute('aria-pressed', 'false');
+    const actions = document.getElementById('project-actions');
+    if (!actions || document.getElementById('pisi-command-center-button')) return;
+    const button = document.createElement('button');
+    button.id = 'pisi-command-center-button';
+    button.type = 'button';
+    button.className = 'project-action-btn';
+    button.textContent = '🧭';
+    button.title = pisiCommandTranslate('Pisi çalışma merkezi');
+    button.addEventListener('click', () => openPisiCommandCenter());
+    actions.prepend(button);
 }
 
 function makePisiThemeOption(theme, label, description, activeTheme, onSelect) {
@@ -343,56 +287,13 @@ function renderPisiPreferencesPage(container) {
     container.appendChild(page);
 }
 
-function makePisiCommandHomeAction(label, iconName, pageId, disabled = false) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'pisi-command-home-action';
-    button.disabled = disabled;
-    const icon = document.createElement('span');
-    icon.className = `pisi-command-home-icon pisi-command-home-icon-${iconName}`;
-    icon.setAttribute('aria-hidden', 'true');
-    const text = document.createElement('strong');
-    text.textContent = label;
-    button.append(icon, text);
-    button.addEventListener('click', () => openPisiCommandCenter(pageId));
-    return button;
-}
-
-function renderPisiSettingsPage(container) {
-    const page = document.createElement('section');
-    page.className = 'pisi-command-home';
-    const heading = document.createElement('div');
-    heading.className = 'pisi-preferences-heading';
-    const title = document.createElement('h2');
-    title.textContent = pisiCommandTranslate('Pisi çalışma merkezi');
-    heading.appendChild(title);
-    const actions = document.createElement('div');
-    actions.className = 'pisi-command-home-actions';
-    actions.append(
-        makePisiCommandHomeAction(
-            pisiCommandTranslate('Özellikler'),
-            'properties',
-            'data',
-            !window.currentProjectFolder
-        ),
-        makePisiCommandHomeAction(
-            getPisiApplicationText('preferences'),
-            'preferences',
-            'preferences'
-        )
-    );
-    page.append(heading, actions);
-    container.appendChild(page);
-}
-
 function registerPisiApplicationPages() {
     registerPisiCommandCenterPage({
         id: 'settings',
         label: () => getPisiApplicationText('settings'),
-        icon: 'workspace',
         order: 900,
         requiresProject: false,
-        render: async (container) => renderPisiSettingsPage(container)
+        render: async () => {}
     });
 
     registerPisiCommandCenterPage({
@@ -410,7 +311,6 @@ function initializePisiCommandCenter() {
     if (!initializePisiCommandCenter.languageUnsubscribe) {
         initializePisiCommandCenter.languageUnsubscribe =
             window.pisiI18n?.onLanguageChanged?.(() => {
-                installPisiCommandCenterButton();
                 if (!pisiCommandCenterState.overlay?.isConnected) return;
                 renderPisiCommandCenterNavigation();
                 pisiCommandCenterState.dialog?.setAttribute(

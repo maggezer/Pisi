@@ -512,7 +512,6 @@ function initializePisiStructuredViews() {
     registerPisiCommandCenterPage({
         id: 'data',
         label: 'Özellikler',
-        icon: 'properties',
         order: 20,
         render: renderPisiStructuredPage
     });
