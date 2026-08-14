@@ -160,7 +160,8 @@ html[data-pisi-theme="light"] body .pisi-rollup-block-editor-status {
     color: #8a5000;
 }
 
-html[data-pisi-theme="light"] body .pisi-map-bases-trigger {
+html[data-pisi-theme="light"] body .pisi-map-bases-trigger,
+html[data-pisi-theme="light"] body .pisi-map-export-trigger {
     color: #9a5a00;
     background: rgb(255 255 255 / 88%);
     border-color: #aab2bc;
@@ -170,10 +171,34 @@ html[data-pisi-theme="light"] body .pisi-map-bases-trigger {
 }
 
 html[data-pisi-theme="light"] body .pisi-map-bases-trigger:hover,
-html[data-pisi-theme="light"] body .pisi-map-bases-trigger:focus-visible {
+html[data-pisi-theme="light"] body .pisi-map-bases-trigger:focus-visible,
+html[data-pisi-theme="light"] body .pisi-map-export-trigger:hover,
+html[data-pisi-theme="light"] body .pisi-map-export-trigger:focus-visible,
+html[data-pisi-theme="light"] body .pisi-map-export-trigger[aria-expanded="true"] {
     color: #754400;
     background: #ffffff;
     border-color: #d88400;
+}
+
+html[data-pisi-theme="light"] body .pisi-map-export-menu {
+    background: rgb(255 255 255 / 96%);
+    border-color: var(--pisi-theme-border-strong);
+    box-shadow: 0 16px 38px rgb(31 38 48 / 20%);
+}
+
+html[data-pisi-theme="light"] body .pisi-map-export-option {
+    color: var(--pisi-theme-text);
+}
+
+html[data-pisi-theme="light"] body .pisi-map-export-option:hover,
+html[data-pisi-theme="light"] body .pisi-map-export-option:focus-visible {
+    border-color: #d5a55d;
+    background: #fff1d9;
+}
+
+html[data-pisi-theme="light"] body .pisi-map-export-format {
+    color: #814d00;
+    background: #ffe7bd;
 }
 
 html[data-pisi-theme="light"] body .pisi-bases-dialog-overlay {

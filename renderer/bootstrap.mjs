@@ -51,6 +51,7 @@ import "./team/pisi-team-api.mjs";
 import "./editor/pisi-node-preview.mjs";
 import "./map/pisi-map-interactions.mjs";
 import "./map/pisi-map-edges.mjs";
+import "./map/pisi-map-export.mjs";
 import "./shell/pisi-interaction-regressions.mjs";
 import "./runtime.mjs";
 

@@ -86,12 +86,24 @@
     transition: opacity 0.18s ease, transform 0.18s ease;
 }
 
-#pisi-bases-map-control[hidden] {
+#pisi-map-export-control {
+    position: absolute;
+    top: 18px;
+    right: 64px;
+    z-index: 21;
+    opacity: 0.55;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+#pisi-bases-map-control[hidden],
+#pisi-map-export-control[hidden] {
     display: none;
 }
 
 #pisi-bases-map-control:hover,
-#pisi-bases-map-control:focus-within {
+#pisi-bases-map-control:focus-within,
+#pisi-map-export-control:hover,
+#pisi-map-export-control:focus-within {
     opacity: 1;
     transform: translateY(-1px);
 }
@@ -100,6 +112,16 @@
 .pisi-map-bases-trigger {
     width: 38px;
     height: 38px;
+}
+
+.pisi-map-export-trigger {
+    width: 38px;
+    height: 38px;
+}
+
+.map-zoom-btn,
+.pisi-map-bases-trigger,
+.pisi-map-export-trigger {
     display: grid;
     place-items: center;
     padding: 0;
@@ -121,14 +143,18 @@
 
 .map-zoom-btn:hover,
 .pisi-map-bases-trigger:hover,
-.pisi-map-bases-trigger:focus-visible {
+.pisi-map-bases-trigger:focus-visible,
+.pisi-map-export-trigger:hover,
+.pisi-map-export-trigger:focus-visible,
+.pisi-map-export-trigger[aria-expanded="true"] {
     background: rgba(45, 45, 48, 0.96);
     border-color: #f39c12;
     outline: none;
 }
 
 .map-zoom-btn:active,
-.pisi-map-bases-trigger:active {
+.pisi-map-bases-trigger:active,
+.pisi-map-export-trigger:active {
     transform: scale(0.94);
 }
 
@@ -140,6 +166,71 @@
     background: currentColor;
     -webkit-mask: url("../assets/icons/bases-lite.svg") center / contain no-repeat;
     mask: url("../assets/icons/bases-lite.svg") center / contain no-repeat;
+}
+
+.pisi-map-export-icon {
+    width: 21px;
+    height: 21px;
+    display: inline-block;
+    flex: 0 0 auto;
+    background: currentColor;
+    -webkit-mask: url("../assets/icons/export-map.svg") center / contain no-repeat;
+    mask: url("../assets/icons/export-map.svg") center / contain no-repeat;
+}
+
+.pisi-map-export-menu {
+    position: absolute;
+    top: 46px;
+    right: 0;
+    width: 174px;
+    display: grid;
+    gap: 5px;
+    padding: 7px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 11px;
+    background: rgba(37, 37, 38, 0.96);
+    box-shadow: 0 16px 38px rgba(0, 0, 0, 0.48);
+    backdrop-filter: blur(10px);
+}
+
+.pisi-map-export-menu[hidden] {
+    display: none;
+}
+
+.pisi-map-export-option {
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 9px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: #e8e8e8;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 650;
+    text-align: left;
+    cursor: pointer;
+}
+
+.pisi-map-export-option:hover,
+.pisi-map-export-option:focus-visible {
+    border-color: rgba(243, 156, 18, 0.58);
+    background: rgba(243, 156, 18, 0.12);
+    outline: none;
+}
+
+.pisi-map-export-format {
+    width: 36px;
+    padding: 3px 0;
+    border-radius: 6px;
+    background: rgba(243, 156, 18, 0.16);
+    color: #f7ad35;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-align: center;
 }
 
 /* CONNECTION DELETE BUTTON */

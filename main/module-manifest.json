@@ -195,6 +195,7 @@
       "restorePisiNodeHistoryVersion",
       "makePisiDocxBuffer",
       "exportPisiNodeDocument",
+      "exportPisiMapGraphic",
       "exportPisiProjectMarkdown",
       "importPisiMarkdownFolder",
       "auditPisiProjectIntegrity",

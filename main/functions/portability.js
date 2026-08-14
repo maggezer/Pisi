@@ -415,6 +415,110 @@ async function exportPisiNodeDocument(nodePath, format) {
     return { ok: true, filePath: result.filePath, format: extension };
 }
 
+const PISI_MAP_EXPORT_MAX_SVG_BYTES = 12 * 1024 * 1024;
+const PISI_MAP_EXPORT_MAX_PNG_BYTES = 40 * 1024 * 1024;
+
+function validatePisiMapExportSvg(value) {
+    const svg = String(value || '').trim();
+    if (!svg || Buffer.byteLength(svg, 'utf8') > PISI_MAP_EXPORT_MAX_SVG_BYTES) {
+        return { ok: false, error: 'Harita SVG verisi geçersiz veya çok büyük.' };
+    }
+    if (!/^<svg[\s>]/i.test(svg) || !/<\/svg>$/i.test(svg)) {
+        return { ok: false, error: 'Harita SVG verisi geçersiz.' };
+    }
+    const hasUnsafeElement = /<(?:script|foreignObject|iframe|object|embed)\b/i
+        .test(svg);
+    const hasUnsafeAttribute = (svg.match(/<[^>]+>/g) || []).some((tag) => (
+        /\son[a-z]+\s*=/i.test(tag) ||
+        /\s(?:(?:xlink:)?href|src)\s*=\s*["'](?:https?:|file:|javascript:)/i
+            .test(tag)
+    ));
+    if (hasUnsafeElement || hasUnsafeAttribute) {
+        return { ok: false, error: 'Harita SVG verisi güvenli değil.' };
+    }
+    return { ok: true, svg };
+}
+
+function decodePisiMapExportPng(value) {
+    const match = String(value || '').match(
+        /^data:image\/png;base64,([a-z0-9+/=\r\n]+)$/i
+    );
+    if (!match) return { ok: false, error: 'PNG verisi geçersiz.' };
+    const buffer = Buffer.from(match[1], 'base64');
+    if (!buffer.length || buffer.length > PISI_MAP_EXPORT_MAX_PNG_BYTES) {
+        return { ok: false, error: 'PNG verisi geçersiz veya çok büyük.' };
+    }
+    const signature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+    if (!signature.every((byte, index) => buffer[index] === byte)) {
+        return { ok: false, error: 'PNG dosya imzası geçersiz.' };
+    }
+    return { ok: true, buffer };
+}
+
+function getPisiMapExportPageSize(width, height) {
+    const safeWidth = Math.max(1, Math.min(200000, Number(width) || 1));
+    const safeHeight = Math.max(1, Math.min(200000, Number(height) || 1));
+    const scale = Math.min(1, 1440 / Math.max(safeWidth, safeHeight));
+    return {
+        width: Math.max(1, Math.round(safeWidth * scale)),
+        height: Math.max(1, Math.round(safeHeight * scale))
+    };
+}
+
+async function exportPisiMapGraphic(mapPath, payload = {}) {
+    const format = String(payload.format || '').toLowerCase();
+    if (!['png', 'pdf'].includes(format)) {
+        return { ok: false, error: 'Desteklenmeyen harita dışa aktarma biçimi.' };
+    }
+    const svgResult = validatePisiMapExportSvg(payload.svg);
+    if (!svgResult.ok) return svgResult;
+
+    const defaultName = path.basename(mapPath, path.extname(mapPath)) || 'Pisi-Map';
+    const result = await dialog.showSaveDialog(globalThis.mainWindow, {
+        title: 'Haritayı dışa aktar',
+        defaultPath: `${defaultName}.${format}`,
+        filters: [{ name: format.toUpperCase(), extensions: [format] }]
+    });
+    if (result.canceled || !result.filePath) return { ok: true, canceled: true };
+
+    if (format === 'png') {
+        const pngResult = decodePisiMapExportPng(payload.pngDataUrl);
+        if (!pngResult.ok) return pngResult;
+        fs.writeFileSync(result.filePath, pngResult.buffer);
+        return { ok: true, filePath: result.filePath, format };
+    }
+
+    const page = getPisiMapExportPageSize(payload.width, payload.height);
+    const html = '<!doctype html><html><head><meta charset="utf-8">' +
+        `<style>@page{size:${page.width}px ${page.height}px;margin:0}` +
+        `html,body{margin:0;width:${page.width}px;height:${page.height}px;` +
+        'overflow:hidden;background:transparent}' +
+        'svg{display:block;width:100%;height:100%}</style></head><body>' +
+        `${svgResult.svg}</body></html>`;
+    const printWindow = new BrowserWindow({
+        show: false,
+        webPreferences: {
+            sandbox: true,
+            nodeIntegration: false,
+            contextIsolation: true
+        }
+    });
+    try {
+        const dataUrl = `data:text/html;charset=utf-8;base64,${
+            Buffer.from(html, 'utf8').toString('base64')
+        }`;
+        await printWindow.loadURL(dataUrl);
+        const buffer = await printWindow.webContents.printToPDF({
+            printBackground: true,
+            preferCSSPageSize: true
+        });
+        fs.writeFileSync(result.filePath, buffer);
+    } finally {
+        if (!printWindow.isDestroyed()) printWindow.destroy();
+    }
+    return { ok: true, filePath: result.filePath, format };
+}
+
 function getPisiPortableRelativePath(projectFolder, filePath, extension) {
     const relative = path.relative(projectFolder, filePath);
     const withoutExtension = relative.replace(/\.(?:node|map)$/i, '');
@@ -609,6 +713,7 @@ const moduleApi = {
     restorePisiNodeHistoryVersion,
     makePisiDocxBuffer,
     exportPisiNodeDocument,
+    exportPisiMapGraphic,
     exportPisiProjectMarkdown,
     importPisiMarkdownFolder,
     auditPisiProjectIntegrity,

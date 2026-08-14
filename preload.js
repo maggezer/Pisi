@@ -79,6 +79,7 @@ contextBridge.exposeInMainWorld('pisiProject', {
     createPropertyMap: (projectFolder, options) => ipcRenderer.invoke('project:create-property-map', projectFolder, options),
     detachMapReference: (mapPath, nodeId) => ipcRenderer.invoke('project:detach-map-reference', mapPath, nodeId),
 
+    exportMap: (mapPath, payload) => ipcRenderer.invoke('project:export-map', mapPath, payload || {}),
     exportNode: (nodePath, format) => ipcRenderer.invoke('project:export-node', nodePath, format),
     exportProjectMarkdown: (projectFolder) => ipcRenderer.invoke('project:export-markdown', projectFolder),
     importMarkdownFolder: (projectFolder) => ipcRenderer.invoke('project:import-markdown', projectFolder),

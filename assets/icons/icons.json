@@ -11,6 +11,7 @@
     "createNode": "assets/icons/create-node.svg",
     "changeProject": "assets/icons/change-project.svg",
     "basesLite": "assets/icons/bases-lite.svg",
+    "exportMap": "assets/icons/export-map.svg",
     "deleteNode": "assets/icons/delete-node.svg",
     "deleteMap": "assets/icons/delete-map.svg"
   },

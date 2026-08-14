@@ -804,6 +804,24 @@
     ]
   },
   {
+    "module": "map.export",
+    "path": "renderer/map/pisi-map-export.mjs",
+    "bindings": [
+      "escapePisiMapExportXml",
+      "collectPisiMapExportNodes",
+      "getPisiMapExportBounds",
+      "makePisiMapExportConnectionPath",
+      "buildPisiMapExportSvg",
+      "rasterizePisiMapExportSvg",
+      "closePisiMapExportMenu",
+      "syncPisiMapExportControl",
+      "exportCurrentPisiMap",
+      "ensurePisiMapExportControl",
+      "updatePisiMapExportTranslations",
+      "initializePisiMapExport"
+    ]
+  },
+  {
     "module": "core.commands",
     "path": "renderer/core/pisi-command-registry.mjs",
     "bindings": [

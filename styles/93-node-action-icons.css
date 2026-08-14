@@ -49,3 +49,16 @@
 .delete-tree-item-btn .tree-action-fallback {
     display: none;
 }
+
+/* The tree keeps the regular arrow cursor, including draggable/action rows. */
+#left-panel,
+#left-panel * {
+    cursor: default;
+}
+
+#left-panel input,
+#left-panel textarea,
+#left-panel [contenteditable="true"],
+#left-panel [contenteditable="plaintext-only"] {
+    cursor: text;
+}

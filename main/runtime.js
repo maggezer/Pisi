@@ -558,6 +558,16 @@ ipcMain.handle('project:detach-map-reference', (_event, mapPath, nodeId) => {
     });
 });
 
+ipcMain.handle('project:export-map', (_event, mapPath, payload) => {
+    return asyncProjectOperation(async () => {
+        const safeMapPath = assertProjectPath(mapPath, {
+            type: 'file',
+            extensions: ['.map']
+        });
+        return exportPisiMapGraphic(safeMapPath, payload || {});
+    });
+});
+
 ipcMain.handle('project:export-node', (_event, nodePath, format) => {
     return asyncProjectOperation(async () => {
         const safeNodePath = assertProjectPath(nodePath, {

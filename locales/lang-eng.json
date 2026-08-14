@@ -432,7 +432,6 @@
     "Gezin": "Navigate",
     "Aç": "Open",
     "Mapte göster": "Show on map",
-    "Kapat": "Close",
     "İçerik": "Content",
     "Görev": "Task",
     "Etiket": "Tag",
@@ -751,6 +750,23 @@
     "Bu renk yalnızca seçili bağlantıya uygulanır ve varsayılan rengin önüne geçer.": "This color applies only to the selected connection and overrides its default color.",
     "Özelleştirmek için orta alanda bir map aç.": "Open a map in the center to customize it.",
     "Tek bir not kartı seç.": "Select a single note card.",
-    "Bir not kartı veya bağlantı seç.": "Select a note card or connection."
+    "Bir not kartı veya bağlantı seç.": "Select a note card or connection.",
+    "Haritayı dışa aktar": "Export map",
+    "PNG olarak dışa aktar": "Export as PNG",
+    "PDF olarak dışa aktar": "Export as PDF",
+    "Dışa aktarılıyor…": "Exporting…",
+    "Dışa aktarılacak görünür node yok.": "There are no visible nodes to export.",
+    "Harita dışa aktarılamadı.": "The map could not be exported.",
+    "PNG verisi okunamadı.": "The PNG data could not be read.",
+    "Harita görseli oluşturulamadı.": "The map image could not be created.",
+    "PNG çizim alanı oluşturulamadı.": "The PNG drawing surface could not be created.",
+    "PNG dosyası oluşturulamadı.": "The PNG file could not be created.",
+    "Harita SVG verisi geçersiz veya çok büyük.": "The map SVG data is invalid or too large.",
+    "Harita SVG verisi geçersiz.": "The map SVG data is invalid.",
+    "Harita SVG verisi güvenli değil.": "The map SVG data is unsafe.",
+    "PNG verisi geçersiz.": "The PNG data is invalid.",
+    "PNG verisi geçersiz veya çok büyük.": "The PNG data is invalid or too large.",
+    "PNG dosya imzası geçersiz.": "The PNG file signature is invalid.",
+    "Desteklenmeyen harita dışa aktarma biçimi.": "Unsupported map export format."
   }
 }

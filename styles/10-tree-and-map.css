@@ -23,8 +23,13 @@
 
 
 .tree-inline-action-btn:hover {
-    background: #333;
+    background: transparent;
+    border-color: transparent;
+}
+
+.tree-inline-action-btn:focus-visible {
     border-color: #f39c12;
+    outline: none;
 }
 
 .tree-action-img[src=""],
@@ -55,6 +60,10 @@
     height: 20px;
     flex: 0 0 20px;
     padding: 0;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background-color: transparent;
+    box-shadow: none;
 }
 
 .tree-action-img {

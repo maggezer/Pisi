@@ -432,7 +432,6 @@
     "Gezin": "Gezin",
     "Aç": "Aç",
     "Mapte göster": "Mapte göster",
-    "Kapat": "Kapat",
     "İçerik": "İçerik",
     "Görev": "Görev",
     "Etiket": "Etiket",
@@ -751,6 +750,23 @@
     "Bu renk yalnızca seçili bağlantıya uygulanır ve varsayılan rengin önüne geçer.": "Bu renk yalnızca seçili bağlantıya uygulanır ve varsayılan rengin önüne geçer.",
     "Özelleştirmek için orta alanda bir map aç.": "Özelleştirmek için orta alanda bir map aç.",
     "Tek bir not kartı seç.": "Tek bir not kartı seç.",
-    "Bir not kartı veya bağlantı seç.": "Bir not kartı veya bağlantı seç."
+    "Bir not kartı veya bağlantı seç.": "Bir not kartı veya bağlantı seç.",
+    "Haritayı dışa aktar": "Haritayı dışa aktar",
+    "PNG olarak dışa aktar": "PNG olarak dışa aktar",
+    "PDF olarak dışa aktar": "PDF olarak dışa aktar",
+    "Dışa aktarılıyor…": "Dışa aktarılıyor…",
+    "Dışa aktarılacak görünür node yok.": "Dışa aktarılacak görünür node yok.",
+    "Harita dışa aktarılamadı.": "Harita dışa aktarılamadı.",
+    "PNG verisi okunamadı.": "PNG verisi okunamadı.",
+    "Harita görseli oluşturulamadı.": "Harita görseli oluşturulamadı.",
+    "PNG çizim alanı oluşturulamadı.": "PNG çizim alanı oluşturulamadı.",
+    "PNG dosyası oluşturulamadı.": "PNG dosyası oluşturulamadı.",
+    "Harita SVG verisi geçersiz veya çok büyük.": "Harita SVG verisi geçersiz veya çok büyük.",
+    "Harita SVG verisi geçersiz.": "Harita SVG verisi geçersiz.",
+    "Harita SVG verisi güvenli değil.": "Harita SVG verisi güvenli değil.",
+    "PNG verisi geçersiz.": "PNG verisi geçersiz.",
+    "PNG verisi geçersiz veya çok büyük.": "PNG verisi geçersiz veya çok büyük.",
+    "PNG dosya imzası geçersiz.": "PNG dosya imzası geçersiz.",
+    "Desteklenmeyen harita dışa aktarma biçimi.": "Desteklenmeyen harita dışa aktarma biçimi."
   }
 }
