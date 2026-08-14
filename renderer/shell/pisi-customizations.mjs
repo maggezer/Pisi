@@ -3,12 +3,17 @@ import { registerModule } from "../core/module-registry.mjs";
 const PISI_CUSTOMIZATION_STORAGE_KEY = 'pisi.customization.v1';
 const PISI_THEME_STORAGE_KEY = 'pisi.theme.v1';
 const PISI_THEME_VALUES = new Set(['dark', 'light']);
+const PISI_EXPLICIT_THEME_COLOR_KEYS = '_explicitThemeColorKeys';
+const PISI_THEME_MAP_NODE_BOX_COLORS = {
+    dark: '#252526',
+    light: '#ffffff'
+};
 
 const PISI_DEFAULT_CUSTOMIZATION = {
     mapDownHubColor: '#f39c12',
     mapCoLevelColor: '#34ace0',
     mapStreamColor: '#2ecc71',
-    mapNodeBoxColor: '#252526',
+    mapNodeBoxColor: PISI_THEME_MAP_NODE_BOX_COLORS.dark,
     mapNodeTitleColor: '#f39c12',
     mapNodeTitleSize: 13,
     mapNodeTextSize: 12,
@@ -73,6 +78,13 @@ function applyPisiTheme(theme) {
     return normalized;
 }
 
+function getPisiAppliedTheme() {
+    return normalizePisiTheme(
+        document.documentElement?.dataset?.pisiTheme ||
+        getPisiThemePreference()
+    );
+}
+
 function setPisiThemePreference(theme) {
     const normalized = applyPisiTheme(theme);
     try {
@@ -80,7 +92,9 @@ function setPisiThemePreference(theme) {
     } catch (error) {
         console.warn('[PISI] Tema tercihi kaydedilemedi:', error);
     }
-    applyPisiCustomizationSettings(loadPisiCustomizationSettings());
+    const settings = loadPisiCustomizationSettings();
+    applyPisiCustomizationSettings(settings);
+    syncPisiCustomizationInputs(settings);
     document.dispatchEvent(new CustomEvent('pisi:theme-changed', {
         detail: { theme: normalized }
     }));
@@ -90,7 +104,12 @@ function setPisiThemePreference(theme) {
 function loadPisiCustomizationSettings() {
     try {
         const raw = localStorage.getItem(PISI_CUSTOMIZATION_STORAGE_KEY);
-        if (!raw) return { ...PISI_DEFAULT_CUSTOMIZATION };
+        if (!raw) {
+            return {
+                ...PISI_DEFAULT_CUSTOMIZATION,
+                [PISI_EXPLICIT_THEME_COLOR_KEYS]: []
+            };
+        }
 
         const parsed = JSON.parse(raw) || {};
         if (parsed.mapConnectionColor && !parsed.mapDownHubColor) {
@@ -98,13 +117,42 @@ function loadPisiCustomizationSettings() {
         }
         delete parsed.mapConnectionColor;
 
+        const explicitThemeColorKeys = new Set(
+            normalizePisiExplicitThemeColorKeys(
+                parsed[PISI_EXPLICIT_THEME_COLOR_KEYS]
+            )
+        );
+        const storedNodeBoxColor = String(
+            parsed.mapNodeBoxColor || ''
+        ).toLowerCase();
+        const themeNodeBoxColors = Object.values(
+            PISI_THEME_MAP_NODE_BOX_COLORS
+        );
+
+        // Eski sürümler açık temadaki beyazı kalıcı bir özelleştirme gibi
+        // saklayabiliyordu. Tema renklerinden farklı eski değerler gerçek
+        // kullanıcı tercihi sayılır; beyaz/koyu palet değerleri temayı izler.
+        if (
+            !Array.isArray(parsed[PISI_EXPLICIT_THEME_COLOR_KEYS]) &&
+            isValidPisiHexColor(storedNodeBoxColor) &&
+            !themeNodeBoxColors.includes(storedNodeBoxColor)
+        ) {
+            explicitThemeColorKeys.add('mapNodeBoxColor');
+        }
+
         return {
             ...PISI_DEFAULT_CUSTOMIZATION,
-            ...parsed
+            ...parsed,
+            [PISI_EXPLICIT_THEME_COLOR_KEYS]: Array.from(
+                explicitThemeColorKeys
+            )
         };
     } catch (error) {
         console.warn('[PISI] Customize ayarları okunamadı:', error);
-        return { ...PISI_DEFAULT_CUSTOMIZATION };
+        return {
+            ...PISI_DEFAULT_CUSTOMIZATION,
+            [PISI_EXPLICIT_THEME_COLOR_KEYS]: []
+        };
     }
 }
 
@@ -123,6 +171,13 @@ function isValidPisiHexColor(value) {
     return /^#[0-9a-fA-F]{6}$/.test(String(value || ''));
 }
 
+function normalizePisiExplicitThemeColorKeys(value) {
+    return Array.from(new Set(
+        (Array.isArray(value) ? value : [])
+            .filter((key) => key === 'mapNodeBoxColor')
+    ));
+}
+
 function normalizePisiSizeValue(value, fallback, min = 8, max = 32) {
     const numberValue = Number(value);
     if (!Number.isFinite(numberValue)) return fallback;
@@ -139,16 +194,24 @@ function resolvePisiCustomizationValue(
         return normalizePisiSizeValue(settings?.[key], fallback, 8, 32);
     }
 
-    let value = isValidPisiHexColor(settings?.[key])
+    const value = isValidPisiHexColor(settings?.[key])
         ? settings[key]
         : fallback;
 
-    if (
-        key === 'mapNodeBoxColor' &&
-        value.toLowerCase() === PISI_DEFAULT_CUSTOMIZATION.mapNodeBoxColor &&
-        getPisiThemePreference() === 'light'
-    ) {
-        value = '#ffffff';
+    if (key === 'mapNodeBoxColor') {
+        const normalizedValue = value.toLowerCase();
+        const explicitThemeColorKeys = normalizePisiExplicitThemeColorKeys(
+            settings?.[PISI_EXPLICIT_THEME_COLOR_KEYS]
+        );
+        const isThemePaletteColor = Object.values(
+            PISI_THEME_MAP_NODE_BOX_COLORS
+        ).includes(normalizedValue);
+        const isExplicit = explicitThemeColorKeys.includes(key) ||
+            !isThemePaletteColor;
+
+        if (!isExplicit) {
+            return PISI_THEME_MAP_NODE_BOX_COLORS[getPisiAppliedTheme()];
+        }
     }
     return value;
 }
@@ -234,7 +297,23 @@ function bindPisiCustomizationPreferenceControls(panel) {
             if (!PISI_DEFAULT_CUSTOMIZATION[key]) return;
             if (!isValidPisiHexColor(input.value)) return;
 
-            settings = { ...settings, [key]: input.value };
+            if (key === 'mapNodeBoxColor') {
+                const explicitThemeColorKeys = new Set(
+                    normalizePisiExplicitThemeColorKeys(
+                        settings[PISI_EXPLICIT_THEME_COLOR_KEYS]
+                    )
+                );
+                explicitThemeColorKeys.add(key);
+                settings = {
+                    ...settings,
+                    [key]: input.value,
+                    [PISI_EXPLICIT_THEME_COLOR_KEYS]: Array.from(
+                        explicitThemeColorKeys
+                    )
+                };
+            } else {
+                settings = { ...settings, [key]: input.value };
+            }
             applyPisiCustomizationSettings(settings);
             savePisiCustomizationSettings(settings);
             document.dispatchEvent(new CustomEvent(
@@ -280,7 +359,10 @@ function bindPisiCustomizationPreferenceControls(panel) {
     panel.querySelector('#pisi-customize-reset')?.addEventListener(
         'click',
         () => {
-            settings = { ...PISI_DEFAULT_CUSTOMIZATION };
+            settings = {
+                ...PISI_DEFAULT_CUSTOMIZATION,
+                [PISI_EXPLICIT_THEME_COLOR_KEYS]: []
+            };
             savePisiCustomizationSettings(settings);
             applyPisiCustomizationSettings(settings);
             syncPisiCustomizationInputs(settings, panel);
