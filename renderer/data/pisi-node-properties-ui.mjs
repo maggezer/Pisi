@@ -308,19 +308,9 @@ async function renderPisiNodePropertiesInfo() {
             return false;
         }
 
-        const header = document.createElement('div');
-        header.className = 'pisi-properties-info-header';
-        const title = document.createElement('strong');
-        title.textContent = snapshot.title;
-        const badge = document.createElement('span');
-        badge.className = 'pisi-properties-readonly-badge';
-        badge.textContent = pisiNodePropertiesTranslate('Salt okunur');
-        header.append(title, badge);
-
         const visibleProperties = getPisiVisibleNodeProperties(snapshot);
         if (!visibleProperties.length) {
             host.replaceChildren(
-                header,
                 makePisiNodePropertiesEmpty('Bu node için özellik tanımlanmamış.')
             );
             return true;
@@ -346,7 +336,7 @@ async function renderPisiNodePropertiesInfo() {
             row.append(rowHeading, value);
             list.appendChild(row);
         }
-        host.replaceChildren(header, list);
+        host.replaceChildren(list);
         return true;
     } catch (error) {
         if (generation !== pisiNodePropertiesUiState.infoGeneration) return false;

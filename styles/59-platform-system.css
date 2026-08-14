@@ -738,38 +738,6 @@
     gap: 10px;
 }
 
-.pisi-properties-info-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    min-width: 0;
-    padding: 10px 11px;
-    color: var(--pisi-theme-text, #e5e7eb);
-    background: var(--pisi-theme-surface-alt, #2a2b2f);
-    border: 1px solid var(--pisi-theme-border, #3d3f45);
-    border-radius: 9px;
-}
-
-.pisi-properties-info-header > strong {
-    min-width: 0;
-    overflow: hidden;
-    font-size: 12px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.pisi-properties-readonly-badge {
-    flex: 0 0 auto;
-    padding: 3px 7px;
-    color: #ffc766;
-    background: color-mix(in srgb, var(--pisi-theme-accent, #f39c12) 12%, transparent);
-    border: 1px solid color-mix(in srgb, var(--pisi-theme-accent, #f39c12) 35%, transparent);
-    border-radius: 999px;
-    font-size: 10px;
-    font-weight: 750;
-}
-
 .pisi-properties-info-list {
     display: grid;
     gap: 7px;

@@ -29,6 +29,34 @@ test('arama soldan kaldırılır ve gerçek sağ panel sekmesine taşınır', ()
     )));
 });
 
+test('arama sonuçları teknik node kimliklerini kullanıcıya göstermez', () => {
+    const panel = read('renderer/search/pisi-search-panel.mjs');
+    const helperSource = panel.slice(
+        panel.indexOf('function getPisiRightSearchDisplayPath'),
+        panel.indexOf('function getPisiRightSearchPreview')
+    );
+    const getDisplayPath = Function(
+        `${helperSource}; return getPisiRightSearchDisplayPath;`
+    )();
+
+    assert.equal(
+        getDisplayPath(
+            'nd_Proje__map_24fc/Plan__node_f35a-91b2.node'
+        ),
+        'Plan.node'
+    );
+    assert.equal(
+        getDisplayPath('Belgeler/Plan__node_f35a-91b2.node'),
+        'Belgeler / Plan.node'
+    );
+    assert.match(panel, /getPisiRightSearchPreview\(result\)/);
+    assert.match(panel, /openPisiSearchResult\(result/);
+    assert.doesNotMatch(
+        panel,
+        /\[result\.mapTitle, result\.relativePath\]/
+    );
+});
+
 test('Links dahil dinamik sekmeler her tıklamada güncel durumdan seçilir', () => {
     const source = read('renderer/shell/pisi-window.mjs');
 

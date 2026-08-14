@@ -73,7 +73,6 @@ html[data-pisi-theme="light"] body .pisi-node-properties-drawer {
     box-shadow: inset 0 8px 18px rgb(31 38 48 / 5%);
 }
 
-html[data-pisi-theme="light"] body .pisi-properties-info-header,
 html[data-pisi-theme="light"] body .pisi-properties-info-row {
     color: var(--pisi-theme-text);
     background: var(--pisi-theme-surface-alt);
@@ -159,12 +158,6 @@ html[data-pisi-theme="light"] body .pisi-rollup-block-editor-field > select {
 
 html[data-pisi-theme="light"] body .pisi-rollup-block-editor-status {
     color: #8a5000;
-}
-
-html[data-pisi-theme="light"] body .pisi-properties-readonly-badge {
-    color: #8a5100;
-    background: #fff1d7;
-    border-color: #e2b45f;
 }
 
 html[data-pisi-theme="light"] body .pisi-map-bases-trigger {

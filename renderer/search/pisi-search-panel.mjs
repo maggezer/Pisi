@@ -44,10 +44,44 @@ function getPisiRightSearchKindIcon(kind) {
     }[kind] || '•';
 }
 
-function getPisiRightSearchContext(result) {
-    return [result.mapTitle, result.relativePath]
+function getPisiRightSearchDisplayPath(value = '') {
+    return String(value || '')
+        .split(/[\\/]+/)
         .filter(Boolean)
-        .join(' · ');
+        .filter((segment) => {
+            return !/^(?:nd|inv)_.+__(?:map|node)_[A-Za-z0-9_-]+$/i
+                .test(segment);
+        })
+        .map((segment) => {
+            return segment.replace(
+                /__(?:node|map)_[A-Za-z0-9_-]+(?=\.(?:node|map)$)/i,
+                ''
+            );
+        })
+        .join(' / ');
+}
+
+function getPisiRightSearchPreview(result) {
+    if (
+        result.kind === 'node' &&
+        result.preview === result.relativePath
+    ) {
+        return getPisiRightSearchDisplayPath(result.preview);
+    }
+    return result.preview || '';
+}
+
+function getPisiRightSearchContext(result) {
+    const values = [
+        result.mapTitle,
+        getPisiRightSearchDisplayPath(result.relativePath)
+    ].filter(Boolean);
+    return values.filter((value, index) => {
+        return values.findIndex((candidate) => {
+            return candidate.toLocaleLowerCase('tr') ===
+                value.toLocaleLowerCase('tr');
+        }) === index;
+    }).join(' · ');
 }
 
 function setPisiRightSearchStatus(state, message, mode = '') {
@@ -119,11 +153,12 @@ function makePisiRightSearchResult(state, result, index) {
     titleRow.append(title, kind);
     body.appendChild(titleRow);
 
-    if (result.preview) {
+    const preview = getPisiRightSearchPreview(result);
+    if (preview) {
         body.appendChild(makePisiRightSearchElement(
             'span',
             'pisi-right-search-result-preview',
-            result.preview
+            preview
         ));
     }
     const context = getPisiRightSearchContext(result);
