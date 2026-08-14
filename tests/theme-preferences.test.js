@@ -108,6 +108,48 @@ test('map node varsayılanı iki yönde tema ile değişir, açık kullanıcı r
     assert.match(customizations, /root\.style\.setProperty\(cssVariable, value\)/);
 });
 
+
+test('map node fontu ve boyutları Preferences ayarlarından uygulanır', () => {
+    const runtime = loadCustomizationRuntime({
+        'pisi.customization.v1': JSON.stringify({
+            mapNodeFontFamily: 'Verdana, Geneva, sans-serif',
+            mapNodeTitleSize: 17,
+            mapNodeTextSize: 15
+        })
+    });
+
+    assert.equal(
+        runtime.cssVariables.get('--pisi-map-node-font-family'),
+        'Verdana, Geneva, sans-serif'
+    );
+    assert.equal(runtime.cssVariables.get('--pisi-map-node-title-size'), '17px');
+    assert.equal(runtime.cssVariables.get('--pisi-map-node-text-size'), '15px');
+});
+
+test('node kartı tipografi seçicisi okunaklı varsayılan ve iki tema stili sunar', () => {
+    const customizations = read('renderer/shell/pisi-customizations.mjs');
+    const variables = read('styles/40-editor.css');
+    const mapCss = read('styles/10-tree-and-map.css');
+    const preferencesCss = read('styles/60-customization.css');
+    const lightCss = read('styles/91-light-theme-tuning.css');
+    const tr = JSON.parse(read('locales/lang-tr.json')).strings;
+    const eng = JSON.parse(read('locales/lang-eng.json')).strings;
+
+    assert.match(customizations, /PISI_MAP_NODE_FONT_OPTIONS/);
+    assert.match(customizations, /Segoe UI Variable Text/);
+    assert.match(customizations, /Verdana, Geneva, sans-serif/);
+    assert.match(customizations, /className = 'pisi-map-font-select'/);
+    assert.match(variables, /--pisi-map-node-font-family: "Segoe UI Variable Text"/);
+    assert.match(mapCss, /font-family: var\(--pisi-map-node-font-family\)/);
+    assert.match(mapCss, /\.map-node-preview[\s\S]*?font-weight: 600;/);
+    assert.match(preferencesCss, /\.pisi-map-font-select/);
+    assert.match(lightCss, /data-pisi-theme="light"[^\n]*\.pisi-map-font-select/);
+    for (const key of ['Nodebox font', 'Varsayılanlara dön']) {
+        assert.equal(typeof tr[key], 'string', key);
+        assert.equal(typeof eng[key], 'string', key);
+    }
+});
+
 test('eski açık tema rengi koyu temaya geçerken yenilenir', () => {
     const runtime = loadCustomizationRuntime({
         'pisi.theme.v1': 'light',

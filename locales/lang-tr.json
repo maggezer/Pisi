@@ -767,6 +767,9 @@
     "PNG verisi geçersiz.": "PNG verisi geçersiz.",
     "PNG verisi geçersiz veya çok büyük.": "PNG verisi geçersiz veya çok büyük.",
     "PNG dosya imzası geçersiz.": "PNG dosya imzası geçersiz.",
-    "Desteklenmeyen harita dışa aktarma biçimi.": "Desteklenmeyen harita dışa aktarma biçimi."
+    "Desteklenmeyen harita dışa aktarma biçimi.": "Desteklenmeyen harita dışa aktarma biçimi.",
+    "Nodebox font": "Not kartı yazı tipi",
+    "Varsayılanlara dön": "Varsayılanlara dön",
+    "Yazı tipi ve boyut ayarları haritadaki tüm not kartlarına uygulanır.": "Yazı tipi ve boyut ayarları haritadaki tüm not kartlarına uygulanır."
   }
 }

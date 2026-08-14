@@ -8,6 +8,14 @@ const PISI_THEME_MAP_NODE_BOX_COLORS = {
     dark: '#252526',
     light: '#ffffff'
 };
+const PISI_MAP_NODE_FONT_OPTIONS = [
+    ['"Segoe UI Variable Text", "Segoe UI", Arial, sans-serif', 'Segoe UI Variable'],
+    ['"Segoe UI", Tahoma, sans-serif', 'Segoe UI'],
+    ['Verdana, Geneva, sans-serif', 'Verdana'],
+    ['Arial, Helvetica, sans-serif', 'Arial'],
+    ['"Trebuchet MS", Arial, sans-serif', 'Trebuchet MS'],
+    ['Georgia, "Times New Roman", serif', 'Georgia']
+];
 
 const PISI_DEFAULT_CUSTOMIZATION = {
     mapDownHubColor: '#f39c12',
@@ -15,6 +23,7 @@ const PISI_DEFAULT_CUSTOMIZATION = {
     mapStreamColor: '#2ecc71',
     mapNodeBoxColor: PISI_THEME_MAP_NODE_BOX_COLORS.dark,
     mapNodeTitleColor: '#f39c12',
+    mapNodeFontFamily: PISI_MAP_NODE_FONT_OPTIONS[0][0],
     mapNodeTitleSize: 13,
     mapNodeTextSize: 12,
     nodeHeaderColor: '#f39c12'
@@ -26,6 +35,7 @@ const PISI_CUSTOMIZATION_CSS_VARIABLES = {
     mapStreamColor: '--pisi-map-stream-color',
     mapNodeBoxColor: '--pisi-map-node-box-color',
     mapNodeTitleColor: '--pisi-map-node-title-color',
+    mapNodeFontFamily: '--pisi-map-node-font-family',
     mapNodeTitleSize: '--pisi-map-node-title-size',
     mapNodeTextSize: '--pisi-map-node-text-size',
     nodeHeaderColor: '--pisi-node-header-color'
@@ -184,11 +194,22 @@ function normalizePisiSizeValue(value, fallback, min = 8, max = 32) {
     return Math.min(max, Math.max(min, Math.round(numberValue)));
 }
 
+function normalizePisiMapNodeFontFamily(value) {
+    const font = String(value || '');
+    return PISI_MAP_NODE_FONT_OPTIONS.some(([candidate]) => candidate === font)
+        ? font
+        : PISI_DEFAULT_CUSTOMIZATION.mapNodeFontFamily;
+}
+
 function resolvePisiCustomizationValue(
     key,
     settings = loadPisiCustomizationSettings()
 ) {
     const fallback = PISI_DEFAULT_CUSTOMIZATION[key];
+
+    if (key === 'mapNodeFontFamily') {
+        return normalizePisiMapNodeFontFamily(settings?.[key]);
+    }
 
     if (key === 'mapNodeTitleSize' || key === 'mapNodeTextSize') {
         return normalizePisiSizeValue(settings?.[key], fallback, 8, 32);
@@ -245,6 +266,13 @@ function syncPisiCustomizationInputs(
         const key = input.dataset.pisiCustomSize;
         input.value = resolvePisiCustomizationValue(key, settings);
     });
+
+    root.querySelectorAll('[data-pisi-custom-font]').forEach((select) => {
+        select.value = resolvePisiCustomizationValue(
+            select.dataset.pisiCustomFont,
+            settings
+        );
+    });
 }
 
 function makePisiPreferenceGroup(titleText, open = true) {
@@ -284,6 +312,24 @@ function appendPisiSizePreference(group, field) {
     input.step = '1';
     input.dataset.pisiCustomSize = key;
     row.append(label, input);
+    group.appendChild(row);
+}
+
+function appendPisiFontPreference(group) {
+    const row = makePisiCustomizeElement('div', 'pisi-customize-row');
+    const label = makePisiCustomizeElement('label', '', 'Nodebox font');
+    label.htmlFor = 'custom-map-node-font';
+    const select = document.createElement('select');
+    select.id = 'custom-map-node-font';
+    select.className = 'pisi-map-font-select';
+    select.dataset.pisiCustomFont = 'mapNodeFontFamily';
+    for (const [value, text] of PISI_MAP_NODE_FONT_OPTIONS) {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = text;
+        select.appendChild(option);
+    }
+    row.append(label, select);
     group.appendChild(row);
 }
 
@@ -340,6 +386,21 @@ function bindPisiCustomizationPreferenceControls(panel) {
             );
             settings = { ...settings, [key]: value };
             input.value = value;
+            applyPisiCustomizationSettings(settings);
+            savePisiCustomizationSettings(settings);
+            document.dispatchEvent(new CustomEvent(
+                'pisi:customization-defaults-changed'
+            ));
+        });
+    });
+
+    panel.querySelectorAll('[data-pisi-custom-font]').forEach((select) => {
+        select.addEventListener('change', () => {
+            const key = select.dataset.pisiCustomFont;
+            settings = {
+                ...settings,
+                [key]: normalizePisiMapNodeFontFamily(select.value)
+            };
             applyPisiCustomizationSettings(settings);
             savePisiCustomizationSettings(settings);
             document.dispatchEvent(new CustomEvent(
@@ -424,9 +485,15 @@ function renderPisiCustomizationPreferences(container) {
     for (const field of PISI_GLOBAL_COLOR_FIELDS) {
         appendPisiColorPreference(map, ...field);
     }
+    appendPisiFontPreference(map);
     for (const field of PISI_GLOBAL_SIZE_FIELDS) {
         appendPisiSizePreference(map, field);
     }
+    map.appendChild(makePisiCustomizeElement(
+        'div',
+        'pisi-customize-note',
+        'Yazı tipi ve boyut ayarları haritadaki tüm not kartlarına uygulanır.'
+    ));
 
     const node = makePisiPreferenceGroup('Node');
     appendPisiColorPreference(
@@ -439,7 +506,7 @@ function renderPisiCustomizationPreferences(container) {
     const reset = makePisiCustomizeElement(
         'button',
         'pisi-customize-reset',
-        'Varsayılan renklere dön'
+        'Varsayılanlara dön'
     );
     reset.id = 'pisi-customize-reset';
     reset.type = 'button';

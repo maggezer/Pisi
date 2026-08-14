@@ -74,6 +74,10 @@ function collectPisiMapExportNodes() {
                 previewStyle.color,
                 '#aaaaaa'
             ),
+            titleFontFamily: titleStyle.fontFamily || '"Segoe UI", sans-serif',
+            previewFontFamily: previewStyle.fontFamily || '"Segoe UI", sans-serif',
+            titleFontWeight: titleStyle.fontWeight || '800',
+            previewFontWeight: previewStyle.fontWeight || '600',
             titleSize: Math.max(
                 9,
                 getPisiMapExportNumber(titleStyle.fontSize, 13)
@@ -310,8 +314,12 @@ function buildPisiMapExportSvg() {
     });
 
     const nodeMarkup = nodes.map((node) => {
-        const titleFont = `700 ${node.titleSize}px "Segoe UI", sans-serif`;
-        const previewFont = `400 ${node.previewSize}px "Segoe UI", sans-serif`;
+        const titleFont = `${node.titleFontWeight} ${node.titleSize}px ${
+            node.titleFontFamily
+        }`;
+        const previewFont = `${node.previewFontWeight} ${node.previewSize}px ${
+            node.previewFontFamily
+        }`;
         const title = fitPisiMapExportLine(
             node.title,
             Math.max(20, node.width - 32),
@@ -321,11 +329,11 @@ function buildPisiMapExportSvg() {
             node.preview,
             Math.max(20, node.width - 24),
             previewFont,
-            Math.max(0, Math.floor((node.height - 49) / (node.previewSize * 1.35)))
+            Math.max(0, Math.floor((node.height - 49) / (node.previewSize * 1.4)))
         );
         const previewTspans = previewLines.map((line, index) => (
             `<tspan x="${node.x + 12}" dy="${
-                index === 0 ? 0 : node.previewSize * 1.35
+                index === 0 ? 0 : node.previewSize * 1.4
             }">${escapePisiMapExportXml(line)}</tspan>`
         )).join('');
 
@@ -339,15 +347,20 @@ function buildPisiMapExportSvg() {
             `stroke="${titleDivider}"/>` +
             `<text x="${node.x + node.width / 2}" y="${node.y + 20}" ` +
             `fill="${escapePisiMapExportXml(node.titleColor)}" ` +
-            `font-family="Segoe UI, sans-serif" font-size="${node.titleSize}" ` +
-            `font-weight="700" text-anchor="middle">${
+            `font-family="${escapePisiMapExportXml(node.titleFontFamily)}" ` +
+            `font-size="${node.titleSize}" font-weight="${
+                escapePisiMapExportXml(node.titleFontWeight)
+            }" text-anchor="middle">${
                 escapePisiMapExportXml(title)
             }</text>` +
             (previewTspans
                 ? `<text x="${node.x + 12}" y="${node.y + 49}" ` +
                     `fill="${escapePisiMapExportXml(node.previewColor)}" ` +
-                    `font-family="Segoe UI, sans-serif" ` +
-                    `font-size="${node.previewSize}">${previewTspans}</text>`
+                    `font-family="${
+                        escapePisiMapExportXml(node.previewFontFamily)
+                    }" font-size="${node.previewSize}" font-weight="${
+                        escapePisiMapExportXml(node.previewFontWeight)
+                    }">${previewTspans}</text>`
                 : '') +
             '</g>';
     }).join('');

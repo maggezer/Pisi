@@ -15,6 +15,7 @@
 
 .add-node-under-map-btn:hover,
 .add-node-under-map-btn:focus-visible {
+    background-image: url("../assets/icons/create-node.svg");
     background-color: rgba(243, 156, 18, 0.16);
     border-color: #f39c12;
     color: #ffb347;

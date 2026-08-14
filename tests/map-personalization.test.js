@@ -13,13 +13,15 @@ test('global görünüm ayarları sağ panelden Preferences sayfasına taşını
     const commandCenter = read('renderer/shell/pisi-command-center.mjs');
     const customizations = read('renderer/shell/pisi-customizations.mjs');
 
-    assert.doesNotMatch(html, /data-pisi-custom-(?:color|size)/);
+    assert.doesNotMatch(html, /data-pisi-custom-(?:color|size|font)/);
     assert.match(html, /id="pisi-map-customize-panel"/);
     assert.match(commandCenter, /renderPisiCustomizationPreferences\(page\)/);
     assert.match(customizations, /id = 'pisi-customize-preferences'/);
     assert.match(customizations, /id = 'pisi-language-select'/);
     assert.match(customizations, /dataset\.pisiCustomColor = key/);
     assert.match(customizations, /dataset\.pisiCustomSize = key/);
+    assert.match(customizations, /dataset\.pisiCustomFont = 'mapNodeFontFamily'/);
+    assert.match(customizations, /appendPisiFontPreference\(map\)/);
 });
 
 test('Customize yalnız görünür bir map varken etkinleşir ve en sağdadır', () => {

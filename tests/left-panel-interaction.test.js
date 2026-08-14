@@ -21,8 +21,12 @@ test('map yanındaki yeni node aksiyonu delete map ile aynı buton yapısını k
         /\.tree-inline-action-btn\s*\{[\s\S]*?border: 1px solid transparent;[\s\S]*?background-color: transparent;[\s\S]*?box-shadow: none;[\s\S]*?\}/
     );
     assert.match(
+        treeCss,
+        /\.tree-inline-action-btn:hover\s*\{[\s\S]*?background-color: transparent;/
+    );
+    assert.match(
         iconCss,
-        /\.add-node-under-map-btn:hover,\s*\.add-node-under-map-btn:focus-visible\s*\{[\s\S]*?background-color: rgba\(243, 156, 18, 0\.16\);[\s\S]*?border-color: #f39c12;[\s\S]*?\}/
+        /\.add-node-under-map-btn:hover,\s*\.add-node-under-map-btn:focus-visible\s*\{[\s\S]*?background-image: url\("\.\.\/assets\/icons\/create-node\.svg"\);[\s\S]*?background-color: rgba\(243, 156, 18, 0\.16\);[\s\S]*?border-color: #f39c12;[\s\S]*?\}/
     );
 });
 

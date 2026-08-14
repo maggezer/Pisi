@@ -23,7 +23,7 @@
 
 
 .tree-inline-action-btn:hover {
-    background: transparent;
+    background-color: transparent;
     border-color: transparent;
 }
 
@@ -128,6 +128,7 @@
     border-radius: 10px;
     box-shadow: 0 8px 24px rgba(0,0,0,0.35);
     color: #d4d4d4;
+    font-family: var(--pisi-map-node-font-family);
     overflow: visible;
     user-select: none;
     z-index: 4;
@@ -147,7 +148,7 @@
     height: 30px;
     padding: 7px 34px 4px 34px;
     color: var(--pisi-map-node-title-color);
-    font-weight: 700;
+    font-weight: 800;
     font-size: var(--pisi-map-node-title-size);
     white-space: nowrap;
     overflow: hidden;
@@ -162,7 +163,9 @@
     min-height: 0;
     padding: 8px 12px 10px 12px;
     font-size: var(--pisi-map-node-text-size);
-    line-height: 1.35;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: 0.01em;
     color: #aaa;
     overflow: hidden;
     white-space: pre-wrap;
@@ -362,7 +365,7 @@
     padding: 1px 6px;
     font: inherit;
     font-size: var(--pisi-map-node-title-size);
-    font-weight: 700;
+    font-weight: 800;
     text-align: center;
 }
 

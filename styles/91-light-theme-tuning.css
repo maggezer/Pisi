@@ -160,6 +160,13 @@ html[data-pisi-theme="light"] body .pisi-rollup-block-editor-status {
     color: #8a5000;
 }
 
+html[data-pisi-theme="light"] body .pisi-map-font-select {
+    color: #202a36;
+    background-color: #ffffff;
+    border-color: #adb5bf;
+    color-scheme: light;
+}
+
 html[data-pisi-theme="light"] body .pisi-map-bases-trigger,
 html[data-pisi-theme="light"] body .pisi-map-export-trigger {
     color: #9a5a00;

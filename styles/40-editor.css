@@ -101,6 +101,7 @@
     --pisi-map-stream-color: #2ecc71;
     --pisi-map-node-box-color: #252526;
     --pisi-map-node-title-color: #f39c12;
+    --pisi-map-node-font-family: "Segoe UI Variable Text", "Segoe UI", Arial, sans-serif;
 
     --pisi-map-node-title-size: 13px;
     --pisi-map-node-text-size: 12px;

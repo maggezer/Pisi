@@ -36,6 +36,9 @@ test('çıktı ekran görüntüsü yerine bütün görünür map geometrisinden 
     assert.match(exporter, /activeMapEdges/);
     assert.match(exporter, /getComputedStyle\(livePath\)\.stroke/);
     assert.match(exporter, /getComputedStyle\(box\)/);
+    assert.match(exporter, /titleStyle\.fontFamily/);
+    assert.match(exporter, /previewStyle\.fontWeight/);
+    assert.match(exporter, /escapePisiMapExportXml\(node\.titleFontFamily\)/);
     assert.doesNotMatch(exporter, /capturePage|html2canvas|getDisplayMedia/);
 });
 

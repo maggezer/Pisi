@@ -767,6 +767,9 @@
     "PNG verisi geçersiz.": "The PNG data is invalid.",
     "PNG verisi geçersiz veya çok büyük.": "The PNG data is invalid or too large.",
     "PNG dosya imzası geçersiz.": "The PNG file signature is invalid.",
-    "Desteklenmeyen harita dışa aktarma biçimi.": "Unsupported map export format."
+    "Desteklenmeyen harita dışa aktarma biçimi.": "Unsupported map export format.",
+    "Nodebox font": "Note card font",
+    "Varsayılanlara dön": "Reset to defaults",
+    "Yazı tipi ve boyut ayarları haritadaki tüm not kartlarına uygulanır.": "Font and size settings apply to every note card on the map."
   }
 }

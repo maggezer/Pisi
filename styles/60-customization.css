@@ -359,7 +359,8 @@
     text-align: center;
 }
 
-.pisi-language-select {
+.pisi-language-select,
+.pisi-map-font-select {
     min-width: 112px;
     height: 29px;
     border: 1px solid #444;
@@ -373,8 +374,14 @@
     cursor: pointer;
 }
 
+.pisi-map-font-select {
+    min-width: 190px;
+}
+
 .pisi-language-select:hover,
-.pisi-language-select:focus {
+.pisi-language-select:focus,
+.pisi-map-font-select:hover,
+.pisi-map-font-select:focus {
     border-color: #f39c12;
 }
 
