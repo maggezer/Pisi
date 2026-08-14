@@ -86,6 +86,12 @@
     overflow: hidden;
 }
 
+#main-layout > #left-panel {
+    position: relative;
+    z-index: 2;
+    isolation: isolate;
+}
+
 #left-panel #file-tree {
     flex: 1 1 auto;
     min-height: 0;
@@ -113,6 +119,7 @@
     justify-content: center;
     overflow: hidden;
     position: relative;
+    z-index: 1;
 }
 
 .pisi-calendar-dock-zone.has-calendar {
@@ -162,7 +169,7 @@
 }
 
 .pisi-calendar.docked {
-    position: static;
+    position: relative;
     width: 100%;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.32);
 }

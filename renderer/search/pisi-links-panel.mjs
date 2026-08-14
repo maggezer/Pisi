@@ -283,23 +283,6 @@ function renderPisiLinksModel(index, model) {
         return;
     }
 
-    const summary = makePisiLinksElement(
-        'div',
-        'pisi-links-summary'
-    );
-    summary.append(
-        makePisiLinksElement(
-            'strong',
-            'pisi-links-summary-title',
-            model.target.title
-        ),
-        makePisiLinksElement(
-            'span',
-            'pisi-links-summary-path',
-            model.target.relativePath
-        )
-    );
-
     const sections = [
         makePisiLinksSection(
             'Bu node’a bağlantı verenler',
@@ -331,7 +314,7 @@ function renderPisiLinksModel(index, model) {
             (item) => makePisiLinksMapButton(index, item)
         )
     ];
-    panel.replaceChildren(summary, ...sections);
+    panel.replaceChildren(...sections);
 }
 
 async function refreshPisiLinksPanel() {

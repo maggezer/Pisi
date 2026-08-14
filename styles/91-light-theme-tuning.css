@@ -427,7 +427,6 @@ html[data-pisi-theme="light"] body .pisi-right-search-result.selected {
     background: var(--pisi-theme-hover);
 }
 
-html[data-pisi-theme="light"] body .pisi-links-summary,
 html[data-pisi-theme="light"] body .pisi-links-section {
     background: var(--pisi-theme-surface-alt);
     color: var(--pisi-theme-text);
@@ -435,12 +434,10 @@ html[data-pisi-theme="light"] body .pisi-links-section {
 }
 
 html[data-pisi-theme="light"] body .pisi-links-section-title,
-html[data-pisi-theme="light"] body .pisi-links-summary-title,
 html[data-pisi-theme="light"] body .pisi-links-item-title {
     color: var(--pisi-theme-text);
 }
 
-html[data-pisi-theme="light"] body .pisi-links-summary-path,
 html[data-pisi-theme="light"] body .pisi-links-item-meta {
     color: var(--pisi-theme-muted);
 }

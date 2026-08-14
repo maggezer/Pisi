@@ -461,32 +461,6 @@
     padding: 0 8px 14px;
 }
 
-.pisi-links-summary {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    padding: 9px 10px;
-    border: 1px solid #454950;
-    border-radius: 8px;
-    background: #24262a;
-}
-
-.pisi-links-summary-title {
-    overflow: hidden;
-    color: #ececef;
-    font-size: 12px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.pisi-links-summary-path {
-    overflow: hidden;
-    color: #8d929a;
-    font-size: 9px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
 .pisi-links-section {
     border: 1px solid #3b3e43;
     border-radius: 8px;
