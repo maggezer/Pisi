@@ -302,9 +302,9 @@
     mask-image: url("../assets/right-tabs/todo.svg");
 }
 
-.pisi-right-tab-icon-details {
-    -webkit-mask-image: url("../assets/right-tabs/details.svg");
-    mask-image: url("../assets/right-tabs/details.svg");
+.pisi-right-tab-icon-tags {
+    -webkit-mask-image: url("../assets/right-tabs/tags.svg");
+    mask-image: url("../assets/right-tabs/tags.svg");
 }
 
 .pisi-right-tab-icon-customize {
@@ -312,9 +312,9 @@
     mask-image: url("../assets/right-tabs/customize.svg");
 }
 
-.pisi-right-tab-icon-connections {
-    -webkit-mask-image: url("../assets/right-tabs/connections.svg");
-    mask-image: url("../assets/right-tabs/connections.svg");
+.pisi-right-tab-icon-links {
+    -webkit-mask-image: url("../assets/right-tabs/links.svg");
+    mask-image: url("../assets/right-tabs/links.svg");
 }
 
 .pisi-right-tab-icon-search {
@@ -322,11 +322,18 @@
     mask-image: url("../assets/right-tabs/search.svg");
 }
 
+.pisi-right-tab-icon-properties {
+    -webkit-mask-image: url("../assets/right-tabs/properties.svg");
+    mask-image: url("../assets/right-tabs/properties.svg");
+}
+
 .right-panel-tab[data-right-tab="missions"] { order: 10; }
-.right-panel-tab[data-right-tab="details"] { order: 20; }
-.right-panel-tab[data-right-tab="connections"] { order: 30; }
-.right-panel-tab[data-right-tab="search"] { order: 40; }
-.right-panel-tab[data-right-tab="customizations"] { order: 50; }
+.right-panel-tab[data-right-tab="tags"] { order: 20; }
+.right-panel-tab[data-right-tab^="extension-"] { order: 40; }
+.right-panel-tab[data-right-tab="links"] { order: 50; }
+.right-panel-tab[data-right-tab="search"] { order: 60; }
+.right-panel-tab[data-right-tab="properties"] { order: 65; }
+.right-panel-tab[data-right-tab="customizations"] { order: 70; }
 
 
 .right-panel-tab:hover {

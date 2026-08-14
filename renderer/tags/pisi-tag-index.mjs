@@ -234,10 +234,6 @@ async function refreshPisiTagsPanel() {
 
         pisiTagsPanelState.index = Array.isArray(index) ? index : [];
 
-        document.dispatchEvent(new CustomEvent('pisi:tags-index-updated', {
-            detail: { count: pisiTagsPanelState.index.length }
-        }));
-
         const missionsPageIsActive = document
             .getElementById('right-tab-missions')
             ?.classList

@@ -60,7 +60,7 @@ test('Rollup yalnız ana toolbardan node bloğu olarak eklenir ve property menü
     assert.match(styles, /\.pisi-property-type-readonly/);
 });
 
-test('sistem metadata ve Relation sağ Detaylar panelinde gösterilmez', () => {
+test('sistem metadata ve Relation sağ Properties panelinde gösterilmez', () => {
     const filesystem = read('main/functions/filesystem-core.js');
     const documentStore = read('main/functions/document-store.js');
     const propertiesUi = read('renderer/data/pisi-node-properties-ui.mjs');
@@ -79,7 +79,7 @@ test('sistem metadata ve Relation sağ Detaylar panelinde gösterilmez', () => {
     assert.match(propertiesUi, /property\.system !== true/);
     assert.match(propertiesUi, /property\.type !== 'system'/);
     assert.match(propertiesUi, /property\.type !== 'relation'/);
-    assert.match(propertiesUi, /for \(const property of regularProperties\)/);
+    assert.match(propertiesUi, /for \(const property of visibleProperties\)/);
     assert.match(propertiesUi, /makePisiNodePropertiesEmpty\('Bu node için özellik tanımlanmamış\.'/);
     assert.doesNotMatch(
         propertiesUi,

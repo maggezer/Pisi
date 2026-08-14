@@ -217,15 +217,27 @@
 
                     <button
                         class="right-panel-tab"
-                        data-right-tab="details"
-                        title="Detaylar"
-                        aria-label="Detaylar"
-                        aria-controls="right-tab-details"
+                        data-right-tab="tags"
+                        title="Tags"
+                        aria-label="Tags"
+                    >
+                        <span
+                            class="pisi-right-tab-icon pisi-right-tab-icon-tags"
+                            aria-hidden="true"
+                        ></span>
+                    </button>
+
+                    <button
+                        class="right-panel-tab"
+                        data-right-tab="properties"
+                        title="Özellikler"
+                        aria-label="Özellikler"
+                        aria-controls="right-tab-properties"
                         aria-disabled="true"
                         disabled
                     >
                         <span
-                            class="pisi-right-tab-icon pisi-right-tab-icon-details"
+                            class="pisi-right-tab-icon pisi-right-tab-icon-properties"
                             aria-hidden="true"
                         ></span>
                     </button>
@@ -259,11 +271,11 @@
                         </div>
                     </section>
 
-                    <section id="right-tab-details" class="right-tab-page">
-                        <div class="right-panel-section-title">Detaylar</div>
-                        <div id="pisi-node-details-info" class="pisi-node-properties-info">
+                    <section id="right-tab-properties" class="right-tab-page">
+                        <div class="right-panel-section-title">Özellikler</div>
+                        <div id="pisi-node-properties-info" class="pisi-node-properties-info">
                             <div class="right-panel-empty">
-                                Detayları görmek için bir node aç.
+                                Özellikleri görmek için bir node aç.
                             </div>
                         </div>
                     </section>
@@ -273,6 +285,25 @@
                         <div id="pisi-map-customize-panel"></div>
                     </section>
 
+                    <section id="right-tab-tags" class="right-tab-page">
+                        <div class="right-panel-section-title">Tags</div>
+
+                        <div id="pisi-tags-panel">
+                            <div class="pisi-tag-picker">
+                                <button id="pisi-tag-picker-button" type="button">
+                                    Choose tag
+                                </button>
+
+                                <div
+                                    id="pisi-tag-picker-menu"
+                                    class="pisi-tag-picker-menu"
+                                    hidden
+                                ></div>
+                            </div>
+
+                            <div id="pisi-tag-block-results" class="pisi-tag-block-results"></div>
+                        </div>
+                    </section>
                 </div>
             </aside>
         </main>

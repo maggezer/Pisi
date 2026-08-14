@@ -276,12 +276,16 @@
     background: #4a4a4a;
 }
 
-/* TAG EXPLORER */
-.pisi-tag-explorer-page {
-    display: grid;
-    gap: 14px;
-    max-width: 880px;
-    margin: 0 auto;
+/* TAGS DROPDOWN PANEL */
+#right-tab-tags.active {
+    display: block;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    min-height: 0;
+    height: auto;
+    margin: 0;
+    padding: 0;
 }
 
 .pisi-tag-picker {

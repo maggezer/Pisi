@@ -1,5 +1,4 @@
 import { registerModule } from "../core/module-registry.mjs";
-import { registerPisiCommandCenterPage } from "../shell/pisi-command-center.mjs";
 import { parsePisiTodoTagValue } from "./pisi-todo-utils.mjs";
 
 function ensurePisiTagsPanelDom() {
@@ -15,7 +14,7 @@ function ensurePisiTagsPanelDom() {
         panel.innerHTML = `
             <div class="pisi-tag-picker">
                 <button id="pisi-tag-picker-button" type="button">
-                    ${pisiBlockTranslateForTags('Choose tag')}
+                    Choose tag
                 </button>
 
                 <div
@@ -45,7 +44,10 @@ function ensurePisiTagsPanelDom() {
 function renderPisiTagsPanel() {
     const dom = ensurePisiTagsPanelDom();
 
-    if (!dom) return false;
+    if (!dom) {
+        console.error('[PISI] Tags panel DOM bulunamadı.');
+        return;
+    }
 
     const {
         pickerButton,
@@ -84,13 +86,13 @@ const tags = Array.from(counts.keys()).sort((a, b) => {
         pisiTagsPanelState.dropdownOpen = false;
 
         pickerButton.disabled = true;
-        pickerButton.textContent = pisiBlockTranslateForTags('Choose tag');
+        pickerButton.textContent = 'Choose tag';
         pickerMenu.hidden = true;
         pickerMenu.innerHTML = '';
 
         resultsEl.innerHTML = `
             <div class="right-panel-empty">
-                ${pisiBlockTranslateForTags('Bu map veya günlük notlar içinde kullanıcı etiketi içeren blok yok.')}
+                Bu map veya günlük notlar içinde kullanıcı etiketi içeren blok yok.
             </div>
         `;
 
@@ -182,44 +184,6 @@ const tags = Array.from(counts.keys()).sort((a, b) => {
 
         resultsEl.appendChild(card);
     }
-
-    return true;
-}
-
-async function renderPisiTagExplorerPage(container) {
-    const page = document.createElement('section');
-    page.className = 'pisi-tag-explorer-page';
-
-    const heading = document.createElement('div');
-    heading.className = 'pisi-command-section-heading';
-    const title = document.createElement('h2');
-    title.textContent = pisiBlockTranslateForTags('Etiket gezgini');
-    const description = document.createElement('p');
-    description.textContent = pisiBlockTranslateForTags(
-        'Map ve günlük notlarındaki blok etiketlerini keşfedin.'
-    );
-    heading.append(title, description);
-
-    const panel = document.createElement('div');
-    panel.id = 'pisi-tags-panel';
-    page.append(heading, panel);
-    container.appendChild(page);
-
-    await window.refreshPisiTagsPanel?.();
-    renderPisiTagsPanel();
-}
-
-function pisiBlockTranslateForTags(value) {
-    return window.pisiT?.(value) ?? String(value ?? '');
-}
-
-function openPisiTagExplorer(tag = '') {
-    const normalized = typeof window.normalizePisiUserTag === 'function'
-        ? window.normalizePisiUserTag(tag)
-        : String(tag || '').replace(/^(?:#|\.\.|\/)/, '').trim().toLowerCase();
-    if (normalized) pisiTagsPanelState.selectedTag = normalized;
-    pisiTagsPanelState.dropdownOpen = false;
-    return window.openPisiCommandCenter?.('tags') || false;
 }
 
 function parsePisiTodoTag(tag) {
@@ -602,14 +566,6 @@ Object.defineProperties(moduleApi, {
         enumerable: true,
         get() { return renderPisiTagsPanel; }
     },
-    "renderPisiTagExplorerPage": {
-        enumerable: true,
-        get() { return renderPisiTagExplorerPage; }
-    },
-    "openPisiTagExplorer": {
-        enumerable: true,
-        get() { return openPisiTagExplorer; }
-    },
     "parsePisiTodoTag": {
         enumerable: true,
         get() { return parsePisiTodoTag; }
@@ -674,11 +630,5 @@ Object.defineProperties(moduleApi, {
         enumerable: true,
         get() { return setPisiMissionCompletion; }
     }
-});
-registerPisiCommandCenterPage({
-    id: 'tags',
-    label: 'Etiketler',
-    order: 20,
-    render: renderPisiTagExplorerPage
 });
 registerModule("tags.panels", moduleApi);

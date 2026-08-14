@@ -167,16 +167,11 @@ function getPisiSelectedBlockReference(index) {
     editor.dispatchEvent(new Event('input', { bubbles: true }));
     const documentRecord = Array.from(index?.documents?.values?.() || [])
         .find((record) => record.path === nodePath);
-    const nodeTitle = documentRecord?.title ||
-        String(nodePath).split(/[\\/]/).pop()?.replace(/\.node$/i, '') ||
-        'Node';
-    const blockText = String(block.textContent || '').replace(/\s+/g, ' ').trim();
     return {
         nodePath,
         blockId: block.dataset.pisiBlockId,
-        reference: `[[${nodeTitle}#^${block.dataset.pisiBlockId}]]`,
-        label: `${nodeTitle} · ${blockText || pisiResearchTranslate('(boş blok)')}`,
-        text: blockText
+        reference: `${documentRecord?.relativePath || nodePath}#${block.dataset.pisiBlockId}`,
+        text: String(block.textContent || '').replace(/\s+/g, ' ').trim()
     };
 }
 
@@ -216,25 +211,25 @@ function buildPisiReferenceAndCitationTools(container, index) {
     copy.addEventListener('click', () => {
         const reference = getPisiSelectedBlockReference(index);
         if (!reference) return alert(pisiResearchTranslate('Referans için açık bir node ve blok gerekli.'));
-        referenceOutput.value = reference.label;
+        referenceOutput.value = reference.reference;
         window.pisiClipboard?.writeText?.(reference.reference);
     });
     current.append(referenceOutput, copy);
 
     const insertRow = document.createElement('div');
     insertRow.className = 'pisi-block-reference-tool';
+    const referenceInput = makePisiResearchInput('blockReference', 'text', 'Node.node#block-id');
     const insertReference = document.createElement('button');
     insertReference.type = 'button';
-    insertReference.className = 'pisi-secondary-button pisi-block-reference-picker-trigger';
-    insertReference.textContent = pisiResearchTranslate('Blok seçerek referans ekle');
+    insertReference.className = 'pisi-secondary-button';
+    insertReference.textContent = pisiResearchTranslate('Blok referansı ekle');
     insertReference.addEventListener('click', () => {
-        const block = window.getPisiActiveBlock?.();
-        if (!block) {
-            return alert(pisiResearchTranslate('Referans için açık bir node ve blok gerekli.'));
-        }
-        window.openPisiBlockReferencePicker?.(block);
+        const value = referenceInput.value.trim();
+        if (!value) return;
+        const html = `<span class="pisi-block-reference" data-pisi-block-ref="${escapePisiResearchHtml(value)}">↗ ${escapePisiResearchHtml(value)}</span>`;
+        if (!insertPisiResearchHtml(html)) alert(pisiResearchTranslate('Alıntı eklemek için bir node açın.'));
     });
-    insertRow.append(insertReference);
+    insertRow.append(referenceInput, insertReference);
 
     const sources = getPisiResearchSourceDocuments(index);
     const citationForm = document.createElement('form');
@@ -247,26 +242,7 @@ function buildPisiReferenceAndCitationTools(container, index) {
         sourceSelect.appendChild(option);
     }
     const quote = makePisiResearchTextarea('quote', 'Alıntılanacak içerik');
-    const blockReference = document.createElement('select');
-    const syncCitationBlocks = () => {
-        const source = sources.find((item) => item.path === sourceSelect.value);
-        const blank = document.createElement('option');
-        blank.value = '';
-        blank.textContent = pisiResearchTranslate('Node geneli');
-        const options = [blank];
-        for (const block of source?.contentBlocks || []) {
-            if (!block.blockId) continue;
-            const option = document.createElement('option');
-            option.value = `${source.path}#${block.blockId}`;
-            option.textContent = String(
-                block.text || pisiResearchTranslate('(boş blok)')
-            ).slice(0, 90);
-            options.push(option);
-        }
-        blockReference.replaceChildren(...options);
-    };
-    sourceSelect.addEventListener('change', syncCitationBlocks);
-    syncCitationBlocks();
+    const blockReference = makePisiResearchInput('sourceBlockRef', 'text', 'İsteğe bağlı kaynak blok referansı');
     const insertCitation = document.createElement('button');
     insertCitation.type = 'submit';
     insertCitation.className = 'pisi-primary-button';

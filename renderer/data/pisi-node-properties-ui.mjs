@@ -280,78 +280,14 @@ function getPisiVisibleNodeProperties(snapshot = {}) {
     });
 }
 
-function getPisiNodeDetailTags(properties = []) {
-    return Array.from(new Set(properties
-        .filter((property) => property.type === 'multiselect')
-        .flatMap((property) => Array.isArray(property.value)
-            ? property.value
-            : String(property.value || '').split(','))
-        .map((value) => String(value || '').replace(/^#/, '').trim())
-        .filter(Boolean)));
-}
-
-function getPisiNodeBlockTagCounts(nodePath) {
-    const counts = new Map();
-    const records = Array.isArray(window.pisiTagsPanelState?.index)
-        ? window.pisiTagsPanelState.index
-        : [];
-    for (const block of records) {
-        if (
-            pisiNodePropertiesPathKey(block?.nodePath) !==
-            pisiNodePropertiesPathKey(nodePath)
-        ) {
-            continue;
-        }
-        for (const rawTag of Array.isArray(block.tags) ? block.tags : []) {
-            const tag = String(rawTag || '')
-                .replace(/^(?:#|\.\.|\/)/, '')
-                .trim()
-                .toLocaleLowerCase('tr-TR');
-            if (!tag || tag === 'done' || /^todo\./i.test(tag)) continue;
-            counts.set(tag, (counts.get(tag) || 0) + 1);
-        }
-    }
-    return counts;
-}
-
-function makePisiNodeDetailsSection(titleText) {
-    const section = document.createElement('section');
-    section.className = 'pisi-node-details-section';
-    const title = document.createElement('h3');
-    title.className = 'pisi-node-details-section-title';
-    title.textContent = pisiNodePropertiesTranslate(titleText);
-    section.appendChild(title);
-    return section;
-}
-
-function makePisiNodeDetailsTags(tags, emptyMessage, options = {}) {
-    if (!tags.length) return makePisiNodePropertiesEmpty(emptyMessage);
-    const list = document.createElement('div');
-    list.className = 'pisi-node-details-tags';
-    for (const tagRecord of tags) {
-        const tag = typeof tagRecord === 'string' ? tagRecord : tagRecord.tag;
-        const count = typeof tagRecord === 'string' ? null : tagRecord.count;
-        const chip = document.createElement(options.interactive ? 'button' : 'span');
-        chip.className = 'pisi-node-details-tag';
-        if (options.interactive) {
-            chip.type = 'button';
-            chip.title = pisiNodePropertiesTranslate('Etiket gezgininde aç');
-            chip.addEventListener('click', () => window.openPisiTagExplorer?.(tag));
-        }
-        chip.textContent = `#${tag}${count ? ` · ${count}` : ''}`;
-        list.appendChild(chip);
-    }
-    return list;
-}
-
 async function renderPisiNodePropertiesInfo() {
-    const host = document.getElementById('pisi-node-details-info');
+    const host = document.getElementById('pisi-node-properties-info');
     if (!host) return false;
     const nodePath = getPisiSearchCurrentNodePath();
     const generation = ++pisiNodePropertiesUiState.infoGeneration;
     if (!nodePath) {
         host.replaceChildren(
-            makePisiNodePropertiesEmpty('Detayları görmek için bir node aç.')
+            makePisiNodePropertiesEmpty('Özellikleri görmek için bir node aç.')
         );
         return false;
     }
@@ -382,32 +318,17 @@ async function renderPisiNodePropertiesInfo() {
         header.append(title, badge);
 
         const visibleProperties = getPisiVisibleNodeProperties(snapshot);
-        const nodeTags = getPisiNodeDetailTags(visibleProperties);
-        const regularProperties = visibleProperties.filter((property) => {
-            return property.type !== 'multiselect';
-        });
-        const blockTags = Array.from(getPisiNodeBlockTagCounts(nodePath))
-            .map(([tag, count]) => ({ tag, count }))
-            .sort((a, b) => a.tag.localeCompare(b.tag, 'tr'));
-
-        const nodeTagsSection = makePisiNodeDetailsSection('Node etiketleri');
-        nodeTagsSection.appendChild(makePisiNodeDetailsTags(
-            nodeTags,
-            'Bu node için etiket tanımlanmamış.'
-        ));
-
-        const blockTagsSection = makePisiNodeDetailsSection('Blok etiketleri');
-        blockTagsSection.appendChild(makePisiNodeDetailsTags(
-            blockTags,
-            'Bu node’da blok etiketi yok.',
-            { interactive: true }
-        ));
-
-        const propertiesSection = makePisiNodeDetailsSection('Özellikler');
+        if (!visibleProperties.length) {
+            host.replaceChildren(
+                header,
+                makePisiNodePropertiesEmpty('Bu node için özellik tanımlanmamış.')
+            );
+            return true;
+        }
 
         const list = document.createElement('div');
         list.className = 'pisi-properties-info-list';
-        for (const property of regularProperties) {
+        for (const property of visibleProperties) {
             const row = document.createElement('div');
             row.className = 'pisi-properties-info-row';
             row.dataset.system = property.system === true ? 'true' : 'false';
@@ -425,17 +346,7 @@ async function renderPisiNodePropertiesInfo() {
             row.append(rowHeading, value);
             list.appendChild(row);
         }
-        propertiesSection.appendChild(
-            regularProperties.length
-                ? list
-                : makePisiNodePropertiesEmpty('Bu node için özellik tanımlanmamış.')
-        );
-        host.replaceChildren(
-            header,
-            nodeTagsSection,
-            blockTagsSection,
-            propertiesSection
-        );
+        host.replaceChildren(header, list);
         return true;
     } catch (error) {
         if (generation !== pisiNodePropertiesUiState.infoGeneration) return false;
@@ -453,7 +364,7 @@ async function renderPisiNodePropertiesInfo() {
 
 function syncPisiNodePropertiesTab(detail = {}) {
     const button = document.querySelector(
-        '.right-panel-tab[data-right-tab="details"]'
+        '.right-panel-tab[data-right-tab="properties"]'
     );
     if (!button) return false;
     const nodePath = Object.prototype.hasOwnProperty.call(detail, 'path')
@@ -465,9 +376,9 @@ function syncPisiNodePropertiesTab(detail = {}) {
 
     if (!enabled) {
         pisiNodePropertiesUiState.infoGeneration += 1;
-        const host = document.getElementById('pisi-node-details-info');
+        const host = document.getElementById('pisi-node-properties-info');
         host?.replaceChildren(
-            makePisiNodePropertiesEmpty('Detayları görmek için bir node aç.')
+            makePisiNodePropertiesEmpty('Özellikleri görmek için bir node aç.')
         );
         if (button.classList.contains('active')) {
             document.querySelector(
@@ -489,13 +400,10 @@ function initializePisiNodePropertiesUi() {
     pisiNodePropertiesUiState.bound = true;
 
     const tabButton = document.querySelector(
-        '.right-panel-tab[data-right-tab="details"]'
+        '.right-panel-tab[data-right-tab="properties"]'
     );
     tabButton?.addEventListener('click', () => {
-        if (!tabButton.disabled) {
-            void renderPisiNodePropertiesInfo();
-            window.refreshPisiTagsPanelSoon?.();
-        }
+        if (!tabButton.disabled) void renderPisiNodePropertiesInfo();
     });
 
     document.addEventListener('pisi:active-node-changed', (event) => {
@@ -524,18 +432,9 @@ function initializePisiNodePropertiesUi() {
             }
         }
         const propertiesTab = document.querySelector(
-            '.right-panel-tab[data-right-tab="details"]'
+            '.right-panel-tab[data-right-tab="properties"]'
         );
         if (propertiesTab?.classList.contains('active')) {
-            void renderPisiNodePropertiesInfo();
-        }
-    });
-
-    document.addEventListener('pisi:tags-index-updated', () => {
-        const detailsTab = document.querySelector(
-            '.right-panel-tab[data-right-tab="details"]'
-        );
-        if (detailsTab?.classList.contains('active')) {
             void renderPisiNodePropertiesInfo();
         }
     });

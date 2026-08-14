@@ -438,8 +438,6 @@
     "bindings": [
       "ensurePisiTagsPanelDom",
       "renderPisiTagsPanel",
-      "renderPisiTagExplorerPage",
-      "openPisiTagExplorer",
       "parsePisiTodoTag",
       "formatPisiMissionDate",
       "getPisiMissionsFromIndex",
@@ -603,9 +601,7 @@
     "bindings": [
       "installPisiLinksPanel",
       "refreshPisiLinksPanel",
-      "schedulePisiLinksPanelRefresh",
-      "setPisiConnectionsView",
-      "openPisiBlockConnections"
+      "schedulePisiLinksPanelRefresh"
     ]
   },
   {
@@ -872,32 +868,6 @@
       "closePisiMarkdownSource",
       "addPisiBlockBelow",
       "initializePisiBlocksEditor"
-    ]
-  },
-  {
-    "module": "search.blockGraph",
-    "path": "renderer/search/pisi-block-graph.mjs",
-    "bindings": [
-      "getPisiBlockGraphKey",
-      "collectPisiBlockGraphData",
-      "buildPisiBlockRelationshipModel",
-      "renderPisiBlockGraphSvg",
-      "renderPisiBlockGraphPage",
-      "renderPisiBlockRelationshipPanel",
-      "initializePisiBlockGraph"
-    ]
-  },
-  {
-    "module": "editor.blockActions",
-    "path": "renderer/editor/pisi-block-actions.mjs",
-    "bindings": [
-      "pisiBlockActionsState",
-      "bindPisiBlockActions",
-      "openPisiBlockReferencePicker",
-      "closePisiBlockReferencePicker",
-      "insertPisiBlockReference",
-      "openPisiEmbeddedBlockReference",
-      "initializePisiBlockActions"
     ]
   },
   {
