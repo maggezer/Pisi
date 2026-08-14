@@ -52,17 +52,12 @@ function installPisiLinksPanel() {
         );
         page.id = 'right-tab-links';
 
-        const title = makePisiLinksElement(
-            'div',
-            'right-panel-section-title',
-            pisiLinksTranslate('Bağlantılar')
-        );
         const body = makePisiLinksElement(
             'div',
             'pisi-links-panel'
         );
         body.id = 'pisi-links-panel';
-        page.append(title, body);
+        page.appendChild(body);
         content.appendChild(page);
     }
 

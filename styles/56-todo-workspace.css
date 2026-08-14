@@ -4,6 +4,12 @@
     display: none;
 }
 
+.pisi-todo-panel-actions-host {
+    display: flex;
+    min-height: 38px;
+    margin-bottom: 10px;
+}
+
 .pisi-todo-panel-actions {
     display: flex;
     align-items: center;

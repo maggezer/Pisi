@@ -62,16 +62,14 @@ function forcePisiRightTodoListView() {
 }
 
 function ensurePisiTodoWorkspaceOpenButton() {
-    const title = document.querySelector(
-        '#right-tab-missions > .right-panel-section-title'
-    );
-    if (!title) return null;
+    const host = document.getElementById('pisi-todo-panel-actions-host');
+    if (!host) return null;
 
-    let actions = title.querySelector('.pisi-todo-panel-actions');
+    let actions = host.querySelector('.pisi-todo-panel-actions');
     if (!actions) {
         actions = document.createElement('div');
         actions.className = 'pisi-todo-panel-actions';
-        title.replaceChildren(actions);
+        host.replaceChildren(actions);
     }
 
     let workspaceButton = actions.querySelector('#pisi-todo-workspace-open');

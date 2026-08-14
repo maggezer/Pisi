@@ -387,14 +387,6 @@
     display: block;
 }
 
-.right-panel-section-title {
-    color: #f39c12;
-    font-size: 13px;
-    font-weight: 800;
-    margin-bottom: 10px;
-}
-
-
 .right-panel-empty {
     border: 1px dashed #444;
     border-radius: 8px;

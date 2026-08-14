@@ -391,10 +391,6 @@ html[data-pisi-theme="light"] body #right-panel-content .right-tab-page {
     color: var(--pisi-theme-text);
 }
 
-html[data-pisi-theme="light"] body #right-panel-content .right-panel-section-title {
-    color: #a85f00;
-}
-
 html[data-pisi-theme="light"] body .pisi-right-search-input-row {
     border-color: var(--pisi-theme-border-strong);
     background: var(--pisi-theme-surface-alt);

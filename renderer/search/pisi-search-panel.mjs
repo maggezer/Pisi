@@ -245,14 +245,7 @@ function makePisiRightSearchState(page) {
     results.id = 'pisi-right-search-results';
     results.setAttribute('role', 'listbox');
     panel.append(inputRow, status, results);
-    page.append(
-        makePisiRightSearchElement(
-            'div',
-            'right-panel-section-title',
-            pisiRightSearchTranslate('Global arama ve hızlı geçiş')
-        ),
-        panel
-    );
+    page.appendChild(panel);
 
     const state = {
         page,
