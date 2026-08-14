@@ -11,7 +11,7 @@ function cancelPendingPisiTreeFileClick() {
     return true;
 }
 
-function schedulePisiTreeFileClick(item, row, afterOpen = null) {
+function schedulePisiTreeFileClick(item, row) {
     cancelPendingPisiTreeFileClick();
 
     const pending = {
@@ -36,17 +36,12 @@ function schedulePisiTreeFileClick(item, row, afterOpen = null) {
         }
 
         try {
-            let opened = true;
             selectTreeFile(currentItem, row);
 
             if (typeof openPisiFileTab === 'function') {
-                opened = await openPisiFileTab(currentItem);
+                await openPisiFileTab(currentItem);
             } else if (isMapFileName(currentItem.name || currentItem.fileName)) {
-                opened = await openMapInWorkspace(currentItem);
-            }
-
-            if (opened !== false && typeof afterOpen === 'function') {
-                await afterOpen();
+                await openMapInWorkspace(currentItem);
             }
         } catch (error) {
             console.error('[PISI] Ağaç öğesi açılamadı:', error);
@@ -498,6 +493,18 @@ async function createTreeNode(item, level = 0, isRoot = false) {
             }
         }
 
+        const toggleControl = row.querySelector('.tree-toggle');
+        toggleControl?.addEventListener('click', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            cancelPendingPisiTreeFileClick();
+            await toggleChildren();
+        });
+        toggleControl?.addEventListener('dblclick', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+        });
+
         if (!isRoot) {
             row.addEventListener('keydown', async (event) => {
                 if (event.target.closest('button, input')) return;
@@ -538,6 +545,7 @@ async function createTreeNode(item, level = 0, isRoot = false) {
     row.addEventListener('click', async (event) => {
         if (event.target.closest('.tree-rename-input')) return;
         if (event.target.closest('.tree-row-actions')) return;
+        if (event.target.closest('.tree-toggle')) return;
 
         event.preventDefault();
         event.stopPropagation();
@@ -550,7 +558,7 @@ async function createTreeNode(item, level = 0, isRoot = false) {
                 return;
             }
 
-            schedulePisiTreeFileClick(item, row, toggleChildren);
+            schedulePisiTreeFileClick(item, row);
             return;
         }
 
@@ -562,6 +570,7 @@ if (!isRoot) {
     row.addEventListener('dblclick', (event) => {
         if (event.target.closest('.tree-rename-input')) return;
         if (event.target.closest('.tree-row-actions')) return;
+        if (event.target.closest('.tree-toggle')) return;
 
         event.preventDefault();
         event.stopPropagation();

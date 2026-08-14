@@ -422,21 +422,12 @@
     text-transform: uppercase;
 }
 
-.pisi-right-search-result-preview,
-.pisi-right-search-result-context {
+.pisi-right-search-result-preview {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-.pisi-right-search-result-preview {
     color: #bcc1c8;
     font-size: 9px;
-}
-
-.pisi-right-search-result-context {
-    color: #858c95;
-    font-size: 8px;
 }
 
 .pisi-right-search-empty {

@@ -395,7 +395,6 @@ html[data-pisi-theme="light"] body .pisi-right-search-input {
 
 html[data-pisi-theme="light"] body .pisi-right-search-input::placeholder,
 html[data-pisi-theme="light"] body .pisi-right-search-status,
-html[data-pisi-theme="light"] body .pisi-right-search-result-context,
 html[data-pisi-theme="light"] body .pisi-right-search-empty {
     color: var(--pisi-theme-muted);
 }

@@ -71,19 +71,6 @@ function getPisiRightSearchPreview(result) {
     return result.preview || '';
 }
 
-function getPisiRightSearchContext(result) {
-    const values = [
-        result.mapTitle,
-        getPisiRightSearchDisplayPath(result.relativePath)
-    ].filter(Boolean);
-    return values.filter((value, index) => {
-        return values.findIndex((candidate) => {
-            return candidate.toLocaleLowerCase('tr') ===
-                value.toLocaleLowerCase('tr');
-        }) === index;
-    }).join(' · ');
-}
-
 function setPisiRightSearchStatus(state, message, mode = '') {
     state.status.textContent = pisiRightSearchTranslate(message);
     state.status.dataset.mode = mode;
@@ -161,15 +148,6 @@ function makePisiRightSearchResult(state, result, index) {
             preview
         ));
     }
-    const context = getPisiRightSearchContext(result);
-    if (context) {
-        body.appendChild(makePisiRightSearchElement(
-            'span',
-            'pisi-right-search-result-context',
-            context
-        ));
-    }
-
     row.append(icon, body);
     row.addEventListener('mouseenter', () => {
         selectPisiRightSearchResult(state, index, false);

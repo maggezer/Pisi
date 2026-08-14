@@ -55,6 +55,8 @@ test('arama sonuçları teknik node kimliklerini kullanıcıya göstermez', () =
         panel,
         /\[result\.mapTitle, result\.relativePath\]/
     );
+    assert.doesNotMatch(panel, /getPisiRightSearchContext/);
+    assert.doesNotMatch(panel, /pisi-right-search-result-context/);
 });
 
 test('Links dahil dinamik sekmeler her tıklamada güncel durumdan seçilir', () => {
@@ -79,4 +81,6 @@ test('sağ arama yüzeyi koyu ve açık tema stillerine sahiptir', () => {
     assert.match(searchCss, /assets\/right-tabs\/search\.svg/);
     assert.match(lightCss, /\.pisi-right-search-input-row/);
     assert.match(lightCss, /\.pisi-right-search-result\.selected/);
+    assert.doesNotMatch(searchCss, /\.pisi-right-search-result-context/);
+    assert.doesNotMatch(lightCss, /\.pisi-right-search-result-context/);
 });
