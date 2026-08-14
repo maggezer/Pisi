@@ -13,6 +13,14 @@
     background-image: url("../assets/icons/create-node.svg");
 }
 
+.add-node-under-map-btn:hover,
+.add-node-under-map-btn:focus-visible {
+    background-color: rgba(243, 156, 18, 0.16);
+    border-color: #f39c12;
+    color: #ffb347;
+    outline: none;
+}
+
 .tree-row-actions:not(:has(.add-node-under-map-btn)) .delete-tree-item-btn {
     background-image: url("../assets/icons/delete-node.svg");
 }

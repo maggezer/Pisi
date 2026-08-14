@@ -8,18 +8,22 @@ const test = require('node:test');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('map yanındaki yeni node aksiyonu hover sırasında koyu çerçeve üretmez', () => {
+test('map yanındaki yeni node aksiyonu delete map ile aynı buton yapısını kullanır', () => {
     const treeCss = read('styles/10-tree-and-map.css');
+    const iconCss = read('styles/93-node-action-icons.css');
 
     assert.match(
-        treeCss,
-        /\.tree-inline-action-btn:hover\s*\{[\s\S]*?background: transparent;[\s\S]*?border-color: transparent;[\s\S]*?\}/
+        iconCss,
+        /\.add-node-under-map-btn,\s*\.delete-tree-item-btn\s*\{[\s\S]*?width: 22px;[\s\S]*?height: 22px;[\s\S]*?\}/
     );
     assert.match(
         treeCss,
         /\.tree-inline-action-btn\s*\{[\s\S]*?border: 1px solid transparent;[\s\S]*?background-color: transparent;[\s\S]*?box-shadow: none;[\s\S]*?\}/
     );
-    assert.match(treeCss, /\.tree-inline-action-btn:focus-visible/);
+    assert.match(
+        iconCss,
+        /\.add-node-under-map-btn:hover,\s*\.add-node-under-map-btn:focus-visible\s*\{[\s\S]*?background-color: rgba\(243, 156, 18, 0\.16\);[\s\S]*?border-color: #f39c12;[\s\S]*?\}/
+    );
 });
 
 test('sol panel normal ok imlecini korur, yalnız metin alanları text imlecidir', () => {
