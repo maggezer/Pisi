@@ -416,7 +416,10 @@ async function savePisiOperationalLayout() {
         layout: {
             name,
             nodes,
-            camera: { ...(window.activeMapCamera || {}) },
+            camera: {
+                ...(window.activeMapCamera || {}),
+                collapsedHubs: Array.from(window.collapsedHubPorts || [])
+            },
             scope: operationalState.scope,
             display: operationalState.display
         }
@@ -441,7 +444,9 @@ async function restorePisiOperationalLayout() {
         window.activeMapPath,
         {
             ...(layout.camera || {}),
-            collapsedHubs: Array.from(window.collapsedHubPorts || []),
+            collapsedHubs: Array.isArray(layout.camera?.collapsedHubs)
+                ? layout.camera.collapsedHubs
+                : [],
             operationalPayload: getPisiOperationalPayload('update')
         }
     );
