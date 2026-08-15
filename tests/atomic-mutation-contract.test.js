@@ -12,13 +12,14 @@ const core = read('main/functions/atomic-mutation-core.js');
 const runtime = read('main/functions/atomic-mutation.js');
 const domain = read('main/functions/domain-command-query.js');
 
-test('atomic manifest commit marker is durable before journal cleanup', () => {
+test('atomic manifest commit marker is durable before best-effort journal cleanup', () => {
     assert.match(core, /manifest\.phase = 'committed'/);
     const phaseIndex = core.indexOf("manifest.phase = 'committed'");
     const persistIndex = core.indexOf('persistAtomicManifest(transaction)', phaseIndex);
-    const cleanupIndex = core.indexOf('fs.rmSync(transaction.directoryPath', phaseIndex);
+    const cleanupIndex = core.indexOf('cleanupAtomicTransactionDirectory(transaction)', persistIndex);
     assert.ok(persistIndex > phaseIndex);
     assert.ok(cleanupIndex > persistIndex);
+    assert.match(core, /cleanupPending:\s*true/);
 });
 
 test('non-committed restart paths roll back snapshots instead of guessing', () => {
