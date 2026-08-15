@@ -1,0 +1,180 @@
+.pisi-map-operational-bar {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    max-width: calc(100% - 110px);
+    padding: 6px;
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: 9px;
+    background: rgba(28, 31, 36, .94);
+    box-shadow: 0 6px 18px rgba(0,0,0,.24);
+    backdrop-filter: blur(8px);
+}
+
+.pisi-map-operational-bar input,
+.pisi-map-operational-bar select,
+.pisi-map-operational-bar button {
+    min-height: 30px;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 6px;
+    background: #252a31;
+    color: #f3f5f7;
+    font: inherit;
+}
+
+.pisi-map-operational-bar input,
+.pisi-map-operational-bar select {
+    padding: 0 8px;
+}
+
+.pisi-map-operational-bar input {
+    width: 150px;
+}
+
+.pisi-map-operational-bar button {
+    padding: 0 9px;
+    cursor: pointer;
+}
+
+.pisi-map-operational-bar button:hover,
+.pisi-map-operational-bar button:focus-visible {
+    background: #313843;
+    outline: none;
+}
+
+.pisi-map-operational-bar button:disabled {
+    opacity: .45;
+    cursor: default;
+}
+
+.pisi-map-operational-summary {
+    min-width: 120px;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #cbd2da;
+    font-size: 12px;
+}
+
+.pisi-map-operational-separator {
+    width: 1px;
+    height: 24px;
+    background: rgba(255,255,255,.12);
+}
+
+.map-node-box.pisi-operational-filter-hidden,
+.map-edge-group.pisi-operational-filter-hidden {
+    display: none !important;
+}
+
+.map-node-box.pisi-operational-dimmed {
+    opacity: .2;
+}
+
+.map-node-box.pisi-map-work-blocked {
+    box-shadow: 0 0 0 2px rgba(255, 95, 95, .7), 0 8px 18px rgba(0,0,0,.2);
+}
+
+.map-node-box.pisi-map-work-overdue:not(.pisi-map-work-blocked) {
+    box-shadow: 0 0 0 2px rgba(255, 177, 66, .72), 0 8px 18px rgba(0,0,0,.2);
+}
+
+.map-node-box.pisi-map-work-next {
+    box-shadow: 0 0 0 2px rgba(92, 196, 132, .76), 0 8px 18px rgba(0,0,0,.2);
+}
+
+.pisi-map-work-badges {
+    position: absolute;
+    left: 8px;
+    bottom: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    max-width: calc(100% - 16px);
+    pointer-events: none;
+}
+
+.pisi-map-work-badge {
+    padding: 2px 5px;
+    border-radius: 999px;
+    background: rgba(15, 18, 22, .72);
+    color: #dfe4ea;
+    font-size: 10px;
+    line-height: 1.25;
+}
+
+.pisi-map-work-badge.blocked { color: #ff9c9c; }
+.pisi-map-work-badge.overdue { color: #ffc36e; }
+.pisi-map-work-badge.ready { color: #85dca6; }
+.pisi-map-work-badge.gap { color: #c6b0ff; }
+
+.pisi-map-task-dependency {
+    fill: none;
+    stroke: #d67d7d;
+    stroke-width: 2;
+    stroke-dasharray: 6 5;
+    opacity: .85;
+    pointer-events: none;
+}
+
+.pisi-map-task-dependency-label {
+    fill: #e7b0b0;
+    font-size: 10px;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    pointer-events: none;
+    paint-order: stroke;
+    stroke: #1d2025;
+    stroke-width: 3px;
+}
+
+.pisi-map-edge-operational-label {
+    fill: #aeb6c1;
+    font-size: 10px;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    pointer-events: none;
+    paint-order: stroke;
+    stroke: #1c1f24;
+    stroke-width: 3px;
+}
+
+html[data-pisi-theme="light"] .pisi-map-operational-bar,
+body.pisi-light-theme .pisi-map-operational-bar {
+    border-color: rgba(0,0,0,.12);
+    background: rgba(250, 251, 253, .95);
+    box-shadow: 0 6px 18px rgba(0,0,0,.12);
+}
+
+html[data-pisi-theme="light"] .pisi-map-operational-bar input,
+html[data-pisi-theme="light"] .pisi-map-operational-bar select,
+html[data-pisi-theme="light"] .pisi-map-operational-bar button,
+body.pisi-light-theme .pisi-map-operational-bar input,
+body.pisi-light-theme .pisi-map-operational-bar select,
+body.pisi-light-theme .pisi-map-operational-bar button {
+    border-color: rgba(0,0,0,.12);
+    background: #ffffff;
+    color: #20242a;
+}
+
+html[data-pisi-theme="light"] .pisi-map-operational-summary,
+body.pisi-light-theme .pisi-map-operational-summary {
+    color: #4d5661;
+}
+
+html[data-pisi-theme="light"] .pisi-map-edge-operational-label,
+body.pisi-light-theme .pisi-map-edge-operational-label {
+    fill: #59616b;
+    stroke: #ffffff;
+}
+
+html[data-pisi-theme="light"] .pisi-map-task-dependency-label,
+body.pisi-light-theme .pisi-map-task-dependency-label {
+    fill: #a85050;
+    stroke: #ffffff;
+}
