@@ -210,7 +210,9 @@ function buildPisiTasksFromLegacyIndex(blocks = []) {
             title: getPisiLegacyTaskTitle(block, todoTag),
             status,
             priority: todo?.priority || 3,
-            dueDate: formatPisiFirstClassDate(todo?.finishDate),
+            dueDate: metadata.deadline
+                ? metadata.deadline.slice(0, 10)
+                : (metadata.scheduledAt ? null : formatPisiFirstClassDate(todo?.finishDate)),
             scheduledAt: metadata.scheduledAt || null,
             deadline: metadata.deadline || null,
             reminderAt: metadata.reminderAt || null,
@@ -244,7 +246,7 @@ function findPisiTaskBlock(container, blockId) {
     ).find((block) => block.dataset.pisiBlockId === blockId) || null;
 }
 
-function setPisiTaskReferenceOnBlock(block, taskId, todoTag = '') {
+function setPisiTaskReferenceOnBlock(block, taskId, todoTag = '', dependencies = null) {
     if (!block || !taskId) return false;
     let changed = block.dataset.pisiTaskId !== taskId;
     block.dataset.pisiTaskId = taskId;
@@ -256,6 +258,16 @@ function setPisiTaskReferenceOnBlock(block, taskId, todoTag = '') {
         if (tag.dataset.pisiTaskId !== taskId) {
             tag.dataset.pisiTaskId = taskId;
             changed = true;
+        }
+        if (Array.isArray(dependencies)) {
+            const parent = dependencies.length
+                ? `dep:${dependencies.map((id) => encodeURIComponent(id)).join('|')}`
+                : '';
+            if (String(tag.dataset.pisiTodoParent || '') !== parent) {
+                if (parent) tag.dataset.pisiTodoParent = parent;
+                else delete tag.dataset.pisiTodoParent;
+                changed = true;
+            }
         }
     }
     return changed;
@@ -312,7 +324,8 @@ async function persistPisiLegacyTaskReferences(tasks = []) {
                     changed = setPisiTaskReferenceOnBlock(
                         block,
                         task.id,
-                        task.todoTag
+                        task.todoTag,
+                        task.dependencies
                     ) || changed;
                     task.embeddedTaskId = task.id;
                 }
@@ -333,7 +346,8 @@ async function persistPisiLegacyTaskReferences(tasks = []) {
                 changed = setPisiTaskReferenceOnBlock(
                     block,
                     task.id,
-                    task.todoTag
+                    task.todoTag,
+                    task.dependencies
                 ) || changed;
                 task.embeddedTaskId = task.id;
             }
@@ -597,7 +611,11 @@ function buildPisiTaskFromEditorBlock(block, context) {
             ? 'done'
             : String(tagElement.dataset.pisiTodoStatus || 'todo').toLowerCase(),
         priority: todo.priority,
-        dueDate: formatPisiFirstClassDate(todo.finishDate),
+        dueDate: tagElement.dataset.pisiTodoDeadline
+            ? String(tagElement.dataset.pisiTodoDeadline).slice(0, 10)
+            : (tagElement.dataset.pisiTodoScheduledAt
+                ? null
+                : formatPisiFirstClassDate(todo.finishDate)),
         scheduledAt: tagElement.dataset.pisiTodoScheduledAt || null,
         deadline: tagElement.dataset.pisiTodoDeadline || null,
         reminderAt: tagElement.dataset.pisiTodoReminderAt || null,
