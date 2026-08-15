@@ -60,12 +60,8 @@ function isPisiTaskNavigationCandidateAccepted(candidate = {}, target = {}, opti
         candidate.sourceText || candidate.title || candidate.text
     );
 
-    return Boolean(
-        targetTodo &&
-        targetText &&
-        candidateTodo === targetTodo &&
-        candidateText === targetText
-    );
+    if (!targetText || candidateText !== targetText) return false;
+    return !targetTodo || candidateTodo === targetTodo;
 }
 
 function scorePisiTaskNavigationCandidate(candidate = {}, target = {}, options = {}) {
