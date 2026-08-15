@@ -294,6 +294,18 @@ function cleanupKnownAtomicTemps(projectFolder) {
     }
 }
 
+function cleanupAtomicTransactionDirectory(transaction) {
+    try {
+        fs.rmSync(transaction.directoryPath, { recursive: true, force: true });
+        return { cleanupPending: false, warning: null };
+    } catch (error) {
+        return {
+            cleanupPending: true,
+            warning: `Atomic journal temizliği ertelendi: ${error.message}`
+        };
+    }
+}
+
 function rollbackAtomicMutation(transaction, options = {}) {
     transaction.manifest.phase = 'rolling-back';
     persistAtomicManifest(transaction);
@@ -307,31 +319,49 @@ function rollbackAtomicMutation(transaction, options = {}) {
     transaction.manifest.phase = 'rolled-back';
     persistAtomicManifest(transaction);
     cleanupKnownAtomicTemps(transaction.projectRoot);
-    if (options.cleanup !== false) {
-        fs.rmSync(transaction.directoryPath, { recursive: true, force: true });
-    }
-    return { ok: true, id: transaction.id, rolledBack: true };
+    const cleanup = options.cleanup === false
+        ? { cleanupPending: true, warning: null }
+        : cleanupAtomicTransactionDirectory(transaction);
+    return {
+        ok: true,
+        id: transaction.id,
+        rolledBack: true,
+        ...cleanup
+    };
 }
 
 function commitAtomicMutation(transaction, options = {}) {
     transaction.manifest.phase = 'committed';
     transaction.manifest.committedAt = new Date().toISOString();
     persistAtomicManifest(transaction);
-    if (options.cleanup !== false) {
-        fs.rmSync(transaction.directoryPath, { recursive: true, force: true });
-    }
-    return { ok: true, id: transaction.id, committed: true };
+    const cleanup = options.cleanup === false
+        ? { cleanupPending: true, warning: null }
+        : cleanupAtomicTransactionDirectory(transaction);
+    return {
+        ok: true,
+        id: transaction.id,
+        committed: true,
+        ...cleanup
+    };
 }
 
 function recoverAtomicMutations(projectFolder) {
     const projectRoot = normalizeAtomicPath(projectFolder);
     const mutationRoot = getAtomicMutationRoot(projectRoot);
     if (!fs.existsSync(mutationRoot)) {
-        return { ok: true, recovered: 0, committedCleanups: 0, warnings: [] };
+        return {
+            ok: true,
+            recovered: 0,
+            committedCleanups: 0,
+            cleanupPending: 0,
+            warnings: []
+        };
     }
     let recovered = 0;
     let committedCleanups = 0;
+    let cleanupPending = 0;
     const warnings = [];
+    const errors = [];
     for (const entry of fs.readdirSync(mutationRoot, { withFileTypes: true })) {
         if (!entry.isDirectory() || !entry.name.startsWith('mut_')) continue;
         const directoryPath = path.join(mutationRoot, entry.name);
@@ -339,7 +369,7 @@ function recoverAtomicMutations(projectFolder) {
         try {
             manifest = readAtomicManifest(directoryPath);
         } catch (error) {
-            warnings.push(`${entry.name}: ${error.message}`);
+            errors.push(`${entry.name}: ${error.message}`);
             continue;
         }
         const transaction = {
@@ -350,22 +380,32 @@ function recoverAtomicMutations(projectFolder) {
             manifest
         };
         if (manifest.phase === 'committed') {
-            fs.rmSync(directoryPath, { recursive: true, force: true });
-            committedCleanups += 1;
+            const cleanup = cleanupAtomicTransactionDirectory(transaction);
+            if (cleanup.cleanupPending) {
+                cleanupPending += 1;
+                if (cleanup.warning) warnings.push(`${manifest.id}: ${cleanup.warning}`);
+            } else {
+                committedCleanups += 1;
+            }
             continue;
         }
         const result = rollbackAtomicMutation(transaction);
         if (!result.ok) {
-            warnings.push(`${manifest.id}: ${result.errors.join(' | ')}`);
+            errors.push(`${manifest.id}: ${result.errors.join(' | ')}`);
             continue;
+        }
+        if (result.cleanupPending) {
+            cleanupPending += 1;
+            if (result.warning) warnings.push(`${manifest.id}: ${result.warning}`);
         }
         recovered += 1;
     }
     return {
-        ok: warnings.length === 0,
+        ok: errors.length === 0,
         recovered,
         committedCleanups,
-        warnings
+        cleanupPending,
+        warnings: [...warnings, ...errors]
     };
 }
 
