@@ -118,26 +118,6 @@ contextBridge.exposeInMainWorld('pisiClipboard', {
     readText: () => clipboard.readText()
 });
 
-contextBridge.exposeInMainWorld('pisiTeamTransport', {
-    getConfig: (projectFolder) => ipcRenderer.invoke('team:get-config', projectFolder),
-    saveConfig: (projectFolder, config, options) => ipcRenderer.invoke(
-        'team:save-config',
-        projectFolder,
-        config,
-        options || {}
-    ),
-    listEvents: (projectFolder, options) => ipcRenderer.invoke(
-        'team:list-events',
-        projectFolder,
-        options || {}
-    ),
-    appendEvent: (projectFolder, event) => ipcRenderer.invoke(
-        'team:append-event',
-        projectFolder,
-        event
-    )
-});
-
 const PISI_LANGUAGE_STORAGE_KEY = 'pisi.language';
 const PISI_TRANSLATABLE_ATTRIBUTES = ['title', 'aria-label', 'alt', 'placeholder'];
 const PISI_USER_CONTENT_SELECTOR = [

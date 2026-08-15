@@ -8,7 +8,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('1.2–platform modülleri bootstrap ve preload köprüsünde kayıtlıdır', () => {
+test('çekirdek platform modülleri bootstrap ve preload köprüsünde kayıtlıdır', () => {
     const bootstrap = read('renderer/bootstrap.mjs');
     const preload = read('preload.js');
     const runtime = read('main/runtime.js');
@@ -16,14 +16,13 @@ test('1.2–platform modülleri bootstrap ve preload köprüsünde kayıtlıdır
         'productivity/pisi-quick-capture.mjs',
         'data/pisi-structured-views.mjs',
         'portability/pisi-portability-panel.mjs',
-        'editor/pisi-block-editor.mjs',
-        'team/pisi-team-api.mjs'
+        'editor/pisi-block-editor.mjs'
     ]) assert.ok(bootstrap.includes(marker), marker);
     for (const marker of [
         'quickAddTask', 'saveNodeProperties', 'getNodePropertyContext', 'createPropertyMap',
         'exportProjectMarkdown', 'listNodeHistory', 'auditIntegrity',
         'restoreBackup', 'listDatabaseTemplates',
-        'applyDatabaseTemplate', 'pisiTeamTransport'
+        'applyDatabaseTemplate'
     ]) assert.ok(preload.includes(marker), marker);
     for (const channel of [
         'project:quick-add-task', 'project:save-node-properties',
@@ -32,8 +31,7 @@ test('1.2–platform modülleri bootstrap ve preload köprüsünde kayıtlıdır
         'project:import-markdown', 'project:list-node-history',
         'project:audit-integrity', 'project:restore-backup',
         'project:list-database-templates',
-        'project:apply-database-template', 'team:get-config',
-        'team:append-event'
+        'project:apply-database-template'
     ]) assert.ok(runtime.includes(channel), channel);
 });
 
@@ -42,7 +40,6 @@ test('Araştırma yüzeyi ve web yakalama hattı ilk sürümden çıkarılmışt
     const preload = read('preload.js');
     const runtime = read('main/runtime.js');
     const mainEntry = read('main.js');
-    const extensions = read('renderer/core/pisi-extension-api.mjs');
     const search = read('renderer/search/pisi-search-index.mjs');
     const editor = read('renderer/editor/pisi-node-editor.mjs');
     const portability = read('main/functions/portability.js');
@@ -61,7 +58,7 @@ test('Araştırma yüzeyi ve web yakalama hattı ilk sürümden çıkarılmışt
         false
     );
     assert.doesNotMatch(
-        [bootstrap, preload, runtime, mainEntry, extensions].join('\n'),
+        [bootstrap, preload, runtime, mainEntry].join('\n'),
         /pisi-research|captureWebSource|capture-web-source|functions\/research|core\.source/
     );
     assert.doesNotMatch(
@@ -103,21 +100,56 @@ test('alt görev hiyerarşisi kaldırılmış, görev bağımlılıkları korunm
     assert.match(thirdRelease, /pisiTodoParent/);
 });
 
-test('blok, eklenti, team ve kısayol API yüzeyleri sürümlüdür', () => {
-    const extensions = read('renderer/core/pisi-extension-api.mjs');
+test('blok ve kısayol API yüzeyleri sürümlüdür', () => {
     const commands = read('renderer/core/pisi-command-registry.mjs');
     const blocks = read('renderer/editor/pisi-block-editor.mjs');
-    const team = read('renderer/team/pisi-team-api.mjs');
-    for (const point of [
-        'nodeType', 'exporter', 'taskView', 'toolbarTool', 'mapLayout', 'rightPanel'
-    ]) assert.match(extensions, new RegExp(`'${point}'`));
-    assert.match(extensions, /registerPisiPlugin/);
+
     assert.match(commands, /findPisiShortcutConflict/);
     assert.match(commands, /Mod\+K/);
     assert.match(blocks, /pisiBlockMarkdownToHtml/);
     assert.match(blocks, /data-pisi-block-type/);
-    assert.match(team, /registerPisiTeamProvider/);
-    assert.match(team, /optimisticRevision/);
+});
+
+test('Plugins ve Team altyapıları ilk sürümden tamamen çıkarılmıştır', () => {
+    const bootstrap = read('renderer/bootstrap.mjs');
+    const preload = read('preload.js');
+    const runtime = read('main/runtime.js');
+    const mainEntry = read('main.js');
+    const toolbar = read('renderer/editor/pisi-editor-unified-toolbar.mjs');
+    const platformStyles = read('styles/59-platform-system.css');
+    const rendererManifest = JSON.parse(read('renderer/module-manifest.json'));
+    const mainManifest = JSON.parse(read('main/module-manifest.json'));
+    const tr = JSON.parse(read('locales/lang-tr.json')).strings;
+    const eng = JSON.parse(read('locales/lang-eng.json')).strings;
+    const readme = read('README.md');
+
+    for (const file of [
+        'renderer/core/pisi-extension-api.mjs',
+        'renderer/team/pisi-team-api.mjs',
+        'main/functions/team-api.js',
+        'docs/pisi-platform-api.md'
+    ]) {
+        assert.equal(fs.existsSync(path.join(root, file)), false, file);
+    }
+
+    assert.doesNotMatch(
+        [bootstrap, preload, runtime, mainEntry, toolbar].join('\n'),
+        /pisi-extension-api|pisi-team-api|pisiTeamTransport|team:(?:get|save|list|append)|mountPisiToolbarExtensions/
+    );
+    assert.doesNotMatch(platformStyles, /pisi-(?:extension|team)|pisi-api-version-badge/);
+    assert.ok(!rendererManifest.some((entry) =>
+        entry.module === 'core.extensions' || entry.module === 'team.api'
+    ));
+    assert.ok(!mainManifest.some((entry) => entry.module === 'main.teamApi'));
+    assert.equal(
+        Object.keys(tr).some((key) => /Eklenti|Team|provider eklentisi/i.test(key)),
+        false
+    );
+    assert.equal(
+        Object.keys(eng).some((key) => /Eklenti|Team|provider eklentisi/i.test(key)),
+        false
+    );
+    assert.doesNotMatch(readme, /Eklenti|Team API|renderer\/team/);
 });
 
 test('editör imleci otomatik kayıtta korunur ve Enter yeni satıra bırakılır', () => {

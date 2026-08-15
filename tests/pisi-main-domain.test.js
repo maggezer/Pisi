@@ -19,8 +19,6 @@ Module._load = function pisiTestElectronStub(request, parent, isMain) {
 require('../main/functions/task-capture');
 require('../main/functions/structured-nodes');
 require('../main/functions/portability');
-require('../main/functions/research');
-require('../main/functions/team-api');
 
 Module._load = originalLoad;
 
@@ -50,32 +48,15 @@ test('portability helpers emit Markdown and a real ZIP-based DOCX', () => {
     );
 });
 
-test('web metadata extracts source title, author, date and DOI', () => {
-    const meta = globalThis.extractPisiWebMeta(`
-        <html><head>
-        <title>Makale</title>
-        <meta name="author" content="Ada Lovelace">
-        <meta name="citation_publication_date" content="2026-08-06">
-        <meta name="citation_doi" content="10.1234/pisi.2026">
-        </head><body><p>Özet</p></body></html>
-    `, 'https://example.com');
-    assert.equal(meta.title, 'Makale');
-    assert.equal(meta.author, 'Ada Lovelace');
-    assert.equal(meta.publicationDate, '2026-08-06');
-    assert.equal(meta.doi, '10.1234/pisi.2026');
-});
-
 test('main roadmap domains register unique public bindings', () => {
     const { modules } = require('../main/module-registry');
     assert.ok(modules['main.taskCapture'].quickAddPisiTask);
     assert.ok(modules['main.structuredNodes'].createPisiPropertyMap);
     assert.ok(modules['main.portability'].restorePisiAtomicBackup);
-    assert.ok(modules['main.research'].capturePisiWebSource);
     assert.ok(modules['main.structuredNodes'].applyPisiDatabaseTemplate);
-    assert.ok(modules['main.teamApi'].appendPisiTeamEvent);
 });
 
-test('relation, rollup ve team verileri sınırlı biçimde normalize edilir', () => {
+test('relation ve rollup verileri sınırlı biçimde normalize edilir', () => {
     assert.deepEqual(
         globalThis.normalizePisiPropertyValue('relation', ['A.node', 'A.node', 'B.node']),
         ['A.node', 'B.node']
@@ -93,10 +74,5 @@ test('relation, rollup ve team verileri sınırlı biçimde normalize edilir', (
             separator: ', '
         }
     );
-    const config = globalThis.normalizePisiTeamConfig({
-        name: 'Araştırma',
-        members: [{ name: 'Ada', role: 'editor' }]
-    });
-    assert.equal(config.members[0].name, 'Ada');
-    assert.equal(globalThis.getPisiTeamCapabilities().realtimeSync, false);
+
 });

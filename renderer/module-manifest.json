@@ -838,26 +838,6 @@
     ]
   },
   {
-    "module": "core.extensions",
-    "path": "renderer/core/pisi-extension-api.mjs",
-    "bindings": [
-      "PISI_EXTENSION_API_VERSION",
-      "PISI_EXTENSION_POINTS",
-      "registerPisiExtension",
-      "unregisterPisiExtension",
-      "listPisiExtensions",
-      "getPisiExtension",
-      "invokePisiExtension",
-      "registerPisiPlugin",
-      "deactivatePisiPlugin",
-      "listPisiPlugins",
-      "mountPisiToolbarExtensions",
-      "installPisiRightPanelExtensions",
-      "renderPisiExtensionsPage",
-      "initializePisiExtensionApi"
-    ]
-  },
-  {
     "module": "editor.blocks",
     "path": "renderer/editor/pisi-block-editor.mjs",
     "bindings": [
@@ -882,24 +862,6 @@
       "closePisiMarkdownSource",
       "addPisiBlockBelow",
       "initializePisiBlocksEditor"
-    ]
-  },
-  {
-    "module": "team.api",
-    "path": "renderer/team/pisi-team-api.mjs",
-    "bindings": [
-      "PISI_TEAM_API_VERSION",
-      "registerPisiTeamProvider",
-      "listPisiTeamProviders",
-      "setPisiTeamProvider",
-      "getPisiTeamProvider",
-      "getPisiTeamConfig",
-      "savePisiTeamConfig",
-      "listPisiTeamEvents",
-      "appendPisiTeamEvent",
-      "subscribePisiTeam",
-      "renderPisiTeamPage",
-      "initializePisiTeamApi"
     ]
   }
 ]

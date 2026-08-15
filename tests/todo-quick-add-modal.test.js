@@ -46,7 +46,6 @@ test('Tasks sekmesi çalışma merkezinden tamamen kaldırılır ve Quick Add mo
     assert.doesNotMatch(capture, /id: 'tasks'/);
     assert.doesNotMatch(capture, /renderPisiTasksPage/);
     assert.doesNotMatch(capture, /openPisiCommandCenter\('tasks'\)/);
-    assert.doesNotMatch(capture, /registerPisiExtension\('taskView'/);
     assert.doesNotMatch(capture, /renderPisiCommandCenterPage/);
     assert.match(commandCenter, /activePage: ''/);
     assert.doesNotMatch(commandCenter, /activePage: 'tasks'/);

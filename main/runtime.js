@@ -657,42 +657,6 @@ ipcMain.handle('project:restore-backup', (_event, projectFolder, backupId) => {
     });
 });
 
-ipcMain.handle('team:get-config', (_event, projectFolder) => {
-    return projectOperation(() => {
-        const safeProjectFolder = assertProjectPath(projectFolder, {
-            type: 'directory'
-        });
-        return readPisiTeamConfig(safeProjectFolder);
-    });
-});
-
-ipcMain.handle('team:save-config', (_event, projectFolder, config, options) => {
-    return projectOperation(() => {
-        const safeProjectFolder = assertProjectPath(projectFolder, {
-            type: 'directory'
-        });
-        return savePisiTeamConfig(safeProjectFolder, config || {}, options || {});
-    });
-});
-
-ipcMain.handle('team:list-events', (_event, projectFolder, options) => {
-    return projectOperation(() => {
-        const safeProjectFolder = assertProjectPath(projectFolder, {
-            type: 'directory'
-        });
-        return readPisiTeamEvents(safeProjectFolder, options || {});
-    });
-});
-
-ipcMain.handle('team:append-event', (_event, projectFolder, event) => {
-    return projectOperation(() => {
-        const safeProjectFolder = assertProjectPath(projectFolder, {
-            type: 'directory'
-        });
-        return appendPisiTeamEvent(safeProjectFolder, event || {});
-    });
-});
-
 ipcMain.handle('project:delete-node-from-map', (_event, nodePath) => {
     return asyncProjectOperation(async () => {
         const safeNodePath = assertProjectPath(nodePath, {

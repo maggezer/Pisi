@@ -223,18 +223,5 @@
       "unlockProjectFolder",
       "createWindow"
     ]
-  },
-  {
-    "module": "main.teamApi",
-    "path": "main/functions/team-api.js",
-    "bindings": [
-      "normalizePisiTeamMember",
-      "normalizePisiTeamConfig",
-      "readPisiTeamConfig",
-      "savePisiTeamConfig",
-      "readPisiTeamEvents",
-      "appendPisiTeamEvent",
-      "getPisiTeamCapabilities"
-    ]
   }
 ]

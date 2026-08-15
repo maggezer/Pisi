@@ -11,7 +11,6 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 test('Markdown kaynak görünümü toolbar butonu üretmez', () => {
     const blocks = read('renderer/editor/pisi-block-editor.mjs');
 
-    assert.doesNotMatch(blocks, /registerPisiExtension\('toolbarTool'/);
     assert.doesNotMatch(blocks, /id: 'core\.markdown-source'/);
 });
 

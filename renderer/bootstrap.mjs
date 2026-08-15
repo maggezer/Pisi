@@ -1,7 +1,6 @@
 import "./core/i18n.mjs";
 import "./core/state.mjs";
 import "./core/pisi-command-registry.mjs";
-import "./core/pisi-extension-api.mjs";
 import "./editor/pisi-editor-sheet.mjs";
 import "./editor/pisi-editor-sheet-interactions.mjs";
 import "./editor/pisi-editor-sheet-structure.mjs";
@@ -46,7 +45,6 @@ import "./data/pisi-property-templates.mjs";
 import "./data/pisi-rollup-blocks.mjs";
 import "./data/pisi-node-properties-ui.mjs";
 import "./portability/pisi-portability-panel.mjs";
-import "./team/pisi-team-api.mjs";
 import "./editor/pisi-node-preview.mjs";
 import "./map/pisi-map-interactions.mjs";
 import "./map/pisi-map-edges.mjs";

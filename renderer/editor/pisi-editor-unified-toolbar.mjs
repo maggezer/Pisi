@@ -416,7 +416,6 @@ function setupPisiUnifiedToolbar(toolbar) {
     syncPisiToolbarIconTheme(toolbar);
     bindPisiUnifiedToolbarEvents(toolbar);
     toolbar.dataset.unifiedBound = '1';
-    window.mountPisiToolbarExtensions?.(toolbar);
     syncPisiUnifiedToolbarContext(toolbar);
 }
 
