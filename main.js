@@ -21,3 +21,4 @@ require("./main/runtime");
 require("./main/functions/task-reference-operation-hooks");
 require("./main/functions/map-semantic-operation-hooks");
 require("./main/functions/domain-command-query");
+require("./main/functions/atomic-domain-hardening");
