@@ -1,12 +1,20 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
 const { registerMainModule } = require('../module-registry');
 const core = require('./atomic-mutation-core');
 
 let activePisiAtomicMutation = null;
+let pisiAtomicFsHooksInstalled = false;
 
 function getActivePisiAtomicMutation() {
     return activePisiAtomicMutation;
+}
+
+function isPisiAtomicTransientPath(targetPath) {
+    const base = path.basename(String(targetPath || ''));
+    return /\.tmp$/i.test(base) || /^\.pisi-delete-/i.test(base);
 }
 
 function capturePisiAtomicPathBeforeChange(targetPath) {
@@ -16,11 +24,75 @@ function capturePisiAtomicPathBeforeChange(targetPath) {
 
 function capturePisiAtomicRenameBeforeChange(oldPath, newPath) {
     if (!activePisiAtomicMutation || !oldPath || !newPath) return null;
+    if (isPisiAtomicTransientPath(oldPath)) {
+        return {
+            source: null,
+            destination: capturePisiAtomicPathBeforeChange(newPath)
+        };
+    }
     return core.captureRenameBeforeMutation(
         activePisiAtomicMutation,
         oldPath,
         newPath
     );
+}
+
+function capturePisiAtomicMkdirBeforeChange(targetPath) {
+    if (!activePisiAtomicMutation || !targetPath || fs.existsSync(targetPath)) return null;
+    const projectRoot = activePisiAtomicMutation.projectRoot;
+    let candidate = path.resolve(targetPath);
+    let topMissing = candidate;
+    while (
+        core.isSameOrInsideAtomicPath(candidate, projectRoot) &&
+        !fs.existsSync(path.dirname(candidate)) &&
+        path.dirname(candidate) !== candidate
+    ) {
+        candidate = path.dirname(candidate);
+        topMissing = candidate;
+    }
+    return capturePisiAtomicPathBeforeChange(topMissing);
+}
+
+function installPisiAtomicFilesystemHooks() {
+    if (pisiAtomicFsHooksInstalled) return;
+    pisiAtomicFsHooksInstalled = true;
+
+    const originalRenameSync = fs.renameSync.bind(fs);
+    const originalWriteFileSync = fs.writeFileSync.bind(fs);
+    const originalMkdirSync = fs.mkdirSync.bind(fs);
+    const originalUnlinkSync = fs.unlinkSync.bind(fs);
+    const originalRmSync = fs.rmSync.bind(fs);
+
+    fs.renameSync = function pisiAtomicRenameSync(oldPath, newPath) {
+        capturePisiAtomicRenameBeforeChange(oldPath, newPath);
+        return originalRenameSync(oldPath, newPath);
+    };
+
+    fs.writeFileSync = function pisiAtomicWriteFileSync(file, data, options) {
+        if (typeof file === 'string' || file instanceof URL) {
+            capturePisiAtomicPathBeforeChange(file);
+        }
+        return originalWriteFileSync(file, data, options);
+    };
+
+    fs.mkdirSync = function pisiAtomicMkdirSync(targetPath, options) {
+        capturePisiAtomicMkdirBeforeChange(targetPath);
+        return originalMkdirSync(targetPath, options);
+    };
+
+    fs.unlinkSync = function pisiAtomicUnlinkSync(targetPath) {
+        if (!isPisiAtomicTransientPath(targetPath)) {
+            capturePisiAtomicPathBeforeChange(targetPath);
+        }
+        return originalUnlinkSync(targetPath);
+    };
+
+    fs.rmSync = function pisiAtomicRmSync(targetPath, options) {
+        if (!isPisiAtomicTransientPath(targetPath)) {
+            capturePisiAtomicPathBeforeChange(targetPath);
+        }
+        return originalRmSync(targetPath, options);
+    };
 }
 
 function recoverPisiAtomicMutations(projectFolder) {
@@ -136,6 +208,8 @@ function runPisiAtomicMutation(projectFolder, commandName, operation) {
     activePisiAtomicMutation = null;
     return finishPisiAtomicMutation(transaction, result);
 }
+
+installPisiAtomicFilesystemHooks();
 
 const moduleApi = {
     PISI_ATOMIC_MUTATION_VERSION: core.PISI_ATOMIC_MUTATION_VERSION,
