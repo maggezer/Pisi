@@ -178,10 +178,15 @@ function isAtomicInternalPath(transaction, targetPath) {
         isSameOrInsideAtomicPath(targetPath, getAtomicMutationRoot(transaction.projectRoot));
 }
 
-function findAtomicEntry(transaction, targetPath) {
+function getAtomicEntryTarget(transaction, entry) {
+    return normalizeAtomicPath(path.join(transaction.projectRoot, entry.path));
+}
+
+function findAtomicEntryCoveringPath(transaction, targetPath) {
     const normalized = normalizeAtomicPath(targetPath);
     return transaction.manifest.entries.find((entry) => {
-        return normalizeAtomicPath(path.join(transaction.projectRoot, entry.path)) === normalized;
+        const entryTarget = getAtomicEntryTarget(transaction, entry);
+        return isSameOrInsideAtomicPath(normalized, entryTarget);
     }) || null;
 }
 
@@ -189,8 +194,8 @@ function capturePathBeforeMutation(transaction, targetPath) {
     if (!transaction?.manifest || transaction.manifest.phase === 'committed') return null;
     const safeTarget = assertAtomicProjectPath(transaction.projectRoot, targetPath);
     if (isAtomicInternalPath(transaction, safeTarget)) return null;
-    const existing = findAtomicEntry(transaction, safeTarget);
-    if (existing) return existing;
+    const coveringEntry = findAtomicEntryCoveringPath(transaction, safeTarget);
+    if (coveringEntry) return coveringEntry;
 
     const relativePath = path.relative(transaction.projectRoot, safeTarget).replace(/\\/g, '/');
     const existed = fs.existsSync(safeTarget);
