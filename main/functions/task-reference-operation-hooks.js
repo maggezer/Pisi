@@ -1,14 +1,19 @@
 'use strict';
 
 const { ipcMain } = require('electron');
-const { registerMainModule } = require('../module-registry');
+const { modules, registerMainModule } = require('../module-registry');
 
 function attachPisiTaskReferenceRewrite(result) {
     if (!result?.ok || !Array.isArray(result.pathChanges) || !result.pathChanges.length) {
         return result;
     }
 
-    const taskReferences = rewritePisiTaskSourcePathsForPathChanges(result.pathChanges);
+    const rewrite = modules['main.taskReferenceIntegrity']
+        ?.rewritePisiTaskSourcePathsForPathChanges;
+    const taskReferences = typeof rewrite === 'function'
+        ? rewrite(result.pathChanges)
+        : { ok: false, updated: 0, error: 'Task reference integrity modülü bulunamadı.' };
+
     if (!taskReferences?.ok) {
         console.warn(
             '[PISI] Task source yolları işlem sonrasında güncellenemedi:',
