@@ -12,8 +12,8 @@ takvim işlevlerini tek bir proje klasöründe birleştirir.
 - Hiyerarşi, süreç ve denk bağlam bağlantıları
 - Sekmeli center editor ve map içi node modalı
 - Zengin metin, Paint ve Excel-benzeri tablo/formül araçları
-- Kalıcı kimlikli WYSIWYG Markdown blokları, `/` menüsü, sürükleme, blok türü,
-  Markdown kaynak görünümü ve blok düzeyi ilişki grafiği
+- Kalıcı kimlikli WYSIWYG Markdown blokları, `/` menüsü, sürükleme, blok türü
+  ve Markdown kaynak görünümü
 - Kullanıcı etiketleri, proje görev indeksi ve görev başına tamamlanma durumu
 - Hiyerarşik alt görevler, alt görev ilerleme sayacı ve bağımlılıklardan ayrı
   `subtask:` ilişki alanı
@@ -28,13 +28,14 @@ takvim işlevlerini tek bir proje klasöründe birleştirir.
   relation ve rollup türlerinde node özellikleri
 - Özellikleri sorgulayan tablo/kart görünümleri, kaydedilebilir filtreler ve
   sonuçlardan kaynak node’ları silmeden map üretme; proje düzeyi şablonlar
+- Map dışa aktarma, map node yazı tipi/boyut tercihleri ve özelleştirilebilir
+  bağlantı görünümü
 - Markdown klasörü içe aktarma; Markdown, HTML, PDF ve DOCX dışa aktarma
 - Son 50 node sürümünü tutan yerel geçmiş, önizleme/karşılaştırma, bütünlük
   denetimi ve görünür yedek geri yükleme
-- URL metadata’sı, seçili metin ve ekran görüntüsünden Kaynak node’u; DOI,
-  bibliyografya, blok referansı ve içerik alıntısı
 - `Ctrl+K` komut paleti, değiştirilebilir/çakışma denetimli kısayollar
 - Günlük node’larıyla eşitlenen görevler ve sürüklenebilir/dock edilebilir takvim
+- Türkçe/İngilizce arayüz, light/dark tema ve değiştirilebilir arayüz tercihleri
 - Proje dışı yol erişimini engelleyen IPC sınırı ve HTML allowlist sanitizer
 - Atomik yazma, proje kilidi, kapanışta kayıt kuyruğunu boşaltma ve silmede
   sistem çöp kutusu
@@ -42,24 +43,22 @@ takvim işlevlerini tek bir proje klasöründe birleştirir.
 ## Kaynak yapısı
 
 ```text
-main.js                              İnce Electron bootstrap
-main/functions/                      Dosya, görev, özellik, geçmiş ve IPC domainleri
-preload.js                           Sınırlı ve doğrulanmış renderer köprüsü
-renderer/bootstrap.mjs               Renderer ES module başlangıcı
-renderer/editor/                     Node, zengin metin, Paint ve sheet araçları
-renderer/map/                        Map çalışma alanı ve bağlantı davranışları
-renderer/tags/                       Blok, etiket ve görev sistemi
-renderer/search/pisi-search-core.mjs Arama puanlama ve ilişki modeli
+main.js                               İnce Electron bootstrap
+main/functions/                       Dosya, görev, özellik, geçmiş ve IPC domainleri
+preload.js                            Sınırlı ve doğrulanmış renderer köprüsü
+renderer/bootstrap.mjs                Renderer ES module başlangıcı
+renderer/editor/                      Node, zengin metin, Paint ve sheet araçları
+renderer/map/                         Map çalışma alanı, bağlantılar ve map dışa aktarma
+renderer/tags/                        Blok, etiket ve görev sistemi
+renderer/search/pisi-search-core.mjs  Arama puanlama ve ilişki modeli
 renderer/search/pisi-search-index.mjs Yerel proje arama indeksi
 renderer/search/pisi-global-search.mjs Hızlı geçiş penceresi ve map odağı
-renderer/search/pisi-links-panel.mjs Backlink/ilişki sağ paneli
-renderer/search/pisi-block-graph.mjs Blok backlink/mention grafiği
-renderer/productivity/               Quick Add ve Türkçe tarih ayrıştırma
-renderer/data/                       Node özellikleri ve Bases-lite görünümleri
-renderer/portability/                Geçmiş, dışa aktarma ve kurtarma arayüzü
-renderer/research/                   Web yakalama, blok referansı ve alıntı akışı
-style.css                            Uygulama stilleri
-tests/                               Formül, yol güvenliği ve regresyon testleri
+renderer/search/pisi-links-panel.mjs  Backlink/ilişki sağ paneli
+renderer/productivity/                Quick Add ve Türkçe tarih ayrıştırma
+renderer/data/                        Node özellikleri, Bases ve rollup arayüzleri
+renderer/portability/                 Geçmiş, içe/dışa aktarma ve kurtarma arayüzü
+style.css                             Uygulama stilleri
+tests/                                Formül, yol güvenliği ve regresyon testleri
 ```
 
 Ortak çalışma durumu `window.Pisi.state` altında tutulur. Eski global adlar,
@@ -84,9 +83,10 @@ npm run validate
 npm run audit
 ```
 
-`npm run validate`, bütün JavaScript dosyalarının sözdizimini, doğruluk odaklı
-ESLint kurallarını ve otomatik regresyon testlerini çalıştırır. Aynı doğrulama
-`main` push’larında GitHub Actions üzerinde de çalışır.
+`npm run validate`, sözdizimi ve mimari kontrollerini, i18n/migration
+kontrollerini, ESLint kurallarını ve otomatik regresyon testlerini çalıştırır.
+Aynı doğrulama `main` push’larında ve pull request’lerde GitHub Actions üzerinde
+de çalışır.
 
 ## Arama ve bağlantılar
 
@@ -98,17 +98,20 @@ değişen node yollarını önbellekten düşürür; değişmeyen belgelerin ayr
 kayıtları yeniden kullanılır. Üçlü-karakter postings indeksi büyük projelerde
 her tuşta tüm kayıtların yeniden normalize edilmesini önler.
 
-Sağ paneldeki **Bağlantılar** sekmesi doğrudan `[[Node Başlığı]]` metin
-referanslarını, map oklarını, bağlantıya dönüştürülmemiş başlık bahsetmelerini,
-node görevlerini, kaynak alıntılarını ve ortak map üyeliklerini birlikte gösterir.
+Sağ paneldeki bağlantı görünümü doğrudan `[[Node Başlığı]]` metin referanslarını,
+map oklarını, bağlantıya dönüştürülmemiş başlık bahsetmelerini, node görevlerini
+ve ortak map üyeliklerini birlikte gösterir.
 
 ## Çalışma merkezi
 
 Explorer başlığındaki pusula düğmesi veya `Ctrl+Shift+P`, çalışma merkezini
 açar. Templates, Ayarlar, Tercihler ve Kısayollar sayfaları buradadır.
-`Ctrl+Shift+A` doğrudan Quick Add alanına gider. Bir node
-seçilmeden eklenen görev proje kökündeki sistem rollü `Inbox.node` dosyasına
-yazılır.
+`Ctrl+Shift+A` doğrudan Quick Add alanına gider. Bir node seçilmeden eklenen
+görev proje kökündeki sistem rollü `Inbox.node` dosyasına yazılır.
+
+İçe/Dışa Aktarma ve sürüm geçmişi ana arayüzden erişilebilir; Project Integrity
+ayarları Settings altında tutulur. Research, Team ve Plugins yüzeyleri ilk beta
+sonrası sadeleştirme kapsamında uygulamadan çıkarılmıştır.
 
 Türkçe ayrıştırıcı; `yarın 14:00`, `cuma saat 3`, `her pazartesi`, `ayın son
 iş günü`, `iki haftada bir`, `görev tamamlandıktan üç gün sonra`, `15
@@ -120,17 +123,16 @@ eder. Filtreler proje kökündeki `.pisi-views.json` dosyasına kaydedilir.
 Filtre sonucundan üretilen map, kaynak node dosyalarını kopyalamaz; güvenli
 referanslar kullanır ve map’ten kaldırma kaynak node’u silmez.
 
-## Taşınabilirlik ve araştırma
+## Taşınabilirlik
 
 Her içerik değişikliğinden önce node’un tam JSON sürümü
 `.pisi-history/<node-id>/` altında saklanır ve son 50 sürüm korunur. Atomik
-`.pisi-backup` dosyaları çalışma merkezinden geri yüklenebilir. Geri yükleme
-öncesinde mevcut node ayrıca geçmişe alınır.
+`.pisi-backup` dosyaları geri yüklenebilir. Geri yükleme öncesinde mevcut node
+ayrıca geçmişe alınır.
 
-Araştırma sayfası bir URL’den başlık, açıklama, yazar, yayın tarihi ve DOI
-metadata’sını alabilir; seçili metin ile isteğe bağlı ekran görüntüsünü aynı
-Kaynak node’una yazar. Editör blok kimlikleri görünmeden korunur ve
-`Node.node#block-id` referansları ile kaynak anahtarlı alıntılar eklenebilir.
+İçe ve dışa aktarma akışları proje verilerini taşımaya yardımcı olur. Sürüm
+geçmişi ile Project Integrity kontrolleri yerel proje dosyaları üzerinde çalışır;
+kullanıcı verileri harici bir uygulama veritabanına taşınmaz.
 
 ## Paketleme
 
@@ -140,8 +142,10 @@ npm run dist:portable
 ```
 
 Windows NSIS ve portable çıktıları x64 ile ARM64 için üretilir. Çıktı adı
-ürün, sürüm, işletim sistemi ve mimariyi içerir. Code signing ve otomatik
-güncelleme için ayrıca yayın sertifikası ile güncelleme sunucusu gerekir.
+ürün, sürüm, işletim sistemi ve mimariyi içerir. `v*.*.*` etiketiyle çalışan
+release workflow’u doğrulama, Windows paketleme, SHA256 üretimi ve GitHub beta
+release oluşturma adımlarını otomatikleştirir. Code signing henüz yapılandırılmış
+değildir.
 
 ## Proje verileri
 
@@ -157,7 +161,9 @@ korunabilir. Bozuk JSON otomatik olarak boş içerikle ezilmez.
 
 - Paint görseli halen node JSON’undaki `data-image` alanında base64 PNG olarak
   tutulur; sidecar’a harici kaynak taşıma henüz yapılmamıştır.
-- macOS/Linux paket hedefleri, platform ikonları ve imzalama altyapısı henüz
+- Windows paketleri henüz code-signed değildir; SmartScreen ilk çalıştırmada
+  uyarı gösterebilir.
+- macOS/Linux paket hedefleri ve platform imzalama altyapısı henüz
   yapılandırılmamıştır.
 - Electron ana süreç domainleri CommonJS, renderer domainleri ES module olarak
   çalışır; tek bir paket formatına tam dönüşüm yapılmamıştır.
