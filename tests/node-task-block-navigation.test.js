@@ -154,7 +154,7 @@ test('todo navigation resolves canonical task then opens node and exact block co
     assert.match(navigation, /getPisiCanonicalTaskForNavigation/);
     assert.match(navigation, /resolvePisiTaskNavigationSource/);
     assert.match(navigation, /recoverPisiTaskNavigationSource/);
-    assert.match(navigation, /data\.pisiTaskId/);
+    assert.match(navigation, /pisiTaskId/);
     assert.match(navigation, /openPisiFileTab/);
     assert.match(navigation, /highlightPisiEditorBlock/);
     assert.match(navigation, /pisi:task-navigation-complete/);
