@@ -8,6 +8,7 @@ require("./main/functions/map-store");
 require("./main/functions/project-operations");
 require("./main/functions/task-capture");
 require("./main/functions/task-store");
+require("./main/functions/task-reference-integrity");
 require("./main/functions/source-of-truth");
 require("./main/functions/structured-nodes");
 require("./main/functions/portability");
