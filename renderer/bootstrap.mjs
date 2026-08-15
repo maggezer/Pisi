@@ -31,6 +31,7 @@ import "./tags/pisi-todo-second-release.mjs";
 import "./tags/pisi-todo-first-release.mjs";
 import "./tags/pisi-todo-blocks.mjs";
 import "./tags/pisi-todo-third-release.mjs";
+import "./tags/pisi-task-store.mjs";
 import "./tags/pisi-todo-third-release-guard.mjs";
 import "./tags/pisi-todo-workspace.mjs";
 import "./tags/pisi-todo-workspace-shield.mjs";
