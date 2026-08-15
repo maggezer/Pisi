@@ -2,7 +2,8 @@ import { registerModule } from "../core/module-registry.mjs";
 import {
     getPisiTaskNavigationTaskId,
     normalizePisiNavigationText,
-    selectPisiTaskNavigationCandidate
+    selectPisiTaskNavigationCandidate,
+    shouldRejectMissingPisiCanonicalTask
 } from "../navigation/pisi-navigation-core.mjs";
 
 let pisiMissionHighlightAnimation = null;
@@ -130,31 +131,6 @@ function makePisiNavigationCandidateFromBlock(block, nodePath = '') {
     };
 }
 
-function isPisiNavigationCandidateExactEnough(candidate, target) {
-    if (!candidate) return false;
-    const taskId = getPisiTaskNavigationTaskId(target);
-    if (taskId && getPisiTaskNavigationTaskId(candidate) === taskId) {
-        return true;
-    }
-
-    const blockId = String(target?.blockId || '').trim();
-    if (blockId && String(candidate.blockId || '') === blockId) {
-        return true;
-    }
-
-    if (taskId || blockId) return false;
-
-    const todo = normalizePisiTaskNavigationTag(target?.todoTag);
-    const text = normalizePisiNavigationText(
-        target?.sourceText || target?.title || target?.text || ''
-    );
-    return Boolean(
-        todo && text &&
-        candidate.todoTag === todo &&
-        candidate.sourceText === text
-    );
-}
-
 function findPisiMissionTarget(editor, mission) {
     if (!editor || !mission) return null;
 
@@ -165,14 +141,15 @@ function findPisiMissionTarget(editor, mission) {
     ).map((block) => makePisiNavigationCandidateFromBlock(
         block,
         mission.nodePath || ''
-    )).filter((candidate) => {
-        return isPisiNavigationCandidateExactEnough(candidate, mission);
-    });
+    ));
 
     const selected = selectPisiTaskNavigationCandidate(
         candidates,
         mission,
-        { caseInsensitive: window.pisiEnvironment?.platform === 'win32' }
+        {
+            caseInsensitive: window.pisiEnvironment?.platform === 'win32',
+            scope: 'direct'
+        }
     )?.candidate;
 
     if (!selected?.block) return null;
@@ -278,12 +255,14 @@ function getPisiNavigationCandidatesFromHtml(html, nodePath) {
 }
 
 function findPisiExactNavigationCandidateInHtml(html, nodePath, target) {
-    const candidates = getPisiNavigationCandidatesFromHtml(html, nodePath)
-        .filter((candidate) => isPisiNavigationCandidateExactEnough(candidate, target));
+    const candidates = getPisiNavigationCandidatesFromHtml(html, nodePath);
     return selectPisiTaskNavigationCandidate(
         candidates,
         target,
-        { caseInsensitive: window.pisiEnvironment?.platform === 'win32' }
+        {
+            caseInsensitive: window.pisiEnvironment?.platform === 'win32',
+            scope: 'direct'
+        }
     )?.candidate || null;
 }
 
@@ -305,7 +284,6 @@ async function recoverPisiTaskNavigationSource(target) {
             documentRecord.html,
             nodePath
         )) {
-            if (!isPisiNavigationCandidateExactEnough(candidate, target)) continue;
             candidates.push({
                 ...candidate,
                 nodeTitle: documentRecord.title || 'Node',
@@ -319,7 +297,10 @@ async function recoverPisiTaskNavigationSource(target) {
     return selectPisiTaskNavigationCandidate(
         candidates,
         target,
-        { caseInsensitive: window.pisiEnvironment?.platform === 'win32' }
+        {
+            caseInsensitive: window.pisiEnvironment?.platform === 'win32',
+            scope: 'recovery'
+        }
     )?.candidate || null;
 }
 
@@ -432,6 +413,16 @@ function dispatchPisiTaskNavigationComplete(result) {
 
 async function navigatePisiTaskToSource(input = {}) {
     clearPisiMissionHighlight();
+
+    const canonicalTask = getPisiCanonicalTaskForNavigation(input);
+    if (shouldRejectMissingPisiCanonicalTask(input, canonicalTask)) {
+        return dispatchPisiTaskNavigationComplete({
+            ok: false,
+            code: 'TASK_NOT_FOUND',
+            taskId: getPisiTaskNavigationTaskId(input) || null
+        });
+    }
+
     const target = await resolvePisiTaskNavigationSource(input);
 
     if (!target?.nodePath) {

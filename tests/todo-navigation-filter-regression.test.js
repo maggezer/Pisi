@@ -14,8 +14,9 @@ test('Todo source navigation targets the active node and never persists highligh
     assert.ok(source.includes('samePisiPathForTags(activeModalNode?.path, mission?.nodePath)'));
     assert.ok(source.includes('samePisiPathForTags(activeCenterNode?.path, mission?.nodePath)'));
     assert.ok(source.includes('getPisiTaskNavigationTaskId'));
-    assert.ok(source.includes('isPisiNavigationCandidateExactEnough'));
     assert.ok(source.includes('selectPisiTaskNavigationCandidate'));
+    assert.ok(source.includes("scope: 'direct'"));
+    assert.ok(source.includes("scope: 'recovery'"));
     assert.ok(source.includes('getPisiMissionSourceInBlock(selected.block, mission)'));
     assert.ok(source.includes('target.animate('));
     assert.ok(source.includes('clearPisiMissionHighlightArtifacts(editor)'));

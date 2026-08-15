@@ -18,6 +18,52 @@ function getPisiTaskNavigationTaskId(value = {}) {
     return '';
 }
 
+function shouldRejectMissingPisiCanonicalTask(target = {}, canonicalTask = null) {
+    return Boolean(getPisiTaskNavigationTaskId(target) && !canonicalTask);
+}
+
+function isPisiTaskNavigationCandidateAccepted(candidate = {}, target = {}, options = {}) {
+    if (!candidate?.nodePath) return false;
+
+    const caseInsensitive = options.caseInsensitive === true;
+    const scope = options.scope === 'recovery' ? 'recovery' : 'direct';
+    const targetTaskId = getPisiTaskNavigationTaskId(target);
+    const candidateTaskId = getPisiTaskNavigationTaskId(candidate);
+    const targetBlockId = String(target.blockId || '').trim();
+    const candidateBlockId = String(candidate.blockId || '').trim();
+    const targetPath = normalizePisiNavigationPath(target.nodePath, caseInsensitive);
+    const candidatePath = normalizePisiNavigationPath(candidate.nodePath, caseInsensitive);
+
+    if (targetTaskId) {
+        if (candidateTaskId) {
+            return candidateTaskId === targetTaskId;
+        }
+
+        // A block-id fallback is only safe while inspecting the canonical node itself.
+        // Cross-node recovery must prove task identity with taskId; otherwise an old copy
+        // carrying the same blockId could be selected after a rename/move.
+        if (scope === 'recovery') return false;
+        if (targetPath && candidatePath !== targetPath) return false;
+        return Boolean(targetBlockId && candidateBlockId === targetBlockId);
+    }
+
+    if (targetBlockId) {
+        return candidateBlockId === targetBlockId;
+    }
+
+    const targetTodo = normalizePisiNavigationText(target.todoTag).toLowerCase();
+    const candidateTodo = normalizePisiNavigationText(candidate.todoTag).toLowerCase();
+    const targetText = normalizePisiNavigationText(
+        target.sourceText || target.title || target.text
+    );
+    const candidateText = normalizePisiNavigationText(
+        candidate.sourceText || candidate.title || candidate.text
+    );
+
+    if (!targetText || candidateText !== targetText) return false;
+    return !targetTodo || candidateTodo === targetTodo;
+}
+
 function scorePisiTaskNavigationCandidate(candidate = {}, target = {}, options = {}) {
     const caseInsensitive = options.caseInsensitive === true;
     const targetTaskId = getPisiTaskNavigationTaskId(target);
@@ -50,6 +96,9 @@ function selectPisiTaskNavigationCandidate(candidates = [], target = {}, options
     let bestScore = 0;
 
     for (const candidate of Array.isArray(candidates) ? candidates : []) {
+        if (!isPisiTaskNavigationCandidateAccepted(candidate, target, options)) {
+            continue;
+        }
         const score = scorePisiTaskNavigationCandidate(candidate, target, options);
         if (score > bestScore) {
             best = candidate;
@@ -62,8 +111,10 @@ function selectPisiTaskNavigationCandidate(candidates = [], target = {}, options
 
 export {
     getPisiTaskNavigationTaskId,
+    isPisiTaskNavigationCandidateAccepted,
     normalizePisiNavigationPath,
     normalizePisiNavigationText,
     scorePisiTaskNavigationCandidate,
-    selectPisiTaskNavigationCandidate
+    selectPisiTaskNavigationCandidate,
+    shouldRejectMissingPisiCanonicalTask
 };
