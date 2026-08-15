@@ -101,19 +101,18 @@ function installPisiAtomicFilesystemHooks() {
     };
 }
 
-function recoverPisiAtomicMutations(projectFolder) {
-    const result = core.recoverAtomicMutations(projectFolder);
+function recoverPisiAtomicMutations(projectFolder, options = {}) {
     const key = normalizePisiAtomicProjectKey(projectFolder);
+    if (options.force !== true && recoveredPisiAtomicProjects.has(key)) {
+        return { ok: true, recovered: 0, cached: true, warnings: [] };
+    }
+    const result = core.recoverAtomicMutations(projectFolder);
     if (result.ok) recoveredPisiAtomicProjects.add(key);
     else recoveredPisiAtomicProjects.delete(key);
     return result;
 }
 
 function ensurePisiAtomicRecovery(projectFolder) {
-    const key = normalizePisiAtomicProjectKey(projectFolder);
-    if (recoveredPisiAtomicProjects.has(key)) {
-        return { ok: true, recovered: 0, cached: true, warnings: [] };
-    }
     return recoverPisiAtomicMutations(projectFolder);
 }
 
