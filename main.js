@@ -19,4 +19,3 @@ require("./main/functions/electron-ipc");
 require("./main/runtime");
 require("./main/functions/task-reference-operation-hooks");
 require("./main/functions/map-semantic-operation-hooks");
-require("./main/functions/map-operational-operation-hooks");
