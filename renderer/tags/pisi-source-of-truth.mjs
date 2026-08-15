@@ -3,6 +3,7 @@ import { buildPisiSearchAccelerator } from "../search/pisi-search-core.mjs";
 const PISI_PROJECTION_WRITE_WINDOW_MS = 3500;
 
 const pisiSourceOfTruthState = {
+    projectKey: '',
     migrationPromise: null,
     migrationComplete: false,
     projectionWriteUntil: 0,
@@ -10,7 +11,29 @@ const pisiSourceOfTruthState = {
     diarySignature: ''
 };
 
+function getPisiSourceProjectKey() {
+    const raw = String(window.currentProjectFolder || '')
+        .replace(/[\\/]+/g, '/')
+        .replace(/\/+$/g, '');
+    return window.pisiEnvironment?.platform === 'win32'
+        ? raw.toLowerCase()
+        : raw;
+}
+
+function ensurePisiSourceProjectState() {
+    const key = getPisiSourceProjectKey();
+    if (key === pisiSourceOfTruthState.projectKey) return key;
+    pisiSourceOfTruthState.projectKey = key;
+    pisiSourceOfTruthState.migrationPromise = null;
+    pisiSourceOfTruthState.migrationComplete = false;
+    pisiSourceOfTruthState.projectionWriteUntil = 0;
+    pisiSourceOfTruthState.projectionSyncPromise = null;
+    pisiSourceOfTruthState.diarySignature = '';
+    return key;
+}
+
 function markPisiTaskProjectionWriteIntent() {
+    ensurePisiSourceProjectState();
     pisiSourceOfTruthState.projectionWriteUntil =
         Date.now() + PISI_PROJECTION_WRITE_WINDOW_MS;
 }
@@ -45,6 +68,7 @@ async function refreshCanonicalPisiTasks() {
 }
 
 async function ensurePisiLegacyTaskMigration() {
+    ensurePisiSourceProjectState();
     if (pisiSourceOfTruthState.migrationComplete) {
         return { ok: true, complete: true };
     }
@@ -55,28 +79,36 @@ async function ensurePisiLegacyTaskMigration() {
         return { ok: false, pending: true };
     }
 
+    const projectFolder = window.currentProjectFolder;
+    const projectKey = getPisiSourceProjectKey();
+    const migrationSnapshot = window.pisiTagsPanelState?.missionIndexComplete === true
+        ? getPisiLegacyTaskSnapshot()
+        : null;
+
     const promise = (async () => {
-        const projectFolder = window.currentProjectFolder;
         const status = await window.pisiProject.quickAddTask(projectFolder, {
             op: 'migration-status'
         });
         if (!status?.ok) return status;
+        if (projectKey !== getPisiSourceProjectKey()) {
+            return { ok: false, stale: true };
+        }
         if (status.complete) {
             pisiSourceOfTruthState.migrationComplete = true;
             return status;
         }
 
-        if (window.pisiTagsPanelState?.missionIndexComplete !== true) {
+        if (!Array.isArray(migrationSnapshot)) {
             return { ok: true, complete: false, pending: true };
         }
 
-        const tasks = getPisiLegacyTaskSnapshot();
         const imported = await window.pisiProject.quickAddTask(projectFolder, {
             op: 'sync-index',
             allowProjectionWrite: true,
+            projectionReason: 'legacy-migration',
             complete: true,
-            pruneMissing: false,
-            tasks
+            pruneMissing: true,
+            tasks: migrationSnapshot
         });
         if (!imported?.ok) return imported;
 
@@ -84,12 +116,17 @@ async function ensurePisiLegacyTaskMigration() {
             op: 'complete-migration'
         });
         if (!completed?.ok) return completed;
+        if (projectKey !== getPisiSourceProjectKey()) {
+            return { ok: false, stale: true };
+        }
 
         pisiSourceOfTruthState.migrationComplete = true;
         await refreshCanonicalPisiTasks();
         return completed;
     })().finally(() => {
-        pisiSourceOfTruthState.migrationPromise = null;
+        if (projectKey === getPisiSourceProjectKey()) {
+            pisiSourceOfTruthState.migrationPromise = null;
+        }
     });
 
     pisiSourceOfTruthState.migrationPromise = promise;
@@ -97,6 +134,7 @@ async function ensurePisiLegacyTaskMigration() {
 }
 
 async function syncControlledPisiTaskProjection(reason = 'ui') {
+    ensurePisiSourceProjectState();
     if (!window.currentProjectFolder || !window.pisiProject?.quickAddTask) {
         return { ok: false, error: 'Aktif proje yok.' };
     }
@@ -104,26 +142,36 @@ async function syncControlledPisiTaskProjection(reason = 'ui') {
         return pisiSourceOfTruthState.projectionSyncPromise;
     }
 
+    const projectFolder = window.currentProjectFolder;
+    const projectKey = getPisiSourceProjectKey();
+    const tasks = getPisiLegacyTaskSnapshot();
+
     const promise = (async () => {
         const migration = await ensurePisiLegacyTaskMigration();
         if (!migration?.ok || migration.pending) return migration;
+        if (projectKey !== getPisiSourceProjectKey()) {
+            return { ok: false, stale: true };
+        }
 
-        const tasks = getPisiLegacyTaskSnapshot();
         const result = await window.pisiProject.quickAddTask(
-            window.currentProjectFolder,
+            projectFolder,
             {
                 op: 'sync-index',
                 allowProjectionWrite: true,
                 projectionReason: reason,
                 complete: true,
-                pruneMissing: false,
+                pruneMissing: true,
                 tasks
             }
         );
-        if (result?.ok) await refreshCanonicalPisiTasks();
+        if (result?.ok && projectKey === getPisiSourceProjectKey()) {
+            await refreshCanonicalPisiTasks();
+        }
         return result;
     })().finally(() => {
-        pisiSourceOfTruthState.projectionSyncPromise = null;
+        if (projectKey === getPisiSourceProjectKey()) {
+            pisiSourceOfTruthState.projectionSyncPromise = null;
+        }
     });
 
     pisiSourceOfTruthState.projectionSyncPromise = promise;
@@ -144,6 +192,13 @@ function bindPisiTaskProjectionWriteIntents() {
     };
     document.addEventListener('change', markFromPanel, true);
     document.addEventListener('drop', markFromPanel, true);
+    document.addEventListener('input', (event) => {
+        if (event.target?.closest?.(
+            '#center-node-editor-content, #node-modal-content'
+        )) {
+            markPisiTaskProjectionWriteIntent();
+        }
+    }, true);
     document.addEventListener('click', (event) => {
         if (!event.target?.closest?.('#pisi-missions-panel')) return;
         if (event.target.closest(
@@ -194,6 +249,7 @@ function getPisiCanonicalDiaryEntries() {
 }
 
 async function syncPisiDiaryFromCanonicalTasks(_index, options = {}) {
+    ensurePisiSourceProjectState();
     if (options.complete !== true) {
         return {
             ok: false,
@@ -205,15 +261,16 @@ async function syncPisiDiaryFromCanonicalTasks(_index, options = {}) {
         return null;
     }
 
+    const projectKey = getPisiSourceProjectKey();
     const entries = getPisiCanonicalDiaryEntries();
-    const signature = JSON.stringify(entries);
+    const signature = `${projectKey}:${JSON.stringify(entries)}`;
     if (signature === pisiSourceOfTruthState.diarySignature) return null;
 
     const result = await window.pisiProject.syncDiaryMissions(
         window.currentProjectFolder,
         { entries, complete: true }
     );
-    if (result?.ok) {
+    if (result?.ok && projectKey === getPisiSourceProjectKey()) {
         pisiSourceOfTruthState.diarySignature = signature;
         await window.refreshPisiCalendarDates?.();
     }
@@ -290,6 +347,7 @@ function bindPisiSourceOfTruthEvents() {
     bindPisiCanonicalSearchProjection();
 
     document.addEventListener('pisi:mission-index-updated', (event) => {
+        ensurePisiSourceProjectState();
         if (event.detail?.complete !== true) return;
         void ensurePisiLegacyTaskMigration();
         const reason = String(event.detail?.reason || '');
@@ -299,10 +357,12 @@ function bindPisiSourceOfTruthEvents() {
     });
 
     document.addEventListener('pisi:task-store-updated', () => {
+        ensurePisiSourceProjectState();
         void syncPisiDiaryFromCanonicalTasks(null, { complete: true });
     });
 
     document.addEventListener('DOMContentLoaded', () => {
+        ensurePisiSourceProjectState();
         installPisiCanonicalDiaryProjection();
         void ensurePisiLegacyTaskMigration();
     });
