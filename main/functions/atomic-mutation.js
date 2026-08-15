@@ -76,7 +76,7 @@ function installPisiAtomicFilesystemHooks() {
     };
 
     fs.writeFileSync = function pisiAtomicWriteFileSync(file, data, options) {
-        if (typeof file === 'string' || file instanceof URL) {
+        if (typeof file === 'string') {
             capturePisiAtomicPathBeforeChange(file);
         }
         return originalWriteFileSync(file, data, options);
@@ -204,7 +204,7 @@ function releasePisiAtomicProjectQueue(projectKey, queue) {
         pisiAtomicProjectQueues.delete(projectKey);
         return;
     }
-    queueMicrotask(() => {
+    Promise.resolve().then(() => {
         let result;
         try {
             result = executePisiQueuedAtomicMutation(
