@@ -7,9 +7,15 @@ const core = require('./atomic-mutation-core');
 
 let activePisiAtomicMutation = null;
 let pisiAtomicFsHooksInstalled = false;
+const recoveredPisiAtomicProjects = new Set();
 
 function getActivePisiAtomicMutation() {
     return activePisiAtomicMutation;
+}
+
+function normalizePisiAtomicProjectKey(projectFolder) {
+    const resolved = path.resolve(String(projectFolder || ''));
+    return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
 }
 
 function isPisiAtomicTransientPath(targetPath) {
@@ -96,13 +102,28 @@ function installPisiAtomicFilesystemHooks() {
 }
 
 function recoverPisiAtomicMutations(projectFolder) {
-    return core.recoverAtomicMutations(projectFolder);
+    const result = core.recoverAtomicMutations(projectFolder);
+    const key = normalizePisiAtomicProjectKey(projectFolder);
+    if (result.ok) recoveredPisiAtomicProjects.add(key);
+    else recoveredPisiAtomicProjects.delete(key);
+    return result;
+}
+
+function ensurePisiAtomicRecovery(projectFolder) {
+    const key = normalizePisiAtomicProjectKey(projectFolder);
+    if (recoveredPisiAtomicProjects.has(key)) {
+        return { ok: true, recovered: 0, cached: true, warnings: [] };
+    }
+    return recoverPisiAtomicMutations(projectFolder);
 }
 
 function finishPisiAtomicMutation(transaction, result) {
     if (result?.ok === false) {
         const rollback = core.rollbackAtomicMutation(transaction);
         if (!rollback.ok) {
+            recoveredPisiAtomicProjects.delete(
+                normalizePisiAtomicProjectKey(transaction.projectRoot)
+            );
             return {
                 ...result,
                 ok: false,
@@ -139,6 +160,9 @@ function finishPisiAtomicMutation(transaction, result) {
     } catch (commitError) {
         const rollback = core.rollbackAtomicMutation(transaction);
         if (!rollback.ok) {
+            recoveredPisiAtomicProjects.delete(
+                normalizePisiAtomicProjectKey(transaction.projectRoot)
+            );
             const error = new Error(
                 `${commitError.message} Atomic rollback başarısız: ${rollback.errors.join(' | ')}`
             );
@@ -152,6 +176,9 @@ function finishPisiAtomicMutation(transaction, result) {
 function failPisiAtomicMutation(transaction, error) {
     const rollback = core.rollbackAtomicMutation(transaction);
     if (!rollback.ok) {
+        recoveredPisiAtomicProjects.delete(
+            normalizePisiAtomicProjectKey(transaction.projectRoot)
+        );
         const wrapped = new Error(
             `${error.message} Atomic rollback başarısız: ${rollback.errors.join(' | ')}`
         );
@@ -179,6 +206,15 @@ function runPisiAtomicMutation(projectFolder, commandName, operation) {
             return operation();
         }
         throw new Error('Aynı anda farklı projelerde nested atomic mutation çalıştırılamaz.');
+    }
+
+    const recovery = ensurePisiAtomicRecovery(projectFolder);
+    if (!recovery.ok) {
+        const error = new Error(
+            `Yarım kalan atomic mutation kurtarılamadı: ${recovery.warnings.join(' | ')}`
+        );
+        error.code = 'ATOMIC_RECOVERY_REQUIRED';
+        throw error;
     }
 
     const transaction = core.beginAtomicMutation(projectFolder, commandName);
@@ -217,6 +253,7 @@ const moduleApi = {
     capturePisiAtomicPathBeforeChange,
     capturePisiAtomicRenameBeforeChange,
     recoverPisiAtomicMutations,
+    ensurePisiAtomicRecovery,
     runPisiAtomicMutation
 };
 
