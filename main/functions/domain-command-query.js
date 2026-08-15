@@ -12,10 +12,42 @@ const documentStore = modules['main.documentStore'];
 const structuredNodes = modules['main.structuredNodes'];
 const mapOperationalStore = modules['main.mapOperationalStore'];
 const mapSemanticOperations = modules['main.mapSemanticOperationHooks'];
+const projectOperations = modules['main.projectOperations'];
+const taskReferenceHooks = modules['main.taskReferenceOperationHooks'];
+const atomicMutation = modules['main.atomicMutation'];
 
 const PISI_DOMAIN_CONTRACT_VERSION = 1;
 const pisiDomainQueries = new Map();
 const pisiDomainCommands = new Map();
+const PISI_ATOMIC_DOMAIN_COMMANDS = new Set([
+    'task.capture.v1',
+    'map.relationship.upsert.v1',
+    'map.relationship.delete.v1',
+    'map.relationship.reparent.v1',
+    'map.node.create.v1',
+    'project.item.rename.v1',
+    'project.item.move.v1',
+    'project.item.delete.v1',
+    'project.path.delete.v1',
+    'project.batch.v1'
+]);
+const PISI_BATCH_MUTATION_COMMANDS = new Set([
+    'task.capture.v1',
+    'task.upsert.v1',
+    'task.update.v1',
+    'task.delete.v1',
+    'map.relationship.upsert.v1',
+    'map.relationship.delete.v1',
+    'map.relationship.reparent.v1',
+    'map.layout.save.v1',
+    'map.operational.mutate.v1',
+    'map.reference.detach.v1',
+    'map.node.create.v1',
+    'project.item.rename.v1',
+    'project.item.move.v1',
+    'project.item.delete.v1',
+    'project.path.delete.v1'
+]);
 
 function registerPisiDomainQuery(name, handler) {
     const key = String(name || '').trim();
@@ -39,6 +71,17 @@ function registerPisiDomainCommand(name, handler) {
     pisiDomainCommands.set(key, handler);
 }
 
+function recoverPisiDomainProjectIfNeeded() {
+    const projectFolder = globalThis.activeProjectFolder;
+    if (!projectFolder || !atomicMutation?.recoverPisiAtomicMutations) return;
+    const recovery = atomicMutation.recoverPisiAtomicMutations(projectFolder);
+    if (!recovery.ok) {
+        throw new Error(
+            `Yarım kalan atomic mutation kurtarılamadı: ${recovery.warnings.join(' | ')}`
+        );
+    }
+}
+
 function executePisiDomainQuery(name, payload = {}) {
     const handler = pisiDomainQueries.get(String(name || ''));
     if (!handler) {
@@ -49,6 +92,7 @@ function executePisiDomainQuery(name, payload = {}) {
         };
     }
     try {
+        recoverPisiDomainProjectIfNeeded();
         return handler(payload || {});
     } catch (error) {
         return {
@@ -59,23 +103,44 @@ function executePisiDomainQuery(name, payload = {}) {
     }
 }
 
+function shouldRunPisiCommandAtomically(name, payload = {}) {
+    if (PISI_ATOMIC_DOMAIN_COMMANDS.has(name)) return true;
+    if (name === 'map.camera.save.v1') {
+        return Boolean(payload.operationalPayload || payload.camera?.operationalPayload);
+    }
+    return false;
+}
+
+function normalizePisiDomainCommandFailure(error) {
+    return {
+        ok: false,
+        code: error?.code || 'DOMAIN_COMMAND_FAILED',
+        error: error?.message || String(error || 'Domain command başarısız.')
+    };
+}
+
 function executePisiDomainCommand(name, payload = {}) {
-    const handler = pisiDomainCommands.get(String(name || ''));
+    const commandName = String(name || '');
+    const handler = pisiDomainCommands.get(commandName);
     if (!handler) {
         return {
             ok: false,
             code: 'DOMAIN_COMMAND_NOT_FOUND',
-            error: `Bilinmeyen domain command: ${String(name || '')}`
+            error: `Bilinmeyen domain command: ${commandName}`
         };
     }
     try {
-        return handler(payload || {});
+        const invoke = () => handler(payload || {});
+        const projectFolder = globalThis.activeProjectFolder;
+        const result = shouldRunPisiCommandAtomically(commandName, payload) && projectFolder
+            ? atomicMutation.runPisiAtomicMutation(projectFolder, commandName, invoke)
+            : invoke();
+        if (result && typeof result.then === 'function') {
+            return result.catch((error) => normalizePisiDomainCommandFailure(error));
+        }
+        return result;
     } catch (error) {
-        return {
-            ok: false,
-            code: 'DOMAIN_COMMAND_FAILED',
-            error: error.message
-        };
+        return normalizePisiDomainCommandFailure(error);
     }
 }
 
@@ -133,6 +198,20 @@ function normalizePisiDomainTaskPayload(payload = {}) {
         };
     }
     return { safeProjectFolder, task };
+}
+
+function attachRequiredPisiTaskReferenceRewrite(result) {
+    const withReferences = taskReferenceHooks.attachPisiTaskReferenceRewrite(result);
+    if (withReferences?.ok && withReferences.taskReferences?.ok === false) {
+        return {
+            ...withReferences,
+            ok: false,
+            code: 'TASK_REFERENCE_REWRITE_FAILED',
+            error: withReferences.taskReferences.error ||
+                'Task source referansları güncellenemedi.'
+        };
+    }
+    return withReferences;
 }
 
 function installPisiDomainContracts() {
@@ -279,6 +358,104 @@ function installPisiDomainContracts() {
             assertPisiDomainMapPath(payload.mapPath)
         );
     });
+
+    registerPisiDomainCommand('project.item.rename.v1', (payload) => {
+        const safeOldPath = electronIpc.assertProjectPath(payload.oldPath, {
+            type: 'file',
+            extensions: ['.map', '.node']
+        });
+        return attachRequiredPisiTaskReferenceRewrite(
+            documentStore.renamePisiFile(safeOldPath, payload.newBaseName)
+        );
+    });
+
+    registerPisiDomainCommand('project.item.move.v1', (payload) => {
+        const safeSourcePath = electronIpc.assertProjectPath(payload.sourcePath);
+        const safeDestinationPath = electronIpc.assertProjectPath(
+            payload.destinationFolderPath,
+            { type: 'directory' }
+        );
+        if (
+            electronIpc.normalizePathForCompare(safeSourcePath) ===
+            electronIpc.normalizePathForCompare(globalThis.activeProjectFolder)
+        ) {
+            throw new Error('Aktif proje kökü taşınamaz.');
+        }
+        const safeOptions = { ...(payload.options || {}) };
+        if (safeOptions.parentMapPath) {
+            safeOptions.parentMapPath = assertPisiDomainMapPath(
+                safeOptions.parentMapPath
+            );
+        }
+        return attachRequiredPisiTaskReferenceRewrite(
+            mapStore.movePisiItem(
+                safeSourcePath,
+                safeDestinationPath,
+                safeOptions
+            )
+        );
+    });
+
+    registerPisiDomainCommand('project.item.delete.v1', async (payload) => {
+        const safeTargetPath = electronIpc.assertProjectPath(payload.targetPath, {
+            type: 'file',
+            extensions: ['.map', '.node']
+        });
+        return projectOperations.deletePisiFile(safeTargetPath);
+    });
+
+    registerPisiDomainCommand('project.path.delete.v1', async (payload) => {
+        const safeTargetPath = electronIpc.assertProjectPath(payload.targetPath);
+        if (
+            electronIpc.normalizePathForCompare(safeTargetPath) ===
+            electronIpc.normalizePathForCompare(globalThis.activeProjectFolder)
+        ) {
+            throw new Error('Aktif proje kökü bu işlemle silinemez.');
+        }
+        atomicMutation.capturePisiAtomicPathBeforeChange(safeTargetPath);
+        return projectOperations.deleteProjectPath(safeTargetPath);
+    });
+
+    registerPisiDomainCommand('project.batch.v1', async (payload) => {
+        const safeProjectFolder = assertPisiDomainProjectRoot(payload.projectFolder);
+        const operations = Array.isArray(payload.operations) ? payload.operations : [];
+        if (!operations.length || operations.length > 100) {
+            return {
+                ok: false,
+                code: 'INVALID_BATCH',
+                error: 'Bulk mutation 1 ile 100 işlem içermeli.'
+            };
+        }
+        const results = [];
+        for (let index = 0; index < operations.length; index += 1) {
+            const item = operations[index] || {};
+            const command = String(item.command || '');
+            if (!PISI_BATCH_MUTATION_COMMANDS.has(command)) {
+                return {
+                    ok: false,
+                    code: 'BATCH_COMMAND_NOT_ALLOWED',
+                    error: `Bulk mutation için izin verilmeyen command: ${command}`,
+                    failedIndex: index,
+                    results
+                };
+            }
+            const result = await executePisiDomainCommand(command, {
+                ...(item.payload || {}),
+                projectFolder: item.payload?.projectFolder || safeProjectFolder
+            });
+            results.push(result);
+            if (!result?.ok) {
+                return {
+                    ok: false,
+                    code: result?.code || 'BATCH_OPERATION_FAILED',
+                    error: result?.error || `Bulk mutation ${index}. adımda başarısız.`,
+                    failedIndex: index,
+                    results
+                };
+            }
+        }
+        return { ok: true, results };
+    });
 }
 
 function bindPisiDomainCompatibilityIpc() {
@@ -327,6 +504,17 @@ function bindPisiDomainCompatibilityIpc() {
     ipcMain.handle('project:get-pisi-document', (_event, filePath) => {
         return electronIpc.projectOperation(() => {
             return executePisiDomainQuery('document.read.v1', { filePath });
+        });
+    });
+
+    ipcMain.removeHandler('project:list-folder');
+    ipcMain.handle('project:list-folder', (_event, folderPath) => {
+        return electronIpc.projectOperation(() => {
+            recoverPisiDomainProjectIfNeeded();
+            const safeFolderPath = electronIpc.assertProjectPath(folderPath, {
+                type: 'directory'
+            });
+            return projectOperations.safeListFolder(safeFolderPath);
         });
     });
 
@@ -396,6 +584,49 @@ function bindPisiDomainCompatibilityIpc() {
             { mapPath }
         ));
     });
+
+    ipcMain.removeHandler('project:rename-pisi-file');
+    ipcMain.handle('project:rename-pisi-file', (_event, oldPath, newBaseName) => {
+        return electronIpc.projectOperation(() => executePisiDomainCommand(
+            'project.item.rename.v1',
+            { oldPath, newBaseName }
+        ));
+    });
+
+    ipcMain.removeHandler('project:move-pisi-item');
+    ipcMain.handle(
+        'project:move-pisi-item',
+        (_event, sourcePath, destinationFolderPath, options) => {
+            return electronIpc.projectOperation(() => executePisiDomainCommand(
+                'project.item.move.v1',
+                { sourcePath, destinationFolderPath, options: options || {} }
+            ));
+        }
+    );
+
+    ipcMain.removeHandler('project:delete-pisi-file');
+    ipcMain.handle('project:delete-pisi-file', (_event, targetPath) => {
+        return electronIpc.asyncProjectOperation(() => executePisiDomainCommand(
+            'project.item.delete.v1',
+            { targetPath }
+        ));
+    });
+
+    ipcMain.removeHandler('project:delete-node-from-map');
+    ipcMain.handle('project:delete-node-from-map', (_event, nodePath) => {
+        return electronIpc.asyncProjectOperation(() => executePisiDomainCommand(
+            'project.item.delete.v1',
+            { targetPath: nodePath }
+        ));
+    });
+
+    ipcMain.removeHandler('project:delete-path');
+    ipcMain.handle('project:delete-path', (_event, targetPath) => {
+        return electronIpc.asyncProjectOperation(() => executePisiDomainCommand(
+            'project.path.delete.v1',
+            { targetPath }
+        ));
+    });
 }
 
 installPisiDomainContracts();
@@ -403,6 +634,7 @@ bindPisiDomainCompatibilityIpc();
 
 const moduleApi = {
     PISI_DOMAIN_CONTRACT_VERSION,
+    PISI_ATOMIC_DOMAIN_COMMANDS,
     pisiDomainQueries,
     pisiDomainCommands,
     registerPisiDomainQuery,

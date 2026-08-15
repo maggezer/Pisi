@@ -3,6 +3,7 @@
 require("./main/functions/path-security");
 require("./main/functions/i18n");
 require("./main/functions/filesystem-core");
+require("./main/functions/atomic-mutation");
 require("./main/functions/document-store");
 require("./main/functions/map-store");
 require("./main/functions/project-operations");
@@ -20,3 +21,4 @@ require("./main/runtime");
 require("./main/functions/task-reference-operation-hooks");
 require("./main/functions/map-semantic-operation-hooks");
 require("./main/functions/domain-command-query");
+require("./main/functions/atomic-domain-hardening");
