@@ -158,7 +158,7 @@ function syncPisiOperationalTaskDependencies(projections, display) {
 
     const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     group.id = 'pisi-map-task-dependencies';
-    group.dataset.pisiDerived = 'task-dependencies';
+    group.setAttribute('data-pisi-derived', 'task-dependencies');
 
     for (const projection of projections) {
         const sourceBox = document.querySelector(
