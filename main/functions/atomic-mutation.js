@@ -2,15 +2,16 @@
 
 const fs = require('fs');
 const path = require('path');
+const { AsyncLocalStorage } = require('async_hooks');
 const { registerMainModule } = require('../module-registry');
 const core = require('./atomic-mutation-core');
 
-let activePisiAtomicMutation = null;
+const pisiAtomicContext = new AsyncLocalStorage();
 let pisiAtomicFsHooksInstalled = false;
 const recoveredPisiAtomicProjects = new Set();
 
 function getActivePisiAtomicMutation() {
-    return activePisiAtomicMutation;
+    return pisiAtomicContext.getStore() || null;
 }
 
 function normalizePisiAtomicProjectKey(projectFolder) {
@@ -24,28 +25,27 @@ function isPisiAtomicTransientPath(targetPath) {
 }
 
 function capturePisiAtomicPathBeforeChange(targetPath) {
-    if (!activePisiAtomicMutation || !targetPath) return null;
-    return core.capturePathBeforeMutation(activePisiAtomicMutation, targetPath);
+    const transaction = getActivePisiAtomicMutation();
+    if (!transaction || !targetPath) return null;
+    return core.capturePathBeforeMutation(transaction, targetPath);
 }
 
 function capturePisiAtomicRenameBeforeChange(oldPath, newPath) {
-    if (!activePisiAtomicMutation || !oldPath || !newPath) return null;
+    const transaction = getActivePisiAtomicMutation();
+    if (!transaction || !oldPath || !newPath) return null;
     if (isPisiAtomicTransientPath(oldPath)) {
         return {
             source: null,
             destination: capturePisiAtomicPathBeforeChange(newPath)
         };
     }
-    return core.captureRenameBeforeMutation(
-        activePisiAtomicMutation,
-        oldPath,
-        newPath
-    );
+    return core.captureRenameBeforeMutation(transaction, oldPath, newPath);
 }
 
 function capturePisiAtomicMkdirBeforeChange(targetPath) {
-    if (!activePisiAtomicMutation || !targetPath || fs.existsSync(targetPath)) return null;
-    const projectRoot = activePisiAtomicMutation.projectRoot;
+    const transaction = getActivePisiAtomicMutation();
+    if (!transaction || !targetPath || fs.existsSync(targetPath)) return null;
+    const projectRoot = transaction.projectRoot;
     let candidate = path.resolve(targetPath);
     let topMissing = candidate;
     while (
@@ -191,20 +191,15 @@ function runPisiAtomicMutation(projectFolder, commandName, operation) {
     if (typeof operation !== 'function') {
         throw new TypeError('Atomic mutation operation fonksiyon olmalı.');
     }
-    if (activePisiAtomicMutation) {
+    const activeTransaction = getActivePisiAtomicMutation();
+    if (activeTransaction) {
         if (
-            core.isSameOrInsideAtomicPath(
-                projectFolder,
-                activePisiAtomicMutation.projectRoot
-            ) &&
-            core.isSameOrInsideAtomicPath(
-                activePisiAtomicMutation.projectRoot,
-                projectFolder
-            )
+            core.isSameOrInsideAtomicPath(projectFolder, activeTransaction.projectRoot) &&
+            core.isSameOrInsideAtomicPath(activeTransaction.projectRoot, projectFolder)
         ) {
             return operation();
         }
-        throw new Error('Aynı anda farklı projelerde nested atomic mutation çalıştırılamaz.');
+        throw new Error('Aynı async zincirde farklı projelerde nested atomic mutation çalıştırılamaz.');
     }
 
     const recovery = ensurePisiAtomicRecovery(projectFolder);
@@ -217,30 +212,19 @@ function runPisiAtomicMutation(projectFolder, commandName, operation) {
     }
 
     const transaction = core.beginAtomicMutation(projectFolder, commandName);
-    activePisiAtomicMutation = transaction;
-
     let result;
     try {
-        result = operation();
+        result = pisiAtomicContext.run(transaction, operation);
     } catch (error) {
-        activePisiAtomicMutation = null;
         return failPisiAtomicMutation(transaction, error);
     }
 
     if (result && typeof result.then === 'function') {
         return result.then(
-            (resolved) => {
-                activePisiAtomicMutation = null;
-                return finishPisiAtomicMutation(transaction, resolved);
-            },
-            (error) => {
-                activePisiAtomicMutation = null;
-                return failPisiAtomicMutation(transaction, error);
-            }
+            (resolved) => finishPisiAtomicMutation(transaction, resolved),
+            (error) => failPisiAtomicMutation(transaction, error)
         );
     }
-
-    activePisiAtomicMutation = null;
     return finishPisiAtomicMutation(transaction, result);
 }
 
