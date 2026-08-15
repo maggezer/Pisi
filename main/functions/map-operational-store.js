@@ -23,6 +23,12 @@ const PISI_OPERATIONAL_RELATIONSHIP_TYPES = new Set([
     'co-level'
 ]);
 
+function finitePisiOperationalNumber(value, fallback, min, max) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return fallback;
+    return Math.min(max, Math.max(min, number));
+}
+
 function normalizePisiOperationalScope(raw = {}) {
     const mode = PISI_OPERATIONAL_SCOPE_MODES.has(String(raw.mode || ''))
         ? String(raw.mode)
@@ -66,20 +72,32 @@ function normalizePisiOperationalDisplay(raw = {}) {
 function normalizePisiOperationalLayoutNode(raw = {}) {
     const id = String(raw.id || '');
     if (!/^node_[A-Za-z0-9_-]+$/.test(id)) return null;
-    return {
+    const node = {
         id,
-        x: Number.isFinite(Number(raw.x)) ? Number(raw.x) : 80,
-        y: Number.isFinite(Number(raw.y)) ? Number(raw.y) : 80,
-        width: Math.max(150, Number(raw.width) || 220),
-        height: Math.max(74, Number(raw.height) || 92)
+        x: finitePisiOperationalNumber(raw.x, 80, -1000000, 1000000),
+        y: finitePisiOperationalNumber(raw.y, 80, -1000000, 1000000),
+        width: finitePisiOperationalNumber(raw.width, 220, 150, 4000),
+        height: finitePisiOperationalNumber(raw.height, 92, 74, 4000)
     };
+    const customization = filesystemCore.normalizePisiMapNodeCustomization(
+        raw.customization
+    );
+    if (Object.keys(customization).length) node.customization = customization;
+    return node;
 }
 
 function normalizePisiOperationalCamera(raw = {}) {
     return {
-        x: Number.isFinite(Number(raw.x)) ? Number(raw.x) : 0,
-        y: Number.isFinite(Number(raw.y)) ? Number(raw.y) : 0,
-        zoom: Math.min(3, Math.max(0.1, Number(raw.zoom) || 1))
+        x: finitePisiOperationalNumber(raw.x, 0, -1000000, 1000000),
+        y: finitePisiOperationalNumber(raw.y, 0, -1000000, 1000000),
+        zoom: finitePisiOperationalNumber(raw.zoom, 1, 0.1, 3),
+        collapsedHubs: Array.from(new Set(
+            (Array.isArray(raw.collapsedHubs) ? raw.collapsedHubs : [])
+                .map((value) => String(value || ''))
+                .filter((value) => {
+                    return /^(?:node_[A-Za-z0-9_-]+)::(?:top|right|bottom|left)$/.test(value);
+                })
+        )).slice(0, 10000)
     };
 }
 
@@ -190,6 +208,7 @@ function savePisiOperationalMapState(mapPath, payload = {}) {
 
 const moduleApi = {
     PISI_OPERATIONAL_MAP_VERSION,
+    finitePisiOperationalNumber,
     normalizePisiOperationalScope,
     normalizePisiOperationalDisplay,
     normalizePisiOperationalLayoutNode,
