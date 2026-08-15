@@ -8,40 +8,58 @@ const test = require('node:test');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('task store tek semantik otoritedir; legacy node taraması yalnız migration içindir', () => {
-    const mainStore = read('main/functions/task-store.js');
-    const rendererStore = read('renderer/tags/pisi-task-store.mjs');
+test('task store tek semantik otoritedir; legacy tarama migration sonrası salt okunurdur', () => {
+    const mainGuard = read('main/functions/source-of-truth.js');
+    const mainBootstrap = read('main.js');
 
-    assert.match(mainStore, /legacyImportedAt/);
-    assert.match(mainStore, /operation === 'migration-status'/);
-    assert.match(mainStore, /operation === 'complete-migration'/);
-    assert.match(rendererStore, /ensurePisiLegacyTaskMigration/);
-    assert.doesNotMatch(
-        rendererStore,
-        /pisi:mission-index-updated[\s\S]{0,900}syncLegacy:\s*true/
+    assert.match(mainGuard, /legacyImportedAt/);
+    assert.match(mainGuard, /operation === 'migration-status'/);
+    assert.match(mainGuard, /operation === 'complete-migration'/);
+    assert.match(mainGuard, /migration\.complete && !explicitProjectionWrite/);
+    assert.match(mainGuard, /authority:\s*'\.pisi\/tasks\.json'/);
+    assert.ok(
+        mainBootstrap.indexOf('task-store') < mainBootstrap.indexOf('source-of-truth'),
+        'source-of-truth guard task-store bridge kurulduktan sonra yüklenmeli'
     );
 });
 
-test('search görevleri node HTML kopyasından değil canonical task store projectionından üretir', () => {
-    const search = read('renderer/search/pisi-search-index.mjs');
+test('yalnız kontrollü kullanıcı işlemleri projection -> task store write-through yapabilir', () => {
+    const rendererGuard = read('renderer/tags/pisi-source-of-truth.mjs');
 
-    assert.doesNotMatch(search, /function extractPisiSearchTasks\(/);
-    assert.match(search, /pisiFirstClassTaskState/);
-    assert.match(search, /kind:\s*'task'/);
-    assert.match(search, /\.pisi-diary-managed-block/);
+    assert.match(rendererGuard, /allowProjectionWrite:\s*true/);
+    assert.match(rendererGuard, /status-change/);
+    assert.match(rendererGuard, /completion-change/);
+    assert.match(rendererGuard, /hasPisiTaskProjectionWriteIntent/);
+    assert.match(rendererGuard, /#center-node-editor-content, #node-modal-content/);
 });
 
-test('diary görev içeriğini kopyalamaz; task referansı taşır', () => {
-    const runtime = read('renderer/runtime.mjs');
-    const documents = read('main/functions/document-store.js');
+test('persisted search task kayıtları canonical task store projectionından üretilir', () => {
+    const rendererGuard = read('renderer/tags/pisi-source-of-truth.mjs');
 
-    assert.match(runtime, /taskId:/);
-    assert.doesNotMatch(runtime, /html:\s*block\.html/);
-    assert.match(documents, /data-pisi-task-ref=/);
-    assert.doesNotMatch(documents, /const blockHtml = entry\.html/);
+    assert.match(rendererGuard, /pisiFirstClassTaskState/);
+    assert.match(rendererGuard, /record\?\.kind !== 'task'/);
+    assert.match(rendererGuard, /makePisiCanonicalTaskSearchRecord/);
+    assert.match(rendererGuard, /buildPisiSearchAccelerator\(records\)/);
+    assert.match(rendererGuard, /taskAuthority = '\.pisi\/tasks\.json'/);
 });
 
-test('progress task projectionundan türetilir', () => {
+test('diary canonical tasklardan üretilen read-only projectiondır ve task HTML kopyalamaz', () => {
+    const rendererGuard = read('renderer/tags/pisi-source-of-truth.mjs');
+    const bootstrap = read('renderer/bootstrap.mjs');
+
+    assert.match(rendererGuard, /getPisiCanonicalDiaryEntries/);
+    assert.match(rendererGuard, /blockId:\s*task\.id/);
+    assert.match(rendererGuard, /text:\s*task\.title/);
+    assert.doesNotMatch(rendererGuard, /html:\s*block\.html/);
+    assert.match(rendererGuard, /syncPisiDiaryFromMissionIndex = syncPisiDiaryFromCanonicalTasks/);
+    assert.ok(
+        bootstrap.indexOf('./runtime.mjs') <
+            bootstrap.indexOf('./tags/pisi-source-of-truth.mjs'),
+        'canonical diary override runtime calendar kurulduktan sonra yüklenmeli'
+    );
+});
+
+test('progress canonical task projectionundan türetilir', () => {
     const todo = read('renderer/tags/pisi-todo-third-release.mjs');
 
     assert.match(todo, /getPisiThirdAllMissions\(\)/);
