@@ -68,7 +68,9 @@ Rename and move still update canonical task source paths. If that reference rewr
 
 ## Concurrency
 
-Transaction context uses Node `AsyncLocalStorage` rather than one process-global mutable transaction variable. Nested operations in the same async command chain share a transaction, while concurrent IPC chains remain isolated.
+Transaction context uses Node `AsyncLocalStorage` rather than one process-global mutable transaction variable. Nested operations in the same async command chain share a transaction.
+
+Top-level mutations are also serialized **per project**. If a destructive command is already running for a project, a second top-level mutation for that same project is queued until the first command has committed or rolled back. This prevents two valid but overlapping journals from concurrently writing the same authoritative files. Different project contexts remain isolated.
 
 ## Recovery gate
 
