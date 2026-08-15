@@ -14,3 +14,4 @@ require("./main/functions/structured-nodes");
 require("./main/functions/portability");
 require("./main/functions/electron-ipc");
 require("./main/runtime");
+require("./main/functions/task-reference-operation-hooks");
