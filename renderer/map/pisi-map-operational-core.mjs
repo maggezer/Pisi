@@ -16,7 +16,10 @@ const PISI_OPERATIONAL_RELATIONSHIP_TYPES = new Set([
 ]);
 
 function normalizePisiOperationalPath(value = '') {
-    return String(value || '').replace(/[\\/]+/g, '/').toLowerCase();
+    const normalized = String(value || '').replace(/[\\/]+/g, '/');
+    return globalThis.window?.pisiEnvironment?.platform === 'win32'
+        ? normalized.toLowerCase()
+        : normalized;
 }
 
 function normalizePisiOperationalScope(raw = {}) {
@@ -147,9 +150,9 @@ function buildPisiOperationalNodeStates(nodes = [], tasks = [], now = Date.now()
             ownerMissing: !hasPisiOperationalOwner(node),
             changedSinceReview,
             highestPriority: openTasks.reduce((best, task) => {
-                const priority = Number(task?.priority) || 3;
-                return Math.min(best, priority);
-            }, 5)
+                const priority = Math.min(5, Math.max(1, Number(task?.priority) || 3));
+                return Math.max(best, priority);
+            }, 1)
         };
         return [node?.id || '', state];
     }));
@@ -298,7 +301,7 @@ function rankPisiOperationalNextNodes(nodes = [], nodeStates = {}) {
             if (state.blocked || !(state.openTasks?.length > 0)) return null;
             const score =
                 (state.overdueTasks?.length || 0) * 100 +
-                (6 - (state.highestPriority || 5)) * 15 +
+                (state.highestPriority || 1) * 15 +
                 (state.openTasks?.length || 0) * 2 +
                 (state.ownerMissing ? -10 : 0);
             return { node, state, score };
