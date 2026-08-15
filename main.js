@@ -7,6 +7,7 @@ require("./main/functions/document-store");
 require("./main/functions/map-store");
 require("./main/functions/project-operations");
 require("./main/functions/task-capture");
+require("./main/functions/task-store");
 require("./main/functions/structured-nodes");
 require("./main/functions/portability");
 require("./main/functions/electron-ipc");
