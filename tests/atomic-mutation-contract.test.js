@@ -11,6 +11,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const core = read('main/functions/atomic-mutation-core.js');
 const runtime = read('main/functions/atomic-mutation.js');
 const domain = read('main/functions/domain-command-query.js');
+const hardening = read('main/functions/atomic-domain-hardening.js');
 
 test('atomic manifest commit marker is durable before best-effort journal cleanup', () => {
     assert.match(core, /manifest\.phase = 'committed'/);
@@ -68,9 +69,38 @@ test('bulk mutation is bounded and recursive batch command is not allowed', () =
     assert.doesNotMatch(allowedBlock, /project\.batch\.v1/);
 });
 
-test('high-frequency camera saves are atomic only for compound operational payloads', () => {
-    assert.match(domain, /name === 'map\.camera\.save\.v1'/);
-    assert.match(domain, /payload\.operationalPayload \|\| payload\.camera\?\.operationalPayload/);
+test('all persistent domain mutations join the atomic project queue', () => {
+    for (const command of [
+        'task.capture.v1',
+        'task.upsert.v1',
+        'task.update.v1',
+        'task.delete.v1',
+        'task.sync-projection.v1',
+        'map.relationship.upsert.v1',
+        'map.relationship.delete.v1',
+        'map.relationship.reparent.v1',
+        'map.layout.save.v1',
+        'map.operational.mutate.v1',
+        'map.camera.save.v1',
+        'map.reference.detach.v1',
+        'map.node.create.v1',
+        'project.item.rename.v1',
+        'project.item.move.v1',
+        'project.item.delete.v1',
+        'project.path.delete.v1',
+        'project.batch.v1'
+    ]) {
+        assert.match(hardening, new RegExp(`'${command.replaceAll('.', '\\.')}'`));
+    }
+    assert.match(hardening, /PISI_ATOMIC_DOMAIN_COMMANDS\.add\(command\)/);
+});
+
+test('atomic hardening loads after the domain registry', () => {
+    const main = read('main.js');
+    const domainIndex = main.indexOf('./main/functions/domain-command-query');
+    const hardeningIndex = main.indexOf('./main/functions/atomic-domain-hardening');
+    assert.ok(domainIndex >= 0);
+    assert.ok(hardeningIndex > domainIndex);
 });
 
 test('destructive compatibility IPC handlers are rebound after legacy hooks', () => {
