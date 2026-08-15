@@ -10,6 +10,7 @@ const mapStore = modules['main.mapStore'];
 const structuredNodes = modules['main.structuredNodes'];
 const relationshipStore = modules['main.relationshipStore'];
 const mapSemanticCore = modules['main.mapSemanticCore'];
+const mapOperationalStore = modules['main.mapOperationalStore'];
 const electronIpc = modules['main.electronIpc'];
 
 function getPisiSemanticProjectFolder(targetPath = null) {
@@ -101,6 +102,9 @@ function getPisiMapSemanticProjection(mapPath, baseResult = null) {
     return {
         ...base,
         edges,
+        operational: mapOperationalStore.normalizePisiOperationalMapState(
+            freshMapInfo.data.map?.operational
+        ),
         relationshipAuthority: relationshipResult.filePath,
         mapStateAuthority: mapPath,
         relationshipWarnings: [
@@ -284,6 +288,11 @@ function reparentPisiMapSemanticNode(mapPath, childId, parentId) {
     };
 }
 
+function savePisiOperationalPayload(mapPath, payload) {
+    if (!payload || typeof payload !== 'object') return null;
+    return mapOperationalStore.savePisiOperationalMapState(mapPath, payload);
+}
+
 function bindPisiMapSemanticOperationHooks() {
     const projectOperation = electronIpc.projectOperation;
     const assertProjectPath = electronIpc.assertProjectPath;
@@ -354,7 +363,19 @@ function bindPisiMapSemanticOperationHooks() {
             });
             const migrated = migratePisiLegacyMapRelationships(safeMapPath);
             if (!migrated.ok) return migrated;
-            return mapStore.saveMapCamera(safeMapPath, camera || {});
+            const cameraResult = mapStore.saveMapCamera(safeMapPath, camera || {});
+            if (!cameraResult.ok) return cameraResult;
+            const operationalResult = savePisiOperationalPayload(
+                safeMapPath,
+                camera?.operationalPayload
+            );
+            if (operationalResult && !operationalResult.ok) {
+                return operationalResult;
+            }
+            return {
+                ...cameraResult,
+                ...(operationalResult ? { operational: operationalResult.state } : {})
+            };
         });
     });
 
@@ -394,6 +415,7 @@ const moduleApi = {
     upsertPisiMapSemanticConnection,
     deletePisiMapSemanticConnection,
     reparentPisiMapSemanticNode,
+    savePisiOperationalPayload,
     bindPisiMapSemanticOperationHooks
 };
 

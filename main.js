@@ -8,6 +8,7 @@ require("./main/functions/map-store");
 require("./main/functions/project-operations");
 require("./main/functions/relationship-store");
 require("./main/functions/map-semantic-core");
+require("./main/functions/map-operational-store");
 require("./main/functions/task-capture");
 require("./main/functions/task-store");
 require("./main/functions/task-reference-integrity");
