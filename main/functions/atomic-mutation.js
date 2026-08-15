@@ -9,6 +9,7 @@ const core = require('./atomic-mutation-core');
 const pisiAtomicContext = new AsyncLocalStorage();
 let pisiAtomicFsHooksInstalled = false;
 const recoveredPisiAtomicProjects = new Set();
+const pisiAtomicProjectQueues = new Map();
 
 function getActivePisiAtomicMutation() {
     return pisiAtomicContext.getStore() || null;
@@ -187,6 +188,87 @@ function failPisiAtomicMutation(transaction, error) {
     throw error;
 }
 
+function getPisiAtomicProjectQueue(projectKey) {
+    let queue = pisiAtomicProjectQueues.get(projectKey);
+    if (!queue) {
+        queue = { busy: false, pending: [] };
+        pisiAtomicProjectQueues.set(projectKey, queue);
+    }
+    return queue;
+}
+
+function releasePisiAtomicProjectQueue(projectKey, queue) {
+    const next = queue.pending.shift();
+    if (!next) {
+        queue.busy = false;
+        pisiAtomicProjectQueues.delete(projectKey);
+        return;
+    }
+    queueMicrotask(() => {
+        let result;
+        try {
+            result = executePisiQueuedAtomicMutation(
+                next.projectFolder,
+                next.commandName,
+                next.operation,
+                projectKey,
+                queue
+            );
+        } catch (error) {
+            next.reject(error);
+            return;
+        }
+        Promise.resolve(result).then(next.resolve, next.reject);
+    });
+}
+
+function executePisiQueuedAtomicMutation(
+    projectFolder,
+    commandName,
+    operation,
+    projectKey,
+    queue
+) {
+    const recovery = ensurePisiAtomicRecovery(projectFolder);
+    if (!recovery.ok) {
+        releasePisiAtomicProjectQueue(projectKey, queue);
+        const error = new Error(
+            `Yarım kalan atomic mutation kurtarılamadı: ${recovery.warnings.join(' | ')}`
+        );
+        error.code = 'ATOMIC_RECOVERY_REQUIRED';
+        throw error;
+    }
+
+    let transaction = null;
+    let result;
+    try {
+        transaction = core.beginAtomicMutation(projectFolder, commandName);
+        result = pisiAtomicContext.run(transaction, operation);
+    } catch (error) {
+        try {
+            if (transaction) return failPisiAtomicMutation(transaction, error);
+            throw error;
+        } finally {
+            releasePisiAtomicProjectQueue(projectKey, queue);
+        }
+    }
+
+    if (result && typeof result.then === 'function') {
+        return result.then(
+            (resolved) => finishPisiAtomicMutation(transaction, resolved),
+            (error) => failPisiAtomicMutation(transaction, error)
+        ).finally(() => {
+            releasePisiAtomicProjectQueue(projectKey, queue);
+        });
+    }
+
+    try {
+        return finishPisiAtomicMutation(transaction, result);
+    } finally {
+        releasePisiAtomicProjectQueue(projectKey, queue);
+    }
+}
+
 function runPisiAtomicMutation(projectFolder, commandName, operation) {
     if (typeof operation !== 'function') {
         throw new TypeError('Atomic mutation operation fonksiyon olmalı.');
@@ -202,30 +284,27 @@ function runPisiAtomicMutation(projectFolder, commandName, operation) {
         throw new Error('Aynı async zincirde farklı projelerde nested atomic mutation çalıştırılamaz.');
     }
 
-    const recovery = ensurePisiAtomicRecovery(projectFolder);
-    if (!recovery.ok) {
-        const error = new Error(
-            `Yarım kalan atomic mutation kurtarılamadı: ${recovery.warnings.join(' | ')}`
-        );
-        error.code = 'ATOMIC_RECOVERY_REQUIRED';
-        throw error;
+    const projectKey = normalizePisiAtomicProjectKey(projectFolder);
+    const queue = getPisiAtomicProjectQueue(projectKey);
+    if (queue.busy) {
+        return new Promise((resolve, reject) => {
+            queue.pending.push({
+                projectFolder,
+                commandName,
+                operation,
+                resolve,
+                reject
+            });
+        });
     }
-
-    const transaction = core.beginAtomicMutation(projectFolder, commandName);
-    let result;
-    try {
-        result = pisiAtomicContext.run(transaction, operation);
-    } catch (error) {
-        return failPisiAtomicMutation(transaction, error);
-    }
-
-    if (result && typeof result.then === 'function') {
-        return result.then(
-            (resolved) => finishPisiAtomicMutation(transaction, resolved),
-            (error) => failPisiAtomicMutation(transaction, error)
-        );
-    }
-    return finishPisiAtomicMutation(transaction, result);
+    queue.busy = true;
+    return executePisiQueuedAtomicMutation(
+        projectFolder,
+        commandName,
+        operation,
+        projectKey,
+        queue
+    );
 }
 
 installPisiAtomicFilesystemHooks();
