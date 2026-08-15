@@ -160,9 +160,10 @@ test('görev kartına tıklama kaynağı açar ve node badge sayıları gösteri
     assert.match(firstRelease, /tree-node\[data-path\]/);
     assert.match(firstRelease, /pisi-mission-node-badge/);
     assert.match(firstRelease, /syncPisiMissionBadgesFirstRelease\(allMissions\)/);
-    assert.match(navigation, /await highlightPisiEditorBlock\(block\)/);
-    assert.match(navigation, /samePisiPathForTags\(activeModalNode\?\.path, mission\?\.nodePath\)/);
-    assert.match(navigation, /pisiMissionBlockContainsTodo/);
+    assert.ok(navigation.includes('return navigatePisiTaskToSource(block)'));
+    assert.ok(navigation.includes('const highlighted = await highlightPisiEditorBlock(target)'));
+    assert.ok(navigation.includes('samePisiPathForTags(activeModalNode?.path, mission?.nodePath)'));
+    assert.ok(navigation.includes('selectPisiTaskNavigationCandidate'));
     assert.match(css, /pisi-mission-node-badge/);
 });
 

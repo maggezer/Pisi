@@ -11,16 +11,17 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 test('Todo source navigation targets the active node and never persists highlight classes', () => {
     const source = read('renderer/tags/pisi-todo-navigation.mjs');
 
-    assert.match(source, /samePisiPathForTags\(activeModalNode\?\.path, mission\?\.nodePath\)/);
-    assert.match(source, /samePisiPathForTags\(activeCenterNode\?\.path, mission\?\.nodePath\)/);
-    assert.match(source, /idMatches\.find[\s\S]*pisiMissionBlockContainsTodo/);
-    assert.match(source, /todoBlocks\.length === 1 \? todoBlocks\[0\] : null/);
-    assert.match(source, /target\.animate\(/);
-    assert.match(source, /clearPisiMissionHighlightArtifacts\(editor\)/);
-    assert.match(source, /new MutationObserver/);
-    assert.match(read('renderer/bootstrap.mjs'), /pisi-todo-navigation\.mjs/);
-    assert.doesNotMatch(source, /block\.classList\.add\('pisi-block-highlight'\)/);
-    assert.doesNotMatch(source, /setTimeout\(\(\) => \{\s*highlightPisiEditorBlock/);
+    assert.ok(source.includes('samePisiPathForTags(activeModalNode?.path, mission?.nodePath)'));
+    assert.ok(source.includes('samePisiPathForTags(activeCenterNode?.path, mission?.nodePath)'));
+    assert.ok(source.includes('getPisiTaskNavigationTaskId'));
+    assert.ok(source.includes('isPisiNavigationCandidateExactEnough'));
+    assert.ok(source.includes('selectPisiTaskNavigationCandidate'));
+    assert.ok(source.includes('getPisiMissionSourceInBlock(selected.block, mission)'));
+    assert.ok(source.includes('target.animate('));
+    assert.ok(source.includes('clearPisiMissionHighlightArtifacts(editor)'));
+    assert.ok(source.includes('new MutationObserver'));
+    assert.ok(read('renderer/bootstrap.mjs').includes('pisi-todo-navigation.mjs'));
+    assert.equal(source.includes("block.classList.add('pisi-block-highlight')"), false);
 });
 
 test('Todo date filters render inside one dropdown trigger', () => {
