@@ -26,25 +26,28 @@ test('sol panele dock edilen takvim merkez sekmelerin arkasında kalmaz', () => 
 });
 
 test('sag panel Search ve dock edilmis takvimi ayri layout satirlarinda tutar', () => {
+    const foundation = read('styles/00-foundation.css');
     const styles = read('styles/95-right-search-calendar-fix.css');
     const runtime = read('renderer/runtime.mjs');
     const windowModule = read('renderer/shell/pisi-window.mjs');
 
     assert.match(
-        styles,
+        foundation,
         /#right-panel \{[\s\S]*?display: grid;[\s\S]*?grid-template-rows: auto minmax\(0, 1fr\) auto;[\s\S]*?overflow: hidden;/
     );
+    assert.doesNotMatch(styles, /#right-panel \{/);
+    assert.doesNotMatch(styles, /!important\b/);
     assert.match(
         styles,
         /#right-panel > #right-panel-content \{[\s\S]*?height: 100%;[\s\S]*?overflow: hidden;/
     );
     assert.match(
         styles,
-        /#right-panel-content > \.right-tab-page \{[\s\S]*?display: none !important;/
+        /#right-panel-content > \.right-tab-page \{[\s\S]*?display: none;/
     );
     assert.match(
         styles,
-        /#right-panel-content > \.right-tab-page\.active \{[\s\S]*?height: 100%;[\s\S]*?overflow-y: auto;/
+        /#right-panel-content > \.right-tab-page\.active \{[\s\S]*?display: block;[\s\S]*?height: 100%;[\s\S]*?overflow-y: auto;/
     );
     assert.match(
         styles,
@@ -56,7 +59,7 @@ test('sag panel Search ve dock edilmis takvimi ayri layout satirlarinda tutar', 
     );
     assert.match(
         styles,
-        /#right-tab-search\.pisi-search-page\.active \{[\s\S]*?height: 100%;[\s\S]*?display: flex !important;[\s\S]*?overflow: hidden;/
+        /#right-tab-search\.pisi-search-page\.active \{[\s\S]*?height: 100%;[\s\S]*?display: flex;[\s\S]*?overflow: hidden;/
     );
     assert.match(
         styles,
