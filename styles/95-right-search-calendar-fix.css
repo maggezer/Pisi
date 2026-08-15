@@ -1,8 +1,26 @@
-/* Restore the right-panel tab visibility rules that were lost during the stylesheet split. */
-#right-panel-content {
+/* Right panel layout: tabs / active content / docked calendar.
+   The calendar is a real sibling of #right-panel-content at runtime, so reserve
+   a dedicated grid row instead of relying on competing flex shrink behavior. */
+#right-panel {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+#right-panel > #right-panel-tabs {
+    min-width: 0;
     min-height: 0;
 }
 
+#right-panel > #right-panel-content {
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Only the selected right-panel page participates in layout. */
 #right-panel-content > .right-tab-page {
     display: none !important;
     height: auto;
@@ -13,9 +31,34 @@
 
 #right-panel-content > .right-tab-page.active {
     display: block !important;
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
-/* Keep the active Global Search page inside the space reserved above the calendar dock. */
+/* An empty dock zone must not consume panel height. The runtime can still dock
+   into the right panel through its bottom-edge fallback hit target. */
+#right-panel > .pisi-calendar-dock-zone[data-calendar-dock-zone="right"] {
+    grid-row: 3;
+    align-self: end;
+    width: 100%;
+    height: 0;
+    min-height: 0;
+    margin-top: 0;
+    flex: none;
+    overflow: hidden;
+}
+
+/* Once the calendar is actually docked, its row has an explicit, protected
+   height. Search/content can shrink only inside the middle grid row. */
+#right-panel > .pisi-calendar-dock-zone[data-calendar-dock-zone="right"].has-calendar {
+    height: min(300px, 35vh);
+    min-height: 180px;
+    margin-top: 10px;
+}
+
+/* Global Search fills only the middle grid row. */
 #right-tab-search.pisi-search-page.active {
     position: relative;
     inset: auto;
@@ -28,13 +71,15 @@
 }
 
 #right-tab-search .pisi-right-search-panel {
-    flex: 1 1 auto;
+    flex: 1 1 0;
+    width: 100%;
+    height: 100%;
     min-height: 0;
     overflow: hidden;
 }
 
 #right-tab-search .pisi-right-search-results {
-    flex: 1 1 auto;
+    flex: 1 1 0;
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
