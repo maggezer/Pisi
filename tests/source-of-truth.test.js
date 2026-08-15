@@ -67,15 +67,39 @@ test('progress canonical task projectionundan türetilir', () => {
     assert.match(todo, /rate\s*=\s*total/);
 });
 
-test('ilişkilerin otoritesi map edges, node connectionTypes yalnız projectiondır', () => {
-    const mapStore = read('main/functions/map-store.js');
+test('semantic relationship otoritesi proje storeudur; map yalnız presentation state taşır', () => {
+    const relationshipStore = read('main/functions/relationship-store.js');
+    const mapCore = read('main/functions/map-semantic-core.js');
+    const hooks = read('main/functions/map-semantic-operation-hooks.js');
+    const bootstrap = read('main.js');
 
-    assert.match(
-        mapStore,
-        /const normalizedEdges = normalizePisiMapEdges\(\s*mapInfo\.data\.map\.edges/
+    assert.match(relationshipStore, /'\.pisi', 'relationships\.json'/);
+    assert.match(relationshipStore, /sourceId:/);
+    assert.match(relationshipStore, /targetId:/);
+    assert.match(relationshipStore, /sourceRole:/);
+    assert.match(relationshipStore, /targetRole:/);
+    assert.match(mapCore, /relationshipId/);
+    assert.match(mapCore, /sourcePort/);
+    assert.match(mapCore, /targetPort/);
+    assert.match(mapCore, /delete mapData\.edges/);
+    assert.match(hooks, /relationshipAuthority:/);
+    assert.match(hooks, /mapStateAuthority:/);
+    assert.doesNotMatch(hooks, /syncMapConnectionMetadata\(/);
+    assert.ok(
+        bootstrap.indexOf('relationship-store') <
+            bootstrap.indexOf('map-semantic-operation-hooks'),
+        'canonical relationship store map IPC adapterından önce yüklenmeli'
     );
-    assert.match(mapStore, /resetNodeConnectionTypes\(nodeInfo\.data\.pisi\)/);
-    assert.match(mapStore, /addUniqueConnectionType\(/);
+});
+
+test('node connectionTypes semantic store üzerinden yalnız query-time projectiondır', () => {
+    const mapCore = read('main/functions/map-semantic-core.js');
+    const hooks = read('main/functions/map-semantic-operation-hooks.js');
+
+    assert.match(mapCore, /derivePisiConnectionTypesFromRelationships/);
+    assert.match(mapCore, /node\.metadata\.connectionTypes = byId\.get\(node\.id\)/);
+    assert.match(hooks, /applyPisiDerivedConnectionTypes/);
+    assert.doesNotMatch(hooks, /writePisiDocumentsTransaction/);
 });
 
 test('map node konumu yalnız map layout kaydına yazılır', () => {
