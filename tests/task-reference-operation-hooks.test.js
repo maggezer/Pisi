@@ -19,7 +19,9 @@ test('rename and move operations expose pathChanges consumed by task reference h
     assert.match(mapStore, /pathChanges/);
 
     assert.match(hooks, /result\.pathChanges/);
-    assert.match(hooks, /rewritePisiTaskSourcePathsForPathChanges\(result\.pathChanges\)/);
+    assert.match(hooks, /main\.taskReferenceIntegrity/);
+    assert.match(hooks, /rewritePisiTaskSourcePathsForPathChanges/);
+    assert.match(hooks, /rewrite\(result\.pathChanges\)/);
     assert.match(hooks, /renamePisiFile\(safeOldPath, newBaseName\)/);
     assert.match(hooks, /movePisiItem\(/);
 });
