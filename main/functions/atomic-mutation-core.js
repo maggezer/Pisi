@@ -194,6 +194,10 @@ function capturePathBeforeMutation(transaction, targetPath) {
     if (!transaction?.manifest || transaction.manifest.phase === 'committed') return null;
     const safeTarget = assertAtomicProjectPath(transaction.projectRoot, targetPath);
     if (isAtomicInternalPath(transaction, safeTarget)) return null;
+    const mutationRoot = getAtomicMutationRoot(transaction.projectRoot);
+    if (isSameOrInsideAtomicPath(mutationRoot, safeTarget)) {
+        throw new Error('Atomic mutation kendi journal klasörünü kapsayan yolu değiştiremez.');
+    }
     const coveringEntry = findAtomicEntryCoveringPath(transaction, safeTarget);
     if (coveringEntry) return coveringEntry;
 
@@ -357,7 +361,6 @@ function recoverAtomicMutations(projectFolder) {
         }
         recovered += 1;
     }
-    cleanupKnownAtomicTemps(projectRoot);
     return {
         ok: warnings.length === 0,
         recovered,
