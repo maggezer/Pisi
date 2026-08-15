@@ -103,12 +103,14 @@ function installPisiSingleSourceTaskGuard() {
                 const migration = readPisiTaskMigrationStatus(projectFolder);
                 if (!migration.ok) return migration;
 
-                const explicitProjectionWrite = payload.allowProjectionWrite === true;
+                const explicitProjectionWrite =
+                    payload.allowProjectionWrite === true ||
+                    payload.complete === false;
 
                 // İlk geçişte legacy node kayıtlarının bir defa içeri alınmasına izin verilir.
                 // Migration tamamlandıktan sonra tam proje taramaları canonical task store'u
-                // geri yazamaz. Yalnız açıkça işaretlenmiş kullanıcı işlemleri write-through
-                // yapabilir.
+                // geri yazamaz. Yalnız açık kullanıcı işlemleri ve canlı editor write-through
+                // çağrıları task store'u değiştirebilir.
                 if (migration.complete && !explicitProjectionWrite) {
                     const canonical = listCanonicalPisiTasks(projectFolder, originalQuickAdd);
                     return canonical?.ok
