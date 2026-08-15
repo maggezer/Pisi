@@ -9,10 +9,28 @@ const PISI_OPERATIONAL_SCOPE_MODES = new Set([
     'manual'
 ]);
 
+const PISI_OPERATIONAL_SCOPE_STRATEGIES = new Set([
+    'live',
+    'snapshot'
+]);
+
 const PISI_OPERATIONAL_RELATIONSHIP_TYPES = new Set([
     'down-hub',
     'stream',
     'co-level'
+]);
+
+const PISI_OPERATIONAL_PROPERTY_OPERATORS = new Set([
+    'exists',
+    'not-empty',
+    'equals',
+    'not-equals',
+    'contains',
+    'one-of',
+    'gt',
+    'gte',
+    'lt',
+    'lte'
 ]);
 
 function normalizePisiOperationalPath(value = '') {
@@ -22,8 +40,28 @@ function normalizePisiOperationalPath(value = '') {
         : normalized;
 }
 
+function normalizePisiOperationalPropertyFilter(raw = {}) {
+    const property = String(
+        raw.property || raw.propertyId || raw.name || ''
+    ).trim().toLowerCase().slice(0, 120);
+    if (!property) return null;
+    const operator = PISI_OPERATIONAL_PROPERTY_OPERATORS.has(String(raw.operator || ''))
+        ? String(raw.operator)
+        : 'contains';
+    return {
+        property,
+        operator,
+        value: ['exists', 'not-empty'].includes(operator)
+            ? ''
+            : String(raw.value ?? '').trim().slice(0, 2400)
+    };
+}
+
 function normalizePisiOperationalScope(raw = {}) {
     return {
+        strategy: PISI_OPERATIONAL_SCOPE_STRATEGIES.has(String(raw.strategy || ''))
+            ? String(raw.strategy)
+            : 'live',
         mode: PISI_OPERATIONAL_SCOPE_MODES.has(String(raw.mode || ''))
             ? String(raw.mode)
             : 'all',
@@ -33,6 +71,10 @@ function normalizePisiOperationalScope(raw = {}) {
                 .map((value) => String(value || ''))
                 .filter((value) => PISI_OPERATIONAL_RELATIONSHIP_TYPES.has(value))
         )),
+        propertyFilters: (Array.isArray(raw.propertyFilters) ? raw.propertyFilters : [])
+            .map(normalizePisiOperationalPropertyFilter)
+            .filter(Boolean)
+            .slice(0, 20),
         includedNodeIds: Array.from(new Set(
             (Array.isArray(raw.includedNodeIds) ? raw.includedNodeIds : [])
                 .map((value) => String(value || ''))
@@ -87,6 +129,63 @@ function getPisiOperationalPropertyEntries(node) {
         name: String(property?.name || id || '').toLowerCase(),
         value: property?.value
     }));
+}
+
+function getPisiOperationalPropertyEntry(node, propertyKey) {
+    const key = String(propertyKey || '').trim().toLowerCase();
+    if (!key) return null;
+    return getPisiOperationalPropertyEntries(node).find((property) => {
+        return property.id === key || property.name === key;
+    }) || null;
+}
+
+function normalizePisiOperationalComparableValues(value) {
+    if (Array.isArray(value)) {
+        return value.map((item) => String(item ?? '').trim().toLowerCase()).filter(Boolean);
+    }
+    if (value === null || value === undefined) return [];
+    return [String(value).trim().toLowerCase()];
+}
+
+function isPisiOperationalPropertyValueEmpty(value) {
+    if (Array.isArray(value)) return value.length === 0 || !value.some(Boolean);
+    return value === null || value === undefined || String(value).trim() === '';
+}
+
+function nodeMatchesPisiOperationalPropertyFilter(node, rawFilter = {}) {
+    const filter = normalizePisiOperationalPropertyFilter(rawFilter);
+    if (!filter) return true;
+    const entry = getPisiOperationalPropertyEntry(node, filter.property);
+    if (filter.operator === 'exists') return Boolean(entry);
+    if (filter.operator === 'not-empty') {
+        return Boolean(entry) && !isPisiOperationalPropertyValueEmpty(entry.value);
+    }
+    if (!entry) return filter.operator === 'not-equals';
+
+    const values = normalizePisiOperationalComparableValues(entry.value);
+    const expected = String(filter.value || '').trim().toLowerCase();
+    if (filter.operator === 'equals') return values.some((value) => value === expected);
+    if (filter.operator === 'not-equals') return values.every((value) => value !== expected);
+    if (filter.operator === 'contains') return values.some((value) => value.includes(expected));
+    if (filter.operator === 'one-of') {
+        const wanted = new Set(expected.split(',').map((value) => value.trim()).filter(Boolean));
+        return values.some((value) => wanted.has(value));
+    }
+
+    const left = Number(Array.isArray(entry.value) ? entry.value[0] : entry.value);
+    const right = Number(filter.value);
+    if (!Number.isFinite(left) || !Number.isFinite(right)) return false;
+    if (filter.operator === 'gt') return left > right;
+    if (filter.operator === 'gte') return left >= right;
+    if (filter.operator === 'lt') return left < right;
+    if (filter.operator === 'lte') return left <= right;
+    return true;
+}
+
+function nodeMatchesPisiOperationalPropertyFilters(node, filters = []) {
+    return (Array.isArray(filters) ? filters : []).every((filter) => {
+        return nodeMatchesPisiOperationalPropertyFilter(node, filter);
+    });
 }
 
 function hasPisiOperationalOwner(node) {
@@ -208,6 +307,12 @@ function nodeMatchesPisiOperationalQuery(node, query) {
 function getPisiOperationalVisibleNodeIds(nodes, edges, nodeStates, rawScope = {}) {
     const scope = normalizePisiOperationalScope(rawScope);
     const manualIds = new Set(scope.includedNodeIds);
+    if (scope.strategy === 'snapshot') {
+        return new Set((Array.isArray(nodes) ? nodes : [])
+            .map((node) => node?.id)
+            .filter((nodeId) => manualIds.has(nodeId)));
+    }
+
     const neighborIds = scope.focusRootNodeId
         ? collectPisiOperationalNeighborIds(
             scope.focusRootNodeId,
@@ -231,6 +336,12 @@ function getPisiOperationalVisibleNodeIds(nodes, edges, nodeStates, rawScope = {
             accepted = Boolean(neighborIds?.has(node?.id));
         }
         if (accepted && !nodeMatchesPisiOperationalQuery(node, scope.query)) {
+            accepted = false;
+        }
+        if (accepted && !nodeMatchesPisiOperationalPropertyFilters(
+            node,
+            scope.propertyFilters
+        )) {
             accepted = false;
         }
         if (accepted) visible.add(node?.id);
@@ -324,14 +435,18 @@ export {
     buildPisiOperationalNodeStates,
     buildPisiTaskDependencyProjections,
     collectPisiOperationalNeighborIds,
+    getPisiOperationalPropertyEntry,
     getPisiOperationalRelationshipLabel,
     getPisiOperationalVisibleEdges,
     getPisiOperationalVisibleNodeIds,
     hasPisiOperationalOwner,
     isPisiOperationalTaskBlocked,
     isPisiOperationalTaskOverdue,
+    nodeMatchesPisiOperationalPropertyFilter,
+    nodeMatchesPisiOperationalPropertyFilters,
     normalizePisiOperationalDisplay,
     normalizePisiOperationalPath,
+    normalizePisiOperationalPropertyFilter,
     normalizePisiOperationalScope,
     rankPisiOperationalNextNodes
 };
