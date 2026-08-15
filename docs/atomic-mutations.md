@@ -1,6 +1,6 @@
 # Atomic Mutation System
 
-Pisi treats destructive or multi-file project changes as one recoverable mutation boundary.
+Pisi treats persistent project changes as recoverable mutation boundaries.
 
 ## Release rule
 
@@ -28,7 +28,7 @@ The phases are:
 - `rollback-failed`
 - `committed`
 
-Any restart-visible transaction that is not durably `committed` is rolled back to its pre-mutation snapshots. A transaction already marked `committed` keeps the new state; only its leftover journal directory is cleaned.
+Any restart-visible transaction that is not durably `committed` is rolled back to its pre-mutation snapshots. A transaction already marked `committed` keeps the new state. Journal cleanup after that marker is best effort; cleanup failure never changes a committed mutation back into a rollback candidate.
 
 ## Filesystem coverage
 
@@ -43,20 +43,15 @@ Atomic journal paths and generated temporary `.tmp` sources are excluded from re
 
 ## Domain integration
 
-The following high-risk domain commands run inside an atomic transaction:
+Every persistent v1 domain mutation joins the project atomic queue, including:
 
-- `task.capture.v1`
-- semantic relationship upsert/delete/reparent
-- map node creation
-- project item rename
-- project item move
-- project item delete
-- project path delete
-- `project.batch.v1`
+- task capture/upsert/update/delete/index projection sync;
+- semantic relationship upsert/delete/reparent;
+- map layout, operational state, camera, reference detach and node creation;
+- project item rename/move/delete and path delete;
+- `project.batch.v1`.
 
-`map.camera.save.v1` becomes atomic when it carries an operational mutation because that legacy transport represents two domain intents that must commit together.
-
-Single-file commands that already use atomic replace can remain outside the project transaction unless they are nested inside a batch. Nested commands inherit the current transaction.
+This means a nominally single-file mutation cannot interleave with a destructive or bulk transaction and invalidate its rollback snapshot. Nested commands inherit the current transaction.
 
 ## Rename and move integrity
 
@@ -70,7 +65,7 @@ Rename and move still update canonical task source paths. If that reference rewr
 
 Transaction context uses Node `AsyncLocalStorage` rather than one process-global mutable transaction variable. Nested operations in the same async command chain share a transaction.
 
-Top-level mutations are also serialized **per project**. If a destructive command is already running for a project, a second top-level mutation for that same project is queued until the first command has committed or rolled back. This prevents two valid but overlapping journals from concurrently writing the same authoritative files. Different project contexts remain isolated.
+Top-level mutations are serialized **per project**. If a persistent command is already running for a project, a second top-level mutation for that same project is queued until the first command has committed or rolled back. This prevents two valid but overlapping journals from concurrently writing the same authoritative files. Different project contexts remain isolated.
 
 ## Recovery gate
 
