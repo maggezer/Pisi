@@ -1,5 +1,4 @@
 import { registerModule } from "../core/module-registry.mjs";
-import { registerPisiCommandCenterPage } from "../shell/pisi-command-center.mjs";
 import { getPisiSearchCurrentNodePath, invalidatePisiSearchIndex } from "../search/pisi-search-index.mjs";
 
 function pisiPortableTranslate(value) {
@@ -120,7 +119,7 @@ async function renderPisiHistory(section, nodePath) {
             if (!result?.ok) return alert(result?.error || pisiPortableTranslate('Sürüm geri yüklenemedi.'));
             invalidatePisiSearchIndex();
             await window.reloadPisiWorkspaceAfterExternalChange?.();
-            await window.renderPisiCommandCenterPage?.();
+            await openPisiHistoryDialog();
         });
         actions.append(preview, restore);
         row.append(info, actions);
@@ -132,29 +131,67 @@ async function renderPisiHistory(section, nodePath) {
     section.appendChild(list);
 }
 
-function renderPisiExportActions(section, nodePath) {
-    const projectActions = document.createElement('div');
-    projectActions.className = 'pisi-portable-actions';
-    const importMarkdown = makePisiPortableButton('Markdown klasörü içe aktar');
-    importMarkdown.addEventListener('click', async () => {
-        importMarkdown.disabled = true;
-        const result = await window.pisiProject?.importMarkdownFolder?.(window.currentProjectFolder);
-        importMarkdown.disabled = false;
-        if (!result?.ok) return alert(result?.error || pisiPortableTranslate('İçe aktarma başarısız.'));
-        if (result.canceled) return;
+async function runPisiImportAction(trigger = null) {
+    if (!window.currentProjectFolder) {
+        alert(pisiPortableTranslate('Önce bir proje açın.'));
+        return false;
+    }
+    if (trigger) trigger.disabled = true;
+    try {
+        const result = await window.pisiProject?.importMarkdownFolder?.(
+            window.currentProjectFolder
+        );
+        if (!result?.ok) {
+            alert(result?.error || pisiPortableTranslate('İçe aktarma başarısız.'));
+            return false;
+        }
+        if (result.canceled) return false;
         invalidatePisiSearchIndex();
         await window.refreshCurrentProjectTree?.();
         alert(`${pisiPortableTranslate('İçe aktarılan node')}: ${result.imported}`);
-    });
+        return true;
+    } catch (error) {
+        alert(error?.message || pisiPortableTranslate('İçe aktarma başarısız.'));
+        return false;
+    } finally {
+        if (trigger) trigger.disabled = false;
+    }
+}
+
+async function runPisiProjectMarkdownExport(trigger = null) {
+    if (!window.currentProjectFolder) {
+        alert(pisiPortableTranslate('Önce bir proje açın.'));
+        return false;
+    }
+    if (trigger) trigger.disabled = true;
+    try {
+        const result = await window.pisiProject?.exportProjectMarkdown?.(
+            window.currentProjectFolder
+        );
+        if (!result?.ok) {
+            alert(result?.error || pisiPortableTranslate('Dışa aktarma başarısız.'));
+            return false;
+        }
+        if (!result.canceled) {
+            alert(`${pisiPortableTranslate('Dışa aktarılan belge')}: ${result.exported}`);
+        }
+        return !result.canceled;
+    } catch (error) {
+        alert(error?.message || pisiPortableTranslate('Dışa aktarma başarısız.'));
+        return false;
+    } finally {
+        if (trigger) trigger.disabled = false;
+    }
+}
+
+function renderPisiExportActions(section, nodePath) {
+    const projectActions = document.createElement('div');
+    projectActions.className = 'pisi-portable-actions';
     const exportMarkdown = makePisiPortableButton('Projeyi Markdown dışa aktar');
-    exportMarkdown.addEventListener('click', async () => {
-        exportMarkdown.disabled = true;
-        const result = await window.pisiProject?.exportProjectMarkdown?.(window.currentProjectFolder);
-        exportMarkdown.disabled = false;
-        if (!result?.ok) return alert(result?.error || pisiPortableTranslate('Dışa aktarma başarısız.'));
-        if (!result.canceled) alert(`${pisiPortableTranslate('Dışa aktarılan belge')}: ${result.exported}`);
+    exportMarkdown.addEventListener('click', () => {
+        void runPisiProjectMarkdownExport(exportMarkdown);
     });
-    projectActions.append(importMarkdown, exportMarkdown);
+    projectActions.appendChild(exportMarkdown);
 
     const nodeActions = document.createElement('div');
     nodeActions.className = 'pisi-portable-actions';
@@ -168,9 +205,19 @@ function renderPisiExportActions(section, nodePath) {
         button.disabled = !nodePath;
         button.addEventListener('click', async () => {
             button.disabled = true;
-            const result = await window.pisiProject?.exportNode?.(nodePath, format[1]);
-            button.disabled = !nodePath;
-            if (!result?.ok) alert(result?.error || pisiPortableTranslate('Dışa aktarma başarısız.'));
+            try {
+                const result = await window.pisiProject?.exportNode?.(
+                    nodePath,
+                    format[1]
+                );
+                if (!result?.ok) {
+                    alert(result?.error || pisiPortableTranslate('Dışa aktarma başarısız.'));
+                }
+            } catch (error) {
+                alert(error?.message || pisiPortableTranslate('Dışa aktarma başarısız.'));
+            } finally {
+                button.disabled = !nodePath;
+            }
         });
         nodeActions.appendChild(button);
     }
@@ -178,33 +225,55 @@ function renderPisiExportActions(section, nodePath) {
 }
 
 function renderPisiIntegrityReport(section) {
-    const run = makePisiPortableButton('Proje bütünlüğünü denetle', 'pisi-primary-button');
+    const run = makePisiPortableButton(
+        'Proje bütünlüğünü denetle',
+        'pisi-primary-button'
+    );
     const report = document.createElement('div');
     report.className = 'pisi-integrity-report';
+
+    if (!window.currentProjectFolder) {
+        run.disabled = true;
+        report.textContent = pisiPortableTranslate(
+            'Proje bütünlüğü için bir proje açın.'
+        );
+    }
+
     run.addEventListener('click', async () => {
         run.disabled = true;
         report.textContent = pisiPortableTranslate('Denetleniyor…');
-        const result = await window.pisiProject?.auditIntegrity?.(window.currentProjectFolder);
-        run.disabled = false;
-        if (!result?.ok) {
-            report.textContent = result?.error || pisiPortableTranslate('Denetim başarısız.');
-            return;
+        try {
+            const result = await window.pisiProject?.auditIntegrity?.(
+                window.currentProjectFolder
+            );
+            if (!result?.ok) {
+                report.textContent =
+                    result?.error || pisiPortableTranslate('Denetim başarısız.');
+                return;
+            }
+            const summary = document.createElement('strong');
+            summary.textContent = result.healthy
+                ? pisiPortableTranslate('Proje bütünlüğü sağlıklı.')
+                : pisiPortableTranslate('Proje bütünlüğünde hata bulundu.');
+            const counts = document.createElement('span');
+            counts.textContent =
+                `${result.summary.nodes} node · ${result.summary.maps} map · `
+                + `${result.summary.issues} ${pisiPortableTranslate('sorun')}`;
+            const list = document.createElement('div');
+            list.className = 'pisi-integrity-issues';
+            for (const issue of result.issues.slice(0, 200)) {
+                const row = document.createElement('div');
+                row.dataset.severity = issue.severity;
+                row.textContent = `${issue.path} · ${issue.message}`;
+                list.appendChild(row);
+            }
+            report.replaceChildren(summary, counts, list);
+        } catch (error) {
+            report.textContent =
+                error?.message || pisiPortableTranslate('Denetim başarısız.');
+        } finally {
+            run.disabled = !window.currentProjectFolder;
         }
-        const summary = document.createElement('strong');
-        summary.textContent = result.healthy
-            ? pisiPortableTranslate('Proje bütünlüğü sağlıklı.')
-            : pisiPortableTranslate('Proje bütünlüğünde hata bulundu.');
-        const counts = document.createElement('span');
-        counts.textContent = `${result.summary.nodes} node · ${result.summary.maps} map · ${result.summary.issues} ${pisiPortableTranslate('sorun')}`;
-        const list = document.createElement('div');
-        list.className = 'pisi-integrity-issues';
-        for (const issue of result.issues.slice(0, 200)) {
-            const row = document.createElement('div');
-            row.dataset.severity = issue.severity;
-            row.textContent = `${issue.path} · ${issue.message}`;
-            list.appendChild(row);
-        }
-        report.replaceChildren(summary, counts, list);
     });
     section.append(run, report);
 }
@@ -240,6 +309,7 @@ async function renderPisiBackups(section, nodePath) {
             if (!restored?.ok) return alert(restored?.error || pisiPortableTranslate('Yedek geri yüklenemedi.'));
             invalidatePisiSearchIndex();
             await window.reloadPisiWorkspaceAfterExternalChange?.();
+            await openPisiHistoryDialog();
         });
         row.append(info, restore);
         list.appendChild(row);
@@ -248,25 +318,175 @@ async function renderPisiBackups(section, nodePath) {
     section.appendChild(list);
 }
 
-async function renderPisiPortabilityPage(container) {
-    const nodePath = getPisiSearchCurrentNodePath();
-    const transfer = makePisiPortableSection('İçe / dışa aktarma');
-    renderPisiExportActions(transfer, nodePath);
-    const history = makePisiPortableSection('Yerel sürüm geçmişi');
-    const integrity = makePisiPortableSection('Proje bütünlüğü');
-    renderPisiIntegrityReport(integrity);
-    const backups = makePisiPortableSection('Yedekten geri yükleme');
-    container.append(transfer, history, integrity, backups);
-    await renderPisiHistory(history, nodePath);
-    await renderPisiBackups(backups, nodePath);
+const pisiPortabilityDialogState = {
+    "overlay": null,
+    "dialog": null,
+    "title": null,
+    "body": null,
+    "opener": null
+};
+
+function closePisiPortabilityDialog() {
+    const { overlay, opener } = pisiPortabilityDialogState;
+    if (!overlay || overlay.hidden) return;
+    overlay.hidden = true;
+    document.body.classList.remove('pisi-portability-dialog-open');
+    if (opener?.isConnected) opener.focus();
+    pisiPortabilityDialogState.opener = null;
 }
 
-function initializePisiPortabilityPanel() {
-    registerPisiCommandCenterPage({
-        id: 'portability',
-        label: 'Taşınabilirlik',
-        order: 30,
-        render: renderPisiPortabilityPage
+function ensurePisiPortabilityDialog() {
+    if (pisiPortabilityDialogState.overlay?.isConnected) {
+        return pisiPortabilityDialogState.overlay;
+    }
+
+    const overlay = document.createElement('div');
+    overlay.className = 'pisi-portability-overlay';
+    overlay.hidden = true;
+
+    const dialog = document.createElement('section');
+    dialog.className = 'pisi-portability-dialog';
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+
+    const header = document.createElement('header');
+    header.className = 'pisi-portability-dialog-header';
+    const title = document.createElement('strong');
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'pisi-portability-dialog-close';
+    close.textContent = '×';
+    close.title = pisiPortableTranslate('Kapat');
+    close.setAttribute('aria-label', pisiPortableTranslate('Kapat'));
+    close.addEventListener('click', closePisiPortabilityDialog);
+    header.append(title, close);
+
+    const body = document.createElement('div');
+    body.className = 'pisi-portability-dialog-body';
+    dialog.append(header, body);
+    overlay.appendChild(dialog);
+    overlay.addEventListener('mousedown', (event) => {
+        if (event.target === overlay) closePisiPortabilityDialog();
+    });
+    document.body.appendChild(overlay);
+
+    Object.assign(pisiPortabilityDialogState, {
+        overlay,
+        dialog,
+        title,
+        body
+    });
+    return overlay;
+}
+
+async function openPisiPortabilityDialog(titleText, render, opener = null) {
+    const overlay = ensurePisiPortabilityDialog();
+    const state = pisiPortabilityDialogState;
+    const wasHidden = overlay.hidden;
+    if (opener) state.opener = opener;
+    else if (wasHidden) state.opener = document.activeElement;
+    state.title.textContent = pisiPortableTranslate(titleText);
+    state.dialog.setAttribute('aria-label', pisiPortableTranslate(titleText));
+    state.body.replaceChildren();
+    state.body.setAttribute('aria-busy', 'true');
+    overlay.hidden = false;
+    document.body.classList.add('pisi-portability-dialog-open');
+
+    try {
+        await render(state.body);
+    } catch (error) {
+        const message = document.createElement('div');
+        message.className = 'pisi-command-center-error';
+        message.textContent =
+            error?.message || pisiPortableTranslate('Sayfa yüklenemedi.');
+        state.body.replaceChildren(message);
+    } finally {
+        state.body.removeAttribute('aria-busy');
+    }
+    state.dialog.querySelector('button:not(:disabled)')?.focus();
+    return true;
+}
+
+async function openPisiHistoryDialog(opener = null) {
+    if (!window.currentProjectFolder) {
+        alert(pisiPortableTranslate('Önce bir proje açın.'));
+        return false;
+    }
+    const nodePath = getPisiSearchCurrentNodePath();
+    return openPisiPortabilityDialog(
+        'Yerel sürüm geçmişi',
+        async (body) => {
+            const history = makePisiPortableSection('Yerel sürüm geçmişi');
+            const backups = makePisiPortableSection('Yedekten geri yükleme');
+            body.append(history, backups);
+            await Promise.all([
+                renderPisiHistory(history, nodePath),
+                renderPisiBackups(backups, nodePath)
+            ]);
+        },
+        opener
+    );
+}
+
+async function openPisiExportDialog(opener = null) {
+    if (!window.currentProjectFolder) {
+        alert(pisiPortableTranslate('Önce bir proje açın.'));
+        return false;
+    }
+    const nodePath = getPisiSearchCurrentNodePath();
+    return openPisiPortabilityDialog(
+        'Dışa aktar',
+        (body) => {
+            const section = makePisiPortableSection('Dışa aktar');
+            renderPisiExportActions(section, nodePath);
+            body.appendChild(section);
+        },
+        opener
+    );
+}
+
+function renderPisiIntegritySettings(container) {
+    if (!container) return;
+    const section = makePisiPortableSection('Proje bütünlüğü');
+    section.classList.add('pisi-integrity-settings');
+    const description = document.createElement('p');
+    description.className = 'pisi-portable-description';
+    description.textContent = pisiPortableTranslate(
+        'Geçerli proje klasöründeki node, map, bağlantı ve yan dosya tutarlılığını denetler.'
+    );
+    section.appendChild(description);
+    renderPisiIntegrityReport(section);
+    container.appendChild(section);
+}
+
+async function handlePisiPortabilityAction(action, trigger = null) {
+    if (action === 'history') return openPisiHistoryDialog(trigger);
+    if (action === 'export') return openPisiExportDialog(trigger);
+    if (action === 'import') return runPisiImportAction(trigger);
+    return false;
+}
+
+function initializePisiPortabilityActions() {
+    if (initializePisiPortabilityActions.bound) return;
+    initializePisiPortabilityActions.bound = true;
+
+    document.addEventListener('pisi:portability-action', (event) => {
+        void handlePisiPortabilityAction(
+            event.detail?.action,
+            event.detail?.trigger || null
+        );
+    });
+    document.addEventListener('pisi:render-settings-sections', (event) => {
+        renderPisiIntegritySettings(event.detail?.container);
+    });
+    document.addEventListener('keydown', (event) => {
+        if (
+            event.key === 'Escape'
+            && pisiPortabilityDialogState.overlay?.hidden === false
+        ) {
+            event.preventDefault();
+            closePisiPortabilityDialog();
+        }
     });
 }
 
@@ -274,16 +494,27 @@ const moduleApi = {
     makePisiSimpleDiff,
     showPisiHistoryPreview,
     renderPisiHistory,
-    renderPisiPortabilityPage,
-    initializePisiPortabilityPanel
+    renderPisiBackups,
+    renderPisiExportActions,
+    renderPisiIntegrityReport,
+    renderPisiIntegritySettings,
+    openPisiHistoryDialog,
+    openPisiExportDialog,
+    runPisiImportAction,
+    handlePisiPortabilityAction,
+    initializePisiPortabilityActions
 };
 
 registerModule('portability.panel', moduleApi);
-initializePisiPortabilityPanel();
+initializePisiPortabilityActions();
 
 export {
+    handlePisiPortabilityAction,
     makePisiSimpleDiff,
+    openPisiExportDialog,
+    openPisiHistoryDialog,
     renderPisiHistory,
-    renderPisiPortabilityPage,
+    renderPisiIntegritySettings,
+    runPisiImportAction,
     showPisiHistoryPreview
 };

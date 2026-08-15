@@ -5,6 +5,8 @@ const PISI_APP_MENU_LABELS = {
         menu: 'Pisi menüsü',
         settings: 'Ayarlar',
         preferences: 'Tercihler',
+        import: 'İçe aktar',
+        export: 'Dışa aktar',
         guide: 'Kullanma Kılavuzu',
         feedback: 'Geri Bildirim',
         quit: 'Kapat'
@@ -13,6 +15,8 @@ const PISI_APP_MENU_LABELS = {
         menu: 'Pisi menu',
         settings: 'Settings',
         preferences: 'Preferences',
+        import: 'Import',
+        export: 'Export',
         guide: 'User Guide',
         feedback: 'Feedback',
         quit: 'Quit'
@@ -54,6 +58,13 @@ function handlePisiAppMenuAction(action) {
 
     if (action === 'settings' || action === 'preferences') {
         window.openPisiCommandCenter?.(action);
+        return;
+    }
+
+    if (action === 'import' || action === 'export') {
+        document.dispatchEvent(new CustomEvent('pisi:portability-action', {
+            detail: { action, source: 'app-menu' }
+        }));
         return;
     }
 
@@ -111,7 +122,15 @@ function setupPisiAppMenu() {
         menu.setAttribute('role', 'menu');
         menu.hidden = true;
 
-        for (const action of ['settings', 'preferences', 'guide', 'feedback', 'quit']) {
+        for (const action of [
+            'settings',
+            'preferences',
+            'import',
+            'export',
+            'guide',
+            'feedback',
+            'quit'
+        ]) {
             const item = document.createElement('button');
             item.type = 'button';
             item.className = 'pisi-app-menu-item';

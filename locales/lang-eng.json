@@ -461,7 +461,6 @@
     "Sayfa yüklenemedi.": "The page could not be loaded.",
     "Görevler": "Tasks",
     "Özellikler": "Properties",
-    "Taşınabilirlik": "Portability",
     "Global Quick Add": "Global Quick Add",
     "Görev ekle": "Add task",
     "Görevi ekle": "Add task",
@@ -737,6 +736,11 @@
     "Desteklenmeyen harita dışa aktarma biçimi.": "Unsupported map export format.",
     "Nodebox font": "Note card font",
     "Varsayılanlara dön": "Reset to defaults",
-    "Yazı tipi ve boyut ayarları haritadaki tüm not kartlarına uygulanır.": "Font and size settings apply to every note card on the map."
+    "Yazı tipi ve boyut ayarları haritadaki tüm not kartlarına uygulanır.": "Font and size settings apply to every note card on the map.",
+    "Dosya ve sürüm araçları": "File and version tools",
+    "İçe aktar": "Import",
+    "Dışa aktar": "Export",
+    "Proje bütünlüğü için bir proje açın.": "Open a project to audit its integrity.",
+    "Geçerli proje klasöründeki node, map, bağlantı ve yan dosya tutarlılığını denetler.": "Checks note, map, link, and sidecar consistency in the current project folder."
   }
 }

@@ -548,6 +548,54 @@ html[data-pisi-theme="light"] .pisi-command-center-tabs {
     border-bottom-color: var(--pisi-theme-border);
 }
 
+html[data-pisi-theme="light"] #pisi-app-menu-button:hover,
+html[data-pisi-theme="light"] #pisi-app-menu-button:focus-visible,
+html[data-pisi-theme="light"] #pisi-app-menu-button[aria-expanded="true"] {
+    background: var(--pisi-theme-hover);
+}
+
+html[data-pisi-theme="light"] #pisi-app-menu-dropdown {
+    background: var(--pisi-theme-surface);
+    border-color: var(--pisi-theme-border-strong);
+    box-shadow: 0 12px 30px var(--pisi-theme-shadow);
+}
+
+html[data-pisi-theme="light"] .pisi-app-menu-item {
+    color: var(--pisi-theme-text);
+}
+
+html[data-pisi-theme="light"] .pisi-app-menu-item:hover,
+html[data-pisi-theme="light"] .pisi-app-menu-item:focus-visible {
+    color: var(--pisi-theme-text);
+    background: var(--pisi-theme-hover);
+}
+
+html[data-pisi-theme="light"] .pisi-app-menu-item[data-pisi-app-menu-action="import"],
+html[data-pisi-theme="light"] .pisi-app-menu-item[data-pisi-app-menu-action="guide"],
+html[data-pisi-theme="light"] .pisi-app-menu-item[data-pisi-app-menu-action="quit"] {
+    border-top-color: var(--pisi-theme-border);
+}
+
+html[data-pisi-theme="light"] .pisi-portability-overlay {
+    background: var(--pisi-theme-overlay);
+}
+
+html[data-pisi-theme="light"] .pisi-portability-dialog {
+    color: var(--pisi-theme-text);
+    background: var(--pisi-theme-surface);
+    border-color: var(--pisi-theme-border-strong);
+    box-shadow: 0 26px 80px var(--pisi-theme-shadow);
+}
+
+html[data-pisi-theme="light"] .pisi-portability-dialog-header {
+    border-bottom-color: var(--pisi-theme-border);
+}
+
+html[data-pisi-theme="light"] .pisi-portability-dialog-close:hover,
+html[data-pisi-theme="light"] .pisi-portability-dialog-close:focus-visible {
+    background: var(--pisi-theme-hover);
+}
+
 html[data-pisi-theme="light"] .pisi-command-center-close:hover,
 html[data-pisi-theme="light"] .pisi-secondary-button,
 html[data-pisi-theme="light"] .pisi-base-layout-button {

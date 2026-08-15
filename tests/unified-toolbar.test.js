@@ -7,7 +7,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('editor preserves the current five-section toolbar selection', () => {
+test('editor preserves the current six-section toolbar selection', () => {
     const html = read('index.html');
     const toolbar = read('renderer/editor/pisi-editor-unified-toolbar.mjs');
     assert.equal((html.match(/pisi-unified-toolbar-root/g) || []).length, 2);
@@ -18,7 +18,8 @@ test('editor preserves the current five-section toolbar selection', () => {
         'pisi-toolbar-section-styles',
         'pisi-toolbar-section-table',
         'pisi-toolbar-section-excel',
-        'pisi-toolbar-section-drawing'
+        'pisi-toolbar-section-drawing',
+        'pisi-toolbar-section-portability'
     ]) {
         assert.match(toolbar, new RegExp(section));
     }

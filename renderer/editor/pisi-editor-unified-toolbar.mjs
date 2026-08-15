@@ -32,6 +32,10 @@ function pisiToolbarIcon(name) {
     return `<img class="pisi-toolbar-icon" src="${iconPath}" data-pisi-toolbar-icon="${name}" alt="" aria-hidden="true">`;
 }
 
+function pisiToolbarTranslate(value) {
+    return window.pisiT?.(value) ?? String(value ?? '');
+}
+
 function syncPisiToolbarIconTheme(
     root = document,
     theme = document.documentElement.dataset.pisiTheme
@@ -171,6 +175,13 @@ function buildPisiUnifiedToolbarMarkup() {
                 </div>
             </section>
 
+            <section class="pisi-toolbar-section pisi-toolbar-section-portability" aria-label="${pisiToolbarTranslate('Dosya ve sürüm araçları')}">
+                <div class="pisi-toolbar-portability-stack">
+                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn pisi-toolbar-portability-btn" data-pisi-portability-action="history" title="${pisiToolbarTranslate('Yerel sürüm geçmişi')}" aria-label="${pisiToolbarTranslate('Yerel sürüm geçmişi')}">${pisiToolbarIcon('history')}</button>
+                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn pisi-toolbar-portability-btn" data-pisi-portability-action="export" title="${pisiToolbarTranslate('Dışa aktar')}" aria-label="${pisiToolbarTranslate('Dışa aktar')}">${pisiToolbarIcon('export')}</button>
+                    <button type="button" class="pisi-ribbon-btn pisi-icon-btn pisi-toolbar-portability-btn" data-pisi-portability-action="import" title="${pisiToolbarTranslate('İçe aktar')}" aria-label="${pisiToolbarTranslate('İçe aktar')}">${pisiToolbarIcon('import')}</button>
+                </div>
+            </section>
         </div>
     `;
 }
@@ -242,6 +253,18 @@ function bindPisiUnifiedToolbarEvents(toolbar) {
     });
 
     toolbar.addEventListener('click', (event) => {
+        const portabilityTrigger = event.target.closest('[data-pisi-portability-action]');
+        if (portabilityTrigger) {
+            document.dispatchEvent(new CustomEvent('pisi:portability-action', {
+                detail: {
+                    action: portabilityTrigger.dataset.pisiPortabilityAction,
+                    trigger: portabilityTrigger,
+                    editorTarget: toolbar.dataset.editorTarget || null
+                }
+            }));
+            return;
+        }
+
         const todoTrigger = event.target.closest('[data-pisi-todo-trigger]');
         if (todoTrigger) {
             openPisiToolbarTodo(toolbar);

@@ -688,8 +688,15 @@
       "makePisiSimpleDiff",
       "showPisiHistoryPreview",
       "renderPisiHistory",
-      "renderPisiPortabilityPage",
-      "initializePisiPortabilityPanel"
+      "renderPisiBackups",
+      "renderPisiExportActions",
+      "renderPisiIntegrityReport",
+      "renderPisiIntegritySettings",
+      "openPisiHistoryDialog",
+      "openPisiExportDialog",
+      "runPisiImportAction",
+      "handlePisiPortabilityAction",
+      "initializePisiPortabilityActions"
     ]
   },
   {

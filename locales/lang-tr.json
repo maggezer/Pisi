@@ -461,7 +461,6 @@
     "Sayfa yüklenemedi.": "Sayfa yüklenemedi.",
     "Görevler": "Görevler",
     "Özellikler": "Özellikler",
-    "Taşınabilirlik": "Taşınabilirlik",
     "Global Quick Add": "Global Hızlı Ekle",
     "Görev ekle": "Görev ekle",
     "Görevi ekle": "Görevi ekle",
@@ -737,6 +736,11 @@
     "Desteklenmeyen harita dışa aktarma biçimi.": "Desteklenmeyen harita dışa aktarma biçimi.",
     "Nodebox font": "Not kartı yazı tipi",
     "Varsayılanlara dön": "Varsayılanlara dön",
-    "Yazı tipi ve boyut ayarları haritadaki tüm not kartlarına uygulanır.": "Yazı tipi ve boyut ayarları haritadaki tüm not kartlarına uygulanır."
+    "Yazı tipi ve boyut ayarları haritadaki tüm not kartlarına uygulanır.": "Yazı tipi ve boyut ayarları haritadaki tüm not kartlarına uygulanır.",
+    "Dosya ve sürüm araçları": "Dosya ve sürüm araçları",
+    "İçe aktar": "İçe aktar",
+    "Dışa aktar": "Dışa aktar",
+    "Proje bütünlüğü için bir proje açın.": "Proje bütünlüğünü denetlemek için bir proje açın.",
+    "Geçerli proje klasöründeki node, map, bağlantı ve yan dosya tutarlılığını denetler.": "Geçerli proje klasöründeki node, map, bağlantı ve yan dosya tutarlılığını denetler."
   }
 }

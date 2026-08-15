@@ -17,6 +17,7 @@ const pisiCommandCenterState = {
 const PISI_APPLICATION_PAGE_LABELS = {
     tr: {
         settings: 'Ayarlar',
+        settingsDescription: 'Proje ayarlarını ve bakım araçlarını yönetin.',
         preferences: 'Tercihler',
         preferencesDescription: 'Uygulama davranışını ve tüm içerikler için kullanılan varsayılan görünümü yönetin.',
         appearance: 'Görünüm',
@@ -28,6 +29,7 @@ const PISI_APPLICATION_PAGE_LABELS = {
     },
     eng: {
         settings: 'Settings',
+        settingsDescription: 'Manage project settings and maintenance tools.',
         preferences: 'Preferences',
         preferencesDescription: 'Manage application behavior and the default appearance used by all content.',
         appearance: 'Appearance',
@@ -225,6 +227,25 @@ function makePisiThemeOption(theme, label, description, activeTheme, onSelect) {
     return button;
 }
 
+function renderPisiSettingsPage(container) {
+    const page = document.createElement('section');
+    page.className = 'pisi-settings-page pisi-preferences-page';
+
+    const heading = document.createElement('div');
+    heading.className = 'pisi-preferences-heading';
+    const title = document.createElement('h2');
+    title.textContent = getPisiApplicationText('settings');
+    const description = document.createElement('p');
+    description.textContent = getPisiApplicationText('settingsDescription');
+    heading.append(title, description);
+    page.appendChild(heading);
+    container.appendChild(page);
+
+    document.dispatchEvent(new CustomEvent('pisi:render-settings-sections', {
+        detail: { container: page }
+    }));
+}
+
 function renderPisiPreferencesPage(container) {
     const page = document.createElement('section');
     page.className = 'pisi-preferences-page';
@@ -293,7 +314,7 @@ function registerPisiApplicationPages() {
         label: () => getPisiApplicationText('settings'),
         order: 900,
         requiresProject: false,
-        render: async () => {}
+        render: async (container) => renderPisiSettingsPage(container)
     });
 
     registerPisiCommandCenterPage({
