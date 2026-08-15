@@ -25,17 +25,34 @@ test('sol panele dock edilen takvim merkez sekmelerin arkasında kalmaz', () => 
     );
 });
 
-test('sag panelde yalniz aktif sekme gorunur ve Global Search takvimin ustundeki alanda kalir', () => {
+test('sag panel Search ve dock edilmis takvimi ayri layout satirlarinda tutar', () => {
     const styles = read('styles/95-right-search-calendar-fix.css');
+    const runtime = read('renderer/runtime.mjs');
     const windowModule = read('renderer/shell/pisi-window.mjs');
 
+    assert.match(
+        styles,
+        /#right-panel \{[\s\S]*?display: grid;[\s\S]*?grid-template-rows: auto minmax\(0, 1fr\) auto;[\s\S]*?overflow: hidden;/
+    );
+    assert.match(
+        styles,
+        /#right-panel > #right-panel-content \{[\s\S]*?height: 100%;[\s\S]*?overflow: hidden;/
+    );
     assert.match(
         styles,
         /#right-panel-content > \.right-tab-page \{[\s\S]*?display: none !important;/
     );
     assert.match(
         styles,
-        /#right-panel-content > \.right-tab-page\.active \{[\s\S]*?display: block !important;/
+        /#right-panel-content > \.right-tab-page\.active \{[\s\S]*?height: 100%;[\s\S]*?overflow-y: auto;/
+    );
+    assert.match(
+        styles,
+        /#right-panel > \.pisi-calendar-dock-zone\[data-calendar-dock-zone="right"\] \{[\s\S]*?grid-row: 3;[\s\S]*?height: 0;[\s\S]*?min-height: 0;/
+    );
+    assert.match(
+        styles,
+        /#right-panel > \.pisi-calendar-dock-zone\[data-calendar-dock-zone="right"\]\.has-calendar \{[\s\S]*?height: min\(300px, 35vh\);[\s\S]*?min-height: 180px;/
     );
     assert.match(
         styles,
@@ -43,7 +60,15 @@ test('sag panelde yalniz aktif sekme gorunur ve Global Search takvimin ustundeki
     );
     assert.match(
         styles,
-        /#right-tab-search \.pisi-right-search-results \{[\s\S]*?overflow-y: auto;/
+        /#right-tab-search \.pisi-right-search-panel \{[\s\S]*?flex: 1 1 0;[\s\S]*?height: 100%;[\s\S]*?overflow: hidden;/
+    );
+    assert.match(
+        styles,
+        /#right-tab-search \.pisi-right-search-results \{[\s\S]*?flex: 1 1 0;[\s\S]*?overflow-y: auto;/
+    );
+    assert.match(
+        runtime,
+        /zone\.dataset\.calendarDockZone = side;[\s\S]*?panel\.appendChild\(zone\);/
     );
     assert.match(
         windowModule,
