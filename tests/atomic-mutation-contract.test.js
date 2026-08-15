@@ -33,11 +33,20 @@ test('journal paths cannot recursively snapshot their own ancestor', () => {
     assert.match(core, /kendi journal klasörünü kapsayan yolu değiştiremez/);
 });
 
-test('concurrent transaction context uses AsyncLocalStorage', () => {
+test('nested transaction context uses AsyncLocalStorage', () => {
     assert.match(runtime, /AsyncLocalStorage/);
     assert.match(runtime, /pisiAtomicContext\.getStore\(\)/);
     assert.match(runtime, /pisiAtomicContext\.run\(transaction, operation\)/);
     assert.doesNotMatch(runtime, /let activePisiAtomicMutation/);
+});
+
+test('top-level mutations in the same project are serialized', () => {
+    assert.match(runtime, /const pisiAtomicProjectQueues = new Map\(\)/);
+    assert.match(runtime, /function getPisiAtomicProjectQueue/);
+    assert.match(runtime, /queue\.pending\.push\(/);
+    assert.match(runtime, /function executePisiQueuedAtomicMutation/);
+    assert.match(runtime, /releasePisiAtomicProjectQueue/);
+    assert.match(runtime, /if \(queue\.busy\)/);
 });
 
 test('filesystem hooks capture rename write mkdir unlink and rm boundaries', () => {
