@@ -25,6 +25,32 @@ test('sol panele dock edilen takvim merkez sekmelerin arkasında kalmaz', () => 
     );
 });
 
+test('sag panelde yalniz aktif sekme gorunur ve Global Search takvimin ustundeki alanda kalir', () => {
+    const styles = read('styles/95-right-search-calendar-fix.css');
+    const windowModule = read('renderer/shell/pisi-window.mjs');
+
+    assert.match(
+        styles,
+        /#right-panel-content > \.right-tab-page \{[\s\S]*?display: none !important;/
+    );
+    assert.match(
+        styles,
+        /#right-panel-content > \.right-tab-page\.active \{[\s\S]*?display: block !important;/
+    );
+    assert.match(
+        styles,
+        /#right-tab-search\.pisi-search-page\.active \{[\s\S]*?height: 100%;[\s\S]*?display: flex !important;[\s\S]*?overflow: hidden;/
+    );
+    assert.match(
+        styles,
+        /#right-tab-search \.pisi-right-search-results \{[\s\S]*?overflow-y: auto;/
+    );
+    assert.match(
+        windowModule,
+        /document\.querySelectorAll\('\.right-tab-page'\)[\s\S]*?page\.classList\.toggle/
+    );
+});
+
 test('Links paneli node adı ve kimlik-yol özet kartını üretmez', () => {
     const links = read('renderer/search/pisi-links-panel.mjs');
     const styles = [
