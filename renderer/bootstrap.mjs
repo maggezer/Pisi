@@ -52,5 +52,6 @@ import "./map/pisi-map-edges.mjs";
 import "./map/pisi-map-export.mjs";
 import "./shell/pisi-interaction-regressions.mjs";
 import "./runtime.mjs";
+import "./tags/pisi-source-of-truth.mjs";
 
 export {};
