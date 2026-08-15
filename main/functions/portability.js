@@ -58,10 +58,6 @@ function pisiHtmlToPlainText(html = '') {
 function pisiHtmlToMarkdown(html = '') {
     let value = stripPisiTaskMetadataHtml(stripPisiUnsafeExportHtml(html));
     value = value.replace(
-        /<span\b[^>]*data-pisi-block-ref=["']([^"']+)["'][^>]*>[\s\S]*?<\/span>/gi,
-        (_all, reference) => `[[${decodePisiHtmlEntities(reference)}]]`
-    );
-    value = value.replace(
         /<(div|p|blockquote|pre)\b[^>]*data-pisi-block-type=["'](bullet|number|task|quote|code)["'][^>]*>([\s\S]*?)<\/\1>/gi,
         (_all, _tag, type, body) => {
             const cleanBody = String(body || '').replace(

@@ -204,19 +204,6 @@
     ]
   },
   {
-    "module": "main.research",
-    "path": "main/functions/research.js",
-    "bindings": [
-      "normalizePisiResearchUrl",
-      "extractPisiWebMeta",
-      "makePisiCitationKey",
-      "makePisiBibliography",
-      "makePisiSourceProperties",
-      "buildPisiSourceNodeContent",
-      "capturePisiWebSource"
-    ]
-  },
-  {
     "module": "main.electronIpc",
     "path": "main/functions/electron-ipc.js",
     "bindings": [

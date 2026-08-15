@@ -346,12 +346,6 @@ function initializePisiExtensionApi() {
         icon: '◆',
         schema: { content: 'blocks', properties: true }
     });
-    registerPisiExtension('nodeType', {
-        id: 'core.source',
-        label: 'Kaynak node’u',
-        icon: '↗',
-        schema: { content: 'blocks', properties: true, systemRole: 'source' }
-    });
     registerPisiExtension('exporter', {
         id: 'core.pdf',
         label: 'PDF dışa aktarıcı',

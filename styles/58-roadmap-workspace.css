@@ -319,8 +319,7 @@
 
 .pisi-properties-editor,
 .pisi-bases,
-.pisi-portable-section,
-.pisi-research-section {
+.pisi-portable-section {
     display: grid;
     gap: 12px;
     margin-bottom: 20px;
@@ -782,8 +781,7 @@
 }
 
 .pisi-bases h2,
-.pisi-portable-section h2,
-.pisi-research-section h2 {
+.pisi-portable-section h2 {
     margin: 0;
     font-size: 16px;
 }
@@ -1205,99 +1203,6 @@
     border-radius: 7px;
 }
 
-.pisi-research-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-}
-
-.pisi-research-field {
-    display: grid;
-    align-content: start;
-    gap: 5px;
-    color: color-mix(in srgb, currentColor 75%, transparent);
-    font-size: 12px;
-}
-
-.pisi-research-field input,
-.pisi-research-field textarea,
-.pisi-research-field select {
-    width: 100%;
-    min-height: 35px;
-    padding: 7px 9px;
-    color: var(--text-color, #e8edf7);
-    background: rgb(0 0 0 / 17%);
-    border: 1px solid rgb(255 255 255 / 12%);
-    border-radius: 8px;
-    resize: vertical;
-}
-
-.pisi-web-capture-form {
-    display: grid;
-    gap: 11px;
-}
-
-.pisi-block-reference-tool {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 7px;
-}
-
-.pisi-block-reference-tool input {
-    min-height: 35px;
-    padding: 7px 9px;
-    color: inherit;
-    background: rgb(0 0 0 / 17%);
-    border: 1px solid rgb(255 255 255 / 12%);
-    border-radius: 8px;
-}
-
-.pisi-citation-form {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 9px;
-    padding-top: 10px;
-    border-top: 1px solid rgb(255 255 255 / 8%);
-}
-
-.pisi-source-library {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-    gap: 8px;
-}
-
-.pisi-source-library button {
-    display: grid;
-    gap: 4px;
-    padding: 10px;
-    color: inherit;
-    text-align: left;
-    background: rgb(0 0 0 / 12%);
-    border: 1px solid rgb(255 255 255 / 9%);
-    border-radius: 8px;
-    cursor: pointer;
-}
-
-.pisi-source-library button span {
-    color: color-mix(in srgb, currentColor 60%, transparent);
-    font-size: 11px;
-}
-
-.pisi-citation {
-    margin: 10px 0;
-    padding: 10px 14px;
-    background: rgb(73 109 224 / 8%);
-    border-left: 3px solid #6d8cf0;
-}
-
-.pisi-block-reference {
-    display: inline-flex;
-    padding: 2px 6px;
-    color: #b9c8ff;
-    background: rgb(73 109 224 / 14%);
-    border-radius: 5px;
-}
-
 @media (max-width: 900px) {
     .pisi-quick-add-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1307,9 +1212,6 @@
         grid-template-columns: 1fr 130px;
     }
 
-    .pisi-research-grid {
-        grid-template-columns: 1fr;
-    }
 }
 
 /* Global Quick Add modal */

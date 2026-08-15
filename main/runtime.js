@@ -657,15 +657,6 @@ ipcMain.handle('project:restore-backup', (_event, projectFolder, backupId) => {
     });
 });
 
-ipcMain.handle('project:capture-web-source', (_event, projectFolder, payload) => {
-    return asyncProjectOperation(async () => {
-        const safeProjectFolder = assertProjectPath(projectFolder, {
-            type: 'directory'
-        });
-        return capturePisiWebSource(safeProjectFolder, payload || {});
-    });
-});
-
 ipcMain.handle('team:get-config', (_event, projectFolder) => {
     return projectOperation(() => {
         const safeProjectFolder = assertProjectPath(projectFolder, {

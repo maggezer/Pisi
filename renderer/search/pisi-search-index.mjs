@@ -123,12 +123,6 @@ function extractPisiDirectTitles(container, plainText) {
     return Array.from(new Set(titles));
 }
 
-function extractPisiDirectPaths(container) {
-    return Array.from(container.querySelectorAll('[data-pisi-citation-source]'))
-        .map((element) => String(element.dataset.pisiCitationSource || '').trim())
-        .filter(Boolean);
-}
-
 function extractPisiUnlinkedText(container, plainText) {
     const clone = container.cloneNode(true);
     clone.querySelectorAll('a').forEach((anchor) => anchor.remove());
@@ -199,18 +193,6 @@ function extractPisiSearchContentBlocks(container) {
 
     const blocks = elements.slice(0, 5000).map((element, index) => {
         const references = [];
-        element.querySelectorAll('[data-pisi-block-ref]').forEach((reference) => {
-            const raw = String(reference.dataset.pisiBlockRef || '').trim();
-            const separator = raw.lastIndexOf('#');
-            if (separator > 0 && separator < raw.length - 1) {
-                references.push({
-                    raw,
-                    target: raw.slice(0, separator),
-                    blockId: raw.slice(separator + 1).replace(/^\^/, ''),
-                    kind: 'reference'
-                });
-            }
-        });
         const sourceText = String(element.textContent || '');
         for (const match of sourceText.matchAll(/\[\[([^\]\n#]+)#\^?([^\]\n]+)\]\]/g)) {
             references.push({
@@ -304,7 +286,6 @@ function createPisiSearchDocumentRecord(rawNode, projectFolder) {
         plainText,
         unlinkedText: extractPisiUnlinkedText(container, plainText),
         directTitles: extractPisiDirectTitles(container, plainText),
-        directPaths: extractPisiDirectPaths(container),
         contentBlocks: extractPisiSearchContentBlocks(container),
         tables: extractPisiSearchTables(container),
         tags: tags.map(({ value, blockId }) => ({ value, blockId })),

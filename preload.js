@@ -89,7 +89,6 @@ contextBridge.exposeInMainWorld('pisiProject', {
     auditIntegrity: (projectFolder) => ipcRenderer.invoke('project:audit-integrity', projectFolder),
     listBackups: (projectFolder, filePath) => ipcRenderer.invoke('project:list-backups', projectFolder, filePath || null),
     restoreBackup: (projectFolder, backupId) => ipcRenderer.invoke('project:restore-backup', projectFolder, backupId),
-    captureWebSource: (projectFolder, payload) => ipcRenderer.invoke('project:capture-web-source', projectFolder, payload),
 
     getPisiDocument: (filePath) => ipcRenderer.invoke('project:get-pisi-document', filePath),
     deleteNodeFromMap: (nodePath) => ipcRenderer.invoke('project:delete-node-from-map', nodePath),

@@ -565,7 +565,6 @@ html[data-pisi-theme="light"] .pisi-quick-add-form,
 html[data-pisi-theme="light"] .pisi-properties-editor,
 html[data-pisi-theme="light"] .pisi-bases,
 html[data-pisi-theme="light"] .pisi-portable-section,
-html[data-pisi-theme="light"] .pisi-research-section,
 html[data-pisi-theme="light"] .pisi-base-card,
 html[data-pisi-theme="light"] .pisi-history-row {
     background: var(--pisi-theme-surface-alt);

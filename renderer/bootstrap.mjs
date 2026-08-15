@@ -46,7 +46,6 @@ import "./data/pisi-property-templates.mjs";
 import "./data/pisi-rollup-blocks.mjs";
 import "./data/pisi-node-properties-ui.mjs";
 import "./portability/pisi-portability-panel.mjs";
-import "./research/pisi-research-panel.mjs";
 import "./team/pisi-team-api.mjs";
 import "./editor/pisi-node-preview.mjs";
 import "./map/pisi-map-interactions.mjs";

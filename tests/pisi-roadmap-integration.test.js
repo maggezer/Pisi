@@ -16,14 +16,13 @@ test('1.2–platform modülleri bootstrap ve preload köprüsünde kayıtlıdır
         'productivity/pisi-quick-capture.mjs',
         'data/pisi-structured-views.mjs',
         'portability/pisi-portability-panel.mjs',
-        'research/pisi-research-panel.mjs',
         'editor/pisi-block-editor.mjs',
         'team/pisi-team-api.mjs'
     ]) assert.ok(bootstrap.includes(marker), marker);
     for (const marker of [
         'quickAddTask', 'saveNodeProperties', 'getNodePropertyContext', 'createPropertyMap',
         'exportProjectMarkdown', 'listNodeHistory', 'auditIntegrity',
-        'restoreBackup', 'captureWebSource', 'listDatabaseTemplates',
+        'restoreBackup', 'listDatabaseTemplates',
         'applyDatabaseTemplate', 'pisiTeamTransport'
     ]) assert.ok(preload.includes(marker), marker);
     for (const channel of [
@@ -32,21 +31,60 @@ test('1.2–platform modülleri bootstrap ve preload köprüsünde kayıtlıdır
         'project:create-property-map', 'project:export-node',
         'project:import-markdown', 'project:list-node-history',
         'project:audit-integrity', 'project:restore-backup',
-        'project:capture-web-source', 'project:list-database-templates',
+        'project:list-database-templates',
         'project:apply-database-template', 'team:get-config',
         'team:append-event'
     ]) assert.ok(runtime.includes(channel), channel);
 });
 
-test('görev süreleri, alıntılar ve blok referansları sanitizer tarafından korunur', () => {
+test('Araştırma yüzeyi ve web yakalama hattı ilk sürümden çıkarılmıştır', () => {
+    const bootstrap = read('renderer/bootstrap.mjs');
+    const preload = read('preload.js');
+    const runtime = read('main/runtime.js');
+    const mainEntry = read('main.js');
+    const extensions = read('renderer/core/pisi-extension-api.mjs');
+    const search = read('renderer/search/pisi-search-index.mjs');
+    const editor = read('renderer/editor/pisi-node-editor.mjs');
+    const portability = read('main/functions/portability.js');
+    const roadmapCss = read('styles/58-roadmap-workspace.css');
+    const rendererManifest = JSON.parse(read('renderer/module-manifest.json'));
+    const mainManifest = JSON.parse(read('main/module-manifest.json'));
+    const tr = JSON.parse(read('locales/lang-tr.json')).strings;
+    const eng = JSON.parse(read('locales/lang-eng.json')).strings;
+
+    assert.equal(
+        fs.existsSync(path.join(root, 'renderer/research/pisi-research-panel.mjs')),
+        false
+    );
+    assert.equal(
+        fs.existsSync(path.join(root, 'main/functions/research.js')),
+        false
+    );
+    assert.doesNotMatch(
+        [bootstrap, preload, runtime, mainEntry, extensions].join('\n'),
+        /pisi-research|captureWebSource|capture-web-source|functions\/research|core\.source/
+    );
+    assert.doesNotMatch(
+        [search, editor, portability].join('\n'),
+        /data-pisi-citation|data-pisi-block-ref|extractPisiDirectPaths/
+    );
+    assert.doesNotMatch(
+        roadmapCss,
+        /pisi-(?:research|web-capture|citation|source-library|block-reference)/
+    );
+    assert.ok(!rendererManifest.some((entry) => entry.module === 'research.panel'));
+    assert.ok(!mainManifest.some((entry) => entry.module === 'main.research'));
+    assert.equal(Object.hasOwn(tr, 'Araştırma'), false);
+    assert.equal(Object.hasOwn(eng, 'Araştırma'), false);
+});
+
+test('görev süreleri ve blok türleri sanitizer tarafından korunur', () => {
     const editor = read('renderer/editor/pisi-node-editor.mjs');
     for (const attribute of [
         'data-pisi-todo-scheduled-at',
         'data-pisi-todo-deadline',
         'data-pisi-todo-duration-minutes',
         'data-pisi-todo-actual-minutes',
-        'data-pisi-citation-source',
-        'data-pisi-block-ref',
         'data-pisi-block-type'
     ]) assert.ok(editor.includes(attribute), attribute);
 });

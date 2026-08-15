@@ -693,17 +693,6 @@
     ]
   },
   {
-    "module": "research.panel",
-    "path": "renderer/research/pisi-research-panel.mjs",
-    "bindings": [
-      "getPisiResearchSourceDocuments",
-      "getPisiSelectedBlockReference",
-      "insertPisiResearchHtml",
-      "renderPisiResearchPage",
-      "initializePisiResearchPanel"
-    ]
-  },
-  {
     "module": "editor.preview",
     "path": "renderer/editor/pisi-node-preview.mjs",
     "bindings": [
