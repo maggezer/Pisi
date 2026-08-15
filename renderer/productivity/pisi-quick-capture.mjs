@@ -57,9 +57,11 @@ function renderPisiDateParsePreview(container, expression) {
 async function submitPisiQuickAdd(form, parsePreview) {
     const data = new FormData(form);
     const parsed = renderPisiDateParsePreview(parsePreview, data.get('dateExpression'));
-    const result = await window.pisiProject?.quickAddTask?.(
-        window.currentProjectFolder,
-        {
+    const domain = window.Pisi?.modules?.['domain.client'];
+    if (!domain?.command) throw new Error('Domain command API hazır değil.');
+    const result = await domain.command('task.capture.v1', {
+        projectFolder: window.currentProjectFolder,
+        task: {
             text: data.get('text'),
             priority: Number(data.get('priority')),
             nodePath: data.get('nodePath') || null,
@@ -71,7 +73,7 @@ async function submitPisiQuickAdd(form, parsePreview) {
             durationMinutes: Number(data.get('durationMinutes')) || 0,
             actualMinutes: Number(data.get('actualMinutes')) || 0
         }
-    );
+    });
     if (!result?.ok) throw new Error(result?.error || pisiQuickTranslate('Görev eklenemedi.'));
     invalidatePisiSearchIndex();
     await ensurePisiSearchIndex({ force: true });
