@@ -35,7 +35,7 @@ The map provides:
 - semantic relationship-type filtering,
 - focused 1/2/3-hop neighborhood views around the selected node,
 - relationship labels that expose hierarchy/flow/peer semantics,
-- a deterministic **Next** action that prioritizes unblocked overdue/high-priority work,
+- a deterministic **Next** action that prioritizes unblocked overdue/high-priority work (`5 = very high`, `1 = very low`),
 - **Create linked node**, which creates a node next to the current selection and then creates one canonical semantic hierarchy relationship,
 - named layout save/restore/delete.
 
