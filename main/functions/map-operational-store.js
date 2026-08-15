@@ -6,7 +6,7 @@ const { modules, registerMainModule } = require('../module-registry');
 const documentStore = modules['main.documentStore'];
 const filesystemCore = modules['main.filesystemCore'];
 
-const PISI_OPERATIONAL_MAP_VERSION = 1;
+const PISI_OPERATIONAL_MAP_VERSION = 2;
 const PISI_OPERATIONAL_SCOPE_MODES = new Set([
     'all',
     'active',
@@ -17,10 +17,26 @@ const PISI_OPERATIONAL_SCOPE_MODES = new Set([
     'neighbors',
     'manual'
 ]);
+const PISI_OPERATIONAL_SCOPE_STRATEGIES = new Set([
+    'live',
+    'snapshot'
+]);
 const PISI_OPERATIONAL_RELATIONSHIP_TYPES = new Set([
     'down-hub',
     'stream',
     'co-level'
+]);
+const PISI_OPERATIONAL_PROPERTY_OPERATORS = new Set([
+    'exists',
+    'not-empty',
+    'equals',
+    'not-equals',
+    'contains',
+    'one-of',
+    'gt',
+    'gte',
+    'lt',
+    'lte'
 ]);
 
 function finitePisiOperationalNumber(value, fallback, min, max) {
@@ -29,7 +45,27 @@ function finitePisiOperationalNumber(value, fallback, min, max) {
     return Math.min(max, Math.max(min, number));
 }
 
+function normalizePisiOperationalPropertyFilter(raw = {}) {
+    const property = String(
+        raw.property || raw.propertyId || raw.name || ''
+    ).trim().toLowerCase().slice(0, 120);
+    if (!property) return null;
+    const operator = PISI_OPERATIONAL_PROPERTY_OPERATORS.has(String(raw.operator || ''))
+        ? String(raw.operator)
+        : 'contains';
+    return {
+        property,
+        operator,
+        value: ['exists', 'not-empty'].includes(operator)
+            ? ''
+            : String(raw.value ?? '').trim().slice(0, 2400)
+    };
+}
+
 function normalizePisiOperationalScope(raw = {}) {
+    const strategy = PISI_OPERATIONAL_SCOPE_STRATEGIES.has(String(raw.strategy || ''))
+        ? String(raw.strategy)
+        : 'live';
     const mode = PISI_OPERATIONAL_SCOPE_MODES.has(String(raw.mode || ''))
         ? String(raw.mode)
         : 'all';
@@ -38,6 +74,10 @@ function normalizePisiOperationalScope(raw = {}) {
             .map((value) => String(value || ''))
             .filter((value) => PISI_OPERATIONAL_RELATIONSHIP_TYPES.has(value))
     ));
+    const propertyFilters = (Array.isArray(raw.propertyFilters) ? raw.propertyFilters : [])
+        .map(normalizePisiOperationalPropertyFilter)
+        .filter(Boolean)
+        .slice(0, 20);
     const includedNodeIds = Array.from(new Set(
         (Array.isArray(raw.includedNodeIds) ? raw.includedNodeIds : [])
             .map((value) => String(value || ''))
@@ -51,9 +91,11 @@ function normalizePisiOperationalScope(raw = {}) {
     const focusDepth = Math.min(3, Math.max(1, Number(raw.focusDepth) || 1));
 
     return {
+        strategy,
         mode,
         query: String(raw.query || '').trim().slice(0, 240),
         relationshipTypes,
+        propertyFilters,
         includedNodeIds,
         focusRootNodeId,
         focusDepth
@@ -125,16 +167,38 @@ function normalizePisiSavedOperationalLayout(raw = {}) {
     };
 }
 
+function normalizePisiSavedOperationalScope(raw = {}) {
+    const id = /^scope_[A-Za-z0-9_-]+$/.test(String(raw.id || ''))
+        ? String(raw.id)
+        : `scope_${crypto.randomUUID()}`;
+    const name = String(raw.name || '').trim().slice(0, 120);
+    if (!name) return null;
+    const timestamp = /^\d{4}-\d{2}-\d{2}T/.test(String(raw.updatedAt || ''))
+        ? String(raw.updatedAt)
+        : new Date().toISOString();
+    return {
+        id,
+        name,
+        scope: normalizePisiOperationalScope(raw.scope),
+        updatedAt: timestamp
+    };
+}
+
 function normalizePisiOperationalMapState(raw = {}) {
     const savedLayouts = (Array.isArray(raw.savedLayouts) ? raw.savedLayouts : [])
         .map(normalizePisiSavedOperationalLayout)
         .filter(Boolean)
         .slice(-20);
+    const savedScopes = (Array.isArray(raw.savedScopes) ? raw.savedScopes : [])
+        .map(normalizePisiSavedOperationalScope)
+        .filter(Boolean)
+        .slice(-40);
     return {
         version: PISI_OPERATIONAL_MAP_VERSION,
         scope: normalizePisiOperationalScope(raw.scope),
         display: normalizePisiOperationalDisplay(raw.display),
-        savedLayouts
+        savedLayouts,
+        savedScopes
     };
 }
 
@@ -200,6 +264,30 @@ function savePisiOperationalMapState(mapPath, payload = {}) {
             return writePisiOperationalMapState(mapPath, state, current.mapInfo);
         }
 
+        if (op === 'save-scope') {
+            const savedScope = normalizePisiSavedOperationalScope({
+                ...payload.savedScope,
+                id: payload.savedScope?.id || `scope_${crypto.randomUUID()}`,
+                updatedAt: new Date().toISOString()
+            });
+            if (!savedScope) return { ok: false, error: 'Scope adı gerekli.' };
+            state.savedScopes = state.savedScopes.filter((item) => item.id !== savedScope.id);
+            state.savedScopes.push(savedScope);
+            state.savedScopes = state.savedScopes.slice(-40);
+            const written = writePisiOperationalMapState(mapPath, state, current.mapInfo);
+            return { ...written, savedScope };
+        }
+
+        if (op === 'delete-scope') {
+            const scopeId = String(payload.scopeId || '');
+            const before = state.savedScopes.length;
+            state.savedScopes = state.savedScopes.filter((item) => item.id !== scopeId);
+            if (before === state.savedScopes.length) {
+                return { ok: false, error: 'Kaydedilmiş scope bulunamadı.' };
+            }
+            return writePisiOperationalMapState(mapPath, state, current.mapInfo);
+        }
+
         return { ok: false, error: 'Bilinmeyen operational map işlemi.' };
     } catch (error) {
         return { ok: false, error: error.message };
@@ -209,11 +297,13 @@ function savePisiOperationalMapState(mapPath, payload = {}) {
 const moduleApi = {
     PISI_OPERATIONAL_MAP_VERSION,
     finitePisiOperationalNumber,
+    normalizePisiOperationalPropertyFilter,
     normalizePisiOperationalScope,
     normalizePisiOperationalDisplay,
     normalizePisiOperationalLayoutNode,
     normalizePisiOperationalCamera,
     normalizePisiSavedOperationalLayout,
+    normalizePisiSavedOperationalScope,
     normalizePisiOperationalMapState,
     readPisiOperationalMapState,
     writePisiOperationalMapState,
