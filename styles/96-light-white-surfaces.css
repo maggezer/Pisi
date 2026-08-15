@@ -5,6 +5,6 @@ html[data-pisi-theme="light"] body #map-canvas {
     background-size: 28px 28px;
 }
 
-html[data-pisi-theme="light"] body #right-panel-tabs {
+html[data-pisi-theme="light"] body #right-panel > #right-panel-tabs {
     background: #ffffff;
 }
