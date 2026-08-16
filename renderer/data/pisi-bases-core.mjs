@@ -47,6 +47,35 @@ function normalizePisiBaseDefinitions(definitions = []) {
     return result;
 }
 
+function canonicalizePisiBaseDocuments(documents = [], definitions = []) {
+    const definitionById = new Map(
+        normalizePisiBaseDefinitions(definitions)
+            .map((definition) => [definition.id, definition])
+    );
+    return Array.from(documents || []).map((documentRecord) => {
+        const normalizedProperties = normalizePisiPropertyCollection(
+            documentRecord?.properties
+        );
+        const properties = Object.fromEntries(
+            normalizedProperties.map((property) => {
+                const definition = definitionById.get(property.id);
+                if (!definition) return [property.id, property];
+                return [property.id, {
+                    ...property,
+                    id: definition.id,
+                    name: definition.name,
+                    type: definition.type,
+                    system: definition.system === true || property.system === true
+                }];
+            })
+        );
+        return {
+            ...documentRecord,
+            properties
+        };
+    });
+}
+
 function collectPisiBaseUsedDefinitions(documents = []) {
     const byId = new Map();
     for (const documentRecord of documents) {
@@ -164,7 +193,8 @@ function formatPisiBasePropertyValue(property, documents = []) {
 }
 
 function buildPisiBaseProjection(documents = [], definitions = [], query = '') {
-    const sourceDocuments = sortPisiBaseDocuments(documents);
+    const canonicalDocuments = canonicalizePisiBaseDocuments(documents, definitions);
+    const sourceDocuments = sortPisiBaseDocuments(canonicalDocuments);
     const columns = collectPisiBaseColumns(sourceDocuments, definitions);
     const filteredDocuments = filterPisiPropertyDocuments(sourceDocuments, query);
     const sortedDocuments = sortPisiBaseDocuments(filteredDocuments);
@@ -188,6 +218,7 @@ export {
     PISI_BASE_LAYOUTS,
     PISI_BASE_TABLE_COLUMN_LIMIT,
     buildPisiBaseProjection,
+    canonicalizePisiBaseDocuments,
     collectPisiBaseColumns,
     comparePisiBaseDocuments,
     formatPisiBasePropertyValue,
