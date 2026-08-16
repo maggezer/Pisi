@@ -1,0 +1,253 @@
+.pisi-integrity-expanded {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.pisi-integrity-actions {
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.pisi-integrity-rebuild-help {
+    margin: 0;
+    max-width: 900px;
+    color: var(--pisi-muted-text, #aab0bb);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.pisi-integrity-report-v2 {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.pisi-integrity-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.035);
+}
+
+.pisi-integrity-status[data-healthy="0"] {
+    border-color: rgba(248, 81, 73, 0.36);
+    background: rgba(248, 81, 73, 0.07);
+}
+
+.pisi-integrity-status span {
+    color: var(--pisi-muted-text, #aab0bb);
+    font-size: 12px;
+}
+
+.pisi-integrity-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+    gap: 8px;
+}
+
+.pisi-integrity-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    padding: 9px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.pisi-integrity-metric strong {
+    font-size: 17px;
+    line-height: 1.1;
+}
+
+.pisi-integrity-metric span {
+    overflow: hidden;
+    color: var(--pisi-muted-text, #aab0bb);
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pisi-integrity-metric[data-severity="critical"],
+.pisi-integrity-metric[data-severity="error"] {
+    border-color: rgba(248, 81, 73, 0.28);
+}
+
+.pisi-integrity-metric[data-severity="warning"] {
+    border-color: rgba(210, 153, 34, 0.32);
+}
+
+.pisi-integrity-metric[data-severity="safe"] {
+    border-color: rgba(63, 185, 80, 0.28);
+}
+
+.pisi-integrity-authorities {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    padding: 8px 10px;
+    border-radius: 7px;
+    background: rgba(255, 255, 255, 0.025);
+    font-size: 12px;
+}
+
+.pisi-integrity-authorities span {
+    color: var(--pisi-muted-text, #aab0bb);
+    overflow-wrap: anywhere;
+}
+
+.pisi-integrity-plan {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 9px;
+}
+
+.pisi-integrity-plan h3 {
+    margin: 0;
+    font-size: 13px;
+}
+
+.pisi-integrity-plan p {
+    margin: 0;
+    color: var(--pisi-muted-text, #aab0bb);
+    font-size: 12px;
+}
+
+.pisi-integrity-plan-list {
+    display: grid;
+    gap: 6px;
+}
+
+.pisi-integrity-plan-item,
+.pisi-integrity-repair-note {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 8px;
+    align-items: start;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.pisi-integrity-plan-item > span:first-child,
+.pisi-integrity-repair-note > span:first-child {
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    font-size: 10px;
+    font-weight: 650;
+    white-space: nowrap;
+}
+
+.pisi-integrity-plan-item[data-safety="safe"] > span:first-child,
+.pisi-integrity-repair-note[data-safety="safe"] > span:first-child {
+    background: rgba(63, 185, 80, 0.13);
+}
+
+.pisi-integrity-plan-item[data-safety="review"] > span:first-child,
+.pisi-integrity-repair-note[data-safety="review"] > span:first-child {
+    background: rgba(210, 153, 34, 0.15);
+}
+
+.pisi-integrity-plan-item[data-safety="manual"] > span:first-child,
+.pisi-integrity-repair-note[data-safety="manual"] > span:first-child {
+    background: rgba(248, 81, 73, 0.12);
+}
+
+.pisi-integrity-issues.expanded {
+    display: grid;
+    gap: 8px;
+    max-height: 520px;
+    overflow: auto;
+    padding-right: 2px;
+}
+
+.pisi-integrity-issue-row {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-left-width: 3px;
+    border-radius: 7px;
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.pisi-integrity-issue-row[data-severity="critical"],
+.pisi-integrity-issue-row[data-severity="error"] {
+    border-left-color: rgba(248, 81, 73, 0.85);
+}
+
+.pisi-integrity-issue-row[data-severity="warning"] {
+    border-left-color: rgba(210, 153, 34, 0.85);
+}
+
+.pisi-integrity-issue-row[data-severity="info"] {
+    border-left-color: rgba(88, 166, 255, 0.75);
+}
+
+.pisi-integrity-issue-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pisi-integrity-severity {
+    padding: 2px 5px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.07);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.pisi-integrity-issue-head code,
+.pisi-integrity-issue-path {
+    color: var(--pisi-muted-text, #aab0bb);
+    font-size: 11px;
+}
+
+.pisi-integrity-issue-message {
+    font-size: 12px;
+}
+
+.pisi-integrity-issue-path {
+    overflow-wrap: anywhere;
+}
+
+html[data-theme="light"] .pisi-integrity-rebuild-help,
+html[data-theme="light"] .pisi-integrity-status span,
+html[data-theme="light"] .pisi-integrity-metric span,
+html[data-theme="light"] .pisi-integrity-authorities span,
+html[data-theme="light"] .pisi-integrity-plan p,
+html[data-theme="light"] .pisi-integrity-issue-head code,
+html[data-theme="light"] .pisi-integrity-issue-path {
+    color: #626b78;
+}
+
+html[data-theme="light"] .pisi-integrity-status,
+html[data-theme="light"] .pisi-integrity-metric,
+html[data-theme="light"] .pisi-integrity-plan,
+html[data-theme="light"] .pisi-integrity-issue-row {
+    border-color: rgba(15, 23, 42, 0.12);
+    background: rgba(15, 23, 42, 0.02);
+}
+
+@media (max-width: 720px) {
+    .pisi-integrity-status {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .pisi-integrity-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}

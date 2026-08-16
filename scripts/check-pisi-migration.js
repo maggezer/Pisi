@@ -63,6 +63,13 @@ function addLegacyNameErrors(file, content) {
     checked = countCompatibility('Eski belge metadata alanı (data.kedi)', checked, /\bdata\.kedi\b/gi);
     checked = countCompatibility('Eski ayar dosyası (kedi-settings.json)', checked, /kedi-settings\.json/gi);
     checked = countCompatibility('Eski proje kilidi (.kedi.lock)', checked, /\.kedi\.lock/gi);
+    if (file === 'main/functions/project-integrity-documents.js') {
+        checked = countCompatibility(
+            'Project Integrity legacy metadata denetimi',
+            checked,
+            /['"]kedi['"]/gi
+        );
+    }
     checked = checked.replace(/https?:\/\/github\.com\/maggezer\/Kedi\b/gi, '');
 
     const lines = checked.split(/\r?\n/);
