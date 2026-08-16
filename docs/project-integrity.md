@@ -42,17 +42,19 @@ Every repairable issue is classified before any mutation occurs:
 
 ### Safe
 
-Safe repairs are deterministic and cannot choose between competing user meanings. Examples include recreating a missing managed sidecar for a document with a valid stable ID, normalizing map-local operational state, completing unambiguous metadata normalization, and retrying atomic recovery/cleanup.
+Safe repairs are deterministic and cannot choose between competing user meanings. Examples include recreating a missing managed sidecar for a document with a valid stable ID, normalizing map-local operational state, and completing unambiguous metadata normalization.
 
 The Settings UI shows the exact safe repair descriptions before the user confirms. Selected safe repairs run through `integrity.repair.v1`, which joins the existing per-project atomic mutation queue. If one repair fails, the transaction fails and the atomic layer restores the pre-command state.
 
+Atomic recovery itself is deliberately **not** run from inside this bulk repair transaction. Residual mutation journals are reported as review/manual recovery findings; actual recovery remains in the startup/domain recovery gate so Project Integrity never creates a nested transaction that tries to recover its own active journal.
+
 ### Review
 
-Review repairs have a plausible mechanical fix but can change user-visible meaning. Examples include removing a dangling task dependency, deduplicating a map layout/reference, normalizing property payloads, or deciding whether an orphan presentation record should be removed. Project Integrity reports these but does not include them in **Apply safe repairs**.
+Review repairs have a plausible mechanical fix but can change user-visible meaning. Examples include removing a dangling task dependency, deduplicating a map layout/reference, normalizing property payloads, deciding whether an orphan presentation record should be removed, or retrying cleanup/recovery after inspecting a residual mutation journal. Project Integrity reports these but does not include them in **Apply safe repairs**.
 
 ### Manual
 
-Manual issues contain identity or semantic ambiguity and must never be auto-fixed. Duplicate node/map/task/relationship IDs, task source identity loss, missing semantic endpoints, second parents, hierarchy cycles, invalid authority stores, and damaged Trash/recovery payloads fall in this class.
+Manual issues contain identity or semantic ambiguity and must never be auto-fixed. Duplicate node/map/task/relationship IDs, task source identity loss, missing semantic endpoints, second parents, hierarchy cycles, invalid authority stores, damaged Trash payloads, and failed/invalid recovery journals fall in this class.
 
 ## Rebuild derived state
 
@@ -84,6 +86,7 @@ Project Integrity does not:
 - silently choose which of two hierarchy parents is correct;
 - automatically convert a hierarchy relationship to stream;
 - delete damaged Trash or atomic recovery records merely to make the audit green;
+- run atomic recovery from inside its own atomic repair transaction;
 - treat permanent deletion as a repair strategy.
 
 The audit is intended to expose uncertainty instead of hiding it.
