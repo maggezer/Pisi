@@ -39,8 +39,10 @@ test('future persistent index backends are isolated behind the adapter contract'
 });
 
 test('canonical task updates use the delta gateway while base invalidation requires a rebuild', () => {
+    const core = read('renderer/search/pisi-projection-index-core.mjs');
     const enhanced = read('renderer/search/pisi-search-enhanced-index.mjs');
     assert.match(enhanced, /pisi:task-store-updated[\s\S]*applyPisiCanonicalTaskSearchDelta/);
     assert.match(enhanced, /pisi:search-index-invalidated[\s\S]*invalidatePisiEnhancedSearchProjection/);
-    assert.match(enhanced, /requiresRebuild/);
+    assert.match(enhanced, /task-delta-rebuild-required/);
+    assert.match(core, /requiresRebuild:\s*true/);
 });
