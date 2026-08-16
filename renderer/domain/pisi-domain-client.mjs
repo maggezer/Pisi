@@ -8,6 +8,12 @@ function getPisiDomainProjectApi() {
     return api;
 }
 
+function getPisiTrashApi() {
+    const api = window.pisiTrash;
+    if (!api) throw new Error('Pisi Trash API hazır değil.');
+    return api;
+}
+
 async function queryPisiDomain(name, payload = {}) {
     const api = getPisiDomainProjectApi();
     switch (String(name || '')) {
@@ -23,6 +29,8 @@ async function queryPisiDomain(name, payload = {}) {
             ? { ok: true, operational: result.operational || {} }
             : result;
     }
+    case 'trash.list.v1':
+        return getPisiTrashApi().list(payload.projectFolder);
     default:
         return {
             ok: false,
@@ -127,6 +135,15 @@ async function commandPisiDomain(name, payload = {}) {
             ? { ...linked, createdNode: created.node }
             : linked;
     }
+    case 'trash.restore.v1':
+        return getPisiTrashApi().restore(payload.projectFolder, payload.trashId);
+    case 'trash.delete-permanently.v1':
+        return getPisiTrashApi().deletePermanently(
+            payload.projectFolder,
+            payload.trashId
+        );
+    case 'trash.empty.v1':
+        return getPisiTrashApi().empty(payload.projectFolder);
     default:
         return {
             ok: false,
