@@ -5,6 +5,7 @@ const { registerMainModule } = require('../module-registry');
 const shared = require('./project-integrity-shared');
 const documents = require('./project-integrity-documents');
 const authorities = require('./project-integrity-authorities');
+const properties = require('./project-integrity-properties');
 const recovery = require('./project-integrity-recovery');
 const repairs = require('./project-integrity-repairs');
 
@@ -14,6 +15,11 @@ function auditPisiProjectIntegrity(projectFolder) {
     const inventory = documents.collectDocumentInventory(projectRoot, context);
     const tasks = authorities.auditTasks(projectRoot, context);
     const relationships = authorities.auditRelationships(projectRoot, context, inventory);
+    const propertySchema = properties.auditPisiPropertySchema(
+        projectRoot,
+        context,
+        inventory
+    );
 
     for (const doc of inventory.docs) {
         documents.auditNodeProperties(context, doc);
@@ -37,6 +43,7 @@ function auditPisiProjectIntegrity(projectFolder) {
             maps: inventory.mapById.size,
             tasks: tasks.tasks.length,
             relationships: relationships.relationships.length,
+            propertyDefinitions: propertySchema.definitions.length,
             trashItems,
             mutationJournals
         }
@@ -45,6 +52,7 @@ function auditPisiProjectIntegrity(projectFolder) {
     report.authorities = {
         tasks: '.pisi/tasks.json',
         relationships: '.pisi/relationships.json',
+        properties: '.pisi/properties.json',
         mapState: '*.map',
         trash: '.pisi/trash/items',
         mutations: '.pisi/mutations'
