@@ -113,6 +113,21 @@ contextBridge.exposeInMainWorld('pisiProject', {
     }
 });
 
+contextBridge.exposeInMainWorld('pisiTrash', {
+    list: (projectFolder) => ipcRenderer.invoke('project:list-trash', projectFolder),
+    restore: (projectFolder, trashId) => ipcRenderer.invoke(
+        'project:restore-trash-item',
+        projectFolder,
+        trashId
+    ),
+    deletePermanently: (projectFolder, trashId) => ipcRenderer.invoke(
+        'project:delete-trash-item',
+        projectFolder,
+        trashId
+    ),
+    empty: (projectFolder) => ipcRenderer.invoke('project:empty-trash', projectFolder)
+});
+
 contextBridge.exposeInMainWorld('pisiClipboard', {
     writeText: (value) => clipboard.writeText(String(value || '')),
     readText: () => clipboard.readText()

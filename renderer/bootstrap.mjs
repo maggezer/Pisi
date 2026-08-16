@@ -16,6 +16,7 @@ import "./shell/pisi-startup.mjs";
 import "./shell/pisi-dialogs.mjs";
 import "./shell/pisi-command-center.mjs";
 import "./shell/pisi-customizations.mjs";
+import "./shell/pisi-trash.mjs";
 import "./tree/pisi-project.mjs";
 import "./tree/pisi-tree-dnd.mjs";
 import "./tree/pisi-tree-view.mjs";
