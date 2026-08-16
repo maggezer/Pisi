@@ -36,18 +36,22 @@ test('map Bases-lite düğmesi zoom kontrolleriyle aynı sağ çizgide ve üstte
     assert.match(interactions, /closest\('\.pisi-map-overlay-control'\)/);
 });
 
-test('özel Bases-lite penceresi mevcut görünüm özelliklerini yeniden kullanır', () => {
-    const structured = read('renderer/data/pisi-structured-views.mjs');
+test('özel Bases-lite penceresi sağlamlaştırılmış ortak projection görünümünü kullanır', () => {
     const dialog = read('renderer/data/pisi-bases-dialog.mjs');
+    const view = read('renderer/data/pisi-bases-view.mjs');
+    const core = read('renderer/data/pisi-bases-core.mjs');
     const css = read('styles/58-roadmap-workspace.css');
 
     assert.match(dialog, /className = 'pisi-bases-dialog'/);
     assert.match(dialog, /setAttribute\('aria-modal', 'true'\)/);
-    assert.match(dialog, /renderPisiBases\(content, \{ showTitle: false \}\)/);
+    assert.match(dialog, /renderPisiBasesView\(content, \{ showTitle: false \}\)/);
     assert.match(dialog, /event\.key === 'Escape'/);
-    assert.match(structured, /async function renderPisiBases\(container, options = \{\}\)/);
-    assert.match(structured, /container\.replaceChildren\(\);[\s\S]*renderPisiBases\(container, options\)/);
-    assert.match(structured, /window\.closePisiBasesDialog\?\.\(\)/);
+    assert.match(view, /async function renderPisiBasesView\(container, options = \{\}\)/);
+    assert.match(view, /buildPisiBaseProjection/);
+    assert.match(view, /renderPisiBasesTable/);
+    assert.match(view, /renderPisiBasesCards/);
+    assert.match(view, /window\.closePisiBasesDialog\?\.\(\)/);
+    assert.match(core, /function collectPisiBaseColumns/);
     assert.match(css, /\.pisi-bases-dialog-overlay/);
     assert.match(css, /\.pisi-bases-dialog-body/);
 });
