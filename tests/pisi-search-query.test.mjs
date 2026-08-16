@@ -92,17 +92,23 @@ test('tag shorthand and kind chips intersect instead of broadening results', () 
     assert.deepEqual(results.map((item) => item.id), ['task:a']);
 });
 
-test('bounded fuzzy matching tolerates a small title typo but never beats exact title', () => {
-    assert.equal(boundedPisiEditDistance('goldbach', 'gldbach', 2), 1);
-    const index = makeIndex([
+test('bounded fuzzy matching is used only when exact trigram candidates are absent', () => {
+    assert.equal(boundedPisiEditDistance('goldbach', 'goldbch', 2), 1);
+    const exactIndex = makeIndex([
         makeRecord('exact', 'node', 'Gldbach'),
+        makeRecord('alternative', 'node', 'Goldbach')
+    ]);
+    const exactResults = searchPisiAdvancedIndex(exactIndex, 'gldbach');
+    assert.deepEqual(exactResults.map((item) => item.id), ['exact']);
+    assert.equal(exactResults[0].fuzzyMatch, false);
+
+    const fuzzyIndex = makeIndex([
         makeRecord('fuzzy', 'node', 'Goldbach'),
         makeRecord('unrelated', 'node', 'Mekanik')
     ]);
-    const results = searchPisiAdvancedIndex(index, 'gldbach');
-    assert.deepEqual(results.slice(0, 2).map((item) => item.id), ['exact', 'fuzzy']);
-    assert.equal(results[0].fuzzyMatch, false);
-    assert.equal(results[1].fuzzyMatch, true);
+    const fuzzyResults = searchPisiAdvancedIndex(fuzzyIndex, 'goldbch');
+    assert.deepEqual(fuzzyResults.map((item) => item.id), ['fuzzy']);
+    assert.equal(fuzzyResults[0].fuzzyMatch, true);
 });
 
 test('project-local recency and current map context improve quick-switch ranking', () => {
