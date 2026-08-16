@@ -65,6 +65,7 @@ test('task search results use canonical taskId and exact task navigation', () =>
 test('indeks içerik türlerini korur ve node property değerlerini projection olarak ekler', () => {
     const source = read('renderer/search/pisi-search-index.mjs');
     const enhanced = read('renderer/search/pisi-search-enhanced-index.mjs');
+    const adapter = read('renderer/search/pisi-search-index-adapter.mjs');
 
     for (const kind of ["'node'", "'map'", "'content'", "'task'", "'tag'", "'table'"]) {
         assert.match(source, new RegExp('kind: ' + kind));
@@ -78,7 +79,8 @@ test('indeks içerik türlerini korur ve node property değerlerini projection o
     assert.match(source, /changedPaths/);
     assert.match(enhanced, /makePisiSearchPropertyFields/);
     assert.match(enhanced, /kind: 'property'/);
-    assert.match(enhanced, /buildPisiSearchAccelerator\(records\)/);
+    assert.match(enhanced, /createPisiRebuildableSearchIndex/);
+    assert.match(adapter, /buildPisiSearchAccelerator\(records\)/);
 });
 
 test('quick switch son kullanılanları proje bazlı tutar ve başarılı navigasyonda kaydeder', () => {
