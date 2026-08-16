@@ -112,8 +112,8 @@ function auditAtomic(projectFolder, context) {
                 path: shared.relativePath(projectFolder, directoryPath), entityId: manifest.id,
                 message: 'Committed atomic journal cleanup bekliyor.'
             }, {
-                safety: 'safe', action: 'run-atomic-recovery',
-                description: 'Committed data korunarak yalnız journal cleanup/recovery akışını yeniden çalıştır.'
+                safety: 'review', action: 'retry-atomic-recovery',
+                description: 'Project Integrity bulk repairinin dışında, recovery gate üzerinden committed cleanup’ı yeniden deneyin.'
             });
         } else if (manifest.phase === 'rollback-failed') {
             shared.issue(context, {
@@ -121,8 +121,8 @@ function auditAtomic(projectFolder, context) {
                 path: shared.relativePath(projectFolder, directoryPath), entityId: manifest.id,
                 message: `Atomic rollback başarısız kalmış: ${(manifest.rollbackErrors || []).join(' | ') || 'detay yok'}`
             }, {
-                safety: 'review', action: 'run-atomic-recovery',
-                description: 'Snapshotların mevcut olduğunu doğruladıktan sonra atomic recovery’yi yeniden deneyin.'
+                safety: 'manual', action: 'inspect-atomic-journal',
+                description: 'Snapshotları doğrulayıp recovery işlemini journal bütünlüğü incelendikten sonra tekrar çalıştırın.'
             });
         } else {
             shared.issue(context, {
@@ -130,8 +130,8 @@ function auditAtomic(projectFolder, context) {
                 path: shared.relativePath(projectFolder, directoryPath), entityId: manifest.id,
                 message: `Tamamlanmamış atomic mutation bulundu: ${String(manifest.phase || '?')}`
             }, {
-                safety: 'safe', action: 'run-atomic-recovery',
-                description: 'Atomic journal snapshotlarından eski tutarlı state’e rollback/recovery uygula.'
+                safety: 'review', action: 'retry-atomic-recovery',
+                description: 'Project Integrity transaction’ı içine nested recovery sokmadan startup/domain recovery gate’ini yeniden çalıştırın.'
             });
         }
     }
