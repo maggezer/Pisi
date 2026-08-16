@@ -1,5 +1,5 @@
 import { registerModule } from "../core/module-registry.mjs";
-import { renderPisiBases } from "./pisi-structured-views.mjs";
+import { renderPisiBasesView } from "./pisi-bases-view.mjs";
 
 const pisiBasesDialogState = {
     body: null,
@@ -154,7 +154,7 @@ async function renderPisiBasesDialogBody() {
     try {
         const content = document.createElement('div');
         content.className = 'pisi-bases-dialog-content';
-        await renderPisiBases(content, { showTitle: false });
+        await renderPisiBasesView(content, { showTitle: false });
         if (generation !== pisiBasesDialogState.generation) return false;
         body.replaceChildren(content);
         return true;
