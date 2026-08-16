@@ -31,3 +31,4 @@ require("./main/functions/domain-command-query");
 require("./main/functions/trash-domain");
 require("./main/functions/project-integrity-domain");
 require("./main/functions/atomic-domain-hardening");
+require("./main/functions/storage-project-fs-bridge");
