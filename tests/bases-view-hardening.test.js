@@ -15,8 +15,8 @@ test('Bases consumes project-level stable property definitions while relation ca
     assert.match(view, /listMapNodes\?\.\(mapPath\)/);
     assert.match(view, /getNodePropertyContext\([\s\S]*anchorNode\.fullPath,[\s\S]*mapPath/);
     assert.match(view, /schemaContext\.propertyDefinitions/);
-    assert.match(hooks, /propertyDefinitions: schemaResult\.definitions/);
-    assert.match(hooks, /nodes,[\s\S]*propertyDefinitions: schemaResult\.definitions/);
+    assert.match(hooks, /mapResult = listNodesForMap/);
+    assert.match(hooks, /\.\.\.mapResult,[\s\S]*propertyDefinitions: schemaResult\.definitions/);
 });
 
 test('Table and Card are projections only and never create another property authority', () => {
