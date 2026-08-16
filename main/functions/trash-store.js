@@ -117,7 +117,11 @@ function readPisiTrashManifest(projectFolder, trashId) {
     const manifestPath = getPisiTrashManifestPath(projectFolder, trashId);
     const result = filesystemCore.readJsonFileResult(manifestPath);
     if (!result.ok || !result.data) {
-        return { ok: false, code: 'TRASH_ITEM_INVALID', error: result.error || 'Trash manifest okunamadı.' };
+        return {
+            ok: false,
+            code: 'TRASH_ITEM_INVALID',
+            error: result.error || 'Trash manifest okunamadı.'
+        };
     }
     const manifest = result.data;
     if (
@@ -276,10 +280,7 @@ function archivePisiTrashReferences(projectFolder, coveredRoots, identity) {
         deepClonePisiTrashValue(taskState.tasks),
         coveredRoots
     );
-    if (
-        taskSplit.archived.length ||
-        taskSplit.dependencyRefs.length
-    ) {
+    if (taskSplit.archived.length || taskSplit.dependencyRefs.length) {
         taskStore.writePisiTaskStore(projectFolder, {
             ...taskState,
             tasks: taskSplit.remaining
@@ -395,15 +396,41 @@ function preflightPisiTrashRestore(projectFolder, manifest) {
         }
     }
 
+    const activeIdentity = collectPisiTrashIdentity(projectFolder, [projectFolder]);
+    for (const nodeId of Array.isArray(manifest.nodeIds) ? manifest.nodeIds : []) {
+        if (activeIdentity.nodeIds.has(nodeId)) {
+            conflicts.push({ type: 'node-id', id: nodeId });
+        }
+    }
+    for (const mapId of Array.isArray(manifest.mapIds) ? manifest.mapIds : []) {
+        if (activeIdentity.mapIds.has(mapId)) {
+            conflicts.push({ type: 'map-id', id: mapId });
+        }
+    }
+
     const currentTasks = taskStore.readPisiTaskStore(projectFolder);
     const liveTaskIds = new Set(currentTasks.tasks.map((task) => task.id));
     for (const task of manifest.references?.tasks || []) {
         if (liveTaskIds.has(task.id)) conflicts.push({ type: 'task-id', id: task.id });
     }
 
+    const restoredNodeIds = new Set(Array.isArray(manifest.nodeIds) ? manifest.nodeIds : []);
+    const availableNodeIds = new Set([...activeIdentity.nodeIds, ...restoredNodeIds]);
     const currentRelationships = relationshipStore.readPisiRelationshipStore(projectFolder);
     let preparedRelationships = currentRelationships.relationships;
     for (const relationship of manifest.references?.relationships || []) {
+        if (
+            !availableNodeIds.has(relationship.sourceId) ||
+            !availableNodeIds.has(relationship.targetId)
+        ) {
+            conflicts.push({
+                type: 'relationship-endpoint-missing',
+                id: relationship.id,
+                sourceId: relationship.sourceId,
+                targetId: relationship.targetId
+            });
+            continue;
+        }
         if (preparedRelationships.some((item) => item.id === relationship.id)) {
             conflicts.push({ type: 'relationship-id', id: relationship.id });
             continue;
@@ -468,6 +495,7 @@ function restorePisiTrashMapReferences(projectFolder, references, restoredRelati
                     !currentViewIds.has(view.relationshipId);
             })
         ];
+        mapData.relationshipViewVersion = mapSemanticCore.PISI_MAP_RELATIONSHIP_VIEW_VERSION;
         if (Array.isArray(mapData.edges)) {
             const currentEdgeIds = new Set(mapData.edges.map((edge) => edge?.id).filter(Boolean));
             mapData.edges.push(...(reference.legacyEdges || []).filter((edge) => {
