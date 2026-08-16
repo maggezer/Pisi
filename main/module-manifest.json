@@ -73,6 +73,13 @@
     ]
   },
   {
+    "module": "main.atomicMutation",
+    "path": "main/functions/atomic-mutation.js",
+    "bindings": [
+      "runPisiAtomicMutation"
+    ]
+  },
+  {
     "module": "main.documentStore",
     "path": "main/functions/document-store.js",
     "bindings": [
@@ -178,6 +185,36 @@
       "resolvePisiMapReference",
       "collectPisiMapReferenceNodes",
       "detachPisiMapReference"
+    ]
+  },
+  {
+    "module": "main.propertySchemaStore",
+    "path": "main/functions/property-schema-store.js",
+    "bindings": [
+      "PISI_PROPERTY_SCHEMA_VERSION",
+      "PISI_PROPERTY_SCHEMA_RELATIVE_PATH",
+      "PISI_EDITABLE_PROPERTY_TYPES",
+      "PISI_INTERNAL_PROPERTY_TYPES",
+      "getPisiPropertySchemaPath",
+      "readPisiPropertySchema",
+      "ensurePisiPropertySchema",
+      "getPisiPropertySchemaDefinitions",
+      "buildPisiPropertyMigration",
+      "collectPisiPropertyCarriers",
+      "savePisiNodePropertiesStable",
+      "savePisiDatabaseTemplateStable",
+      "applyPisiDatabaseTemplateStable",
+      "stabilizeTemplateProperties",
+      "propertySchemaContract"
+    ]
+  },
+  {
+    "module": "main.propertySchemaMutations",
+    "path": "main/functions/property-schema-mutations.js",
+    "bindings": [
+      "savePisiNodePropertiesBySchema",
+      "preparePisiPropertyDefinitionRewrite",
+      "resolveSubmittedPisiPropertyDefinition"
     ]
   },
   {
