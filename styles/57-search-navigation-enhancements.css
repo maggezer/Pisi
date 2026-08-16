@@ -1,0 +1,120 @@
+.pisi-global-search-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 14px 2px;
+}
+
+.pisi-global-search-filter {
+    min-height: 26px;
+    padding: 3px 9px;
+    border: 1px solid #4a4f58;
+    border-radius: 999px;
+    background: #27292d;
+    color: #b9bdc4;
+    font: inherit;
+    font-size: 10px;
+    cursor: pointer;
+}
+
+.pisi-global-search-filter:hover,
+.pisi-global-search-filter:focus-visible {
+    border-color: #71849a;
+    outline: 0;
+    color: #edf2f7;
+}
+
+.pisi-global-search-filter.active {
+    border-color: #4ca6ff;
+    background: #294866;
+    color: #f4f8fc;
+}
+
+.pisi-global-search-syntax {
+    padding: 6px 17px 0;
+    color: #777e88;
+    font: 10px/1.4 ui-monospace, SFMono-Regular, Consolas, monospace;
+    white-space: normal;
+}
+
+.pisi-global-search-result.recent::after {
+    content: "↺";
+    align-self: center;
+    color: #7f9db9;
+    font-size: 12px;
+}
+
+.pisi-global-search-result.recent {
+    grid-template-columns: 34px minmax(0, 1fr) 18px;
+}
+
+.pisi-global-search-result-fuzzy {
+    flex: 0 0 auto;
+    padding: 1px 5px;
+    border: 1px solid rgba(239, 171, 69, 0.26);
+    border-radius: 999px;
+    color: #d6aa66;
+    font-size: 8px;
+    white-space: nowrap;
+}
+
+.pisi-right-search-syntax {
+    margin: -3px 2px 0;
+    color: #767d87;
+    font: 8px/1.35 ui-monospace, SFMono-Regular, Consolas, monospace;
+    overflow-wrap: anywhere;
+}
+
+.pisi-right-search-result.recent {
+    border-left-color: rgba(76, 166, 255, 0.42);
+}
+
+.pisi-right-search-result-fuzzy {
+    color: #d6aa66;
+    font-size: 9px;
+    font-weight: 750;
+}
+
+html[data-theme="light"] .pisi-global-search-filter {
+    border-color: #cbd2da;
+    background: #f5f7f9;
+    color: #526071;
+}
+
+html[data-theme="light"] .pisi-global-search-filter:hover,
+html[data-theme="light"] .pisi-global-search-filter:focus-visible {
+    border-color: #8298ae;
+    color: #182534;
+}
+
+html[data-theme="light"] .pisi-global-search-filter.active {
+    border-color: #2d7fc4;
+    background: #dceeff;
+    color: #173b5b;
+}
+
+html[data-theme="light"] .pisi-global-search-syntax,
+html[data-theme="light"] .pisi-right-search-syntax {
+    color: #778494;
+}
+
+html[data-theme="light"] .pisi-global-search-result-fuzzy,
+html[data-theme="light"] .pisi-right-search-result-fuzzy {
+    color: #8c621b;
+}
+
+@media (max-width: 620px) {
+    .pisi-global-search-filters {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 4px;
+    }
+
+    .pisi-global-search-filter {
+        flex: 0 0 auto;
+    }
+
+    .pisi-global-search-syntax {
+        display: none;
+    }
+}
