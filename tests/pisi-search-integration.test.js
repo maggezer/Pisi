@@ -14,36 +14,59 @@ test('arama modülleri bootstrap ve stil zincirine bağlıdır', () => {
     const bootstrap = read('renderer/bootstrap.mjs');
     const styles = read('style.css');
 
-    assert.match(bootstrap, /search\/pisi-search-index\.mjs/);
-    assert.match(bootstrap, /search\/pisi-global-search\.mjs/);
-    assert.match(bootstrap, /search\/pisi-links-panel\.mjs/);
+    for (const moduleName of [
+        'pisi-search-index.mjs',
+        'pisi-search-query.mjs',
+        'pisi-search-history.mjs',
+        'pisi-search-enhanced-index.mjs',
+        'pisi-search-navigation.mjs',
+        'pisi-global-search.mjs',
+        'pisi-search-panel.mjs',
+        'pisi-links-panel.mjs'
+    ]) {
+        assert.match(bootstrap, new RegExp('search/' + moduleName.replace('.', '\\.')));
+    }
     assert.doesNotMatch(bootstrap, /search\/pisi-block-graph\.mjs/);
     assert.match(styles, /57-search-and-links\.css/);
+    assert.match(styles, /57-search-navigation-enhancements\.css/);
     assert.match(styles, /59-platform-system\.css/);
 });
 
-test('hızlı geçiş klavye ve map odağı davranışlarını taşır', () => {
+test('hızlı geçiş klavye, filtre ve map odağı davranışlarını taşır', () => {
     const source = read('renderer/search/pisi-global-search.mjs');
+    const navigation = read('renderer/search/pisi-search-navigation.mjs');
     const commands = read('renderer/core/pisi-command-registry.mjs');
 
     assert.match(source, /defaultShortcut: 'Mod\+P'/);
+    assert.match(source, /PageDown/);
+    assert.match(source, /Home/);
+    assert.match(source, /pisi-global-search-filter/);
     assert.match(source, /mapOnly: event\.altKey/);
-    assert.match(source, /focusPisiSearchMapBox/);
-    assert.match(source, /openNodeModalFromBox/);
+    assert.match(navigation, /focusPisiSearchMapBox/);
+    assert.match(navigation, /activeMapPath/);
     assert.match(commands, /event\.stopImmediatePropagation\(\)/);
 });
 
-test('indeks bütün istenen içerik türlerini ayrı kayıtlar olarak üretir', () => {
-    const source = read('renderer/search/pisi-search-index.mjs');
+test('task search results use canonical taskId and exact task navigation', () => {
+    const enhanced = read('renderer/search/pisi-search-enhanced-index.mjs');
+    const navigation = read('renderer/search/pisi-search-navigation.mjs');
 
-    for (const kind of [
-        "'node'",
-        "'map'",
-        "'content'",
-        "'task'",
-        "'tag'",
-        "'table'"
-    ]) {
+    assert.match(enhanced, /getPisiCanonicalSearchTasks/);
+    assert.match(enhanced, /kind: 'task'/);
+    assert.match(enhanced, /taskId: task\.id/);
+    assert.match(enhanced, /id: `task:\$\{task\.id\}`/);
+    assert.match(enhanced, /\.filter\(\(record\) => record\?\.kind !== 'task'\)/);
+    assert.match(navigation, /result\?\.kind === 'task'/);
+    assert.match(navigation, /result\?\.taskId/);
+    assert.match(navigation, /openPisiTagBlockResult/);
+    assert.match(navigation, /missionId: result\.taskId/);
+});
+
+test('indeks içerik türlerini korur ve node property değerlerini projection olarak ekler', () => {
+    const source = read('renderer/search/pisi-search-index.mjs');
+    const enhanced = read('renderer/search/pisi-search-enhanced-index.mjs');
+
+    for (const kind of ["'node'", "'map'", "'content'", "'task'", "'tag'", "'table'"]) {
         assert.match(source, new RegExp('kind: ' + kind));
     }
     assert.match(source, /listFolder/);
@@ -53,6 +76,38 @@ test('indeks bütün istenen içerik türlerini ayrı kayıtlar olarak üretir',
     assert.match(source, /buildPisiSearchAccelerator/);
     assert.match(source, /pisiSearchDocumentCache/);
     assert.match(source, /changedPaths/);
+    assert.match(enhanced, /makePisiSearchPropertyFields/);
+    assert.match(enhanced, /kind: 'property'/);
+    assert.match(enhanced, /buildPisiSearchAccelerator\(records\)/);
+});
+
+test('quick switch son kullanılanları proje bazlı tutar ve başarılı navigasyonda kaydeder', () => {
+    const history = read('renderer/search/pisi-search-history.mjs');
+    const navigation = read('renderer/search/pisi-search-navigation.mjs');
+    const source = read('renderer/search/pisi-global-search.mjs');
+
+    assert.match(history, /PISI_SEARCH_HISTORY_PREFIX/);
+    assert.match(history, /pisiSearchPathKey\(projectFolder\)/);
+    assert.match(history, /PISI_SEARCH_HISTORY_LIMIT = 32/);
+    assert.match(navigation, /rememberPisiSearchResult/);
+    assert.match(navigation, /if \(opened\) rememberSuccessfulPisiSearchNavigation/);
+    assert.match(source, /makePisiSearchRecentMap/);
+    assert.match(source, /Son kullanılanlar ve hızlı geçiş/);
+});
+
+test('advanced query grammar fuzzy ranking ve bounded fallback kullanılır', () => {
+    const query = read('renderer/search/pisi-search-query.mjs');
+    const source = read('renderer/search/pisi-global-search.mjs');
+    const panel = read('renderer/search/pisi-search-panel.mjs');
+
+    for (const filter of ['type', 'kind', 'map', 'path', 'tag', 'status', 'priority']) {
+        assert.match(query, new RegExp("'" + filter + "'"));
+    }
+    assert.match(query, /boundedPisiEditDistance/);
+    assert.match(query, /PISI_SEARCH_FUZZY_FIELDS/);
+    assert.match(query, /slice\(0, 2500\)/);
+    assert.match(source, /searchPisiAdvancedIndex/);
+    assert.match(panel, /searchPisiAdvancedIndex/);
 });
 
 test('aktif node olayı ve proje değişimi ilişki indeksini yeniler', () => {
