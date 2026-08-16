@@ -17,6 +17,7 @@ require("./main/functions/task-reference-integrity");
 require("./main/functions/source-of-truth");
 require("./main/functions/structured-nodes");
 require("./main/functions/project-integrity");
+require("./main/functions/project-integrity-hardening");
 require("./main/functions/portability");
 require("./main/functions/electron-ipc");
 require("./main/runtime");
