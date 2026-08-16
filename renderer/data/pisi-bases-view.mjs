@@ -92,14 +92,16 @@ async function loadPisiBasesContext() {
             anchorNode.fullPath,
             mapPath
         );
-        if (schemaContext?.ok) {
-            nodes = Array.isArray(schemaContext.nodes) ? schemaContext.nodes : nodes;
-            propertyDefinitions = normalizePisiBaseDefinitions(
-                schemaContext.propertyDefinitions
+        if (!schemaContext?.ok) {
+            throw new Error(
+                schemaContext?.error || 'Property schema yüklenemedi.'
             );
         }
-    }
-    if (!propertyDefinitions.length) {
+        nodes = Array.isArray(schemaContext.nodes) ? schemaContext.nodes : nodes;
+        propertyDefinitions = normalizePisiBaseDefinitions(
+            schemaContext.propertyDefinitions
+        );
+    } else {
         propertyDefinitions = collectPisiBasesFallbackDefinitions(nodes);
     }
     return { mapPath, nodes, propertyDefinitions };
