@@ -1,50 +1,54 @@
 'use strict';
 
-const fs = require('fs');
 const path = require('path');
+const storageLayer = require('./storage');
 const { registerMainModule } = require('../module-registry');
 const contract = require('./property-schema-core');
 
 const PISI_PROPERTY_SCHEMA_DIR = '.pisi';
 const PISI_PROPERTY_TEMPLATE_FILE = '.pisi-templates.json';
 const PISI_PROPERTY_MAX_DEFINITIONS = 500;
+const PISI_PROPERTY_SCHEMA_KEY = contract.PISI_PROPERTY_SCHEMA_RELATIVE_PATH;
+
+function getPisiPropertyStorage(projectFolder) {
+    return storageLayer.getPisiProjectStorage(projectFolder);
+}
 
 function getPisiPropertySchemaPath(projectFolder) {
     return path.join(projectFolder, ...contract.PISI_PROPERTY_SCHEMA_RELATIVE_PATH.split('/'));
 }
 
-function readJsonWithoutMutation(filePath) {
+function readJsonWithoutMutation(projectFolder, filePath) {
     try {
-        return { ok: true, data: JSON.parse(fs.readFileSync(filePath, 'utf8')) };
+        const storage = getPisiPropertyStorage(projectFolder);
+        return storage.readJson(storage.keyForPath(filePath));
     } catch (error) {
         return { ok: false, error: error.message, data: null };
     }
 }
 
 function walkPisiPropertyNodePaths(projectFolder) {
-    const results = [];
-    const blocked = new Set(['.git', '.pisi', 'node_modules']);
-    const visit = (directory) => {
-        for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
-            if (blocked.has(entry.name)) continue;
-            const fullPath = path.join(directory, entry.name);
-            if (entry.isSymbolicLink?.()) continue;
-            if (entry.isDirectory()) {
-                visit(fullPath);
-                continue;
-            }
-            if (entry.isFile() && entry.name.toLowerCase().endsWith('.node')) {
-                results.push(fullPath);
-            }
-        }
-    };
-    visit(projectFolder);
-    return results.sort((a, b) => a.localeCompare(b, 'en'));
+    const storage = getPisiPropertyStorage(projectFolder);
+    const result = storage.walk('.', {
+        ignore: ['.git', '.pisi', 'node_modules'],
+        extensions: ['.node'],
+        maxFiles: 100000
+    });
+    if (!result.ok) {
+        throw new Error(result.error || 'Property node taraması başarısız.');
+    }
+    return result.entries
+        .map((entry) => entry.path)
+        .sort((a, b) => a.localeCompare(b, 'en'));
 }
 
 function readPisiPropertySchema(projectFolder) {
-    const filePath = getPisiPropertySchemaPath(projectFolder);
-    if (!fs.existsSync(filePath)) {
+    const storage = getPisiPropertyStorage(projectFolder);
+    const filePath = storage.resolvePath(PISI_PROPERTY_SCHEMA_KEY);
+    const read = storage.readJson(PISI_PROPERTY_SCHEMA_KEY, {
+        allowMissing: true
+    });
+    if (read.missing) {
         return {
             ok: true,
             exists: false,
@@ -52,7 +56,6 @@ function readPisiPropertySchema(projectFolder) {
             schema: contract.makePropertySchema([], { updatedAt: null })
         };
     }
-    const read = readJsonWithoutMutation(filePath);
     if (!read.ok || !read.data || typeof read.data !== 'object' || Array.isArray(read.data)) {
         return {
             ok: false,
@@ -87,9 +90,11 @@ function readPisiPropertySchema(projectFolder) {
 }
 
 function writePisiPropertySchema(projectFolder, schema) {
-    const directory = path.join(projectFolder, PISI_PROPERTY_SCHEMA_DIR);
-    fs.mkdirSync(directory, { recursive: true });
-    const filePath = getPisiPropertySchemaPath(projectFolder);
+    const storage = getPisiPropertyStorage(projectFolder);
+    const ensured = storage.ensureDirectory(PISI_PROPERTY_SCHEMA_DIR, { hidden: true });
+    if (!ensured.ok) {
+        throw new Error(ensured.error || 'Property schema klasörü oluşturulamadı.');
+    }
     const clean = {
         version: contract.PISI_PROPERTY_SCHEMA_VERSION,
         definitions: (Array.isArray(schema.definitions) ? schema.definitions : [])
@@ -100,7 +105,14 @@ function writePisiPropertySchema(projectFolder, schema) {
         migratedAt: schema.migratedAt || null,
         updatedAt: new Date().toISOString()
     };
-    writeFileAtomic(filePath, JSON.stringify(clean, null, 2), { backup: true });
+    const written = storage.writeJson(PISI_PROPERTY_SCHEMA_KEY, clean, {
+        backup: true,
+        newline: false,
+        hiddenParent: true
+    });
+    if (!written.ok) {
+        throw new Error(written.error || 'Property schema yazılamadı.');
+    }
     return clean;
 }
 
@@ -117,8 +129,9 @@ function makePropertyCarrier(kind, filePath, ownerId, properties, write) {
 
 function collectPisiPropertyCarriers(projectFolder) {
     const carriers = [];
+    const storage = getPisiPropertyStorage(projectFolder);
     for (const nodePath of walkPisiPropertyNodePaths(projectFolder)) {
-        const read = readJsonWithoutMutation(nodePath);
+        const read = readJsonWithoutMutation(projectFolder, nodePath);
         if (!read.ok || read.data?.pisi?.type !== 'node') continue;
         if (!read.data.properties || typeof read.data.properties !== 'object') continue;
         carriers.push(makePropertyCarrier(
@@ -127,7 +140,7 @@ function collectPisiPropertyCarriers(projectFolder) {
             read.data.pisi.id || nodePath,
             read.data.properties,
             (properties, reason = 'property-schema-migration') => {
-                const latest = readJsonWithoutMutation(nodePath);
+                const latest = readJsonWithoutMutation(projectFolder, nodePath);
                 if (!latest.ok || latest.data?.pisi?.type !== 'node') {
                     throw new Error(`Property migration sırasında node okunamadı: ${nodePath}`);
                 }
@@ -142,9 +155,9 @@ function collectPisiPropertyCarriers(projectFolder) {
         ));
     }
 
-    const templatePath = path.join(projectFolder, PISI_PROPERTY_TEMPLATE_FILE);
-    if (fs.existsSync(templatePath)) {
-        const read = readJsonWithoutMutation(templatePath);
+    const templatePath = storage.resolvePath(PISI_PROPERTY_TEMPLATE_FILE);
+    if (storage.exists(PISI_PROPERTY_TEMPLATE_FILE)) {
+        const read = readJsonWithoutMutation(projectFolder, templatePath);
         if (read.ok && Array.isArray(read.data?.templates)) {
             read.data.templates.forEach((template, index) => {
                 if (!template?.properties || typeof template.properties !== 'object') return;
@@ -154,7 +167,7 @@ function collectPisiPropertyCarriers(projectFolder) {
                     template.id || `template-${index}`,
                     template.properties,
                     (properties) => {
-                        const latest = readJsonWithoutMutation(templatePath);
+                        const latest = readJsonWithoutMutation(projectFolder, templatePath);
                         if (!latest.ok || !Array.isArray(latest.data?.templates)) {
                             throw new Error('Property migration sırasında template store okunamadı.');
                         }
@@ -163,7 +176,13 @@ function collectPisiPropertyCarriers(projectFolder) {
                         if (!target) throw new Error('Property migration sırasında template bulunamadı.');
                         target.properties = properties;
                         target.updatedAt = new Date().toISOString();
-                        writeFileAtomic(templatePath, JSON.stringify(latest.data, null, 2), { backup: true });
+                        const written = storage.writeJson(PISI_PROPERTY_TEMPLATE_FILE, latest.data, {
+                            backup: true,
+                            newline: false
+                        });
+                        if (!written.ok) {
+                            throw new Error(written.error || 'Property template store yazılamadı.');
+                        }
                     }
                 ));
             });
