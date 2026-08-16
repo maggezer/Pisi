@@ -15,14 +15,17 @@ function getDefinitionIndexes(schema) {
     const byId = new Map();
     const byName = new Map();
     const occupied = new Set();
+    const normalizedDefinitions = [];
     for (const raw of Array.isArray(schema?.definitions) ? schema.definitions : []) {
         const definition = contract.normalizePropertyDefinition(raw);
         if (!definition) continue;
+        normalizedDefinitions.push(definition);
         byId.set(definition.id, definition);
         const nameKey = contract.normalizePropertyNameKey(definition.name);
         if (!byName.has(nameKey)) byName.set(nameKey, definition);
         occupied.add(definition.id);
     }
+    schema.definitions = normalizedDefinitions;
     return { byId, byName, occupied };
 }
 
