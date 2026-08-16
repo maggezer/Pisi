@@ -1,18 +1,23 @@
 'use strict';
 
-const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const storageLayer = require('./storage');
 const { modules, registerMainModule } = require('../module-registry');
 
 const PISI_TASK_STORE_VERSION = 1;
 const PISI_TASK_STORE_DIR = '.pisi';
 const PISI_TASK_STORE_FILE = 'tasks.json';
+const PISI_TASK_STORE_KEY = `${PISI_TASK_STORE_DIR}/${PISI_TASK_STORE_FILE}`;
 const PISI_TASK_STATUSES = new Set(['todo', 'doing', 'waiting', 'blocked', 'done']);
 const PISI_TASK_REPEATS = new Set([
     'none', 'daily', 'weekdays', 'weekly', 'biweekly',
     'monthly', 'after-completion'
 ]);
+
+function getPisiTaskStorage(projectFolder) {
+    return storageLayer.getPisiProjectStorage(projectFolder);
+}
 
 function getPisiTaskStoreDirectory(projectFolder) {
     return path.join(path.resolve(projectFolder), PISI_TASK_STORE_DIR);
@@ -57,26 +62,24 @@ function hydratePisiTaskStoredPath(projectFolder, storedPath) {
 }
 
 function ensurePisiTaskStoreDirectory(projectFolder) {
-    const directory = getPisiTaskStoreDirectory(projectFolder);
-    if (!fs.existsSync(directory)) {
-        fs.mkdirSync(directory, { recursive: true });
+    const storage = getPisiTaskStorage(projectFolder);
+    const ensured = storage.ensureDirectory(PISI_TASK_STORE_DIR, { hidden: true });
+    if (!ensured.ok) {
+        throw new Error(ensured.error || 'Görev deposu klasörü oluşturulamadı.');
     }
-    try {
-        globalThis.hideFileOnWindows?.(directory);
-    } catch {}
-    return directory;
+    return ensured.path;
 }
 
 function readPisiTaskStore(projectFolder) {
-    const storePath = getPisiTaskStorePath(projectFolder);
-    if (!fs.existsSync(storePath)) {
+    const storage = getPisiTaskStorage(projectFolder);
+    const result = storage.readJson(PISI_TASK_STORE_KEY, { allowMissing: true });
+    if (result.missing) {
         return {
             version: PISI_TASK_STORE_VERSION,
             updatedAt: null,
             tasks: []
         };
     }
-    const result = readJsonFileResult(storePath);
     if (!result.ok || !result.data || !Array.isArray(result.data.tasks)) {
         throw new Error(
             `Görev deposu okunamadı: ${result.error || 'Geçersiz tasks.json'}`
@@ -91,17 +94,19 @@ function readPisiTaskStore(projectFolder) {
 
 function writePisiTaskStore(projectFolder, store) {
     ensurePisiTaskStoreDirectory(projectFolder);
-    const storePath = getPisiTaskStorePath(projectFolder);
+    const storage = getPisiTaskStorage(projectFolder);
     const data = {
         version: PISI_TASK_STORE_VERSION,
         updatedAt: new Date().toISOString(),
         tasks: Array.isArray(store?.tasks) ? store.tasks : []
     };
-    const content = `${JSON.stringify(data, null, 2)}\n`;
-    if (typeof globalThis.writeFileAtomic === 'function') {
-        globalThis.writeFileAtomic(storePath, content, { backup: true });
-    } else {
-        fs.writeFileSync(storePath, content, 'utf-8');
+    const written = storage.writeJson(PISI_TASK_STORE_KEY, data, {
+        backup: true,
+        newline: true,
+        hiddenParent: true
+    });
+    if (!written.ok) {
+        throw new Error(written.error || 'Görev deposu yazılamadı.');
     }
     return data;
 }

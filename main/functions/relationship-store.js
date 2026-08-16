@@ -2,12 +2,18 @@
 
 const path = require('path');
 const crypto = require('crypto');
+const storageLayer = require('./storage');
 const { modules, registerMainModule } = require('../module-registry');
 
 const filesystemCore = modules['main.filesystemCore'];
 const pathSecurity = modules['main.pathSecurity'];
 
 const PISI_RELATIONSHIP_STORE_VERSION = 1;
+const PISI_RELATIONSHIP_STORE_KEY = '.pisi/relationships.json';
+
+function getPisiRelationshipStorage(projectFolder) {
+    return storageLayer.getPisiProjectStorage(projectFolder);
+}
 
 function getPisiRelationshipStorePath(projectFolder) {
     return path.join(projectFolder, '.pisi', 'relationships.json');
@@ -145,10 +151,13 @@ function normalizeRelationshipCollection(rawRelationships = []) {
 }
 
 function readPisiRelationshipStore(projectFolder) {
-    const filePath = getPisiRelationshipStorePath(projectFolder);
-    const result = filesystemCore.readJsonFileResult(filePath);
+    const storage = getPisiRelationshipStorage(projectFolder);
+    const filePath = storage.resolvePath(PISI_RELATIONSHIP_STORE_KEY);
+    const result = storage.readJson(PISI_RELATIONSHIP_STORE_KEY, {
+        allowMissing: true
+    });
 
-    if (!result.ok) {
+    if (result.missing) {
         return {
             ok: true,
             version: PISI_RELATIONSHIP_STORE_VERSION,
@@ -156,6 +165,16 @@ function readPisiRelationshipStore(projectFolder) {
             warnings: [],
             missing: true,
             filePath
+        };
+    }
+    if (!result.ok) {
+        return {
+            ok: false,
+            version: PISI_RELATIONSHIP_STORE_VERSION,
+            relationships: [],
+            warnings: [],
+            filePath,
+            error: result.error || 'Relationship store okunamadı.'
         };
     }
 
@@ -171,14 +190,25 @@ function readPisiRelationshipStore(projectFolder) {
 
 function writePisiRelationshipStore(projectFolder, relationships = []) {
     const normalized = normalizeRelationshipCollection(relationships);
-    const filePath = getPisiRelationshipStorePath(projectFolder);
-    filesystemCore.writeFileAtomic(
-        filePath,
-        JSON.stringify({
-            version: PISI_RELATIONSHIP_STORE_VERSION,
-            relationships: normalized.relationships
-        }, null, 2)
-    );
+    const storage = getPisiRelationshipStorage(projectFolder);
+    const filePath = storage.resolvePath(PISI_RELATIONSHIP_STORE_KEY);
+    const written = storage.writeJson(PISI_RELATIONSHIP_STORE_KEY, {
+        version: PISI_RELATIONSHIP_STORE_VERSION,
+        relationships: normalized.relationships
+    }, {
+        backup: true,
+        newline: false,
+        hiddenParent: true
+    });
+    if (!written.ok) {
+        return {
+            ok: false,
+            relationships: normalized.relationships,
+            warnings: normalized.warnings,
+            filePath,
+            error: written.error || 'Relationship store yazılamadı.'
+        };
+    }
     return {
         ok: true,
         relationships: normalized.relationships,

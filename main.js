@@ -3,6 +3,7 @@
 require("./main/functions/path-security");
 require("./main/functions/i18n");
 require("./main/functions/filesystem-core");
+require("./main/functions/storage");
 require("./main/functions/atomic-mutation");
 require("./main/functions/document-store");
 require("./main/functions/map-store");

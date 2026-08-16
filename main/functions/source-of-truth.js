@@ -1,32 +1,34 @@
 'use strict';
 
-const fs = require('fs');
 const path = require('path');
+const storageLayer = require('./storage');
 const { modules } = require('../module-registry');
 
 const PISI_TASK_MIGRATION_MARKER = 'task-store-migration.json';
+const PISI_TASK_MIGRATION_KEY = `.pisi/${PISI_TASK_MIGRATION_MARKER}`;
 
 function getPisiTaskMigrationMarkerPath(projectFolder) {
     return path.join(path.resolve(projectFolder), '.pisi', PISI_TASK_MIGRATION_MARKER);
 }
 
 function readPisiTaskMigrationStatus(projectFolder) {
-    const markerPath = getPisiTaskMigrationMarkerPath(projectFolder);
-    if (!fs.existsSync(markerPath)) {
+    const storage = storageLayer.getPisiProjectStorage(projectFolder);
+    const result = storage.readJson(PISI_TASK_MIGRATION_KEY, {
+        allowMissing: true
+    });
+    if (result.missing) {
         return {
             ok: true,
             complete: false,
             legacyImportedAt: null
         };
     }
-
-    const result = globalThis.readJsonFileResult?.(markerPath);
-    if (!result?.ok || !result.data) {
+    if (!result.ok || !result.data) {
         return {
             ok: false,
             complete: false,
             legacyImportedAt: null,
-            error: result?.error || 'Task migration marker okunamadı.'
+            error: result.error || 'Task migration marker okunamadı.'
         };
     }
 
@@ -38,13 +40,17 @@ function readPisiTaskMigrationStatus(projectFolder) {
 }
 
 function completePisiTaskLegacyMigration(projectFolder) {
-    const directory = path.join(path.resolve(projectFolder), '.pisi');
-    fs.mkdirSync(directory, { recursive: true });
-    try {
-        globalThis.hideFileOnWindows?.(directory);
-    } catch {}
+    const storage = storageLayer.getPisiProjectStorage(projectFolder);
+    const ensured = storage.ensureDirectory('.pisi', { hidden: true });
+    if (!ensured.ok) {
+        return {
+            ok: false,
+            complete: false,
+            legacyImportedAt: null,
+            error: ensured.error || 'Task migration klasörü oluşturulamadı.'
+        };
+    }
 
-    const markerPath = getPisiTaskMigrationMarkerPath(projectFolder);
     const legacyImportedAt = new Date().toISOString();
     const data = {
         version: 1,
@@ -52,12 +58,18 @@ function completePisiTaskLegacyMigration(projectFolder) {
         authority: '.pisi/tasks.json',
         note: 'Legacy node task metadata is a projection after this migration.'
     };
-    const content = `${JSON.stringify(data, null, 2)}\n`;
-
-    if (typeof globalThis.writeFileAtomic === 'function') {
-        globalThis.writeFileAtomic(markerPath, content, { backup: false });
-    } else {
-        fs.writeFileSync(markerPath, content, 'utf-8');
+    const written = storage.writeJson(PISI_TASK_MIGRATION_KEY, data, {
+        backup: false,
+        newline: true,
+        hiddenParent: true
+    });
+    if (!written.ok) {
+        return {
+            ok: false,
+            complete: false,
+            legacyImportedAt: null,
+            error: written.error || 'Task migration marker yazılamadı.'
+        };
     }
 
     return {
