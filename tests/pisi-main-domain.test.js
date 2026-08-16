@@ -18,6 +18,7 @@ Module._load = function pisiTestElectronStub(request, parent, isMain) {
 
 require('../main/functions/task-capture');
 require('../main/functions/structured-nodes');
+require('../main/functions/project-integrity');
 require('../main/functions/portability');
 
 Module._load = originalLoad;
@@ -52,6 +53,11 @@ test('main roadmap domains register unique public bindings', () => {
     const { modules } = require('../main/module-registry');
     assert.ok(modules['main.taskCapture'].quickAddPisiTask);
     assert.ok(modules['main.structuredNodes'].createPisiPropertyMap);
+    assert.ok(modules['main.projectIntegrity'].auditPisiProjectIntegrity);
+    assert.equal(
+        Object.hasOwn(modules['main.portability'], 'auditPisiProjectIntegrity'),
+        false
+    );
     assert.ok(modules['main.portability'].restorePisiAtomicBackup);
     assert.ok(modules['main.structuredNodes'].applyPisiDatabaseTemplate);
 });

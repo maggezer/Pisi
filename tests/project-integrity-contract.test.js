@@ -9,6 +9,8 @@ const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 const service = read('main/functions/project-integrity.js');
+const portability = read('main/functions/portability.js');
+const mainManifest = JSON.parse(read('main/module-manifest.json'));
 const shared = read('main/functions/project-integrity-shared.js');
 const documents = read('main/functions/project-integrity-documents.js');
 const authorities = read('main/functions/project-integrity-authorities.js');
@@ -22,6 +24,16 @@ const bootstrap = read('renderer/bootstrap.mjs');
 const style = read('style.css');
 const css = read('styles/62-project-integrity.css');
 const auditSources = [service, shared, documents, authorities, recovery].join('\n');
+
+test('Project Integrity exclusively owns the public audit binding', () => {
+    const owners = mainManifest
+        .filter((entry) => entry.bindings.includes('auditPisiProjectIntegrity'))
+        .map((entry) => entry.module);
+
+    assert.deepEqual(owners, ['main.projectIntegrity']);
+    assert.match(service, /function auditPisiProjectIntegrity\(/);
+    assert.doesNotMatch(portability, /\bauditPisiProjectIntegrity\b/);
+});
 
 test('Project Integrity audits every canonical and recovery authority', () => {
     assert.match(authorities, /taskStore\.getPisiTaskStorePath/);

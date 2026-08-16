@@ -218,6 +218,20 @@
     ]
   },
   {
+    "module": "main.projectIntegrity",
+    "path": "main/functions/project-integrity.js",
+    "bindings": [
+      "PISI_INTEGRITY_VERSION",
+      "walkIntegrityProjectDocuments",
+      "extractLocalAttachmentCandidates",
+      "collectPisiDocumentInventory",
+      "auditPisiProjectIntegrity",
+      "repairPisiProjectIntegrity",
+      "rebuildPisiDerivedIntegrityState",
+      "makeRepairPlan"
+    ]
+  },
+  {
     "module": "main.portability",
     "path": "main/functions/portability.js",
     "bindings": [
@@ -235,7 +249,6 @@
       "exportPisiMapGraphic",
       "exportPisiProjectMarkdown",
       "importPisiMarkdownFolder",
-      "auditPisiProjectIntegrity",
       "listPisiAtomicBackups",
       "restorePisiAtomicBackup"
     ]

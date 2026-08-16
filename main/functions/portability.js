@@ -594,68 +594,6 @@ async function importPisiMarkdownFolder(projectFolder) {
     return { ok: true, destination, imported: created.length, created };
 }
 
-function auditPisiProjectIntegrity(projectFolder) {
-    const issues = [];
-    const ids = new Map();
-    const files = walkPisiFiles(projectFolder, (_filePath, name) => /\.(?:node|map)$/i.test(name), { maxFiles: 50000 });
-    let nodes = 0;
-    let maps = 0;
-    for (const filePath of files) {
-        const result = readJsonFileResult(filePath);
-        const relativePath = path.relative(projectFolder, filePath);
-        if (!result.ok) {
-            issues.push({ severity: 'error', code: 'invalid-json', path: relativePath, message: result.error });
-            continue;
-        }
-        const metadata = result.data?.pisi;
-        const expectedType = path.extname(filePath).toLowerCase() === '.node' ? 'node' : 'map';
-        if (!metadata?.id || metadata.type !== expectedType) {
-            issues.push({ severity: 'error', code: 'metadata', path: relativePath, message: 'Pisi kimliği veya türü geçersiz.' });
-            continue;
-        }
-        if (ids.has(metadata.id)) {
-            issues.push({ severity: 'error', code: 'duplicate-id', path: relativePath, message: `Kimlik daha önce kullanıldı: ${ids.get(metadata.id)}` });
-        } else ids.set(metadata.id, relativePath);
-        if (expectedType === 'node') nodes += 1;
-        else maps += 1;
-        const sidecar = metadata.sidecar ? path.join(path.dirname(filePath), metadata.sidecar) : null;
-        if (sidecar && !fs.existsSync(sidecar)) {
-            issues.push({ severity: 'warning', code: 'missing-sidecar', path: relativePath, message: 'Yan klasör bulunamadı.' });
-        }
-        if (expectedType !== 'map') continue;
-        const knownIds = new Set();
-        if (sidecar && fs.existsSync(sidecar)) {
-            for (const child of fs.readdirSync(sidecar)) {
-                if (!child.toLowerCase().endsWith('.node')) continue;
-                const childResult = readJsonFileResult(path.join(sidecar, child));
-                if (childResult.data?.pisi?.id) knownIds.add(childResult.data.pisi.id);
-            }
-        }
-        for (const reference of result.data.map?.references || []) {
-            const resolved = resolvePisiMapReference(projectFolder, reference);
-            if (!resolved) {
-                issues.push({ severity: 'warning', code: 'dangling-reference', path: relativePath, message: `Node referansı bulunamadı: ${reference.path}` });
-            } else knownIds.add(reference.id);
-        }
-        for (const layout of result.data.map?.nodes || []) {
-            if (!knownIds.has(layout.id)) {
-                issues.push({ severity: 'warning', code: 'dangling-layout', path: relativePath, message: `Yerleşim node'u bulunamadı: ${layout.id}` });
-            }
-        }
-        for (const edge of result.data.map?.edges || []) {
-            if (!knownIds.has(edge.sourceId) || !knownIds.has(edge.targetId)) {
-                issues.push({ severity: 'error', code: 'dangling-edge', path: relativePath, message: `Bağlantı ucu bulunamadı: ${edge.id || '?'}` });
-            }
-        }
-    }
-    return {
-        ok: true,
-        healthy: !issues.some((issue) => issue.severity === 'error'),
-        summary: { files: files.length, nodes, maps, issues: issues.length },
-        issues
-    };
-}
-
 function listPisiAtomicBackups(projectFolder, filePath = null) {
     try {
         const candidates = filePath
@@ -712,7 +650,6 @@ const moduleApi = {
     exportPisiMapGraphic,
     exportPisiProjectMarkdown,
     importPisiMarkdownFolder,
-    auditPisiProjectIntegrity,
     listPisiAtomicBackups,
     restorePisiAtomicBackup
 };
