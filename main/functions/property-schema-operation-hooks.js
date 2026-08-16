@@ -87,7 +87,7 @@ function rebindPisiPropertySchemaIpc() {
                 type: 'file',
                 extensions: ['.node']
             });
-            return savePisiNodePropertiesStable(
+            return savePisiNodePropertiesBySchema(
                 active.projectFolder,
                 safeNodePath,
                 properties || {}
