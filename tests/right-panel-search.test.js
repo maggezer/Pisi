@@ -20,8 +20,9 @@ test('arama soldan kaldırılır ve gerçek sağ panel sekmesine taşınır', ()
     assert.match(globalSearch, /defaultShortcut: 'Mod\+P'/);
     assert.match(panel, /id = 'pisi-search-tab-button'/);
     assert.match(panel, /page\.id = 'right-tab-search'/);
-    assert.match(panel, /ensurePisiSearchIndex/);
-    assert.match(panel, /searchPisiIndex/);
+    assert.match(panel, /ensurePisiEnhancedLiveSearchIndex/);
+    assert.match(panel, /searchPisiAdvancedIndex/);
+    assert.match(panel, /makePisiSearchRecentMap/);
     assert.match(panel, /openPisiSearchResult/);
     assert.ok(manifest.some((entry) => (
         entry.module === 'search.rightPanel' &&
@@ -40,9 +41,7 @@ test('arama sonuçları teknik node kimliklerini kullanıcıya göstermez', () =
     )();
 
     assert.equal(
-        getDisplayPath(
-            'nd_Proje__map_24fc/Plan__node_f35a-91b2.node'
-        ),
+        getDisplayPath('nd_Proje__map_24fc/Plan__node_f35a-91b2.node'),
         'Plan.node'
     );
     assert.equal(
@@ -51,10 +50,7 @@ test('arama sonuçları teknik node kimliklerini kullanıcıya göstermez', () =
     );
     assert.match(panel, /getPisiRightSearchPreview\(result\)/);
     assert.match(panel, /openPisiSearchResult\(result/);
-    assert.doesNotMatch(
-        panel,
-        /\[result\.mapTitle, result\.relativePath\]/
-    );
+    assert.doesNotMatch(panel, /\[result\.mapTitle, result\.relativePath\]/);
     assert.doesNotMatch(panel, /getPisiRightSearchContext/);
     assert.doesNotMatch(panel, /pisi-right-search-result-context/);
 });
@@ -74,11 +70,14 @@ test('Links dahil dinamik sekmeler her tıklamada güncel durumdan seçilir', ()
 
 test('sağ arama yüzeyi koyu ve açık tema stillerine sahiptir', () => {
     const searchCss = read('styles/57-search-and-links.css');
+    const enhancementCss = read('styles/57-search-navigation-enhancements.css');
     const lightCss = read('styles/91-light-theme-tuning.css');
 
     assert.match(searchCss, /\.pisi-right-search-input-row/);
     assert.match(searchCss, /\.pisi-right-search-result\.selected/);
     assert.match(searchCss, /assets\/right-tabs\/search\.svg/);
+    assert.match(enhancementCss, /\.pisi-right-search-syntax/);
+    assert.match(enhancementCss, /html\[data-theme="light"\]/);
     assert.match(lightCss, /\.pisi-right-search-input-row/);
     assert.match(lightCss, /\.pisi-right-search-result\.selected/);
     assert.doesNotMatch(searchCss, /\.pisi-right-search-result-context/);
