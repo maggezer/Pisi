@@ -1,21 +1,23 @@
 import { registerModule } from '../core/module-registry.mjs';
-import {
-    buildPisiSearchAccelerator,
-    pisiSearchPathKey
-} from './pisi-search-core.mjs';
+import { pisiSearchPathKey } from './pisi-search-core.mjs';
 import {
     ensurePisiSearchIndex,
     getPisiSearchCurrentNodePath,
     getPisiSearchLiveIndex
 } from './pisi-search-index.mjs';
+import {
+    buildPisiDisposableSearchSnapshot,
+    createPisiRebuildableSearchIndex
+} from './pisi-search-index-adapter.mjs';
+import { makePisiProjectionSourceFingerprint } from './pisi-projection-index-core.mjs';
 
 const PISI_SEARCH_PROPERTY_VALUE_LIMIT = 1400;
 const PISI_SEARCH_PROPERTY_FIELD_LIMIT = 80;
 
 let pisiSearchTaskGeneration = 0;
-let pisiSearchEnhancedCache = new WeakMap();
 let pisiSearchTaskLoadedProjectKey = '';
 const pisiSearchLastIndexByProject = new Map();
+const pisiSearchProjectionByProject = new Map();
 let pisiSearchWarmupTimer = null;
 
 function normalizePisiSearchPropertyValue(value, depth = 0) {
@@ -192,37 +194,124 @@ function makePisiCanonicalTaskSearchRecord(index, task) {
     }, memberships);
 }
 
-function makePisiEnhancedSearchIndex(baseIndex) {
-    if (!baseIndex) return null;
-    const cached = pisiSearchEnhancedCache.get(baseIndex);
-    if (cached?.taskGeneration === pisiSearchTaskGeneration) return cached.index;
+function makePisiEnhancedSourceFingerprint(baseIndex, tasks = getPisiCanonicalSearchTasks()) {
+    const parts = [];
+    for (const record of Array.isArray(baseIndex?.records) ? baseIndex.records : []) {
+        parts.push([
+            'base',
+            record?.id || '',
+            record?.nodeItem?.metadata?.updatedAt || '',
+            record?.nodeItem?.metadata?.id || '',
+            record?.kind || ''
+        ].join(':'));
+    }
+    for (const task of Array.isArray(tasks) ? tasks : []) {
+        parts.push([
+            'task', task?.id || '', task?.updatedAt || '', task?.status || '',
+            task?.priority || '', task?.title || '', task?.source?.nodePath || '',
+            task?.source?.blockId || ''
+        ].join(':'));
+    }
+    return makePisiProjectionSourceFingerprint(parts);
+}
 
-    const records = (Array.isArray(baseIndex.records) ? baseIndex.records : [])
+function buildPisiEnhancedRecords(baseIndex, tasks = getPisiCanonicalSearchTasks()) {
+    const records = (Array.isArray(baseIndex?.records) ? baseIndex.records : [])
         .filter((record) => record?.kind !== 'task')
         .map((record) => enhancePisiBaseSearchRecord(baseIndex, record));
-    for (const task of getPisiCanonicalSearchTasks()) {
+    for (const task of tasks) {
         const record = makePisiCanonicalTaskSearchRecord(baseIndex, task);
         if (record) records.push(record);
     }
-    const accelerator = buildPisiSearchAccelerator(records);
-    const index = {
+    return records;
+}
+
+function makePisiEnhancedIndexResult(baseIndex, snapshot, taskCount) {
+    const records = snapshot.records || [];
+    const accelerator = snapshot.accelerator;
+    return {
         ...baseIndex,
         records,
         accelerator,
+        projection: snapshot.projection,
         canonicalTasks: true,
         performance: {
             ...(baseIndex.performance || {}),
             enhancedRecordCount: records.length,
-            enhancedGramCount: accelerator.gramCount,
-            canonicalTaskCount: records.filter((record) => record.kind === 'task').length
+            enhancedGramCount: accelerator?.gramCount || 0,
+            canonicalTaskCount: taskCount
         }
     };
-    pisiSearchEnhancedCache.set(baseIndex, {
+}
+
+function makePisiEnhancedSearchIndex(baseIndex, options = {}) {
+    if (!baseIndex) return null;
+    const projectKey = pisiSearchPathKey(baseIndex.projectFolder);
+    const tasks = getPisiCanonicalSearchTasks();
+    const sourceFingerprint = makePisiEnhancedSourceFingerprint(baseIndex, tasks);
+    const cached = !options.transient ? pisiSearchProjectionByProject.get(projectKey) : null;
+    if (
+        cached?.baseIndex === baseIndex &&
+        cached?.taskGeneration === pisiSearchTaskGeneration &&
+        cached?.index?.projection?.sourceFingerprint === sourceFingerprint
+    ) {
+        return cached.index;
+    }
+
+    const records = buildPisiEnhancedRecords(baseIndex, tasks);
+    let snapshot;
+    let projection = null;
+    if (options.transient) {
+        snapshot = buildPisiDisposableSearchSnapshot(records, {
+            name: 'search-live',
+            sourceFingerprint
+        });
+    } else {
+        projection = cached?.projection || createPisiRebuildableSearchIndex('search-enhanced');
+        snapshot = projection.replaceAll(records, { sourceFingerprint });
+    }
+    const index = makePisiEnhancedIndexResult(baseIndex, snapshot, tasks.length);
+    if (!options.transient && projectKey) {
+        pisiSearchProjectionByProject.set(projectKey, {
+            baseIndex,
+            taskGeneration: pisiSearchTaskGeneration,
+            projection,
+            index
+        });
+        pisiSearchLastIndexByProject.set(projectKey, index);
+    }
+    return index;
+}
+
+function applyPisiCanonicalTaskSearchDelta(projectFolder = window.currentProjectFolder) {
+    const projectKey = pisiSearchPathKey(projectFolder);
+    const cached = pisiSearchProjectionByProject.get(projectKey);
+    if (!cached?.projection || !cached?.baseIndex) return null;
+    const tasks = getPisiCanonicalSearchTasks();
+    const taskRecords = tasks
+        .map((task) => makePisiCanonicalTaskSearchRecord(cached.baseIndex, task))
+        .filter(Boolean);
+    const existingTaskIds = (cached.index?.records || [])
+        .filter((record) => record?.kind === 'task')
+        .map((record) => record.id);
+    const sourceFingerprint = makePisiEnhancedSourceFingerprint(cached.baseIndex, tasks);
+    const delta = cached.projection.applyDelta({
+        remove: existingTaskIds,
+        upsert: taskRecords
+    }, { sourceFingerprint });
+    if (!delta.ok) {
+        cached.projection.invalidate('task-delta-rebuild-required');
+        pisiSearchProjectionByProject.delete(projectKey);
+        pisiSearchLastIndexByProject.delete(projectKey);
+        return null;
+    }
+    const index = makePisiEnhancedIndexResult(cached.baseIndex, delta, tasks.length);
+    pisiSearchProjectionByProject.set(projectKey, {
+        ...cached,
         taskGeneration: pisiSearchTaskGeneration,
         index
     });
-    const projectKey = pisiSearchPathKey(baseIndex.projectFolder);
-    if (projectKey) pisiSearchLastIndexByProject.set(projectKey, index);
+    pisiSearchLastIndexByProject.set(projectKey, index);
     return index;
 }
 
@@ -244,11 +333,25 @@ async function ensurePisiEnhancedLiveSearchIndex(options = {}) {
         base,
         options.targetPath || getPisiSearchCurrentNodePath()
     );
-    return makePisiEnhancedSearchIndex(live);
+    if (live === base) return makePisiEnhancedSearchIndex(base);
+    return makePisiEnhancedSearchIndex(live, { transient: true });
 }
 
 function getPisiStaleSearchIndex(projectFolder = window.currentProjectFolder) {
     return pisiSearchLastIndexByProject.get(pisiSearchPathKey(projectFolder)) || null;
+}
+
+function getPisiRebuildableSearchIndexStatus(projectFolder = window.currentProjectFolder) {
+    const cached = pisiSearchProjectionByProject.get(pisiSearchPathKey(projectFolder));
+    return cached?.projection?.getManifest?.() || null;
+}
+
+function invalidatePisiEnhancedSearchProjection(reason = 'source-changed', projectFolder = window.currentProjectFolder) {
+    const projectKey = pisiSearchPathKey(projectFolder);
+    const cached = pisiSearchProjectionByProject.get(projectKey);
+    cached?.projection?.invalidate?.(reason);
+    pisiSearchProjectionByProject.delete(projectKey);
+    pisiSearchLastIndexByProject.delete(projectKey);
 }
 
 function schedulePisiSearchWarmup(delay = 120) {
@@ -269,15 +372,18 @@ function schedulePisiSearchWarmup(delay = 120) {
 
 document.addEventListener('pisi:task-store-updated', () => {
     pisiSearchTaskGeneration += 1;
-    pisiSearchEnhancedCache = new WeakMap();
-    const projectKey = pisiSearchPathKey(window.currentProjectFolder);
-    if (projectKey) {
-        const stale = pisiSearchLastIndexByProject.get(projectKey);
-        if (stale) pisiSearchLastIndexByProject.delete(projectKey);
-    }
+    const index = applyPisiCanonicalTaskSearchDelta();
     document.dispatchEvent(new CustomEvent('pisi:enhanced-search-index-updated', {
-        detail: { reason: 'tasks' }
+        detail: {
+            reason: 'tasks',
+            mode: index ? 'delta' : 'rebuild-required',
+            projection: index?.projection || null
+        }
     }));
+});
+
+document.addEventListener('pisi:search-index-invalidated', (event) => {
+    invalidatePisiEnhancedSearchProjection(event.detail?.reason || 'base-invalidated');
 });
 
 document.addEventListener('pisi:search-index-ready', (event) => {
@@ -288,8 +394,12 @@ const moduleApi = {
     ensurePisiEnhancedSearchIndex,
     ensurePisiEnhancedLiveSearchIndex,
     getPisiStaleSearchIndex,
+    getPisiRebuildableSearchIndexStatus,
+    invalidatePisiEnhancedSearchProjection,
+    applyPisiCanonicalTaskSearchDelta,
     makePisiCanonicalTaskSearchRecord,
     makePisiEnhancedSearchIndex,
+    makePisiEnhancedSourceFingerprint,
     makePisiSearchPropertyFields,
     normalizePisiSearchPropertyValue,
     schedulePisiSearchWarmup
@@ -300,8 +410,12 @@ export {
     ensurePisiEnhancedSearchIndex,
     ensurePisiEnhancedLiveSearchIndex,
     getPisiStaleSearchIndex,
+    getPisiRebuildableSearchIndexStatus,
+    invalidatePisiEnhancedSearchProjection,
+    applyPisiCanonicalTaskSearchDelta,
     makePisiCanonicalTaskSearchRecord,
     makePisiEnhancedSearchIndex,
+    makePisiEnhancedSourceFingerprint,
     makePisiSearchPropertyFields,
     normalizePisiSearchPropertyValue,
     schedulePisiSearchWarmup

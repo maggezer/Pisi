@@ -121,7 +121,7 @@ test('new snapshots are gzip compressed, indexed, deduplicated and readable', (t
     assert.match(loaded.text, /repeatable text/);
 });
 
-test('byte budget prunes older snapshots instead of letting a large node multiply indefinitely', (t) => {
+test('byte budget prunes older snapshots instead of letting a large node multiply indefinitely', async (t) => {
     const fixture = makeFixture();
     t.after(() => fs.rmSync(fixture.projectFolder, { recursive: true, force: true }));
     const options = { ...fixture.options, maxBytes: 1, maxVersions: 50 };
@@ -130,6 +130,10 @@ test('byte budget prunes older snapshots instead of letting a large node multipl
     const first = history.snapshotPisiNodeVersionBounded(fixture.nodePath, 'save', options);
     assert.equal(first.ok, true);
 
+    // History ordering is millisecond based. Keep this retention test focused on
+    // byte pruning rather than making two intentionally distinct snapshots share
+    // the same timestamp and then relying on their content hash as a tiebreaker.
+    await new Promise((resolve) => setTimeout(resolve, 2));
     fixture.writeNode(crypto.randomBytes(4096).toString('base64'));
     const second = history.snapshotPisiNodeVersionBounded(fixture.nodePath, 'save', options);
     assert.equal(second.ok, true);
