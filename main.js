@@ -22,6 +22,7 @@ require("./main/functions/project-integrity");
 require("./main/functions/portability");
 require("./main/functions/electron-ipc");
 require("./main/runtime");
+require("./main/functions/version-history-operation-hooks");
 require("./main/functions/task-reference-operation-hooks");
 require("./main/functions/map-semantic-operation-hooks");
 require("./main/functions/property-schema-operation-hooks");
