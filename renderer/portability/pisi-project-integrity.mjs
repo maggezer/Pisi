@@ -3,95 +3,81 @@ import { registerModule } from '../core/module-registry.mjs';
 const PISI_INTEGRITY_UI = {
     tr: {
         title: 'Proje bütünlüğü',
-        description: 'Canonical task ve relationship store’ları, node/map kimliklerini, map state ve referanslarını, property/ek hedeflerini, Trash kayıtlarını ve atomic recovery kalıntılarını birlikte denetler.',
+        description: 'Canonical task/relationship store’ları, node/map kimlikleri, map state, property/ek hedefleri, Trash ve atomic recovery kayıtlarını birlikte denetler.',
         audit: 'Projeyi denetle',
         auditing: 'Denetleniyor…',
         healthy: 'Kritik bütünlük hatası yok.',
         unhealthy: 'Proje bütünlüğünde müdahale gerektiren hata var.',
         clean: 'Hiç sorun bulunmadı.',
-        files: 'dosya',
-        nodes: 'node',
-        maps: 'map',
-        tasks: 'görev',
-        relationships: 'ilişki',
-        trash: 'Trash kaydı',
-        journals: 'mutation journal',
-        issues: 'sorun',
-        critical: 'kritik',
-        errors: 'hata',
-        warnings: 'uyarı',
-        safeRepairs: 'güvenli onarım',
+        applySafe: 'Güvenli onarımları uygula',
+        applying: 'Onarılıyor…',
+        rebuild: 'Türetilmiş durumu yeniden oluştur',
+        rebuildDescription: 'Node connectionTypes cache’i ile map-local operational/presentation state yeniden oluşturulur. .pisi/tasks.json ve .pisi/relationships.json değiştirilmez.',
+        confirmRepairs: 'Aşağıdaki güvenli onarımlar tek atomic transaction içinde uygulanacak:',
+        confirmRebuild: 'Türetilmiş state yeniden oluşturulsun mu? Canonical task ve relationship authority değişmeyecek.',
         repairPlan: 'Onarım planı',
         safe: 'Güvenli',
         review: 'İncele',
         manual: 'Manuel',
-        applySafe: 'Güvenli onarımları uygula',
-        applying: 'Onarılıyor…',
-        rebuild: 'Türetilmiş durumu yeniden oluştur',
-        rebuildDescription: 'Node connectionTypes cache’i ile map-local operational/presentation state yeniden normalize edilir. .pisi/tasks.json ve .pisi/relationships.json authority dosyaları değiştirilmez.',
-        confirmRepairs: 'Aşağıdaki güvenli onarımlar atomik transaction içinde uygulanacak:',
-        confirmRebuild: 'Türetilmiş state yeniden oluşturulsun mu? Canonical task ve relationship authority değişmeyecek.',
+        authority: 'Authority',
+        path: 'Yol',
+        noProject: 'Project Integrity için bir proje açın.',
         auditFailed: 'Project Integrity denetimi başarısız.',
         repairFailed: 'Project Integrity onarımı başarısız.',
         rebuildFailed: 'Türetilmiş state yeniden oluşturulamadı.',
-        noProject: 'Project Integrity için bir proje açın.',
-        applied: 'uygulandı',
-        rebuilt: 'Türetilmiş state yeniden oluşturuldu.',
-        authority: 'Authority',
-        path: 'Yol'
+        files: 'dosya', nodes: 'node', maps: 'map', tasks: 'görev',
+        relationships: 'ilişki', trash: 'Trash', journals: 'journal',
+        critical: 'kritik', errors: 'hata', warnings: 'uyarı', safeRepairs: 'güvenli onarım'
     },
     eng: {
         title: 'Project Integrity',
-        description: 'Audits canonical task and relationship stores together with node/map identities, map state and references, property/attachment targets, Trash records, and atomic recovery artifacts.',
+        description: 'Audits canonical task/relationship stores together with node/map identities, map state, property/attachment targets, Trash, and atomic recovery records.',
         audit: 'Audit project',
         auditing: 'Auditing…',
         healthy: 'No critical integrity errors.',
         unhealthy: 'Project integrity has errors that require attention.',
         clean: 'No issues found.',
-        files: 'files',
-        nodes: 'nodes',
-        maps: 'maps',
-        tasks: 'tasks',
-        relationships: 'relationships',
-        trash: 'Trash items',
-        journals: 'mutation journals',
-        issues: 'issues',
-        critical: 'critical',
-        errors: 'errors',
-        warnings: 'warnings',
-        safeRepairs: 'safe repairs',
+        applySafe: 'Apply safe repairs',
+        applying: 'Repairing…',
+        rebuild: 'Rebuild derived state',
+        rebuildDescription: 'Rebuilds node connectionTypes cache and map-local operational/presentation state. It does not modify .pisi/tasks.json or .pisi/relationships.json.',
+        confirmRepairs: 'The following safe repairs will run inside one atomic transaction:',
+        confirmRebuild: 'Rebuild derived state? Canonical task and relationship authorities will remain unchanged.',
         repairPlan: 'Repair plan',
         safe: 'Safe',
         review: 'Review',
         manual: 'Manual',
-        applySafe: 'Apply safe repairs',
-        applying: 'Repairing…',
-        rebuild: 'Rebuild derived state',
-        rebuildDescription: 'Rebuilds node connectionTypes cache and normalizes map-local operational/presentation state. It does not modify .pisi/tasks.json or .pisi/relationships.json authorities.',
-        confirmRepairs: 'The following safe repairs will run inside one atomic transaction:',
-        confirmRebuild: 'Rebuild derived state? Canonical task and relationship authorities will remain unchanged.',
+        authority: 'Authority',
+        path: 'Path',
+        noProject: 'Open a project to use Project Integrity.',
         auditFailed: 'Project Integrity audit failed.',
         repairFailed: 'Project Integrity repair failed.',
         rebuildFailed: 'Derived state could not be rebuilt.',
-        noProject: 'Open a project to use Project Integrity.',
-        applied: 'applied',
-        rebuilt: 'Derived state rebuilt.',
-        authority: 'Authority',
-        path: 'Path'
+        files: 'files', nodes: 'nodes', maps: 'maps', tasks: 'tasks',
+        relationships: 'relationships', trash: 'Trash', journals: 'journals',
+        critical: 'critical', errors: 'errors', warnings: 'warnings', safeRepairs: 'safe repairs'
     }
 };
 
-function integrityLanguage() {
-    return window.pisiI18n?.getLanguage?.() === 'eng' ? 'eng' : 'tr';
-}
-
 function integrityText(key) {
-    return PISI_INTEGRITY_UI[integrityLanguage()]?.[key]
-        || PISI_INTEGRITY_UI.tr[key]
-        || key;
+    const language = window.pisiI18n?.getLanguage?.() === 'eng' ? 'eng' : 'tr';
+    return PISI_INTEGRITY_UI[language]?.[key] || PISI_INTEGRITY_UI.tr[key] || key;
 }
 
-function makeIntegrityButton(label, className = 'pisi-secondary-button') {
+async function runIntegrityTransport(action, repairIds = []) {
+    const projectFolder = window.currentProjectFolder;
+    if (!projectFolder) return { ok: false, error: integrityText('noProject') };
+    if (action === 'audit') {
+        return window.pisiProject?.auditIntegrity?.(projectFolder);
+    }
+    return window.pisiProject?.auditIntegrity?.({
+        action,
+        projectFolder,
+        repairIds
+    });
+}
+
+function makeButton(label, className = 'pisi-secondary-button') {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = className;
@@ -99,7 +85,7 @@ function makeIntegrityButton(label, className = 'pisi-secondary-button') {
     return button;
 }
 
-function makeIntegrityMetric(label, value, severity = '') {
+function makeMetric(label, value, severity = '') {
     const metric = document.createElement('div');
     metric.className = 'pisi-integrity-metric';
     if (severity) metric.dataset.severity = severity;
@@ -111,11 +97,11 @@ function makeIntegrityMetric(label, value, severity = '') {
     return metric;
 }
 
-function getRepairSafetyLabel(safety) {
+function repairSafetyLabel(safety) {
     return integrityText(['safe', 'review', 'manual'].includes(safety) ? safety : 'manual');
 }
 
-function makeIntegrityIssueRow(issue) {
+function makeIssueRow(issue) {
     const row = document.createElement('article');
     row.className = 'pisi-integrity-issue-row';
     row.dataset.severity = issue.severity || 'warning';
@@ -132,34 +118,31 @@ function makeIntegrityIssueRow(issue) {
     const message = document.createElement('div');
     message.className = 'pisi-integrity-issue-message';
     message.textContent = issue.message || issue.code || 'Issue';
-
-    const pathLine = document.createElement('div');
-    pathLine.className = 'pisi-integrity-issue-path';
-    pathLine.textContent = `${integrityText('path')}: ${issue.path || '—'}${issue.entityId ? ` · ${issue.entityId}` : ''}`;
-
-    row.append(head, message, pathLine);
+    const issuePath = document.createElement('div');
+    issuePath.className = 'pisi-integrity-issue-path';
+    issuePath.textContent = `${integrityText('path')}: ${issue.path || '—'}${issue.entityId ? ` · ${issue.entityId}` : ''}`;
+    row.append(head, message, issuePath);
 
     if (issue.repair) {
         const repair = document.createElement('div');
         repair.className = 'pisi-integrity-repair-note';
         repair.dataset.safety = issue.repair.safety || 'manual';
         const badge = document.createElement('span');
-        badge.textContent = getRepairSafetyLabel(issue.repair.safety);
-        const description = document.createElement('span');
-        description.textContent = issue.repair.description || issue.repair.action;
-        repair.append(badge, description);
+        badge.textContent = repairSafetyLabel(issue.repair.safety);
+        const copy = document.createElement('span');
+        copy.textContent = issue.repair.description || issue.repair.action;
+        repair.append(badge, copy);
         row.appendChild(repair);
     }
     return row;
 }
 
 function makeRepairPlan(report) {
-    const plan = document.createElement('section');
-    plan.className = 'pisi-integrity-plan';
-    const heading = document.createElement('h3');
-    heading.textContent = integrityText('repairPlan');
-    plan.appendChild(heading);
-
+    const section = document.createElement('section');
+    section.className = 'pisi-integrity-plan';
+    const title = document.createElement('h3');
+    title.textContent = integrityText('repairPlan');
+    section.appendChild(title);
     const repairs = [
         ...(report.repairPlan?.safe || []),
         ...(report.repairPlan?.review || []),
@@ -168,80 +151,68 @@ function makeRepairPlan(report) {
     if (!repairs.length) {
         const empty = document.createElement('p');
         empty.textContent = integrityText('clean');
-        plan.appendChild(empty);
-        return plan;
+        section.appendChild(empty);
+        return section;
     }
-
     const list = document.createElement('div');
     list.className = 'pisi-integrity-plan-list';
     for (const repair of repairs.slice(0, 200)) {
-        const item = document.createElement('div');
-        item.className = 'pisi-integrity-plan-item';
-        item.dataset.safety = repair.safety || 'manual';
+        const row = document.createElement('div');
+        row.className = 'pisi-integrity-plan-item';
+        row.dataset.safety = repair.safety || 'manual';
         const badge = document.createElement('span');
-        badge.textContent = getRepairSafetyLabel(repair.safety);
+        badge.textContent = repairSafetyLabel(repair.safety);
         const copy = document.createElement('span');
         copy.textContent = `${repair.description}${repair.path ? ` · ${repair.path}` : ''}`;
-        item.append(badge, copy);
-        list.appendChild(item);
+        row.append(badge, copy);
+        list.appendChild(row);
     }
-    plan.appendChild(list);
-    return plan;
+    section.appendChild(list);
+    return section;
 }
 
-function renderIntegrityReport(reportRoot, report) {
-    reportRoot.replaceChildren();
+function renderIntegrityReport(root, report) {
+    root.replaceChildren();
     const status = document.createElement('div');
     status.className = 'pisi-integrity-status';
     status.dataset.healthy = report.healthy ? '1' : '0';
-    const statusTitle = document.createElement('strong');
-    statusTitle.textContent = report.clean
+    const label = document.createElement('strong');
+    label.textContent = report.clean
         ? integrityText('clean')
-        : report.healthy
-            ? integrityText('healthy')
-            : integrityText('unhealthy');
-    const audited = document.createElement('span');
-    audited.textContent = report.auditedAt
-        ? new Date(report.auditedAt).toLocaleString()
-        : '';
-    status.append(statusTitle, audited);
+        : report.healthy ? integrityText('healthy') : integrityText('unhealthy');
+    const timestamp = document.createElement('span');
+    timestamp.textContent = report.auditedAt ? new Date(report.auditedAt).toLocaleString() : '';
+    status.append(label, timestamp);
 
-    const summary = document.createElement('div');
-    summary.className = 'pisi-integrity-metrics';
-    const metrics = [
-        [integrityText('files'), report.summary?.files],
-        [integrityText('nodes'), report.summary?.nodes],
-        [integrityText('maps'), report.summary?.maps],
-        [integrityText('tasks'), report.summary?.tasks],
-        [integrityText('relationships'), report.summary?.relationships],
-        [integrityText('trash'), report.summary?.trashItems],
-        [integrityText('journals'), report.summary?.mutationJournals],
-        [integrityText('critical'), report.summary?.critical, 'critical'],
-        [integrityText('errors'), report.summary?.errors, 'error'],
-        [integrityText('warnings'), report.summary?.warnings, 'warning'],
-        [integrityText('safeRepairs'), report.summary?.safeRepairs, 'safe']
-    ];
-    for (const metric of metrics) summary.appendChild(makeIntegrityMetric(...metric));
+    const metrics = document.createElement('div');
+    metrics.className = 'pisi-integrity-metrics';
+    for (const item of [
+        ['files', report.summary?.files], ['nodes', report.summary?.nodes],
+        ['maps', report.summary?.maps], ['tasks', report.summary?.tasks],
+        ['relationships', report.summary?.relationships], ['trash', report.summary?.trashItems],
+        ['journals', report.summary?.mutationJournals], ['critical', report.summary?.critical, 'critical'],
+        ['errors', report.summary?.errors, 'error'], ['warnings', report.summary?.warnings, 'warning'],
+        ['safeRepairs', report.summary?.safeRepairs, 'safe']
+    ]) {
+        metrics.appendChild(makeMetric(integrityText(item[0]), item[1], item[2]));
+    }
 
     const authorities = document.createElement('div');
     authorities.className = 'pisi-integrity-authorities';
-    const authorityTitle = document.createElement('strong');
-    authorityTitle.textContent = integrityText('authority');
-    const authorityText = document.createElement('span');
-    authorityText.textContent = [
+    const authorityLabel = document.createElement('strong');
+    authorityLabel.textContent = integrityText('authority');
+    const authorityValue = document.createElement('span');
+    authorityValue.textContent = [
         report.authorities?.tasks,
         report.authorities?.relationships,
         report.authorities?.mapState
     ].filter(Boolean).join(' · ');
-    authorities.append(authorityTitle, authorityText);
+    authorities.append(authorityLabel, authorityValue);
 
     const issues = document.createElement('div');
     issues.className = 'pisi-integrity-issues expanded';
-    for (const issue of report.issues || []) {
-        issues.appendChild(makeIntegrityIssueRow(issue));
-    }
-
-    reportRoot.append(status, summary, authorities, makeRepairPlan(report), issues);
+    for (const issue of report.issues || []) issues.appendChild(makeIssueRow(issue));
+    root.append(status, metrics, authorities, makeRepairPlan(report), issues);
 }
 
 async function confirmSafeRepairs(report) {
@@ -250,9 +221,8 @@ async function confirmSafeRepairs(report) {
     const preview = safe.slice(0, 12)
         .map((repair) => `• ${repair.description}${repair.path ? ` (${repair.path})` : ''}`)
         .join('\n');
-    const overflow = safe.length > 12 ? `\n… +${safe.length - 12}` : '';
     return window.pisiConfirm?.(
-        `${integrityText('confirmRepairs')}\n\n${preview}${overflow}`,
+        `${integrityText('confirmRepairs')}\n\n${preview}${safe.length > 12 ? `\n… +${safe.length - 12}` : ''}`,
         {
             title: integrityText('title'),
             confirmText: integrityText('applySafe'),
@@ -263,7 +233,6 @@ async function confirmSafeRepairs(report) {
 
 function buildPisiExpandedIntegritySection(container) {
     container.querySelectorAll('.pisi-integrity-settings').forEach((node) => node.remove());
-
     const section = document.createElement('section');
     section.className = 'pisi-portable-section pisi-integrity-settings pisi-integrity-expanded';
     const title = document.createElement('h2');
@@ -271,116 +240,89 @@ function buildPisiExpandedIntegritySection(container) {
     const description = document.createElement('p');
     description.className = 'pisi-portable-description';
     description.textContent = integrityText('description');
-
     const actions = document.createElement('div');
     actions.className = 'pisi-portable-actions pisi-integrity-actions';
-    const audit = makeIntegrityButton(integrityText('audit'), 'pisi-primary-button');
-    const repair = makeIntegrityButton(integrityText('applySafe'));
-    const rebuild = makeIntegrityButton(integrityText('rebuild'));
+    const audit = makeButton(integrityText('audit'), 'pisi-primary-button');
+    const repair = makeButton(integrityText('applySafe'));
+    const rebuild = makeButton(integrityText('rebuild'));
     repair.disabled = true;
     rebuild.disabled = !window.currentProjectFolder;
     actions.append(audit, repair, rebuild);
-
-    const rebuildHelp = document.createElement('p');
-    rebuildHelp.className = 'pisi-integrity-rebuild-help';
-    rebuildHelp.textContent = integrityText('rebuildDescription');
-
+    const help = document.createElement('p');
+    help.className = 'pisi-integrity-rebuild-help';
+    help.textContent = integrityText('rebuildDescription');
     const reportRoot = document.createElement('div');
     reportRoot.className = 'pisi-integrity-report pisi-integrity-report-v2';
     let currentReport = null;
 
-    if (!window.currentProjectFolder) {
-        audit.disabled = true;
-        reportRoot.textContent = integrityText('noProject');
-    }
+    const setButtons = () => {
+        audit.disabled = !window.currentProjectFolder;
+        rebuild.disabled = !window.currentProjectFolder;
+        repair.disabled = !(currentReport?.repairPlan?.safe || []).length;
+    };
 
-    const runAudit = async () => {
+    const auditProject = async () => {
         if (!window.currentProjectFolder) return null;
         audit.disabled = true;
         repair.disabled = true;
         reportRoot.textContent = integrityText('auditing');
         try {
-            const result = await window.pisiProject?.auditIntegrity?.(
-                window.currentProjectFolder
-            );
-            if (!result?.ok) {
-                throw new Error(result?.error || integrityText('auditFailed'));
-            }
+            const result = await runIntegrityTransport('audit');
+            if (!result?.ok) throw new Error(result?.error || integrityText('auditFailed'));
             currentReport = result;
             renderIntegrityReport(reportRoot, result);
-            repair.disabled = !(result.repairPlan?.safe || []).length;
             return result;
         } catch (error) {
             currentReport = null;
             reportRoot.textContent = error?.message || integrityText('auditFailed');
             return null;
         } finally {
-            audit.disabled = !window.currentProjectFolder;
+            setButtons();
         }
     };
 
-    audit.addEventListener('click', () => {
-        void runAudit();
-    });
-
+    audit.addEventListener('click', () => void auditProject());
     repair.addEventListener('click', async () => {
-        if (!currentReport || !window.currentProjectFolder) return;
-        const safe = currentReport.repairPlan?.safe || [];
+        const safe = currentReport?.repairPlan?.safe || [];
         if (!safe.length || !(await confirmSafeRepairs(currentReport))) return;
-        audit.disabled = true;
-        repair.disabled = true;
-        rebuild.disabled = true;
+        audit.disabled = repair.disabled = rebuild.disabled = true;
+        reportRoot.textContent = integrityText('applying');
         try {
-            reportRoot.textContent = integrityText('applying');
-            const result = await window.pisiProject?.repairIntegrity?.(
-                window.currentProjectFolder,
-                safe.map((item) => item.id)
-            );
+            const result = await runIntegrityTransport('repair', safe.map((item) => item.id));
             if (!result?.ok) throw new Error(result?.error || integrityText('repairFailed'));
-            currentReport = result.after || await runAudit();
-            if (result.after) renderIntegrityReport(reportRoot, result.after);
+            currentReport = result.after || null;
+            if (currentReport) renderIntegrityReport(reportRoot, currentReport);
+            else await auditProject();
             await window.reloadPisiWorkspaceAfterExternalChange?.();
         } catch (error) {
             reportRoot.textContent = error?.message || integrityText('repairFailed');
         } finally {
-            audit.disabled = !window.currentProjectFolder;
-            rebuild.disabled = !window.currentProjectFolder;
-            repair.disabled = !(currentReport?.repairPlan?.safe || []).length;
+            setButtons();
         }
     });
-
     rebuild.addEventListener('click', async () => {
-        if (!window.currentProjectFolder) return;
-        const confirmed = await window.pisiConfirm?.(
-            integrityText('confirmRebuild'),
-            {
-                title: integrityText('rebuild'),
-                confirmText: integrityText('rebuild'),
-                cancelText: window.pisiT?.('Vazgeç') || 'Vazgeç'
-            }
-        );
+        const confirmed = await window.pisiConfirm?.(integrityText('confirmRebuild'), {
+            title: integrityText('rebuild'),
+            confirmText: integrityText('rebuild'),
+            cancelText: window.pisiT?.('Vazgeç') || 'Vazgeç'
+        });
         if (!confirmed) return;
-        audit.disabled = true;
-        repair.disabled = true;
-        rebuild.disabled = true;
+        audit.disabled = repair.disabled = rebuild.disabled = true;
         try {
-            const result = await window.pisiProject?.rebuildIntegrityDerived?.(
-                window.currentProjectFolder
-            );
+            const result = await runIntegrityTransport('rebuild-derived');
             if (!result?.ok) throw new Error(result?.error || integrityText('rebuildFailed'));
-            currentReport = result.report;
+            currentReport = result.report || null;
             if (currentReport) renderIntegrityReport(reportRoot, currentReport);
             await window.reloadPisiWorkspaceAfterExternalChange?.();
         } catch (error) {
             reportRoot.textContent = error?.message || integrityText('rebuildFailed');
         } finally {
-            audit.disabled = !window.currentProjectFolder;
-            rebuild.disabled = !window.currentProjectFolder;
-            repair.disabled = !(currentReport?.repairPlan?.safe || []).length;
+            setButtons();
         }
     });
 
-    section.append(title, description, actions, rebuildHelp, reportRoot);
+    if (!window.currentProjectFolder) reportRoot.textContent = integrityText('noProject');
+    section.append(title, description, actions, help, reportRoot);
     container.appendChild(section);
     return section;
 }
@@ -389,20 +331,19 @@ function initializePisiExpandedIntegrity() {
     if (initializePisiExpandedIntegrity.bound) return;
     initializePisiExpandedIntegrity.bound = true;
     document.addEventListener('pisi:render-settings-sections', (event) => {
-        const container = event.detail?.container;
-        if (container) buildPisiExpandedIntegritySection(container);
+        if (event.detail?.container) buildPisiExpandedIntegritySection(event.detail.container);
     });
     document.addEventListener('pisi:language-changed', () => {
         const section = document.querySelector('.pisi-integrity-expanded');
-        const container = section?.parentElement;
-        if (container) buildPisiExpandedIntegritySection(container);
+        if (section?.parentElement) buildPisiExpandedIntegritySection(section.parentElement);
     });
 }
 
 const moduleApi = {
     PISI_INTEGRITY_UI,
     integrityText,
-    makeIntegrityIssueRow,
+    runIntegrityTransport,
+    makeIssueRow,
     makeRepairPlan,
     renderIntegrityReport,
     buildPisiExpandedIntegritySection,
@@ -416,7 +357,8 @@ export {
     PISI_INTEGRITY_UI,
     buildPisiExpandedIntegritySection,
     integrityText,
-    makeIntegrityIssueRow,
+    makeIssueRow,
     makeRepairPlan,
-    renderIntegrityReport
+    renderIntegrityReport,
+    runIntegrityTransport
 };
