@@ -4,6 +4,8 @@ import {
     buildPisiSearchAccelerator,
     pisiSearchPathKey
 } from "./pisi-search-core.mjs";
+import { classifyPisiSearchChangedPaths } from './pisi-search-filesystem-delta-core.mjs';
+import { createPisiSearchFilesystemDeltaController } from './pisi-search-filesystem-delta.mjs';
 
 let pisiSearchIndexCache = null;
 let pisiSearchBuildPromise = null;
@@ -350,9 +352,7 @@ function createPisiSearchRecordsForDocument(documentRecord) {
             kind: 'content',
             blockId: block.blockId,
             preview: block.text,
-            searchFields: [
-                { kind: 'content', value: block.text }
-            ]
+            searchFields: [{ kind: 'content', value: block.text }]
         });
     });
 
@@ -376,18 +376,16 @@ function createPisiSearchRecordsForDocument(documentRecord) {
     documentRecord.tags
         .filter((tag) => !/^todo\./i.test(tag.value))
         .forEach((tag, index) => {
-        records.push({
-            ...base,
-            id: 'tag:' + pisiSearchPathKey(documentRecord.path) +
-                ':' + (tag.blockId || index) + ':' + tag.value,
-            kind: 'tag',
-            blockId: tag.blockId,
-            tag: tag.value,
-            preview: '#' + tag.value,
-            searchFields: [
-                { kind: 'tag', value: tag.value }
-            ]
-        });
+            records.push({
+                ...base,
+                id: 'tag:' + pisiSearchPathKey(documentRecord.path) +
+                    ':' + (tag.blockId || index) + ':' + tag.value,
+                kind: 'tag',
+                blockId: tag.blockId,
+                tag: tag.value,
+                preview: '#' + tag.value,
+                searchFields: [{ kind: 'tag', value: tag.value }]
+            });
         });
 
     documentRecord.tables.forEach((table, index) => {
@@ -398,9 +396,7 @@ function createPisiSearchRecordsForDocument(documentRecord) {
             kind: 'table',
             blockId: table.blockId,
             preview: table.text,
-            searchFields: [
-                { kind: 'table', value: table.text }
-            ]
+            searchFields: [{ kind: 'table', value: table.text }]
         });
     });
 
@@ -446,67 +442,105 @@ function upsertPisiRawNode(rawNodes, item, content, metadata, membership) {
     }
 }
 
+function makePisiSearchMapRecord(item, mapResult) {
+    const fileName = String(
+        item?.name || item?.fileName || getPisiSearchFileName(item?.fullPath)
+    );
+    const mapRecord = {
+        path: item.fullPath,
+        title: getPisiSearchMapTitle(item),
+        item: {
+            ...item,
+            fileName,
+            name: fileName,
+            metadata: item?.metadata || {}
+        },
+        nodes: [],
+        edges: Array.isArray(mapResult?.edges) ? mapResult.edges : []
+    };
+
+    for (const node of mapResult?.nodes || []) {
+        const nodeItem = {
+            ...node,
+            name: node.fileName,
+            fileName: node.fileName,
+            type: 'file',
+            isFile: true,
+            isDirectory: false
+        };
+        mapRecord.nodes.push({
+            id: node.id,
+            path: node.fullPath,
+            title: getPisiSearchNodeTitle(nodeItem, node.metadata),
+            layout: node.layout || null
+        });
+    }
+    return mapRecord;
+}
+
+function makePisiSearchMapSearchRecord(map, projectFolder) {
+    const relativePath = getPisiSearchRelativePath(map.path, projectFolder);
+    return {
+        id: 'map:' + pisiSearchPathKey(map.path),
+        kind: 'map',
+        title: map.title,
+        mapTitle: map.title,
+        mapPath: map.path,
+        mapItem: map.item,
+        relativePath,
+        preview: relativePath,
+        searchFields: [
+            { kind: 'title', value: map.title },
+            { kind: 'path', value: relativePath }
+        ]
+    };
+}
+
+function cachePisiSearchDocument(rawNode, documentRecord) {
+    const key = pisiSearchPathKey(documentRecord?.path || rawNode?.path);
+    if (!key) return;
+    pisiSearchDocumentCache.set(key, {
+        signature: getPisiSearchDocumentSignature(rawNode),
+        metadataSignature: getPisiSearchMetadataSignature(rawNode),
+        document: documentRecord
+    });
+}
+
 async function scanPisiSearchFolder(folderPath, context) {
     const result = await window.pisiProject?.listFolder?.(folderPath);
     if (!result?.ok || !Array.isArray(result.items)) {
         context.complete = false;
-        context.errors.push(
-            result?.error || 'Klasör listelenemedi: ' + folderPath
-        );
+        context.errors.push(result?.error || 'Klasör listelenemedi: ' + folderPath);
         return;
     }
 
     for (const item of result.items) {
         if (context.generation !== pisiSearchIndexGeneration) return;
-
         if (item?.isDirectory) {
             await scanPisiSearchFolder(item.fullPath, context);
             continue;
         }
-
         if (!item?.isFile || !item.fullPath) continue;
         const fileName = String(item.name || item.fileName || '');
 
         if (/\.node$/i.test(fileName)) {
             upsertPisiRawNode(
                 context.rawNodes,
-                {
-                    ...item,
-                    fileName,
-                    name: fileName
-                },
+                { ...item, fileName, name: fileName },
                 null,
                 item.metadata,
                 null
             );
             continue;
         }
-
         if (!/\.map$/i.test(fileName)) continue;
 
-        const mapTitle = getPisiSearchMapTitle(item);
-        const mapResult = await window.pisiProject?.listMapNodes?.(
-            item.fullPath
-        );
-        const mapRecord = {
-            path: item.fullPath,
-            title: mapTitle,
-            item: {
-                ...item,
-                fileName,
-                name: fileName,
-                metadata: item.metadata || {}
-            },
-            nodes: [],
-            edges: Array.isArray(mapResult?.edges) ? mapResult.edges : []
-        };
+        const mapResult = await window.pisiProject?.listMapNodes?.(item.fullPath);
+        const mapRecord = makePisiSearchMapRecord(item, mapResult);
         context.maps.push(mapRecord);
-
         if (!mapResult?.ok) {
             context.complete = false;
-            context.errors.push(
-                mapResult?.error || 'Map okunamadı: ' + item.fullPath
-            );
+            context.errors.push(mapResult?.error || 'Map okunamadı: ' + item.fullPath);
             continue;
         }
 
@@ -519,23 +553,12 @@ async function scanPisiSearchFolder(folderPath, context) {
                 isFile: true,
                 isDirectory: false
             };
-            const membership = makePisiSearchMembership(
-                mapRecord,
-                node
-            );
-
-            mapRecord.nodes.push({
-                id: node.id,
-                path: node.fullPath,
-                title: getPisiSearchNodeTitle(nodeItem, node.metadata),
-                layout: node.layout || null
-            });
             upsertPisiRawNode(
                 context.rawNodes,
                 nodeItem,
                 node.content,
                 node.metadata,
-                membership
+                makePisiSearchMembership(mapRecord, node)
             );
         }
     }
@@ -569,9 +592,7 @@ async function hydratePisiStandaloneNodes(rawNodes, context) {
             const node = batch[index];
             if (!result?.ok) {
                 context.complete = false;
-                context.errors.push(
-                    result?.error || 'Node okunamadı: ' + node.path
-                );
+                context.errors.push(result?.error || 'Node okunamadı: ' + node.path);
                 return;
             }
             node.content = String(result.data?.content || '');
@@ -600,34 +621,12 @@ async function buildPisiSearchIndex(projectFolder, generation) {
 
     await scanPisiSearchFolder(projectFolder, context);
     await hydratePisiStandaloneNodes(context.rawNodes, context);
-
     if (generation !== pisiSearchIndexGeneration) return null;
 
     const documents = new Map();
-    const records = [];
-
-    for (const map of context.maps) {
-        records.push({
-            id: 'map:' + pisiSearchPathKey(map.path),
-            kind: 'map',
-            title: map.title,
-            mapTitle: map.title,
-            mapPath: map.path,
-            mapItem: map.item,
-            relativePath: getPisiSearchRelativePath(
-                map.path,
-                projectFolder
-            ),
-            preview: getPisiSearchRelativePath(map.path, projectFolder),
-            searchFields: [
-                { kind: 'title', value: map.title },
-                {
-                    kind: 'path',
-                    value: getPisiSearchRelativePath(map.path, projectFolder)
-                }
-            ]
-        });
-    }
+    const records = context.maps.map((map) => {
+        return makePisiSearchMapSearchRecord(map, projectFolder);
+    });
 
     let documentOffset = 0;
     const seenDocumentKeys = new Set();
@@ -655,12 +654,8 @@ async function buildPisiSearchIndex(projectFolder, generation) {
             documentRecord = createPisiSearchDocumentRecord(rawNode, projectFolder);
             context.parsedDocuments += 1;
         }
-        pisiSearchDocumentCache.set(key, {
-            signature,
-            metadataSignature: getPisiSearchMetadataSignature(rawNode),
-            document: documentRecord
-        });
-        documents.set(pisiSearchPathKey(documentRecord.path), documentRecord);
+        cachePisiSearchDocument(rawNode, documentRecord);
+        documents.set(key, documentRecord);
         records.push(...createPisiSearchRecordsForDocument(documentRecord));
         documentOffset += 1;
         if (documentOffset % 120 === 0) await yieldPisiSearchBuild();
@@ -674,11 +669,12 @@ async function buildPisiSearchIndex(projectFolder, generation) {
     }
 
     const accelerator = buildPisiSearchAccelerator(records);
-
     return {
         projectFolder,
         projectKey: pisiSearchPathKey(projectFolder),
         builtAt: Date.now(),
+        updatedAt: Date.now(),
+        deltaGeneration: 0,
         complete: context.complete,
         errors: context.errors,
         maps: context.maps,
@@ -689,7 +685,8 @@ async function buildPisiSearchIndex(projectFolder, generation) {
             parsedDocuments: context.parsedDocuments,
             reusedDocuments: context.reusedDocuments,
             recordCount: records.length,
-            gramCount: accelerator.gramCount
+            gramCount: accelerator.gramCount,
+            scopedDeltaCount: 0
         }
     };
 }
@@ -699,13 +696,9 @@ async function ensurePisiSearchIndex(options = {}) {
     if (!projectFolder) return null;
     const projectKey = pisiSearchPathKey(projectFolder);
 
-    if (
-        !options.force &&
-        pisiSearchIndexCache?.projectKey === projectKey
-    ) {
+    if (!options.force && pisiSearchIndexCache?.projectKey === projectKey) {
         return pisiSearchIndexCache;
     }
-
     if (
         !options.force &&
         pisiSearchBuildPromise &&
@@ -721,7 +714,7 @@ async function ensurePisiSearchIndex(options = {}) {
                 pisiSearchIndexCache = index;
                 document.dispatchEvent(new CustomEvent(
                     'pisi:search-index-ready',
-                    { detail: { index } }
+                    { detail: { index, mode: 'rebuild' } }
                 ));
             }
             return index;
@@ -732,17 +725,13 @@ async function ensurePisiSearchIndex(options = {}) {
             }
         });
 
-    pisiSearchBuildPromise = {
-        projectKey,
-        generation,
-        promise
-    };
+    pisiSearchBuildPromise = { projectKey, generation, promise };
     return promise;
 }
 
 function invalidatePisiSearchIndex(reason = 'filesystem', changedPaths = []) {
     const paths = Array.isArray(changedPaths) ? changedPaths.filter(Boolean) : [];
-    if (reason === 'project') {
+    if (reason === 'project' || reason === 'project-change') {
         pisiSearchDocumentCache.clear();
     } else {
         for (const changedPath of paths) {
@@ -768,15 +757,32 @@ function refreshPisiSearchIndex() {
     return ensurePisiSearchIndex({ force: true });
 }
 
+const pisiSearchFilesystemDeltaController = createPisiSearchFilesystemDeltaController({
+    getBaseIndex: () => pisiSearchIndexCache,
+    setBaseIndex: (index) => { pisiSearchIndexCache = index; },
+    getIndexGeneration: () => pisiSearchIndexGeneration,
+    hasBuildPromise: () => Boolean(pisiSearchBuildPromise),
+    getProjectFolder: () => window.currentProjectFolder,
+    invalidate: invalidatePisiSearchIndex,
+    createDocumentRecord: createPisiSearchDocumentRecord,
+    createRecordsForDocument: createPisiSearchRecordsForDocument,
+    makeMapRecord: makePisiSearchMapRecord,
+    makeMapSearchRecord: makePisiSearchMapSearchRecord,
+    makeMembership: makePisiSearchMembership,
+    cacheDocument: cachePisiSearchDocument,
+    deleteDocumentCache: (key) => pisiSearchDocumentCache.delete(key)
+});
+
+function applyPisiSearchFilesystemDelta(classification) {
+    return pisiSearchFilesystemDeltaController.apply(classification);
+}
+
 function getPisiSearchCurrentNodePath() {
     return activeModalNode?.path || activeCenterNode?.path || null;
 }
 
 function getPisiSearchLiveIndex(index, targetPath) {
-    if (!index || !(index.documents instanceof Map) || !targetPath) {
-        return index;
-    }
-
+    if (!index || !(index.documents instanceof Map) || !targetPath) return index;
     const targetKey = pisiSearchPathKey(targetPath);
     const previous = index.documents.get(targetKey);
     if (!previous) return index;
@@ -793,13 +799,13 @@ function getPisiSearchLiveIndex(index, targetPath) {
     ) {
         editor = document.getElementById('center-node-editor-content');
     }
-
     if (!editor) return index;
 
     const liveDocument = createPisiSearchDocumentRecord({
         path: previous.path,
         item: previous.nodeItem,
         metadata: previous.metadata,
+        properties: previous.properties,
         memberships: previous.memberships,
         content: editor.innerHTML
     }, index.projectFolder);
@@ -811,7 +817,6 @@ function getPisiSearchLiveIndex(index, targetPath) {
         }),
         ...createPisiSearchRecordsForDocument(liveDocument)
     ];
-
     return {
         ...index,
         documents,
@@ -824,7 +829,9 @@ function getPisiSearchCacheStats() {
     return {
         documents: pisiSearchDocumentCache.size,
         generation: pisiSearchIndexGeneration,
-        building: Boolean(pisiSearchBuildPromise)
+        building: Boolean(pisiSearchBuildPromise),
+        applyingDelta: pisiSearchFilesystemDeltaController.isActive(),
+        deltaGeneration: Number(pisiSearchIndexCache?.deltaGeneration || 0)
     };
 }
 
@@ -835,12 +842,20 @@ function bindPisiSearchIndexInvalidation() {
             const paths = Array.isArray(payload.changedPaths)
                 ? payload.changedPaths.filter(Boolean)
                 : [];
-            const relevant = paths.filter((changedPath) => {
-                const extension = String(changedPath).match(/\.[A-Za-z0-9]+$/)?.[0]?.toLowerCase();
-                return !extension || extension === '.node' || extension === '.map';
-            });
-            if (paths.length && !relevant.length) return;
-            invalidatePisiSearchIndex('filesystem', relevant);
+            const classification = classifyPisiSearchChangedPaths(paths);
+            if (classification.mode === 'ignore') return;
+            if (classification.mode === 'rebuild') {
+                invalidatePisiSearchIndex('filesystem', classification.uniquePaths);
+                return;
+            }
+            if (!pisiSearchIndexCache || pisiSearchBuildPromise) {
+                invalidatePisiSearchIndex(
+                    'filesystem-base-not-ready',
+                    classification.uniquePaths
+                );
+                return;
+            }
+            void pisiSearchFilesystemDeltaController.queue(classification);
         }) || null;
 }
 
@@ -861,6 +876,10 @@ Object.defineProperties(moduleApi, {
     refreshPisiSearchIndex: {
         enumerable: true,
         get() { return refreshPisiSearchIndex; }
+    },
+    applyPisiSearchFilesystemDelta: {
+        enumerable: true,
+        get() { return applyPisiSearchFilesystemDelta; }
     },
     createPisiSearchDocumentRecord: {
         enumerable: true,
@@ -893,6 +912,7 @@ export {
     ensurePisiSearchIndex,
     invalidatePisiSearchIndex,
     refreshPisiSearchIndex,
+    applyPisiSearchFilesystemDelta,
     createPisiSearchDocumentRecord,
     getPisiSearchCurrentNodePath,
     getPisiSearchLiveIndex,

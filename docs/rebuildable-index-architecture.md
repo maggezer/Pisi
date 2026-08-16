@@ -8,10 +8,11 @@ The current path is:
 
 1. canonical project authorities and node/map documents;
 2. search source collector (`pisi-search-index.mjs`);
-3. enhanced search projection;
-4. rebuildable projection-index contract;
-5. active index driver (`memory-trigram-v1`);
-6. query/navigation UI.
+3. document/map filesystem delta classifier;
+4. enhanced search projection;
+5. rebuildable projection-index contract;
+6. active index driver (`memory-trigram-v1`);
+7. query/navigation UI.
 
 The source collector can continue to evolve independently from the physical index backend.
 
@@ -66,14 +67,34 @@ The current memory driver may rebuild its trigram accelerator internally after a
 
 ## Incremental path
 
-Canonical task-store updates now use the delta gateway:
+Canonical task-store updates use the projection delta gateway. Node and map filesystem changes now also avoid a full source scan when the watcher gives a bounded, unambiguous set of `.node` / `.map` paths.
 
-1. project document/map projection stays unchanged;
-2. existing canonical task records are removed from the disposable index;
-3. current canonical task records are upserted;
-4. the driver atomically publishes the next snapshot from the caller's point of view.
+`renderer/search/pisi-search-filesystem-delta-core.mjs` classifies watcher batches:
 
-Broad filesystem/node/map invalidation still requires a source rebuild. This is safer than attempting to infer semantic changes from filesystem events. Later work may add document-scoped source deltas behind the same contract.
+- `.node` and `.map` paths are eligible for scoped processing;
+- unrelated extensions are ignored by search;
+- extensionless/directory-like paths are ambiguous and force a rebuild;
+- batches above 24 search-source paths force a rebuild rather than attempting an oversized pseudo-incremental update.
+
+For a node change, Pisi reads only that node. If the direct read fails, the parent folder is listed before treating the path as deleted. A path that still exists but cannot be read is ambiguous and falls back to a full rebuild.
+
+For a map change, Pisi reads only that map and updates the affected membership projections. Map deletion is likewise accepted only after parent-folder verification. Stable node identity is used during rename/move cases so a node can retain its map membership while its path changes.
+
+The scoped source update publishes `pisi:search-index-delta-applied` and a new ready snapshot. The current in-memory trigram accelerator is still rebuilt once for that updated record set; importantly, Pisi no longer recursively scans the whole project and reparses unrelated documents for ordinary bounded node/map watcher events.
+
+## Fail-closed rebuild cases
+
+A full source rebuild remains the correct fallback when:
+
+- the base index is not ready;
+- a full build is already in progress;
+- a watcher path is directory-like or otherwise ambiguous;
+- a scoped batch is too large;
+- the parent folder cannot verify a suspected deletion;
+- an existing node/map cannot be read consistently;
+- the active project or base generation changes while a delta is being prepared.
+
+The delta is disposable. Failure never changes canonical data and never attempts to repair an authority from projection state.
 
 ## Live editor overlay
 
@@ -99,9 +120,10 @@ If a future cache is stored under the project, it should live in an explicitly d
 
 The architecture now permits these optimizations without changing consumers:
 
-1. document-scoped source upsert/remove events instead of broad rebuilds;
-2. coalesced background indexing and project-open warmup;
-3. persisted disposable manifest/cache if startup profiling justifies it;
-4. SQLite FTS driver if 10k+ representative projects show the in-memory accelerator cannot meet release latency targets.
+1. avoid reparsing unchanged documents inside large map-only membership/layout deltas;
+2. coalesce/warm indexing around project open and idle periods;
+3. move the base search source projection itself behind the same physical driver contract if profiling justifies it;
+4. add a persisted disposable manifest/cache only if startup profiling justifies it;
+5. add a SQLite FTS driver only if representative 10k+ projects show the memory driver cannot meet release latency targets.
 
 Performance work must be driven by profiling. The current search correctness/ranking semantics remain unchanged.
