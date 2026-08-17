@@ -57,6 +57,7 @@ function makeClassList() {
 }
 
 function makeElement(tagName = 'div') {
+    const listeners = Object.create(null);
     return {
         tagName: String(tagName).toUpperCase(),
         className: '',
@@ -65,6 +66,7 @@ function makeElement(tagName = 'div') {
         children: [],
         hidden: false,
         textContent: '',
+        listeners,
         append(...nodes) {
             this.children.push(...nodes);
         },
@@ -75,7 +77,10 @@ function makeElement(tagName = 'div') {
         replaceChildren(...nodes) {
             this.children = [...nodes];
         },
-        addEventListener() {},
+        addEventListener(type, handler) {
+            if (!listeners[type]) listeners[type] = [];
+            listeners[type].push(handler);
+        },
         querySelector() {
             return null;
         }
@@ -190,7 +195,8 @@ function makeMixedMenuItems(trigger = '/') {
         },
         {
             kind: 'latex', id: 'frac', label: 'frac',
-            category: 'LaTeX · Yapı', typedToken: `${trigger}frac`, description: 'Fraction'
+            category: 'LaTeX · Yapı', typedToken: `${trigger}frac`, description: 'Fraction',
+            template: '\\frac{__PISI_CURSOR__}{}'
         },
         {
             kind: 'format', id: 'bold', label: 'Bold',
@@ -298,6 +304,91 @@ test('standard LaTeX snippets are available by default and disappear when prefer
     assert.ok(!unified.pisiUnifiedCommandState.items.some((item) => item.kind === 'latex'));
 });
 
+test('clicking a routed LaTeX item removes the command token and inserts the template', async () => {
+    const { preferences, routing, unified } = await loadModules();
+    localStorage.clear();
+    preferences.setPisiLatexCommandsPreference(true);
+
+    let deleted = false;
+    let insertedNode = null;
+    let caretOffset = null;
+    let focused = false;
+    let dispatchedInput = null;
+
+    window.makeRangeInElementByTextOffsets = () => ({
+        deleteContents() {
+            deleted = true;
+        },
+        insertNode(node) {
+            insertedNode = node;
+        }
+    });
+    document.createTextNode = (value) => ({ nodeValue: String(value) });
+    document.createRange = () => ({
+        setStart(node, offset) {
+            assert.equal(node, insertedNode);
+            caretOffset = offset;
+        },
+        collapse() {}
+    });
+    window.getSelection = () => ({
+        removeAllRanges() {},
+        addRange() {}
+    });
+    global.InputEvent = class InputEvent {
+        constructor(type, init = {}) {
+            this.type = type;
+            Object.assign(this, init);
+        }
+    };
+
+    const editor = {
+        focus() {
+            focused = true;
+        },
+        dispatchEvent(event) {
+            dispatchedInput = event;
+            return true;
+        }
+    };
+    const command = {
+        trigger: '/',
+        body: 'frac',
+        block: {},
+        tokenStartInText: 0,
+        tokenEndInText: 5,
+        editor
+    };
+    const frac = unified.PISI_LATEX_COMMANDS.find((item) => item.id === 'frac');
+    const item = {
+        ...frac,
+        kind: 'latex',
+        label: 'frac',
+        typedToken: '/frac'
+    };
+
+    resetUnifiedState(unified, editor, [item]);
+    assert.equal(routing.renderPisiRoutedUnifiedMenu(editor, command), true);
+
+    const fragment = activeMenu.children[0];
+    const option = fragment.children.find((child) => child.tagName === 'BUTTON');
+    assert.ok(option, 'routed LaTeX option should be rendered as a button');
+    assert.equal(option.listeners.mousedown?.length, 1);
+
+    option.listeners.mousedown[0]({
+        preventDefault() {},
+        stopPropagation() {}
+    });
+
+    assert.equal(deleted, true);
+    assert.equal(insertedNode?.nodeValue, '\\frac{}{}');
+    assert.equal(caretOffset, '\\frac{'.length);
+    assert.equal(focused, true);
+    assert.equal(dispatchedInput?.type, 'input');
+    assert.equal(dispatchedInput?.inputType, 'insertText');
+    assert.equal(dispatchedInput?.data, '\\frac{}{}');
+});
+
 test('.. commands preference defaults on and gates the alternate command menu', async () => {
     const { preferences, routing, unified } = await loadModules();
     localStorage.clear();
@@ -345,5 +436,6 @@ test('Preferences UI exposes and wires LaTeX and .. command toggles', () => {
     assert.match(routing, /kind === 'user' \|\| item\.kind === 'new-user' \|\| item\.kind === 'system'/);
     assert.match(routing, /body === 'todo'/);
     assert.match(routing, /body === 'done'/);
+    assert.match(routing, /runPisiExtendedUnifiedCommandItem\(editor, activeCommand, item\)/);
     assert.match(routing, /editor\.addEventListener\('keydown',[\s\S]*true\);/);
 });
