@@ -3,9 +3,22 @@ import {
     getPisiDoubleDotCommandsPreference,
     getPisiLatexCommandsPreference
 } from './pisi-editor-command-preferences.mjs';
-import { runPisiExtendedUnifiedCommandItem } from './pisi-unified-command-formatting.mjs';
+import {
+    buildPisiUnifiedCommandItems,
+    closePisiUnifiedCommandMenu,
+    pisiUnifiedCommandState
+} from './pisi-unified-command-menu.mjs';
+import {
+    buildPisiWritingCommandItems,
+    comparePisiExtendedUnifiedItems,
+    runPisiExtendedUnifiedCommandItem
+} from './pisi-unified-command-formatting.mjs';
 
 const PISI_EDITOR_TOKEN_CHARS = 'A-Za-z0-9ğüşöçıİĞÜŞÖÇ_-';
+
+function normalizePisiCommandId(value = '') {
+    return String(value || '').trim().toLocaleLowerCase('tr-TR');
+}
 
 function getPisiTokenAtCaret(editor, mode = 'any') {
     const selection = window.getSelection?.();
@@ -44,9 +57,7 @@ function getPisiTokenAtCaret(editor, mode = 'any') {
     if (!match) return null;
 
     const token = match[2];
-    const body = trigger === '..'
-        ? token.slice(2)
-        : token.slice(1);
+    const body = trigger === '..' ? token.slice(2) : token.slice(1);
 
     return {
         editor,
@@ -108,6 +119,8 @@ function buildPisiHashTagItems(command) {
 
 function openPisiHashTagMenu(editor, command) {
     const items = buildPisiHashTagItems(command);
+    closePisiUnifiedCommandMenu();
+
     if (!items.length) {
         if (window.pisiTagMenuState?.mode === 'hash-tags') {
             window.closePisiTagMenu?.();
@@ -115,7 +128,6 @@ function openPisiHashTagMenu(editor, command) {
         return false;
     }
 
-    window.closePisiUnifiedCommandMenu?.();
     window.openPisiTagMenuForEditor?.(editor, {
         ...command,
         mode: 'hash-tags',
@@ -124,53 +136,107 @@ function openPisiHashTagMenu(editor, command) {
     return true;
 }
 
-function closePisiCommandMenusForDisabledDoubleDot(editor) {
-    const command = getPisiTokenAtCaret(editor, 'command');
-    if (command?.trigger !== '..') return false;
-    if (getPisiDoubleDotCommandsPreference()) return false;
-
-    window.closePisiUnifiedCommandMenu?.();
-    if (window.pisiTagMenuState?.editor === editor) {
-        window.closePisiTagMenu?.();
+function normalizePisiBlockCommandItem(item) {
+    if (item?.kind === 'block' && item.id === 'bullet') {
+        return {
+            ...item,
+            category: 'Formatting · Lists',
+            description: 'Madde işaretli liste bloğu',
+            aliases: [...(item.aliases || []), 'bullet list', 'madde', 'maddeleme']
+        };
     }
-    return true;
+    if (item?.kind === 'block' && item.id === 'number') {
+        return {
+            ...item,
+            category: 'Formatting · Lists',
+            description: 'Numaralı liste bloğu',
+            aliases: [...(item.aliases || []), 'numbered list', 'numbering', 'numarali', 'numaralı']
+        };
+    }
+    return item;
 }
 
-function isPisiAllowedUnifiedItem(item) {
-    if (!item) return false;
-    if (item.kind === 'user' || item.kind === 'new-user' || item.kind === 'system') {
-        return false;
-    }
-    if (item.kind === 'latex' && !getPisiLatexCommandsPreference()) {
-        return false;
-    }
+function buildPisiFinalCommandItems(command) {
+    if (!command || !['/', '..'].includes(command.trigger)) return [];
+    if (command.trigger === '..' && !getPisiDoubleDotCommandsPreference()) return [];
+
+    const writingItems = buildPisiWritingCommandItems(command);
+    const baseItems = buildPisiUnifiedCommandItems(command)
+        .map(normalizePisiBlockCommandItem)
+        .filter((item) => item.kind !== 'latex' || getPisiLatexCommandsPreference());
+
+    const seen = new Set();
+    return [...writingItems, ...baseItems]
+        .filter((item) => {
+            const key = `${item.kind}:${normalizePisiCommandId(item.id)}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        })
+        .sort(comparePisiExtendedUnifiedItems)
+        .slice(0, 120);
+}
+
+function getPisiCommandMenuElement() {
+    return document.getElementById('pisi-tag-menu');
+}
+
+function syncPisiCommandMenuSelection() {
+    const menu = getPisiCommandMenuElement();
+    if (!menu || !pisiUnifiedCommandState.active) return;
+    menu.querySelectorAll('.pisi-unified-command-option').forEach((option) => {
+        option.classList.toggle(
+            'active',
+            Number(option.dataset.pisiUnifiedIndex) === pisiUnifiedCommandState.selectedIndex
+        );
+    });
+    menu.querySelector(
+        `.pisi-unified-command-option[data-pisi-unified-index="${pisiUnifiedCommandState.selectedIndex}"]`
+    )?.scrollIntoView?.({ block: 'nearest' });
+}
+
+function movePisiCommandMenuSelection(delta) {
+    const count = pisiUnifiedCommandState.items.length;
+    if (!count) return false;
+    pisiUnifiedCommandState.selectedIndex = (
+        pisiUnifiedCommandState.selectedIndex + delta + count
+    ) % count;
+    syncPisiCommandMenuSelection();
     return true;
 }
 
 function renderPisiRoutedUnifiedMenu(editor, command) {
-    const state = window.pisiUnifiedCommandState;
-    const menu = document.getElementById('pisi-tag-menu');
-    if (!state?.active || state.editor !== editor || !menu) return false;
+    const menu = getPisiCommandMenuElement();
+    if (!menu || !editor || !command) return false;
 
-    const activeCommand = command || state.command;
-    if (!activeCommand) return false;
-
-    if (activeCommand.trigger === '..' && !getPisiDoubleDotCommandsPreference()) {
-        window.closePisiUnifiedCommandMenu?.();
-        return false;
-    }
-
-    const items = (Array.isArray(state.items) ? state.items : [])
-        .filter(isPisiAllowedUnifiedItem);
-
+    const items = buildPisiFinalCommandItems(command);
     if (!items.length) {
-        window.closePisiUnifiedCommandMenu?.();
+        closePisiUnifiedCommandMenu();
         return false;
     }
 
-    state.command = activeCommand;
-    state.items = items;
-    state.selectedIndex = Math.min(state.selectedIndex, items.length - 1);
+    if (window.pisiTagMenuState?.active) {
+        window.closePisiTagMenu?.();
+    }
+
+    const previousBody = pisiUnifiedCommandState.command?.body;
+    const previousTrigger = pisiUnifiedCommandState.command?.trigger;
+    if (
+        pisiUnifiedCommandState.editor !== editor ||
+        previousBody !== command.body ||
+        previousTrigger !== command.trigger
+    ) {
+        pisiUnifiedCommandState.selectedIndex = 0;
+    }
+
+    pisiUnifiedCommandState.active = true;
+    pisiUnifiedCommandState.editor = editor;
+    pisiUnifiedCommandState.command = command;
+    pisiUnifiedCommandState.items = items;
+    pisiUnifiedCommandState.selectedIndex = Math.min(
+        pisiUnifiedCommandState.selectedIndex,
+        items.length - 1
+    );
 
     const fragment = document.createDocumentFragment();
     let previousCategory = '';
@@ -187,7 +253,7 @@ function renderPisiRoutedUnifiedMenu(editor, command) {
         const option = document.createElement('button');
         option.type = 'button';
         option.className = `pisi-tag-option pisi-unified-command-option ${item.kind}`;
-        option.classList.toggle('active', index === state.selectedIndex);
+        option.classList.toggle('active', index === pisiUnifiedCommandState.selectedIndex);
         option.dataset.pisiUnifiedIndex = String(index);
 
         const code = document.createElement('span');
@@ -202,7 +268,7 @@ function renderPisiRoutedUnifiedMenu(editor, command) {
         option.addEventListener('mousedown', (event) => {
             event.preventDefault();
             event.stopPropagation();
-            void runPisiExtendedUnifiedCommandItem(editor, activeCommand, item);
+            void runPisiExtendedUnifiedCommandItem(editor, command, item);
         });
         fragment.appendChild(option);
     });
@@ -214,11 +280,17 @@ function renderPisiRoutedUnifiedMenu(editor, command) {
     return true;
 }
 
+function closePisiRoutedMenuForEditor(editor) {
+    if (pisiUnifiedCommandState.active && pisiUnifiedCommandState.editor === editor) {
+        closePisiUnifiedCommandMenu();
+    }
+}
+
 function routePisiEditorToken(editor) {
     const tagCommand = getPisiTokenAtCaret(editor, 'tag');
     if (tagCommand) {
         openPisiHashTagMenu(editor, tagCommand);
-        return;
+        return 'tag';
     }
 
     if (window.pisiTagMenuState?.mode === 'hash-tags') {
@@ -226,22 +298,67 @@ function routePisiEditorToken(editor) {
     }
 
     const command = getPisiTokenAtCaret(editor, 'command');
-    if (!command) return;
+    if (!command) {
+        closePisiRoutedMenuForEditor(editor);
+        return null;
+    }
 
     if (command.trigger === '..' && !getPisiDoubleDotCommandsPreference()) {
-        closePisiCommandMenusForDisabledDoubleDot(editor);
-        return;
+        closePisiRoutedMenuForEditor(editor);
+        return null;
     }
 
     renderPisiRoutedUnifiedMenu(editor, command);
+    return 'command';
 }
 
 function schedulePisiEditorTokenRouting(editor) {
     queueMicrotask(() => routePisiEditorToken(editor));
 }
 
+function getExactPisiCommandMenuItem(command) {
+    const body = normalizePisiCommandId(command?.body);
+    if (!body) return null;
+    return pisiUnifiedCommandState.items.find((item) => {
+        return normalizePisiCommandId(item.id) === body;
+    }) || null;
+}
+
 function handlePisiEditorTokenKeydown(editor, event) {
     if (event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
+
+    if (
+        pisiUnifiedCommandState.active &&
+        pisiUnifiedCommandState.editor === editor
+    ) {
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            movePisiCommandMenuSelection(event.key === 'ArrowDown' ? 1 : -1);
+            return;
+        }
+
+        if (event.key === 'Enter' || event.key === 'Tab') {
+            const item = pisiUnifiedCommandState.items[pisiUnifiedCommandState.selectedIndex];
+            if (!item) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            void runPisiExtendedUnifiedCommandItem(
+                editor,
+                pisiUnifiedCommandState.command,
+                item
+            );
+            return;
+        }
+
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            closePisiUnifiedCommandMenu();
+            return;
+        }
+    }
+
     if (event.key !== ' ') return;
 
     const tagCommand = getPisiTokenAtCaret(editor, 'tag');
@@ -260,33 +377,21 @@ function handlePisiEditorTokenKeydown(editor, event) {
 
     const command = getPisiTokenAtCaret(editor, 'command');
     if (!command) return;
+    if (command.trigger === '..' && !getPisiDoubleDotCommandsPreference()) return;
 
-    if (command.trigger === '..' && !getPisiDoubleDotCommandsPreference()) {
-        // Keep ".." as normal text when the alternative command trigger is disabled.
-        // Stop the legacy tag listener from converting it into a tag, but allow the
-        // browser to insert the requested space.
-        event.stopImmediatePropagation();
-        return;
+    if (
+        !pisiUnifiedCommandState.active ||
+        pisiUnifiedCommandState.editor !== editor
+    ) {
+        renderPisiRoutedUnifiedMenu(editor, command);
     }
 
-    const body = String(command.body || '').trim().toLowerCase();
-    if (body === 'todo') {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        window.openPisiTodoPriorityMenu?.(editor, command);
-        return;
-    }
+    const exact = getExactPisiCommandMenuItem(command);
+    if (!exact) return;
 
-    if (body === 'done') {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        window.applyPisiDoneCommandToEditor?.(editor, command);
-        return;
-    }
-
-    // Slash and double-dot tokens are commands, never user tags. Let the browser
-    // insert a normal space for unknown text, but block the legacy tag shortcut.
+    event.preventDefault();
     event.stopImmediatePropagation();
+    void runPisiExtendedUnifiedCommandItem(editor, command, exact);
 }
 
 function bindPisiEditorTokenRouting(editor) {
@@ -321,29 +426,41 @@ function initializePisiEditorTokenRouting() {
 
     document.addEventListener('pisi:active-node-changed', refreshPisiEditorTokenRouting);
     document.addEventListener('pisi:editor-command-preferences-changed', () => {
-        const active = window.pisiUnifiedCommandState?.editor;
+        const active = pisiUnifiedCommandState.editor;
         if (active) schedulePisiEditorTokenRouting(active);
         else refreshPisiEditorTokenRouting();
+    });
+
+    document.addEventListener('mousedown', (event) => {
+        if (!pisiUnifiedCommandState.active) return;
+        const menu = getPisiCommandMenuElement();
+        if (menu?.contains(event.target)) return;
+        if (pisiUnifiedCommandState.editor?.contains(event.target)) return;
+        closePisiUnifiedCommandMenu();
     });
 }
 
 const moduleApi = {
+    buildPisiFinalCommandItems,
     buildPisiHashTagItems,
     getPisiTokenAtCaret,
     initializePisiEditorTokenRouting,
     openPisiHashTagMenu,
     refreshPisiEditorTokenRouting,
-    renderPisiRoutedUnifiedMenu
+    renderPisiRoutedUnifiedMenu,
+    routePisiEditorToken
 };
 
 registerModule('editor.commandRouting', moduleApi);
 initializePisiEditorTokenRouting();
 
 export {
+    buildPisiFinalCommandItems,
     buildPisiHashTagItems,
     getPisiTokenAtCaret,
     initializePisiEditorTokenRouting,
     openPisiHashTagMenu,
     refreshPisiEditorTokenRouting,
-    renderPisiRoutedUnifiedMenu
+    renderPisiRoutedUnifiedMenu,
+    routePisiEditorToken
 };
