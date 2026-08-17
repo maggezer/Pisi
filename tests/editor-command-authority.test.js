@@ -57,39 +57,59 @@ test('underline and strike preserve the other active decoration', async () => {
     );
 });
 
-test('command authority owns toolbar and unified-menu inline commands', () => {
+test('text authority owns persistent toolbar and command-menu inline formatting', () => {
     const source = read('renderer/editor/pisi-editor-command-authority.mjs');
 
     assert.match(source, /handlePisiAuthorityToolbarClick/);
-    assert.match(source, /button\[data-pisi-unified-command\]/);
-    assert.match(source, /handlePisiAuthorityMenuPointerDown/);
-    assert.match(source, /pisi-unified-command-option/);
+    assert.match(source, /handlePisiAuthorityBeforeInput/);
+    assert.match(source, /pisiAuthorityTypingStyles/);
     assert.match(source, /runPisiAuthoritativeMenuInlineCommand/);
     assert.match(source, /applyPisiAuthorityMutationToRange/);
     assert.match(source, /pisi-inline-command-style/);
+    assert.match(source, /pisi-typing-style/);
     assert.match(source, /event\.stopImmediatePropagation\(\)/);
+
+    assert.doesNotMatch(source, /pisi-block-slash-menu/);
+    assert.doesNotMatch(source, /removePisiLegacyBlockSlashMenus/);
+    assert.doesNotMatch(source, /schedulePisiLegacyCommandMenuCleanup/);
+    assert.doesNotMatch(source, /handlePisiAuthorityMenuPointerDown/);
 });
 
-test('legacy slash popup is removed and command typing cleans legacy tag menu', () => {
-    const authority = read('renderer/editor/pisi-editor-command-authority.mjs');
+test('legacy slash popup and legacy slash tag parser are deleted from production source', () => {
+    const blocks = read('renderer/editor/pisi-block-editor.mjs');
+    const tags = read('renderer/tags/pisi-tag-editor.mjs');
+    const routing = read('renderer/editor/pisi-editor-command-routing.mjs');
+    const platformStyles = read('styles/59-platform-system.css');
+    const interactionStyles = read('styles/92-interaction-fixes.css');
 
-    assert.match(authority, /removePisiLegacyBlockSlashMenus/);
-    assert.match(authority, /document\.querySelectorAll\('\.pisi-block-slash-menu'\)/);
-    assert.match(authority, /\.forEach\(\(menu\) => menu\.remove\(\)\)/);
-    assert.match(authority, /schedulePisiLegacyCommandMenuCleanup/);
-    assert.match(authority, /window\.closePisiTagMenu\?\.\(\)/);
-    assert.match(authority, /event\.key === '\/'/);
-    assert.match(authority, /MutationObserver/);
+    assert.doesNotMatch(blocks, /ensurePisiSlashMenu|renderPisiSlashMenu|openPisiSlashMenu|isPisiSlashMenuOpen/);
+    assert.doesNotMatch(blocks, /pisi-block-slash-menu|pisi-block-slash-item/);
+    assert.doesNotMatch(tags, /getPisiEditorCommandAtCaret|updatePisiTagMenuForEditor|buildPisiTagMenuItems/);
+    assert.doesNotMatch(tags, /PISI_SYSTEM_TAGS|applyPisiSystemTagToEditor|applyPisiHeadingTagToEditor/);
+    assert.doesNotMatch(platformStyles, /pisi-block-slash-menu|pisi-block-slash-item/);
+    assert.doesNotMatch(interactionStyles, /pisi-block-slash-menu/);
+
+    assert.match(routing, /function renderPisiRoutedUnifiedMenu/);
+    assert.match(routing, /function buildPisiFinalCommandItems/);
+    assert.match(routing, /runPisiExtendedUnifiedCommandItem\(editor, command, item\)/);
 });
 
-test('authority loads after routing and word behavior', () => {
+test('single command router loads after tag, block, formatting and text authority services', () => {
     const bootstrap = read('renderer/bootstrap.mjs');
 
-    const routing = bootstrap.indexOf('pisi-editor-command-routing.mjs');
+    const tag = bootstrap.indexOf('pisi-tag-editor.mjs');
+    const block = bootstrap.indexOf('pisi-block-editor.mjs');
+    const unified = bootstrap.indexOf('pisi-unified-command-menu.mjs');
+    const formatting = bootstrap.indexOf('pisi-unified-command-formatting.mjs');
     const word = bootstrap.indexOf('pisi-editor-word-behavior.mjs');
     const authority = bootstrap.indexOf('pisi-editor-command-authority.mjs');
+    const routing = bootstrap.indexOf('pisi-editor-command-routing.mjs');
 
-    assert.ok(routing >= 0);
-    assert.ok(word > routing);
+    assert.ok(tag >= 0);
+    assert.ok(block > tag);
+    assert.ok(unified > block);
+    assert.ok(formatting > unified);
+    assert.ok(word > formatting);
     assert.ok(authority > word);
+    assert.ok(routing > authority);
 });
