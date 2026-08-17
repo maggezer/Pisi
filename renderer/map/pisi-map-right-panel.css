@@ -23,7 +23,6 @@
 .pisi-mindmap-panel-header {
     margin: 0 0 12px;
     padding: 0 2px 10px;
-    border-bottom: 1px solid #383a3f;
 }
 
 .pisi-mindmap-panel-title {
@@ -131,11 +130,6 @@
 #right-tab-mindmap .pisi-map-scope-filter-chip {
     width: auto;
     max-width: 100%;
-}
-
-html[data-pisi-theme="light"] .pisi-mindmap-panel-header,
-body.pisi-light-theme .pisi-mindmap-panel-header {
-    border-bottom-color: #d8dbe0;
 }
 
 html[data-pisi-theme="light"] .pisi-mindmap-panel-description,
