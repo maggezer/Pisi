@@ -153,6 +153,8 @@ function getPisiAuthorityEffectiveStyle(editor, range) {
 
 function clonePisiAuthorityStyleShell(span) {
     const clone = span.cloneNode(false);
+    clone.classList.remove('pisi-typing-style');
+    clone.removeAttribute('data-pisi-authority-typing');
     clone.removeAttribute('data-pisi-authority-signature');
     return clone;
 }
@@ -164,6 +166,13 @@ function hasPisiAuthorityFragmentContent(fragment) {
 function normalizePisiAuthorityDecorationValue(value) {
     const decorations = parsePisiTextDecorations({ textDecoration: value });
     return decorations.size ? Array.from(decorations).join(' ') : 'none';
+}
+
+function getPisiAuthorityRemovedDecorations(style, mutation) {
+    if (mutation?.property !== 'textDecoration') return new Set();
+    const current = parsePisiTextDecorations(style || {});
+    const next = parsePisiTextDecorations({ textDecoration: mutation.value });
+    return new Set(Array.from(current).filter((item) => !next.has(item)));
 }
 
 function removePisiAuthorityDecorationsFromSubtree(root, removedDecorations) {
@@ -204,19 +213,12 @@ function getPisiAuthorityDecorationAncestor(editor, node, removedDecorations) {
     return null;
 }
 
-function splitPisiAuthorityDecorationAncestor(editor, range, mutation) {
+function splitPisiAuthorityDecorationSelection(editor, range, mutation, style) {
     if (!editor || !range || range.collapsed || mutation?.property !== 'textDecoration') {
         return false;
     }
 
-    const nextDecorations = parsePisiTextDecorations({ textDecoration: mutation.value });
-    const startElement = getPisiAuthorityElementFromRange(editor, range);
-    const currentDecorations = parsePisiTextDecorations(
-        startElement ? getComputedStyle(startElement) : {}
-    );
-    const removedDecorations = new Set(
-        Array.from(currentDecorations).filter((item) => !nextDecorations.has(item))
-    );
+    const removedDecorations = getPisiAuthorityRemovedDecorations(style, mutation);
     if (!removedDecorations.size) return false;
 
     const startSpan = getPisiAuthorityDecorationAncestor(
@@ -272,16 +274,76 @@ function splitPisiAuthorityDecorationAncestor(editor, range, mutation) {
     return true;
 }
 
-function applyPisiAuthorityMutationToRange(editor, range, mutation) {
+function splitPisiAuthorityDecorationCaret(editor, range, mutation, style) {
+    if (!editor || !range?.collapsed || mutation?.property !== 'textDecoration') {
+        return false;
+    }
+
+    const removedDecorations = getPisiAuthorityRemovedDecorations(style, mutation);
+    if (!removedDecorations.size) return false;
+
+    const span = getPisiAuthorityDecorationAncestor(
+        editor,
+        range.startContainer,
+        removedDecorations
+    );
+    if (!span || !span.parentNode) return false;
+
+    const beforeRange = document.createRange();
+    beforeRange.selectNodeContents(span);
+    beforeRange.setEnd(range.startContainer, range.startOffset);
+    const beforeFragment = beforeRange.cloneContents();
+
+    const afterRange = document.createRange();
+    afterRange.selectNodeContents(span);
+    afterRange.setStart(range.startContainer, range.startOffset);
+    const afterFragment = afterRange.cloneContents();
+
+    const replacement = document.createDocumentFragment();
+    if (hasPisiAuthorityFragmentContent(beforeFragment)) {
+        const beforeSpan = clonePisiAuthorityStyleShell(span);
+        beforeSpan.appendChild(beforeFragment);
+        replacement.appendChild(beforeSpan);
+    }
+
+    const caretText = document.createTextNode('');
+    replacement.appendChild(caretText);
+
+    if (hasPisiAuthorityFragmentContent(afterFragment)) {
+        const afterSpan = clonePisiAuthorityStyleShell(span);
+        afterSpan.appendChild(afterFragment);
+        replacement.appendChild(afterSpan);
+    }
+
+    span.replaceWith(replacement);
+    range.setStart(caretText, 0);
+    range.collapse(true);
+    selectPisiAuthorityRange(range);
+    return true;
+}
+
+function applyPisiAuthorityMutationToRange(editor, range, mutation, command, style) {
     if (!editor || !range || !mutation?.property) return false;
 
     if (range.collapsed) {
+        splitPisiAuthorityDecorationCaret(editor, range, mutation, style);
         setPisiAuthorityTypingStyle(editor, mutation.property, mutation.value);
         return true;
     }
 
-    if (splitPisiAuthorityDecorationAncestor(editor, range, mutation)) {
+    if (splitPisiAuthorityDecorationSelection(editor, range, mutation, style)) {
         return true;
+    }
+
+    const removedDecorations = getPisiAuthorityRemovedDecorations(style, mutation);
+    if (
+        mutation.property === 'textDecoration' &&
+        removedDecorations.size &&
+        ['underline', 'strikeThrough'].includes(command) &&
+        typeof document.execCommand === 'function'
+    ) {
+        selectPisiAuthorityRange(range);
+        return document.execCommand(command, false, null) !== false;
     }
 
     const startBlock = getPisiAuthorityBlock(editor, range.startContainer);
@@ -366,7 +428,13 @@ function applyPisiAuthoritativeInlineCommand(editor, range, command) {
     const mutation = resolvePisiInlineTextMutation(command, style);
     if (!mutation) return false;
 
-    const changed = applyPisiAuthorityMutationToRange(editor, range, mutation);
+    const changed = applyPisiAuthorityMutationToRange(
+        editor,
+        range,
+        mutation,
+        command,
+        style
+    );
     if (!changed) return false;
 
     notifyPisiAuthorityEditorChanged(editor);
