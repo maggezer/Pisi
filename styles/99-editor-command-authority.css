@@ -1,0 +1,4 @@
+/* The unified / and .. command menu is the only command popup. */
+.pisi-block-slash-menu {
+    display: none !important;
+}
