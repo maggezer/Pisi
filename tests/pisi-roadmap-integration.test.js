@@ -152,9 +152,10 @@ test('Plugins ve Team altyapıları ilk sürümden tamamen çıkarılmıştır',
     assert.doesNotMatch(readme, /Eklenti|Team API|renderer\/team/);
 });
 
-test('editör imleci otomatik kayıtta korunur ve Enter yeni satıra bırakılır', () => {
+test('editör imleci otomatik kayıtta korunur, Enter yeni satıra bırakılır ve eski slash popup yoktur', () => {
     const nodeEditor = read('renderer/editor/pisi-node-editor.mjs');
     const blocks = read('renderer/editor/pisi-block-editor.mjs');
+    const routing = read('renderer/editor/pisi-editor-command-routing.mjs');
     const tabs = read('renderer/shell/pisi-tabs.mjs');
     const platformStyles = read('styles/59-platform-system.css');
 
@@ -169,10 +170,11 @@ test('editör imleci otomatik kayıtta korunur ve Enter yeni satıra bırakılı
         2
     );
     assert.match(tabs, /shouldSuppressFileSystemRefresh\(\)/);
-    assert.match(blocks, /function isPisiSlashMenuOpen\(\)/);
-    assert.match(blocks, /if \(isPisiSlashMenuOpen\(\)\)/);
+    assert.doesNotMatch(blocks, /isPisiSlashMenuOpen|openPisiSlashMenu|ensurePisiSlashMenu|pisi-block-slash-menu/);
+    assert.match(blocks, /applyPisiMarkdownBlockShortcut\(event, block\)/);
+    assert.match(routing, /renderPisiRoutedUnifiedMenu/);
     assert.doesNotMatch(blocks, /pisi-block-toolbar/);
-    assert.doesNotMatch(platformStyles, /\.pisi-block-toolbar/);
+    assert.doesNotMatch(platformStyles, /\.pisi-block-toolbar|\.pisi-block-slash-menu/);
 });
 
 test('Pisi geçmişi gizlenir ve yeniden adlandırma alanları klavyeyi korur', () => {
