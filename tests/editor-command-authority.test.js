@@ -114,7 +114,18 @@ test('typing format state only overrides a collapsed caret and resets on navigat
     assert.match(source, /clearPisiAuthorityTypingStyles\(editor\)/);
 });
 
-test('toolbar state is re-synced from DOM then corrected by active typing overrides', () => {
+test('nested underline and strike state is resolved through ancestors', () => {
+    const source = read('renderer/editor/pisi-editor-command-authority.mjs');
+
+    assert.match(source, /function getPisiAuthorityDecorationsAtRange/);
+    assert.match(source, /while \(element && editor\.contains\(element\)\)/);
+    assert.match(source, /addPisiAuthorityDecorations\(decorations, getComputedStyle\(element\)\)/);
+    assert.match(source, /tag === 'u'/);
+    assert.match(source, /tag === 's' \|\| tag === 'strike'/);
+    assert.match(source, /getPisiAuthorityEffectiveStyle\(editor, range\)/);
+});
+
+test('toolbar state has one final inline authority after legacy Word synchronization', () => {
     const source = read('renderer/editor/pisi-editor-command-authority.mjs');
     const syncStart = source.indexOf('function syncPisiAuthorityToolbarState');
     const syncEnd = source.indexOf('\n}\n', syncStart);
@@ -127,6 +138,10 @@ test('toolbar state is re-synced from DOM then corrected by active typing overri
         syncBody.indexOf('syncPisiWordToolbarState') <
         syncBody.indexOf('syncPisiAuthorityToolbarTypingState')
     );
+    assert.match(source, /function getPisiAuthorityCommandActive/);
+    assert.match(source, /getPisiAuthorityCurrentRange\(editor\)/);
+    assert.match(source, /window\.addEventListener\('keyup', handlePisiAuthorityPostEditorEvent\)/);
+    assert.match(source, /window\.addEventListener\('input', handlePisiAuthorityPostEditorEvent\)/);
 });
 
 test('legacy slash popup and legacy slash tag parser are deleted from production source', () => {
