@@ -14,3 +14,11 @@ html body #node-modal-overlay {
     -webkit-backdrop-filter: blur(6px);
     backdrop-filter: blur(6px);
 }
+
+/* Editor command popups live outside the editor/modal DOM. Keep them above the
+   node modal so / and .. menus remain visible and interactive while editing. */
+html body .pisi-block-slash-menu,
+html body #pisi-tag-menu {
+    z-index: 31000 !important;
+    pointer-events: auto;
+}
