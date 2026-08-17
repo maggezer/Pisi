@@ -83,6 +83,12 @@ function makeElement(tagName = 'div') {
         },
         querySelector() {
             return null;
+        },
+        querySelectorAll() {
+            return [];
+        },
+        contains(node) {
+            return node === this || this.children.includes(node);
         }
     };
 }
@@ -90,7 +96,16 @@ function makeElement(tagName = 'div') {
 let activeMenu = null;
 
 global.localStorage = localStorageMock;
-global.window = {};
+global.window = {
+    PISI_BLOCK_SLASH_COMMANDS: [
+        { id: 'paragraph', label: 'Paragraf', slash: 'paragraph', action: 'block' },
+        { id: 'heading1', label: 'Başlık 1', slash: 'heading1', action: 'block' },
+        { id: 'bullet', label: 'Madde', slash: 'bullet', action: 'block' },
+        { id: 'number', label: 'Numara', slash: 'number', action: 'block' },
+        { id: 'task', label: 'Görev', slash: 'todo', action: 'todo' },
+        { id: 'done', label: 'Tamamlandı', slash: 'done', action: 'done' }
+    ]
+};
 global.document = {
     readyState: 'loading',
     body: null,
@@ -115,11 +130,11 @@ function loadModules() {
             const preferences = await import(pathToFileURL(
                 path.join(root, 'renderer/editor/pisi-editor-command-preferences.mjs')
             ).href);
-            const routing = await import(pathToFileURL(
-                path.join(root, 'renderer/editor/pisi-editor-command-routing.mjs')
-            ).href);
             const unified = await import(pathToFileURL(
                 path.join(root, 'renderer/editor/pisi-unified-command-menu.mjs')
+            ).href);
+            const routing = await import(pathToFileURL(
+                path.join(root, 'renderer/editor/pisi-editor-command-routing.mjs')
             ).href);
             return { preferences, routing, unified };
         })();
@@ -161,48 +176,14 @@ function parseCaretToken(getPisiTokenAtCaret, text, mode) {
     return getPisiTokenAtCaret(editor, mode);
 }
 
-function resetUnifiedState(unified, editor, items) {
-    unified.pisiUnifiedCommandState.active = true;
-    unified.pisiUnifiedCommandState.editor = editor;
+function resetMenuState(unified) {
+    unified.pisiUnifiedCommandState.active = false;
+    unified.pisiUnifiedCommandState.editor = null;
     unified.pisiUnifiedCommandState.command = null;
-    unified.pisiUnifiedCommandState.items = items.map((item) => ({ ...item }));
+    unified.pisiUnifiedCommandState.items = [];
     unified.pisiUnifiedCommandState.selectedIndex = 0;
     activeMenu = makeElement('div');
     activeMenu.hidden = true;
-}
-
-function makeMixedMenuItems(trigger = '/') {
-    return [
-        {
-            kind: 'user', id: 'project', label: 'project',
-            category: 'Tags · User', typedToken: `${trigger}project`, description: 'tag'
-        },
-        {
-            kind: 'new-user', id: 'newtag', label: 'newtag',
-            category: 'Tags · User', typedToken: `${trigger}newtag`, description: 'new tag'
-        },
-        {
-            kind: 'system', id: 'h2', label: 'h2',
-            category: 'Tags · System', typedToken: `${trigger}h2`, description: 'heading tag'
-        },
-        {
-            kind: 'todo-start', id: 'todo', label: 'todo',
-            category: 'Tasks', typedToken: `${trigger}todo`, description: 'Task'
-        },
-        {
-            kind: 'todo-done', id: 'done', label: 'done',
-            category: 'Tasks', typedToken: `${trigger}done`, description: 'Done'
-        },
-        {
-            kind: 'latex', id: 'frac', label: 'frac',
-            category: 'LaTeX · Yapı', typedToken: `${trigger}frac`, description: 'Fraction',
-            template: '\\frac{__PISI_CURSOR__}{}'
-        },
-        {
-            kind: 'format', id: 'bold', label: 'Bold',
-            category: 'Formatting · Text', typedToken: `${trigger}bold`, description: 'Bold'
-        }
-    ];
 }
 
 test('parser reserves # for tags and / or .. for editor commands', async () => {
@@ -251,30 +232,41 @@ test('hash-tag menu creates tags only from # tokens', async () => {
     assert.deepEqual(routing.buildPisiHashTagItems({ trigger: '..', body: 'project' }), []);
 });
 
-test('/ and .. routed menus remove tag commands but preserve todo and done', async () => {
-    const { preferences, routing, unified } = await loadModules();
+test('/ and .. build one command menu with formatting, lists, todo/done and LaTeX but no tags', async () => {
+    const { preferences, routing } = await loadModules();
     localStorage.clear();
     preferences.setPisiDoubleDotCommandsPreference(true);
     preferences.setPisiLatexCommandsPreference(true);
 
-    const editor = {};
     for (const trigger of ['/', '..']) {
-        resetUnifiedState(unified, editor, makeMixedMenuItems(trigger));
-        const rendered = routing.renderPisiRoutedUnifiedMenu(editor, {
-            trigger,
-            body: '',
-            editor
-        });
+        const items = routing.buildPisiFinalCommandItems({ trigger, body: '' });
+        const kinds = items.map((item) => item.kind);
+        const ids = new Set(items.map((item) => item.id));
 
-        assert.equal(rendered, true);
-        const kinds = unified.pisiUnifiedCommandState.items.map((item) => item.kind);
-        assert.ok(!kinds.includes('user'));
-        assert.ok(!kinds.includes('new-user'));
-        assert.ok(!kinds.includes('system'));
+        assert.ok(kinds.includes('format'));
+        assert.ok(kinds.includes('block'));
         assert.ok(kinds.includes('todo-start'));
         assert.ok(kinds.includes('todo-done'));
         assert.ok(kinds.includes('latex'));
-        assert.ok(kinds.includes('format'));
+        assert.ok(!kinds.includes('user'));
+        assert.ok(!kinds.includes('new-user'));
+        assert.ok(!kinds.includes('system'));
+        assert.ok(ids.has('bold'));
+        assert.ok(ids.has('italic'));
+        assert.ok(ids.has('bullet'));
+        assert.ok(ids.has('number'));
+        assert.ok(ids.has('todo'));
+        assert.ok(ids.has('done'));
+        assert.ok(ids.has('frac'));
+
+        assert.equal(
+            items.find((item) => item.id === 'bullet')?.category,
+            'Formatting · Lists'
+        );
+        assert.equal(
+            items.find((item) => item.id === 'number')?.category,
+            'Formatting · Lists'
+        );
     }
 });
 
@@ -291,23 +283,24 @@ test('standard LaTeX snippets are available by default and disappear when prefer
     assert.match(byId.get('int')?.template || '', /^\\int_/);
     assert.match(byId.get('matrix')?.template || '', /^\\begin\{matrix\}/);
 
-    const editor = {};
-    resetUnifiedState(unified, editor, makeMixedMenuItems('/'));
-    assert.equal(routing.renderPisiRoutedUnifiedMenu(editor, { trigger: '/', body: '', editor }), true);
-    assert.ok(unified.pisiUnifiedCommandState.items.some((item) => item.kind === 'latex'));
+    assert.ok(
+        routing.buildPisiFinalCommandItems({ trigger: '/', body: '' })
+            .some((item) => item.kind === 'latex')
+    );
 
     preferences.setPisiLatexCommandsPreference(false);
     assert.equal(preferences.getPisiLatexCommandsPreference(), false);
-
-    resetUnifiedState(unified, editor, makeMixedMenuItems('/'));
-    assert.equal(routing.renderPisiRoutedUnifiedMenu(editor, { trigger: '/', body: '', editor }), true);
-    assert.ok(!unified.pisiUnifiedCommandState.items.some((item) => item.kind === 'latex'));
+    assert.ok(
+        !routing.buildPisiFinalCommandItems({ trigger: '/', body: '' })
+            .some((item) => item.kind === 'latex')
+    );
 });
 
-test('clicking a routed LaTeX item removes the command token and inserts the template', async () => {
+test('routed /frac menu click removes the token and inserts the LaTeX template', async () => {
     const { preferences, routing, unified } = await loadModules();
     localStorage.clear();
     preferences.setPisiLatexCommandsPreference(true);
+    resetMenuState(unified);
 
     let deleted = false;
     let insertedNode = null;
@@ -359,20 +352,16 @@ test('clicking a routed LaTeX item removes the command token and inserts the tem
         tokenEndInText: 5,
         editor
     };
-    const frac = unified.PISI_LATEX_COMMANDS.find((item) => item.id === 'frac');
-    const item = {
-        ...frac,
-        kind: 'latex',
-        label: 'frac',
-        typedToken: '/frac'
-    };
 
-    resetUnifiedState(unified, editor, [item]);
     assert.equal(routing.renderPisiRoutedUnifiedMenu(editor, command), true);
+    assert.deepEqual(
+        unified.pisiUnifiedCommandState.items.map((item) => item.id),
+        ['frac']
+    );
 
     const fragment = activeMenu.children[0];
     const option = fragment.children.find((child) => child.tagName === 'BUTTON');
-    assert.ok(option, 'routed LaTeX option should be rendered as a button');
+    assert.ok(option, 'final routed LaTeX option should be rendered as a button');
     assert.equal(option.listeners.mousedown?.length, 1);
 
     option.listeners.mousedown[0]({
@@ -390,52 +379,58 @@ test('clicking a routed LaTeX item removes the command token and inserts the tem
 });
 
 test('.. commands preference defaults on and gates the alternate command menu', async () => {
-    const { preferences, routing, unified } = await loadModules();
+    const { preferences, routing } = await loadModules();
     localStorage.clear();
 
     assert.equal(preferences.getPisiDoubleDotCommandsPreference(), true);
-
-    const editor = {};
-    resetUnifiedState(unified, editor, makeMixedMenuItems('..'));
-    assert.equal(routing.renderPisiRoutedUnifiedMenu(editor, { trigger: '..', body: '', editor }), true);
+    assert.ok(routing.buildPisiFinalCommandItems({ trigger: '..', body: '' }).length > 0);
 
     preferences.setPisiDoubleDotCommandsPreference(false);
     assert.equal(preferences.getPisiDoubleDotCommandsPreference(), false);
-    resetUnifiedState(unified, editor, makeMixedMenuItems('..'));
-    assert.equal(routing.renderPisiRoutedUnifiedMenu(editor, { trigger: '..', body: '', editor }), false);
+    assert.deepEqual(routing.buildPisiFinalCommandItems({ trigger: '..', body: '' }), []);
 
     preferences.setPisiDoubleDotCommandsPreference(true);
     assert.equal(preferences.getPisiDoubleDotCommandsPreference(), true);
-    resetUnifiedState(unified, editor, makeMixedMenuItems('..'));
-    assert.equal(routing.renderPisiRoutedUnifiedMenu(editor, { trigger: '..', body: '', editor }), true);
+    assert.ok(routing.buildPisiFinalCommandItems({ trigger: '..', body: '' }).length > 0);
+});
+
+test('production source has one / and .. menu renderer and no legacy menu/parser implementation', () => {
+    const routing = read('renderer/editor/pisi-editor-command-routing.mjs');
+    const unified = read('renderer/editor/pisi-unified-command-menu.mjs');
+    const formatting = read('renderer/editor/pisi-unified-command-formatting.mjs');
+    const blocks = read('renderer/editor/pisi-block-editor.mjs');
+    const tags = read('renderer/tags/pisi-tag-editor.mjs');
+
+    assert.match(routing, /function renderPisiRoutedUnifiedMenu/);
+    assert.match(routing, /function buildPisiFinalCommandItems/);
+    assert.match(routing, /runPisiExtendedUnifiedCommandItem\(editor, command, item\)/);
+    assert.match(routing, /editor\.addEventListener\('keydown',[\s\S]*true\);/);
+
+    assert.doesNotMatch(unified, /addEventListener\('keydown'|initializePisiUnifiedEditorCommandMenu|renderPisiUnifiedCommandMenu/);
+    assert.doesNotMatch(formatting, /installPisiUnifiedCommandFormatting|renderPisiExtendedUnifiedMenu|addEventListener\('input'/);
+    assert.doesNotMatch(blocks, /pisi-block-slash-menu|openPisiSlashMenu|isPisiSlashMenuOpen/);
+    assert.doesNotMatch(tags, /getPisiEditorCommandAtCaret|updatePisiTagMenuForEditor|buildPisiTagMenuItems/);
 });
 
 test('Preferences UI exposes and wires LaTeX and .. command toggles', () => {
     const source = read('renderer/editor/pisi-editor-command-preferences.mjs');
     const bootstrap = read('renderer/bootstrap.mjs');
-    const routing = read('renderer/editor/pisi-editor-command-routing.mjs');
 
-    assert.match(source, /getPisiLatexCommandsPreference\(\)[\s\S]*PISI_LATEX_COMMANDS_STORAGE_KEY, true/);
-    assert.match(source, /getPisiDoubleDotCommandsPreference\(\)[\s\S]*PISI_DOUBLE_DOT_COMMANDS_STORAGE_KEY, true/);
     assert.match(source, /id: 'pisi-preference-latex-commands'/);
     assert.match(source, /labelText: 'LaTeX support'/);
     assert.match(source, /setValue: setPisiLatexCommandsPreference/);
     assert.match(source, /id: 'pisi-preference-double-dot-commands'/);
     assert.match(source, /labelText: '\.\. commands'/);
     assert.match(source, /setValue: setPisiDoubleDotCommandsPreference/);
-    assert.match(source, /setValue\(!getValue\(\)\)/);
     assert.match(source, /pisi:editor-command-preferences-changed/);
 
     const preferenceIndex = bootstrap.indexOf('pisi-editor-command-preferences.mjs');
     const tagEditorIndex = bootstrap.indexOf('pisi-tag-editor.mjs');
+    const authorityIndex = bootstrap.indexOf('pisi-editor-command-authority.mjs');
     const routingIndex = bootstrap.indexOf('pisi-editor-command-routing.mjs');
-    assert.ok(preferenceIndex >= 0);
-    assert.ok(tagEditorIndex >= 0);
-    assert.ok(routingIndex > tagEditorIndex);
 
-    assert.match(routing, /kind === 'user' \|\| item\.kind === 'new-user' \|\| item\.kind === 'system'/);
-    assert.match(routing, /body === 'todo'/);
-    assert.match(routing, /body === 'done'/);
-    assert.match(routing, /runPisiExtendedUnifiedCommandItem\(editor, activeCommand, item\)/);
-    assert.match(routing, /editor\.addEventListener\('keydown',[\s\S]*true\);/);
+    assert.ok(preferenceIndex >= 0);
+    assert.ok(tagEditorIndex > preferenceIndex);
+    assert.ok(authorityIndex > tagEditorIndex);
+    assert.ok(routingIndex > authorityIndex);
 });
