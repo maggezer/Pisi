@@ -75,6 +75,7 @@ function syncPisiOperationalNodeDecorations(
         box.classList.toggle('pisi-map-work-next', nodeId === nextNodeId);
 
         const title = box.querySelector('.map-node-title')?.textContent?.trim() || 'Node';
+        const taskCount = state.tasks?.length || 0;
         const openCount = state.openTasks?.length || 0;
         const blockedCount = state.blockedTasks?.length || 0;
         const overdueCount = state.overdueTasks?.length || 0;
@@ -83,7 +84,7 @@ function syncPisiOperationalNodeDecorations(
             `${title}; ${openCount} open; ${blockedCount} blocked; ${overdueCount} overdue`
         );
 
-        if (!display.showWorkBadges) continue;
+        if (!display.showWorkBadges || taskCount === 0) continue;
         const badges = document.createElement('div');
         badges.className = 'pisi-map-work-badges';
         if (openCount > 0) {
