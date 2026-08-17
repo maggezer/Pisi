@@ -61,6 +61,7 @@ import "./map/pisi-map-operational-render.mjs";
 import "./map/pisi-map-operational.mjs";
 import "./map/pisi-map-scopes.mjs";
 import "./map/pisi-map-right-panel.mjs";
+import "./map/pisi-map-label-preference.mjs";
 import "./map/pisi-map-export.mjs";
 import "./shell/pisi-interaction-regressions.mjs";
 import "./runtime.mjs";
