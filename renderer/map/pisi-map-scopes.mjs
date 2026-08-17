@@ -223,8 +223,13 @@ function addPisiPropertyFilter() {
 
 async function savePisiCurrentScope() {
     const current = state();
-    const name = window.prompt(t('scopeName'))?.trim();
-    if (!current || !name) return;
+    if (!current) return;
+    const name = await operational()?.requestPisiName?.({
+        title: t('save'),
+        label: t('scopeName'),
+        confirmLabel: t('save')
+    });
+    if (!name) return;
     const result = await persist({ op: 'save-scope', savedScope: { name, scope: current.scope } });
     if (!result?.ok) return alert(result?.error || t('saveFailed'));
     const select = document.getElementById('pisi-map-saved-scope');
