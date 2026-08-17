@@ -19,6 +19,6 @@ html body #node-modal-overlay {
    node modal so / and .. menus remain visible and interactive while editing. */
 html body .pisi-block-slash-menu,
 html body #pisi-tag-menu {
-    z-index: 31000 !important;
+    z-index: 31000;
     pointer-events: auto;
 }
