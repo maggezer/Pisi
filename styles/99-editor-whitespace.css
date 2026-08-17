@@ -1,0 +1,5 @@
+/* Rich-text whitespace must occupy real layout width so repeated spaces move the caret. */
+.pisi-rich-editor .pisi-editor-block,
+.pisi-rich-editor .pisi-typing-style {
+    white-space: break-spaces;
+}
