@@ -44,16 +44,32 @@ test('inline text format core toggles bold and italic deterministically', async 
     );
 });
 
-test('underline and strike preserve the other active decoration', async () => {
+test('underline and strike toggle independently without leaving a stuck decoration', async () => {
     const core = await loadCore();
 
     assert.deepEqual(
-        core.resolvePisiInlineTextMutation('underline', { textDecorationLine: 'line-through' }),
-        { property: 'textDecoration', value: 'line-through underline' }
+        core.resolvePisiInlineTextMutation('strikeThrough', {
+            textDecorationLine: 'line-through'
+        }),
+        { property: 'textDecoration', value: 'none' }
     );
     assert.deepEqual(
-        core.resolvePisiInlineTextMutation('strikeThrough', { textDecorationLine: 'underline line-through' }),
+        core.resolvePisiInlineTextMutation('underline', {
+            textDecorationLine: 'underline line-through'
+        }),
+        { property: 'textDecoration', value: 'line-through' }
+    );
+    assert.deepEqual(
+        core.resolvePisiInlineTextMutation('strikeThrough', {
+            textDecorationLine: 'underline line-through'
+        }),
         { property: 'textDecoration', value: 'underline' }
+    );
+    assert.deepEqual(
+        core.resolvePisiInlineTextMutation('underline', {
+            textDecorationLine: 'line-through'
+        }),
+        { property: 'textDecoration', value: 'line-through underline' }
     );
 });
 
@@ -73,6 +89,44 @@ test('text authority owns persistent toolbar and command-menu inline formatting'
     assert.doesNotMatch(source, /removePisiLegacyBlockSlashMenus/);
     assert.doesNotMatch(source, /schedulePisiLegacyCommandMenuCleanup/);
     assert.doesNotMatch(source, /handlePisiAuthorityMenuPointerDown/);
+});
+
+test('decoration off splits the owning span instead of nesting text-decoration none', () => {
+    const source = read('renderer/editor/pisi-editor-command-authority.mjs');
+
+    assert.match(source, /function splitPisiAuthorityDecorationSelection/);
+    assert.match(source, /function splitPisiAuthorityDecorationCaret/);
+    assert.match(source, /getPisiAuthorityRemovedDecorations/);
+    assert.match(source, /startSpan\.replaceWith\(replacement\)/);
+    assert.match(source, /span\.replaceWith\(replacement\)/);
+    assert.match(source, /range\.setStart\(caretText, 0\)/);
+    assert.match(source, /clone\.classList\.remove\('pisi-typing-style'\)/);
+});
+
+test('typing format state only overrides a collapsed caret and resets on navigation', () => {
+    const source = read('renderer/editor/pisi-editor-command-authority.mjs');
+
+    assert.match(source, /const typing = range\?\.collapsed/);
+    assert.match(source, /if \(!range\.collapsed\) \{\s*clearPisiAuthorityTypingStyles\(editor\)/);
+    assert.match(source, /PISI_AUTHORITY_NAVIGATION_KEYS/);
+    assert.match(source, /handlePisiAuthorityNavigationKeydown/);
+    assert.match(source, /handlePisiAuthorityEditorPointerUp/);
+    assert.match(source, /clearPisiAuthorityTypingStyles\(editor\)/);
+});
+
+test('toolbar state is re-synced from DOM then corrected by active typing overrides', () => {
+    const source = read('renderer/editor/pisi-editor-command-authority.mjs');
+    const syncStart = source.indexOf('function syncPisiAuthorityToolbarState');
+    const syncEnd = source.indexOf('\n}\n', syncStart);
+    const syncBody = source.slice(syncStart, syncEnd);
+
+    assert.ok(syncStart >= 0);
+    assert.match(syncBody, /window\.syncPisiWordToolbarState\?\.\(toolbar\)/);
+    assert.match(syncBody, /syncPisiAuthorityToolbarTypingState\(editor\)/);
+    assert.ok(
+        syncBody.indexOf('syncPisiWordToolbarState') <
+        syncBody.indexOf('syncPisiAuthorityToolbarTypingState')
+    );
 });
 
 test('legacy slash popup and legacy slash tag parser are deleted from production source', () => {
