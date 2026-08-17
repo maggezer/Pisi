@@ -26,3 +26,4 @@
 @import url("./styles/96-light-white-surfaces.css") layer(pisi);
 @import url("./styles/97-unified-editor-command-menu.css") layer(pisi);
 @import url("./styles/98-unified-editor-formatting.css") layer(pisi);
+@import url("./styles/99-editor-whitespace.css") layer(pisi);
