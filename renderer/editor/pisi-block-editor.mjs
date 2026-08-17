@@ -33,8 +33,6 @@ const pisiHydratedTaskMarkers = new WeakSet();
 const pisiBlocksEditorState = {
     editor: null,
     block: null,
-    slashMenu: null,
-    slashIndex: 0,
     draggedBlockId: null,
     sourceOverlay: null,
     sourceEditor: null,
@@ -399,77 +397,6 @@ function getPisiBlockAtEvent(editor, target) {
     return block && editor.contains(block) ? block : null;
 }
 
-function ensurePisiSlashMenu() {
-    if (pisiBlocksEditorState.slashMenu?.isConnected) return pisiBlocksEditorState.slashMenu;
-    const menu = document.createElement('div');
-    menu.className = 'pisi-block-slash-menu';
-    menu.hidden = true;
-    document.body.appendChild(menu);
-    pisiBlocksEditorState.slashMenu = menu;
-    return menu;
-}
-
-function renderPisiSlashMenu(block) {
-    const menu = ensurePisiSlashMenu();
-    const fragment = document.createDocumentFragment();
-    PISI_BLOCK_SLASH_COMMANDS.forEach((record, index) => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'pisi-block-slash-item';
-        button.classList.toggle('selected', index === pisiBlocksEditorState.slashIndex);
-        button.textContent = `${pisiBlockTranslate(record.label)} · /${record.slash}`;
-        button.addEventListener('mousedown', (event) => event.preventDefault());
-        button.addEventListener('click', () => {
-            runPisiBlockSlashCommand(block, record);
-        });
-        fragment.appendChild(button);
-    });
-    menu.replaceChildren(fragment);
-}
-
-function runPisiBlockSlashCommand(block, record) {
-    if (!block || !record) return false;
-    const editor = block.closest('.pisi-rich-editor');
-    closePisiSlashMenu();
-    if (record.action === 'todo') {
-        return window.openPisiTodoPickerForEditor?.(editor, {
-            block,
-            captureSelection: false
-        }) || false;
-    }
-    if (record.action === 'done') {
-        return window.applyPisiDoneCommandToEditor?.(editor, {
-            editor,
-            block,
-            sourceSelection: false,
-            completeAfterApply: true
-        }) || false;
-    }
-    applyPisiBlockType(block, record.id)?.focus?.();
-    return true;
-}
-
-function openPisiSlashMenu(block) {
-    const menu = ensurePisiSlashMenu();
-    pisiBlocksEditorState.slashIndex = 0;
-    renderPisiSlashMenu(block);
-    const rect = block.getBoundingClientRect();
-    menu.style.left = `${Math.max(8, rect.left + 18)}px`;
-    menu.style.top = `${Math.min(window.innerHeight - 300, rect.bottom + 4)}px`;
-    menu.hidden = false;
-}
-
-function closePisiSlashMenu() {
-    if (pisiBlocksEditorState.slashMenu) pisiBlocksEditorState.slashMenu.hidden = true;
-}
-
-function isPisiSlashMenuOpen() {
-    return Boolean(
-        pisiBlocksEditorState.slashMenu &&
-        !pisiBlocksEditorState.slashMenu.hidden
-    );
-}
-
 function applyPisiMarkdownBlockShortcut(event, block) {
     if (event.key !== ' ' || event.ctrlKey || event.metaKey || event.altKey) return false;
     const marker = String(block.textContent || '').trim();
@@ -496,35 +423,6 @@ function applyPisiMarkdownBlockShortcut(event, block) {
 function handlePisiBlocksEditorKeydown(editor, event) {
     const block = getPisiBlockAtEvent(editor, event.target) || getPisiActiveBlock();
     if (!block) return;
-    if (isPisiSlashMenuOpen()) {
-        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-            event.preventDefault();
-            const delta = event.key === 'ArrowDown' ? 1 : -1;
-            pisiBlocksEditorState.slashIndex = (
-                pisiBlocksEditorState.slashIndex + delta + PISI_BLOCK_SLASH_COMMANDS.length
-            ) % PISI_BLOCK_SLASH_COMMANDS.length;
-            renderPisiSlashMenu(block);
-            return;
-        }
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            runPisiBlockSlashCommand(
-                block,
-                PISI_BLOCK_SLASH_COMMANDS[pisiBlocksEditorState.slashIndex]
-            );
-            return;
-        }
-        if (event.key === 'Escape') {
-            event.preventDefault();
-            closePisiSlashMenu();
-            return;
-        }
-    }
-    if (event.key === '/' && !String(block.textContent || '').trim()) {
-        event.preventDefault();
-        openPisiSlashMenu(block);
-        return;
-    }
     applyPisiMarkdownBlockShortcut(event, block);
 }
 
