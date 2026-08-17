@@ -1,5 +1,3 @@
-import { registerModule } from "../core/module-registry.mjs";
-
 function getPisiTreePathSegments(value) {
     return String(value || '')
         .replace(/\\/g, '/')
@@ -55,14 +53,6 @@ if (typeof document !== 'undefined') {
         initializePisiInternalTreeFilter();
     }
 }
-
-registerModule('tree.internalFilter', {
-    getPisiTreePathSegments,
-    initializePisiInternalTreeFilter,
-    installPisiInternalTreeFilter,
-    isPisiInternalTreePath,
-    removePisiInternalTreeNodes
-});
 
 export {
     getPisiTreePathSegments,
