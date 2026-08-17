@@ -5,7 +5,7 @@ import {
 } from './pisi-editor-text-format-core.mjs';
 
 const pisiAuthoritativeSelections = new WeakMap();
-let pisiLegacySlashObserver = null;
+const pisiAuthorityTypingStyles = new WeakMap();
 
 function getPisiAuthorityEditorFromTarget(target) {
     const editor = target?.closest?.('.pisi-rich-editor');
@@ -19,6 +19,14 @@ function getPisiAuthorityToolbarFromTarget(target) {
 function getPisiAuthorityEditorForToolbar(toolbar) {
     const targetId = toolbar?.dataset?.editorTarget;
     return targetId ? document.getElementById(targetId) : null;
+}
+
+function getPisiAuthorityToolbarForEditor(editor) {
+    if (!editor?.id) return null;
+    return document.querySelector(
+        `.pisi-editor-toolbar[data-editor-target="${CSS.escape(editor.id)}"], ` +
+        `.pisi-word-toolbar[data-editor-target="${CSS.escape(editor.id)}"]`
+    );
 }
 
 function getPisiAuthorityRangeInsideEditor(editor, selection = window.getSelection?.()) {
@@ -44,6 +52,7 @@ function restorePisiAuthoritySelection(editor) {
         pisiAuthoritativeSelections.delete(editor);
         return null;
     }
+
     const range = saved.cloneRange();
     editor.focus({ preventScroll: true });
     const selection = window.getSelection?.();
@@ -82,31 +91,58 @@ function getPisiAuthorityBlock(editor, node) {
     return block && editor?.contains(block) ? block : null;
 }
 
-function notifyPisiAuthorityEditorChanged(editor) {
+function getPisiAuthorityTypingStyle(editor, property = null) {
+    const state = pisiAuthorityTypingStyles.get(editor) || null;
+    if (!property) return state ? { ...state } : null;
+    return state && Object.prototype.hasOwnProperty.call(state, property)
+        ? state[property]
+        : null;
+}
+
+function setPisiAuthorityTypingStyle(editor, property, value) {
+    if (!editor || !property) return false;
+    const state = {
+        ...(pisiAuthorityTypingStyles.get(editor) || {})
+    };
+    state[property] = value;
+    pisiAuthorityTypingStyles.set(editor, state);
+    return true;
+}
+
+function clearPisiAuthorityTypingStyles(editor) {
+    if (!editor) return false;
+    return pisiAuthorityTypingStyles.delete(editor);
+}
+
+function notifyPisiAuthorityEditorChanged(editor, inputType = 'formatSet', data = null) {
     if (!editor) return;
     if (typeof window.notifyPisiEditorChanged === 'function') {
         window.notifyPisiEditorChanged(editor);
         return;
     }
     const event = typeof InputEvent === 'function'
-        ? new InputEvent('input', { bubbles: true, inputType: 'formatSet' })
+        ? new InputEvent('input', { bubbles: true, inputType, data })
         : new Event('input', { bubbles: true });
     editor.dispatchEvent(event);
+}
+
+function getPisiAuthorityEffectiveStyle(editor, range) {
+    const probe = getPisiAuthorityElementFromRange(editor, range);
+    const computed = probe ? getComputedStyle(probe) : {};
+    const typing = pisiAuthorityTypingStyles.get(editor) || {};
+    return {
+        fontWeight: typing.fontWeight ?? computed.fontWeight,
+        fontStyle: typing.fontStyle ?? computed.fontStyle,
+        textDecoration: typing.textDecoration ?? computed.textDecoration,
+        textDecorationLine: typing.textDecoration ?? computed.textDecorationLine
+    };
 }
 
 function applyPisiAuthorityMutationToRange(editor, range, mutation) {
     if (!editor || !range || !mutation?.property) return false;
 
     if (range.collapsed) {
-        const span = document.createElement('span');
-        span.className = 'pisi-typing-style pisi-inline-command-style';
-        span.style[mutation.property] = mutation.value;
-        const textNode = document.createTextNode('');
-        span.appendChild(textNode);
-        range.insertNode(span);
-        range.setStart(textNode, 0);
-        range.collapse(true);
-        selectPisiAuthorityRange(range);
+        setPisiAuthorityTypingStyle(editor, mutation.property, mutation.value);
         return true;
     }
 
@@ -139,11 +175,43 @@ function applyPisiAuthorityMutationToRange(editor, range, mutation) {
     return true;
 }
 
+function getPisiAuthorityCommandActive(editor, command) {
+    const state = pisiAuthorityTypingStyles.get(editor) || {};
+    if (command === 'bold' && Object.hasOwn(state, 'fontWeight')) {
+        return Number.parseInt(state.fontWeight, 10) >= 600;
+    }
+    if (command === 'italic' && Object.hasOwn(state, 'fontStyle')) {
+        return state.fontStyle === 'italic';
+    }
+    if (
+        ['underline', 'strikeThrough'].includes(command) &&
+        Object.hasOwn(state, 'textDecoration')
+    ) {
+        const target = command === 'underline' ? 'underline' : 'line-through';
+        return String(state.textDecoration || '').includes(target);
+    }
+    return null;
+}
+
+function syncPisiAuthorityToolbarTypingState(editor) {
+    const toolbar = getPisiAuthorityToolbarForEditor(editor);
+    if (!toolbar) return;
+    ['bold', 'italic', 'underline', 'strikeThrough'].forEach((command) => {
+        const active = getPisiAuthorityCommandActive(editor, command);
+        if (active === null) return;
+        const button = toolbar.querySelector(
+            `button[data-pisi-unified-command="${command}"]`
+        );
+        if (!button) return;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+    });
+}
+
 function applyPisiAuthoritativeInlineCommand(editor, range, command) {
     if (!editor || !range || !isPisiInlineTextCommand(command)) return false;
-    const probe = getPisiAuthorityElementFromRange(editor, range);
-    if (!probe) return false;
-    const mutation = resolvePisiInlineTextMutation(command, getComputedStyle(probe));
+    const style = getPisiAuthorityEffectiveStyle(editor, range);
+    const mutation = resolvePisiInlineTextMutation(command, style);
     if (!mutation) return false;
 
     const changed = applyPisiAuthorityMutationToRange(editor, range, mutation);
@@ -151,11 +219,10 @@ function applyPisiAuthoritativeInlineCommand(editor, range, command) {
 
     notifyPisiAuthorityEditorChanged(editor);
     rememberPisiAuthoritySelection(editor);
-    const toolbar = document.querySelector(
-        `.pisi-editor-toolbar[data-editor-target="${CSS.escape(editor.id)}"], ` +
-        `.pisi-word-toolbar[data-editor-target="${CSS.escape(editor.id)}"]`
-    );
-    queueMicrotask(() => window.syncPisiWordToolbarState?.(toolbar));
+    queueMicrotask(() => {
+        window.syncPisiWordToolbarState?.(getPisiAuthorityToolbarForEditor(editor));
+        syncPisiAuthorityToolbarTypingState(editor);
+    });
     return true;
 }
 
@@ -183,13 +250,6 @@ function runPisiAuthoritativeMenuInlineCommand(editor, command, item) {
     editor.focus({ preventScroll: true });
     selectPisiAuthorityRange(range);
     return applyPisiAuthoritativeInlineCommand(editor, range, item.execCommand);
-}
-
-function getPisiAuthorityUnifiedItem(index = null) {
-    const state = window.pisiUnifiedCommandState;
-    if (!state?.active || !Array.isArray(state.items)) return null;
-    const resolvedIndex = index === null ? state.selectedIndex : Number(index);
-    return state.items[resolvedIndex] || null;
 }
 
 function handlePisiAuthorityToolbarPointerDown(event) {
@@ -224,113 +284,80 @@ function handlePisiAuthorityToolbarClick(event) {
     return applyPisiAuthoritativeInlineCommand(editor, range, command);
 }
 
-function handlePisiAuthorityMenuPointerDown(event) {
-    const option = event.target?.closest?.('.pisi-unified-command-option');
-    if (!option) return false;
-    const item = getPisiAuthorityUnifiedItem(option.dataset.pisiUnifiedIndex);
-    if (!isPisiInlineTextCommand(item?.execCommand)) return false;
+function makePisiAuthorityTypingSignature(styles) {
+    return Object.entries(styles || {})
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, value]) => `${key}:${value}`)
+        .join(';');
+}
 
-    const state = window.pisiUnifiedCommandState;
-    const editor = state?.editor;
-    const command = state?.command;
-    if (!editor || !command) return false;
+function getPisiAuthorityTypingSpan(editor, range, signature) {
+    if (!range?.collapsed || range.startContainer?.nodeType !== Node.TEXT_NODE) return null;
+    const span = range.startContainer.parentElement?.closest?.(
+        '.pisi-typing-style[data-pisi-authority-typing="1"]'
+    );
+    if (!span || !editor.contains(span)) return null;
+    return span.dataset.pisiAuthoritySignature === signature ? span : null;
+}
+
+function handlePisiAuthorityBeforeInput(event) {
+    const editor = getPisiAuthorityEditorFromTarget(event.target);
+    if (!editor) return;
+    const styles = pisiAuthorityTypingStyles.get(editor);
+    if (!styles || !Object.keys(styles).length) return;
+    if (!['insertText', 'insertCompositionText', 'insertReplacementText'].includes(event.inputType)) {
+        return;
+    }
+    if (typeof event.data !== 'string' || !event.data) return;
+
+    const range = getPisiAuthorityRangeInsideEditor(editor);
+    if (!range?.collapsed) return;
 
     event.preventDefault();
     event.stopImmediatePropagation();
-    return runPisiAuthoritativeMenuInlineCommand(editor, command, item);
-}
 
-function isPisiAuthorityCommandTriggerPosition(editor) {
-    const selection = window.getSelection?.();
-    const range = getPisiAuthorityRangeInsideEditor(editor, selection);
-    if (!range || !range.collapsed) return false;
-    const block = window.getPisiCurrentEditorBlock?.(editor, range.startContainer);
-    if (!block) return false;
-    const before = range.cloneRange();
-    before.selectNodeContents(block);
-    before.setEnd(range.startContainer, range.startOffset);
-    const text = before.toString();
-    return !text || /\s$/.test(text);
-}
+    const signature = makePisiAuthorityTypingSignature(styles);
+    const activeSpan = getPisiAuthorityTypingSpan(editor, range, signature);
+    let textNode = range.startContainer;
+    let nextOffset = range.startOffset;
 
-function handlePisiAuthorityWindowKeydown(event) {
-    if (event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
-    const editor = getPisiAuthorityEditorFromTarget(event.target);
-    if (!editor) return;
-
-    if (event.key === '/' && isPisiAuthorityCommandTriggerPosition(editor)) {
-        removePisiLegacyBlockSlashMenus();
-        event.stopImmediatePropagation();
-        return;
-    }
-
-    const state = window.pisiUnifiedCommandState;
-    if (!state?.active || state.editor !== editor) return;
-
-    if (event.key === 'Enter' || event.key === 'Tab') {
-        const item = getPisiAuthorityUnifiedItem();
-        if (!isPisiInlineTextCommand(item?.execCommand)) return;
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        runPisiAuthoritativeMenuInlineCommand(editor, state.command, item);
-        return;
-    }
-
-    if (event.key === ' ') {
-        const command = window.getPisiTokenAtCaret?.(editor, 'command') ||
-            window.getPisiEditorCommandAtCaret?.(editor);
-        const body = String(command?.body || '').trim().toLocaleLowerCase('tr-TR');
-        if (!body) return;
-        const item = state.items.find((candidate) => {
-            return String(candidate?.id || '').toLocaleLowerCase('tr-TR') === body;
+    if (activeSpan && textNode?.nodeType === Node.TEXT_NODE) {
+        textNode.insertData(range.startOffset, event.data);
+        nextOffset = range.startOffset + event.data.length;
+    } else {
+        const span = document.createElement('span');
+        span.className = 'pisi-typing-style pisi-inline-command-style';
+        span.dataset.pisiAuthorityTyping = '1';
+        span.dataset.pisiAuthoritySignature = signature;
+        Object.entries(styles).forEach(([property, value]) => {
+            span.style[property] = value;
         });
-        if (!isPisiInlineTextCommand(item?.execCommand)) return;
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        runPisiAuthoritativeMenuInlineCommand(editor, command, item);
+        textNode = document.createTextNode(event.data);
+        span.appendChild(textNode);
+        range.insertNode(span);
+        nextOffset = event.data.length;
     }
+
+    const caret = document.createRange();
+    caret.setStart(textNode, nextOffset);
+    caret.collapse(true);
+    selectPisiAuthorityRange(caret);
+    rememberPisiAuthoritySelection(editor);
+    notifyPisiAuthorityEditorChanged(editor, 'insertText', event.data);
+    queueMicrotask(() => syncPisiAuthorityToolbarTypingState(editor));
 }
 
-function removePisiLegacyBlockSlashMenus() {
-    document.querySelectorAll('.pisi-block-slash-menu').forEach((menu) => menu.remove());
-}
-
-function schedulePisiLegacyCommandMenuCleanup(editor) {
-    if (!editor) return;
-    queueMicrotask(() => {
-        removePisiLegacyBlockSlashMenus();
-        const command = window.getPisiTokenAtCaret?.(editor, 'command') ||
-            window.getPisiEditorCommandAtCaret?.(editor);
-        if (!command) return;
-
-        const legacyState = window.pisiTagMenuState;
-        if (legacyState?.editor === editor && legacyState.mode !== 'hash-tags') {
-            window.closePisiTagMenu?.();
-        }
-    });
-}
-
-function handlePisiAuthorityEditorActivity(event) {
+function handlePisiAuthorityEditorPointerUp(event) {
     const editor = getPisiAuthorityEditorFromTarget(event.target);
     if (!editor) return;
     rememberPisiAuthoritySelection(editor);
-    schedulePisiLegacyCommandMenuCleanup(editor);
 }
 
 function initializePisiEditorCommandAuthority() {
-    removePisiLegacyBlockSlashMenus();
-
-    window.addEventListener('keydown', handlePisiAuthorityWindowKeydown, true);
-    window.addEventListener('mousedown', (event) => {
-        handlePisiAuthorityToolbarPointerDown(event);
-        if (handlePisiAuthorityMenuPointerDown(event)) return;
-    }, true);
-    window.addEventListener('click', (event) => {
-        handlePisiAuthorityToolbarClick(event);
-    }, true);
-    window.addEventListener('input', handlePisiAuthorityEditorActivity, true);
-    window.addEventListener('keyup', handlePisiAuthorityEditorActivity, true);
-    window.addEventListener('pointerup', handlePisiAuthorityEditorActivity, true);
+    window.addEventListener('mousedown', handlePisiAuthorityToolbarPointerDown, true);
+    window.addEventListener('click', handlePisiAuthorityToolbarClick, true);
+    window.addEventListener('beforeinput', handlePisiAuthorityBeforeInput, true);
+    window.addEventListener('pointerup', handlePisiAuthorityEditorPointerUp, true);
 
     document.addEventListener('selectionchange', () => {
         [
@@ -338,16 +365,6 @@ function initializePisiEditorCommandAuthority() {
             document.getElementById('node-modal-content')
         ].filter(Boolean).forEach(rememberPisiAuthoritySelection);
     });
-
-    if (!pisiLegacySlashObserver && document.body) {
-        pisiLegacySlashObserver = new MutationObserver(() => {
-            removePisiLegacyBlockSlashMenus();
-        });
-        pisiLegacySlashObserver.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
-    }
 }
 
 if (document.readyState === 'loading') {
@@ -360,14 +377,20 @@ if (document.readyState === 'loading') {
 
 registerModule('editor.commandAuthority', {
     applyPisiAuthoritativeInlineCommand,
+    clearPisiAuthorityTypingStyles,
+    getPisiAuthorityTypingStyle,
     initializePisiEditorCommandAuthority,
-    removePisiLegacyBlockSlashMenus,
-    runPisiAuthoritativeMenuInlineCommand
+    isPisiInlineTextCommand,
+    runPisiAuthoritativeMenuInlineCommand,
+    syncPisiAuthorityToolbarTypingState
 });
 
 export {
     applyPisiAuthoritativeInlineCommand,
+    clearPisiAuthorityTypingStyles,
+    getPisiAuthorityTypingStyle,
     initializePisiEditorCommandAuthority,
-    removePisiLegacyBlockSlashMenus,
-    runPisiAuthoritativeMenuInlineCommand
+    isPisiInlineTextCommand,
+    runPisiAuthoritativeMenuInlineCommand,
+    syncPisiAuthorityToolbarTypingState
 };
