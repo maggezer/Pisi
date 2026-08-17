@@ -19,6 +19,8 @@ test('kısa tarihli ..todo sözdizimi görev metadata etiketi olarak ayrıştır
 test('todo ve done bütün editör girişlerinden aynı blok görev modeline bağlanır', () => {
     const bootstrap = read('renderer/bootstrap.mjs');
     const tagEditor = read('renderer/tags/pisi-tag-editor.mjs');
+    const routing = read('renderer/editor/pisi-editor-command-routing.mjs');
+    const unifiedMenu = read('renderer/editor/pisi-unified-command-menu.mjs');
     const blockEditor = read('renderer/editor/pisi-block-editor.mjs');
     const toolbar = read('renderer/editor/pisi-editor-unified-toolbar.mjs');
     const todoBlocks = read('renderer/tags/pisi-todo-blocks.mjs');
@@ -26,8 +28,14 @@ test('todo ve done bütün editör girişlerinden aynı blok görev modeline ba�
     const styles = read('styles/59-platform-system.css');
 
     assert.match(bootstrap, /tags\/pisi-todo-blocks\.mjs/);
-    assert.match(tagEditor, /parsePisiTodoTagValue\(command\?\.body\)/);
-    assert.match(tagEditor, /isPisiDoneCommand\(command\)/);
+    assert.match(routing, /function buildPisiFinalCommandItems/);
+    assert.match(routing, /runPisiExtendedUnifiedCommandItem/);
+    assert.match(unifiedMenu, /item\.kind === 'todo-start'/);
+    assert.match(unifiedMenu, /openPisiTodoPriorityMenu/);
+    assert.match(unifiedMenu, /item\.kind === 'todo-done'/);
+    assert.match(unifiedMenu, /applyPisiDoneCommandToEditor/);
+    assert.doesNotMatch(tagEditor, /parsePisiTodoTagValue\(command\?\.body\)/);
+    assert.doesNotMatch(tagEditor, /getPisiEditorCommandAtCaret|updatePisiTagMenuForEditor/);
     assert.match(blockEditor, /slash: record\.id === 'task' \? 'todo'/);
     assert.match(blockEditor, /slash: 'done'/);
     assert.match(toolbar, /data-pisi-todo-trigger/);
