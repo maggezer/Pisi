@@ -21,6 +21,7 @@ import "./shell/pisi-trash.mjs";
 import "./tree/pisi-project.mjs";
 import "./tree/pisi-tree-dnd.mjs";
 import "./tree/pisi-tree-view.mjs";
+import "./tree/pisi-tree-internal-filter.mjs";
 import "./map/pisi-map-workspace.mjs";
 import "./editor/pisi-node-editor.mjs";
 import "./tags/pisi-editor-blocks.mjs";
