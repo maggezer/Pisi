@@ -49,6 +49,15 @@ function getPisiAuthorityRangeInsideEditor(editor, selection = window.getSelecti
     return range;
 }
 
+function getPisiAuthorityCurrentRange(editor) {
+    const live = getPisiAuthorityRangeInsideEditor(editor);
+    if (live) return live;
+    const saved = pisiAuthoritativeSelections.get(editor);
+    return saved?.startContainer?.isConnected && saved?.endContainer?.isConnected
+        ? saved
+        : null;
+}
+
 function rememberPisiAuthoritySelection(editor) {
     const range = getPisiAuthorityRangeInsideEditor(editor);
     if (!range) return false;
@@ -137,17 +146,50 @@ function notifyPisiAuthorityEditorChanged(editor, inputType = 'formatSet', data 
     editor.dispatchEvent(event);
 }
 
+function addPisiAuthorityDecorations(target, style) {
+    parsePisiTextDecorations(style || {}).forEach((decoration) => {
+        target.add(decoration);
+    });
+}
+
+function getPisiAuthorityDecorationsAtRange(editor, range) {
+    const decorations = new Set();
+    let element = getPisiAuthorityElementFromRange(editor, range);
+
+    while (element && editor.contains(element)) {
+        addPisiAuthorityDecorations(decorations, getComputedStyle(element));
+        addPisiAuthorityDecorations(decorations, {
+            textDecoration: element.style?.textDecoration || element.style?.textDecorationLine
+        });
+
+        const tag = String(element.tagName || '').toLowerCase();
+        if (tag === 'u') decorations.add('underline');
+        if (tag === 's' || tag === 'strike') decorations.add('line-through');
+
+        if (element === editor) break;
+        element = element.parentElement;
+    }
+
+    return decorations;
+}
+
 function getPisiAuthorityEffectiveStyle(editor, range) {
     const probe = getPisiAuthorityElementFromRange(editor, range);
     const computed = probe ? getComputedStyle(probe) : {};
     const typing = range?.collapsed
         ? (pisiAuthorityTypingStyles.get(editor) || {})
         : {};
+    const decorations = getPisiAuthorityDecorationsAtRange(editor, range);
+    const decorationValue = decorations.size
+        ? Array.from(decorations).join(' ')
+        : 'none';
+    const effectiveDecoration = typing.textDecoration ?? decorationValue;
+
     return {
         fontWeight: typing.fontWeight ?? computed.fontWeight,
         fontStyle: typing.fontStyle ?? computed.fontStyle,
-        textDecoration: typing.textDecoration ?? computed.textDecoration,
-        textDecorationLine: typing.textDecoration ?? computed.textDecorationLine
+        textDecoration: effectiveDecoration,
+        textDecorationLine: effectiveDecoration
     };
 }
 
@@ -376,21 +418,20 @@ function applyPisiAuthorityMutationToRange(editor, range, mutation, command, sty
 }
 
 function getPisiAuthorityCommandActive(editor, command) {
-    const state = pisiAuthorityTypingStyles.get(editor) || {};
-    if (command === 'bold' && Object.hasOwn(state, 'fontWeight')) {
-        return Number.parseInt(state.fontWeight, 10) >= 600;
+    const range = getPisiAuthorityCurrentRange(editor);
+    if (!range) return null;
+    const style = getPisiAuthorityEffectiveStyle(editor, range);
+
+    if (command === 'bold') {
+        return Number.parseInt(style.fontWeight, 10) >= 600 ||
+            String(style.fontWeight || '').toLowerCase() === 'bold';
     }
-    if (command === 'italic' && Object.hasOwn(state, 'fontStyle')) {
-        return state.fontStyle === 'italic';
+    if (command === 'italic') {
+        return String(style.fontStyle || '').toLowerCase() === 'italic';
     }
-    if (
-        ['underline', 'strikeThrough'].includes(command) &&
-        Object.hasOwn(state, 'textDecoration')
-    ) {
+    if (command === 'underline' || command === 'strikeThrough') {
         const target = command === 'underline' ? 'underline' : 'line-through';
-        return parsePisiTextDecorations({
-            textDecoration: state.textDecoration
-        }).has(target);
+        return parsePisiTextDecorations(style).has(target);
     }
     return null;
 }
@@ -564,12 +605,6 @@ function handlePisiAuthorityBeforeInput(event) {
     queueMicrotask(() => syncPisiAuthorityToolbarState(editor));
 }
 
-function resetPisiAuthorityTypingFromNavigation(editor) {
-    if (!editor) return;
-    clearPisiAuthorityTypingStyles(editor);
-    queueMicrotask(() => syncPisiAuthorityToolbarState(editor));
-}
-
 function handlePisiAuthorityEditorPointerUp(event) {
     const editor = getPisiAuthorityEditorFromTarget(event.target);
     if (!editor) return;
@@ -582,15 +617,24 @@ function handlePisiAuthorityNavigationKeydown(event) {
     if (!PISI_AUTHORITY_NAVIGATION_KEYS.has(event.key)) return;
     const editor = getPisiAuthorityEditorFromTarget(event.target);
     if (!editor) return;
-    resetPisiAuthorityTypingFromNavigation(editor);
+    clearPisiAuthorityTypingStyles(editor);
+}
+
+function handlePisiAuthorityPostEditorEvent(event) {
+    const editor = getPisiAuthorityEditorFromTarget(event.target);
+    if (!editor) return;
+    rememberPisiAuthoritySelection(editor);
+    queueMicrotask(() => syncPisiAuthorityToolbarState(editor));
 }
 
 function initializePisiEditorCommandAuthority() {
     window.addEventListener('mousedown', handlePisiAuthorityToolbarPointerDown, true);
     window.addEventListener('click', handlePisiAuthorityToolbarClick, true);
     window.addEventListener('beforeinput', handlePisiAuthorityBeforeInput, true);
-    window.addEventListener('pointerup', handlePisiAuthorityEditorPointerUp, true);
     window.addEventListener('keydown', handlePisiAuthorityNavigationKeydown, true);
+    window.addEventListener('pointerup', handlePisiAuthorityEditorPointerUp);
+    window.addEventListener('keyup', handlePisiAuthorityPostEditorEvent);
+    window.addEventListener('input', handlePisiAuthorityPostEditorEvent);
 
     document.addEventListener('selectionchange', () => {
         [
