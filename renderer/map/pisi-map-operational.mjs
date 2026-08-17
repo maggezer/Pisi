@@ -29,7 +29,7 @@ const operationalText = {
         focus: 'Komşulara odaklan', next: 'Sıradaki', linked: 'Bağlı node oluştur',
         deps: 'Dependencies', labels: 'Labels', work: 'Work badges',
         layout: 'Layout seç', save: 'Layout kaydet', restore: 'Geri yükle',
-        remove: 'Sil', reset: 'Reset', layoutName: 'Layout adı', noSelection: 'Bir node seç.',
+        remove: 'Sil', reset: 'Reset', layoutName: 'Layout adı', cancel: 'İptal', noSelection: 'Bir node seç.',
         createFailed: 'Bağlı node oluşturulamadı.', saveFailed: 'Operational map kaydedilemedi.',
         visible: 'görünür', blockedShort: 'blocked', overdueShort: 'geciken'
     },
@@ -40,7 +40,7 @@ const operationalText = {
         focus: 'Focus neighbors', next: 'Next', linked: 'Create linked node',
         deps: 'Dependencies', labels: 'Labels', work: 'Work badges',
         layout: 'Choose layout', save: 'Save layout', restore: 'Restore',
-        remove: 'Delete', reset: 'Reset', layoutName: 'Layout name', noSelection: 'Select a node.',
+        remove: 'Delete', reset: 'Reset', layoutName: 'Layout name', cancel: 'Cancel', noSelection: 'Select a node.',
         createFailed: 'Linked node could not be created.', saveFailed: 'Operational map could not be saved.',
         visible: 'visible', blockedShort: 'blocked', overdueShort: 'overdue'
     }
@@ -80,6 +80,74 @@ function getOperationalPayload(op, extra = {}) {
         display: operationalState.display,
         ...extra
     };
+}
+
+function requestPisiName({ title = '', label = '', initialValue = '', confirmLabel = '', cancelLabel = '' } = {}) {
+    return new Promise((resolve) => {
+        document.getElementById('pisi-map-name-dialog')?.remove();
+
+        const dialog = document.createElement('dialog');
+        dialog.id = 'pisi-map-name-dialog';
+        dialog.className = 'pisi-map-name-dialog';
+
+        const form = document.createElement('form');
+        form.method = 'dialog';
+        form.className = 'pisi-map-name-dialog-form';
+
+        const heading = document.createElement('strong');
+        heading.id = 'pisi-map-name-dialog-title';
+        heading.textContent = title || label;
+        dialog.setAttribute('aria-labelledby', heading.id);
+
+        const field = document.createElement('label');
+        field.className = 'pisi-map-name-dialog-field';
+        const caption = document.createElement('span');
+        caption.textContent = label;
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.required = true;
+        input.autocomplete = 'off';
+        input.value = String(initialValue || '');
+        field.append(caption, input);
+
+        const actions = document.createElement('div');
+        actions.className = 'pisi-map-name-dialog-actions';
+        const cancel = document.createElement('button');
+        cancel.type = 'button';
+        cancel.textContent = cancelLabel || t('cancel');
+        const confirm = document.createElement('button');
+        confirm.type = 'submit';
+        confirm.textContent = confirmLabel || t('save');
+        actions.append(cancel, confirm);
+        form.append(heading, field, actions);
+        dialog.appendChild(form);
+
+        cancel.addEventListener('click', () => dialog.close('cancel'));
+        dialog.addEventListener('cancel', (event) => {
+            event.preventDefault();
+            dialog.close('cancel');
+        });
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            if (!input.value.trim()) {
+                input.focus();
+                return;
+            }
+            dialog.close('save');
+        });
+        dialog.addEventListener('close', () => {
+            const value = dialog.returnValue === 'save' ? input.value.trim() : '';
+            dialog.remove();
+            resolve(value || null);
+        }, { once: true });
+
+        document.body.appendChild(dialog);
+        dialog.showModal();
+        requestAnimationFrame(() => {
+            input.focus();
+            input.select();
+        });
+    });
 }
 
 async function persistPisiOperationalPayload(payload) {
@@ -408,7 +476,11 @@ async function createPisiOperationalLinkedNode() {
 
 async function savePisiOperationalLayout() {
     if (!window.activeMapPath) return;
-    const name = window.prompt(t('layoutName'))?.trim();
+    const name = await requestPisiName({
+        title: t('save'),
+        label: t('layoutName'),
+        confirmLabel: t('save')
+    });
     if (!name) return;
     const nodes = window.Pisi?.modules?.['map.workspace']?.collectMapLayout?.() || [];
     const result = await persistPisiOperationalPayload({
@@ -447,7 +519,7 @@ async function restorePisiOperationalLayout() {
             collapsedHubs: Array.isArray(layout.camera?.collapsedHubs)
                 ? layout.camera.collapsedHubs
                 : [],
-            operationalPayload: getPisiOperationalPayload('update')
+            operationalPayload: getOperationalPayload('update')
         }
     );
     if (!result?.ok) return alert(result?.error || t('saveFailed'));
@@ -543,6 +615,7 @@ registerModule('map.operational', {
     focusNextPisiOperationalNode,
     loadPisiOperationalMapState,
     operationalState,
+    requestPisiName,
     resetPisiOperationalScope,
     restorePisiOperationalLayout,
     savePisiOperationalLayout,
@@ -557,6 +630,7 @@ export {
     focusNextPisiOperationalNode,
     loadPisiOperationalMapState,
     operationalState,
+    requestPisiName,
     resetPisiOperationalScope,
     restorePisiOperationalLayout,
     savePisiOperationalLayout,
