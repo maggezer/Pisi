@@ -15,9 +15,7 @@ html body #node-modal-overlay {
     backdrop-filter: blur(6px);
 }
 
-/* Editor command popups live outside the editor/modal DOM. Keep them above the
-   node modal so / and .. menus remain visible and interactive while editing. */
-html body .pisi-block-slash-menu,
+/* The shared #tag / command popup lives outside the editor/modal DOM. */
 html body #pisi-tag-menu {
     z-index: 31000;
     pointer-events: auto;
