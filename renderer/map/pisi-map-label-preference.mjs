@@ -128,9 +128,7 @@ if (document.readyState === 'loading') {
 
 registerModule('map.labelPreference', {
     bindLabelsPreference,
-    getPisiRelationshipLabelsPreference,
     installLabelsPreferenceRow,
-    setPisiRelationshipLabelsPreference,
     syncOperationalLabelsPreference
 });
 
