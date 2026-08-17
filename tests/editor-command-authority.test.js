@@ -70,21 +70,20 @@ test('command authority owns toolbar and unified-menu inline commands', () => {
     assert.match(source, /event\.stopImmediatePropagation\(\)/);
 });
 
-test('legacy slash popup is retired and command typing cleans legacy tag menu', () => {
+test('legacy slash popup is removed and command typing cleans legacy tag menu', () => {
     const authority = read('renderer/editor/pisi-editor-command-authority.mjs');
-    const css = read('styles/99-editor-command-authority.css');
 
     assert.match(authority, /removePisiLegacyBlockSlashMenus/);
     assert.match(authority, /document\.querySelectorAll\('\.pisi-block-slash-menu'\)/);
+    assert.match(authority, /\.forEach\(\(menu\) => menu\.remove\(\)\)/);
     assert.match(authority, /schedulePisiLegacyCommandMenuCleanup/);
     assert.match(authority, /window\.closePisiTagMenu\?\.\(\)/);
     assert.match(authority, /event\.key === '\/'/);
-    assert.match(css, /\.pisi-block-slash-menu\s*\{[\s\S]*display:\s*none\s*!important/);
+    assert.match(authority, /MutationObserver/);
 });
 
-test('authority loads after routing and word behavior and its stylesheet is last', () => {
+test('authority loads after routing and word behavior', () => {
     const bootstrap = read('renderer/bootstrap.mjs');
-    const style = read('style.css');
 
     const routing = bootstrap.indexOf('pisi-editor-command-routing.mjs');
     const word = bootstrap.indexOf('pisi-editor-word-behavior.mjs');
@@ -93,9 +92,4 @@ test('authority loads after routing and word behavior and its stylesheet is last
     assert.ok(routing >= 0);
     assert.ok(word > routing);
     assert.ok(authority > word);
-    assert.match(style, /99-editor-command-authority\.css/);
-    assert.ok(
-        style.indexOf('99-editor-command-authority.css') >
-        style.indexOf('98-unified-editor-formatting.css')
-    );
 });
