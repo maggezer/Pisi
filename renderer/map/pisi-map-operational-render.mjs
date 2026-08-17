@@ -8,6 +8,27 @@ import {
     rankPisiOperationalNextNodes
 } from './pisi-map-operational-core.mjs';
 
+const PISI_RELATIONSHIP_LABELS_STORAGE_KEY = 'pisi.map.relationshipLabels.v1';
+
+function getPisiRelationshipLabelsPreference() {
+    try {
+        const value = String(localStorage.getItem(PISI_RELATIONSHIP_LABELS_STORAGE_KEY) || '').toLowerCase();
+        return value === '1' || value === 'true' || value === 'on';
+    } catch {
+        return false;
+    }
+}
+
+function setPisiRelationshipLabelsPreference(enabled) {
+    const normalized = enabled === true;
+    try {
+        localStorage.setItem(PISI_RELATIONSHIP_LABELS_STORAGE_KEY, normalized ? '1' : '0');
+    } catch (error) {
+        console.warn('[PISI] Relationship labels preference could not be saved:', error);
+    }
+    return normalized;
+}
+
 function getPisiOperationalTasks() {
     const state = window.Pisi?.modules?.['tags.taskStore']?.pisiFirstClassTaskState;
     return Array.isArray(state?.tasks) ? state.tasks : [];
@@ -103,9 +124,9 @@ function removePisiOperationalRelationshipLabels() {
     });
 }
 
-function syncPisiOperationalRelationshipLabels(visibleEdges, display) {
+function syncPisiOperationalRelationshipLabels(visibleEdges) {
     removePisiOperationalRelationshipLabels();
-    if (!display.showRelationshipLabels) return;
+    if (!getPisiRelationshipLabelsPreference()) return;
     const svg = document.getElementById('map-connections');
     if (!svg) return;
 
@@ -240,7 +261,7 @@ function renderPisiOperationalMap(scope = {}, display = {}) {
         nextNodeId
     );
     syncPisiOperationalSemanticEdgeVisibility(visibleEdges);
-    syncPisiOperationalRelationshipLabels(visibleEdges, display);
+    syncPisiOperationalRelationshipLabels(visibleEdges);
     syncPisiOperationalTaskDependencies(
         buildPisiTaskDependencyProjections(nodes, tasks, visibleNodeIds),
         display
@@ -268,7 +289,9 @@ function clearPisiOperationalMapRender() {
 registerModule('map.operationalRender', {
     clearPisiOperationalMapRender,
     getPisiOperationalTasks,
+    getPisiRelationshipLabelsPreference,
     renderPisiOperationalMap,
+    setPisiRelationshipLabelsPreference,
     syncPisiOperationalRelationshipLabels,
     syncPisiOperationalTaskDependencies
 });
@@ -276,7 +299,9 @@ registerModule('map.operationalRender', {
 export {
     clearPisiOperationalMapRender,
     getPisiOperationalTasks,
+    getPisiRelationshipLabelsPreference,
     renderPisiOperationalMap,
+    setPisiRelationshipLabelsPreference,
     syncPisiOperationalRelationshipLabels,
     syncPisiOperationalTaskDependencies
 };
