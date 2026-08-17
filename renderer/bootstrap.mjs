@@ -33,6 +33,7 @@ import "./editor/pisi-unified-command-menu.mjs";
 import "./editor/pisi-unified-command-formatting.mjs";
 import "./editor/pisi-editor-command-routing.mjs";
 import "./editor/pisi-editor-word-behavior.mjs";
+import "./editor/pisi-editor-command-authority.mjs";
 import "./tags/pisi-todo-second-release.mjs";
 import "./tags/pisi-todo-first-release.mjs";
 import "./tags/pisi-todo-blocks.mjs";
