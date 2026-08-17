@@ -3,6 +3,7 @@ import {
     getPisiDoubleDotCommandsPreference,
     getPisiLatexCommandsPreference
 } from './pisi-editor-command-preferences.mjs';
+import { runPisiExtendedUnifiedCommandItem } from './pisi-unified-command-formatting.mjs';
 
 const PISI_EDITOR_TOKEN_CHARS = 'A-Za-z0-9ğüşöçıİĞÜŞÖÇ_-';
 
@@ -151,7 +152,10 @@ function renderPisiRoutedUnifiedMenu(editor, command) {
     const menu = document.getElementById('pisi-tag-menu');
     if (!state?.active || state.editor !== editor || !menu) return false;
 
-    if (command?.trigger === '..' && !getPisiDoubleDotCommandsPreference()) {
+    const activeCommand = command || state.command;
+    if (!activeCommand) return false;
+
+    if (activeCommand.trigger === '..' && !getPisiDoubleDotCommandsPreference()) {
         window.closePisiUnifiedCommandMenu?.();
         return false;
     }
@@ -164,7 +168,7 @@ function renderPisiRoutedUnifiedMenu(editor, command) {
         return false;
     }
 
-    state.command = command || state.command;
+    state.command = activeCommand;
     state.items = items;
     state.selectedIndex = Math.min(state.selectedIndex, items.length - 1);
 
@@ -198,8 +202,7 @@ function renderPisiRoutedUnifiedMenu(editor, command) {
         option.addEventListener('mousedown', (event) => {
             event.preventDefault();
             event.stopPropagation();
-            const runner = window.runPisiExtendedUnifiedCommandItem || window.runPisiUnifiedCommandItem;
-            void runner?.(editor, state.command, item);
+            void runPisiExtendedUnifiedCommandItem(editor, activeCommand, item);
         });
         fragment.appendChild(option);
     });
