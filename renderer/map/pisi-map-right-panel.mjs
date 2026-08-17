@@ -2,15 +2,11 @@ import { registerModule } from '../core/module-registry.mjs';
 
 const mindMapPanelText = {
     tr: {
-        title: 'Mind Map',
         tab: 'Mind Map araçları',
-        description: 'Aktif map için görünüm, scope, ilişkiler ve kayıtlı layout kontrolleri.',
         empty: 'Mind Map araçlarını kullanmak için orta alanda bir map aç.'
     },
     eng: {
-        title: 'Mind Map',
         tab: 'Mind Map tools',
-        description: 'View, scope, relationship and saved layout controls for the active map.',
         empty: 'Open a map in the workspace to use Mind Map tools.'
     }
 };
@@ -44,12 +40,6 @@ function syncMindMapPanelLabels() {
         button.title = t('tab');
         button.setAttribute('aria-label', t('tab'));
     }
-
-    const title = document.getElementById('pisi-mindmap-panel-title');
-    if (title) title.textContent = t('title');
-
-    const description = document.getElementById('pisi-mindmap-panel-description');
-    if (description) description.textContent = t('description');
 
     const empty = document.getElementById('pisi-mindmap-panel-empty');
     if (empty) empty.textContent = t('empty');
@@ -92,6 +82,8 @@ function installMindMapRightPanel() {
     const content = document.getElementById('right-panel-content');
     if (!tabs || !content) return false;
 
+    tabs.classList.add('pisi-mindmap-tabs-installed');
+
     let button = document.getElementById('pisi-mindmap-tab-button');
     if (!button) {
         button = makeElement('button', 'right-panel-tab');
@@ -111,16 +103,9 @@ function installMindMapRightPanel() {
         page = makeElement('section', 'right-tab-page pisi-mindmap-page');
         page.id = 'right-tab-mindmap';
 
-        const header = makeElement('header', 'pisi-mindmap-panel-header');
-        const heading = makeElement('h2', 'pisi-mindmap-panel-title', t('title'));
-        heading.id = 'pisi-mindmap-panel-title';
-        const description = makeElement('p', 'pisi-mindmap-panel-description', t('description'));
-        description.id = 'pisi-mindmap-panel-description';
-        header.append(heading, description);
-
         const host = makeElement('div', 'pisi-mindmap-controls-host');
         host.id = 'pisi-mindmap-controls-host';
-        page.append(header, host);
+        page.appendChild(host);
         content.appendChild(page);
     }
 
