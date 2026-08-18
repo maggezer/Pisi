@@ -133,7 +133,7 @@ function installPisiEditorCommandPreferenceRows() {
     const latex = makePisiEditorPreferenceRow({
         id: 'pisi-preference-latex-commands',
         labelText: 'LaTeX support',
-        descriptionText: 'Enable LaTeX commands and snippet insertion in the editor.',
+        descriptionText: 'Enable extended / and .. commands including formatting, blocks and LaTeX. Todo and done stay available.',
         getValue: getPisiLatexCommandsPreference,
         setValue: setPisiLatexCommandsPreference,
         eventKey: 'latex'
