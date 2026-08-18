@@ -33,7 +33,14 @@ function getPisiLatexCommandsPreference() {
 }
 
 function setPisiLatexCommandsPreference(enabled) {
-    return writePisiBooleanPreference(PISI_LATEX_COMMANDS_STORAGE_KEY, enabled);
+    const normalized = writePisiBooleanPreference(
+        PISI_LATEX_COMMANDS_STORAGE_KEY,
+        enabled
+    );
+    if (!normalized) {
+        window.closePisiUnifiedCommandMenu?.();
+    }
+    return normalized;
 }
 
 function getPisiDoubleDotCommandsPreference() {
@@ -86,9 +93,6 @@ function makePisiEditorPreferenceRow({ id, labelText, descriptionText, getValue,
     button.addEventListener('click', () => {
         const enabled = setValue(!getValue());
         syncPisiEditorPreferenceButton(button, enabled);
-        if (eventKey === 'latex' && !enabled) {
-            window.closePisiUnifiedCommandMenu?.();
-        }
         document.dispatchEvent(new CustomEvent('pisi:editor-command-preferences-changed', {
             detail: { key: eventKey, enabled }
         }));
