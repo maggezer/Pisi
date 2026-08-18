@@ -1,7 +1,6 @@
 'use strict';
 
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 const { pathToFileURL } = require('node:url');
@@ -98,13 +97,30 @@ test('LaTeX preference gates both menu item creation and execution', async () =>
     assert.equal(rangeRequests, 0);
 });
 
-test('LaTeX preference UI closes an already-open command menu when switched off', () => {
-    const source = fs.readFileSync(
-        path.join(root, 'renderer/editor/pisi-editor-command-preferences.mjs'),
-        'utf8'
-    );
+test('switching LaTeX off immediately closes stale unified command state', async () => {
+    const { preferences, unified } = await loadModules();
+    localStorage.clear();
+    preferences.setPisiLatexCommandsPreference(true);
 
-    assert.match(source, /eventKey === 'latex' && !enabled/);
-    assert.match(source, /window\.closePisiUnifiedCommandMenu\?\.\(\)/);
-    assert.match(source, /Enable LaTeX commands and snippet insertion in the editor\./);
+    const menu = {
+        hidden: false,
+        cleared: false,
+        replaceChildren() {
+            this.cleared = true;
+        },
+        classList: {
+            remove() {}
+        }
+    };
+    document.getElementById = (id) => id === 'pisi-tag-menu' ? menu : null;
+    unified.pisiUnifiedCommandState.active = true;
+    unified.pisiUnifiedCommandState.editor = {};
+    unified.pisiUnifiedCommandState.command = { trigger: '/', body: 'frac' };
+    unified.pisiUnifiedCommandState.items = [{ kind: 'latex', id: 'frac' }];
+
+    assert.equal(preferences.setPisiLatexCommandsPreference(false), false);
+    assert.equal(menu.hidden, true);
+    assert.equal(menu.cleared, true);
+    assert.equal(unified.pisiUnifiedCommandState.active, false);
+    assert.deepEqual(unified.pisiUnifiedCommandState.items, []);
 });
