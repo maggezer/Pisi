@@ -1,4 +1,5 @@
 import { registerModule } from '../core/module-registry.mjs';
+import { getPisiLatexCommandsPreference } from './pisi-editor-command-preferences.mjs';
 
 const PISI_LATEX_CURSOR = '__PISI_CURSOR__';
 
@@ -94,7 +95,12 @@ function matchesPisiUnifiedItem(item, query) {
     return haystack.includes(clean);
 }
 
+function isPisiLatexCommandExecutionEnabled() {
+    return getPisiLatexCommandsPreference() === true;
+}
+
 function makePisiUnifiedLatexItems(command) {
+    if (!isPisiLatexCommandExecutionEnabled()) return [];
     return PISI_LATEX_COMMANDS
         .filter((record) => matchesPisiUnifiedItem(record, command?.body))
         .map((record) => ({
@@ -173,6 +179,11 @@ function makePisiCommandRange(command) {
 }
 
 function insertPisiLatexTemplate(editor, command, template) {
+    if (!isPisiLatexCommandExecutionEnabled()) {
+        closePisiUnifiedCommandMenu();
+        return false;
+    }
+
     const range = makePisiCommandRange(command);
     if (!range) return false;
 
@@ -227,6 +238,10 @@ async function runPisiUnifiedCommandItem(editor, command, item) {
     if (!editor || !command || !item) return false;
 
     if (item.kind === 'latex') {
+        if (!isPisiLatexCommandExecutionEnabled()) {
+            closePisiUnifiedCommandMenu();
+            return false;
+        }
         return insertPisiLatexTemplate(editor, command, item.template);
     }
 
@@ -253,6 +268,7 @@ const moduleApi = {
     buildPisiUnifiedCommandItems,
     closePisiUnifiedCommandMenu,
     insertPisiLatexTemplate,
+    isPisiLatexCommandExecutionEnabled,
     makePisiUnifiedBlockItems,
     makePisiUnifiedLatexItems,
     pisiUnifiedCommandState,
@@ -266,6 +282,7 @@ export {
     buildPisiUnifiedCommandItems,
     closePisiUnifiedCommandMenu,
     insertPisiLatexTemplate,
+    isPisiLatexCommandExecutionEnabled,
     makePisiUnifiedBlockItems,
     makePisiUnifiedLatexItems,
     pisiUnifiedCommandState,
