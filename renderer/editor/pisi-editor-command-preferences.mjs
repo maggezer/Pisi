@@ -86,6 +86,9 @@ function makePisiEditorPreferenceRow({ id, labelText, descriptionText, getValue,
     button.addEventListener('click', () => {
         const enabled = setValue(!getValue());
         syncPisiEditorPreferenceButton(button, enabled);
+        if (eventKey === 'latex' && !enabled) {
+            window.closePisiUnifiedCommandMenu?.();
+        }
         document.dispatchEvent(new CustomEvent('pisi:editor-command-preferences-changed', {
             detail: { key: eventKey, enabled }
         }));
@@ -126,7 +129,7 @@ function installPisiEditorCommandPreferenceRows() {
     const latex = makePisiEditorPreferenceRow({
         id: 'pisi-preference-latex-commands',
         labelText: 'LaTeX support',
-        descriptionText: 'Show standard LaTeX snippets in the / command menu.',
+        descriptionText: 'Enable LaTeX commands and snippet insertion in the editor.',
         getValue: getPisiLatexCommandsPreference,
         setValue: setPisiLatexCommandsPreference,
         eventKey: 'latex'
