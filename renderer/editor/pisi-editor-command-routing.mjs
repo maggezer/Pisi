@@ -156,17 +156,31 @@ function normalizePisiBlockCommandItem(item) {
     return item;
 }
 
+function isPisiEssentialCommandItem(item) {
+    return item?.kind === 'todo-start' || item?.kind === 'todo-done';
+}
+
+function isPisiRoutedCommandAllowed(command, item) {
+    if (!command || !item || !['/', '..'].includes(command.trigger)) return false;
+    if (command.trigger === '..' && !getPisiDoubleDotCommandsPreference()) return false;
+    if (getPisiLatexCommandsPreference()) return true;
+    return isPisiEssentialCommandItem(item);
+}
+
 function buildPisiFinalCommandItems(command) {
     if (!command || !['/', '..'].includes(command.trigger)) return [];
     if (command.trigger === '..' && !getPisiDoubleDotCommandsPreference()) return [];
 
     const writingItems = buildPisiWritingCommandItems(command);
     const baseItems = buildPisiUnifiedCommandItems(command)
-        .map(normalizePisiBlockCommandItem)
-        .filter((item) => item.kind !== 'latex' || getPisiLatexCommandsPreference());
+        .map(normalizePisiBlockCommandItem);
+    const candidates = [...writingItems, ...baseItems];
+    const allowedItems = getPisiLatexCommandsPreference()
+        ? candidates
+        : candidates.filter(isPisiEssentialCommandItem);
 
     const seen = new Set();
-    return [...writingItems, ...baseItems]
+    return allowedItems
         .filter((item) => {
             const key = `${item.kind}:${normalizePisiCommandId(item.id)}`;
             if (seen.has(key)) return false;
@@ -175,6 +189,14 @@ function buildPisiFinalCommandItems(command) {
         })
         .sort(comparePisiExtendedUnifiedItems)
         .slice(0, 120);
+}
+
+async function runPisiRoutedCommandItem(editor, command, item) {
+    if (!isPisiRoutedCommandAllowed(command, item)) {
+        closePisiUnifiedCommandMenu();
+        return false;
+    }
+    return runPisiExtendedUnifiedCommandItem(editor, command, item);
 }
 
 function getPisiCommandMenuElement() {
@@ -268,7 +290,7 @@ function renderPisiRoutedUnifiedMenu(editor, command) {
         option.addEventListener('mousedown', (event) => {
             event.preventDefault();
             event.stopPropagation();
-            void runPisiExtendedUnifiedCommandItem(editor, command, item);
+            void runPisiRoutedCommandItem(editor, command, item);
         });
         fragment.appendChild(option);
     });
@@ -343,7 +365,7 @@ function handlePisiEditorTokenKeydown(editor, event) {
             if (!item) return;
             event.preventDefault();
             event.stopImmediatePropagation();
-            void runPisiExtendedUnifiedCommandItem(
+            void runPisiRoutedCommandItem(
                 editor,
                 pisiUnifiedCommandState.command,
                 item
@@ -391,7 +413,7 @@ function handlePisiEditorTokenKeydown(editor, event) {
 
     event.preventDefault();
     event.stopImmediatePropagation();
-    void runPisiExtendedUnifiedCommandItem(editor, command, exact);
+    void runPisiRoutedCommandItem(editor, command, exact);
 }
 
 function bindPisiEditorTokenRouting(editor) {
