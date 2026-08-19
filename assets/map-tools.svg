@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="20" viewBox="0 0 300 20">
+  <g fill="none" stroke="#000" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+    <g transform="translate(0 0)"><path d="M3 4h14l-5.4 6.1v4.4l-3.2 1.5v-5.9z"/></g>
+    <g transform="translate(20 0)"><circle cx="10" cy="10" r="6"/><circle cx="10" cy="10" r="2"/><path d="M10 1.8v2.4M10 15.8v2.4M1.8 10h2.4M15.8 10h2.4"/></g>
+    <g transform="translate(40 0)"><path d="M5 4.5 13 10l-8 5.5M4 10h9"/></g>
+    <g transform="translate(60 0)"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/><path d="M8.5 8.5l3 3M14 3v5M11.5 5.5h5"/></g>
+    <g transform="translate(80 0)"><circle cx="5" cy="5" r="2"/><circle cx="15" cy="5" r="2"/><circle cx="10" cy="15" r="2"/><path d="M6.7 6.1 9 13M13.3 6.1 11 13M7 5h6"/></g>
+    <g transform="translate(100 0)"><path d="M3.5 4.5h8l5 5-7 7-6-6z"/><circle cx="7" cy="8" r="1"/></g>
+    <g transform="translate(120 0)"><rect x="3" y="4" width="4" height="4" rx=".8"/><path d="m4.2 6 1.1 1 2-2M9.5 6h7M3 12h4M9.5 12h7M3 16h4M9.5 16h7"/></g>
+    <g transform="translate(140 0)"><path d="M4 3h10l2 2v12H4zM7 3v5h6V3M7 14h6"/></g>
+    <g transform="translate(160 0)"><path d="M4 8a6 6 0 1 1 1.5 6M4 8V4M4 8h4"/></g>
+    <g transform="translate(180 0)"><path d="M4 6h12M8 3h4M6 6l1 11h6l1-11M8.5 9v5M11.5 9v5"/></g>
+    <g transform="translate(200 0)"><path d="M4 8a6 6 0 0 1 10.5-3M16 12a6 6 0 0 1-10.5 3M14.5 2v4h-4M5.5 18v-4h4"/></g>
+    <g transform="translate(220 0)"><path d="M10 2v16M3 6l14 8M3 14l14-8M6 3l8 14M14 3 6 17"/></g>
+    <g transform="translate(240 0)"><circle cx="10" cy="10" r="7"/><path d="M10 6v8M6 10h8"/></g>
+    <g transform="translate(260 0)"><circle cx="10" cy="10" r="7"/><path d="m6.5 10.2 2.3 2.4 4.9-5.2"/></g>
+    <g transform="translate(280 0)"><circle cx="10" cy="10" r="7"/><path d="M10 3a7 7 0 0 0 0 14z" fill="#000" stroke="none"/></g>
+  </g>
+</svg>
