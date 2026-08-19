@@ -4,7 +4,6 @@ const PISI_OPERATIONAL_SCOPE_MODES = new Set([
     'blocked',
     'overdue',
     'missing-next-action',
-    'owner-missing',
     'neighbors',
     'manual'
 ]);
@@ -188,16 +187,6 @@ function nodeMatchesPisiOperationalPropertyFilters(node, filters = []) {
     });
 }
 
-function hasPisiOperationalOwner(node) {
-    const ownerPattern = /(?:^|[-_\s])(owner|assignee|sorumlu|sahip)(?:$|[-_\s])/i;
-    const entry = getPisiOperationalPropertyEntries(node).find((property) => {
-        return ownerPattern.test(property.id) || ownerPattern.test(property.name);
-    });
-    if (!entry) return false;
-    if (Array.isArray(entry.value)) return entry.value.some(Boolean);
-    return Boolean(String(entry.value ?? '').trim());
-}
-
 function getPisiOperationalReviewedAt(node) {
     const reviewPattern = /(?:reviewed[-_\s]?at|last[-_\s]?review|son[-_\s]?inceleme)/i;
     const entry = getPisiOperationalPropertyEntries(node).find((property) => {
@@ -246,7 +235,6 @@ function buildPisiOperationalNodeStates(nodes = [], tasks = [], now = Date.now()
             blocked: blockedTasks.length > 0,
             overdue: overdueTasks.length > 0,
             missingNextAction: openTasks.length === 0,
-            ownerMissing: !hasPisiOperationalOwner(node),
             changedSinceReview,
             highestPriority: openTasks.reduce((best, task) => {
                 const priority = Math.min(5, Math.max(1, Number(task?.priority) || 3));
@@ -329,7 +317,6 @@ function getPisiOperationalVisibleNodeIds(nodes, edges, nodeStates, rawScope = {
         if (scope.mode === 'blocked') accepted = state.blocked === true;
         if (scope.mode === 'overdue') accepted = state.overdue === true;
         if (scope.mode === 'missing-next-action') accepted = state.missingNextAction === true;
-        if (scope.mode === 'owner-missing') accepted = state.ownerMissing === true;
         if (scope.mode === 'manual') accepted = manualIds.has(node?.id);
         if (scope.mode === 'neighbors') accepted = Boolean(neighborIds?.has(node?.id));
         if (accepted && scope.focusRootNodeId && scope.mode !== 'neighbors') {
@@ -413,8 +400,7 @@ function rankPisiOperationalNextNodes(nodes = [], nodeStates = {}) {
             const score =
                 (state.overdueTasks?.length || 0) * 100 +
                 (state.highestPriority || 1) * 15 +
-                (state.openTasks?.length || 0) * 2 +
-                (state.ownerMissing ? -10 : 0);
+                (state.openTasks?.length || 0) * 2;
             return { node, state, score };
         })
         .filter(Boolean)
@@ -439,7 +425,6 @@ export {
     getPisiOperationalRelationshipLabel,
     getPisiOperationalVisibleEdges,
     getPisiOperationalVisibleNodeIds,
-    hasPisiOperationalOwner,
     isPisiOperationalTaskBlocked,
     isPisiOperationalTaskOverdue,
     nodeMatchesPisiOperationalPropertyFilter,
