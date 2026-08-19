@@ -20,14 +20,20 @@ test('badge picker preferences overflowundan body portalına çıkarılır', () 
     assert.match(source, /window\.addEventListener\('resize'/);
 });
 
-test('badge picker portalı üst katmanda fixed konumlanır', () => {
+test('badge picker portalı workspace center dahil modal katmanlarının üstünde kalır', () => {
+    const source = read('renderer/map/pisi-map-property-badge-portal.mjs');
     const css = read('renderer/map/pisi-map-property-badge-portal.css');
 
     assert.match(css, /\.pisi-badge-picker-portal\s*\{/);
     assert.match(css, /position:\s*fixed/);
-    assert.match(css, /z-index:\s*12050/);
+    assert.match(css, /z-index:\s*2147483000/);
     assert.match(css, /max-width:\s*calc\(100vw - 16px\)/);
     assert.match(css, /max-height:\s*min\(320px, calc\(100vh - 16px\)\)/);
+    assert.match(source, /PISI_BADGE_PICKER_TOP_LAYER_Z_INDEX = 2147483000/);
+    assert.match(source, /getElementById\('pisi-command-center-overlay'\)/);
+    assert.match(source, /getComputedStyle\(commandCenterOverlay\)\.zIndex/);
+    assert.match(source, /overlayZIndex \+ 1/);
+    assert.match(source, /syncPisiBadgePickerPortalLayer\(picker\)/);
 });
 
 test('portal badge sisteminden sonra bootstrap edilir', () => {
