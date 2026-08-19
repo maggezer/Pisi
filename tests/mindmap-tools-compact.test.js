@@ -59,6 +59,13 @@ test('Dim filtered is a top-level Mind Map action while filter settings stay in 
     assert.doesNotMatch(filterBlock, /'pisi-map-dim-filtered'/);
 });
 
+test('Saved scope actions stay on one three-column row', () => {
+    assert.match(css, /#pisi-map-scope-controls\s*\{[^}]*grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/s);
+    assert.match(css, /#pisi-map-save-scope\s*\{[^}]*grid-column:\s*1/s);
+    assert.match(css, /#pisi-map-apply-scope\s*\{[^}]*grid-column:\s*2/s);
+    assert.match(css, /#pisi-map-delete-scope\s*\{[^}]*grid-column:\s*3/s);
+});
+
 test('Mind Map filter menu is a compact inline dropdown and icon sprite ships with it', () => {
     assert.match(css, /\.pisi-mindmap-filter-menu\s*\{/);
     assert.match(css, /\.pisi-mindmap-filter-menu\[hidden\]\s*\{\s*display:\s*none/);
