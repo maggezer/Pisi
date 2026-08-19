@@ -2,6 +2,10 @@
     display: none;
 }
 
+.map-node-box[data-node-path] > .pisi-mission-node-badge {
+    display: none;
+}
+
 .pisi-map-task-count-badge {
     position: absolute;
     top: -9px;
