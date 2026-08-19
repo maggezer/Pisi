@@ -36,6 +36,7 @@ function getPisiOperationalTasks() {
 
 function clearPisiOperationalBadges(box) {
     box.querySelector('.pisi-map-work-badges')?.remove();
+    box.querySelector('.pisi-map-task-count-badge')?.remove();
     box.classList.remove(
         'pisi-map-work-blocked',
         'pisi-map-work-overdue',
@@ -52,6 +53,14 @@ function makePisiOperationalBadge(text, className = '') {
     return badge;
 }
 
+function makePisiTaskCountBadge(openCount) {
+    const badge = document.createElement('span');
+    badge.className = 'pisi-map-task-count-badge';
+    badge.textContent = String(openCount);
+    badge.setAttribute('aria-label', `${openCount} open task${openCount === 1 ? '' : 's'}`);
+    return badge;
+}
+
 function syncPisiOperationalNodeDecorations(
     nodeStates,
     visibleNodeIds,
@@ -59,6 +68,7 @@ function syncPisiOperationalNodeDecorations(
     nextNodeId = null
 ) {
     for (const box of document.querySelectorAll('.map-node-box[data-node-id]')) {
+        box.querySelector('.map-node-open')?.remove();
         clearPisiOperationalBadges(box);
         const nodeId = String(box.dataset.nodeId || '');
         const state = nodeStates.get(nodeId) || {};
@@ -84,12 +94,13 @@ function syncPisiOperationalNodeDecorations(
             `${title}; ${openCount} open; ${blockedCount} blocked; ${overdueCount} overdue`
         );
 
+        if (openCount > 0) {
+            box.appendChild(makePisiTaskCountBadge(openCount));
+        }
+
         if (!display.showWorkBadges || taskCount === 0) continue;
         const badges = document.createElement('div');
         badges.className = 'pisi-map-work-badges';
-        if (openCount > 0) {
-            badges.appendChild(makePisiOperationalBadge(`${openCount} open`, 'ready'));
-        }
         if (blockedCount > 0) {
             badges.appendChild(makePisiOperationalBadge(`${blockedCount} blocked`, 'blocked'));
         }
