@@ -39,6 +39,7 @@ const mindMapPrimaryActionIds = [
     'pisi-map-operational-deps',
     'pisi-map-operational-labels',
     'pisi-map-operational-work',
+    'pisi-map-dim-filtered',
     'pisi-map-operational-reset'
 ];
 
