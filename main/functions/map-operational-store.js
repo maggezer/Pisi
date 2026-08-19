@@ -13,7 +13,6 @@ const PISI_OPERATIONAL_SCOPE_MODES = new Set([
     'blocked',
     'overdue',
     'missing-next-action',
-    'owner-missing',
     'neighbors',
     'manual'
 ]);
