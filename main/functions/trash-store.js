@@ -29,6 +29,22 @@ const {
     summarizePisiTrashManifest
 } = trashCore;
 
+const PISI_TRASH_DELETE_RETRY_CODES = new Set([
+    'EBUSY',
+    'EMFILE',
+    'ENFILE',
+    'ENOTEMPTY',
+    'EPERM',
+    'EACCES'
+]);
+
+const PISI_TRASH_DELETE_OPTIONS = Object.freeze({
+    recursive: true,
+    force: true,
+    maxRetries: 8,
+    retryDelay: 120
+});
+
 function deepClonePisiTrashValue(value) {
     return JSON.parse(JSON.stringify(value));
 }
@@ -60,6 +76,48 @@ function isSameOrInsidePisiTrashPath(candidatePath, parentPath) {
         !relative.startsWith(`..${path.sep}`) &&
         !path.isAbsolute(relative)
     );
+}
+
+function makePisiTrashDeletePathWritable(candidatePath, rootPath) {
+    if (process.platform !== 'win32' || typeof candidatePath !== 'string') return;
+    const resolved = path.resolve(candidatePath);
+    if (!isSameOrInsidePisiTrashPath(resolved, path.resolve(rootPath))) return;
+    try {
+        fs.chmodSync(resolved, 0o700);
+    } catch {
+        // Windows may still have a short-lived lock; rmSync retry handles that case.
+    }
+}
+
+function removePisiTrashPathWithRetry(targetPath) {
+    const resolved = path.resolve(targetPath);
+    if (!fs.existsSync(resolved)) return { ok: true };
+
+    let lastError = null;
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+            fs.rmSync(resolved, PISI_TRASH_DELETE_OPTIONS);
+            return { ok: true };
+        } catch (error) {
+            lastError = error;
+            if (!PISI_TRASH_DELETE_RETRY_CODES.has(error?.code)) break;
+
+            makePisiTrashDeletePathWritable(resolved, resolved);
+            if (
+                typeof error?.path === 'string' &&
+                isSameOrInsidePisiTrashPath(error.path, resolved)
+            ) {
+                makePisiTrashDeletePathWritable(error.path, resolved);
+                makePisiTrashDeletePathWritable(path.dirname(error.path), resolved);
+            }
+        }
+    }
+
+    return {
+        ok: false,
+        code: lastError?.code || 'TRASH_DELETE_FAILED',
+        error: lastError?.message || 'Trash öğesi kalıcı olarak silinemedi.'
+    };
 }
 
 function assertPisiTrashProjectPath(projectFolder, targetPath) {
@@ -564,7 +622,12 @@ function restorePisiTrashItem(projectFolder, trashId) {
             restoredRelationshipIds
         );
 
-        fs.rmSync(itemDirectory, { recursive: true, force: true });
+        const cleanup = removePisiTrashPathWithRetry(itemDirectory);
+        if (!cleanup.ok) {
+            const cleanupError = new Error(cleanup.error);
+            cleanupError.code = cleanup.code;
+            throw cleanupError;
+        }
         return {
             ok: true,
             trashId: manifest.id,
@@ -585,7 +648,14 @@ function permanentlyDeletePisiTrashItem(projectFolder, trashId) {
         if (!result.ok) return result;
         const itemDirectory = getPisiTrashItemDirectory(projectRoot, trashId);
         const summary = summarizePisiTrashManifest(result.manifest);
-        fs.rmSync(itemDirectory, { recursive: true, force: true });
+        const deletion = removePisiTrashPathWithRetry(itemDirectory);
+        if (!deletion.ok) {
+            return {
+                ok: false,
+                code: 'TRASH_PERMANENT_DELETE_FAILED',
+                error: deletion.error
+            };
+        }
         return { ok: true, trashId: result.manifest.id, permanentlyDeleted: true, summary };
     } catch (error) {
         return { ok: false, code: 'TRASH_PERMANENT_DELETE_FAILED', error: error.message };
@@ -599,10 +669,28 @@ function emptyPisiTrash(projectFolder) {
             return { ok: true, permanentlyDeleted: 0 };
         }
         let permanentlyDeleted = 0;
+        const failed = [];
         for (const entry of fs.readdirSync(itemsRoot, { withFileTypes: true })) {
             if (!entry.isDirectory() || !normalizePisiTrashId(entry.name)) continue;
-            fs.rmSync(path.join(itemsRoot, entry.name), { recursive: true, force: true });
-            permanentlyDeleted += 1;
+            const deletion = removePisiTrashPathWithRetry(path.join(itemsRoot, entry.name));
+            if (deletion.ok) {
+                permanentlyDeleted += 1;
+                continue;
+            }
+            failed.push({
+                trashId: entry.name,
+                code: deletion.code,
+                error: deletion.error
+            });
+        }
+        if (failed.length) {
+            return {
+                ok: false,
+                code: 'TRASH_EMPTY_PARTIAL',
+                error: `${permanentlyDeleted} Trash öğesi silindi; ${failed.length} öğe Windows tarafından kilitlendiği için silinemedi. Tekrar deneyin.`,
+                permanentlyDeleted,
+                failed
+            };
         }
         return { ok: true, permanentlyDeleted };
     } catch (error) {
