@@ -181,9 +181,58 @@
     justify-self: start;
 }
 
+#right-tab-mindmap .pisi-mindmap-filter-menu #pisi-map-scope-controls {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+    min-width: 0;
+}
+
+#right-tab-mindmap .pisi-mindmap-filter-menu #pisi-map-scope-strategy {
+    grid-column: 1 / 3;
+}
+
+#right-tab-mindmap .pisi-mindmap-filter-menu #pisi-map-freeze-scope {
+    grid-column: 3;
+    justify-self: end;
+}
+
+#right-tab-mindmap .pisi-mindmap-filter-menu #pisi-map-scope-property {
+    grid-column: 1;
+}
+
+#right-tab-mindmap .pisi-mindmap-filter-menu #pisi-map-scope-operator {
+    grid-column: 2;
+}
+
+#right-tab-mindmap .pisi-mindmap-filter-menu #pisi-map-scope-value {
+    grid-column: 3;
+}
+
+#right-tab-mindmap .pisi-mindmap-filter-menu #pisi-map-add-property-filter {
+    grid-column: 3;
+    justify-self: end;
+}
+
 #right-tab-mindmap .pisi-mindmap-filter-menu #pisi-map-scope-filter-chips,
 #right-tab-mindmap .pisi-mindmap-filter-menu #pisi-map-saved-scope {
     grid-column: 1 / -1;
+}
+
+#right-tab-mindmap .pisi-mindmap-filter-menu #pisi-map-save-scope {
+    grid-column: 1;
+    justify-self: start;
+}
+
+#right-tab-mindmap .pisi-mindmap-filter-menu #pisi-map-apply-scope {
+    grid-column: 2;
+    justify-self: center;
+}
+
+#right-tab-mindmap .pisi-mindmap-filter-menu #pisi-map-delete-scope {
+    grid-column: 3;
+    justify-self: end;
 }
 
 #right-tab-mindmap .pisi-map-scope-filter-chips {
