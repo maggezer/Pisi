@@ -32,6 +32,7 @@ test('Mind Map text action buttons are decorated as icon-only controls', () => {
         'pisi-map-operational-deps',
         'pisi-map-operational-labels',
         'pisi-map-operational-work',
+        'pisi-map-dim-filtered',
         'pisi-map-operational-save-layout',
         'pisi-map-operational-restore',
         'pisi-map-operational-delete-layout',
@@ -44,6 +45,18 @@ test('Mind Map text action buttons are decorated as icon-only controls', () => {
     assert.match(css, /\.pisi-mindmap-icon-button\s*\{/);
     assert.match(css, /font-size:\s*0/);
     assert.match(css, /assets\/map-tools\.svg/);
+});
+
+test('Dim filtered is a top-level Mind Map action while filter settings stay in the menu', () => {
+    const primaryStart = panel.indexOf('const mindMapPrimaryActionIds');
+    const primaryEnd = panel.indexOf('const mindMapFilterControlIds', primaryStart);
+    const primaryBlock = panel.slice(primaryStart, primaryEnd);
+    assert.match(primaryBlock, /'pisi-map-dim-filtered'/);
+
+    const filterStart = primaryEnd;
+    const filterEnd = panel.indexOf('let mindMapPanelObserver', filterStart);
+    const filterBlock = panel.slice(filterStart, filterEnd);
+    assert.doesNotMatch(filterBlock, /'pisi-map-dim-filtered'/);
 });
 
 test('Mind Map filter menu is a compact inline dropdown and icon sprite ships with it', () => {
