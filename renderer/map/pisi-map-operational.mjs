@@ -24,7 +24,7 @@ const operationalState = {
 const operationalText = {
     tr: {
         search: 'Map içinde ara', all: 'Tümü', active: 'Aktif iş', blocked: 'Blocked',
-        overdue: 'Geciken', missing: 'Next action yok', owner: 'Owner yok',
+        overdue: 'Geciken', missing: 'Next action yok',
         relations: 'Tüm ilişkiler', hierarchy: 'Hierarchy', flow: 'Flow', peer: 'Peer',
         focus: 'Komşulara odaklan', next: 'Sıradaki', linked: 'Bağlı node oluştur',
         deps: 'Dependencies', labels: 'Labels', work: 'Work badges',
@@ -35,7 +35,7 @@ const operationalText = {
     },
     eng: {
         search: 'Search map', all: 'All', active: 'Active work', blocked: 'Blocked',
-        overdue: 'Overdue', missing: 'Missing next action', owner: 'Missing owner',
+        overdue: 'Overdue', missing: 'Missing next action',
         relations: 'All relationships', hierarchy: 'Hierarchy', flow: 'Flow', peer: 'Peer',
         focus: 'Focus neighbors', next: 'Next', linked: 'Create linked node',
         deps: 'Dependencies', labels: 'Labels', work: 'Work badges',
@@ -279,8 +279,7 @@ function rebuildPisiOperationalControlLabels() {
             makeOption('active', t('active')),
             makeOption('blocked', t('blocked')),
             makeOption('overdue', t('overdue')),
-            makeOption('missing-next-action', t('missing')),
-            makeOption('owner-missing', t('owner'))
+            makeOption('missing-next-action', t('missing'))
         );
         scope.value = value || 'all';
     }
