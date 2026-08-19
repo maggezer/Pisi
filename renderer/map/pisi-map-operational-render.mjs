@@ -99,9 +99,6 @@ function syncPisiOperationalNodeDecorations(
         if (state.missingNextAction) {
             badges.appendChild(makePisiOperationalBadge('next?', 'gap'));
         }
-        if (state.ownerMissing && openCount > 0) {
-            badges.appendChild(makePisiOperationalBadge('owner?', 'gap'));
-        }
         if (state.changedSinceReview) {
             badges.appendChild(makePisiOperationalBadge('changed', 'gap'));
         }
