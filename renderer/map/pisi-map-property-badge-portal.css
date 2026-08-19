@@ -1,0 +1,11 @@
+.pisi-badge-picker-portal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 12050;
+    width: 270px;
+    max-width: calc(100vw - 16px);
+    max-height: min(320px, calc(100vh - 16px));
+    margin: 0;
+    overscroll-behavior: contain;
+}
