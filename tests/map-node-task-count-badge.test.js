@@ -26,6 +26,15 @@ test('node modal open button is removed and open task count occupies its corner'
     assert.match(css, /pointer-events:\s*none/);
 });
 
+test('legacy mission task badge no longer appears on map node boxes', () => {
+    const css = read('styles/100-map-task-count-badge.css');
+
+    assert.match(
+        css,
+        /\.map-node-box\[data-node-path\] > \.pisi-mission-node-badge\s*\{[\s\S]*?display:\s*none/
+    );
+});
+
 test('double click modal opening remains available after removing the corner button', () => {
     const workspace = read('renderer/map/pisi-map-workspace.mjs');
     const previewDoubleClick = /previewEl\?\.addEventListener\('dblclick',[\s\S]{0,260}?openNodeModalFromBox\(box\)/;
