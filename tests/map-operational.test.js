@@ -120,12 +120,10 @@ test('focused neighbor görünümü semantic graph üzerinde deterministic 1-3 h
     );
 });
 
-test('operational scope blocked, overdue, next-action, owner ve query filtrelerini tek projectionda uygular', async () => {
+test('operational scope blocked, overdue, next-action ve query filtrelerini tek projectionda uygular', async () => {
     const core = await loadCore();
     const nodes = [
-        node('node_A', 'Alpha', '/project/A.node', {
-            owner: { id: 'owner', name: 'Owner', type: 'text', value: 'Ali' }
-        }),
+        node('node_A', 'Alpha', '/project/A.node'),
         node('node_B', 'Beta', '/project/B.node'),
         node('node_C', 'Gamma', '/project/C.node')
     ];
@@ -156,13 +154,26 @@ test('operational scope blocked, overdue, next-action, owner ve query filtreleri
         ['node_C']
     );
     assert.deepEqual(
-        [...core.getPisiOperationalVisibleNodeIds(nodes, edges, states, { mode: 'owner-missing' })],
-        ['node_B', 'node_C']
-    );
-    assert.deepEqual(
         [...core.getPisiOperationalVisibleNodeIds(nodes, edges, states, { mode: 'all', query: 'alpha preview' })],
         ['node_A']
     );
+});
+
+test('owner operational feature is fully retired and stale owner scope falls back to all', async () => {
+    const core = await loadCore();
+    assert.equal(core.hasPisiOperationalOwner, undefined);
+    assert.equal(core.normalizePisiOperationalScope({ mode: 'owner-missing' }).mode, 'all');
+
+    const coreSource = read('renderer/map/pisi-map-operational-core.mjs');
+    const renderer = read('renderer/map/pisi-map-operational-render.mjs');
+    const controls = read('renderer/map/pisi-map-operational.mjs');
+    const store = read('main/functions/map-operational-store.js');
+
+    for (const source of [coreSource, renderer, controls, store]) {
+        assert.doesNotMatch(source, /owner-missing|ownerMissing|hasPisiOperationalOwner|owner\?/);
+    }
+    assert.doesNotMatch(coreSource, /owner\|assignee\|sorumlu\|sahip/);
+    assert.doesNotMatch(controls, /Owner yok|Missing owner/);
 });
 
 test('relationship type filtresi node membershipi değiştirmeden yalnız semantic edge projectionını daraltır', async () => {
