@@ -3,6 +3,7 @@ const PISI_BADGE_PICKER_PORTAL_CLASS = 'pisi-badge-picker-portal';
 const PISI_BADGE_PICKER_ANCHOR_ID = 'pisi-add-map-property-badge';
 const PISI_BADGE_PICKER_VIEWPORT_PADDING = 8;
 const PISI_BADGE_PICKER_GAP = 6;
+const PISI_BADGE_PICKER_TOP_LAYER_Z_INDEX = 2147483000;
 
 let pisiBadgePickerPortalObserver = null;
 
@@ -25,6 +26,25 @@ function getPisiBadgePickerPortal() {
     );
 }
 
+function syncPisiBadgePickerPortalLayer(picker = getPisiBadgePickerPortal()) {
+    if (!picker) return false;
+
+    let zIndex = PISI_BADGE_PICKER_TOP_LAYER_Z_INDEX;
+    const commandCenterOverlay = document.getElementById('pisi-command-center-overlay');
+    if (commandCenterOverlay?.isConnected) {
+        const overlayZIndex = Number.parseInt(
+            window.getComputedStyle(commandCenterOverlay).zIndex,
+            10
+        );
+        if (Number.isFinite(overlayZIndex)) {
+            zIndex = Math.max(zIndex, overlayZIndex + 1);
+        }
+    }
+
+    picker.style.zIndex = String(zIndex);
+    return true;
+}
+
 function positionPisiBadgePickerPortal(picker = getPisiBadgePickerPortal()) {
     if (!picker || picker.hidden) return false;
 
@@ -33,6 +53,8 @@ function positionPisiBadgePickerPortal(picker = getPisiBadgePickerPortal()) {
         picker.hidden = true;
         return false;
     }
+
+    syncPisiBadgePickerPortalLayer(picker);
 
     const viewportWidth = Math.max(0, window.innerWidth || document.documentElement.clientWidth || 0);
     const viewportHeight = Math.max(0, window.innerHeight || document.documentElement.clientHeight || 0);
@@ -81,6 +103,7 @@ function portalizePisiBadgePicker(picker) {
 
     picker.classList.add(PISI_BADGE_PICKER_PORTAL_CLASS);
     if (picker.parentElement !== document.body) document.body.appendChild(picker);
+    syncPisiBadgePickerPortalLayer(picker);
     if (!picker.hidden) requestAnimationFrame(() => positionPisiBadgePickerPortal(picker));
     return true;
 }
@@ -156,5 +179,6 @@ export {
     getPisiBadgePickerPortal,
     installPisiBadgePickerPortal,
     portalizePisiBadgePicker,
-    positionPisiBadgePickerPortal
+    positionPisiBadgePickerPortal,
+    syncPisiBadgePickerPortalLayer
 };
