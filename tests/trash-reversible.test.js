@@ -86,6 +86,19 @@ test('permanent delete and empty Trash remain explicit atomic domain commands', 
     assert.match(store, /emptyPisiTrash/);
 });
 
+test('Trash deletion retries transient Windows locks and keeps emptying other items', () => {
+    assert.match(store, /PISI_TRASH_DELETE_RETRY_CODES/);
+    assert.match(store, /'EPERM'/);
+    assert.match(store, /'EACCES'/);
+    assert.match(store, /maxRetries:\s*8/);
+    assert.match(store, /retryDelay:\s*120/);
+    assert.match(store, /fs\.chmodSync\(resolved, 0o700\)/);
+    assert.match(store, /removePisiTrashPathWithRetry/);
+    assert.match(store, /const failed = \[\]/);
+    assert.match(store, /TRASH_EMPTY_PARTIAL/);
+    assert.match(store, /failed\.push\(/);
+});
+
 test('Trash modules load after canonical stores and after base domain registration', () => {
     const taskStoreIndex = main.indexOf('./main/functions/task-store');
     const trashStoreIndex = main.indexOf('./main/functions/trash-store');
