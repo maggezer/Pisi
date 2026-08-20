@@ -70,6 +70,7 @@ import "./map/pisi-map-operational-render.mjs";
 import "./map/pisi-map-operational.mjs";
 import "./map/pisi-map-scopes.mjs";
 import "./map/pisi-map-right-panel.mjs";
+import "./map/pisi-map-focus-menu.mjs";
 import "./map/pisi-map-label-preference.mjs";
 import "./map/pisi-map-property-badges.mjs";
 import "./map/pisi-map-property-badge-portal.mjs";
