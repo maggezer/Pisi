@@ -83,7 +83,8 @@ function addLegacyNameErrors(file, content) {
 function addAssetReferenceErrors(file, content) {
     const references = new Set();
     for (const match of content.matchAll(/(?:^|["'`(\s])((?:\.\.\/)*assets\/[A-Za-z0-9._/-]+)/g)) {
-        references.add(match[1]);
+        const reference = match[1].replace(/[.,;:!?]+$/, '');
+        references.add(reference);
     }
 
     for (const reference of references) {
