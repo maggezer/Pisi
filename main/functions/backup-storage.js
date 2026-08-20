@@ -8,6 +8,11 @@ const PISI_BACKUP_ROOT_RELATIVE = path.join('.pisi', 'backups');
 const PISI_ATOMIC_BACKUP_RELATIVE = path.join(PISI_BACKUP_ROOT_RELATIVE, 'atomic');
 const PISI_CORRUPT_BACKUP_RELATIVE = path.join(PISI_BACKUP_ROOT_RELATIVE, 'corrupt');
 const PISI_CORRUPT_BACKUP_PATTERN = /\.corrupt-([0-9a-f]{12})\.bak$/i;
+const PISI_BACKUP_MIGRATION_SKIP_NAMES = new Set([
+    '.git',
+    'node_modules',
+    '.pisi-history'
+]);
 
 function normalizePisiBackupPath(value) {
     return path.resolve(String(value || ''));
@@ -187,6 +192,122 @@ function migratePisiLegacyAtomicBackup(projectFolder, targetPath, options = {}) 
     }
 }
 
+function shouldSkipPisiBackupMigrationDirectory(projectFolder, directoryPath, name) {
+    if (PISI_BACKUP_MIGRATION_SKIP_NAMES.has(name)) return true;
+    if (isPisiBackupStoragePath(projectFolder, directoryPath)) return true;
+
+    const pisiRoot = path.join(projectFolder, '.pisi');
+    const mutationRoot = path.join(pisiRoot, 'mutations');
+    const trashRoot = path.join(pisiRoot, 'trash');
+    return (
+        isSameOrInsidePisiBackupPath(directoryPath, mutationRoot) ||
+        isSameOrInsidePisiBackupPath(directoryPath, trashRoot)
+    );
+}
+
+function collectPisiLegacyBackupFiles(projectFolder, options = {}) {
+    const projectRoot = normalizePisiBackupPath(projectFolder);
+    const maxFiles = Math.max(1, Number(options.maxFiles) || 5000);
+    const atomic = [];
+    const corrupt = [];
+    const queue = [projectRoot];
+
+    while (queue.length && atomic.length + corrupt.length < maxFiles) {
+        const directory = queue.shift();
+        let entries = [];
+        try {
+            entries = fs.readdirSync(directory, { withFileTypes: true });
+        } catch {
+            continue;
+        }
+
+        for (const entry of entries) {
+            if (atomic.length + corrupt.length >= maxFiles) break;
+            if (entry.isSymbolicLink?.()) continue;
+            const fullPath = path.join(directory, entry.name);
+
+            if (entry.isDirectory()) {
+                if (
+                    !shouldSkipPisiBackupMigrationDirectory(
+                        projectRoot,
+                        fullPath,
+                        entry.name
+                    )
+                ) {
+                    queue.push(fullPath);
+                }
+                continue;
+            }
+
+            if (!entry.isFile()) continue;
+            if (entry.name.endsWith(PISI_BACKUP_SUFFIX)) {
+                atomic.push(fullPath);
+                continue;
+            }
+            if (PISI_CORRUPT_BACKUP_PATTERN.test(entry.name)) {
+                corrupt.push(fullPath);
+            }
+        }
+    }
+
+    return { atomic, corrupt };
+}
+
+function migratePisiLegacyBackups(projectFolder, options = {}) {
+    const projectRoot = normalizePisiBackupPath(projectFolder);
+    const files = collectPisiLegacyBackupFiles(projectRoot, options);
+    const warnings = [];
+    let atomicMigrated = 0;
+    let corruptMigrated = 0;
+
+    for (const legacyPath of files.atomic) {
+        const targetPath = getPisiAtomicBackupTargetPath(projectRoot, legacyPath);
+        const destinationPath = targetPath
+            ? getPisiAtomicBackupPath(projectRoot, targetPath)
+            : null;
+        if (!targetPath || !destinationPath) continue;
+        try {
+            if (movePisiBackupFile(legacyPath, destinationPath, options)) {
+                atomicMigrated += 1;
+            }
+        } catch (error) {
+            warnings.push(`${legacyPath}: ${error.message}`);
+        }
+    }
+
+    for (const legacyPath of files.corrupt) {
+        const parsed = getPisiLegacyCorruptBackupTarget(legacyPath);
+        if (
+            !parsed ||
+            !isPisiProjectPath(projectRoot, parsed.targetPath) ||
+            isPisiBackupStoragePath(projectRoot, parsed.targetPath)
+        ) {
+            continue;
+        }
+        const destinationPath = getPisiCorruptBackupPath(
+            projectRoot,
+            parsed.targetPath,
+            parsed.digest
+        );
+        if (!destinationPath) continue;
+        try {
+            if (movePisiBackupFile(legacyPath, destinationPath, options)) {
+                corruptMigrated += 1;
+            }
+        } catch (error) {
+            warnings.push(`${legacyPath}: ${error.message}`);
+        }
+    }
+
+    return {
+        ok: warnings.length === 0,
+        atomicMigrated,
+        corruptMigrated,
+        migrated: atomicMigrated + corruptMigrated,
+        warnings
+    };
+}
+
 module.exports = {
     PISI_BACKUP_SUFFIX,
     PISI_BACKUP_ROOT_RELATIVE,
@@ -203,5 +324,7 @@ module.exports = {
     isPisiBackupStoragePath,
     ensurePisiBackupParent,
     movePisiBackupFile,
-    migratePisiLegacyAtomicBackup
+    migratePisiLegacyAtomicBackup,
+    collectPisiLegacyBackupFiles,
+    migratePisiLegacyBackups
 };
