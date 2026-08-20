@@ -20,6 +20,7 @@ function loadDismissHarness() {
     let mouseDownHandler = null;
     let capturePhase = null;
     let removedSelectedClasses = 0;
+    let blurredEdgeFocus = 0;
     const dispatched = [];
 
     class TestCustomEvent {
@@ -28,12 +29,23 @@ function loadDismissHarness() {
         }
     }
 
+    const activeEdgeElement = {
+        closest(selector) {
+            assert.equal(selector, '.map-edge-group[data-edge-id]');
+            return { dataset: { edgeId: 'edge_test' } };
+        },
+        blur() {
+            blurredEdgeFocus += 1;
+        }
+    };
+
     const context = vm.createContext({
         window: {
             selectedMapEdgeId: 'edge_test'
         },
         CustomEvent: TestCustomEvent,
         document: {
+            activeElement: activeEdgeElement,
             addEventListener(type, handler, capture) {
                 if (type === 'mousedown') {
                     mouseDownHandler = handler;
@@ -68,11 +80,12 @@ function loadDismissHarness() {
         getHandler: () => mouseDownHandler,
         getCapturePhase: () => capturePhase,
         getRemovedCount: () => removedSelectedClasses,
+        getBlurredFocusCount: () => blurredEdgeFocus,
         dispatched
     };
 }
 
-test('clicking outside a selected map edge clears its selection globally', () => {
+test('clicking canvas outside a selected map edge clears state, class and focus', () => {
     const harness = loadDismissHarness();
     const handler = harness.getHandler();
 
@@ -89,13 +102,14 @@ test('clicking outside a selected map edge clears its selection globally', () =>
 
     assert.equal(harness.context.window.selectedMapEdgeId, null);
     assert.equal(harness.getRemovedCount(), 1);
+    assert.equal(harness.getBlurredFocusCount(), 1);
     assert.deepEqual(
         harness.dispatched,
         ['pisi:map-customization-context-changed']
     );
 });
 
-test('clicking the edge itself keeps the current edge selection', () => {
+test('clicking the edge itself keeps the current edge selection and focus', () => {
     const harness = loadDismissHarness();
     const handler = harness.getHandler();
 
@@ -110,6 +124,7 @@ test('clicking the edge itself keeps the current edge selection', () => {
 
     assert.equal(harness.context.window.selectedMapEdgeId, 'edge_test');
     assert.equal(harness.getRemovedCount(), 0);
+    assert.equal(harness.getBlurredFocusCount(), 0);
     assert.deepEqual(harness.dispatched, []);
 });
 
