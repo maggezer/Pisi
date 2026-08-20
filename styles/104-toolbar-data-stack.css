@@ -1,0 +1,6 @@
+.pisi-unified-toolbar > .pisi-toolbar-section.pisi-toolbar-section-excel {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
