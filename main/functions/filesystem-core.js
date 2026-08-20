@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const { registerMainModule } = require('../module-registry');
+const backupStorage = require('./backup-storage');
 
 function normalizePisiCustomizationColor(value) {
     const color = String(value || '').trim();
@@ -338,6 +339,40 @@ function fsyncDirectoryBestEffort(directoryPath) {
     }
 }
 
+function resolvePisiAtomicBackupPath(targetPath, options = {}) {
+    if (options.backup === false) return null;
+
+    const projectFolder = globalThis.activeProjectFolder;
+    if (
+        projectFolder &&
+        backupStorage.isPisiProjectPath(projectFolder, targetPath)
+    ) {
+        if (backupStorage.isPisiBackupStoragePath(projectFolder, targetPath)) {
+            return null;
+        }
+        return backupStorage.getPisiAtomicBackupPath(projectFolder, targetPath);
+    }
+
+    return `${targetPath}${backupStorage.PISI_BACKUP_SUFFIX}`;
+}
+
+function removeLegacyPisiAtomicBackup(targetPath, backupPath) {
+    const legacyPath = `${targetPath}${backupStorage.PISI_BACKUP_SUFFIX}`;
+    if (
+        !backupPath ||
+        path.resolve(legacyPath) === path.resolve(backupPath) ||
+        !fs.existsSync(legacyPath)
+    ) {
+        return;
+    }
+
+    try {
+        fs.unlinkSync(legacyPath);
+    } catch {
+        // Yeni merkezi yedek başarıyla oluştuysa eski kopya temizliği best-effort'tur.
+    }
+}
+
 function writeFileAtomic(filePath, content, options = {}) {
     const targetPath = path.resolve(filePath);
     const directoryPath = path.dirname(targetPath);
@@ -346,9 +381,14 @@ function writeFileAtomic(filePath, content, options = {}) {
         directoryPath,
         `.${baseName}.${process.pid}.${crypto.randomUUID()}.tmp`
     );
-    const backupPath = `${targetPath}.pisi-backup`;
+    const backupPath = resolvePisiAtomicBackupPath(targetPath, options);
+    let backupTempPath = null;
     let descriptor = null;
-    markInternalFileChange(targetPath, tempPath, backupPath);
+    markInternalFileChange(
+        targetPath,
+        tempPath,
+        ...(backupPath ? [backupPath] : [])
+    );
 
     try {
         descriptor = fs.openSync(tempPath, 'wx', 0o600);
@@ -357,16 +397,23 @@ function writeFileAtomic(filePath, content, options = {}) {
         fs.closeSync(descriptor);
         descriptor = null;
 
-        if (options.backup !== false && fs.existsSync(targetPath)) {
-            const backupTempPath = `${backupPath}.${crypto.randomUUID()}.tmp`;
+        if (backupPath && fs.existsSync(targetPath)) {
+            backupStorage.ensurePisiBackupParent(backupPath);
+            backupTempPath = `${backupPath}.${crypto.randomUUID()}.tmp`;
             markInternalFileChange(backupTempPath);
             fs.copyFileSync(targetPath, backupTempPath);
             renamePathInternal(backupTempPath, backupPath);
+            backupTempPath = null;
+            removeLegacyPisiAtomicBackup(targetPath, backupPath);
         }
 
         renamePathInternal(tempPath, targetPath);
         fsyncDirectoryBestEffort(directoryPath);
-        sealInternalFileChange(targetPath, tempPath, backupPath);
+        sealInternalFileChange(
+            targetPath,
+            tempPath,
+            ...(backupPath ? [backupPath] : [])
+        );
     } catch (error) {
         if (descriptor !== null) {
             try {
@@ -374,12 +421,17 @@ function writeFileAtomic(filePath, content, options = {}) {
             } catch {}
         }
 
-        try {
-            if (fs.existsSync(tempPath)) {
-                fs.unlinkSync(tempPath);
-            }
-        } catch {}
-        sealInternalFileChange(tempPath);
+        for (const cleanupPath of [tempPath, backupTempPath].filter(Boolean)) {
+            try {
+                if (fs.existsSync(cleanupPath)) {
+                    fs.unlinkSync(cleanupPath);
+                }
+            } catch {}
+        }
+        sealInternalFileChange(
+            tempPath,
+            ...(backupTempPath ? [backupTempPath] : [])
+        );
 
         throw error;
     }
@@ -461,10 +513,30 @@ function backupCorruptPisiFile(filePath) {
             .update(raw)
             .digest('hex')
             .slice(0, 12);
-        const backupPath = `${filePath}.corrupt-${digest}.bak`;
+        const projectFolder = globalThis.activeProjectFolder;
+        const managedBackupPath = projectFolder
+            ? backupStorage.getPisiCorruptBackupPath(
+                projectFolder,
+                filePath,
+                digest
+            )
+            : null;
+        const backupPath = managedBackupPath ||
+            `${filePath}.corrupt-${digest}.bak`;
 
+        backupStorage.ensurePisiBackupParent(backupPath);
         if (!fs.existsSync(backupPath)) {
             fs.copyFileSync(filePath, backupPath, fs.constants.COPYFILE_EXCL);
+        }
+
+        if (managedBackupPath) {
+            const legacyPath = `${filePath}.corrupt-${digest}.bak`;
+            if (
+                path.resolve(legacyPath) !== path.resolve(backupPath) &&
+                fs.existsSync(legacyPath)
+            ) {
+                try { fs.unlinkSync(legacyPath); } catch {}
+            }
         }
 
         return backupPath;
