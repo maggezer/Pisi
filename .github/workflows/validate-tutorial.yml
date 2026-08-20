@@ -1,0 +1,55 @@
+name: Validate Pisi Tutorial
+
+on:
+  push:
+    branches:
+      - chatgpt/add-tutorial-20260820
+    paths:
+      - .github/workflows/validate-tutorial.yml
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: chatgpt/add-tutorial-20260820
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - id: install
+        name: Install dependencies
+        continue-on-error: true
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+        run: npm ci
+
+      - id: validate
+        name: Validate
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
+        run: npm run validate
+
+      - name: Record status
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INSTALL: ${{ steps.install.outcome }}
+          VALIDATE: ${{ steps.validate.outcome }}
+        run: |
+          printf 'install=%s\nvalidate=%s\n' "$INSTALL" "$VALIDATE" > tutorial-validation.txt
+          content=$(base64 -w0 tutorial-validation.txt)
+          gh api --method PUT "repos/$GITHUB_REPOSITORY/contents/.tutorial-validation.txt" \
+            -f message='Record tutorial validation' \
+            -f content="$content" \
+            -f branch='chatgpt/add-tutorial-20260820'
