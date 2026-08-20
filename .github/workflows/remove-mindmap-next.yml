@@ -1,0 +1,104 @@
+name: Remove Mind Map Next
+
+on:
+  push:
+    branches:
+      - chatgpt/remove-mindmap-next-20260820
+    paths:
+      - .github/workflows/remove-mindmap-next.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: chatgpt/remove-mindmap-next-20260820
+
+      - name: Remove Next UI and handler
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          operational = Path('renderer/map/pisi-map-operational.mjs')
+          text = operational.read_text(encoding='utf-8')
+
+          replacements = [
+              ("        focus: 'Komşulara odaklan', next: 'Sıradaki', linked: 'Bağlı node oluştur',", "        focus: 'Komşulara odaklan', linked: 'Bağlı node oluştur',"),
+              ("        focus: 'Focus neighbors', next: 'Next', linked: 'Create linked node',", "        focus: 'Focus neighbors', linked: 'Create linked node',"),
+              ("    const nextButton = document.getElementById('pisi-map-operational-next');\n    if (nextButton) {\n        const next = operationalState.lastRender?.ranked?.[0]?.node;\n        nextButton.disabled = !next;\n        nextButton.title = next?.metadata?.title\n            ? `${t('next')}: ${next.metadata.title}`\n            : t('next');\n    }\n", ""),
+              ("        ['pisi-map-operational-focus', 'focus'],\n        ['pisi-map-operational-next', 'next'],\n        ['pisi-map-operational-deps', 'deps'],", "        ['pisi-map-operational-focus', 'focus'],\n        ['pisi-map-operational-deps', 'deps'],"),
+              ("        'focus', 'next', 'deps', 'labels', 'work',", "        'focus', 'deps', 'labels', 'work',"),
+              ("        buttons.focus, buttons.next,\n        buttons.deps, buttons.labels, buttons.work,", "        buttons.focus,\n        buttons.deps, buttons.labels, buttons.work,"),
+              ("    document.getElementById('pisi-map-operational-next')?.addEventListener('click', focusNextPisiOperationalNode);\n", ""),
+              ("function focusNextPisiOperationalNode() {\n    const next = operationalState.lastRender?.ranked?.[0]?.node;\n    if (!next) return;\n    const box = document.querySelector(\n        `.map-node-box[data-node-id=\"${CSS.escape(next.id)}\"]`\n    );\n    const canvas = document.getElementById('map-canvas');\n    if (!box || !canvas) return;\n    window.Pisi?.modules?.['map.interactions']?.clearSelectedMapNodes?.();\n    box.classList.add('selected');\n    const zoom = window.activeMapCamera?.zoom || 1;\n    const x = parseFloat(box.style.left || '0') + box.offsetWidth / 2;\n    const y = parseFloat(box.style.top || '0') + box.offsetHeight / 2;\n    window.activeMapCamera.x = canvas.clientWidth / 2 - x * zoom;\n    window.activeMapCamera.y = canvas.clientHeight / 2 - y * zoom;\n    window.Pisi?.modules?.['map.interactions']?.applyMapCamera?.();\n    window.Pisi?.modules?.['map.interactions']?.saveActiveMapCameraSoon?.();\n    schedulePisiOperationalRender();\n    box.focus();\n}\n\n", ""),
+              ("    createPisiOperationalLinkedNode,\n    focusNextPisiOperationalNode,\n    loadPisiOperationalMapState,", "    createPisiOperationalLinkedNode,\n    loadPisiOperationalMapState,"),
+          ]
+
+          for old, new in replacements:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'operational replacement expected once, got {count}: {old[:90]!r}')
+              text = text.replace(old, new, 1)
+
+          if 'pisi-map-operational-next' in text or 'focusNextPisiOperationalNode' in text:
+              raise SystemExit('Next UI/function reference remains in pisi-map-operational.mjs')
+          operational.write_text(text, encoding='utf-8')
+
+          panel = Path('renderer/map/pisi-map-right-panel.mjs')
+          text = panel.read_text(encoding='utf-8')
+          replacements = [
+              ("    'pisi-map-operational-next': 'next',\n", ""),
+              ("    'pisi-map-operational-next',\n", ""),
+          ]
+          for old, new in replacements:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'panel replacement expected once, got {count}: {old!r}')
+              text = text.replace(old, new, 1)
+          if 'pisi-map-operational-next' in text:
+              raise SystemExit('Next panel reference remains')
+          panel.write_text(text, encoding='utf-8')
+
+          test_file = Path('tests/mindmap-tools-compact.test.js')
+          text = test_file.read_text(encoding='utf-8')
+          old = "        'pisi-map-operational-focus',\n        'pisi-map-operational-next',\n        'pisi-map-operational-linked',"
+          new = "        'pisi-map-operational-focus',\n        'pisi-map-operational-linked',"
+          if text.count(old) != 1:
+              raise SystemExit('expected Mind Map test list once')
+          text = text.replace(old, new, 1)
+          anchor = "    assert.match(panel, /assets\\/map-tools\\.svg/);\n"
+          if text.count(anchor) != 1:
+              raise SystemExit('expected Mind Map test assertion anchor once')
+          text = text.replace(anchor, anchor + "    assert.doesNotMatch(panel, /pisi-map-operational-next/);\n", 1)
+          test_file.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+        run: npm ci
+
+      - name: Validate
+        run: npm run validate
+
+      - name: Commit change
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- renderer/map/pisi-map-operational.mjs renderer/map/pisi-map-right-panel.mjs tests/mindmap-tools-compact.test.js
+          git commit -m "Remove Mind Map Next action"
+          git push
