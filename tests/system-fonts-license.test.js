@@ -27,8 +27,11 @@ test('Comic Sans is exposed as a system font without redistributing font binarie
     const moduleSource = read('renderer/editor/pisi-editor-system-fonts.mjs');
     const bootstrap = read('renderer/bootstrap.mjs');
 
-    assert.match(moduleSource, /value:\s*'Comic Sans MS'/);
-    assert.match(moduleSource, /"Comic Sans MS", "Comic Sans", cursive/);
+    assert.match(
+        moduleSource,
+        /value:\s*'"Comic Sans MS", "Comic Sans", cursive'/
+    );
+    assert.match(moduleSource, /label:\s*'Comic Sans MS'/);
     assert.doesNotMatch(moduleSource, /@font-face/i);
     assert.doesNotMatch(moduleSource, /https?:\/\//i);
     assert.match(
