@@ -1,0 +1,832 @@
+
+> pisi@0.11.0 validate
+> npm run check:syntax && npm run check:architecture && npm run check:migration && npm run check:i18n && npm run lint && npm test
+
+
+> pisi@0.11.0 check:syntax
+> node scripts/check-syntax.js
+
+264 JavaScript/ES module dosyası sözdizimi kontrolünden geçti.
+
+> pisi@0.11.0 check:architecture
+> node scripts/check-architecture.js
+
+Architecture boundaries, CSS cascade and module sizes are valid.
+
+> pisi@0.11.0 check:migration
+> node scripts/check-pisi-migration.js
+
+Pisi geçiş denetimi: 204 production dosyası incelendi.
+Bilinçli geriye dönük uyumluluk referansları:
+- Eski belge metadata alanı (data.kedi): 8
+- Eski proje kilidi (.kedi.lock): 2
+- Eski ayar dosyası (kedi-settings.json): 1
+- Project Integrity legacy metadata denetimi: 1
+- Eski diary klasör işaretçisi (.kedi-diary): 1
+Pisi geçiş denetimi başarılı.
+
+> pisi@0.11.0 check:i18n
+> node scripts/check-i18n.js
+
+Pisi i18n catalogs, UI coverage and language plumbing are valid (716 keys).
+
+> pisi@0.11.0 lint
+> eslint .
+
+
+> pisi@0.11.0 test
+> node --test
+
+✔ atomic manifest commit marker is durable before best-effort journal cleanup (1.293597ms)
+✔ non-committed restart paths roll back snapshots instead of guessing (1.082613ms)
+✔ journal paths cannot recursively snapshot their own ancestor (0.184505ms)
+✔ nested transaction context uses AsyncLocalStorage (0.165268ms)
+✔ top-level mutations in the same project are serialized (0.237815ms)
+✔ filesystem hooks capture rename write mkdir unlink and rm boundaries (0.147826ms)
+✔ bulk mutation is bounded and recursive batch command is not allowed (0.218749ms)
+✔ all persistent domain mutations join the atomic project queue (0.231252ms)
+✔ atomic hardening loads after the domain registry (0.374049ms)
+✔ destructive compatibility IPC handlers are rebound after legacy hooks (0.529479ms)
+✔ crash after first file write recovers completely to old state (14.662031ms)
+✔ crash between multi-file writes never leaves 50/50 state (12.121358ms)
+✔ crash after rename restores source tree and removes destination tree (9.23817ms)
+✔ newly created file and directory are removed on recovery (5.882849ms)
+✔ durable committed marker makes restart keep the new state (5.211118ms)
+✔ rollback restores pre-existing destination as well as source (8.788448ms)
+✔ atomic core refuses project escape and symlink snapshots (4.52845ms)
+✔ domain layer routes destructive and bulk operations through atomic mutation runner (0.531122ms)
+✔ rename and move task-reference failure is an atomic failure rather than partial success (0.435113ms)
+✔ startup project listing gates visible state behind atomic recovery (0.488623ms)
+✔ atomic journal is loaded before mutating storage services (0.310711ms)
+✔ manifestless leftover mutation directory is cleanup residue, not fatal recovery (2.648297ms)
+✔ existing malformed manifest stays fatal instead of being silently deleted (1.019385ms)
+✔ normal commit exits mut namespace before journal deletion (6.159428ms)
+✔ hardening source keeps Windows transient cleanup retries (0.31577ms)
+✔ project backups resolve under .pisi/backups instead of beside documents (2.304546ms)
+✔ backup storage never creates backups of files already inside backup storage (0.236913ms)
+✔ legacy beside-file atomic backup migrates to central storage and keeps target mapping (1.914187ms)
+✔ project-open migration moves atomic and corrupt legacy backups together (2.488659ms)
+✔ legacy backup target decoding remains supported for old projects (1.002643ms)
+✔ filesystem, project-open migration and backup IPC use centralized storage (0.496778ms)
+✔ Bases-lite Workspace Center yerine map sağ üst düğmesinden açılır (1.910129ms)
+✔ map Bases-lite düğmesi zoom kontrolleriyle aynı sağ çizgide ve üsttedir (1.612192ms)
+✔ özel Bases-lite penceresi sağlamlaştırılmış ortak projection görünümünü kullanır (0.622162ms)
+✔ Bases-lite düğmesi, penceresi ve özel ikonu iki temaya uygundur (2.322429ms)
+✔ Bases consumes project-level stable property definitions while relation candidates remain active-map nodes (1.249123ms)
+✔ Table and Card are projections only and never create another property authority (0.611201ms)
+✔ filtering does not redefine columns and cards use the same bounded canonical columns (1.28471ms)
+✔ Bases saved views keep current query/layout scope and invalid layout fails closed to table (0.579032ms)
+✔ Create-map action uses exactly the currently visible projection rather than a second filter implementation (0.30493ms)
+✔ project switch clears ephemeral Bases query/layout state to avoid cross-project leakage (0.34767ms)
+✔ Comic Neue is bundled offline with its OFL license (1.714123ms)
+✔ Vincendo is bundled locally, licensed, and exposed in the editor font list (2.184251ms)
+✔ sol panele dock edilen takvim merkez sekmelerin arkasında kalmaz (1.168503ms)
+✔ sag panel Search ve dock edilmis takvimi ayri layout satirlarinda tutar (1.291703ms)
+✔ Links paneli node adı ve kimlik-yol özet kartını üretmez (1.248602ms)
+✔ edge onarımı self-loop, tekrar, ikinci parent ve döngüyü güvenli temizler (6.195764ms)
+✔ layout ve kamera sayıları güvenli aralıklara sıkıştırılır (1.1669ms)
+✔ diary temizleyicisi çalıştırılabilir HTML özelliklerini kaldırır (1.993615ms)
+✔ diary managed alanı çıkarılırken manuel boşluklar korunur (0.987655ms)
+✔ normal kullanıcı diary klasörü marker eklenmeden korunur (3.220256ms)
+✔ boş ve eski işaretçili diary klasörleri güvenle Pisi yönetimine alınır (2.114982ms)
+✔ watcher PISI kaydını dış değişiklikten dosya imzasıyla ayırır (2.657134ms)
+✔ canvas yoksa Paint araçları belge mürekkep katmanına yönelir (1.000188ms)
+✔ belge mürekkebi şeffaf PNG olarak kaydedilip geri yüklenir (0.206636ms)
+✔ silgi yalnızca mürekkep katmanını temizler (0.267159ms)
+✔ yazı aracına geçmek veya Escape belge çizimini kapatır (0.199532ms)
+✔ belge mürekkep modülü bootstrap ve stil zincirine bağlıdır (0.214951ms)
+✔ domain contract command ve query registrylerini ayrı ve versioned tutar (1.324815ms)
+✔ unknown domain command ve query fail closed davranır (0.318866ms)
+✔ task domain canonical task store ve capture servisini kullanır (0.300001ms)
+✔ map relationship commandlari semantic operation katmanını aşmaz (0.253564ms)
+✔ operational mutation camera yan etkisinden ayrı domain commanddır (0.216755ms)
+✔ compatibility IPC core task ve map çağrılarını domain dispatchere reroute eder (0.333513ms)
+✔ domain path guard aktif proje kökü ve typed document yollarını zorunlu kılar (0.291285ms)
+✔ renderer domain client semantic isimleri compatibility transporttan ayırır (0.166862ms)
+✔ Quick Add UI storage API yerine task capture domain commandını çağırır (0.557051ms)
+✔ domain katmanı storage dosyalarına doğrudan fs yazımı yapmaz (0.560107ms)
+✔ domain katmanları kritik feature modüllerinden önce ve IPC hooklarından sonra yüklenir (0.392864ms)
+✔ inline text format core toggles bold and italic deterministically (3.019591ms)
+✔ underline and strike toggle independently without leaving a stuck decoration (0.345125ms)
+✔ text authority owns persistent toolbar and command-menu inline formatting (1.306911ms)
+✔ decoration off splits the owning span instead of nesting text-decoration none (0.266157ms)
+✔ typing format state only overrides a collapsed caret and resets on navigation (0.400849ms)
+✔ nested underline and strike state is resolved through ancestors (0.25651ms)
+✔ toolbar state has one final inline authority after legacy Word synchronization (0.402091ms)
+✔ legacy slash popup and legacy slash tag parser are deleted from production source (0.81348ms)
+✔ single command router loads after tag, block, formatting and text authority services (0.377245ms)
+✔ LaTeX support on exposes the full / and .. command sets (16.875569ms)
+✔ LaTeX support off leaves only todo and done for / and .. (8.45159ms)
+✔ .. master preference still disables even todo and done (0.24658ms)
+✔ all routed menu execution paths pass through the preference gate (0.485467ms)
+✔ parser reserves # for tags and / or .. for editor commands (8.366091ms)
+✔ hash-tag menu creates tags only from # tokens (1.486197ms)
+✔ / and .. build one command menu with formatting, lists, todo/done and LaTeX but no tags (10.164892ms)
+✔ standard LaTeX snippets are available by default and disappear when preference is off (2.680378ms)
+✔ routed /frac menu click removes the token and inserts the LaTeX template (3.158862ms)
+✔ .. commands preference defaults on and gates the alternate command menu (1.40238ms)
+✔ production source has one / and .. menu renderer and no legacy menu/parser implementation (0.968029ms)
+✔ Preferences UI exposes and wires LaTeX and .. command toggles (0.298127ms)
+✔ rich editor preserves repeated spaces as visible caret width (1.399805ms)
+✔ internal .pisi namespace is hidden without hiding a user map named pisi (0.964542ms)
+✔ internal tree filter is loaded after the normal tree renderer and removes matching DOM nodes (1.232322ms)
+✔ Word-like behavior layer is loaded after block editor (1.04351ms)
+✔ toolbar remembers selection and synchronizes font and command state (0.483072ms)
+✔ font changes use real sizes and keep a collapsed caret typing style (0.377906ms)
+✔ style selector matches the block model and headings can collapse sections (0.566598ms)
+✔ aritmetik ayrıştırıcı öncelik ve parantezleri güvenli hesaplar (6.015638ms)
+✔ SUM, COUNT ve AVG boş hücreleri doğru ele alır (2.121333ms)
+✔ döngüsel formül ve tablo dışı dev aralık hata üretir (0.64265ms)
+✔ Turkish and English catalogs have matching complete keys (4.158539ms)
+✔ language selection is persisted and the live DOM translator watches changes (0.920179ms)
+✔ renderer and native Electron dialogs use the localization layer (1.349602ms)
+✔ interaction regression layer is loaded by renderer bootstrap (1.096628ms)
+✔ map edge deletion has one canonical handler and does not steal editor focus (0.692193ms)
+✔ map rename closes outside without leaking the same pointer event (0.367948ms)
+✔ map rename finishes before the same node opens in modal (1.06019ms)
+✔ Tab inserts indentation into rich text blocks instead of leaving editor (0.442627ms)
+✔ visible node modal owns Escape before background rename handlers (0.253985ms)
+✔ node modal blocks Pisi menu and titlebar language toggle is removed (0.351126ms)
+✔ LaTeX preference gates both menu item creation and execution (7.393342ms)
+✔ switching LaTeX off immediately closes stale unified command state (0.287357ms)
+✔ map yanındaki yeni node aksiyonu delete map ile aynı buton yapısını kullanır (1.249134ms)
+✔ sol panel normal ok imlecini korur, yalnız metin alanları text imlecidir (0.5676ms)
+✔ light theme selected map node keeps the orange selection border (1.066223ms)
+✔ external rectangular node selection frame is no longer loaded (0.217466ms)
+✔ selected map edge exposes a three-type connection menu instead of an x delete button (1.767052ms)
+✔ changing connection type persists the same edge through semantic upsert and refreshes map state (0.696811ms)
+✔ connection menu interaction keeps the edge selected while menu items are clicked (0.286776ms)
+✔ connection menu stylesheet is loaded and supports both themes (0.282518ms)
+✔ clicking canvas outside a selected map edge clears state, class and focus (3.138624ms)
+✔ clicking the edge itself keeps the current edge selection and focus (0.898819ms)
+✔ edge customize controls are explicit selection-preserving targets (0.152425ms)
+✔ outside-click dismissal loads immediately after map edge interactions (0.281686ms)
+✔ açık harita sağ üst menüden PNG veya PDF olarak dışa aktarılır (1.347969ms)
+✔ çıktı ekran görüntüsü yerine bütün görünür map geometrisinden üretilir (4.600986ms)
+✔ PNG yüksek çözünürlükte rasterize edilir, PDF SVG vektörünü korur (0.933543ms)
+✔ export düğmesi, menüsü, ikonu ve metinleri iki temada tanımlıdır (2.292032ms)
+✔ node modal open button is removed and open task count occupies its corner (1.699876ms)
+✔ legacy mission task badge no longer appears on map node boxes (0.309648ms)
+✔ double click modal opening remains available after removing the corner button (0.311712ms)
+✔ task count badge stylesheet is loaded after existing map styles (0.233477ms)
+✔ saved operational layout snapshots current collapsed hubs (1.017652ms)
+✔ restoring operational layout uses snapshot collapsed hubs instead of current map state (0.268702ms)
+✔ operational Next respects Pisi priority direction: 5 outranks 1 (3.63409ms)
+✔ blocked ve overdue durumları canonical task dependencylerinden node seviyesinde türetilir (3.394765ms)
+✔ task dependency overlay yalnız unresolved cross-node dependencyleri üretir (2.010006ms)
+✔ focused neighbor görünümü semantic graph üzerinde deterministic 1-3 hop BFS uygular (0.410557ms)
+✔ operational scope blocked, overdue, next-action ve query filtrelerini tek projectionda uygular (0.937211ms)
+✔ owner operational feature is fully retired and stale owner scope falls back to all (0.762665ms)
+✔ relationship type filtresi node membershipi değiştirmeden yalnız semantic edge projectionını daraltır (0.389367ms)
+✔ sıradaki çalışma önerisi blocked nodeu dışlar ve overdue/priority ile deterministik sıralar (0.583851ms)
+✔ operational state map state içinde kalır; relationship store veya task store authoritysine yazılmaz (0.48157ms)
+✔ saved layouts node customization, camera, collapsed hubs, scope ve display durumunu birlikte taşır (1.643531ms)
+✔ quick linked node işlemi node oluşturur, yakına yerleştirir ve semantic link kurar (0.625058ms)
+✔ operational renderer dependency overlayi semantic edge listesine eklemez ve ayrı DOM layer kullanır (0.32618ms)
+✔ operational toolbar bootstrap zincirinde semantic edge çiziminden sonra yüklenir (0.211856ms)
+✔ global görünüm ayarları sağ panelden Preferences sayfasına taşınır (1.811976ms)
+✔ Customize yalnız görünür bir map varken etkinleşir ve en sağdadır (1.638992ms)
+✔ node kartı renkleri map kaydında tutulur ve global varsayılanı ezer (1.546619ms)
+✔ seçili bağlantının rengi yalnız o edge üzerinde saklanır ve çizilir (0.469657ms)
+✔ kişiselleştirme yüzeyleri açık ve koyu tema stillerini taşır (0.391511ms)
+✔ map node önizlemesi non-breaking space değerlerini normal boşluğa çevirir (2.169009ms)
+✔ map node başlığı normal ve düzenleme görünümünde ortalanır (0.404111ms)
+✔ badge picker preferences overflowundan body portalına çıkarılır (1.056981ms)
+✔ badge picker portalı workspace center dahil modal katmanlarının üstünde kalır (0.523691ms)
+✔ portal badge sisteminden sonra bootstrap edilir (0.512049ms)
+✔ Workspace Center Preferences Add badge akışı yalnız Metin, Sayı ve Etiket property tiplerini sunar (1.302686ms)
+✔ badge picker önce tip sonra o tipe ait mevcut propertyleri listeler (0.361417ms)
+✔ mindmap badge görünür metin olarak property adını değil node üzerindeki değeri kullanır (1.281274ms)
+✔ Etiket propertysinin tüm dolu değerleri ayrı badge değerleri olarak üretilir, boş değer çizilmez (0.276865ms)
+✔ badge seçimi aktif mindmap bazında saklanır ve aynı property ikinci kez eklenmez (0.407707ms)
+✔ node property kaydı değişince açık mindmapteki badge değeri yeniden çizilir (0.276354ms)
+✔ badge sistemi structured property authorityden sonra bootstrapa yüklenir ve kendi stilini taşır (0.944514ms)
+✔ live scoped map property filtrelerini text, multiselect ve number alanlarında AND olarak uygular (4.174381ms)
+✔ snapshot scope criteria değişse bile captured node membershipini sabit tutar (1.335259ms)
+✔ property filter normalizasyonu yalnız desteklenen operatorleri ve bounded kriterleri kabul eder (0.363372ms)
+✔ relationship filtresi snapshot node membershipinden bağımsız edge projectionı olarak kalır (0.423558ms)
+✔ map operational store saved scopesu layouttan bağımsız ve map-local olarak persist eder (0.552848ms)
+✔ scoped map toolbar live/snapshot, property filter, saved scope ve dim controlsunu map toolbarına ekler (0.389763ms)
+✔ task/query/focus criteria düzenlenince frozen snapshot tekrar live scopea döner (0.355186ms)
+✔ scope observer kendi control mutasyonlarında reload döngüsü üretmez (0.342552ms)
+✔ snapshot refresh önce live projectionı render edip sonra görünümü yeniden dondurur (0.39357ms)
+✔ scoped filter module operational mapten sonra, export/runtime öncesinde bootstrapa bağlanır (0.449308ms)
+✔ semantic relationship store never persists map geometry or visual customization (6.169966ms)
+✔ map relationshipViews contain presentation only and reject semantic duplication (0.432365ms)
+✔ legacy map.edges migrate deterministically into semantic store plus presentation view (2.126927ms)
+✔ the same semantic relationship can have independent presentation in different maps (0.409771ms)
+✔ map placement and camera state can change without mutating semantic relationship authority (1.754598ms)
+✔ semantic hierarchy constraints are project-wide instead of map-local (4.269165ms)
+✔ node connectionTypes are derived in memory from canonical semantic relationships (0.613174ms)
+✔ runtime IPC contract routes semantic writes away from legacy map.edges (0.662139ms)
+✔ Markdown kaynak görünümü toolbar butonu üretmez (1.097199ms)
+✔ Markdown kaynak komutu ve düzenleyicisi kullanılabilir kalır (0.345788ms)
+✔ Mind Map search stays first and filter criteria move behind one filter disclosure (1.003418ms)
+✔ Mind Map text action buttons are decorated as icon-only controls (0.298666ms)
+✔ Dim filtered is a top-level Mind Map action while filter settings stay in the menu (0.197261ms)
+✔ Saved scope actions stay on one three-column row (0.283828ms)
+✔ Mind Map filter menu is a compact inline dropdown and icon sprite ships with it (0.256746ms)
+✔ node modal close button sits flush in the top-right corner without a frame (1.109854ms)
+✔ node modal close polish stylesheet is loaded last (0.287024ms)
+✔ Properties düzenleyicisi node toolbarının açılır alanında yaşar (1.771431ms)
+✔ sağ Properties sekmesi yalnız aktif node bilgisini gösterir (1.300952ms)
+✔ Properties yüzeyleri koyu ve açık tema ile özel sekme ikonuna sahiptir (1.728929ms)
+✔ task navigation exact identity has deterministic priority (4.85729ms)
+✔ todo navigation resolves canonical task then opens node and exact block context (0.369594ms)
+✔ task clicks no longer stop at the currently visible map node box (0.317062ms)
+✔ old-format map creates node file, nodebox and persisted layout together (7.672978ms)
+✔ older map hardening is loaded after the original IPC handlers (1.006324ms)
+✔ new nodebox creation does not depend on reparsing every old map node (0.295281ms)
+✔ stored sidecar from an older map is preserved and migrated safely (0.190619ms)
+✔ malformed old map containers are normalized before adding the new layout (0.171862ms)
+✔ table and card projection share one canonical used-column order independent of filter result (11.967592ms)
+✔ canonical schema name wins over stale redundant node copies while unused definitions stay hidden (0.422055ms)
+✔ missing and empty cells render consistently and relation values resolve to node labels (0.829231ms)
+✔ document order is deterministic for duplicate titles by path and identity (0.938302ms)
+✔ invalid saved-view layout values fail closed to table (0.183554ms)
+✔ projection keeps source count separate from filtered count for UI consistency (0.576774ms)
+✔ Türkçe göreli gün ve saat ifadelerini ayrı plan alanına ayrıştırır (2.537681ms)
+✔ Türkçe tekrar ifadelerini tanır (0.96297ms)
+✔ deadline ve son iş günü planını tek tarih alanına sıkıştırmaz (0.455089ms)
+✔ hızlı erteleme ön ayarlarını yerel ISO değere dönüştürür (1.183475ms)
+✔ eski belge metadata kimlik ve bağlantıları korunarak Pisi alanına taşınır (1.145382ms)
+✔ eski ayarlar yeni Pisi ayar dosyasına güvenle kopyalanır (0.343834ms)
+✔ eski proje kilidi canlı süreç varsa korunur, bayatsa kaldırılır (0.384462ms)
+✔ portability helpers emit Markdown and a real ZIP-based DOCX (5.034673ms)
+✔ main roadmap domains register unique public bindings (0.275272ms)
+✔ relation ve rollup verileri sınırlı biçimde normalize edilir (1.48067ms)
+✔ yalnızca tıklanan porttan başlayan alt node ağacını toplar (1.622454ms)
+✔ gizlenen alt nodea bağlı tüm bağlantıları görünmez sayar (0.29008ms)
+✔ iç içe port daraltmaları üst dal tekrar açıldığında korunur (0.365736ms)
+✔ bozuk döngüsel hiyerarşi verisinde hesaplama sonlanır (0.222079ms)
+✔ bağlantı silme map durumunu temizler ve node düzenleme odağını çalmaz (1.167034ms)
+✔ zoom out bağlantı çizgisi, ok boşluğu ve eğri ölçülerini birlikte küçültür (1.141224ms)
+✔ zoom in bağlantı ve ok ölçülerini node ölçeğiyle aynı oranda büyütür (0.188823ms)
+✔ geçersiz kamera zoom değeri güvenli biçimde 1 kabul edilir (0.981516ms)
+✔ projection fingerprint is deterministic and independent of source enumeration order (8.760426ms)
+✔ rebuildable search projection exposes a versioned disposable manifest (1.746787ms)
+✔ delta gateway upserts and removes records without changing the consumer index shape (1.701743ms)
+✔ stale projection refuses deltas until rebuilt and compatibility is fail closed (0.458447ms)
+✔ generic projection contract owns lifecycle but not domain semantics (0.377136ms)
+✔ özellik sorgusunu operatörlü koşullara ayırır (1.769911ms)
+✔ relation kayıtları rollup toplamı ve sayısına dönüştürülür (1.477333ms)
+✔ metin, sayı ve Tags alanlarını filtreler (2.198242ms)
+✔ tablo ve kart görünümü için özellik sütunlarını tekilleştirir (0.327483ms)
+✔ çekirdek platform modülleri bootstrap ve preload köprüsünde kayıtlıdır (2.69384ms)
+✔ Araştırma yüzeyi ve web yakalama hattı ilk sürümden çıkarılmıştır (3.432531ms)
+✔ görev süreleri ve blok türleri sanitizer tarafından korunur (0.253124ms)
+✔ alt görev hiyerarşisi kaldırılmış, görev bağımlılıkları korunmuştur (0.642001ms)
+✔ blok ve kısayol API yüzeyleri sürümlüdür (0.367848ms)
+✔ Plugins ve Team altyapıları ilk sürümden tamamen çıkarılmıştır (2.709478ms)
+✔ editör imleci otomatik kayıtta korunur, Enter yeni satıra bırakılır ve eski slash popup yoktur (1.00458ms)
+✔ Pisi geçmişi gizlenir ve yeniden adlandırma alanları klavyeyi korur (0.740454ms)
+✔ map seçimi, ağaç tıklamaları ve node yazma odağı birbirine karışmaz (0.778616ms)
+✔ map portu kendi alt node ağacını ve bu ağa bağlı çizgileri daraltır (0.767024ms)
+✔ map ok uçları ve çizgileri node zoom oranını izler (0.52908ms)
+✔ günlük takvimi açılan günü seçili bırakmaz ve dil değişikliğini izler (0.506187ms)
+✔ mantıksal, metin ve bilimsel tablo formülleri etkin hesap motoruna bağlıdır (0.393195ms)
+✔ Türkçe karakterler aksansız sorgularla eşleşir (1.308087ms)
+✔ üçlü-karakter indeksi büyük kayıt kümesinde güvenli aday daraltır (102.976489ms)
+✔ başlık eşleşmesi içerik eşleşmesinden önce sıralanır (0.453308ms)
+✔ çok sözcüklü sorgunun bütün parçaları bulunmalıdır (0.516026ms)
+✔ metin, map ve bağlantısız bahsetme ilişkileri birlikte kurulur (1.394799ms)
+✔ quick navigation history is project-scoped (1.967039ms)
+✔ reopening the same result moves it to top and increments usage (0.575677ms)
+✔ arama modülleri bootstrap ve stil zincirine bağlıdır (1.421158ms)
+✔ hızlı geçiş klavye, filtre ve map odağı davranışlarını taşır (0.670624ms)
+✔ task search results use canonical taskId and exact task navigation (1.356617ms)
+✔ indeks içerik türlerini korur ve node property değerlerini projection olarak ekler (0.456063ms)
+✔ quick switch son kullanılanları proje bazlı tutar ve başarılı navigasyonda kaydeder (0.370914ms)
+✔ advanced query grammar fuzzy ranking ve bounded fallback kullanılır (0.380462ms)
+✔ aktif node olayı ve proje değişimi ilişki indeksini yeniler (0.455692ms)
+✔ arama arayüzünün Türkçe ve İngilizce anahtarları eşlenmiştir (2.017644ms)
+✔ advanced query parser separates quoted terms and navigation filters (2.367809ms)
+✔ filter-only queries return matching canonical task projection (1.85527ms)
+✔ tag shorthand and kind chips intersect instead of broadening results (0.4544ms)
+✔ bounded fuzzy matching is used only when exact trigram candidates are absent (1.327202ms)
+✔ project-local recency and current map context improve quick-switch ranking (0.73763ms)
+✔ property fields make node metadata searchable without creating a new authority record (0.396141ms)
+✔ 10k-record exact quick search stays accelerated and below release guardrail (293.207727ms)
+✔ mantıksal formüller karşılaştırma, kısa devre ve hata yakalama uygular (2.900666ms)
+✔ metin formülleri hücre, Unicode ve aralık değerleriyle çalışır (1.996785ms)
+✔ geniş matematik formülleri aralık ve bilimsel işlemleri hesaplar (0.856212ms)
+✔ temel bilimsel hesap makinesi fonksiyonları doğru sonuç verir (0.480168ms)
+✔ geçersiz ve tanımsız formüller güvenli hata sonucu üretir (0.400198ms)
+✔ formül menüsü yalnızca etkin işlevleri ve geniş kataloğu sunar (0.41695ms)
+✔ kısa tarihli ..todo sözdizimi görev metadata etiketi olarak ayrıştırılır (1.456905ms)
+✔ todo ve done bütün editör girişlerinden aynı blok görev modeline bağlanır (2.045085ms)
+✔ Markdown çıktısı görünmez todo ve done etiketlerini dışarı sızdırmaz (0.441847ms)
+✔ portability tools are distributed without a command-center portability page (1.710139ms)
+✔ toolbar keeps history, export, and import as a right-aligned vertical stack (2.039024ms)
+✔ all existing transfer and restore capabilities remain available (0.460691ms)
+✔ new toolbar assets and light theme counterparts are present (0.639476ms)
+✔ sol panel proje eylemleri özel SVG ikonlarla gösterilir (1.655516ms)
+✔ yeni proje eylemi SVG assetleri güvenli ve ortak geometri kullanır (0.380401ms)
+✔ proje eylem butonları tema, odak ve basma durumlarını taşır (0.440393ms)
+✔ Project Integrity exclusively owns the public audit binding (2.997086ms)
+✔ Project Integrity audits every canonical and recovery authority (0.390829ms)
+✔ Project Integrity detects identity reference task and hierarchy corruption classes (0.478405ms)
+✔ ambiguous identity and semantic repairs are never classified as safe (0.397523ms)
+✔ safe repairs are bounded and explained before mutation (0.274273ms)
+✔ atomic journal findings do not trigger nested recovery inside integrity repair (0.245469ms)
+✔ graph-wide connection cache repair is review-only and routed to derived rebuild (0.19205ms)
+✔ derived rebuild explicitly preserves task and relationship authorities (0.286877ms)
+✔ repair and derived rebuild commands join atomic mutation queue (0.276427ms)
+✔ existing preload audit bridge remains bounded and transports explicit integrity actions (0.366275ms)
+✔ Project Integrity orchestrator stays thin and composes bounded audit modules (0.360585ms)
+✔ Project Integrity domain hooks load after base domain and before atomic hardening (0.205695ms)
+✔ Settings replaces legacy basic integrity section with expanded report and repair plan (0.245719ms)
+✔ Project Integrity UI and styles load after portability base panel (0.202829ms)
+✔ integrity issue identities are deterministic but distinct by code path and entity (1.660456ms)
+✔ integrity summary separates severity and repair safety (0.835413ms)
+✔ integrity issues sort critical before error warning and info (1.009378ms)
+✔ integrity ID validation keeps canonical identity namespaces distinct (0.284081ms)
+✔ integrity project path guard rejects traversal outside project (0.298678ms)
+✔ duplicate collector reports later occurrences without losing first owner (0.318235ms)
+✔ aynı PID ile kalmış eski proje kilidi güvenle geri alınır (7.676238ms)
+✔ başka çalışan sürecin proje kilidi korunur ve açık hata döner (3.094028ms)
+✔ erişilemeyen proje yolu yapılandırılmış hata döndürür (1.220283ms)
+✔ klasör seçimi eski ve yapılandırılmış IPC yanıtlarını destekler (0.91383ms)
+✔ proje ancak dosya ağacı başarıyla yüklendikten sonra açılmış sayılır (0.376856ms)
+✔ property şeması ve node seçenekleri yalnız aktif node mapinden alınır (2.751136ms)
+✔ property adı önerisi türü devralır, değeri temizler ve ikon aksiyonları kullanır (0.537906ms)
+✔ editable property schema is frozen to Text Number Tags and Relation for 1.0 (1.597157ms)
+✔ legacy types migrate deterministically without adding new public types (0.163276ms)
+✔ legacy properties without IDs receive deterministic stable IDs (1.125636ms)
+✔ invalid types and values fail explicitly instead of silently becoming text (0.393195ms)
+✔ type changes are allowed only when existing values are losslessly compatible (0.323957ms)
+✔ legacy checked-percent rollup is detected but not accepted as current aggregate (0.322874ms)
+✔ initial migration creates one project definition and rewrites compatible duplicate names to one stable ID (18.69013ms)
+✔ renaming a property changes the project definition and every redundant node name but never its ID (6.599695ms)
+✔ project-wide type change fails before mutation when any existing value is not losslessly compatible (4.049835ms)
+✔ removing a property value from one node does not delete its project definition (3.187463ms)
+✔ project-level property schema loads after legacy structured storage and before integrity/runtime hooks (1.030969ms)
+✔ normal property save and context IPC are rebound through stable schema layer (0.323125ms)
+✔ schema authority is versioned and does not store per-node values (0.759301ms)
+✔ rename preserves stable ID and type changes are lossless-or-fail project-wide (1.230071ms)
+✔ removing a node value does not implicitly delete schema definitions (0.340677ms)
+✔ Project Integrity audits property authority invalid type value drift and migration conflicts (0.383557ms)
+✔ 1.0 property surface does not add formula nested database or automation types (0.330598ms)
+✔ property drawer yalnız alt-sağ template seçici ile add/save ikonlarını gösterir (2.21878ms)
+✔ Workspace Center Templates sayfası property template oluşturma ve silmeyi yönetir (1.416439ms)
+✔ property template yüzeyleri açık/koyu temaya ve iki dile sahiptir (1.474348ms)
+✔ property menüsü yalnız Metin, Sayı, Tags ve Relation türlerini sunar (1.22985ms)
+✔ eski property türleri veri kaybetmeden yeni türlere dönüştürülür (0.644555ms)
+✔ Rollup yalnız ana toolbardan node bloğu olarak eklenir ve property menüsü değildir (1.637974ms)
+✔ sistem metadata ve Relation sağ Properties panelinde gösterilmez (2.512489ms)
+✔ search projection is explicitly rebuildable and driver-backed without becoming authority (1.710359ms)
+✔ future persistent index backends are isolated behind the adapter contract (0.498342ms)
+✔ canonical task updates use the delta gateway while base invalidation requires a rebuild (0.356457ms)
+✔ sağ panel sekme içerikleri yinelenen turuncu adları göstermez (1.837326ms)
+✔ altı ana sağ panel sekmesi yalnız özel ikonlarla gösterilir (3.841296ms)
+✔ blok grafiği sağ panelden ve Workspace Centerdan tamamen kaldırılmıştır (0.58792ms)
+✔ sağ panel sekmeleri kare, sıralı ve ortalanmıştır (0.436516ms)
+✔ özel sekme SVG assetleri güvenli ve ortak geometri kullanır (1.210274ms)
+✔ arama soldan kaldırılır ve gerçek sağ panel sekmesine taşınır (1.912087ms)
+✔ arama sonuçları teknik node kimliklerini kullanıcıya göstermez (1.673701ms)
+✔ Links dahil dinamik sekmeler her tıklamada güncel durumdan seçilir (0.316432ms)
+✔ sağ arama yüzeyi koyu ve açık tema stillerine sahiptir (0.394488ms)
+✔ Rollup ana toolbar üzerinden property paneli açmadan node bloğu ekler (2.99374ms)
+✔ Rollup blok içinde hesaplanır ve çift tıklamayla yeniden düzenlenir (0.616293ms)
+✔ Rollup kontrollerinin Türkçe ve İngilizce metinleri eşleşir (2.080001ms)
+✔ Rollup yapılandırması node içeriğinde ve Markdown geçişinde korunur (0.604862ms)
+✔ Rollup açık ve koyu temada ayrı yüzey renkleri kullanır (0.339144ms)
+✔ filesystem search updates prefer scoped node and map deltas over full project rebuilds (1.654154ms)
+✔ scoped delete is verified against the parent folder before projection removal (0.281647ms)
+✔ scoped search deltas remain disposable and never write canonical authorities (1.460962ms)
+✔ rename recovery can reuse stable node identity to preserve map membership (0.318616ms)
+✔ node and map filesystem changes stay document scoped while unrelated files are ignored (1.757387ms)
+✔ directory ambiguity and oversized source batches fail closed to rebuild (1.279123ms)
+✔ non search source changes do not invalidate the search projection (0.245348ms)
+✔ node record replacement removes every projection row owned by the changed document (0.297145ms)
+✔ map record and membership helpers change presentation projection only (0.439202ms)
+✔ PISI kimlikleri yol parçaları ve yanlış tür öneklerini reddeder (4.766697ms)
+✔ Windows reserved adları güvenli dosya adına dönüştürülür (1.55027ms)
+✔ proje yolu sınırı dış erişimi ve symlink kaçışını engeller (3.809946ms)
+✔ tablo referansları satır ve sütun değişikliklerinde güncellenir (2.691985ms)
+✔ tablo arayüzünde gezinme, çoklu seçim ve biçimlendirme bulunur (1.616305ms)
+✔ renderer formülleri eval veya Function constructor kullanmaz (3.073229ms)
+✔ Electron güvenlik sınırları üretim ayarlarında korunur (0.713746ms)
+✔ Electron giriş dosyaları uygulama kökünden yüklenir (0.343873ms)
+✔ editör normalizasyonu caret konumunu korur (0.318055ms)
+✔ Enter ile boş satır korunur ve node açılışı odağı çalmaz (0.211315ms)
+✔ merkez node editöründe başlık ve kaydet şeridi bulunmaz (0.325809ms)
+✔ Paint geçici yükleme nitelikleri kalıcı HTML içine yazılmaz (0.654184ms)
+✔ Paint PNG zemini ve ağaç yenilemesi görünür regresyon üretmez (0.45964ms)
+✔ renderer yalnızca tek ES module bootstrap üzerinden yüklenir (0.430675ms)
+✔ renderer bootstrap yalnızca mevcut modülleri import eder (4.277191ms)
+✔ preload API anahtarları ve kritik DOM kontrolleri tekildir (0.451304ms)
+✔ kullanılmayan production paketleri geri eklenmez (0.802941ms)
+✔ editör iki görünümde güncel altı bölümlü toolbarı kullanır (0.370644ms)
+✔ task store tek semantik otoritedir; legacy tarama migration sonrası salt okunurdur (1.326291ms)
+✔ yalnız kontrollü kullanıcı işlemleri projection -> task store write-through yapabilir (0.431087ms)
+✔ persisted search task kayıtları canonical task store projectionından üretilir (0.479367ms)
+✔ diary canonical tasklardan üretilen read-only projectiondır ve task HTML kopyalamaz (1.460883ms)
+✔ progress canonical task projectionundan türetilir (0.494766ms)
+✔ semantic relationship otoritesi proje storeudur; map yalnız presentation state taşır (0.419635ms)
+✔ node connectionTypes semantic store üzerinden yalnız query-time projectiondır (0.369411ms)
+✔ map node konumu yalnız map layout kaydına yazılır (0.32072ms)
+✔ filesystem storage keeps project-relative writes inside the project root (5.212459ms)
+✔ filesystem storage rejects symlink escape instead of following it (1.018996ms)
+✔ canonical metadata stores use the shared storage port instead of direct fs access (1.63024ms)
+✔ storage remains an IO boundary and delegates production writes to the atomic file primitive (0.455141ms)
+✔ storage keys are project-relative and reject traversal or absolute paths (1.676847ms)
+✔ project storage contract works through a replaceable driver (2.377718ms)
+✔ walk is bounded, ignores requested directories and filters extensions (2.102673ms)
+✔ active project document and sidecar fs operations route through project storage (8.89552ms)
+✔ storage driver IO does not recurse back into the fs bridge (3.492293ms)
+✔ atomic journal and paths outside the active project remain infrastructure IO (0.853867ms)
+✔ binary reads stay at the physical IO layer while UTF-8 document reads use storage (0.680583ms)
+✔ project fs bridge loads after runtime operation hooks and atomic hardening (1.000301ms)
+✔ wave two routes document map and sidecar metadata IO but keeps atomic bytes physical (0.858366ms)
+✔ atomic mutation journal is explicitly excluded from the compatibility bridge (0.328444ms)
+✔ storage bridge does not redefine task relationship property or map authority (0.4439ms)
+✔ Comic Sans and Comic Neue are reconciled into every editor font list (3.317335ms)
+✔ node rename rewrites nodePath while taskId and blockId remain stable (24.687338ms)
+✔ folder and map move rewrite descendant nodePath and mapPath without changing identities (14.048358ms)
+✔ moving a task between nodes and changing blockId preserves canonical taskId (1.392404ms)
+✔ deleted task identity disappears and a stale projection is explicitly rejected (2.231133ms)
+✔ recovery rejects stale copies and deterministically selects the exact moved task (2.52829ms)
+✔ direct canonical node keeps blockId fallback only when no conflicting taskId is present (0.235911ms)
+✔ task identity survives editor sanitation and recovery repairs canonical source fields (0.542565ms)
+✔ task source path rewrite layer is part of the main module graph (0.284822ms)
+✔ rename and move operations expose pathChanges consumed by task reference hooks (1.735557ms)
+✔ task reference hooks replace the original IPC handlers only after runtime registered them (0.345617ms)
+✔ task reference hook failures are surfaced without pretending references were updated (1.063469ms)
+✔ tema tercihi proje bağımsız saklanır ve document köküne uygulanır (1.345647ms)
+✔ Workspace Center Tercihler sayfası koyu ve açık tema seçicilerini sunar (0.319378ms)
+✔ light palette son CSS katmanında ana Pisi yüzeylerini kapsar (1.181861ms)
+✔ map node varsayılanı iki yönde tema ile değişir, açık kullanıcı rengi korunur (0.55097ms)
+✔ map node fontu ve boyutları Preferences ayarlarından uygulanır (2.829081ms)
+✔ node kartı tipografi seçicisi okunaklı varsayılan ve iki tema stili sunar (2.26152ms)
+✔ eski açık tema rengi koyu temaya geçerken yenilenir (1.405028ms)
+✔ açıkça seçilen global ve node özel renkleri tema varsayılanını ezer (1.195096ms)
+✔ özel To-do çalışma alanı bootstrap ve stil zincirine bağlıdır (1.153537ms)
+✔ sağ paneldeki başlıksız To-do eylem alanı iki kompakt düğme taşır (0.593981ms)
+✔ genel görünümler merkezdeki özel çalışma alanına aktarılır (1.242536ms)
+✔ sağ alandaki To-do toolbarı ve görev listesi korunur (0.387344ms)
+✔ özel To-do dosyası merkez sekmelerinde açılıp kapatılabilir (0.334455ms)
+✔ To-do çalışma alanı opaktır ve arkadaki merkez yüzeylerini kilitler (0.291095ms)
+✔ To-do çalışma alanı koyu ve açık tema paletlerini kendi kapsamında uygular (0.348121ms)
+✔ To-do görünümleri iki temada okunabilir yüzey ve odak durumları sunar (0.231112ms)
+✔ Todo source navigation targets the active node and never persists highlight classes (1.3579ms)
+✔ Todo date filters render inside one dropdown trigger (0.501678ms)
+✔ sağ panel görevleri bağımsız ve yarış korumalı indeks akışından yeniler (1.226374ms)
+✔ To-do sekmesi ve merkez çalışma alanı güncel görev indeksini bekler (0.498712ms)
+✔ Quick Add sağ panel indeksini doğrudan eşitler (1.377406ms)
+✔ takvim günlükleri normal klasör taramasından ayrı olarak görev indeksine katılır (0.427891ms)
+✔ node açıldığında To-do katmanı kapanır ve tema okunabilirliği korunur (0.506948ms)
+✔ geri alınan görsel metinler sözlüklerden çıkarılır, işlevsel hata metinleri korunur (2.234109ms)
+✔ sağ To-do başlığı eşit kare, sağa yaslı ve yalnız ikonlu eylemleri taşır (1.803062ms)
+✔ Tasks sekmesi çalışma merkezinden tamamen kaldırılır ve Quick Add modalda kalır (1.580176ms)
+✔ quick add modülü kayıt sisteminin salt-okunur global bağlarını ezmez (0.309379ms)
+✔ Ctrl+M görev ekleme modalını açar ve kısayol sayfasında okunur görünür (0.4977ms)
+✔ görev ekleme modalı koyu ve açık temalarda ayrı, okunabilir paletler kullanır (0.436136ms)
+✔ yeni görev ekleme metinleri iki dil kataloğunda eşleşir (1.996986ms)
+✔ tekrarlayan görev tarihleri tüm desteklenen tekrar türlerinde ilerler (1.873835ms)
+✔ tekrar ve manuel sıra metadata alanları indeks ve sanitizer zincirinde korunur (1.548466ms)
+✔ ikinci sürüm paneli alt görev arayüzü olmadan tekrar, filtre ve sürükle bırak sağlar (0.791631ms)
+✔ manuel sıralama artık görevleri parent hiyerarşisine göre kısıtlamaz (0.317424ms)
+✔ günlük node eşitlemesi durum ve tekrar bilgisini taşır (1.285936ms)
+✔ ikinci sürüm modülü bootstrap, manifest ve dil kataloglarına bağlıdır (0.922045ms)
+✔ todo önem dereceleri 1-5 ve mevcut sözdizimi korunur (2.086132ms)
+✔ tarihsiz görev mevcut todo sözdiziminin geriye uyumlu uzantısıdır (0.476892ms)
+✔ eski 6-9 todo etiketleri very high olarak geriye dönük okunur (1.214282ms)
+✔ bugün, yaklaşan, geciken ve tarihsiz filtreleri doğru sınıflandırır (0.394267ms)
+✔ görev durumları mevcut tamamlanma etiketinden bağımsız tutulur (0.752378ms)
+✔ ..todo ve seçili metin aynı öncelik/tarih akışını kullanır (0.570357ms)
+✔ görev indeksi node ve map kaynağı ile durum/kaynak metnini taşır (0.454741ms)
+✔ görev kartına tıklama kaynağı açar ve node badge sayıları gösterilir (1.3631ms)
+✔ Todo ilk sürüm modülü bootstrap, manifest, sanitizer ve dil kataloglarına bağlıdır (1.465711ms)
+✔ üçüncü sürüm modülü ve görünüm stilleri bootstrap zincirine bağlıdır (1.1067ms)
+✔ görev bağımlılıkları kalıcı metadata, çoklu seçim ve döngü koruması sağlar (0.649004ms)
+✔ kanban, takvim, zaman çizelgesi ve istatistik görünümü sağlanır (1.386123ms)
+✔ hatırlatmalar görev etiketi sınıfında saklanır ve tek seferlik bildirilir (0.451114ms)
+✔ yeniden çizim koruması alternatif görünümde mutation döngüsünü engeller (0.212858ms)
+✔ üçüncü sürüm alt görev sistemini yeniden getirmez (0.370082ms)
+✔ toolbar uses complete dark and light Pisi SVG icon sets (3.716852ms)
+✔ toolbar icon sources follow live theme changes (0.1761ms)
+✔ removed toolbar controls stay removed (0.219621ms)
+✔ toolbar popovers are portalled to body (0.882421ms)
+✔ toolbar popovers render above the node modal (0.415818ms)
+✔ toolbar sections use separators and alignment controls use a fixed 2x2 grid (2.186751ms)
+✔ Table ve Rollup butonları formül butonlarıyla aynı ölçüdedir (0.683338ms)
+✔ table cells support justify and compact style buttons stay fixed width (1.152065ms)
+✔ canvas dimensions provide four-digit input space (0.332261ms)
+✔ font selector stays left aligned and paint split buttons use fixed widths (0.358591ms)
+✔ trash path coverage is project-relative and segment safe (1.082685ms)
+✔ trash relative path normalization rejects traversal (0.252723ms)
+✔ tasks sourced from deleted roots are archived and surviving dependencies are detached (1.0585ms)
+✔ restoring tasks merges only archived dependency edges and keeps later dependencies (0.338624ms)
+✔ semantic relationships touching deleted node identities are archived (0.291615ms)
+✔ trash summary exposes reviewable linked-record counts without payload internals (0.271628ms)
+✔ restore rejects reused Pisi identities before relationship merge (0.993539ms)
+✔ restore rejects missing semantic relationship endpoints (0.242413ms)
+✔ restored map views retain presentation schema version (0.16033ms)
+✔ legacy OS trash remains outside new destructive domain route (0.169678ms)
+✔ project delete commands are rebound to project-local reversible Trash (1.306544ms)
+✔ Trash payload and manifest stay inside .pisi/trash and reject project internals (0.236313ms)
+✔ deletion archives canonical tasks semantic relationships and external map references (0.210223ms)
+✔ restore is a delta merge rather than a whole-project snapshot overwrite (0.199884ms)
+✔ restore fails closed on path task and semantic conflicts (0.224129ms)
+✔ restore captures Trash item as one atomic ancestor before moving payload out (0.218068ms)
+✔ permanent delete and empty Trash remain explicit atomic domain commands (0.244388ms)
+✔ Trash deletion retries transient Windows locks and keeps emptying other items (0.328946ms)
+✔ Trash modules load after canonical stores and after base domain registration (0.305491ms)
+✔ preload exposes only bounded Trash actions and renderer domain consumes them (0.396832ms)
+✔ Workspace Center exposes reviewable Trash with restore permanent delete and empty actions (0.249757ms)
+✔ Trash UI ships in both Turkish and English and refreshes the project tree after restore (0.182ms)
+✔ Trash page and styles are part of bootstrap and layered CSS (0.120275ms)
+✔ ağaç oku dalı, dosya satırı ise yalnız node veya map içeriğini açar (1.183324ms)
+✔ tutorial is loaded and registered as an application-level Workspace Center page (1.014398ms)
+✔ tutorial is first-run once and can be replayed without mutating project data (0.311423ms)
+✖ tutorial covers the primary Pisi work areas and provides keyboard exit/navigation (2.770662ms)
+✔ tutorial spotlight and cards support both themes (0.222206ms)
+✔ editor preserves the current six-section toolbar selection (1.447437ms)
+✔ unified text controls also target selected table cells (2.482143ms)
+✔ drawing toolbar supports brush and size popovers (0.455002ms)
+✔ retention is bounded by count and bytes while always preserving the newest version (8.8747ms)
+✔ history IDs support legacy JSON and compressed JSON without accepting traversal (0.279392ms)
+✔ new snapshots are gzip compressed, indexed, deduplicated and readable (8.508125ms)
+✔ byte budget prunes older snapshots instead of letting a large node multiply indefinitely (8.246956ms)
+✔ version-history IPC hooks replace unbounded save/list routes and skip project-wide backup scans (0.670815ms)
+✔ Verdana is the application and rich-editor default while Vincendo remains available (1.631903ms)
+✔ Windows rename retries transient permission and busy errors (1.011742ms)
+✔ rename treats already-achieved destination state as success (0.215623ms)
+✔ rename seals watcher state both on success and terminal failure (0.244157ms)
+ℹ tests 517
+ℹ suites 0
+ℹ pass 516
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7220.427785
+
+✖ failing tests:
+
+test at tests/tutorial.test.js:32:1
+✖ tutorial covers the primary Pisi work areas and provides keyboard exit/navigation (2.770662ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /data-right-tab=\\"missions\\"/. Input:
+  
+  "import { registerModule } from '../core/module-registry.mjs';\n" +
+    'import {\n' +
+    '    closePisiCommandCenter,\n' +
+    '    registerPisiCommandCenterPage\n' +
+    "} from './pisi-command-center.mjs';\n" +
+    '\n' +
+    "const PISI_TUTORIAL_COMPLETED_KEY = 'pisi.tutorial.v1.completed';\n" +
+    '\n' +
+    'const tutorialState = {\n' +
+    '    overlay: null,\n' +
+    '    spotlight: null,\n' +
+    '    card: null,\n' +
+    '    stepIndex: 0,\n' +
+    '    active: false,\n' +
+    '    firstRunTimer: null,\n' +
+    '    resizeHandler: null,\n' +
+    '    keyHandler: null\n' +
+    '};\n' +
+    '\n' +
+    'const tutorialText = {\n' +
+    '    tr: {\n' +
+    "        page: 'Tutorial',\n" +
+    "        pageDescription: 'Pisi arayüzünü kısa bir rehberle tanı ve temel çalışma akışını öğren.',\n" +
+    "        replay: 'Tutorialı başlat',\n" +
+    "        replayDescription: 'Rehber uygulama üzerinde ilgili alanları sırayla vurgular. Verilerinizi değiştirmez.',\n" +
+    "        skip: 'Atla',\n" +
+    "        back: 'Geri',\n" +
+    "        next: 'İleri',\n" +
+    "        finish: 'Bitir',\n" +
+    "        step: 'Adım',\n" +
+    "        of: '/',\n" +
+    `        welcomeTitle: "Pisi'ye hoş geldin",\n` +
+    "        welcomeBody: 'Bu kısa rehber sana Pisi’nin temel alanlarını gösterecek. İstediğin zaman Workspace Center içindeki Tutorial sayfasından yeniden başlatabilirsin.',\n" +
+    "        explorerTitle: 'Explorer',\n" +
+    "        explorerBody: 'Projendeki map ve node dosyaları burada görünür. Dosyaları açabilir, yeniden adlandırabilir ve ağaç içinde taşıyabilirsin.',\n" +
+    "        projectTitle: 'Proje araçları',\n" +
+    "        projectBody: 'Yeni map veya node oluşturmak, proje klasörünü değiştirmek ve Workspace Center’ı açmak için bu araçları kullan.',\n" +
+    "        workspaceTitle: 'Çalışma alanı',\n" +
+    "        workspaceBody: 'Map’ler, node içerikleri ve açık sekmeler orta alanda çalışır. Map üzerinde node’ları düzenleyebilir ve bağlantılar kurabilirsin.',\n" +
+    "        editorTitle: 'Editör araçları',\n" +
+    "        editorBody: 'Bir node açtığında yazı biçimlendirme, tablo, rollup ve çizim araçları burada görünür.',\n" +
+    "        todoTitle: 'To‑Do',\n" +
+    "        todoBody: 'Node içindeki görevler sağdaki To‑Do alanında toplanır. Filtreleyebilir, durumlarını takip edebilir ve ilgili node’a gidebilirsin.',\n" +
+    "        mindmapTitle: 'Mind Map',\n" +
+    "        mindmapBody: 'Mind Map sekmesi açık map için odaklanma, filtreleme, görünüm ve kayıtlı layout araçlarını içerir.',\n" +
+    "        centerTitle: 'Workspace Center',\n" +
+    "        centerBody: 'Ayarlar ve Preferences burada. Tema, görünüm tercihleri ve uygulama düzeyindeki araçları bu merkezden yönetebilirsin.'\n" +
+    '    },\n' +
+    '    eng: {\n' +
+    "        page: 'Tutorial',\n" +
+    "        pageDescription: 'Learn the Pisi interface and the core workflow with a short guided tour.',\n" +
+    "        replay: 'Start tutorial',\n" +
+    "        replayDescription: 'The guide highlights relevant areas on top of the application. It does not modify your data.',\n" +
+    "        skip: 'Skip',\n" +
+    "        back: 'Back',\n" +
+    "        next: 'Next',\n" +
+    "        finish: 'Finish',\n" +
+    "        step: 'Step',\n" +
+    "        of: '/',\n" +
+    "        welcomeTitle: 'Welcome to Pisi',\n" +
+    "        welcomeBody: 'This short guide introduces the main areas of Pisi. You can replay it any time from the Tutorial page in Workspace Center.',\n" +
+    "        explorerTitle: 'Explorer',\n" +
+    "        explorerBody: 'Your project maps and nodes appear here. Open, rename and move files within the project tree.',\n" +
+    "        projectTitle: 'Project tools',\n" +
+    "        projectBody: 'Use these controls to create maps or nodes, change the project folder and open Workspace Center.',\n" +
+    "        workspaceTitle: 'Workspace',\n" +
+    "        workspaceBody: 'Maps, node content and open tabs live in the center. Arrange map nodes and create relationships here.',\n" +
+    "        editorTitle: 'Editor tools',\n" +
+    "        editorBody: 'When a node is open, text formatting, tables, rollups and drawing tools appear in this area.',\n" +
+    "        todoTitle: 'To‑Do',\n" +
+    "        todoBody: 'Tasks from nodes are collected in the To‑Do panel. Filter them, track status and navigate back to the source node.',\n" +
+    "        mindmapTitle: 'Mind Map',\n" +
+    "        mindmapBody: 'The Mind Map tab contains focus, filtering, display and saved-layout tools for the active map.',\n" +
+    "        centerTitle: 'Workspace Center',\n" +
+    "        centerBody: 'Settings and Preferences live here. Manage themes, appearance defaults and application-level tools from this center.'\n" +
+    '    }\n' +
+    '};\n' +
+    '\n' +
+    'function getTutorialLanguage() {\n' +
+    "    return window.pisiI18n?.getLanguage?.() === 'eng' ? 'eng' : 'tr';\n" +
+    '}\n' +
+    '\n' +
+    'function tt(key) {\n' +
+    '    const language = getTutorialLanguage();\n' +
+    '    return tutorialText[language]?.[key] || tutorialText.tr[key] || key;\n' +
+    '}\n' +
+    '\n' +
+    'const tutorialSteps = Object.freeze([\n' +
+    "    Object.freeze({ title: 'welcomeTitle', body: 'welcomeBody', selectors: [] }),\n" +
+    "    Object.freeze({ title: 'explorerTitle', body: 'explorerBody', selectors: ['#left-panel'] }),\n" +
+    "    Object.freeze({ title: 'projectTitle', body: 'projectBody', selectors: ['#project-actions'] }),\n" +
+    "    Object.freeze({ title: 'workspaceTitle', body: 'workspaceBody', selectors: ['#workspace', '#center-panel'] }),\n" +
+    "    Object.freeze({ title: 'editorTitle', body: 'editorBody', selectors: ['.pisi-editor-toolbar:not([hidden])', '#center-toolbar'] }),\n" +
+    `    Object.freeze({ title: 'todoTitle', body: 'todoBody', selectors: ['[data-right-tab="missions"]', '#right-panel'] }),\n` +
+    `    Object.freeze({ title: 'mindmapTitle', body: 'mindmapBody', selectors: ['[data-right-tab="mindmap"]', '#right-panel-tabs'] }),\n` +
+    "    Object.freeze({ title: 'centerTitle', body: 'centerBody', selectors: ['#pisi-command-center-button', '#project-actions'] })\n" +
+    ']);\n' +
+    '\n' +
+    'function isTutorialCompleted() {\n' +
+    '    try {\n' +
+    "        return localStorage.getItem(PISI_TUTORIAL_COMPLETED_KEY) === '1';\n" +
+    '    } catch {\n' +
+    '        return false;\n' +
+    '    }\n' +
+    '}\n' +
+    '\n' +
+    'function markTutorialCompleted() {\n' +
+    '    try {\n' +
+    "        localStorage.setItem(PISI_TUTORIAL_COMPLETED_KEY, '1');\n" +
+    '    } catch {\n' +
+    '        // Tutorial completion is a convenience preference only.\n' +
+    '    }\n' +
+    '}\n' +
+    '\n' +
+    'function findTutorialTarget(step) {\n' +
+    '    for (const selector of step?.selectors || []) {\n' +
+    '        const element = document.querySelector(selector);\n' +
+    '        if (!element) continue;\n' +
+    '        const rect = element.getBoundingClientRect?.();\n' +
+    '        if (!rect || rect.width <= 0 || rect.height <= 0) continue;\n' +
+    '        return element;\n' +
+    '    }\n' +
+    '    return null;\n' +
+    '}\n' +
+    '\n' +
+    'function makeTutorialButton(className, onClick) {\n' +
+    "    const button = document.createElement('button');\n" +
+    "    button.type = 'button';\n" +
+    '    button.className = className;\n' +
+    "    button.addEventListener('click', onClick);\n" +
+    '    return button;\n' +
+    '}\n' +
+    '\n' +
+    'function ensureTutorialOverlay() {\n' +
+    '    if (tutorialState.overlay?.isConnected) return tutorialState.overlay;\n' +
+    '\n' +
+    "    const overlay = document.createElement('div');\n" +
+    "    overlay.id = 'pisi-tutorial-overlay';\n" +
+    "    overlay.className = 'pisi-tutorial-overlay';\n" +
+    '    overlay.hidden = true;\n' +
+    '\n' +
+    "    const spotlight = document.createElement('div');\n" +
+    "    spotlight.className = 'pisi-tutorial-spotlight';\n" +
+    "    spotlight.setAttribute('aria-hidden', 'true');\n" +
+    '\n' +
+    "    const card = document.createElement('section');\n" +
+    "    card.className = 'pisi-tutorial-card';\n" +
+    "    card.setAttribute('role', 'dialog');\n" +
+    "    card.setAttribute('aria-modal', 'true');\n" +
+    "    card.setAttribute('aria-live', 'polite');\n" +
+    '\n' +
+    '    overlay.append(spotlight, card);\n' +
+    '    document.body.appendChild(overlay);\n' +
+    '\n' +
+    '    tutorialState.overlay = overlay;\n' +
+    '    tutorialState.spotlight = spotlight;\n' +
+    '    tutorialState.card = card;\n' +
+    '    return overlay;\n' +
+    '}\n' +
+    '\n' +
+    'function positionTutorialCard(target) {\n' +
+    '    const overlay = tutorialState.overlay;\n' +
+    '    const spotlight = tutorialState.spotlight;\n' +
+    '    const card = tutorialState.card;\n' +
+    '    if (!overlay || !spotlight || !card) return;\n' +
+    '\n' +
+    '    const viewportWidth = window.innerWidth;\n' +
+    '    const viewportHeight = window.innerHeight;\n' +
+    '    const margin = 16;\n' +
+    '    const gap = 18;\n' +
+    '\n' +
+    '    if (!target) {\n' +
+    "        overlay.classList.add('pisi-tutorial-no-target');\n" +
+    '        spotlight.hidden = true;\n' +
+    "        card.style.left = '50%';\n" +
+    "        card.style.top = '50%';\n" +
+    "        card.style.transform = 'translate(-50%, -50%)';\n" +
+    '        return;\n' +
+    '    }\n' +
+    '\n' +
+    "    overlay.classList.remove('pisi-tutorial-no-target');\n" +
+    '    spotlight.hidden = false;\n' +
+    "    card.style.transform = 'none';\n" +
+    '\n' +
+    '    const rect = target.getBoundingClientRect();\n' +
+    '    const pad = 7;\n' +
+    '    spotlight.style.left = `${Math.max(0, rect.left - pad)}px`;\n' +
+    '    spotlight.style.top = `${Math.max(0, rect.top - pad)}px`;\n' +
+    '    spotlight.style.width = `${Math.min(viewportWidth, rect.width + pad * 2)}px`;\n' +
+    '    spotlight.style.height = `${Math.min(viewportHeight, rect.height + pad * 2)}px`;\n' +
+    '\n' +
+    '    const cardRect = card.getBoundingClientRect();\n' +
+    '    const cardWidth = cardRect.width || Math.min(360, viewportWidth - margin * 2);\n' +
+    '    const cardHeight = cardRect.height || 220;\n' +
+    '\n' +
+    '    let left = rect.right + gap;\n' +
+    '    if (left + cardWidth > viewportWidth - margin) {\n' +
+    '        left = rect.left - cardWidth - gap;\n' +
+    '    }\n' +
+    '    if (left < margin) {\n' +
+    '        left = Math.max(margin, Math.min(\n' +
+    '            viewportWidth - cardWidth - margin,\n' +
+    '            rect.left + rect.width / 2 - cardWidth / 2\n' +
+    '        ));\n' +
+    '    }\n' +
+    '\n' +
+    '    let top = rect.top;\n' +
+    '    if (top + cardHeight > viewportHeight - margin) {\n' +
+    '        top = viewportHeight - cardHeight - margin;\n' +
+    '    }\n' +
+    '    top = Math.max(margin, top);\n' +
+    '\n' +
+    '    card.style.left = `${left}px`;\n' +
+    '    card.style.top = `${top}px`;\n' +
+    '}\n' +
+    '\n' +
+    'function renderTutorialStep() {\n' +
+    '    if (!tutorialState.active) return;\n' +
+    '    const step = tutorialSteps[tutorialState.stepIndex];\n' +
+    '    const card = tutorialState.card;\n' +
+    '    if (!step || !card) return;\n' +
+    '\n' +
+    '    card.replaceChildren();\n' +
+    '\n' +
+    "    const progress = document.createElement('div');\n" +
+    "    progress.className = 'pisi-tutorial-progress';\n" +
+    "    progress.textContent = `${tt('step')} ${tutorialState.stepIndex + 1} ${tt('of')} ${tutorialSteps.length}`;\n" +
+    '\n' +
+    "    const title = document.createElement('h2');\n" +
+    "    title.className = 'pisi-tutorial-title';\n" +
+    '    title.textContent = tt(step.title);\n' +
+    '\n' +
+    "    const body = document.createElement('p');\n" +
+    "    body.className = 'pisi-tutorial-body';\n" +
+    '    body.textContent = tt(step.body);\n' +
+    '\n' +
+    "    const actions = document.createElement('div');\n" +
+    "    actions.className = 'pisi-tutorial-actions';\n" +
+    '\n' +
+    "    const skip = makeTutorialButton('pisi-tutorial-button pisi-tutorial-skip', () => {\n" +
+    '        finishPisiTutorial(true);\n' +
+    '    });\n' +
+    "    skip.textContent = tt('skip');\n" +
+    '\n' +
+    "    const navigation = document.createElement('div');\n" +
+    "    navigation.className = 'pisi-tutorial-navigation"... 6249 more characters
+  
+      at TestContext.<anonymous> (/home/runner/work/Kedi/Kedi/tests/tutorial.test.js:41:16)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'import { registerModule } from \'../core/module-registry.mjs\';\nimport {\n    closePisiCommandCenter,\n    registerPisiCommandCenterPage\n} from \'./pisi-command-center.mjs\';\n\nconst PISI_TUTORIAL_COMPLETED_KEY = \'pisi.tutorial.v1.completed\';\n\nconst tutorialState = {\n    overlay: null,\n    spotlight: null,\n    card: null,\n    stepIndex: 0,\n    active: false,\n    firstRunTimer: null,\n    resizeHandler: null,\n    keyHandler: null\n};\n\nconst tutorialText = {\n    tr: {\n        page: \'Tutorial\',\n        pageDescription: \'Pisi arayüzünü kısa bir rehberle tanı ve temel çalışma akışını öğren.\',\n        replay: \'Tutorialı başlat\',\n        replayDescription: \'Rehber uygulama üzerinde ilgili alanları sırayla vurgular. Verilerinizi değiştirmez.\',\n        skip: \'Atla\',\n        back: \'Geri\',\n        next: \'İleri\',\n        finish: \'Bitir\',\n        step: \'Adım\',\n        of: \'/\',\n        welcomeTitle: "Pisi\'ye hoş geldin",\n        welcomeBody: \'Bu kısa rehber sana Pisi’nin temel alanlarını gösterecek. İstediğin zaman Workspace Center içindeki Tutorial sayfasından yeniden başlatabilirsin.\',\n        explorerTitle: \'Explorer\',\n        explorerBody: \'Projendeki map ve node dosyaları burada görünür. Dosyaları açabilir, yeniden adlandırabilir ve ağaç içinde taşıyabilirsin.\',\n        projectTitle: \'Proje araçları\',\n        projectBody: \'Yeni map veya node oluşturmak, proje klasörünü değiştirmek ve Workspace Center’ı açmak için bu araçları kullan.\',\n        workspaceTitle: \'Çalışma alanı\',\n        workspaceBody: \'Map’ler, node içerikleri ve açık sekmeler orta alanda çalışır. Map üzerinde node’ları düzenleyebilir ve bağlantılar kurabilirsin.\',\n        editorTitle: \'Editör araçları\',\n        editorBody: \'Bir node açtığında yazı biçimlendirme, tablo, rollup ve çizim araçları burada görünür.\',\n        todoTitle: \'To‑Do\',\n        todoBody: \'Node içindeki görevler sağdaki To‑Do alanında toplanır. Filtreleyebilir, durumlarını takip edebilir ve ilgili node’a gidebilirsin.\',\n        mindmapTitle: \'Mind Map\',\n        mindmapBody: \'Mind Map sekmesi açık map için odaklanma, filtreleme, görünüm ve kayıtlı layout araçlarını içerir.\',\n        centerTitle: \'Workspace Center\',\n        centerBody: \'Ayarlar ve Preferences burada. Tema, görünüm tercihleri ve uygulama düzeyindeki araçları bu merkezden yönetebilirsin.\'\n    },\n    eng: {\n        page: \'Tutorial\',\n        pageDescription: \'Learn the Pisi interface and the core workflow with a short guided tour.\',\n        replay: \'Start tutorial\',\n        replayDescription: \'The guide highlights relevant areas on top of the application. It does not modify your data.\',\n        skip: \'Skip\',\n        back: \'Back\',\n        next: \'Next\',\n        finish: \'Finish\',\n        step: \'Step\',\n        of: \'/\',\n        welcomeTitle: \'Welcome to Pisi\',\n        welcomeBody: \'This short guide introduces the main areas of Pisi. You can replay it any time from the Tutorial page in Workspace Center.\',\n        explorerTitle: \'Explorer\',\n        explorerBody: \'Your project maps and nodes appear here. Open, rename and move files within the project tree.\',\n        projectTitle: \'Project tools\',\n        projectBody: \'Use these controls to create maps or nodes, change the project folder and open Workspace Center.\',\n        workspaceTitle: \'Workspace\',\n        workspaceBody: \'Maps, node content and open tabs live in the center. Arrange map nodes and create relationships here.\',\n        editorTitle: \'Editor tools\',\n        editorBody: \'When a node is open, text formatting, tables, rollups and drawing tools appear in this area.\',\n        todoTitle: \'To‑Do\',\n        todoBody: \'Tasks from nodes are collected in the To‑Do panel. Filter them, track status and navigate back to the source node.\',\n        mindmapTitle: \'Mind Map\',\n        mindmapBody: \'The Mind Map tab contains focus, filtering, display and saved-layout tools for the active map.\',\n        centerTitle: \'Workspace Center\',\n        centerBody: \'Settings and Preferences live here. Manage themes, appearance defaults and application-level tools from this center.\'\n    }\n};\n\nfunction getTutorialLanguage() {\n    return window.pisiI18n?.getLanguage?.() === \'eng\' ? \'eng\' : \'tr\';\n}\n\nfunction tt(key) {\n    const language = getTutorialLanguage();\n    return tutorialText[language]?.[key] || tutorialText.tr[key] || key;\n}\n\nconst tutorialSteps = Object.freeze([\n    Object.freeze({ title: \'welcomeTitle\', body: \'welcomeBody\', selectors: [] }),\n    Object.freeze({ title: \'explorerTitle\', body: \'explorerBody\', selectors: [\'#left-panel\'] }),\n    Object.freeze({ title: \'projectTitle\', body: \'projectBody\', selectors: [\'#project-actions\'] }),\n    Object.freeze({ title: \'workspaceTitle\', body: \'workspaceBody\', selectors: [\'#workspace\', \'#center-panel\'] }),\n    Object.freeze({ title: \'editorTitle\', body: \'editorBody\', selectors: [\'.pisi-editor-toolbar:not([hidden])\', \'#center-toolbar\'] }),\n    Object.freeze({ title: \'todoTitle\', body: \'todoBody\', selectors: [\'[data-right-tab="missions"]\', \'#right-panel\'] }),\n    Object.freeze({ title: \'mindmapTitle\', body: \'mindmapBody\', selectors: [\'[data-right-tab="mindmap"]\', \'#right-panel-tabs\'] }),\n    Object.freeze({ title: \'centerTitle\', body: \'centerBody\', selectors: [\'#pisi-command-center-button\', \'#project-actions\'] })\n]);\n\nfunction isTutorialCompleted() {\n    try {\n        return localStorage.getItem(PISI_TUTORIAL_COMPLETED_KEY) === \'1\';\n    } catch {\n        return false;\n    }\n}\n\nfunction markTutorialCompleted() {\n    try {\n        localStorage.setItem(PISI_TUTORIAL_COMPLETED_KEY, \'1\');\n    } catch {\n        // Tutorial completion is a convenience preference only.\n    }\n}\n\nfunction findTutorialTarget(step) {\n    for (const selector of step?.selectors || []) {\n        const element = document.querySelector(selector);\n        if (!element) continue;\n        const rect = element.getBoundingClientRect?.();\n        if (!rect || rect.width <= 0 || rect.height <= 0) continue;\n        return element;\n    }\n    return null;\n}\n\nfunction makeTutorialButton(className, onClick) {\n    const button = document.createElement(\'button\');\n    button.type = \'button\';\n    button.className = className;\n    button.addEventListener(\'click\', onClick);\n    return button;\n}\n\nfunction ensureTutorialOverlay() {\n    if (tutorialState.overlay?.isConnected) return tutorialState.overlay;\n\n    const overlay = document.createElement(\'div\');\n    overlay.id = \'pisi-tutorial-overlay\';\n    overlay.className = \'pisi-tutorial-overlay\';\n    overlay.hidden = true;\n\n    const spotlight = document.createElement(\'div\');\n    spotlight.className = \'pisi-tutorial-spotlight\';\n    spotlight.setAttribute(\'aria-hidden\', \'true\');\n\n    const card = document.createElement(\'section\');\n    card.className = \'pisi-tutorial-card\';\n    card.setAttribute(\'role\', \'dialog\');\n    card.setAttribute(\'aria-modal\', \'true\');\n    card.setAttribute(\'aria-live\', \'polite\');\n\n    overlay.append(spotlight, card);\n    document.body.appendChild(overlay);\n\n    tutorialState.overlay = overlay;\n    tutorialState.spotlight = spotlight;\n    tutorialState.card = card;\n    return overlay;\n}\n\nfunction positionTutorialCard(target) {\n    const overlay = tutorialState.overlay;\n    const spotlight = tutorialState.spotlight;\n    const card = tutorialState.card;\n    if (!overlay || !spotlight || !card) return;\n\n    const viewportWidth = window.innerWidth;\n    const viewportHeight = window.innerHeight;\n    const margin = 16;\n    const gap = 18;\n\n    if (!target) {\n        overlay.classList.add(\'pisi-tutorial-no-target\');\n        spotlight.hidden = true;\n        card.style.left = \'50%\';\n        card.style.top = \'50%\';\n        card.style.transform = \'translate(-50%, -50%)\';\n        return;\n    }\n\n    overlay.classList.remove(\'pisi-tutorial-no-target\');\n    spotlight.hidden = false;\n    card.style.transform = \'none\';\n\n    const rect = target.getBoundingClientRect();\n    const pad = 7;\n    spotlight.style.left = `${Math.max(0, rect.left - pad)}px`;\n    spotlight.style.top = `${Math.max(0, rect.top - pad)}px`;\n    spotlight.style.width = `${Math.min(viewportWidth, rect.width + pad * 2)}px`;\n    spotlight.style.height = `${Math.min(viewportHeight, rect.height + pad * 2)}px`;\n\n    const cardRect = card.getBoundingClientRect();\n    const cardWidth = cardRect.width || Math.min(360, viewportWidth - margin * 2);\n    const cardHeight = cardRect.height || 220;\n\n    let left = rect.right + gap;\n    if (left + cardWidth > viewportWidth - margin) {\n        left = rect.left - cardWidth - gap;\n    }\n    if (left < margin) {\n        left = Math.max(margin, Math.min(\n            viewportWidth - cardWidth - margin,\n            rect.left + rect.width / 2 - cardWidth / 2\n        ));\n    }\n\n    let top = rect.top;\n    if (top + cardHeight > viewportHeight - margin) {\n        top = viewportHeight - cardHeight - margin;\n    }\n    top = Math.max(margin, top);\n\n    card.style.left = `${left}px`;\n    card.style.top = `${top}px`;\n}\n\nfunction renderTutorialStep() {\n    if (!tutorialState.active) return;\n    const step = tutorialSteps[tutorialState.stepIndex];\n    const card = tutorialState.card;\n    if (!step || !card) return;\n\n    card.replaceChildren();\n\n    const progress = document.createElement(\'div\');\n    progress.className = \'pisi-tutorial-progress\';\n    progress.textContent = `${tt(\'step\')} ${tutorialState.stepIndex + 1} ${tt(\'of\')} ${tutorialSteps.length}`;\n\n    const title = document.createElement(\'h2\');\n    title.className = \'pisi-tutorial-title\';\n    title.textContent = tt(step.title);\n\n    const body = document.createElement(\'p\');\n    body.className = \'pisi-tutorial-body\';\n    body.textContent = tt(step.body);\n\n    const actions = document.createElement(\'div\');\n    actions.className = \'pisi-tutorial-actions\';\n\n    const skip = makeTutorialButton(\'pisi-tutorial-button pisi-tutorial-skip\', () => {\n        finishPisiTutorial(true);\n    });\n    skip.textContent = tt(\'skip\');\n\n    const navigation = document.createElement(\'div\');\n    navigation.className = \'pisi-tutorial-navigation'... 6249 more characters,
+    expected: /data-right-tab=\\"missions\\"/,
+    operator: 'match',
+    diff: 'simple'
+  }
