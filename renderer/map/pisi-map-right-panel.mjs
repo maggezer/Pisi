@@ -15,7 +15,6 @@ const mindMapPanelText = {
 
 const mindMapToolIcons = Object.freeze({
     'pisi-map-operational-focus': 'focus',
-    'pisi-map-operational-next': 'next',
     'pisi-map-operational-linked': 'linked',
     'pisi-map-operational-deps': 'dependencies',
     'pisi-map-operational-labels': 'labels',
@@ -34,7 +33,6 @@ const mindMapToolIcons = Object.freeze({
 
 const mindMapPrimaryActionIds = [
     'pisi-map-operational-focus',
-    'pisi-map-operational-next',
     'pisi-map-operational-linked',
     'pisi-map-operational-deps',
     'pisi-map-operational-labels',

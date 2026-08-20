@@ -26,7 +26,7 @@ const operationalText = {
         search: 'Map içinde ara', all: 'Tümü', active: 'Aktif iş', blocked: 'Blocked',
         overdue: 'Geciken', missing: 'Next action yok',
         relations: 'Tüm ilişkiler', hierarchy: 'Hierarchy', flow: 'Flow', peer: 'Peer',
-        focus: 'Komşulara odaklan', next: 'Sıradaki', linked: 'Bağlı node oluştur',
+        focus: 'Komşulara odaklan', linked: 'Bağlı node oluştur',
         deps: 'Dependencies', labels: 'Labels', work: 'Work badges',
         layout: 'Layout seç', save: 'Layout kaydet', restore: 'Geri yükle',
         remove: 'Sil', reset: 'Reset', layoutName: 'Layout adı', cancel: 'İptal', noSelection: 'Bir node seç.',
@@ -37,7 +37,7 @@ const operationalText = {
         search: 'Search map', all: 'All', active: 'Active work', blocked: 'Blocked',
         overdue: 'Overdue', missing: 'Missing next action',
         relations: 'All relationships', hierarchy: 'Hierarchy', flow: 'Flow', peer: 'Peer',
-        focus: 'Focus neighbors', next: 'Next', linked: 'Create linked node',
+        focus: 'Focus neighbors', linked: 'Create linked node',
         deps: 'Dependencies', labels: 'Labels', work: 'Work badges',
         layout: 'Choose layout', save: 'Save layout', restore: 'Restore',
         remove: 'Delete', reset: 'Reset', layoutName: 'Layout name', cancel: 'Cancel', noSelection: 'Select a node.',
@@ -190,14 +190,7 @@ function updatePisiOperationalSummary() {
         summary.blocked ? `${summary.blocked} ${t('blockedShort')}` : '',
         summary.overdue ? `${summary.overdue} ${t('overdueShort')}` : ''
     ].filter(Boolean).join(' · ');
-    const nextButton = document.getElementById('pisi-map-operational-next');
-    if (nextButton) {
-        const next = operationalState.lastRender?.ranked?.[0]?.node;
-        nextButton.disabled = !next;
-        nextButton.title = next?.metadata?.title
-            ? `${t('next')}: ${next.metadata.title}`
-            : t('next');
-    }
+
 }
 
 function schedulePisiOperationalRender() {
@@ -296,7 +289,6 @@ function rebuildPisiOperationalControlLabels() {
     if (query) query.placeholder = t('search');
     for (const [id, key] of [
         ['pisi-map-operational-focus', 'focus'],
-        ['pisi-map-operational-next', 'next'],
         ['pisi-map-operational-deps', 'deps'],
         ['pisi-map-operational-labels', 'labels'],
         ['pisi-map-operational-work', 'work'],
@@ -331,7 +323,7 @@ function createPisiOperationalBar() {
     depth.append(makeOption('1', '1-hop'), makeOption('2', '2-hop'), makeOption('3', '3-hop'));
 
     const ids = [
-        'focus', 'next', 'deps', 'labels', 'work',
+        'focus', 'deps', 'labels', 'work',
         'save-layout', 'restore', 'delete-layout', 'reset'
     ];
     const buttons = Object.fromEntries(ids.map((id) => {
@@ -348,7 +340,7 @@ function createPisiOperationalBar() {
 
     bar.append(
         scope, query, relation, depth,
-        buttons.focus, buttons.next,
+        buttons.focus,
         buttons.deps, buttons.labels, buttons.work,
         layout, buttons['save-layout'], buttons.restore,
         buttons['delete-layout'], buttons.reset, summary
@@ -400,7 +392,6 @@ function bindPisiOperationalControls() {
         schedulePisiOperationalRender();
         schedulePisiOperationalPersistence();
     });
-    document.getElementById('pisi-map-operational-next')?.addEventListener('click', focusNextPisiOperationalNode);
     document.getElementById('pisi-map-operational-deps')?.addEventListener('click', () => togglePisiOperationalDisplay('showTaskDependencies'));
     document.getElementById('pisi-map-operational-labels')?.addEventListener('click', () => togglePisiOperationalDisplay('showRelationshipLabels'));
     document.getElementById('pisi-map-operational-work')?.addEventListener('click', () => togglePisiOperationalDisplay('showWorkBadges'));
@@ -415,27 +406,6 @@ function togglePisiOperationalDisplay(key) {
     operationalState.display[key] = !operationalState.display[key];
     schedulePisiOperationalRender();
     schedulePisiOperationalPersistence();
-}
-
-function focusNextPisiOperationalNode() {
-    const next = operationalState.lastRender?.ranked?.[0]?.node;
-    if (!next) return;
-    const box = document.querySelector(
-        `.map-node-box[data-node-id="${CSS.escape(next.id)}"]`
-    );
-    const canvas = document.getElementById('map-canvas');
-    if (!box || !canvas) return;
-    window.Pisi?.modules?.['map.interactions']?.clearSelectedMapNodes?.();
-    box.classList.add('selected');
-    const zoom = window.activeMapCamera?.zoom || 1;
-    const x = parseFloat(box.style.left || '0') + box.offsetWidth / 2;
-    const y = parseFloat(box.style.top || '0') + box.offsetHeight / 2;
-    window.activeMapCamera.x = canvas.clientWidth / 2 - x * zoom;
-    window.activeMapCamera.y = canvas.clientHeight / 2 - y * zoom;
-    window.Pisi?.modules?.['map.interactions']?.applyMapCamera?.();
-    window.Pisi?.modules?.['map.interactions']?.saveActiveMapCameraSoon?.();
-    schedulePisiOperationalRender();
-    box.focus();
 }
 
 async function createPisiOperationalLinkedNode() {
@@ -607,7 +577,6 @@ function bindPisiOperationalMap() {
 registerModule('map.operational', {
     bindPisiOperationalMap,
     createPisiOperationalLinkedNode,
-    focusNextPisiOperationalNode,
     loadPisiOperationalMapState,
     operationalState,
     requestPisiName,
@@ -622,7 +591,6 @@ bindPisiOperationalMap();
 export {
     bindPisiOperationalMap,
     createPisiOperationalLinkedNode,
-    focusNextPisiOperationalNode,
     loadPisiOperationalMapState,
     operationalState,
     requestPisiName,

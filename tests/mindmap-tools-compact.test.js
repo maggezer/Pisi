@@ -27,7 +27,6 @@ test('Mind Map search stays first and filter criteria move behind one filter dis
 test('Mind Map text action buttons are decorated as icon-only controls', () => {
     for (const id of [
         'pisi-map-operational-focus',
-        'pisi-map-operational-next',
         'pisi-map-operational-linked',
         'pisi-map-operational-deps',
         'pisi-map-operational-labels',
