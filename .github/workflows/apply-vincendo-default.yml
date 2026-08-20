@@ -1,0 +1,101 @@
+name: Apply Vincendo Default
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/vincendo-default.trigger
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Make Vincendo the default font
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          css_path = Path('styles/105-bundled-vincendo.css')
+          css = css_path.read_text()
+          marker = '/* Pisi global default font */'
+          block = '''\n\n/* Pisi global default font */\n:root {\n    --pisi-app-font-family: "Vincendo", "Segoe UI", Tahoma, sans-serif;\n}\n\nhtml,\nbody {\n    font-family: var(--pisi-app-font-family);\n}\n\nbutton,\ninput,\nselect,\ntextarea {\n    font-family: var(--pisi-app-font-family);\n}\n\n#center-node-editor-content,\n#node-modal-content,\n.pisi-rich-editor {\n    font-family: var(--pisi-app-font-family);\n}\n'''
+          if marker not in css:
+              css = css.rstrip() + block + '\n'
+          css_path.write_text(css)
+
+          custom_path = Path('renderer/shell/pisi-customizations.mjs')
+          custom = custom_path.read_text()
+          old_option = '''const PISI_MAP_NODE_FONT_OPTIONS = [\n    ['"Segoe UI Variable Text", "Segoe UI", Arial, sans-serif', 'Segoe UI Variable'],'''
+          new_option = '''const PISI_LEGACY_MAP_NODE_DEFAULT_FONT = '"Segoe UI Variable Text", "Segoe UI", Arial, sans-serif';\nconst PISI_MAP_NODE_FONT_OPTIONS = [\n    ['"Vincendo", "Segoe UI", Tahoma, sans-serif', 'Vincendo'],\n    [PISI_LEGACY_MAP_NODE_DEFAULT_FONT, 'Segoe UI Variable'],'''
+          if old_option not in custom:
+              raise SystemExit('map font option anchor not found')
+          custom = custom.replace(old_option, new_option, 1)
+
+          parse_anchor = '''        const parsed = JSON.parse(raw) || {};\n        if (parsed.mapConnectionColor && !parsed.mapDownHubColor) {'''
+          parse_replacement = '''        const parsed = JSON.parse(raw) || {};\n\n        // Migrate only the former built-in default. Other explicit font choices\n        // remain untouched.\n        if (parsed.mapNodeFontFamily === PISI_LEGACY_MAP_NODE_DEFAULT_FONT) {\n            parsed.mapNodeFontFamily = PISI_DEFAULT_CUSTOMIZATION.mapNodeFontFamily;\n        }\n\n        if (parsed.mapConnectionColor && !parsed.mapDownHubColor) {'''
+          if parse_anchor not in custom:
+              raise SystemExit('customization migration anchor not found')
+          custom = custom.replace(parse_anchor, parse_replacement, 1)
+          custom_path.write_text(custom)
+
+          toolbar_path = Path('renderer/editor/pisi-editor-unified-toolbar.mjs')
+          toolbar = toolbar_path.read_text()
+          toolbar_anchor = '''                    <select class="pisi-office-select pisi-font-family-select" data-pisi-unified-command="fontName" title="Font type" aria-label="Font type">\n                        <option value="Segoe UI">Segoe UI</option>'''
+          toolbar_replacement = '''                    <select class="pisi-office-select pisi-font-family-select" data-pisi-unified-command="fontName" title="Font type" aria-label="Font type">\n                        <option value="Vincendo" selected>Vincendo</option>\n                        <option value="Segoe UI">Segoe UI</option>'''
+          if toolbar_anchor not in toolbar:
+              raise SystemExit('toolbar font select anchor not found')
+          toolbar = toolbar.replace(toolbar_anchor, toolbar_replacement, 1)
+          toolbar_path.write_text(toolbar)
+          PY
+
+      - name: Add regression test
+        run: |
+          cat > tests/vincendo-default-font.test.js <<'EOF'
+          'use strict';
+
+          const test = require('node:test');
+          const assert = require('node:assert/strict');
+          const fs = require('node:fs');
+          const path = require('node:path');
+
+          const root = path.resolve(__dirname, '..');
+          const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), 'utf8');
+
+          test('Vincendo is the application, editor, toolbar and map-node default font', () => {
+              const css = read('styles/105-bundled-vincendo.css');
+              const customization = read('renderer/shell/pisi-customizations.mjs');
+              const toolbar = read('renderer/editor/pisi-editor-unified-toolbar.mjs');
+
+              assert.match(css, /--pisi-app-font-family:\s*"Vincendo"/);
+              assert.match(css, /html,\s*\nbody\s*\{[\s\S]*font-family:\s*var\(--pisi-app-font-family\)/);
+              assert.match(css, /#center-node-editor-content,[\s\S]*#node-modal-content,[\s\S]*\.pisi-rich-editor[\s\S]*font-family:\s*var\(--pisi-app-font-family\)/);
+
+              assert.match(customization, /PISI_MAP_NODE_FONT_OPTIONS = \[\s*\n\s*\['"Vincendo", "Segoe UI", Tahoma, sans-serif', 'Vincendo'\]/);
+              assert.match(customization, /mapNodeFontFamily:\s*PISI_MAP_NODE_FONT_OPTIONS\[0\]\[0\]/);
+              assert.match(customization, /parsed\.mapNodeFontFamily === PISI_LEGACY_MAP_NODE_DEFAULT_FONT/);
+
+              assert.match(toolbar, /<option value="Vincendo" selected>Vincendo<\/option>/);
+          });
+          EOF
+
+      - name: Validate
+        run: |
+          npm ci --ignore-scripts
+          npm run validate
+
+      - name: Commit changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add styles/105-bundled-vincendo.css renderer/shell/pisi-customizations.mjs renderer/editor/pisi-editor-unified-toolbar.mjs tests/vincendo-default-font.test.js
+          git diff --cached --quiet && exit 0
+          git commit -m 'Make Vincendo the default Pisi font'
+          git push
