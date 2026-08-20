@@ -29,3 +29,4 @@
 @import url("./styles/99-editor-whitespace.css") layer(pisi);
 @import url("./styles/100-map-task-count-badge.css") layer(pisi);
 @import url("./styles/101-node-modal-close.css") layer(pisi);
+@import url("./styles/102-map-node-selection-rectangle.css") layer(pisi);
