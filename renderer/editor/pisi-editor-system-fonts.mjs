@@ -1,7 +1,7 @@
 import { registerModule } from "../core/module-registry.mjs";
 
 // Comic Sans is never bundled: Pisi only asks the operating system for it.
-// Comic Neue is bundled separately under SIL OFL 1.1 by editor.bundledFonts.
+// Comic Neue and Vincendo are bundled locally under SIL OFL 1.1.
 const PISI_EDITOR_EXTRA_FONT_OPTIONS = Object.freeze([
     Object.freeze({
         value: '"Comic Sans MS", "Comic Sans", cursive',
@@ -11,6 +11,11 @@ const PISI_EDITOR_EXTRA_FONT_OPTIONS = Object.freeze([
     Object.freeze({
         value: 'Comic Neue',
         label: 'Comic Neue',
+        source: 'bundled'
+    }),
+    Object.freeze({
+        value: 'Vincendo',
+        label: 'Vincendo',
         source: 'bundled'
     })
 ]);
