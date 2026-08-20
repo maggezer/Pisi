@@ -20,3 +20,9 @@ html body #pisi-tag-menu {
     z-index: 31000;
     pointer-events: auto;
 }
+
+/* Toolbar popovers are portalled to body; keep them above an open node modal. */
+html body > .pisi-office-popover {
+    z-index: 32000;
+    pointer-events: auto;
+}
