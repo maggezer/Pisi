@@ -66,6 +66,7 @@ function buildPisiUnifiedToolbarMarkup() {
             <section class="pisi-toolbar-section pisi-toolbar-section-text" aria-label="Temel yazı araçları">
                 <div class="pisi-toolbar-section-row pisi-toolbar-section-row-top">
                     <select class="pisi-office-select pisi-font-family-select" data-pisi-unified-command="fontName" title="Font type" aria-label="Font type">
+                        <option value="Vincendo" selected>Vincendo</option>
                         <option value="Segoe UI">Segoe UI</option>
                         <option value="Arial">Arial</option>
                         <option value="Calibri">Calibri</option>

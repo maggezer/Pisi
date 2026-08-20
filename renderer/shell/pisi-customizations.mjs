@@ -8,8 +8,10 @@ const PISI_THEME_MAP_NODE_BOX_COLORS = {
     dark: '#252526',
     light: '#ffffff'
 };
+const PISI_LEGACY_MAP_NODE_DEFAULT_FONT = '"Segoe UI Variable Text", "Segoe UI", Arial, sans-serif';
 const PISI_MAP_NODE_FONT_OPTIONS = [
-    ['"Segoe UI Variable Text", "Segoe UI", Arial, sans-serif', 'Segoe UI Variable'],
+    ['"Vincendo", "Segoe UI", Tahoma, sans-serif', 'Vincendo'],
+    [PISI_LEGACY_MAP_NODE_DEFAULT_FONT, 'Segoe UI Variable'],
     ['"Segoe UI", Tahoma, sans-serif', 'Segoe UI'],
     ['Verdana, Geneva, sans-serif', 'Verdana'],
     ['Arial, Helvetica, sans-serif', 'Arial'],
@@ -122,6 +124,13 @@ function loadPisiCustomizationSettings() {
         }
 
         const parsed = JSON.parse(raw) || {};
+
+        // Migrate only the former built-in default. Other explicit font choices
+        // remain untouched.
+        if (parsed.mapNodeFontFamily === PISI_LEGACY_MAP_NODE_DEFAULT_FONT) {
+            parsed.mapNodeFontFamily = PISI_DEFAULT_CUSTOMIZATION.mapNodeFontFamily;
+        }
+
         if (parsed.mapConnectionColor && !parsed.mapDownHubColor) {
             parsed.mapDownHubColor = parsed.mapConnectionColor;
         }
