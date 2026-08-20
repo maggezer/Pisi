@@ -30,16 +30,12 @@ test('tutorial is first-run once and can be replayed without mutating project da
 });
 
 test('tutorial covers the primary Pisi work areas and provides keyboard exit/navigation', () => {
-    for (const selector of [
-        '#left-panel',
-        '#project-actions',
-        '#workspace',
-        'data-right-tab=\\"missions\\"',
-        'data-right-tab=\\"mindmap\\"',
-        '#pisi-command-center-button'
-    ]) {
-        assert.match(tutorial, new RegExp(selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
-    }
+    assert.match(tutorial, /#left-panel/);
+    assert.match(tutorial, /#project-actions/);
+    assert.match(tutorial, /#workspace/);
+    assert.match(tutorial, /\[data-right-tab="missions"\]/);
+    assert.match(tutorial, /\[data-right-tab="mindmap"\]/);
+    assert.match(tutorial, /#pisi-command-center-button/);
     assert.match(tutorial, /event\.key === 'Escape'/);
     assert.match(tutorial, /event\.key === 'ArrowRight'/);
     assert.match(tutorial, /event\.key === 'ArrowLeft'/);
