@@ -1,0 +1,25 @@
+/* Right-panel Todo toolbar: keep Filter, status, and sort controls together. */
+.pisi-missions-toolbar-row {
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.pisi-missions-filter-menu {
+    flex: 0 0 auto;
+    max-width: none;
+}
+
+.pisi-missions-filter-trigger {
+    width: auto;
+    min-width: 0;
+    height: 30px;
+    white-space: nowrap;
+}
+
+.pisi-missions-filter-trigger > span:first-child {
+    display: none;
+}
+
+.pisi-missions-filter-trigger::before {
+    content: "Filter";
+}
