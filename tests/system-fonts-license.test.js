@@ -23,7 +23,7 @@ function walk(directory) {
     return result;
 }
 
-test('Comic Sans is exposed as a system font without redistributing font binaries', () => {
+test('Comic Sans and Comic Neue are reconciled into every editor font list', () => {
     const moduleSource = read('renderer/editor/pisi-editor-system-fonts.mjs');
     const bootstrap = read('renderer/bootstrap.mjs');
 
@@ -32,16 +32,28 @@ test('Comic Sans is exposed as a system font without redistributing font binarie
         /value:\s*'"Comic Sans MS", "Comic Sans", cursive'/
     );
     assert.match(moduleSource, /label:\s*'Comic Sans MS'/);
+    assert.match(moduleSource, /value:\s*'Comic Neue'/);
+    assert.match(moduleSource, /label:\s*'Comic Neue'/);
+    assert.match(moduleSource, /\.pisi-font-family-select/);
+    assert.match(moduleSource, /DOMContentLoaded/);
+    assert.match(moduleSource, /setTimeout\(refreshPisiEditorExtraFontOptions, 0\)/);
+    assert.match(moduleSource, /document\.addEventListener\('mousedown'/);
+    assert.match(moduleSource, /document\.addEventListener\('focusin'/);
+    assert.match(moduleSource, /loadPisiComicNeueFont/);
     assert.doesNotMatch(moduleSource, /@font-face/i);
     assert.doesNotMatch(moduleSource, /https?:\/\//i);
     assert.match(
         bootstrap,
         /import "\.\/editor\/pisi-editor-system-fonts\.mjs";/
     );
+    assert.match(
+        bootstrap,
+        /import "\.\/editor\/pisi-editor-bundled-fonts\.mjs";/
+    );
 
-    const bundledComicFontFiles = walk('assets').filter((file) => (
+    const bundledComicSansFiles = walk('assets').filter((file) => (
         /comic[\s_-]*sans/i.test(path.basename(file)) &&
         /\.(?:ttf|otf|woff2?|eot)$/i.test(file)
     ));
-    assert.deepEqual(bundledComicFontFiles, []);
+    assert.deepEqual(bundledComicSansFiles, []);
 });
