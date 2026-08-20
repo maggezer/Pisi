@@ -5,7 +5,92 @@ const fs = require('fs');
 const path = require('path');
 const { registerMainModule } = require('../module-registry');
 
-const PISI_MAP_NODE_CREATE_HARDENING_VERSION = 1;
+const PISI_MAP_NODE_CREATE_HARDENING_VERSION = 2;
+
+function getPisiStoredMapSidecarPath(mapPath) {
+    const data = readJsonFileSafe(mapPath);
+    const metadata = data?.pisi && typeof data.pisi === 'object'
+        ? data.pisi
+        : (data?.kedi && typeof data.kedi === 'object' ? data.kedi : null);
+    const storedName = String(metadata?.sidecar || '').trim();
+
+    if (
+        !storedName ||
+        storedName === '.' ||
+        storedName === '..' ||
+        path.basename(storedName) !== storedName
+    ) {
+        return null;
+    }
+
+    const candidate = path.join(path.dirname(mapPath), storedName);
+    try {
+        return fs.existsSync(candidate) && fs.statSync(candidate).isDirectory()
+            ? candidate
+            : null;
+    } catch {
+        return null;
+    }
+}
+
+function ensureEmptyPisiSidecarDirectory(sidecarPath) {
+    if (!sidecarPath || fs.existsSync(sidecarPath)) return;
+    markInternalFileChange(sidecarPath);
+    fs.mkdirSync(sidecarPath, { recursive: true });
+    sealInternalFileChange(sidecarPath);
+}
+
+function repairPisiStoredMapSidecar(storedSidecarPath, mapInfo) {
+    const desiredSidecarPath = mapInfo?.sidecarPath;
+    if (
+        !storedSidecarPath ||
+        !desiredSidecarPath ||
+        normalizePathForCompare(storedSidecarPath) ===
+            normalizePathForCompare(desiredSidecarPath) ||
+        !fs.existsSync(storedSidecarPath)
+    ) {
+        return desiredSidecarPath;
+    }
+
+    try {
+        if (fs.existsSync(desiredSidecarPath)) {
+            const stat = fs.statSync(desiredSidecarPath);
+            if (!stat.isDirectory()) return desiredSidecarPath;
+
+            const entries = fs.readdirSync(desiredSidecarPath);
+            if (entries.length > 0) {
+                return desiredSidecarPath;
+            }
+
+            markInternalFileChange(desiredSidecarPath);
+            fs.rmSync(desiredSidecarPath, { recursive: true, force: false });
+            sealInternalFileChange(desiredSidecarPath);
+        }
+
+        renamePathInternal(storedSidecarPath, desiredSidecarPath);
+        mapInfo.sidecarPath = desiredSidecarPath;
+        return desiredSidecarPath;
+    } catch (error) {
+        ensureEmptyPisiSidecarDirectory(desiredSidecarPath);
+        console.warn(
+            '[PISI] Eski map yan klasörü yeni biçime taşınamadı:',
+            error.message
+        );
+        return desiredSidecarPath;
+    }
+}
+
+function preparePisiMapForNodeCreate(mapPath) {
+    const storedSidecarPath = getPisiStoredMapSidecarPath(mapPath);
+    const mapInfo = ensurePisiFileMetadata(mapPath);
+    if (!mapInfo?.ok) return mapInfo;
+
+    repairPisiStoredMapSidecar(storedSidecarPath, mapInfo);
+    return {
+        ok: true,
+        mapInfo
+    };
+}
 
 function ensurePisiMapDataForNodeCreate(mapInfo) {
     if (
@@ -111,8 +196,10 @@ function createPisiMapNodeResilient(mapPath) {
             };
         }
 
-        const mapInfo = ensurePisiFileMetadata(mapPath);
-        if (!mapInfo?.ok) return mapInfo;
+        const prepared = preparePisiMapForNodeCreate(mapPath);
+        if (!prepared?.ok) return prepared;
+        const mapInfo = prepared.mapInfo;
+
         if (mapInfo.metadata?.type !== 'map') {
             return {
                 ok: false,
@@ -158,6 +245,19 @@ function createPisiMapNodeResilient(mapPath) {
 }
 
 function installPisiMapNodeCreateHardening() {
+    ipcMain.removeHandler('project:list-map-nodes');
+    ipcMain.handle('project:list-map-nodes', (_event, mapPath) => {
+        return projectOperation(() => {
+            const safeMapPath = assertProjectPath(mapPath, {
+                type: 'file',
+                extensions: ['.map']
+            });
+            const prepared = preparePisiMapForNodeCreate(safeMapPath);
+            if (!prepared?.ok) return prepared;
+            return listNodesForMap(safeMapPath);
+        });
+    });
+
     ipcMain.removeHandler('project:create-node-under-map');
     ipcMain.handle('project:create-node-under-map', (_event, mapPath) => {
         return projectOperation(() => {
@@ -172,6 +272,9 @@ function installPisiMapNodeCreateHardening() {
 
 const moduleApi = {
     PISI_MAP_NODE_CREATE_HARDENING_VERSION,
+    getPisiStoredMapSidecarPath,
+    repairPisiStoredMapSidecar,
+    preparePisiMapForNodeCreate,
     createPisiMapNodeResilient,
     installPisiMapNodeCreateHardening
 };
