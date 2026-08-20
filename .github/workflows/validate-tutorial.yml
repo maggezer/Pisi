@@ -1,5 +1,6 @@
 name: Validate Pisi Tutorial
 
+# Re-run after tutorial regression test fix.
 on:
   push:
     branches:
