@@ -1,0 +1,23 @@
+/* Pisi default UI typeface: CAT Rhythmus by Peter Wiegel. */
+@font-face {
+    font-family: "CAT Rhythmus";
+    src:
+        local("CAT Rhythmus"),
+        url("https://raw.githubusercontent.com/despotgit/gos-swift-client/master/GOS/Utils/Fonts/CATRhythmus-Regular.ttf/cat-rhythmus.regular.ttf") format("truetype");
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+}
+
+:root {
+    --pisi-default-font-family: "CAT Rhythmus", "Segoe UI", Tahoma, sans-serif;
+}
+
+html,
+body,
+button,
+input,
+select,
+textarea {
+    font-family: var(--pisi-default-font-family);
+}
