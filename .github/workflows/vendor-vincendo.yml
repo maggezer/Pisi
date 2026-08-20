@@ -1,0 +1,37 @@
+name: Vendor Vincendo
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/vincendo-fetch.trigger
+
+permissions:
+  contents: write
+
+jobs:
+  vendor-font:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Vincendo Regular
+        run: |
+          mkdir -p assets/fonts
+          curl --fail --location --retry 3 \
+            'https://db.onlinewebfonts.com/t/4e6199de244adde40440a5877ffb7b3c.woff2' \
+            --output assets/fonts/vincendo-regular.woff2
+          test "$(xxd -p -l 4 assets/fonts/vincendo-regular.woff2)" = "774f4632"
+          test "$(stat -c%s assets/fonts/vincendo-regular.woff2)" -gt 10000
+
+      - name: Commit vendored font
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/fonts/vincendo-regular.woff2
+          git diff --cached --quiet && exit 0
+          git commit -m 'Vendor Vincendo Regular font'
+          git push
