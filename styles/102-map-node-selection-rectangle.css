@@ -1,9 +1,0 @@
-.map-node-box.selected::after {
-    content: "";
-    position: absolute;
-    inset: -6px;
-    border: 1px solid #f39c12;
-    border-radius: 2px;
-    pointer-events: none;
-    z-index: 8;
-}
