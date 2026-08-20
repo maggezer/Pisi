@@ -1,3 +1,7 @@
+#pisi-map-operational-depth {
+    display: none;
+}
+
 #pisi-map-operational-focus[data-pisi-focus-degree-menu="1"]::after {
     content: "";
     position: absolute;
