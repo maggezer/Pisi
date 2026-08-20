@@ -11,7 +11,7 @@ async function persistPisiMapConnection(edgePayload) {
     if (result?.code === 'SECOND_PARENT_CONFIRM_REQUIRED') {
         const confirmed = typeof pisiConfirm === 'function'
             ? await pisiConfirm(
-                'Bu node zaten bir parent’a sahip. Yeni bağlantı hiyerarşi yerine stream ilişkisi olarak kaydedilsin mi?',
+                'Bu node zaten bir parent’a sahip. Bağlantı hiyerarşi yerine stream ilişkisi olarak kaydedilsin mi?',
                 {
                     title: 'İkinci parent',
                     confirmText: 'Stream olarak ekle',
@@ -19,7 +19,7 @@ async function persistPisiMapConnection(edgePayload) {
                 }
             )
             : confirm(
-                'Bu node zaten bir parent’a sahip. Yeni bağlantı stream olarak kaydedilsin mi?'
+                'Bu node zaten bir parent’a sahip. Bağlantı stream ilişkisi olarak kaydedilsin mi?'
             );
 
         if (!confirmed) {
@@ -47,6 +47,263 @@ async function persistPisiMapConnection(edgePayload) {
 }
 
 let pisiKeyboardConnectionSource = null;
+let pisiMapEdgeMenu = null;
+let pisiMapEdgeMenuAnchor = null;
+let pisiMapEdgeMenuEdgeId = null;
+
+const PISI_MAP_EDGE_TYPE_OPTIONS = Object.freeze([
+    {
+        type: 'down-hub',
+        label: 'Hub bağlantı',
+        sourceRole: 'down-hub',
+        targetRole: 'up-hub'
+    },
+    {
+        type: 'co-level',
+        label: 'Co-level bağlantı',
+        sourceRole: 'co-level',
+        targetRole: 'co-level'
+    },
+    {
+        type: 'stream',
+        label: 'Stream bağlantı',
+        sourceRole: 'downstream',
+        targetRole: 'upstream'
+    }
+]);
+
+function translatePisiMapEdgeMenuText(value) {
+    return window.pisiI18n?.translate?.(value) || String(value || '');
+}
+
+function getPisiMapEdgeById(edgeId) {
+    return Array.isArray(activeMapEdges)
+        ? activeMapEdges.find((edge) => edge?.id === edgeId) || null
+        : null;
+}
+
+function closePisiMapEdgeMenu() {
+    pisiMapEdgeMenu?.remove?.();
+    pisiMapEdgeMenu = null;
+    pisiMapEdgeMenuEdgeId = null;
+    if (pisiMapEdgeMenuAnchor) {
+        pisiMapEdgeMenuAnchor.setAttribute('aria-expanded', 'false');
+    }
+    pisiMapEdgeMenuAnchor = null;
+}
+
+function positionPisiMapEdgeMenu(menu, anchor) {
+    if (!menu || !anchor?.getBoundingClientRect) return;
+
+    const rect = anchor.getBoundingClientRect();
+    const margin = 8;
+    const gap = 6;
+    const width = menu.offsetWidth || 190;
+    const height = menu.offsetHeight || 170;
+
+    let left = rect.left + (rect.width / 2) - (width / 2);
+    left = Math.max(
+        margin,
+        Math.min(left, Math.max(margin, window.innerWidth - width - margin))
+    );
+
+    let top = rect.bottom + gap;
+    if (top + height > window.innerHeight - margin) {
+        top = Math.max(margin, rect.top - height - gap);
+    }
+
+    menu.style.left = `${left}px`;
+    menu.style.top = `${top}px`;
+}
+
+function prunePisiStaleCollapsedHubPorts() {
+    if (
+        typeof getCollapsedHubPortSet !== 'function' ||
+        typeof hasOutgoingHubEdgesFromPort !== 'function'
+    ) {
+        return false;
+    }
+
+    const collapsed = getCollapsedHubPortSet();
+    if (!(collapsed instanceof Set)) return false;
+
+    let changed = false;
+    for (const key of Array.from(collapsed)) {
+        const [nodeId, port] = String(key || '').split('::');
+        if (!nodeId || !port || hasOutgoingHubEdgesFromPort(nodeId, port)) {
+            continue;
+        }
+        collapsed.delete(key);
+        changed = true;
+    }
+
+    if (typeof syncHubPortCollapseVisuals === 'function') {
+        syncHubPortCollapseVisuals();
+    }
+    if (changed && typeof saveActiveMapCameraSoon === 'function') {
+        saveActiveMapCameraSoon();
+    }
+    return changed;
+}
+
+async function changePisiMapEdgeType(edgeId, nextType) {
+    const edge = getPisiMapEdgeById(edgeId);
+    const option = PISI_MAP_EDGE_TYPE_OPTIONS.find(
+        (candidate) => candidate.type === nextType
+    );
+
+    if (!activeMapPath || !edge || !option) {
+        return {
+            ok: false,
+            error: 'Bağlantı tipi değiştirilemedi.'
+        };
+    }
+
+    if (edge.type === option.type) {
+        return {
+            ok: true,
+            unchanged: true,
+            edge
+        };
+    }
+
+    const wasSelected = selectedMapEdgeId === edgeId;
+    const result = await persistPisiMapConnection({
+        ...edge,
+        id: edge.id,
+        type: option.type,
+        sourceRole: option.sourceRole,
+        targetRole: option.targetRole
+    });
+
+    if (!result?.ok) {
+        if (!result?.cancelled) {
+            alert(result?.error || 'Bağlantı tipi değiştirilemedi.');
+        }
+        return result;
+    }
+
+    prunePisiStaleCollapsedHubPorts();
+
+    if (wasSelected && getPisiMapEdgeById(edgeId)) {
+        selectPisiMapEdge(edgeId);
+    }
+
+    return result;
+}
+
+function makePisiMapEdgeMenuOption(edge, option) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'pisi-map-edge-menu-option pisi-map-edge-menu-type';
+    button.dataset.edgeType = option.type;
+    button.setAttribute('role', 'menuitemradio');
+    button.setAttribute('aria-checked', edge.type === option.type ? 'true' : 'false');
+    button.classList.toggle('current', edge.type === option.type);
+
+    const swatch = document.createElement('span');
+    swatch.className = `pisi-map-edge-menu-swatch ${option.type}`;
+    swatch.setAttribute('aria-hidden', 'true');
+
+    const label = document.createElement('span');
+    label.textContent = translatePisiMapEdgeMenuText(option.label);
+
+    button.append(swatch, label);
+    button.addEventListener('click', async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        closePisiMapEdgeMenu();
+        await changePisiMapEdgeType(edge.id, option.type);
+    });
+    return button;
+}
+
+function openPisiMapEdgeMenu(edgeId, anchor) {
+    const edge = getPisiMapEdgeById(edgeId);
+    if (!edge || !anchor) return false;
+
+    closePisiMapEdgeMenu();
+    selectPisiMapEdge(edgeId);
+
+    const menu = document.createElement('div');
+    menu.className = 'pisi-map-edge-menu';
+    menu.dataset.edgeId = edgeId;
+    menu.setAttribute('role', 'menu');
+    menu.setAttribute(
+        'aria-label',
+        translatePisiMapEdgeMenuText('Bağlantı seçenekleri')
+    );
+
+    const typeLabel = document.createElement('div');
+    typeLabel.className = 'pisi-map-edge-menu-label';
+    typeLabel.textContent = translatePisiMapEdgeMenuText('Bağlantı tipi');
+    menu.appendChild(typeLabel);
+
+    for (const option of PISI_MAP_EDGE_TYPE_OPTIONS) {
+        menu.appendChild(makePisiMapEdgeMenuOption(edge, option));
+    }
+
+    const separator = document.createElement('div');
+    separator.className = 'pisi-map-edge-menu-separator';
+    separator.setAttribute('role', 'separator');
+    menu.appendChild(separator);
+
+    const deleteButton = document.createElement('button');
+    deleteButton.type = 'button';
+    deleteButton.className = 'pisi-map-edge-menu-option pisi-map-edge-menu-delete';
+    deleteButton.setAttribute('role', 'menuitem');
+    deleteButton.textContent = translatePisiMapEdgeMenuText('Bağlantıyı sil');
+    deleteButton.addEventListener('click', async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        closePisiMapEdgeMenu();
+        await deleteMapEdge(edgeId);
+    });
+    menu.appendChild(deleteButton);
+
+    menu.addEventListener('mousedown', (event) => {
+        event.stopPropagation();
+    });
+
+    document.body.appendChild(menu);
+    pisiMapEdgeMenu = menu;
+    pisiMapEdgeMenuAnchor = anchor;
+    pisiMapEdgeMenuEdgeId = edgeId;
+    anchor.setAttribute('aria-expanded', 'true');
+
+    requestAnimationFrame(() => {
+        if (pisiMapEdgeMenu !== menu) return;
+        positionPisiMapEdgeMenu(menu, anchor);
+        menu.querySelector('.pisi-map-edge-menu-type.current')?.focus?.();
+    });
+    return true;
+}
+
+function bindPisiMapEdgeMenuDismissal() {
+    document.addEventListener('pointerdown', (event) => {
+        if (!pisiMapEdgeMenu) return;
+        if (
+            pisiMapEdgeMenu.contains(event.target) ||
+            pisiMapEdgeMenuAnchor?.contains?.(event.target)
+        ) {
+            return;
+        }
+        closePisiMapEdgeMenu();
+    }, true);
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            closePisiMapEdgeMenu();
+        }
+    });
+
+    window.addEventListener('resize', closePisiMapEdgeMenu);
+    window.addEventListener('blur', closePisiMapEdgeMenu);
+}
+
+bindPisiMapEdgeMenuDismissal();
 
 function notifyPisiMapCustomizationContextChanged() {
     document.dispatchEvent(new CustomEvent(
@@ -75,6 +332,7 @@ function selectPisiMapEdge(edgeId) {
 }
 
 function resetPisiMapConnectionInteractions() {
+    closePisiMapEdgeMenu();
     pisiKeyboardConnectionSource?.portEl?.classList.remove(
         'connecting-source'
     );
@@ -189,6 +447,8 @@ currentConnectionDrag = {
 async function deleteMapEdge(edgeId) {
     if (!activeMapPath || !edgeId) return;
 
+    closePisiMapEdgeMenu();
+
     // Bağlantı sürükleme/seçim durumunu temizle; global focus'u body'ye
     // taşımıyoruz. Confirm diyaloğu kendi focus yaşam döngüsünü yönetiyor.
     resetPisiMapConnectionInteractions();
@@ -224,6 +484,7 @@ async function deleteMapEdge(edgeId) {
             return edge.id !== edgeId;
         });
 
+        prunePisiStaleCollapsedHubPorts();
         drawMapConnections();
 
         if (typeof refreshActiveMapTreeBranch === 'function') {
@@ -246,18 +507,23 @@ function createMapEdgeDeleteButton(edge, pathData) {
     if (!point) return null;
 
     const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    group.classList.add('map-edge-delete');
+    group.classList.add('map-edge-menu-trigger');
     group.dataset.edgeId = edge.id;
     group.setAttribute('transform', `translate(${point.x}, ${point.y})`);
+    group.setAttribute('role', 'button');
+    group.setAttribute('tabindex', '0');
+    group.setAttribute('aria-haspopup', 'menu');
+    group.setAttribute('aria-expanded', 'false');
+    group.setAttribute('aria-label', 'Bağlantı seçenekleri');
 
     const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    circle.classList.add('map-edge-delete-hit');
+    circle.classList.add('map-edge-menu-hit');
     circle.setAttribute('r', '10');
 
     const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    text.classList.add('map-edge-delete-x');
-    text.textContent = '×';
-    text.setAttribute('y', '-0.5');
+    text.classList.add('map-edge-menu-dots');
+    text.textContent = '⋯';
+    text.setAttribute('y', '-1');
 
     group.appendChild(circle);
     group.appendChild(text);
@@ -267,11 +533,25 @@ function createMapEdgeDeleteButton(edge, pathData) {
         event.stopPropagation();
     });
 
-    group.addEventListener('click', async (event) => {
+    const toggleMenu = (event) => {
         event.preventDefault();
         event.stopPropagation();
 
-        await deleteMapEdge(edge.id);
+        if (
+            pisiMapEdgeMenu &&
+            pisiMapEdgeMenuEdgeId === edge.id &&
+            pisiMapEdgeMenuAnchor === group
+        ) {
+            closePisiMapEdgeMenu();
+            return;
+        }
+        openPisiMapEdgeMenu(edge.id, group);
+    };
+
+    group.addEventListener('click', toggleMenu);
+    group.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        toggleMenu(event);
     });
 
     return group;
@@ -285,7 +565,7 @@ function getMapEdgePathMidpoint(pathData) {
         const length = tempPath.getTotalLength();
         return tempPath.getPointAtLength(length / 2);
     } catch (error) {
-        console.warn('[PISI] Bağlantı silme butonu konumu hesaplanamadı:', error);
+        console.warn('[PISI] Bağlantı menüsü konumu hesaplanamadı:', error);
         return null;
     }
 }
@@ -295,6 +575,13 @@ function updateMapEdgeDeleteButtonPosition(group, pathData) {
     const point = getMapEdgePathMidpoint(pathData);
     if (!point) return;
     group.setAttribute('transform', `translate(${point.x}, ${point.y})`);
+
+    if (
+        pisiMapEdgeMenu &&
+        pisiMapEdgeMenuAnchor === group
+    ) {
+        positionPisiMapEdgeMenu(pisiMapEdgeMenu, group);
+    }
 }
 
 let pisiConnectionDrawFrame = null;
@@ -388,7 +675,7 @@ function bindPisiMapEdgeSelection(groupEl, hitPathEl) {
     hitPathEl.setAttribute('aria-label', 'Bağlantı');
 
     groupEl.addEventListener('click', (event) => {
-        if (event.target.closest?.('.map-edge-delete')) return;
+        if (event.target.closest?.('.map-edge-menu-trigger')) return;
         event.preventDefault();
         event.stopPropagation();
         selectPisiMapEdge(groupEl.dataset.edgeId);
@@ -452,7 +739,7 @@ function drawMapConnections() {
         );
         let hitPathEl = groupEl?.querySelector('.map-edge-hit') || null;
         let pathEl = groupEl?.querySelector('.map-edge') || null;
-        let deleteEl = groupEl?.querySelector('.map-edge-delete') || null;
+        let menuTriggerEl = groupEl?.querySelector('.map-edge-menu-trigger') || null;
 
         if (!groupEl) {
             groupEl = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -466,13 +753,13 @@ function drawMapConnections() {
             pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             pathEl.dataset.edgeId = edge.id;
 
-            deleteEl = createMapEdgeDeleteButton(edge, pathData);
+            menuTriggerEl = createMapEdgeDeleteButton(edge, pathData);
 
             groupEl.appendChild(hitPathEl);
             groupEl.appendChild(pathEl);
 
-            if (deleteEl) {
-                groupEl.appendChild(deleteEl);
+            if (menuTriggerEl) {
+                groupEl.appendChild(menuTriggerEl);
             }
 
             svg.appendChild(groupEl);
@@ -494,13 +781,16 @@ function drawMapConnections() {
         );
         groupEl.classList.toggle('selected', edge.id === selectedMapEdgeId);
 
-        if (deleteEl) {
-            updateMapEdgeDeleteButtonPosition(deleteEl, pathData);
+        if (menuTriggerEl) {
+            updateMapEdgeDeleteButtonPosition(menuTriggerEl, pathData);
         }
     }
 
     svg.querySelectorAll('.map-edge-group').forEach((group) => {
         if (!liveEdgeIds.has(group.dataset.edgeId)) {
+            if (pisiMapEdgeMenuEdgeId === group.dataset.edgeId) {
+                closePisiMapEdgeMenu();
+            }
             group.remove();
         }
     });
