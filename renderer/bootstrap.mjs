@@ -62,6 +62,7 @@ import "./portability/pisi-project-integrity.mjs";
 import "./editor/pisi-node-preview.mjs";
 import "./map/pisi-map-interactions.mjs";
 import "./map/pisi-map-edges.mjs";
+import "./map/pisi-map-edge-selection-dismiss.mjs";
 import "./map/pisi-map-operational-core.mjs";
 import "./map/pisi-map-operational-render.mjs";
 import "./map/pisi-map-operational.mjs";
