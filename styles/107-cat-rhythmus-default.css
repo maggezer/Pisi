@@ -3,14 +3,16 @@
     font-family: "CAT Rhythmus";
     src:
         local("CAT Rhythmus"),
-        url("https://raw.githubusercontent.com/despotgit/gos-swift-client/master/GOS/Utils/Fonts/CATRhythmus-Regular.ttf/cat-rhythmus.regular.ttf") format("truetype");
+        local("CATRhythmus"),
+        url("https://db.onlinewebfonts.com/t/757a0f376d51f4aabe4e79c63d04bb8f.woff2") format("woff2"),
+        url("https://st.1001fonts.net/download/font/cat-rhythmus.regular.ttf") format("truetype");
     font-style: normal;
     font-weight: 400;
     font-display: swap;
 }
 
 :root {
-    --pisi-default-font-family: "CAT Rhythmus", "Segoe UI", Tahoma, sans-serif;
+    --pisi-default-font-family: "CAT Rhythmus", Tahoma, "Segoe UI", sans-serif;
 }
 
 html,
