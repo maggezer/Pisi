@@ -1,4 +1,4 @@
-/* Right-panel Todo: filter icon on the left of the top action row. */
+/* Right-panel Todo: icon filters on the left of the top action row. */
 #right-tab-missions {
     position: relative;
 }
@@ -42,7 +42,7 @@
         box-shadow 140ms ease;
 }
 
-/* Keep the dynamic filter label/count available to assistive tech, but icon-only visually. */
+/* Keep the dynamic date-filter label/count available to assistive tech, but icon-only visually. */
 #right-tab-missions .pisi-missions-filter-trigger > span {
     position: absolute;
     width: 1px;
@@ -107,16 +107,90 @@
     width: 190px;
 }
 
-html[data-pisi-theme="light"] #right-tab-missions .pisi-missions-filter-trigger {
+/* Status filter: keep the native select behavior, but present it as an icon button. */
+#right-tab-missions .pisi-missions-status-filter {
+    position: absolute;
+    top: 0;
+    left: 46px;
+    z-index: 160;
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    min-height: 38px;
+    padding: 0;
+    border: 1px solid var(--border-color, #4a5059);
+    border-radius: 9px;
+    appearance: none;
+    -webkit-appearance: none;
+    background-color: color-mix(
+        in srgb,
+        var(--accent-color, #f39c12) 9%,
+        var(--panel-bg, #252526)
+    );
+    background-image: url("../assets/todo/status-filter.svg");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 21px 21px;
+    color: transparent;
+    font-size: 0;
+    cursor: pointer;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
+    transition:
+        transform 140ms ease,
+        border-color 140ms ease,
+        background-color 140ms ease,
+        box-shadow 140ms ease;
+}
+
+#right-tab-missions .pisi-missions-status-filter:hover {
+    border-color: var(--accent-color, #f39c12);
+    background-color: color-mix(
+        in srgb,
+        var(--accent-color, #f39c12) 18%,
+        var(--panel-bg, #252526)
+    );
+    transform: translateY(-1px);
+}
+
+#right-tab-missions .pisi-missions-status-filter:active {
+    transform: translateY(0);
+}
+
+#right-tab-missions .pisi-missions-status-filter:focus,
+#right-tab-missions .pisi-missions-status-filter:focus-visible {
+    border-color: var(--accent-color, #f39c12);
+    outline: 2px solid color-mix(
+        in srgb,
+        var(--accent-color, #f39c12) 72%,
+        white
+    );
+    outline-offset: 2px;
+    box-shadow: none;
+}
+
+#right-tab-missions .pisi-missions-status-filter option {
+    background: #252526;
+    color: #d4d4d4;
+    font-size: 10px;
+}
+
+html[data-pisi-theme="light"] #right-tab-missions .pisi-missions-filter-trigger,
+html[data-pisi-theme="light"] #right-tab-missions .pisi-missions-status-filter {
     border-color: var(--pisi-theme-border-strong);
-    background: var(--pisi-theme-surface-alt);
+    background-color: var(--pisi-theme-surface-alt);
     color: var(--pisi-theme-text);
     box-shadow: 0 2px 6px var(--pisi-theme-shadow);
 }
 
 html[data-pisi-theme="light"] #right-tab-missions .pisi-missions-filter-trigger:hover,
-html[data-pisi-theme="light"] #right-tab-missions .pisi-missions-filter-trigger[aria-expanded="true"] {
+html[data-pisi-theme="light"] #right-tab-missions .pisi-missions-filter-trigger[aria-expanded="true"],
+html[data-pisi-theme="light"] #right-tab-missions .pisi-missions-status-filter:hover {
     border-color: #b66b00;
-    background: #fff4e1;
+    background-color: #fff4e1;
     color: #a85f00;
+}
+
+html[data-pisi-theme="light"] #right-tab-missions .pisi-missions-status-filter option {
+    background: #ffffff;
+    color: #20252c;
 }
