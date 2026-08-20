@@ -1,0 +1,8 @@
+CAT Rhythmus
+Copyright © 2009 Peter Wiegel.
+Licensed under the SIL Open Font License 1.1 (OFL-1.1).
+
+Official font page / license reference:
+https://www.1001fonts.com/cat-rhythmus-font.html
+
+Pisi loads the Regular face from a public GitHub-hosted copy of the font binary. The fallback stack remains Segoe UI, Tahoma, sans-serif if the font cannot be loaded.
