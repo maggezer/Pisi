@@ -1,5 +1,5 @@
 /* Right-panel Todo: completed visibility is an icon-only toggle. */
-#right-tab-missions .pisi-missions-completed-toggle {
+#right-tab-missions :is(.pisi-missions-completed-toggle) {
     width: 30px;
     min-width: 30px;
     height: 30px;
@@ -9,7 +9,7 @@
     font-size: 0;
 }
 
-#right-tab-missions .pisi-missions-completed-toggle::before {
+#right-tab-missions :is(.pisi-missions-completed-toggle)::before {
     content: "";
     width: 18px;
     height: 18px;
@@ -28,9 +28,9 @@
     mask-size: contain;
 }
 
-#right-tab-missions .pisi-missions-completed-toggle[aria-pressed="true"]::before,
-html[data-pisi-theme="light"] #right-tab-missions .pisi-missions-completed-toggle::before,
-html[data-pisi-theme="light"] #right-tab-missions .pisi-missions-completed-toggle[aria-pressed="true"]::before {
+#right-tab-missions :is(.pisi-missions-completed-toggle)[aria-pressed="true"]::before,
+html[data-pisi-theme="light"] #right-tab-missions :is(.pisi-missions-completed-toggle)::before,
+html[data-pisi-theme="light"] #right-tab-missions :is(.pisi-missions-completed-toggle)[aria-pressed="true"]::before {
     border: 0;
     background: currentColor;
     box-shadow: none;
