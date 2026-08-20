@@ -15,7 +15,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 60
     env:
-      TARGET_SHA: 146a85dd5dd38d1c5af18178c77e8e28f07f2292
+      TARGET_SHA: c49c7a415cfdfb84d8af1b41ae771d527ee34c83
       RELEASE_TAG: v0.11.0
       HELPER_BRANCH: chatgpt/tag-v0.11.0-20260820
 
@@ -23,7 +23,7 @@ jobs:
       - name: Checkout release commit
         uses: actions/checkout@v4
         with:
-          ref: 146a85dd5dd38d1c5af18178c77e8e28f07f2292
+          ref: c49c7a415cfdfb84d8af1b41ae771d527ee34c83
           fetch-depth: 0
 
       - name: Setup Node
@@ -32,7 +32,7 @@ jobs:
           node-version: 24
           cache: npm
 
-      - name: Verify release metadata and tag
+      - name: Verify release metadata and retag unpublished release target
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
@@ -53,11 +53,24 @@ jobs:
           if ($LASTEXITCODE -eq 0) {
             $tagCommit = (git rev-list -n 1 v0.11.0).Trim()
             if ($tagCommit -ne $env:TARGET_SHA) {
-              throw "Existing v0.11.0 tag points to $tagCommit instead of $env:TARGET_SHA"
+              gh release view v0.11.0 *> $null
+              if ($LASTEXITCODE -eq 0) {
+                throw "Refusing to move v0.11.0 because a GitHub release already exists."
+              }
+              git push origin :refs/tags/v0.11.0
+              git tag -d v0.11.0
             }
-          } else {
+          }
+
+          git rev-parse --verify --quiet refs/tags/v0.11.0 | Out-Null
+          if ($LASTEXITCODE -ne 0) {
             git tag -a v0.11.0 $env:TARGET_SHA -m "Pisi 0.11.0 Beta"
             git push origin refs/tags/v0.11.0
+          }
+
+          $finalTagCommit = (git rev-list -n 1 v0.11.0).Trim()
+          if ($finalTagCommit -ne $env:TARGET_SHA) {
+            throw "v0.11.0 tag points to $finalTagCommit instead of $env:TARGET_SHA"
           }
 
       - name: Install dependencies
@@ -140,7 +153,7 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw 'Failed to create GitHub release.' }
           }
 
-      - name: Record release status
+      - name: Record final release status
         if: always()
         shell: pwsh
         env:
@@ -151,7 +164,7 @@ jobs:
           $status = "status=$env:JOB_STATUS`ntag=v0.11.0`ntarget=$env:TARGET_SHA`nurl=$releaseUrl`n"
           $bytes = [System.Text.Encoding]::UTF8.GetBytes($status)
           $content = [Convert]::ToBase64String($bytes)
-          gh api --method PUT "repos/$env:GITHUB_REPOSITORY/contents/.release-status-v0.11.0.txt" `
-            -f message='Record v0.11.0 release status' `
+          gh api --method PUT "repos/$env:GITHUB_REPOSITORY/contents/.release-status-v0.11.0-final.txt" `
+            -f message='Record final v0.11.0 release status' `
             -f content="$content" `
             -f branch="$env:HELPER_BRANCH"
