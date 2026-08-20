@@ -1,5 +1,6 @@
 const PISI_MAP_EDGE_KEEP_SELECTION_SELECTOR = [
     '.map-edge-group[data-edge-id]',
+    '.pisi-map-edge-menu',
     '#right-tab-customize',
     '[data-right-tab="customize"]'
 ].join(', ');
