@@ -217,9 +217,7 @@ function schedulePisiOperationalRender() {
 function updatePisiOperationalControlState() {
     const selected = getSelectedOperationalNodeBox();
     const focus = document.getElementById('pisi-map-operational-focus');
-    const linked = document.getElementById('pisi-map-operational-linked');
     if (focus) focus.disabled = !selected;
-    if (linked) linked.disabled = !selected;
     for (const [id, enabled] of [
         ['pisi-map-operational-deps', operationalState.display.showTaskDependencies],
         ['pisi-map-operational-labels', operationalState.display.showRelationshipLabels],
@@ -299,7 +297,6 @@ function rebuildPisiOperationalControlLabels() {
     for (const [id, key] of [
         ['pisi-map-operational-focus', 'focus'],
         ['pisi-map-operational-next', 'next'],
-        ['pisi-map-operational-linked', 'linked'],
         ['pisi-map-operational-deps', 'deps'],
         ['pisi-map-operational-labels', 'labels'],
         ['pisi-map-operational-work', 'work'],
@@ -334,7 +331,7 @@ function createPisiOperationalBar() {
     depth.append(makeOption('1', '1-hop'), makeOption('2', '2-hop'), makeOption('3', '3-hop'));
 
     const ids = [
-        'focus', 'next', 'linked', 'deps', 'labels', 'work',
+        'focus', 'next', 'deps', 'labels', 'work',
         'save-layout', 'restore', 'delete-layout', 'reset'
     ];
     const buttons = Object.fromEntries(ids.map((id) => {
@@ -351,7 +348,7 @@ function createPisiOperationalBar() {
 
     bar.append(
         scope, query, relation, depth,
-        buttons.focus, buttons.next, buttons.linked,
+        buttons.focus, buttons.next,
         buttons.deps, buttons.labels, buttons.work,
         layout, buttons['save-layout'], buttons.restore,
         buttons['delete-layout'], buttons.reset, summary
@@ -404,7 +401,6 @@ function bindPisiOperationalControls() {
         schedulePisiOperationalPersistence();
     });
     document.getElementById('pisi-map-operational-next')?.addEventListener('click', focusNextPisiOperationalNode);
-    document.getElementById('pisi-map-operational-linked')?.addEventListener('click', createPisiOperationalLinkedNode);
     document.getElementById('pisi-map-operational-deps')?.addEventListener('click', () => togglePisiOperationalDisplay('showTaskDependencies'));
     document.getElementById('pisi-map-operational-labels')?.addEventListener('click', () => togglePisiOperationalDisplay('showRelationshipLabels'));
     document.getElementById('pisi-map-operational-work')?.addEventListener('click', () => togglePisiOperationalDisplay('showWorkBadges'));
