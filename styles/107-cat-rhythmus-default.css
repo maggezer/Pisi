@@ -1,11 +1,7 @@
-/* Pisi default UI typeface: CAT Rhythmus by Peter Wiegel. */
+/* Pisi default UI typeface: bundled CAT Rhythmus by Peter Wiegel. */
 @font-face {
     font-family: "CAT Rhythmus";
-    src:
-        local("CAT Rhythmus"),
-        local("CATRhythmus"),
-        url("https://db.onlinewebfonts.com/t/757a0f376d51f4aabe4e79c63d04bb8f.woff2") format("woff2"),
-        url("https://st.1001fonts.net/download/font/cat-rhythmus.regular.ttf") format("truetype");
+    src: url("../assets/fonts/cat-rhythmus.regular.ttf") format("truetype");
     font-style: normal;
     font-weight: 400;
     font-display: swap;
