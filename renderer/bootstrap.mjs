@@ -11,6 +11,7 @@ import "./editor/pisi-editor-toolbar-popovers.mjs";
 import "./editor/pisi-editor-toolbar-menus.mjs";
 import "./editor/pisi-editor-unified-toolbar.mjs";
 import "./editor/pisi-editor-system-fonts.mjs";
+import "./editor/pisi-editor-bundled-fonts.mjs";
 import "./shell/pisi-window.mjs";
 import "./shell/pisi-tabs.mjs";
 import "./shell/pisi-startup.mjs";
