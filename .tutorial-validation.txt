@@ -1,2 +1,2 @@
 install=success
-validate=failure
+validate=success
