@@ -5,9 +5,8 @@ import { registerModule } from "../core/module-registry.mjs";
 // to the browser's generic cursive family when it is unavailable.
 const PISI_SYSTEM_FONT_OPTIONS = Object.freeze([
     Object.freeze({
-        value: 'Comic Sans MS',
-        label: 'Comic Sans MS',
-        cssFamily: '"Comic Sans MS", "Comic Sans", cursive'
+        value: '"Comic Sans MS", "Comic Sans", cursive',
+        label: 'Comic Sans MS'
     })
 ]);
 
