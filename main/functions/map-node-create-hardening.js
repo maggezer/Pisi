@@ -9,9 +9,12 @@ const PISI_MAP_NODE_CREATE_HARDENING_VERSION = 2;
 
 function getPisiStoredMapSidecarPath(mapPath) {
     const data = readJsonFileSafe(mapPath);
+    const legacyMetadata = data && data.kedi && typeof data.kedi === 'object'
+        ? data.kedi
+        : null;
     const metadata = data?.pisi && typeof data.pisi === 'object'
         ? data.pisi
-        : (data?.kedi && typeof data.kedi === 'object' ? data.kedi : null);
+        : legacyMetadata;
     const storedName = String(metadata?.sidecar || '').trim();
 
     if (
