@@ -1,0 +1,425 @@
+name: Focus Neighbor Degrees
+
+on:
+  push:
+    branches:
+      - chatgpt/focus-neighbor-degrees-20260820
+    paths:
+      - .github/workflows/focus-neighbor-degrees.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: chatgpt/focus-neighbor-degrees-20260820
+
+      - name: Merge hop depth into Focus neighbors
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected 1 match, got {count}')
+              return text.replace(old, new, 1)
+
+          # Renderer operational core: preserve the legacy numeric depths and add unlimited connected-neighbor focus.
+          core_path = Path('renderer/map/pisi-map-operational-core.mjs')
+          core = core_path.read_text(encoding='utf-8')
+          core = replace_once(
+              core,
+              "        focusDepth: Math.min(3, Math.max(1, Number(raw.focusDepth) || 1))",
+              "        focusDepth: String(raw.focusDepth || '').toLowerCase() === 'all'\n            ? 'all'\n            : Math.min(3, Math.max(1, Number(raw.focusDepth) || 1))",
+              'renderer focusDepth normalization'
+          )
+          core = replace_once(
+              core,
+              "    const wantedDepth = Math.min(3, Math.max(1, Number(depth) || 1));",
+              "    const wantedDepth = String(depth || '').toLowerCase() === 'all'\n        ? Number.POSITIVE_INFINITY\n        : Math.min(3, Math.max(1, Number(depth) || 1));",
+              'neighbor traversal depth'
+          )
+          core_path.write_text(core, encoding='utf-8')
+
+          # Main-process persistence normalizer must keep 'all' instead of collapsing it back to 1.
+          store_path = Path('main/functions/map-operational-store.js')
+          store = store_path.read_text(encoding='utf-8')
+          store = replace_once(
+              store,
+              "    const focusDepth = Math.min(3, Math.max(1, Number(raw.focusDepth) || 1));",
+              "    const focusDepth = String(raw.focusDepth || '').toLowerCase() === 'all'\n        ? 'all'\n        : Math.min(3, Math.max(1, Number(raw.focusDepth) || 1));",
+              'main focusDepth normalization'
+          )
+          store_path.write_text(store, encoding='utf-8')
+
+          # Operational toolbar: remove standalone hop selector and make Focus neighbors own the degree menu.
+          op_path = Path('renderer/map/pisi-map-operational.mjs')
+          op = op_path.read_text(encoding='utf-8')
+          op = replace_once(
+              op,
+              "        focus: 'Komşulara odaklan', linked: 'Bağlı node oluştur',",
+              "        focus: 'Komşulara odaklan', firstDegree: '1st degree', secondDegree: '2nd degree',\n        thirdDegree: '3rd degree', allDegrees: 'All', linked: 'Bağlı node oluştur',",
+              'TR focus degree labels'
+          )
+          op = replace_once(
+              op,
+              "        focus: 'Focus neighbors', linked: 'Create linked node',",
+              "        focus: 'Focus neighbors', firstDegree: '1st degree', secondDegree: '2nd degree',\n        thirdDegree: '3rd degree', allDegrees: 'All', linked: 'Create linked node',",
+              'EN focus degree labels'
+          )
+          op = replace_once(
+              op,
+              "    const depth = document.getElementById('pisi-map-operational-depth');\n",
+              "",
+              'sync depth lookup'
+          )
+          op = replace_once(
+              op,
+              "    if (depth) depth.value = String(operationalState.scope.focusDepth || 1);\n    renderPisiOperationalLayoutOptions();",
+              "    syncPisiOperationalFocusMenu();\n    renderPisiOperationalLayoutOptions();",
+              'sync depth value'
+          )
+          op = replace_once(
+              op,
+              "    const depth = document.createElement('select');\n    depth.id = 'pisi-map-operational-depth';\n    depth.append(makeOption('1', '1-hop'), makeOption('2', '2-hop'), makeOption('3', '3-hop'));\n\n",
+              "",
+              'standalone depth selector creation'
+          )
+          op = replace_once(
+              op,
+              "    const layout = document.createElement('select');\n",
+              "    const focusGroup = document.createElement('div');\n    focusGroup.id = 'pisi-map-operational-focus-group';\n    focusGroup.className = 'pisi-map-operational-focus-group';\n    buttons.focus.setAttribute('aria-haspopup', 'menu');\n    buttons.focus.setAttribute('aria-controls', 'pisi-map-operational-focus-menu');\n    buttons.focus.setAttribute('aria-expanded', 'false');\n\n    const focusMenu = document.createElement('div');\n    focusMenu.id = 'pisi-map-operational-focus-menu';\n    focusMenu.className = 'pisi-map-operational-focus-menu';\n    focusMenu.setAttribute('role', 'menu');\n    focusMenu.hidden = true;\n    for (const [value, key] of [\n        ['1', 'firstDegree'],\n        ['2', 'secondDegree'],\n        ['3', 'thirdDegree'],\n        ['all', 'allDegrees']\n    ]) {\n        const option = document.createElement('button');\n        option.type = 'button';\n        option.dataset.pisiFocusDepth = value;\n        option.setAttribute('role', 'menuitemradio');\n        option.setAttribute('aria-checked', 'false');\n        option.textContent = t(key);\n        focusMenu.appendChild(option);\n    }\n    focusGroup.append(buttons.focus, focusMenu);\n\n    const layout = document.createElement('select');\n",
+              'focus degree menu creation'
+          )
+          op = replace_once(
+              op,
+              "        scope, query, relation, depth,\n        buttons.focus,",
+              "        scope, query, relation,\n        focusGroup,",
+              'toolbar focus group append'
+          )
+          op = replace_once(
+              op,
+              "    const depth = document.getElementById('pisi-map-operational-depth');\n\n    scope?.addEventListener('change', () => {",
+              "\n    scope?.addEventListener('change', () => {",
+              'binding depth lookup'
+          )
+          op = replace_once(
+              op,
+              "    depth?.addEventListener('change', () => {\n        operationalState.scope.focusDepth = Number(depth.value) || 1;\n        if (operationalState.scope.focusRootNodeId) {\n            operationalState.scope.mode = 'neighbors';\n            schedulePisiOperationalRender();\n            schedulePisiOperationalPersistence();\n        }\n    });\n\n",
+              "",
+              'depth change listener'
+          )
+          op = replace_once(
+              op,
+              "    document.getElementById('pisi-map-operational-focus')?.addEventListener('click', () => {\n        const selected = getSelectedOperationalNodeBox();\n        if (!selected) return alert(t('noSelection'));\n        operationalState.scope.focusRootNodeId = selected.dataset.nodeId;\n        operationalState.scope.focusDepth = Number(depth?.value) || 1;\n        operationalState.scope.mode = 'neighbors';\n        schedulePisiOperationalRender();\n        schedulePisiOperationalPersistence();\n    });",
+              "    const focus = document.getElementById('pisi-map-operational-focus');\n    const focusMenu = document.getElementById('pisi-map-operational-focus-menu');\n    const focusGroup = document.getElementById('pisi-map-operational-focus-group');\n    focus?.addEventListener('click', (event) => {\n        event.stopPropagation();\n        if (focus.disabled || !focusMenu) return;\n        const open = focus.getAttribute('aria-expanded') !== 'true';\n        focus.setAttribute('aria-expanded', open ? 'true' : 'false');\n        focusMenu.hidden = !open;\n    });\n    focusMenu?.addEventListener('click', (event) => {\n        const option = event.target.closest('button[data-pisi-focus-depth]');\n        if (!option) return;\n        const depth = option.dataset.pisiFocusDepth === 'all'\n            ? 'all'\n            : Number(option.dataset.pisiFocusDepth) || 1;\n        applyPisiOperationalNeighborFocus(depth);\n    });\n    document.addEventListener('mousedown', (event) => {\n        if (!focusGroup?.contains(event.target)) closePisiOperationalFocusMenu();\n    }, true);\n    document.addEventListener('keydown', (event) => {\n        if (event.key !== 'Escape' || focus?.getAttribute('aria-expanded') !== 'true') return;\n        closePisiOperationalFocusMenu();\n        focus?.focus();\n    }, true);",
+              'focus button listener'
+          )
+
+          # Add focus-menu helpers before the render scheduler.
+          marker = "function schedulePisiOperationalRender() {"
+          if op.count(marker) != 1:
+              raise SystemExit('focus helper insertion marker missing')
+          helpers = """function closePisiOperationalFocusMenu() {
+    const focus = document.getElementById('pisi-map-operational-focus');
+    const menu = document.getElementById('pisi-map-operational-focus-menu');
+    if (focus) focus.setAttribute('aria-expanded', 'false');
+    if (menu) menu.hidden = true;
+}
+
+function syncPisiOperationalFocusMenu() {
+    const current = String(operationalState.scope.focusDepth || 1);
+    document.querySelectorAll('#pisi-map-operational-focus-menu [data-pisi-focus-depth]').forEach((option) => {
+        option.setAttribute(
+            'aria-checked',
+            option.dataset.pisiFocusDepth === current ? 'true' : 'false'
+        );
+    });
+}
+
+function applyPisiOperationalNeighborFocus(depth = 1) {
+    const selected = getSelectedOperationalNodeBox();
+    if (!selected) return alert(t('noSelection'));
+    operationalState.scope.focusRootNodeId = selected.dataset.nodeId;
+    operationalState.scope.focusDepth = String(depth).toLowerCase() === 'all'
+        ? 'all'
+        : Math.min(3, Math.max(1, Number(depth) || 1));
+    operationalState.scope.mode = 'neighbors';
+    closePisiOperationalFocusMenu();
+    syncPisiOperationalFocusMenu();
+    schedulePisiOperationalRender();
+    schedulePisiOperationalPersistence();
+}
+
+"""
+          op = op.replace(marker, helpers + marker, 1)
+
+          # Rebuild labels for focus degree options when language changes.
+          label_anchor = "    renderPisiOperationalLayoutOptions();\n    updatePisiOperationalSummary();\n}"
+          if op.count(label_anchor) != 1:
+              raise SystemExit('label rebuild anchor missing')
+          label_block = """    for (const [value, key] of [
+        ['1', 'firstDegree'],
+        ['2', 'secondDegree'],
+        ['3', 'thirdDegree'],
+        ['all', 'allDegrees']
+    ]) {
+        const option = document.querySelector(
+            `#pisi-map-operational-focus-menu [data-pisi-focus-depth="${value}"]`
+        );
+        if (option) option.textContent = t(key);
+    }
+    syncPisiOperationalFocusMenu();
+    renderPisiOperationalLayoutOptions();
+    updatePisiOperationalSummary();
+}"""
+          op = op.replace(label_anchor, label_block, 1)
+
+          if 'pisi-map-operational-depth' in op or '1-hop' in op or '2-hop' in op or '3-hop' in op:
+              raise SystemExit('legacy standalone hop control still exists in operational UI')
+          op_path.write_text(op, encoding='utf-8')
+
+          # Right panel: the filter menu no longer owns a depth select; the focus wrapper stays with primary actions.
+          panel_path = Path('renderer/map/pisi-map-right-panel.mjs')
+          panel = panel_path.read_text(encoding='utf-8')
+          panel = replace_once(
+              panel,
+              "    'pisi-map-operational-relation',\n    'pisi-map-operational-depth',\n    'pisi-map-scope-controls'",
+              "    'pisi-map-operational-relation',\n    'pisi-map-scope-controls'",
+              'filter depth entry'
+          )
+          panel = replace_once(
+              panel,
+              "    for (const id of mindMapPrimaryActionIds) {\n        const button = document.getElementById(id);\n        if (button) actionElements.push(button);\n    }",
+              "    for (const id of mindMapPrimaryActionIds) {\n        if (id === 'pisi-map-operational-focus') {\n            const focusGroup = document.getElementById('pisi-map-operational-focus-group');\n            if (focusGroup) {\n                actionElements.push(focusGroup);\n                continue;\n            }\n        }\n        const button = document.getElementById(id);\n        if (button) actionElements.push(button);\n    }",
+              'focus group primary action placement'
+          )
+          panel_path.write_text(panel, encoding='utf-8')
+
+          # Focus dropdown styling, including light theme.
+          css_path = Path('renderer/map/pisi-map-right-panel.css')
+          css = css_path.read_text(encoding='utf-8')
+          anchor = "#right-tab-mindmap .pisi-mindmap-layout-row {"
+          if css.count(anchor) != 1:
+              raise SystemExit('CSS insertion anchor missing')
+          focus_css = """#right-tab-mindmap .pisi-map-operational-focus-group {
+    position: relative;
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+}
+
+#right-tab-mindmap #pisi-map-operational-focus.pisi-mindmap-icon-button::after {
+    content: '';
+    position: absolute;
+    right: 3px;
+    bottom: 3px;
+    width: 0;
+    height: 0;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    border-top: 4px solid currentColor;
+    opacity: .8;
+}
+
+#right-tab-mindmap .pisi-map-operational-focus-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 45;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 132px;
+    padding: 5px;
+    border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 8px;
+    background: #25272b;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .34);
+}
+
+#right-tab-mindmap .pisi-map-operational-focus-menu[hidden] {
+    display: none;
+}
+
+#right-tab-mindmap .pisi-map-operational-focus-menu button {
+    width: 100%;
+    min-height: 30px;
+    padding: 5px 9px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+#right-tab-mindmap .pisi-map-operational-focus-menu button:hover,
+#right-tab-mindmap .pisi-map-operational-focus-menu button:focus-visible,
+#right-tab-mindmap .pisi-map-operational-focus-menu button[aria-checked="true"] {
+    background: rgba(93, 137, 216, .22);
+    outline: none;
+}
+
+html[data-pisi-theme="light"] #right-tab-mindmap .pisi-map-operational-focus-menu,
+body.pisi-light-theme #right-tab-mindmap .pisi-map-operational-focus-menu {
+    border-color: rgba(0, 0, 0, .12);
+    background: #ffffff;
+    box-shadow: 0 10px 26px rgba(31, 38, 48, .16);
+}
+
+html[data-pisi-theme="light"] #right-tab-mindmap .pisi-map-operational-focus-menu button:hover,
+body.pisi-light-theme #right-tab-mindmap .pisi-map-operational-focus-menu button:hover,
+html[data-pisi-theme="light"] #right-tab-mindmap .pisi-map-operational-focus-menu button:focus-visible,
+body.pisi-light-theme #right-tab-mindmap .pisi-map-operational-focus-menu button:focus-visible,
+html[data-pisi-theme="light"] #right-tab-mindmap .pisi-map-operational-focus-menu button[aria-checked="true"],
+body.pisi-light-theme #right-tab-mindmap .pisi-map-operational-focus-menu button[aria-checked="true"] {
+    background: rgba(70, 112, 185, .1);
+}
+
+"""
+          css = css.replace(anchor, focus_css + anchor, 1)
+          css = replace_once(
+              css,
+              "#right-tab-mindmap .pisi-mindmap-icon-button[aria-pressed=\"true\"],\n#right-tab-mindmap #pisi-mindmap-filter-button[aria-expanded=\"true\"] {",
+              "#right-tab-mindmap .pisi-mindmap-icon-button[aria-pressed=\"true\"],\n#right-tab-mindmap #pisi-mindmap-filter-button[aria-expanded=\"true\"],\n#right-tab-mindmap #pisi-map-operational-focus[aria-expanded=\"true\"] {",
+              'dark expanded focus state'
+          )
+          css = replace_once(
+              css,
+              "html[data-pisi-theme=\"light\"] #right-tab-mindmap #pisi-mindmap-filter-button[aria-expanded=\"true\"],\nbody.pisi-light-theme #right-tab-mindmap #pisi-mindmap-filter-button[aria-expanded=\"true\"] {",
+              "html[data-pisi-theme=\"light\"] #right-tab-mindmap #pisi-mindmap-filter-button[aria-expanded=\"true\"],\nbody.pisi-light-theme #right-tab-mindmap #pisi-mindmap-filter-button[aria-expanded=\"true\"],\nhtml[data-pisi-theme=\"light\"] #right-tab-mindmap #pisi-map-operational-focus[aria-expanded=\"true\"],\nbody.pisi-light-theme #right-tab-mindmap #pisi-map-operational-focus[aria-expanded=\"true\"] {",
+              'light expanded focus state'
+          )
+          css_path.write_text(css, encoding='utf-8')
+
+          # Regression coverage: no standalone hop selector, dropdown labels exist, and All traverses the full connected component.
+          compact_path = Path('tests/mindmap-tools-compact.test.js')
+          compact = compact_path.read_text(encoding='utf-8')
+          compact = replace_once(
+              compact,
+              "const panel = read('renderer/map/pisi-map-right-panel.mjs');\nconst css = read('renderer/map/pisi-map-right-panel.css');",
+              "const panel = read('renderer/map/pisi-map-right-panel.mjs');\nconst operational = read('renderer/map/pisi-map-operational.mjs');\nconst css = read('renderer/map/pisi-map-right-panel.css');",
+              'compact operational fixture'
+          )
+          compact = replace_once(
+              compact,
+              "    assert.match(panel, /'pisi-map-operational-relation'/);\n    assert.match(panel, /'pisi-map-operational-depth'/);\n    assert.match(panel, /'pisi-map-scope-controls'/);",
+              "    assert.match(panel, /'pisi-map-operational-relation'/);\n    assert.doesNotMatch(panel, /'pisi-map-operational-depth'/);\n    assert.doesNotMatch(operational, /pisi-map-operational-depth|[123]-hop/);\n    assert.match(panel, /'pisi-map-scope-controls'/);",
+              'compact filter assertions'
+          )
+          insert_after = "    assert.match(css, /assets\\/map-tools\\.svg/);\n});"
+          if compact.count(insert_after) != 1:
+              raise SystemExit('compact focus assertion anchor missing')
+          focus_test = """    assert.match(css, /assets\\/map-tools\\.svg/);
+});
+
+test('Focus neighbors owns degree selection instead of a standalone hop filter', () => {
+    assert.match(operational, /pisi-map-operational-focus-group/);
+    assert.match(operational, /pisi-map-operational-focus-menu/);
+    assert.match(operational, /firstDegree: '1st degree'/);
+    assert.match(operational, /secondDegree: '2nd degree'/);
+    assert.match(operational, /thirdDegree: '3rd degree'/);
+    assert.match(operational, /allDegrees: 'All'/);
+    assert.match(operational, /applyPisiOperationalNeighborFocus/);
+    assert.match(panel, /pisi-map-operational-focus-group/);
+    assert.match(css, /\\.pisi-map-operational-focus-menu\\s*\\{/);
+});"""
+          compact = compact.replace(insert_after, focus_test, 1)
+          compact_path.write_text(compact, encoding='utf-8')
+
+          operational_test_path = Path('tests/map-operational.test.js')
+          test_src = operational_test_path.read_text(encoding='utf-8')
+          test_src = replace_once(
+              test_src,
+              "test('focused neighbor görünümü semantic graph üzerinde deterministic 1-3 hop BFS uygular', async () => {",
+              "test('focused neighbor görünümü 1st-3rd degree ve All kapsamlarını deterministic uygular', async () => {",
+              'neighbor test title'
+          )
+          test_src = replace_once(
+              test_src,
+              "        { sourceId: 'node_C', targetId: 'node_D' },\n        { sourceId: 'node_X', targetId: 'node_Y' }",
+              "        { sourceId: 'node_C', targetId: 'node_D' },\n        { sourceId: 'node_D', targetId: 'node_E' },\n        { sourceId: 'node_X', targetId: 'node_Y' }",
+              'neighbor test fourth degree edge'
+          )
+          test_src = replace_once(
+              test_src,
+              "    assert.deepEqual(\n        [...core.collectPisiOperationalNeighborIds('node_A', edges, 3)].sort(),\n        ['node_A', 'node_B', 'node_C', 'node_D']\n    );\n});",
+              "    assert.deepEqual(\n        [...core.collectPisiOperationalNeighborIds('node_A', edges, 3)].sort(),\n        ['node_A', 'node_B', 'node_C', 'node_D']\n    );\n    assert.deepEqual(\n        [...core.collectPisiOperationalNeighborIds('node_A', edges, 'all')].sort(),\n        ['node_A', 'node_B', 'node_C', 'node_D', 'node_E']\n    );\n    assert.equal(core.normalizePisiOperationalScope({ focusDepth: 'all' }).focusDepth, 'all');\n});",
+              'neighbor All assertion'
+          )
+          operational_test_path.write_text(test_src, encoding='utf-8')
+          PY
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - id: install
+        name: Install dependencies
+        continue-on-error: true
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+        run: npm ci
+
+      - id: validate
+        name: Validate
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          npm run validate > focus-neighbor-validation.log 2>&1
+          code=$?
+          cat focus-neighbor-validation.log
+          exit $code
+
+      - name: Commit implementation when validation passes
+        if: steps.install.outcome == 'success' && steps.validate.outcome == 'success'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- \
+            renderer/map/pisi-map-operational-core.mjs \
+            renderer/map/pisi-map-operational.mjs \
+            renderer/map/pisi-map-right-panel.mjs \
+            renderer/map/pisi-map-right-panel.css \
+            main/functions/map-operational-store.js \
+            tests/map-operational.test.js \
+            tests/mindmap-tools-compact.test.js
+          git commit -m "Merge neighbor depth into Focus menu"
+          git push
+
+      - name: Record validation result
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INSTALL: ${{ steps.install.outcome }}
+          VALIDATE: ${{ steps.validate.outcome }}
+        run: |
+          printf 'install=%s\nvalidate=%s\n' "$INSTALL" "$VALIDATE" > focus-neighbor-validation.txt
+          content=$(base64 -w0 focus-neighbor-validation.txt)
+          gh api --method PUT "repos/$GITHUB_REPOSITORY/contents/.focus-neighbor-validation.txt" \
+            -f message='Record Focus neighbors validation' \
+            -f content="$content" \
+            -f branch='chatgpt/focus-neighbor-degrees-20260820'
+          if [ "$VALIDATE" != "success" ]; then
+            log_content=$(base64 -w0 focus-neighbor-validation.log)
+            gh api --method PUT "repos/$GITHUB_REPOSITORY/contents/.focus-neighbor-validation.log" \
+              -f message='Record Focus neighbors validation log' \
+              -f content="$log_content" \
+              -f branch='chatgpt/focus-neighbor-degrees-20260820'
+          fi
