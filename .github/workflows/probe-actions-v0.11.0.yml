@@ -1,0 +1,51 @@
+name: Probe Pisi v0.11.0 Actions
+
+on:
+  push:
+    branches:
+      - chatgpt/tag-v0.11.0-20260820
+    paths:
+      - .github/workflows/probe-actions-v0.11.0.yml
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    env:
+      HELPER_BRANCH: chatgpt/tag-v0.11.0-20260820
+    steps:
+      - name: Probe workflow runs
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          repo="$GITHUB_REPOSITORY"
+          {
+            echo '=== publish workflow runs ==='
+            gh run list --repo "$repo" --workflow tag-v0.11.0.yml --branch "$HELPER_BRANCH" --limit 5 --json databaseId,status,conclusion,headSha,createdAt,updatedAt,url
+            echo
+            echo '=== build diagnostic runs ==='
+            gh run list --repo "$repo" --workflow diagnose-build-v0.11.0.yml --branch "$HELPER_BRANCH" --limit 5 --json databaseId,status,conclusion,headSha,createdAt,updatedAt,url
+            echo
+            publish_id=$(gh run list --repo "$repo" --workflow tag-v0.11.0.yml --branch "$HELPER_BRANCH" --limit 1 --json databaseId --jq '.[0].databaseId')
+            if [ -n "$publish_id" ]; then
+              echo "=== failed log for publish run $publish_id ==="
+              gh run view --repo "$repo" "$publish_id" --log-failed
+            fi
+            echo
+            build_id=$(gh run list --repo "$repo" --workflow diagnose-build-v0.11.0.yml --branch "$HELPER_BRANCH" --limit 1 --json databaseId --jq '.[0].databaseId')
+            if [ -n "$build_id" ]; then
+              echo "=== build run $build_id summary ==="
+              gh run view --repo "$repo" "$build_id" --json status,conclusion,jobs,url
+            fi
+          } > actions-probe-v2.txt 2>&1
+
+          content=$(base64 -w0 actions-probe-v2.txt)
+          gh api --method PUT "repos/$repo/contents/.actions-probe-v0.11.0-v2.txt" \
+            -f message='Record v0.11.0 Actions probe v2' \
+            -f content="$content" \
+            -f branch="$HELPER_BRANCH"

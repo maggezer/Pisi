@@ -1,0 +1,72 @@
+name: Diagnose Pisi v0.11.0 Release
+
+on:
+  push:
+    branches:
+      - chatgpt/tag-v0.11.0-20260820
+    paths:
+      - .github/workflows/diagnose-v0.11.0.yml
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    env:
+      TARGET_SHA: 146a85dd5dd38d1c5af18178c77e8e28f07f2292
+      HELPER_BRANCH: chatgpt/tag-v0.11.0-20260820
+    steps:
+      - name: Checkout release commit
+        uses: actions/checkout@v4
+        with:
+          ref: 146a85dd5dd38d1c5af18178c77e8e28f07f2292
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Verify metadata and tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(node -p "require('./package.json').version")
+          test "$version" = "0.11.0"
+          test -f docs/releases/v0.11.0.md
+          git fetch origin main --tags
+          tag_commit=$(git rev-list -n 1 v0.11.0)
+          test "$tag_commit" = "$TARGET_SHA"
+
+      - name: Install dependencies without Electron binary
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+        run: npm ci
+
+      - name: Capture validation output
+        shell: bash
+        continue-on-error: true
+        run: |
+          set +e
+          npm run validate > validate.log 2>&1
+          code=$?
+          cat validate.log
+          printf '%s\n' "$code" > validate-exit.txt
+          exit "$code"
+
+      - name: Record validation log
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ ! -f validate.log ]; then
+            printf 'validate.log was not produced\n' > validate.log
+          fi
+          content=$(base64 -w0 validate.log)
+          gh api --method PUT "repos/$GITHUB_REPOSITORY/contents/.release-validate-v0.11.0.log" \
+            -f message='Record v0.11.0 validation log' \
+            -f content="$content" \
+            -f branch="$HELPER_BRANCH"
