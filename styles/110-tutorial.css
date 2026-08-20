@@ -1,0 +1,214 @@
+.pisi-tutorial-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 12000;
+    pointer-events: auto;
+}
+
+.pisi-tutorial-overlay[hidden] {
+    display: none;
+}
+
+.pisi-tutorial-spotlight {
+    position: fixed;
+    z-index: 0;
+    border: 2px solid #f39c12;
+    border-radius: 12px;
+    box-shadow: 0 0 0 9999px rgb(0 0 0 / 66%);
+    pointer-events: none;
+    transition:
+        left 0.16s ease,
+        top 0.16s ease,
+        width 0.16s ease,
+        height 0.16s ease;
+}
+
+.pisi-tutorial-no-target {
+    background: rgb(0 0 0 / 66%);
+}
+
+.pisi-tutorial-card {
+    position: fixed;
+    z-index: 1;
+    width: min(360px, calc(100vw - 32px));
+    padding: 18px;
+    border: 1px solid rgb(243 156 18 / 62%);
+    border-radius: 14px;
+    background: #252526;
+    color: #f2f2f2;
+    box-shadow: 0 18px 46px rgb(0 0 0 / 48%);
+}
+
+.pisi-tutorial-progress {
+    margin-bottom: 8px;
+    color: #b8b8b8;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.pisi-tutorial-title {
+    margin: 0 0 9px;
+    color: #f39c12;
+    font-size: 19px;
+    line-height: 1.25;
+}
+
+.pisi-tutorial-body {
+    margin: 0;
+    color: #e6e6e6;
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.pisi-tutorial-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.pisi-tutorial-navigation {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pisi-tutorial-button {
+    min-height: 32px;
+    padding: 6px 11px;
+    border: 1px solid #5a5a5d;
+    border-radius: 8px;
+    background: #323235;
+    color: #f0f0f0;
+    font: inherit;
+    cursor: pointer;
+}
+
+.pisi-tutorial-button:hover,
+.pisi-tutorial-button:focus-visible {
+    border-color: #f39c12;
+    outline: none;
+}
+
+.pisi-tutorial-button:disabled {
+    opacity: 0.38;
+    cursor: default;
+}
+
+.pisi-tutorial-primary {
+    border-color: #d88400;
+    background: #f39c12;
+    color: #171717;
+    font-weight: 700;
+}
+
+.pisi-tutorial-skip {
+    border-color: transparent;
+    background: transparent;
+    color: #bdbdbd;
+}
+
+.pisi-tutorial-page {
+    display: grid;
+    gap: 18px;
+    max-width: 760px;
+}
+
+.pisi-tutorial-page-heading h2 {
+    margin: 0 0 6px;
+}
+
+.pisi-tutorial-page-heading p {
+    margin: 0;
+    color: #bcbcbc;
+    line-height: 1.5;
+}
+
+.pisi-tutorial-page-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 18px;
+    border: 1px solid #454548;
+    border-radius: 12px;
+    background: #2b2b2d;
+}
+
+.pisi-tutorial-page-card p {
+    margin: 0;
+    line-height: 1.5;
+}
+
+.pisi-tutorial-page-start {
+    flex: 0 0 auto;
+    min-height: 36px;
+    padding: 7px 13px;
+    border: 1px solid #d88400;
+    border-radius: 8px;
+    background: #f39c12;
+    color: #171717;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.pisi-tutorial-page-start:hover,
+.pisi-tutorial-page-start:focus-visible {
+    background: #ffad2e;
+    outline: none;
+}
+
+html[data-pisi-theme="light"] body .pisi-tutorial-card {
+    border-color: rgb(216 132 0 / 72%);
+    background: #ffffff;
+    color: #20242a;
+    box-shadow: 0 18px 46px rgb(31 38 48 / 24%);
+}
+
+html[data-pisi-theme="light"] body .pisi-tutorial-progress,
+html[data-pisi-theme="light"] body .pisi-tutorial-page-heading p {
+    color: #68717c;
+}
+
+html[data-pisi-theme="light"] body .pisi-tutorial-body {
+    color: #343a43;
+}
+
+html[data-pisi-theme="light"] body .pisi-tutorial-button {
+    border-color: #b7bec7;
+    background: #f5f6f7;
+    color: #252a31;
+}
+
+html[data-pisi-theme="light"] body .pisi-tutorial-primary,
+html[data-pisi-theme="light"] body .pisi-tutorial-page-start {
+    border-color: #d88400;
+    background: #f39c12;
+    color: #171717;
+}
+
+html[data-pisi-theme="light"] body .pisi-tutorial-skip {
+    border-color: transparent;
+    background: transparent;
+    color: #69727d;
+}
+
+html[data-pisi-theme="light"] body .pisi-tutorial-page-card {
+    border-color: #c7cdd4;
+    background: #ffffff;
+}
+
+@media (max-width: 700px) {
+    .pisi-tutorial-page-card {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .pisi-tutorial-page-start {
+        width: 100%;
+    }
+}
