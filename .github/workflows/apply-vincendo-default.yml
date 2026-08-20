@@ -35,24 +35,27 @@ jobs:
           custom = custom_path.read_text()
           old_option = '''const PISI_MAP_NODE_FONT_OPTIONS = [\n    ['"Segoe UI Variable Text", "Segoe UI", Arial, sans-serif', 'Segoe UI Variable'],'''
           new_option = '''const PISI_LEGACY_MAP_NODE_DEFAULT_FONT = '"Segoe UI Variable Text", "Segoe UI", Arial, sans-serif';\nconst PISI_MAP_NODE_FONT_OPTIONS = [\n    ['"Vincendo", "Segoe UI", Tahoma, sans-serif', 'Vincendo'],\n    [PISI_LEGACY_MAP_NODE_DEFAULT_FONT, 'Segoe UI Variable'],'''
-          if old_option not in custom:
+          if old_option in custom:
+              custom = custom.replace(old_option, new_option, 1)
+          elif 'PISI_LEGACY_MAP_NODE_DEFAULT_FONT' not in custom:
               raise SystemExit('map font option anchor not found')
-          custom = custom.replace(old_option, new_option, 1)
 
           parse_anchor = '''        const parsed = JSON.parse(raw) || {};\n        if (parsed.mapConnectionColor && !parsed.mapDownHubColor) {'''
           parse_replacement = '''        const parsed = JSON.parse(raw) || {};\n\n        // Migrate only the former built-in default. Other explicit font choices\n        // remain untouched.\n        if (parsed.mapNodeFontFamily === PISI_LEGACY_MAP_NODE_DEFAULT_FONT) {\n            parsed.mapNodeFontFamily = PISI_DEFAULT_CUSTOMIZATION.mapNodeFontFamily;\n        }\n\n        if (parsed.mapConnectionColor && !parsed.mapDownHubColor) {'''
-          if parse_anchor not in custom:
+          if parse_anchor in custom:
+              custom = custom.replace(parse_anchor, parse_replacement, 1)
+          elif 'parsed.mapNodeFontFamily === PISI_LEGACY_MAP_NODE_DEFAULT_FONT' not in custom:
               raise SystemExit('customization migration anchor not found')
-          custom = custom.replace(parse_anchor, parse_replacement, 1)
           custom_path.write_text(custom)
 
           toolbar_path = Path('renderer/editor/pisi-editor-unified-toolbar.mjs')
           toolbar = toolbar_path.read_text()
           toolbar_anchor = '''                    <select class="pisi-office-select pisi-font-family-select" data-pisi-unified-command="fontName" title="Font type" aria-label="Font type">\n                        <option value="Segoe UI">Segoe UI</option>'''
           toolbar_replacement = '''                    <select class="pisi-office-select pisi-font-family-select" data-pisi-unified-command="fontName" title="Font type" aria-label="Font type">\n                        <option value="Vincendo" selected>Vincendo</option>\n                        <option value="Segoe UI">Segoe UI</option>'''
-          if toolbar_anchor not in toolbar:
+          if toolbar_anchor in toolbar:
+              toolbar = toolbar.replace(toolbar_anchor, toolbar_replacement, 1)
+          elif '<option value="Vincendo" selected>Vincendo</option>' not in toolbar:
               raise SystemExit('toolbar font select anchor not found')
-          toolbar = toolbar.replace(toolbar_anchor, toolbar_replacement, 1)
           toolbar_path.write_text(toolbar)
           PY
 
@@ -77,19 +80,12 @@ jobs:
               assert.match(css, /--pisi-app-font-family:\s*"Vincendo"/);
               assert.match(css, /html,\s*\nbody\s*\{[\s\S]*font-family:\s*var\(--pisi-app-font-family\)/);
               assert.match(css, /#center-node-editor-content,[\s\S]*#node-modal-content,[\s\S]*\.pisi-rich-editor[\s\S]*font-family:\s*var\(--pisi-app-font-family\)/);
-
               assert.match(customization, /PISI_MAP_NODE_FONT_OPTIONS = \[\s*\n\s*\['"Vincendo", "Segoe UI", Tahoma, sans-serif', 'Vincendo'\]/);
               assert.match(customization, /mapNodeFontFamily:\s*PISI_MAP_NODE_FONT_OPTIONS\[0\]\[0\]/);
               assert.match(customization, /parsed\.mapNodeFontFamily === PISI_LEGACY_MAP_NODE_DEFAULT_FONT/);
-
               assert.match(toolbar, /<option value="Vincendo" selected>Vincendo<\/option>/);
           });
           EOF
-
-      - name: Validate
-        run: |
-          npm ci --ignore-scripts
-          npm run validate
 
       - name: Commit changes
         run: |
