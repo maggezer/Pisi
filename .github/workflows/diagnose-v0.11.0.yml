@@ -1,0 +1,80 @@
+name: Diagnose Pisi v0.11.0 Release
+
+on:
+  push:
+    branches:
+      - chatgpt/tag-v0.11.0-20260820
+    paths:
+      - .github/workflows/diagnose-v0.11.0.yml
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    env:
+      TARGET_SHA: 146a85dd5dd38d1c5af18178c77e8e28f07f2292
+      HELPER_BRANCH: chatgpt/tag-v0.11.0-20260820
+    steps:
+      - id: checkout
+        name: Checkout release commit
+        uses: actions/checkout@v4
+        with:
+          ref: 146a85dd5dd38d1c5af18178c77e8e28f07f2292
+          fetch-depth: 0
+
+      - id: node
+        name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - id: verify
+        name: Verify metadata and tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(node -p "require('./package.json').version")
+          test "$version" = "0.11.0"
+          test -f docs/releases/v0.11.0.md
+          git fetch origin main --tags
+          tag_commit=$(git rev-list -n 1 v0.11.0)
+          test "$tag_commit" = "$TARGET_SHA"
+
+      - id: install
+        name: Install dependencies without Electron binary
+        continue-on-error: true
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+        run: npm ci
+
+      - id: validate
+        name: Validate source
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
+        run: npm run validate
+
+      - id: audit
+        name: Audit dependencies
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
+        run: npm run audit
+
+      - name: Record diagnostic status
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERIFY: ${{ steps.verify.outcome }}
+          INSTALL: ${{ steps.install.outcome }}
+          VALIDATE: ${{ steps.validate.outcome }}
+          AUDIT: ${{ steps.audit.outcome }}
+        run: |
+          printf 'verify=%s\ninstall=%s\nvalidate=%s\naudit=%s\n' "$VERIFY" "$INSTALL" "$VALIDATE" "$AUDIT" > diagnostic.txt
+          content=$(base64 -w0 diagnostic.txt)
+          gh api --method PUT "repos/$GITHUB_REPOSITORY/contents/.release-diagnostic-v0.11.0.txt" \
+            -f message='Record v0.11.0 release diagnostic' \
+            -f content="$content" \
+            -f branch="$HELPER_BRANCH"
