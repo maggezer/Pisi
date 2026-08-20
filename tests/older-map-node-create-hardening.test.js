@@ -35,7 +35,7 @@ test('new nodebox creation does not depend on reparsing every old map node', () 
 test('stored sidecar from an older map is preserved and migrated safely', () => {
     assert.match(hardening, /function getPisiStoredMapSidecarPath/);
     assert.match(hardening, /path\.basename\(storedName\) !== storedName/);
-    assert.match(hardening, /data\?\.kedi/);
+    assert.match(hardening, /data\.kedi/);
     assert.match(hardening, /function repairPisiStoredMapSidecar/);
     assert.match(hardening, /fs\.readdirSync\(desiredSidecarPath\)/);
     assert.match(hardening, /if \(entries\.length > 0\)/);
