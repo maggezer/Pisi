@@ -1,30 +1,48 @@
 import { registerModule } from "../core/module-registry.mjs";
 
-// Pisi intentionally does not bundle or redistribute Comic Sans font files.
-// The editor only references an already-installed system font and falls back
-// to the browser's generic cursive family when it is unavailable.
-const PISI_SYSTEM_FONT_OPTIONS = Object.freeze([
+// Comic Sans is never bundled: Pisi only asks the operating system for it.
+// Comic Neue is bundled separately under SIL OFL 1.1 by editor.bundledFonts.
+const PISI_EDITOR_EXTRA_FONT_OPTIONS = Object.freeze([
     Object.freeze({
         value: '"Comic Sans MS", "Comic Sans", cursive',
-        label: 'Comic Sans MS'
+        label: 'Comic Sans MS',
+        source: 'system'
+    }),
+    Object.freeze({
+        value: 'Comic Neue',
+        label: 'Comic Neue',
+        source: 'bundled'
     })
 ]);
 
-function ensurePisiEditorSystemFontOptions(root = document) {
-    if (!root?.querySelectorAll) return 0;
+function collectPisiFontSelects(root = document) {
+    if (!root) return [];
+    const selects = [];
 
+    if (root.matches?.('.pisi-font-family-select')) {
+        selects.push(root);
+    }
+    if (root.querySelectorAll) {
+        selects.push(...root.querySelectorAll('.pisi-font-family-select'));
+    }
+
+    return Array.from(new Set(selects));
+}
+
+function ensurePisiEditorExtraFontOptions(root = document) {
     let added = 0;
-    root.querySelectorAll('.pisi-font-family-select').forEach((select) => {
-        for (const font of PISI_SYSTEM_FONT_OPTIONS) {
+
+    collectPisiFontSelects(root).forEach((select) => {
+        for (const font of PISI_EDITOR_EXTRA_FONT_OPTIONS) {
             const exists = Array.from(select.options || []).some((option) => (
-                option.value === font.value
+                option.value === font.value || option.textContent === font.label
             ));
             if (exists) continue;
 
             const option = document.createElement('option');
             option.value = font.value;
             option.textContent = font.label;
-            option.dataset.pisiSystemFont = 'true';
+            option.dataset.pisiExtraFont = font.source;
             select.appendChild(option);
             added += 1;
         }
@@ -33,8 +51,19 @@ function ensurePisiEditorSystemFontOptions(root = document) {
     return added;
 }
 
+// Backward-compatible name used by earlier tests/integration points.
+function ensurePisiEditorSystemFontOptions(root = document) {
+    return ensurePisiEditorExtraFontOptions(root);
+}
+
+function refreshPisiEditorExtraFontOptions() {
+    ensurePisiEditorExtraFontOptions(document);
+    // Bundled-font module owns the actual Comic Neue FontFace load.
+    void window.loadPisiComicNeueFont?.();
+}
+
 function setupPisiEditorSystemFonts() {
-    ensurePisiEditorSystemFontOptions(document);
+    refreshPisiEditorExtraFontOptions();
 
     if (document.documentElement?.dataset.pisiSystemFontsBound === '1') {
         return;
@@ -49,23 +78,61 @@ function setupPisiEditorSystemFonts() {
                     node.matches?.('.pisi-font-family-select') ||
                     node.querySelector?.('.pisi-font-family-select')
                 ) {
-                    ensurePisiEditorSystemFontOptions(node.parentElement || node);
+                    ensurePisiEditorExtraFontOptions(node);
                 }
             }
         }
     });
 
-    observer.observe(document.body || document.documentElement, {
+    observer.observe(document.documentElement, {
         childList: true,
         subtree: true
     });
+
+    // setupPisiRichToolbars() runs from a DOMContentLoaded listener registered
+    // later in bootstrap. Queueing a task guarantees the final toolbar markup
+    // has been created before we reconcile its native <select> options.
+    const reconcileAfterToolbarSetup = () => {
+        setTimeout(refreshPisiEditorExtraFontOptions, 0);
+        setTimeout(refreshPisiEditorExtraFontOptions, 100);
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener(
+            'DOMContentLoaded',
+            reconcileAfterToolbarSetup,
+            { once: true }
+        );
+    } else {
+        reconcileAfterToolbarSetup();
+    }
+
+    // Last-line guarantee for toolbars that are rebuilt later (modal/center
+    // editor). Reconcile synchronously before the native select opens.
+    document.addEventListener('mousedown', (event) => {
+        const select = event.target?.closest?.('.pisi-font-family-select');
+        if (!select) return;
+        ensurePisiEditorExtraFontOptions(select);
+        void window.loadPisiComicNeueFont?.();
+    }, true);
+
+    document.addEventListener('focusin', (event) => {
+        const select = event.target?.closest?.('.pisi-font-family-select');
+        if (!select) return;
+        ensurePisiEditorExtraFontOptions(select);
+        void window.loadPisiComicNeueFont?.();
+    }, true);
 }
 
 setupPisiEditorSystemFonts();
 
 const moduleApi = {
-    PISI_SYSTEM_FONT_OPTIONS,
+    PISI_EDITOR_EXTRA_FONT_OPTIONS,
+    PISI_SYSTEM_FONT_OPTIONS: PISI_EDITOR_EXTRA_FONT_OPTIONS,
+    collectPisiFontSelects,
+    ensurePisiEditorExtraFontOptions,
     ensurePisiEditorSystemFontOptions,
+    refreshPisiEditorExtraFontOptions,
     setupPisiEditorSystemFonts
 };
 
