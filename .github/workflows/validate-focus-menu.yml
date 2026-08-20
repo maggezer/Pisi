@@ -1,0 +1,40 @@
+name: Validate Focus Menu
+
+on:
+  push:
+    branches:
+      - chatgpt/focus-neighbor-degrees-20260820
+    paths:
+      - .github/workflows/validate-focus-menu.yml
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chatgpt/focus-neighbor-degrees-20260820
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - id: validate
+        name: Validate source
+        continue-on-error: true
+        run: npm run validate
+      - name: Record result
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESULT: ${{ steps.validate.outcome }}
+        run: |
+          printf 'validate=%s\n' "$RESULT" > result.txt
+          content=$(base64 -w0 result.txt)
+          gh api --method PUT "repos/$GITHUB_REPOSITORY/contents/.focus-menu-validation.txt" -f message='Record Focus menu validation' -f content="$content" -f branch='chatgpt/focus-neighbor-degrees-20260820'
