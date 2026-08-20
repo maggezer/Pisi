@@ -1,0 +1,8 @@
+/* Optional bundled Vincendo editor/map font. The application default is set separately. */
+@font-face {
+    font-family: "Vincendo";
+    src: url("../assets/fonts/vincendo-regular.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+}
