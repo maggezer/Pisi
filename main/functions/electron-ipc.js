@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const { registerMainModule } = require('../module-registry');
+const backupStorage = require('./backup-storage');
 const PISI_APP_ROOT = path.resolve(__dirname, '..', '..');
 
 function startProjectWatcher(folderPath) {
@@ -102,7 +103,7 @@ function assertProjectPath(inputPath, options = {}) {
             throw new Error('İstenen yol bir dosya değil.');
         }
         if (options.type === 'directory' && !stat.isDirectory()) {
-            throw new Error('İstenen yol bir klasör değil.');
+            throw new Error('İstenen yol bir klasör olmalı.');
         }
     } else {
         let ancestorPath = path.dirname(resolvedPath);
@@ -417,6 +418,25 @@ function tryLockProjectFolder(folderPath) {
         try {
             activeProjectFolder = realFolderPath;
             activeProjectLockPath = lockResult.lockPath;
+
+            try {
+                const backupMigration = backupStorage.migratePisiLegacyBackups(
+                    realFolderPath,
+                    { rename: renamePathInternal }
+                );
+                if (backupMigration.warnings.length) {
+                    console.warn(
+                        '[PISI] Bazı eski yedekler merkezi klasöre taşınamadı:',
+                        backupMigration.warnings.join(' | ')
+                    );
+                }
+            } catch (migrationError) {
+                console.warn(
+                    '[PISI] Eski yedek klasörü geçişi tamamlanamadı:',
+                    migrationError.message
+                );
+            }
+
             startProjectWatcher(realFolderPath);
         } catch (error) {
             activeProjectFolder = oldProjectFolder;
