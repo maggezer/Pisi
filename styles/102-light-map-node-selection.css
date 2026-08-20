@@ -1,0 +1,6 @@
+html[data-pisi-theme="light"] body .map-node-box.selected {
+    border-color: var(--pisi-theme-accent, #f39c12);
+    box-shadow:
+        0 0 0 2px rgb(243 156 18 / 25%),
+        0 8px 24px var(--pisi-theme-shadow);
+}
