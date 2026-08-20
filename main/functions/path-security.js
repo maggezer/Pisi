@@ -6,6 +6,14 @@ const fs = require('fs');
 const crypto = require('crypto');
 const { registerMainModule } = require('../module-registry');
 
+const PISI_WINDOWS_RENAME_RETRY_CODES = new Set([
+    'EPERM',
+    'EACCES',
+    'EBUSY'
+]);
+const PISI_WINDOWS_RENAME_MAX_ATTEMPTS = 8;
+const PISI_WINDOWS_RENAME_RETRY_DELAY_MS = 35;
+
 function getInternalFileChangeSignature(filePath) {
     try {
         const stats = fs.statSync(filePath);
@@ -108,10 +116,77 @@ function hasRecentInternalFileChangeInside(directoryPath) {
     return false;
 }
 
+function waitForPisiWindowsRenameRetry(delayMs) {
+    if (!Number.isFinite(delayMs) || delayMs <= 0) return;
+
+    try {
+        const state = new Int32Array(new SharedArrayBuffer(4));
+        Atomics.wait(state, 0, 0, delayMs);
+    } catch {
+        const deadline = Date.now() + delayMs;
+        while (Date.now() < deadline) {
+            // Çok eski runtimelarda Atomics.wait kullanılamazsa kısa fallback.
+        }
+    }
+}
+
+function relaxPisiWindowsRenamePermissions(filePath) {
+    if (process.platform !== 'win32' || !filePath || !fs.existsSync(filePath)) {
+        return;
+    }
+
+    try {
+        const stats = fs.statSync(filePath);
+        fs.chmodSync(filePath, stats.isDirectory() ? 0o777 : 0o666);
+    } catch {
+        // Salt-okunur flag kaldırma best-effort; retry yine denenir.
+    }
+}
+
 function renamePathInternal(oldPath, newPath) {
     markInternalFileChange(oldPath, newPath);
-    fs.renameSync(oldPath, newPath);
+
+    const maxAttempts = process.platform === 'win32'
+        ? PISI_WINDOWS_RENAME_MAX_ATTEMPTS
+        : 1;
+    let lastError = null;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        try {
+            fs.renameSync(oldPath, newPath);
+            sealInternalFileChange(oldPath, newPath);
+            return;
+        } catch (error) {
+            lastError = error;
+
+            const sourceExists = fs.existsSync(oldPath);
+            const destinationExists = fs.existsSync(newPath);
+
+            // Windows/AV yarışında syscall hata döndürse bile istenen durum
+            // oluşmuş olabilir. Böyle bir durumda sahte hata göstermeyelim.
+            if (!sourceExists && destinationExists) {
+                sealInternalFileChange(oldPath, newPath);
+                return;
+            }
+
+            const retryable = process.platform === 'win32' &&
+                PISI_WINDOWS_RENAME_RETRY_CODES.has(error?.code) &&
+                attempt + 1 < maxAttempts;
+
+            if (!retryable) {
+                sealInternalFileChange(oldPath, newPath);
+                throw error;
+            }
+
+            relaxPisiWindowsRenamePermissions(oldPath);
+            waitForPisiWindowsRenameRetry(
+                PISI_WINDOWS_RENAME_RETRY_DELAY_MS * (attempt + 1)
+            );
+        }
+    }
+
     sealInternalFileChange(oldPath, newPath);
+    throw lastError || new Error('Yeniden adlandırma tamamlanamadı.');
 }
 
 function getSettingsPath() {
