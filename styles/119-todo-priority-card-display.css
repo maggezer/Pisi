@@ -1,0 +1,4 @@
+/* The card keeps workorder as its sorting value, but presents it as Priority. */
+.pisi-mission-meta > .pisi-mission-priority {
+    display: none;
+}
