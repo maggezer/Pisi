@@ -29,8 +29,33 @@ assert.match(
 );
 assert.match(
     css,
-    /\.pisi-mission-meta\s*>\s*\.pisi-mission-priority\s*\{[^}]*display:\s*none/s,
+    /\.pisi-mission-meta\s*>\s*\.pisi-mission-priority/,
     'legacy Priority: N · Label badge should remain hidden'
+);
+assert.match(
+    css,
+    /\.pisi-mission-node/,
+    'Map and node location should be hidden from Todo task cards immediately'
+);
+assert.match(
+    css,
+    /span:first-child:not\(\.pisi-mission-priority\)/,
+    'the leading date metadata should be hidden before runtime cleanup'
+);
+assert.match(
+    moduleSource,
+    /querySelectorAll\('\.pisi-mission-node'\)/,
+    'Map and node location should also be removed from rendered cards'
+);
+assert.match(
+    moduleSource,
+    /const firstMeta = meta\?\.querySelector\(':scope > span:first-child'\)/,
+    'card cleanup should identify the leading date metadata'
+);
+assert.match(
+    moduleSource,
+    /firstMeta\.remove\(\)/,
+    'card date metadata should be removed from the DOM'
 );
 assert.match(
     moduleSource,
