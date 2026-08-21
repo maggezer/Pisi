@@ -1,0 +1,19 @@
+/* Dynamic center divider: only reaches the last open center tab. */
+#center-toolbar {
+    position: relative;
+}
+
+#center-toolbar::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: var(--pisi-center-divider-width, 0px);
+    height: 1px;
+    background: #333;
+    pointer-events: none;
+}
+
+html[data-pisi-theme="light"] #center-toolbar::after {
+    background: var(--pisi-theme-border);
+}
