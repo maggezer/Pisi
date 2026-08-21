@@ -8,9 +8,10 @@ let propertyBadgesToggleObserver = null;
 function getPisiPropertyBadgesVisible() {
     try {
         const value = String(localStorage.getItem(PISI_PROPERTY_BADGES_VISIBLE_STORAGE_KEY) || '').toLowerCase();
-        return !['0', 'false', 'off', 'hidden'].includes(value);
+        if (!value) return false;
+        return ['1', 'true', 'on', 'visible'].includes(value);
     } catch {
-        return true;
+        return false;
     }
 }
 
