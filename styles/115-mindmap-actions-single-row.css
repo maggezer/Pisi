@@ -1,4 +1,4 @@
-/* Keep the complete Mind Map primary action set, including Reset, on one row. */
+/* Keep the seven Mind Map primary actions on one compact row. */
 #right-tab-mindmap .pisi-mindmap-icon-actions.pisi-mindmap-icon-actions {
     flex-wrap: nowrap;
     gap: 2px;
@@ -11,4 +11,9 @@
     max-width: 30px;
     min-height: 30px;
     height: 30px;
+}
+
+/* Layout select + Save + Restore + Delete + Reset. Reset is the rightmost action. */
+#right-tab-mindmap .pisi-mindmap-layout-row.pisi-mindmap-layout-row {
+    grid-template-columns: minmax(0, 1fr) repeat(4, 32px);
 }
