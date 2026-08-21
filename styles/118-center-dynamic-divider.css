@@ -1,9 +1,9 @@
 /* Dynamic center divider: only reaches the last open center tab. */
-#center-panel > #center-toolbar {
+#center-panel > div#center-toolbar {
     position: relative;
 }
 
-#center-panel > #center-toolbar::after {
+#center-panel > div#center-toolbar::after {
     content: "";
     position: absolute;
     left: 0;
@@ -14,6 +14,6 @@
     pointer-events: none;
 }
 
-html[data-pisi-theme="light"] #center-panel > #center-toolbar::after {
+html[data-pisi-theme="light"] #center-panel > div#center-toolbar::after {
     background: var(--pisi-theme-border);
 }
