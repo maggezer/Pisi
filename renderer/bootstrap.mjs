@@ -56,6 +56,7 @@ import "./search/pisi-global-search.mjs";
 import "./search/pisi-search-panel.mjs";
 import "./search/pisi-links-panel.mjs";
 import "./productivity/pisi-quick-capture.mjs";
+import "./productivity/pisi-quick-add-repeat-policy.mjs";
 import "./data/pisi-structured-views.mjs";
 import "./data/pisi-bases-dialog.mjs";
 import "./data/pisi-property-templates.mjs";
