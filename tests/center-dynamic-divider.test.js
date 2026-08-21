@@ -40,7 +40,22 @@ assert.match(
 assert.match(
     moduleSource,
     /const lastTab = openTabs\.at\(-1\)/,
-    'divider should stop at the final visible open tab'
+    'divider should follow the final visible open tab'
+);
+assert.match(
+    moduleSource,
+    /getComputedStyle\(tabs\)/,
+    'divider should read the live tab-strip spacing'
+);
+assert.match(
+    moduleSource,
+    /tabsStyle\.paddingLeft/,
+    'divider should reuse the left tab-strip padding as its trailing gap'
+);
+assert.match(
+    moduleSource,
+    /lastTabRect\.right - toolbarRect\.left \+ trailingGap/,
+    'divider should extend beyond the last tab by the matching left-side gap'
 );
 assert.match(
     moduleSource,
