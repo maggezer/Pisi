@@ -16,14 +16,21 @@ body.pisi-calendar-is-dragging #right-panel > .pisi-calendar-dock-zone[data-cale
     min-height: 270px;
     max-height: 270px;
     margin: 10px auto 0;
-    align-self: end;
-    justify-self: center;
     overflow: visible;
     background: rgb(46 204 113 / 8%);
     outline: 2px solid rgb(46 204 113 / 72%);
     outline-offset: -3px;
     border-radius: 12px;
     pointer-events: auto;
+}
+
+body.pisi-calendar-is-dragging #left-panel > .pisi-calendar-dock-zone[data-calendar-dock-zone="left"]:not(.has-calendar) {
+    align-self: center;
+}
+
+body.pisi-calendar-is-dragging #right-panel > .pisi-calendar-dock-zone[data-calendar-dock-zone="right"]:not(.has-calendar) {
+    align-self: end;
+    justify-self: center;
 }
 
 body.pisi-calendar-is-dragging #left-panel > .pisi-calendar-dock-zone[data-calendar-dock-zone="left"].active-drop-target,
