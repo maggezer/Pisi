@@ -13,7 +13,16 @@
     height: 30px;
 }
 
-/* Layout select + Save + Restore + Delete + Reset. Reset is the rightmost action. */
+/* Dim Filtered owns the far-right slot of the primary row. */
+#right-tab-mindmap #pisi-map-dim-filtered.pisi-mindmap-icon-button {
+    margin-left: auto;
+}
+
+/* Layout select + Save + Restore + Delete + Reset. Reset stays under Dim. */
 #right-tab-mindmap .pisi-mindmap-layout-row.pisi-mindmap-layout-row {
     grid-template-columns: minmax(0, 1fr) repeat(4, 32px);
+}
+
+#right-tab-mindmap .pisi-mindmap-layout-row #pisi-map-operational-reset {
+    justify-self: end;
 }
