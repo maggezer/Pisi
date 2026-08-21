@@ -25,17 +25,45 @@ function getPisiTodoWorkorderPriorityValue(value) {
     };
 }
 
+function removePisiTodoCardContext(card) {
+    if (!card) return false;
+    let changed = false;
+
+    card.querySelectorAll('.pisi-mission-node').forEach((location) => {
+        location.remove();
+        changed = true;
+    });
+
+    const meta = card.querySelector('.pisi-mission-meta');
+    const firstMeta = meta?.querySelector(':scope > span:first-child');
+    if (
+        firstMeta &&
+        !firstMeta.classList.contains('pisi-mission-priority') &&
+        !firstMeta.classList.contains('pisi-mission-workorder-priority') &&
+        !firstMeta.classList.contains('pisi-task-duration-badge') &&
+        !getPisiTodoWorkorderPriorityValue(firstMeta.textContent)
+    ) {
+        firstMeta.remove();
+        changed = true;
+    }
+
+    return changed;
+}
+
 function normalizePisiTodoPriorityCard(card) {
     if (!card) return false;
 
+    let changed = removePisiTodoCardContext(card);
+
     card.querySelectorAll('.pisi-mission-priority').forEach((priority) => {
         priority.remove();
+        changed = true;
     });
 
     const top = card.querySelector('.pisi-mission-top');
     const status = top?.querySelector('.pisi-mission-status');
     const meta = card.querySelector('.pisi-mission-meta');
-    if (!top || !status || !meta) return false;
+    if (!top || !status || !meta) return changed;
 
     let badge = top.querySelector('.pisi-mission-workorder-priority');
     if (!badge) {
@@ -43,7 +71,7 @@ function normalizePisiTodoPriorityCard(card) {
             return Boolean(getPisiTodoWorkorderPriorityValue(item.textContent));
         }) || null;
     }
-    if (!badge) return false;
+    if (!badge) return changed;
 
     const parsed = getPisiTodoWorkorderPriorityValue(badge.textContent);
     if (parsed) {
@@ -56,9 +84,10 @@ function normalizePisiTodoPriorityCard(card) {
     badge.classList.add('pisi-mission-workorder-priority');
     if (badge.parentElement !== top || badge.previousElementSibling !== status) {
         status.after(badge);
+        changed = true;
     }
 
-    return true;
+    return changed;
 }
 
 function applyPisiTodoPriorityTones(root = document) {
@@ -120,8 +149,8 @@ function bindPisiTodoPriorityCardDisplay() {
                 [...mutation.addedNodes].some((node) => (
                     node?.nodeType === Node.ELEMENT_NODE &&
                     (
-                        node.matches?.('.pisi-mission-card, .pisi-mission-meta, .pisi-mission-top') ||
-                        node.querySelector?.('.pisi-mission-card, .pisi-mission-meta, .pisi-mission-top')
+                        node.matches?.('.pisi-mission-card, .pisi-mission-meta, .pisi-mission-top, .pisi-mission-node') ||
+                        node.querySelector?.('.pisi-mission-card, .pisi-mission-meta, .pisi-mission-top, .pisi-mission-node')
                     )
                 ))
             ));
@@ -149,6 +178,7 @@ registerModule('tags.todoPriorityCardDisplay', {
     getPisiTodoWorkorderPriorityValue,
     normalizePisiTodoPriorityCard,
     normalizePisiTodoPriorityCards,
+    removePisiTodoCardContext,
     schedulePisiTodoPriorityCardNormalization
 });
 
@@ -159,5 +189,6 @@ export {
     getPisiTodoWorkorderPriorityValue,
     normalizePisiTodoPriorityCard,
     normalizePisiTodoPriorityCards,
+    removePisiTodoCardContext,
     schedulePisiTodoPriorityCardNormalization
 };
