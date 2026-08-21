@@ -1,0 +1,192 @@
+name: Remove Mind Map Task Scope
+
+on:
+  push:
+    branches:
+      - chatgpt/remove-mindmap-task-scope-20260821
+    paths:
+      - .github/workflows/remove-mindmap-task-scope.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chatgpt/remove-mindmap-task-scope-20260821
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Remove task-status scope from Mind Map
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          def once(text, old, new, label):
+              n = text.count(old)
+              if n != 1:
+                  raise SystemExit(f'{label}: expected 1 match, got {n}')
+              return text.replace(old, new, 1)
+
+          # Renderer core: task status is no longer a Mind Map scope mode.
+          path = Path('renderer/map/pisi-map-operational-core.mjs')
+          text = path.read_text(encoding='utf-8')
+          text = once(text,
+          "const PISI_OPERATIONAL_SCOPE_MODES = new Set([\n    'all',\n    'active',\n    'blocked',\n    'overdue',\n    'missing-next-action',\n    'neighbors',\n    'manual'\n]);",
+          "const PISI_OPERATIONAL_SCOPE_MODES = new Set([\n    'all',\n    'neighbors',\n    'manual'\n]);",
+          'renderer scope modes')
+          text = once(text,
+          "        let accepted = true;\n        if (scope.mode === 'active') accepted = (state.openTasks?.length || 0) > 0;\n        if (scope.mode === 'blocked') accepted = state.blocked === true;\n        if (scope.mode === 'overdue') accepted = state.overdue === true;\n        if (scope.mode === 'missing-next-action') accepted = state.missingNextAction === true;\n        if (scope.mode === 'manual') accepted = manualIds.has(node?.id);",
+          "        let accepted = true;\n        if (scope.mode === 'manual') accepted = manualIds.has(node?.id);",
+          'renderer task mode filtering')
+          path.write_text(text, encoding='utf-8')
+
+          # Main-process persistence: legacy task modes normalize to all.
+          path = Path('main/functions/map-operational-store.js')
+          text = path.read_text(encoding='utf-8')
+          text = once(text,
+          "const PISI_OPERATIONAL_SCOPE_MODES = new Set([\n    'all',\n    'active',\n    'blocked',\n    'overdue',\n    'missing-next-action',\n    'neighbors',\n    'manual'\n]);",
+          "const PISI_OPERATIONAL_SCOPE_MODES = new Set([\n    'all',\n    'neighbors',\n    'manual'\n]);",
+          'main scope modes')
+          path.write_text(text, encoding='utf-8')
+
+          # Operational toolbar: remove the entire task-status scope select.
+          path = Path('renderer/map/pisi-map-operational.mjs')
+          text = path.read_text(encoding='utf-8')
+          text = once(text,
+          "        search: 'Map içinde ara', all: 'Tümü', active: 'Aktif iş', blocked: 'Blocked',\n        overdue: 'Geciken', missing: 'Next action yok',\n        relations: 'Tüm ilişkiler', hierarchy: 'Hierarchy', flow: 'Flow', peer: 'Peer',",
+          "        search: 'Map içinde ara',\n        relations: 'Tüm ilişkiler', hierarchy: 'Hierarchy', flow: 'Flow', peer: 'Peer',",
+          'TR task scope labels')
+          text = once(text,
+          "        search: 'Search map', all: 'All', active: 'Active work', blocked: 'Blocked',\n        overdue: 'Overdue', missing: 'Missing next action',\n        relations: 'All relationships', hierarchy: 'Hierarchy', flow: 'Flow', peer: 'Peer',",
+          "        search: 'Search map',\n        relations: 'All relationships', hierarchy: 'Hierarchy', flow: 'Flow', peer: 'Peer',",
+          'EN task scope labels')
+          text = once(text,
+          "    const scope = document.getElementById('pisi-map-operational-scope');\n    const query = document.getElementById('pisi-map-operational-query');",
+          "    const query = document.getElementById('pisi-map-operational-query');",
+          'sync scope lookup')
+          text = once(text,
+          "    if (scope) scope.value = operationalState.scope.mode === 'neighbors'\n        ? 'all'\n        : operationalState.scope.mode;\n    if (query) query.value = operationalState.scope.query || '';",
+          "    if (query) query.value = operationalState.scope.query || '';",
+          'sync scope value')
+          scope_labels = re.compile(r"function rebuildPisiOperationalControlLabels\(\) \{\n    const scope = document\.getElementById\('pisi-map-operational-scope'\);\n    if \(scope\) \{.*?\n    \}\n    const relation =", re.S)
+          text, n = scope_labels.subn("function rebuildPisiOperationalControlLabels() {\n    const relation =", text, count=1)
+          if n != 1:
+              raise SystemExit(f'rebuild scope labels: expected 1 match, got {n}')
+          text = once(text,
+          "    const scope = document.createElement('select');\n    scope.id = 'pisi-map-operational-scope';\n    const query = document.createElement('input');",
+          "    const query = document.createElement('input');",
+          'scope select creation')
+          text = once(text,
+          "        scope, query, relation, depth,",
+          "        query, relation, depth,",
+          'scope toolbar append')
+          text = once(text,
+          "    const scope = document.getElementById('pisi-map-operational-scope');\n    const query = document.getElementById('pisi-map-operational-query');",
+          "    const query = document.getElementById('pisi-map-operational-query');",
+          'bind scope lookup')
+          scope_listener = re.compile(r"\n    scope\?\.addEventListener\('change', \(\) => \{.*?\n    \}\);\n", re.S)
+          text, n = scope_listener.subn("\n", text, count=1)
+          if n != 1:
+              raise SystemExit(f'scope listener: expected 1 match, got {n}')
+          if 'pisi-map-operational-scope' in text:
+              raise SystemExit('operational scope select reference still present')
+          path.write_text(text, encoding='utf-8')
+
+          # Right panel filter disclosure must not look for the removed control.
+          path = Path('renderer/map/pisi-map-right-panel.mjs')
+          text = path.read_text(encoding='utf-8')
+          text = once(text,
+          "const mindMapFilterControlIds = [\n    'pisi-map-operational-scope',\n    'pisi-map-operational-relation',",
+          "const mindMapFilterControlIds = [\n    'pisi-map-operational-relation',",
+          'right panel scope control')
+          path.write_text(text, encoding='utf-8')
+
+          # Existing tests: task-state derivation remains, task-state scoping is retired.
+          path = Path('tests/map-operational.test.js')
+          text = path.read_text(encoding='utf-8')
+          block = re.compile(r"test\('operational scope blocked, overdue, next-action ve query filtrelerini tek projectionda uygular', async \(\) => \{.*?\n\}\);", re.S)
+          replacement = """test('retired task-status scope modes normalize to all while query filtering remains', async () => {
+    const core = await loadCore();
+    const nodes = [
+        node('node_A', 'Alpha', '/project/A.node'),
+        node('node_B', 'Beta', '/project/B.node')
+    ];
+    const states = core.buildPisiOperationalNodeStates(nodes, []);
+
+    for (const retiredMode of ['active', 'blocked', 'overdue', 'missing-next-action']) {
+        assert.equal(core.normalizePisiOperationalScope({ mode: retiredMode }).mode, 'all');
+    }
+    assert.deepEqual(
+        [...core.getPisiOperationalVisibleNodeIds(nodes, [], states, { mode: 'all', query: 'alpha preview' })],
+        ['node_A']
+    );
+});"""
+          text, n = block.subn(replacement, text, count=1)
+          if n != 1:
+              raise SystemExit(f'operational scope test: expected 1 match, got {n}')
+          path.write_text(text, encoding='utf-8')
+
+          path = Path('tests/mindmap-tools-compact.test.js')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace("    assert.match(panel, /'pisi-map-operational-scope'/);\n", "")
+          path.write_text(text, encoding='utf-8')
+
+          # Dedicated regression contract.
+          Path('tests/mindmap-task-scope-retired.test.js').write_text("""'use strict';
+
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const test = require('node:test');
+
+const root = path.resolve(__dirname, '..');
+const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+
+test('Mind Map task-status scope selector is fully retired', () => {
+    const operational = read('renderer/map/pisi-map-operational.mjs');
+    const panel = read('renderer/map/pisi-map-right-panel.mjs');
+    const core = read('renderer/map/pisi-map-operational-core.mjs');
+    const store = read('main/functions/map-operational-store.js');
+
+    assert.doesNotMatch(operational, /pisi-map-operational-scope/);
+    assert.doesNotMatch(panel, /pisi-map-operational-scope/);
+    assert.doesNotMatch(core, /'active'\s*,\s*\n\s*'blocked'\s*,\s*\n\s*'overdue'\s*,\s*\n\s*'missing-next-action'/);
+    assert.doesNotMatch(store, /'active'\s*,\s*\n\s*'blocked'\s*,\s*\n\s*'overdue'\s*,\s*\n\s*'missing-next-action'/);
+});
+""", encoding='utf-8')
+          PY
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Validate
+        run: npm run validate
+
+      - name: Commit changes
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- renderer/map/pisi-map-operational-core.mjs main/functions/map-operational-store.js renderer/map/pisi-map-operational.mjs renderer/map/pisi-map-right-panel.mjs tests/map-operational.test.js tests/mindmap-tools-compact.test.js tests/mindmap-task-scope-retired.test.js
+          git commit -m "Remove Mind Map task status scope"
+          git push origin HEAD:chatgpt/remove-mindmap-task-scope-20260821
+
+      - name: Mark validation
+        run: echo "validate=success" > .mindmap-task-scope-validation.txt
+
+      - name: Commit validation marker
+        shell: bash
+        run: |
+          git add -- .mindmap-task-scope-validation.txt
+          git commit -m "Mark Mind Map task scope validation"
+          git push origin HEAD:chatgpt/remove-mindmap-task-scope-20260821
