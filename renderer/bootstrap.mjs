@@ -78,6 +78,7 @@ import "./map/pisi-map-label-preference.mjs";
 import "./map/pisi-map-property-badges.mjs";
 import "./map/pisi-map-property-badges-toggle.mjs";
 import "./map/pisi-map-toolbar-layout-fix.mjs";
+import "./map/pisi-map-filter-simplification.mjs";
 import "./map/pisi-map-property-badge-portal.mjs";
 import "./map/pisi-map-export.mjs";
 import "./shell/pisi-tutorial.mjs";
