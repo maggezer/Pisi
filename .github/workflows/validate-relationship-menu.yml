@@ -1,0 +1,36 @@
+name: Validate Relationship Menu
+
+on:
+  push:
+    branches:
+      - chatgpt/relationship-icon-menu-20260821
+    paths:
+      - .github/workflows/validate-relationship-menu.yml
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: chatgpt/relationship-icon-menu-20260821
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run validate
+      - name: Record success
+        if: success()
+        shell: bash
+        run: |
+          printf 'validate=success\n' > .relationship-menu-validation.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- .relationship-menu-validation.txt
+          git commit -m "Record relationship menu validation" || exit 0
+          git push origin HEAD:chatgpt/relationship-icon-menu-20260821
