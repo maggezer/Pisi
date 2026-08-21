@@ -40,6 +40,17 @@ function getPisiOperationalModule() {
     return window.Pisi?.modules?.['map.operational'] || null;
 }
 
+function syncPisiOverlayButton(button, enabled) {
+    if (!button) return;
+    const pressed = enabled ? 'true' : 'false';
+    if (button.getAttribute('aria-pressed') !== pressed) {
+        button.setAttribute('aria-pressed', pressed);
+    }
+    if (button.classList.contains('active') !== enabled) {
+        button.classList.toggle('active', enabled);
+    }
+}
+
 function applyPisiMindMapOverlayPreferences() {
     const operational = getPisiOperationalModule();
     const display = operational?.operationalState?.display;
@@ -52,11 +63,10 @@ function applyPisiMindMapOverlayPreferences() {
             display[preference.stateKey] = enabled;
             changed = true;
         }
-        const button = document.getElementById(preference.buttonId);
-        if (button) {
-            button.setAttribute('aria-pressed', enabled ? 'true' : 'false');
-            button.classList.toggle('active', enabled);
-        }
+        syncPisiOverlayButton(
+            document.getElementById(preference.buttonId),
+            enabled
+        );
     }
 
     if (changed) operational?.schedulePisiOperationalRender?.();
@@ -149,12 +159,14 @@ registerModule('map.overlayVisibilityDefaults', {
     applyPisiMindMapOverlayPreferences,
     bindPisiMindMapOverlayVisibilityDefaults,
     getPisiStoredOverlayVisibility,
-    setPisiStoredOverlayVisibility
+    setPisiStoredOverlayVisibility,
+    syncPisiOverlayButton
 });
 
 export {
     applyPisiMindMapOverlayPreferences,
     bindPisiMindMapOverlayVisibilityDefaults,
     getPisiStoredOverlayVisibility,
-    setPisiStoredOverlayVisibility
+    setPisiStoredOverlayVisibility,
+    syncPisiOverlayButton
 };
