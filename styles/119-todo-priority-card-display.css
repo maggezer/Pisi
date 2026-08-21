@@ -1,4 +1,50 @@
-/* The card keeps workorder as its sorting value, but presents it as Priority. */
+/* Keep the legacy priority badge hidden; show the workorder number beside status. */
 .pisi-mission-meta > .pisi-mission-priority {
     display: none;
+}
+
+.pisi-mission-top > .pisi-mission-workorder-priority {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+    height: 24px;
+    padding: 0 7px;
+    margin-left: 6px;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.pisi-mission-top > .pisi-priority-tone-0 {
+    color: #d94a4a;
+    background: rgba(217, 74, 74, 0.12);
+}
+
+.pisi-mission-top > .pisi-priority-tone-1 {
+    color: #d97732;
+    background: rgba(217, 119, 50, 0.12);
+}
+
+.pisi-mission-top > .pisi-priority-tone-2 {
+    color: #b99b2f;
+    background: rgba(185, 155, 47, 0.12);
+}
+
+.pisi-mission-top > .pisi-priority-tone-3 {
+    color: #6aa442;
+    background: rgba(106, 164, 66, 0.12);
+}
+
+.pisi-mission-top > .pisi-priority-tone-4 {
+    color: #2f9d58;
+    background: rgba(47, 157, 88, 0.12);
+}
+
+.pisi-mission-top > .pisi-priority-tone-neutral {
+    color: var(--text-secondary, #888);
+    background: transparent;
 }
