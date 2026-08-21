@@ -30,7 +30,7 @@ assert.match(
 assert.match(
     css,
     /\.pisi-mission-meta\s*>\s*\.pisi-mission-priority\s*\{[^}]*display:\s*none/s,
-    'legacy Priority: N · Label badge should be hidden immediately'
+    'legacy Priority: N · Label badge should remain hidden'
 );
 assert.match(
     moduleSource,
@@ -39,18 +39,37 @@ assert.match(
 );
 assert.match(
     moduleSource,
-    /\^\(Order\|Sıra\)/,
-    'workorder label conversion should recognize English and Turkish labels'
+    /\^\(\?:Order\|Sıra\|Priority\|Öncelik\)/,
+    'display cleanup should recognize both old Order labels and current Priority labels'
 );
 assert.match(
     moduleSource,
-    /\? 'Öncelik'\s*:\s*'Priority'/,
-    'workorder value should be presented as Priority without changing the value'
+    /badge\.textContent = parsed\.displayValue/,
+    'only the numeric workorder value should remain visible'
 );
 assert.match(
     moduleSource,
-    /match\[2\]/,
-    'the existing workorder numeric value should be preserved'
+    /status\.after\(badge\)/,
+    'priority value should be moved directly to the right of the Todo status select'
 );
+assert.match(
+    moduleSource,
+    /\(value - min\) \/ \(max - min\)/,
+    'priority color should be normalized from the lowest to highest visible value'
+);
+assert.match(
+    moduleSource,
+    /Math\.round\(ratio \* 4\)/,
+    'priority color scale should use five red-to-green levels'
+);
+for (let tone = 0; tone <= 4; tone += 1) {
+    assert.match(
+        css,
+        new RegExp(`\\.pisi-mission-top > \\.pisi-priority-tone-${tone}`),
+        `priority tone ${tone} should have a visible style`
+    );
+}
+assert.match(css, /pisi-priority-tone-0[\s\S]*#d94a4a/);
+assert.match(css, /pisi-priority-tone-4[\s\S]*#2f9d58/);
 
 console.log('Todo priority card display regression checks passed');
