@@ -40,3 +40,21 @@ test('saved filter presets are normalized back to live strategy', () => {
     const applyBlock = moduleSource.slice(applyStart, applyEnd);
     assert.match(applyBlock, /strategy:\s*'live'/);
 });
+
+test('native filter selects are not repeatedly moved or resynced by option mutations', () => {
+    const moduleSource = read('renderer/map/pisi-map-filter-simplification.mjs');
+
+    const orderStart = moduleSource.indexOf('function orderSimplifiedFilterControlsOnce');
+    const installStart = moduleSource.indexOf('function installSimplifiedFilterControls', orderStart);
+    const orderBlock = moduleSource.slice(orderStart, installStart);
+    assert.match(orderBlock, /pisiSimplifiedFilterOrdered === '1'/);
+    assert.match(orderBlock, /group\.dataset\.pisiSimplifiedFilterOrdered = '1'/);
+
+    const mutationStart = moduleSource.indexOf('function mutationTouchesFilterControls');
+    const bindStart = moduleSource.indexOf('function bindSimplifiedFilterControls', mutationStart);
+    const mutationBlock = moduleSource.slice(mutationStart, bindStart);
+    assert.match(mutationBlock, /mutation\.addedNodes/);
+    assert.match(mutationBlock, /mutation\.removedNodes/);
+    assert.doesNotMatch(mutationBlock, /target\.closest/);
+    assert.doesNotMatch(mutationBlock, /#pisi-map-scope-property|#pisi-map-scope-operator|#pisi-map-saved-scope/);
+});
