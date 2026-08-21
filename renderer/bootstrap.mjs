@@ -68,6 +68,7 @@ import "./map/pisi-map-edge-selection-dismiss.mjs";
 import "./map/pisi-map-operational-core.mjs";
 import "./map/pisi-map-operational-render.mjs";
 import "./map/pisi-map-operational.mjs";
+import "./map/pisi-map-overlay-visibility-defaults.mjs";
 import "./map/pisi-map-scopes.mjs";
 import "./map/pisi-map-right-panel.mjs";
 import "./map/pisi-map-focus-menu.mjs";
