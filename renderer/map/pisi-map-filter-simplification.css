@@ -1,0 +1,94 @@
+#right-tab-mindmap .pisi-mindmap-filter-menu #pisi-map-scope-controls.pisi-simplified-filter-controls {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+}
+
+#right-tab-mindmap .pisi-simplified-filter-controls > #pisi-map-scope-property {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+#right-tab-mindmap .pisi-simplified-filter-controls > #pisi-map-scope-operator {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+#right-tab-mindmap .pisi-simplified-filter-controls > #pisi-map-scope-value {
+    grid-column: 3;
+    grid-row: 1;
+}
+
+#right-tab-mindmap .pisi-simplified-filter-controls > #pisi-map-add-property-filter {
+    grid-column: 1 / -1;
+    grid-row: 2;
+}
+
+#right-tab-mindmap .pisi-simplified-filter-controls > [data-pisi-filter-section="active"] {
+    grid-column: 1 / -1;
+    grid-row: 3;
+}
+
+#right-tab-mindmap .pisi-simplified-filter-controls > #pisi-map-scope-filter-chips {
+    grid-column: 1 / -1;
+    grid-row: 4;
+}
+
+#right-tab-mindmap .pisi-simplified-filter-controls > [data-pisi-filter-section="saved"] {
+    grid-column: 1 / -1;
+    grid-row: 5;
+}
+
+#right-tab-mindmap .pisi-simplified-filter-controls > #pisi-map-saved-scope {
+    grid-column: 1 / -1;
+    grid-row: 6;
+}
+
+#right-tab-mindmap .pisi-simplified-filter-controls > #pisi-map-save-scope {
+    grid-column: 1;
+    grid-row: 7;
+}
+
+#right-tab-mindmap .pisi-simplified-filter-controls > #pisi-map-apply-scope {
+    grid-column: 2;
+    grid-row: 7;
+}
+
+#right-tab-mindmap .pisi-simplified-filter-controls > #pisi-map-delete-scope {
+    grid-column: 3;
+    grid-row: 7;
+}
+
+#right-tab-mindmap .pisi-simplified-filter-controls > #pisi-map-freeze-scope {
+    grid-column: 1 / -1;
+    grid-row: 8;
+    justify-self: stretch;
+}
+
+#right-tab-mindmap .pisi-simplified-filter-controls > [data-pisi-filter-text-button="1"] {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    min-height: 32px;
+    height: auto;
+    padding: 5px 9px;
+    font-size: 12px;
+    line-height: 1.2;
+    overflow: visible;
+}
+
+#right-tab-mindmap .pisi-simplified-filter-controls > [data-pisi-filter-text-button="1"]::before {
+    display: none;
+}
+
+#right-tab-mindmap .pisi-filter-section-label {
+    padding-top: 4px;
+    color: #aeb3bd;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .02em;
+}
+
+#right-tab-mindmap .pisi-simplified-filter-controls > #pisi-map-freeze-scope[aria-pressed="true"] {
+    border-color: rgba(110, 179, 255, .62);
+    background: rgba(93, 137, 216, .18);
+}
