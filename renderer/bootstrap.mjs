@@ -14,6 +14,7 @@ import "./editor/pisi-editor-system-fonts.mjs";
 import "./editor/pisi-editor-bundled-fonts.mjs";
 import "./shell/pisi-window.mjs";
 import "./shell/pisi-tabs.mjs";
+import "./shell/pisi-center-tab-divider.mjs";
 import "./shell/pisi-startup.mjs";
 import "./shell/pisi-dialogs.mjs";
 import "./shell/pisi-command-center.mjs";
