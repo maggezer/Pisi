@@ -1,5 +1,5 @@
 /* Give every right-panel tab a little more usable horizontal space. */
-#right-panel {
+#main-layout > #right-panel {
     padding-left: 8px;
     padding-right: 8px;
 }
