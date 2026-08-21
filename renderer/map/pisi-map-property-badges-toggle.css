@@ -1,0 +1,11 @@
+html[data-pisi-property-badges-visible="false"] .pisi-map-property-badges {
+    display: none;
+}
+
+.map-node-box > .pisi-map-work-badges {
+    z-index: 8;
+}
+
+.map-node-box > .pisi-map-property-badges {
+    z-index: 7;
+}
