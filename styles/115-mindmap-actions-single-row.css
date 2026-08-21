@@ -1,0 +1,14 @@
+/* Keep the complete Mind Map primary action set, including Reset, on one row. */
+#right-tab-mindmap .pisi-mindmap-icon-actions.pisi-mindmap-icon-actions {
+    flex-wrap: nowrap;
+    gap: 2px;
+}
+
+#right-tab-mindmap .pisi-mindmap-icon-actions > .pisi-mindmap-icon-button {
+    flex: 0 0 30px;
+    width: 30px;
+    min-width: 30px;
+    max-width: 30px;
+    min-height: 30px;
+    height: 30px;
+}
