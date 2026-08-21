@@ -1,17 +1,23 @@
 /* Calendar light-theme polish and drag/dock visibility. */
 
 /*
- * The right dock zone intentionally collapses to zero height when empty so it
- * does not steal room from Search. During a calendar drag the runtime still
- * treats the panel's bottom 86px as a valid target, so make that same target
- * visible for the duration of the drag.
+ * Empty dock zones stay unobtrusive at rest. During a calendar drag expose
+ * matching targets on both side panels. The compact calendar is 222px wide
+ * and roughly 254px tall, so 238x270 gives it a small, even landing margin.
  */
+body.pisi-calendar-is-dragging #left-panel > .pisi-calendar-dock-zone[data-calendar-dock-zone="left"]:not(.has-calendar),
 body.pisi-calendar-is-dragging #right-panel > .pisi-calendar-dock-zone[data-calendar-dock-zone="right"]:not(.has-calendar) {
     position: relative;
     z-index: 7000;
-    height: 86px;
-    min-height: 86px;
-    margin-top: 10px;
+    flex: 0 0 270px;
+    width: 238px;
+    max-width: calc(100% - 4px);
+    height: 270px;
+    min-height: 270px;
+    max-height: 270px;
+    margin: 10px auto 0;
+    align-self: end;
+    justify-self: center;
     overflow: visible;
     background: rgb(46 204 113 / 8%);
     outline: 2px solid rgb(46 204 113 / 72%);
@@ -20,6 +26,7 @@ body.pisi-calendar-is-dragging #right-panel > .pisi-calendar-dock-zone[data-cale
     pointer-events: auto;
 }
 
+body.pisi-calendar-is-dragging #left-panel > .pisi-calendar-dock-zone[data-calendar-dock-zone="left"].active-drop-target,
 body.pisi-calendar-is-dragging #right-panel > .pisi-calendar-dock-zone[data-calendar-dock-zone="right"].active-drop-target {
     z-index: 7001;
     background: rgb(46 204 113 / 14%);
