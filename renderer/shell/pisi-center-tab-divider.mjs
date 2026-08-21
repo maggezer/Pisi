@@ -20,9 +20,11 @@ function updatePisiCenterTabDivider() {
 
     const toolbarRect = toolbar.getBoundingClientRect();
     const lastTabRect = lastTab.getBoundingClientRect();
+    const tabsStyle = getComputedStyle(tabs);
+    const trailingGap = Math.max(0, Number.parseFloat(tabsStyle.paddingLeft) || 0);
     const width = Math.max(0, Math.min(
         toolbar.clientWidth,
-        lastTabRect.right - toolbarRect.left
+        lastTabRect.right - toolbarRect.left + trailingGap
     ));
 
     toolbar.style.setProperty(
