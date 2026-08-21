@@ -8,7 +8,7 @@ const test = require('node:test');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('calendar drag exposes the right bottom dock target that is collapsed at rest', () => {
+test('calendar drag exposes equal left and right dock targets slightly larger than the calendar', () => {
     const base = read('styles/95-right-search-calendar-fix.css');
     const fix = read('styles/120-calendar-light-dock-fix.css');
     const runtime = read('renderer/runtime.mjs');
@@ -23,16 +23,16 @@ test('calendar drag exposes the right bottom dock target that is collapsed at re
         /document\.body\.classList\.add\('pisi-calendar-is-dragging'\)/
     );
     assert.match(
-        runtime,
-        /const inBottomZone = y >= rect\.bottom - 86;/
+        fix,
+        /body\.pisi-calendar-is-dragging #left-panel > \.pisi-calendar-dock-zone\[data-calendar-dock-zone="left"\]:not\(\.has-calendar\),[\s\S]*?body\.pisi-calendar-is-dragging #right-panel > \.pisi-calendar-dock-zone\[data-calendar-dock-zone="right"\]:not\(\.has-calendar\) \{[\s\S]*?z-index: 7000;[\s\S]*?width: 238px;[\s\S]*?height: 270px;[\s\S]*?min-height: 270px;[\s\S]*?max-height: 270px;[\s\S]*?overflow: visible;/
     );
     assert.match(
         fix,
-        /body\.pisi-calendar-is-dragging #right-panel > \.pisi-calendar-dock-zone\[data-calendar-dock-zone="right"\]:not\(\.has-calendar\) \{[\s\S]*?z-index: 7000;[\s\S]*?height: 86px;[\s\S]*?min-height: 86px;[\s\S]*?overflow: visible;/
+        /max-width: calc\(100% - 4px\);/
     );
     assert.match(
         fix,
-        /\.active-drop-target \{[\s\S]*?z-index: 7001;/
+        /\.active-drop-target,[\s\S]*?\.active-drop-target \{[\s\S]*?z-index: 7001;/
     );
 
     const baseIndex = entry.indexOf('95-right-search-calendar-fix.css');
