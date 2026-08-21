@@ -1,5 +1,7 @@
-/* Keep the legacy priority badge hidden; show the workorder number beside status. */
-.pisi-mission-meta > .pisi-mission-priority {
+/* Keep retired card metadata hidden; show only the workorder number beside status. */
+.pisi-mission-meta > .pisi-mission-priority,
+.pisi-mission-node,
+.pisi-mission-meta > span:first-child:not(.pisi-mission-priority):not(.pisi-mission-workorder-priority):not(.pisi-task-duration-badge) {
     display: none;
 }
 
