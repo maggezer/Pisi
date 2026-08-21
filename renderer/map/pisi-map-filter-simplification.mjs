@@ -207,12 +207,9 @@ function syncSavedFilterLabels() {
     const placeholder = select?.querySelector('option[value=""]');
     setText(placeholder, t('savedFilters'));
 
-    const save = document.getElementById('pisi-map-save-scope');
-    const apply = document.getElementById('pisi-map-apply-scope');
-    const remove = document.getElementById('pisi-map-delete-scope');
-    setText(save, t('save'));
-    setText(apply, t('apply'));
-    setText(remove, t('remove'));
+    setText(document.getElementById('pisi-map-save-scope'), t('save'));
+    setText(document.getElementById('pisi-map-apply-scope'), t('apply'));
+    setText(document.getElementById('pisi-map-delete-scope'), t('remove'));
     markTextButton('pisi-map-delete-scope');
 }
 
@@ -226,6 +223,12 @@ function syncFreezeButton() {
     freeze.title = label;
     freeze.setAttribute('aria-label', label);
     freeze.setAttribute('aria-pressed', frozen ? 'true' : 'false');
+}
+
+function orderSimplifiedFilterControlsOnce(group, elements) {
+    if (group.dataset.pisiSimplifiedFilterOrdered === '1') return;
+    for (const element of elements.filter(Boolean)) group.appendChild(element);
+    group.dataset.pisiSimplifiedFilterOrdered = '1';
 }
 
 function installSimplifiedFilterControls() {
@@ -251,13 +254,13 @@ function installSimplifiedFilterControls() {
     const activeLabel = ensureSectionLabel(group, 'active', chips);
     const savedLabel = ensureSectionLabel(group, 'saved', saved);
 
-    [
+    orderSimplifiedFilterControlsOnce(group, [
         property, operator, value, add,
         activeLabel, chips,
         savedLabel, saved,
         save, apply, remove,
         freeze
-    ].filter(Boolean).forEach((element) => group.appendChild(element));
+    ]);
 
     setText(add, t('addFilter'));
     syncSavedFilterLabels();
@@ -268,10 +271,8 @@ function installSimplifiedFilterControls() {
 function syncSimplifiedFilterControls() {
     if (!installSimplifiedFilterControls()) return false;
     const group = document.getElementById('pisi-map-scope-controls');
-    const activeLabel = group?.querySelector('[data-pisi-filter-section="active"]');
-    const savedLabel = group?.querySelector('[data-pisi-filter-section="saved"]');
-    setText(activeLabel, t('activeFilters'));
-    setText(savedLabel, t('savedFilters'));
+    setText(group?.querySelector('[data-pisi-filter-section="active"]'), t('activeFilters'));
+    setText(group?.querySelector('[data-pisi-filter-section="saved"]'), t('savedFilters'));
     setText(document.getElementById('pisi-map-add-property-filter'), t('addFilter'));
     syncSavedFilterLabels();
     syncFreezeButton();
@@ -287,10 +288,6 @@ function scheduleSimplifiedFilterSync() {
 }
 
 function mutationTouchesFilterControls(mutation) {
-    const target = mutation.target;
-    if (target?.nodeType === Node.ELEMENT_NODE && target.closest?.('#pisi-map-scope-controls')) {
-        return true;
-    }
     return [...mutation.addedNodes, ...mutation.removedNodes].some((node) => (
         node?.nodeType === Node.ELEMENT_NODE && (
             node.id === 'pisi-map-scope-controls' ||
@@ -325,6 +322,8 @@ registerModule('map.filterSimplification', {
     applyPisiFilterPreset,
     bindSimplifiedFilterControls,
     installSimplifiedFilterControls,
+    mutationTouchesFilterControls,
+    orderSimplifiedFilterControlsOnce,
     returnPisiFiltersToLive,
     savePisiFilterPreset,
     syncSimplifiedFilterControls,
@@ -335,6 +334,8 @@ export {
     applyPisiFilterPreset,
     bindSimplifiedFilterControls,
     installSimplifiedFilterControls,
+    mutationTouchesFilterControls,
+    orderSimplifiedFilterControlsOnce,
     returnPisiFiltersToLive,
     savePisiFilterPreset,
     syncSimplifiedFilterControls,
