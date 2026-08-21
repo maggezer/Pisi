@@ -8,21 +8,33 @@ const test = require('node:test');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-const operational = read('renderer/map/pisi-map-operational.mjs');
-const panel = read('renderer/map/pisi-map-right-panel.mjs');
 const preference = read('renderer/map/pisi-map-label-preference.mjs');
+const toggle = read('renderer/map/pisi-map-property-badges-toggle.mjs');
+const toggleCss = read('renderer/map/pisi-map-property-badges-toggle.css');
+const bootstrap = read('renderer/bootstrap.mjs');
+const operationalRender = read('renderer/map/pisi-map-operational-render.mjs');
+const propertyBadges = read('renderer/map/pisi-map-property-badges.mjs');
 
-test('Labels remains a visible Mind Map primary action', () => {
-    assert.match(operational, /'focus', 'deps', 'labels', 'work'/);
-    assert.match(operational, /pisi-map-operational-labels/);
-    assert.match(operational, /togglePisiOperationalDisplay\('showRelationshipLabels'\)/);
-    assert.match(panel, /'pisi-map-operational-labels'/);
-    assert.doesNotMatch(preference, /getElementById\('pisi-map-operational-labels'\)\?\.remove\(\)/);
+test('connection Labels button is retired from the Mind Map toolbar', () => {
+    assert.match(preference, /removeLegacyLabelsButton/);
+    assert.match(preference, /getElementById\('pisi-map-operational-labels'\)\?\.remove\(\)/);
 });
 
-test('Labels button stays synchronized with the Preferences label toggle', () => {
-    assert.match(preference, /closest\?\.\('#pisi-map-operational-labels'\)/);
-    assert.match(preference, /queueMicrotask\(syncPreferenceFromOperationalButton\)/);
-    assert.match(preference, /setPisiRelationshipLabelsPreference\(enabled\)/);
-    assert.match(preference, /display\.showRelationshipLabels !== false/);
+test('property Badges has its own persistent Mind Map visibility toggle beside Work badges', () => {
+    assert.match(bootstrap, /pisi-map-property-badges-toggle\.mjs/);
+    assert.match(toggle, /pisi\.map\.propertyBadges\.visible\.v1/);
+    assert.match(toggle, /pisi-map-property-badges-toggle/);
+    assert.match(toggle, /workButton\.insertAdjacentElement\('afterend', button\)/);
+    assert.match(toggle, /dataset\.pisiToolIcon = 'labels'/);
+    assert.match(toggle, /setPisiPropertyBadgesVisible\(!getPisiPropertyBadgesVisible\(\)\)/);
+    assert.match(toggleCss, /data-pisi-property-badges-visible="false"/);
+});
+
+test('property badges and Work badges remain independent render layers', () => {
+    assert.match(propertyBadges, /box\.querySelector\('\.pisi-map-property-badges'\)\?\.remove\(\)/);
+    assert.doesNotMatch(propertyBadges, /pisi-map-work-badges.*remove/s);
+    assert.match(operationalRender, /box\.querySelector\('\.pisi-map-work-badges'\)\?\.remove\(\)/);
+    assert.doesNotMatch(operationalRender, /pisi-map-property-badges.*remove/s);
+    assert.match(toggleCss, /\.map-node-box > \.pisi-map-work-badges/);
+    assert.match(toggleCss, /\.map-node-box > \.pisi-map-property-badges/);
 });
