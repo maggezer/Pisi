@@ -40,6 +40,7 @@ import "./editor/pisi-editor-command-authority.mjs";
 import "./editor/pisi-editor-command-routing.mjs";
 import "./tags/pisi-todo-second-release.mjs";
 import "./tags/pisi-todo-first-release.mjs";
+import "./tags/pisi-todo-priority-card-display.mjs";
 import "./tags/pisi-todo-blocks.mjs";
 import "./tags/pisi-todo-third-release.mjs";
 import "./tags/pisi-task-store.mjs";
