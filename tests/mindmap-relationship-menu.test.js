@@ -14,7 +14,8 @@ const style = read('style.css');
 const css = read('styles/113-mindmap-relationship-menu.css');
 
 test('All relationships select is retired from visible Mind Map filters', () => {
-    assert.match(css, /#pisi-map-operational-relation\s*\{[^}]*display:\s*none\s*!important/s);
+    assert.match(css, /#pisi-map-operational-relation\s*\{[^}]*display:\s*none\s*;/s);
+    assert.doesNotMatch(css, /!important/);
     assert.match(moduleSource, /select\.hidden\s*=\s*true/);
 });
 
