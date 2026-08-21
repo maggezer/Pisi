@@ -37,8 +37,7 @@ const mindMapPrimaryActionIds = [
     'pisi-map-operational-deps',
     'pisi-map-operational-labels',
     'pisi-map-operational-work',
-    'pisi-map-dim-filtered',
-    'pisi-map-operational-reset'
+    'pisi-map-dim-filtered'
 ];
 
 const mindMapFilterControlIds = [
@@ -207,7 +206,8 @@ function ensureMindMapLayoutRow(toolbar) {
         document.getElementById('pisi-map-operational-layout'),
         document.getElementById('pisi-map-operational-save-layout'),
         document.getElementById('pisi-map-operational-restore'),
-        document.getElementById('pisi-map-operational-delete-layout')
+        document.getElementById('pisi-map-operational-delete-layout'),
+        document.getElementById('pisi-map-operational-reset')
     ].filter(Boolean);
     row.replaceChildren(...elements);
     return row;
