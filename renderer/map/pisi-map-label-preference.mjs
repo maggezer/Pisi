@@ -5,7 +5,6 @@ import {
 } from './pisi-map-operational-render.mjs';
 
 let labelsPreferenceObserver = null;
-let labelsPreferenceHandlersBound = false;
 
 function ensureLabelsPreferenceStyle() {
     if (document.querySelector('link[data-pisi-map-label-preference-style]')) return;
@@ -14,6 +13,10 @@ function ensureLabelsPreferenceStyle() {
     link.href = 'renderer/map/pisi-map-label-preference.css';
     link.dataset.pisiMapLabelPreferenceStyle = '1';
     document.head.appendChild(link);
+}
+
+function removeLegacyLabelsButton() {
+    document.getElementById('pisi-map-operational-labels')?.remove();
 }
 
 function syncOperationalLabelsPreference() {
@@ -32,20 +35,6 @@ function syncPreferenceButton(button) {
     button.textContent = enabled ? 'On' : 'Off';
     button.setAttribute('aria-pressed', enabled ? 'true' : 'false');
     button.classList.toggle('active', enabled);
-}
-
-function syncPreferenceFromOperationalButton() {
-    const operational = window.Pisi?.modules?.['map.operational'];
-    const display = operational?.operationalState?.display;
-    if (!display) return getPisiRelationshipLabelsPreference();
-
-    const enabled = display.showRelationshipLabels !== false;
-    setPisiRelationshipLabelsPreference(enabled);
-    syncPreferenceButton(document.querySelector('#pisi-preference-map-labels button'));
-    document.dispatchEvent(new CustomEvent('pisi:relationship-labels-preference-changed', {
-        detail: { enabled }
-    }));
-    return enabled;
 }
 
 function installLabelsPreferenceRow() {
@@ -83,8 +72,6 @@ function installLabelsPreferenceRow() {
             operational.operationalState.display.showRelationshipLabels = enabled;
         }
         syncPreferenceButton(button);
-        const mapButton = document.getElementById('pisi-map-operational-labels');
-        mapButton?.setAttribute('aria-pressed', enabled ? 'true' : 'false');
         operational?.schedulePisiOperationalRender?.();
         document.dispatchEvent(new CustomEvent('pisi:relationship-labels-preference-changed', {
             detail: { enabled }
@@ -99,23 +86,13 @@ function installLabelsPreferenceRow() {
 }
 
 function refreshLabelsPreferenceUi() {
-    syncOperationalLabelsPreference();
+    removeLegacyLabelsButton();
     installLabelsPreferenceRow();
-}
-
-function bindLabelsPreferenceHandlers() {
-    if (labelsPreferenceHandlersBound) return;
-    labelsPreferenceHandlersBound = true;
-
-    document.addEventListener('click', (event) => {
-        if (!event.target?.closest?.('#pisi-map-operational-labels')) return;
-        queueMicrotask(syncPreferenceFromOperationalButton);
-    });
 }
 
 function bindLabelsPreference() {
     ensureLabelsPreferenceStyle();
-    bindLabelsPreferenceHandlers();
+    removeLegacyLabelsButton();
     syncOperationalLabelsPreference();
     installLabelsPreferenceRow();
 
@@ -136,7 +113,10 @@ function bindLabelsPreference() {
     }
 
     document.addEventListener('pisi:map-customization-context-changed', () => {
-        requestAnimationFrame(refreshLabelsPreferenceUi);
+        requestAnimationFrame(() => {
+            removeLegacyLabelsButton();
+            syncOperationalLabelsPreference();
+        });
     });
 }
 
@@ -149,13 +129,11 @@ if (document.readyState === 'loading') {
 registerModule('map.labelPreference', {
     bindLabelsPreference,
     installLabelsPreferenceRow,
-    syncOperationalLabelsPreference,
-    syncPreferenceFromOperationalButton
+    syncOperationalLabelsPreference
 });
 
 export {
     bindLabelsPreference,
     installLabelsPreferenceRow,
-    syncOperationalLabelsPreference,
-    syncPreferenceFromOperationalButton
+    syncOperationalLabelsPreference
 };
