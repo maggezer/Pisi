@@ -1,0 +1,12 @@
+/* Give every right-panel tab a little more usable horizontal space. */
+#right-panel {
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+/* Keep enough room for seven 32px Mind Map actions with 6px gaps. */
+@media (max-width: 1000px) {
+    #main-layout {
+        grid-template-columns: 220px minmax(260px, 1fr) 280px;
+    }
+}
