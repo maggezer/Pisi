@@ -21,14 +21,18 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci --ignore-scripts
-      - run: npm run validate
-      - name: Record success
-        if: success()
+      - id: validate
+        continue-on-error: true
+        run: npm run validate
+      - name: Record outcome
+        if: always()
         shell: bash
         run: |
-          printf 'validate=success\ncommit=%s\n' "$GITHUB_SHA" > .validate-labels-reset-layout.txt
+          status='${{ steps.validate.outcome }}'
+          printf 'validate=%s\ncommit=%s\n' "$status" "$GITHUB_SHA" > .validate-labels-reset-layout.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -- .validate-labels-reset-layout.txt
           git commit -m "Record Labels and Reset validation" || exit 0
           git push origin HEAD:main
+          test "$status" = 'success'
