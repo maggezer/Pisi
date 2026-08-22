@@ -244,6 +244,21 @@
     ]
   },
   {
+    "module": "sync.settings",
+    "path": "renderer/sync/pisi-sync-settings.mjs",
+    "bindings": [
+      "pisiSyncTranslate",
+      "formatPisiSyncTime",
+      "getPisiRendererSyncStatus",
+      "makePisiSyncButton",
+      "refreshPisiSyncSettings",
+      "runPisiRendererSync",
+      "renderPisiSyncSettings",
+      "schedulePisiAutoSync",
+      "initializePisiSyncSettings"
+    ]
+  },
+  {
     "module": "shell.customizations",
     "path": "renderer/shell/pisi-customizations.mjs",
     "bindings": [

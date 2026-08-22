@@ -218,6 +218,16 @@
     ]
   },
   {
+    "module": "main.syncProjectAdapter",
+    "path": "main/functions/sync-project-adapter.js",
+    "bindings": [
+      "CONFIG_FILES",
+      "readProjectDocuments",
+      "exportPisiSyncEntities",
+      "applyPisiSyncRecords"
+    ]
+  },
+  {
     "module": "main.projectIntegrity",
     "path": "main/functions/project-integrity.js",
     "bindings": [
@@ -272,6 +282,22 @@
       "lockProjectFolder",
       "unlockProjectFolder",
       "createWindow"
+    ]
+  },
+  {
+    "module": "main.syncDomain",
+    "path": "main/functions/sync-domain.js",
+    "bindings": [
+      "MANIFEST_RELATIVE",
+      "DEVICES_RELATIVE",
+      "atomicWriteJson",
+      "readSnapshots",
+      "performPisiSync",
+      "runPisiSync",
+      "selectPisiSyncFolder",
+      "getPisiSyncStatus",
+      "disconnectPisiSync",
+      "installPisiSyncIpc"
     ]
   }
 ]

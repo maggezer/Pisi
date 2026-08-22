@@ -18,6 +18,7 @@ import "./shell/pisi-center-tab-divider.mjs";
 import "./shell/pisi-startup.mjs";
 import "./shell/pisi-dialogs.mjs";
 import "./shell/pisi-command-center.mjs";
+import "./sync/pisi-sync-settings.mjs";
 import "./editor/pisi-editor-command-preferences.mjs";
 import "./shell/pisi-customizations.mjs";
 import "./shell/pisi-trash.mjs";

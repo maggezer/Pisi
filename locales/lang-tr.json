@@ -717,6 +717,24 @@
     "İçe aktar": "İçe aktar",
     "Dışa aktar": "Dışa aktar",
     "Proje bütünlüğü için bir proje açın.": "Proje bütünlüğünü denetlemek için bir proje açın.",
-    "Geçerli proje klasöründeki node, map, bağlantı ve yan dosya tutarlılığını denetler.": "Geçerli proje klasöründeki node, map, bağlantı ve yan dosya tutarlılığını denetler."
+    "Geçerli proje klasöründeki node, map, bağlantı ve yan dosya tutarlılığını denetler.": "Geçerli proje klasöründeki node, map, bağlantı ve yan dosya tutarlılığını denetler.",
+    "Henüz senkronize edilmedi": "Henüz senkronize edilmedi",
+    "Sync köprüsü kullanılamıyor.": "Sync köprüsü kullanılamıyor.",
+    "Bağlı klasör": "Bağlı klasör",
+    "Ortak klasör bağlı değil": "Ortak klasör bağlı değil",
+    "Son senkronizasyon": "Son senkronizasyon",
+    "Google Drive, OneDrive veya başka bir ortak klasör seçin.": "Google Drive, OneDrive veya başka bir ortak klasör seçin.",
+    "Klasörü değiştir": "Klasörü değiştir",
+    "Ortak klasör seç": "Ortak klasör seç",
+    "değişiklik": "değişiklik",
+    "çakışma kopyası": "çakışma kopyası",
+    "cihaz": "cihaz",
+    "Cihazlar arası senkronizasyon": "Cihazlar arası senkronizasyon",
+    "Proje dosyalarını Google Drive, OneDrive veya başka bir ortak klasör üzerinden masaüstü ve Android ile eşitler.": "Proje dosyalarını Google Drive, OneDrive veya başka bir ortak klasör üzerinden masaüstü ve Android ile eşitler.",
+    "Şimdi senkronize et": "Şimdi senkronize et",
+    "Bağlantıyı kes": "Bağlantıyı kes",
+    "Sync klasörü seçilemedi.": "Sync klasörü seçilemedi.",
+    "Senkronizasyon başarısız.": "Senkronizasyon başarısız.",
+    "Sync bağlantısı kesilsin mi? Yerel proje dosyaları korunur.": "Sync bağlantısı kesilsin mi? Yerel proje dosyaları korunur."
   }
 }

@@ -113,6 +113,13 @@ contextBridge.exposeInMainWorld('pisiProject', {
     }
 });
 
+contextBridge.exposeInMainWorld('pisiSync', {
+    getStatus: () => ipcRenderer.invoke('pisi-sync:status'),
+    selectFolder: () => ipcRenderer.invoke('pisi-sync:select-folder'),
+    run: (options = {}) => ipcRenderer.invoke('pisi-sync:run', options),
+    disconnect: () => ipcRenderer.invoke('pisi-sync:disconnect')
+});
+
 contextBridge.exposeInMainWorld('pisiTrash', {
     list: (projectFolder) => ipcRenderer.invoke('project:list-trash', projectFolder),
     restore: (projectFolder, trashId) => ipcRenderer.invoke(
