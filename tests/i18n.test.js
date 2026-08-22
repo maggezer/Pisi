@@ -25,6 +25,29 @@ test('Turkish and English catalogs have matching complete keys', () => {
     assert.equal(eng.strings['Yeni Node'], 'New Note');
 });
 
+test('supplemental UI catalogs match and are shared by renderer and main process', () => {
+    const supplemental = readJson('locales/ui-translations.json');
+    const trKeys = Object.keys(supplemental.tr || {}).sort();
+    const engKeys = Object.keys(supplemental.eng || {}).sort();
+    const rendererI18n = read('renderer/core/i18n.mjs');
+    const mainI18n = read('main/functions/i18n.js');
+    const checkI18n = read('scripts/check-i18n.js');
+
+    assert.deepEqual(engKeys, trKeys);
+    assert.ok(trKeys.length >= 100);
+    assert.equal(supplemental.tr['Explorer'], 'Gezgin');
+    assert.equal(supplemental.eng['Explorer'], 'Explorer');
+    assert.equal(supplemental.tr['Formatting · Text'], 'Biçimlendirme · Metin');
+    assert.equal(supplemental.eng['Formatting · Text'], 'Formatting · Text');
+    assert.equal(supplemental.eng['LaTeX · Yapı'], 'LaTeX · Structure');
+    assert.match(rendererI18n, /locales\/ui-translations\.json/);
+    assert.match(rendererI18n, /applyPisiSupplementalRoot/);
+    assert.match(rendererI18n, /pisi:language-changed/);
+    assert.match(mainI18n, /ui-translations\.json/);
+    assert.match(mainI18n, /supplementalTranslations\[normalized\]/);
+    assert.match(checkI18n, /full renderer UI coverage/);
+});
+
 test('language selection is persisted and the live DOM translator watches changes', () => {
     const preload = read('preload.js');
     const runtime = read('main/runtime.js');
