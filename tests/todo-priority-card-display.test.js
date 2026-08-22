@@ -74,8 +74,48 @@ assert.match(
 );
 assert.match(
     moduleSource,
-    /status\.after\(badge\)/,
-    'priority value should be moved directly to the right of the Todo status select'
+    /function arrangePisiTodoCardLayout/,
+    'Todo cards should have a dedicated compact layout pass'
+);
+assert.match(
+    moduleSource,
+    /const desired = \[badge, main, check, content\]/,
+    'top-row DOM order should be priority, task, completion, then controls'
+);
+assert.match(
+    moduleSource,
+    /status\.classList\.add\('pisi-mission-status-icon'\)/,
+    'Todo status select should be converted to icon presentation'
+);
+assert.match(
+    moduleSource,
+    /summary\.classList\.add\('pisi-mission-planning-icon'\)/,
+    'Planning summary should be converted to icon presentation'
+);
+assert.match(
+    css,
+    /grid-template-areas:\s*"priority task check"\s*"controls controls controls"/s,
+    'Todo card should use priority-task-check on row one and controls on row two'
+);
+assert.match(
+    css,
+    /\.pisi-mission-status-icon[\s\S]*background-image:\s*url\("\.\.\/assets\/todo\/status-filter\.svg"\)/,
+    'Todo dropdown should use the Todo status icon'
+);
+assert.match(
+    css,
+    /\.pisi-mission-planning-icon::before[\s\S]*workspace\.svg/,
+    'Planning dropdown should use a planning/calendar icon mask'
+);
+assert.match(
+    css,
+    /\.pisi-mission-compact-card > \.pisi-mission-check-wrap[\s\S]*grid-area:\s*check/,
+    'completion checkbox should occupy the far-right top grid area'
+);
+assert.match(
+    css,
+    /\.pisi-mission-compact-card > \.pisi-mission-content[\s\S]*justify-content:\s*flex-end/,
+    'Todo and Planning controls should be right-aligned on the lower row'
 );
 assert.match(
     moduleSource,
@@ -90,7 +130,7 @@ assert.match(
 for (let tone = 0; tone <= 4; tone += 1) {
     assert.match(
         css,
-        new RegExp(`\\.pisi-mission-top > \\.pisi-priority-tone-${tone}`),
+        new RegExp(`\\.pisi-mission-compact-card > \\.pisi-priority-tone-${tone}`),
         `priority tone ${tone} should have a visible style`
     );
 }
