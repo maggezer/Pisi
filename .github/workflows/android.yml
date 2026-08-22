@@ -3,6 +3,8 @@ name: Android APK
 on:
   push:
     branches: [mobile5, "agent/pisi-mobile-responsive"]
+  pull_request:
+    branches: [mobile5]
   workflow_dispatch:
 
 permissions:

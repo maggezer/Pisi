@@ -51,6 +51,6 @@ npm run android:open
 
 Android Studio’da cihaz veya emülatör seçip **Run** düğmesine basın. Komut satırından `npm run android:run` da kullanılabilir.
 
-`mobile5` tabanlı mobil dallara gönderilen commit’lerde Android APK iş akışı testleri çalıştırır ve `Pisi-android-debug` artifact’ini üretir.
+`mobile5` dalına gönderilen commit’lerde ve `mobile5` hedefli pull request’lerde Android APK iş akışı testleri çalıştırır ve `Pisi-android-debug` artifact’ini üretir.
 
 Kurulum ve gerçek cihaz testi için [Pisi Sync uygulama kılavuzuna](docs/pisi-sync-guide-tr.md) bakın.
