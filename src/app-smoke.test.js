@@ -22,7 +22,6 @@ describe('Pisi responsive application shell', () => {
     expect(document.body.textContent).toContain('Hızlı yakala ve planla');
 
     document.querySelector('[data-route="data"]').click();
-    expect(document.body.textContent).toContain('Veri ve araştırma');
     expect(document.body.textContent).toContain('Node sistemi');
 
     document.querySelector('[data-route="notes"]').click();

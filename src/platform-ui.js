@@ -8,11 +8,9 @@ import {
   applyStructuredView, applyTemplate, createSavedView, createTemplate,
   generatePropertyMap, normalizePropertySchema, propertyValue
 } from './properties.js';
-import { captureWebSource, createDoiSource, formatCitation, lookupDoi, makeQuoteBlock } from './research.js';
+import { makeQuoteBlock } from './research.js';
 import { exportDocument, importPortableFile } from './portability.js';
-import {
-  initializePlatformApis, invokeExtension, listExtensions, listPlugins, teamApi
-} from './extensions.js';
+import { initializePlatformApis, invokeExtension, listExtensions } from './extensions.js';
 import { escapeHtml, htmlToText, sanitizeRichHtml } from './sanitize.js';
 import { lightHaptic, successHaptic } from './native.js';
 
@@ -22,7 +20,7 @@ const TODAY = () => {
 };
 
 function routeLabel(route) {
-  return ({ notes: 'Notlar', maps: 'Haritalar', tasks: 'Görevler', calendar: 'Takvim', data: 'Veri ve Araştırma', settings: 'Ayarlar' })[route] || 'Pisi';
+  return ({ notes: 'Notlar', maps: 'Haritalar', tasks: 'Görevler', calendar: 'Takvim', data: 'Node sistemi', settings: 'Ayarlar' })[route] || 'Pisi';
 }
 
 function taskGroup(task, view) {
@@ -53,8 +51,6 @@ export class PlatformController {
     this.templates = [];
     this.activeView = { type: 'cards', filters: [], sort: [] };
     this.documentVersions = [];
-    this.teamConfig = { name: 'Pisi Team', revision: 0, members: [] };
-    this.teamEvents = [];
     this.searchCache = null;
     this.searchSignature = '';
     this.boundHotkeys = false;
@@ -68,7 +64,6 @@ export class PlatformController {
       getSetting('templates', [])
     ]);
     this.schema = normalizePropertySchema(this.schema);
-    await this.refreshTeam();
     initializePlatformApis({
       listDocuments: () => structuredClone(this.app.documents),
       openDocument: (id) => this.app.openDocument(id),
@@ -77,14 +72,16 @@ export class PlatformController {
     this.bindKeyboardShortcuts();
   }
 
-  async refreshTeam() {
-    try {
-      [this.teamConfig, this.teamEvents] = await Promise.all([
-        teamApi.getConfig(), teamApi.listEvents({ limit: 20 })
-      ]);
-    } catch (error) {
-      console.error('[Pisi team]', error);
-    }
+  async refreshFromStorage() {
+    [this.tasks, this.schema, this.savedViews, this.templates] = await Promise.all([
+      listTasks(),
+      getSetting('propertySchema', []),
+      getSetting('savedViews', []),
+      getSetting('templates', [])
+    ]);
+    this.schema = normalizePropertySchema(this.schema);
+    this.searchCache = null;
+    this.searchSignature = '';
   }
 
   async prepareDocument(id) {
@@ -133,7 +130,7 @@ export class PlatformController {
       <section><h3>Hızlı erişim</h3>
         <button type="button" class="inspector-action" data-platform-search>⌕ Global arama</button>
         <button type="button" class="inspector-action" data-platform-quick-task>✓ Görev yakala</button>
-        <button type="button" class="inspector-action" data-route="data">▦ Veri ve araştırma</button>
+        <button type="button" class="inspector-action" data-route="data">▦ Node sistemi</button>
       </section>
       <section><h3>Durum</h3><p>${this.app.documents.length} belge · ${this.tasks.filter(({ done }) => !done).length} açık görev</p></section>
       <section><h3>Tablet modu</h3><p>Sol tarafta belge ağacı, ortada çalışma alanı ve sağda bağlama göre araçlar bulunur.</p></section>
@@ -260,7 +257,7 @@ export class PlatformController {
     const existing = this.tasks.filter((task) => task.documentId === document.id && task.blockId);
     const activeIds = new Set();
     for (const block of blocks) {
-      const id = `task-${document.id}-${block.id}`;
+      const id = `task_${document.id}_${block.id}`.slice(0, 180);
       activeIds.add(id);
       const previous = this.tasks.find((task) => task.id === id);
       const candidate = {
@@ -281,7 +278,6 @@ export class PlatformController {
     const parsed = parseTurkishDate(input.dateExpression || input.text || '');
     const task = await putTask({
       text: input.text,
-      parentId: input.parentId || null,
       importance: input.importance || 'normal',
       scheduledAt: input.scheduledAt || parsed.scheduledAt,
       deadline: input.deadline || parsed.deadline,
@@ -295,21 +291,7 @@ export class PlatformController {
   }
 
   orderedTasksForView(view) {
-    const matching = this.tasks.filter((task) => taskGroup(task, view));
-    const accepted = new Set(matching.map(({ id }) => id));
-    const children = new Map();
-    matching.forEach((task) => {
-      const parentId = accepted.has(task.parentId) ? task.parentId : null;
-      if (!children.has(parentId)) children.set(parentId, []);
-      children.get(parentId).push(task);
-    });
-    const rows = [];
-    const visit = (parentId, depth) => (children.get(parentId) || []).forEach((task) => {
-      rows.push({ task, depth });
-      visit(task.id, depth + 1);
-    });
-    visit(null, 0);
-    return rows;
+    return this.tasks.filter((task) => taskGroup(task, view)).map((task) => ({ task, depth: 0 }));
   }
 
   renderTasks() {
@@ -323,8 +305,8 @@ export class PlatformController {
         <div class="task-view-tabs">${[['inbox', 'Inbox'], ['today', 'Bugün'], ['upcoming', 'Yaklaşan'], ['done', 'Tamamlanan']].map(([id, label]) => `<button class="${this.taskView === id ? 'active' : ''}" data-task-view="${id}">${label}<span>${this.tasks.filter((task) => taskGroup(task, id)).length}</span></button>`).join('')}</div>
         <section class="task-list">${visible.length ? visible.map(({ task, depth }) => `<article class="task-row ${task.done ? 'done' : ''}" data-task-id="${task.id}" style="--task-depth:${Math.min(depth, 4)}">
           <button type="button" class="task-check" data-task-toggle aria-label="Tamamlandı">${task.done ? '✓' : ''}</button>
-          <div><strong>${escapeHtml(task.text)}</strong><span><i class="importance ${task.importance}"></i>${taskDateLabel(task)}${task.durationMinutes ? ` · ${task.durationMinutes} dk` : ''}${task.repeat !== 'none' ? ` · ${escapeHtml(task.repeat)}` : ''}${task.parentId ? ' · alt görev' : ''}</span></div>
-          <div class="task-row-actions"><button type="button" class="task-more" data-task-subtask title="Alt görev ekle">＋</button><button type="button" class="task-more" data-task-snooze title="Yarına ertele">›</button></div>
+          <div><strong>${escapeHtml(task.text)}</strong><span><i class="importance ${task.importance}"></i>${taskDateLabel(task)}${task.durationMinutes ? ` · ${task.durationMinutes} dk` : ''}${task.repeat !== 'none' ? ` · ${escapeHtml(task.repeat)}` : ''}${task.dependencies?.length ? ` · ${task.dependencies.length} bağımlılık` : ''}</span></div>
+          <div class="task-row-actions"><button type="button" class="task-more" data-task-snooze title="Yarına ertele">›</button></div>
         </article>`).join('') : '<div class="soft-empty task-empty">Bu görünümde görev yok.</div>'}</section>`
     });
     this.bindTaskView();
@@ -352,26 +334,12 @@ export class PlatformController {
         this.tasks = await listTasks();
         this.renderTasks();
       });
-      row.querySelector('[data-task-subtask]')?.addEventListener('click', async () => {
-        const text = prompt('Alt görev');
-        if (!text?.trim()) return;
-        await this.createTask({ text: text.trim(), parentId: task.id, importance: task.importance });
-        this.renderTasks();
-      });
     });
   }
 
   async toggleTask(task) {
     if (!task) return;
     task = await putTask({ ...task, done: !task.done });
-    const children = this.tasks.filter(({ parentId }) => parentId === task.id);
-    if (children.length && task.done) {
-      for (const child of children) await putTask({ ...child, done: true });
-    } else if (task.parentId) {
-      const siblings = this.tasks.filter(({ parentId, id }) => parentId === task.parentId && id !== task.id);
-      const parent = this.tasks.find(({ id }) => id === task.parentId);
-      if (parent) await putTask({ ...parent, done: task.done && siblings.every(({ done }) => done) });
-    }
     if (task.documentId && task.blockId) {
       const rowDocument = this.app.documents.find(({ id }) => id === task.documentId);
       if (rowDocument) {
@@ -459,15 +427,8 @@ export class PlatformController {
       <div class="saved-view-row">${this.savedViews.map((view) => `<button data-saved-view="${view.id}">${escapeHtml(view.name)}</button>`).join('')}<button data-save-view>＋ Görünümü kaydet</button></div>
       ${this.activeView.type === 'table' ? `<div class="structured-table-wrap"><table class="structured-table"><thead><tr><th>Node</th>${propertyNames.map((name) => `<th>${escapeHtml(name)}</th>`).join('')}</tr></thead><tbody>${documents.map((row) => `<tr data-data-open="${row.id}"><th>${escapeHtml(row.title)}</th>${propertyNames.map((name) => `<td>${escapeHtml(row.properties?.[name] ?? '')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`
         : `<div class="structured-cards">${documents.map((row) => `<button data-data-open="${row.id}"><strong>${escapeHtml(row.title)}</strong><span>${Object.entries(row.properties || {}).slice(0, 4).map(([key, value]) => `${escapeHtml(key)}: ${escapeHtml(value)}`).join('<br>') || 'Özellik yok'}</span></button>`).join('')}</div>`}
-      <section class="data-admin-grid"><form id="property-schema-form"><h3>Node özelliği</h3><input name="name" placeholder="Özellik adı" required><select name="type">${['text', 'number', 'date', 'checkbox', 'select', 'multi-select', 'relation', 'rollup', 'url', 'doi'].map((type) => `<option>${type}</option>`).join('')}</select><div class="rollup-config"><input name="relationProperty" placeholder="Relation özelliği"><input name="targetProperty" placeholder="Hedef özellik"><select name="operation"><option value="count">count</option><option value="sum">sum</option><option value="average">average</option><option value="min">min</option><option value="max">max</option><option value="join">join</option></select></div><button>Ekle</button></form>
+      <section class="data-admin-grid"><form id="property-schema-form"><h3>Node özelliği</h3><input name="name" placeholder="Özellik adı" required><select name="type">${['text', 'number', 'multiselect', 'relation', 'rollup'].map((type) => `<option>${type}</option>`).join('')}</select><div class="rollup-config"><input name="relationProperty" placeholder="Relation özelliği"><input name="targetProperty" placeholder="Hedef özellik"><select name="operation"><option value="count">count</option><option value="sum">sum</option><option value="average">average</option><option value="min">min</option><option value="max">max</option><option value="join">join</option></select></div><button>Ekle</button></form>
       <form id="property-map-form"><h3>Özelliğe göre map</h3><select name="property" required>${propertyNames.map((name) => `<option>${escapeHtml(name)}</option>`).join('')}</select><button>Map üret</button></form></section>`;
-  }
-
-  researchTemplate() {
-    const sources = this.app.documents.filter(({ kind }) => kind === 'source');
-    return `<div class="research-grid"><form id="web-capture-form" class="data-form-card"><h3>Web yakalama</h3><input name="url" type="url" placeholder="https://…" required><input name="title" placeholder="Başlık (isteğe bağlı)"><textarea name="excerpt" placeholder="Alıntı veya özet"></textarea><button>Kaynak node’u oluştur</button></form>
-      <form id="doi-form" class="data-form-card"><h3>DOI ve bibliyografya</h3><input name="doi" placeholder="10.xxxx/…" required><button>DOI bilgisini getir</button><small>Çevrimdışıyken DOI ve URL yine kaynak alanı olarak saklanır.</small></form></div>
-      <section class="source-library"><h3>Kaynaklar</h3>${sources.map((source) => `<article><div><strong>${escapeHtml(source.title)}</strong><small>${escapeHtml(formatCitation(source))}</small></div><button data-data-open="${source.id}">Aç</button></article>`).join('') || '<p>Henüz kaynak node’u yok.</p>'}</section>`;
   }
 
   portabilityTemplate() {
@@ -476,23 +437,13 @@ export class PlatformController {
       <section class="data-form-card"><h3>Dışa aktarma</h3><p>Bir node seçip Markdown, PDF, HTML veya DOCX olarak kaydet.</p><select id="portable-document">${this.app.documents.filter(({ kind }) => kind !== 'canvas').map((row) => `<option value="${row.id}">${escapeHtml(row.title)}</option>`).join('')}</select><div class="export-grid">${['md', 'pdf', 'html', 'docx'].map((format) => `<button type="button" data-portable-export="${format}">.${format}</button>`).join('')}</div></section>`;
   }
 
-  extensionsTemplate() {
-    return `<section class="api-heading"><h3>Eklenti API</h3><span>v1.0</span></section><p class="api-note">Yalnızca güvenilen, uygulama içine alınmış eklentiler çalıştırılır.</p><div class="extension-grid">${Object.entries(listExtensions()).map(([point, rows]) => `<article><strong>${point}</strong><span>${rows.length}</span><small>${rows.map(({ label }) => escapeHtml(label)).join(', ') || 'Kayıt yok'}</small></article>`).join('')}</div><section class="data-form-card"><h3>Etkin eklentiler</h3><p>${listPlugins().map(({ name, version }) => `${escapeHtml(name)} ${escapeHtml(version)}`).join('<br>') || 'Harici eklenti etkin değil.'}</p></section>`;
-  }
-
-  teamTemplate() {
-    return `<form id="team-form" class="data-form-card team-form"><h3>Team API</h3><label>Team adı<input name="name" value="${escapeHtml(this.teamConfig.name || '')}"></label><label>Üyeler<textarea name="members" placeholder="Her satıra bir ad">${escapeHtml((this.teamConfig.members || []).map((member) => member.name).join('\n'))}</textarea></label><button>Team ayarlarını kaydet</button></form><section class="team-events"><h3>Yerel değişiklik günlüğü</h3>${this.teamEvents.map((event) => `<article><strong>${escapeHtml(event.type)}</strong><span>${escapeHtml(event.payload?.text || event.payload?.summary || event.target || '')}</span><time>${new Date(event.createdAt).toLocaleString('tr-TR')}</time></article>`).join('') || '<p>Henüz olay yok.</p>'}</section>`;
-  }
-
   renderData() {
-    const content = this.dataTab === 'research' ? this.researchTemplate()
-      : this.dataTab === 'portability' ? this.portabilityTemplate()
-        : this.dataTab === 'extensions' ? this.extensionsTemplate()
-          : this.dataTab === 'team' ? this.teamTemplate() : this.structuredTemplate();
+    const content = this.dataTab === 'portability'
+      ? this.portabilityTemplate() : this.structuredTemplate();
     this.app.shell({
-      title: 'Veri ve araştırma', eyebrow: 'Yapılandır, taşı ve genişlet', route: 'data',
+      title: 'Node sistemi', eyebrow: 'Yapılandır ve taşı', route: 'data',
       actions: '<button class="round-button" data-platform-search aria-label="Ara">⌕</button>',
-      content: `<div class="data-tabs">${[['structured', 'Node sistemi'], ['research', 'Araştırma'], ['portability', 'Taşınabilirlik'], ['extensions', 'Eklentiler'], ['team', 'Team']].map(([id, label]) => `<button class="${this.dataTab === id ? 'active' : ''}" data-data-tab="${id}">${label}</button>`).join('')}</div><div class="data-workspace">${content}</div>`
+      content: `<div class="data-tabs">${[['structured', 'Node sistemi'], ['portability', 'Taşınabilirlik']].map(([id, label]) => `<button class="${this.dataTab === id ? 'active' : ''}" data-data-tab="${id}">${label}</button>`).join('')}</div><div class="data-workspace">${content}</div>`
     });
     this.bindData();
   }
@@ -543,25 +494,6 @@ export class PlatformController {
       const map = await this.app.createMap({ title: `${property} haritası`, canvas: generatePropertyMap(this.app.documents, property), open: false });
       this.app.openDocument(map.id, 'data');
     });
-    document.querySelector('#web-capture-form')?.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      try {
-        const source = await captureWebSource(Object.fromEntries(new FormData(event.currentTarget)));
-        await putDocument(source);
-        await this.app.reloadDocuments();
-        await successHaptic();
-        this.app.openDocument(source.id, 'data');
-      } catch (error) { this.app.toast(error.message, 'error'); }
-    });
-    document.querySelector('#doi-form')?.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      try {
-        const source = createDoiSource(await lookupDoi(new FormData(event.currentTarget).get('doi')));
-        await putDocument(source);
-        await this.app.reloadDocuments();
-        this.app.openDocument(source.id, 'data');
-      } catch (error) { this.app.toast(error.message, 'error'); }
-    });
     document.querySelector('[data-portable-import]')?.addEventListener('click', () => document.querySelector('#portable-file').click());
     document.querySelector('#portable-file')?.addEventListener('change', async (event) => {
       try {
@@ -581,17 +513,6 @@ export class PlatformController {
       const output = document.querySelector('#integrity-result');
       output.textContent = report.ok ? `Sorun bulunmadı · ${report.counts.documents} node denetlendi.` : `${report.issues.length} sorun bulundu.`;
       output.className = report.ok ? 'ok' : 'error';
-    });
-    document.querySelector('#team-form')?.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const data = Object.fromEntries(new FormData(event.currentTarget));
-      const members = String(data.members || '').split('\n').map((name) => name.trim()).filter(Boolean).map((name, index) => ({ id: `member-${index + 1}`, name, role: 'member' }));
-      try {
-        this.teamConfig = await teamApi.saveConfig({ ...this.teamConfig, name: data.name, members }, { expectedRevision: this.teamConfig.revision });
-        await this.refreshTeam();
-        this.app.toast('Team ayarları kaydedildi.');
-        this.renderData();
-      } catch (error) { this.app.toast(error.message, 'error'); }
     });
   }
 

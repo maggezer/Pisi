@@ -30,6 +30,10 @@ import {
   successHaptic,
   updateNativeTheme
 } from './native.js';
+import {
+  disconnectMobileSync, getMobileSyncStatus, initializeMobileSync,
+  runMobileSync, selectMobileSyncFolder
+} from './sync-service.js';
 
 const root = document.querySelector('#app');
 
@@ -135,6 +139,7 @@ class PisiApp {
     this.drawColor = '#e99a2e';
     this.drawWidth = 4;
     this.platform = new PlatformController(this);
+    this.syncStatus = { configured: false, running: false };
     this.saveActiveDebounced = debounce(() => this.saveActive(), 500);
   }
 
@@ -149,6 +154,18 @@ class PisiApp {
       await initializeNativeShell(resolveTheme(this.theme));
       this.documents = (await seedDatabase()).map(normalizeDocument);
       await this.platform.init();
+      this.syncStatus = await initializeMobileSync() || this.syncStatus;
+      document.addEventListener('pisi:sync-finished', async () => {
+        await this.reloadDocuments();
+        await this.platform.refreshFromStorage();
+        this.syncStatus = await getMobileSyncStatus();
+        if (this.route === 'settings') this.renderSettings();
+      });
+      document.addEventListener('pisi:sync-error', async (event) => {
+        this.syncStatus = await getMobileSyncStatus().catch(() => this.syncStatus);
+        this.toast(event.detail?.message || 'Senkronizasyon başarısız.', 'error');
+        if (this.route === 'settings') this.renderSettings();
+      });
       await this.bindNativeBack();
       this.render();
     } catch (error) {
@@ -624,6 +641,10 @@ class PisiApp {
   renderSettings() {
     const countNotes = this.documents.filter(({ kind }) => kind !== 'canvas').length;
     const countMaps = this.documents.filter(({ kind }) => kind === 'canvas').length;
+    const sync = this.syncStatus || {};
+    const syncDate = sync.lastSyncAt
+      ? new Date(sync.lastSyncAt).toLocaleString(this.locale === 'en' ? 'en-US' : 'tr-TR')
+      : 'Henüz senkronize edilmedi';
     this.shell({
       title: 'Ayarlar',
       eyebrow: 'Kendi düzenin',
@@ -666,9 +687,26 @@ class PisiApp {
           <h2>Çalışma alanı</h2>
           <button class="setting-action standalone" data-route="data">
             <span class="setting-icon">▦</span>
-            <span><strong>Veri, araştırma ve API</strong><small>Özellikler, görünümler, kaynaklar, dışa aktarma, eklentiler ve Team</small></span>
+            <span><strong>Node sistemi ve taşınabilirlik</strong><small>Özellikler, görünümler, şablonlar ve dışa aktarma</small></span>
             <b>›</b>
           </button>
+        </section>
+        <section class="settings-group sync-settings" aria-busy="${sync.running ? 'true' : 'false'}">
+          <h2>Senkronizasyon</h2>
+          <p class="sync-description">Google Drive, OneDrive veya Android’in sunduğu başka bir ortak klasörle masaüstü ve mobili eşitle.</p>
+          <div class="sync-status ${sync.configured ? 'connected' : ''}">
+            <span class="setting-icon">${sync.configured ? '✓' : '↔'}</span>
+            <span><strong>${sync.configured ? escapeHtml(sync.folderName || 'Pisi Sync') : 'Klasör bağlı değil'}</strong><small>${escapeHtml(syncDate)}</small></span>
+          </div>
+          <div class="sync-actions">
+            <button class="setting-action" id="sync-folder-button">
+              <span><strong>${sync.configured ? 'Klasörü değiştir' : 'Ortak klasör seç'}</strong><small>Android klasör seçicisini açar</small></span><b>›</b>
+            </button>
+            ${sync.configured ? `<button class="setting-action" id="sync-now-button" ${sync.running ? 'disabled' : ''}>
+              <span><strong>${sync.running ? 'Senkronize ediliyor…' : 'Şimdi senkronize et'}</strong><small>Değişiklikleri al ve gönder</small></span><b>↻</b>
+            </button><button class="setting-action danger" id="sync-disconnect-button"><span><strong>Bağlantıyı kes</strong><small>Yerel veriler silinmez</small></span><b>×</b></button>` : ''}
+          </div>
+          ${sync.lastResult ? `<small class="sync-result">Son işlem: ${Number(sync.lastResult.changed || 0)} değişiklik · ${Number(sync.lastResult.conflicts || 0)} çakışma kopyası · ${Number(sync.lastResult.devices || 1)} cihaz</small>` : ''}
         </section>
         <section class="settings-group">
           <h2>Verilerin</h2>
@@ -690,7 +728,7 @@ class PisiApp {
         </section>
         <section class="settings-group about-group">
           <h2>Hakkında</h2>
-          <p>Pisi 3.0 · Android telefon ve tablet sürümü</p>
+          <p>Pisi 3.1 · Android telefon ve tablet sürümü</p>
           <p>Notların bu cihazda saklanır; sen dışa aktarmadıkça başka yere gönderilmez.</p>
         </section>
       `
@@ -713,6 +751,45 @@ class PisiApp {
       this.calendarCursor = createCalendarCursor(this.calendarType);
       await setSetting('calendarType', this.calendarType);
       this.toast('Takvim tercihi kaydedildi.');
+    });
+    document.querySelector('#sync-folder-button')?.addEventListener('click', async () => {
+      try {
+        this.syncStatus = { ...this.syncStatus, running: true };
+        this.renderSettings();
+        const result = await selectMobileSyncFolder();
+        this.syncStatus = await getMobileSyncStatus();
+        await this.reloadDocuments();
+        await this.platform.refreshFromStorage();
+        await successHaptic();
+        this.toast(`${result.changed} değişiklik senkronize edildi.`);
+      } catch (error) {
+        this.syncStatus = await getMobileSyncStatus().catch(() => this.syncStatus);
+        this.toast(error?.message || 'Sync klasörü seçilemedi.', 'error');
+      }
+      this.renderSettings();
+    });
+    document.querySelector('#sync-now-button')?.addEventListener('click', async () => {
+      try {
+        if (this.activeDocument) await this.saveActiveDebounced.flush();
+        this.syncStatus = { ...this.syncStatus, running: true };
+        this.renderSettings();
+        const result = await runMobileSync({ reason: 'manual' });
+        this.syncStatus = await getMobileSyncStatus();
+        await this.reloadDocuments();
+        await this.platform.refreshFromStorage();
+        await successHaptic();
+        this.toast(`${result.changed} değişiklik senkronize edildi.`);
+      } catch (error) {
+        this.syncStatus = await getMobileSyncStatus().catch(() => this.syncStatus);
+        this.toast(error?.message || 'Senkronizasyon başarısız.', 'error');
+      }
+      this.renderSettings();
+    });
+    document.querySelector('#sync-disconnect-button')?.addEventListener('click', async () => {
+      if (!confirm('Sync klasörü bağlantısı kesilsin mi? Yerel veriler korunur.')) return;
+      await disconnectMobileSync();
+      this.syncStatus = await getMobileSyncStatus();
+      this.renderSettings();
     });
     document.querySelector('#backup-button')?.addEventListener('click', async () => {
       try {

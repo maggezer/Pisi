@@ -2106,3 +2106,27 @@ button:disabled {
   }
 }
 
+.sync-description {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.sync-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  margin-bottom: 10px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+
+.sync-status.connected .setting-icon { color: #5cbf85; }
+.sync-status span:not(.setting-icon) { display: grid; gap: 3px; }
+.sync-status small, .sync-result { color: var(--muted); }
+.sync-actions { display: grid; gap: 8px; }
+.sync-result { display: block; margin-top: 10px; line-height: 1.45; }
+.sync-settings[aria-busy="true"] { opacity: .78; }
