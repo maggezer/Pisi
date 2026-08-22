@@ -386,7 +386,11 @@ async function performPisiSync(projectFolder, folder, reason = 'manual') {
         records: finalized.records,
         clock: finalized.clock
     });
-    writeDeviceSnapshot(folder, snapshot);
+    const ownSnapshotIsCurrent = remote.snapshots.some((item) =>
+        item.deviceId === deviceId &&
+        syncCore.hashValue(item.records || []) === syncCore.hashValue(snapshot.records)
+    );
+    if (!ownSnapshotIsCurrent) writeDeviceSnapshot(folder, snapshot);
     const baseSummary = syncCore.summarizeSyncPlan(plan);
     const result = {
         ...baseSummary,

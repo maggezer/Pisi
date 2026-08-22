@@ -87,11 +87,17 @@ test('ortak klasör domaini iki bağımsız cihazda push, pull ve çakışma tur
         assert.equal(conflictResult.conflicts, 1);
         assert.equal(appliedConflicts.get(projectA), 1);
 
+        const indexPath = path.join(
+            shared, '.pisi-sync', 'devices', 'device_desktop_a', 'index.json'
+        );
+        const indexBeforeRepeat = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
         const repeated = await domain.performPisiSync(projectA, shared, 'test-conflict-repeat');
         assert.equal(repeated.conflicts, 0, 'aynı uzak çakışma ikinci kez üretilmemeli');
-        assert.ok(fs.existsSync(path.join(
-            shared, '.pisi-sync', 'devices', 'device_desktop_a', 'index.json'
-        )));
+        const indexAfterRepeat = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
+        assert.equal(
+            indexAfterRepeat.createdAt, indexBeforeRepeat.createdAt,
+            'değişmeyen snapshot bulut klasörüne tekrar yazılmamalı'
+        );
     } finally {
         fs.rmSync(root, { recursive: true, force: true });
     }
