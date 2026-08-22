@@ -50,6 +50,65 @@ function removePisiTodoCardContext(card) {
     return changed;
 }
 
+function arrangePisiTodoCardLayout(card, badge, status) {
+    if (!card || !badge || !status) return false;
+
+    const content = card.querySelector('.pisi-mission-content');
+    const main = card.querySelector('.pisi-mission-main');
+    const check = card.querySelector('.pisi-mission-check-wrap');
+    const top = card.querySelector('.pisi-mission-top');
+    if (!content || !main || !check || !top) return false;
+
+    let changed = false;
+    if (!card.classList.contains('pisi-mission-compact-card')) {
+        card.classList.add('pisi-mission-compact-card');
+        changed = true;
+    }
+
+    status.classList.add('pisi-mission-status-icon');
+    const selectedStatus = String(status.selectedOptions?.[0]?.textContent || '').trim();
+    status.title = selectedStatus || String(status.getAttribute('aria-label') || 'To-Do');
+
+    if (main.parentElement !== card) {
+        card.appendChild(main);
+        changed = true;
+    }
+    if (badge.parentElement !== card) {
+        card.appendChild(badge);
+        changed = true;
+    }
+
+    const desired = [badge, main, check, content];
+    const current = Array.from(card.children).filter((child) => desired.includes(child));
+    if (desired.some((child, index) => current[index] !== child)) {
+        desired.forEach((child) => card.appendChild(child));
+        changed = true;
+    }
+
+    if (top.parentElement !== content) {
+        content.prepend(top);
+        changed = true;
+    }
+
+    const planning = card.querySelector('.pisi-third-planning');
+    const summary = planning?.querySelector(':scope > summary');
+    if (planning) {
+        planning.classList.add('pisi-mission-planning-icon-menu');
+        if (planning.parentElement !== content) {
+            content.appendChild(planning);
+            changed = true;
+        }
+    }
+    if (summary) {
+        const label = String(summary.textContent || '').trim();
+        summary.classList.add('pisi-mission-planning-icon');
+        summary.title = label || 'Planlama';
+        summary.setAttribute('aria-label', label || 'Planlama');
+    }
+
+    return changed;
+}
+
 function normalizePisiTodoPriorityCard(card) {
     if (!card) return false;
 
@@ -61,13 +120,14 @@ function normalizePisiTodoPriorityCard(card) {
     });
 
     const top = card.querySelector('.pisi-mission-top');
-    const status = top?.querySelector('.pisi-mission-status');
+    const status = top?.querySelector('.pisi-mission-status') ||
+        card.querySelector('.pisi-mission-status');
     const meta = card.querySelector('.pisi-mission-meta');
-    if (!top || !status || !meta) return changed;
+    if (!top || !status) return changed;
 
-    let badge = top.querySelector('.pisi-mission-workorder-priority');
+    let badge = card.querySelector('.pisi-mission-workorder-priority');
     if (!badge) {
-        badge = Array.from(meta.querySelectorAll(':scope > span')).find((item) => {
+        badge = Array.from(meta?.querySelectorAll?.(':scope > span') || []).find((item) => {
             return Boolean(getPisiTodoWorkorderPriorityValue(item.textContent));
         }) || null;
     }
@@ -82,11 +142,7 @@ function normalizePisiTodoPriorityCard(card) {
     }
 
     badge.classList.add('pisi-mission-workorder-priority');
-    if (badge.parentElement !== top || badge.previousElementSibling !== status) {
-        status.after(badge);
-        changed = true;
-    }
-
+    changed = arrangePisiTodoCardLayout(card, badge, status) || changed;
     return changed;
 }
 
@@ -149,8 +205,14 @@ function bindPisiTodoPriorityCardDisplay() {
                 [...mutation.addedNodes].some((node) => (
                     node?.nodeType === Node.ELEMENT_NODE &&
                     (
-                        node.matches?.('.pisi-mission-card, .pisi-mission-meta, .pisi-mission-top, .pisi-mission-node') ||
-                        node.querySelector?.('.pisi-mission-card, .pisi-mission-meta, .pisi-mission-top, .pisi-mission-node')
+                        node.matches?.(
+                            '.pisi-mission-card, .pisi-mission-meta, .pisi-mission-top, ' +
+                            '.pisi-mission-main, .pisi-mission-node, .pisi-third-planning'
+                        ) ||
+                        node.querySelector?.(
+                            '.pisi-mission-card, .pisi-mission-meta, .pisi-mission-top, ' +
+                            '.pisi-mission-main, .pisi-mission-node, .pisi-third-planning'
+                        )
                     )
                 ))
             ));
@@ -174,6 +236,7 @@ if (document.readyState === 'loading') {
 registerModule('tags.todoPriorityCardDisplay', {
     PISI_TODO_PRIORITY_TONE_CLASSES,
     applyPisiTodoPriorityTones,
+    arrangePisiTodoCardLayout,
     bindPisiTodoPriorityCardDisplay,
     getPisiTodoWorkorderPriorityValue,
     normalizePisiTodoPriorityCard,
@@ -185,6 +248,7 @@ registerModule('tags.todoPriorityCardDisplay', {
 export {
     PISI_TODO_PRIORITY_TONE_CLASSES,
     applyPisiTodoPriorityTones,
+    arrangePisiTodoCardLayout,
     bindPisiTodoPriorityCardDisplay,
     getPisiTodoWorkorderPriorityValue,
     normalizePisiTodoPriorityCard,
