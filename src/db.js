@@ -158,7 +158,7 @@ export function makeId(prefix = 'doc') {
   const canonicalPrefix = ({
     note: 'node', journal: 'node', source: 'node', database: 'node',
     canvas: 'map', doc: 'node', history: 'history', task: 'task',
-    edge: 'edge'
+    edge: 'edge', block: 'blk'
   })[prefix] || String(prefix || 'node').replace(/[^A-Za-z0-9.-]/g, '');
   return `${canonicalPrefix}_${random}`;
 }
