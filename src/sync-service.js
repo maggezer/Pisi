@@ -3,7 +3,7 @@ import { App } from '@capacitor/app';
 import { getSetting, setSetting } from './db.js';
 import {
   foldDeviceSnapshots, makeDeviceSnapshot, makeSyncManifest,
-  planMergedRecords, prepareDeviceRecords, summarizeSyncPlan,
+  hashValue, planMergedRecords, prepareDeviceRecords, summarizeSyncPlan,
   validateSyncManifest
 } from './sync-core.js';
 import { applyMobileSyncRecords, exportMobileSyncEntities } from './sync-adapter.js';
@@ -375,7 +375,11 @@ async function performSync(reason = 'manual') {
     records: finalized.records,
     clock: finalized.clock
   });
-  await writeDeviceSnapshot(snapshot);
+  const ownSnapshotIsCurrent = remote.snapshots.some((item) =>
+    item.deviceId === state.deviceId &&
+    hashValue(item.records || []) === hashValue(snapshot.records)
+  );
+  if (!ownSnapshotIsCurrent) await writeDeviceSnapshot(snapshot);
 
   const summary = summarizeSyncPlan(plan);
   const result = {
