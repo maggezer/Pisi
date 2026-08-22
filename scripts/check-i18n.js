@@ -83,6 +83,12 @@ const TECHNICAL_UI_LITERALS = new Set([
     'Georgia'
 ]);
 
+const EXPLICIT_LOCALIZED_UI_FILES = new Set([
+    'renderer/map/pisi-map-property-badges.mjs',
+    'renderer/portability/pisi-project-integrity.mjs',
+    'renderer/shell/pisi-trash.mjs'
+]);
+
 function requireKey(value, location) {
     const clean = String(value || '').replace(/\s+/g, ' ').trim();
     if (!clean || clean.endsWith('\\')) return;
@@ -148,6 +154,7 @@ const uiPatterns = [
 for (const file of rendererUiFiles) {
     const source = read(file);
     for (const { re, name } of uiPatterns) {
+        if (name === 'UI record' && EXPLICIT_LOCALIZED_UI_FILES.has(file)) continue;
         for (const match of source.matchAll(re)) {
             const value = match[1]
                 .replace(/\\n/g, ' ')
