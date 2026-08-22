@@ -3,6 +3,7 @@
 const { app } = require('electron');
 const fs = require('fs');
 const path = require('path');
+const supplementalTranslations = require('../../locales/ui-translations.json');
 const { registerMainModule } = require('../module-registry');
 
 const PISI_DEFAULT_LANGUAGE = 'tr';
@@ -53,12 +54,14 @@ function loadPisiMainLocale(language) {
         const parsed = JSON.parse(fs.readFileSync(localePath, 'utf8'));
         locale = {
             language: normalized,
-            strings: parsed && typeof parsed.strings === 'object'
-                ? parsed.strings
-                : {}
+            strings: {
+                ...(parsed && typeof parsed.strings === 'object' ? parsed.strings : {}),
+                ...(supplementalTranslations[normalized] || {})
+            }
         };
     } catch (error) {
         console.error('[PISI] Locale file could not be read:', localePath, error);
+        locale.strings = { ...(supplementalTranslations[normalized] || {}) };
     }
 
     const templates = [];
