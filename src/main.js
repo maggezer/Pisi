@@ -1,4 +1,5 @@
 import './styles.css';
+import './platform.css';
 import {
   createDocument,
   exportDatabase,
@@ -23,6 +24,7 @@ import { PlatformController } from './platform-ui.js';
 import { parseTurkishDate } from './date-parser.js';
 import {
   initializeNativeShell,
+  isSoftKeyboardVisible,
   lightHaptic,
   onHardwareBack,
   exitNativeApp,
@@ -183,13 +185,20 @@ class PisiApp {
 
   async bindNativeBack() {
     await onHardwareBack(() => {
-      if (['editor', 'map'].includes(this.route)) {
-        this.leaveDetail();
+      if (isSoftKeyboardVisible()) return;
+
+      const overlay = document.querySelector('#platform-overlay, #todo-options-overlay');
+      if (overlay) {
+        overlay.remove();
         return;
       }
       if (this.mapEditingNode) {
         this.mapEditingNode = null;
-        this.render();
+        this.renderMapEditor();
+        return;
+      }
+      if (['editor', 'map'].includes(this.route)) {
+        this.leaveDetail();
         return;
       }
       if (this.route !== 'notes') this.navigate('notes');
@@ -203,11 +212,14 @@ class PisiApp {
   }
 
   async setTheme(theme) {
+    if (!['system', 'dark', 'light'].includes(theme)) return;
     this.theme = theme;
-    await setSetting('theme', theme);
     this.applyTheme();
+    document.querySelectorAll('button[data-theme-option]').forEach((button) => {
+      button.classList.toggle('active', button.dataset.themeOption === theme);
+    });
+    await setSetting('theme', theme);
     await updateNativeTheme(theme);
-    this.render();
   }
 
   async reloadDocuments() {
@@ -661,7 +673,7 @@ class PisiApp {
               ['dark', 'Koyu'],
               ['light', 'Açık']
             ].map(([theme, label]) => `
-              <button class="${this.theme === theme ? 'active' : ''}" data-theme="${theme}">${label}</button>
+              <button class="${this.theme === theme ? 'active' : ''}" data-theme-option="${theme}">${label}</button>
             `).join('')}
           </div>
         </section>
@@ -734,8 +746,8 @@ class PisiApp {
       `
     });
 
-    document.querySelectorAll('[data-theme]').forEach((button) => {
-      button.addEventListener('click', () => this.setTheme(button.dataset.theme));
+    document.querySelectorAll('button[data-theme-option]').forEach((button) => {
+      button.addEventListener('click', () => this.setTheme(button.dataset.themeOption));
     });
     document.querySelectorAll('[data-locale]').forEach((button) => {
       button.addEventListener('click', async () => {
@@ -835,7 +847,8 @@ class PisiApp {
           <button class="back-button" id="detail-back" aria-label="Geri">‹</button>
           <div class="detail-title-wrap">
             <span>${isJournal ? 'Günlük' : note.kind === 'source' ? 'Kaynak' : note.kind === 'database' ? 'Veritabanı' : 'Not'}</span>
-            <input id="note-title" value="${escapeHtml(note.title)}" aria-label="Not başlığı" />
+            <input id="note-title" value="${escapeHtml(note.title)}" aria-label="Not başlığı"
+              autocomplete="off" autocapitalize="sentences" enterkeyhint="next" />
           </div>
           <div class="detail-actions"><button class="round-button" id="document-tools" aria-label="Belge araçları">•••</button><button class="round-button danger-quiet" id="delete-note" aria-label="Notu sil">×</button></div>
         </header>
@@ -886,6 +899,7 @@ class PisiApp {
           ${this.platform.toolbarExtensionsTemplate()}
         </div>
         <article id="rich-editor" class="rich-editor" contenteditable="true" spellcheck="true"
+          inputmode="text" enterkeyhint="enter" autocapitalize="sentences"
           data-placeholder="Yazmaya başla…">${sanitizeRichHtml(this.activeDocument.content)}</article>
       </section>
     `;
@@ -956,9 +970,15 @@ class PisiApp {
   bindEditor() {
     document.querySelector('#detail-back')?.addEventListener('click', () => this.leaveDetail());
     document.querySelector('#document-tools')?.addEventListener('click', () => this.platform.openDocumentPanel());
-    document.querySelector('#note-title')?.addEventListener('input', (event) => {
+    const titleInput = document.querySelector('#note-title');
+    titleInput?.addEventListener('input', (event) => {
       this.activeDocument.title = event.target.value;
       this.scheduleSave();
+    });
+    titleInput?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      document.querySelector('#rich-editor')?.focus({ preventScroll: true });
     });
     document.querySelector('#delete-note')?.addEventListener('click', () => this.deleteActiveDocument());
     document.querySelectorAll('[data-editor-tab]').forEach((button) => {
@@ -1021,7 +1041,17 @@ class PisiApp {
       document.querySelector('#todo-options-overlay')?.remove();
       document.body.insertAdjacentHTML('beforeend', `<div id="todo-options-overlay" class="platform-overlay todo-options-overlay"><form class="todo-options-card"><header><strong>Görev ayrıntıları</strong><button type="button" data-todo-cancel>×</button></header><label>Önem<select name="importance"><option value="normal">Normal</option><option value="high">Yüksek</option><option value="urgent">Acil</option><option value="low">Düşük</option></select></label><label>Tarih<input name="date" placeholder="yarın, cuma 14:00"></label><button class="primary-button">Checkbox ekle</button></form></div>`);
       const overlay = document.querySelector('#todo-options-overlay');
-      overlay.querySelector('[data-todo-cancel]').addEventListener('click', () => overlay.remove());
+      const restoreEditorFocus = () => requestAnimationFrame(() => {
+        if (savedRange && editor.isConnected) {
+          selection.removeAllRanges();
+          selection.addRange(savedRange);
+        }
+        editor.focus({ preventScroll: true });
+      });
+      overlay.querySelector('[data-todo-cancel]').addEventListener('click', () => {
+        overlay.remove();
+        restoreEditorFocus();
+      });
       overlay.querySelector('form').addEventListener('submit', (submitEvent) => {
         submitEvent.preventDefault();
         const values = Object.fromEntries(new FormData(submitEvent.currentTarget));
@@ -1040,6 +1070,7 @@ class PisiApp {
         });
         editor.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
         overlay.remove();
+        restoreEditorFocus();
       });
     });
     document.querySelector('#text-color')?.addEventListener('input', (event) => {
@@ -1331,8 +1362,10 @@ class PisiApp {
             <h2>Düğümü düzenle</h2>
             <button id="close-node-sheet">Bitti</button>
           </div>
-          <label>Başlık<input id="node-sheet-title" value="${escapeHtml(node.title || '')}" /></label>
-          <label>Not<textarea id="node-sheet-content" rows="8" placeholder="Bu fikirle ilgili ayrıntılar…">${escapeHtml(htmlToText(node.content || ''))}</textarea></label>
+          <label>Başlık<input id="node-sheet-title" value="${escapeHtml(node.title || '')}"
+            autocomplete="off" autocapitalize="sentences" enterkeyhint="next" /></label>
+          <label>Not<textarea id="node-sheet-content" rows="8" placeholder="Bu fikirle ilgili ayrıntılar…"
+            autocapitalize="sentences" enterkeyhint="done">${escapeHtml(htmlToText(node.content || ''))}</textarea></label>
         </section>
       </div>
     `;
@@ -1628,6 +1661,11 @@ class PisiApp {
     document.querySelector('#node-sheet-title')?.addEventListener('input', (event) => {
       node.title = event.target.value;
       this.scheduleSave();
+    });
+    document.querySelector('#node-sheet-title')?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      document.querySelector('#node-sheet-content')?.focus({ preventScroll: true });
     });
     document.querySelector('#node-sheet-content')?.addEventListener('input', (event) => {
       node.content = `<p>${escapeHtml(event.target.value).replaceAll('\n', '<br>')}</p>`;

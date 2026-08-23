@@ -2,20 +2,33 @@ import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
-import { Keyboard } from '@capacitor/keyboard';
+import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
 import { Share } from '@capacitor/share';
 import { StatusBar, Style } from '@capacitor/status-bar';
+import { installMobileViewport } from './mobile-viewport.js';
 
 export const isNative = Capacitor.isNativePlatform();
+let viewportController;
 
 export async function initializeNativeShell(theme = 'dark') {
+  viewportController ||= installMobileViewport({
+    keyboard: isNative ? Keyboard : null,
+    isNative
+  });
   if (!isNative) return;
 
-  await Promise.allSettled([
+  const nativeTasks = [
     StatusBar.setStyle({ style: theme === 'light' ? Style.Dark : Style.Light }),
-    StatusBar.setBackgroundColor({ color: theme === 'light' ? '#fbf7f1' : '#171310' }),
-    Keyboard.setResizeMode({ mode: 'body' })
-  ]);
+    StatusBar.setBackgroundColor({ color: theme === 'light' ? '#fbf7f1' : '#171310' })
+  ];
+  if (Capacitor.getPlatform() === 'ios') {
+    nativeTasks.push(Keyboard.setResizeMode({ mode: KeyboardResize.Native }));
+  }
+  await Promise.allSettled(nativeTasks);
+}
+
+export function isSoftKeyboardVisible() {
+  return viewportController?.isKeyboardVisible() || false;
 }
 
 export async function updateNativeTheme(theme) {

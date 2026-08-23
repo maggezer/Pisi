@@ -37,6 +37,7 @@ npm run dev
 Test ve üretim derlemesi:
 
 ```bash
+npm run test:server
 npm test
 npm run build
 ```
@@ -53,4 +54,4 @@ Android Studio’da cihaz veya emülatör seçip **Run** düğmesine basın. Kom
 
 `mobile5` dalına gönderilen commit’lerde ve `mobile5` hedefli pull request’lerde Android APK iş akışı testleri çalıştırır ve `Pisi-android-debug` artifact’ini üretir.
 
-Kurulum ve gerçek cihaz testi için [Pisi Sync uygulama kılavuzuna](docs/pisi-sync-guide-tr.md) bakın.
+Klavye, dokunmatik akışlar, APK kurulumu ve Samsung cihaz kontrol listesi için [mobil doğrulama kılavuzuna](docs/mobile-qa.md) bakın. Ortak klasör kurulumu için [Pisi Sync uygulama kılavuzu](docs/pisi-sync-guide-tr.md) ayrıntılı adımları içerir.

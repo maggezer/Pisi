@@ -19,6 +19,14 @@ const TODAY = () => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
 
+function focusField(element) {
+  requestAnimationFrame(() => {
+    if (!element?.isConnected) return;
+    element.focus({ preventScroll: true });
+    element.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+  });
+}
+
 function routeLabel(route) {
   return ({ notes: 'Notlar', maps: 'Haritalar', tasks: 'Görevler', calendar: 'Takvim', data: 'Node sistemi', settings: 'Ayarlar' })[route] || 'Pisi';
 }
@@ -300,7 +308,8 @@ export class PlatformController {
       title: 'Görevler', eyebrow: 'Hızlı yakala ve planla', route: 'tasks',
       actions: '<button class="round-button" data-platform-quick-task aria-label="Hızlı görev">＋</button>',
       content: `<section class="task-capture-card"><form id="task-capture-form">
-          <input name="text" placeholder="Görev yaz; ör. rapor yarın 14:00 45 dk" autocomplete="off" required>
+          <input name="text" placeholder="Görev yaz; ör. rapor yarın 14:00 45 dk" autocomplete="off"
+            autocapitalize="sentences" enterkeyhint="send" required>
           <button type="submit">Ekle</button></form><small>Türkçe tarih, saat, tekrar ve süre ifadelerini anlayabilir.</small></section>
         <div class="task-view-tabs">${[['inbox', 'Inbox'], ['today', 'Bugün'], ['upcoming', 'Yaklaşan'], ['done', 'Tamamlanan']].map(([id, label]) => `<button class="${this.taskView === id ? 'active' : ''}" data-task-view="${id}">${label}<span>${this.tasks.filter((task) => taskGroup(task, id)).length}</span></button>`).join('')}</div>
         <section class="task-list">${visible.length ? visible.map(({ task, depth }) => `<article class="task-row ${task.done ? 'done' : ''}" data-task-id="${task.id}" style="--task-depth:${Math.min(depth, 4)}">
@@ -366,7 +375,7 @@ export class PlatformController {
   openQuickTask() {
     document.querySelector('#platform-overlay')?.remove();
     document.body.insertAdjacentHTML('beforeend', `<div id="platform-overlay" class="platform-overlay"><section class="quick-task-sheet"><header><div><small>Global Quick Add</small><h2>Görevi yakala</h2></div><button type="button" data-overlay-close>×</button></header>
-      <form id="quick-task-form"><label>Görev<input name="text" required autofocus placeholder="Ne yapılacak?"></label><label>Tarih ifadesi<input name="dateExpression" placeholder="yarın 14:00, cuma, 12 Eylül"></label><div class="quick-task-fields"><label>Önem<select name="importance"><option value="normal">Normal</option><option value="high">Yüksek</option><option value="urgent">Acil</option><option value="low">Düşük</option></select></label><label>Süre<input name="durationMinutes" type="number" min="0" step="5" placeholder="dk"></label></div><output id="quick-task-preview"></output><button class="primary-button">Inbox’a ekle</button></form></section></div>`);
+      <form id="quick-task-form"><label>Görev<input name="text" required placeholder="Ne yapılacak?" autocomplete="off" autocapitalize="sentences" enterkeyhint="next"></label><label>Tarih ifadesi<input name="dateExpression" placeholder="yarın 14:00, cuma, 12 Eylül" autocomplete="off" enterkeyhint="next"></label><div class="quick-task-fields"><label>Önem<select name="importance"><option value="normal">Normal</option><option value="high">Yüksek</option><option value="urgent">Acil</option><option value="low">Düşük</option></select></label><label>Süre<input name="durationMinutes" type="number" min="0" step="5" inputmode="numeric" placeholder="dk" enterkeyhint="done"></label></div><output id="quick-task-preview"></output><button class="primary-button">Inbox’a ekle</button></form></section></div>`);
     const overlay = document.querySelector('#platform-overlay');
     const form = overlay.querySelector('#quick-task-form');
     const preview = overlay.querySelector('#quick-task-preview');
@@ -384,7 +393,7 @@ export class PlatformController {
     });
     overlay.querySelector('[data-overlay-close]').addEventListener('click', () => overlay.remove());
     overlay.addEventListener('click', (event) => { if (event.target === overlay) overlay.remove(); });
-    setTimeout(() => form.elements.text.focus(), 30);
+    focusField(form.elements.text);
   }
 
   openGlobalSearch() {
@@ -395,7 +404,7 @@ export class PlatformController {
       this.searchSignature = signature;
     }
     const index = this.searchCache;
-    document.body.insertAdjacentHTML('beforeend', `<div id="platform-overlay" class="platform-overlay search-overlay"><section class="global-search-panel"><header><span>⌕</span><input id="global-search-input" placeholder="Not, blok, görev, özellik veya harita düğümü ara" autocomplete="off"><kbd>Esc</kbd><button data-overlay-close>×</button></header><div id="global-search-results" class="global-search-results"></div></section></div>`);
+    document.body.insertAdjacentHTML('beforeend', `<div id="platform-overlay" class="platform-overlay search-overlay"><section class="global-search-panel"><header><span>⌕</span><input id="global-search-input" placeholder="Not, blok, görev, özellik veya harita düğümü ara" autocomplete="off" enterkeyhint="search"><kbd>Esc</kbd><button data-overlay-close>×</button></header><div id="global-search-results" class="global-search-results"></div></section></div>`);
     const overlay = document.querySelector('#platform-overlay');
     const input = overlay.querySelector('#global-search-input');
     const results = overlay.querySelector('#global-search-results');
@@ -416,7 +425,7 @@ export class PlatformController {
     overlay.querySelector('[data-overlay-close]').addEventListener('click', () => overlay.remove());
     overlay.addEventListener('click', (event) => { if (event.target === overlay) overlay.remove(); });
     render();
-    setTimeout(() => input.focus(), 20);
+    focusField(input);
   }
 
   structuredTemplate() {
@@ -509,10 +518,17 @@ export class PlatformController {
       if (documentRow) await exportDocument(documentRow, button.dataset.portableExport);
     }));
     document.querySelector('[data-integrity-check]')?.addEventListener('click', async () => {
-      const report = await inspectDatabaseIntegrity();
       const output = document.querySelector('#integrity-result');
-      output.textContent = report.ok ? `Sorun bulunmadı · ${report.counts.documents} node denetlendi.` : `${report.issues.length} sorun bulundu.`;
-      output.className = report.ok ? 'ok' : 'error';
+      output.textContent = 'Denetleniyor…';
+      output.className = '';
+      try {
+        const report = await inspectDatabaseIntegrity();
+        output.textContent = report.ok ? `Sorun bulunmadı · ${report.counts.documents} node denetlendi.` : `${report.issues.length} sorun bulundu.`;
+        output.className = report.ok ? 'ok' : 'error';
+      } catch (error) {
+        output.textContent = error?.message || 'Proje bütünlüğü denetlenemedi.';
+        output.className = 'error';
+      }
     });
   }
 

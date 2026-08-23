@@ -12,6 +12,7 @@
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run",
+    "test:server": "node scripts/local-server-smoke.mjs",
     "test:watch": "vitest",
     "android:sync": "npm run build && cap sync android",
     "android:open": "cap open android",

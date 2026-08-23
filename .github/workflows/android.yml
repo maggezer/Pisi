@@ -38,6 +38,9 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Check local Vite server
+        run: npm run test:server
+
       - name: Build and sync Android
         run: npm run android:sync
 
