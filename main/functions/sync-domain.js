@@ -69,11 +69,12 @@ function assertFolder(folderPath, projectFolder) {
     if (!fs.statSync(folder).isDirectory()) throw new Error('Sync hedefi bir klasör olmalı.');
     const relativeFromProject = path.relative(projectFolder, folder);
     const relativeFromSync = path.relative(folder, projectFolder);
+    if (relativeFromProject === '') return folder;
     const nested = (relative) => relative === '' || (
         relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative)
     );
     if (nested(relativeFromProject) || nested(relativeFromSync)) {
-        throw new Error('Sync klasörü proje klasörünün içinde veya üstünde olamaz. Ayrı bir ortak klasör seçin.');
+        throw new Error('Proje kökünün kendisini seçin; proje içindeki bir alt klasör veya üst klasör kullanılamaz.');
     }
     return folder;
 }
@@ -396,6 +397,9 @@ async function performPisiSync(projectFolder, folder, reason = 'manual') {
         ...baseSummary,
         conflicts: applied.conflicts,
         recoveredToSyncTrash: applied.recoveredToSyncTrash,
+        filesVerified: finalized.records.filter((record) =>
+            !record.deleted && (record.kind === 'node' || record.kind === 'map')
+        ).length,
         warnings: remote.warnings,
         devices: new Set(remote.snapshots.map((item) => item.deviceId).filter(Boolean)).size +
             (remote.snapshots.some((item) => item.deviceId === deviceId) ? 0 : 1),
@@ -436,7 +440,8 @@ function runPisiSync(options = {}) {
 async function selectPisiSyncFolder() {
     const projectFolder = activeProject();
     const options = {
-        title: 'Pisi Sync ortak klasörünü seç',
+        title: 'Açık Pisi projesinin kök klasörünü seç',
+        defaultPath: projectFolder,
         properties: ['openDirectory', 'createDirectory']
     };
     const owner = globalThis.mainWindow;
@@ -465,6 +470,9 @@ function getPisiSyncStatus() {
             configured: Boolean(config.folder && fs.existsSync(config.folder)),
             folderName: config.folder ? path.basename(config.folder) : '',
             folderPath: config.folder || '',
+            usesProjectRoot: Boolean(
+                config.folder && path.resolve(config.folder) === path.resolve(projectFolder)
+            ),
             projectId: state.projectId,
             deviceId: config.sync.deviceId,
             lastSyncAt: state.lastSyncAt,
@@ -495,6 +503,7 @@ const moduleApi = {
     MANIFEST_RELATIVE,
     DEVICES_RELATIVE,
     atomicWriteJson,
+    assertFolder,
     readSnapshots,
     performPisiSync,
     runPisiSync,

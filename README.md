@@ -136,12 +136,12 @@ kullanıcı verileri harici bir uygulama veritabanına taşınmaz.
 
 ## Cihazlar arası senkronizasyon
 
-Workspace Center → Ayarlar bölümündeki Pisi Sync; node, map, görev, semantic
-ilişki ve yapılandırılmış veri sözleşmelerini Android sürümüyle çift yönlü
-eşitler. Google Drive, OneDrive veya iki cihazda ortak klasör olarak görünen
-başka bir sağlayıcı kullanılabilir. Yerel proje dosyaları kaynak olmaya devam
-eder; silmeler kurtarılabilir, eşzamanlı düzenlemeler çakışma kopyasıyla
-korunur. Kurulum ve kabul testi için
+Workspace Center → Ayarlar bölümündeki Pisi Sync; masaüstünde açık olan gerçek
+proje kökünü Android sürümüyle çift yönlü eşitler. Google Drive, OneDrive veya
+iki cihazda aynı klasörü gösteren başka bir sağlayıcı kullanılabilir. Okunabilir
+`.node/.map` proje dosyaları kaynak olmaya devam eder; `.pisi-sync` yalnız sürüm
+ve çakışma metadatasıdır. Silmeler kurtarılabilir, eşzamanlı düzenlemeler
+çakışma kopyasıyla korunur. Kurulum ve kabul testi için
 [`docs/pisi-sync-guide-tr.md`](docs/pisi-sync-guide-tr.md) dosyasına bakın.
 
 ## Paketleme

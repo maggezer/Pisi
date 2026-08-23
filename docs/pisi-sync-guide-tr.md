@@ -1,50 +1,61 @@
-# Pisi Desktop ↔ Android senkronizasyonu
+# Pisi Desktop ↔ Android ortak proje klasörü
 
-Pisi Sync yerel-önceliklidir. Desktop `.node`, `.map` ve `.pisi` proje kayıtlarını; Android ise IndexedDB kayıtlarını kaynak olarak kullanmaya devam eder. Ortak klasörde sadece sağlayıcıdan bağımsız `.pisi-sync` anlık görüntüleri tutulur.
+Senkronizasyonun kaynağı okunabilir Pisi proje dosyalarıdır. Desktop ve Android aynı Google Drive/OneDrive proje kökünü kullanır; `.node`, `.map`, `nd_…` yan klasörleri ve `.pisi` authority dosyaları doğrudan bu kökte bulunur. `.pisi-sync` yalnız sürüm, silme ve çakışma metadatasıdır.
 
 ## Kurulum
 
-1. Windows’ta Google Drive for desktop veya OneDrive’ı kurup oturum açın.
-2. Bulut alanında boş bir `Pisi Sync` klasörü oluşturun.
-3. Pisi Desktop’ta yerel Pisi projenizi açın.
-4. Workspace Center → Ayarlar → Cihazlar arası senkronizasyon → `Ortak klasör seç` yoluyla bu klasörü seçin.
-5. Android’de aynı sağlayıcı hesabını açın.
-6. Pisi Mobile → Ayarlar → Senkronizasyon → `Ortak klasör seç` yoluna gidin.
-7. Android’in sistem klasör seçicisinden aynı klasörü seçip kalıcı okuma/yazma izni verin.
-8. Her iki cihazda `Şimdi senkronize et`e birer kez basın.
+1. Google Drive for desktop veya OneDrive’ı kurup oturum açın.
+2. Eşlenen alanda `Pisi Projem` adlı bir klasör oluşturun ya da mevcut Pisi projenizi bütün dosya ve yan klasörleriyle buraya taşıyın.
+3. Pisi Desktop’ta bu `Pisi Projem` klasörünü açın.
+4. Workspace Center → Ayarlar → Cihazlar arası senkronizasyon → `Proje kökünü seç` yoluna gidin.
+5. Dosya seçicide açık projenin **aynı kök klasörünü** seçin. Alt klasör veya üst klasör kabul edilmez.
+6. Android’de aynı bulut hesabını açın.
+7. Pisi Mobile → Ayarlar → Not çalışma klasörü → `Not çalışma klasörü seç` yoluna gidin.
+8. Android sistem seçicisinde aynı `Pisi Projem` kökünü seçip **Bu klasörü kullan** onayını verin. `.pisi-sync` alt klasörünü seçmeyin.
+9. Bulut aktarımını bekleyip her iki uygulamada birer kez `Şimdi senkronize et`e basın.
 
-OneDrive/Google Drive zorunlu değildir. Windows ve Android’de aynı klasörü görünür kılan, Android Storage Access Framework ile seçilebilen başka bir çift yönlü klasör aracı da kullanılabilir.
+Android ayrı bir “tüm dosyalar” izni istemez. **Bu klasörü kullan** onayı yalnız seçilen proje köküne kalıcı okuma-yazma yetkisidir.
 
-Resmî başvuru bağlantıları: [Google Drive for desktop kurulumu](https://support.google.com/drive/answer/10838124?hl=tr), [OneDrive klasör eşitleme](https://support.microsoft.com/en-us/onedrive/sync-your-computer-s-files-and-folders-with-onedrive), [Android klasör erişimi](https://developer.android.com/training/data-storage/shared/documents-files).
+## Beklenen klasör
 
-## Otomatik çalışma
+```text
+Pisi Projem/
+├── Not__node_….node
+├── Harita__map_….map
+├── nd_Harita__map_…/
+├── .pisi/
+│   ├── tasks.json
+│   └── relationships.json
+└── .pisi-sync/
+    ├── manifest.json
+    ├── workspace-files.json
+    └── devices/
+```
 
-- Desktop başlangıç, pencere odağı, düzenleme tetikleyicileri ve 60 saniyelik kontrol ile eşitler.
-- Android başlangıç, resume ve yerel değişikliklerden yaklaşık 1,8 saniye sonra eşitler.
-- Sağlayıcı çevrimdışıyken yerel çalışma devam eder. Bir sonraki başarılı deneme değişiklikleri birleştirir.
+## Davranış
 
-## Veri ve güvenlik davranışı
+- Desktop ve mobil aynı `.node/.map` içeriklerini çift yönlü okur ve yazar.
+- Desktop başlangıçta, odak değişiminde, yerel düzenlemelerden sonra ve periyodik olarak eşitler.
+- Mobil başlangıçta, uygulamaya dönüşte, yerel değişikliklerden sonra ve manuel düğmeyle eşitler.
+- Mobil, gerçek proje dosyalarını yazıp aynı baytları geri okumadan ve klasör listesinde görmeden başarı göstermez.
+- Silmeler tombstone olarak yayılır; Desktop’ta uzaktan silinen dosya `.pisi/sync-trash/` altında kurtarılabilir.
+- Eşzamanlı çevrimdışı düzenlemede deterministik kazanan kalır, diğer içerik çakışma kopyası olarak korunur.
 
-- Node, map, first-class görev, semantic ilişki, property schema, kayıtlı görünüm ve şablonlar eşitlenir.
-- Silmeler sürümlü tombstone olarak yayılır.
-- Desktop’ta uzaktan silinen proje dosyası kalıcı silinmez; `.pisi/sync-trash/<zaman>/` altına taşınır.
-- Aynı kayıt iki cihazda çevrimdışıyken değişirse Lamport sürümüyle deterministik kazanan seçilir, kaybeden içerik `Sync çakışması - cihaz…` kopyası olarak korunur.
-- Her cihaz yalnız kendi `devices/<deviceId>/` indeks ve parça kümesini yazar; iki cihaz aynı uzak anlık görüntüyü eşzamanlı yazmaz.
-- Dosyalar geçici dosya + atomik rename ile yayımlanır. Manifest proje kimliğini ve protokol sürümünü doğrular.
+## Kabul testi
 
-## Beş dakikalık kabul testi
-
-1. Desktop’ta `Sync kabul testi` node’u, bir harita ve bir görev oluşturup Sync’e basın.
-2. Bulut istemcisinin aktarımı bitince mobilde Sync’e basın; üçünü de açın.
-3. Mobilde node metnini, harita düğümünü ve görev durumunu değiştirip Sync’e basın.
-4. Desktop’ta Sync’e basın ve üç değişikliği doğrulayın.
-5. Aynı node’u iki cihaz çevrimdışıyken farklı düzenleyin; cihazları sırayla çevrimiçi yapıp eşitleyin. Normal node yanında bir çakışma kopyası oluşmalıdır.
-6. Mobilde test node’unu silip iki cihazı eşitleyin. Desktop’ta `.pisi/sync-trash` kurtarma kaydını doğrulayın.
+1. Desktop’ta `Sync kabul testi` notu, bir harita ve görev oluşturun; senkronize edin.
+2. Drive/OneDrive aktarımından sonra mobilde senkronize edin ve üçünü açın.
+3. Mobilde not metnini, harita düğümünü ve görev durumunu değiştirin; senkronize edin.
+4. Mobil Ayarlar’da gerçek dosya doğrulama sayısını ve `.node/.map` dosya kanıtını kontrol edin.
+5. Desktop’ta senkronize edip üç değişikliği doğrulayın.
+6. Aynı notu iki cihaz çevrimdışıyken farklı değiştirip sırayla eşitleyin; çakışma kopyası oluşmalıdır.
+7. Bir notu mobilde silip iki cihazı eşitleyin; Desktop’ta `.pisi/sync-trash` kaydını doğrulayın.
 
 ## Sorun giderme
 
-- `Ortak klasör bağlı değil`: doğru projeyi açın ve Ayarlar’dan klasörü yeniden seçin.
-- Android’de sağlayıcı görünmüyor: sağlayıcı uygulamasını açın, oturumu doğrulayın ve sistem Dosyalar uygulamasına dönün.
-- Değişiklik gelmiyor: bulut istemcisinin aktarım durumunu bekleyip iki cihazda manuel Sync çalıştırın.
+- Klasörde yalnız `.pisi-sync` görünüyor ve `.node/.map` görünmüyorsa eski ayrı aktarım klasörü seçilmiştir. Gerçek proje kökünü yeniden seçin.
+- Android’de izin tekrar sorulmuyorsa kalıcı yetki hâlâ geçerlidir; mobil Ayarlar’daki izin satırını kontrol edin veya klasör iznini yenileyin.
+- Sağlayıcı görünmiyorsa Drive/OneDrive uygulamasını açıp oturumu doğrulayın.
+- İki cihazda manuel senkronizasyona basmadan önce bulut aktarımının bitmesini bekleyin.
 - `.pisi-sync` içindeki JSON dosyalarını elle düzenlemeyin.
-- Sync yedek değildir; Pisi’nin yedek özelliğini ayrıca kullanın.
+- Senkronizasyon yedek değildir; düzenli Pisi yedeği alın.

@@ -55,6 +55,26 @@ const node = (title) => ({
     kind: 'node', id: 'node_alpha', payload: { title, content: title }
 });
 
+test('açık projenin gerçek kökü sync hedefi olarak seçilebilir', async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-sync-root-'));
+    const child = path.join(root, 'alt-klasor');
+    fs.mkdirSync(child);
+    try {
+        assert.equal(domain.assertFolder(root, root), fs.realpathSync.native(root));
+        assert.throws(
+            () => domain.assertFolder(child, root),
+            /Proje kökünün kendisini seçin/
+        );
+        currentDevice = 'device_desktop_root';
+        projectEntities.set(root, [node('Kökteki gerçek not')]);
+        const result = await domain.performPisiSync(root, root, 'project-root');
+        assert.equal(result.filesVerified, 1);
+        assert.ok(fs.existsSync(path.join(root, '.pisi-sync', 'manifest.json')));
+    } finally {
+        fs.rmSync(root, { recursive: true, force: true });
+    }
+});
+
 test('ortak klasör domaini iki bağımsız cihazda push, pull ve çakışma turunu tamamlar', async () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-sync-domain-'));
     const shared = path.join(root, 'shared');

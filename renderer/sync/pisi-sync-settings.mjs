@@ -51,6 +51,7 @@ async function refreshPisiSyncSettings(section) {
     if (status.lastResult) {
         result.hidden = false;
         result.textContent = [
+            `${Number(status.lastResult.filesVerified || 0)} ${pisiSyncTranslate('gerçek proje dosyası')}`,
             `${Number(status.lastResult.changed || 0)} ${pisiSyncTranslate('değişiklik')}`,
             `${Number(status.lastResult.conflicts || 0)} ${pisiSyncTranslate('çakışma kopyası')}`,
             `${Number(status.lastResult.devices || 1)} ${pisiSyncTranslate('cihaz')}`
