@@ -19,7 +19,12 @@ const harness = vi.hoisted(() => {
       provider: 'com.google.android.apps.docs.storage'
     },
     failWrites: false,
-    failDeletes: false
+    failDeletes: false,
+    failWritePattern: '',
+    backup: {
+      format: 'pisi-backup', version: 4,
+      documents: [], tasks: [], histories: [], settings: {}
+    }
   };
   const plugin = {
     chooseFolder: vi.fn(async () => ({ ...data.folder })),
@@ -29,9 +34,14 @@ const harness = vi.hoisted(() => {
       content: data.files.get(path) || ''
     })),
     writeText: vi.fn(async ({ path, content }) => {
-      if (data.failWrites) throw new Error('Sağlayıcı yazmayı reddetti.');
+      if (data.failWrites || (data.failWritePattern && path.includes(data.failWritePattern))) {
+        throw new Error('Sağlayıcı yazmayı reddetti.');
+      }
       data.files.set(path, content);
-      return { ok: true, bytes: content.length };
+      return {
+        ok: true, verified: true, listed: true, jsonParsed: true,
+        bytes: content.length, path, completedAt: new Date().toISOString()
+      };
     }),
     listFiles: vi.fn(async ({ path }) => {
       const prefix = path ? `${path}/` : '';
@@ -44,8 +54,38 @@ const harness = vi.hoisted(() => {
     deleteFile: vi.fn(async ({ path }) => {
       if (data.failDeletes) throw new Error('Sağlayıcı silmeyi reddetti.');
       data.files.delete(path);
-      return { ok: true };
+      return { ok: true, verified: true };
     }),
+    moveEntry: vi.fn(async ({ fromPath, toPath }) => {
+      const rows = Array.from(data.files.entries()).filter(([path]) => (
+        path === fromPath || path.startsWith(`${fromPath}/`)
+      ));
+      if (!rows.length) {
+        const alreadyMoved = Array.from(data.files.keys()).some((path) => (
+          path === toPath || path.startsWith(`${toPath}/`)
+        ));
+        return {
+          ok: true, verified: alreadyMoved, moved: false,
+          missing: !alreadyMoved, alreadyMoved
+        };
+      }
+      if (Array.from(data.files.keys()).some((path) => path === toPath || path.startsWith(`${toPath}/`))) {
+        throw new Error('Taşıma hedefi zaten var.');
+      }
+      for (const [path, content] of rows) {
+        data.files.delete(path);
+        data.files.set(`${toPath}${path.slice(fromPath.length)}`, content);
+      }
+      return { ok: true, verified: true, moved: true, missing: false };
+    }),
+    probeFolder: vi.fn(async () => {
+      if (data.failWrites) throw new Error('Sağlayıcı yazmayı reddetti.');
+      return {
+        ok: true, verified: true, created: true, readBack: true,
+        listed: true, deleted: true, checkedAt: new Date().toISOString()
+      };
+    }),
+    openDriveSync: vi.fn(async () => ({ opened: true, installed: true })),
     disconnect: vi.fn(async () => {
       data.folder.configured = false;
     })
@@ -72,6 +112,7 @@ vi.mock('@capacitor/app', () => ({
 }));
 
 vi.mock('./db.js', () => ({
+  exportDatabase: vi.fn(async () => structuredClone(harness.data.backup)),
   getSetting: vi.fn(async (key, fallback = null) => (
     harness.data.settings.has(key)
       ? structuredClone(harness.data.settings.get(key))
@@ -79,12 +120,17 @@ vi.mock('./db.js', () => ({
   )),
   setSetting: vi.fn(async (key, value) => {
     harness.data.settings.set(key, structuredClone(value));
-  })
+  }),
+  installDurableMutationHandler: vi.fn()
 }));
 
 vi.mock('./sync-adapter.js', () => ({
   exportMobileSyncEntities: harness.adapter.exportEntities,
-  applyMobileSyncRecords: harness.adapter.applyRecords
+  applyMobileSyncRecords: harness.adapter.applyRecords,
+  preserveMobileSyncConflicts: vi.fn((records) => ({
+    records: structuredClone(records.filter((record) => !record.deleted)),
+    log: []
+  }))
 }));
 
 import {
@@ -142,11 +188,24 @@ beforeEach(() => {
   };
   harness.data.failWrites = false;
   harness.data.failDeletes = false;
+  harness.data.failWritePattern = '';
+  harness.data.backup = {
+    format: 'pisi-backup', version: 4,
+    documents: [], tasks: [], histories: [], settings: {}
+  };
   Object.values(harness.plugin).forEach((mock) => mock.mockClear?.());
   Object.values(harness.adapter).forEach((mock) => mock.mockClear?.());
 });
 
 describe('mobile folder-backed synchronization', () => {
+  it('treats a persisted SAF grant as configured after process restart', async () => {
+    harness.data.folder.uri = 'content://com.android.externalstorage.documents/tree/primary%3APisi';
+    const status = await getMobileSyncStatus();
+    expect(status.configured).toBe(true);
+    expect(status.permissionPersisted).toBe(true);
+    expect(status.folderUri).toContain('content://');
+  });
+
   it('joins the desktop project when .pisi-sync itself was selected', async () => {
     const projectId = 'project_shared';
     harness.data.folder.name = '.pisi-sync';
@@ -181,12 +240,18 @@ describe('mobile folder-backed synchronization', () => {
     expect(paths).toContain('.pisi-sync/manifest.json');
     expect(paths.some((path) => path.startsWith('.pisi-sync/devices/device_'))).toBe(true);
     expect(paths.some((path) => path.startsWith('.pisi-sync/.pisi-sync/'))).toBe(false);
-    expect(result.uploadedRecords).toBe(1);
+    expect(result.uploadedRecords).toBe(4); // node + three canonical config authorities
     expect(result.filesVerified).toBe(1);
     expect(result.filesWritten).toBe(1);
     const nodePath = paths.find((path) => path.endsWith('.node'));
     expect(nodePath).toBeTruthy();
     expect(JSON.parse(harness.data.files.get(nodePath)).pisi.id).toBe('node_mobile');
+    expect(harness.plugin.writeText).toHaveBeenCalledWith(expect.objectContaining({
+      path: nodePath,
+      expectedId: 'node_mobile',
+      expectedType: 'node'
+    }));
+    expect(harness.plugin.probeFolder).toHaveBeenCalled();
     expect(result.peerDevices).toBe(0);
     expect(status.layout).toBe('nested');
     expect(status.storagePath).toBe('Pisi Sync/.pisi-sync');
@@ -219,6 +284,26 @@ describe('mobile folder-backed synchronization', () => {
     expect(result.filesVerified).toBe(1);
     expect(result.visibleFiles).toContain('Masaüstü Notu.node');
     expect(harness.data.files.has('.pisi-sync/workspace-files.json')).toBe(true);
+  });
+
+  it('detects a DriveSync-style external file edit during a foreground scan', async () => {
+    harness.data.entities = [{
+      kind: 'node', id: 'node_external', payload: { title: 'Dış', content: '<p>önce</p>' }
+    }];
+    await selectMobileSyncFolder();
+    const nodePath = Array.from(harness.data.files.keys()).find((path) => path.endsWith('.node'));
+    const external = JSON.parse(harness.data.files.get(nodePath));
+    external.content = '<p>DriveSync indirdi</p>';
+    external.pisi.updatedAt = '2026-08-23T13:00:00.000Z';
+    harness.data.files.set(nodePath, `${JSON.stringify(external, null, 2)}\n`);
+
+    await runMobileSync({ reason: 'external-scan', requireFresh: true });
+    const status = await getMobileSyncStatus();
+
+    expect(harness.data.entities.find(({ id }) => id === 'node_external').payload.content)
+      .toBe('<p>DriveSync indirdi</p>');
+    expect(status.lastExternalScanAt).toBeTruthy();
+    expect(status.lastExternalChangeAt).toBeTruthy();
   });
 
   it('treats deletion of an indexed visible file as a real workspace deletion', async () => {
@@ -266,12 +351,192 @@ describe('mobile folder-backed synchronization', () => {
     harness.data.failWrites = true;
 
     await expect(runMobileSync({ reason: 'manual' }))
-      .rejects.toThrow('yazma/okuma doğrulamasını geçemedi');
+      .rejects.toThrow('fiziksel oluşturma/yazma/okuma/listeleme/silme doğrulamasını geçemedi');
     const status = await getMobileSyncStatus();
 
     expect(status.configured).toBe(true);
     expect(status.lastError?.message).toContain('Sağlayıcı yazmayı reddetti');
     expect(status.lastError?.reason).toBe('manual');
     expect(status.lastAttemptAt).toBeTruthy();
+  });
+
+  it('fails closed after permission revoke and becomes ready after explicit reselection', async () => {
+    await selectMobileSyncFolder();
+    harness.data.folder = {
+      configured: false,
+      name: '',
+      uri: 'content://revoked',
+      readable: false,
+      writable: false,
+      permissionPersisted: false,
+      provider: 'com.android.externalstorage.documents'
+    };
+    const revoked = await getMobileSyncStatus();
+    expect(revoked.configured).toBe(false);
+    expect(revoked.folderSelected).toBe(true);
+    expect(revoked.permissionPersisted).toBe(false);
+    await expect(runMobileSync({ reason: 'manual', requireFresh: true }))
+      .rejects.toThrow('Önce gerçek Pisi proje klasörünü seçin');
+
+    harness.data.folder = {
+      configured: true,
+      name: 'Pisi Yeni',
+      uri: 'content://new-folder',
+      readable: true,
+      writable: true,
+      permissionPersisted: true,
+      provider: 'com.android.externalstorage.documents'
+    };
+    const result = await selectMobileSyncFolder();
+    expect(result.localFilesVerified).toBe(true);
+    expect((await getMobileSyncStatus()).configured).toBe(true);
+  });
+
+  it('writes and rereads physical files before replacing the IndexedDB cache', async () => {
+    harness.data.entities = [{
+      kind: 'node', id: 'node_order', payload: { title: 'Sıra', content: '<p>önce</p>' }
+    }];
+    await selectMobileSyncFolder();
+    const nodePath = Array.from(harness.data.files.keys()).find((path) => path.endsWith('.node'));
+    const oldContent = harness.data.files.get(nodePath);
+    harness.data.entities.find(({ id }) => id === 'node_order').payload.content = '<p>sonra</p>';
+    harness.adapter.applyRecords.mockClear();
+    harness.data.failWritePattern = '.node';
+
+    await expect(runMobileSync({ reason: 'manual', requireFresh: true }))
+      .rejects.toThrow('Sağlayıcı yazmayı reddetti');
+
+    expect(harness.adapter.applyRecords).not.toHaveBeenCalled();
+    expect(harness.data.files.get(nodePath)).toBe(oldContent);
+  });
+
+  it('creates and verifies a recovery backup before merging pre-folder private data', async () => {
+    harness.data.backup.documents = [{
+      id: 'node_private', kind: 'note', title: 'Özel not', content: '<p>koru</p>'
+    }];
+    harness.data.entities = [{
+      kind: 'node', id: 'node_private', payload: { title: 'Özel not', content: '<p>koru</p>' }
+    }];
+
+    const result = await selectMobileSyncFolder();
+    const backupPath = Array.from(harness.data.files.keys())
+      .find((path) => path.startsWith('.pisi/recovery/mobile-private-'));
+
+    expect(result.migrationBackupPath).toBe(backupPath);
+    expect(JSON.parse(harness.data.files.get(backupPath)).documents[0].id).toBe('node_private');
+  });
+
+  it('does not rename or delete existing binary sidecar assets during a mobile edit', async () => {
+    const sidecar = 'inv_Sabit__node_binary';
+    harness.data.files.set(`${sidecar}/attachment.bin`, 'BINARY\u0000PAYLOAD');
+    harness.data.entities = [{
+      kind: 'node',
+      id: 'node_binary',
+      payload: {
+        title: 'Yeni başlık',
+        content: '<p>Mobil</p>',
+        relativePath: 'Sabit.node',
+        native: {
+          pisi: {
+            version: 1, type: 'node', id: 'node_binary', title: 'Sabit',
+            sidecar, parentMap: 'none'
+          },
+          attachments: [{ path: 'attachment.bin' }]
+        }
+      }
+    }];
+
+    await selectMobileSyncFolder();
+    const written = JSON.parse(harness.data.files.get('Sabit.node'));
+
+    expect(written.pisi.sidecar).toBe(sidecar);
+    expect(written.attachments[0].path).toBe('attachment.bin');
+    expect(harness.data.files.get(`${sidecar}/attachment.bin`)).toBe('BINARY\u0000PAYLOAD');
+  });
+
+  it('moves deleted project files and binary sidecars into recoverable sync trash', async () => {
+    const sidecar = 'inv_Silinecek__node_with_asset';
+    harness.data.files.set(`${sidecar}/asset.bin`, 'ASSET');
+    harness.data.entities = [{
+      kind: 'node',
+      id: 'node_with_asset',
+      payload: {
+        title: 'Silinecek', content: '<p>sil</p>', relativePath: 'Silinecek.node',
+        native: {
+          pisi: {
+            version: 1, type: 'node', id: 'node_with_asset', title: 'Silinecek',
+            sidecar, parentMap: 'none'
+          }
+        }
+      }
+    }];
+    await selectMobileSyncFolder();
+    harness.data.entities = harness.data.entities.filter(({ id }) => id !== 'node_with_asset');
+
+    const result = await runMobileSync({ reason: 'manual', requireFresh: true });
+    const paths = Array.from(harness.data.files.keys());
+
+    expect(result.filesRemoved).toBe(1);
+    expect(harness.data.files.has('Silinecek.node')).toBe(false);
+    expect(harness.data.files.has(`${sidecar}/asset.bin`)).toBe(false);
+    expect(paths.some((path) => (
+      path.startsWith('.pisi/sync-trash/') && path.endsWith('/Silinecek.node')
+    ))).toBe(true);
+    expect(paths.some((path) => (
+      path.startsWith('.pisi/sync-trash/') && path.endsWith(`/${sidecar}/asset.bin`)
+    ))).toBe(true);
+  });
+
+  it('moves a reparented node sidecar without losing binary attachments', async () => {
+    const mapASidecar = 'nd_A__map_a';
+    const mapBSidecar = 'nd_B__map_b';
+    const nodeSidecar = 'inv_Child__node_child';
+    harness.data.files.set(`${mapASidecar}/${nodeSidecar}/asset.bin`, 'MOVE-ME');
+    harness.data.entities = [
+      {
+        kind: 'map', id: 'map_a', payload: {
+          title: 'A', relativePath: 'A.map',
+          map: { nodes: [{ id: 'node_child', x: 1, y: 2 }], edges: [] },
+          native: { pisi: { version: 1, type: 'map', id: 'map_a', title: 'A', sidecar: mapASidecar } }
+        }
+      },
+      {
+        kind: 'map', id: 'map_b', payload: {
+          title: 'B', relativePath: 'B.map',
+          map: { nodes: [], edges: [] },
+          native: { pisi: { version: 1, type: 'map', id: 'map_b', title: 'B', sidecar: mapBSidecar } }
+        }
+      },
+      {
+        kind: 'node', id: 'node_child', payload: {
+          title: 'Child', content: 'child', parentMap: 'map_a',
+          relativePath: `${mapASidecar}/Child.node`,
+          native: {
+            pisi: {
+              version: 1, type: 'node', id: 'node_child', title: 'Child',
+              sidecar: nodeSidecar, parentMap: 'map_a'
+            }
+          }
+        }
+      }
+    ];
+    await selectMobileSyncFolder();
+    harness.data.entities.find(({ id }) => id === 'node_child').payload.parentMap = 'map_b';
+
+    await runMobileSync({ reason: 'manual', requireFresh: true });
+
+    expect(harness.data.files.get(`${mapBSidecar}/${nodeSidecar}/asset.bin`)).toBe('MOVE-ME');
+    expect(harness.data.files.has(`${mapASidecar}/${nodeSidecar}/asset.bin`)).toBe(false);
+    expect(harness.plugin.moveEntry).toHaveBeenCalledWith(expect.objectContaining({
+      fromPath: `${mapASidecar}/${nodeSidecar}`,
+      toPath: `${mapBSidecar}/${nodeSidecar}`
+    }));
+
+    harness.data.entities.find(({ id }) => id === 'node_child').payload.parentMap = 'map_a';
+    harness.data.failWritePattern = '.node';
+    await expect(runMobileSync({ reason: 'manual', requireFresh: true }))
+      .rejects.toThrow('Sağlayıcı yazmayı reddetti');
+    expect(harness.data.files.get(`${mapBSidecar}/${nodeSidecar}/asset.bin`)).toBe('MOVE-ME');
+    expect(harness.data.files.has(`${mapASidecar}/${nodeSidecar}/asset.bin`)).toBe(false);
   });
 });

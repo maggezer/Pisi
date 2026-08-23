@@ -34,7 +34,7 @@ import {
 } from './native.js';
 import {
   disconnectMobileSync, getMobileSyncStatus, initializeMobileSync,
-  runMobileSync, selectMobileSyncFolder
+  openDriveSyncApp, runMobileSync, selectMobileSyncFolder
 } from './sync-service.js';
 
 const root = document.querySelector('#app');
@@ -102,17 +102,12 @@ function kindLabel(kind) {
 
 function describeSyncResult(result = {}) {
   const received = Number(result.changed || 0);
-  const sent = Number(result.uploadedRecords || 0);
-  const peers = Number(result.peerDevices || 0);
   const files = Number(result.filesVerified || 0);
   const fileProof = files
-    ? `${files} gerçek .node/.map dosyası yazılıp doğrulandı`
-    : 'Çalışma klasörü yazma-okuma testi doğrulandı; görünür not dosyası yok';
-  if (peers === 0) {
-    return `${fileProof}; ${sent} kayıt gönderildi. Diğer cihaz henüz bu projede görünmüyor.`;
-  }
-  if (!received && !sent) return `${fileProof}; ${peers + 1} cihaz güncel.`;
-  return `${fileProof}; ${received} değişiklik alındı, ${sent} kayıt gönderildi · ${peers + 1} cihaz.`;
+    ? `${files} gerçek .node/.map dosyası yazılıp geri okunarak doğrulandı`
+    : 'Klasörün fiziksel yazma-okuma-listeleme-silme denemesi doğrulandı; görünür not dosyası yok';
+  const changes = received ? `; ${received} klasör değişikliği önbelleğe alındı` : '';
+  return `${fileProof}${changes}. DriveSync bulut aktarımı Pisi tarafından doğrulanmaz.`;
 }
 
 function resolveTheme(theme) {
@@ -122,17 +117,32 @@ function resolveTheme(theme) {
   return theme;
 }
 
-function debounce(callback, delay = 450) {
-  let timer;
+function debounce(callback, delay = 450, onError = console.error) {
+  let timer = null;
+  let pendingArgs = [];
   const wrapped = (...args) => {
     clearTimeout(timer);
-    timer = setTimeout(() => callback(...args), delay);
+    pendingArgs = args;
+    timer = setTimeout(() => {
+      timer = null;
+      const currentArgs = pendingArgs;
+      pendingArgs = [];
+      Promise.resolve(callback(...currentArgs)).catch(onError);
+    }, delay);
   };
   wrapped.flush = (...args) => {
+    if (timer == null) return Promise.resolve(undefined);
     clearTimeout(timer);
-    return callback(...args);
+    timer = null;
+    const currentArgs = args.length ? args : pendingArgs;
+    pendingArgs = [];
+    return callback(...currentArgs);
   };
-  wrapped.cancel = () => clearTimeout(timer);
+  wrapped.cancel = () => {
+    clearTimeout(timer);
+    timer = null;
+    pendingArgs = [];
+  };
   return wrapped;
 }
 
@@ -157,7 +167,11 @@ class PisiApp {
     this.drawWidth = 4;
     this.platform = new PlatformController(this);
     this.syncStatus = { configured: false, running: false };
-    this.saveActiveDebounced = debounce(() => this.saveActive(), 500);
+    this.saveActiveDebounced = debounce(
+      () => this.saveActive(),
+      500,
+      (error) => this.showSaveFailure(error)
+    );
   }
 
   async init() {
@@ -169,9 +183,22 @@ class PisiApp {
       this.calendarCursor = createCalendarCursor(this.calendarType);
       this.applyTheme();
       await initializeNativeShell(resolveTheme(this.theme));
-      this.documents = (await seedDatabase()).map(normalizeDocument);
+      this.syncStatus = await initializeMobileSync({
+        autoStart: false,
+        beforeExternalScan: async () => {
+          if (this.activeDocument) await this.saveActiveDebounced.flush();
+        }
+      }) || this.syncStatus;
+      if (this.syncStatus.configured) {
+        await runMobileSync({ reason: 'startup', requireFresh: true }).catch((error) => {
+          console.error('Startup project scan failed', error);
+        });
+        this.syncStatus = await getMobileSyncStatus().catch(() => this.syncStatus);
+        this.documents = (await listDocuments()).map(normalizeDocument);
+      } else {
+        this.documents = (await seedDatabase()).map(normalizeDocument);
+      }
       await this.platform.init();
-      this.syncStatus = await initializeMobileSync() || this.syncStatus;
       document.addEventListener('pisi:sync-finished', async () => {
         await this.reloadDocuments();
         await this.platform.refreshFromStorage();
@@ -273,22 +300,38 @@ class PisiApp {
     if (!this.activeDocument) return;
     this.activeDocument.updatedAt = new Date().toISOString();
     this.activeDocument.content = sanitizeRichHtml(this.activeDocument.content);
-    this.activeDocument = normalizeDocument(await putDocument(structuredClone(this.activeDocument)));
+    const stored = await putDocument(structuredClone(this.activeDocument));
+    const storageResult = stored.__pisiStorageResult;
+    this.activeDocument = normalizeDocument(stored);
     await this.platform.syncDocumentTasks(this.activeDocument);
 
     const index = this.documents.findIndex(({ id }) => id === this.activeDocument.id);
     if (index >= 0) this.documents[index] = normalizeDocument(structuredClone(this.activeDocument));
     else this.documents.unshift(normalizeDocument(structuredClone(this.activeDocument)));
-    this.showSaveState();
+    this.showSaveState(storageResult);
   }
 
-  showSaveState() {
+  showSaveState(storageResult = {}) {
     const status = document.querySelector('#save-state');
     if (!status) return;
-    status.textContent = 'Kaydedildi';
+    status.textContent = storageResult.verified
+      ? 'Proje klasörüne yazıldı ✓'
+      : storageResult.reason === 'project-folder-not-selected'
+        ? 'Yalnızca cihaz kurtarma kopyasında — klasör seçilmedi veya erişilemiyor'
+        : 'Yalnızca cihaz kurtarma kopyasında — fiziksel dosya doğrulanmadı';
     status.classList.add('visible');
     clearTimeout(this.saveStateTimer);
-    this.saveStateTimer = setTimeout(() => status.classList.remove('visible'), 1400);
+    this.saveStateTimer = setTimeout(() => status.classList.remove('visible'), 2200);
+  }
+
+  showSaveFailure(error) {
+    const message = error?.message || 'Proje dosyası yazılamadı.';
+    const status = document.querySelector('#save-state');
+    if (status) {
+      status.textContent = `Kaydedilmedi: ${message}`;
+      status.classList.add('visible');
+    }
+    this.toast(message, 'error');
   }
 
   scheduleSave() {
@@ -669,9 +712,12 @@ class PisiApp {
     const countNotes = this.documents.filter(({ kind }) => kind !== 'canvas').length;
     const countMaps = this.documents.filter(({ kind }) => kind === 'canvas').length;
     const sync = this.syncStatus || {};
+    const localDate = (value) => value
+      ? new Date(value).toLocaleString(this.locale === 'en' ? 'en-US' : 'tr-TR')
+      : '—';
     const syncDate = sync.lastSyncAt
       ? new Date(sync.lastSyncAt).toLocaleString(this.locale === 'en' ? 'en-US' : 'tr-TR')
-      : 'Henüz senkronize edilmedi';
+      : 'Henüz klasör denetlenmedi';
     const syncError = sync.lastError?.message || '';
     const syncErrorDate = sync.lastError?.at
       ? new Date(sync.lastError.at).toLocaleString(this.locale === 'en' ? 'en-US' : 'tr-TR')
@@ -737,24 +783,33 @@ class PisiApp {
         </section>
         <section class="settings-group sync-settings" aria-busy="${sync.running ? 'true' : 'false'}">
           <h2>Not çalışma klasörü</h2>
-          <p class="sync-description">Seçtiğin klasör gerçek Pisi proje köküdür. Notlar ve haritalar burada görünür <strong>.node/.map</strong> dosyaları olarak tutulur; telefon veritabanı yalnız çevrimdışı çalışma kopyasıdır.</p>
+          <p class="sync-description">Seçtiğin klasör gerçek Pisi proje köküdür. Notlar ve haritalar burada görünür <strong>.node/.map</strong> dosyaları olarak tutulur; telefon veritabanı yalnız yeniden oluşturulabilir çalışma önbelleğidir. DriveSync’te aynı klasörü yerel taraf, masaüstünün Google Drive klasörünü uzak taraf ve modu <strong>Two-way</strong> olarak eşleştir.</p>
           <div class="sync-status ${sync.configured ? 'connected' : ''}">
             <span class="setting-icon">${sync.configured ? '✓' : '↔'}</span>
-            <span><strong>${escapeHtml(syncStateTitle)}</strong><small>${escapeHtml(syncDate)}</small>${sync.folderSelected ? `<small>Android klasör izni: ${permissionReady ? 'kalıcı okuma + yazma ✓' : 'eksik; klasörü yeniden seç'}</small>` : ''}${sync.storagePath ? `<small>Sync metadatası: ${escapeHtml(sync.storagePath)}</small>` : ''}${projectFingerprint ? `<small>Proje: ${escapeHtml(projectFingerprint)}</small>` : ''}</span>
+            <span><strong>${escapeHtml(syncStateTitle)}</strong><small>${escapeHtml(syncDate)}</small>${sync.folderSelected ? `<small>Erişim: Read ${sync.folderReadable !== false ? '✓' : '✗'} · Write ${sync.folderWritable !== false ? '✓' : '✗'} · Persisted ${sync.permissionPersisted ? '✓' : '✗'}${permissionReady ? '' : ' — klasörü yeniden seç'}</small>` : ''}${sync.storagePath ? `<small>Sync metadatası: ${escapeHtml(sync.storagePath)}</small>` : ''}${projectFingerprint ? `<small>Proje: ${escapeHtml(projectFingerprint)}</small>` : ''}</span>
           </div>
-          <small class="sync-permission-note">Android ayrıca “tüm dosyalar” izni istemez. Sistem seçicisindeki <strong>Bu klasörü kullan</strong> onayı yalnız seçtiğin klasöre kalıcı okuma-yazma yetkisi verir.</small>
+          <small class="sync-permission-note">Android ayrıca “tüm dosyalar” izni istemez. Sistem seçicisindeki <strong>Bu klasörü kullan</strong> onayı yalnız seçtiğin klasöre kalıcı okuma-yazma yetkisi verir. Android 11+ depolama kökünü ve İndirilenler kökünü seçtirmez; DriveSync için ayrı bir alt klasör kullan. DriveSync bulut kuyruğu ve Google Drive sonucu Pisi tarafından görülemez; burada yalnız fiziksel yerel klasör kanıtı gösterilir.</small>
           ${syncError ? `<div class="sync-error" role="alert"><strong>Son senkronizasyon tamamlanamadı</strong><span>${escapeHtml(syncError)}</span>${syncErrorDate ? `<small>${escapeHtml(syncErrorDate)}</small>` : ''}</div>` : ''}
           <div class="sync-actions">
             <button class="setting-action" id="sync-folder-button">
               <span><strong>${sync.folderSelected ? 'Klasör iznini yenile / değiştir' : 'Not çalışma klasörü seç'}</strong><small>Gerçek Pisi proje klasörünü sistem seçicisinde yetkilendir</small></span><b>›</b>
             </button>
             ${sync.configured ? `<button class="setting-action" id="sync-now-button" ${sync.running ? 'disabled' : ''}>
-              <span><strong>${sync.running ? 'Senkronize ediliyor…' : 'Şimdi senkronize et'}</strong><small>Gerçek dosyaları yaz, geri oku ve klasör listesinde doğrula</small></span><b>↻</b>
-            </button><button class="setting-action danger" id="sync-disconnect-button"><span><strong>Bağlantıyı kes</strong><small>Yerel veriler silinmez</small></span><b>×</b></button>` : ''}
+              <span><strong>${sync.running ? 'Dosyalar denetleniyor…' : 'Dosyaları şimdi denetle'}</strong><small>Gerçek dosyaları yaz, geri oku ve klasör listesinde doğrula</small></span><b>↻</b>
+            </button><button class="setting-action" id="open-drivesync-button">
+              <span><strong>DriveSync’i aç</strong><small>${sync.driveSyncInstalled ? 'Klasör çiftini ve bulut kuyruğunu DriveSync’te denetle' : 'com.ttxapps.drivesync bu cihazda görünmüyor'}</small></span><b>↗</b>
+            </button><button class="setting-action danger" id="sync-disconnect-button" ${sync.running ? 'disabled' : ''}><span><strong>Bağlantıyı kes</strong><small>Yerel veriler silinmez</small></span><b>×</b></button>` : ''}
           </div>
-          ${sync.lastResult ? `<small class="sync-result">Son işlem: ${Number(sync.lastResult.filesVerified || 0)} gerçek dosya doğrulandı · ${Number(sync.lastResult.filesWritten || 0)} dosya yazıldı · ${Number(sync.lastResult.changed || 0)} alındı · ${Number(sync.lastResult.conflicts || 0)} çakışma kopyası</small>` : ''}
+          ${sync.lastResult ? `<small class="sync-result">Son yerel işlem: ${Number(sync.lastResult.filesVerified || 0)} gerçek dosya doğrulandı · ${Number(sync.lastResult.filesWritten || 0)} dosya yazıldı · ${Number(sync.lastResult.changed || 0)} değişiklik önbelleğe alındı · ${Number(sync.lastResult.conflicts || 0)} eşzamanlı düzenleme kopyası · ${Number(sync.lastResult.fileConflictCount || 0)} DriveSync dosya çakışması</small>` : ''}
+          ${sync.lastResult ? `<small class="sync-result">Bulunan dosyalar: ${Number(sync.lastResult.nodeFilesFound || 0)} node · ${Number(sync.lastResult.mapFilesFound || 0)} map</small>` : ''}
           ${visibleFiles.length ? `<small class="sync-result">Dosya kanıtı: ${visibleFiles.map(escapeHtml).join(' · ')}</small>` : ''}
-          ${sync.lastResult?.peerDevices === 0 ? '<small class="sync-warning">Henüz başka cihaz görünmüyor. Masaüstünde aynı klasör ve aynı proje kimliğinin bağlı olduğunu kontrol et.</small>' : ''}
+          ${sync.configured ? `<small class="sync-result">Depolama: ${escapeHtml(sync.storageBackend || 'SAF')} · sağlayıcı: ${escapeHtml(sync.folderProvider || '—')}</small>
+          <small class="sync-result">URI: ${escapeHtml(sync.folderUri || '—')}</small>
+          <small class="sync-result">Son fiziksel yazma: ${escapeHtml(localDate(sync.lastLocalWrite))}${sync.lastLocalWritePath ? ` · ${escapeHtml(sync.lastLocalWritePath)} · ${Number(sync.lastLocalWriteBytes || 0)} byte` : ''}</small>
+          <small class="sync-result">Son dış değişiklik taraması: ${escapeHtml(localDate(sync.lastExternalScanAt))} · algılanan son değişiklik: ${escapeHtml(localDate(sync.lastExternalChangeAt))}</small>
+          ${sync.lastMigrationBackupPath ? `<small class="sync-result">Geçiş kurtarma kopyası: ${escapeHtml(sync.lastMigrationBackupPath)}</small>` : ''}` : ''}
+          <small class="sync-warning">Bulut durumu: doğrulanmadı — DriveSync yönetiyor.</small>
+          ${sync.lastResult?.fileConflictCount ? '<small class="sync-warning">DriveSync çakışma dosyaları ayrı not/harita kopyaları olarak korundu; içerikleri karşılaştırıp birleştir.</small>' : ''}
         </section>
         <section class="settings-group">
           <h2>Verilerin</h2>
@@ -776,7 +831,7 @@ class PisiApp {
         </section>
         <section class="settings-group about-group">
           <h2>Hakkında</h2>
-          <p>Pisi 3.1.2 · Android telefon ve tablet sürümü</p>
+          <p>Pisi 3.2.0 · Android telefon ve tablet sürümü</p>
           <p>Okunabilir .node/.map proje dosyaları asıl veridir; telefon önbelleği yeniden oluşturulabilir çalışma kopyasıdır.</p>
         </section>
       `
@@ -821,7 +876,7 @@ class PisiApp {
         if (this.activeDocument) await this.saveActiveDebounced.flush();
         this.syncStatus = { ...this.syncStatus, running: true };
         this.renderSettings();
-        const result = await runMobileSync({ reason: 'manual' });
+        const result = await runMobileSync({ reason: 'manual', requireFresh: true });
         this.syncStatus = await getMobileSyncStatus();
         await this.reloadDocuments();
         await this.platform.refreshFromStorage();
@@ -832,6 +887,13 @@ class PisiApp {
         this.toast(error?.message || 'Senkronizasyon başarısız.', 'error');
       }
       this.renderSettings();
+    });
+    document.querySelector('#open-drivesync-button')?.addEventListener('click', async () => {
+      try {
+        await openDriveSyncApp();
+      } catch (error) {
+        this.toast(error?.message || 'DriveSync açılamadı.', 'error');
+      }
     });
     document.querySelector('#sync-disconnect-button')?.addEventListener('click', async () => {
       if (!confirm('Sync klasörü bağlantısı kesilsin mi? Yerel veriler korunur.')) return;
@@ -906,7 +968,7 @@ class PisiApp {
               ? this.sheetTemplate()
               : this.writingTemplate()}
         </main>
-        <div id="save-state" class="save-state">Kaydedildi</div>
+        <div id="save-state" class="save-state">Henüz doğrulanmadı</div>
       </div>
       ${this.platform.documentInspectorTemplate(note)}
       </div>
@@ -1376,7 +1438,7 @@ class PisiApp {
           <button id="map-delete-node" ${this.selectedMapNode ? '' : 'disabled'} class="danger-tool"><span>×</span> Sil</button>
         </div>
         ${this.mapEditingNode ? this.mapNodeSheetTemplate() : ''}
-        <div id="save-state" class="save-state">Kaydedildi</div>
+        <div id="save-state" class="save-state">Henüz doğrulanmadı</div>
       </div>
       ${this.platform.inspectorTemplate('map')}
       </div>

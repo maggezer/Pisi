@@ -232,7 +232,7 @@ function makeConflictId(record) {
   return `${prefix}_conflict_${hashString(stamp)}`;
 }
 
-function withConflictCopies(records, conflicts) {
+export function preserveMobileSyncConflicts(records, conflicts) {
   const result = records.filter((record) => !record.deleted).map((record) => structuredClone(record));
   const seen = new Set(result.map(({ key }) => key));
   const log = [];
@@ -310,8 +310,13 @@ function mobileRelations(relations) {
   }));
 }
 
-export async function applyMobileSyncRecords(records, conflicts = []) {
-  const preserved = withConflictCopies(records, conflicts);
+export async function applyMobileSyncRecords(records, conflicts = [], options = {}) {
+  const preserved = options.recordsAlreadyPreserved
+    ? {
+        records: records.filter((record) => !record.deleted).map((record) => structuredClone(record)),
+        log: Array.isArray(options.conflictLog) ? structuredClone(options.conflictLog) : []
+      }
+    : preserveMobileSyncConflicts(records, conflicts);
   const live = preserved.records;
   const nodeById = new Map(live.filter(({ kind }) => kind === 'node')
     .map((record) => [record.id, record.payload]));
@@ -348,7 +353,8 @@ export async function applyMobileSyncRecords(records, conflicts = []) {
       });
     } else if (record.kind === 'map') {
       const map = payload.map || {};
-      const layouts = Array.isArray(map.nodes) ? structuredClone(map.nodes) : [];
+      const layouts = (Array.isArray(map.nodes) ? structuredClone(map.nodes) : [])
+        .filter((layout) => nodeById.get(layout.id)?.parentMap === record.id);
       const layoutIds = new Set(layouts.map(({ id }) => id));
       for (const [nodeId, node] of nodeById) {
         if (node.parentMap !== record.id || layoutIds.has(nodeId)) continue;
@@ -360,6 +366,7 @@ export async function applyMobileSyncRecords(records, conflicts = []) {
           width: 220,
           height: 92
         });
+        layoutIds.add(nodeId);
       }
       documents.push({
         id: record.id,
@@ -386,11 +393,13 @@ export async function applyMobileSyncRecords(records, conflicts = []) {
               syncNative: { node: node.native || null }
             };
           }),
-          edges: (map.edges || []).map((edge) => ({
-            ...structuredClone(edge),
-            from: edge.sourceId,
-            to: edge.targetId
-          })),
+          edges: (map.edges || [])
+            .filter((edge) => layoutIds.has(edge.sourceId) && layoutIds.has(edge.targetId))
+            .map((edge) => ({
+              ...structuredClone(edge),
+              from: edge.sourceId,
+              to: edge.targetId
+            })),
           camera: map.camera || { x: 0, y: 0, zoom: 1 },
           collapsedAnchors: map.collapsedAnchors || []
         },
