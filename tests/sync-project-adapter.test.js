@@ -62,15 +62,22 @@ test('desktop adapter node, map, görev ve config kayıtlarını kayıpsız roun
         const mapId = 'map_alpha';
         const nodeId = 'node_alpha';
         const mapSidecar = sidecar('Harita', '.map', mapId);
+        const nodeSidecar = sidecar('Not', '.node', nodeId);
         fs.mkdirSync(path.join(project, mapSidecar));
         fs.writeFileSync(path.join(project, 'Harita.map'), JSON.stringify({
             pisi: { version: 1, type: 'map', id: mapId, title: 'Harita', sidecar: mapSidecar },
             map: { nodes: [{ id: nodeId, x: 10, y: 20 }], edges: [], camera: { x: 0, y: 0, zoom: 1 } }
         }));
         fs.writeFileSync(path.join(project, mapSidecar, 'Not.node'), JSON.stringify({
-            pisi: { version: 1, type: 'node', id: nodeId, title: 'Not', parentMap: mapId },
-            content: '<p>İlk</p>', properties: { durum: 'aktif' }
+            pisi: {
+                version: 1, type: 'node', id: nodeId, title: 'Not', parentMap: mapId,
+                sidecar: nodeSidecar, futureMetadata: { keep: true }
+            },
+            content: '<p>İlk</p>', properties: { durum: 'aktif' },
+            attachments: [{ path: 'attachment.bin' }], futureTopLevel: ['kept']
         }));
+        fs.mkdirSync(path.join(project, mapSidecar, nodeSidecar));
+        fs.writeFileSync(path.join(project, mapSidecar, nodeSidecar, 'attachment.bin'), Buffer.from([0, 1, 2, 255]));
         storedTasks = [{
             id: 'task_alpha', title: 'Görev', status: 'todo',
             source: { nodePath: path.join(project, mapSidecar, 'Not.node'), blockId: 'block_1' }
@@ -89,6 +96,7 @@ test('desktop adapter node, map, görev ve config kayıtlarını kayıpsız roun
         }));
         const node = records.find((record) => record.kind === 'node');
         node.payload.content = '<p>Mobil değişiklik</p>';
+        node.payload.title = 'Mobil başlık';
         const result = adapter.applyPisiSyncRecords(project, records, []);
         assert.equal(result.documents, 2);
         assert.equal(result.tasks, 1);
@@ -97,6 +105,13 @@ test('desktop adapter node, map, görev ve config kayıtlarını kayıpsız roun
         const exportedNode = exported.find((entity) => entity.kind === 'node' && entity.id === nodeId);
         const exportedTask = exported.find((entity) => entity.kind === 'task');
         assert.equal(exportedNode.payload.content, '<p>Mobil değişiklik</p>');
+        assert.deepEqual(exportedNode.payload.native.pisi.futureMetadata, { keep: true });
+        assert.deepEqual(exportedNode.payload.native.futureTopLevel, ['kept']);
+        assert.equal(exportedNode.payload.native.pisi.sidecar, nodeSidecar);
+        assert.deepEqual(
+            fs.readFileSync(path.join(project, mapSidecar, nodeSidecar, 'attachment.bin')),
+            Buffer.from([0, 1, 2, 255])
+        );
         assert.equal(exportedTask.payload.source.documentId, nodeId);
 
         const propertyRecord = records.find((record) =>
@@ -135,6 +150,132 @@ test('desktop adapter node, map, görev ve config kayıtlarını kayıpsız roun
         const repeatedSchema = adapter.exportPisiSyncEntities(project)
             .find((entity) => entity.kind === 'config' && entity.id === 'propertySchema');
         assert.equal(repeatedSchema.payload.value.length, 3, 'çakışma kopyası tekrarlanmamalı');
+    } finally {
+        fs.rmSync(project, { recursive: true, force: true });
+    }
+});
+
+test('DriveSync conflict-named duplicate files remain visible as stable separate entities', () => {
+    const project = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-sync-conflict-file-'));
+    try {
+        const data = (content) => ({
+            pisi: {
+                version: 1, type: 'node', id: 'node_same', title: 'Ortak',
+                sidecar: sidecar('Ortak', '.node', 'node_same'), parentMap: 'none'
+            },
+            content
+        });
+        fs.writeFileSync(path.join(project, 'Ortak.node'), JSON.stringify(data('asıl')));
+        fs.writeFileSync(
+            path.join(project, 'Ortak (conflict 2026-08-23-12-30-45).node'),
+            JSON.stringify(data('çakışan'))
+        );
+        storedTasks = [];
+        storedRelationships = [];
+
+        const first = adapter.exportPisiSyncEntities(project).filter(({ kind }) => kind === 'node');
+        const original = first.find(({ id }) => id === 'node_same');
+        const conflict = first.find(({ id }) => id !== 'node_same');
+
+        assert.equal(first.length, 2);
+        assert.equal(original.payload.content, 'asıl');
+        assert.match(conflict.id, /^node_conflict_[A-Za-z0-9_-]+$/);
+        assert.equal(conflict.payload.content, 'çakışan');
+        assert.equal(conflict.payload.native.pisi.conflictOf, 'node_same');
+
+        const records = first.map((entity, index) => ({
+            ...entity,
+            key: `${entity.kind}:${entity.id}`,
+            deleted: false,
+            hash: `hash_${index}`,
+            version: { counter: index + 1, deviceId: 'device_test' },
+            updatedAt: '2026-08-23T12:30:46.000Z'
+        }));
+        adapter.applyPisiSyncRecords(project, records, []);
+        const second = adapter.exportPisiSyncEntities(project).filter(({ kind }) => kind === 'node');
+        assert.deepEqual(new Set(second.map(({ id }) => id)), new Set(first.map(({ id }) => id)));
+    } finally {
+        fs.rmSync(project, { recursive: true, force: true });
+    }
+});
+
+test('reparenting a node moves its binary sidecar beside the new desktop path', () => {
+    const project = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-sync-sidecar-move-'));
+    try {
+        const mapA = 'map_a';
+        const mapB = 'map_b';
+        const nodeId = 'node_move';
+        const mapASidecar = sidecar('A', '.map', mapA);
+        const mapBSidecar = sidecar('B', '.map', mapB);
+        const nodeSidecar = sidecar('Ekli', '.node', nodeId);
+        fs.mkdirSync(path.join(project, mapASidecar, nodeSidecar), { recursive: true });
+        fs.mkdirSync(path.join(project, mapBSidecar), { recursive: true });
+        fs.writeFileSync(path.join(project, 'A.map'), JSON.stringify({
+            pisi: { version: 1, type: 'map', id: mapA, title: 'A', sidecar: mapASidecar },
+            map: { nodes: [{ id: nodeId }], edges: [] }
+        }));
+        fs.writeFileSync(path.join(project, 'B.map'), JSON.stringify({
+            pisi: { version: 1, type: 'map', id: mapB, title: 'B', sidecar: mapBSidecar },
+            map: { nodes: [], edges: [] }
+        }));
+        fs.writeFileSync(path.join(project, mapASidecar, 'Ekli.node'), JSON.stringify({
+            pisi: {
+                version: 1, type: 'node', id: nodeId, title: 'Ekli',
+                sidecar: nodeSidecar, parentMap: mapA
+            },
+            content: 'ekli'
+        }));
+        fs.writeFileSync(
+            path.join(project, mapASidecar, nodeSidecar, 'asset.bin'),
+            Buffer.from([9, 8, 7, 6])
+        );
+        storedTasks = [];
+        storedRelationships = [];
+
+        const entities = adapter.exportPisiSyncEntities(project);
+        entities.find(({ id }) => id === nodeId).payload.parentMap = mapB;
+        const records = entities.map((entity, index) => ({
+            ...entity,
+            key: `${entity.kind}:${entity.id}`,
+            deleted: false,
+            hash: `move_${index}`,
+            version: { counter: index + 1, deviceId: 'device_test' },
+            updatedAt: '2026-08-23T12:40:00.000Z'
+        }));
+        adapter.applyPisiSyncRecords(project, records, []);
+
+        assert.deepEqual(
+            fs.readFileSync(path.join(project, mapBSidecar, nodeSidecar, 'asset.bin')),
+            Buffer.from([9, 8, 7, 6])
+        );
+        assert.equal(fs.existsSync(path.join(project, mapASidecar, nodeSidecar)), false);
+    } finally {
+        fs.rmSync(project, { recursive: true, force: true });
+    }
+});
+
+test('sync-created desktop names are NFC, case-safe, bounded and Windows compatible', () => {
+    const project = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-sync-windows-name-'));
+    try {
+        storedTasks = [];
+        storedRelationships = [];
+        const id = `node_${'a'.repeat(96)}`;
+        adapter.applyPisiSyncRecords(project, [{
+            key: `node:${id}`,
+            kind: 'node',
+            id,
+            deleted: false,
+            hash: 'windows-name',
+            version: { counter: 1, deviceId: 'device_test' },
+            updatedAt: '2026-08-23T12:50:00.000Z',
+            payload: { title: 'CON', content: 'safe', parentMap: 'none' }
+        }], []);
+        const inventory = adapter.readProjectDocuments(project);
+        const name = path.basename(inventory.documents[0].path);
+
+        assert.match(name, /^_CON(?:__node_|\.node)/);
+        assert.ok(name.length <= 180);
+        assert.equal(name, name.normalize('NFC'));
     } finally {
         fs.rmSync(project, { recursive: true, force: true });
     }
