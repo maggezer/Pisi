@@ -7,8 +7,8 @@ android {
         applicationId "com.maggezer.pisi"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 6
-        versionName "3.1.2"
+        versionCode 7
+        versionName "3.2.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -20,6 +20,13 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        full {
+            initWith release
+            // A release-like, non-debuggable APK signed with the Android debug key so
+            // CI can produce a clean-install artifact without storing a production key.
+            signingConfig signingConfigs.debug
+            matchingFallbacks = ['release']
         }
     }
 }
