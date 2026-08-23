@@ -93,8 +93,13 @@ public class PisiSyncFolderPlugin extends Plugin {
         getBridge().execute(() -> {
             try {
                 DocumentFile root = configuredRoot();
-                if (root == null || !root.exists() || !root.canRead()) {
-                    throw new Exception("Önce bir Pisi Sync klasörü seçin.");
+                if (
+                    root == null || !root.exists() ||
+                    !root.canRead() || !root.canWrite()
+                ) {
+                    throw new Exception(
+                        "Pisi çalışma klasörü okunamıyor veya yazılamıyor. Klasörü yeniden seçin."
+                    );
                 }
                 operation.run(root);
             } catch (Exception error) {
@@ -132,18 +137,51 @@ public class PisiSyncFolderPlugin extends Plugin {
             Intent.FLAG_GRANT_READ_URI_PERMISSION |
             Intent.FLAG_GRANT_WRITE_URI_PERMISSION
         );
+        Uri previous = configuredUri();
         try {
+            if (
+                (flags & Intent.FLAG_GRANT_READ_URI_PERMISSION) == 0 ||
+                (flags & Intent.FLAG_GRANT_WRITE_URI_PERMISSION) == 0
+            ) {
+                throw new Exception("Android klasör için okuma-yazma izni vermedi.");
+            }
             getContext().getContentResolver()
                 .takePersistableUriPermission(uri, flags);
+            DocumentFile root = DocumentFile.fromTreeUri(getContext(), uri);
+            if (
+                root == null || !root.exists() ||
+                !root.canRead() || !root.canWrite()
+            ) {
+                throw new Exception("Seçilen klasör okuma ve yazma izni vermedi.");
+            }
             preferences().edit().putString(URI_KEY, uri.toString()).apply();
+            if (previous != null && !previous.equals(uri)) {
+                try {
+                    getContext().getContentResolver().releasePersistableUriPermission(
+                        previous,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION |
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                    );
+                } catch (Exception ignored) {}
+            }
             JSObject response = new JSObject();
             response.put("configured", true);
             response.put("uri", uri.toString());
-            DocumentFile root = DocumentFile.fromTreeUri(getContext(), uri);
             response.put("name", root == null ? "Pisi Sync" : root.getName());
+            response.put("readable", true);
+            response.put("writable", true);
             call.resolve(response);
         } catch (Exception error) {
-            call.reject("Klasör izni kalıcılaştırılamadı.", error);
+            if (previous == null || !previous.equals(uri)) {
+                try {
+                    getContext().getContentResolver().releasePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION |
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                    );
+                } catch (Exception ignored) {}
+            }
+            call.reject("Klasör bağlanamadı: " + error.getMessage(), error);
         }
     }
 
@@ -151,9 +189,14 @@ public class PisiSyncFolderPlugin extends Plugin {
     public void getFolder(PluginCall call) {
         DocumentFile root = configuredRoot();
         JSObject response = new JSObject();
-        response.put("configured", root != null && root.exists());
+        boolean exists = root != null && root.exists();
+        boolean readable = exists && root.canRead();
+        boolean writable = exists && root.canWrite();
+        response.put("configured", exists && readable && writable);
         response.put("uri", configuredUri() == null ? "" : configuredUri().toString());
         response.put("name", root == null ? "" : root.getName());
+        response.put("readable", readable);
+        response.put("writable", writable);
         call.resolve(response);
     }
 
@@ -225,9 +268,24 @@ public class PisiSyncFolderPlugin extends Plugin {
             DocumentFile parent = ensureParent(root, segments);
             String name = segments[segments.length - 1];
             DocumentFile file = parent.findFile(name);
-            if (file == null) file = parent.createFile("application/json", name);
-            if (file == null || !file.isFile()) {
+            boolean created = false;
+            if (file == null) {
+                file = parent.createFile("application/octet-stream", name);
+                created = true;
+                if (file != null && !name.equals(file.getName())) {
+                    try { file.delete(); } catch (Exception ignored) {}
+                    file = parent.createFile("application/json", name);
+                }
+            }
+            if (file == null || !file.isFile() || !file.canWrite()) {
                 throw new Exception("Sync dosyası oluşturulamadı.");
+            }
+            if (!name.equals(file.getName())) {
+                if (created) try { file.delete(); } catch (Exception ignored) {}
+                throw new Exception(
+                    "Bulut sağlayıcısı Sync dosyasının adını değiştirdi. " +
+                    "Başka bir klasör sağlayıcısı seçin."
+                );
             }
             ContentResolver resolver = getContext().getContentResolver();
             OutputStream output;

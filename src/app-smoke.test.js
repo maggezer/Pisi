@@ -100,6 +100,8 @@ describe('Pisi responsive application shell', () => {
     await vi.waitFor(() => expect(document.querySelector('.calendar-card')).toBeTruthy());
 
     document.querySelector('.bottom-nav [data-route="settings"]').click();
+    expect(document.body.textContent).toContain('Not çalışma klasörü');
+    expect(document.querySelector('#sync-folder-button')?.textContent).toContain('Not çalışma klasörü seç');
     expect(Array.from(document.querySelectorAll('#calendar-setting option'), ({ value }) => value)).toEqual(['gregorian', 'hijri', 'lunar']);
     document.querySelector('[data-theme-option="light"]').click();
     await vi.waitFor(() => expect(document.documentElement.dataset.theme).toBe('light'));

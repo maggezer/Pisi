@@ -7,12 +7,14 @@ import {
   validateSyncManifest
 } from './sync-core.js';
 import { applyMobileSyncRecords, exportMobileSyncEntities } from './sync-adapter.js';
+import {
+  chooseSyncLayout, formatSyncStoragePath, makeSyncPaths,
+  SYNC_LAYOUT_DIRECT, SYNC_LAYOUT_NESTED
+} from './sync-folder-layout.js';
 
 const NativeFolder = registerPlugin('PisiSyncFolder');
 const STATE_KEY = 'pisiSyncState';
 const HANDLE_KEY = 'pisiSyncDirectoryHandle';
-const MANIFEST_PATH = '.pisi-sync/manifest.json';
-const DEVICES_PATH = '.pisi-sync/devices';
 const MAX_SNAPSHOT_BYTES = 48 * 1024 * 1024;
 const SNAPSHOT_CHUNK_BYTES = 4 * 1024 * 1024;
 const SNAPSHOT_INDEX_FORMAT = 'pisi-sync-device-index';
@@ -41,6 +43,12 @@ async function getState() {
       ? stored.handledConflicts.slice(-256) : [],
     lastSyncAt: stored?.lastSyncAt || null,
     lastResult: stored?.lastResult || null,
+    lastAttemptAt: stored?.lastAttemptAt || null,
+    lastVerifiedAt: stored?.lastVerifiedAt || null,
+    lastError: stored?.lastError && typeof stored.lastError === 'object'
+      ? stored.lastError : null,
+    layout: [SYNC_LAYOUT_DIRECT, SYNC_LAYOUT_NESTED].includes(stored?.layout)
+      ? stored.layout : null,
     enabled: stored?.enabled === true
   };
 }
@@ -164,10 +172,97 @@ async function readJson(path, { optional = false } = {}) {
   }
 }
 
-async function ensureManifest(state) {
-  const existing = await readJson(MANIFEST_PATH, { optional: true });
+async function inspectManifest(path) {
+  const content = await transport.read(path);
+  if (content == null) return { status: 'missing', path, manifest: null, error: null };
+  let parsed;
+  try { parsed = JSON.parse(content); } catch {
+    return {
+      status: 'invalid', path, manifest: null,
+      error: new Error(`Sync manifesti bozuk: ${path}`)
+    };
+  }
+  try {
+    return { status: 'valid', path, manifest: validateSyncManifest(parsed), error: null };
+  } catch (error) {
+    return { status: 'invalid', path, manifest: null, error };
+  }
+}
+
+async function resolveSyncLayout(folder, state) {
+  const directPaths = makeSyncPaths(SYNC_LAYOUT_DIRECT);
+  const nestedPaths = makeSyncPaths(SYNC_LAYOUT_NESTED);
+  const [direct, nested] = await Promise.all([
+    inspectManifest(directPaths.manifest),
+    inspectManifest(nestedPaths.manifest)
+  ]);
+  const choice = chooseSyncLayout({
+    folderName: folder.name,
+    direct: direct.status,
+    nested: nested.status,
+    previousMode: state.layout
+  });
+  const selected = choice.mode === SYNC_LAYOUT_DIRECT ? direct : nested;
+  if (selected.status === 'invalid') {
+    throw new Error(
+      `Seçilen çalışma klasöründeki Pisi Sync bilgisi okunamıyor (${selected.path}). ` +
+      'Dosyayı elle değiştirmeyin; doğru ortak klasörü yeniden seçin.'
+    );
+  }
+  const warnings = [];
+  if (choice.duplicateProjects) {
+    warnings.push(
+      choice.mode === SYNC_LAYOUT_DIRECT
+        ? 'İç içe iki Sync alanı bulundu; doğrudan seçilen .pisi-sync projesi kullanıldı.'
+        : 'İç içe iki Sync alanı bulundu; ortak klasördeki standart .pisi-sync projesi kullanıldı.'
+    );
+  } else if (choice.recoveredAlternate) {
+    warnings.push('Mevcut Pisi Sync projesi otomatik algılandı ve doğru klasör düzeni kullanıldı.');
+  }
+  return {
+    ...makeSyncPaths(choice.mode),
+    existingManifest: selected.manifest,
+    warnings
+  };
+}
+
+async function verifyFolderAccess(paths, state) {
+  const token = `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  const path = paths.resolve(`probe_${state.deviceId}.json`);
+  const content = JSON.stringify({ format: 'pisi-sync-probe', token });
+  let operationError = null;
+  try {
+    await transport.write(path, content);
+    let stored = await transport.read(path);
+    for (const delay of [120, 320]) {
+      if (stored === content) break;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      stored = await transport.read(path);
+    }
+    if (stored !== content) {
+      throw new Error('Yazılan deneme dosyası aynı ad ve içerikle geri okunamadı.');
+    }
+  } catch (error) {
+    operationError = error;
+  }
+  try {
+    await transport.delete(path);
+  } catch (error) {
+    operationError ||= new Error(`Deneme dosyası temizlenemedi: ${error.message}`);
+  }
+  if (operationError) {
+    throw new Error(
+      `Seçilen klasör yazma/okuma doğrulamasını geçemedi: ${operationError.message} ` +
+      'Android klasör iznini ve bulut sağlayıcısının erişimini kontrol edin.'
+    );
+  }
+  return new Date().toISOString();
+}
+
+async function ensureManifest(state, layout) {
+  const existing = layout.existingManifest;
   if (existing) {
-    const manifest = validateSyncManifest(existing);
+    const manifest = existing;
     if (state.projectId && state.projectId !== manifest.projectId) {
       state.records = [];
       state.clock = 0;
@@ -179,9 +274,13 @@ async function ensureManifest(state) {
   const manifest = makeSyncManifest({
     projectId: state.projectId || newId('project'), createdBy: state.deviceId
   });
-  await transport.write(MANIFEST_PATH, JSON.stringify(manifest, null, 2));
-  state.projectId = manifest.projectId;
-  return manifest;
+  await transport.write(layout.manifest, JSON.stringify(manifest, null, 2));
+  const confirmed = validateSyncManifest(await readJson(layout.manifest));
+  if (confirmed.projectId !== manifest.projectId) {
+    throw new Error('Sync manifesti yazıldıktan sonra farklı içerikle okundu.');
+  }
+  state.projectId = confirmed.projectId;
+  return confirmed;
 }
 
 function snapshotChunkGroups(records) {
@@ -206,9 +305,9 @@ function snapshotChunkGroups(records) {
   return groups;
 }
 
-async function writeDeviceSnapshot(snapshot) {
+async function writeDeviceSnapshot(snapshot, paths) {
   const generation = `g${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-  const directory = `${DEVICES_PATH}/${snapshot.deviceId}`;
+  const directory = `${paths.devices}/${snapshot.deviceId}`;
   const chunks = [];
   const groups = snapshotChunkGroups(snapshot.records);
   for (let index = 0; index < groups.length; index += 1) {
@@ -235,7 +334,7 @@ async function writeDeviceSnapshot(snapshot) {
     chunks
   };
   await transport.write(`${directory}/index.json`, JSON.stringify(index));
-  await transport.delete(`${DEVICES_PATH}/${snapshot.deviceId}.json`).catch(() => {});
+  await transport.delete(`${paths.devices}/${snapshot.deviceId}.json`).catch(() => {});
   const keep = new Set(['index.json', ...chunks]);
   const oldFiles = await transport.list(directory).catch(() => []);
   for (const name of oldFiles) {
@@ -245,8 +344,8 @@ async function writeDeviceSnapshot(snapshot) {
   }
 }
 
-async function readSnapshots(projectId) {
-  const names = await transport.list(DEVICES_PATH);
+async function readSnapshots(projectId, paths) {
+  const names = await transport.list(paths.devices);
   const snapshots = [];
   const warnings = [];
   const legacy = names.filter((value) => /^device_[A-Za-z0-9._:-]{4,180}\.json$/.test(value));
@@ -255,7 +354,7 @@ async function readSnapshots(projectId) {
   );
   for (const name of legacy.slice(0, 200)) {
     try {
-      const snapshot = await readJson(`${DEVICES_PATH}/${name}`);
+      const snapshot = await readJson(`${paths.devices}/${name}`);
       if (snapshot?.projectId === projectId) snapshots.push(snapshot);
     } catch (error) {
       warnings.push(error.message);
@@ -263,7 +362,7 @@ async function readSnapshots(projectId) {
   }
   for (const indexPath of indexes.slice(0, 200)) {
     try {
-      const index = await readJson(`${DEVICES_PATH}/${indexPath}`);
+      const index = await readJson(`${paths.devices}/${indexPath}`);
       if (
         index?.format !== SNAPSHOT_INDEX_FORMAT || index.version !== 1 ||
         index.projectId !== projectId || !Array.isArray(index.chunks) || index.chunks.length > 500
@@ -274,7 +373,7 @@ async function readSnapshots(projectId) {
         if (!/^g[A-Za-z0-9_:-]{4,80}_\d{4}\.json$/.test(String(name))) {
           throw new Error('Sync parça adı geçersiz.');
         }
-        const chunk = await readJson(`${DEVICES_PATH}/${deviceDirectory}/${name}`);
+        const chunk = await readJson(`${paths.devices}/${deviceDirectory}/${name}`);
         if (
           chunk?.format !== SNAPSHOT_CHUNK_FORMAT || chunk.version !== 1 ||
           chunk.projectId !== projectId || chunk.deviceId !== index.deviceId ||
@@ -324,12 +423,23 @@ function preserveRemoteDefaultsOnFirstJoin(entities, remoteRecords, stateRecords
 async function performSync(reason = 'manual') {
   const folder = await transport.status();
   if (!folder.configured) throw new Error('Önce bir Pisi Sync klasörü seçin.');
+  if (folder.readable === false || folder.writable === false) {
+    throw new Error('Seçilen çalışma klasörü artık okunabilir ve yazılabilir değil. Klasörü yeniden seçin.');
+  }
   const state = await getState();
   state.enabled = true;
   state.folderName = folder.name || state.folderName;
-  await ensureManifest(state);
+  state.lastAttemptAt = new Date().toISOString();
+  const layout = await resolveSyncLayout(folder, state);
+  state.layout = layout.mode;
+  const verifiedRecently = state.lastVerifiedAt &&
+    Date.now() - new Date(state.lastVerifiedAt).getTime() < 24 * 60 * 60 * 1000;
+  if (reason === 'manual' || reason === 'folder-selected' || !verifiedRecently) {
+    state.lastVerifiedAt = await verifyFolderAccess(layout, state);
+  }
+  await ensureManifest(state, layout);
 
-  const remote = await readSnapshots(state.projectId);
+  const remote = await readSnapshots(state.projectId, layout);
   const foldedBefore = foldDeviceSnapshots(remote.snapshots, state.projectId);
   const entities = preserveRemoteDefaultsOnFirstJoin(
     await exportMobileSyncEntities(), foldedBefore.records, state.records
@@ -379,15 +489,22 @@ async function performSync(reason = 'manual') {
     item.deviceId === state.deviceId &&
     hashValue(item.records || []) === hashValue(snapshot.records)
   );
-  if (!ownSnapshotIsCurrent) await writeDeviceSnapshot(snapshot);
+  if (!ownSnapshotIsCurrent) await writeDeviceSnapshot(snapshot, layout);
 
   const summary = summarizeSyncPlan(plan);
+  const knownDevices = new Set(remote.snapshots.map(({ deviceId }) => deviceId).filter(Boolean));
+  knownDevices.add(state.deviceId);
   const result = {
     ...summary,
     conflicts: applied.conflicts,
-    warnings: remote.warnings,
-    devices: new Set(remote.snapshots.map(({ deviceId }) => deviceId).filter(Boolean)).size +
-      (remote.snapshots.some(({ deviceId }) => deviceId === state.deviceId) ? 0 : 1),
+    warnings: [...layout.warnings, ...remote.warnings],
+    devices: knownDevices.size,
+    peerDevices: Math.max(0, knownDevices.size - 1),
+    uploaded: !ownSnapshotIsCurrent,
+    uploadedRecords: ownSnapshotIsCurrent ? 0 : snapshot.records.length,
+    storagePath: formatSyncStoragePath(state.folderName, layout.mode),
+    projectId: state.projectId,
+    verifiedAt: state.lastVerifiedAt,
     reason,
     syncedAt: new Date().toISOString()
   };
@@ -401,6 +518,8 @@ async function performSync(reason = 'manual') {
     ])).slice(-256),
     lastSyncAt: result.syncedAt,
     lastResult: result,
+    lastAttemptAt: result.syncedAt,
+    lastError: null,
     enabled: true
   });
   document.dispatchEvent(new CustomEvent('pisi:sync-finished', { detail: result }));
@@ -409,7 +528,24 @@ async function performSync(reason = 'manual') {
 
 export function runMobileSync(options = {}) {
   if (!runningPromise) {
-    runningPromise = performSync(options.reason || 'manual')
+    const reason = options.reason || 'manual';
+    runningPromise = performSync(reason)
+      .catch(async (error) => {
+        try {
+          const state = await getState();
+          const at = new Date().toISOString();
+          await saveState({
+            ...state,
+            lastAttemptAt: at,
+            lastError: {
+              message: String(error?.message || 'Senkronizasyon başarısız.'),
+              reason,
+              at
+            }
+          });
+        } catch {}
+        throw error;
+      })
       .finally(() => { runningPromise = null; });
   }
   return runningPromise;
@@ -418,26 +554,48 @@ export function runMobileSync(options = {}) {
 export async function selectMobileSyncFolder() {
   const selected = await transport.choose();
   const state = await getState();
-  await saveState({ ...state, enabled: true, folderName: selected.name || '' });
+  await saveState({
+    ...state,
+    enabled: true,
+    folderName: selected.name || '',
+    layout: null,
+    lastError: null
+  });
   return runMobileSync({ reason: 'folder-selected' });
 }
 
 export async function disconnectMobileSync() {
   await transport.disconnect();
   const state = await getState();
-  await saveState({ ...state, enabled: false, folderName: '' });
+  await saveState({
+    ...state,
+    enabled: false,
+    folderName: '',
+    layout: null,
+    lastError: null
+  });
   return { ok: true };
 }
 
 export async function getMobileSyncStatus() {
   const [folder, state] = await Promise.all([transport.status(), getState()]);
+  const folderName = folder.name || state.folderName || '';
+  const accessible = folder.readable !== false && folder.writable !== false;
   return {
-    configured: Boolean(folder.configured && state.enabled),
-    folderName: folder.name || state.folderName || '',
+    configured: Boolean(folder.configured && accessible && state.enabled),
+    folderSelected: Boolean(folder.configured),
+    folderReadable: folder.readable !== false,
+    folderWritable: folder.writable !== false,
+    folderName,
+    layout: state.layout,
+    storagePath: state.layout ? formatSyncStoragePath(folderName, state.layout) : '',
     projectId: state.projectId,
     deviceId: state.deviceId,
     lastSyncAt: state.lastSyncAt,
     lastResult: state.lastResult,
+    lastAttemptAt: state.lastAttemptAt,
+    lastVerifiedAt: state.lastVerifiedAt,
+    lastError: state.lastError,
     running: Boolean(runningPromise)
   };
 }

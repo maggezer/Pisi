@@ -100,6 +100,17 @@ function kindLabel(kind) {
   return 'Not';
 }
 
+function describeSyncResult(result = {}) {
+  const received = Number(result.changed || 0);
+  const sent = Number(result.uploadedRecords || 0);
+  const peers = Number(result.peerDevices || 0);
+  if (peers === 0) {
+    return `Çalışma klasörü doğrulandı; ${sent} kayıt gönderildi. Diğer cihaz henüz bu projede görünmüyor.`;
+  }
+  if (!received && !sent) return `Klasör doğrulandı; ${peers + 1} cihaz güncel.`;
+  return `${received} değişiklik alındı, ${sent} kayıt gönderildi · ${peers + 1} cihaz.`;
+}
+
 function resolveTheme(theme) {
   if (theme === 'system') {
     return matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
@@ -657,6 +668,19 @@ class PisiApp {
     const syncDate = sync.lastSyncAt
       ? new Date(sync.lastSyncAt).toLocaleString(this.locale === 'en' ? 'en-US' : 'tr-TR')
       : 'Henüz senkronize edilmedi';
+    const syncError = sync.lastError?.message || '';
+    const syncErrorDate = sync.lastError?.at
+      ? new Date(sync.lastError.at).toLocaleString(this.locale === 'en' ? 'en-US' : 'tr-TR')
+      : '';
+    const syncName = sync.folderName || 'Pisi Sync';
+    const syncStateTitle = sync.configured
+      ? syncName
+      : sync.folderSelected
+        ? `${syncName} erişilemiyor`
+        : 'Çalışma klasörü bağlı değil';
+    const projectFingerprint = sync.projectId
+      ? String(sync.projectId).replace(/^project_/, '').slice(0, 12)
+      : '';
     this.shell({
       title: 'Ayarlar',
       eyebrow: 'Kendi düzenin',
@@ -704,21 +728,23 @@ class PisiApp {
           </button>
         </section>
         <section class="settings-group sync-settings" aria-busy="${sync.running ? 'true' : 'false'}">
-          <h2>Senkronizasyon</h2>
-          <p class="sync-description">Google Drive, OneDrive veya Android’in sunduğu başka bir ortak klasörle masaüstü ve mobili eşitle.</p>
+          <h2>Not çalışma klasörü</h2>
+          <p class="sync-description">Notlar çevrimdışı kullanım için telefonda korunur ve seçtiğin ortak çalışma klasörüne otomatik yazılır. Masaüstünde bağlı olan aynı <strong>Pisi Sync</strong> klasörünü seç.</p>
           <div class="sync-status ${sync.configured ? 'connected' : ''}">
             <span class="setting-icon">${sync.configured ? '✓' : '↔'}</span>
-            <span><strong>${sync.configured ? escapeHtml(sync.folderName || 'Pisi Sync') : 'Klasör bağlı değil'}</strong><small>${escapeHtml(syncDate)}</small></span>
+            <span><strong>${escapeHtml(syncStateTitle)}</strong><small>${escapeHtml(syncDate)}</small>${sync.storagePath ? `<small>Etkin yol: ${escapeHtml(sync.storagePath)}</small>` : ''}${projectFingerprint ? `<small>Proje: ${escapeHtml(projectFingerprint)}</small>` : ''}</span>
           </div>
+          ${syncError ? `<div class="sync-error" role="alert"><strong>Son senkronizasyon tamamlanamadı</strong><span>${escapeHtml(syncError)}</span>${syncErrorDate ? `<small>${escapeHtml(syncErrorDate)}</small>` : ''}</div>` : ''}
           <div class="sync-actions">
             <button class="setting-action" id="sync-folder-button">
-              <span><strong>${sync.configured ? 'Klasörü değiştir' : 'Ortak klasör seç'}</strong><small>Android klasör seçicisini açar</small></span><b>›</b>
+              <span><strong>${sync.folderSelected ? 'Çalışma klasörünü değiştir' : 'Not çalışma klasörü seç'}</strong><small>Google Drive, OneDrive veya yerel eşlenen klasör</small></span><b>›</b>
             </button>
             ${sync.configured ? `<button class="setting-action" id="sync-now-button" ${sync.running ? 'disabled' : ''}>
-              <span><strong>${sync.running ? 'Senkronize ediliyor…' : 'Şimdi senkronize et'}</strong><small>Değişiklikleri al ve gönder</small></span><b>↻</b>
+              <span><strong>${sync.running ? 'Senkronize ediliyor…' : 'Şimdi senkronize et'}</strong><small>Klasörü doğrula, değişiklikleri al ve gönder</small></span><b>↻</b>
             </button><button class="setting-action danger" id="sync-disconnect-button"><span><strong>Bağlantıyı kes</strong><small>Yerel veriler silinmez</small></span><b>×</b></button>` : ''}
           </div>
-          ${sync.lastResult ? `<small class="sync-result">Son işlem: ${Number(sync.lastResult.changed || 0)} değişiklik · ${Number(sync.lastResult.conflicts || 0)} çakışma kopyası · ${Number(sync.lastResult.devices || 1)} cihaz</small>` : ''}
+          ${sync.lastResult ? `<small class="sync-result">Son işlem: ${Number(sync.lastResult.changed || 0)} alındı · ${Number(sync.lastResult.uploadedRecords || 0)} gönderildi · ${Number(sync.lastResult.conflicts || 0)} çakışma kopyası · ${Number(sync.lastResult.devices || 1)} cihaz</small>` : ''}
+          ${sync.lastResult?.peerDevices === 0 ? '<small class="sync-warning">Henüz başka cihaz görünmüyor. Masaüstünde aynı klasör ve aynı proje kimliğinin bağlı olduğunu kontrol et.</small>' : ''}
         </section>
         <section class="settings-group">
           <h2>Verilerin</h2>
@@ -740,8 +766,8 @@ class PisiApp {
         </section>
         <section class="settings-group about-group">
           <h2>Hakkında</h2>
-          <p>Pisi 3.1 · Android telefon ve tablet sürümü</p>
-          <p>Notların bu cihazda saklanır; sen dışa aktarmadıkça başka yere gönderilmez.</p>
+          <p>Pisi 3.1.1 · Android telefon ve tablet sürümü</p>
+          <p>Notların telefonda çevrimdışı önbellekte kalır; çalışma klasörü bağlandığında aynı projenin eşleme kopyası seçtiğin klasöre yazılır.</p>
         </section>
       `
     });
@@ -773,7 +799,7 @@ class PisiApp {
         await this.reloadDocuments();
         await this.platform.refreshFromStorage();
         await successHaptic();
-        this.toast(`${result.changed} değişiklik senkronize edildi.`);
+        this.toast(describeSyncResult(result));
       } catch (error) {
         this.syncStatus = await getMobileSyncStatus().catch(() => this.syncStatus);
         this.toast(error?.message || 'Sync klasörü seçilemedi.', 'error');
@@ -790,7 +816,7 @@ class PisiApp {
         await this.reloadDocuments();
         await this.platform.refreshFromStorage();
         await successHaptic();
-        this.toast(`${result.changed} değişiklik senkronize edildi.`);
+        this.toast(describeSyncResult(result));
       } catch (error) {
         this.syncStatus = await getMobileSyncStatus().catch(() => this.syncStatus);
         this.toast(error?.message || 'Senkronizasyon başarısız.', 'error');

@@ -90,10 +90,12 @@ Her adımda uygulamanın kapanmaması, ekranın boşalmaması ve yazı odağın�
 ## 4. Senkronizasyon testi
 
 1. Google Drive veya OneDrive Android uygulamasını kurup hesabınıza giriş yapın.
-2. Pisi'de Ayarlar → Ortak klasör seç yolunu açın.
+2. Pisi'de Ayarlar → Not çalışma klasörü → Not çalışma klasörü seç yolunu açın.
 3. Android sistem klasör seçicisinde Drive/OneDrive içindeki boş bir `Pisi Sync` klasörünü seçin.
 4. Masaüstünde aynı klasörü masaüstü eşitleme istemcisiyle yerel klasör olarak açın.
-5. Telefonda bir notu değiştirip `Şimdi senkronize et` seçin; masaüstünde senkronizasyonu çalıştırın.
+5. İlk bağlantıdan sonra Etkin yol ve Proje değerlerini kaydedin; kalıcı bir erişim hatası görünmediğini doğrulayın.
+6. Telefonda bir notu değiştirip `Şimdi senkronize et` seçin; sonuçta gönderilen kayıt sayısının sıfırdan büyük olduğunu doğrulayın ve masaüstünde senkronizasyonu çalıştırın.
+7. Android seçicide doğrudan `.pisi-sync` klasörünü seçebilen bir sağlayıcı varsa bu yolu ayrıca deneyin; uygulama ikinci bir `.pisi-sync` oluşturmamalı ve aynı proje kimliğini göstermelidir.
 6. Aynı notu iki cihazda çevrimdışı değiştirerek çakışma kopyasının ve her iki içeriğin korunduğunu doğrulayın.
 
 ## 5. Sorun kaydı alma
