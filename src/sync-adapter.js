@@ -131,6 +131,7 @@ function canonicalNodePayload(document, ids, extra = {}) {
     view: document.view || null,
     createdAt: document.createdAt || null,
     updatedAt: document.updatedAt || null,
+    relativePath: document.syncRelativePath || null,
     native: document.syncNative?.node || null
   };
 }
@@ -165,6 +166,7 @@ function canonicalMapPayload(document, ids) {
       ? structuredClone(document.properties) : {},
     createdAt: document.createdAt || null,
     updatedAt: document.updatedAt || null,
+    relativePath: document.syncRelativePath || null,
     native: document.syncNative?.map || null
   };
 }
@@ -341,6 +343,7 @@ export async function applyMobileSyncRecords(records, conflicts = []) {
         view: payload.view || undefined,
         createdAt: payload.createdAt || undefined,
         updatedAt: payload.updatedAt || undefined,
+        syncRelativePath: payload.relativePath || null,
         syncNative: { node: payload.native || null }
       });
     } else if (record.kind === 'map') {
@@ -379,6 +382,7 @@ export async function applyMobileSyncRecords(records, conflicts = []) {
               sources: node.sources || [],
               createdAt: node.createdAt || payload.createdAt,
               updatedAt: node.updatedAt || payload.updatedAt,
+              syncRelativePath: node.relativePath || null,
               syncNative: { node: node.native || null }
             };
           }),
@@ -392,6 +396,7 @@ export async function applyMobileSyncRecords(records, conflicts = []) {
         },
         createdAt: payload.createdAt || undefined,
         updatedAt: payload.updatedAt || undefined,
+        syncRelativePath: payload.relativePath || null,
         syncNative: { map: payload.native || null }
       });
     } else if (record.kind === 'task') {

@@ -91,12 +91,14 @@ Her adımda uygulamanın kapanmaması, ekranın boşalmaması ve yazı odağın�
 
 1. Google Drive veya OneDrive Android uygulamasını kurup hesabınıza giriş yapın.
 2. Pisi'de Ayarlar → Not çalışma klasörü → Not çalışma klasörü seç yolunu açın.
-3. Android sistem klasör seçicisinde Drive/OneDrive içindeki boş bir `Pisi Sync` klasörünü seçin.
-4. Masaüstünde aynı klasörü masaüstü eşitleme istemcisiyle yerel klasör olarak açın.
-5. İlk bağlantıdan sonra Etkin yol ve Proje değerlerini kaydedin; kalıcı bir erişim hatası görünmediğini doğrulayın.
-6. Telefonda bir notu değiştirip `Şimdi senkronize et` seçin; sonuçta gönderilen kayıt sayısının sıfırdan büyük olduğunu doğrulayın ve masaüstünde senkronizasyonu çalıştırın.
-7. Android seçicide doğrudan `.pisi-sync` klasörünü seçebilen bir sağlayıcı varsa bu yolu ayrıca deneyin; uygulama ikinci bir `.pisi-sync` oluşturmamalı ve aynı proje kimliğini göstermelidir.
-6. Aynı notu iki cihazda çevrimdışı değiştirerek çakışma kopyasının ve her iki içeriğin korunduğunu doğrulayın.
+3. Android sistem seçicisinde masaüstünde açık olan gerçek Pisi proje kökünü seçin; `.pisi-sync` alt klasörünü seçmeyin.
+4. `Bu klasörü kullan` onayından sonra Ayarlar'da `Android klasör izni: kalıcı okuma + yazma ✓` satırını doğrulayın.
+5. Telefonda Türkçe karakter ve boşluk içeren başlıklı bir not oluşturup `Şimdi senkronize et` seçin.
+6. Sonuçta en az bir gerçek dosyanın doğrulandığını, `Dosya kanıtı` satırında `.node` adının göründüğünü ve Drive/OneDrive klasöründe aynı dosyanın gerçekten bulunduğunu doğrulayın.
+7. Bir harita ve harita düğümü oluşturun; kökte `.map`, `nd_…` yan klasöründe `.node` yazıldığını doğrulayın.
+8. Masaüstünde aynı proje kökünü açın/senkronize edin ve mobil içeriğin geldiğini kontrol edin.
+9. Görünür `.node` dosyasını masaüstünde silin; bulut aktarımından ve mobil senkronizasyondan sonra notun mobilde de kalktığını doğrulayın.
+10. Aynı notu iki cihazda çevrimdışı değiştirerek çakışma kopyasının ve iki içeriğin korunduğunu doğrulayın.
 
 ## 5. Sorun kaydı alma
 

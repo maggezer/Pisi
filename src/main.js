@@ -104,11 +104,15 @@ function describeSyncResult(result = {}) {
   const received = Number(result.changed || 0);
   const sent = Number(result.uploadedRecords || 0);
   const peers = Number(result.peerDevices || 0);
+  const files = Number(result.filesVerified || 0);
+  const fileProof = files
+    ? `${files} gerçek .node/.map dosyası yazılıp doğrulandı`
+    : 'Çalışma klasörü yazma-okuma testi doğrulandı; görünür not dosyası yok';
   if (peers === 0) {
-    return `Çalışma klasörü doğrulandı; ${sent} kayıt gönderildi. Diğer cihaz henüz bu projede görünmüyor.`;
+    return `${fileProof}; ${sent} kayıt gönderildi. Diğer cihaz henüz bu projede görünmüyor.`;
   }
-  if (!received && !sent) return `Klasör doğrulandı; ${peers + 1} cihaz güncel.`;
-  return `${received} değişiklik alındı, ${sent} kayıt gönderildi · ${peers + 1} cihaz.`;
+  if (!received && !sent) return `${fileProof}; ${peers + 1} cihaz güncel.`;
+  return `${fileProof}; ${received} değişiklik alındı, ${sent} kayıt gönderildi · ${peers + 1} cihaz.`;
 }
 
 function resolveTheme(theme) {
@@ -681,6 +685,10 @@ class PisiApp {
     const projectFingerprint = sync.projectId
       ? String(sync.projectId).replace(/^project_/, '').slice(0, 12)
       : '';
+    const permissionReady = sync.permissionPersisted &&
+      sync.folderReadable !== false && sync.folderWritable !== false;
+    const visibleFiles = Array.isArray(sync.lastResult?.visibleFiles)
+      ? sync.lastResult.visibleFiles.slice(0, 3) : [];
     this.shell({
       title: 'Ayarlar',
       eyebrow: 'Kendi düzenin',
@@ -729,21 +737,23 @@ class PisiApp {
         </section>
         <section class="settings-group sync-settings" aria-busy="${sync.running ? 'true' : 'false'}">
           <h2>Not çalışma klasörü</h2>
-          <p class="sync-description">Notlar çevrimdışı kullanım için telefonda korunur ve seçtiğin ortak çalışma klasörüne otomatik yazılır. Masaüstünde bağlı olan aynı <strong>Pisi Sync</strong> klasörünü seç.</p>
+          <p class="sync-description">Seçtiğin klasör gerçek Pisi proje köküdür. Notlar ve haritalar burada görünür <strong>.node/.map</strong> dosyaları olarak tutulur; telefon veritabanı yalnız çevrimdışı çalışma kopyasıdır.</p>
           <div class="sync-status ${sync.configured ? 'connected' : ''}">
             <span class="setting-icon">${sync.configured ? '✓' : '↔'}</span>
-            <span><strong>${escapeHtml(syncStateTitle)}</strong><small>${escapeHtml(syncDate)}</small>${sync.storagePath ? `<small>Etkin yol: ${escapeHtml(sync.storagePath)}</small>` : ''}${projectFingerprint ? `<small>Proje: ${escapeHtml(projectFingerprint)}</small>` : ''}</span>
+            <span><strong>${escapeHtml(syncStateTitle)}</strong><small>${escapeHtml(syncDate)}</small>${sync.folderSelected ? `<small>Android klasör izni: ${permissionReady ? 'kalıcı okuma + yazma ✓' : 'eksik; klasörü yeniden seç'}</small>` : ''}${sync.storagePath ? `<small>Sync metadatası: ${escapeHtml(sync.storagePath)}</small>` : ''}${projectFingerprint ? `<small>Proje: ${escapeHtml(projectFingerprint)}</small>` : ''}</span>
           </div>
+          <small class="sync-permission-note">Android ayrıca “tüm dosyalar” izni istemez. Sistem seçicisindeki <strong>Bu klasörü kullan</strong> onayı yalnız seçtiğin klasöre kalıcı okuma-yazma yetkisi verir.</small>
           ${syncError ? `<div class="sync-error" role="alert"><strong>Son senkronizasyon tamamlanamadı</strong><span>${escapeHtml(syncError)}</span>${syncErrorDate ? `<small>${escapeHtml(syncErrorDate)}</small>` : ''}</div>` : ''}
           <div class="sync-actions">
             <button class="setting-action" id="sync-folder-button">
-              <span><strong>${sync.folderSelected ? 'Çalışma klasörünü değiştir' : 'Not çalışma klasörü seç'}</strong><small>Google Drive, OneDrive veya yerel eşlenen klasör</small></span><b>›</b>
+              <span><strong>${sync.folderSelected ? 'Klasör iznini yenile / değiştir' : 'Not çalışma klasörü seç'}</strong><small>Gerçek Pisi proje klasörünü sistem seçicisinde yetkilendir</small></span><b>›</b>
             </button>
             ${sync.configured ? `<button class="setting-action" id="sync-now-button" ${sync.running ? 'disabled' : ''}>
-              <span><strong>${sync.running ? 'Senkronize ediliyor…' : 'Şimdi senkronize et'}</strong><small>Klasörü doğrula, değişiklikleri al ve gönder</small></span><b>↻</b>
+              <span><strong>${sync.running ? 'Senkronize ediliyor…' : 'Şimdi senkronize et'}</strong><small>Gerçek dosyaları yaz, geri oku ve klasör listesinde doğrula</small></span><b>↻</b>
             </button><button class="setting-action danger" id="sync-disconnect-button"><span><strong>Bağlantıyı kes</strong><small>Yerel veriler silinmez</small></span><b>×</b></button>` : ''}
           </div>
-          ${sync.lastResult ? `<small class="sync-result">Son işlem: ${Number(sync.lastResult.changed || 0)} alındı · ${Number(sync.lastResult.uploadedRecords || 0)} gönderildi · ${Number(sync.lastResult.conflicts || 0)} çakışma kopyası · ${Number(sync.lastResult.devices || 1)} cihaz</small>` : ''}
+          ${sync.lastResult ? `<small class="sync-result">Son işlem: ${Number(sync.lastResult.filesVerified || 0)} gerçek dosya doğrulandı · ${Number(sync.lastResult.filesWritten || 0)} dosya yazıldı · ${Number(sync.lastResult.changed || 0)} alındı · ${Number(sync.lastResult.conflicts || 0)} çakışma kopyası</small>` : ''}
+          ${visibleFiles.length ? `<small class="sync-result">Dosya kanıtı: ${visibleFiles.map(escapeHtml).join(' · ')}</small>` : ''}
           ${sync.lastResult?.peerDevices === 0 ? '<small class="sync-warning">Henüz başka cihaz görünmüyor. Masaüstünde aynı klasör ve aynı proje kimliğinin bağlı olduğunu kontrol et.</small>' : ''}
         </section>
         <section class="settings-group">
@@ -766,8 +776,8 @@ class PisiApp {
         </section>
         <section class="settings-group about-group">
           <h2>Hakkında</h2>
-          <p>Pisi 3.1.1 · Android telefon ve tablet sürümü</p>
-          <p>Notların telefonda çevrimdışı önbellekte kalır; çalışma klasörü bağlandığında aynı projenin eşleme kopyası seçtiğin klasöre yazılır.</p>
+          <p>Pisi 3.1.2 · Android telefon ve tablet sürümü</p>
+          <p>Okunabilir .node/.map proje dosyaları asıl veridir; telefon önbelleği yeniden oluşturulabilir çalışma kopyasıdır.</p>
         </section>
       `
     });

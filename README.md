@@ -5,7 +5,7 @@ Pisi’nin Android için telefon ve tablet çalışma alanı. Uygulama aynı kod
 - Telefon modu, hızlı yakalama ve tek elle kullanıma odaklanan alt menülü görünüm.
 - Tablet modu, Windows sürümüne benzeyen belge ağacı, merkez çalışma alanı ve bağlamsal sağ panel.
 
-Veriler cihazdaki IndexedDB alanında çevrimdışı tutulur. Pisi 3.1; masaüstündeki node/map, first-class görev, ilişki ve property sözleşmelerini kullanır. İsteğe bağlı Pisi Sync, Google Drive, OneDrive veya Android sistem klasör seçicisinde görünen başka bir ortak klasör üzerinden masaüstüyle çift yönlü eşitleme yapar.
+Pisi 3.1.2; masaüstündeki node/map, first-class görev, ilişki ve property sözleşmelerini kullanır. Bağlanan çalışma klasöründeki okunabilir `.node/.map` dosyaları asıl veridir; IndexedDB çevrimdışı çalışma kopyasıdır. Google Drive, OneDrive veya Android sistem klasör seçicisinde görünen başka bir çift yönlü klasör sağlayıcısı kullanılabilir.
 
 ## Özellikler
 
@@ -16,7 +16,7 @@ Veriler cihazdaki IndexedDB alanında çevrimdışı tutulur. Pisi 3.1; masaüst
 - Markdown/HTML içe aktarma; Markdown, PDF, HTML ve DOCX dışa aktarma
 - Yerel sürüm geçmişi, sürüm geri yükleme, bütünlük denetimi ve Pisi 3 yedeği
 - Masaüstüyle uyumlu node/map kimlikleri, first-class görevler ve property tipleri
-- Ortak klasör üzerinden çevrimdışı-öncelikli otomatik/manüel senkronizasyon
+- Gerçek Pisi proje köküne `.node/.map` yazan ve geri okuyarak doğrulayan otomatik/manüel senkronizasyon
 - Deterministik sürüm birleştirme, tombstone silme ve içerik kaybetmeyen çakışma kopyaları
 - Mantıksal, metin, matematik ve bilimsel hesap tablosu formülleri
 - Dış klavye kısayolları ve büyük veri için önceden oluşturulan arama indeksi

@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.UriPermission;
 import android.net.Uri;
 import androidx.activity.result.ActivityResult;
 import androidx.documentfile.provider.DocumentFile;
@@ -20,6 +21,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @CapacitorPlugin(name = "PisiSyncFolder")
 public class PisiSyncFolderPlugin extends Plugin {
@@ -43,6 +45,33 @@ public class PisiSyncFolderPlugin extends Plugin {
         return DocumentFile.fromTreeUri(getContext(), uri);
     }
 
+    private UriPermission persistedPermission(Uri uri) {
+        if (uri == null) return null;
+        for (UriPermission permission : getContext().getContentResolver().getPersistedUriPermissions()) {
+            if (uri.equals(permission.getUri())) return permission;
+        }
+        return null;
+    }
+
+    private boolean hasPersistedReadWritePermission(Uri uri) {
+        UriPermission permission = persistedPermission(uri);
+        return permission != null && permission.isReadPermission() && permission.isWritePermission();
+    }
+
+    private void putFolderStatus(JSObject response, Uri uri, DocumentFile root) {
+        boolean exists = root != null && root.exists();
+        boolean readable = exists && root.canRead();
+        boolean writable = exists && root.canWrite();
+        boolean persisted = hasPersistedReadWritePermission(uri);
+        response.put("configured", persisted && readable && writable);
+        response.put("uri", uri == null ? "" : uri.toString());
+        response.put("name", root == null ? "" : root.getName());
+        response.put("readable", readable);
+        response.put("writable", writable);
+        response.put("permissionPersisted", persisted);
+        response.put("provider", uri == null || uri.getAuthority() == null ? "" : uri.getAuthority());
+    }
+
     private String[] safeSegments(String input) throws Exception {
         String raw = String.valueOf(input == null ? "" : input)
             .replace('\\', '/')
@@ -52,12 +81,12 @@ public class PisiSyncFolderPlugin extends Plugin {
         String[] segments = raw.split("/");
         if (segments.length > 24) throw new Exception("Sync yolu çok derin.");
         for (String segment : segments) {
-            if (
-                segment.isEmpty() ||
-                segment.equals(".") ||
-                segment.equals("..") ||
-                !segment.matches("[A-Za-z0-9._:-]{1,180}")
-            ) {
+            boolean invalid = segment.isEmpty() || segment.equals(".") ||
+                segment.equals("..") || segment.length() > 180;
+            for (int index = 0; !invalid && index < segment.length(); index++) {
+                invalid = Character.isISOControl(segment.charAt(index));
+            }
+            if (invalid) {
                 throw new Exception("Geçersiz sync yolu.");
             }
         }
@@ -93,7 +122,9 @@ public class PisiSyncFolderPlugin extends Plugin {
         getBridge().execute(() -> {
             try {
                 DocumentFile root = configuredRoot();
+                Uri uri = configuredUri();
                 if (
+                    !hasPersistedReadWritePermission(uri) ||
                     root == null || !root.exists() ||
                     !root.canRead() || !root.canWrite()
                 ) {
@@ -154,7 +185,12 @@ public class PisiSyncFolderPlugin extends Plugin {
             ) {
                 throw new Exception("Seçilen klasör okuma ve yazma izni vermedi.");
             }
-            preferences().edit().putString(URI_KEY, uri.toString()).apply();
+            if (!hasPersistedReadWritePermission(uri)) {
+                throw new Exception("Android kalıcı klasör iznini kaydetmedi.");
+            }
+            if (!preferences().edit().putString(URI_KEY, uri.toString()).commit()) {
+                throw new Exception("Klasör seçimi uygulama ayarlarına kaydedilemedi.");
+            }
             if (previous != null && !previous.equals(uri)) {
                 try {
                     getContext().getContentResolver().releasePersistableUriPermission(
@@ -165,11 +201,7 @@ public class PisiSyncFolderPlugin extends Plugin {
                 } catch (Exception ignored) {}
             }
             JSObject response = new JSObject();
-            response.put("configured", true);
-            response.put("uri", uri.toString());
-            response.put("name", root == null ? "Pisi Sync" : root.getName());
-            response.put("readable", true);
-            response.put("writable", true);
+            putFolderStatus(response, uri, root);
             call.resolve(response);
         } catch (Exception error) {
             if (previous == null || !previous.equals(uri)) {
@@ -187,16 +219,10 @@ public class PisiSyncFolderPlugin extends Plugin {
 
     @PluginMethod
     public void getFolder(PluginCall call) {
+        Uri uri = configuredUri();
         DocumentFile root = configuredRoot();
         JSObject response = new JSObject();
-        boolean exists = root != null && root.exists();
-        boolean readable = exists && root.canRead();
-        boolean writable = exists && root.canWrite();
-        response.put("configured", exists && readable && writable);
-        response.put("uri", configuredUri() == null ? "" : configuredUri().toString());
-        response.put("name", root == null ? "" : root.getName());
-        response.put("readable", readable);
-        response.put("writable", writable);
+        putFolderStatus(response, uri, root);
         call.resolve(response);
     }
 
@@ -270,7 +296,12 @@ public class PisiSyncFolderPlugin extends Plugin {
             DocumentFile file = parent.findFile(name);
             boolean created = false;
             if (file == null) {
-                file = parent.createFile("application/octet-stream", name);
+                String lowerName = name.toLowerCase(Locale.ROOT);
+                String mimeType = (
+                    lowerName.endsWith(".json") || lowerName.endsWith(".node") ||
+                    lowerName.endsWith(".map")
+                ) ? "application/json" : "application/octet-stream";
+                file = parent.createFile(mimeType, name);
                 created = true;
                 if (file != null && !name.equals(file.getName())) {
                     try { file.delete(); } catch (Exception ignored) {}
@@ -348,10 +379,27 @@ public class PisiSyncFolderPlugin extends Plugin {
                 throw new Exception("Sync klasöründe çok fazla dosya var.");
             }
             String name = entry.getName();
-            if (name == null || !name.matches("[A-Za-z0-9._:-]{1,180}")) continue;
+            if (name == null || name.isEmpty() || name.length() > 180) continue;
+            boolean invalidName = name.equals(".") || name.equals("..");
+            for (int index = 0; !invalidName && index < name.length(); index++) {
+                invalidName = Character.isISOControl(name.charAt(index));
+            }
+            if (invalidName) continue;
             String relative = prefix.isEmpty() ? name : prefix + "/" + name;
-            if (entry.isDirectory()) collectFiles(entry, relative, output);
-            else if (entry.isFile() && name.endsWith(".json")) output.add(relative);
+            String lower = relative.toLowerCase(Locale.ROOT);
+            if (entry.isDirectory()) {
+                if (
+                    name.equalsIgnoreCase(".git") ||
+                    name.equalsIgnoreCase("node_modules") ||
+                    name.equalsIgnoreCase(".pisi-sync") ||
+                    lower.equals(".pisi-history") || lower.startsWith(".pisi-history/") ||
+                    lower.equals(".pisi/sync-trash") || lower.startsWith(".pisi/sync-trash/")
+                ) continue;
+                collectFiles(entry, relative, output);
+            } else if (
+                entry.isFile() &&
+                (lower.endsWith(".json") || lower.endsWith(".node") || lower.endsWith(".map"))
+            ) output.add(relative);
         }
     }
 

@@ -11,6 +11,10 @@ import {
   chooseSyncLayout, formatSyncStoragePath, makeSyncPaths,
   SYNC_LAYOUT_DIRECT, SYNC_LAYOUT_NESTED
 } from './sync-folder-layout.js';
+import {
+  buildWorkspaceProjection, CONFIG_PATHS, parseWorkspaceFiles,
+  WORKSPACE_INDEX_FORMAT, WORKSPACE_INDEX_VERSION
+} from './workspace-files.js';
 
 const NativeFolder = registerPlugin('PisiSyncFolder');
 const STATE_KEY = 'pisiSyncState';
@@ -19,6 +23,13 @@ const MAX_SNAPSHOT_BYTES = 48 * 1024 * 1024;
 const SNAPSHOT_CHUNK_BYTES = 4 * 1024 * 1024;
 const SNAPSHOT_INDEX_FORMAT = 'pisi-sync-device-index';
 const SNAPSHOT_CHUNK_FORMAT = 'pisi-sync-device-chunk';
+const WORKSPACE_DEVICE_ID = 'device_workspace_files';
+const WORKSPACE_INDEX_NAME = 'workspace-files.json';
+const WORKSPACE_AUTHORITY_PATHS = new Set([
+  '.pisi/tasks.json',
+  '.pisi/relationships.json',
+  ...Object.values(CONFIG_PATHS)
+]);
 
 let runningPromise = null;
 let autoTimer = null;
@@ -75,7 +86,8 @@ async function getWebRoot(request = false) {
 
 async function webPath(path, { create = false, file = false } = {}) {
   const root = await getWebRoot(false);
-  if (!root) throw new Error('Önce bir Pisi Sync klasörü seçin.');
+  if (!root) throw new Error('Önce gerçek Pisi proje klasörünü seçin.');
+  if (path && !isSafeWorkspacePath(path)) throw new Error('Geçersiz proje dosyası yolu.');
   const segments = String(path || '').split('/').filter(Boolean);
   let directory = root;
   const directorySegments = file ? segments.slice(0, -1) : segments;
@@ -101,8 +113,18 @@ async function listWebFiles(path) {
   const visit = async (current, prefix = '') => {
     for await (const [name, handle] of current.entries()) {
       const relative = prefix ? `${prefix}/${name}` : name;
-      if (handle.kind === 'directory') await visit(handle, relative);
-      else if (handle.kind === 'file' && name.endsWith('.json')) files.push(relative);
+      const lower = relative.toLocaleLowerCase('en-US');
+      if (handle.kind === 'directory') {
+        if (
+          ['.git', 'node_modules', '.pisi-sync'].includes(name.toLocaleLowerCase('en-US')) ||
+          lower === '.pisi/sync-trash' || lower.startsWith('.pisi/sync-trash/') ||
+          lower === '.pisi-history' || lower.startsWith('.pisi-history/')
+        ) continue;
+        await visit(handle, relative);
+      } else if (
+        handle.kind === 'file' &&
+        (lower.endsWith('.json') || lower.endsWith('.node') || lower.endsWith('.map'))
+      ) files.push(relative);
     }
   };
   await visit(directory);
@@ -113,12 +135,19 @@ const transport = {
   async choose() {
     if (Capacitor.isNativePlatform()) return NativeFolder.chooseFolder();
     const root = await getWebRoot(true);
-    return { configured: true, name: root.name };
+    return {
+      configured: true, name: root.name, readable: true, writable: true,
+      permissionPersisted: true, provider: 'browser-file-system'
+    };
   },
   async status() {
     if (Capacitor.isNativePlatform()) return NativeFolder.getFolder();
     const root = await getWebRoot(false);
-    return { configured: Boolean(root), name: root?.name || '' };
+    return {
+      configured: Boolean(root), name: root?.name || '',
+      readable: Boolean(root), writable: Boolean(root),
+      permissionPersisted: Boolean(root), provider: 'browser-file-system'
+    };
   },
   async read(path) {
     if (Capacitor.isNativePlatform()) {
@@ -389,6 +418,181 @@ async function readSnapshots(projectId, paths) {
   return { snapshots, warnings };
 }
 
+function normalizeWorkspacePath(value = '') {
+  return String(value).replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+}
+
+function isSafeWorkspacePath(value = '') {
+  const segments = normalizeWorkspacePath(value).split('/');
+  return segments.length > 0 && segments.length <= 24 && segments.every((segment) => (
+    segment && segment !== '.' && segment !== '..' && segment.length <= 180 &&
+    !/[\u0000-\u001f]/.test(segment)
+  ));
+}
+
+function isWorkspaceDocumentPath(value = '') {
+  const normalized = normalizeWorkspacePath(value);
+  if (!isSafeWorkspacePath(normalized)) return false;
+  const lower = normalized.toLocaleLowerCase('en-US');
+  return lower.endsWith('.node') || lower.endsWith('.map');
+}
+
+function isWorkspaceProjectPath(value = '') {
+  const path = normalizeWorkspacePath(value);
+  if (!path || path.startsWith('.pisi-sync/')) return false;
+  return isWorkspaceDocumentPath(path) || WORKSPACE_AUTHORITY_PATHS.has(path);
+}
+
+function validWorkspaceIndex(value, projectId) {
+  return value?.format === WORKSPACE_INDEX_FORMAT &&
+    value.version === WORKSPACE_INDEX_VERSION &&
+    value.projectId === projectId &&
+    value.records && typeof value.records === 'object' && !Array.isArray(value.records);
+}
+
+async function readWorkspaceProject(layout, projectId) {
+  const listed = await transport.list('');
+  const projectPaths = Array.from(new Set(listed
+    .map(normalizeWorkspacePath)
+    .filter(isWorkspaceProjectPath)));
+  const index = await readJson(layout.resolve(WORKSPACE_INDEX_NAME), { optional: true })
+    .catch(() => null);
+
+  if (validWorkspaceIndex(index, projectId)) {
+    for (const path of Object.values(index.records)) {
+      const normalized = normalizeWorkspacePath(path);
+      if (!isWorkspaceDocumentPath(normalized) || projectPaths.includes(normalized)) continue;
+      const content = await transport.read(normalized);
+      if (content != null) projectPaths.push(normalized);
+    }
+  }
+
+  const rows = [];
+  for (const path of projectPaths) {
+    const content = await transport.read(path);
+    if (content != null) rows.push({ path, content });
+  }
+  const parsed = parseWorkspaceFiles(rows);
+  if (parsed.warnings.length) {
+    throw new Error(`Proje dosyaları güvenle okunamadı: ${parsed.warnings[0]}`);
+  }
+  const entityKeys = new Set(parsed.entities.map(({ kind, id }) => `${kind}:${id}`));
+  const rowPaths = new Set(rows.map(({ path }) =>
+    normalizeWorkspacePath(path).toLocaleLowerCase('en-US')
+  ));
+  const managedKeys = [];
+  if (validWorkspaceIndex(index, projectId)) {
+    for (const [key, indexedPath] of Object.entries(index.records)) {
+      if (!/^(?:node|map):/.test(key) || entityKeys.has(key)) continue;
+      const normalized = normalizeWorkspacePath(indexedPath).toLocaleLowerCase('en-US');
+      if (rowPaths.has(normalized)) {
+        throw new Error(
+          `Yönetilen proje dosyasının kimliği veya biçimi değişmiş: ${indexedPath}`
+        );
+      }
+      managedKeys.push(key);
+    }
+  }
+  return { ...parsed, managedKeys };
+}
+
+function makeWorkspaceSnapshot(state, baseline, workspace) {
+  const entityKeys = new Set(workspace.entities.map(({ kind, id }) => `${kind}:${id}`));
+  const relevantKeys = new Set([...entityKeys, ...workspace.managedKeys]);
+  if (!relevantKeys.size) return null;
+  const prepared = prepareDeviceRecords({
+    entities: workspace.entities,
+    baseRecords: baseline.records.filter(({ key }) => relevantKeys.has(key)),
+    deviceId: WORKSPACE_DEVICE_ID,
+    clock: Math.max(state.clock, baseline.clock)
+  });
+  return makeDeviceSnapshot({
+    projectId: state.projectId,
+    deviceId: WORKSPACE_DEVICE_ID,
+    deviceName: 'Seçilen Pisi proje dosyaları',
+    records: prepared.records,
+    clock: prepared.clock
+  });
+}
+
+async function materializeWorkspace(records, layout, projectId) {
+  const projection = buildWorkspaceProjection(records);
+  const nextVisible = new Set(projection.visibleFiles.map(normalizeWorkspacePath));
+  const previousIndex = await readJson(layout.resolve(WORKSPACE_INDEX_NAME), { optional: true })
+    .catch(() => null);
+  let visibleWrites = 0;
+  let authorityWrites = 0;
+
+  for (const file of projection.files) {
+    const existing = await transport.read(file.path);
+    if (existing !== file.content) {
+      await transport.write(file.path, file.content);
+      if (file.visible) visibleWrites += 1;
+      else authorityWrites += 1;
+    }
+    const confirmed = await transport.read(file.path);
+    if (confirmed !== file.content) {
+      throw new Error(`Gerçek proje dosyası yazıldıktan sonra doğrulanamadı: ${file.path}`);
+    }
+  }
+
+  let removedFiles = 0;
+  if (validWorkspaceIndex(previousIndex, projectId)) {
+    for (const previousPath of Object.values(previousIndex.records)) {
+      const path = normalizeWorkspacePath(previousPath);
+      if (!isWorkspaceDocumentPath(path) || nextVisible.has(path)) continue;
+      await transport.delete(path);
+      if (await transport.read(path) != null) {
+        throw new Error(`Silinen proje dosyası klasörden kaldırılamadı: ${path}`);
+      }
+      removedFiles += 1;
+    }
+  }
+
+  const writtenIndex = {
+    ...projection.index,
+    projectId,
+    verifiedAt: new Date().toISOString(),
+    files: projection.visibleFiles.map((path) => ({ path }))
+  };
+  const indexContent = `${JSON.stringify(writtenIndex, null, 2)}\n`;
+  const indexPath = layout.resolve(WORKSPACE_INDEX_NAME);
+  if (await transport.read(indexPath) !== indexContent) {
+    await transport.write(indexPath, indexContent);
+  }
+  if (await transport.read(indexPath) !== indexContent) {
+    throw new Error('Proje dosyası doğrulama indeksi geri okunamadı.');
+  }
+
+  let listed = [];
+  let missing = [];
+  for (const delay of [0, 180, 420]) {
+    if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
+    listed = await transport.list('');
+    const available = new Set(listed.map((path) =>
+      normalizeWorkspacePath(path).toLocaleLowerCase('en-US')
+    ));
+    missing = projection.visibleFiles.filter((path) =>
+      !available.has(normalizeWorkspacePath(path).toLocaleLowerCase('en-US'))
+    );
+    if (!missing.length) break;
+  }
+  if (missing.length) {
+    throw new Error(
+      `Dosya içeriği geri okundu ancak seçilen klasör listesinde görünmedi: ${missing[0]}`
+    );
+  }
+
+  return {
+    filesWritten: visibleWrites,
+    authorityFilesWritten: authorityWrites,
+    filesVerified: projection.visibleFiles.length,
+    authorityFilesVerified: projection.files.length - projection.visibleFiles.length,
+    filesRemoved: removedFiles,
+    visibleFiles: projection.visibleFiles.slice(0, 12)
+  };
+}
+
 function collectConflicts(baseRecords, localRecords, snapshots, ownDeviceId, handled = []) {
   const bySignature = new Map();
   const handledSet = new Set(handled);
@@ -422,7 +626,7 @@ function preserveRemoteDefaultsOnFirstJoin(entities, remoteRecords, stateRecords
 
 async function performSync(reason = 'manual') {
   const folder = await transport.status();
-  if (!folder.configured) throw new Error('Önce bir Pisi Sync klasörü seçin.');
+  if (!folder.configured) throw new Error('Önce gerçek Pisi proje klasörünü seçin.');
   if (folder.readable === false || folder.writable === false) {
     throw new Error('Seçilen çalışma klasörü artık okunabilir ve yazılabilir değil. Klasörü yeniden seçin.');
   }
@@ -440,7 +644,23 @@ async function performSync(reason = 'manual') {
   await ensureManifest(state, layout);
 
   const remote = await readSnapshots(state.projectId, layout);
-  const foldedBefore = foldDeviceSnapshots(remote.snapshots, state.projectId);
+  const baselineSnapshots = [...remote.snapshots];
+  if (state.records.length) {
+    baselineSnapshots.push(makeDeviceSnapshot({
+      projectId: state.projectId,
+      deviceId: state.deviceId,
+      deviceName: state.deviceName,
+      records: state.records,
+      clock: state.clock
+    }));
+  }
+  const baseline = foldDeviceSnapshots(baselineSnapshots, state.projectId);
+  const workspace = await readWorkspaceProject(layout, state.projectId);
+  const workspaceSnapshot = makeWorkspaceSnapshot(state, baseline, workspace);
+  const sourceSnapshots = workspaceSnapshot
+    ? [...remote.snapshots, workspaceSnapshot]
+    : remote.snapshots;
+  const foldedBefore = foldDeviceSnapshots(sourceSnapshots, state.projectId);
   const entities = preserveRemoteDefaultsOnFirstJoin(
     await exportMobileSyncEntities(), foldedBefore.records, state.records
   );
@@ -451,7 +671,7 @@ async function performSync(reason = 'manual') {
     clock: Math.max(state.clock, foldedBefore.clock)
   });
   const detectedConflicts = collectConflicts(
-    state.records, prepared.records, remote.snapshots, state.deviceId,
+    state.records, prepared.records, sourceSnapshots, state.deviceId,
     state.handledConflicts
   );
   const conflicts = detectedConflicts.conflicts;
@@ -462,7 +682,7 @@ async function performSync(reason = 'manual') {
     records: prepared.records,
     clock: prepared.clock
   });
-  const folded = foldDeviceSnapshots([...remote.snapshots, localSnapshot], state.projectId);
+  const folded = foldDeviceSnapshots([...sourceSnapshots, localSnapshot], state.projectId);
   const plan = planMergedRecords({
     baseRecords: state.records,
     localRecords: prepared.records,
@@ -490,19 +710,24 @@ async function performSync(reason = 'manual') {
     hashValue(item.records || []) === hashValue(snapshot.records)
   );
   if (!ownSnapshotIsCurrent) await writeDeviceSnapshot(snapshot, layout);
+  const workspaceResult = await materializeWorkspace(
+    finalized.records, layout, state.projectId
+  );
 
   const summary = summarizeSyncPlan(plan);
   const knownDevices = new Set(remote.snapshots.map(({ deviceId }) => deviceId).filter(Boolean));
   knownDevices.add(state.deviceId);
   const result = {
     ...summary,
+    ...workspaceResult,
     conflicts: applied.conflicts,
-    warnings: [...layout.warnings, ...remote.warnings],
+    warnings: [...layout.warnings, ...remote.warnings, ...workspace.warnings],
     devices: knownDevices.size,
     peerDevices: Math.max(0, knownDevices.size - 1),
     uploaded: !ownSnapshotIsCurrent,
     uploadedRecords: ownSnapshotIsCurrent ? 0 : snapshot.records.length,
     storagePath: formatSyncStoragePath(state.folderName, layout.mode),
+    workspacePath: state.folderName,
     projectId: state.projectId,
     verifiedAt: state.lastVerifiedAt,
     reason,
@@ -583,9 +808,11 @@ export async function getMobileSyncStatus() {
   const accessible = folder.readable !== false && folder.writable !== false;
   return {
     configured: Boolean(folder.configured && accessible && state.enabled),
-    folderSelected: Boolean(folder.configured),
+    folderSelected: Boolean(folder.configured || folder.uri || state.folderName),
     folderReadable: folder.readable !== false,
     folderWritable: folder.writable !== false,
+    permissionPersisted: folder.permissionPersisted !== false,
+    folderProvider: folder.provider || '',
     folderName,
     layout: state.layout,
     storagePath: state.layout ? formatSyncStoragePath(folderName, state.layout) : '',

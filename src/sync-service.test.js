@@ -14,7 +14,9 @@ const harness = vi.hoisted(() => {
       configured: true,
       name: 'Pisi Sync',
       readable: true,
-      writable: true
+      writable: true,
+      permissionPersisted: true,
+      provider: 'com.google.android.apps.docs.storage'
     },
     failWrites: false,
     failDeletes: false
@@ -35,7 +37,7 @@ const harness = vi.hoisted(() => {
       const prefix = path ? `${path}/` : '';
       return {
         files: Array.from(data.files.keys())
-          .filter((name) => name.startsWith(prefix) && name.endsWith('.json'))
+          .filter((name) => name.startsWith(prefix) && /\.(?:json|node|map)$/i.test(name))
           .map((name) => name.slice(prefix.length))
       };
     }),
@@ -134,7 +136,9 @@ beforeEach(() => {
     configured: true,
     name: 'Pisi Sync',
     readable: true,
-    writable: true
+    writable: true,
+    permissionPersisted: true,
+    provider: 'com.google.android.apps.docs.storage'
   };
   harness.data.failWrites = false;
   harness.data.failDeletes = false;
@@ -178,10 +182,80 @@ describe('mobile folder-backed synchronization', () => {
     expect(paths.some((path) => path.startsWith('.pisi-sync/devices/device_'))).toBe(true);
     expect(paths.some((path) => path.startsWith('.pisi-sync/.pisi-sync/'))).toBe(false);
     expect(result.uploadedRecords).toBe(1);
+    expect(result.filesVerified).toBe(1);
+    expect(result.filesWritten).toBe(1);
+    const nodePath = paths.find((path) => path.endsWith('.node'));
+    expect(nodePath).toBeTruthy();
+    expect(JSON.parse(harness.data.files.get(nodePath)).pisi.id).toBe('node_mobile');
     expect(result.peerDevices).toBe(0);
     expect(status.layout).toBe('nested');
     expect(status.storagePath).toBe('Pisi Sync/.pisi-sync');
     expect(status.lastError).toBeNull();
+    expect(status.permissionPersisted).toBe(true);
+  });
+
+  it('imports an existing visible desktop project and verifies its real file', async () => {
+    harness.data.folder.name = 'Pisi Projem';
+    harness.data.files.set('Masaüstü Notu.node', `${JSON.stringify({
+      pisi: {
+        version: 1,
+        type: 'node',
+        id: 'node_existing',
+        title: 'Masaüstü Notu',
+        sidecar: 'inv_Masaüstü Notu__node_existing',
+        parentMap: 'none',
+        createdAt: '2026-08-23T09:00:00.000Z',
+        updatedAt: '2026-08-23T09:00:00.000Z'
+      },
+      content: '<p>Diskteki gerçek içerik</p>',
+      blocks: [], tags: [], properties: {}, sources: []
+    }, null, 2)}\n`);
+
+    const result = await selectMobileSyncFolder();
+
+    expect(harness.data.entities.some(({ id, payload }) => (
+      id === 'node_existing' && payload.content === '<p>Diskteki gerçek içerik</p>'
+    ))).toBe(true);
+    expect(result.filesVerified).toBe(1);
+    expect(result.visibleFiles).toContain('Masaüstü Notu.node');
+    expect(harness.data.files.has('.pisi-sync/workspace-files.json')).toBe(true);
+  });
+
+  it('treats deletion of an indexed visible file as a real workspace deletion', async () => {
+    harness.data.entities = [{
+      kind: 'node',
+      id: 'node_delete_me',
+      payload: { title: 'Silinecek not', content: '<p>Geçici</p>' }
+    }];
+    await selectMobileSyncFolder();
+    const visiblePath = Array.from(harness.data.files.keys())
+      .find((path) => path.endsWith('.node'));
+    expect(visiblePath).toBeTruthy();
+
+    harness.data.files.delete(visiblePath);
+    const result = await runMobileSync({ reason: 'manual' });
+
+    expect(harness.data.entities.some(({ id }) => id === 'node_delete_me')).toBe(false);
+    expect(harness.data.files.has(visiblePath)).toBe(false);
+    expect(result.filesVerified).toBe(0);
+  });
+
+  it('never overwrites a present but corrupted real project file', async () => {
+    harness.data.entities = [{
+      kind: 'node',
+      id: 'node_protected',
+      payload: { title: 'Korunan not', content: '<p>Önemli</p>' }
+    }];
+    await selectMobileSyncFolder();
+    const visiblePath = Array.from(harness.data.files.keys())
+      .find((path) => path.endsWith('.node'));
+    harness.data.files.set(visiblePath, '{bozuk-json');
+
+    await expect(runMobileSync({ reason: 'manual' }))
+      .rejects.toThrow('Proje dosyaları güvenle okunamadı');
+
+    expect(harness.data.files.get(visiblePath)).toBe('{bozuk-json');
+    expect(harness.data.entities.some(({ id }) => id === 'node_protected')).toBe(true);
   });
 
   it('keeps a manual-sync storage failure visible in status', async () => {

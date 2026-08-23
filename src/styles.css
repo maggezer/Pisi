@@ -2132,6 +2132,13 @@ button:disabled {
 .sync-status.connected .setting-icon { color: #5cbf85; }
 .sync-status span:not(.setting-icon) { display: grid; gap: 3px; }
 .sync-status small, .sync-result { color: var(--muted); }
+.sync-permission-note {
+  display: block;
+  margin: -2px 2px 12px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
 .sync-actions { display: grid; gap: 8px; }
 .sync-result { display: block; margin-top: 10px; line-height: 1.45; }
 .sync-error,
