@@ -3,6 +3,8 @@ name: Android APK
 on:
   push:
     branches: [mobile5, "agent/pisi-mobile-responsive"]
+  pull_request:
+    branches: [mobile5]
   workflow_dispatch:
 
 permissions:
@@ -36,6 +38,9 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Check local Vite server
+        run: npm run test:server
+
       - name: Build and sync Android
         run: npm run android:sync
 
@@ -44,7 +49,7 @@ jobs:
 
       - name: Assemble debug APK
         working-directory: android
-        run: ./gradlew assembleDebug
+        run: bash ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

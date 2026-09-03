@@ -3,6 +3,12 @@
   "appName": "Pisi",
   "webDir": "dist",
   "backgroundColor": "#171310",
+  "plugins": {
+    "Keyboard": {
+      "resize": "native",
+      "resizeOnFullScreen": true
+    }
+  },
   "android": {
     "allowMixedContent": false,
     "captureInput": true,

@@ -1,6 +1,6 @@
 .responsive-layout {
   width: 100%;
-  height: 100dvh;
+  height: var(--app-height);
 }
 
 .tablet-rail,
@@ -19,13 +19,13 @@
 }
 
 .detail-actions .round-button {
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
   font-size: 13px;
 }
 
 .detail-header {
-  grid-template-columns: 42px minmax(0, 1fr) 81px;
+  grid-template-columns: 42px minmax(0, 1fr) 89px;
 }
 
 .setting-action.standalone {
@@ -286,6 +286,35 @@
   backdrop-filter: blur(7px);
 }
 
+:root[data-keyboard="open"] .bottom-nav,
+:root[data-keyboard="open"] .fab {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+:root[data-keyboard="open"] .page-content {
+  padding-bottom: calc(20px + var(--bottom-safe));
+}
+
+:root[data-keyboard="open"] .platform-overlay {
+  align-items: flex-start;
+  overflow-y: auto;
+  padding-top: max(12px, var(--top-safe));
+  padding-bottom: 12px;
+}
+
+:root[data-keyboard="open"] .quick-task-sheet,
+:root[data-keyboard="open"] .todo-options-card,
+:root[data-keyboard="open"] .node-sheet {
+  max-height: calc(var(--app-height) - 24px);
+  overflow-y: auto;
+}
+
+:root[data-keyboard="open"] .search-overlay {
+  padding-top: max(8px, var(--top-safe));
+}
+
 .quick-task-sheet,
 .todo-options-card {
   width: min(100%, 560px);
@@ -313,7 +342,7 @@
 .todo-options-overlay { align-items: center; }
 
 .search-overlay { align-items: flex-start; padding-top: max(22px, var(--top-safe)); }
-.global-search-panel { width: min(100%, 760px); max-height: min(82dvh, 720px); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--line); border-radius: 23px; background: var(--surface); box-shadow: var(--shadow); }
+.global-search-panel { width: min(100%, 760px); max-height: min(calc(var(--app-height) - 32px), 720px); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--line); border-radius: 23px; background: var(--surface); box-shadow: var(--shadow); }
 .global-search-panel header { min-height: 61px; padding: 9px 12px; display: grid; grid-template-columns: 28px minmax(0,1fr) auto 34px; align-items: center; gap: 7px; border-bottom: 1px solid var(--line); }
 .global-search-panel header > span { color: var(--accent); font-size: 25px; }
 .global-search-panel input { width: 100%; height: 42px; border: 0; outline: 0; background: transparent; font-size: 14px; }
@@ -364,7 +393,7 @@ kbd { padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; backg
 
 /* Inspector */
 
-.inspector-overlay { padding: 0; }.mobile-inspector-sheet { width: 100%; max-height: 90dvh; position: relative; overflow: auto; border-radius: 25px 25px 0 0; background: var(--surface); }
+.inspector-overlay { padding: 0; }.mobile-inspector-sheet { width: 100%; max-height: calc(var(--app-height) - 10px); position: relative; overflow: auto; border-radius: 25px 25px 0 0; background: var(--surface); }
 .mobile-inspector-sheet .tablet-inspector { width: 100%; min-height: auto; display: flex; border: 0; }
 .mobile-sheet-close { width: 38px; height: 38px; position: sticky; z-index: 5; left: calc(100% - 52px); top: 12px; margin-bottom: -38px; border-radius: 12px; background: var(--surface-2); color: var(--muted); }
 .document-inspector details { border-top: 1px solid var(--line); }.document-inspector summary { min-height: 44px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; color: var(--text); font-size: 11px; font-weight: 750; list-style: none; }.document-inspector summary span { color: var(--muted); }
@@ -377,6 +406,131 @@ kbd { padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; backg
 .direct-relations { display: grid; gap: 4px; }.direct-relations > div { display: grid; grid-template-columns: minmax(0,1fr) auto 28px; align-items: center; gap: 4px; }.direct-relations button { min-height: 30px; border-radius: 8px; background: var(--surface-2); color: var(--text); font-size: 8px; }.direct-relations small { color: var(--accent); font-size: 7px; }.relation-add-form { margin-top: 6px; display: grid; grid-template-columns: 1fr 75px 42px; gap: 4px; }.relation-add-form select { min-width: 0; min-height: 32px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); font-size: 8px; }.relation-add-form button { border-radius: 8px; background: var(--accent-soft); color: var(--accent); font-size: 8px; }
 .source-picker { display: grid; gap: 5px; }.source-picker > div { display: grid; grid-template-columns: minmax(0,1fr) 30px 30px; gap: 4px; }.source-picker > div > button:nth-child(n+2) { padding: 0; text-align: center; color: var(--accent); }
 .history-list { display: grid; gap: 5px; }.history-list button { display: flex; justify-content: space-between; }.history-list time { color: var(--muted); font-size: 8px; }.inspector-action { width: 100%; min-height: 38px; margin-bottom: 5px; padding: 0 10px; border-radius: 10px; text-align: left; background: var(--surface-2); color: var(--text); font-size: 9px; }
+
+/* Phone touch targets */
+
+@media (max-width: 759px) {
+  .round-button,
+  .back-button,
+  .detail-actions .round-button,
+  .format-toolbar button,
+  .color-tool,
+  .drawing-toolbar button,
+  .draw-color,
+  .mobile-sheet-close,
+  .quick-task-sheet header button,
+  .todo-options-card header button,
+  .global-search-panel header button {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+
+  .detail-header { grid-template-columns: 44px minmax(0, 1fr) 93px; }
+  .format-toolbar { min-height: 58px; }
+  .drawing-toolbar { min-height: 60px; }
+  .stroke-size { height: 44px; }
+  .filter-chip,
+  .formula-catalog > summary,
+  .formula-catalog > div button,
+  .task-view-tabs button,
+  .data-tabs button,
+  .saved-view-row button,
+  .source-library button,
+  .export-grid button,
+  .inspector-action,
+  .inspector-link-group > button,
+  .source-picker button,
+  .history-list button {
+    min-height: 44px;
+  }
+
+  .task-row {
+    min-height: 78px;
+    grid-template-columns: 44px minmax(0, 1fr) 48px;
+  }
+  .task-check,
+  .task-more {
+    width: 44px;
+    height: 44px;
+  }
+
+  .pisi-task-checkbox::after {
+    content: "";
+    position: absolute;
+    inset: -12px;
+  }
+
+  .global-search-panel header {
+    min-height: 66px;
+    grid-template-columns: 28px minmax(0, 1fr) auto 44px;
+  }
+  .task-capture-card input,
+  .quick-task-sheet input,
+  .quick-task-sheet select,
+  .todo-options-card input,
+  .todo-options-card select,
+  .global-search-panel input,
+  .node-sheet input {
+    min-height: 48px;
+    font-size: 16px;
+  }
+
+  .property-list label { grid-template-columns: 72px minmax(0, 1fr) 44px; }
+  .property-list input,
+  .property-list button,
+  .property-add-form input,
+  .property-add-form button,
+  .inspector-link-row button,
+  .direct-relations button,
+  .relation-add-form select,
+  .relation-add-form button {
+    min-height: 44px;
+  }
+  .property-list input,
+  .property-add-form input,
+  .relation-add-form select { font-size: 14px; }
+  .property-list button { width: 44px; height: 44px; }
+  .inspector-link-row { grid-template-columns: minmax(0, 1fr) 44px; }
+  .direct-relations > div { grid-template-columns: minmax(0, 1fr) auto 44px; }
+  .relation-add-form { grid-template-columns: minmax(0, 1fr) 90px 48px; }
+  .source-picker > div { grid-template-columns: minmax(0, 1fr) 44px 44px; }
+
+  .node-edit {
+    width: 44px;
+    height: 44px;
+    right: 7px;
+    top: 7px;
+  }
+  .map-node h3 { margin-right: 42px; }
+  .node-anchor {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+  }
+  .node-anchor::after {
+    content: "";
+    width: 14px;
+    height: 14px;
+    position: absolute;
+    left: 15px;
+    top: 15px;
+    border: 3px solid var(--surface);
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .node-anchor.anchor-left { left: -22px; right: auto; top: calc(50% - 22px); }
+  .node-anchor.anchor-right { right: -22px; top: calc(50% - 22px); }
+  .node-anchor.anchor-top { left: calc(50% - 22px); right: auto; top: -22px; }
+  .node-anchor.anchor-bottom { left: calc(50% - 22px); right: auto; top: auto; bottom: -22px; }
+  .node-anchor.collapsed { background: transparent; box-shadow: none; transform: none; }
+  .node-anchor.collapsed::after { background: var(--surface); box-shadow: inset 0 0 0 3px var(--accent); transform: scale(1.2); }
+}
 
 @media (min-width: 620px) {
   .structured-cards { grid-template-columns: repeat(2, minmax(0,1fr)); }
@@ -396,7 +550,7 @@ kbd { padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; backg
   .tablet-rail,
   .tablet-inspector {
     min-width: 0;
-    height: 100dvh;
+    height: var(--app-height);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -418,7 +572,7 @@ kbd { padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; backg
   .app-shell,.detail-shell,.map-detail-shell { width: auto; max-width: none; margin: 0; border: 0; }
   .bottom-nav { display: none; }
   .page-header { height: calc(78px + var(--top-safe)); padding: calc(14px + var(--top-safe)) 20px 12px; }
-  .page-header h1 { font-size: 25px; }.page-content { height: calc(100dvh - 78px - var(--top-safe)); padding: 8px 20px 28px; }.fab { right: 22px; bottom: 22px; }
+  .page-header h1 { font-size: 25px; }.page-content { height: calc(var(--app-height) - 78px - var(--top-safe)); padding: 8px 20px 28px; }.fab { right: 22px; bottom: 22px; }
   .document-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }.detail-header,.map-header { padding-right: 12px; padding-left: 12px; }.editor-stage { background: var(--bg); }.rich-editor { padding-right: max(26px, calc((100% - 720px)/2)); padding-left: max(26px, calc((100% - 720px)/2)); }
   .map-toolbar { min-height: 61px; padding-bottom: 7px; }.map-toolbar button { min-height: 45px; flex-direction: row; gap: 6px; font-size: 9px; }.map-toolbar button span { font-size: 17px; }
   #toast-host { left: 215px; right: 260px; bottom: 24px; }

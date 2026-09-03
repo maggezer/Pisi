@@ -22,7 +22,7 @@ describe('Pisi mobile platform core', () => {
   it('assigns block ids and recognizes completed task blocks', () => {
     const blocks = documentBlocksFromHtml('<h1>Başlık</h1><p>Bitir /done</p>');
     expect(blocks).toHaveLength(2);
-    expect(blocks[0].id).toMatch(/^block-/);
+    expect(blocks[0].id).toMatch(/^blk_/);
     expect(blocks[1]).toMatchObject({ type: 'todo', done: true, text: 'Bitir' });
   });
 

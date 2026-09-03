@@ -1,4 +1,5 @@
 import './styles.css';
+import './platform.css';
 import {
   createDocument,
   exportDatabase,
@@ -23,6 +24,7 @@ import { PlatformController } from './platform-ui.js';
 import { parseTurkishDate } from './date-parser.js';
 import {
   initializeNativeShell,
+  isSoftKeyboardVisible,
   lightHaptic,
   onHardwareBack,
   exitNativeApp,
@@ -30,6 +32,10 @@ import {
   successHaptic,
   updateNativeTheme
 } from './native.js';
+import {
+  disconnectMobileSync, getMobileSyncStatus, initializeMobileSync,
+  runMobileSync, selectMobileSyncFolder
+} from './sync-service.js';
 
 const root = document.querySelector('#app');
 
@@ -94,6 +100,21 @@ function kindLabel(kind) {
   return 'Not';
 }
 
+function describeSyncResult(result = {}) {
+  const received = Number(result.changed || 0);
+  const sent = Number(result.uploadedRecords || 0);
+  const peers = Number(result.peerDevices || 0);
+  const files = Number(result.filesVerified || 0);
+  const fileProof = files
+    ? `${files} gerçek .node/.map dosyası yazılıp doğrulandı`
+    : 'Çalışma klasörü yazma-okuma testi doğrulandı; görünür not dosyası yok';
+  if (peers === 0) {
+    return `${fileProof}; ${sent} kayıt gönderildi. Diğer cihaz henüz bu projede görünmüyor.`;
+  }
+  if (!received && !sent) return `${fileProof}; ${peers + 1} cihaz güncel.`;
+  return `${fileProof}; ${received} değişiklik alındı, ${sent} kayıt gönderildi · ${peers + 1} cihaz.`;
+}
+
 function resolveTheme(theme) {
   if (theme === 'system') {
     return matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
@@ -135,6 +156,7 @@ class PisiApp {
     this.drawColor = '#e99a2e';
     this.drawWidth = 4;
     this.platform = new PlatformController(this);
+    this.syncStatus = { configured: false, running: false };
     this.saveActiveDebounced = debounce(() => this.saveActive(), 500);
   }
 
@@ -149,6 +171,18 @@ class PisiApp {
       await initializeNativeShell(resolveTheme(this.theme));
       this.documents = (await seedDatabase()).map(normalizeDocument);
       await this.platform.init();
+      this.syncStatus = await initializeMobileSync() || this.syncStatus;
+      document.addEventListener('pisi:sync-finished', async () => {
+        await this.reloadDocuments();
+        await this.platform.refreshFromStorage();
+        this.syncStatus = await getMobileSyncStatus();
+        if (this.route === 'settings') this.renderSettings();
+      });
+      document.addEventListener('pisi:sync-error', async (event) => {
+        this.syncStatus = await getMobileSyncStatus().catch(() => this.syncStatus);
+        this.toast(event.detail?.message || 'Senkronizasyon başarısız.', 'error');
+        if (this.route === 'settings') this.renderSettings();
+      });
       await this.bindNativeBack();
       this.render();
     } catch (error) {
@@ -166,13 +200,20 @@ class PisiApp {
 
   async bindNativeBack() {
     await onHardwareBack(() => {
-      if (['editor', 'map'].includes(this.route)) {
-        this.leaveDetail();
+      if (isSoftKeyboardVisible()) return;
+
+      const overlay = document.querySelector('#platform-overlay, #todo-options-overlay');
+      if (overlay) {
+        overlay.remove();
         return;
       }
       if (this.mapEditingNode) {
         this.mapEditingNode = null;
-        this.render();
+        this.renderMapEditor();
+        return;
+      }
+      if (['editor', 'map'].includes(this.route)) {
+        this.leaveDetail();
         return;
       }
       if (this.route !== 'notes') this.navigate('notes');
@@ -186,11 +227,14 @@ class PisiApp {
   }
 
   async setTheme(theme) {
+    if (!['system', 'dark', 'light'].includes(theme)) return;
     this.theme = theme;
-    await setSetting('theme', theme);
     this.applyTheme();
+    document.querySelectorAll('button[data-theme-option]').forEach((button) => {
+      button.classList.toggle('active', button.dataset.themeOption === theme);
+    });
+    await setSetting('theme', theme);
     await updateNativeTheme(theme);
-    this.render();
   }
 
   async reloadDocuments() {
@@ -624,6 +668,27 @@ class PisiApp {
   renderSettings() {
     const countNotes = this.documents.filter(({ kind }) => kind !== 'canvas').length;
     const countMaps = this.documents.filter(({ kind }) => kind === 'canvas').length;
+    const sync = this.syncStatus || {};
+    const syncDate = sync.lastSyncAt
+      ? new Date(sync.lastSyncAt).toLocaleString(this.locale === 'en' ? 'en-US' : 'tr-TR')
+      : 'Henüz senkronize edilmedi';
+    const syncError = sync.lastError?.message || '';
+    const syncErrorDate = sync.lastError?.at
+      ? new Date(sync.lastError.at).toLocaleString(this.locale === 'en' ? 'en-US' : 'tr-TR')
+      : '';
+    const syncName = sync.folderName || 'Pisi Sync';
+    const syncStateTitle = sync.configured
+      ? syncName
+      : sync.folderSelected
+        ? `${syncName} erişilemiyor`
+        : 'Çalışma klasörü bağlı değil';
+    const projectFingerprint = sync.projectId
+      ? String(sync.projectId).replace(/^project_/, '').slice(0, 12)
+      : '';
+    const permissionReady = sync.permissionPersisted &&
+      sync.folderReadable !== false && sync.folderWritable !== false;
+    const visibleFiles = Array.isArray(sync.lastResult?.visibleFiles)
+      ? sync.lastResult.visibleFiles.slice(0, 3) : [];
     this.shell({
       title: 'Ayarlar',
       eyebrow: 'Kendi düzenin',
@@ -640,7 +705,7 @@ class PisiApp {
               ['dark', 'Koyu'],
               ['light', 'Açık']
             ].map(([theme, label]) => `
-              <button class="${this.theme === theme ? 'active' : ''}" data-theme="${theme}">${label}</button>
+              <button class="${this.theme === theme ? 'active' : ''}" data-theme-option="${theme}">${label}</button>
             `).join('')}
           </div>
         </section>
@@ -666,9 +731,30 @@ class PisiApp {
           <h2>Çalışma alanı</h2>
           <button class="setting-action standalone" data-route="data">
             <span class="setting-icon">▦</span>
-            <span><strong>Veri, araştırma ve API</strong><small>Özellikler, görünümler, kaynaklar, dışa aktarma, eklentiler ve Team</small></span>
+            <span><strong>Node sistemi ve taşınabilirlik</strong><small>Özellikler, görünümler, şablonlar ve dışa aktarma</small></span>
             <b>›</b>
           </button>
+        </section>
+        <section class="settings-group sync-settings" aria-busy="${sync.running ? 'true' : 'false'}">
+          <h2>Not çalışma klasörü</h2>
+          <p class="sync-description">Seçtiğin klasör gerçek Pisi proje köküdür. Notlar ve haritalar burada görünür <strong>.node/.map</strong> dosyaları olarak tutulur; telefon veritabanı yalnız çevrimdışı çalışma kopyasıdır.</p>
+          <div class="sync-status ${sync.configured ? 'connected' : ''}">
+            <span class="setting-icon">${sync.configured ? '✓' : '↔'}</span>
+            <span><strong>${escapeHtml(syncStateTitle)}</strong><small>${escapeHtml(syncDate)}</small>${sync.folderSelected ? `<small>Android klasör izni: ${permissionReady ? 'kalıcı okuma + yazma ✓' : 'eksik; klasörü yeniden seç'}</small>` : ''}${sync.storagePath ? `<small>Sync metadatası: ${escapeHtml(sync.storagePath)}</small>` : ''}${projectFingerprint ? `<small>Proje: ${escapeHtml(projectFingerprint)}</small>` : ''}</span>
+          </div>
+          <small class="sync-permission-note">Android ayrıca “tüm dosyalar” izni istemez. Sistem seçicisindeki <strong>Bu klasörü kullan</strong> onayı yalnız seçtiğin klasöre kalıcı okuma-yazma yetkisi verir.</small>
+          ${syncError ? `<div class="sync-error" role="alert"><strong>Son senkronizasyon tamamlanamadı</strong><span>${escapeHtml(syncError)}</span>${syncErrorDate ? `<small>${escapeHtml(syncErrorDate)}</small>` : ''}</div>` : ''}
+          <div class="sync-actions">
+            <button class="setting-action" id="sync-folder-button">
+              <span><strong>${sync.folderSelected ? 'Klasör iznini yenile / değiştir' : 'Not çalışma klasörü seç'}</strong><small>Gerçek Pisi proje klasörünü sistem seçicisinde yetkilendir</small></span><b>›</b>
+            </button>
+            ${sync.configured ? `<button class="setting-action" id="sync-now-button" ${sync.running ? 'disabled' : ''}>
+              <span><strong>${sync.running ? 'Senkronize ediliyor…' : 'Şimdi senkronize et'}</strong><small>Gerçek dosyaları yaz, geri oku ve klasör listesinde doğrula</small></span><b>↻</b>
+            </button><button class="setting-action danger" id="sync-disconnect-button"><span><strong>Bağlantıyı kes</strong><small>Yerel veriler silinmez</small></span><b>×</b></button>` : ''}
+          </div>
+          ${sync.lastResult ? `<small class="sync-result">Son işlem: ${Number(sync.lastResult.filesVerified || 0)} gerçek dosya doğrulandı · ${Number(sync.lastResult.filesWritten || 0)} dosya yazıldı · ${Number(sync.lastResult.changed || 0)} alındı · ${Number(sync.lastResult.conflicts || 0)} çakışma kopyası</small>` : ''}
+          ${visibleFiles.length ? `<small class="sync-result">Dosya kanıtı: ${visibleFiles.map(escapeHtml).join(' · ')}</small>` : ''}
+          ${sync.lastResult?.peerDevices === 0 ? '<small class="sync-warning">Henüz başka cihaz görünmüyor. Masaüstünde aynı klasör ve aynı proje kimliğinin bağlı olduğunu kontrol et.</small>' : ''}
         </section>
         <section class="settings-group">
           <h2>Verilerin</h2>
@@ -690,14 +776,14 @@ class PisiApp {
         </section>
         <section class="settings-group about-group">
           <h2>Hakkında</h2>
-          <p>Pisi 3.0 · Android telefon ve tablet sürümü</p>
-          <p>Notların bu cihazda saklanır; sen dışa aktarmadıkça başka yere gönderilmez.</p>
+          <p>Pisi 3.1.2 · Android telefon ve tablet sürümü</p>
+          <p>Okunabilir .node/.map proje dosyaları asıl veridir; telefon önbelleği yeniden oluşturulabilir çalışma kopyasıdır.</p>
         </section>
       `
     });
 
-    document.querySelectorAll('[data-theme]').forEach((button) => {
-      button.addEventListener('click', () => this.setTheme(button.dataset.theme));
+    document.querySelectorAll('button[data-theme-option]').forEach((button) => {
+      button.addEventListener('click', () => this.setTheme(button.dataset.themeOption));
     });
     document.querySelectorAll('[data-locale]').forEach((button) => {
       button.addEventListener('click', async () => {
@@ -713,6 +799,45 @@ class PisiApp {
       this.calendarCursor = createCalendarCursor(this.calendarType);
       await setSetting('calendarType', this.calendarType);
       this.toast('Takvim tercihi kaydedildi.');
+    });
+    document.querySelector('#sync-folder-button')?.addEventListener('click', async () => {
+      try {
+        this.syncStatus = { ...this.syncStatus, running: true };
+        this.renderSettings();
+        const result = await selectMobileSyncFolder();
+        this.syncStatus = await getMobileSyncStatus();
+        await this.reloadDocuments();
+        await this.platform.refreshFromStorage();
+        await successHaptic();
+        this.toast(describeSyncResult(result));
+      } catch (error) {
+        this.syncStatus = await getMobileSyncStatus().catch(() => this.syncStatus);
+        this.toast(error?.message || 'Sync klasörü seçilemedi.', 'error');
+      }
+      this.renderSettings();
+    });
+    document.querySelector('#sync-now-button')?.addEventListener('click', async () => {
+      try {
+        if (this.activeDocument) await this.saveActiveDebounced.flush();
+        this.syncStatus = { ...this.syncStatus, running: true };
+        this.renderSettings();
+        const result = await runMobileSync({ reason: 'manual' });
+        this.syncStatus = await getMobileSyncStatus();
+        await this.reloadDocuments();
+        await this.platform.refreshFromStorage();
+        await successHaptic();
+        this.toast(describeSyncResult(result));
+      } catch (error) {
+        this.syncStatus = await getMobileSyncStatus().catch(() => this.syncStatus);
+        this.toast(error?.message || 'Senkronizasyon başarısız.', 'error');
+      }
+      this.renderSettings();
+    });
+    document.querySelector('#sync-disconnect-button')?.addEventListener('click', async () => {
+      if (!confirm('Sync klasörü bağlantısı kesilsin mi? Yerel veriler korunur.')) return;
+      await disconnectMobileSync();
+      this.syncStatus = await getMobileSyncStatus();
+      this.renderSettings();
     });
     document.querySelector('#backup-button')?.addEventListener('click', async () => {
       try {
@@ -758,7 +883,8 @@ class PisiApp {
           <button class="back-button" id="detail-back" aria-label="Geri">‹</button>
           <div class="detail-title-wrap">
             <span>${isJournal ? 'Günlük' : note.kind === 'source' ? 'Kaynak' : note.kind === 'database' ? 'Veritabanı' : 'Not'}</span>
-            <input id="note-title" value="${escapeHtml(note.title)}" aria-label="Not başlığı" />
+            <input id="note-title" value="${escapeHtml(note.title)}" aria-label="Not başlığı"
+              autocomplete="off" autocapitalize="sentences" enterkeyhint="next" />
           </div>
           <div class="detail-actions"><button class="round-button" id="document-tools" aria-label="Belge araçları">•••</button><button class="round-button danger-quiet" id="delete-note" aria-label="Notu sil">×</button></div>
         </header>
@@ -809,6 +935,7 @@ class PisiApp {
           ${this.platform.toolbarExtensionsTemplate()}
         </div>
         <article id="rich-editor" class="rich-editor" contenteditable="true" spellcheck="true"
+          inputmode="text" enterkeyhint="enter" autocapitalize="sentences"
           data-placeholder="Yazmaya başla…">${sanitizeRichHtml(this.activeDocument.content)}</article>
       </section>
     `;
@@ -879,9 +1006,15 @@ class PisiApp {
   bindEditor() {
     document.querySelector('#detail-back')?.addEventListener('click', () => this.leaveDetail());
     document.querySelector('#document-tools')?.addEventListener('click', () => this.platform.openDocumentPanel());
-    document.querySelector('#note-title')?.addEventListener('input', (event) => {
+    const titleInput = document.querySelector('#note-title');
+    titleInput?.addEventListener('input', (event) => {
       this.activeDocument.title = event.target.value;
       this.scheduleSave();
+    });
+    titleInput?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      document.querySelector('#rich-editor')?.focus({ preventScroll: true });
     });
     document.querySelector('#delete-note')?.addEventListener('click', () => this.deleteActiveDocument());
     document.querySelectorAll('[data-editor-tab]').forEach((button) => {
@@ -944,7 +1077,17 @@ class PisiApp {
       document.querySelector('#todo-options-overlay')?.remove();
       document.body.insertAdjacentHTML('beforeend', `<div id="todo-options-overlay" class="platform-overlay todo-options-overlay"><form class="todo-options-card"><header><strong>Görev ayrıntıları</strong><button type="button" data-todo-cancel>×</button></header><label>Önem<select name="importance"><option value="normal">Normal</option><option value="high">Yüksek</option><option value="urgent">Acil</option><option value="low">Düşük</option></select></label><label>Tarih<input name="date" placeholder="yarın, cuma 14:00"></label><button class="primary-button">Checkbox ekle</button></form></div>`);
       const overlay = document.querySelector('#todo-options-overlay');
-      overlay.querySelector('[data-todo-cancel]').addEventListener('click', () => overlay.remove());
+      const restoreEditorFocus = () => requestAnimationFrame(() => {
+        if (savedRange && editor.isConnected) {
+          selection.removeAllRanges();
+          selection.addRange(savedRange);
+        }
+        editor.focus({ preventScroll: true });
+      });
+      overlay.querySelector('[data-todo-cancel]').addEventListener('click', () => {
+        overlay.remove();
+        restoreEditorFocus();
+      });
       overlay.querySelector('form').addEventListener('submit', (submitEvent) => {
         submitEvent.preventDefault();
         const values = Object.fromEntries(new FormData(submitEvent.currentTarget));
@@ -963,6 +1106,7 @@ class PisiApp {
         });
         editor.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
         overlay.remove();
+        restoreEditorFocus();
       });
     });
     document.querySelector('#text-color')?.addEventListener('input', (event) => {
@@ -1254,8 +1398,10 @@ class PisiApp {
             <h2>Düğümü düzenle</h2>
             <button id="close-node-sheet">Bitti</button>
           </div>
-          <label>Başlık<input id="node-sheet-title" value="${escapeHtml(node.title || '')}" /></label>
-          <label>Not<textarea id="node-sheet-content" rows="8" placeholder="Bu fikirle ilgili ayrıntılar…">${escapeHtml(htmlToText(node.content || ''))}</textarea></label>
+          <label>Başlık<input id="node-sheet-title" value="${escapeHtml(node.title || '')}"
+            autocomplete="off" autocapitalize="sentences" enterkeyhint="next" /></label>
+          <label>Not<textarea id="node-sheet-content" rows="8" placeholder="Bu fikirle ilgili ayrıntılar…"
+            autocapitalize="sentences" enterkeyhint="done">${escapeHtml(htmlToText(node.content || ''))}</textarea></label>
         </section>
       </div>
     `;
@@ -1551,6 +1697,11 @@ class PisiApp {
     document.querySelector('#node-sheet-title')?.addEventListener('input', (event) => {
       node.title = event.target.value;
       this.scheduleSave();
+    });
+    document.querySelector('#node-sheet-title')?.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      document.querySelector('#node-sheet-content')?.focus({ preventScroll: true });
     });
     document.querySelector('#node-sheet-content')?.addEventListener('input', (event) => {
       node.content = `<p>${escapeHtml(event.target.value).replaceAll('\n', '<br>')}</p>`;

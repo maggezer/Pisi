@@ -1,11 +1,10 @@
 export const DB_NAME = 'pisi-mobile';
-export const DB_VERSION = 3;
+export const DB_VERSION = 4;
 
 const DOCUMENTS = 'documents';
 const SETTINGS = 'settings';
 const HISTORIES = 'histories';
 const TASKS = 'tasks';
-const TEAM_EVENTS = 'teamEvents';
 const VALID_KINDS = new Set(['note', 'journal', 'canvas', 'source', 'database']);
 const HISTORY_LIMIT = 80;
 
@@ -30,11 +29,77 @@ function addIndex(store, name, keyPath, options) {
   if (!store.indexNames.contains(name)) store.createIndex(name, keyPath, options);
 }
 
+function canonicalTaskId(value) {
+  const raw = String(value || '');
+  if (/^task_[A-Za-z0-9._:-]{4,180}$/.test(raw)) return raw;
+  const source = raw || (globalThis.crypto?.randomUUID?.()
+    ?? `${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`);
+  const cleaned = source.replace(/^task[-_:]?/i, '')
+    .replace(/[^A-Za-z0-9._:-]+/g, '_').slice(0, 150) || 'mobile';
+  let hash = 2166136261;
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index);
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+  return `task_${cleaned}_${hash.toString(16).padStart(8, '0')}`;
+}
+
+function normalizeTaskForStorage(task = {}, options = {}) {
+  const now = options.updatedAt || new Date().toISOString();
+  const idMap = options.idMap instanceof Map ? options.idMap : new Map();
+  const remapTaskId = (id) => idMap.get(String(id)) || canonicalTaskId(id);
+  const status = ['todo', 'doing', 'waiting', 'blocked', 'done'].includes(task.status)
+    ? task.status : (task.done ? 'done' : 'todo');
+  const priority = Math.max(1, Math.min(5, Number(task.priority) || ({
+    low: 1, normal: 3, high: 4, urgent: 5
+  })[task.importance] || 3));
+  const title = String(task.title ?? task.text ?? '').trim().slice(0, 500);
+  const source = {
+    documentId: task.source?.documentId || task.documentId || null,
+    blockId: task.source?.blockId || task.blockId || null,
+    mapId: task.source?.mapId || null,
+    nodeTitle: String(task.source?.nodeTitle || ''),
+    mapTitle: String(task.source?.mapTitle || '')
+  };
+  return {
+    id: task.id ? remapTaskId(task.id) : makeId('task'),
+    title,
+    status,
+    priority,
+    dueDate: task.dueDate || null,
+    scheduledAt: task.scheduledAt || null,
+    deadline: task.deadline || null,
+    reminderAt: task.reminderAt || null,
+    reminderMode: task.reminderMode || 'none',
+    durationMinutes: Math.max(0, Number(task.durationMinutes) || 0),
+    actualMinutes: Math.max(0, Number(task.actualMinutes) || 0),
+    repeat: task.repeat || 'none',
+    completionOffsetDays: Number.isFinite(Number(task.completionOffsetDays))
+      ? Number(task.completionOffsetDays) : null,
+    dependencies: Array.from(new Set([
+      ...(Array.isArray(task.dependencies) ? task.dependencies : []),
+      ...(task.parentId ? [task.parentId] : [])
+    ].filter(Boolean).map(remapTaskId))),
+    manualOrder: Number(task.manualOrder) || Date.now(),
+    todoTag: task.todoTag || `todo.${priority}.none`,
+    source,
+    text: title,
+    done: status === 'done',
+    importance: priority >= 5 ? 'urgent' : priority >= 4 ? 'high' : priority <= 1 ? 'low' : 'normal',
+    documentId: source.documentId,
+    blockId: source.blockId,
+    parentId: null,
+    completedAt: status === 'done' ? (task.completedAt || now) : null,
+    createdAt: task.createdAt || now,
+    updatedAt: now
+  };
+}
+
 export function openDatabase() {
   if (databasePromise) return databasePromise;
   databasePromise = new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onupgradeneeded = () => {
+    request.onupgradeneeded = (event) => {
       const db = request.result;
       const documents = db.objectStoreNames.contains(DOCUMENTS)
         ? request.transaction.objectStore(DOCUMENTS)
@@ -61,11 +126,25 @@ export function openDatabase() {
       addIndex(tasks, 'scheduledAt', 'scheduledAt');
       addIndex(tasks, 'done', 'done');
 
-      const events = db.objectStoreNames.contains(TEAM_EVENTS)
-        ? request.transaction.objectStore(TEAM_EVENTS)
-        : db.createObjectStore(TEAM_EVENTS, { keyPath: 'id' });
-      addIndex(events, 'createdAt', 'createdAt');
-      addIndex(events, 'type', 'type');
+      // Team/Plugins were retired in the desktop source of truth. Version 4
+      // removes the obsolete mobile-only event store and upgrades legacy
+      // subtask rows to the first-class task/dependency contract.
+      if (db.objectStoreNames.contains('teamEvents')) {
+        db.deleteObjectStore('teamEvents');
+      }
+      request.transaction.objectStore(SETTINGS).delete('teamConfig');
+      if (event.oldVersion < 4) {
+        const allTasks = tasks.getAll();
+        allTasks.onsuccess = () => {
+          const rows = allTasks.result || [];
+          const idMap = new Map(rows.map((row) => [String(row.id), canonicalTaskId(row.id)]));
+          tasks.clear();
+          rows.forEach((row) => tasks.put(normalizeTaskForStorage(row, {
+            idMap,
+            updatedAt: row.updatedAt || new Date().toISOString()
+          })));
+        };
+      }
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -76,7 +155,12 @@ export function openDatabase() {
 export function makeId(prefix = 'doc') {
   const random = globalThis.crypto?.randomUUID?.()
     ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-  return `${prefix}-${random}`;
+  const canonicalPrefix = ({
+    note: 'node', journal: 'node', source: 'node', database: 'node',
+    canvas: 'map', doc: 'node', history: 'history', task: 'task',
+    edge: 'edge', block: 'blk'
+  })[prefix] || String(prefix || 'node').replace(/[^A-Za-z0-9.-]/g, '');
+  return `${canonicalPrefix}_${random}`;
 }
 
 export function createDocument(kind = 'note', overrides = {}) {
@@ -189,6 +273,9 @@ export async function putDocument(document, options = {}) {
   }
   await transactionDone(transaction);
   if (shouldRecord) await trimDocumentHistory(next.id);
+  if (options.notify !== false) {
+    documentEvent('document', next.id);
+  }
   return next;
 }
 
@@ -210,6 +297,7 @@ export async function removeDocument(id) {
   versions.forEach((version) => transaction.objectStore(HISTORIES).delete(version.id));
   tasks.forEach((task) => transaction.objectStore(TASKS).delete(task.id));
   await transactionDone(transaction);
+  documentEvent('document', id, true);
 }
 
 export async function getSetting(key, fallback = null) {
@@ -252,30 +340,13 @@ export async function listTasks() {
 }
 
 export async function putTask(task = {}) {
-  const now = new Date().toISOString();
-  const next = {
-    id: task.id || makeId('task'),
-    text: String(task.text || '').trim().slice(0, 500),
-    documentId: task.documentId || null,
-    blockId: task.blockId || null,
-    parentId: task.parentId || null,
-    importance: ['low', 'normal', 'high', 'urgent'].includes(task.importance)
-      ? task.importance : 'normal',
-    scheduledAt: task.scheduledAt || null,
-    deadline: task.deadline || null,
-    reminderAt: task.reminderAt || null,
-    durationMinutes: Math.max(0, Number(task.durationMinutes) || 0),
-    repeat: task.repeat || 'none',
-    done: Boolean(task.done),
-    completedAt: task.done ? (task.completedAt || now) : null,
-    createdAt: task.createdAt || now,
-    updatedAt: now
-  };
-  if (!next.text) throw new Error('Görev metni boş olamaz.');
+  const next = normalizeTaskForStorage(task);
+  if (!next.title) throw new Error('Görev metni boş olamaz.');
   const db = await openDatabase();
   const transaction = db.transaction(TASKS, 'readwrite');
   transaction.objectStore(TASKS).put(next);
   await transactionDone(transaction);
+  documentEvent('task', next.id);
   return next;
 }
 
@@ -284,28 +355,7 @@ export async function removeTask(id) {
   const transaction = db.transaction(TASKS, 'readwrite');
   transaction.objectStore(TASKS).delete(id);
   await transactionDone(transaction);
-}
-
-export async function appendTeamEvent(event = {}) {
-  const next = {
-    id: event.id || makeId('event'),
-    type: String(event.type || 'change').slice(0, 80),
-    actorId: event.actorId || 'local',
-    target: event.target || null,
-    payload: event.payload && typeof event.payload === 'object' ? event.payload : {},
-    createdAt: event.createdAt || new Date().toISOString()
-  };
-  const db = await openDatabase();
-  const transaction = db.transaction(TEAM_EVENTS, 'readwrite');
-  transaction.objectStore(TEAM_EVENTS).put(next);
-  await transactionDone(transaction);
-  return next;
-}
-
-export async function listTeamEvents(limit = 100) {
-  return (await getAll(TEAM_EVENTS))
-    .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
-    .slice(0, Math.max(1, Number(limit) || 100));
+  documentEvent('task', id, true);
 }
 
 export async function inspectDatabaseIntegrity() {
@@ -339,9 +389,6 @@ export async function inspectDatabaseIntegrity() {
     if (task.documentId && !ids.has(task.documentId)) {
       issues.push({ type: 'orphan-task', taskId: task.id, documentId: task.documentId });
     }
-    if (task.parentId && !tasks.some(({ id }) => id === task.parentId)) {
-      issues.push({ type: 'orphan-subtask', taskId: task.id, parentId: task.parentId });
-    }
   });
   histories.forEach((history) => {
     if (!ids.has(history.documentId)) {
@@ -357,24 +404,23 @@ export async function inspectDatabaseIntegrity() {
 }
 
 export async function exportDatabase() {
-  const [documents, settingsRows, histories, tasks, teamEvents] = await Promise.all([
-    listDocuments(), getAll(SETTINGS), getAll(HISTORIES), listTasks(), getAll(TEAM_EVENTS)
+  const [documents, settingsRows, histories, tasks] = await Promise.all([
+    listDocuments(), getAll(SETTINGS), getAll(HISTORIES), listTasks()
   ]);
   return {
     format: 'pisi-backup',
-    version: 3,
+    version: 4,
     exportedAt: new Date().toISOString(),
     documents,
     tasks,
     histories,
-    teamEvents,
     settings: Object.fromEntries(settingsRows.map(({ key, value }) => [key, value]))
   };
 }
 
 function validateBackup(backup) {
-  if (!backup || backup.format !== 'pisi-backup' || backup.version !== 3) {
-    throw new Error('Bu dosya geçerli bir Pisi 3 yedeği değil.');
+  if (!backup || backup.format !== 'pisi-backup' || ![3, 4].includes(backup.version)) {
+    throw new Error('Bu dosya geçerli bir Pisi yedeği değil.');
   }
   if (!Array.isArray(backup.documents) || typeof backup.settings !== 'object') {
     throw new Error('Yedek dosyasının içeriği eksik.');
@@ -384,7 +430,7 @@ function validateBackup(backup) {
 export async function importDatabase(backup, { replace = true } = {}) {
   validateBackup(backup);
   const db = await openDatabase();
-  const storeNames = [DOCUMENTS, SETTINGS, HISTORIES, TASKS, TEAM_EVENTS];
+  const storeNames = [DOCUMENTS, SETTINGS, HISTORIES, TASKS];
   const transaction = db.transaction(storeNames, 'readwrite');
   const stores = Object.fromEntries(storeNames.map((name) => [name, transaction.objectStore(name)]));
   if (replace) storeNames.forEach((name) => stores[name].clear());
@@ -394,8 +440,41 @@ export async function importDatabase(backup, { replace = true } = {}) {
   Object.entries(backup.settings || {}).forEach(([key, value]) => stores[SETTINGS].put({ key, value }));
   (backup.histories || []).forEach((row) => row?.id && stores[HISTORIES].put(row));
   (backup.tasks || []).forEach((row) => row?.id && stores[TASKS].put(row));
-  (backup.teamEvents || []).forEach((row) => row?.id && stores[TEAM_EVENTS].put(row));
   await transactionDone(transaction);
+  documentEvent('workspace', 'backup-import');
+}
+
+function documentEvent(kind, id, deleted = false) {
+  try {
+    document.dispatchEvent(new CustomEvent('pisi:data-changed', {
+      detail: { kind, id, deleted }
+    }));
+  } catch {}
+}
+
+export async function replaceSyncedWorkspace({ documents = [], tasks = [], settings = {} } = {}) {
+  const db = await openDatabase();
+  const transaction = db.transaction([DOCUMENTS, TASKS, HISTORIES, SETTINGS], 'readwrite');
+  const documentStore = transaction.objectStore(DOCUMENTS);
+  const taskStore = transaction.objectStore(TASKS);
+  const historyStore = transaction.objectStore(HISTORIES);
+  const settingsStore = transaction.objectStore(SETTINGS);
+  const liveDocumentIds = new Set(documents.map(({ id }) => id));
+
+  documentStore.clear();
+  taskStore.clear();
+  documents.forEach((row) => row?.id && documentStore.put(normalizeDocumentForStorage(row)));
+  tasks.forEach((row) => row?.id && taskStore.put(row));
+  for (const [key, value] of Object.entries(settings)) {
+    settingsStore.put({ key, value });
+  }
+
+  const histories = await requestToPromise(historyStore.getAll());
+  histories.forEach((row) => {
+    if (!liveDocumentIds.has(row.documentId)) historyStore.delete(row.id);
+  });
+  await transactionDone(transaction);
+  documentEvent('workspace', 'sync-apply');
 }
 
 export async function seedDatabase() {
