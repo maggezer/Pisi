@@ -134,6 +134,16 @@ ayrıca geçmişe alınır.
 geçmişi ile Project Integrity kontrolleri yerel proje dosyaları üzerinde çalışır;
 kullanıcı verileri harici bir uygulama veritabanına taşınmaz.
 
+## Cihazlar arası senkronizasyon
+
+Workspace Center → Ayarlar bölümündeki Pisi Sync; masaüstünde açık olan gerçek
+proje kökünü Android sürümüyle çift yönlü eşitler. Google Drive, OneDrive veya
+iki cihazda aynı klasörü gösteren başka bir sağlayıcı kullanılabilir. Okunabilir
+`.node/.map` proje dosyaları kaynak olmaya devam eder; `.pisi-sync` yalnız sürüm
+ve çakışma metadatasıdır. Silmeler kurtarılabilir, eşzamanlı düzenlemeler
+çakışma kopyasıyla korunur. Kurulum ve kabul testi için
+[`docs/pisi-sync-guide-tr.md`](docs/pisi-sync-guide-tr.md) dosyasına bakın.
+
 ## Paketleme
 
 ```bash

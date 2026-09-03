@@ -717,6 +717,25 @@
     "İçe aktar": "Import",
     "Dışa aktar": "Export",
     "Proje bütünlüğü için bir proje açın.": "Open a project to audit its integrity.",
-    "Geçerli proje klasöründeki node, map, bağlantı ve yan dosya tutarlılığını denetler.": "Checks note, map, link, and sidecar consistency in the current project folder."
+    "Geçerli proje klasöründeki node, map, bağlantı ve yan dosya tutarlılığını denetler.": "Checks note, map, link, and sidecar consistency in the current project folder.",
+    "Henüz senkronize edilmedi": "Not synced yet",
+    "Sync köprüsü kullanılamıyor.": "The sync bridge is unavailable.",
+    "Bağlı klasör": "Connected project root",
+    "Ortak klasör bağlı değil": "No project root connected",
+    "Son senkronizasyon": "Last sync",
+    "Google Drive, OneDrive veya başka bir ortak klasör seçin.": "Choose the actual Pisi project root currently open on desktop.",
+    "Klasörü değiştir": "Change project root",
+    "Ortak klasör seç": "Choose project root",
+    "gerçek proje dosyası": "real project files",
+    "değişiklik": "changes",
+    "çakışma kopyası": "conflict copies",
+    "cihaz": "devices",
+    "Cihazlar arası senkronizasyon": "Cross-device sync",
+    "Proje dosyalarını Google Drive, OneDrive veya başka bir ortak klasör üzerinden masaüstü ve Android ile eşitler.": "Shares the actual Pisi project root with Android; readable .node/.map files remain authoritative.",
+    "Şimdi senkronize et": "Sync now",
+    "Bağlantıyı kes": "Disconnect",
+    "Sync klasörü seçilemedi.": "The sync folder could not be selected.",
+    "Senkronizasyon başarısız.": "Sync failed.",
+    "Sync bağlantısı kesilsin mi? Yerel proje dosyaları korunur.": "Disconnect sync? Local project files will be preserved."
   }
 }

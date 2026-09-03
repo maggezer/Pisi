@@ -717,6 +717,25 @@
     "İçe aktar": "İçe aktar",
     "Dışa aktar": "Dışa aktar",
     "Proje bütünlüğü için bir proje açın.": "Proje bütünlüğünü denetlemek için bir proje açın.",
-    "Geçerli proje klasöründeki node, map, bağlantı ve yan dosya tutarlılığını denetler.": "Geçerli proje klasöründeki node, map, bağlantı ve yan dosya tutarlılığını denetler."
+    "Geçerli proje klasöründeki node, map, bağlantı ve yan dosya tutarlılığını denetler.": "Geçerli proje klasöründeki node, map, bağlantı ve yan dosya tutarlılığını denetler.",
+    "Henüz senkronize edilmedi": "Henüz senkronize edilmedi",
+    "Sync köprüsü kullanılamıyor.": "Sync köprüsü kullanılamıyor.",
+    "Bağlı klasör": "Bağlı proje kökü",
+    "Ortak klasör bağlı değil": "Proje kökü bağlı değil",
+    "Son senkronizasyon": "Son senkronizasyon",
+    "Google Drive, OneDrive veya başka bir ortak klasör seçin.": "Masaüstünde açık olan gerçek Pisi proje kökünü seçin.",
+    "Klasörü değiştir": "Proje kökünü değiştir",
+    "Ortak klasör seç": "Proje kökünü seç",
+    "gerçek proje dosyası": "gerçek proje dosyası",
+    "değişiklik": "değişiklik",
+    "çakışma kopyası": "çakışma kopyası",
+    "cihaz": "cihaz",
+    "Cihazlar arası senkronizasyon": "Cihazlar arası senkronizasyon",
+    "Proje dosyalarını Google Drive, OneDrive veya başka bir ortak klasör üzerinden masaüstü ve Android ile eşitler.": "Masaüstünde açık olan gerçek Pisi proje kökünü Android ile paylaşır; .node/.map dosyaları asıl veridir.",
+    "Şimdi senkronize et": "Şimdi senkronize et",
+    "Bağlantıyı kes": "Bağlantıyı kes",
+    "Sync klasörü seçilemedi.": "Sync klasörü seçilemedi.",
+    "Senkronizasyon başarısız.": "Senkronizasyon başarısız.",
+    "Sync bağlantısı kesilsin mi? Yerel proje dosyaları korunur.": "Sync bağlantısı kesilsin mi? Yerel proje dosyaları korunur."
   }
 }
