@@ -4,6 +4,7 @@ import {
   createDocument,
   exportDatabase,
   getDocument,
+  installDurableMutationHandler,
   inspectDatabaseIntegrity,
   listDocumentVersions,
   listDocuments,
@@ -46,5 +47,35 @@ describe('local Pisi database', () => {
     expect(child.parentId).toBeNull();
     expect((await listTasks()).some(({ id }) => id === child.id)).toBe(true);
   });
-});
 
+  it('reports verified folder durability and rolls IndexedDB back on a failed physical write', async () => {
+    const note = createDocument('note', { title: 'Dayanıklılık sınaması' });
+    try {
+      installDurableMutationHandler(async (detail) => ({
+        verified: true,
+        storage: 'selected-project-folder',
+        id: detail.id
+      }));
+      const stored = await putDocument(note);
+      expect(stored.__pisiStorageResult).toMatchObject({
+        verified: true,
+        storage: 'selected-project-folder',
+        id: note.id
+      });
+
+      installDurableMutationHandler(async () => {
+        throw new Error('SAF geri okuma doğrulaması başarısız.');
+      });
+      await expect(putDocument({ ...stored, title: 'Yazılmamalı' }))
+        .rejects.toThrow('SAF geri okuma doğrulaması başarısız');
+      expect((await getDocument(note.id)).title).toBe('Dayanıklılık sınaması');
+
+      await expect(removeDocument(note.id))
+        .rejects.toThrow('SAF geri okuma doğrulaması başarısız');
+      expect(await getDocument(note.id)).toBeTruthy();
+    } finally {
+      installDurableMutationHandler(null);
+      await removeDocument(note.id, { durable: false });
+    }
+  });
+});

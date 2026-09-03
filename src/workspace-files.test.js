@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { buildWorkspaceProjection, parseWorkspaceFiles } from './workspace-files.js';
+import {
+  buildWorkspaceProjection, parseWorkspaceFiles, sanitizePisiFileTitle
+} from './workspace-files.js';
 
 const updatedAt = '2026-08-23T08:30:00.000Z';
 
@@ -94,5 +96,109 @@ describe('visible Pisi workspace files', () => {
     expect(task.payload.source.documentId).toBe('node_standalone');
     expect(task.payload.source.blockId).toBe('block_1');
     expect(schema.payload.value[0].name).toBe('Durum');
+  });
+
+  it('preserves unknown desktop fields and a binary sidecar reference across a mobile round-trip', () => {
+    const native = {
+      pisi: {
+        version: 1,
+        type: 'node',
+        id: 'node_unknown',
+        title: 'Eski başlık',
+        sidecar: 'inv_Eski başlık__node_unknown',
+        parentMap: 'none',
+        desktopExtension: { future: true }
+      },
+      content: '<p>Özgün</p>',
+      attachments: [{ path: 'photo.bin', mime: 'application/octet-stream' }],
+      futureTopLevel: { nested: ['kept'] }
+    };
+    const projection = buildWorkspaceProjection([record('node', 'node_unknown', {
+      title: 'Yeni başlık',
+      content: '<p>Mobil düzenleme</p>',
+      native,
+      relativePath: 'Arşiv/Eski.node',
+      updatedAt
+    })]);
+    const file = projection.files.find(({ visible }) => visible);
+    const written = JSON.parse(file.content);
+
+    expect(file.path).toBe('Arşiv/Eski.node');
+    expect(written.pisi.sidecar).toBe('inv_Eski başlık__node_unknown');
+    expect(written.pisi.desktopExtension).toEqual({ future: true });
+    expect(written.attachments[0].path).toBe('photo.bin');
+    expect(written.futureTopLevel.nested).toEqual(['kept']);
+
+    const parsed = parseWorkspaceFiles(projection.files);
+    const roundTrip = buildWorkspaceProjection(parsed.entities.map((entity) => record(
+      entity.kind, entity.id, entity.payload
+    )));
+    const second = JSON.parse(roundTrip.files.find(({ visible }) => visible).content);
+    expect(second.pisi.desktopExtension).toEqual({ future: true });
+    expect(second.futureTopLevel.nested).toEqual(['kept']);
+    expect(second.pisi.sidecar).toBe('inv_Eski başlık__node_unknown');
+  });
+
+  it('keeps DriveSync conflict files as stable, separately addressable copies', () => {
+    const makeContent = (content) => JSON.stringify({
+      pisi: {
+        version: 1, type: 'node', id: 'node_shared', title: 'Ortak',
+        sidecar: 'inv_Ortak__node_shared', parentMap: 'none',
+        updatedAt
+      },
+      content, blocks: [], tags: [], properties: {}, sources: []
+    });
+    const conflictPath = 'Ortak (conflict 2026-08-23-12-30-45).node';
+    const parsed = parseWorkspaceFiles([
+      { path: 'Ortak.node', content: makeContent('<p>Asıl</p>') },
+      { path: conflictPath, content: makeContent('<p>Çakışan</p>') }
+    ]);
+    const original = parsed.entities.find(({ id }) => id === 'node_shared');
+    const conflict = parsed.entities.find(({ id }) => id !== 'node_shared');
+
+    expect(parsed.warnings).toEqual([]);
+    expect(parsed.fileConflicts).toHaveLength(1);
+    expect(original.payload.content).toBe('<p>Asıl</p>');
+    expect(conflict.id).toMatch(/^node_conflict_[a-f0-9]{8}$/);
+    expect(conflict.payload.native.pisi.conflictOf).toBe('node_shared');
+
+    const projection = buildWorkspaceProjection(parsed.entities.map((entity) => record(
+      entity.kind, entity.id, entity.payload
+    )));
+    const reparsed = parseWorkspaceFiles(projection.files);
+    expect(reparsed.entities.some(({ id }) => id === conflict.id)).toBe(true);
+    expect(reparsed.entities.filter(({ kind }) => kind === 'node')).toHaveLength(2);
+  });
+
+  it('normalizes Unicode and avoids Windows-reserved file names', () => {
+    expect(sanitizePisiFileTitle('CON')).toBe('_CON');
+    expect(sanitizePisiFileTitle('baslik. ')).toBe('baslik');
+    expect(sanitizePisiFileTitle('Çalışma')).toBe('Çalışma');
+
+    const longId = `node_${'a'.repeat(96)}`;
+    const projection = buildWorkspaceProjection([
+      record('node', longId, { title: 'Çok '.repeat(100), content: '' }),
+      record('node', 'node_case_a', {
+        title: 'Bir', content: '', relativePath: 'Klasör/Not.node'
+      }),
+      record('node', 'node_case_b', {
+        title: 'İki', content: '', relativePath: 'klasör/not.node'
+      })
+    ]);
+    const visible = projection.visibleFiles;
+    expect(visible.every((path) => path.split('/').every((part) => part.length <= 180))).toBe(true);
+    expect(new Set(visible.map((path) => path.toLocaleLowerCase('en-US'))).size).toBe(visible.length);
+
+    expect(() => buildWorkspaceProjection([record('node', 'node_legacy', {
+      title: 'CON',
+      content: '',
+      relativePath: 'CON.node',
+      native: {
+        pisi: {
+          version: 1, type: 'node', id: 'node_legacy', title: 'CON',
+          sidecar: 'inv_CON__node_legacy', parentMap: 'none'
+        }
+      }
+    })])).toThrow('Windows ile uyumsuz mevcut node yolu otomatik taşınmadı');
   });
 });

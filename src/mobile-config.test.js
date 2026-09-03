@@ -20,6 +20,17 @@ describe('Android keyboard and responsive CSS configuration', () => {
     expect(manifest).toContain('android:windowSoftInputMode="adjustResize"');
   });
 
+  it('defines versioned debug and release-like full clean-install builds', () => {
+    const gradle = readFileSync(new URL('../android/app/build.gradle', import.meta.url), 'utf8');
+    const workflow = readFileSync(new URL('../.github/workflows/android.yml', import.meta.url), 'utf8');
+    expect(gradle).toContain('versionCode 7');
+    expect(gradle).toContain('versionName "3.2.0"');
+    expect(gradle).toContain('full {');
+    expect(gradle).toContain('signingConfig signingConfigs.debug');
+    expect(workflow).toContain('assembleDebug assembleFull');
+    expect(workflow).toContain('Pisi-android-full');
+  });
+
   it('uses a persisted scoped folder grant and accepts real Pisi file names', () => {
     const plugin = readFileSync(new URL(
       '../android/app/src/main/java/com/maggezer/pisi/PisiSyncFolderPlugin.java',
@@ -33,5 +44,28 @@ describe('Android keyboard and responsive CSS configuration', () => {
     expect(plugin).toContain('lower.endsWith(".map")');
     expect(plugin).toContain('Character.isISOControl');
     expect(plugin).not.toContain('!segment.matches("[A-Za-z0-9._:-]{1,180}")');
+  });
+
+  it('uses a crash-recoverable, reread-verified native storage transaction', () => {
+    const plugin = readFileSync(new URL(
+      '../android/app/src/main/java/com/maggezer/pisi/PisiSyncFolderPlugin.java',
+      import.meta.url
+    ), 'utf8');
+    const manifest = readFileSync(new URL('../android/app/src/main/AndroidManifest.xml', import.meta.url), 'utf8');
+
+    expect(plugin).toContain('output.getFD().sync()');
+    expect(plugin).toContain('pending-write-transaction');
+    expect(plugin).toContain('.pisi-tmp-');
+    expect(plugin).toContain('.pisi-old-');
+    expect(plugin).toContain('recoverPendingTransaction(root)');
+    expect(plugin).toContain('Arrays.equals(readBytes(file), expected)');
+    expect(plugin).toContain('validateJson(readBytes(target), expectedId, expectedType)');
+    expect(plugin).toContain('public void probeFolder(PluginCall call)');
+    expect(plugin).toContain('public void moveEntry(PluginCall call)');
+    expect(plugin).toContain('DocumentsContract.moveDocument');
+    expect(plugin).toContain('root.findFile(name) != null');
+    expect(plugin).toContain('private static final String TAG = "PisiStorage"');
+    expect(plugin).not.toContain('openOutputStream');
+    expect(manifest).toContain('android:name="com.ttxapps.drivesync"');
   });
 });

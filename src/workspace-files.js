@@ -20,7 +20,17 @@ function clone(value) {
 }
 
 function normalizePath(value = '') {
-  return String(value).replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+  return String(value).normalize('NFC').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+}
+
+function pathKey(value = '') {
+  return normalizePath(value).toLocaleLowerCase('en-US');
+}
+
+function windowsSafeSegment(segment = '') {
+  if (!segment || /[<>:"|?*\u0000-\u001f]/.test(segment) || /[. ]$/.test(segment)) return false;
+  const stem = segment.split('.')[0].toUpperCase();
+  return !/^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/.test(stem);
 }
 
 function safeSegments(value = '') {
@@ -39,6 +49,7 @@ function safeSegments(value = '') {
 
 export function sanitizePisiFileTitle(value, fallback = 'Yeni Dosya') {
   let cleaned = String(value || fallback)
+    .normalize('NFC')
     .trim()
     .replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_')
     .replace(/\s+/g, ' ')
@@ -51,14 +62,20 @@ export function sanitizePisiFileTitle(value, fallback = 'Yeni Dosya') {
   return cleaned || fallback;
 }
 
-function sidecarName(title, kind, id) {
+function sidecarName(title, kind, id, nativeSidecar = '') {
   const prefix = kind === 'map' ? 'nd_' : 'inv_';
-  return `${prefix}${sanitizePisiFileTitle(title).slice(0, 80)}__${id}`;
+  const stored = String(nativeSidecar || '').normalize('NFC');
+  if (
+    stored.startsWith(prefix) && stored.length <= 180 &&
+    !stored.includes('/') && !stored.includes('\\') && windowsSafeSegment(stored)
+  ) return stored;
+  const titleLimit = Math.max(8, 180 - prefix.length - 2 - String(id).length);
+  return `${prefix}${sanitizePisiFileTitle(title).slice(0, titleLimit)}__${id}`;
 }
 
 function safeDocumentPath(value, extension) {
   const segments = safeSegments(value);
-  if (!segments) return null;
+  if (!segments || !segments.every(windowsSafeSegment)) return null;
   const first = segments[0].toLocaleLowerCase('en-US');
   if (['.pisi', '.pisi-sync', '.git', 'node_modules'].includes(first)) return null;
   const path = segments.join('/');
@@ -66,10 +83,11 @@ function safeDocumentPath(value, extension) {
 }
 
 function stableGeneratedPath(record, extension, directory = '') {
+  const titleLimit = Math.max(8, 180 - 2 - String(record.id).length - extension.length);
   const title = sanitizePisiFileTitle(
     record.payload?.title,
     extension === '.map' ? 'Yeni Harita' : 'Yeni Not'
-  );
+  ).slice(0, titleLimit);
   const name = `${title}__${record.id}${extension}`;
   return directory ? `${directory}/${name}` : name;
 }
@@ -153,17 +171,31 @@ export function buildWorkspaceProjection(records = []) {
   const nodes = live.filter(({ kind }) => kind === 'node');
   const occupied = new Set();
   const recordPaths = {};
+  const recordSidecars = {};
   const mapInfo = new Map();
   const files = [];
 
   for (const record of maps) {
-    let path = safeDocumentPath(record.payload?.relativePath, '.map')
+    const requestedPath = normalizePath(record.payload?.relativePath);
+    const existingPath = safeDocumentPath(requestedPath, '.map');
+    if (requestedPath && !existingPath && record.payload?.native) {
+      throw new Error(`Windows ile uyumsuz mevcut harita yolu otomatik taşınmadı: ${requestedPath}`);
+    }
+    let path = existingPath
       || stableGeneratedPath(record, '.map');
-    if (occupied.has(path.toLocaleLowerCase('en-US'))) path = stableGeneratedPath(record, '.map');
-    occupied.add(path.toLocaleLowerCase('en-US'));
+    if (occupied.has(pathKey(path))) {
+      if (existingPath && record.payload?.native) {
+        throw new Error(`Büyük/küçük harf çakışan harita yolu otomatik taşınmadı: ${existingPath}`);
+      }
+      path = stableGeneratedPath(record, '.map');
+    }
+    occupied.add(pathKey(path));
     const directory = path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '';
-    const sidecar = sidecarName(record.payload?.title, 'map', record.id);
+    const sidecar = sidecarName(
+      record.payload?.title, 'map', record.id, record.payload?.native?.pisi?.sidecar
+    );
     recordPaths[`map:${record.id}`] = path;
+    recordSidecars[`map:${record.id}`] = sidecar;
     mapInfo.set(record.id, { path, directory, sidecar });
     files.push(jsonFile(path, makeMapData(record, sidecar), {
       visible: true,
@@ -180,15 +212,25 @@ export function buildWorkspaceProjection(records = []) {
     const existing = safeDocumentPath(record.payload?.relativePath, '.node');
     const existingDirectory = existing?.includes('/')
       ? existing.slice(0, existing.lastIndexOf('/')) : '';
+    const requestedPath = normalizePath(record.payload?.relativePath);
+    if (requestedPath && !existing && record.payload?.native) {
+      throw new Error(`Windows ile uyumsuz mevcut node yolu otomatik taşınmadı: ${requestedPath}`);
+    }
     let path = existing && (!parent || existingDirectory === expectedDirectory)
       ? existing
       : stableGeneratedPath(record, '.node', expectedDirectory);
-    if (occupied.has(path.toLocaleLowerCase('en-US'))) {
+    if (occupied.has(pathKey(path))) {
+      if (existing && record.payload?.native) {
+        throw new Error(`Büyük/küçük harf çakışan node yolu otomatik taşınmadı: ${existing}`);
+      }
       path = stableGeneratedPath(record, '.node', expectedDirectory);
     }
-    occupied.add(path.toLocaleLowerCase('en-US'));
-    const sidecar = sidecarName(record.payload?.title, 'node', record.id);
+    occupied.add(pathKey(path));
+    const sidecar = sidecarName(
+      record.payload?.title, 'node', record.id, record.payload?.native?.pisi?.sidecar
+    );
     recordPaths[`node:${record.id}`] = path;
+    recordSidecars[`node:${record.id}`] = sidecar;
     files.push(jsonFile(path, makeNodeData(record, parentMap, sidecar), {
       visible: true,
       recordKey: `node:${record.id}`
@@ -249,7 +291,8 @@ export function buildWorkspaceProjection(records = []) {
       format: WORKSPACE_INDEX_FORMAT,
       version: WORKSPACE_INDEX_VERSION,
       updatedAt: newestTimestamp(live),
-      records: recordPaths
+      records: recordPaths,
+      sidecars: recordSidecars
     }
   };
 }
@@ -261,7 +304,7 @@ function parseJson(row, warnings) {
   }
 }
 
-function canonicalNodeEntity(path, data, relationships) {
+function canonicalNodeEntity(path, data, relationships, relationshipSourceId = data.pisi.id) {
   const id = String(data.pisi.id);
   return {
     kind: 'node',
@@ -273,7 +316,7 @@ function canonicalNodeEntity(path, data, relationships) {
       blocks: clone(data.blocks || []),
       tags: clone(data.tags || []),
       properties: clone(data.properties || {}),
-      relations: clone(relationships.filter(({ sourceId }) => sourceId === id)
+      relations: clone(relationships.filter(({ sourceId }) => sourceId === relationshipSourceId)
         .map(({ sourceId: _sourceId, ...relation }) => relation)),
       sources: clone(data.sources || []),
       parentMap: data.pisi.parentMap || 'none',
@@ -289,6 +332,22 @@ function canonicalNodeEntity(path, data, relationships) {
       native: clone(data)
     }
   };
+}
+
+function driveSyncConflict(path) {
+  const match = normalizePath(path).match(
+    / \(conflict (\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2})\)(?: \(\d+\))?(?=\.(?:node|map)$)/i
+  );
+  return match ? { stamp: match[1] } : null;
+}
+
+function stablePathToken(value) {
+  let hash = 2166136261;
+  for (const character of String(value)) {
+    hash ^= character.codePointAt(0);
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+  return hash.toString(16).padStart(8, '0');
 }
 
 function canonicalMapEntity(path, data) {
@@ -317,10 +376,18 @@ function canonicalMapEntity(path, data) {
 
 export function parseWorkspaceFiles(rows = []) {
   const warnings = [];
+  const notices = [];
+  const fileConflicts = [];
   const parsed = new Map();
   for (const row of rows) {
     const path = normalizePath(row.path);
-    if (!path || path.startsWith('.pisi-sync/')) continue;
+    const lower = pathKey(path);
+    if (
+      !path || lower.startsWith('.pisi-sync/') ||
+      lower === '.pisi/sync-trash' || lower.startsWith('.pisi/sync-trash/') ||
+      lower === '.pisi/recovery' || lower.startsWith('.pisi/recovery/') ||
+      lower === '.pisi-history' || lower.startsWith('.pisi-history/')
+    ) continue;
     const data = parseJson({ ...row, path }, warnings);
     if (data) parsed.set(path, data);
   }
@@ -330,23 +397,75 @@ export function parseWorkspaceFiles(rows = []) {
     ? relationshipStore.relationships : [];
   const entities = [];
   const idByPath = new Map();
+  const firstPathByEntity = new Map();
 
-  for (const [path, data] of parsed) {
-    const lower = path.toLocaleLowerCase('en-US');
+  const documents = Array.from(parsed.entries())
+    .filter(([path]) => /\.(?:node|map)$/i.test(path))
+    .sort(([left], [right]) => (
+      Number(Boolean(driveSyncConflict(left))) - Number(Boolean(driveSyncConflict(right))) ||
+      pathKey(left).localeCompare(pathKey(right))
+    ));
+  for (const [path, originalData] of documents) {
+    const lower = pathKey(path);
     if (!lower.endsWith('.node') && !lower.endsWith('.map')) continue;
     const expectedKind = lower.endsWith('.map') ? 'map' : 'node';
-    const id = String(data?.pisi?.id || '');
+    const originalId = String(originalData?.pisi?.id || '');
     const validId = expectedKind === 'map'
-      ? /^map_[A-Za-z0-9_-]{1,96}$/.test(id)
-      : /^node_[A-Za-z0-9_-]{1,96}$/.test(id);
-    if (!validId || data?.pisi?.type !== expectedKind) {
+      ? /^map_[A-Za-z0-9_-]{1,96}$/.test(originalId)
+      : /^node_[A-Za-z0-9_-]{1,96}$/.test(originalId);
+    if (!validId || originalData?.pisi?.type !== expectedKind) {
       warnings.push(`Geçersiz Pisi ${expectedKind} dosyası atlandı: ${path}`);
       continue;
     }
-    idByPath.set(path.toLocaleLowerCase('en-US'), { id, kind: expectedKind });
+    const originalKey = `${expectedKind}:${originalId}`;
+    const namedConflict = driveSyncConflict(path);
+    const duplicatePath = firstPathByEntity.get(originalKey);
+    const alreadyIsolated = Boolean(
+      namedConflict && originalData?.pisi?.conflictOf &&
+      new RegExp(`^${expectedKind}_conflict_[A-Za-z0-9_-]+$`).test(originalId)
+    );
+    let data = originalData;
+    let id = originalId;
+    if ((namedConflict && !alreadyIsolated) || duplicatePath) {
+      const token = stablePathToken(`${path}\n${JSON.stringify(originalData)}`);
+      id = `${expectedKind}_conflict_${token}`;
+      data = clone(originalData);
+      data.pisi = {
+        ...data.pisi,
+        id,
+        title: `${data.pisi.title || 'Başlıksız'} (DriveSync çakışma kopyası)`,
+        conflictOf: originalId,
+        conflictSourcePath: path,
+        ...(namedConflict ? { conflictStamp: namedConflict.stamp } : {})
+      };
+      fileConflicts.push({
+        kind: expectedKind,
+        originalId,
+        conflictId: id,
+        originalPath: duplicatePath || null,
+        conflictPath: path,
+        source: namedConflict ? 'drivesync-filename' : 'duplicate-pisi-id'
+      });
+      notices.push(
+        `Çakışma dosyası ayrı kopya olarak korundu: ${path}`
+      );
+    } else {
+      firstPathByEntity.set(originalKey, path);
+      if (alreadyIsolated) {
+        fileConflicts.push({
+          kind: expectedKind,
+          originalId: String(originalData.pisi.conflictOf),
+          conflictId: originalId,
+          originalPath: null,
+          conflictPath: path,
+          source: 'drivesync-filename'
+        });
+      }
+    }
+    idByPath.set(pathKey(path), { id, kind: expectedKind });
     entities.push(expectedKind === 'map'
       ? canonicalMapEntity(path, data)
-      : canonicalNodeEntity(path, data, relationships));
+      : canonicalNodeEntity(path, data, relationships, originalId));
   }
 
   const taskStore = parsed.get('.pisi/tasks.json');
@@ -355,9 +474,9 @@ export function parseWorkspaceFiles(rows = []) {
     if (!/^task_[A-Za-z0-9._:-]{4,180}$/.test(id)) continue;
     const source = task.source || {};
     const node = source.nodePath
-      ? idByPath.get(normalizePath(source.nodePath).toLocaleLowerCase('en-US')) : null;
+      ? idByPath.get(pathKey(source.nodePath)) : null;
     const map = source.mapPath
-      ? idByPath.get(normalizePath(source.mapPath).toLocaleLowerCase('en-US')) : null;
+      ? idByPath.get(pathKey(source.mapPath)) : null;
     entities.push({
       kind: 'task',
       id,
@@ -390,6 +509,8 @@ export function parseWorkspaceFiles(rows = []) {
   return {
     entities,
     warnings,
+    notices,
+    fileConflicts,
     documentPaths: Array.from(idByPath.keys()),
     authorityPaths: Array.from(parsed.keys()).filter((path) => (
       path === '.pisi/tasks.json' || path === '.pisi/relationships.json' ||

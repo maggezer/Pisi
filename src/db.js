@@ -7,8 +7,33 @@ const HISTORIES = 'histories';
 const TASKS = 'tasks';
 const VALID_KINDS = new Set(['note', 'journal', 'canvas', 'source', 'database']);
 const HISTORY_LIMIT = 80;
+const MISSING_SETTING = Symbol('missing-setting');
 
 let databasePromise;
+let durableMutationHandler = null;
+
+const DURABLE_SETTINGS = new Set(['propertySchema', 'savedViews', 'templates']);
+
+export function installDurableMutationHandler(handler) {
+  durableMutationHandler = typeof handler === 'function' ? handler : null;
+}
+
+async function commitDurableMutation(detail, options = {}) {
+  if (options.durable === false || !durableMutationHandler) {
+    return { verified: false, storage: 'private-cache' };
+  }
+  return durableMutationHandler(structuredClone(detail));
+}
+
+function attachDurabilityResult(value, result) {
+  if (!value || typeof value !== 'object') return value;
+  Object.defineProperty(value, '__pisiStorageResult', {
+    value: result,
+    enumerable: false,
+    configurable: true
+  });
+  return value;
+}
 
 function requestToPromise(request) {
   return new Promise((resolve, reject) => {
@@ -258,12 +283,13 @@ export async function putDocument(document, options = {}) {
     && previous
     && snapshotValue(previous) !== snapshotValue(next);
   const stores = shouldRecord ? [DOCUMENTS, HISTORIES] : [DOCUMENTS];
+  const historyId = shouldRecord ? makeId('history') : null;
   const db = await openDatabase();
   const transaction = db.transaction(stores, 'readwrite');
   transaction.objectStore(DOCUMENTS).put(next);
   if (shouldRecord) {
     transaction.objectStore(HISTORIES).put({
-      id: makeId('history'),
+      id: historyId,
       documentId: previous.id,
       revision: Number(previous.revision) || 1,
       createdAt: now,
@@ -272,11 +298,26 @@ export async function putDocument(document, options = {}) {
     });
   }
   await transactionDone(transaction);
+  let durability;
+  try {
+    durability = await commitDurableMutation({
+      operation: 'put-document',
+      entityKind: next.kind === 'canvas' ? 'map' : 'node',
+      id: next.id
+    }, options);
+  } catch (error) {
+    const rollback = db.transaction(stores, 'readwrite');
+    if (previous) rollback.objectStore(DOCUMENTS).put(previous);
+    else rollback.objectStore(DOCUMENTS).delete(next.id);
+    if (historyId) rollback.objectStore(HISTORIES).delete(historyId);
+    await transactionDone(rollback);
+    throw error;
+  }
   if (shouldRecord) await trimDocumentHistory(next.id);
   if (options.notify !== false) {
     documentEvent('document', next.id);
   }
-  return next;
+  return attachDurabilityResult(next, durability);
 }
 
 async function trimDocumentHistory(documentId) {
@@ -288,7 +329,8 @@ async function trimDocumentHistory(documentId) {
   await transactionDone(transaction);
 }
 
-export async function removeDocument(id) {
+export async function removeDocument(id, options = {}) {
+  const previous = await getDocument(id);
   const versions = await listDocumentVersions(id);
   const tasks = (await listTasks()).filter((task) => task.documentId === id);
   const db = await openDatabase();
@@ -297,7 +339,23 @@ export async function removeDocument(id) {
   versions.forEach((version) => transaction.objectStore(HISTORIES).delete(version.id));
   tasks.forEach((task) => transaction.objectStore(TASKS).delete(task.id));
   await transactionDone(transaction);
+  let durability;
+  try {
+    durability = await commitDurableMutation({
+      operation: 'delete-document',
+      entityKind: previous?.kind === 'canvas' ? 'map' : 'node',
+      id
+    }, options);
+  } catch (error) {
+    const rollback = db.transaction([DOCUMENTS, HISTORIES, TASKS], 'readwrite');
+    if (previous) rollback.objectStore(DOCUMENTS).put(previous);
+    versions.forEach((version) => rollback.objectStore(HISTORIES).put(version));
+    tasks.forEach((task) => rollback.objectStore(TASKS).put(task));
+    await transactionDone(rollback);
+    throw error;
+  }
   documentEvent('document', id, true);
+  return attachDurabilityResult({ id, deleted: true }, durability);
 }
 
 export async function getSetting(key, fallback = null) {
@@ -308,11 +366,23 @@ export async function getSetting(key, fallback = null) {
   return row ? row.value : fallback;
 }
 
-export async function setSetting(key, value) {
+export async function setSetting(key, value, options = {}) {
+  const previous = await getSetting(key, MISSING_SETTING);
   const db = await openDatabase();
   const transaction = db.transaction(SETTINGS, 'readwrite');
   transaction.objectStore(SETTINGS).put({ key, value });
   await transactionDone(transaction);
+  if (DURABLE_SETTINGS.has(key)) {
+    try {
+      await commitDurableMutation({ operation: 'put-setting', entityKind: 'config', id: key }, options);
+    } catch (error) {
+      const rollback = db.transaction(SETTINGS, 'readwrite');
+      if (previous === MISSING_SETTING) rollback.objectStore(SETTINGS).delete(key);
+      else rollback.objectStore(SETTINGS).put({ key, value: previous });
+      await transactionDone(rollback);
+      throw error;
+    }
+  }
   return value;
 }
 
@@ -339,23 +409,59 @@ export async function listTasks() {
   });
 }
 
-export async function putTask(task = {}) {
+async function getTask(id) {
+  const db = await openDatabase();
+  const transaction = db.transaction(TASKS, 'readonly');
+  const result = await requestToPromise(transaction.objectStore(TASKS).get(id));
+  await transactionDone(transaction);
+  return result;
+}
+
+export async function putTask(task = {}, options = {}) {
   const next = normalizeTaskForStorage(task);
   if (!next.title) throw new Error('Görev metni boş olamaz.');
+  const previous = await getTask(next.id);
   const db = await openDatabase();
   const transaction = db.transaction(TASKS, 'readwrite');
   transaction.objectStore(TASKS).put(next);
   await transactionDone(transaction);
+  let durability;
+  try {
+    durability = await commitDurableMutation({
+      operation: 'put-task', entityKind: 'task', id: next.id
+    }, options);
+  } catch (error) {
+    const rollback = db.transaction(TASKS, 'readwrite');
+    if (previous) rollback.objectStore(TASKS).put(previous);
+    else rollback.objectStore(TASKS).delete(next.id);
+    await transactionDone(rollback);
+    throw error;
+  }
   documentEvent('task', next.id);
-  return next;
+  return attachDurabilityResult(next, durability);
 }
 
-export async function removeTask(id) {
+export async function removeTask(id, options = {}) {
+  const previous = await getTask(id);
   const db = await openDatabase();
   const transaction = db.transaction(TASKS, 'readwrite');
   transaction.objectStore(TASKS).delete(id);
   await transactionDone(transaction);
+  let durability;
+  try {
+    durability = await commitDurableMutation(
+      { operation: 'delete-task', entityKind: 'task', id }, options
+    );
+  } catch (error) {
+    if (previous) {
+      const rollback = db.transaction(TASKS, 'readwrite');
+      rollback.objectStore(TASKS).put(previous);
+      await transactionDone(rollback);
+    }
+    throw error;
+  }
   documentEvent('task', id, true);
+  return attachDurabilityResult({ id, deleted: true }, durability);
 }
 
 export async function inspectDatabaseIntegrity() {
@@ -427,8 +533,11 @@ function validateBackup(backup) {
   }
 }
 
-export async function importDatabase(backup, { replace = true } = {}) {
+export async function importDatabase(backup, { replace = true, durable = true } = {}) {
   validateBackup(backup);
+  const previous = await Promise.all([
+    getAll(DOCUMENTS), getAll(SETTINGS), getAll(HISTORIES), getAll(TASKS)
+  ]);
   const db = await openDatabase();
   const storeNames = [DOCUMENTS, SETTINGS, HISTORIES, TASKS];
   const transaction = db.transaction(storeNames, 'readwrite');
@@ -441,7 +550,22 @@ export async function importDatabase(backup, { replace = true } = {}) {
   (backup.histories || []).forEach((row) => row?.id && stores[HISTORIES].put(row));
   (backup.tasks || []).forEach((row) => row?.id && stores[TASKS].put(row));
   await transactionDone(transaction);
+  let durability;
+  try {
+    durability = await commitDurableMutation({
+      operation: 'import-workspace', entityKind: 'workspace', id: 'backup-import'
+    }, { durable });
+  } catch (error) {
+    const rollback = db.transaction(storeNames, 'readwrite');
+    storeNames.forEach((name) => rollback.objectStore(name).clear());
+    previous.forEach((rows, index) => {
+      rows.forEach((row) => rollback.objectStore(storeNames[index]).put(row));
+    });
+    await transactionDone(rollback);
+    throw error;
+  }
   documentEvent('workspace', 'backup-import');
+  return durability;
 }
 
 function documentEvent(kind, id, deleted = false) {
@@ -515,7 +639,7 @@ export async function seedDatabase() {
     fromAnchor: 'right',
     toAnchor: 'left'
   });
-  await putDocument(welcome, { recordHistory: false });
-  await putDocument(canvas, { recordHistory: false });
+  await putDocument(welcome, { recordHistory: false, durable: false });
+  await putDocument(canvas, { recordHistory: false, durable: false });
   return listDocuments();
 }

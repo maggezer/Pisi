@@ -2,7 +2,7 @@ name: Android APK
 
 on:
   push:
-    branches: [mobile5, "agent/pisi-mobile-responsive"]
+    branches: [mobile5, "agent/pisi-mobile-responsive", "chatgpt/**"]
   pull_request:
     branches: [mobile5]
   workflow_dispatch:
@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build:
-    name: Build debug APK
+    name: Build clean-install APK
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -47,14 +47,41 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Assemble debug APK
+      - name: Clean, test and assemble debug/full APKs
         working-directory: android
-        run: bash ./gradlew assembleDebug
+        run: bash ./gradlew clean test assembleDebug assembleFull
 
-      - name: Upload APK
+      - name: Verify APK signatures and manifest metadata
+        working-directory: android
+        shell: bash
+        run: |
+          set -euo pipefail
+          APKSIGNER="$(ls -1 "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)"
+          AAPT="$(ls -1 "$ANDROID_HOME"/build-tools/*/aapt | sort -V | tail -1)"
+          "$APKSIGNER" verify --verbose --print-certs app/build/outputs/apk/debug/app-debug.apk
+          "$APKSIGNER" verify --verbose --print-certs app/build/outputs/apk/full/app-full.apk
+          "$AAPT" dump badging app/build/outputs/apk/full/app-full.apk \
+            | grep -F "package: name='com.maggezer.pisi' versionCode='7' versionName='3.2.0'"
+          "$AAPT" dump xmltree app/build/outputs/apk/full/app-full.apk AndroidManifest.xml \
+            | grep -F 'com.ttxapps.drivesync'
+          if "$AAPT" dump xmltree app/build/outputs/apk/full/app-full.apk AndroidManifest.xml \
+            | grep -Fq 'android:debuggable'; then
+            echo 'Full APK must not be debuggable.' >&2
+            exit 1
+          fi
+
+      - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: Pisi-android-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload full clean-install APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Pisi-android-full
+          path: android/app/build/outputs/apk/full/app-full.apk
           if-no-files-found: error
           retention-days: 7
