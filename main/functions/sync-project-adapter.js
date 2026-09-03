@@ -21,6 +21,33 @@ function getStorage(projectFolder) {
     return storageLayer.getPisiProjectStorage(projectFolder);
 }
 
+function comparePath(value) {
+    return path.resolve(value).normalize('NFC').toLowerCase();
+}
+
+function isDriveSyncConflictPath(value) {
+    return / \(conflict \d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\)(?: \(\d+\))?\.(?:node|map)$/i
+        .test(String(value || ''));
+}
+
+function isSafeSidecarName(value) {
+    const name = String(value || '').normalize('NFC');
+    if (
+        !name || name.length > 180 || path.basename(name) !== name ||
+        /[<>:"|?*\u0000-\u001f]/.test(name) || /[. ]$/.test(name)
+    ) return false;
+    const stem = name.split('.')[0].toUpperCase();
+    return !/^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/.test(stem);
+}
+
+function generatedSidecarName(title, extension, id) {
+    const generated = modules['main.filesystemCore'].getPisiSidecarName(title, extension, id);
+    if (isSafeSidecarName(generated)) return generated;
+    const prefix = extension === '.map' ? 'nd_' : 'inv_';
+    const maximum = Math.max(8, 180 - prefix.length - 2 - String(id).length);
+    return `${prefix}${sanitizeTitle(title, 'Yeni Dosya', maximum)}__${id}`;
+}
+
 function readProjectDocuments(projectFolder) {
     const storage = getStorage(projectFolder);
     const walked = storage.walk('.', {
@@ -32,19 +59,53 @@ function readProjectDocuments(projectFolder) {
     const documents = [];
     const byId = new Map();
     const byPath = new Map();
-    for (const entry of walked.entries) {
+    const entries = [...walked.entries].sort((left, right) => (
+        Number(isDriveSyncConflictPath(left.key)) - Number(isDriveSyncConflictPath(right.key)) ||
+        String(left.key).localeCompare(String(right.key))
+    ));
+    const fileConflicts = [];
+    for (const entry of entries) {
         const read = storage.readJson(entry.key);
         if (!read.ok || !read.data?.pisi?.id || !['node', 'map'].includes(read.data.pisi.type)) {
             continue;
         }
-        const id = String(read.data.pisi.id);
-        if (byId.has(id)) throw new Error(`Sync için tekrarlanan Pisi kimliği: ${id}`);
-        const row = { id, kind: read.data.pisi.type, key: entry.key, path: entry.path, data: read.data };
+        let data = read.data;
+        let id = String(data.pisi.id);
+        const kind = data.pisi.type;
+        const namedConflict = isDriveSyncConflictPath(entry.key);
+        const duplicate = byId.get(id);
+        const alreadyIsolated = Boolean(
+            namedConflict && data.pisi.conflictOf &&
+            new RegExp(`^${kind}_conflict_[A-Za-z0-9_-]+$`).test(id)
+        );
+        if ((namedConflict && !alreadyIsolated) || duplicate) {
+            const originalId = id;
+            const suffix = syncCore.hashString(`${entry.key}:${originalId}:${JSON.stringify(data)}`);
+            id = `${kind}_conflict_${suffix}`;
+            data = clone(data);
+            data.pisi = {
+                ...data.pisi,
+                id,
+                title: `${data.pisi.title || 'Başlıksız'} (DriveSync çakışma kopyası)`,
+                conflictOf: originalId,
+                conflictSourcePath: entry.key
+            };
+            fileConflicts.push({
+                kind, originalId, conflictId: id,
+                originalPath: duplicate?.key || null,
+                conflictPath: entry.key,
+                source: namedConflict ? 'drivesync-filename' : 'duplicate-pisi-id'
+            });
+        }
+        if (byId.has(id)) {
+            throw new Error(`Sync çakışma kimliği güvenle ayrılamadı: ${id}`);
+        }
+        const row = { id, kind, key: entry.key, path: entry.path, data };
         documents.push(row);
         byId.set(id, row);
-        byPath.set(path.resolve(entry.path), row);
+        byPath.set(comparePath(entry.path), row);
     }
-    return { documents, byId, byPath };
+    return { documents, byId, byPath, fileConflicts };
 }
 
 function canonicalNodePayload(row, relationships) {
@@ -116,7 +177,7 @@ function resolveTaskSourceIds(projectFolder, task, byPath) {
         const absolute = path.isAbsolute(value)
             ? path.resolve(value)
             : path.resolve(projectFolder, String(value).replace(/\//g, path.sep));
-        const row = byPath.get(absolute);
+        const row = byPath.get(comparePath(absolute));
         return row?.kind === kind ? row.id : null;
     };
     return {
@@ -169,18 +230,26 @@ function exportPisiSyncEntities(projectFolder) {
     return entities;
 }
 
-function sanitizeTitle(value, fallback) {
-    const title = String(value || fallback || 'Başlıksız')
+function sanitizeTitle(value, fallback, maximum = 100) {
+    let title = String(value || fallback || 'Başlıksız')
+        .normalize('NFC')
         .replace(/[<>:"/\\|?*\u0000-\u001f]/g, ' ')
         .replace(/\s+/g, ' ')
         .trim()
         .replace(/[. ]+$/g, '')
-        .slice(0, 100);
+        .slice(0, Math.max(8, maximum));
+    const stem = title.split('.')[0].toUpperCase();
+    if (/^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/.test(stem)) title = `_${title}`;
     return title || fallback || 'Başlıksız';
 }
 
 function uniqueFilePath(directory, title, extension, id, occupied) {
-    const clean = sanitizeTitle(title, extension === '.map' ? 'Senkronize Harita' : 'Senkronize Node');
+    const maximum = Math.max(8, 180 - 2 - String(id).length - extension.length);
+    const clean = sanitizeTitle(
+        title,
+        extension === '.map' ? 'Senkronize Harita' : 'Senkronize Node',
+        maximum
+    );
     const candidates = [
         `${clean}${extension}`,
         `${clean}__${id}${extension}`
@@ -189,7 +258,7 @@ function uniqueFilePath(directory, title, extension, id, occupied) {
     while (true) {
         const name = candidates.shift() || `${clean}__${id}_${index++}${extension}`;
         const candidate = path.join(directory, name);
-        const normalized = path.resolve(candidate).toLowerCase();
+        const normalized = comparePath(candidate);
         if (!occupied.has(normalized) && !fs.existsSync(candidate)) {
             occupied.add(normalized);
             return candidate;
@@ -322,7 +391,7 @@ function applyPisiSyncRecords(projectFolder, records, conflicts = []) {
     const preserved = makeConflictRecords(records, conflicts);
     const liveDocuments = preserved.live.filter(({ kind }) => kind === 'node' || kind === 'map');
     const liveIds = new Set(liveDocuments.map(({ id }) => id));
-    const occupied = new Set(inventory.documents.map(({ path: filePath }) => path.resolve(filePath).toLowerCase()));
+    const occupied = new Set(inventory.documents.map(({ path: filePath }) => comparePath(filePath)));
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
     const mapPaths = new Map();
     const planned = [];
@@ -333,14 +402,8 @@ function applyPisiSyncRecords(projectFolder, records, conflicts = []) {
             projectFolder, record.payload?.title, '.map', record.id, occupied
         );
         const data = makeDocumentData(record, existing?.data);
-        const expectedSidecar = modules['main.filesystemCore'].getPisiSidecarName(
-            data.pisi.title, '.map', record.id
-        );
-        if (
-            !data.pisi.sidecar ||
-            path.basename(data.pisi.sidecar) !== data.pisi.sidecar ||
-            !data.pisi.sidecar.startsWith('.pisi-')
-        ) data.pisi.sidecar = expectedSidecar;
+        const expectedSidecar = generatedSidecarName(data.pisi.title, '.map', record.id);
+        if (!isSafeSidecarName(data.pisi.sidecar)) data.pisi.sidecar = expectedSidecar;
         const sidecarPath = path.join(path.dirname(filePath), data.pisi.sidecar);
         fs.mkdirSync(sidecarPath, { recursive: true });
         mapPaths.set(record.id, { filePath, sidecarPath });
@@ -357,33 +420,65 @@ function applyPisiSyncRecords(projectFolder, records, conflicts = []) {
             );
         }
         const data = makeDocumentData(record, existing?.data, parentMap);
-        data.pisi.sidecar ||= modules['main.filesystemCore'].getPisiSidecarName(
-            data.pisi.title, '.node', record.id
-        );
-        planned.push({ filePath, data, oldPath: existing?.path || null });
+        if (!isSafeSidecarName(data.pisi.sidecar)) {
+            data.pisi.sidecar = generatedSidecarName(data.pisi.title, '.node', record.id);
+        }
+        const oldSidecar = existing?.data?.pisi?.sidecar;
+        const oldSidecarPath = existing && isSafeSidecarName(oldSidecar)
+            ? path.join(path.dirname(existing.path), oldSidecar) : null;
+        const newSidecarPath = isSafeSidecarName(data.pisi.sidecar)
+            ? path.join(path.dirname(filePath), data.pisi.sidecar) : null;
+        planned.push({
+            filePath, data, oldPath: existing?.path || null,
+            oldSidecarPath, newSidecarPath
+        });
     }
 
+    for (const item of planned) {
+        if (
+            item.oldSidecarPath && item.newSidecarPath &&
+            comparePath(item.oldSidecarPath) !== comparePath(item.newSidecarPath) &&
+            fs.existsSync(item.oldSidecarPath) && fs.existsSync(item.newSidecarPath)
+        ) {
+            throw new Error(`Sync sidecar hedefi zaten var; ekler otomatik birleştirilmedi: ${item.newSidecarPath}`);
+        }
+    }
     modules['main.filesystemCore'].writePisiDocumentsTransaction(
         planned.map(({ filePath, data }) => ({ filePath, data }))
     );
     const trashPaths = new Set();
     for (const item of planned) {
-        if (item.oldPath && path.resolve(item.oldPath) !== path.resolve(item.filePath)) {
+        if (
+            item.oldSidecarPath && item.newSidecarPath &&
+            comparePath(item.oldSidecarPath) !== comparePath(item.newSidecarPath) &&
+            fs.existsSync(item.oldSidecarPath)
+        ) {
+            fs.mkdirSync(path.dirname(item.newSidecarPath), { recursive: true });
+            fs.renameSync(item.oldSidecarPath, item.newSidecarPath);
+        }
+        if (item.oldPath && comparePath(item.oldPath) !== comparePath(item.filePath)) {
             const moved = moveToSyncTrash(projectFolder, item.oldPath, stamp);
             if (moved) trashPaths.add(moved);
         }
     }
-    for (const row of inventory.documents) {
-        if (liveIds.has(row.id)) continue;
+    const movedSidecarRoots = [];
+    const deletions = inventory.documents
+        .filter((row) => !liveIds.has(row.id))
+        .sort((left, right) => Number(right.kind === 'map') - Number(left.kind === 'map'));
+    for (const row of deletions) {
+        if (movedSidecarRoots.some((root) => (
+            comparePath(row.path) === root || comparePath(row.path).startsWith(`${root}${path.sep}`)
+        ))) continue;
         const moved = moveToSyncTrash(projectFolder, row.path, stamp);
         if (moved) trashPaths.add(moved);
-        if (row.kind === 'map') {
-            const sidecar = row.data?.pisi?.sidecar;
-            if (sidecar) {
-                const movedSidecar = moveToSyncTrash(
-                    projectFolder, path.join(path.dirname(row.path), sidecar), stamp
-                );
-                if (movedSidecar) trashPaths.add(movedSidecar);
+        const sidecar = row.data?.pisi?.sidecar;
+        if (isSafeSidecarName(sidecar)) {
+            const sidecarPath = path.join(path.dirname(row.path), sidecar);
+            const normalizedSidecar = comparePath(sidecarPath);
+            const movedSidecar = moveToSyncTrash(projectFolder, sidecarPath, stamp);
+            if (movedSidecar) {
+                trashPaths.add(movedSidecar);
+                movedSidecarRoots.push(normalizedSidecar);
             }
         }
     }
