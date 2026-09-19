@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, Menu, ipcMain, dialog, screen, shell } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, dialog, screen, shell, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
@@ -507,6 +507,8 @@ function unlockProjectFolder() {
 function createWindow() {
 
     const savedWindowState = getSavedWindowState();
+    const appIcon = nativeImage.createFromPath(appIconPath);
+    const hasAppIcon = !appIcon.isEmpty();
 
     mainWindow = new BrowserWindow({
         
@@ -519,7 +521,7 @@ function createWindow() {
         minHeight: 600,
 
         title: 'PISI',
-        icon: appIconPath,
+        icon: hasAppIcon ? appIcon : undefined,
         frame: false,
         backgroundColor: '#1e1e1e',
         show: false,
@@ -531,9 +533,10 @@ function createWindow() {
         }
     });
 
-    // Keep the Windows taskbar/window icon explicitly synchronized with the packaged app icon.
-    if (process.platform === 'win32') {
-        mainWindow.setIcon(appIconPath);
+    // Keep the Windows taskbar/window icon explicitly synchronized with the app icon.
+    // nativeImage avoids throwing when an icon file cannot be decoded.
+    if (process.platform === 'win32' && hasAppIcon) {
+        mainWindow.setIcon(appIcon);
     }
 
     if (!app.isPackaged) {
