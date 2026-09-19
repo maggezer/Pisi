@@ -531,6 +531,11 @@ function createWindow() {
         }
     });
 
+    // Keep the Windows taskbar/window icon explicitly synchronized with the packaged app icon.
+    if (process.platform === 'win32') {
+        mainWindow.setIcon(appIconPath);
+    }
+
     if (!app.isPackaged) {
     mainWindow.webContents.on('before-input-event', (event, input) => {
         const key = String(input.key || '').toLowerCase();
