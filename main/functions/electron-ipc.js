@@ -7,6 +7,8 @@ const crypto = require('crypto');
 const { registerMainModule } = require('../module-registry');
 const backupStorage = require('./backup-storage');
 const PISI_APP_ROOT = path.resolve(__dirname, '..', '..');
+const PISI_WINDOWS_APP_ID = 'com.mumin.pisi';
+const PISI_TASKBAR_ICON_PATH = path.join(PISI_APP_ROOT, 'assets', 'pisi.ico');
 
 function startProjectWatcher(folderPath) {
     stopProjectWatcher();
@@ -533,10 +535,22 @@ function createWindow() {
         }
     });
 
-    // Keep the Windows taskbar/window icon explicitly synchronized with the app icon.
-    // nativeImage avoids throwing when an icon file cannot be decoded.
-    if (process.platform === 'win32' && hasAppIcon) {
-        mainWindow.setIcon(appIcon);
+    // Keep the live window icon and the Windows taskbar identity separate:
+    // PNG is reliable for BrowserWindow; ICO is used by the Windows shell/taskbar.
+    if (process.platform === 'win32') {
+        if (hasAppIcon) {
+            mainWindow.setIcon(appIcon);
+        }
+
+        mainWindow.setAppDetails({
+            appId: PISI_WINDOWS_APP_ID,
+            appIconPath: PISI_TASKBAR_ICON_PATH,
+            appIconIndex: 0,
+            relaunchCommand: app.isPackaged
+                ? process.execPath
+                : `"${process.execPath}" "${app.getAppPath()}"`,
+            relaunchDisplayName: 'Pisi'
+        });
     }
 
     if (!app.isPackaged) {
