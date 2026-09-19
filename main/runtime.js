@@ -92,7 +92,7 @@ Object.defineProperties(moduleApi6, {
 registerMainModule("main.runtime", moduleApi6);
 
 
-const appIconPath = path.join(app.getAppPath(), 'assets', 'pisi.ico');
+const appIconPath = path.join(app.getAppPath(), 'assets', 'pisi.png');
 
 
 const moduleApi7 = {};

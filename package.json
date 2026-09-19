@@ -57,7 +57,7 @@
           ]
         }
       ],
-      "icon": "assets/pisi.ico"
+      "icon": "assets/pisi.png"
     },
     "nsis": {
       "oneClick": false,
