@@ -135,10 +135,10 @@ if (!Array.isArray(packageJson.build?.files) || !packageJson.build.files.include
 }
 
 const runtime = fs.readFileSync(path.join(root, 'main', 'runtime.js'), 'utf8');
-if (!/path\.join\(app\.getAppPath\(\), ['"]assets['"], ['"]pisi\.ico['"]\)/.test(runtime)) {
-    errors.push('Çalışma zamanı ikonu uygulama kökünden app.getAppPath() ile çözülmüyor.');
+if (!/path\.join\(app\.getAppPath\(\), ['"]assets['"], ['"]pisi\.png['"]\)/.test(runtime)) {
+    errors.push('Çalışma zamanı ikonu assets/pisi.png olarak uygulama kökünden app.getAppPath() ile çözülmüyor.');
 }
-if (/path\.join\(__dirname, ['"]assets['"], ['"]pisi\.ico['"]\)/.test(runtime)) {
+if (/path\.join\(__dirname, ['"]assets['"], ['"]pisi\.(?:ico|png)['"]\)/.test(runtime)) {
     errors.push('Çalışma zamanı ikonu yanlışlıkla main/assets altında aranıyor.');
 }
 
