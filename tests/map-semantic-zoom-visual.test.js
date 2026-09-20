@@ -10,16 +10,21 @@ const css = fs.readFileSync(
     'utf8'
 );
 
-test('far semantic zoom constrains saved inline node height to title height', () => {
+test('far semantic zoom constrains saved inline node height to enlarged title height', () => {
     const selector = '#map-canvas[data-semantic-zoom="far"] .map-node-box';
     const start = css.indexOf(selector);
     const end = css.indexOf('}', start);
     const rule = css.slice(start, end);
 
     assert.ok(start >= 0);
-    assert.match(rule, /min-height:\s*34px/);
-    assert.match(rule, /height:\s*34px/);
-    assert.match(rule, /max-height:\s*34px/);
+    assert.match(rule, /min-height:\s*42px/);
+    assert.match(rule, /height:\s*42px/);
+    assert.match(rule, /max-height:\s*42px/);
+});
+
+test('node title and preview fonts scale existing preferences by one and a half', () => {
+    assert.match(css, /font-size:\s*calc\(var\(--pisi-map-node-title-size\) \* 1\.5\)/);
+    assert.match(css, /font-size:\s*calc\(var\(--pisi-map-node-text-size\) \* 1\.5\)/);
 });
 
 test('far semantic zoom removes preview and node controls', () => {
