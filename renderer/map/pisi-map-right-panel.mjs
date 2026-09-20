@@ -4,12 +4,14 @@ const mindMapPanelText = {
     tr: {
         tab: 'Mind Map araçları',
         empty: 'Mind Map araçlarını kullanmak için orta alanda bir map aç.',
-        filters: 'Filtreler'
+        filters: 'Filtreler',
+        titles: 'Yalnız başlık'
     },
     eng: {
         tab: 'Mind Map tools',
         empty: 'Open a map in the workspace to use Mind Map tools.',
-        filters: 'Filters'
+        filters: 'Filters',
+        titles: 'Titles only'
     }
 };
 
@@ -46,6 +48,50 @@ const mindMapFilterControlIds = [
     'pisi-map-operational-depth',
     'pisi-map-scope-controls'
 ];
+
+const titleViewStorageKey = 'pisi.map.titleOnly.v1';
+let titleOnly = false;
+try {
+    titleOnly = localStorage.getItem(titleViewStorageKey) === 'true';
+} catch {
+    // Keep the default full view when storage is unavailable.
+}
+
+function syncMindMapTitleView() {
+    const canvas = document.getElementById('map-canvas');
+    if (canvas) canvas.dataset.nodeView = titleOnly ? 'title' : 'full';
+    const button = document.getElementById('pisi-map-title-view');
+    if (button) {
+        button.setAttribute('aria-pressed', String(titleOnly));
+        button.title = t('titles');
+        button.setAttribute('aria-label', t('titles'));
+    }
+}
+
+function ensureMindMapTitleButton() {
+    let button = document.getElementById('pisi-map-title-view');
+    if (!button) {
+        button = document.createElement('button');
+        button.id = 'pisi-map-title-view';
+        button.type = 'button';
+        button.className = 'pisi-mindmap-icon-button';
+        button.dataset.pisiToolIcon = 'labels';
+        button.addEventListener('click', () => {
+            titleOnly = !titleOnly;
+            try {
+                localStorage.setItem(titleViewStorageKey, String(titleOnly));
+            } catch {
+                // The toggle still works for this session.
+            }
+            syncMindMapTitleView();
+            window.scheduleDrawMapConnections?.();
+        });
+    }
+    button.setAttribute('aria-pressed', String(titleOnly));
+    button.title = t('titles');
+    button.setAttribute('aria-label', t('titles'));
+    return button;
+}
 
 let mindMapPanelObserver = null;
 let mindMapDocumentHandlersBound = false;
@@ -109,6 +155,7 @@ function bindMindMapDocumentHandlers() {
 }
 
 function syncMindMapPanelLabels() {
+    syncMindMapTitleView();
     const button = document.getElementById('pisi-mindmap-tab-button');
     if (button) {
         button.title = t('tab');
@@ -177,7 +224,7 @@ function ensureMindMapFilterDisclosure(toolbar) {
     filterButton.title = t('filters');
     filterButton.setAttribute('aria-label', t('filters'));
 
-    const actionElements = [filterButton];
+    const actionElements = [filterButton, ensureMindMapTitleButton()];
     for (const id of mindMapPrimaryActionIds) {
         const button = document.getElementById(id);
         if (button) actionElements.push(button);

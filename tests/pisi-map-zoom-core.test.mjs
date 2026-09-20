@@ -2,16 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
     getPisiMapConnectionMetrics,
-    getPisiMapSemanticZoomMode,
     normalizePisiMapRenderZoom,
     PISI_MAP_CONNECTION_BASE_METRICS
 } from '../renderer/map/pisi-map-zoom-core.mjs';
-
-test('semantic zoom yakın, orta ve uzak görünümü kararlı eşiklerle seçer', () => {
-    assert.equal(getPisiMapSemanticZoomMode(1), 'near');
-    assert.equal(getPisiMapSemanticZoomMode(0.77), 'medium');
-    assert.equal(getPisiMapSemanticZoomMode(0.47), 'far');
-});
 
 test('zoom out bağlantı çizgisi, ok boşluğu ve eğri ölçülerini birlikte küçültür', () => {
     const metrics = getPisiMapConnectionMetrics(0.1);
