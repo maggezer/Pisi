@@ -8,8 +8,8 @@
 
 .pisi-map-task-count-badge {
     position: absolute;
-    top: -9px;
-    right: -9px;
+    top: 5px;
+    right: 7px;
     z-index: 5;
     min-width: 22px;
     height: 22px;
@@ -21,7 +21,7 @@
     border-radius: 999px;
     background: #f39c12;
     color: #1e1e1e;
-    box-shadow: 0 3px 8px rgba(0,0,0,.45);
+    box-shadow: none;
     font-size: 10px;
     font-weight: 900;
     line-height: 1;

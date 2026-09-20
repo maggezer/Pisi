@@ -1,13 +1,27 @@
 .pisi-map-property-badges {
     position: absolute;
-    top: calc(100% + 5px);
-    left: 4px;
+    left: 9px;
+    bottom: 7px;
     z-index: 7;
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
-    max-width: calc(100% - 8px);
+    max-width: calc(100% - 18px);
+    opacity: 0;
+    transform: translateY(2px);
+    transition: opacity .14s ease, transform .14s ease;
     pointer-events: none;
+}
+
+.map-node-box:hover .pisi-map-property-badges,
+.map-node-box.selected .pisi-map-property-badges,
+.map-node-box:focus-within .pisi-map-property-badges {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.pisi-map-property-badge-overflow {
+    color: #aeb6c1;
 }
 
 .pisi-map-property-badge {

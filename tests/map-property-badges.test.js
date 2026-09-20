@@ -45,6 +45,14 @@ test('mindmap badge görünür metin olarak property adını değil node üzerin
     assert.doesNotMatch(renderer, /badge\.textContent = selection\.name/);
 });
 
+test('node kartında en fazla iki property badge görünür ve kalanı sayaçta toplanır', () => {
+    const source = read('renderer/map/pisi-map-property-badges.mjs');
+    assert.match(source, /visibleCount >= 2/);
+    assert.match(source, /overflowCount \+= 1/);
+    assert.match(source, /pisi-map-property-badge-overflow/);
+    assert.match(source, /overflow\.textContent = `\+\$\{overflowCount\}`/);
+});
+
 test('Etiket propertysinin tüm dolu değerleri ayrı badge değerleri olarak üretilir, boş değer çizilmez', () => {
     const source = read('renderer/map/pisi-map-property-badges.mjs');
     const start = source.indexOf('function getPisiBadgePropertyValues');

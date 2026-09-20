@@ -269,6 +269,15 @@ test('operational renderer dependency overlayi semantic edge listesine eklemez v
     assert.doesNotMatch(core, /saveMapLayout/);
 });
 
+test('operational durum border glow yerine başlık içi durum noktası kullanır', () => {
+    const renderer = read('renderer/map/pisi-map-operational-render.mjs');
+    const css = read('renderer/map/pisi-map-operational.css');
+    assert.match(renderer, /pisi-map-status-dot/);
+    assert.match(renderer, /makePisiOperationalStatusDot/);
+    assert.match(css, /\.pisi-map-status-dot/);
+    assert.doesNotMatch(css, /\.map-node-box\.pisi-map-work-blocked\s*\{[^}]*box-shadow/s);
+});
+
 test('operational toolbar bootstrap zincirinde semantic edge çiziminden sonra yüklenir', () => {
     const bootstrap = read('renderer/bootstrap.mjs');
     const edgesIndex = bootstrap.indexOf('./map/pisi-map-edges.mjs');

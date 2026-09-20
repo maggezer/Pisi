@@ -1,23 +1,23 @@
 import { registerModule } from "../core/module-registry.mjs";
 import {
+    collectPisiCollapsedHubCounts,
     collectPisiCollapsedHubNodeIds,
     isPisiHierarchyEdge,
     isPisiMapEdgeHiddenByCollapsedHub,
     makePisiCollapsedHubPortKey
 } from "./pisi-map-collapse-core.mjs";
-import { getPisiMapConnectionMetrics } from "./pisi-map-zoom-core.mjs";
-
+import {
+    getPisiMapConnectionMetrics,
+    getPisiMapSemanticZoomMode
+} from "./pisi-map-zoom-core.mjs";
 function getTreeItemDisplayName(item) {
     if (!item) return '';
-
     if (item.metadata?.title) {
         return item.metadata.title;
     }
-
     if (item.displayName) {
         return item.displayName;
     }
-
     if (item.name?.toLowerCase().endsWith('.node')) {
         return item.name.slice(0, -'.node'.length);
     }
@@ -25,7 +25,6 @@ function getTreeItemDisplayName(item) {
     if (item.name?.toLowerCase().endsWith('.map')) {
         return item.name.slice(0, -'.map'.length);
     }
-
     return item.name || '';
 }
 
@@ -59,7 +58,6 @@ function getConnectionDataFromEvent(event) {
 function isHierarchyEdge(edge) {
     return isPisiHierarchyEdge(edge);
 }
-
 function getCollapsedHubPortSet() {
     if (!window.Pisi) {
         window.Pisi = { state: {} };
@@ -133,8 +131,13 @@ function syncHubPortCollapseVisuals() {
     document.querySelectorAll('.map-port.hub-collapsed').forEach((port) => {
         port.classList.remove('hub-collapsed');
         port.title = '';
+        delete port.dataset.collapsedCount;
     });
 
+    const collapsedCounts = collectPisiCollapsedHubCounts(
+        Array.isArray(activeMapEdges) ? activeMapEdges : [],
+        getCollapsedHubPortSet()
+    );
     for (const key of getCollapsedHubPortSet()) {
         const [nodeId, port] = String(key).split('::');
         if (!nodeId || !port) continue;
@@ -144,8 +147,11 @@ function syncHubPortCollapseVisuals() {
         );
 
         if (portEl) {
+            const hiddenCount = collapsedCounts.get(key) || 0;
             portEl.classList.add('hub-collapsed');
-            portEl.title = 'Hub bağlantıları kapalı. Tekrar açmak için tıkla.';
+            portEl.dataset.collapsedCount = String(hiddenCount);
+            portEl.title = `${hiddenCount} gizli node. Hub bağlantılarını açmak için tıkla.`;
+            portEl.setAttribute('aria-label', `${hiddenCount} gizli node; bağlantıları aç`);
         }
     }
 }
@@ -385,6 +391,7 @@ function applyMapCamera() {
 
     if (canvas) {
         canvas.style.backgroundPosition = `${activeMapCamera.x}px ${activeMapCamera.y}px`;
+        canvas.dataset.semanticZoom = getPisiMapSemanticZoomMode(activeMapCamera.zoom);
     }
 
     syncMapConnectionZoomStyles();

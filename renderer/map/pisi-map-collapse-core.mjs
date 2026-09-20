@@ -71,6 +71,21 @@ function collectPisiCollapsedHubNodeIds(edges = [], collapsedHubPortKeys = []) {
     return hiddenNodeIds;
 }
 
+function collectPisiCollapsedHubCounts(edges = [], collapsedHubPortKeys = []) {
+    const keys = normalizePisiCollapsedHubKeys(collapsedHubPortKeys);
+    const counts = new Map();
+    for (const key of keys) {
+        const [nodeId, port = 'right'] = String(key).split('::');
+        if (!nodeId) continue;
+        const hidden = collectPisiCollapsedHubNodeIds(
+            edges,
+            new Set([makePisiCollapsedHubPortKey(nodeId, port)])
+        );
+        counts.set(makePisiCollapsedHubPortKey(nodeId, port), hidden.size);
+    }
+    return counts;
+}
+
 function isPisiMapEdgeHiddenByCollapsedHub(
     edge,
     hiddenNodeIds = [],
@@ -95,6 +110,7 @@ function isPisiMapEdgeHiddenByCollapsedHub(
 }
 
 export {
+    collectPisiCollapsedHubCounts,
     collectPisiCollapsedHubNodeIds,
     isPisiHierarchyEdge,
     isPisiMapEdgeHiddenByCollapsedHub,
