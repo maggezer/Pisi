@@ -7,8 +7,7 @@ import {
     makePisiCollapsedHubPortKey
 } from "./pisi-map-collapse-core.mjs";
 import {
-    getPisiMapConnectionMetrics,
-    getPisiMapSemanticZoomMode
+    getPisiMapConnectionMetrics
 } from "./pisi-map-zoom-core.mjs";
 function getTreeItemDisplayName(item) {
     if (!item) return '';
@@ -391,7 +390,6 @@ function applyMapCamera() {
 
     if (canvas) {
         canvas.style.backgroundPosition = `${activeMapCamera.x}px ${activeMapCamera.y}px`;
-        canvas.dataset.semanticZoom = getPisiMapSemanticZoomMode(activeMapCamera.zoom);
     }
 
     syncMapConnectionZoomStyles();
