@@ -273,6 +273,7 @@
 #map-canvas[data-semantic-zoom="far"] .map-node-box {
     min-height: 34px;
     height: 34px;
+    max-height: 34px;
     box-shadow: none;
 }
 
