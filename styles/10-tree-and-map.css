@@ -255,20 +255,6 @@
     transform: scale(1);
 }
 
-.map-port.hub-collapsed {
-    width: auto;
-    min-width: 22px;
-    height: 18px;
-    padding: 0 4px;
-    border-radius: 999px;
-    opacity: 1;
-    transform: scale(1);
-    background: var(--pisi-map-node-title-color);
-    color: #171717;
-    font-size: 9px;
-    font-weight: 900;
-}
-
 .map-port.hub-collapsed::after {
     content: "+" attr(data-collapsed-count);
 }
@@ -285,8 +271,8 @@
 }
 
 #map-canvas[data-semantic-zoom="far"] .map-node-box {
-    min-height: 34px !important;
-    height: 34px !important;
+    min-height: 34px;
+    height: 34px;
     box-shadow: none;
 }
 
@@ -304,7 +290,7 @@
 #map-canvas[data-semantic-zoom="far"] .pisi-map-property-badges,
 #map-canvas[data-semantic-zoom="far"] .pisi-map-work-badges,
 #map-canvas[data-semantic-zoom="far"] .pisi-map-task-count-badge {
-    display: none !important;
+    display: none;
 }
 
 .map-port.top {

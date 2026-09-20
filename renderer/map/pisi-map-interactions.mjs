@@ -10,14 +10,12 @@ import {
     getPisiMapConnectionMetrics,
     getPisiMapSemanticZoomMode
 } from "./pisi-map-zoom-core.mjs";
-
 function getTreeItemDisplayName(item) {
     if (!item) return '';
 
     if (item.metadata?.title) {
         return item.metadata.title;
     }
-
     if (item.displayName) {
         return item.displayName;
     }
@@ -29,7 +27,6 @@ function getTreeItemDisplayName(item) {
     if (item.name?.toLowerCase().endsWith('.map')) {
         return item.name.slice(0, -'.map'.length);
     }
-
     return item.name || '';
 }
 
@@ -63,7 +60,6 @@ function getConnectionDataFromEvent(event) {
 function isHierarchyEdge(edge) {
     return isPisiHierarchyEdge(edge);
 }
-
 function getCollapsedHubPortSet() {
     if (!window.Pisi) {
         window.Pisi = { state: {} };

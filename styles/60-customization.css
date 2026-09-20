@@ -247,9 +247,17 @@
 }
 
 .map-port.hub-collapsed {
+    width: auto;
+    min-width: 22px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 999px;
     opacity: 1;
-    background: #e74c3c;
-    transform: scale(1.18);
+    background: var(--pisi-map-node-title-color);
+    color: #171717;
+    font-size: 9px;
+    font-weight: 900;
+    transform: scale(1);
 }
 
 .center-tab-rename-input {
