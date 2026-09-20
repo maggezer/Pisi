@@ -156,15 +156,29 @@ function syncPisiMapPropertyBadgeForNode(box, node, selections = null) {
 
     const host = document.createElement('div');
     host.className = 'pisi-map-property-badges';
+    let visibleCount = 0;
+    let overflowCount = 0;
     for (const selection of activeSelections) {
         const property = findPisiBadgeProperty(node, selection);
         for (const value of getPisiBadgePropertyValues(property)) {
+            if (visibleCount >= 2) {
+                overflowCount += 1;
+                continue;
+            }
             const badge = document.createElement('span');
             badge.className = `pisi-map-property-badge pisi-map-property-badge-${selection.type}`;
             badge.textContent = value;
             badge.title = `${selection.name}: ${value}`;
             host.appendChild(badge);
+            visibleCount += 1;
         }
+    }
+    if (overflowCount > 0) {
+        const overflow = document.createElement('span');
+        overflow.className = 'pisi-map-property-badge pisi-map-property-badge-overflow';
+        overflow.textContent = `+${overflowCount}`;
+        overflow.title = `${overflowCount} ek özellik`;
+        host.appendChild(overflow);
     }
     if (host.childElementCount) box.appendChild(host);
 }

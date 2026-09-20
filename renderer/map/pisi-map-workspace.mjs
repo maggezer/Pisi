@@ -328,6 +328,9 @@ function createMapNodeBox(node) {
     box.dataset.nodePath = node.fullPath;
     box.dataset.pisiReference = node.isReference ? 'true' : 'false';
     box.classList.toggle('pisi-map-reference-node', node.isReference === true);
+    const hierarchyChildren = (Array.isArray(activeMapEdges) ? activeMapEdges : [])
+        .filter((edge) => edge?.sourceId === node.id && edge?.type === 'down-hub');
+    box.classList.toggle('pisi-map-hub-node', hierarchyChildren.length > 0);
 
     box.style.left = `${node.layout.x}px`;
     box.style.top = `${node.layout.y}px`;
@@ -352,7 +355,7 @@ function createMapNodeBox(node) {
         <div class="map-port bottom" data-port="bottom" role="button" tabindex="0" aria-label="Alt bağlantı portu"></div>
         <div class="map-port left" data-port="left" role="button" tabindex="0" aria-label="Sol bağlantı portu"></div>
 
-        <div class="map-node-title" title="${escapeHtml(title)}">${escapeHtml(title)}</div>
+        <div class="map-node-title" title="${escapeHtml(title)}"><span class="map-node-title-text">${escapeHtml(title)}</span></div>
         <div class="map-node-preview">${escapeHtml(preview)}</div>
 
         <div class="map-node-resize"></div>

@@ -1,10 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+    collectPisiCollapsedHubCounts,
     collectPisiCollapsedHubNodeIds,
     isPisiMapEdgeHiddenByCollapsedHub,
     makePisiCollapsedHubPortKey
 } from '../renderer/map/pisi-map-collapse-core.mjs';
+
+test('collapsed hub sayacı port yönündeki bütün gizli torunları sayar', () => {
+    const edges = [
+        hierarchyEdge('a-b', 'a', 'b', 'right'),
+        hierarchyEdge('b-c', 'b', 'c', 'right'),
+        hierarchyEdge('b-d', 'b', 'd', 'bottom')
+    ];
+    const key = makePisiCollapsedHubPortKey('a', 'right');
+    assert.equal(collectPisiCollapsedHubCounts(edges, new Set([key])).get(key), 3);
+});
 
 const hierarchyEdge = (
     id,
