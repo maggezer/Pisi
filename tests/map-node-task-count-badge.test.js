@@ -8,7 +8,7 @@ const test = require('node:test');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('node modal open button is removed and open task count occupies its corner', () => {
+test('node modal open button is removed and open task count stays inside the card', () => {
     const render = read('renderer/map/pisi-map-operational-render.mjs');
     const css = read('styles/100-map-task-count-badge.css');
 
@@ -21,8 +21,9 @@ test('node modal open button is removed and open task count occupies its corner'
 
     assert.match(css, /\.map-node-box > \.map-node-open\s*\{[\s\S]*?display:\s*none/);
     assert.match(css, /\.pisi-map-task-count-badge\s*\{/);
-    assert.match(css, /top:\s*-9px/);
-    assert.match(css, /right:\s*-9px/);
+    assert.match(css, /top:\s*5px/);
+    assert.match(css, /right:\s*7px/);
+    assert.match(css, /box-shadow:\s*none/);
     assert.match(css, /pointer-events:\s*none/);
 });
 
