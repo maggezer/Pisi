@@ -12,14 +12,12 @@ import {
 } from "./pisi-map-zoom-core.mjs";
 function getTreeItemDisplayName(item) {
     if (!item) return '';
-
     if (item.metadata?.title) {
         return item.metadata.title;
     }
     if (item.displayName) {
         return item.displayName;
     }
-
     if (item.name?.toLowerCase().endsWith('.node')) {
         return item.name.slice(0, -'.node'.length);
     }
