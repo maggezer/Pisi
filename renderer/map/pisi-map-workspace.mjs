@@ -346,7 +346,6 @@ function createMapNodeBox(node) {
     box.innerHTML = `
         <button class="map-node-btn map-node-delete" title="Node sil">×</button>
         <button class="map-node-btn map-node-open" title="Node düzenle">↗</button>
-        <button type="button" class="map-node-btn map-node-rename" title="Başlığı değiştir (F2)" aria-label="Başlığı değiştir">✎</button>
         <div class="map-port top" data-port="top" role="button" tabindex="0" aria-label="Üst bağlantı portu"></div>
         <div class="map-port right" data-port="right" role="button" tabindex="0" aria-label="Sağ bağlantı portu"></div>
         <div class="map-port bottom" data-port="bottom" role="button" tabindex="0" aria-label="Alt bağlantı portu"></div>
@@ -371,7 +370,6 @@ function bindMapNodeBoxEvents(box, node) {
     const previewEl = box.querySelector('.map-node-preview');
     const openBtn = box.querySelector('.map-node-open');
     const deleteBtn = box.querySelector('.map-node-delete');
-    const renameBtn = box.querySelector('.map-node-rename');
     const resizeHandle = box.querySelector('.map-node-resize');
 
     box.addEventListener('mousedown', (event) => {
@@ -426,17 +424,35 @@ function bindMapNodeBoxEvents(box, node) {
         event.preventDefault();
         event.stopPropagation();
 
-        if (document.getElementById('map-canvas')?.dataset.nodeView === 'title') {
-            openNodeModalFromBox(box);
-        } else {
-            startMapNodeTitleEdit(box, node);
-        }
+        startMapNodeTitleEdit(box, node);
     });
 
-    renameBtn?.addEventListener('click', (event) => {
+    // Browsers do not emit dblclick for the secondary mouse button.
+    let lastRightClick = null;
+    const isTitleCardTarget = (event) =>
+        document.getElementById('map-canvas')?.dataset.nodeView === 'title' &&
+        !event.target.closest('.map-node-btn, .map-port, .map-node-resize, input, textarea, [contenteditable="true"]');
+
+    box.addEventListener('contextmenu', (event) => {
+        if (!isTitleCardTarget(event)) return;
         event.preventDefault();
         event.stopPropagation();
-        startMapNodeTitleEdit(box, node);
+    });
+
+    box.addEventListener('mouseup', (event) => {
+        if (event.button !== 2 || !isTitleCardTarget(event)) {
+            lastRightClick = null;
+            return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        const previous = lastRightClick;
+        lastRightClick = { time: event.timeStamp, x: event.clientX, y: event.clientY };
+        if (previous && event.timeStamp - previous.time <= 500 &&
+            Math.hypot(event.clientX - previous.x, event.clientY - previous.y) <= 6) {
+            lastRightClick = null;
+            openNodeModalFromBox(box);
+        }
     });
 
     previewEl?.addEventListener('dblclick', (event) => {

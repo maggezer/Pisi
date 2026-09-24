@@ -468,15 +468,6 @@
 }
 
 /* Compact cards retain editing and connection controls on hover or focus. */
-.map-node-box .map-node-rename {
-    display: none;
-    right: -9px;
-    background: #f39c12;
-    color: #1e1e1e;
-}
-
-#map-canvas[data-node-view="title"] .map-node-box:hover .map-node-rename,
-#map-canvas[data-node-view="title"] .map-node-box:focus-within .map-node-rename,
 #map-canvas[data-node-view="title"] .map-node-box:focus-within .map-node-delete {
     display: flex;
 }
