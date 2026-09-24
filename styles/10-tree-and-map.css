@@ -274,8 +274,6 @@
 }
 
 #map-canvas[data-node-view="title"] .map-node-preview,
-#map-canvas[data-node-view="title"] .map-port,
-#map-canvas[data-node-view="title"] .map-node-btn,
 #map-canvas[data-node-view="title"] .map-node-resize,
 #map-canvas[data-node-view="title"] .pisi-map-property-badges,
 #map-canvas[data-node-view="title"] .pisi-map-work-badges,
@@ -467,4 +465,23 @@
 
 #arrow-downhub path {
     fill: var(--pisi-map-downhub-color);
+}
+
+/* Compact cards retain editing and connection controls on hover or focus. */
+.map-node-box .map-node-rename {
+    display: none;
+    right: -9px;
+    background: #f39c12;
+    color: #1e1e1e;
+}
+
+#map-canvas[data-node-view="title"] .map-node-box:hover .map-node-rename,
+#map-canvas[data-node-view="title"] .map-node-box:focus-within .map-node-rename,
+#map-canvas[data-node-view="title"] .map-node-box:focus-within .map-node-delete {
+    display: flex;
+}
+
+#map-canvas[data-node-view="title"] .map-node-box:focus-within .map-port {
+    opacity: 1;
+    transform: scale(1);
 }

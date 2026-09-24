@@ -349,6 +349,7 @@ function createMapNodeBox(node) {
     box.innerHTML = `
         <button class="map-node-btn map-node-delete" title="Node sil">×</button>
         <button class="map-node-btn map-node-open" title="Node düzenle">↗</button>
+        <button type="button" class="map-node-btn map-node-rename" title="Başlığı değiştir (F2)" aria-label="Başlığı değiştir">✎</button>
 
         <div class="map-port top" data-port="top" role="button" tabindex="0" aria-label="Üst bağlantı portu"></div>
         <div class="map-port right" data-port="right" role="button" tabindex="0" aria-label="Sağ bağlantı portu"></div>
@@ -380,6 +381,7 @@ function bindMapNodeBoxEvents(box, node) {
     const previewEl = box.querySelector('.map-node-preview');
     const openBtn = box.querySelector('.map-node-open');
     const deleteBtn = box.querySelector('.map-node-delete');
+    const renameBtn = box.querySelector('.map-node-rename');
     const resizeHandle = box.querySelector('.map-node-resize');
 
     box.addEventListener('mousedown', (event) => {
@@ -421,6 +423,9 @@ function bindMapNodeBoxEvents(box, node) {
         if (event.key === 'Enter') {
             event.preventDefault();
             openNodeModalFromBox(box);
+        } else if (event.key === 'F2') {
+            event.preventDefault();
+            startMapNodeTitleEdit(box, node);
         } else if (event.key === 'Delete') {
             event.preventDefault();
             deleteBtn?.click();
@@ -431,6 +436,16 @@ function bindMapNodeBoxEvents(box, node) {
         event.preventDefault();
         event.stopPropagation();
 
+        if (document.getElementById('map-canvas')?.dataset.nodeView === 'title') {
+            openNodeModalFromBox(box);
+        } else {
+            startMapNodeTitleEdit(box, node);
+        }
+    });
+
+    renameBtn?.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
         startMapNodeTitleEdit(box, node);
     });
 
