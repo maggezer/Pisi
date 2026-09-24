@@ -331,7 +331,6 @@ function createMapNodeBox(node) {
     const hierarchyChildren = (Array.isArray(activeMapEdges) ? activeMapEdges : [])
         .filter((edge) => edge?.sourceId === node.id && edge?.type === 'down-hub');
     box.classList.toggle('pisi-map-hub-node', hierarchyChildren.length > 0);
-
     box.style.left = `${node.layout.x}px`;
     box.style.top = `${node.layout.y}px`;
     box.style.width = `${node.layout.width}px`;
@@ -339,29 +338,23 @@ function createMapNodeBox(node) {
     if (typeof applyPisiMapNodeCustomization === 'function') {
         applyPisiMapNodeCustomization(box, node);
     }
-
     const title = node.metadata?.title || node.fileName.replace(/\.node$/i, '');
     const preview = node.preview || '';
     box.tabIndex = 0;
     box.setAttribute('role', 'group');
     box.setAttribute('aria-label', `${title} node`);
-
     box.innerHTML = `
         <button class="map-node-btn map-node-delete" title="Node sil">×</button>
         <button class="map-node-btn map-node-open" title="Node düzenle">↗</button>
         <button type="button" class="map-node-btn map-node-rename" title="Başlığı değiştir (F2)" aria-label="Başlığı değiştir">✎</button>
-
         <div class="map-port top" data-port="top" role="button" tabindex="0" aria-label="Üst bağlantı portu"></div>
         <div class="map-port right" data-port="right" role="button" tabindex="0" aria-label="Sağ bağlantı portu"></div>
         <div class="map-port bottom" data-port="bottom" role="button" tabindex="0" aria-label="Alt bağlantı portu"></div>
         <div class="map-port left" data-port="left" role="button" tabindex="0" aria-label="Sol bağlantı portu"></div>
-
         <div class="map-node-title" title="${escapeHtml(title)}"><span class="map-node-title-text">${escapeHtml(title)}</span></div>
         <div class="map-node-preview">${escapeHtml(preview)}</div>
-
         <div class="map-node-resize"></div>
     `;
-
     if (node.isReference) {
         const deleteButton = box.querySelector('.map-node-delete');
         if (deleteButton) deleteButton.title = 'Map referansını kaldır';
@@ -370,12 +363,9 @@ function createMapNodeBox(node) {
             port.tabIndex = -1;
         });
     }
-
     bindMapNodeBoxEvents(box, node);
-
     return box;
 }
-
 function bindMapNodeBoxEvents(box, node) {
     const titleEl = box.querySelector('.map-node-title');
     const previewEl = box.querySelector('.map-node-preview');
