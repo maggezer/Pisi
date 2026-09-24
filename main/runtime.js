@@ -106,7 +106,7 @@ registerMainModule("main.runtime", moduleApi7);
 
 
 if (process.platform === 'win32') {
-    app.setAppUserModelId('com.mumin.pisi');
+    app.setAppUserModelId(require('./functions/windows-app-identity').getWindowsAppIdentity(app).appId);
 }
 
 scheduleWindowStateSave.timer = null;

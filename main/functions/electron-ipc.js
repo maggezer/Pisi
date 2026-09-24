@@ -7,8 +7,7 @@ const crypto = require('crypto');
 const { registerMainModule } = require('../module-registry');
 const backupStorage = require('./backup-storage');
 const PISI_APP_ROOT = path.resolve(__dirname, '..', '..');
-const PISI_WINDOWS_APP_ID = 'com.mumin.pisi';
-const PISI_TASKBAR_ICON_PATH = path.join(PISI_APP_ROOT, 'assets', 'pisi.ico');
+const { getWindowsAppIdentity, ensureWindowsDevShortcut } = require('./windows-app-identity');
 
 function startProjectWatcher(folderPath) {
     stopProjectWatcher();
@@ -508,6 +507,7 @@ function unlockProjectFolder() {
 
 function createWindow() {
 
+    ensureWindowsDevShortcut(app, shell);
     const savedWindowState = getSavedWindowState();
     const appIcon = nativeImage.createFromPath(appIconPath);
     const hasAppIcon = !appIcon.isEmpty();
@@ -542,15 +542,7 @@ function createWindow() {
             mainWindow.setIcon(appIcon);
         }
 
-        mainWindow.setAppDetails({
-            appId: PISI_WINDOWS_APP_ID,
-            appIconPath: PISI_TASKBAR_ICON_PATH,
-            appIconIndex: 0,
-            relaunchCommand: app.isPackaged
-                ? process.execPath
-                : `"${process.execPath}" "${app.getAppPath()}"`,
-            relaunchDisplayName: 'Pisi'
-        });
+        mainWindow.setAppDetails(getWindowsAppIdentity(app));
     }
 
     if (!app.isPackaged) {
