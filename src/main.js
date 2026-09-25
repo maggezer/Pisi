@@ -420,7 +420,6 @@ class PisiApp {
         <section class="welcome-strip">
           <div>
             <span>Bugün neyi çözüyoruz?</span>
-            <strong>${searchable.length} not, tek sakin alan.</strong>
           </div>
           <div class="mini-cat" aria-hidden="true"><span></span><i></i></div>
         </section>
