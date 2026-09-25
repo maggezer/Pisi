@@ -604,22 +604,6 @@ export async function replaceSyncedWorkspace({ documents = [], tasks = [], setti
 export async function seedDatabase() {
   const documents = await listDocuments();
   if (documents.length > 0) return documents;
-  const welcome = createDocument('note', {
-    title: 'Pisi’ye hoş geldin',
-    pinned: true,
-    tags: ['başlangıç'],
-    properties: { durum: 'aktif', alan: 'kişisel' },
-    content: `
-      <h1>Merhaba 👋</h1>
-      <p>Pisi artık telefonunda ve tabletinde. Bu çalışma alanında:</p>
-      <ul>
-        <li>Bağlantılı not, blok ve görevlerini arayabilir,</li>
-        <li>Yazı, çizim, tablo ve fikir haritaları oluşturabilir,</li>
-        <li>Özellikler, kaynaklar ve sürüm geçmişiyle güvenle çalışabilirsin.</li>
-      </ul>
-      <p><strong>[[İlk fikir haritam]]</strong> bağlantısını açmayı dene.</p>
-    `
-  });
   const canvas = createDocument('canvas', {
     title: 'İlk fikir haritam',
     canvas: {
@@ -639,7 +623,6 @@ export async function seedDatabase() {
     fromAnchor: 'right',
     toAnchor: 'left'
   });
-  await putDocument(welcome, { recordHistory: false, durable: false });
   await putDocument(canvas, { recordHistory: false, durable: false });
   return listDocuments();
 }
