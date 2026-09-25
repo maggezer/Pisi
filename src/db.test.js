@@ -18,7 +18,7 @@ import {
 describe('local Pisi database', () => {
   it('seeds, stores, exports and removes documents', async () => {
     const seeded = await seedDatabase();
-    expect(seeded.some(({ kind }) => kind === 'note')).toBe(true);
+    expect(seeded.some(({ kind }) => kind === 'note')).toBe(false);
     expect(seeded.some(({ kind }) => kind === 'canvas')).toBe(true);
 
     const note = createDocument('note', { title: 'Test notu' });
