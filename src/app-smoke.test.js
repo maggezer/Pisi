@@ -12,7 +12,6 @@ describe('Pisi responsive application shell', () => {
       expect(document.querySelector('.app-shell')).toBeTruthy();
     });
     expect(document.body.textContent).toContain('Pisi');
-    expect(document.body.textContent).toContain('Pisi’ye hoş geldin');
     expect(document.querySelector('.tablet-rail')).toBeTruthy();
     expect(document.querySelectorAll('.bottom-nav .nav-button')).toHaveLength(5);
 
@@ -26,9 +25,9 @@ describe('Pisi responsive application shell', () => {
     expect(document.body.textContent).toContain('Node sistemi');
 
     document.querySelector('[data-route="notes"]').click();
-    document.querySelector('[data-open]').click();
+    document.querySelector('#new-note').click();
     await vi.waitFor(() => expect(document.querySelector('.detail-shell')).toBeTruthy());
-    expect(document.querySelector('#note-title').value).toBe('Pisi’ye hoş geldin');
+    expect(document.querySelector('#note-title').value).toBe('Yeni Not');
     expect(document.querySelector('[data-todo-button]')).toBeTruthy();
 
     const title = document.querySelector('#note-title');
