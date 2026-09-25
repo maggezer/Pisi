@@ -417,12 +417,6 @@ class PisiApp {
       eyebrow: 'Sessizce düzenle',
       actions: '<button class="round-button" data-platform-search aria-label="Global arama">⌕</button><button class="round-button" data-route="settings" aria-label="Ayarlar">◉</button>',
       content: `
-        <section class="welcome-strip">
-          <div>
-            <span>Bugün neyi çözüyoruz?</span>
-          </div>
-          <div class="mini-cat" aria-hidden="true"><span></span><i></i></div>
-        </section>
         <label class="search-box">
           <span aria-hidden="true">⌕</span>
           <input id="note-search" type="search" placeholder="Notlarda ara" autocomplete="off" />
