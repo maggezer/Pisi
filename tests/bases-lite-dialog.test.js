@@ -26,13 +26,13 @@ test('Bases-lite Workspace Center yerine map sağ üst düğmesinden açılır',
 
 test('map Bases-lite düğmesi zoom kontrolleriyle aynı sağ çizgide ve üsttedir', () => {
     const css = read('styles/20-map-interactions.css');
-    const workspace = read('renderer/map/pisi-map-workspace.mjs');
+    const creation = read('renderer/map/pisi-map-creation.mjs');
     const interactions = read('renderer/map/pisi-map-interactions.mjs');
 
     assert.match(css, /#map-zoom-controls\s*\{[\s\S]*right: 18px;[\s\S]*bottom: 18px;/);
     assert.match(css, /#pisi-bases-map-control\s*\{[\s\S]*top: 18px;[\s\S]*right: 18px;/);
     assert.match(css, /\.map-zoom-btn,\s*\.pisi-map-bases-trigger\s*\{[\s\S]*width: 38px;[\s\S]*height: 38px;/);
-    assert.match(workspace, /closest\?\.\('\.pisi-map-overlay-control'\)/);
+    assert.match(creation, /closest\?\.\('\.pisi-map-overlay-control'\)/);
     assert.match(interactions, /closest\('\.pisi-map-overlay-control'\)/);
 });
 
