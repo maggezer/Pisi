@@ -359,20 +359,26 @@ export function prepareMapConnection(existingEdges = [], rawEdge = {}, options =
     rawEdge,
     options
   );
+  const viewFor = (relationship) => ({
+    relationshipId: relationship.id,
+    sourcePort: rawEdge.sourcePort,
+    targetPort: rawEdge.targetPort,
+    customization: rawEdge.customization
+  });
   if (!prepared.ok) {
     return {
       ...prepared,
       suggestedEdge: prepared.suggestedRelationship
         ? projectSemanticRelationshipToMapEdge(
             prepared.suggestedRelationship,
-            rawEdge
+            viewFor(prepared.suggestedRelationship)
           )
         : undefined
     };
   }
   const edge = projectSemanticRelationshipToMapEdge(
     prepared.relationship,
-    rawEdge
+    viewFor(prepared.relationship)
   );
   const unchanged = currentRelationships.some((current) => (
     current.id === prepared.relationship.id
