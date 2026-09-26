@@ -221,10 +221,15 @@ function makeMapData(record, sidecar) {
   };
 }
 
-function jsonFile(path, value, { visible = false, recordKey = null } = {}) {
+function jsonFile(
+  path,
+  value,
+  { visible = false, recordKey = null, newline = true } = {}
+) {
+  const serialized = JSON.stringify(value, null, 2);
   return {
     path,
-    content: `${JSON.stringify(value, null, 2)}\n`,
+    content: newline ? `${serialized}\n` : serialized,
     visible,
     recordKey
   };
@@ -334,7 +339,7 @@ export function buildWorkspaceProjection(records = []) {
   files.push(jsonFile('.pisi/relationships.json', {
     version: 1,
     relationships
-  }));
+  }, { newline: false }));
 
   const tasks = live.filter(({ kind }) => kind === 'task').map((record) => {
     const payload = clone(record.payload || {});
