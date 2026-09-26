@@ -38,7 +38,9 @@ import {
 } from './sync-service.js';
 import {
   isHierarchyMapEdge,
+  mapEdgeToRelationship,
   normalizeMapEdges,
+  normalizeRelationshipCollection,
   prepareMapConnection
 } from './map-connections.js';
 
@@ -56,6 +58,22 @@ const WEEKDAYS = {
   tr: ['Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct', 'Pz'],
   en: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
 };
+
+function normalizeCollapsedHubs(canvas = {}) {
+  const source = Array.isArray(canvas.collapsedHubs) && canvas.collapsedHubs.length
+    ? canvas.collapsedHubs
+    : (canvas.collapsedAnchors || []);
+  return Array.from(new Set(
+    (Array.isArray(source) ? source : [])
+      .map((value) => {
+        const raw = String(value || '');
+        if (/^node_[A-Za-z0-9_-]+::(?:top|right|bottom|left)$/.test(raw)) return raw;
+        const legacy = raw.match(/^(node_[A-Za-z0-9_-]+):(top|right|bottom|left)$/);
+        return legacy ? `${legacy[1]}::${legacy[2]}` : '';
+      })
+      .filter(Boolean)
+  )).slice(0, 10000);
+}
 
 function normalizeDocument(document) {
   const sheet = document.sheet || {};
@@ -83,7 +101,7 @@ function normalizeDocument(document) {
     canvas: {
       nodes,
       edges,
-      collapsedAnchors: Array.isArray(canvas.collapsedAnchors) ? canvas.collapsedAnchors : [],
+      collapsedHubs: normalizeCollapsedHubs(canvas),
       camera: {
         x: Number(canvas.camera?.x) || 0,
         y: Number(canvas.camera?.y) || 0,
@@ -590,7 +608,7 @@ class PisiApp {
       canvas: options.canvas || {
         nodes: [centerNode],
         edges: [],
-        collapsedAnchors: [],
+        collapsedHubs: [],
         camera: { x: -500, y: -330, zoom: 1 }
       }
     }));
@@ -1360,7 +1378,7 @@ class PisiApp {
   }
 
   visibleMapGraph() {
-    const canvas = this.activeDocument?.canvas || { nodes: [], edges: [], collapsedAnchors: [] };
+    const canvas = this.activeDocument?.canvas || { nodes: [], edges: [], collapsedHubs: [] };
     const hidden = new Set();
     const outgoing = new Map();
     canvas.edges.filter(isHierarchyMapEdge).forEach((edge) => {
@@ -1373,11 +1391,12 @@ class PisiApp {
       hidden.add(nodeId);
       (outgoing.get(nodeId) || []).forEach((edge) => hideBranch(edge.targetId, visited));
     };
-    (canvas.collapsedAnchors || []).forEach((key) => {
-      const separator = key.lastIndexOf(':');
-      if (separator <= 0) return;
-      const nodeId = key.slice(0, separator);
-      const anchor = key.slice(separator + 1);
+    (canvas.collapsedHubs || []).forEach((key) => {
+      const match = String(key || '').match(
+        /^(node_[A-Za-z0-9_-]+)::(top|right|bottom|left)$/
+      );
+      if (!match) return;
+      const [, nodeId, anchor] = match;
       (outgoing.get(nodeId) || [])
         .filter((edge) => edge.sourcePort === anchor)
         .forEach((edge) => hideBranch(edge.targetId, new Set([nodeId])));
@@ -1392,12 +1411,51 @@ class PisiApp {
   }
 
   toggleMapAnchor(key) {
-    const collapsed = this.activeDocument.canvas.collapsedAnchors ||= [];
-    const index = collapsed.indexOf(key);
+    const match = String(key || '').match(
+      /^(node_[A-Za-z0-9_-]+)(?:::|:)(top|right|bottom|left)$/
+    );
+    if (!match) return;
+    const canonicalKey = `${match[1]}::${match[2]}`;
+    const collapsed = this.activeDocument.canvas.collapsedHubs ||= [];
+    const index = collapsed.indexOf(canonicalKey);
     if (index >= 0) collapsed.splice(index, 1);
-    else collapsed.push(key);
+    else collapsed.push(canonicalKey);
     this.scheduleSave();
     this.renderMapEditor();
+  }
+
+  collectSemanticRelationships() {
+    const documents = this.documents.map((document) => (
+      this.activeDocument?.id === document.id ? this.activeDocument : document
+    ));
+    if (
+      this.activeDocument
+      && !documents.some((document) => document.id === this.activeDocument.id)
+    ) {
+      documents.push(this.activeDocument);
+    }
+
+    const raw = [];
+    const addRelations = (sourceId, relations = []) => {
+      for (const relation of Array.isArray(relations) ? relations : []) {
+        raw.push({ ...structuredClone(relation), sourceId });
+      }
+    };
+
+    for (const document of documents) {
+      if (document.kind === 'canvas') {
+        for (const edge of document.canvas?.edges || []) {
+          const relationship = mapEdgeToRelationship(edge);
+          if (relationship) raw.push(relationship);
+        }
+        for (const node of document.canvas?.nodes || []) {
+          addRelations(node.id, node.relations);
+        }
+      } else {
+        addRelations(document.id, document.relations);
+      }
+    }
+    return normalizeRelationshipCollection(raw).relationships;
   }
 
   renderMapEditor() {
@@ -1427,7 +1485,7 @@ class PisiApp {
                   <p>${escapeHtml(htmlToText(node.content || '').slice(0, 90) || 'Ayrıntı ekle')}</p>
                   ${['top', 'right', 'bottom', 'left'].map((anchor) => {
                     const isConnectionStart = this.connectFrom?.nodeId === node.id && this.connectFrom?.anchor === anchor;
-                    const isCollapsed = canvas.collapsedAnchors.includes(`${node.id}:${anchor}`);
+                    const isCollapsed = canvas.collapsedHubs.includes(`${node.id}::${anchor}`);
                     return `<button type="button" class="node-anchor anchor-${anchor} ${isCollapsed ? 'collapsed' : ''} ${isConnectionStart ? 'connection-start' : ''}" data-map-anchor="${node.id}:${anchor}" aria-label="${anchor} bağlantı noktası" aria-pressed="${isConnectionStart}"></button>`;
                   }).join('')}
                 </article>
@@ -1793,14 +1851,15 @@ class PisiApp {
     lightHaptic();
   }
 
-  pruneMapCollapsedAnchors() {
+  pruneMapCollapsedHubs() {
     const canvas = this.activeDocument?.canvas;
     if (!canvas) return;
-    canvas.collapsedAnchors = (canvas.collapsedAnchors || []).filter((key) => {
-      const separator = String(key).lastIndexOf(':');
-      if (separator <= 0) return false;
-      const nodeId = key.slice(0, separator);
-      const port = key.slice(separator + 1);
+    canvas.collapsedHubs = (canvas.collapsedHubs || []).filter((key) => {
+      const match = String(key || '').match(
+        /^(node_[A-Za-z0-9_-]+)::(top|right|bottom|left)$/
+      );
+      if (!match) return false;
+      const [, nodeId, port] = match;
       return canvas.edges.some((edge) => (
         isHierarchyMapEdge(edge)
         && edge.sourceId === nodeId
@@ -1819,18 +1878,27 @@ class PisiApp {
       return;
     }
 
-    const otherEdges = canvas.edges.filter((candidate) => candidate.id !== edgeId);
-    const prepared = prepareMapConnection(otherEdges, {
+    const currentRelationships = this.collectSemanticRelationships();
+    let prepared = prepareMapConnection(currentRelationships, {
       ...edge,
       type: nextType
     });
 
+    if (prepared.code === 'SECOND_PARENT_CONFIRM_REQUIRED') {
+      const confirmed = confirm(
+        'Bu node zaten bir parent’a sahip. Bağlantı hiyerarşi yerine stream ilişkisi olarak kaydedilsin mi?'
+      );
+      if (!confirmed) return;
+      prepared = prepareMapConnection(currentRelationships, {
+        ...edge,
+        type: nextType
+      }, {
+        confirmSecondParentAsStream: true
+      });
+    }
+
     if (!prepared.ok) {
-      if (prepared.code === 'SECOND_PARENT_CONFIRM_REQUIRED') {
-        this.toast('Bu node zaten bir parent’a sahip; bağlantı Hub yapılamaz.', 'error');
-      } else {
-        this.toast(prepared.error || 'Bağlantı tipi değiştirilemedi.', 'error');
-      }
+      this.toast(prepared.error || 'Bağlantı tipi değiştirilemedi.', 'error');
       return;
     }
     if (prepared.unchanged) {
@@ -1838,8 +1906,10 @@ class PisiApp {
       return;
     }
 
-    canvas.edges = [...otherEdges, prepared.edge];
-    this.pruneMapCollapsedAnchors();
+    canvas.edges = canvas.edges.map((candidate) => (
+      candidate.id === edgeId ? prepared.edge : candidate
+    ));
+    this.pruneMapCollapsedHubs();
     this.closeMapEdgeMenu();
     this.scheduleSave();
     successHaptic();
@@ -1853,7 +1923,7 @@ class PisiApp {
     if (!confirm('Bu bağlantı silinsin mi?')) return;
 
     canvas.edges = canvas.edges.filter((candidate) => candidate.id !== edgeId);
-    this.pruneMapCollapsedAnchors();
+    this.pruneMapCollapsedHubs();
     this.closeMapEdgeMenu();
     this.scheduleSave();
     successHaptic();
@@ -1909,13 +1979,14 @@ class PisiApp {
       targetRole: 'up-hub'
     };
 
-    let prepared = prepareMapConnection(this.activeDocument.canvas.edges, rawEdge);
+    const currentRelationships = this.collectSemanticRelationships();
+    let prepared = prepareMapConnection(currentRelationships, rawEdge);
     if (prepared.code === 'SECOND_PARENT_CONFIRM_REQUIRED') {
       const confirmed = confirm(
         'Bu node zaten bir parent’a sahip. Bağlantı hiyerarşi yerine stream ilişkisi olarak kaydedilsin mi?'
       );
       if (confirmed) {
-        prepared = prepareMapConnection(this.activeDocument.canvas.edges, rawEdge, {
+        prepared = prepareMapConnection(currentRelationships, rawEdge, {
           confirmSecondParentAsStream: true
         });
       } else {
@@ -1956,7 +2027,7 @@ class PisiApp {
     if (!node) return;
     this.selectedMapNode = id;
     if (this.visibleMapGraph().hidden.has(id)) {
-      this.activeDocument.canvas.collapsedAnchors = [];
+      this.activeDocument.canvas.collapsedHubs = [];
     }
     this.renderMapEditor();
     requestAnimationFrame(() => {
