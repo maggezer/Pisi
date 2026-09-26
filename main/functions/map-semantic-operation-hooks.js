@@ -33,46 +33,7 @@ function writePisiMapSemanticState(mapPath, mapInfo) {
     modules['main.filesystemCore'].writePisiDocument(mapPath, mapInfo.data);
 }
 
-function migratePisiLegacyMapRelationships(mapPath) {
-    try {
-        const projectFolder = getPisiSemanticProjectFolder(mapPath);
-        const mapInfo = documentStore.ensurePisiFileMetadata(mapPath);
-        if (!mapInfo.ok) return mapInfo;
-        if (!mapInfo.data.map || typeof mapInfo.data.map !== 'object') {
-            return { ok: false, error: 'Map state bulunamadı.' };
-        }
-
-        const migration = mapSemanticCore.migratePisiLegacyMapEdgesData(
-            mapInfo.data.map,
-            (edge) => {
-                const result = relationshipStore.upsertPisiSemanticRelationship(
-                    projectFolder,
-                    edge,
-                    { migration: true }
-                );
-                return result.ok ? result.relationship : null;
-            }
-        );
-
-        if (migration.changed) {
-            writePisiMapSemanticState(mapPath, mapInfo);
-        }
-
-        return {
-            ok: true,
-            migrated: migration.migrated,
-            warnings: migration.warnings,
-            mapInfo
-        };
-    } catch (error) {
-        return { ok: false, error: error.message };
-    }
-}
-
 function getPisiMapSemanticProjection(mapPath, baseResult = null) {
-    const migration = migratePisiLegacyMapRelationships(mapPath);
-    if (!migration.ok) return migration;
-
     const base = baseResult || mapStore.listNodesForMap(mapPath);
     if (!base.ok) return base;
 
@@ -107,10 +68,7 @@ function getPisiMapSemanticProjection(mapPath, baseResult = null) {
         ),
         relationshipAuthority: relationshipResult.filePath,
         mapStateAuthority: mapPath,
-        relationshipWarnings: [
-            ...(migration.warnings || []),
-            ...(relationshipResult.warnings || [])
-        ]
+        relationshipWarnings: relationshipResult.warnings || []
     };
 }
 
@@ -126,9 +84,6 @@ function persistPisiRelationshipView(mapPath, relationship, presentation = {}) {
         relationship,
         presentation
     );
-    if (Object.prototype.hasOwnProperty.call(mapInfo.data.map, 'edges')) {
-        delete mapInfo.data.map.edges;
-    }
     writePisiMapSemanticState(mapPath, mapInfo);
     return { ok: true };
 }
@@ -144,8 +99,7 @@ function removePisiRelationshipViewFromMap(mapPath, relationshipId) {
         relationshipId
     );
     if (Object.prototype.hasOwnProperty.call(mapInfo.data.map, 'edges')) {
-        delete mapInfo.data.map.edges;
-    }
+        }
     writePisiMapSemanticState(mapPath, mapInfo);
     return { ok: true };
 }
@@ -212,8 +166,6 @@ function upsertPisiMapSemanticConnection(mapPath, edge = {}) {
 }
 
 function deletePisiMapSemanticConnection(mapPath, relationshipId) {
-    const migration = migratePisiLegacyMapRelationships(mapPath);
-    if (!migration.ok) return migration;
     const projectFolder = getPisiSemanticProjectFolder(mapPath);
     const deleted = relationshipStore.deletePisiSemanticRelationship(
         projectFolder,
@@ -348,8 +300,6 @@ function bindPisiMapSemanticOperationHooks() {
                 type: 'file',
                 extensions: ['.map']
             });
-            const migrated = migratePisiLegacyMapRelationships(safeMapPath);
-            if (!migrated.ok) return migrated;
             return mapStore.saveMapNodeLayout(safeMapPath, nodeLayouts);
         });
     });
@@ -361,8 +311,6 @@ function bindPisiMapSemanticOperationHooks() {
                 type: 'file',
                 extensions: ['.map']
             });
-            const migrated = migratePisiLegacyMapRelationships(safeMapPath);
-            if (!migrated.ok) return migrated;
             const cameraResult = mapStore.saveMapCamera(safeMapPath, camera || {});
             if (!cameraResult.ok) return cameraResult;
             const operationalResult = savePisiOperationalPayload(
@@ -386,15 +334,11 @@ function bindPisiMapSemanticOperationHooks() {
                 type: 'file',
                 extensions: ['.map']
             });
-            const migrated = migratePisiLegacyMapRelationships(safeMapPath);
-            if (!migrated.ok) return migrated;
             const detached = structuredNodes.detachPisiMapReference(
                 safeMapPath,
                 nodeId
             );
             if (!detached.ok) return detached;
-            const cleaned = migratePisiLegacyMapRelationships(safeMapPath);
-            if (!cleaned.ok) return cleaned;
             const refreshed = getPisiMapSemanticProjection(safeMapPath);
             return {
                 ...detached,
@@ -408,7 +352,6 @@ bindPisiMapSemanticOperationHooks();
 
 const moduleApi = {
     getPisiSemanticProjectFolder,
-    migratePisiLegacyMapRelationships,
     getPisiMapSemanticProjection,
     persistPisiRelationshipView,
     removePisiRelationshipViewFromMap,
