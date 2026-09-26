@@ -2,6 +2,7 @@ import {
   getSetting, listDocuments, listTasks, replaceSyncedWorkspace
 } from './db.js';
 import { hashString, hashValue } from './sync-core.js';
+import { normalizeMapEdges } from './map-connections.js';
 
 const CONFIG_KEYS = ['propertySchema', 'savedViews', 'templates'];
 
@@ -53,6 +54,22 @@ export function canonicalSyncId(value, kind) {
 function remapId(id, kind, ids) {
   if (!id || id === 'none') return null;
   return ids.get(String(id)) || canonicalSyncId(id, kind);
+}
+
+function canonicalCollapsedHubs(canvas = {}, ids = new Map()) {
+  const source = Array.isArray(canvas.collapsedHubs) && canvas.collapsedHubs.length
+    ? canvas.collapsedHubs
+    : (canvas.collapsedAnchors || []);
+  return Array.from(new Set(
+    (Array.isArray(source) ? source : []).map((value) => {
+      const match = String(value || '').match(
+        /^(node_[A-Za-z0-9_-]+)(?:::|:)(top|right|bottom|left)$/
+      );
+      if (!match) return null;
+      const nodeId = remapId(match[1], 'node', ids);
+      return nodeId ? `${nodeId}::${match[2]}` : null;
+    }).filter(Boolean)
+  ));
 }
 
 function canonicalTask(task, ids, taskIds) {
@@ -138,28 +155,38 @@ function canonicalNodePayload(document, ids, extra = {}) {
 
 function canonicalMapPayload(document, ids) {
   const canvas = document.canvas || {};
+  const nodes = (canvas.nodes || []).map((node) => ({
+    id: remapId(node.id, 'node', ids),
+    x: Number(node.x) || 0,
+    y: Number(node.y) || 0,
+    width: Number(node.width) || 220,
+    height: Number(node.height) || 92,
+    ...(node.customization ? { customization: structuredClone(node.customization) } : {})
+  }));
+  const validNodeIds = new Set(nodes.map(({ id }) => id).filter(Boolean));
+  const edges = normalizeMapEdges(
+    (canvas.edges || []).map((edge) => ({
+      ...structuredClone(edge),
+      id: canonicalSyncId(
+        edge.id || `${edge.sourceId || edge.from}:${edge.targetId || edge.to}`,
+        'edge'
+      ),
+      sourceId: remapId(edge.sourceId || edge.from, 'node', ids),
+      targetId: remapId(edge.targetId || edge.to, 'node', ids),
+      sourcePort: edge.sourcePort || edge.fromAnchor,
+      targetPort: edge.targetPort || edge.toAnchor
+    })),
+    validNodeIds
+  ).edges;
+
   return {
     schema: 'pisi.map.v1',
     title: String(document.title || 'Başlıksız harita'),
     map: {
-      nodes: (canvas.nodes || []).map((node) => ({
-        id: remapId(node.id, 'node', ids),
-        x: Number(node.x) || 0,
-        y: Number(node.y) || 0,
-        width: Number(node.width) || 220,
-        height: Number(node.height) || 92,
-        ...(node.customization ? { customization: structuredClone(node.customization) } : {})
-      })),
-      edges: (canvas.edges || []).map((edge) => ({
-        ...structuredClone(edge),
-        id: canonicalSyncId(edge.id || `${edge.from}:${edge.to}`, 'edge'),
-        sourceId: remapId(edge.sourceId || edge.from, 'node', ids),
-        targetId: remapId(edge.targetId || edge.to, 'node', ids),
-        from: undefined,
-        to: undefined
-      })),
+      nodes,
+      edges,
       camera: structuredClone(canvas.camera || { x: 0, y: 0, zoom: 1 }),
-      collapsedAnchors: structuredClone(canvas.collapsedAnchors || [])
+      collapsedHubs: canonicalCollapsedHubs(canvas, ids)
     },
     tags: Array.isArray(document.tags) ? structuredClone(document.tags) : [],
     properties: document.properties && typeof document.properties === 'object'
@@ -393,15 +420,14 @@ export async function applyMobileSyncRecords(records, conflicts = [], options = 
               syncNative: { node: node.native || null }
             };
           }),
-          edges: (map.edges || [])
-            .filter((edge) => layoutIds.has(edge.sourceId) && layoutIds.has(edge.targetId))
-            .map((edge) => ({
-              ...structuredClone(edge),
-              from: edge.sourceId,
-              to: edge.targetId
-            })),
+          edges: normalizeMapEdges(
+            (map.edges || []).filter(
+              (edge) => layoutIds.has(edge.sourceId) && layoutIds.has(edge.targetId)
+            ),
+            layoutIds
+          ).edges,
           camera: map.camera || { x: 0, y: 0, zoom: 1 },
-          collapsedAnchors: map.collapsedAnchors || []
+          collapsedHubs: canonicalCollapsedHubs(map)
         },
         createdAt: payload.createdAt || undefined,
         updatedAt: payload.updatedAt || undefined,
