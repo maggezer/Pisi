@@ -1406,20 +1406,20 @@ class PisiApp {
                   <button class="node-edit" data-edit-node="${node.id}" aria-label="Düğümü düzenle">✎</button>
                   <h3>${escapeHtml(node.title || 'Başlıksız')}</h3>
                   <p>${escapeHtml(htmlToText(node.content || '').slice(0, 90) || 'Ayrıntı ekle')}</p>
-                  ${['top', 'right', 'bottom', 'left'].map((anchor) => `<button type="button" class="node-anchor anchor-${anchor} ${canvas.collapsedAnchors.includes(`${node.id}:${anchor}`) ? 'collapsed' : ''}" data-map-anchor="${node.id}:${anchor}" aria-label="${anchor} alt dalını aç veya kapat"></button>`).join('')}
+                  ${['top', 'right', 'bottom', 'left'].map((anchor) => {
+                    const isConnectionStart = this.connectFrom?.nodeId === node.id && this.connectFrom?.anchor === anchor;
+                    return `<button type="button" class="node-anchor anchor-${anchor} ${isConnectionStart ? 'connection-start' : ''}" data-map-anchor="${node.id}:${anchor}" aria-label="${anchor} bağlantı noktası" aria-pressed="${isConnectionStart}"></button>`;
+                  }).join('')}
                 </article>
               `).join('')}
             </div>
           </div>
           <div class="map-tip ${this.connectFrom ? 'active' : ''}">
-            ${this.connectFrom ? 'Bağlanacak ikinci düğüme dokun' : 'Çift dokun: düğüm ekle · sürükle: haritayı taşı'}
+            ${this.connectFrom ? 'Diğer node’un bağlantı noktasına dokun' : 'Noktaya dokun: bağla · çift dokun: düğüm ekle'}
           </div>
         </main>
         <div class="map-toolbar">
           <button id="map-add-node"><span>＋</span> Düğüm</button>
-          <button id="map-connect" ${this.selectedMapNode ? '' : 'disabled'} class="${this.connectFrom ? 'active' : ''}">
-            <span>⌁</span> Bağla
-          </button>
           <button id="map-unlink" ${this.selectedMapNode ? '' : 'disabled'}><span>⌫</span> Ayır</button>
           <button id="map-delete-node" ${this.selectedMapNode ? '' : 'disabled'} class="danger-tool"><span>×</span> Sil</button>
         </div>
@@ -1470,7 +1470,6 @@ class PisiApp {
     });
     document.querySelector('#map-fit')?.addEventListener('click', () => this.fitMap());
     document.querySelector('#map-add-node')?.addEventListener('click', () => this.addMapNode());
-    document.querySelector('#map-connect')?.addEventListener('click', () => this.startConnection());
     document.querySelector('#map-unlink')?.addEventListener('click', () => this.unlinkSelectedNode());
     document.querySelector('#map-delete-node')?.addEventListener('click', () => this.deleteSelectedNode());
 
@@ -1487,7 +1486,7 @@ class PisiApp {
       button.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
-        this.toggleMapAnchor(button.dataset.mapAnchor);
+        this.handleMapAnchorConnection(button.dataset.mapAnchor);
       });
     });
 
@@ -1677,36 +1676,66 @@ class PisiApp {
   }
 
   selectMapNode(id) {
-    if (this.connectFrom && this.connectFrom !== id) {
-      const duplicate = this.activeDocument.canvas.edges.some((edge) =>
-        (edge.from === this.connectFrom && edge.to === id)
-        || (edge.to === this.connectFrom && edge.from === id)
-      );
-      if (!duplicate) {
-        const fromNode = this.activeDocument.canvas.nodes.find((node) => node.id === this.connectFrom);
-        const toNode = this.activeDocument.canvas.nodes.find((node) => node.id === id);
-        const dx = (Number(toNode?.x) || 0) - (Number(fromNode?.x) || 0);
-        const dy = (Number(toNode?.y) || 0) - (Number(fromNode?.y) || 0);
-        const horizontal = Math.abs(dx) >= Math.abs(dy);
-        const fromAnchor = horizontal ? (dx >= 0 ? 'right' : 'left') : (dy >= 0 ? 'bottom' : 'top');
-        const toAnchor = horizontal ? (dx >= 0 ? 'left' : 'right') : (dy >= 0 ? 'top' : 'bottom');
-        this.activeDocument.canvas.edges.push({ id: makeId('edge'), from: this.connectFrom, to: id, fromAnchor, toAnchor });
-        this.scheduleSave();
-        successHaptic();
-      }
-      this.connectFrom = null;
-      this.selectedMapNode = id;
-      this.renderMapEditor();
-      return;
-    }
     this.selectedMapNode = id;
     document.querySelectorAll('.map-node').forEach((element) => {
       element.classList.toggle('selected', element.dataset.nodeId === id);
     });
-    document.querySelectorAll('#map-connect, #map-unlink, #map-delete-node').forEach((button) => {
+    document.querySelectorAll('#map-unlink, #map-delete-node').forEach((button) => {
       button.disabled = false;
     });
     lightHaptic();
+  }
+
+  handleMapAnchorConnection(key) {
+    const separator = String(key || '').lastIndexOf(':');
+    if (separator <= 0) return;
+    const nodeId = key.slice(0, separator);
+    const anchor = key.slice(separator + 1);
+    if (!['top', 'right', 'bottom', 'left'].includes(anchor)) return;
+    if (!this.activeDocument?.canvas?.nodes?.some((node) => node.id === nodeId)) return;
+
+    if (!this.connectFrom) {
+      this.connectFrom = { nodeId, anchor };
+      this.selectedMapNode = nodeId;
+      lightHaptic();
+      this.renderMapEditor();
+      return;
+    }
+
+    if (this.connectFrom.nodeId === nodeId) {
+      if (this.connectFrom.anchor === anchor) {
+        this.connectFrom = null;
+      } else {
+        this.connectFrom = { nodeId, anchor };
+      }
+      this.selectedMapNode = nodeId;
+      lightHaptic();
+      this.renderMapEditor();
+      return;
+    }
+
+    const source = this.connectFrom;
+    const duplicate = this.activeDocument.canvas.edges.some((edge) =>
+      (edge.from === source.nodeId && edge.to === nodeId)
+      || (edge.to === source.nodeId && edge.from === nodeId)
+    );
+    if (!duplicate) {
+      this.activeDocument.canvas.edges.push({
+        id: makeId('edge'),
+        from: source.nodeId,
+        to: nodeId,
+        fromAnchor: source.anchor,
+        toAnchor: anchor
+      });
+      this.scheduleSave();
+      successHaptic();
+    } else {
+      lightHaptic();
+    }
+
+    this.connectFrom = null;
+    this.selectedMapNode = nodeId;
+    this.renderMapEditor();
   }
 
   focusMapNode(id) {
@@ -1744,12 +1773,6 @@ class PisiApp {
     this.selectedMapNode = node.id;
     this.mapEditingNode = node.id;
     this.scheduleSave();
-    this.renderMapEditor();
-  }
-
-  startConnection() {
-    if (!this.selectedMapNode) return;
-    this.connectFrom = this.connectFrom ? null : this.selectedMapNode;
     this.renderMapEditor();
   }
 
