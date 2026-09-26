@@ -44,15 +44,12 @@ export function normalizeRelationshipProperties(value) {
 }
 
 export function normalizeMapEdge(edge = {}, { idFactory = fallbackEdgeId } = {}) {
-  // from/to and fromAnchor/toAnchor are accepted only as a mobile legacy-read bridge.
-  // Canonical output always uses the same fields as desktop main.
-  const sourceId = normalizeNodeId(edge.sourceId || edge.from);
-  const targetId = normalizeNodeId(edge.targetId || edge.to);
+  const sourceId = normalizeNodeId(edge.sourceId);
+  const targetId = normalizeNodeId(edge.targetId);
   if (!sourceId || !targetId || sourceId === targetId) return null;
 
-  let type = String(edge.type || 'down-hub');
-  if (type === 'colevel') type = 'co-level';
-  if (!MAP_EDGE_TYPES.has(type)) type = 'down-hub';
+  let type = String(edge.type || '');
+  if (!MAP_EDGE_TYPES.has(type)) return null;
 
   let sourceRole;
   let targetRole;
@@ -68,12 +65,8 @@ export function normalizeMapEdge(edge = {}, { idFactory = fallbackEdgeId } = {})
     targetRole = 'up-hub';
   }
 
-  const sourcePort = MAP_PORTS.has(edge.sourcePort)
-    ? edge.sourcePort
-    : (MAP_PORTS.has(edge.fromAnchor) ? edge.fromAnchor : 'bottom');
-  const targetPort = MAP_PORTS.has(edge.targetPort)
-    ? edge.targetPort
-    : (MAP_PORTS.has(edge.toAnchor) ? edge.toAnchor : 'top');
+  const sourcePort = MAP_PORTS.has(edge.sourcePort) ? edge.sourcePort : 'bottom';
+  const targetPort = MAP_PORTS.has(edge.targetPort) ? edge.targetPort : 'top';
 
   const normalized = {
     id: EDGE_ID.test(String(edge.id || '')) ? String(edge.id) : idFactory(),
@@ -319,10 +312,7 @@ export function prepareSemanticRelationshipUpsert(currentRelationships, raw, opt
     ));
 
     if (existingParent) {
-      if (
-        options.confirmSecondParentAsStream !== true
-        && options.migration !== true
-      ) {
+      if (options.confirmSecondParentAsStream !== true) {
         return {
           ok: false,
           code: 'SECOND_PARENT_CONFIRM_REQUIRED',
@@ -344,17 +334,11 @@ export function prepareSemanticRelationshipUpsert(currentRelationships, raw, opt
         incoming.sourceId,
         incoming.targetId
       )) {
-        if (options.migration === true) {
-          incoming = normalizeSemanticRelationship(convertMapEdgeToStream(incoming), {
-            createdAt: incoming.createdAt
-          });
-        } else {
-          return {
-            ok: false,
-            code: 'HIERARCHY_CYCLE',
-            error: 'Bu semantic ilişki hiyerarşide döngü oluşturur.'
-          };
-        }
+        return {
+          ok: false,
+          code: 'HIERARCHY_CYCLE',
+          error: 'Bu semantic ilişki hiyerarşide döngü oluşturur.'
+        };
       }
     }
   }
@@ -399,8 +383,8 @@ export function prepareMapConnection(existingEdges = [], rawEdge = {}, options =
 }
 
 export function normalizeRelationshipView(raw = {}) {
-  const relationshipId = EDGE_ID.test(String(raw.relationshipId || raw.id || ''))
-    ? String(raw.relationshipId || raw.id)
+  const relationshipId = EDGE_ID.test(String(raw.relationshipId || ''))
+    ? String(raw.relationshipId)
     : '';
   if (!relationshipId) return null;
   const view = {
@@ -441,11 +425,9 @@ export function mapEdgeToRelationshipView(edge) {
 }
 
 export function projectSemanticRelationshipToMapEdge(relationship, rawView = null) {
-  if (!relationship?.id) return null;
-  const view = normalizeRelationshipView(
-    rawView || { relationshipId: relationship.id }
-  ) || normalizeRelationshipView({ relationshipId: relationship.id });
-  if (!view) return null;
+  if (!relationship?.id || !rawView) return null;
+  const view = normalizeRelationshipView(rawView);
+  if (!view || view.relationshipId !== relationship.id) return null;
 
   const projected = normalizeMapEdge({
     id: relationship.id,
@@ -478,10 +460,12 @@ export function projectRelationshipsToMapEdges(
       .map((view) => [view.relationshipId, view])
   );
   const projected = (Array.isArray(relationships) ? relationships : [])
-    .map((relationship) => projectSemanticRelationshipToMapEdge(
-      relationship,
-      views.get(relationship.id) || null
-    ))
+    .map((relationship) => {
+      const view = views.get(relationship.id);
+      return view
+        ? projectSemanticRelationshipToMapEdge(relationship, view)
+        : null;
+    })
     .filter(Boolean)
     .filter((edge) => (
       !(validNodeIds instanceof Set)
