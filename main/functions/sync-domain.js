@@ -189,8 +189,6 @@ function writeDeviceSnapshot(folder, snapshot) {
             try { fs.unlinkSync(path.join(directory, entry.name)); } catch {}
         }
     }
-    const legacy = path.join(folder, DEVICES_RELATIVE, `${snapshot.deviceId}.json`);
-    if (fs.existsSync(legacy)) try { fs.unlinkSync(legacy); } catch {}
 }
 
 function readLocalState(projectFolder, deviceId) {
