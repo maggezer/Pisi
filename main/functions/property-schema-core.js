@@ -12,16 +12,9 @@ const PISI_INTERNAL_PROPERTY_TYPES = Object.freeze([
     'rollup'
 ]);
 const PISI_PROPERTY_TYPE_SET = new Set(PISI_INTERNAL_PROPERTY_TYPES);
-const PISI_LEGACY_PROPERTY_TYPE_ALIASES = Object.freeze({
-    date: 'text',
-    select: 'multiselect',
-    node: 'relation',
-    checkbox: 'multiselect'
-});
 const PISI_ROLLUP_AGGREGATES = new Set([
     'count', 'sum', 'average', 'min', 'max', 'unique', 'join'
 ]);
-const PISI_LEGACY_ROLLUP_AGGREGATES = new Set(['checked-percent']);
 
 function normalizePropertyName(value = '') {
     return String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, 120);
@@ -41,8 +34,7 @@ function normalizePropertyNameKey(value = '') {
 }
 
 function normalizePropertyType(value = 'text') {
-    const source = String(value || 'text').trim().toLowerCase();
-    return PISI_LEGACY_PROPERTY_TYPE_ALIASES[source] || source;
+    return String(value || 'text').trim().toLowerCase();
 }
 
 function isSupportedPropertyType(value) {
@@ -151,9 +143,6 @@ function validatePropertyValue(type, value, options = {}) {
     }
     if (resolvedType === 'multiselect' || resolvedType === 'relation') {
         if (!Array.isArray(value)) {
-            if (options.allowLegacyScalar === true && (typeof value === 'string' || value == null)) {
-                return { ok: true, legacy: true, normalized: normalizePropertyValue(resolvedType, value) };
-            }
             return { ok: false, code: 'PROPERTY_VALUE_INVALID', normalized: value };
         }
         const stringsOnly = value.every((item) => typeof item === 'string');
@@ -169,9 +158,7 @@ function validatePropertyValue(type, value, options = {}) {
         if (!PISI_ROLLUP_AGGREGATES.has(aggregate)) {
             return {
                 ok: false,
-                code: PISI_LEGACY_ROLLUP_AGGREGATES.has(aggregate)
-                    ? 'PROPERTY_ROLLUP_LEGACY_AGGREGATE'
-                    : 'PROPERTY_VALUE_INVALID',
+                code: 'PROPERTY_VALUE_INVALID',
                 normalized: normalizeRollupValue(value)
             };
         }
@@ -216,7 +203,6 @@ function makePropertySchema(definitions = [], options = {}) {
             .map((item) => normalizePropertyDefinition(item))
             .filter(Boolean),
         conflicts: Array.isArray(options.conflicts) ? options.conflicts : [],
-        migratedAt: options.migratedAt || null,
         updatedAt: options.updatedAt || new Date().toISOString()
     };
 }
@@ -226,9 +212,7 @@ module.exports = {
     PISI_PROPERTY_SCHEMA_RELATIVE_PATH,
     PISI_EDITABLE_PROPERTY_TYPES,
     PISI_INTERNAL_PROPERTY_TYPES,
-    PISI_LEGACY_PROPERTY_TYPE_ALIASES,
     PISI_ROLLUP_AGGREGATES,
-    PISI_LEGACY_ROLLUP_AGGREGATES,
     normalizePropertyName,
     normalizePropertyNameKey,
     normalizePropertyType,
