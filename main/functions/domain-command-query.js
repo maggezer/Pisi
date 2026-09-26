@@ -301,8 +301,6 @@ function installPisiDomainContracts() {
 
     registerPisiDomainCommand('map.layout.save.v1', (payload) => {
         const safeMapPath = assertPisiDomainMapPath(payload.mapPath);
-        const migrated = mapSemanticOperations.migratePisiLegacyMapRelationships(safeMapPath);
-        if (!migrated.ok) return migrated;
         return mapStore.saveMapNodeLayout(
             safeMapPath,
             Array.isArray(payload.nodes) ? payload.nodes : []
@@ -318,8 +316,6 @@ function installPisiDomainContracts() {
 
     registerPisiDomainCommand('map.camera.save.v1', (payload) => {
         const safeMapPath = assertPisiDomainMapPath(payload.mapPath);
-        const migrated = mapSemanticOperations.migratePisiLegacyMapRelationships(safeMapPath);
-        if (!migrated.ok) return migrated;
         const camera = { ...(payload.camera || {}) };
         delete camera.operationalPayload;
         const cameraResult = mapStore.saveMapCamera(safeMapPath, camera);
@@ -339,8 +335,6 @@ function installPisiDomainContracts() {
 
     registerPisiDomainCommand('map.reference.detach.v1', (payload) => {
         const safeMapPath = assertPisiDomainMapPath(payload.mapPath);
-        const migrated = mapSemanticOperations.migratePisiLegacyMapRelationships(safeMapPath);
-        if (!migrated.ok) return migrated;
         const detached = structuredNodes.detachPisiMapReference(
             safeMapPath,
             String(payload.nodeId || '')
