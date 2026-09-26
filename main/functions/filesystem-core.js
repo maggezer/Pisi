@@ -353,23 +353,6 @@ function resolvePisiAtomicBackupPath(targetPath, options = {}) {
     return `${targetPath}${backupStorage.PISI_BACKUP_SUFFIX}`;
 }
 
-function removeLegacyPisiAtomicBackup(targetPath, backupPath) {
-    const legacyPath = `${targetPath}${backupStorage.PISI_BACKUP_SUFFIX}`;
-    if (
-        !backupPath ||
-        path.resolve(legacyPath) === path.resolve(backupPath) ||
-        !fs.existsSync(legacyPath)
-    ) {
-        return;
-    }
-
-    try {
-        fs.unlinkSync(legacyPath);
-    } catch {
-        // Yeni merkezi yedek başarıyla oluştuysa eski kopya temizliği best-effort'tur.
-    }
-}
-
 function writeFileAtomic(filePath, content, options = {}) {
     const targetPath = path.resolve(filePath);
     const directoryPath = path.dirname(targetPath);
@@ -401,7 +384,6 @@ function writeFileAtomic(filePath, content, options = {}) {
             fs.copyFileSync(targetPath, backupTempPath);
             renamePathInternal(backupTempPath, backupPath);
             backupTempPath = null;
-            removeLegacyPisiAtomicBackup(targetPath, backupPath);
         }
 
         renamePathInternal(tempPath, targetPath);
@@ -524,16 +506,6 @@ function backupCorruptPisiFile(filePath) {
         backupStorage.ensurePisiBackupParent(backupPath);
         if (!fs.existsSync(backupPath)) {
             fs.copyFileSync(filePath, backupPath, fs.constants.COPYFILE_EXCL);
-        }
-
-        if (managedBackupPath) {
-            const legacyPath = `${filePath}.corrupt-${digest}.bak`;
-            if (
-                path.resolve(legacyPath) !== path.resolve(backupPath) &&
-                fs.existsSync(legacyPath)
-            ) {
-                try { fs.unlinkSync(legacyPath); } catch {}
-            }
         }
 
         return backupPath;
