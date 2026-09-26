@@ -249,7 +249,6 @@ function bindPisiMapSemanticOperationHooks() {
     const projectOperation = electronIpc.projectOperation;
     const assertProjectPath = electronIpc.assertProjectPath;
 
-    ipcMain.removeHandler('project:list-map-nodes');
     ipcMain.handle('project:list-map-nodes', (_event, mapPath) => {
         return projectOperation(() => {
             const safeMapPath = assertProjectPath(mapPath, {
@@ -260,7 +259,6 @@ function bindPisiMapSemanticOperationHooks() {
         });
     });
 
-    ipcMain.removeHandler('project:upsert-map-connection');
     ipcMain.handle('project:upsert-map-connection', (_event, mapPath, edge) => {
         return projectOperation(() => {
             const safeMapPath = assertProjectPath(mapPath, {
@@ -271,7 +269,6 @@ function bindPisiMapSemanticOperationHooks() {
         });
     });
 
-    ipcMain.removeHandler('project:delete-map-connection');
     ipcMain.handle('project:delete-map-connection', (_event, mapPath, edgeId) => {
         return projectOperation(() => {
             const safeMapPath = assertProjectPath(mapPath, {
@@ -282,7 +279,6 @@ function bindPisiMapSemanticOperationHooks() {
         });
     });
 
-    ipcMain.removeHandler('project:reparent-map-node');
     ipcMain.handle('project:reparent-map-node', (_event, mapPath, childId, parentId) => {
         return projectOperation(() => {
             const safeMapPath = assertProjectPath(mapPath, {
@@ -293,7 +289,6 @@ function bindPisiMapSemanticOperationHooks() {
         });
     });
 
-    ipcMain.removeHandler('project:save-map-layout');
     ipcMain.handle('project:save-map-layout', (_event, mapPath, nodeLayouts) => {
         return projectOperation(() => {
             const safeMapPath = assertProjectPath(mapPath, {
@@ -304,7 +299,6 @@ function bindPisiMapSemanticOperationHooks() {
         });
     });
 
-    ipcMain.removeHandler('project:save-map-camera');
     ipcMain.handle('project:save-map-camera', (_event, mapPath, camera) => {
         return projectOperation(() => {
             const safeMapPath = assertProjectPath(mapPath, {
@@ -327,7 +321,6 @@ function bindPisiMapSemanticOperationHooks() {
         });
     });
 
-    ipcMain.removeHandler('project:detach-map-reference');
     ipcMain.handle('project:detach-map-reference', (_event, mapPath, nodeId) => {
         return projectOperation(() => {
             const safeMapPath = assertProjectPath(mapPath, {
