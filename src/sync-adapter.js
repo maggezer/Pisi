@@ -119,21 +119,32 @@ function canonicalNodePayload(document, ids, extra = {}) {
     tags: Array.isArray(document.tags) ? structuredClone(document.tags) : [],
     properties: document.properties && typeof document.properties === 'object'
       ? structuredClone(document.properties) : {},
-    relations: (Array.isArray(document.relations) ? document.relations : []).map((relation) => {
-      const targetId = remapId(relation.targetId, 'node', ids);
-      const type = relation.syncType || (
-        relation.type === 'sub-node' ? 'down-hub'
-          : relation.type === 'co-level' ? 'co-level' : 'stream'
-      );
-      return {
-        ...structuredClone(relation),
-        id: canonicalSyncId(relation.id || `${sourceId}:${targetId}:${type}`, 'edge'),
-        targetId,
-        type,
-        sourceRole: type === 'co-level' ? 'co-level' : type === 'stream' ? 'downstream' : 'down-hub',
-        targetRole: type === 'co-level' ? 'co-level' : type === 'stream' ? 'upstream' : 'up-hub'
-      };
-    }),
+    relations: (Array.isArray(document.relations) ? document.relations : [])
+      .map((relation) => {
+        const targetId = remapId(relation.targetId, 'node', ids);
+        const type = String(relation.type || '');
+        if (
+          !targetId ||
+          !['down-hub', 'co-level', 'stream'].includes(type)
+        ) return null;
+        return {
+          ...structuredClone(relation),
+          id: canonicalSyncId(
+            relation.id || `${sourceId}:${targetId}:${type}`,
+            'edge'
+          ),
+          targetId,
+          type,
+          sourceRole: type === 'co-level'
+            ? 'co-level'
+            : type === 'stream' ? 'downstream' : 'down-hub',
+          targetRole: type === 'co-level'
+            ? 'co-level'
+            : type === 'stream' ? 'upstream' : 'up-hub',
+          direction: type === 'co-level' ? 'undirected' : 'directed'
+        };
+      })
+      .filter(Boolean),
     sources: (Array.isArray(document.sources) ? document.sources : []).map((source) => ({
       ...structuredClone(source),
       documentId: remapId(source.documentId, 'node', ids)
@@ -327,11 +338,8 @@ function mobileTask(id, payload) {
 }
 
 function mobileRelations(relations) {
-  return (Array.isArray(relations) ? relations : []).map((relation) => ({
-    ...structuredClone(relation),
-    syncType: relation.type,
-    type: relation.type === 'down-hub' ? 'sub-node' : 'relation'
-  }));
+  return (Array.isArray(relations) ? relations : [])
+    .map((relation) => structuredClone(relation));
 }
 
 export async function applyMobileSyncRecords(records, conflicts = [], options = {}) {
