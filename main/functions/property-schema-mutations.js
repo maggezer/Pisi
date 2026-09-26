@@ -45,7 +45,6 @@ function writeSchema(projectFolder, schema) {
             contract.normalizePropertyDefinition(item)
         )).filter(Boolean),
         conflicts: Array.isArray(schema.conflicts) ? schema.conflicts : [],
-        migratedAt: schema.migratedAt || null,
         updatedAt: new Date().toISOString()
     };
     writeFileAtomic(schemaPath, JSON.stringify(payload, null, 2), { backup: true });
@@ -149,8 +148,7 @@ function prepareDefinitionRewrite(projectFolder, change) {
             }
             const validation = contract.validatePropertyValue(
                 definition.type,
-                property.value,
-                { allowLegacyScalar: previousType === definition.type }
+                property.value
             );
             if (!validation.ok && !contract.isEmptyPropertyValue(property.value)) {
                 return {
