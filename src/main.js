@@ -240,7 +240,9 @@ class PisiApp {
     await onHardwareBack(() => {
       if (isSoftKeyboardVisible()) return;
 
-      const overlay = document.querySelector('#platform-overlay, #todo-options-overlay');
+      const overlay = document.querySelector(
+        '#platform-overlay, #todo-options-overlay, #map-edge-menu-overlay'
+      );
       if (overlay) {
         overlay.remove();
         return;
@@ -280,6 +282,7 @@ class PisiApp {
   }
 
   navigate(route) {
+    this.closeMapEdgeMenu();
     this.route = route;
     this.activeDocument = null;
     this.selectedMapNode = null;
@@ -1397,6 +1400,7 @@ class PisiApp {
   }
 
   renderMapEditor() {
+    this.closeMapEdgeMenu();
     const map = this.activeDocument;
     if (!map) return this.navigate('maps');
     const canvas = map.canvas;
@@ -1505,6 +1509,7 @@ class PisiApp {
       });
     });
 
+    this.bindMapEdgeInteractions();
     this.bindMapPan();
     this.bindMapNodes();
     this.bindMapNodeSheet();
@@ -1699,6 +1704,159 @@ class PisiApp {
       button.disabled = false;
     });
     lightHaptic();
+  }
+
+  closeMapEdgeMenu() {
+    document.querySelector('#map-edge-menu-overlay')?.remove();
+    document.querySelectorAll('.map-edge-visible.menu-open').forEach((path) => {
+      path.classList.remove('menu-open');
+    });
+  }
+
+  bindMapEdgeInteractions() {
+    document.querySelectorAll('[data-map-edge-hit]').forEach((path) => {
+      path.addEventListener('pointerdown', (event) => {
+        event.stopPropagation();
+      });
+      path.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.openMapEdgeMenu(path.dataset.edgeId);
+      });
+    });
+  }
+
+  openMapEdgeMenu(edgeId) {
+    const edge = this.activeDocument?.canvas?.edges
+      ?.find((candidate) => candidate.id === edgeId);
+    if (!edge) return;
+
+    this.closeMapEdgeMenu();
+    document.querySelector(
+      `.map-edge-visible[data-edge-id="${CSS.escape(edgeId)}"]`
+    )?.classList.add('menu-open');
+
+    const labels = {
+      'down-hub': ['Hub', 'Parent → child'],
+      'co-level': ['Co-level', 'Aynı seviyede'],
+      stream: ['Stream', 'Yönlü akış']
+    };
+    const options = ['down-hub', 'co-level', 'stream'].map((type) => {
+      const [label, description] = labels[type];
+      return `
+        <button type="button"
+          class="map-edge-type-option ${edge.type === type ? 'active' : ''}"
+          data-map-edge-type="${type}">
+          <span class="map-edge-type-swatch map-edge-type-swatch-${type}" aria-hidden="true"></span>
+          <span><strong>${label}</strong><small>${description}</small></span>
+          <i aria-hidden="true">${edge.type === type ? '✓' : ''}</i>
+        </button>
+      `;
+    }).join('');
+
+    const overlay = document.createElement('div');
+    overlay.id = 'map-edge-menu-overlay';
+    overlay.className = 'map-edge-menu-overlay';
+    overlay.innerHTML = `
+      <section class="map-edge-menu-sheet" role="dialog" aria-modal="true"
+        aria-label="Bağlantı seçenekleri">
+        <div class="sheet-handle"></div>
+        <div class="map-edge-menu-header">
+          <div>
+            <span>Bağlantı</span>
+            <strong>Tipini değiştir veya sil</strong>
+          </div>
+          <button type="button" data-close-map-edge-menu aria-label="Kapat">×</button>
+        </div>
+        <div class="map-edge-type-options">${options}</div>
+        <button type="button" class="map-edge-delete-action" data-delete-map-edge>
+          <span>×</span> Bağlantıyı sil
+        </button>
+      </section>
+    `;
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay || event.target.closest('[data-close-map-edge-menu]')) {
+        this.closeMapEdgeMenu();
+      }
+    });
+    overlay.querySelectorAll('[data-map-edge-type]').forEach((button) => {
+      button.addEventListener('click', () => {
+        this.changeMapEdgeType(edgeId, button.dataset.mapEdgeType);
+      });
+    });
+    overlay.querySelector('[data-delete-map-edge]')?.addEventListener('click', () => {
+      this.deleteMapEdge(edgeId);
+    });
+    lightHaptic();
+  }
+
+  pruneMapCollapsedAnchors() {
+    const canvas = this.activeDocument?.canvas;
+    if (!canvas) return;
+    canvas.collapsedAnchors = (canvas.collapsedAnchors || []).filter((key) => {
+      const separator = String(key).lastIndexOf(':');
+      if (separator <= 0) return false;
+      const nodeId = key.slice(0, separator);
+      const port = key.slice(separator + 1);
+      return canvas.edges.some((edge) => (
+        isHierarchyMapEdge(edge)
+        && edge.sourceId === nodeId
+        && edge.sourcePort === port
+      ));
+    });
+  }
+
+  changeMapEdgeType(edgeId, nextType) {
+    if (!['down-hub', 'co-level', 'stream'].includes(nextType)) return;
+    const canvas = this.activeDocument?.canvas;
+    const edge = canvas?.edges?.find((candidate) => candidate.id === edgeId);
+    if (!canvas || !edge) return;
+    if (edge.type === nextType) {
+      this.closeMapEdgeMenu();
+      return;
+    }
+
+    const otherEdges = canvas.edges.filter((candidate) => candidate.id !== edgeId);
+    const prepared = prepareMapConnection(otherEdges, {
+      ...edge,
+      type: nextType
+    });
+
+    if (!prepared.ok) {
+      if (prepared.code === 'SECOND_PARENT_CONFIRM_REQUIRED') {
+        this.toast('Bu node zaten bir parent’a sahip; bağlantı Hub yapılamaz.', 'error');
+      } else {
+        this.toast(prepared.error || 'Bağlantı tipi değiştirilemedi.', 'error');
+      }
+      return;
+    }
+    if (prepared.unchanged) {
+      this.toast('Aynı ilişki zaten mevcut.', 'error');
+      return;
+    }
+
+    canvas.edges = [...otherEdges, prepared.edge];
+    this.pruneMapCollapsedAnchors();
+    this.closeMapEdgeMenu();
+    this.scheduleSave();
+    successHaptic();
+    this.renderMapEditor();
+  }
+
+  deleteMapEdge(edgeId) {
+    const canvas = this.activeDocument?.canvas;
+    const edge = canvas?.edges?.find((candidate) => candidate.id === edgeId);
+    if (!canvas || !edge) return;
+    if (!confirm('Bu bağlantı silinsin mi?')) return;
+
+    canvas.edges = canvas.edges.filter((candidate) => candidate.id !== edgeId);
+    this.pruneMapCollapsedAnchors();
+    this.closeMapEdgeMenu();
+    this.scheduleSave();
+    successHaptic();
+    this.renderMapEditor();
   }
 
   handleMapAnchorConnection(key) {
@@ -1928,10 +2086,39 @@ class PisiApp {
       const control2 = targetHorizontal
         ? `${end.x + bend * ex},${end.y}`
         : `${end.x},${end.y + bend * ey}`;
-      const markerStart = edge.type === 'co-level' ? ' marker-start="url(#pisi-map-arrow)"' : '';
-      return `<path class="map-edge-${edge.type}" data-edge-id="${edge.id}" d="M${start.x},${start.y} C${control1} ${control2} ${end.x},${end.y}"${markerStart} marker-end="url(#pisi-map-arrow)" />`;
+      const d = `M${start.x},${start.y} C${control1} ${control2} ${end.x},${end.y}`;
+      const markerId = edge.type === 'co-level'
+        ? 'pisi-map-arrow-co-level'
+        : edge.type === 'stream'
+          ? 'pisi-map-arrow-stream'
+          : 'pisi-map-arrow-down-hub';
+      const markerStart = edge.type === 'co-level'
+        ? ` marker-start="url(#${markerId})"`
+        : '';
+      return `
+        <path class="map-edge-hit" data-map-edge-hit data-edge-id="${edge.id}" d="${d}" />
+        <path class="map-edge-visible map-edge-${edge.type}" data-edge-id="${edge.id}"
+          d="${d}"${markerStart} marker-end="url(#${markerId})" />
+      `;
     }).join('');
-    svg.innerHTML = `<defs><marker id="pisi-map-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0 0L10 5L0 10Z" class="map-arrow-head" /></marker></defs>${paths}`;
+    svg.innerHTML = `
+      <defs>
+        <marker id="pisi-map-arrow-down-hub" viewBox="0 0 10 10" refX="9" refY="5"
+          markerWidth="7" markerHeight="7" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+          <path d="M0 0L10 5L0 10Z" class="map-arrow-head map-arrow-head-down-hub" />
+        </marker>
+        <marker id="pisi-map-arrow-stream" viewBox="0 0 10 10" refX="9" refY="5"
+          markerWidth="7" markerHeight="7" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+          <path d="M0 0L10 5L0 10Z" class="map-arrow-head map-arrow-head-stream" />
+        </marker>
+        <marker id="pisi-map-arrow-co-level" viewBox="0 0 10 10" refX="9" refY="5"
+          markerWidth="7" markerHeight="7" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+          <path d="M0 0L10 5L0 10Z" class="map-arrow-head map-arrow-head-co-level" />
+        </marker>
+      </defs>
+      ${paths}
+    `;
+    this.bindMapEdgeInteractions();
   }
 
   fitMap() {
