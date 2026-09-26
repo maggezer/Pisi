@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   getMapEdgeSemanticKey,
   normalizeMapEdge,
+  normalizeMapEdgeCustomization,
+  normalizeRelationshipCollection,
   prepareMapConnection,
   projectRelationshipsToMapEdges
 } from './map-connections.js';
@@ -21,14 +23,16 @@ function edge(id, sourceId, targetId, extra = {}) {
 }
 
 describe('desktop-compatible map connection rules', () => {
-  it('normalizes legacy mobile geometry into canonical desktop fields', () => {
-    expect(normalizeMapEdge({
+  it('accepts legacy mobile geometry but emits canonical desktop fields', () => {
+    const normalized = normalizeMapEdge({
       id: 'edge_legacy',
       from: 'node_a',
       to: 'node_b',
       fromAnchor: 'left',
       toAnchor: 'right'
-    })).toMatchObject({
+    });
+    expect(normalized).toMatchObject({
+      id: 'edge_legacy',
       sourceId: 'node_a',
       targetId: 'node_b',
       sourcePort: 'left',
@@ -37,6 +41,10 @@ describe('desktop-compatible map connection rules', () => {
       sourceRole: 'down-hub',
       targetRole: 'up-hub'
     });
+    expect(normalized.from).toBeUndefined();
+    expect(normalized.to).toBeUndefined();
+    expect(normalized.fromAnchor).toBeUndefined();
+    expect(normalized.toAnchor).toBeUndefined();
   });
 
   it('requires confirmation for a second hierarchy parent and then stores it as stream', () => {
@@ -78,6 +86,36 @@ describe('desktop-compatible map connection rules', () => {
     expect(getMapEdgeSemanticKey(first)).toBe(getMapEdgeSemanticKey(reverse));
   });
 
+  it('rejects duplicate relationship IDs like desktop relationship store', () => {
+    const normalized = normalizeRelationshipCollection([
+      edge('edge_same', 'node_a', 'node_b'),
+      edge('edge_same', 'node_c', 'node_d', { type: 'stream' })
+    ]);
+    expect(normalized.relationships).toHaveLength(1);
+    expect(normalized.warnings.some((warning) => warning.includes('relationship id'))).toBe(true);
+  });
+
+  it('preserves createdAt when an existing relationship changes type', () => {
+    const createdAt = '2026-09-01T10:00:00.000Z';
+    const existing = [edge('edge_change', 'node_a', 'node_b', {
+      createdAt,
+      updatedAt: createdAt
+    })];
+    const result = prepareMapConnection(existing, edge('edge_change', 'node_a', 'node_b', {
+      type: 'stream'
+    }));
+    expect(result.ok).toBe(true);
+    expect(result.relationship.createdAt).toBe(createdAt);
+    expect(result.relationship.type).toBe('stream');
+    expect(result.relationship.updatedAt).not.toBe(createdAt);
+  });
+
+  it('uses desktop edge customization rules', () => {
+    expect(normalizeMapEdgeCustomization({ color: '#AABBCC', width: 99 }))
+      .toEqual({ color: '#aabbcc' });
+    expect(normalizeMapEdgeCustomization({ color: 'red' })).toEqual({});
+  });
+
   it('projects desktop relationshipViews back into mobile-renderable edges', () => {
     const projected = projectRelationshipsToMapEdges(
       [{
@@ -86,7 +124,9 @@ describe('desktop-compatible map connection rules', () => {
         targetId: 'node_b',
         type: 'stream',
         sourceRole: 'downstream',
-        targetRole: 'upstream'
+        targetRole: 'upstream',
+        createdAt: '2026-09-01T10:00:00.000Z',
+        updatedAt: '2026-09-02T10:00:00.000Z'
       }],
       [{
         relationshipId: 'edge_desktop',
@@ -97,15 +137,29 @@ describe('desktop-compatible map connection rules', () => {
     );
     expect(projected).toHaveLength(1);
     expect(projected[0]).toMatchObject({
+      id: 'edge_desktop',
+      relationshipId: 'edge_desktop',
       sourceId: 'node_a',
       targetId: 'node_b',
       sourcePort: 'top',
       targetPort: 'bottom',
       type: 'stream',
-      from: 'node_a',
-      to: 'node_b',
-      fromAnchor: 'top',
-      toAnchor: 'bottom'
+      createdAt: '2026-09-01T10:00:00.000Z',
+      updatedAt: '2026-09-02T10:00:00.000Z'
+    });
+  });
+
+  it('projects a desktop semantic relationship even when its view is missing', () => {
+    const projected = projectRelationshipsToMapEdges(
+      [edge('edge_no_view', 'node_a', 'node_b')],
+      [],
+      new Set(['node_a', 'node_b'])
+    );
+    expect(projected).toHaveLength(1);
+    expect(projected[0]).toMatchObject({
+      id: 'edge_no_view',
+      sourcePort: 'bottom',
+      targetPort: 'top'
     });
   });
 });
