@@ -60,18 +60,12 @@ const WEEKDAYS = {
 };
 
 function normalizeCollapsedHubs(canvas = {}) {
-  const source = Array.isArray(canvas.collapsedHubs) && canvas.collapsedHubs.length
-    ? canvas.collapsedHubs
-    : (canvas.collapsedAnchors || []);
   return Array.from(new Set(
-    (Array.isArray(source) ? source : [])
-      .map((value) => {
-        const raw = String(value || '');
-        if (/^node_[A-Za-z0-9_-]+::(?:top|right|bottom|left)$/.test(raw)) return raw;
-        const legacy = raw.match(/^(node_[A-Za-z0-9_-]+):(top|right|bottom|left)$/);
-        return legacy ? `${legacy[1]}::${legacy[2]}` : '';
-      })
-      .filter(Boolean)
+    (Array.isArray(canvas.collapsedHubs) ? canvas.collapsedHubs : [])
+      .map((value) => String(value || ''))
+      .filter((value) => (
+        /^node_[A-Za-z0-9_-]+::(?:top|right|bottom|left)$/.test(value)
+      ))
   )).slice(0, 10000);
 }
 
@@ -1481,7 +1475,7 @@ class PisiApp {
 
   toggleMapAnchor(key) {
     const match = String(key || '').match(
-      /^(node_[A-Za-z0-9_-]+)(?:::|:)(top|right|bottom|left)$/
+      /^(node_[A-Za-z0-9_-]+)::(top|right|bottom|left)$/
     );
     if (!match) return;
     const canonicalKey = `${match[1]}::${match[2]}`;
@@ -1555,7 +1549,7 @@ class PisiApp {
                   ${['top', 'right', 'bottom', 'left'].map((anchor) => {
                     const isConnectionStart = this.connectFrom?.nodeId === node.id && this.connectFrom?.anchor === anchor;
                     const isCollapsed = canvas.collapsedHubs.includes(`${node.id}::${anchor}`);
-                    return `<button type="button" class="node-anchor anchor-${anchor} ${isCollapsed ? 'collapsed' : ''} ${isConnectionStart ? 'connection-start' : ''}" data-map-anchor="${node.id}:${anchor}" aria-label="${anchor} bağlantı noktası" aria-pressed="${isConnectionStart}"></button>`;
+                    return `<button type="button" class="node-anchor anchor-${anchor} ${isCollapsed ? 'collapsed' : ''} ${isConnectionStart ? 'connection-start' : ''}" data-map-anchor="${node.id}::${anchor}" aria-label="${anchor} bağlantı noktası" aria-pressed="${isConnectionStart}"></button>`;
                   }).join('')}
                 </article>
               `).join('')}
@@ -2002,11 +1996,11 @@ class PisiApp {
   }
 
   handleMapAnchorConnection(key) {
-    const separator = String(key || '').lastIndexOf(':');
-    if (separator <= 0) return;
-    const nodeId = key.slice(0, separator);
-    const anchor = key.slice(separator + 1);
-    if (!['top', 'right', 'bottom', 'left'].includes(anchor)) return;
+    const match = String(key || '').match(
+      /^(node_[A-Za-z0-9_-]+)::(top|right|bottom|left)$/
+    );
+    if (!match) return;
+    const [, nodeId, anchor] = match;
     if (!this.activeDocument?.canvas?.nodes?.some((node) => node.id === nodeId)) return;
 
     if (!this.connectFrom) {
@@ -2026,7 +2020,7 @@ class PisiApp {
         ));
         this.connectFrom = null;
         if (hasOutgoingHub) {
-          this.toggleMapAnchor(`${nodeId}:${anchor}`);
+          this.toggleMapAnchor(`${nodeId}::${anchor}`);
           return;
         }
       } else {
