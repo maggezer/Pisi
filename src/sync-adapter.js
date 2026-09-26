@@ -2,7 +2,12 @@ import {
   getSetting, listDocuments, listTasks, replaceSyncedWorkspace
 } from './db.js';
 import { hashString, hashValue } from './sync-core.js';
-import { normalizeMapEdgeProjections } from './map-connections.js';
+import {
+  mapEdgeToRelationship,
+  mapEdgeToRelationshipView,
+  normalizeMapEdgeProjections,
+  projectRelationshipsToMapEdges
+} from './map-connections.js';
 
 const CONFIG_KEYS = ['propertySchema', 'savedViews', 'templates'];
 
@@ -175,24 +180,28 @@ function canonicalMapPayload(document, ids) {
   }));
   const validNodeIds = new Set(nodes.map(({ id }) => id).filter(Boolean));
   const rawEdges = (canvas.edges || []).map((edge) => ({
-      ...structuredClone(edge),
-      id: canonicalSyncId(
-        edge.id || `${edge.sourceId}:${edge.targetId}`,
-        'edge'
-      ),
-      sourceId: remapId(edge.sourceId, 'node', ids),
-      targetId: remapId(edge.targetId, 'node', ids),
-      sourcePort: edge.sourcePort,
-      targetPort: edge.targetPort
-    }));
+    ...structuredClone(edge),
+    id: canonicalSyncId(
+      edge.id || `${edge.sourceId}:${edge.targetId}`,
+      'edge'
+    ),
+    sourceId: remapId(edge.sourceId, 'node', ids),
+    targetId: remapId(edge.targetId, 'node', ids),
+    sourcePort: edge.sourcePort,
+    targetPort: edge.targetPort
+  }));
   const edges = normalizeMapEdgeProjections(rawEdges, validNodeIds);
+  const relationshipViews = edges
+    .map((edge) => mapEdgeToRelationshipView(edge))
+    .filter(Boolean);
 
   return {
     schema: 'pisi.map.v1',
     title: String(document.title || 'Başlıksız harita'),
     map: {
       nodes,
-      edges,
+      relationshipViews,
+      relationshipViewVersion: 1,
       camera: structuredClone(canvas.camera || { x: 0, y: 0, zoom: 1 }),
       collapsedHubs: canonicalCollapsedHubs(canvas, ids)
     },
@@ -204,6 +213,25 @@ function canonicalMapPayload(document, ids) {
     relativePath: document.syncRelativePath || null,
     native: document.syncNative?.map || null
   };
+}
+
+function canonicalMapNodeRelations(canvas, nodeId) {
+  const direct = Array.isArray(
+    canvas?.nodes?.find((node) => node.id === nodeId)?.relations
+  )
+    ? canvas.nodes.find((node) => node.id === nodeId).relations
+    : [];
+  const mapRelations = (canvas?.edges || [])
+    .filter((edge) => edge.sourceId === nodeId)
+    .map((edge) => mapEdgeToRelationship(edge))
+    .filter(Boolean)
+    .map(({ sourceId: _sourceId, ...relation }) => relation);
+  const byId = new Map();
+  for (const relation of [...direct, ...mapRelations]) {
+    if (!relation?.id) continue;
+    byId.set(relation.id, structuredClone(relation));
+  }
+  return [...byId.values()];
 }
 
 export async function exportMobileSyncEntities() {
@@ -236,6 +264,7 @@ export async function exportMobileSyncEntities() {
           id: ids.get(node.id),
           payload: canonicalNodePayload({
             ...node,
+            relations: canonicalMapNodeRelations(document.canvas, node.id),
             kind: node.kind || 'note',
             createdAt: node.createdAt || document.createdAt,
             updatedAt: node.updatedAt || document.updatedAt
@@ -352,6 +381,12 @@ export async function applyMobileSyncRecords(records, conflicts = [], options = 
   const live = preserved.records;
   const nodeById = new Map(live.filter(({ kind }) => kind === 'node')
     .map((record) => [record.id, record.payload]));
+  const semanticRelationships = live
+    .filter(({ kind }) => kind === 'node')
+    .flatMap((record) => mobileRelations(record.payload?.relations).map((relation) => ({
+      ...relation,
+      sourceId: record.id
+    })));
   const liveMapIds = new Set(live.filter(({ kind }) => kind === 'map').map(({ id }) => id));
   const documents = [];
   const tasks = [];
@@ -425,10 +460,9 @@ export async function applyMobileSyncRecords(records, conflicts = [], options = 
               syncNative: { node: node.native || null }
             };
           }),
-          edges: normalizeMapEdgeProjections(
-            (map.edges || []).filter(
-              (edge) => layoutIds.has(edge.sourceId) && layoutIds.has(edge.targetId)
-            ),
+          edges: projectRelationshipsToMapEdges(
+            semanticRelationships,
+            map.relationshipViews || [],
             layoutIds
           ),
           camera: map.camera || { x: 0, y: 0, zoom: 1 },
