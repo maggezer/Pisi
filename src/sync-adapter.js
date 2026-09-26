@@ -2,7 +2,10 @@ import {
   getSetting, listDocuments, listTasks, replaceSyncedWorkspace
 } from './db.js';
 import { hashString, hashValue } from './sync-core.js';
-import { normalizeMapEdges } from './map-connections.js';
+import {
+  normalizeMapEdgeProjections,
+  normalizeMapEdges
+} from './map-connections.js';
 
 const CONFIG_KEYS = ['propertySchema', 'savedViews', 'templates'];
 
@@ -164,8 +167,7 @@ function canonicalMapPayload(document, ids) {
     ...(node.customization ? { customization: structuredClone(node.customization) } : {})
   }));
   const validNodeIds = new Set(nodes.map(({ id }) => id).filter(Boolean));
-  const edges = normalizeMapEdges(
-    (canvas.edges || []).map((edge) => ({
+  const rawEdges = (canvas.edges || []).map((edge) => ({
       ...structuredClone(edge),
       id: canonicalSyncId(
         edge.id || `${edge.sourceId || edge.from}:${edge.targetId || edge.to}`,
@@ -175,9 +177,8 @@ function canonicalMapPayload(document, ids) {
       targetId: remapId(edge.targetId || edge.to, 'node', ids),
       sourcePort: edge.sourcePort || edge.fromAnchor,
       targetPort: edge.targetPort || edge.toAnchor
-    })),
-    validNodeIds
-  ).edges;
+    }));
+  const edges = normalizeMapEdgeProjections(rawEdges, validNodeIds);
 
   return {
     schema: 'pisi.map.v1',
@@ -420,12 +421,12 @@ export async function applyMobileSyncRecords(records, conflicts = [], options = 
               syncNative: { node: node.native || null }
             };
           }),
-          edges: normalizeMapEdges(
+          edges: normalizeMapEdgeProjections(
             (map.edges || []).filter(
               (edge) => layoutIds.has(edge.sourceId) && layoutIds.has(edge.targetId)
             ),
             layoutIds
-          ).edges,
+          ),
           camera: map.camera || { x: 0, y: 0, zoom: 1 },
           collapsedHubs: canonicalCollapsedHubs(map)
         },
