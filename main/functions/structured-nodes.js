@@ -8,14 +8,8 @@ const { registerMainModule } = require('../module-registry');
 const PISI_PROPERTY_TYPES = new Set([
     'text', 'number', 'multiselect', 'relation', 'rollup'
 ]);
-const PISI_LEGACY_PROPERTY_TYPE_ALIASES = Object.freeze({
-    date: 'text',
-    select: 'multiselect',
-    node: 'relation',
-    checkbox: 'multiselect'
-});
 const PISI_ROLLUP_AGGREGATES = new Set([
-    'count', 'sum', 'average', 'min', 'max', 'unique', 'join', 'checked-percent'
+    'count', 'sum', 'average', 'min', 'max', 'unique', 'join'
 ]);
 
 function normalizePisiPropertyId(value = '') {
@@ -42,7 +36,7 @@ function normalizePisiPropertyValue(type, value) {
         return Number.isFinite(number) ? number : null;
     }
     if (type === 'multiselect' || type === 'relation') {
-        const values = Array.isArray(value) ? value : String(value || '').split(',');
+        const values = Array.isArray(value) ? value : [];
         return Array.from(new Set(values.map((item) => String(item).trim()).filter(Boolean)))
             .slice(0, type === 'relation' ? 500 : 100)
             .map((item) => item.slice(0, type === 'relation' ? 2048 : 240));
@@ -67,19 +61,16 @@ function normalizePisiPropertyValue(type, value) {
 
 function normalizePisiProperties(properties = {}) {
     const result = {};
-    const entries = Array.isArray(properties)
-        ? properties.map((item) => [item?.id || item?.name, item])
-        : Object.entries(properties || {});
+    const entries = properties && typeof properties === 'object' && !Array.isArray(properties)
+        ? Object.entries(properties)
+        : [];
     for (const [rawId, raw] of entries.slice(0, 250)) {
         if (!raw || typeof raw !== 'object') continue;
         const name = String(raw.name || rawId || '').trim().slice(0, 120);
         if (!name) continue;
         const id = normalizePisiPropertyId(raw.id || rawId || name);
-        const sourceType = String(raw.type || '').toLowerCase();
-        const resolvedType = PISI_LEGACY_PROPERTY_TYPE_ALIASES[sourceType] || sourceType;
-        const type = PISI_PROPERTY_TYPES.has(resolvedType)
-            ? resolvedType
-            : 'text';
+        const type = String(raw.type || '').toLowerCase();
+        if (!PISI_PROPERTY_TYPES.has(type)) continue;
         result[id] = {
             id,
             name,
@@ -432,11 +423,9 @@ function detachPisiMapReference(mapPath, nodeId) {
         }
         mapInfo.data.map.nodes = (mapInfo.data.map.nodes || [])
             .filter((item) => item.id !== id);
-        mapInfo.data.map.edges = (mapInfo.data.map.edges || [])
-            .filter((edge) => edge.sourceId !== id && edge.targetId !== id);
         mapInfo.data.pisi.updatedAt = new Date().toISOString();
         writePisiDocument(mapPath, mapInfo.data);
-        return { ok: true, detached: true, nodeId: id, edges: mapInfo.data.map.edges };
+        return { ok: true, detached: true, nodeId: id };
     } catch (error) {
         return { ok: false, error: error.message };
     }
