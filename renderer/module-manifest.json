@@ -375,12 +375,6 @@
       "samePisiWorkspacePath",
       "openMapInWorkspace",
       "clearMapWorkspace",
-      "getMapWorldPointFromClient",
-      "isMapBlankEventTarget",
-      "createMapNodeBoxAtClientPoint",
-      "hidePisiMapContextMenu",
-      "showPisiMapContextMenu",
-      "bindMapCreationEvents",
       "createMapNodeBox",
       "bindMapNodeBoxEvents",
       "bindMapNodeDrag",
@@ -392,6 +386,18 @@
       "setPisiEditorContent",
       "getPisiEditorContent",
       "markdownTextToPisiEditorHtml"
+    ]
+  },
+  {
+    "module": "map.creation",
+    "path": "renderer/map/pisi-map-creation.mjs",
+    "bindings": [
+      "getMapWorldPointFromClient",
+      "isMapBlankEventTarget",
+      "createMapNodeBoxAtClientPoint",
+      "hidePisiMapContextMenu",
+      "showPisiMapContextMenu",
+      "bindMapCreationEvents"
     ]
   },
   {
