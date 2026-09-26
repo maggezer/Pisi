@@ -36,6 +36,11 @@ import {
   disconnectMobileSync, getMobileSyncStatus, initializeMobileSync,
   openDriveSyncApp, runMobileSync, selectMobileSyncFolder
 } from './sync-service.js';
+import {
+  isHierarchyMapEdge,
+  normalizeMapEdges,
+  prepareMapConnection
+} from './map-connections.js';
 
 const root = document.querySelector('#app');
 
@@ -55,6 +60,12 @@ const WEEKDAYS = {
 function normalizeDocument(document) {
   const sheet = document.sheet || {};
   const canvas = document.canvas || {};
+  const nodes = Array.isArray(canvas.nodes) ? canvas.nodes : [];
+  const validNodeIds = new Set(nodes.map(({ id }) => id).filter(Boolean));
+  const edges = normalizeMapEdges(
+    Array.isArray(canvas.edges) ? canvas.edges : [],
+    validNodeIds
+  ).edges;
   return {
     ...createDocument(document.kind || 'note'),
     ...document,
@@ -70,8 +81,8 @@ function normalizeDocument(document) {
       cells: sheet.cells && typeof sheet.cells === 'object' ? sheet.cells : {}
     },
     canvas: {
-      nodes: Array.isArray(canvas.nodes) ? canvas.nodes : [],
-      edges: Array.isArray(canvas.edges) ? canvas.edges : [],
+      nodes,
+      edges,
       collapsedAnchors: Array.isArray(canvas.collapsedAnchors) ? canvas.collapsedAnchors : [],
       camera: {
         x: Number(canvas.camera?.x) || 0,
@@ -1348,27 +1359,30 @@ class PisiApp {
     const canvas = this.activeDocument?.canvas || { nodes: [], edges: [], collapsedAnchors: [] };
     const hidden = new Set();
     const outgoing = new Map();
-    canvas.edges.forEach((edge) => {
-      if (!outgoing.has(edge.from)) outgoing.set(edge.from, []);
-      outgoing.get(edge.from).push(edge);
+    canvas.edges.filter(isHierarchyMapEdge).forEach((edge) => {
+      if (!outgoing.has(edge.sourceId)) outgoing.set(edge.sourceId, []);
+      outgoing.get(edge.sourceId).push(edge);
     });
     const hideBranch = (nodeId, visited = new Set()) => {
       if (visited.has(nodeId)) return;
       visited.add(nodeId);
       hidden.add(nodeId);
-      (outgoing.get(nodeId) || []).forEach((edge) => hideBranch(edge.to, visited));
+      (outgoing.get(nodeId) || []).forEach((edge) => hideBranch(edge.targetId, visited));
     };
     (canvas.collapsedAnchors || []).forEach((key) => {
       const separator = key.lastIndexOf(':');
+      if (separator <= 0) return;
       const nodeId = key.slice(0, separator);
       const anchor = key.slice(separator + 1);
       (outgoing.get(nodeId) || [])
-        .filter((edge) => (edge.fromAnchor || 'right') === anchor)
-        .forEach((edge) => hideBranch(edge.to, new Set([nodeId])));
+        .filter((edge) => edge.sourcePort === anchor)
+        .forEach((edge) => hideBranch(edge.targetId, new Set([nodeId])));
     });
     return {
       nodes: canvas.nodes.filter(({ id }) => !hidden.has(id)),
-      edges: canvas.edges.filter(({ from, to }) => !hidden.has(from) && !hidden.has(to)),
+      edges: canvas.edges.filter(({ sourceId, targetId }) => (
+        !hidden.has(sourceId) && !hidden.has(targetId)
+      )),
       hidden
     };
   }
@@ -1408,7 +1422,8 @@ class PisiApp {
                   <p>${escapeHtml(htmlToText(node.content || '').slice(0, 90) || 'Ayrıntı ekle')}</p>
                   ${['top', 'right', 'bottom', 'left'].map((anchor) => {
                     const isConnectionStart = this.connectFrom?.nodeId === node.id && this.connectFrom?.anchor === anchor;
-                    return `<button type="button" class="node-anchor anchor-${anchor} ${isConnectionStart ? 'connection-start' : ''}" data-map-anchor="${node.id}:${anchor}" aria-label="${anchor} bağlantı noktası" aria-pressed="${isConnectionStart}"></button>`;
+                    const isCollapsed = canvas.collapsedAnchors.includes(`${node.id}:${anchor}`);
+                    return `<button type="button" class="node-anchor anchor-${anchor} ${isCollapsed ? 'collapsed' : ''} ${isConnectionStart ? 'connection-start' : ''}" data-map-anchor="${node.id}:${anchor}" aria-label="${anchor} bağlantı noktası" aria-pressed="${isConnectionStart}"></button>`;
                   }).join('')}
                 </article>
               `).join('')}
@@ -1704,7 +1719,16 @@ class PisiApp {
 
     if (this.connectFrom.nodeId === nodeId) {
       if (this.connectFrom.anchor === anchor) {
+        const hasOutgoingHub = this.activeDocument.canvas.edges.some((edge) => (
+          isHierarchyMapEdge(edge)
+          && edge.sourceId === nodeId
+          && edge.sourcePort === anchor
+        ));
         this.connectFrom = null;
+        if (hasOutgoingHub) {
+          this.toggleMapAnchor(`${nodeId}:${anchor}`);
+          return;
+        }
       } else {
         this.connectFrom = { nodeId, anchor };
       }
@@ -1715,20 +1739,50 @@ class PisiApp {
     }
 
     const source = this.connectFrom;
-    const duplicate = this.activeDocument.canvas.edges.some((edge) =>
-      (edge.from === source.nodeId && edge.to === nodeId)
-      || (edge.to === source.nodeId && edge.from === nodeId)
-    );
-    if (!duplicate) {
-      this.activeDocument.canvas.edges.push({
-        id: makeId('edge'),
-        from: source.nodeId,
-        to: nodeId,
-        fromAnchor: source.anchor,
-        toAnchor: anchor
-      });
+    const rawEdge = {
+      id: makeId('edge'),
+      sourceId: source.nodeId,
+      targetId: nodeId,
+      sourcePort: source.anchor,
+      targetPort: anchor,
+      type: 'down-hub',
+      sourceRole: 'down-hub',
+      targetRole: 'up-hub'
+    };
+
+    let prepared = prepareMapConnection(this.activeDocument.canvas.edges, rawEdge);
+    if (prepared.code === 'SECOND_PARENT_CONFIRM_REQUIRED') {
+      const confirmed = confirm(
+        'Bu node zaten bir parent’a sahip. Bağlantı hiyerarşi yerine stream ilişkisi olarak kaydedilsin mi?'
+      );
+      if (confirmed) {
+        prepared = prepareMapConnection(this.activeDocument.canvas.edges, rawEdge, {
+          confirmSecondParentAsStream: true
+        });
+      } else {
+        this.connectFrom = null;
+        this.selectedMapNode = nodeId;
+        this.renderMapEditor();
+        return;
+      }
+    }
+
+    if (!prepared.ok) {
+      this.connectFrom = null;
+      this.selectedMapNode = nodeId;
+      this.toast(prepared.error || 'Bağlantı oluşturulamadı.', 'error');
+      lightHaptic();
+      this.renderMapEditor();
+      return;
+    }
+
+    if (!prepared.unchanged) {
+      this.activeDocument.canvas.edges.push(prepared.edge);
       this.scheduleSave();
       successHaptic();
+      if (prepared.edge.type === 'stream') {
+        this.toast('İkinci parent bağlantısı stream olarak eklendi.');
+      }
     } else {
       lightHaptic();
     }
@@ -1779,7 +1833,9 @@ class PisiApp {
   unlinkSelectedNode() {
     if (!this.selectedMapNode) return;
     this.activeDocument.canvas.edges = this.activeDocument.canvas.edges.filter(
-      ({ from, to }) => from !== this.selectedMapNode && to !== this.selectedMapNode
+      ({ sourceId, targetId }) => (
+        sourceId !== this.selectedMapNode && targetId !== this.selectedMapNode
+      )
     );
     this.scheduleSave();
     this.renderMapEditor();
@@ -1791,7 +1847,7 @@ class PisiApp {
     const id = this.selectedMapNode;
     this.activeDocument.canvas.nodes = this.activeDocument.canvas.nodes.filter((node) => node.id !== id);
     this.activeDocument.canvas.edges = this.activeDocument.canvas.edges.filter(
-      ({ from, to }) => from !== id && to !== id
+      ({ sourceId, targetId }) => sourceId !== id && targetId !== id
     );
     this.selectedMapNode = null;
     this.scheduleSave();
@@ -1849,21 +1905,31 @@ class PisiApp {
       return { x: left + element.offsetWidth, y: top + element.offsetHeight / 2 };
     };
     const paths = this.visibleMapGraph().edges.map((edge) => {
-      const from = document.querySelector(`[data-node-id="${CSS.escape(edge.from)}"]`);
-      const to = document.querySelector(`[data-node-id="${CSS.escape(edge.to)}"]`);
+      const from = document.querySelector(`[data-node-id="${CSS.escape(edge.sourceId)}"]`);
+      const to = document.querySelector(`[data-node-id="${CSS.escape(edge.targetId)}"]`);
       if (!from || !to) return '';
-      const start = point(from, edge.fromAnchor || 'right');
-      const end = point(to, edge.toAnchor || 'left');
-      const horizontal = ['left', 'right'].includes(edge.fromAnchor || 'right');
-      const bend = Math.max(70, horizontal ? Math.abs(end.x - start.x) * 0.45 : Math.abs(end.y - start.y) * 0.45);
-      const sx = (edge.fromAnchor || 'right') === 'left' ? -1 : 1;
-      const sy = (edge.fromAnchor || 'right') === 'top' ? -1 : 1;
-      const ex = (edge.toAnchor || 'left') === 'left' ? -1 : 1;
-      const ey = (edge.toAnchor || 'left') === 'top' ? -1 : 1;
-      const control1 = horizontal ? `${start.x + bend * sx},${start.y}` : `${start.x},${start.y + bend * sy}`;
-      const targetHorizontal = ['left', 'right'].includes(edge.toAnchor || 'left');
-      const control2 = targetHorizontal ? `${end.x + bend * ex},${end.y}` : `${end.x},${end.y + bend * ey}`;
-      return `<path d="M${start.x},${start.y} C${control1} ${control2} ${end.x},${end.y}" marker-end="url(#pisi-map-arrow)" />`;
+      const sourcePort = edge.sourcePort || 'bottom';
+      const targetPort = edge.targetPort || 'top';
+      const start = point(from, sourcePort);
+      const end = point(to, targetPort);
+      const horizontal = ['left', 'right'].includes(sourcePort);
+      const bend = Math.max(
+        70,
+        horizontal ? Math.abs(end.x - start.x) * 0.45 : Math.abs(end.y - start.y) * 0.45
+      );
+      const sx = sourcePort === 'left' ? -1 : 1;
+      const sy = sourcePort === 'top' ? -1 : 1;
+      const ex = targetPort === 'left' ? -1 : 1;
+      const ey = targetPort === 'top' ? -1 : 1;
+      const control1 = horizontal
+        ? `${start.x + bend * sx},${start.y}`
+        : `${start.x},${start.y + bend * sy}`;
+      const targetHorizontal = ['left', 'right'].includes(targetPort);
+      const control2 = targetHorizontal
+        ? `${end.x + bend * ex},${end.y}`
+        : `${end.x},${end.y + bend * ey}`;
+      const markerStart = edge.type === 'co-level' ? ' marker-start="url(#pisi-map-arrow)"' : '';
+      return `<path class="map-edge-${edge.type}" data-edge-id="${edge.id}" d="M${start.x},${start.y} C${control1} ${control2} ${end.x},${end.y}"${markerStart} marker-end="url(#pisi-map-arrow)" />`;
     }).join('');
     svg.innerHTML = `<defs><marker id="pisi-map-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M0 0L10 5L0 10Z" class="map-arrow-head" /></marker></defs>${paths}`;
   }
