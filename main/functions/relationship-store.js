@@ -283,7 +283,7 @@ function prepareSemanticRelationshipUpsert(currentRelationships, raw, options = 
         });
 
         if (existingParent) {
-            if (options.confirmSecondParentAsStream !== true && options.migration !== true) {
+            if (options.confirmSecondParentAsStream !== true) {
                 return {
                     ok: false,
                     code: 'SECOND_PARENT_CONFIRM_REQUIRED',
@@ -308,15 +308,11 @@ function prepareSemanticRelationshipUpsert(currentRelationships, raw, options = 
                     incoming.targetId
                 )
             ) {
-                if (options.migration === true) {
-                    incoming = convertSemanticRelationshipToStream(incoming);
-                } else {
-                    return {
-                        ok: false,
-                        code: 'HIERARCHY_CYCLE',
-                        error: 'Bu semantic ilişki hiyerarşide döngü oluşturur.'
-                    };
-                }
+                return {
+                    ok: false,
+                    code: 'HIERARCHY_CYCLE',
+                    error: 'Bu semantic ilişki hiyerarşide döngü oluşturur.'
+                };
             }
         }
     }
