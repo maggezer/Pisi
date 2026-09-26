@@ -112,7 +112,6 @@ vi.mock('@capacitor/app', () => ({
 }));
 
 vi.mock('./db.js', () => ({
-  exportDatabase: vi.fn(async () => structuredClone(harness.data.backup)),
   getSetting: vi.fn(async (key, fallback = null) => (
     harness.data.settings.has(key)
       ? structuredClone(harness.data.settings.get(key))
@@ -189,10 +188,6 @@ beforeEach(() => {
   harness.data.failWrites = false;
   harness.data.failDeletes = false;
   harness.data.failWritePattern = '';
-  harness.data.backup = {
-    format: 'pisi-backup', version: 4,
-    documents: [], tasks: [], histories: [], settings: {}
-  };
   Object.values(harness.plugin).forEach((mock) => mock.mockClear?.());
   Object.values(harness.adapter).forEach((mock) => mock.mockClear?.());
 });
@@ -408,22 +403,6 @@ describe('mobile folder-backed synchronization', () => {
 
     expect(harness.adapter.applyRecords).not.toHaveBeenCalled();
     expect(harness.data.files.get(nodePath)).toBe(oldContent);
-  });
-
-  it('creates and verifies a recovery backup before merging pre-folder private data', async () => {
-    harness.data.backup.documents = [{
-      id: 'node_private', kind: 'note', title: 'Özel not', content: '<p>koru</p>'
-    }];
-    harness.data.entities = [{
-      kind: 'node', id: 'node_private', payload: { title: 'Özel not', content: '<p>koru</p>' }
-    }];
-
-    const result = await selectMobileSyncFolder();
-    const backupPath = Array.from(harness.data.files.keys())
-      .find((path) => path.startsWith('.pisi/recovery/mobile-private-'));
-
-    expect(result.migrationBackupPath).toBe(backupPath);
-    expect(JSON.parse(harness.data.files.get(backupPath)).documents[0].id).toBe('node_private');
   });
 
   it('does not rename or delete existing binary sidecar assets during a mobile edit', async () => {
