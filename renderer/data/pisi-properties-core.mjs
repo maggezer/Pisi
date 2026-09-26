@@ -5,13 +5,6 @@ const PISI_NODE_PROPERTY_TYPES = Object.freeze([
     Object.freeze({ value: 'relation', label: 'Relation' })
 ]);
 
-const PISI_LEGACY_PROPERTY_TYPE_ALIASES = Object.freeze({
-    date: 'text',
-    select: 'multiselect',
-    node: 'relation',
-    checkbox: 'multiselect'
-});
-
 const PISI_ROLLUP_AGGREGATES = Object.freeze([
     Object.freeze({ value: 'count', label: 'Kayıt sayısı' }),
     Object.freeze({ value: 'sum', label: 'Toplam' }),
@@ -23,8 +16,7 @@ const PISI_ROLLUP_AGGREGATES = Object.freeze([
 ]);
 
 function normalizePisiNodePropertyType(type = 'text') {
-    const source = String(type || 'text').toLowerCase();
-    return PISI_LEGACY_PROPERTY_TYPE_ALIASES[source] || source;
+    return String(type || 'text').trim().toLowerCase();
 }
 
 function normalizePisiPropertySearch(value = '') {
