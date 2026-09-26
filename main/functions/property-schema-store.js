@@ -83,7 +83,6 @@ function readPisiPropertySchema(projectFolder) {
             version: contract.PISI_PROPERTY_SCHEMA_VERSION,
             definitions: Array.isArray(read.data.definitions) ? read.data.definitions : [],
             conflicts: Array.isArray(read.data.conflicts) ? read.data.conflicts : [],
-            migratedAt: read.data.migratedAt || null,
             updatedAt: read.data.updatedAt || null
         }
     };
@@ -102,7 +101,6 @@ function writePisiPropertySchema(projectFolder, schema) {
             .filter(Boolean)
             .slice(0, PISI_PROPERTY_MAX_DEFINITIONS),
         conflicts: Array.isArray(schema.conflicts) ? schema.conflicts.slice(0, 500) : [],
-        migratedAt: schema.migratedAt || null,
         updatedAt: new Date().toISOString()
     };
     const written = storage.writeJson(PISI_PROPERTY_SCHEMA_KEY, clean, {
@@ -117,10 +115,10 @@ function writePisiPropertySchema(projectFolder, schema) {
 }
 
 function getRawPropertyEntries(properties) {
-    if (!properties || typeof properties !== 'object') return [];
-    return Array.isArray(properties)
-        ? properties.map((property, index) => [property?.id || property?.name || String(index), property])
-        : Object.entries(properties);
+    if (!properties || typeof properties !== 'object' || Array.isArray(properties)) {
+        return [];
+    }
+    return Object.entries(properties);
 }
 
 function makePropertyCarrier(kind, filePath, ownerId, properties, write) {
@@ -191,143 +189,26 @@ function collectPisiPropertyCarriers(projectFolder) {
     return carriers;
 }
 
-function makeSchemaConflict(code, carrier, property, detail = {}) {
-    return {
-        code,
-        carrier: carrier.kind,
-        ownerId: String(carrier.ownerId || ''),
-        path: carrier.kind === 'node' ? carrier.filePath : PISI_PROPERTY_TEMPLATE_FILE,
-        propertyId: String(property?.id || ''),
-        propertyName: String(property?.name || ''),
-        ...detail
-    };
-}
-
-function buildPisiPropertyMigration(projectFolder) {
-    const carriers = collectPisiPropertyCarriers(projectFolder);
-    const definitions = [];
-    const byId = new Map();
-    const byName = new Map();
-    const conflicts = [];
-    const rewrites = [];
-    const occupied = new Set();
-
-    for (const carrier of carriers) {
-        const normalizedEntries = [];
-        const targetIds = new Set();
-        let carrierConflict = false;
-
-        for (const [rawKey, rawProperty] of getRawPropertyEntries(carrier.properties)) {
-            if (!rawProperty || typeof rawProperty !== 'object') continue;
-            const name = contract.normalizePropertyName(rawProperty.name || rawKey);
-            const type = contract.normalizePropertyType(rawProperty.type || 'text');
-            if (!name || !contract.isSupportedPropertyType(type)) {
-                conflicts.push(makeSchemaConflict('property-definition-invalid', carrier, rawProperty, {
-                    rawType: String(rawProperty.type || '')
-                }));
-                carrierConflict = true;
-                continue;
-            }
-
-            const rawId = contract.normalizeStablePropertyId(rawProperty.id || rawKey);
-            let id = rawId;
-            const nameKey = contract.normalizePropertyNameKey(name);
-            const sameName = byName.get(nameKey);
-            if (sameName && sameName.type === type) {
-                id = sameName.id;
-            }
-            if (!id) id = contract.makeNewPropertyId(name, type, occupied);
-
-            const sameId = byId.get(id);
-            if (sameId && (sameId.type !== type || contract.normalizePropertyNameKey(sameId.name) !== nameKey)) {
-                conflicts.push(makeSchemaConflict('property-id-conflict', carrier, rawProperty, {
-                    canonicalName: sameId.name,
-                    canonicalType: sameId.type
-                }));
-                carrierConflict = true;
-                continue;
-            }
-            if (sameName && sameName.type !== type && sameName.id !== id) {
-                conflicts.push(makeSchemaConflict('property-name-type-conflict', carrier, rawProperty, {
-                    canonicalId: sameName.id,
-                    canonicalType: sameName.type,
-                    rawType: type
-                }));
-            }
-
-            let definition = byId.get(id);
-            if (!definition) {
-                definition = { id, name, type, ...(rawProperty.system === true ? { system: true } : {}) };
-                definitions.push(definition);
-                byId.set(id, definition);
-                occupied.add(id);
-                if (!byName.has(nameKey)) byName.set(nameKey, definition);
-            }
-
-            if (targetIds.has(id)) {
-                conflicts.push(makeSchemaConflict('property-node-duplicate-after-migration', carrier, rawProperty, {
-                    canonicalId: id
-                }));
-                carrierConflict = true;
-                continue;
-            }
-            targetIds.add(id);
-            const validation = contract.validatePropertyValue(type, rawProperty.value, {
-                allowLegacyScalar: true
-            });
-            normalizedEntries.push([id, {
-                id,
-                name: definition.name,
-                type: definition.type,
-                value: validation.ok ? validation.normalized : rawProperty.value,
-                ...(rawProperty.system === true ? { system: true } : {})
-            }]);
-            if (!validation.ok) {
-                conflicts.push(makeSchemaConflict(validation.code, carrier, rawProperty, {
-                    canonicalId: id,
-                    canonicalType: type
-                }));
-            }
-        }
-
-        if (!carrierConflict) {
-            const normalized = Object.fromEntries(normalizedEntries);
-            if (JSON.stringify(normalized) !== JSON.stringify(carrier.properties)) {
-                rewrites.push({ carrier, properties: normalized });
-            }
-        }
-    }
-
-    return { carriers, definitions, conflicts, rewrites };
-}
-
 function ensurePisiPropertySchema(projectFolder) {
     const current = readPisiPropertySchema(projectFolder);
     if (!current.ok) return current;
     if (current.exists) return current;
 
-    return runPisiAtomicMutation(projectFolder, 'property.schema.migrate.v1', () => {
+    return runPisiAtomicMutation(projectFolder, 'property.schema.create.v1', () => {
         const recheck = readPisiPropertySchema(projectFolder);
         if (!recheck.ok) return recheck;
         if (recheck.exists) return recheck;
-        const migration = buildPisiPropertyMigration(projectFolder);
-        const now = new Date().toISOString();
         const schema = writePisiPropertySchema(projectFolder, {
-            definitions: migration.definitions,
-            conflicts: migration.conflicts,
-            migratedAt: now,
-            updatedAt: now
+            definitions: [],
+            conflicts: []
         });
-        for (const rewrite of migration.rewrites) {
-            rewrite.carrier.write(rewrite.properties, 'property-schema-migration');
-        }
         return {
             ok: true,
             exists: true,
-            migrated: true,
+            created: true,
             filePath: getPisiPropertySchemaPath(projectFolder),
             schema,
-            conflicts: migration.conflicts
+            conflicts: []
         };
     });
 }
@@ -363,9 +244,7 @@ function rewritePropertyDefinitionUses(projectFolder, definition, previousType =
     const uses = collectPropertyUses(projectFolder, definition.id);
     const grouped = new Map();
     for (const use of uses) {
-        const validation = contract.validatePropertyValue(definition.type, use.property.value, {
-            allowLegacyScalar: previousType === definition.type
-        });
+        const validation = contract.validatePropertyValue(definition.type, use.property.value);
         if (!validation.ok && !contract.isEmptyPropertyValue(use.property.value)) {
             return {
                 ok: false,
@@ -579,7 +458,7 @@ function stabilizeTemplateProperties(schema, properties) {
                 error: `Template property türü proje şemasıyla uyuşmuyor: ${name}`
             };
         }
-        const validation = contract.validatePropertyValue(type, raw.value, { allowLegacyScalar: true });
+        const validation = contract.validatePropertyValue(type, raw.value);
         if (!validation.ok) return { ok: false, code: validation.code, error: `Template property değeri geçersiz: ${name}` };
         normalized[definition.id] = {
             id: definition.id,
@@ -658,7 +537,6 @@ const moduleApi = {
     readPisiPropertySchema,
     ensurePisiPropertySchema,
     getPisiPropertySchemaDefinitions,
-    buildPisiPropertyMigration,
     collectPisiPropertyCarriers,
     savePisiNodePropertiesStable,
     savePisiDatabaseTemplateStable,
