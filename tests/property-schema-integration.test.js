@@ -15,7 +15,7 @@ function readJson(filePath) {
     return JSON.parse(fs.readFileSync(filePath, 'utf8'));
 }
 
-function makeNode(id, title, properties) {
+function makeNode(id, title, value) {
     return {
         pisi: {
             version: 1,
@@ -26,7 +26,14 @@ function makeNode(id, title, properties) {
             updatedAt: '2026-01-01T00:00:00.000Z'
         },
         content: '',
-        properties
+        properties: {
+            status_a: {
+                id: 'status_a',
+                name: 'Durum',
+                type: 'multiselect',
+                value
+            }
+        }
     };
 }
 
@@ -49,53 +56,45 @@ globalThis.ensurePisiFileMetadata = (filePath) => {
 const schemaStore = require('../main/functions/property-schema-store');
 const mutations = require('../main/functions/property-schema-mutations');
 
-function resetProject() {
+function resetProject({ withSchema = true } = {}) {
     fs.rmSync(projectFolder, { recursive: true, force: true });
     fs.mkdirSync(projectFolder, { recursive: true });
-    writeJson(path.join(projectFolder, 'A.node'), makeNode('node_A', 'A', {
-        status_a: {
-            id: 'status_a',
-            name: 'Durum',
-            type: 'select',
-            value: 'Aktif'
-        }
-    }));
-    writeJson(path.join(projectFolder, 'B.node'), makeNode('node_B', 'B', {
-        status_b: {
-            id: 'status_b',
-            name: 'Durum',
-            type: 'multiselect',
-            value: ['Bitti']
-        }
-    }));
+    writeJson(path.join(projectFolder, 'A.node'), makeNode('node_A', 'A', ['Aktif']));
+    writeJson(path.join(projectFolder, 'B.node'), makeNode('node_B', 'B', ['Bitti']));
+
+    if (withSchema) {
+        writeJson(schemaStore.getPisiPropertySchemaPath(projectFolder), {
+            version: 1,
+            definitions: [{
+                id: 'status_a',
+                name: 'Durum',
+                type: 'multiselect'
+            }],
+            conflicts: [],
+            updatedAt: '2026-01-01T00:00:00.000Z'
+        });
+    }
 }
 
 test.after(() => {
     fs.rmSync(tempRoot, { recursive: true, force: true });
 });
 
-test('initial migration creates one project definition and rewrites compatible duplicate names to one stable ID', () => {
-    resetProject();
-    const result = schemaStore.ensurePisiPropertySchema(projectFolder);
-    assert.equal(result.ok, true);
-    assert.equal(result.schema.version, 1);
-    assert.equal(result.schema.definitions.length, 1);
-    const definition = result.schema.definitions[0];
-    assert.equal(definition.id, 'status_a');
-    assert.equal(definition.name, 'Durum');
-    assert.equal(definition.type, 'multiselect');
+test('missing property schema creates an empty canonical schema without migrating node data', () => {
+    resetProject({ withSchema: false });
+    const beforeA = readJson(path.join(projectFolder, 'A.node'));
 
-    const first = readJson(path.join(projectFolder, 'A.node')).properties;
-    const second = readJson(path.join(projectFolder, 'B.node')).properties;
-    assert.deepEqual(Object.keys(first), ['status_a']);
-    assert.deepEqual(Object.keys(second), ['status_a']);
-    assert.deepEqual(first.status_a.value, ['Aktif']);
-    assert.deepEqual(second.status_a.value, ['Bitti']);
+    const result = schemaStore.ensurePisiPropertySchema(projectFolder);
+
+    assert.equal(result.ok, true);
+    assert.equal(result.created, true);
+    assert.equal(result.schema.version, 1);
+    assert.deepEqual(result.schema.definitions, []);
+    assert.deepEqual(readJson(path.join(projectFolder, 'A.node')), beforeA);
 });
 
-test('renaming a property changes the project definition and every redundant node name but never its ID', () => {
+test('renaming a property changes the project definition and every matching node name but never its ID', () => {
     resetProject();
-    schemaStore.ensurePisiPropertySchema(projectFolder);
     const save = mutations.savePisiNodePropertiesBySchema(
         projectFolder,
         path.join(projectFolder, 'A.node'),
@@ -106,6 +105,7 @@ test('renaming a property changes the project definition and every redundant nod
             value: ['Aktif']
         }]
     );
+
     assert.equal(save.ok, true);
     const schema = schemaStore.readPisiPropertySchema(projectFolder).schema;
     assert.deepEqual(
@@ -116,9 +116,8 @@ test('renaming a property changes the project definition and every redundant nod
     assert.equal(readJson(path.join(projectFolder, 'B.node')).properties.status_a.name, 'Aşama');
 });
 
-test('project-wide type change fails before mutation when any existing value is not losslessly compatible', () => {
+test('project-wide type change fails before mutation when an existing value is incompatible', () => {
     resetProject();
-    schemaStore.ensurePisiPropertySchema(projectFolder);
     const beforeA = fs.readFileSync(path.join(projectFolder, 'A.node'), 'utf8');
     const beforeB = fs.readFileSync(path.join(projectFolder, 'B.node'), 'utf8');
     const beforeSchema = fs.readFileSync(
@@ -131,6 +130,7 @@ test('project-wide type change fails before mutation when any existing value is 
         path.join(projectFolder, 'A.node'),
         [{ id: 'status_a', name: 'Durum', type: 'number', value: 1 }]
     );
+
     assert.equal(save.ok, false);
     assert.equal(save.code, 'PROPERTY_TYPE_CHANGE_CONFLICT');
     assert.equal(fs.readFileSync(path.join(projectFolder, 'A.node'), 'utf8'), beforeA);
@@ -143,12 +143,12 @@ test('project-wide type change fails before mutation when any existing value is 
 
 test('removing a property value from one node does not delete its project definition', () => {
     resetProject();
-    schemaStore.ensurePisiPropertySchema(projectFolder);
     const save = mutations.savePisiNodePropertiesBySchema(
         projectFolder,
         path.join(projectFolder, 'A.node'),
         []
     );
+
     assert.equal(save.ok, true);
     assert.deepEqual(readJson(path.join(projectFolder, 'A.node')).properties, {});
     const schema = schemaStore.readPisiPropertySchema(projectFolder).schema;
