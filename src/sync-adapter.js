@@ -2,10 +2,7 @@ import {
   getSetting, listDocuments, listTasks, replaceSyncedWorkspace
 } from './db.js';
 import { hashString, hashValue } from './sync-core.js';
-import {
-  normalizeMapEdgeProjections,
-  normalizeMapEdges
-} from './map-connections.js';
+import { normalizeMapEdgeProjections } from './map-connections.js';
 
 const CONFIG_KEYS = ['propertySchema', 'savedViews', 'templates'];
 
