@@ -2,7 +2,6 @@ import {
   mapEdgeToRelationship,
   mapEdgeToRelationshipView,
   normalizeMapEdgeProjections,
-  normalizeMapEdges,
   normalizeRelationshipCollection,
   projectRelationshipsToMapEdges
 } from './map-connections.js';
@@ -406,7 +405,7 @@ function canonicalMapEntity(path, data, relationships = []) {
     validNodeIds
   );
   const legacy = normalizeMapEdgeProjections(map.edges || [], validNodeIds);
-  const edges = normalizeMapEdges([...projected, ...legacy], validNodeIds).edges;
+  const edges = normalizeMapEdgeProjections([...projected, ...legacy], validNodeIds);
   return {
     kind: 'map',
     id: String(data.pisi.id),
