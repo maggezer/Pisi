@@ -186,6 +186,26 @@ export function normalizeMapEdges(rawEdges = [], validNodeIds = null) {
   return { edges: cleanEdges, warnings };
 }
 
+export function normalizeMapEdgeProjections(rawEdges = [], validNodeIds = null) {
+  const rawById = new Map(
+    (Array.isArray(rawEdges) ? rawEdges : [])
+      .filter((edge) => edge?.id)
+      .map((edge) => [String(edge.id), edge])
+  );
+  return normalizeMapEdges(rawEdges, validNodeIds).edges.map((edge) => {
+    const raw = rawById.get(edge.id) || {};
+    const projected = { ...edge };
+    const label = String(raw.label || '').trim().slice(0, 500);
+    if (label) projected.label = label;
+    const properties = normalizeRelationshipProperties(raw.properties);
+    if (Object.keys(properties).length) projected.properties = properties;
+    if (validTimestamp(raw.createdAt)) projected.createdAt = String(raw.createdAt);
+    if (validTimestamp(raw.updatedAt)) projected.updatedAt = String(raw.updatedAt);
+    projected.relationshipId = edge.id;
+    return projected;
+  });
+}
+
 export function normalizeSemanticRelationship(raw = {}, options = {}) {
   const edge = normalizeMapEdge(raw);
   if (!edge) return null;
