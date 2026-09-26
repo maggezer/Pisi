@@ -1502,6 +1502,11 @@ class PisiApp {
     const pointers = new Map();
     let panStart = null;
     let pinchStart = null;
+    let tapStart = null;
+    let lastTap = null;
+    const doubleTapDelay = 340;
+    const tapMoveTolerance = 12;
+    const doubleTapDistance = 36;
     const localPoint = (event) => {
       const rect = viewport.getBoundingClientRect();
       return { x: event.clientX - rect.left, y: event.clientY - rect.top };
@@ -1523,6 +1528,12 @@ class PisiApp {
       const currentPoint = localPoint(event);
       pointers.set(event.pointerId, currentPoint);
       if (pointers.size === 1) {
+        tapStart = {
+          pointerId: event.pointerId,
+          point: currentPoint,
+          startedAt: performance.now(),
+          moved: false
+        };
         panStart = {
           pointerX: currentPoint.x,
           pointerY: currentPoint.y,
@@ -1530,6 +1541,8 @@ class PisiApp {
           cameraY: this.activeDocument.canvas.camera.y
         };
       } else if (pointers.size === 2) {
+        tapStart = null;
+        lastTap = null;
         pinchStart = {
           distance: distance(),
           midpoint: midpoint(),
@@ -1542,6 +1555,10 @@ class PisiApp {
       if (!pointers.has(event.pointerId)) return;
       const currentPoint = localPoint(event);
       pointers.set(event.pointerId, currentPoint);
+      if (tapStart?.pointerId === event.pointerId
+        && Math.hypot(currentPoint.x - tapStart.point.x, currentPoint.y - tapStart.point.y) > tapMoveTolerance) {
+        tapStart.moved = true;
+      }
       const camera = this.activeDocument.canvas.camera;
       if (pointers.size === 1 && panStart) {
         camera.x = panStart.cameraX + currentPoint.x - panStart.pointerX;
@@ -1562,15 +1579,42 @@ class PisiApp {
 
     const release = (event) => {
       if (!pointers.has(event.pointerId)) return;
+      const releasedPoint = localPoint(event);
+      const wasTap = pointers.size === 1
+        && tapStart?.pointerId === event.pointerId
+        && !tapStart.moved
+        && performance.now() - tapStart.startedAt <= 260;
+
       pointers.delete(event.pointerId);
       if (pointers.size < 2) pinchStart = null;
       if (pointers.size === 0) {
         panStart = null;
         this.scheduleSave();
       }
+
+      if (wasTap) {
+        const now = performance.now();
+        const isDoubleTap = lastTap
+          && now - lastTap.at <= doubleTapDelay
+          && Math.hypot(releasedPoint.x - lastTap.point.x, releasedPoint.y - lastTap.point.y) <= doubleTapDistance;
+        if (isDoubleTap) {
+          lastTap = null;
+          tapStart = null;
+          this.addMapNode(releasedPoint);
+          return;
+        }
+        lastTap = { at: now, point: releasedPoint };
+      } else {
+        lastTap = null;
+      }
+      tapStart = null;
     };
     viewport.addEventListener('pointerup', release);
-    viewport.addEventListener('pointercancel', release);
+    viewport.addEventListener('pointercancel', (event) => {
+      lastTap = null;
+      tapStart = null;
+      release(event);
+    });
     viewport.addEventListener('wheel', (event) => {
       event.preventDefault();
       const camera = this.activeDocument.canvas.camera;
@@ -1684,16 +1728,17 @@ class PisiApp {
     });
   }
 
-  addMapNode() {
+  addMapNode(viewportPoint = null) {
     const viewport = document.querySelector('#map-viewport');
     const camera = this.activeDocument.canvas.camera;
     const rect = viewport?.getBoundingClientRect() || { width: innerWidth, height: innerHeight };
+    const point = viewportPoint || { x: rect.width / 2, y: rect.height / 2 };
     const node = {
       id: makeId('node'),
       title: 'Yeni fikir',
       content: '',
-      x: (rect.width / 2 - camera.x) / camera.zoom - 90,
-      y: (rect.height / 2 - camera.y) / camera.zoom - 45
+      x: (point.x - camera.x) / camera.zoom - 90,
+      y: (point.y - camera.y) / camera.zoom - 45
     };
     this.activeDocument.canvas.nodes.push(node);
     this.selectedMapNode = node.id;
