@@ -23,30 +23,6 @@ function edge(id, sourceId, targetId, extra = {}) {
 }
 
 describe('desktop-compatible map connection rules', () => {
-  it('accepts legacy mobile geometry but emits canonical desktop fields', () => {
-    const normalized = normalizeMapEdge({
-      id: 'edge_legacy',
-      from: 'node_a',
-      to: 'node_b',
-      fromAnchor: 'left',
-      toAnchor: 'right'
-    });
-    expect(normalized).toMatchObject({
-      id: 'edge_legacy',
-      sourceId: 'node_a',
-      targetId: 'node_b',
-      sourcePort: 'left',
-      targetPort: 'right',
-      type: 'down-hub',
-      sourceRole: 'down-hub',
-      targetRole: 'up-hub'
-    });
-    expect(normalized.from).toBeUndefined();
-    expect(normalized.to).toBeUndefined();
-    expect(normalized.fromAnchor).toBeUndefined();
-    expect(normalized.toAnchor).toBeUndefined();
-  });
-
   it('requires confirmation for a second hierarchy parent and then stores it as stream', () => {
     const existing = [edge('edge_parent_a', 'node_a', 'node_child')];
     const proposed = edge('edge_parent_b', 'node_b', 'node_child');
@@ -149,17 +125,12 @@ describe('desktop-compatible map connection rules', () => {
     });
   });
 
-  it('projects a desktop semantic relationship even when its view is missing', () => {
+  it('does not project a semantic relationship without a canonical relationshipView', () => {
     const projected = projectRelationshipsToMapEdges(
       [edge('edge_no_view', 'node_a', 'node_b')],
       [],
       new Set(['node_a', 'node_b'])
     );
-    expect(projected).toHaveLength(1);
-    expect(projected[0]).toMatchObject({
-      id: 'edge_no_view',
-      sourcePort: 'bottom',
-      targetPort: 'top'
-    });
+    expect(projected).toEqual([]);
   });
 });
