@@ -170,6 +170,7 @@
 .node-anchor.anchor-top { left: calc(50% - 7px); right: auto; top: -7px; }
 .node-anchor.anchor-bottom { left: calc(50% - 7px); right: auto; top: auto; bottom: -7px; }
 .node-anchor.collapsed { background: var(--surface); box-shadow: inset 0 0 0 3px var(--accent); transform: scale(1.25); }
+.node-anchor.connection-start { background: var(--surface); box-shadow: 0 0 0 4px var(--accent-soft), inset 0 0 0 3px var(--accent); transform: scale(1.3); }
 .map-lines .map-arrow-head { fill: color-mix(in srgb, var(--accent) 65%, var(--muted)); stroke: none; }
 
 /* Tasks */
@@ -530,6 +531,8 @@ kbd { padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; backg
   .node-anchor.anchor-bottom { left: calc(50% - 22px); right: auto; top: auto; bottom: -22px; }
   .node-anchor.collapsed { background: transparent; box-shadow: none; transform: none; }
   .node-anchor.collapsed::after { background: var(--surface); box-shadow: inset 0 0 0 3px var(--accent); transform: scale(1.2); }
+  .node-anchor.connection-start { background: transparent; box-shadow: none; transform: none; }
+  .node-anchor.connection-start::after { background: var(--surface); box-shadow: 0 0 0 5px var(--accent-soft), inset 0 0 0 3px var(--accent); transform: scale(1.25); }
 }
 
 @media (min-width: 620px) {
