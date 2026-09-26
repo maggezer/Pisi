@@ -40,7 +40,6 @@ import {
   isHierarchyMapEdge,
   mapEdgeToRelationship,
   normalizeMapEdgeProjections,
-  normalizeMapEdges,
   normalizeRelationshipCollection,
   prepareMapConnection
 } from './map-connections.js';
