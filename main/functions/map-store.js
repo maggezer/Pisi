@@ -376,7 +376,9 @@ function listNodesForMap(mapPath) {
         if (!mapInfo.data.map) {
             mapInfo.data.map = {
                 nodes: [],
-                edges: [],
+                relationshipViews: [],
+                relationshipViewVersion: 1,
+                collapsedHubs: [],
                 camera: { x: 0, y: 0, zoom: 1 }
             };
         }
@@ -502,15 +504,11 @@ function listNodesForMap(mapPath) {
             writePisiDocument(mapPath, mapInfo.data);
         }
 
-        const syncResult = syncMapConnectionMetadata(mapPath);
-
         return {
-        ok: true,
-        map: mapInfo,
-        nodes,
-        edges: syncResult.ok
-        ? syncResult.edges
-        : (Array.isArray(mapInfo.data.map.edges) ? mapInfo.data.map.edges : [])
+            ok: true,
+            map: mapInfo,
+            nodes,
+            edges: []
         };
 
     } catch (error) {
@@ -530,7 +528,9 @@ function saveMapNodeLayout(mapPath, nodeLayouts = []) {
         if (!mapInfo.data.map) {
             mapInfo.data.map = {
                 nodes: [],
-                edges: [],
+                relationshipViews: [],
+                relationshipViewVersion: 1,
+                collapsedHubs: [],
                 camera: { x: 0, y: 0, zoom: 1 }
             };
         }
@@ -599,7 +599,9 @@ function saveMapCamera(mapPath, camera = {}) {
         if (!mapInfo.data.map) {
             mapInfo.data.map = {
                 nodes: [],
-                edges: [],
+                relationshipViews: [],
+                relationshipViewVersion: 1,
+                collapsedHubs: [],
                 camera: { x: 0, y: 0, zoom: 1 }
             };
         }
@@ -709,275 +711,6 @@ function getAllNodeDocsInMap(mapPath) {
     };
 }
 
-function syncMapConnectionMetadata(mapPath) {
-    const result = getAllNodeDocsInMap(mapPath);
-
-    if (!result.ok) {
-        return result;
-    }
-
-    const { mapInfo, nodesById } = result;
-
-    if (!mapInfo.data.map) {
-        mapInfo.data.map = {
-            nodes: [],
-            edges: [],
-            camera: { x: 0, y: 0, zoom: 1 }
-        };
-    }
-
-    if (!Array.isArray(mapInfo.data.map.edges)) {
-        mapInfo.data.map.edges = [];
-    }
-
-    const oldEdgesJson = JSON.stringify(mapInfo.data.map.edges);
-    const oldConnectionTypesByPath = new Map();
-
-    // Önce mevcut connectionTypes durumunu kaydediyoruz.
-    for (const nodeInfo of nodesById.values()) {
-        oldConnectionTypesByPath.set(
-            nodeInfo.filePath,
-            JSON.stringify(normalizeNodeConnectionTypes(nodeInfo.data.pisi.connectionTypes))
-        );
-
-        resetNodeConnectionTypes(nodeInfo.data.pisi);
-    }
-
-    const normalizedEdges = normalizePisiMapEdges(
-        mapInfo.data.map.edges,
-        new Set(nodesById.keys())
-    );
-    const cleanEdges = normalizedEdges.edges;
-
-    for (const edge of cleanEdges) {
-        const sourceInfo = nodesById.get(edge.sourceId);
-        const targetInfo = nodesById.get(edge.targetId);
-
-        addUniqueConnectionType(
-            sourceInfo.data.pisi,
-            edge.sourceRole,
-            edge.targetId
-        );
-
-        addUniqueConnectionType(
-            targetInfo.data.pisi,
-            edge.targetRole,
-            edge.sourceId
-        );
-    }
-
-    mapInfo.data.map.edges = cleanEdges;
-
-    const newEdgesJson = JSON.stringify(cleanEdges);
-
-    const documentChanges = [];
-
-    if (oldEdgesJson !== newEdgesJson) {
-        mapInfo.data.pisi.updatedAt = new Date().toISOString();
-        documentChanges.push({
-            filePath: mapPath,
-            data: mapInfo.data
-        });
-    }
-
-    for (const nodeInfo of nodesById.values()) {
-        const oldConnectionTypesJson = oldConnectionTypesByPath.get(nodeInfo.filePath);
-        const newConnectionTypesJson = JSON.stringify(
-            normalizeNodeConnectionTypes(nodeInfo.data.pisi.connectionTypes)
-        );
-
-        if (oldConnectionTypesJson !== newConnectionTypesJson) {
-            nodeInfo.data.pisi.updatedAt = new Date().toISOString();
-            documentChanges.push({
-                filePath: nodeInfo.filePath,
-                data: nodeInfo.data
-            });
-        }
-    }
-
-    writePisiDocumentsTransaction(documentChanges);
-
-    return {
-        ok: true,
-        edges: cleanEdges,
-        nodesById,
-        warnings: normalizedEdges.warnings
-    };
-}
-
-function removeNodeRelationship(metadata, otherNodeId) {
-    if (!metadata.connectionTypes) {
-        metadata.connectionTypes = getDefaultNodeConnectionTypes();
-    }
-
-    const keys = ["up-hub", "down-hub", "co-level", "upstream", "downstream"];
-
-    for (const key of keys) {
-        metadata.connectionTypes[key] = Array.isArray(metadata.connectionTypes[key])
-            ? metadata.connectionTypes[key].filter((id) => id !== otherNodeId)
-            : [];
-    }
-}
-
-function addUniqueConnectionType(metadata, type, otherNodeId) {
-    if (!metadata.connectionTypes) {
-        metadata.connectionTypes = getDefaultNodeConnectionTypes();
-    }
-
-    if (!Array.isArray(metadata.connectionTypes[type])) {
-        metadata.connectionTypes[type] = [];
-    }
-
-    if (!metadata.connectionTypes[type].includes(otherNodeId)) {
-        metadata.connectionTypes[type].push(otherNodeId);
-    }
-}
-
-function upsertMapConnection(mapPath, edge) {
-    try {
-        const mapInfo = ensurePisiFileMetadata(mapPath);
-
-        if (!mapInfo.ok) return mapInfo;
-
-        if (!mapInfo.data.map) {
-            mapInfo.data.map = {
-                nodes: [],
-                edges: [],
-                camera: { x: 0, y: 0, zoom: 1 }
-            };
-        }
-
-        if (!Array.isArray(mapInfo.data.map.edges)) {
-            mapInfo.data.map.edges = [];
-        }
-
-        if (!edge?.sourceId || !edge?.targetId) {
-            return {
-                ok: false,
-                error: 'Bağlantı için sourceId ve targetId gerekli.'
-            };
-        }
-
-        if (edge.sourceId === edge.targetId) {
-            return {
-                ok: false,
-                error: 'Bir node kendisine bağlanamaz.'
-            };
-        }
-
-        const originalMapContent = fs.readFileSync(mapPath, 'utf-8');
-        const nodeDocsResult = getAllNodeDocsInMap(mapPath);
-        if (!nodeDocsResult.ok) return nodeDocsResult;
-
-        let normalizedEdge = normalizeMapEdge(edge);
-
-        if (!normalizedEdge) {
-            return {
-                ok: false,
-                error: 'Bağlantı normalize edilemedi.'
-            };
-        }
-
-        if (
-            !nodeDocsResult.nodesById.has(normalizedEdge.sourceId) ||
-            !nodeDocsResult.nodesById.has(normalizedEdge.targetId)
-        ) {
-            return {
-                ok: false,
-                error: 'Bağlantının source veya target node dosyası bulunamadı.'
-            };
-        }
-
-        const normalizedExisting = normalizePisiMapEdges(
-            mapInfo.data.map.edges,
-            new Set(nodeDocsResult.nodesById.keys())
-        ).edges;
-
-        if (isHierarchyEdge(normalizedEdge)) {
-            const existingParent = normalizedExisting.find((existing) => {
-                return (
-                    isHierarchyEdge(existing) &&
-                    existing.targetId === normalizedEdge.targetId &&
-                    existing.sourceId !== normalizedEdge.sourceId
-                );
-            });
-
-            if (existingParent && edge.confirmSecondParentAsStream !== true) {
-                return {
-                    ok: false,
-                    code: 'SECOND_PARENT_CONFIRM_REQUIRED',
-                    requiresConfirmation: true,
-                    error: 'Hedef node zaten bir parent bağlantısına sahip.',
-                    suggestedEdge: convertEdgeToStream(normalizedEdge)
-                };
-            }
-
-            if (existingParent) {
-                normalizedEdge = convertEdgeToStream(normalizedEdge);
-            } else {
-                const parentByChild = new Map();
-                normalizedExisting
-                    .filter(isHierarchyEdge)
-                    .forEach((existing) => {
-                        parentByChild.set(
-                            existing.targetId,
-                            existing.sourceId
-                        );
-                    });
-
-                if (
-                    wouldCreatePisiHierarchyCycle(
-                        parentByChild,
-                        normalizedEdge.sourceId,
-                        normalizedEdge.targetId
-                    )
-                ) {
-                    return {
-                        ok: false,
-                        code: 'HIERARCHY_CYCLE',
-                        error: 'Bu bağlantı hiyerarşide döngü oluşturur.'
-                    };
-                }
-            }
-        }
-
-        const semanticKey = getPisiEdgeSemanticKey(normalizedEdge);
-        mapInfo.data.map.edges = mapInfo.data.map.edges.filter((existing) => {
-            return (
-                existing.id !== normalizedEdge.id &&
-                getPisiEdgeSemanticKey(existing) !== semanticKey
-            );
-        });
-
-        mapInfo.data.map.edges.push(normalizedEdge);
-        mapInfo.data.pisi.updatedAt = new Date().toISOString();
-
-        writePisiDocument(mapPath, mapInfo.data);
-
-        const syncResult = syncMapConnectionMetadata(mapPath);
-
-        if (!syncResult.ok) {
-            writeFileAtomic(
-                mapPath,
-                originalMapContent,
-                { backup: false }
-            );
-            return syncResult;
-        }
-
-        return {
-            ok: true,
-            edge: normalizedEdge,
-            edges: syncResult.edges
-        };
-    } catch (error) {
-        return {
-            ok: false,
-            error: error.message
-        };
-    }
-}
-
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
     "getUniqueDirectoryPath": {
@@ -1035,22 +768,6 @@ Object.defineProperties(moduleApi, {
     "getAllNodeDocsInMap": {
         enumerable: true,
         get() { return getAllNodeDocsInMap; }
-    },
-    "syncMapConnectionMetadata": {
-        enumerable: true,
-        get() { return syncMapConnectionMetadata; }
-    },
-    "removeNodeRelationship": {
-        enumerable: true,
-        get() { return removeNodeRelationship; }
-    },
-    "addUniqueConnectionType": {
-        enumerable: true,
-        get() { return addUniqueConnectionType; }
-    },
-    "upsertMapConnection": {
-        enumerable: true,
-        get() { return upsertMapConnection; }
     }
 });
 registerMainModule("main.mapStore", moduleApi);
