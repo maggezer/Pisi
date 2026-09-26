@@ -10,9 +10,9 @@ const PISI_MAP_PORTS = new Set(['top', 'right', 'bottom', 'left']);
 
 function normalizePisiRelationshipView(raw = {}) {
     const relationshipId = /^edge_[A-Za-z0-9_-]{1,101}$/.test(
-        String(raw.relationshipId || raw.id || '')
+        String(raw.relationshipId || '')
     )
-        ? String(raw.relationshipId || raw.id)
+        ? String(raw.relationshipId)
         : '';
     if (!relationshipId) return null;
 
@@ -72,50 +72,6 @@ function removePisiRelationshipView(mapData, relationshipId) {
     mapData.relationshipViews = next;
     mapData.relationshipViewVersion = PISI_MAP_RELATIONSHIP_VIEW_VERSION;
     return next.length !== current.length;
-}
-
-function migratePisiLegacyMapEdgesData(mapData, resolveSemanticRelationship) {
-    if (!mapData || typeof mapData !== 'object') {
-        return { changed: false, migrated: 0, relationships: [], warnings: [] };
-    }
-
-    const legacyEdges = Array.isArray(mapData.edges) ? mapData.edges : [];
-    const relationships = [];
-    const warnings = [];
-    let migrated = 0;
-
-    for (const rawEdge of legacyEdges) {
-        const edge = filesystemCore.normalizeMapEdge(rawEdge);
-        if (!edge) {
-            warnings.push('Geçersiz legacy map edge atlandı.');
-            continue;
-        }
-        const resolved = resolveSemanticRelationship(edge, rawEdge);
-        const relationship = resolved?.relationship || resolved;
-        if (!relationship?.id) {
-            warnings.push(`Legacy edge semantic store'a taşınamadı: ${edge.id}`);
-            continue;
-        }
-        upsertPisiRelationshipView(mapData, relationship, edge);
-        relationships.push(relationship);
-        migrated += 1;
-    }
-
-    const hadLegacyField = Object.prototype.hasOwnProperty.call(mapData, 'edges');
-    if (hadLegacyField) {
-        delete mapData.edges;
-    }
-    mapData.relationshipViews = normalizePisiRelationshipViews(
-        mapData.relationshipViews
-    );
-    mapData.relationshipViewVersion = PISI_MAP_RELATIONSHIP_VIEW_VERSION;
-
-    return {
-        changed: hadLegacyField || migrated > 0,
-        migrated,
-        relationships,
-        warnings
-    };
 }
 
 function projectPisiSemanticRelationshipToMapEdge(relationship, rawView = null) {
@@ -219,7 +175,6 @@ const moduleApi = {
     makePisiRelationshipView,
     upsertPisiRelationshipView,
     removePisiRelationshipView,
-    migratePisiLegacyMapEdgesData,
     projectPisiSemanticRelationshipToMapEdge,
     projectPisiRelationshipsForMap,
     derivePisiConnectionTypesFromRelationships,
