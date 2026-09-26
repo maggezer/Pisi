@@ -1,7 +1,7 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import {
-  exportDatabase, getSetting, installDurableMutationHandler, setSetting
+  getSetting, installDurableMutationHandler, setSetting
 } from './db.js';
 import {
   foldDeviceSnapshots, makeDeviceSnapshot, makeSyncManifest,
@@ -67,7 +67,6 @@ async function getState() {
     lastExternalChangeAt: stored?.lastExternalChangeAt || null,
     externalScanCount: Math.max(0, Number(stored?.externalScanCount) || 0),
     lastWorkspaceHash: stored?.lastWorkspaceHash || null,
-    lastMigrationBackupPath: stored?.lastMigrationBackupPath || null,
     lastError: stored?.lastError && typeof stored.lastError === 'object'
       ? stored.lastError : null,
     layout: [SYNC_LAYOUT_DIRECT, SYNC_LAYOUT_NESTED].includes(stored?.layout)
@@ -777,25 +776,6 @@ function assertWorkspaceRoundTrip(expectedRecords, workspace) {
   }
 }
 
-async function writeMigrationBackup(backup) {
-  const hasPrivateData = Boolean(backup?.documents?.length || backup?.tasks?.length);
-  if (!hasPrivateData) return null;
-  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const path = `.pisi/recovery/mobile-private-${stamp}.json`;
-  const content = `${JSON.stringify({
-    ...backup,
-    migration: {
-      reason: 'before-first-project-folder-merge',
-      createdAt: new Date().toISOString()
-    }
-  }, null, 2)}\n`;
-  await transport.write(path, content);
-  if (await transport.read(path) !== content) {
-    throw new Error('Klasör geçişi öncesi özel veri kurtarma kopyası doğrulanamadı.');
-  }
-  return path;
-}
-
 function collectConflicts(baseRecords, localRecords, snapshots, ownDeviceId, handled = []) {
   const bySignature = new Map();
   const handledSet = new Set(handled);
@@ -1005,22 +985,18 @@ export async function runMobileSync(options = {}) {
 }
 
 export async function selectMobileSyncFolder() {
-  const privateBackup = await exportDatabase();
   const selected = await transport.choose();
   const state = await getState();
   const verifiedAt = await verifyFolderAccess();
-  const migrationBackupPath = await writeMigrationBackup(privateBackup);
   await saveState({
     ...state,
     enabled: true,
     folderName: selected.name || '',
     layout: null,
     lastVerifiedAt: verifiedAt,
-    lastMigrationBackupPath: migrationBackupPath || state.lastMigrationBackupPath,
     lastError: null
   });
-  const result = await runMobileSync({ reason: 'folder-selected', requireFresh: true });
-  return { ...result, migrationBackupPath };
+  return runMobileSync({ reason: 'folder-selected', requireFresh: true });
 }
 
 export async function disconnectMobileSync() {
@@ -1067,7 +1043,6 @@ export async function getMobileSyncStatus() {
     lastExternalScanAt: state.lastExternalScanAt,
     lastExternalChangeAt: state.lastExternalChangeAt,
     externalScanCount: state.externalScanCount,
-    lastMigrationBackupPath: state.lastMigrationBackupPath,
     lastError: state.lastError,
     running: Boolean(runningPromise)
   };
