@@ -139,10 +139,12 @@ describe('Pisi responsive application shell', () => {
       new MouseEvent('click', { bubbles: true, cancelable: true })
     );
     await vi.waitFor(() => expect(document.querySelector('[data-delete-map-edge]')).toBeTruthy());
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const previousConfirm = globalThis.confirm;
+    globalThis.confirm = vi.fn(() => true);
     document.querySelector('[data-delete-map-edge]').click();
     await vi.waitFor(() => expect(document.querySelector('.map-edge-visible')).toBeFalsy());
-    confirmSpy.mockRestore();
+    if (previousConfirm) globalThis.confirm = previousConfirm;
+    else delete globalThis.confirm;
 
     document.querySelector('#map-back').click();
     await vi.waitFor(() => expect(document.querySelector('#new-map')).toBeTruthy());
