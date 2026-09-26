@@ -553,10 +553,7 @@ function isPisiManagedDiaryFolder(folderPath) {
         return false;
     }
 
-    if (
-        fs.existsSync(path.join(folderPath, '.pisi-diary')) ||
-        fs.existsSync(path.join(folderPath, '.kedi-diary'))
-    ) {
+    if (fs.existsSync(path.join(folderPath, '.pisi-diary'))) {
         return true;
     }
 
