@@ -41,7 +41,6 @@ function isPisiStorageBridgeInfrastructurePath(projectRoot, targetPath) {
     const normalized = relative.split(path.sep).join('/');
     return (
         normalized === '.pisi.lock' ||
-        normalized === '.kedi.lock' ||
         normalized === '.git' ||
         normalized.startsWith('.git/') ||
         normalized === 'node_modules' ||
