@@ -153,10 +153,15 @@ function ensurePisiFileMetadata(filePath, options = {}) {
         }
     }
 
-    if (ext === '.map' && (!data.map || typeof data.map !== 'object')) {
+    if (
+        ext === '.map' &&
+        (!data.map || typeof data.map !== 'object' || Array.isArray(data.map))
+    ) {
         data.map = {
             nodes: [],
-            edges: [],
+            relationshipViews: [],
+            relationshipViewVersion: 1,
+            collapsedHubs: [],
             camera: { x: 0, y: 0, zoom: 1 }
         };
         changed = true;
