@@ -1777,17 +1777,27 @@ class PisiApp {
 
   bindMapNodeSheet() {
     if (!this.mapEditingNode) return;
-    const node = this.activeDocument.canvas.nodes.find(({ id }) => id === this.mapEditingNode);
-    if (!node) return;
-    const close = () => {
+    const editingNodeId = this.mapEditingNode;
+    const currentNode = () => this.activeDocument?.canvas?.nodes
+      ?.find(({ id }) => id === editingNodeId);
+    if (!currentNode()) return;
+
+    const close = async () => {
+      await this.saveActiveDebounced.flush();
       this.mapEditingNode = null;
       this.renderMapEditor();
     };
-    document.querySelector('#close-node-sheet')?.addEventListener('click', close);
+    document.querySelector('#close-node-sheet')?.addEventListener('click', () => {
+      close().catch((error) => this.showSaveFailure(error));
+    });
     document.querySelector('#node-sheet-overlay')?.addEventListener('click', (event) => {
-      if (event.target.id === 'node-sheet-overlay') close();
+      if (event.target.id === 'node-sheet-overlay') {
+        close().catch((error) => this.showSaveFailure(error));
+      }
     });
     document.querySelector('#node-sheet-title')?.addEventListener('input', (event) => {
+      const node = currentNode();
+      if (!node) return;
       node.title = event.target.value;
       this.scheduleSave();
     });
@@ -1797,6 +1807,8 @@ class PisiApp {
       document.querySelector('#node-sheet-content')?.focus({ preventScroll: true });
     });
     document.querySelector('#node-sheet-content')?.addEventListener('input', (event) => {
+      const node = currentNode();
+      if (!node) return;
       node.content = `<p>${escapeHtml(event.target.value).replaceAll('\n', '<br>')}</p>`;
       this.scheduleSave();
     });
