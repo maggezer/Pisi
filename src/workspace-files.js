@@ -1,6 +1,7 @@
 import {
   mapEdgeToRelationship,
   mapEdgeToRelationshipView,
+  normalizeMapEdgeProjections,
   normalizeMapEdges,
   normalizeRelationshipCollection,
   projectRelationshipsToMapEdges
@@ -162,7 +163,7 @@ function makeMapData(record, sidecar) {
     nodes: [], edges: [], camera: { x: 0, y: 0, zoom: 1 }, collapsedHubs: []
   });
   const validNodeIds = new Set((rawMap.nodes || []).map(({ id }) => id).filter(Boolean));
-  const edges = normalizeMapEdges(rawMap.edges || [], validNodeIds).edges;
+  const edges = normalizeMapEdgeProjections(rawMap.edges || [], validNodeIds);
   const map = {
     ...(native.map && typeof native.map === 'object' ? clone(native.map) : {}),
     ...rawMap,
@@ -283,7 +284,7 @@ export function buildWorkspaceProjection(records = []) {
   for (const record of maps) {
     const rawMap = record.payload?.map || {};
     const validNodeIds = new Set((rawMap.nodes || []).map(({ id }) => id).filter(Boolean));
-    for (const edge of normalizeMapEdges(rawMap.edges || [], validNodeIds).edges) {
+    for (const edge of normalizeMapEdgeProjections(rawMap.edges || [], validNodeIds)) {
       const relationship = mapEdgeToRelationship(edge);
       if (relationship) rawRelationships.push(relationship);
     }
@@ -404,7 +405,7 @@ function canonicalMapEntity(path, data, relationships = []) {
     map.relationshipViews || [],
     validNodeIds
   );
-  const legacy = normalizeMapEdges(map.edges || [], validNodeIds).edges;
+  const legacy = normalizeMapEdgeProjections(map.edges || [], validNodeIds);
   const edges = normalizeMapEdges([...projected, ...legacy], validNodeIds).edges;
   return {
     kind: 'map',
