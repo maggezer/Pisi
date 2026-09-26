@@ -1412,7 +1412,7 @@ class PisiApp {
             </div>
           </div>
           <div class="map-tip ${this.connectFrom ? 'active' : ''}">
-            ${this.connectFrom ? 'Bağlanacak ikinci düğüme dokun' : 'Boş alanda sürükle · düğümü seçip taşı'}
+            ${this.connectFrom ? 'Bağlanacak ikinci düğüme dokun' : 'Çift dokun: düğüm ekle · sürükle: haritayı taşı'}
           </div>
         </main>
         <div class="map-toolbar">
