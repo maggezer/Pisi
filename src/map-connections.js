@@ -134,7 +134,6 @@ export function wouldCreateMapHierarchyCycle(parentByChild, parentId, childId) {
 
 export function normalizeMapEdges(rawEdges = [], validNodeIds = null) {
   const cleanEdges = [];
-  const seenIds = new Set();
   const seenSemanticEdges = new Set();
   const parentByChild = new Map();
   const warnings = [];
@@ -143,10 +142,6 @@ export function normalizeMapEdges(rawEdges = [], validNodeIds = null) {
     let edge = normalizeMapEdge(rawEdge);
     if (!edge) {
       warnings.push('Geçersiz veya self-loop bağlantı atlandı.');
-      continue;
-    }
-    if (seenIds.has(edge.id)) {
-      warnings.push(`Tekrarlanan relationship id atlandı: ${edge.id}`);
       continue;
     }
     if (
@@ -178,7 +173,6 @@ export function normalizeMapEdges(rawEdges = [], validNodeIds = null) {
       warnings.push(`Tekrarlanan bağlantı atlandı: ${edge.id}`);
       continue;
     }
-    seenIds.add(edge.id);
     seenSemanticEdges.add(semanticKey);
     cleanEdges.push(edge);
   }
