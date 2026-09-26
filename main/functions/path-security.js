@@ -193,35 +193,16 @@ function getSettingsPath() {
     return path.join(app.getPath('userData'), 'pisi-settings.json');
 }
 
-function getLegacySettingsPath() {
-    return path.join(app.getPath('userData'), 'kedi-settings.json');
-}
-
 function readSettings() {
     const settingsPath = getSettingsPath();
-    const legacySettingsPath = getLegacySettingsPath();
 
     try {
-        const sourcePath = fs.existsSync(settingsPath)
-            ? settingsPath
-            : (fs.existsSync(legacySettingsPath) ? legacySettingsPath : null);
-
-        if (!sourcePath) {
+        if (!fs.existsSync(settingsPath)) {
             return {};
         }
 
-        const raw = fs.readFileSync(sourcePath, 'utf-8');
-        const settings = JSON.parse(raw || '{}');
-
-        if (sourcePath === legacySettingsPath) {
-            writeFileAtomic(
-                settingsPath,
-                JSON.stringify(settings, null, 2),
-                { backup: false }
-            );
-        }
-
-        return settings;
+        const raw = fs.readFileSync(settingsPath, 'utf-8');
+        return JSON.parse(raw || '{}');
     } catch (error) {
         console.error('[PISI] Settings okunamadı:', error);
         return {};
