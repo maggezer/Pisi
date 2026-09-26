@@ -1,3 +1,10 @@
+import {
+  mapEdgeToRelationship,
+  mapEdgeToRelationshipView,
+  normalizeMapEdges,
+  projectRelationshipsToMapEdges
+} from './map-connections.js';
+
 const WORKSPACE_INDEX_FORMAT = 'pisi-workspace-file-index';
 const WORKSPACE_INDEX_VERSION = 1;
 
@@ -136,6 +143,18 @@ function makeMapData(record, sidecar) {
   const native = payload.native && typeof payload.native === 'object'
     ? clone(payload.native) : {};
   const now = payload.updatedAt || record.updatedAt || new Date().toISOString();
+  const rawMap = clone(payload.map || {
+    nodes: [], edges: [], camera: { x: 0, y: 0, zoom: 1 }, collapsedAnchors: []
+  });
+  const validNodeIds = new Set((rawMap.nodes || []).map(({ id }) => id).filter(Boolean));
+  const edges = normalizeMapEdges(rawMap.edges || [], validNodeIds).edges;
+  const map = {
+    ...(native.map && typeof native.map === 'object' ? clone(native.map) : {}),
+    ...rawMap,
+    relationshipViews: edges.map(mapEdgeToRelationshipView).filter(Boolean),
+    relationshipViewVersion: 1
+  };
+  delete map.edges;
   return {
     ...native,
     pisi: {
@@ -148,9 +167,7 @@ function makeMapData(record, sidecar) {
       createdAt: payload.createdAt || native.pisi?.createdAt || now,
       updatedAt: now
     },
-    map: clone(payload.map || {
-      nodes: [], edges: [], camera: { x: 0, y: 0, zoom: 1 }, collapsedAnchors: []
-    }),
+    map,
     tags: clone(payload.tags || []),
     properties: clone(payload.properties || {})
   };
@@ -237,15 +254,27 @@ export function buildWorkspaceProjection(records = []) {
     }));
   }
 
-  const relationships = [];
+  const relationshipsById = new Map();
+  const addRelationship = (relationship) => {
+    if (!relationship?.id) return;
+    relationshipsById.set(String(relationship.id), clone(relationship));
+  };
   for (const record of nodes) {
     for (const relation of record.payload?.relations || []) {
-      relationships.push({ ...clone(relation), sourceId: record.id });
+      addRelationship({ ...clone(relation), sourceId: record.id });
     }
   }
+  for (const record of maps) {
+    const rawMap = record.payload?.map || {};
+    const validNodeIds = new Set((rawMap.nodes || []).map(({ id }) => id).filter(Boolean));
+    for (const edge of normalizeMapEdges(rawMap.edges || [], validNodeIds).edges) {
+      addRelationship(mapEdgeToRelationship(edge));
+    }
+  }
+  const relationships = Array.from(relationshipsById.values());
   files.push(jsonFile('.pisi/relationships.json', {
     version: 1,
-    updatedAt: newestTimestamp(nodes),
+    updatedAt: newestTimestamp([...nodes, ...maps]),
     relationships
   }));
 
@@ -350,8 +379,17 @@ function stablePathToken(value) {
   return hash.toString(16).padStart(8, '0');
 }
 
-function canonicalMapEntity(path, data) {
+function canonicalMapEntity(path, data, relationships = []) {
   const map = data.map || {};
+  const nodes = clone(map.nodes || []);
+  const validNodeIds = new Set(nodes.map(({ id }) => id).filter(Boolean));
+  const projected = projectRelationshipsToMapEdges(
+    relationships,
+    map.relationshipViews || [],
+    validNodeIds
+  );
+  const legacy = normalizeMapEdges(map.edges || [], validNodeIds).edges;
+  const edges = normalizeMapEdges([...projected, ...legacy], validNodeIds).edges;
   return {
     kind: 'map',
     id: String(data.pisi.id),
@@ -359,8 +397,8 @@ function canonicalMapEntity(path, data) {
       schema: 'pisi.map.v1',
       title: String(data.pisi.title || 'Başlıksız harita'),
       map: {
-        nodes: clone(map.nodes || []),
-        edges: clone(map.edges || []),
+        nodes,
+        edges,
         camera: clone(map.camera || { x: 0, y: 0, zoom: 1 }),
         collapsedAnchors: clone(map.collapsedAnchors || [])
       },
@@ -395,6 +433,18 @@ export function parseWorkspaceFiles(rows = []) {
   const relationshipStore = parsed.get('.pisi/relationships.json');
   const relationships = Array.isArray(relationshipStore?.relationships)
     ? relationshipStore.relationships : [];
+  const mapRelationshipIds = new Set();
+  for (const [path, data] of parsed.entries()) {
+    if (!pathKey(path).endsWith('.map')) continue;
+    for (const view of Array.isArray(data?.map?.relationshipViews)
+      ? data.map.relationshipViews : []) {
+      const id = String(view?.relationshipId || view?.id || '');
+      if (id) mapRelationshipIds.add(id);
+    }
+  }
+  const nonMapRelationships = relationships.filter(
+    (relationship) => !mapRelationshipIds.has(String(relationship?.id || ''))
+  );
   const entities = [];
   const idByPath = new Map();
   const firstPathByEntity = new Map();
@@ -464,8 +514,8 @@ export function parseWorkspaceFiles(rows = []) {
     }
     idByPath.set(pathKey(path), { id, kind: expectedKind });
     entities.push(expectedKind === 'map'
-      ? canonicalMapEntity(path, data)
-      : canonicalNodeEntity(path, data, relationships, originalId));
+      ? canonicalMapEntity(path, data, relationships)
+      : canonicalNodeEntity(path, data, nonMapRelationships, originalId));
   }
 
   const taskStore = parsed.get('.pisi/tasks.json');
