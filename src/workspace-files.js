@@ -9,14 +9,6 @@ import {
 const WORKSPACE_INDEX_FORMAT = 'pisi-workspace-file-index';
 const WORKSPACE_INDEX_VERSION = 1;
 
-const DEFAULT_CONNECTION_TYPES = Object.freeze({
-  'up-hub': [],
-  'down-hub': [],
-  'co-level': [],
-  upstream: [],
-  downstream: []
-});
-
 function emptyConnectionTypes() {
   return {
     'up-hub': [],
