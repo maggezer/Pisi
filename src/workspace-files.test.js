@@ -98,6 +98,79 @@ describe('visible Pisi workspace files', () => {
     expect(schema.payload.value[0].name).toBe('Durum');
   });
 
+  it('round-trips desktop semantic map relationships without falling back to legacy map.edges', () => {
+    const records = [
+      record('map', 'map_semantic', {
+        title: 'Semantic Harita',
+        map: {
+          nodes: [
+            { id: 'node_parent', x: 20, y: 20 },
+            { id: 'node_child', x: 280, y: 20 }
+          ],
+          edges: [{
+            id: 'edge_semantic',
+            sourceId: 'node_parent',
+            targetId: 'node_child',
+            sourcePort: 'right',
+            targetPort: 'left',
+            type: 'down-hub',
+            sourceRole: 'down-hub',
+            targetRole: 'up-hub'
+          }],
+          camera: { x: 0, y: 0, zoom: 1 },
+          collapsedAnchors: []
+        },
+        updatedAt
+      }),
+      record('node', 'node_parent', {
+        title: 'Parent', content: '', parentMap: 'map_semantic', relations: [], updatedAt
+      }),
+      record('node', 'node_child', {
+        title: 'Child', content: '', parentMap: 'map_semantic', relations: [], updatedAt
+      })
+    ];
+
+    const projection = buildWorkspaceProjection(records);
+    const mapPath = projection.index.records['map:map_semantic'];
+    const writtenMap = JSON.parse(
+      projection.files.find(({ path }) => path === mapPath).content
+    );
+    const relationshipStore = JSON.parse(
+      projection.files.find(({ path }) => path === '.pisi/relationships.json').content
+    );
+
+    expect(writtenMap.map.edges).toBeUndefined();
+    expect(writtenMap.map.relationshipViewVersion).toBe(1);
+    expect(writtenMap.map.relationshipViews).toEqual([{
+      relationshipId: 'edge_semantic',
+      sourcePort: 'right',
+      targetPort: 'left'
+    }]);
+    expect(relationshipStore.relationships).toContainEqual(expect.objectContaining({
+      id: 'edge_semantic',
+      sourceId: 'node_parent',
+      targetId: 'node_child',
+      type: 'down-hub',
+      sourceRole: 'down-hub',
+      targetRole: 'up-hub',
+      direction: 'directed'
+    }));
+
+    const parsed = parseWorkspaceFiles(projection.files);
+    const map = parsed.entities.find(({ kind, id }) => kind === 'map' && id === 'map_semantic');
+    const parent = parsed.entities.find(({ kind, id }) => kind === 'node' && id === 'node_parent');
+    expect(map.payload.map.edges).toHaveLength(1);
+    expect(map.payload.map.edges[0]).toMatchObject({
+      id: 'edge_semantic',
+      sourceId: 'node_parent',
+      targetId: 'node_child',
+      sourcePort: 'right',
+      targetPort: 'left',
+      type: 'down-hub'
+    });
+    expect(parent.payload.relations).toEqual([]);
+  });
+
   it('preserves unknown desktop fields and a binary sidecar reference across a mobile round-trip', () => {
     const native = {
       pisi: {
