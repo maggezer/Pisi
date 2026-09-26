@@ -504,9 +504,6 @@ function normalizeNodeConnectionTypes(value) {
 function normalizeConnectionRole(role) {
     const value = String(role || '').trim();
 
-    if (value === 'colevel') return 'co-level';
-    if (value === 'co-level') return 'co-level';
-
     if (PISI_CONNECTION_KEYS.includes(value)) {
         return value;
     }
