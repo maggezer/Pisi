@@ -32,7 +32,6 @@ function loadProjectLockApi(options = {}) {
         'isProjectLockOwnedByCurrentInstance',
         'isProjectLockHeldByAnotherProcess',
         'removeProjectLockFile',
-        'migrateLegacyProjectLock',
         'acquireProjectLock',
         'inspectProjectFolder'
     ];
@@ -77,7 +76,7 @@ function loadProjectSelectionApi() {
     return context.normalizeSelection;
 }
 
-test('aynı PID ile kalmış eski proje kilidi güvenle geri alınır', (t) => {
+test('aynı PID ile kalmış stale proje kilidi güvenle geri alınır', (t) => {
     const folderPath = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-lock-'));
     const lockPath = path.join(folderPath, '.pisi.lock');
 
@@ -143,16 +142,9 @@ test('erişilemeyen proje yolu yapılandırılmış hata döndürür', () => {
     assert.match(result.error, /bulunamadı/);
 });
 
-test('klasör seçimi eski ve yapılandırılmış IPC yanıtlarını destekler', () => {
+test('klasör seçimi yalnız yapılandırılmış IPC yanıtını kabul eder', () => {
     const normalizeSelection = loadProjectSelectionApi();
 
-    assert.deepEqual(
-        { ...normalizeSelection('/tmp/project') },
-        {
-            ok: true,
-            folderPath: '/tmp/project'
-        }
-    );
     assert.deepEqual(
         { ...normalizeSelection({ ok: true, folderPath: '/tmp/project' }) },
         {
@@ -179,6 +171,7 @@ test('klasör seçimi eski ve yapılandırılmış IPC yanıtlarını destekler'
     assert.equal(failed.code, 'EACCES');
     assert.equal(failed.error, 'Erişim reddedildi.');
     assert.equal(failed.reported, true);
+    assert.equal(normalizeSelection('/tmp/project').ok, false);
 });
 
 test('proje ancak dosya ağacı başarıyla yüklendikten sonra açılmış sayılır', () => {
