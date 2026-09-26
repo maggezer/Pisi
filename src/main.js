@@ -820,7 +820,7 @@ class PisiApp {
           <small class="sync-result">URI: ${escapeHtml(sync.folderUri || '—')}</small>
           <small class="sync-result">Son fiziksel yazma: ${escapeHtml(localDate(sync.lastLocalWrite))}${sync.lastLocalWritePath ? ` · ${escapeHtml(sync.lastLocalWritePath)} · ${Number(sync.lastLocalWriteBytes || 0)} byte` : ''}</small>
           <small class="sync-result">Son dış değişiklik taraması: ${escapeHtml(localDate(sync.lastExternalScanAt))} · algılanan son değişiklik: ${escapeHtml(localDate(sync.lastExternalChangeAt))}</small>
-          ${sync.lastMigrationBackupPath ? `<small class="sync-result">Geçiş kurtarma kopyası: ${escapeHtml(sync.lastMigrationBackupPath)}</small>` : ''}` : ''}
+` : ''}
           <small class="sync-warning">Bulut durumu: doğrulanmadı — DriveSync yönetiyor.</small>
           ${sync.lastResult?.fileConflictCount ? '<small class="sync-warning">DriveSync çakışma dosyaları ayrı not/harita kopyaları olarak korundu; içerikleri karşılaştırıp birleştir.</small>' : ''}
         </section>
