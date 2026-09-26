@@ -121,8 +121,24 @@ describe('Pisi responsive application shell', () => {
     sourceNode.querySelector('.anchor-right').click();
     await vi.waitFor(() => expect(document.querySelector('.node-anchor.connection-start')).toBeTruthy());
     targetNode.querySelector('.anchor-left').click();
-    await vi.waitFor(() => expect(document.querySelectorAll('#map-lines > path')).toHaveLength(1));
+    await vi.waitFor(() => expect(document.querySelectorAll('.map-edge-visible')).toHaveLength(1));
+    expect(document.querySelector('.map-edge-visible')).toHaveClass('map-edge-down-hub');
     expect(document.querySelector('.node-anchor.connection-start')).toBeFalsy();
+
+    document.querySelector('[data-map-edge-hit]').click();
+    await vi.waitFor(() => expect(document.querySelector('#map-edge-menu-overlay')).toBeTruthy());
+    expect(document.querySelectorAll('[data-map-edge-type]')).toHaveLength(3);
+    document.querySelector('[data-map-edge-type="co-level"]').click();
+    await vi.waitFor(() => {
+      expect(document.querySelector('.map-edge-visible')).toHaveClass('map-edge-co-level');
+    });
+
+    document.querySelector('[data-map-edge-hit]').click();
+    await vi.waitFor(() => expect(document.querySelector('[data-delete-map-edge]')).toBeTruthy());
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    document.querySelector('[data-delete-map-edge]').click();
+    await vi.waitFor(() => expect(document.querySelector('.map-edge-visible')).toBeFalsy());
+    confirmSpy.mockRestore();
 
     document.querySelector('#map-back').click();
     await vi.waitFor(() => expect(document.querySelector('#new-map')).toBeTruthy());
