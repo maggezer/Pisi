@@ -149,6 +149,17 @@ describe('visible Pisi workspace files', () => {
       targetPort: 'left'
     }]);
     expect(relationshipStore.updatedAt).toBeUndefined();
+    const parentPath = projection.index.records['node:node_parent'];
+    const childPath = projection.index.records['node:node_child'];
+    const parentFile = JSON.parse(
+      projection.files.find(({ path }) => path === parentPath).content
+    );
+    const childFile = JSON.parse(
+      projection.files.find(({ path }) => path === childPath).content
+    );
+    expect(parentFile.pisi.connectionTypes['down-hub']).toEqual(['node_child']);
+    expect(childFile.pisi.connectionTypes['up-hub']).toEqual(['node_parent']);
+
     expect(relationshipStore.relationships).toContainEqual(expect.objectContaining({
       id: 'edge_semantic',
       sourceId: 'node_parent',
