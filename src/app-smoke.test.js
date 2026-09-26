@@ -86,9 +86,21 @@ describe('Pisi responsive application shell', () => {
     await new Promise((resolve) => setTimeout(resolve, 650));
     expect(document.activeElement).toBe(nodeTitle);
     nodeTitle.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
-    expect(document.activeElement).toBe(document.querySelector('#node-sheet-content'));
+    const nodeContent = document.querySelector('#node-sheet-content');
+    expect(document.activeElement).toBe(nodeContent);
+    nodeContent.value = 'Yeni düğüm ayrıntısı';
+    nodeContent.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
+    await new Promise((resolve) => setTimeout(resolve, 650));
+
     document.querySelector('#close-node-sheet').click();
-    expect(document.querySelector('#node-sheet-overlay')).toBeFalsy();
+    await vi.waitFor(() => expect(document.querySelector('#node-sheet-overlay')).toBeFalsy());
+
+    document.querySelector('[data-edit-node]').click();
+    await vi.waitFor(() => expect(document.querySelector('#node-sheet-title')).toBeTruthy());
+    expect(document.querySelector('#node-sheet-title').value).toBe('Dokunmatik düğüm');
+    expect(document.querySelector('#node-sheet-content').value).toBe('Yeni düğüm ayrıntısı');
+    document.querySelector('#close-node-sheet').click();
+    await vi.waitFor(() => expect(document.querySelector('#node-sheet-overlay')).toBeFalsy());
 
     document.querySelector('#map-back').click();
     await vi.waitFor(() => expect(document.querySelector('#new-map')).toBeTruthy());
