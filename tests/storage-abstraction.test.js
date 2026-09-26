@@ -58,14 +58,17 @@ test('canonical metadata stores use the shared storage port instead of direct fs
     for (const file of [
         'main/functions/task-store.js',
         'main/functions/relationship-store.js',
-        'main/functions/property-schema-store.js',
-        'main/functions/source-of-truth.js'
+        'main/functions/property-schema-store.js'
     ]) {
         const source = readSource(file);
         assert.match(source, /require\('\.\/storage'\)/, file);
         assert.match(source, /getPisiProjectStorage/, file);
         assert.doesNotMatch(source, /require\(['"]fs['"]\)/, file);
     }
+
+    const sourceOfTruth = readSource('main/functions/source-of-truth.js');
+    assert.doesNotMatch(sourceOfTruth, /require\(['"]fs['"]\)/);
+    assert.doesNotMatch(sourceOfTruth, /writeFile|readFile|writeJson|readJson/);
 });
 
 test('storage remains an IO boundary and delegates production writes to the atomic file primitive', () => {
