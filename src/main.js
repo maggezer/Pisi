@@ -39,6 +39,7 @@ import {
 import {
   isHierarchyMapEdge,
   mapEdgeToRelationship,
+  normalizeMapEdgeProjections,
   normalizeMapEdges,
   normalizeRelationshipCollection,
   prepareMapConnection
@@ -80,10 +81,10 @@ function normalizeDocument(document) {
   const canvas = document.canvas || {};
   const nodes = Array.isArray(canvas.nodes) ? canvas.nodes : [];
   const validNodeIds = new Set(nodes.map(({ id }) => id).filter(Boolean));
-  const edges = normalizeMapEdges(
+  const edges = normalizeMapEdgeProjections(
     Array.isArray(canvas.edges) ? canvas.edges : [],
     validNodeIds
-  ).edges;
+  );
   return {
     ...createDocument(document.kind || 'note'),
     ...document,
