@@ -244,7 +244,8 @@ class PisiApp {
         '#platform-overlay, #todo-options-overlay, #map-edge-menu-overlay'
       );
       if (overlay) {
-        overlay.remove();
+        if (overlay.id === 'map-edge-menu-overlay') this.closeMapEdgeMenu();
+        else overlay.remove();
         return;
       }
       if (this.mapEditingNode) {
