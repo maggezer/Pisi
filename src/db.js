@@ -213,7 +213,7 @@ export function createDocument(kind = 'note', overrides = {}) {
     canvas: {
       nodes: [],
       edges: [],
-      collapsedAnchors: [],
+      collapsedHubs: [],
       camera: { x: 36, y: 42, zoom: 1 }
     },
     view: { type: 'document', filters: [], sort: [] },
