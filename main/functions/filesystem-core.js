@@ -37,10 +37,6 @@ function normalizeMapEdge(edge) {
 
     let type = String(edge.type || 'down-hub');
 
-    if (type === 'colevel') {
-        type = 'co-level';
-    }
-
     if (!['down-hub', 'stream', 'co-level'].includes(type)) {
         type = 'down-hub';
     }
@@ -48,8 +44,7 @@ function normalizeMapEdge(edge) {
     let sourceRole = normalizeConnectionRole(edge.sourceRole);
     let targetRole = normalizeConnectionRole(edge.targetRole);
 
-    // Portlar yalnızca geometriyi belirler. İlişki türü ile rollerin
-    // çelişmesine izin vermeyerek elle düzenlenmiş eski dosyaları onar.
+    // Portlar yalnızca geometriyi belirler. Semantik roller tipten türetilir.
     if (type === 'co-level') {
         sourceRole = 'co-level';
         targetRole = 'co-level';
@@ -282,7 +277,9 @@ function createPisiDocumentData({ ext, title, id, parentMap = 'none' }) {
             ...base,
             map: {
                 nodes: [],
-                edges: [],
+                relationshipViews: [],
+                relationshipViewVersion: 1,
+                collapsedHubs: [],
                 camera: { x: 0, y: 0, zoom: 1 }
             }
         };
