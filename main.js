@@ -26,7 +26,6 @@ require("./main/functions/portability");
 require("./main/functions/electron-ipc");
 require("./main/functions/sync-domain");
 require("./main/runtime");
-require("./main/functions/map-node-create-hardening");
 require("./main/functions/version-history-operation-hooks");
 require("./main/functions/backup-directory-ipc");
 require("./main/functions/task-reference-operation-hooks");
