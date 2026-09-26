@@ -376,13 +376,13 @@ function hashPisiTaskIdentity(value) {
     return `${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}`;
 }
 
-function getPisiTaskIdForLegacySource(nodePath, blockId, todoTag) {
+function getPisiTaskIdForSource(nodePath, blockId, todoTag) {
     const key = [
         normalizePisiTaskIdentityPath(nodePath),
         String(blockId || ''),
         String(todoTag || '')
     ].map(encodeURIComponent).join('::');
-    return `task_legacy_${hashPisiTaskIdentity(key)}`;
+    return `task_source_${hashPisiTaskIdentity(key)}`;
 }
 
 function parsePisiTaskPriority(todoTag, fallback = 3) {
@@ -402,7 +402,7 @@ function registerQuickCapturedTask(projectFolder, payload, result) {
     if (!sourceTask?.nodePath || !sourceTask?.blockId || !sourceTask?.todoTag) {
         return result;
     }
-    const taskId = getPisiTaskIdForLegacySource(
+    const taskId = getPisiTaskIdForSource(
         sourceTask.nodePath,
         sourceTask.blockId,
         sourceTask.todoTag
@@ -500,7 +500,7 @@ const moduleApi = {
     updatePisiFirstClassTask,
     deletePisiFirstClassTask,
     syncPisiFirstClassTaskIndex,
-    getPisiTaskIdForLegacySource,
+    getPisiTaskIdForSource,
     installPisiFirstClassTaskCaptureBridge
 };
 
