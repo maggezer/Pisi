@@ -55,20 +55,15 @@ function clone(value) {
   return value === undefined ? undefined : structuredClone(value);
 }
 
-function normalizeCollapsedHubs(values = [], legacyValues = []) {
-  const source = Array.isArray(values) && values.length ? values : legacyValues;
+function normalizeCollapsedHubs(values = []) {
   return Array.from(new Set(
-    (Array.isArray(source) ? source : [])
-      .map((value) => {
-        const raw = String(value || '');
-        if (/^node_[A-Za-z0-9_-]+::(?:top|right|bottom|left)$/.test(raw)) return raw;
-        const legacy = raw.match(/^(node_[A-Za-z0-9_-]+):(top|right|bottom|left)$/);
-        return legacy ? `${legacy[1]}::${legacy[2]}` : '';
-      })
-      .filter(Boolean)
+    (Array.isArray(values) ? values : [])
+      .map((value) => String(value || ''))
+      .filter((value) => (
+        /^node_[A-Za-z0-9_-]+::(?:top|right|bottom|left)$/.test(value)
+      ))
   )).slice(0, 10000);
 }
-
 function normalizePath(value = '') {
   return String(value).normalize('NFC').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
 }
@@ -196,13 +191,9 @@ function makeMapData(record, sidecar) {
     ...rawMap,
     relationshipViews: edges.map(mapEdgeToRelationshipView).filter(Boolean),
     relationshipViewVersion: 1,
-    collapsedHubs: normalizeCollapsedHubs(
-      rawMap.collapsedHubs,
-      rawMap.collapsedAnchors || native.map?.collapsedAnchors
-    )
+    collapsedHubs: normalizeCollapsedHubs(rawMap.collapsedHubs)
   };
   delete map.edges;
-  delete map.collapsedAnchors;
   return {
     ...native,
     pisi: {
@@ -446,13 +437,11 @@ function canonicalMapEntity(path, data, relationships = []) {
   const map = data.map || {};
   const nodes = clone(map.nodes || []);
   const validNodeIds = new Set(nodes.map(({ id }) => id).filter(Boolean));
-  const projected = projectRelationshipsToMapEdges(
+  const edges = projectRelationshipsToMapEdges(
     relationships,
     map.relationshipViews || [],
     validNodeIds
   );
-  const legacy = normalizeMapEdgeProjections(map.edges || [], validNodeIds);
-  const edges = normalizeMapEdgeProjections([...projected, ...legacy], validNodeIds);
   return {
     kind: 'map',
     id: String(data.pisi.id),
@@ -463,7 +452,7 @@ function canonicalMapEntity(path, data, relationships = []) {
         nodes,
         edges,
         camera: clone(map.camera || { x: 0, y: 0, zoom: 1 }),
-        collapsedHubs: normalizeCollapsedHubs(map.collapsedHubs, map.collapsedAnchors)
+        collapsedHubs: normalizeCollapsedHubs(map.collapsedHubs)
       },
       tags: clone(data.tags || []),
       properties: clone(data.properties || {}),
@@ -503,23 +492,10 @@ export function parseWorkspaceFiles(rows = []) {
   const mapRelationshipIds = new Set();
   for (const [path, data] of parsed.entries()) {
     if (!pathKey(path).endsWith('.map')) continue;
-    const mapNodeIds = new Set(
-      (Array.isArray(data?.map?.nodes) ? data.map.nodes : [])
-        .map(({ id }) => String(id || ''))
-        .filter(Boolean)
-    );
     for (const view of Array.isArray(data?.map?.relationshipViews)
       ? data.map.relationshipViews : []) {
-      const id = String(view?.relationshipId || view?.id || '');
+      const id = String(view?.relationshipId || '');
       if (id) mapRelationshipIds.add(id);
-    }
-    for (const relationship of relationships) {
-      if (
-        mapNodeIds.has(relationship.sourceId)
-        && mapNodeIds.has(relationship.targetId)
-      ) {
-        mapRelationshipIds.add(relationship.id);
-      }
     }
   }
   const nonMapRelationships = relationships.filter(
