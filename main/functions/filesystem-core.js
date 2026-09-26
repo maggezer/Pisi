@@ -35,10 +35,10 @@ function normalizeMapEdge(edge) {
         return null;
     }
 
-    let type = String(edge.type || 'down-hub');
+    let type = String(edge.type || '');
 
     if (!['down-hub', 'stream', 'co-level'].includes(type)) {
-        type = 'down-hub';
+        return null;
     }
 
     let sourceRole = normalizeConnectionRole(edge.sourceRole);
