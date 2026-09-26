@@ -88,18 +88,6 @@ function collectDocumentInventory(projectFolder, context) {
             } : null);
         }
 
-        if (Object.prototype.hasOwnProperty.call(data, 'kedi') || !metadata.version) {
-            shared.issue(context, {
-                severity: 'warning', code: 'document-migration-incomplete', domain: 'migration',
-                path: storedPath, entityId: id,
-                message: 'Belgede tamamlanmamış legacy metadata/migration alanları var.'
-            }, idValid ? {
-                safety: 'safe', action: 'normalize-document-metadata',
-                description: 'Mevcut kimliği koruyarak legacy metadata alanlarını güncel Pisi şemasına taşı.',
-                payload: { path: storedPath }
-            } : null);
-        }
-
         const sidecarName = String(metadata.sidecar || '');
         const sidecarPath = sidecarName ? path.join(path.dirname(filePath), sidecarName) : null;
         const sidecarExists = sidecarPath && fs.existsSync(sidecarPath) && fs.statSync(sidecarPath).isDirectory();
@@ -332,16 +320,6 @@ function auditMaps(projectFolder, context, inventory, relationshipsById) {
         auditMapLayout(context, doc, known);
         auditMapViews(context, doc, known, relationshipsById);
         const mapData = doc.data.map;
-        if (Object.prototype.hasOwnProperty.call(mapData, 'edges')) {
-            shared.issue(context, {
-                severity: Array.isArray(mapData.edges) && mapData.edges.length ? 'warning' : 'info',
-                code: 'map-legacy-edges-present', domain: 'migration', path: doc.storedPath,
-                entityId: doc.metadata?.id, message: 'Map içinde legacy semantic edges alanı hâlâ mevcut.'
-            }, {
-                safety: 'review', action: 'migrate-legacy-map-edges',
-                description: 'Legacy edge kayıtlarını canonical relationship store + map relationshipViews modeline taşı.'
-            });
-        }
         if (mapData.operational !== undefined) {
             const normalized = mapOperationalStore.normalizePisiOperationalMapState(mapData.operational);
             if (JSON.stringify(normalized) !== JSON.stringify(mapData.operational)) {
