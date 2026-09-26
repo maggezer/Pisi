@@ -2166,3 +2166,204 @@ button:disabled {
   background: color-mix(in srgb, #d69a3f 9%, var(--surface-2));
 }
 .sync-settings[aria-busy="true"] { opacity: .78; }
+
+
+/* Interactive semantic map connections */
+.map-lines .map-edge-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 24px;
+  pointer-events: stroke;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.map-lines .map-edge-visible {
+  fill: none;
+  stroke-width: 3px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+  transition: stroke-width 140ms ease, filter 140ms ease;
+}
+
+.map-lines .map-edge-visible.menu-open {
+  stroke-width: 4.5px;
+  filter: drop-shadow(0 0 5px currentColor);
+}
+
+.map-lines .map-edge-down-hub {
+  stroke: #f39c12;
+  color: #f39c12;
+}
+
+.map-lines .map-edge-co-level {
+  stroke: #34ace0;
+  color: #34ace0;
+}
+
+.map-lines .map-edge-stream {
+  stroke: #a55eea;
+  color: #a55eea;
+}
+
+.map-lines marker .map-arrow-head-down-hub {
+  fill: #f39c12;
+}
+
+.map-lines marker .map-arrow-head-co-level {
+  fill: #34ace0;
+}
+
+.map-lines marker .map-arrow-head-stream {
+  fill: #a55eea;
+}
+
+.map-edge-menu-overlay {
+  position: fixed;
+  z-index: 240;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px 12px max(16px, var(--bottom-safe));
+  background: rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(3px);
+}
+
+.map-edge-menu-sheet {
+  width: min(100%, 480px);
+  padding: 8px 14px 14px;
+  border: 1px solid var(--line);
+  border-radius: 22px 22px 16px 16px;
+  background: var(--surface);
+  box-shadow: 0 -14px 42px rgba(0, 0, 0, 0.34);
+}
+
+.map-edge-menu-sheet .sheet-handle {
+  margin: 2px auto 10px;
+}
+
+.map-edge-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px 2px 12px;
+}
+
+.map-edge-menu-header > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.map-edge-menu-header span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.map-edge-menu-header strong {
+  font-size: 15px;
+}
+
+.map-edge-menu-header button {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 22px;
+}
+
+.map-edge-type-options {
+  display: grid;
+  gap: 8px;
+}
+
+.map-edge-type-option {
+  min-height: 58px;
+  width: 100%;
+  padding: 9px 12px;
+  display: grid;
+  grid-template-columns: 17px minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 11px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-2);
+  color: var(--text);
+  text-align: left;
+}
+
+.map-edge-type-option.active {
+  border-color: color-mix(in srgb, var(--accent) 65%, var(--line));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.map-edge-type-option > span:nth-child(2) {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.map-edge-type-option strong {
+  font-size: 12px;
+}
+
+.map-edge-type-option small {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.map-edge-type-option i {
+  color: var(--accent);
+  font-style: normal;
+  font-size: 15px;
+  text-align: center;
+}
+
+.map-edge-type-swatch {
+  width: 14px;
+  height: 14px;
+  display: block;
+  border-radius: 999px;
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.map-edge-type-swatch-down-hub {
+  background: #f39c12;
+  color: #f39c12;
+}
+
+.map-edge-type-swatch-co-level {
+  background: #34ace0;
+  color: #34ace0;
+}
+
+.map-edge-type-swatch-stream {
+  background: #a55eea;
+  color: #a55eea;
+}
+
+.map-edge-delete-action {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 12px;
+  border: 1px solid color-mix(in srgb, #ff5b5b 42%, var(--line));
+  border-radius: 14px;
+  background: color-mix(in srgb, #ff5b5b 10%, var(--surface-2));
+  color: #ff7272;
+  font-weight: 760;
+}
+
+.map-edge-delete-action span {
+  margin-right: 6px;
+  font-size: 17px;
+}
