@@ -75,11 +75,9 @@ function removePisiRelationshipView(mapData, relationshipId) {
 }
 
 function projectPisiSemanticRelationshipToMapEdge(relationship, rawView = null) {
-    if (!relationship?.id) return null;
-    const view = normalizePisiRelationshipView(
-        rawView || { relationshipId: relationship.id }
-    ) || normalizePisiRelationshipView({ relationshipId: relationship.id });
-    if (!view) return null;
+    if (!relationship?.id || !rawView) return null;
+    const view = normalizePisiRelationshipView(rawView);
+    if (!view || view.relationshipId !== relationship.id) return null;
 
     const projected = filesystemCore.normalizeMapEdge({
         id: relationship.id,
@@ -107,10 +105,10 @@ function projectPisiRelationshipsForMap(relationships = [], rawViews = []) {
     );
     return (Array.isArray(relationships) ? relationships : [])
         .map((relationship) => {
-            return projectPisiSemanticRelationshipToMapEdge(
-                relationship,
-                views.get(relationship.id) || null
-            );
+            const view = views.get(relationship.id);
+            return view
+                ? projectPisiSemanticRelationshipToMapEdge(relationship, view)
+                : null;
         })
         .filter(Boolean);
 }
