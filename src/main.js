@@ -526,13 +526,6 @@ class PisiApp {
       title: 'Fikir haritaları',
       eyebrow: 'Bağlantıları gör',
       content: `
-        <section class="map-intro">
-          <div class="map-orbit"><span></span><span></span><i></i></div>
-          <div>
-            <h2>Fikirlerini serbest bırak.</h2>
-            <p>Düğümleri dokunarak taşı, bağla ve ayrıntılandır.</p>
-          </div>
-        </section>
         <div class="map-list">
           ${maps.length ? maps.map((map) => {
             const nodes = map.canvas?.nodes?.length || 0;
