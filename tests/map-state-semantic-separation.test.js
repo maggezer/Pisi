@@ -373,7 +373,7 @@ test('runtime IPC contract exposes only canonical semantic relationship writes',
     assert.ok(
         bootstrap.indexOf('main/runtime') <
             bootstrap.indexOf('map-semantic-operation-hooks'),
-        'semantic IPC hooks must replace legacy handlers after runtime registration'
+        'canonical semantic IPC hooks load after runtime initialization'
     );
 
     for (const channel of [
@@ -385,7 +385,12 @@ test('runtime IPC contract exposes only canonical semantic relationship writes',
         'project:save-map-camera',
         'project:detach-map-reference'
     ]) {
-        assert.ok(hooks.includes(`ipcMain.removeHandler('${channel}')`));
+        assert.ok(hooks.includes(`ipcMain.handle('${channel}'`));
+        assert.equal(
+            read('main/runtime.js').includes(`ipcMain.handle('${channel}'`),
+            false
+        );
+        assert.equal(hooks.includes(`ipcMain.removeHandler('${channel}')`), false);
     }
 
     assert.match(hooks, /upsertPisiSemanticRelationship/);
