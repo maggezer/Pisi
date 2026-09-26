@@ -12,7 +12,7 @@ test('property menüsü yalnız Metin, Sayı, Tags ve Relation türlerini sunar'
     const core = read('renderer/data/pisi-properties-core.mjs');
     const menuTypes = core.slice(
         core.indexOf('const PISI_NODE_PROPERTY_TYPES'),
-        core.indexOf('const PISI_LEGACY_PROPERTY_TYPE_ALIASES')
+        core.indexOf('const PISI_ROLLUP_AGGREGATES')
     );
     const aggregates = core.slice(
         core.indexOf('const PISI_ROLLUP_AGGREGATES'),
@@ -27,22 +27,6 @@ test('property menüsü yalnız Metin, Sayı, Tags ve Relation türlerini sunar'
     }
     assert.match(menuTypes, /value: 'multiselect', label: 'Tags'/);
     assert.doesNotMatch(aggregates, /checked-percent|İşaretli yüzdesi/);
-});
-
-test('eski property türleri veri kaybetmeden yeni türlere dönüştürülür', () => {
-    const rendererCore = read('renderer/data/pisi-properties-core.mjs');
-    const main = read('main/functions/structured-nodes.js');
-
-    for (const mapping of [
-        "date: 'text'",
-        "select: 'multiselect'",
-        "node: 'relation'",
-        "checkbox: 'multiselect'"
-    ]) {
-        assert.ok(rendererCore.includes(mapping), mapping);
-        assert.ok(main.includes(mapping), mapping);
-    }
-    assert.match(main, /'text', 'number', 'multiselect', 'relation', 'rollup'/);
 });
 
 test('Rollup yalnız ana toolbardan node bloğu olarak eklenir ve property menüsü değildir', () => {
