@@ -20,9 +20,8 @@ function makeFilesystemCoreStub() {
         const sourceId = normalizeNodeId(raw.sourceId);
         const targetId = normalizeNodeId(raw.targetId);
         if (!sourceId || !targetId || sourceId === targetId) return null;
-        let type = String(raw.type || 'down-hub');
-        if (type === 'colevel') type = 'co-level';
-        if (!['down-hub', 'stream', 'co-level'].includes(type)) type = 'down-hub';
+        let type = String(raw.type || '');
+        if (!['down-hub', 'stream', 'co-level'].includes(type)) return null;
         let sourceRole = 'down-hub';
         let targetRole = 'up-hub';
         if (type === 'stream') {
@@ -215,59 +214,6 @@ test('map relationshipViews contain presentation only and reject semantic duplic
     assert.equal('targetRole' in view, false);
 });
 
-test('legacy map.edges migrate deterministically into semantic store plus presentation view', () => {
-    const project = makeProject();
-    try {
-        const mapData = {
-            nodes: [
-                { id: 'node_A', x: 10, y: 20 },
-                { id: 'node_B', x: 30, y: 40 }
-            ],
-            camera: { x: 1, y: 2, zoom: 1.25 },
-            edges: [{
-                id: 'edge_legacy_001',
-                sourceId: 'node_A',
-                targetId: 'node_B',
-                type: 'stream',
-                sourcePort: 'top',
-                targetPort: 'bottom',
-                customization: { color: '#445566' }
-            }]
-        };
-
-        const migrated = modules.mapCore.migratePisiLegacyMapEdgesData(
-            mapData,
-            (edge) => modules.relationshipStore.upsertPisiSemanticRelationship(
-                project,
-                edge,
-                { migration: true }
-            )
-        );
-
-        assert.equal(migrated.changed, true);
-        assert.equal(migrated.migrated, 1);
-        assert.equal(Object.prototype.hasOwnProperty.call(mapData, 'edges'), false);
-        assert.deepEqual(mapData.relationshipViews, [{
-            relationshipId: 'edge_legacy_001',
-            sourcePort: 'top',
-            targetPort: 'bottom',
-            customization: { color: '#445566' }
-        }]);
-        assert.deepEqual(mapData.nodes, [
-            { id: 'node_A', x: 10, y: 20 },
-            { id: 'node_B', x: 30, y: 40 }
-        ]);
-        assert.deepEqual(mapData.camera, { x: 1, y: 2, zoom: 1.25 });
-
-        const stored = modules.relationshipStore.listPisiSemanticRelationships(project);
-        assert.equal(stored.relationships.length, 1);
-        assert.equal(stored.relationships[0].id, 'edge_legacy_001');
-        assert.equal('sourcePort' in stored.relationships[0], false);
-    } finally {
-        fs.rmSync(project, { recursive: true, force: true });
-    }
-});
-
 test('the same semantic relationship can have independent presentation in different maps', () => {
     const relationship = modules.relationshipStore.normalizePisiSemanticRelationship({
         id: 'edge_shared_001',
@@ -420,7 +366,7 @@ test('node connectionTypes are derived in memory from canonical semantic relatio
     assert.deepEqual(nodes[2].metadata.connectionTypes.upstream, ['node_B']);
 });
 
-test('runtime IPC contract routes semantic writes away from legacy map.edges', () => {
+test('runtime IPC contract exposes only canonical semantic relationship writes', () => {
     const bootstrap = read('main.js');
     const hooks = read('main/functions/map-semantic-operation-hooks.js');
 
@@ -444,7 +390,8 @@ test('runtime IPC contract routes semantic writes away from legacy map.edges', (
 
     assert.match(hooks, /upsertPisiSemanticRelationship/);
     assert.match(hooks, /deletePisiSemanticRelationship/);
-    assert.match(hooks, /migratePisiLegacyMapRelationships/);
+    assert.doesNotMatch(hooks, /migratePisiLegacyMapRelationships/);
+    assert.doesNotMatch(hooks, /migratePisiLegacyMapEdgesData/);
     assert.doesNotMatch(hooks, /mapInfo\.data\.map\.edges\.push/);
     assert.doesNotMatch(hooks, /syncMapConnectionMetadata\(/);
 });
