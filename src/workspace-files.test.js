@@ -28,7 +28,7 @@ describe('visible Pisi workspace files', () => {
           nodes: [{ id: 'node_child', x: 10, y: 20, width: 220, height: 92 }],
           edges: [],
           camera: { x: 2, y: 3, zoom: 1.1 },
-          collapsedAnchors: []
+          collapsedHubs: []
         },
         tags: ['plan'],
         properties: {},
@@ -98,7 +98,7 @@ describe('visible Pisi workspace files', () => {
     expect(schema.payload.value[0].name).toBe('Durum');
   });
 
-  it('round-trips desktop semantic map relationships without falling back to legacy map.edges', () => {
+  it('round-trips the canonical desktop semantic map relationship schema', () => {
     const records = [
       record('map', 'map_semantic', {
         title: 'Semantic Harita',
@@ -118,7 +118,7 @@ describe('visible Pisi workspace files', () => {
             targetRole: 'up-hub'
           }],
           camera: { x: 0, y: 0, zoom: 1 },
-          collapsedAnchors: ['node_parent:right']
+          collapsedHubs: ['node_parent::right']
         },
         updatedAt
       }),
@@ -142,7 +142,6 @@ describe('visible Pisi workspace files', () => {
 
     expect(relationshipFile.content.endsWith('\n')).toBe(false);
     expect(writtenMap.map.edges).toBeUndefined();
-    expect(writtenMap.map.collapsedAnchors).toBeUndefined();
     expect(writtenMap.map.collapsedHubs).toEqual(['node_parent::right']);
     expect(writtenMap.map.relationshipViewVersion).toBe(1);
     expect(writtenMap.map.relationshipViews).toEqual([{
@@ -203,7 +202,7 @@ describe('visible Pisi workspace files', () => {
     expect(secondSemantic.updatedAt).toBe(firstSemantic.updatedAt);
   });
 
-  it('projects desktop relationships without relationshipViews using default ports', () => {
+  it('keeps relationships without relationshipViews out of the map projection', () => {
     const mapFile = JSON.stringify({
       pisi: {
         version: 1,
@@ -264,14 +263,12 @@ describe('visible Pisi workspace files', () => {
     const map = parsed.entities.find(({ kind }) => kind === 'map');
     const sourceNode = parsed.entities.find(({ id }) => id === 'node_mv_a');
 
-    expect(map.payload.map.edges).toHaveLength(1);
-    expect(map.payload.map.edges[0]).toMatchObject({
+    expect(map.payload.map.edges).toEqual([]);
+    expect(sourceNode.payload.relations).toContainEqual(expect.objectContaining({
       id: 'edge_missing_view',
-      sourcePort: 'bottom',
-      targetPort: 'top',
+      targetId: 'node_mv_b',
       type: 'stream'
-    });
-    expect(sourceNode.payload.relations).toEqual([]);
+    }));
   });
 
   it('preserves unknown desktop fields and a binary sidecar reference across a mobile round-trip', () => {
