@@ -95,7 +95,9 @@ describe('Pisi responsive application shell', () => {
     document.querySelector('#close-node-sheet').click();
     await vi.waitFor(() => expect(document.querySelector('#node-sheet-overlay')).toBeFalsy());
 
-    document.querySelector('[data-edit-node]').click();
+    const editedNodeCard = [...document.querySelectorAll('.map-node')]
+      .find((element) => element.querySelector('h3')?.textContent === 'Dokunmatik düğüm');
+    editedNodeCard.querySelector('[data-edit-node]').click();
     await vi.waitFor(() => expect(document.querySelector('#node-sheet-title')).toBeTruthy());
     expect(document.querySelector('#node-sheet-title').value).toBe('Dokunmatik düğüm');
     expect(document.querySelector('#node-sheet-content').value).toBe('Yeni düğüm ayrıntısı');
@@ -110,11 +112,15 @@ describe('Pisi responsive application shell', () => {
     secondNodeTitle.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
     document.querySelector('#close-node-sheet').click();
     await vi.waitFor(() => expect(document.querySelector('#node-sheet-overlay')).toBeFalsy());
-    expect(document.querySelectorAll('.map-node')).toHaveLength(2);
+    expect(document.querySelectorAll('.map-node')).toHaveLength(3);
 
-    document.querySelectorAll('.map-node')[0].querySelector('.anchor-right').click();
+    const sourceNode = [...document.querySelectorAll('.map-node')]
+      .find((element) => element.querySelector('h3')?.textContent === 'Dokunmatik düğüm');
+    const targetNode = [...document.querySelectorAll('.map-node')]
+      .find((element) => element.querySelector('h3')?.textContent === 'İkinci düğüm');
+    sourceNode.querySelector('.anchor-right').click();
     await vi.waitFor(() => expect(document.querySelector('.node-anchor.connection-start')).toBeTruthy());
-    document.querySelectorAll('.map-node')[1].querySelector('.anchor-left').click();
+    targetNode.querySelector('.anchor-left').click();
     await vi.waitFor(() => expect(document.querySelectorAll('#map-lines > path')).toHaveLength(1));
     expect(document.querySelector('.node-anchor.connection-start')).toBeFalsy();
 
