@@ -118,7 +118,7 @@ describe('visible Pisi workspace files', () => {
             targetRole: 'up-hub'
           }],
           camera: { x: 0, y: 0, zoom: 1 },
-          collapsedAnchors: []
+          collapsedAnchors: ['node_parent:right']
         },
         updatedAt
       }),
@@ -140,12 +140,15 @@ describe('visible Pisi workspace files', () => {
     );
 
     expect(writtenMap.map.edges).toBeUndefined();
+    expect(writtenMap.map.collapsedAnchors).toBeUndefined();
+    expect(writtenMap.map.collapsedHubs).toEqual(['node_parent::right']);
     expect(writtenMap.map.relationshipViewVersion).toBe(1);
     expect(writtenMap.map.relationshipViews).toEqual([{
       relationshipId: 'edge_semantic',
       sourcePort: 'right',
       targetPort: 'left'
     }]);
+    expect(relationshipStore.updatedAt).toBeUndefined();
     expect(relationshipStore.relationships).toContainEqual(expect.objectContaining({
       id: 'edge_semantic',
       sourceId: 'node_parent',
@@ -159,6 +162,7 @@ describe('visible Pisi workspace files', () => {
     const parsed = parseWorkspaceFiles(projection.files);
     const map = parsed.entities.find(({ kind, id }) => kind === 'map' && id === 'map_semantic');
     const parent = parsed.entities.find(({ kind, id }) => kind === 'node' && id === 'node_parent');
+    expect(map.payload.map.collapsedHubs).toEqual(['node_parent::right']);
     expect(map.payload.map.edges).toHaveLength(1);
     expect(map.payload.map.edges[0]).toMatchObject({
       id: 'edge_semantic',
@@ -169,6 +173,77 @@ describe('visible Pisi workspace files', () => {
       type: 'down-hub'
     });
     expect(parent.payload.relations).toEqual([]);
+  });
+
+  it('projects desktop relationships without relationshipViews using default ports', () => {
+    const mapFile = JSON.stringify({
+      pisi: {
+        version: 1,
+        type: 'map',
+        id: 'map_missing_view',
+        title: 'Eksik görünüm',
+        sidecar: 'nd_Eksik__map_missing_view',
+        updatedAt
+      },
+      map: {
+        nodes: [
+          { id: 'node_mv_a', x: 0, y: 0 },
+          { id: 'node_mv_b', x: 240, y: 0 }
+        ],
+        relationshipViews: [],
+        relationshipViewVersion: 1,
+        camera: { x: 0, y: 0, zoom: 1 },
+        collapsedHubs: []
+      }
+    });
+    const relationships = JSON.stringify({
+      version: 1,
+      relationships: [{
+        id: 'edge_missing_view',
+        sourceId: 'node_mv_a',
+        targetId: 'node_mv_b',
+        type: 'stream',
+        sourceRole: 'downstream',
+        targetRole: 'upstream',
+        direction: 'directed',
+        createdAt: updatedAt,
+        updatedAt
+      }]
+    });
+    const nodeFile = (id, title) => JSON.stringify({
+      pisi: {
+        version: 1,
+        type: 'node',
+        id,
+        title,
+        sidecar: `inv_${id}`,
+        parentMap: 'map_missing_view',
+        updatedAt
+      },
+      content: '',
+      blocks: [],
+      tags: [],
+      properties: {},
+      sources: []
+    });
+
+    const parsed = parseWorkspaceFiles([
+      { path: 'Eksik.map', content: mapFile },
+      { path: 'nd_Eksik__map_missing_view/A.node', content: nodeFile('node_mv_a', 'A') },
+      { path: 'nd_Eksik__map_missing_view/B.node', content: nodeFile('node_mv_b', 'B') },
+      { path: '.pisi/relationships.json', content: relationships }
+    ]);
+    const map = parsed.entities.find(({ kind }) => kind === 'map');
+    const sourceNode = parsed.entities.find(({ id }) => id === 'node_mv_a');
+
+    expect(map.payload.map.edges).toHaveLength(1);
+    expect(map.payload.map.edges[0]).toMatchObject({
+      id: 'edge_missing_view',
+      sourcePort: 'bottom',
+      targetPort: 'top',
+      type: 'stream'
+    });
+    expect(sourceNode.payload.relations).toEqual([]);
   });
 
   it('preserves unknown desktop fields and a binary sidecar reference across a mobile round-trip', () => {
