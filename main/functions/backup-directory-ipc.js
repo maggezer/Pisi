@@ -21,60 +21,32 @@ function listCentralizedPisiAtomicBackups(projectFolder, filePath = null) {
             };
         }
 
-        const migration = backupStorage.migratePisiLegacyAtomicBackup(
-            projectFolder,
-            filePath,
-            {
-                rename: typeof globalThis.renamePathInternal === 'function'
-                    ? globalThis.renamePathInternal
-                    : undefined
-            }
-        );
-
-        const managedPath = backupStorage.getPisiAtomicBackupPath(
+        const backupPath = backupStorage.getPisiAtomicBackupPath(
             projectFolder,
             filePath
         );
-        const legacyPath = `${path.resolve(filePath)}${backupStorage.PISI_BACKUP_SUFFIX}`;
-        const candidates = [managedPath, legacyPath]
-            .filter(Boolean)
-            .filter((candidate, index, all) => {
-                return all.indexOf(candidate) === index && fs.existsSync(candidate);
-            });
+        if (!backupPath || !fs.existsSync(backupPath)) {
+            return { ok: true, backups: [] };
+        }
 
-        const byTarget = new Map();
-        for (const backupPath of candidates) {
-            const targetPath = backupStorage.getPisiAtomicBackupTargetPath(
-                projectFolder,
-                backupPath
-            );
-            if (!targetPath) continue;
-            const stat = fs.statSync(backupPath);
-            const entry = {
+        const targetPath = backupStorage.getPisiAtomicBackupTargetPath(
+            projectFolder,
+            backupPath
+        );
+        if (!targetPath) return { ok: true, backups: [] };
+
+        const stat = fs.statSync(backupPath);
+        return {
+            ok: true,
+            backups: [{
                 backupId: path.relative(projectFolder, backupPath)
                     .split(path.sep)
                     .join('/'),
                 targetPath,
                 updatedAt: stat.mtime.toISOString(),
                 size: stat.size,
-                centralized: backupStorage.isPisiBackupStoragePath(
-                    projectFolder,
-                    backupPath
-                )
-            };
-            const key = normalizeBackupTargetKey(targetPath);
-            const existing = byTarget.get(key);
-            if (!existing || entry.updatedAt > existing.updatedAt) {
-                byTarget.set(key, entry);
-            }
-        }
-
-        return {
-            ok: migration.ok !== false,
-            backups: Array.from(byTarget.values())
-                .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
-            migratedLegacyBackup: migration.migrated === true,
-            warning: migration.ok === false ? migration.error : null
+                centralized: true
+            }]
         };
     } catch (error) {
         return { ok: false, error: error.message, backups: [] };
