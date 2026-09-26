@@ -139,7 +139,10 @@ function upsertPisiMapSemanticConnection(mapPath, edge = {}) {
                 ...saved,
                 suggestedEdge: mapSemanticCore.projectPisiSemanticRelationshipToMapEdge(
                     saved.suggestedRelationship,
-                    normalized
+                    mapSemanticCore.makePisiRelationshipView(
+                        saved.suggestedRelationship,
+                        normalized
+                    )
                 )
             };
         }
@@ -158,7 +161,10 @@ function upsertPisiMapSemanticConnection(mapPath, edge = {}) {
         ok: true,
         edge: mapSemanticCore.projectPisiSemanticRelationshipToMapEdge(
             saved.relationship,
-            normalized
+            mapSemanticCore.makePisiRelationshipView(
+                saved.relationship,
+                normalized
+            )
         ),
         edges: refreshed.ok ? refreshed.edges : [],
         relationship: saved.relationship
