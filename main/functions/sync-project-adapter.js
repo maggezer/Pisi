@@ -147,14 +147,24 @@ function canonicalNodePayload(row, relationships) {
 function canonicalMapPayload(row) {
     const data = row.data;
     const map = data.map || {};
+    const semantic = modules['main.mapSemanticCore'];
     return {
         schema: 'pisi.map.v1',
         title: String(data.pisi.title || path.basename(row.path, '.map')),
         map: {
             nodes: clone(Array.isArray(map.nodes) ? map.nodes : []),
-            edges: clone(Array.isArray(map.edges) ? map.edges : []),
+            relationshipViews: clone(
+                semantic.normalizePisiRelationshipViews(map.relationshipViews)
+            ),
+            relationshipViewVersion: semantic.PISI_MAP_RELATIONSHIP_VIEW_VERSION,
             camera: clone(map.camera || { x: 0, y: 0, zoom: 1 }),
-            collapsedAnchors: clone(Array.isArray(map.collapsedAnchors) ? map.collapsedAnchors : [])
+            collapsedHubs: Array.from(new Set(
+                (Array.isArray(map.collapsedHubs) ? map.collapsedHubs : [])
+                    .map((value) => String(value || ''))
+                    .filter((value) => (
+                        /^(?:node_[A-Za-z0-9_-]+)::(?:top|right|bottom|left)$/.test(value)
+                    ))
+            )).slice(0, 10000)
         },
         tags: Array.isArray(data.tags) ? clone(data.tags) : [],
         properties: data.properties && typeof data.properties === 'object' ? clone(data.properties) : {},
@@ -309,7 +319,25 @@ function makeDocumentData(record, existingData, parentMap = 'none') {
         if (payload.sheet != null) data.sheet = clone(payload.sheet);
         if (payload.view != null) data.view = clone(payload.view);
     } else {
-        data.map = clone(payload.map || { nodes: [], edges: [], camera: { x: 0, y: 0, zoom: 1 } });
+        const incomingMap = payload.map && typeof payload.map === 'object'
+            ? payload.map
+            : {};
+        const semantic = modules['main.mapSemanticCore'];
+        data.map = {
+            nodes: clone(Array.isArray(incomingMap.nodes) ? incomingMap.nodes : []),
+            relationshipViews: clone(
+                semantic.normalizePisiRelationshipViews(incomingMap.relationshipViews)
+            ),
+            relationshipViewVersion: semantic.PISI_MAP_RELATIONSHIP_VIEW_VERSION,
+            camera: clone(incomingMap.camera || { x: 0, y: 0, zoom: 1 }),
+            collapsedHubs: Array.from(new Set(
+                (Array.isArray(incomingMap.collapsedHubs) ? incomingMap.collapsedHubs : [])
+                    .map((value) => String(value || ''))
+                    .filter((value) => (
+                        /^(?:node_[A-Za-z0-9_-]+)::(?:top|right|bottom|left)$/.test(value)
+                    ))
+            )).slice(0, 10000)
+        };
         data.tags = clone(payload.tags || []);
         data.properties = clone(payload.properties || {});
     }
