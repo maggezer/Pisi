@@ -602,27 +602,5 @@ export async function replaceSyncedWorkspace({ documents = [], tasks = [], setti
 }
 
 export async function seedDatabase() {
-  const documents = await listDocuments();
-  if (documents.length > 0) return documents;
-  const canvas = createDocument('canvas', {
-    title: 'İlk fikir haritam',
-    canvas: {
-      nodes: [
-        { id: makeId('node'), title: 'Ana fikir', content: 'Buradan başla', x: 520, y: 360 },
-        { id: makeId('node'), title: 'Bir sonraki adım', content: 'Düğüme dokunup düzenle', x: 820, y: 540 }
-      ],
-      edges: [],
-      collapsedAnchors: [],
-      camera: { x: -390, y: -255, zoom: 1 }
-    }
-  });
-  canvas.canvas.edges.push({
-    id: makeId('edge'),
-    from: canvas.canvas.nodes[0].id,
-    to: canvas.canvas.nodes[1].id,
-    fromAnchor: 'right',
-    toAnchor: 'left'
-  });
-  await putDocument(canvas, { recordHistory: false, durable: false });
   return listDocuments();
 }
