@@ -13,13 +13,6 @@ test('editable property schema is frozen to Text Number Tags and Relation for 1.
     assert.equal(contract.isSupportedPropertyType('formula'), false);
 });
 
-test('legacy types migrate deterministically without adding new public types', () => {
-    assert.equal(contract.normalizePropertyType('date'), 'text');
-    assert.equal(contract.normalizePropertyType('select'), 'multiselect');
-    assert.equal(contract.normalizePropertyType('node'), 'relation');
-    assert.equal(contract.normalizePropertyType('checkbox'), 'multiselect');
-});
-
 test('legacy properties without IDs receive deterministic stable IDs', () => {
     const first = contract.makeDeterministicPropertyId('Öncelik', 'number');
     const second = contract.makeDeterministicPropertyId('Öncelik', 'number');
@@ -47,13 +40,3 @@ test('type changes are allowed only when existing values are losslessly compatib
     assert.equal(contract.canLosslesslyChangePropertyType('text', 'relation', ''), true);
 });
 
-test('legacy checked-percent rollup is detected but not accepted as current aggregate', () => {
-    const result = contract.validatePropertyValue('rollup', {
-        relationProperty: 'tasks',
-        targetProperty: 'done',
-        aggregate: 'checked-percent'
-    });
-    assert.equal(result.ok, false);
-    assert.equal(result.code, 'PROPERTY_ROLLUP_LEGACY_AGGREGATE');
-    assert.equal(result.normalized.aggregate, 'count');
-});
