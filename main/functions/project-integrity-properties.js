@@ -145,16 +145,7 @@ function auditNodePropertyAgainstSchema(context, doc, indexes) {
             }
         }
 
-        if (contract.PISI_LEGACY_PROPERTY_TYPE_ALIASES[rawType]) {
-            issueProperty(context, {
-                severity: 'warning', code: 'node-property-legacy-type',
-                path: doc.storedPath, entityId: id,
-                message: `Legacy property türü migration bekliyor: ${rawType}`
-            }, {
-                safety: 'review', action: 'migrate-legacy-property-type',
-                description: `Legacy ${rawType} değerini ${type} türüne veri kaybı olmadan taşı.`
-            });
-        } else if (!contract.isSupportedPropertyType(type)) {
+        if (!contract.isSupportedPropertyType(type)) {
             issueProperty(context, {
                 severity: 'error', code: 'node-property-type-invalid',
                 path: doc.storedPath, entityId: id,
