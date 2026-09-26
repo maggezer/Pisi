@@ -57,18 +57,17 @@ function remapId(id, kind, ids) {
 }
 
 function canonicalCollapsedHubs(canvas = {}, ids = new Map()) {
-  const source = Array.isArray(canvas.collapsedHubs) && canvas.collapsedHubs.length
-    ? canvas.collapsedHubs
-    : (canvas.collapsedAnchors || []);
   return Array.from(new Set(
-    (Array.isArray(source) ? source : []).map((value) => {
-      const match = String(value || '').match(
-        /^(node_[A-Za-z0-9_-]+)(?:::|:)(top|right|bottom|left)$/
-      );
-      if (!match) return null;
-      const nodeId = remapId(match[1], 'node', ids);
-      return nodeId ? `${nodeId}::${match[2]}` : null;
-    }).filter(Boolean)
+    (Array.isArray(canvas.collapsedHubs) ? canvas.collapsedHubs : [])
+      .map((value) => {
+        const match = String(value || '').match(
+          /^(node_[A-Za-z0-9_-]+)::(top|right|bottom|left)$/
+        );
+        if (!match) return null;
+        const nodeId = remapId(match[1], 'node', ids);
+        return nodeId ? `${nodeId}::${match[2]}` : null;
+      })
+      .filter(Boolean)
   ));
 }
 
@@ -167,13 +166,13 @@ function canonicalMapPayload(document, ids) {
   const rawEdges = (canvas.edges || []).map((edge) => ({
       ...structuredClone(edge),
       id: canonicalSyncId(
-        edge.id || `${edge.sourceId || edge.from}:${edge.targetId || edge.to}`,
+        edge.id || `${edge.sourceId}:${edge.targetId}`,
         'edge'
       ),
-      sourceId: remapId(edge.sourceId || edge.from, 'node', ids),
-      targetId: remapId(edge.targetId || edge.to, 'node', ids),
-      sourcePort: edge.sourcePort || edge.fromAnchor,
-      targetPort: edge.targetPort || edge.toAnchor
+      sourceId: remapId(edge.sourceId, 'node', ids),
+      targetId: remapId(edge.targetId, 'node', ids),
+      sourcePort: edge.sourcePort,
+      targetPort: edge.targetPort
     }));
   const edges = normalizeMapEdgeProjections(rawEdges, validNodeIds);
 
