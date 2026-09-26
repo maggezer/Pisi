@@ -125,7 +125,9 @@ describe('Pisi responsive application shell', () => {
     expect(document.querySelector('.map-edge-visible').classList.contains('map-edge-down-hub')).toBe(true);
     expect(document.querySelector('.node-anchor.connection-start')).toBeFalsy();
 
-    document.querySelector('[data-map-edge-hit]').click();
+    document.querySelector('[data-map-edge-hit]').dispatchEvent(
+      new MouseEvent('click', { bubbles: true, cancelable: true })
+    );
     await vi.waitFor(() => expect(document.querySelector('#map-edge-menu-overlay')).toBeTruthy());
     expect(document.querySelectorAll('[data-map-edge-type]')).toHaveLength(3);
     document.querySelector('[data-map-edge-type="co-level"]').click();
@@ -133,7 +135,9 @@ describe('Pisi responsive application shell', () => {
       expect(document.querySelector('.map-edge-visible').classList.contains('map-edge-co-level')).toBe(true);
     });
 
-    document.querySelector('[data-map-edge-hit]').click();
+    document.querySelector('[data-map-edge-hit]').dispatchEvent(
+      new MouseEvent('click', { bubbles: true, cancelable: true })
+    );
     await vi.waitFor(() => expect(document.querySelector('[data-delete-map-edge]')).toBeTruthy());
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
     document.querySelector('[data-delete-map-edge]').click();
