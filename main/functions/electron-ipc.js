@@ -269,35 +269,11 @@ function inspectProjectFolder(folderPath) {
     }
 }
 
-function migrateLegacyProjectLock(folderPath) {
-    const legacyLockPath = path.join(folderPath, '.kedi.lock');
-    if (!fs.existsSync(legacyLockPath)) return { ok: true };
-
-    let legacyLock = null;
-    try {
-        legacyLock = JSON.parse(fs.readFileSync(legacyLockPath, 'utf-8'));
-    } catch {}
-
-    if (isProjectLockHeldByAnotherProcess(legacyLock)) {
-        return {
-            ok: false,
-            code: 'LEGACY_PROJECT_IN_USE',
-            error: `Bu proje eski uygulamanın çalışan bir süreci tarafından kullanılıyor (PID ${legacyLock.pid}).`
-        };
-    }
-
-    removeProjectLockFile(legacyLockPath);
-    return { ok: true };
-}
-
 function acquireProjectLock(folderPath) {
     const lockPath = path.join(folderPath, '.pisi.lock');
     let lockCreated = false;
 
     try {
-        const legacyLockResult = migrateLegacyProjectLock(folderPath);
-        if (!legacyLockResult.ok) return legacyLockResult;
-
         if (fs.existsSync(lockPath)) {
             let existingLock = null;
 
@@ -419,24 +395,6 @@ function tryLockProjectFolder(folderPath) {
         try {
             activeProjectFolder = realFolderPath;
             activeProjectLockPath = lockResult.lockPath;
-
-            try {
-                const backupMigration = backupStorage.migratePisiLegacyBackups(
-                    realFolderPath,
-                    { rename: renamePathInternal }
-                );
-                if (backupMigration.warnings.length) {
-                    console.warn(
-                        '[PISI] Bazı eski yedekler merkezi klasöre taşınamadı:',
-                        backupMigration.warnings.join(' | ')
-                    );
-                }
-            } catch (migrationError) {
-                console.warn(
-                    '[PISI] Eski yedek klasörü geçişi tamamlanamadı:',
-                    migrationError.message
-                );
-            }
 
             startProjectWatcher(realFolderPath);
         } catch (error) {
