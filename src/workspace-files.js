@@ -17,6 +17,42 @@ const DEFAULT_CONNECTION_TYPES = Object.freeze({
   downstream: []
 });
 
+function emptyConnectionTypes() {
+  return {
+    'up-hub': [],
+    'down-hub': [],
+    'co-level': [],
+    upstream: [],
+    downstream: []
+  };
+}
+
+function deriveConnectionTypes(nodeIds = [], relationships = []) {
+  const result = new Map(
+    (Array.isArray(nodeIds) ? nodeIds : [])
+      .filter(Boolean)
+      .map((id) => [String(id), emptyConnectionTypes()])
+  );
+  for (const relationship of Array.isArray(relationships) ? relationships : []) {
+    const source = result.get(relationship.sourceId);
+    const target = result.get(relationship.targetId);
+    if (!source || !target) continue;
+    if (
+      Array.isArray(source[relationship.sourceRole])
+      && !source[relationship.sourceRole].includes(relationship.targetId)
+    ) {
+      source[relationship.sourceRole].push(relationship.targetId);
+    }
+    if (
+      Array.isArray(target[relationship.targetRole])
+      && !target[relationship.targetRole].includes(relationship.sourceId)
+    ) {
+      target[relationship.targetRole].push(relationship.sourceId);
+    }
+  }
+  return result;
+}
+
 const CONFIG_PATHS = Object.freeze({
   propertySchema: '.pisi/properties.json',
   savedViews: '.pisi-views.json',
@@ -134,7 +170,7 @@ function makeNodeData(record, parentMap, sidecar) {
       title: String(payload.title || native.pisi?.title || 'Başlıksız'),
       sidecar,
       parentMap: parentMap || payload.parentMap || 'none',
-      connectionTypes: clone(native.pisi?.connectionTypes || DEFAULT_CONNECTION_TYPES),
+      connectionTypes: emptyConnectionTypes(),
       createdAt: payload.createdAt || native.pisi?.createdAt || now,
       updatedAt: now
     },
@@ -289,6 +325,20 @@ export function buildWorkspaceProjection(records = []) {
     }
   }
   const relationships = normalizeRelationshipCollection(rawRelationships).relationships;
+  const connectionTypesByNodeId = deriveConnectionTypes(
+    nodes.map(({ id }) => id),
+    relationships
+  );
+  for (const file of files) {
+    if (!String(file.recordKey || '').startsWith('node:')) continue;
+    const nodeId = String(file.recordKey).slice('node:'.length);
+    const data = JSON.parse(file.content);
+    data.pisi.connectionTypes = clone(
+      connectionTypesByNodeId.get(nodeId) || emptyConnectionTypes()
+    );
+    file.content = `${JSON.stringify(data, null, 2)}\n`;
+  }
+
   files.push(jsonFile('.pisi/relationships.json', {
     version: 1,
     relationships
