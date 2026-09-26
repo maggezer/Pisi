@@ -75,107 +75,10 @@ test('backup storage never creates backups of files already inside backup storag
     );
 });
 
-test('legacy beside-file atomic backup migrates to central storage and keeps target mapping', (t) => {
-    const project = fs.mkdtempSync(
-        path.join(os.tmpdir(), 'pisi-backup-migrate-')
-    );
-    t.after(() => {
-        fs.rmSync(project, { recursive: true, force: true });
-    });
 
-    const nodePath = path.join(project, 'Notes', 'Eski.node');
-    const legacyBackup = `${nodePath}.pisi-backup`;
-    const expectedBackup = path.join(
-        project,
-        '.pisi',
-        'backups',
-        'atomic',
-        'Notes',
-        'Eski.node.pisi-backup'
-    );
 
-    fs.mkdirSync(path.dirname(nodePath), { recursive: true });
-    fs.writeFileSync(nodePath, '{"current":true}', 'utf8');
-    fs.writeFileSync(legacyBackup, '{"backup":true}', 'utf8');
 
-    const result = backupStorage.migratePisiLegacyAtomicBackup(
-        project,
-        nodePath
-    );
-
-    assert.equal(result.ok, true);
-    assert.equal(result.migrated, true);
-    assert.equal(result.backupPath, expectedBackup);
-    assert.equal(fs.existsSync(legacyBackup), false);
-    assert.equal(fs.readFileSync(expectedBackup, 'utf8'), '{"backup":true}');
-    assert.equal(
-        backupStorage.getPisiAtomicBackupTargetPath(project, expectedBackup),
-        nodePath
-    );
-});
-
-test('project-open migration moves atomic and corrupt legacy backups together', (t) => {
-    const project = fs.mkdtempSync(
-        path.join(os.tmpdir(), 'pisi-backup-project-open-')
-    );
-    t.after(() => {
-        fs.rmSync(project, { recursive: true, force: true });
-    });
-
-    const nodePath = path.join(project, 'Work', 'Node.node');
-    const atomicLegacy = `${nodePath}.pisi-backup`;
-    const corruptLegacy = `${nodePath}.corrupt-0123456789ab.bak`;
-    fs.mkdirSync(path.dirname(nodePath), { recursive: true });
-    fs.writeFileSync(nodePath, '{}', 'utf8');
-    fs.writeFileSync(atomicLegacy, 'atomic-old', 'utf8');
-    fs.writeFileSync(corruptLegacy, 'corrupt-old', 'utf8');
-
-    const migration = backupStorage.migratePisiLegacyBackups(project);
-
-    assert.equal(migration.ok, true);
-    assert.equal(migration.atomicMigrated, 1);
-    assert.equal(migration.corruptMigrated, 1);
-    assert.equal(fs.existsSync(atomicLegacy), false);
-    assert.equal(fs.existsSync(corruptLegacy), false);
-    assert.equal(
-        fs.readFileSync(
-            backupStorage.getPisiAtomicBackupPath(project, nodePath),
-            'utf8'
-        ),
-        'atomic-old'
-    );
-    assert.equal(
-        fs.readFileSync(
-            backupStorage.getPisiCorruptBackupPath(
-                project,
-                nodePath,
-                '0123456789ab'
-            ),
-            'utf8'
-        ),
-        'corrupt-old'
-    );
-});
-
-test('legacy backup target decoding remains supported for old projects', (t) => {
-    const project = fs.mkdtempSync(
-        path.join(os.tmpdir(), 'pisi-backup-legacy-read-')
-    );
-    t.after(() => {
-        fs.rmSync(project, { recursive: true, force: true });
-    });
-
-    const mapPath = path.join(project, 'Old.map');
-    const legacyBackup = `${mapPath}.pisi-backup`;
-    fs.writeFileSync(legacyBackup, '{}', 'utf8');
-
-    assert.equal(
-        backupStorage.getPisiAtomicBackupTargetPath(project, legacyBackup),
-        mapPath
-    );
-});
-
-test('filesystem, project-open migration and backup IPC use centralized storage', () => {
+test('filesystem and backup IPC use only centralized backup storage', () => {
     assert.match(
         filesystemCoreSource,
         /require\('\.\/backup-storage'\)/
@@ -188,22 +91,13 @@ test('filesystem, project-open migration and backup IPC use centralized storage'
         filesystemCoreSource,
         /backupStorage\.getPisiCorruptBackupPath/
     );
-    assert.match(
+    assert.doesNotMatch(
         electronIpcSource,
-        /backupStorage\.migratePisiLegacyBackups\(/
+        /migratePisiLegacy/
     );
-    assert.match(
-        electronIpcSource,
-        /startProjectWatcher\(realFolderPath\)/
-    );
-    assert.ok(
-        electronIpcSource.indexOf('backupStorage.migratePisiLegacyBackups(') <
-        electronIpcSource.indexOf('startProjectWatcher(realFolderPath)',
-            electronIpcSource.indexOf('backupStorage.migratePisiLegacyBackups('))
-    );
-    assert.match(
+    assert.doesNotMatch(
         backupIpcSource,
-        /migratePisiLegacyAtomicBackup/
+        /migratePisiLegacy/
     );
     assert.match(
         backupIpcSource,
