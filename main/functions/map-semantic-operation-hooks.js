@@ -226,7 +226,6 @@ function reparentPisiMapSemanticNode(mapPath, childId, parentId) {
         saved.relationship,
         { sourcePort: 'bottom', targetPort: 'top' }
     );
-    delete mapInfo.data.map.edges;
     writePisiMapSemanticState(mapPath, mapInfo);
 
     const refreshed = getPisiMapSemanticProjection(mapPath);
