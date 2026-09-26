@@ -98,8 +98,6 @@ function removePisiRelationshipViewFromMap(mapPath, relationshipId) {
         mapInfo.data.map,
         relationshipId
     );
-    if (Object.prototype.hasOwnProperty.call(mapInfo.data.map, 'edges')) {
-        }
     writePisiMapSemanticState(mapPath, mapInfo);
     return { ok: true };
 }
