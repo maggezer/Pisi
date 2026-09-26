@@ -1846,7 +1846,7 @@ button:disabled {
   min-height: calc(68px + var(--bottom-safe));
   padding: 7px 9px calc(7px + var(--bottom-safe));
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 5px;
   flex: 0 0 auto;
   border-top: 1px solid var(--line);
