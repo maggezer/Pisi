@@ -131,13 +131,6 @@ function hideProjectModal() {
 }
 
 function normalizePisiProjectSelection(selection) {
-    if (typeof selection === 'string' && selection.trim()) {
-        return {
-            ok: true,
-            folderPath: selection
-        };
-    }
-
     if (
         selection?.ok === true &&
         typeof selection.folderPath === 'string' &&
