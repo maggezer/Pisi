@@ -135,10 +135,12 @@ describe('visible Pisi workspace files', () => {
     const writtenMap = JSON.parse(
       projection.files.find(({ path }) => path === mapPath).content
     );
-    const relationshipStore = JSON.parse(
-      projection.files.find(({ path }) => path === '.pisi/relationships.json').content
+    const relationshipFile = projection.files.find(
+      ({ path }) => path === '.pisi/relationships.json'
     );
+    const relationshipStore = JSON.parse(relationshipFile.content);
 
+    expect(relationshipFile.content.endsWith('\n')).toBe(false);
     expect(writtenMap.map.edges).toBeUndefined();
     expect(writtenMap.map.collapsedAnchors).toBeUndefined();
     expect(writtenMap.map.collapsedHubs).toEqual(['node_parent::right']);
@@ -184,6 +186,21 @@ describe('visible Pisi workspace files', () => {
       type: 'down-hub'
     });
     expect(parent.payload.relations).toEqual([]);
+
+    const secondProjection = buildWorkspaceProjection(
+      parsed.entities.map((entity) => record(entity.kind, entity.id, entity.payload))
+    );
+    const secondRelationshipStore = JSON.parse(
+      secondProjection.files.find(({ path }) => path === '.pisi/relationships.json').content
+    );
+    const firstSemantic = relationshipStore.relationships.find(
+      ({ id }) => id === 'edge_semantic'
+    );
+    const secondSemantic = secondRelationshipStore.relationships.find(
+      ({ id }) => id === 'edge_semantic'
+    );
+    expect(secondSemantic.createdAt).toBe(firstSemantic.createdAt);
+    expect(secondSemantic.updatedAt).toBe(firstSemantic.updatedAt);
   });
 
   it('projects desktop relationships without relationshipViews using default ports', () => {
