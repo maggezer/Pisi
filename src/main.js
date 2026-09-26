@@ -1365,11 +1365,80 @@ class PisiApp {
     });
   }
 
+  async purgeSemanticRelationshipsForNode(nodeId) {
+    const clean = (document) => {
+      let changed = false;
+      if (document.kind === 'canvas') {
+        const beforeEdges = document.canvas?.edges?.length || 0;
+        document.canvas.edges = (document.canvas?.edges || []).filter(
+          ({ sourceId, targetId }) => sourceId !== nodeId && targetId !== nodeId
+        );
+        changed ||= document.canvas.edges.length !== beforeEdges;
+
+        document.canvas.nodes = (document.canvas?.nodes || []).map((node) => {
+          if (node.id === nodeId) return node;
+          const relations = (node.relations || []).filter((relation) => (
+            relation.targetId !== nodeId && relation.sourceId !== nodeId
+          ));
+          if (relations.length !== (node.relations || []).length) {
+            changed = true;
+            return { ...node, relations };
+          }
+          return node;
+        });
+
+        const beforeCollapsed = document.canvas.collapsedHubs || [];
+        const nextCollapsed = beforeCollapsed.filter((key) => {
+          const match = String(key || '').match(
+            /^(node_[A-Za-z0-9_-]+)::(top|right|bottom|left)$/
+          );
+          if (!match || match[1] === nodeId) return false;
+          return document.canvas.edges.some((edge) => (
+            isHierarchyMapEdge(edge)
+            && edge.sourceId === match[1]
+            && edge.sourcePort === match[2]
+          ));
+        });
+        if (nextCollapsed.length !== beforeCollapsed.length) changed = true;
+        document.canvas.collapsedHubs = nextCollapsed;
+      } else {
+        const relations = (document.relations || []).filter((relation) => (
+          relation.targetId !== nodeId && relation.sourceId !== nodeId
+        ));
+        if (relations.length !== (document.relations || []).length) {
+          document.relations = relations;
+          changed = true;
+        }
+      }
+      return changed;
+    };
+
+    for (let index = 0; index < this.documents.length; index += 1) {
+      const document = this.documents[index];
+      if (document.id === this.activeDocument?.id) continue;
+      const copy = structuredClone(document);
+      if (!clean(copy)) continue;
+      const stored = await putDocument(copy, {
+        durable: false,
+        notify: false,
+        recordHistory: false
+      });
+      this.documents[index] = normalizeDocument(stored);
+    }
+    if (this.activeDocument) clean(this.activeDocument);
+  }
+
   async deleteActiveDocument() {
     if (!this.activeDocument) return;
     const noun = this.activeDocument.kind === 'canvas' ? 'harita' : 'not';
     if (!confirm(`Bu ${noun} kalıcı olarak silinsin mi?`)) return;
     const id = this.activeDocument.id;
+    const removedNodeIds = this.activeDocument.kind === 'canvas'
+      ? (this.activeDocument.canvas?.nodes || []).map(({ id: nodeId }) => nodeId)
+      : [id];
+    for (const nodeId of removedNodeIds) {
+      await this.purgeSemanticRelationshipsForNode(nodeId);
+    }
     await removeDocument(id);
     this.documents = this.documents.filter((document) => document.id !== id);
     this.activeDocument = null;
@@ -1549,7 +1618,9 @@ class PisiApp {
     document.querySelector('#map-fit')?.addEventListener('click', () => this.fitMap());
     document.querySelector('#map-add-node')?.addEventListener('click', () => this.addMapNode());
     document.querySelector('#map-unlink')?.addEventListener('click', () => this.unlinkSelectedNode());
-    document.querySelector('#map-delete-node')?.addEventListener('click', () => this.deleteSelectedNode());
+    document.querySelector('#map-delete-node')?.addEventListener('click', () => {
+      this.deleteSelectedNode().catch((error) => this.showSaveFailure(error));
+    });
 
     document.querySelectorAll('[data-edit-node]').forEach((button) => {
       button.addEventListener('pointerdown', (event) => event.stopPropagation());
@@ -2071,14 +2142,15 @@ class PisiApp {
     this.renderMapEditor();
   }
 
-  deleteSelectedNode() {
+  async deleteSelectedNode() {
     if (!this.selectedMapNode) return;
     if (!confirm('Seçili düğüm ve bağlantıları silinsin mi?')) return;
     const id = this.selectedMapNode;
-    this.activeDocument.canvas.nodes = this.activeDocument.canvas.nodes.filter((node) => node.id !== id);
-    this.activeDocument.canvas.edges = this.activeDocument.canvas.edges.filter(
-      ({ sourceId, targetId }) => sourceId !== id && targetId !== id
+    await this.purgeSemanticRelationshipsForNode(id);
+    this.activeDocument.canvas.nodes = this.activeDocument.canvas.nodes.filter(
+      (node) => node.id !== id
     );
+    this.pruneMapCollapsedHubs();
     this.selectedMapNode = null;
     this.scheduleSave();
     this.renderMapEditor();
