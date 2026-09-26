@@ -2,6 +2,7 @@ import {
   mapEdgeToRelationship,
   mapEdgeToRelationshipView,
   normalizeMapEdges,
+  normalizeRelationshipCollection,
   projectRelationshipsToMapEdges
 } from './map-connections.js';
 
@@ -24,6 +25,20 @@ const CONFIG_PATHS = Object.freeze({
 
 function clone(value) {
   return value === undefined ? undefined : structuredClone(value);
+}
+
+function normalizeCollapsedHubs(values = [], legacyValues = []) {
+  const source = Array.isArray(values) && values.length ? values : legacyValues;
+  return Array.from(new Set(
+    (Array.isArray(source) ? source : [])
+      .map((value) => {
+        const raw = String(value || '');
+        if (/^node_[A-Za-z0-9_-]+::(?:top|right|bottom|left)$/.test(raw)) return raw;
+        const legacy = raw.match(/^(node_[A-Za-z0-9_-]+):(top|right|bottom|left)$/);
+        return legacy ? `${legacy[1]}::${legacy[2]}` : '';
+      })
+      .filter(Boolean)
+  )).slice(0, 10000);
 }
 
 function normalizePath(value = '') {
@@ -144,7 +159,7 @@ function makeMapData(record, sidecar) {
     ? clone(payload.native) : {};
   const now = payload.updatedAt || record.updatedAt || new Date().toISOString();
   const rawMap = clone(payload.map || {
-    nodes: [], edges: [], camera: { x: 0, y: 0, zoom: 1 }, collapsedAnchors: []
+    nodes: [], edges: [], camera: { x: 0, y: 0, zoom: 1 }, collapsedHubs: []
   });
   const validNodeIds = new Set((rawMap.nodes || []).map(({ id }) => id).filter(Boolean));
   const edges = normalizeMapEdges(rawMap.edges || [], validNodeIds).edges;
@@ -152,9 +167,14 @@ function makeMapData(record, sidecar) {
     ...(native.map && typeof native.map === 'object' ? clone(native.map) : {}),
     ...rawMap,
     relationshipViews: edges.map(mapEdgeToRelationshipView).filter(Boolean),
-    relationshipViewVersion: 1
+    relationshipViewVersion: 1,
+    collapsedHubs: normalizeCollapsedHubs(
+      rawMap.collapsedHubs,
+      rawMap.collapsedAnchors || native.map?.collapsedAnchors
+    )
   };
   delete map.edges;
+  delete map.collapsedAnchors;
   return {
     ...native,
     pisi: {
@@ -254,27 +274,23 @@ export function buildWorkspaceProjection(records = []) {
     }));
   }
 
-  const relationshipsById = new Map();
-  const addRelationship = (relationship) => {
-    if (!relationship?.id) return;
-    relationshipsById.set(String(relationship.id), clone(relationship));
-  };
+  const rawRelationships = [];
   for (const record of nodes) {
     for (const relation of record.payload?.relations || []) {
-      addRelationship({ ...clone(relation), sourceId: record.id });
+      rawRelationships.push({ ...clone(relation), sourceId: record.id });
     }
   }
   for (const record of maps) {
     const rawMap = record.payload?.map || {};
     const validNodeIds = new Set((rawMap.nodes || []).map(({ id }) => id).filter(Boolean));
     for (const edge of normalizeMapEdges(rawMap.edges || [], validNodeIds).edges) {
-      addRelationship(mapEdgeToRelationship(edge));
+      const relationship = mapEdgeToRelationship(edge);
+      if (relationship) rawRelationships.push(relationship);
     }
   }
-  const relationships = Array.from(relationshipsById.values());
+  const relationships = normalizeRelationshipCollection(rawRelationships).relationships;
   files.push(jsonFile('.pisi/relationships.json', {
     version: 1,
-    updatedAt: newestTimestamp([...nodes, ...maps]),
     relationships
   }));
 
@@ -400,7 +416,7 @@ function canonicalMapEntity(path, data, relationships = []) {
         nodes,
         edges,
         camera: clone(map.camera || { x: 0, y: 0, zoom: 1 }),
-        collapsedAnchors: clone(map.collapsedAnchors || [])
+        collapsedHubs: normalizeCollapsedHubs(map.collapsedHubs, map.collapsedAnchors)
       },
       tags: clone(data.tags || []),
       properties: clone(data.properties || {}),
@@ -431,15 +447,32 @@ export function parseWorkspaceFiles(rows = []) {
   }
 
   const relationshipStore = parsed.get('.pisi/relationships.json');
-  const relationships = Array.isArray(relationshipStore?.relationships)
-    ? relationshipStore.relationships : [];
+  const normalizedRelationships = normalizeRelationshipCollection(
+    relationshipStore?.relationships || []
+  );
+  const relationships = normalizedRelationships.relationships;
+  warnings.push(...normalizedRelationships.warnings);
+
   const mapRelationshipIds = new Set();
   for (const [path, data] of parsed.entries()) {
     if (!pathKey(path).endsWith('.map')) continue;
+    const mapNodeIds = new Set(
+      (Array.isArray(data?.map?.nodes) ? data.map.nodes : [])
+        .map(({ id }) => String(id || ''))
+        .filter(Boolean)
+    );
     for (const view of Array.isArray(data?.map?.relationshipViews)
       ? data.map.relationshipViews : []) {
       const id = String(view?.relationshipId || view?.id || '');
       if (id) mapRelationshipIds.add(id);
+    }
+    for (const relationship of relationships) {
+      if (
+        mapNodeIds.has(relationship.sourceId)
+        && mapNodeIds.has(relationship.targetId)
+      ) {
+        mapRelationshipIds.add(relationship.id);
+      }
     }
   }
   const nonMapRelationships = relationships.filter(
