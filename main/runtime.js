@@ -305,45 +305,13 @@ ipcMain.handle('app:set-language', (_event, language) => {
     return setPisiLanguage(language);
 });
 
-ipcMain.handle('project:save-map-camera', (_event, mapPath, camera) => {
-    return projectOperation(() => {
-        const safeMapPath = assertProjectPath(mapPath, {
-            type: 'file',
-            extensions: ['.map']
-        });
-        return saveMapCamera(safeMapPath, camera);
-    });
-});
 
-ipcMain.handle('project:upsert-map-connection', (_event, mapPath, edge) => {
-    return projectOperation(() => {
-        const safeMapPath = assertProjectPath(mapPath, {
-            type: 'file',
-            extensions: ['.map']
-        });
-        return upsertMapConnection(safeMapPath, edge);
-    });
-});
 
-ipcMain.handle('project:delete-map-connection', (_event, mapPath, edgeId) => {
-    return projectOperation(() => {
-        const safeMapPath = assertProjectPath(mapPath, {
-            type: 'file',
-            extensions: ['.map']
-        });
-        return deleteMapConnection(safeMapPath, String(edgeId || ''));
-    });
-});
 
-ipcMain.handle('project:reparent-map-node', (_event, mapPath, childId, parentId) => {
-    return projectOperation(() => {
-        const safeMapPath = assertProjectPath(mapPath, {
-            type: 'file',
-            extensions: ['.map']
-        });
-        return reparentMapNode(safeMapPath, childId, parentId);
-    });
-});
+
+
+
+
 
 ipcMain.handle('project:get-pisi-document', (_event, filePath) => {
     return projectOperation(() => {
@@ -355,15 +323,7 @@ ipcMain.handle('project:get-pisi-document', (_event, filePath) => {
     });
 });
 
-ipcMain.handle('project:list-map-nodes', (_event, mapPath) => {
-    return projectOperation(() => {
-        const safeMapPath = assertProjectPath(mapPath, {
-            type: 'file',
-            extensions: ['.map']
-        });
-        return listNodesForMap(safeMapPath);
-    });
-});
+
 
 ipcMain.handle('project:get-node-property-context', (_event, nodePath, preferredMapPath) => {
     return projectOperation(() => {
@@ -416,15 +376,7 @@ ipcMain.handle('project:get-node-property-context', (_event, nodePath, preferred
     });
 });
 
-ipcMain.handle('project:save-map-layout', (_event, mapPath, nodeLayouts) => {
-    return projectOperation(() => {
-        const safeMapPath = assertProjectPath(mapPath, {
-            type: 'file',
-            extensions: ['.map']
-        });
-        return saveMapNodeLayout(safeMapPath, nodeLayouts);
-    });
-});
+
 
 ipcMain.handle('project:save-node-content', (_event, nodePath, content) => {
     return projectOperation(() => {
@@ -548,15 +500,7 @@ ipcMain.handle('project:create-property-map', (_event, projectFolder, options) =
     });
 });
 
-ipcMain.handle('project:detach-map-reference', (_event, mapPath, nodeId) => {
-    return projectOperation(() => {
-        const safeMapPath = assertProjectPath(mapPath, {
-            type: 'file',
-            extensions: ['.map']
-        });
-        return detachPisiMapReference(safeMapPath, nodeId);
-    });
-});
+
 
 ipcMain.handle('project:export-map', (_event, mapPath, payload) => {
     return asyncProjectOperation(async () => {
