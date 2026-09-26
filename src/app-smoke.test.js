@@ -102,6 +102,22 @@ describe('Pisi responsive application shell', () => {
     document.querySelector('#close-node-sheet').click();
     await vi.waitFor(() => expect(document.querySelector('#node-sheet-overlay')).toBeFalsy());
 
+    expect(document.querySelector('#map-connect')).toBeFalsy();
+    document.querySelector('#map-add-node').click();
+    await vi.waitFor(() => expect(document.querySelector('#node-sheet-title')).toBeTruthy());
+    const secondNodeTitle = document.querySelector('#node-sheet-title');
+    secondNodeTitle.value = 'İkinci düğüm';
+    secondNodeTitle.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
+    document.querySelector('#close-node-sheet').click();
+    await vi.waitFor(() => expect(document.querySelector('#node-sheet-overlay')).toBeFalsy());
+    expect(document.querySelectorAll('.map-node')).toHaveLength(2);
+
+    document.querySelectorAll('.map-node')[0].querySelector('.anchor-right').click();
+    await vi.waitFor(() => expect(document.querySelector('.node-anchor.connection-start')).toBeTruthy());
+    document.querySelectorAll('.map-node')[1].querySelector('.anchor-left').click();
+    await vi.waitFor(() => expect(document.querySelectorAll('#map-lines > path')).toHaveLength(1));
+    expect(document.querySelector('.node-anchor.connection-start')).toBeFalsy();
+
     document.querySelector('#map-back').click();
     await vi.waitFor(() => expect(document.querySelector('#new-map')).toBeTruthy());
     document.querySelector('.bottom-nav [data-route="calendar"]').click();
