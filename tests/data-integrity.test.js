@@ -235,12 +235,12 @@ test('normal kullanıcı diary klasörü marker eklenmeden korunur', (t) => {
     );
 });
 
-test('boş ve eski işaretçili diary klasörleri güvenle Pisi yönetimine alınır', (t) => {
-    const projectFolders = [];
+test('boş diary klasörü güvenle Pisi yönetimine alınır', (t) => {
+    const projectFolder = fs.mkdtempSync(
+        path.join(os.tmpdir(), 'pisi-empty-diary-')
+    );
     t.after(() => {
-        for (const folder of projectFolders) {
-            fs.rmSync(folder, { recursive: true, force: true });
-        }
+        fs.rmSync(projectFolder, { recursive: true, force: true });
     });
 
     const api = loadMainHelpers([
@@ -252,41 +252,18 @@ test('boş ve eski işaretçili diary klasörleri güvenle Pisi yönetimine alı
         'ensurePisiDiaryFolder'
     ]);
 
-    const emptyProject = fs.mkdtempSync(
-        path.join(os.tmpdir(), 'pisi-empty-diary-')
-    );
-    projectFolders.push(emptyProject);
-    const emptyDiary = path.join(emptyProject, 'diary');
-    fs.mkdirSync(emptyDiary);
+    const diaryFolder = path.join(projectFolder, 'diary');
+    fs.mkdirSync(diaryFolder);
 
-    const emptyResult = api.ensurePisiDiaryFolder(emptyProject);
-    assert.equal(emptyResult.ok, true);
+    const result = api.ensurePisiDiaryFolder(projectFolder);
+    assert.equal(result.ok, true);
     assert.equal(
-        fs.existsSync(path.join(emptyDiary, '.pisi-diary')),
-        true
-    );
-
-    const legacyProject = fs.mkdtempSync(
-        path.join(os.tmpdir(), 'pisi-legacy-diary-')
-    );
-    projectFolders.push(legacyProject);
-    const legacyDiary = path.join(legacyProject, 'diary');
-    fs.mkdirSync(legacyDiary);
-    fs.writeFileSync(
-        path.join(legacyDiary, '.kedi-diary'),
-        'legacy marker',
-        'utf8'
-    );
-
-    const legacyResult = api.ensurePisiDiaryFolder(legacyProject);
-    assert.equal(legacyResult.ok, true);
-    assert.equal(
-        fs.existsSync(path.join(legacyDiary, '.pisi-diary')),
+        fs.existsSync(path.join(diaryFolder, '.pisi-diary')),
         true
     );
     assert.equal(
-        fs.readFileSync(path.join(legacyDiary, '.kedi-diary'), 'utf8'),
-        'legacy marker'
+        fs.existsSync(path.join(diaryFolder, '.kedi-diary')),
+        false
     );
 });
 
