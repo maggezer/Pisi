@@ -8,15 +8,15 @@ const test = require('node:test');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('task store tek semantik otoritedir; legacy tarama migration sonrası salt okunurdur', () => {
+test('task store tek semantik otoritedir; projection yazımları canonical store üzerinden korunur', () => {
     const mainGuard = read('main/functions/source-of-truth.js');
     const mainBootstrap = read('main.js');
 
-    assert.match(mainGuard, /legacyImportedAt/);
-    assert.match(mainGuard, /operation === 'migration-status'/);
-    assert.match(mainGuard, /operation === 'complete-migration'/);
-    assert.match(mainGuard, /migration\.complete && !explicitProjectionWrite/);
+    assert.match(mainGuard, /operation === 'sync-index'/);
+    assert.match(mainGuard, /allowProjectionWrite === true/);
+    assert.match(mainGuard, /ignoredProjectionWrite:\s*true/);
     assert.match(mainGuard, /authority:\s*'\.pisi\/tasks\.json'/);
+    assert.doesNotMatch(mainGuard, /migration-status|complete-migration|legacyImportedAt/);
     assert.ok(
         mainBootstrap.indexOf('task-store') < mainBootstrap.indexOf('source-of-truth'),
         'source-of-truth guard task-store bridge kurulduktan sonra yüklenmeli'
@@ -81,7 +81,9 @@ test('semantic relationship otoritesi proje storeudur; map yalnız presentation 
     assert.match(mapCore, /relationshipId/);
     assert.match(mapCore, /sourcePort/);
     assert.match(mapCore, /targetPort/);
-    assert.match(mapCore, /delete mapData\.edges/);
+    assert.doesNotMatch(mapCore, /mapData\.edges|collapsedAnchors/);
+    assert.match(mapCore, /relationshipViews/);
+    assert.match(mapCore, /PISI_MAP_RELATIONSHIP_VIEW_VERSION/);
     assert.match(hooks, /relationshipAuthority:/);
     assert.match(hooks, /mapStateAuthority:/);
     assert.doesNotMatch(hooks, /syncMapConnectionMetadata\(/);
