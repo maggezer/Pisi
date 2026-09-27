@@ -98,6 +98,63 @@ describe('visible Pisi workspace files', () => {
     expect(schema.payload.value[0].name).toBe('Durum');
   });
 
+  it('writes property map references as real desktop node paths without duplicating nodes', () => {
+    const records = [
+      record('map', 'map_property', {
+        title: 'Durum haritası',
+        map: {
+          nodes: [{ id: 'node_source', x: 100, y: 120, width: 220, height: 92 }],
+          references: [{ id: 'node_source' }],
+          edges: [],
+          collapsedHubs: [],
+          generated: { kind: 'properties', property: 'durum' },
+          camera: { x: 20, y: 20, zoom: 0.85 }
+        },
+        updatedAt
+      }),
+      record('node', 'node_source', {
+        title: 'Kaynak',
+        content: '<p>Asıl içerik</p>',
+        parentMap: 'none',
+        relations: [],
+        relativePath: 'Notlar/Kaynak.node',
+        updatedAt
+      })
+    ];
+
+    const projection = buildWorkspaceProjection(records);
+    const mapPath = projection.index.records['map:map_property'];
+    const sourcePath = projection.index.records['node:node_source'];
+    const writtenMap = JSON.parse(
+      projection.files.find(({ path }) => path === mapPath).content
+    );
+
+    expect(sourcePath).toBe('Notlar/Kaynak.node');
+    expect(writtenMap.map.references).toEqual([{
+      id: 'node_source',
+      path: 'Notlar/Kaynak.node'
+    }]);
+    expect(
+      projection.files.filter(({ recordKey }) => recordKey === 'node:node_source')
+    ).toHaveLength(1);
+
+    const parsed = parseWorkspaceFiles(projection.files);
+    const map = parsed.entities.find(({ kind, id }) => (
+      kind === 'map' && id === 'map_property'
+    ));
+    const source = parsed.entities.find(({ kind, id }) => (
+      kind === 'node' && id === 'node_source'
+    ));
+
+    expect(map.payload.map.references).toEqual([{ id: 'node_source' }]);
+    expect(map.payload.map.nodes).toHaveLength(1);
+    expect(map.payload.map.generated).toMatchObject({
+      kind: 'properties',
+      property: 'durum'
+    });
+    expect(source.payload.parentMap).toBe('none');
+  });
+
   it('round-trips the canonical desktop semantic map relationship schema', () => {
     const records = [
       record('map', 'map_semantic', {
