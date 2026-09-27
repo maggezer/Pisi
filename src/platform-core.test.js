@@ -41,8 +41,8 @@ describe('Pisi mobile platform core', () => {
 
   it('supports filtered structured views, relations, rollups and property maps', () => {
     const documents = [
-      { id: 'a', title: 'A', updatedAt: '2026-01-01', properties: { durum: 'aktif', related: ['b'] } },
-      { id: 'b', title: 'B', updatedAt: '2026-01-02', properties: { durum: 'bekliyor', puan: 8 } }
+      { id: 'node_a', title: 'A', content: '<p>A</p>', updatedAt: '2026-01-01', properties: { durum: 'aktif', related: ['node_b'] } },
+      { id: 'node_b', title: 'B', content: '<p>B</p>', updatedAt: '2026-01-02', properties: { durum: 'bekliyor', puan: 8 } }
     ];
     expect(applyStructuredView(documents, {
       filters: [{ propertyId: 'durum', operator: 'equals', value: 'aktif' }]
@@ -52,7 +52,11 @@ describe('Pisi mobile platform core', () => {
       rollup: { relationProperty: 'related', targetProperty: 'puan', operation: 'sum' }
     }, documents)).toBe(8);
     const map = generatePropertyMap(documents, 'durum');
-    expect(map.nodes.length).toBeGreaterThan(documents.length);
-    expect(map.edges).toHaveLength(documents.length);
+    expect(map.nodes).toHaveLength(documents.length);
+    expect(map.nodes.map(({ id }) => id)).toEqual(['node_a', 'node_b']);
+    expect(map.references).toEqual([{ id: 'node_a' }, { id: 'node_b' }]);
+    expect(map.edges).toEqual([]);
+    expect(map.collapsedHubs).toEqual([]);
+    expect(map.nodes.every(({ isReference }) => isReference)).toBe(true);
   });
 });
