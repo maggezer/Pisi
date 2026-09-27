@@ -70,18 +70,12 @@ jobs:
             exit 1
           fi
 
-      - name: Upload debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Pisi-android-debug
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
-          retention-days: 7
-
       - name: Upload full clean-install APK
+        if: github.event_name == 'workflow_dispatch'
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: Pisi-android-full
           path: android/app/build/outputs/apk/full/app-full.apk
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 1
