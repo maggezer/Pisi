@@ -2,17 +2,17 @@ import { makeId } from './db.js';
 
 export const PROPERTY_TYPES = Object.freeze(['text', 'number', 'multiselect', 'relation', 'rollup']);
 
-const PROPERTY_TYPE_ALIASES = Object.freeze({
-  date: 'text', checkbox: 'multiselect', select: 'multiselect',
-  'multi-select': 'multiselect', url: 'text', doi: 'text'
-});
+function preservePropertyType(value) {
+  const type = String(value || 'text').trim().toLowerCase();
+  return /^[a-z][a-z0-9-]{0,63}$/.test(type) ? type : 'text';
+}
 
 export function normalizePropertySchema(schema = []) {
   return (Array.isArray(schema) ? schema : []).map((property) => ({
+    ...structuredClone(property),
     id: property.id || makeId('property'),
     name: String(property.name || 'Özellik').slice(0, 80),
-    type: PROPERTY_TYPES.includes(PROPERTY_TYPE_ALIASES[property.type] || property.type)
-      ? (PROPERTY_TYPE_ALIASES[property.type] || property.type) : 'text',
+    type: preservePropertyType(property.type),
     options: Array.isArray(property.options) ? property.options.map(String) : [],
     relationDocumentIds: Array.isArray(property.relationDocumentIds) ? property.relationDocumentIds : [],
     rollup: property.rollup && typeof property.rollup === 'object' ? property.rollup : null
