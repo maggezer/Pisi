@@ -22,7 +22,7 @@ describe('rich text typography preservation', () => {
     expect(span.style.fontSize).toBe('18px');
     expect(span.style.fontStyle).toBe('italic');
     expect(span.style.fontWeight).toBe('700');
-    expect(span.style.color).toBe('rgb(18, 52, 86)');
+    expect(span.style.color).toBe('#123456');
   });
 
   it('keeps typography context when mobile edits inside the formatted span', () => {
