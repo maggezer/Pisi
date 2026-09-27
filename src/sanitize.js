@@ -42,10 +42,33 @@ export function sanitizeRichHtml(value = '') {
         node.removeAttribute(attribute.name);
       }
       if (name === 'style') {
-        const safe = attribute.value.split(';').map((rule) => rule.trim()).filter((rule) =>
-          /^(?:color|background-color|text-decoration|text-align)\s*:/i.test(rule)
-          && !/url\s*\(|expression\s*\(/i.test(rule)
-        ).join('; ');
+        const allowedStyleProperties = new Set([
+          'background-color',
+          'color',
+          'font-family',
+          'font-size',
+          'font-style',
+          'font-weight',
+          'text-align',
+          'text-decoration'
+        ]);
+        const safe = attribute.value
+          .split(';')
+          .map((rule) => rule.trim())
+          .filter(Boolean)
+          .map((rule) => {
+            const separatorIndex = rule.indexOf(':');
+            if (separatorIndex < 1) return '';
+            const property = rule.slice(0, separatorIndex).trim().toLowerCase();
+            const propertyValue = rule.slice(separatorIndex + 1).trim();
+            if (
+              !allowedStyleProperties.has(property)
+              || /url\s*\(|expression\s*\(|@import/i.test(propertyValue)
+            ) return '';
+            return `${property}: ${propertyValue}`;
+          })
+          .filter(Boolean)
+          .join('; ');
         if (safe) node.setAttribute('style', safe);
         else node.removeAttribute('style');
       }
