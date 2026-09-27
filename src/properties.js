@@ -109,27 +109,51 @@ export function applyTemplate(document, template) {
 
 export function generatePropertyMap(documents = [], propertyName) {
   const groups = new Map();
-  documents.forEach((document) => {
+  const seen = new Set();
+
+  for (const document of documents) {
+    if (!/^node_[A-Za-z0-9_-]+$/.test(String(document?.id || ''))) continue;
     const raw = document.properties?.[propertyName];
     const values = Array.isArray(raw) ? raw : [raw ?? 'Belirtilmemiş'];
-    values.forEach((value) => {
-      const key = String(value || 'Belirtilmemiş');
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key).push(document);
-    });
-  });
+    const group = String(values.find((value) => String(value ?? '').trim()) ?? 'Belirtilmemiş');
+    if (!groups.has(group)) groups.set(group, []);
+    groups.get(group).push(document);
+  }
+
   const nodes = [];
-  const edges = [];
+  const references = [];
   let column = 0;
-  for (const [group, rows] of groups) {
-    const groupId = makeId('node');
-    nodes.push({ id: groupId, title: group, content: `${rows.length} kayıt`, x: 200 + column * 360, y: 180 });
-    rows.forEach((document, index) => {
-      const nodeId = makeId('node');
-      nodes.push({ id: nodeId, title: document.title, content: '', documentId: document.id, x: 160 + column * 360, y: 350 + index * 150 });
-      edges.push({ id: makeId('edge'), from: groupId, to: nodeId, fromAnchor: 'bottom', toAnchor: 'top' });
-    });
+  for (const [, rows] of groups) {
+    let rowIndex = 0;
+    for (const document of rows) {
+      if (seen.has(document.id)) continue;
+      seen.add(document.id);
+      nodes.push({
+        id: document.id,
+        title: document.title || 'Başlıksız',
+        content: document.content || '',
+        x: 160 + column * 360,
+        y: 180 + rowIndex * 150,
+        width: 220,
+        height: 92,
+        isReference: true
+      });
+      references.push({ id: document.id });
+      rowIndex += 1;
+    }
     column += 1;
   }
-  return { nodes, edges, collapsedAnchors: [], camera: { x: 20, y: 20, zoom: 0.85 } };
+
+  return {
+    nodes,
+    references,
+    edges: [],
+    collapsedHubs: [],
+    generated: {
+      kind: 'properties',
+      property: String(propertyName || '').slice(0, 120),
+      createdAt: new Date().toISOString()
+    },
+    camera: { x: 20, y: 20, zoom: 0.85 }
+  };
 }
