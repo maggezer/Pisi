@@ -94,8 +94,17 @@ function normalizeDocument(document) {
     },
     canvas: {
       nodes,
+      references: (Array.isArray(canvas.references) ? canvas.references : [])
+        .map((reference) => ({ id: String(reference?.id || '') }))
+        .filter((reference, index, all) => (
+          /^node_[A-Za-z0-9_-]+$/.test(reference.id)
+          && all.findIndex((item) => item.id === reference.id) === index
+        )),
       edges,
       collapsedHubs: normalizeCollapsedHubs(canvas),
+      generated: canvas.generated && typeof canvas.generated === 'object'
+        ? structuredClone(canvas.generated)
+        : null,
       camera: {
         x: Number(canvas.camera?.x) || 0,
         y: Number(canvas.camera?.y) || 0,
@@ -1620,7 +1629,14 @@ class PisiApp {
       button.addEventListener('pointerdown', (event) => event.stopPropagation());
       button.addEventListener('click', (event) => {
         event.stopPropagation();
-        this.mapEditingNode = button.dataset.editNode;
+        const nodeId = button.dataset.editNode;
+        const isReference = (this.activeDocument.canvas.references || [])
+          .some((reference) => reference.id === nodeId);
+        if (isReference) {
+          this.openDocument(nodeId, 'map');
+          return;
+        }
+        this.mapEditingNode = nodeId;
         this.renderMapEditor();
       });
     });
@@ -2138,9 +2154,24 @@ class PisiApp {
 
   async deleteSelectedNode() {
     if (!this.selectedMapNode) return;
-    if (!confirm('Seçili düğüm ve bağlantıları silinsin mi?')) return;
     const id = this.selectedMapNode;
-    await this.purgeSemanticRelationshipsForNode(id);
+    const isReference = (this.activeDocument.canvas.references || [])
+      .some((reference) => reference.id === id);
+    const promptText = isReference
+      ? 'Bu referans haritadan kaldırılsın mı? Orijinal node silinmez.'
+      : 'Seçili düğüm ve bağlantıları silinsin mi?';
+    if (!confirm(promptText)) return;
+
+    if (isReference) {
+      this.activeDocument.canvas.references = this.activeDocument.canvas.references
+        .filter((reference) => reference.id !== id);
+      this.activeDocument.canvas.edges = this.activeDocument.canvas.edges.filter(
+        ({ sourceId, targetId }) => sourceId !== id && targetId !== id
+      );
+    } else {
+      await this.purgeSemanticRelationshipsForNode(id);
+    }
+
     this.activeDocument.canvas.nodes = this.activeDocument.canvas.nodes.filter(
       (node) => node.id !== id
     );
