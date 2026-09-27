@@ -24,13 +24,9 @@ function canonicalConfigValue(id, value) {
     nodeType: template.nodeType || template.kind || 'note'
   }));
   if (id !== 'propertySchema') return structuredClone(rows);
-  const aliases = {
-    date: 'text', checkbox: 'multiselect', select: 'multiselect',
-    'multi-select': 'multiselect', url: 'text', doi: 'text'
-  };
   return (Array.isArray(value) ? value : []).map((property) => ({
     ...structuredClone(property),
-    type: aliases[property?.type] || property?.type || 'text'
+    type: String(property?.type || 'text').trim().toLowerCase() || 'text'
   }));
 }
 
