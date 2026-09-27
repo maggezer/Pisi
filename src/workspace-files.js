@@ -189,9 +189,18 @@ function makeMapData(record, sidecar) {
   const map = {
     ...(native.map && typeof native.map === 'object' ? clone(native.map) : {}),
     ...rawMap,
+    references: (Array.isArray(rawMap.references) ? rawMap.references : [])
+      .map((reference) => ({ id: String(reference?.id || '') }))
+      .filter((reference, index, all) => (
+        /^node_[A-Za-z0-9_-]+$/.test(reference.id)
+        && all.findIndex((item) => item.id === reference.id) === index
+      )),
     relationshipViews: edges.map(mapEdgeToRelationshipView).filter(Boolean),
     relationshipViewVersion: 1,
-    collapsedHubs: normalizeCollapsedHubs(rawMap.collapsedHubs)
+    collapsedHubs: normalizeCollapsedHubs(rawMap.collapsedHubs),
+    generated: rawMap.generated && typeof rawMap.generated === 'object'
+      ? clone(rawMap.generated)
+      : null
   };
   delete map.edges;
   return {
@@ -296,6 +305,20 @@ export function buildWorkspaceProjection(records = []) {
       visible: true,
       recordKey: `node:${record.id}`
     }));
+  }
+
+  for (const record of maps) {
+    const file = files.find(({ recordKey }) => recordKey === `map:${record.id}`);
+    if (!file) continue;
+    const data = JSON.parse(file.content);
+    data.map.references = (record.payload?.map?.references || [])
+      .map((reference) => {
+        const id = String(reference?.id || '');
+        const referencePath = recordPaths[`node:${id}`];
+        return referencePath ? { id, path: referencePath } : null;
+      })
+      .filter(Boolean);
+    file.content = `${JSON.stringify(data, null, 2)}\n`;
   }
 
   const rawRelationships = [];
@@ -450,9 +473,18 @@ function canonicalMapEntity(path, data, relationships = []) {
       title: String(data.pisi.title || 'Başlıksız harita'),
       map: {
         nodes,
+        references: (Array.isArray(map.references) ? map.references : [])
+          .map((reference) => ({ id: String(reference?.id || '') }))
+          .filter((reference, index, all) => (
+            /^node_[A-Za-z0-9_-]+$/.test(reference.id)
+            && all.findIndex((item) => item.id === reference.id) === index
+          )),
         edges,
         camera: clone(map.camera || { x: 0, y: 0, zoom: 1 }),
-        collapsedHubs: normalizeCollapsedHubs(map.collapsedHubs)
+        collapsedHubs: normalizeCollapsedHubs(map.collapsedHubs),
+        generated: map.generated && typeof map.generated === 'object'
+          ? clone(map.generated)
+          : null
       },
       tags: clone(data.tags || []),
       properties: clone(data.properties || {}),
