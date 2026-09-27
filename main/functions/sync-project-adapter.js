@@ -153,6 +153,12 @@ function canonicalMapPayload(row) {
         title: String(data.pisi.title || path.basename(row.path, '.map')),
         map: {
             nodes: clone(Array.isArray(map.nodes) ? map.nodes : []),
+            references: (Array.isArray(map.references) ? map.references : [])
+                .map((reference) => ({ id: String(reference?.id || '') }))
+                .filter((reference, index, all) => (
+                    /^node_[A-Za-z0-9_-]+$/.test(reference.id) &&
+                    all.findIndex((item) => item.id === reference.id) === index
+                )),
             relationshipViews: clone(
                 semantic.normalizePisiRelationshipViews(map.relationshipViews)
             ),
@@ -164,7 +170,10 @@ function canonicalMapPayload(row) {
                     .filter((value) => (
                         /^(?:node_[A-Za-z0-9_-]+)::(?:top|right|bottom|left)$/.test(value)
                     ))
-            )).slice(0, 10000)
+            )).slice(0, 10000),
+            generated: map.generated && typeof map.generated === 'object'
+                ? clone(map.generated)
+                : null
         },
         tags: Array.isArray(data.tags) ? clone(data.tags) : [],
         properties: data.properties && typeof data.properties === 'object' ? clone(data.properties) : {},
@@ -325,6 +334,12 @@ function makeDocumentData(record, existingData, parentMap = 'none') {
         const semantic = modules['main.mapSemanticCore'];
         data.map = {
             nodes: clone(Array.isArray(incomingMap.nodes) ? incomingMap.nodes : []),
+            references: (Array.isArray(incomingMap.references) ? incomingMap.references : [])
+                .map((reference) => ({ id: String(reference?.id || '') }))
+                .filter((reference, index, all) => (
+                    /^node_[A-Za-z0-9_-]+$/.test(reference.id) &&
+                    all.findIndex((item) => item.id === reference.id) === index
+                )),
             relationshipViews: clone(
                 semantic.normalizePisiRelationshipViews(incomingMap.relationshipViews)
             ),
@@ -336,7 +351,10 @@ function makeDocumentData(record, existingData, parentMap = 'none') {
                     .filter((value) => (
                         /^(?:node_[A-Za-z0-9_-]+)::(?:top|right|bottom|left)$/.test(value)
                     ))
-            )).slice(0, 10000)
+            )).slice(0, 10000),
+            generated: incomingMap.generated && typeof incomingMap.generated === 'object'
+                ? clone(incomingMap.generated)
+                : null
         };
         data.tags = clone(payload.tags || []);
         data.properties = clone(payload.properties || {});
@@ -435,7 +453,10 @@ function applyPisiSyncRecords(projectFolder, records, conflicts = []) {
         const sidecarPath = path.join(path.dirname(filePath), data.pisi.sidecar);
         fs.mkdirSync(sidecarPath, { recursive: true });
         mapPaths.set(record.id, { filePath, sidecarPath });
-        planned.push({ filePath, data, oldPath: existing?.path || null });
+        planned.push({
+            kind: 'map', recordId: record.id,
+            filePath, data, oldPath: existing?.path || null
+        });
     }
     for (const record of liveDocuments.filter(({ kind }) => kind === 'node')) {
         const existing = inventory.byId.get(record.id);
@@ -457,9 +478,30 @@ function applyPisiSyncRecords(projectFolder, records, conflicts = []) {
         const newSidecarPath = isSafeSidecarName(data.pisi.sidecar)
             ? path.join(path.dirname(filePath), data.pisi.sidecar) : null;
         planned.push({
+            kind: 'node', recordId: record.id,
             filePath, data, oldPath: existing?.path || null,
             oldSidecarPath, newSidecarPath
         });
+    }
+
+    const nodePathById = new Map(
+        planned
+            .filter((item) => item.kind === 'node')
+            .map((item) => [item.recordId, item.filePath])
+    );
+    for (const item of planned.filter((entry) => entry.kind === 'map')) {
+        item.data.map.references = (item.data.map.references || [])
+            .map((reference) => {
+                const nodePath = nodePathById.get(reference.id)
+                    || inventory.byId.get(reference.id)?.path;
+                if (!nodePath) return null;
+                return {
+                    id: reference.id,
+                    path: path.relative(projectFolder, nodePath)
+                        .split(path.sep).join('/')
+                };
+            })
+            .filter(Boolean);
     }
 
     for (const item of planned) {
