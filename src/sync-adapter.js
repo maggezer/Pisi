@@ -200,10 +200,19 @@ function canonicalMapPayload(document, ids) {
     title: String(document.title || 'Başlıksız harita'),
     map: {
       nodes,
+      references: (Array.isArray(canvas.references) ? canvas.references : [])
+        .map((reference) => ({ id: remapId(reference?.id, 'node', ids) }))
+        .filter((reference, index, all) => (
+          reference.id
+          && all.findIndex((item) => item.id === reference.id) === index
+        )),
       relationshipViews,
       relationshipViewVersion: 1,
       camera: structuredClone(canvas.camera || { x: 0, y: 0, zoom: 1 }),
-      collapsedHubs: canonicalCollapsedHubs(canvas, ids)
+      collapsedHubs: canonicalCollapsedHubs(canvas, ids),
+      generated: canvas.generated && typeof canvas.generated === 'object'
+        ? structuredClone(canvas.generated)
+        : null
     },
     tags: Array.isArray(document.tags) ? structuredClone(document.tags) : [],
     properties: document.properties && typeof document.properties === 'object'
@@ -213,6 +222,34 @@ function canonicalMapPayload(document, ids) {
     relativePath: document.syncRelativePath || null,
     native: document.syncNative?.map || null
   };
+}
+
+function mergeSyncRelations(...collections) {
+  const byId = new Map();
+  for (const collection of collections) {
+    for (const relation of Array.isArray(collection) ? collection : []) {
+      if (!relation?.id) continue;
+      byId.set(String(relation.id), structuredClone(relation));
+    }
+  }
+  return [...byId.values()];
+}
+
+function collectCanvasRelationsBySource(documents = []) {
+  const result = new Map();
+  for (const document of documents) {
+    if (document.kind !== 'canvas') continue;
+    for (const edge of document.canvas?.edges || []) {
+      const relationship = mapEdgeToRelationship(edge);
+      if (!relationship) continue;
+      const { sourceId, ...relation } = relationship;
+      result.set(
+        sourceId,
+        mergeSyncRelations(result.get(sourceId), [relation])
+      );
+    }
+  }
+  return result;
 }
 
 function canonicalMapNodeRelations(canvas, nodeId) {
@@ -242,6 +279,7 @@ export async function exportMobileSyncEntities() {
   ]);
   const ids = new Map();
   const taskIds = new Map();
+  const canvasRelationsBySource = collectCanvasRelationsBySource(documents);
 
   for (const document of documents) {
     ids.set(document.id, canonicalSyncId(document.id, document.kind === 'canvas' ? 'map' : 'node'));
@@ -258,13 +296,20 @@ export async function exportMobileSyncEntities() {
     if (document.kind === 'canvas') {
       const mapId = ids.get(document.id);
       entities.push({ kind: 'map', id: mapId, payload: canonicalMapPayload(document, ids) });
+      const referenceIds = new Set(
+        (document.canvas?.references || []).map(({ id }) => id)
+      );
       for (const node of document.canvas?.nodes || []) {
+        if (referenceIds.has(node.id)) continue;
         entities.push({
           kind: 'node',
           id: ids.get(node.id),
           payload: canonicalNodePayload({
             ...node,
-            relations: canonicalMapNodeRelations(document.canvas, node.id),
+            relations: mergeSyncRelations(
+              canonicalMapNodeRelations(document.canvas, node.id),
+              canvasRelationsBySource.get(node.id)
+            ),
             kind: node.kind || 'note',
             createdAt: node.createdAt || document.createdAt,
             updatedAt: node.updatedAt || document.updatedAt
@@ -275,7 +320,13 @@ export async function exportMobileSyncEntities() {
       entities.push({
         kind: 'node',
         id: ids.get(document.id),
-        payload: canonicalNodePayload(document, ids)
+        payload: canonicalNodePayload({
+          ...document,
+          relations: mergeSyncRelations(
+            document.relations,
+            canvasRelationsBySource.get(document.id)
+          )
+        }, ids)
       });
     }
   }
@@ -420,11 +471,31 @@ export async function applyMobileSyncRecords(records, conflicts = [], options = 
       });
     } else if (record.kind === 'map') {
       const map = payload.map || {};
+      const referenceIds = new Set(
+        (Array.isArray(map.references) ? map.references : [])
+          .map((reference) => String(reference?.id || ''))
+          .filter((id) => nodeById.has(id))
+      );
       const layouts = (Array.isArray(map.nodes) ? structuredClone(map.nodes) : [])
-        .filter((layout) => nodeById.get(layout.id)?.parentMap === record.id);
+        .filter((layout) => (
+          nodeById.get(layout.id)?.parentMap === record.id
+          || referenceIds.has(layout.id)
+        ));
       const layoutIds = new Set(layouts.map(({ id }) => id));
       for (const [nodeId, node] of nodeById) {
         if (node.parentMap !== record.id || layoutIds.has(nodeId)) continue;
+        const index = layouts.length;
+        layouts.push({
+          id: nodeId,
+          x: 80 + (index % 4) * 260,
+          y: 80 + Math.floor(index / 4) * 140,
+          width: 220,
+          height: 92
+        });
+        layoutIds.add(nodeId);
+      }
+      for (const nodeId of referenceIds) {
+        if (layoutIds.has(nodeId)) continue;
         const index = layouts.length;
         layouts.push({
           id: nodeId,
@@ -457,16 +528,21 @@ export async function applyMobileSyncRecords(records, conflicts = [], options = 
               createdAt: node.createdAt || payload.createdAt,
               updatedAt: node.updatedAt || payload.updatedAt,
               syncRelativePath: node.relativePath || null,
-              syncNative: { node: node.native || null }
+              syncNative: { node: node.native || null },
+              isReference: referenceIds.has(layout.id)
             };
           }),
+          references: [...referenceIds].map((id) => ({ id })),
           edges: projectRelationshipsToMapEdges(
             semanticRelationships,
             map.relationshipViews || [],
             layoutIds
           ),
           camera: map.camera || { x: 0, y: 0, zoom: 1 },
-          collapsedHubs: canonicalCollapsedHubs(map)
+          collapsedHubs: canonicalCollapsedHubs(map),
+          generated: map.generated && typeof map.generated === 'object'
+            ? structuredClone(map.generated)
+            : null
         },
         createdAt: payload.createdAt || undefined,
         updatedAt: payload.updatedAt || undefined,
