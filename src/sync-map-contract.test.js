@@ -102,6 +102,69 @@ describe('canonical desktop/mobile map sync contract', () => {
     ]);
   });
 
+  it('exports and imports property maps as references without duplicating source nodes', async () => {
+    state.documents = [
+      {
+        id: 'node_source',
+        kind: 'note',
+        title: 'Kaynak',
+        content: '<p>Asıl içerik</p>',
+        relations: [],
+        properties: { durum: 'aktif' },
+        createdAt: '2026-09-26T09:00:00.000Z',
+        updatedAt: '2026-09-26T10:00:00.000Z'
+      },
+      {
+        id: 'map_property',
+        kind: 'canvas',
+        title: 'Durum haritası',
+        canvas: {
+          nodes: [{
+            id: 'node_source',
+            title: 'Kaynak',
+            content: '<p>Asıl içerik</p>',
+            x: 100,
+            y: 120,
+            width: 220,
+            height: 92,
+            isReference: true
+          }],
+          references: [{ id: 'node_source' }],
+          edges: [],
+          collapsedHubs: [],
+          generated: { kind: 'properties', property: 'durum' },
+          camera: { x: 20, y: 20, zoom: 0.85 }
+        }
+      }
+    ];
+
+    const entities = await exportMobileSyncEntities();
+    const sourceNodes = entities.filter(
+      ({ kind, id }) => kind === 'node' && id === 'node_source'
+    );
+    const map = entities.find(({ kind, id }) => kind === 'map' && id === 'map_property');
+
+    expect(sourceNodes).toHaveLength(1);
+    expect(sourceNodes[0].payload.parentMap).toBe('none');
+    expect(map.payload.map.references).toEqual([{ id: 'node_source' }]);
+    expect(map.payload.map.nodes).toHaveLength(1);
+    expect(map.payload.map.generated).toMatchObject({
+      kind: 'properties',
+      property: 'durum'
+    });
+
+    await applyMobileSyncRecords(entities.map(asRecord), []);
+    const importedMap = state.replaced.documents.find(({ id }) => id === 'map_property');
+    const importedSource = state.replaced.documents.find(({ id }) => id === 'node_source');
+    expect(importedSource.kind).toBe('note');
+    expect(importedMap.canvas.references).toEqual([{ id: 'node_source' }]);
+    expect(importedMap.canvas.nodes[0]).toMatchObject({
+      id: 'node_source',
+      isReference: true,
+      title: 'Kaynak'
+    });
+  });
+
   it('rebuilds mobile canvas edges from node relations plus relationshipViews', async () => {
     const entities = [
       {
