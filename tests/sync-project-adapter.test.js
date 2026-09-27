@@ -194,6 +194,79 @@ test('desktop adapter node, map, görev ve config kayıtlarını kayıpsız roun
     }
 });
 
+test('desktop sync round-trips property map references without reparenting source nodes', () => {
+    const project = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-sync-map-reference-'));
+    try {
+        const mapId = 'map_property';
+        const nodeId = 'node_source';
+        const mapSidecar = sidecar('Durum haritası', '.map', mapId);
+        fs.mkdirSync(path.join(project, mapSidecar), { recursive: true });
+        fs.mkdirSync(path.join(project, 'Notlar'), { recursive: true });
+
+        fs.writeFileSync(path.join(project, 'Notlar', 'Kaynak.node'), JSON.stringify({
+            pisi: {
+                version: 1, type: 'node', id: nodeId, title: 'Kaynak',
+                parentMap: 'none', sidecar: sidecar('Kaynak', '.node', nodeId)
+            },
+            content: '<p>Asıl içerik</p>'
+        }));
+        fs.writeFileSync(path.join(project, 'Durum haritası.map'), JSON.stringify({
+            pisi: {
+                version: 1, type: 'map', id: mapId,
+                title: 'Durum haritası', sidecar: mapSidecar
+            },
+            map: {
+                nodes: [{ id: nodeId, x: 100, y: 120, width: 220, height: 92 }],
+                references: [{ id: nodeId, path: 'Notlar/Kaynak.node' }],
+                relationshipViews: [],
+                relationshipViewVersion: 1,
+                collapsedHubs: [],
+                generated: { kind: 'properties', property: 'durum' },
+                camera: { x: 20, y: 20, zoom: 0.85 }
+            }
+        }));
+
+        storedTasks = [];
+        storedRelationships = [];
+        const entities = adapter.exportPisiSyncEntities(project);
+        const mapEntity = entities.find(({ kind, id }) => kind === 'map' && id === mapId);
+        const sourceEntity = entities.find(({ kind, id }) => kind === 'node' && id === nodeId);
+
+        assert.deepEqual(mapEntity.payload.map.references, [{ id: nodeId }]);
+        assert.equal(sourceEntity.payload.parentMap, 'none');
+
+        const records = entities.map((entity, index) => ({
+            ...entity,
+            key: `${entity.kind}:${entity.id}`,
+            deleted: false,
+            hash: `ref_${index}`,
+            version: { counter: index + 1, deviceId: 'device_mobile' },
+            updatedAt: '2026-09-26T15:00:00.000Z'
+        }));
+        adapter.applyPisiSyncRecords(project, records, []);
+
+        const exported = adapter.exportPisiSyncEntities(project);
+        const exportedMap = exported.find(({ kind, id }) => kind === 'map' && id === mapId);
+        const exportedSource = exported.find(({ kind, id }) => kind === 'node' && id === nodeId);
+        assert.deepEqual(exportedMap.payload.map.references, [{ id: nodeId }]);
+        assert.equal(exportedSource.payload.parentMap, 'none');
+
+        const mapFile = JSON.parse(
+            fs.readFileSync(path.join(project, 'Durum haritası.map'), 'utf8')
+        );
+        assert.deepEqual(mapFile.map.references, [{
+            id: nodeId,
+            path: 'Notlar/Kaynak.node'
+        }]);
+        assert.equal(
+            fs.existsSync(path.join(project, mapSidecar, 'Kaynak.node')),
+            false
+        );
+    } finally {
+        fs.rmSync(project, { recursive: true, force: true });
+    }
+});
+
 test('desktop map sync preserves semantic relationship views, ports, type and collapsed hubs', () => {
     const project = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-sync-map-semantics-'));
     try {
