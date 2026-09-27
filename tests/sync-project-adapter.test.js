@@ -256,7 +256,7 @@ test('desktop sync round-trips property map references without reparenting sourc
         );
         assert.deepEqual(mapFile.map.references, [{
             id: nodeId,
-            path: 'Notlar/Kaynak.node'
+            path: 'Kaynak.node'
         }]);
         assert.equal(
             fs.existsSync(path.join(project, mapSidecar, 'Kaynak.node')),
