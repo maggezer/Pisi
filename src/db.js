@@ -212,8 +212,10 @@ export function createDocument(kind = 'note', overrides = {}) {
     sheet: { rows: 12, cols: 6, cells: {} },
     canvas: {
       nodes: [],
+      references: [],
       edges: [],
       collapsedHubs: [],
+      generated: null,
       camera: { x: 36, y: 42, zoom: 1 }
     },
     view: { type: 'document', filters: [], sort: [] },
