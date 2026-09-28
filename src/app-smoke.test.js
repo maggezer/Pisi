@@ -28,7 +28,15 @@ describe('Pisi responsive application shell', () => {
     document.querySelector('#new-note').click();
     await vi.waitFor(() => expect(document.querySelector('.detail-shell')).toBeTruthy());
     expect(document.querySelector('#note-title').value).toBe('Yeni Not');
-    expect(document.querySelector('[data-todo-button]')).toBeTruthy();
+    expect(document.querySelector('[data-portrait-format-toolbar]')).toBeTruthy();
+    expect(document.querySelector('[data-landscape-format-toolbar]')).toBeTruthy();
+    expect(document.querySelector('[data-portrait-format-toolbar] [data-command="bold"]')).toBeTruthy();
+    expect(document.querySelector('[data-portrait-format-toolbar] [data-font-family-select]')).toBeFalsy();
+    expect(document.querySelector('[data-landscape-format-toolbar] [data-font-family-select]')).toBeTruthy();
+    expect(document.querySelector('[data-landscape-format-toolbar] [data-font-size-select]')).toBeTruthy();
+    expect(document.querySelector('[data-landscape-format-toolbar] [data-command="strikeThrough"]')).toBeTruthy();
+    expect(document.querySelector('[data-landscape-format-toolbar] [data-highlight-color]')).toBeTruthy();
+    expect(document.querySelectorAll('[data-todo-button]').length).toBeGreaterThanOrEqual(2);
 
     const title = document.querySelector('#note-title');
     title.focus();
