@@ -6,6 +6,15 @@ const EDITABLE_SELECTOR = [
 ].join(',');
 
 const KEYBOARD_THRESHOLD = 120;
+export const LANDSCAPE_PISI_BREAKPOINT = 600;
+
+export function resolvePisiLayoutMode({ width, height }) {
+  const safeWidth = Math.max(1, Math.round(Number(width) || 1));
+  const safeHeight = Math.max(1, Math.round(Number(height) || 1));
+  return safeWidth >= LANDSCAPE_PISI_BREAKPOINT || safeWidth > safeHeight
+    ? 'landscape'
+    : 'portrait';
+}
 
 export function isEditableElement(element) {
   return Boolean(element?.matches?.(EDITABLE_SELECTOR));
@@ -35,6 +44,23 @@ export function installMobileViewport({
     root.style.setProperty('--keyboard-height', `${keyboardHeight}px`);
   };
 
+  const currentWidth = () => Math.max(
+    1,
+    Math.round(visualViewport?.width || win.innerWidth || root.clientWidth || 1)
+  );
+
+  const updateLayoutMode = () => {
+    const width = currentWidth();
+    const height = Math.max(
+      1,
+      Math.round(visualViewport?.height || win.innerHeight || root.clientHeight || stableHeight)
+    );
+    const mode = resolvePisiLayoutMode({ width, height });
+    root.dataset.layout = mode;
+    root.style.setProperty('--window-width', `${width}px`);
+    return mode;
+  };
+
   const visibleHeight = () => {
     const layoutHeight = Math.max(1, Math.round(win.innerHeight || root.clientHeight || stableHeight));
     const visualHeight = Math.max(1, Math.round(visualViewport?.height || layoutHeight));
@@ -60,6 +86,7 @@ export function installMobileViewport({
   };
 
   const updateViewport = () => {
+    updateLayoutMode();
     if (!isNative && visualViewport) {
       const inferredHeight = Math.max(0, Math.round((win.innerHeight || stableHeight) - visualViewport.height - (visualViewport.offsetTop || 0)));
       if (inferredHeight >= KEYBOARD_THRESHOLD && editableIsFocused()) setKeyboardState(true, inferredHeight);
@@ -131,8 +158,10 @@ export function installMobileViewport({
       await Promise.allSettled(nativeHandles.splice(0).map((handle) => handle.remove()));
       delete root.dataset.inputActive;
       delete root.dataset.keyboard;
+      delete root.dataset.layout;
       root.style.removeProperty('--keyboard-height');
       root.style.removeProperty('--app-height');
+      root.style.removeProperty('--window-width');
     }
   };
 }
