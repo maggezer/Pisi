@@ -393,7 +393,7 @@ class PisiApp {
   shell({ title, eyebrow = '', actions = '', content, fab = '', route = this.route }) {
     root.innerHTML = `
       <div class="responsive-layout">
-        ${this.platform.railTemplate(route)}
+        ${this.platform.landscapeRailTemplate(route)}
       <div class="app-shell">
         <header class="page-header">
           <div>
@@ -413,7 +413,7 @@ class PisiApp {
           `).join('')}
         </nav>
       </div>
-      ${this.platform.inspectorTemplate(route)}
+      ${this.platform.landscapeInspectorTemplate(route)}
       </div>
     `;
     this.bindShell();
@@ -961,7 +961,7 @@ class PisiApp {
     const isJournal = note.kind === 'journal';
     root.innerHTML = `
       <div class="responsive-layout detail-layout">
-      ${this.platform.railTemplate('editor')}
+      ${this.platform.landscapeRailTemplate('editor')}
       <div class="detail-shell">
         <header class="detail-header">
           <button class="back-button" id="detail-back" aria-label="Geri">‹</button>
@@ -1538,7 +1538,7 @@ class PisiApp {
     const graph = this.visibleMapGraph();
     root.innerHTML = `
       <div class="responsive-layout map-layout">
-      ${this.platform.railTemplate('map')}
+      ${this.platform.landscapeRailTemplate('map')}
       <div class="map-detail-shell">
         <header class="map-header">
           <button class="back-button" id="map-back" aria-label="Geri">‹</button>
@@ -1576,7 +1576,7 @@ class PisiApp {
         ${this.mapEditingNode ? this.mapNodeSheetTemplate() : ''}
         <div id="save-state" class="save-state">Henüz doğrulanmadı</div>
       </div>
-      ${this.platform.inspectorTemplate('map')}
+      ${this.platform.landscapeInspectorTemplate('map')}
       </div>
     `;
     this.applyMapTransform();
