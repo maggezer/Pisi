@@ -12,7 +12,7 @@ describe('Pisi responsive application shell', () => {
       expect(document.querySelector('.app-shell')).toBeTruthy();
     });
     expect(document.body.textContent).toContain('Pisi');
-    expect(document.querySelector('.tablet-rail')).toBeTruthy();
+    expect(document.querySelector('.landscape-rail')).toBeTruthy();
     expect(document.querySelectorAll('.bottom-nav .nav-button')).toHaveLength(5);
 
     document.querySelector('[data-route="maps"]').click();
