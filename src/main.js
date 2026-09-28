@@ -149,6 +149,46 @@ function resolveTheme(theme) {
   return theme;
 }
 
+const PISI_EDITOR_FONT_FAMILIES = Object.freeze([
+  'Vincendo',
+  'Segoe UI',
+  'Arial',
+  'Calibri',
+  'Times New Roman',
+  'Georgia',
+  'Consolas',
+  'Comic Sans MS'
+]);
+
+const PISI_EDITOR_FONT_SIZES = Object.freeze([
+  ['1', '8'],
+  ['2', '10'],
+  ['3', '12'],
+  ['4', '14'],
+  ['5', '18'],
+  ['6', '24'],
+  ['7', '32']
+]);
+
+function collectDocumentFontFamilies(html = '') {
+  const template = document.createElement('template');
+  template.innerHTML = sanitizeRichHtml(html);
+  const fonts = new Set();
+
+  template.content.querySelectorAll('[style]').forEach((element) => {
+    const family = String(element.style?.fontFamily || '')
+      .split(',')[0]
+      .trim()
+      .replace(/^["']|["']$/g, '');
+    if (family) fonts.add(family);
+  });
+  template.content.querySelectorAll('font[face]').forEach((element) => {
+    const family = String(element.getAttribute('face') || '').trim();
+    if (family) fonts.add(family);
+  });
+  return [...fonts];
+}
+
 function debounce(callback, delay = 450, onError = console.error) {
   let timer = null;
   let pendingArgs = [];
@@ -197,6 +237,7 @@ class PisiApp {
     this.drawTool = 'pen';
     this.drawColor = '#e99a2e';
     this.drawWidth = 4;
+    this.richTextRange = null;
     this.platform = new PlatformController(this);
     this.syncStatus = { configured: false, running: false };
     this.saveActiveDebounced = debounce(
@@ -999,25 +1040,76 @@ class PisiApp {
   }
 
   writingTemplate() {
+    const documentFonts = collectDocumentFontFamilies(this.activeDocument.content);
+    const fontFamilies = [...new Set([
+      ...PISI_EDITOR_FONT_FAMILIES,
+      ...documentFonts
+    ])];
+    const fontOptions = fontFamilies.map((font) => (
+      `<option value="${escapeHtml(font)}">${escapeHtml(font)}${documentFonts.includes(font) && !PISI_EDITOR_FONT_FAMILIES.includes(font) ? ' · belgede' : ''}</option>`
+    )).join('');
+
     return `
       <section class="writing-workspace">
-        <div class="format-toolbar" role="toolbar" aria-label="Metin biçimlendirme">
+        <div class="format-toolbar portrait-format-toolbar" data-portrait-format-toolbar role="toolbar" aria-label="Hızlı metin biçimlendirme">
           <button data-command="bold" aria-label="Kalın"><b>B</b></button>
           <button data-command="italic" aria-label="İtalik"><i>I</i></button>
-          <button data-command="underline" aria-label="Altı çizili"><u>U</u></button>
-          <span></span>
-          <button data-block="H1">H1</button>
-          <button data-block="H2">H2</button>
+          <select class="compact-block-select" data-format-block-select aria-label="Paragraf türü">
+            <option value="P">Normal</option>
+            <option value="H1">H1</option>
+            <option value="H2">H2</option>
+            <option value="BLOCKQUOTE">Alıntı</option>
+          </select>
           <button data-command="insertUnorderedList" aria-label="Liste">≡</button>
           <button data-todo-button aria-label="Görev ekle" title="Görev /todo">☐</button>
-          <button data-command="formatBlock" data-command-value="BLOCKQUOTE" aria-label="Alıntı">❞</button>
           <button data-command="createLink" data-link-button aria-label="Bağlantı">⌁</button>
-          <label class="color-tool" aria-label="Yazı rengi">
-            <input type="color" id="text-color" value="#e99a2e" />
-            <i>A</i>
-          </label>
-          ${this.platform.toolbarExtensionsTemplate()}
         </div>
+
+        <div class="landscape-format-toolbar" data-landscape-format-toolbar role="toolbar" aria-label="Gelişmiş metin biçimlendirme">
+          <div class="landscape-format-row landscape-format-row-primary">
+            <select class="landscape-font-select" data-font-family-select aria-label="Yazı tipi">
+              ${fontOptions}
+            </select>
+            <select class="landscape-size-select" data-font-size-select aria-label="Yazı boyutu">
+              ${PISI_EDITOR_FONT_SIZES.map(([value, label]) => `<option value="${value}">${label}</option>`).join('')}
+            </select>
+            <span class="format-separator"></span>
+            <button data-command="bold" aria-label="Kalın"><b>B</b></button>
+            <button data-command="italic" aria-label="İtalik"><i>I</i></button>
+            <button data-command="underline" aria-label="Altı çizili"><u>U</u></button>
+            <button data-command="strikeThrough" aria-label="Üstü çizili"><s>S</s></button>
+            <label class="landscape-color-tool" aria-label="Yazı rengi" title="Yazı rengi">
+              <input type="color" data-text-color value="#e99a2e" />
+              <i>A</i>
+            </label>
+            <label class="landscape-color-tool highlight-tool" aria-label="Vurgu rengi" title="Vurgu rengi">
+              <input type="color" data-highlight-color value="#fff2a8" />
+              <i>▰</i>
+            </label>
+          </div>
+          <div class="landscape-format-row landscape-format-row-secondary">
+            <select class="landscape-block-select" data-format-block-select aria-label="Paragraf türü">
+              <option value="P">Normal</option>
+              <option value="H1">Başlık 1</option>
+              <option value="H2">Başlık 2</option>
+              <option value="H3">Başlık 3</option>
+              <option value="BLOCKQUOTE">Alıntı</option>
+              <option value="PRE">Kod</option>
+            </select>
+            <span class="format-separator"></span>
+            <button data-command="justifyLeft" aria-label="Sola hizala">≡←</button>
+            <button data-command="justifyCenter" aria-label="Ortala">≡</button>
+            <button data-command="justifyRight" aria-label="Sağa hizala">→≡</button>
+            <span class="format-separator"></span>
+            <button data-command="insertUnorderedList" aria-label="Madde listesi">•≡</button>
+            <button data-command="insertOrderedList" aria-label="Numaralı liste">1.</button>
+            <button data-todo-button aria-label="Görev ekle" title="Görev /todo">☐</button>
+            <button data-command="createLink" data-link-button aria-label="Bağlantı">⌁</button>
+            <button data-command="removeFormat" aria-label="Biçimlendirmeyi temizle">Tx</button>
+            ${this.platform.toolbarExtensionsTemplate()}
+          </div>
+        </div>
+
         <article id="rich-editor" class="rich-editor" contenteditable="true" spellcheck="true"
           inputmode="text" enterkeyhint="enter" autocapitalize="sentences"
           data-placeholder="Yazmaya başla…">${sanitizeRichHtml(this.activeDocument.content)}</article>
@@ -1128,77 +1220,220 @@ class PisiApp {
   bindWritingEditor() {
     const editor = document.querySelector('#rich-editor');
     if (!editor) return;
+
+    const selection = () => document.getSelection();
+    const selectionIsInsideEditor = () => {
+      const current = selection();
+      if (!current?.rangeCount) return false;
+      const range = current.getRangeAt(0);
+      const node = range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
+        ? range.commonAncestorContainer
+        : range.commonAncestorContainer.parentElement;
+      return Boolean(node && (node === editor || editor.contains(node)));
+    };
+    const rememberSelection = () => {
+      if (!selectionIsInsideEditor()) return;
+      this.richTextRange = selection().getRangeAt(0).cloneRange();
+    };
+    const restoreSelection = () => {
+      const current = selection();
+      if (
+        !this.richTextRange
+        || !editor.isConnected
+        || !editor.contains(this.richTextRange.commonAncestorContainer)
+      ) return false;
+      current.removeAllRanges();
+      current.addRange(this.richTextRange);
+      return true;
+    };
+    const commitRichText = () => {
+      this.activeDocument.blocks = serializeBlocks(editor);
+      this.activeDocument.content = editor.innerHTML;
+      rememberSelection();
+      this.scheduleSave();
+    };
+    const runCommand = (command, value = null) => {
+      editor.focus({ preventScroll: true });
+      restoreSelection();
+      document.execCommand(command, false, value);
+      commitRichText();
+      syncToolbarState();
+    };
+    const ensureSelectOption = (select, value, label = value) => {
+      if (!select || !value) return;
+      const exists = [...select.options].some((option) => option.value === value);
+      if (!exists) {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = label;
+        option.dataset.contextOnly = 'true';
+        select.prepend(option);
+      }
+      select.value = value;
+    };
+    const currentElement = () => {
+      const current = selection();
+      if (!current?.rangeCount) return null;
+      const node = current.anchorNode;
+      return node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement || null;
+    };
+    const syncToolbarState = () => {
+      if (!selectionIsInsideEditor()) return;
+      const element = currentElement();
+      const style = element ? getComputedStyle(element) : null;
+
+      document.querySelectorAll('[data-command]').forEach((button) => {
+        const command = button.dataset.command;
+        if (!['bold', 'italic', 'underline', 'strikeThrough'].includes(command)) return;
+        let active = false;
+        try { active = document.queryCommandState(command); } catch {}
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+      });
+
+      const fontSelect = document.querySelector('[data-font-family-select]');
+      const family = String(style?.fontFamily || '')
+        .split(',')[0]
+        .trim()
+        .replace(/^["']|["']$/g, '');
+      if (family) ensureSelectOption(fontSelect, family, `${family} · geçerli`);
+
+      const sizeSelect = document.querySelector('[data-font-size-select]');
+      let sizeValue = '';
+      try { sizeValue = String(document.queryCommandValue('fontSize') || ''); } catch {}
+      if (PISI_EDITOR_FONT_SIZES.some(([value]) => value === sizeValue)) {
+        sizeSelect.value = sizeValue;
+      } else if (style?.fontSize) {
+        const currentLabel = String(style.fontSize).replace(/px$/i, '');
+        const currentValue = `current:${style.fontSize}`;
+        ensureSelectOption(sizeSelect, currentValue, `${currentLabel} · geçerli`);
+      }
+
+      const block = element?.closest?.('h1,h2,h3,blockquote,pre,p,div');
+      const tag = block?.tagName || 'P';
+      document.querySelectorAll('[data-format-block-select]').forEach((select) => {
+        if ([...select.options].some((option) => option.value === tag)) select.value = tag;
+      });
+    };
+
     this.blockBinding = bindPisiBlocks(editor, {
       onChange: (blocks) => {
         this.activeDocument.blocks = blocks;
         this.activeDocument.content = editor.innerHTML;
+        rememberSelection();
         this.scheduleSave();
       },
       onTaskToggle: () => lightHaptic()
     });
-    document.querySelectorAll('[data-command], [data-block]').forEach((button) => {
+
+    editor.addEventListener('keyup', () => {
+      rememberSelection();
+      syncToolbarState();
+    });
+    editor.addEventListener('pointerup', () => {
+      rememberSelection();
+      syncToolbarState();
+    });
+    editor.addEventListener('input', () => {
+      rememberSelection();
+      syncToolbarState();
+    });
+    document.addEventListener('selectionchange', () => {
+      if (!selectionIsInsideEditor()) return;
+      rememberSelection();
+      syncToolbarState();
+    });
+
+    document.querySelectorAll('[data-command]').forEach((button) => {
       button.addEventListener('pointerdown', (event) => {
         event.preventDefault();
-        editor.focus();
-        if (button.dataset.block) document.execCommand('formatBlock', false, button.dataset.block);
-        else if (button.dataset.linkButton !== undefined) {
+        rememberSelection();
+        if (button.dataset.linkButton !== undefined) {
           const value = prompt('Bağlantı adresi veya [[Node adı]]');
           if (!value) return;
-          if (value.startsWith('[[')) document.execCommand('insertText', false, value);
-          else if (/^(https?:\/\/|mailto:)/i.test(value)) document.execCommand('createLink', false, value);
+          if (value.startsWith('[[')) runCommand('insertText', value);
+          else if (/^(https?:\/\/|mailto:)/i.test(value)) runCommand('createLink', value);
           else this.toast('Bağlantı http, https, mailto veya [[Node]] olmalı.', 'error');
-        } else document.execCommand(button.dataset.command, false, button.dataset.commandValue || null);
-        this.activeDocument.blocks = serializeBlocks(editor);
-        this.activeDocument.content = editor.innerHTML;
-        this.scheduleSave();
+          return;
+        }
+        runCommand(button.dataset.command, button.dataset.commandValue || null);
       });
     });
-    document.querySelector('[data-todo-button]')?.addEventListener('pointerdown', (event) => {
-      event.preventDefault();
-      const selection = getSelection();
-      const selectedText = selection?.toString().trim() || '';
-      const savedRange = selection?.rangeCount ? selection.getRangeAt(0).cloneRange() : null;
-      document.querySelector('#todo-options-overlay')?.remove();
-      document.body.insertAdjacentHTML('beforeend', `<div id="todo-options-overlay" class="platform-overlay todo-options-overlay"><form class="todo-options-card"><header><strong>Görev ayrıntıları</strong><button type="button" data-todo-cancel>×</button></header><label>Önem<select name="importance"><option value="normal">Normal</option><option value="high">Yüksek</option><option value="urgent">Acil</option><option value="low">Düşük</option></select></label><label>Tarih<input name="date" placeholder="yarın, cuma 14:00"></label><button class="primary-button">Checkbox ekle</button></form></div>`);
-      const overlay = document.querySelector('#todo-options-overlay');
-      const restoreEditorFocus = () => requestAnimationFrame(() => {
-        if (savedRange && editor.isConnected) {
-          selection.removeAllRanges();
-          selection.addRange(savedRange);
-        }
-        editor.focus({ preventScroll: true });
-      });
-      overlay.querySelector('[data-todo-cancel]').addEventListener('click', () => {
-        overlay.remove();
-        restoreEditorFocus();
-      });
-      overlay.querySelector('form').addEventListener('submit', (submitEvent) => {
-        submitEvent.preventDefault();
-        const values = Object.fromEntries(new FormData(submitEvent.currentTarget));
-        if (savedRange) {
-          selection.removeAllRanges();
-          selection.addRange(savedRange);
-        }
-        const parsed = parseTurkishDate(values.date);
-        insertTodoAtSelection(editor, {
-          text: selectedText || undefined,
-          importance: values.importance,
-          scheduledAt: parsed.scheduledAt,
-          deadline: parsed.deadline,
-          durationMinutes: parsed.durationMinutes,
-          repeat: parsed.repeat
+
+    document.querySelectorAll('[data-format-block-select]').forEach((select) => {
+      select.addEventListener('pointerdown', rememberSelection);
+      select.addEventListener('change', () => runCommand('formatBlock', select.value));
+    });
+
+    document.querySelector('[data-font-family-select]')?.addEventListener('pointerdown', rememberSelection);
+    document.querySelector('[data-font-family-select]')?.addEventListener('change', (event) => {
+      runCommand('fontName', event.target.value);
+    });
+
+    document.querySelector('[data-font-size-select]')?.addEventListener('pointerdown', rememberSelection);
+    document.querySelector('[data-font-size-select]')?.addEventListener('change', (event) => {
+      if (String(event.target.value).startsWith('current:')) return;
+      runCommand('fontSize', event.target.value);
+    });
+
+    document.querySelectorAll('[data-text-color]').forEach((input) => {
+      input.addEventListener('pointerdown', rememberSelection);
+      input.addEventListener('input', (event) => runCommand('foreColor', event.target.value));
+    });
+    document.querySelectorAll('[data-highlight-color]').forEach((input) => {
+      input.addEventListener('pointerdown', rememberSelection);
+      input.addEventListener('input', (event) => runCommand('hiliteColor', event.target.value));
+    });
+
+    document.querySelectorAll('[data-todo-button]').forEach((button) => {
+      button.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        rememberSelection();
+        const current = selection();
+        const selectedText = current?.toString().trim() || '';
+        const savedRange = this.richTextRange?.cloneRange() || null;
+        document.querySelector('#todo-options-overlay')?.remove();
+        document.body.insertAdjacentHTML('beforeend', `<div id="todo-options-overlay" class="platform-overlay todo-options-overlay"><form class="todo-options-card"><header><strong>Görev ayrıntıları</strong><button type="button" data-todo-cancel>×</button></header><label>Önem<select name="importance"><option value="normal">Normal</option><option value="high">Yüksek</option><option value="urgent">Acil</option><option value="low">Düşük</option></select></label><label>Tarih<input name="date" placeholder="yarın, cuma 14:00"></label><button class="primary-button">Checkbox ekle</button></form></div>`);
+        const overlay = document.querySelector('#todo-options-overlay');
+        const restoreEditorFocus = () => requestAnimationFrame(() => {
+          if (savedRange && editor.isConnected) {
+            current.removeAllRanges();
+            current.addRange(savedRange);
+            this.richTextRange = savedRange.cloneRange();
+          }
+          editor.focus({ preventScroll: true });
         });
-        editor.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
-        overlay.remove();
-        restoreEditorFocus();
+        overlay.querySelector('[data-todo-cancel]').addEventListener('click', () => {
+          overlay.remove();
+          restoreEditorFocus();
+        });
+        overlay.querySelector('form').addEventListener('submit', (submitEvent) => {
+          submitEvent.preventDefault();
+          const values = Object.fromEntries(new FormData(submitEvent.currentTarget));
+          if (savedRange) {
+            current.removeAllRanges();
+            current.addRange(savedRange);
+          }
+          const parsed = parseTurkishDate(values.date);
+          insertTodoAtSelection(editor, {
+            text: selectedText || undefined,
+            importance: values.importance,
+            scheduledAt: parsed.scheduledAt,
+            deadline: parsed.deadline,
+            durationMinutes: parsed.durationMinutes,
+            repeat: parsed.repeat
+          });
+          editor.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
+          overlay.remove();
+          restoreEditorFocus();
+        });
       });
     });
-    document.querySelector('#text-color')?.addEventListener('input', (event) => {
-      editor.focus();
-      document.execCommand('foreColor', false, event.target.value);
-      this.activeDocument.blocks = serializeBlocks(editor);
-      this.activeDocument.content = editor.innerHTML;
-      this.scheduleSave();
+
+    requestAnimationFrame(() => {
+      editor.focus({ preventScroll: true });
+      rememberSelection();
+      syncToolbarState();
     });
   }
 
