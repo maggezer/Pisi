@@ -853,7 +853,7 @@ class PisiApp {
         </section>
         <section class="settings-group about-group">
           <h2>Hakkında</h2>
-          <p>Pisi 3.2.0 · Android telefon ve tablet sürümü</p>
+          <p>Pisi 3.2.0 · Android Dikey/Yatay Pisi sürümü</p>
           <p>Okunabilir .node/.map proje dosyaları asıl veridir; telefon önbelleği yeniden oluşturulabilir çalışma kopyasıdır.</p>
         </section>
       `
