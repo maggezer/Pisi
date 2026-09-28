@@ -238,6 +238,7 @@ class PisiApp {
     this.drawColor = '#e99a2e';
     this.drawWidth = 4;
     this.richTextRange = null;
+    this.richSelectionChangeHandler = null;
     this.platform = new PlatformController(this);
     this.syncStatus = { configured: false, running: false };
     this.saveActiveDebounced = debounce(
@@ -1255,12 +1256,18 @@ class PisiApp {
     const runCommand = (command, value = null) => {
       editor.focus({ preventScroll: true });
       restoreSelection();
-      document.execCommand(command, false, value);
+      let applied = document.execCommand(command, false, value);
+      if (command === 'hiliteColor' && applied === false) {
+        applied = document.execCommand('backColor', false, value);
+      }
       commitRichText();
       syncToolbarState();
     };
     const ensureSelectOption = (select, value, label = value) => {
       if (!select || !value) return;
+      select.querySelectorAll('option[data-context-only="true"]').forEach((option) => {
+        if (option.value !== value) option.remove();
+      });
       const exists = [...select.options].some((option) => option.value === value);
       if (!exists) {
         const option = document.createElement('option');
@@ -1338,11 +1345,15 @@ class PisiApp {
       rememberSelection();
       syncToolbarState();
     });
-    document.addEventListener('selectionchange', () => {
+    if (this.richSelectionChangeHandler) {
+      document.removeEventListener('selectionchange', this.richSelectionChangeHandler);
+    }
+    this.richSelectionChangeHandler = () => {
       if (!selectionIsInsideEditor()) return;
       rememberSelection();
       syncToolbarState();
-    });
+    };
+    document.addEventListener('selectionchange', this.richSelectionChangeHandler);
 
     document.querySelectorAll('[data-command]').forEach((button) => {
       button.addEventListener('pointerdown', (event) => {
@@ -1431,9 +1442,10 @@ class PisiApp {
     });
 
     requestAnimationFrame(() => {
-      editor.focus({ preventScroll: true });
-      rememberSelection();
-      syncToolbarState();
+      if (selectionIsInsideEditor()) {
+        rememberSelection();
+        syncToolbarState();
+      }
     });
   }
 
