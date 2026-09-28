@@ -96,21 +96,21 @@ export class PlatformController {
     this.documentVersions = await listDocumentVersions(id);
   }
 
-  railTemplate(route = this.app.route) {
+  landscapeRailTemplate(route = this.app.route) {
     const documents = this.app.documents.slice(0, 80);
     return `
-      <aside class="tablet-rail" aria-label="Pisi gezinme">
-        <div class="tablet-brand"><span class="settings-logo"><i></i></span><strong>Pisi</strong></div>
-        <button class="tablet-search" type="button" data-platform-search><span>⌕</span> Her yerde ara <kbd>Ctrl K</kbd></button>
-        <nav class="tablet-primary-nav">
+      <aside class="landscape-rail" aria-label="Pisi gezinme">
+        <div class="landscape-brand"><span class="settings-logo"><i></i></span><strong>Pisi</strong></div>
+        <button class="landscape-search" type="button" data-platform-search><span>⌕</span> Her yerde ara <kbd>Ctrl K</kbd></button>
+        <nav class="landscape-primary-nav">
           ${['notes', 'maps', 'tasks', 'calendar', 'data', 'settings'].map((item) => `
             <button type="button" class="${route === item ? 'active' : ''}" data-route="${item}">${routeLabel(item)}</button>
           `).join('')}
         </nav>
-        <div class="tablet-tree-heading"><strong>Çalışma alanı</strong><button type="button" data-quick-note title="Yeni not">＋</button></div>
-        <div class="tablet-document-tree">
+        <div class="landscape-tree-heading"><strong>Çalışma alanı</strong><button type="button" data-quick-note title="Yeni not">＋</button></div>
+        <div class="landscape-document-tree">
           ${documents.map((document) => `
-            <div class="tablet-tree-row" style="--depth:${document.parentId ? 1 : 0}">
+            <div class="landscape-tree-row" style="--depth:${document.parentId ? 1 : 0}">
               <button type="button" data-rail-open="${escapeHtml(document.id)}" title="Tek tık: aç · Çift tık: yeniden adlandır">
                 <span>${document.kind === 'canvas' ? '◇' : document.kind === 'source' ? '⌁' : '□'}</span>
                 <b>${escapeHtml(document.title || 'Başlıksız')}</b>
@@ -119,21 +119,21 @@ export class PlatformController {
             </div>
           `).join('')}
         </div>
-        <button class="tablet-quick-task" type="button" data-platform-quick-task>＋ Hızlı görev <kbd>Ctrl ⇧ A</kbd></button>
+        <button class="landscape-quick-task" type="button" data-platform-quick-task>＋ Hızlı görev <kbd>Ctrl ⇧ A</kbd></button>
       </aside>`;
   }
 
-  inspectorTemplate(route = this.app.route) {
+  landscapeInspectorTemplate(route = this.app.route) {
     if (route === 'editor' && this.app.activeDocument) return this.documentInspectorTemplate(this.app.activeDocument);
     if (route === 'map' && this.app.activeDocument) {
       const map = this.app.activeDocument;
-      return `<aside class="tablet-inspector"><div class="inspector-heading"><small>Harita</small><h2>${escapeHtml(map.title)}</h2></div>
+      return `<aside class="landscape-inspector"><div class="inspector-heading"><small>Harita</small><h2>${escapeHtml(map.title)}</h2></div>
         <section><h3>Özet</h3><p>${map.canvas.nodes.length} düğüm · ${map.canvas.edges.length} bağlantı</p></section>
         <section><h3>Yerleşim</h3><button type="button" class="inspector-action" data-platform-map-layout="radial">Radyal yerleşim</button></section>
         <section><h3>Kısayollar</h3><p>Kaydır: taşı · Sıkıştır: yakınlaştır · Bağlantı noktasına dokun: alt dalı aç/kapat</p></section>
       </aside>`;
     }
-    return `<aside class="tablet-inspector">
+    return `<aside class="landscape-inspector">
       <div class="inspector-heading"><small>Çalışma alanı</small><h2>${routeLabel(route)}</h2></div>
       <section><h3>Hızlı erişim</h3>
         <button type="button" class="inspector-action" data-platform-search>⌕ Global arama</button>
@@ -141,7 +141,7 @@ export class PlatformController {
         <button type="button" class="inspector-action" data-route="data">▦ Node sistemi</button>
       </section>
       <section><h3>Durum</h3><p>${this.app.documents.length} belge · ${this.tasks.filter(({ done }) => !done).length} açık görev</p></section>
-      <section><h3>Tablet modu</h3><p>Sol tarafta belge ağacı, ortada çalışma alanı ve sağda bağlama göre araçlar bulunur.</p></section>
+      <section><h3>Yatay Pisi</h3><p>Geniş ekranda belge ağacı ve derin çalışma araçları görünür; 840 px ve üzerindeki genişliklerde sağ inspector da açılır.</p></section>
     </aside>`;
   }
 
@@ -177,7 +177,7 @@ export class PlatformController {
     const relationRow = (title, rows, type) => `<div class="inspector-link-group"><strong>${title}<span>${rows.length}</span></strong>${rows.length
       ? rows.slice(0, 8).map((row) => `<div class="inspector-link-row"><button type="button" data-inspector-open="${row.id}" data-link-type="${type}">${escapeHtml(row.title)}</button>${type === 'mention' ? `<button type="button" data-convert-mention="${row.id}" title="Bahsetmeyi bağlantıya çevir">⌁</button>` : ''}</div>`).join('')
       : '<small>Kayıt yok</small>'}</div>`;
-    return `<aside class="tablet-inspector document-inspector" data-document-inspector="${note.id}">
+    return `<aside class="landscape-inspector document-inspector" data-document-inspector="${note.id}">
       <div class="inspector-heading"><small>${note.kind === 'source' ? 'Kaynak' : 'Belge'}</small><h2>${escapeHtml(note.title)}</h2></div>
       <details open><summary>Özellikler <span>${propertyRows.length}</span></summary>
         <div class="property-list">${propertyRows.join('')}</div>
@@ -236,7 +236,7 @@ export class PlatformController {
     });
     scope.querySelectorAll('[data-rail-rename]').forEach((input) => {
       const finish = async (save = true) => {
-        const row = input.closest('.tablet-tree-row');
+        const row = input.closest('.landscape-tree-row');
         const button = row.querySelector('[data-rail-open]');
         if (save && input.value.trim()) {
           const item = this.app.documents.find(({ id }) => id === input.dataset.railRename);
@@ -657,7 +657,7 @@ export class PlatformController {
   openDocumentPanel() {
     document.querySelector('#platform-overlay')?.remove();
     const markup = this.documentInspectorTemplate(this.app.activeDocument).replace('<aside ', '<section ');
-    document.body.insertAdjacentHTML('beforeend', `<div id="platform-overlay" class="platform-overlay inspector-overlay"><div class="mobile-inspector-sheet"><button class="mobile-sheet-close" data-overlay-close>×</button>${markup.replace('</aside>', '</section>')}</div></div>`);
+    document.body.insertAdjacentHTML('beforeend', `<div id="platform-overlay" class="platform-overlay inspector-overlay"><div class="portrait-inspector-sheet"><button class="portrait-sheet-close" data-overlay-close>×</button>${markup.replace('</aside>', '</section>')}</div></div>`);
     const overlay = document.querySelector('#platform-overlay');
     this.bindDocumentInspector(overlay);
     overlay.querySelector('[data-overlay-close]').addEventListener('click', () => overlay.remove());
