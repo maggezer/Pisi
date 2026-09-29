@@ -84,12 +84,6 @@ function englishMonthShort(dateKey) {
   return new Intl.DateTimeFormat('en-US', { month: 'short' }).format(dateFromKey(dateKey));
 }
 
-function dateDistanceInDays(fromKey, toKey) {
-  const from = dateFromKey(fromKey);
-  const to = dateFromKey(toKey);
-  return Math.round((to - from) / 86400000);
-}
-
 function normalizeCollapsedHubs(canvas = {}) {
   return Array.from(new Set(
     (Array.isArray(canvas.collapsedHubs) ? canvas.collapsedHubs : [])
@@ -467,10 +461,12 @@ class PisiApp {
   }
 
   shell({ title = '', eyebrow = '', actions = '', content, fab = '', route = this.route, header = true }) {
+    const pisiFocus = route === 'pisi';
+    const pisiMenuItems = NAV_ITEMS.filter((item) => item.id !== 'pisi');
     root.innerHTML = `
-      <div class="responsive-layout">
-        ${this.platform.landscapeRailTemplate(route)}
-      <div class="app-shell ${header ? '' : 'headerless'}">
+      <div class="responsive-layout ${pisiFocus ? 'pisi-focus-layout' : ''}">
+        ${pisiFocus ? '' : this.platform.landscapeRailTemplate(route)}
+      <div class="app-shell ${header ? '' : 'headerless'} ${pisiFocus ? 'pisi-focus-shell' : ''}">
         ${header ? `
           <header class="page-header">
             <div>
@@ -482,16 +478,32 @@ class PisiApp {
         ` : ''}
         <main class="page-content page-content-${route}">${content}</main>
         ${fab}
-        <nav class="bottom-nav" aria-label="Ana menü">
-          ${NAV_ITEMS.map((item) => `
-            <button class="nav-button ${route === item.id ? 'active' : ''}" data-route="${item.id}">
-              <span class="nav-icon" aria-hidden="true">${item.icon}</span>
-              <span>${item.label}</span>
+        ${pisiFocus ? `
+          <div class="pisi-nav-launcher">
+            <button type="button" class="pisi-nav-toggle" id="pisi-nav-toggle"
+              aria-expanded="false" aria-controls="pisi-nav-menu" aria-label="Ana sekmeleri aç">
+              <span></span><span></span><span></span>
             </button>
-          `).join('')}
-        </nav>
+            <nav class="pisi-nav-menu" id="pisi-nav-menu" aria-label="Pisi menüsü" hidden>
+              ${pisiMenuItems.map((item) => `
+                <button type="button" data-route="${item.id}">
+                  <span aria-hidden="true">${item.icon}</span><b>${item.label}</b>
+                </button>
+              `).join('')}
+            </nav>
+          </div>
+        ` : `
+          <nav class="bottom-nav" aria-label="Ana menü">
+            ${NAV_ITEMS.map((item) => `
+              <button class="nav-button ${route === item.id ? 'active' : ''}" data-route="${item.id}">
+                <span class="nav-icon" aria-hidden="true">${item.icon}</span>
+                <span>${item.label}</span>
+              </button>
+            `).join('')}
+          </nav>
+        `}
       </div>
-      ${this.platform.landscapeInspectorTemplate(route)}
+      ${pisiFocus ? '' : this.platform.landscapeInspectorTemplate(route)}
       </div>
     `;
     this.bindShell();
@@ -504,6 +516,26 @@ class PisiApp {
         this.navigate(button.dataset.route);
       });
     });
+
+    const pisiToggle = document.querySelector('#pisi-nav-toggle');
+    const pisiMenu = document.querySelector('#pisi-nav-menu');
+    pisiToggle?.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const open = pisiMenu?.hasAttribute('hidden');
+      if (open) pisiMenu.removeAttribute('hidden');
+      else pisiMenu?.setAttribute('hidden', '');
+      pisiToggle.setAttribute('aria-expanded', String(Boolean(open)));
+      pisiToggle.classList.toggle('open', Boolean(open));
+      lightHaptic();
+    });
+    document.addEventListener('click', (event) => {
+      if (!pisiMenu || pisiMenu.hasAttribute('hidden')) return;
+      if (event.target.closest('.pisi-nav-launcher')) return;
+      pisiMenu.setAttribute('hidden', '');
+      pisiToggle?.setAttribute('aria-expanded', 'false');
+      pisiToggle?.classList.remove('open');
+    }, { once: true });
+
     this.platform.bindChrome();
   }
 
@@ -830,12 +862,15 @@ class PisiApp {
       content: `<div class="pisi-day-page">
         <div class="pisi-day-main" id="pisi-day-main">${this.pisiDayTemplate(this.pisiDateKey)}</div>
         <aside class="pisi-date-rail" aria-label="Tarih seçici">
-          <div class="pisi-date-month" id="pisi-date-month">${englishMonthShort(this.pisiDateKey)}</div>
           <div class="pisi-date-scroll" id="pisi-date-scroll" tabindex="0">
             ${dates.map((dateKey) => `<button type="button"
               class="pisi-date-item ${dateKey === this.pisiDateKey ? 'active' : ''}"
               data-pisi-date="${dateKey}"
-              aria-label="${dateKey}">${Number(dateKey.slice(8, 10))}</button>`).join('')}
+              aria-label="${dateKey}"><span>${Number(dateKey.slice(8, 10))}</span></button>`).join('')}
+          </div>
+          <div class="pisi-date-meta">
+            <strong id="pisi-date-month">${englishMonthShort(this.pisiDateKey)}</strong>
+            <span id="pisi-date-year">${dateFromKey(this.pisiDateKey).getFullYear()}</span>
           </div>
         </aside>
       </div>`
@@ -853,15 +888,11 @@ class PisiApp {
       this.bindPisiDayContent(main);
     }
     const month = document.querySelector('#pisi-date-month');
+    const year = document.querySelector('#pisi-date-year');
     if (month) month.textContent = englishMonthShort(dateKey);
+    if (year) year.textContent = String(dateFromKey(dateKey).getFullYear());
     document.querySelectorAll('[data-pisi-date]').forEach((button) => {
-      const active = button.dataset.pisiDate === dateKey;
-      const distance = Math.max(-6, Math.min(
-        6,
-        dateDistanceInDays(dateKey, button.dataset.pisiDate)
-      ));
-      button.classList.toggle('active', active);
-      button.style.setProperty('--pisi-date-step', String(distance));
+      button.classList.toggle('active', button.dataset.pisiDate === dateKey);
     });
     lightHaptic();
   }
@@ -890,28 +921,23 @@ class PisiApp {
     if (!scroller) return;
     this.bindPisiDayContent(document);
     document.querySelectorAll('[data-pisi-date]').forEach((button) => {
-      const distance = Math.max(-6, Math.min(
-        6,
-        dateDistanceInDays(this.pisiDateKey, button.dataset.pisiDate)
-      ));
-      button.style.setProperty('--pisi-date-step', String(distance));
       button.addEventListener('click', () => this.setPisiDate(button.dataset.pisiDate));
     });
 
     const selected = scroller.querySelector(`[data-pisi-date="${this.pisiDateKey}"]`);
-    requestAnimationFrame(() => selected?.scrollIntoView?.({ block: 'center' }));
+    requestAnimationFrame(() => selected?.scrollIntoView?.({ inline: 'center', block: 'nearest' }));
 
     let scrollTimer = null;
     scroller.addEventListener('scroll', () => {
       clearTimeout(scrollTimer);
       scrollTimer = setTimeout(() => {
         const railBox = scroller.getBoundingClientRect();
-        const center = railBox.top + railBox.height / 2;
+        const center = railBox.left + railBox.width / 2;
         let closest = null;
         let distance = Infinity;
         scroller.querySelectorAll('[data-pisi-date]').forEach((button) => {
           const box = button.getBoundingClientRect();
-          const delta = Math.abs((box.top + box.height / 2) - center);
+          const delta = Math.abs((box.left + box.width / 2) - center);
           if (delta < distance) {
             closest = button;
             distance = delta;
@@ -921,18 +947,18 @@ class PisiApp {
       }, 80);
     }, { passive: true });
 
-    let dragStartY = 0;
+    let dragStartX = 0;
     let dragStartScroll = 0;
     scroller.addEventListener('pointerdown', (event) => {
       if (event.pointerType !== 'mouse') return;
-      dragStartY = event.clientY;
-      dragStartScroll = scroller.scrollTop;
+      dragStartX = event.clientX;
+      dragStartScroll = scroller.scrollLeft;
       scroller.classList.add('dragging');
       scroller.setPointerCapture?.(event.pointerId);
     });
     scroller.addEventListener('pointermove', (event) => {
       if (!scroller.classList.contains('dragging')) return;
-      scroller.scrollTop = dragStartScroll - (event.clientY - dragStartY);
+      scroller.scrollLeft = dragStartScroll - (event.clientX - dragStartX);
     });
     const finishDrag = () => scroller.classList.remove('dragging');
     scroller.addEventListener('pointerup', finishDrag);
