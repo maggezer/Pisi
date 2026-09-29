@@ -1,3 +1,0 @@
-tag_commit=c49c7a415cfdfb84d8af1b41ae771d527ee34c83
-release_exit=1
-release_view=release not found

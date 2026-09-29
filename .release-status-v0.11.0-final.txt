@@ -1,4 +1,0 @@
-status=failure
-tag=v0.11.0
-target=c49c7a415cfdfb84d8af1b41ae771d527ee34c83
-url=https://github.com/maggezer/Kedi/releases/tag/v0.11.0

@@ -1,4 +1,0 @@
-installer_exit=0
-installer_assets=True
-portable_exit=0
-portable_assets=True

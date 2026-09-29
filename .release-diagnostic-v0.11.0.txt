@@ -1,4 +1,0 @@
-verify=success
-install=success
-validate=failure
-audit=success
