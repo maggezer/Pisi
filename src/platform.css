@@ -647,24 +647,33 @@ kbd { padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; backg
 
 .page-content-pisi {
   height: var(--app-height) !important;
-  padding: 0 0 calc(88px + var(--bottom-safe)) 16px !important;
+  padding: 0 !important;
   overflow: hidden !important;
 }
 
+.pisi-focus-layout,
+.pisi-focus-shell {
+  width: 100%;
+  height: var(--app-height);
+  min-width: 0;
+}
+
 .pisi-day-page {
+  position: relative;
+  width: 100%;
   height: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 72px;
   overflow: hidden;
 }
 
 .pisi-day-main {
+  width: 100%;
+  height: 100%;
   min-width: 0;
   min-height: 0;
-  padding: calc(18px + var(--top-safe)) 16px 18px 0;
+  padding: calc(18px + var(--top-safe)) 18px calc(72px + var(--bottom-safe)) 18px;
   display: grid;
   grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
-  overflow: auto;
+  overflow: hidden;
 }
 
 .pisi-day-diary,
@@ -672,10 +681,20 @@ kbd { padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; backg
   min-height: 0;
   padding: 12px 8px 16px 2px;
   overflow: auto;
+  scrollbar-width: none;
+}
+
+.pisi-day-diary::-webkit-scrollbar,
+.pisi-day-tasks::-webkit-scrollbar {
+  display: none;
 }
 
 .pisi-day-diary {
   border-bottom: 2px solid color-mix(in srgb, var(--text) 78%, transparent);
+}
+
+.pisi-day-tasks {
+  padding-right: clamp(96px, 15vh, 132px);
 }
 
 .pisi-day-diary h2,
@@ -769,67 +788,69 @@ kbd { padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; backg
   line-height: 1.5;
 }
 
+/*
+ * Bottom-right date wedge.
+ * The top-right anchor sits 25% of the screen above the bottom edge.
+ * A 29vh line rotated -60deg lands near the bottom edge, creating the
+ * requested ~30deg-to-vertical / ~60deg-to-horizontal boundary.
+ */
 .pisi-date-rail {
-  position: relative;
-  min-width: 0;
-  min-height: 0;
-  padding-top: calc(8px + var(--top-safe));
-  display: grid;
-  grid-template-rows: 42px minmax(0, 1fr);
-  overflow: hidden;
-  border-left: 1px solid var(--line);
-  background:
-    linear-gradient(164deg,
-      transparent 0 46%,
-      color-mix(in srgb, var(--text) 88%, transparent) 46% 48%,
-      transparent 48% 100%),
-    color-mix(in srgb, var(--surface) 94%, var(--bg));
+  position: absolute;
+  z-index: 20;
+  right: 0;
+  bottom: 0;
+  width: clamp(104px, 15vh, 148px);
+  height: 25%;
+  min-height: 142px;
+  max-height: 230px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.pisi-date-rail::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  top: 0;
+  width: min(29vh, 260px);
+  height: 2px;
+  background: var(--text);
+  transform: rotate(-60deg);
+  transform-origin: right center;
 }
 
 .pisi-date-rail::after {
   content: "";
   position: absolute;
-  right: -18px;
-  top: 41%;
-  width: 96px;
-  height: 2px;
+  z-index: 0;
+  inset: 0;
+  background: color-mix(in srgb, var(--surface-2) 92%, transparent);
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
   pointer-events: none;
-  background: var(--text);
-  transform: rotate(-48deg);
-  transform-origin: center;
-  opacity: .9;
-}
-
-.pisi-date-month {
-  position: relative;
-  z-index: 2;
-  width: 48px;
-  height: 30px;
-  margin: 4px auto 0;
-  display: grid;
-  place-items: center;
-  clip-path: polygon(12% 0, 100% 0, 86% 100%, 0 100%);
-  background: var(--text);
-  color: var(--surface);
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  transform: rotate(-4deg);
 }
 
 .pisi-date-scroll {
-  position: relative;
-  z-index: 1;
-  min-height: 0;
-  padding: 42% 0;
-  overflow-y: auto;
-  overflow-x: hidden;
+  position: absolute;
+  z-index: 4;
+  right: 0;
+  top: -22px;
+  width: min(29vh, 260px);
+  height: 46px;
+  padding: 0 42%;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  overflow-x: auto;
+  overflow-y: hidden;
   overscroll-behavior: contain;
-  scroll-snap-type: y proximity;
+  scroll-snap-type: x proximity;
   scrollbar-width: none;
-  touch-action: pan-y;
+  touch-action: pan-x;
   cursor: grab;
+  pointer-events: auto;
+  transform: rotate(-60deg);
+  transform-origin: right center;
 }
 
 .pisi-date-scroll::-webkit-scrollbar {
@@ -842,61 +863,168 @@ kbd { padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; backg
 }
 
 .pisi-date-item {
-  --pisi-date-step: 0;
-  width: 46px;
-  height: 46px;
-  margin-left: auto;
-  margin-right: 2px;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
   scroll-snap-align: center;
-  border-radius: 0;
+  border: 0;
   background: transparent;
   color: var(--muted);
-  font-size: 15px;
-  font-weight: 720;
+  font-size: 14px;
+  font-weight: 760;
   font-variant-numeric: tabular-nums;
-  transform:
-    translateX(calc(var(--pisi-date-step) * -4px))
-    rotate(-8deg);
-  transition:
-    transform 120ms ease,
-    color 120ms ease,
-    background 120ms ease,
-    filter 120ms ease;
 }
 
-.pisi-date-item:nth-child(2n) {
-  filter: saturate(.85);
+.pisi-date-item > span {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  transform: rotate(60deg);
 }
 
-.pisi-date-item.active {
-  z-index: 3;
+.pisi-date-item.active > span {
   color: var(--surface);
   background: var(--text);
   clip-path: polygon(18% 0, 100% 0, 82% 100%, 0 100%);
-  box-shadow: none;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 950;
-  transform:
-    translateX(-5px)
-    rotate(-8deg)
-    scale(1.06);
+}
+
+.pisi-date-meta {
+  position: absolute;
+  z-index: 5;
+  right: 12px;
+  bottom: calc(14px + var(--bottom-safe));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.pisi-date-meta strong {
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 950;
+  letter-spacing: .03em;
+  text-transform: capitalize;
+}
+
+.pisi-date-meta span {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 760;
+  letter-spacing: .08em;
+}
+
+/* Pisi-only collapsed navigation */
+.pisi-nav-launcher {
+  position: absolute;
+  z-index: 60;
+  left: 12px;
+  bottom: calc(12px + var(--bottom-safe));
+}
+
+.pisi-nav-toggle {
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  display: grid;
+  place-content: center;
+  gap: 5px;
+  border: 0;
+  clip-path: polygon(0 12%, 88% 0, 100% 88%, 12% 100%);
+  background: var(--text);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .18);
+}
+
+.pisi-nav-toggle span {
+  width: 22px;
+  height: 2px;
+  display: block;
+  background: var(--surface);
+  transition: transform 140ms ease, opacity 140ms ease;
+}
+
+.pisi-nav-toggle.open span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.pisi-nav-toggle.open span:nth-child(2) {
+  opacity: 0;
+}
+
+.pisi-nav-toggle.open span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+.pisi-nav-menu {
+  position: absolute;
+  left: 0;
+  bottom: 60px;
+  width: 164px;
+  padding: 7px;
+  display: grid;
+  gap: 4px;
+  background: var(--text);
+  clip-path: polygon(0 4%, 100% 0, 94% 100%, 0 96%);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, .24);
+}
+
+.pisi-nav-menu[hidden] {
+  display: none !important;
+}
+
+.pisi-nav-menu button {
+  min-height: 38px;
+  padding: 0 11px;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  background: transparent;
+  color: var(--surface);
+  text-align: left;
+}
+
+.pisi-nav-menu button + button {
+  border-top: 1px solid color-mix(in srgb, var(--surface) 22%, transparent);
+}
+
+.pisi-nav-menu button span {
+  font-size: 15px;
+}
+
+.pisi-nav-menu button b {
+  font-size: 11px;
+  font-weight: 780;
 }
 
 :root[data-layout="landscape"] .page-content-pisi {
-  padding: 0 0 18px 14px !important;
-}
-
-:root[data-layout="landscape"] .pisi-day-page {
-  grid-template-columns: minmax(0, 1fr) 68px;
+  padding: 0 !important;
 }
 
 :root[data-layout="landscape"] .pisi-day-main {
   padding-top: calc(10px + var(--top-safe));
+  padding-bottom: calc(66px + var(--bottom-safe));
 }
 
 :root[data-layout="landscape"] .pisi-day-diary h2,
 :root[data-layout="landscape"] .pisi-day-tasks h2 {
   font-size: 20px;
+}
+
+:root[data-layout="landscape"] .pisi-date-rail {
+  width: clamp(88px, 15vh, 128px);
+  min-height: 110px;
+}
+
+:root[data-layout="landscape"] .pisi-date-rail::before,
+:root[data-layout="landscape"] .pisi-date-scroll {
+  width: min(29vh, 220px);
 }
