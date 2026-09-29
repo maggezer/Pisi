@@ -69,8 +69,11 @@ let pisiNodePreviewTimer = null;
 
 let pisiNodePreviewRequest = 0;
 
+/** @param {Document | Element} [root] */
 function hidePisiCanvasHints(root = document) {
-    if (root.matches?.('.pisi-canvas-toolbar-hint')) root.hidden = true;
+    if (root instanceof HTMLElement && root.matches('.pisi-canvas-toolbar-hint')) {
+        root.hidden = true;
+    }
     root.querySelectorAll?.('.pisi-canvas-toolbar-hint').forEach((hint) => {
         hint.hidden = true;
         hint.style.display = 'none';
@@ -335,13 +338,13 @@ function bindPisiMapNodePreviewEvents() {
 
     document.addEventListener('mouseover', (event) => {
         const box = event.target.closest?.('.map-node-box');
-        if (!box || box.contains(event.relatedTarget)) return;
+        if (!box || box.contains(/** @type {Node | null} */ (event.relatedTarget))) return;
         schedulePisiNodeHoverPreview(box);
     });
 
     document.addEventListener('mouseout', (event) => {
         const box = event.target.closest?.('.map-node-box');
-        if (!box || box.contains(event.relatedTarget)) return;
+        if (!box || box.contains(/** @type {Node | null} */ (event.relatedTarget))) return;
         hidePisiNodeHoverPreview();
     });
 
