@@ -258,6 +258,15 @@
 }
 
 .task-view-tabs button.active { border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); background: var(--accent-soft); color: var(--accent); }
+.task-view-tabs .task-add-button {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: var(--accent);
+  color: #291a0b;
+}
+.task-view-tabs .task-add-button b {
+  font-size: 16px;
+  line-height: 1;
+}
 .task-list { display: grid; gap: 8px; }
 .task-row { min-height: 70px; margin-left: calc(var(--task-depth, 0) * 17px); padding: 11px; display: grid; grid-template-columns: 27px minmax(0, 1fr) 68px; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
 .task-row.done strong { color: var(--muted); text-decoration: line-through; }
