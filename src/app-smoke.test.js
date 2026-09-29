@@ -28,11 +28,25 @@ describe('Pisi responsive application shell', () => {
     expect(document.querySelector('.pisi-date-item.active')).toBeTruthy();
     expect(document.body.textContent).toContain('Diary');
     expect(document.body.textContent).toContain('Tasks');
+    expect(document.querySelector('.pisi-diary-card')).toBeFalsy();
+
+    const inlineDiary = document.querySelector('[data-pisi-journal-editor]');
+    expect(inlineDiary).toBeTruthy();
+    expect(inlineDiary.getAttribute('contenteditable')).toBe('true');
+    inlineDiary.innerHTML = '<p>Pisi içinden doğrudan günlük düzenleme testi.</p>';
+    inlineDiary.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
+    await new Promise((resolve) => setTimeout(resolve, 650));
 
     document.querySelector('#pisi-nav-toggle').click();
     expect(document.querySelector('#pisi-nav-menu').hasAttribute('hidden')).toBe(false);
     document.querySelector('#pisi-nav-menu [data-route="notes"]').click();
     expect(document.querySelector('.bottom-nav')).toBeTruthy();
+
+    document.querySelector('.bottom-nav [data-route="pisi"]').click();
+    expect(document.querySelector('[data-pisi-journal-editor]').textContent)
+      .toContain('Pisi içinden doğrudan günlük düzenleme testi.');
+    document.querySelector('#pisi-nav-toggle').click();
+    document.querySelector('#pisi-nav-menu [data-route="notes"]').click();
 
     document.querySelector('[data-route="maps"]').click();
     expect(document.querySelector('.page-header')).toBeFalsy();
