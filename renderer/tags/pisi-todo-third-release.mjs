@@ -656,7 +656,7 @@ function renderPisiTodoThirdTimeline(list, missions) {
     today.setHours(0, 0, 0, 0);
     const dated = missions
         .filter((mission) => mission.finishDate)
-        .sort((a, b) => a.finishDate - b.finishDate);
+        .sort((a, b) => String(a.finishDate).localeCompare(String(b.finishDate)));
 
     for (const mission of dated) {
         const due = new Date(mission.finishDate);
