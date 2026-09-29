@@ -233,9 +233,11 @@ function recoverPisiAtomicMutationsHardened(projectFolder) {
             errors.push(`${manifest.id}: ${result.errors.join(' | ')}`);
             continue;
         }
-        if (result.cleanupPending) {
+        if ('cleanupPending' in result && result.cleanupPending) {
             cleanupPending += 1;
-            if (result.warning) warnings.push(`${manifest.id}: ${result.warning}`);
+            if ('warning' in result && result.warning) {
+                warnings.push(`${manifest.id}: ${result.warning}`);
+            }
         }
         recovered += 1;
     }
