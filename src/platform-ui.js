@@ -28,7 +28,7 @@ function focusField(element) {
 }
 
 function routeLabel(route) {
-  return ({ notes: 'Notlar', maps: 'Haritalar', tasks: 'Görevler', calendar: 'Takvim', data: 'Node sistemi', settings: 'Ayarlar' })[route] || 'Pisi';
+  return ({ notes: 'Notlar', maps: 'Haritalar', tasks: 'Görevler', calendar: 'Takvim', pisi: 'Pisi', data: 'Node sistemi', settings: 'Ayarlar' })[route] || 'Pisi';
 }
 
 function taskGroup(task, view) {
@@ -103,7 +103,7 @@ export class PlatformController {
         <div class="landscape-brand"><span class="settings-logo"><i></i></span><strong>Pisi</strong></div>
         <button class="landscape-search" type="button" data-platform-search><span>⌕</span> Her yerde ara <kbd>Ctrl K</kbd></button>
         <nav class="landscape-primary-nav">
-          ${['notes', 'maps', 'tasks', 'calendar', 'data', 'settings'].map((item) => `
+          ${['notes', 'maps', 'tasks', 'calendar', 'pisi', 'data', 'settings'].map((item) => `
             <button type="button" class="${route === item ? 'active' : ''}" data-route="${item}">${routeLabel(item)}</button>
           `).join('')}
         </nav>
