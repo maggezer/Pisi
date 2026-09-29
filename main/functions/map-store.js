@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const { registerMainModule } = require('../module-registry');
+const editorAssets = require('./editor-asset-store');
 
 function getUniqueDirectoryPath(destinationFolder, wantedName) {
     const cleanName = sanitizePisiBaseName(wantedName || translatePisiMain('Yeni Klasör'));
@@ -276,7 +277,7 @@ function movePisiItem(sourcePath, destinationFolderPath, options = {}) {
     }
 }
 
-function getPisiDocument(filePath) {
+function getPisiDocument(filePath, options = {}) {
     try {
         if (!filePath || !fs.existsSync(filePath)) {
             return {
@@ -289,13 +290,26 @@ function getPisiDocument(filePath) {
 
         if (!ensured.ok) return ensured;
 
+        let data = ensured.data;
+
+        if (
+            options.hydrateEditorAssets === true &&
+            ensured.metadata?.type === 'node'
+        ) {
+            data = structuredClone(ensured.data);
+            data.content = editorAssets.hydratePisiEditorPaintAssets(
+                data.content || '',
+                { sidecarPath: ensured.sidecarPath }
+            );
+        }
+
         return {
             ok: true,
             fullPath: filePath,
             fileName: path.basename(filePath),
             metadata: ensured.metadata,
             sidecarPath: ensured.sidecarPath,
-            data: ensured.data
+            data
         };
     } catch (error) {
         return {
@@ -646,7 +660,15 @@ function saveNodeContent(nodePath, content = '') {
             };
         }
 
-        nodeInfo.data.content = String(content || '');
+        const normalizedContent = editorAssets.normalizePisiEditorPaintAssets(
+            String(content || ''),
+            {
+                sidecarPath: nodeInfo.sidecarPath,
+                writeAssets: true
+            }
+        );
+
+        nodeInfo.data.content = normalizedContent.content;
         nodeInfo.data.pisi.updatedAt = new Date().toISOString();
 
         writePisiDocument(nodePath, nodeInfo.data);
