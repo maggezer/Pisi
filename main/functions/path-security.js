@@ -6,6 +6,24 @@ const fs = require('fs');
 const crypto = require('crypto');
 const { registerMainModule } = require('../module-registry');
 
+const pisiTestUserDataPath = String(
+    process.env.PISI_TEST_USER_DATA || ''
+).trim();
+
+if (!app.isPackaged && pisiTestUserDataPath) {
+    const resolvedUserDataPath = path.resolve(pisiTestUserDataPath);
+    const resolvedSessionDataPath = path.join(
+        resolvedUserDataPath,
+        'session'
+    );
+
+    fs.mkdirSync(resolvedUserDataPath, { recursive: true });
+    fs.mkdirSync(resolvedSessionDataPath, { recursive: true });
+
+    app.setPath('userData', resolvedUserDataPath);
+    app.setPath('sessionData', resolvedSessionDataPath);
+}
+
 const PISI_WINDOWS_RENAME_RETRY_CODES = new Set([
     'EPERM',
     'EACCES',
