@@ -319,7 +319,9 @@ ipcMain.handle('project:get-pisi-document', (_event, filePath) => {
             type: 'file',
             extensions: ['.map', '.node']
         });
-        return getPisiDocument(safeFilePath);
+        return getPisiDocument(safeFilePath, {
+            hydrateEditorAssets: true
+        });
     });
 });
 
