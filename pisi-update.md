@@ -195,8 +195,6 @@ paketleme ve dokümantasyon başlıklarında yeniden denetlendi.
   SmartScreen itibarı ve otomatik güncelleme yayın sunucusu sağlanmadan güvenli
   biçimde tamamlanamaz; Windows’un mevcut release akışı korunarak ertelendi.
 
-<<<<<<< HEAD
-=======
 **Özellik kaldırma durumu:** Uygulama özelliği kaldırılmadı. Kaldırılan
 `@panzoom/panzoom`, `lunar-javascript`, `moment` ve `moment-hijri` paketleri
 kaynak kodun hiçbir yerinde kullanılmıyordu; map, takvim, Paint, Excel, Tags,
@@ -228,4 +226,3 @@ Missions, diary ve sağ panel özellikleri korunuyor.
 
 **Özellik kaldırma durumu:** Bu düzeltmede hiçbir uygulama özelliği veya
 biçimlendirme seçeneği kaldırılmadı.
->>>>>>> 8d9f0086ac0acfe93aa5a9c8f41cb430744a9401
