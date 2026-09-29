@@ -534,9 +534,9 @@ class PisiApp {
         ` : `
           <nav class="bottom-nav" aria-label="Ana menü">
             ${NAV_ITEMS.map((item) => `
-              <button class="nav-button ${route === item.id ? 'active' : ''}" data-route="${item.id}">
+              <button class="nav-button ${route === item.id ? 'active' : ''}"
+                data-route="${item.id}" aria-label="${escapeHtml(item.label)}" title="${escapeHtml(item.label)}">
                 <span class="nav-icon" aria-hidden="true">${item.icon}</span>
-                <span>${item.label}</span>
               </button>
             `).join('')}
           </nav>
