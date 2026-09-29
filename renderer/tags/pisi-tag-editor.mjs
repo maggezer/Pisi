@@ -116,7 +116,7 @@ function openPisiTodoDateMenu(editor, priorityValue, commandOverride = null) {
     dateInput?.addEventListener('mousedown', (event) => {
         event.stopPropagation();
     });
-    dateInput?.addEventListener('change', commitTodo);
+    dateInput?.addEventListener('change', () => commitTodo());
     dateInput?.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
