@@ -250,6 +250,11 @@ button:disabled {
   scrollbar-width: none;
 }
 
+.app-shell.headerless .page-content {
+  height: var(--app-height);
+  padding-top: calc(14px + var(--top-safe));
+}
+
 .page-content::-webkit-scrollbar,
 .sheet-scroll::-webkit-scrollbar {
   display: none;
