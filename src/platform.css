@@ -592,6 +592,10 @@ kbd { padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; backg
 :root[data-layout="landscape"] .page-header { height: calc(68px + var(--top-safe)); padding: calc(9px + var(--top-safe)) 16px 9px; }
 :root[data-layout="landscape"] .page-header h1 { font-size: 22px; }
 :root[data-layout="landscape"] .page-content { height: calc(var(--app-height) - 68px - var(--top-safe)); padding: 7px 16px 22px; }
+:root[data-layout="landscape"] .app-shell.headerless .page-content {
+  height: var(--app-height);
+  padding-top: calc(10px + var(--top-safe));
+}
 :root[data-layout="landscape"] .fab { right: 18px; bottom: 18px; }
 :root[data-layout="landscape"] .document-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
 :root[data-layout="landscape"] .detail-header,
@@ -613,6 +617,10 @@ kbd { padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; backg
   :root[data-layout="landscape"] .page-header { height: calc(78px + var(--top-safe)); padding: calc(14px + var(--top-safe)) 20px 12px; }
   :root[data-layout="landscape"] .page-header h1 { font-size: 25px; }
   :root[data-layout="landscape"] .page-content { height: calc(var(--app-height) - 78px - var(--top-safe)); padding: 8px 20px 28px; }
+  :root[data-layout="landscape"] .app-shell.headerless .page-content {
+    height: var(--app-height);
+    padding-top: calc(14px + var(--top-safe));
+  }
   :root[data-layout="landscape"] .fab { right: 22px; bottom: 22px; }
   :root[data-layout="landscape"] #toast-host { left: 215px; right: 260px; bottom: 24px; }
 }
