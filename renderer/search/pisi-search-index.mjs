@@ -228,7 +228,15 @@ function extractPisiSearchContentBlocks(container) {
 
     if (!blocks.length) {
         const text = cleanPisiSearchText(container.textContent || '');
-        if (text) blocks.push({ text, blockId: null, order: 0 });
+        if (text) {
+            blocks.push({
+                text,
+                blockId: null,
+                blockType: null,
+                references: [],
+                order: 0
+            });
+        }
     }
     return blocks;
 }
@@ -316,6 +324,7 @@ function makePisiSearchRecordBase(documentRecord) {
 
 function createPisiSearchRecordsForDocument(documentRecord) {
     const base = makePisiSearchRecordBase(documentRecord);
+    /** @type {Array<Record<string, any>>} */
     const records = [{
         ...base,
         id: 'node:' + pisiSearchPathKey(documentRecord.path),
