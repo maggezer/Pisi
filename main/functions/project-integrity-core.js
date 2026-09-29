@@ -150,7 +150,11 @@ function makePisiIntegrityReport(issues = [], counts = {}, extra = {}) {
     };
 }
 
-function collectDuplicateValues(items = [], getValue = (item) => item) {
+/**
+ * @param {any[]} [items]
+ * @param {(item: any, index: number) => any} [getValue]
+ */
+function collectDuplicateValues(items = [], getValue = (item, _index) => item) {
     const seen = new Map();
     const duplicates = [];
     items.forEach((item, index) => {
