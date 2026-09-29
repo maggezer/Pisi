@@ -269,7 +269,7 @@ button:disabled {
   min-height: 70px;
   padding: 7px 7px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   background: color-mix(in srgb, var(--surface) 94%, transparent);
   border: 1px solid var(--line);
   border-radius: 24px;
