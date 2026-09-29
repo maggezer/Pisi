@@ -33,6 +33,7 @@ function createPisiSearchFilesystemDeltaController(options = {}) {
         deleteDocumentCache
     } = options;
 
+    /** @type {Promise<any>} */
     let deltaPromise = Promise.resolve();
     let deltaActive = false;
 
