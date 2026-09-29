@@ -641,3 +641,206 @@ kbd { padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; backg
   :root[data-layout="landscape"] .document-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
   :root[data-layout="landscape"] #toast-host { left: 260px; right: 320px; }
 }
+
+
+/* Pisi day timeline */
+
+.page-content-pisi {
+  height: var(--app-height) !important;
+  padding: 0 0 calc(88px + var(--bottom-safe)) 16px !important;
+  overflow: hidden !important;
+}
+
+.pisi-day-page {
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 58px;
+  overflow: hidden;
+}
+
+.pisi-day-main {
+  min-width: 0;
+  min-height: 0;
+  padding: calc(18px + var(--top-safe)) 16px 18px 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  overflow: auto;
+}
+
+.pisi-day-diary,
+.pisi-day-tasks {
+  min-height: 0;
+  padding: 12px 8px 16px 2px;
+  overflow: auto;
+}
+
+.pisi-day-diary {
+  border-bottom: 2px solid color-mix(in srgb, var(--text) 78%, transparent);
+}
+
+.pisi-day-diary h2,
+.pisi-day-tasks h2 {
+  margin: 0 0 16px;
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 720;
+  letter-spacing: -0.03em;
+}
+
+.pisi-day-diary-list,
+.pisi-day-task-list {
+  display: grid;
+  gap: 9px;
+}
+
+.pisi-diary-card {
+  width: 100%;
+  padding: 0 2px 12px;
+  display: grid;
+  gap: 7px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  background: transparent;
+  color: var(--text);
+}
+
+.pisi-diary-card strong {
+  font-size: 13px;
+}
+
+.pisi-diary-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.pisi-day-task {
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  border-bottom: 1px solid var(--line);
+}
+
+.pisi-day-task.done strong {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.pisi-day-task > span {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pisi-day-task strong {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pisi-day-task small {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.pisi-day-check {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--muted);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--accent);
+  font-weight: 850;
+}
+
+.pisi-day-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.pisi-date-rail {
+  min-width: 0;
+  min-height: 0;
+  padding-top: calc(8px + var(--top-safe));
+  display: grid;
+  grid-template-rows: 42px minmax(0, 1fr);
+  border-left: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 94%, var(--bg));
+}
+
+.pisi-date-month {
+  display: grid;
+  place-items: center;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.pisi-date-scroll {
+  min-height: 0;
+  padding: 42% 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-snap-type: y proximity;
+  scrollbar-width: none;
+  touch-action: pan-y;
+  cursor: grab;
+}
+
+.pisi-date-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.pisi-date-scroll.dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.pisi-date-item {
+  width: 100%;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  scroll-snap-align: center;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pisi-date-item.active {
+  color: var(--text);
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 2px var(--text);
+  font-weight: 800;
+}
+
+:root[data-layout="landscape"] .page-content-pisi {
+  padding: 0 0 18px 14px !important;
+}
+
+:root[data-layout="landscape"] .pisi-day-page {
+  grid-template-columns: minmax(0, 1fr) 54px;
+}
+
+:root[data-layout="landscape"] .pisi-day-main {
+  padding-top: calc(10px + var(--top-safe));
+}
+
+:root[data-layout="landscape"] .pisi-day-diary h2,
+:root[data-layout="landscape"] .pisi-day-tasks h2 {
+  font-size: 20px;
+}
