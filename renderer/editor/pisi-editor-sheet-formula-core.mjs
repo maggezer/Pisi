@@ -181,12 +181,12 @@ function parsePisiFormula(source) {
             return { type: 'call', name: token.value, args };
         }
 
-        if (PISI_CELL_REFERENCE.test(token.value)) {
+        if (PISI_CELL_REFERENCE.test(String(token.value))) {
             if (match(':')) {
                 const end = take();
                 if (
                     end.type !== 'identifier' ||
-                    !PISI_CELL_REFERENCE.test(end.value)
+                    !PISI_CELL_REFERENCE.test(String(end.value))
                 ) {
                     formulaError('Invalid cell range');
                 }
@@ -199,7 +199,7 @@ function parsePisiFormula(source) {
             return { type: 'cell', ref: token.value };
         }
 
-        if (['TRUE', 'FALSE', 'PI', 'E'].includes(token.value)) {
+        if (['TRUE', 'FALSE', 'PI', 'E'].includes(String(token.value))) {
             return { type: 'constant', name: token.value };
         }
 
@@ -235,7 +235,7 @@ function parsePisiFormula(source) {
 
     function parseProduct() {
         let value = parseUnary();
-        while (['*', '/'].includes(peek().value)) {
+        while (['*', '/'].includes(String(peek().value))) {
             const operator = take().value;
             value = {
                 type: 'binary',
@@ -249,7 +249,7 @@ function parsePisiFormula(source) {
 
     function parseSum() {
         let value = parseProduct();
-        while (['+', '-'].includes(peek().value)) {
+        while (['+', '-'].includes(String(peek().value))) {
             const operator = take().value;
             value = {
                 type: 'binary',
@@ -276,7 +276,7 @@ function parsePisiFormula(source) {
 
     function parseComparison() {
         let value = parseConcatenation();
-        while (['=', '<>', '!=', '<', '<=', '>', '>='].includes(peek().value)) {
+        while (['=', '<>', '!=', '<', '<=', '>', '>='].includes(String(peek().value))) {
             const operator = take().value;
             value = {
                 type: 'binary',
