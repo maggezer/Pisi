@@ -24,7 +24,7 @@ describe('Pisi responsive application shell', () => {
     expect(document.querySelector('#pisi-nav-menu').hasAttribute('hidden')).toBe(true);
     expect(document.querySelector('.pisi-date-rail')).toBeTruthy();
     expect(document.querySelector('.pisi-date-month').textContent).toMatch(/^[A-Z][a-z]{2}$/);
-    expect(document.querySelector('.pisi-date-year').textContent).toMatch(/^\d{4}$/);
+    expect(document.querySelector('.pisi-date-year')).toBeFalsy();
     expect(document.querySelector('.pisi-date-item.active')).toBeTruthy();
     expect(document.body.textContent).toContain('Diary');
     expect(document.body.textContent).toContain('Tasks');
