@@ -156,7 +156,8 @@ function setupPisiAppMenu() {
         host.dataset.bound = '1';
 
         document.addEventListener('pointerdown', (event) => {
-            if (!host.contains(event.target)) closePisiAppMenu();
+            const target = event.target instanceof Node ? event.target : null;
+            if (!target || !host.contains(target)) closePisiAppMenu();
         });
 
         document.addEventListener('keydown', (event) => {
