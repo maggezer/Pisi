@@ -27,3 +27,12 @@ Desktop.ini
 .eslintcache
 out/
 release/
+
+# Android yerel build ve Gradle çıktıları
+android/.gradle/
+android/app/build/
+*.apk
+
+# Release / CI tanılama artefaktları
+.release-*
+.actions-probe-*
