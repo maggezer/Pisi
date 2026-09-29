@@ -122,7 +122,7 @@ function isHubEdgeCollapsed(edge, hiddenNodeIds = collectCollapsedHubNodeIds()) 
     return isPisiMapEdgeHiddenByCollapsedHub(
         edge,
         hiddenNodeIds,
-        getCollapsedHubPortSet()
+        Array.from(getCollapsedHubPortSet())
     );
 }
 
