@@ -38,3 +38,6 @@ android/local.properties
 # Release / CI tanılama artefaktları
 .release-*
 .actions-probe-*
+
+# Generated JavaScript type-check declarations
+.pisi-types/
