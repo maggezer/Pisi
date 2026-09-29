@@ -1,3 +1,4 @@
+import { sealRendererModuleRegistry } from "./core/module-registry.mjs";
 import "./core/i18n.mjs";
 import "./core/state.mjs";
 import "./core/pisi-command-registry.mjs";
@@ -90,5 +91,7 @@ import "./shell/pisi-tutorial.mjs";
 import "./shell/pisi-interaction-regressions.mjs";
 import "./runtime.mjs";
 import "./tags/pisi-source-of-truth.mjs";
+
+sealRendererModuleRegistry();
 
 export {};
