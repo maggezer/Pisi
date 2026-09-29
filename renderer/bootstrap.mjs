@@ -1,5 +1,5 @@
-import { sealRendererModuleRegistry } from "./core/module-registry.mjs";
 import "./core/i18n.mjs";
+import { sealRendererModuleRegistry } from "./core/module-registry.mjs";
 import "./core/state.mjs";
 import "./core/pisi-command-registry.mjs";
 import "./domain/pisi-domain-client.mjs";
