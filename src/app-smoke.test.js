@@ -11,18 +11,23 @@ describe('Pisi responsive application shell', () => {
     await vi.waitFor(() => {
       expect(document.querySelector('.app-shell')).toBeTruthy();
     });
-    expect(document.body.textContent).toContain('Pisi');
+    expect(document.querySelector('.page-header')).toBeFalsy();
     expect(document.querySelector('.landscape-rail')).toBeTruthy();
     expect(document.querySelectorAll('.bottom-nav .nav-button')).toHaveLength(5);
 
     document.querySelector('[data-route="maps"]').click();
-    expect(document.body.textContent).toContain('Fikir haritaları');
+    expect(document.querySelector('.page-header')).toBeFalsy();
+    expect(document.querySelector('.map-list')).toBeTruthy();
 
     document.querySelector('[data-route="tasks"]').click();
-    expect(document.body.textContent).toContain('Hızlı yakala ve planla');
+    expect(document.querySelector('.page-header')).toBeFalsy();
+    expect(document.querySelector('.task-add-button')).toBeTruthy();
+    expect(document.querySelector('.task-view-tabs .task-add-button').previousElementSibling.textContent)
+      .toContain('Tamamlanan');
 
     document.querySelector('[data-route="data"]').click();
-    expect(document.body.textContent).toContain('Node sistemi');
+    expect(document.querySelector('.page-header')).toBeFalsy();
+    expect(document.querySelector('.data-tabs')).toBeTruthy();
 
     document.querySelector('[data-route="notes"]').click();
     document.querySelector('#new-note').click();
