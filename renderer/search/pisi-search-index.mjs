@@ -633,6 +633,7 @@ async function buildPisiSearchIndex(projectFolder, generation) {
     if (generation !== pisiSearchIndexGeneration) return null;
 
     const documents = new Map();
+    /** @type {Array<Record<string, any>>} */
     const records = context.maps.map((map) => {
         return makePisiSearchMapSearchRecord(map, projectFolder);
     });
