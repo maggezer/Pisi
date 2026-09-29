@@ -1,14 +1,58 @@
+# PISI – Güncel Açıklar ve Bilinen Sınırlar
 
+Bu dosya yalnızca güncel `main` dalında gerçekten devam eden açıkları ve bilinçli
+olarak ertelenmiş işleri listeler. Kapatılmış tarihsel bulgular
+`pisi-update.md` içinde tutulur.
 
-16. **[Orta · eksik] Satır/sütun ekleme üst sınırı yalnızca ilk tablo oluşturulurken uygulanıyor.** `+ Satır` ve `+ Sütun` işlemleri [`app.js:998-1022`](https://github.com/maggezer/Kedi/blob/main/app.js#L998-L1022) üzerinden sınırsız büyüyebiliyor. Satır/sütun silme, hücre biçimlendirme, referans güncelleme ve çoklu seçim de yok.
+## 1. Sheet gelişmiş düzenleme işlemleri
 
-74. **[Orta · kesin] Node sidecar klasörleri oluşturuluyor fakat Paint/Excel kaynakları oraya yazılmıyor.** Paint PNG’si doğrudan node JSON’una base64 gömülüyor; bu yüzden sidecar klasörleri çoğunlukla boş. Dokümanda anlatılan kaynak klasörü mimarisi uygulanmamış.
+**[Orta · özellik eksiği]** Tablo büyütme artık 80 satır × 26 sütun
+(2.080 hücre) sınırıyla korunuyor; eski sınırsız büyüme hatası kapatıldı.
+Ancak satır/sütun silme, gelişmiş hücre biçimlendirme, yapısal değişikliklerde
+formül referanslarını yeniden yazma ve çoklu hücre seçimi henüz yok.
 
+## 2. Paint / Sheet sidecar depolaması
 
-102. **[Yüksek · bağımlılık] Kilitli paketlerle `npm audit` sonucu 1 kritik ve 11 yüksek riskli dependency kaydı.** Doğrudan riskli paketler `electron@30.5.1` ve `electron-builder@24.13.3`; transitive tarafta `tar` kritik seviyede. Bunların çoğu build zinciri olsa da Electron doğrudan runtime bağımlılığı. Major upgrade ve tekrar audit gerekiyor.
+**[Orta · mimari borç]** Paint PNG verisi halen node JSON içindeki
+`data-image` alanında tutuluyor. Paint/Sheet kaynaklarını sidecar dosyalara
+taşıma; mevcut belgeler için migration ve geri uyumluluk gerektirdiği için
+ertelendi.
 
+## 3. Development dependency audit bulguları
 
-104. **[Yüksek · kalite] Test, lint, format ve typecheck komutu yok.** `package.json` yalnızca start/dist scriptleri içeriyor. Depoda test dosyası ve GitHub Actions workflow’u da yok. Paint ve proje geçişi gibi veri kaybı hatalarının fark edilmemesinin temel sebeplerinden biri bu.
+**[Orta · build zinciri]** 29 Eylül 2026 tarihli CI auditinde
+**3 high + 1 moderate** bulgu bulunuyor. Yüksek bulgular:
 
-105. **[Orta · release] Build yalnızca Windows x64 NSIS/portable hedefli.** ARM64, macOS/Linux paketleri, code signing, SmartScreen itibarı, artifact naming ve otomatik güncelleme ayarları yok.
+- `@xmldom/xmldom@0.8.13` — `plist` üzerinden,
+- `fast-uri@3.1.5` — `ajv` üzerinden,
+- `js-yaml@4.3.1` — `electron-builder` / `app-builder-lib` zincirinde.
 
+Moderate bulgu `undici` paketinde. Kilit dosyasında bu paketlerin tamamı
+development/build bağımlılığı olarak işaretli; uygulamanın kullanıcı verisini
+işleyen production bağımlılıkları değiller. CI audit raporunu görünür şekilde
+çalıştırıyor, fakat bu bulgular şimdilik buildi bloklamıyor. Güncelleme yapılırken
+`npm audit fix` sonrası paketleme ve 557 regresyon testinin tamamı yeniden
+çalıştırılmalı.
+
+## 4. Typecheck ve otomatik formatlama
+
+**[Düşük · kalite]** Syntax, architecture, branding, i18n, ESLint ve Node test
+runner kontrolleri mevcut ve CI'da çalışıyor. Ancak repository-wide typecheck
+ve otomatik format kontrolü henüz yok.
+
+## 5. Dağıtım / imzalama
+
+**[Orta · release]** Windows NSIS ve portable paketleri x64 ile ARM64 için
+üretiliyor. Henüz:
+
+- Windows code signing / SmartScreen itibarı,
+- macOS ve Linux paket hedefleri,
+- platform imzalama/notarization,
+- otomatik güncelleme yayın altyapısı
+
+yapılandırılmış değil.
+
+## Doğrulama durumu
+
+Güncel `main` CI; syntax, architecture, branding, i18n, ESLint ve test
+kontrollerinden geçiyor. Son doğrulamada **557/557 test başarılı**.
