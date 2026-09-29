@@ -98,7 +98,9 @@
       "openPisiToolbarTodo",
       "syncPisiUnifiedToolbarContext",
       "bindPisiUnifiedToolbarEvents",
-      "setupPisiUnifiedToolbar"
+      "setupPisiUnifiedToolbar",
+      "getPisiToolbarIconPath",
+      "syncPisiToolbarIconTheme"
     ]
   },
   {
@@ -175,7 +177,8 @@
     "bindings": [
       "setupWindowControls",
       "bindRightPanelTabs",
-      "setupCenterFileTabs"
+      "setupCenterFileTabs",
+      "setupPisiAppMenu"
     ]
   },
   {
@@ -426,12 +429,6 @@
     "bindings": [
       "bindPisiBlockIndexControls",
       "bindPisiTagPickerOutsideClose",
-      "makePisiBlockId",
-      "isPisiEditorBlockElement",
-      "decoratePisiEditorBlock",
-      "ensurePisiEditorBlocks",
-      "getPisiBlockElementsFromContainer",
-      "createPisiInertHtmlTemplate",
       "extractPisiTagsFromBlock",
       "refreshPisiTagsPanelSoon",
       "resetPisiTagsForProject",
@@ -450,7 +447,9 @@
       "buildPisiTagBlockIndex",
       "extractPisiTagBlocksFromHtmlDetailed",
       "extractPisiTagBlocksFromHtml",
-      "persistPisiAssignedBlockIds"
+      "persistPisiAssignedBlockIds",
+      "refreshPisiMissionIndex",
+      "bindPisiMissionIndexInvalidation"
     ]
   },
   {
@@ -492,7 +491,6 @@
     "bindings": [
       "markPisiMissionDone",
       "reopenPisiMission",
-      "PISI_SYSTEM_TAGS",
       "isPisiTodoCommand",
       "isPisiDoneCommand",
       "buildPisiTodoPriorityItems",
@@ -500,18 +498,12 @@
       "openPisiTodoDateMenu",
       "bindPisiTagControls",
       "bindPisiTagControlsForEditor",
-      "updatePisiTagMenuForEditor",
-      "getPisiEditorCommandAtCaret",
-      "buildPisiTagMenuItems",
-      "getExactPisiSystemTag",
       "collectPisiUserTagsFromEditor",
       "collectPisiUserTagSuggestions",
       "openPisiTagMenuForEditor",
       "applyPisiTagMenuItem",
       "closePisiTagMenu",
       "movePisiTagSelection",
-      "applyPisiSystemTagToEditor",
-      "applyPisiHeadingTagToEditor",
       "applyPisiUserTagToEditor",
       "normalizePisiUserTag",
       "isValidPisiUserTag",
@@ -594,7 +586,8 @@
       "getPisiSearchLiveIndex",
       "getPisiSearchCacheStats",
       "getPisiSearchMetadataSignature",
-      "getPisiSearchDocumentSignature"
+      "getPisiSearchDocumentSignature",
+      "applyPisiSearchFilesystemDelta"
     ]
   },
   {
@@ -629,15 +622,11 @@
     "module": "productivity.quickCapture",
     "path": "renderer/productivity/pisi-quick-capture.mjs",
     "bindings": [
-      "PISI_TASK_HUB_FILTERS",
-      "PISI_POSTPONE_PRESETS",
       "pisiQuickCaptureState",
-      "collectPisiGlobalTasks",
-      "matchesPisiTaskHubFilter",
       "formatPisiTaskMinutes",
-      "renderPisiTasksPage",
-      "postponePisiTask",
-      "initializePisiQuickCapture"
+      "initializePisiQuickCapture",
+      "openPisiQuickAddModal",
+      "closePisiQuickAddModal"
     ]
   },
   {
@@ -855,7 +844,8 @@
       "openPisiCommandPalette",
       "closePisiCommandPalette",
       "renderPisiShortcutSettings",
-      "initializePisiCommandRegistry"
+      "initializePisiCommandRegistry",
+      "formatPisiShortcutForDisplay"
     ]
   },
   {
