@@ -958,7 +958,7 @@ kbd { padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; backg
   position: absolute;
   z-index: 5;
   right: clamp(12px, 2.5vw, 19px);
-  bottom: calc(24px + var(--bottom-safe));
+  bottom: calc(12px + var(--bottom-safe));
   display: flex;
   align-items: center;
   justify-content: center;
