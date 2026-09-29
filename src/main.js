@@ -84,6 +84,12 @@ function englishMonthShort(dateKey) {
   return new Intl.DateTimeFormat('en-US', { month: 'short' }).format(dateFromKey(dateKey));
 }
 
+function dateDistanceInDays(fromKey, toKey) {
+  const from = dateFromKey(fromKey);
+  const to = dateFromKey(toKey);
+  return Math.round((to - from) / 86400000);
+}
+
 function normalizeCollapsedHubs(canvas = {}) {
   return Array.from(new Set(
     (Array.isArray(canvas.collapsedHubs) ? canvas.collapsedHubs : [])
@@ -849,7 +855,13 @@ class PisiApp {
     const month = document.querySelector('#pisi-date-month');
     if (month) month.textContent = englishMonthShort(dateKey);
     document.querySelectorAll('[data-pisi-date]').forEach((button) => {
-      button.classList.toggle('active', button.dataset.pisiDate === dateKey);
+      const active = button.dataset.pisiDate === dateKey;
+      const distance = Math.max(-6, Math.min(
+        6,
+        dateDistanceInDays(dateKey, button.dataset.pisiDate)
+      ));
+      button.classList.toggle('active', active);
+      button.style.setProperty('--pisi-date-step', String(distance));
     });
     lightHaptic();
   }
@@ -878,6 +890,11 @@ class PisiApp {
     if (!scroller) return;
     this.bindPisiDayContent(document);
     document.querySelectorAll('[data-pisi-date]').forEach((button) => {
+      const distance = Math.max(-6, Math.min(
+        6,
+        dateDistanceInDays(this.pisiDateKey, button.dataset.pisiDate)
+      ));
+      button.style.setProperty('--pisi-date-step', String(distance));
       button.addEventListener('click', () => this.setPisiDate(button.dataset.pisiDate));
     });
 
