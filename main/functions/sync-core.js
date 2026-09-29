@@ -168,6 +168,15 @@ function nextVersion(clock, deviceId) {
     return { counter: clock.value, deviceId };
 }
 
+/**
+ * @param {{
+ *   entities?: any[],
+ *   baseRecords?: any[],
+ *   deviceId?: string,
+ *   clock?: number,
+ *   now?: string
+ * }} [options]
+ */
 function prepareDeviceRecords({
     entities = [],
     baseRecords = [],
@@ -327,6 +336,9 @@ function planMergedRecords({
     };
 }
 
+/**
+ * @param {{projectId?: string, createdBy?: string, createdAt?: string}} [options]
+ */
 function makeSyncManifest({
     projectId,
     createdBy,
@@ -354,6 +366,16 @@ function validateSyncManifest(manifest) {
     return makeSyncManifest(manifest);
 }
 
+/**
+ * @param {{
+ *   projectId?: string,
+ *   deviceId?: string,
+ *   deviceName?: string,
+ *   records?: any[],
+ *   clock?: number,
+ *   createdAt?: string
+ * }} [options]
+ */
 function makeDeviceSnapshot({
     projectId,
     deviceId,
