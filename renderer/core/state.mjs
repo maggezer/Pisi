@@ -3,6 +3,7 @@
     const previousState = previousPisi.state || {};
 
     window.Pisi = {
+        ...previousPisi,
         state: {
 
 
