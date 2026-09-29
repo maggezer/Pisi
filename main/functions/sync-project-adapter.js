@@ -215,6 +215,7 @@ function exportPisiSyncEntities(projectFolder) {
     if (!relationshipsResult.ok) throw new Error(relationshipsResult.error);
     const taskStore = modules['main.taskStore'].readPisiTaskStore(projectFolder);
     const storage = getStorage(projectFolder);
+    /** @type {Array<{kind: string, id: string, payload: any}>} */
     const entities = inventory.documents.map((row) => ({
         kind: row.kind,
         id: row.id,
