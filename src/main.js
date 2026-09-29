@@ -925,19 +925,24 @@ class PisiApp {
     });
 
     const selected = scroller.querySelector(`[data-pisi-date="${this.pisiDateKey}"]`);
-    requestAnimationFrame(() => selected?.scrollIntoView?.({ inline: 'center', block: 'nearest' }));
+    requestAnimationFrame(() => {
+      if (!selected) return;
+      scroller.scrollLeft = Math.max(
+        0,
+        selected.offsetLeft - (scroller.clientWidth - selected.offsetWidth) / 2
+      );
+    });
 
     let scrollTimer = null;
     scroller.addEventListener('scroll', () => {
       clearTimeout(scrollTimer);
       scrollTimer = setTimeout(() => {
-        const railBox = scroller.getBoundingClientRect();
-        const center = railBox.left + railBox.width / 2;
+        const center = scroller.scrollLeft + scroller.clientWidth / 2;
         let closest = null;
         let distance = Infinity;
         scroller.querySelectorAll('[data-pisi-date]').forEach((button) => {
-          const box = button.getBoundingClientRect();
-          const delta = Math.abs((box.left + box.width / 2) - center);
+          const buttonCenter = button.offsetLeft + button.offsetWidth / 2;
+          const delta = Math.abs(buttonCenter - center);
           if (delta < distance) {
             closest = button;
             distance = delta;
@@ -948,17 +953,22 @@ class PisiApp {
     }, { passive: true });
 
     let dragStartX = 0;
+    let dragStartY = 0;
     let dragStartScroll = 0;
     scroller.addEventListener('pointerdown', (event) => {
       if (event.pointerType !== 'mouse') return;
       dragStartX = event.clientX;
+      dragStartY = event.clientY;
       dragStartScroll = scroller.scrollLeft;
       scroller.classList.add('dragging');
       scroller.setPointerCapture?.(event.pointerId);
     });
     scroller.addEventListener('pointermove', (event) => {
       if (!scroller.classList.contains('dragging')) return;
-      scroller.scrollLeft = dragStartScroll - (event.clientX - dragStartX);
+      const dx = event.clientX - dragStartX;
+      const dy = event.clientY - dragStartY;
+      const localDelta = dx * 0.5 - dy * 0.8660254;
+      scroller.scrollLeft = dragStartScroll - localDelta;
     });
     const finishDrag = () => scroller.classList.remove('dragging');
     scroller.addEventListener('pointerup', finishDrag);
