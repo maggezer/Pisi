@@ -654,7 +654,7 @@ kbd { padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; backg
 .pisi-day-page {
   height: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 58px;
+  grid-template-columns: minmax(0, 1fr) 72px;
   overflow: hidden;
 }
 
@@ -770,28 +770,61 @@ kbd { padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; backg
 }
 
 .pisi-date-rail {
+  position: relative;
   min-width: 0;
   min-height: 0;
   padding-top: calc(8px + var(--top-safe));
   display: grid;
   grid-template-rows: 42px minmax(0, 1fr);
+  overflow: hidden;
   border-left: 1px solid var(--line);
-  background: color-mix(in srgb, var(--surface) 94%, var(--bg));
+  background:
+    linear-gradient(164deg,
+      transparent 0 46%,
+      color-mix(in srgb, var(--text) 88%, transparent) 46% 48%,
+      transparent 48% 100%),
+    color-mix(in srgb, var(--surface) 94%, var(--bg));
+}
+
+.pisi-date-rail::after {
+  content: "";
+  position: absolute;
+  right: -18px;
+  top: 41%;
+  width: 96px;
+  height: 2px;
+  pointer-events: none;
+  background: var(--text);
+  transform: rotate(-48deg);
+  transform-origin: center;
+  opacity: .9;
 }
 
 .pisi-date-month {
+  position: relative;
+  z-index: 2;
+  width: 48px;
+  height: 30px;
+  margin: 4px auto 0;
   display: grid;
   place-items: center;
-  color: var(--text);
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
+  clip-path: polygon(12% 0, 100% 0, 86% 100%, 0 100%);
+  background: var(--text);
+  color: var(--surface);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  transform: rotate(-4deg);
 }
 
 .pisi-date-scroll {
+  position: relative;
+  z-index: 1;
   min-height: 0;
   padding: 42% 0;
   overflow-y: auto;
+  overflow-x: hidden;
   overscroll-behavior: contain;
   scroll-snap-type: y proximity;
   scrollbar-width: none;
@@ -809,23 +842,46 @@ kbd { padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; backg
 }
 
 .pisi-date-item {
-  width: 100%;
+  --pisi-date-step: 0;
+  width: 46px;
   height: 46px;
+  margin-left: auto;
+  margin-right: 2px;
   display: grid;
   place-items: center;
   scroll-snap-align: center;
-  border-radius: 11px;
+  border-radius: 0;
   background: transparent;
   color: var(--muted);
-  font-size: 16px;
+  font-size: 15px;
+  font-weight: 720;
   font-variant-numeric: tabular-nums;
+  transform:
+    translateX(calc(var(--pisi-date-step) * -4px))
+    rotate(-8deg);
+  transition:
+    transform 120ms ease,
+    color 120ms ease,
+    background 120ms ease,
+    filter 120ms ease;
+}
+
+.pisi-date-item:nth-child(2n) {
+  filter: saturate(.85);
 }
 
 .pisi-date-item.active {
-  color: var(--text);
-  background: var(--surface-2);
-  box-shadow: inset 0 0 0 2px var(--text);
-  font-weight: 800;
+  z-index: 3;
+  color: var(--surface);
+  background: var(--text);
+  clip-path: polygon(18% 0, 100% 0, 82% 100%, 0 100%);
+  box-shadow: none;
+  font-size: 18px;
+  font-weight: 950;
+  transform:
+    translateX(-5px)
+    rotate(-8deg)
+    scale(1.06);
 }
 
 :root[data-layout="landscape"] .page-content-pisi {
@@ -833,7 +889,7 @@ kbd { padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; backg
 }
 
 :root[data-layout="landscape"] .pisi-day-page {
-  grid-template-columns: minmax(0, 1fr) 54px;
+  grid-template-columns: minmax(0, 1fr) 68px;
 }
 
 :root[data-layout="landscape"] .pisi-day-main {
