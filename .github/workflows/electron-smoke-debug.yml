@@ -29,7 +29,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          ELECTRON_ENABLE_LOGGING=1 timeout 15s xvfb-run -a npm start -- --enable-logging=stderr > electron-smoke.log 2>&1
+          ELECTRON_ENABLE_LOGGING=1 timeout 15s xvfb-run -a npm start -- --no-sandbox --enable-logging=stderr > electron-smoke.log 2>&1
           status=$?
           set -e
           cat electron-smoke.log
