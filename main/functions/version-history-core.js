@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
+const editorAssets = require('./editor-asset-store');
 
 const PISI_VERSION_HISTORY_FORMAT_VERSION = 2;
 const PISI_VERSION_HISTORY_INDEX_VERSION = 1;
@@ -322,7 +323,16 @@ function saveNodeContentWithBoundedHistory(nodePath, content = '', options = {})
         const saveContent = options.saveNodeContent || globalThis.saveNodeContent;
         const current = getDocument(nodePath);
         if (!current?.ok) return current;
-        if (String(current.data?.content || '') === String(content || '')) {
+
+        const normalizedIncoming = editorAssets.normalizePisiEditorPaintAssets(
+            String(content || ''),
+            { writeAssets: false }
+        ).content;
+
+        if (
+            String(current.data?.content || '') ===
+            String(normalizedIncoming || '')
+        ) {
             return {
                 ok: true,
                 unchanged: true,
