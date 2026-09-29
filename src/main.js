@@ -911,7 +911,6 @@ class PisiApp {
           </div>
           <div class="pisi-date-meta">
             <strong class="pisi-date-month" id="pisi-date-month">${englishMonthShort(this.pisiDateKey)}</strong>
-            <span class="pisi-date-year" id="pisi-date-year">${dateFromKey(this.pisiDateKey).getFullYear()}</span>
           </div>
         </aside>
       </div>`
@@ -929,9 +928,7 @@ class PisiApp {
       this.bindPisiDayContent(main);
     }
     const month = document.querySelector('#pisi-date-month');
-    const year = document.querySelector('#pisi-date-year');
     if (month) month.textContent = englishMonthShort(dateKey);
-    if (year) year.textContent = String(dateFromKey(dateKey).getFullYear());
     document.querySelectorAll('[data-pisi-date]').forEach((button) => {
       button.classList.toggle('active', button.dataset.pisiDate === dateKey);
     });
