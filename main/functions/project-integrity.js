@@ -35,6 +35,7 @@ function auditPisiProjectIntegrity(projectFolder) {
 
     const trashItems = recovery.auditTrash(projectRoot, context);
     const mutationJournals = recovery.auditAtomic(projectRoot, context);
+    /** @type {any} */
     const report = shared.integrityCore.makePisiIntegrityReport(
         context.issues,
         {
