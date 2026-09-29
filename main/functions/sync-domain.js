@@ -437,6 +437,7 @@ function runPisiSync(options = {}) {
 
 async function selectPisiSyncFolder() {
     const projectFolder = activeProject();
+    /** @type {import('electron').OpenDialogOptions} */
     const options = {
         title: 'Açık Pisi projesinin kök klasörünü seç',
         defaultPath: projectFolder,
