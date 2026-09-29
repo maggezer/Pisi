@@ -432,18 +432,20 @@ class PisiApp {
     return this.renderNotes();
   }
 
-  shell({ title, eyebrow = '', actions = '', content, fab = '', route = this.route }) {
+  shell({ title = '', eyebrow = '', actions = '', content, fab = '', route = this.route, header = true }) {
     root.innerHTML = `
       <div class="responsive-layout">
         ${this.platform.landscapeRailTemplate(route)}
-      <div class="app-shell">
-        <header class="page-header">
-          <div>
-            ${eyebrow ? `<span class="eyebrow">${escapeHtml(eyebrow)}</span>` : ''}
-            <h1>${escapeHtml(title)}</h1>
-          </div>
-          <div class="header-actions">${actions}</div>
-        </header>
+      <div class="app-shell ${header ? '' : 'headerless'}">
+        ${header ? `
+          <header class="page-header">
+            <div>
+              ${eyebrow ? `<span class="eyebrow">${escapeHtml(eyebrow)}</span>` : ''}
+              <h1>${escapeHtml(title)}</h1>
+            </div>
+            <div class="header-actions">${actions}</div>
+          </header>
+        ` : ''}
         <main class="page-content">${content}</main>
         ${fab}
         <nav class="bottom-nav" aria-label="Ana menü">
@@ -491,9 +493,7 @@ class PisiApp {
       `;
 
     this.shell({
-      title: 'Pisi',
-      eyebrow: 'Sessizce düzenle',
-      actions: '<button class="round-button" data-platform-search aria-label="Global arama">⌕</button><button class="round-button" data-route="settings" aria-label="Ayarlar">◉</button>',
+      header: false,
       content: `
         <label class="search-box">
           <span aria-hidden="true">⌕</span>
