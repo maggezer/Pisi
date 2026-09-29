@@ -682,46 +682,37 @@ kbd { padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; backg
   min-width: 0;
   min-height: 0;
   padding: calc(16px + var(--top-safe)) 16px calc(78px + var(--bottom-safe));
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 10px;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+}
+
+.pisi-day-main::-webkit-scrollbar {
+  display: none;
 }
 
 .pisi-day-diary,
 .pisi-day-tasks {
   position: relative;
-  min-height: 0;
-  padding: 15px 14px 17px;
-  overflow: auto;
-  scrollbar-width: none;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  background:
-    linear-gradient(145deg,
-      color-mix(in srgb, var(--surface-2) 72%, transparent),
-      color-mix(in srgb, var(--surface) 92%, transparent));
-  box-shadow: 0 10px 28px color-mix(in srgb, #000 12%, transparent);
+  flex: 0 0 auto;
+  min-height: 132px;
+  padding: 15px 14px 18px;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
-.pisi-day-diary::-webkit-scrollbar,
-.pisi-day-tasks::-webkit-scrollbar {
-  display: none;
-}
-
-.pisi-day-diary::before,
-.pisi-day-tasks::before {
-  content: "";
-  position: absolute;
-  left: 14px;
-  top: 0;
-  width: 38px;
-  height: 3px;
-  border-radius: 0 0 4px 4px;
-  background: var(--accent);
+.pisi-day-diary {
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 72%, transparent);
 }
 
 .pisi-day-tasks {
+  padding-top: 18px;
   padding-right: clamp(102px, 16vh, 140px);
 }
 
@@ -1092,11 +1083,6 @@ kbd { padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; backg
   white-space: nowrap;
 }
 
-:root[data-theme="light"] .pisi-day-diary,
-:root[data-theme="light"] .pisi-day-tasks {
-  box-shadow: 0 10px 28px rgba(79, 52, 30, .07);
-}
-
 :root[data-theme="light"] .pisi-date-item > span {
   box-shadow: 0 5px 14px rgba(79, 52, 30, .08);
 }
@@ -1108,9 +1094,25 @@ kbd { padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; backg
 :root[data-layout="landscape"] .pisi-day-main {
   padding-top: calc(10px + var(--top-safe));
   padding-bottom: calc(66px + var(--bottom-safe));
+  display: grid;
   grid-template-columns: minmax(0, 1.12fr) minmax(0, .88fr);
-  grid-template-rows: minmax(0, 1fr);
-  gap: 10px;
+  grid-template-rows: auto;
+  align-items: start;
+  overflow-y: auto;
+}
+
+:root[data-layout="landscape"] .pisi-day-diary,
+:root[data-layout="landscape"] .pisi-day-tasks {
+  min-height: 132px;
+}
+
+:root[data-layout="landscape"] .pisi-day-diary {
+  border-bottom: 0;
+  border-right: 1px solid color-mix(in srgb, var(--accent) 72%, transparent);
+}
+
+:root[data-layout="landscape"] .pisi-day-tasks {
+  padding-top: 15px;
 }
 
 :root[data-layout="landscape"] .pisi-day-diary h2,
