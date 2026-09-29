@@ -84,6 +84,45 @@ function englishMonthShort(dateKey) {
   return new Intl.DateTimeFormat('en-US', { month: 'short' }).format(dateFromKey(dateKey));
 }
 
+function pisiJournalTitle(dateKey, locale = 'tr') {
+  const language = locale === 'en' ? 'en-US' : 'tr-TR';
+  const formatted = new Intl.DateTimeFormat(language, {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }).format(dateFromKey(dateKey));
+  return locale === 'en' ? `${formatted} Journal` : `${formatted} Günlüğü`;
+}
+
+function pisiJournalBodyHtml(journal) {
+  if (!journal) return '';
+  const template = document.createElement('template');
+  template.innerHTML = sanitizeRichHtml(journal.content || '');
+  const first = template.content.firstElementChild;
+  const firstText = first?.textContent?.trim() || '';
+  const title = String(journal.title || '').trim();
+  const automaticHeading = first?.tagName === 'H1' && (
+    firstText === title || /(?:Günlüğü|Journal)$/i.test(firstText)
+  );
+  if (automaticHeading) first.remove();
+  const body = template.innerHTML.trim();
+  return htmlToText(body).trim() ? body : '';
+}
+
+function mergePisiJournalBody(journal, bodyHtml) {
+  const source = document.createElement('template');
+  source.innerHTML = sanitizeRichHtml(journal?.content || '');
+  const first = source.content.firstElementChild;
+  const firstText = first?.textContent?.trim() || '';
+  const title = String(journal?.title || '').trim();
+  const automaticHeading = first?.tagName === 'H1' && (
+    firstText === title || /(?:Günlüğü|Journal)$/i.test(firstText)
+  );
+  const prefix = automaticHeading ? first.outerHTML : '';
+  const cleanBody = sanitizeRichHtml(bodyHtml || '');
+  return sanitizeRichHtml(`${prefix}${htmlToText(cleanBody).trim() ? cleanBody : '<p><br></p>'}`);
+}
+
 function normalizeCollapsedHubs(canvas = {}) {
   return Array.from(new Set(
     (Array.isArray(canvas.collapsedHubs) ? canvas.collapsedHubs : [])
@@ -820,7 +859,7 @@ class PisiApp {
   }
 
   pisiDayTemplate(dateKey = this.pisiDateKey) {
-    const journals = this.documents.filter(
+    const journal = this.documents.find(
       (document) => document.kind === 'journal' && document.dateKey === dateKey
     );
     const tasks = (this.platform.tasks || []).filter((task) => {
@@ -828,15 +867,17 @@ class PisiApp {
       const deadline = String(task.deadline || '').slice(0, 10);
       return scheduled === dateKey || deadline === dateKey;
     });
-    const journalHtml = journals.length
-      ? journals.map((journal) => {
-          const excerpt = htmlToText(journal.content || '').trim() || 'Boş günlük notu';
-          return `<button type="button" class="pisi-diary-card" data-pisi-journal="${escapeHtml(journal.id)}">
-            <strong>${escapeHtml(journal.title || dateKey)}</strong>
-            <p>${escapeHtml(excerpt.slice(0, 520))}</p>
-          </button>`;
-        }).join('')
-      : '<p class="pisi-day-empty">Bu tarihte günlük notu yok.</p>';
+    const journalHtml = `<article
+      class="pisi-diary-editor"
+      contenteditable="true"
+      spellcheck="true"
+      inputmode="text"
+      enterkeyhint="enter"
+      autocapitalize="sentences"
+      data-pisi-journal-editor
+      data-pisi-date-key="${escapeHtml(dateKey)}"
+      data-pisi-journal="${escapeHtml(journal?.id || '')}"
+      data-placeholder="Yazmaya başla…">${journal ? pisiJournalBodyHtml(journal) : ''}</article>`;
     const taskHtml = tasks.length
       ? tasks.map((task) => `<article class="pisi-day-task ${task.done ? 'done' : ''}" data-pisi-task="${escapeHtml(task.id)}">
           <button type="button" class="pisi-day-check" data-pisi-task-toggle aria-label="Tamamlandı">${task.done ? '✓' : ''}</button>
@@ -897,10 +938,68 @@ class PisiApp {
     lightHaptic();
   }
 
+  async savePisiJournal(dateKey, journalId, bodyHtml) {
+    let journal = this.documents.find(
+      (document) => document.kind === 'journal'
+        && document.dateKey === dateKey
+        && (!journalId || document.id === journalId)
+    );
+    if (!journal) {
+      journal = this.documents.find(
+        (document) => document.kind === 'journal' && document.dateKey === dateKey
+      );
+    }
+
+    journal = journal
+      ? normalizeDocument(structuredClone(journal))
+      : normalizeDocument(createDocument('journal', {
+          title: pisiJournalTitle(dateKey, this.locale),
+          dateKey,
+          content: '<p><br></p>'
+        }));
+
+    journal.content = mergePisiJournalBody(journal, bodyHtml);
+    journal.updatedAt = new Date().toISOString();
+
+    const stored = await putDocument(structuredClone(journal));
+    const normalized = normalizeDocument(stored);
+    await this.platform.syncDocumentTasks(normalized);
+
+    const index = this.documents.findIndex(({ id }) => id === normalized.id);
+    if (index >= 0) this.documents[index] = normalizeDocument(structuredClone(normalized));
+    else this.documents.unshift(normalizeDocument(structuredClone(normalized)));
+
+    this.showSaveState(stored.__pisiStorageResult);
+    return normalized;
+  }
+
   bindPisiDayContent(scope = document) {
-    scope.querySelectorAll('[data-pisi-journal]').forEach((button) => {
-      button.addEventListener('click', () => this.openDocument(button.dataset.pisiJournal, 'pisi'));
+    scope.querySelectorAll('[data-pisi-journal-editor]').forEach((editor) => {
+      let saveTimer = null;
+      let saveQueue = Promise.resolve();
+
+      const persist = () => {
+        clearTimeout(saveTimer);
+        saveTimer = null;
+        const dateKey = editor.dataset.pisiDateKey || this.pisiDateKey;
+        const bodyHtml = editor.innerHTML;
+        const journalId = editor.dataset.pisiJournal || '';
+        saveQueue = saveQueue
+          .then(() => this.savePisiJournal(dateKey, journalId, bodyHtml))
+          .then((stored) => {
+            if (stored?.id) editor.dataset.pisiJournal = stored.id;
+          })
+          .catch((error) => this.showSaveFailure(error));
+        return saveQueue;
+      };
+
+      editor.addEventListener('input', () => {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(persist, 450);
+      });
+      editor.addEventListener('blur', persist);
     });
+
     scope.querySelectorAll('[data-pisi-task-toggle]').forEach((button) => {
       button.addEventListener('click', async () => {
         const row = button.closest('[data-pisi-task]');
