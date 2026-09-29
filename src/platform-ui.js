@@ -305,13 +305,12 @@ export class PlatformController {
   renderTasks() {
     const visible = this.orderedTasksForView(this.taskView);
     this.app.shell({
-      title: 'Görevler', eyebrow: 'Hızlı yakala ve planla', route: 'tasks',
-      actions: '<button class="round-button" data-platform-quick-task aria-label="Hızlı görev">＋</button>',
+      header: false, route: 'tasks',
       content: `<section class="task-capture-card"><form id="task-capture-form">
           <input name="text" placeholder="Görev yaz; ör. rapor yarın 14:00 45 dk" autocomplete="off"
             autocapitalize="sentences" enterkeyhint="send" required>
           <button type="submit">Ekle</button></form><small>Türkçe tarih, saat, tekrar ve süre ifadelerini anlayabilir.</small></section>
-        <div class="task-view-tabs">${[['inbox', 'Inbox'], ['today', 'Bugün'], ['upcoming', 'Yaklaşan'], ['done', 'Tamamlanan']].map(([id, label]) => `<button class="${this.taskView === id ? 'active' : ''}" data-task-view="${id}">${label}<span>${this.tasks.filter((task) => taskGroup(task, id)).length}</span></button>`).join('')}</div>
+        <div class="task-view-tabs">${[['inbox', 'Inbox'], ['today', 'Bugün'], ['upcoming', 'Yaklaşan'], ['done', 'Tamamlanan']].map(([id, label]) => `<button class="${this.taskView === id ? 'active' : ''}" data-task-view="${id}">${label}<span>${this.tasks.filter((task) => taskGroup(task, id)).length}</span></button>`).join('')}<button type="button" class="task-add-button" data-platform-quick-task><b>＋</b> Görev ekle</button></div>
         <section class="task-list">${visible.length ? visible.map(({ task, depth }) => `<article class="task-row ${task.done ? 'done' : ''}" data-task-id="${task.id}" style="--task-depth:${Math.min(depth, 4)}">
           <button type="button" class="task-check" data-task-toggle aria-label="Tamamlandı">${task.done ? '✓' : ''}</button>
           <div><strong>${escapeHtml(task.text)}</strong><span><i class="importance ${task.importance}"></i>${taskDateLabel(task)}${task.durationMinutes ? ` · ${task.durationMinutes} dk` : ''}${task.repeat !== 'none' ? ` · ${escapeHtml(task.repeat)}` : ''}${task.dependencies?.length ? ` · ${task.dependencies.length} bağımlılık` : ''}</span></div>
@@ -450,8 +449,7 @@ export class PlatformController {
     const content = this.dataTab === 'portability'
       ? this.portabilityTemplate() : this.structuredTemplate();
     this.app.shell({
-      title: 'Node sistemi', eyebrow: 'Yapılandır ve taşı', route: 'data',
-      actions: '<button class="round-button" data-platform-search aria-label="Ara">⌕</button>',
+      header: false, route: 'data',
       content: `<div class="data-tabs">${[['structured', 'Node sistemi'], ['portability', 'Taşınabilirlik']].map(([id, label]) => `<button class="${this.dataTab === id ? 'active' : ''}" data-data-tab="${id}">${label}</button>`).join('')}</div><div class="data-workspace">${content}</div>`
     });
     this.bindData();
