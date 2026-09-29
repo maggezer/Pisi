@@ -6,160 +6,6 @@ const fs = require('fs');
 const crypto = require('crypto');
 const { registerMainModule } = require('../module-registry');
 
-function deleteMapConnection(mapPath, edgeId) {
-    try {
-        const mapInfo = ensurePisiFileMetadata(mapPath);
-
-        if (!mapInfo.ok) {
-            return mapInfo;
-        }
-
-        if (!mapInfo.data.map || !Array.isArray(mapInfo.data.map.edges)) {
-            return {
-                ok: false,
-                error: 'Bu map içinde bağlantı listesi bulunamadı.'
-            };
-        }
-
-        const originalMapContent = fs.readFileSync(mapPath, 'utf-8');
-        const beforeCount = mapInfo.data.map.edges.length;
-
-        mapInfo.data.map.edges = mapInfo.data.map.edges.filter((edge) => {
-            return edge.id !== edgeId;
-        });
-
-        const afterCount = mapInfo.data.map.edges.length;
-
-        if (beforeCount === afterCount) {
-            return {
-                ok: false,
-                error: 'Silinecek bağlantı bulunamadı.'
-            };
-        }
-
-        mapInfo.data.pisi.updatedAt = new Date().toISOString();
-        writePisiDocument(mapPath, mapInfo.data);
-
-        // Kritik kısım:
-        // Edge silindikten sonra bütün node connectionTypes alanları
-        // kalan edge listesine göre yeniden üretilir.
-        const syncResult = syncMapConnectionMetadata(mapPath);
-
-        if (!syncResult.ok) {
-            writeFileAtomic(
-                mapPath,
-                originalMapContent,
-                { backup: false }
-            );
-            return syncResult;
-        }
-
-        return {
-            ok: true,
-            deletedEdgeId: edgeId,
-            edges: syncResult.edges
-        };
-    } catch (error) {
-        return {
-            ok: false,
-            error: error.message
-        };
-    }
-}
-
-function reparentMapNode(mapPath, childId, parentId) {
-    try {
-        const safeChildId = normalizePisiId(childId, '.node');
-        const safeParentId = normalizePisiId(parentId, '.node');
-
-        if (!safeChildId || !safeParentId || safeChildId === safeParentId) {
-            return {
-                ok: false,
-                error: 'Geçersiz parent veya child kimliği.'
-            };
-        }
-
-        const nodeDocsResult = getAllNodeDocsInMap(mapPath);
-        if (!nodeDocsResult.ok) return nodeDocsResult;
-
-        if (
-            !nodeDocsResult.nodesById.has(safeChildId) ||
-            !nodeDocsResult.nodesById.has(safeParentId)
-        ) {
-            return {
-                ok: false,
-                error: 'Parent veya child node map içinde bulunamadı.'
-            };
-        }
-
-        const mapInfo = nodeDocsResult.mapInfo;
-        const originalMapContent = fs.readFileSync(mapPath, 'utf-8');
-        const existingEdges = normalizePisiMapEdges(
-            mapInfo.data.map?.edges || [],
-            new Set(nodeDocsResult.nodesById.keys())
-        ).edges;
-        const withoutOldParents = existingEdges.filter((edge) => {
-            return !(isHierarchyEdge(edge) && edge.targetId === safeChildId);
-        });
-        const parentByChild = new Map();
-
-        withoutOldParents
-            .filter(isHierarchyEdge)
-            .forEach((edge) => {
-                parentByChild.set(edge.targetId, edge.sourceId);
-            });
-
-        if (
-            wouldCreatePisiHierarchyCycle(
-                parentByChild,
-                safeParentId,
-                safeChildId
-            )
-        ) {
-            return {
-                ok: false,
-                code: 'HIERARCHY_CYCLE',
-                error: 'Bu taşıma hiyerarşide döngü oluşturur.'
-            };
-        }
-
-        const replacement = normalizeMapEdge({
-            sourceId: safeParentId,
-            targetId: safeChildId,
-            sourcePort: 'bottom',
-            targetPort: 'top',
-            type: 'down-hub',
-            sourceRole: 'down-hub',
-            targetRole: 'up-hub'
-        });
-
-        mapInfo.data.map.edges = [...withoutOldParents, replacement];
-        mapInfo.data.pisi.updatedAt = new Date().toISOString();
-        writePisiDocument(mapPath, mapInfo.data);
-
-        const syncResult = syncMapConnectionMetadata(mapPath);
-        if (!syncResult.ok) {
-            writeFileAtomic(
-                mapPath,
-                originalMapContent,
-                { backup: false }
-            );
-            return syncResult;
-        }
-
-        return {
-            ok: true,
-            edge: replacement,
-            edges: syncResult.edges
-        };
-    } catch (error) {
-        return {
-            ok: false,
-            error: error.message
-        };
-    }
-}
-
 function findParentMapPathForNode(nodePath, nodeInfo = null) {
     const nodeDir = path.dirname(nodePath);
     const possibleMapDir = path.dirname(nodeDir);
@@ -195,6 +41,18 @@ function findParentMapPathForNode(nodePath, nodeInfo = null) {
     }
 
     return null;
+}
+
+function removeLegacyNodeRelationship(metadata, otherNodeId) {
+    if (!metadata.connectionTypes) {
+        metadata.connectionTypes = getDefaultNodeConnectionTypes();
+    }
+
+    for (const key of PISI_CONNECTION_KEYS) {
+        metadata.connectionTypes[key] = Array.isArray(metadata.connectionTypes[key])
+            ? metadata.connectionTypes[key].filter((id) => id !== otherNodeId)
+            : [];
+    }
 }
 
 function cleanupDeletedNodeFromParentMap(parentMapPath, deletedNodeId, deletionTransaction = null) {
@@ -264,7 +122,7 @@ function cleanupDeletedNodeFromParentMap(parentMapPath, deletedNodeId, deletionT
 
             const before = JSON.stringify(nodeInfo.data.pisi.connectionTypes);
 
-            removeNodeRelationship(nodeInfo.data.pisi, deletedNodeId);
+            removeLegacyNodeRelationship(nodeInfo.data.pisi, deletedNodeId);
 
             const after = JSON.stringify(nodeInfo.data.pisi.connectionTypes);
 
@@ -816,14 +674,6 @@ function syncProjectWatchers(folderPath) {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "deleteMapConnection": {
-        enumerable: true,
-        get() { return deleteMapConnection; }
-    },
-    "reparentMapNode": {
-        enumerable: true,
-        get() { return reparentMapNode; }
-    },
     "findParentMapPathForNode": {
         enumerable: true,
         get() { return findParentMapPathForNode; }
