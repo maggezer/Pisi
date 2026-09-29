@@ -315,6 +315,7 @@ function pisiApplyIcon(element, sourceText) {
     element.dataset.pisiIconized = '1';
 }
 
+/** @param {Document | Element | Node} [root] */
 function pisiApplyToRoot(root = document) {
     if (!root || !pisiLocale) return;
     pisiApplyingTranslations = true;
