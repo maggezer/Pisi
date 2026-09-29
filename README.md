@@ -174,8 +174,6 @@ korunabilir. Bozuk JSON otomatik olarak boş içerikle ezilmez.
 - Sheet tarafında 80 × 26 sınırı uygulanır; satır/sütun silme, gelişmiş hücre
   biçimlendirme, yapısal formül referansı güncelleme ve çoklu hücre seçimi
   henüz tamamlanmamıştır.
-- Paint görseli halen node JSON’undaki `data-image` alanında base64 PNG olarak
-  tutulur; sidecar’a harici kaynak taşıma henüz yapılmamıştır.
 - `npm audit` şu anda yalnız development/build zincirinde 3 high ve 1 moderate
   bulgu raporlamaktadır; ayrıntılar `pisi-error.md` içindedir.
 - Windows paketleri henüz code-signed değildir; SmartScreen ilk çalıştırmada
