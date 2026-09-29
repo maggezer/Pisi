@@ -83,7 +83,9 @@ function openPisiTodoDateMenu(editor, priorityValue, commandOverride = null) {
         </div>
     `;
 
-    const dateInput = menu.querySelector('.pisi-todo-date-input');
+    const dateInput = /** @type {HTMLInputElement | null} */ (
+        menu.querySelector('.pisi-todo-date-input')
+    );
     const backButton = menu.querySelector('.pisi-todo-back');
     const undatedButton = menu.querySelector('.pisi-todo-undated');
     const applyButton = menu.querySelector('.pisi-todo-apply');
@@ -115,7 +117,7 @@ function openPisiTodoDateMenu(editor, priorityValue, commandOverride = null) {
         event.stopPropagation();
     });
     dateInput?.addEventListener('change', commitTodo);
-    dateInput?.addEventListener('keydown', (/** @type {KeyboardEvent} */ event) => {
+    dateInput?.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
             commitTodo();
