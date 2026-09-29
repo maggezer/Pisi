@@ -19,8 +19,11 @@ function normalizePisiQuickAddPath(value) {
 
 /** @param {Document | Element | Node} [root] */
 function removePisiTodoCardRepeatControls(root = document) {
+    /** @type {Element[]} */
     const controls = [];
-    if (root?.matches?.('.pisi-mission-repeat')) controls.push(root);
+    if (root instanceof Element && root.matches('.pisi-mission-repeat')) {
+        controls.push(root);
+    }
     root?.querySelectorAll?.('.pisi-mission-repeat').forEach((control) => controls.push(control));
 
     controls.forEach((control) => {
