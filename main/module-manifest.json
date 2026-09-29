@@ -133,8 +133,6 @@
     "module": "main.projectOperations",
     "path": "main/functions/project-operations.js",
     "bindings": [
-      "deleteMapConnection",
-      "reparentMapNode",
       "findParentMapPathForNode",
       "cleanupDeletedNodeFromParentMap",
       "writePisiDeletionMetadata",
