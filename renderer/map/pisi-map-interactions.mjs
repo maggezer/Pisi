@@ -88,7 +88,7 @@ function hasOutgoingHubEdgesFromPort(nodeId, port) {
 function collectCollapsedHubNodeIds() {
     return collectPisiCollapsedHubNodeIds(
         activeMapEdges,
-        getCollapsedHubPortSet()
+        Array.from(getCollapsedHubPortSet())
     );
 }
 
@@ -363,7 +363,9 @@ function ensureTempEdgePath() {
     const svg = document.getElementById('map-connections');
     if (!svg) return null;
 
-    let path = document.getElementById('map-temp-edge');
+    let path = /** @type {SVGPathElement | null} */ (
+        document.querySelector('#map-temp-edge')
+    );
 
     if (!path) {
         path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
