@@ -20,6 +20,7 @@ const PISI_EDITOR_EXTRA_FONT_OPTIONS = Object.freeze([
     })
 ]);
 
+/** @param {Document | Element | Node} [root] */
 function collectPisiFontSelects(root = document) {
     if (!root) return [];
     const selects = [];
@@ -34,6 +35,7 @@ function collectPisiFontSelects(root = document) {
     return Array.from(new Set(selects));
 }
 
+/** @param {Document | Element | Node} [root] */
 function ensurePisiEditorExtraFontOptions(root = document) {
     let added = 0;
 
@@ -57,6 +59,7 @@ function ensurePisiEditorExtraFontOptions(root = document) {
 }
 
 // Backward-compatible name used by earlier tests/integration points.
+/** @param {Document | Element | Node} [root] */
 function ensurePisiEditorSystemFontOptions(root = document) {
     return ensurePisiEditorExtraFontOptions(root);
 }
