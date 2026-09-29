@@ -56,6 +56,19 @@ function createPisiRebuildableProjectionIndex(options = {}) {
     const schemaVersion = Math.max(1, Number(options.schemaVersion) || 1);
     const driver = assertPisiProjectionIndexDriver(options.driver);
     let generation = 0;
+    /** @type {{
+     * contractVersion: number,
+     * schemaVersion: number,
+     * name: string,
+     * driver: string,
+     * state: string,
+     * generation: number,
+     * sourceFingerprint: string,
+     * builtAt: number | null,
+     * recordCount: number,
+     * staleReason: string | null,
+     * error: string | null
+     * }} */
     let manifest = {
         contractVersion: PISI_PROJECTION_INDEX_CONTRACT_VERSION,
         schemaVersion,
