@@ -76,7 +76,13 @@
     "module": "main.atomicMutation",
     "path": "main/functions/atomic-mutation.js",
     "bindings": [
-      "runPisiAtomicMutation"
+      "runPisiAtomicMutation",
+      "PISI_ATOMIC_MUTATION_VERSION",
+      "getActivePisiAtomicMutation",
+      "capturePisiAtomicPathBeforeChange",
+      "capturePisiAtomicRenameBeforeChange",
+      "recoverPisiAtomicMutations",
+      "ensurePisiAtomicRecovery"
     ]
   },
   {
@@ -120,11 +126,7 @@
       "saveMapNodeLayout",
       "saveMapCamera",
       "saveNodeContent",
-      "getAllNodeDocsInMap",
-      "syncMapConnectionMetadata",
-      "removeNodeRelationship",
-      "addUniqueConnectionType",
-      "upsertMapConnection"
+      "getAllNodeDocsInMap"
     ]
   },
   {
@@ -199,7 +201,6 @@
       "readPisiPropertySchema",
       "ensurePisiPropertySchema",
       "getPisiPropertySchemaDefinitions",
-      "buildPisiPropertyMigration",
       "collectPisiPropertyCarriers",
       "savePisiNodePropertiesStable",
       "savePisiDatabaseTemplateStable",
@@ -297,7 +298,8 @@
       "selectPisiSyncFolder",
       "getPisiSyncStatus",
       "disconnectPisiSync",
-      "installPisiSyncIpc"
+      "installPisiSyncIpc",
+      "assertFolder"
     ]
   }
 ]
