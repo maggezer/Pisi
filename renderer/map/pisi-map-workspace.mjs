@@ -791,30 +791,6 @@ Object.defineProperties(moduleApi, {
         enumerable: true,
         get() { return clearMapWorkspace; }
     },
-    "getMapWorldPointFromClient": {
-        enumerable: true,
-        get() { return getMapWorldPointFromClient; }
-    },
-    "isMapBlankEventTarget": {
-        enumerable: true,
-        get() { return isMapBlankEventTarget; }
-    },
-    "createMapNodeBoxAtClientPoint": {
-        enumerable: true,
-        get() { return createMapNodeBoxAtClientPoint; }
-    },
-    "hidePisiMapContextMenu": {
-        enumerable: true,
-        get() { return hidePisiMapContextMenu; }
-    },
-    "showPisiMapContextMenu": {
-        enumerable: true,
-        get() { return showPisiMapContextMenu; }
-    },
-    "bindMapCreationEvents": {
-        enumerable: true,
-        get() { return bindMapCreationEvents; }
-    },
     "createMapNodeBox": {
         enumerable: true,
         get() { return createMapNodeBox; }
