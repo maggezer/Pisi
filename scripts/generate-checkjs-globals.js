@@ -44,6 +44,68 @@ function collectPatternNames(pattern, names) {
     }
 }
 
+function walkSourceFiles(relativeDir, extensions = new Set(['.js', '.mjs'])) {
+    const start = path.join(root, relativeDir);
+    if (!fs.existsSync(start)) return [];
+    const files = [];
+    const queue = [start];
+
+    while (queue.length) {
+        const current = queue.shift();
+        for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
+            const fullPath = path.join(current, entry.name);
+            if (entry.isDirectory()) {
+                queue.push(fullPath);
+                continue;
+            }
+            if (extensions.has(path.extname(entry.name))) {
+                files.push(fullPath);
+            }
+        }
+    }
+
+    return files;
+}
+
+function collectDynamicGlobalProperties() {
+    const names = new Set();
+    const files = [
+        ...walkSourceFiles('renderer'),
+        ...walkSourceFiles('main'),
+        path.join(root, 'preload.js')
+    ].filter((filePath) => fs.existsSync(filePath));
+
+    const assignmentPattern = /\b(?:window|globalThis)\.([A-Za-z_$][\w$]*)\s*(?:=|\|\|=|\?\?=)/g;
+    const definePattern = /Object\.defineProperty\(\s*(?:window|globalThis)\s*,\s*['"]([A-Za-z_$][\w$]*)['"]/g;
+
+    for (const filePath of files) {
+        const source = fs.readFileSync(filePath, 'utf8');
+        for (const pattern of [assignmentPattern, definePattern]) {
+            pattern.lastIndex = 0;
+            let match;
+            while ((match = pattern.exec(source)) !== null) {
+                names.add(match[1]);
+            }
+        }
+    }
+
+    return [...names];
+}
+
+function collectRendererStateBridges() {
+    const filePath = path.join(root, 'renderer/core/state.mjs');
+    if (!fs.existsSync(filePath)) return [];
+
+    const source = fs.readFileSync(filePath, 'utf8');
+    const match = source.match(
+        /\[([\s\S]*?)\]\.forEach\(definePisiStateBridge\)/
+    );
+    if (!match) return [];
+
+    return [...match[1].matchAll(/['"]([A-Za-z_$][\w$]*)['"]/g)]
+        .map((item) => item[1]);
+}
+
 function collectRuntimeGlobals(relativePath) {
     const source = fs.readFileSync(path.join(root, relativePath), 'utf8');
     const ast = espree.parse(source, {
@@ -75,7 +137,9 @@ function isIdentifier(name) {
 const names = new Set([
     ...collectManifestBindings('renderer/module-manifest.json'),
     ...collectManifestBindings('main/module-manifest.json'),
-    ...collectRuntimeGlobals('main/runtime.js')
+    ...collectRuntimeGlobals('main/runtime.js'),
+    ...collectDynamicGlobalProperties(),
+    ...collectRendererStateBridges()
 ]);
 
 const declarations = [...names]
