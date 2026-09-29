@@ -138,7 +138,12 @@ function installPisiBadgePickerPortal() {
                     ) &&
                     !mutation.target.hidden
                 ) {
-                    requestAnimationFrame(() => positionPisiBadgePickerPortal(mutation.target));
+                    const target = mutation.target;
+                    requestAnimationFrame(() => {
+                        positionPisiBadgePickerPortal(
+                            /** @type {Element} */ (target)
+                        );
+                    });
                 }
             }
         });
