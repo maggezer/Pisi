@@ -141,11 +141,16 @@ function sanitizePisiEditorHtml(html = '') {
                     'height',
                     'data-pisi-canvas',
                     'data-pisi-document-ink',
+                    'data-pisi-asset',
                     'data-image'
                 ].includes(name);
 
                 if (name === 'data-image') {
                     allowed = /^data:image\/png;base64,/i.test(value);
+                }
+
+                if (name === 'data-pisi-asset') {
+                    allowed = /^paint\/[a-f0-9]{64}\.png$/i.test(value);
                 }
             }
 
