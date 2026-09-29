@@ -788,7 +788,7 @@ class PisiApp {
     const tasks = (this.platform.tasks || []).filter((task) => {
       const scheduled = String(task.scheduledAt || '').slice(0, 10);
       const deadline = String(task.deadline || '').slice(0, 10);
-      return scheduled === dateKey || (!scheduled && deadline === dateKey);
+      return scheduled === dateKey || deadline === dateKey;
     });
     const journalHtml = journals.length
       ? journals.map((journal) => {
