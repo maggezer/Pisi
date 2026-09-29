@@ -869,8 +869,8 @@ class PisiApp {
               aria-label="${dateKey}"><span>${Number(dateKey.slice(8, 10))}</span></button>`).join('')}
           </div>
           <div class="pisi-date-meta">
-            <strong id="pisi-date-month">${englishMonthShort(this.pisiDateKey)}</strong>
-            <span id="pisi-date-year">${dateFromKey(this.pisiDateKey).getFullYear()}</span>
+            <strong class="pisi-date-month" id="pisi-date-month">${englishMonthShort(this.pisiDateKey)}</strong>
+            <span class="pisi-date-year" id="pisi-date-year">${dateFromKey(this.pisiDateKey).getFullYear()}</span>
           </div>
         </aside>
       </div>`
