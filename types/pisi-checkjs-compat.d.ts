@@ -32,22 +32,33 @@ interface Element {
     setCustomValidity(error: string): void;
     reportValidity(): boolean;
     showPicker(): void;
+    width: number;
+    height: number;
+    getContext(contextId: string, options?: any): any;
+    getTotalLength(): number;
+    getPointAtLength(distance: number): DOMPoint;
 }
 
 interface EventTarget {
     closest(selectors: string): Element | null;
+    matches(selectors: string): boolean;
     value: string;
 }
 
 interface Node {
     matches(selectors: string): boolean;
     querySelector<E extends Element = Element>(selectors: string): E | null;
+    querySelectorAll<E extends Element = Element>(selectors: string): NodeListOf<E>;
+    readonly dataset: DOMStringMap;
+    id: string;
+    insertData(offset: number, data: string): void;
 }
 
 interface Document {
     matches(selectors: string): boolean;
     closest(selectors: string): Element | null;
     remove(): void;
+    readonly options: HTMLOptionsCollection;
 }
 
 interface Event {
@@ -71,4 +82,10 @@ interface Function {
 
 interface Error {
     code?: string;
+}
+
+interface Navigator {
+    readonly userAgentData?: {
+        readonly platform?: string;
+    };
 }
