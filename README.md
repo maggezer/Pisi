@@ -15,17 +15,17 @@ takvim işlevlerini tek bir proje klasöründe birleştirir.
 - Kalıcı kimlikli WYSIWYG Markdown blokları, `/` menüsü, sürükleme, blok türü
   ve Markdown kaynak görünümü
 - Kullanıcı etiketleri, proje görev indeksi ve görev başına tamamlanma durumu
-- Hiyerarşik alt görevler, alt görev ilerleme sayacı ve bağımlılıklardan ayrı
-  `subtask:` ilişki alanı
+- Canonical görev deposu, görev bağımlılıkları, durum/öncelik/zaman alanları
+  ve diary/takvim projeksiyonları
 - `Ctrl+P` ile node, içerik, görev, etiket, map, tablo ve dosya yolu araması
 - Metin/map/görev ilişkilerini birleştiren backlink ve bağlantısız bahsetme paneli
 - Arama sonucundaki node’u kendi map’inde merkezleme ve vurgulama
-- `Ctrl+Shift+A` ile Global Quick Add, otomatik Inbox ve proje geneli
+- `Ctrl+M` (`Mod+M`) ile Global Quick Add, otomatik Inbox ve proje geneli
   Inbox/Bugün/Yaklaşan/Geciken/Tarihsiz/Engellenen görünümleri
 - Türkçe doğal tarih ayrıştırma, hızlı erteleme, planlanan zaman, deadline,
   hatırlatma ve tahmini/gerçek görev süresi
-- Metin, sayı, tarih, seçim, çoklu seçim, node bağlantısı, onay kutusu,
-  relation ve rollup türlerinde node özellikleri
+- Metin, Sayı, Tags ve Relation türlerinde canonical node özellikleri;
+  Rollup ise ana toolbardan node bloğu olarak eklenir
 - Özellikleri sorgulayan tablo/kart görünümleri, kaydedilebilir filtreler ve
   sonuçlardan kaynak node’ları silmeden map üretme; proje düzeyi şablonlar
 - Map dışa aktarma, map node yazı tipi/boyut tercihleri ve özelleştirilebilir
@@ -34,7 +34,8 @@ takvim işlevlerini tek bir proje klasöründe birleştirir.
 - Son 50 node sürümünü tutan yerel geçmiş, önizleme/karşılaştırma, bütünlük
   denetimi ve görünür yedek geri yükleme
 - `Ctrl+K` komut paleti, değiştirilebilir/çakışma denetimli kısayollar
-- Günlük node’larıyla eşitlenen görevler ve sürüklenebilir/dock edilebilir takvim
+- Canonical görevlerden üretilen read-only diary görünümü ve
+  sürüklenebilir/dock edilebilir takvim
 - Türkçe/İngilizce arayüz, light/dark tema ve değiştirilebilir arayüz tercihleri
 - Proje dışı yol erişimini engelleyen IPC sınırı ve HTML allowlist sanitizer
 - Atomik yazma, proje kilidi, kapanışta kayıt kuyruğunu boşaltma ve silmede
@@ -83,10 +84,11 @@ npm run validate
 npm run audit
 ```
 
-`npm run validate`, sözdizimi ve mimari kontrollerini, i18n/migration
+`npm run validate`, sözdizimi ve mimari kontrollerini, branding/i18n
 kontrollerini, ESLint kurallarını ve otomatik regresyon testlerini çalıştırır.
 Aynı doğrulama `main` push’larında ve pull request’lerde GitHub Actions üzerinde
-de çalışır.
+de çalışır. CI ayrıca `npm run audit` sonucunu raporlar. 29 Eylül 2026
+itibarıyla 557 regresyon testinin tamamı geçmektedir.
 
 ## Arama ve bağlantılar
 
@@ -106,7 +108,7 @@ ve ortak map üyeliklerini birlikte gösterir.
 
 Explorer başlığındaki pusula düğmesi veya `Ctrl+Shift+P`, çalışma merkezini
 açar. Templates, Ayarlar, Tercihler ve Kısayollar sayfaları buradadır.
-`Ctrl+Shift+A` doğrudan Quick Add alanına gider. Bir node seçilmeden eklenen
+`Ctrl+M` (`Mod+M`) Quick Add penceresini açar. Bir node seçilmeden eklenen
 görev proje kökündeki sistem rollü `Inbox.node` dosyasına yazılır.
 
 İçe/Dışa Aktarma ve sürüm geçmişi ana arayüzden erişilebilir; Project Integrity
@@ -169,11 +171,16 @@ korunabilir. Bozuk JSON otomatik olarak boş içerikle ezilmez.
 
 ## Mevcut sınırlar
 
+- Sheet tarafında 80 × 26 sınırı uygulanır; satır/sütun silme, gelişmiş hücre
+  biçimlendirme, yapısal formül referansı güncelleme ve çoklu hücre seçimi
+  henüz tamamlanmamıştır.
 - Paint görseli halen node JSON’undaki `data-image` alanında base64 PNG olarak
   tutulur; sidecar’a harici kaynak taşıma henüz yapılmamıştır.
+- `npm audit` şu anda yalnız development/build zincirinde 3 high ve 1 moderate
+  bulgu raporlamaktadır; ayrıntılar `pisi-error.md` içindedir.
 - Windows paketleri henüz code-signed değildir; SmartScreen ilk çalıştırmada
   uyarı gösterebilir.
-- macOS/Linux paket hedefleri ve platform imzalama altyapısı henüz
-  yapılandırılmamıştır.
+- macOS/Linux paket hedefleri, platform imzalama/notarization ve otomatik
+  güncelleme yayın altyapısı henüz yapılandırılmamıştır.
 - Electron ana süreç domainleri CommonJS, renderer domainleri ES module olarak
   çalışır; tek bir paket formatına tam dönüşüm yapılmamıştır.
