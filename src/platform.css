@@ -957,7 +957,7 @@ kbd { padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; backg
 .pisi-date-meta {
   position: absolute;
   z-index: 5;
-  right: clamp(24px, 5vw, 38px);
+  right: clamp(12px, 2.5vw, 19px);
   bottom: calc(24px + var(--bottom-safe));
   display: flex;
   align-items: center;
