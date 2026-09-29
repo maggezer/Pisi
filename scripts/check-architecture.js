@@ -243,26 +243,34 @@ function auditSourceModuleOwnership(manifests) {
     const bindingOwners = new Map();
 
     for (const registration of registrations) {
-        const previousModulePath = moduleOwners.get(registration.module);
+        const world = registration.path.startsWith('renderer/')
+            ? 'renderer'
+            : 'main';
+        const moduleKey = world + '::' + registration.module;
+        const previousModulePath = moduleOwners.get(moduleKey);
+
         if (previousModulePath && previousModulePath !== registration.path) {
             errors.push(
-                'Module owner collision ' + registration.module + ': ' +
+                'Module owner collision [' + world + '] ' +
+                registration.module + ': ' +
                 previousModulePath + ' / ' + registration.path
             );
         } else if (!previousModulePath) {
-            moduleOwners.set(registration.module, registration.path);
+            moduleOwners.set(moduleKey, registration.path);
         }
 
         for (const binding of registration.bindings) {
-            const previous = bindingOwners.get(binding);
+            const bindingKey = world + '::' + binding;
+            const previous = bindingOwners.get(bindingKey);
             if (previous) {
                 errors.push(
-                    'Source binding collision ' + binding + ': ' +
+                    'Source binding collision [' + world + '] ' +
+                    binding + ': ' +
                     previous.module + ' @ ' + previous.path + ' / ' +
                     registration.module + ' @ ' + registration.path
                 );
             } else {
-                bindingOwners.set(binding, registration);
+                bindingOwners.set(bindingKey, registration);
             }
         }
     }
