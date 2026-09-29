@@ -601,8 +601,7 @@ class PisiApp {
   renderMaps() {
     const maps = this.documents.filter(({ kind }) => kind === 'canvas');
     this.shell({
-      title: 'Fikir haritaları',
-      eyebrow: 'Bağlantıları gör',
+      header: false,
       content: `
         <div class="map-list">
           ${maps.length ? maps.map((map) => {
@@ -689,8 +688,7 @@ class PisiApp {
 
     const recentJournals = this.documents.filter(({ kind }) => kind === 'journal').slice(0, 3);
     this.shell({
-      title: 'Takvim',
-      eyebrow: 'Günlere not düş',
+      header: false,
       content: `
         <div class="calendar-type-switch" role="group" aria-label="Takvim türü">
           ${[
@@ -800,8 +798,7 @@ class PisiApp {
     const visibleFiles = Array.isArray(sync.lastResult?.visibleFiles)
       ? sync.lastResult.visibleFiles.slice(0, 3) : [];
     this.shell({
-      title: 'Ayarlar',
-      eyebrow: 'Kendi düzenin',
+      header: false,
       content: `
         <section class="settings-profile">
           <div class="settings-logo"><span></span><i></i></div>
