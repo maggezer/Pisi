@@ -661,7 +661,9 @@ function renderPisiTodoThirdTimeline(list, missions) {
     for (const mission of dated) {
         const due = new Date(mission.finishDate);
         due.setHours(0, 0, 0, 0);
-        const dayOffset = Math.round((due - today) / 86400000);
+        const dayOffset = Math.round(
+            (due.getTime() - today.getTime()) / 86400000
+        );
         const position = Math.max(0, Math.min(30, dayOffset)) / 30 * 100;
         const row = document.createElement('div');
         row.className = 'pisi-third-timeline-row';
