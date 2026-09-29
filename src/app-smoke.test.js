@@ -18,12 +18,21 @@ describe('Pisi responsive application shell', () => {
 
     document.querySelector('.bottom-nav [data-route="pisi"]').click();
     expect(document.querySelector('.pisi-day-page')).toBeTruthy();
+    expect(document.querySelector('.bottom-nav')).toBeFalsy();
+    expect(document.querySelector('.landscape-rail')).toBeFalsy();
+    expect(document.querySelector('#pisi-nav-toggle')).toBeTruthy();
+    expect(document.querySelector('#pisi-nav-menu').hasAttribute('hidden')).toBe(true);
     expect(document.querySelector('.pisi-date-rail')).toBeTruthy();
     expect(document.querySelector('.pisi-date-month').textContent).toMatch(/^[A-Z][a-z]{2}$/);
+    expect(document.querySelector('.pisi-date-year').textContent).toMatch(/^\d{4}$/);
     expect(document.querySelector('.pisi-date-item.active')).toBeTruthy();
     expect(document.body.textContent).toContain('Diary');
     expect(document.body.textContent).toContain('Tasks');
-    document.querySelector('.bottom-nav [data-route="notes"]').click();
+
+    document.querySelector('#pisi-nav-toggle').click();
+    expect(document.querySelector('#pisi-nav-menu').hasAttribute('hidden')).toBe(false);
+    document.querySelector('#pisi-nav-menu [data-route="notes"]').click();
+    expect(document.querySelector('.bottom-nav')).toBeTruthy();
 
     document.querySelector('[data-route="maps"]').click();
     expect(document.querySelector('.page-header')).toBeFalsy();
