@@ -17,6 +17,7 @@ function normalizePisiQuickAddPath(value) {
     return String(value || '').replace(/[\\/]+/g, '/').toLowerCase();
 }
 
+/** @param {Document | Element | Node} [root] */
 function removePisiTodoCardRepeatControls(root = document) {
     const controls = [];
     if (root?.matches?.('.pisi-mission-repeat')) controls.push(root);
@@ -159,6 +160,7 @@ function makePisiQuickAddRepeatField(form) {
     return field;
 }
 
+/** @param {Document | Element | Node} [root] */
 function enhancePisiQuickAddRepeatUi(root = document) {
     const forms = [];
     if (root?.matches?.('.pisi-quick-add-form')) forms.push(root);
