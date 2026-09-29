@@ -456,8 +456,9 @@ function initializePisiEditorTokenRouting() {
     document.addEventListener('mousedown', (event) => {
         if (!pisiUnifiedCommandState.active) return;
         const menu = getPisiCommandMenuElement();
-        if (menu?.contains(event.target)) return;
-        if (pisiUnifiedCommandState.editor?.contains(event.target)) return;
+        const target = event.target instanceof Node ? event.target : null;
+        if (target && menu?.contains(target)) return;
+        if (target && pisiUnifiedCommandState.editor?.contains(target)) return;
         closePisiUnifiedCommandMenu();
     });
 }
