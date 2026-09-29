@@ -122,7 +122,11 @@ function installPisiBadgePickerPortal() {
         pisiBadgePickerPortalObserver = new MutationObserver((mutations) => {
             for (const mutation of mutations) {
                 if (mutation.type === 'childList') {
-                    mutation.addedNodes.forEach(portalizePisiBadgePickersWithin);
+                    mutation.addedNodes.forEach((node) => {
+                        if (node instanceof Element) {
+                            portalizePisiBadgePickersWithin(node);
+                        }
+                    });
                     continue;
                 }
                 if (
@@ -150,7 +154,8 @@ function installPisiBadgePickerPortal() {
         const picker = getPisiBadgePickerPortal();
         if (!picker || picker.hidden) return;
         const anchor = getPisiBadgePickerAnchor();
-        if (picker.contains(event.target) || anchor?.contains(event.target)) return;
+        const target = event.target instanceof Node ? event.target : null;
+        if (target && (picker.contains(target) || anchor?.contains(target))) return;
         picker.hidden = true;
     }, true);
 
