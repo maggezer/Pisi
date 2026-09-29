@@ -2,8 +2,7 @@
     const previousPisi = window.Pisi || {};
     const previousState = previousPisi.state || {};
 
-    window.Pisi = {
-        ...previousPisi,
+    Object.assign(previousPisi, {
         state: {
 
 
@@ -88,7 +87,8 @@
         tags: previousPisi.tags || {},
         connections: previousPisi.connections || {},
         calendar: previousPisi.calendar || {}
-    };
+    });
+    window.Pisi = previousPisi;
 
     function definePisiStateBridge(name) {
         if (Object.prototype.hasOwnProperty.call(window, name)) {
