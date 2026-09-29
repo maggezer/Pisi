@@ -13,7 +13,17 @@ describe('Pisi responsive application shell', () => {
     });
     expect(document.querySelector('.page-header')).toBeFalsy();
     expect(document.querySelector('.landscape-rail')).toBeTruthy();
-    expect(document.querySelectorAll('.bottom-nav .nav-button')).toHaveLength(5);
+    expect(document.querySelectorAll('.bottom-nav .nav-button')).toHaveLength(6);
+    expect(document.querySelector('.bottom-nav [data-route="pisi"]')).toBeTruthy();
+
+    document.querySelector('.bottom-nav [data-route="pisi"]').click();
+    expect(document.querySelector('.pisi-day-page')).toBeTruthy();
+    expect(document.querySelector('.pisi-date-rail')).toBeTruthy();
+    expect(document.querySelector('.pisi-date-month').textContent).toMatch(/^[A-Z][a-z]{2}$/);
+    expect(document.querySelector('.pisi-date-item.active')).toBeTruthy();
+    expect(document.body.textContent).toContain('Diary');
+    expect(document.body.textContent).toContain('Tasks');
+    document.querySelector('.bottom-nav [data-route="notes"]').click();
 
     document.querySelector('[data-route="maps"]').click();
     expect(document.querySelector('.page-header')).toBeFalsy();
