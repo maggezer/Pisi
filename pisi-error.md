@@ -11,14 +11,7 @@ olarak ertelenmiş işleri listeler. Kapatılmış tarihsel bulgular
 Ancak satır/sütun silme, gelişmiş hücre biçimlendirme, yapısal değişikliklerde
 formül referanslarını yeniden yazma ve çoklu hücre seçimi henüz yok.
 
-## 2. Paint / Sheet sidecar depolaması
-
-**[Orta · mimari borç]** Paint PNG verisi halen node JSON içindeki
-`data-image` alanında tutuluyor. Paint/Sheet kaynaklarını sidecar dosyalara
-taşıma; mevcut belgeler için migration ve geri uyumluluk gerektirdiği için
-ertelendi.
-
-## 3. Development dependency audit bulguları
+## 2. Development dependency audit bulguları
 
 **[Orta · build zinciri]** 29 Eylül 2026 tarihli CI auditinde
 **3 high + 1 moderate** bulgu bulunuyor. Yüksek bulgular:
@@ -34,13 +27,13 @@ işleyen production bağımlılıkları değiller. CI audit raporunu görünür 
 `npm audit fix` sonrası paketleme ve 557 regresyon testinin tamamı yeniden
 çalıştırılmalı.
 
-## 4. Typecheck ve otomatik formatlama
+## 3. Typecheck ve otomatik formatlama
 
 **[Düşük · kalite]** Syntax, architecture, branding, i18n, ESLint ve Node test
 runner kontrolleri mevcut ve CI'da çalışıyor. Ancak repository-wide typecheck
 ve otomatik format kontrolü henüz yok.
 
-## 5. Dağıtım / imzalama
+## 4. Dağıtım / imzalama
 
 **[Orta · release]** Windows NSIS ve portable paketleri x64 ile ARM64 için
 üretiliyor. Henüz:
