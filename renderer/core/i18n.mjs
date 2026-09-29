@@ -99,6 +99,7 @@ function applyPisiSupplementalAttributes(element) {
     return changed;
 }
 
+/** @param {Document | Element | Node} [root] */
 function applyPisiSupplementalRoot(root = document) {
     if (!root || pisiSupplementalApplying) return;
     pisiSupplementalApplying = true;
