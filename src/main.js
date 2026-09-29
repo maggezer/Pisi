@@ -304,6 +304,7 @@ class PisiApp {
         await this.platform.refreshFromStorage();
         this.syncStatus = await getMobileSyncStatus();
         if (this.route === 'settings') this.renderSettings();
+        else if (this.route === 'pisi') this.renderPisiDay();
       });
       document.addEventListener('pisi:sync-error', async (event) => {
         this.syncStatus = await getMobileSyncStatus().catch(() => this.syncStatus);
@@ -473,7 +474,7 @@ class PisiApp {
             <div class="header-actions">${actions}</div>
           </header>
         ` : ''}
-        <main class="page-content">${content}</main>
+        <main class="page-content page-content-${route}">${content}</main>
         ${fab}
         <nav class="bottom-nav" aria-label="Ana menü">
           ${NAV_ITEMS.map((item) => `
