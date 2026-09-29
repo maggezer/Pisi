@@ -92,6 +92,7 @@ function normalizeStringArray(value, limit, itemLimit) {
 }
 
 function normalizeRollupValue(value = {}) {
+    /** @type {Record<string, any>} */
     const source = value && typeof value === 'object' && !Array.isArray(value)
         ? value
         : {};
