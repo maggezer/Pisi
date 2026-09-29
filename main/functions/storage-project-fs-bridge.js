@@ -1,8 +1,6 @@
 'use strict';
 
 const fs = require('fs');
-/** @type {any} */
-const mutableFs = fs;
 const path = require('path');
 const { AsyncLocalStorage } = require('async_hooks');
 const storageLayer = require('./storage');
@@ -129,7 +127,7 @@ function installPisiStorageProjectFsBridge() {
         rmSync: fs.rmSync.bind(fs)
     };
 
-    mutableFs.existsSync = function pisiStorageExistsSync(targetPath) {
+    fs.existsSync = function pisiStorageExistsSync(targetPath) {
         const target = resolvePisiStorageBridgeTarget(targetPath);
         if (!target) return original.existsSync(targetPath);
         try {
@@ -140,7 +138,7 @@ function installPisiStorageProjectFsBridge() {
         }
     };
 
-    mutableFs.readFileSync = function pisiStorageReadFileSync(targetPath, options) {
+    fs.readFileSync = function pisiStorageReadFileSync(targetPath, options) {
         const encoding = normalizeReadEncoding(options);
         if (!['utf8', 'utf-8'].includes(encoding || '')) {
             return original.readFileSync(targetPath, options);
@@ -153,7 +151,7 @@ function installPisiStorageProjectFsBridge() {
         return result.text;
     };
 
-    mutableFs.readdirSync = function pisiStorageReaddirSync(targetPath, options) {
+    fs.readdirSync = function pisiStorageReaddirSync(targetPath, options) {
         const encoding = typeof options === 'string'
             ? options
             : options?.encoding;
@@ -171,7 +169,8 @@ function installPisiStorageProjectFsBridge() {
         return result.entries.map((entry) => entry.name);
     };
 
-    mutableFs.statSync = function pisiStorageStatSync(targetPath, options) {
+    // @ts-ignore Pisi intentionally patches Node's fs compatibility bridge at runtime.
+    fs.statSync = function pisiStorageStatSync(targetPath, options) {
         if (options && typeof options === 'object' && options.bigint === true) {
             return original.statSync(targetPath, options);
         }
@@ -188,7 +187,7 @@ function installPisiStorageProjectFsBridge() {
         return result.stat;
     };
 
-    mutableFs.mkdirSync = function pisiStorageMkdirSync(targetPath, options) {
+    fs.mkdirSync = function pisiStorageMkdirSync(targetPath, options) {
         const recursive = options && typeof options === 'object'
             ? options.recursive === true
             : false;
@@ -201,7 +200,7 @@ function installPisiStorageProjectFsBridge() {
         return result.path;
     };
 
-    mutableFs.renameSync = function pisiStorageRenameSync(sourcePath, destinationPath) {
+    fs.renameSync = function pisiStorageRenameSync(sourcePath, destinationPath) {
         const source = resolvePisiStorageBridgeTarget(sourcePath);
         const destination = resolvePisiStorageBridgeTarget(destinationPath);
         if (!source || !destination || source.projectRoot !== destination.projectRoot) {
@@ -212,7 +211,7 @@ function installPisiStorageProjectFsBridge() {
         if (!result.ok) throw makePisiStorageBridgeError(result, 'STORAGE_RENAME_FAILED');
     };
 
-    mutableFs.unlinkSync = function pisiStorageUnlinkSync(targetPath) {
+    fs.unlinkSync = function pisiStorageUnlinkSync(targetPath) {
         const target = resolvePisiStorageBridgeTarget(targetPath);
         if (!target) return original.unlinkSync(targetPath);
         bridgeStats.remove += 1;
@@ -220,7 +219,7 @@ function installPisiStorageProjectFsBridge() {
         if (!result.ok) throw makePisiStorageBridgeError(result, 'STORAGE_REMOVE_FAILED');
     };
 
-    mutableFs.rmSync = function pisiStorageRmSync(targetPath, options = {}) {
+    fs.rmSync = function pisiStorageRmSync(targetPath, options = {}) {
         const target = resolvePisiStorageBridgeTarget(targetPath);
         if (!target) return original.rmSync(targetPath, options);
         bridgeStats.remove += 1;
