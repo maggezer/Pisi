@@ -166,6 +166,7 @@ function createPisiProjectStorage(projectRoot, driver) {
     }
 
     function readJson(key, options = {}) {
+        /** @type {any} */
         const read = readText(key, options);
         if (!read.ok || read.missing) {
             return {
@@ -271,6 +272,7 @@ function createPisiProjectStorage(projectRoot, driver) {
         const files = [];
         const visit = (currentKey) => {
             if (files.length >= maxFiles) return;
+            /** @type {any} */
             const current = list(currentKey, { allowMissing: options.allowMissing === true });
             if (!current.ok) throw new Error(current.error);
             for (const entry of current.entries) {
