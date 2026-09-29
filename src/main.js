@@ -51,6 +51,7 @@ const NAV_ITEMS = [
   { id: 'maps', icon: '⌘', label: 'Haritalar' },
   { id: 'tasks', icon: '✓', label: 'Görevler' },
   { id: 'calendar', icon: '□', label: 'Takvim' },
+  { id: 'pisi', icon: '▤', label: 'Pisi' },
   { id: 'settings', icon: '◉', label: 'Ayarlar' }
 ];
 
@@ -58,6 +59,30 @@ const WEEKDAYS = {
   tr: ['Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct', 'Pz'],
   en: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
 };
+
+function localDateKey(date = new Date()) {
+  const value = new Date(date);
+  return [
+    value.getFullYear(),
+    String(value.getMonth() + 1).padStart(2, '0'),
+    String(value.getDate()).padStart(2, '0')
+  ].join('-');
+}
+
+function dateFromKey(dateKey) {
+  const [year, month, day] = String(dateKey || '').split('-').map(Number);
+  return new Date(year, Math.max(0, month - 1), day || 1, 12);
+}
+
+function shiftDateKey(dateKey, amount) {
+  const date = dateFromKey(dateKey);
+  date.setDate(date.getDate() + Number(amount || 0));
+  return localDateKey(date);
+}
+
+function englishMonthShort(dateKey) {
+  return new Intl.DateTimeFormat('en-US', { month: 'short' }).format(dateFromKey(dateKey));
+}
 
 function normalizeCollapsedHubs(canvas = {}) {
   return Array.from(new Set(
@@ -230,6 +255,7 @@ class PisiApp {
     this.calendarType = 'gregorian';
     this.locale = 'tr';
     this.calendarCursor = createCalendarCursor('gregorian');
+    this.pisiDateKey = localDateKey();
     this.selectedMapNode = null;
     this.connectFrom = null;
     this.mapEditingNode = null;
@@ -428,6 +454,7 @@ class PisiApp {
     if (this.route === 'tasks') return this.platform.renderTasks();
     if (this.route === 'data') return this.platform.renderData();
     if (this.route === 'calendar') return this.renderCalendar();
+    if (this.route === 'pisi') return this.renderPisiDay();
     if (this.route === 'settings') return this.renderSettings();
     return this.renderNotes();
   }
@@ -751,6 +778,147 @@ class PisiApp {
     document.querySelectorAll('.journal-row[data-open]').forEach((button) => {
       button.addEventListener('click', () => this.openDocument(button.dataset.open, 'calendar'));
     });
+  }
+
+  pisiDayTemplate(dateKey = this.pisiDateKey) {
+    const journals = this.documents.filter(
+      (document) => document.kind === 'journal' && document.dateKey === dateKey
+    );
+    const tasks = (this.platform.tasks || []).filter((task) => {
+      const scheduled = String(task.scheduledAt || '').slice(0, 10);
+      const deadline = String(task.deadline || '').slice(0, 10);
+      return scheduled === dateKey || (!scheduled && deadline === dateKey);
+    });
+    const journalHtml = journals.length
+      ? journals.map((journal) => {
+          const excerpt = htmlToText(journal.content || '').trim() || 'Boş günlük notu';
+          return `<button type="button" class="pisi-diary-card" data-pisi-journal="${escapeHtml(journal.id)}">
+            <strong>${escapeHtml(journal.title || dateKey)}</strong>
+            <p>${escapeHtml(excerpt.slice(0, 520))}</p>
+          </button>`;
+        }).join('')
+      : '<p class="pisi-day-empty">Bu tarihte günlük notu yok.</p>';
+    const taskHtml = tasks.length
+      ? tasks.map((task) => `<article class="pisi-day-task ${task.done ? 'done' : ''}" data-pisi-task="${escapeHtml(task.id)}">
+          <button type="button" class="pisi-day-check" data-pisi-task-toggle aria-label="Tamamlandı">${task.done ? '✓' : ''}</button>
+          <span><strong>${escapeHtml(task.text || 'Görev')}</strong>${task.durationMinutes ? `<small>${task.durationMinutes} dk</small>` : ''}</span>
+        </article>`).join('')
+      : '<p class="pisi-day-empty">Bu tarihte görev yok.</p>';
+
+    return `<section class="pisi-day-diary">
+        <h2>Diary</h2>
+        <div class="pisi-day-diary-list">${journalHtml}</div>
+      </section>
+      <section class="pisi-day-tasks">
+        <h2>Tasks</h2>
+        <div class="pisi-day-task-list">${taskHtml}</div>
+      </section>`;
+  }
+
+  renderPisiDay() {
+    const dates = Array.from({ length: 731 }, (_, index) => shiftDateKey(this.pisiDateKey, index - 365));
+    this.shell({
+      header: false,
+      route: 'pisi',
+      content: `<div class="pisi-day-page">
+        <div class="pisi-day-main" id="pisi-day-main">${this.pisiDayTemplate(this.pisiDateKey)}</div>
+        <aside class="pisi-date-rail" aria-label="Tarih seçici">
+          <div class="pisi-date-month" id="pisi-date-month">${englishMonthShort(this.pisiDateKey)}</div>
+          <div class="pisi-date-scroll" id="pisi-date-scroll" tabindex="0">
+            ${dates.map((dateKey) => `<button type="button"
+              class="pisi-date-item ${dateKey === this.pisiDateKey ? 'active' : ''}"
+              data-pisi-date="${dateKey}"
+              aria-label="${dateKey}">${Number(dateKey.slice(8, 10))}</button>`).join('')}
+          </div>
+        </aside>
+      </div>`
+    });
+    this.bindPisiDay();
+  }
+
+  setPisiDate(dateKey) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dateKey || ''))) return;
+    if (dateKey === this.pisiDateKey) return;
+    this.pisiDateKey = dateKey;
+    const main = document.querySelector('#pisi-day-main');
+    if (main) {
+      main.innerHTML = this.pisiDayTemplate(dateKey);
+      this.bindPisiDayContent(main);
+    }
+    const month = document.querySelector('#pisi-date-month');
+    if (month) month.textContent = englishMonthShort(dateKey);
+    document.querySelectorAll('[data-pisi-date]').forEach((button) => {
+      button.classList.toggle('active', button.dataset.pisiDate === dateKey);
+    });
+    lightHaptic();
+  }
+
+  bindPisiDayContent(scope = document) {
+    scope.querySelectorAll('[data-pisi-journal]').forEach((button) => {
+      button.addEventListener('click', () => this.openDocument(button.dataset.pisiJournal, 'pisi'));
+    });
+    scope.querySelectorAll('[data-pisi-task-toggle]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const row = button.closest('[data-pisi-task]');
+        const task = (this.platform.tasks || []).find(({ id }) => id === row?.dataset.pisiTask);
+        if (!task) return;
+        await this.platform.toggleTask(task);
+        const main = document.querySelector('#pisi-day-main');
+        if (main) {
+          main.innerHTML = this.pisiDayTemplate(this.pisiDateKey);
+          this.bindPisiDayContent(main);
+        }
+      });
+    });
+  }
+
+  bindPisiDay() {
+    const scroller = document.querySelector('#pisi-date-scroll');
+    if (!scroller) return;
+    this.bindPisiDayContent(document);
+    document.querySelectorAll('[data-pisi-date]').forEach((button) => {
+      button.addEventListener('click', () => this.setPisiDate(button.dataset.pisiDate));
+    });
+
+    const selected = scroller.querySelector(`[data-pisi-date="${this.pisiDateKey}"]`);
+    requestAnimationFrame(() => selected?.scrollIntoView?.({ block: 'center' }));
+
+    let scrollTimer = null;
+    scroller.addEventListener('scroll', () => {
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => {
+        const railBox = scroller.getBoundingClientRect();
+        const center = railBox.top + railBox.height / 2;
+        let closest = null;
+        let distance = Infinity;
+        scroller.querySelectorAll('[data-pisi-date]').forEach((button) => {
+          const box = button.getBoundingClientRect();
+          const delta = Math.abs((box.top + box.height / 2) - center);
+          if (delta < distance) {
+            closest = button;
+            distance = delta;
+          }
+        });
+        if (closest) this.setPisiDate(closest.dataset.pisiDate);
+      }, 80);
+    }, { passive: true });
+
+    let dragStartY = 0;
+    let dragStartScroll = 0;
+    scroller.addEventListener('pointerdown', (event) => {
+      if (event.pointerType !== 'mouse') return;
+      dragStartY = event.clientY;
+      dragStartScroll = scroller.scrollTop;
+      scroller.classList.add('dragging');
+      scroller.setPointerCapture?.(event.pointerId);
+    });
+    scroller.addEventListener('pointermove', (event) => {
+      if (!scroller.classList.contains('dragging')) return;
+      scroller.scrollTop = dragStartScroll - (event.clientY - dragStartY);
+    });
+    const finishDrag = () => scroller.classList.remove('dragging');
+    scroller.addEventListener('pointerup', finishDrag);
+    scroller.addEventListener('pointercancel', finishDrag);
   }
 
   async openJournal(dateKey, title) {
