@@ -424,6 +424,18 @@
     ]
   },
   {
+    "module": "tags.editorBlocks",
+    "path": "renderer/tags/pisi-editor-blocks.mjs",
+    "bindings": [
+      "makePisiBlockId",
+      "isPisiEditorBlockElement",
+      "decoratePisiEditorBlock",
+      "ensurePisiEditorBlocks",
+      "getPisiBlockElementsFromContainer",
+      "createPisiInertHtmlTemplate"
+    ]
+  },
+  {
     "module": "tags.index",
     "path": "renderer/tags/pisi-tag-index.mjs",
     "bindings": [
