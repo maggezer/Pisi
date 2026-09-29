@@ -731,34 +731,47 @@ kbd { padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; backg
   gap: 9px;
 }
 
-.pisi-diary-card {
+.pisi-diary-editor {
   width: 100%;
-  padding: 10px 11px;
-  display: grid;
-  gap: 6px;
-  border: 1px solid transparent;
-  border-radius: 13px;
-  text-align: left;
-  background: color-mix(in srgb, var(--surface-2) 46%, transparent);
+  min-height: 74px;
+  padding: 2px 1px 6px;
+  border: 0;
+  outline: 0;
+  background: transparent;
   color: var(--text);
-  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+  font-size: 14px;
+  line-height: 1.62;
+  overflow-wrap: anywhere;
+  caret-color: var(--accent);
 }
 
-.pisi-diary-card:active {
-  border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
-  background: var(--accent-soft);
-  transform: scale(.992);
+.pisi-diary-editor:empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted-2);
+  pointer-events: none;
 }
 
-.pisi-diary-card strong {
-  font-size: 13px;
+.pisi-diary-editor p {
+  margin: 0 0 .72em;
 }
 
-.pisi-diary-card p {
-  margin: 0;
+.pisi-diary-editor p:last-child {
+  margin-bottom: 0;
+}
+
+.pisi-diary-editor h1,
+.pisi-diary-editor h2,
+.pisi-diary-editor h3 {
+  margin: .65em 0 .35em;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.pisi-diary-editor blockquote {
+  margin: .7em 0;
+  padding-left: 12px;
+  border-left: 2px solid var(--accent);
   color: var(--muted);
-  font-size: 12px;
-  line-height: 1.55;
 }
 
 .pisi-day-task {
