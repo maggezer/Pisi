@@ -453,6 +453,7 @@ function decodePisiBundledFont(base64) {
 
 let pisiComicNeueLoadPromise = null;
 
+/** @param {Document | Element | Node} [root] */
 function ensurePisiComicNeueFontOption(root = document) {
     if (!root?.querySelectorAll) return 0;
     let added = 0;
