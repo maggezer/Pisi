@@ -79,7 +79,7 @@ function collectPisiCollapsedHubCounts(edges = [], collapsedHubPortKeys = []) {
         if (!nodeId) continue;
         const hidden = collectPisiCollapsedHubNodeIds(
             edges,
-            new Set([makePisiCollapsedHubPortKey(nodeId, port)])
+            [makePisiCollapsedHubPortKey(nodeId, port)]
         );
         counts.set(makePisiCollapsedHubPortKey(nodeId, port), hidden.size);
     }
