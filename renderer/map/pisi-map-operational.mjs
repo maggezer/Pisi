@@ -211,11 +211,11 @@ function updatePisiOperationalControlState() {
     const selected = getSelectedOperationalNodeBox();
     const focus = document.getElementById('pisi-map-operational-focus');
     if (focus) focus.disabled = !selected;
-    for (const [id, enabled] of [
+    for (const [id, enabled] of /** @type {Array<[string, boolean]>} */ ([
         ['pisi-map-operational-deps', operationalState.display.showTaskDependencies],
         ['pisi-map-operational-labels', operationalState.display.showRelationshipLabels],
         ['pisi-map-operational-work', operationalState.display.showWorkBadges]
-    ]) {
+    ])) {
         const button = document.getElementById(id);
         if (button) button.setAttribute('aria-pressed', enabled ? 'true' : 'false');
     }
