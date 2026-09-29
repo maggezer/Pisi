@@ -121,7 +121,7 @@ function syncCollapsedHubNodeVisibility() {
 function isHubEdgeCollapsed(edge, hiddenNodeIds = collectCollapsedHubNodeIds()) {
     return isPisiMapEdgeHiddenByCollapsedHub(
         edge,
-        hiddenNodeIds,
+        Array.from(hiddenNodeIds || []),
         Array.from(getCollapsedHubPortSet())
     );
 }
