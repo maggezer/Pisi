@@ -19,6 +19,7 @@ function normalizePisiNodePropertyType(type = 'text') {
     return String(type || 'text').trim().toLowerCase();
 }
 
+/** @param {any} [value] */
 function normalizePisiPropertySearch(value = '') {
     return String(value ?? '')
         .toLocaleLowerCase('tr-TR')
