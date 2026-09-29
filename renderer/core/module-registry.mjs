@@ -1,7 +1,7 @@
 const bindingOwners = new Map();
 const bootOwners = new Map();
 const moduleNames = new Set();
-const registryToken = {};
+let registryRoot = null;
 let registrySealed = false;
 
 function getPisiRoot() {
@@ -9,20 +9,14 @@ function getPisiRoot() {
         window.Pisi = {};
     }
 
-    if (
-        window.Pisi.__moduleRegistryToken &&
-        window.Pisi.__moduleRegistryToken !== registryToken
-    ) {
-        throw new Error('[PISI] Renderer Pisi namespace was replaced after module registry initialization.');
+    if (registryRoot && window.Pisi !== registryRoot) {
+        throw new Error(
+            '[PISI] Renderer Pisi namespace was replaced after module registry initialization.'
+        );
     }
 
-    if (!window.Pisi.__moduleRegistryToken) {
-        Object.defineProperty(window.Pisi, '__moduleRegistryToken', {
-            configurable: false,
-            enumerable: false,
-            writable: false,
-            value: registryToken
-        });
+    if (!registryRoot) {
+        registryRoot = window.Pisi;
     }
 
     if (!window.Pisi.modules || typeof window.Pisi.modules !== 'object') {
