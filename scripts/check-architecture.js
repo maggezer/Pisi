@@ -54,6 +54,262 @@ function scanRootSelectors(css) {
     return selectors;
 }
 
+function readBalancedObject(source, start) {
+    if (source[start] !== '{') throw new Error('Expected object literal.');
+    let depth = 1;
+    let index = start + 1;
+    let quote = null;
+    let escaped = false;
+
+    while (index < source.length) {
+        const char = source[index];
+
+        if (quote) {
+            if (escaped) {
+                escaped = false;
+            } else if (char === '\\') {
+                escaped = true;
+            } else if (char === quote) {
+                quote = null;
+            }
+            index += 1;
+            continue;
+        }
+
+        if (char === '"' || char === "'" || char === '`') {
+            quote = char;
+            index += 1;
+            continue;
+        }
+
+        if (source.startsWith('//', index)) {
+            const end = source.indexOf('\n', index + 2);
+            index = end === -1 ? source.length : end + 1;
+            continue;
+        }
+
+        if (source.startsWith('/*', index)) {
+            const end = source.indexOf('*/', index + 2);
+            index = end === -1 ? source.length : end + 2;
+            continue;
+        }
+
+        if (char === '{') depth += 1;
+        if (char === '}') {
+            depth -= 1;
+            if (depth === 0) return source.slice(start, index + 1);
+        }
+        index += 1;
+    }
+
+    throw new Error('Unterminated module API object.');
+}
+
+function splitTopLevelObjectEntries(objectSource) {
+    const body = objectSource.slice(1, -1);
+    const entries = [];
+    let start = 0;
+    let brace = 0;
+    let bracket = 0;
+    let paren = 0;
+    let quote = null;
+    let escaped = false;
+
+    for (let index = 0; index < body.length; index += 1) {
+        const char = body[index];
+
+        if (quote) {
+            if (escaped) escaped = false;
+            else if (char === '\\') escaped = true;
+            else if (char === quote) quote = null;
+            continue;
+        }
+
+        if (char === '"' || char === "'" || char === '`') {
+            quote = char;
+            continue;
+        }
+
+        if (char === '{') brace += 1;
+        else if (char === '}') brace -= 1;
+        else if (char === '[') bracket += 1;
+        else if (char === ']') bracket -= 1;
+        else if (char === '(') paren += 1;
+        else if (char === ')') paren -= 1;
+        else if (
+            char === ',' &&
+            brace === 0 &&
+            bracket === 0 &&
+            paren === 0
+        ) {
+            entries.push(body.slice(start, index));
+            start = index + 1;
+        }
+    }
+
+    entries.push(body.slice(start));
+    return entries.map((entry) => entry.trim()).filter(Boolean);
+}
+
+function moduleApiKeys(objectSource) {
+    return splitTopLevelObjectEntries(objectSource).map((entry) => {
+        if (entry.startsWith('...')) {
+            throw new Error('Module API spread is not ownership-auditable.');
+        }
+
+        let match = entry.match(/^["']([^"']+)["']\s*:/);
+        if (!match) match = entry.match(/^(?:get\s+|set\s+)?([A-Za-z_$][\w$]*)\s*:/);
+        if (!match) match = entry.match(/^([A-Za-z_$][\w$]*)\s*\(/);
+        if (!match) match = entry.match(/^([A-Za-z_$][\w$]*)\s*$/);
+
+        if (!match) {
+            throw new Error('Unsupported module API entry: ' + entry.slice(0, 100));
+        }
+
+        return match[1];
+    });
+}
+
+function resolveModuleApiObject(source, identifier, beforeIndex) {
+    const defineNeedle = 'Object.defineProperties(' + identifier + ',';
+    const declarationNeedles = [
+        'const ' + identifier + ' =',
+        'let ' + identifier + ' =',
+        'var ' + identifier + ' ='
+    ];
+
+    let ownerIndex = source.lastIndexOf(defineNeedle, beforeIndex);
+    for (const needle of declarationNeedles) {
+        ownerIndex = Math.max(ownerIndex, source.lastIndexOf(needle, beforeIndex));
+    }
+
+    if (ownerIndex < 0) {
+        throw new Error('Cannot resolve module API object: ' + identifier);
+    }
+
+    const objectStart = source.indexOf('{', ownerIndex);
+    if (objectStart < 0 || objectStart >= beforeIndex) {
+        throw new Error('Cannot locate module API object: ' + identifier);
+    }
+
+    return readBalancedObject(source, objectStart);
+}
+
+function scanModuleRegistrations(file, registerName) {
+    const source = read(file);
+    const pattern = new RegExp(
+        '\\b' + registerName + '\\s*\\(\\s*(["\\\'])([^"\\\']+)\\1\\s*,',
+        'g'
+    );
+    const result = [];
+    let match;
+
+    while ((match = pattern.exec(source)) !== null) {
+        let cursor = pattern.lastIndex;
+        while (/\s/.test(source[cursor] || '')) cursor += 1;
+
+        let apiSource;
+        if (source[cursor] === '{') {
+            apiSource = readBalancedObject(source, cursor);
+        } else {
+            const identifier = source.slice(cursor).match(/^([A-Za-z_$][\w$]*)/)?.[1];
+            if (!identifier) {
+                throw new Error(file + ': unsupported module API argument.');
+            }
+            apiSource = resolveModuleApiObject(source, identifier, match.index);
+        }
+
+        result.push({
+            module: match[2],
+            path: file,
+            bindings: moduleApiKeys(apiSource)
+        });
+    }
+
+    return result;
+}
+
+function auditSourceModuleOwnership(manifests) {
+    const registrations = [];
+
+    for (const file of walk('renderer', '.mjs')) {
+        registrations.push(...scanModuleRegistrations(file, 'registerModule'));
+    }
+    for (const file of [...walk('main/functions', '.js'), 'main/runtime.js']) {
+        registrations.push(...scanModuleRegistrations(file, 'registerMainModule'));
+    }
+
+    const moduleOwners = new Map();
+    const bindingOwners = new Map();
+
+    for (const registration of registrations) {
+        const previousModulePath = moduleOwners.get(registration.module);
+        if (previousModulePath && previousModulePath !== registration.path) {
+            errors.push(
+                'Module owner collision ' + registration.module + ': ' +
+                previousModulePath + ' / ' + registration.path
+            );
+        } else if (!previousModulePath) {
+            moduleOwners.set(registration.module, registration.path);
+        }
+
+        for (const binding of registration.bindings) {
+            const previous = bindingOwners.get(binding);
+            if (previous) {
+                errors.push(
+                    'Source binding collision ' + binding + ': ' +
+                    previous.module + ' @ ' + previous.path + ' / ' +
+                    registration.module + ' @ ' + registration.path
+                );
+            } else {
+                bindingOwners.set(binding, registration);
+            }
+        }
+    }
+
+    for (const manifest of manifests) {
+        for (const entry of manifest) {
+            const matches = registrations.filter((registration) => (
+                registration.module === entry.module &&
+                registration.path === entry.path
+            ));
+
+            if (!matches.length) {
+                errors.push(
+                    'Manifest owner has no source registration: ' +
+                    entry.module + ' @ ' + entry.path
+                );
+                continue;
+            }
+
+            const actual = new Set(matches.flatMap((match) => match.bindings));
+            const expected = new Set(entry.bindings);
+
+            const missing = [...expected].filter((binding) => !actual.has(binding));
+            const extra = [...actual].filter((binding) => !expected.has(binding));
+
+            if (missing.length) {
+                errors.push(
+                    'Manifest binding missing in source ' + entry.module + ': ' +
+                    missing.join(', ')
+                );
+            }
+
+            if (extra.length) {
+                errors.push(
+                    'Unowned source binding ' + entry.module + ': ' +
+                    extra.join(', ')
+                );
+            }
+        }
+    }
+
+    return {
+        modules: moduleOwners.size,
+        bindings: bindingOwners.size
+    };
+}
+
 const errors = [];
 const html = read('index.html');
 const moduleScripts = [...html.matchAll(/<script[^>]+type="module"[^>]+src="([^"]+)"/g)].map((match) => match[1]);
@@ -88,6 +344,13 @@ for (const manifest of manifests) {
     }
 }
 
+let ownershipAudit = { modules: 0, bindings: 0 };
+try {
+    ownershipAudit = auditSourceModuleOwnership(manifests);
+} catch (error) {
+    errors.push('Module ownership audit failed: ' + error.message);
+}
+
 for (const file of walk('renderer', '.mjs')) {
     const lines = read(file).split(/\r?\n/).length;
     const limit = file === 'renderer/tags/pisi-todo-third-release.mjs'
@@ -119,4 +382,8 @@ if (errors.length) {
     console.error(errors.join('\n'));
     process.exit(1);
 }
-console.log('Architecture boundaries, CSS cascade and module sizes are valid.');
+console.log(
+    'Architecture boundaries, source ownership (' +
+    ownershipAudit.modules + ' modules / ' +
+    ownershipAudit.bindings + ' bindings), CSS cascade and module sizes are valid.'
+);
