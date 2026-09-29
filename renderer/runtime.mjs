@@ -1,3 +1,7 @@
+import { claimRendererBoot } from "./core/module-registry.mjs";
+
+claimRendererBoot('renderer.runtime', 'renderer/runtime.mjs');
+
 // From app.js:143
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('[PISI] Temiz arayüz yüklendi.');
