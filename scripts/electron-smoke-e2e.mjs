@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 const require = createRequire(import.meta.url);
-const electronPath = require('electron');
+const electronPath = /** @type {string} */ (require('electron'));
 const repoRoot = path.resolve(import.meta.dirname, '..');
 const port = 9223;
 const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'pisi-electron-e2e-'));
@@ -42,8 +42,8 @@ const collect = (chunk) => {
     logs += text;
     process.stdout.write(text);
 };
-child.stdout.on('data', collect);
-child.stderr.on('data', collect);
+child.stdout?.on('data', collect);
+child.stderr?.on('data', collect);
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
