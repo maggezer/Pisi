@@ -327,7 +327,9 @@ function pisiApplyToRoot(root = document) {
 
         const elements = root.nodeType === Node.ELEMENT_NODE
             ? [root, ...root.querySelectorAll('*')]
-            : [...document.querySelectorAll('*')];
+            : root.nodeType === Node.DOCUMENT_NODE
+                ? [...document.querySelectorAll('*')]
+                : [];
 
         for (const element of elements) {
             pisiTranslateAttributes(element);
