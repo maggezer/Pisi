@@ -62,6 +62,7 @@ async function validateCurrentProject() {
 
 let pisiProjectRefreshSequence = 0;
 
+/** @type {Promise<boolean | void>} */
 let pisiProjectRefreshTail = Promise.resolve();
 
 const pisiProjectRefreshWaiters = [];
