@@ -25,7 +25,7 @@ function collectPisiFontSelects(root = document) {
     if (!root) return [];
     const selects = [];
 
-    if (root.matches?.('.pisi-font-family-select')) {
+    if (root instanceof Element && root.matches('.pisi-font-family-select')) {
         selects.push(root);
     }
     if (root.querySelectorAll) {
