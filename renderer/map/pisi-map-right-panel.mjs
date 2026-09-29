@@ -141,7 +141,8 @@ function bindMindMapDocumentHandlers() {
         const button = getMindMapFilterButton();
         const menu = getMindMapFilterMenu();
         if (!button || !menu || menu.hidden) return;
-        if (button.contains(event.target) || menu.contains(event.target)) return;
+        const target = event.target instanceof Node ? event.target : null;
+        if (target && (button.contains(target) || menu.contains(target))) return;
         setMindMapFilterMenuOpen(false);
     }, true);
 
