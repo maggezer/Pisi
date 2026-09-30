@@ -201,12 +201,13 @@ test('tablo arayüzünde Phase 2 gezinme, seçim, yapı ve biçimlendirme bulunu
     assert.match(toolbar, /max="300".*data-pisi-excel-rows/);
     assert.match(toolbar, /max="80".*data-pisi-excel-cols/);
 
-    assert.match(popovers, /data-pisi-sheet-popover-action="addRow"/);
-    assert.match(popovers, /data-pisi-sheet-popover-action="deleteCol"/);
-    assert.match(popovers, /data-pisi-sheet-popover-action="toggleWrap"/);
-    assert.match(popovers, /data-pisi-table-custom-rows/);
-    assert.match(popovers, /data-pisi-table-custom-cols/);
+    assert.doesNotMatch(popovers, /openPisiToolbarTablePopover/);
+    assert.doesNotMatch(popovers, /data-pisi-sheet-popover-action/);
+    assert.doesNotMatch(popovers, /data-pisi-table-custom-rows/);
 
+    assert.match(unifiedToolbar, /class="pisi-sheet-inline-tools"/);
+    assert.match(unifiedToolbar, /insertPisiSheet\(editor, 5, 5\)/);
+    assert.doesNotMatch(unifiedToolbar, /openPisiToolbarTablePopover/);
     assert.match(unifiedToolbar, /data-pisi-excel-action="addRow"/);
     assert.match(unifiedToolbar, /data-pisi-excel-action="deleteRow"/);
     assert.match(unifiedToolbar, /data-pisi-excel-action="addCol"/);
