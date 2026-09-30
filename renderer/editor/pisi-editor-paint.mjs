@@ -7,14 +7,17 @@ function getPisiToolbarEditor(toolbar) {
     return targetId ? document.getElementById(targetId) : null;
 }
 
-function notifyPisiEditorChanged(editor) {
+function notifyPisiEditorChanged(editor, rehydrate = true) {
     if (!editor) return;
 
-    if (typeof ensurePisiEditorBlocks === 'function') {
+    if (rehydrate && typeof ensurePisiEditorBlocks === 'function') {
         ensurePisiEditorBlocks(editor);
     }
 
-    if (typeof initializePisiAdvancedEditorContent === 'function') {
+    if (
+        rehydrate &&
+        typeof initializePisiAdvancedEditorContent === 'function'
+    ) {
         initializePisiAdvancedEditorContent(editor);
     }
 
