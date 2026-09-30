@@ -226,3 +226,25 @@ Missions, diary ve sağ panel özellikleri korunuyor.
 
 **Özellik kaldırma durumu:** Bu düzeltmede hiçbir uygulama özelliği veya
 biçimlendirme seçeneği kaldırılmadı.
+
+## 30-09-2026 — Sheet Phase 2
+
+- Sheet güvenlik sınırı 80 × 26'dan **300 × 80** hücre ızgarasına çıkarıldı;
+  çok harfli sütun adları (AA, AB, ...) destekleniyor.
+- Satır ve sütun silme seçili dikdörtgen aralığa göre çalışıyor; tabloda en az
+  bir satır ve sütun korunuyor.
+- Hücreler fareyle sürükleme, Shift+tıklama, Shift+ok, satır/sütun başlıkları
+  ve sol üst köşe üzerinden gerçek dikdörtgen aralık olarak seçilebiliyor.
+- Seçili aralığa toplu bold/italic/underline/strike, font, boyut, yatay/dikey
+  hizalama, wrap, yazı/dolgu rengi ve kenarlık işlemleri uygulanabiliyor.
+- Table popover aktif Sheet için satır/sütun ve format araçlarını gösteriyor;
+  ayrıca 300 × 80 sınırına kadar özel boyutlu yeni tablo oluşturabiliyor.
+- Yapısal satır/sütun ekleme ve silmede formül referansları yeniden yazılıyor.
+  Aralıklar kısmi silmede daralıyor, yalnız tamamen silinen aralıklar
+  `#REF!` oluyor; quoted stringler ve `LOG10` gibi fonksiyon adları
+  referans sanılmıyor.
+- `$A$1`, `A$1`, `$A1` biçimindeki absolute referanslar formül
+  ayrıştırıcısında destekleniyor.
+- Sheet Phase 2 regresyonları dahil güncel doğrulama **571/571 test** ve
+  Electron E2E ile yeşildir.
+
