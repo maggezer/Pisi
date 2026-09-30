@@ -233,6 +233,7 @@ test('tablo arayüzünde Phase 2 gezinme, seçim, yapı ve biçimlendirme bulunu
     assert.match(interactions, /table\.addEventListener\('dblclick'/);
     assert.match(interactions, /beginPisiSheetColumnLabelEdit/);
     assert.match(interactions, /data-pisi-sheet-col-editor/);
+    assert.match(interactions, /event\.detail >= 2/);
     assert.match(interactions, /event\.key === 'Enter'/);
     assert.match(interactions, /event\.key === 'Escape'/);
 

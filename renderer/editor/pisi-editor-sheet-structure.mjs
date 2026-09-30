@@ -726,21 +726,9 @@ function syncPisiSheetToolbarState(toolbar, table) {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "getPisiSheetColumnLabels": {
-        enumerable: true,
-        get() { return getPisiSheetColumnLabels; }
-    },
-    "getPisiSheetColumnLabel": {
-        enumerable: true,
-        get() { return getPisiSheetColumnLabel; }
-    },
     "setPisiSheetColumnLabel": {
         enumerable: true,
         get() { return setPisiSheetColumnLabel; }
-    },
-    "shiftPisiSheetColumnLabels": {
-        enumerable: true,
-        get() { return shiftPisiSheetColumnLabels; }
     },
     "refreshPisiSheetCellMetadata": {
         enumerable: true,

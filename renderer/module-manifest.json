@@ -155,6 +155,7 @@
     "module": "editor.sheetStructure",
     "path": "renderer/editor/pisi-editor-sheet-structure.mjs",
     "bindings": [
+      "setPisiSheetColumnLabel",
       "refreshPisiSheetCellMetadata",
       "getPisiSheetMutationFocus",
       "updatePisiSheetFormulaReferences",

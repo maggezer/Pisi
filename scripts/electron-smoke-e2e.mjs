@@ -322,15 +322,32 @@ try {
             '.pisi-sheet-col-label'
         );
 
-        firstLabel?.dispatchEvent(new MouseEvent('dblclick', {
+        firstLabel?.dispatchEvent(new MouseEvent('mousedown', {
             bubbles: true,
             cancelable: true,
-            button: 0
+            button: 0,
+            buttons: 1,
+            detail: 1
+        }));
+        firstLabel?.dispatchEvent(new MouseEvent('mouseup', {
+            bubbles: true,
+            cancelable: true,
+            button: 0,
+            detail: 1
+        }));
+        firstLabel?.dispatchEvent(new MouseEvent('mousedown', {
+            bubbles: true,
+            cancelable: true,
+            button: 0,
+            buttons: 1,
+            detail: 2
         }));
 
         const headerEditor = firstHeader?.querySelector(
             '[data-pisi-sheet-col-editor="0"]'
         );
+        const widthWhileRenaming =
+            firstHeader?.getBoundingClientRect().width || 0;
         if (headerEditor) {
             headerEditor.value = 'Project';
             headerEditor.dispatchEvent(new KeyboardEvent('keydown', {
@@ -395,6 +412,7 @@ try {
             renamedHeaderBeforeAdd,
             renamedHeaderAfterAdd,
             storedHeaderLabel,
+            widthWhileRenaming,
             widthBeforeResize,
             widthAfterResize,
             bodyWidthAfterResize,
@@ -423,6 +441,10 @@ try {
         sheetResult.renamedHeaderBeforeAdd !== 'Project' ||
         sheetResult.renamedHeaderAfterAdd !== 'Project' ||
         sheetResult.storedHeaderLabel !== 'Project' ||
+        Math.abs(
+            sheetResult.widthWhileRenaming -
+            sheetResult.widthAfterResize
+        ) > 2 ||
         sheetResult.widthAfterResize < sheetResult.widthBeforeResize + 40 ||
         Math.abs(
             sheetResult.bodyWidthAfterResize -

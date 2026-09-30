@@ -133,9 +133,11 @@ function beginPisiSheetColumnLabelEdit(table, label) {
     input.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
+            event.stopPropagation();
             finish(true);
         } else if (event.key === 'Escape') {
             event.preventDefault();
+            event.stopPropagation();
             finish(false);
         }
     });
@@ -302,6 +304,22 @@ function hydratePisiSheets(root = document) {
                 '[data-pisi-sheet-col-editor]'
             );
             if (colEditor && table.contains(colEditor)) {
+                return;
+            }
+
+            const colLabel = event.target.closest(
+                '.pisi-sheet-col-label'
+            );
+            if (
+                colLabel &&
+                table.contains(colLabel) &&
+                event.button === 0 &&
+                event.detail >= 2
+            ) {
+                event.preventDefault();
+                event.stopPropagation();
+                closePisiSheetContextMenu();
+                beginPisiSheetColumnLabelEdit(table, colLabel);
                 return;
             }
 
