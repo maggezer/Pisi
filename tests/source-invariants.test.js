@@ -149,7 +149,7 @@ test('preload API anahtarları ve kritik DOM kontrolleri tekildir', () => {
 test('kullanılmayan production paketleri geri eklenmez', () => {
     const packageJson = JSON.parse(read('package.json'));
     assert.deepEqual(packageJson.dependencies || {}, {});
-    assert.equal(packageJson.devDependencies.electron, '^43.2.0');
+    assert.equal(packageJson.devDependencies.electron, '^43.4.2');
     assert.equal(packageJson.devDependencies['electron-builder'], '^26.15.7');
 });
 
