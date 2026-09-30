@@ -6,7 +6,7 @@ const { pathToFileURL } = require('node:url');
 
 const root = path.resolve(__dirname, '..');
 
-test('tablo referansları satır ve sütun değişikliklerinde güncellenir', async () => {
+async function loadSheetModel() {
     const modelUrl = pathToFileURL(
         path.join(
             root,
@@ -14,7 +14,11 @@ test('tablo referansları satır ve sütun değişikliklerinde güncellenir', as
         )
     );
 
-    const model = await import(modelUrl.href);
+    return import(modelUrl.href);
+}
+
+test('tablo referansları satır ve sütun değişikliklerinde güncellenir', async () => {
+    const model = await loadSheetModel();
 
     assert.equal(
         model.transformPisiSheetFormulaReferences(
@@ -41,7 +45,91 @@ test('tablo referansları satır ve sütun değişikliklerinde güncellenir', as
     );
 });
 
-test('tablo arayüzünde gezinme, çoklu seçim ve biçimlendirme bulunur', () => {
+test('range referansları silmede daralır ve yalnız tamamen silinirse REF olur', async () => {
+    const model = await loadSheetModel();
+
+    assert.equal(
+        model.transformPisiSheetFormulaReferences(
+            '=SUM(A1:A5)',
+            {
+                type: 'delete-row',
+                index: 0,
+                count: 1
+            }
+        ),
+        '=SUM(A1:A4)'
+    );
+
+    assert.equal(
+        model.transformPisiSheetFormulaReferences(
+            '=SUM(A1:A5)',
+            {
+                type: 'delete-row',
+                index: 1,
+                count: 2
+            }
+        ),
+        '=SUM(A1:A3)'
+    );
+
+    assert.equal(
+        model.transformPisiSheetFormulaReferences(
+            '=SUM(A1:A2)',
+            {
+                type: 'delete-row',
+                index: 0,
+                count: 2
+            }
+        ),
+        '=SUM(#REF!)'
+    );
+});
+
+test('formula rewrite stringleri ve fonksiyon adlarını değiştirmez', async () => {
+    const model = await loadSheetModel();
+
+    assert.equal(
+        model.transformPisiSheetFormulaReferences(
+            '=CONCAT("A1:B2",A1)+LOG10(B1)',
+            {
+                type: 'insert-row',
+                index: 0,
+                count: 1
+            }
+        ),
+        '=CONCAT("A1:B2",A2)+LOG10(B2)'
+    );
+});
+
+test('absolute ve Z sonrası sütun referansları structural editlerde korunur', async () => {
+    const model = await loadSheetModel();
+
+    assert.equal(
+        model.transformPisiSheetFormulaReferences(
+            '=$A$1+B$2+$C3',
+            {
+                type: 'insert-row',
+                index: 1,
+                count: 1
+            }
+        ),
+        '=$A$1+B$3+$C4'
+    );
+
+    assert.equal(
+        model.transformPisiSheetFormulaReferences(
+            '=Z1+AA1+AB1',
+            {
+                type: 'insert-col',
+                index: 26,
+                count: 1
+            }
+        ),
+        '=Z1+AB1+AC1'
+    );
+});
+
+test('tablo arayüzünde Phase 2 gezinme, seçim, yapı ve biçimlendirme bulunur', () => {
     const sheet = fs.readFileSync(
         path.join(
             root,
@@ -70,18 +158,38 @@ test('tablo arayüzünde gezinme, çoklu seçim ve biçimlendirme bulunur', () =
         ),
         'utf8'
     );
+    const popovers = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-toolbar-popovers.mjs'
+        ),
+        'utf8'
+    );
     const tableSource = [sheet, interactions, structure].join('\n');
 
     assert.match(tableSource, /event\.key === 'Tab'/);
     assert.match(tableSource, /event\.key === 'Enter'/);
-    assert.match(tableSource, /requestAnimationFrame/);
-    assert.match(tableSource, /schedulePisiSheetEditorNotification/);
+    assert.match(interactions, /pisiSheetDragSelection/);
+    assert.match(interactions, /table\.addEventListener\('mouseover'/);
+    assert.match(interactions, /data-pisi-sheet-corner/);
     assert.match(tableSource, /deletePisiSheetRows/);
     assert.match(tableSource, /deletePisiSheetColumns/);
     assert.match(tableSource, /applyPisiSheetCellFormat/);
     assert.match(tableSource, /transformPisiSheetFormulaReferences/);
-    assert.match(toolbar, /data-pisi-excel-action="deleteRow"/);
-    assert.match(toolbar, /data-pisi-excel-action="deleteCol"/);
-    assert.match(toolbar, /data-pisi-excel-format="textColor"/);
-    assert.match(toolbar, /data-pisi-excel-format="fillColor"/);
+
+    assert.match(structure, /verticalMiddle/);
+    assert.match(structure, /toggleWrap/);
+    assert.match(structure, /borderAll/);
+    assert.match(structure, /borderNone/);
+
+    assert.match(sheet, /PISI_SHEET_MAX_ROWS = 300/);
+    assert.match(sheet, /PISI_SHEET_MAX_COLS = 80/);
+    assert.match(toolbar, /max="300".*data-pisi-excel-rows/);
+    assert.match(toolbar, /max="80".*data-pisi-excel-cols/);
+
+    assert.match(popovers, /data-pisi-sheet-popover-action="addRow"/);
+    assert.match(popovers, /data-pisi-sheet-popover-action="deleteCol"/);
+    assert.match(popovers, /data-pisi-sheet-popover-action="toggleWrap"/);
+    assert.match(popovers, /data-pisi-table-custom-rows/);
+    assert.match(popovers, /data-pisi-table-custom-cols/);
 });
