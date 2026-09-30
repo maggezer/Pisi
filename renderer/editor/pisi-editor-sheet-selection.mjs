@@ -113,18 +113,6 @@ function getPisiSheetActivePoint(table) {
     );
 }
 
-function getPisiSheetSelection(table) {
-    return normalizePisiSheetSelection(table);
-}
-
-
-function getPisiSelectedSheetPoints(table) {
-    return getPisiSelectedSheetPointsForDatabase(
-        getPisiSheetDatabase(table)
-    );
-}
-
-
 function getPisiSelectedSheetCells(table) {
     return getPisiSelectedSheetPoints(table)
         .map((point) => {
@@ -406,86 +394,6 @@ function selectPisiSheetCell(cell, options = {}) {
     );
 }
 
-function selectPisiSheetRow(table, rowIndex, extend = false) {
-    const dimensions = getPisiSheetDimensions(table);
-
-    if (
-        !Number.isInteger(rowIndex) ||
-        rowIndex < 0 ||
-        rowIndex >= dimensions.rows ||
-        dimensions.cols < 1
-    ) {
-        return;
-    }
-
-    const startPoint = getPisiSheetPointByIndex(
-        table,
-        rowIndex,
-        0
-    );
-    const endPoint = getPisiSheetPointByIndex(
-        table,
-        rowIndex,
-        dimensions.cols - 1
-    );
-
-    if (!startPoint || !endPoint) return;
-
-    const previous = normalizePisiSheetSelection(table);
-
-    setPisiSheetSelectionState(table, {
-        mode: 'row',
-        anchor: extend && previous
-            ? previous.anchor
-            : startPoint,
-        focus: endPoint,
-        active: endPoint
-    });
-
-    syncPisiSheetSelectionProjection(table);
-}
-
-
-function selectPisiSheetColumn(table, colIndex, extend = false) {
-    const dimensions = getPisiSheetDimensions(table);
-
-    if (
-        !Number.isInteger(colIndex) ||
-        colIndex < 0 ||
-        colIndex >= dimensions.cols ||
-        dimensions.rows < 1
-    ) {
-        return;
-    }
-
-    const startPoint = getPisiSheetPointByIndex(
-        table,
-        0,
-        colIndex
-    );
-    const endPoint = getPisiSheetPointByIndex(
-        table,
-        dimensions.rows - 1,
-        colIndex
-    );
-
-    if (!startPoint || !endPoint) return;
-
-    const previous = normalizePisiSheetSelection(table);
-
-    setPisiSheetSelectionState(table, {
-        mode: 'column',
-        anchor: extend && previous
-            ? previous.anchor
-            : startPoint,
-        focus: endPoint,
-        active: endPoint
-    });
-
-    syncPisiSheetSelectionProjection(table);
-}
-
-
 function selectAllPisiSheetCells(table) {
     const dimensions = getPisiSheetDimensions(table);
 
@@ -696,48 +604,6 @@ function isPisiSheetEditingCell(table, cell) {
     return pisiSheetEditStates.get(table)?.cell === cell;
 }
 
-function getPisiSheetVisibleColumnIndices(table) {
-    const dimensions = getPisiSheetDimensions(table);
-    const indices = [];
-
-    for (let col = 0; col < dimensions.cols; col += 1) {
-        if (!isPisiSheetFieldHidden(table, col)) {
-            indices.push(col);
-        }
-    }
-
-    return indices;
-}
-
-function getPisiSheetNextVisibleColumn(
-    table,
-    startCol,
-    direction
-) {
-    const visible = getPisiSheetVisibleColumnIndices(table);
-    if (!visible.length) return startCol;
-
-    if (direction > 0) {
-        return (
-            visible.find((col) => col > startCol) ??
-            visible[visible.length - 1]
-        );
-    }
-
-    if (direction < 0) {
-        return (
-            [...visible]
-                .reverse()
-                .find((col) => col < startCol) ??
-            visible[0]
-        );
-    }
-
-    return visible.includes(startCol)
-        ? startCol
-        : visible[0];
-}
-
 function extendPisiSheetSelectionByKeyboard(
     table,
     cell,
@@ -886,10 +752,6 @@ Object.defineProperties(moduleApi, {
         enumerable: true,
         get() { return getPisiSheetSelectionState; }
     },
-    "getPisiSheetSelection": {
-        enumerable: true,
-        get() { return getPisiSheetSelection; }
-    },
     "setPisiSheetSelectionState": {
         enumerable: true,
         get() { return setPisiSheetSelectionState; }
@@ -922,10 +784,6 @@ Object.defineProperties(moduleApi, {
         enumerable: true,
         get() { return getPisiSheetCell; }
     },
-    "getPisiSelectedSheetPoints": {
-        enumerable: true,
-        get() { return getPisiSelectedSheetPoints; }
-    },
     "getPisiSelectedSheetCells": {
         enumerable: true,
         get() { return getPisiSelectedSheetCells; }
@@ -949,14 +807,6 @@ Object.defineProperties(moduleApi, {
     "selectPisiSheetCell": {
         enumerable: true,
         get() { return selectPisiSheetCell; }
-    },
-    "selectPisiSheetRow": {
-        enumerable: true,
-        get() { return selectPisiSheetRow; }
-    },
-    "selectPisiSheetColumn": {
-        enumerable: true,
-        get() { return selectPisiSheetColumn; }
     },
     "selectAllPisiSheetCells": {
         enumerable: true,

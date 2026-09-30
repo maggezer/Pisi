@@ -158,10 +158,24 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         ),
         'utf8'
     );
+    const headerSelection = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-sheet-header-selection.mjs'
+        ),
+        'utf8'
+    );
     const selection = fs.readFileSync(
         path.join(
             root,
             'renderer/editor/pisi-editor-sheet-selection.mjs'
+        ),
+        'utf8'
+    );
+    const columnProperties = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-sheet-column-properties.mjs'
         ),
         'utf8'
     );
@@ -329,16 +343,28 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
 
     assert.match(selection, /getPisiSheetSelectionState/);
     assert.match(
-        selection,
+        headerSelection,
         /getPisiSheetHeaderSelection/
+    );
+    assert.match(
+        headerSelection,
+        /setPisiSheetHeaderSelectionStateForDatabase/
+    );
+    assert.match(
+        headerSelection,
+        /selectPisiSheetRow/
+    );
+    assert.match(
+        headerSelection,
+        /selectPisiSheetColumn/
+    );
+    assert.match(
+        headerSelection,
+        /getPisiSheetVisibleColumnIndices/
     );
     assert.match(
         selection,
         /pisi-sheet-header-selected/
-    );
-    assert.match(
-        selection,
-        /setPisiSheetHeaderSelectionStateForDatabase/
     );
     assert.match(selection, /setPisiSheetSelectionState/);
     assert.match(selection, /getPisiSheetSelectionFocus/);
@@ -412,38 +438,61 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         interactions,
         /pisiSheetSelections\.(get|set)/
     );
-    assert.match(interactions, /setPisiSheetFieldWidth/);
     assert.match(
-        interactions,
+        columnProperties,
+        /setPisiSheetFieldWidth/
+    );
+    assert.match(
+        columnProperties,
         /PISI_SHEET_MIN_COLUMN_WIDTH = 25/
     );
     assert.match(
-        interactions,
+        columnProperties,
         /PISI_SHEET_AUTO_FIT_MIN_WIDTH = 64/
     );
     assert.match(
-        interactions,
+        columnProperties,
         /PISI_SHEET_AUTO_FIT_MAX_WIDTH = 480/
     );
     assert.match(
-        interactions,
+        columnProperties,
         /PISI_SHEET_RESIZE_SNAP_PX = 4/
     );
-    assert.match(interactions, /autoFitPisiSheetColumn/);
-    assert.match(interactions, /measurePisiSheetText/);
-    assert.match(interactions, /updatePisiSheetField/);
-    assert.match(interactions, /setPisiSheetFieldHidden/);
     assert.match(
-        interactions,
+        columnProperties,
+        /autoFitPisiSheetColumn/
+    );
+    assert.match(
+        columnProperties,
+        /measurePisiSheetText/
+    );
+    assert.match(
+        columnProperties,
+        /updatePisiSheetField/
+    );
+    assert.match(
+        columnProperties,
+        /setPisiSheetFieldHidden/
+    );
+    assert.match(
+        columnProperties,
         /pisi-sheet-column-property-row/
     );
     assert.match(
-        interactions,
+        columnProperties,
         /data-pisi-sheet-column-action/
     );
     assert.doesNotMatch(
-        interactions,
+        columnProperties,
         /pisi-sheet-col-editor/
+    );
+    assert.match(
+        interactions,
+        /openPisiSheetColumnMenu/
+    );
+    assert.match(
+        interactions,
+        /autoFitPisiSheetColumn/
     );
     assert.match(
         interactions,

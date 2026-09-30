@@ -752,6 +752,10 @@ Object.defineProperties(moduleApi, {
         enumerable: true,
         get() { return persistPisiSheetDatabase; }
     },
+    "getPisiSheetTableView": {
+        enumerable: true,
+        get() { return getPisiSheetTableView; }
+    },
     "getPisiSheetOrderedFields": {
         enumerable: true,
         get() { return getPisiSheetOrderedFields; }

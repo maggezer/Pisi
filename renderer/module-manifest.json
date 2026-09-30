@@ -115,6 +115,7 @@
       "attachPisiSheetDatabase",
       "getPisiSheetDatabase",
       "persistPisiSheetDatabase",
+      "getPisiSheetTableView",
       "getPisiSheetOrderedFields",
       "getPisiSheetDatabaseDimensions",
       "getPisiSheetField",
@@ -199,14 +200,25 @@
     ]
   },
   {
+    "module": "editor.sheetHeaderSelection",
+    "path": "renderer/editor/pisi-editor-sheet-header-selection.mjs",
+    "bindings": [
+      "getPisiSheetHeaderSelection",
+      "getPisiSheetSelection",
+      "getPisiSelectedSheetPoints",
+      "selectPisiSheetRow",
+      "selectPisiSheetColumn",
+      "getPisiSheetVisibleColumnIndices",
+      "getPisiSheetNextVisibleColumn"
+    ]
+  },
+  {
     "module": "editor.sheetSelection",
     "path": "renderer/editor/pisi-editor-sheet-selection.mjs",
     "bindings": [
       "getPisiSheetDimensions",
       "getPisiSheetSelectionGroupId",
       "getPisiSheetSelectionState",
-      "getPisiSheetSelection",
-      "getPisiSheetHeaderSelection",
       "setPisiSheetSelectionState",
       "getPisiSheetSelectionFocus",
       "getPisiSheetActivePoint",
@@ -215,15 +227,12 @@
       "syncPisiSheetSelectionProjection",
       "getPisiSheetCellPosition",
       "getPisiSheetCell",
-      "getPisiSelectedSheetPoints",
       "getPisiSelectedSheetCells",
       "isPisiSheetCellSelected",
       "renderPisiSheetSelection",
       "setPisiSheetRangeSelection",
       "ensurePisiSheetCellVisible",
       "selectPisiSheetCell",
-      "selectPisiSheetRow",
-      "selectPisiSheetColumn",
       "selectAllPisiSheetCells",
       "focusPisiSheetCell",
       "syncPisiSheetFormulaInput",
@@ -264,6 +273,23 @@
     "bindings": [
       "handlePisiSheetSelectionKeydown",
       "handlePisiSheetOutsidePointerDown"
+    ]
+  },
+  {
+    "module": "editor.sheetColumnProperties",
+    "path": "renderer/editor/pisi-editor-sheet-column-properties.mjs",
+    "bindings": [
+      "PISI_SHEET_MIN_COLUMN_WIDTH",
+      "PISI_SHEET_MAX_COLUMN_WIDTH",
+      "PISI_SHEET_AUTO_FIT_MIN_WIDTH",
+      "PISI_SHEET_AUTO_FIT_MAX_WIDTH",
+      "PISI_SHEET_RESIZE_SNAP_PX",
+      "setPisiSheetColumnWidth",
+      "getPisiSheetColumnAutoFitWidth",
+      "autoFitPisiSheetColumn",
+      "startPisiSheetColumnResize",
+      "closePisiSheetColumnMenu",
+      "openPisiSheetColumnMenu"
     ]
   },
   {
