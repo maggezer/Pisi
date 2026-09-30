@@ -126,9 +126,24 @@ jobs:
 
           $hashLines | Set-Content -Encoding utf8NoBOM release/SHA256SUMS.txt
 
-      - name: Upload dry-run release artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Pisi-release-dry-run-Windows
-          path: release/*
-          if-no-files-found: error
+      - name: Verify dry-run release assets
+        shell: pwsh
+        run: |
+          $version = node -p "require('./package.json').version"
+          $assetNames = @(
+            "Pisi-$version-Setup-x64.exe",
+            "Pisi-$version-Setup-arm64.exe",
+            "Pisi-$version-Portable-x64.exe",
+            "Pisi-$version-Portable-arm64.exe",
+            "SHA256SUMS.txt"
+          )
+
+          foreach ($assetName in $assetNames) {
+            $assetPath = Join-Path release $assetName
+            if (-not (Test-Path $assetPath)) {
+              throw "Missing dry-run release asset: $assetPath"
+            }
+          }
+
+          Get-ChildItem release | Select-Object Name, Length
+          Get-Content release/SHA256SUMS.txt
