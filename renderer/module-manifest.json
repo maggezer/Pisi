@@ -237,6 +237,7 @@
       "finishPisiSheetFormulaReferencePick",
       "closePisiSheetFormulaReferenceSession",
       "movePisiSheetFormulaReferenceByKeyboard",
+      "isPisiSheetFormulaReferenceKeyboardNavigationActive",
       "isPisiSheetFormulaReferencePicking",
       "isPisiSheetFormulaInputActive",
       "pisiSheetPointToReference",

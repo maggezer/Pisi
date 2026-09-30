@@ -449,30 +449,46 @@ function movePisiSheetFormulaReferenceByKeyboard(
 
     if (!next) return false;
 
-    if (options.extend !== true) {
-        session.anchor = next;
+    session.keyboardNavigating = true;
+
+    try {
+        if (options.extend !== true) {
+            session.anchor = next;
+        }
+
+        session.focus = next;
+
+        setPisiSheetRangeSelection(
+            table,
+            session.anchor,
+            next,
+            {
+                mode: 'range',
+                active: session.activePoint || next,
+                ensureVisible: true
+            }
+        );
+
+        writePisiSheetFormulaReference(session, next);
+        setPisiSheetEditableCaretOffset(
+            session.editCell,
+            session.end
+        );
+    } finally {
+        session.keyboardNavigating = false;
     }
 
-    session.focus = next;
-
-    setPisiSheetRangeSelection(
-        table,
-        session.anchor,
-        next,
-        {
-            mode: 'range',
-            active: session.activePoint || next,
-            ensureVisible: true
-        }
-    );
-
-    writePisiSheetFormulaReference(session, next);
-    setPisiSheetEditableCaretOffset(
-        session.editCell,
-        session.end
-    );
-
     return true;
+}
+
+function isPisiSheetFormulaReferenceKeyboardNavigationActive(
+    table
+) {
+    return Boolean(
+        pisiSheetFormulaReferenceSession &&
+        pisiSheetFormulaReferenceSession.table === table &&
+        pisiSheetFormulaReferenceSession.keyboardNavigating === true
+    );
 }
 
 function closePisiSheetFormulaReferenceSession(
@@ -594,6 +610,12 @@ Object.defineProperties(moduleApi, {
         enumerable: true,
         get() {
             return movePisiSheetFormulaReferenceByKeyboard;
+        }
+    },
+    "isPisiSheetFormulaReferenceKeyboardNavigationActive": {
+        enumerable: true,
+        get() {
+            return isPisiSheetFormulaReferenceKeyboardNavigationActive;
         }
     },
     "closePisiSheetFormulaReferenceSession": {

@@ -733,6 +733,14 @@ function hydratePisiSheets(root = document) {
                 return;
             }
 
+            if (
+                isPisiSheetFormulaReferenceKeyboardNavigationActive(
+                    table
+                )
+            ) {
+                return;
+            }
+
             finishPisiSheetCellEdit(table, {
                 commit: true,
                 refocus: false
