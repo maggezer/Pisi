@@ -207,6 +207,11 @@ try {
             '[data-pisi-excel-action="toggleWrap"]'
         );
         const rowsBefore = table.querySelectorAll('tbody tr').length;
+        const contextTools = toolbar.querySelector(
+            '[data-pisi-sheet-context]'
+        );
+        const toolbarRect = toolbar.getBoundingClientRect();
+        const contextRect = contextTools?.getBoundingClientRect();
 
         addRow?.click();
 
@@ -217,7 +222,17 @@ try {
             hasDeleteRow: Boolean(deleteRow),
             hasWrap: Boolean(wrap),
             rowsBefore,
-            rowsAfter: table.querySelectorAll('tbody tr').length
+            rowsAfter: table.querySelectorAll('tbody tr').length,
+            contextVisible: Boolean(
+                contextRect &&
+                contextRect.width > 0 &&
+                contextRect.height > 0
+            ),
+            contextInsideToolbar: Boolean(
+                contextRect &&
+                contextRect.top >= toolbarRect.top &&
+                contextRect.bottom <= toolbarRect.bottom + 1
+            )
         };
     })()`);
 
@@ -227,6 +242,8 @@ try {
         !sheetResult.hasAddRow ||
         !sheetResult.hasDeleteRow ||
         !sheetResult.hasWrap ||
+        !sheetResult.contextVisible ||
+        !sheetResult.contextInsideToolbar ||
         sheetResult.rowsAfter !== sheetResult.rowsBefore + 1
     ) {
         throw new Error(
