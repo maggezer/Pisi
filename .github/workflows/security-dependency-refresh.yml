@@ -1,0 +1,59 @@
+name: Security Dependency Refresh
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/security-dependency-refresh.yml
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Refresh vulnerable dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm pkg set 'devDependencies.electron=^43.4.2'
+          npm update electron @xmldom/xmldom fast-uri js-yaml undici --package-lock-only
+
+      - name: Install refreshed dependency graph
+        run: npm ci --ignore-scripts
+
+      - name: Require clean audit
+        run: npm audit --audit-level=moderate
+
+      - name: Validate source
+        run: npm run validate
+
+      - name: Commit refreshed lockfile
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- package.json package-lock.json; then
+            echo "Dependency graph already clean; nothing to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "Update vulnerable dependency graph"
+          git push origin HEAD:main
