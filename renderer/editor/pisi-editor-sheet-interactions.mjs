@@ -382,6 +382,7 @@ function hydratePisiSheets(root = document) {
         hydratePisiSheetDatabase(table);
         renderPisiSheetDatabase(table);
         recalcPisiSheet(table);
+        reconcilePisiSheetSelection(table);
         pisiBoundSheets.add(table);
 
         table.addEventListener('focusin', (event) => {
@@ -393,8 +394,7 @@ function hydratePisiSheets(root = document) {
             if (!isPisiSheetCellSelected(table, cell)) {
                 selectPisiSheetCell(cell);
             } else {
-                window.__pisiActiveSheetCell = cell;
-                syncPisiSheetFormulaInput(cell);
+                syncPisiSheetSelectionProjection(table);
             }
         });
 
@@ -564,7 +564,7 @@ function hydratePisiSheets(root = document) {
                 focus: true
             });
 
-            const selection = pisiSheetSelections.get(table);
+            const selection = getPisiSheetSelection(table);
 
             if (selection) {
                 pisiSheetDragSelection = {
@@ -599,16 +599,13 @@ function hydratePisiSheets(root = document) {
             drag.last = point;
             table.classList.add('pisi-sheet-drag-selecting');
 
-            pisiSheetSelections.set(table, {
+            setPisiSheetSelectionState(table, {
                 mode: 'range',
                 anchor: drag.anchor,
                 focus: point
             });
 
-            window.__pisiActiveSheetCell = cell;
-            renderPisiSheetSelection(table);
-            syncPisiSheetFormulaInput(cell);
-            syncPisiSheetToolbarForTable(table);
+            syncPisiSheetSelectionProjection(table);
         });
 
         table.addEventListener('keydown', (event) => {

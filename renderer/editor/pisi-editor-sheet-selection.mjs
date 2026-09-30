@@ -1,6 +1,5 @@
 import { registerModule } from "../core/module-registry.mjs";
 
-const pisiSheetSelections = new WeakMap();
 const pisiRenderedSheetSelectionCells = new WeakMap();
 const pisiSheetEditStates = new WeakMap();
 
@@ -8,124 +7,127 @@ function getPisiSheetDimensions(table) {
     return getPisiSheetDatabaseDimensions(table);
 }
 
+function getPisiSheetSelectionGroupId(table) {
+    const database = getPisiSheetDatabase(table);
+
+    return getPisiSheetSelectionGroupIdFromDatabase(
+        database
+    );
+}
+
+function getPisiSheetSelectionState(table) {
+    const database = getPisiSheetDatabase(table);
+
+    return getPisiSheetSelectionStateForDatabase(
+        database
+    );
+}
+
+function getPisiSheetActiveTable(root = document) {
+    const activeGroupId = getPisiSheetActiveGroupId();
+
+    if (!activeGroupId || !root) return null;
+
+    return Array.from(
+        root.querySelectorAll('table[data-pisi-sheet]')
+    ).find((table) => {
+        return (
+            getPisiSheetSelectionGroupId(table) ===
+            activeGroupId
+        );
+    }) || null;
+}
+
+function getPisiSheetPointByIndex(table, row, col) {
+    return getPisiSheetPointByIndexFromDatabase(
+        getPisiSheetDatabase(table),
+        row,
+        col
+    );
+}
 
 function getPisiSheetCellPosition(cell) {
     if (!cell) return null;
 
-    const row = Number(cell.dataset.row);
-    const col = Number(cell.dataset.col);
-    const rowId = String(cell.dataset.pisiRowId || '');
-    const colId = String(cell.dataset.pisiColId || '');
+    const table = cell.closest('table[data-pisi-sheet]');
+    const database = getPisiSheetDatabase(table);
 
-    if (
-        !Number.isInteger(row) ||
-        !Number.isInteger(col) ||
-        !rowId ||
-        !colId
-    ) {
-        return null;
-    }
+    if (!table || !database) return null;
 
-    return { row, col, rowId, colId };
+    return resolvePisiSheetSelectionPoint(
+        database,
+        {
+            groupId: database.databaseId,
+            rowId: String(
+                cell.dataset.pisiRowId || ''
+            ),
+            colId: String(
+                cell.dataset.pisiColId || ''
+            )
+        }
+    );
 }
+
 
 function getPisiSheetCell(table, row, col) {
-    if (
-        !table ||
-        !Number.isInteger(row) ||
-        !Number.isInteger(col) ||
-        row < 0 ||
-        col < 0
-    ) {
-        return null;
-    }
+    const point = getPisiSheetPointByIndex(
+        table,
+        row,
+        col
+    );
 
-    const tableRow = table.tBodies?.[0]?.rows?.[row];
-    return tableRow?.cells?.[col + 1] || null;
+    if (!point) return null;
+
+    return table.querySelector(
+        'tbody tr[data-pisi-row-id="' +
+        point.rowId +
+        '"] td[data-pisi-col-id="' +
+        point.colId +
+        '"]'
+    );
 }
 
-function resolvePisiSheetPoint(table, point) {
-    if (!table || !point) return null;
-
-    let cell = null;
-
-    if (point.rowId && point.colId) {
-        cell = table.querySelector(
-            'tbody tr[data-pisi-row-id="' + point.rowId + '"] ' +
-            'td[data-pisi-col-id="' + point.colId + '"]'
-        );
-    }
-
-    if (
-        !cell &&
-        Number.isInteger(point.row) &&
-        Number.isInteger(point.col)
-    ) {
-        cell = getPisiSheetCell(table, point.row, point.col);
-    }
-
-    return cell ? getPisiSheetCellPosition(cell) : null;
+function setPisiSheetSelectionState(table, selection) {
+    return setPisiSheetSelectionStateForDatabase(
+        getPisiSheetDatabase(table),
+        selection
+    );
 }
 
 function normalizePisiSheetSelection(table) {
-    const selection = pisiSheetSelections.get(table);
-    if (!selection) return null;
-
-    const anchor = resolvePisiSheetPoint(
-        table,
-        selection.anchor
+    return getPisiSheetSelectionForDatabase(
+        getPisiSheetDatabase(table)
     );
-    const focus = resolvePisiSheetPoint(
-        table,
-        selection.focus
-    );
-
-    if (!anchor || !focus) {
-        pisiSheetSelections.delete(table);
-        return null;
-    }
-
-    const next = {
-        mode: selection.mode || 'cell',
-        anchor,
-        focus
-    };
-
-    pisiSheetSelections.set(table, next);
-    return next;
 }
 
-function getPisiSheetSelectionRect(anchor, focus) {
-    if (!anchor || !focus) return null;
-
-    return {
-        rowStart: Math.min(anchor.row, focus.row),
-        rowEnd: Math.max(anchor.row, focus.row),
-        colStart: Math.min(anchor.col, focus.col),
-        colEnd: Math.max(anchor.col, focus.col)
-    };
+function getPisiSheetSelectionFocus(table) {
+    return getPisiSheetSelectionFocusForDatabase(
+        getPisiSheetDatabase(table)
+    );
 }
+
+function getPisiSheetSelection(table) {
+    return normalizePisiSheetSelection(table);
+}
+
+
+function getPisiSelectedSheetPoints(table) {
+    return getPisiSelectedSheetPointsForDatabase(
+        getPisiSheetDatabase(table)
+    );
+}
+
 
 function getPisiSelectedSheetCells(table) {
-    const selection = normalizePisiSheetSelection(table);
-    if (!selection) return [];
-
-    const rect = getPisiSheetSelectionRect(
-        selection.anchor,
-        selection.focus
-    );
-    if (!rect) return [];
-
-    const cells = [];
-
-    for (let row = rect.rowStart; row <= rect.rowEnd; row += 1) {
-        for (let col = rect.colStart; col <= rect.colEnd; col += 1) {
-            const cell = getPisiSheetCell(table, row, col);
-            if (cell) cells.push(cell);
-        }
-    }
-
-    return cells;
+    return getPisiSelectedSheetPoints(table)
+        .map((point) => {
+            return getPisiSheetCell(
+                table,
+                point.row,
+                point.col
+            );
+        })
+        .filter(Boolean);
 }
 
 function renderPisiSheetSelection(table) {
@@ -161,30 +163,31 @@ function renderPisiSheetSelection(table) {
     pisiRenderedSheetSelectionCells.set(table, next);
 }
 
-function reconcilePisiSheetSelection(table) {
+function syncPisiSheetSelectionProjection(table) {
     const selection = normalizePisiSheetSelection(table);
 
-    if (!selection) {
-        const active = window.__pisiActiveSheetCell;
+    renderPisiSheetSelection(table);
 
-        if (active && table.contains(active)) {
-            window.__pisiActiveSheetCell = null;
-        }
+    const active = selection
+        ? getPisiSheetCell(
+            table,
+            selection.focus.row,
+            selection.focus.col
+        )
+        : null;
 
-        renderPisiSheetSelection(table);
-        return false;
+    if (active) {
+        syncPisiSheetFormulaInput(active);
     }
 
-    const active = getPisiSheetCell(
-        table,
-        selection.focus.row,
-        selection.focus.col
-    );
+    syncPisiSheetToolbarForTable(table);
+    return active;
+}
 
-    window.__pisiActiveSheetCell = active;
-    renderPisiSheetSelection(table);
-    syncPisiSheetFormulaInput(active);
-    return true;
+function reconcilePisiSheetSelection(table) {
+    return Boolean(
+        syncPisiSheetSelectionProjection(table)
+    );
 }
 
 function clearPisiSheetSelection(table) {
@@ -199,17 +202,15 @@ function clearPisiSheetSelection(table) {
     }
 
     pisiRenderedSheetSelectionCells.set(table, new Set());
-    pisiSheetSelections.delete(table);
 
-    const active = window.__pisiActiveSheetCell;
-
-    if (active && table.contains(active)) {
-        window.__pisiActiveSheetCell = null;
-    }
+    clearPisiSheetSelectionStateForDatabase(
+        getPisiSheetDatabase(table)
+    );
 
     window.getSelection?.()?.removeAllRanges?.();
     syncPisiSheetToolbarForTable(table);
 }
+
 
 function isPisiSheetCellSelected(table, cell) {
     const point = getPisiSheetCellPosition(cell);
@@ -242,21 +243,19 @@ function selectPisiSheetCell(cell, options = {}) {
         ? previous.anchor
         : point;
 
-    pisiSheetSelections.set(table, {
+    setPisiSheetSelectionState(table, {
         mode: options.extend ? 'range' : 'cell',
         anchor,
         focus: point
     });
 
-    window.__pisiActiveSheetCell = cell;
-    renderPisiSheetSelection(table);
-    syncPisiSheetFormulaInput(cell);
-    syncPisiSheetToolbarForTable(table);
+    syncPisiSheetSelectionProjection(table);
 
     if (options.focus) {
         focusPisiSheetCell(cell);
     }
 }
+
 
 function selectPisiSheetRow(table, rowIndex, extend = false) {
     const dimensions = getPisiSheetDimensions(table);
@@ -270,19 +269,22 @@ function selectPisiSheetRow(table, rowIndex, extend = false) {
         return;
     }
 
-    const start = getPisiSheetCell(table, rowIndex, 0);
-    const end = getPisiSheetCell(
+    const startPoint = getPisiSheetPointByIndex(
+        table,
+        rowIndex,
+        0
+    );
+    const endPoint = getPisiSheetPointByIndex(
         table,
         rowIndex,
         dimensions.cols - 1
     );
-    const startPoint = getPisiSheetCellPosition(start);
-    const endPoint = getPisiSheetCellPosition(end);
+
     if (!startPoint || !endPoint) return;
 
     const previous = normalizePisiSheetSelection(table);
 
-    pisiSheetSelections.set(table, {
+    setPisiSheetSelectionState(table, {
         mode: 'row',
         anchor: extend && previous
             ? previous.anchor
@@ -290,11 +292,9 @@ function selectPisiSheetRow(table, rowIndex, extend = false) {
         focus: endPoint
     });
 
-    window.__pisiActiveSheetCell = end;
-    renderPisiSheetSelection(table);
-    syncPisiSheetFormulaInput(end);
-    syncPisiSheetToolbarForTable(table);
+    syncPisiSheetSelectionProjection(table);
 }
+
 
 function selectPisiSheetColumn(table, colIndex, extend = false) {
     const dimensions = getPisiSheetDimensions(table);
@@ -308,19 +308,22 @@ function selectPisiSheetColumn(table, colIndex, extend = false) {
         return;
     }
 
-    const start = getPisiSheetCell(table, 0, colIndex);
-    const end = getPisiSheetCell(
+    const startPoint = getPisiSheetPointByIndex(
+        table,
+        0,
+        colIndex
+    );
+    const endPoint = getPisiSheetPointByIndex(
         table,
         dimensions.rows - 1,
         colIndex
     );
-    const startPoint = getPisiSheetCellPosition(start);
-    const endPoint = getPisiSheetCellPosition(end);
+
     if (!startPoint || !endPoint) return;
 
     const previous = normalizePisiSheetSelection(table);
 
-    pisiSheetSelections.set(table, {
+    setPisiSheetSelectionState(table, {
         mode: 'column',
         anchor: extend && previous
             ? previous.anchor
@@ -328,37 +331,37 @@ function selectPisiSheetColumn(table, colIndex, extend = false) {
         focus: endPoint
     });
 
-    window.__pisiActiveSheetCell = end;
-    renderPisiSheetSelection(table);
-    syncPisiSheetFormulaInput(end);
-    syncPisiSheetToolbarForTable(table);
+    syncPisiSheetSelectionProjection(table);
 }
+
 
 function selectAllPisiSheetCells(table) {
     const dimensions = getPisiSheetDimensions(table);
+
     if (!dimensions.rows || !dimensions.cols) return;
 
-    const first = getPisiSheetCell(table, 0, 0);
-    const last = getPisiSheetCell(
+    const anchor = getPisiSheetPointByIndex(
+        table,
+        0,
+        0
+    );
+    const focus = getPisiSheetPointByIndex(
         table,
         dimensions.rows - 1,
         dimensions.cols - 1
     );
-    const anchor = getPisiSheetCellPosition(first);
-    const focus = getPisiSheetCellPosition(last);
+
     if (!anchor || !focus) return;
 
-    pisiSheetSelections.set(table, {
+    setPisiSheetSelectionState(table, {
         mode: 'range',
         anchor,
         focus
     });
 
-    window.__pisiActiveSheetCell = last;
-    renderPisiSheetSelection(table);
-    syncPisiSheetFormulaInput(last);
-    syncPisiSheetToolbarForTable(table);
+    syncPisiSheetSelectionProjection(table);
 }
+
 
 function focusPisiSheetCell(cell) {
     if (!cell) return;
@@ -439,8 +442,9 @@ function beginPisiSheetCellEdit(cell, options = {}) {
 
     pisiSheetEditStates.set(table, {
         cell,
-        row: position.row,
-        col: position.col
+        groupId: position.groupId,
+        rowId: position.rowId,
+        colId: position.colId
     });
 
     cell.classList.add('pisi-sheet-cell-editing');
@@ -529,32 +533,39 @@ function extendPisiSheetSelectionByKeyboard(
         ArrowRight: [0, 1]
     };
     const delta = deltas[key];
-    const nextCell = getPisiSheetCell(
+    const next = getPisiSheetPointByIndex(
         table,
         Math.max(
             0,
-            Math.min(dimensions.rows - 1, position.row + delta[0])
+            Math.min(
+                dimensions.rows - 1,
+                position.row + delta[0]
+            )
         ),
         Math.max(
             0,
-            Math.min(dimensions.cols - 1, position.col + delta[1])
+            Math.min(
+                dimensions.cols - 1,
+                position.col + delta[1]
+            )
         )
     );
-    const next = getPisiSheetCellPosition(nextCell);
+
     if (!next) return;
 
-    pisiSheetSelections.set(table, {
+    setPisiSheetSelectionState(table, {
         mode: 'range',
         anchor: current?.anchor || position,
         focus: next
     });
 
-    window.__pisiActiveSheetCell = nextCell;
-    renderPisiSheetSelection(table);
-    syncPisiSheetFormulaInput(nextCell);
-    syncPisiSheetToolbarForTable(table);
-    focusPisiSheetCell(nextCell);
+    const nextCell = syncPisiSheetSelectionProjection(table);
+
+    if (nextCell) {
+        focusPisiSheetCell(nextCell);
+    }
 }
+
 
 function movePisiSheetCellFocus(
     table,
@@ -612,13 +623,41 @@ function movePisiSheetCellFocus(
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "pisiSheetSelections": {
-        enumerable: true,
-        get() { return pisiSheetSelections; }
-    },
     "getPisiSheetDimensions": {
         enumerable: true,
         get() { return getPisiSheetDimensions; }
+    },
+    "getPisiSheetSelectionGroupId": {
+        enumerable: true,
+        get() { return getPisiSheetSelectionGroupId; }
+    },
+    "getPisiSheetSelectionState": {
+        enumerable: true,
+        get() { return getPisiSheetSelectionState; }
+    },
+    "getPisiSheetSelection": {
+        enumerable: true,
+        get() { return getPisiSheetSelection; }
+    },
+    "setPisiSheetSelectionState": {
+        enumerable: true,
+        get() { return setPisiSheetSelectionState; }
+    },
+    "getPisiSheetSelectionFocus": {
+        enumerable: true,
+        get() { return getPisiSheetSelectionFocus; }
+    },
+    "getPisiSheetActiveTable": {
+        enumerable: true,
+        get() { return getPisiSheetActiveTable; }
+    },
+    "getPisiSheetPointByIndex": {
+        enumerable: true,
+        get() { return getPisiSheetPointByIndex; }
+    },
+    "syncPisiSheetSelectionProjection": {
+        enumerable: true,
+        get() { return syncPisiSheetSelectionProjection; }
     },
     "getPisiSheetCellPosition": {
         enumerable: true,
@@ -628,9 +667,9 @@ Object.defineProperties(moduleApi, {
         enumerable: true,
         get() { return getPisiSheetCell; }
     },
-    "getPisiSheetSelectionRect": {
+    "getPisiSelectedSheetPoints": {
         enumerable: true,
-        get() { return getPisiSheetSelectionRect; }
+        get() { return getPisiSelectedSheetPoints; }
     },
     "getPisiSelectedSheetCells": {
         enumerable: true,

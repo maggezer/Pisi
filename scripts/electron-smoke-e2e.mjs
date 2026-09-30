@@ -301,8 +301,18 @@ try {
 
         const selectedAfterClick =
             table.querySelectorAll('.pisi-sheet-cell-range').length;
-        const activeAfterClick =
-            window.__pisiActiveSheetCell?.dataset.cell || '';
+        const selectionLabel = (targetTable) => {
+            const focus =
+                window.getPisiSheetSelectionFocus?.(targetTable);
+
+            if (!focus) return '';
+
+            return (
+                window.pisiColumnName?.(focus.col) +
+                String(focus.row + 1)
+            );
+        };
+        const activeAfterClick = selectionLabel(table);
 
         firstCell.dispatchEvent(new KeyboardEvent('keydown', {
             bubbles: true,
@@ -311,8 +321,7 @@ try {
         }));
 
         const secondCell = table.querySelector('td[data-cell="B1"]');
-        const activeAfterArrow =
-            window.__pisiActiveSheetCell?.dataset.cell || '';
+        const activeAfterArrow = selectionLabel(table);
 
         secondCell?.dispatchEvent(new KeyboardEvent('keydown', {
             bubbles: true,
@@ -341,8 +350,7 @@ try {
             }));
         }
 
-        const activeAfterCommit =
-            window.__pisiActiveSheetCell?.dataset.cell || '';
+        const activeAfterCommit = selectionLabel(table);
         const committedValue =
             table.querySelector('td[data-cell="B1"]')
                 ?.textContent?.trim() || '';
@@ -401,8 +409,7 @@ try {
 
         const selectedAfterHeaderClick =
             table.querySelectorAll('.pisi-sheet-cell-range').length;
-        const activeAfterHeaderClick =
-            window.__pisiActiveSheetCell?.dataset.cell || '';
+        const activeAfterHeaderClick = selectionLabel(table);
         const columnMenu = document.querySelector(
             '.pisi-sheet-column-menu'
         );
@@ -502,6 +509,31 @@ try {
 
         const databaseAfterAdd =
             window.getPisiSheetDatabase?.(table) || null;
+        const selectionBeforeDomReplace =
+            window.getPisiSheetSelection?.(table) || null;
+        const groupIdBeforeDomReplace =
+            window.getPisiSheetActiveGroupId?.() || '';
+        const focusBeforeDomReplace =
+            window.getPisiSheetSelectionFocus?.(table) || null;
+        const replacement = table.cloneNode(true);
+
+        table.replaceWith(replacement);
+        window.hydratePisiSheets?.(editor);
+
+        const selectionAfterDomReplace =
+            window.getPisiSheetSelection?.(replacement) || null;
+        const groupIdAfterDomReplace =
+            window.getPisiSheetActiveGroupId?.() || '';
+        const focusAfterDomReplace =
+            window.getPisiSheetSelectionFocus?.(replacement) || null;
+        const selectedAfterDomReplace =
+            replacement.querySelectorAll(
+                '.pisi-sheet-cell-range'
+            ).length;
+        const activeTableAfterDomReplace =
+            window.getPisiSheetActiveTable?.(editor) || null;
+        const activeTableDatabaseId =
+            activeTableAfterDomReplace?.dataset?.pisiDatabaseId || '';
 
         return {
             ok: true,
@@ -561,6 +593,14 @@ try {
                 databaseAfterAdd?.items?.length || 0,
             modelFieldsAfterAdd:
                 databaseAfterAdd?.fields?.length || 0,
+            selectionBeforeDomReplace,
+            selectionAfterDomReplace,
+            groupIdBeforeDomReplace,
+            groupIdAfterDomReplace,
+            focusBeforeDomReplace,
+            focusAfterDomReplace,
+            selectedAfterDomReplace,
+            activeTableDatabaseId,
             stableRowIdAfterAdd:
                 firstCellAfterAdd?.dataset.pisiRowId || '',
             stableColIdAfterAdd:
@@ -642,6 +682,24 @@ try {
         sheetResult.rowsAfter !== sheetResult.rowsBefore + 1 ||
         sheetResult.modelRowsAfterAdd !== sheetResult.rowsAfter ||
         sheetResult.modelFieldsAfterAdd !== 5 ||
+        !sheetResult.selectionBeforeDomReplace ||
+        !sheetResult.selectionAfterDomReplace ||
+        !sheetResult.groupIdBeforeDomReplace ||
+        sheetResult.groupIdAfterDomReplace !==
+            sheetResult.groupIdBeforeDomReplace ||
+        sheetResult.selectionBeforeDomReplace.groupId !==
+            sheetResult.groupIdBeforeDomReplace ||
+        sheetResult.selectionAfterDomReplace.groupId !==
+            sheetResult.groupIdBeforeDomReplace ||
+        sheetResult.focusAfterDomReplace?.rowId !==
+            sheetResult.focusBeforeDomReplace?.rowId ||
+        sheetResult.focusAfterDomReplace?.colId !==
+            sheetResult.focusBeforeDomReplace?.colId ||
+        sheetResult.focusAfterDomReplace?.groupId !==
+            sheetResult.groupIdBeforeDomReplace ||
+        sheetResult.selectedAfterDomReplace < 1 ||
+        sheetResult.activeTableDatabaseId !==
+            sheetResult.groupIdBeforeDomReplace ||
         sheetResult.stableRowIdAfterAdd !==
             sheetResult.originalRowId ||
         sheetResult.stableColIdAfterAdd !==

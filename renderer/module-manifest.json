@@ -170,14 +170,39 @@
     ]
   },
   {
+    "module": "editor.sheetSelectionState",
+    "path": "renderer/editor/pisi-editor-sheet-selection-state.mjs",
+    "bindings": [
+      "pisiSheetSelections",
+      "getPisiSheetSelectionGroupIdFromDatabase",
+      "resolvePisiSheetSelectionPoint",
+      "getPisiSheetPointByIndexFromDatabase",
+      "getPisiSheetSelectionStateForDatabase",
+      "setPisiSheetSelectionStateForDatabase",
+      "clearPisiSheetSelectionStateForDatabase",
+      "getPisiSheetSelectionForDatabase",
+      "getPisiSheetSelectionFocusForDatabase",
+      "getPisiSheetSelectionRect",
+      "getPisiSelectedSheetPointsForDatabase",
+      "getPisiSheetActiveGroupId"
+    ]
+  },
+  {
     "module": "editor.sheetSelection",
     "path": "renderer/editor/pisi-editor-sheet-selection.mjs",
     "bindings": [
-      "pisiSheetSelections",
       "getPisiSheetDimensions",
+      "getPisiSheetSelectionGroupId",
+      "getPisiSheetSelectionState",
+      "getPisiSheetSelection",
+      "setPisiSheetSelectionState",
+      "getPisiSheetSelectionFocus",
+      "getPisiSheetActiveTable",
+      "getPisiSheetPointByIndex",
+      "syncPisiSheetSelectionProjection",
       "getPisiSheetCellPosition",
       "getPisiSheetCell",
-      "getPisiSheetSelectionRect",
+      "getPisiSelectedSheetPoints",
       "getPisiSelectedSheetCells",
       "isPisiSheetCellSelected",
       "renderPisiSheetSelection",

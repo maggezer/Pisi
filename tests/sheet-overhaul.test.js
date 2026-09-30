@@ -151,6 +151,13 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         ),
         'utf8'
     );
+    const selectionState = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-sheet-selection-state.mjs'
+        ),
+        'utf8'
+    );
     const selection = fs.readFileSync(
         path.join(
             root,
@@ -222,6 +229,9 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
 
     assert.match(structure, /insertPisiSheetItem/);
     assert.match(structure, /deletePisiSheetItems/);
+    assert.match(structure, /getPisiSheetSelectionFocus/);
+    assert.doesNotMatch(structure, /__pisiActiveSheetCell/);
+    assert.doesNotMatch(structure, /pisiSheetSelections\.get/);
     assert.match(structure, /insertPisiSheetField/);
     assert.match(structure, /deletePisiSheetFields/);
     assert.match(
@@ -231,10 +241,42 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.doesNotMatch(structure, /tbody\.insertBefore/);
     assert.doesNotMatch(structure, /cell\.remove\(\)/);
 
-    assert.match(selection, /rowId/);
-    assert.match(selection, /colId/);
-    assert.match(selection, /normalizePisiSheetSelection/);
+    assert.match(selectionState, /rowId/);
+    assert.match(selectionState, /colId/);
+    assert.match(selectionState, /groupId/);
+    assert.match(selectionState, /pisiSheetSelections = new Map/);
+    assert.match(selectionState, /pisiActiveSheetGroupId/);
+    assert.match(
+        selectionState,
+        /getPisiSheetSelectionStateForDatabase/
+    );
+    assert.match(
+        selectionState,
+        /setPisiSheetSelectionStateForDatabase/
+    );
+    assert.match(
+        selectionState,
+        /getPisiSelectedSheetPointsForDatabase/
+    );
+    assert.doesNotMatch(selectionState, /querySelector/);
+    assert.doesNotMatch(selectionState, /querySelectorAll/);
+    assert.doesNotMatch(selectionState, /window\./);
+    assert.doesNotMatch(selectionState, /contenteditable/);
+
+    assert.match(selection, /getPisiSheetSelectionState/);
+    assert.match(selection, /setPisiSheetSelectionState/);
+    assert.match(selection, /getPisiSheetSelectionFocus/);
+    assert.match(selection, /getPisiSheetActiveTable/);
+    assert.match(selection, /getPisiSelectedSheetPoints/);
     assert.match(selection, /getPisiSheetCellSource/);
+    assert.doesNotMatch(
+        selection,
+        /pisiSheetSelections = new WeakMap/
+    );
+    assert.doesNotMatch(
+        selection,
+        /__pisiActiveSheetCell/
+    );
     assert.match(
         selection,
         /setAttribute\('contenteditable', 'plaintext-only'\)/
@@ -246,6 +288,13 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
 
     assert.match(interactions, /hydratePisiSheetDatabase\(table\)/);
     assert.match(interactions, /renderPisiSheetDatabase\(table\)/);
+    assert.match(interactions, /reconcilePisiSheetSelection\(table\)/);
+    assert.match(interactions, /setPisiSheetSelectionState/);
+    assert.doesNotMatch(interactions, /__pisiActiveSheetCell/);
+    assert.doesNotMatch(
+        interactions,
+        /pisiSheetSelections\.(get|set)/
+    );
     assert.match(interactions, /setPisiSheetFieldWidth/);
     assert.doesNotMatch(interactions, /pisiColumnWidths/);
 
@@ -267,5 +316,11 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.doesNotMatch(popovers, /data-pisi-sheet-popover-action/);
     assert.doesNotMatch(unifiedToolbar, /pisi-sheet-inline-tools/);
     assert.doesNotMatch(unifiedToolbar, /data-pisi-excel-action=/);
+    assert.match(unifiedToolbar, /getPisiSheetActiveTable/);
+    assert.doesNotMatch(
+        unifiedToolbar,
+        /__pisiActiveSheetCell/
+    );
+    assert.doesNotMatch(sheet, /__pisiActiveSheetCell/);
     assert.match(unifiedToolbar, /insertPisiSheet\(editor, 5, 5\)/);
 });

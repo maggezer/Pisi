@@ -179,24 +179,20 @@ const pisiBoundSheets = new WeakSet();
 const pisiEditedSheetCells = new WeakSet();
 
 function getActivePisiSheetForEditor(editor) {
-    const activeCell = window.__pisiActiveSheetCell;
+    if (!editor) return null;
 
-    if (activeCell && editor.contains(activeCell)) {
-        return activeCell.closest('table[data-pisi-sheet]');
-    }
-
-    return editor.querySelector('table[data-pisi-sheet]');
+    return (
+        getPisiSheetActiveTable(editor) ||
+        editor.querySelector('table[data-pisi-sheet]')
+    );
 }
 
+
 function applyPisiSheetFormula(table, formula) {
-    const activeCell = window.__pisiActiveSheetCell;
-    const cell = activeCell && table.contains(activeCell)
-        ? activeCell
-        : getPisiSheetCell(table, 0, 0);
+    const position =
+        getPisiSheetSelectionFocus(table) ||
+        getPisiSheetPointByIndex(table, 0, 0);
 
-    if (!cell) return;
-
-    const position = getPisiSheetCellPosition(cell);
     if (!position) return;
 
     const value = String(formula || '').trim();
@@ -211,7 +207,7 @@ function applyPisiSheetFormula(table, formula) {
     );
 
     recalcPisiSheet(table);
-    selectPisiSheetCell(cell);
+    reconcilePisiSheetSelection(table);
 }
 
 

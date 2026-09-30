@@ -35,16 +35,9 @@ function refreshPisiSheetCellMetadata(table) {
 }
 
 function getPisiSheetMutationFocus(table) {
-    const selected = pisiSheetSelections.get(table);
-
-    if (selected?.focus) {
-        return selected.focus;
-    }
-
     return (
-        getPisiSheetCellPosition(
-            window.__pisiActiveSheetCell
-        ) ||
+        getPisiSheetSelectionFocus(table) ||
+        getPisiSheetPointByIndex(table, 0, 0) ||
         { row: 0, col: 0 }
     );
 }
@@ -135,7 +128,7 @@ function deletePisiSheetRows(table) {
     const dimensions = getPisiSheetDimensions(table);
     if (dimensions.rows <= 1) return false;
 
-    const selection = pisiSheetSelections.get(table);
+    const selection = getPisiSheetSelection(table);
     const rect = selection
         ? getPisiSheetSelectionRect(
             selection.anchor,
@@ -182,7 +175,7 @@ function deletePisiSheetColumns(table) {
     const dimensions = getPisiSheetDimensions(table);
     if (dimensions.cols <= 1) return false;
 
-    const selection = pisiSheetSelections.get(table);
+    const selection = getPisiSheetSelection(table);
     const rect = selection
         ? getPisiSheetSelectionRect(
             selection.anchor,
@@ -500,7 +493,7 @@ function syncPisiSheetToolbarState(toolbar, table) {
     );
 
     if (status && table) {
-        const selection = pisiSheetSelections.get(table);
+        const selection = getPisiSheetSelection(table);
         const rect = selection
             ? getPisiSheetSelectionRect(
                 selection.anchor,

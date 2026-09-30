@@ -192,9 +192,8 @@ function buildPisiUnifiedToolbarMarkup() {
 function getPisiUnifiedToolbarActiveTable(toolbar) {
     const editor = getPisiToolbarEditor(toolbar);
     if (!editor) return null;
-    const activeCell = window.__pisiActiveSheetCell;
-    if (!activeCell || !editor.contains(activeCell)) return null;
-    return activeCell.closest('table[data-pisi-sheet]');
+
+    return getPisiSheetActiveTable(editor);
 }
 
 function runPisiUnifiedTextCommand(toolbar, command, value = null) {
