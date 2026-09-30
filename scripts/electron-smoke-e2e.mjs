@@ -185,22 +185,9 @@ try {
 
         editorWrapper.hidden = false;
         editorWrapper.style.display = 'block';
+        editor.innerHTML = '<div><br></div>';
 
-        editor.innerHTML = '<table class="pisi-sheet-table" data-pisi-sheet="1"><thead><tr><th></th><th>A</th><th>B</th></tr></thead><tbody><tr><th>1</th><td contenteditable="true"></td><td contenteditable="true"></td></tr><tr><th>2</th><td contenteditable="true"></td><td contenteditable="true"></td></tr></tbody></table>';
-        window.initializePisiAdvancedEditorContent?.(editor);
-
-        const table = editor.querySelector('table[data-pisi-sheet]');
-        const firstCell = table?.querySelector('td[data-cell="A1"]');
-        if (!table || !firstCell) {
-            return { ok: false, reason: 'sheet hydration failed' };
-        }
-
-        firstCell.dispatchEvent(new MouseEvent('mousedown', {
-            bubbles: true,
-            button: 0,
-            buttons: 1
-        }));
-
+        const tableTrigger = toolbar.querySelector('[data-pisi-table-trigger]');
         const addRow = toolbar.querySelector(
             '[data-pisi-excel-action="addRow"]'
         );
@@ -210,44 +197,107 @@ try {
         const wrap = toolbar.querySelector(
             '[data-pisi-excel-action="toggleWrap"]'
         );
-        const rowsBefore = table.querySelectorAll('tbody tr').length;
-        const contextTools = toolbar.querySelector(
-            '[data-pisi-sheet-context]'
-        );
+        const inlineTools = toolbar.querySelector('[data-pisi-sheet-tools]');
+
+        window.syncPisiSheetToolbarState?.(toolbar, null);
+
         const toolbarRect = toolbar.getBoundingClientRect();
-        const contextRect = contextTools?.getBoundingClientRect();
+        const toolsBeforeRect = inlineTools?.getBoundingClientRect();
+        const toolsVisibleBeforeSheet = Boolean(
+            toolsBeforeRect &&
+            toolsBeforeRect.width > 0 &&
+            toolsBeforeRect.height > 0
+        );
+        const toolsInsideToolbarBeforeSheet = Boolean(
+            toolsBeforeRect &&
+            toolsBeforeRect.top >= toolbarRect.top &&
+            toolsBeforeRect.bottom <= toolbarRect.bottom + 1
+        );
+        const disabledBeforeSheet = Boolean(
+            addRow?.disabled &&
+            deleteRow?.disabled &&
+            wrap?.disabled
+        );
+
+        tableTrigger?.click();
+
+        const table = editor.querySelector('table[data-pisi-sheet]');
+        const firstCell = table?.querySelector('td[data-cell="A1"]');
+        const directTableSize = table
+            ? {
+                rows: table.querySelectorAll('tbody tr').length,
+                cols: table.querySelectorAll('tbody tr:first-child td').length
+            }
+            : null;
+
+        if (!table || !firstCell) {
+            return {
+                ok: false,
+                reason: 'direct Table insert failed',
+                toolsVisibleBeforeSheet,
+                disabledBeforeSheet
+            };
+        }
+
+        firstCell.dispatchEvent(new MouseEvent('mousedown', {
+            bubbles: true,
+            button: 0,
+            buttons: 1
+        }));
+
+        const rowsBefore = table.querySelectorAll('tbody tr').length;
+        const toolsAfterRect = inlineTools?.getBoundingClientRect();
 
         addRow?.click();
 
         return {
             ok: true,
-            contextActive: toolbar.classList.contains('pisi-table-context'),
+            hasTableTrigger: Boolean(tableTrigger),
             hasAddRow: Boolean(addRow),
             hasDeleteRow: Boolean(deleteRow),
             hasWrap: Boolean(wrap),
+            toolsVisibleBeforeSheet,
+            toolsInsideToolbarBeforeSheet,
+            disabledBeforeSheet,
+            actionsEnabledWithSheet: Boolean(
+                !addRow?.disabled &&
+                !deleteRow?.disabled &&
+                !wrap?.disabled
+            ),
+            directTableSize,
             rowsBefore,
             rowsAfter: table.querySelectorAll('tbody tr').length,
-            contextVisible: Boolean(
-                contextRect &&
-                contextRect.width > 0 &&
-                contextRect.height > 0
+            toolsVisibleWithSheet: Boolean(
+                toolsAfterRect &&
+                toolsAfterRect.width > 0 &&
+                toolsAfterRect.height > 0
             ),
-            contextInsideToolbar: Boolean(
-                contextRect &&
-                contextRect.top >= toolbarRect.top &&
-                contextRect.bottom <= toolbarRect.bottom + 1
+            toolsInsideToolbarWithSheet: Boolean(
+                toolsAfterRect &&
+                toolsAfterRect.top >= toolbarRect.top &&
+                toolsAfterRect.bottom <= toolbarRect.bottom + 1
+            ),
+            tablePopoverPresent: Boolean(
+                document.querySelector('.pisi-office-table-popover')
             )
         };
     })()`);
 
     if (
         !sheetResult?.ok ||
-        !sheetResult.contextActive ||
+        !sheetResult.hasTableTrigger ||
         !sheetResult.hasAddRow ||
         !sheetResult.hasDeleteRow ||
         !sheetResult.hasWrap ||
-        !sheetResult.contextVisible ||
-        !sheetResult.contextInsideToolbar ||
+        !sheetResult.toolsVisibleBeforeSheet ||
+        !sheetResult.toolsInsideToolbarBeforeSheet ||
+        !sheetResult.disabledBeforeSheet ||
+        !sheetResult.actionsEnabledWithSheet ||
+        sheetResult.directTableSize?.rows !== 5 ||
+        sheetResult.directTableSize?.cols !== 5 ||
+        !sheetResult.toolsVisibleWithSheet ||
+        !sheetResult.toolsInsideToolbarWithSheet ||
+        sheetResult.tablePopoverPresent ||
         sheetResult.rowsAfter !== sheetResult.rowsBefore + 1
     ) {
         throw new Error(
