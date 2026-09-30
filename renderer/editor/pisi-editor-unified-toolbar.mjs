@@ -139,8 +139,10 @@ function buildPisiUnifiedToolbarMarkup() {
             </section>
 
             <section class="pisi-toolbar-section pisi-toolbar-section-excel" aria-label="Tablo araçları">
-                <button type="button" class="pisi-ribbon-btn pisi-toolbar-data-btn" data-pisi-table-trigger title="5 × 5 tablo ekle">${pisiToolbarIcon('table')}<span>Table</span></button>
-                <button type="button" class="pisi-ribbon-btn pisi-toolbar-data-btn" data-pisi-rollup-trigger title="Rollup ekle">${pisiToolbarIcon('rollup')}<span>Roll</span></button>
+                <div class="pisi-sheet-main-stack">
+                    <button type="button" class="pisi-ribbon-btn pisi-toolbar-data-btn" data-pisi-table-trigger title="5 × 5 tablo ekle">${pisiToolbarIcon('table')}<span>Table</span></button>
+                    <button type="button" class="pisi-ribbon-btn pisi-toolbar-data-btn" data-pisi-rollup-trigger title="Rollup ekle">${pisiToolbarIcon('rollup')}<span>Roll</span></button>
+                </div>
                 <div class="pisi-sheet-inline-tools" data-pisi-sheet-tools aria-label="Sheet araçları">
                     <button type="button" class="pisi-ribbon-btn pisi-sheet-mini-btn" data-pisi-excel-action="addRow" title="Seçili satırın altına satır ekle" aria-label="Satır ekle">R+</button>
                     <button type="button" class="pisi-ribbon-btn pisi-sheet-mini-btn" data-pisi-excel-action="deleteRow" title="Seçili satır veya satırları sil" aria-label="Satır sil">R−</button>
