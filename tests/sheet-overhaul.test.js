@@ -213,7 +213,10 @@ test('tablo arayüzünde Phase 2 gezinme, seçim, yapı ve biçimlendirme bulunu
     assert.match(unifiedToolbar, /data-pisi-excel-action="deleteCol"/);
     assert.match(unifiedToolbar, /data-pisi-excel-action="toggleWrap"/);
     assert.match(unifiedToolbar, /data-pisi-excel-action="borderAll"/);
-    assert.match(unifiedToolbar, /data-pisi-sheet-status/);
+    assert.doesNotMatch(
+        unifiedToolbar,
+        /class="pisi-sheet-toolbar-status" data-pisi-sheet-status/
+    );
 
     assert.match(paint, /notifyPisiEditorChanged\(editor, rehydrate = true\)/);
     assert.match(structure, /notifyPisiEditorChanged\(editor, false\)/);
