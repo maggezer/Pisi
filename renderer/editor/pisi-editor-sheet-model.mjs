@@ -180,7 +180,7 @@ export function transformPisiSheetFormulaReferences(formula, change) {
     const source = String(formula || '');
 
     return source.replace(
-        /"(?:[^"]|"")*"|\$?[A-Z]+\$?\d+(?::\$?[A-Z]+\$?\d+)?/gi,
+        /"(?:[^"]|"")*"|(?<![A-Z0-9_.$])\$?[A-Z]+\$?\d+(?::\$?[A-Z]+\$?\d+)?(?![A-Z0-9_.$]|\s*\()/gi,
         (token) => {
             if (token.startsWith('"')) return token;
 
