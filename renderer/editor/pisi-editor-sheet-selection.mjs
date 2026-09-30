@@ -180,6 +180,12 @@ function renderPisiSheetSelection(table) {
     }
 
     if (activeCell) {
+        if (!selectedCells.has(activeCell)) {
+            activeCell.classList.remove(
+                'pisi-sheet-cell-selected'
+            );
+        }
+
         activeCell.classList.add(
             'pisi-sheet-cell-active'
         );
