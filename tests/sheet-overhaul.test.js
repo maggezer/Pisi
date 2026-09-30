@@ -225,7 +225,7 @@ test('Sheet seçim ve düzenleme mimarisi veri state ile DOM odağını ayırır
     assert.match(interactions, /action: 'addCol'/);
     assert.match(interactions, /action: 'deleteCol'/);
 
-    assert.match(structure, /data-pisi-sheet-col-resizer/);
+    assert.match(structure, /pisiSheetColResizer/);
     assert.match(interactions, /PISI_SHEET_MIN_COLUMN_WIDTH = 48/);
     assert.match(interactions, /PISI_SHEET_MAX_COLUMN_WIDTH = 640/);
     assert.match(interactions, /storePisiSheetColumnWidth/);

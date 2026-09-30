@@ -74,6 +74,8 @@
     background: #1f1f20;
     outline: none;
     font-family: Consolas, monospace;
+    cursor: cell;
+    user-select: none;
 }
 
 .pisi-sheet-table th[data-row-header],
@@ -146,10 +148,6 @@ body.pisi-sheet-column-resizing * {
     background: #3a3428;
 }
 
-.pisi-sheet-table td {
-    cursor: cell;
-    user-select: none;
-}
 
 .pisi-sheet-cell-range {
     box-shadow: inset 0 0 0 1px rgba(243, 156, 18, 0.55);
