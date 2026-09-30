@@ -10,27 +10,13 @@ let pisiSheetColumnResize = null;
 const PISI_SHEET_MIN_COLUMN_WIDTH = 48;
 const PISI_SHEET_MAX_COLUMN_WIDTH = 640;
 
-function getPisiSheetStoredColumnWidths(table) {
-    try {
-        const widths = JSON.parse(
-            table?.dataset?.pisiColumnWidths || '[]'
-        );
-        return Array.isArray(widths) ? widths : [];
-    } catch {
-        return [];
-    }
-}
-
-function storePisiSheetColumnWidth(table, colIndex, width) {
-    const widths = getPisiSheetStoredColumnWidths(table);
-    widths[colIndex] = width;
-    table.dataset.pisiColumnWidths = JSON.stringify(widths);
-}
-
 function setPisiSheetColumnWidth(table, colIndex, width) {
     const nextWidth = Math.max(
         PISI_SHEET_MIN_COLUMN_WIDTH,
-        Math.min(PISI_SHEET_MAX_COLUMN_WIDTH, Math.round(width))
+        Math.min(
+            PISI_SHEET_MAX_COLUMN_WIDTH,
+            Math.round(width)
+        )
     );
     const size = String(nextWidth) + 'px';
     const header = table.querySelector(
@@ -49,9 +35,15 @@ function setPisiSheetColumnWidth(table, colIndex, width) {
             cell.style.maxWidth = size;
         });
 
-    storePisiSheetColumnWidth(table, colIndex, nextWidth);
+    setPisiSheetFieldWidth(
+        table,
+        colIndex,
+        nextWidth
+    );
+
     return nextWidth;
 }
+
 
 function startPisiSheetColumnResize(table, resizer, event) {
     finishPisiSheetCellEdit(table, {
@@ -387,7 +379,9 @@ function hydratePisiSheets(root = document) {
 
         if (pisiBoundSheets.has(table)) return;
 
-        refreshPisiSheetCellMetadata(table);
+        hydratePisiSheetDatabase(table);
+        renderPisiSheetDatabase(table);
+        recalcPisiSheet(table);
         pisiBoundSheets.add(table);
 
         table.addEventListener('focusin', (event) => {

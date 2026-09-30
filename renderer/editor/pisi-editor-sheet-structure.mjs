@@ -1,324 +1,33 @@
 import { registerModule } from "../core/module-registry.mjs";
-import { transformPisiSheetFormulaReferences } from "./pisi-editor-sheet-model.mjs";
-
-function getPisiSheetColumnLabels(table) {
-    const raw = table?.dataset?.pisiColumnLabels;
-    if (!raw) return [];
-
-    try {
-        const labels = JSON.parse(raw);
-        if (!Array.isArray(labels)) return [];
-
-        return labels.map((label) => {
-            return typeof label === 'string'
-                ? label
-                : null;
-        });
-    } catch {
-        return [];
-    }
-}
-
-function savePisiSheetColumnLabels(table, labels) {
-    const normalized = Array.from(labels || [], (label) => {
-        if (typeof label !== 'string') return null;
-
-        const trimmed = label.trim().slice(0, 80);
-        return trimmed || null;
-    });
-
-    while (
-        normalized.length &&
-        normalized[normalized.length - 1] === null
-    ) {
-        normalized.pop();
-    }
-
-    if (normalized.length) {
-        table.dataset.pisiColumnLabels =
-            JSON.stringify(normalized);
-    } else {
-        delete table.dataset.pisiColumnLabels;
-    }
-
-    return normalized;
-}
-
 function getPisiSheetColumnLabel(table, colIndex) {
-    const custom = getPisiSheetColumnLabels(table)[colIndex];
+    const field = getPisiSheetField(table, colIndex);
 
-    return custom || pisiColumnName(colIndex);
+    return field?.name || pisiColumnName(colIndex);
 }
 
 function setPisiSheetColumnLabel(table, colIndex, value) {
-    const labels = getPisiSheetColumnLabels(table);
-    const fallback = pisiColumnName(colIndex);
-    const normalized = String(value ?? '')
-        .trim()
-        .slice(0, 80);
+    const label = renamePisiSheetField(
+        table,
+        colIndex,
+        value
+    );
+    if (!label) return null;
 
-    labels[colIndex] =
-        normalized && normalized !== fallback
-            ? normalized
-            : null;
-
-    savePisiSheetColumnLabels(table, labels);
-
-    const label = table.querySelector(
-        `thead th[data-col-header="${colIndex}"] .pisi-sheet-col-label`
+    const labelElement = table.querySelector(
+        'thead th[data-col-header="' +
+        colIndex +
+        '"] .pisi-sheet-col-label'
     );
 
-    if (label) {
-        label.textContent = normalized || fallback;
+    if (labelElement) {
+        labelElement.textContent = label;
     }
 
-    return normalized || fallback;
-}
-
-function shiftPisiSheetColumnLabels(table, change) {
-    const labels = getPisiSheetColumnLabels(table);
-    if (!labels.length) return;
-
-    if (change.type === 'insert-col') {
-        labels.splice(
-            change.index,
-            0,
-            ...Array(change.count || 1).fill(null)
-        );
-    } else if (change.type === 'delete-col') {
-        labels.splice(
-            change.index,
-            change.count || 1
-        );
-    } else {
-        return;
-    }
-
-    savePisiSheetColumnLabels(table, labels);
-}
-
-function escapePisiSheetHeaderLabel(value) {
-    return String(value)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#39;');
-}
-
-function createPisiSheetStableId(prefix) {
-    const uuid = globalThis.crypto?.randomUUID?.();
-
-    if (uuid) {
-        return prefix + '-' + uuid;
-    }
-
-    return (
-        prefix + '-' +
-        Date.now().toString(36) + '-' +
-        Math.random().toString(36).slice(2, 10)
-    );
-}
-
-function getPisiSheetColumnIds(table) {
-    try {
-        const ids = JSON.parse(
-            table?.dataset?.pisiColumnIds || '[]'
-        );
-        return Array.isArray(ids)
-            ? ids.filter((id) => typeof id === 'string' && id)
-            : [];
-    } catch {
-        return [];
-    }
-}
-
-function savePisiSheetColumnIds(table, ids) {
-    table.dataset.pisiColumnIds = JSON.stringify(ids);
-    return ids;
-}
-
-function ensurePisiSheetColumnIds(table, colCount) {
-    const ids = getPisiSheetColumnIds(table).slice(0, colCount);
-
-    while (ids.length < colCount) {
-        ids.push(createPisiSheetStableId('c'));
-    }
-
-    return savePisiSheetColumnIds(table, ids);
-}
-
-function shiftPisiSheetColumnIds(table, change) {
-    const dimensions = getPisiSheetDimensions(table);
-    const count = Math.max(1, Number(change.count) || 1);
-    const expectedBefore = change.type === 'insert-col'
-        ? Math.max(0, dimensions.cols - count)
-        : dimensions.cols + count;
-    const ids = getPisiSheetColumnIds(table);
-
-    while (ids.length < expectedBefore) {
-        ids.push(createPisiSheetStableId('c'));
-    }
-
-    if (change.type === 'insert-col') {
-        ids.splice(
-            change.index,
-            0,
-            ...Array.from(
-                { length: count },
-                () => createPisiSheetStableId('c')
-            )
-        );
-    } else if (change.type === 'delete-col') {
-        ids.splice(change.index, count);
-    }
-
-    savePisiSheetColumnIds(table, ids);
-}
-
-function getPisiSheetColumnWidths(table) {
-    try {
-        const widths = JSON.parse(
-            table?.dataset?.pisiColumnWidths || '[]'
-        );
-        return Array.isArray(widths) ? widths : [];
-    } catch {
-        return [];
-    }
-}
-
-function savePisiSheetColumnWidths(table, widths) {
-    const next = Array.from(widths || [], (value) => {
-        const number = Number(value);
-
-        return Number.isFinite(number) && number > 0
-            ? Math.round(number)
-            : null;
-    });
-
-    while (next.length && next[next.length - 1] === null) {
-        next.pop();
-    }
-
-    if (next.length) {
-        table.dataset.pisiColumnWidths = JSON.stringify(next);
-    } else {
-        delete table.dataset.pisiColumnWidths;
-    }
-}
-
-function shiftPisiSheetColumnWidths(table, change) {
-    const widths = getPisiSheetColumnWidths(table);
-    const count = Math.max(1, Number(change.count) || 1);
-
-    if (change.type === 'insert-col') {
-        widths.splice(
-            change.index,
-            0,
-            ...Array(count).fill(null)
-        );
-    } else if (change.type === 'delete-col') {
-        widths.splice(change.index, count);
-    }
-
-    savePisiSheetColumnWidths(table, widths);
+    return label;
 }
 
 function refreshPisiSheetCellMetadata(table) {
-    const rows = Array.from(table.querySelectorAll('tbody tr'));
-    const colCount = Math.max(
-        0,
-        ...rows.map((row) => row.querySelectorAll('td').length)
-    );
-    const columnIds = ensurePisiSheetColumnIds(table, colCount);
-    const columnWidths = getPisiSheetColumnWidths(table);
-
-    rows.forEach((row, rowIndex) => {
-        let rowHeader = row.querySelector('th');
-
-        if (!row.dataset.pisiRowId) {
-            row.dataset.pisiRowId = createPisiSheetStableId('r');
-        }
-
-        if (!rowHeader) {
-            rowHeader = document.createElement('th');
-            row.prepend(rowHeader);
-        }
-
-        rowHeader.textContent = String(rowIndex + 1);
-        rowHeader.dataset.rowHeader = String(rowIndex);
-        rowHeader.dataset.pisiRowId = row.dataset.pisiRowId;
-
-        Array.from(row.querySelectorAll('td')).forEach(
-            (cell, colIndex) => {
-                const width = Number(columnWidths[colIndex]);
-
-                cell.setAttribute('contenteditable', 'false');
-                cell.setAttribute('tabindex', '-1');
-                cell.dataset.row = String(rowIndex);
-                cell.dataset.col = String(colIndex);
-                cell.dataset.pisiRowId = row.dataset.pisiRowId;
-                cell.dataset.pisiColId = columnIds[colIndex];
-                cell.dataset.cell =
-                    pisiColumnName(colIndex) + String(rowIndex + 1);
-
-                if (Number.isFinite(width) && width > 0) {
-                    const size = String(width) + 'px';
-                    cell.style.width = size;
-                    cell.style.minWidth = size;
-                    cell.style.maxWidth = size;
-                }
-            }
-        );
-    });
-
-    let thead = table.querySelector('thead');
-
-    if (!thead) {
-        thead = document.createElement('thead');
-        table.prepend(thead);
-    }
-
-    let headerRow = thead.querySelector('tr');
-
-    if (!headerRow) {
-        headerRow = document.createElement('tr');
-        thead.appendChild(headerRow);
-    }
-
-    const corner = document.createElement('th');
-    corner.dataset.pisiSheetCorner = '1';
-    const headerCells = [corner];
-
-    for (let index = 0; index < colCount; index += 1) {
-        const header = document.createElement('th');
-        const label = document.createElement('span');
-        const resizer = document.createElement('span');
-        const width = Number(columnWidths[index]);
-
-        header.dataset.colHeader = String(index);
-        header.dataset.pisiColId = columnIds[index];
-
-        label.className = 'pisi-sheet-col-label';
-        label.textContent = getPisiSheetColumnLabel(table, index);
-
-        resizer.className = 'pisi-sheet-col-resizer';
-        resizer.dataset.pisiSheetColResizer = String(index);
-        resizer.setAttribute('aria-hidden', 'true');
-
-        header.append(label, resizer);
-
-        if (Number.isFinite(width) && width > 0) {
-            const size = String(width) + 'px';
-            header.style.width = size;
-            header.style.minWidth = size;
-            header.style.maxWidth = size;
-        }
-
-        headerCells.push(header);
-    }
-
-    headerRow.replaceChildren(...headerCells);
+    renderPisiSheetDatabase(table);
 
     if (typeof reconcilePisiSheetSelection === 'function') {
         reconcilePisiSheetSelection(table);
@@ -327,7 +36,10 @@ function refreshPisiSheetCellMetadata(table) {
 
 function getPisiSheetMutationFocus(table) {
     const selected = pisiSheetSelections.get(table);
-    if (selected?.focus) return selected.focus;
+
+    if (selected?.focus) {
+        return selected.focus;
+    }
 
     return (
         getPisiSheetCellPosition(
@@ -338,17 +50,12 @@ function getPisiSheetMutationFocus(table) {
 }
 
 function updatePisiSheetFormulaReferences(table, change) {
-    table.querySelectorAll('td[data-formula]').forEach((cell) => {
-        cell.dataset.formula =
-            transformPisiSheetFormulaReferences(
-                cell.dataset.formula,
-                change
-            );
-    });
+    transformPisiSheetDatabaseFormulas(table, change);
 }
 
 function addPisiSheetRow(table, afterRowIndex = null) {
     const dimensions = getPisiSheetDimensions(table);
+
     if (dimensions.rows >= PISI_SHEET_MAX_ROWS) {
         return false;
     }
@@ -361,26 +68,9 @@ function addPisiSheetRow(table, afterRowIndex = null) {
         0,
         Math.min(dimensions.rows, after + 1)
     );
-    const tbody =
-        table.querySelector('tbody') ||
-        table.appendChild(document.createElement('tbody'));
-    const row = document.createElement('tr');
     const colCount = Math.max(1, dimensions.cols);
 
-    row.innerHTML =
-        '<th></th>' +
-        Array.from(
-            { length: colCount },
-            () => {
-                return '<td contenteditable="false" tabindex="-1"></td>';
-            }
-        ).join('');
-
-    const beforeRow =
-        tbody.querySelectorAll('tr')[insertIndex] ||
-        null;
-
-    tbody.insertBefore(row, beforeRow);
+    insertPisiSheetItem(table, insertIndex);
     updatePisiSheetFormulaReferences(table, {
         type: 'insert-row',
         index: insertIndex,
@@ -404,6 +94,7 @@ function addPisiSheetRow(table, afterRowIndex = null) {
 
 function addPisiSheetColumn(table, afterColIndex = null) {
     const dimensions = getPisiSheetDimensions(table);
+
     if (dimensions.cols >= PISI_SHEET_MAX_COLS) {
         return false;
     }
@@ -416,44 +107,8 @@ function addPisiSheetColumn(table, afterColIndex = null) {
         0,
         Math.min(dimensions.cols, after + 1)
     );
-    const tbody =
-        table.querySelector('tbody') ||
-        table.appendChild(document.createElement('tbody'));
 
-    if (!tbody.querySelector('tr')) {
-        const row = document.createElement('tr');
-        row.innerHTML =
-            '<th></th><td contenteditable="false" tabindex="-1"></td>';
-        tbody.appendChild(row);
-    } else {
-        tbody.querySelectorAll('tr').forEach((row) => {
-            const cell = document.createElement('td');
-            cell.setAttribute('contenteditable', 'false');
-            cell.setAttribute('tabindex', '-1');
-
-            const beforeCell =
-                row.querySelectorAll('td')[insertIndex] ||
-                null;
-
-            row.insertBefore(cell, beforeCell);
-        });
-    }
-
-    shiftPisiSheetColumnLabels(table, {
-        type: 'insert-col',
-        index: insertIndex,
-        count: 1
-    });
-    shiftPisiSheetColumnIds(table, {
-        type: 'insert-col',
-        index: insertIndex,
-        count: 1
-    });
-    shiftPisiSheetColumnWidths(table, {
-        type: 'insert-col',
-        index: insertIndex,
-        count: 1
-    });
+    insertPisiSheetField(table, insertIndex);
     updatePisiSheetFormulaReferences(table, {
         type: 'insert-col',
         index: insertIndex,
@@ -462,12 +117,10 @@ function addPisiSheetColumn(table, afterColIndex = null) {
     refreshPisiSheetCellMetadata(table);
     recalcPisiSheet(table);
 
+    const next = getPisiSheetDimensions(table);
     const nextCell = getPisiSheetCell(
         table,
-        Math.min(
-            focus.row,
-            getPisiSheetDimensions(table).rows - 1
-        ),
+        Math.min(focus.row, next.rows - 1),
         insertIndex
     );
 
@@ -502,12 +155,7 @@ function deletePisiSheetRows(table) {
 
     if (count < 1) return false;
 
-    Array.from(
-        table.querySelectorAll('tbody tr')
-    )
-        .slice(start, start + count)
-        .forEach((row) => row.remove());
-
+    deletePisiSheetItems(table, start, count);
     updatePisiSheetFormulaReferences(table, {
         type: 'delete-row',
         index: start,
@@ -554,27 +202,7 @@ function deletePisiSheetColumns(table) {
 
     if (count < 1) return false;
 
-    table.querySelectorAll('tbody tr').forEach((row) => {
-        Array.from(row.querySelectorAll('td'))
-            .slice(start, start + count)
-            .forEach((cell) => cell.remove());
-    });
-
-    shiftPisiSheetColumnLabels(table, {
-        type: 'delete-col',
-        index: start,
-        count
-    });
-    shiftPisiSheetColumnIds(table, {
-        type: 'delete-col',
-        index: start,
-        count
-    });
-    shiftPisiSheetColumnWidths(table, {
-        type: 'delete-col',
-        index: start,
-        count
-    });
+    deletePisiSheetFields(table, start, count);
     updatePisiSheetFormulaReferences(table, {
         type: 'delete-col',
         index: start,
@@ -739,6 +367,19 @@ function applyPisiSheetCellFormat(
         return false;
     }
 
+    cells.forEach((cell) => {
+        const position = getPisiSheetCellPosition(cell);
+
+        if (!position) return;
+
+        setPisiSheetCellFormat(
+            table,
+            position.row,
+            position.col,
+            capturePisiSheetCellFormat(cell)
+        );
+    });
+
     renderPisiSheetSelection(table);
     return true;
 }
@@ -748,8 +389,14 @@ function clearPisiSheetSelectedCells(table) {
     if (!cells.length) return false;
 
     cells.forEach((cell) => {
-        delete cell.dataset.formula;
-        cell.textContent = '';
+        const position = getPisiSheetCellPosition(cell);
+        if (!position) return;
+
+        clearPisiSheetCell(
+            table,
+            position.row,
+            position.col
+        );
         pisiEditedSheetCells.delete(cell);
     });
 
@@ -758,7 +405,10 @@ function clearPisiSheetSelectedCells(table) {
     return true;
 }
 
+
 function schedulePisiSheetEditorNotification(table) {
+    persistPisiSheetDatabase(table);
+
     const previousTimer = pisiSheetNotifyTimers.get(table);
 
     if (previousTimer) {

@@ -135,27 +135,37 @@ function insertPisiSheet(editor, rows = 5, cols = 5) {
     notifyPisiEditorChanged(editor);
 }
 
-function buildPisiSheetHtml(rows, cols) {
-    let head = '<thead><tr><th></th>';
-    for (let col = 0; col < cols; col += 1) {
-        head += `<th>${pisiColumnName(col)}</th>`;
-    }
-    head += '</tr></thead>';
-
-    let body = '<tbody>';
-    for (let row = 0; row < rows; row += 1) {
-        body += `<tr><th>${row + 1}</th>`;
-        for (let col = 0; col < cols; col += 1) {
-            body += `<td contenteditable="false" tabindex="-1" data-row="${row}" data-col="${col}" data-cell="${pisiColumnName(col)}${row + 1}"></td>`;
-        }
-        body += '</tr>';
-    }
-    body += '</tbody>';
-
-    return `<table class="pisi-sheet-table" data-pisi-sheet="1">${head}${body}</table>`;
+function escapePisiSheetModelAttribute(value) {
+    return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('"', '&quot;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
 }
 
-// Safety caps keep a single DOM-backed sheet responsive while allowing
+function buildPisiSheetHtml(rows, cols) {
+    const database = createPisiSheetDatabase(rows, cols);
+    const serialized = escapePisiSheetModelAttribute(
+        JSON.stringify(database)
+    );
+
+    return (
+        '<table class="pisi-sheet-table" ' +
+        'data-pisi-sheet="1" ' +
+        'data-pisi-database-id="' +
+        database.databaseId +
+        '" ' +
+        'data-pisi-sheet-model="' +
+        serialized +
+        '">' +
+        '<thead><tr></tr></thead>' +
+        '<tbody></tbody>' +
+        '</table>'
+    );
+}
+
+
+// Safety caps keep a single SheetDatabase responsive while allowing
 // substantially larger tables than the original 80 x 26 grid.
 const PISI_SHEET_MAX_ROWS = 300;
 
@@ -182,64 +192,106 @@ function applyPisiSheetFormula(table, formula) {
     const activeCell = window.__pisiActiveSheetCell;
     const cell = activeCell && table.contains(activeCell)
         ? activeCell
-        : table.querySelector('td[data-cell]');
+        : getPisiSheetCell(table, 0, 0);
 
     if (!cell) return;
 
+    const position = getPisiSheetCellPosition(cell);
+    if (!position) return;
+
     const value = String(formula || '').trim();
 
-    if (value.startsWith('=')) {
-        cell.dataset.formula = value;
-    } else {
-        delete cell.dataset.formula;
-        cell.textContent = value;
-    }
+    setPisiSheetCellSource(
+        table,
+        position.row,
+        position.col,
+        value.startsWith('=')
+            ? { value: '', formula: value }
+            : { value, formula: null }
+    );
 
     recalcPisiSheet(table);
     selectPisiSheetCell(cell);
 }
 
-function commitPisiSheetCell(cell) {
-    const value = cell.textContent.trim();
-    const wasEdited = pisiEditedSheetCells.has(cell);
 
-    if (value.startsWith('=')) {
-        cell.dataset.formula = value;
-    } else if (wasEdited) {
-        delete cell.dataset.formula;
-        cell.textContent = value;
-    } else if (!cell.dataset.formula) {
-        cell.textContent = value;
-    }
+function commitPisiSheetCell(cell) {
+    if (!cell) return;
+
+    const table = cell.closest('table[data-pisi-sheet]');
+    const position = getPisiSheetCellPosition(cell);
+
+    if (!table || !position) return;
+
+    const value = String(cell.textContent || '').trim();
+
+    setPisiSheetCellSource(
+        table,
+        position.row,
+        position.col,
+        value.startsWith('=')
+            ? { value: '', formula: value }
+            : { value, formula: null }
+    );
 
     pisiEditedSheetCells.delete(cell);
 }
 
+
 function recalcPisiSheet(table) {
     if (!table) return;
 
-    refreshPisiSheetCellMetadata(table);
+    const dimensions = getPisiSheetDatabaseDimensions(table);
 
-    const cells = Array.from(table.querySelectorAll('td[data-cell]'));
+    for (let row = 0; row < dimensions.rows; row += 1) {
+        for (let col = 0; col < dimensions.cols; col += 1) {
+            const source = getPisiSheetCellSource(
+                table,
+                row,
+                col
+            );
 
-    for (const cell of cells) {
-        if (cell.dataset.formula) {
-            if (cell.dataset.formula.includes('#REF!')) {
-                cell.textContent = '#REF!';
+            if (!source.formula) {
+                renderPisiSheetCellFromDatabase(
+                    table,
+                    row,
+                    col,
+                    source.value
+                );
                 continue;
             }
 
+            if (source.formula.includes('#REF!')) {
+                renderPisiSheetCellFromDatabase(
+                    table,
+                    row,
+                    col,
+                    '#REF!'
+                );
+                continue;
+            }
+
+            const ref =
+                pisiColumnName(col) +
+                String(row + 1);
             const result = evaluatePisiSheetFormulaResult(
                 table,
-                cell.dataset.formula,
-                new Set([cell.dataset.cell])
+                source.formula,
+                new Set([ref])
             );
-            cell.textContent = result.ok
-                ? formatPisiSheetValue(result.value)
-                : result.error;
+
+            renderPisiSheetCellFromDatabase(
+                table,
+                row,
+                col,
+                result.ok
+                    ? formatPisiSheetValue(result.value)
+                    : result.error
+            );
         }
     }
 }
+
 
 function getPisiSheetFormulaLocale() {
     return window.pisiI18n?.getLanguage?.() === 'tr'
@@ -297,8 +349,16 @@ function getPisiSheetCellNumericValue(table, ref, stack = new Set()) {
 }
 
 function getPisiSheetCellValue(table, ref, stack = new Set()) {
-    const cell = table.querySelector(`td[data-cell="${ref}"]`);
-    if (!cell) {
+    const position = parsePisiCellRef(ref);
+    const dimensions = getPisiSheetDatabaseDimensions(table);
+
+    if (
+        !position ||
+        position.row < 0 ||
+        position.col < 0 ||
+        position.row >= dimensions.rows ||
+        position.col >= dimensions.cols
+    ) {
         return {
             value: NaN,
             numeric: false,
@@ -306,7 +366,13 @@ function getPisiSheetCellValue(table, ref, stack = new Set()) {
         };
     }
 
-    if (cell.dataset.formula) {
+    const source = getPisiSheetCellSource(
+        table,
+        position.row,
+        position.col
+    );
+
+    if (source.formula) {
         if (stack.has(ref)) {
             return {
                 value: NaN,
@@ -317,20 +383,23 @@ function getPisiSheetCellValue(table, ref, stack = new Set()) {
 
         const nextStack = new Set(stack);
         nextStack.add(ref);
+
         const result = evaluatePisiSheetFormulaResult(
             table,
-            cell.dataset.formula,
+            source.formula,
             nextStack
         );
 
         return {
             value: result.ok ? result.value : null,
-            numeric: result.ok && typeof result.value === 'number',
+            numeric:
+                result.ok &&
+                typeof result.value === 'number',
             error: !result.ok
         };
     }
 
-    const text = String(cell.textContent || '').trim();
+    const text = String(source.value || '').trim();
 
     if (!text) {
         return {
@@ -349,15 +418,18 @@ function getPisiSheetCellValue(table, ref, stack = new Set()) {
     };
 }
 
-function getPisiSheetRangeCellValues(table, startRef, endRef, stack = new Set()) {
+
+function getPisiSheetRangeCellValues(
+    table,
+    startRef,
+    endRef,
+    stack = new Set()
+) {
     const start = parsePisiCellRef(startRef);
     const end = parsePisiCellRef(endRef);
-    const rows = table.querySelectorAll('tbody tr');
-    const rowCount = rows.length;
-    const colCount = Math.max(
-        0,
-        ...Array.from(rows).map((row) => row.querySelectorAll('td').length)
-    );
+    const dimensions = getPisiSheetDatabaseDimensions(table);
+    const rowCount = dimensions.rows;
+    const colCount = dimensions.cols;
 
     if (
         !start ||
@@ -397,7 +469,7 @@ function getPisiSheetRangeCellValues(table, startRef, endRef, stack = new Set())
         for (let col = colMin; col <= colMax; col += 1) {
             const result = getPisiSheetCellValue(
                 table,
-                `${pisiColumnName(col)}${row + 1}`,
+                pisiColumnName(col) + String(row + 1),
                 stack
             );
 
@@ -417,6 +489,7 @@ function getPisiSheetRangeCellValues(table, startRef, endRef, stack = new Set())
         error: false
     };
 }
+
 
 function getPisiSheetRangeValues(table, startRef, endRef, stack = new Set()) {
     const range = getPisiSheetRangeCellValues(

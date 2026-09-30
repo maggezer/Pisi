@@ -129,7 +129,21 @@ test('absolute ve Z sonrası sütun referansları structural editlerde korunur',
     );
 });
 
-test('Sheet seçim ve düzenleme mimarisi veri state ile DOM odağını ayırır', () => {
+test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () => {
+    const database = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-sheet-database.mjs'
+        ),
+        'utf8'
+    );
+    const databaseDom = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-sheet-database-dom.mjs'
+        ),
+        'utf8'
+    );
     const sheet = fs.readFileSync(
         path.join(
             root,
@@ -179,69 +193,48 @@ test('Sheet seçim ve düzenleme mimarisi veri state ile DOM odağını ayırır
         ),
         'utf8'
     );
-    const paint = fs.readFileSync(
-        path.join(
-            root,
-            'renderer/editor/pisi-editor-paint.mjs'
-        ),
-        'utf8'
-    );
-    const tableSource = [
+
+    assert.match(database, /databaseId/);
+    assert.match(database, /fields/);
+    assert.match(database, /items/);
+    assert.match(database, /views/);
+    assert.match(database, /activeViewId/);
+    assert.match(database, /fieldOrder/);
+    assert.match(database, /type: 'table'/);
+    assert.match(database, /pisiSheetDatabases = new WeakMap/);
+
+    assert.doesNotMatch(database, /querySelector/);
+    assert.doesNotMatch(database, /querySelectorAll/);
+    assert.doesNotMatch(database, /\.textContent/);
+
+    assert.match(databaseDom, /migratePisiSheetDatabaseFromDom/);
+    assert.match(databaseDom, /hydratePisiSheetDatabase/);
+    assert.match(databaseDom, /renderPisiSheetDatabase/);
+    assert.match(databaseDom, /pisiRowId/);
+    assert.match(databaseDom, /pisiColId/);
+
+    assert.match(sheet, /getPisiSheetCellSource/);
+    assert.match(sheet, /getPisiSheetDatabaseDimensions/);
+    assert.doesNotMatch(
         sheet,
-        selection,
-        interactions,
-        structure
-    ].join('\n');
+        /const text = String\(cell\.textContent/
+    );
 
-    assert.match(interactions, /event\.key === 'Tab'/);
-    assert.match(interactions, /event\.key === 'Enter'/);
-    assert.match(interactions, /pisiSheetDragSelection/);
-    assert.match(interactions, /table\.addEventListener\('mouseover'/);
-    assert.match(tableSource, /deletePisiSheetRows/);
-    assert.match(tableSource, /deletePisiSheetColumns/);
-    assert.match(tableSource, /applyPisiSheetCellFormat/);
-    assert.match(tableSource, /transformPisiSheetFormulaReferences/);
+    assert.match(structure, /insertPisiSheetItem/);
+    assert.match(structure, /deletePisiSheetItems/);
+    assert.match(structure, /insertPisiSheetField/);
+    assert.match(structure, /deletePisiSheetFields/);
+    assert.match(
+        structure,
+        /transformPisiSheetDatabaseFormulas/
+    );
+    assert.doesNotMatch(structure, /tbody\.insertBefore/);
+    assert.doesNotMatch(structure, /cell\.remove\(\)/);
 
-    assert.match(structure, /verticalMiddle/);
-    assert.match(structure, /toggleWrap/);
-    assert.match(structure, /borderAll/);
-    assert.match(structure, /borderNone/);
-
-    assert.match(sheet, /PISI_SHEET_MAX_ROWS = 300/);
-    assert.match(sheet, /PISI_SHEET_MAX_COLS = 80/);
-    assert.match(toolbar, /max="300".*data-pisi-excel-rows/);
-    assert.match(toolbar, /max="80".*data-pisi-excel-cols/);
-
-    assert.doesNotMatch(popovers, /openPisiToolbarTablePopover/);
-    assert.doesNotMatch(popovers, /data-pisi-sheet-popover-action/);
-    assert.doesNotMatch(popovers, /data-pisi-table-custom-rows/);
-    assert.doesNotMatch(unifiedToolbar, /pisi-sheet-inline-tools/);
-    assert.doesNotMatch(unifiedToolbar, /data-pisi-excel-action=/);
-    assert.match(unifiedToolbar, /insertPisiSheet\(editor, 5, 5\)/);
-
-    assert.match(interactions, /data-pisi-sheet-context-action/);
-    assert.match(interactions, /action: 'addRow'/);
-    assert.match(interactions, /action: 'deleteRow'/);
-    assert.match(interactions, /action: 'addCol'/);
-    assert.match(interactions, /action: 'deleteCol'/);
-
-    assert.match(structure, /pisiSheetColResizer/);
-    assert.match(interactions, /PISI_SHEET_MIN_COLUMN_WIDTH = 48/);
-    assert.match(interactions, /PISI_SHEET_MAX_COLUMN_WIDTH = 640/);
-    assert.match(interactions, /storePisiSheetColumnWidth/);
-    assert.match(structure, /pisiColumnWidths/);
-
-    assert.match(structure, /createPisiSheetStableId/);
-    assert.match(structure, /pisiColumnIds/);
-    assert.match(structure, /pisiRowId/);
     assert.match(selection, /rowId/);
     assert.match(selection, /colId/);
     assert.match(selection, /normalizePisiSheetSelection/);
-    assert.match(structure, /reconcilePisiSheetSelection\(table\)/);
-
-    assert.doesNotMatch(sheet, /contenteditable="true"/);
-    assert.doesNotMatch(structure, /contenteditable="true"/);
-    assert.match(selection, /pisiSheetEditStates/);
+    assert.match(selection, /getPisiSheetCellSource/);
     assert.match(
         selection,
         /setAttribute\('contenteditable', 'plaintext-only'\)/
@@ -250,30 +243,29 @@ test('Sheet seçim ve düzenleme mimarisi veri state ile DOM odağını ayırır
         selection,
         /setAttribute\('contenteditable', 'false'\)/
     );
-    assert.match(selection, /beginPisiSheetCellEdit/);
-    assert.match(selection, /finishPisiSheetCellEdit/);
 
-    assert.match(interactions, /pisi-sheet-column-menu/);
-    assert.match(interactions, /pisi-sheet-column-name-input/);
-    assert.match(interactions, /openPisiSheetColumnMenu/);
-    assert.doesNotMatch(
-        interactions,
-        /beginPisiSheetColumnLabelEdit/
-    );
-    assert.doesNotMatch(
-        interactions,
-        /data-pisi-sheet-editing/
-    );
+    assert.match(interactions, /hydratePisiSheetDatabase\(table\)/);
+    assert.match(interactions, /renderPisiSheetDatabase\(table\)/);
+    assert.match(interactions, /setPisiSheetFieldWidth/);
+    assert.doesNotMatch(interactions, /pisiColumnWidths/);
 
-    assert.match(paint, /notifyPisiEditorChanged\(editor, rehydrate = true\)/);
-    assert.match(structure, /notifyPisiEditorChanged\(editor, false\)/);
+    assert.match(interactions, /event\.key === 'Tab'/);
+    assert.match(interactions, /event\.key === 'Enter'/);
+    assert.match(interactions, /pisiSheetDragSelection/);
+    assert.match(interactions, /data-pisi-sheet-context-action/);
+    assert.match(interactions, /action: 'addRow'/);
+    assert.match(interactions, /action: 'deleteRow'/);
+    assert.match(interactions, /action: 'addCol'/);
+    assert.match(interactions, /action: 'deleteCol'/);
 
-    assert.doesNotMatch(
-        interactions,
-        /getPisiSelectedSheetCells\(table\)\.includes\(cell\)/
-    );
-    assert.doesNotMatch(
-        selection,
-        /table\.querySelectorAll\(\s*['"]\.pisi-sheet-cell-selected/
-    );
+    assert.match(sheet, /PISI_SHEET_MAX_ROWS = 300/);
+    assert.match(sheet, /PISI_SHEET_MAX_COLS = 80/);
+    assert.match(toolbar, /max="300".*data-pisi-excel-rows/);
+    assert.match(toolbar, /max="80".*data-pisi-excel-cols/);
+
+    assert.doesNotMatch(popovers, /openPisiToolbarTablePopover/);
+    assert.doesNotMatch(popovers, /data-pisi-sheet-popover-action/);
+    assert.doesNotMatch(unifiedToolbar, /pisi-sheet-inline-tools/);
+    assert.doesNotMatch(unifiedToolbar, /data-pisi-excel-action=/);
+    assert.match(unifiedToolbar, /insertPisiSheet\(editor, 5, 5\)/);
 });

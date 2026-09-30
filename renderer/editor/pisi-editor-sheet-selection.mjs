@@ -5,16 +5,9 @@ const pisiRenderedSheetSelectionCells = new WeakMap();
 const pisiSheetEditStates = new WeakMap();
 
 function getPisiSheetDimensions(table) {
-    const rows = Array.from(table.querySelectorAll('tbody tr'));
-
-    return {
-        rows: rows.length,
-        cols: Math.max(
-            0,
-            ...rows.map((row) => row.querySelectorAll('td').length)
-        )
-    };
+    return getPisiSheetDatabaseDimensions(table);
 }
+
 
 function getPisiSheetCellPosition(cell) {
     if (!cell) return null;
@@ -385,6 +378,15 @@ function focusPisiSheetCell(cell) {
 function syncPisiSheetFormulaInput(cell) {
     if (!cell) return;
 
+    const table = cell.closest('table[data-pisi-sheet]');
+    const position = getPisiSheetCellPosition(cell);
+    if (!table || !position) return;
+
+    const source = getPisiSheetCellSource(
+        table,
+        position.row,
+        position.col
+    );
     const editor = getEditorForPisiElement(cell);
     const toolbar = editor
         ? document.querySelector(
@@ -398,16 +400,18 @@ function syncPisiSheetFormulaInput(cell) {
 
     if (formulaInput) {
         formulaInput.value =
-            cell.dataset.formula ||
-            String(cell.textContent || '').trim();
+            source.formula ||
+            source.value;
     }
 }
+
 
 function beginPisiSheetCellEdit(cell, options = {}) {
     if (!cell) return false;
 
     const table = cell.closest('table[data-pisi-sheet]');
-    if (!table) return false;
+    const position = getPisiSheetCellPosition(cell);
+    if (!table || !position) return false;
 
     const current = pisiSheetEditStates.get(table);
 
@@ -424,14 +428,19 @@ function beginPisiSheetCellEdit(cell, options = {}) {
 
     selectPisiSheetCell(cell);
 
-    const originalText = String(cell.textContent || '');
-    const originalFormula = cell.dataset.formula || null;
-    const sourceText = originalFormula || originalText;
+    const source = getPisiSheetCellSource(
+        table,
+        position.row,
+        position.col
+    );
+    const sourceText =
+        source.formula ||
+        source.value;
 
     pisiSheetEditStates.set(table, {
         cell,
-        originalText,
-        originalFormula
+        row: position.row,
+        col: position.col
     });
 
     cell.classList.add('pisi-sheet-cell-editing');
@@ -462,22 +471,16 @@ function beginPisiSheetCellEdit(cell, options = {}) {
     return true;
 }
 
+
 function finishPisiSheetCellEdit(table, options = {}) {
     const state = pisiSheetEditStates.get(table);
     if (!state) return false;
 
     pisiSheetEditStates.delete(table);
+
     const cell = state.cell;
 
     if (options.commit === false) {
-        cell.textContent = state.originalText;
-
-        if (state.originalFormula) {
-            cell.dataset.formula = state.originalFormula;
-        } else {
-            delete cell.dataset.formula;
-        }
-
         pisiEditedSheetCells.delete(cell);
     } else {
         commitPisiSheetCell(cell);
@@ -500,6 +503,7 @@ function finishPisiSheetCellEdit(table, options = {}) {
 
     return true;
 }
+
 
 function isPisiSheetEditingCell(table, cell) {
     return pisiSheetEditStates.get(table)?.cell === cell;

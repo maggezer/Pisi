@@ -103,6 +103,46 @@
     ]
   },
   {
+    "module": "editor.sheetDatabase",
+    "path": "renderer/editor/pisi-editor-sheet-database.mjs",
+    "bindings": [
+      "PISI_SHEET_DATABASE_VERSION",
+      "PISI_SHEET_FORMAT_PROPERTIES",
+      "pisiSheetDatabases",
+      "createPisiSheetDatabase",
+      "normalizePisiSheetDatabase",
+      "attachPisiSheetDatabase",
+      "getPisiSheetDatabase",
+      "persistPisiSheetDatabase",
+      "getPisiSheetOrderedFields",
+      "getPisiSheetDatabaseDimensions",
+      "getPisiSheetField",
+      "getPisiSheetItem",
+      "getPisiSheetCellSource",
+      "setPisiSheetCellSource",
+      "setPisiSheetCellFormat",
+      "clearPisiSheetCell",
+      "renamePisiSheetField",
+      "setPisiSheetFieldWidth",
+      "insertPisiSheetItem",
+      "deletePisiSheetItems",
+      "insertPisiSheetField",
+      "deletePisiSheetFields",
+      "transformPisiSheetDatabaseFormulas"
+    ]
+  },
+  {
+    "module": "editor.sheetDatabaseDom",
+    "path": "renderer/editor/pisi-editor-sheet-database-dom.mjs",
+    "bindings": [
+      "capturePisiSheetCellFormat",
+      "applyPisiSheetCellFormatToDom",
+      "hydratePisiSheetDatabase",
+      "renderPisiSheetDatabase",
+      "renderPisiSheetCellFromDatabase"
+    ]
+  },
+  {
     "module": "editor.sheet",
     "path": "renderer/editor/pisi-editor-sheet.mjs",
     "bindings": [

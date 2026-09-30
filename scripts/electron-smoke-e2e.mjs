@@ -350,6 +350,41 @@ try {
             table.querySelector('td[data-cell="B1"]')
                 ?.getAttribute('contenteditable') || '';
 
+        const databaseAfterCommit =
+            window.getPisiSheetDatabase?.(table) || null;
+        const modelValueAfterCommit =
+            window.getPisiSheetCellValue?.(table, 'B1')?.value;
+        const modelShapeAfterCommit = {
+            databaseId: databaseAfterCommit?.databaseId || '',
+            fields: databaseAfterCommit?.fields?.length || 0,
+            items: databaseAfterCommit?.items?.length || 0,
+            views: databaseAfterCommit?.views?.length || 0,
+            activeViewId: databaseAfterCommit?.activeViewId || '',
+            firstFieldId: databaseAfterCommit?.fields?.[0]?.id || '',
+            firstItemId: databaseAfterCommit?.items?.[0]?.id || ''
+        };
+
+        const modelCell = table.querySelector('td[data-cell="B1"]');
+        if (modelCell) {
+            modelCell.textContent = '999';
+        }
+
+        const modelValueAfterDomTamper =
+            window.getPisiSheetCellValue?.(table, 'B1')?.value;
+        window.recalcPisiSheet?.(table);
+        const domValueAfterModelRecalc =
+            table.querySelector('td[data-cell="B1"]')
+                ?.textContent?.trim() || '';
+        const serializedDatabase = (() => {
+            try {
+                return JSON.parse(
+                    table.dataset.pisiSheetModel || '{}'
+                );
+            } catch {
+                return {};
+            }
+        })();
+
         const firstHeader = table.querySelector(
             'thead th[data-col-header="0"]'
         );
@@ -391,6 +426,9 @@ try {
                 'thead th[data-col-header="0"] .pisi-sheet-col-label'
             )?.textContent?.trim() || '';
 
+        const renamedModelField =
+            window.getPisiSheetField?.(table, 0)?.name || '';
+
         const resizeHeader = table.querySelector(
             'thead th[data-col-header="0"]'
         );
@@ -424,6 +462,9 @@ try {
             resizeHeader?.getBoundingClientRect().width || 0;
         const bodyWidthAfterResize =
             firstCell.getBoundingClientRect().width || 0;
+
+        const modelWidthAfterResize =
+            window.getPisiSheetField?.(table, 0)?.width || 0;
 
         firstCell.dispatchEvent(new MouseEvent('contextmenu', {
             bubbles: true,
@@ -459,6 +500,9 @@ try {
             'thead th[data-col-header="0"]'
         );
 
+        const databaseAfterAdd =
+            window.getPisiSheetDatabase?.(table) || null;
+
         return {
             ok: true,
             hasTableTrigger: Boolean(tableTrigger),
@@ -484,16 +528,26 @@ try {
             activeAfterCommit,
             committedValue,
             editableAfterCommit,
+            modelValueAfterCommit,
+            modelValueAfterDomTamper,
+            domValueAfterModelRecalc,
+            modelShapeAfterCommit,
+            serializedDatabaseVersion:
+                serializedDatabase.version || 0,
+            serializedDatabaseId:
+                serializedDatabase.databaseId || '',
             headerHeight,
             bodyHeight,
             selectedAfterHeaderClick,
             activeAfterHeaderClick,
             columnMenuPresent: Boolean(columnMenu),
             renamedHeader,
+            renamedModelField,
             hasColumnResizer: Boolean(firstResizer),
             widthBeforeResize,
             widthAfterResize,
             bodyWidthAfterResize,
+            modelWidthAfterResize,
             contextMenuPresent: Boolean(menu),
             contextMenuActions: menuActions,
             contextMenuClosedAfterAction:
@@ -503,6 +557,10 @@ try {
             rowsBefore,
             rowsAfter:
                 table.querySelectorAll('tbody tr').length,
+            modelRowsAfterAdd:
+                databaseAfterAdd?.items?.length || 0,
+            modelFieldsAfterAdd:
+                databaseAfterAdd?.fields?.length || 0,
             stableRowIdAfterAdd:
                 firstCellAfterAdd?.dataset.pisiRowId || '',
             stableColIdAfterAdd:
@@ -540,16 +598,36 @@ try {
         sheetResult.activeAfterCommit !== 'B2' ||
         sheetResult.committedValue !== '42' ||
         sheetResult.editableAfterCommit !== 'false' ||
+        sheetResult.modelValueAfterCommit !== 42 ||
+        sheetResult.modelValueAfterDomTamper !== 42 ||
+        sheetResult.domValueAfterModelRecalc !== '42' ||
+        !sheetResult.modelShapeAfterCommit.databaseId ||
+        sheetResult.modelShapeAfterCommit.fields !== 5 ||
+        sheetResult.modelShapeAfterCommit.items !== 5 ||
+        sheetResult.modelShapeAfterCommit.views !== 1 ||
+        !sheetResult.modelShapeAfterCommit.activeViewId ||
+        sheetResult.modelShapeAfterCommit.firstFieldId !==
+            sheetResult.originalColId ||
+        sheetResult.modelShapeAfterCommit.firstItemId !==
+            sheetResult.originalRowId ||
+        sheetResult.serializedDatabaseVersion !== 1 ||
+        sheetResult.serializedDatabaseId !==
+            sheetResult.modelShapeAfterCommit.databaseId ||
         sheetResult.headerHeight > sheetResult.bodyHeight ||
         sheetResult.selectedAfterHeaderClick !== 0 ||
         sheetResult.activeAfterHeaderClick !== '' ||
         !sheetResult.columnMenuPresent ||
         sheetResult.renamedHeader !== 'Project' ||
+        sheetResult.renamedModelField !== 'Project' ||
         !sheetResult.hasColumnResizer ||
         sheetResult.widthAfterResize <
             sheetResult.widthBeforeResize + 40 ||
         Math.abs(
             sheetResult.bodyWidthAfterResize -
+            sheetResult.widthAfterResize
+        ) > 2 ||
+        Math.abs(
+            sheetResult.modelWidthAfterResize -
             sheetResult.widthAfterResize
         ) > 2 ||
         !sheetResult.contextMenuPresent ||
@@ -562,6 +640,8 @@ try {
             ]) ||
         !sheetResult.contextMenuClosedAfterAction ||
         sheetResult.rowsAfter !== sheetResult.rowsBefore + 1 ||
+        sheetResult.modelRowsAfterAdd !== sheetResult.rowsAfter ||
+        sheetResult.modelFieldsAfterAdd !== 5 ||
         sheetResult.stableRowIdAfterAdd !==
             sheetResult.originalRowId ||
         sheetResult.stableColIdAfterAdd !==
