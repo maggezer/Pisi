@@ -164,6 +164,70 @@ try {
         throw new Error('Project chooser stayed visible after restoring the last project.');
     }
 
+    const watcherProbe = await cdp.evaluate(`(async () => {
+        window.__pisiFsWatchProbeCount = 0;
+        window.__pisiFsWatchProbeOff?.();
+        window.__pisiFsWatchProbeOff =
+            window.pisiProject?.onFileSystemChanged?.(() => {
+                window.__pisiFsWatchProbeCount += 1;
+            }) || null;
+
+        const created = await window.pisiProject?.createPisiFile?.(
+            window.currentProjectFolder,
+            '.node'
+        );
+
+        return {
+            ok: Boolean(created?.ok && created?.fullPath),
+            fullPath: created?.fullPath || null
+        };
+    })()`);
+
+    if (!watcherProbe?.ok || !watcherProbe.fullPath) {
+        throw new Error(
+            'Internal watcher probe file could not be created: ' +
+            JSON.stringify(watcherProbe)
+        );
+    }
+
+    await sleep(1000);
+
+    const internalWatchCount = await cdp.evaluate(
+        'window.__pisiFsWatchProbeCount || 0'
+    );
+    if (internalWatchCount !== 0) {
+        throw new Error(
+            'Internal Pisi write leaked as external filesystem refresh: ' +
+            internalWatchCount
+        );
+    }
+
+    await sleep(500);
+    const probeText = await fs.readFile(watcherProbe.fullPath, 'utf8');
+    await fs.writeFile(
+        watcherProbe.fullPath,
+        probeText + '\n',
+        'utf8'
+    );
+    await sleep(900);
+
+    const externalWatchCount = await cdp.evaluate(
+        'window.__pisiFsWatchProbeCount || 0'
+    );
+    if (externalWatchCount < 1) {
+        throw new Error(
+            'External filesystem change was not delivered to renderer.'
+        );
+    }
+
+    await cdp.evaluate(`(async () => {
+        window.__pisiFsWatchProbeOff?.();
+        window.__pisiFsWatchProbeOff = null;
+        await window.pisiProject?.deletePisiFile?.(
+            ${JSON.stringify(watcherProbe.fullPath)}
+        );
+    })()`);
+
     const clickExpression = "(() => { const button = document.querySelector('[data-right-tab=\\\"tags\\\"]'); if (!button) return { ok: false, reason: 'tags button missing' }; button.click(); return { ok: true, buttonActive: button.classList.contains('active'), pageActive: document.getElementById('right-tab-tags')?.classList.contains('active') === true }; })()";
     const clickResult = await cdp.evaluate(clickExpression);
 
@@ -346,7 +410,7 @@ try {
         throw new Error('Renderer startup marker was not observed.\n' + logs);
     }
 
-    console.log('[E2E] Electron startup, last-project restore, Sheet toolbar and right-panel interaction passed.');
+    console.log('[E2E] Electron startup, watcher filtering, last-project restore, Sheet toolbar and right-panel interaction passed.');
 } finally {
     cdp?.close();
     if (child.exitCode === null) {
