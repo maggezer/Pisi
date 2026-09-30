@@ -10,6 +10,9 @@ function shouldIgnorePisiSheetGlobalKey(event) {
     if (
         target.matches(
             'input, textarea, select, [data-pisi-excel-formula]'
+        ) ||
+        target.closest(
+            '.pisi-editor-toolbar, .pisi-word-toolbar'
         )
     ) {
         return true;

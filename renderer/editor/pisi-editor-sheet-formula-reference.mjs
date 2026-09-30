@@ -1,32 +1,91 @@
 import { registerModule } from "../core/module-registry.mjs";
 
 let pisiSheetFormulaReferenceSession = null;
+let pisiActiveSheetFormulaInput = null;
 
-function getPisiSheetFormulaInputForTable(table) {
-    const active = document.activeElement;
-
-    if (
-        !(active instanceof HTMLInputElement) ||
-        !active.matches('[data-pisi-excel-formula]') ||
-        !String(active.value || '').trimStart().startsWith('=')
-    ) {
-        return null;
-    }
-
-    const toolbar = active.closest(
+function getPisiSheetFormulaInputEditor(input) {
+    const toolbar = input?.closest?.(
         '.pisi-editor-toolbar, .pisi-word-toolbar'
     );
     const targetId = toolbar?.dataset?.editorTarget;
-    const editor = targetId
+
+    return targetId
         ? document.getElementById(targetId)
         : null;
+}
 
-    if (!editor || !editor.contains(table)) {
-        return null;
+function isPisiSheetFormulaInputForTable(input, table) {
+    if (
+        !(input instanceof HTMLInputElement) ||
+        !input.matches('[data-pisi-excel-formula]') ||
+        !String(input.value || '').trimStart().startsWith('=')
+    ) {
+        return false;
     }
 
-    return active;
+    const editor = getPisiSheetFormulaInputEditor(input);
+
+    return Boolean(
+        editor &&
+        table &&
+        editor.contains(table)
+    );
 }
+
+function getPisiSheetFormulaInputForTable(table) {
+    const focused = document.activeElement;
+
+    if (isPisiSheetFormulaInputForTable(focused, table)) {
+        pisiActiveSheetFormulaInput = focused;
+        return focused;
+    }
+
+    return isPisiSheetFormulaInputForTable(
+        pisiActiveSheetFormulaInput,
+        table
+    )
+        ? pisiActiveSheetFormulaInput
+        : null;
+}
+
+function trackPisiSheetFormulaInput(event) {
+    const input = event.target;
+
+    if (
+        !(input instanceof HTMLInputElement) ||
+        !input.matches('[data-pisi-excel-formula]')
+    ) {
+        return;
+    }
+
+    if (
+        String(input.value || '').trimStart().startsWith('=')
+    ) {
+        pisiActiveSheetFormulaInput = input;
+    } else if (pisiActiveSheetFormulaInput === input) {
+        pisiActiveSheetFormulaInput = null;
+    }
+}
+
+function clearPisiSheetFormulaInputSession(input = null) {
+    if (
+        !input ||
+        pisiActiveSheetFormulaInput === input
+    ) {
+        pisiActiveSheetFormulaInput = null;
+    }
+}
+
+document.addEventListener(
+    'focusin',
+    trackPisiSheetFormulaInput,
+    true
+);
+document.addEventListener(
+    'input',
+    trackPisiSheetFormulaInput,
+    true
+);
 
 function pisiSheetPointToReference(point) {
     if (!point) return '';
@@ -217,6 +276,10 @@ function applyPisiSheetFormulaInputOnEnter(event) {
     finishPisiSheetFormulaReferencePick();
     applyPisiSheetFormula(table, input.value);
     schedulePisiSheetEditorNotification(table);
+    table.classList.remove(
+        'pisi-sheet-formula-reference-mode'
+    );
+    clearPisiSheetFormulaInputSession(input);
 }
 
 document.addEventListener(
@@ -246,6 +309,14 @@ Object.defineProperties(moduleApi, {
     "isPisiSheetFormulaInputActive": {
         enumerable: true,
         get() { return isPisiSheetFormulaInputActive; }
+    },
+    "trackPisiSheetFormulaInput": {
+        enumerable: true,
+        get() { return trackPisiSheetFormulaInput; }
+    },
+    "clearPisiSheetFormulaInputSession": {
+        enumerable: true,
+        get() { return clearPisiSheetFormulaInputSession; }
     },
     "pisiSheetPointToReference": {
         enumerable: true,

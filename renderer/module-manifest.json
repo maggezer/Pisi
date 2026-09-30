@@ -235,7 +235,9 @@
       "isPisiSheetFormulaInputActive",
       "pisiSheetPointToReference",
       "pisiSheetPointsToReference",
-      "applyPisiSheetFormulaInputOnEnter"
+      "applyPisiSheetFormulaInputOnEnter",
+      "trackPisiSheetFormulaInput",
+      "clearPisiSheetFormulaInputSession"
     ]
   },
   {

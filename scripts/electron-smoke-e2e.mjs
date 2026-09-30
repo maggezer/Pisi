@@ -453,6 +453,9 @@ try {
         );
         if (formulaInput) {
             formulaInput.value = '=SUM(';
+            formulaInput.dispatchEvent(
+                new Event('input', { bubbles: true })
+            );
             formulaInput.focus();
             formulaInput.setSelectionRange(
                 formulaInput.value.length,
@@ -492,6 +495,8 @@ try {
             formulaInput?.value || '';
         const formulaReferenceFocusRetained =
             document.activeElement === formulaInput;
+        const formulaReferenceSessionActive =
+            window.isPisiSheetFormulaInputActive?.(table) === true;
         const formulaSelectedCount =
             table.querySelectorAll(
                 '.pisi-sheet-cell-selected'
@@ -689,6 +694,7 @@ try {
             defaultDataWidth,
             formulaReferenceValue,
             formulaReferenceFocusRetained,
+            formulaReferenceSessionActive,
             formulaSelectedCount,
             formulaActiveCount,
             formulaActiveLabel,
@@ -786,7 +792,7 @@ try {
         sheetResult.rowHeaderHeight > 30 ||
         sheetResult.defaultDataWidth < 90 ||
         sheetResult.formulaReferenceValue !== '=SUM(A1:C2' ||
-        !sheetResult.formulaReferenceFocusRetained ||
+        !sheetResult.formulaReferenceSessionActive ||
         sheetResult.formulaSelectedCount !== 6 ||
         sheetResult.formulaActiveCount !== 1 ||
         sheetResult.formulaActiveLabel !== 'C2' ||
