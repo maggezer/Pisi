@@ -636,8 +636,14 @@ function syncProjectWatchers(folderPath) {
                         ? path.join(directoryPath, String(fileName))
                         : directoryPath;
                     const isInternalChange = fileName
-                        ? isRecentInternalFileChange(changedPath)
-                        : hasRecentInternalFileChangeInside(directoryPath);
+                        ? (
+                            isRecentInternalFileChange(changedPath) ||
+                            hasRecentInternalDirectoryChange(directoryPath)
+                        )
+                        : (
+                            hasRecentInternalDirectoryChange(directoryPath) ||
+                            hasRecentInternalFileChangeInside(directoryPath)
+                        );
 
                     if (!isInternalChange) {
                         notifyProjectChanged(
@@ -646,12 +652,17 @@ function syncProjectWatchers(folderPath) {
                         );
                     }
 
-                    clearTimeout(projectWatcherRescanTimer);
-                    projectWatcherRescanTimer = setTimeout(() => {
-                        if (activeProjectFolder) {
-                            syncProjectWatchers(activeProjectFolder);
-                        }
-                    }, 350);
+                    if (
+                        eventType === 'rename' ||
+                        !fileName
+                    ) {
+                        clearTimeout(projectWatcherRescanTimer);
+                        projectWatcherRescanTimer = setTimeout(() => {
+                            if (activeProjectFolder) {
+                                syncProjectWatchers(activeProjectFolder);
+                            }
+                        }, 450);
+                    }
                 }
             );
 
