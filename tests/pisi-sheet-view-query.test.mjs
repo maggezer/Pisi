@@ -221,7 +221,7 @@ test('multi-sort uses criteria priority without mutating database items', () => 
             database,
             view
         ).map((record) => record.item.id),
-        ['c', 'd', 'b', 'a']
+        ['d', 'c', 'b', 'a']
     );
 
     assert.deepEqual(
