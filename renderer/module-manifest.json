@@ -216,6 +216,8 @@
       "focusPisiSheetCell",
       "syncPisiSheetFormulaInput",
       "beginPisiSheetCellEdit",
+      "markPisiSheetCellEditFormulaReference",
+      "getPisiSheetCellEditState",
       "finishPisiSheetCellEdit",
       "isPisiSheetEditingCell",
       "extendPisiSheetSelectionByKeyboard",

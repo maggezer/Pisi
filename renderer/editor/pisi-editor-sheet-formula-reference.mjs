@@ -104,12 +104,169 @@ function pisiSheetPointsToReference(anchor, focus) {
     return start === end ? start : start + ':' + end;
 }
 
+function getPisiSheetEditableCaretOffset(cell) {
+    const text = String(cell?.textContent || '');
+    const selection = window.getSelection?.();
+
+    if (!cell || !selection || selection.rangeCount < 1) {
+        return text.length;
+    }
+
+    const range = selection.getRangeAt(0);
+
+    if (!cell.contains(range.startContainer)) {
+        return text.length;
+    }
+
+    const before = document.createRange();
+    before.selectNodeContents(cell);
+
+    try {
+        before.setEnd(
+            range.startContainer,
+            range.startOffset
+        );
+    } catch {
+        return text.length;
+    }
+
+    return Math.max(
+        0,
+        Math.min(text.length, before.toString().length)
+    );
+}
+
+function setPisiSheetEditableCaretOffset(cell, offset) {
+    if (!cell) return;
+
+    const text = String(cell.textContent || '');
+    const safeOffset = Math.max(
+        0,
+        Math.min(text.length, Number(offset) || 0)
+    );
+
+    if (!cell.firstChild) {
+        cell.appendChild(document.createTextNode(text));
+    }
+
+    const textNode = Array.from(cell.childNodes).find(
+        (node) => node.nodeType === Node.TEXT_NODE
+    );
+
+    if (!textNode) return;
+
+    cell.focus({ preventScroll: true });
+
+    const range = document.createRange();
+    const selection = window.getSelection?.();
+
+    range.setStart(
+        textNode,
+        Math.min(safeOffset, textNode.textContent.length)
+    );
+    range.collapse(true);
+
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+}
+
+function isPisiSheetCellReferenceExpression(editState) {
+    const text = String(
+        editState?.cell?.textContent || ''
+    );
+
+    if (editState?.forceFormula === true) {
+        return true;
+    }
+
+    const trimmed = text.trimStart();
+
+    return (
+        trimmed.startsWith('=') ||
+        /[+\-*/^(:,;=<>]\s*$/.test(text)
+    );
+}
+
+function createPisiSheetCellReferenceTarget(
+    table,
+    clickedCell
+) {
+    const editState = getPisiSheetCellEditState(table);
+
+    if (
+        !editState ||
+        editState.cell === clickedCell ||
+        !isPisiSheetCellReferenceExpression(editState)
+    ) {
+        return null;
+    }
+
+    const activePoint = getPisiSheetCellPosition(
+        editState.cell
+    );
+
+    if (!activePoint) return null;
+
+    const start = getPisiSheetEditableCaretOffset(
+        editState.cell
+    );
+
+    return {
+        kind: 'cell',
+        editCell: editState.cell,
+        activePoint,
+        start,
+        end: start
+    };
+}
+
+function createPisiSheetInputReferenceTarget(table) {
+    const input = getPisiSheetFormulaInputForTable(table);
+
+    if (!input) return null;
+
+    const start = Number.isInteger(input.selectionStart)
+        ? input.selectionStart
+        : input.value.length;
+    const end = Number.isInteger(input.selectionEnd)
+        ? input.selectionEnd
+        : start;
+
+    return {
+        kind: 'input',
+        input,
+        activePoint:
+            getPisiSheetActivePoint(table),
+        start,
+        end
+    };
+}
+
 function writePisiSheetFormulaReference(session, focus) {
     const reference = pisiSheetPointsToReference(
         session.anchor,
         focus
     );
     if (!reference) return false;
+
+    if (session.kind === 'cell') {
+        const cell = session.editCell;
+        const text = String(cell.textContent || '');
+        const before = text.slice(0, session.start);
+        const after = text.slice(session.end);
+
+        cell.textContent = before + reference + after;
+        session.end = session.start + reference.length;
+
+        markPisiSheetCellEditFormulaReference(
+            session.table
+        );
+        setPisiSheetEditableCaretOffset(
+            cell,
+            session.end
+        );
+        return true;
+    }
 
     const input = session.input;
     const before = input.value.slice(0, session.start);
@@ -134,47 +291,56 @@ function beginPisiSheetFormulaReferencePick(
     cell,
     event
 ) {
-    const input = getPisiSheetFormulaInputForTable(table);
     const point = getPisiSheetCellPosition(cell);
+    if (!point) return false;
 
-    if (!input || !point) return false;
+    const target =
+        createPisiSheetCellReferenceTarget(
+            table,
+            cell
+        ) ||
+        createPisiSheetInputReferenceTarget(table);
+
+    if (!target) return false;
 
     event?.preventDefault?.();
     event?.stopPropagation?.();
 
-    const start = Number.isInteger(input.selectionStart)
-        ? input.selectionStart
-        : input.value.length;
-    const end = Number.isInteger(input.selectionEnd)
-        ? input.selectionEnd
-        : start;
-
     pisiSheetFormulaReferenceSession = {
         table,
-        input,
+        ...target,
         anchor: point,
-        focus: point,
-        start,
-        end
+        focus: point
     };
 
     table.classList.add(
         'pisi-sheet-formula-reference-mode'
     );
 
+    const activePoint = target.activePoint || point;
+
     setPisiSheetSelectionState(table, {
         mode: 'range',
         anchor: point,
         focus: point,
-        active: point
+        active: activePoint
     });
     syncPisiSheetSelectionProjection(table);
+
     writePisiSheetFormulaReference(
         pisiSheetFormulaReferenceSession,
         point
     );
 
-    input.focus({ preventScroll: true });
+    if (target.kind === 'cell') {
+        setPisiSheetEditableCaretOffset(
+            target.editCell,
+            pisiSheetFormulaReferenceSession.end
+        );
+    } else {
+        target.input.focus({ preventScroll: true });
+    }
+
     return true;
 }
 
@@ -210,7 +376,7 @@ function updatePisiSheetFormulaReferencePick(
         mode: 'range',
         anchor: session.anchor,
         focus: point,
-        active: point
+        active: session.activePoint || point
     });
     syncPisiSheetSelectionProjection(table);
     writePisiSheetFormulaReference(session, point);
@@ -222,6 +388,15 @@ function finishPisiSheetFormulaReferencePick() {
     if (!session) return false;
 
     pisiSheetFormulaReferenceSession = null;
+
+    if (session.kind === 'cell') {
+        setPisiSheetEditableCaretOffset(
+            session.editCell,
+            session.end
+        );
+        return true;
+    }
+
     session.table.classList.remove(
         'pisi-sheet-formula-reference-mode'
     );

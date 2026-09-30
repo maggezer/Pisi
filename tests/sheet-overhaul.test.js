@@ -300,6 +300,12 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(selection, /getPisiSheetActiveTable/);
     assert.match(selection, /getPisiSelectedSheetPoints/);
     assert.match(selection, /getPisiSheetCellSource/);
+    assert.match(selection, /getPisiSheetCellEditState/);
+    assert.match(
+        selection,
+        /markPisiSheetCellEditFormulaReference/
+    );
+    assert.match(selection, /forceFormula/);
     assert.doesNotMatch(
         selection,
         /pisiSheetSelections = new WeakMap/
@@ -352,6 +358,7 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
 
     assert.match(sheet, /PISI_SHEET_MAX_ROWS = 300/);
     assert.match(sheet, /PISI_SHEET_MAX_COLS = 80/);
+    assert.match(sheet, /options\.forceFormula === true/);
     assert.match(toolbar, /max="300".*data-pisi-excel-rows/);
     assert.match(toolbar, /max="80".*data-pisi-excel-cols/);
 
@@ -363,6 +370,22 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         formulaReference,
         /pisiSheetPointsToReference/
+    );
+    assert.match(
+        formulaReference,
+        /createPisiSheetCellReferenceTarget/
+    );
+    assert.match(
+        formulaReference,
+        /isPisiSheetCellReferenceExpression/
+    );
+    assert.match(
+        formulaReference,
+        /markPisiSheetCellEditFormulaReference/
+    );
+    assert.match(
+        formulaReference,
+        /active: session\.activePoint \|\| point/
     );
     assert.match(
         formulaReference,
@@ -383,6 +406,10 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         componentsCss,
         /pisi-sheet-cell-selected/
+    );
+    assert.doesNotMatch(
+        componentsCss,
+        /pisi-sheet-formula-reference-mode[\s\S]*td\.pisi-sheet-cell-active[\s\S]*#42a5f5/
     );
     assert.match(
         componentsCss,

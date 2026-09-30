@@ -211,7 +211,7 @@ function applyPisiSheetFormula(table, formula) {
 }
 
 
-function commitPisiSheetCell(cell) {
+function commitPisiSheetCell(cell, options = {}) {
     if (!cell) return;
 
     const table = cell.closest('table[data-pisi-sheet]');
@@ -220,12 +220,15 @@ function commitPisiSheetCell(cell) {
     if (!table || !position) return;
 
     const value = String(cell.textContent || '').trim();
+    const formulaMode =
+        options.forceFormula === true ||
+        value.startsWith('=');
 
     setPisiSheetCellSource(
         table,
         position.row,
         position.col,
-        value.startsWith('=')
+        formulaMode
             ? { value: '', formula: value }
             : { value, formula: null }
     );
