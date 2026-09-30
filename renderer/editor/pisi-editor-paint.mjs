@@ -119,8 +119,8 @@ function buildPisiExcelToolbarControls(controls) {
     controls.dataset.rendered = '1';
     controls.innerHTML = `
         <button type="button" class="pisi-word-btn" data-pisi-excel-action="insertTable" title="Tablo ekle">▦ Tablo</button>
-        <label class="pisi-toolbar-field">Satır <input class="pisi-toolbar-number" type="number" min="1" max="80" step="1" value="5" data-pisi-excel-rows></label>
-        <label class="pisi-toolbar-field">Sütun <input class="pisi-toolbar-number" type="number" min="1" max="26" step="1" value="5" data-pisi-excel-cols></label>
+        <label class="pisi-toolbar-field">Satır <input class="pisi-toolbar-number" type="number" min="1" max="300" step="1" value="5" data-pisi-excel-rows></label>
+        <label class="pisi-toolbar-field">Sütun <input class="pisi-toolbar-number" type="number" min="1" max="80" step="1" value="5" data-pisi-excel-cols></label>
         <span class="pisi-word-separator"></span>
         <button type="button" class="pisi-word-btn" data-pisi-excel-action="addRow" title="Seçili satırın altına satır ekle">+ Satır</button>
         <button type="button" class="pisi-word-btn" data-pisi-excel-action="deleteRow" title="Seçili satırları sil">− Satır</button>
@@ -130,9 +130,33 @@ function buildPisiExcelToolbarControls(controls) {
         <span class="pisi-word-separator"></span>
         <button type="button" class="pisi-word-btn" data-pisi-excel-action="toggleBold" title="Kalın"><b>B</b></button>
         <button type="button" class="pisi-word-btn" data-pisi-excel-action="toggleItalic" title="İtalik"><i>I</i></button>
+        <button type="button" class="pisi-word-btn" data-pisi-excel-action="toggleUnderline" title="Altı çizili"><u>U</u></button>
+        <button type="button" class="pisi-word-btn" data-pisi-excel-action="toggleStrikeThrough" title="Üstü çizili"><s>S</s></button>
+        <select class="pisi-word-select" data-pisi-excel-format-select="fontFamily" title="Hücre yazı tipi">
+            <option value="Segoe UI">Segoe UI</option>
+            <option value="Arial">Arial</option>
+            <option value="Calibri">Calibri</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Consolas">Consolas</option>
+        </select>
+        <select class="pisi-word-select" data-pisi-excel-format-select="fontSize" title="Hücre yazı boyutu">
+            <option value="2">10</option>
+            <option value="3" selected>12</option>
+            <option value="4">14</option>
+            <option value="5">18</option>
+            <option value="6">24</option>
+        </select>
         <button type="button" class="pisi-word-btn" data-pisi-excel-action="alignLeft" title="Sola hizala">☰</button>
         <button type="button" class="pisi-word-btn" data-pisi-excel-action="alignCenter" title="Ortala">☷</button>
         <button type="button" class="pisi-word-btn" data-pisi-excel-action="alignRight" title="Sağa hizala">☱</button>
+        <button type="button" class="pisi-word-btn" data-pisi-excel-action="alignJustify" title="İki yana yasla">≡</button>
+        <button type="button" class="pisi-word-btn" data-pisi-excel-action="verticalTop" title="Dikey üst">⇈</button>
+        <button type="button" class="pisi-word-btn" data-pisi-excel-action="verticalMiddle" title="Dikey orta">↕</button>
+        <button type="button" class="pisi-word-btn" data-pisi-excel-action="verticalBottom" title="Dikey alt">⇊</button>
+        <button type="button" class="pisi-word-btn" data-pisi-excel-action="toggleWrap" title="Metni kaydır">↩</button>
+        <button type="button" class="pisi-word-btn" data-pisi-excel-action="borderAll" title="Kenarlık ekle">▦</button>
+        <button type="button" class="pisi-word-btn" data-pisi-excel-action="borderNone" title="Kenarlığı kaldır">□</button>
         <label class="pisi-word-color" title="Hücre yazı rengi">A<input type="color" value="#d4d4d4" data-pisi-excel-format="textColor"></label>
         <label class="pisi-word-color pisi-sheet-fill-color" title="Hücre dolgu rengi">■<input type="color" value="#1f1f20" data-pisi-excel-format="fillColor"></label>
         <button type="button" class="pisi-word-btn" data-pisi-excel-action="clearFormat" title="Biçimi temizle">Temizle</button>
