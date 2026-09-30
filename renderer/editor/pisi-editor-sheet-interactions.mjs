@@ -35,7 +35,7 @@ function hydratePisiSheets(root = document) {
             }
         });
 
-        table.addEventListener('mousedown', (event) => {
+        table.addEventListener('mousedown', (/** @type {MouseEvent} */ event) => {
             const rowHeader = event.target.closest(
                 'tbody th[data-row-header]'
             );
@@ -119,7 +119,7 @@ function hydratePisiSheets(root = document) {
             }
         });
 
-        table.addEventListener('mouseover', (event) => {
+        table.addEventListener('mouseover', (/** @type {MouseEvent} */ event) => {
             const drag = pisiSheetDragSelection;
             if (!drag || drag.table !== table) return;
             if (!(event.buttons & 1)) return;
