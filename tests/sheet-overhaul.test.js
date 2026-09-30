@@ -165,6 +165,20 @@ test('tablo arayüzünde Phase 2 gezinme, seçim, yapı ve biçimlendirme bulunu
         ),
         'utf8'
     );
+    const unifiedToolbar = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-unified-toolbar.mjs'
+        ),
+        'utf8'
+    );
+    const paint = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-paint.mjs'
+        ),
+        'utf8'
+    );
     const tableSource = [sheet, interactions, structure].join('\n');
 
     assert.match(tableSource, /event\.key === 'Tab'/);
@@ -192,4 +206,20 @@ test('tablo arayüzünde Phase 2 gezinme, seçim, yapı ve biçimlendirme bulunu
     assert.match(popovers, /data-pisi-sheet-popover-action="toggleWrap"/);
     assert.match(popovers, /data-pisi-table-custom-rows/);
     assert.match(popovers, /data-pisi-table-custom-cols/);
+
+    assert.match(unifiedToolbar, /data-pisi-excel-action="addRow"/);
+    assert.match(unifiedToolbar, /data-pisi-excel-action="deleteRow"/);
+    assert.match(unifiedToolbar, /data-pisi-excel-action="addCol"/);
+    assert.match(unifiedToolbar, /data-pisi-excel-action="deleteCol"/);
+    assert.match(unifiedToolbar, /data-pisi-excel-action="toggleWrap"/);
+    assert.match(unifiedToolbar, /data-pisi-excel-action="borderAll"/);
+    assert.match(unifiedToolbar, /data-pisi-sheet-status/);
+
+    assert.match(paint, /notifyPisiEditorChanged\(editor, rehydrate = true\)/);
+    assert.match(structure, /notifyPisiEditorChanged\(editor, false\)/);
+    assert.match(
+        interactions,
+        /if \(pisiBoundSheets\.has\(table\)\) return;[\s\S]*refreshPisiSheetCellMetadata\(table\)/
+    );
+    assert.match(interactions, /function isPisiSheetCellSelected/);
 });
