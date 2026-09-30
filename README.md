@@ -78,6 +78,7 @@ Kullanılabilir doğrulama komutları:
 
 ```bash
 npm run check:syntax
+npm run check:types
 npm run lint
 npm test
 npm run validate
@@ -85,10 +86,11 @@ npm run audit
 ```
 
 `npm run validate`, sözdizimi ve mimari kontrollerini, branding/i18n
-kontrollerini, ESLint kurallarını ve otomatik regresyon testlerini çalıştırır.
-Aynı doğrulama `main` push’larında ve pull request’lerde GitHub Actions üzerinde
-de çalışır. CI ayrıca `npm run audit` sonucunu raporlar. 29 Eylül 2026
-itibarıyla 557 regresyon testinin tamamı geçmektedir.
+kontrollerini, `tsc --checkJs` tip denetimini, ESLint kurallarını ve otomatik
+regresyon testlerini çalıştırır. Aynı doğrulama `main` push’larında ve pull
+request’lerde GitHub Actions üzerinde de çalışır. CI ayrıca `npm run audit`
+sonucunu raporlar. 30 Eylül 2026 itibarıyla dependency audit temizdir ve
+571 regresyon testinin tamamı geçmektedir.
 
 ## Arama ve bağlantılar
 
@@ -171,11 +173,10 @@ korunabilir. Bozuk JSON otomatik olarak boş içerikle ezilmez.
 
 ## Mevcut sınırlar
 
-- Sheet tarafında 80 × 26 sınırı uygulanır; satır/sütun silme, gelişmiş hücre
-  biçimlendirme, yapısal formül referansı güncelleme ve çoklu hücre seçimi
-  henüz tamamlanmamıştır.
-- `npm audit` şu anda yalnız development/build zincirinde 3 high ve 1 moderate
-  bulgu raporlamaktadır; ayrıntılar `pisi-error.md` içindedir.
+- Sheet, DOM tabanlı çalışma modelini kontrollü tutmak için 300 × 80 güvenlik
+  sınırı uygular. Satır/sütun silme, fare/klavye ile dikdörtgen çoklu seçim,
+  seçili aralığa toplu biçimlendirme ve yapısal formül referansı güncelleme
+  desteklenir.
 - Windows paketleri henüz code-signed değildir; SmartScreen ilk çalıştırmada
   uyarı gösterebilir.
 - macOS/Linux paket hedefleri, platform imzalama/notarization ve otomatik
