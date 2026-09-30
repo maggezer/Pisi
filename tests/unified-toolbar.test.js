@@ -28,7 +28,13 @@ test('editor preserves the current six-section toolbar selection', () => {
         assert.match(toolbar, new RegExp('data-pisi-formula-trigger="' + formula + '"'));
     }
     assert.doesNotMatch(toolbar, /data-pisi-formula-trigger="financial"/);
-    assert.doesNotMatch(toolbar, /data-pisi-excel-action="(?:addRow|addCol|deleteRow|deleteCol)"/);
+    assert.match(toolbar, /data-pisi-sheet-context/);
+    for (const action of ['addRow', 'deleteRow', 'addCol', 'deleteCol']) {
+        assert.match(
+            toolbar,
+            new RegExp('data-pisi-excel-action="' + action + '"')
+        );
+    }
 });
 
 test('unified text controls also target selected table cells', () => {
