@@ -294,7 +294,25 @@ function beginPisiSheetFormulaReferencePick(
     const point = getPisiSheetCellPosition(cell);
     if (!point) return false;
 
+    const currentSession =
+        pisiSheetFormulaReferenceSession;
+    const editState = getPisiSheetCellEditState(table);
+    const reusableCellTarget =
+        currentSession?.kind === 'cell' &&
+        currentSession.table === table &&
+        editState?.cell === currentSession.editCell &&
+        currentSession.editCell !== cell
+            ? {
+                kind: 'cell',
+                editCell: currentSession.editCell,
+                activePoint: currentSession.activePoint,
+                start: currentSession.start,
+                end: currentSession.end
+            }
+            : null;
+
     const target =
+        reusableCellTarget ||
         createPisiSheetCellReferenceTarget(
             table,
             cell
@@ -310,7 +328,8 @@ function beginPisiSheetFormulaReferencePick(
         table,
         ...target,
         anchor: point,
-        focus: point
+        focus: point,
+        pointerActive: true
     };
 
     table.classList.add(
@@ -383,13 +402,106 @@ function updatePisiSheetFormulaReferencePick(
     return true;
 }
 
+function movePisiSheetFormulaReferenceByKeyboard(
+    table,
+    key,
+    options = {}
+) {
+    const session = pisiSheetFormulaReferenceSession;
+
+    if (
+        !session ||
+        session.kind !== 'cell' ||
+        session.table !== table
+    ) {
+        return false;
+    }
+
+    const deltas = {
+        ArrowUp: [-1, 0],
+        ArrowDown: [1, 0],
+        ArrowLeft: [0, -1],
+        ArrowRight: [0, 1]
+    };
+    const delta = deltas[key];
+
+    if (!delta) return false;
+
+    const dimensions = getPisiSheetDimensions(table);
+    const current = session.focus;
+    const next = getPisiSheetPointByIndex(
+        table,
+        Math.max(
+            0,
+            Math.min(
+                dimensions.rows - 1,
+                current.row + delta[0]
+            )
+        ),
+        Math.max(
+            0,
+            Math.min(
+                dimensions.cols - 1,
+                current.col + delta[1]
+            )
+        )
+    );
+
+    if (!next) return false;
+
+    if (options.extend !== true) {
+        session.anchor = next;
+    }
+
+    session.focus = next;
+
+    setPisiSheetRangeSelection(
+        table,
+        session.anchor,
+        next,
+        {
+            mode: 'range',
+            active: session.activePoint || next,
+            ensureVisible: true
+        }
+    );
+
+    writePisiSheetFormulaReference(session, next);
+    setPisiSheetEditableCaretOffset(
+        session.editCell,
+        session.end
+    );
+
+    return true;
+}
+
+function closePisiSheetFormulaReferenceSession(
+    table = null
+) {
+    const session = pisiSheetFormulaReferenceSession;
+
+    if (
+        !session ||
+        (table && session.table !== table)
+    ) {
+        return false;
+    }
+
+    pisiSheetFormulaReferenceSession = null;
+    session.table.classList.remove(
+        'pisi-sheet-formula-reference-mode'
+    );
+
+    return true;
+}
+
 function finishPisiSheetFormulaReferencePick() {
     const session = pisiSheetFormulaReferenceSession;
     if (!session) return false;
 
-    pisiSheetFormulaReferenceSession = null;
-
     if (session.kind === 'cell') {
+        session.pointerActive = false;
+
         setPisiSheetEditableCaretOffset(
             session.editCell,
             session.end
@@ -397,6 +509,7 @@ function finishPisiSheetFormulaReferencePick() {
         return true;
     }
 
+    pisiSheetFormulaReferenceSession = null;
     session.table.classList.remove(
         'pisi-sheet-formula-reference-mode'
     );
@@ -476,6 +589,18 @@ Object.defineProperties(moduleApi, {
     "finishPisiSheetFormulaReferencePick": {
         enumerable: true,
         get() { return finishPisiSheetFormulaReferencePick; }
+    },
+    "movePisiSheetFormulaReferenceByKeyboard": {
+        enumerable: true,
+        get() {
+            return movePisiSheetFormulaReferenceByKeyboard;
+        }
+    },
+    "closePisiSheetFormulaReferenceSession": {
+        enumerable: true,
+        get() {
+            return closePisiSheetFormulaReferenceSession;
+        }
     },
     "isPisiSheetFormulaReferencePicking": {
         enumerable: true,

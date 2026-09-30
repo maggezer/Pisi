@@ -643,6 +643,24 @@ function hydratePisiSheets(root = document) {
                 return;
             }
 
+            if (
+                [
+                    'ArrowUp',
+                    'ArrowDown',
+                    'ArrowLeft',
+                    'ArrowRight'
+                ].includes(event.key) &&
+                movePisiSheetFormulaReferenceByKeyboard(
+                    table,
+                    event.key,
+                    { extend: event.shiftKey }
+                )
+            ) {
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
+
             if (event.key === 'Escape') {
                 event.preventDefault();
                 event.stopPropagation();

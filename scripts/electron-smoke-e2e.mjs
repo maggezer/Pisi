@@ -533,6 +533,15 @@ try {
                 formula: null
             }
         );
+        window.setPisiSheetCellSource?.(
+            table,
+            3,
+            2,
+            {
+                value: '6',
+                formula: null
+            }
+        );
         window.recalcPisiSheet?.(table);
 
         const inCellEditCell = table.querySelector(
@@ -617,6 +626,27 @@ try {
                 '.pisi-sheet-cell-active'
             ).length;
         const inCellBrowserFocusRetained =
+            document.activeElement === inCellEditCell;
+
+        inCellEditCell?.dispatchEvent(
+            new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                key: 'ArrowRight'
+            })
+        );
+
+        const inCellTextAfterArrowReference =
+            inCellEditCell?.textContent || '';
+        const inCellActiveAfterArrowReference =
+            activeCellLabel(table);
+        const inCellFocusAfterArrowReference =
+            selectionFocusLabel(table);
+        const inCellSelectedAfterArrowReference =
+            table.querySelectorAll(
+                '.pisi-sheet-cell-selected'
+            ).length;
+        const inCellFocusRetainedAfterArrowReference =
             document.activeElement === inCellEditCell;
 
         inCellEditCell?.dispatchEvent(
@@ -1237,6 +1267,11 @@ try {
             inCellSelectedCount,
             inCellActiveCount,
             inCellBrowserFocusRetained,
+            inCellTextAfterArrowReference,
+            inCellActiveAfterArrowReference,
+            inCellFocusAfterArrowReference,
+            inCellSelectedAfterArrowReference,
+            inCellFocusRetainedAfterArrowReference,
             inCellFormulaSource,
             inCellFormulaValue,
             inCellRenderedValue,
@@ -1392,9 +1427,14 @@ try {
         sheetResult.inCellSelectedCount !== 1 ||
         sheetResult.inCellActiveCount !== 1 ||
         !sheetResult.inCellBrowserFocusRetained ||
-        sheetResult.inCellFormulaSource !== '2+B4' ||
-        sheetResult.inCellFormulaValue !== 7 ||
-        sheetResult.inCellRenderedValue !== '7' ||
+        sheetResult.inCellTextAfterArrowReference !== '2+C4' ||
+        sheetResult.inCellActiveAfterArrowReference !== 'A2' ||
+        sheetResult.inCellFocusAfterArrowReference !== 'C4' ||
+        sheetResult.inCellSelectedAfterArrowReference !== 1 ||
+        !sheetResult.inCellFocusRetainedAfterArrowReference ||
+        sheetResult.inCellFormulaSource !== '2+C4' ||
+        sheetResult.inCellFormulaValue !== 8 ||
+        sheetResult.inCellRenderedValue !== '8' ||
         !sheetResult.inCellFormulaModeCleared ||
         !sheetResult.allCellsNonEditableBeforeStage4 ||
         sheetResult.stage4SingleClickEditable !== 'false' ||

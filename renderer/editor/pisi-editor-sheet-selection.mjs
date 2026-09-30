@@ -572,6 +572,7 @@ function finishPisiSheetCellEdit(table, options = {}) {
     const state = pisiSheetEditStates.get(table);
     if (!state) return false;
 
+    closePisiSheetFormulaReferenceSession(table);
     pisiSheetEditStates.delete(table);
 
     const cell = state.cell;

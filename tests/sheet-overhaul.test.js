@@ -330,6 +330,10 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         /markPisiSheetCellEditFormulaReference/
     );
     assert.match(selection, /forceFormula/);
+    assert.match(
+        selection,
+        /closePisiSheetFormulaReferenceSession\(table\)/
+    );
     assert.doesNotMatch(
         selection,
         /pisiSheetSelections = new WeakMap/
@@ -381,6 +385,10 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(interactions, /event\.key === 'Tab'/);
     assert.match(interactions, /event\.key === 'Enter'/);
     assert.match(interactions, /event\.key === 'Escape'/);
+    assert.match(
+        interactions,
+        /movePisiSheetFormulaReferenceByKeyboard/
+    );
     assert.doesNotMatch(interactions, /ArrowUp/);
     assert.doesNotMatch(interactions, /ArrowDown/);
     assert.doesNotMatch(interactions, /ArrowLeft/);
@@ -435,6 +443,22 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         formulaReference,
         /active: session\.activePoint \|\| point/
+    );
+    assert.match(
+        formulaReference,
+        /movePisiSheetFormulaReferenceByKeyboard/
+    );
+    assert.match(
+        formulaReference,
+        /closePisiSheetFormulaReferenceSession/
+    );
+    assert.match(
+        formulaReference,
+        /options\.extend !== true/
+    );
+    assert.match(
+        formulaReference,
+        /setPisiSheetRangeSelection/
     );
     assert.match(
         formulaReference,
