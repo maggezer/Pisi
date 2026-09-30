@@ -401,10 +401,15 @@ function makePisiSheetSelectOptionsEditor(
         onOptionsChange(options);
         render();
 
-        list.querySelector(
-            '.pisi-sheet-column-option-row:last-child ' +
-            '.pisi-sheet-column-option-label'
-        )?.select?.();
+        const newestLabel =
+            /** @type {HTMLInputElement | null} */ (
+                list.querySelector(
+                    '.pisi-sheet-column-option-row:last-child ' +
+                    '.pisi-sheet-column-option-label'
+                )
+            );
+
+        newestLabel?.select();
     });
 
     group.append(

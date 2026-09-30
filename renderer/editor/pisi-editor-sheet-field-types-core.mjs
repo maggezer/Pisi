@@ -103,14 +103,16 @@ function normalizePisiSheetFieldOptions(options = []) {
 
 function normalizePisiSheetNumberFormat(format = {}) {
     const raw =
-        typeof format === 'string'
-            ? { style: format }
-            : (
-                format &&
-                typeof format === 'object'
-                    ? format
-                    : {}
-            );
+        /** @type {Record<string, any>} */ (
+            typeof format === 'string'
+                ? { style: format }
+                : (
+                    format &&
+                    typeof format === 'object'
+                        ? format
+                        : {}
+                )
+        );
 
     const style = PISI_SHEET_NUMBER_FORMATS.some(
         (item) => item.value === raw.style
