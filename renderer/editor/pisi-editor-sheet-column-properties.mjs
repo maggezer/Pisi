@@ -278,6 +278,8 @@ function openPisiSheetColumnMenu(table, header) {
     const wrap = document.createElement('input');
     const widthInput = document.createElement('input');
     const pin = document.createElement('input');
+    const moveLeftButton = document.createElement('button');
+    const moveRightButton = document.createElement('button');
     const autoFitButton = document.createElement('button');
     const hideButton = document.createElement('button');
     const deleteButton = document.createElement('button');
@@ -396,6 +398,21 @@ function openPisiSheetColumnMenu(table, header) {
     actions.className =
         'pisi-sheet-column-menu-actions';
 
+    moveLeftButton.type = 'button';
+    moveLeftButton.textContent =
+        window.pisiT?.('Sola taşı') || 'Sola taşı';
+    moveLeftButton.dataset.pisiSheetColumnAction =
+        'moveLeft';
+    moveLeftButton.disabled = colIndex <= 0;
+
+    moveRightButton.type = 'button';
+    moveRightButton.textContent =
+        window.pisiT?.('Sağa taşı') || 'Sağa taşı';
+    moveRightButton.dataset.pisiSheetColumnAction =
+        'moveRight';
+    moveRightButton.disabled =
+        colIndex >= fields.length - 1;
+
     autoFitButton.type = 'button';
     autoFitButton.textContent =
         window.pisiT?.('İçeriğe sığdır') || 'İçeriğe sığdır';
@@ -422,6 +439,8 @@ function openPisiSheetColumnMenu(table, header) {
     deleteButton.disabled = fields.length <= 1;
 
     actions.append(
+        moveLeftButton,
+        moveRightButton,
         autoFitButton,
         hideButton,
         deleteButton
@@ -554,6 +573,24 @@ function openPisiSheetColumnMenu(table, header) {
         persistFieldPatch({
             pin: pin.checked
         });
+    });
+
+    moveLeftButton.addEventListener('click', () => {
+        closePisiSheetColumnMenu();
+        movePisiSheetColumn(
+            table,
+            colIndex,
+            colIndex - 1
+        );
+    });
+
+    moveRightButton.addEventListener('click', () => {
+        closePisiSheetColumnMenu();
+        movePisiSheetColumn(
+            table,
+            colIndex,
+            colIndex + 1
+        );
     });
 
     autoFitButton.addEventListener('click', () => {

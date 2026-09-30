@@ -11,6 +11,8 @@ import "./editor/pisi-editor-sheet-header-selection.mjs";
 import "./editor/pisi-editor-sheet-selection.mjs";
 import "./editor/pisi-editor-sheet-formula-reference.mjs";
 import "./editor/pisi-editor-sheet-keyboard.mjs";
+import "./editor/pisi-editor-sheet-view-state.mjs";
+import "./editor/pisi-editor-sheet-column-reorder.mjs";
 import "./editor/pisi-editor-sheet-column-properties.mjs";
 import "./editor/pisi-editor-sheet-interactions.mjs";
 import "./editor/pisi-editor-sheet-structure.mjs";

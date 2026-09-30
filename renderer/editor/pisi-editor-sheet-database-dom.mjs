@@ -201,6 +201,14 @@ function renderPisiSheetDatabase(table) {
         view?.hiddenFieldIds || []
     );
     const pinLeftByFieldId = new Map();
+    const visiblePinnedFieldIds = fields
+        .filter((field) => (
+            field.pin &&
+            !hiddenFieldIds.has(field.id)
+        ))
+        .map((field) => field.id);
+    const lastPinnedFieldId =
+        visiblePinnedFieldIds.at(-1) || '';
     let pinnedLeft = 36;
 
     fields.forEach((field) => {
@@ -246,6 +254,8 @@ function renderPisiSheetDatabase(table) {
 
         label.className = 'pisi-sheet-col-label';
         label.textContent = field.name;
+        label.draggable = true;
+        label.dataset.pisiSheetColDrag = '1';
 
         resizer.className = 'pisi-sheet-col-resizer';
         resizer.dataset.pisiSheetColResizer =
@@ -273,10 +283,17 @@ function renderPisiSheetDatabase(table) {
             header.classList.add(
                 'pisi-sheet-column-pinned'
             );
+            header.dataset.pisiSheetPinned = '1';
             header.style.left =
                 String(
                     pinLeftByFieldId.get(field.id) || 36
                 ) + 'px';
+
+            if (field.id === lastPinnedFieldId) {
+                header.classList.add(
+                    'pisi-sheet-column-pinned-last'
+                );
+            }
         }
 
         headers.push(header);
@@ -344,10 +361,17 @@ function renderPisiSheetDatabase(table) {
                     cell.classList.add(
                         'pisi-sheet-column-pinned'
                     );
+                    cell.dataset.pisiSheetPinned = '1';
                     cell.style.left =
                         String(
                             pinLeftByFieldId.get(field.id) || 36
                         ) + 'px';
+
+                    if (field.id === lastPinnedFieldId) {
+                        cell.classList.add(
+                            'pisi-sheet-column-pinned-last'
+                        );
+                    }
                 }
 
                 if (!record?.formula) {

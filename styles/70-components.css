@@ -122,7 +122,11 @@
     padding: 0;
     text-overflow: ellipsis;
     white-space: nowrap;
-    cursor: pointer;
+    cursor: grab;
+}
+
+.pisi-sheet-column-dragging .pisi-sheet-col-label {
+    cursor: grabbing;
 }
 
 .pisi-sheet-col-resizer {
@@ -168,14 +172,60 @@ body.pisi-sheet-column-resizing * {
     box-shadow: inset 0 0 0 1px rgba(243, 156, 18, 0.72);
 }
 
-.pisi-sheet-column-pinned {
+.pisi-sheet-table th[data-pisi-sheet-corner],
+.pisi-sheet-table th[data-row-header] {
     position: sticky;
-    z-index: 3;
+    left: 0;
+    z-index: 6;
     background-clip: padding-box;
 }
 
+.pisi-sheet-table th[data-pisi-sheet-corner] {
+    z-index: 9;
+}
+
+.pisi-sheet-table th.pisi-sheet-column-pinned,
+.pisi-sheet-table td.pisi-sheet-column-pinned {
+    position: sticky;
+    background-clip: padding-box;
+}
+
+.pisi-sheet-table td.pisi-sheet-column-pinned {
+    z-index: 4;
+}
+
 .pisi-sheet-table th.pisi-sheet-column-pinned {
-    z-index: 5;
+    z-index: 8;
+}
+
+.pisi-sheet-table .pisi-sheet-column-pinned-last {
+    box-shadow:
+        2px 0 0 rgba(243, 156, 18, 0.42),
+        4px 0 8px rgba(0, 0, 0, 0.20);
+}
+
+.pisi-sheet-table th.pisi-sheet-col-drop-before::before,
+.pisi-sheet-table th.pisi-sheet-col-drop-after::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    z-index: 10;
+    background: #f39c12;
+    pointer-events: none;
+}
+
+.pisi-sheet-table th.pisi-sheet-col-drop-before::before {
+    left: -2px;
+}
+
+.pisi-sheet-table th.pisi-sheet-col-drop-after::after {
+    right: -2px;
+}
+
+.pisi-sheet-table th.pisi-sheet-column-drag-source {
+    opacity: 0.55;
 }
 
 

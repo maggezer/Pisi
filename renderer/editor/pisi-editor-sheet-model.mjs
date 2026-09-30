@@ -110,6 +110,97 @@ function transformPisiSheetAxisRange(start, end, change) {
         : [mappedHigh, mappedLow];
 }
 
+function getPisiSheetReorderedColumnIndex(col, change) {
+    const indexMap = Array.isArray(change?.indexMap)
+        ? change.indexMap
+        : [];
+
+    const mapped = Number(indexMap[col]);
+
+    return Number.isInteger(mapped) && mapped >= 0
+        ? mapped
+        : col;
+}
+
+function transformPisiSheetReorderedReference(reference, change) {
+    const parsed = parsePisiSheetReference(reference);
+    if (!parsed) return reference;
+
+    return formatPisiSheetReference({
+        ...parsed,
+        col: getPisiSheetReorderedColumnIndex(
+            parsed.col,
+            change
+        )
+    });
+}
+
+function transformPisiSheetReorderedRange(
+    startRef,
+    endRef,
+    change
+) {
+    const start = parsePisiSheetReference(startRef);
+    const end = parsePisiSheetReference(endRef);
+
+    if (!start || !end) {
+        return String(startRef) + ':' + String(endRef);
+    }
+
+    const colStart = Math.min(start.col, end.col);
+    const colEnd = Math.max(start.col, end.col);
+    const mappedCols = [];
+
+    for (
+        let col = colStart;
+        col <= colEnd;
+        col += 1
+    ) {
+        mappedCols.push(
+            getPisiSheetReorderedColumnIndex(
+                col,
+                change
+            )
+        );
+    }
+
+    mappedCols.sort((a, b) => a - b);
+
+    const groups = [];
+
+    for (const col of mappedCols) {
+        const current = groups.at(-1);
+
+        if (
+            current &&
+            col === current.end + 1
+        ) {
+            current.end = col;
+        } else {
+            groups.push({
+                start: col,
+                end: col
+            });
+        }
+    }
+
+    return groups.map((group) => {
+        const nextStart = {
+            ...start,
+            col: group.start
+        };
+        const nextEnd = {
+            ...end,
+            col: group.end
+        };
+
+        return [
+            formatPisiSheetReference(nextStart),
+            formatPisiSheetReference(nextEnd)
+        ].join(':');
+    }).join(',');
+}
+
 function getPisiSheetAxisChange(change) {
     if (!change) return null;
 
@@ -130,6 +221,13 @@ function getPisiSheetAxisChange(change) {
 }
 
 function transformPisiSheetReference(reference, change) {
+    if (change?.type === 'reorder-col') {
+        return transformPisiSheetReorderedReference(
+            reference,
+            change
+        );
+    }
+
     const parsed = parsePisiSheetReference(reference);
     const axisChange = getPisiSheetAxisChange(change);
 
@@ -149,6 +247,14 @@ function transformPisiSheetReference(reference, change) {
 }
 
 function transformPisiSheetRangeReference(startRef, endRef, change) {
+    if (change?.type === 'reorder-col') {
+        return transformPisiSheetReorderedRange(
+            startRef,
+            endRef,
+            change
+        );
+    }
+
     const start = parsePisiSheetReference(startRef);
     const end = parsePisiSheetReference(endRef);
     const axisChange = getPisiSheetAxisChange(change);

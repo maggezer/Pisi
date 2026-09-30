@@ -749,6 +749,8 @@
     "Sütunu gizle": "Hide column",
     "Sütunu sil": "Delete column",
     "Gizli sütunlar": "Hidden columns",
-    "Göster": "Show"
+    "Göster": "Show",
+    "Sola taşı": "Move left",
+    "Sağa taşı": "Move right"
   }
 }

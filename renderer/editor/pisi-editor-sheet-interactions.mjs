@@ -172,6 +172,7 @@ function hydratePisiSheets(root = document) {
         renderPisiSheetDatabase(table);
         recalcPisiSheet(table);
         reconcilePisiSheetSelection(table);
+        bindPisiSheetColumnReorder(table);
         pisiBoundSheets.add(table);
 
         table.addEventListener('focusin', (event) => {

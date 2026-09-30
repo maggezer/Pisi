@@ -276,6 +276,26 @@
     ]
   },
   {
+    "module": "editor.sheetViewState",
+    "path": "renderer/editor/pisi-editor-sheet-view-state.mjs",
+    "bindings": [
+      "clonePisiSheetTableView",
+      "setPisiSheetActiveView",
+      "refreshPisiSheetActiveView",
+      "activatePisiSheetView"
+    ]
+  },
+  {
+    "module": "editor.sheetColumnReorder",
+    "path": "renderer/editor/pisi-editor-sheet-column-reorder.mjs",
+    "bindings": [
+      "movePisiSheetField",
+      "movePisiSheetColumn",
+      "bindPisiSheetColumnReorder",
+      "getPisiSheetColumnDropIndex"
+    ]
+  },
+  {
     "module": "editor.sheetColumnProperties",
     "path": "renderer/editor/pisi-editor-sheet-column-properties.mjs",
     "bindings": [

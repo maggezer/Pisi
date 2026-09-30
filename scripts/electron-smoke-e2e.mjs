@@ -1523,14 +1523,235 @@ try {
 
         const widthAfterResize =
             resizeHeader?.getBoundingClientRect().width || 0;
-        const currentFirstCell = table.querySelector(
+        const resizeBodyCell = table.querySelector(
             'td[data-cell="A1"]'
         );
         const bodyWidthAfterResize =
-            currentFirstCell?.getBoundingClientRect().width || 0;
+            resizeBodyCell?.getBoundingClientRect().width || 0;
 
         const modelWidthAfterResize =
             window.getPisiSheetField?.(table, 0)?.width || 0;
+
+        window.updatePisiSheetField?.(
+            table,
+            1,
+            { pin: true }
+        );
+        window.renderPisiSheetDatabase?.(table);
+        window.recalcPisiSheet?.(table);
+
+        const stage10Block = table.closest(
+            '.pisi-sheet-block'
+        );
+        if (stage10Block) {
+            stage10Block.style.width = '260px';
+        }
+
+        const stage10PinnedHeader0 = table.querySelector(
+            'thead th[data-col-header="0"]'
+        );
+        const stage10PinnedHeader1 = table.querySelector(
+            'thead th[data-col-header="1"]'
+        );
+        const stage10PinnedPosition0 =
+            stage10PinnedHeader0
+                ? getComputedStyle(
+                    stage10PinnedHeader0
+                ).position
+                : '';
+        const stage10PinnedPosition1 =
+            stage10PinnedHeader1
+                ? getComputedStyle(
+                    stage10PinnedHeader1
+                ).position
+                : '';
+        const stage10PinnedLeft0 =
+            stage10PinnedHeader0?.style.left || '';
+        const stage10PinnedLeft1 =
+            stage10PinnedHeader1?.style.left || '';
+        const stage10BeforeScrollLeft =
+            stage10PinnedHeader0
+                ?.getBoundingClientRect().left || 0;
+        const stage10Scrollable = Boolean(
+            stage10Block &&
+            stage10Block.scrollWidth >
+                stage10Block.clientWidth
+        );
+
+        if (stage10Block) {
+            stage10Block.scrollLeft = 180;
+        }
+
+        const stage10AfterScrollLeft =
+            stage10PinnedHeader0
+                ?.getBoundingClientRect().left || 0;
+        const stage10LastPinnedCount =
+            table.querySelectorAll(
+                'thead .pisi-sheet-column-pinned-last'
+            ).length;
+
+        const stage12Database =
+            window.getPisiSheetDatabase?.(table) || null;
+        const stage12MainViewId =
+            stage12Database?.activeViewId || '';
+        const stage12TechnicalView =
+            window.clonePisiSheetTableView?.(
+                table,
+                'Technical View'
+            ) || null;
+
+        if (stage12TechnicalView) {
+            window.activatePisiSheetView?.(
+                table,
+                stage12TechnicalView.id
+            );
+            window.setPisiSheetFieldHidden?.(
+                table,
+                2,
+                true
+            );
+            window.renderPisiSheetDatabase?.(table);
+            window.recalcPisiSheet?.(table);
+        }
+
+        const stage12TechnicalHidden =
+            window.getPisiSheetTableView?.(
+                window.getPisiSheetDatabase?.(table)
+            )?.hiddenFieldIds?.length || 0;
+
+        window.activatePisiSheetView?.(
+            table,
+            stage12MainViewId
+        );
+
+        const stage12MainHidden =
+            window.getPisiSheetTableView?.(
+                window.getPisiSheetDatabase?.(table)
+            )?.hiddenFieldIds?.length || 0;
+
+        if (stage12TechnicalView) {
+            window.activatePisiSheetView?.(
+                table,
+                stage12TechnicalView.id
+            );
+        }
+
+        const stage12TechnicalHiddenAfterReturn =
+            window.getPisiSheetTableView?.(
+                window.getPisiSheetDatabase?.(table)
+            )?.hiddenFieldIds?.length || 0;
+
+        window.activatePisiSheetView?.(
+            table,
+            stage12MainViewId
+        );
+
+        const stage13DatabaseBefore =
+            window.getPisiSheetDatabase?.(table) || null;
+        const stage13ViewBefore =
+            window.getPisiSheetTableView?.(
+                stage13DatabaseBefore
+            ) || null;
+        const stage13OrderBefore = [
+            ...(stage13ViewBefore?.fieldOrder || [])
+        ];
+        const stage13OriginalFirstFieldId =
+            stage13OrderBefore[0] || '';
+        const stage13FormulaFieldId =
+            stage13OrderBefore[4] || '';
+
+        window.setPisiSheetCellSource?.(
+            table,
+            0,
+            0,
+            { value: '10', formula: null }
+        );
+        window.setPisiSheetCellSource?.(
+            table,
+            0,
+            1,
+            { value: '20', formula: null }
+        );
+        window.setPisiSheetCellSource?.(
+            table,
+            0,
+            4,
+            {
+                value: '',
+                formula: '=SUM(A1:B1)'
+            }
+        );
+        window.recalcPisiSheet?.(table);
+
+        const stage13FormulaValueBefore =
+            table.querySelector(
+                'td[data-cell="E1"]'
+            )?.textContent?.trim() || '';
+
+        const stage13MoveResult =
+            window.movePisiSheetColumn?.(
+                table,
+                0,
+                2,
+                { select: false }
+            ) || null;
+        const stage13DatabaseAfter =
+            window.getPisiSheetDatabase?.(table) || null;
+        const stage13ViewAfter =
+            window.getPisiSheetTableView?.(
+                stage13DatabaseAfter
+            ) || null;
+        const stage13OrderAfter = [
+            ...(stage13ViewAfter?.fieldOrder || [])
+        ];
+        const stage13MovedIndex =
+            stage13OrderAfter.indexOf(
+                stage13OriginalFirstFieldId
+            );
+        const stage13FormulaIndex =
+            stage13OrderAfter.indexOf(
+                stage13FormulaFieldId
+            );
+        const stage13FormulaSource =
+            window.getPisiSheetCellSource?.(
+                table,
+                0,
+                stage13FormulaIndex
+            )?.formula || '';
+        const stage13FormulaValueAfter =
+            table.querySelector(
+                'tbody td[data-col="' +
+                stage13FormulaIndex +
+                '"]'
+            )?.textContent?.trim() || '';
+        const stage13MovedData =
+            stage13DatabaseAfter
+                ?.items?.[0]
+                ?.values?.[stage13OriginalFirstFieldId]
+                ?.value ?? '';
+        const stage13MovedHeader =
+            table.querySelector(
+                'thead th[data-pisi-col-id="' +
+                stage13OriginalFirstFieldId +
+                '"]'
+            );
+        const stage13MovedHeaderLabel =
+            stage13MovedHeader
+                ?.querySelector(
+                    '.pisi-sheet-col-label'
+                )
+                ?.textContent?.trim() || '';
+        const stage13MovedHeaderPinned =
+            stage13MovedHeader
+                ?.classList.contains(
+                    'pisi-sheet-column-pinned'
+                ) || false;
+        const stage13NewFirstFieldId =
+            stage13OrderAfter[0] || '';
+
+        const currentFirstCell = table.querySelector(
+            'td[data-cell="A1"]'
+        );
 
         currentFirstCell?.dispatchEvent(new MouseEvent('contextmenu', {
             bubbles: true,
@@ -1563,7 +1784,9 @@ try {
         const firstCellAfterAdd =
             table.querySelector('td[data-cell="A1"]');
         const headerAfterAdd = table.querySelector(
-            'thead th[data-col-header="0"]'
+            'thead th[data-pisi-col-id="' +
+            stage13OriginalFirstFieldId +
+            '"]'
         );
 
         const databaseAfterAdd =
@@ -1597,7 +1820,9 @@ try {
             activeTableAfterDomReplace?.dataset?.pisiDatabaseId || '';
         const widthAfterDomReplace =
             replacement.querySelector(
-                'thead th[data-col-header="0"]'
+                'thead th[data-pisi-col-id="' +
+                stage13OriginalFirstFieldId +
+                '"]'
             )?.getBoundingClientRect().width || 0;
 
         return {
@@ -1749,6 +1974,34 @@ try {
             widthAfterResize,
             bodyWidthAfterResize,
             modelWidthAfterResize,
+            stage10PinnedPosition0,
+            stage10PinnedPosition1,
+            stage10PinnedLeft0,
+            stage10PinnedLeft1,
+            stage10BeforeScrollLeft,
+            stage10AfterScrollLeft,
+            stage10Scrollable,
+            stage10LastPinnedCount,
+            stage12MainViewId,
+            stage12TechnicalViewId:
+                stage12TechnicalView?.id || '',
+            stage12TechnicalHidden,
+            stage12MainHidden,
+            stage12TechnicalHiddenAfterReturn,
+            stage13OrderBefore,
+            stage13OrderAfter,
+            stage13OriginalFirstFieldId,
+            stage13FormulaFieldId,
+            stage13MoveTo:
+                stage13MoveResult?.toIndex ?? -1,
+            stage13MovedIndex,
+            stage13FormulaValueBefore,
+            stage13FormulaSource,
+            stage13FormulaValueAfter,
+            stage13MovedData,
+            stage13MovedHeaderLabel,
+            stage13MovedHeaderPinned,
+            stage13NewFirstFieldId,
             contextMenuPresent: Boolean(menu),
             contextMenuActions: menuActions,
             contextMenuClosedAfterAction:
@@ -1971,6 +2224,39 @@ try {
             sheetResult.modelWidthAfterResize -
             sheetResult.widthAfterResize
         ) > 2 ||
+        sheetResult.stage10PinnedPosition0 !== 'sticky' ||
+        sheetResult.stage10PinnedPosition1 !== 'sticky' ||
+        sheetResult.stage10PinnedLeft0 !== '36px' ||
+        Number.parseFloat(
+            sheetResult.stage10PinnedLeft1
+        ) <= 36 ||
+        !sheetResult.stage10Scrollable ||
+        Math.abs(
+            sheetResult.stage10AfterScrollLeft -
+            sheetResult.stage10BeforeScrollLeft
+        ) > 2 ||
+        sheetResult.stage10LastPinnedCount !== 1 ||
+        !sheetResult.stage12MainViewId ||
+        !sheetResult.stage12TechnicalViewId ||
+        sheetResult.stage12TechnicalHidden !== 1 ||
+        sheetResult.stage12MainHidden !== 0 ||
+        sheetResult.stage12TechnicalHiddenAfterReturn !== 1 ||
+        sheetResult.stage13OrderBefore?.length !== 5 ||
+        sheetResult.stage13OrderAfter?.length !== 5 ||
+        sheetResult.stage13MoveTo !== 2 ||
+        sheetResult.stage13MovedIndex !== 2 ||
+        sheetResult.stage13OrderAfter?.[0] !==
+            sheetResult.stage13OrderBefore?.[1] ||
+        sheetResult.stage13OrderAfter?.[2] !==
+            sheetResult.stage13OriginalFirstFieldId ||
+        String(sheetResult.stage13MovedData) !== '10' ||
+        sheetResult.stage13MovedHeaderLabel !== 'Project' ||
+        !sheetResult.stage13MovedHeaderPinned ||
+        sheetResult.stage13FormulaValueBefore !== '30' ||
+        sheetResult.stage13FormulaSource !==
+            '=SUM(A1:A1,C1:C1)' ||
+        sheetResult.stage13FormulaValueAfter !== '30' ||
+        !sheetResult.stage13NewFirstFieldId ||
         !sheetResult.contextMenuPresent ||
         JSON.stringify(sheetResult.contextMenuActions) !==
             JSON.stringify([
@@ -2004,7 +2290,7 @@ try {
         sheetResult.stableRowIdAfterAdd !==
             sheetResult.originalRowId ||
         sheetResult.stableColIdAfterAdd !==
-            sheetResult.originalColId ||
+            sheetResult.stage13NewFirstFieldId ||
         sheetResult.renamedHeaderAfterAdd !== 'Project' ||
         Math.abs(
             sheetResult.widthAfterAdd -

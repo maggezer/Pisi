@@ -172,6 +172,20 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         ),
         'utf8'
     );
+    const sheetViewState = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-sheet-view-state.mjs'
+        ),
+        'utf8'
+    );
+    const columnReorder = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-sheet-column-reorder.mjs'
+        ),
+        'utf8'
+    );
     const columnProperties = fs.readFileSync(
         path.join(
             root,
@@ -258,6 +272,8 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(database, /updatePisiSheetField/);
     assert.match(database, /setPisiSheetFieldHidden/);
     assert.match(database, /hiddenFieldIds/);
+    assert.match(database, /fieldOrder/);
+    assert.match(database, /activeViewId/);
 
     assert.doesNotMatch(database, /querySelector/);
     assert.doesNotMatch(database, /querySelectorAll/);
@@ -272,6 +288,18 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(databaseDom, /field\.wrap/);
     assert.match(databaseDom, /field\.pin/);
     assert.match(databaseDom, /pisi-sheet-column-pinned/);
+    assert.match(
+        databaseDom,
+        /pisi-sheet-column-pinned-last/
+    );
+    assert.match(
+        databaseDom,
+        /label\.draggable = true/
+    );
+    assert.match(
+        databaseDom,
+        /visiblePinnedFieldIds/
+    );
     assert.match(
         databaseDom,
         /setAttribute\(\s*'contenteditable',\s*'false'/
@@ -482,6 +510,18 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         columnProperties,
         /pisiSheetColumnAction/
     );
+    assert.match(
+        columnProperties,
+        /movePisiSheetColumn/
+    );
+    assert.match(
+        columnProperties,
+        /'moveLeft'/
+    );
+    assert.match(
+        columnProperties,
+        /'moveRight'/
+    );
     assert.doesNotMatch(
         columnProperties,
         /pisi-sheet-col-editor/
@@ -493,6 +533,10 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         interactions,
         /autoFitPisiSheetColumn/
+    );
+    assert.match(
+        interactions,
+        /bindPisiSheetColumnReorder/
     );
     assert.match(
         interactions,
@@ -542,6 +586,43 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(interactions, /action: 'deleteRow'/);
     assert.match(interactions, /action: 'addCol'/);
     assert.match(interactions, /action: 'deleteCol'/);
+
+    assert.match(
+        sheetViewState,
+        /clonePisiSheetTableView/
+    );
+    assert.match(
+        sheetViewState,
+        /setPisiSheetActiveView/
+    );
+    assert.match(
+        sheetViewState,
+        /activeViewId/
+    );
+    assert.match(
+        columnReorder,
+        /view\.fieldOrder/
+    );
+    assert.match(
+        columnReorder,
+        /reorder-col/
+    );
+    assert.match(
+        columnReorder,
+        /transformPisiSheetFormulaReferences/
+    );
+    assert.match(
+        columnReorder,
+        /dragstart/
+    );
+    assert.match(
+        columnReorder,
+        /dragover/
+    );
+    assert.match(
+        columnReorder,
+        /drop/
+    );
 
     assert.match(sheet, /PISI_SHEET_MAX_ROWS = 300/);
     assert.match(sheet, /PISI_SHEET_MAX_COLS = 80/);
@@ -650,6 +731,22 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         componentsCss,
         /pisi-sheet-column-pinned/
+    );
+    assert.match(
+        componentsCss,
+        /position: sticky/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-column-pinned-last/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-col-drop-before/
+    );
+    assert.match(
+        componentsCss,
+        /th\[data-row-header\]/
     );
     assert.match(
         componentsCss,
