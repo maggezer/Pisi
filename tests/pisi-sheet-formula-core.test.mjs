@@ -69,6 +69,11 @@ test('metin formülleri hücre, Unicode ve aralık değerleriyle çalışır', (
     );
 });
 
+test('absolute hücre referansları normal hücrelerle aynı hesaplanır', () => {
+    assert.equal(formulaValue('=$A$1+$B$1', context), 16);
+    assert.equal(formulaValue('=SUM($A$1:$B$1)', context), 16);
+});
+
 test('geniş matematik formülleri aralık ve bilimsel işlemleri hesaplar', () => {
     assert.equal(formulaValue('=SUM(A1:B1)', context), 16);
     assert.equal(formulaValue('=COUNT(A3:B3)', context), 0);
