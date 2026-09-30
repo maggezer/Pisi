@@ -36,6 +36,7 @@ function refreshPisiSheetCellMetadata(table) {
 
 function getPisiSheetMutationFocus(table) {
     return (
+        getPisiSheetSelection(table)?.focus ||
         getPisiSheetSelectionFocus(table) ||
         getPisiSheetPointByIndex(table, 0, 0) ||
         { row: 0, col: 0 }

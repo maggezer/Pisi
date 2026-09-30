@@ -125,6 +125,9 @@
       "clearPisiSheetCell",
       "renamePisiSheetField",
       "setPisiSheetFieldWidth",
+      "setPisiSheetFieldHidden",
+      "isPisiSheetFieldHidden",
+      "updatePisiSheetField",
       "insertPisiSheetItem",
       "deletePisiSheetItems",
       "insertPisiSheetField",
@@ -186,7 +189,13 @@
       "getPisiSheetActivePointForDatabase",
       "getPisiSheetSelectionRect",
       "getPisiSelectedSheetPointsForDatabase",
-      "getPisiSheetActiveGroupId"
+      "getPisiSheetActiveGroupId",
+      "pisiSheetHeaderSelections",
+      "getPisiSheetHeaderSelectionStateForDatabase",
+      "setPisiSheetHeaderSelectionStateForDatabase",
+      "clearPisiSheetHeaderSelectionStateForDatabase",
+      "getPisiSheetHeaderSelectionForDatabase",
+      "clearPisiSheetAllSelectionStateForDatabase"
     ]
   },
   {
@@ -197,6 +206,7 @@
       "getPisiSheetSelectionGroupId",
       "getPisiSheetSelectionState",
       "getPisiSheetSelection",
+      "getPisiSheetHeaderSelection",
       "setPisiSheetSelectionState",
       "getPisiSheetSelectionFocus",
       "getPisiSheetActivePoint",

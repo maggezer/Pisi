@@ -58,13 +58,16 @@ function createPisiSheetField(index, options = {}) {
             pisiSheetDatabaseColumnName(index)
         ).slice(0, 80),
         type: String(options.type || 'text'),
+        description: String(options.description || '').slice(0, 240),
+        wrap: options.wrap === true,
+        pin: options.pin === true,
         width:
             options.width !== null &&
             options.width !== undefined &&
             Number.isFinite(Number(options.width)) &&
             Number(options.width) > 0
                 ? Math.max(
-                    48,
+                    25,
                     Math.round(Number(options.width))
                 )
                 : PISI_SHEET_DEFAULT_COLUMN_WIDTH
@@ -174,6 +177,9 @@ function normalizePisiSheetDatabase(database) {
             id: field?.id,
             name: field?.name,
             type: field?.type,
+            description: field?.description,
+            wrap: field?.wrap,
+            pin: field?.pin,
             width: field?.width
         });
     });
@@ -524,6 +530,84 @@ function setPisiSheetFieldWidth(table, colIndex, width) {
     return true;
 }
 
+function updatePisiSheetField(table, colIndex, patch = {}) {
+    const field = getPisiSheetField(table, colIndex);
+    if (!field || !patch || typeof patch !== 'object') {
+        return null;
+    }
+
+    if (Object.hasOwn(patch, 'name')) {
+        field.name =
+            String(patch.name || '').trim().slice(0, 80) ||
+            pisiSheetDatabaseColumnName(colIndex);
+    }
+
+    if (Object.hasOwn(patch, 'description')) {
+        field.description = String(
+            patch.description || ''
+        ).slice(0, 240);
+    }
+
+    if (Object.hasOwn(patch, 'type')) {
+        const allowedTypes = new Set([
+            'text',
+            'number',
+            'formula'
+        ]);
+        const type = String(patch.type || 'text');
+        field.type = allowedTypes.has(type)
+            ? type
+            : 'text';
+    }
+
+    if (Object.hasOwn(patch, 'wrap')) {
+        field.wrap = patch.wrap === true;
+    }
+
+    if (Object.hasOwn(patch, 'pin')) {
+        field.pin = patch.pin === true;
+    }
+
+    persistPisiSheetDatabase(table);
+    return field;
+}
+
+function isPisiSheetFieldHidden(table, colIndex) {
+    const database = requirePisiSheetDatabase(table);
+    const field = getPisiSheetField(table, colIndex);
+    const view = getPisiSheetTableView(database);
+
+    return Boolean(
+        field &&
+        view?.hiddenFieldIds?.includes(field.id)
+    );
+}
+
+function setPisiSheetFieldHidden(
+    table,
+    colIndex,
+    hidden = true
+) {
+    const database = requirePisiSheetDatabase(table);
+    const field = getPisiSheetField(table, colIndex);
+    const view = getPisiSheetTableView(database);
+
+    if (!field || !view) return false;
+
+    const next = new Set(view.hiddenFieldIds || []);
+
+    if (hidden) {
+        next.add(field.id);
+    } else {
+        next.delete(field.id);
+    }
+
+    view.hiddenFieldIds = [...next];
+    persistPisiSheetDatabase(table);
+    return true;
+}
+
+
 function insertPisiSheetItem(table, index) {
     const database = requirePisiSheetDatabase(table);
     const insertIndex = Math.max(
@@ -588,6 +672,9 @@ function deletePisiSheetFields(table, index, count = 1) {
         amount
     );
     const removed = new Set(removedIds);
+
+    view.hiddenFieldIds = (view.hiddenFieldIds || [])
+        .filter((fieldId) => !removed.has(fieldId));
 
     database.fields = database.fields.filter(
         (field) => !removed.has(field.id)
@@ -704,6 +791,18 @@ Object.defineProperties(moduleApi, {
     "setPisiSheetFieldWidth": {
         enumerable: true,
         get() { return setPisiSheetFieldWidth; }
+    },
+    "updatePisiSheetField": {
+        enumerable: true,
+        get() { return updatePisiSheetField; }
+    },
+    "isPisiSheetFieldHidden": {
+        enumerable: true,
+        get() { return isPisiSheetFieldHidden; }
+    },
+    "setPisiSheetFieldHidden": {
+        enumerable: true,
+        get() { return setPisiSheetFieldHidden; }
     },
     "insertPisiSheetItem": {
         enumerable: true,

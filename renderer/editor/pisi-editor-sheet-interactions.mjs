@@ -7,8 +7,13 @@ let pisiSheetContextMenu = null;
 let pisiSheetColumnMenu = null;
 let pisiSheetColumnResize = null;
 
-const PISI_SHEET_MIN_COLUMN_WIDTH = 48;
+const PISI_SHEET_MIN_COLUMN_WIDTH = 25;
 const PISI_SHEET_MAX_COLUMN_WIDTH = 640;
+const PISI_SHEET_AUTO_FIT_MIN_WIDTH = 64;
+const PISI_SHEET_AUTO_FIT_MAX_WIDTH = 480;
+const PISI_SHEET_RESIZE_SNAP_PX = 4;
+
+let pisiSheetMeasureCanvas = null;
 
 function setPisiSheetColumnWidth(table, colIndex, width) {
     const nextWidth = Math.max(
@@ -44,6 +49,84 @@ function setPisiSheetColumnWidth(table, colIndex, width) {
     return nextWidth;
 }
 
+function measurePisiSheetText(element, text) {
+    pisiSheetMeasureCanvas =
+        pisiSheetMeasureCanvas ||
+        document.createElement('canvas');
+
+    const context =
+        pisiSheetMeasureCanvas.getContext('2d');
+
+    if (!context) {
+        return String(text || '').length * 8;
+    }
+
+    const style = element
+        ? getComputedStyle(element)
+        : getComputedStyle(document.body);
+
+    context.font = [
+        style.fontStyle || 'normal',
+        style.fontWeight || '400',
+        style.fontSize || '12px',
+        style.fontFamily || 'sans-serif'
+    ].join(' ');
+
+    return context.measureText(
+        String(text || '')
+    ).width;
+}
+
+function getPisiSheetColumnAutoFitWidth(table, colIndex) {
+    const header = table.querySelector(
+        'thead th[data-col-header="' + colIndex + '"]'
+    );
+    const label = header?.querySelector(
+        '.pisi-sheet-col-label'
+    );
+    let required = label
+        ? measurePisiSheetText(
+            label,
+            label.textContent || ''
+        ) + 42
+        : PISI_SHEET_AUTO_FIT_MIN_WIDTH;
+
+    table.querySelectorAll(
+        'tbody td[data-col="' + colIndex + '"]'
+    ).forEach((cell) => {
+        required = Math.max(
+            required,
+            measurePisiSheetText(
+                cell,
+                cell.textContent || ''
+            ) + 18
+        );
+    });
+
+    return Math.max(
+        PISI_SHEET_AUTO_FIT_MIN_WIDTH,
+        Math.min(
+            PISI_SHEET_AUTO_FIT_MAX_WIDTH,
+            Math.ceil(required)
+        )
+    );
+}
+
+function autoFitPisiSheetColumn(table, colIndex) {
+    const width = getPisiSheetColumnAutoFitWidth(
+        table,
+        colIndex
+    );
+
+    setPisiSheetColumnWidth(
+        table,
+        colIndex,
+        width
+    );
+    schedulePisiSheetEditorNotification(table);
+    return width;
+}
+
 
 function startPisiSheetColumnResize(table, resizer, event) {
     finishPisiSheetCellEdit(table, {
@@ -76,10 +159,20 @@ function movePisiSheetColumnResize(event) {
 
     event.preventDefault();
 
+    const rawWidth =
+        resize.startWidth +
+        event.clientX -
+        resize.startX;
+    const snappedWidth =
+        Math.abs(rawWidth - resize.startWidth) <=
+        PISI_SHEET_RESIZE_SNAP_PX
+            ? resize.startWidth
+            : rawWidth;
+
     resize.width = setPisiSheetColumnWidth(
         resize.table,
         resize.colIndex,
-        resize.startWidth + event.clientX - resize.startX
+        snappedWidth
     );
 }
 
@@ -98,31 +191,36 @@ function finishPisiSheetColumnResize() {
 document.addEventListener('mousemove', movePisiSheetColumnResize, true);
 document.addEventListener('mouseup', finishPisiSheetColumnResize, true);
 
-function closePisiSheetColumnMenu(save = true) {
+function closePisiSheetColumnMenu() {
     if (!pisiSheetColumnMenu) return;
 
     const state = pisiSheetColumnMenu;
     pisiSheetColumnMenu = null;
-
-    if (save) {
-        const nextValue = String(state.input.value || '').trim();
-
-        if (nextValue !== state.originalLabel) {
-            setPisiSheetColumnLabel(
-                state.table,
-                state.colIndex,
-                nextValue
-            );
-            schedulePisiSheetEditorNotification(state.table);
-        }
-    }
-
     state.menu.remove();
+}
+
+function refreshPisiSheetAfterColumnPropertyChange(table) {
+    renderPisiSheetDatabase(table);
+    recalcPisiSheet(table);
+    reconcilePisiSheetSelection(table);
+    schedulePisiSheetEditorNotification(table);
+}
+
+function makePisiSheetColumnMenuRow(labelText, control) {
+    const row = document.createElement('label');
+    const label = document.createElement('span');
+
+    row.className = 'pisi-sheet-column-property-row';
+    label.className = 'pisi-sheet-column-property-label';
+    label.textContent = labelText;
+
+    row.append(label, control);
+    return row;
 }
 
 function openPisiSheetColumnMenu(table, header) {
     closePisiSheetContextMenu();
-    closePisiSheetColumnMenu(true);
+    closePisiSheetColumnMenu();
     finishPisiSheetCellEdit(table, {
         commit: true,
         refocus: false
@@ -130,32 +228,207 @@ function openPisiSheetColumnMenu(table, header) {
     clearPisiSheetSelection(table);
 
     const colIndex = Number(header.dataset.colHeader);
-    if (!Number.isInteger(colIndex)) return;
+    const field = getPisiSheetField(table, colIndex);
 
-    const label = header.querySelector('.pisi-sheet-col-label');
-    const originalLabel = String(label?.textContent || '').trim();
+    if (!Number.isInteger(colIndex) || !field) return;
+
+    const database = getPisiSheetDatabase(table);
+    const view = database
+        ? getPisiSheetTableView(database)
+        : null;
+    const fields = database
+        ? getPisiSheetOrderedFields(database)
+        : [];
+    const hiddenIds = new Set(
+        view?.hiddenFieldIds || []
+    );
     const menu = document.createElement('div');
+    const heading = document.createElement('div');
+    const icon = document.createElement('span');
     const input = document.createElement('input');
+    const description = document.createElement('textarea');
+    const typeSelect = document.createElement('select');
+    const wrap = document.createElement('input');
+    const widthInput = document.createElement('input');
+    const pin = document.createElement('input');
+    const autoFitButton = document.createElement('button');
+    const hideButton = document.createElement('button');
+    const deleteButton = document.createElement('button');
 
     menu.className = 'pisi-sheet-column-menu';
     menu.setAttribute('role', 'dialog');
     menu.setAttribute(
         'aria-label',
-        window.pisiT?.('Sütun adını değiştir') ||
-            'Sütun adını değiştir'
+        window.pisiT?.('Sütun ayarları') ||
+            'Sütun ayarları'
     );
+
+    heading.className = 'pisi-sheet-column-menu-heading';
+    icon.className = 'pisi-sheet-column-type-icon';
+    icon.textContent =
+        field.type === 'number'
+            ? '123'
+            : (field.type === 'formula' ? 'fx' : 'Aa');
 
     input.type = 'text';
     input.className = 'pisi-sheet-column-name-input';
     input.maxLength = 80;
-    input.value = originalLabel;
-    input.setAttribute(
-        'aria-label',
-        window.pisiT?.('Sütun adını değiştir') ||
-            'Sütun adını değiştir'
+    input.value = field.name;
+    input.setAttribute('aria-label', 'Column name');
+
+    heading.append(icon, input);
+    menu.appendChild(heading);
+
+    description.className =
+        'pisi-sheet-column-description-input';
+    description.maxLength = 240;
+    description.rows = 2;
+    description.placeholder =
+        window.pisiT?.('Açıklama') || 'Açıklama';
+    description.value = field.description || '';
+    menu.appendChild(
+        makePisiSheetColumnMenuRow(
+            window.pisiT?.('Açıklama') || 'Açıklama',
+            description
+        )
     );
 
-    menu.appendChild(input);
+    [
+        ['text', window.pisiT?.('Metin') || 'Text'],
+        ['number', window.pisiT?.('Sayı') || 'Number'],
+        ['formula', window.pisiT?.('Formül') || 'Formula']
+    ].forEach(([value, label]) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = label;
+        typeSelect.appendChild(option);
+    });
+    typeSelect.value = field.type || 'text';
+    typeSelect.className = 'pisi-sheet-column-select';
+    menu.appendChild(
+        makePisiSheetColumnMenuRow(
+            window.pisiT?.('Tip') || 'Type',
+            typeSelect
+        )
+    );
+
+    wrap.type = 'checkbox';
+    wrap.checked = field.wrap === true;
+    menu.appendChild(
+        makePisiSheetColumnMenuRow(
+            window.pisiT?.('Metni kaydır') || 'Wrap',
+            wrap
+        )
+    );
+
+    widthInput.type = 'number';
+    widthInput.min = String(PISI_SHEET_MIN_COLUMN_WIDTH);
+    widthInput.max = String(PISI_SHEET_MAX_COLUMN_WIDTH);
+    widthInput.step = '1';
+    widthInput.value = String(
+        Math.round(field.width || PISI_SHEET_DEFAULT_COLUMN_WIDTH)
+    );
+    widthInput.className = 'pisi-sheet-column-width-input';
+    menu.appendChild(
+        makePisiSheetColumnMenuRow(
+            window.pisiT?.('Genişlik') || 'Width',
+            widthInput
+        )
+    );
+
+    pin.type = 'checkbox';
+    pin.checked = field.pin === true;
+    menu.appendChild(
+        makePisiSheetColumnMenuRow(
+            window.pisiT?.('Sabitle') || 'Pin',
+            pin
+        )
+    );
+
+    const actions = document.createElement('div');
+    actions.className = 'pisi-sheet-column-menu-actions';
+
+    autoFitButton.type = 'button';
+    autoFitButton.textContent =
+        window.pisiT?.('İçeriğe sığdır') || 'Fit width';
+    autoFitButton.dataset.pisiSheetColumnAction = 'autoFit';
+
+    hideButton.type = 'button';
+    hideButton.textContent =
+        window.pisiT?.('Sütunu gizle') || 'Hide column';
+    hideButton.dataset.pisiSheetColumnAction = 'hide';
+
+    const visibleFieldCount = fields.filter(
+        (candidate) => !hiddenIds.has(candidate.id)
+    ).length;
+    hideButton.disabled = visibleFieldCount <= 1;
+
+    deleteButton.type = 'button';
+    deleteButton.textContent =
+        window.pisiT?.('Sütunu sil') || 'Delete column';
+    deleteButton.dataset.pisiSheetColumnAction = 'delete';
+    deleteButton.className = 'danger';
+    deleteButton.disabled = fields.length <= 1;
+
+    actions.append(
+        autoFitButton,
+        hideButton,
+        deleteButton
+    );
+    menu.appendChild(actions);
+
+    const hiddenFields = fields.filter(
+        (candidate) => hiddenIds.has(candidate.id)
+    );
+
+    if (hiddenFields.length) {
+        const hiddenGroup = document.createElement('div');
+        const hiddenTitle = document.createElement('div');
+
+        hiddenGroup.className =
+            'pisi-sheet-hidden-columns-group';
+        hiddenTitle.className =
+            'pisi-sheet-hidden-columns-title';
+        hiddenTitle.textContent =
+            window.pisiT?.('Gizli sütunlar') ||
+            'Hidden columns';
+        hiddenGroup.appendChild(hiddenTitle);
+
+        hiddenFields.forEach((hiddenField) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent =
+                (window.pisiT?.('Göster') || 'Show') +
+                ': ' +
+                hiddenField.name;
+            button.dataset.pisiSheetShowFieldId =
+                hiddenField.id;
+
+            button.addEventListener('click', () => {
+                const index = fields.findIndex(
+                    (candidate) =>
+                        candidate.id === hiddenField.id
+                );
+
+                if (index < 0) return;
+
+                setPisiSheetFieldHidden(
+                    table,
+                    index,
+                    false
+                );
+                refreshPisiSheetAfterColumnPropertyChange(
+                    table
+                );
+                closePisiSheetColumnMenu();
+            });
+
+            hiddenGroup.appendChild(button);
+        });
+
+        menu.appendChild(hiddenGroup);
+    }
+
     document.body.appendChild(menu);
 
     const rect = header.getBoundingClientRect();
@@ -180,20 +453,100 @@ function openPisiSheetColumnMenu(table, header) {
     pisiSheetColumnMenu = {
         table,
         colIndex,
-        input,
-        menu,
-        originalLabel
+        menu
     };
+
+    const persistFieldPatch = (patch) => {
+        updatePisiSheetField(
+            table,
+            colIndex,
+            patch
+        );
+        refreshPisiSheetAfterColumnPropertyChange(table);
+    };
+
+    input.addEventListener('change', () => {
+        persistFieldPatch({
+            name: input.value
+        });
+    });
 
     input.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
             event.stopPropagation();
-            closePisiSheetColumnMenu(true);
+            persistFieldPatch({
+                name: input.value
+            });
+            closePisiSheetColumnMenu();
         } else if (event.key === 'Escape') {
             event.preventDefault();
             event.stopPropagation();
-            closePisiSheetColumnMenu(false);
+            closePisiSheetColumnMenu();
+        }
+    });
+
+    description.addEventListener('change', () => {
+        persistFieldPatch({
+            description: description.value
+        });
+    });
+
+    typeSelect.addEventListener('change', () => {
+        persistFieldPatch({
+            type: typeSelect.value
+        });
+    });
+
+    wrap.addEventListener('change', () => {
+        persistFieldPatch({
+            wrap: wrap.checked
+        });
+    });
+
+    widthInput.addEventListener('change', () => {
+        const width = setPisiSheetColumnWidth(
+            table,
+            colIndex,
+            Number(widthInput.value)
+        );
+        widthInput.value = String(width);
+        schedulePisiSheetEditorNotification(table);
+    });
+
+    pin.addEventListener('change', () => {
+        persistFieldPatch({
+            pin: pin.checked
+        });
+    });
+
+    autoFitButton.addEventListener('click', () => {
+        widthInput.value = String(
+            autoFitPisiSheetColumn(table, colIndex)
+        );
+    });
+
+    hideButton.addEventListener('click', () => {
+        setPisiSheetFieldHidden(
+            table,
+            colIndex,
+            true
+        );
+        refreshPisiSheetAfterColumnPropertyChange(table);
+        closePisiSheetColumnMenu();
+    });
+
+    deleteButton.addEventListener('click', () => {
+        closePisiSheetColumnMenu();
+        selectPisiSheetColumn(
+            table,
+            colIndex,
+            false
+        );
+
+        if (deletePisiSheetColumns(table)) {
+            syncPisiSheetToolbarForTable(table);
+            schedulePisiSheetEditorNotification(table);
         }
     });
 
@@ -244,7 +597,7 @@ function runPisiSheetContextAction(table, action) {
 }
 
 function openPisiSheetContextMenu(table, clientX, clientY) {
-    closePisiSheetColumnMenu(true);
+    closePisiSheetColumnMenu();
     closePisiSheetContextMenu();
 
     const dimensions = getPisiSheetDimensions(table);
@@ -334,7 +687,7 @@ document.addEventListener('pointerdown', (event) => {
         pisiSheetColumnMenu &&
         !pisiSheetColumnMenu.menu.contains(event.target)
     ) {
-        closePisiSheetColumnMenu(true);
+        closePisiSheetColumnMenu();
     }
 }, true);
 
@@ -346,12 +699,12 @@ document.addEventListener('keydown', (event) => {
 
 document.addEventListener('scroll', () => {
     closePisiSheetContextMenu();
-    closePisiSheetColumnMenu(true);
+    closePisiSheetColumnMenu();
 }, true);
 
 window.addEventListener('blur', () => {
     closePisiSheetContextMenu();
-    closePisiSheetColumnMenu(true);
+    closePisiSheetColumnMenu();
 });
 
 document.addEventListener('mouseup', () => {
@@ -407,6 +760,26 @@ function hydratePisiSheets(root = document) {
         });
 
         table.addEventListener('dblclick', (/** @type {MouseEvent} */ event) => {
+            const resizer = event.target.closest(
+                '[data-pisi-sheet-col-resizer]'
+            );
+
+            if (resizer && table.contains(resizer)) {
+                const colIndex = Number(
+                    resizer.dataset.pisiSheetColResizer
+                );
+
+                if (Number.isInteger(colIndex)) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    autoFitPisiSheetColumn(
+                        table,
+                        colIndex
+                    );
+                }
+                return;
+            }
+
             const cell = event.target.closest('td[data-cell]');
 
             if (!cell || !table.contains(cell)) return;
@@ -483,7 +856,7 @@ function hydratePisiSheets(root = document) {
 
                 event.preventDefault();
                 event.stopPropagation();
-                closePisiSheetColumnMenu(true);
+                closePisiSheetColumnMenu();
                 closePisiSheetContextMenu();
                 startPisiSheetColumnResize(
                     table,
@@ -564,7 +937,7 @@ function hydratePisiSheets(root = document) {
                 commit: true,
                 refocus: false
             });
-            closePisiSheetColumnMenu(true);
+            closePisiSheetColumnMenu();
             closePisiSheetContextMenu();
 
             event.preventDefault();

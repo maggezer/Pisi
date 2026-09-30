@@ -1,6 +1,7 @@
 import { registerModule } from "../core/module-registry.mjs";
 
 const pisiRenderedSheetSelectionCells = new WeakMap();
+const pisiRenderedSheetSelectionHeaders = new WeakMap();
 const pisiSheetEditStates = new WeakMap();
 
 function getPisiSheetDimensions(table) {
@@ -137,9 +138,11 @@ function getPisiSelectedSheetCells(table) {
 }
 
 function renderPisiSheetSelection(table) {
-    const previous =
+    const previousCells =
         pisiRenderedSheetSelectionCells.get(table) || new Set();
-    const selection = normalizePisiSheetSelection(table);
+    const previousHeaders =
+        pisiRenderedSheetSelectionHeaders.get(table) || new Set();
+    const selection = getPisiSheetSelection(table);
     const points = selection
         ? getPisiSelectedSheetPoints(table)
         : [];
@@ -152,25 +155,36 @@ function renderPisiSheetSelection(table) {
             ))
             .filter(Boolean)
     );
-    const activeCell = selection?.active
-        ? getPisiSheetCell(
-            table,
-            selection.active.row,
-            selection.active.col
-        )
-        : null;
-    const rendered = new Set(selectedCells);
+    const activeCell =
+        selection &&
+        !['row', 'column'].includes(selection.mode) &&
+        selection.active
+            ? getPisiSheetCell(
+                table,
+                selection.active.row,
+                selection.active.col
+            )
+            : null;
+    const renderedCells = new Set(selectedCells);
+    const renderedHeaders = new Set();
 
     if (activeCell) {
-        rendered.add(activeCell);
+        renderedCells.add(activeCell);
     }
 
-    for (const cell of previous) {
-        if (rendered.has(cell)) continue;
+    for (const cell of previousCells) {
+        if (renderedCells.has(cell)) continue;
 
         cell.classList.remove(
             'pisi-sheet-cell-selected',
             'pisi-sheet-cell-active'
+        );
+    }
+
+    for (const header of previousHeaders) {
+        if (renderedHeaders.has(header)) continue;
+        header.classList.remove(
+            'pisi-sheet-header-selected'
         );
     }
 
@@ -191,9 +205,67 @@ function renderPisiSheetSelection(table) {
         );
     }
 
+    if (selection?.mode === 'row') {
+        const rect = getPisiSheetSelectionRect(
+            selection.anchor,
+            selection.focus
+        );
+
+        if (rect) {
+            for (
+                let row = rect.rowStart;
+                row <= rect.rowEnd;
+                row += 1
+            ) {
+                const header = table.querySelector(
+                    'tbody th[data-row-header="' +
+                    row +
+                    '"]'
+                );
+
+                if (header) {
+                    header.classList.add(
+                        'pisi-sheet-header-selected'
+                    );
+                    renderedHeaders.add(header);
+                }
+            }
+        }
+    } else if (selection?.mode === 'column') {
+        const rect = getPisiSheetSelectionRect(
+            selection.anchor,
+            selection.focus
+        );
+
+        if (rect) {
+            for (
+                let col = rect.colStart;
+                col <= rect.colEnd;
+                col += 1
+            ) {
+                const header = table.querySelector(
+                    'thead th[data-col-header="' +
+                    col +
+                    '"]'
+                );
+
+                if (header) {
+                    header.classList.add(
+                        'pisi-sheet-header-selected'
+                    );
+                    renderedHeaders.add(header);
+                }
+            }
+        }
+    }
+
     pisiRenderedSheetSelectionCells.set(
         table,
-        rendered
+        renderedCells
+    );
+    pisiRenderedSheetSelectionHeaders.set(
+        table,
+        renderedHeaders
     );
 }
 
@@ -230,26 +302,34 @@ function reconcilePisiSheetSelection(table) {
 }
 
 function clearPisiSheetSelection(table) {
-    const previous =
+    const previousCells =
         pisiRenderedSheetSelectionCells.get(table) || new Set();
+    const previousHeaders =
+        pisiRenderedSheetSelectionHeaders.get(table) || new Set();
 
-    for (const cell of previous) {
+    for (const cell of previousCells) {
         cell.classList.remove(
             'pisi-sheet-cell-selected',
             'pisi-sheet-cell-active'
         );
     }
 
-    pisiRenderedSheetSelectionCells.set(table, new Set());
+    for (const header of previousHeaders) {
+        header.classList.remove(
+            'pisi-sheet-header-selected'
+        );
+    }
 
-    clearPisiSheetSelectionStateForDatabase(
+    pisiRenderedSheetSelectionCells.set(table, new Set());
+    pisiRenderedSheetSelectionHeaders.set(table, new Set());
+
+    clearPisiSheetAllSelectionStateForDatabase(
         getPisiSheetDatabase(table)
     );
 
     window.getSelection?.()?.removeAllRanges?.();
     syncPisiSheetToolbarForTable(table);
 }
-
 
 function isPisiSheetCellSelected(table, cell) {
     const point = getPisiSheetCellPosition(cell);
@@ -616,6 +696,48 @@ function isPisiSheetEditingCell(table, cell) {
     return pisiSheetEditStates.get(table)?.cell === cell;
 }
 
+function getPisiSheetVisibleColumnIndices(table) {
+    const dimensions = getPisiSheetDimensions(table);
+    const indices = [];
+
+    for (let col = 0; col < dimensions.cols; col += 1) {
+        if (!isPisiSheetFieldHidden(table, col)) {
+            indices.push(col);
+        }
+    }
+
+    return indices;
+}
+
+function getPisiSheetNextVisibleColumn(
+    table,
+    startCol,
+    direction
+) {
+    const visible = getPisiSheetVisibleColumnIndices(table);
+    if (!visible.length) return startCol;
+
+    if (direction > 0) {
+        return (
+            visible.find((col) => col > startCol) ??
+            visible[visible.length - 1]
+        );
+    }
+
+    if (direction < 0) {
+        return (
+            [...visible]
+                .reverse()
+                .find((col) => col < startCol) ??
+            visible[0]
+        );
+    }
+
+    return visible.includes(startCol)
+        ? startCol
+        : visible[0];
+}
+
 function extendPisiSheetSelectionByKeyboard(
     table,
     cell,
@@ -636,22 +758,27 @@ function extendPisiSheetSelectionByKeyboard(
         ArrowRight: [0, 1]
     };
     const delta = deltas[key];
+    let nextRow = Math.max(
+        0,
+        Math.min(
+            dimensions.rows - 1,
+            position.row + delta[0]
+        )
+    );
+    let nextCol = position.col;
+
+    if (delta[1]) {
+        nextCol = getPisiSheetNextVisibleColumn(
+            table,
+            position.col,
+            delta[1]
+        );
+    }
+
     const next = getPisiSheetPointByIndex(
         table,
-        Math.max(
-            0,
-            Math.min(
-                dimensions.rows - 1,
-                position.row + delta[0]
-            )
-        ),
-        Math.max(
-            0,
-            Math.min(
-                dimensions.cols - 1,
-                position.col + delta[1]
-            )
-        )
+        nextRow,
+        nextCol
     );
 
     if (!next) return;
@@ -668,7 +795,6 @@ function extendPisiSheetSelectionByKeyboard(
     );
 }
 
-
 function movePisiSheetCellFocus(
     table,
     cell,
@@ -680,15 +806,40 @@ function movePisiSheetCellFocus(
     const position = getPisiSheetCellPosition(cell);
     if (!position) return false;
 
-    let nextRow = position.row + rowDelta;
-    let nextCol = position.col + colDelta;
+    const visibleCols = getPisiSheetVisibleColumnIndices(table);
+    if (!visibleCols.length) return false;
 
-    if (options.wrap && nextCol >= dimensions.cols) {
-        nextCol = 0;
-        nextRow += 1;
-    } else if (options.wrap && nextCol < 0) {
-        nextCol = dimensions.cols - 1;
-        nextRow -= 1;
+    let nextRow = position.row + rowDelta;
+    let nextCol = position.col;
+
+    if (colDelta !== 0) {
+        const currentVisibleIndex =
+            visibleCols.indexOf(position.col);
+        let visibleIndex =
+            currentVisibleIndex >= 0
+                ? currentVisibleIndex
+                : 0;
+        visibleIndex += colDelta > 0 ? 1 : -1;
+
+        if (options.wrap && visibleIndex >= visibleCols.length) {
+            visibleIndex = 0;
+            nextRow += 1;
+        } else if (options.wrap && visibleIndex < 0) {
+            visibleIndex = visibleCols.length - 1;
+            nextRow -= 1;
+        } else {
+            visibleIndex = Math.max(
+                0,
+                Math.min(
+                    visibleCols.length - 1,
+                    visibleIndex
+                )
+            );
+        }
+
+        nextCol = visibleCols[visibleIndex];
+    } else if (!visibleCols.includes(nextCol)) {
+        nextCol = visibleCols[0];
     }
 
     if (
@@ -699,16 +850,12 @@ function movePisiSheetCellFocus(
         addPisiSheetRow(table, dimensions.rows - 1);
         dimensions = getPisiSheetDimensions(table);
         nextRow = dimensions.rows - 1;
-        nextCol = 0;
+        nextCol = visibleCols[0];
     }
 
     nextRow = Math.max(
         0,
         Math.min(dimensions.rows - 1, nextRow)
-    );
-    nextCol = Math.max(
-        0,
-        Math.min(dimensions.cols - 1, nextCol)
     );
 
     const nextCell = getPisiSheetCell(
@@ -717,7 +864,7 @@ function movePisiSheetCellFocus(
         nextCol
     );
 
-    if (!nextCell) return false;
+    if (!nextCell || nextCell.hidden) return false;
 
     selectPisiSheetCell(nextCell, {
         ensureVisible: true

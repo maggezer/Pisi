@@ -1,6 +1,7 @@
 import { registerModule } from "../core/module-registry.mjs";
 
 const pisiSheetSelections = new Map();
+const pisiSheetHeaderSelections = new Map();
 
 let pisiActiveSheetGroupId = null;
 
@@ -137,6 +138,7 @@ function setPisiSheetSelectionStateForDatabase(
         active: storePisiSheetSelectionPoint(active)
     };
 
+    pisiSheetHeaderSelections.delete(groupId);
     pisiSheetSelections.set(groupId, state);
     pisiActiveSheetGroupId = groupId;
 
@@ -151,7 +153,10 @@ function clearPisiSheetSelectionStateForDatabase(database) {
 
     const removed = pisiSheetSelections.delete(groupId);
 
-    if (pisiActiveSheetGroupId === groupId) {
+    if (
+        pisiActiveSheetGroupId === groupId &&
+        !pisiSheetHeaderSelections.has(groupId)
+    ) {
         pisiActiveSheetGroupId = null;
     }
 
@@ -259,6 +264,192 @@ function getPisiSelectedSheetPointsForDatabase(database) {
     return points;
 }
 
+function getPisiSheetHeaderSelectionStateForDatabase(
+    database
+) {
+    const groupId =
+        getPisiSheetSelectionGroupIdFromDatabase(database);
+
+    return groupId
+        ? pisiSheetHeaderSelections.get(groupId) || null
+        : null;
+}
+
+function setPisiSheetHeaderSelectionStateForDatabase(
+    database,
+    selection
+) {
+    const groupId =
+        getPisiSheetSelectionGroupIdFromDatabase(database);
+
+    if (
+        !groupId ||
+        !selection ||
+        !['row', 'column'].includes(selection.mode)
+    ) {
+        return null;
+    }
+
+    const mode = selection.mode;
+    let anchorId = '';
+    let focusId = '';
+
+    if (mode === 'row') {
+        anchorId = String(selection.anchorId || '');
+        focusId = String(selection.focusId || '');
+
+        if (
+            !database.items.some((item) => item.id === anchorId) ||
+            !database.items.some((item) => item.id === focusId)
+        ) {
+            return null;
+        }
+    } else {
+        const fields = getPisiSheetOrderedFields(database);
+        anchorId = String(selection.anchorId || '');
+        focusId = String(selection.focusId || '');
+
+        if (
+            !fields.some((field) => field.id === anchorId) ||
+            !fields.some((field) => field.id === focusId)
+        ) {
+            return null;
+        }
+    }
+
+    const state = {
+        groupId,
+        mode,
+        anchorId,
+        focusId
+    };
+
+    pisiSheetSelections.delete(groupId);
+    pisiSheetHeaderSelections.set(groupId, state);
+    pisiActiveSheetGroupId = groupId;
+
+    return state;
+}
+
+function clearPisiSheetHeaderSelectionStateForDatabase(database) {
+    const groupId =
+        getPisiSheetSelectionGroupIdFromDatabase(database);
+
+    if (!groupId) return false;
+
+    const removed = pisiSheetHeaderSelections.delete(groupId);
+
+    if (
+        removed &&
+        pisiActiveSheetGroupId === groupId &&
+        !pisiSheetSelections.has(groupId)
+    ) {
+        pisiActiveSheetGroupId = null;
+    }
+
+    return removed;
+}
+
+function getPisiSheetHeaderSelectionForDatabase(database) {
+    const state =
+        getPisiSheetHeaderSelectionStateForDatabase(database);
+
+    if (!state) return null;
+
+    if (state.mode === 'row') {
+        const anchorRow = database.items.findIndex(
+            (item) => item.id === state.anchorId
+        );
+        const focusRow = database.items.findIndex(
+            (item) => item.id === state.focusId
+        );
+        const fields = getPisiSheetOrderedFields(database);
+
+        if (
+            anchorRow < 0 ||
+            focusRow < 0 ||
+            !fields.length
+        ) {
+            clearPisiSheetHeaderSelectionStateForDatabase(
+                database
+            );
+            return null;
+        }
+
+        return {
+            groupId: state.groupId,
+            mode: 'row',
+            anchor: getPisiSheetPointByIndexFromDatabase(
+                database,
+                anchorRow,
+                0
+            ),
+            focus: getPisiSheetPointByIndexFromDatabase(
+                database,
+                focusRow,
+                fields.length - 1
+            ),
+            active: getPisiSheetPointByIndexFromDatabase(
+                database,
+                focusRow,
+                fields.length - 1
+            ),
+            anchorId: state.anchorId,
+            focusId: state.focusId
+        };
+    }
+
+    const fields = getPisiSheetOrderedFields(database);
+    const anchorCol = fields.findIndex(
+        (field) => field.id === state.anchorId
+    );
+    const focusCol = fields.findIndex(
+        (field) => field.id === state.focusId
+    );
+
+    if (
+        anchorCol < 0 ||
+        focusCol < 0 ||
+        !database.items.length
+    ) {
+        clearPisiSheetHeaderSelectionStateForDatabase(
+            database
+        );
+        return null;
+    }
+
+    return {
+        groupId: state.groupId,
+        mode: 'column',
+        anchor: getPisiSheetPointByIndexFromDatabase(
+            database,
+            0,
+            anchorCol
+        ),
+        focus: getPisiSheetPointByIndexFromDatabase(
+            database,
+            database.items.length - 1,
+            focusCol
+        ),
+        active: getPisiSheetPointByIndexFromDatabase(
+            database,
+            database.items.length - 1,
+            focusCol
+        ),
+        anchorId: state.anchorId,
+        focusId: state.focusId
+    };
+}
+
+function clearPisiSheetAllSelectionStateForDatabase(database) {
+    const cellCleared =
+        clearPisiSheetSelectionStateForDatabase(database);
+    const headerCleared =
+        clearPisiSheetHeaderSelectionStateForDatabase(database);
+
+    return cellCleared || headerCleared;
+}
+
 function getPisiSheetActiveGroupId() {
     return pisiActiveSheetGroupId;
 }
@@ -268,6 +459,10 @@ Object.defineProperties(moduleApi, {
     "pisiSheetSelections": {
         enumerable: true,
         get() { return pisiSheetSelections; }
+    },
+    "pisiSheetHeaderSelections": {
+        enumerable: true,
+        get() { return pisiSheetHeaderSelections; }
     },
     "getPisiSheetSelectionGroupIdFromDatabase": {
         enumerable: true,
@@ -327,6 +522,36 @@ Object.defineProperties(moduleApi, {
         enumerable: true,
         get() {
             return getPisiSelectedSheetPointsForDatabase;
+        }
+    },
+    "getPisiSheetHeaderSelectionStateForDatabase": {
+        enumerable: true,
+        get() {
+            return getPisiSheetHeaderSelectionStateForDatabase;
+        }
+    },
+    "setPisiSheetHeaderSelectionStateForDatabase": {
+        enumerable: true,
+        get() {
+            return setPisiSheetHeaderSelectionStateForDatabase;
+        }
+    },
+    "clearPisiSheetHeaderSelectionStateForDatabase": {
+        enumerable: true,
+        get() {
+            return clearPisiSheetHeaderSelectionStateForDatabase;
+        }
+    },
+    "getPisiSheetHeaderSelectionForDatabase": {
+        enumerable: true,
+        get() {
+            return getPisiSheetHeaderSelectionForDatabase;
+        }
+    },
+    "clearPisiSheetAllSelectionStateForDatabase": {
+        enumerable: true,
+        get() {
+            return clearPisiSheetAllSelectionStateForDatabase;
         }
     },
     "getPisiSheetActiveGroupId": {

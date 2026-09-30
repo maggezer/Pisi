@@ -103,7 +103,10 @@ function migratePisiSheetDatabaseFromDom(table) {
         ).slice(0, 80);
         field.width = width > 0
             ? Math.round(width)
-            : null;
+            : PISI_SHEET_DEFAULT_COLUMN_WIDTH;
+        field.wrap = false;
+        field.pin = false;
+        field.description = '';
     });
 
     const view = seed.views[0];
@@ -193,6 +196,28 @@ function renderPisiSheetDatabase(table) {
     if (!database) return null;
 
     const fields = getPisiSheetOrderedFields(database);
+    const view = getPisiSheetTableView(database);
+    const hiddenFieldIds = new Set(
+        view?.hiddenFieldIds || []
+    );
+    const pinLeftByFieldId = new Map();
+    let pinnedLeft = 36;
+
+    fields.forEach((field) => {
+        if (hiddenFieldIds.has(field.id)) return;
+
+        if (field.pin) {
+            pinLeftByFieldId.set(
+                field.id,
+                pinnedLeft
+            );
+            pinnedLeft += Number(
+                field.width ||
+                PISI_SHEET_DEFAULT_COLUMN_WIDTH
+            );
+        }
+    });
+
     let thead = table.querySelector('thead');
 
     if (!thead) {
@@ -234,6 +259,24 @@ function renderPisiSheetDatabase(table) {
             header.style.width = size;
             header.style.minWidth = size;
             header.style.maxWidth = size;
+        }
+
+        if (field.description) {
+            header.title = field.description;
+        }
+
+        if (hiddenFieldIds.has(field.id)) {
+            header.hidden = true;
+        }
+
+        if (field.pin && !header.hidden) {
+            header.classList.add(
+                'pisi-sheet-column-pinned'
+            );
+            header.style.left =
+                String(
+                    pinLeftByFieldId.get(field.id) || 36
+                ) + 'px';
         }
 
         headers.push(header);
@@ -287,6 +330,25 @@ function renderPisiSheetDatabase(table) {
                     cell,
                     record?.format || {}
                 );
+
+                cell.style.whiteSpace =
+                    field.wrap ? 'normal' : 'nowrap';
+                cell.style.overflowWrap =
+                    field.wrap ? 'anywhere' : '';
+
+                if (hiddenFieldIds.has(field.id)) {
+                    cell.hidden = true;
+                }
+
+                if (field.pin && !cell.hidden) {
+                    cell.classList.add(
+                        'pisi-sheet-column-pinned'
+                    );
+                    cell.style.left =
+                        String(
+                            pinLeftByFieldId.get(field.id) || 36
+                        ) + 'px';
+                }
 
                 if (!record?.formula) {
                     cell.textContent = String(

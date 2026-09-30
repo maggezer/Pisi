@@ -1163,36 +1163,274 @@ try {
         Element.prototype.scrollIntoView =
             originalScrollIntoView;
 
-        firstHeader?.dispatchEvent(new MouseEvent('click', {
+        const stage7CellA1 = table.querySelector(
+            'td[data-cell="A1"]'
+        );
+        const stage7RowHeader = table.querySelector(
+            'tbody th[data-row-header="0"]'
+        );
+
+        stage7CellA1?.dispatchEvent(
+            new MouseEvent('mousedown', {
+                bubbles: true,
+                cancelable: true,
+                button: 0,
+                buttons: 1
+            })
+        );
+        document.dispatchEvent(
+            new MouseEvent('mouseup', {
+                bubbles: true,
+                cancelable: true,
+                button: 0
+            })
+        );
+
+        const stage7CellStateBeforeRow =
+            window.getPisiSheetSelectionState?.(table) || null;
+
+        stage7RowHeader?.dispatchEvent(
+            new MouseEvent('mousedown', {
+                bubbles: true,
+                cancelable: true,
+                button: 0,
+                buttons: 1
+            })
+        );
+        document.dispatchEvent(
+            new MouseEvent('mouseup', {
+                bubbles: true,
+                cancelable: true,
+                button: 0
+            })
+        );
+
+        const stage7CellStateAfterRow =
+            window.getPisiSheetSelectionState?.(table) || null;
+        const stage7RowState =
+            window.getPisiSheetHeaderSelection?.(table) || null;
+        const stage7SelectedRowHeaders =
+            table.querySelectorAll(
+                'tbody th.pisi-sheet-header-selected'
+            ).length;
+
+        const stage7CellB2 = table.querySelector(
+            'td[data-cell="B2"]'
+        );
+        stage7CellB2?.dispatchEvent(
+            new MouseEvent('mousedown', {
+                bubbles: true,
+                cancelable: true,
+                button: 0,
+                buttons: 1
+            })
+        );
+        document.dispatchEvent(
+            new MouseEvent('mouseup', {
+                bubbles: true,
+                cancelable: true,
+                button: 0
+            })
+        );
+
+        const stage7HeaderStateAfterCell =
+            window.getPisiSheetHeaderSelection?.(table) || null;
+        const stage7CellStateAfterCell =
+            window.getPisiSheetSelectionState?.(table) || null;
+
+        const propertyHeader = table.querySelector(
+            'thead th[data-col-header="0"]'
+        );
+        const propertyLabel = propertyHeader?.querySelector(
+            '.pisi-sheet-col-label'
+        );
+
+        propertyHeader?.dispatchEvent(new MouseEvent('click', {
             bubbles: true,
             cancelable: true,
             button: 0
         }));
 
+        propertyHeader?.dispatchEvent(
+            new MouseEvent('dblclick', {
+                bubbles: true,
+                cancelable: true,
+                button: 0,
+                detail: 2
+            })
+        );
+
         const selectedAfterHeaderClick =
-            table.querySelectorAll('.pisi-sheet-cell-selected').length;
+            table.querySelectorAll(
+                '.pisi-sheet-cell-selected'
+            ).length;
         const activeAfterHeaderClick = activeCellLabel(table);
-        const columnMenu = document.querySelector(
+        const stage8HeaderSelectionAfterOpen =
+            window.getPisiSheetHeaderSelection?.(table) || null;
+        let columnMenu = document.querySelector(
             '.pisi-sheet-column-menu'
         );
+        const stage8InlineEditorPresent = Boolean(
+            table.querySelector(
+                '.pisi-sheet-col-editor, ' +
+                '[contenteditable="true"].pisi-sheet-col-label'
+            )
+        );
+        const stage8HeaderContentEditable =
+            propertyHeader?.getAttribute(
+                'contenteditable'
+            ) || '';
+        const stage8LabelContentEditable =
+            propertyLabel?.getAttribute(
+                'contenteditable'
+            ) || '';
+
         const columnNameInput = columnMenu?.querySelector(
             '.pisi-sheet-column-name-input'
+        );
+        const descriptionInput = columnMenu?.querySelector(
+            '.pisi-sheet-column-description-input'
+        );
+        const typeSelect = columnMenu?.querySelector(
+            '.pisi-sheet-column-select'
+        );
+        const wrapInput = columnMenu?.querySelector(
+            '.pisi-sheet-column-property-row input[type="checkbox"]'
+        );
+        const propertyCheckboxes = columnMenu
+            ? Array.from(
+                columnMenu.querySelectorAll(
+                    '.pisi-sheet-column-property-row ' +
+                    'input[type="checkbox"]'
+                )
+            )
+            : [];
+        const pinInput = propertyCheckboxes[1] || null;
+        const widthInput = columnMenu?.querySelector(
+            '.pisi-sheet-column-width-input'
+        );
+        const autoFitAction = columnMenu?.querySelector(
+            '[data-pisi-sheet-column-action="autoFit"]'
+        );
+        const hideAction = columnMenu?.querySelector(
+            '[data-pisi-sheet-column-action="hide"]'
+        );
+        const deleteColumnAction = columnMenu?.querySelector(
+            '[data-pisi-sheet-column-action="delete"]'
         );
 
         if (columnNameInput) {
             columnNameInput.value = 'Project';
             columnNameInput.dispatchEvent(
-                new KeyboardEvent('keydown', {
-                    bubbles: true,
-                    cancelable: true,
-                    key: 'Enter'
+                new Event('change', {
+                    bubbles: true
                 })
             );
         }
 
+        if (descriptionInput) {
+            descriptionInput.value = 'Project identifier';
+            descriptionInput.dispatchEvent(
+                new Event('change', {
+                    bubbles: true
+                })
+            );
+        }
+
+        if (typeSelect) {
+            typeSelect.value = 'number';
+            typeSelect.dispatchEvent(
+                new Event('change', {
+                    bubbles: true
+                })
+            );
+        }
+
+        if (wrapInput) {
+            wrapInput.checked = true;
+            wrapInput.dispatchEvent(
+                new Event('change', {
+                    bubbles: true
+                })
+            );
+        }
+
+        if (pinInput) {
+            pinInput.checked = true;
+            pinInput.dispatchEvent(
+                new Event('change', {
+                    bubbles: true
+                })
+            );
+        }
+
+        if (widthInput) {
+            widthInput.value = '142';
+            widthInput.dispatchEvent(
+                new Event('change', {
+                    bubbles: true
+                })
+            );
+        }
+
+        const stage8FieldAfterProperties = {
+            ...(window.getPisiSheetField?.(table, 0) || {})
+        };
+        const stage8PinnedHeader = table.querySelector(
+            'thead th[data-col-header="0"].pisi-sheet-column-pinned'
+        );
+        const stage8WrappedCell = table.querySelector(
+            'tbody td[data-col="0"]'
+        );
+
+        hideAction?.click();
+
+        const stage8HiddenHeader = table.querySelector(
+            'thead th[data-col-header="0"]'
+        );
+        const stage8HiddenAfterAction =
+            stage8HiddenHeader?.hidden === true;
+
+        const secondHeaderForUnhide = table.querySelector(
+            'thead th[data-col-header="1"]'
+        );
+        secondHeaderForUnhide?.dispatchEvent(
+            new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true,
+                button: 0
+            })
+        );
+
+        columnMenu = document.querySelector(
+            '.pisi-sheet-column-menu'
+        );
+        const showHiddenButton = columnMenu
+            ? Array.from(
+                columnMenu.querySelectorAll(
+                    '[data-pisi-sheet-show-field-id]'
+                )
+            ).find((button) => (
+                button.textContent.includes('Project')
+            ))
+            : null;
+
+        showHiddenButton?.click();
+
+        const stage8RestoredHeader = table.querySelector(
+            'thead th[data-col-header="0"]'
+        );
+        const stage8HiddenRestored =
+            stage8RestoredHeader?.hidden === false;
+        const stage8DeleteActionPresent =
+            Boolean(deleteColumnAction);
+        const stage8AutoFitActionPresent =
+            Boolean(autoFitAction);
+
         const renamedHeader =
             table.querySelector(
-                'thead th[data-col-header="0"] .pisi-sheet-col-label'
+                'thead th[data-col-header="0"] ' +
+                '.pisi-sheet-col-label'
             )?.textContent?.trim() || '';
 
         const renamedModelField =
@@ -1204,6 +1442,55 @@ try {
         const firstResizer = resizeHeader?.querySelector(
             '[data-pisi-sheet-col-resizer="0"]'
         );
+
+        window.setPisiSheetCellSource?.(
+            table,
+            0,
+            0,
+            {
+                value: 'A considerably longer Project value',
+                formula: null
+            }
+        );
+        window.recalcPisiSheet?.(table);
+
+        firstResizer?.dispatchEvent(
+            new MouseEvent('dblclick', {
+                bubbles: true,
+                cancelable: true,
+                button: 0,
+                detail: 2
+            })
+        );
+
+        const widthAfterAutoFit =
+            resizeHeader?.getBoundingClientRect().width || 0;
+        const modelWidthAfterAutoFit =
+            window.getPisiSheetField?.(table, 0)?.width || 0;
+
+        firstResizer?.dispatchEvent(new MouseEvent('mousedown', {
+            bubbles: true,
+            cancelable: true,
+            button: 0,
+            buttons: 1,
+            clientX: 120
+        }));
+        document.dispatchEvent(new MouseEvent('mousemove', {
+            bubbles: true,
+            cancelable: true,
+            buttons: 1,
+            clientX: 122
+        }));
+        document.dispatchEvent(new MouseEvent('mouseup', {
+            bubbles: true,
+            cancelable: true,
+            button: 0,
+            clientX: 122
+        }));
+
+        const widthAfterSnapAttempt =
+            resizeHeader?.getBoundingClientRect().width || 0;
+
         const widthBeforeResize =
             resizeHeader?.getBoundingClientRect().width || 0;
 
@@ -1229,13 +1516,16 @@ try {
 
         const widthAfterResize =
             resizeHeader?.getBoundingClientRect().width || 0;
+        const currentFirstCell = table.querySelector(
+            'td[data-cell="A1"]'
+        );
         const bodyWidthAfterResize =
-            firstCell.getBoundingClientRect().width || 0;
+            currentFirstCell?.getBoundingClientRect().width || 0;
 
         const modelWidthAfterResize =
             window.getPisiSheetField?.(table, 0)?.width || 0;
 
-        firstCell.dispatchEvent(new MouseEvent('contextmenu', {
+        currentFirstCell?.dispatchEvent(new MouseEvent('contextmenu', {
             bubbles: true,
             cancelable: true,
             button: 2,
@@ -1422,12 +1712,33 @@ try {
             stage5VisibilityAllNearest,
             stage5EscapeClearedSelection,
             stage5EscapeClearedActive,
+            stage7CellStateBeforeRow,
+            stage7CellStateAfterRow,
+            stage7RowState,
+            stage7SelectedRowHeaders,
+            stage7HeaderStateAfterCell,
+            stage7CellStateAfterCell,
             selectedAfterHeaderClick,
             activeAfterHeaderClick,
+            stage8HeaderSelectionAfterOpen,
+            stage8InlineEditorPresent,
+            stage8HeaderContentEditable,
+            stage8LabelContentEditable,
             columnMenuPresent: Boolean(columnMenu),
+            stage8FieldAfterProperties,
+            stage8PinnedHeaderPresent: Boolean(stage8PinnedHeader),
+            stage8WrappedWhiteSpace:
+                stage8WrappedCell?.style?.whiteSpace || '',
+            stage8HiddenAfterAction,
+            stage8HiddenRestored,
+            stage8DeleteActionPresent,
+            stage8AutoFitActionPresent,
             renamedHeader,
             renamedModelField,
             hasColumnResizer: Boolean(firstResizer),
+            widthAfterAutoFit,
+            modelWidthAfterAutoFit,
+            widthAfterSnapAttempt,
             widthBeforeResize,
             widthAfterResize,
             bodyWidthAfterResize,
@@ -1601,12 +1912,45 @@ try {
         !sheetResult.stage5VisibilityAllNearest ||
         !sheetResult.stage5EscapeClearedSelection ||
         !sheetResult.stage5EscapeClearedActive ||
+        sheetResult.stage7CellStateBeforeRow?.mode !== 'cell' ||
+        sheetResult.stage7CellStateAfterRow !== null ||
+        sheetResult.stage7RowState?.mode !== 'row' ||
+        sheetResult.stage7SelectedRowHeaders !== 1 ||
+        sheetResult.stage7HeaderStateAfterCell !== null ||
+        sheetResult.stage7CellStateAfterCell?.mode !== 'cell' ||
         sheetResult.selectedAfterHeaderClick !== 0 ||
         sheetResult.activeAfterHeaderClick !== '' ||
+        sheetResult.stage8HeaderSelectionAfterOpen !== null ||
+        sheetResult.stage8InlineEditorPresent ||
+        sheetResult.stage8HeaderContentEditable !== '' ||
+        sheetResult.stage8LabelContentEditable !== '' ||
         !sheetResult.columnMenuPresent ||
+        sheetResult.stage8FieldAfterProperties?.name !== 'Project' ||
+        sheetResult.stage8FieldAfterProperties?.description !==
+            'Project identifier' ||
+        sheetResult.stage8FieldAfterProperties?.type !== 'number' ||
+        sheetResult.stage8FieldAfterProperties?.wrap !== true ||
+        sheetResult.stage8FieldAfterProperties?.pin !== true ||
+        sheetResult.stage8FieldAfterProperties?.width !== 142 ||
+        !sheetResult.stage8PinnedHeaderPresent ||
+        sheetResult.stage8WrappedWhiteSpace !== 'normal' ||
+        !sheetResult.stage8HiddenAfterAction ||
+        !sheetResult.stage8HiddenRestored ||
+        !sheetResult.stage8DeleteActionPresent ||
+        !sheetResult.stage8AutoFitActionPresent ||
         sheetResult.renamedHeader !== 'Project' ||
         sheetResult.renamedModelField !== 'Project' ||
         !sheetResult.hasColumnResizer ||
+        sheetResult.widthAfterAutoFit < 64 ||
+        sheetResult.widthAfterAutoFit > 480 ||
+        Math.abs(
+            sheetResult.modelWidthAfterAutoFit -
+            sheetResult.widthAfterAutoFit
+        ) > 2 ||
+        Math.abs(
+            sheetResult.widthAfterSnapAttempt -
+            sheetResult.widthAfterAutoFit
+        ) > 2 ||
         sheetResult.widthAfterResize <
             sheetResult.widthBeforeResize + 40 ||
         Math.abs(

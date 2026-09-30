@@ -238,6 +238,12 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         database,
         /PISI_SHEET_DEFAULT_COLUMN_WIDTH = 96/
     );
+    assert.match(database, /description:/);
+    assert.match(database, /wrap:/);
+    assert.match(database, /pin:/);
+    assert.match(database, /updatePisiSheetField/);
+    assert.match(database, /setPisiSheetFieldHidden/);
+    assert.match(database, /hiddenFieldIds/);
 
     assert.doesNotMatch(database, /querySelector/);
     assert.doesNotMatch(database, /querySelectorAll/);
@@ -248,6 +254,10 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(databaseDom, /renderPisiSheetDatabase/);
     assert.match(databaseDom, /pisiRowId/);
     assert.match(databaseDom, /pisiColId/);
+    assert.match(databaseDom, /hiddenFieldIds/);
+    assert.match(databaseDom, /field\.wrap/);
+    assert.match(databaseDom, /field\.pin/);
+    assert.match(databaseDom, /pisi-sheet-column-pinned/);
     assert.match(
         databaseDom,
         /setAttribute\(\s*'contenteditable',\s*'false'/
@@ -283,6 +293,22 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         /getPisiSheetActivePointForDatabase/
     );
     assert.match(selectionState, /pisiSheetSelections = new Map/);
+    assert.match(
+        selectionState,
+        /pisiSheetHeaderSelections = new Map/
+    );
+    assert.match(
+        selectionState,
+        /setPisiSheetHeaderSelectionStateForDatabase/
+    );
+    assert.match(
+        selectionState,
+        /getPisiSheetHeaderSelectionForDatabase/
+    );
+    assert.match(
+        selectionState,
+        /pisiSheetHeaderSelections\.delete\(groupId\)/
+    );
     assert.match(selectionState, /pisiActiveSheetGroupId/);
     assert.match(
         selectionState,
@@ -302,6 +328,18 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.doesNotMatch(selectionState, /contenteditable/);
 
     assert.match(selection, /getPisiSheetSelectionState/);
+    assert.match(
+        selection,
+        /getPisiSheetHeaderSelection/
+    );
+    assert.match(
+        selection,
+        /pisi-sheet-header-selected/
+    );
+    assert.match(
+        selection,
+        /setPisiSheetHeaderSelectionStateForDatabase/
+    );
     assert.match(selection, /setPisiSheetSelectionState/);
     assert.match(selection, /getPisiSheetSelectionFocus/);
     assert.match(selection, /getPisiSheetActivePoint/);
@@ -375,6 +413,38 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         /pisiSheetSelections\.(get|set)/
     );
     assert.match(interactions, /setPisiSheetFieldWidth/);
+    assert.match(
+        interactions,
+        /PISI_SHEET_MIN_COLUMN_WIDTH = 25/
+    );
+    assert.match(
+        interactions,
+        /PISI_SHEET_AUTO_FIT_MIN_WIDTH = 64/
+    );
+    assert.match(
+        interactions,
+        /PISI_SHEET_AUTO_FIT_MAX_WIDTH = 480/
+    );
+    assert.match(
+        interactions,
+        /PISI_SHEET_RESIZE_SNAP_PX = 4/
+    );
+    assert.match(interactions, /autoFitPisiSheetColumn/);
+    assert.match(interactions, /measurePisiSheetText/);
+    assert.match(interactions, /updatePisiSheetField/);
+    assert.match(interactions, /setPisiSheetFieldHidden/);
+    assert.match(
+        interactions,
+        /pisi-sheet-column-property-row/
+    );
+    assert.match(
+        interactions,
+        /data-pisi-sheet-column-action/
+    );
+    assert.doesNotMatch(
+        interactions,
+        /pisi-sheet-col-editor/
+    );
     assert.match(
         interactions,
         /beginPisiSheetFormulaReferencePick/
@@ -519,6 +589,22 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         componentsCss,
         /pisi-sheet-cell-selected/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-header-selected/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-column-property-row/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-column-pinned/
+    );
+    assert.match(
+        componentsCss,
+        /min-width: 25px/
     );
     assert.doesNotMatch(
         componentsCss,
