@@ -226,4 +226,17 @@ test('tablo arayüzünde Phase 2 gezinme, seçim, yapı ve biçimlendirme bulunu
         /if \(pisiBoundSheets\.has\(table\)\) return;[\s\S]*refreshPisiSheetCellMetadata\(table\)/
     );
     assert.match(interactions, /function isPisiSheetCellSelected/);
+    assert.match(interactions, /pisiRenderedSheetSelectionCells/);
+    assert.match(
+        interactions,
+        /table\.tBodies\?\.\[0\]\?\.rows\?\.\[row\]/
+    );
+    assert.doesNotMatch(
+        interactions,
+        /getPisiSelectedSheetCells\(table\)\.includes\(cell\)/
+    );
+    assert.doesNotMatch(
+        interactions,
+        /table\.querySelectorAll\(\s*['"]\.pisi-sheet-cell-selected/
+    );
 });
