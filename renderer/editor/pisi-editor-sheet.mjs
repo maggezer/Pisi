@@ -439,7 +439,9 @@ function getPisiSheetRangeValues(table, startRef, endRef, stack = new Set()) {
 function parsePisiCellRef(ref) {
     const match = String(ref || '')
         .toUpperCase()
-        .replaceAll('
+        .replaceAll('$', '')
+        .match(/^([A-Z]+)(\d+)$/);
+
     if (!match) return null;
 
     return {
