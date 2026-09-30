@@ -3,6 +3,7 @@ import { registerModule } from "../core/module-registry.mjs";
 const pisiSheetSelections = new WeakMap();
 
 const pisiSheetNotifyTimers = new WeakMap();
+const pisiRenderedSheetSelectionCells = new WeakMap();
 
 let pisiSheetDragSelection = null;
 
@@ -98,10 +99,23 @@ function hydratePisiSheets(root = document) {
                     focus: true
                 });
             } else {
-                const selectedCells = getPisiSelectedSheetCells(table);
+                const currentSelection = pisiSheetSelections.get(table);
+                const currentRect = currentSelection
+                    ? getPisiSheetSelectionRect(
+                        currentSelection.anchor,
+                        currentSelection.focus
+                    )
+                    : null;
+                const selectedCellCount = currentRect
+                    ? (
+                        (currentRect.rowEnd - currentRect.rowStart + 1) *
+                        (currentRect.colEnd - currentRect.colStart + 1)
+                    )
+                    : 1;
+
                 if (
                     window.__pisiActiveSheetCell !== cell ||
-                    selectedCells.length > 1
+                    selectedCellCount > 1
                 ) {
                     selectPisiSheetCell(cell);
                     requestAnimationFrame(() => {
@@ -272,9 +286,18 @@ function getPisiSheetCellPosition(cell) {
 }
 
 function getPisiSheetCell(table, row, col) {
-    return table.querySelector(
-        `td[data-row="${row}"][data-col="${col}"]`
-    );
+    if (
+        !table ||
+        !Number.isInteger(row) ||
+        !Number.isInteger(col) ||
+        row < 0 ||
+        col < 0
+    ) {
+        return null;
+    }
+
+    const tableRow = table.tBodies?.[0]?.rows?.[row];
+    return tableRow?.cells?.[col + 1] || null;
 }
 
 function getPisiSheetSelectionRect(anchor, focus) {
@@ -340,27 +363,39 @@ function getPisiSelectedSheetCells(table) {
 }
 
 function renderPisiSheetSelection(table) {
-    table.querySelectorAll(
-        '.pisi-sheet-cell-selected, .pisi-sheet-cell-range'
-    ).forEach((cell) => {
+    const previousCells =
+        pisiRenderedSheetSelectionCells.get(table) || new Set();
+    const selection = pisiSheetSelections.get(table);
+    const nextCells = new Set(
+        selection
+            ? getPisiSelectedSheetCells(table)
+            : []
+    );
+
+    for (const cell of previousCells) {
+        if (nextCells.has(cell)) continue;
         cell.classList.remove(
             'pisi-sheet-cell-selected',
             'pisi-sheet-cell-range'
         );
-    });
+    }
 
-    const selection = pisiSheetSelections.get(table);
-    if (!selection) return;
+    for (const cell of nextCells) {
+        if (!previousCells.has(cell)) {
+            cell.classList.add('pisi-sheet-cell-range');
+        }
+        cell.classList.remove('pisi-sheet-cell-selected');
+    }
 
-    getPisiSelectedSheetCells(table).forEach((cell) => {
-        cell.classList.add('pisi-sheet-cell-range');
-    });
+    if (selection) {
+        getPisiSheetCell(
+            table,
+            selection.focus.row,
+            selection.focus.col
+        )?.classList.add('pisi-sheet-cell-selected');
+    }
 
-    getPisiSheetCell(
-        table,
-        selection.focus.row,
-        selection.focus.col
-    )?.classList.add('pisi-sheet-cell-selected');
+    pisiRenderedSheetSelectionCells.set(table, nextCells);
 }
 
 function selectPisiSheetCell(cell, options = {}) {
