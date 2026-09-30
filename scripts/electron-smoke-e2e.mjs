@@ -188,6 +188,7 @@ try {
         editor.innerHTML = '<div><br></div>';
 
         const tableTrigger = toolbar.querySelector('[data-pisi-table-trigger]');
+        const rollupTrigger = toolbar.querySelector('[data-pisi-rollup-trigger]');
         const addRow = toolbar.querySelector(
             '[data-pisi-excel-action="addRow"]'
         );
@@ -202,6 +203,8 @@ try {
         window.syncPisiSheetToolbarState?.(toolbar, null);
 
         const toolbarRect = toolbar.getBoundingClientRect();
+        const tableRect = tableTrigger?.getBoundingClientRect();
+        const rollupRect = rollupTrigger?.getBoundingClientRect();
         const toolsBeforeRect = inlineTools?.getBoundingClientRect();
         const toolsVisibleBeforeSheet = Boolean(
             toolsBeforeRect &&
@@ -253,6 +256,22 @@ try {
         return {
             ok: true,
             hasTableTrigger: Boolean(tableTrigger),
+            hasRollupTrigger: Boolean(rollupTrigger),
+            mainButtonsStacked: Boolean(
+                tableRect &&
+                rollupRect &&
+                rollupRect.top > tableRect.top &&
+                Math.abs(rollupRect.left - tableRect.left) <= 1
+            ),
+            toolsRightOfMainStack: Boolean(
+                tableRect &&
+                rollupRect &&
+                toolsBeforeRect &&
+                toolsBeforeRect.left > Math.max(
+                    tableRect.right,
+                    rollupRect.right
+                )
+            ),
             hasAddRow: Boolean(addRow),
             hasDeleteRow: Boolean(deleteRow),
             hasWrap: Boolean(wrap),
@@ -286,6 +305,9 @@ try {
     if (
         !sheetResult?.ok ||
         !sheetResult.hasTableTrigger ||
+        !sheetResult.hasRollupTrigger ||
+        !sheetResult.mainButtonsStacked ||
+        !sheetResult.toolsRightOfMainStack ||
         !sheetResult.hasAddRow ||
         !sheetResult.hasDeleteRow ||
         !sheetResult.hasWrap ||
