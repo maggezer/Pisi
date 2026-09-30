@@ -490,7 +490,7 @@ function schedulePisiSheetEditorNotification(table) {
 
         const editor = getEditorForPisiElement(table);
         if (editor) {
-            notifyPisiEditorChanged(editor);
+            notifyPisiEditorChanged(editor, false);
         }
     }, 0);
 
@@ -514,6 +514,13 @@ function syncPisiSheetToolbarForTable(table) {
             `.pisi-editor-toolbar[data-editor-target="${editor.id}"]`
         )
         : null;
+
+    if (toolbar) {
+        toolbar.classList.toggle(
+            'pisi-table-context',
+            Boolean(table)
+        );
+    }
 
     syncPisiSheetToolbarState(toolbar, table);
 }
