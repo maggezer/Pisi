@@ -148,6 +148,28 @@
     ]
   },
   {
+    "module": "editor.sheetViewQuery",
+    "path": "renderer/editor/pisi-editor-sheet-view-query.mjs",
+    "bindings": [
+      "getPisiSheetActiveViewFilters",
+      "getPisiSheetActiveViewSorts",
+      "getPisiSheetViewRecords",
+      "getPisiSheetVisibleRowIndices",
+      "getPisiSheetNextVisibleRowIndex",
+      "refreshPisiSheetViewQuery",
+      "setPisiSheetViewFilters",
+      "setPisiSheetViewSorts",
+      "addPisiSheetViewFilterCondition",
+      "addPisiSheetViewFilterGroup",
+      "updatePisiSheetViewFilterNode",
+      "removePisiSheetViewFilterNode",
+      "addPisiSheetViewSort",
+      "updatePisiSheetViewSort",
+      "removePisiSheetViewSort",
+      "movePisiSheetViewSort"
+    ]
+  },
+  {
     "module": "editor.sheetDatabaseDom",
     "path": "renderer/editor/pisi-editor-sheet-database-dom.mjs",
     "bindings": [
@@ -294,6 +316,15 @@
       "setPisiSheetActiveView",
       "refreshPisiSheetActiveView",
       "activatePisiSheetView"
+    ]
+  },
+  {
+    "module": "editor.sheetViewRulesUi",
+    "path": "renderer/editor/pisi-editor-sheet-view-rules-ui.mjs",
+    "bindings": [
+      "openPisiSheetViewRulesPanel",
+      "closePisiSheetViewRulesPanel",
+      "renderPisiSheetViewRulesPanel"
     ]
   },
   {

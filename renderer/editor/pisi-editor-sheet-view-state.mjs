@@ -1,4 +1,7 @@
 import { registerModule } from "../core/module-registry.mjs";
+import {
+    makePisiSheetEmptyFilterTree
+} from "./pisi-editor-sheet-view-query-core.mjs";
 
 function createPisiSheetViewId() {
     const uuid = globalThis.crypto?.randomUUID?.();
@@ -35,9 +38,9 @@ function clonePisiSheetTableView(
         hiddenFieldIds: [
             ...(active.hiddenFieldIds || [])
         ],
-        filters: Array.isArray(active.filters)
-            ? structuredClone(active.filters)
-            : [],
+        filters: structuredClone(
+            active.filters || makePisiSheetEmptyFilterTree()
+        ),
         sorts: Array.isArray(active.sorts)
             ? structuredClone(active.sorts)
             : []
@@ -67,14 +70,7 @@ function setPisiSheetActiveView(table, viewId) {
 }
 
 function refreshPisiSheetActiveView(table) {
-    renderPisiSheetDatabase(table);
-    recalcPisiSheet(table);
-    reconcilePisiSheetSelection(table);
-    schedulePisiSheetEditorNotification(table);
-
-    return getPisiSheetTableView(
-        getPisiSheetDatabase(table)
-    );
+    return refreshPisiSheetViewQuery(table);
 }
 
 function activatePisiSheetView(table, viewId) {

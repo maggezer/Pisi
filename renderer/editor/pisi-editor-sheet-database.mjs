@@ -9,6 +9,11 @@ import {
     normalizePisiSheetNumberFormat,
     normalizePisiSheetStoredValue
 } from "./pisi-editor-sheet-field-types-core.mjs";
+import {
+    makePisiSheetEmptyFilterTree,
+    normalizePisiSheetFilterTree,
+    normalizePisiSheetSorts
+} from "./pisi-editor-sheet-view-query-core.mjs";
 
 const PISI_SHEET_DATABASE_VERSION = 1;
 const PISI_SHEET_DEFAULT_COLUMN_WIDTH = 96;
@@ -113,7 +118,7 @@ function createPisiSheetTableView(fields, options = {}) {
         name: String(options.name || 'Table'),
         fieldOrder: fields.map((field) => field.id),
         hiddenFieldIds: [],
-        filters: [],
+        filters: makePisiSheetEmptyFilterTree(),
         sorts: []
     };
 }
@@ -272,12 +277,14 @@ function normalizePisiSheetDatabase(database) {
                         (id) => fieldIds.has(id)
                     )
                     : [],
-                filters: Array.isArray(view.filters)
-                    ? view.filters
-                    : [],
-                sorts: Array.isArray(view.sorts)
-                    ? view.sorts
-                    : []
+                filters: normalizePisiSheetFilterTree(
+                    view.filters,
+                    fieldIds
+                ),
+                sorts: normalizePisiSheetSorts(
+                    view.sorts,
+                    fieldIds
+                )
             };
         });
 

@@ -573,6 +573,48 @@ body.light-theme .pisi-sheet-typed-editor-actions button {
     color: #3a3d42;
 }
 
+body.light-theme .pisi-sheet-view-rules-panel {
+    border-color: #d8d8d8;
+    background: #ffffff;
+    color: #222222;
+    box-shadow: 0 14px 30px rgba(31, 35, 41, 0.16);
+}
+
+body.light-theme .pisi-sheet-view-rules-section {
+    border-top-color: #e1e1e1;
+}
+
+body.light-theme .pisi-sheet-view-rules-summary,
+body.light-theme .pisi-sheet-view-rules-empty {
+    color: #6b7078;
+}
+
+body.light-theme .pisi-sheet-view-rules-button {
+    color: #3a3d42;
+}
+
+body.light-theme .pisi-sheet-view-rules-button.active,
+body.light-theme .pisi-sheet-view-rules-button:hover:not(:disabled) {
+    background: #f4eadb;
+    color: #202226;
+}
+
+body.light-theme .pisi-sheet-view-rules-button.danger {
+    color: #b84a4a;
+}
+
+body.light-theme .pisi-sheet-view-rules-select,
+body.light-theme .pisi-sheet-view-rules-input {
+    border-color: #cfcfcf;
+    background: #ffffff;
+    color: #222222;
+}
+
+body.light-theme .pisi-sheet-filter-group {
+    border-color: #d9dce1;
+    background: #fafafa;
+}
+
 body.light-theme .pisi-sheet-formula-input {
     border-color: #c9cbd0;
     background: #ffffff;

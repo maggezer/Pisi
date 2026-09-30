@@ -454,6 +454,7 @@ function openPisiSheetColumnMenu(table, header) {
     const wrap = document.createElement('input');
     const widthInput = document.createElement('input');
     const pin = document.createElement('input');
+    const viewRulesButton = document.createElement('button');
     const moveLeftButton = document.createElement('button');
     const moveRightButton = document.createElement('button');
     const autoFitButton = document.createElement('button');
@@ -641,6 +642,12 @@ function openPisiSheetColumnMenu(table, header) {
     actions.className =
         'pisi-sheet-column-menu-actions';
 
+    viewRulesButton.type = 'button';
+    viewRulesButton.textContent =
+        window.pisiT?.('Filtre / Sırala') || 'Filtre / Sırala';
+    viewRulesButton.dataset.pisiSheetColumnAction =
+        'viewRules';
+
     moveLeftButton.type = 'button';
     moveLeftButton.textContent =
         window.pisiT?.('Sola taşı') || 'Sola taşı';
@@ -682,6 +689,7 @@ function openPisiSheetColumnMenu(table, header) {
     deleteButton.disabled = fields.length <= 1;
 
     actions.append(
+        viewRulesButton,
         moveLeftButton,
         moveRightButton,
         autoFitButton,
@@ -835,6 +843,17 @@ function openPisiSheetColumnMenu(table, header) {
         persistFieldPatch({
             pin: pin.checked
         });
+    });
+
+    viewRulesButton.addEventListener('click', () => {
+        closePisiSheetColumnMenu();
+        openPisiSheetViewRulesPanel(
+            table,
+            header,
+            {
+                fieldId: field.id
+            }
+        );
     });
 
     moveLeftButton.addEventListener('click', () => {

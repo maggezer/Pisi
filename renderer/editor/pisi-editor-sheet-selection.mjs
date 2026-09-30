@@ -624,14 +624,16 @@ function extendPisiSheetSelectionByKeyboard(
         ArrowRight: [0, 1]
     };
     const delta = deltas[key];
-    let nextRow = Math.max(
-        0,
-        Math.min(
-            dimensions.rows - 1,
-            position.row + delta[0]
-        )
-    );
+    let nextRow = position.row;
     let nextCol = position.col;
+
+    if (delta[0]) {
+        nextRow = getPisiSheetNextVisibleRowIndex(
+            table,
+            position.row,
+            delta[0]
+        );
+    }
 
     if (delta[1]) {
         nextCol = getPisiSheetNextVisibleColumn(
@@ -673,10 +675,21 @@ function movePisiSheetCellFocus(
     if (!position) return false;
 
     const visibleCols = getPisiSheetVisibleColumnIndices(table);
-    if (!visibleCols.length) return false;
+    const visibleRows = getPisiSheetVisibleRowIndices(table);
+    if (!visibleCols.length || !visibleRows.length) {
+        return false;
+    }
 
-    let nextRow = position.row + rowDelta;
+    let nextRow = position.row;
     let nextCol = position.col;
+
+    if (rowDelta !== 0) {
+        nextRow = getPisiSheetNextVisibleRowIndex(
+            table,
+            position.row,
+            rowDelta
+        );
+    }
 
     if (colDelta !== 0) {
         const currentVisibleIndex =
@@ -689,10 +702,18 @@ function movePisiSheetCellFocus(
 
         if (options.wrap && visibleIndex >= visibleCols.length) {
             visibleIndex = 0;
-            nextRow += 1;
+            nextRow = getPisiSheetNextVisibleRowIndex(
+                table,
+                position.row,
+                1
+            );
         } else if (options.wrap && visibleIndex < 0) {
             visibleIndex = visibleCols.length - 1;
-            nextRow -= 1;
+            nextRow = getPisiSheetNextVisibleRowIndex(
+                table,
+                position.row,
+                -1
+            );
         } else {
             visibleIndex = Math.max(
                 0,
@@ -708,21 +729,22 @@ function movePisiSheetCellFocus(
         nextCol = visibleCols[0];
     }
 
+    const atLastVisibleRow =
+        position.row === visibleRows.at(-1);
+
     if (
         options.addRowAtEnd &&
-        nextRow >= dimensions.rows &&
-        dimensions.rows < PISI_SHEET_MAX_ROWS
+        colDelta > 0 &&
+        atLastVisibleRow &&
+        nextRow === position.row &&
+        dimensions.rows < PISI_SHEET_MAX_ROWS &&
+        visibleRows.length === dimensions.rows
     ) {
         addPisiSheetRow(table, dimensions.rows - 1);
         dimensions = getPisiSheetDimensions(table);
         nextRow = dimensions.rows - 1;
         nextCol = visibleCols[0];
     }
-
-    nextRow = Math.max(
-        0,
-        Math.min(dimensions.rows - 1, nextRow)
-    );
 
     const nextCell = getPisiSheetCell(
         table,

@@ -308,8 +308,8 @@ function renderPisiSheetDatabase(table) {
         table.appendChild(tbody);
     }
 
-    const rows = database.items.map(
-        (item, rowIndex) => {
+    const rows = getPisiSheetViewRecords(table).map(
+        ({ item, modelIndex: rowIndex }, viewIndex) => {
             const row = document.createElement('tr');
             const rowHeader = document.createElement('th');
 
@@ -317,6 +317,7 @@ function renderPisiSheetDatabase(table) {
             rowHeader.dataset.rowHeader = String(rowIndex);
             rowHeader.dataset.pisiRowId = item.id;
             rowHeader.textContent = String(rowIndex + 1);
+            rowHeader.dataset.pisiViewRow = String(viewIndex);
             row.appendChild(rowHeader);
 
             fields.forEach((field, colIndex) => {
@@ -401,9 +402,21 @@ function renderPisiSheetCellFromDatabase(
     colIndex,
     displayValue = null
 ) {
-    const cell = table.tBodies?.[0]
-        ?.rows?.[rowIndex]
-        ?.cells?.[colIndex + 1];
+    const database = getPisiSheetDatabase(table);
+    const item = database?.items?.[rowIndex];
+    const field = database
+        ? getPisiSheetOrderedFields(database)[colIndex]
+        : null;
+
+    if (!item || !field) return false;
+
+    const cell = table.querySelector(
+        'tbody tr[data-pisi-row-id="' +
+        item.id +
+        '"] td[data-pisi-col-id="' +
+        field.id +
+        '"]'
+    );
     if (!cell) return false;
 
     const source = getPisiSheetCellSource(

@@ -1828,7 +1828,7 @@ try {
         const typedHost = document.createElement('div');
         typedHost.className = 'pisi-sheet-block';
         typedHost.innerHTML =
-            window.buildPisiSheetHtml?.(2, 6) || '';
+            window.buildPisiSheetHtml?.(4, 6) || '';
         editor.appendChild(typedHost);
         window.hydratePisiSheets?.(editor);
 
@@ -2310,6 +2310,269 @@ try {
                 ) || ''
         };
 
+        const viewRuleHeader =
+            typedTable.querySelector(
+                'thead th[data-col-header="2"]'
+            );
+        viewRuleHeader?.dispatchEvent(
+            new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true,
+                button: 0
+            })
+        );
+        const viewRuleMenu = document.querySelector(
+            '.pisi-sheet-column-menu'
+        );
+        const viewRuleButton =
+            viewRuleMenu?.querySelector(
+                '[data-pisi-sheet-column-action="viewRules"]'
+            );
+        viewRuleButton?.click();
+
+        const viewRulesPanel =
+            document.querySelector(
+                '.pisi-sheet-view-rules-panel'
+            );
+        const viewRulesUi = {
+            panelPresent: Boolean(viewRulesPanel),
+            filterGroupPresent: Boolean(
+                viewRulesPanel?.querySelector(
+                    '.pisi-sheet-filter-group'
+                )
+            ),
+            sortListPresent: Boolean(
+                viewRulesPanel?.querySelector(
+                    '.pisi-sheet-sort-list'
+                )
+            ),
+            logicValues: viewRulesPanel
+                ? Array.from(
+                    viewRulesPanel.querySelectorAll(
+                        '.pisi-sheet-filter-logic option'
+                    )
+                ).map((option) => option.value)
+                : []
+        };
+        window.closePisiSheetViewRulesPanel?.();
+
+        window.setPisiSheetCellSource?.(
+            typedTable,
+            1,
+            0,
+            { value: 100, formula: null }
+        );
+        window.setPisiSheetCellSource?.(
+            typedTable,
+            1,
+            1,
+            { value: '2026-09-29', formula: null }
+        );
+        window.setPisiSheetCellSource?.(
+            typedTable,
+            1,
+            2,
+            { value: 'done', formula: null }
+        );
+
+        window.setPisiSheetCellSource?.(
+            typedTable,
+            2,
+            0,
+            { value: 100, formula: null }
+        );
+        window.setPisiSheetCellSource?.(
+            typedTable,
+            2,
+            1,
+            { value: '2026-10-02', formula: null }
+        );
+        window.setPisiSheetCellSource?.(
+            typedTable,
+            2,
+            2,
+            { value: 'done', formula: null }
+        );
+
+        window.setPisiSheetCellSource?.(
+            typedTable,
+            3,
+            0,
+            { value: 200, formula: null }
+        );
+        window.setPisiSheetCellSource?.(
+            typedTable,
+            3,
+            1,
+            { value: '2026-09-28', formula: null }
+        );
+        window.setPisiSheetCellSource?.(
+            typedTable,
+            3,
+            2,
+            { value: 'todo', formula: null }
+        );
+
+        window.renderPisiSheetDatabase?.(typedTable);
+        window.recalcPisiSheet?.(typedTable);
+
+        const queryDatabaseBefore =
+            window.getPisiSheetDatabase?.(
+                typedTable
+            ) || null;
+        const queryFields =
+            window.getPisiSheetOrderedFields?.(
+                queryDatabaseBefore
+            ) || [];
+        const amountFieldId =
+            queryFields[0]?.id || '';
+        const dateFieldId =
+            queryFields[1]?.id || '';
+        const statusFieldId =
+            queryFields[2]?.id || '';
+        const queryOriginalItemOrder =
+            queryDatabaseBefore?.items?.map(
+                (item) => item.id
+            ) || [];
+
+        window.setPisiSheetViewFilters?.(
+            typedTable,
+            {
+                type: 'group',
+                id: 'e2e-filter-root',
+                logic: 'and',
+                children: [
+                    {
+                        type: 'condition',
+                        id: 'e2e-status-done',
+                        fieldId: statusFieldId,
+                        operator: 'is',
+                        value: 'done'
+                    },
+                    {
+                        type: 'condition',
+                        id: 'e2e-date-before',
+                        fieldId: dateFieldId,
+                        operator: 'before',
+                        value: '2026-09-30'
+                    }
+                ]
+            }
+        );
+
+        const filterDomOrder =
+            Array.from(
+                typedTable.querySelectorAll(
+                    'tbody tr[data-pisi-row-id]'
+                )
+            ).map((row) => row.dataset.pisiRowId);
+        const filterVisibleRows =
+            window.getPisiSheetVisibleRowIndices?.(
+                typedTable
+            ) || [];
+        const filterConfigBeforeReopen =
+            structuredClone(
+                window.getPisiSheetActiveViewFilters?.(
+                    typedTable
+                )
+            );
+
+        let queryReplacement =
+            typedTable.cloneNode(true);
+        typedTable.replaceWith(queryReplacement);
+        window.hydratePisiSheets?.(editor);
+        typedTable = queryReplacement;
+
+        const filterConfigAfterReopen =
+            window.getPisiSheetActiveViewFilters?.(
+                typedTable
+            ) || null;
+        const filterDomOrderAfterReopen =
+            Array.from(
+                typedTable.querySelectorAll(
+                    'tbody tr[data-pisi-row-id]'
+                )
+            ).map((row) => row.dataset.pisiRowId);
+
+        window.setPisiSheetViewFilters?.(
+            typedTable,
+            {
+                type: 'group',
+                id: 'e2e-filter-empty',
+                logic: 'and',
+                children: []
+            }
+        );
+        window.setPisiSheetViewSorts?.(
+            typedTable,
+            [
+                {
+                    id: 'e2e-sort-amount',
+                    fieldId: amountFieldId,
+                    direction: 'desc'
+                },
+                {
+                    id: 'e2e-sort-date',
+                    fieldId: dateFieldId,
+                    direction: 'asc'
+                }
+            ]
+        );
+
+        const sortDomOrder =
+            Array.from(
+                typedTable.querySelectorAll(
+                    'tbody tr[data-pisi-row-id]'
+                )
+            ).map((row) => row.dataset.pisiRowId);
+        const queryDatabaseAfterSort =
+            window.getPisiSheetDatabase?.(
+                typedTable
+            ) || null;
+        const sortModelOrder =
+            queryDatabaseAfterSort?.items?.map(
+                (item) => item.id
+            ) || [];
+        const sortsBeforeReopen =
+            structuredClone(
+                window.getPisiSheetActiveViewSorts?.(
+                    typedTable
+                ) || []
+            );
+
+        queryReplacement =
+            typedTable.cloneNode(true);
+        typedTable.replaceWith(queryReplacement);
+        window.hydratePisiSheets?.(editor);
+        typedTable = queryReplacement;
+
+        const sortsAfterReopen =
+            window.getPisiSheetActiveViewSorts?.(
+                typedTable
+            ) || [];
+        const sortDomOrderAfterReopen =
+            Array.from(
+                typedTable.querySelectorAll(
+                    'tbody tr[data-pisi-row-id]'
+                )
+            ).map((row) => row.dataset.pisiRowId);
+
+        const viewQueryStages = {
+            ui: viewRulesUi,
+            originalItemOrder:
+                queryOriginalItemOrder,
+            filterDomOrder,
+            filterVisibleRows,
+            filterConfigBeforeReopen,
+            filterConfigAfterReopen,
+            filterDomOrderAfterReopen,
+            sortDomOrder,
+            sortModelOrder,
+            sortsBeforeReopen,
+            sortsAfterReopen,
+            sortDomOrderAfterReopen
+        };
+
         typedHost.remove();
 
         const typedStages = {
@@ -2335,7 +2598,8 @@ try {
             rawAfterReopen:
                 typedRawAfterReopen,
             reopenMetadata:
-                typedReopenMetadata
+                typedReopenMetadata,
+            viewQuery: viewQueryStages
         };
 
         return {
@@ -2558,6 +2822,47 @@ try {
 
     if (
         !sheetResult?.ok ||
+        !sheetResult.typedStages?.viewQuery?.ui?.panelPresent ||
+        !sheetResult.typedStages.viewQuery.ui.filterGroupPresent ||
+        !sheetResult.typedStages.viewQuery.ui.sortListPresent ||
+        JSON.stringify(
+            sheetResult.typedStages.viewQuery.ui.logicValues
+        ) !== JSON.stringify(['and', 'or']) ||
+        sheetResult.typedStages.viewQuery.filterDomOrder?.length !== 1 ||
+        sheetResult.typedStages.viewQuery.filterDomOrder?.[0] !==
+            sheetResult.typedStages.viewQuery.originalItemOrder?.[1] ||
+        JSON.stringify(
+            sheetResult.typedStages.viewQuery.filterVisibleRows
+        ) !== JSON.stringify([1]) ||
+        sheetResult.typedStages.viewQuery.filterConfigBeforeReopen
+            ?.children?.length !== 2 ||
+        sheetResult.typedStages.viewQuery.filterConfigAfterReopen
+            ?.children?.length !== 2 ||
+        JSON.stringify(
+            sheetResult.typedStages.viewQuery.filterDomOrderAfterReopen
+        ) !== JSON.stringify(
+            sheetResult.typedStages.viewQuery.filterDomOrder
+        ) ||
+        JSON.stringify(
+            sheetResult.typedStages.viewQuery.sortModelOrder
+        ) !== JSON.stringify(
+            sheetResult.typedStages.viewQuery.originalItemOrder
+        ) ||
+        JSON.stringify(
+            sheetResult.typedStages.viewQuery.sortDomOrder
+        ) !== JSON.stringify([
+            sheetResult.typedStages.viewQuery.originalItemOrder?.[0],
+            sheetResult.typedStages.viewQuery.originalItemOrder?.[3],
+            sheetResult.typedStages.viewQuery.originalItemOrder?.[1],
+            sheetResult.typedStages.viewQuery.originalItemOrder?.[2]
+        ]) ||
+        sheetResult.typedStages.viewQuery.sortsBeforeReopen?.length !== 2 ||
+        sheetResult.typedStages.viewQuery.sortsAfterReopen?.length !== 2 ||
+        JSON.stringify(
+            sheetResult.typedStages.viewQuery.sortDomOrderAfterReopen
+        ) !== JSON.stringify(
+            sheetResult.typedStages.viewQuery.sortDomOrder
+        ) ||
         typeof sheetResult.typedStages?.rawBefore?.number !== 'number' ||
         sheetResult.typedStages.rawBefore.number !== 1234.5 ||
         sheetResult.typedStages.rawBefore.date !== '2026-09-30' ||

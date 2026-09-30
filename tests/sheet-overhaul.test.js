@@ -186,6 +186,27 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         ),
         'utf8'
     );
+    const sheetViewQueryCore = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-sheet-view-query-core.mjs'
+        ),
+        'utf8'
+    );
+    const sheetViewQuery = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-sheet-view-query.mjs'
+        ),
+        'utf8'
+    );
+    const sheetViewRulesUi = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-sheet-view-rules-ui.mjs'
+        ),
+        'utf8'
+    );
     const sheetViewState = fs.readFileSync(
         path.join(
             root,
@@ -298,6 +319,18 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(database, /hiddenFieldIds/);
     assert.match(database, /fieldOrder/);
     assert.match(database, /activeViewId/);
+    assert.match(
+        database,
+        /makePisiSheetEmptyFilterTree/
+    );
+    assert.match(
+        database,
+        /normalizePisiSheetFilterTree/
+    );
+    assert.match(
+        database,
+        /normalizePisiSheetSorts/
+    );
 
     assert.doesNotMatch(database, /querySelector/);
     assert.doesNotMatch(database, /querySelectorAll/);
@@ -379,6 +412,14 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         databaseDom,
         /visiblePinnedFieldIds/
+    );
+    assert.match(
+        databaseDom,
+        /getPisiSheetViewRecords\(table\)/
+    );
+    assert.match(
+        databaseDom,
+        /modelIndex: rowIndex/
     );
     assert.match(
         databaseDom,
@@ -496,6 +537,14 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         selection,
         /movePisiSheetCellFocus[\s\S]*ensureVisible: true/
+    );
+    assert.match(
+        selection,
+        /getPisiSheetVisibleRowIndices/
+    );
+    assert.match(
+        selection,
+        /getPisiSheetNextVisibleRowIndex/
     );
     assert.match(selection, /pisi-sheet-cell-active/);
     assert.match(selection, /pisi-sheet-cell-selected/);
@@ -717,6 +766,62 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         /activeViewId/
     );
     assert.match(
+        sheetViewQueryCore,
+        /PISI_SHEET_FILTER_OPERATORS/
+    );
+    assert.match(
+        sheetViewQueryCore,
+        /normalizePisiSheetFilterTree/
+    );
+    assert.match(
+        sheetViewQueryCore,
+        /evaluatePisiSheetFilterTree/
+    );
+    assert.match(
+        sheetViewQueryCore,
+        /getPisiSheetViewItemRecords/
+    );
+    assert.match(
+        sheetViewQueryCore,
+        /resolvePisiSheetDateFilterValue/
+    );
+    assert.match(
+        sheetViewQuery,
+        /setPisiSheetViewFilters/
+    );
+    assert.match(
+        sheetViewQuery,
+        /setPisiSheetViewSorts/
+    );
+    assert.match(
+        sheetViewQuery,
+        /addPisiSheetViewFilterGroup/
+    );
+    assert.match(
+        sheetViewQuery,
+        /movePisiSheetViewSort/
+    );
+    assert.match(
+        sheetViewRulesUi,
+        /pisi-sheet-filter-group/
+    );
+    assert.match(
+        sheetViewRulesUi,
+        /pisi-sheet-sort-row/
+    );
+    assert.match(
+        sheetViewRulesUi,
+        /'@today'/
+    );
+    assert.match(
+        sheetViewRulesUi,
+        /openPisiSheetViewRulesPanel/
+    );
+    assert.match(
+        columnProperties,
+        /openPisiSheetViewRulesPanel/
+    );
+    assert.match(
         columnReorder,
         /view\?\.fieldOrder/
     );
@@ -876,6 +981,18 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         componentsCss,
         /pisi-sheet-column-option-row/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-view-rules-panel/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-filter-condition/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-sort-row/
     );
     assert.match(
         componentsCss,
