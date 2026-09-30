@@ -531,6 +531,13 @@ function syncPisiSheetToolbarState(toolbar, table) {
     const dimensions = table
         ? getPisiSheetDimensions(table)
         : { rows: 0, cols: 0 };
+
+    toolbar
+        .querySelectorAll('[data-pisi-excel-action]')
+        .forEach((button) => {
+            button.disabled = !table;
+        });
+
     const setDisabled = (action, disabled) => {
         const button = toolbar.querySelector(
             `[data-pisi-excel-action="${action}"]`
