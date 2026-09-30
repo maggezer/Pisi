@@ -33,6 +33,7 @@ jobs:
           set -euo pipefail
           npm pkg set 'devDependencies.electron=^43.4.2'
           npm update electron @xmldom/xmldom fast-uri js-yaml undici --package-lock-only
+          npm audit fix --package-lock-only
 
       - name: Install refreshed dependency graph
         run: npm ci --ignore-scripts
