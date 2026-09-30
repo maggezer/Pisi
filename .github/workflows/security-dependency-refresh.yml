@@ -1,5 +1,7 @@
 name: Security Dependency Refresh
 
+# refreshed after patched Electron invariant update
+
 on:
   push:
     branches:
