@@ -450,6 +450,18 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     );
     assert.match(
         formulaReference,
+        /handlePisiSheetFormulaReferenceKeydown/
+    );
+    assert.match(
+        formulaReference,
+        /stopImmediatePropagation/
+    );
+    assert.match(
+        formulaReference,
+        /window\.addEventListener\([\s\S]*'keydown'[\s\S]*true/
+    );
+    assert.match(
+        formulaReference,
         /closePisiSheetFormulaReferenceSession/
     );
     assert.match(

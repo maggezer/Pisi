@@ -546,6 +546,53 @@ function isPisiSheetFormulaReferencePicking(table) {
     );
 }
 
+function handlePisiSheetFormulaReferenceKeydown(event) {
+    const session = pisiSheetFormulaReferenceSession;
+
+    if (
+        !session ||
+        session.kind !== 'cell' ||
+        event.defaultPrevented ||
+        ![
+            'ArrowUp',
+            'ArrowDown',
+            'ArrowLeft',
+            'ArrowRight'
+        ].includes(event.key)
+    ) {
+        return;
+    }
+
+    const target = event.target;
+
+    if (
+        !(target instanceof Node) ||
+        !session.editCell.contains(target)
+    ) {
+        return;
+    }
+
+    if (
+        !movePisiSheetFormulaReferenceByKeyboard(
+            session.table,
+            event.key,
+            { extend: event.shiftKey }
+        )
+    ) {
+        return;
+    }
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+}
+
+window.addEventListener(
+    'keydown',
+    handlePisiSheetFormulaReferenceKeydown,
+    true
+);
+
+
 function isPisiSheetFormulaInputActive(table) {
     return Boolean(
         getPisiSheetFormulaInputForTable(table)
@@ -627,6 +674,10 @@ Object.defineProperties(moduleApi, {
     "isPisiSheetFormulaReferencePicking": {
         enumerable: true,
         get() { return isPisiSheetFormulaReferencePicking; }
+    },
+    "handlePisiSheetFormulaReferenceKeydown": {
+        enumerable: true,
+        get() { return handlePisiSheetFormulaReferenceKeydown; }
     },
     "isPisiSheetFormulaInputActive": {
         enumerable: true,
