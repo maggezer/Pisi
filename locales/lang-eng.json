@@ -797,6 +797,8 @@
     "Sıralama": "Sorting",
     "Artan": "Ascending",
     "Azalan": "Descending",
-    "Sıralama yok": "No sorting"
+    "Sıralama yok": "No sorting",
+    "↑": "↑",
+    "↓": "↓"
   }
 }
