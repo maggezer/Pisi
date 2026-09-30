@@ -322,6 +322,11 @@ try {
             '.pisi-sheet-col-label'
         );
 
+        const headerHeightBeforeRename =
+            firstHeader?.getBoundingClientRect().height || 0;
+        const bodyHeightBeforeRename =
+            firstCell.getBoundingClientRect().height || 0;
+
         firstLabel?.dispatchEvent(new MouseEvent('mousedown', {
             bubbles: true,
             cancelable: true,
@@ -329,6 +334,10 @@ try {
             buttons: 1,
             detail: 1
         }));
+
+        const selectedAfterFirstHeaderPress =
+            table.querySelectorAll('.pisi-sheet-cell-range').length;
+
         firstLabel?.dispatchEvent(new MouseEvent('mouseup', {
             bubbles: true,
             cancelable: true,
@@ -343,14 +352,16 @@ try {
             detail: 2
         }));
 
-        const headerEditor = firstHeader?.querySelector(
-            '[data-pisi-sheet-col-editor="0"]'
-        );
+        const headerEditing =
+            firstLabel?.dataset.pisiSheetEditing === '1';
         const widthWhileRenaming =
             firstHeader?.getBoundingClientRect().width || 0;
-        if (headerEditor) {
-            headerEditor.value = 'Project';
-            headerEditor.dispatchEvent(new KeyboardEvent('keydown', {
+        const headerHeightWhileRenaming =
+            firstHeader?.getBoundingClientRect().height || 0;
+
+        if (headerEditing && firstLabel) {
+            firstLabel.textContent = 'Project';
+            firstLabel.dispatchEvent(new KeyboardEvent('keydown', {
                 bubbles: true,
                 cancelable: true,
                 key: 'Enter'
@@ -408,7 +419,11 @@ try {
             toolbarSheetActionsAbsent,
             directTableSize,
             hasColumnResizer: Boolean(firstResizer),
-            hasHeaderEditor: Boolean(headerEditor),
+            headerEditing,
+            selectedAfterFirstHeaderPress,
+            headerHeightBeforeRename,
+            headerHeightWhileRenaming,
+            bodyHeightBeforeRename,
             renamedHeaderBeforeAdd,
             renamedHeaderAfterAdd,
             storedHeaderLabel,
@@ -437,7 +452,14 @@ try {
         sheetResult.directTableSize?.rows !== 5 ||
         sheetResult.directTableSize?.cols !== 5 ||
         !sheetResult.hasColumnResizer ||
-        !sheetResult.hasHeaderEditor ||
+        !sheetResult.headerEditing ||
+        sheetResult.selectedAfterFirstHeaderPress !== 1 ||
+        sheetResult.headerHeightBeforeRename >
+            sheetResult.bodyHeightBeforeRename ||
+        Math.abs(
+            sheetResult.headerHeightWhileRenaming -
+            sheetResult.headerHeightBeforeRename
+        ) > 1 ||
         sheetResult.renamedHeaderBeforeAdd !== 'Project' ||
         sheetResult.renamedHeaderAfterAdd !== 'Project' ||
         sheetResult.storedHeaderLabel !== 'Project' ||

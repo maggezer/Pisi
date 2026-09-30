@@ -89,48 +89,40 @@ function beginPisiSheetColumnLabelEdit(table, label) {
     if (
         !header ||
         !Number.isInteger(colIndex) ||
-        header.querySelector('[data-pisi-sheet-col-editor]')
+        label.dataset.pisiSheetEditing === '1'
     ) {
         return;
     }
 
-    const originalLabel = String(label.textContent || '');
-    const input = document.createElement('input');
+    const originalLabel = String(label.textContent || '').trim();
     let finished = false;
-
-    input.type = 'text';
-    input.className = 'pisi-sheet-col-editor';
-    input.setAttribute('data-pisi-sheet-col-editor', String(colIndex));
-    input.setAttribute('aria-label', 'Sütun adını değiştir');
-    input.maxLength = 80;
-    input.value = originalLabel;
 
     const finish = (save) => {
         if (finished) return;
         finished = true;
 
+        label.removeEventListener('keydown', onKeyDown);
+        label.removeEventListener('blur', onBlur);
+        delete label.dataset.pisiSheetEditing;
+        label.removeAttribute('contenteditable');
+        label.removeAttribute('spellcheck');
+        label.removeAttribute('aria-label');
+
         if (save) {
             setPisiSheetColumnLabel(
                 table,
                 colIndex,
-                input.value
+                label.textContent
             );
             schedulePisiSheetEditorNotification(table);
         } else {
             label.textContent = originalLabel;
         }
 
-        label.hidden = false;
-        input.remove();
+        window.getSelection?.()?.removeAllRanges?.();
     };
 
-    input.addEventListener('mousedown', (event) => {
-        event.stopPropagation();
-    });
-    input.addEventListener('click', (event) => {
-        event.stopPropagation();
-    });
-    input.addEventListener('keydown', (event) => {
+    const onKeyDown = (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
             event.stopPropagation();
@@ -140,19 +132,30 @@ function beginPisiSheetColumnLabelEdit(table, label) {
             event.stopPropagation();
             finish(false);
         }
-    });
-    input.addEventListener('blur', () => finish(true), {
-        once: true
-    });
+    };
 
-    label.hidden = true;
-    header.insertBefore(
-        input,
-        header.querySelector('[data-pisi-sheet-col-resizer]')
+    const onBlur = () => finish(true);
+
+    label.dataset.pisiSheetEditing = '1';
+    label.setAttribute('contenteditable', 'plaintext-only');
+    label.setAttribute('spellcheck', 'false');
+    label.setAttribute(
+        'aria-label',
+        window.pisiT?.('Sütun adını değiştir') ||
+            'Sütun adını değiştir'
     );
+    label.addEventListener('keydown', onKeyDown);
+    label.addEventListener('blur', onBlur, { once: true });
 
-    input.focus();
-    input.select();
+    label.focus();
+
+    const selection = window.getSelection?.();
+    if (selection) {
+        const range = document.createRange();
+        range.selectNodeContents(label);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
 }
 
 function closePisiSheetContextMenu() {
@@ -192,15 +195,35 @@ function openPisiSheetContextMenu(table, clientX, clientY) {
     closePisiSheetContextMenu();
     const dimensions = getPisiSheetDimensions(table);
     const actions = [
-        { action: 'addRow', label: 'Satır ekle', disabled: dimensions.rows >= PISI_SHEET_MAX_ROWS },
-        { action: 'deleteRow', label: 'Satır sil', disabled: dimensions.rows <= 1 },
-        { action: 'addCol', label: 'Sütun ekle', disabled: dimensions.cols >= PISI_SHEET_MAX_COLS },
-        { action: 'deleteCol', label: 'Sütun sil', disabled: dimensions.cols <= 1 }
+        {
+            action: 'addRow',
+            label: window.pisiT?.('Satır ekle') || 'Satır ekle',
+            disabled: dimensions.rows >= PISI_SHEET_MAX_ROWS
+        },
+        {
+            action: 'deleteRow',
+            label: window.pisiT?.('Satır sil') || 'Satır sil',
+            disabled: dimensions.rows <= 1
+        },
+        {
+            action: 'addCol',
+            label: window.pisiT?.('Sütun ekle') || 'Sütun ekle',
+            disabled: dimensions.cols >= PISI_SHEET_MAX_COLS
+        },
+        {
+            action: 'deleteCol',
+            label: window.pisiT?.('Sütun sil') || 'Sütun sil',
+            disabled: dimensions.cols <= 1
+        }
     ];
     const menu = document.createElement('div');
     menu.className = 'pisi-sheet-context-menu';
     menu.setAttribute('role', 'menu');
-    menu.setAttribute('aria-label', 'Tablo satır ve sütun işlemleri');
+    menu.setAttribute(
+        'aria-label',
+        window.pisiT?.('Tablo satır ve sütun işlemleri') ||
+            'Tablo satır ve sütun işlemleri'
+    );
 
     actions.forEach(({ action, label, disabled }) => {
         const button = document.createElement('button');
@@ -300,26 +323,29 @@ function hydratePisiSheets(root = document) {
         });
 
         table.addEventListener('mousedown', (/** @type {MouseEvent} */ event) => {
-            const colEditor = event.target.closest(
-                '[data-pisi-sheet-col-editor]'
-            );
-            if (colEditor && table.contains(colEditor)) {
-                return;
-            }
-
             const colLabel = event.target.closest(
                 '.pisi-sheet-col-label'
             );
             if (
                 colLabel &&
                 table.contains(colLabel) &&
-                event.button === 0 &&
-                event.detail >= 2
+                event.button === 0
             ) {
-                event.preventDefault();
                 event.stopPropagation();
+
+                if (colLabel.dataset.pisiSheetEditing === '1') {
+                    return;
+                }
+
+                event.preventDefault();
                 closePisiSheetContextMenu();
-                beginPisiSheetColumnLabelEdit(table, colLabel);
+
+                if (event.detail >= 2) {
+                    beginPisiSheetColumnLabelEdit(
+                        table,
+                        colLabel
+                    );
+                }
                 return;
             }
 

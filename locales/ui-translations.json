@@ -1,5 +1,11 @@
 {
   "tr": {
+    "Sütun adını değiştir": "Sütun adını değiştir",
+    "Tablo satır ve sütun işlemleri": "Tablo satır ve sütun işlemleri",
+    "Satır ekle": "Satır ekle",
+    "Satır sil": "Satır sil",
+    "Sütun ekle": "Sütun ekle",
+    "Sütun sil": "Sütun sil",
     "Kısayollar": "Kısayollar",
     "Gezinme": "Gezinme",
     "Ayarlar": "Ayarlar",
@@ -166,6 +172,12 @@
     "Explorer": "Gezgin"
   },
   "eng": {
+    "Sütun adını değiştir": "Rename column",
+    "Tablo satır ve sütun işlemleri": "Table row and column actions",
+    "Satır ekle": "Add row",
+    "Satır sil": "Delete row",
+    "Sütun ekle": "Add column",
+    "Sütun sil": "Delete column",
     "Kısayollar": "Shortcuts",
     "Gezinme": "Navigation",
     "Ayarlar": "Settings",
