@@ -25,6 +25,18 @@ const startupSource = fs.readFileSync(
     path.join(root, 'renderer', 'shell', 'pisi-startup.mjs'),
     'utf8'
 );
+const pathSecuritySource = fs.readFileSync(
+    path.join(root, 'main', 'functions', 'path-security.js'),
+    'utf8'
+);
+const projectOperationsSource = fs.readFileSync(
+    path.join(root, 'main', 'functions', 'project-operations.js'),
+    'utf8'
+);
+const tabsSource = fs.readFileSync(
+    path.join(root, 'renderer', 'shell', 'pisi-tabs.mjs'),
+    'utf8'
+);
 
 function loadProjectLockApi(options = {}) {
     const functionNames = [
@@ -185,3 +197,36 @@ test('proje ancak dosya ağacı başarıyla yüklendikten sonra açılmış say�
     assert.match(startupSource, /const loaded = await loadProject\(lastFolder\)/);
     assert.match(startupSource, /if \(loaded\) \{\s*hideProjectModal\(\)/);
 });
+
+test('dosya izleyici Pisi iç yazılarını coalesce eder ve gereksiz tam refresh yapmaz', () => {
+    assert.match(
+        pathSecuritySource,
+        /PISI_INTERNAL_DIRECTORY_GRACE_MS = 1200/
+    );
+    assert.match(
+        pathSecuritySource,
+        /function hasRecentInternalDirectoryChange\(/
+    );
+    assert.match(
+        projectOperationsSource,
+        /isRecentInternalFileChange\(changedPath\)[\s\S]*hasRecentInternalDirectoryChange\(directoryPath\)/
+    );
+    assert.match(
+        projectOperationsSource,
+        /eventType === 'rename'[\s\S]*syncProjectWatchers\(activeProjectFolder\)/
+    );
+
+    const handler = tabsSource.match(
+        /function handlePisiExternalFileSystemChange\(payload = \{\}\) \{[\s\S]*?\n\}/
+    )?.[0] || '';
+
+    assert.match(handler, /pisiPendingFileSystemPaths\.add/);
+    assert.match(handler, /setTimeout\(\(\) =>/);
+    assert.doesNotMatch(handler, /await refreshCurrentProjectTree\(\)/);
+
+    assert.match(
+        tabsSource,
+        /if \(refreshTree\) \{\s*await refreshCurrentProjectTree\(\)/
+    );
+});
+
