@@ -133,13 +133,6 @@ jobs:
 
           $hashLines | Set-Content -Encoding utf8NoBOM release/SHA256SUMS.txt
 
-      - name: Upload release artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Pisi-${{ github.ref_name }}-Windows
-          path: release/*
-          if-no-files-found: error
-
       - name: Publish GitHub beta release
         shell: pwsh
         env:
