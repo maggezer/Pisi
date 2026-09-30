@@ -404,7 +404,7 @@ function hydratePisiSheets(root = document) {
             }
         });
 
-        table.addEventListener('click', (event) => {
+        table.addEventListener('click', (/** @type {MouseEvent} */ event) => {
             const header = event.target.closest(
                 'thead th[data-col-header]'
             );
@@ -419,7 +419,7 @@ function hydratePisiSheets(root = document) {
             }
         });
 
-        table.addEventListener('dblclick', (event) => {
+        table.addEventListener('dblclick', (/** @type {MouseEvent} */ event) => {
             const cell = event.target.closest('td[data-cell]');
 
             if (!cell || !table.contains(cell)) return;
@@ -429,7 +429,7 @@ function hydratePisiSheets(root = document) {
             beginPisiSheetCellEdit(cell);
         });
 
-        table.addEventListener('contextmenu', (event) => {
+        table.addEventListener('contextmenu', (/** @type {MouseEvent} */ event) => {
             const rowHeader = event.target.closest(
                 'tbody th[data-row-header]'
             );
@@ -440,6 +440,7 @@ function hydratePisiSheets(root = document) {
 
             if (
                 (!rowHeader && !colHeader && !cell) ||
+                !(event.target instanceof Node) ||
                 !table.contains(event.target)
             ) {
                 return;
@@ -479,7 +480,7 @@ function hydratePisiSheets(root = document) {
             );
         });
 
-        table.addEventListener('mousedown', (event) => {
+        table.addEventListener('mousedown', (/** @type {MouseEvent} */ event) => {
             const resizer = event.target.closest(
                 '[data-pisi-sheet-col-resizer]'
             );
@@ -580,7 +581,7 @@ function hydratePisiSheets(root = document) {
             }
         });
 
-        table.addEventListener('mouseover', (event) => {
+        table.addEventListener('mouseover', (/** @type {MouseEvent} */ event) => {
             const drag = pisiSheetDragSelection;
 
             if (!drag || drag.table !== table) return;
