@@ -173,6 +173,68 @@ try {
         );
     }
 
+    const sheetResult = await cdp.evaluate(`(() => {
+        const editor = document.getElementById('center-node-editor-content');
+        const toolbar = document.querySelector(
+            '.pisi-editor-toolbar[data-editor-target="center-node-editor-content"]'
+        );
+        if (!editor || !toolbar) {
+            return { ok: false, reason: 'center editor or toolbar missing' };
+        }
+
+        editor.innerHTML = '<table class="pisi-sheet-table" data-pisi-sheet="1"><thead><tr><th></th><th>A</th><th>B</th></tr></thead><tbody><tr><th>1</th><td contenteditable="true"></td><td contenteditable="true"></td></tr><tr><th>2</th><td contenteditable="true"></td><td contenteditable="true"></td></tr></tbody></table>';
+        window.initializePisiAdvancedEditorContent?.(editor);
+
+        const table = editor.querySelector('table[data-pisi-sheet]');
+        const firstCell = table?.querySelector('td[data-cell="A1"]');
+        if (!table || !firstCell) {
+            return { ok: false, reason: 'sheet hydration failed' };
+        }
+
+        firstCell.dispatchEvent(new MouseEvent('mousedown', {
+            bubbles: true,
+            button: 0,
+            buttons: 1
+        }));
+
+        const addRow = toolbar.querySelector(
+            '[data-pisi-excel-action="addRow"]'
+        );
+        const deleteRow = toolbar.querySelector(
+            '[data-pisi-excel-action="deleteRow"]'
+        );
+        const wrap = toolbar.querySelector(
+            '[data-pisi-excel-action="toggleWrap"]'
+        );
+        const rowsBefore = table.querySelectorAll('tbody tr').length;
+
+        addRow?.click();
+
+        return {
+            ok: true,
+            contextActive: toolbar.classList.contains('pisi-table-context'),
+            hasAddRow: Boolean(addRow),
+            hasDeleteRow: Boolean(deleteRow),
+            hasWrap: Boolean(wrap),
+            rowsBefore,
+            rowsAfter: table.querySelectorAll('tbody tr').length
+        };
+    })()`);
+
+    if (
+        !sheetResult?.ok ||
+        !sheetResult.contextActive ||
+        !sheetResult.hasAddRow ||
+        !sheetResult.hasDeleteRow ||
+        !sheetResult.hasWrap ||
+        sheetResult.rowsAfter !== sheetResult.rowsBefore + 1
+    ) {
+        throw new Error(
+            'Sheet toolbar interaction failed: ' +
+            JSON.stringify(sheetResult)
+        );
+    }
+
     await sleep(300);
 
     const fatalPatterns = [
@@ -191,7 +253,7 @@ try {
         throw new Error('Renderer startup marker was not observed.\n' + logs);
     }
 
-    console.log('[E2E] Electron startup, last-project restore and right-panel interaction passed.');
+    console.log('[E2E] Electron startup, last-project restore, Sheet toolbar and right-panel interaction passed.');
 } finally {
     cdp?.close();
     if (child.exitCode === null) {
