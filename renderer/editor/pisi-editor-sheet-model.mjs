@@ -13,45 +13,190 @@ function pisiSheetColumnName(index) {
 }
 
 function parsePisiSheetReference(reference) {
-    const match = String(reference || '').toUpperCase().match(/^([A-Z]+)(\d+)$/);
+    const match = String(reference || '')
+        .toUpperCase()
+        .match(/^(\$?)([A-Z]+)(\$?)(\d+)$/);
+
     if (!match) return null;
 
-    const col = match[1].split('').reduce((sum, character) => {
+    const col = match[2].split('').reduce((sum, character) => {
         return sum * 26 + character.charCodeAt(0) - 64;
     }, 0) - 1;
 
     return {
         col,
-        row: Number(match[2]) - 1
+        row: Number(match[4]) - 1,
+        absoluteCol: match[1] === '$',
+        absoluteRow: match[3] === '$'
     };
+}
+
+function formatPisiSheetReference(reference) {
+    if (!reference || reference.row < 0 || reference.col < 0) {
+        return '#REF!';
+    }
+
+    return [
+        reference.absoluteCol ? '$' : '',
+        pisiSheetColumnName(reference.col),
+        reference.absoluteRow ? '$' : '',
+        reference.row + 1
+    ].join('');
+}
+
+function transformPisiSheetAxisValue(value, change) {
+    const index = Math.max(0, Number(change.index) || 0);
+    const count = Math.max(1, Number(change.count) || 1);
+
+    if (change.mode === 'insert') {
+        return value >= index ? value + count : value;
+    }
+
+    if (change.mode === 'delete') {
+        const deleteEnd = index + count - 1;
+        if (value >= index && value <= deleteEnd) return null;
+        return value > deleteEnd ? value - count : value;
+    }
+
+    return value;
+}
+
+function transformPisiSheetAxisRange(start, end, change) {
+    const low = Math.min(start, end);
+    const high = Math.max(start, end);
+    const ascending = start <= end;
+    const index = Math.max(0, Number(change.index) || 0);
+    const count = Math.max(1, Number(change.count) || 1);
+
+    if (change.mode === 'insert') {
+        const nextStart = transformPisiSheetAxisValue(start, change);
+        const nextEnd = transformPisiSheetAxisValue(end, change);
+        return [nextStart, nextEnd];
+    }
+
+    if (change.mode !== 'delete') return [start, end];
+
+    const deleteEnd = index + count - 1;
+
+    if (deleteEnd < low) {
+        return [start - count, end - count];
+    }
+
+    if (index > high) {
+        return [start, end];
+    }
+
+    if (index <= low && deleteEnd >= high) {
+        return null;
+    }
+
+    const firstSurvivor = low < index
+        ? low
+        : Math.max(low, deleteEnd + 1);
+    const lastSurvivor = high > deleteEnd
+        ? high
+        : Math.min(high, index - 1);
+
+    if (firstSurvivor > lastSurvivor) return null;
+
+    const mapSurvivor = (value) => (
+        value > deleteEnd ? value - count : value
+    );
+    const mappedLow = mapSurvivor(firstSurvivor);
+    const mappedHigh = mapSurvivor(lastSurvivor);
+
+    return ascending
+        ? [mappedLow, mappedHigh]
+        : [mappedHigh, mappedLow];
+}
+
+function getPisiSheetAxisChange(change) {
+    if (!change) return null;
+
+    if (change.type === 'insert-row') {
+        return { axis: 'row', mode: 'insert', ...change };
+    }
+    if (change.type === 'delete-row') {
+        return { axis: 'row', mode: 'delete', ...change };
+    }
+    if (change.type === 'insert-col') {
+        return { axis: 'col', mode: 'insert', ...change };
+    }
+    if (change.type === 'delete-col') {
+        return { axis: 'col', mode: 'delete', ...change };
+    }
+
+    return null;
 }
 
 function transformPisiSheetReference(reference, change) {
     const parsed = parsePisiSheetReference(reference);
-    if (!parsed || !change) return reference;
+    const axisChange = getPisiSheetAxisChange(change);
 
-    let { row, col } = parsed;
-    const index = Math.max(0, Number(change.index) || 0);
-    const count = Math.max(1, Number(change.count) || 1);
+    if (!parsed || !axisChange) return reference;
 
-    if (change.type === 'insert-row' && row >= index) row += count;
-    if (change.type === 'insert-col' && col >= index) col += count;
+    const next = { ...parsed };
+    const value = next[axisChange.axis];
+    const transformed = transformPisiSheetAxisValue(
+        value,
+        axisChange
+    );
 
-    if (change.type === 'delete-row') {
-        if (row >= index && row < index + count) return '#REF!';
-        if (row >= index + count) row -= count;
+    if (transformed === null) return '#REF!';
+
+    next[axisChange.axis] = transformed;
+    return formatPisiSheetReference(next);
+}
+
+function transformPisiSheetRangeReference(startRef, endRef, change) {
+    const start = parsePisiSheetReference(startRef);
+    const end = parsePisiSheetReference(endRef);
+    const axisChange = getPisiSheetAxisChange(change);
+
+    if (!start || !end || !axisChange) {
+        return `${startRef}:${endRef}`;
     }
 
-    if (change.type === 'delete-col') {
-        if (col >= index && col < index + count) return '#REF!';
-        if (col >= index + count) col -= count;
-    }
+    const transformedRange = transformPisiSheetAxisRange(
+        start[axisChange.axis],
+        end[axisChange.axis],
+        axisChange
+    );
 
-    return `${pisiSheetColumnName(col)}${row + 1}`;
+    if (!transformedRange) return '#REF!';
+
+    const nextStart = { ...start };
+    const nextEnd = { ...end };
+    nextStart[axisChange.axis] = transformedRange[0];
+    nextEnd[axisChange.axis] = transformedRange[1];
+
+    return [
+        formatPisiSheetReference(nextStart),
+        formatPisiSheetReference(nextEnd)
+    ].join(':');
 }
 
 export function transformPisiSheetFormulaReferences(formula, change) {
-    return String(formula || '').replace(/\b([A-Z]+\d+)\b/gi, (reference) => {
-        return transformPisiSheetReference(reference.toUpperCase(), change);
-    });
+    const source = String(formula || '');
+
+    return source.replace(
+        /"(?:[^"]|"")*"|\$?[A-Z]+\$?\d+(?::\$?[A-Z]+\$?\d+)?/gi,
+        (token) => {
+            if (token.startsWith('"')) return token;
+
+            const parts = token.split(':');
+            if (parts.length === 2) {
+                return transformPisiSheetRangeReference(
+                    parts[0].toUpperCase(),
+                    parts[1].toUpperCase(),
+                    change
+                );
+            }
+
+            return transformPisiSheetReference(
+                token.toUpperCase(),
+                change
+            );
+        }
+    );
 }
