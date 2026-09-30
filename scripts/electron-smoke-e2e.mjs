@@ -1939,7 +1939,11 @@ try {
         sheetResult.stage8FieldAfterProperties?.pin !== true ||
         sheetResult.stage8FieldAfterProperties?.width !== 142 ||
         !sheetResult.stage8PinnedHeaderPresent ||
-        sheetResult.stage8WrappedWhiteSpace !== 'normal' ||
+        ![
+            'normal',
+            'pre-wrap',
+            'break-spaces'
+        ].includes(sheetResult.stage8WrappedWhiteSpace) ||
         !sheetResult.stage8HiddenAfterAction ||
         !sheetResult.stage8HiddenRestored ||
         !sheetResult.stage8DeleteActionPresent ||

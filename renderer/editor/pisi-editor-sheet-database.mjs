@@ -536,36 +536,39 @@ function updatePisiSheetField(table, colIndex, patch = {}) {
         return null;
     }
 
-    if (Object.hasOwn(patch, 'name')) {
+    const nextPatch =
+        /** @type {Record<string, any>} */ (patch);
+
+    if (Object.hasOwn(nextPatch, 'name')) {
         field.name =
-            String(patch.name || '').trim().slice(0, 80) ||
+            String(nextPatch.name || '').trim().slice(0, 80) ||
             pisiSheetDatabaseColumnName(colIndex);
     }
 
-    if (Object.hasOwn(patch, 'description')) {
+    if (Object.hasOwn(nextPatch, 'description')) {
         field.description = String(
-            patch.description || ''
+            nextPatch.description || ''
         ).slice(0, 240);
     }
 
-    if (Object.hasOwn(patch, 'type')) {
+    if (Object.hasOwn(nextPatch, 'type')) {
         const allowedTypes = new Set([
             'text',
             'number',
             'formula'
         ]);
-        const type = String(patch.type || 'text');
+        const type = String(nextPatch.type || 'text');
         field.type = allowedTypes.has(type)
             ? type
             : 'text';
     }
 
-    if (Object.hasOwn(patch, 'wrap')) {
-        field.wrap = patch.wrap === true;
+    if (Object.hasOwn(nextPatch, 'wrap')) {
+        field.wrap = nextPatch.wrap === true;
     }
 
-    if (Object.hasOwn(patch, 'pin')) {
-        field.pin = patch.pin === true;
+    if (Object.hasOwn(nextPatch, 'pin')) {
+        field.pin = nextPatch.pin === true;
     }
 
     persistPisiSheetDatabase(table);
