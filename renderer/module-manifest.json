@@ -130,25 +130,38 @@
     ]
   },
   {
-    "module": "editor.sheetInteractions",
-    "path": "renderer/editor/pisi-editor-sheet-interactions.mjs",
+    "module": "editor.sheetSelection",
+    "path": "renderer/editor/pisi-editor-sheet-selection.mjs",
     "bindings": [
       "pisiSheetSelections",
-      "pisiSheetNotifyTimers",
-      "hydratePisiSheets",
       "getPisiSheetDimensions",
       "getPisiSheetCellPosition",
       "getPisiSheetCell",
       "getPisiSheetSelectionRect",
       "getPisiSelectedSheetCells",
+      "isPisiSheetCellSelected",
       "renderPisiSheetSelection",
       "selectPisiSheetCell",
       "selectPisiSheetRow",
       "selectPisiSheetColumn",
+      "selectAllPisiSheetCells",
       "focusPisiSheetCell",
       "syncPisiSheetFormulaInput",
+      "beginPisiSheetCellEdit",
+      "finishPisiSheetCellEdit",
+      "isPisiSheetEditingCell",
       "extendPisiSheetSelectionByKeyboard",
-      "movePisiSheetCellFocus"
+      "movePisiSheetCellFocus",
+      "reconcilePisiSheetSelection",
+      "clearPisiSheetSelection"
+    ]
+  },
+  {
+    "module": "editor.sheetInteractions",
+    "path": "renderer/editor/pisi-editor-sheet-interactions.mjs",
+    "bindings": [
+      "pisiSheetNotifyTimers",
+      "hydratePisiSheets"
     ]
   },
   {

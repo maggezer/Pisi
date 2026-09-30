@@ -106,11 +106,139 @@ function escapePisiSheetHeaderLabel(value) {
         .replaceAll("'", '&#39;');
 }
 
+function createPisiSheetStableId(prefix) {
+    const uuid = globalThis.crypto?.randomUUID?.();
+
+    if (uuid) {
+        return prefix + '-' + uuid;
+    }
+
+    return (
+        prefix + '-' +
+        Date.now().toString(36) + '-' +
+        Math.random().toString(36).slice(2, 10)
+    );
+}
+
+function getPisiSheetColumnIds(table) {
+    try {
+        const ids = JSON.parse(
+            table?.dataset?.pisiColumnIds || '[]'
+        );
+        return Array.isArray(ids)
+            ? ids.filter((id) => typeof id === 'string' && id)
+            : [];
+    } catch {
+        return [];
+    }
+}
+
+function savePisiSheetColumnIds(table, ids) {
+    table.dataset.pisiColumnIds = JSON.stringify(ids);
+    return ids;
+}
+
+function ensurePisiSheetColumnIds(table, colCount) {
+    const ids = getPisiSheetColumnIds(table).slice(0, colCount);
+
+    while (ids.length < colCount) {
+        ids.push(createPisiSheetStableId('c'));
+    }
+
+    return savePisiSheetColumnIds(table, ids);
+}
+
+function shiftPisiSheetColumnIds(table, change) {
+    const dimensions = getPisiSheetDimensions(table);
+    const count = Math.max(1, Number(change.count) || 1);
+    const expectedBefore = change.type === 'insert-col'
+        ? Math.max(0, dimensions.cols - count)
+        : dimensions.cols + count;
+    const ids = getPisiSheetColumnIds(table);
+
+    while (ids.length < expectedBefore) {
+        ids.push(createPisiSheetStableId('c'));
+    }
+
+    if (change.type === 'insert-col') {
+        ids.splice(
+            change.index,
+            0,
+            ...Array.from(
+                { length: count },
+                () => createPisiSheetStableId('c')
+            )
+        );
+    } else if (change.type === 'delete-col') {
+        ids.splice(change.index, count);
+    }
+
+    savePisiSheetColumnIds(table, ids);
+}
+
+function getPisiSheetColumnWidths(table) {
+    try {
+        const widths = JSON.parse(
+            table?.dataset?.pisiColumnWidths || '[]'
+        );
+        return Array.isArray(widths) ? widths : [];
+    } catch {
+        return [];
+    }
+}
+
+function savePisiSheetColumnWidths(table, widths) {
+    const next = Array.from(widths || [], (value) => {
+        const number = Number(value);
+
+        return Number.isFinite(number) && number > 0
+            ? Math.round(number)
+            : null;
+    });
+
+    while (next.length && next[next.length - 1] === null) {
+        next.pop();
+    }
+
+    if (next.length) {
+        table.dataset.pisiColumnWidths = JSON.stringify(next);
+    } else {
+        delete table.dataset.pisiColumnWidths;
+    }
+}
+
+function shiftPisiSheetColumnWidths(table, change) {
+    const widths = getPisiSheetColumnWidths(table);
+    const count = Math.max(1, Number(change.count) || 1);
+
+    if (change.type === 'insert-col') {
+        widths.splice(
+            change.index,
+            0,
+            ...Array(count).fill(null)
+        );
+    } else if (change.type === 'delete-col') {
+        widths.splice(change.index, count);
+    }
+
+    savePisiSheetColumnWidths(table, widths);
+}
+
 function refreshPisiSheetCellMetadata(table) {
     const rows = Array.from(table.querySelectorAll('tbody tr'));
+    const colCount = Math.max(
+        0,
+        ...rows.map((row) => row.querySelectorAll('td').length)
+    );
+    const columnIds = ensurePisiSheetColumnIds(table, colCount);
+    const columnWidths = getPisiSheetColumnWidths(table);
 
     rows.forEach((row, rowIndex) => {
         let rowHeader = row.querySelector('th');
+
+        if (!row.dataset.pisiRowId) {
+            row.dataset.pisiRowId = createPisiSheetStableId('r');
+        }
 
         if (!rowHeader) {
             rowHeader = document.createElement('th');
@@ -119,25 +247,31 @@ function refreshPisiSheetCellMetadata(table) {
 
         rowHeader.textContent = String(rowIndex + 1);
         rowHeader.dataset.rowHeader = String(rowIndex);
+        rowHeader.dataset.pisiRowId = row.dataset.pisiRowId;
 
         Array.from(row.querySelectorAll('td')).forEach(
             (cell, colIndex) => {
-                cell.setAttribute('contenteditable', 'true');
-                cell.setAttribute('tabindex', '0');
+                const width = Number(columnWidths[colIndex]);
+
+                cell.setAttribute('contenteditable', 'false');
+                cell.setAttribute('tabindex', '-1');
                 cell.dataset.row = String(rowIndex);
                 cell.dataset.col = String(colIndex);
+                cell.dataset.pisiRowId = row.dataset.pisiRowId;
+                cell.dataset.pisiColId = columnIds[colIndex];
                 cell.dataset.cell =
-                    `${pisiColumnName(colIndex)}${rowIndex + 1}`;
+                    pisiColumnName(colIndex) + String(rowIndex + 1);
+
+                if (Number.isFinite(width) && width > 0) {
+                    const size = String(width) + 'px';
+                    cell.style.width = size;
+                    cell.style.minWidth = size;
+                    cell.style.maxWidth = size;
+                }
             }
         );
     });
 
-    const colCount = Math.max(
-        0,
-        ...rows.map((row) => {
-            return row.querySelectorAll('td').length;
-        })
-    );
     let thead = table.querySelector('thead');
 
     if (!thead) {
@@ -152,47 +286,42 @@ function refreshPisiSheetCellMetadata(table) {
         thead.appendChild(headerRow);
     }
 
-    headerRow.innerHTML =
-        '<th data-pisi-sheet-corner="1"></th>' +
-        Array.from({ length: colCount }, (_, index) => {
-            const label = escapePisiSheetHeaderLabel(
-                getPisiSheetColumnLabel(table, index)
-            );
+    const corner = document.createElement('th');
+    corner.dataset.pisiSheetCorner = '1';
+    const headerCells = [corner];
 
-            return `
-                <th
-                    data-col-header="${index}"
-                    title="Çift tıkla sütun adını değiştir"
-                >
-                    <span class="pisi-sheet-col-label">${label}</span>
-                    <span
-                        class="pisi-sheet-col-resizer"
-                        data-pisi-sheet-col-resizer="${index}"
-                        aria-hidden="true"
-                    ></span>
-                </th>
-            `;
-        }).join('');
+    for (let index = 0; index < colCount; index += 1) {
+        const header = document.createElement('th');
+        const label = document.createElement('span');
+        const resizer = document.createElement('span');
+        const width = Number(columnWidths[index]);
 
-    if (pisiSheetSelections.has(table)) {
-        const dimensions = getPisiSheetDimensions(table);
-        const selection = pisiSheetSelections.get(table);
+        header.dataset.colHeader = String(index);
+        header.dataset.pisiColId = columnIds[index];
 
-        for (const point of [
-            selection.anchor,
-            selection.focus
-        ]) {
-            point.row = Math.min(
-                point.row,
-                Math.max(0, dimensions.rows - 1)
-            );
-            point.col = Math.min(
-                point.col,
-                Math.max(0, dimensions.cols - 1)
-            );
+        label.className = 'pisi-sheet-col-label';
+        label.textContent = getPisiSheetColumnLabel(table, index);
+
+        resizer.className = 'pisi-sheet-col-resizer';
+        resizer.dataset.pisiSheetColResizer = String(index);
+        resizer.setAttribute('aria-hidden', 'true');
+
+        header.append(label, resizer);
+
+        if (Number.isFinite(width) && width > 0) {
+            const size = String(width) + 'px';
+            header.style.width = size;
+            header.style.minWidth = size;
+            header.style.maxWidth = size;
         }
 
-        renderPisiSheetSelection(table);
+        headerCells.push(header);
+    }
+
+    headerRow.replaceChildren(...headerCells);
+
+    if (typeof reconcilePisiSheetSelection === 'function') {
+        reconcilePisiSheetSelection(table);
     }
 }
 
@@ -243,7 +372,7 @@ function addPisiSheetRow(table, afterRowIndex = null) {
         Array.from(
             { length: colCount },
             () => {
-                return '<td contenteditable="true" tabindex="0"></td>';
+                return '<td contenteditable="false" tabindex="-1"></td>';
             }
         ).join('');
 
@@ -294,13 +423,13 @@ function addPisiSheetColumn(table, afterColIndex = null) {
     if (!tbody.querySelector('tr')) {
         const row = document.createElement('tr');
         row.innerHTML =
-            '<th></th><td contenteditable="true" tabindex="0"></td>';
+            '<th></th><td contenteditable="false" tabindex="-1"></td>';
         tbody.appendChild(row);
     } else {
         tbody.querySelectorAll('tr').forEach((row) => {
             const cell = document.createElement('td');
-            cell.setAttribute('contenteditable', 'true');
-            cell.setAttribute('tabindex', '0');
+            cell.setAttribute('contenteditable', 'false');
+            cell.setAttribute('tabindex', '-1');
 
             const beforeCell =
                 row.querySelectorAll('td')[insertIndex] ||
@@ -311,6 +440,16 @@ function addPisiSheetColumn(table, afterColIndex = null) {
     }
 
     shiftPisiSheetColumnLabels(table, {
+        type: 'insert-col',
+        index: insertIndex,
+        count: 1
+    });
+    shiftPisiSheetColumnIds(table, {
+        type: 'insert-col',
+        index: insertIndex,
+        count: 1
+    });
+    shiftPisiSheetColumnWidths(table, {
         type: 'insert-col',
         index: insertIndex,
         count: 1
@@ -422,6 +561,16 @@ function deletePisiSheetColumns(table) {
     });
 
     shiftPisiSheetColumnLabels(table, {
+        type: 'delete-col',
+        index: start,
+        count
+    });
+    shiftPisiSheetColumnIds(table, {
+        type: 'delete-col',
+        index: start,
+        count
+    });
+    shiftPisiSheetColumnWidths(table, {
         type: 'delete-col',
         index: start,
         count

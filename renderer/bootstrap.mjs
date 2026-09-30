@@ -4,6 +4,7 @@ import "./core/state.mjs";
 import "./core/pisi-command-registry.mjs";
 import "./domain/pisi-domain-client.mjs";
 import "./editor/pisi-editor-sheet.mjs";
+import "./editor/pisi-editor-sheet-selection.mjs";
 import "./editor/pisi-editor-sheet-interactions.mjs";
 import "./editor/pisi-editor-sheet-structure.mjs";
 import "./editor/pisi-editor-paint.mjs";

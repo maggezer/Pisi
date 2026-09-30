@@ -243,16 +243,24 @@ try {
             '.pisi-editor-toolbar[data-editor-target="center-node-editor-content"]'
         );
         const editorWrapper = document.getElementById('center-node-editor');
+
         if (!editor || !toolbar || !editorWrapper) {
-            return { ok: false, reason: 'center editor or toolbar missing' };
+            return {
+                ok: false,
+                reason: 'center editor or toolbar missing'
+            };
         }
 
         editorWrapper.hidden = false;
         editorWrapper.style.display = 'block';
         editor.innerHTML = '<div><br></div>';
 
-        const tableTrigger = toolbar.querySelector('[data-pisi-table-trigger]');
-        const rollupTrigger = toolbar.querySelector('[data-pisi-rollup-trigger]');
+        const tableTrigger = toolbar.querySelector(
+            '[data-pisi-table-trigger]'
+        );
+        const rollupTrigger = toolbar.querySelector(
+            '[data-pisi-rollup-trigger]'
+        );
         const toolbarSheetActionsAbsent = !toolbar.querySelector(
             '[data-pisi-excel-action]'
         );
@@ -263,12 +271,6 @@ try {
 
         const table = editor.querySelector('table[data-pisi-sheet]');
         const firstCell = table?.querySelector('td[data-cell="A1"]');
-        const directTableSize = table
-            ? {
-                rows: table.querySelectorAll('tbody tr').length,
-                cols: table.querySelectorAll('tbody tr:first-child td').length
-            }
-            : null;
 
         if (!table || !firstCell) {
             return {
@@ -278,21 +280,125 @@ try {
             };
         }
 
+        const directTableSize = {
+            rows: table.querySelectorAll('tbody tr').length,
+            cols: table.querySelectorAll(
+                'tbody tr:first-child td'
+            ).length
+        };
+        const initialEditable =
+            firstCell.getAttribute('contenteditable');
+        const originalRowId = firstCell.dataset.pisiRowId || '';
+        const originalColId = firstCell.dataset.pisiColId || '';
+
         firstCell.dispatchEvent(new MouseEvent('mousedown', {
             bubbles: true,
+            cancelable: true,
             button: 0,
-            buttons: 1
+            buttons: 1,
+            detail: 1
         }));
 
-        const rowsBefore = table.querySelectorAll('tbody tr').length;
+        const selectedAfterClick =
+            table.querySelectorAll('.pisi-sheet-cell-range').length;
+        const activeAfterClick =
+            window.__pisiActiveSheetCell?.dataset.cell || '';
+
+        firstCell.dispatchEvent(new KeyboardEvent('keydown', {
+            bubbles: true,
+            cancelable: true,
+            key: 'ArrowRight'
+        }));
+
+        const secondCell = table.querySelector('td[data-cell="B1"]');
+        const activeAfterArrow =
+            window.__pisiActiveSheetCell?.dataset.cell || '';
+
+        secondCell?.dispatchEvent(new KeyboardEvent('keydown', {
+            bubbles: true,
+            cancelable: true,
+            key: 'Enter'
+        }));
+
+        const editableDuringEdit =
+            secondCell?.getAttribute('contenteditable') || '';
+        const editingClassDuringEdit =
+            secondCell?.classList.contains(
+                'pisi-sheet-cell-editing'
+            ) === true;
+
+        if (secondCell) {
+            secondCell.textContent = '42';
+            secondCell.dispatchEvent(new InputEvent('input', {
+                bubbles: true,
+                inputType: 'insertText',
+                data: '42'
+            }));
+            secondCell.dispatchEvent(new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                key: 'Enter'
+            }));
+        }
+
+        const activeAfterCommit =
+            window.__pisiActiveSheetCell?.dataset.cell || '';
+        const committedValue =
+            table.querySelector('td[data-cell="B1"]')
+                ?.textContent?.trim() || '';
+        const editableAfterCommit =
+            table.querySelector('td[data-cell="B1"]')
+                ?.getAttribute('contenteditable') || '';
+
         const firstHeader = table.querySelector(
             'thead th[data-col-header="0"]'
         );
-        const firstResizer = firstHeader?.querySelector(
+        const headerHeight =
+            firstHeader?.getBoundingClientRect().height || 0;
+        const bodyHeight =
+            firstCell.getBoundingClientRect().height || 0;
+
+        firstHeader?.dispatchEvent(new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true,
+            button: 0
+        }));
+
+        const selectedAfterHeaderClick =
+            table.querySelectorAll('.pisi-sheet-cell-range').length;
+        const activeAfterHeaderClick =
+            window.__pisiActiveSheetCell?.dataset.cell || '';
+        const columnMenu = document.querySelector(
+            '.pisi-sheet-column-menu'
+        );
+        const columnNameInput = columnMenu?.querySelector(
+            '.pisi-sheet-column-name-input'
+        );
+
+        if (columnNameInput) {
+            columnNameInput.value = 'Project';
+            columnNameInput.dispatchEvent(
+                new KeyboardEvent('keydown', {
+                    bubbles: true,
+                    cancelable: true,
+                    key: 'Enter'
+                })
+            );
+        }
+
+        const renamedHeader =
+            table.querySelector(
+                'thead th[data-col-header="0"] .pisi-sheet-col-label'
+            )?.textContent?.trim() || '';
+
+        const resizeHeader = table.querySelector(
+            'thead th[data-col-header="0"]'
+        );
+        const firstResizer = resizeHeader?.querySelector(
             '[data-pisi-sheet-col-resizer="0"]'
         );
         const widthBeforeResize =
-            firstHeader?.getBoundingClientRect().width || 0;
+            resizeHeader?.getBoundingClientRect().width || 0;
 
         firstResizer?.dispatchEvent(new MouseEvent('mousedown', {
             bubbles: true,
@@ -315,71 +421,9 @@ try {
         }));
 
         const widthAfterResize =
-            firstHeader?.getBoundingClientRect().width || 0;
+            resizeHeader?.getBoundingClientRect().width || 0;
         const bodyWidthAfterResize =
             firstCell.getBoundingClientRect().width || 0;
-        const firstLabel = firstHeader?.querySelector(
-            '.pisi-sheet-col-label'
-        );
-
-        const headerHeightBeforeRename =
-            firstHeader?.getBoundingClientRect().height || 0;
-        const bodyHeightBeforeRename =
-            firstCell.getBoundingClientRect().height || 0;
-
-        firstLabel?.dispatchEvent(new MouseEvent('mousedown', {
-            bubbles: true,
-            cancelable: true,
-            button: 0,
-            buttons: 1,
-            detail: 1
-        }));
-
-        const selectedAfterFirstHeaderPress =
-            table.querySelectorAll('.pisi-sheet-cell-range').length;
-
-        firstLabel?.dispatchEvent(new MouseEvent('mouseup', {
-            bubbles: true,
-            cancelable: true,
-            button: 0,
-            detail: 1
-        }));
-        firstLabel?.dispatchEvent(new MouseEvent('mousedown', {
-            bubbles: true,
-            cancelable: true,
-            button: 0,
-            buttons: 1,
-            detail: 2
-        }));
-
-        const headerEditing =
-            firstLabel?.dataset.pisiSheetEditing === '1';
-        const widthWhileRenaming =
-            firstHeader?.getBoundingClientRect().width || 0;
-        const headerHeightWhileRenaming =
-            firstHeader?.getBoundingClientRect().height || 0;
-
-        if (headerEditing && firstLabel) {
-            firstLabel.textContent = 'Project';
-            firstLabel.dispatchEvent(new KeyboardEvent('keydown', {
-                bubbles: true,
-                cancelable: true,
-                key: 'Enter'
-            }));
-        }
-
-        const renamedHeaderBeforeAdd =
-            firstHeader?.querySelector('.pisi-sheet-col-label')
-                ?.textContent?.trim() || '';
-        const storedHeaderLabel = (() => {
-            try {
-                return JSON.parse(
-                    table.dataset.pisiColumnLabels || '[]'
-                )[0] || '';
-            } catch {
-                return '';
-            }
-        })();
 
         firstCell.dispatchEvent(new MouseEvent('contextmenu', {
             bubbles: true,
@@ -389,22 +433,31 @@ try {
             clientY: 120
         }));
 
-        const menu = document.querySelector('.pisi-sheet-context-menu');
+        const menu = document.querySelector(
+            '.pisi-sheet-context-menu'
+        );
         const menuActions = menu
             ? Array.from(
-                menu.querySelectorAll('[data-pisi-sheet-context-action]')
-            ).map((button) => button.dataset.pisiSheetContextAction)
+                menu.querySelectorAll(
+                    '[data-pisi-sheet-context-action]'
+                )
+            ).map((button) => (
+                button.dataset.pisiSheetContextAction
+            ))
             : [];
         const addRow = menu?.querySelector(
             '[data-pisi-sheet-context-action="addRow"]'
         );
+        const rowsBefore =
+            table.querySelectorAll('tbody tr').length;
 
         addRow?.click();
 
-        const renamedHeaderAfterAdd =
-            table.querySelector(
-                'thead th[data-col-header="0"] .pisi-sheet-col-label'
-            )?.textContent?.trim() || '';
+        const firstCellAfterAdd =
+            table.querySelector('td[data-cell="A1"]');
+        const headerAfterAdd = table.querySelector(
+            'thead th[data-col-header="0"]'
+        );
 
         return {
             ok: true,
@@ -414,31 +467,56 @@ try {
                 tableRect &&
                 rollupRect &&
                 rollupRect.top > tableRect.top &&
-                Math.abs(rollupRect.left - tableRect.left) <= 1
+                Math.abs(
+                    rollupRect.left - tableRect.left
+                ) <= 1
             ),
             toolbarSheetActionsAbsent,
             directTableSize,
+            initialEditable,
+            originalRowId,
+            originalColId,
+            selectedAfterClick,
+            activeAfterClick,
+            activeAfterArrow,
+            editableDuringEdit,
+            editingClassDuringEdit,
+            activeAfterCommit,
+            committedValue,
+            editableAfterCommit,
+            headerHeight,
+            bodyHeight,
+            selectedAfterHeaderClick,
+            activeAfterHeaderClick,
+            columnMenuPresent: Boolean(columnMenu),
+            renamedHeader,
             hasColumnResizer: Boolean(firstResizer),
-            headerEditing,
-            selectedAfterFirstHeaderPress,
-            headerHeightBeforeRename,
-            headerHeightWhileRenaming,
-            bodyHeightBeforeRename,
-            renamedHeaderBeforeAdd,
-            renamedHeaderAfterAdd,
-            storedHeaderLabel,
-            widthWhileRenaming,
             widthBeforeResize,
             widthAfterResize,
             bodyWidthAfterResize,
-            rowsBefore,
-            rowsAfter: table.querySelectorAll('tbody tr').length,
             contextMenuPresent: Boolean(menu),
             contextMenuActions: menuActions,
             contextMenuClosedAfterAction:
-                !document.querySelector('.pisi-sheet-context-menu'),
+                !document.querySelector(
+                    '.pisi-sheet-context-menu'
+                ),
+            rowsBefore,
+            rowsAfter:
+                table.querySelectorAll('tbody tr').length,
+            stableRowIdAfterAdd:
+                firstCellAfterAdd?.dataset.pisiRowId || '',
+            stableColIdAfterAdd:
+                firstCellAfterAdd?.dataset.pisiColId || '',
+            renamedHeaderAfterAdd:
+                headerAfterAdd?.querySelector(
+                    '.pisi-sheet-col-label'
+                )?.textContent?.trim() || '',
+            widthAfterAdd:
+                headerAfterAdd?.getBoundingClientRect().width || 0,
             tablePopoverPresent: Boolean(
-                document.querySelector('.pisi-office-table-popover')
+                document.querySelector(
+                    '.pisi-office-table-popover'
+                )
             )
         };
     })()`);
@@ -451,36 +529,52 @@ try {
         !sheetResult.toolbarSheetActionsAbsent ||
         sheetResult.directTableSize?.rows !== 5 ||
         sheetResult.directTableSize?.cols !== 5 ||
+        sheetResult.initialEditable !== 'false' ||
+        !sheetResult.originalRowId ||
+        !sheetResult.originalColId ||
+        sheetResult.selectedAfterClick !== 1 ||
+        sheetResult.activeAfterClick !== 'A1' ||
+        sheetResult.activeAfterArrow !== 'B1' ||
+        sheetResult.editableDuringEdit !== 'plaintext-only' ||
+        !sheetResult.editingClassDuringEdit ||
+        sheetResult.activeAfterCommit !== 'B2' ||
+        sheetResult.committedValue !== '42' ||
+        sheetResult.editableAfterCommit !== 'false' ||
+        sheetResult.headerHeight > sheetResult.bodyHeight ||
+        sheetResult.selectedAfterHeaderClick !== 0 ||
+        sheetResult.activeAfterHeaderClick !== '' ||
+        !sheetResult.columnMenuPresent ||
+        sheetResult.renamedHeader !== 'Project' ||
         !sheetResult.hasColumnResizer ||
-        !sheetResult.headerEditing ||
-        sheetResult.selectedAfterFirstHeaderPress !== 1 ||
-        sheetResult.headerHeightBeforeRename >
-            sheetResult.bodyHeightBeforeRename ||
-        Math.abs(
-            sheetResult.headerHeightWhileRenaming -
-            sheetResult.headerHeightBeforeRename
-        ) > 1 ||
-        sheetResult.renamedHeaderBeforeAdd !== 'Project' ||
-        sheetResult.renamedHeaderAfterAdd !== 'Project' ||
-        sheetResult.storedHeaderLabel !== 'Project' ||
-        Math.abs(
-            sheetResult.widthWhileRenaming -
-            sheetResult.widthAfterResize
-        ) > 2 ||
-        sheetResult.widthAfterResize < sheetResult.widthBeforeResize + 40 ||
+        sheetResult.widthAfterResize <
+            sheetResult.widthBeforeResize + 40 ||
         Math.abs(
             sheetResult.bodyWidthAfterResize -
             sheetResult.widthAfterResize
         ) > 2 ||
         !sheetResult.contextMenuPresent ||
         JSON.stringify(sheetResult.contextMenuActions) !==
-            JSON.stringify(['addRow', 'deleteRow', 'addCol', 'deleteCol']) ||
+            JSON.stringify([
+                'addRow',
+                'deleteRow',
+                'addCol',
+                'deleteCol'
+            ]) ||
         !sheetResult.contextMenuClosedAfterAction ||
-        sheetResult.tablePopoverPresent ||
-        sheetResult.rowsAfter !== sheetResult.rowsBefore + 1
+        sheetResult.rowsAfter !== sheetResult.rowsBefore + 1 ||
+        sheetResult.stableRowIdAfterAdd !==
+            sheetResult.originalRowId ||
+        sheetResult.stableColIdAfterAdd !==
+            sheetResult.originalColId ||
+        sheetResult.renamedHeaderAfterAdd !== 'Project' ||
+        Math.abs(
+            sheetResult.widthAfterAdd -
+            sheetResult.widthAfterResize
+        ) > 2 ||
+        sheetResult.tablePopoverPresent
     ) {
         throw new Error(
-            'Sheet context-menu interaction failed: ' +
+            'Sheet state/edit architecture failed: ' +
             JSON.stringify(sheetResult)
         );
     }

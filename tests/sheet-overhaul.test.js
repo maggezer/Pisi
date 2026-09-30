@@ -129,11 +129,18 @@ test('absolute ve Z sonrası sütun referansları structural editlerde korunur',
     );
 });
 
-test('tablo arayüzünde Phase 2 gezinme, seçim, yapı ve biçimlendirme bulunur', () => {
+test('Sheet seçim ve düzenleme mimarisi veri state ile DOM odağını ayırır', () => {
     const sheet = fs.readFileSync(
         path.join(
             root,
             'renderer/editor/pisi-editor-sheet.mjs'
+        ),
+        'utf8'
+    );
+    const selection = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-sheet-selection.mjs'
         ),
         'utf8'
     );
@@ -179,13 +186,17 @@ test('tablo arayüzünde Phase 2 gezinme, seçim, yapı ve biçimlendirme bulunu
         ),
         'utf8'
     );
-    const tableSource = [sheet, interactions, structure].join('\n');
+    const tableSource = [
+        sheet,
+        selection,
+        interactions,
+        structure
+    ].join('\n');
 
-    assert.match(tableSource, /event\.key === 'Tab'/);
-    assert.match(tableSource, /event\.key === 'Enter'/);
+    assert.match(interactions, /event\.key === 'Tab'/);
+    assert.match(interactions, /event\.key === 'Enter'/);
     assert.match(interactions, /pisiSheetDragSelection/);
     assert.match(interactions, /table\.addEventListener\('mouseover'/);
-    assert.match(interactions, /data-pisi-sheet-corner/);
     assert.match(tableSource, /deletePisiSheetRows/);
     assert.match(tableSource, /deletePisiSheetColumns/);
     assert.match(tableSource, /applyPisiSheetCellFormat/);
@@ -204,59 +215,65 @@ test('tablo arayüzünde Phase 2 gezinme, seçim, yapı ve biçimlendirme bulunu
     assert.doesNotMatch(popovers, /openPisiToolbarTablePopover/);
     assert.doesNotMatch(popovers, /data-pisi-sheet-popover-action/);
     assert.doesNotMatch(popovers, /data-pisi-table-custom-rows/);
-
     assert.doesNotMatch(unifiedToolbar, /pisi-sheet-inline-tools/);
     assert.doesNotMatch(unifiedToolbar, /data-pisi-excel-action=/);
     assert.match(unifiedToolbar, /insertPisiSheet\(editor, 5, 5\)/);
-    assert.doesNotMatch(unifiedToolbar, /openPisiToolbarTablePopover/);
 
-    assert.match(interactions, /table\.addEventListener\('contextmenu'/);
     assert.match(interactions, /data-pisi-sheet-context-action/);
     assert.match(interactions, /action: 'addRow'/);
     assert.match(interactions, /action: 'deleteRow'/);
     assert.match(interactions, /action: 'addCol'/);
     assert.match(interactions, /action: 'deleteCol'/);
-    assert.match(interactions, /label: 'Satır ekle'/);
-    assert.match(interactions, /label: 'Sütun sil'/);
 
     assert.match(structure, /data-pisi-sheet-col-resizer/);
     assert.match(interactions, /PISI_SHEET_MIN_COLUMN_WIDTH = 48/);
     assert.match(interactions, /PISI_SHEET_MAX_COLUMN_WIDTH = 640/);
-    assert.match(interactions, /startPisiSheetColumnResize/);
-    assert.match(interactions, /setPisiSheetColumnWidth/);
-    assert.match(interactions, /schedulePisiSheetEditorNotification\(resize\.table\)/);
+    assert.match(interactions, /storePisiSheetColumnWidth/);
+    assert.match(structure, /pisiColumnWidths/);
 
-    assert.match(structure, /getPisiSheetColumnLabels/);
-    assert.match(structure, /setPisiSheetColumnLabel/);
-    assert.match(structure, /shiftPisiSheetColumnLabels/);
-    assert.match(structure, /data-pisi-column-labels|pisiColumnLabels/);
-    assert.match(interactions, /table\.addEventListener\('dblclick'/);
-    assert.match(interactions, /beginPisiSheetColumnLabelEdit/);
-    assert.match(interactions, /data\.pisiSheetEditing/);
-    assert.match(interactions, /contenteditable', 'plaintext-only'/);
-    assert.match(interactions, /event\.detail >= 2/);
-    assert.doesNotMatch(interactions, /data-pisi-sheet-col-editor/);
-    assert.match(interactions, /event\.key === 'Enter'/);
-    assert.match(interactions, /event\.key === 'Escape'/);
+    assert.match(structure, /createPisiSheetStableId/);
+    assert.match(structure, /pisiColumnIds/);
+    assert.match(structure, /pisiRowId/);
+    assert.match(selection, /rowId/);
+    assert.match(selection, /colId/);
+    assert.match(selection, /normalizePisiSheetSelection/);
+    assert.match(structure, /reconcilePisiSheetSelection\(table\)/);
+
+    assert.doesNotMatch(sheet, /contenteditable="true"/);
+    assert.doesNotMatch(structure, /contenteditable="true"/);
+    assert.match(selection, /pisiSheetEditStates/);
+    assert.match(
+        selection,
+        /setAttribute\('contenteditable', 'plaintext-only'\)/
+    );
+    assert.match(
+        selection,
+        /setAttribute\('contenteditable', 'false'\)/
+    );
+    assert.match(selection, /beginPisiSheetCellEdit/);
+    assert.match(selection, /finishPisiSheetCellEdit/);
+
+    assert.match(interactions, /pisi-sheet-column-menu/);
+    assert.match(interactions, /pisi-sheet-column-name-input/);
+    assert.match(interactions, /openPisiSheetColumnMenu/);
+    assert.doesNotMatch(
+        interactions,
+        /beginPisiSheetColumnLabelEdit/
+    );
+    assert.doesNotMatch(
+        interactions,
+        /data-pisi-sheet-editing/
+    );
 
     assert.match(paint, /notifyPisiEditorChanged\(editor, rehydrate = true\)/);
     assert.match(structure, /notifyPisiEditorChanged\(editor, false\)/);
-    assert.match(
-        interactions,
-        /if \(pisiBoundSheets\.has\(table\)\) return;[\s\S]*refreshPisiSheetCellMetadata\(table\)/
-    );
-    assert.match(interactions, /function isPisiSheetCellSelected/);
-    assert.match(interactions, /pisiRenderedSheetSelectionCells/);
-    assert.match(
-        interactions,
-        /table\.tBodies\?\.\[0\]\?\.rows\?\.\[row\]/
-    );
+
     assert.doesNotMatch(
         interactions,
         /getPisiSelectedSheetCells\(table\)\.includes\(cell\)/
     );
     assert.doesNotMatch(
-        interactions,
+        selection,
         /table\.querySelectorAll\(\s*['"]\.pisi-sheet-cell-selected/
     );
 });

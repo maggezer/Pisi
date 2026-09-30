@@ -146,7 +146,7 @@ function buildPisiSheetHtml(rows, cols) {
     for (let row = 0; row < rows; row += 1) {
         body += `<tr><th>${row + 1}</th>`;
         for (let col = 0; col < cols; col += 1) {
-            body += `<td contenteditable="true" data-row="${row}" data-col="${col}" data-cell="${pisiColumnName(col)}${row + 1}"></td>`;
+            body += `<td contenteditable="false" tabindex="-1" data-row="${row}" data-col="${col}" data-cell="${pisiColumnName(col)}${row + 1}"></td>`;
         }
         body += '</tr>';
     }
