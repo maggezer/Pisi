@@ -298,6 +298,26 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(selection, /setPisiSheetSelectionState/);
     assert.match(selection, /getPisiSheetSelectionFocus/);
     assert.match(selection, /getPisiSheetActivePoint/);
+    assert.match(
+        selection,
+        /function setPisiSheetRangeSelection/
+    );
+    assert.match(
+        selection,
+        /function ensurePisiSheetCellVisible/
+    );
+    assert.match(
+        selection,
+        /scrollIntoView\(\{[\s\S]*block: 'nearest',[\s\S]*inline: 'nearest'/
+    );
+    assert.match(
+        selection,
+        /extendPisiSheetSelectionByKeyboard[\s\S]*setPisiSheetRangeSelection/
+    );
+    assert.match(
+        selection,
+        /movePisiSheetCellFocus[\s\S]*ensureVisible: true/
+    );
     assert.match(selection, /pisi-sheet-cell-active/);
     assert.match(selection, /pisi-sheet-cell-selected/);
     assert.doesNotMatch(selection, /pisi-sheet-cell-range/);
@@ -364,6 +384,14 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         /isPisiSheetPrintableKey/
     );
     assert.match(interactions, /pisiSheetDragSelection/);
+    assert.match(
+        interactions,
+        /setPisiSheetRangeSelection/
+    );
+    assert.match(
+        interactions,
+        /anchor: \{ \.\.\.selection\.anchor \}/
+    );
     assert.match(interactions, /data-pisi-sheet-context-action/);
     assert.match(interactions, /action: 'addRow'/);
     assert.match(interactions, /action: 'deleteRow'/);
@@ -411,6 +439,10 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     );
     assert.match(keyboard, /event\.key === 'Enter'/);
     assert.match(keyboard, /event\.key === 'Tab'/);
+    assert.match(
+        keyboard,
+        /event\.shiftKey \? -1 : 1/
+    );
     assert.match(keyboard, /event\.key === 'Delete'/);
     assert.match(keyboard, /event\.key === 'Backspace'/);
     assert.match(keyboard, /event\.key === 'Escape'/);

@@ -270,6 +270,38 @@ function isPisiSheetCellSelected(table, cell) {
     );
 }
 
+function setPisiSheetRangeSelection(
+    table,
+    anchor,
+    focus,
+    options = {}
+) {
+    if (!table || !anchor || !focus) return null;
+
+    const state = setPisiSheetSelectionState(table, {
+        mode: options.mode || 'range',
+        anchor,
+        focus,
+        active: options.active || focus
+    });
+
+    if (!state) return null;
+
+    const projected = syncPisiSheetSelectionProjection(table);
+
+    if (options.ensureVisible !== false) {
+        const focusCell = getPisiSheetCell(
+            table,
+            focus.row,
+            focus.col
+        );
+
+        ensurePisiSheetCellVisible(focusCell);
+    }
+
+    return state;
+}
+
 function selectPisiSheetCell(cell, options = {}) {
     if (!cell) return;
 
@@ -282,20 +314,17 @@ function selectPisiSheetCell(cell, options = {}) {
         ? previous.anchor
         : point;
 
-    setPisiSheetSelectionState(table, {
-        mode: options.extend ? 'range' : 'cell',
+    setPisiSheetRangeSelection(
+        table,
         anchor,
-        focus: point,
-        active: point
-    });
-
-    syncPisiSheetSelectionProjection(table);
-
-    if (options.focus) {
-        revealPisiSheetCell(cell);
-    }
+        point,
+        {
+            mode: options.extend ? 'range' : 'cell',
+            active: point,
+            ensureVisible: options.ensureVisible === true
+        }
+    );
 }
-
 
 function selectPisiSheetRow(table, rowIndex, extend = false) {
     const dimensions = getPisiSheetDimensions(table);
@@ -406,13 +435,15 @@ function selectAllPisiSheetCells(table) {
 }
 
 
-function revealPisiSheetCell(cell) {
-    if (!cell) return;
+function ensurePisiSheetCellVisible(cell) {
+    if (!cell) return false;
 
     cell.scrollIntoView({
         block: 'nearest',
         inline: 'nearest'
     });
+
+    return true;
 }
 
 function focusPisiSheetCell(cell) {
@@ -573,7 +604,7 @@ function finishPisiSheetCellEdit(table, options = {}) {
     }
 
     if (options.refocus !== false) {
-        revealPisiSheetCell(cell);
+        ensurePisiSheetCellVisible(cell);
     }
 
     return true;
@@ -624,18 +655,16 @@ function extendPisiSheetSelectionByKeyboard(
 
     if (!next) return;
 
-    setPisiSheetSelectionState(table, {
-        mode: 'range',
-        anchor: current?.anchor || position,
-        focus: next,
-        active: next
-    });
-
-    const nextCell = syncPisiSheetSelectionProjection(table);
-
-    if (nextCell) {
-        revealPisiSheetCell(nextCell);
-    }
+    setPisiSheetRangeSelection(
+        table,
+        current?.anchor || position,
+        next,
+        {
+            mode: 'range',
+            active: next,
+            ensureVisible: true
+        }
+    );
 }
 
 
@@ -689,7 +718,9 @@ function movePisiSheetCellFocus(
 
     if (!nextCell) return false;
 
-    selectPisiSheetCell(nextCell, { focus: true });
+    selectPisiSheetCell(nextCell, {
+        ensureVisible: true
+    });
     return true;
 }
 
@@ -758,6 +789,14 @@ Object.defineProperties(moduleApi, {
     "renderPisiSheetSelection": {
         enumerable: true,
         get() { return renderPisiSheetSelection; }
+    },
+    "setPisiSheetRangeSelection": {
+        enumerable: true,
+        get() { return setPisiSheetRangeSelection; }
+    },
+    "ensurePisiSheetCellVisible": {
+        enumerable: true,
+        get() { return ensurePisiSheetCellVisible; }
     },
     "selectPisiSheetCell": {
         enumerable: true,

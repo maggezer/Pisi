@@ -209,6 +209,8 @@
       "getPisiSelectedSheetCells",
       "isPisiSheetCellSelected",
       "renderPisiSheetSelection",
+      "setPisiSheetRangeSelection",
+      "ensurePisiSheetCellVisible",
       "selectPisiSheetCell",
       "selectPisiSheetRow",
       "selectPisiSheetColumn",

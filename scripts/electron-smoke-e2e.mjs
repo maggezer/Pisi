@@ -831,6 +831,214 @@ try {
                 '.pisi-sheet-cell-selected'
             ).length;
 
+        const originalScrollIntoView =
+            Element.prototype.scrollIntoView;
+        const stage5VisibilityEvents = [];
+
+        Element.prototype.scrollIntoView = function (options) {
+            if (this.matches?.('td[data-cell]')) {
+                stage5VisibilityEvents.push({
+                    cell: this.dataset.cell || '',
+                    block: options?.block || '',
+                    inline: options?.inline || ''
+                });
+            }
+
+            if (originalScrollIntoView) {
+                return originalScrollIntoView.call(
+                    this,
+                    options
+                );
+            }
+        };
+
+        const stage6MouseAnchor = table.querySelector(
+            'td[data-cell="A1"]'
+        );
+        const stage6MouseFocus = table.querySelector(
+            'td[data-cell="C3"]'
+        );
+
+        stage6MouseAnchor?.dispatchEvent(
+            new MouseEvent('mousedown', {
+                bubbles: true,
+                cancelable: true,
+                button: 0,
+                buttons: 1
+            })
+        );
+        stage6MouseFocus?.dispatchEvent(
+            new MouseEvent('mouseover', {
+                bubbles: true,
+                cancelable: true,
+                buttons: 1
+            })
+        );
+        document.dispatchEvent(
+            new MouseEvent('mouseup', {
+                bubbles: true,
+                cancelable: true,
+                button: 0
+            })
+        );
+
+        const stage6MouseSelection =
+            window.getPisiSheetSelection?.(table) || null;
+        const stage6MouseAnchorLabel =
+            pointLabel(stage6MouseSelection?.anchor);
+        const stage6MouseFocusLabel =
+            pointLabel(stage6MouseSelection?.focus);
+        const stage6MouseActiveLabel =
+            pointLabel(stage6MouseSelection?.active);
+        const stage6MouseSelectedCount =
+            table.querySelectorAll(
+                '.pisi-sheet-cell-selected'
+            ).length;
+
+        document.dispatchEvent(
+            new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                key: 'ArrowRight',
+                shiftKey: true
+            })
+        );
+
+        const stage6MixedSelection =
+            window.getPisiSheetSelection?.(table) || null;
+        const stage6MixedAnchorLabel =
+            pointLabel(stage6MixedSelection?.anchor);
+        const stage6MixedFocusLabel =
+            pointLabel(stage6MixedSelection?.focus);
+        const stage6MixedActiveLabel =
+            pointLabel(stage6MixedSelection?.active);
+        const stage6MixedSelectedCount =
+            table.querySelectorAll(
+                '.pisi-sheet-cell-selected'
+            ).length;
+
+        document.dispatchEvent(
+            new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                key: 'ArrowUp'
+            })
+        );
+        const stage5AfterUp = activeCellLabel(table);
+
+        document.dispatchEvent(
+            new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                key: 'ArrowRight'
+            })
+        );
+        const stage5AfterRight = activeCellLabel(table);
+
+        document.dispatchEvent(
+            new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                key: 'ArrowDown'
+            })
+        );
+        const stage5AfterDown = activeCellLabel(table);
+
+        document.dispatchEvent(
+            new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                key: 'ArrowLeft'
+            })
+        );
+        const stage5AfterLeft = activeCellLabel(table);
+
+        document.dispatchEvent(
+            new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                key: 'ArrowUp'
+            })
+        );
+        const stage5AfterSecondUp = activeCellLabel(table);
+
+        document.dispatchEvent(
+            new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                key: 'Tab'
+            })
+        );
+        const stage5AfterTab = activeCellLabel(table);
+
+        document.dispatchEvent(
+            new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                key: 'Tab',
+                shiftKey: true
+            })
+        );
+        const stage5AfterShiftTab = activeCellLabel(table);
+
+        window.setPisiSheetCellSource?.(
+            table,
+            1,
+            3,
+            {
+                value: '6',
+                formula: null
+            }
+        );
+        window.recalcPisiSheet?.(table);
+
+        document.dispatchEvent(
+            new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                key: 'Backspace'
+            })
+        );
+
+        const stage5BackspaceModelValue =
+            window.getPisiSheetCellSource?.(
+                table,
+                1,
+                3
+            )?.value || '';
+        const stage5BackspaceRenderedValue =
+            table.querySelector(
+                'td[data-cell="D2"]'
+            )?.textContent?.trim() || '';
+
+        const stage5VisibilityCells =
+            stage5VisibilityEvents.map(
+                (entry) => entry.cell
+            );
+        const stage5VisibilityAllNearest =
+            stage5VisibilityEvents.every(
+                (entry) => (
+                    entry.block === 'nearest' &&
+                    entry.inline === 'nearest'
+                )
+            );
+
+        document.dispatchEvent(
+            new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                key: 'Escape'
+            })
+        );
+
+        const stage5EscapeClearedSelection =
+            window.getPisiSheetSelection?.(table) === null;
+        const stage5EscapeClearedActive =
+            activeCellLabel(table) === '';
+
+        Element.prototype.scrollIntoView =
+            originalScrollIntoView;
+
         firstHeader?.dispatchEvent(new MouseEvent('click', {
             bubbles: true,
             cancelable: true,
@@ -1056,6 +1264,27 @@ try {
             stage4SelectedAfterShiftArrow,
             stage4ActiveAfterTab,
             stage4SelectedAfterTab,
+            stage6MouseAnchorLabel,
+            stage6MouseFocusLabel,
+            stage6MouseActiveLabel,
+            stage6MouseSelectedCount,
+            stage6MixedAnchorLabel,
+            stage6MixedFocusLabel,
+            stage6MixedActiveLabel,
+            stage6MixedSelectedCount,
+            stage5AfterUp,
+            stage5AfterRight,
+            stage5AfterDown,
+            stage5AfterLeft,
+            stage5AfterSecondUp,
+            stage5AfterTab,
+            stage5AfterShiftTab,
+            stage5BackspaceModelValue,
+            stage5BackspaceRenderedValue,
+            stage5VisibilityCells,
+            stage5VisibilityAllNearest,
+            stage5EscapeClearedSelection,
+            stage5EscapeClearedActive,
             selectedAfterHeaderClick,
             activeAfterHeaderClick,
             columnMenuPresent: Boolean(columnMenu),
@@ -1190,6 +1419,38 @@ try {
         sheetResult.stage4SelectedAfterShiftArrow !== 2 ||
         sheetResult.stage4ActiveAfterTab !== 'C4' ||
         sheetResult.stage4SelectedAfterTab !== 1 ||
+        sheetResult.stage6MouseAnchorLabel !== 'A1' ||
+        sheetResult.stage6MouseFocusLabel !== 'C3' ||
+        sheetResult.stage6MouseActiveLabel !== 'C3' ||
+        sheetResult.stage6MouseSelectedCount !== 9 ||
+        sheetResult.stage6MixedAnchorLabel !== 'A1' ||
+        sheetResult.stage6MixedFocusLabel !== 'D3' ||
+        sheetResult.stage6MixedActiveLabel !== 'D3' ||
+        sheetResult.stage6MixedSelectedCount !== 12 ||
+        sheetResult.stage5AfterUp !== 'D2' ||
+        sheetResult.stage5AfterRight !== 'E2' ||
+        sheetResult.stage5AfterDown !== 'E3' ||
+        sheetResult.stage5AfterLeft !== 'D3' ||
+        sheetResult.stage5AfterSecondUp !== 'D2' ||
+        sheetResult.stage5AfterTab !== 'E2' ||
+        sheetResult.stage5AfterShiftTab !== 'D2' ||
+        sheetResult.stage5BackspaceModelValue !== '' ||
+        sheetResult.stage5BackspaceRenderedValue !== '' ||
+        JSON.stringify(sheetResult.stage5VisibilityCells) !==
+            JSON.stringify([
+                'C3',
+                'D3',
+                'D2',
+                'E2',
+                'E3',
+                'D3',
+                'D2',
+                'E2',
+                'D2'
+            ]) ||
+        !sheetResult.stage5VisibilityAllNearest ||
+        !sheetResult.stage5EscapeClearedSelection ||
+        !sheetResult.stage5EscapeClearedActive ||
         sheetResult.selectedAfterHeaderClick !== 0 ||
         sheetResult.activeAfterHeaderClick !== '' ||
         !sheetResult.columnMenuPresent ||

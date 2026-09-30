@@ -620,14 +620,16 @@ function hydratePisiSheets(root = document) {
             drag.last = point;
             table.classList.add('pisi-sheet-drag-selecting');
 
-            setPisiSheetSelectionState(table, {
-                mode: 'range',
-                anchor: drag.anchor,
-                focus: point,
-                active: point
-            });
-
-            syncPisiSheetSelectionProjection(table);
+            setPisiSheetRangeSelection(
+                table,
+                drag.anchor,
+                point,
+                {
+                    mode: 'range',
+                    active: point,
+                    ensureVisible: true
+                }
+            );
         });
 
         table.addEventListener('keydown', (event) => {
