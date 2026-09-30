@@ -71,7 +71,11 @@ test('toolbar icon sources follow live theme changes', () => {
     assert.match(toolbar, /syncPisiToolbarIconTheme\(toolbar\)/);
 });
 
-test('removed toolbar controls stay removed', () => {
+test('retired formula controls stay removed and Sheet actions are contextual', () => {
     assert.doesNotMatch(toolbar, /data-pisi-formula-trigger="financial"/);
-    assert.doesNotMatch(toolbar, /data-pisi-excel-action="(?:addRow|addCol|deleteRow|deleteCol)"/);
+    assert.match(toolbar, /class="pisi-sheet-context-tools"/);
+    assert.match(toolbar, /data-pisi-excel-action="addRow"/);
+    assert.match(toolbar, /data-pisi-excel-action="deleteRow"/);
+    assert.match(toolbar, /data-pisi-excel-action="addCol"/);
+    assert.match(toolbar, /data-pisi-excel-action="deleteCol"/);
 });
