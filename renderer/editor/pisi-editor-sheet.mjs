@@ -96,6 +96,13 @@ function runPisiExcelAction(toolbar, action, actionValue = null) {
             'alignLeft',
             'alignCenter',
             'alignRight',
+            'alignJustify',
+            'verticalTop',
+            'verticalMiddle',
+            'verticalBottom',
+            'toggleWrap',
+            'borderAll',
+            'borderNone',
             'clearFormat',
             'textColor',
             'fillColor'
@@ -148,9 +155,11 @@ function buildPisiSheetHtml(rows, cols) {
     return `<table class="pisi-sheet-table" data-pisi-sheet="1">${head}${body}</table>`;
 }
 
-const PISI_SHEET_MAX_ROWS = 80;
+// Safety caps keep a single DOM-backed sheet responsive while allowing
+// substantially larger tables than the original 80 x 26 grid.
+const PISI_SHEET_MAX_ROWS = 300;
 
-const PISI_SHEET_MAX_COLS = 26;
+const PISI_SHEET_MAX_COLS = 80;
 
 const PISI_SHEET_MAX_RANGE_CELLS =
     PISI_SHEET_MAX_ROWS * PISI_SHEET_MAX_COLS;
@@ -428,7 +437,132 @@ function getPisiSheetRangeValues(table, startRef, endRef, stack = new Set()) {
 }
 
 function parsePisiCellRef(ref) {
-    const match = String(ref || '').toUpperCase().match(/^([A-Z]+)(\d+)$/);
+    const match = String(ref || '')
+        .toUpperCase()
+        .replaceAll('
+    if (!match) return null;
+
+    return {
+        col: pisiColumnIndex(match[1]),
+        row: Number(match[2]) - 1
+    };
+}
+
+function pisiColumnName(index) {
+    let name = '';
+    let n = Number(index) + 1;
+
+    while (n > 0) {
+        const rem = (n - 1) % 26;
+        name = String.fromCharCode(65 + rem) + name;
+        n = Math.floor((n - 1) / 26);
+    }
+
+    return name;
+}
+
+function pisiColumnIndex(name) {
+    return String(name || '').toUpperCase().split('').reduce((sum, char) => {
+        return sum * 26 + char.charCodeAt(0) - 64;
+    }, 0) - 1;
+}
+
+function formatPisiSheetNumber(value) {
+    if (!Number.isFinite(value)) return '#ERR';
+    if (Math.abs(value - Math.round(value)) < 1e-10) return String(Math.round(value));
+    return String(Math.round(value * 1000000) / 1000000);
+}
+
+const moduleApi = {};
+Object.defineProperties(moduleApi, {
+    "runPisiExcelAction": {
+        enumerable: true,
+        get() { return runPisiExcelAction; }
+    },
+    "insertPisiSheet": {
+        enumerable: true,
+        get() { return insertPisiSheet; }
+    },
+    "buildPisiSheetHtml": {
+        enumerable: true,
+        get() { return buildPisiSheetHtml; }
+    },
+    "PISI_SHEET_MAX_ROWS": {
+        enumerable: true,
+        get() { return PISI_SHEET_MAX_ROWS; }
+    },
+    "PISI_SHEET_MAX_COLS": {
+        enumerable: true,
+        get() { return PISI_SHEET_MAX_COLS; }
+    },
+    "PISI_SHEET_MAX_RANGE_CELLS": {
+        enumerable: true,
+        get() { return PISI_SHEET_MAX_RANGE_CELLS; }
+    },
+    "pisiBoundSheets": {
+        enumerable: true,
+        get() { return pisiBoundSheets; }
+    },
+    "pisiEditedSheetCells": {
+        enumerable: true,
+        get() { return pisiEditedSheetCells; }
+    },
+    "getActivePisiSheetForEditor": {
+        enumerable: true,
+        get() { return getActivePisiSheetForEditor; }
+    },
+    "applyPisiSheetFormula": {
+        enumerable: true,
+        get() { return applyPisiSheetFormula; }
+    },
+    "commitPisiSheetCell": {
+        enumerable: true,
+        get() { return commitPisiSheetCell; }
+    },
+    "recalcPisiSheet": {
+        enumerable: true,
+        get() { return recalcPisiSheet; }
+    },
+    "evaluatePisiSheetFormula": {
+        enumerable: true,
+        get() { return evaluatePisiSheetFormula; }
+    },
+    "evaluatePisiArithmeticExpression": {
+        enumerable: true,
+        get() { return evaluatePisiArithmeticExpression; }
+    },
+    "getPisiSheetCellNumericValue": {
+        enumerable: true,
+        get() { return getPisiSheetCellNumericValue; }
+    },
+    "getPisiSheetCellValue": {
+        enumerable: true,
+        get() { return getPisiSheetCellValue; }
+    },
+    "getPisiSheetRangeValues": {
+        enumerable: true,
+        get() { return getPisiSheetRangeValues; }
+    },
+    "parsePisiCellRef": {
+        enumerable: true,
+        get() { return parsePisiCellRef; }
+    },
+    "pisiColumnName": {
+        enumerable: true,
+        get() { return pisiColumnName; }
+    },
+    "pisiColumnIndex": {
+        enumerable: true,
+        get() { return pisiColumnIndex; }
+    },
+    "formatPisiSheetNumber": {
+        enumerable: true,
+        get() { return formatPisiSheetNumber; }
+    }
+});
+registerModule("editor.sheet", moduleApi);
+, '')
+        .match(/^([A-Z]+)(\d+)$/);
     if (!match) return null;
 
     return {
