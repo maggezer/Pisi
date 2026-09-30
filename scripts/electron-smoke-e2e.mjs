@@ -178,9 +178,13 @@ try {
         const toolbar = document.querySelector(
             '.pisi-editor-toolbar[data-editor-target="center-node-editor-content"]'
         );
-        if (!editor || !toolbar) {
+        const editorWrapper = document.getElementById('center-node-editor');
+        if (!editor || !toolbar || !editorWrapper) {
             return { ok: false, reason: 'center editor or toolbar missing' };
         }
+
+        editorWrapper.hidden = false;
+        editorWrapper.style.display = 'block';
 
         editor.innerHTML = '<table class="pisi-sheet-table" data-pisi-sheet="1"><thead><tr><th></th><th>A</th><th>B</th></tr></thead><tbody><tr><th>1</th><td contenteditable="true"></td><td contenteditable="true"></td></tr><tr><th>2</th><td contenteditable="true"></td><td contenteditable="true"></td></tr></tbody></table>';
         window.initializePisiAdvancedEditorContent?.(editor);
