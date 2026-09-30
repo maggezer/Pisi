@@ -403,6 +403,35 @@ function applyPisiSheetCellFormat(
         cells.forEach((cell) => {
             cell.style.textAlign = 'justify';
         });
+    } else if (action === 'verticalTop') {
+        cells.forEach((cell) => {
+            cell.style.verticalAlign = 'top';
+        });
+    } else if (action === 'verticalMiddle') {
+        cells.forEach((cell) => {
+            cell.style.verticalAlign = 'middle';
+        });
+    } else if (action === 'verticalBottom') {
+        cells.forEach((cell) => {
+            cell.style.verticalAlign = 'bottom';
+        });
+    } else if (action === 'toggleWrap') {
+        const enable = !cells.every((cell) => {
+            return cell.style.whiteSpace === 'normal';
+        });
+
+        cells.forEach((cell) => {
+            cell.style.whiteSpace = enable ? 'normal' : 'nowrap';
+            cell.style.overflowWrap = enable ? 'anywhere' : '';
+        });
+    } else if (action === 'borderAll') {
+        cells.forEach((cell) => {
+            cell.style.border = '1px solid rgba(127, 127, 127, 0.7)';
+        });
+    } else if (action === 'borderNone') {
+        cells.forEach((cell) => {
+            cell.style.border = '';
+        });
     } else if (action === 'textColor' && value) {
         cells.forEach((cell) => {
             cell.style.color = value;
@@ -419,6 +448,10 @@ function applyPisiSheetCellFormat(
             cell.style.fontFamily = '';
             cell.style.fontSize = '';
             cell.style.textAlign = '';
+            cell.style.verticalAlign = '';
+            cell.style.whiteSpace = '';
+            cell.style.overflowWrap = '';
+            cell.style.border = '';
             cell.style.color = '';
             cell.style.backgroundColor = '';
         });
@@ -523,8 +556,26 @@ function syncPisiSheetToolbarState(toolbar, table) {
     );
 
     if (status && table) {
+        const selection = pisiSheetSelections.get(table);
+        const rect = selection
+            ? getPisiSheetSelectionRect(
+                selection.anchor,
+                selection.focus
+            )
+            : null;
+        const selectedRows = rect
+            ? rect.rowEnd - rect.rowStart + 1
+            : 1;
+        const selectedCols = rect
+            ? rect.colEnd - rect.colStart + 1
+            : 1;
+        const selectionLabel =
+            selectedRows > 1 || selectedCols > 1
+                ? ` · ${selectedRows}×${selectedCols} seçili`
+                : '';
+
         status.textContent =
-            `${dimensions.rows} × ${dimensions.cols}`;
+            `${dimensions.rows} × ${dimensions.cols}${selectionLabel}`;
     }
 }
 
