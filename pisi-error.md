@@ -4,39 +4,24 @@ Bu dosya yalnızca güncel `main` dalında gerçekten devam eden açıkları ve 
 olarak ertelenmiş işleri listeler. Kapatılmış tarihsel bulgular
 `pisi-update.md` içinde tutulur.
 
-## 1. Sheet gelişmiş düzenleme işlemleri
+## 1. Paint/Sheet sidecar depolama
 
-**[Orta · özellik eksiği]** Tablo büyütme artık 80 satır × 26 sütun
-(2.080 hücre) sınırıyla korunuyor; eski sınırsız büyüme hatası kapatıldı.
-Ancak satır/sütun silme, gelişmiş hücre biçimlendirme, yapısal değişikliklerde
-formül referanslarını yeniden yazma ve çoklu hücre seçimi henüz yok.
+**[Orta · mimari]** Paint görselleri ve büyük Sheet içerikleri hâlâ node belgesi
+içinde tutuluyor. Özellikle Paint `data-image` verisi büyük node dosyaları,
+daha pahalı sürüm geçmişi ve cihazlar arası senkronizasyonda gereksiz veri
+taşınmasına neden olabilir. Ayrı sidecar depolama tasarımı henüz uygulanmadı.
 
-## 2. Development dependency audit bulguları
+## 2. Otomatik formatlama
 
-**[Orta · build zinciri]** 29 Eylül 2026 tarihli CI auditinde
-**3 high + 1 moderate** bulgu bulunuyor. Yüksek bulgular:
+**[Düşük · kalite]** Syntax, architecture, branding, i18n, `tsc --checkJs`,
+ESLint ve Node test runner kontrolleri CI'da çalışıyor. Repository-wide otomatik
+formatlama ve format-check adımı henüz yok.
 
-- `@xmldom/xmldom@0.8.13` — `plist` üzerinden,
-- `fast-uri@3.1.5` — `ajv` üzerinden,
-- `js-yaml@4.3.1` — `electron-builder` / `app-builder-lib` zincirinde.
-
-Moderate bulgu `undici` paketinde. Kilit dosyasında bu paketlerin tamamı
-development/build bağımlılığı olarak işaretli; uygulamanın kullanıcı verisini
-işleyen production bağımlılıkları değiller. CI audit raporunu görünür şekilde
-çalıştırıyor, fakat bu bulgular şimdilik buildi bloklamıyor. Güncelleme yapılırken
-`npm audit fix` sonrası paketleme ve 557 regresyon testinin tamamı yeniden
-çalıştırılmalı.
-
-## 3. Typecheck ve otomatik formatlama
-
-**[Düşük · kalite]** Syntax, architecture, branding, i18n, ESLint ve Node test
-runner kontrolleri mevcut ve CI'da çalışıyor. Ancak repository-wide typecheck
-ve otomatik format kontrolü henüz yok.
-
-## 4. Dağıtım / imzalama
+## 3. Dağıtım / imzalama
 
 **[Orta · release]** Windows NSIS ve portable paketleri x64 ile ARM64 için
-üretiliyor. Henüz:
+üretiliyor; release hattı temiz dependency audit, source validation, SHA256 ve
+tag doğrulaması uyguluyor. Henüz:
 
 - Windows code signing / SmartScreen itibarı,
 - macOS ve Linux paket hedefleri,
@@ -47,5 +32,14 @@ yapılandırılmış değil.
 
 ## Doğrulama durumu
 
-Güncel `main` CI; syntax, architecture, branding, i18n, ESLint ve test
-kontrollerinden geçiyor. Son doğrulamada **557/557 test başarılı**.
+30 Eylül 2026 tarihli güncel `main` doğrulamasında:
+
+- `npm audit`: **0 vulnerability**,
+- `tsc --checkJs`: **0 hata**,
+- architecture ownership: **107 module / 1142 binding**,
+- Node regresyon testleri: **571/571 başarılı**,
+- Electron E2E: **başarılı**.
+
+Sheet Phase 2 kapsamında 300 × 80 güvenlik sınırı, satır/sütun silme, gerçek
+dikdörtgen çoklu seçim, toplu hücre biçimlendirme ve yapısal formül referansı
+yeniden yazma tamamlanmıştır.
