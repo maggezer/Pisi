@@ -182,6 +182,10 @@ function parsePisiFormula(source) {
         }
 
         if (PISI_CELL_REFERENCE.test(String(token.value))) {
+            const normalizeReference = (value) => {
+                return String(value).replaceAll('$', '');
+            };
+
             if (match(':')) {
                 const end = take();
                 if (
@@ -192,7 +196,15 @@ function parsePisiFormula(source) {
                 }
                 return {
                     type: 'range',
-                    start: String(token.value).replaceAll('
+                    start: normalizeReference(token.value),
+                    end: normalizeReference(end.value)
+                };
+            }
+
+            return {
+                type: 'cell',
+                ref: normalizeReference(token.value)
+            };
         }
 
         if (['TRUE', 'FALSE', 'PI', 'E'].includes(String(token.value))) {
