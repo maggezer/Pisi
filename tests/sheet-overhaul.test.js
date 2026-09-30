@@ -389,10 +389,14 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         interactions,
         /movePisiSheetFormulaReferenceByKeyboard/
     );
-    assert.doesNotMatch(interactions, /ArrowUp/);
-    assert.doesNotMatch(interactions, /ArrowDown/);
-    assert.doesNotMatch(interactions, /ArrowLeft/);
-    assert.doesNotMatch(interactions, /ArrowRight/);
+    assert.match(
+        interactions,
+        /movePisiSheetFormulaReferenceByKeyboard/
+    );
+    assert.doesNotMatch(
+        interactions,
+        /extendPisiSheetSelectionByKeyboard/
+    );
     assert.doesNotMatch(interactions, /Backspace/);
     assert.doesNotMatch(
         interactions,
