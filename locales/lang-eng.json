@@ -736,6 +736,19 @@
     "Bağlantıyı kes": "Disconnect",
     "Sync klasörü seçilemedi.": "The sync folder could not be selected.",
     "Senkronizasyon başarısız.": "Sync failed.",
-    "Sync bağlantısı kesilsin mi? Yerel proje dosyaları korunur.": "Disconnect sync? Local project files will be preserved."
+    "Sync bağlantısı kesilsin mi? Yerel proje dosyaları korunur.": "Disconnect sync? Local project files will be preserved.",
+    "Sütun ayarları": "Column properties",
+    "Sütun adı": "Column name",
+    "Açıklama": "Description",
+    "Formül": "Formula",
+    "Tip": "Type",
+    "Metni kaydır": "Wrap",
+    "Genişlik": "Width",
+    "Sabitle": "Pin",
+    "İçeriğe sığdır": "Fit width",
+    "Sütunu gizle": "Hide column",
+    "Sütunu sil": "Delete column",
+    "Gizli sütunlar": "Hidden columns",
+    "Göster": "Show"
   }
 }

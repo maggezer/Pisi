@@ -736,6 +736,19 @@
     "Bağlantıyı kes": "Bağlantıyı kes",
     "Sync klasörü seçilemedi.": "Sync klasörü seçilemedi.",
     "Senkronizasyon başarısız.": "Senkronizasyon başarısız.",
-    "Sync bağlantısı kesilsin mi? Yerel proje dosyaları korunur.": "Sync bağlantısı kesilsin mi? Yerel proje dosyaları korunur."
+    "Sync bağlantısı kesilsin mi? Yerel proje dosyaları korunur.": "Sync bağlantısı kesilsin mi? Yerel proje dosyaları korunur.",
+    "Sütun ayarları": "Sütun ayarları",
+    "Sütun adı": "Sütun adı",
+    "Açıklama": "Açıklama",
+    "Formül": "Formül",
+    "Tip": "Tip",
+    "Metni kaydır": "Metni kaydır",
+    "Genişlik": "Genişlik",
+    "Sabitle": "Sabitle",
+    "İçeriğe sığdır": "İçeriğe sığdır",
+    "Sütunu gizle": "Sütunu gizle",
+    "Sütunu sil": "Sütunu sil",
+    "Gizli sütunlar": "Gizli sütunlar",
+    "Göster": "Göster"
   }
 }

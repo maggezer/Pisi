@@ -284,7 +284,10 @@ function openPisiSheetColumnMenu(table, header) {
 
     menu.className = 'pisi-sheet-column-menu';
     menu.setAttribute('role', 'dialog');
-    menu.setAttribute('aria-label', 'Column properties');
+    menu.setAttribute(
+        'aria-label',
+        window.pisiT?.('Sütun ayarları') || 'Sütun ayarları'
+    );
 
     heading.className =
         'pisi-sheet-column-menu-heading';
@@ -298,7 +301,10 @@ function openPisiSheetColumnMenu(table, header) {
     input.className = 'pisi-sheet-column-name-input';
     input.maxLength = 80;
     input.value = field.name;
-    input.setAttribute('aria-label', 'Column name');
+    input.setAttribute(
+        'aria-label',
+        window.pisiT?.('Sütun adı') || 'Sütun adı'
+    );
 
     heading.append(icon, input);
     menu.appendChild(heading);
@@ -307,19 +313,29 @@ function openPisiSheetColumnMenu(table, header) {
         'pisi-sheet-column-description-input';
     description.maxLength = 240;
     description.rows = 2;
-    description.placeholder = 'Description';
+    description.placeholder =
+        window.pisiT?.('Açıklama') || 'Açıklama';
     description.value = field.description || '';
     menu.appendChild(
         makePisiSheetColumnMenuRow(
-            'Description',
+            window.pisiT?.('Açıklama') || 'Açıklama',
             description
         )
     );
 
     [
-        ['text', 'Text'],
-        ['number', 'Number'],
-        ['formula', 'Formula']
+        [
+            'text',
+            window.pisiT?.('Metin') || 'Metin'
+        ],
+        [
+            'number',
+            window.pisiT?.('Sayı') || 'Sayı'
+        ],
+        [
+            'formula',
+            window.pisiT?.('Formül') || 'Formül'
+        ]
     ].forEach(([value, label]) => {
         const option = document.createElement('option');
         option.value = value;
@@ -330,7 +346,7 @@ function openPisiSheetColumnMenu(table, header) {
     typeSelect.className = 'pisi-sheet-column-select';
     menu.appendChild(
         makePisiSheetColumnMenuRow(
-            'Type',
+            window.pisiT?.('Tip') || 'Tip',
             typeSelect
         )
     );
@@ -339,7 +355,7 @@ function openPisiSheetColumnMenu(table, header) {
     wrap.checked = field.wrap === true;
     menu.appendChild(
         makePisiSheetColumnMenuRow(
-            'Wrap',
+            window.pisiT?.('Metni kaydır') || 'Metni kaydır',
             wrap
         )
     );
@@ -362,7 +378,7 @@ function openPisiSheetColumnMenu(table, header) {
         'pisi-sheet-column-width-input';
     menu.appendChild(
         makePisiSheetColumnMenuRow(
-            'Width',
+            window.pisiT?.('Genişlik') || 'Genişlik',
             widthInput
         )
     );
@@ -371,7 +387,7 @@ function openPisiSheetColumnMenu(table, header) {
     pin.checked = field.pin === true;
     menu.appendChild(
         makePisiSheetColumnMenuRow(
-            'Pin',
+            window.pisiT?.('Sabitle') || 'Sabitle',
             pin
         )
     );
@@ -381,12 +397,14 @@ function openPisiSheetColumnMenu(table, header) {
         'pisi-sheet-column-menu-actions';
 
     autoFitButton.type = 'button';
-    autoFitButton.textContent = 'Fit width';
+    autoFitButton.textContent =
+        window.pisiT?.('İçeriğe sığdır') || 'İçeriğe sığdır';
     autoFitButton.dataset.pisiSheetColumnAction =
         'autoFit';
 
     hideButton.type = 'button';
-    hideButton.textContent = 'Hide column';
+    hideButton.textContent =
+        window.pisiT?.('Sütunu gizle') || 'Sütunu gizle';
     hideButton.dataset.pisiSheetColumnAction =
         'hide';
 
@@ -396,7 +414,8 @@ function openPisiSheetColumnMenu(table, header) {
     hideButton.disabled = visibleFieldCount <= 1;
 
     deleteButton.type = 'button';
-    deleteButton.textContent = 'Delete column';
+    deleteButton.textContent =
+        window.pisiT?.('Sütunu sil') || 'Sütunu sil';
     deleteButton.dataset.pisiSheetColumnAction =
         'delete';
     deleteButton.className = 'danger';
@@ -423,7 +442,8 @@ function openPisiSheetColumnMenu(table, header) {
             'pisi-sheet-hidden-columns-group';
         hiddenTitle.className =
             'pisi-sheet-hidden-columns-title';
-        hiddenTitle.textContent = 'Hidden columns';
+        hiddenTitle.textContent =
+            window.pisiT?.('Gizli sütunlar') || 'Gizli sütunlar';
         hiddenGroup.appendChild(hiddenTitle);
 
         hiddenFields.forEach((hiddenField) => {
@@ -432,7 +452,9 @@ function openPisiSheetColumnMenu(table, header) {
 
             button.type = 'button';
             button.textContent =
-                'Show: ' + hiddenField.name;
+                (window.pisiT?.('Göster') || 'Göster') +
+                ': ' +
+                hiddenField.name;
             button.dataset.pisiSheetShowFieldId =
                 hiddenField.id;
 

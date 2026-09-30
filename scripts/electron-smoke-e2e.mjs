@@ -1379,9 +1379,7 @@ try {
         const stage8PinnedHeader = table.querySelector(
             'thead th[data-col-header="0"].pisi-sheet-column-pinned'
         );
-        const stage8WrappedCell = table.querySelector(
-            'tbody td[data-col="0"]'
-        );
+
 
         hideAction?.click();
 
@@ -1422,6 +1420,15 @@ try {
         );
         const stage8HiddenRestored =
             stage8RestoredHeader?.hidden === false;
+        const stage8RestoredWrapCell = table.querySelector(
+            'tbody td[data-col="0"]'
+        );
+        const stage8WrappedWhiteSpace =
+            stage8RestoredWrapCell
+                ? getComputedStyle(
+                    stage8RestoredWrapCell
+                ).whiteSpace
+                : '';
         const stage8DeleteActionPresent =
             Boolean(deleteColumnAction);
         const stage8AutoFitActionPresent =
@@ -1727,8 +1734,7 @@ try {
             columnMenuPresent: Boolean(columnMenu),
             stage8FieldAfterProperties,
             stage8PinnedHeaderPresent: Boolean(stage8PinnedHeader),
-            stage8WrappedWhiteSpace:
-                stage8WrappedCell?.style?.whiteSpace || '',
+            stage8WrappedWhiteSpace,
             stage8HiddenAfterAction,
             stage8HiddenRestored,
             stage8DeleteActionPresent,
