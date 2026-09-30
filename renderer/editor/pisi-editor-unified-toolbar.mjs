@@ -158,7 +158,6 @@ function buildPisiUnifiedToolbarMarkup() {
                         <button type="button" class="pisi-ribbon-btn pisi-sheet-mini-btn" data-pisi-excel-action="borderAll" title="Seçime kenarlık ekle" aria-label="Kenarlık ekle">▦</button>
                         <button type="button" class="pisi-ribbon-btn pisi-sheet-mini-btn" data-pisi-excel-action="borderNone" title="Seçimin kenarlığını kaldır" aria-label="Kenarlığı kaldır">□</button>
                     </div>
-                    <span class="pisi-sheet-toolbar-status" data-pisi-sheet-status>0 × 0</span>
                 </div>
             </section>
 
