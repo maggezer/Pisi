@@ -647,6 +647,190 @@ try {
                 'pisi-sheet-formula-reference-mode'
             );
 
+        const allCellsNonEditableBeforeStage4 =
+            Array.from(
+                table.querySelectorAll('tbody td[data-cell]')
+            ).every((cell) => (
+                cell.getAttribute('contenteditable') === 'false'
+            ));
+
+        const stage4Cell = table.querySelector(
+            'td[data-cell="D3"]'
+        );
+
+        stage4Cell?.dispatchEvent(
+            new MouseEvent('mousedown', {
+                bubbles: true,
+                cancelable: true,
+                button: 0,
+                buttons: 1,
+                detail: 1
+            })
+        );
+        document.dispatchEvent(
+            new MouseEvent('mouseup', {
+                bubbles: true,
+                cancelable: true,
+                button: 0
+            })
+        );
+
+        const stage4SingleClickEditable =
+            stage4Cell?.getAttribute('contenteditable') || '';
+        const stage4SingleClickActive =
+            activeCellLabel(table);
+        const stage4SingleClickNoBrowserFocus =
+            document.activeElement !== stage4Cell;
+
+        document.dispatchEvent(
+            new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                key: '9'
+            })
+        );
+
+        const stage4TypingEditable =
+            stage4Cell?.getAttribute('contenteditable') || '';
+        const stage4TypingText =
+            stage4Cell?.textContent || '';
+        const stage4TypingActive =
+            activeCellLabel(table);
+        const stage4TypingHasBrowserFocus =
+            document.activeElement === stage4Cell;
+
+        stage4Cell?.dispatchEvent(
+            new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                key: 'Escape'
+            })
+        );
+
+        const stage4EscapeEditable =
+            stage4Cell?.getAttribute('contenteditable') || '';
+        const stage4EscapeText =
+            stage4Cell?.textContent || '';
+        const stage4EscapeModelValue =
+            window.getPisiSheetCellSource?.(
+                table,
+                2,
+                3
+            )?.value || '';
+        const stage4EscapeActive =
+            activeCellLabel(table);
+
+        document.dispatchEvent(
+            new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                key: 'Enter'
+            })
+        );
+
+        const stage4EnterEditable =
+            stage4Cell?.getAttribute('contenteditable') || '';
+        const stage4EnterHasBrowserFocus =
+            document.activeElement === stage4Cell;
+
+        if (stage4Cell) {
+            stage4Cell.textContent = '8';
+            stage4Cell.dispatchEvent(
+                new InputEvent('input', {
+                    bubbles: true,
+                    inputType: 'insertText',
+                    data: '8'
+                })
+            );
+            stage4Cell.dispatchEvent(
+                new KeyboardEvent('keydown', {
+                    bubbles: true,
+                    cancelable: true,
+                    key: 'Enter'
+                })
+            );
+        }
+
+        const stage4CommittedValue =
+            window.getPisiSheetCellValue?.(
+                table,
+                'D3'
+            )?.value;
+        const stage4ActiveAfterEnter =
+            activeCellLabel(table);
+
+        window.setPisiSheetCellSource?.(
+            table,
+            3,
+            3,
+            {
+                value: '5',
+                formula: null
+            }
+        );
+        window.recalcPisiSheet?.(table);
+
+        document.dispatchEvent(
+            new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                key: 'Delete'
+            })
+        );
+
+        const stage4DeleteModelValue =
+            window.getPisiSheetCellSource?.(
+                table,
+                3,
+                3
+            )?.value || '';
+        const stage4DeleteRenderedValue =
+            table.querySelector(
+                'td[data-cell="D4"]'
+            )?.textContent?.trim() || '';
+
+        document.dispatchEvent(
+            new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                key: 'ArrowLeft'
+            })
+        );
+
+        const stage4ActiveAfterArrow =
+            activeCellLabel(table);
+
+        document.dispatchEvent(
+            new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                key: 'ArrowLeft',
+                shiftKey: true
+            })
+        );
+
+        const stage4ActiveAfterShiftArrow =
+            activeCellLabel(table);
+        const stage4SelectedAfterShiftArrow =
+            table.querySelectorAll(
+                '.pisi-sheet-cell-selected'
+            ).length;
+
+        document.dispatchEvent(
+            new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                key: 'Tab'
+            })
+        );
+
+        const stage4ActiveAfterTab =
+            activeCellLabel(table);
+        const stage4SelectedAfterTab =
+            table.querySelectorAll(
+                '.pisi-sheet-cell-selected'
+            ).length;
+
         firstHeader?.dispatchEvent(new MouseEvent('click', {
             bubbles: true,
             cancelable: true,
@@ -849,6 +1033,29 @@ try {
             inCellFormulaValue,
             inCellRenderedValue,
             inCellFormulaModeCleared,
+            allCellsNonEditableBeforeStage4,
+            stage4SingleClickEditable,
+            stage4SingleClickActive,
+            stage4SingleClickNoBrowserFocus,
+            stage4TypingEditable,
+            stage4TypingText,
+            stage4TypingActive,
+            stage4TypingHasBrowserFocus,
+            stage4EscapeEditable,
+            stage4EscapeText,
+            stage4EscapeModelValue,
+            stage4EscapeActive,
+            stage4EnterEditable,
+            stage4EnterHasBrowserFocus,
+            stage4CommittedValue,
+            stage4ActiveAfterEnter,
+            stage4DeleteModelValue,
+            stage4DeleteRenderedValue,
+            stage4ActiveAfterArrow,
+            stage4ActiveAfterShiftArrow,
+            stage4SelectedAfterShiftArrow,
+            stage4ActiveAfterTab,
+            stage4SelectedAfterTab,
             selectedAfterHeaderClick,
             activeAfterHeaderClick,
             columnMenuPresent: Boolean(columnMenu),
@@ -960,6 +1167,29 @@ try {
         sheetResult.inCellFormulaValue !== 7 ||
         sheetResult.inCellRenderedValue !== '7' ||
         !sheetResult.inCellFormulaModeCleared ||
+        !sheetResult.allCellsNonEditableBeforeStage4 ||
+        sheetResult.stage4SingleClickEditable !== 'false' ||
+        sheetResult.stage4SingleClickActive !== 'D3' ||
+        !sheetResult.stage4SingleClickNoBrowserFocus ||
+        sheetResult.stage4TypingEditable !== 'plaintext-only' ||
+        sheetResult.stage4TypingText !== '9' ||
+        sheetResult.stage4TypingActive !== 'D3' ||
+        !sheetResult.stage4TypingHasBrowserFocus ||
+        sheetResult.stage4EscapeEditable !== 'false' ||
+        sheetResult.stage4EscapeText !== '' ||
+        sheetResult.stage4EscapeModelValue !== '' ||
+        sheetResult.stage4EscapeActive !== 'D3' ||
+        sheetResult.stage4EnterEditable !== 'plaintext-only' ||
+        !sheetResult.stage4EnterHasBrowserFocus ||
+        sheetResult.stage4CommittedValue !== 8 ||
+        sheetResult.stage4ActiveAfterEnter !== 'D4' ||
+        sheetResult.stage4DeleteModelValue !== '' ||
+        sheetResult.stage4DeleteRenderedValue !== '' ||
+        sheetResult.stage4ActiveAfterArrow !== 'C4' ||
+        sheetResult.stage4ActiveAfterShiftArrow !== 'B4' ||
+        sheetResult.stage4SelectedAfterShiftArrow !== 2 ||
+        sheetResult.stage4ActiveAfterTab !== 'C4' ||
+        sheetResult.stage4SelectedAfterTab !== 1 ||
         sheetResult.selectedAfterHeaderClick !== 0 ||
         sheetResult.activeAfterHeaderClick !== '' ||
         !sheetResult.columnMenuPresent ||

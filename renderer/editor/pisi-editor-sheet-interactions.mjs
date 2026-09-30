@@ -366,15 +366,6 @@ document.addEventListener('mouseup', () => {
     pisiSheetDragSelection = null;
 }, true);
 
-function isPisiSheetPrintableKey(event) {
-    return Boolean(
-        event.key?.length === 1 &&
-        !event.ctrlKey &&
-        !event.metaKey &&
-        !event.altKey
-    );
-}
-
 function hydratePisiSheets(root = document) {
     root.querySelectorAll('table[data-pisi-sheet]').forEach((table) => {
         table.removeAttribute('data-pisi-sheet-bound');
@@ -642,72 +633,47 @@ function hydratePisiSheets(root = document) {
         table.addEventListener('keydown', (event) => {
             const cell = event.target.closest('td[data-cell]');
 
-            if (!cell || !table.contains(cell)) return;
-
-            if (isPisiSheetEditingCell(table, cell)) {
-                if (event.key === 'Escape') {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    finishPisiSheetCellEdit(table, {
-                        commit: false,
-                        refocus: true
-                    });
-                    return;
-                }
-
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    finishPisiSheetCellEdit(table, {
-                        commit: true,
-                        refocus: false
-                    });
-                    movePisiSheetCellFocus(
-                        table,
-                        cell,
-                        event.shiftKey ? -1 : 1,
-                        0
-                    );
-                    return;
-                }
-
-                if (event.key === 'Tab') {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    finishPisiSheetCellEdit(table, {
-                        commit: true,
-                        refocus: false
-                    });
-                    movePisiSheetCellFocus(
-                        table,
-                        cell,
-                        0,
-                        event.shiftKey ? -1 : 1,
-                        {
-                            wrap: true,
-                            addRowAtEnd: !event.shiftKey
-                        }
-                    );
-                }
-
+            if (
+                !cell ||
+                !table.contains(cell) ||
+                !isPisiSheetEditingCell(table, cell)
+            ) {
                 return;
             }
 
-            const arrows = [
-                'ArrowUp',
-                'ArrowDown',
-                'ArrowLeft',
-                'ArrowRight'
-            ];
-
-            if (event.key === 'Enter' || event.key === 'F2') {
+            if (event.key === 'Escape') {
                 event.preventDefault();
-                beginPisiSheetCellEdit(cell);
+                event.stopPropagation();
+                finishPisiSheetCellEdit(table, {
+                    commit: false,
+                    refocus: true
+                });
+                return;
+            }
+
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                event.stopPropagation();
+                finishPisiSheetCellEdit(table, {
+                    commit: true,
+                    refocus: false
+                });
+                movePisiSheetCellFocus(
+                    table,
+                    cell,
+                    event.shiftKey ? -1 : 1,
+                    0
+                );
                 return;
             }
 
             if (event.key === 'Tab') {
                 event.preventDefault();
+                event.stopPropagation();
+                finishPisiSheetCellEdit(table, {
+                    commit: true,
+                    refocus: false
+                });
                 movePisiSheetCellFocus(
                     table,
                     cell,
@@ -718,63 +684,6 @@ function hydratePisiSheets(root = document) {
                         addRowAtEnd: !event.shiftKey
                     }
                 );
-                return;
-            }
-
-            if (
-                event.shiftKey &&
-                arrows.includes(event.key)
-            ) {
-                event.preventDefault();
-                extendPisiSheetSelectionByKeyboard(
-                    table,
-                    cell,
-                    event.key
-                );
-                return;
-            }
-
-            if (arrows.includes(event.key)) {
-                event.preventDefault();
-
-                const deltas = {
-                    ArrowUp: [-1, 0],
-                    ArrowDown: [1, 0],
-                    ArrowLeft: [0, -1],
-                    ArrowRight: [0, 1]
-                };
-                const delta = deltas[event.key];
-
-                movePisiSheetCellFocus(
-                    table,
-                    cell,
-                    delta[0],
-                    delta[1]
-                );
-                return;
-            }
-
-            if (
-                event.key === 'Delete' ||
-                event.key === 'Backspace'
-            ) {
-                event.preventDefault();
-                clearPisiSheetSelectedCells(table);
-                return;
-            }
-
-            if (event.key === 'Escape') {
-                event.preventDefault();
-                clearPisiSheetSelection(table);
-                return;
-            }
-
-            if (isPisiSheetPrintableKey(event)) {
-                event.preventDefault();
-                beginPisiSheetCellEdit(cell, {
-                    replace: true,
-                    initialText: event.key
-                });
             }
         });
 

@@ -246,7 +246,7 @@
     "module": "editor.sheetKeyboard",
     "path": "renderer/editor/pisi-editor-sheet-keyboard.mjs",
     "bindings": [
-      "handlePisiSheetGlobalKeydown",
+      "handlePisiSheetSelectionKeydown",
       "handlePisiSheetOutsidePointerDown"
     ]
   },

@@ -241,6 +241,10 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(databaseDom, /renderPisiSheetDatabase/);
     assert.match(databaseDom, /pisiRowId/);
     assert.match(databaseDom, /pisiColId/);
+    assert.match(
+        databaseDom,
+        /setAttribute\(\s*'contenteditable',\s*'false'/
+    );
 
     assert.match(sheet, /getPisiSheetCellSource/);
     assert.match(sheet, /getPisiSheetDatabaseDimensions/);
@@ -349,6 +353,16 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
 
     assert.match(interactions, /event\.key === 'Tab'/);
     assert.match(interactions, /event\.key === 'Enter'/);
+    assert.match(interactions, /event\.key === 'Escape'/);
+    assert.doesNotMatch(interactions, /ArrowUp/);
+    assert.doesNotMatch(interactions, /ArrowDown/);
+    assert.doesNotMatch(interactions, /ArrowLeft/);
+    assert.doesNotMatch(interactions, /ArrowRight/);
+    assert.doesNotMatch(interactions, /Backspace/);
+    assert.doesNotMatch(
+        interactions,
+        /isPisiSheetPrintableKey/
+    );
     assert.match(interactions, /pisiSheetDragSelection/);
     assert.match(interactions, /data-pisi-sheet-context-action/);
     assert.match(interactions, /action: 'addRow'/);
@@ -393,7 +407,20 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     );
     assert.match(
         keyboard,
-        /handlePisiSheetGlobalKeydown/
+        /handlePisiSheetSelectionKeydown/
+    );
+    assert.match(keyboard, /event\.key === 'Enter'/);
+    assert.match(keyboard, /event\.key === 'Tab'/);
+    assert.match(keyboard, /event\.key === 'Delete'/);
+    assert.match(keyboard, /event\.key === 'Backspace'/);
+    assert.match(keyboard, /event\.key === 'Escape'/);
+    assert.match(keyboard, /ArrowUp/);
+    assert.match(keyboard, /ArrowDown/);
+    assert.match(keyboard, /ArrowLeft/);
+    assert.match(keyboard, /ArrowRight/);
+    assert.match(
+        keyboard,
+        /beginPisiSheetCellEdit\(cell, \{/
     );
     assert.match(
         keyboard,

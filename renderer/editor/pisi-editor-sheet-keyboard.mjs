@@ -1,6 +1,6 @@
 import { registerModule } from "../core/module-registry.mjs";
 
-function shouldIgnorePisiSheetGlobalKey(event) {
+function shouldIgnorePisiSheetSelectionKey(event) {
     const target = event.target;
 
     if (!(target instanceof Element)) {
@@ -23,10 +23,10 @@ function shouldIgnorePisiSheetGlobalKey(event) {
     );
 }
 
-function handlePisiSheetGlobalKeydown(event) {
+function handlePisiSheetSelectionKeydown(event) {
     if (
         event.defaultPrevented ||
-        shouldIgnorePisiSheetGlobalKey(event)
+        shouldIgnorePisiSheetSelectionKey(event)
     ) {
         return;
     }
@@ -158,7 +158,7 @@ function handlePisiSheetOutsidePointerDown(event) {
 
 document.addEventListener(
     'keydown',
-    handlePisiSheetGlobalKeydown,
+    handlePisiSheetSelectionKeydown,
     true
 );
 document.addEventListener(
@@ -169,9 +169,9 @@ document.addEventListener(
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "handlePisiSheetGlobalKeydown": {
+    "handlePisiSheetSelectionKeydown": {
         enumerable: true,
-        get() { return handlePisiSheetGlobalKeydown; }
+        get() { return handlePisiSheetSelectionKeydown; }
     },
     "handlePisiSheetOutsidePointerDown": {
         enumerable: true,
