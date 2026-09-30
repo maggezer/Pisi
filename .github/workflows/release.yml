@@ -6,7 +6,7 @@ on:
       - 'v*.*.*'
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: release-${{ github.ref }}
@@ -46,14 +46,16 @@ jobs:
           ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
         run: npm ci
 
+      - name: Require clean dependency audit
+        run: npm audit --audit-level=moderate
+
       - name: Validate source
         run: npm run validate
 
-      - name: Audit dependencies
-        run: npm run audit
-
   windows-release:
     needs: validate
+    permissions:
+      contents: write
     runs-on: windows-latest
     timeout-minutes: 45
 
@@ -152,4 +154,5 @@ jobs:
             "release/SHA256SUMS.txt" `
             --title "Pisi $version Beta" `
             --notes-file "docs/releases/v$version.md" `
+            --verify-tag `
             --prerelease
