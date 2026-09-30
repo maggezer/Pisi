@@ -509,6 +509,8 @@ try {
 
         const databaseAfterAdd =
             window.getPisiSheetDatabase?.(table) || null;
+        const widthAfterAddBeforeDomReplace =
+            headerAfterAdd?.getBoundingClientRect().width || 0;
         const selectionBeforeDomReplace =
             window.getPisiSheetSelection?.(table) || null;
         const groupIdBeforeDomReplace =
@@ -534,6 +536,10 @@ try {
             window.getPisiSheetActiveTable?.(editor) || null;
         const activeTableDatabaseId =
             activeTableAfterDomReplace?.dataset?.pisiDatabaseId || '';
+        const widthAfterDomReplace =
+            replacement.querySelector(
+                'thead th[data-col-header="0"]'
+            )?.getBoundingClientRect().width || 0;
 
         return {
             ok: true,
@@ -610,7 +616,8 @@ try {
                     '.pisi-sheet-col-label'
                 )?.textContent?.trim() || '',
             widthAfterAdd:
-                headerAfterAdd?.getBoundingClientRect().width || 0,
+                widthAfterAddBeforeDomReplace,
+            widthAfterDomReplace,
             tablePopoverPresent: Boolean(
                 document.querySelector(
                     '.pisi-office-table-popover'
@@ -707,6 +714,10 @@ try {
         sheetResult.renamedHeaderAfterAdd !== 'Project' ||
         Math.abs(
             sheetResult.widthAfterAdd -
+            sheetResult.widthAfterResize
+        ) > 2 ||
+        Math.abs(
+            sheetResult.widthAfterDomReplace -
             sheetResult.widthAfterResize
         ) > 2 ||
         sheetResult.tablePopoverPresent
