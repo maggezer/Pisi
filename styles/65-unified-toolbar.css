@@ -23,7 +23,7 @@
     min-width: 1110px;
     min-height: 98px;
     display: grid;
-    grid-template-columns: 250px 118px 104px 266px 236px 44px;
+    grid-template-columns: 250px 118px 104px 104px 236px 44px;
     align-items: stretch;
     gap: 6px;
     padding: 4px 8px 1px;
@@ -268,54 +268,15 @@
 }
 
 .pisi-toolbar-section-excel {
-    display: grid;
-    grid-template-columns: 42px 132px;
-    grid-template-rows: 79px;
-    align-items: start;
-    justify-content: start;
-    column-gap: 7px;
     padding-top: 4px;
     padding-right: 6px;
 }
 
 .pisi-sheet-main-stack {
-    grid-column: 1;
     display: grid;
     grid-template-rows: repeat(2, 38px);
     gap: 3px;
     width: 42px;
-}
-
-.pisi-sheet-inline-tools {
-    grid-column: 2;
-    display: grid;
-    grid-template-columns: repeat(5, 24px);
-    grid-template-rows: repeat(2, 24px);
-    align-items: start;
-    align-content: start;
-    gap: 3px;
-    width: 132px;
-    min-height: 51px;
-    margin-top: 14px;
-}
-
-.pisi-sheet-mini-btn {
-    min-width: 0;
-    width: 24px;
-    height: 24px;
-    padding: 0 2px;
-    border-radius: 4px;
-    font-size: 10px;
-    line-height: 1;
-}
-
-.pisi-sheet-mini-btn:nth-child(n + 5) {
-    font-size: 13px;
-}
-
-.pisi-sheet-mini-btn:disabled {
-    opacity: 0.34;
-    cursor: default;
 }
 
 .pisi-toolbar-data-btn {

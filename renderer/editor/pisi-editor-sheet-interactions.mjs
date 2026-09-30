@@ -6,6 +6,87 @@ const pisiSheetNotifyTimers = new WeakMap();
 const pisiRenderedSheetSelectionCells = new WeakMap();
 
 let pisiSheetDragSelection = null;
+let pisiSheetContextMenu = null;
+
+function closePisiSheetContextMenu() {
+    if (!pisiSheetContextMenu) return;
+    pisiSheetContextMenu.remove();
+    pisiSheetContextMenu = null;
+}
+
+function getPisiSheetContextToolbar(table) {
+    const editor = getEditorForPisiElement(table);
+    if (!editor) return null;
+    return document.querySelector(
+        `.pisi-editor-toolbar[data-editor-target="${editor.id}"]`
+    );
+}
+
+function runPisiSheetContextAction(table, action) {
+    const toolbar = getPisiSheetContextToolbar(table);
+    if (toolbar) {
+        runPisiExcelAction(toolbar, action);
+        return;
+    }
+
+    let changed = false;
+    if (action === 'addRow') changed = addPisiSheetRow(table);
+    else if (action === 'deleteRow') changed = deletePisiSheetRows(table);
+    else if (action === 'addCol') changed = addPisiSheetColumn(table);
+    else if (action === 'deleteCol') changed = deletePisiSheetColumns(table);
+
+    if (changed) {
+        syncPisiSheetToolbarForTable(table);
+        schedulePisiSheetEditorNotification(table);
+    }
+}
+
+function openPisiSheetContextMenu(table, clientX, clientY) {
+    closePisiSheetContextMenu();
+    const dimensions = getPisiSheetDimensions(table);
+    const actions = [
+        { action: 'addRow', label: 'Satır ekle', disabled: dimensions.rows >= PISI_SHEET_MAX_ROWS },
+        { action: 'deleteRow', label: 'Satır sil', disabled: dimensions.rows <= 1 },
+        { action: 'addCol', label: 'Sütun ekle', disabled: dimensions.cols >= PISI_SHEET_MAX_COLS },
+        { action: 'deleteCol', label: 'Sütun sil', disabled: dimensions.cols <= 1 }
+    ];
+    const menu = document.createElement('div');
+    menu.className = 'pisi-sheet-context-menu';
+    menu.setAttribute('role', 'menu');
+    menu.setAttribute('aria-label', 'Tablo satır ve sütun işlemleri');
+
+    actions.forEach(({ action, label, disabled }) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.setAttribute('role', 'menuitem');
+        button.setAttribute('data-pisi-sheet-context-action', action);
+        button.textContent = label;
+        button.disabled = disabled;
+        button.addEventListener('click', () => {
+            closePisiSheetContextMenu();
+            runPisiSheetContextAction(table, action);
+        });
+        menu.appendChild(button);
+    });
+
+    document.body.appendChild(menu);
+    pisiSheetContextMenu = menu;
+    const margin = 8;
+    const rect = menu.getBoundingClientRect();
+    menu.style.left = `${Math.max(margin, Math.min(clientX, window.innerWidth - rect.width - margin))}px`;
+    menu.style.top = `${Math.max(margin, Math.min(clientY, window.innerHeight - rect.height - margin))}px`;
+}
+
+document.addEventListener('pointerdown', (event) => {
+    if (pisiSheetContextMenu && !pisiSheetContextMenu.contains(event.target)) {
+        closePisiSheetContextMenu();
+    }
+}, true);
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closePisiSheetContextMenu();
+}, true);
+document.addEventListener('scroll', closePisiSheetContextMenu, true);
+window.addEventListener('blur', closePisiSheetContextMenu);
 
 document.addEventListener('mouseup', () => {
     if (pisiSheetDragSelection?.table) {
@@ -35,6 +116,27 @@ function hydratePisiSheets(root = document) {
                 window.__pisiActiveSheetCell = cell;
                 syncPisiSheetFormulaInput(cell);
             }
+        });
+
+        table.addEventListener('contextmenu', (/** @type {MouseEvent} */ event) => {
+            const rowHeader = event.target.closest('tbody th[data-row-header]');
+            const colHeader = event.target.closest('thead th[data-col-header]');
+            const cell = event.target.closest('td[data-cell]');
+
+            if ((!rowHeader && !colHeader && !cell) || !table.contains(event.target)) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (rowHeader) {
+                selectPisiSheetRow(table, Number(rowHeader.dataset.rowHeader), false);
+            } else if (colHeader) {
+                selectPisiSheetColumn(table, Number(colHeader.dataset.colHeader), false);
+            } else if (cell && !isPisiSheetCellSelected(table, cell)) {
+                selectPisiSheetCell(cell);
+            }
+
+            openPisiSheetContextMenu(table, event.clientX, event.clientY);
         });
 
         table.addEventListener('mousedown', (/** @type {MouseEvent} */ event) => {

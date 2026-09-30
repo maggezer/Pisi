@@ -143,18 +143,6 @@ function buildPisiUnifiedToolbarMarkup() {
                     <button type="button" class="pisi-ribbon-btn pisi-toolbar-data-btn" data-pisi-table-trigger title="5 × 5 tablo ekle">${pisiToolbarIcon('table')}<span>Table</span></button>
                     <button type="button" class="pisi-ribbon-btn pisi-toolbar-data-btn" data-pisi-rollup-trigger title="Rollup ekle">${pisiToolbarIcon('rollup')}<span>Roll</span></button>
                 </div>
-                <div class="pisi-sheet-inline-tools" data-pisi-sheet-tools aria-label="Sheet araçları">
-                    <button type="button" class="pisi-ribbon-btn pisi-sheet-mini-btn" data-pisi-excel-action="addRow" title="Seçili satırın altına satır ekle" aria-label="Satır ekle">R+</button>
-                    <button type="button" class="pisi-ribbon-btn pisi-sheet-mini-btn" data-pisi-excel-action="deleteRow" title="Seçili satır veya satırları sil" aria-label="Satır sil">R−</button>
-                    <button type="button" class="pisi-ribbon-btn pisi-sheet-mini-btn" data-pisi-excel-action="addCol" title="Seçili sütunun sağına sütun ekle" aria-label="Sütun ekle">C+</button>
-                    <button type="button" class="pisi-ribbon-btn pisi-sheet-mini-btn" data-pisi-excel-action="deleteCol" title="Seçili sütun veya sütunları sil" aria-label="Sütun sil">C−</button>
-                    <button type="button" class="pisi-ribbon-btn pisi-sheet-mini-btn" data-pisi-excel-action="verticalTop" title="Hücreyi dikey üst hizala" aria-label="Dikey üst hizala">↑</button>
-                    <button type="button" class="pisi-ribbon-btn pisi-sheet-mini-btn" data-pisi-excel-action="verticalMiddle" title="Hücreyi dikey ortala" aria-label="Dikey ortala">↕</button>
-                    <button type="button" class="pisi-ribbon-btn pisi-sheet-mini-btn" data-pisi-excel-action="verticalBottom" title="Hücreyi dikey alt hizala" aria-label="Dikey alt hizala">↓</button>
-                    <button type="button" class="pisi-ribbon-btn pisi-sheet-mini-btn" data-pisi-excel-action="toggleWrap" title="Metni hücre içinde kaydır" aria-label="Metni kaydır">↩</button>
-                    <button type="button" class="pisi-ribbon-btn pisi-sheet-mini-btn" data-pisi-excel-action="borderAll" title="Seçime kenarlık ekle" aria-label="Kenarlık ekle">▦</button>
-                    <button type="button" class="pisi-ribbon-btn pisi-sheet-mini-btn" data-pisi-excel-action="borderNone" title="Seçimin kenarlığını kaldır" aria-label="Kenarlığı kaldır">□</button>
-                </div>
             </section>
 
             <section class="pisi-toolbar-section pisi-toolbar-section-drawing" aria-label="Çizim araçları">

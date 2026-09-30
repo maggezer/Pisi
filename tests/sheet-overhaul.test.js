@@ -205,19 +205,19 @@ test('tablo arayüzünde Phase 2 gezinme, seçim, yapı ve biçimlendirme bulunu
     assert.doesNotMatch(popovers, /data-pisi-sheet-popover-action/);
     assert.doesNotMatch(popovers, /data-pisi-table-custom-rows/);
 
-    assert.match(unifiedToolbar, /class="pisi-sheet-inline-tools"/);
+    assert.doesNotMatch(unifiedToolbar, /pisi-sheet-inline-tools/);
+    assert.doesNotMatch(unifiedToolbar, /data-pisi-excel-action=/);
     assert.match(unifiedToolbar, /insertPisiSheet\(editor, 5, 5\)/);
     assert.doesNotMatch(unifiedToolbar, /openPisiToolbarTablePopover/);
-    assert.match(unifiedToolbar, /data-pisi-excel-action="addRow"/);
-    assert.match(unifiedToolbar, /data-pisi-excel-action="deleteRow"/);
-    assert.match(unifiedToolbar, /data-pisi-excel-action="addCol"/);
-    assert.match(unifiedToolbar, /data-pisi-excel-action="deleteCol"/);
-    assert.match(unifiedToolbar, /data-pisi-excel-action="toggleWrap"/);
-    assert.match(unifiedToolbar, /data-pisi-excel-action="borderAll"/);
-    assert.doesNotMatch(
-        unifiedToolbar,
-        /class="pisi-sheet-toolbar-status" data-pisi-sheet-status/
-    );
+
+    assert.match(interactions, /table\.addEventListener\('contextmenu'/);
+    assert.match(interactions, /data-pisi-sheet-context-action/);
+    assert.match(interactions, /action: 'addRow'/);
+    assert.match(interactions, /action: 'deleteRow'/);
+    assert.match(interactions, /action: 'addCol'/);
+    assert.match(interactions, /action: 'deleteCol'/);
+    assert.match(interactions, /label: 'Satır ekle'/);
+    assert.match(interactions, /label: 'Sütun sil'/);
 
     assert.match(paint, /notifyPisiEditorChanged\(editor, rehydrate = true\)/);
     assert.match(structure, /notifyPisiEditorChanged\(editor, false\)/);

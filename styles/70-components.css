@@ -95,6 +95,44 @@
     background: #26231d;
 }
 
+.pisi-sheet-context-menu {
+    position: fixed;
+    z-index: 4200;
+    min-width: 156px;
+    display: grid;
+    gap: 2px;
+    padding: 5px;
+    border: 1px solid #4a4b50;
+    border-radius: 7px;
+    background: #25262a;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.34);
+}
+
+.pisi-sheet-context-menu button {
+    min-height: 28px;
+    width: 100%;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: #e3e3e5;
+    padding: 5px 9px;
+    text-align: left;
+    font: 600 12px "Segoe UI", Tahoma, sans-serif;
+    cursor: pointer;
+}
+
+.pisi-sheet-context-menu button:hover:not(:disabled),
+.pisi-sheet-context-menu button:focus-visible {
+    background: #3a3428;
+    color: #ffffff;
+    outline: none;
+}
+
+.pisi-sheet-context-menu button:disabled {
+    color: #777a80;
+    cursor: default;
+}
+
 .pisi-sheet-toolbar-status {
     min-width: 58px;
     height: 28px;

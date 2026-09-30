@@ -40,10 +40,11 @@ test('toolbar sections use separators and alignment controls use a fixed 2x2 gri
         /pisi-unified-toolbar > \.pisi-toolbar-section-drawing[\s\S]*border-right: 1px solid #3a3b40/
     );
     assert.match(css, /grid-template-columns: minmax\(0, 1fr\) 56px/);
-    assert.match(css, /grid-template-columns: 250px 118px 104px 266px 236px 44px/);
+    assert.match(css, /grid-template-columns: 250px 118px 104px 104px 236px 44px/);
     assert.match(toolbar, /class="pisi-sheet-main-stack"/);
     assert.match(css, /pisi-sheet-main-stack[\s\S]*repeat\(2, 38px\)/);
-    assert.match(css, /pisi-sheet-inline-tools[\s\S]*repeat\(5, 24px\)/);
+    assert.doesNotMatch(toolbar, /pisi-sheet-inline-tools/);
+    assert.doesNotMatch(css, /pisi-sheet-inline-tools/);
     assert.doesNotMatch(toolbar, /openPisiToolbarTablePopover/);
     assert.match(css, /pisi-editor-toolbar[\s\S]*min-height: 102px/);
     assert.match(css, /pisi-unified-toolbar[\s\S]*min-height: 98px/);

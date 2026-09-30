@@ -253,38 +253,11 @@ try {
 
         const tableTrigger = toolbar.querySelector('[data-pisi-table-trigger]');
         const rollupTrigger = toolbar.querySelector('[data-pisi-rollup-trigger]');
-        const addRow = toolbar.querySelector(
-            '[data-pisi-excel-action="addRow"]'
+        const toolbarSheetActionsAbsent = !toolbar.querySelector(
+            '[data-pisi-excel-action]'
         );
-        const deleteRow = toolbar.querySelector(
-            '[data-pisi-excel-action="deleteRow"]'
-        );
-        const wrap = toolbar.querySelector(
-            '[data-pisi-excel-action="toggleWrap"]'
-        );
-        const inlineTools = toolbar.querySelector('[data-pisi-sheet-tools]');
-
-        window.syncPisiSheetToolbarState?.(toolbar, null);
-
-        const toolbarRect = toolbar.getBoundingClientRect();
         const tableRect = tableTrigger?.getBoundingClientRect();
         const rollupRect = rollupTrigger?.getBoundingClientRect();
-        const toolsBeforeRect = inlineTools?.getBoundingClientRect();
-        const toolsVisibleBeforeSheet = Boolean(
-            toolsBeforeRect &&
-            toolsBeforeRect.width > 0 &&
-            toolsBeforeRect.height > 0
-        );
-        const toolsInsideToolbarBeforeSheet = Boolean(
-            toolsBeforeRect &&
-            toolsBeforeRect.top >= toolbarRect.top &&
-            toolsBeforeRect.bottom <= toolbarRect.bottom + 1
-        );
-        const disabledBeforeSheet = Boolean(
-            addRow?.disabled &&
-            deleteRow?.disabled &&
-            wrap?.disabled
-        );
 
         tableTrigger?.click();
 
@@ -301,8 +274,7 @@ try {
             return {
                 ok: false,
                 reason: 'direct Table insert failed',
-                toolsVisibleBeforeSheet,
-                disabledBeforeSheet
+                toolbarSheetActionsAbsent
             };
         }
 
@@ -313,7 +285,24 @@ try {
         }));
 
         const rowsBefore = table.querySelectorAll('tbody tr').length;
-        const toolsAfterRect = inlineTools?.getBoundingClientRect();
+
+        firstCell.dispatchEvent(new MouseEvent('contextmenu', {
+            bubbles: true,
+            cancelable: true,
+            button: 2,
+            clientX: 120,
+            clientY: 120
+        }));
+
+        const menu = document.querySelector('.pisi-sheet-context-menu');
+        const menuActions = menu
+            ? Array.from(
+                menu.querySelectorAll('[data-pisi-sheet-context-action]')
+            ).map((button) => button.dataset.pisiSheetContextAction)
+            : [];
+        const addRow = menu?.querySelector(
+            '[data-pisi-sheet-context-action="addRow"]'
+        );
 
         addRow?.click();
 
@@ -327,39 +316,14 @@ try {
                 rollupRect.top > tableRect.top &&
                 Math.abs(rollupRect.left - tableRect.left) <= 1
             ),
-            toolsRightOfMainStack: Boolean(
-                tableRect &&
-                rollupRect &&
-                toolsBeforeRect &&
-                toolsBeforeRect.left > Math.max(
-                    tableRect.right,
-                    rollupRect.right
-                )
-            ),
-            hasAddRow: Boolean(addRow),
-            hasDeleteRow: Boolean(deleteRow),
-            hasWrap: Boolean(wrap),
-            toolsVisibleBeforeSheet,
-            toolsInsideToolbarBeforeSheet,
-            disabledBeforeSheet,
-            actionsEnabledWithSheet: Boolean(
-                !addRow?.disabled &&
-                !deleteRow?.disabled &&
-                !wrap?.disabled
-            ),
+            toolbarSheetActionsAbsent,
             directTableSize,
             rowsBefore,
             rowsAfter: table.querySelectorAll('tbody tr').length,
-            toolsVisibleWithSheet: Boolean(
-                toolsAfterRect &&
-                toolsAfterRect.width > 0 &&
-                toolsAfterRect.height > 0
-            ),
-            toolsInsideToolbarWithSheet: Boolean(
-                toolsAfterRect &&
-                toolsAfterRect.top >= toolbarRect.top &&
-                toolsAfterRect.bottom <= toolbarRect.bottom + 1
-            ),
+            contextMenuPresent: Boolean(menu),
+            contextMenuActions: menuActions,
+            contextMenuClosedAfterAction:
+                !document.querySelector('.pisi-sheet-context-menu'),
             tablePopoverPresent: Boolean(
                 document.querySelector('.pisi-office-table-popover')
             )
@@ -371,23 +335,18 @@ try {
         !sheetResult.hasTableTrigger ||
         !sheetResult.hasRollupTrigger ||
         !sheetResult.mainButtonsStacked ||
-        !sheetResult.toolsRightOfMainStack ||
-        !sheetResult.hasAddRow ||
-        !sheetResult.hasDeleteRow ||
-        !sheetResult.hasWrap ||
-        !sheetResult.toolsVisibleBeforeSheet ||
-        !sheetResult.toolsInsideToolbarBeforeSheet ||
-        !sheetResult.disabledBeforeSheet ||
-        !sheetResult.actionsEnabledWithSheet ||
+        !sheetResult.toolbarSheetActionsAbsent ||
         sheetResult.directTableSize?.rows !== 5 ||
         sheetResult.directTableSize?.cols !== 5 ||
-        !sheetResult.toolsVisibleWithSheet ||
-        !sheetResult.toolsInsideToolbarWithSheet ||
+        !sheetResult.contextMenuPresent ||
+        JSON.stringify(sheetResult.contextMenuActions) !==
+            JSON.stringify(['addRow', 'deleteRow', 'addCol', 'deleteCol']) ||
+        !sheetResult.contextMenuClosedAfterAction ||
         sheetResult.tablePopoverPresent ||
         sheetResult.rowsAfter !== sheetResult.rowsBefore + 1
     ) {
         throw new Error(
-            'Sheet toolbar interaction failed: ' +
+            'Sheet context-menu interaction failed: ' +
             JSON.stringify(sheetResult)
         );
     }
