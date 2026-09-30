@@ -281,6 +281,8 @@ test('watcher PISI kaydını dış değişiklikten dosya imzasıyla ayırır', (
         'isSameOrInsidePath',
         'getInternalFileChangeSignature',
         'pruneExpiredInternalFileChanges',
+        'markInternalDirectoryChange',
+        'hasRecentInternalDirectoryChange',
         'markInternalFileChange',
         'sealInternalFileChange',
         'isRecentInternalFileChange',
@@ -288,7 +290,9 @@ test('watcher PISI kaydını dış değişiklikten dosya imzasıyla ayırır', (
     ];
     const source = `
         const recentInternalFileChanges = new Map();
+        const recentInternalDirectoryChanges = new Map();
         const PISI_INTERNAL_CHANGE_TTL_MS = 6000;
+        const PISI_INTERNAL_DIRECTORY_GRACE_MS = 1200;
         ${functionNames
             .map((name) => extractFunction(mainSource, name))
             .join('\n')}
@@ -296,7 +300,8 @@ test('watcher PISI kaydını dış değişiklikten dosya imzasıyla ayırır', (
             markInternalFileChange,
             sealInternalFileChange,
             isRecentInternalFileChange,
-            hasRecentInternalFileChangeInside
+            hasRecentInternalFileChangeInside,
+            hasRecentInternalDirectoryChange
         };
     `;
     const context = {
@@ -319,6 +324,10 @@ test('watcher PISI kaydını dış değişiklikten dosya imzasıyla ayırır', (
     );
     assert.equal(
         context.watcherApi.hasRecentInternalFileChangeInside(folder),
+        true
+    );
+    assert.equal(
+        context.watcherApi.hasRecentInternalDirectoryChange(folder),
         true
     );
 
