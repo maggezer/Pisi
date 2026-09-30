@@ -20,10 +20,10 @@
 }
 
 .pisi-unified-toolbar {
-    min-width: 1110px;
+    min-width: 1232px;
     min-height: 98px;
     display: grid;
-    grid-template-columns: 250px 118px 104px 104px 236px 44px;
+    grid-template-columns: 250px 118px 226px 104px 236px 44px;
     align-items: stretch;
     gap: 6px;
     padding: 4px 8px 1px;
@@ -244,6 +244,53 @@
 .pisi-toolbar-formula-row {
     justify-content: center;
     gap: 6px;
+}
+
+.pisi-toolbar-formula-layout {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+}
+
+.pisi-toolbar-formula-buttons {
+    display: grid;
+    gap: 4px;
+}
+
+.pisi-sheet-formula-bar {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr);
+    align-items: center;
+    gap: 4px;
+}
+
+.pisi-sheet-formula-bar > span {
+    color: #f39c12;
+    font-size: 12px;
+    font-weight: 800;
+    text-align: center;
+}
+
+.pisi-sheet-formula-input {
+    width: 100%;
+    min-width: 0;
+    height: 30px;
+    box-sizing: border-box;
+    border: 1px solid #4c4e54;
+    border-radius: 5px;
+    outline: none;
+    background: #18191b;
+    color: #eceef1;
+    padding: 3px 7px;
+    font: 12px Consolas, monospace;
+}
+
+.pisi-sheet-formula-input:focus {
+    border-color: #f39c12;
+    box-shadow: 0 0 0 1px rgba(243, 156, 18, 0.22);
 }
 
 .pisi-formula-btn {

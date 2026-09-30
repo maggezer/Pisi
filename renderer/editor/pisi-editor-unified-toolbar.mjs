@@ -128,13 +128,21 @@ function buildPisiUnifiedToolbarMarkup() {
             </section>
 
             <section class="pisi-toolbar-section pisi-toolbar-section-table" aria-label="Formül araçları">
-                <div class="pisi-toolbar-section-row pisi-toolbar-formula-row">
-                    <button type="button" class="pisi-ribbon-btn pisi-formula-btn pisi-ribbon-dropdown" data-pisi-formula-trigger="logical" title="Logical formulas">${pisiToolbarIcon('formula-logical')}<span>F1</span></button>
-                    <button type="button" class="pisi-ribbon-btn pisi-formula-btn pisi-ribbon-dropdown" data-pisi-formula-trigger="text" title="Text formulas">${pisiToolbarIcon('formula-text')}<span>F2</span></button>
-                </div>
-                <div class="pisi-toolbar-section-row pisi-toolbar-formula-row">
-                    <button type="button" class="pisi-ribbon-btn pisi-formula-btn pisi-ribbon-dropdown" data-pisi-formula-trigger="math" title="Math formulas">${pisiToolbarIcon('formula-math')}<span>F3</span></button>
-                    <button type="button" class="pisi-ribbon-btn pisi-formula-btn pisi-ribbon-dropdown" data-pisi-formula-trigger="personal" title="Personal formulas">${pisiToolbarIcon('formula-personal')}<span>F4</span></button>
+                <div class="pisi-toolbar-formula-layout">
+                    <div class="pisi-toolbar-formula-buttons">
+                        <div class="pisi-toolbar-section-row pisi-toolbar-formula-row">
+                            <button type="button" class="pisi-ribbon-btn pisi-formula-btn pisi-ribbon-dropdown" data-pisi-formula-trigger="logical" title="Logical formulas">${pisiToolbarIcon('formula-logical')}<span>F1</span></button>
+                            <button type="button" class="pisi-ribbon-btn pisi-formula-btn pisi-ribbon-dropdown" data-pisi-formula-trigger="text" title="Text formulas">${pisiToolbarIcon('formula-text')}<span>F2</span></button>
+                        </div>
+                        <div class="pisi-toolbar-section-row pisi-toolbar-formula-row">
+                            <button type="button" class="pisi-ribbon-btn pisi-formula-btn pisi-ribbon-dropdown" data-pisi-formula-trigger="math" title="Math formulas">${pisiToolbarIcon('formula-math')}<span>F3</span></button>
+                            <button type="button" class="pisi-ribbon-btn pisi-formula-btn pisi-ribbon-dropdown" data-pisi-formula-trigger="personal" title="Personal formulas">${pisiToolbarIcon('formula-personal')}<span>F4</span></button>
+                        </div>
+                    </div>
+                    <label class="pisi-sheet-formula-bar" title="Formül">
+                        <span aria-hidden="true">fx</span>
+                        <input class="pisi-sheet-formula-input" type="text" placeholder="=SUM(A1:B2)" data-pisi-excel-formula aria-label="Formül">
+                    </label>
                 </div>
             </section>
 

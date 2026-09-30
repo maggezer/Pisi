@@ -508,3 +508,14 @@ body.light-theme .pisi-sheet-column-name-input {
 body.light-theme .pisi-sheet-column-name-input:focus {
     border-color: #f39c12;
 }
+
+body.light-theme .pisi-sheet-formula-input {
+    border-color: #c9cbd0;
+    background: #ffffff;
+    color: #202124;
+}
+
+body.light-theme .pisi-sheet-formula-input:focus {
+    border-color: #f39c12;
+    box-shadow: 0 0 0 1px rgba(243, 156, 18, 0.18);
+}

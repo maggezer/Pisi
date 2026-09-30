@@ -398,4 +398,6 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     );
     assert.doesNotMatch(sheet, /__pisiActiveSheetCell/);
     assert.match(unifiedToolbar, /insertPisiSheet\(editor, 5, 5\)/);
+    assert.match(unifiedToolbar, /data-pisi-excel-formula/);
+    assert.match(unifiedToolbar, /pisi-sheet-formula-input/);
 });
