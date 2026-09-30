@@ -164,6 +164,44 @@ function sanitizePisiEditorHtml(html = '') {
                 ].includes(name);
             }
 
+            if (element.tagName === 'TABLE') {
+                if (name === 'data-pisi-database-id') {
+                    allowed =
+                        /^database-[A-Za-z0-9_-]{8,160}$/.test(
+                            value
+                        );
+                }
+
+                if (name === 'data-pisi-sheet-model') {
+                    allowed = false;
+
+                    if (value.length <= 8 * 1024 * 1024) {
+                        try {
+                            const snapshot = JSON.parse(value);
+                            const validSnapshot = Boolean(
+                                snapshot &&
+                                typeof snapshot === 'object' &&
+                                !Array.isArray(snapshot) &&
+                                typeof snapshot.databaseId === 'string' &&
+                                Array.isArray(snapshot.fields) &&
+                                Array.isArray(snapshot.items) &&
+                                Array.isArray(snapshot.views)
+                            );
+
+                            if (validSnapshot) {
+                                element.setAttribute(
+                                    attribute.name,
+                                    JSON.stringify(snapshot)
+                                );
+                                allowed = true;
+                            }
+                        } catch {
+                            allowed = false;
+                        }
+                    }
+                }
+            }
+
             if (['data-pisi-rollup-relation', 'data-pisi-rollup-target'].includes(name)) {
                 allowed = allowed && value.length <= 160 && !/[\u0000-\u001f\u007f]/.test(value);
             }

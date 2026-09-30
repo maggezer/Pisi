@@ -677,6 +677,100 @@ try {
                 'pisi-sheet-formula-reference-mode'
             );
 
+        window.setPisiSheetCellSource?.(
+            table,
+            4,
+            0,
+            {
+                value: '10',
+                formula: null
+            }
+        );
+        window.setPisiSheetCellSource?.(
+            table,
+            4,
+            1,
+            {
+                value: '',
+                formula: '2+A5'
+            }
+        );
+        window.recalcPisiSheet?.(table);
+
+        const persistenceFormulaBeforeSave =
+            window.getPisiSheetCellSource?.(
+                table,
+                4,
+                1
+            )?.formula || '';
+        const persistenceValueBeforeSave =
+            window.getPisiSheetCellValue?.(
+                table,
+                'B5'
+            )?.value;
+        const persistenceRenderedBeforeSave =
+            table.querySelector(
+                'td[data-cell="B5"]'
+            )?.textContent?.trim() || '';
+
+        const sanitizedSheetHtml =
+            window.sanitizePisiEditorHtml?.(
+                table.outerHTML
+            ) || '';
+        const persistenceHost =
+            document.createElement('div');
+        persistenceHost.innerHTML =
+            sanitizedSheetHtml;
+        const reopenedPersistenceTable =
+            persistenceHost.querySelector(
+                'table[data-pisi-sheet]'
+            );
+
+        const persistenceModelAttributeSurvived =
+            Boolean(
+                reopenedPersistenceTable?.dataset
+                    ?.pisiSheetModel
+            );
+        const persistenceDatabaseIdSurvived =
+            Boolean(
+                reopenedPersistenceTable?.dataset
+                    ?.pisiDatabaseId
+            );
+
+        if (reopenedPersistenceTable) {
+            window.hydratePisiSheetDatabase?.(
+                reopenedPersistenceTable
+            );
+            window.renderPisiSheetDatabase?.(
+                reopenedPersistenceTable
+            );
+            window.recalcPisiSheet?.(
+                reopenedPersistenceTable
+            );
+        }
+
+        const persistenceFormulaAfterReopen =
+            reopenedPersistenceTable
+                ? window.getPisiSheetCellSource?.(
+                    reopenedPersistenceTable,
+                    4,
+                    1
+                )?.formula || ''
+                : '';
+        const persistenceValueAfterReopen =
+            reopenedPersistenceTable
+                ? window.getPisiSheetCellValue?.(
+                    reopenedPersistenceTable,
+                    'B5'
+                )?.value
+                : null;
+        const persistenceRenderedAfterReopen =
+            reopenedPersistenceTable
+                ?.querySelector(
+                    'td[data-cell="B5"]'
+                )
+                ?.textContent?.trim() || '';
+
         const allCellsNonEditableBeforeStage4 =
             Array.from(
                 table.querySelectorAll('tbody td[data-cell]')
@@ -1276,6 +1370,14 @@ try {
             inCellFormulaValue,
             inCellRenderedValue,
             inCellFormulaModeCleared,
+            persistenceFormulaBeforeSave,
+            persistenceValueBeforeSave,
+            persistenceRenderedBeforeSave,
+            persistenceModelAttributeSurvived,
+            persistenceDatabaseIdSurvived,
+            persistenceFormulaAfterReopen,
+            persistenceValueAfterReopen,
+            persistenceRenderedAfterReopen,
             allCellsNonEditableBeforeStage4,
             stage4SingleClickEditable,
             stage4SingleClickActive,
@@ -1436,6 +1538,14 @@ try {
         sheetResult.inCellFormulaValue !== 8 ||
         sheetResult.inCellRenderedValue !== '8' ||
         !sheetResult.inCellFormulaModeCleared ||
+        sheetResult.persistenceFormulaBeforeSave !== '2+A5' ||
+        sheetResult.persistenceValueBeforeSave !== 12 ||
+        sheetResult.persistenceRenderedBeforeSave !== '12' ||
+        !sheetResult.persistenceModelAttributeSurvived ||
+        !sheetResult.persistenceDatabaseIdSurvived ||
+        sheetResult.persistenceFormulaAfterReopen !== '2+A5' ||
+        sheetResult.persistenceValueAfterReopen !== 12 ||
+        sheetResult.persistenceRenderedAfterReopen !== '12' ||
         !sheetResult.allCellsNonEditableBeforeStage4 ||
         sheetResult.stage4SingleClickEditable !== 'false' ||
         sheetResult.stage4SingleClickActive !== 'D3' ||

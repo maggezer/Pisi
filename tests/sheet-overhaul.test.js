@@ -190,6 +190,13 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         path.join(root, 'styles/70-components.css'),
         'utf8'
     );
+    const nodeEditor = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-node-editor.mjs'
+        ),
+        'utf8'
+    );
     const structure = fs.readFileSync(
         path.join(
             root,
@@ -533,4 +540,20 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(unifiedToolbar, /insertPisiSheet\(editor, 5, 5\)/);
     assert.match(unifiedToolbar, /data-pisi-excel-formula/);
     assert.match(unifiedToolbar, /pisi-sheet-formula-input/);
+    assert.match(
+        nodeEditor,
+        /data-pisi-sheet-model/
+    );
+    assert.match(
+        nodeEditor,
+        /data-pisi-database-id/
+    );
+    assert.match(
+        nodeEditor,
+        /JSON\.parse\(value\)/
+    );
+    assert.match(
+        nodeEditor,
+        /JSON\.stringify\(snapshot\)/
+    );
 });
