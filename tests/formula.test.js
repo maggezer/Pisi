@@ -45,6 +45,21 @@ const formulaTestApiPromise = import(pathToFileURL(formulaCorePath).href)
         `;
         const formulaContext = {
             evaluatePisiFormulaExpression,
+            getPisiSheetDatabaseDimensions(table) {
+                return {
+                    rows: table.__rowCount,
+                    cols: table.__colCount
+                };
+            },
+            getPisiSheetCellSource(table, row, col) {
+                return table.__sources.get(
+                    row + ':' + col
+                ) || {
+                    value: '',
+                    formula: null,
+                    format: {}
+                };
+            },
             window: {
                 pisiI18n: {
                     getLanguage() {
@@ -58,44 +73,49 @@ const formulaTestApiPromise = import(pathToFileURL(formulaCorePath).href)
         return formulaContext.pisiFormulaTestApi;
     });
 
+function columnIndex(name) {
+    return String(name || '')
+        .toUpperCase()
+        .split('')
+        .reduce((sum, character) => {
+            return (
+                sum * 26 +
+                character.charCodeAt(0) -
+                64
+            );
+        }, 0) - 1;
+}
+
 function makeTable(values, rowCount = 2, colCount = 2) {
-    const cells = new Map(
-        Object.entries(values).map(([ref, value]) => {
-            const cell = typeof value === 'object'
+    const sources = new Map();
+
+    for (const [ref, raw] of Object.entries(values)) {
+        const match = ref.match(/^([A-Z]+)(\d+)$/);
+        if (!match) continue;
+
+        const row = Number(match[2]) - 1;
+        const col = columnIndex(match[1]);
+
+        sources.set(
+            row + ':' + col,
+            typeof raw === 'object'
                 ? {
-                    textContent: value.text || '',
-                    dataset: {
-                        cell: ref,
-                        ...(value.formula
-                            ? { formula: value.formula }
-                            : {})
-                    }
+                    value: String(raw.text || ''),
+                    formula: raw.formula || null,
+                    format: {}
                 }
                 : {
-                    textContent: String(value),
-                    dataset: { cell: ref }
-                };
-            return [ref, cell];
-        })
-    );
-    const rows = Array.from({ length: rowCount }, () => ({
-        querySelectorAll(selector) {
-            return selector === 'td'
-                ? Array.from({ length: colCount }, () => ({}))
-                : [];
-        }
-    }));
+                    value: String(raw),
+                    formula: null,
+                    format: {}
+                }
+        );
+    }
 
     return {
-        querySelector(selector) {
-            const match = selector.match(
-                /^td\[data-cell="([A-Z]+\d+)"\]$/
-            );
-            return match ? cells.get(match[1]) || null : null;
-        },
-        querySelectorAll(selector) {
-            return selector === 'tbody tr' ? rows : [];
-        }
+        __sources: sources,
+        __rowCount: rowCount,
+        __colCount: colCount
     };
 }
 
