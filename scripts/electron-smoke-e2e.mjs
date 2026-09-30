@@ -285,6 +285,39 @@ try {
         }));
 
         const rowsBefore = table.querySelectorAll('tbody tr').length;
+        const firstHeader = table.querySelector(
+            'thead th[data-col-header="0"]'
+        );
+        const firstResizer = firstHeader?.querySelector(
+            '[data-pisi-sheet-col-resizer="0"]'
+        );
+        const widthBeforeResize =
+            firstHeader?.getBoundingClientRect().width || 0;
+
+        firstResizer?.dispatchEvent(new MouseEvent('mousedown', {
+            bubbles: true,
+            cancelable: true,
+            button: 0,
+            buttons: 1,
+            clientX: 120
+        }));
+        document.dispatchEvent(new MouseEvent('mousemove', {
+            bubbles: true,
+            cancelable: true,
+            buttons: 1,
+            clientX: 168
+        }));
+        document.dispatchEvent(new MouseEvent('mouseup', {
+            bubbles: true,
+            cancelable: true,
+            button: 0,
+            clientX: 168
+        }));
+
+        const widthAfterResize =
+            firstHeader?.getBoundingClientRect().width || 0;
+        const bodyWidthAfterResize =
+            firstCell.getBoundingClientRect().width || 0;
 
         firstCell.dispatchEvent(new MouseEvent('contextmenu', {
             bubbles: true,
@@ -318,6 +351,10 @@ try {
             ),
             toolbarSheetActionsAbsent,
             directTableSize,
+            hasColumnResizer: Boolean(firstResizer),
+            widthBeforeResize,
+            widthAfterResize,
+            bodyWidthAfterResize,
             rowsBefore,
             rowsAfter: table.querySelectorAll('tbody tr').length,
             contextMenuPresent: Boolean(menu),
@@ -338,6 +375,12 @@ try {
         !sheetResult.toolbarSheetActionsAbsent ||
         sheetResult.directTableSize?.rows !== 5 ||
         sheetResult.directTableSize?.cols !== 5 ||
+        !sheetResult.hasColumnResizer ||
+        sheetResult.widthAfterResize < sheetResult.widthBeforeResize + 40 ||
+        Math.abs(
+            sheetResult.bodyWidthAfterResize -
+            sheetResult.widthAfterResize
+        ) > 2 ||
         !sheetResult.contextMenuPresent ||
         JSON.stringify(sheetResult.contextMenuActions) !==
             JSON.stringify(['addRow', 'deleteRow', 'addCol', 'deleteCol']) ||

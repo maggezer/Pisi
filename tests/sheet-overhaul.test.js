@@ -219,6 +219,13 @@ test('tablo arayüzünde Phase 2 gezinme, seçim, yapı ve biçimlendirme bulunu
     assert.match(interactions, /label: 'Satır ekle'/);
     assert.match(interactions, /label: 'Sütun sil'/);
 
+    assert.match(structure, /data-pisi-sheet-col-resizer/);
+    assert.match(interactions, /PISI_SHEET_MIN_COLUMN_WIDTH = 48/);
+    assert.match(interactions, /PISI_SHEET_MAX_COLUMN_WIDTH = 640/);
+    assert.match(interactions, /startPisiSheetColumnResize/);
+    assert.match(interactions, /setPisiSheetColumnWidth/);
+    assert.match(interactions, /schedulePisiSheetEditorNotification\(resize\.table\)/);
+
     assert.match(paint, /notifyPisiEditorChanged\(editor, rehydrate = true\)/);
     assert.match(structure, /notifyPisiEditorChanged\(editor, false\)/);
     assert.match(

@@ -50,7 +50,16 @@ function refreshPisiSheetCellMetadata(table) {
     headerRow.innerHTML =
         '<th data-pisi-sheet-corner="1"></th>' +
         Array.from({ length: colCount }, (_, index) => {
-            return `<th data-col-header="${index}">${pisiColumnName(index)}</th>`;
+            return `
+                <th data-col-header="${index}">
+                    <span class="pisi-sheet-col-label">${pisiColumnName(index)}</span>
+                    <span
+                        class="pisi-sheet-col-resizer"
+                        data-pisi-sheet-col-resizer="${index}"
+                        aria-hidden="true"
+                    ></span>
+                </th>
+            `;
         }).join('');
 
     if (pisiSheetSelections.has(table)) {

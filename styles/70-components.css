@@ -54,6 +54,7 @@
 
 .pisi-sheet-table th,
 .pisi-sheet-table td {
+    box-sizing: border-box;
     min-width: 84px;
     height: 28px;
     border: 1px solid #444;
@@ -78,6 +79,46 @@
 .pisi-sheet-table th[data-row-header],
 .pisi-sheet-table th[data-col-header] {
     cursor: pointer;
+}
+
+.pisi-sheet-table th[data-col-header] {
+    position: relative;
+}
+
+.pisi-sheet-col-label {
+    pointer-events: none;
+}
+
+.pisi-sheet-col-resizer {
+    position: absolute;
+    top: 0;
+    right: -4px;
+    bottom: 0;
+    width: 8px;
+    z-index: 2;
+    cursor: col-resize;
+    touch-action: none;
+}
+
+.pisi-sheet-col-resizer::after {
+    content: "";
+    position: absolute;
+    top: 4px;
+    right: 3px;
+    bottom: 4px;
+    width: 1px;
+    background: transparent;
+}
+
+.pisi-sheet-table th[data-col-header]:hover .pisi-sheet-col-resizer::after,
+.pisi-sheet-column-resizing .pisi-sheet-col-resizer::after {
+    background: #f39c12;
+}
+
+body.pisi-sheet-column-resizing,
+body.pisi-sheet-column-resizing * {
+    cursor: col-resize !important;
+    user-select: none !important;
 }
 
 .pisi-sheet-table th[data-row-header]:hover,

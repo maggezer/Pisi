@@ -7,6 +7,80 @@ const pisiRenderedSheetSelectionCells = new WeakMap();
 
 let pisiSheetDragSelection = null;
 let pisiSheetContextMenu = null;
+let pisiSheetColumnResize = null;
+
+const PISI_SHEET_MIN_COLUMN_WIDTH = 48;
+const PISI_SHEET_MAX_COLUMN_WIDTH = 640;
+
+function setPisiSheetColumnWidth(table, colIndex, width) {
+    const nextWidth = Math.max(
+        PISI_SHEET_MIN_COLUMN_WIDTH,
+        Math.min(PISI_SHEET_MAX_COLUMN_WIDTH, Math.round(width))
+    );
+    const size = `${nextWidth}px`;
+    const header = table.querySelector(
+        `thead th[data-col-header="${colIndex}"]`
+    );
+
+    [header, ...Array.from(
+        table.querySelectorAll(
+            `tbody td[data-col="${colIndex}"]`
+        )
+    )]
+        .filter(Boolean)
+        .forEach((cell) => {
+            cell.style.width = size;
+            cell.style.minWidth = size;
+            cell.style.maxWidth = size;
+        });
+
+    return nextWidth;
+}
+
+function startPisiSheetColumnResize(table, resizer, event) {
+    const colIndex = Number(resizer.dataset.pisiSheetColResizer);
+    const header = table.querySelector(
+        `thead th[data-col-header="${colIndex}"]`
+    );
+    if (!Number.isInteger(colIndex) || !header) return;
+
+    const startWidth = header.getBoundingClientRect().width;
+    pisiSheetColumnResize = {
+        table,
+        colIndex,
+        startX: event.clientX,
+        startWidth,
+        width: startWidth
+    };
+    document.body.classList.add('pisi-sheet-column-resizing');
+}
+
+function movePisiSheetColumnResize(event) {
+    const resize = pisiSheetColumnResize;
+    if (!resize) return;
+
+    event.preventDefault();
+    resize.width = setPisiSheetColumnWidth(
+        resize.table,
+        resize.colIndex,
+        resize.startWidth + event.clientX - resize.startX
+    );
+}
+
+function finishPisiSheetColumnResize() {
+    const resize = pisiSheetColumnResize;
+    if (!resize) return;
+
+    pisiSheetColumnResize = null;
+    document.body.classList.remove('pisi-sheet-column-resizing');
+
+    if (Math.abs(resize.width - resize.startWidth) >= 1) {
+        schedulePisiSheetEditorNotification(resize.table);
+    }
+}
+
+document.addEventListener('mousemove', movePisiSheetColumnResize, true);
+document.addEventListener('mouseup', finishPisiSheetColumnResize, true);
 
 function closePisiSheetContextMenu() {
     if (!pisiSheetContextMenu) return;
@@ -140,6 +214,19 @@ function hydratePisiSheets(root = document) {
         });
 
         table.addEventListener('mousedown', (/** @type {MouseEvent} */ event) => {
+            const colResizer = event.target.closest(
+                '[data-pisi-sheet-col-resizer]'
+            );
+
+            if (colResizer && table.contains(colResizer)) {
+                if (event.button !== 0) return;
+                event.preventDefault();
+                event.stopPropagation();
+                closePisiSheetContextMenu();
+                startPisiSheetColumnResize(table, colResizer, event);
+                return;
+            }
+
             const rowHeader = event.target.closest(
                 'tbody th[data-row-header]'
             );
