@@ -350,7 +350,14 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(interactions, /hydratePisiSheetDatabase\(table\)/);
     assert.match(interactions, /renderPisiSheetDatabase\(table\)/);
     assert.match(interactions, /reconcilePisiSheetSelection\(table\)/);
-    assert.match(interactions, /setPisiSheetSelectionState/);
+    assert.match(
+        interactions,
+        /setPisiSheetRangeSelection/
+    );
+    assert.doesNotMatch(
+        interactions,
+        /setPisiSheetSelectionState\(table, \{[\s\S]*mode: 'range'/
+    );
     assert.doesNotMatch(interactions, /__pisiActiveSheetCell/);
     assert.doesNotMatch(
         interactions,
