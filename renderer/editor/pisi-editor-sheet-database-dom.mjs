@@ -375,8 +375,11 @@ function renderPisiSheetDatabase(table) {
                 }
 
                 if (!record?.formula) {
-                    cell.textContent = String(
-                        record?.value ?? ''
+                    renderPisiSheetTypedCell(
+                        table,
+                        cell,
+                        rowIndex,
+                        colIndex
                     );
                 }
 
@@ -414,13 +417,19 @@ function renderPisiSheetCellFromDatabase(
         source.format
     );
 
-    cell.textContent = displayValue === null
-        ? (
-            source.formula
-                ? ''
-                : source.value
-        )
-        : String(displayValue);
+    renderPisiSheetTypedCell(
+        table,
+        cell,
+        rowIndex,
+        colIndex,
+        displayValue === null
+            ? (
+                source.formula
+                    ? ''
+                    : source.value
+            )
+            : displayValue
+    );
 
     return true;
 }

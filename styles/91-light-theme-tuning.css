@@ -509,6 +509,70 @@ body.light-theme .pisi-sheet-column-name-input:focus {
     border-color: #f39c12;
 }
 
+body.light-theme .pisi-sheet-column-description-input,
+body.light-theme .pisi-sheet-column-select,
+body.light-theme .pisi-sheet-column-width-input,
+body.light-theme .pisi-sheet-column-decimals-input,
+body.light-theme .pisi-sheet-column-option-label,
+body.light-theme .pisi-sheet-date-input {
+    border-color: #cfcfcf;
+    background: #ffffff;
+    color: #222222;
+}
+
+body.light-theme .pisi-sheet-column-options-group {
+    border-top-color: #e1e1e1;
+}
+
+body.light-theme .pisi-sheet-column-option-remove,
+body.light-theme .pisi-sheet-column-option-add {
+    color: #3a3d42;
+}
+
+body.light-theme .pisi-sheet-column-option-remove:hover,
+body.light-theme .pisi-sheet-column-option-add:hover {
+    background: #f4eadb;
+    color: #202226;
+}
+
+body.light-theme .pisi-sheet-option-chip {
+    color: #2d3136;
+}
+
+body.light-theme .pisi-sheet-checkbox-control {
+    border-color: #b9bdc4;
+    background: #ffffff;
+    color: #d98200;
+}
+
+body.light-theme .pisi-sheet-checkbox-control[aria-checked="true"] {
+    border-color: #d98200;
+    background: #fff3df;
+}
+
+body.light-theme .pisi-sheet-typed-editor {
+    border-color: #d8d8d8;
+    background: #ffffff;
+    box-shadow: 0 12px 28px rgba(31, 35, 41, 0.15);
+}
+
+body.light-theme .pisi-sheet-option-choice {
+    color: #2d3136;
+}
+
+body.light-theme .pisi-sheet-option-choice:hover,
+body.light-theme .pisi-sheet-option-choice[aria-pressed="true"],
+body.light-theme .pisi-sheet-typed-editor-clear:hover,
+body.light-theme .pisi-sheet-typed-editor-actions button:hover {
+    background: #f4eadb;
+    color: #202226;
+}
+
+body.light-theme .pisi-sheet-typed-editor-clear,
+body.light-theme .pisi-sheet-typed-editor-actions button {
+    color: #3a3d42;
+}
+
 body.light-theme .pisi-sheet-formula-input {
     border-color: #c9cbd0;
     background: #ffffff;

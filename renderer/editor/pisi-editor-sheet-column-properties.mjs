@@ -1,4 +1,12 @@
 import { registerModule } from "../core/module-registry.mjs";
+import {
+    PISI_SHEET_FIELD_TYPES,
+    PISI_SHEET_NUMBER_FORMATS,
+    PISI_SHEET_SELECT_COLORS,
+    createPisiSheetOptionId,
+    normalizePisiSheetFieldOptions,
+    normalizePisiSheetNumberFormat
+} from "./pisi-editor-sheet-field-types-core.mjs";
 
 let pisiSheetColumnMenu = null;
 let pisiSheetColumnResize = null;
@@ -246,6 +254,169 @@ function positionPisiSheetColumnMenu(menu, header) {
     )) + 'px';
 }
 
+function getPisiSheetFieldTypeIcon(type) {
+    const icons = {
+        text: 'Aa',
+        number: '123',
+        date: '◫',
+        select: '▾',
+        mSelect: '≡',
+        checkbox: '☑',
+        formula: 'fx'
+    };
+
+    return icons[type] || 'Aa';
+}
+
+function makePisiSheetSelectOptionsEditor(
+    field,
+    onOptionsChange
+) {
+    const group = document.createElement('div');
+    const title = document.createElement('div');
+    const list = document.createElement('div');
+    const add = document.createElement('button');
+
+    group.className =
+        'pisi-sheet-column-options-group';
+    title.className =
+        'pisi-sheet-hidden-columns-title';
+    title.textContent =
+        window.pisiT?.('Seçenekler') || 'Seçenekler';
+    list.className =
+        'pisi-sheet-column-options-list';
+
+    const render = () => {
+        const options = normalizePisiSheetFieldOptions(
+            field.options
+        );
+        list.replaceChildren();
+
+        options.forEach((option, index) => {
+            const row = document.createElement('div');
+            const color = document.createElement('input');
+            const label = document.createElement('input');
+            const remove = document.createElement('button');
+
+            row.className =
+                'pisi-sheet-column-option-row';
+
+            color.type = 'color';
+            color.className =
+                'pisi-sheet-column-option-color';
+            color.value = option.color;
+
+            label.type = 'text';
+            label.className =
+                'pisi-sheet-column-option-label';
+            label.maxLength = 80;
+            label.value = option.label;
+
+            remove.type = 'button';
+            remove.className =
+                'pisi-sheet-column-option-remove';
+            remove.textContent = '×';
+            remove.setAttribute(
+                'aria-label',
+                window.pisiT?.('Sil') || 'Sil'
+            );
+
+            color.addEventListener('change', () => {
+                const next = normalizePisiSheetFieldOptions(
+                    field.options
+                );
+                next[index] = {
+                    ...next[index],
+                    color: color.value
+                };
+                field.options = next;
+                onOptionsChange(next);
+            });
+
+            label.addEventListener('change', () => {
+                const next = normalizePisiSheetFieldOptions(
+                    field.options
+                );
+                const value = label.value.trim();
+
+                if (!value) {
+                    label.value = next[index]?.label || '';
+                    return;
+                }
+
+                next[index] = {
+                    ...next[index],
+                    label: value
+                };
+                field.options = next;
+                onOptionsChange(next);
+            });
+
+            remove.addEventListener('click', () => {
+                const next = normalizePisiSheetFieldOptions(
+                    field.options
+                );
+                next.splice(index, 1);
+                field.options = next;
+                onOptionsChange(next);
+                render();
+            });
+
+            row.append(
+                color,
+                label,
+                remove
+            );
+            list.appendChild(row);
+        });
+    };
+
+    add.type = 'button';
+    add.className =
+        'pisi-sheet-column-option-add';
+    add.textContent =
+        '+ ' +
+        (window.pisiT?.('Seçenek ekle') || 'Seçenek ekle');
+
+    add.addEventListener('click', () => {
+        const options = normalizePisiSheetFieldOptions(
+            field.options
+        );
+        const number = options.length + 1;
+        const label =
+            (window.pisiT?.('Seçenek') || 'Seçenek') +
+            ' ' +
+            number;
+
+        options.push({
+            id: createPisiSheetOptionId(label),
+            label,
+            color: PISI_SHEET_SELECT_COLORS[
+                (number - 1) %
+                PISI_SHEET_SELECT_COLORS.length
+            ]
+        });
+
+        field.options = options;
+        onOptionsChange(options);
+        render();
+
+        list.querySelector(
+            '.pisi-sheet-column-option-row:last-child ' +
+            '.pisi-sheet-column-option-label'
+        )?.select?.();
+    });
+
+    group.append(
+        title,
+        list,
+        add
+    );
+    render();
+
+    return group;
+}
+
 function openPisiSheetColumnMenu(table, header) {
     closePisiSheetColumnMenu();
     finishPisiSheetCellEdit(table, {
@@ -295,9 +466,7 @@ function openPisiSheetColumnMenu(table, header) {
         'pisi-sheet-column-menu-heading';
     icon.className = 'pisi-sheet-column-type-icon';
     icon.textContent =
-        field.type === 'number'
-            ? '123'
-            : (field.type === 'formula' ? 'fx' : 'Aa');
+        getPisiSheetFieldTypeIcon(field.type);
 
     input.type = 'text';
     input.className = 'pisi-sheet-column-name-input';
@@ -325,20 +494,12 @@ function openPisiSheetColumnMenu(table, header) {
         )
     );
 
-    [
+    PISI_SHEET_FIELD_TYPES.map((item) => (
         [
-            'text',
-            window.pisiT?.('Metin') || 'Metin'
-        ],
-        [
-            'number',
-            window.pisiT?.('Sayı') || 'Sayı'
-        ],
-        [
-            'formula',
-            window.pisiT?.('Formül') || 'Formül'
+            item.value,
+            window.pisiT?.(item.label) || item.label
         ]
-    ].forEach(([value, label]) => {
+    )).forEach(([value, label]) => {
         const option = document.createElement('option');
         option.value = value;
         option.textContent = label;
@@ -352,6 +513,83 @@ function openPisiSheetColumnMenu(table, header) {
             typeSelect
         )
     );
+
+    const numberFormatSelect =
+        document.createElement('select');
+    const decimalsInput =
+        document.createElement('input');
+    const numberFormatWrap =
+        document.createElement('div');
+    const numberFormatRow =
+        makePisiSheetColumnMenuRow(
+            window.pisiT?.('Sayı biçimi') || 'Sayı biçimi',
+            numberFormatWrap
+        );
+
+    numberFormatSelect.className =
+        'pisi-sheet-column-select';
+
+    PISI_SHEET_NUMBER_FORMATS.forEach((format) => {
+        const option = document.createElement('option');
+        option.value = format.value;
+        option.textContent = format.label;
+        numberFormatSelect.appendChild(option);
+    });
+
+    const currentNumberFormat =
+        normalizePisiSheetNumberFormat(
+            field.numberFormat
+        );
+    numberFormatSelect.value =
+        currentNumberFormat.style;
+
+    decimalsInput.type = 'number';
+    decimalsInput.min = '0';
+    decimalsInput.max = '8';
+    decimalsInput.step = '1';
+    decimalsInput.value = String(
+        currentNumberFormat.decimals
+    );
+    decimalsInput.className =
+        'pisi-sheet-column-decimals-input';
+    decimalsInput.title =
+        window.pisiT?.('Ondalık') || 'Ondalık';
+
+    numberFormatWrap.className =
+        'pisi-sheet-number-format-controls';
+    numberFormatWrap.append(
+        numberFormatSelect,
+        decimalsInput
+    );
+    menu.appendChild(numberFormatRow);
+
+    const optionsGroup =
+        makePisiSheetSelectOptionsEditor(
+            field,
+            (options) => {
+                updatePisiSheetField(
+                    table,
+                    colIndex,
+                    { options }
+                );
+                refreshPisiSheetAfterColumnPropertyChange(
+                    table
+                );
+            }
+        );
+    menu.appendChild(optionsGroup);
+
+    const syncTypeSpecificControls = () => {
+        const type = typeSelect.value;
+        numberFormatRow.hidden =
+            type !== 'number';
+        optionsGroup.hidden =
+            !['select', 'mSelect'].includes(type);
+        icon.textContent =
+            getPisiSheetFieldTypeIcon(type);
+    };
+
+    syncTypeSpecificControls();
 
     wrap.type = 'checkbox';
     wrap.checked = field.wrap === true;
@@ -551,7 +789,26 @@ function openPisiSheetColumnMenu(table, header) {
         persistFieldPatch({
             type: typeSelect.value
         });
+        syncTypeSpecificControls();
     });
+
+    const persistNumberFormat = () => {
+        persistFieldPatch({
+            numberFormat: {
+                style: numberFormatSelect.value,
+                decimals: Number(decimalsInput.value)
+            }
+        });
+    };
+
+    numberFormatSelect.addEventListener(
+        'change',
+        persistNumberFormat
+    );
+    decimalsInput.addEventListener(
+        'change',
+        persistNumberFormat
+    );
 
     wrap.addEventListener('change', () => {
         persistFieldPatch({

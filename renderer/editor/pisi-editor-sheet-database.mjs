@@ -2,6 +2,13 @@ import { registerModule } from "../core/module-registry.mjs";
 import {
     transformPisiSheetFormulaReferences
 } from "./pisi-editor-sheet-model.mjs";
+import {
+    isPisiSheetEmptyStoredValue,
+    normalizePisiSheetFieldOptions,
+    normalizePisiSheetFieldType,
+    normalizePisiSheetNumberFormat,
+    normalizePisiSheetStoredValue
+} from "./pisi-editor-sheet-field-types-core.mjs";
 
 const PISI_SHEET_DATABASE_VERSION = 1;
 const PISI_SHEET_DEFAULT_COLUMN_WIDTH = 96;
@@ -57,8 +64,16 @@ function createPisiSheetField(index, options = {}) {
             options.name ||
             pisiSheetDatabaseColumnName(index)
         ).slice(0, 80),
-        type: String(options.type || 'text'),
+        type: normalizePisiSheetFieldType(
+            options.type || 'text'
+        ),
         description: String(options.description || '').slice(0, 240),
+        options: normalizePisiSheetFieldOptions(
+            options.options
+        ),
+        numberFormat: normalizePisiSheetNumberFormat(
+            options.numberFormat
+        ),
         wrap: options.wrap === true,
         pin: options.pin === true,
         width:
@@ -131,7 +146,9 @@ function normalizePisiSheetCellRecord(record) {
         return null;
     }
 
-    const value = String(record.value ?? '');
+    const value = normalizePisiSheetStoredValue(
+        record.value
+    );
     const formula = record.formula
         ? String(record.formula)
         : null;
@@ -154,7 +171,7 @@ function normalizePisiSheetCellRecord(record) {
     }
 
     if (
-        !value &&
+        isPisiSheetEmptyStoredValue(value) &&
         !formula &&
         Object.keys(format).length === 0
     ) {
@@ -178,6 +195,8 @@ function normalizePisiSheetDatabase(database) {
             name: field?.name,
             type: field?.type,
             description: field?.description,
+            options: field?.options,
+            numberFormat: field?.numberFormat,
             wrap: field?.wrap,
             pin: field?.pin,
             width: field?.width
@@ -397,7 +416,9 @@ function getPisiSheetCellSource(table, rowIndex, colIndex) {
     );
 
     return {
-        value: String(record?.value ?? ''),
+        value: normalizePisiSheetStoredValue(
+            record?.value
+        ),
         formula: record?.formula
             ? String(record.formula)
             : null,
@@ -439,7 +460,9 @@ function setPisiSheetCellSource(
     );
     if (!record) return false;
 
-    record.value = String(source.value ?? '');
+    record.value = normalizePisiSheetStoredValue(
+        source.value
+    );
     record.formula = source.formula
         ? String(source.formula)
         : null;
@@ -552,15 +575,21 @@ function updatePisiSheetField(table, colIndex, patch = {}) {
     }
 
     if (Object.hasOwn(nextPatch, 'type')) {
-        const allowedTypes = new Set([
-            'text',
-            'number',
-            'formula'
-        ]);
-        const type = String(nextPatch.type || 'text');
-        field.type = allowedTypes.has(type)
-            ? type
-            : 'text';
+        field.type = normalizePisiSheetFieldType(
+            nextPatch.type
+        );
+    }
+
+    if (Object.hasOwn(nextPatch, 'options')) {
+        field.options = normalizePisiSheetFieldOptions(
+            nextPatch.options
+        );
+    }
+
+    if (Object.hasOwn(nextPatch, 'numberFormat')) {
+        field.numberFormat = normalizePisiSheetNumberFormat(
+            nextPatch.numberFormat
+        );
     }
 
     if (Object.hasOwn(nextPatch, 'wrap')) {

@@ -751,6 +751,18 @@
     "Gizli sütunlar": "Hidden columns",
     "Göster": "Show",
     "Sola taşı": "Move left",
-    "Sağa taşı": "Move right"
+    "Sağa taşı": "Move right",
+    "Tarih": "Date",
+    "Tek seçim": "Select",
+    "Checkbox": "Checkbox",
+    "Seçenekler": "Options",
+    "Seçenek ekle": "Add option",
+    "Seçenek": "Option",
+    "Sayı biçimi": "Number format",
+    "Ondalık": "Decimals",
+    "Seçenek tanımlanmamış": "No options defined",
+    "Temizle": "Clear",
+    "Uygula": "Apply",
+    "Sil": "Delete"
   }
 }

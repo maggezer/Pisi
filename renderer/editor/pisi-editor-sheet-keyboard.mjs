@@ -12,7 +12,8 @@ function shouldIgnorePisiSheetSelectionKey(event) {
             'input, textarea, select, [data-pisi-excel-formula]'
         ) ||
         target.closest(
-            '.pisi-editor-toolbar, .pisi-word-toolbar'
+            '.pisi-editor-toolbar, .pisi-word-toolbar, ' +
+            '.pisi-sheet-typed-editor'
         )
     ) {
         return true;
@@ -53,7 +54,10 @@ function handlePisiSheetSelectionKeydown(event) {
 
     if (event.key === 'Enter' || event.key === 'F2') {
         event.preventDefault();
-        beginPisiSheetCellEdit(cell);
+
+        if (!beginPisiSheetTypedCellEdit(cell)) {
+            beginPisiSheetCellEdit(cell);
+        }
         return;
     }
 
@@ -127,10 +131,13 @@ function handlePisiSheetSelectionKeydown(event) {
         !event.altKey
     ) {
         event.preventDefault();
-        beginPisiSheetCellEdit(cell, {
-            replace: true,
-            initialText: event.key
-        });
+
+        if (!beginPisiSheetTypedCellEdit(cell)) {
+            beginPisiSheetCellEdit(cell, {
+                replace: true,
+                initialText: event.key
+            });
+        }
     }
 }
 
@@ -141,6 +148,12 @@ function handlePisiSheetOutsidePointerDown(event) {
     const target = event.target;
 
     if (!(target instanceof Node)) return;
+    if (
+        target instanceof Element &&
+        isPisiSheetTypedEditorTarget(target)
+    ) {
+        return;
+    }
     if (table.contains(target)) return;
 
     const editor = getEditorForPisiElement(table);

@@ -1825,8 +1825,522 @@ try {
                 '"]'
             )?.getBoundingClientRect().width || 0;
 
+        const typedHost = document.createElement('div');
+        typedHost.className = 'pisi-sheet-block';
+        typedHost.innerHTML =
+            window.buildPisiSheetHtml?.(2, 6) || '';
+        editor.appendChild(typedHost);
+        window.hydratePisiSheets?.(editor);
+
+        let typedTable = typedHost.querySelector(
+            'table[data-pisi-sheet]'
+        );
+        const typedOptions = [
+            {
+                id: 'todo',
+                label: 'Todo',
+                color: '#e57373'
+            },
+            {
+                id: 'done',
+                label: 'Done',
+                color: '#81c784'
+            }
+        ];
+
+        window.updatePisiSheetField?.(
+            typedTable,
+            0,
+            {
+                name: 'Amount',
+                type: 'number',
+                numberFormat: {
+                    style: 'currency-TRY',
+                    decimals: 2
+                }
+            }
+        );
+        window.updatePisiSheetField?.(
+            typedTable,
+            1,
+            {
+                name: 'Date',
+                type: 'date'
+            }
+        );
+        window.updatePisiSheetField?.(
+            typedTable,
+            2,
+            {
+                name: 'Status',
+                type: 'select',
+                options: typedOptions
+            }
+        );
+        window.updatePisiSheetField?.(
+            typedTable,
+            3,
+            {
+                name: 'Tags',
+                type: 'mSelect',
+                options: typedOptions
+            }
+        );
+        window.updatePisiSheetField?.(
+            typedTable,
+            4,
+            {
+                name: 'Done?',
+                type: 'checkbox'
+            }
+        );
+        window.updatePisiSheetField?.(
+            typedTable,
+            5,
+            {
+                name: 'Progress',
+                type: 'number',
+                numberFormat: {
+                    style: 'percent',
+                    decimals: 0
+                }
+            }
+        );
+
+        window.setPisiSheetCellSource?.(
+            typedTable,
+            0,
+            0,
+            { value: 1234.5, formula: null }
+        );
+        window.setPisiSheetCellSource?.(
+            typedTable,
+            0,
+            1,
+            { value: '2026-09-30', formula: null }
+        );
+        window.setPisiSheetCellSource?.(
+            typedTable,
+            0,
+            2,
+            { value: 'done', formula: null }
+        );
+        window.setPisiSheetCellSource?.(
+            typedTable,
+            0,
+            3,
+            {
+                value: ['todo', 'done'],
+                formula: null
+            }
+        );
+        window.setPisiSheetCellSource?.(
+            typedTable,
+            0,
+            4,
+            { value: true, formula: null }
+        );
+        window.setPisiSheetCellSource?.(
+            typedTable,
+            0,
+            5,
+            { value: 0.34, formula: null }
+        );
+        window.renderPisiSheetDatabase?.(typedTable);
+        window.recalcPisiSheet?.(typedTable);
+
+        const typedRawBefore = {
+            number:
+                window.getPisiSheetCellSource?.(
+                    typedTable,
+                    0,
+                    0
+                )?.value,
+            date:
+                window.getPisiSheetCellSource?.(
+                    typedTable,
+                    0,
+                    1
+                )?.value,
+            select:
+                window.getPisiSheetCellSource?.(
+                    typedTable,
+                    0,
+                    2
+                )?.value,
+            mSelect:
+                window.getPisiSheetCellSource?.(
+                    typedTable,
+                    0,
+                    3
+                )?.value,
+            checkbox:
+                window.getPisiSheetCellSource?.(
+                    typedTable,
+                    0,
+                    4
+                )?.value,
+            percent:
+                window.getPisiSheetCellSource?.(
+                    typedTable,
+                    0,
+                    5
+                )?.value
+        };
+
+        const typedDisplayBefore = {
+            number:
+                typedTable.querySelector(
+                    'td[data-cell="A1"]'
+                )?.textContent?.trim() || '',
+            date:
+                typedTable.querySelector(
+                    'td[data-cell="B1"]'
+                )?.textContent?.trim() || '',
+            select:
+                typedTable.querySelector(
+                    'td[data-cell="C1"]'
+                )?.textContent?.trim() || '',
+            multi:
+                typedTable.querySelector(
+                    'td[data-cell="D1"]'
+                )?.textContent?.trim() || '',
+            percent:
+                typedTable.querySelector(
+                    'td[data-cell="F1"]'
+                )?.textContent?.trim() || '',
+            chipCount:
+                typedTable.querySelectorAll(
+                    'td[data-cell="D1"] ' +
+                    '.pisi-sheet-option-chip'
+                ).length,
+            doneChipColor:
+                typedTable.querySelector(
+                    'td[data-cell="C1"] ' +
+                    '.pisi-sheet-option-chip'
+                )?.style?.getPropertyValue(
+                    '--pisi-sheet-chip-color'
+                ) || '',
+            checkboxChecked:
+                typedTable.querySelector(
+                    'td[data-cell="E1"] ' +
+                    '[data-pisi-sheet-checkbox]'
+                )?.getAttribute(
+                    'aria-checked'
+                ) || ''
+        };
+
+        const typedHeader0 = typedTable.querySelector(
+            'thead th[data-col-header="0"]'
+        );
+        typedHeader0?.dispatchEvent(
+            new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true,
+                button: 0
+            })
+        );
+
+        let typedColumnMenu = document.querySelector(
+            '.pisi-sheet-column-menu'
+        );
+        const typedTypeSelect = typedColumnMenu
+            ? Array.from(
+                typedColumnMenu.querySelectorAll('select')
+            ).find((select) => (
+                select.querySelector(
+                    'option[value="date"]'
+                )
+            ))
+            : null;
+        const typedTypeOptions = typedTypeSelect
+            ? Array.from(typedTypeSelect.options)
+                .map((option) => option.value)
+            : [];
+        const typedNumberFormat =
+            typedColumnMenu?.querySelector(
+                '.pisi-sheet-number-format-controls select'
+            )?.value || '';
+        const typedDecimals =
+            typedColumnMenu?.querySelector(
+                '.pisi-sheet-column-decimals-input'
+            )?.value || '';
+        window.closePisiSheetColumnMenu?.();
+
+        const typedHeader2 = typedTable.querySelector(
+            'thead th[data-col-header="2"]'
+        );
+        typedHeader2?.dispatchEvent(
+            new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true,
+                button: 0
+            })
+        );
+        typedColumnMenu = document.querySelector(
+            '.pisi-sheet-column-menu'
+        );
+        const typedOptionEditorVisible =
+            typedColumnMenu?.querySelector(
+                '.pisi-sheet-column-options-group'
+            )?.hidden === false;
+        const typedOptionEditorRows =
+            typedColumnMenu?.querySelectorAll(
+                '.pisi-sheet-column-option-row'
+            ).length || 0;
+        const typedOptionEditorColors =
+            typedColumnMenu
+                ? Array.from(
+                    typedColumnMenu.querySelectorAll(
+                        '.pisi-sheet-column-option-color'
+                    )
+                ).map((input) => input.value)
+                : [];
+        window.closePisiSheetColumnMenu?.();
+
+        const typedCheckbox =
+            typedTable.querySelector(
+                'td[data-cell="E1"] ' +
+                '[data-pisi-sheet-checkbox]'
+            );
+        typedCheckbox?.click();
+        const typedCheckboxAfterClick =
+            window.getPisiSheetCellSource?.(
+                typedTable,
+                0,
+                4
+            )?.value;
+
+        const typedSelectCell =
+            typedTable.querySelector(
+                'td[data-cell="C1"]'
+            );
+        typedSelectCell?.dispatchEvent(
+            new MouseEvent('dblclick', {
+                bubbles: true,
+                cancelable: true,
+                button: 0,
+                detail: 2
+            })
+        );
+        let typedEditor = document.querySelector(
+            '.pisi-sheet-typed-editor'
+        );
+        const todoChoice = typedEditor
+            ? Array.from(
+                typedEditor.querySelectorAll(
+                    '.pisi-sheet-option-choice'
+                )
+            ).find((button) => (
+                button.textContent.includes('Todo')
+            ))
+            : null;
+        todoChoice?.click();
+        const typedSelectAfterPick =
+            window.getPisiSheetCellSource?.(
+                typedTable,
+                0,
+                2
+            )?.value;
+
+        const typedMultiCell =
+            typedTable.querySelector(
+                'td[data-cell="D1"]'
+            );
+        typedMultiCell?.dispatchEvent(
+            new MouseEvent('dblclick', {
+                bubbles: true,
+                cancelable: true,
+                button: 0,
+                detail: 2
+            })
+        );
+        typedEditor = document.querySelector(
+            '.pisi-sheet-typed-editor'
+        );
+        const doneChoice = typedEditor
+            ? Array.from(
+                typedEditor.querySelectorAll(
+                    '.pisi-sheet-option-choice'
+                )
+            ).find((button) => (
+                button.textContent.includes('Done')
+            ))
+            : null;
+        doneChoice?.click();
+        const typedMultiAfterToggle =
+            window.getPisiSheetCellSource?.(
+                typedTable,
+                0,
+                3
+            )?.value;
+        window.closePisiSheetTypedCellEditor?.();
+
+        const typedDateCell =
+            typedTable.querySelector(
+                'td[data-cell="B1"]'
+            );
+        typedDateCell?.dispatchEvent(
+            new MouseEvent('dblclick', {
+                bubbles: true,
+                cancelable: true,
+                button: 0,
+                detail: 2
+            })
+        );
+        typedEditor = document.querySelector(
+            '.pisi-sheet-typed-editor'
+        );
+        const typedDateInput =
+            typedEditor?.querySelector(
+                'input[type="date"]'
+            );
+        if (typedDateInput) {
+            typedDateInput.value = '2026-10-05';
+        }
+        const typedApplyDate =
+            typedEditor
+                ? Array.from(
+                    typedEditor.querySelectorAll('button')
+                ).find((button) => (
+                    button.textContent.includes(
+                        window.pisiT?.('Uygula') || 'Uygula'
+                    )
+                ))
+                : null;
+        typedApplyDate?.click();
+        const typedDateAfterPick =
+            window.getPisiSheetCellSource?.(
+                typedTable,
+                0,
+                1
+            )?.value;
+
+        window.setPisiSheetCellSource?.(
+            typedTable,
+            0,
+            4,
+            { value: true, formula: null }
+        );
+        window.renderPisiSheetDatabase?.(typedTable);
+        window.recalcPisiSheet?.(typedTable);
+
+        const typedReplacement =
+            typedTable.cloneNode(true);
+        typedTable.replaceWith(
+            typedReplacement
+        );
+        window.hydratePisiSheets?.(editor);
+        typedTable = typedReplacement;
+
+        const typedDatabaseAfterReopen =
+            window.getPisiSheetDatabase?.(
+                typedTable
+            ) || null;
+        const typedFieldsAfterReopen =
+            window.getPisiSheetOrderedFields?.(
+                typedDatabaseAfterReopen
+            ) || [];
+        const typedRawAfterReopen = {
+            number:
+                window.getPisiSheetCellSource?.(
+                    typedTable,
+                    0,
+                    0
+                )?.value,
+            date:
+                window.getPisiSheetCellSource?.(
+                    typedTable,
+                    0,
+                    1
+                )?.value,
+            select:
+                window.getPisiSheetCellSource?.(
+                    typedTable,
+                    0,
+                    2
+                )?.value,
+            mSelect:
+                window.getPisiSheetCellSource?.(
+                    typedTable,
+                    0,
+                    3
+                )?.value,
+            checkbox:
+                window.getPisiSheetCellSource?.(
+                    typedTable,
+                    0,
+                    4
+                )?.value,
+            percent:
+                window.getPisiSheetCellSource?.(
+                    typedTable,
+                    0,
+                    5
+                )?.value
+        };
+        const typedReopenMetadata = {
+            types: typedFieldsAfterReopen.map(
+                (field) => field.type
+            ),
+            selectOptions:
+                typedFieldsAfterReopen[2]
+                    ?.options?.map((option) => ({
+                        id: option.id,
+                        label: option.label,
+                        color: option.color
+                    })) || [],
+            numberFormat:
+                typedFieldsAfterReopen[0]
+                    ?.numberFormat || null,
+            percentFormat:
+                typedFieldsAfterReopen[5]
+                    ?.numberFormat || null,
+            chips:
+                typedTable.querySelectorAll(
+                    'td[data-cell="D1"] ' +
+                    '.pisi-sheet-option-chip'
+                ).length,
+            checkboxChecked:
+                typedTable.querySelector(
+                    'td[data-cell="E1"] ' +
+                    '[data-pisi-sheet-checkbox]'
+                )?.getAttribute(
+                    'aria-checked'
+                ) || ''
+        };
+
+        typedHost.remove();
+
+        const typedStages = {
+            rawBefore: typedRawBefore,
+            displayBefore: typedDisplayBefore,
+            typeOptions: typedTypeOptions,
+            numberFormat: typedNumberFormat,
+            decimals: typedDecimals,
+            optionEditorVisible:
+                typedOptionEditorVisible,
+            optionEditorRows:
+                typedOptionEditorRows,
+            optionEditorColors:
+                typedOptionEditorColors,
+            checkboxAfterClick:
+                typedCheckboxAfterClick,
+            selectAfterPick:
+                typedSelectAfterPick,
+            multiAfterToggle:
+                typedMultiAfterToggle,
+            dateAfterPick:
+                typedDateAfterPick,
+            rawAfterReopen:
+                typedRawAfterReopen,
+            reopenMetadata:
+                typedReopenMetadata
+        };
+
         return {
             ok: true,
+            typedStages,
             hasTableTrigger: Boolean(tableTrigger),
             hasRollupTrigger: Boolean(rollupTrigger),
             mainButtonsStacked: Boolean(
@@ -2044,6 +2558,94 @@ try {
 
     if (
         !sheetResult?.ok ||
+        typeof sheetResult.typedStages?.rawBefore?.number !== 'number' ||
+        sheetResult.typedStages.rawBefore.number !== 1234.5 ||
+        sheetResult.typedStages.rawBefore.date !== '2026-09-30' ||
+        sheetResult.typedStages.rawBefore.select !== 'done' ||
+        JSON.stringify(
+            sheetResult.typedStages.rawBefore.mSelect
+        ) !== JSON.stringify(['todo', 'done']) ||
+        sheetResult.typedStages.rawBefore.checkbox !== true ||
+        sheetResult.typedStages.rawBefore.percent !== 0.34 ||
+        !/₺|TL/.test(
+            sheetResult.typedStages.displayBefore.number
+        ) ||
+        !sheetResult.typedStages.displayBefore.date ||
+        sheetResult.typedStages.displayBefore.date ===
+            '2026-09-30' ||
+        sheetResult.typedStages.displayBefore.select !== 'Done' ||
+        !sheetResult.typedStages.displayBefore.multi.includes('Todo') ||
+        !sheetResult.typedStages.displayBefore.multi.includes('Done') ||
+        !sheetResult.typedStages.displayBefore.percent.includes('34') ||
+        !sheetResult.typedStages.displayBefore.percent.includes('%') ||
+        sheetResult.typedStages.displayBefore.chipCount !== 2 ||
+        sheetResult.typedStages.displayBefore.doneChipColor !==
+            '#81c784' ||
+        sheetResult.typedStages.displayBefore.checkboxChecked !==
+            'true' ||
+        JSON.stringify(
+            sheetResult.typedStages.typeOptions
+        ) !== JSON.stringify([
+            'text',
+            'number',
+            'date',
+            'select',
+            'mSelect',
+            'checkbox',
+            'formula'
+        ]) ||
+        sheetResult.typedStages.numberFormat !==
+            'currency-TRY' ||
+        sheetResult.typedStages.decimals !== '2' ||
+        !sheetResult.typedStages.optionEditorVisible ||
+        sheetResult.typedStages.optionEditorRows !== 2 ||
+        JSON.stringify(
+            sheetResult.typedStages.optionEditorColors
+        ) !== JSON.stringify([
+            '#e57373',
+            '#81c784'
+        ]) ||
+        sheetResult.typedStages.checkboxAfterClick !== false ||
+        sheetResult.typedStages.selectAfterPick !== 'todo' ||
+        JSON.stringify(
+            sheetResult.typedStages.multiAfterToggle
+        ) !== JSON.stringify(['todo']) ||
+        sheetResult.typedStages.dateAfterPick !==
+            '2026-10-05' ||
+        typeof sheetResult.typedStages.rawAfterReopen.number !==
+            'number' ||
+        sheetResult.typedStages.rawAfterReopen.number !==
+            1234.5 ||
+        sheetResult.typedStages.rawAfterReopen.date !==
+            '2026-10-05' ||
+        sheetResult.typedStages.rawAfterReopen.select !==
+            'todo' ||
+        JSON.stringify(
+            sheetResult.typedStages.rawAfterReopen.mSelect
+        ) !== JSON.stringify(['todo']) ||
+        sheetResult.typedStages.rawAfterReopen.checkbox !== true ||
+        sheetResult.typedStages.rawAfterReopen.percent !== 0.34 ||
+        JSON.stringify(
+            sheetResult.typedStages.reopenMetadata.types
+        ) !== JSON.stringify([
+            'number',
+            'date',
+            'select',
+            'mSelect',
+            'checkbox',
+            'number'
+        ]) ||
+        sheetResult.typedStages.reopenMetadata.selectOptions?.[0]?.id !==
+            'todo' ||
+        sheetResult.typedStages.reopenMetadata.selectOptions?.[0]?.color !==
+            '#e57373' ||
+        sheetResult.typedStages.reopenMetadata.numberFormat?.style !==
+            'currency-TRY' ||
+        sheetResult.typedStages.reopenMetadata.percentFormat?.style !==
+            'percent' ||
+        sheetResult.typedStages.reopenMetadata.chips !== 1 ||
+        sheetResult.typedStages.reopenMetadata.checkboxChecked !==
+            'true' ||
         !sheetResult.hasTableTrigger ||
         !sheetResult.hasRollupTrigger ||
         !sheetResult.mainButtonsStacked ||

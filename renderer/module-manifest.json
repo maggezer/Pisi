@@ -137,6 +137,17 @@
     ]
   },
   {
+    "module": "editor.sheetFieldTypesUi",
+    "path": "renderer/editor/pisi-editor-sheet-field-types-ui.mjs",
+    "bindings": [
+      "renderPisiSheetTypedCell",
+      "beginPisiSheetTypedCellEdit",
+      "togglePisiSheetCheckboxCell",
+      "closePisiSheetTypedCellEditor",
+      "isPisiSheetTypedEditorTarget"
+    ]
+  },
+  {
     "module": "editor.sheetDatabaseDom",
     "path": "renderer/editor/pisi-editor-sheet-database-dom.mjs",
     "bindings": [

@@ -1,5 +1,8 @@
 import { registerModule } from "../core/module-registry.mjs";
 import { evaluatePisiFormulaExpression } from "./pisi-editor-sheet-formula-core.mjs";
+import {
+    normalizePisiSheetTypedValue
+} from "./pisi-editor-sheet-field-types-core.mjs";
 
 function runPisiExcelAction(toolbar, action, actionValue = null) {
     const editor = getPisiToolbarEditor(toolbar);
@@ -197,13 +200,24 @@ function applyPisiSheetFormula(table, formula) {
 
     const value = String(formula || '').trim();
 
+    const field = getPisiSheetField(
+        table,
+        position.col
+    );
+
     setPisiSheetCellSource(
         table,
         position.row,
         position.col,
         value.startsWith('=')
             ? { value: '', formula: value }
-            : { value, formula: null }
+            : {
+                value: normalizePisiSheetTypedValue(
+                    field,
+                    value
+                ),
+                formula: null
+            }
     );
 
     recalcPisiSheet(table);
@@ -224,13 +238,24 @@ function commitPisiSheetCell(cell, options = {}) {
         options.forceFormula === true ||
         value.startsWith('=');
 
+    const field = getPisiSheetField(
+        table,
+        position.col
+    );
+
     setPisiSheetCellSource(
         table,
         position.row,
         position.col,
         formulaMode
             ? { value: '', formula: value }
-            : { value, formula: null }
+            : {
+                value: normalizePisiSheetTypedValue(
+                    field,
+                    value
+                ),
+                formula: null
+            }
     );
 
     pisiEditedSheetCells.delete(cell);
@@ -398,7 +423,34 @@ function getPisiSheetCellValue(table, ref, stack = new Set()) {
         };
     }
 
-    const text = String(source.value || '').trim();
+    if (
+        typeof source.value === 'number' &&
+        Number.isFinite(source.value)
+    ) {
+        return {
+            value: source.value,
+            numeric: true,
+            error: false
+        };
+    }
+
+    if (typeof source.value === 'boolean') {
+        return {
+            value: source.value,
+            numeric: false,
+            error: false
+        };
+    }
+
+    if (Array.isArray(source.value)) {
+        return {
+            value: source.value.join(', '),
+            numeric: false,
+            error: false
+        };
+    }
+
+    const text = String(source.value ?? '').trim();
 
     if (!text) {
         return {

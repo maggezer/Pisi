@@ -137,6 +137,20 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         ),
         'utf8'
     );
+    const fieldTypesCore = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-sheet-field-types-core.mjs'
+        ),
+        'utf8'
+    );
+    const fieldTypesUi = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-sheet-field-types-ui.mjs'
+        ),
+        'utf8'
+    );
     const databaseDom = fs.readFileSync(
         path.join(
             root,
@@ -269,6 +283,16 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(database, /description:/);
     assert.match(database, /wrap:/);
     assert.match(database, /pin:/);
+    assert.match(database, /options:/);
+    assert.match(database, /numberFormat:/);
+    assert.match(
+        database,
+        /normalizePisiSheetFieldType/
+    );
+    assert.match(
+        database,
+        /normalizePisiSheetStoredValue/
+    );
     assert.match(database, /updatePisiSheetField/);
     assert.match(database, /setPisiSheetFieldHidden/);
     assert.match(database, /hiddenFieldIds/);
@@ -278,6 +302,62 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.doesNotMatch(database, /querySelector/);
     assert.doesNotMatch(database, /querySelectorAll/);
     assert.doesNotMatch(database, /\.textContent/);
+
+    for (const type of [
+        'text',
+        'number',
+        'date',
+        'select',
+        'mSelect',
+        'checkbox',
+        'formula'
+    ]) {
+        assert.match(
+            fieldTypesCore,
+            new RegExp("value: '" + type + "'")
+        );
+    }
+    assert.match(
+        fieldTypesCore,
+        /PISI_SHEET_SELECT_COLORS/
+    );
+    assert.match(
+        fieldTypesCore,
+        /PISI_SHEET_NUMBER_FORMATS/
+    );
+    assert.match(
+        fieldTypesCore,
+        /normalizePisiSheetDateValue/
+    );
+    assert.match(
+        fieldTypesCore,
+        /normalizePisiSheetTypedValue/
+    );
+    assert.match(
+        fieldTypesCore,
+        /getPisiSheetTypedDisplayParts/
+    );
+
+    assert.match(
+        fieldTypesUi,
+        /renderPisiSheetTypedCell/
+    );
+    assert.match(
+        fieldTypesUi,
+        /beginPisiSheetTypedCellEdit/
+    );
+    assert.match(
+        fieldTypesUi,
+        /togglePisiSheetCheckboxCell/
+    );
+    assert.match(
+        fieldTypesUi,
+        /pisi-sheet-option-chip/
+    );
+    assert.match(
+        fieldTypesUi,
+        /input\.type = 'date'/
+    );
 
     assert.match(databaseDom, /migratePisiSheetDatabaseFromDom/);
     assert.match(databaseDom, /hydratePisiSheetDatabase/);
@@ -512,6 +592,26 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     );
     assert.match(
         columnProperties,
+        /PISI_SHEET_FIELD_TYPES/
+    );
+    assert.match(
+        columnProperties,
+        /PISI_SHEET_NUMBER_FORMATS/
+    );
+    assert.match(
+        columnProperties,
+        /pisi-sheet-column-options-group/
+    );
+    assert.match(
+        columnProperties,
+        /pisi-sheet-column-option-color/
+    );
+    assert.match(
+        columnProperties,
+        /numberFormatSelect/
+    );
+    assert.match(
+        columnProperties,
         /movePisiSheetColumn/
     );
     assert.match(
@@ -540,6 +640,14 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     );
     assert.match(
         interactions,
+        /togglePisiSheetCheckboxCell/
+    );
+    assert.match(
+        interactions,
+        /beginPisiSheetTypedCellEdit/
+    );
+    assert.match(
+        interactions,
         /beginPisiSheetFormulaReferencePick/
     );
     assert.match(
@@ -551,6 +659,15 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         /finishPisiSheetFormulaReferencePick/
     );
     assert.doesNotMatch(interactions, /pisiColumnWidths/);
+
+    assert.match(
+        keyboard,
+        /beginPisiSheetTypedCellEdit/
+    );
+    assert.match(
+        keyboard,
+        /isPisiSheetTypedEditorTarget/
+    );
 
     assert.match(interactions, /event\.key === 'Tab'/);
     assert.match(interactions, /event\.key === 'Enter'/);
@@ -743,6 +860,22 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         componentsCss,
         /pisi-sheet-col-drop-before/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-option-chip/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-checkbox-control/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-typed-editor/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-column-option-row/
     );
     assert.match(
         componentsCss,

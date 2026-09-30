@@ -189,6 +189,26 @@ function hydratePisiSheets(root = document) {
         });
 
         table.addEventListener('click', (/** @type {MouseEvent} */ event) => {
+            const checkbox = event.target.closest(
+                '[data-pisi-sheet-checkbox]'
+            );
+            const checkboxCell = checkbox?.closest(
+                'td[data-cell]'
+            );
+
+            if (
+                checkbox &&
+                checkboxCell &&
+                table.contains(checkboxCell)
+            ) {
+                event.preventDefault();
+                event.stopPropagation();
+                togglePisiSheetCheckboxCell(
+                    checkboxCell
+                );
+                return;
+            }
+
             const header = event.target.closest(
                 'thead th[data-col-header]'
             );
@@ -236,7 +256,10 @@ function hydratePisiSheets(root = document) {
 
             event.preventDefault();
             event.stopPropagation();
-            beginPisiSheetCellEdit(cell);
+
+            if (!beginPisiSheetTypedCellEdit(cell)) {
+                beginPisiSheetCellEdit(cell);
+            }
         });
 
         table.addEventListener('contextmenu', (/** @type {MouseEvent} */ event) => {
