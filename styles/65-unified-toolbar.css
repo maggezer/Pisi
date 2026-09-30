@@ -269,24 +269,28 @@
 
 .pisi-toolbar-section-excel {
     flex-direction: row;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     gap: 6px;
+    padding-top: 9px;
     padding-right: 6px;
 }
 
 .pisi-sheet-primary-controls {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 6px;
 }
 
 .pisi-sheet-context-tools {
     display: none;
     grid-template-columns: 54px 82px;
-    grid-template-rows: auto 16px;
-    align-items: center;
-    gap: 4px 6px;
+    align-items: start;
+    align-content: start;
+    gap: 0 6px;
+    min-height: 51px;
+    max-height: 51px;
+    overflow: visible;
 }
 
 .pisi-editor-toolbar.pisi-table-context .pisi-sheet-context-tools {
@@ -326,23 +330,6 @@
 
 .pisi-sheet-format-grid .pisi-sheet-mini-btn {
     font-size: 13px;
-}
-
-.pisi-sheet-context-tools .pisi-sheet-toolbar-status {
-    grid-column: 1 / -1;
-    min-width: 0;
-    width: 100%;
-    height: 16px;
-    overflow: hidden;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    color: #b9bbc0;
-    padding: 0;
-    font: 700 9px/1 "Segoe UI", Tahoma, sans-serif;
-    text-align: center;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .pisi-toolbar-data-btn {
