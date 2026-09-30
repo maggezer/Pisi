@@ -9,6 +9,7 @@
       "sealInternalFileChange",
       "isRecentInternalFileChange",
       "hasRecentInternalFileChangeInside",
+      "hasRecentInternalDirectoryChange",
       "renamePathInternal",
       "getSettingsPath",
       "readSettings",
