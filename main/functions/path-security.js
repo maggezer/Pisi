@@ -31,6 +31,37 @@ const PISI_WINDOWS_RENAME_RETRY_CODES = new Set([
 ]);
 const PISI_WINDOWS_RENAME_MAX_ATTEMPTS = 8;
 const PISI_WINDOWS_RENAME_RETRY_DELAY_MS = 35;
+const PISI_INTERNAL_DIRECTORY_GRACE_MS = 1200;
+const recentInternalDirectoryChanges = new Map();
+
+function markInternalDirectoryChange(filePath) {
+    if (!filePath) return;
+
+    const directoryPath = normalizePathForCompare(
+        path.dirname(path.resolve(filePath))
+    );
+    if (!directoryPath) return;
+
+    recentInternalDirectoryChanges.set(
+        directoryPath,
+        Date.now() + PISI_INTERNAL_DIRECTORY_GRACE_MS
+    );
+}
+
+function hasRecentInternalDirectoryChange(directoryPath) {
+    const normalizedDirectory = normalizePathForCompare(directoryPath);
+    if (!normalizedDirectory) return false;
+
+    const now = Date.now();
+    for (const [key, expiresAt] of recentInternalDirectoryChanges) {
+        if (expiresAt <= now) {
+            recentInternalDirectoryChanges.delete(key);
+        }
+    }
+
+    return (recentInternalDirectoryChanges.get(normalizedDirectory) || 0) > now;
+}
+
 
 function getInternalFileChangeSignature(filePath) {
     try {
@@ -65,6 +96,7 @@ function markInternalFileChange(...filePaths) {
             expiresAt,
             signature: null
         });
+        markInternalDirectoryChange(filePath);
     }
 }
 
@@ -79,6 +111,7 @@ function sealInternalFileChange(...filePaths) {
             expiresAt,
             signature: getInternalFileChangeSignature(filePath)
         });
+        markInternalDirectoryChange(filePath);
     }
 }
 
@@ -554,6 +587,10 @@ Object.defineProperties(moduleApi, {
     "hasRecentInternalFileChangeInside": {
         enumerable: true,
         get() { return hasRecentInternalFileChangeInside; }
+    },
+    "hasRecentInternalDirectoryChange": {
+        enumerable: true,
+        get() { return hasRecentInternalDirectoryChange; }
     },
     "renamePathInternal": {
         enumerable: true,
