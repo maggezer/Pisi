@@ -638,6 +638,34 @@ async function reloadPisiWorkspaceAfterExternalChange(changedPaths) {
 }
 
 let pisiFileSystemRefreshTail = Promise.resolve();
+let pisiFileSystemRefreshTimer = null;
+const pisiPendingFileSystemPaths = new Set();
+let pisiPendingFileSystemTreeRefresh = false;
+
+function flushPisiExternalFileSystemChanges() {
+    clearTimeout(pisiFileSystemRefreshTimer);
+    pisiFileSystemRefreshTimer = null;
+
+    const changedPaths = Array.from(pisiPendingFileSystemPaths);
+    const refreshTree = pisiPendingFileSystemTreeRefresh;
+
+    pisiPendingFileSystemPaths.clear();
+    pisiPendingFileSystemTreeRefresh = false;
+
+    pisiFileSystemRefreshTail = pisiFileSystemRefreshTail
+        .catch(() => undefined)
+        .then(async () => {
+            if (refreshTree) {
+                await refreshCurrentProjectTree();
+            }
+            await reloadPisiWorkspaceAfterExternalChange(changedPaths);
+        })
+        .catch((error) => {
+            console.error('[PISI] Dış dosya değişikliği yenilenemedi:', error);
+        });
+
+    return pisiFileSystemRefreshTail;
+}
 
 function handlePisiExternalFileSystemChange(payload = {}) {
     if (
@@ -651,15 +679,23 @@ function handlePisiExternalFileSystemChange(payload = {}) {
         ? payload.changedPaths.filter(Boolean)
         : [];
 
-    pisiFileSystemRefreshTail = pisiFileSystemRefreshTail
-        .catch(() => undefined)
-        .then(async () => {
-            await refreshCurrentProjectTree();
-            await reloadPisiWorkspaceAfterExternalChange(changedPaths);
-        })
-        .catch((error) => {
-            console.error('[PISI] Dış dosya değişikliği yenilenemedi:', error);
-        });
+    changedPaths.forEach((changedPath) => {
+        pisiPendingFileSystemPaths.add(changedPath);
+    });
+
+    const reason = String(payload?.reason || '').toLowerCase();
+    if (
+        !changedPaths.length ||
+        reason === 'rename' ||
+        reason === 'filesystem'
+    ) {
+        pisiPendingFileSystemTreeRefresh = true;
+    }
+
+    clearTimeout(pisiFileSystemRefreshTimer);
+    pisiFileSystemRefreshTimer = setTimeout(() => {
+        flushPisiExternalFileSystemChanges();
+    }, 220);
 
     return pisiFileSystemRefreshTail;
 }
