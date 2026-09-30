@@ -86,7 +86,29 @@
 }
 
 .pisi-sheet-col-label {
-    pointer-events: none;
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    padding: 0 6px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: text;
+}
+
+.pisi-sheet-col-editor {
+    width: calc(100% - 8px);
+    min-width: 28px;
+    height: 22px;
+    box-sizing: border-box;
+    border: 1px solid #f39c12;
+    border-radius: 4px;
+    outline: none;
+    background: rgba(0, 0, 0, 0.16);
+    color: inherit;
+    padding: 1px 5px;
+    text-align: center;
+    font: inherit;
+    font-weight: 900;
 }
 
 .pisi-sheet-col-resizer {

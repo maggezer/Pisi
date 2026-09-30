@@ -226,6 +226,16 @@ test('tablo arayüzünde Phase 2 gezinme, seçim, yapı ve biçimlendirme bulunu
     assert.match(interactions, /setPisiSheetColumnWidth/);
     assert.match(interactions, /schedulePisiSheetEditorNotification\(resize\.table\)/);
 
+    assert.match(structure, /getPisiSheetColumnLabels/);
+    assert.match(structure, /setPisiSheetColumnLabel/);
+    assert.match(structure, /shiftPisiSheetColumnLabels/);
+    assert.match(structure, /data-pisi-column-labels|pisiColumnLabels/);
+    assert.match(interactions, /table\.addEventListener\('dblclick'/);
+    assert.match(interactions, /beginPisiSheetColumnLabelEdit/);
+    assert.match(interactions, /data-pisi-sheet-col-editor/);
+    assert.match(interactions, /event\.key === 'Enter'/);
+    assert.match(interactions, /event\.key === 'Escape'/);
+
     assert.match(paint, /notifyPisiEditorChanged\(editor, rehydrate = true\)/);
     assert.match(structure, /notifyPisiEditorChanged\(editor, false\)/);
     assert.match(

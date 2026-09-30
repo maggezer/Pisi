@@ -82,6 +82,77 @@ function finishPisiSheetColumnResize() {
 document.addEventListener('mousemove', movePisiSheetColumnResize, true);
 document.addEventListener('mouseup', finishPisiSheetColumnResize, true);
 
+function beginPisiSheetColumnLabelEdit(table, label) {
+    const header = label.closest('th[data-col-header]');
+    const colIndex = Number(header?.dataset.colHeader);
+
+    if (
+        !header ||
+        !Number.isInteger(colIndex) ||
+        header.querySelector('[data-pisi-sheet-col-editor]')
+    ) {
+        return;
+    }
+
+    const originalLabel = String(label.textContent || '');
+    const input = document.createElement('input');
+    let finished = false;
+
+    input.type = 'text';
+    input.className = 'pisi-sheet-col-editor';
+    input.setAttribute('data-pisi-sheet-col-editor', String(colIndex));
+    input.setAttribute('aria-label', 'Sütun adını değiştir');
+    input.maxLength = 80;
+    input.value = originalLabel;
+
+    const finish = (save) => {
+        if (finished) return;
+        finished = true;
+
+        if (save) {
+            setPisiSheetColumnLabel(
+                table,
+                colIndex,
+                input.value
+            );
+            schedulePisiSheetEditorNotification(table);
+        } else {
+            label.textContent = originalLabel;
+        }
+
+        label.hidden = false;
+        input.remove();
+    };
+
+    input.addEventListener('mousedown', (event) => {
+        event.stopPropagation();
+    });
+    input.addEventListener('click', (event) => {
+        event.stopPropagation();
+    });
+    input.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            finish(true);
+        } else if (event.key === 'Escape') {
+            event.preventDefault();
+            finish(false);
+        }
+    });
+    input.addEventListener('blur', () => finish(true), {
+        once: true
+    });
+
+    label.hidden = true;
+    header.insertBefore(
+        input,
+        header.querySelector('[data-pisi-sheet-col-resizer]')
+    );
+
+    input.focus();
+    input.select();
+}
+
 function closePisiSheetContextMenu() {
     if (!pisiSheetContextMenu) return;
     pisiSheetContextMenu.remove();
@@ -192,6 +263,19 @@ function hydratePisiSheets(root = document) {
             }
         });
 
+        table.addEventListener('dblclick', (/** @type {MouseEvent} */ event) => {
+            const label = event.target.closest(
+                '.pisi-sheet-col-label'
+            );
+
+            if (!label || !table.contains(label)) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+            closePisiSheetContextMenu();
+            beginPisiSheetColumnLabelEdit(table, label);
+        });
+
         table.addEventListener('contextmenu', (/** @type {MouseEvent} */ event) => {
             const rowHeader = event.target.closest('tbody th[data-row-header]');
             const colHeader = event.target.closest('thead th[data-col-header]');
@@ -214,6 +298,13 @@ function hydratePisiSheets(root = document) {
         });
 
         table.addEventListener('mousedown', (/** @type {MouseEvent} */ event) => {
+            const colEditor = event.target.closest(
+                '[data-pisi-sheet-col-editor]'
+            );
+            if (colEditor && table.contains(colEditor)) {
+                return;
+            }
+
             const colResizer = event.target.closest(
                 '[data-pisi-sheet-col-resizer]'
             );

@@ -318,6 +318,40 @@ try {
             firstHeader?.getBoundingClientRect().width || 0;
         const bodyWidthAfterResize =
             firstCell.getBoundingClientRect().width || 0;
+        const firstLabel = firstHeader?.querySelector(
+            '.pisi-sheet-col-label'
+        );
+
+        firstLabel?.dispatchEvent(new MouseEvent('dblclick', {
+            bubbles: true,
+            cancelable: true,
+            button: 0
+        }));
+
+        const headerEditor = firstHeader?.querySelector(
+            '[data-pisi-sheet-col-editor="0"]'
+        );
+        if (headerEditor) {
+            headerEditor.value = 'Project';
+            headerEditor.dispatchEvent(new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                key: 'Enter'
+            }));
+        }
+
+        const renamedHeaderBeforeAdd =
+            firstHeader?.querySelector('.pisi-sheet-col-label')
+                ?.textContent?.trim() || '';
+        const storedHeaderLabel = (() => {
+            try {
+                return JSON.parse(
+                    table.dataset.pisiColumnLabels || '[]'
+                )[0] || '';
+            } catch {
+                return '';
+            }
+        })();
 
         firstCell.dispatchEvent(new MouseEvent('contextmenu', {
             bubbles: true,
@@ -339,6 +373,11 @@ try {
 
         addRow?.click();
 
+        const renamedHeaderAfterAdd =
+            table.querySelector(
+                'thead th[data-col-header="0"] .pisi-sheet-col-label'
+            )?.textContent?.trim() || '';
+
         return {
             ok: true,
             hasTableTrigger: Boolean(tableTrigger),
@@ -352,6 +391,10 @@ try {
             toolbarSheetActionsAbsent,
             directTableSize,
             hasColumnResizer: Boolean(firstResizer),
+            hasHeaderEditor: Boolean(headerEditor),
+            renamedHeaderBeforeAdd,
+            renamedHeaderAfterAdd,
+            storedHeaderLabel,
             widthBeforeResize,
             widthAfterResize,
             bodyWidthAfterResize,
@@ -376,6 +419,10 @@ try {
         sheetResult.directTableSize?.rows !== 5 ||
         sheetResult.directTableSize?.cols !== 5 ||
         !sheetResult.hasColumnResizer ||
+        !sheetResult.hasHeaderEditor ||
+        sheetResult.renamedHeaderBeforeAdd !== 'Project' ||
+        sheetResult.renamedHeaderAfterAdd !== 'Project' ||
+        sheetResult.storedHeaderLabel !== 'Project' ||
         sheetResult.widthAfterResize < sheetResult.widthBeforeResize + 40 ||
         Math.abs(
             sheetResult.bodyWidthAfterResize -

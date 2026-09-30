@@ -1,6 +1,111 @@
 import { registerModule } from "../core/module-registry.mjs";
 import { transformPisiSheetFormulaReferences } from "./pisi-editor-sheet-model.mjs";
 
+function getPisiSheetColumnLabels(table) {
+    const raw = table?.dataset?.pisiColumnLabels;
+    if (!raw) return [];
+
+    try {
+        const labels = JSON.parse(raw);
+        if (!Array.isArray(labels)) return [];
+
+        return labels.map((label) => {
+            return typeof label === 'string'
+                ? label
+                : null;
+        });
+    } catch {
+        return [];
+    }
+}
+
+function savePisiSheetColumnLabels(table, labels) {
+    const normalized = Array.from(labels || [], (label) => {
+        if (typeof label !== 'string') return null;
+
+        const trimmed = label.trim().slice(0, 80);
+        return trimmed || null;
+    });
+
+    while (
+        normalized.length &&
+        normalized[normalized.length - 1] === null
+    ) {
+        normalized.pop();
+    }
+
+    if (normalized.length) {
+        table.dataset.pisiColumnLabels =
+            JSON.stringify(normalized);
+    } else {
+        delete table.dataset.pisiColumnLabels;
+    }
+
+    return normalized;
+}
+
+function getPisiSheetColumnLabel(table, colIndex) {
+    const custom = getPisiSheetColumnLabels(table)[colIndex];
+
+    return custom || pisiColumnName(colIndex);
+}
+
+function setPisiSheetColumnLabel(table, colIndex, value) {
+    const labels = getPisiSheetColumnLabels(table);
+    const fallback = pisiColumnName(colIndex);
+    const normalized = String(value ?? '')
+        .trim()
+        .slice(0, 80);
+
+    labels[colIndex] =
+        normalized && normalized !== fallback
+            ? normalized
+            : null;
+
+    savePisiSheetColumnLabels(table, labels);
+
+    const label = table.querySelector(
+        `thead th[data-col-header="${colIndex}"] .pisi-sheet-col-label`
+    );
+
+    if (label) {
+        label.textContent = normalized || fallback;
+    }
+
+    return normalized || fallback;
+}
+
+function shiftPisiSheetColumnLabels(table, change) {
+    const labels = getPisiSheetColumnLabels(table);
+    if (!labels.length) return;
+
+    if (change.type === 'insert-col') {
+        labels.splice(
+            change.index,
+            0,
+            ...Array(change.count || 1).fill(null)
+        );
+    } else if (change.type === 'delete-col') {
+        labels.splice(
+            change.index,
+            change.count || 1
+        );
+    } else {
+        return;
+    }
+
+    savePisiSheetColumnLabels(table, labels);
+}
+
+function escapePisiSheetHeaderLabel(value) {
+    return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+}
+
 function refreshPisiSheetCellMetadata(table) {
     const rows = Array.from(table.querySelectorAll('tbody tr'));
 
@@ -50,9 +155,16 @@ function refreshPisiSheetCellMetadata(table) {
     headerRow.innerHTML =
         '<th data-pisi-sheet-corner="1"></th>' +
         Array.from({ length: colCount }, (_, index) => {
+            const label = escapePisiSheetHeaderLabel(
+                getPisiSheetColumnLabel(table, index)
+            );
+
             return `
-                <th data-col-header="${index}">
-                    <span class="pisi-sheet-col-label">${pisiColumnName(index)}</span>
+                <th
+                    data-col-header="${index}"
+                    title="Çift tıkla sütun adını değiştir"
+                >
+                    <span class="pisi-sheet-col-label">${label}</span>
                     <span
                         class="pisi-sheet-col-resizer"
                         data-pisi-sheet-col-resizer="${index}"
@@ -198,6 +310,11 @@ function addPisiSheetColumn(table, afterColIndex = null) {
         });
     }
 
+    shiftPisiSheetColumnLabels(table, {
+        type: 'insert-col',
+        index: insertIndex,
+        count: 1
+    });
     updatePisiSheetFormulaReferences(table, {
         type: 'insert-col',
         index: insertIndex,
@@ -304,6 +421,11 @@ function deletePisiSheetColumns(table) {
             .forEach((cell) => cell.remove());
     });
 
+    shiftPisiSheetColumnLabels(table, {
+        type: 'delete-col',
+        index: start,
+        count
+    });
     updatePisiSheetFormulaReferences(table, {
         type: 'delete-col',
         index: start,
@@ -604,6 +726,22 @@ function syncPisiSheetToolbarState(toolbar, table) {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
+    "getPisiSheetColumnLabels": {
+        enumerable: true,
+        get() { return getPisiSheetColumnLabels; }
+    },
+    "getPisiSheetColumnLabel": {
+        enumerable: true,
+        get() { return getPisiSheetColumnLabel; }
+    },
+    "setPisiSheetColumnLabel": {
+        enumerable: true,
+        get() { return setPisiSheetColumnLabel; }
+    },
+    "shiftPisiSheetColumnLabels": {
+        enumerable: true,
+        get() { return shiftPisiSheetColumnLabels; }
+    },
     "refreshPisiSheetCellMetadata": {
         enumerable: true,
         get() { return refreshPisiSheetCellMetadata; }
