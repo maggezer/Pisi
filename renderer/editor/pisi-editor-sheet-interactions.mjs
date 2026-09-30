@@ -355,6 +355,8 @@ window.addEventListener('blur', () => {
 });
 
 document.addEventListener('mouseup', () => {
+    finishPisiSheetFormulaReferencePick();
+
     if (pisiSheetDragSelection?.table) {
         pisiSheetDragSelection.table.classList.remove(
             'pisi-sheet-drag-selecting'
@@ -417,6 +419,12 @@ function hydratePisiSheets(root = document) {
             const cell = event.target.closest('td[data-cell]');
 
             if (!cell || !table.contains(cell)) return;
+
+            if (isPisiSheetFormulaInputActive(table)) {
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
 
             event.preventDefault();
             event.stopPropagation();
@@ -546,6 +554,17 @@ function hydratePisiSheets(root = document) {
                 return;
             }
 
+            if (
+                beginPisiSheetFormulaReferencePick(
+                    table,
+                    cell,
+                    event
+                )
+            ) {
+                pisiSheetDragSelection = null;
+                return;
+            }
+
             if (isPisiSheetEditingCell(table, cell)) {
                 return;
             }
@@ -561,7 +580,7 @@ function hydratePisiSheets(root = document) {
 
             selectPisiSheetCell(cell, {
                 extend: event.shiftKey,
-                focus: true
+                focus: false
             });
 
             const selection = getPisiSheetSelection(table);
@@ -576,14 +595,25 @@ function hydratePisiSheets(root = document) {
         });
 
         table.addEventListener('mouseover', (/** @type {MouseEvent} */ event) => {
-            const drag = pisiSheetDragSelection;
-
-            if (!drag || drag.table !== table) return;
             if (!(event.buttons & 1)) return;
 
             const cell = event.target.closest('td[data-cell]');
 
             if (!cell || !table.contains(cell)) return;
+
+            if (
+                updatePisiSheetFormulaReferencePick(
+                    table,
+                    cell,
+                    event
+                )
+            ) {
+                return;
+            }
+
+            const drag = pisiSheetDragSelection;
+
+            if (!drag || drag.table !== table) return;
 
             const point = getPisiSheetCellPosition(cell);
 
@@ -602,7 +632,8 @@ function hydratePisiSheets(root = document) {
             setPisiSheetSelectionState(table, {
                 mode: 'range',
                 anchor: drag.anchor,
-                focus: point
+                focus: point,
+                active: point
             });
 
             syncPisiSheetSelectionProjection(table);

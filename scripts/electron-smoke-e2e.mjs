@@ -300,7 +300,7 @@ try {
         }));
 
         const selectedAfterClick =
-            table.querySelectorAll('.pisi-sheet-cell-range').length;
+            table.querySelectorAll('.pisi-sheet-cell-selected').length;
         const selectionLabel = (targetTable) => {
             const focus =
                 window.getPisiSheetSelectionFocus?.(targetTable);
@@ -314,7 +314,14 @@ try {
         };
         const activeAfterClick = selectionLabel(table);
 
-        firstCell.dispatchEvent(new KeyboardEvent('keydown', {
+        const activeCountAfterClick =
+            table.querySelectorAll(
+                '.pisi-sheet-cell-active'
+            ).length;
+        const browserFocusStayedOffCell =
+            document.activeElement !== firstCell;
+
+        document.dispatchEvent(new KeyboardEvent('keydown', {
             bubbles: true,
             cancelable: true,
             key: 'ArrowRight'
@@ -323,7 +330,37 @@ try {
         const secondCell = table.querySelector('td[data-cell="B1"]');
         const activeAfterArrow = selectionLabel(table);
 
-        secondCell?.dispatchEvent(new KeyboardEvent('keydown', {
+        document.dispatchEvent(new KeyboardEvent('keydown', {
+            bubbles: true,
+            cancelable: true,
+            key: 'ArrowRight',
+            shiftKey: true
+        }));
+
+        const activeAfterRangeExtend = selectionLabel(table);
+        const selectedAfterRangeExtend =
+            table.querySelectorAll(
+                '.pisi-sheet-cell-selected'
+            ).length;
+        const activeCountAfterRangeExtend =
+            table.querySelectorAll(
+                '.pisi-sheet-cell-active'
+            ).length;
+
+        secondCell?.dispatchEvent(new MouseEvent('mousedown', {
+            bubbles: true,
+            cancelable: true,
+            button: 0,
+            buttons: 1,
+            detail: 1
+        }));
+        document.dispatchEvent(new MouseEvent('mouseup', {
+            bubbles: true,
+            cancelable: true,
+            button: 0
+        }));
+
+        document.dispatchEvent(new KeyboardEvent('keydown', {
             bubbles: true,
             cancelable: true,
             key: 'Enter'
@@ -401,6 +438,72 @@ try {
         const bodyHeight =
             firstCell.getBoundingClientRect().height || 0;
 
+        const firstRowHeader = table.querySelector(
+            'tbody th[data-row-header="0"]'
+        );
+        const rowHeaderWidth =
+            firstRowHeader?.getBoundingClientRect().width || 0;
+        const rowHeaderHeight =
+            firstRowHeader?.getBoundingClientRect().height || 0;
+        const defaultDataWidth =
+            firstCell.getBoundingClientRect().width || 0;
+
+        const formulaInput = toolbar.querySelector(
+            '[data-pisi-excel-formula]'
+        );
+        if (formulaInput) {
+            formulaInput.value = '=SUM(';
+            formulaInput.focus();
+            formulaInput.setSelectionRange(
+                formulaInput.value.length,
+                formulaInput.value.length
+            );
+        }
+
+        const formulaStartCell = table.querySelector(
+            'td[data-cell="A1"]'
+        );
+        const formulaEndCell = table.querySelector(
+            'td[data-cell="C2"]'
+        );
+
+        formulaStartCell?.dispatchEvent(
+            new MouseEvent('mousedown', {
+                bubbles: true,
+                cancelable: true,
+                button: 0,
+                buttons: 1
+            })
+        );
+        formulaEndCell?.dispatchEvent(
+            new MouseEvent('mouseover', {
+                bubbles: true,
+                cancelable: true,
+                buttons: 1
+            })
+        );
+        document.dispatchEvent(new MouseEvent('mouseup', {
+            bubbles: true,
+            cancelable: true,
+            button: 0
+        }));
+
+        const formulaReferenceValue =
+            formulaInput?.value || '';
+        const formulaReferenceFocusRetained =
+            document.activeElement === formulaInput;
+        const formulaSelectedCount =
+            table.querySelectorAll(
+                '.pisi-sheet-cell-selected'
+            ).length;
+        const formulaActiveCount =
+            table.querySelectorAll(
+                '.pisi-sheet-cell-active'
+            ).length;
+        const formulaActiveLabel = selectionLabel(table);
+
+        formulaInput?.blur();
+
         firstHeader?.dispatchEvent(new MouseEvent('click', {
             bubbles: true,
             cancelable: true,
@@ -408,7 +511,7 @@ try {
         }));
 
         const selectedAfterHeaderClick =
-            table.querySelectorAll('.pisi-sheet-cell-range').length;
+            table.querySelectorAll('.pisi-sheet-cell-selected').length;
         const activeAfterHeaderClick = selectionLabel(table);
         const columnMenu = document.querySelector(
             '.pisi-sheet-column-menu'
@@ -530,7 +633,7 @@ try {
             window.getPisiSheetSelectionFocus?.(replacement) || null;
         const selectedAfterDomReplace =
             replacement.querySelectorAll(
-                '.pisi-sheet-cell-range'
+                '.pisi-sheet-cell-selected'
             ).length;
         const activeTableAfterDomReplace =
             window.getPisiSheetActiveTable?.(editor) || null;
@@ -560,7 +663,12 @@ try {
             originalColId,
             selectedAfterClick,
             activeAfterClick,
+            activeCountAfterClick,
+            browserFocusStayedOffCell,
             activeAfterArrow,
+            activeAfterRangeExtend,
+            selectedAfterRangeExtend,
+            activeCountAfterRangeExtend,
             editableDuringEdit,
             editingClassDuringEdit,
             activeAfterCommit,
@@ -576,6 +684,14 @@ try {
                 serializedDatabase.databaseId || '',
             headerHeight,
             bodyHeight,
+            rowHeaderWidth,
+            rowHeaderHeight,
+            defaultDataWidth,
+            formulaReferenceValue,
+            formulaReferenceFocusRetained,
+            formulaSelectedCount,
+            formulaActiveCount,
+            formulaActiveLabel,
             selectedAfterHeaderClick,
             activeAfterHeaderClick,
             columnMenuPresent: Boolean(columnMenu),
@@ -639,7 +755,12 @@ try {
         !sheetResult.originalColId ||
         sheetResult.selectedAfterClick !== 1 ||
         sheetResult.activeAfterClick !== 'A1' ||
+        sheetResult.activeCountAfterClick !== 1 ||
+        !sheetResult.browserFocusStayedOffCell ||
         sheetResult.activeAfterArrow !== 'B1' ||
+        sheetResult.activeAfterRangeExtend !== 'C1' ||
+        sheetResult.selectedAfterRangeExtend !== 2 ||
+        sheetResult.activeCountAfterRangeExtend !== 1 ||
         sheetResult.editableDuringEdit !== 'plaintext-only' ||
         !sheetResult.editingClassDuringEdit ||
         sheetResult.activeAfterCommit !== 'B2' ||
@@ -661,6 +782,14 @@ try {
         sheetResult.serializedDatabaseId !==
             sheetResult.modelShapeAfterCommit.databaseId ||
         sheetResult.headerHeight > sheetResult.bodyHeight ||
+        sheetResult.rowHeaderWidth > 40 ||
+        sheetResult.rowHeaderHeight > 30 ||
+        sheetResult.defaultDataWidth < 90 ||
+        sheetResult.formulaReferenceValue !== '=SUM(A1:C2' ||
+        !sheetResult.formulaReferenceFocusRetained ||
+        sheetResult.formulaSelectedCount !== 6 ||
+        sheetResult.formulaActiveCount !== 1 ||
+        sheetResult.formulaActiveLabel !== 'C2' ||
         sheetResult.selectedAfterHeaderClick !== 0 ||
         sheetResult.activeAfterHeaderClick !== '' ||
         !sheetResult.columnMenuPresent ||

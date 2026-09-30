@@ -8,6 +8,8 @@ import "./editor/pisi-editor-sheet-database-dom.mjs";
 import "./editor/pisi-editor-sheet.mjs";
 import "./editor/pisi-editor-sheet-selection-state.mjs";
 import "./editor/pisi-editor-sheet-selection.mjs";
+import "./editor/pisi-editor-sheet-formula-reference.mjs";
+import "./editor/pisi-editor-sheet-keyboard.mjs";
 import "./editor/pisi-editor-sheet-interactions.mjs";
 import "./editor/pisi-editor-sheet-structure.mjs";
 import "./editor/pisi-editor-paint.mjs";

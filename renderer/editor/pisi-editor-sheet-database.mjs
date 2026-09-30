@@ -4,6 +4,7 @@ import {
 } from "./pisi-editor-sheet-model.mjs";
 
 const PISI_SHEET_DATABASE_VERSION = 1;
+const PISI_SHEET_DEFAULT_COLUMN_WIDTH = 96;
 const pisiSheetDatabases = new WeakMap();
 
 const PISI_SHEET_FORMAT_PROPERTIES = [
@@ -57,9 +58,16 @@ function createPisiSheetField(index, options = {}) {
             pisiSheetDatabaseColumnName(index)
         ).slice(0, 80),
         type: String(options.type || 'text'),
-        width: Number.isFinite(Number(options.width))
-            ? Math.max(1, Math.round(Number(options.width)))
-            : null
+        width:
+            options.width !== null &&
+            options.width !== undefined &&
+            Number.isFinite(Number(options.width)) &&
+            Number(options.width) > 0
+                ? Math.max(
+                    48,
+                    Math.round(Number(options.width))
+                )
+                : PISI_SHEET_DEFAULT_COLUMN_WIDTH
     };
 }
 
@@ -624,6 +632,10 @@ Object.defineProperties(moduleApi, {
     "PISI_SHEET_DATABASE_VERSION": {
         enumerable: true,
         get() { return PISI_SHEET_DATABASE_VERSION; }
+    },
+    "PISI_SHEET_DEFAULT_COLUMN_WIDTH": {
+        enumerable: true,
+        get() { return PISI_SHEET_DEFAULT_COLUMN_WIDTH; }
     },
     "PISI_SHEET_FORMAT_PROPERTIES": {
         enumerable: true,

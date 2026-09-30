@@ -119,14 +119,22 @@ function setPisiSheetSelectionStateForDatabase(
             groupId
         }
     );
+    const active = resolvePisiSheetSelectionPoint(
+        database,
+        {
+            ...(selection.active || selection.focus),
+            groupId
+        }
+    );
 
-    if (!anchor || !focus) return null;
+    if (!anchor || !focus || !active) return null;
 
     const state = {
         groupId,
         mode: selection.mode || 'cell',
         anchor: storePisiSheetSelectionPoint(anchor),
-        focus: storePisiSheetSelectionPoint(focus)
+        focus: storePisiSheetSelectionPoint(focus),
+        active: storePisiSheetSelectionPoint(active)
     };
 
     pisiSheetSelections.set(groupId, state);
@@ -164,8 +172,12 @@ function getPisiSheetSelectionForDatabase(database) {
         database,
         selection.focus
     );
+    const active = resolvePisiSheetSelectionPoint(
+        database,
+        selection.active || selection.focus
+    );
 
-    if (!anchor || !focus) {
+    if (!anchor || !focus || !active) {
         clearPisiSheetSelectionStateForDatabase(database);
         return null;
     }
@@ -174,7 +186,8 @@ function getPisiSheetSelectionForDatabase(database) {
         groupId: selection.groupId,
         mode: selection.mode || 'cell',
         anchor,
-        focus
+        focus,
+        active
     };
 }
 
@@ -182,6 +195,14 @@ function getPisiSheetSelectionFocusForDatabase(database) {
     return (
         getPisiSheetSelectionForDatabase(database)
             ?.focus ||
+        null
+    );
+}
+
+function getPisiSheetActivePointForDatabase(database) {
+    return (
+        getPisiSheetSelectionForDatabase(database)
+            ?.active ||
         null
     );
 }
@@ -290,6 +311,12 @@ Object.defineProperties(moduleApi, {
         enumerable: true,
         get() {
             return getPisiSheetSelectionFocusForDatabase;
+        }
+    },
+    "getPisiSheetActivePointForDatabase": {
+        enumerable: true,
+        get() {
+            return getPisiSheetActivePointForDatabase;
         }
     },
     "getPisiSheetSelectionRect": {

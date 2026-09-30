@@ -172,6 +172,24 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         ),
         'utf8'
     );
+    const formulaReference = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-sheet-formula-reference.mjs'
+        ),
+        'utf8'
+    );
+    const keyboard = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-sheet-keyboard.mjs'
+        ),
+        'utf8'
+    );
+    const componentsCss = fs.readFileSync(
+        path.join(root, 'styles/70-components.css'),
+        'utf8'
+    );
     const structure = fs.readFileSync(
         path.join(
             root,
@@ -209,6 +227,10 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(database, /fieldOrder/);
     assert.match(database, /type: 'table'/);
     assert.match(database, /pisiSheetDatabases = new WeakMap/);
+    assert.match(
+        database,
+        /PISI_SHEET_DEFAULT_COLUMN_WIDTH = 96/
+    );
 
     assert.doesNotMatch(database, /querySelector/);
     assert.doesNotMatch(database, /querySelectorAll/);
@@ -244,6 +266,11 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(selectionState, /rowId/);
     assert.match(selectionState, /colId/);
     assert.match(selectionState, /groupId/);
+    assert.match(selectionState, /active/);
+    assert.match(
+        selectionState,
+        /getPisiSheetActivePointForDatabase/
+    );
     assert.match(selectionState, /pisiSheetSelections = new Map/);
     assert.match(selectionState, /pisiActiveSheetGroupId/);
     assert.match(
@@ -266,6 +293,10 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(selection, /getPisiSheetSelectionState/);
     assert.match(selection, /setPisiSheetSelectionState/);
     assert.match(selection, /getPisiSheetSelectionFocus/);
+    assert.match(selection, /getPisiSheetActivePoint/);
+    assert.match(selection, /pisi-sheet-cell-active/);
+    assert.match(selection, /pisi-sheet-cell-selected/);
+    assert.doesNotMatch(selection, /pisi-sheet-cell-range/);
     assert.match(selection, /getPisiSheetActiveTable/);
     assert.match(selection, /getPisiSelectedSheetPoints/);
     assert.match(selection, /getPisiSheetCellSource/);
@@ -296,6 +327,18 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         /pisiSheetSelections\.(get|set)/
     );
     assert.match(interactions, /setPisiSheetFieldWidth/);
+    assert.match(
+        interactions,
+        /beginPisiSheetFormulaReferencePick/
+    );
+    assert.match(
+        interactions,
+        /updatePisiSheetFormulaReferencePick/
+    );
+    assert.match(
+        interactions,
+        /finishPisiSheetFormulaReferencePick/
+    );
     assert.doesNotMatch(interactions, /pisiColumnWidths/);
 
     assert.match(interactions, /event\.key === 'Tab'/);
@@ -317,6 +360,38 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.doesNotMatch(unifiedToolbar, /pisi-sheet-inline-tools/);
     assert.doesNotMatch(unifiedToolbar, /data-pisi-excel-action=/);
     assert.match(unifiedToolbar, /getPisiSheetActiveTable/);
+    assert.match(
+        formulaReference,
+        /pisiSheetPointsToReference/
+    );
+    assert.match(
+        formulaReference,
+        /data-pisi-excel-formula/
+    );
+    assert.match(
+        keyboard,
+        /handlePisiSheetGlobalKeydown/
+    );
+    assert.match(
+        keyboard,
+        /getPisiSheetActivePoint/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-cell-active/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-cell-selected/
+    );
+    assert.match(
+        componentsCss,
+        /max-width: 36px/
+    );
+    assert.doesNotMatch(
+        componentsCss,
+        /pisi-sheet-cell-range/
+    );
     assert.doesNotMatch(
         unifiedToolbar,
         /__pisiActiveSheetCell/

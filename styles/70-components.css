@@ -46,23 +46,22 @@
 
 .pisi-sheet-table {
     border-collapse: collapse;
+    table-layout: fixed;
+    width: max-content;
+    min-width: 0;
     background: #1e1e1e;
     color: #d4d4d4;
     font-size: 12px;
-    min-width: 420px;
 }
 
 .pisi-sheet-table th,
 .pisi-sheet-table td {
     box-sizing: border-box;
-    min-width: 84px;
     height: 28px;
     border: 1px solid #444;
-    padding: 4px 6px;
 }
 
 .pisi-sheet-table th {
-    min-width: 34px;
     background: #2d2d30;
     color: #f39c12;
     text-align: center;
@@ -71,11 +70,25 @@
 }
 
 .pisi-sheet-table td {
+    min-width: 48px;
+    height: 28px;
+    padding: 3px 6px;
+    line-height: 18px;
     background: #1f1f20;
     outline: none;
     font-family: Consolas, monospace;
     cursor: cell;
     user-select: none;
+    overflow: hidden;
+}
+
+.pisi-sheet-table th[data-pisi-sheet-corner],
+.pisi-sheet-table th[data-row-header] {
+    width: 36px;
+    min-width: 36px;
+    max-width: 36px;
+    height: 28px;
+    padding: 0 4px;
 }
 
 .pisi-sheet-table th[data-row-header],
@@ -95,6 +108,7 @@
 
 .pisi-sheet-table th[data-col-header] {
     position: relative;
+    min-width: 48px;
 }
 
 .pisi-sheet-col-label {
@@ -148,13 +162,14 @@ body.pisi-sheet-column-resizing * {
     background: #3a3428;
 }
 
-
-.pisi-sheet-cell-range {
-    box-shadow: inset 0 0 0 1px rgba(243, 156, 18, 0.55);
-    background: #24221d;
+.pisi-sheet-cell-selected {
+    box-shadow: inset 0 0 0 1px rgba(243, 156, 18, 0.48);
+    background: rgba(243, 156, 18, 0.10);
 }
 
-.pisi-sheet-cell-selected {
+.pisi-sheet-cell-active {
+    position: relative;
+    z-index: 1;
     box-shadow: inset 0 0 0 2px #f39c12;
     background: #2a261e;
 }
@@ -165,6 +180,18 @@ body.pisi-sheet-column-resizing * {
     box-shadow: inset 0 0 0 2px #f39c12;
     background: #1f1f20;
 }
+
+.pisi-sheet-table.pisi-sheet-formula-reference-mode
+    td.pisi-sheet-cell-active {
+    box-shadow: inset 0 0 0 2px #42a5f5;
+}
+
+.pisi-sheet-table.pisi-sheet-formula-reference-mode
+    td.pisi-sheet-cell-selected {
+    background: rgba(66, 165, 245, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(66, 165, 245, 0.55);
+}
+
 
 .pisi-sheet-column-menu {
     position: fixed;

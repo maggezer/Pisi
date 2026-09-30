@@ -107,6 +107,7 @@
     "path": "renderer/editor/pisi-editor-sheet-database.mjs",
     "bindings": [
       "PISI_SHEET_DATABASE_VERSION",
+      "PISI_SHEET_DEFAULT_COLUMN_WIDTH",
       "PISI_SHEET_FORMAT_PROPERTIES",
       "pisiSheetDatabases",
       "createPisiSheetDatabase",
@@ -182,6 +183,7 @@
       "clearPisiSheetSelectionStateForDatabase",
       "getPisiSheetSelectionForDatabase",
       "getPisiSheetSelectionFocusForDatabase",
+      "getPisiSheetActivePointForDatabase",
       "getPisiSheetSelectionRect",
       "getPisiSelectedSheetPointsForDatabase",
       "getPisiSheetActiveGroupId"
@@ -197,6 +199,7 @@
       "getPisiSheetSelection",
       "setPisiSheetSelectionState",
       "getPisiSheetSelectionFocus",
+      "getPisiSheetActivePoint",
       "getPisiSheetActiveTable",
       "getPisiSheetPointByIndex",
       "syncPisiSheetSelectionProjection",
@@ -219,6 +222,28 @@
       "movePisiSheetCellFocus",
       "reconcilePisiSheetSelection",
       "clearPisiSheetSelection"
+    ]
+  },
+  {
+    "module": "editor.sheetFormulaReference",
+    "path": "renderer/editor/pisi-editor-sheet-formula-reference.mjs",
+    "bindings": [
+      "beginPisiSheetFormulaReferencePick",
+      "updatePisiSheetFormulaReferencePick",
+      "finishPisiSheetFormulaReferencePick",
+      "isPisiSheetFormulaReferencePicking",
+      "isPisiSheetFormulaInputActive",
+      "pisiSheetPointToReference",
+      "pisiSheetPointsToReference",
+      "applyPisiSheetFormulaInputOnEnter"
+    ]
+  },
+  {
+    "module": "editor.sheetKeyboard",
+    "path": "renderer/editor/pisi-editor-sheet-keyboard.mjs",
+    "bindings": [
+      "handlePisiSheetGlobalKeydown",
+      "handlePisiSheetOutsidePointerDown"
     ]
   },
   {
