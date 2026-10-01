@@ -1,4 +1,5 @@
 import {
+    ensurePisiCompositeAlignment,
     ensurePisiEditableLineAfter,
     normalizePisiCompositeBlockLayout,
     selectPisiCompositeAlignmentBlock
@@ -469,6 +470,7 @@ function ensurePisiCanvasSectionHeader(canvas) {
 
     if (!block) return null;
 
+    ensurePisiCompositeAlignment(block);
     normalizePisiCompositeBlockLayout(block);
 
     block.classList.remove(
