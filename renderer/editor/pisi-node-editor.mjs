@@ -772,6 +772,7 @@ async function performCurrentCenterNodeEditorSave() {
 
 function clearCenterNodeEditor() {
     clearTimeout(centerNodeSaveTimer);
+    centerNodeSaveTimer = null;
 
     const {
         wrapper,
