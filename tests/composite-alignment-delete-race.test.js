@@ -88,7 +88,7 @@ test('Sheet and Canvas use full-width section chrome with aligned inner content'
     );
     assert.match(
         css,
-        /\.pisi-sheet-block\[data-pisi-composite-align="center"\][\s\S]*?> \.pisi-sheet-table[\s\S]*?margin-inline-start:\s*auto;[\s\S]*?margin-inline-end:\s*auto;/
+        /\.pisi-sheet-block\[data-pisi-composite-align="center"\][\s\S]*?> \.pisi-sheet-search-row,[\s\S]*?> \.pisi-sheet-table[\s\S]*?margin-inline-start:\s*auto;[\s\S]*?margin-inline-end:\s*auto;/
     );
     assert.match(
         css,
@@ -104,45 +104,53 @@ test('Sheet and Canvas use full-width section chrome with aligned inner content'
     );
 });
 
-test('Sheet exposes a dedicated blank selection surface beside search', () => {
+test('Sheet alignment comes from blank chrome, not title/search/table controls', () => {
     const search = read(
         'renderer/editor/pisi-editor-sheet-search-ui.mjs'
+    );
+    const section = read(
+        'renderer/editor/pisi-editor-sheet-section-ui.mjs'
     );
     const composite = read(
         'renderer/editor/pisi-editor-composite-blocks.mjs'
     );
-    const nodeEditor = read(
-        'renderer/editor/pisi-node-editor.mjs'
-    );
     const css = read('styles/70-components.css');
 
     assert.match(
-        search,
-        /pisi-sheet-search-row/
+        composite,
+        /function isPisiSheetBlankAlignmentTarget/
     );
     assert.match(
+        composite,
+        /\.pisi-sheet-table,/
+    );
+    assert.match(
+        composite,
+        /\.pisi-sheet-search,/
+    );
+    assert.match(
+        composite,
+        /\.pisi-sheet-section-title,/
+    );
+    assert.doesNotMatch(
+        search,
+        /selectPisiCompositeAlignmentBlock/
+    );
+    assert.doesNotMatch(
+        section,
+        /selectPisiCompositeAlignmentBlock/
+    );
+    assert.doesNotMatch(
         search,
         /pisi-sheet-selection-surface/
     );
     assert.match(
-        search,
-        /selectPisiCompositeAlignmentBlock\(\s*block\s*\)/
-    );
-    assert.match(
-        composite,
-        /\.pisi-sheet-selection-surface/
+        css,
+        /\.pisi-sheet-search-row\s*\{[\s\S]{0,180}width:\s*min\(420px, 100%\)/
     );
     assert.match(
         css,
-        /\.pisi-sheet-selection-surface/
-    );
-    assert.match(
-        css,
-        /\.pisi-sheet-block\.pisi-composite-alignment-active[\s\S]{0,120}\.pisi-sheet-selection-surface/
-    );
-    assert.match(
-        nodeEditor,
-        /\.pisi-sheet-search-row/
+        /\.pisi-sheet-block\.pisi-composite-alignment-active[\s\S]{0,120}> \.pisi-sheet-table[\s\S]{0,180}box-shadow:/
     );
 });
 
