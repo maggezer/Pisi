@@ -2832,8 +2832,21 @@ try {
                     '.pisi-editor-block'
                 )
             );
+        const sheetLineSelection =
+            window.getSelection?.();
+        const sheetLineAnchorNode =
+            sheetLineSelection?.anchorNode || null;
         const sheetLineAfterHasCaret =
-            document.activeElement === sheetLineAfter;
+            Boolean(
+                sheetLineAfter &&
+                sheetLineAnchorNode &&
+                (
+                    sheetLineAnchorNode === sheetLineAfter ||
+                    sheetLineAfter.contains(
+                        sheetLineAnchorNode
+                    )
+                )
+            );
 
         sheetLineAfter?.dispatchEvent(
             new Event('paste', {
