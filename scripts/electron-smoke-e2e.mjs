@@ -3508,10 +3508,13 @@ try {
             sheetAlignedCenter,
             sheetTitleGeometryMoves,
             sheetTitleCompositeSelected,
+            sheetChromeStaysFixed,
             sheetSearchAlignmentWorks,
             sheetSearchCompositeSelected,
             sheetSearchFocusRetained,
             sheetSearchValueAfterTyping,
+            sheetSelectionSurfaceSelected,
+            sheetSelectionSurfaceAlignmentWorks,
             sheetCopyButtonPresent,
             sheetNewLineButtonPresent,
             sheetLineAfterPresent,
@@ -3527,6 +3530,7 @@ try {
             canvasAlignedCenter,
             canvasTitleGeometryMoves,
             canvasTitleCompositeSelected,
+            canvasChromeStaysFixed,
             canvasSurfaceAlignmentWorks,
             canvasSurfaceCompositeSelected,
             canvasFirstClickSelectedOnly,
@@ -3547,7 +3551,9 @@ try {
             sheetAfterToggleVisibleBlankCount,
             sheetAfterToggleTextBlockDecorated,
             sheetHeaderCountAfterHydrate,
+            sheetSearchRowCountAfterHydrate,
             sheetSearchCountAfterHydrate,
+            sheetSelectionSurfaceCountAfterHydrate,
             sheetPaginationCountAfterHydrate,
             sanitizedSheetChromeStripped,
             sanitizedSheetTableSurvived,
@@ -3901,10 +3907,13 @@ try {
         !sheetResult.sheetAlignedCenter ||
         !sheetResult.sheetTitleGeometryMoves ||
         !sheetResult.sheetTitleCompositeSelected ||
+        !sheetResult.sheetChromeStaysFixed ||
         !sheetResult.sheetSearchAlignmentWorks ||
         !sheetResult.sheetSearchCompositeSelected ||
         !sheetResult.sheetSearchFocusRetained ||
         sheetResult.sheetSearchValueAfterTyping !== 'ABC' ||
+        !sheetResult.sheetSelectionSurfaceSelected ||
+        !sheetResult.sheetSelectionSurfaceAlignmentWorks ||
         !sheetResult.sheetCopyButtonPresent ||
         !sheetResult.sheetNewLineButtonPresent ||
         !sheetResult.sheetLineAfterPresent ||
@@ -3920,6 +3929,7 @@ try {
         !sheetResult.canvasAlignedCenter ||
         !sheetResult.canvasTitleGeometryMoves ||
         !sheetResult.canvasTitleCompositeSelected ||
+        !sheetResult.canvasChromeStaysFixed ||
         !sheetResult.canvasSurfaceAlignmentWorks ||
         !sheetResult.canvasSurfaceCompositeSelected ||
         !sheetResult.canvasFirstClickSelectedOnly ||
@@ -3943,7 +3953,9 @@ try {
         sheetResult.sheetAfterToggleVisibleBlankCount !== 0 ||
         sheetResult.sheetAfterToggleTextBlockDecorated ||
         sheetResult.sheetHeaderCountAfterHydrate !== 1 ||
+        sheetResult.sheetSearchRowCountAfterHydrate !== 1 ||
         sheetResult.sheetSearchCountAfterHydrate !== 1 ||
+        sheetResult.sheetSelectionSurfaceCountAfterHydrate !== 1 ||
         sheetResult.sheetPaginationCountAfterHydrate !== 1 ||
         !sheetResult.sanitizedSheetChromeStripped ||
         !sheetResult.sanitizedSheetTableSurvived ||
