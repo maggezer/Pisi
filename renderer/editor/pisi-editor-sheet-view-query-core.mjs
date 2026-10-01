@@ -337,6 +337,112 @@ function normalizePisiSheetTextCompare(value) {
         .trim();
 }
 
+function normalizePisiSheetSearchQuery(value = '') {
+    return normalizePisiSheetTextCompare(value)
+        .replace(/\s+/g, ' ')
+        .slice(0, 240);
+}
+
+function getPisiSheetItemSearchText(
+    database,
+    item
+) {
+    const parts = [];
+
+    for (const field of database?.fields || []) {
+        const record = item?.values?.[field.id] || null;
+        if (!record) continue;
+
+        const type = normalizePisiSheetFieldType(
+            field.type
+        );
+
+        if (type === 'select') {
+            const option = findPisiSheetFieldOption(
+                field,
+                record.value
+            );
+            parts.push(
+                option?.label || '',
+                record.value || ''
+            );
+            continue;
+        }
+
+        if (type === 'mSelect') {
+            const ids = Array.isArray(record.value)
+                ? record.value
+                : [];
+            const options =
+                normalizePisiSheetFieldOptions(
+                    field.options
+                );
+
+            for (const id of ids) {
+                parts.push(
+                    options.find(
+                        (option) => option.id === id
+                    )?.label || '',
+                    id
+                );
+            }
+            continue;
+        }
+
+        if (type === 'checkbox') {
+            parts.push(
+                record.value === true
+                    ? 'true checked evet'
+                    : 'false unchecked hayir'
+            );
+            continue;
+        }
+
+        if (record.formula) {
+            parts.push(record.formula);
+        }
+
+        if (
+            record.value !== null &&
+            record.value !== undefined
+        ) {
+            parts.push(
+                Array.isArray(record.value)
+                    ? record.value.join(' ')
+                    : String(record.value)
+            );
+        }
+    }
+
+    return normalizePisiSheetTextCompare(
+        parts.join(' ')
+    ).replace(/\s+/g, ' ');
+}
+
+function matchesPisiSheetSearchQuery(
+    database,
+    item,
+    query
+) {
+    const normalized =
+        normalizePisiSheetSearchQuery(query);
+
+    if (!normalized) return true;
+
+    const haystack =
+        getPisiSheetItemSearchText(
+            database,
+            item
+        );
+    const tokens = normalized
+        .split(' ')
+        .filter(Boolean);
+
+    return tokens.every(
+        (token) => haystack.includes(token)
+    );
+}
+
 function resolvePisiSheetDateFilterValue(
     value,
     now = new Date()
@@ -681,6 +787,10 @@ function getPisiSheetViewItemRecords(
             database.fields.map((field) => field.id)
         )
     );
+    const searchQuery =
+        normalizePisiSheetSearchQuery(
+            view?.searchQuery
+        );
     const sorts = normalizePisiSheetSorts(
         view?.sorts,
         new Set(
@@ -700,6 +810,13 @@ function getPisiSheetViewItemRecords(
             item,
             modelIndex
         }))
+        .filter(({ item }) => (
+            matchesPisiSheetSearchQuery(
+                database,
+                item,
+                searchQuery
+            )
+        ))
         .filter(({ item }) => (
             evaluatePisiSheetFilterTree(
                 database,
@@ -769,7 +886,9 @@ export {
     getPisiSheetFilterOperatorsForType,
     getPisiSheetViewItemRecords,
     makePisiSheetEmptyFilterTree,
+    matchesPisiSheetSearchQuery,
     normalizePisiSheetFilterCondition,
+    normalizePisiSheetSearchQuery,
     normalizePisiSheetFilterTree,
     normalizePisiSheetConditionalColors,
     normalizePisiSheetSorts,

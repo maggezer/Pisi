@@ -214,6 +214,13 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         ),
         'utf8'
     );
+    const sheetSearchUi = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-sheet-search-ui.mjs'
+        ),
+        'utf8'
+    );
     const sheetDragFill = fs.readFileSync(
         path.join(
             root,
@@ -385,6 +392,7 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(database, /page:/);
     assert.match(database, /pageSize:/);
     assert.match(database, /virtualScroll:/);
+    assert.match(database, /searchQuery:/);
     assert.match(
         database,
         /normalizePisiSheetConditionalColors/
@@ -873,6 +881,7 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     );
     assert.match(sheetViewState, /pageSize/);
     assert.match(sheetViewState, /virtualScroll/);
+    assert.match(sheetViewState, /searchQuery/);
     assert.match(
         sheetViewQueryCore,
         /PISI_SHEET_FILTER_OPERATORS/
@@ -900,6 +909,14 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         sheetViewQueryCore,
         /getPisiSheetConditionalColorMatches/
+    );
+    assert.match(
+        sheetViewQueryCore,
+        /matchesPisiSheetSearchQuery/
+    );
+    assert.match(
+        sheetViewQueryCore,
+        /normalizePisiSheetSearchQuery/
     );
     assert.match(
         sheetViewQuery,
@@ -930,6 +947,14 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         /getPisiSheetViewRecords/
     );
     assert.match(
+        sheetViewQuery,
+        /setPisiSheetViewSearchQuery/
+    );
+    assert.match(
+        sheetViewQuery,
+        /getPisiSheetActiveViewSearchQuery/
+    );
+    assert.match(
         sheetPaginationCore,
         /paginatePisiSheetRecords/
     );
@@ -948,6 +973,18 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         sheetVirtualScroll,
         /pisi-sheet-pagination/
+    );
+    assert.match(
+        sheetVirtualScroll,
+        /ensurePisiSheetSearchControl/
+    );
+    assert.match(
+        sheetSearchUi,
+        /pisi-sheet-search-input/
+    );
+    assert.match(
+        sheetSearchUi,
+        /setPisiSheetViewSearchQuery/
     );
     assert.match(
         sheetDragFillCore,
@@ -1153,6 +1190,14 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         componentsCss,
         /pisi-sheet-pagination/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-search/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-search-input/
     );
     assert.match(
         componentsCss,

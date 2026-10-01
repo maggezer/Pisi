@@ -822,6 +822,8 @@
     "Sayfa boyutu": "Page size",
     "Sayfa": "Page",
     "satır/sayfa": "rows/page",
-    "Doldurma tutamacı": "Fill handle"
+    "Doldurma tutamacı": "Fill handle",
+    "Sheet içinde ara": "Search this Sheet",
+    "Aramayı temizle": "Clear search"
   }
 }

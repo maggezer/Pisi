@@ -129,6 +129,9 @@ function createPisiSheetTableView(fields, options = {}) {
         filters: makePisiSheetEmptyFilterTree(),
         sorts: [],
         conditionalColors: [],
+        searchQuery: String(
+            options.searchQuery || ''
+        ).slice(0, 240),
         page: pagination.page,
         pageSize: pagination.pageSize,
         virtualScroll: pagination.virtualScroll
@@ -306,6 +309,9 @@ function normalizePisiSheetDatabase(database) {
                         view.conditionalColors,
                         fields
                     ),
+                searchQuery: String(
+                    view.searchQuery || ''
+                ).slice(0, 240),
                 page: pagination.page,
                 pageSize: pagination.pageSize,
                 virtualScroll:

@@ -386,3 +386,111 @@ test('conditional color normalization removes invalid rules', () => {
     assert.equal(rules[0].target, 'row');
     assert.equal(rules[0].tone, 'red');
 });
+
+
+test('all-field search matches text select labels numbers and dates', () => {
+    assert.deepEqual(
+        getPisiSheetViewItemRecords(
+            database,
+            { searchQuery: 'done' }
+        ).map((record) => record.item.id),
+        ['a', 'b', 'd']
+    );
+
+    assert.deepEqual(
+        getPisiSheetViewItemRecords(
+            database,
+            { searchQuery: '5' }
+        ).map((record) => record.item.id),
+        ['b', 'c', 'd']
+    );
+
+    assert.deepEqual(
+        getPisiSheetViewItemRecords(
+            database,
+            { searchQuery: '2026-09-28' }
+        ).map((record) => record.item.id),
+        ['c']
+    );
+});
+
+test('all-field search uses AND tokens across different columns', () => {
+    assert.deepEqual(
+        getPisiSheetViewItemRecords(
+            database,
+            { searchQuery: 'done alpha' }
+        ).map((record) => record.item.id),
+        ['b']
+    );
+
+    assert.deepEqual(
+        getPisiSheetViewItemRecords(
+            database,
+            { searchQuery: 'todo 5 gamma' }
+        ).map((record) => record.item.id),
+        ['c']
+    );
+});
+
+test('all-field search is Turkish-character and case insensitive', () => {
+    const localizedDatabase = {
+        fields: [
+            {
+                id: 'name',
+                name: 'Name',
+                type: 'text'
+            }
+        ],
+        items: [
+            {
+                id: 'x',
+                values: {
+                    name: { value: 'Işıl Çalışkan' }
+                }
+            }
+        ]
+    };
+
+    assert.equal(
+        getPisiSheetViewItemRecords(
+            localizedDatabase,
+            { searchQuery: 'ISIL caliskan' }
+        ).length,
+        1
+    );
+});
+
+test('search is applied before typed filters and sorting', () => {
+    const records = getPisiSheetViewItemRecords(
+        database,
+        {
+            searchQuery: 'done',
+            filters: {
+                type: 'group',
+                id: 'root',
+                logic: 'and',
+                children: [
+                    {
+                        type: 'condition',
+                        id: 'priority-high',
+                        fieldId: 'priority',
+                        operator: 'gte',
+                        value: 5
+                    }
+                ]
+            },
+            sorts: [
+                {
+                    id: 'deadline-asc',
+                    fieldId: 'deadline',
+                    direction: 'asc'
+                }
+            ]
+        }
+    );
+
+    assert.deepEqual(
+        records.map((record) => record.item.id),
+        ['d', 'b']
+    );
+});

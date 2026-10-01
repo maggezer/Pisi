@@ -50,6 +50,9 @@ function clonePisiSheetTableView(
                     active.conditionalColors
                 )
                 : [],
+        searchQuery: String(
+            active.searchQuery || ''
+        ).slice(0, 240),
         page: Number(active.page) || 1,
         pageSize: Number(active.pageSize) || 250,
         virtualScroll: structuredClone(

@@ -29,6 +29,15 @@ function getPisiSheetActiveViewSorts(table) {
         : [];
 }
 
+function getPisiSheetActiveViewSearchQuery(table) {
+    const database = getPisiSheetDatabase(table);
+    const view = database
+        ? getPisiSheetTableView(database)
+        : null;
+
+    return String(view?.searchQuery || '');
+}
+
 function getPisiSheetActiveViewConditionalColors(table) {
     const database = getPisiSheetDatabase(table);
     const view = database
@@ -148,6 +157,36 @@ function refreshPisiSheetViewQuery(table) {
     return getPisiSheetTableView(
         getPisiSheetDatabase(table)
     );
+}
+
+function setPisiSheetViewSearchQuery(
+    table,
+    query
+) {
+    const database = getPisiSheetDatabase(table);
+    const view = database
+        ? getPisiSheetTableView(database)
+        : null;
+
+    if (!database || !view) return null;
+
+    const next = String(query || '').slice(0, 240);
+
+    if (view.searchQuery === next) {
+        return next;
+    }
+
+    view.searchQuery = next;
+    view.page = 1;
+
+    const block = table.closest(
+        '.pisi-sheet-block'
+    );
+
+    if (block) block.scrollTop = 0;
+
+    refreshPisiSheetViewQuery(table);
+    return view.searchQuery;
 }
 
 function setPisiSheetViewFilters(table, filters) {
@@ -604,10 +643,12 @@ export {
     addPisiSheetViewConditionalColor,
     getPisiSheetViewRecords,
     getPisiSheetActiveViewConditionalColors,
+    getPisiSheetActiveViewSearchQuery,
     getPisiSheetConditionalColorMatchesForItem,
     movePisiSheetViewConditionalColor,
     removePisiSheetViewConditionalColor,
     setPisiSheetViewConditionalColors,
+    setPisiSheetViewSearchQuery,
     updatePisiSheetViewConditionalColor
 };
 
