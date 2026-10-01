@@ -75,11 +75,11 @@ test('Canvas uses Sheet-style section chrome and persistent metadata', () => {
     );
     assert.match(
         paint,
-        /data\.pisiCanvasTitle = 'Canvas'/
+        /block\.dataset\.pisiCanvasTitle = 'Canvas'/
     );
     assert.match(
         paint,
-        /data\.pisiCanvasCollapsed = '0'/
+        /block\.dataset\.pisiCanvasCollapsed = '0'/
     );
     assert.match(
         paint,
