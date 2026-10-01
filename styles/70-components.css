@@ -384,6 +384,10 @@ body.pisi-sheet-column-resizing * {
     pointer-events: none;
 }
 
+.pisi-sheet-search-icon::before {
+    content: "⌕";
+}
+
 .pisi-sheet-search-input {
     min-width: 0;
     width: 100%;

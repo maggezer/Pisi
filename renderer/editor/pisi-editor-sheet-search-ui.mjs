@@ -74,7 +74,6 @@ function ensurePisiSheetSearchControl(
         const clear = document.createElement('button');
 
         icon.className = 'pisi-sheet-search-icon';
-        icon.textContent = '⌕';
         icon.setAttribute('aria-hidden', 'true');
 
         input.type = 'search';
