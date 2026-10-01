@@ -162,11 +162,87 @@ document.addEventListener('mouseup', () => {
     pisiSheetDragSelection = null;
 }, true);
 
+function cleanupPisiSheetTransientChrome(table) {
+    const block = table?.closest?.(
+        '.pisi-sheet-block'
+    );
+
+    if (!block) return false;
+
+    const specs = [
+        {
+            className: 'pisi-sheet-section-header',
+            selectors: [
+                '[data-pisi-sheet-section-toggle]',
+                '[data-pisi-sheet-section-title]'
+            ]
+        },
+        {
+            className: 'pisi-sheet-search',
+            selectors: [
+                '[data-pisi-sheet-search-input]',
+                '[data-pisi-sheet-search-status]',
+                '[data-pisi-sheet-search-clear]'
+            ]
+        },
+        {
+            className: 'pisi-sheet-pagination',
+            selectors: [
+                '[data-pisi-sheet-page-previous]',
+                '[data-pisi-sheet-page-next]',
+                '[data-pisi-sheet-page-status]',
+                '[data-pisi-sheet-page-size]'
+            ]
+        }
+    ];
+    let changed = false;
+
+    for (const spec of specs) {
+        const candidates = Array.from(
+            block.children
+        ).filter((child) => (
+            child.classList?.contains(
+                spec.className
+            )
+        ));
+        const valid = candidates.find(
+            (candidate) => spec.selectors.every(
+                (selector) => candidate.querySelector(
+                    selector
+                )
+            )
+        ) || null;
+
+        for (const candidate of candidates) {
+            if (candidate !== valid) {
+                candidate.remove();
+                changed = true;
+            }
+        }
+    }
+
+    return changed;
+}
+
 function hydratePisiSheets(root = document) {
     root.querySelectorAll('table[data-pisi-sheet]').forEach((table) => {
         table.removeAttribute('data-pisi-sheet-bound');
 
-        if (pisiBoundSheets.has(table)) return;
+        const chromeChanged =
+            cleanupPisiSheetTransientChrome(table);
+
+        if (pisiBoundSheets.has(table)) {
+            if (chromeChanged) {
+                renderPisiSheetDatabase(table, {
+                    persist: false,
+                    preserveScroll: true
+                });
+                recalcPisiSheet(table);
+                reconcilePisiSheetSelection(table);
+            }
+
+            return;
+        }
 
         hydratePisiSheetDatabase(table);
         renderPisiSheetDatabase(table);
