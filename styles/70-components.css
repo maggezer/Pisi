@@ -133,6 +133,14 @@
     cursor: grabbing;
 }
 
+.pisi-sheet-col-label[data-pisi-field-icon]::before {
+    content: attr(data-pisi-field-icon);
+    display: inline-block;
+    margin-right: 5px;
+    font-style: normal;
+    font-weight: 400;
+}
+
 .pisi-sheet-col-resizer {
     position: absolute;
     top: 0;
@@ -322,6 +330,7 @@ body.pisi-sheet-column-resizing * {
 
 .pisi-sheet-column-name-input,
 .pisi-sheet-column-description-input,
+.pisi-sheet-column-icon-input,
 .pisi-sheet-column-select,
 .pisi-sheet-column-width-input {
     width: 100%;
@@ -336,6 +345,7 @@ body.pisi-sheet-column-resizing * {
 }
 
 .pisi-sheet-column-name-input,
+.pisi-sheet-column-icon-input,
 .pisi-sheet-column-select,
 .pisi-sheet-column-width-input {
     height: 30px;

@@ -324,6 +324,10 @@ function renderPisiSheetDatabase(table) {
 
         label.className = 'pisi-sheet-col-label';
         label.textContent = field.name;
+        if (field.icon) {
+            label.dataset.pisiFieldIcon =
+                field.icon;
+        }
         label.draggable = true;
         label.dataset.pisiSheetColDrag = '1';
 

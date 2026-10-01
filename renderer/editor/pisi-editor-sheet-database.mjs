@@ -74,6 +74,7 @@ function createPisiSheetField(index, options = {}) {
             options.type || 'text'
         ),
         description: String(options.description || '').slice(0, 240),
+        icon: String(options.icon || '').trim().slice(0, 12),
         options: normalizePisiSheetFieldOptions(
             options.options
         ),
@@ -202,6 +203,7 @@ function normalizePisiSheetDatabase(database) {
             name: field?.name,
             type: field?.type,
             description: field?.description,
+            icon: field?.icon,
             options: field?.options,
             numberFormat: field?.numberFormat,
             wrap: field?.wrap,
@@ -586,6 +588,12 @@ function updatePisiSheetField(table, colIndex, patch = {}) {
         field.description = String(
             nextPatch.description || ''
         ).slice(0, 240);
+    }
+
+    if (Object.hasOwn(nextPatch, 'icon')) {
+        field.icon = String(
+            nextPatch.icon || ''
+        ).trim().slice(0, 12);
     }
 
     if (Object.hasOwn(nextPatch, 'type')) {

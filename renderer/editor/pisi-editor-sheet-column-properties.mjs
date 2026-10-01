@@ -450,6 +450,7 @@ function openPisiSheetColumnMenu(table, header) {
     const icon = document.createElement('span');
     const input = document.createElement('input');
     const description = document.createElement('textarea');
+    const iconInput = document.createElement('input');
     const typeSelect = document.createElement('select');
     const wrap = document.createElement('input');
     const widthInput = document.createElement('input');
@@ -472,6 +473,7 @@ function openPisiSheetColumnMenu(table, header) {
         'pisi-sheet-column-menu-heading';
     icon.className = 'pisi-sheet-column-type-icon';
     icon.textContent =
+        field.icon ||
         getPisiSheetFieldTypeIcon(field.type);
 
     input.type = 'text';
@@ -497,6 +499,24 @@ function openPisiSheetColumnMenu(table, header) {
         makePisiSheetColumnMenuRow(
             window.pisiT?.('Açıklama') || 'Açıklama',
             description
+        )
+    );
+
+    iconInput.type = 'text';
+    iconInput.className =
+        'pisi-sheet-column-icon-input';
+    iconInput.maxLength = 12;
+    iconInput.value = field.icon || '';
+    iconInput.placeholder =
+        getPisiSheetFieldTypeIcon(field.type);
+    iconInput.setAttribute(
+        'aria-label',
+        window.pisiT?.('İkon') || 'İkon'
+    );
+    menu.appendChild(
+        makePisiSheetColumnMenuRow(
+            window.pisiT?.('İkon') || 'İkon',
+            iconInput
         )
     );
 
@@ -591,7 +611,10 @@ function openPisiSheetColumnMenu(table, header) {
             type !== 'number';
         optionsGroup.hidden =
             !['select', 'mSelect'].includes(type);
+        iconInput.placeholder =
+            getPisiSheetFieldTypeIcon(type);
         icon.textContent =
+            iconInput.value.trim() ||
             getPisiSheetFieldTypeIcon(type);
     };
 
@@ -795,6 +818,20 @@ function openPisiSheetColumnMenu(table, header) {
     description.addEventListener('change', () => {
         persistFieldPatch({
             description: description.value
+        });
+    });
+
+    iconInput.addEventListener('input', () => {
+        icon.textContent =
+            iconInput.value.trim() ||
+            getPisiSheetFieldTypeIcon(
+                typeSelect.value
+            );
+    });
+
+    iconInput.addEventListener('change', () => {
+        persistFieldPatch({
+            icon: iconInput.value
         });
     });
 

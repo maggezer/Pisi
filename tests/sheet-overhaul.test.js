@@ -309,6 +309,7 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         /PISI_SHEET_DEFAULT_COLUMN_WIDTH = 96/
     );
     assert.match(database, /description:/);
+    assert.match(database, /icon:/);
     assert.match(database, /wrap:/);
     assert.match(database, /pin:/);
     assert.match(database, /options:/);
@@ -443,6 +444,10 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         databaseDom,
         /pisiConditionalColor/
+    );
+    assert.match(
+        databaseDom,
+        /pisiFieldIcon/
     );
     assert.match(
         databaseDom,
@@ -657,6 +662,14 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         columnProperties,
         /pisi-sheet-column-property-row/
+    );
+    assert.match(
+        columnProperties,
+        /pisi-sheet-column-icon-input/
+    );
+    assert.match(
+        columnProperties,
+        /icon: iconInput\.value/
     );
     assert.match(
         columnProperties,
@@ -1000,6 +1013,14 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         componentsCss,
         /pisi-sheet-column-property-row/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-column-icon-input/
+    );
+    assert.match(
+        componentsCss,
+        /data-pisi-field-icon/
     );
     assert.match(
         componentsCss,
