@@ -207,6 +207,13 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         ),
         'utf8'
     );
+    const sheetConditionalColorsUi = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-sheet-conditional-colors-ui.mjs'
+        ),
+        'utf8'
+    );
     const sheetViewState = fs.readFileSync(
         path.join(
             root,
@@ -846,11 +853,11 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         /pisi-sheet-sort-row/
     );
     assert.match(
-        sheetViewRulesUi,
+        sheetConditionalColorsUi,
         /pisi-sheet-conditional-color-row/
     );
     assert.match(
-        sheetViewRulesUi,
+        sheetConditionalColorsUi,
         /Koşullu renkler/
     );
     assert.match(

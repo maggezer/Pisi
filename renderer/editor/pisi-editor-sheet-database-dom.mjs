@@ -1,4 +1,7 @@
 import { registerModule } from "../core/module-registry.mjs";
+import {
+    getPisiSheetConditionalColorMatchesForItem
+} from "./pisi-editor-sheet-view-query.mjs";
 
 function capturePisiSheetCellFormat(cell) {
     const format = {};

@@ -590,6 +590,16 @@ function movePisiSheetViewConditionalColor(
     );
 }
 
+export {
+    addPisiSheetViewConditionalColor,
+    getPisiSheetActiveViewConditionalColors,
+    getPisiSheetConditionalColorMatchesForItem,
+    movePisiSheetViewConditionalColor,
+    removePisiSheetViewConditionalColor,
+    setPisiSheetViewConditionalColors,
+    updatePisiSheetViewConditionalColor
+};
+
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
     "getPisiSheetActiveViewFilters": {
@@ -599,14 +609,6 @@ Object.defineProperties(moduleApi, {
     "getPisiSheetActiveViewSorts": {
         enumerable: true,
         get() { return getPisiSheetActiveViewSorts; }
-    },
-    "getPisiSheetActiveViewConditionalColors": {
-        enumerable: true,
-        get() { return getPisiSheetActiveViewConditionalColors; }
-    },
-    "getPisiSheetConditionalColorMatchesForItem": {
-        enumerable: true,
-        get() { return getPisiSheetConditionalColorMatchesForItem; }
     },
     "getPisiSheetViewRecords": {
         enumerable: true,
@@ -631,10 +633,6 @@ Object.defineProperties(moduleApi, {
     "setPisiSheetViewSorts": {
         enumerable: true,
         get() { return setPisiSheetViewSorts; }
-    },
-    "setPisiSheetViewConditionalColors": {
-        enumerable: true,
-        get() { return setPisiSheetViewConditionalColors; }
     },
     "addPisiSheetViewFilterCondition": {
         enumerable: true,
@@ -667,22 +665,6 @@ Object.defineProperties(moduleApi, {
     "movePisiSheetViewSort": {
         enumerable: true,
         get() { return movePisiSheetViewSort; }
-    },
-    "addPisiSheetViewConditionalColor": {
-        enumerable: true,
-        get() { return addPisiSheetViewConditionalColor; }
-    },
-    "updatePisiSheetViewConditionalColor": {
-        enumerable: true,
-        get() { return updatePisiSheetViewConditionalColor; }
-    },
-    "removePisiSheetViewConditionalColor": {
-        enumerable: true,
-        get() { return removePisiSheetViewConditionalColor; }
-    },
-    "movePisiSheetViewConditionalColor": {
-        enumerable: true,
-        get() { return movePisiSheetViewConditionalColor; }
     }
 });
 registerModule("editor.sheetViewQuery", moduleApi);
