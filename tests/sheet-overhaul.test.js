@@ -505,10 +505,6 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     );
 
     assert.match(sheet, /getPisiSheetCellSource/);
-    assert.match(
-        sheet,
-        /shiftPisiSheetFormulaReferences/
-    );
     assert.match(sheet, /getPisiSheetDatabaseDimensions/);
     assert.doesNotMatch(
         sheet,
@@ -964,6 +960,10 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         sheetDragFill,
         /applyPisiSheetDragFill/
+    );
+    assert.match(
+        sheetDragFill,
+        /shiftPisiSheetFormulaReferences/
     );
     assert.match(
         sheetDragFill,
