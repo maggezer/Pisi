@@ -132,6 +132,7 @@ function insertPisiSheet(editor, rows = 5, cols = 5) {
     block.className = 'pisi-sheet-block';
     block.contentEditable = 'false';
     block.dataset.pisiSheetBlock = '1';
+    block.dataset.pisiCompositeAlign = 'center';
     block.innerHTML = buildPisiSheetHtml(rows, cols);
 
     const selection = window.getSelection?.();

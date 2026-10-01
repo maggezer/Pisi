@@ -1,4 +1,5 @@
 import {
+    ensurePisiCompositeAlignment,
     ensurePisiEditableLineAfter
 } from "./pisi-editor-composite-blocks.mjs";
 
@@ -453,6 +454,8 @@ function ensurePisiCanvasSectionHeader(canvas) {
         getPisiCanvasSectionBlock(canvas);
 
     if (!block) return null;
+
+    ensurePisiCompositeAlignment(block);
 
     block.classList.remove(
         'pisi-editor-block',

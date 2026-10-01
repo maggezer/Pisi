@@ -1,4 +1,9 @@
 import { registerModule } from "../core/module-registry.mjs";
+import {
+    getPisiActiveCompositeAlignmentBlock,
+    getPisiCompositeAlignment,
+    setPisiCompositeAlignment
+} from "./pisi-editor-composite-blocks.mjs";
 
 const PISI_FONT_SIZE_LABELS = {
     '1': '8',
@@ -204,8 +209,79 @@ function getPisiUnifiedToolbarActiveTable(toolbar) {
     return getPisiSheetActiveTable(editor);
 }
 
+function syncPisiCompositeAlignmentToolbar(
+    toolbar,
+    block
+) {
+    const alignment = block
+        ? getPisiCompositeAlignment(block)
+        : null;
+    const commands = {
+        justifyLeft: 'left',
+        justifyCenter: 'center',
+        justifyRight: 'right'
+    };
+
+    Object.entries(commands).forEach(
+        ([command, target]) => {
+            const button = toolbar.querySelector(
+                'button[data-pisi-unified-command="' +
+                command +
+                '"]'
+            );
+
+            if (!button) return;
+
+            const active =
+                Boolean(block) &&
+                alignment === target;
+
+            button.classList.toggle(
+                'active',
+                active
+            );
+            button.setAttribute(
+                'aria-pressed',
+                String(active)
+            );
+        }
+    );
+}
+
 function runPisiUnifiedTextCommand(toolbar, command, value = null) {
-    const table = getPisiUnifiedToolbarActiveTable(toolbar);
+    const editor = getPisiToolbarEditor(toolbar);
+    const compositeBlock =
+        editor
+            ? getPisiActiveCompositeAlignmentBlock(
+                editor
+            )
+            : null;
+    const compositeActions = {
+        justifyLeft: 'left',
+        justifyCenter: 'center',
+        justifyRight: 'right'
+    };
+    const compositeAlignment =
+        compositeActions[command];
+
+    if (
+        compositeBlock &&
+        compositeAlignment
+    ) {
+        setPisiCompositeAlignment(
+            compositeBlock,
+            compositeAlignment
+        );
+        syncPisiCompositeAlignmentToolbar(
+            toolbar,
+            compositeBlock
+        );
+        return;
+    }
+
+    const table = compositeBlock
+        ? null
+        : getPisiUnifiedToolbarActiveTable(toolbar);
     const tableActions = {
         bold: 'toggleBold',
         italic: 'toggleItalic',
@@ -252,9 +328,34 @@ function openPisiToolbarTodo(toolbar) {
 }
 
 function syncPisiUnifiedToolbarContext(toolbar) {
-    const table = getPisiUnifiedToolbarActiveTable(toolbar);
-    toolbar.classList.toggle('pisi-table-context', Boolean(table));
-    syncPisiSheetToolbarState(toolbar, table);
+    const editor = getPisiToolbarEditor(toolbar);
+    const compositeBlock =
+        editor
+            ? getPisiActiveCompositeAlignmentBlock(
+                editor
+            )
+            : null;
+    const table = compositeBlock
+        ? null
+        : getPisiUnifiedToolbarActiveTable(toolbar);
+
+    toolbar.classList.toggle(
+        'pisi-table-context',
+        Boolean(table)
+    );
+    toolbar.classList.toggle(
+        'pisi-composite-context',
+        Boolean(compositeBlock)
+    );
+
+    syncPisiSheetToolbarState(
+        toolbar,
+        table
+    );
+    syncPisiCompositeAlignmentToolbar(
+        toolbar,
+        compositeBlock
+    );
 }
 
 function bindPisiUnifiedToolbarEvents(toolbar) {

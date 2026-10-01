@@ -221,6 +221,13 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         ),
         'utf8'
     );
+    const compositeBlocks = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-composite-blocks.mjs'
+        ),
+        'utf8'
+    );
     const sheetSectionUi = fs.readFileSync(
         path.join(
             root,
@@ -1057,6 +1064,34 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     );
     assert.match(
         sheetSectionUi,
+        /ensurePisiCompositeAlignment/
+    );
+    assert.match(
+        compositeBlocks,
+        /getPisiActiveCompositeAlignmentBlock/
+    );
+    assert.match(
+        compositeBlocks,
+        /setPisiCompositeAlignment/
+    );
+    assert.match(
+        compositeBlocks,
+        /data\.pisiCompositeAlign/
+    );
+    assert.match(
+        unifiedToolbar,
+        /getPisiActiveCompositeAlignmentBlock/
+    );
+    assert.match(
+        unifiedToolbar,
+        /setPisiCompositeAlignment/
+    );
+    assert.match(
+        unifiedToolbar,
+        /pisi-composite-context/
+    );
+    assert.match(
+        sheetSectionUi,
         /deletePisiSheetSection/
     );
     assert.match(
@@ -1347,6 +1382,14 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         componentsCss,
         /pisi-sheet-section-title/
+    );
+    assert.match(
+        componentsCss,
+        /data-pisi-composite-align="center"/
+    );
+    assert.match(
+        componentsCss,
+        /width: fit-content/
     );
     assert.match(
         componentsCss,

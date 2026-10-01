@@ -271,6 +271,7 @@ function insertPisiCanvas(editor, width = 520, height = 320) {
     block.dataset.pisiCanvasBlock = '1';
     block.dataset.pisiCanvasTitle = 'Canvas';
     block.dataset.pisiCanvasCollapsed = '0';
+    block.dataset.pisiCompositeAlign = 'center';
 
     canvas.className = 'pisi-paint-canvas';
     canvas.dataset.pisiCanvas = '1';

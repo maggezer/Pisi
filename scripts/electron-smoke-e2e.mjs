@@ -367,6 +367,32 @@ try {
             }
         }
 
+        const alignLeftButton = toolbar.querySelector(
+            '[data-pisi-unified-command="justifyLeft"]'
+        );
+        const alignCenterButton = toolbar.querySelector(
+            '[data-pisi-unified-command="justifyCenter"]'
+        );
+        const alignRightButton = toolbar.querySelector(
+            '[data-pisi-unified-command="justifyRight"]'
+        );
+
+        const sheetDefaultAlignment =
+            sheetBlock?.dataset.pisiCompositeAlign || '';
+
+        sectionTitle?.focus();
+        alignLeftButton?.click();
+        const sheetAlignedLeft =
+            sheetBlock?.dataset.pisiCompositeAlign === 'left';
+
+        alignRightButton?.click();
+        const sheetAlignedRight =
+            sheetBlock?.dataset.pisiCompositeAlign === 'right';
+
+        alignCenterButton?.click();
+        const sheetAlignedCenter =
+            sheetBlock?.dataset.pisiCompositeAlign === 'center';
+
         const searchInput =
             sheetBlock?.querySelector(
                 '[data-pisi-sheet-search-input]'
@@ -3011,6 +3037,18 @@ try {
             canvasBlock?.querySelector(
                 '[data-pisi-canvas-section-title]'
             ) || null;
+        const canvasDefaultAlignment =
+            canvasBlock?.dataset.pisiCompositeAlign || '';
+        canvasTitle?.focus();
+        alignLeftButton?.click();
+        const canvasAlignedLeft =
+            canvasBlock?.dataset.pisiCompositeAlign === 'left';
+        alignRightButton?.click();
+        const canvasAlignedRight =
+            canvasBlock?.dataset.pisiCompositeAlign === 'right';
+        alignCenterButton?.click();
+        const canvasAlignedCenter =
+            canvasBlock?.dataset.pisiCompositeAlign === 'center';
         const canvasNewLineButton =
             canvasBlock?.querySelector(
                 '[data-pisi-composite-new-line]'
@@ -3139,6 +3177,10 @@ try {
             sheetTitleValueAfterTyping,
             sheetTitleModelAfterCommit,
             sheetTitleSerializedAfterCommit,
+            sheetDefaultAlignment,
+            sheetAlignedLeft,
+            sheetAlignedRight,
+            sheetAlignedCenter,
             sheetSearchFocusRetained,
             sheetSearchValueAfterTyping,
             sheetCopyButtonPresent,
@@ -3150,6 +3192,10 @@ try {
             pastedSheetRemoved,
             sheetDeleteButtonPresent,
             sheetRemovedByDelete,
+            canvasDefaultAlignment,
+            canvasAlignedLeft,
+            canvasAlignedRight,
+            canvasAlignedCenter,
             canvasPasteCreatedCopy,
             canvasCopyPreservedState,
             canvasCopiesRemoved,
@@ -3514,6 +3560,10 @@ try {
         sheetResult.sheetTitleValueAfterTyping !== 'SheetABC' ||
         sheetResult.sheetTitleModelAfterCommit !== 'SheetABC' ||
         sheetResult.sheetTitleSerializedAfterCommit !== 'SheetABC' ||
+        sheetResult.sheetDefaultAlignment !== 'center' ||
+        !sheetResult.sheetAlignedLeft ||
+        !sheetResult.sheetAlignedRight ||
+        !sheetResult.sheetAlignedCenter ||
         !sheetResult.sheetSearchFocusRetained ||
         sheetResult.sheetSearchValueAfterTyping !== 'ABC' ||
         !sheetResult.sheetCopyButtonPresent ||
@@ -3525,6 +3575,10 @@ try {
         !sheetResult.pastedSheetRemoved ||
         !sheetResult.sheetDeleteButtonPresent ||
         !sheetResult.sheetRemovedByDelete ||
+        sheetResult.canvasDefaultAlignment !== 'center' ||
+        !sheetResult.canvasAlignedLeft ||
+        !sheetResult.canvasAlignedRight ||
+        !sheetResult.canvasAlignedCenter ||
         !sheetResult.canvasPasteCreatedCopy ||
         !sheetResult.canvasCopyPreservedState ||
         !sheetResult.canvasCopiesRemoved ||

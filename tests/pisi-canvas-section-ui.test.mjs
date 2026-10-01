@@ -116,6 +116,14 @@ test('Canvas uses Sheet-style section chrome and persistent metadata', () => {
     );
     assert.match(
         section,
+        /ensurePisiCompositeAlignment/
+    );
+    assert.match(
+        paint,
+        /pisiCompositeAlign = 'center'/
+    );
+    assert.match(
+        section,
         /deletePisiCanvasSection/
     );
     assert.match(

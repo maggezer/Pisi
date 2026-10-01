@@ -3,6 +3,114 @@ const PISI_COMPOSITE_CLIPBOARD_PREFIX =
 
 let pisiCompositeClipboardText = '';
 
+const pisiActiveCompositeContexts = new WeakMap();
+
+function normalizePisiCompositeAlignment(value) {
+    return ['left', 'center', 'right'].includes(value)
+        ? value
+        : 'center';
+}
+
+function ensurePisiCompositeAlignment(block) {
+    if (!block) return 'center';
+
+    const alignment =
+        normalizePisiCompositeAlignment(
+            block.dataset.pisiCompositeAlign
+        );
+
+    block.dataset.pisiCompositeAlign = alignment;
+    return alignment;
+}
+
+function setPisiCompositeAlignment(
+    block,
+    alignment,
+    options = {}
+) {
+    if (!block) return false;
+
+    const next =
+        normalizePisiCompositeAlignment(alignment);
+    const changed =
+        block.dataset.pisiCompositeAlign !== next;
+
+    block.dataset.pisiCompositeAlign = next;
+
+    if (
+        changed &&
+        options.notify !== false
+    ) {
+        const editor =
+            getPisiCompositeEditor(block);
+
+        editor?.dispatchEvent(
+            new InputEvent('input', {
+                bubbles: true,
+                inputType: 'formatSet'
+            })
+        );
+    }
+
+    return changed;
+}
+
+function getPisiCompositeAlignment(block) {
+    return ensurePisiCompositeAlignment(block);
+}
+
+function rememberPisiCompositeContext(event) {
+    const target = event?.target;
+
+    if (!(target instanceof Element)) return;
+
+    const editor = target.closest(
+        '.pisi-rich-editor'
+    );
+
+    if (!editor) return;
+
+    const block =
+        getPisiCompositeBlock(target);
+
+    if (!block) {
+        pisiActiveCompositeContexts.delete(editor);
+        return;
+    }
+
+    const wholeBlock = Boolean(
+        target.closest(
+            '.pisi-sheet-section-header, ' +
+            '.pisi-sheet-search, ' +
+            '.pisi-canvas-section-header, ' +
+            '.pisi-paint-canvas'
+        )
+    );
+
+    pisiActiveCompositeContexts.set(
+        editor,
+        {
+            block,
+            wholeBlock
+        }
+    );
+}
+
+function getPisiActiveCompositeAlignmentBlock(editor) {
+    const context =
+        pisiActiveCompositeContexts.get(editor);
+
+    if (
+        !context?.wholeBlock ||
+        !context.block?.isConnected ||
+        !editor?.contains?.(context.block)
+    ) {
+        return null;
+    }
+
+    return context.block;
+}
+
 function makePisiCompositeId(prefix) {
     const uuid = globalThis.crypto?.randomUUID?.();
 
@@ -68,6 +176,8 @@ function getPisiCompositePayload(block) {
         return {
             version: 1,
             type: 'sheet',
+            alignment:
+                getPisiCompositeAlignment(block),
             database: structuredClone(database)
         };
     }
@@ -86,6 +196,8 @@ function getPisiCompositePayload(block) {
     return {
         version: 1,
         type: 'canvas',
+        alignment:
+            getPisiCompositeAlignment(block),
         title: String(
             block.dataset.pisiCanvasTitle || 'Canvas'
         ).slice(0, 80),
@@ -258,6 +370,10 @@ function createPisiSheetBlockFromPayload(payload) {
     block.className = 'pisi-sheet-block';
     block.contentEditable = 'false';
     block.dataset.pisiSheetBlock = '1';
+    block.dataset.pisiCompositeAlign =
+        normalizePisiCompositeAlignment(
+            payload?.alignment
+        );
 
     table.className = 'pisi-sheet-table';
     table.dataset.pisiSheet = '1';
@@ -286,6 +402,10 @@ function createPisiCanvasBlockFromPayload(payload) {
         'Canvas';
     block.dataset.pisiCanvasCollapsed =
         payload?.collapsed === true ? '1' : '0';
+    block.dataset.pisiCompositeAlign =
+        normalizePisiCompositeAlignment(
+            payload?.alignment
+        );
 
     canvas.className = 'pisi-paint-canvas';
     canvas.dataset.pisiCanvas = '1';
@@ -569,6 +689,16 @@ function handlePisiCompositePaste(event) {
 
 if (typeof document !== 'undefined') {
     document.addEventListener(
+        'pointerdown',
+        rememberPisiCompositeContext,
+        true
+    );
+    document.addEventListener(
+        'focusin',
+        rememberPisiCompositeContext,
+        true
+    );
+    document.addEventListener(
         'click',
         handlePisiCompositeClick,
         true
@@ -587,8 +717,12 @@ if (typeof document !== 'undefined') {
 
 export {
     copyPisiCompositeBlock,
+    ensurePisiCompositeAlignment,
     ensurePisiEditableLineAfter,
+    getPisiActiveCompositeAlignmentBlock,
+    getPisiCompositeAlignment,
     insertPisiCompositePayload,
     parsePisiCompositePayload,
-    serializePisiCompositePayload
+    serializePisiCompositePayload,
+    setPisiCompositeAlignment
 };

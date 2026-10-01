@@ -154,6 +154,8 @@ function sanitizePisiEditorHtml(html = '') {
                         !/[\u0000-\u001f\u007f]/.test(value);
                 } else if (name === 'data-pisi-canvas-collapsed') {
                     allowed = /^(?:0|1)$/.test(value);
+                } else if (name === 'data-pisi-composite-align') {
+                    allowed = /^(?:left|center|right)$/.test(value);
                 }
             }
 

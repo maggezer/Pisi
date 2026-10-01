@@ -1,4 +1,5 @@
 import {
+    ensurePisiCompositeAlignment,
     ensurePisiEditableLineAfter
 } from "./pisi-editor-composite-blocks.mjs";
 
@@ -533,6 +534,8 @@ function ensurePisiSheetSectionHeader(table) {
     const database = getPisiSheetDatabase(table);
 
     if (!block || !database) return null;
+
+    ensurePisiCompositeAlignment(block);
 
     block.classList.remove(
         'pisi-editor-block',

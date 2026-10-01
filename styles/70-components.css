@@ -2,6 +2,7 @@
 
 .pisi-canvas-block {
     display: block;
+    width: fit-content;
     max-width: 100%;
     margin: 0;
     overflow: auto;
@@ -175,6 +176,7 @@
 }
 
 .pisi-sheet-block {
+    width: fit-content;
     max-width: 100%;
     margin: 0;
     overflow: auto;
@@ -1512,4 +1514,22 @@ body.pisi-sheet-column-resizing * {
 .pisi-rich-editor.pisi-block-system
     .pisi-canvas-block.pisi-canvas-collapsed {
     padding-bottom: 0;
+}
+
+.pisi-sheet-block[data-pisi-composite-align="left"],
+.pisi-canvas-block[data-pisi-composite-align="left"] {
+    margin-left: 0;
+    margin-right: auto;
+}
+
+.pisi-sheet-block[data-pisi-composite-align="center"],
+.pisi-canvas-block[data-pisi-composite-align="center"] {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.pisi-sheet-block[data-pisi-composite-align="right"],
+.pisi-canvas-block[data-pisi-composite-align="right"] {
+    margin-left: auto;
+    margin-right: 0;
 }
