@@ -237,10 +237,33 @@ function syncPisiWordToolbarState(toolbar) {
 
     const alignTarget = block || probe;
     const align = String(getComputedStyle(alignTarget).textAlign || '').toLowerCase();
-    setPisiWordCommandPressed(toolbar, 'justifyLeft', ['left', 'start', ''].includes(align));
-    setPisiWordCommandPressed(toolbar, 'justifyCenter', align === 'center');
-    setPisiWordCommandPressed(toolbar, 'justifyRight', ['right', 'end'].includes(align));
-    setPisiWordCommandPressed(toolbar, 'justifyFull', align === 'justify');
+    const compositeOwnsAlignment =
+        toolbar.classList.contains(
+            'pisi-composite-context'
+        );
+
+    if (!compositeOwnsAlignment) {
+        setPisiWordCommandPressed(
+            toolbar,
+            'justifyLeft',
+            ['left', 'start', ''].includes(align)
+        );
+        setPisiWordCommandPressed(
+            toolbar,
+            'justifyCenter',
+            align === 'center'
+        );
+        setPisiWordCommandPressed(
+            toolbar,
+            'justifyRight',
+            ['right', 'end'].includes(align)
+        );
+        setPisiWordCommandPressed(
+            toolbar,
+            'justifyFull',
+            align === 'justify'
+        );
+    }
 }
 
 function notifyPisiWordEditorChanged(editor) {
@@ -560,6 +583,23 @@ function bindPisiWordToolbar(toolbar) {
             'button[data-pisi-unified-command], [data-pisi-color-trigger], [data-pisi-symbol-trigger], [data-pisi-todo-trigger]'
         );
         if (!textControl) return;
+
+        const command =
+            textControl.dataset?.pisiUnifiedCommand || '';
+        const compositeAlignmentCommand =
+            toolbar.classList.contains(
+                'pisi-composite-context'
+            ) &&
+            [
+                'justifyLeft',
+                'justifyCenter',
+                'justifyRight'
+            ].includes(command);
+
+        if (compositeAlignmentCommand) {
+            return;
+        }
+
         restorePisiWordSelection(toolbar);
         queueMicrotask(() => {
             rememberPisiWordSelection(toolbar);
