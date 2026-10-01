@@ -420,6 +420,10 @@ try {
             sheetBlock?.classList.contains(
                 'pisi-editor-block'
             ) === true;
+        const sheetBlockIsDirectEditorChild =
+            sheetBlock?.parentElement === editor;
+        const sheetSelectionCollapsedAfterInsert =
+            window.getSelection?.()?.isCollapsed === true;
         const sheetBlockActiveDuringTitle =
             sheetBlock?.classList.contains(
                 'pisi-block-active'
@@ -2797,6 +2801,8 @@ try {
             sheetAfterAnchorHeight,
             sheetAdjacentVisibleBlankCount,
             sheetBlockTextBlockDecorated,
+            sheetBlockIsDirectEditorChild,
+            sheetSelectionCollapsedAfterInsert,
             sheetBlockActiveDuringTitle,
             sheetAfterAnchorTag,
             sheetAfterToggleAnchorTag,
@@ -3154,9 +3160,11 @@ try {
         sheetResult.sheetAfterAnchorHeight > 1 ||
         sheetResult.sheetAdjacentVisibleBlankCount !== 0 ||
         sheetResult.sheetBlockTextBlockDecorated ||
+        !sheetResult.sheetBlockIsDirectEditorChild ||
+        !sheetResult.sheetSelectionCollapsedAfterInsert ||
         sheetResult.sheetBlockActiveDuringTitle ||
-        sheetResult.sheetAfterAnchorTag !== 'SPAN' ||
-        sheetResult.sheetAfterToggleAnchorTag !== 'SPAN' ||
+        sheetResult.sheetAfterAnchorTag !== '' ||
+        sheetResult.sheetAfterToggleAnchorTag !== '' ||
         sheetResult.sheetAfterToggleVisibleBlankCount !== 0 ||
         sheetResult.sheetAfterToggleTextBlockDecorated ||
         sheetResult.initialEditable !== 'false' ||

@@ -1031,7 +1031,7 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         sheetSectionUi,
         /pisi-sheet-caret-anchor/
     );
-    assert.match(
+    assert.doesNotMatch(
         sheetSectionUi,
         /document\.createElement\('span'\)/
     );
@@ -1124,9 +1124,17 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         /drop/
     );
 
-    assert.match(
+    assert.doesNotMatch(
         sheet,
         /pisi-sheet-caret-anchor/
+    );
+    assert.match(
+        sheet,
+        /range\.setStartAfter\(block\)/
+    );
+    assert.match(
+        sheet,
+        /currentBlock\.replaceWith\(block\)/
     );
     assert.match(sheet, /PISI_SHEET_MAX_ROWS = 10000/);
     assert.match(sheet, /PISI_SHEET_MAX_COLS = 80/);

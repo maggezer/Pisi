@@ -41,17 +41,6 @@ function isPisiSheetEmptyAdjacentBlock(element) {
     ).trim();
 }
 
-function makePisiSheetCaretAnchor() {
-    const anchor = document.createElement('span');
-
-    anchor.className = 'pisi-sheet-caret-anchor';
-    anchor.dataset.pisiSheetCaretAnchor = 'after';
-    anchor.setAttribute('contenteditable', 'true');
-    anchor.innerHTML = '<br>';
-
-    return anchor;
-}
-
 function normalizePisiSheetAdjacentSpacing(table) {
     const block = getPisiSheetSectionBlock(table);
     const editor = block?.closest?.(
@@ -60,39 +49,48 @@ function normalizePisiSheetAdjacentSpacing(table) {
 
     if (!block || !editor) return;
 
-    let previous = block.previousElementSibling;
+    for (const direction of [
+        'previousElementSibling',
+        'nextElementSibling'
+    ]) {
+        let sibling = block[direction];
 
-    while (
-        previous &&
-        (
-            previous.matches?.(
-                '.pisi-sheet-caret-anchor'
-            ) ||
-            isPisiSheetEmptyAdjacentBlock(previous)
-        )
-    ) {
-        const remove = previous;
-        previous = previous.previousElementSibling;
-        remove.remove();
+        while (
+            sibling &&
+            (
+                sibling.matches?.(
+                    '.pisi-sheet-caret-anchor'
+                ) ||
+                isPisiSheetEmptyAdjacentBlock(sibling)
+            )
+        ) {
+            const remove = sibling;
+            sibling = sibling[direction];
+            remove.remove();
+        }
     }
+}
 
-    let next = block.nextElementSibling;
+function clearPisiSheetDocumentSelection(block) {
+    const selection = window.getSelection?.();
 
-    while (
-        next &&
-        (
-            next.matches?.(
-                '.pisi-sheet-caret-anchor'
-            ) ||
-            isPisiSheetEmptyAdjacentBlock(next)
-        )
-    ) {
-        const remove = next;
-        next = next.nextElementSibling;
-        remove.remove();
+    if (!selection || !selection.rangeCount) return;
+
+    const ranges = Array.from(
+        { length: selection.rangeCount },
+        (_, index) => selection.getRangeAt(index)
+    );
+    const intersectsSheet = ranges.some((range) => {
+        try {
+            return range.intersectsNode(block);
+        } catch {
+            return false;
+        }
+    });
+
+    if (intersectsSheet) {
+        selection.removeAllRanges();
     }
-
-    block.after(makePisiSheetCaretAnchor());
 }
 
 function syncPisiSheetSectionTitleWidth(input) {
@@ -309,6 +307,9 @@ function createPisiSheetSectionHeader(table) {
     toggle.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
+        clearPisiSheetDocumentSelection(
+            getPisiSheetSectionBlock(table)
+        );
 
         togglePisiSheetSection(
             table,
@@ -341,6 +342,10 @@ function createPisiSheetSectionHeader(table) {
     });
 
     title.addEventListener('focus', () => {
+        clearPisiSheetDocumentSelection(
+            getPisiSheetSectionBlock(table)
+        );
+
         const database =
             getPisiSheetDatabase(table);
 

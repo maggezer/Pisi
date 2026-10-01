@@ -126,16 +126,54 @@ function runPisiExcelAction(toolbar, action, actionValue = null) {
 }
 
 function insertPisiSheet(editor, rows = 5, cols = 5) {
-    const html = `
-        <div class="pisi-sheet-block" contenteditable="false" data-pisi-sheet-block="1">
-            ${buildPisiSheetHtml(rows, cols)}
-        </div>
-        <span class="pisi-sheet-caret-anchor" data-pisi-sheet-caret-anchor="after" contenteditable="true"><br></span>
-    `;
+    if (!editor) return null;
 
-    insertHtmlIntoPisiEditor(editor, html);
+    const block = document.createElement('div');
+    block.className = 'pisi-sheet-block';
+    block.contentEditable = 'false';
+    block.dataset.pisiSheetBlock = '1';
+    block.innerHTML = buildPisiSheetHtml(rows, cols);
+
+    const selection = window.getSelection?.();
+    const anchorNode = selection?.anchorNode || null;
+    const anchorElement = anchorNode?.nodeType === Node.ELEMENT_NODE
+        ? anchorNode
+        : anchorNode?.parentElement;
+    const currentBlock = anchorElement?.closest?.(
+        '.pisi-editor-block'
+    );
+    const canUseCurrentBlock = Boolean(
+        currentBlock &&
+        editor.contains(currentBlock) &&
+        !currentBlock.closest('.pisi-sheet-block')
+    );
+
+    if (canUseCurrentBlock) {
+        const isEmpty = !String(
+            currentBlock.textContent || ''
+        ).trim();
+
+        if (isEmpty) {
+            currentBlock.replaceWith(block);
+        } else {
+            currentBlock.after(block);
+        }
+    } else {
+        editor.appendChild(block);
+    }
+
+    if (selection) {
+        const range = document.createRange();
+
+        range.setStartAfter(block);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+
     initializePisiAdvancedEditorContent(editor);
-    notifyPisiEditorChanged(editor);
+    notifyPisiEditorChanged(editor, false);
+    return block;
 }
 
 function escapePisiSheetModelAttribute(value) {
