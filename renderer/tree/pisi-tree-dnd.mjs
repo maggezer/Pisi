@@ -668,6 +668,29 @@ async function deleteTreePisiItem(item, treeNode) {
     if (!ok) return;
 
     try {
+        const centerWasExactTarget = Boolean(
+            isNodeFile &&
+            typeof activeCenterNode !== 'undefined' &&
+            activeCenterNode?.path &&
+            sameClientPath(
+                activeCenterNode.path,
+                item.fullPath
+            )
+        );
+        const modalWasExactTarget = Boolean(
+            isNodeFile &&
+            typeof activeModalNode !== 'undefined' &&
+            activeModalNode?.path &&
+            sameClientPath(
+                activeModalNode.path,
+                item.fullPath
+            )
+        );
+        const modalTargetBox =
+            modalWasExactTarget
+                ? activeModalNode?.box || null
+                : null;
+
         if (typeof flushPisiPendingSaves === 'function') {
             const saved =
                 await flushPisiPendingSaves();
@@ -675,19 +698,50 @@ async function deleteTreePisiItem(item, treeNode) {
             if (!saved) return;
         }
 
+        let deletePath = item.fullPath;
+
+        if (
+            centerWasExactTarget &&
+            typeof activeCenterNode !== 'undefined' &&
+            activeCenterNode?.path
+        ) {
+            deletePath = activeCenterNode.path;
+        } else if (
+            modalWasExactTarget &&
+            modalTargetBox?.dataset?.nodePath
+        ) {
+            deletePath = modalTargetBox.dataset.nodePath;
+        }
+
         const liveTreeNode =
-            findTreeNodeByPath(item.fullPath);
+            findTreeNodeByPath(deletePath);
 
         if (liveTreeNode) {
             treeNode = liveTreeNode;
             item =
                 liveTreeNode.__pisiItem ||
-                item;
+                {
+                    ...item,
+                    fullPath: deletePath
+                };
+        } else if (
+            !sameClientPath(
+                deletePath,
+                item.fullPath
+            )
+        ) {
+            item = {
+                ...item,
+                fullPath: deletePath
+            };
         }
 
         suppressNextFileSystemRefresh(8000);
 
-        const result = await window.pisiProject?.deletePisiFile?.(item.fullPath);
+        const result =
+            await window.pisiProject?.deletePisiFile?.(
+                item.fullPath
+            );
 
         if (!result || !result.ok) {
             alert(result?.error || 'Dosya silinemedi.');

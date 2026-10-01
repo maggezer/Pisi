@@ -25,12 +25,59 @@ function ensurePisiCompositeAlignment(block) {
     return alignment;
 }
 
+const PISI_COMPOSITE_LAYOUT_STYLE_PROPERTIES =
+    Object.freeze([
+        'width',
+        'max-width',
+        'margin',
+        'margin-left',
+        'margin-right',
+        'margin-inline',
+        'margin-inline-start',
+        'margin-inline-end',
+        'left',
+        'right',
+        'transform',
+        'text-align'
+    ]);
+
+function normalizePisiCompositeBlockLayout(block) {
+    if (!block) return false;
+
+    ensurePisiCompositeAlignment(block);
+
+    const style = block.style;
+    if (!style) return false;
+
+    let changed = false;
+
+    for (
+        const property
+        of PISI_COMPOSITE_LAYOUT_STYLE_PROPERTIES
+    ) {
+        if (!style.getPropertyValue(property)) {
+            continue;
+        }
+
+        style.removeProperty(property);
+        changed = true;
+    }
+
+    if (!String(style.cssText || '').trim()) {
+        block.removeAttribute('style');
+    }
+
+    return changed;
+}
+
 function setPisiCompositeAlignment(
     block,
     alignment,
     options = {}
 ) {
     if (!block) return false;
+
+    normalizePisiCompositeBlockLayout(block);
 
     const next =
         normalizePisiCompositeAlignment(alignment);
@@ -79,6 +126,8 @@ function selectPisiCompositeAlignmentBlock(block) {
     const editor = getPisiCompositeEditor(block);
 
     if (!block || !editor) return false;
+
+    normalizePisiCompositeBlockLayout(block);
 
     editor.querySelectorAll(
         '.pisi-paint-canvas.selected'
@@ -842,6 +891,7 @@ export {
     getPisiActiveCompositeAlignmentBlock,
     getPisiCompositeAlignment,
     insertPisiCompositePayload,
+    normalizePisiCompositeBlockLayout,
     parsePisiCompositePayload,
     serializePisiCompositePayload,
     setPisiCompositeAlignment,

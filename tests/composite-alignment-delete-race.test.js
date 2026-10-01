@@ -42,20 +42,57 @@ test('composite alignment prefers explicit block context and selected Canvas sta
     );
 });
 
-test('Sheet and Canvas keep visible section dividers and logical auto-margin alignment', () => {
+test('Sheet and Canvas normalize legacy wrapper geometry and keep visible dividers', () => {
+    const composite = read(
+        'renderer/editor/pisi-editor-composite-blocks.mjs'
+    );
+    const sheetSection = read(
+        'renderer/editor/pisi-editor-sheet-section-ui.mjs'
+    );
+    const canvasSection = read(
+        'renderer/editor/pisi-editor-canvas-section-ui.mjs'
+    );
     const css = read('styles/70-components.css');
 
+    assert.match(
+        composite,
+        /function normalizePisiCompositeBlockLayout\(block\)/
+    );
+    assert.match(
+        composite,
+        /'margin-left'[\s\S]{0,220}'margin-right'/
+    );
+    assert.match(
+        composite,
+        /style\.removeProperty\(property\)/
+    );
+    assert.match(
+        sheetSection,
+        /normalizePisiCompositeBlockLayout\(block\)/
+    );
+    assert.match(
+        canvasSection,
+        /normalizePisiCompositeBlockLayout\(block\)/
+    );
     assert.match(
         css,
         /--pisi-composite-divider-color/
     );
     assert.match(
         css,
-        /border-bottom:\s*1px solid var\(--pisi-composite-divider-color\)/
+        /\.pisi-sheet-block\s*\{[\s\S]{0,220}width:\s*fit-content/
     );
     assert.match(
         css,
         /data-pisi-composite-align="center"[\s\S]*?margin-inline-start:\s*auto;[\s\S]*?margin-inline-end:\s*auto;/
+    );
+    assert.match(
+        css,
+        /\.pisi-sheet-block\.pisi-sheet-collapsed[\s\S]{0,180}border-bottom:\s*1px solid var\(--pisi-composite-divider-color\)/
+    );
+    assert.match(
+        css,
+        /\.pisi-canvas-block\.pisi-canvas-collapsed[\s\S]{0,180}border-bottom:\s*1px solid var\(--pisi-composite-divider-color\)/
     );
 });
 
@@ -85,6 +122,26 @@ test('tree delete flushes pending editor saves before moving a file and re-resol
     );
     assert.match(
         deletion,
-        /findTreeNodeByPath\(item\.fullPath\)/
+        /let deletePath = item\.fullPath/
+    );
+    assert.match(
+        deletion,
+        /centerWasExactTarget/
+    );
+    assert.match(
+        deletion,
+        /modalWasExactTarget/
+    );
+    assert.match(
+        deletion,
+        /findTreeNodeByPath\(deletePath\)/
+    );
+
+    const nodeEditor = read(
+        'renderer/editor/pisi-node-editor.mjs'
+    );
+    assert.match(
+        nodeEditor,
+        /function clearCenterNodeEditor\(\)\s*\{\s*clearTimeout\(centerNodeSaveTimer\);\s*centerNodeSaveTimer = null;/
     );
 });
