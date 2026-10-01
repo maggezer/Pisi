@@ -1331,12 +1331,25 @@ body.pisi-sheet-column-resizing * {
 
 /* Keep a zero-height editable landing point after a non-editable Sheet
    without rendering an extra blank editor row. */
-#center-node-editor-content div.pisi-sheet-caret-anchor,
-#node-modal-content div.pisi-sheet-caret-anchor {
+#center-node-editor-content > .pisi-sheet-caret-anchor,
+#node-modal-content > .pisi-sheet-caret-anchor,
+.pisi-rich-editor.pisi-block-system > .pisi-sheet-caret-anchor {
     min-height: 0;
     height: 0;
     margin: 0;
     padding: 0;
+    border: 0;
     overflow: hidden;
+    font-size: 0;
     line-height: 0;
+    white-space: normal;
+}
+
+#center-node-editor-content > .pisi-sheet-block,
+#node-modal-content > .pisi-sheet-block,
+.pisi-rich-editor.pisi-block-system > .pisi-sheet-block {
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
 }

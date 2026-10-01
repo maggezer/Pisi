@@ -13,6 +13,102 @@ function normalizePisiSheetSectionTitle(value) {
         PISI_SHEET_DEFAULT_TITLE;
 }
 
+function isPisiSheetEmptyAdjacentBlock(element) {
+    if (!(element instanceof Element)) return false;
+
+    if (
+        !['DIV', 'P'].includes(element.tagName) ||
+        element.matches(
+            '.pisi-sheet-block, ' +
+            '.pisi-canvas-block, ' +
+            '.pisi-rollup-block'
+        )
+    ) {
+        return false;
+    }
+
+    if (
+        element.querySelector(
+            'table, canvas, img, input, button, ' +
+            '[data-pisi-rollup-relation]'
+        )
+    ) {
+        return false;
+    }
+
+    return !String(
+        element.textContent || ''
+    ).trim();
+}
+
+function makePisiSheetCaretAnchor(
+    position
+) {
+    const anchor = document.createElement('div');
+
+    anchor.className =
+        'pisi-sheet-caret-anchor pisi-editor-block';
+    anchor.dataset.pisiSheetCaretAnchor = position;
+    anchor.innerHTML = '<br>';
+
+    return anchor;
+}
+
+function normalizePisiSheetAdjacentSpacing(table) {
+    const block = getPisiSheetSectionBlock(table);
+    const editor = block?.closest?.(
+        '.pisi-rich-editor'
+    );
+
+    if (!block || !editor) return;
+
+    const normalizeSide = (
+        position,
+        direction
+    ) => {
+        let sibling = block[direction];
+        const empty = [];
+
+        while (
+            sibling &&
+            isPisiSheetEmptyAdjacentBlock(sibling)
+        ) {
+            empty.push(sibling);
+            sibling = sibling[direction];
+        }
+
+        const anchor = empty.shift() ||
+            makePisiSheetCaretAnchor(position);
+
+        anchor.classList.add(
+            'pisi-sheet-caret-anchor'
+        );
+        anchor.dataset.pisiSheetCaretAnchor =
+            position;
+
+        for (const extra of empty) {
+            extra.remove();
+        }
+
+        if (!anchor.isConnected) {
+            if (position === 'before') {
+                block.before(anchor);
+            } else {
+                block.after(anchor);
+            }
+        }
+    };
+
+    normalizeSide(
+        'before',
+        'previousElementSibling'
+    );
+    normalizeSide(
+        'after',
+        'nextElementSibling'
+    );
+}
+
 function syncPisiSheetSectionTitleWidth(input) {
     if (!input) return;
 
@@ -111,6 +207,19 @@ function syncPisiSheetSectionState(
         title,
         collapsed
     };
+}
+
+function updatePisiSheetSectionTitleDraft(
+    table,
+    input
+) {
+    const database = getPisiSheetDatabase(table);
+
+    if (!database || !input) return;
+
+    database.title = String(
+        input.value || ''
+    ).slice(0, 80);
 }
 
 function commitPisiSheetSectionTitle(
@@ -214,12 +323,51 @@ function createPisiSheetSectionHeader(table) {
         );
     });
 
+    const stopTitleEditorEvent = (event) => {
+        event.stopPropagation();
+    };
+
+    [
+        'pointerdown',
+        'pointerup',
+        'mousedown',
+        'mouseup',
+        'click',
+        'dblclick',
+        'focusin',
+        'focusout',
+        'keyup',
+        'compositionstart',
+        'compositionupdate',
+        'compositionend'
+    ].forEach((type) => {
+        title.addEventListener(
+            type,
+            stopTitleEditorEvent
+        );
+    });
+
+    title.addEventListener('focus', () => {
+        const database =
+            getPisiSheetDatabase(table);
+
+        title.dataset.pisiSheetOriginalTitle =
+            String(
+                database?.title ||
+                PISI_SHEET_DEFAULT_TITLE
+            );
+    });
+
     title.addEventListener('beforeinput', (event) => {
         event.stopPropagation();
     });
 
     title.addEventListener('input', (event) => {
         event.stopPropagation();
+        updatePisiSheetSectionTitleDraft(
+            table,
+            title
+        );
         syncPisiSheetSectionTitleWidth(title);
     });
 
@@ -246,10 +394,18 @@ function createPisiSheetSectionHeader(table) {
 
         const database =
             getPisiSheetDatabase(table);
+        const original =
+            title.dataset.pisiSheetOriginalTitle ||
+            PISI_SHEET_DEFAULT_TITLE;
 
-        title.value = normalizePisiSheetSectionTitle(
-            database?.title
-        );
+        if (database) {
+            database.title = original;
+        }
+
+        title.value =
+            normalizePisiSheetSectionTitle(
+                original
+            );
         syncPisiSheetSectionTitleWidth(title);
         title.blur();
     });
@@ -277,6 +433,7 @@ function ensurePisiSheetSectionHeader(table) {
         block.prepend(header);
     }
 
+    normalizePisiSheetAdjacentSpacing(table);
     syncPisiSheetSectionState(
         table,
         header

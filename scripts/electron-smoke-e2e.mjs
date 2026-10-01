@@ -304,12 +304,36 @@ try {
                 document.activeElement === sectionTitle;
 
             for (const character of ['A', 'B', 'C']) {
+                sectionTitle.dispatchEvent(
+                    new KeyboardEvent('keydown', {
+                        bubbles: true,
+                        cancelable: true,
+                        key: character
+                    })
+                );
+                sectionTitle.dispatchEvent(
+                    new InputEvent('beforeinput', {
+                        bubbles: true,
+                        cancelable: true,
+                        inputType: 'insertText',
+                        data: character
+                    })
+                );
+
                 sectionTitle.value += character;
+
                 sectionTitle.dispatchEvent(
                     new InputEvent('input', {
                         bubbles: true,
                         inputType: 'insertText',
                         data: character
+                    })
+                );
+                sectionTitle.dispatchEvent(
+                    new KeyboardEvent('keyup', {
+                        bubbles: true,
+                        cancelable: true,
+                        key: character
                     })
                 );
 
@@ -364,16 +388,34 @@ try {
                     sheetBlockStyle?.paddingBottom || '0'
                 ) || 0
         };
-        const sheetCaretAnchor =
+        const sheetBeforeAnchor =
+            sheetBlock?.previousElementSibling?.classList?.contains(
+                'pisi-sheet-caret-anchor'
+            )
+                ? sheetBlock.previousElementSibling
+                : null;
+        const sheetAfterAnchor =
             sheetBlock?.nextElementSibling?.classList?.contains(
                 'pisi-sheet-caret-anchor'
             )
                 ? sheetBlock.nextElementSibling
                 : null;
-        const sheetCaretAnchorHeight =
-            sheetCaretAnchor
-                ? sheetCaretAnchor.getBoundingClientRect().height
+        const sheetBeforeAnchorHeight =
+            sheetBeforeAnchor
+                ? sheetBeforeAnchor.getBoundingClientRect().height
                 : -1;
+        const sheetAfterAnchorHeight =
+            sheetAfterAnchor
+                ? sheetAfterAnchor.getBoundingClientRect().height
+                : -1;
+        const sheetAdjacentVisibleBlankCount = [
+            sheetBlock?.previousElementSibling,
+            sheetBlock?.nextElementSibling
+        ].filter((element) => (
+            element &&
+            !String(element.textContent || '').trim() &&
+            element.getBoundingClientRect().height > 1
+        )).length;
         const initialEditable =
             firstCell.getAttribute('contenteditable');
         const originalRowId = firstCell.dataset.pisiRowId || '';
@@ -2710,7 +2752,9 @@ try {
             sheetTitleModelAfterCommit,
             sheetTitleSerializedAfterCommit,
             sheetBlockOuterSpacing,
-            sheetCaretAnchorHeight,
+            sheetBeforeAnchorHeight,
+            sheetAfterAnchorHeight,
+            sheetAdjacentVisibleBlankCount,
             initialEditable,
             originalRowId,
             originalColId,
@@ -3059,7 +3103,9 @@ try {
         sheetResult.sheetBlockOuterSpacing?.marginBottom !== 0 ||
         sheetResult.sheetBlockOuterSpacing?.paddingTop !== 0 ||
         sheetResult.sheetBlockOuterSpacing?.paddingBottom !== 0 ||
-        sheetResult.sheetCaretAnchorHeight > 1 ||
+        sheetResult.sheetBeforeAnchorHeight > 1 ||
+        sheetResult.sheetAfterAnchorHeight > 1 ||
+        sheetResult.sheetAdjacentVisibleBlankCount !== 0 ||
         sheetResult.initialEditable !== 'false' ||
         !sheetResult.originalRowId ||
         !sheetResult.originalColId ||
