@@ -208,9 +208,10 @@ function togglePisiCanvasSection(
 function deletePisiCanvasSection(canvas) {
     const block =
         getPisiCanvasSectionBlock(canvas);
-    const editor = block?.closest?.(
-        '.pisi-rich-editor'
-    );
+    const editor =
+        block?.closest?.('.pisi-rich-editor') ||
+        block?.parentElement ||
+        null;
 
     if (!block || !editor) return false;
 
@@ -220,7 +221,12 @@ function deletePisiCanvasSection(canvas) {
         window.__pisiPaintState.activeCanvas = null;
     }
 
-    clearPisiCanvasDocumentSelection(block);
+    try {
+        clearPisiCanvasDocumentSelection(block);
+    } catch {
+        window.getSelection?.()?.removeAllRanges?.();
+    }
+
     block.remove();
 
     editor.dispatchEvent(

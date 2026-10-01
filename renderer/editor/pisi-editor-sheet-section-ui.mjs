@@ -283,23 +283,30 @@ function togglePisiSheetSection(
 
 function deletePisiSheetSection(table) {
     const block = getPisiSheetSectionBlock(table);
-    const editor = block?.closest?.('.pisi-rich-editor');
+    const editor =
+        block?.closest?.('.pisi-rich-editor') ||
+        block?.parentElement ||
+        null;
 
     if (!block || !editor) return false;
 
-    if (
-        typeof isPisiSheetEditingCell === 'function' &&
-        isPisiSheetEditingCell(table)
-    ) {
-        finishPisiSheetCellEdit(table, {
-            commit: true,
-            refocus: false
-        });
-    }
+    try {
+        if (
+            typeof isPisiSheetEditingCell === 'function' &&
+            isPisiSheetEditingCell(table)
+        ) {
+            finishPisiSheetCellEdit(table, {
+                commit: true,
+                refocus: false
+            });
+        }
 
-    if (typeof clearPisiSheetSelection === 'function') {
-        clearPisiSheetSelection(table);
-    } else {
+        if (typeof clearPisiSheetSelection === 'function') {
+            clearPisiSheetSelection(table);
+        } else {
+            window.getSelection?.()?.removeAllRanges?.();
+        }
+    } catch {
         window.getSelection?.()?.removeAllRanges?.();
     }
 
