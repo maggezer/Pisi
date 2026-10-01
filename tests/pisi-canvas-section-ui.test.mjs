@@ -197,8 +197,20 @@ test('Canvas uses Sheet-style section chrome and persistent metadata', () => {
         css,
         /\.pisi-canvas-block\.pisi-canvas-collapsed/
     );
+    const sheetBlockStart =
+        css.indexOf('.pisi-sheet-block {');
+    const sheetBlockEnd =
+        css.indexOf('}', sheetBlockStart);
+    const sheetBlockRule =
+        css.slice(
+            sheetBlockStart,
+            sheetBlockEnd + 1
+        );
+
+    assert.ok(sheetBlockStart >= 0);
+    assert.ok(sheetBlockEnd > sheetBlockStart);
     assert.match(
-        css,
-        /\.pisi-sheet-block[\s\S]{0,240}padding: 0 0 5px/
+        sheetBlockRule,
+        /padding:\s*0 0 5px/
     );
 });
