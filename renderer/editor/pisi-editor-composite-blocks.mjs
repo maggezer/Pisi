@@ -186,6 +186,7 @@ function isPisiCompositeWholeBlockTarget(
         target.closest(
             '.pisi-sheet-section-header, ' +
             '.pisi-sheet-search, ' +
+            '.pisi-sheet-selection-surface, ' +
             '.pisi-canvas-section-header, ' +
             '.pisi-paint-canvas'
         )

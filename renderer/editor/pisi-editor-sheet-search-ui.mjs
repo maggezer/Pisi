@@ -57,12 +57,12 @@ function ensurePisiSheetSearchControl(
     if (!block) return null;
 
     const controls = Array.from(
-        block.children
-    ).filter((child) => (
-        child.classList?.contains(
-            'pisi-sheet-search'
+        block.querySelectorAll(
+            ':scope > .pisi-sheet-search, ' +
+            ':scope > .pisi-sheet-search-row ' +
+            '> .pisi-sheet-search'
         )
-    ));
+    );
     let control = controls.find((child) => (
         pisiBoundSheetSearchControls.has(child) &&
         child.querySelector(
@@ -217,7 +217,91 @@ function ensurePisiSheetSearchControl(
             clear
         );
         pisiBoundSheetSearchControls.add(control);
-        block.insertBefore(control, table);
+    }
+
+    let searchRow = Array.from(
+        block.children
+    ).find((child) => (
+        child.classList?.contains(
+            'pisi-sheet-search-row'
+        )
+    )) || null;
+
+    block.querySelectorAll(
+        ':scope > .pisi-sheet-search-row'
+    ).forEach((candidate) => {
+        if (candidate !== searchRow) {
+            candidate.remove();
+        }
+    });
+
+    if (!searchRow) {
+        searchRow = document.createElement('div');
+        searchRow.className =
+            'pisi-sheet-search-row';
+        searchRow.dataset.pisiSheetSearchRow = '1';
+        searchRow.setAttribute(
+            'contenteditable',
+            'false'
+        );
+        block.insertBefore(searchRow, table);
+    }
+
+    let selectionSurface =
+        searchRow.querySelector(
+            '[data-pisi-sheet-selection-surface]'
+        );
+
+    if (!selectionSurface) {
+        selectionSurface =
+            document.createElement('button');
+        selectionSurface.type = 'button';
+        selectionSurface.className =
+            'pisi-sheet-selection-surface';
+        selectionSurface.dataset
+            .pisiSheetSelectionSurface = '1';
+        selectionSurface.setAttribute(
+            'contenteditable',
+            'false'
+        );
+        selectionSurface.setAttribute(
+            'aria-label',
+            window.pisiT?.("Sheet'i seç") ||
+            "Sheet'i seç"
+        );
+        selectionSurface.title =
+            window.pisiT?.("Sheet'i seç") ||
+            "Sheet'i seç";
+
+        const selectWholeSheet = (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            selectPisiCompositeAlignmentBlock(
+                block
+            );
+        };
+
+        selectionSurface.addEventListener(
+            'pointerdown',
+            selectWholeSheet
+        );
+        selectionSurface.addEventListener(
+            'click',
+            selectWholeSheet
+        );
+    }
+
+    if (control.parentElement !== searchRow) {
+        searchRow.prepend(control);
+    }
+
+    if (
+        selectionSurface.parentElement !==
+        searchRow
+    ) {
+        searchRow.appendChild(
+            selectionSurface
+        );
     }
 
     const input = control.querySelector(
