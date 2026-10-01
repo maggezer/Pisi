@@ -1,7 +1,7 @@
 
 
 .pisi-canvas-block {
-    --pisi-composite-divider-color: rgba(190, 194, 201, 0.42);
+    --pisi-composite-divider-color: rgba(190, 194, 201, 0.58);
     display: block;
     width: max-content;
     max-width: 100%;
@@ -149,13 +149,14 @@
 
 .pisi-canvas-block.pisi-canvas-collapsed {
     overflow: visible;
-    border-bottom: 0;
+    border-bottom: 1px solid var(--pisi-composite-divider-color);
     padding-bottom: 0;
 }
 
 .pisi-canvas-block.pisi-canvas-collapsed
     > .pisi-canvas-section-header {
     margin-bottom: 0;
+    border-bottom: 0;
 }
 
 .pisi-canvas-block.pisi-canvas-collapsed
@@ -179,8 +180,8 @@
 }
 
 .pisi-sheet-block {
-    --pisi-composite-divider-color: rgba(190, 194, 201, 0.42);
-    width: max-content;
+    --pisi-composite-divider-color: rgba(190, 194, 201, 0.58);
+    width: fit-content;
     max-width: 100%;
     max-inline-size: 100%;
     box-sizing: border-box;
@@ -275,13 +276,14 @@
 .pisi-sheet-block.pisi-sheet-collapsed {
     max-height: none;
     overflow: visible;
-    border-bottom: 0;
+    border-bottom: 1px solid var(--pisi-composite-divider-color);
     padding-bottom: 0;
 }
 
 .pisi-sheet-block.pisi-sheet-collapsed
     > .pisi-sheet-section-header {
     margin-bottom: 0;
+    border-bottom: 0;
 }
 
 .pisi-sheet-block.pisi-sheet-collapsed
@@ -1548,5 +1550,5 @@ body.pisi-sheet-column-resizing * {
 
 html[data-pisi-theme="light"] .pisi-sheet-block,
 html[data-pisi-theme="light"] .pisi-canvas-block {
-    --pisi-composite-divider-color: rgba(70, 77, 87, 0.34);
+    --pisi-composite-divider-color: rgba(70, 77, 87, 0.42);
 }
