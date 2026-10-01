@@ -33,6 +33,27 @@ test('toolbar remembers selection and synchronizes font and command state', () =
     assert.match(source, /setPisiWordCommandPressed\(toolbar, 'strikeThrough'/);
 });
 
+test('composite alignment owns alignment buttons over Word state', () => {
+    const source = read('renderer/editor/pisi-editor-word-behavior.mjs');
+
+    assert.match(
+        source,
+        /toolbar\.classList\.contains\([\s\S]{0,80}'pisi-composite-context'/
+    );
+    assert.match(
+        source,
+        /if \(!compositeOwnsAlignment\)[\s\S]{0,500}justifyLeft[\s\S]{0,500}justifyCenter[\s\S]{0,500}justifyRight/
+    );
+    assert.match(
+        source,
+        /const compositeAlignmentCommand[\s\S]{0,420}'justifyLeft'[\s\S]{0,220}'justifyCenter'[\s\S]{0,220}'justifyRight'/
+    );
+    assert.match(
+        source,
+        /if \(compositeAlignmentCommand\) \{[\s\S]{0,80}return;/
+    );
+});
+
 test('font changes use real sizes and keep a collapsed caret typing style', () => {
     const source = read('renderer/editor/pisi-editor-word-behavior.mjs');
 
