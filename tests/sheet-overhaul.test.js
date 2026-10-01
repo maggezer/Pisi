@@ -1111,6 +1111,18 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         /pisi-composite-context/
     );
     assert.match(
+        unifiedToolbar,
+        /data-pisi-composite-alignment-active/
+    );
+    assert.match(
+        unifiedToolbar,
+        /pisi:composite-alignment-changed/
+    );
+    assert.match(
+        unifiedToolbar,
+        /syncPisiUnifiedToolbarContext\(toolbar\)/
+    );
+    assert.match(
         sheetSectionUi,
         /deletePisiSheetSection/
     );
