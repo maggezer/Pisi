@@ -42,7 +42,7 @@ test('composite alignment prefers explicit block context and selected Canvas sta
     );
 });
 
-test('Sheet and Canvas normalize legacy wrapper geometry and keep visible dividers', () => {
+test('Sheet and Canvas use full-width section chrome with aligned inner content', () => {
     const composite = read(
         'renderer/editor/pisi-editor-composite-blocks.mjs'
     );
@@ -80,11 +80,19 @@ test('Sheet and Canvas normalize legacy wrapper geometry and keep visible divide
     );
     assert.match(
         css,
-        /\.pisi-sheet-block\s*\{[\s\S]{0,220}width:\s*fit-content/
+        /\.pisi-sheet-block\s*\{[\s\S]{0,220}width:\s*100%/
     );
     assert.match(
         css,
-        /data-pisi-composite-align="center"[\s\S]*?margin-inline-start:\s*auto;[\s\S]*?margin-inline-end:\s*auto;/
+        /\.pisi-canvas-block\s*\{[\s\S]{0,220}width:\s*100%/
+    );
+    assert.match(
+        css,
+        /\.pisi-sheet-block\[data-pisi-composite-align="center"\][\s\S]*?> \.pisi-sheet-table[\s\S]*?margin-inline-start:\s*auto;[\s\S]*?margin-inline-end:\s*auto;/
+    );
+    assert.match(
+        css,
+        /\.pisi-canvas-block\[data-pisi-composite-align="center"\][\s\S]*?> \.pisi-paint-canvas/
     );
     assert.match(
         css,
@@ -93,6 +101,48 @@ test('Sheet and Canvas normalize legacy wrapper geometry and keep visible divide
     assert.match(
         css,
         /\.pisi-canvas-block\.pisi-canvas-collapsed[\s\S]{0,180}border-bottom:\s*1px solid var\(--pisi-composite-divider-color\)/
+    );
+});
+
+test('Sheet exposes a dedicated blank selection surface beside search', () => {
+    const search = read(
+        'renderer/editor/pisi-editor-sheet-search-ui.mjs'
+    );
+    const composite = read(
+        'renderer/editor/pisi-editor-composite-blocks.mjs'
+    );
+    const nodeEditor = read(
+        'renderer/editor/pisi-node-editor.mjs'
+    );
+    const css = read('styles/70-components.css');
+
+    assert.match(
+        search,
+        /pisi-sheet-search-row/
+    );
+    assert.match(
+        search,
+        /pisi-sheet-selection-surface/
+    );
+    assert.match(
+        search,
+        /selectPisiCompositeAlignmentBlock\(\s*block\s*\)/
+    );
+    assert.match(
+        composite,
+        /\.pisi-sheet-selection-surface/
+    );
+    assert.match(
+        css,
+        /\.pisi-sheet-selection-surface/
+    );
+    assert.match(
+        css,
+        /\.pisi-sheet-block\.pisi-composite-alignment-active[\s\S]{0,120}\.pisi-sheet-selection-surface/
+    );
+    assert.match(
+        nodeEditor,
+        /\.pisi-sheet-search-row/
     );
 });
 
