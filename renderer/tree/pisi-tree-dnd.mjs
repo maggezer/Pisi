@@ -636,6 +636,8 @@ if (!isRoot) {
 async function deleteTreePisiItem(item, treeNode) {
     if (!item || item.isDirectory) return;
 
+    cancelPendingPisiTreeFileClick();
+
     const isMapFile = isMapFileName(item.name);
     const isNodeFile = isNodeFileName(item.name);
 
@@ -666,6 +668,23 @@ async function deleteTreePisiItem(item, treeNode) {
     if (!ok) return;
 
     try {
+        if (typeof flushPisiPendingSaves === 'function') {
+            const saved =
+                await flushPisiPendingSaves();
+
+            if (!saved) return;
+        }
+
+        const liveTreeNode =
+            findTreeNodeByPath(item.fullPath);
+
+        if (liveTreeNode) {
+            treeNode = liveTreeNode;
+            item =
+                liveTreeNode.__pisiItem ||
+                item;
+        }
+
         suppressNextFileSystemRefresh(8000);
 
         const result = await window.pisiProject?.deletePisiFile?.(item.fullPath);

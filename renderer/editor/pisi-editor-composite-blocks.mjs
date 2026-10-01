@@ -121,6 +121,68 @@ function selectPisiCompositeAlignmentBlock(block) {
     return true;
 }
 
+function isPisiCompositeWholeBlockTarget(
+    target,
+    block = getPisiCompositeBlock(target)
+) {
+    if (
+        !(target instanceof Element) ||
+        !block ||
+        !block.contains(target)
+    ) {
+        return false;
+    }
+
+    return Boolean(
+        target.closest(
+            '.pisi-sheet-section-header, ' +
+            '.pisi-sheet-search, ' +
+            '.pisi-canvas-section-header, ' +
+            '.pisi-paint-canvas'
+        )
+    );
+}
+
+function getPisiFocusedCompositeAlignmentBlock(editor) {
+    const activeElement = document.activeElement;
+
+    if (
+        !(activeElement instanceof Element) ||
+        !editor?.contains(activeElement)
+    ) {
+        return null;
+    }
+
+    const block =
+        getPisiCompositeBlock(activeElement);
+
+    if (!block) return null;
+
+    return isPisiCompositeWholeBlockTarget(
+        activeElement,
+        block
+    )
+        ? block
+        : null;
+}
+
+function getPisiSelectedCanvasAlignmentBlock(editor) {
+    if (!editor) return null;
+
+    const selectedCanvas = editor.querySelector(
+        '.pisi-paint-canvas.selected'
+    );
+    const block =
+        getPisiCompositeBlock(selectedCanvas);
+
+    return (
+        block?.isConnected &&
+        editor.contains(block)
+    )
+        ? block
+        : null;
+}
+
 function rememberPisiCompositeContext(event) {
     const target = event?.target;
 
@@ -134,15 +196,11 @@ function rememberPisiCompositeContext(event) {
 
     const block =
         getPisiCompositeBlock(target);
-    const wholeBlock = Boolean(
-        block &&
-        target.closest(
-            '.pisi-sheet-section-header, ' +
-            '.pisi-sheet-search, ' +
-            '.pisi-canvas-section-header, ' +
-            '.pisi-paint-canvas'
-        )
-    );
+    const wholeBlock =
+        isPisiCompositeWholeBlockTarget(
+            target,
+            block
+        );
 
     clearPisiCompositeAlignmentContext(editor);
 
@@ -161,6 +219,39 @@ function rememberPisiCompositeContext(event) {
 function getPisiActiveCompositeAlignmentBlock(editor) {
     if (!editor) return null;
 
+    const activeElement = document.activeElement;
+
+    if (
+        activeElement instanceof Element &&
+        editor.contains(activeElement)
+    ) {
+        const activeBlock =
+            getPisiCompositeBlock(activeElement);
+
+        if (activeBlock) {
+            return isPisiCompositeWholeBlockTarget(
+                activeElement,
+                activeBlock
+            )
+                ? activeBlock
+                : null;
+        }
+    }
+
+    const focused =
+        getPisiFocusedCompositeAlignmentBlock(editor);
+
+    if (focused) {
+        return focused;
+    }
+
+    const selectedCanvas =
+        getPisiSelectedCanvasAlignmentBlock(editor);
+
+    if (selectedCanvas) {
+        return selectedCanvas;
+    }
+
     const marked = editor.querySelector(
         '.pisi-sheet-block.' +
         PISI_COMPOSITE_ACTIVE_CLASS +
@@ -168,7 +259,10 @@ function getPisiActiveCompositeAlignmentBlock(editor) {
         PISI_COMPOSITE_ACTIVE_CLASS
     );
 
-    if (marked?.isConnected) {
+    if (
+        marked?.isConnected &&
+        editor.contains(marked)
+    ) {
         return marked;
     }
 
