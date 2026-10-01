@@ -1286,11 +1286,11 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     );
     assert.match(
         componentsCss,
-        /pisi-rich-editor\.pisi-block-system > \.pisi-sheet-caret-anchor/
+        /pisi-rich-editor\.pisi-block-system \.pisi-sheet-caret-anchor/
     );
     assert.match(
         componentsCss,
-        /pisi-rich-editor\.pisi-block-system > \.pisi-sheet-block/
+        /pisi-rich-editor\.pisi-block-system \.pisi-sheet-block/
     );
     assert.match(
         componentsCss,

@@ -1331,9 +1331,9 @@ body.pisi-sheet-column-resizing * {
 
 /* Keep a zero-height editable landing point after a non-editable Sheet
    without rendering an extra blank editor row. */
-#center-node-editor-content > .pisi-sheet-caret-anchor,
-#node-modal-content > .pisi-sheet-caret-anchor,
-.pisi-rich-editor.pisi-block-system > .pisi-sheet-caret-anchor {
+#center-node-editor-content .pisi-sheet-caret-anchor,
+#node-modal-content .pisi-sheet-caret-anchor,
+.pisi-rich-editor.pisi-block-system .pisi-sheet-caret-anchor {
     min-height: 0;
     height: 0;
     margin: 0;
@@ -1345,9 +1345,9 @@ body.pisi-sheet-column-resizing * {
     white-space: normal;
 }
 
-#center-node-editor-content > .pisi-sheet-block,
-#node-modal-content > .pisi-sheet-block,
-.pisi-rich-editor.pisi-block-system > .pisi-sheet-block {
+#center-node-editor-content .pisi-sheet-block,
+#node-modal-content .pisi-sheet-block,
+.pisi-rich-editor.pisi-block-system .pisi-sheet-block {
     margin-top: 0;
     margin-bottom: 0;
     padding-top: 0;

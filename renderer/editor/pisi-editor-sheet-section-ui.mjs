@@ -232,14 +232,21 @@ function commitPisiSheetSectionTitle(
     const next = normalizePisiSheetSectionTitle(
         input.value
     );
-    const changed = database.title !== next;
+    const original =
+        normalizePisiSheetSectionTitle(
+            input.dataset.pisiSheetOriginalTitle ||
+            database.title
+        );
+    const changed = original !== next;
 
     database.title = next;
     input.value = next;
+    input.dataset.pisiSheetOriginalTitle = next;
     syncPisiSheetSectionTitleWidth(input);
 
+    persistPisiSheetDatabase(table);
+
     if (changed) {
-        persistPisiSheetDatabase(table);
         schedulePisiSheetEditorNotification(table);
     }
 
