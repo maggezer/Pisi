@@ -237,7 +237,7 @@ try {
         );
     }
 
-    const sheetResult = await cdp.evaluate(`(() => {
+    const sheetResult = await cdp.evaluate(`(async () => {
         const editor = document.getElementById('center-node-editor-content');
         const toolbar = document.querySelector(
             '.pisi-editor-toolbar[data-editor-target="center-node-editor-content"]'
@@ -412,6 +412,14 @@ try {
                     'data-pisi-composite-alignment-active'
                 ) === true
         });
+
+        const settleCompositeToolbarState = async () => {
+            await Promise.resolve();
+            await new Promise((resolve) => {
+                requestAnimationFrame(() => resolve());
+            });
+            await Promise.resolve();
+        };
 
         const sheetDefaultAlignment =
             sheetBlock?.dataset.pisiCompositeAlign || '';
@@ -3436,22 +3444,42 @@ try {
         );
 
         alignLeftButton?.click();
+        await settleCompositeToolbarState();
+        const canvasSurfaceLeftButtonState =
+            getCompositeAlignmentButtonState();
         const canvasSurfaceLeftPosition =
             measureLeft(sourceCanvas);
         const canvasSurfaceAlignedLeft =
             canvasBlock?.dataset.pisiCompositeAlign === 'left';
 
         alignRightButton?.click();
+        await settleCompositeToolbarState();
+        const canvasSurfaceRightButtonState =
+            getCompositeAlignmentButtonState();
         const canvasSurfaceRightPosition =
             measureLeft(sourceCanvas);
         const canvasSurfaceAlignedRight =
             canvasBlock?.dataset.pisiCompositeAlign === 'right';
 
         alignCenterButton?.click();
+        await settleCompositeToolbarState();
+        const canvasSurfaceCenterButtonState =
+            getCompositeAlignmentButtonState();
         const canvasSurfaceCenterPosition =
             measureLeft(sourceCanvas);
         const canvasSurfaceAlignedCenter =
             canvasBlock?.dataset.pisiCompositeAlign === 'center';
+
+        const canvasSurfaceAlignmentButtonsStaySynced =
+            canvasSurfaceLeftButtonState.left &&
+            !canvasSurfaceLeftButtonState.center &&
+            !canvasSurfaceLeftButtonState.right &&
+            !canvasSurfaceRightButtonState.left &&
+            !canvasSurfaceRightButtonState.center &&
+            canvasSurfaceRightButtonState.right &&
+            !canvasSurfaceCenterButtonState.left &&
+            canvasSurfaceCenterButtonState.center &&
+            !canvasSurfaceCenterButtonState.right;
 
         const canvasSurfaceAlignmentWorks =
             canvasSurfaceAlignedLeft &&
@@ -3626,6 +3654,7 @@ try {
             canvasTitleCompositeSelected,
             canvasChromeStaysFixed,
             canvasSurfaceAlignmentWorks,
+            canvasSurfaceAlignmentButtonsStaySynced,
             canvasSurfaceCompositeSelected,
             canvasFirstClickSelectedOnly,
             canvasSecondGestureDraws,
@@ -4029,6 +4058,7 @@ try {
         !sheetResult.canvasTitleCompositeSelected ||
         !sheetResult.canvasChromeStaysFixed ||
         !sheetResult.canvasSurfaceAlignmentWorks ||
+        !sheetResult.canvasSurfaceAlignmentButtonsStaySynced ||
         !sheetResult.canvasSurfaceCompositeSelected ||
         !sheetResult.canvasFirstClickSelectedOnly ||
         !sheetResult.canvasSecondGestureDraws ||
