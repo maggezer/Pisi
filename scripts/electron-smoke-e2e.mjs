@@ -376,6 +376,42 @@ try {
         const alignRightButton = toolbar.querySelector(
             '[data-pisi-unified-command="justifyRight"]'
         );
+        const fontSizeSelect = toolbar.querySelector(
+            '[data-pisi-unified-command="fontSize"]'
+        );
+        const alignGrid = toolbar.querySelector(
+            '.pisi-toolbar-align-grid'
+        );
+
+        const fontSizeRight =
+            fontSizeSelect?.getBoundingClientRect?.().right ?? -1;
+        const alignGridRight =
+            alignGrid?.getBoundingClientRect?.().right ?? -1;
+        const alignmentButtonsMatchFontSizeEdge =
+            Math.abs(
+                fontSizeRight - alignGridRight
+            ) <= 1;
+
+        const getCompositeAlignmentButtonState = () => ({
+            left:
+                alignLeftButton?.classList.contains('active') === true &&
+                alignLeftButton?.getAttribute('aria-pressed') === 'true' &&
+                alignLeftButton?.hasAttribute(
+                    'data-pisi-composite-alignment-active'
+                ) === true,
+            center:
+                alignCenterButton?.classList.contains('active') === true &&
+                alignCenterButton?.getAttribute('aria-pressed') === 'true' &&
+                alignCenterButton?.hasAttribute(
+                    'data-pisi-composite-alignment-active'
+                ) === true,
+            right:
+                alignRightButton?.classList.contains('active') === true &&
+                alignRightButton?.getAttribute('aria-pressed') === 'true' &&
+                alignRightButton?.hasAttribute(
+                    'data-pisi-composite-alignment-active'
+                ) === true
+        });
 
         const sheetDefaultAlignment =
             sheetBlock?.dataset.pisiCompositeAlign || '';
@@ -521,6 +557,8 @@ try {
         };
 
         alignLeftButton?.click();
+        const sheetLeftButtonState =
+            getCompositeAlignmentButtonState();
         const tableLeftRect = measureRect(table);
         const searchLeftRect =
             measureRect(searchRow);
@@ -528,6 +566,8 @@ try {
             sheetBlock?.dataset.pisiCompositeAlign === 'left';
 
         alignRightButton?.click();
+        const sheetRightButtonState =
+            getCompositeAlignmentButtonState();
         const tableRightRect = measureRect(table);
         const searchRightRect =
             measureRect(searchRow);
@@ -535,11 +575,24 @@ try {
             sheetBlock?.dataset.pisiCompositeAlign === 'right';
 
         alignCenterButton?.click();
+        const sheetCenterButtonState =
+            getCompositeAlignmentButtonState();
         const tableCenterRect = measureRect(table);
         const searchCenterRect =
             measureRect(searchRow);
         const sheetAlignedCenter =
             sheetBlock?.dataset.pisiCompositeAlign === 'center';
+
+        const sheetAlignmentButtonsRefreshImmediately =
+            sheetLeftButtonState.left &&
+            !sheetLeftButtonState.center &&
+            !sheetLeftButtonState.right &&
+            !sheetRightButtonState.left &&
+            !sheetRightButtonState.center &&
+            sheetRightButtonState.right &&
+            !sheetCenterButtonState.left &&
+            sheetCenterButtonState.center &&
+            !sheetCenterButtonState.right;
 
         const sheetContentAlignmentWorks =
             sheetAlignedLeft &&
@@ -3313,22 +3366,39 @@ try {
             measureLeft(canvasBlock);
 
         alignLeftButton?.click();
+        const canvasLeftButtonState =
+            getCompositeAlignmentButtonState();
         const canvasTitleLeftPosition =
             measureLeft(sourceCanvas);
         const canvasAlignedLeft =
             canvasBlock?.dataset.pisiCompositeAlign === 'left';
 
         alignRightButton?.click();
+        const canvasRightButtonState =
+            getCompositeAlignmentButtonState();
         const canvasTitleRightPosition =
             measureLeft(sourceCanvas);
         const canvasAlignedRight =
             canvasBlock?.dataset.pisiCompositeAlign === 'right';
 
         alignCenterButton?.click();
+        const canvasCenterButtonState =
+            getCompositeAlignmentButtonState();
         const canvasTitleCenterPosition =
             measureLeft(sourceCanvas);
         const canvasAlignedCenter =
             canvasBlock?.dataset.pisiCompositeAlign === 'center';
+
+        const canvasAlignmentButtonsRefreshImmediately =
+            canvasLeftButtonState.left &&
+            !canvasLeftButtonState.center &&
+            !canvasLeftButtonState.right &&
+            !canvasRightButtonState.left &&
+            !canvasRightButtonState.center &&
+            canvasRightButtonState.right &&
+            !canvasCenterButtonState.left &&
+            canvasCenterButtonState.center &&
+            !canvasCenterButtonState.right;
 
         const canvasTitleGeometryMoves =
             canvasTitleRightPosition >
@@ -3517,6 +3587,7 @@ try {
             ),
             toolbarSheetActionsAbsent,
             directTableSize,
+            alignmentButtonsMatchFontSizeEdge,
             sheetTitleFocusRetained,
             sheetTitleValueAfterTyping,
             sheetTitleModelAfterCommit,
@@ -3525,6 +3596,7 @@ try {
             sheetAlignedLeft,
             sheetAlignedRight,
             sheetAlignedCenter,
+            sheetAlignmentButtonsRefreshImmediately,
             sheetTitleCompositeSelected,
             sheetSearchCompositeSelected,
             sheetHeaderBlankSelected,
@@ -3549,6 +3621,7 @@ try {
             canvasAlignedLeft,
             canvasAlignedRight,
             canvasAlignedCenter,
+            canvasAlignmentButtonsRefreshImmediately,
             canvasTitleGeometryMoves,
             canvasTitleCompositeSelected,
             canvasChromeStaysFixed,
@@ -3917,6 +3990,7 @@ try {
         !sheetResult.toolbarSheetActionsAbsent ||
         sheetResult.directTableSize?.rows !== 5 ||
         sheetResult.directTableSize?.cols !== 5 ||
+        !sheetResult.alignmentButtonsMatchFontSizeEdge ||
         !sheetResult.sheetTitleFocusRetained ||
         sheetResult.sheetTitleValueAfterTyping !== 'SheetABC' ||
         sheetResult.sheetTitleModelAfterCommit !== 'SheetABC' ||
@@ -3925,6 +3999,7 @@ try {
         !sheetResult.sheetAlignedLeft ||
         !sheetResult.sheetAlignedRight ||
         !sheetResult.sheetAlignedCenter ||
+        !sheetResult.sheetAlignmentButtonsRefreshImmediately ||
         sheetResult.sheetTitleCompositeSelected ||
         sheetResult.sheetSearchCompositeSelected ||
         !sheetResult.sheetHeaderBlankSelected ||
@@ -3949,6 +4024,7 @@ try {
         !sheetResult.canvasAlignedLeft ||
         !sheetResult.canvasAlignedRight ||
         !sheetResult.canvasAlignedCenter ||
+        !sheetResult.canvasAlignmentButtonsRefreshImmediately ||
         !sheetResult.canvasTitleGeometryMoves ||
         !sheetResult.canvasTitleCompositeSelected ||
         !sheetResult.canvasChromeStaysFixed ||
