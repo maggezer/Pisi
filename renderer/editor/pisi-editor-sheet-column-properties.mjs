@@ -7,6 +7,9 @@ import {
     normalizePisiSheetFieldOptions,
     normalizePisiSheetNumberFormat
 } from "./pisi-editor-sheet-field-types-core.mjs";
+import {
+    configurePisiSheetColumnIconControl
+} from "./pisi-editor-sheet-column-icon.mjs";
 
 let pisiSheetColumnMenu = null;
 let pisiSheetColumnResize = null;
@@ -254,20 +257,6 @@ function positionPisiSheetColumnMenu(menu, header) {
     )) + 'px';
 }
 
-function getPisiSheetFieldTypeIcon(type) {
-    const icons = {
-        text: 'Aa',
-        number: '123',
-        date: '◫',
-        select: '▾',
-        mSelect: '≡',
-        checkbox: '☑',
-        formula: 'fx'
-    };
-
-    return icons[type] || 'Aa';
-}
-
 function makePisiSheetSelectOptionsEditor(
     field,
     onOptionsChange
@@ -472,9 +461,6 @@ function openPisiSheetColumnMenu(table, header) {
     heading.className =
         'pisi-sheet-column-menu-heading';
     icon.className = 'pisi-sheet-column-type-icon';
-    icon.textContent =
-        field.icon ||
-        getPisiSheetFieldTypeIcon(field.type);
 
     input.type = 'text';
     input.className = 'pisi-sheet-column-name-input';
@@ -502,17 +488,6 @@ function openPisiSheetColumnMenu(table, header) {
         )
     );
 
-    iconInput.type = 'text';
-    iconInput.className =
-        'pisi-sheet-column-icon-input';
-    iconInput.maxLength = 12;
-    iconInput.value = field.icon || '';
-    iconInput.placeholder =
-        getPisiSheetFieldTypeIcon(field.type);
-    iconInput.setAttribute(
-        'aria-label',
-        window.pisiT?.('İkon') || 'İkon'
-    );
     menu.appendChild(
         makePisiSheetColumnMenuRow(
             window.pisiT?.('İkon') || 'İkon',
@@ -605,17 +580,25 @@ function openPisiSheetColumnMenu(table, header) {
         );
     menu.appendChild(optionsGroup);
 
+    const syncIconControl =
+        configurePisiSheetColumnIconControl(
+            iconInput,
+            icon,
+            field,
+            typeSelect,
+            (value) => {
+                persistFieldPatch({ icon: value });
+            },
+            (value) => window.pisiT?.(value) || value
+        );
+
     const syncTypeSpecificControls = () => {
         const type = typeSelect.value;
         numberFormatRow.hidden =
             type !== 'number';
         optionsGroup.hidden =
             !['select', 'mSelect'].includes(type);
-        iconInput.placeholder =
-            getPisiSheetFieldTypeIcon(type);
-        icon.textContent =
-            iconInput.value.trim() ||
-            getPisiSheetFieldTypeIcon(type);
+        syncIconControl(type);
     };
 
     syncTypeSpecificControls();
@@ -818,20 +801,6 @@ function openPisiSheetColumnMenu(table, header) {
     description.addEventListener('change', () => {
         persistFieldPatch({
             description: description.value
-        });
-    });
-
-    iconInput.addEventListener('input', () => {
-        icon.textContent =
-            iconInput.value.trim() ||
-            getPisiSheetFieldTypeIcon(
-                typeSelect.value
-            );
-    });
-
-    iconInput.addEventListener('change', () => {
-        persistFieldPatch({
-            icon: iconInput.value
         });
     });
 

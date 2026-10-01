@@ -235,6 +235,13 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         ),
         'utf8'
     );
+    const columnIcon = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-sheet-column-icon.mjs'
+        ),
+        'utf8'
+    );
     const interactions = fs.readFileSync(
         path.join(
             root,
@@ -665,11 +672,15 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     );
     assert.match(
         columnProperties,
+        /configurePisiSheetColumnIconControl/
+    );
+    assert.match(
+        columnIcon,
         /pisi-sheet-column-icon-input/
     );
     assert.match(
-        columnProperties,
-        /icon: iconInput\.value/
+        columnIcon,
+        /getPisiSheetFieldTypeIcon/
     );
     assert.match(
         columnProperties,
