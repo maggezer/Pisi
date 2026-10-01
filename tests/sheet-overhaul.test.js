@@ -214,6 +214,20 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         ),
         'utf8'
     );
+    const sheetDragFill = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-sheet-drag-fill.mjs'
+        ),
+        'utf8'
+    );
+    const sheetDragFillCore = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-sheet-drag-fill-core.mjs'
+        ),
+        'utf8'
+    );
     const sheetViewRulesUi = fs.readFileSync(
         path.join(
             root,
@@ -330,6 +344,10 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         /PISI_SHEET_DEFAULT_COLUMN_WIDTH = 96/
     );
     assert.match(database, /description:/);
+    assert.match(
+        database,
+        /setPisiSheetCellRecordsBatch/
+    );
     assert.match(database, /icon:/);
     assert.match(database, /wrap:/);
     assert.match(database, /pin:/);
@@ -487,6 +505,10 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     );
 
     assert.match(sheet, /getPisiSheetCellSource/);
+    assert.match(
+        sheet,
+        /shiftPisiSheetFormulaReferences/
+    );
     assert.match(sheet, /getPisiSheetDatabaseDimensions/);
     assert.doesNotMatch(
         sheet,
@@ -609,6 +631,14 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         selection,
         /ensurePisiSheetModelCellRendered/
+    );
+    assert.match(
+        selection,
+        /renderPisiSheetDragFillHandle/
+    );
+    assert.match(
+        selection,
+        /clearPisiSheetDragFillHandle/
     );
     assert.match(selection, /pisi-sheet-cell-active/);
     assert.match(selection, /pisi-sheet-cell-selected/);
@@ -924,6 +954,22 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         /pisi-sheet-pagination/
     );
     assert.match(
+        sheetDragFillCore,
+        /getPisiSheetDragFillSeriesValue/
+    );
+    assert.match(
+        sheetDragFill,
+        /pisi-sheet-drag-fill-handle/
+    );
+    assert.match(
+        sheetDragFill,
+        /applyPisiSheetDragFill/
+    );
+    assert.match(
+        sheetDragFill,
+        /setPisiSheetCellRecordsBatch/
+    );
+    assert.match(
         sheetViewRulesUi,
         /pisi-sheet-filter-group/
     );
@@ -1107,6 +1153,14 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         componentsCss,
         /pisi-sheet-pagination/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-drag-fill-handle/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-drag-fill-preview/
     );
     assert.match(
         componentsCss,

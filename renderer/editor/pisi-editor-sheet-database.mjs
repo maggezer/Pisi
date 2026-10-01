@@ -504,6 +504,55 @@ function setPisiSheetCellSource(
     return true;
 }
 
+function setPisiSheetCellRecordsBatch(
+    table,
+    changes = []
+) {
+    const database = requirePisiSheetDatabase(table);
+    const fields = getPisiSheetOrderedFields(database);
+    let changed = false;
+
+    for (const change of Array.isArray(changes) ? changes : []) {
+        const rowIndex = Number(change?.row);
+        const colIndex = Number(change?.col);
+        const item = database.items[rowIndex];
+        const field = fields[colIndex];
+
+        if (
+            !Number.isInteger(rowIndex) ||
+            !Number.isInteger(colIndex) ||
+            !item ||
+            !field
+        ) {
+            continue;
+        }
+
+        const normalized = normalizePisiSheetCellRecord({
+            value: change?.value,
+            formula: change?.formula,
+            format:
+                change?.format &&
+                typeof change.format === 'object'
+                    ? structuredClone(change.format)
+                    : {}
+        });
+
+        if (normalized) {
+            item.values[field.id] = normalized;
+        } else {
+            delete item.values[field.id];
+        }
+
+        changed = true;
+    }
+
+    if (changed) {
+        persistPisiSheetDatabase(table);
+    }
+
+    return changed;
+}
+
 function setPisiSheetCellFormat(
     table,
     rowIndex,
@@ -857,6 +906,10 @@ Object.defineProperties(moduleApi, {
     "setPisiSheetCellSource": {
         enumerable: true,
         get() { return setPisiSheetCellSource; }
+    },
+    "setPisiSheetCellRecordsBatch": {
+        enumerable: true,
+        get() { return setPisiSheetCellRecordsBatch; }
     },
     "setPisiSheetCellFormat": {
         enumerable: true,

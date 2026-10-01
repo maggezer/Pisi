@@ -295,6 +295,48 @@ body.pisi-sheet-column-resizing * {
     background: #2a261e;
 }
 
+.pisi-sheet-table td.pisi-sheet-fill-handle-cell {
+    position: relative;
+}
+
+.pisi-sheet-drag-fill-handle {
+    position: absolute;
+    right: 1px;
+    bottom: 1px;
+    z-index: 7;
+    width: 7px;
+    height: 7px;
+    box-sizing: border-box;
+    border: 1px solid #1e1e1e;
+    border-radius: 1px;
+    background: #f39c12;
+    cursor: crosshair;
+    user-select: none;
+    touch-action: none;
+}
+
+.pisi-sheet-drag-fill-handle:hover {
+    width: 9px;
+    height: 9px;
+    right: 0;
+    bottom: 0;
+}
+
+.pisi-sheet-table td.pisi-sheet-drag-fill-preview {
+    background: rgba(243, 156, 18, 0.14);
+    box-shadow:
+        inset 0 0 0 1px rgba(243, 156, 18, 0.72);
+}
+
+.pisi-sheet-table.pisi-sheet-drag-filling {
+    cursor: crosshair;
+}
+
+.pisi-sheet-table.pisi-sheet-drag-filling
+    td[data-cell] {
+    cursor: crosshair;
+}
+
 .pisi-sheet-table td.pisi-sheet-cell-editing {
     cursor: text;
     user-select: text;

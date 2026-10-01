@@ -44,6 +44,81 @@ function formatPisiSheetReference(reference) {
     ].join('');
 }
 
+function shiftPisiSheetReference(
+    reference,
+    rowDelta,
+    colDelta
+) {
+    const parsed = parsePisiSheetReference(reference);
+    if (!parsed) return reference;
+
+    const next = {
+        ...parsed,
+        row: parsed.absoluteRow
+            ? parsed.row
+            : parsed.row + rowDelta,
+        col: parsed.absoluteCol
+            ? parsed.col
+            : parsed.col + colDelta
+    };
+
+    return formatPisiSheetReference(next);
+}
+
+function shiftPisiSheetRangeReference(
+    startRef,
+    endRef,
+    rowDelta,
+    colDelta
+) {
+    return [
+        shiftPisiSheetReference(
+            startRef,
+            rowDelta,
+            colDelta
+        ),
+        shiftPisiSheetReference(
+            endRef,
+            rowDelta,
+            colDelta
+        )
+    ].join(':');
+}
+
+export function shiftPisiSheetFormulaReferences(
+    formula,
+    rowDelta = 0,
+    colDelta = 0
+) {
+    const source = String(formula || '');
+    const rowShift = Math.trunc(Number(rowDelta) || 0);
+    const colShift = Math.trunc(Number(colDelta) || 0);
+
+    return source.replace(
+        /"(?:[^"]|"")*"|(?<![A-Z0-9_.$])\$?[A-Z]+\$?\d+(?::\$?[A-Z]+\$?\d+)?(?![A-Z0-9_.$]|\s*\()/gi,
+        (token) => {
+            if (token.startsWith('"')) return token;
+
+            const parts = token.split(':');
+
+            if (parts.length === 2) {
+                return shiftPisiSheetRangeReference(
+                    parts[0].toUpperCase(),
+                    parts[1].toUpperCase(),
+                    rowShift,
+                    colShift
+                );
+            }
+
+            return shiftPisiSheetReference(
+                token.toUpperCase(),
+                rowShift,
+                colShift
+            );
+        }
+    );
+}
+
 function transformPisiSheetAxisValue(value, change) {
     const index = Math.max(0, Number(change.index) || 0);
     const count = Math.max(1, Number(change.count) || 1);

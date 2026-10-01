@@ -2,6 +2,10 @@ import { registerModule } from "../core/module-registry.mjs";
 import {
     ensurePisiSheetModelCellRendered
 } from "./pisi-editor-sheet-virtual-scroll.mjs";
+import {
+    clearPisiSheetDragFillHandle,
+    renderPisiSheetDragFillHandle
+} from "./pisi-editor-sheet-drag-fill.mjs";
 
 const pisiRenderedSheetSelectionCells = new WeakMap();
 const pisiRenderedSheetSelectionHeaders = new WeakMap();
@@ -250,6 +254,11 @@ function renderPisiSheetSelection(table) {
         }
     }
 
+    renderPisiSheetDragFillHandle(
+        table,
+        selection
+    );
+
     pisiRenderedSheetSelectionCells.set(
         table,
         renderedCells
@@ -313,6 +322,7 @@ function clearPisiSheetSelection(table) {
 
     pisiRenderedSheetSelectionCells.set(table, new Set());
     pisiRenderedSheetSelectionHeaders.set(table, new Set());
+    clearPisiSheetDragFillHandle(table);
 
     clearPisiSheetAllSelectionStateForDatabase(
         getPisiSheetDatabase(table)
