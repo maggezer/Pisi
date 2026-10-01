@@ -11,6 +11,16 @@ function makePisiBlockId() {
 function isPisiEditorBlockElement(element) {
     if (!element || element.nodeType !== Node.ELEMENT_NODE) return false;
 
+    if (
+        element.matches?.(
+            '.pisi-sheet-block, ' +
+            '.pisi-sheet-caret-anchor, ' +
+            '[data-pisi-sheet-block]'
+        )
+    ) {
+        return false;
+    }
+
     return /^(DIV|P|H1|H2|H3|H4|H5|H6|BLOCKQUOTE|PRE|LI)$/i.test(element.tagName);
 }
 

@@ -393,6 +393,15 @@ function selectPisiBlock(editor, block) {
 }
 
 function getPisiBlockAtEvent(editor, target) {
+    if (
+        target?.closest?.(
+            '.pisi-sheet-block, ' +
+            '.pisi-sheet-caret-anchor'
+        )
+    ) {
+        return null;
+    }
+
     const block = target?.closest?.('.pisi-editor-block');
     return block && editor.contains(block) ? block : null;
 }

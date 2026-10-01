@@ -416,6 +416,47 @@ try {
             !String(element.textContent || '').trim() &&
             element.getBoundingClientRect().height > 1
         )).length;
+        const sheetBlockTextBlockDecorated =
+            sheetBlock?.classList.contains(
+                'pisi-editor-block'
+            ) === true;
+        const sheetBlockActiveDuringTitle =
+            sheetBlock?.classList.contains(
+                'pisi-block-active'
+            ) === true;
+        const sheetAfterAnchorTag =
+            sheetAfterAnchor?.tagName || '';
+
+        const sectionToggle = sheetBlock?.querySelector(
+            '[data-pisi-sheet-section-toggle]'
+        );
+
+        sectionToggle?.click();
+        sectionToggle?.click();
+        window.ensurePisiEditorBlocks?.(editor);
+        window.hydratePisiSheets?.(editor);
+
+        const sheetAfterToggleAnchor =
+            sheetBlock?.nextElementSibling;
+        const sheetAfterToggleAnchorTag =
+            sheetAfterToggleAnchor?.classList?.contains(
+                'pisi-sheet-caret-anchor'
+            )
+                ? sheetAfterToggleAnchor.tagName
+                : '';
+        const sheetAfterToggleVisibleBlankCount = [
+            sheetBlock?.previousElementSibling,
+            sheetBlock?.nextElementSibling
+        ].filter((element) => (
+            element &&
+            !String(element.textContent || '').trim() &&
+            element.getBoundingClientRect().height > 1
+        )).length;
+        const sheetAfterToggleTextBlockDecorated =
+            sheetBlock?.classList.contains(
+                'pisi-editor-block'
+            ) === true;
+
         const initialEditable =
             firstCell.getAttribute('contenteditable');
         const originalRowId = firstCell.dataset.pisiRowId || '';
@@ -2755,6 +2796,12 @@ try {
             sheetBeforeAnchorHeight,
             sheetAfterAnchorHeight,
             sheetAdjacentVisibleBlankCount,
+            sheetBlockTextBlockDecorated,
+            sheetBlockActiveDuringTitle,
+            sheetAfterAnchorTag,
+            sheetAfterToggleAnchorTag,
+            sheetAfterToggleVisibleBlankCount,
+            sheetAfterToggleTextBlockDecorated,
             initialEditable,
             originalRowId,
             originalColId,
@@ -3106,6 +3153,12 @@ try {
         sheetResult.sheetBeforeAnchorHeight > 1 ||
         sheetResult.sheetAfterAnchorHeight > 1 ||
         sheetResult.sheetAdjacentVisibleBlankCount !== 0 ||
+        sheetResult.sheetBlockTextBlockDecorated ||
+        sheetResult.sheetBlockActiveDuringTitle ||
+        sheetResult.sheetAfterAnchorTag !== 'SPAN' ||
+        sheetResult.sheetAfterToggleAnchorTag !== 'SPAN' ||
+        sheetResult.sheetAfterToggleVisibleBlankCount !== 0 ||
+        sheetResult.sheetAfterToggleTextBlockDecorated ||
         sheetResult.initialEditable !== 'false' ||
         !sheetResult.originalRowId ||
         !sheetResult.originalColId ||

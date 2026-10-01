@@ -1334,12 +1334,18 @@ body.pisi-sheet-column-resizing * {
 #center-node-editor-content .pisi-sheet-caret-anchor,
 #node-modal-content .pisi-sheet-caret-anchor,
 .pisi-rich-editor.pisi-block-system .pisi-sheet-caret-anchor {
+    display: block;
+    width: 0;
+    min-width: 0;
+    max-width: 0;
     min-height: 0;
     height: 0;
+    max-height: 0;
     margin: 0;
     padding: 0;
     border: 0;
     overflow: hidden;
+    opacity: 0;
     font-size: 0;
     line-height: 0;
     white-space: normal;

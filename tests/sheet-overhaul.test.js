@@ -1033,6 +1033,14 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     );
     assert.match(
         sheetSectionUi,
+        /document\.createElement\('span'\)/
+    );
+    assert.match(
+        sheetSectionUi,
+        /pisi-block-active/
+    );
+    assert.match(
+        sheetSectionUi,
         /updatePisiSheetSectionTitleDraft/
     );
     assert.match(

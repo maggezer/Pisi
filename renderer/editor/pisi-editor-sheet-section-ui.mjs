@@ -41,14 +41,12 @@ function isPisiSheetEmptyAdjacentBlock(element) {
     ).trim();
 }
 
-function makePisiSheetCaretAnchor(
-    position
-) {
-    const anchor = document.createElement('div');
+function makePisiSheetCaretAnchor() {
+    const anchor = document.createElement('span');
 
-    anchor.className =
-        'pisi-sheet-caret-anchor pisi-editor-block';
-    anchor.dataset.pisiSheetCaretAnchor = position;
+    anchor.className = 'pisi-sheet-caret-anchor';
+    anchor.dataset.pisiSheetCaretAnchor = 'after';
+    anchor.setAttribute('contenteditable', 'true');
     anchor.innerHTML = '<br>';
 
     return anchor;
@@ -62,51 +60,39 @@ function normalizePisiSheetAdjacentSpacing(table) {
 
     if (!block || !editor) return;
 
-    const normalizeSide = (
-        position,
-        direction
-    ) => {
-        let sibling = block[direction];
-        const empty = [];
+    let previous = block.previousElementSibling;
 
-        while (
-            sibling &&
-            isPisiSheetEmptyAdjacentBlock(sibling)
-        ) {
-            empty.push(sibling);
-            sibling = sibling[direction];
-        }
+    while (
+        previous &&
+        (
+            previous.matches?.(
+                '.pisi-sheet-caret-anchor'
+            ) ||
+            isPisiSheetEmptyAdjacentBlock(previous)
+        )
+    ) {
+        const remove = previous;
+        previous = previous.previousElementSibling;
+        remove.remove();
+    }
 
-        const anchor = empty.shift() ||
-            makePisiSheetCaretAnchor(position);
+    let next = block.nextElementSibling;
 
-        anchor.classList.add(
-            'pisi-sheet-caret-anchor'
-        );
-        anchor.dataset.pisiSheetCaretAnchor =
-            position;
+    while (
+        next &&
+        (
+            next.matches?.(
+                '.pisi-sheet-caret-anchor'
+            ) ||
+            isPisiSheetEmptyAdjacentBlock(next)
+        )
+    ) {
+        const remove = next;
+        next = next.nextElementSibling;
+        remove.remove();
+    }
 
-        for (const extra of empty) {
-            extra.remove();
-        }
-
-        if (!anchor.isConnected) {
-            if (position === 'before') {
-                block.before(anchor);
-            } else {
-                block.after(anchor);
-            }
-        }
-    };
-
-    normalizeSide(
-        'before',
-        'previousElementSibling'
-    );
-    normalizeSide(
-        'after',
-        'nextElementSibling'
-    );
+    block.after(makePisiSheetCaretAnchor());
 }
 
 function syncPisiSheetSectionTitleWidth(input) {
@@ -426,6 +412,13 @@ function ensurePisiSheetSectionHeader(table) {
     const database = getPisiSheetDatabase(table);
 
     if (!block || !database) return null;
+
+    block.classList.remove(
+        'pisi-editor-block',
+        'pisi-block-active'
+    );
+    delete block.dataset.pisiBlockId;
+    delete block.dataset.pisiBlockType;
 
     let header = Array.from(
         block.children
