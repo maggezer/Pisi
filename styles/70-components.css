@@ -44,6 +44,12 @@
     padding: 8px;
 }
 
+.pisi-sheet-block.pisi-sheet-virtualized {
+    max-height: min(62vh, 560px);
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}
+
 .pisi-sheet-table {
     border-collapse: collapse;
     table-layout: fixed;
@@ -59,6 +65,15 @@
     box-sizing: border-box;
     height: 28px;
     border: 1px solid #444;
+}
+
+.pisi-sheet-table tr.pisi-sheet-virtual-spacer,
+.pisi-sheet-table tr.pisi-sheet-virtual-spacer td {
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    pointer-events: none;
 }
 
 .pisi-sheet-table th {
@@ -291,6 +306,62 @@ body.pisi-sheet-column-resizing * {
     td.pisi-sheet-cell-selected {
     background: rgba(66, 165, 245, 0.12);
     box-shadow: inset 0 0 0 1px rgba(66, 165, 245, 0.55);
+}
+
+.pisi-sheet-pagination {
+    position: sticky;
+    left: 0;
+    bottom: -8px;
+    z-index: 12;
+    width: max-content;
+    min-width: 280px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    padding: 5px 7px;
+    border: 1px solid #45474d;
+    border-radius: 7px;
+    background: rgba(37, 38, 42, 0.96);
+    box-shadow: 0 -3px 12px rgba(0, 0, 0, 0.24);
+    color: #cfd0d3;
+    font: 600 11px "Segoe UI", Tahoma, sans-serif;
+}
+
+.pisi-sheet-pagination[hidden] {
+    display: none;
+}
+
+.pisi-sheet-pagination button,
+.pisi-sheet-pagination select {
+    height: 26px;
+    box-sizing: border-box;
+    border: 1px solid #55575e;
+    border-radius: 5px;
+    background: #1f2023;
+    color: #e7e7e9;
+    font: inherit;
+}
+
+.pisi-sheet-pagination button {
+    min-width: 28px;
+    padding: 0 7px;
+    cursor: pointer;
+}
+
+.pisi-sheet-pagination button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.pisi-sheet-pagination select {
+    padding: 2px 6px;
+}
+
+.pisi-sheet-pagination-status {
+    min-width: 118px;
+    text-align: center;
+    white-space: nowrap;
 }
 
 

@@ -816,6 +816,11 @@
     "Mor": "Purple",
     "Gri": "Gray",
     "renk": "colors",
-    "İkon": "Icon"
+    "İkon": "Icon",
+    "Önceki sayfa": "Previous page",
+    "Sonraki sayfa": "Next page",
+    "Sayfa boyutu": "Page size",
+    "Sayfa": "Page",
+    "satır/sayfa": "rows/page"
   }
 }

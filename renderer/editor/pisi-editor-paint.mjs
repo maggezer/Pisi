@@ -122,7 +122,7 @@ function buildPisiExcelToolbarControls(controls) {
     controls.dataset.rendered = '1';
     controls.innerHTML = `
         <button type="button" class="pisi-word-btn" data-pisi-excel-action="insertTable" title="Tablo ekle">▦ Tablo</button>
-        <label class="pisi-toolbar-field">Satır <input class="pisi-toolbar-number" type="number" min="1" max="300" step="1" value="5" data-pisi-excel-rows></label>
+        <label class="pisi-toolbar-field">Satır <input class="pisi-toolbar-number" type="number" min="1" max="10000" step="1" value="5" data-pisi-excel-rows></label>
         <label class="pisi-toolbar-field">Sütun <input class="pisi-toolbar-number" type="number" min="1" max="80" step="1" value="5" data-pisi-excel-cols></label>
         <span class="pisi-word-separator"></span>
         <button type="button" class="pisi-word-btn" data-pisi-excel-action="addRow" title="Seçili satırın altına satır ekle">+ Satır</button>

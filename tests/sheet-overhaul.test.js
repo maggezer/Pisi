@@ -200,6 +200,20 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         ),
         'utf8'
     );
+    const sheetPaginationCore = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-sheet-pagination-core.mjs'
+        ),
+        'utf8'
+    );
+    const sheetVirtualScroll = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-sheet-virtual-scroll.mjs'
+        ),
+        'utf8'
+    );
     const sheetViewRulesUi = fs.readFileSync(
         path.join(
             root,
@@ -350,6 +364,9 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         database,
         /conditionalColors/
     );
+    assert.match(database, /page:/);
+    assert.match(database, /pageSize:/);
+    assert.match(database, /virtualScroll:/);
     assert.match(
         database,
         /normalizePisiSheetConditionalColors/
@@ -455,6 +472,18 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         databaseDom,
         /pisiFieldIcon/
+    );
+    assert.match(
+        databaseDom,
+        /getPisiSheetVirtualRenderState/
+    );
+    assert.match(
+        databaseDom,
+        /pisi-sheet-virtual-spacer/
+    );
+    assert.match(
+        databaseDom,
+        /finalizePisiSheetVirtualRender/
     );
     assert.match(
         databaseDom,
@@ -580,6 +609,10 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         selection,
         /getPisiSheetNextVisibleRowIndex/
+    );
+    assert.match(
+        selection,
+        /ensurePisiSheetModelCellRendered/
     );
     assert.match(selection, /pisi-sheet-cell-active/);
     assert.match(selection, /pisi-sheet-cell-selected/);
@@ -816,6 +849,8 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         sheetViewState,
         /conditionalColors/
     );
+    assert.match(sheetViewState, /pageSize/);
+    assert.match(sheetViewState, /virtualScroll/);
     assert.match(
         sheetViewQueryCore,
         /PISI_SHEET_FILTER_OPERATORS/
@@ -867,6 +902,30 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         sheetViewQuery,
         /movePisiSheetViewConditionalColor/
+    );
+    assert.match(
+        sheetViewQuery,
+        /getPisiSheetViewRecords/
+    );
+    assert.match(
+        sheetPaginationCore,
+        /paginatePisiSheetRecords/
+    );
+    assert.match(
+        sheetPaginationCore,
+        /computePisiSheetVirtualWindow/
+    );
+    assert.match(
+        sheetVirtualScroll,
+        /ensurePisiSheetPointRendered/
+    );
+    assert.match(
+        sheetVirtualScroll,
+        /setPisiSheetViewPageSize/
+    );
+    assert.match(
+        sheetVirtualScroll,
+        /pisi-sheet-pagination/
     );
     assert.match(
         sheetViewRulesUi,
@@ -921,10 +980,10 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         /drop/
     );
 
-    assert.match(sheet, /PISI_SHEET_MAX_ROWS = 300/);
+    assert.match(sheet, /PISI_SHEET_MAX_ROWS = 10000/);
     assert.match(sheet, /PISI_SHEET_MAX_COLS = 80/);
     assert.match(sheet, /options\.forceFormula === true/);
-    assert.match(toolbar, /max="300".*data-pisi-excel-rows/);
+    assert.match(toolbar, /max="10000".*data-pisi-excel-rows/);
     assert.match(toolbar, /max="80".*data-pisi-excel-cols/);
 
     assert.doesNotMatch(popovers, /openPisiToolbarTablePopover/);
@@ -1007,6 +1066,14 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     );
     assert.match(
         keyboard,
+        /ensurePisiSheetModelCellRendered/
+    );
+    assert.match(
+        keyboard,
+        /pisi-sheet-block/
+    );
+    assert.match(
+        keyboard,
         /getPisiSheetActivePoint/
     );
     assert.match(
@@ -1032,6 +1099,18 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         componentsCss,
         /data-pisi-field-icon/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-virtualized/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-virtual-spacer/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-pagination/
     );
     assert.match(
         componentsCss,

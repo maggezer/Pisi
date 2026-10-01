@@ -10,6 +10,9 @@ import {
     normalizePisiSheetStoredValue
 } from "./pisi-editor-sheet-field-types-core.mjs";
 import {
+    normalizePisiSheetPaginationConfig
+} from "./pisi-editor-sheet-pagination-core.mjs";
+import {
     makePisiSheetEmptyFilterTree,
     normalizePisiSheetFilterTree,
     normalizePisiSheetConditionalColors,
@@ -111,6 +114,9 @@ function createPisiSheetItem(options = {}) {
 }
 
 function createPisiSheetTableView(fields, options = {}) {
+    const pagination =
+        normalizePisiSheetPaginationConfig(options);
+
     return {
         id: String(
             options.id ||
@@ -122,7 +128,10 @@ function createPisiSheetTableView(fields, options = {}) {
         hiddenFieldIds: [],
         filters: makePisiSheetEmptyFilterTree(),
         sorts: [],
-        conditionalColors: []
+        conditionalColors: [],
+        page: pagination.page,
+        pageSize: pagination.pageSize,
+        virtualScroll: pagination.virtualScroll
     };
 }
 
@@ -266,6 +275,9 @@ function normalizePisiSheetDatabase(database) {
                 .map((field) => field.id)
                 .filter((id) => !ordered.includes(id));
 
+            const pagination =
+                normalizePisiSheetPaginationConfig(view);
+
             return {
                 id: String(
                     view.id ||
@@ -293,7 +305,11 @@ function normalizePisiSheetDatabase(database) {
                     normalizePisiSheetConditionalColors(
                         view.conditionalColors,
                         fields
-                    )
+                    ),
+                page: pagination.page,
+                pageSize: pagination.pageSize,
+                virtualScroll:
+                    pagination.virtualScroll
             };
         });
 

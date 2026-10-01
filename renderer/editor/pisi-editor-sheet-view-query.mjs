@@ -158,6 +158,11 @@ function setPisiSheetViewFilters(table, filters) {
 
     if (!database || !view) return null;
 
+    view.page = 1;
+    const filterBlock =
+        table.closest('.pisi-sheet-block');
+    if (filterBlock) filterBlock.scrollTop = 0;
+
     view.filters = normalizePisiSheetFilterTree(
         filters,
         new Set(
@@ -176,6 +181,11 @@ function setPisiSheetViewSorts(table, sorts) {
         : null;
 
     if (!database || !view) return null;
+
+    view.page = 1;
+    const sortBlock =
+        table.closest('.pisi-sheet-block');
+    if (sortBlock) sortBlock.scrollTop = 0;
 
     view.sorts = normalizePisiSheetSorts(
         sorts,
@@ -592,6 +602,7 @@ function movePisiSheetViewConditionalColor(
 
 export {
     addPisiSheetViewConditionalColor,
+    getPisiSheetViewRecords,
     getPisiSheetActiveViewConditionalColors,
     getPisiSheetConditionalColorMatchesForItem,
     movePisiSheetViewConditionalColor,

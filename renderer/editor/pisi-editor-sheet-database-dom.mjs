@@ -2,6 +2,10 @@ import { registerModule } from "../core/module-registry.mjs";
 import {
     getPisiSheetConditionalColorMatchesForItem
 } from "./pisi-editor-sheet-view-query.mjs";
+import {
+    finalizePisiSheetVirtualRender,
+    getPisiSheetVirtualRenderState
+} from "./pisi-editor-sheet-virtual-scroll.mjs";
 
 function capturePisiSheetCellFormat(cell) {
     const format = {};
@@ -93,6 +97,27 @@ function applyPisiSheetConditionalColorsToRow(
             delete cell.dataset.pisiConditionalColor;
         }
     }
+}
+
+function makePisiSheetVirtualSpacerRow(
+    height,
+    columnCount
+) {
+    if (!(height > 0)) return null;
+
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+
+    row.className = 'pisi-sheet-virtual-spacer';
+    row.setAttribute('aria-hidden', 'true');
+    cell.colSpan = Math.max(
+        1,
+        Number(columnCount) + 1
+    );
+    cell.style.height =
+        String(Math.round(height)) + 'px';
+    row.appendChild(cell);
+    return row;
 }
 
 function readLegacyPisiSheetColumnArray(table, key) {
@@ -259,7 +284,10 @@ function hydratePisiSheetDatabase(table) {
     return database;
 }
 
-function renderPisiSheetDatabase(table) {
+function renderPisiSheetDatabase(
+    table,
+    options = {}
+) {
     const database =
         getPisiSheetDatabase(table) ||
         hydratePisiSheetDatabase(table);
@@ -267,6 +295,8 @@ function renderPisiSheetDatabase(table) {
 
     const fields = getPisiSheetOrderedFields(database);
     const view = getPisiSheetTableView(database);
+    const virtualState =
+        getPisiSheetVirtualRenderState(table);
     const hiddenFieldIds = new Set(
         view?.hiddenFieldIds || []
     );
@@ -382,16 +412,30 @@ function renderPisiSheetDatabase(table) {
         table.appendChild(tbody);
     }
 
-    const rows = getPisiSheetViewRecords(table).map(
-        ({ item, modelIndex: rowIndex }, viewIndex) => {
+    const rows = [];
+    const topSpacer = makePisiSheetVirtualSpacerRow(
+        virtualState.topHeight,
+        fields.length
+    );
+
+    if (topSpacer) rows.push(topSpacer);
+
+    virtualState.records.forEach(
+        (
+            { item, modelIndex: rowIndex },
+            renderedIndex
+        ) => {
             const row = document.createElement('tr');
             const rowHeader = document.createElement('th');
+            const viewIndex =
+                virtualState.viewStart + renderedIndex;
 
             row.dataset.pisiRowId = item.id;
             rowHeader.dataset.rowHeader = String(rowIndex);
             rowHeader.dataset.pisiRowId = item.id;
             rowHeader.textContent = String(rowIndex + 1);
-            rowHeader.dataset.pisiViewRow = String(viewIndex);
+            rowHeader.dataset.pisiViewRow =
+                String(viewIndex);
             row.appendChild(rowHeader);
 
             fields.forEach((field, colIndex) => {
@@ -468,12 +512,28 @@ function renderPisiSheetDatabase(table) {
                 fields
             );
 
-            return row;
+            rows.push(row);
         }
     );
 
+    const bottomSpacer =
+        makePisiSheetVirtualSpacerRow(
+            virtualState.bottomHeight,
+            fields.length
+        );
+
+    if (bottomSpacer) rows.push(bottomSpacer);
+
     tbody.replaceChildren(...rows);
-    persistPisiSheetDatabase(table);
+    finalizePisiSheetVirtualRender(
+        table,
+        virtualState
+    );
+
+    if (options.persist !== false) {
+        persistPisiSheetDatabase(table);
+    }
+
     return database;
 }
 
