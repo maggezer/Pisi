@@ -24,7 +24,8 @@ function sanitizePisiEditorHtml(html = '') {
             '.pisi-sheet-section-header, ' +
             '.pisi-sheet-search, ' +
             '.pisi-sheet-pagination, ' +
-            '.pisi-sheet-drag-fill-handle'
+            '.pisi-sheet-drag-fill-handle, ' +
+            '.pisi-canvas-section-header'
         )
         .forEach((element) => element.remove());
 
@@ -142,6 +143,18 @@ function sanitizePisiEditorHtml(html = '') {
 
             if (element.tagName === 'FONT') {
                 allowed = ['color', 'face', 'size'].includes(name);
+            }
+
+            if (element.tagName === 'DIV') {
+                if (name === 'data-pisi-canvas-block') {
+                    allowed = value === '1';
+                } else if (name === 'data-pisi-canvas-title') {
+                    allowed =
+                        value.length <= 80 &&
+                        !/[\u0000-\u001f\u007f]/.test(value);
+                } else if (name === 'data-pisi-canvas-collapsed') {
+                    allowed = /^(?:0|1)$/.test(value);
+                }
             }
 
             if (element.tagName === 'CANVAS') {

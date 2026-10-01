@@ -15,7 +15,9 @@ function isPisiEditorBlockElement(element) {
         element.matches?.(
             '.pisi-sheet-block, ' +
             '.pisi-sheet-caret-anchor, ' +
-            '[data-pisi-sheet-block]'
+            '[data-pisi-sheet-block], ' +
+            '.pisi-canvas-block, ' +
+            '[data-pisi-canvas-block]'
         )
     ) {
         return false;

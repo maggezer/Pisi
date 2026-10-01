@@ -396,7 +396,8 @@ function getPisiBlockAtEvent(editor, target) {
     if (
         target?.closest?.(
             '.pisi-sheet-block, ' +
-            '.pisi-sheet-caret-anchor'
+            '.pisi-sheet-caret-anchor, ' +
+            '.pisi-canvas-block'
         )
     ) {
         return null;

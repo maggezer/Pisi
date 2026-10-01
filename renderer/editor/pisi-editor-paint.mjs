@@ -1,4 +1,7 @@
 import { registerModule } from "../core/module-registry.mjs";
+import {
+    ensurePisiCanvasSectionHeader
+} from "./pisi-editor-canvas-section-ui.mjs";
 
 function getPisiToolbarEditor(toolbar) {
     if (!toolbar) return null;
@@ -258,19 +261,65 @@ function insertPisiCanvasFromToolbar(toolbar) {
 }
 
 function insertPisiCanvas(editor, width = 520, height = 320) {
-    if (!editor) return;
+    if (!editor) return null;
 
-    const html = `
-        <div class="pisi-canvas-block" contenteditable="false" data-pisi-canvas-block="1">
-            <div class="pisi-canvas-toolbar-hint">Paint tuvali · çizmek için tuvale tıkla</div>
-            <canvas class="pisi-paint-canvas" data-pisi-canvas="1" width="${Number(width)}" height="${Number(height)}"></canvas>
-        </div>
-        <div><br></div>
-    `;
+    const block = document.createElement('div');
+    const canvas = document.createElement('canvas');
 
-    insertHtmlIntoPisiEditor(editor, html);
+    block.className = 'pisi-canvas-block';
+    block.contentEditable = 'false';
+    block.dataset.pisiCanvasBlock = '1';
+    block.dataset.pisiCanvasTitle = 'Canvas';
+    block.dataset.pisiCanvasCollapsed = '0';
+
+    canvas.className = 'pisi-paint-canvas';
+    canvas.dataset.pisiCanvas = '1';
+    canvas.width = Number(width);
+    canvas.height = Number(height);
+
+    block.appendChild(canvas);
+
+    const selection = window.getSelection?.();
+    const anchorNode = selection?.anchorNode || null;
+    const anchorElement =
+        anchorNode?.nodeType === Node.ELEMENT_NODE
+            ? anchorNode
+            : anchorNode?.parentElement;
+    const currentBlock = anchorElement?.closest?.(
+        '.pisi-editor-block'
+    );
+    const canUseCurrentBlock = Boolean(
+        currentBlock &&
+        editor.contains(currentBlock) &&
+        !currentBlock.closest('.pisi-canvas-block')
+    );
+
+    if (canUseCurrentBlock) {
+        const isEmpty = !String(
+            currentBlock.textContent || ''
+        ).trim();
+
+        if (isEmpty) {
+            currentBlock.replaceWith(block);
+        } else {
+            currentBlock.after(block);
+        }
+    } else {
+        editor.appendChild(block);
+    }
+
+    if (selection) {
+        const range = document.createRange();
+
+        range.setStartAfter(block);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+
     initializePisiAdvancedEditorContent(editor);
-    notifyPisiEditorChanged(editor);
+    notifyPisiEditorChanged(editor, false);
+    return block;
 }
 
 function insertHtmlIntoPisiEditor(editor, html) {
@@ -382,6 +431,7 @@ function hydratePisiPaintCanvases(root = document) {
     root.querySelectorAll('canvas[data-pisi-canvas]').forEach((canvas) => {
         canvas.removeAttribute('data-pisi-canvas-bound');
         canvas.removeAttribute('data-image-loaded');
+        ensurePisiCanvasSectionHeader(canvas);
 
         if (!pisiBoundPaintCanvases.has(canvas)) {
             bindPisiCanvas(canvas);

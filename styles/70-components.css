@@ -1,22 +1,106 @@
 
 
 .pisi-canvas-block {
-    display: inline-block;
+    display: block;
     max-width: 100%;
-    margin: 12px 0;
-    padding: 9px;
-    border: 1px solid #3a3a3a;
-    border-radius: 10px;
-    background: #242424;
+    margin: 0;
     overflow: auto;
+    border: 0;
+    border-bottom: 1px solid #3a3a3a;
+    border-radius: 0;
+    background: transparent;
+    padding: 0 0 5px;
 }
 
 .pisi-canvas-toolbar-hint {
-    color: #888;
-    font-size: 11px;
-    font-weight: 800;
-    margin-bottom: 6px;
-    user-select: none;
+    display: none;
+}
+
+.pisi-canvas-section-header {
+    min-width: 100%;
+    height: 30px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #3a3a3a;
+    background: transparent;
+    padding: 0 2px;
+}
+
+.pisi-canvas-section-toggle {
+    position: relative;
+    width: 26px;
+    min-width: 26px;
+    height: 27px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: #aeb0b5;
+    padding: 0;
+    cursor: pointer;
+}
+
+.pisi-canvas-section-toggle::before {
+    content: "▾";
+    display: block;
+    font-size: 14px;
+    line-height: 1;
+    transform: translateY(-1px);
+}
+
+.pisi-canvas-collapsed
+    .pisi-canvas-section-toggle::before {
+    content: "▸";
+}
+
+.pisi-canvas-section-toggle:hover,
+.pisi-canvas-section-toggle:focus-visible {
+    color: #f39c12;
+}
+
+.pisi-canvas-section-title {
+    min-width: 92px;
+    max-width: 360px;
+    height: 27px;
+    box-sizing: border-box;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: #e8e8ea;
+    padding: 0 5px 2px 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font: 700 12px "Segoe UI", Tahoma, sans-serif;
+}
+
+.pisi-canvas-section-title:hover {
+    color: #ffffff;
+}
+
+.pisi-canvas-section-title:focus {
+    color: #ffffff;
+    background: rgba(243, 156, 18, 0.08);
+}
+
+.pisi-canvas-block.pisi-canvas-collapsed {
+    overflow: visible;
+    border-bottom: 0;
+    padding-bottom: 0;
+}
+
+.pisi-canvas-block.pisi-canvas-collapsed
+    > .pisi-canvas-section-header {
+    margin-bottom: 0;
+}
+
+.pisi-canvas-block.pisi-canvas-collapsed
+    > .pisi-paint-canvas {
+    display: none;
 }
 
 .pisi-paint-canvas {
@@ -42,7 +126,7 @@
     border-bottom: 1px solid #3a3a3a;
     border-radius: 0;
     background: transparent;
-    padding: 0;
+    padding: 0 0 5px;
 }
 
 .pisi-sheet-block.pisi-sheet-virtualized:not(.pisi-sheet-collapsed) {
@@ -1353,9 +1437,23 @@ body.pisi-sheet-column-resizing * {
 
 #center-node-editor-content .pisi-sheet-block,
 #node-modal-content .pisi-sheet-block,
-.pisi-rich-editor.pisi-block-system .pisi-sheet-block {
+.pisi-rich-editor.pisi-block-system .pisi-sheet-block,
+#center-node-editor-content .pisi-canvas-block,
+#node-modal-content .pisi-canvas-block,
+.pisi-rich-editor.pisi-block-system .pisi-canvas-block {
     margin-top: 0;
     margin-bottom: 0;
     padding-top: 0;
+    padding-bottom: 5px;
+}
+
+#center-node-editor-content .pisi-sheet-block.pisi-sheet-collapsed,
+#node-modal-content .pisi-sheet-block.pisi-sheet-collapsed,
+.pisi-rich-editor.pisi-block-system
+    .pisi-sheet-block.pisi-sheet-collapsed,
+#center-node-editor-content .pisi-canvas-block.pisi-canvas-collapsed,
+#node-modal-content .pisi-canvas-block.pisi-canvas-collapsed,
+.pisi-rich-editor.pisi-block-system
+    .pisi-canvas-block.pisi-canvas-collapsed {
     padding-bottom: 0;
 }

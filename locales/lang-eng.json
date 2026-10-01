@@ -827,6 +827,9 @@
     "Aramayı temizle": "Clear search",
     "Sheet başlığı": "Sheet title",
     "Sheet'i aç": "Open Sheet",
-    "Sheet'i kapat": "Collapse Sheet"
+    "Sheet'i kapat": "Collapse Sheet",
+    "Canvas başlığı": "Canvas title",
+    "Canvas'ı aç": "Open Canvas",
+    "Canvas'ı kapat": "Collapse Canvas"
   }
 }
