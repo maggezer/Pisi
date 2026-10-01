@@ -474,6 +474,16 @@ function ensurePisiSheetPointRendered(
 ) {
     if (!table || !point) return null;
 
+    const existing = table.querySelector(
+        'tbody tr[data-pisi-row-id="' +
+        point.rowId +
+        '"] td[data-pisi-col-id="' +
+        point.colId +
+        '"]'
+    );
+
+    if (existing) return existing;
+
     const database = getPisiSheetDatabase(table);
     const view = database
         ? getPisiSheetTableView(database)

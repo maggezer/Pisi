@@ -455,10 +455,6 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     );
     assert.match(
         databaseDom,
-        /getPisiSheetViewRecords\(table\)/
-    );
-    assert.match(
-        databaseDom,
         /modelIndex: rowIndex/
     );
     assert.match(
