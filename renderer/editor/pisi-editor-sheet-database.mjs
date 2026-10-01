@@ -504,7 +504,7 @@ function setPisiSheetCellSource(
     return true;
 }
 
-function setPisiSheetCellRecordsBatch(
+export function setPisiSheetCellRecordsBatch(
     table,
     changes = []
 ) {
@@ -906,10 +906,6 @@ Object.defineProperties(moduleApi, {
     "setPisiSheetCellSource": {
         enumerable: true,
         get() { return setPisiSheetCellSource; }
-    },
-    "setPisiSheetCellRecordsBatch": {
-        enumerable: true,
-        get() { return setPisiSheetCellRecordsBatch; }
     },
     "setPisiSheetCellFormat": {
         enumerable: true,

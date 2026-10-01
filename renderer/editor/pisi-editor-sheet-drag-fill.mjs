@@ -7,6 +7,9 @@ import {
 import {
     shiftPisiSheetFormulaReferences
 } from "./pisi-editor-sheet-model.mjs";
+import {
+    setPisiSheetCellRecordsBatch
+} from "./pisi-editor-sheet-database.mjs";
 
 let pisiSheetDragFillState = null;
 const pisiSheetDragFillPreviewCells = new Set();
