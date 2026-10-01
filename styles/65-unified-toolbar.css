@@ -93,6 +93,8 @@
 }
 
 .pisi-toolbar-text-controls {
+    width: 212px;
+    max-width: 100%;
     display: grid;
     grid-template-columns: minmax(0, 1fr) 56px;
     align-items: start;
@@ -104,6 +106,23 @@
     grid-template-columns: repeat(2, 26px);
     grid-template-rows: repeat(2, 26px);
     gap: 4px;
+}
+
+/* Composite Sheet/Canvas alignment owns the visible alignment state.
+   Ignore stale cell/text active flags while a composite block is selected. */
+.pisi-unified-toolbar.pisi-composite-context
+    .pisi-toolbar-align-grid
+    .pisi-ribbon-btn.active:not(
+        [data-pisi-composite-alignment-active]
+    ):not(:hover):not(:focus-visible),
+.pisi-unified-toolbar.pisi-composite-context
+    .pisi-toolbar-align-grid
+    .pisi-ribbon-btn[aria-pressed="true"]:not(
+        [data-pisi-composite-alignment-active]
+    ):not(:hover):not(:focus-visible) {
+    border-color: #46484e;
+    background: linear-gradient(180deg, #36373b 0%, #2d2e32 100%);
+    box-shadow: none;
 }
 
 .pisi-toolbar-text-action-stack {
