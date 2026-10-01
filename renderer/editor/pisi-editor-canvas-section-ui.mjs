@@ -1,4 +1,5 @@
 const PISI_CANVAS_DEFAULT_TITLE = 'Canvas';
+const pisiBoundCanvasSectionHeaders = new WeakSet();
 
 function normalizePisiCanvasSectionTitle(value) {
     return String(
@@ -385,6 +386,7 @@ function createPisiCanvasSectionHeader(canvas) {
     });
 
     header.append(toggle, title, remove);
+    pisiBoundCanvasSectionHeaders.add(header);
 
     const labels = getPisiCanvasSectionLabels(
         getPisiCanvasSectionBlock(canvas)
@@ -426,6 +428,7 @@ function ensurePisiCanvasSectionHeader(canvas) {
         )
     ));
     let header = headers.find((candidate) => (
+        pisiBoundCanvasSectionHeaders.has(candidate) &&
         candidate.dataset
             ?.pisiCanvasSectionHeader === '1' &&
         candidate.querySelector(

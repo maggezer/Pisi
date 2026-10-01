@@ -1,4 +1,5 @@
 const PISI_SHEET_DEFAULT_TITLE = 'Sheet';
+const pisiBoundSheetSectionHeaders = new WeakSet();
 
 function getPisiSheetSectionBlock(table) {
     return table?.closest?.(
@@ -466,6 +467,7 @@ function createPisiSheetSectionHeader(table) {
     });
 
     header.append(toggle, title, remove);
+    pisiBoundSheetSectionHeaders.add(header);
 
     const labels = getPisiSheetSectionLabels(
         getPisiSheetDatabase(table)?.collapsed === true
@@ -500,6 +502,7 @@ function ensurePisiSheetSectionHeader(table) {
         )
     ));
     let header = headers.find((child) => (
+        pisiBoundSheetSectionHeaders.has(child) &&
         child.dataset?.pisiSheetSectionHeader === '1' &&
         child.querySelector(
             '[data-pisi-sheet-section-toggle]'
