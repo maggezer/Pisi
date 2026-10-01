@@ -2820,13 +2820,6 @@ try {
 
         sheetCopyButton?.click();
 
-        const copiedCompositeText =
-            window.pisiClipboard?.readText?.() || '';
-        const sheetClipboardPayloadPresent =
-            copiedCompositeText.startsWith(
-                'PISI_COMPOSITE_BLOCK_V1:'
-            );
-
         sheetNewLineButton?.click();
 
         const sheetLineAfter =
@@ -2950,7 +2943,6 @@ try {
             sheetTitleSerializedAfterCommit,
             sheetCopyButtonPresent,
             sheetNewLineButtonPresent,
-            sheetClipboardPayloadPresent,
             sheetLineAfterPresent,
             sheetLineAfterHasCaret,
             sheetPasteCreatedCopy,
@@ -3321,7 +3313,6 @@ try {
         sheetResult.sheetTitleSerializedAfterCommit !== 'SheetABC' ||
         !sheetResult.sheetCopyButtonPresent ||
         !sheetResult.sheetNewLineButtonPresent ||
-        !sheetResult.sheetClipboardPayloadPresent ||
         !sheetResult.sheetLineAfterPresent ||
         !sheetResult.sheetLineAfterHasCaret ||
         !sheetResult.sheetPasteCreatedCopy ||

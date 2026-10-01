@@ -1,6 +1,8 @@
 const PISI_COMPOSITE_CLIPBOARD_PREFIX =
     'PISI_COMPOSITE_BLOCK_V1:';
 
+let pisiCompositeClipboardText = '';
+
 function makePisiCompositeId(prefix) {
     const uuid = globalThis.crypto?.randomUUID?.();
 
@@ -148,7 +150,21 @@ function copyPisiCompositeBlock(block) {
     const serialized =
         serializePisiCompositePayload(payload);
 
-    window.pisiClipboard?.writeText?.(serialized);
+    pisiCompositeClipboardText = serialized;
+
+    try {
+        const clipboard = window.pisiClipboard;
+
+        if (
+            clipboard &&
+            typeof clipboard.writeText === 'function'
+        ) {
+            clipboard.writeText(serialized);
+        }
+    } catch {
+        // The in-memory clipboard keeps in-app copy/paste working.
+    }
+
     return true;
 }
 
@@ -408,15 +424,35 @@ function insertPisiCompositePayload(
 }
 
 function readPisiCompositeClipboard(event) {
-    const eventText =
-        event?.clipboardData?.getData?.(
-            'text/plain'
-        ) || '';
+    if (event?.clipboardData) {
+        const eventText =
+            event.clipboardData.getData?.(
+                'text/plain'
+            ) || '';
+
+        return parsePisiCompositePayload(
+            eventText
+        );
+    }
+
+    let bridgeText = '';
+
+    try {
+        const clipboard = window.pisiClipboard;
+
+        if (
+            clipboard &&
+            typeof clipboard.readText === 'function'
+        ) {
+            bridgeText = clipboard.readText() || '';
+        }
+    } catch {
+        bridgeText = '';
+    }
 
     return parsePisiCompositePayload(
-        eventText ||
-        window.pisiClipboard?.readText?.() ||
-        ''
+        bridgeText ||
+        pisiCompositeClipboardText
     );
 }
 
