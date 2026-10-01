@@ -462,6 +462,36 @@ function ensurePisiCanvasSectionHeader(canvas) {
     return header;
 }
 
+if (typeof document !== 'undefined') {
+    document.addEventListener(
+        'click',
+        (event) => {
+            const target = event.target;
+            const button = target instanceof Element
+                ? target.closest(
+                    '[data-pisi-canvas-section-delete]'
+                )
+                : null;
+
+            if (!button) return;
+
+            const block = button.closest(
+                '.pisi-canvas-block'
+            );
+            const canvas = block?.querySelector(
+                'canvas[data-pisi-canvas]'
+            );
+
+            if (!canvas) return;
+
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            deletePisiCanvasSection(canvas);
+        },
+        true
+    );
+}
+
 export {
     ensurePisiCanvasSectionHeader,
     normalizePisiCanvasSectionTitle

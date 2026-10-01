@@ -537,6 +537,36 @@ function ensurePisiSheetSectionHeader(table) {
     return header;
 }
 
+if (typeof document !== 'undefined') {
+    document.addEventListener(
+        'click',
+        (event) => {
+            const target = event.target;
+            const button = target instanceof Element
+                ? target.closest(
+                    '[data-pisi-sheet-section-delete]'
+                )
+                : null;
+
+            if (!button) return;
+
+            const block = button.closest(
+                '.pisi-sheet-block'
+            );
+            const table = block?.querySelector(
+                'table[data-pisi-sheet]'
+            );
+
+            if (!table) return;
+
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            deletePisiSheetSection(table);
+        },
+        true
+    );
+}
+
 export {
     ensurePisiSheetSectionHeader,
     normalizePisiSheetSectionTitle
