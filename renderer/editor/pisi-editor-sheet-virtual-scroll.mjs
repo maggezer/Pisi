@@ -9,6 +9,9 @@ import {
 import {
     ensurePisiSheetSearchControl
 } from "./pisi-editor-sheet-search-ui.mjs";
+import {
+    ensurePisiSheetSectionHeader
+} from "./pisi-editor-sheet-section-ui.mjs";
 
 const pisiSheetVirtualStates = new WeakMap();
 const PISI_SHEET_PAGE_SIZE_OPTIONS = Object.freeze([
@@ -380,6 +383,7 @@ function finalizePisiSheetVirtualRender(
     state.forcedIndex = null;
 
     bindPisiSheetVirtualScroll(table);
+    ensurePisiSheetSectionHeader(table);
     ensurePisiSheetSearchControl(
         table,
         info

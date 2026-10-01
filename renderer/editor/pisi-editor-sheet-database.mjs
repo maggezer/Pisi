@@ -138,7 +138,7 @@ function createPisiSheetTableView(fields, options = {}) {
     };
 }
 
-function createPisiSheetDatabase(rows = 5, cols = 5) {
+function createPisiSheetDatabase(rows = 5, cols = 5, options = {}) {
     const rowCount = Math.max(1, Number(rows) || 1);
     const colCount = Math.max(1, Number(cols) || 1);
     const fields = Array.from(
@@ -154,6 +154,8 @@ function createPisiSheetDatabase(rows = 5, cols = 5) {
     return {
         version: PISI_SHEET_DATABASE_VERSION,
         databaseId: createPisiSheetDatabaseId('database'),
+        title: String(options.title || 'Sheet').trim().slice(0, 80) || 'Sheet',
+        collapsed: options.collapsed === true,
         fields,
         items,
         views: [view],
@@ -333,6 +335,8 @@ function normalizePisiSheetDatabase(database) {
             database.databaseId ||
             createPisiSheetDatabaseId('database')
         ),
+        title: String(database.title || 'Sheet').trim().slice(0, 80) || 'Sheet',
+        collapsed: database.collapsed === true,
         fields,
         items,
         views,

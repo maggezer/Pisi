@@ -221,6 +221,13 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         ),
         'utf8'
     );
+    const sheetSectionUi = fs.readFileSync(
+        path.join(
+            root,
+            'renderer/editor/pisi-editor-sheet-section-ui.mjs'
+        ),
+        'utf8'
+    );
     const sheetDragFill = fs.readFileSync(
         path.join(
             root,
@@ -339,6 +346,8 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     );
 
     assert.match(database, /databaseId/);
+    assert.match(database, /title:/);
+    assert.match(database, /collapsed:/);
     assert.match(database, /fields/);
     assert.match(database, /items/);
     assert.match(database, /views/);
@@ -979,12 +988,32 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         /ensurePisiSheetSearchControl/
     );
     assert.match(
+        sheetVirtualScroll,
+        /ensurePisiSheetSectionHeader/
+    );
+    assert.match(
         sheetSearchUi,
         /pisi-sheet-search-input/
     );
     assert.match(
         sheetSearchUi,
         /setPisiSheetViewSearchQuery/
+    );
+    assert.match(
+        sheetSectionUi,
+        /pisi-sheet-section-header/
+    );
+    assert.match(
+        sheetSectionUi,
+        /pisi-sheet-section-title/
+    );
+    assert.match(
+        sheetSectionUi,
+        /pisi-sheet-collapsed/
+    );
+    assert.match(
+        sheetSectionUi,
+        /persistPisiSheetDatabase/
     );
     assert.match(
         sheetDragFillCore,
@@ -1183,6 +1212,10 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         componentsCss,
         /pisi-sheet-virtualized/
     );
+    assert.doesNotMatch(
+        componentsCss,
+        /\.pisi-sheet-block\s*\{[\s\S]{0,260}border:\s*1px solid #3a3a3a/
+    );
     assert.match(
         componentsCss,
         /pisi-sheet-virtual-spacer/
@@ -1198,6 +1231,22 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         componentsCss,
         /pisi-sheet-search-input/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-section-header/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-section-toggle/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-section-title/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-collapsed/
     );
     assert.match(
         componentsCss,

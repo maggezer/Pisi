@@ -824,6 +824,9 @@
     "satır/sayfa": "rows/page",
     "Doldurma tutamacı": "Fill handle",
     "Sheet içinde ara": "Search this Sheet",
-    "Aramayı temizle": "Clear search"
+    "Aramayı temizle": "Clear search",
+    "Sheet başlığı": "Sheet title",
+    "Sheet'i aç": "Open Sheet",
+    "Sheet'i kapat": "Collapse Sheet"
   }
 }
