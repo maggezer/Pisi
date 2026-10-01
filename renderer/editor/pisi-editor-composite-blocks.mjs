@@ -170,6 +170,34 @@ function selectPisiCompositeAlignmentBlock(block) {
     return true;
 }
 
+function isPisiSheetBlankAlignmentTarget(
+    target,
+    block
+) {
+    if (
+        !block?.classList?.contains(
+            'pisi-sheet-block'
+        )
+    ) {
+        return false;
+    }
+
+    const excluded = target.closest(
+        '.pisi-sheet-table, ' +
+        '.pisi-sheet-search, ' +
+        '.pisi-sheet-section-title, ' +
+        '.pisi-sheet-section-toggle, ' +
+        '.pisi-section-copy, ' +
+        '.pisi-section-new-line, ' +
+        '.pisi-section-delete, ' +
+        '.pisi-sheet-pagination, ' +
+        'input, button, select, textarea, a, ' +
+        '[contenteditable="true"]'
+    );
+
+    return !excluded || !block.contains(excluded);
+}
+
 function isPisiCompositeWholeBlockTarget(
     target,
     block = getPisiCompositeBlock(target)
@@ -182,11 +210,19 @@ function isPisiCompositeWholeBlockTarget(
         return false;
     }
 
+    if (
+        block.classList.contains(
+            'pisi-sheet-block'
+        )
+    ) {
+        return isPisiSheetBlankAlignmentTarget(
+            target,
+            block
+        );
+    }
+
     return Boolean(
         target.closest(
-            '.pisi-sheet-section-header, ' +
-            '.pisi-sheet-search, ' +
-            '.pisi-sheet-selection-surface, ' +
             '.pisi-canvas-section-header, ' +
             '.pisi-paint-canvas'
         )

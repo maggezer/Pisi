@@ -1066,13 +1066,17 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         sheetSectionUi,
         /ensurePisiCompositeAlignment/
     );
-    assert.match(
+    assert.doesNotMatch(
         sheetSectionUi,
         /selectPisiCompositeAlignmentBlock/
     );
-    assert.match(
+    assert.doesNotMatch(
         sheetSearchUi,
         /selectPisiCompositeAlignmentBlock/
+    );
+    assert.match(
+        compositeBlocks,
+        /isPisiSheetBlankAlignmentTarget/
     );
     assert.match(
         compositeBlocks,

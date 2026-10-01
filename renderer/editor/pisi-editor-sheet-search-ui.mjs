@@ -1,7 +1,4 @@
 import {
-    selectPisiCompositeAlignmentBlock
-} from "./pisi-editor-composite-blocks.mjs";
-import {
     getPisiSheetActiveViewSearchQuery,
     setPisiSheetViewSearchQuery
 } from "./pisi-editor-sheet-view-query.mjs";
@@ -152,19 +149,6 @@ function ensurePisiSheetSearchControl(
             );
         });
 
-        const selectSearchBlock = () => {
-            selectPisiCompositeAlignmentBlock(block);
-        };
-
-        input.addEventListener(
-            'pointerdown',
-            selectSearchBlock
-        );
-        input.addEventListener(
-            'focus',
-            selectSearchBlock
-        );
-
         input.addEventListener(
             'beforeinput',
             stopSearchEditorEvent
@@ -247,61 +231,8 @@ function ensurePisiSheetSearchControl(
         block.insertBefore(searchRow, table);
     }
 
-    let selectionSurface =
-        searchRow.querySelector(
-            '[data-pisi-sheet-selection-surface]'
-        );
-
-    if (!selectionSurface) {
-        selectionSurface =
-            document.createElement('button');
-        selectionSurface.type = 'button';
-        selectionSurface.className =
-            'pisi-sheet-selection-surface';
-        selectionSurface.dataset
-            .pisiSheetSelectionSurface = '1';
-        selectionSurface.setAttribute(
-            'contenteditable',
-            'false'
-        );
-        selectionSurface.setAttribute(
-            'aria-label',
-            window.pisiT?.("Sheet'i seç") ||
-            "Sheet'i seç"
-        );
-        selectionSurface.title =
-            window.pisiT?.("Sheet'i seç") ||
-            "Sheet'i seç";
-
-        const selectWholeSheet = (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            selectPisiCompositeAlignmentBlock(
-                block
-            );
-        };
-
-        selectionSurface.addEventListener(
-            'pointerdown',
-            selectWholeSheet
-        );
-        selectionSurface.addEventListener(
-            'click',
-            selectWholeSheet
-        );
-    }
-
     if (control.parentElement !== searchRow) {
-        searchRow.prepend(control);
-    }
-
-    if (
-        selectionSurface.parentElement !==
-        searchRow
-    ) {
-        searchRow.appendChild(
-            selectionSurface
-        );
+        searchRow.appendChild(control);
     }
 
     const input = control.querySelector(
