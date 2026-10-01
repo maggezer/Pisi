@@ -286,6 +286,94 @@ try {
                 'tbody tr:first-child td'
             ).length
         };
+
+        const sheetBlock = table.closest(
+            '.pisi-sheet-block'
+        );
+        const sectionTitle = sheetBlock?.querySelector(
+            '[data-pisi-sheet-section-title]'
+        );
+        let sheetTitleFocusRetained = false;
+        let sheetTitleValueAfterTyping = '';
+        let sheetTitleModelAfterCommit = '';
+        let sheetTitleSerializedAfterCommit = '';
+
+        if (sectionTitle) {
+            sectionTitle.focus();
+            sheetTitleFocusRetained =
+                document.activeElement === sectionTitle;
+
+            for (const character of ['A', 'B', 'C']) {
+                sectionTitle.value += character;
+                sectionTitle.dispatchEvent(
+                    new InputEvent('input', {
+                        bubbles: true,
+                        inputType: 'insertText',
+                        data: character
+                    })
+                );
+
+                sheetTitleFocusRetained =
+                    sheetTitleFocusRetained &&
+                    sectionTitle.isConnected &&
+                    document.activeElement === sectionTitle;
+            }
+
+            sheetTitleValueAfterTyping =
+                sectionTitle.value;
+
+            sectionTitle.dispatchEvent(
+                new Event('change', {
+                    bubbles: true
+                })
+            );
+
+            sheetTitleModelAfterCommit =
+                window.getPisiSheetDatabase?.(
+                    table
+                )?.title || '';
+
+            try {
+                sheetTitleSerializedAfterCommit =
+                    JSON.parse(
+                        table.dataset.pisiSheetModel || '{}'
+                    ).title || '';
+            } catch {
+                sheetTitleSerializedAfterCommit = '';
+            }
+        }
+
+        const sheetBlockStyle = sheetBlock
+            ? getComputedStyle(sheetBlock)
+            : null;
+        const sheetBlockOuterSpacing = {
+            marginTop:
+                Number.parseFloat(
+                    sheetBlockStyle?.marginTop || '0'
+                ) || 0,
+            marginBottom:
+                Number.parseFloat(
+                    sheetBlockStyle?.marginBottom || '0'
+                ) || 0,
+            paddingTop:
+                Number.parseFloat(
+                    sheetBlockStyle?.paddingTop || '0'
+                ) || 0,
+            paddingBottom:
+                Number.parseFloat(
+                    sheetBlockStyle?.paddingBottom || '0'
+                ) || 0
+        };
+        const sheetCaretAnchor =
+            sheetBlock?.nextElementSibling?.classList?.contains(
+                'pisi-sheet-caret-anchor'
+            )
+                ? sheetBlock.nextElementSibling
+                : null;
+        const sheetCaretAnchorHeight =
+            sheetCaretAnchor
+                ? sheetCaretAnchor.getBoundingClientRect().height
+                : -1;
         const initialEditable =
             firstCell.getAttribute('contenteditable');
         const originalRowId = firstCell.dataset.pisiRowId || '';
@@ -2617,6 +2705,12 @@ try {
             ),
             toolbarSheetActionsAbsent,
             directTableSize,
+            sheetTitleFocusRetained,
+            sheetTitleValueAfterTyping,
+            sheetTitleModelAfterCommit,
+            sheetTitleSerializedAfterCommit,
+            sheetBlockOuterSpacing,
+            sheetCaretAnchorHeight,
             initialEditable,
             originalRowId,
             originalColId,
@@ -2957,6 +3051,15 @@ try {
         !sheetResult.toolbarSheetActionsAbsent ||
         sheetResult.directTableSize?.rows !== 5 ||
         sheetResult.directTableSize?.cols !== 5 ||
+        !sheetResult.sheetTitleFocusRetained ||
+        sheetResult.sheetTitleValueAfterTyping !== 'SheetABC' ||
+        sheetResult.sheetTitleModelAfterCommit !== 'SheetABC' ||
+        sheetResult.sheetTitleSerializedAfterCommit !== 'SheetABC' ||
+        sheetResult.sheetBlockOuterSpacing?.marginTop !== 0 ||
+        sheetResult.sheetBlockOuterSpacing?.marginBottom !== 0 ||
+        sheetResult.sheetBlockOuterSpacing?.paddingTop !== 0 ||
+        sheetResult.sheetBlockOuterSpacing?.paddingBottom !== 0 ||
+        sheetResult.sheetCaretAnchorHeight > 1 ||
         sheetResult.initialEditable !== 'false' ||
         !sheetResult.originalRowId ||
         !sheetResult.originalColId ||

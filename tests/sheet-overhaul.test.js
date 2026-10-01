@@ -1016,6 +1016,14 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         /persistPisiSheetDatabase/
     );
     assert.match(
+        sheetSectionUi,
+        /beforeinput/
+    );
+    assert.match(
+        sheetSectionUi,
+        /event\.stopPropagation\(\)/
+    );
+    assert.match(
         sheetDragFillCore,
         /getPisiSheetDragFillSeriesValue/
     );
@@ -1088,6 +1096,10 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         /drop/
     );
 
+    assert.match(
+        sheet,
+        /pisi-sheet-caret-anchor/
+    );
     assert.match(sheet, /PISI_SHEET_MAX_ROWS = 10000/);
     assert.match(sheet, /PISI_SHEET_MAX_COLS = 80/);
     assert.match(sheet, /options\.forceFormula === true/);
@@ -1247,6 +1259,10 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         componentsCss,
         /pisi-sheet-collapsed/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-caret-anchor/
     );
     assert.match(
         componentsCss,

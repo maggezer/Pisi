@@ -36,13 +36,13 @@
 
 .pisi-sheet-block {
     max-width: 100%;
-    margin: 12px 0;
+    margin: 0;
     overflow: auto;
     border: 0;
     border-bottom: 1px solid #3a3a3a;
     border-radius: 0;
     background: transparent;
-    padding: 0 0 8px;
+    padding: 0;
 }
 
 .pisi-sheet-block.pisi-sheet-virtualized:not(.pisi-sheet-collapsed) {
@@ -1326,4 +1326,17 @@ body.pisi-sheet-column-resizing * {
     width: 26px;
     min-width: 26px;
     justify-self: start;
+}
+
+
+/* Keep a zero-height editable landing point after a non-editable Sheet
+   without rendering an extra blank editor row. */
+#center-node-editor-content div.pisi-sheet-caret-anchor,
+#node-modal-content div.pisi-sheet-caret-anchor {
+    min-height: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    line-height: 0;
 }

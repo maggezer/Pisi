@@ -214,11 +214,17 @@ function createPisiSheetSectionHeader(table) {
         );
     });
 
-    title.addEventListener('input', () => {
+    title.addEventListener('beforeinput', (event) => {
+        event.stopPropagation();
+    });
+
+    title.addEventListener('input', (event) => {
+        event.stopPropagation();
         syncPisiSheetSectionTitleWidth(title);
     });
 
-    title.addEventListener('change', () => {
+    title.addEventListener('change', (event) => {
+        event.stopPropagation();
         commitPisiSheetSectionTitle(
             table,
             title
@@ -226,6 +232,8 @@ function createPisiSheetSectionHeader(table) {
     });
 
     title.addEventListener('keydown', (event) => {
+        event.stopPropagation();
+
         if (event.key === 'Enter') {
             event.preventDefault();
             title.blur();

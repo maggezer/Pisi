@@ -130,7 +130,7 @@ function insertPisiSheet(editor, rows = 5, cols = 5) {
         <div class="pisi-sheet-block" contenteditable="false" data-pisi-sheet-block="1">
             ${buildPisiSheetHtml(rows, cols)}
         </div>
-        <div><br></div>
+        <div class="pisi-sheet-caret-anchor"><br></div>
     `;
 
     insertHtmlIntoPisiEditor(editor, html);
