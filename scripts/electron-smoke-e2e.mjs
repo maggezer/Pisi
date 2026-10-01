@@ -367,6 +367,79 @@ try {
             }
         }
 
+        const searchInput =
+            sheetBlock?.querySelector(
+                '[data-pisi-sheet-search-input]'
+            ) || null;
+        let sheetSearchFocusRetained =
+            Boolean(searchInput);
+        let sheetSearchValueAfterTyping = '';
+
+        if (searchInput) {
+            searchInput.focus();
+            sheetSearchFocusRetained =
+                document.activeElement === searchInput;
+
+            for (const character of ['A', 'B', 'C']) {
+                searchInput.dispatchEvent(
+                    new KeyboardEvent('keydown', {
+                        bubbles: true,
+                        cancelable: true,
+                        key: character
+                    })
+                );
+                searchInput.dispatchEvent(
+                    new InputEvent('beforeinput', {
+                        bubbles: true,
+                        cancelable: true,
+                        inputType: 'insertText',
+                        data: character
+                    })
+                );
+
+                searchInput.value += character;
+
+                searchInput.dispatchEvent(
+                    new InputEvent('input', {
+                        bubbles: true,
+                        inputType: 'insertText',
+                        data: character
+                    })
+                );
+                searchInput.dispatchEvent(
+                    new KeyboardEvent('keyup', {
+                        bubbles: true,
+                        cancelable: true,
+                        key: character
+                    })
+                );
+
+                window.setPisiSheetViewSearchQuery?.(
+                    table,
+                    searchInput.value
+                );
+
+                sheetSearchFocusRetained =
+                    sheetSearchFocusRetained &&
+                    searchInput.isConnected &&
+                    document.activeElement === searchInput &&
+                    sheetBlock.querySelector(
+                        '[data-pisi-sheet-search-input]'
+                    ) === searchInput;
+            }
+
+            sheetSearchValueAfterTyping =
+                searchInput.value;
+
+            searchInput.dispatchEvent(
+                new KeyboardEvent('keydown', {
+                    bubbles: true,
+                    cancelable: true,
+                    key: 'Escape'
+                })
+            );
+        }
+
         const sheetBlockStyle = sheetBlock
             ? getComputedStyle(sheetBlock)
             : null;
@@ -3066,6 +3139,8 @@ try {
             sheetTitleValueAfterTyping,
             sheetTitleModelAfterCommit,
             sheetTitleSerializedAfterCommit,
+            sheetSearchFocusRetained,
+            sheetSearchValueAfterTyping,
             sheetCopyButtonPresent,
             sheetNewLineButtonPresent,
             sheetLineAfterPresent,
@@ -3439,6 +3514,8 @@ try {
         sheetResult.sheetTitleValueAfterTyping !== 'SheetABC' ||
         sheetResult.sheetTitleModelAfterCommit !== 'SheetABC' ||
         sheetResult.sheetTitleSerializedAfterCommit !== 'SheetABC' ||
+        !sheetResult.sheetSearchFocusRetained ||
+        sheetResult.sheetSearchValueAfterTyping !== 'ABC' ||
         !sheetResult.sheetCopyButtonPresent ||
         !sheetResult.sheetNewLineButtonPresent ||
         !sheetResult.sheetLineAfterPresent ||

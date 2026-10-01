@@ -4,6 +4,7 @@ import {
 } from "./pisi-editor-sheet-view-query.mjs";
 
 const pisiSheetSearchTimers = new WeakMap();
+const pisiBoundSheetSearchControls = new WeakSet();
 
 function clearPisiSheetSearchTimer(table) {
     const timer = pisiSheetSearchTimers.get(table);
@@ -60,6 +61,7 @@ function ensurePisiSheetSearchControl(
         )
     ));
     let control = controls.find((child) => (
+        pisiBoundSheetSearchControls.has(child) &&
         child.querySelector(
             '[data-pisi-sheet-search-input]'
         ) &&
@@ -123,7 +125,37 @@ function ensurePisiSheetSearchControl(
             'Aramayı temizle'
         );
 
-        input.addEventListener('input', () => {
+        const stopSearchEditorEvent = (event) => {
+            event.stopPropagation();
+        };
+
+        [
+            'pointerdown',
+            'pointerup',
+            'mousedown',
+            'mouseup',
+            'click',
+            'dblclick',
+            'focusin',
+            'focusout',
+            'keyup',
+            'compositionstart',
+            'compositionupdate',
+            'compositionend'
+        ].forEach((type) => {
+            input.addEventListener(
+                type,
+                stopSearchEditorEvent
+            );
+        });
+
+        input.addEventListener(
+            'beforeinput',
+            stopSearchEditorEvent
+        );
+
+        input.addEventListener('input', (event) => {
+            event.stopPropagation();
             clear.hidden = !input.value;
             schedulePisiSheetSearch(
                 table,
@@ -132,6 +164,8 @@ function ensurePisiSheetSearchControl(
         });
 
         input.addEventListener('keydown', (event) => {
+            event.stopPropagation();
+
             if (event.key !== 'Escape') return;
 
             event.preventDefault();
@@ -148,7 +182,9 @@ function ensurePisiSheetSearchControl(
             }
         });
 
-        clear.addEventListener('click', () => {
+        clear.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
             input.value = '';
             clear.hidden = true;
             commitPisiSheetSearch(
@@ -164,6 +200,7 @@ function ensurePisiSheetSearchControl(
             status,
             clear
         );
+        pisiBoundSheetSearchControls.add(control);
         block.insertBefore(control, table);
     }
 

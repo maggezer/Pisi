@@ -1016,6 +1016,22 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         /candidate\.remove\(\)/
     );
     assert.match(
+        sheetSearchUi,
+        /pisiBoundSheetSearchControls/
+    );
+    assert.match(
+        sheetSearchUi,
+        /beforeinput/
+    );
+    assert.match(
+        sheetSearchUi,
+        /compositionstart/
+    );
+    assert.match(
+        sheetSearchUi,
+        /event\.stopPropagation\(\)/
+    );
+    assert.match(
         sheetSectionUi,
         /pisi-sheet-section-header/
     );
