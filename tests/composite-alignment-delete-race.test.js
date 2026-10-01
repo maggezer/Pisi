@@ -9,7 +9,7 @@ const root = path.resolve(__dirname, '..');
 const read = (file) =>
     fs.readFileSync(path.join(root, file), 'utf8');
 
-test('composite alignment can be recovered from real focus and selected Canvas state', () => {
+test('composite alignment prefers explicit block context and selected Canvas state', () => {
     const source = read(
         'renderer/editor/pisi-editor-composite-blocks.mjs'
     );
@@ -22,15 +22,7 @@ test('composite alignment can be recovered from real focus and selected Canvas s
 
     assert.match(
         source,
-        /function getPisiFocusedCompositeAlignmentBlock/
-    );
-    assert.match(
-        source,
         /function getPisiSelectedCanvasAlignmentBlock/
-    );
-    assert.match(
-        resolver,
-        /document\.activeElement/
     );
     assert.match(
         resolver,
@@ -39,6 +31,14 @@ test('composite alignment can be recovered from real focus and selected Canvas s
     assert.match(
         resolver,
         /PISI_COMPOSITE_ACTIVE_CLASS/
+    );
+    assert.match(
+        resolver,
+        /pisiActiveCompositeContexts\.get\(editor\)/
+    );
+    assert.doesNotMatch(
+        resolver,
+        /document\.activeElement/
     );
 });
 
