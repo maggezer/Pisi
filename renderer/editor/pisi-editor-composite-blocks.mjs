@@ -143,29 +143,6 @@ function isPisiCompositeWholeBlockTarget(
     );
 }
 
-function getPisiFocusedCompositeAlignmentBlock(editor) {
-    const activeElement = document.activeElement;
-
-    if (
-        !(activeElement instanceof Element) ||
-        !editor?.contains(activeElement)
-    ) {
-        return null;
-    }
-
-    const block =
-        getPisiCompositeBlock(activeElement);
-
-    if (!block) return null;
-
-    return isPisiCompositeWholeBlockTarget(
-        activeElement,
-        block
-    )
-        ? block
-        : null;
-}
-
 function getPisiSelectedCanvasAlignmentBlock(editor) {
     if (!editor) return null;
 
@@ -218,32 +195,6 @@ function rememberPisiCompositeContext(event) {
 
 function getPisiActiveCompositeAlignmentBlock(editor) {
     if (!editor) return null;
-
-    const activeElement = document.activeElement;
-
-    if (
-        activeElement instanceof Element &&
-        editor.contains(activeElement)
-    ) {
-        const activeBlock =
-            getPisiCompositeBlock(activeElement);
-
-        if (activeBlock) {
-            return isPisiCompositeWholeBlockTarget(
-                activeElement,
-                activeBlock
-            )
-                ? activeBlock
-                : null;
-        }
-    }
-
-    const focused =
-        getPisiFocusedCompositeAlignmentBlock(editor);
-
-    if (focused) {
-        return focused;
-    }
 
     const selectedCanvas =
         getPisiSelectedCanvasAlignmentBlock(editor);
