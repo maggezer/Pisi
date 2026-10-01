@@ -86,19 +86,31 @@ function setPisiCompositeAlignment(
 
     block.dataset.pisiCompositeAlign = next;
 
-    if (
-        changed &&
-        options.notify !== false
-    ) {
+    if (changed) {
         const editor =
             getPisiCompositeEditor(block);
 
         editor?.dispatchEvent(
-            new InputEvent('input', {
-                bubbles: true,
-                inputType: 'formatSet'
-            })
+            new CustomEvent(
+                'pisi:composite-alignment-changed',
+                {
+                    bubbles: false,
+                    detail: {
+                        block,
+                        alignment: next
+                    }
+                }
+            )
         );
+
+        if (options.notify !== false) {
+            editor?.dispatchEvent(
+                new InputEvent('input', {
+                    bubbles: true,
+                    inputType: 'formatSet'
+                })
+            );
+        }
     }
 
     return changed;
