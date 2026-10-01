@@ -1,4 +1,5 @@
 import {
+    ensurePisiCompositeAlignment,
     ensurePisiEditableLineAfter,
     normalizePisiCompositeBlockLayout,
     selectPisiCompositeAlignmentBlock
@@ -550,6 +551,7 @@ function ensurePisiSheetSectionHeader(table) {
 
     if (!block || !database) return null;
 
+    ensurePisiCompositeAlignment(block);
     normalizePisiCompositeBlockLayout(block);
 
     block.classList.remove(
