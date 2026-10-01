@@ -397,21 +397,24 @@ try {
                 'pisi-composite-alignment-active'
             ) === true;
 
+        const sheetBlockInitialLeft =
+            measureLeft(sheetBlock);
+
         alignLeftButton?.click();
         const sheetTitleLeftPosition =
-            measureLeft(sheetBlock);
+            measureLeft(table);
         const sheetAlignedLeft =
             sheetBlock?.dataset.pisiCompositeAlign === 'left';
 
         alignRightButton?.click();
         const sheetTitleRightPosition =
-            measureLeft(sheetBlock);
+            measureLeft(table);
         const sheetAlignedRight =
             sheetBlock?.dataset.pisiCompositeAlign === 'right';
 
         alignCenterButton?.click();
         const sheetTitleCenterPosition =
-            measureLeft(sheetBlock);
+            measureLeft(table);
         const sheetAlignedCenter =
             sheetBlock?.dataset.pisiCompositeAlign === 'center';
 
@@ -422,6 +425,11 @@ try {
                 sheetTitleLeftPosition + 3 &&
             sheetTitleCenterPosition <
                 sheetTitleRightPosition - 3;
+        const sheetChromeStaysFixed =
+            Math.abs(
+                measureLeft(sheetBlock) -
+                sheetBlockInitialLeft
+            ) <= 1;
 
         const searchInput =
             sheetBlock?.querySelector(
@@ -504,17 +512,19 @@ try {
 
             alignLeftButton?.click();
             const searchLeft =
-                measureLeft(sheetBlock);
+                measureLeft(table);
             const sheetSearchAlignedLeft =
                 sheetBlock?.dataset.pisiCompositeAlign === 'left';
 
             alignRightButton?.click();
             const searchRight =
-                measureLeft(sheetBlock);
+                measureLeft(table);
             const sheetSearchAlignedRight =
                 sheetBlock?.dataset.pisiCompositeAlign === 'right';
 
             alignCenterButton?.click();
+            const searchCenter =
+                measureLeft(table);
             const sheetSearchAlignedCenter =
                 sheetBlock?.dataset.pisiCompositeAlign === 'center';
 
@@ -522,7 +532,9 @@ try {
                 sheetSearchAlignedLeft &&
                 sheetSearchAlignedRight &&
                 sheetSearchAlignedCenter &&
-                searchRight > searchLeft + 8;
+                searchRight > searchLeft + 8 &&
+                searchCenter > searchLeft + 3 &&
+                searchCenter < searchRight - 3;
 
             searchInput.dispatchEvent(
                 new KeyboardEvent('keydown', {
@@ -531,6 +543,57 @@ try {
                     key: 'Escape'
                 })
             );
+        }
+
+        const sheetSelectionSurface =
+            sheetBlock?.querySelector(
+                '[data-pisi-sheet-selection-surface]'
+            ) || null;
+        let sheetSelectionSurfaceSelected = false;
+        let sheetSelectionSurfaceAlignmentWorks = false;
+
+        if (sheetSelectionSurface) {
+            sheetSelectionSurface.dispatchEvent(
+                new PointerEvent('pointerdown', {
+                    bubbles: true,
+                    cancelable: true,
+                    pointerType: 'mouse'
+                })
+            );
+            sheetSelectionSurface.click();
+
+            sheetSelectionSurfaceSelected =
+                sheetBlock?.classList.contains(
+                    'pisi-composite-alignment-active'
+                ) === true;
+
+            alignLeftButton?.click();
+            const surfaceLeft =
+                measureLeft(table);
+            const surfaceAlignedLeft =
+                sheetBlock?.dataset.pisiCompositeAlign === 'left';
+
+            sheetSelectionSurface.click();
+            alignRightButton?.click();
+            const surfaceRight =
+                measureLeft(table);
+            const surfaceAlignedRight =
+                sheetBlock?.dataset.pisiCompositeAlign === 'right';
+
+            sheetSelectionSurface.click();
+            alignCenterButton?.click();
+            const surfaceCenter =
+                measureLeft(table);
+            const surfaceAlignedCenter =
+                sheetBlock?.dataset.pisiCompositeAlign === 'center';
+
+            sheetSelectionSurfaceAlignmentWorks =
+                surfaceAlignedLeft &&
+                surfaceAlignedRight &&
+                surfaceAlignedCenter &&
+                surfaceRight > surfaceLeft + 8 &&
+                surfaceCenter > surfaceLeft + 3 &&
+                surfaceCenter < surfaceRight - 3;
         }
 
         const sheetBlockStyle = sheetBlock
