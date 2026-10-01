@@ -2805,6 +2805,20 @@ try {
 
         typedHost.remove();
 
+        const sheetDeleteButton =
+            sheetBlock?.querySelector(
+                '[data-pisi-sheet-section-delete]'
+            );
+        const sheetDeleteButtonPresent =
+            Boolean(sheetDeleteButton);
+        sheetDeleteButton?.click();
+        const sheetRemovedByDelete =
+            Boolean(
+                sheetBlock &&
+                !sheetBlock.isConnected &&
+                !editor.contains(sheetBlock)
+            );
+
         const typedStages = {
             rawBefore: typedRawBefore,
             displayBefore: typedDisplayBefore,
@@ -2851,6 +2865,8 @@ try {
             sheetTitleValueAfterTyping,
             sheetTitleModelAfterCommit,
             sheetTitleSerializedAfterCommit,
+            sheetDeleteButtonPresent,
+            sheetRemovedByDelete,
             sheetBlockOuterSpacing,
             sheetBeforeAnchorHeight,
             sheetAfterAnchorHeight,
@@ -3212,10 +3228,12 @@ try {
         sheetResult.sheetTitleValueAfterTyping !== 'SheetABC' ||
         sheetResult.sheetTitleModelAfterCommit !== 'SheetABC' ||
         sheetResult.sheetTitleSerializedAfterCommit !== 'SheetABC' ||
+        !sheetResult.sheetDeleteButtonPresent ||
+        !sheetResult.sheetRemovedByDelete ||
         sheetResult.sheetBlockOuterSpacing?.marginTop !== 0 ||
         sheetResult.sheetBlockOuterSpacing?.marginBottom !== 0 ||
         sheetResult.sheetBlockOuterSpacing?.paddingTop !== 0 ||
-        sheetResult.sheetBlockOuterSpacing?.paddingBottom !== 0 ||
+        sheetResult.sheetBlockOuterSpacing?.paddingBottom !== 5 ||
         sheetResult.sheetBeforeAnchorHeight > 1 ||
         sheetResult.sheetAfterAnchorHeight > 1 ||
         sheetResult.sheetAdjacentVisibleBlankCount !== 0 ||

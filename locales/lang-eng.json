@@ -830,6 +830,8 @@
     "Sheet'i kapat": "Collapse Sheet",
     "Canvas başlığı": "Canvas title",
     "Canvas'ı aç": "Open Canvas",
-    "Canvas'ı kapat": "Collapse Canvas"
+    "Canvas'ı kapat": "Collapse Canvas",
+    "Sheet'i sil": "Delete Sheet",
+    "Canvas'ı sil": "Delete Canvas"
   }
 }

@@ -80,7 +80,10 @@ function getPisiCanvasSectionLabels(collapsed) {
             ),
         title:
             window.pisiT?.('Canvas başlığı') ||
-            'Canvas başlığı'
+            'Canvas başlığı',
+        delete:
+            window.pisiT?.("Canvas'ı sil") ||
+            "Canvas'ı sil"
     };
 }
 
@@ -202,10 +205,39 @@ function togglePisiCanvasSection(
     return true;
 }
 
+function deletePisiCanvasSection(canvas) {
+    const block =
+        getPisiCanvasSectionBlock(canvas);
+    const editor = block?.closest?.(
+        '.pisi-rich-editor'
+    );
+
+    if (!block || !editor) return false;
+
+    if (
+        window.__pisiPaintState?.activeCanvas === canvas
+    ) {
+        window.__pisiPaintState.activeCanvas = null;
+    }
+
+    clearPisiCanvasDocumentSelection(block);
+    block.remove();
+
+    editor.dispatchEvent(
+        new InputEvent('input', {
+            bubbles: true,
+            inputType: 'deleteContent'
+        })
+    );
+
+    return true;
+}
+
 function createPisiCanvasSectionHeader(canvas) {
     const header = document.createElement('div');
     const toggle = document.createElement('button');
     const title = document.createElement('input');
+    const remove = document.createElement('button');
 
     header.className =
         'pisi-canvas-section-header';
@@ -227,6 +259,11 @@ function createPisiCanvasSectionHeader(canvas) {
     title.maxLength = 80;
     title.autocomplete = 'off';
     title.spellcheck = false;
+
+    remove.type = 'button';
+    remove.className = 'pisi-section-delete';
+    remove.dataset.pisiCanvasSectionDelete = '1';
+    remove.setAttribute('contenteditable', 'false');
 
     toggle.addEventListener('click', (event) => {
         event.preventDefault();
@@ -303,6 +340,13 @@ function createPisiCanvasSectionHeader(canvas) {
         );
     });
 
+    remove.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        deletePisiCanvasSection(canvas);
+    });
+
     title.addEventListener('keydown', (event) => {
         event.stopPropagation();
 
@@ -334,7 +378,18 @@ function createPisiCanvasSectionHeader(canvas) {
         title.blur();
     });
 
-    header.append(toggle, title);
+    header.append(toggle, title, remove);
+
+    const labels = getPisiCanvasSectionLabels(
+        getPisiCanvasSectionBlock(canvas)
+            ?.dataset.pisiCanvasCollapsed === '1'
+    );
+    remove.setAttribute(
+        'aria-label',
+        labels.delete
+    );
+    remove.title = labels.delete;
+
     return header;
 }
 
@@ -372,6 +427,9 @@ function ensurePisiCanvasSectionHeader(canvas) {
         ) &&
         candidate.querySelector(
             '[data-pisi-canvas-section-title]'
+        ) &&
+        candidate.querySelector(
+            '[data-pisi-canvas-section-delete]'
         )
     )) || null;
 

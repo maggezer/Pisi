@@ -174,7 +174,8 @@ function cleanupPisiSheetTransientChrome(table) {
             className: 'pisi-sheet-section-header',
             selectors: [
                 '[data-pisi-sheet-section-toggle]',
-                '[data-pisi-sheet-section-title]'
+                '[data-pisi-sheet-section-title]',
+                '[data-pisi-sheet-section-delete]'
             ]
         },
         {

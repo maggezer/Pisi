@@ -123,7 +123,10 @@ function getPisiSheetSectionLabels(collapsed) {
             ),
         title:
             window.pisiT?.('Sheet başlığı') ||
-            'Sheet başlığı'
+            'Sheet başlığı',
+        delete:
+            window.pisiT?.("Sheet'i sil") ||
+            "Sheet'i sil"
     };
 }
 
@@ -278,10 +281,45 @@ function togglePisiSheetSection(
     return true;
 }
 
+function deletePisiSheetSection(table) {
+    const block = getPisiSheetSectionBlock(table);
+    const editor = block?.closest?.('.pisi-rich-editor');
+
+    if (!block || !editor) return false;
+
+    if (
+        typeof isPisiSheetEditingCell === 'function' &&
+        isPisiSheetEditingCell(table)
+    ) {
+        finishPisiSheetCellEdit(table, {
+            commit: true,
+            refocus: false
+        });
+    }
+
+    if (typeof clearPisiSheetSelection === 'function') {
+        clearPisiSheetSelection(table);
+    } else {
+        window.getSelection?.()?.removeAllRanges?.();
+    }
+
+    block.remove();
+
+    editor.dispatchEvent(
+        new InputEvent('input', {
+            bubbles: true,
+            inputType: 'deleteContent'
+        })
+    );
+
+    return true;
+}
+
 function createPisiSheetSectionHeader(table) {
     const header = document.createElement('div');
     const toggle = document.createElement('button');
     const title = document.createElement('input');
+    const remove = document.createElement('button');
 
     header.className =
         'pisi-sheet-section-header';
@@ -303,6 +341,11 @@ function createPisiSheetSectionHeader(table) {
     title.maxLength = 80;
     title.autocomplete = 'off';
     title.spellcheck = false;
+
+    remove.type = 'button';
+    remove.className = 'pisi-section-delete';
+    remove.dataset.pisiSheetSectionDelete = '1';
+    remove.setAttribute('contenteditable', 'false');
 
     toggle.addEventListener('click', (event) => {
         event.preventDefault();
@@ -377,6 +420,13 @@ function createPisiSheetSectionHeader(table) {
         );
     });
 
+    remove.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        deletePisiSheetSection(table);
+    });
+
     title.addEventListener('keydown', (event) => {
         event.stopPropagation();
 
@@ -408,7 +458,17 @@ function createPisiSheetSectionHeader(table) {
         title.blur();
     });
 
-    header.append(toggle, title);
+    header.append(toggle, title, remove);
+
+    const labels = getPisiSheetSectionLabels(
+        getPisiSheetDatabase(table)?.collapsed === true
+    );
+    remove.setAttribute(
+        'aria-label',
+        labels.delete
+    );
+    remove.title = labels.delete;
+
     return header;
 }
 
@@ -439,6 +499,9 @@ function ensurePisiSheetSectionHeader(table) {
         ) &&
         child.querySelector(
             '[data-pisi-sheet-section-title]'
+        ) &&
+        child.querySelector(
+            '[data-pisi-sheet-section-delete]'
         )
     )) || null;
 

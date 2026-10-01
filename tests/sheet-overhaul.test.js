@@ -1025,6 +1025,14 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     );
     assert.match(
         sheetSectionUi,
+        /pisi-sheet-section-delete/
+    );
+    assert.match(
+        sheetSectionUi,
+        /deletePisiSheetSection/
+    );
+    assert.match(
+        sheetSectionUi,
         /pisi-sheet-collapsed/
     );
     assert.match(

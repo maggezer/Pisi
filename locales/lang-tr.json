@@ -828,8 +828,10 @@
     "Sheet başlığı": "Sheet başlığı",
     "Sheet'i aç": "Sheet'i aç",
     "Sheet'i kapat": "Sheet'i kapat",
-    "Canvas başlığı": "Canvas başlığı",
-    "Canvas'ı aç": "Canvas'ı aç",
-    "Canvas'ı kapat": "Canvas'ı kapat"
+    "Canvas başlığı": "Tuval başlığı",
+    "Canvas'ı aç": "Tuvali aç",
+    "Canvas'ı kapat": "Tuvali kapat",
+    "Sheet'i sil": "Sheet'i sil",
+    "Canvas'ı sil": "Tuvali sil"
   }
 }
