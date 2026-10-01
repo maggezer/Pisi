@@ -726,11 +726,6 @@ try {
                 ':scope > .pisi-sheet-search-row ' +
                 '> .pisi-sheet-search'
             ).length || 0;
-        const sheetSelectionSurfaceCountAfterHydrate =
-            sheetBlock?.querySelectorAll(
-                ':scope > .pisi-sheet-search-row ' +
-                '> [data-pisi-sheet-selection-surface]'
-            ).length || 0;
         const sheetPaginationCountAfterHydrate =
             sheetBlock?.querySelectorAll(
                 ':scope > .pisi-sheet-pagination'
@@ -3530,15 +3525,17 @@ try {
             sheetAlignedLeft,
             sheetAlignedRight,
             sheetAlignedCenter,
-            sheetTitleGeometryMoves,
             sheetTitleCompositeSelected,
-            sheetChromeStaysFixed,
-            sheetSearchAlignmentWorks,
             sheetSearchCompositeSelected,
+            sheetHeaderBlankSelected,
+            sheetBlockBlankSelected,
+            sheetContentAlignmentWorks,
+            sheetSearchMovesWithTable,
+            sheetChromeStaysFixed,
+            sheetTableClearsCompositeSelection,
+            sheetTableGlowVisible,
             sheetSearchFocusRetained,
             sheetSearchValueAfterTyping,
-            sheetSelectionSurfaceSelected,
-            sheetSelectionSurfaceAlignmentWorks,
             sheetCopyButtonPresent,
             sheetNewLineButtonPresent,
             sheetLineAfterPresent,
@@ -3577,7 +3574,6 @@ try {
             sheetHeaderCountAfterHydrate,
             sheetSearchRowCountAfterHydrate,
             sheetSearchCountAfterHydrate,
-            sheetSelectionSurfaceCountAfterHydrate,
             sheetPaginationCountAfterHydrate,
             sanitizedSheetChromeStripped,
             sanitizedSheetTableSurvived,
@@ -3929,15 +3925,17 @@ try {
         !sheetResult.sheetAlignedLeft ||
         !sheetResult.sheetAlignedRight ||
         !sheetResult.sheetAlignedCenter ||
-        !sheetResult.sheetTitleGeometryMoves ||
-        !sheetResult.sheetTitleCompositeSelected ||
+        sheetResult.sheetTitleCompositeSelected ||
+        sheetResult.sheetSearchCompositeSelected ||
+        !sheetResult.sheetHeaderBlankSelected ||
+        !sheetResult.sheetBlockBlankSelected ||
+        !sheetResult.sheetContentAlignmentWorks ||
+        !sheetResult.sheetSearchMovesWithTable ||
         !sheetResult.sheetChromeStaysFixed ||
-        !sheetResult.sheetSearchAlignmentWorks ||
-        !sheetResult.sheetSearchCompositeSelected ||
+        !sheetResult.sheetTableClearsCompositeSelection ||
+        !sheetResult.sheetTableGlowVisible ||
         !sheetResult.sheetSearchFocusRetained ||
         sheetResult.sheetSearchValueAfterTyping !== 'ABC' ||
-        !sheetResult.sheetSelectionSurfaceSelected ||
-        !sheetResult.sheetSelectionSurfaceAlignmentWorks ||
         !sheetResult.sheetCopyButtonPresent ||
         !sheetResult.sheetNewLineButtonPresent ||
         !sheetResult.sheetLineAfterPresent ||
@@ -3979,7 +3977,6 @@ try {
         sheetResult.sheetHeaderCountAfterHydrate !== 1 ||
         sheetResult.sheetSearchRowCountAfterHydrate !== 1 ||
         sheetResult.sheetSearchCountAfterHydrate !== 1 ||
-        sheetResult.sheetSelectionSurfaceCountAfterHydrate !== 1 ||
         sheetResult.sheetPaginationCountAfterHydrate !== 1 ||
         !sheetResult.sanitizedSheetChromeStripped ||
         !sheetResult.sanitizedSheetTableSurvived ||
