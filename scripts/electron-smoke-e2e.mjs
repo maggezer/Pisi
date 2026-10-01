@@ -2848,10 +2848,14 @@ try {
                 )
             );
 
+        const sheetPasteClipboard =
+            new DataTransfer();
+
         sheetLineAfter?.dispatchEvent(
-            new Event('paste', {
+            new ClipboardEvent('paste', {
                 bubbles: true,
-                cancelable: true
+                cancelable: true,
+                clipboardData: sheetPasteClipboard
             })
         );
 
@@ -2906,6 +2910,114 @@ try {
                 sheetBlock &&
                 !sheetBlock.isConnected &&
                 !editor.contains(sheetBlock)
+            );
+
+        const canvasBlock =
+            window.insertPisiCanvas?.(
+                editor,
+                96,
+                64
+            ) || null;
+        const sourceCanvas =
+            canvasBlock?.querySelector(
+                'canvas[data-pisi-canvas]'
+            ) || null;
+
+        if (sourceCanvas) {
+            const context =
+                sourceCanvas.getContext('2d');
+
+            context.fillStyle = '#ff0000';
+            context.fillRect(0, 0, 8, 8);
+            window.savePisiCanvasData?.(
+                sourceCanvas
+            );
+        }
+
+        const canvasTitle =
+            canvasBlock?.querySelector(
+                '[data-pisi-canvas-section-title]'
+            ) || null;
+        const canvasNewLineButton =
+            canvasBlock?.querySelector(
+                '[data-pisi-composite-new-line]'
+            ) || null;
+
+        if (canvasBlock) {
+            canvasBlock.dataset.pisiCanvasTitle =
+                'Canvas E2E';
+        }
+
+        canvasTitle?.focus();
+        canvasTitle?.dispatchEvent(
+            new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                ctrlKey: true,
+                key: 'c'
+            })
+        );
+
+        canvasNewLineButton?.click();
+
+        const canvasLineAfter =
+            canvasBlock?.nextElementSibling || null;
+        const canvasPasteClipboard =
+            new DataTransfer();
+
+        canvasLineAfter?.dispatchEvent(
+            new ClipboardEvent('paste', {
+                bubbles: true,
+                cancelable: true,
+                clipboardData: canvasPasteClipboard
+            })
+        );
+
+        const canvasBlocksAfterPaste =
+            Array.from(
+                editor.querySelectorAll(
+                    ':scope > .pisi-canvas-block'
+                )
+            );
+        const canvasPasteCreatedCopy =
+            canvasBlocksAfterPaste.length === 2;
+        const pastedCanvasBlock =
+            canvasBlocksAfterPaste.find(
+                (candidate) => candidate !== canvasBlock
+            ) || null;
+        const pastedCanvas =
+            pastedCanvasBlock?.querySelector(
+                'canvas[data-pisi-canvas]'
+            ) || null;
+        const canvasCopyPreservedState =
+            Boolean(
+                sourceCanvas &&
+                pastedCanvas &&
+                pastedCanvas.width === sourceCanvas.width &&
+                pastedCanvas.height === sourceCanvas.height &&
+                pastedCanvasBlock.dataset.pisiCanvasTitle ===
+                    'Canvas E2E' &&
+                pastedCanvas.dataset.image ===
+                    sourceCanvas.dataset.image
+            );
+
+        pastedCanvasBlock
+            ?.querySelector(
+                '[data-pisi-canvas-section-delete]'
+            )
+            ?.click();
+        canvasBlock
+            ?.querySelector(
+                '[data-pisi-canvas-section-delete]'
+            )
+            ?.click();
+
+        const canvasCopiesRemoved =
+            Boolean(
+                canvasBlock &&
+                pastedCanvasBlock &&
+                !canvasBlock.isConnected &&
+                !pastedCanvasBlock.isConnected
             );
 
         const typedStages = {
@@ -2963,6 +3075,9 @@ try {
             pastedSheetRemoved,
             sheetDeleteButtonPresent,
             sheetRemovedByDelete,
+            canvasPasteCreatedCopy,
+            canvasCopyPreservedState,
+            canvasCopiesRemoved,
             sheetBlockOuterSpacing,
             sheetBeforeAnchorHeight,
             sheetAfterAnchorHeight,
@@ -3333,6 +3448,9 @@ try {
         !sheetResult.pastedSheetRemoved ||
         !sheetResult.sheetDeleteButtonPresent ||
         !sheetResult.sheetRemovedByDelete ||
+        !sheetResult.canvasPasteCreatedCopy ||
+        !sheetResult.canvasCopyPreservedState ||
+        !sheetResult.canvasCopiesRemoved ||
         sheetResult.sheetBlockOuterSpacing?.marginTop !== 0 ||
         sheetResult.sheetBlockOuterSpacing?.marginBottom !== 0 ||
         sheetResult.sheetBlockOuterSpacing?.paddingTop !== 0 ||

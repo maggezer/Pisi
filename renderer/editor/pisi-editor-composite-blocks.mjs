@@ -429,10 +429,16 @@ function readPisiCompositeClipboard(event) {
             event.clipboardData.getData?.(
                 'text/plain'
             ) || '';
+        const eventPayload =
+            parsePisiCompositePayload(eventText);
 
-        return parsePisiCompositePayload(
-            eventText
-        );
+        if (eventPayload) {
+            return eventPayload;
+        }
+
+        if (eventText) {
+            return null;
+        }
     }
 
     let bridgeText = '';
@@ -493,6 +499,39 @@ function handlePisiCompositeClick(event) {
     ensurePisiEditableLineAfter(block);
 }
 
+function handlePisiCompositeKeydown(event) {
+    if (
+        !event ||
+        !(event.ctrlKey || event.metaKey) ||
+        event.altKey ||
+        String(event.key || '').toLowerCase() !== 'c'
+    ) {
+        return;
+    }
+
+    const target = event.target;
+    const element =
+        target instanceof Element
+            ? target
+            : target?.parentElement;
+
+    const title = element?.closest?.(
+        '[data-pisi-sheet-section-title], ' +
+        '[data-pisi-canvas-section-title]'
+    );
+
+    if (!title) return;
+
+    const block =
+        getPisiCompositeBlock(title);
+
+    if (!block) return;
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    copyPisiCompositeBlock(block);
+}
+
 function handlePisiCompositePaste(event) {
     const target = event.target;
     const element =
@@ -532,6 +571,11 @@ if (typeof document !== 'undefined') {
     document.addEventListener(
         'click',
         handlePisiCompositeClick,
+        true
+    );
+    document.addEventListener(
+        'keydown',
+        handlePisiCompositeKeydown,
         true
     );
     document.addEventListener(
