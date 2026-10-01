@@ -119,8 +119,24 @@ test('Canvas uses Sheet-style section chrome and persistent metadata', () => {
         /ensurePisiCompositeAlignment/
     );
     assert.match(
+        section,
+        /selectPisiCompositeAlignmentBlock/
+    );
+    assert.match(
         paint,
         /pisiCompositeAlign = 'center'/
+    );
+    assert.match(
+        paint,
+        /const wasSelected =/
+    );
+    assert.match(
+        paint,
+        /if \(!wasSelected\)/
+    );
+    assert.match(
+        paint,
+        /selectPisiCompositeAlignmentBlock/
     );
     assert.match(
         section,

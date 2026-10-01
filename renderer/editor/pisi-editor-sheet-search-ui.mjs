@@ -1,4 +1,7 @@
 import {
+    selectPisiCompositeAlignmentBlock
+} from "./pisi-editor-composite-blocks.mjs";
+import {
     getPisiSheetActiveViewSearchQuery,
     setPisiSheetViewSearchQuery
 } from "./pisi-editor-sheet-view-query.mjs";
@@ -148,6 +151,19 @@ function ensurePisiSheetSearchControl(
                 stopSearchEditorEvent
             );
         });
+
+        const selectSearchBlock = () => {
+            selectPisiCompositeAlignmentBlock(block);
+        };
+
+        input.addEventListener(
+            'pointerdown',
+            selectSearchBlock
+        );
+        input.addEventListener(
+            'focus',
+            selectSearchBlock
+        );
 
         input.addEventListener(
             'beforeinput',

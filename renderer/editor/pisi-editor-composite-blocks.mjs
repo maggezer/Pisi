@@ -75,32 +75,23 @@ function clearPisiCompositeAlignmentContext(editor) {
     pisiActiveCompositeContexts.delete(editor);
 }
 
-function rememberPisiCompositeContext(event) {
-    const target = event?.target;
+function selectPisiCompositeAlignmentBlock(block) {
+    const editor = getPisiCompositeEditor(block);
 
-    if (!(target instanceof Element)) return;
+    if (!block || !editor) return false;
 
-    const editor = target.closest(
-        '.pisi-rich-editor'
-    );
-
-    if (!editor) return;
-
-    const block =
-        getPisiCompositeBlock(target);
-    const wholeBlock = Boolean(
-        block &&
-        target.closest(
-            '.pisi-sheet-section-header, ' +
-            '.pisi-sheet-search, ' +
-            '.pisi-canvas-section-header, ' +
-            '.pisi-paint-canvas'
-        )
-    );
+    editor.querySelectorAll(
+        '.pisi-paint-canvas.selected'
+    ).forEach((canvas) => {
+        if (
+            canvas.closest('.pisi-canvas-block') !==
+            block
+        ) {
+            canvas.classList.remove('selected');
+        }
+    });
 
     clearPisiCompositeAlignmentContext(editor);
-
-    if (!block || !wholeBlock) return;
 
     block.classList.add(
         PISI_COMPOSITE_ACTIVE_CLASS
@@ -126,6 +117,45 @@ function rememberPisiCompositeContext(event) {
             }
         )
     );
+
+    return true;
+}
+
+function rememberPisiCompositeContext(event) {
+    const target = event?.target;
+
+    if (!(target instanceof Element)) return;
+
+    const editor = target.closest(
+        '.pisi-rich-editor'
+    );
+
+    if (!editor) return;
+
+    const block =
+        getPisiCompositeBlock(target);
+    const wholeBlock = Boolean(
+        block &&
+        target.closest(
+            '.pisi-sheet-section-header, ' +
+            '.pisi-sheet-search, ' +
+            '.pisi-canvas-section-header, ' +
+            '.pisi-paint-canvas'
+        )
+    );
+
+    clearPisiCompositeAlignmentContext(editor);
+
+    if (!block || !wholeBlock) {
+        editor.querySelectorAll(
+            '.pisi-paint-canvas.selected'
+        ).forEach((canvas) => {
+            canvas.classList.remove('selected');
+        });
+        return;
+    }
+
+    selectPisiCompositeAlignmentBlock(block);
 }
 
 function getPisiActiveCompositeAlignmentBlock(editor) {
@@ -769,5 +799,6 @@ export {
     insertPisiCompositePayload,
     parsePisiCompositePayload,
     serializePisiCompositePayload,
-    setPisiCompositeAlignment
+    setPisiCompositeAlignment,
+    selectPisiCompositeAlignmentBlock
 };

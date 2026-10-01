@@ -2,6 +2,9 @@ import { registerModule } from "../core/module-registry.mjs";
 import {
     ensurePisiCanvasSectionHeader
 } from "./pisi-editor-canvas-section-ui.mjs";
+import {
+    selectPisiCompositeAlignmentBlock
+} from "./pisi-editor-composite-blocks.mjs";
 
 function getPisiToolbarEditor(toolbar) {
     if (!toolbar) return null;
@@ -494,7 +497,17 @@ function bindPisiCanvas(canvas) {
         event.preventDefault();
         event.stopPropagation();
 
+        const state = getPisiPaintState();
+        const wasSelected =
+            canvas.classList.contains('selected') &&
+            state.activeCanvas === canvas;
+
         selectPisiCanvas(canvas);
+
+        if (!wasSelected) {
+            return;
+        }
+
         if (pisiPendingPaintImages.has(canvas)) return;
 
         const context = canvas.getContext('2d');
@@ -568,12 +581,18 @@ function bindPisiCanvas(canvas) {
 }
 
 function selectPisiCanvas(canvas) {
-    document.querySelectorAll('.pisi-paint-canvas.selected').forEach((existing) => {
+    document.querySelectorAll(
+        '.pisi-paint-canvas.selected'
+    ).forEach((existing) => {
         existing.classList.remove('selected');
     });
 
     canvas.classList.add('selected');
     getPisiPaintState().activeCanvas = canvas;
+
+    selectPisiCompositeAlignmentBlock(
+        canvas.closest('.pisi-canvas-block')
+    );
 }
 
 function getPisiCanvasPoint(canvas, event) {

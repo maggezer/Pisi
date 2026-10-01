@@ -392,6 +392,10 @@ try {
             })
         );
         sectionTitle?.focus();
+        const sheetTitleCompositeSelected =
+            sheetBlock?.classList.contains(
+                'pisi-composite-alignment-active'
+            ) === true;
 
         alignLeftButton?.click();
         const sheetTitleLeftPosition =
@@ -427,6 +431,7 @@ try {
             Boolean(searchInput);
         let sheetSearchValueAfterTyping = '';
         let sheetSearchAlignmentWorks = false;
+        let sheetSearchCompositeSelected = false;
 
         if (searchInput) {
             searchInput.focus();
@@ -492,6 +497,10 @@ try {
                 })
             );
             searchInput.focus();
+            sheetSearchCompositeSelected =
+                sheetBlock?.classList.contains(
+                    'pisi-composite-alignment-active'
+                ) === true;
 
             alignLeftButton?.click();
             const searchLeft =
@@ -3080,9 +3089,106 @@ try {
                 'canvas[data-pisi-canvas]'
             ) || null;
 
+        let canvasFirstClickSelectedOnly = false;
+        let canvasSecondGestureDraws = false;
+
         if (sourceCanvas) {
             const context =
                 sourceCanvas.getContext('2d');
+            const rect =
+                sourceCanvas.getBoundingClientRect();
+            const startX = rect.left + 10;
+            const startY = rect.top + 10;
+            const endX = rect.left + 24;
+            const endY = rect.top + 24;
+            const sample = () => Array.from(
+                context.getImageData(
+                    16,
+                    16,
+                    1,
+                    1
+                ).data
+            );
+
+            const beforeFirst = sample();
+
+            sourceCanvas.dispatchEvent(
+                new PointerEvent('pointerdown', {
+                    bubbles: true,
+                    cancelable: true,
+                    pointerId: 41,
+                    pointerType: 'mouse',
+                    clientX: startX,
+                    clientY: startY
+                })
+            );
+            sourceCanvas.dispatchEvent(
+                new PointerEvent('pointermove', {
+                    bubbles: true,
+                    cancelable: true,
+                    pointerId: 41,
+                    pointerType: 'mouse',
+                    clientX: endX,
+                    clientY: endY
+                })
+            );
+            sourceCanvas.dispatchEvent(
+                new PointerEvent('pointerup', {
+                    bubbles: true,
+                    cancelable: true,
+                    pointerId: 41,
+                    pointerType: 'mouse',
+                    clientX: endX,
+                    clientY: endY
+                })
+            );
+
+            const afterFirst = sample();
+            canvasFirstClickSelectedOnly =
+                sourceCanvas.classList.contains(
+                    'selected'
+                ) &&
+                canvasBlock.classList.contains(
+                    'pisi-composite-alignment-active'
+                ) &&
+                JSON.stringify(beforeFirst) ===
+                    JSON.stringify(afterFirst);
+
+            sourceCanvas.dispatchEvent(
+                new PointerEvent('pointerdown', {
+                    bubbles: true,
+                    cancelable: true,
+                    pointerId: 42,
+                    pointerType: 'mouse',
+                    clientX: startX,
+                    clientY: startY
+                })
+            );
+            sourceCanvas.dispatchEvent(
+                new PointerEvent('pointermove', {
+                    bubbles: true,
+                    cancelable: true,
+                    pointerId: 42,
+                    pointerType: 'mouse',
+                    clientX: endX,
+                    clientY: endY
+                })
+            );
+            sourceCanvas.dispatchEvent(
+                new PointerEvent('pointerup', {
+                    bubbles: true,
+                    cancelable: true,
+                    pointerId: 42,
+                    pointerType: 'mouse',
+                    clientX: endX,
+                    clientY: endY
+                })
+            );
+
+            const afterSecond = sample();
+            canvasSecondGestureDraws =
+                JSON.stringify(afterSecond) !==
+                    JSON.stringify(afterFirst);
 
             context.fillStyle = '#ff0000';
             context.fillRect(0, 0, 8, 8);
@@ -3106,6 +3212,10 @@ try {
             })
         );
         canvasTitle?.focus();
+        const canvasTitleCompositeSelected =
+            canvasBlock?.classList.contains(
+                'pisi-composite-alignment-active'
+            ) === true;
 
         alignLeftButton?.click();
         const canvasTitleLeftPosition =
@@ -3137,6 +3247,20 @@ try {
             new PointerEvent('pointerdown', {
                 bubbles: true,
                 cancelable: true,
+                pointerId: 43,
+                pointerType: 'mouse'
+            })
+        );
+        const canvasSurfaceCompositeSelected =
+            canvasBlock?.classList.contains(
+                'pisi-composite-alignment-active'
+            ) === true;
+
+        sourceCanvas?.dispatchEvent(
+            new PointerEvent('pointerup', {
+                bubbles: true,
+                cancelable: true,
+                pointerId: 43,
                 pointerType: 'mouse'
             })
         );
@@ -3296,7 +3420,9 @@ try {
             sheetAlignedRight,
             sheetAlignedCenter,
             sheetTitleGeometryMoves,
+            sheetTitleCompositeSelected,
             sheetSearchAlignmentWorks,
+            sheetSearchCompositeSelected,
             sheetSearchFocusRetained,
             sheetSearchValueAfterTyping,
             sheetCopyButtonPresent,
@@ -3313,7 +3439,11 @@ try {
             canvasAlignedRight,
             canvasAlignedCenter,
             canvasTitleGeometryMoves,
+            canvasTitleCompositeSelected,
             canvasSurfaceAlignmentWorks,
+            canvasSurfaceCompositeSelected,
+            canvasFirstClickSelectedOnly,
+            canvasSecondGestureDraws,
             canvasPasteCreatedCopy,
             canvasCopyPreservedState,
             canvasCopiesRemoved,
@@ -3683,7 +3813,9 @@ try {
         !sheetResult.sheetAlignedRight ||
         !sheetResult.sheetAlignedCenter ||
         !sheetResult.sheetTitleGeometryMoves ||
+        !sheetResult.sheetTitleCompositeSelected ||
         !sheetResult.sheetSearchAlignmentWorks ||
+        !sheetResult.sheetSearchCompositeSelected ||
         !sheetResult.sheetSearchFocusRetained ||
         sheetResult.sheetSearchValueAfterTyping !== 'ABC' ||
         !sheetResult.sheetCopyButtonPresent ||
@@ -3700,7 +3832,11 @@ try {
         !sheetResult.canvasAlignedRight ||
         !sheetResult.canvasAlignedCenter ||
         !sheetResult.canvasTitleGeometryMoves ||
+        !sheetResult.canvasTitleCompositeSelected ||
         !sheetResult.canvasSurfaceAlignmentWorks ||
+        !sheetResult.canvasSurfaceCompositeSelected ||
+        !sheetResult.canvasFirstClickSelectedOnly ||
+        !sheetResult.canvasSecondGestureDraws ||
         !sheetResult.canvasPasteCreatedCopy ||
         !sheetResult.canvasCopyPreservedState ||
         !sheetResult.canvasCopiesRemoved ||

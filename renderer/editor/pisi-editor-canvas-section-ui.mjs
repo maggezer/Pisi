@@ -1,6 +1,7 @@
 import {
     ensurePisiCompositeAlignment,
-    ensurePisiEditableLineAfter
+    ensurePisiEditableLineAfter,
+    selectPisiCompositeAlignmentBlock
 } from "./pisi-editor-composite-blocks.mjs";
 
 const PISI_CANVAS_DEFAULT_TITLE = 'Canvas';
@@ -332,11 +333,24 @@ function createPisiCanvasSectionHeader(canvas) {
         );
     });
 
+    const selectCanvasBlock = () => {
+        const block =
+            getPisiCanvasSectionBlock(canvas);
+
+        selectPisiCompositeAlignmentBlock(block);
+    };
+
+    title.addEventListener(
+        'pointerdown',
+        selectCanvasBlock
+    );
+
     title.addEventListener('focus', () => {
         const block =
             getPisiCanvasSectionBlock(canvas);
 
         clearPisiCanvasDocumentSelection(block);
+        selectPisiCompositeAlignmentBlock(block);
         title.dataset.pisiCanvasOriginalTitle =
             String(
                 block?.dataset.pisiCanvasTitle ||

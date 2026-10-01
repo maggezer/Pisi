@@ -1,6 +1,7 @@
 import {
     ensurePisiCompositeAlignment,
-    ensurePisiEditableLineAfter
+    ensurePisiEditableLineAfter,
+    selectPisiCompositeAlignmentBlock
 } from "./pisi-editor-composite-blocks.mjs";
 
 const PISI_SHEET_DEFAULT_TITLE = 'Sheet';
@@ -415,10 +416,24 @@ function createPisiSheetSectionHeader(table) {
         );
     });
 
+    const selectSheetBlock = () => {
+        const block =
+            getPisiSheetSectionBlock(table);
+
+        selectPisiCompositeAlignmentBlock(block);
+    };
+
+    title.addEventListener(
+        'pointerdown',
+        selectSheetBlock
+    );
+
     title.addEventListener('focus', () => {
-        clearPisiSheetDocumentSelection(
-            getPisiSheetSectionBlock(table)
-        );
+        const block =
+            getPisiSheetSectionBlock(table);
+
+        clearPisiSheetDocumentSelection(block);
+        selectPisiCompositeAlignmentBlock(block);
 
         const database =
             getPisiSheetDatabase(table);
