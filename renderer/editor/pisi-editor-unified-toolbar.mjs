@@ -244,6 +244,10 @@ function syncPisiCompositeAlignmentToolbar(
                 'aria-pressed',
                 String(active)
             );
+            button.toggleAttribute(
+                'data-pisi-composite-alignment-active',
+                active
+            );
         }
     );
 }
@@ -272,10 +276,19 @@ function runPisiUnifiedTextCommand(toolbar, command, value = null) {
             compositeBlock,
             compositeAlignment
         );
-        syncPisiCompositeAlignmentToolbar(
-            toolbar,
-            compositeBlock
-        );
+
+        /* Clear any stale Sheet/text alignment state first, then
+           re-apply the composite block state immediately. */
+        syncPisiUnifiedToolbarContext(toolbar);
+
+        queueMicrotask(() => {
+            syncPisiUnifiedToolbarContext(toolbar);
+        });
+
+        globalThis.requestAnimationFrame?.(() => {
+            syncPisiUnifiedToolbarContext(toolbar);
+        });
+
         return;
     }
 
@@ -528,6 +541,10 @@ function bindPisiUnifiedToolbarEvents(toolbar) {
     );
     editor?.addEventListener(
         'pisi:composite-context-changed',
+        () => syncPisiUnifiedToolbarContext(toolbar)
+    );
+    editor?.addEventListener(
+        'pisi:composite-alignment-changed',
         () => syncPisiUnifiedToolbarContext(toolbar)
     );
 }
