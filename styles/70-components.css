@@ -2,7 +2,7 @@
 
 .pisi-canvas-block {
     display: block;
-    width: fit-content;
+    width: max-content;
     max-width: 100%;
     margin: 0;
     overflow: auto;
@@ -176,7 +176,7 @@
 }
 
 .pisi-sheet-block {
-    width: fit-content;
+    width: max-content;
     max-width: 100%;
     margin: 0;
     overflow: auto;

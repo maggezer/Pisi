@@ -1076,6 +1076,10 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     );
     assert.match(
         compositeBlocks,
+        /pisi-composite-alignment-active/
+    );
+    assert.match(
+        compositeBlocks,
         /block\.dataset\.pisiCompositeAlign/
     );
     assert.match(
@@ -1389,7 +1393,7 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     );
     assert.match(
         componentsCss,
-        /width: fit-content/
+        /width: max-content/
     );
     assert.match(
         componentsCss,

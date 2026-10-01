@@ -518,8 +518,18 @@ function bindPisiUnifiedToolbarEvents(toolbar) {
     });
 
     const editor = getPisiToolbarEditor(toolbar);
-    editor?.addEventListener('focusin', () => syncPisiUnifiedToolbarContext(toolbar));
-    editor?.addEventListener('pointerup', () => syncPisiUnifiedToolbarContext(toolbar));
+    editor?.addEventListener(
+        'focusin',
+        () => syncPisiUnifiedToolbarContext(toolbar)
+    );
+    editor?.addEventListener(
+        'pointerup',
+        () => syncPisiUnifiedToolbarContext(toolbar)
+    );
+    editor?.addEventListener(
+        'pisi:composite-context-changed',
+        () => syncPisiUnifiedToolbarContext(toolbar)
+    );
 }
 
 function setupPisiUnifiedToolbar(toolbar) {

@@ -29,6 +29,16 @@ function sanitizePisiEditorHtml(html = '') {
         )
         .forEach((element) => element.remove());
 
+    wrapper
+        .querySelectorAll(
+            '.pisi-composite-alignment-active'
+        )
+        .forEach((element) => {
+            element.classList.remove(
+                'pisi-composite-alignment-active'
+            );
+        });
+
     const allowedTags = new Set([
         'A', 'B', 'BLOCKQUOTE', 'BR', 'CANVAS', 'CODE', 'DIV', 'EM',
         'FONT', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'I', 'IMG', 'LI',

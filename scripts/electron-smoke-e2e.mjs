@@ -380,18 +380,44 @@ try {
         const sheetDefaultAlignment =
             sheetBlock?.dataset.pisiCompositeAlign || '';
 
+        const measureLeft = (element) => (
+            element?.getBoundingClientRect?.().left ?? -1
+        );
+
+        sectionTitle?.dispatchEvent(
+            new PointerEvent('pointerdown', {
+                bubbles: true,
+                cancelable: true,
+                pointerType: 'mouse'
+            })
+        );
         sectionTitle?.focus();
+
         alignLeftButton?.click();
+        const sheetTitleLeftPosition =
+            measureLeft(sheetBlock);
         const sheetAlignedLeft =
             sheetBlock?.dataset.pisiCompositeAlign === 'left';
 
         alignRightButton?.click();
+        const sheetTitleRightPosition =
+            measureLeft(sheetBlock);
         const sheetAlignedRight =
             sheetBlock?.dataset.pisiCompositeAlign === 'right';
 
         alignCenterButton?.click();
+        const sheetTitleCenterPosition =
+            measureLeft(sheetBlock);
         const sheetAlignedCenter =
             sheetBlock?.dataset.pisiCompositeAlign === 'center';
+
+        const sheetTitleGeometryMoves =
+            sheetTitleRightPosition >
+                sheetTitleLeftPosition + 8 &&
+            sheetTitleCenterPosition >
+                sheetTitleLeftPosition + 3 &&
+            sheetTitleCenterPosition <
+                sheetTitleRightPosition - 3;
 
         const searchInput =
             sheetBlock?.querySelector(
@@ -400,6 +426,7 @@ try {
         let sheetSearchFocusRetained =
             Boolean(searchInput);
         let sheetSearchValueAfterTyping = '';
+        let sheetSearchAlignmentWorks = false;
 
         if (searchInput) {
             searchInput.focus();
@@ -456,6 +483,37 @@ try {
 
             sheetSearchValueAfterTyping =
                 searchInput.value;
+
+            searchInput.dispatchEvent(
+                new PointerEvent('pointerdown', {
+                    bubbles: true,
+                    cancelable: true,
+                    pointerType: 'mouse'
+                })
+            );
+            searchInput.focus();
+
+            alignLeftButton?.click();
+            const searchLeft =
+                measureLeft(sheetBlock);
+            const sheetSearchAlignedLeft =
+                sheetBlock?.dataset.pisiCompositeAlign === 'left';
+
+            alignRightButton?.click();
+            const searchRight =
+                measureLeft(sheetBlock);
+            const sheetSearchAlignedRight =
+                sheetBlock?.dataset.pisiCompositeAlign === 'right';
+
+            alignCenterButton?.click();
+            const sheetSearchAlignedCenter =
+                sheetBlock?.dataset.pisiCompositeAlign === 'center';
+
+            sheetSearchAlignmentWorks =
+                sheetSearchAlignedLeft &&
+                sheetSearchAlignedRight &&
+                sheetSearchAlignedCenter &&
+                searchRight > searchLeft + 8;
 
             searchInput.dispatchEvent(
                 new KeyboardEvent('keydown', {
@@ -3039,16 +3097,72 @@ try {
             ) || null;
         const canvasDefaultAlignment =
             canvasBlock?.dataset.pisiCompositeAlign || '';
+
+        canvasTitle?.dispatchEvent(
+            new PointerEvent('pointerdown', {
+                bubbles: true,
+                cancelable: true,
+                pointerType: 'mouse'
+            })
+        );
         canvasTitle?.focus();
+
         alignLeftButton?.click();
+        const canvasTitleLeftPosition =
+            measureLeft(canvasBlock);
         const canvasAlignedLeft =
             canvasBlock?.dataset.pisiCompositeAlign === 'left';
+
         alignRightButton?.click();
+        const canvasTitleRightPosition =
+            measureLeft(canvasBlock);
         const canvasAlignedRight =
             canvasBlock?.dataset.pisiCompositeAlign === 'right';
+
         alignCenterButton?.click();
+        const canvasTitleCenterPosition =
+            measureLeft(canvasBlock);
         const canvasAlignedCenter =
             canvasBlock?.dataset.pisiCompositeAlign === 'center';
+
+        const canvasTitleGeometryMoves =
+            canvasTitleRightPosition >
+                canvasTitleLeftPosition + 8 &&
+            canvasTitleCenterPosition >
+                canvasTitleLeftPosition + 3 &&
+            canvasTitleCenterPosition <
+                canvasTitleRightPosition - 3;
+
+        sourceCanvas?.dispatchEvent(
+            new PointerEvent('pointerdown', {
+                bubbles: true,
+                cancelable: true,
+                pointerType: 'mouse'
+            })
+        );
+
+        alignLeftButton?.click();
+        const canvasSurfaceLeftPosition =
+            measureLeft(canvasBlock);
+        const canvasSurfaceAlignedLeft =
+            canvasBlock?.dataset.pisiCompositeAlign === 'left';
+
+        alignRightButton?.click();
+        const canvasSurfaceRightPosition =
+            measureLeft(canvasBlock);
+        const canvasSurfaceAlignedRight =
+            canvasBlock?.dataset.pisiCompositeAlign === 'right';
+
+        alignCenterButton?.click();
+        const canvasSurfaceAlignedCenter =
+            canvasBlock?.dataset.pisiCompositeAlign === 'center';
+
+        const canvasSurfaceAlignmentWorks =
+            canvasSurfaceAlignedLeft &&
+            canvasSurfaceAlignedRight &&
+            canvasSurfaceAlignedCenter &&
+            canvasSurfaceRightPosition >
+                canvasSurfaceLeftPosition + 8;
         const canvasNewLineButton =
             canvasBlock?.querySelector(
                 '[data-pisi-composite-new-line]'
@@ -3181,6 +3295,8 @@ try {
             sheetAlignedLeft,
             sheetAlignedRight,
             sheetAlignedCenter,
+            sheetTitleGeometryMoves,
+            sheetSearchAlignmentWorks,
             sheetSearchFocusRetained,
             sheetSearchValueAfterTyping,
             sheetCopyButtonPresent,
@@ -3196,6 +3312,8 @@ try {
             canvasAlignedLeft,
             canvasAlignedRight,
             canvasAlignedCenter,
+            canvasTitleGeometryMoves,
+            canvasSurfaceAlignmentWorks,
             canvasPasteCreatedCopy,
             canvasCopyPreservedState,
             canvasCopiesRemoved,
@@ -3564,6 +3682,8 @@ try {
         !sheetResult.sheetAlignedLeft ||
         !sheetResult.sheetAlignedRight ||
         !sheetResult.sheetAlignedCenter ||
+        !sheetResult.sheetTitleGeometryMoves ||
+        !sheetResult.sheetSearchAlignmentWorks ||
         !sheetResult.sheetSearchFocusRetained ||
         sheetResult.sheetSearchValueAfterTyping !== 'ABC' ||
         !sheetResult.sheetCopyButtonPresent ||
@@ -3579,6 +3699,8 @@ try {
         !sheetResult.canvasAlignedLeft ||
         !sheetResult.canvasAlignedRight ||
         !sheetResult.canvasAlignedCenter ||
+        !sheetResult.canvasTitleGeometryMoves ||
+        !sheetResult.canvasSurfaceAlignmentWorks ||
         !sheetResult.canvasPasteCreatedCopy ||
         !sheetResult.canvasCopyPreservedState ||
         !sheetResult.canvasCopiesRemoved ||

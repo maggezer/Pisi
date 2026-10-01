@@ -4,6 +4,8 @@ const PISI_COMPOSITE_CLIPBOARD_PREFIX =
 let pisiCompositeClipboardText = '';
 
 const pisiActiveCompositeContexts = new WeakMap();
+const PISI_COMPOSITE_ACTIVE_CLASS =
+    'pisi-composite-alignment-active';
 
 function normalizePisiCompositeAlignment(value) {
     return ['left', 'center', 'right'].includes(value)
@@ -59,6 +61,20 @@ function getPisiCompositeAlignment(block) {
     return ensurePisiCompositeAlignment(block);
 }
 
+function clearPisiCompositeAlignmentContext(editor) {
+    if (!editor) return;
+
+    editor.querySelectorAll(
+        '.' + PISI_COMPOSITE_ACTIVE_CLASS
+    ).forEach((block) => {
+        block.classList.remove(
+            PISI_COMPOSITE_ACTIVE_CLASS
+        );
+    });
+
+    pisiActiveCompositeContexts.delete(editor);
+}
+
 function rememberPisiCompositeContext(event) {
     const target = event?.target;
 
@@ -72,13 +88,8 @@ function rememberPisiCompositeContext(event) {
 
     const block =
         getPisiCompositeBlock(target);
-
-    if (!block) {
-        pisiActiveCompositeContexts.delete(editor);
-        return;
-    }
-
     const wholeBlock = Boolean(
+        block &&
         target.closest(
             '.pisi-sheet-section-header, ' +
             '.pisi-sheet-search, ' +
@@ -87,23 +98,57 @@ function rememberPisiCompositeContext(event) {
         )
     );
 
+    clearPisiCompositeAlignmentContext(editor);
+
+    if (!block || !wholeBlock) return;
+
+    block.classList.add(
+        PISI_COMPOSITE_ACTIVE_CLASS
+    );
     pisiActiveCompositeContexts.set(
         editor,
         {
             block,
-            wholeBlock
+            wholeBlock: true
         }
+    );
+
+    editor.dispatchEvent(
+        new CustomEvent(
+            'pisi:composite-context-changed',
+            {
+                bubbles: false,
+                detail: {
+                    block,
+                    alignment:
+                        getPisiCompositeAlignment(block)
+                }
+            }
+        )
     );
 }
 
 function getPisiActiveCompositeAlignmentBlock(editor) {
+    if (!editor) return null;
+
+    const marked = editor.querySelector(
+        '.pisi-sheet-block.' +
+        PISI_COMPOSITE_ACTIVE_CLASS +
+        ', .pisi-canvas-block.' +
+        PISI_COMPOSITE_ACTIVE_CLASS
+    );
+
+    if (marked?.isConnected) {
+        return marked;
+    }
+
     const context =
         pisiActiveCompositeContexts.get(editor);
 
     if (
         !context?.wholeBlock ||
         !context.block?.isConnected ||
-        !editor?.contains?.(context.block)
+        !editor.contains(context.block)
     ) {
         return null;
     }
