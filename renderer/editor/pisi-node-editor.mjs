@@ -22,6 +22,7 @@ function sanitizePisiEditorHtml(html = '') {
     wrapper
         .querySelectorAll(
             '.pisi-sheet-section-header, ' +
+            '.pisi-sheet-search-row, ' +
             '.pisi-sheet-search, ' +
             '.pisi-sheet-pagination, ' +
             '.pisi-sheet-drag-fill-handle, ' +
