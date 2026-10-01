@@ -520,7 +520,11 @@ function bindPisiCanvas(canvas) {
         pisiDirtyPaintCanvases.add(canvas);
 
         if (canvas.setPointerCapture) {
-            canvas.setPointerCapture(event.pointerId);
+            try {
+                canvas.setPointerCapture(event.pointerId);
+            } catch {
+                // Synthetic or interrupted pointers may not be capturable.
+            }
         }
 
         if (['pencil', 'brush', 'eraser'].includes(getPisiPaintState().tool)) {
