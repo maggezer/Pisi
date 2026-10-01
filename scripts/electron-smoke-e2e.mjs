@@ -237,7 +237,7 @@ try {
         );
     }
 
-    const sheetResult = await cdp.evaluate(`(async () => {
+    const sheetResult = await cdp.evaluate(`(() => {
         const editor = document.getElementById('center-node-editor-content');
         const toolbar = document.querySelector(
             '.pisi-editor-toolbar[data-editor-target="center-node-editor-content"]'
@@ -412,14 +412,6 @@ try {
                     'data-pisi-composite-alignment-active'
                 ) === true
         });
-
-        const settleCompositeToolbarState = async () => {
-            await Promise.resolve();
-            await new Promise((resolve) => {
-                requestAnimationFrame(() => resolve());
-            });
-            await Promise.resolve();
-        };
 
         const sheetDefaultAlignment =
             sheetBlock?.dataset.pisiCompositeAlign || '';
@@ -3444,42 +3436,22 @@ try {
         );
 
         alignLeftButton?.click();
-        await settleCompositeToolbarState();
-        const canvasSurfaceLeftButtonState =
-            getCompositeAlignmentButtonState();
         const canvasSurfaceLeftPosition =
             measureLeft(sourceCanvas);
         const canvasSurfaceAlignedLeft =
             canvasBlock?.dataset.pisiCompositeAlign === 'left';
 
         alignRightButton?.click();
-        await settleCompositeToolbarState();
-        const canvasSurfaceRightButtonState =
-            getCompositeAlignmentButtonState();
         const canvasSurfaceRightPosition =
             measureLeft(sourceCanvas);
         const canvasSurfaceAlignedRight =
             canvasBlock?.dataset.pisiCompositeAlign === 'right';
 
         alignCenterButton?.click();
-        await settleCompositeToolbarState();
-        const canvasSurfaceCenterButtonState =
-            getCompositeAlignmentButtonState();
         const canvasSurfaceCenterPosition =
             measureLeft(sourceCanvas);
         const canvasSurfaceAlignedCenter =
             canvasBlock?.dataset.pisiCompositeAlign === 'center';
-
-        const canvasSurfaceAlignmentButtonsStaySynced =
-            canvasSurfaceLeftButtonState.left &&
-            !canvasSurfaceLeftButtonState.center &&
-            !canvasSurfaceLeftButtonState.right &&
-            !canvasSurfaceRightButtonState.left &&
-            !canvasSurfaceRightButtonState.center &&
-            canvasSurfaceRightButtonState.right &&
-            !canvasSurfaceCenterButtonState.left &&
-            canvasSurfaceCenterButtonState.center &&
-            !canvasSurfaceCenterButtonState.right;
 
         const canvasSurfaceAlignmentWorks =
             canvasSurfaceAlignedLeft &&
@@ -3654,7 +3626,6 @@ try {
             canvasTitleCompositeSelected,
             canvasChromeStaysFixed,
             canvasSurfaceAlignmentWorks,
-            canvasSurfaceAlignmentButtonsStaySynced,
             canvasSurfaceCompositeSelected,
             canvasFirstClickSelectedOnly,
             canvasSecondGestureDraws,
@@ -4058,7 +4029,6 @@ try {
         !sheetResult.canvasTitleCompositeSelected ||
         !sheetResult.canvasChromeStaysFixed ||
         !sheetResult.canvasSurfaceAlignmentWorks ||
-        !sheetResult.canvasSurfaceAlignmentButtonsStaySynced ||
         !sheetResult.canvasSurfaceCompositeSelected ||
         !sheetResult.canvasFirstClickSelectedOnly ||
         !sheetResult.canvasSecondGestureDraws ||
@@ -4341,6 +4311,167 @@ try {
         throw new Error(
             'Sheet state/edit architecture failed: ' +
             JSON.stringify(sheetResult)
+        );
+    }
+
+    const canvasToolbarStateResult = await cdp.evaluate(`(async () => {
+        const editor = document.getElementById(
+            'center-node-editor-content'
+        );
+        const toolbar = document.querySelector(
+            '.pisi-editor-toolbar[data-editor-target="center-node-editor-content"]'
+        );
+        const createCanvas = toolbar?.querySelector(
+            '[data-pisi-paint-action="createCanvas"]'
+        );
+        const left = toolbar?.querySelector(
+            '[data-pisi-unified-command="justifyLeft"]'
+        );
+        const center = toolbar?.querySelector(
+            '[data-pisi-unified-command="justifyCenter"]'
+        );
+        const right = toolbar?.querySelector(
+            '[data-pisi-unified-command="justifyRight"]'
+        );
+
+        if (
+            !editor ||
+            !toolbar ||
+            !createCanvas ||
+            !left ||
+            !center ||
+            !right
+        ) {
+            return {
+                ok: false,
+                reason: 'Canvas alignment controls missing'
+            };
+        }
+
+        createCanvas.click();
+
+        const blocks = Array.from(
+            editor.querySelectorAll(
+                ':scope > .pisi-canvas-block'
+            )
+        );
+        const block = blocks.at(-1) || null;
+        const canvas = block?.querySelector(
+            'canvas[data-pisi-canvas]'
+        ) || null;
+
+        if (!block || !canvas) {
+            return {
+                ok: false,
+                reason: 'Canvas insert failed'
+            };
+        }
+
+        const settle = async () => {
+            await Promise.resolve();
+            await new Promise((resolve) => {
+                requestAnimationFrame(() => resolve());
+            });
+            await Promise.resolve();
+        };
+
+        const state = () => ({
+            left:
+                left.classList.contains('active') &&
+                left.getAttribute('aria-pressed') === 'true' &&
+                left.hasAttribute(
+                    'data-pisi-composite-alignment-active'
+                ),
+            center:
+                center.classList.contains('active') &&
+                center.getAttribute('aria-pressed') === 'true' &&
+                center.hasAttribute(
+                    'data-pisi-composite-alignment-active'
+                ),
+            right:
+                right.classList.contains('active') &&
+                right.getAttribute('aria-pressed') === 'true' &&
+                right.hasAttribute(
+                    'data-pisi-composite-alignment-active'
+                )
+        });
+
+        canvas.dispatchEvent(
+            new PointerEvent('pointerdown', {
+                bubbles: true,
+                cancelable: true,
+                pointerId: 701,
+                pointerType: 'mouse',
+                clientX:
+                    canvas.getBoundingClientRect().left + 8,
+                clientY:
+                    canvas.getBoundingClientRect().top + 8
+            })
+        );
+        canvas.dispatchEvent(
+            new PointerEvent('pointerup', {
+                bubbles: true,
+                cancelable: true,
+                pointerId: 701,
+                pointerType: 'mouse',
+                clientX:
+                    canvas.getBoundingClientRect().left + 8,
+                clientY:
+                    canvas.getBoundingClientRect().top + 8
+            })
+        );
+        await settle();
+
+        const selected =
+            block.classList.contains(
+                'pisi-composite-alignment-active'
+            ) &&
+            canvas.classList.contains('selected');
+
+        left.click();
+        await settle();
+        const leftState = state();
+
+        right.click();
+        await settle();
+        const rightState = state();
+
+        center.click();
+        await settle();
+        const centerState = state();
+
+        const alignment =
+            block.dataset.pisiCompositeAlign || '';
+
+        block.remove();
+
+        return {
+            ok: true,
+            selected,
+            leftState,
+            rightState,
+            centerState,
+            alignment
+        };
+    })()`);
+
+    if (
+        !canvasToolbarStateResult?.ok ||
+        !canvasToolbarStateResult.selected ||
+        !canvasToolbarStateResult.leftState?.left ||
+        canvasToolbarStateResult.leftState?.center ||
+        canvasToolbarStateResult.leftState?.right ||
+        canvasToolbarStateResult.rightState?.left ||
+        canvasToolbarStateResult.rightState?.center ||
+        !canvasToolbarStateResult.rightState?.right ||
+        canvasToolbarStateResult.centerState?.left ||
+        !canvasToolbarStateResult.centerState?.center ||
+        canvasToolbarStateResult.centerState?.right ||
+        canvasToolbarStateResult.alignment !== 'center'
+    ) {
+        throw new Error(
+            'Canvas alignment toolbar state race failed: ' +
+            JSON.stringify(canvasToolbarStateResult)
         );
     }
 
