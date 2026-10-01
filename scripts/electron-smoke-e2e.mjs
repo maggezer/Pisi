@@ -400,45 +400,17 @@ try {
         const sheetBlockInitialLeft =
             measureLeft(sheetBlock);
 
-        alignLeftButton?.click();
-        const sheetTitleLeftPosition =
-            measureLeft(table);
-        const sheetAlignedLeft =
-            sheetBlock?.dataset.pisiCompositeAlign === 'left';
-
-        alignRightButton?.click();
-        const sheetTitleRightPosition =
-            measureLeft(table);
-        const sheetAlignedRight =
-            sheetBlock?.dataset.pisiCompositeAlign === 'right';
-
-        alignCenterButton?.click();
-        const sheetTitleCenterPosition =
-            measureLeft(table);
-        const sheetAlignedCenter =
-            sheetBlock?.dataset.pisiCompositeAlign === 'center';
-
-        const sheetTitleGeometryMoves =
-            sheetTitleRightPosition >
-                sheetTitleLeftPosition + 8 &&
-            sheetTitleCenterPosition >
-                sheetTitleLeftPosition + 3 &&
-            sheetTitleCenterPosition <
-                sheetTitleRightPosition - 3;
-        const sheetChromeStaysFixed =
-            Math.abs(
-                measureLeft(sheetBlock) -
-                sheetBlockInitialLeft
-            ) <= 1;
-
         const searchInput =
             sheetBlock?.querySelector(
                 '[data-pisi-sheet-search-input]'
             ) || null;
+        const searchRow =
+            sheetBlock?.querySelector(
+                '[data-pisi-sheet-search-row]'
+            ) || null;
         let sheetSearchFocusRetained =
             Boolean(searchInput);
         let sheetSearchValueAfterTyping = '';
-        let sheetSearchAlignmentWorks = false;
         let sheetSearchCompositeSelected = false;
 
         if (searchInput) {
@@ -505,96 +477,148 @@ try {
                 })
             );
             searchInput.focus();
+
             sheetSearchCompositeSelected =
                 sheetBlock?.classList.contains(
                     'pisi-composite-alignment-active'
                 ) === true;
-
-            alignLeftButton?.click();
-            const searchLeft =
-                measureLeft(table);
-            const sheetSearchAlignedLeft =
-                sheetBlock?.dataset.pisiCompositeAlign === 'left';
-
-            alignRightButton?.click();
-            const searchRight =
-                measureLeft(table);
-            const sheetSearchAlignedRight =
-                sheetBlock?.dataset.pisiCompositeAlign === 'right';
-
-            alignCenterButton?.click();
-            const searchCenter =
-                measureLeft(table);
-            const sheetSearchAlignedCenter =
-                sheetBlock?.dataset.pisiCompositeAlign === 'center';
-
-            sheetSearchAlignmentWorks =
-                sheetSearchAlignedLeft &&
-                sheetSearchAlignedRight &&
-                sheetSearchAlignedCenter &&
-                searchRight > searchLeft + 8 &&
-                searchCenter > searchLeft + 3 &&
-                searchCenter < searchRight - 3;
-
-            searchInput.dispatchEvent(
-                new KeyboardEvent('keydown', {
-                    bubbles: true,
-                    cancelable: true,
-                    key: 'Escape'
-                })
-            );
         }
 
-        const sheetSelectionSurface =
+        const sectionHeader =
             sheetBlock?.querySelector(
-                '[data-pisi-sheet-selection-surface]'
+                '[data-pisi-sheet-section-header]'
             ) || null;
-        let sheetSelectionSurfaceSelected = false;
-        let sheetSelectionSurfaceAlignmentWorks = false;
 
-        if (sheetSelectionSurface) {
-            sheetSelectionSurface.dispatchEvent(
-                new PointerEvent('pointerdown', {
-                    bubbles: true,
-                    cancelable: true,
-                    pointerType: 'mouse'
-                })
-            );
-            sheetSelectionSurface.click();
+        sectionHeader?.dispatchEvent(
+            new PointerEvent('pointerdown', {
+                bubbles: true,
+                cancelable: true,
+                pointerType: 'mouse'
+            })
+        );
 
-            sheetSelectionSurfaceSelected =
-                sheetBlock?.classList.contains(
-                    'pisi-composite-alignment-active'
-                ) === true;
+        const sheetHeaderBlankSelected =
+            sheetBlock?.classList.contains(
+                'pisi-composite-alignment-active'
+            ) === true;
 
-            alignLeftButton?.click();
-            const surfaceLeft =
-                measureLeft(table);
-            const surfaceAlignedLeft =
-                sheetBlock?.dataset.pisiCompositeAlign === 'left';
+        const measureRect = (element) => {
+            const rect =
+                element?.getBoundingClientRect?.();
 
-            sheetSelectionSurface.click();
-            alignRightButton?.click();
-            const surfaceRight =
-                measureLeft(table);
-            const surfaceAlignedRight =
-                sheetBlock?.dataset.pisiCompositeAlign === 'right';
+            return rect
+                ? {
+                    left: rect.left,
+                    right: rect.right,
+                    center:
+                        rect.left + rect.width / 2
+                }
+                : {
+                    left: -1,
+                    right: -1,
+                    center: -1
+                };
+        };
 
-            sheetSelectionSurface.click();
-            alignCenterButton?.click();
-            const surfaceCenter =
-                measureLeft(table);
-            const surfaceAlignedCenter =
-                sheetBlock?.dataset.pisiCompositeAlign === 'center';
+        alignLeftButton?.click();
+        const tableLeftRect = measureRect(table);
+        const searchLeftRect =
+            measureRect(searchRow);
+        const sheetAlignedLeft =
+            sheetBlock?.dataset.pisiCompositeAlign === 'left';
 
-            sheetSelectionSurfaceAlignmentWorks =
-                surfaceAlignedLeft &&
-                surfaceAlignedRight &&
-                surfaceAlignedCenter &&
-                surfaceRight > surfaceLeft + 8 &&
-                surfaceCenter > surfaceLeft + 3 &&
-                surfaceCenter < surfaceRight - 3;
-        }
+        alignRightButton?.click();
+        const tableRightRect = measureRect(table);
+        const searchRightRect =
+            measureRect(searchRow);
+        const sheetAlignedRight =
+            sheetBlock?.dataset.pisiCompositeAlign === 'right';
+
+        alignCenterButton?.click();
+        const tableCenterRect = measureRect(table);
+        const searchCenterRect =
+            measureRect(searchRow);
+        const sheetAlignedCenter =
+            sheetBlock?.dataset.pisiCompositeAlign === 'center';
+
+        const sheetContentAlignmentWorks =
+            sheetAlignedLeft &&
+            sheetAlignedRight &&
+            sheetAlignedCenter &&
+            tableRightRect.left >
+                tableLeftRect.left + 8 &&
+            tableCenterRect.left >
+                tableLeftRect.left + 3 &&
+            tableCenterRect.left <
+                tableRightRect.left - 3;
+
+        const sheetSearchMovesWithTable =
+            Math.abs(
+                tableLeftRect.left -
+                searchLeftRect.left
+            ) <= 2 &&
+            Math.abs(
+                tableCenterRect.center -
+                searchCenterRect.center
+            ) <= 2 &&
+            Math.abs(
+                tableRightRect.right -
+                searchRightRect.right
+            ) <= 2 &&
+            searchRightRect.left >
+                searchLeftRect.left + 8;
+
+        const sheetChromeStaysFixed =
+            Math.abs(
+                measureLeft(sheetBlock) -
+                sheetBlockInitialLeft
+            ) <= 1;
+
+        table?.dispatchEvent(
+            new PointerEvent('pointerdown', {
+                bubbles: true,
+                cancelable: true,
+                pointerType: 'mouse'
+            })
+        );
+
+        const sheetTableClearsCompositeSelection =
+            sheetBlock?.classList.contains(
+                'pisi-composite-alignment-active'
+            ) !== true;
+
+        sheetBlock?.dispatchEvent(
+            new PointerEvent('pointerdown', {
+                bubbles: true,
+                cancelable: true,
+                pointerType: 'mouse'
+            })
+        );
+
+        const sheetBlockBlankSelected =
+            sheetBlock?.classList.contains(
+                'pisi-composite-alignment-active'
+            ) === true;
+
+        const selectedTableStyle = table
+            ? getComputedStyle(table)
+            : null;
+        const sheetTableGlowVisible =
+            selectedTableStyle?.outlineStyle !== 'none' &&
+            (
+                Number.parseFloat(
+                    selectedTableStyle?.outlineWidth || '0'
+                ) || 0
+            ) >= 1 &&
+            selectedTableStyle?.boxShadow !== 'none';
+
+        searchInput?.dispatchEvent(
+            new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                key: 'Escape'
+            })
+        );
 
         const sheetBlockStyle = sheetBlock
             ? getComputedStyle(sheetBlock)
