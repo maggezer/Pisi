@@ -425,11 +425,28 @@ function ensurePisiSheetSectionHeader(table) {
     delete block.dataset.pisiBlockId;
     delete block.dataset.pisiBlockType;
 
-    let header = Array.from(
+    const headers = Array.from(
         block.children
-    ).find((child) => (
-        child.dataset?.pisiSheetSectionHeader === '1'
+    ).filter((child) => (
+        child.classList?.contains(
+            'pisi-sheet-section-header'
+        )
     ));
+    let header = headers.find((child) => (
+        child.dataset?.pisiSheetSectionHeader === '1' &&
+        child.querySelector(
+            '[data-pisi-sheet-section-toggle]'
+        ) &&
+        child.querySelector(
+            '[data-pisi-sheet-section-title]'
+        )
+    )) || null;
+
+    for (const candidate of headers) {
+        if (candidate !== header) {
+            candidate.remove();
+        }
+    }
 
     if (!header) {
         header = createPisiSheetSectionHeader(

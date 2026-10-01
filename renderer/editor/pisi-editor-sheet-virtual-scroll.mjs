@@ -118,13 +118,33 @@ function ensurePisiSheetPaginationControls(
     const block = getPisiSheetBlock(table);
     if (!block) return null;
 
-    let controls = Array.from(
+    const paginationControls = Array.from(
         block.children
-    ).find((child) => (
+    ).filter((child) => (
         child.classList?.contains(
             'pisi-sheet-pagination'
         )
     ));
+    let controls = paginationControls.find((child) => (
+        child.querySelector(
+            '[data-pisi-sheet-page-previous]'
+        ) &&
+        child.querySelector(
+            '[data-pisi-sheet-page-next]'
+        ) &&
+        child.querySelector(
+            '[data-pisi-sheet-page-status]'
+        ) &&
+        child.querySelector(
+            '[data-pisi-sheet-page-size]'
+        )
+    )) || null;
+
+    for (const candidate of paginationControls) {
+        if (candidate !== controls) {
+            candidate.remove();
+        }
+    }
 
     if (!controls) {
         controls = document.createElement('div');

@@ -992,12 +992,24 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         /ensurePisiSheetSectionHeader/
     );
     assert.match(
+        sheetVirtualScroll,
+        /paginationControls/
+    );
+    assert.match(
+        sheetVirtualScroll,
+        /candidate\.remove\(\)/
+    );
+    assert.match(
         sheetSearchUi,
         /pisi-sheet-search-input/
     );
     assert.match(
         sheetSearchUi,
         /setPisiSheetViewSearchQuery/
+    );
+    assert.match(
+        sheetSearchUi,
+        /candidate\.remove\(\)/
     );
     assert.match(
         sheetSectionUi,
@@ -1038,6 +1050,10 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         sheetSectionUi,
         /pisi-block-active/
+    );
+    assert.match(
+        sheetSectionUi,
+        /candidate\.remove\(\)/
     );
     assert.match(
         sheetSectionUi,
@@ -1403,6 +1419,18 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         nodeEditor,
         /data-pisi-database-id/
+    );
+    assert.match(
+        nodeEditor,
+        /pisi-sheet-section-header/
+    );
+    assert.match(
+        nodeEditor,
+        /pisi-sheet-search/
+    );
+    assert.match(
+        nodeEditor,
+        /pisi-sheet-pagination/
     );
     assert.match(
         nodeEditor,

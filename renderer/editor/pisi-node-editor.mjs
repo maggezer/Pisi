@@ -19,6 +19,15 @@ function sanitizePisiEditorHtml(html = '') {
     const wrapper = document.createElement('div');
     wrapper.innerHTML = String(html || '');
 
+    wrapper
+        .querySelectorAll(
+            '.pisi-sheet-section-header, ' +
+            '.pisi-sheet-search, ' +
+            '.pisi-sheet-pagination, ' +
+            '.pisi-sheet-drag-fill-handle'
+        )
+        .forEach((element) => element.remove());
+
     const allowedTags = new Set([
         'A', 'B', 'BLOCKQUOTE', 'BR', 'CANVAS', 'CODE', 'DIV', 'EM',
         'FONT', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'I', 'IMG', 'LI',

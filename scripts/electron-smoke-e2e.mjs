@@ -437,8 +437,63 @@ try {
 
         sectionToggle?.click();
         sectionToggle?.click();
+
+        const staleHeader = document.createElement('div');
+        staleHeader.className =
+            'pisi-sheet-section-header';
+        const staleSearch = document.createElement('div');
+        staleSearch.className =
+            'pisi-sheet-search';
+        const stalePagination = document.createElement('div');
+        stalePagination.className =
+            'pisi-sheet-pagination';
+
+        sheetBlock?.prepend(staleHeader);
+        sheetBlock?.insertBefore(
+            staleSearch,
+            table
+        );
+        sheetBlock?.appendChild(
+            stalePagination
+        );
+
         window.ensurePisiEditorBlocks?.(editor);
         window.hydratePisiSheets?.(editor);
+
+        const sheetHeaderCountAfterHydrate =
+            sheetBlock?.querySelectorAll(
+                ':scope > .pisi-sheet-section-header'
+            ).length || 0;
+        const sheetSearchCountAfterHydrate =
+            sheetBlock?.querySelectorAll(
+                ':scope > .pisi-sheet-search'
+            ).length || 0;
+        const sheetPaginationCountAfterHydrate =
+            sheetBlock?.querySelectorAll(
+                ':scope > .pisi-sheet-pagination'
+            ).length || 0;
+
+        const sanitizedSheetBlockHtml =
+            window.sanitizePisiEditorHtml?.(
+                sheetBlock?.outerHTML || ''
+            ) || '';
+        const sanitizedSheetChromeStripped =
+            !sanitizedSheetBlockHtml.includes(
+                'pisi-sheet-section-header'
+            ) &&
+            !sanitizedSheetBlockHtml.includes(
+                'pisi-sheet-search'
+            ) &&
+            !sanitizedSheetBlockHtml.includes(
+                'pisi-sheet-pagination'
+            );
+        const sanitizedSheetTableSurvived =
+            sanitizedSheetBlockHtml.includes(
+                'data-pisi-sheet="1"'
+            ) &&
+            sanitizedSheetBlockHtml.includes(
+                'data-pisi-sheet-model='
+            );
 
         const sheetAfterToggleAnchor =
             sheetBlock?.nextElementSibling;
@@ -2808,6 +2863,11 @@ try {
             sheetAfterToggleAnchorTag,
             sheetAfterToggleVisibleBlankCount,
             sheetAfterToggleTextBlockDecorated,
+            sheetHeaderCountAfterHydrate,
+            sheetSearchCountAfterHydrate,
+            sheetPaginationCountAfterHydrate,
+            sanitizedSheetChromeStripped,
+            sanitizedSheetTableSurvived,
             initialEditable,
             originalRowId,
             originalColId,
@@ -3167,6 +3227,11 @@ try {
         sheetResult.sheetAfterToggleAnchorTag !== '' ||
         sheetResult.sheetAfterToggleVisibleBlankCount !== 0 ||
         sheetResult.sheetAfterToggleTextBlockDecorated ||
+        sheetResult.sheetHeaderCountAfterHydrate !== 1 ||
+        sheetResult.sheetSearchCountAfterHydrate !== 1 ||
+        sheetResult.sheetPaginationCountAfterHydrate !== 1 ||
+        !sheetResult.sanitizedSheetChromeStripped ||
+        !sheetResult.sanitizedSheetTableSurvived ||
         sheetResult.initialEditable !== 'false' ||
         !sheetResult.originalRowId ||
         !sheetResult.originalColId ||

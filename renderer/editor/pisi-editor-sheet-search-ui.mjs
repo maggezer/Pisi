@@ -52,13 +52,30 @@ function ensurePisiSheetSearchControl(
 
     if (!block) return null;
 
-    let control = Array.from(
+    const controls = Array.from(
         block.children
-    ).find((child) => (
+    ).filter((child) => (
         child.classList?.contains(
             'pisi-sheet-search'
         )
     ));
+    let control = controls.find((child) => (
+        child.querySelector(
+            '[data-pisi-sheet-search-input]'
+        ) &&
+        child.querySelector(
+            '[data-pisi-sheet-search-status]'
+        ) &&
+        child.querySelector(
+            '[data-pisi-sheet-search-clear]'
+        )
+    )) || null;
+
+    for (const candidate of controls) {
+        if (candidate !== control) {
+            candidate.remove();
+        }
+    }
 
     if (!control) {
         control = document.createElement('div');
