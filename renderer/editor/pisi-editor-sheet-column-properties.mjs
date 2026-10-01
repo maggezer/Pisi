@@ -644,7 +644,7 @@ function openPisiSheetColumnMenu(table, header) {
 
     viewRulesButton.type = 'button';
     viewRulesButton.textContent =
-        window.pisiT?.('Filtre / Sırala') || 'Filtre / Sırala';
+        window.pisiT?.('View Kuralları') || 'View Kuralları';
     viewRulesButton.dataset.pisiSheetColumnAction =
         'viewRules';
 

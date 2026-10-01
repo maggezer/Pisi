@@ -331,6 +331,14 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         database,
         /normalizePisiSheetSorts/
     );
+    assert.match(
+        database,
+        /conditionalColors/
+    );
+    assert.match(
+        database,
+        /normalizePisiSheetConditionalColors/
+    );
 
     assert.doesNotMatch(database, /querySelector/);
     assert.doesNotMatch(database, /querySelectorAll/);
@@ -420,6 +428,14 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         databaseDom,
         /modelIndex: rowIndex/
+    );
+    assert.match(
+        databaseDom,
+        /applyPisiSheetConditionalColorsToRow/
+    );
+    assert.match(
+        databaseDom,
+        /pisiConditionalColor/
     );
     assert.match(
         databaseDom,
@@ -766,6 +782,10 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         /activeViewId/
     );
     assert.match(
+        sheetViewState,
+        /conditionalColors/
+    );
+    assert.match(
         sheetViewQueryCore,
         /PISI_SHEET_FILTER_OPERATORS/
     );
@@ -786,6 +806,14 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         /resolvePisiSheetDateFilterValue/
     );
     assert.match(
+        sheetViewQueryCore,
+        /normalizePisiSheetConditionalColors/
+    );
+    assert.match(
+        sheetViewQueryCore,
+        /getPisiSheetConditionalColorMatches/
+    );
+    assert.match(
         sheetViewQuery,
         /setPisiSheetViewFilters/
     );
@@ -802,12 +830,28 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         /movePisiSheetViewSort/
     );
     assert.match(
+        sheetViewQuery,
+        /setPisiSheetViewConditionalColors/
+    );
+    assert.match(
+        sheetViewQuery,
+        /movePisiSheetViewConditionalColor/
+    );
+    assert.match(
         sheetViewRulesUi,
         /pisi-sheet-filter-group/
     );
     assert.match(
         sheetViewRulesUi,
         /pisi-sheet-sort-row/
+    );
+    assert.match(
+        sheetViewRulesUi,
+        /pisi-sheet-conditional-color-row/
+    );
+    assert.match(
+        sheetViewRulesUi,
+        /Koşullu renkler/
     );
     assert.match(
         sheetViewRulesUi,
@@ -993,6 +1037,14 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(
         componentsCss,
         /pisi-sheet-sort-row/
+    );
+    assert.match(
+        componentsCss,
+        /pisi-sheet-conditional-color-row/
+    );
+    assert.match(
+        componentsCss,
+        /data-pisi-conditional-color/
     );
     assert.match(
         componentsCss,

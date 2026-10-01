@@ -25,6 +25,73 @@ function applyPisiSheetCellFormatToDom(cell, format = {}) {
     }
 }
 
+function applyPisiSheetConditionalColorsToRow(
+    table,
+    row,
+    item,
+    fields
+) {
+    if (!row || !item) return;
+
+    const matches =
+        getPisiSheetConditionalColorMatchesForItem(
+            table,
+            item
+        );
+    const rowHeader = row.querySelector(
+        'th[data-row-header]'
+    );
+    let rowTone = '';
+
+    for (const rule of matches) {
+        if (rule.target === 'row') {
+            rowTone = rule.tone;
+        }
+    }
+
+    if (rowTone) {
+        row.dataset.pisiConditionalColor = rowTone;
+        if (rowHeader) {
+            rowHeader.dataset.pisiConditionalColor =
+                rowTone;
+        }
+    } else {
+        delete row.dataset.pisiConditionalColor;
+        if (rowHeader) {
+            delete rowHeader.dataset.pisiConditionalColor;
+        }
+    }
+
+    for (const field of fields) {
+        const cell = row.querySelector(
+            'td[data-pisi-col-id="' +
+            field.id +
+            '"]'
+        );
+        if (!cell) continue;
+
+        let tone = '';
+
+        for (const rule of matches) {
+            if (
+                rule.target === 'row' ||
+                (
+                    rule.target === 'cell' &&
+                    rule.fieldId === field.id
+                )
+            ) {
+                tone = rule.tone;
+            }
+        }
+
+        if (tone) {
+            cell.dataset.pisiConditionalColor = tone;
+        } else {
+            delete cell.dataset.pisiConditionalColor;
+        }
+    }
+}
+
 function readLegacyPisiSheetColumnArray(table, key) {
     try {
         const value = JSON.parse(
@@ -387,6 +454,13 @@ function renderPisiSheetDatabase(table) {
                 row.appendChild(cell);
             });
 
+            applyPisiSheetConditionalColorsToRow(
+                table,
+                row,
+                item,
+                fields
+            );
+
             return row;
         }
     );
@@ -443,6 +517,16 @@ function renderPisiSheetCellFromDatabase(
             )
             : displayValue
     );
+
+    const row = cell.closest('tr');
+    if (row) {
+        applyPisiSheetConditionalColorsToRow(
+            table,
+            row,
+            item,
+            getPisiSheetOrderedFields(database)
+        );
+    }
 
     return true;
 }

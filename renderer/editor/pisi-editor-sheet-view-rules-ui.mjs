@@ -1,5 +1,6 @@
 import { registerModule } from "../core/module-registry.mjs";
 import {
+    PISI_SHEET_CONDITIONAL_COLOR_TONES,
     createPisiSheetViewRuleId,
     getPisiSheetFilterOperatorsForType
 } from "./pisi-editor-sheet-view-query-core.mjs";
@@ -8,6 +9,17 @@ import {
 } from "./pisi-editor-sheet-field-types-core.mjs";
 
 let pisiSheetViewRulesPanel = null;
+
+const PISI_SHEET_CONDITIONAL_COLOR_TONE_LABELS =
+    Object.freeze({
+        red: 'Kırmızı',
+        orange: 'Turuncu',
+        yellow: 'Sarı',
+        green: 'Yeşil',
+        blue: 'Mavi',
+        purple: 'Mor',
+        gray: 'Gri'
+    });
 
 const PISI_SHEET_FILTER_OPERATOR_LABELS = Object.freeze({
     is: 'Eşittir',
@@ -632,6 +644,182 @@ function renderPisiSheetSortRow(
     return row;
 }
 
+function renderPisiSheetConditionalColorRow(
+    table,
+    rule,
+    fields,
+    index,
+    count,
+    rerender
+) {
+    const row = document.createElement('div');
+    const field = fields.find(
+        (candidate) => candidate.id === rule.fieldId
+    ) || fields[0];
+    const fieldSelect = makePisiSheetFieldSelect(
+        fields,
+        field?.id
+    );
+    const operatorSelect =
+        makePisiSheetOperatorSelect(
+            field,
+            rule.operator
+        );
+    const target = document.createElement('select');
+    const tone = document.createElement('select');
+    const up = makePisiSheetRulesButton('↑', 'icon');
+    const down = makePisiSheetRulesButton('↓', 'icon');
+    const remove = makePisiSheetRulesButton(
+        'Sil',
+        'icon danger'
+    );
+
+    row.className =
+        'pisi-sheet-conditional-color-row';
+    row.dataset.pisiSheetConditionalColorId =
+        rule.id;
+
+    target.className =
+        'pisi-sheet-view-rules-select pisi-sheet-conditional-target';
+    [
+        ['row', 'Satır'],
+        ['cell', 'Hücre']
+    ].forEach(([value, label]) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent =
+            pisiSheetRulesTranslate(label);
+        target.appendChild(option);
+    });
+    target.value = rule.target || 'row';
+
+    tone.className =
+        'pisi-sheet-view-rules-select pisi-sheet-conditional-tone';
+    PISI_SHEET_CONDITIONAL_COLOR_TONES.forEach(
+        (value) => {
+            const option =
+                document.createElement('option');
+            option.value = value;
+            option.textContent =
+                pisiSheetRulesTranslate(
+                    PISI_SHEET_CONDITIONAL_COLOR_TONE_LABELS[
+                        value
+                    ] || value
+                );
+            tone.appendChild(option);
+        }
+    );
+    tone.value = rule.tone || 'red';
+
+    up.disabled = index === 0;
+    down.disabled = index === count - 1;
+
+    fieldSelect.addEventListener('change', () => {
+        const nextField = fields.find(
+            (candidate) => (
+                candidate.id === fieldSelect.value
+            )
+        );
+
+        updatePisiSheetViewConditionalColor(
+            table,
+            rule.id,
+            {
+                fieldId: fieldSelect.value,
+                operator:
+                    getPisiSheetFilterDefaultOperator(
+                        nextField
+                    ),
+                value: ''
+            }
+        );
+        rerender();
+    });
+
+    operatorSelect.addEventListener('change', () => {
+        updatePisiSheetViewConditionalColor(
+            table,
+            rule.id,
+            { operator: operatorSelect.value }
+        );
+        rerender();
+    });
+
+    const valueControl =
+        makePisiSheetFilterValueControl(
+            field,
+            {
+                ...rule,
+                operator: operatorSelect.value
+            },
+            (value) => {
+                updatePisiSheetViewConditionalColor(
+                    table,
+                    rule.id,
+                    { value }
+                );
+                rerender();
+            }
+        );
+
+    target.addEventListener('change', () => {
+        updatePisiSheetViewConditionalColor(
+            table,
+            rule.id,
+            { target: target.value }
+        );
+        rerender();
+    });
+
+    tone.addEventListener('change', () => {
+        updatePisiSheetViewConditionalColor(
+            table,
+            rule.id,
+            { tone: tone.value }
+        );
+        rerender();
+    });
+
+    up.addEventListener('click', () => {
+        movePisiSheetViewConditionalColor(
+            table,
+            rule.id,
+            -1
+        );
+        rerender();
+    });
+
+    down.addEventListener('click', () => {
+        movePisiSheetViewConditionalColor(
+            table,
+            rule.id,
+            1
+        );
+        rerender();
+    });
+
+    remove.addEventListener('click', () => {
+        removePisiSheetViewConditionalColor(
+            table,
+            rule.id
+        );
+        rerender();
+    });
+
+    row.append(
+        fieldSelect,
+        operatorSelect,
+        valueControl,
+        target,
+        tone,
+        up,
+        down,
+        remove
+    );
+
+    return row;
+}
+
 function renderPisiSheetViewRulesPanel() {
     const state = pisiSheetViewRulesPanel;
     if (!state) return;
@@ -645,6 +833,10 @@ function renderPisiSheetViewRulesPanel() {
         getPisiSheetActiveViewFilters(table);
     const sorts =
         getPisiSheetActiveViewSorts(table);
+    const conditionalColors =
+        getPisiSheetActiveViewConditionalColors(
+            table
+        );
 
     element.replaceChildren();
 
@@ -659,7 +851,7 @@ function renderPisiSheetViewRulesPanel() {
         'pisi-sheet-view-rules-heading';
     title.textContent =
         pisiSheetRulesTranslate(
-            'View filtreleri ve sıralama'
+            'View kuralları'
         );
     close.setAttribute(
         'aria-label',
@@ -680,7 +872,10 @@ function renderPisiSheetViewRulesPanel() {
         pisiSheetRulesTranslate('filtre'),
         '·',
         sorts.length,
-        pisiSheetRulesTranslate('sıralama')
+        pisiSheetRulesTranslate('sıralama'),
+        '·',
+        conditionalColors.length,
+        pisiSheetRulesTranslate('renk')
     ].join(' ');
     element.appendChild(summary);
 
@@ -817,6 +1012,96 @@ function renderPisiSheetViewRulesPanel() {
     sortSection.appendChild(sortList);
     element.appendChild(sortSection);
 
+    const colorSection = document.createElement('section');
+    const colorTitle = document.createElement('h4');
+    const addColor = makePisiSheetRulesButton(
+        '+ Renk kuralı',
+        'compact'
+    );
+    const clearColors = makePisiSheetRulesButton(
+        'Renk kurallarını temizle',
+        'compact'
+    );
+
+    colorSection.className =
+        'pisi-sheet-view-rules-section';
+    colorTitle.textContent =
+        pisiSheetRulesTranslate('Koşullu renkler');
+
+    addColor.disabled =
+        !fields.length ||
+        conditionalColors.length >= 50;
+
+    addColor.addEventListener('click', () => {
+        const field = fields[0];
+        if (!field) return;
+
+        addPisiSheetViewConditionalColor(
+            table,
+            {
+                fieldId: field.id,
+                operator:
+                    getPisiSheetFilterDefaultOperator(
+                        field
+                    ),
+                target: 'row',
+                tone: 'red'
+            }
+        );
+        renderPisiSheetViewRulesPanel();
+    });
+
+    clearColors.disabled =
+        conditionalColors.length === 0;
+    clearColors.addEventListener('click', () => {
+        setPisiSheetViewConditionalColors(
+            table,
+            []
+        );
+        renderPisiSheetViewRulesPanel();
+    });
+
+    const colorHeader = document.createElement('div');
+    colorHeader.className =
+        'pisi-sheet-view-rules-section-heading';
+    colorHeader.append(
+        colorTitle,
+        addColor,
+        clearColors
+    );
+    colorSection.appendChild(colorHeader);
+
+    const colorList = document.createElement('div');
+    colorList.className =
+        'pisi-sheet-conditional-color-list';
+
+    conditionalColors.forEach((rule, index) => {
+        colorList.appendChild(
+            renderPisiSheetConditionalColorRow(
+                table,
+                rule,
+                fields,
+                index,
+                conditionalColors.length,
+                renderPisiSheetViewRulesPanel
+            )
+        );
+    });
+
+    if (!conditionalColors.length) {
+        const empty = document.createElement('div');
+        empty.className =
+            'pisi-sheet-view-rules-empty';
+        empty.textContent =
+            pisiSheetRulesTranslate(
+                'Renk kuralı yok'
+            );
+        colorList.appendChild(empty);
+    }
+
+    colorSection.appendChild(colorList);
+    element.appendChild(colorSection);
+
     positionPisiSheetViewRulesPanel(
         element,
         state.anchor
@@ -837,7 +1122,7 @@ function openPisiSheetViewRulesPanel(
     element.setAttribute(
         'aria-label',
         pisiSheetRulesTranslate(
-            'View filtreleri ve sıralama'
+            'View kuralları'
         )
     );
 

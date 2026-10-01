@@ -1,8 +1,10 @@
 import { registerModule } from "../core/module-registry.mjs";
 import {
     createPisiSheetViewRuleId,
+    getPisiSheetConditionalColorMatches,
     getPisiSheetViewItemRecords,
     makePisiSheetEmptyFilterTree,
+    normalizePisiSheetConditionalColors,
     normalizePisiSheetFilterTree,
     normalizePisiSheetSorts
 } from "./pisi-editor-sheet-view-query-core.mjs";
@@ -24,6 +26,35 @@ function getPisiSheetActiveViewSorts(table) {
 
     return Array.isArray(view?.sorts)
         ? view.sorts
+        : [];
+}
+
+function getPisiSheetActiveViewConditionalColors(table) {
+    const database = getPisiSheetDatabase(table);
+    const view = database
+        ? getPisiSheetTableView(database)
+        : null;
+
+    return Array.isArray(view?.conditionalColors)
+        ? view.conditionalColors
+        : [];
+}
+
+function getPisiSheetConditionalColorMatchesForItem(
+    table,
+    item
+) {
+    const database = getPisiSheetDatabase(table);
+    const view = database
+        ? getPisiSheetTableView(database)
+        : null;
+
+    return database
+        ? getPisiSheetConditionalColorMatches(
+            database,
+            item,
+            view?.conditionalColors
+        )
         : [];
 }
 
@@ -155,6 +186,27 @@ function setPisiSheetViewSorts(table, sorts) {
 
     refreshPisiSheetViewQuery(table);
     return view.sorts;
+}
+
+function setPisiSheetViewConditionalColors(
+    table,
+    rules
+) {
+    const database = getPisiSheetDatabase(table);
+    const view = database
+        ? getPisiSheetTableView(database)
+        : null;
+
+    if (!database || !view) return null;
+
+    view.conditionalColors =
+        normalizePisiSheetConditionalColors(
+            rules,
+            database.fields
+        );
+
+    refreshPisiSheetViewQuery(table);
+    return view.conditionalColors;
 }
 
 function findPisiSheetFilterNode(
@@ -427,6 +479,117 @@ function movePisiSheetViewSort(
     );
 }
 
+function addPisiSheetViewConditionalColor(
+    table,
+    rule = {}
+) {
+    const database = getPisiSheetDatabase(table);
+    const firstField = database?.fields?.[0];
+    const rules = structuredClone(
+        getPisiSheetActiveViewConditionalColors(
+            table
+        )
+    );
+
+    rules.push({
+        id: createPisiSheetViewRuleId(
+            'conditional-color'
+        ),
+        fieldId: String(
+            rule.fieldId ||
+            firstField?.id ||
+            ''
+        ),
+        operator: String(
+            rule.operator || 'is'
+        ),
+        value: rule.value ?? '',
+        target: String(rule.target || 'row'),
+        tone: String(rule.tone || 'red')
+    });
+
+    return setPisiSheetViewConditionalColors(
+        table,
+        rules
+    );
+}
+
+function updatePisiSheetViewConditionalColor(
+    table,
+    ruleId,
+    patch = {}
+) {
+    const rules = structuredClone(
+        getPisiSheetActiveViewConditionalColors(
+            table
+        )
+    );
+    const rule = rules.find(
+        (candidate) => candidate.id === ruleId
+    );
+
+    if (!rule) return null;
+
+    Object.assign(
+        rule,
+        /** @type {Record<string, any>} */ (patch)
+    );
+
+    return setPisiSheetViewConditionalColors(
+        table,
+        rules
+    );
+}
+
+function removePisiSheetViewConditionalColor(
+    table,
+    ruleId
+) {
+    return setPisiSheetViewConditionalColors(
+        table,
+        getPisiSheetActiveViewConditionalColors(
+            table
+        ).filter(
+            (rule) => rule.id !== ruleId
+        )
+    );
+}
+
+function movePisiSheetViewConditionalColor(
+    table,
+    ruleId,
+    delta
+) {
+    const rules = structuredClone(
+        getPisiSheetActiveViewConditionalColors(
+            table
+        )
+    );
+    const index = rules.findIndex(
+        (rule) => rule.id === ruleId
+    );
+
+    if (index < 0) return null;
+
+    const next = Math.max(
+        0,
+        Math.min(
+            rules.length - 1,
+            index + Number(delta || 0)
+        )
+    );
+
+    if (next === index) return rules;
+
+    const [rule] = rules.splice(index, 1);
+    rules.splice(next, 0, rule);
+
+    return setPisiSheetViewConditionalColors(
+        table,
+        rules
+    );
+}
+
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
     "getPisiSheetActiveViewFilters": {
@@ -436,6 +599,14 @@ Object.defineProperties(moduleApi, {
     "getPisiSheetActiveViewSorts": {
         enumerable: true,
         get() { return getPisiSheetActiveViewSorts; }
+    },
+    "getPisiSheetActiveViewConditionalColors": {
+        enumerable: true,
+        get() { return getPisiSheetActiveViewConditionalColors; }
+    },
+    "getPisiSheetConditionalColorMatchesForItem": {
+        enumerable: true,
+        get() { return getPisiSheetConditionalColorMatchesForItem; }
     },
     "getPisiSheetViewRecords": {
         enumerable: true,
@@ -460,6 +631,10 @@ Object.defineProperties(moduleApi, {
     "setPisiSheetViewSorts": {
         enumerable: true,
         get() { return setPisiSheetViewSorts; }
+    },
+    "setPisiSheetViewConditionalColors": {
+        enumerable: true,
+        get() { return setPisiSheetViewConditionalColors; }
     },
     "addPisiSheetViewFilterCondition": {
         enumerable: true,
@@ -492,6 +667,22 @@ Object.defineProperties(moduleApi, {
     "movePisiSheetViewSort": {
         enumerable: true,
         get() { return movePisiSheetViewSort; }
+    },
+    "addPisiSheetViewConditionalColor": {
+        enumerable: true,
+        get() { return addPisiSheetViewConditionalColor; }
+    },
+    "updatePisiSheetViewConditionalColor": {
+        enumerable: true,
+        get() { return updatePisiSheetViewConditionalColor; }
+    },
+    "removePisiSheetViewConditionalColor": {
+        enumerable: true,
+        get() { return removePisiSheetViewConditionalColor; }
+    },
+    "movePisiSheetViewConditionalColor": {
+        enumerable: true,
+        get() { return movePisiSheetViewConditionalColor; }
     }
 });
 registerModule("editor.sheetViewQuery", moduleApi);

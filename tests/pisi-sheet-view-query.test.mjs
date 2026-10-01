@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 
 import {
     evaluatePisiSheetFilterTree,
+    getPisiSheetConditionalColorMatches,
     getPisiSheetViewItemRecords,
+    normalizePisiSheetConditionalColors,
     normalizePisiSheetFilterTree,
     normalizePisiSheetSorts
 } from '../renderer/editor/pisi-editor-sheet-view-query-core.mjs';
@@ -281,4 +283,106 @@ test('legacy filter arrays normalize into an AND tree and invalid sorts are remo
         ]),
         [['priority', 'desc']]
     );
+});
+
+
+test('conditional colors reuse typed conditions for row and cell targets', () => {
+    const rules = [
+        {
+            id: 'status-row',
+            fieldId: 'status',
+            operator: 'is',
+            value: 'done',
+            target: 'row',
+            tone: 'red'
+        },
+        {
+            id: 'deadline-cell',
+            fieldId: 'deadline',
+            operator: 'before',
+            value: '@today',
+            target: 'cell',
+            tone: 'orange'
+        }
+    ];
+    const now = new Date('2026-09-30T12:00:00Z');
+
+    assert.deepEqual(
+        getPisiSheetConditionalColorMatches(
+            database,
+            items[0],
+            rules,
+            now
+        ).map((rule) => rule.id),
+        ['status-row', 'deadline-cell']
+    );
+
+    assert.deepEqual(
+        getPisiSheetConditionalColorMatches(
+            database,
+            items[1],
+            rules,
+            now
+        ).map((rule) => rule.id),
+        ['status-row']
+    );
+
+    assert.deepEqual(
+        getPisiSheetConditionalColorMatches(
+            database,
+            items[2],
+            rules,
+            now
+        ).map((rule) => rule.id),
+        ['deadline-cell']
+    );
+});
+
+test('conditional color normalization removes invalid rules', () => {
+    const rules = normalizePisiSheetConditionalColors(
+        [
+            {
+                fieldId: 'deadline',
+                operator: 'before',
+                value: '@today',
+                target: 'row',
+                tone: 'red'
+            },
+            {
+                fieldId: 'deadline',
+                operator: 'contains',
+                value: 'x',
+                target: 'row',
+                tone: 'red'
+            },
+            {
+                fieldId: 'missing',
+                operator: 'is',
+                value: 'x',
+                target: 'row',
+                tone: 'red'
+            },
+            {
+                fieldId: 'title',
+                operator: 'contains',
+                value: 'a',
+                target: 'page',
+                tone: 'blue'
+            },
+            {
+                fieldId: 'title',
+                operator: 'contains',
+                value: 'a',
+                target: 'cell',
+                tone: 'pink'
+            }
+        ],
+        fields
+    );
+
+    assert.equal(rules.length, 1);
+    assert.equal(rules[0].fieldId, 'deadline');
+    assert.equal(rules[0].operator, 'before');
+    assert.equal(rules[0].target, 'row');
+    assert.equal(rules[0].tone, 'red');
 });

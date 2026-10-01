@@ -12,6 +12,7 @@ import {
 import {
     makePisiSheetEmptyFilterTree,
     normalizePisiSheetFilterTree,
+    normalizePisiSheetConditionalColors,
     normalizePisiSheetSorts
 } from "./pisi-editor-sheet-view-query-core.mjs";
 
@@ -119,7 +120,8 @@ function createPisiSheetTableView(fields, options = {}) {
         fieldOrder: fields.map((field) => field.id),
         hiddenFieldIds: [],
         filters: makePisiSheetEmptyFilterTree(),
-        sorts: []
+        sorts: [],
+        conditionalColors: []
     };
 }
 
@@ -284,7 +286,12 @@ function normalizePisiSheetDatabase(database) {
                 sorts: normalizePisiSheetSorts(
                     view.sorts,
                     fieldIds
-                )
+                ),
+                conditionalColors:
+                    normalizePisiSheetConditionalColors(
+                        view.conditionalColors,
+                        fields
+                    )
             };
         });
 
@@ -718,6 +725,14 @@ function deletePisiSheetFields(table, index, count = 1) {
     database.fields = database.fields.filter(
         (field) => !removed.has(field.id)
     );
+
+    for (const tableView of database.views) {
+        tableView.conditionalColors =
+            normalizePisiSheetConditionalColors(
+                tableView.conditionalColors,
+                database.fields
+            );
+    }
 
     for (const item of database.items) {
         for (const fieldId of removedIds) {
