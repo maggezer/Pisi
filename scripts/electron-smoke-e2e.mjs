@@ -693,9 +693,19 @@ try {
             sheetBlock?.querySelectorAll(
                 ':scope > .pisi-sheet-section-header'
             ).length || 0;
+        const sheetSearchRowCountAfterHydrate =
+            sheetBlock?.querySelectorAll(
+                ':scope > .pisi-sheet-search-row'
+            ).length || 0;
         const sheetSearchCountAfterHydrate =
             sheetBlock?.querySelectorAll(
-                ':scope > .pisi-sheet-search'
+                ':scope > .pisi-sheet-search-row ' +
+                '> .pisi-sheet-search'
+            ).length || 0;
+        const sheetSelectionSurfaceCountAfterHydrate =
+            sheetBlock?.querySelectorAll(
+                ':scope > .pisi-sheet-search-row ' +
+                '> [data-pisi-sheet-selection-surface]'
             ).length || 0;
         const sheetPaginationCountAfterHydrate =
             sheetBlock?.querySelectorAll(
@@ -3280,21 +3290,24 @@ try {
                 'pisi-composite-alignment-active'
             ) === true;
 
+        const canvasBlockInitialLeft =
+            measureLeft(canvasBlock);
+
         alignLeftButton?.click();
         const canvasTitleLeftPosition =
-            measureLeft(canvasBlock);
+            measureLeft(sourceCanvas);
         const canvasAlignedLeft =
             canvasBlock?.dataset.pisiCompositeAlign === 'left';
 
         alignRightButton?.click();
         const canvasTitleRightPosition =
-            measureLeft(canvasBlock);
+            measureLeft(sourceCanvas);
         const canvasAlignedRight =
             canvasBlock?.dataset.pisiCompositeAlign === 'right';
 
         alignCenterButton?.click();
         const canvasTitleCenterPosition =
-            measureLeft(canvasBlock);
+            measureLeft(sourceCanvas);
         const canvasAlignedCenter =
             canvasBlock?.dataset.pisiCompositeAlign === 'center';
 
@@ -3305,6 +3318,11 @@ try {
                 canvasTitleLeftPosition + 3 &&
             canvasTitleCenterPosition <
                 canvasTitleRightPosition - 3;
+        const canvasChromeStaysFixed =
+            Math.abs(
+                measureLeft(canvasBlock) -
+                canvasBlockInitialLeft
+            ) <= 1;
 
         sourceCanvas?.dispatchEvent(
             new PointerEvent('pointerdown', {
@@ -3330,17 +3348,19 @@ try {
 
         alignLeftButton?.click();
         const canvasSurfaceLeftPosition =
-            measureLeft(canvasBlock);
+            measureLeft(sourceCanvas);
         const canvasSurfaceAlignedLeft =
             canvasBlock?.dataset.pisiCompositeAlign === 'left';
 
         alignRightButton?.click();
         const canvasSurfaceRightPosition =
-            measureLeft(canvasBlock);
+            measureLeft(sourceCanvas);
         const canvasSurfaceAlignedRight =
             canvasBlock?.dataset.pisiCompositeAlign === 'right';
 
         alignCenterButton?.click();
+        const canvasSurfaceCenterPosition =
+            measureLeft(sourceCanvas);
         const canvasSurfaceAlignedCenter =
             canvasBlock?.dataset.pisiCompositeAlign === 'center';
 
@@ -3349,7 +3369,11 @@ try {
             canvasSurfaceAlignedRight &&
             canvasSurfaceAlignedCenter &&
             canvasSurfaceRightPosition >
-                canvasSurfaceLeftPosition + 8;
+                canvasSurfaceLeftPosition + 8 &&
+            canvasSurfaceCenterPosition >
+                canvasSurfaceLeftPosition + 3 &&
+            canvasSurfaceCenterPosition <
+                canvasSurfaceRightPosition - 3;
         const canvasNewLineButton =
             canvasBlock?.querySelector(
                 '[data-pisi-composite-new-line]'
