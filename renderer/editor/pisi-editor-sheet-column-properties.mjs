@@ -7,6 +7,9 @@ import {
     normalizePisiSheetFieldOptions,
     normalizePisiSheetNumberFormat
 } from "./pisi-editor-sheet-field-types-core.mjs";
+import {
+    configurePisiSheetColumnIconControl
+} from "./pisi-editor-sheet-column-icon.mjs";
 
 let pisiSheetColumnMenu = null;
 let pisiSheetColumnResize = null;
@@ -254,20 +257,6 @@ function positionPisiSheetColumnMenu(menu, header) {
     )) + 'px';
 }
 
-function getPisiSheetFieldTypeIcon(type) {
-    const icons = {
-        text: 'Aa',
-        number: '123',
-        date: '◫',
-        select: '▾',
-        mSelect: '≡',
-        checkbox: '☑',
-        formula: 'fx'
-    };
-
-    return icons[type] || 'Aa';
-}
-
 function makePisiSheetSelectOptionsEditor(
     field,
     onOptionsChange
@@ -450,6 +439,7 @@ function openPisiSheetColumnMenu(table, header) {
     const icon = document.createElement('span');
     const input = document.createElement('input');
     const description = document.createElement('textarea');
+    const iconInput = document.createElement('input');
     const typeSelect = document.createElement('select');
     const wrap = document.createElement('input');
     const widthInput = document.createElement('input');
@@ -471,8 +461,6 @@ function openPisiSheetColumnMenu(table, header) {
     heading.className =
         'pisi-sheet-column-menu-heading';
     icon.className = 'pisi-sheet-column-type-icon';
-    icon.textContent =
-        getPisiSheetFieldTypeIcon(field.type);
 
     input.type = 'text';
     input.className = 'pisi-sheet-column-name-input';
@@ -497,6 +485,13 @@ function openPisiSheetColumnMenu(table, header) {
         makePisiSheetColumnMenuRow(
             window.pisiT?.('Açıklama') || 'Açıklama',
             description
+        )
+    );
+
+    menu.appendChild(
+        makePisiSheetColumnMenuRow(
+            window.pisiT?.('İkon') || 'İkon',
+            iconInput
         )
     );
 
@@ -585,14 +580,25 @@ function openPisiSheetColumnMenu(table, header) {
         );
     menu.appendChild(optionsGroup);
 
+    const syncIconControl =
+        configurePisiSheetColumnIconControl(
+            iconInput,
+            icon,
+            field,
+            typeSelect,
+            (value) => {
+                persistFieldPatch({ icon: value });
+            },
+            (value) => window.pisiT?.(value) || value
+        );
+
     const syncTypeSpecificControls = () => {
         const type = typeSelect.value;
         numberFormatRow.hidden =
             type !== 'number';
         optionsGroup.hidden =
             !['select', 'mSelect'].includes(type);
-        icon.textContent =
-            getPisiSheetFieldTypeIcon(type);
+        syncIconControl(type);
     };
 
     syncTypeSpecificControls();
@@ -644,7 +650,7 @@ function openPisiSheetColumnMenu(table, header) {
 
     viewRulesButton.type = 'button';
     viewRulesButton.textContent =
-        window.pisiT?.('Filtre / Sırala') || 'Filtre / Sırala';
+        window.pisiT?.('View Kuralları') || 'View Kuralları';
     viewRulesButton.dataset.pisiSheetColumnAction =
         'viewRules';
 

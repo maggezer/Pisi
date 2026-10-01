@@ -1,4 +1,7 @@
 import { registerModule } from "../core/module-registry.mjs";
+import {
+    ensurePisiSheetModelCellRendered
+} from "./pisi-editor-sheet-virtual-scroll.mjs";
 
 const pisiRenderedSheetSelectionCells = new WeakMap();
 const pisiRenderedSheetSelectionHeaders = new WeakMap();
@@ -355,16 +358,23 @@ function setPisiSheetRangeSelection(
 
     if (!state) return null;
 
-    const projected = syncPisiSheetSelectionProjection(table);
-
     if (options.ensureVisible !== false) {
-        const focusCell = getPisiSheetCell(
-            table,
-            focus.row,
-            focus.col
-        );
+        const focusCell =
+            ensurePisiSheetModelCellRendered(
+                table,
+                focus.row,
+                focus.col
+            ) ||
+            getPisiSheetCell(
+                table,
+                focus.row,
+                focus.col
+            );
 
+        syncPisiSheetSelectionProjection(table);
         ensurePisiSheetCellVisible(focusCell);
+    } else {
+        syncPisiSheetSelectionProjection(table);
     }
 
     return state;
@@ -746,18 +756,26 @@ function movePisiSheetCellFocus(
         nextCol = visibleCols[0];
     }
 
-    const nextCell = getPisiSheetCell(
+    const next = getPisiSheetPointByIndex(
         table,
         nextRow,
         nextCol
     );
 
-    if (!nextCell || nextCell.hidden) return false;
+    if (!next) return false;
 
-    selectPisiSheetCell(nextCell, {
-        ensureVisible: true
-    });
-    return true;
+    return Boolean(
+        setPisiSheetRangeSelection(
+            table,
+            next,
+            next,
+            {
+                mode: 'cell',
+                active: next,
+                ensureVisible: true
+            }
+        )
+    );
 }
 
 const moduleApi = {};

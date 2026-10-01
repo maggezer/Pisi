@@ -43,7 +43,22 @@ function clonePisiSheetTableView(
         ),
         sorts: Array.isArray(active.sorts)
             ? structuredClone(active.sorts)
-            : []
+            : [],
+        conditionalColors:
+            Array.isArray(active.conditionalColors)
+                ? structuredClone(
+                    active.conditionalColors
+                )
+                : [],
+        page: Number(active.page) || 1,
+        pageSize: Number(active.pageSize) || 250,
+        virtualScroll: structuredClone(
+            active.virtualScroll || {
+                enabled: true,
+                rowHeight: 28,
+                overscan: 8
+            }
+        )
     };
 
     database.views.push(view);

@@ -1,4 +1,7 @@
 import { registerModule } from "../core/module-registry.mjs";
+import {
+    ensurePisiSheetModelCellRendered
+} from "./pisi-editor-sheet-virtual-scroll.mjs";
 
 function shouldIgnorePisiSheetSelectionKey(event) {
     const target = event.target;
@@ -38,11 +41,17 @@ function handlePisiSheetSelectionKeydown(event) {
     const activePoint = getPisiSheetActivePoint(table);
     if (!activePoint) return;
 
-    const cell = getPisiSheetCell(
-        table,
-        activePoint.row,
-        activePoint.col
-    );
+    const cell =
+        getPisiSheetCell(
+            table,
+            activePoint.row,
+            activePoint.col
+        ) ||
+        ensurePisiSheetModelCellRendered(
+            table,
+            activePoint.row,
+            activePoint.col
+        );
     if (!cell) return;
 
     const arrows = [
@@ -155,6 +164,11 @@ function handlePisiSheetOutsidePointerDown(event) {
         return;
     }
     if (table.contains(target)) return;
+
+    const block = table.closest(
+        '.pisi-sheet-block'
+    );
+    if (block?.contains(target)) return;
 
     const editor = getEditorForPisiElement(table);
     const toolbar = editor

@@ -10,8 +10,12 @@ import {
     normalizePisiSheetStoredValue
 } from "./pisi-editor-sheet-field-types-core.mjs";
 import {
+    normalizePisiSheetPaginationConfig
+} from "./pisi-editor-sheet-pagination-core.mjs";
+import {
     makePisiSheetEmptyFilterTree,
     normalizePisiSheetFilterTree,
+    normalizePisiSheetConditionalColors,
     normalizePisiSheetSorts
 } from "./pisi-editor-sheet-view-query-core.mjs";
 
@@ -73,6 +77,7 @@ function createPisiSheetField(index, options = {}) {
             options.type || 'text'
         ),
         description: String(options.description || '').slice(0, 240),
+        icon: String(options.icon || '').trim().slice(0, 12),
         options: normalizePisiSheetFieldOptions(
             options.options
         ),
@@ -109,6 +114,9 @@ function createPisiSheetItem(options = {}) {
 }
 
 function createPisiSheetTableView(fields, options = {}) {
+    const pagination =
+        normalizePisiSheetPaginationConfig(options);
+
     return {
         id: String(
             options.id ||
@@ -119,7 +127,11 @@ function createPisiSheetTableView(fields, options = {}) {
         fieldOrder: fields.map((field) => field.id),
         hiddenFieldIds: [],
         filters: makePisiSheetEmptyFilterTree(),
-        sorts: []
+        sorts: [],
+        conditionalColors: [],
+        page: pagination.page,
+        pageSize: pagination.pageSize,
+        virtualScroll: pagination.virtualScroll
     };
 }
 
@@ -200,6 +212,7 @@ function normalizePisiSheetDatabase(database) {
             name: field?.name,
             type: field?.type,
             description: field?.description,
+            icon: field?.icon,
             options: field?.options,
             numberFormat: field?.numberFormat,
             wrap: field?.wrap,
@@ -262,6 +275,9 @@ function normalizePisiSheetDatabase(database) {
                 .map((field) => field.id)
                 .filter((id) => !ordered.includes(id));
 
+            const pagination =
+                normalizePisiSheetPaginationConfig(view);
+
             return {
                 id: String(
                     view.id ||
@@ -284,7 +300,16 @@ function normalizePisiSheetDatabase(database) {
                 sorts: normalizePisiSheetSorts(
                     view.sorts,
                     fieldIds
-                )
+                ),
+                conditionalColors:
+                    normalizePisiSheetConditionalColors(
+                        view.conditionalColors,
+                        fields
+                    ),
+                page: pagination.page,
+                pageSize: pagination.pageSize,
+                virtualScroll:
+                    pagination.virtualScroll
             };
         });
 
@@ -581,6 +606,12 @@ function updatePisiSheetField(table, colIndex, patch = {}) {
         ).slice(0, 240);
     }
 
+    if (Object.hasOwn(nextPatch, 'icon')) {
+        field.icon = String(
+            nextPatch.icon || ''
+        ).trim().slice(0, 12);
+    }
+
     if (Object.hasOwn(nextPatch, 'type')) {
         field.type = normalizePisiSheetFieldType(
             nextPatch.type
@@ -718,6 +749,14 @@ function deletePisiSheetFields(table, index, count = 1) {
     database.fields = database.fields.filter(
         (field) => !removed.has(field.id)
     );
+
+    for (const tableView of database.views) {
+        tableView.conditionalColors =
+            normalizePisiSheetConditionalColors(
+                tableView.conditionalColors,
+                database.fields
+            );
+    }
 
     for (const item of database.items) {
         for (const fieldId of removedIds) {

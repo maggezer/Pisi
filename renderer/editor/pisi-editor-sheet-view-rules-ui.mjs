@@ -4,6 +4,12 @@ import {
     getPisiSheetFilterOperatorsForType
 } from "./pisi-editor-sheet-view-query-core.mjs";
 import {
+    getPisiSheetActiveViewConditionalColors
+} from "./pisi-editor-sheet-view-query.mjs";
+import {
+    renderPisiSheetConditionalColorsSection
+} from "./pisi-editor-sheet-conditional-colors-ui.mjs";
+import {
     normalizePisiSheetFieldOptions
 } from "./pisi-editor-sheet-field-types-core.mjs";
 
@@ -645,6 +651,10 @@ function renderPisiSheetViewRulesPanel() {
         getPisiSheetActiveViewFilters(table);
     const sorts =
         getPisiSheetActiveViewSorts(table);
+    const conditionalColors =
+        getPisiSheetActiveViewConditionalColors(
+            table
+        );
 
     element.replaceChildren();
 
@@ -659,7 +669,7 @@ function renderPisiSheetViewRulesPanel() {
         'pisi-sheet-view-rules-heading';
     title.textContent =
         pisiSheetRulesTranslate(
-            'View filtreleri ve sıralama'
+            'View kuralları'
         );
     close.setAttribute(
         'aria-label',
@@ -680,7 +690,10 @@ function renderPisiSheetViewRulesPanel() {
         pisiSheetRulesTranslate('filtre'),
         '·',
         sorts.length,
-        pisiSheetRulesTranslate('sıralama')
+        pisiSheetRulesTranslate('sıralama'),
+        '·',
+        conditionalColors.length,
+        pisiSheetRulesTranslate('renk')
     ].join(' ');
     element.appendChild(summary);
 
@@ -817,6 +830,25 @@ function renderPisiSheetViewRulesPanel() {
     sortSection.appendChild(sortList);
     element.appendChild(sortSection);
 
+    element.appendChild(
+        renderPisiSheetConditionalColorsSection({
+            table,
+            fields,
+            rules: conditionalColors,
+            rerender: renderPisiSheetViewRulesPanel,
+            helpers: {
+                translate: pisiSheetRulesTranslate,
+                makeButton: makePisiSheetRulesButton,
+                makeFieldSelect: makePisiSheetFieldSelect,
+                makeOperatorSelect: makePisiSheetOperatorSelect,
+                makeValueControl:
+                    makePisiSheetFilterValueControl,
+                getDefaultOperator:
+                    getPisiSheetFilterDefaultOperator
+            }
+        })
+    );
+
     positionPisiSheetViewRulesPanel(
         element,
         state.anchor
@@ -837,7 +869,7 @@ function openPisiSheetViewRulesPanel(
     element.setAttribute(
         'aria-label',
         pisiSheetRulesTranslate(
-            'View filtreleri ve sıralama'
+            'View kuralları'
         )
     );
 

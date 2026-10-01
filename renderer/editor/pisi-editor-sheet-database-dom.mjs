@@ -1,4 +1,11 @@
 import { registerModule } from "../core/module-registry.mjs";
+import {
+    getPisiSheetConditionalColorMatchesForItem
+} from "./pisi-editor-sheet-view-query.mjs";
+import {
+    finalizePisiSheetVirtualRender,
+    getPisiSheetVirtualRenderState
+} from "./pisi-editor-sheet-virtual-scroll.mjs";
 
 function capturePisiSheetCellFormat(cell) {
     const format = {};
@@ -23,6 +30,94 @@ function applyPisiSheetCellFormatToDom(cell, format = {}) {
                 ? format[property]
                 : '';
     }
+}
+
+function applyPisiSheetConditionalColorsToRow(
+    table,
+    row,
+    item,
+    fields
+) {
+    if (!row || !item) return;
+
+    const matches =
+        getPisiSheetConditionalColorMatchesForItem(
+            table,
+            item
+        );
+    const rowHeader = row.querySelector(
+        'th[data-row-header]'
+    );
+    let rowTone = '';
+
+    for (const rule of matches) {
+        if (rule.target === 'row') {
+            rowTone = rule.tone;
+        }
+    }
+
+    if (rowTone) {
+        row.dataset.pisiConditionalColor = rowTone;
+        if (rowHeader) {
+            rowHeader.dataset.pisiConditionalColor =
+                rowTone;
+        }
+    } else {
+        delete row.dataset.pisiConditionalColor;
+        if (rowHeader) {
+            delete rowHeader.dataset.pisiConditionalColor;
+        }
+    }
+
+    for (const field of fields) {
+        const cell = row.querySelector(
+            'td[data-pisi-col-id="' +
+            field.id +
+            '"]'
+        );
+        if (!cell) continue;
+
+        let tone = '';
+
+        for (const rule of matches) {
+            if (
+                rule.target === 'row' ||
+                (
+                    rule.target === 'cell' &&
+                    rule.fieldId === field.id
+                )
+            ) {
+                tone = rule.tone;
+            }
+        }
+
+        if (tone) {
+            cell.dataset.pisiConditionalColor = tone;
+        } else {
+            delete cell.dataset.pisiConditionalColor;
+        }
+    }
+}
+
+function makePisiSheetVirtualSpacerRow(
+    height,
+    columnCount
+) {
+    if (!(height > 0)) return null;
+
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+
+    row.className = 'pisi-sheet-virtual-spacer';
+    row.setAttribute('aria-hidden', 'true');
+    cell.colSpan = Math.max(
+        1,
+        Number(columnCount) + 1
+    );
+    cell.style.height =
+        String(Math.round(height)) + 'px';
+    row.appendChild(cell);
+    return row;
 }
 
 function readLegacyPisiSheetColumnArray(table, key) {
@@ -189,7 +284,10 @@ function hydratePisiSheetDatabase(table) {
     return database;
 }
 
-function renderPisiSheetDatabase(table) {
+function renderPisiSheetDatabase(
+    table,
+    options = {}
+) {
     const database =
         getPisiSheetDatabase(table) ||
         hydratePisiSheetDatabase(table);
@@ -197,6 +295,8 @@ function renderPisiSheetDatabase(table) {
 
     const fields = getPisiSheetOrderedFields(database);
     const view = getPisiSheetTableView(database);
+    const virtualState =
+        getPisiSheetVirtualRenderState(table);
     const hiddenFieldIds = new Set(
         view?.hiddenFieldIds || []
     );
@@ -254,6 +354,10 @@ function renderPisiSheetDatabase(table) {
 
         label.className = 'pisi-sheet-col-label';
         label.textContent = field.name;
+        if (field.icon) {
+            label.dataset.pisiFieldIcon =
+                field.icon;
+        }
         label.draggable = true;
         label.dataset.pisiSheetColDrag = '1';
 
@@ -308,16 +412,30 @@ function renderPisiSheetDatabase(table) {
         table.appendChild(tbody);
     }
 
-    const rows = getPisiSheetViewRecords(table).map(
-        ({ item, modelIndex: rowIndex }, viewIndex) => {
+    const rows = [];
+    const topSpacer = makePisiSheetVirtualSpacerRow(
+        virtualState.topHeight,
+        fields.length
+    );
+
+    if (topSpacer) rows.push(topSpacer);
+
+    virtualState.records.forEach(
+        (
+            { item, modelIndex: rowIndex },
+            renderedIndex
+        ) => {
             const row = document.createElement('tr');
             const rowHeader = document.createElement('th');
+            const viewIndex =
+                virtualState.viewStart + renderedIndex;
 
             row.dataset.pisiRowId = item.id;
             rowHeader.dataset.rowHeader = String(rowIndex);
             rowHeader.dataset.pisiRowId = item.id;
             rowHeader.textContent = String(rowIndex + 1);
-            rowHeader.dataset.pisiViewRow = String(viewIndex);
+            rowHeader.dataset.pisiViewRow =
+                String(viewIndex);
             row.appendChild(rowHeader);
 
             fields.forEach((field, colIndex) => {
@@ -387,12 +505,35 @@ function renderPisiSheetDatabase(table) {
                 row.appendChild(cell);
             });
 
-            return row;
+            applyPisiSheetConditionalColorsToRow(
+                table,
+                row,
+                item,
+                fields
+            );
+
+            rows.push(row);
         }
     );
 
+    const bottomSpacer =
+        makePisiSheetVirtualSpacerRow(
+            virtualState.bottomHeight,
+            fields.length
+        );
+
+    if (bottomSpacer) rows.push(bottomSpacer);
+
     tbody.replaceChildren(...rows);
-    persistPisiSheetDatabase(table);
+    finalizePisiSheetVirtualRender(
+        table,
+        virtualState
+    );
+
+    if (options.persist !== false) {
+        persistPisiSheetDatabase(table);
+    }
+
     return database;
 }
 
@@ -443,6 +584,16 @@ function renderPisiSheetCellFromDatabase(
             )
             : displayValue
     );
+
+    const row = cell.closest('tr');
+    if (row) {
+        applyPisiSheetConditionalColorsToRow(
+            table,
+            row,
+            item,
+            getPisiSheetOrderedFields(database)
+        );
+    }
 
     return true;
 }

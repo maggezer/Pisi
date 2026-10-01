@@ -16,6 +16,21 @@ const PISI_SHEET_SORT_DIRECTIONS = Object.freeze([
     'desc'
 ]);
 
+const PISI_SHEET_CONDITIONAL_COLOR_TARGETS = Object.freeze([
+    'row',
+    'cell'
+]);
+
+const PISI_SHEET_CONDITIONAL_COLOR_TONES = Object.freeze([
+    'red',
+    'orange',
+    'yellow',
+    'green',
+    'blue',
+    'purple',
+    'gray'
+]);
+
 const PISI_SHEET_FILTER_OPERATORS = Object.freeze({
     text: Object.freeze([
         'is',
@@ -232,6 +247,65 @@ function normalizePisiSheetSorts(
         });
 
         if (result.length >= 20) break;
+    }
+
+    return result;
+}
+
+function normalizePisiSheetConditionalColors(
+    rules,
+    fields = []
+) {
+    const fieldsById = new Map(
+        (Array.isArray(fields) ? fields : [])
+            .map((field) => [field.id, field])
+    );
+    const validateFields = fieldsById.size > 0;
+    const result = [];
+
+    for (const raw of Array.isArray(rules) ? rules : []) {
+        if (!raw || typeof raw !== 'object') continue;
+
+        const fieldId = String(raw.fieldId || '');
+        const field = fieldsById.get(fieldId);
+        const operator = String(raw.operator || 'is');
+        const target = String(raw.target || 'row');
+        const tone = String(raw.tone || 'red');
+
+        if (
+            !fieldId ||
+            (validateFields && !field) ||
+            (
+                field &&
+                !getPisiSheetFilterOperatorsForType(
+                    field.type
+                ).includes(operator)
+            ) ||
+            !PISI_SHEET_CONDITIONAL_COLOR_TARGETS.includes(
+                target
+            ) ||
+            !PISI_SHEET_CONDITIONAL_COLOR_TONES.includes(
+                tone
+            )
+        ) {
+            continue;
+        }
+
+        result.push({
+            id: String(
+                raw.id ||
+                createPisiSheetViewRuleId(
+                    'conditional-color'
+                )
+            ),
+            fieldId,
+            operator,
+            value: raw.value ?? '',
+            target,
+            tone
+        });
+
+        if (result.length >= 50) break;
     }
 
     return result;
@@ -542,6 +616,27 @@ function evaluatePisiSheetFilterTree(
     ));
 }
 
+function getPisiSheetConditionalColorMatches(
+    database,
+    item,
+    rules,
+    now = new Date()
+) {
+    if (!database || !item) return [];
+
+    return normalizePisiSheetConditionalColors(
+        rules,
+        database.fields
+    ).filter((rule) => (
+        evaluatePisiSheetFilterCondition(
+            database,
+            item,
+            rule,
+            now
+        )
+    ));
+}
+
 function comparePisiSheetSortValues(left, right) {
     const leftEmpty =
         left === null ||
@@ -663,16 +758,20 @@ export {
     PISI_SHEET_FILTER_LOGICS,
     PISI_SHEET_FILTER_OPERATORS,
     PISI_SHEET_SORT_DIRECTIONS,
+    PISI_SHEET_CONDITIONAL_COLOR_TARGETS,
+    PISI_SHEET_CONDITIONAL_COLOR_TONES,
     comparePisiSheetSortValues,
     createPisiSheetViewRuleId,
     evaluatePisiSheetFilterCondition,
     evaluatePisiSheetFilterTree,
+    getPisiSheetConditionalColorMatches,
     getPisiSheetComparableValue,
     getPisiSheetFilterOperatorsForType,
     getPisiSheetViewItemRecords,
     makePisiSheetEmptyFilterTree,
     normalizePisiSheetFilterCondition,
     normalizePisiSheetFilterTree,
+    normalizePisiSheetConditionalColors,
     normalizePisiSheetSorts,
     resolvePisiSheetDateFilterValue
 };

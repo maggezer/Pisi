@@ -170,7 +170,7 @@ function buildPisiSheetHtml(rows, cols) {
 
 // Safety caps keep a single SheetDatabase responsive while allowing
 // substantially larger tables than the original 80 x 26 grid.
-const PISI_SHEET_MAX_ROWS = 300;
+const PISI_SHEET_MAX_ROWS = 10000;
 
 const PISI_SHEET_MAX_COLS = 80;
 
