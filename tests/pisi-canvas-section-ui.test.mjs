@@ -104,6 +104,18 @@ test('Canvas uses Sheet-style section chrome and persistent metadata', () => {
     );
     assert.match(
         section,
+        /pisi-section-copy/
+    );
+    assert.match(
+        section,
+        /pisi-section-new-line/
+    );
+    assert.match(
+        section,
+        /ensurePisiEditableLineAfter/
+    );
+    assert.match(
+        section,
         /deletePisiCanvasSection/
     );
     assert.match(
@@ -148,6 +160,14 @@ test('Canvas uses Sheet-style section chrome and persistent metadata', () => {
     assert.match(
         css,
         /\.pisi-section-delete/
+    );
+    assert.match(
+        css,
+        /\.pisi-section-copy/
+    );
+    assert.match(
+        css,
+        /\.pisi-section-new-line/
     );
     assert.match(
         css,

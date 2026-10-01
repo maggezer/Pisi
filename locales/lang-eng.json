@@ -832,6 +832,10 @@
     "Canvas'ı aç": "Open Canvas",
     "Canvas'ı kapat": "Collapse Canvas",
     "Sheet'i sil": "Delete Sheet",
-    "Canvas'ı sil": "Delete Canvas"
+    "Canvas'ı sil": "Delete Canvas",
+    "Sheet'i kopyala": "Copy Sheet",
+    "Sheet altına satır ekle": "Add line below Sheet",
+    "Canvas'ı kopyala": "Copy Canvas",
+    "Canvas altına satır ekle": "Add line below Canvas"
   }
 }

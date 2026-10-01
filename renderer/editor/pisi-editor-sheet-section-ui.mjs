@@ -1,3 +1,7 @@
+import {
+    ensurePisiEditableLineAfter
+} from "./pisi-editor-composite-blocks.mjs";
+
 const PISI_SHEET_DEFAULT_TITLE = 'Sheet';
 const pisiBoundSheetSectionHeaders = new WeakSet();
 
@@ -125,6 +129,12 @@ function getPisiSheetSectionLabels(collapsed) {
         title:
             window.pisiT?.('Sheet başlığı') ||
             'Sheet başlığı',
+        copy:
+            window.pisiT?.("Sheet'i kopyala") ||
+            "Sheet'i kopyala",
+        newLine:
+            window.pisiT?.('Sheet altına satır ekle') ||
+            'Sheet altına satır ekle',
         delete:
             window.pisiT?.("Sheet'i sil") ||
             "Sheet'i sil"
@@ -327,6 +337,8 @@ function createPisiSheetSectionHeader(table) {
     const header = document.createElement('div');
     const toggle = document.createElement('button');
     const title = document.createElement('input');
+    const copy = document.createElement('button');
+    const newLine = document.createElement('button');
     const remove = document.createElement('button');
 
     header.className =
@@ -349,6 +361,16 @@ function createPisiSheetSectionHeader(table) {
     title.maxLength = 80;
     title.autocomplete = 'off';
     title.spellcheck = false;
+
+    copy.type = 'button';
+    copy.className = 'pisi-section-copy';
+    copy.dataset.pisiCompositeCopy = '1';
+    copy.setAttribute('contenteditable', 'false');
+
+    newLine.type = 'button';
+    newLine.className = 'pisi-section-new-line';
+    newLine.dataset.pisiCompositeNewLine = '1';
+    newLine.setAttribute('contenteditable', 'false');
 
     remove.type = 'button';
     remove.className = 'pisi-section-delete';
@@ -440,7 +462,14 @@ function createPisiSheetSectionHeader(table) {
 
         if (event.key === 'Enter') {
             event.preventDefault();
+            commitPisiSheetSectionTitle(
+                table,
+                title
+            );
+            const block =
+                getPisiSheetSectionBlock(table);
             title.blur();
+            ensurePisiEditableLineAfter(block);
             return;
         }
 
@@ -466,12 +495,30 @@ function createPisiSheetSectionHeader(table) {
         title.blur();
     });
 
-    header.append(toggle, title, remove);
+    header.append(
+        toggle,
+        title,
+        copy,
+        newLine,
+        remove
+    );
     pisiBoundSheetSectionHeaders.add(header);
 
     const labels = getPisiSheetSectionLabels(
         getPisiSheetDatabase(table)?.collapsed === true
     );
+    copy.setAttribute(
+        'aria-label',
+        labels.copy
+    );
+    copy.title = labels.copy;
+
+    newLine.setAttribute(
+        'aria-label',
+        labels.newLine
+    );
+    newLine.title = labels.newLine;
+
     remove.setAttribute(
         'aria-label',
         labels.delete
@@ -509,6 +556,12 @@ function ensurePisiSheetSectionHeader(table) {
         ) &&
         child.querySelector(
             '[data-pisi-sheet-section-title]'
+        ) &&
+        child.querySelector(
+            '[data-pisi-composite-copy]'
+        ) &&
+        child.querySelector(
+            '[data-pisi-composite-new-line]'
         ) &&
         child.querySelector(
             '[data-pisi-sheet-section-delete]'

@@ -832,6 +832,10 @@
     "Canvas'ı aç": "Tuvali aç",
     "Canvas'ı kapat": "Tuvali kapat",
     "Sheet'i sil": "Sheet'i sil",
-    "Canvas'ı sil": "Tuvali sil"
+    "Canvas'ı sil": "Tuvali sil",
+    "Sheet'i kopyala": "Sheet'i kopyala",
+    "Sheet altına satır ekle": "Sheet altına satır ekle",
+    "Canvas'ı kopyala": "Tuvali kopyala",
+    "Canvas altına satır ekle": "Tuval altına satır ekle"
   }
 }

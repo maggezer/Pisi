@@ -87,6 +87,8 @@
     background: rgba(243, 156, 18, 0.08);
 }
 
+.pisi-section-copy,
+.pisi-section-new-line,
 .pisi-section-delete {
     position: relative;
     width: 24px;
@@ -102,6 +104,29 @@
     padding: 0;
     margin-left: 2px;
     cursor: pointer;
+}
+
+.pisi-section-copy::before {
+    content: "⧉";
+    display: block;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.pisi-section-new-line::before {
+    content: "↵";
+    display: block;
+    font-size: 15px;
+    line-height: 1;
+    transform: translateY(-1px);
+}
+
+.pisi-section-copy:hover,
+.pisi-section-copy:focus-visible,
+.pisi-section-new-line:hover,
+.pisi-section-new-line:focus-visible {
+    background: rgba(243, 156, 18, 0.10);
+    color: #f39c12;
 }
 
 .pisi-section-delete::before {

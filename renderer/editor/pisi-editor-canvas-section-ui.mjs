@@ -1,3 +1,7 @@
+import {
+    ensurePisiEditableLineAfter
+} from "./pisi-editor-composite-blocks.mjs";
+
 const PISI_CANVAS_DEFAULT_TITLE = 'Canvas';
 const pisiBoundCanvasSectionHeaders = new WeakSet();
 
@@ -82,6 +86,12 @@ function getPisiCanvasSectionLabels(collapsed) {
         title:
             window.pisiT?.('Canvas başlığı') ||
             'Canvas başlığı',
+        copy:
+            window.pisiT?.("Canvas'ı kopyala") ||
+            "Canvas'ı kopyala",
+        newLine:
+            window.pisiT?.('Canvas altına satır ekle') ||
+            'Canvas altına satır ekle',
         delete:
             window.pisiT?.("Canvas'ı sil") ||
             "Canvas'ı sil"
@@ -244,6 +254,8 @@ function createPisiCanvasSectionHeader(canvas) {
     const header = document.createElement('div');
     const toggle = document.createElement('button');
     const title = document.createElement('input');
+    const copy = document.createElement('button');
+    const newLine = document.createElement('button');
     const remove = document.createElement('button');
 
     header.className =
@@ -266,6 +278,16 @@ function createPisiCanvasSectionHeader(canvas) {
     title.maxLength = 80;
     title.autocomplete = 'off';
     title.spellcheck = false;
+
+    copy.type = 'button';
+    copy.className = 'pisi-section-copy';
+    copy.dataset.pisiCompositeCopy = '1';
+    copy.setAttribute('contenteditable', 'false');
+
+    newLine.type = 'button';
+    newLine.className = 'pisi-section-new-line';
+    newLine.dataset.pisiCompositeNewLine = '1';
+    newLine.setAttribute('contenteditable', 'false');
 
     remove.type = 'button';
     remove.className = 'pisi-section-delete';
@@ -359,7 +381,14 @@ function createPisiCanvasSectionHeader(canvas) {
 
         if (event.key === 'Enter') {
             event.preventDefault();
+            commitPisiCanvasSectionTitle(
+                canvas,
+                title
+            );
+            const block =
+                getPisiCanvasSectionBlock(canvas);
             title.blur();
+            ensurePisiEditableLineAfter(block);
             return;
         }
 
@@ -385,13 +414,31 @@ function createPisiCanvasSectionHeader(canvas) {
         title.blur();
     });
 
-    header.append(toggle, title, remove);
+    header.append(
+        toggle,
+        title,
+        copy,
+        newLine,
+        remove
+    );
     pisiBoundCanvasSectionHeaders.add(header);
 
     const labels = getPisiCanvasSectionLabels(
         getPisiCanvasSectionBlock(canvas)
             ?.dataset.pisiCanvasCollapsed === '1'
     );
+    copy.setAttribute(
+        'aria-label',
+        labels.copy
+    );
+    copy.title = labels.copy;
+
+    newLine.setAttribute(
+        'aria-label',
+        labels.newLine
+    );
+    newLine.title = labels.newLine;
+
     remove.setAttribute(
         'aria-label',
         labels.delete
@@ -436,6 +483,12 @@ function ensurePisiCanvasSectionHeader(canvas) {
         ) &&
         candidate.querySelector(
             '[data-pisi-canvas-section-title]'
+        ) &&
+        candidate.querySelector(
+            '[data-pisi-composite-copy]'
+        ) &&
+        candidate.querySelector(
+            '[data-pisi-composite-new-line]'
         ) &&
         candidate.querySelector(
             '[data-pisi-canvas-section-delete]'

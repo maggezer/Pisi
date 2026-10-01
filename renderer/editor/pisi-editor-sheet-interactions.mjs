@@ -175,6 +175,8 @@ function cleanupPisiSheetTransientChrome(table) {
             selectors: [
                 '[data-pisi-sheet-section-toggle]',
                 '[data-pisi-sheet-section-title]',
+                '[data-pisi-composite-copy]',
+                '[data-pisi-composite-new-line]',
                 '[data-pisi-sheet-section-delete]'
             ]
         },

@@ -2805,6 +2805,89 @@ try {
 
         typedHost.remove();
 
+        const sheetCopyButton =
+            sheetBlock?.querySelector(
+                '[data-pisi-composite-copy]'
+            );
+        const sheetNewLineButton =
+            sheetBlock?.querySelector(
+                '[data-pisi-composite-new-line]'
+            );
+        const sheetCopyButtonPresent =
+            Boolean(sheetCopyButton);
+        const sheetNewLineButtonPresent =
+            Boolean(sheetNewLineButton);
+
+        sheetCopyButton?.click();
+
+        const copiedCompositeText =
+            window.pisiClipboard?.readText?.() || '';
+        const sheetClipboardPayloadPresent =
+            copiedCompositeText.startsWith(
+                'PISI_COMPOSITE_BLOCK_V1:'
+            );
+
+        sheetNewLineButton?.click();
+
+        const sheetLineAfter =
+            sheetBlock?.nextElementSibling;
+        const sheetLineAfterPresent =
+            Boolean(
+                sheetLineAfter &&
+                editor.contains(sheetLineAfter) &&
+                sheetLineAfter.matches(
+                    '.pisi-editor-block'
+                )
+            );
+        const sheetLineAfterHasCaret =
+            document.activeElement === sheetLineAfter;
+
+        sheetLineAfter?.dispatchEvent(
+            new Event('paste', {
+                bubbles: true,
+                cancelable: true
+            })
+        );
+
+        const sheetBlocksAfterPaste =
+            Array.from(
+                editor.querySelectorAll(
+                    ':scope > .pisi-sheet-block'
+                )
+            );
+        const sheetPasteCreatedCopy =
+            sheetBlocksAfterPaste.length === 2;
+        const pastedSheetBlock =
+            sheetBlocksAfterPaste.find(
+                (candidate) => candidate !== sheetBlock
+            ) || null;
+        const pastedSheetTable =
+            pastedSheetBlock?.querySelector(
+                'table[data-pisi-sheet]'
+            );
+        const originalDatabaseId =
+            table.dataset.pisiDatabaseId || '';
+        const pastedDatabaseId =
+            pastedSheetTable?.dataset.pisiDatabaseId || '';
+        const pastedSheetDatabaseIsIndependent =
+            Boolean(
+                originalDatabaseId &&
+                pastedDatabaseId &&
+                originalDatabaseId !== pastedDatabaseId
+            );
+
+        pastedSheetBlock
+            ?.querySelector(
+                '[data-pisi-sheet-section-delete]'
+            )
+            ?.click();
+
+        const pastedSheetRemoved =
+            Boolean(
+                pastedSheetBlock &&
+                !pastedSheetBlock.isConnected
+            );
+
         const sheetDeleteButton =
             sheetBlock?.querySelector(
                 '[data-pisi-sheet-section-delete]'
@@ -2865,6 +2948,14 @@ try {
             sheetTitleValueAfterTyping,
             sheetTitleModelAfterCommit,
             sheetTitleSerializedAfterCommit,
+            sheetCopyButtonPresent,
+            sheetNewLineButtonPresent,
+            sheetClipboardPayloadPresent,
+            sheetLineAfterPresent,
+            sheetLineAfterHasCaret,
+            sheetPasteCreatedCopy,
+            pastedSheetDatabaseIsIndependent,
+            pastedSheetRemoved,
             sheetDeleteButtonPresent,
             sheetRemovedByDelete,
             sheetBlockOuterSpacing,
@@ -3228,6 +3319,14 @@ try {
         sheetResult.sheetTitleValueAfterTyping !== 'SheetABC' ||
         sheetResult.sheetTitleModelAfterCommit !== 'SheetABC' ||
         sheetResult.sheetTitleSerializedAfterCommit !== 'SheetABC' ||
+        !sheetResult.sheetCopyButtonPresent ||
+        !sheetResult.sheetNewLineButtonPresent ||
+        !sheetResult.sheetClipboardPayloadPresent ||
+        !sheetResult.sheetLineAfterPresent ||
+        !sheetResult.sheetLineAfterHasCaret ||
+        !sheetResult.sheetPasteCreatedCopy ||
+        !sheetResult.pastedSheetDatabaseIsIndependent ||
+        !sheetResult.pastedSheetRemoved ||
         !sheetResult.sheetDeleteButtonPresent ||
         !sheetResult.sheetRemovedByDelete ||
         sheetResult.sheetBlockOuterSpacing?.marginTop !== 0 ||
