@@ -228,19 +228,9 @@ function hydratePisiSheets(root = document) {
     root.querySelectorAll('table[data-pisi-sheet]').forEach((table) => {
         table.removeAttribute('data-pisi-sheet-bound');
 
-        const chromeChanged =
-            cleanupPisiSheetTransientChrome(table);
+        cleanupPisiSheetTransientChrome(table);
 
         if (pisiBoundSheets.has(table)) {
-            if (chromeChanged) {
-                renderPisiSheetDatabase(table, {
-                    persist: false,
-                    preserveScroll: true
-                });
-                recalcPisiSheet(table);
-                reconcilePisiSheetSelection(table);
-            }
-
             return;
         }
 

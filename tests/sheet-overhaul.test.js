@@ -691,10 +691,6 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
         interactions,
         /cleanupPisiSheetTransientChrome/
     );
-    assert.match(
-        interactions,
-        /chromeChanged/
-    );
     assert.match(interactions, /renderPisiSheetDatabase\(table\)/);
     assert.match(interactions, /reconcilePisiSheetSelection\(table\)/);
     assert.match(
