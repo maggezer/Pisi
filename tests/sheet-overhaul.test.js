@@ -1076,7 +1076,7 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     );
     assert.match(
         compositeBlocks,
-        /data\.pisiCompositeAlign/
+        /block\.dataset\.pisiCompositeAlign/
     );
     assert.match(
         unifiedToolbar,
