@@ -38,7 +38,7 @@ test('composite alignment can be recovered from real focus and selected Canvas s
     );
     assert.match(
         resolver,
-        /pisi-composite-alignment-active/
+        /PISI_COMPOSITE_ACTIVE_CLASS/
     );
 });
 
