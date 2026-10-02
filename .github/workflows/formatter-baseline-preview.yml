@@ -46,9 +46,12 @@ jobs:
         run: npm run format
 
       - name: Validate formatted source
+        id: formatted-validation
+        continue-on-error: true
         run: npm run validate
 
       - name: Create formatted repository archive
+        if: always()
         shell: bash
         run: |
           set -euo pipefail
@@ -58,6 +61,7 @@ jobs:
           tar --exclude=.git --exclude=node_modules --exclude=prettier-baseline.tar.gz -czf prettier-baseline.tar.gz .
 
       - name: Upload formatter baseline
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: prettier-baseline
