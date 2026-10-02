@@ -46,27 +46,49 @@ jobs:
         run: npm run format
 
       - name: Validate formatted source
-        id: formatted-validation
-        continue-on-error: true
         run: npm run validate
 
-      - name: Create formatted repository archive
-        if: always()
+      - name: Emit formatter baseline transfer batches
         shell: bash
         run: |
-          set -euo pipefail
-          git status --short
-          git diff --stat
-          git diff --binary > prettier-baseline.patch
-          tar --exclude=.git --exclude=node_modules --exclude=prettier-baseline.tar.gz -czf prettier-baseline.tar.gz .
+          node <<'NODE'
+          const fs = require('node:fs');
+          const zlib = require('node:zlib');
+          const { execFileSync } = require('node:child_process');
 
-      - name: Upload formatter baseline
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: prettier-baseline
-          path: |
-            prettier-baseline.patch
-            prettier-baseline.tar.gz
-          if-no-files-found: error
-          retention-days: 3
+          const paths = execFileSync(
+            'git',
+            ['diff', '--name-only', '-z'],
+            { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 }
+          ).split('\0').filter(Boolean);
+
+          const batches = [];
+          let current = [];
+          let currentBytes = 0;
+          const targetBytes = 110 * 1024;
+
+          for (const path of paths) {
+            if (!fs.existsSync(path) || fs.statSync(path).isDirectory()) continue;
+            const content = fs.readFileSync(path, 'utf8');
+            const itemBytes = Buffer.byteLength(content, 'utf8');
+
+            if (current.length && currentBytes + itemBytes > targetBytes) {
+              batches.push(current);
+              current = [];
+              currentBytes = 0;
+            }
+
+            current.push([path, content]);
+            currentBytes += itemBytes;
+          }
+
+          if (current.length) batches.push(current);
+
+          console.log('PISI_PRETTIER_BATCH_COUNT=' + batches.length);
+          batches.forEach((batch, index) => {
+            const json = JSON.stringify(batch);
+            const encoded = zlib.deflateSync(Buffer.from(json, 'utf8'), { level: 9 }).toString('base64');
+            const key = String(index).padStart(3, '0');
+            console.log('PISI_PRETTIER_BATCH_' + key + '=' + encoded);
+          });
+          NODE
