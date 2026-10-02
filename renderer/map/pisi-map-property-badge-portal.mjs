@@ -8,12 +8,7 @@ const PISI_BADGE_PICKER_TOP_LAYER_Z_INDEX = 2147483000;
 let pisiBadgePickerPortalObserver = null;
 
 function ensurePisiBadgePickerPortalStyles() {
-    if (document.querySelector('link[data-pisi-badge-picker-portal-style]')) return;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'renderer/map/pisi-map-property-badge-portal.css';
-    link.dataset.pisiBadgePickerPortalStyle = '1';
-    document.head.appendChild(link);
+    // Consolidated CSS is loaded statically through style.css.
 }
 
 function getPisiBadgePickerAnchor() {

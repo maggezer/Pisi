@@ -193,12 +193,7 @@ function syncPisiMapPropertyBadges() {
 }
 
 function ensurePisiMapPropertyBadgeStyles() {
-    if (document.querySelector('link[data-pisi-map-property-badges-style]')) return;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'renderer/map/pisi-map-property-badges.css';
-    link.dataset.pisiMapPropertyBadgesStyle = '1';
-    document.head.appendChild(link);
+    // Consolidated CSS is loaded statically through style.css.
 }
 
 function makeBadgePreferenceButton(text, className = '') {

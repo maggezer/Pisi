@@ -91,12 +91,7 @@ function option(value, label) {
 }
 
 function ensureStyle() {
-    if (document.querySelector('link[data-pisi-map-scopes-style]')) return;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'renderer/map/pisi-map-scopes.css';
-    link.dataset.pisiMapScopesStyle = '1';
-    document.head.appendChild(link);
+    // Consolidated CSS is loaded statically through style.css.
 }
 
 async function persist(payload) {

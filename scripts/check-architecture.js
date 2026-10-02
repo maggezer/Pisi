@@ -388,6 +388,50 @@ for (const file of [...walk('main/functions', '.js'), 'main/runtime.js', 'main/m
     }
 }
 
+const expectedStyleBundles = [
+    'styles/00-core.css',
+    'styles/50-features.css',
+    'styles/80-themes.css',
+    'styles/90-overrides.css',
+    'styles/100-late-features.css',
+    'styles/110-runtime-modules.css'
+];
+
+const actualStyleBundles = walk('styles', '.css');
+const missingStyleBundles = expectedStyleBundles.filter((file) => !actualStyleBundles.includes(file));
+const unexpectedStyleBundles = actualStyleBundles.filter((file) => !expectedStyleBundles.includes(file));
+if (missingStyleBundles.length) errors.push('Missing consolidated CSS bundle(s): ' + missingStyleBundles.join(', '));
+if (unexpectedStyleBundles.length) errors.push('Unexpected legacy CSS file(s): ' + unexpectedStyleBundles.join(', '));
+
+const rendererCssFiles = walk('renderer', '.css');
+if (rendererCssFiles.length) {
+    errors.push('Renderer-local CSS remains after consolidation: ' + rendererCssFiles.join(', '));
+}
+
+const styleIndex = read('style.css');
+const styleImports = [...styleIndex.matchAll(/@import\s+url\(['"]([^'"]+)['"]\)(\s+layer\(pisi\))?\s*;/g)].map((match) => ({
+    path: match[1],
+    layered: Boolean(match[2])
+}));
+const expectedStyleImports = [
+    { path: './styles/00-core.css', layered: true },
+    { path: './styles/50-features.css', layered: true },
+    { path: './styles/80-themes.css', layered: true },
+    { path: './styles/90-overrides.css', layered: true },
+    { path: './styles/100-late-features.css', layered: true },
+    { path: './styles/110-runtime-modules.css', layered: false }
+];
+if (JSON.stringify(styleImports) !== JSON.stringify(expectedStyleImports)) {
+    errors.push('style.css must load only the six consolidated bundles in canonical cascade order.');
+}
+
+for (const file of walk('renderer', '.mjs')) {
+    const source = read(file);
+    if (/['"`][^'"`]*\.css['"`]/.test(source)) {
+        errors.push('Renderer module still references CSS directly: ' + file);
+    }
+}
+
 const selectorOwners = new Map();
 for (const file of walk('styles', '.css')) {
     const css = read(file);

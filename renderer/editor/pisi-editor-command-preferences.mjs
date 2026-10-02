@@ -49,12 +49,7 @@ function setPisiDoubleDotCommandsPreference(enabled) {
 }
 
 function ensurePisiEditorCommandPreferenceStyle() {
-    if (document.querySelector('link[data-pisi-editor-command-preferences-style]')) return;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'renderer/editor/pisi-editor-command-preferences.css';
-    link.dataset.pisiEditorCommandPreferencesStyle = '1';
-    document.head.appendChild(link);
+    // Consolidated CSS is loaded statically through style.css.
 }
 
 function syncPisiEditorPreferenceButton(button, enabled) {

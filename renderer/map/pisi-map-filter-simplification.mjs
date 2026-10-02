@@ -51,12 +51,7 @@ function operationalState() {
 }
 
 function ensureSimplifiedFilterStyle() {
-    if (document.querySelector('link[data-pisi-filter-simplification-style]')) return;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'renderer/map/pisi-map-filter-simplification.css';
-    link.dataset.pisiFilterSimplificationStyle = '1';
-    document.head.appendChild(link);
+    // Consolidated CSS is loaded statically through style.css.
 }
 
 function setText(element, value) {

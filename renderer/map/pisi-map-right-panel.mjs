@@ -97,12 +97,7 @@ function t(key) {
 }
 
 function ensureMindMapPanelStyle() {
-    if (document.querySelector('link[data-pisi-map-right-panel-style]')) return;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'renderer/map/pisi-map-right-panel.css';
-    link.dataset.pisiMapRightPanelStyle = '1';
-    document.head.appendChild(link);
+    // Consolidated CSS is loaded statically through style.css.
 }
 
 function makeElement(tagName, className = '', text = '') {

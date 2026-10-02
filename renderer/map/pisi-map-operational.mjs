@@ -84,12 +84,7 @@ function t(key) {
 }
 
 function ensurePisiOperationalStyles() {
-    if (document.querySelector('link[data-pisi-map-operational-style]')) return;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'renderer/map/pisi-map-operational.css';
-    link.dataset.pisiMapOperationalStyle = '1';
-    document.head.appendChild(link);
+    // Consolidated CSS is loaded statically through style.css.
 }
 
 function getPisiOperationalMapItem() {
