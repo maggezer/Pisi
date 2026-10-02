@@ -17,7 +17,7 @@ jobs:
             HELPER_BRANCH: chatgpt/tag-v0.11.0-20260820
         steps:
             - name: Checkout helper
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
               with:
                   fetch-depth: 0
 

@@ -18,12 +18,12 @@ jobs:
             HELPER_BRANCH: chatgpt/tag-v0.11.0-20260820
         steps:
             - name: Checkout release commit
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
               with:
                   ref: c49c7a415cfdfb84d8af1b41ae771d527ee34c83
 
             - name: Setup Node
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v5
               with:
                   node-version: 24
                   cache: npm
