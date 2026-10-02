@@ -45,6 +45,6 @@ test('tutorial spotlight and cards support both themes', () => {
     assert.match(styleRoot, /110-tutorial\.css/);
     assert.match(css, /\.pisi-tutorial-spotlight\s*\{/);
     assert.match(css, /box-shadow:\s*0 0 0 9999px/);
-    assert.match(css, /html\[data-pisi-theme="light"\] body \.pisi-tutorial-card/);
+    assert.match(css, /html\[data-pisi-theme=(?:"light"|'light')\] body \.pisi-tutorial-card/);
     assert.match(css, /\.pisi-tutorial-page-start/);
 });
