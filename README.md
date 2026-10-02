@@ -185,5 +185,7 @@ korunabilir. Bozuk JSON otomatik olarak boş içerikle ezilmez.
   uyarı gösterebilir.
 - macOS/Linux paket hedefleri, platform imzalama/notarization ve otomatik
   güncelleme yayın altyapısı henüz yapılandırılmamıştır.
-- Electron ana süreç domainleri CommonJS, renderer domainleri ES module olarak
-  çalışır; tek bir paket formatına tam dönüşüm yapılmamıştır.
+- Electron ana süreç ve renderer domainleri ES module olarak çalışır. Ana süreç
+  `main.mjs` üzerinden başlar ve `main/package.json` altında `type: module` ile
+  korunur. `preload.js`, `sandbox: true` Electron preload ortamının sınırlı
+  `require` API'si nedeniyle bilinçli olarak CommonJS sınırında tutulur.
