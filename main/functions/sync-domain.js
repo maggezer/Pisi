@@ -856,8 +856,6 @@ const moduleApi = {
     atomicWriteJson,
     assertFolder,
     readSnapshots,
-    listPisiSyncEditorAssetReferences,
-    reconcilePisiSyncEditorAssets,
     performPisiSync,
     runPisiSync,
     selectPisiSyncFolder,
