@@ -63,20 +63,20 @@ test('filesystem storage rejects symlink escape instead of following it', (t) =>
 test('canonical metadata stores use the shared storage port instead of direct fs access', () => {
     for (const file of ['main/functions/task-store.js', 'main/functions/relationship-store.js', 'main/functions/property-schema-store.js']) {
         const source = readSource(file);
-        assert.match(source, /require\('\.\/storage'\)/, file);
+        assert.match(source, /import \* as storageLayer from '\.\/storage\.js';/, file);
         assert.match(source, /getPisiProjectStorage/, file);
-        assert.doesNotMatch(source, /require\(['"]fs['"]\)/, file);
+        assert.doesNotMatch(source, /from ['"]node:fs['"]/, file);
     }
 
     const sourceOfTruth = readSource('main/functions/source-of-truth.js');
-    assert.doesNotMatch(sourceOfTruth, /require\(['"]fs['"]\)/);
+    assert.doesNotMatch(sourceOfTruth, /from ['"]node:fs['"]/);
     assert.doesNotMatch(sourceOfTruth, /writeFile|readFile|writeJson|readJson/);
 });
 
 test('storage remains an IO boundary and delegates production writes to the atomic file primitive', () => {
     const storage = readSource('main/functions/storage.js');
     const core = readSource('main/functions/storage-core.js');
-    const main = readSource('main.js');
+    const main = readSource('main.mjs');
 
     assert.match(storage, /globalThis\.writeFileAtomic/);
     assert.match(storage, /assertPisiStoragePathSafe/);

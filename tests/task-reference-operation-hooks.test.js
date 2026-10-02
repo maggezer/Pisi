@@ -27,7 +27,7 @@ test('rename and move operations expose pathChanges consumed by task reference h
 });
 
 test('task reference hooks replace the original IPC handlers only after runtime registered them', () => {
-    const bootstrap = read('main.js');
+    const bootstrap = read('main.mjs');
     const hooks = read('main/functions/task-reference-operation-hooks.js');
 
     assert.ok(

@@ -6,7 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 
-const atomic = require('../main/functions/atomic-mutation-core');
+const { atomicMutationCore: atomic } = require('../main/functions/atomic-mutation-core');
 require('../main/functions/atomic-recovery-hardening');
 
 function makeProject() {

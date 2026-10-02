@@ -9,7 +9,7 @@ const root = path.resolve(__dirname, '..');
 const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), 'utf8');
 
 test('project-level property schema loads after legacy structured storage and before integrity/runtime hooks', () => {
-    const main = read('main.js');
+    const main = read('main.mjs');
     const structured = main.indexOf('structured-nodes');
     const schema = main.indexOf('property-schema-store');
     const mutations = main.indexOf('property-schema-mutations');

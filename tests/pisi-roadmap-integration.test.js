@@ -52,7 +52,7 @@ test('Araştırma yüzeyi ve web yakalama hattı ilk sürümden çıkarılmışt
     const bootstrap = read('renderer/bootstrap.mjs');
     const preload = read('preload.js');
     const runtime = read('main/runtime.js');
-    const mainEntry = read('main.js');
+    const mainEntry = read('main.mjs');
     const search = read('renderer/search/pisi-search-index.mjs');
     const editor = read('renderer/editor/pisi-node-editor.mjs');
     const portability = read('main/functions/portability.js');
@@ -116,7 +116,7 @@ test('Plugins ve Team altyapıları ilk sürümden tamamen çıkarılmıştır',
     const bootstrap = read('renderer/bootstrap.mjs');
     const preload = read('preload.js');
     const runtime = read('main/runtime.js');
-    const mainEntry = read('main.js');
+    const mainEntry = read('main.mjs');
     const toolbar = read('renderer/editor/pisi-editor-unified-toolbar.mjs');
     const platformStyles = read('styles/59-platform-system.css');
     const rendererManifest = JSON.parse(read('renderer/module-manifest.json'));

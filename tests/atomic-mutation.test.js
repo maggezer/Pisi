@@ -205,7 +205,7 @@ test('startup project listing gates visible state behind atomic recovery', () =>
 });
 
 test('atomic journal is loaded before mutating storage services', () => {
-    const main = fs.readFileSync(path.join(__dirname, '..', 'main.js'), 'utf8');
+    const main = fs.readFileSync(path.join(__dirname, '..', 'main.mjs'), 'utf8');
     const atomicIndex = main.indexOf('./main/functions/atomic-mutation');
     assert.ok(atomicIndex > main.indexOf('./main/functions/filesystem-core'));
     assert.ok(atomicIndex < main.indexOf('./main/functions/document-store'));

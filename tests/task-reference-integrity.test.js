@@ -312,7 +312,7 @@ test('task identity survives editor sanitation and recovery repairs canonical so
 });
 
 test('task source path rewrite layer is part of the main module graph', () => {
-    const bootstrap = read('main.js');
+    const bootstrap = read('main.mjs');
     const integrity = read('main/functions/task-reference-integrity.js');
 
     assert.match(bootstrap, /task-store/);

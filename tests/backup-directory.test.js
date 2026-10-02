@@ -12,7 +12,7 @@ const root = path.resolve(__dirname, '..');
 const filesystemCoreSource = fs.readFileSync(path.join(root, 'main/functions/filesystem-core.js'), 'utf8');
 const backupIpcSource = fs.readFileSync(path.join(root, 'main/functions/backup-directory-ipc.js'), 'utf8');
 const electronIpcSource = fs.readFileSync(path.join(root, 'main/functions/electron-ipc.js'), 'utf8');
-const bootstrapSource = fs.readFileSync(path.join(root, 'main.js'), 'utf8');
+const bootstrapSource = fs.readFileSync(path.join(root, 'main.mjs'), 'utf8');
 
 test('project backups resolve under .pisi/backups instead of beside documents', () => {
     const project = path.join(os.tmpdir(), 'pisi-backup-layout-project');
@@ -37,15 +37,15 @@ test('backup storage never creates backups of files already inside backup storag
 });
 
 test('filesystem and backup IPC use only centralized backup storage', () => {
-    assert.match(filesystemCoreSource, /require\('\.\/backup-storage'\)/);
+    assert.match(filesystemCoreSource, /import \* as backupStorage from '\.\/backup-storage\.js';/);
     assert.match(filesystemCoreSource, /backupStorage\.getPisiAtomicBackupPath\(projectFolder, targetPath\)/);
     assert.match(filesystemCoreSource, /backupStorage\.getPisiCorruptBackupPath/);
     assert.doesNotMatch(electronIpcSource, /migratePisiLegacy/);
     assert.doesNotMatch(backupIpcSource, /migratePisiLegacy/);
     assert.match(backupIpcSource, /getPisiAtomicBackupTargetPath/);
 
-    const historyIndex = bootstrapSource.search(/require\(\s*['"]\.\/main\/functions\/version-history-operation-hooks['"]\s*\)/);
-    const backupIndex = bootstrapSource.search(/require\(\s*['"]\.\/main\/functions\/backup-directory-ipc['"]\s*\)/);
+    const historyIndex = bootstrapSource.search(/import\s+['"]\.\/main\/functions\/version-history-operation-hooks\.js['"]\s*;/);
+    const backupIndex = bootstrapSource.search(/import\s+['"]\.\/main\/functions\/backup-directory-ipc\.js['"]\s*;/);
     assert.ok(historyIndex >= 0);
     assert.ok(backupIndex > historyIndex);
 });

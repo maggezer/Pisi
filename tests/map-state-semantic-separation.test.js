@@ -341,7 +341,7 @@ test('node connectionTypes are derived in memory from canonical semantic relatio
 });
 
 test('runtime IPC contract exposes only canonical semantic relationship writes', () => {
-    const bootstrap = read('main.js');
+    const bootstrap = read('main.mjs');
     const hooks = read('main/functions/map-semantic-operation-hooks.js');
 
     assert.ok(

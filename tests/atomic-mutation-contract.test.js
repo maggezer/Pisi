@@ -93,7 +93,7 @@ test('all persistent domain mutations join the atomic project queue', () => {
 });
 
 test('atomic hardening loads after the domain registry', () => {
-    const main = read('main.js');
+    const main = read('main.mjs');
     const domainIndex = main.indexOf('./main/functions/domain-command-query');
     const hardeningIndex = main.indexOf('./main/functions/atomic-domain-hardening');
     assert.ok(domainIndex >= 0);
@@ -110,6 +110,6 @@ test('destructive compatibility IPC handlers are rebound after legacy hooks', ()
     ]) {
         assert.match(domain, new RegExp(`removeHandler\\('${channel}'\\)`));
     }
-    const main = read('main.js');
+    const main = read('main.mjs');
     assert.ok(main.indexOf('./main/functions/domain-command-query') > main.indexOf('./main/functions/task-reference-operation-hooks'));
 });

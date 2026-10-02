@@ -11,6 +11,7 @@ on:
             - main/package.json
             - scripts/check-i18n.js
             - scripts/generate-checkjs-globals.js
+            - tests/**/*.js
 
 permissions:
     contents: write

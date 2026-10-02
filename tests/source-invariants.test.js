@@ -9,7 +9,7 @@ const { collect, readMainSource, readRendererSource, readMany } = require('./sou
 const root = path.resolve(__dirname, '..');
 const read = (filePath) => fs.readFileSync(path.join(root, filePath), 'utf8');
 const rendererSource = readRendererSource();
-const mainSource = [read('main.js'), readMainSource(), read('main/runtime.js')].join('\n');
+const mainSource = [read('main.mjs'), readMainSource(), read('main/runtime.js')].join('\n');
 const treeSource = readMany(collect('renderer/tree', '.mjs'));
 const mapSource = readMany(collect('renderer/map', '.mjs'));
 const editorSource = readMany(collect('renderer/editor', '.mjs'));

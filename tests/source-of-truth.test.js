@@ -10,7 +10,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 test('task store tek semantik otoritedir; projection yazımları canonical store üzerinden korunur', () => {
     const mainGuard = read('main/functions/source-of-truth.js');
-    const mainBootstrap = read('main.js');
+    const mainBootstrap = read('main.mjs');
 
     assert.match(mainGuard, /operation === 'sync-index'/);
     assert.match(mainGuard, /allowProjectionWrite === true/);
@@ -70,7 +70,7 @@ test('semantic relationship otoritesi proje storeudur; map yalnız presentation 
     const relationshipStore = read('main/functions/relationship-store.js');
     const mapCore = read('main/functions/map-semantic-core.js');
     const hooks = read('main/functions/map-semantic-operation-hooks.js');
-    const bootstrap = read('main.js');
+    const bootstrap = read('main.mjs');
 
     assert.match(relationshipStore, /'\.pisi', 'relationships\.json'/);
     assert.match(relationshipStore, /sourceId:/);

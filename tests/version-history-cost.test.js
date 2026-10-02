@@ -131,7 +131,7 @@ test('byte budget prunes older snapshots instead of letting a large node multipl
 test('version-history IPC hooks replace unbounded save/list routes and skip project-wide backup scans', () => {
     const root = path.resolve(__dirname, '..');
     const hooks = fs.readFileSync(path.join(root, 'main/functions/version-history-operation-hooks.js'), 'utf8');
-    const main = fs.readFileSync(path.join(root, 'main.js'), 'utf8');
+    const main = fs.readFileSync(path.join(root, 'main.mjs'), 'utf8');
 
     for (const channel of [
         'project:save-node-content',
