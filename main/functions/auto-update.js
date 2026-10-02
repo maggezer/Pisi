@@ -8,6 +8,8 @@ const fs = require('fs');
 const path = require('path');
 const { Readable } = require('stream');
 const { pipeline } = require('stream/promises');
+const { URL } = require('url');
+const { clearInterval, clearTimeout, setInterval, setTimeout } = require('timers');
 
 const PISI_UPDATE_SCHEMA_VERSION = 1;
 const PISI_UPDATE_MANIFEST = 'latest.json';
