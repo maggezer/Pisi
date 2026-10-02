@@ -182,12 +182,17 @@ paketleme ve dokümantasyon başlıklarında yeniden denetlendi.
   Mevcut Paint ve Excel özelliği korunarak ertelendi.
 - **92:** Listelenen kullanılmayan yardımcı fonksiyonlar, özellik kaybı riski
   oluşturmamak için bu toplu düzeltmede silinmedi.
-- **98, 100, 101:** Tam CSS konsolidasyonu, klasik global scriptlerden ES
-  module’a geçiş ve ana domain dosyalarını daha küçük modüllere bölme ayrı,
-  geniş kapsamlı refactor olarak bırakıldı.
+- **98, 101:** Tam CSS konsolidasyonu ve ana domain dosyalarını daha küçük
+  modüllere bölme ayrı, geniş kapsamlı refactor olarak bırakıldı.
 
 ### Sonradan tamamlanan kalite / release maddeleri
 
+- **100 / P3.6:** Renderer ve Electron ana süreç domainleri ES module’a geçirildi.
+  Uygulama `main.mjs` ile başlıyor; `main/package.json` `type: module` sınırını
+  tanımlıyor ve mimari kontrolü ana süreçte `require` / `module.exports`
+  kalmasını engelliyor. `sandbox: true` kullanılan `preload.js` ise Electron’ın
+  sandbox preload modeli gereği bilinçli CommonJS uyumluluk sınırı olarak
+  bırakıldı.
 - **102:** Güncel CI’da `npm audit` **0 vulnerability** raporluyor; önceki
   paketleme zinciri güvenlik bulgusu notu artık güncel değildir.
 - **104:** `checkJs: true` tabanlı TypeScript denetimi ve repository-wide
