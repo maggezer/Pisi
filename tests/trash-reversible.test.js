@@ -9,7 +9,7 @@ const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 const store = read('main/functions/trash-store.js');
-const domain = read('main/functions/trash-domain.mjs');
+const domain = read('main/functions/trash-domain.js');
 const main = read('main.mjs');
 const preload = read('preload.js');
 const rendererDomain = read('renderer/domain/pisi-domain-client.mjs');
