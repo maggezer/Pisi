@@ -185,6 +185,7 @@ paketleme ve dokümantasyon başlıklarında yeniden denetlendi.
 - **98, 100, 101:** Tam CSS konsolidasyonu, klasik global scriptlerden ES
   module’a geçiş ve ana domain dosyalarını daha küçük modüllere bölme ayrı,
   geniş kapsamlı refactor olarak bırakıldı.
+
 ### Sonradan tamamlanan kalite / release maddeleri
 
 - **102:** Güncel CI’da `npm audit` **0 vulnerability** raporluyor; önceki
