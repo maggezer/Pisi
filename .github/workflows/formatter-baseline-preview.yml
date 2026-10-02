@@ -10,7 +10,14 @@ on:
       - '.prettierrc.json'
       - '.prettierignore'
       - '.github/workflows/formatter-baseline-preview.yml'
-      - 'scripts/check-i18n.js'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'main/**'
+      - 'renderer/**'
+      - 'styles/**'
+      - 'style.css'
+      - 'preload.js'
+      - 'main.js'
 
 permissions:
   contents: read
