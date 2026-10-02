@@ -38,9 +38,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          normalized_patch="$RUNNER_TEMP/pisi-hardening.patch"
           for patch_file in .github/prettier-hardening/*.patch; do
-            git apply --unidiff-zero --check "$patch_file"
-            git apply --unidiff-zero "$patch_file"
+            cat "$patch_file" > "$normalized_patch"
+            printf '\n' >> "$normalized_patch"
+            git apply --unidiff-zero --check "$normalized_patch"
+            git apply --unidiff-zero "$normalized_patch"
           done
 
       - name: Normalize hardened tests
