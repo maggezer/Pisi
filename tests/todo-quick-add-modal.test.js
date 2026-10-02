@@ -82,7 +82,7 @@ test('görev ekleme modalı koyu ve açık temalarda ayrı, okunabilir paletler 
 
     assert.match(css, /\.pisi-quick-add-overlay \{[\s\S]*--pisi-quick-modal-bg: #20242b/);
     assert.match(css, /\.pisi-quick-add-overlay\[hidden\]/);
-    assert.match(css, /html\[data-pisi-theme="light"\] \.pisi-quick-add-overlay \{[\s\S]*--pisi-quick-modal-bg: #ffffff/);
+    assert.match(css, /html\[data-pisi-theme=(?:"light"|'light')\] \.pisi-quick-add-overlay \{[\s\S]*--pisi-quick-modal-bg: #ffffff/);
     assert.match(css, /\.pisi-quick-add-dialog \.pisi-quick-field input:focus/);
     assert.match(css, /\.pisi-quick-add-actions/);
 });
