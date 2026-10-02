@@ -1,0 +1,114 @@
+name: Cross-platform Packaging Smoke
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'build/**'
+      - '.github/workflows/release.yml'
+      - '.github/workflows/packaging-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: packaging-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macos-package:
+    runs-on: macos-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build unsigned macOS packages
+        run: |
+          npm run dist:mac -- \
+            -c.mac.identity=null \
+            -c.mac.hardenedRuntime=false \
+            -c.mac.notarize=false \
+            -c.extraMetadata.pisiDistribution=macos
+
+      - name: Verify macOS package set
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          dmg_count=$(find dist -maxdepth 1 -type f -name '*.dmg' | wc -l | tr -d ' ')
+          zip_count=$(find dist -maxdepth 1 -type f -name '*.zip' | wc -l | tr -d ' ')
+
+          [[ "$dmg_count" -ge 3 ]] || {
+            echo "Expected x64, ARM64 and universal DMG packages; found $dmg_count." >&2
+            find dist -maxdepth 1 -type f -print
+            exit 1
+          }
+
+          [[ "$zip_count" -ge 3 ]] || {
+            echo "Expected x64, ARM64 and universal ZIP packages; found $zip_count." >&2
+            find dist -maxdepth 1 -type f -print
+            exit 1
+          }
+
+  linux-package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Linux packages
+        run: npm run dist:linux -- -c.extraMetadata.pisiDistribution=linux
+
+      - name: Verify Linux package set
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mapfile -t debs < <(find dist -maxdepth 1 -type f -name '*.deb' -print)
+          mapfile -t appimages < <(find dist -maxdepth 1 -type f -name '*.AppImage' -print)
+
+          [[ "${#debs[@]}" -ge 2 ]] || {
+            echo "Expected x64 and ARM64 deb packages." >&2
+            find dist -maxdepth 1 -type f -print
+            exit 1
+          }
+
+          [[ "${#appimages[@]}" -ge 2 ]] || {
+            echo "Expected x64 and ARM64 AppImage packages." >&2
+            find dist -maxdepth 1 -type f -print
+            exit 1
+          }
+
+          for package in "${debs[@]}"; do
+            dpkg-deb --info "$package" >/dev/null
+          done
+
+          for package in "${appimages[@]}"; do
+            file "$package" | grep -Eq 'ELF|AppImage|executable'
+          done
