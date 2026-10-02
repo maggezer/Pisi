@@ -150,7 +150,7 @@ jobs:
           retention-days: 30
 
       - name: Require Microsoft Store publishing configuration
-        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        if: (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && vars.PISI_STORE_AUTO_PUBLISH == 'true')
         shell: pwsh
         env:
           PISI_STORE_PRODUCT_ID: ${{ vars.PISI_STORE_PRODUCT_ID }}
@@ -173,11 +173,11 @@ jobs:
           }
 
       - name: Setup Microsoft Store Developer CLI
-        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        if: (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && vars.PISI_STORE_AUTO_PUBLISH == 'true')
         uses: microsoft/microsoft-store-apppublisher@v1.1
 
       - name: Configure Microsoft Store credentials
-        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        if: (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && vars.PISI_STORE_AUTO_PUBLISH == 'true')
         shell: pwsh
         env:
           PISI_STORE_TENANT_ID: ${{ secrets.PISI_STORE_TENANT_ID }}
@@ -192,7 +192,7 @@ jobs:
             --clientSecret "$env:PISI_STORE_CLIENT_SECRET"
 
       - name: Publish package to Microsoft Store
-        if: github.event_name == 'workflow_dispatch' && inputs.publish
+        if: (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && vars.PISI_STORE_AUTO_PUBLISH == 'true')
         shell: pwsh
         env:
           PISI_STORE_PRODUCT_ID: ${{ vars.PISI_STORE_PRODUCT_ID }}

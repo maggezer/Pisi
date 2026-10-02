@@ -23,6 +23,7 @@ require("./main/functions/property-schema-mutations");
 require("./main/functions/sync-project-adapter");
 require("./main/functions/project-integrity");
 require("./main/functions/portability");
+require("./main/functions/auto-update");
 require("./main/functions/electron-ipc");
 require("./main/functions/sync-domain");
 require("./main/runtime");

@@ -264,6 +264,13 @@
     ]
   },
   {
+    "module": "main.autoUpdate",
+    "path": "main/functions/auto-update.js",
+    "bindings": [
+      "initializePisiAutoUpdate"
+    ]
+  },
+  {
     "module": "main.electronIpc",
     "path": "main/functions/electron-ipc.js",
     "bindings": [

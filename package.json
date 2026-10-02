@@ -21,8 +21,8 @@
     "check:i18n": "node scripts/check-i18n.js",
     "test:e2e": "node scripts/electron-smoke-e2e.mjs",
     "check:types": "node scripts/generate-checkjs-globals.js && tsc -p tsconfig.checkjs.json",
-    "dist:store:x64": "electron-builder --win dir --x64 --publish never -c.directories.output=dist-store/x64",
-    "dist:store:arm64": "electron-builder --win dir --arm64 --publish never -c.directories.output=dist-store/arm64"
+    "dist:store:x64": "electron-builder --win dir --x64 --publish never -c.directories.output=dist-store/x64 -c.extraMetadata.pisiDistribution=store",
+    "dist:store:arm64": "electron-builder --win dir --arm64 --publish never -c.directories.output=dist-store/arm64 -c.extraMetadata.pisiDistribution=store"
   },
   "build": {
     "appId": "com.mumin.pisi",

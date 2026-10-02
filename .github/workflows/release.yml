@@ -62,6 +62,8 @@ jobs:
       WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
       WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
       PISI_WINDOWS_CERT_SHA1: ${{ secrets.PISI_WINDOWS_CERT_SHA1 }}
+      PISI_UPDATE_FEED_URL: ${{ vars.PISI_UPDATE_FEED_URL }}
+      PISI_UPDATE_CHANNEL: ${{ vars.PISI_UPDATE_CHANNEL || 'beta' }}
 
     steps:
       - name: Checkout
@@ -128,8 +130,14 @@ jobs:
             '--x64',
             '--arm64',
             '--publish',
-            'never'
+            'never',
+            '-c.extraMetadata.pisiDistribution=nsis',
+            "-c.extraMetadata.pisiUpdateChannel=$env:PISI_UPDATE_CHANNEL"
           )
+
+          if (-not [string]::IsNullOrWhiteSpace($env:PISI_UPDATE_FEED_URL)) {
+            $arguments += "-c.extraMetadata.pisiUpdateFeedUrl=$env:PISI_UPDATE_FEED_URL"
+          }
 
           if ($env:PISI_SIGNING_ENABLED -eq 'true') {
             $arguments += '-c.forceCodeSigning=true'
@@ -175,7 +183,9 @@ jobs:
             '--x64',
             '--arm64',
             '--publish',
-            'never'
+            'never',
+            '-c.extraMetadata.pisiDistribution=portable',
+            "-c.extraMetadata.pisiUpdateChannel=$env:PISI_UPDATE_CHANNEL"
           )
 
           if ($env:PISI_SIGNING_ENABLED -eq 'true') {
@@ -227,6 +237,35 @@ jobs:
 
           $hashLines | Set-Content -Encoding utf8NoBOM release/SHA256SUMS.txt
 
+      - name: Create direct auto-update feed manifest
+        shell: pwsh
+        run: |
+          $version = node -p "require('./package.json').version"
+
+          $x64Name = "Pisi-$version-Setup-x64.exe"
+          $arm64Name = "Pisi-$version-Setup-arm64.exe"
+
+          $x64Hash = (Get-FileHash -Algorithm SHA256 (Join-Path release $x64Name)).Hash.ToLowerInvariant()
+          $arm64Hash = (Get-FileHash -Algorithm SHA256 (Join-Path release $arm64Name)).Hash.ToLowerInvariant()
+
+          $manifest = [ordered]@{
+            schemaVersion = 1
+            channel = $env:PISI_UPDATE_CHANNEL
+            version = $version
+            files = [ordered]@{
+              x64 = [ordered]@{
+                url = $x64Name
+                sha256 = $x64Hash
+              }
+              arm64 = [ordered]@{
+                url = $arm64Name
+                sha256 = $arm64Hash
+              }
+            }
+          }
+
+          $manifest | ConvertTo-Json -Depth 6 | Set-Content -Encoding utf8NoBOM release/latest.json
+
       - name: Verify Windows Authenticode signatures
         if: env.PISI_SIGNING_ENABLED == 'true'
         shell: pwsh
@@ -260,6 +299,7 @@ jobs:
             "release/Pisi-$version-Portable-x64.exe" `
             "release/Pisi-$version-Portable-arm64.exe" `
             "release/SHA256SUMS.txt" `
+            "release/latest.json" `
             --title "Pisi $version Beta" `
             --notes-file "docs/releases/v$version.md" `
             --verify-tag `

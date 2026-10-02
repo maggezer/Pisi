@@ -866,6 +866,7 @@ if (!hasSingleInstanceLock) {
 
     app.whenReady().then(() => {
         createWindow();
+        initializePisiAutoUpdate();
 
         app.on('activate', () => {
             if (BrowserWindow.getAllWindows().length === 0) {

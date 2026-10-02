@@ -116,3 +116,23 @@ GitHub beta releases still provide:
 Authenticode signing for those direct-download executables is optional. If a
 public signing identity is configured later, the release workflow automatically
 uses and verifies it.
+
+
+## Store-managed automatic updates
+
+Pisi does not run its direct updater inside an MSIX/Store installation.
+Electron exposes MSIX identity through `process.windowsStore`, and Pisi uses
+that signal to select the Store-managed update mode.
+
+Microsoft Store MSIX installations receive package updates through the Store.
+To make release submission automatic after Pisi's Partner Center credentials
+are configured, set this GitHub repository variable:
+
+- `PISI_STORE_AUTO_PUBLISH=true`
+
+With that switch enabled, a `v*.*.*` tag builds the Store MSIX bundle and
+submits the new package to Partner Center. Store certification/publication still
+remains Microsoft's release gate.
+
+Leave the variable unset or `false` while Store onboarding is incomplete.
+Manual workflow dispatch with `publish=true` remains available.

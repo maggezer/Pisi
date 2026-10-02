@@ -43,6 +43,18 @@ contextBridge.exposeInMainWorld('electronWindow', {
     }
 });
 
+contextBridge.exposeInMainWorld('pisiUpdates', {
+    getStatus: () => ipcRenderer.invoke('app:get-update-status'),
+    check: () => ipcRenderer.invoke('app:check-for-updates'),
+    install: () => ipcRenderer.invoke('app:install-update'),
+    onStatus: (callback) => {
+        if (typeof callback !== 'function') return () => {};
+        const listener = (_event, payload) => callback(payload);
+        ipcRenderer.on('app:update-status', listener);
+        return () => ipcRenderer.removeListener('app:update-status', listener);
+    }
+});
+
 contextBridge.exposeInMainWorld('pisiProject', {
     getLastFolder: () => ipcRenderer.invoke('project:get-last-folder'),
     chooseFolder: () => ipcRenderer.invoke('project:choose-folder'),
