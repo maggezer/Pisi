@@ -58,6 +58,10 @@ jobs:
       contents: write
     runs-on: windows-latest
     timeout-minutes: 45
+    env:
+      WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+      WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+      PISI_WINDOWS_CERT_SHA1: ${{ secrets.PISI_WINDOWS_CERT_SHA1 }}
 
     steps:
       - name: Checkout
@@ -72,8 +76,69 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Require Windows code-signing identity
+        shell: pwsh
+        run: |
+          $hasCscLink = -not [string]::IsNullOrWhiteSpace($env:WIN_CSC_LINK)
+          $hasStoreCertificate = -not [string]::IsNullOrWhiteSpace($env:PISI_WINDOWS_CERT_SHA1)
+
+          if ($hasCscLink -and $hasStoreCertificate) {
+            throw "Configure exactly one Windows signing mode: WIN_CSC_LINK or PISI_WINDOWS_CERT_SHA1."
+          }
+
+          if (-not $hasCscLink -and -not $hasStoreCertificate) {
+            throw "Windows signing credentials are missing. Production releases must never be unsigned."
+          }
+
+          if ($hasCscLink -and [string]::IsNullOrWhiteSpace($env:WIN_CSC_KEY_PASSWORD)) {
+            throw "WIN_CSC_KEY_PASSWORD is required when WIN_CSC_LINK is used."
+          }
+
+          if ($hasStoreCertificate) {
+            $thumbprint = ($env:PISI_WINDOWS_CERT_SHA1 -replace '\s', '').ToUpperInvariant()
+
+            if ($thumbprint -notmatch '^[A-F0-9]{40}$') {
+              throw "PISI_WINDOWS_CERT_SHA1 must be a 40-character SHA-1 certificate thumbprint."
+            }
+
+            $certificate = Get-ChildItem Cert:\CurrentUser\My -CodeSigningCert |
+              Where-Object { $_.Thumbprint -eq $thumbprint } |
+              Select-Object -First 1
+
+            if (-not $certificate) {
+              throw "The configured signing certificate is not available in CurrentUser\\My. Load the HSM/cloud signing provider before the build."
+            }
+
+            Write-Host "Signing mode: Windows certificate store / HSM provider"
+            Write-Host "Signing subject: $($certificate.Subject)"
+          }
+          else {
+            Write-Host "Signing mode: electron-builder WIN_CSC_LINK"
+          }
+
       - name: Build Windows installers
-        run: npm run dist:installer -- --x64 --arm64 --publish never
+        shell: pwsh
+        run: |
+          $arguments = @(
+            'run',
+            'dist:installer',
+            '--',
+            '--x64',
+            '--arm64',
+            '--publish',
+            'never',
+            '-c.forceCodeSigning=true'
+          )
+
+          if (-not [string]::IsNullOrWhiteSpace($env:PISI_WINDOWS_CERT_SHA1)) {
+            $thumbprint = ($env:PISI_WINDOWS_CERT_SHA1 -replace '\s', '').ToUpperInvariant()
+            $arguments += "-c.win.signtoolOptions.certificateSha1=$thumbprint"
+          }
+
+          & npm @arguments
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
 
       - name: Collect installer assets
         shell: pwsh
@@ -96,7 +161,28 @@ jobs:
           Remove-Item 'dist/*.exe' -Force -ErrorAction SilentlyContinue
 
       - name: Build Windows portable packages
-        run: npm run dist:portable -- --x64 --arm64 --publish never
+        shell: pwsh
+        run: |
+          $arguments = @(
+            'run',
+            'dist:portable',
+            '--',
+            '--x64',
+            '--arm64',
+            '--publish',
+            'never',
+            '-c.forceCodeSigning=true'
+          )
+
+          if (-not [string]::IsNullOrWhiteSpace($env:PISI_WINDOWS_CERT_SHA1)) {
+            $thumbprint = ($env:PISI_WINDOWS_CERT_SHA1 -replace '\s', '').ToUpperInvariant()
+            $arguments += "-c.win.signtoolOptions.certificateSha1=$thumbprint"
+          }
+
+          & npm @arguments
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
 
       - name: Collect portable assets and checksums
         shell: pwsh
@@ -132,6 +218,17 @@ jobs:
           }
 
           $hashLines | Set-Content -Encoding utf8NoBOM release/SHA256SUMS.txt
+
+      - name: Verify Windows Authenticode signatures
+        shell: pwsh
+        run: |
+          $version = node -p "require('./package.json').version"
+          ./scripts/verify-windows-signatures.ps1 -Path @(
+            "release/Pisi-$version-Setup-x64.exe",
+            "release/Pisi-$version-Setup-arm64.exe",
+            "release/Pisi-$version-Portable-x64.exe",
+            "release/Pisi-$version-Portable-arm64.exe"
+          )
 
       - name: Publish GitHub beta release
         shell: pwsh
