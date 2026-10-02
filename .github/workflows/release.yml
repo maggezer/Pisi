@@ -49,8 +49,11 @@ jobs:
       - name: Require clean dependency audit
         run: npm audit --audit-level=moderate
 
+      - name: Check repository formatting
+        run: npm run format:check
+
       - name: Validate source
-        run: npm run validate
+        run: npm run validate:source
 
   windows-release:
     needs: validate

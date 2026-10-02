@@ -10,7 +10,7 @@
     "check:syntax": "node scripts/check-syntax.js",
     "lint": "eslint .",
     "test": "node --test",
-    "validate": "npm run check:syntax && npm run check:architecture && npm run check:branding && npm run check:i18n && npm run check:types && npm run lint && npm test",
+    "validate": "npm run format:check && npm run validate:source",
     "audit": "npm audit --audit-level=high",
     "dist": "electron-builder",
     "dist:win": "electron-builder --win",
@@ -24,7 +24,10 @@
     "dist:store:x64": "electron-builder --win dir --x64 --publish never -c.directories.output=dist-store/x64 -c.extraMetadata.pisiDistribution=store",
     "dist:store:arm64": "electron-builder --win dir --arm64 --publish never -c.directories.output=dist-store/arm64 -c.extraMetadata.pisiDistribution=store",
     "dist:mac": "electron-builder --mac dmg zip --x64 --arm64 --universal --publish never",
-    "dist:linux": "electron-builder --linux AppImage deb --x64 --arm64 --publish never"
+    "dist:linux": "electron-builder --linux AppImage deb --x64 --arm64 --publish never",
+    "format": "prettier . --write --ignore-unknown",
+    "format:check": "prettier . --check --ignore-unknown",
+    "validate:source": "npm run check:syntax && npm run check:architecture && npm run check:branding && npm run check:i18n && npm run check:types && npm run lint && npm test"
   },
   "build": {
     "appId": "com.mumin.pisi",
@@ -149,6 +152,7 @@
     "electron": "^43.4.2",
     "electron-builder": "^26.15.7",
     "eslint": "^10.8.0",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "prettier": "3.9.9"
   }
 }

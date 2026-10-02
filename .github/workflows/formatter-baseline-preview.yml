@@ -1,0 +1,60 @@
+name: Formatter Baseline Preview
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - '.prettierrc.json'
+      - '.prettierignore'
+      - '.github/workflows/formatter-baseline-preview.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  format-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies without Electron binary
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+        run: npm ci --ignore-scripts
+
+      - name: Apply repository-wide Prettier baseline
+        run: npm run format
+
+      - name: Validate formatted source
+        run: npm run validate
+
+      - name: Create formatted repository archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          git status --short
+          git diff --stat
+          git diff --binary > prettier-baseline.patch
+          tar --exclude=.git --exclude=node_modules --exclude=prettier-baseline.tar.gz -czf prettier-baseline.tar.gz .
+
+      - name: Upload formatter baseline
+        uses: actions/upload-artifact@v4
+        with:
+          name: prettier-baseline
+          path: |
+            prettier-baseline.patch
+            prettier-baseline.tar.gz
+          if-no-files-found: error
+          retention-days: 3
