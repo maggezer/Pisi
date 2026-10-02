@@ -114,10 +114,4 @@ function rebuildDerivedState(projectFolder, auditAfter) {
     };
 }
 
-export {
-normalizeDocumentMetadata,
-    ensureDocumentSidecar,
-    normalizeMapOperationalState,
-    applySafeRepair,
-    rebuildDerivedState
-};
+export { normalizeDocumentMetadata, ensureDocumentSidecar, normalizeMapOperationalState, applySafeRepair, rebuildDerivedState };

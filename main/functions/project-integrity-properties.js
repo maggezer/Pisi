@@ -343,9 +343,4 @@ function auditPisiPropertySchema(projectFolder, context, inventory) {
     };
 }
 
-export {
-auditPisiPropertySchema,
-    auditPropertyDefinitionSet,
-    auditNodePropertyAgainstSchema,
-    auditTemplateProperties
-};
+export { auditPisiPropertySchema, auditPropertyDefinitionSet, auditNodePropertyAgainstSchema, auditTemplateProperties };

@@ -109,7 +109,7 @@ function summarizePisiTrashManifest(manifest = {}) {
 }
 
 export {
-PISI_TRASH_VERSION,
+    PISI_TRASH_VERSION,
     PISI_TRASH_DIR,
     PISI_TRASH_ITEMS_DIR,
     normalizePisiTrashId,

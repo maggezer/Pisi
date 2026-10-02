@@ -359,7 +359,7 @@ function createPisiProjectStorage(projectRoot, driver) {
 }
 
 export {
-PISI_STORAGE_CONTRACT_VERSION,
+    PISI_STORAGE_CONTRACT_VERSION,
     PISI_STORAGE_DRIVER_METHODS,
     normalizePisiStorageKey,
     isSameOrInsidePisiStoragePath,

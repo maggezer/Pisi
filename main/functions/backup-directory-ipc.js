@@ -114,8 +114,4 @@ function bindCentralizedPisiBackupIpc() {
 
 bindCentralizedPisiBackupIpc();
 
-export {
-listCentralizedPisiAtomicBackups,
-    restoreCentralizedPisiAtomicBackup,
-    bindCentralizedPisiBackupIpc
-};
+export { listCentralizedPisiAtomicBackups, restoreCentralizedPisiAtomicBackup, bindCentralizedPisiBackupIpc };

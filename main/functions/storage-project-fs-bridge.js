@@ -246,7 +246,7 @@ function installPisiStorageProjectFsBridge() {
 const installedBridge = installPisiStorageProjectFsBridge();
 
 export {
-PISI_STORAGE_FS_BRIDGE_VERSION,
+    PISI_STORAGE_FS_BRIDGE_VERSION,
     getPisiStorageBridgeProjectRoot,
     runPisiStorageBridgeForProject,
     isPisiStorageBridgeInfrastructurePath,

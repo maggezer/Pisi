@@ -582,7 +582,7 @@ function auditDocumentsAndMaps(projectFolder, context, relationships) {
 }
 
 export {
-collectDocumentInventory,
+    collectDocumentInventory,
     auditNodeProperties,
     auditAttachments,
     resolveMapReference,

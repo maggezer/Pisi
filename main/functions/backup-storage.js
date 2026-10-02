@@ -89,7 +89,7 @@ function ensurePisiBackupParent(backupPath) {
 }
 
 export {
-PISI_BACKUP_SUFFIX,
+    PISI_BACKUP_SUFFIX,
     PISI_BACKUP_ROOT_RELATIVE,
     PISI_ATOMIC_BACKUP_RELATIVE,
     PISI_CORRUPT_BACKUP_RELATIVE,

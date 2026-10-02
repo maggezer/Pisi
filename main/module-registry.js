@@ -41,7 +41,4 @@ function registerMainModule(moduleName, api) {
     return moduleApi;
 }
 
-export {
-modules,
-    registerMainModule
-};
+export { modules, registerMainModule };

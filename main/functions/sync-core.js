@@ -335,7 +335,7 @@ function summarizeSyncPlan(plan = {}) {
 }
 
 export {
-PISI_SYNC_PROTOCOL,
+    PISI_SYNC_PROTOCOL,
     PISI_SYNC_VERSION,
     PISI_SYNC_DEVICE_SNAPSHOT,
     stableStringify,

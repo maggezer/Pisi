@@ -344,7 +344,4 @@ function auditRelationships(projectFolder, context, inventory) {
     return { relationships, byId };
 }
 
-export {
-auditTasks,
-    auditRelationships
-};
+export { auditTasks, auditRelationships };

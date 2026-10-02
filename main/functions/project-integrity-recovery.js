@@ -202,7 +202,4 @@ function auditAtomic(projectFolder, context) {
     return count;
 }
 
-export {
-auditTrash,
-    auditAtomic
-};
+export { auditTrash, auditAtomic };

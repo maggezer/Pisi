@@ -169,7 +169,7 @@ function validPisiIntegrityId(kind, value) {
 }
 
 export {
-PISI_INTEGRITY_VERSION,
+    PISI_INTEGRITY_VERSION,
     PISI_INTEGRITY_SEVERITIES,
     PISI_INTEGRITY_REPAIR_SAFETY,
     normalizePisiIntegrityPath,

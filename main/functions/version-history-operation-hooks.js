@@ -81,6 +81,4 @@ function rebindPisiVersionHistoryIpc() {
 
 rebindPisiVersionHistoryIpc();
 
-export {
-rebindPisiVersionHistoryIpc
-};
+export { rebindPisiVersionHistoryIpc };

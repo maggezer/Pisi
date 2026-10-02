@@ -212,7 +212,7 @@ function clearPisiProjectStorageCache(projectFolder = null) {
 
 export * from './storage-core.js';
 export {
-canonicalizePisiStorageRoot,
+    canonicalizePisiStorageRoot,
     assertPisiStoragePathSafe,
     createPisiFileStorageDriver,
     getPisiProjectStorage,

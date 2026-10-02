@@ -55,6 +55,4 @@ function installPisiSingleSourceTaskGuard() {
 
 installPisiSingleSourceTaskGuard();
 
-export {
-installPisiSingleSourceTaskGuard
-};
+export { installPisiSingleSourceTaskGuard };

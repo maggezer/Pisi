@@ -43,6 +43,4 @@ function ensureWindowsDevShortcut(app, shell, executable = process.execPath) {
     }
 }
 
-export {
-getWindowsAppIdentity, ensureWindowsDevShortcut
-};
+export { getWindowsAppIdentity, ensureWindowsDevShortcut };

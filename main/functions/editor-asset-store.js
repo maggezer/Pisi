@@ -455,7 +455,7 @@ function hydratePisiEditorAssets(content = '', options = {}) {
 }
 
 export {
-PISI_PAINT_ASSET_PATTERN,
+    PISI_PAINT_ASSET_PATTERN,
     PISI_SHEET_ASSET_PATTERN,
     PISI_SHEET_MAX_BYTES,
     PISI_PAINT_MAX_BYTES,

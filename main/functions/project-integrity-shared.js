@@ -109,7 +109,7 @@ function makeRepairPlan(issues = []) {
 }
 
 export {
-integrityCore,
+    integrityCore,
     relativePath,
     absolutePath,
     readJson,
