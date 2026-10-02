@@ -1,8 +1,9 @@
-import * as fs from 'node:fs';
+import fs from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
 import * as path from 'node:path';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { registerMainModule } from '../module-registry.js';
-import * as core from './atomic-mutation-core.js';
+import { atomicMutationCore as core } from './atomic-mutation-core.js';
 
 const pisiAtomicContext = new AsyncLocalStorage();
 let pisiAtomicFsHooksInstalled = false;
@@ -94,6 +95,8 @@ function installPisiAtomicFilesystemHooks() {
         }
         return originalRmSync(targetPath, options);
     };
+
+    syncBuiltinESMExports();
 }
 
 function recoverPisiAtomicMutations(projectFolder, options = {}) {

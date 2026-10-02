@@ -1,4 +1,5 @@
-import * as fs from 'node:fs';
+import fs from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
 import * as path from 'node:path';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import * as storageLayer from './storage.js';
@@ -238,6 +239,7 @@ function installPisiStorageProjectFsBridge() {
         writable: false,
         value: api
     });
+    syncBuiltinESMExports();
     return api;
 }
 

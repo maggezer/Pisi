@@ -403,8 +403,23 @@ function recoverAtomicMutations(projectFolder) {
     };
 }
 
+const atomicMutationCore = {
+    PISI_ATOMIC_MUTATION_VERSION,
+    PISI_ATOMIC_MUTATION_DIR,
+    beginAtomicMutation,
+    capturePathBeforeMutation,
+    captureRenameBeforeMutation,
+    commitAtomicMutation,
+    rollbackAtomicMutation,
+    recoverAtomicMutations,
+    getAtomicMutationRoot,
+    readAtomicManifest,
+    isSameOrInsideAtomicPath
+};
+
 export {
-PISI_ATOMIC_MUTATION_VERSION,
+    atomicMutationCore,
+    PISI_ATOMIC_MUTATION_VERSION,
     PISI_ATOMIC_MUTATION_DIR,
     beginAtomicMutation,
     capturePathBeforeMutation,
