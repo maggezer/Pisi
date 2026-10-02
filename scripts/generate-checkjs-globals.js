@@ -101,7 +101,7 @@ function collectRuntimeGlobals(relativePath) {
     const source = fs.readFileSync(path.join(root, relativePath), 'utf8');
     const ast = espree.parse(source, {
         ecmaVersion: 'latest',
-        sourceType: 'commonjs'
+        sourceType: 'module'
     });
     const names = new Set();
 

@@ -9,6 +9,8 @@ on:
             - main.mjs
             - main/**/*.js
             - main/package.json
+            - scripts/check-i18n.js
+            - scripts/generate-checkjs-globals.js
 
 permissions:
     contents: write

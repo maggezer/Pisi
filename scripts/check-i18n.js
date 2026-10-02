@@ -209,7 +209,7 @@ const runtime = read('main/runtime.js');
 for (const marker of ["ipcMain.handle('app:get-language'", "ipcMain.handle('app:set-language'"]) {
     if (!runtime.includes(marker)) addError('Missing main language IPC: ' + marker);
 }
-if (!/require\(\s*['"]\.\/main\/functions\/i18n['"]\s*\)/.test(read('main.js'))) {
+if (!/^\s*import\s+['"]\.\/main\/functions\/i18n\.js['"]\s*;/m.test(read('main.mjs'))) {
     addError('Main i18n module is not bootstrapped.');
 }
 if (!/^\s*import\s+['"]\.\/core\/i18n\.mjs['"]\s*;/.test(read('renderer/bootstrap.mjs'))) {
