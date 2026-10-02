@@ -22,7 +22,9 @@
     "test:e2e": "node scripts/electron-smoke-e2e.mjs",
     "check:types": "node scripts/generate-checkjs-globals.js && tsc -p tsconfig.checkjs.json",
     "dist:store:x64": "electron-builder --win dir --x64 --publish never -c.directories.output=dist-store/x64 -c.extraMetadata.pisiDistribution=store",
-    "dist:store:arm64": "electron-builder --win dir --arm64 --publish never -c.directories.output=dist-store/arm64 -c.extraMetadata.pisiDistribution=store"
+    "dist:store:arm64": "electron-builder --win dir --arm64 --publish never -c.directories.output=dist-store/arm64 -c.extraMetadata.pisiDistribution=store",
+    "dist:mac": "electron-builder --mac dmg zip --x64 --arm64 --universal --publish never",
+    "dist:linux": "electron-builder --linux AppImage deb --x64 --arm64 --publish never"
   },
   "build": {
     "appId": "com.mumin.pisi",
@@ -75,6 +77,72 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "Pisi"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64",
+            "universal"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64",
+            "universal"
+          ]
+        }
+      ],
+      "icon": "assets/pisi.png",
+      "category": "public.app-category.productivity",
+      "hardenedRuntime": true,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.inherit.plist",
+      "notarize": false
+    },
+    "dmg": {
+      "title": "Pisi ${version}",
+      "iconSize": 96,
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "assets/pisi.png",
+      "category": "Office",
+      "executableName": "pisi",
+      "maintainer": "Mumin Biyiklioglu",
+      "synopsis": "Pisi desktop knowledge mapping app",
+      "description": "Pisi desktop knowledge mapping app"
     }
   },
   "devDependencies": {
