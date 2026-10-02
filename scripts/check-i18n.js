@@ -211,10 +211,10 @@ const runtime = read('main/runtime.js');
 for (const marker of ["ipcMain.handle('app:get-language'", "ipcMain.handle('app:set-language'"]) {
     if (!runtime.includes(marker)) addError('Missing main language IPC: ' + marker);
 }
-if (!read('main.js').includes('require("./main/functions/i18n")')) {
+if (!/require\(\s*['"]\.\/main\/functions\/i18n['"]\s*\)/.test(read('main.js'))) {
     addError('Main i18n module is not bootstrapped.');
 }
-if (!read('renderer/bootstrap.mjs').startsWith('import "./core/i18n.mjs";')) {
+if (!/^\s*import\s+['"]\.\/core\/i18n\.mjs['"]\s*;/.test(read('renderer/bootstrap.mjs'))) {
     addError('Renderer i18n module must load before other renderer modules.');
 }
 
