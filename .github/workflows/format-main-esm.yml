@@ -1,0 +1,53 @@
+name: Format Main ESM
+
+on:
+    push:
+        branches:
+            - main
+        paths:
+            - .github/workflows/format-main-esm.yml
+
+permissions:
+    contents: write
+
+jobs:
+    format-and-validate:
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v5
+              with:
+                  fetch-depth: 0
+
+            - name: Setup Node
+              uses: actions/setup-node@v5
+              with:
+                  node-version: 24
+                  cache: npm
+
+            - name: Install dependencies
+              run: npm ci --ignore-scripts
+
+            - name: Format ESM main process
+              run: npx prettier main.mjs "main/**/*.js" --write
+
+            - name: Check repository formatting
+              run: npm run format:check
+
+            - name: Validate source
+              run: npm run validate:source
+
+            - name: Commit formatted ESM sources
+              shell: bash
+              run: |
+                  if git diff --quiet -- main.mjs main; then
+                    echo "No formatting changes needed."
+                    exit 0
+                  fi
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  git add main.mjs main
+                  git commit -m "Format ESM main process"
+                  git push origin HEAD:main
