@@ -2,14 +2,14 @@ import { app, BrowserWindow, Menu, ipcMain, dialog, screen, shell, nativeImage }
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import * as crypto from 'node:crypto';
+import { execFile } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { registerMainModule } from '../module-registry.js';
 import * as backupStorage from './backup-storage.js';
-const PISI_APP_ROOT = path.resolve(__dirname, '..', '..');
 import { getWindowsAppIdentity, ensureWindowsDevShortcut } from './windows-app-identity.js';
 
-import { fileURLToPath } from 'node:url';
-
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const PISI_APP_ROOT = path.resolve(__dirname, '..', '..');
 function startProjectWatcher(folderPath) {
     stopProjectWatcher();
 
@@ -152,7 +152,6 @@ function hideFileOnWindows(filePath) {
     if (process.platform !== 'win32') return;
 
     try {
-        import { execFile } from 'node:child_process';
         execFile('attrib', ['+H', filePath], () => {});
     } catch (error) {
         console.warn('[PISI] Lock dosyası gizlenemedi:', error.message);

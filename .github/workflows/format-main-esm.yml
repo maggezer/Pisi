@@ -6,6 +6,9 @@ on:
             - main
         paths:
             - .github/workflows/format-main-esm.yml
+            - main.mjs
+            - main/**/*.js
+            - main/package.json
 
 permissions:
     contents: write
