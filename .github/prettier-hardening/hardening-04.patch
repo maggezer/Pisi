@@ -1,0 +1,50 @@
+diff --git a/tests/system-fonts-license.test.js b/tests/system-fonts-license.test.js
+--- a/tests/system-fonts-license.test.js
++++ b/tests/system-fonts-license.test.js
+@@ -34,2 +34,2 @@
+-    assert.match(moduleSource, /document\.addEventListener\('mousedown'/);
+-    assert.match(moduleSource, /document\.addEventListener\('focusin'/);
++    assert.match(moduleSource, /document\.addEventListener\(\s*'mousedown'/);
++    assert.match(moduleSource, /document\.addEventListener\(\s*'focusin'/);
+@@ -39,2 +39,2 @@
+-    assert.match(bootstrap, /import "\.\/editor\/pisi-editor-system-fonts\.mjs";/);
+-    assert.match(bootstrap, /import "\.\/editor\/pisi-editor-bundled-fonts\.mjs";/);
++    assert.match(bootstrap, /import\s+["\']\.\/editor\/pisi-editor-system-fonts\.mjs["\'];/);
++    assert.match(bootstrap, /import\s+["\']\.\/editor\/pisi-editor-bundled-fonts\.mjs["\'];/);
+diff --git a/tests/theme-preferences.test.js b/tests/theme-preferences.test.js
+--- a/tests/theme-preferences.test.js
++++ b/tests/theme-preferences.test.js
+@@ -101,6 +101,6 @@
+-    assert.match(themes, /html\[data-pisi-theme="light"\] body/);
+-    assert.match(themes, /html\[data-pisi-theme="light"\] #map-canvas/);
+-    assert.match(themes, /html\[data-pisi-theme="light"\] #center-node-editor-content/);
+-    assert.match(themes, /html\[data-pisi-theme="light"\] \.pisi-editor-toolbar/);
+-    assert.match(themes, /html\[data-pisi-theme="light"\] \.pisi-command-center-dialog/);
+-    assert.match(themes, /html\[data-pisi-theme="light"\] \.pisi-mission-card/);
++    assert.match(themes, /html\[data-pisi-theme=["\']light["\']\] body/);
++    assert.match(themes, /html\[data-pisi-theme=["\']light["\']\] #map-canvas/);
++    assert.match(themes, /html\[data-pisi-theme=["\']light["\']\] #center-node-editor-content/);
++    assert.match(themes, /html\[data-pisi-theme=["\']light["\']\] \.pisi-editor-toolbar/);
++    assert.match(themes, /html\[data-pisi-theme=["\']light["\']\] \.pisi-command-center-dialog/);
++    assert.match(themes, /html\[data-pisi-theme=["\']light["\']\] \.pisi-mission-card/);
+@@ -150 +150 @@
+-    assert.match(variables, /--pisi-map-node-font-family: "Segoe UI Variable Text"/);
++    assert.match(variables, /--pisi-map-node-font-family:\s*["\']Segoe UI Variable Text["\']/);
+@@ -154 +154 @@
+-    assert.match(lightCss, /data-pisi-theme="light"[^\n]*\.pisi-map-font-select/);
++    assert.match(lightCss, /data-pisi-theme=["\']light["\'][^\n]*\.pisi-map-font-select/);
+diff --git a/tests/todo-dedicated-workspace.test.js b/tests/todo-dedicated-workspace.test.js
+--- a/tests/todo-dedicated-workspace.test.js
++++ b/tests/todo-dedicated-workspace.test.js
+@@ -92 +92 @@
+-    assert.match(css, /html\[data-pisi-theme="light"\] #workspace\.pisi-todo-workspace-active\s*\{[\s\S]*--pisi-todo-bg: #eceff3/);
++    assert.match(css, /html\[data-pisi-theme=["\']light["\']\] #workspace\.pisi-todo-workspace-active\s*\{[\s\S]*--pisi-todo-bg: #eceff3/);
+diff --git a/tests/todo-priority-card-display.test.js b/tests/todo-priority-card-display.test.js
+--- a/tests/todo-priority-card-display.test.js
++++ b/tests/todo-priority-card-display.test.js
+@@ -28 +28 @@
+-    /grid-template-areas:\s*"priority task check"\s*"controls controls controls"/s,
++    /grid-template-areas:\s*["\']priority task check["\']\s*["\']controls controls controls["\']/s,
+@@ -33 +33 @@
+-    /\.pisi-mission-status-icon[\s\S]*background-image:\s*url\("\.\.\/assets\/todo\/status-filter\.svg"\)/,
++    /\.pisi-mission-status-icon[\s\S]*background-image:\s*url\(["\']\.\.\/assets\/todo\/status-filter\.svg["\']\)/,

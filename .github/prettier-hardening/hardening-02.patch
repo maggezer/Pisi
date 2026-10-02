@@ -1,0 +1,92 @@
+diff --git a/tests/document-ink.test.js b/tests/document-ink.test.js
+--- a/tests/document-ink.test.js
++++ b/tests/document-ink.test.js
+@@ -46 +46 @@
+-    assert.match(bootstrapSource, /import "\.\/editor\/pisi-editor-document-ink\.mjs";/);
++    assert.match(bootstrapSource, /import\s+["\']\.\/editor\/pisi-editor-document-ink\.mjs["\'];/);
+diff --git a/tests/editor-command-routing.test.js b/tests/editor-command-routing.test.js
+--- a/tests/editor-command-routing.test.js
++++ b/tests/editor-command-routing.test.js
+@@ -389 +389 @@
+-    assert.match(routing, /editor\.addEventListener\('keydown',[\s\S]*true\);/);
++    assert.match(routing, /editor\.addEventListener\(\s*'keydown'\s*,[\s\S]*?true\s*\);/);
+diff --git a/tests/editor-word-behavior.test.js b/tests/editor-word-behavior.test.js
+--- a/tests/editor-word-behavior.test.js
++++ b/tests/editor-word-behavior.test.js
+@@ -72,2 +72,2 @@
+-    assert.match(styles, /content: "▾"/);
+-    assert.match(styles, /content: "▸"/);
++    assert.match(styles, /content:\s*["\']▾["\']/);
++    assert.match(styles, /content:\s*["\']▸["\']/);
+diff --git a/tests/i18n.test.js b/tests/i18n.test.js
+--- a/tests/i18n.test.js
++++ b/tests/i18n.test.js
+@@ -74 +74 @@
+-    assert.ok(bootstrap.startsWith('import "./core/i18n.mjs";'));
++    assert.match(bootstrap, /^import\s+['"]\.\/core\/i18n\.mjs['"];/);
+diff --git a/tests/interaction-regressions.test.js b/tests/interaction-regressions.test.js
+--- a/tests/interaction-regressions.test.js
++++ b/tests/interaction-regressions.test.js
+@@ -13 +13 @@
+-    assert.match(bootstrap, /import "\.\/shell\/pisi-interaction-regressions\.mjs";/);
++    assert.match(bootstrap, /import\s+["\']\.\/shell\/pisi-interaction-regressions\.mjs["\'];/);
+diff --git a/tests/left-panel-interaction.test.js b/tests/left-panel-interaction.test.js
+--- a/tests/left-panel-interaction.test.js
++++ b/tests/left-panel-interaction.test.js
+@@ -23 +23 @@
+-        /\.add-node-under-map-btn:hover,\s*\.add-node-under-map-btn:focus-visible\s*\{[\s\S]*?background-image: url\("\.\.\/assets\/icons\/create-node\.svg"\);[\s\S]*?background-color: rgba\(243, 156, 18, 0\.16\);[\s\S]*?border-color: #f39c12;[\s\S]*?\}/
++        /\.add-node-under-map-btn:hover,\s*\.add-node-under-map-btn:focus-visible\s*\{[\s\S]*?background-image:\s*url\(["\']\.\.\/assets\/icons\/create-node\.svg["\']\);[\s\S]*?background-color: rgba\(243, 156, 18, 0\.16\);[\s\S]*?border-color: #f39c12;[\s\S]*?\}/
+@@ -33 +33 @@
+-    assert.match(iconsCss, /#left-panel input,[\s\S]*?\[contenteditable="true"\][\s\S]*?cursor: text;/);
++    assert.match(iconsCss, /#left-panel input,[\s\S]*?\[contenteditable=["\']true["\']\][\s\S]*?cursor: text;/);
+diff --git a/tests/light-map-node-selection.test.js b/tests/light-map-node-selection.test.js
+--- a/tests/light-map-node-selection.test.js
++++ b/tests/light-map-node-selection.test.js
+@@ -13 +13 @@
+-    assert.match(selectionSource, /html\[data-pisi-theme="light"\]\s+body\s+\.map-node-box\.selected/);
++    assert.match(selectionSource, /html\[data-pisi-theme=["\']light["\']\]\s+body\s+\.map-node-box\.selected/);
+diff --git a/tests/map-creation-module-ownership.test.js b/tests/map-creation-module-ownership.test.js
+--- a/tests/map-creation-module-ownership.test.js
++++ b/tests/map-creation-module-ownership.test.js
+@@ -24 +24 @@
+-    assert.match(creationSource, /registerModule\("map\.creation",[\s\S]*?\);/);
++    assert.match(creationSource, /registerModule\(["\']map\.creation["\']\s*,[\s\S]*?\);/);
+diff --git a/tests/map-edge-menu.test.js b/tests/map-edge-menu.test.js
+--- a/tests/map-edge-menu.test.js
++++ b/tests/map-edge-menu.test.js
+@@ -53 +53 @@
+-    assert.match(menuStyleSource, /html\[data-pisi-theme="light"\]\s+\.pisi-map-edge-menu/);
++    assert.match(menuStyleSource, /html\[data-pisi-theme=["\']light["\']\]\s+\.pisi-map-edge-menu/);
+diff --git a/tests/map-edge-selection-dismiss.test.js b/tests/map-edge-selection-dismiss.test.js
+--- a/tests/map-edge-selection-dismiss.test.js
++++ b/tests/map-edge-selection-dismiss.test.js
+@@ -130,2 +130,2 @@
+-    const edgeIndex = bootstrapSource.indexOf('import "./map/pisi-map-edges.mjs";');
+-    const dismissIndex = bootstrapSource.indexOf('import "./map/pisi-map-edge-selection-dismiss.mjs";');
++    const edgeIndex = bootstrapSource.search(/import\s+['"]\.\/map\/pisi-map-edges\.mjs['"];/);
++    const dismissIndex = bootstrapSource.search(/import\s+['"]\.\/map\/pisi-map-edge-selection-dismiss\.mjs['"];/);
+diff --git a/tests/map-export.test.js b/tests/map-export.test.js
+--- a/tests/map-export.test.js
++++ b/tests/map-export.test.js
+@@ -73,2 +73,2 @@
+-    assert.match(lightCss, /data-pisi-theme="light"[^\n]*\.pisi-map-export-trigger/);
+-    assert.match(lightCss, /data-pisi-theme="light"[^\n]*\.pisi-map-export-menu/);
++    assert.match(lightCss, /data-pisi-theme=["\']light["\'][^\n]*\.pisi-map-export-trigger/);
++    assert.match(lightCss, /data-pisi-theme=["\']light["\'][^\n]*\.pisi-map-export-menu/);
+diff --git a/tests/map-personalization.test.js b/tests/map-personalization.test.js
+--- a/tests/map-personalization.test.js
++++ b/tests/map-personalization.test.js
+@@ -42 +42 @@
+-    assert.match(css, /data-right-tab="customizations"\] \{ order: 70; \}/);
++    assert.match(css, /data-right-tab=["\']customizations["\']\]\s*\{[\s\S]*?order:\s*70;/);
+@@ -91,2 +91,2 @@
+-    assert.match(themes, /html\[data-pisi-theme="light"\] \.pisi-selection-customize-row/);
+-    assert.match(themes, /html\[data-pisi-theme="light"\] \.pisi-selection-customize-reset/);
++    assert.match(themes, /html\[data-pisi-theme=["\']light["\']\] \.pisi-selection-customize-row/);
++    assert.match(themes, /html\[data-pisi-theme=["\']light["\']\] \.pisi-selection-customize-reset/);
+diff --git a/tests/map-property-badge-portal.test.js b/tests/map-property-badge-portal.test.js
+--- a/tests/map-property-badge-portal.test.js
++++ b/tests/map-property-badge-portal.test.js
+@@ -19 +19 @@
+-    assert.match(source, /document\.addEventListener\('scroll'/);
++    assert.match(source, /document\.addEventListener\(\s*'scroll'/);
