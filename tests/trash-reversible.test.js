@@ -144,5 +144,5 @@ test('Trash page and styles are part of bootstrap and layered CSS', () => {
     assert.match(bootstrap, /\.\/shell\/pisi-trash\.mjs/);
     assert.match(style, /styles\/61-trash\.css/);
     assert.match(trashCss, /\.pisi-trash-page/);
-    assert.match(trashCss, /html\[data-theme="light"\]/);
+    assert.match(trashCss, /html\[data-theme=(?:"light"|'light')\]/);
 });
