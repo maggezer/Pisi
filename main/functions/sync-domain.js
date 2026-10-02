@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const { dialog, ipcMain } = require('electron');
 const syncCore = require('./sync-core');
 const storageLayer = require('./storage');
+const editorAssets = require('./editor-asset-store');
 const { modules, registerMainModule } = require('../module-registry');
 
 const MANIFEST_RELATIVE = path.join('.pisi-sync', 'manifest.json');
@@ -17,6 +18,339 @@ const SNAPSHOT_CHUNK_BYTES = 4 * 1024 * 1024;
 const SNAPSHOT_INDEX_FORMAT = 'pisi-sync-device-index';
 const SNAPSHOT_CHUNK_FORMAT = 'pisi-sync-device-chunk';
 const runningProjects = new Map();
+
+
+const PISI_SYNC_EDITOR_ASSETS_RELATIVE = path.join('.pisi-sync', 'assets');
+
+function isSameOrInsidePath(candidatePath, rootPath) {
+    const candidate = path.resolve(candidatePath);
+    const root = path.resolve(rootPath);
+    const relative = path.relative(root, candidate);
+
+    return relative === '' || (
+        relative !== '..' &&
+        !relative.startsWith(`..${path.sep}`) &&
+        !path.isAbsolute(relative)
+    );
+}
+
+function listPisiSyncEditorAssetReferences(content = '') {
+    const references = [];
+    const seen = new Set();
+    const source = String(content || '');
+    const attributePattern =
+        /\sdata-pisi-(?:asset|sheet-asset)\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))/gi;
+    let match;
+
+    while ((match = attributePattern.exec(source))) {
+        const relativePath = String(
+            match[1] ?? match[2] ?? match[3] ?? ''
+        );
+
+        let descriptor = null;
+        const paintMatch = relativePath.match(
+            editorAssets.PISI_PAINT_ASSET_PATTERN
+        );
+        const sheetMatch = relativePath.match(
+            editorAssets.PISI_SHEET_ASSET_PATTERN
+        );
+
+        if (paintMatch) {
+            descriptor = {
+                kind: 'paint',
+                hash: paintMatch[1],
+                relativePath,
+                maxBytes: editorAssets.PISI_PAINT_MAX_BYTES
+            };
+        } else if (sheetMatch) {
+            descriptor = {
+                kind: 'sheet',
+                hash: sheetMatch[1],
+                relativePath,
+                maxBytes: editorAssets.PISI_SHEET_MAX_BYTES
+            };
+        }
+
+        if (!descriptor || seen.has(descriptor.relativePath)) continue;
+
+        seen.add(descriptor.relativePath);
+        references.push(descriptor);
+    }
+
+    return references;
+}
+
+function getPisiSyncNodeSidecarPath(projectFolder, entity) {
+    const payload = entity?.payload;
+    const relativePath = String(payload?.relativePath || '').trim();
+    const sidecarName = String(
+        payload?.native?.pisi?.sidecar || ''
+    ).trim();
+
+    if (
+        !relativePath ||
+        !sidecarName ||
+        path.basename(sidecarName) !== sidecarName ||
+        sidecarName === '.' ||
+        sidecarName === '..'
+    ) {
+        return null;
+    }
+
+    const nodePath = path.resolve(projectFolder, relativePath);
+
+    if (
+        !isSameOrInsidePath(nodePath, projectFolder) ||
+        path.extname(nodePath).toLowerCase() !== '.node'
+    ) {
+        return null;
+    }
+
+    const sidecarPath = path.resolve(
+        path.dirname(nodePath),
+        sidecarName
+    );
+
+    return isSameOrInsidePath(sidecarPath, projectFolder)
+        ? sidecarPath
+        : null;
+}
+
+function inspectPisiSyncEditorAsset(filePath, descriptor) {
+    try {
+        if (!fs.existsSync(filePath)) {
+            return { exists: false, valid: false };
+        }
+
+        const linkStat = fs.lstatSync(filePath);
+
+        if (linkStat.isSymbolicLink()) {
+            return {
+                exists: true,
+                valid: false,
+                error: 'Asset sembolik bağlantı olamaz.'
+            };
+        }
+
+        const stat = fs.statSync(filePath);
+
+        if (
+            !stat.isFile() ||
+            stat.size < 1 ||
+            stat.size > descriptor.maxBytes
+        ) {
+            return {
+                exists: true,
+                valid: false,
+                error: 'Asset boyutu veya türü geçersiz.'
+            };
+        }
+
+        const buffer = fs.readFileSync(filePath);
+        const actualHash = crypto
+            .createHash('sha256')
+            .update(buffer)
+            .digest('hex');
+
+        if (actualHash !== descriptor.hash) {
+            return {
+                exists: true,
+                valid: false,
+                error: 'Asset hash doğrulaması başarısız.'
+            };
+        }
+
+        if (
+            descriptor.kind === 'paint' &&
+            !Buffer.from([
+                0x89, 0x50, 0x4e, 0x47,
+                0x0d, 0x0a, 0x1a, 0x0a
+            ]).equals(buffer.subarray(0, 8))
+        ) {
+            return {
+                exists: true,
+                valid: false,
+                error: 'Paint PNG imzası geçersiz.'
+            };
+        }
+
+        if (descriptor.kind === 'sheet') {
+            let snapshot;
+
+            try {
+                snapshot = JSON.parse(buffer.toString('utf8'));
+            } catch {
+                return {
+                    exists: true,
+                    valid: false,
+                    error: 'Sheet asset JSON verisi bozuk.'
+                };
+            }
+
+            if (
+                !snapshot ||
+                typeof snapshot !== 'object' ||
+                Array.isArray(snapshot) ||
+                !Array.isArray(snapshot.fields) ||
+                !Array.isArray(snapshot.items) ||
+                !Array.isArray(snapshot.views)
+            ) {
+                return {
+                    exists: true,
+                    valid: false,
+                    error: 'Sheet asset yapısı geçersiz.'
+                };
+            }
+        }
+
+        return { exists: true, valid: true, buffer };
+    } catch (error) {
+        return {
+            exists: true,
+            valid: false,
+            error: error.message
+        };
+    }
+}
+
+function writePisiSyncEditorAsset(destinationPath, buffer) {
+    const directory = path.dirname(destinationPath);
+    const temporaryPath = path.join(
+        directory,
+        `.${path.basename(destinationPath)}.${process.pid}.${crypto.randomUUID()}.tmp`
+    );
+    let descriptor = null;
+
+    globalThis.markInternalFileChange?.(
+        directory,
+        destinationPath,
+        temporaryPath
+    );
+
+    fs.mkdirSync(directory, { recursive: true });
+
+    try {
+        descriptor = fs.openSync(temporaryPath, 'wx', 0o600);
+        fs.writeFileSync(descriptor, buffer);
+        fs.fsyncSync(descriptor);
+        fs.closeSync(descriptor);
+        descriptor = null;
+
+        if (fs.existsSync(destinationPath)) {
+            fs.unlinkSync(destinationPath);
+        }
+
+        fs.renameSync(temporaryPath, destinationPath);
+
+        globalThis.sealInternalFileChange?.(
+            directory,
+            destinationPath,
+            temporaryPath
+        );
+    } catch (error) {
+        if (descriptor !== null) {
+            try {
+                fs.closeSync(descriptor);
+            } catch {}
+        }
+
+        try {
+            if (fs.existsSync(temporaryPath)) {
+                fs.unlinkSync(temporaryPath);
+            }
+        } catch {}
+
+        globalThis.sealInternalFileChange?.(temporaryPath);
+        throw error;
+    }
+}
+
+function reconcilePisiSyncEditorAssets(
+    projectFolder,
+    syncFolder,
+    entities = []
+) {
+    const warnings = [];
+    let uploaded = 0;
+    let downloaded = 0;
+
+    for (const entity of entities) {
+        if (entity?.kind !== 'node') continue;
+
+        const references = listPisiSyncEditorAssetReferences(
+            entity?.payload?.content || ''
+        );
+
+        if (!references.length) continue;
+
+        const sidecarPath = getPisiSyncNodeSidecarPath(
+            projectFolder,
+            entity
+        );
+
+        if (!sidecarPath) {
+            warnings.push(
+                `Editor asset sidecar yolu çözülemedi: ${entity?.id || 'node'}`
+            );
+            continue;
+        }
+
+        for (const descriptor of references) {
+            const parts = descriptor.relativePath.split('/');
+            const localPath = path.join(sidecarPath, ...parts);
+            const remotePath = path.join(
+                syncFolder,
+                PISI_SYNC_EDITOR_ASSETS_RELATIVE,
+                ...parts
+            );
+
+            const local = inspectPisiSyncEditorAsset(
+                localPath,
+                descriptor
+            );
+            const remote = inspectPisiSyncEditorAsset(
+                remotePath,
+                descriptor
+            );
+
+            try {
+                if (local.valid && !remote.valid) {
+                    writePisiSyncEditorAsset(
+                        remotePath,
+                        local.buffer
+                    );
+                    uploaded += 1;
+                    continue;
+                }
+
+                if (!local.valid && remote.valid) {
+                    writePisiSyncEditorAsset(
+                        localPath,
+                        remote.buffer
+                    );
+                    downloaded += 1;
+                    continue;
+                }
+
+                if (!local.valid && !remote.valid) {
+                    warnings.push(
+                        `Editor asset bulunamadı veya bozuk: ${descriptor.relativePath}`
+                    );
+                }
+            } catch (error) {
+                warnings.push(
+                    `Editor asset sync hatası (${descriptor.relativePath}): ${error.message}`
+                );
+            }
+        }
+    }
+
+    return {
+        uploaded,
+        downloaded,
+        warnings
+    };
+}
 
 function projectKey(projectFolder) {
     return crypto.createHash('sha256')
@@ -339,6 +673,11 @@ async function performPisiSync(projectFolder, folder, reason = 'manual') {
         foldedBefore.records,
         state.records
     );
+    const editorAssetsBefore = reconcilePisiSyncEditorAssets(
+        projectFolder,
+        folder,
+        entities
+    );
     const prepared = syncCore.prepareDeviceRecords({
         entities,
         baseRecords: state.records,
@@ -372,6 +711,11 @@ async function performPisiSync(projectFolder, folder, reason = 'manual') {
         ))
         : { documents: 0, tasks: 0, conflicts: 0, recoveredToSyncTrash: 0 };
     const finalEntities = modules['main.syncProjectAdapter'].exportPisiSyncEntities(projectFolder);
+    const editorAssetsAfter = reconcilePisiSyncEditorAssets(
+        projectFolder,
+        folder,
+        finalEntities
+    );
     const finalized = syncCore.prepareDeviceRecords({
         entities: finalEntities,
         baseRecords: plan.records,
@@ -398,7 +742,15 @@ async function performPisiSync(projectFolder, folder, reason = 'manual') {
         filesVerified: finalized.records.filter((record) =>
             !record.deleted && (record.kind === 'node' || record.kind === 'map')
         ).length,
-        warnings: remote.warnings,
+        warnings: [
+            ...remote.warnings,
+            ...editorAssetsBefore.warnings,
+            ...editorAssetsAfter.warnings
+        ],
+        editorAssetsUploaded:
+            editorAssetsBefore.uploaded + editorAssetsAfter.uploaded,
+        editorAssetsDownloaded:
+            editorAssetsBefore.downloaded + editorAssetsAfter.downloaded,
         devices: new Set(remote.snapshots.map((item) => item.deviceId).filter(Boolean)).size +
             (remote.snapshots.some((item) => item.deviceId === deviceId) ? 0 : 1),
         reason,
@@ -504,6 +856,8 @@ const moduleApi = {
     atomicWriteJson,
     assertFolder,
     readSnapshots,
+    listPisiSyncEditorAssetReferences,
+    reconcilePisiSyncEditorAssets,
     performPisiSync,
     runPisiSync,
     selectPisiSyncFolder,

@@ -122,3 +122,115 @@ test('ortak klasör domaini iki bağımsız cihazda push, pull ve çakışma tur
         fs.rmSync(root, { recursive: true, force: true });
     }
 });
+
+
+function makePaintAsset(seed = 1) {
+    const buffer = Buffer.concat([
+        Buffer.from([
+            0x89, 0x50, 0x4e, 0x47,
+            0x0d, 0x0a, 0x1a, 0x0a
+        ]),
+        Buffer.from([seed, seed + 1, seed + 2, seed + 3])
+    ]);
+    const hash = require('node:crypto')
+        .createHash('sha256')
+        .update(buffer)
+        .digest('hex');
+
+    return {
+        buffer,
+        hash,
+        relativePath: `paint/${hash}.png`
+    };
+}
+
+function nodeWithPaintAsset(title, asset, sidecar) {
+    return {
+        kind: 'node',
+        id: 'node_asset_alpha',
+        payload: {
+            title,
+            content:
+                `<canvas data-pisi-canvas="1" data-pisi-asset="${asset.relativePath}"></canvas>`,
+            relativePath: 'Asset.node',
+            native: {
+                pisi: {
+                    sidecar
+                }
+            }
+        }
+    };
+}
+
+test('editor sidecar asset shared klasör üzerinden ikinci cihaza taşınır', async () => {
+    const root = fs.mkdtempSync(
+        path.join(os.tmpdir(), 'pisi-sync-editor-asset-')
+    );
+    const shared = path.join(root, 'shared');
+    const projectA = path.join(root, 'project-a');
+    const projectB = path.join(root, 'project-b');
+    const sidecarName = 'inv_Asset__node_asset_alpha';
+    const asset = makePaintAsset(91);
+
+    fs.mkdirSync(shared);
+    fs.mkdirSync(projectA);
+    fs.mkdirSync(projectB);
+
+    const sidecarA = path.join(projectA, sidecarName, 'paint');
+    fs.mkdirSync(sidecarA, { recursive: true });
+    fs.writeFileSync(
+        path.join(sidecarA, `${asset.hash}.png`),
+        asset.buffer
+    );
+
+    projectEntities.set(
+        projectA,
+        [nodeWithPaintAsset('Desktop asset', asset, sidecarName)]
+    );
+    projectEntities.set(projectB, []);
+
+    try {
+        currentDevice = 'device_asset_a';
+        const pushed = await domain.performPisiSync(
+            projectA,
+            shared,
+            'asset-push'
+        );
+
+        assert.equal(pushed.editorAssetsUploaded >= 1, true);
+        assert.equal(
+            fs.existsSync(
+                path.join(
+                    shared,
+                    '.pisi-sync',
+                    'assets',
+                    'paint',
+                    `${asset.hash}.png`
+                )
+            ),
+            true
+        );
+
+        currentDevice = 'device_asset_b';
+        const pulled = await domain.performPisiSync(
+            projectB,
+            shared,
+            'asset-pull'
+        );
+
+        assert.equal(pulled.editorAssetsDownloaded >= 1, true);
+        assert.deepEqual(
+            fs.readFileSync(
+                path.join(
+                    projectB,
+                    sidecarName,
+                    'paint',
+                    `${asset.hash}.png`
+                )
+            ),
+            asset.buffer
+        );
+    } finally {
+        fs.rmSync(root, { recursive: true, force: true });
+    }
+});
