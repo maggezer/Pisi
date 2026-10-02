@@ -8,8 +8,13 @@ const test = require('node:test');
 
 const {
     getPisiPaintAssetReference,
+    getPisiSheetAssetReference,
     normalizePisiEditorPaintAssets,
-    hydratePisiEditorPaintAssets
+    hydratePisiEditorPaintAssets,
+    normalizePisiEditorSheetAssets,
+    hydratePisiEditorSheetAssets,
+    normalizePisiEditorAssets,
+    hydratePisiEditorAssets
 } = require('../main/functions/editor-asset-store');
 
 const PNG_SIGNATURE = Buffer.from([
@@ -153,4 +158,210 @@ test('Normalization without writes is safe for history comparisons', () => {
     assert.equal(normalized.written.length, 0);
     assert.doesNotMatch(normalized.content, /data-image=/i);
     assert.match(normalized.content, /data-pisi-asset="paint\/[a-f0-9]{64}\.png"/i);
+});
+
+
+function makeSheetSnapshot(seed = 1) {
+    return {
+        databaseId: `database-test-${seed}-abcdefgh`,
+        title: `Sheet ${seed}`,
+        fields: [
+            { id: 'field-a', name: 'A', type: 'text' },
+            { id: 'field-b', name: 'B', type: 'number' }
+        ],
+        items: [
+            {
+                id: `row-${seed}`,
+                values: {
+                    'field-a': { value: `Value ${seed}` },
+                    'field-b': { value: seed }
+                }
+            }
+        ],
+        views: [
+            {
+                id: 'view-table',
+                type: 'table',
+                fieldOrder: ['field-a', 'field-b']
+            }
+        ],
+        activeViewId: 'view-table'
+    };
+}
+
+function makeSheetHtml(snapshot) {
+    const json = JSON.stringify(snapshot)
+        .replace(/&/g, '&amp;')
+        .replace(/'/g, '&#39;');
+
+    return [
+        '<table data-pisi-sheet="1" ',
+        `data-pisi-database-id="${snapshot.databaseId}" `,
+        `data-pisi-sheet-model='${json}'>`,
+        '<tbody><tr><td>A</td><td>1</td></tr></tbody>',
+        '</table>'
+    ].join('');
+}
+
+test('Sheet model is externalized to a content-addressed sidecar asset', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-sheet-asset-'));
+    const sidecar = path.join(root, 'Note.pisi-node');
+    fs.mkdirSync(sidecar, { recursive: true });
+
+    try {
+        const snapshot = makeSheetSnapshot(11);
+        const reference = getPisiSheetAssetReference(snapshot);
+        const normalized = normalizePisiEditorSheetAssets(
+            makeSheetHtml(snapshot),
+            { sidecarPath: sidecar }
+        );
+
+        assert.deepEqual(normalized.assets, [reference.relativePath]);
+        assert.deepEqual(normalized.written, [reference.relativePath]);
+        assert.doesNotMatch(normalized.content, /data-pisi-sheet-model=/i);
+        assert.match(
+            normalized.content,
+            new RegExp(
+                `data-pisi-sheet-asset="${reference.relativePath.replace('.', '\\.')}"`
+            )
+        );
+
+        const assetPath = path.join(
+            sidecar,
+            ...reference.relativePath.split('/')
+        );
+        assert.equal(fs.existsSync(assetPath), true);
+        assert.deepEqual(
+            JSON.parse(fs.readFileSync(assetPath, 'utf8')),
+            snapshot
+        );
+    } finally {
+        fs.rmSync(root, { recursive: true, force: true });
+    }
+});
+
+test('Sheet sidecar asset hydrates to transient renderer model data', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-sheet-hydrate-'));
+    const sidecar = path.join(root, 'Note.pisi-node');
+    fs.mkdirSync(sidecar, { recursive: true });
+
+    try {
+        const snapshot = makeSheetSnapshot(21);
+        const normalized = normalizePisiEditorSheetAssets(
+            makeSheetHtml(snapshot),
+            { sidecarPath: sidecar }
+        );
+        const hydrated = hydratePisiEditorSheetAssets(
+            normalized.content,
+            { sidecarPath: sidecar }
+        );
+
+        assert.match(
+            hydrated,
+            /data-pisi-sheet-asset="sheet\/[a-f0-9]{64}\.json"/i
+        );
+        assert.match(hydrated, /data-pisi-sheet-model=/i);
+        assert.match(hydrated, /&quot;databaseId&quot;/i);
+        assert.match(hydrated, /&quot;items&quot;/i);
+    } finally {
+        fs.rmSync(root, { recursive: true, force: true });
+    }
+});
+
+test('Saving the same Sheet model twice reuses the same asset file', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-sheet-dedupe-'));
+    const sidecar = path.join(root, 'Note.pisi-node');
+    fs.mkdirSync(sidecar, { recursive: true });
+
+    try {
+        const html = makeSheetHtml(makeSheetSnapshot(31));
+        const first = normalizePisiEditorSheetAssets(
+            html,
+            { sidecarPath: sidecar }
+        );
+        const second = normalizePisiEditorSheetAssets(
+            html,
+            { sidecarPath: sidecar }
+        );
+
+        assert.deepEqual(first.assets, second.assets);
+        assert.equal(first.written.length, 1);
+        assert.equal(second.written.length, 0);
+        assert.equal(
+            fs.readdirSync(path.join(sidecar, 'sheet')).length,
+            1
+        );
+    } finally {
+        fs.rmSync(root, { recursive: true, force: true });
+    }
+});
+
+test('Changed Sheet model creates a new immutable asset reference', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-sheet-version-'));
+    const sidecar = path.join(root, 'Note.pisi-node');
+    fs.mkdirSync(sidecar, { recursive: true });
+
+    try {
+        const first = normalizePisiEditorSheetAssets(
+            makeSheetHtml(makeSheetSnapshot(41)),
+            { sidecarPath: sidecar }
+        );
+        const second = normalizePisiEditorSheetAssets(
+            makeSheetHtml(makeSheetSnapshot(42)),
+            { sidecarPath: sidecar }
+        );
+
+        assert.notEqual(first.assets[0], second.assets[0]);
+        assert.equal(
+            fs.readdirSync(path.join(sidecar, 'sheet')).length,
+            2
+        );
+    } finally {
+        fs.rmSync(root, { recursive: true, force: true });
+    }
+});
+
+test('Combined editor asset normalization externalizes Paint and Sheet together', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-editor-assets-'));
+    const sidecar = path.join(root, 'Note.pisi-node');
+    fs.mkdirSync(sidecar, { recursive: true });
+
+    try {
+        const content = makeCanvasHtml(makePng(72)) +
+            makeSheetHtml(makeSheetSnapshot(51));
+        const normalized = normalizePisiEditorAssets(
+            content,
+            { sidecarPath: sidecar }
+        );
+
+        assert.doesNotMatch(normalized.content, /data-image=/i);
+        assert.doesNotMatch(normalized.content, /data-pisi-sheet-model=/i);
+        assert.match(normalized.content, /data-pisi-asset="paint\//i);
+        assert.match(normalized.content, /data-pisi-sheet-asset="sheet\//i);
+        assert.equal(normalized.assets.length, 2);
+
+        const hydrated = hydratePisiEditorAssets(
+            normalized.content,
+            { sidecarPath: sidecar }
+        );
+
+        assert.match(hydrated, /data-image="data:image\/png;base64,/i);
+        assert.match(hydrated, /data-pisi-sheet-model=/i);
+    } finally {
+        fs.rmSync(root, { recursive: true, force: true });
+    }
+});
+
+test('Sheet normalization without writes is safe for history comparisons', () => {
+    const normalized = normalizePisiEditorSheetAssets(
+        makeSheetHtml(makeSheetSnapshot(61)),
+        { writeAssets: false }
+    );
+
+    assert.equal(normalized.written.length, 0);
+    assert.doesNotMatch(normalized.content, /data-pisi-sheet-model=/i);
+    assert.match(
+        normalized.content,
+        /data-pisi-sheet-asset="sheet\/[a-f0-9]{64}\.json"/i
+    );
 });

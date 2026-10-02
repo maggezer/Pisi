@@ -207,10 +207,16 @@ function sanitizePisiEditorHtml(html = '') {
                         );
                 }
 
+                if (name === 'data-pisi-sheet-asset') {
+                    allowed = /^sheet\/[a-f0-9]{64}\.json$/i.test(
+                        value
+                    );
+                }
+
                 if (name === 'data-pisi-sheet-model') {
                     allowed = false;
 
-                    if (value.length <= 8 * 1024 * 1024) {
+                    if (value.length <= 64 * 1024 * 1024) {
                         try {
                             const snapshot = JSON.parse(value);
                             const validSnapshot = Boolean(

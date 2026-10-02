@@ -324,7 +324,7 @@ function saveNodeContentWithBoundedHistory(nodePath, content = '', options = {})
         const current = getDocument(nodePath);
         if (!current?.ok) return current;
 
-        const normalizedIncoming = editorAssets.normalizePisiEditorPaintAssets(
+        const normalizedIncoming = editorAssets.normalizePisiEditorAssets(
             String(content || ''),
             { writeAssets: false }
         ).content;

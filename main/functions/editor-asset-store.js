@@ -5,7 +5,9 @@ const fs = require('fs');
 const path = require('path');
 
 const PISI_PAINT_ASSET_PATTERN = /^paint\/([a-f0-9]{64})\.png$/;
+const PISI_SHEET_ASSET_PATTERN = /^sheet\/([a-f0-9]{64})\.json$/;
 const PISI_PAINT_MAX_BYTES = 20 * 1024 * 1024;
+const PISI_SHEET_MAX_BYTES = 64 * 1024 * 1024;
 const PISI_PNG_SIGNATURE = Buffer.from([
     0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a
 ]);
@@ -292,11 +294,333 @@ function hydratePisiEditorPaintAssets(content = '', options = {}) {
     );
 }
 
+
+function decodePisiHtmlAttributeValue(value) {
+    return String(value || '')
+        .replace(/&#x([0-9a-f]+);/gi, (_match, hex) => {
+            const codePoint = Number.parseInt(hex, 16);
+            return Number.isInteger(codePoint) && codePoint <= 0x10ffff
+                ? String.fromCodePoint(codePoint)
+                : '';
+        })
+        .replace(/&#(\d+);/g, (_match, decimal) => {
+            const codePoint = Number.parseInt(decimal, 10);
+            return Number.isInteger(codePoint) && codePoint <= 0x10ffff
+                ? String.fromCodePoint(codePoint)
+                : '';
+        })
+        .replace(/&quot;/gi, '"')
+        .replace(/&apos;|&#39;/gi, "'")
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/&amp;/gi, '&');
+}
+
+function normalizePisiSheetSnapshot(value) {
+    const decoded = decodePisiHtmlAttributeValue(value);
+    if (!decoded) {
+        return { ok: false, error: 'Sheet modeli boş.' };
+    }
+
+    if (Buffer.byteLength(decoded, 'utf8') > PISI_SHEET_MAX_BYTES) {
+        return { ok: false, error: 'Sheet modeli izin verilen boyutu aşıyor.' };
+    }
+
+    let snapshot;
+    try {
+        snapshot = JSON.parse(decoded);
+    } catch {
+        return { ok: false, error: 'Sheet modeli geçerli JSON değil.' };
+    }
+
+    const valid = Boolean(
+        snapshot &&
+        typeof snapshot === 'object' &&
+        !Array.isArray(snapshot) &&
+        typeof snapshot.databaseId === 'string' &&
+        snapshot.databaseId.length >= 8 &&
+        snapshot.databaseId.length <= 160 &&
+        Array.isArray(snapshot.fields) &&
+        Array.isArray(snapshot.items) &&
+        Array.isArray(snapshot.views)
+    );
+
+    if (!valid) {
+        return { ok: false, error: 'Sheet modeli beklenen yapıda değil.' };
+    }
+
+    const json = JSON.stringify(snapshot);
+    if (Buffer.byteLength(json, 'utf8') > PISI_SHEET_MAX_BYTES) {
+        return { ok: false, error: 'Sheet modeli izin verilen boyutu aşıyor.' };
+    }
+
+    return { ok: true, snapshot, json };
+}
+
+function getPisiSheetAssetReference(value) {
+    const normalized = typeof value === 'string'
+        ? normalizePisiSheetSnapshot(value)
+        : normalizePisiSheetSnapshot(JSON.stringify(value || {}));
+
+    if (!normalized.ok) {
+        throw new Error(normalized.error);
+    }
+
+    const buffer = Buffer.from(normalized.json, 'utf8');
+    const hash = crypto.createHash('sha256').update(buffer).digest('hex');
+
+    return {
+        hash,
+        relativePath: `sheet/${hash}.json`,
+        json: normalized.json,
+        buffer
+    };
+}
+
+function writePisiSheetAsset(sidecarPath, reference) {
+    if (!sidecarPath) {
+        throw new Error('Sheet asset sidecar klasörü bulunamadı.');
+    }
+
+    const sheetDirectory = path.join(sidecarPath, 'sheet');
+    const assetPath = path.join(sheetDirectory, `${reference.hash}.json`);
+    const buffer = reference.buffer || Buffer.from(reference.json || '', 'utf8');
+
+    globalThis.markInternalFileChange?.(sheetDirectory, assetPath);
+    fs.mkdirSync(sheetDirectory, { recursive: true });
+
+    if (fs.existsSync(assetPath)) {
+        const existing = fs.readFileSync(assetPath);
+        const existingHash = crypto
+            .createHash('sha256')
+            .update(existing)
+            .digest('hex');
+
+        if (existingHash !== reference.hash) {
+            throw new Error('Sheet asset hash çakışması algılandı.');
+        }
+
+        globalThis.sealInternalFileChange?.(sheetDirectory, assetPath);
+        return { assetPath, written: false };
+    }
+
+    const temporaryPath = path.join(
+        sheetDirectory,
+        `.${reference.hash}.${process.pid}.${crypto.randomUUID()}.tmp`
+    );
+    let descriptor = null;
+
+    globalThis.markInternalFileChange?.(temporaryPath);
+
+    try {
+        descriptor = fs.openSync(temporaryPath, 'wx', 0o600);
+        fs.writeFileSync(descriptor, buffer);
+        fs.fsyncSync(descriptor);
+        fs.closeSync(descriptor);
+        descriptor = null;
+
+        if (typeof globalThis.renamePathInternal === 'function') {
+            globalThis.renamePathInternal(temporaryPath, assetPath);
+        } else {
+            fs.renameSync(temporaryPath, assetPath);
+        }
+
+        globalThis.sealInternalFileChange?.(
+            sheetDirectory,
+            assetPath,
+            temporaryPath
+        );
+
+        return { assetPath, written: true };
+    } catch (error) {
+        if (descriptor !== null) {
+            try {
+                fs.closeSync(descriptor);
+            } catch {}
+        }
+
+        try {
+            if (fs.existsSync(temporaryPath)) {
+                fs.unlinkSync(temporaryPath);
+            }
+        } catch {}
+
+        globalThis.sealInternalFileChange?.(temporaryPath);
+        throw error;
+    }
+}
+
+function normalizePisiEditorSheetAssets(content = '', options = {}) {
+    const sidecarPath = options.sidecarPath || null;
+    const writeAssets = options.writeAssets !== false;
+    const assets = [];
+    const written = [];
+
+    const normalized = String(content || '').replace(
+        /<table\b[^>]*>/gi,
+        (tableTag) => {
+            if (!hasPisiHtmlAttribute(tableTag, 'data-pisi-sheet')) {
+                return tableTag;
+            }
+
+            const modelValue = getPisiHtmlAttribute(
+                tableTag,
+                'data-pisi-sheet-model'
+            );
+            const existingAsset = getPisiHtmlAttribute(
+                tableTag,
+                'data-pisi-sheet-asset'
+            );
+
+            if (!modelValue) {
+                if (
+                    existingAsset &&
+                    PISI_SHEET_ASSET_PATTERN.test(existingAsset)
+                ) {
+                    assets.push(existingAsset);
+                    return tableTag;
+                }
+
+                if (existingAsset) {
+                    return removePisiHtmlAttribute(
+                        tableTag,
+                        'data-pisi-sheet-asset'
+                    );
+                }
+
+                return tableTag;
+            }
+
+            const reference = getPisiSheetAssetReference(modelValue);
+            assets.push(reference.relativePath);
+
+            if (writeAssets) {
+                const stored = writePisiSheetAsset(
+                    sidecarPath,
+                    reference
+                );
+                if (stored.written) {
+                    written.push(reference.relativePath);
+                }
+            }
+
+            let nextTag = removePisiHtmlAttribute(
+                tableTag,
+                'data-pisi-sheet-model'
+            );
+            nextTag = setPisiHtmlAttribute(
+                nextTag,
+                'data-pisi-sheet-asset',
+                reference.relativePath
+            );
+
+            return nextTag;
+        }
+    );
+
+    return {
+        content: normalized,
+        assets: Array.from(new Set(assets)),
+        written: Array.from(new Set(written))
+    };
+}
+
+function hydratePisiEditorSheetAssets(content = '', options = {}) {
+    const sidecarPath = options.sidecarPath || null;
+
+    if (!sidecarPath || !fs.existsSync(sidecarPath)) {
+        return String(content || '');
+    }
+
+    return String(content || '').replace(
+        /<table\b[^>]*>/gi,
+        (tableTag) => {
+            if (!hasPisiHtmlAttribute(tableTag, 'data-pisi-sheet')) {
+                return tableTag;
+            }
+
+            const reference = getPisiHtmlAttribute(
+                tableTag,
+                'data-pisi-sheet-asset'
+            );
+            const match = String(reference || '').match(
+                PISI_SHEET_ASSET_PATTERN
+            );
+
+            if (!match) return tableTag;
+
+            const assetPath = path.join(
+                sidecarPath,
+                'sheet',
+                `${match[1]}.json`
+            );
+
+            if (!fs.existsSync(assetPath)) return tableTag;
+
+            const buffer = fs.readFileSync(assetPath);
+            if (!buffer.length || buffer.length > PISI_SHEET_MAX_BYTES) {
+                return tableTag;
+            }
+
+            const actualHash = crypto
+                .createHash('sha256')
+                .update(buffer)
+                .digest('hex');
+
+            if (actualHash !== match[1]) return tableTag;
+
+            const normalized = normalizePisiSheetSnapshot(
+                buffer.toString('utf8')
+            );
+
+            if (!normalized.ok) return tableTag;
+
+            return setPisiHtmlAttribute(
+                tableTag,
+                'data-pisi-sheet-model',
+                normalized.json
+            );
+        }
+    );
+}
+
+function normalizePisiEditorAssets(content = '', options = {}) {
+    const paint = normalizePisiEditorPaintAssets(content, options);
+    const sheet = normalizePisiEditorSheetAssets(
+        paint.content,
+        options
+    );
+
+    return {
+        content: sheet.content,
+        assets: Array.from(
+            new Set([...(paint.assets || []), ...(sheet.assets || [])])
+        ),
+        written: Array.from(
+            new Set([...(paint.written || []), ...(sheet.written || [])])
+        )
+    };
+}
+
+function hydratePisiEditorAssets(content = '', options = {}) {
+    return hydratePisiEditorSheetAssets(
+        hydratePisiEditorPaintAssets(content, options),
+        options
+    );
+}
+
 module.exports = {
     PISI_PAINT_ASSET_PATTERN,
+    PISI_SHEET_ASSET_PATTERN,
+    PISI_SHEET_MAX_BYTES,
     PISI_PAINT_MAX_BYTES,
     decodePisiPaintPngDataUrl,
     getPisiPaintAssetReference,
+    getPisiSheetAssetReference,
     normalizePisiEditorPaintAssets,
-    hydratePisiEditorPaintAssets
+    hydratePisiEditorPaintAssets,
+    normalizePisiEditorSheetAssets,
+    hydratePisiEditorSheetAssets,
+    normalizePisiEditorAssets,
+    hydratePisiEditorAssets
 };

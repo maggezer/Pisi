@@ -297,7 +297,7 @@ function getPisiDocument(filePath, options = {}) {
             ensured.metadata?.type === 'node'
         ) {
             data = structuredClone(ensured.data);
-            data.content = editorAssets.hydratePisiEditorPaintAssets(
+            data.content = editorAssets.hydratePisiEditorAssets(
                 data.content || '',
                 { sidecarPath: ensured.sidecarPath }
             );
@@ -660,7 +660,7 @@ function saveNodeContent(nodePath, content = '') {
             };
         }
 
-        const normalizedContent = editorAssets.normalizePisiEditorPaintAssets(
+        const normalizedContent = editorAssets.normalizePisiEditorAssets(
             String(content || ''),
             {
                 sidecarPath: nodeInfo.sidecarPath,

@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const { registerMainModule } = require('../module-registry');
+const editorAssets = require('./editor-asset-store');
 
 function pisiSafeTimestamp(date = new Date()) {
     return date.toISOString().replace(/[:.]/g, '-');
@@ -204,7 +205,16 @@ function saveNodeContentWithHistory(nodePath, content = '', options = {}) {
     try {
         const current = getPisiDocument(nodePath);
         if (!current.ok) return current;
-        if (String(current.data?.content || '') === String(content || '')) {
+
+        const normalizedIncoming = editorAssets.normalizePisiEditorAssets(
+            String(content || ''),
+            { writeAssets: false }
+        ).content;
+
+        if (
+            String(current.data?.content || '') ===
+            String(normalizedIncoming || '')
+        ) {
             return {
                 ok: true,
                 unchanged: true,
