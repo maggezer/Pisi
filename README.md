@@ -81,16 +81,20 @@ npm run check:syntax
 npm run check:types
 npm run lint
 npm test
+npm run format
+npm run format:check
 npm run validate
 npm run audit
 ```
 
-`npm run validate`, sözdizimi ve mimari kontrollerini, branding/i18n
-kontrollerini, `tsc --checkJs` tip denetimini, ESLint kurallarını ve otomatik
-regresyon testlerini çalıştırır. Aynı doğrulama `main` push’larında ve pull
-request’lerde GitHub Actions üzerinde de çalışır. CI ayrıca `npm run audit`
-sonucunu raporlar. 30 Eylül 2026 itibarıyla dependency audit temizdir ve
-571 regresyon testinin tamamı geçmektedir.
+`npm run validate`, repository-wide Prettier format kontrolünü; sözdizimi ve
+mimari kontrollerini; branding/i18n kontrollerini; `checkJs: true` ile çalışan
+TypeScript tip denetimini; ESLint kurallarını ve otomatik regresyon testlerini
+çalıştırır. Aynı doğrulama `main` push’larında ve pull request’lerde GitHub
+Actions üzerinde de çalışır. CI ayrıca `npm run audit` sonucunu raporlar.
+2 Ekim 2026 tarihli güncel `main` doğrulamasında dependency audit
+**0 vulnerability**, `tsc --checkJs` **0 hata** ve Node regresyon testleri
+**638/638 başarılı** durumdadır.
 
 ## Arama ve bağlantılar
 

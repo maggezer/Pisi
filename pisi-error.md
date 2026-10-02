@@ -11,33 +11,33 @@ içinde tutuluyor. Özellikle Paint `data-image` verisi büyük node dosyaları,
 daha pahalı sürüm geçmişi ve cihazlar arası senkronizasyonda gereksiz veri
 taşınmasına neden olabilir. Ayrı sidecar depolama tasarımı henüz uygulanmadı.
 
-## 2. Otomatik formatlama
+## 2. Dağıtım kimliği / production yayını
 
-**[Düşük · kalite]** Syntax, architecture, branding, i18n, `tsc --checkJs`,
-ESLint ve Node test runner kontrolleri CI'da çalışıyor. Repository-wide otomatik
-formatlama ve format-check adımı henüz yok.
+**[Orta · release]** Windows NSIS/portable paketleri x64 ve ARM64 için,
+Microsoft Store hattı çok mimarili MSIX için, macOS hattı DMG/ZIP için ve Linux
+hattı AppImage/DEB için yapılandırılmıştır. Direct Windows auto-update altyapısı
+ve Microsoft Store dağıtımına uygun Store-aware güncelleme davranışı da
+mevcuttur.
 
-## 3. Dağıtım / imzalama
+Kalan işler artık kaynak kodundan çok yayın ortamına bağlıdır:
 
-**[Orta · release]** Windows NSIS ve portable paketleri x64 ile ARM64 için
-üretiliyor; release hattı temiz dependency audit, source validation, SHA256 ve
-tag doğrulaması uyguluyor. Henüz:
-
-- Windows code signing / SmartScreen itibarı,
-- macOS ve Linux paket hedefleri,
-- platform imzalama/notarization,
-- otomatik güncelleme yayın altyapısı
-
-yapılandırılmış değil.
+- GitHub üzerinden dağıtılan Windows EXE’leri için gerçek code-signing
+  kimliği/SmartScreen itibarı,
+- macOS dağıtımı için Apple signing ve notarization kimlik bilgileri,
+- production direct-update feed URL’si ve yayın altyapısının işletilmesi,
+- Microsoft Store submission/publishing hesabının gerçek mağaza sürecine
+  bağlanması.
 
 ## Doğrulama durumu
 
-30 Eylül 2026 tarihli güncel `main` doğrulamasında:
+2 Ekim 2026 tarihli güncel `main` doğrulamasında:
 
+- `npm run format:check`: **başarılı**,
 - `npm audit`: **0 vulnerability**,
-- `tsc --checkJs`: **0 hata**,
-- architecture ownership: **107 module / 1142 binding**,
-- Node regresyon testleri: **571/571 başarılı**,
+- `tsconfig.checkjs.json` içinde `checkJs: true`; `tsc`: **0 hata**,
+- checkJs global üretimi: **1047 runtime-owned identifier**,
+- architecture ownership: **121 module / 1277 binding**,
+- Node regresyon testleri: **638/638 başarılı**,
 - Electron E2E: **başarılı**.
 
 Sheet Phase 2 kapsamında 300 × 80 güvenlik sınırı, satır/sütun silme, gerçek

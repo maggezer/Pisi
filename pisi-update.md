@@ -185,15 +185,18 @@ paketleme ve dokümantasyon başlıklarında yeniden denetlendi.
 - **98, 100, 101:** Tam CSS konsolidasyonu, klasik global scriptlerden ES
   module’a geçiş ve ana domain dosyalarını daha küçük modüllere bölme ayrı,
   geniş kapsamlı refactor olarak bırakıldı.
-- **102:** `npm audit` kritik açığı **0** ve production-only açığı **0**
-  gösteriyor. electron-builder’ın paketleme zincirinde 16 yüksek seviye
-  geliştirme/build bulgusu sürüyor; npm’in önerdiği otomatik çözüm güncel
-  sürüme yükseltmek yerine eski major sürüme düşürdüğü için uygulanmadı.
-- **104:** Tam typecheck ve repository-wide otomatik format dönüşümü mevcut
-  klasik global mimariyi geniş ölçüde değiştireceğinden bu turda yapılmadı.
-- **105:** macOS/Linux ikonları ve paket hedefleri, code-signing sertifikası,
-  SmartScreen itibarı ve otomatik güncelleme yayın sunucusu sağlanmadan güvenli
-  biçimde tamamlanamaz; Windows’un mevcut release akışı korunarak ertelendi.
+### Sonradan tamamlanan kalite / release maddeleri
+
+- **102:** Güncel CI’da `npm audit` **0 vulnerability** raporluyor; önceki
+  paketleme zinciri güvenlik bulgusu notu artık güncel değildir.
+- **104:** `checkJs: true` tabanlı TypeScript denetimi ve repository-wide
+  Prettier dönüşümü tamamlandı. `npm run validate` format kontrolünü de içeriyor
+  ve CI `npm run format:check` adımını zorunlu çalıştırıyor.
+- **105:** macOS/Linux çok mimarili paket hedefleri, Microsoft Store için
+  çok mimarili MSIX hattı ve Store-aware/direct auto-update altyapısı eklendi.
+  Gerçek Windows/Apple signing kimlikleri, notarization ve production update
+  feed/Store publishing ayarları dağıtım ortamında sağlanacak operasyonel
+  girdiler olarak kalıyor.
 
 **Özellik kaldırma durumu:** Uygulama özelliği kaldırılmadı. Kaldırılan
 `@panzoom/panzoom`, `lunar-javascript`, `moment` ve `moment-hijri` paketleri
@@ -245,5 +248,6 @@ biçimlendirme seçeneği kaldırılmadı.
   referans sanılmıyor.
 - `$A$1`, `A$1`, `$A1` biçimindeki absolute referanslar formül
   ayrıştırıcısında destekleniyor.
-- Sheet Phase 2 regresyonları dahil güncel doğrulama **571/571 test** ve
-  Electron E2E ile yeşildir.
+- Sheet Phase 2 regresyonları dahil 2 Ekim 2026 tarihli güncel doğrulama
+  **638/638 test**, aktif `checkJs` typecheck, repository-wide format-check ve
+  Electron E2E ile yeşildir. Güncel `npm audit` sonucu **0 vulnerability**’dir.
