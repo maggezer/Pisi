@@ -1,77 +1,54 @@
 # Windows code signing
 
-Pisi production Windows releases are required to be Authenticode-signed.
+Pisi uses two separate Windows distribution paths:
 
-The release workflow intentionally fails when no signing identity is available,
-and it verifies every Setup and Portable executable before publishing a GitHub
-Release. Local development builds remain unsigned unless signing credentials
-are explicitly provided.
+- GitHub beta Setup/Portable executables can be unsigned.
+- Microsoft Store packages are uploaded unsigned and are signed by Microsoft during Store publishing.
 
-## Supported release modes
+Authenticode signing for direct EXE distribution remains supported, but it is
+optional until Pisi has its own public code-signing identity.
 
-### 1. electron-builder certificate input
+## Optional direct EXE signing
 
-The workflow understands the standard electron-builder environment variables:
+The GitHub release workflow detects either of these signing modes:
+
+### electron-builder certificate input
 
 - `WIN_CSC_LINK`
 - `WIN_CSC_KEY_PASSWORD`
 
-Store both values as GitHub Actions repository or environment secrets.
+### Windows certificate store / HSM provider
 
-`WIN_CSC_LINK` may be a supported certificate location accepted by
-electron-builder. Never commit a certificate or its password to the repository.
+- `PISI_WINDOWS_CERT_SHA1`
 
-This mode is mainly useful when you already have a signing credential that can
-be supplied through electron-builder's standard certificate input.
+Do not configure both modes at the same time.
 
-### 2. Windows certificate store / HSM / cloud signing provider
+When a signing identity is present, the release workflow enables
+`forceCodeSigning`, signs Setup and Portable artifacts with SHA-256 and an
+RFC3161 timestamp, and verifies every final executable before publishing.
 
-For modern publicly trusted code-signing certificates, the private key normally
-lives in a hardware or cloud HSM rather than an exportable PFX file.
+When no signing identity is present, the GitHub beta release is intentionally
+published unsigned and a warning is written to the GitHub Actions job summary.
 
-A provider setup step must make the signing certificate/private-key provider
-available to the Windows runner in `Cert:\CurrentUser\My`. Then add this
-GitHub secret:
+## Microsoft Store packages
 
-- `PISI_WINDOWS_CERT_SHA1` — the 40-character thumbprint of the code-signing
-  certificate.
+The Store pipeline is separate from direct EXE signing. It produces an unsigned
+x64 + ARM64 MSIX bundle and a Store upload archive. Partner Center signs the
+package during Store publishing, so the Store path does not require a Pisi
+code-signing certificate.
 
-The release workflow passes that thumbprint to electron-builder's SignTool
-configuration. This keeps the Pisi build provider-neutral: DigiCert KeyLocker,
-SSL.com eSigner, another HSM service, or a controlled self-hosted Windows runner
-can be used as long as the provider exposes the certificate to SignTool.
-
-Do not set `WIN_CSC_LINK` and `PISI_WINDOWS_CERT_SHA1` at the same time.
-
-## Release guarantees
-
-A tagged release will fail before publication when:
-
-- no signing identity is configured;
-- both signing modes are configured at once;
-- the requested certificate-store thumbprint is unavailable;
-- electron-builder cannot code-sign the app;
-- any final Setup or Portable executable has an invalid Authenticode signature;
-- any release executable has no timestamp;
-- release executables were signed by different certificates.
-
-The Windows build uses SHA-256 signing and an RFC3161 timestamp.
+See `docs/microsoft-store.md` for the required Partner Center variables,
+credentials, package build, and optional publishing flow.
 
 ## SmartScreen
 
-Authenticode signing establishes publisher identity and protects binary
-integrity, but a new publisher may still receive Microsoft Defender SmartScreen
-warnings until reputation has been established. Keep the same trusted publisher
-identity across releases; changing signing identity can reset or fragment that
-reputation.
+Unsigned GitHub beta EXE files can trigger Microsoft Defender SmartScreen or
+show an unknown publisher. This is accepted for the beta/direct-download
+channel.
 
-## Before the first public release
+The Microsoft Store distribution channel uses Microsoft's Store signing and
+installation flow.
 
-1. Obtain a publicly trusted Windows code-signing identity from a CA/signing
-   service that supports your organization and preferred HSM/cloud workflow.
-2. Add the provider setup to the `windows-release` job if it needs a client or
-   GitHub Action to load the certificate into the Windows certificate store.
-3. Configure exactly one signing mode described above.
-4. Run a tagged beta release.
-5. Confirm the release job reports all four artifacts as `Valid` before
-   publication.
+If direct web/GitHub distribution becomes a primary end-user channel later,
+configure one of the optional Authenticode modes above and keep the same
+publisher identity across releases.

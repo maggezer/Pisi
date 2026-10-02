@@ -76,7 +76,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Require Windows code-signing identity
+      - name: Detect optional Windows code-signing identity
         shell: pwsh
         run: |
           $hasCscLink = -not [string]::IsNullOrWhiteSpace($env:WIN_CSC_LINK)
@@ -84,10 +84,6 @@ jobs:
 
           if ($hasCscLink -and $hasStoreCertificate) {
             throw "Configure exactly one Windows signing mode: WIN_CSC_LINK or PISI_WINDOWS_CERT_SHA1."
-          }
-
-          if (-not $hasCscLink -and -not $hasStoreCertificate) {
-            throw "Windows signing credentials are missing. Production releases must never be unsigned."
           }
 
           if ($hasCscLink -and [string]::IsNullOrWhiteSpace($env:WIN_CSC_KEY_PASSWORD)) {
@@ -112,9 +108,15 @@ jobs:
             Write-Host "Signing mode: Windows certificate store / HSM provider"
             Write-Host "Signing subject: $($certificate.Subject)"
           }
-          else {
+          elseif ($hasCscLink) {
             Write-Host "Signing mode: electron-builder WIN_CSC_LINK"
           }
+          else {
+            Write-Warning "No Windows code-signing identity configured. GitHub beta EXE artifacts will be unsigned."
+          }
+
+          $enabled = $hasCscLink -or $hasStoreCertificate
+          "PISI_SIGNING_ENABLED=$($enabled.ToString().ToLowerInvariant())" >> $env:GITHUB_ENV
 
       - name: Build Windows installers
         shell: pwsh
@@ -126,9 +128,12 @@ jobs:
             '--x64',
             '--arm64',
             '--publish',
-            'never',
-            '-c.forceCodeSigning=true'
+            'never'
           )
+
+          if ($env:PISI_SIGNING_ENABLED -eq 'true') {
+            $arguments += '-c.forceCodeSigning=true'
+          }
 
           if (-not [string]::IsNullOrWhiteSpace($env:PISI_WINDOWS_CERT_SHA1)) {
             $thumbprint = ($env:PISI_WINDOWS_CERT_SHA1 -replace '\s', '').ToUpperInvariant()
@@ -170,9 +175,12 @@ jobs:
             '--x64',
             '--arm64',
             '--publish',
-            'never',
-            '-c.forceCodeSigning=true'
+            'never'
           )
+
+          if ($env:PISI_SIGNING_ENABLED -eq 'true') {
+            $arguments += '-c.forceCodeSigning=true'
+          }
 
           if (-not [string]::IsNullOrWhiteSpace($env:PISI_WINDOWS_CERT_SHA1)) {
             $thumbprint = ($env:PISI_WINDOWS_CERT_SHA1 -replace '\s', '').ToUpperInvariant()
@@ -220,6 +228,7 @@ jobs:
           $hashLines | Set-Content -Encoding utf8NoBOM release/SHA256SUMS.txt
 
       - name: Verify Windows Authenticode signatures
+        if: env.PISI_SIGNING_ENABLED == 'true'
         shell: pwsh
         run: |
           $version = node -p "require('./package.json').version"
@@ -229,6 +238,15 @@ jobs:
             "release/Pisi-$version-Portable-x64.exe",
             "release/Pisi-$version-Portable-arm64.exe"
           )
+
+      - name: Record unsigned beta release
+        if: env.PISI_SIGNING_ENABLED != 'true'
+        shell: pwsh
+        run: |
+          Add-Content $env:GITHUB_STEP_SUMMARY "### Windows signing"
+          Add-Content $env:GITHUB_STEP_SUMMARY ""
+          Add-Content $env:GITHUB_STEP_SUMMARY "No signing identity was configured. The GitHub beta Setup/Portable EXE files are intentionally unsigned."
+          Add-Content $env:GITHUB_STEP_SUMMARY "The Microsoft Store MSIX pipeline is separate; Store submission packages are unsigned before upload and are signed by Microsoft during publishing."
 
       - name: Publish GitHub beta release
         shell: pwsh
