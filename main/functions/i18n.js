@@ -1,6 +1,7 @@
 import { app } from '../electron-bridge.js';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { URL } from 'node:url';
 const supplementalTranslations = JSON.parse(fs.readFileSync(new URL('../../locales/ui-translations.json', import.meta.url), 'utf8'));
 import { registerMainModule } from '../module-registry.js';
 
