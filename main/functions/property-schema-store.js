@@ -1,9 +1,7 @@
-'use strict';
-
-const path = require('path');
-const storageLayer = require('./storage');
-const { registerMainModule } = require('../module-registry');
-const contract = require('./property-schema-core');
+import * as path from 'node:path';
+import * as storageLayer from './storage.js';
+import { registerMainModule } from '../module-registry.js';
+import * as contract from './property-schema-core.js';
 
 const PISI_PROPERTY_SCHEMA_DIR = '.pisi';
 const PISI_PROPERTY_TEMPLATE_FILE = '.pisi-templates.json';
@@ -524,4 +522,19 @@ const moduleApi = {
 
 registerMainModule('main.propertySchemaStore', moduleApi);
 
-module.exports = moduleApi;
+export {
+    getPisiPropertySchemaPath,
+    readPisiPropertySchema,
+    ensurePisiPropertySchema,
+    getPisiPropertySchemaDefinitions,
+    collectPisiPropertyCarriers,
+    savePisiNodePropertiesStable,
+    savePisiDatabaseTemplateStable,
+    applyPisiDatabaseTemplateStable,
+    stabilizeTemplateProperties,
+    contract as propertySchemaContract
+};
+export const PISI_PROPERTY_SCHEMA_VERSION = contract.PISI_PROPERTY_SCHEMA_VERSION;
+export const PISI_PROPERTY_SCHEMA_RELATIVE_PATH = contract.PISI_PROPERTY_SCHEMA_RELATIVE_PATH;
+export const PISI_EDITABLE_PROPERTY_TYPES = contract.PISI_EDITABLE_PROPERTY_TYPES;
+export const PISI_INTERNAL_PROPERTY_TYPES = contract.PISI_INTERNAL_PROPERTY_TYPES;

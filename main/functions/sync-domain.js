@@ -1,14 +1,12 @@
-'use strict';
-
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
-const crypto = require('crypto');
-const { dialog, ipcMain } = require('electron');
-const syncCore = require('./sync-core');
-const storageLayer = require('./storage');
-const editorAssets = require('./editor-asset-store');
-const { modules, registerMainModule } = require('../module-registry');
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as os from 'node:os';
+import * as crypto from 'node:crypto';
+import { dialog, ipcMain } from '../electron-bridge.js';
+import * as syncCore from './sync-core.js';
+import * as storageLayer from './storage.js';
+import * as editorAssets from './editor-asset-store.js';
+import { modules, registerMainModule } from '../module-registry.js';
 
 const MANIFEST_RELATIVE = path.join('.pisi-sync', 'manifest.json');
 const DEVICES_RELATIVE = path.join('.pisi-sync', 'devices');

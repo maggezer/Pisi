@@ -50,7 +50,7 @@ function loadRuntimeGlobals(relativePath) {
     const source = fs.readFileSync(filePath, 'utf8');
     const ast = espree.parse(source, {
         ecmaVersion: 'latest',
-        sourceType: 'commonjs'
+        sourceType: 'module'
     });
     const names = new Set();
     for (const statement of ast.body) {
@@ -101,10 +101,10 @@ module.exports = [
         rules: { ...correctnessRules, 'no-undef': 'error' }
     },
     {
-        files: ['main.js', 'main/**/*.js'],
+        files: ['main.mjs', 'main/**/*.js'],
         languageOptions: {
             ecmaVersion: 'latest',
-            sourceType: 'commonjs',
+            sourceType: 'module',
             globals: {
                 ...nodeGlobals,
                 ...loadManifestGlobals('main/module-manifest.json'),

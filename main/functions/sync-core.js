@@ -1,5 +1,3 @@
-'use strict';
-
 const PISI_SYNC_PROTOCOL = 'pisi-sync';
 const PISI_SYNC_VERSION = 1;
 const PISI_SYNC_DEVICE_SNAPSHOT = 'pisi-sync-device-snapshot';
@@ -336,8 +334,8 @@ function summarizeSyncPlan(plan = {}) {
     };
 }
 
-module.exports = {
-    PISI_SYNC_PROTOCOL,
+export {
+PISI_SYNC_PROTOCOL,
     PISI_SYNC_VERSION,
     PISI_SYNC_DEVICE_SNAPSHOT,
     stableStringify,

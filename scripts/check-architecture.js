@@ -371,7 +371,22 @@ for (const file of walk('main/functions', '.js')) {
     const lines = read(file).split(/\r?\n/).length;
     if (lines > 1100) errors.push('Main domain module too large (' + lines + '): ' + file);
 }
-if (read('main.js').split(/\r?\n/).length > 40) errors.push('main.js is not a thin bootstrap.');
+if (read('main.mjs').split(/\r?\n/).length > 40) errors.push('main.mjs is not a thin bootstrap.');
+
+const rootPackage = JSON.parse(read('package.json'));
+const mainPackage = JSON.parse(read('main/package.json'));
+if (rootPackage.main !== 'main.mjs') errors.push('package.json main entry must be main.mjs.');
+if (mainPackage.type !== 'module') errors.push('main/package.json must declare type=module.');
+const mainBootstrap = read('main.mjs');
+if (/\brequire\s*\(|\bmodule\.exports\b/.test(mainBootstrap)) {
+    errors.push('CommonJS syntax remains in main.mjs.');
+}
+for (const file of [...walk('main/functions', '.js'), 'main/runtime.js', 'main/module-registry.js']) {
+    const source = read(file);
+    if (/\brequire\s*\(|\bmodule\.exports\b/.test(source)) {
+        errors.push('CommonJS syntax remains in ESM main module: ' + file);
+    }
+}
 
 const selectorOwners = new Map();
 for (const file of walk('styles', '.css')) {

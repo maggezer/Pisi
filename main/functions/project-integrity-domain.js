@@ -1,7 +1,5 @@
-'use strict';
-
-const { ipcMain } = require('electron');
-const { modules, registerMainModule } = require('../module-registry');
+import { ipcMain } from '../electron-bridge.js';
+import { modules, registerMainModule } from '../module-registry.js';
 
 const domain = modules['main.domainCommandQuery'];
 const projectIntegrity = modules['main.projectIntegrity'];

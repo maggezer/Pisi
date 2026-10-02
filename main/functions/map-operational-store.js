@@ -1,7 +1,5 @@
-'use strict';
-
-const crypto = require('crypto');
-const { modules, registerMainModule } = require('../module-registry');
+import * as crypto from 'node:crypto';
+import { modules, registerMainModule } from '../module-registry.js';
 
 const documentStore = modules['main.documentStore'];
 const filesystemCore = modules['main.filesystemCore'];

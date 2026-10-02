@@ -1,9 +1,7 @@
-'use strict';
-
-const path = require('path');
-const fs = require('fs');
-const crypto = require('crypto');
-const { registerMainModule } = require('../module-registry');
+import * as path from 'node:path';
+import * as fs from 'node:fs';
+import * as crypto from 'node:crypto';
+import { registerMainModule } from '../module-registry.js';
 
 function escapePisiTaskHtml(value = '') {
     return String(value || '')

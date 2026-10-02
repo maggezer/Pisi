@@ -1,8 +1,6 @@
-'use strict';
-
-const fs = require('fs');
-const path = require('path');
-const { registerMainModule, modules } = require('../module-registry');
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { registerMainModule, modules } from '../module-registry.js';
 
 const schemaStore = modules['main.propertySchemaStore'];
 const contract = schemaStore.propertySchemaContract;
@@ -256,4 +254,8 @@ const moduleApi = {
 };
 registerMainModule('main.propertySchemaMutations', moduleApi);
 
-module.exports = moduleApi;
+export {
+    savePisiNodePropertiesBySchema,
+    prepareDefinitionRewrite as preparePisiPropertyDefinitionRewrite,
+    resolveSubmittedDefinition as resolveSubmittedPisiPropertyDefinition
+};

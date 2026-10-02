@@ -1,8 +1,6 @@
-'use strict';
-
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as crypto from 'node:crypto';
 
 const PISI_ATOMIC_MUTATION_VERSION = 1;
 const PISI_ATOMIC_MUTATION_DIR = path.join('.pisi', 'mutations');
@@ -405,8 +403,8 @@ function recoverAtomicMutations(projectFolder) {
     };
 }
 
-module.exports = {
-    PISI_ATOMIC_MUTATION_VERSION,
+export {
+PISI_ATOMIC_MUTATION_VERSION,
     PISI_ATOMIC_MUTATION_DIR,
     beginAtomicMutation,
     capturePathBeforeMutation,

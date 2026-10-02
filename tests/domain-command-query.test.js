@@ -108,7 +108,7 @@ test('domain katmanı storage dosyalarına doğrudan fs yazımı yapmaz', () => 
 });
 
 test('domain katmanları kritik feature modüllerinden önce ve IPC hooklarından sonra yüklenir', () => {
-    const main = read('main.js');
+    const main = read('main.mjs');
     const bootstrap = read('renderer/bootstrap.mjs');
     const mainDomainIndex = main.indexOf('./main/functions/domain-command-query');
     assert.ok(mainDomainIndex > main.indexOf('./main/functions/task-reference-operation-hooks'));

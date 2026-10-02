@@ -9,7 +9,7 @@ const root = path.resolve(__dirname, '..');
 const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), 'utf8');
 
 test('project fs bridge loads after runtime operation hooks and atomic hardening', () => {
-    const main = read('main.js');
+    const main = read('main.mjs');
     const bridgeIndex = main.indexOf('storage-project-fs-bridge');
     assert.ok(bridgeIndex > main.indexOf('./main/runtime'));
     assert.ok(bridgeIndex > main.indexOf('version-history-operation-hooks'));

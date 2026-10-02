@@ -1,6 +1,4 @@
-'use strict';
-
-const { modules } = require('../module-registry');
+import { modules } from '../module-registry.js';
 
 function listCanonicalPisiTasks(projectFolder, originalQuickAdd) {
     const result = originalQuickAdd(projectFolder, { op: 'list' });
@@ -57,6 +55,6 @@ function installPisiSingleSourceTaskGuard() {
 
 installPisiSingleSourceTaskGuard();
 
-module.exports = {
-    installPisiSingleSourceTaskGuard
+export {
+installPisiSingleSourceTaskGuard
 };

@@ -1,10 +1,8 @@
-'use strict';
-
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
-const { modules, registerMainModule } = require('../module-registry');
-const trashCore = require('./trash-core');
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as crypto from 'node:crypto';
+import { modules, registerMainModule } from '../module-registry.js';
+import * as trashCore from './trash-core.js';
 
 const filesystemCore = modules['main.filesystemCore'];
 const documentStore = modules['main.documentStore'];

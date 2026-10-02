@@ -1,15 +1,14 @@
-'use strict';
+import { registerMainModule } from './module-registry.js';
 
-const { registerMainModule } = require('./module-registry');
+import { app, BrowserWindow, Menu, ipcMain, dialog, screen, shell } from './electron-bridge.js';
 
-const { app, BrowserWindow, Menu, ipcMain, dialog, screen, shell } = require('electron');
+import * as path from 'node:path';
 
-const path = require('path');
+import * as fs from 'node:fs';
 
-const fs = require('fs');
+import * as crypto from 'node:crypto';
 
-const crypto = require('crypto');
-
+import { getWindowsAppIdentity } from './functions/windows-app-identity.js';
 let mainWindow = null;
 
 const moduleApi1 = {};
@@ -114,7 +113,7 @@ Object.defineProperties(moduleApi7, {
 registerMainModule('main.runtime', moduleApi7);
 
 if (process.platform === 'win32') {
-    app.setAppUserModelId(require('./functions/windows-app-identity').getWindowsAppIdentity(app).appId);
+    app.setAppUserModelId(getWindowsAppIdentity(app).appId);
 }
 
 scheduleWindowStateSave.timer = null;

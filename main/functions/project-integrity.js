@@ -1,13 +1,11 @@
-'use strict';
-
-const path = require('path');
-const { registerMainModule } = require('../module-registry');
-const shared = require('./project-integrity-shared');
-const documents = require('./project-integrity-documents');
-const authorities = require('./project-integrity-authorities');
-const properties = require('./project-integrity-properties');
-const recovery = require('./project-integrity-recovery');
-const repairs = require('./project-integrity-repairs');
+import * as path from 'node:path';
+import { registerMainModule } from '../module-registry.js';
+import * as shared from './project-integrity-shared.js';
+import * as documents from './project-integrity-documents.js';
+import * as authorities from './project-integrity-authorities.js';
+import * as properties from './project-integrity-properties.js';
+import * as recovery from './project-integrity-recovery.js';
+import * as repairs from './project-integrity-repairs.js';
 
 function auditPisiProjectIntegrity(projectFolder) {
     const projectRoot = path.resolve(projectFolder);

@@ -1,11 +1,9 @@
-'use strict';
-
-const { app, BrowserWindow, Menu, ipcMain, dialog, screen, shell } = require('electron');
-const path = require('path');
-const fs = require('fs');
-const crypto = require('crypto');
-const { registerMainModule } = require('../module-registry');
-const backupStorage = require('./backup-storage');
+import { app, BrowserWindow, Menu, ipcMain, dialog, screen, shell } from '../electron-bridge.js';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
+import * as crypto from 'node:crypto';
+import { registerMainModule } from '../module-registry.js';
+import * as backupStorage from './backup-storage.js';
 
 function normalizePisiCustomizationColor(value) {
     const color = String(value || '').trim();

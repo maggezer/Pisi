@@ -1,10 +1,8 @@
-'use strict';
-
-const { app } = require('electron');
-const fs = require('fs');
-const path = require('path');
-const supplementalTranslations = require('../../locales/ui-translations.json');
-const { registerMainModule } = require('../module-registry');
+import { app } from '../electron-bridge.js';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+const supplementalTranslations = JSON.parse(fs.readFileSync(new URL('../../locales/ui-translations.json', import.meta.url), 'utf8'));
+import { registerMainModule } from '../module-registry.js';
 
 const PISI_DEFAULT_LANGUAGE = 'tr';
 const PISI_SUPPORTED_LANGUAGES = new Set(['tr', 'eng']);

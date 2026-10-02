@@ -1,9 +1,8 @@
-'use strict';
+import { modules } from '../module-registry.js';
+import * as shared from './project-integrity-shared.js';
+import * as documents from './project-integrity-documents.js';
 
-const { modules } = require('../module-registry');
-const shared = require('./project-integrity-shared');
-const documents = require('./project-integrity-documents');
-
+import * as path from 'node:path';
 const documentStore = modules['main.documentStore'];
 const relationshipStore = modules['main.relationshipStore'];
 const mapSemanticCore = modules['main.mapSemanticCore'];
@@ -53,7 +52,7 @@ function applySafeRepair(projectFolder, repair) {
 }
 
 function rebuildDerivedState(projectFolder, auditAfter) {
-    const projectRoot = require('path').resolve(projectFolder);
+    const projectRoot = path.resolve(projectFolder);
     const context = { issues: [] };
     const inventory = documents.collectDocumentInventory(projectRoot, context);
     const relationshipState = relationshipStore.readPisiRelationshipStore(projectRoot);
@@ -115,8 +114,8 @@ function rebuildDerivedState(projectFolder, auditAfter) {
     };
 }
 
-module.exports = {
-    normalizeDocumentMetadata,
+export {
+normalizeDocumentMetadata,
     ensureDocumentSidecar,
     normalizeMapOperationalState,
     applySafeRepair,

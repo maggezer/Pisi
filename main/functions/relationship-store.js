@@ -1,9 +1,7 @@
-'use strict';
-
-const path = require('path');
-const crypto = require('crypto');
-const storageLayer = require('./storage');
-const { modules, registerMainModule } = require('../module-registry');
+import * as path from 'node:path';
+import * as crypto from 'node:crypto';
+import * as storageLayer from './storage.js';
+import { modules, registerMainModule } from '../module-registry.js';
 
 const filesystemCore = modules['main.filesystemCore'];
 const pathSecurity = modules['main.pathSecurity'];

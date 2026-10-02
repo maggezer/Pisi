@@ -1,7 +1,5 @@
-'use strict';
-
-const fs = require('fs');
-const path = require('path');
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 const PISI_BACKUP_SUFFIX = '.pisi-backup';
 const PISI_BACKUP_ROOT_RELATIVE = path.join('.pisi', 'backups');
@@ -90,8 +88,8 @@ function ensurePisiBackupParent(backupPath) {
     fs.mkdirSync(path.dirname(backupPath), { recursive: true });
 }
 
-module.exports = {
-    PISI_BACKUP_SUFFIX,
+export {
+PISI_BACKUP_SUFFIX,
     PISI_BACKUP_ROOT_RELATIVE,
     PISI_ATOMIC_BACKUP_RELATIVE,
     PISI_CORRUPT_BACKUP_RELATIVE,

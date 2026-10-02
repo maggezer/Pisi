@@ -18,7 +18,7 @@ function listTrackedFiles() {
 
 function isProductionFile(file) {
     return (
-        file === 'main.js' ||
+        file === 'main.mjs' ||
         file === 'preload.js' ||
         file === 'index.html' ||
         file === 'style.css' ||

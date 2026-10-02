@@ -21,7 +21,7 @@
     "include": [
         "types/**/*.d.ts",
         ".pisi-types/**/*.d.ts",
-        "main.js",
+        "main.mjs",
         "preload.js",
         "main/**/*.js",
         "renderer/**/*.mjs",

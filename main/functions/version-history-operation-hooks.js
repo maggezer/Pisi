@@ -1,7 +1,5 @@
-'use strict';
-
-const { ipcMain } = require('electron');
-const history = require('./version-history-core');
+import { ipcMain } from '../electron-bridge.js';
+import * as history from './version-history-core.js';
 
 function rebindPisiVersionHistoryIpc() {
     ipcMain.removeHandler('project:save-node-content');
@@ -83,6 +81,6 @@ function rebindPisiVersionHistoryIpc() {
 
 rebindPisiVersionHistoryIpc();
 
-module.exports = {
-    rebindPisiVersionHistoryIpc
+export {
+rebindPisiVersionHistoryIpc
 };

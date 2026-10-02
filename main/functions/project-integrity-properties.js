@@ -1,9 +1,7 @@
-'use strict';
-
-const fs = require('fs');
-const path = require('path');
-const schemaStore = require('./property-schema-store');
-const shared = require('./project-integrity-shared');
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as schemaStore from './property-schema-store.js';
+import * as shared from './project-integrity-shared.js';
 
 const contract = schemaStore.propertySchemaContract;
 
@@ -345,8 +343,8 @@ function auditPisiPropertySchema(projectFolder, context, inventory) {
     };
 }
 
-module.exports = {
-    auditPisiPropertySchema,
+export {
+auditPisiPropertySchema,
     auditPropertyDefinitionSet,
     auditNodePropertyAgainstSchema,
     auditTemplateProperties

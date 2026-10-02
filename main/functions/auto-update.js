@@ -1,15 +1,13 @@
-'use strict';
-
-const { registerMainModule } = require('../module-registry');
-const { app, BrowserWindow, dialog, ipcMain, net } = require('electron');
-const { spawn } = require('child_process');
-const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
-const { Readable } = require('stream');
-const { pipeline } = require('stream/promises');
-const { URL } = require('url');
-const { clearInterval, clearTimeout, setInterval, setTimeout } = require('timers');
+import { registerMainModule } from '../module-registry.js';
+import { app, BrowserWindow, dialog, ipcMain, net } from '../electron-bridge.js';
+import { spawn } from 'node:child_process';
+import * as crypto from 'node:crypto';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import { URL } from 'node:url';
+import { clearInterval, clearTimeout, setInterval, setTimeout } from 'node:timers';
 
 const PISI_UPDATE_SCHEMA_VERSION = 1;
 const PISI_UPDATE_MANIFEST = 'latest.json';

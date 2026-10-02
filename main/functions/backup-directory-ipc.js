@@ -1,9 +1,7 @@
-'use strict';
-
-const { ipcMain } = require('electron');
-const fs = require('fs');
-const path = require('path');
-const backupStorage = require('./backup-storage');
+import { ipcMain } from '../electron-bridge.js';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as backupStorage from './backup-storage.js';
 
 function normalizeBackupTargetKey(targetPath) {
     const resolved = path.resolve(String(targetPath || ''));
@@ -116,8 +114,8 @@ function bindCentralizedPisiBackupIpc() {
 
 bindCentralizedPisiBackupIpc();
 
-module.exports = {
-    listCentralizedPisiAtomicBackups,
+export {
+listCentralizedPisiAtomicBackups,
     restoreCentralizedPisiAtomicBackup,
     bindCentralizedPisiBackupIpc
 };

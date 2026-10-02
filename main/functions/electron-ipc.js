@@ -1,14 +1,15 @@
-'use strict';
-
-const { app, BrowserWindow, Menu, ipcMain, dialog, screen, shell, nativeImage } = require('electron');
-const path = require('path');
-const fs = require('fs');
-const crypto = require('crypto');
-const { registerMainModule } = require('../module-registry');
-const backupStorage = require('./backup-storage');
+import { app, BrowserWindow, Menu, ipcMain, dialog, screen, shell, nativeImage } from '../electron-bridge.js';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
+import * as crypto from 'node:crypto';
+import { registerMainModule } from '../module-registry.js';
+import * as backupStorage from './backup-storage.js';
 const PISI_APP_ROOT = path.resolve(__dirname, '..', '..');
-const { getWindowsAppIdentity, ensureWindowsDevShortcut } = require('./windows-app-identity');
+import { getWindowsAppIdentity, ensureWindowsDevShortcut } from './windows-app-identity.js';
 
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 function startProjectWatcher(folderPath) {
     stopProjectWatcher();
 
@@ -151,7 +152,7 @@ function hideFileOnWindows(filePath) {
     if (process.platform !== 'win32') return;
 
     try {
-        const { execFile } = require('child_process');
+        import { execFile } from 'node:child_process';
         execFile('attrib', ['+H', filePath], () => {});
     } catch (error) {
         console.warn('[PISI] Lock dosyası gizlenemedi:', error.message);

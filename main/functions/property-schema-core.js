@@ -1,6 +1,4 @@
-'use strict';
-
-const crypto = require('crypto');
+import * as crypto from 'node:crypto';
 
 const PISI_PROPERTY_SCHEMA_VERSION = 1;
 const PISI_PROPERTY_SCHEMA_RELATIVE_PATH = '.pisi/properties.json';
@@ -199,8 +197,8 @@ function makePropertySchema(definitions = [], options = {}) {
     };
 }
 
-module.exports = {
-    PISI_PROPERTY_SCHEMA_VERSION,
+export {
+PISI_PROPERTY_SCHEMA_VERSION,
     PISI_PROPERTY_SCHEMA_RELATIVE_PATH,
     PISI_EDITABLE_PROPERTY_TYPES,
     PISI_INTERNAL_PROPERTY_TYPES,

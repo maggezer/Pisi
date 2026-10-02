@@ -1,6 +1,4 @@
-'use strict';
-
-const path = require('path');
+import * as path from 'node:path';
 
 const PISI_STORAGE_CONTRACT_VERSION = 1;
 const PISI_STORAGE_DRIVER_METHODS = Object.freeze(['exists', 'mkdir', 'readText', 'writeText', 'list', 'stat', 'rename', 'remove']);
@@ -360,8 +358,8 @@ function createPisiProjectStorage(projectRoot, driver) {
     });
 }
 
-module.exports = {
-    PISI_STORAGE_CONTRACT_VERSION,
+export {
+PISI_STORAGE_CONTRACT_VERSION,
     PISI_STORAGE_DRIVER_METHODS,
     normalizePisiStorageKey,
     isSameOrInsidePisiStoragePath,

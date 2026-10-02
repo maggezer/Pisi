@@ -1,10 +1,8 @@
-'use strict';
-
-const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
-const zlib = require('zlib');
-const editorAssets = require('./editor-asset-store');
+import * as crypto from 'node:crypto';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as zlib from 'node:zlib';
+import * as editorAssets from './editor-asset-store.js';
 
 const PISI_VERSION_HISTORY_FORMAT_VERSION = 2;
 const PISI_VERSION_HISTORY_INDEX_VERSION = 1;
@@ -357,8 +355,8 @@ function restorePisiNodeHistoryVersionBounded(nodePath, historyId, options = {})
     }
 }
 
-module.exports = {
-    PISI_VERSION_HISTORY_FORMAT_VERSION,
+export {
+PISI_VERSION_HISTORY_FORMAT_VERSION,
     PISI_VERSION_HISTORY_INDEX_VERSION,
     PISI_VERSION_HISTORY_MAX_BYTES,
     PISI_VERSION_HISTORY_MAX_VERSIONS,

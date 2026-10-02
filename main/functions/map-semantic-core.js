@@ -1,6 +1,4 @@
-'use strict';
-
-const { modules, registerMainModule } = require('../module-registry');
+import { modules, registerMainModule } from '../module-registry.js';
 
 const filesystemCore = modules['main.filesystemCore'];
 const pathSecurity = modules['main.pathSecurity'];

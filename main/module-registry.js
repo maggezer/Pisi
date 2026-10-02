@@ -1,5 +1,3 @@
-'use strict';
-
 const modules = Object.create(null);
 const bindingOwners = new Map();
 
@@ -43,7 +41,7 @@ function registerMainModule(moduleName, api) {
     return moduleApi;
 }
 
-module.exports = {
-    modules,
+export {
+modules,
     registerMainModule
 };

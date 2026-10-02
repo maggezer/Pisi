@@ -1,7 +1,5 @@
-'use strict';
-
-const { ipcMain } = require('electron');
-const { registerMainModule } = require('../module-registry');
+import { ipcMain } from '../electron-bridge.js';
+import { registerMainModule } from '../module-registry.js';
 
 function getActivePropertyProjectFolder() {
     const projectFolder = globalThis.activeProjectFolder;

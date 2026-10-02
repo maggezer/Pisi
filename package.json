@@ -2,7 +2,7 @@
     "name": "pisi",
     "version": "0.11.0",
     "description": "Pisi desktop knowledge mapping app",
-    "main": "main.js",
+    "main": "main.mjs",
     "author": "Mumin Biyiklioglu",
     "license": "ISC",
     "scripts": {
@@ -38,7 +38,7 @@
             "output": "dist"
         },
         "files": [
-            "main.js",
+            "main.mjs",
             "main/**/*",
             "preload.js",
             "index.html",

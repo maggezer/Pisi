@@ -1,9 +1,7 @@
-'use strict';
-
-const fs = require('fs');
-const path = require('path');
-const { AsyncLocalStorage } = require('async_hooks');
-const storageLayer = require('./storage');
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { AsyncLocalStorage } from 'node:async_hooks';
+import * as storageLayer from './storage.js';
 
 const PISI_STORAGE_FS_BRIDGE_VERSION = 1;
 const PISI_STORAGE_FS_BRIDGE_SYMBOL = Symbol.for('pisi.storage.project-fs-bridge');
@@ -245,8 +243,8 @@ function installPisiStorageProjectFsBridge() {
 
 const installedBridge = installPisiStorageProjectFsBridge();
 
-module.exports = {
-    PISI_STORAGE_FS_BRIDGE_VERSION,
+export {
+PISI_STORAGE_FS_BRIDGE_VERSION,
     getPisiStorageBridgeProjectRoot,
     runPisiStorageBridgeForProject,
     isPisiStorageBridgeInfrastructurePath,

@@ -1,8 +1,6 @@
-'use strict';
-
-const fs = require('fs');
-const path = require('path');
-const integrityCore = require('./project-integrity-core');
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as integrityCore from './project-integrity-core.js';
 
 const PISI_INTEGRITY_SKIP_DIRS = new Set(['.git', 'node_modules', '.pisi', '.pisi-history']);
 const PISI_LOCAL_ATTACHMENT_EXT = /\.(?:png|jpe?g|gif|webp|svg|pdf|docx?|xlsx?|csv|txt|zip|json)$/i;
@@ -110,8 +108,8 @@ function makeRepairPlan(issues = []) {
     return plan;
 }
 
-module.exports = {
-    integrityCore,
+export {
+integrityCore,
     relativePath,
     absolutePath,
     readJson,

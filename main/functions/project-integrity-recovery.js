@@ -1,10 +1,8 @@
-'use strict';
-
-const fs = require('fs');
-const path = require('path');
-const { modules } = require('../module-registry');
-const shared = require('./project-integrity-shared');
-const atomicCore = require('./atomic-mutation-core');
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { modules } from '../module-registry.js';
+import * as shared from './project-integrity-shared.js';
+import * as atomicCore from './atomic-mutation-core.js';
 
 const trashStore = modules['main.trashStore'];
 
@@ -204,7 +202,7 @@ function auditAtomic(projectFolder, context) {
     return count;
 }
 
-module.exports = {
-    auditTrash,
+export {
+auditTrash,
     auditAtomic
 };

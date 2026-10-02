@@ -1,11 +1,9 @@
-'use strict';
-
-const { BrowserWindow, dialog } = require('electron');
-const path = require('path');
-const fs = require('fs');
-const crypto = require('crypto');
-const { registerMainModule } = require('../module-registry');
-const editorAssets = require('./editor-asset-store');
+import { BrowserWindow, dialog } from '../electron-bridge.js';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
+import * as crypto from 'node:crypto';
+import { registerMainModule } from '../module-registry.js';
+import * as editorAssets from './editor-asset-store.js';
 
 function pisiSafeTimestamp(date = new Date()) {
     return date.toISOString().replace(/[:.]/g, '-');

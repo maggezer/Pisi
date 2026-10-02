@@ -1,7 +1,5 @@
-'use strict';
-
-const { ipcMain } = require('electron');
-const { modules, registerMainModule } = require('../module-registry');
+import { ipcMain } from '../electron-bridge.js';
+import { modules, registerMainModule } from '../module-registry.js';
 
 function attachPisiTaskReferenceRewrite(result) {
     if (!result?.ok || !Array.isArray(result.pathChanges) || !result.pathChanges.length) {

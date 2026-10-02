@@ -1,9 +1,7 @@
-'use strict';
-
-const fs = require('fs');
-const path = require('path');
-const { modules } = require('../module-registry');
-const shared = require('./project-integrity-shared');
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { modules } from '../module-registry.js';
+import * as shared from './project-integrity-shared.js';
 
 const filesystemCore = modules['main.filesystemCore'];
 const mapSemanticCore = modules['main.mapSemanticCore'];
@@ -583,8 +581,8 @@ function auditDocumentsAndMaps(projectFolder, context, relationships) {
     return inventory;
 }
 
-module.exports = {
-    collectDocumentInventory,
+export {
+collectDocumentInventory,
     auditNodeProperties,
     auditAttachments,
     resolveMapReference,

@@ -1,9 +1,7 @@
-'use strict';
-
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
-const core = require('./storage-core');
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as crypto from 'node:crypto';
+import * as core from './storage-core.js';
 
 const pisiProjectStorageCache = new Map();
 let pisiStorageDriverIoDepth = 0;
@@ -212,9 +210,9 @@ function clearPisiProjectStorageCache(projectFolder = null) {
     pisiProjectStorageCache.delete(key);
 }
 
-module.exports = {
-    ...core,
-    canonicalizePisiStorageRoot,
+export * from './storage-core.js';
+export {
+canonicalizePisiStorageRoot,
     assertPisiStoragePathSafe,
     createPisiFileStorageDriver,
     getPisiProjectStorage,

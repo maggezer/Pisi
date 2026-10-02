@@ -1,9 +1,7 @@
-'use strict';
-
-const path = require('path');
-const fs = require('fs');
-const crypto = require('crypto');
-const { registerMainModule } = require('../module-registry');
+import * as path from 'node:path';
+import * as fs from 'node:fs';
+import * as crypto from 'node:crypto';
+import { registerMainModule } from '../module-registry.js';
 
 const PISI_PROPERTY_TYPES = new Set(['text', 'number', 'multiselect', 'relation', 'rollup']);
 const PISI_ROLLUP_AGGREGATES = new Set(['count', 'sum', 'average', 'min', 'max', 'unique', 'join']);

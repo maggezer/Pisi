@@ -1,8 +1,6 @@
-'use strict';
-
-const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
+import * as crypto from 'node:crypto';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 
 const PISI_PAINT_ASSET_PATTERN = /^paint\/([a-f0-9]{64})\.png$/;
 const PISI_SHEET_ASSET_PATTERN = /^sheet\/([a-f0-9]{64})\.json$/;
@@ -456,8 +454,8 @@ function hydratePisiEditorAssets(content = '', options = {}) {
     return hydratePisiEditorSheetAssets(hydratePisiEditorPaintAssets(content, options), options);
 }
 
-module.exports = {
-    PISI_PAINT_ASSET_PATTERN,
+export {
+PISI_PAINT_ASSET_PATTERN,
     PISI_SHEET_ASSET_PATTERN,
     PISI_SHEET_MAX_BYTES,
     PISI_PAINT_MAX_BYTES,

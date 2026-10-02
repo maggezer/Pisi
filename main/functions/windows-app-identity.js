@@ -1,8 +1,6 @@
-'use strict';
-
-const path = require('path');
-const fs = require('fs');
-const crypto = require('crypto');
+import * as path from 'node:path';
+import * as fs from 'node:fs';
+import * as crypto from 'node:crypto';
 
 function getWindowsAppIdentity(app, executable = process.execPath) {
     const root = app.getAppPath();
@@ -45,4 +43,6 @@ function ensureWindowsDevShortcut(app, shell, executable = process.execPath) {
     }
 }
 
-module.exports = { getWindowsAppIdentity, ensureWindowsDevShortcut };
+export {
+getWindowsAppIdentity, ensureWindowsDevShortcut
+};

@@ -1,7 +1,5 @@
-'use strict';
-
-const path = require('path');
-const crypto = require('crypto');
+import * as path from 'node:path';
+import * as crypto from 'node:crypto';
 
 const PISI_INTEGRITY_VERSION = 2;
 const PISI_INTEGRITY_SEVERITIES = new Set(['info', 'warning', 'error', 'critical']);
@@ -170,8 +168,8 @@ function validPisiIntegrityId(kind, value) {
     return false;
 }
 
-module.exports = {
-    PISI_INTEGRITY_VERSION,
+export {
+PISI_INTEGRITY_VERSION,
     PISI_INTEGRITY_SEVERITIES,
     PISI_INTEGRITY_REPAIR_SAFETY,
     normalizePisiIntegrityPath,

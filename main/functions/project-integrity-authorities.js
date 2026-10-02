@@ -1,9 +1,7 @@
-'use strict';
-
-const fs = require('fs');
-const path = require('path');
-const { modules } = require('../module-registry');
-const shared = require('./project-integrity-shared');
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { modules } from '../module-registry.js';
+import * as shared from './project-integrity-shared.js';
 
 const taskStore = modules['main.taskStore'];
 const relationshipStore = modules['main.relationshipStore'];
@@ -346,7 +344,7 @@ function auditRelationships(projectFolder, context, inventory) {
     return { relationships, byId };
 }
 
-module.exports = {
-    auditTasks,
+export {
+auditTasks,
     auditRelationships
 };

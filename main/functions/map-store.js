@@ -1,11 +1,9 @@
-'use strict';
-
-const { app, BrowserWindow, Menu, ipcMain, dialog, screen, shell } = require('electron');
-const path = require('path');
-const fs = require('fs');
-const crypto = require('crypto');
-const { registerMainModule } = require('../module-registry');
-const editorAssets = require('./editor-asset-store');
+import { app, BrowserWindow, Menu, ipcMain, dialog, screen, shell } from '../electron-bridge.js';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
+import * as crypto from 'node:crypto';
+import { registerMainModule } from '../module-registry.js';
+import * as editorAssets from './editor-asset-store.js';
 
 function getUniqueDirectoryPath(destinationFolder, wantedName) {
     const cleanName = sanitizePisiBaseName(wantedName || translatePisiMain('Yeni Klasör'));

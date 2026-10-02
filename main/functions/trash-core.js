@@ -1,6 +1,4 @@
-'use strict';
-
-const path = require('path');
+import * as path from 'node:path';
 
 const PISI_TRASH_VERSION = 1;
 const PISI_TRASH_DIR = path.join('.pisi', 'trash');
@@ -110,8 +108,8 @@ function summarizePisiTrashManifest(manifest = {}) {
     };
 }
 
-module.exports = {
-    PISI_TRASH_VERSION,
+export {
+PISI_TRASH_VERSION,
     PISI_TRASH_DIR,
     PISI_TRASH_ITEMS_DIR,
     normalizePisiTrashId,
