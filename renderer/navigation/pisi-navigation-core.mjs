@@ -6,7 +6,9 @@ function normalizePisiNavigationPath(value = '', caseInsensitive = false) {
 }
 
 function normalizePisiNavigationText(value = '') {
-    return String(value || '').replace(/\s+/g, ' ').trim();
+    return String(value || '')
+        .replace(/\s+/g, ' ')
+        .trim();
 }
 
 function getPisiTaskNavigationTaskId(value = {}) {
@@ -53,12 +55,8 @@ function isPisiTaskNavigationCandidateAccepted(candidate = {}, target = {}, opti
 
     const targetTodo = normalizePisiNavigationText(target.todoTag).toLowerCase();
     const candidateTodo = normalizePisiNavigationText(candidate.todoTag).toLowerCase();
-    const targetText = normalizePisiNavigationText(
-        target.sourceText || target.title || target.text
-    );
-    const candidateText = normalizePisiNavigationText(
-        candidate.sourceText || candidate.title || candidate.text
-    );
+    const targetText = normalizePisiNavigationText(target.sourceText || target.title || target.text);
+    const candidateText = normalizePisiNavigationText(candidate.sourceText || candidate.title || candidate.text);
 
     if (!targetText || candidateText !== targetText) return false;
     return !targetTodo || candidateTodo === targetTodo;
@@ -74,12 +72,8 @@ function scorePisiTaskNavigationCandidate(candidate = {}, target = {}, options =
     const candidatePath = normalizePisiNavigationPath(candidate.nodePath, caseInsensitive);
     const targetTodo = normalizePisiNavigationText(target.todoTag).toLowerCase();
     const candidateTodo = normalizePisiNavigationText(candidate.todoTag).toLowerCase();
-    const targetText = normalizePisiNavigationText(
-        target.sourceText || target.title || target.text
-    );
-    const candidateText = normalizePisiNavigationText(
-        candidate.sourceText || candidate.title || candidate.text
-    );
+    const targetText = normalizePisiNavigationText(target.sourceText || target.title || target.text);
+    const candidateText = normalizePisiNavigationText(candidate.sourceText || candidate.title || candidate.text);
 
     let score = 0;
     if (targetTaskId && candidateTaskId === targetTaskId) score += 100000;

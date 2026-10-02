@@ -1,22 +1,17 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 import {
     getPisiTaskNavigationTaskId,
     normalizePisiNavigationText,
     selectPisiTaskNavigationCandidate,
     shouldRejectMissingPisiCanonicalTask
-} from "../navigation/pisi-navigation-core.mjs";
+} from '../navigation/pisi-navigation-core.mjs';
 
 let pisiMissionHighlightAnimation = null;
 let pisiMissionHighlightRequest = 0;
 
 function clearPisiMissionHighlightArtifacts(root = document) {
-    root.querySelectorAll?.(
-        '.pisi-block-highlight, .pisi-todo-source-highlight'
-    ).forEach((element) => {
-        element.classList.remove(
-            'pisi-block-highlight',
-            'pisi-todo-source-highlight'
-        );
+    root.querySelectorAll?.('.pisi-block-highlight, .pisi-todo-source-highlight').forEach((element) => {
+        element.classList.remove('pisi-block-highlight', 'pisi-todo-source-highlight');
     });
 }
 
@@ -50,17 +45,11 @@ function getPisiMissionEditorCandidates(mission) {
     const modalEditor = document.getElementById('node-modal-content');
     const centerEditor = document.getElementById('center-node-editor-content');
 
-    if (
-        modalEditor &&
-        samePisiPathForTags(activeModalNode?.path, mission?.nodePath)
-    ) {
+    if (modalEditor && samePisiPathForTags(activeModalNode?.path, mission?.nodePath)) {
         candidates.push(modalEditor);
     }
 
-    if (
-        centerEditor &&
-        samePisiPathForTags(activeCenterNode?.path, mission?.nodePath)
-    ) {
+    if (centerEditor && samePisiPathForTags(activeCenterNode?.path, mission?.nodePath)) {
         candidates.push(centerEditor);
     }
 
@@ -81,36 +70,25 @@ function getPisiTaskIdFromBlock(block) {
     const direct = String(block?.dataset?.pisiTaskId || '').trim();
     if (direct.startsWith('task_')) return direct;
 
-    const tagged = Array.from(
-        block?.querySelectorAll?.('[data-pisi-task-id]') || []
-    ).map((element) => String(element.dataset.pisiTaskId || '').trim())
+    const tagged = Array.from(block?.querySelectorAll?.('[data-pisi-task-id]') || [])
+        .map((element) => String(element.dataset.pisiTaskId || '').trim())
         .find((value) => value.startsWith('task_'));
     return tagged || '';
 }
 
 function getPisiTodoTagFromNavigationBlock(block) {
-    const element = Array.from(
-        block?.querySelectorAll?.('.pisi-user-tag[data-pisi-tag]') || []
-    ).find((candidate) => {
-        return /^todo\./i.test(normalizePisiTaskNavigationTag(
-            candidate.dataset.pisiTag || candidate.textContent || ''
-        ));
+    const element = Array.from(block?.querySelectorAll?.('.pisi-user-tag[data-pisi-tag]') || []).find((candidate) => {
+        return /^todo\./i.test(normalizePisiTaskNavigationTag(candidate.dataset.pisiTag || candidate.textContent || ''));
     });
-    return element
-        ? normalizePisiTaskNavigationTag(element.dataset.pisiTag || element.textContent)
-        : '';
+    return element ? normalizePisiTaskNavigationTag(element.dataset.pisiTag || element.textContent) : '';
 }
 
 function getPisiMissionSourceInBlock(block, mission) {
     const normalizedTodoTag = normalizePisiTaskNavigationTag(mission?.todoTag);
-    const sources = Array.from(
-        block?.querySelectorAll?.('.pisi-todo-source[data-pisi-todo-for]') || []
-    );
+    const sources = Array.from(block?.querySelectorAll?.('.pisi-todo-source[data-pisi-todo-for]') || []);
 
     const exact = sources.find((element) => {
-        return normalizePisiTaskNavigationTag(
-            element.dataset.pisiTodoFor || ''
-        ) === normalizedTodoTag;
+        return normalizePisiTaskNavigationTag(element.dataset.pisiTodoFor || '') === normalizedTodoTag;
     });
     if (exact) return exact;
     return sources.length === 1 ? sources[0] : null;
@@ -124,9 +102,7 @@ function makePisiNavigationCandidateFromBlock(block, nodePath = '') {
         blockId: String(block.dataset?.pisiBlockId || '').trim(),
         nodePath,
         todoTag: getPisiTodoTagFromNavigationBlock(block),
-        sourceText: normalizePisiNavigationText(
-            source?.textContent || block.textContent || ''
-        ),
+        sourceText: normalizePisiNavigationText(source?.textContent || block.textContent || ''),
         block
     };
 }
@@ -136,21 +112,14 @@ function findPisiMissionTarget(editor, mission) {
 
     ensurePisiEditorBlocks(editor, { preserveSelection: false });
 
-    const candidates = Array.from(
-        editor.querySelectorAll('.pisi-editor-block[data-pisi-block-id]')
-    ).map((block) => makePisiNavigationCandidateFromBlock(
-        block,
-        mission.nodePath || ''
-    ));
+    const candidates = Array.from(editor.querySelectorAll('.pisi-editor-block[data-pisi-block-id]')).map((block) =>
+        makePisiNavigationCandidateFromBlock(block, mission.nodePath || '')
+    );
 
-    const selected = selectPisiTaskNavigationCandidate(
-        candidates,
-        mission,
-        {
-            caseInsensitive: window.pisiEnvironment?.platform === 'win32',
-            scope: 'direct'
-        }
-    )?.candidate;
+    const selected = selectPisiTaskNavigationCandidate(candidates, mission, {
+        caseInsensitive: window.pisiEnvironment?.platform === 'win32',
+        scope: 'direct'
+    })?.candidate;
 
     if (!selected?.block) return null;
     return getPisiMissionSourceInBlock(selected.block, mission) || selected.block;
@@ -165,26 +134,29 @@ function animatePisiMissionTarget(target) {
         behavior: 'smooth'
     });
 
-    pisiMissionHighlightAnimation = target.animate([
+    pisiMissionHighlightAnimation = target.animate(
+        [
+            {
+                backgroundColor: 'rgba(93, 173, 226, 0.34)',
+                boxShadow: '0 0 0 2px rgba(93, 173, 226, 0.88)',
+                offset: 0
+            },
+            {
+                backgroundColor: 'rgba(93, 173, 226, 0.24)',
+                boxShadow: '0 0 0 2px rgba(93, 173, 226, 0.72)',
+                offset: 0.72
+            },
+            {
+                backgroundColor: 'rgba(93, 173, 226, 0)',
+                boxShadow: '0 0 0 2px rgba(93, 173, 226, 0)',
+                offset: 1
+            }
+        ],
         {
-            backgroundColor: 'rgba(93, 173, 226, 0.34)',
-            boxShadow: '0 0 0 2px rgba(93, 173, 226, 0.88)',
-            offset: 0
-        },
-        {
-            backgroundColor: 'rgba(93, 173, 226, 0.24)',
-            boxShadow: '0 0 0 2px rgba(93, 173, 226, 0.72)',
-            offset: 0.72
-        },
-        {
-            backgroundColor: 'rgba(93, 173, 226, 0)',
-            boxShadow: '0 0 0 2px rgba(93, 173, 226, 0)',
-            offset: 1
+            duration: 2200,
+            easing: 'ease-out'
         }
-    ], {
-        duration: 2200,
-        easing: 'ease-out'
-    });
+    );
 
     const animation = pisiMissionHighlightAnimation;
     animation.finished
@@ -248,22 +220,19 @@ function makePisiCanonicalNavigationTarget(input = {}) {
 function getPisiNavigationCandidatesFromHtml(html, nodePath) {
     const template = document.createElement('template');
     template.innerHTML = String(html || '');
-    return Array.from(template.content.querySelectorAll(
-        '.pisi-editor-block[data-pisi-block-id]'
-    )).filter((block) => !block.closest('.pisi-diary-managed-block'))
+    return Array.from(template.content.querySelectorAll('.pisi-editor-block[data-pisi-block-id]'))
+        .filter((block) => !block.closest('.pisi-diary-managed-block'))
         .map((block) => makePisiNavigationCandidateFromBlock(block, nodePath));
 }
 
 function findPisiExactNavigationCandidateInHtml(html, nodePath, target) {
     const candidates = getPisiNavigationCandidatesFromHtml(html, nodePath);
-    return selectPisiTaskNavigationCandidate(
-        candidates,
-        target,
-        {
+    return (
+        selectPisiTaskNavigationCandidate(candidates, target, {
             caseInsensitive: window.pisiEnvironment?.platform === 'win32',
             scope: 'direct'
-        }
-    )?.candidate || null;
+        })?.candidate || null
+    );
 }
 
 async function readPisiNavigationNode(nodePath) {
@@ -280,10 +249,7 @@ async function recoverPisiTaskNavigationSource(target) {
     for (const documentRecord of index.documents.values()) {
         const nodePath = documentRecord?.path;
         if (!nodePath) continue;
-        for (const candidate of getPisiNavigationCandidatesFromHtml(
-            documentRecord.html,
-            nodePath
-        )) {
+        for (const candidate of getPisiNavigationCandidatesFromHtml(documentRecord.html, nodePath)) {
             candidates.push({
                 ...candidate,
                 nodeTitle: documentRecord.title || 'Node',
@@ -294,26 +260,18 @@ async function recoverPisiTaskNavigationSource(target) {
         }
     }
 
-    return selectPisiTaskNavigationCandidate(
-        candidates,
-        target,
-        {
+    return (
+        selectPisiTaskNavigationCandidate(candidates, target, {
             caseInsensitive: window.pisiEnvironment?.platform === 'win32',
             scope: 'recovery'
-        }
-    )?.candidate || null;
+        })?.candidate || null
+    );
 }
 
 async function resolvePisiTaskNavigationSource(input = {}) {
     const target = makePisiCanonicalNavigationTarget(input);
     let documentResult = await readPisiNavigationNode(target.nodePath);
-    let exact = documentResult
-        ? findPisiExactNavigationCandidateInHtml(
-            documentResult.data?.content || '',
-            target.nodePath,
-            target
-        )
-        : null;
+    let exact = documentResult ? findPisiExactNavigationCandidateInHtml(documentResult.data?.content || '', target.nodePath, target) : null;
 
     if (documentResult && exact) {
         return {
@@ -326,9 +284,7 @@ async function resolvePisiTaskNavigationSource(input = {}) {
 
     const recovered = await recoverPisiTaskNavigationSource(target);
     if (!recovered?.nodePath) {
-        return documentResult
-            ? { ...target, documentResult, recovered: false, exactMissing: true }
-            : null;
+        return documentResult ? { ...target, documentResult, recovered: false, exactMissing: true } : null;
     }
 
     documentResult = await readPisiNavigationNode(recovered.nodePath);
@@ -356,26 +312,23 @@ async function repairPisiCanonicalTaskSource(target) {
     const changed =
         !samePisiPathForTags(current.nodePath, target.nodePath) ||
         String(current.blockId || '') !== String(target.blockId || '') ||
-        Boolean(target.mapPath) && !samePisiPathForTags(current.mapPath, target.mapPath);
+        (Boolean(target.mapPath) && !samePisiPathForTags(current.mapPath, target.mapPath));
     if (!changed) return;
 
-    await window.pisiProject?.quickAddTask?.(
-        window.currentProjectFolder,
-        {
-            op: 'update',
-            taskId,
-            patch: {
-                source: {
-                    ...current,
-                    nodePath: target.nodePath,
-                    blockId: target.blockId || current.blockId || null,
-                    mapPath: target.mapPath || current.mapPath || null,
-                    nodeTitle: target.nodeTitle || current.nodeTitle || '',
-                    mapTitle: target.mapTitle || current.mapTitle || ''
-                }
+    await window.pisiProject?.quickAddTask?.(window.currentProjectFolder, {
+        op: 'update',
+        taskId,
+        patch: {
+            source: {
+                ...current,
+                nodePath: target.nodePath,
+                blockId: target.blockId || current.blockId || null,
+                mapPath: target.mapPath || current.mapPath || null,
+                nodeTitle: target.nodeTitle || current.nodeTitle || '',
+                mapTitle: target.mapTitle || current.mapTitle || ''
             }
         }
-    );
+    });
 }
 
 function makePisiNavigationNodeItem(target) {
@@ -387,7 +340,10 @@ function makePisiNavigationNodeItem(target) {
         };
     }
 
-    const fileName = String(target.nodePath || '').split(/[\\/]/).pop() || 'Node.node';
+    const fileName =
+        String(target.nodePath || '')
+            .split(/[\\/]/)
+            .pop() || 'Node.node';
     return {
         name: fileName,
         fileName,
@@ -405,9 +361,11 @@ function makePisiNavigationNodeItem(target) {
 }
 
 function dispatchPisiTaskNavigationComplete(result) {
-    document.dispatchEvent(new CustomEvent('pisi:task-navigation-complete', {
-        detail: result
-    }));
+    document.dispatchEvent(
+        new CustomEvent('pisi:task-navigation-complete', {
+            detail: result
+        })
+    );
     return result;
 }
 
@@ -433,14 +391,8 @@ async function navigatePisiTaskToSource(input = {}) {
         });
     }
 
-    const modalAlreadyOnTarget = samePisiPathForTags(
-        activeModalNode?.path,
-        target.nodePath
-    );
-    const centerAlreadyOnTarget = samePisiPathForTags(
-        activeCenterNode?.path,
-        target.nodePath
-    );
+    const modalAlreadyOnTarget = samePisiPathForTags(activeModalNode?.path, target.nodePath);
+    const centerAlreadyOnTarget = samePisiPathForTags(activeCenterNode?.path, target.nodePath);
 
     if (!modalAlreadyOnTarget && activeModalNode) {
         const saved = await window.closeNodeModalAndSave?.();
@@ -455,9 +407,7 @@ async function navigatePisiTaskToSource(input = {}) {
     }
 
     if (!modalAlreadyOnTarget && !centerAlreadyOnTarget) {
-        const opened = await window.openPisiFileTab?.(
-            makePisiNavigationNodeItem(target)
-        );
+        const opened = await window.openPisiFileTab?.(makePisiNavigationNodeItem(target));
         if (!opened) {
             return dispatchPisiTaskNavigationComplete({
                 ok: false,
@@ -492,24 +442,26 @@ async function openPisiTagBlockResult(block) {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "openPisiTagBlockResult": {
+    openPisiTagBlockResult: {
         enumerable: true,
-        get() { return openPisiTagBlockResult; }
+        get() {
+            return openPisiTagBlockResult;
+        }
     },
-    "highlightPisiEditorBlock": {
+    highlightPisiEditorBlock: {
         enumerable: true,
-        get() { return highlightPisiEditorBlock; }
+        get() {
+            return highlightPisiEditorBlock;
+        }
     },
-    "bindPisiMissionHighlightSanitizer": {
+    bindPisiMissionHighlightSanitizer: {
         enumerable: true,
-        get() { return bindPisiMissionHighlightSanitizer; }
+        get() {
+            return bindPisiMissionHighlightSanitizer;
+        }
     }
 });
 
-registerModule("tags.todoNavigation", moduleApi);
+registerModule('tags.todoNavigation', moduleApi);
 
-export {
-    openPisiTagBlockResult,
-    highlightPisiEditorBlock,
-    bindPisiMissionHighlightSanitizer
-};
+export { openPisiTagBlockResult, highlightPisiEditorBlock, bindPisiMissionHighlightSanitizer };

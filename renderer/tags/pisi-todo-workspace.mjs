@@ -41,10 +41,7 @@ function loadPisiTodoWorkspaceView() {
 
 function savePisiTodoWorkspaceView() {
     try {
-        localStorage.setItem(
-            getPisiTodoWorkspaceStorageKey(),
-            pisiTodoWorkspaceState.view
-        );
+        localStorage.setItem(getPisiTodoWorkspaceStorageKey(), pisiTodoWorkspaceState.view);
     } catch {
         // Görünüm tercihi zorunlu değildir.
     }
@@ -77,16 +74,12 @@ function ensurePisiTodoWorkspaceOpenButton() {
         workspaceButton = document.createElement('button');
         workspaceButton.id = 'pisi-todo-workspace-open';
         workspaceButton.type = 'button';
-        workspaceButton.className =
-            'pisi-todo-panel-action pisi-todo-workspace-open';
+        workspaceButton.className = 'pisi-todo-panel-action pisi-todo-workspace-open';
         const icon = document.createElement('span');
-        icon.className =
-            'pisi-todo-panel-action-icon pisi-todo-panel-workspace-icon';
+        icon.className = 'pisi-todo-panel-action-icon pisi-todo-panel-workspace-icon';
         icon.setAttribute('aria-hidden', 'true');
         workspaceButton.appendChild(icon);
-        workspaceButton.title = pisiTodoWorkspaceTranslate(
-            'To-do çalışma alanını aç'
-        );
+        workspaceButton.title = pisiTodoWorkspaceTranslate('To-do çalışma alanını aç');
         workspaceButton.setAttribute('aria-label', workspaceButton.title);
         workspaceButton.addEventListener('click', openPisiTodoWorkspace);
         actions.appendChild(workspaceButton);
@@ -97,23 +90,16 @@ function ensurePisiTodoWorkspaceOpenButton() {
         quickAddButton = document.createElement('button');
         quickAddButton.id = 'pisi-todo-quick-add';
         quickAddButton.type = 'button';
-        quickAddButton.className =
-            'pisi-todo-panel-action pisi-todo-quick-add';
+        quickAddButton.className = 'pisi-todo-panel-action pisi-todo-quick-add';
         quickAddButton.setAttribute('aria-keyshortcuts', 'Control+M');
         const icon = document.createElement('span');
-        icon.className =
-            'pisi-todo-panel-action-icon pisi-todo-quick-add-icon';
+        icon.className = 'pisi-todo-panel-action-icon pisi-todo-quick-add-icon';
         icon.setAttribute('aria-hidden', 'true');
         quickAddButton.appendChild(icon);
-        quickAddButton.title = pisiTodoWorkspaceTranslate(
-            'Görev ekleme penceresini aç (Ctrl+M)'
-        );
+        quickAddButton.title = pisiTodoWorkspaceTranslate('Görev ekleme penceresini aç (Ctrl+M)');
         quickAddButton.setAttribute('aria-label', quickAddButton.title);
         quickAddButton.addEventListener('click', () => {
-            document.dispatchEvent(new CustomEvent(
-                'pisi:quick-add-requested',
-                { detail: { source: 'todo-panel' } }
-            ));
+            document.dispatchEvent(new CustomEvent('pisi:quick-add-requested', { detail: { source: 'todo-panel' } }));
         });
         actions.appendChild(quickAddButton);
     }
@@ -146,10 +132,7 @@ function ensurePisiTodoWorkspaceDom() {
 
     const navigation = document.createElement('nav');
     navigation.className = 'pisi-todo-workspace-navigation';
-    navigation.setAttribute(
-        'aria-label',
-        pisiTodoWorkspaceTranslate('To-do genel görünümleri')
-    );
+    navigation.setAttribute('aria-label', pisiTodoWorkspaceTranslate('To-do genel görünümleri'));
 
     for (const view of PISI_TODO_WORKSPACE_VIEWS) {
         const button = document.createElement('button');
@@ -171,9 +154,7 @@ function ensurePisiTodoWorkspaceDom() {
     content.id = 'pisi-todo-workspace-content';
     content.className = 'pisi-todo-workspace-content';
     content.addEventListener('click', (event) => {
-        if (!event.target.closest(
-            '.pisi-third-calendar-nav-button, .pisi-third-calendar-today'
-        )) {
+        if (!event.target.closest('.pisi-third-calendar-nav-button, .pisi-third-calendar-today')) {
             return;
         }
         queueMicrotask(renderPisiTodoWorkspace);
@@ -194,9 +175,7 @@ function getPisiTodoWorkspaceMissions() {
         includeCompleted: true
     });
 
-    return typeof window.enhancePisiMissionsThirdRelease === 'function'
-        ? window.enhancePisiMissionsThirdRelease(missions)
-        : missions;
+    return typeof window.enhancePisiMissionsThirdRelease === 'function' ? window.enhancePisiMissionsThirdRelease(missions) : missions;
 }
 
 function updatePisiTodoWorkspaceNavigation(workspace) {
@@ -218,10 +197,7 @@ function renderPisiTodoWorkspace() {
 
     const subtitle = workspace.querySelector('.pisi-todo-workspace-subtitle');
     if (subtitle) {
-        const projectName = getPisiTodoWorkspaceProjectKey()
-            .split('/')
-            .filter(Boolean)
-            .pop();
+        const projectName = getPisiTodoWorkspaceProjectKey().split('/').filter(Boolean).pop();
         subtitle.textContent = window.currentProjectFolder
             ? `${projectName || pisiTodoWorkspaceTranslate('Proje')} · ${pisiTodoWorkspaceTranslate('genel görev görünümü')}`
             : pisiTodoWorkspaceTranslate('Önce bir proje klasörü seçin.');
@@ -231,9 +207,7 @@ function renderPisiTodoWorkspace() {
         content.innerHTML = '';
         const empty = document.createElement('div');
         empty.className = 'pisi-todo-workspace-empty';
-        empty.textContent = pisiTodoWorkspaceTranslate(
-            'To-do çalışma alanı için önce bir proje klasörü seçin.'
-        );
+        empty.textContent = pisiTodoWorkspaceTranslate('To-do çalışma alanı için önce bir proje klasörü seçin.');
         content.appendChild(empty);
         return;
     }
@@ -250,9 +224,7 @@ function renderPisiTodoWorkspace() {
         content.innerHTML = '';
         const empty = document.createElement('div');
         empty.className = 'pisi-todo-workspace-empty';
-        empty.textContent = pisiTodoWorkspaceTranslate(
-            'To-do görünümü henüz hazır değil.'
-        );
+        empty.textContent = pisiTodoWorkspaceTranslate('To-do görünümü henüz hazır değil.');
         content.appendChild(empty);
         return;
     }
@@ -274,11 +246,7 @@ function schedulePisiTodoWorkspaceRender() {
 function captureAndHidePisiCenterSurfaces() {
     if (pisiTodoWorkspaceState.hiddenSnapshot) return;
 
-    const ids = [
-        'workspace-placeholder',
-        'map-canvas',
-        'center-node-editor'
-    ];
+    const ids = ['workspace-placeholder', 'map-canvas', 'center-node-editor'];
     pisiTodoWorkspaceState.hiddenSnapshot = {};
 
     for (const id of ids) {
@@ -386,9 +354,7 @@ function bindPisiTodoWorkspaceTabs() {
     if (!tabs) return;
 
     tabs.addEventListener('click', (event) => {
-        const regularTab = event.target.closest(
-            '.center-tab:not(.pisi-todo-center-tab)'
-        );
+        const regularTab = event.target.closest('.center-tab:not(.pisi-todo-center-tab)');
         if (!regularTab || event.target.closest('.center-tab-close')) return;
         if (pisiTodoWorkspaceState.open) closePisiTodoWorkspace();
     });
@@ -423,10 +389,7 @@ function initializePisiTodoWorkspace() {
     ensurePisiTodoWorkspaceDom();
     bindPisiTodoWorkspaceTabs();
     bindPisiTodoWorkspaceMissionRefresh();
-    document.addEventListener(
-        'pisi:mission-index-updated',
-        schedulePisiTodoWorkspaceRender
-    );
+    document.addEventListener('pisi:mission-index-updated', schedulePisiTodoWorkspaceRender);
 
     document.addEventListener('pisi:active-node-changed', (event) => {
         if (!pisiTodoWorkspaceState.open) return;
@@ -441,10 +404,4 @@ if (document.readyState === 'loading') {
     initializePisiTodoWorkspace();
 }
 
-export {
-    PISI_TODO_WORKSPACE_VIEWS,
-    pisiTodoWorkspaceState,
-    openPisiTodoWorkspace,
-    closePisiTodoWorkspace,
-    renderPisiTodoWorkspace
-};
+export { PISI_TODO_WORKSPACE_VIEWS, pisiTodoWorkspaceState, openPisiTodoWorkspace, closePisiTodoWorkspace, renderPisiTodoWorkspace };

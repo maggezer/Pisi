@@ -12,9 +12,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 let corePromise = null;
 function loadCore() {
     if (!corePromise) {
-        corePromise = import(pathToFileURL(
-            path.join(root, 'renderer/editor/pisi-editor-text-format-core.mjs')
-        ).href);
+        corePromise = import(pathToFileURL(path.join(root, 'renderer/editor/pisi-editor-text-format-core.mjs')).href);
     }
     return corePromise;
 }
@@ -26,22 +24,10 @@ test('inline text format core toggles bold and italic deterministically', async 
     assert.equal(core.isPisiInlineTextCommand('italic'), true);
     assert.equal(core.isPisiInlineTextCommand('indent'), false);
 
-    assert.deepEqual(
-        core.resolvePisiInlineTextMutation('bold', { fontWeight: '400' }),
-        { property: 'fontWeight', value: '700' }
-    );
-    assert.deepEqual(
-        core.resolvePisiInlineTextMutation('bold', { fontWeight: '700' }),
-        { property: 'fontWeight', value: '400' }
-    );
-    assert.deepEqual(
-        core.resolvePisiInlineTextMutation('italic', { fontStyle: 'normal' }),
-        { property: 'fontStyle', value: 'italic' }
-    );
-    assert.deepEqual(
-        core.resolvePisiInlineTextMutation('italic', { fontStyle: 'italic' }),
-        { property: 'fontStyle', value: 'normal' }
-    );
+    assert.deepEqual(core.resolvePisiInlineTextMutation('bold', { fontWeight: '400' }), { property: 'fontWeight', value: '700' });
+    assert.deepEqual(core.resolvePisiInlineTextMutation('bold', { fontWeight: '700' }), { property: 'fontWeight', value: '400' });
+    assert.deepEqual(core.resolvePisiInlineTextMutation('italic', { fontStyle: 'normal' }), { property: 'fontStyle', value: 'italic' });
+    assert.deepEqual(core.resolvePisiInlineTextMutation('italic', { fontStyle: 'italic' }), { property: 'fontStyle', value: 'normal' });
 });
 
 test('underline and strike toggle independently without leaving a stuck decoration', async () => {
@@ -134,10 +120,7 @@ test('toolbar state has one final inline authority after legacy Word synchroniza
     assert.ok(syncStart >= 0);
     assert.match(syncBody, /window\.syncPisiWordToolbarState\?\.\(toolbar\)/);
     assert.match(syncBody, /syncPisiAuthorityToolbarTypingState\(editor\)/);
-    assert.ok(
-        syncBody.indexOf('syncPisiWordToolbarState') <
-        syncBody.indexOf('syncPisiAuthorityToolbarTypingState')
-    );
+    assert.ok(syncBody.indexOf('syncPisiWordToolbarState') < syncBody.indexOf('syncPisiAuthorityToolbarTypingState'));
     assert.match(source, /function getPisiAuthorityCommandActive/);
     assert.match(source, /getPisiAuthorityCurrentRange\(editor\)/);
     assert.match(source, /window\.addEventListener\('keyup', handlePisiAuthorityPostEditorEvent\)/);

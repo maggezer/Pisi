@@ -11,13 +11,7 @@ const PISI_SEARCH_FIELD_WEIGHTS = Object.freeze({
 const pisiPreparedSearchFields = new WeakMap();
 
 function replaceTurkishSearchCharacters(value) {
-    return value
-        .replace(/[ıİ]/g, 'i')
-        .replace(/[şŞ]/g, 's')
-        .replace(/[ğĞ]/g, 'g')
-        .replace(/[üÜ]/g, 'u')
-        .replace(/[öÖ]/g, 'o')
-        .replace(/[çÇ]/g, 'c');
+    return value.replace(/[ıİ]/g, 'i').replace(/[şŞ]/g, 's').replace(/[ğĞ]/g, 'g').replace(/[üÜ]/g, 'u').replace(/[öÖ]/g, 'o').replace(/[çÇ]/g, 'c');
 }
 
 export function normalizePisiSearchText(value = '') {
@@ -45,9 +39,7 @@ function getRecordFields(record) {
                 kind: field?.kind || 'content',
                 value: String(field?.value || ''),
                 normalized: normalizePisiSearchText(field?.value || ''),
-                weight: Number(field?.weight) ||
-                    PISI_SEARCH_FIELD_WEIGHTS[field?.kind] ||
-                    PISI_SEARCH_FIELD_WEIGHTS.content
+                weight: Number(field?.weight) || PISI_SEARCH_FIELD_WEIGHTS[field?.kind] || PISI_SEARCH_FIELD_WEIGHTS.content
             }))
             .filter((field) => field.normalized);
     } else {
@@ -56,11 +48,13 @@ function getRecordFields(record) {
             { kind: 'content', value: record?.text || '' },
             { kind: 'map', value: record?.mapTitle || '' },
             { kind: 'path', value: record?.relativePath || record?.path || '' }
-        ].map((field) => ({
-            ...field,
-            normalized: normalizePisiSearchText(field.value),
-            weight: PISI_SEARCH_FIELD_WEIGHTS[field.kind]
-        })).filter((field) => field.normalized);
+        ]
+            .map((field) => ({
+                ...field,
+                normalized: normalizePisiSearchText(field.value),
+                weight: PISI_SEARCH_FIELD_WEIGHTS[field.kind]
+            }))
+            .filter((field) => field.normalized);
     }
     if (record && typeof record === 'object') pisiPreparedSearchFields.set(record, fields);
     return fields;
@@ -212,10 +206,7 @@ export function searchPisiRecords(records = [], query = '', options = {}) {
         .filter((result) => result.score > 0)
         .sort((a, b) => {
             if (b.score !== a.score) return b.score - a.score;
-            const titleOrder = String(a.record?.title || '').localeCompare(
-                String(b.record?.title || ''),
-                'tr'
-            );
+            const titleOrder = String(a.record?.title || '').localeCompare(String(b.record?.title || ''), 'tr');
             return titleOrder || a.originalIndex - b.originalIndex;
         })
         .slice(0, limit)
@@ -229,9 +220,7 @@ export function searchPisiRecords(records = [], query = '', options = {}) {
 export function searchPisiIndex(index, query = '', options = {}) {
     const accelerator = index?.accelerator;
     const candidates = getPisiSearchCandidates(accelerator, query);
-    const records = candidates === null
-        ? (accelerator?.records || index?.records || [])
-        : candidates;
+    const records = candidates === null ? accelerator?.records || index?.records || [] : candidates;
     return searchPisiRecords(records, query, options);
 }
 
@@ -253,10 +242,7 @@ function addRelationship(target, key, relationship) {
     if (!relationship?.path || !key) return;
     const existing = target.get(key);
     if (existing) {
-        existing.types = Array.from(new Set([
-            ...(existing.types || []),
-            ...(relationship.types || [])
-        ]));
+        existing.types = Array.from(new Set([...(existing.types || []), ...(relationship.types || [])]));
         if (!existing.mapPath && relationship.mapPath) {
             existing.mapPath = relationship.mapPath;
             existing.mapTitle = relationship.mapTitle;
@@ -281,9 +267,7 @@ function makeNodeRelationship(documentRecord, membership, types) {
 }
 
 export function buildPisiRelationshipModel(index, targetPath) {
-    const documents = index?.documents instanceof Map
-        ? index.documents
-        : new Map();
+    const documents = index?.documents instanceof Map ? index.documents : new Map();
     const maps = Array.isArray(index?.maps) ? index.maps : [];
     const targetKey = pisiSearchPathKey(targetPath);
     const targetDocument = documents.get(targetKey) || null;
@@ -307,31 +291,14 @@ export function buildPisiRelationshipModel(index, targetPath) {
 
     for (const [documentKey, documentRecord] of documents) {
         if (documentKey === targetKey) continue;
-        const directTitles = new Set(
-            (documentRecord.directTitles || []).map(normalizePisiSearchText)
-        );
-        const directPaths = new Set(
-            (documentRecord.directPaths || []).map(pisiSearchPathKey)
-        );
+        const directTitles = new Set((documentRecord.directTitles || []).map(normalizePisiSearchText));
+        const directPaths = new Set((documentRecord.directPaths || []).map(pisiSearchPathKey));
         const membership = documentRecord.memberships?.[0] || null;
 
         if (directTitles.has(targetTitleKey) || directPaths.has(targetKey)) {
-            addRelationship(
-                inbound,
-                documentKey,
-                makeNodeRelationship(documentRecord, membership, ['text'])
-            );
-        } else if (
-            containsPisiTitleMention(
-                documentRecord.unlinkedText || documentRecord.plainText,
-                targetDocument.title
-            )
-        ) {
-            addRelationship(
-                unlinked,
-                documentKey,
-                makeNodeRelationship(documentRecord, membership, ['mention'])
-            );
+            addRelationship(inbound, documentKey, makeNodeRelationship(documentRecord, membership, ['text']));
+        } else if (containsPisiTitleMention(documentRecord.unlinkedText || documentRecord.plainText, targetDocument.title)) {
+            addRelationship(unlinked, documentKey, makeNodeRelationship(documentRecord, membership, ['mention']));
         }
     }
 
@@ -344,35 +311,17 @@ export function buildPisiRelationshipModel(index, targetPath) {
     }
 
     for (const directTitle of targetDocument.directTitles || []) {
-        const linkedDocument = documentByTitle.get(
-            normalizePisiSearchText(directTitle)
-        );
+        const linkedDocument = documentByTitle.get(normalizePisiSearchText(directTitle));
         if (!linkedDocument || linkedDocument.path === targetDocument.path) continue;
         const linkedKey = pisiSearchPathKey(linkedDocument.path);
-        addRelationship(
-            outbound,
-            linkedKey,
-            makeNodeRelationship(
-                linkedDocument,
-                linkedDocument.memberships?.[0],
-                ['text']
-            )
-        );
+        addRelationship(outbound, linkedKey, makeNodeRelationship(linkedDocument, linkedDocument.memberships?.[0], ['text']));
     }
 
     for (const directPath of targetDocument.directPaths || []) {
         const linkedDocument = documents.get(pisiSearchPathKey(directPath));
         if (!linkedDocument || linkedDocument.path === targetDocument.path) continue;
         const linkedKey = pisiSearchPathKey(linkedDocument.path);
-        addRelationship(
-            outbound,
-            linkedKey,
-            makeNodeRelationship(
-                linkedDocument,
-                linkedDocument.memberships?.[0] || null,
-                ['citation']
-            )
-        );
+        addRelationship(outbound, linkedKey, makeNodeRelationship(linkedDocument, linkedDocument.memberships?.[0] || null, ['citation']));
     }
 
     for (const map of maps) {
@@ -381,9 +330,7 @@ export function buildPisiRelationshipModel(index, targetPath) {
         });
         if (!targetMembership) continue;
 
-        const nodeById = new Map(
-            (map.nodes || []).map((node) => [String(node.id), node])
-        );
+        const nodeById = new Map((map.nodes || []).map((node) => [String(node.id), node]));
 
         for (const edge of map.edges || []) {
             const sourceId = String(edge?.sourceId || '');
@@ -394,17 +341,19 @@ export function buildPisiRelationshipModel(index, targetPath) {
             if (sourceId === currentId || (isSymmetric && targetId === currentId)) {
                 const otherId = sourceId === currentId ? targetId : sourceId;
                 const otherNode = nodeById.get(otherId);
-                const otherDocument = documents.get(
-                    pisiSearchPathKey(otherNode?.path)
-                );
+                const otherDocument = documents.get(pisiSearchPathKey(otherNode?.path));
                 if (otherDocument) {
                     addRelationship(
                         outbound,
                         pisiSearchPathKey(otherDocument.path),
-                        makeNodeRelationship(otherDocument, {
-                            mapPath: map.path,
-                            mapTitle: map.title
-                        }, ['map'])
+                        makeNodeRelationship(
+                            otherDocument,
+                            {
+                                mapPath: map.path,
+                                mapTitle: map.title
+                            },
+                            ['map']
+                        )
                     );
                 }
             }
@@ -412,17 +361,19 @@ export function buildPisiRelationshipModel(index, targetPath) {
             if (targetId === currentId || (isSymmetric && sourceId === currentId)) {
                 const otherId = targetId === currentId ? sourceId : targetId;
                 const otherNode = nodeById.get(otherId);
-                const otherDocument = documents.get(
-                    pisiSearchPathKey(otherNode?.path)
-                );
+                const otherDocument = documents.get(pisiSearchPathKey(otherNode?.path));
                 if (otherDocument) {
                     addRelationship(
                         inbound,
                         pisiSearchPathKey(otherDocument.path),
-                        makeNodeRelationship(otherDocument, {
-                            mapPath: map.path,
-                            mapTitle: map.title
-                        }, ['map'])
+                        makeNodeRelationship(
+                            otherDocument,
+                            {
+                                mapPath: map.path,
+                                mapTitle: map.title
+                            },
+                            ['map']
+                        )
                     );
                 }
             }
@@ -434,18 +385,9 @@ export function buildPisiRelationshipModel(index, targetPath) {
         inbound: Array.from(inbound.values()),
         outbound: Array.from(outbound.values()),
         unlinked: Array.from(unlinked.values()),
-        tasks: Array.isArray(targetDocument.tasks)
-            ? targetDocument.tasks
-            : [],
-        sameMaps: Array.isArray(targetDocument.memberships)
-            ? targetDocument.memberships
-            : []
+        tasks: Array.isArray(targetDocument.tasks) ? targetDocument.tasks : [],
+        sameMaps: Array.isArray(targetDocument.memberships) ? targetDocument.memberships : []
     };
 }
 
-export {
-    PISI_SEARCH_FIELD_WEIGHTS,
-    buildPisiSearchAccelerator,
-    getPisiSearchCandidates,
-    makePisiSearchTrigrams
-};
+export { PISI_SEARCH_FIELD_WEIGHTS, buildPisiSearchAccelerator, getPisiSearchCandidates, makePisiSearchTrigrams };

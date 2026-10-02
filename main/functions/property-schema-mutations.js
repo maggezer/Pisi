@@ -31,9 +31,7 @@ function getDefinitionIndexes(schema) {
 
 function getEntries(properties = {}) {
     if (!properties || typeof properties !== 'object') return [];
-    return Array.isArray(properties)
-        ? properties.map((item, index) => [item?.id || item?.name || String(index), item])
-        : Object.entries(properties);
+    return Array.isArray(properties) ? properties.map((item, index) => [item?.id || item?.name || String(index), item]) : Object.entries(properties);
 }
 
 function writeSchema(projectFolder, schema) {
@@ -41,9 +39,7 @@ function writeSchema(projectFolder, schema) {
     fs.mkdirSync(path.dirname(schemaPath), { recursive: true });
     const payload = {
         version: schemaStore.PISI_PROPERTY_SCHEMA_VERSION,
-        definitions: (schema.definitions || []).map((item) => (
-            contract.normalizePropertyDefinition(item)
-        )).filter(Boolean),
+        definitions: (schema.definitions || []).map((item) => contract.normalizePropertyDefinition(item)).filter(Boolean),
         conflicts: Array.isArray(schema.conflicts) ? schema.conflicts : [],
         updatedAt: new Date().toISOString()
     };
@@ -68,9 +64,7 @@ function resolveSubmittedDefinition(schema, indexes, rawKey, raw = {}) {
         definition = indexes.byName.get(contract.normalizePropertyNameKey(name));
     }
     if (!definition) {
-        const id = rawId && !indexes.occupied.has(rawId)
-            ? rawId
-            : contract.makeNewPropertyId(name, type, indexes.occupied);
+        const id = rawId && !indexes.occupied.has(rawId) ? rawId : contract.makeNewPropertyId(name, type, indexes.occupied);
         definition = { id, name, type };
         schema.definitions.push(definition);
         indexes.byId.set(id, definition);
@@ -124,14 +118,7 @@ function prepareDefinitionRewrite(projectFolder, change) {
             if (!property || typeof property !== 'object') continue;
             const id = contract.normalizeStablePropertyId(property.id || rawKey);
             if (id !== definition.id) continue;
-            if (
-                previousType !== definition.type &&
-                !contract.canLosslesslyChangePropertyType(
-                    property.type || previousType,
-                    definition.type,
-                    property.value
-                )
-            ) {
+            if (previousType !== definition.type && !contract.canLosslesslyChangePropertyType(property.type || previousType, definition.type, property.value)) {
                 return {
                     ok: false,
                     code: 'PROPERTY_TYPE_CHANGE_CONFLICT',
@@ -146,10 +133,7 @@ function prepareDefinitionRewrite(projectFolder, change) {
                     }
                 };
             }
-            const validation = contract.validatePropertyValue(
-                definition.type,
-                property.value
-            );
+            const validation = contract.validatePropertyValue(definition.type, property.value);
             if (!validation.ok && !contract.isEmptyPropertyValue(property.value)) {
                 return {
                     ok: false,
@@ -169,11 +153,10 @@ function prepareDefinitionRewrite(projectFolder, change) {
                 id: definition.id,
                 name: definition.name,
                 type: definition.type,
-                value: validation.ok
-                    ? validation.normalized
-                    : contract.normalizePropertyValue(definition.type, property.value)
+                value: validation.ok ? validation.normalized : contract.normalizePropertyValue(definition.type, property.value)
             };
-            changed = changed ||
+            changed =
+                changed ||
                 rawKey !== definition.id ||
                 property.name !== definition.name ||
                 property.type !== definition.type ||
@@ -224,10 +207,7 @@ function savePisiNodePropertiesBySchema(projectFolder, nodePath, properties = {}
                 value: validation.normalized,
                 ...(raw.system === true ? { system: true } : {})
             };
-            if (
-                resolved.previousName !== definition.name ||
-                resolved.previousType !== definition.type
-            ) {
+            if (resolved.previousName !== definition.name || resolved.previousType !== definition.type) {
                 rewrites.set(definition.id, resolved);
             }
         }
@@ -240,8 +220,7 @@ function savePisiNodePropertiesBySchema(projectFolder, nodePath, properties = {}
         }
 
         for (const rewrite of preparedRewrites) {
-            if (rewrite.carrier.kind === 'node' &&
-                path.resolve(rewrite.carrier.filePath) === path.resolve(nodePath)) {
+            if (rewrite.carrier.kind === 'node' && path.resolve(rewrite.carrier.filePath) === path.resolve(nodePath)) {
                 continue;
             }
             rewrite.carrier.write(rewrite.properties, 'property-schema-change');

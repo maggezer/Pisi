@@ -38,13 +38,7 @@ function clearPisiOperationalBadges(box) {
     box.querySelector('.pisi-map-work-badges')?.remove();
     box.querySelector('.pisi-map-task-count-badge')?.remove();
     box.querySelector('.pisi-map-status-dot')?.remove();
-    box.classList.remove(
-        'pisi-map-work-blocked',
-        'pisi-map-work-overdue',
-        'pisi-map-work-next',
-        'pisi-operational-filter-hidden',
-        'pisi-operational-dimmed'
-    );
+    box.classList.remove('pisi-map-work-blocked', 'pisi-map-work-overdue', 'pisi-map-work-next', 'pisi-operational-filter-hidden', 'pisi-operational-dimmed');
 }
 
 function makePisiOperationalStatusDot(state, isNext) {
@@ -81,12 +75,7 @@ function makePisiTaskCountBadge(openCount) {
     return badge;
 }
 
-function syncPisiOperationalNodeDecorations(
-    nodeStates,
-    visibleNodeIds,
-    display,
-    nextNodeId = null
-) {
+function syncPisiOperationalNodeDecorations(nodeStates, visibleNodeIds, display, nextNodeId = null) {
     for (const box of document.querySelectorAll('.map-node-box[data-node-id]')) {
         box.querySelector('.map-node-open')?.remove();
         clearPisiOperationalBadges(box);
@@ -98,15 +87,10 @@ function syncPisiOperationalNodeDecorations(
             box.classList.toggle('pisi-operational-filter-hidden', display.dimFiltered !== true);
         }
         box.classList.toggle('pisi-map-work-blocked', state.blocked === true);
-        box.classList.toggle(
-            'pisi-map-work-overdue',
-            state.overdue === true && state.blocked !== true
-        );
+        box.classList.toggle('pisi-map-work-overdue', state.overdue === true && state.blocked !== true);
         box.classList.toggle('pisi-map-work-next', nodeId === nextNodeId);
         if (state.blocked || state.overdue || nodeId === nextNodeId) {
-            box.querySelector('.map-node-title')?.prepend(
-                makePisiOperationalStatusDot(state, nodeId === nextNodeId)
-            );
+            box.querySelector('.map-node-title')?.prepend(makePisiOperationalStatusDot(state, nodeId === nextNodeId));
         }
 
         const title = box.querySelector('.map-node-title')?.textContent?.trim() || 'Node';
@@ -114,10 +98,7 @@ function syncPisiOperationalNodeDecorations(
         const openCount = state.openTasks?.length || 0;
         const blockedCount = state.blockedTasks?.length || 0;
         const overdueCount = state.overdueTasks?.length || 0;
-        box.setAttribute(
-            'aria-label',
-            `${title}; ${openCount} open; ${blockedCount} blocked; ${overdueCount} overdue`
-        );
+        box.setAttribute('aria-label', `${title}; ${openCount} open; ${blockedCount} blocked; ${overdueCount} overdue`);
 
         if (openCount > 0) {
             box.appendChild(makePisiTaskCountBadge(openCount));
@@ -145,10 +126,7 @@ function syncPisiOperationalNodeDecorations(
 function syncPisiOperationalSemanticEdgeVisibility(visibleEdges) {
     const visibleIds = new Set(visibleEdges.map((edge) => edge?.id).filter(Boolean));
     document.querySelectorAll('.map-edge-group[data-edge-id]').forEach((group) => {
-        group.classList.toggle(
-            'pisi-operational-filter-hidden',
-            !visibleIds.has(group.dataset.edgeId)
-        );
+        group.classList.toggle('pisi-operational-filter-hidden', !visibleIds.has(group.dataset.edgeId));
     });
 }
 
@@ -165,9 +143,7 @@ function syncPisiOperationalRelationshipLabels(visibleEdges) {
     if (!svg) return;
 
     for (const edge of visibleEdges) {
-        const group = svg.querySelector(
-            `.map-edge-group[data-edge-id="${CSS.escape(edge.id)}"]`
-        );
+        const group = svg.querySelector(`.map-edge-group[data-edge-id="${CSS.escape(edge.id)}"]`);
         const pathEl = group?.querySelector('.map-edge');
         if (!group || !pathEl || group.classList.contains('pisi-operational-filter-hidden')) {
             continue;
@@ -194,13 +170,7 @@ function removePisiOperationalTaskDependencyLayer() {
 function makePisiOperationalDependencyPath(sourceBox, targetBox) {
     const interactions = window.Pisi?.modules?.['map.interactions'];
     if (typeof interactions?.makeConnectionPathFromBoxes === 'function') {
-        return interactions.makeConnectionPathFromBoxes(
-            sourceBox,
-            'right',
-            targetBox,
-            'left',
-            'stream'
-        );
+        return interactions.makeConnectionPathFromBoxes(sourceBox, 'right', targetBox, 'left', 'stream');
     }
     return '';
 }
@@ -216,12 +186,8 @@ function syncPisiOperationalTaskDependencies(projections, display) {
     group.setAttribute('data-pisi-derived', 'task-dependencies');
 
     for (const projection of projections) {
-        const sourceBox = document.querySelector(
-            `.map-node-box[data-node-id="${CSS.escape(projection.sourceId)}"]`
-        );
-        const targetBox = document.querySelector(
-            `.map-node-box[data-node-id="${CSS.escape(projection.targetId)}"]`
-        );
+        const sourceBox = document.querySelector(`.map-node-box[data-node-id="${CSS.escape(projection.sourceId)}"]`);
+        const targetBox = document.querySelector(`.map-node-box[data-node-id="${CSS.escape(projection.targetId)}"]`);
         if (!sourceBox || !targetBox) continue;
         const pathData = makePisiOperationalDependencyPath(sourceBox, targetBox);
         if (!pathData) continue;
@@ -273,33 +239,15 @@ function renderPisiOperationalMap(scope = {}, display = {}) {
     const edges = Array.isArray(window.activeMapEdges) ? window.activeMapEdges : [];
     const tasks = getPisiOperationalTasks();
     const nodeStates = buildPisiOperationalNodeStates(nodes, tasks);
-    const visibleNodeIds = getPisiOperationalVisibleNodeIds(
-        nodes,
-        edges,
-        nodeStates,
-        scope
-    );
-    const visibleEdges = getPisiOperationalVisibleEdges(
-        edges,
-        visibleNodeIds,
-        scope
-    );
-    const ranked = rankPisiOperationalNextNodes(nodes, nodeStates)
-        .filter((item) => visibleNodeIds.has(item.node?.id));
+    const visibleNodeIds = getPisiOperationalVisibleNodeIds(nodes, edges, nodeStates, scope);
+    const visibleEdges = getPisiOperationalVisibleEdges(edges, visibleNodeIds, scope);
+    const ranked = rankPisiOperationalNextNodes(nodes, nodeStates).filter((item) => visibleNodeIds.has(item.node?.id));
     const nextNodeId = ranked[0]?.node?.id || null;
 
-    syncPisiOperationalNodeDecorations(
-        nodeStates,
-        visibleNodeIds,
-        display,
-        nextNodeId
-    );
+    syncPisiOperationalNodeDecorations(nodeStates, visibleNodeIds, display, nextNodeId);
     syncPisiOperationalSemanticEdgeVisibility(visibleEdges);
     syncPisiOperationalRelationshipLabels(visibleEdges);
-    syncPisiOperationalTaskDependencies(
-        buildPisiTaskDependencyProjections(nodes, tasks, visibleNodeIds),
-        display
-    );
+    syncPisiOperationalTaskDependencies(buildPisiTaskDependencyProjections(nodes, tasks, visibleNodeIds), display);
 
     return {
         nodeStates,

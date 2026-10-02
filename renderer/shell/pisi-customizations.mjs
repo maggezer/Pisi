@@ -1,4 +1,4 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 
 const PISI_CUSTOMIZATION_STORAGE_KEY = 'pisi.customization.v1';
 const PISI_THEME_STORAGE_KEY = 'pisi.theme.v1';
@@ -70,7 +70,9 @@ function makePisiCustomizeElement(tagName, className, text) {
 }
 
 function normalizePisiTheme(value) {
-    const normalized = String(value || '').trim().toLowerCase();
+    const normalized = String(value || '')
+        .trim()
+        .toLowerCase();
     return PISI_THEME_VALUES.has(normalized) ? normalized : 'dark';
 }
 
@@ -91,10 +93,7 @@ function applyPisiTheme(theme) {
 }
 
 function getPisiAppliedTheme() {
-    return normalizePisiTheme(
-        document.documentElement?.dataset?.pisiTheme ||
-        getPisiThemePreference()
-    );
+    return normalizePisiTheme(document.documentElement?.dataset?.pisiTheme || getPisiThemePreference());
 }
 
 function setPisiThemePreference(theme) {
@@ -107,9 +106,11 @@ function setPisiThemePreference(theme) {
     const settings = loadPisiCustomizationSettings();
     applyPisiCustomizationSettings(settings);
     syncPisiCustomizationInputs(settings);
-    document.dispatchEvent(new CustomEvent('pisi:theme-changed', {
-        detail: { theme: normalized }
-    }));
+    document.dispatchEvent(
+        new CustomEvent('pisi:theme-changed', {
+            detail: { theme: normalized }
+        })
+    );
     return normalized;
 }
 
@@ -136,17 +137,9 @@ function loadPisiCustomizationSettings() {
         }
         delete parsed.mapConnectionColor;
 
-        const explicitThemeColorKeys = new Set(
-            normalizePisiExplicitThemeColorKeys(
-                parsed[PISI_EXPLICIT_THEME_COLOR_KEYS]
-            )
-        );
-        const storedNodeBoxColor = String(
-            parsed.mapNodeBoxColor || ''
-        ).toLowerCase();
-        const themeNodeBoxColors = Object.values(
-            PISI_THEME_MAP_NODE_BOX_COLORS
-        );
+        const explicitThemeColorKeys = new Set(normalizePisiExplicitThemeColorKeys(parsed[PISI_EXPLICIT_THEME_COLOR_KEYS]));
+        const storedNodeBoxColor = String(parsed.mapNodeBoxColor || '').toLowerCase();
+        const themeNodeBoxColors = Object.values(PISI_THEME_MAP_NODE_BOX_COLORS);
 
         // Eski sürümler açık temadaki beyazı kalıcı bir özelleştirme gibi
         // saklayabiliyordu. Tema renklerinden farklı eski değerler gerçek
@@ -162,9 +155,7 @@ function loadPisiCustomizationSettings() {
         return {
             ...PISI_DEFAULT_CUSTOMIZATION,
             ...parsed,
-            [PISI_EXPLICIT_THEME_COLOR_KEYS]: Array.from(
-                explicitThemeColorKeys
-            )
+            [PISI_EXPLICIT_THEME_COLOR_KEYS]: Array.from(explicitThemeColorKeys)
         };
     } catch (error) {
         console.warn('[PISI] Customize ayarları okunamadı:', error);
@@ -177,10 +168,7 @@ function loadPisiCustomizationSettings() {
 
 function savePisiCustomizationSettings(settings) {
     try {
-        localStorage.setItem(
-            PISI_CUSTOMIZATION_STORAGE_KEY,
-            JSON.stringify(settings)
-        );
+        localStorage.setItem(PISI_CUSTOMIZATION_STORAGE_KEY, JSON.stringify(settings));
     } catch (error) {
         console.warn('[PISI] Customize ayarları kaydedilemedi:', error);
     }
@@ -191,10 +179,7 @@ function isValidPisiHexColor(value) {
 }
 
 function normalizePisiExplicitThemeColorKeys(value) {
-    return Array.from(new Set(
-        (Array.isArray(value) ? value : [])
-            .filter((key) => key === 'mapNodeBoxColor')
-    ));
+    return Array.from(new Set((Array.isArray(value) ? value : []).filter((key) => key === 'mapNodeBoxColor')));
 }
 
 function normalizePisiSizeValue(value, fallback, min = 8, max = 32) {
@@ -205,15 +190,10 @@ function normalizePisiSizeValue(value, fallback, min = 8, max = 32) {
 
 function normalizePisiMapNodeFontFamily(value) {
     const font = String(value || '');
-    return PISI_MAP_NODE_FONT_OPTIONS.some(([candidate]) => candidate === font)
-        ? font
-        : PISI_DEFAULT_CUSTOMIZATION.mapNodeFontFamily;
+    return PISI_MAP_NODE_FONT_OPTIONS.some(([candidate]) => candidate === font) ? font : PISI_DEFAULT_CUSTOMIZATION.mapNodeFontFamily;
 }
 
-function resolvePisiCustomizationValue(
-    key,
-    settings = loadPisiCustomizationSettings()
-) {
+function resolvePisiCustomizationValue(key, settings = loadPisiCustomizationSettings()) {
     const fallback = PISI_DEFAULT_CUSTOMIZATION[key];
 
     if (key === 'mapNodeFontFamily') {
@@ -224,20 +204,13 @@ function resolvePisiCustomizationValue(
         return normalizePisiSizeValue(settings?.[key], fallback, 8, 32);
     }
 
-    const value = isValidPisiHexColor(settings?.[key])
-        ? settings[key]
-        : fallback;
+    const value = isValidPisiHexColor(settings?.[key]) ? settings[key] : fallback;
 
     if (key === 'mapNodeBoxColor') {
         const normalizedValue = value.toLowerCase();
-        const explicitThemeColorKeys = normalizePisiExplicitThemeColorKeys(
-            settings?.[PISI_EXPLICIT_THEME_COLOR_KEYS]
-        );
-        const isThemePaletteColor = Object.values(
-            PISI_THEME_MAP_NODE_BOX_COLORS
-        ).includes(normalizedValue);
-        const isExplicit = explicitThemeColorKeys.includes(key) ||
-            !isThemePaletteColor;
+        const explicitThemeColorKeys = normalizePisiExplicitThemeColorKeys(settings?.[PISI_EXPLICIT_THEME_COLOR_KEYS]);
+        const isThemePaletteColor = Object.values(PISI_THEME_MAP_NODE_BOX_COLORS).includes(normalizedValue);
+        const isExplicit = explicitThemeColorKeys.includes(key) || !isThemePaletteColor;
 
         if (!isExplicit) {
             return PISI_THEME_MAP_NODE_BOX_COLORS[getPisiAppliedTheme()];
@@ -249,9 +222,7 @@ function resolvePisiCustomizationValue(
 function applyPisiCustomizationSettings(settings) {
     const root = document.documentElement;
 
-    for (const [key, cssVariable] of Object.entries(
-        PISI_CUSTOMIZATION_CSS_VARIABLES
-    )) {
+    for (const [key, cssVariable] of Object.entries(PISI_CUSTOMIZATION_CSS_VARIABLES)) {
         const value = resolvePisiCustomizationValue(key, settings);
         if (typeof value === 'number') {
             root.style.setProperty(cssVariable, `${value}px`);
@@ -261,10 +232,7 @@ function applyPisiCustomizationSettings(settings) {
     }
 }
 
-function syncPisiCustomizationInputs(
-    settings,
-    root = document
-) {
+function syncPisiCustomizationInputs(settings, root = document) {
     root.querySelectorAll('[data-pisi-custom-color]').forEach((input) => {
         const key = input.dataset.pisiCustomColor;
         const value = resolvePisiCustomizationValue(key, settings);
@@ -277,18 +245,12 @@ function syncPisiCustomizationInputs(
     });
 
     root.querySelectorAll('[data-pisi-custom-font]').forEach((select) => {
-        select.value = resolvePisiCustomizationValue(
-            select.dataset.pisiCustomFont,
-            settings
-        );
+        select.value = resolvePisiCustomizationValue(select.dataset.pisiCustomFont, settings);
     });
 }
 
 function makePisiPreferenceGroup(titleText, open = true) {
-    const group = makePisiCustomizeElement(
-        'details',
-        'pisi-customize-group pisi-preference-group'
-    );
+    const group = makePisiCustomizeElement('details', 'pisi-customize-group pisi-preference-group');
     group.open = open;
     group.appendChild(makePisiCustomizeElement('summary', '', titleText));
     return group;
@@ -353,53 +315,35 @@ function bindPisiCustomizationPreferenceControls(panel) {
             if (!isValidPisiHexColor(input.value)) return;
 
             if (key === 'mapNodeBoxColor') {
-                const explicitThemeColorKeys = new Set(
-                    normalizePisiExplicitThemeColorKeys(
-                        settings[PISI_EXPLICIT_THEME_COLOR_KEYS]
-                    )
-                );
+                const explicitThemeColorKeys = new Set(normalizePisiExplicitThemeColorKeys(settings[PISI_EXPLICIT_THEME_COLOR_KEYS]));
                 explicitThemeColorKeys.add(key);
                 settings = {
                     ...settings,
                     [key]: input.value,
-                    [PISI_EXPLICIT_THEME_COLOR_KEYS]: Array.from(
-                        explicitThemeColorKeys
-                    )
+                    [PISI_EXPLICIT_THEME_COLOR_KEYS]: Array.from(explicitThemeColorKeys)
                 };
             } else {
                 settings = { ...settings, [key]: input.value };
             }
             applyPisiCustomizationSettings(settings);
             savePisiCustomizationSettings(settings);
-            document.dispatchEvent(new CustomEvent(
-                'pisi:customization-defaults-changed'
-            ));
+            document.dispatchEvent(new CustomEvent('pisi:customization-defaults-changed'));
         });
     });
 
     panel.querySelectorAll('[data-pisi-custom-size]').forEach((input) => {
         input.addEventListener('input', () => {
             const key = input.dataset.pisiCustomSize;
-            if (!Object.prototype.hasOwnProperty.call(
-                PISI_DEFAULT_CUSTOMIZATION,
-                key
-            )) {
+            if (!Object.prototype.hasOwnProperty.call(PISI_DEFAULT_CUSTOMIZATION, key)) {
                 return;
             }
 
-            const value = normalizePisiSizeValue(
-                input.value,
-                PISI_DEFAULT_CUSTOMIZATION[key],
-                Number(input.min || 8),
-                Number(input.max || 32)
-            );
+            const value = normalizePisiSizeValue(input.value, PISI_DEFAULT_CUSTOMIZATION[key], Number(input.min || 8), Number(input.max || 32));
             settings = { ...settings, [key]: value };
             input.value = value;
             applyPisiCustomizationSettings(settings);
             savePisiCustomizationSettings(settings);
-            document.dispatchEvent(new CustomEvent(
-                'pisi:customization-defaults-changed'
-            ));
+            document.dispatchEvent(new CustomEvent('pisi:customization-defaults-changed'));
         });
     });
 
@@ -412,9 +356,7 @@ function bindPisiCustomizationPreferenceControls(panel) {
             };
             applyPisiCustomizationSettings(settings);
             savePisiCustomizationSettings(settings);
-            document.dispatchEvent(new CustomEvent(
-                'pisi:customization-defaults-changed'
-            ));
+            document.dispatchEvent(new CustomEvent('pisi:customization-defaults-changed'));
         });
     });
 
@@ -426,48 +368,30 @@ function bindPisiCustomizationPreferenceControls(panel) {
         });
     }
 
-    panel.querySelector('#pisi-customize-reset')?.addEventListener(
-        'click',
-        () => {
-            settings = {
-                ...PISI_DEFAULT_CUSTOMIZATION,
-                [PISI_EXPLICIT_THEME_COLOR_KEYS]: []
-            };
-            savePisiCustomizationSettings(settings);
-            applyPisiCustomizationSettings(settings);
-            syncPisiCustomizationInputs(settings, panel);
-            document.dispatchEvent(new CustomEvent(
-                'pisi:customization-defaults-changed'
-            ));
-        }
-    );
+    panel.querySelector('#pisi-customize-reset')?.addEventListener('click', () => {
+        settings = {
+            ...PISI_DEFAULT_CUSTOMIZATION,
+            [PISI_EXPLICIT_THEME_COLOR_KEYS]: []
+        };
+        savePisiCustomizationSettings(settings);
+        applyPisiCustomizationSettings(settings);
+        syncPisiCustomizationInputs(settings, panel);
+        document.dispatchEvent(new CustomEvent('pisi:customization-defaults-changed'));
+    });
 }
 
 function renderPisiCustomizationPreferences(container) {
-    const panel = makePisiCustomizeElement(
-        'section',
-        'pisi-preferences-customization'
-    );
+    const panel = makePisiCustomizeElement('section', 'pisi-preferences-customization');
     panel.id = 'pisi-customize-preferences';
 
-    const heading = makePisiCustomizeElement(
-        'div',
-        'pisi-preferences-subheading'
-    );
+    const heading = makePisiCustomizeElement('div', 'pisi-preferences-subheading');
     heading.append(
         makePisiCustomizeElement('h3', '', 'Uygulama ve varsayılanlar'),
-        makePisiCustomizeElement(
-            'p',
-            '',
-            'Bu değerler tüm map ve not kartları için varsayılan görünümü belirler.'
-        )
+        makePisiCustomizeElement('p', '', 'Bu değerler tüm map ve not kartları için varsayılan görünümü belirler.')
     );
 
     const application = makePisiPreferenceGroup('Uygulama');
-    const languageRow = makePisiCustomizeElement(
-        'div',
-        'pisi-customize-row'
-    );
+    const languageRow = makePisiCustomizeElement('div', 'pisi-customize-row');
     const languageLabel = makePisiCustomizeElement('label', '', 'Dil');
     languageLabel.htmlFor = 'pisi-language-select';
     const language = document.createElement('select');
@@ -481,14 +405,7 @@ function renderPisiCustomizationPreferences(container) {
     english.textContent = 'English';
     language.append(turkish, english);
     languageRow.append(languageLabel, language);
-    application.append(
-        languageRow,
-        makePisiCustomizeElement(
-            'div',
-            'pisi-customize-note',
-            'Dil değişikliği anında uygulanır.'
-        )
-    );
+    application.append(languageRow, makePisiCustomizeElement('div', 'pisi-customize-note', 'Dil değişikliği anında uygulanır.'));
 
     const map = makePisiPreferenceGroup('Map');
     for (const field of PISI_GLOBAL_COLOR_FIELDS) {
@@ -498,25 +415,12 @@ function renderPisiCustomizationPreferences(container) {
     for (const field of PISI_GLOBAL_SIZE_FIELDS) {
         appendPisiSizePreference(map, field);
     }
-    map.appendChild(makePisiCustomizeElement(
-        'div',
-        'pisi-customize-note',
-        'Yazı tipi ve boyut ayarları haritadaki tüm not kartlarına uygulanır.'
-    ));
+    map.appendChild(makePisiCustomizeElement('div', 'pisi-customize-note', 'Yazı tipi ve boyut ayarları haritadaki tüm not kartlarına uygulanır.'));
 
     const node = makePisiPreferenceGroup('Node');
-    appendPisiColorPreference(
-        node,
-        'custom-node-header-color',
-        'Headerlar',
-        'nodeHeaderColor'
-    );
+    appendPisiColorPreference(node, 'custom-node-header-color', 'Headerlar', 'nodeHeaderColor');
 
-    const reset = makePisiCustomizeElement(
-        'button',
-        'pisi-customize-reset',
-        'Varsayılanlara dön'
-    );
+    const reset = makePisiCustomizeElement('button', 'pisi-customize-reset', 'Varsayılanlara dön');
     reset.id = 'pisi-customize-reset';
     reset.type = 'button';
 
@@ -543,55 +447,31 @@ function applyPisiMapNodeCustomization(box, node) {
         box.style.removeProperty('--pisi-map-node-title-color');
     }
 
-    box.dataset.pisiCustomized = (
-        isValidPisiHexColor(cardColor) ||
-        isValidPisiHexColor(titleColor)
-    ) ? 'true' : 'false';
+    box.dataset.pisiCustomized = isValidPisiHexColor(cardColor) || isValidPisiHexColor(titleColor) ? 'true' : 'false';
 }
 
 function getPisiMapEdgeCustomizationColor(edge) {
-    return isValidPisiHexColor(edge?.customization?.color)
-        ? edge.customization.color
-        : '';
+    return isValidPisiHexColor(edge?.customization?.color) ? edge.customization.color : '';
 }
 
 function getPisiMapEdgeDefaultColor(edge) {
-    const key = edge?.type === 'co-level'
-        ? 'mapCoLevelColor'
-        : edge?.type === 'stream'
-            ? 'mapStreamColor'
-            : 'mapDownHubColor';
+    const key = edge?.type === 'co-level' ? 'mapCoLevelColor' : edge?.type === 'stream' ? 'mapStreamColor' : 'mapDownHubColor';
     return resolvePisiCustomizationValue(key);
 }
 
 function getPisiMapCustomizationContext() {
     const canvas = document.getElementById('map-canvas');
-    const mapOpen = Boolean(
-        window.activeMapPath &&
-        canvas &&
-        !canvas.hidden &&
-        canvas.style.display !== 'none'
-    );
+    const mapOpen = Boolean(window.activeMapPath && canvas && !canvas.hidden && canvas.style.display !== 'none');
 
     if (!mapOpen) return { mapOpen: false, kind: 'none' };
 
-    const edge = Array.isArray(window.activeMapEdges)
-        ? window.activeMapEdges.find((item) => (
-            item?.id === window.selectedMapEdgeId
-        ))
-        : null;
+    const edge = Array.isArray(window.activeMapEdges) ? window.activeMapEdges.find((item) => item?.id === window.selectedMapEdgeId) : null;
     if (edge) return { mapOpen: true, kind: 'edge', edge };
 
-    const selectedBoxes = Array.from(document.querySelectorAll(
-        '.map-node-box.selected[data-node-id]'
-    ));
+    const selectedBoxes = Array.from(document.querySelectorAll('.map-node-box.selected[data-node-id]'));
     if (selectedBoxes.length === 1) {
         const box = selectedBoxes[0];
-        const node = Array.isArray(window.activeMapNodes)
-            ? window.activeMapNodes.find((item) => (
-                item?.id === box.dataset.nodeId
-            ))
-            : null;
+        const node = Array.isArray(window.activeMapNodes) ? window.activeMapNodes.find((item) => item?.id === box.dataset.nodeId) : null;
         if (node) return { mapOpen: true, kind: 'node', node, box };
     }
 
@@ -602,18 +482,11 @@ function getPisiMapCustomizationContext() {
 }
 
 function getPisiMapNodeTitle(node) {
-    return (
-        node?.metadata?.title ||
-        String(node?.fileName || '').replace(/\.node$/i, '') ||
-        pisiCustomizeTranslate('Node')
-    );
+    return node?.metadata?.title || String(node?.fileName || '').replace(/\.node$/i, '') || pisiCustomizeTranslate('Node');
 }
 
 function makePisiSelectionColorRow(id, labelText, value) {
-    const row = makePisiCustomizeElement(
-        'label',
-        'pisi-selection-customize-row'
-    );
+    const row = makePisiCustomizeElement('label', 'pisi-selection-customize-row');
     row.htmlFor = id;
     const copy = makePisiCustomizeElement('span', '', labelText);
     const input = document.createElement('input');
@@ -633,17 +506,13 @@ function setPisiMapNodeCustomization(node, key, value) {
         ...(node.customization || {}),
         [key]: value
     };
-    const box = document.querySelector(
-        `.map-node-box[data-node-id="${CSS.escape(node.id)}"]`
-    );
+    const box = document.querySelector(`.map-node-box[data-node-id="${CSS.escape(node.id)}"]`);
     applyPisiMapNodeCustomization(box, node);
     return true;
 }
 
 async function persistPisiMapEdgeCustomization(edgeId, fallbackCustomization) {
-    const edge = Array.isArray(window.activeMapEdges)
-        ? window.activeMapEdges.find((item) => item?.id === edgeId)
-        : null;
+    const edge = Array.isArray(window.activeMapEdges) ? window.activeMapEdges.find((item) => item?.id === edgeId) : null;
     if (!edge || !window.activeMapPath) return false;
     const mapPath = window.activeMapPath;
 
@@ -651,10 +520,7 @@ async function persistPisiMapEdgeCustomization(edgeId, fallbackCustomization) {
         if (typeof window.suppressNextFileSystemRefresh === 'function') {
             window.suppressNextFileSystemRefresh(2000);
         }
-        const result = await window.pisiProject?.upsertMapConnection?.(
-            mapPath,
-            edge
-        );
+        const result = await window.pisiProject?.upsertMapConnection?.(mapPath, edge);
         if (!result?.ok) {
             edge.customization = { ...(fallbackCustomization || {}) };
             if (!Object.keys(edge.customization).length) {
@@ -663,9 +529,7 @@ async function persistPisiMapEdgeCustomization(edgeId, fallbackCustomization) {
             if (window.activeMapPath === mapPath) {
                 window.drawMapConnections?.();
             }
-            alert(result?.error || pisiCustomizeTranslate(
-                'Bağlantı rengi kaydedilemedi.'
-            ));
+            alert(result?.error || pisiCustomizeTranslate('Bağlantı rengi kaydedilemedi.'));
             if (window.activeMapPath === mapPath) {
                 renderPisiMapCustomizationPanel();
             }
@@ -695,44 +559,22 @@ async function persistPisiMapEdgeCustomization(edgeId, fallbackCustomization) {
 }
 
 function makePisiSelectionHeader(labelText, titleText) {
-    const header = makePisiCustomizeElement(
-        'div',
-        'pisi-selection-customize-header'
-    );
+    const header = makePisiCustomizeElement('div', 'pisi-selection-customize-header');
     const title = document.createElement('strong');
     title.className = 'pisi-selection-customize-title';
     title.dataset.pisiUserContent = 'true';
     title.textContent = String(titleText || '');
-    header.append(
-        makePisiCustomizeElement(
-            'span',
-            'pisi-selection-customize-eyebrow',
-            labelText
-        ),
-        title
-    );
+    header.append(makePisiCustomizeElement('span', 'pisi-selection-customize-eyebrow', labelText), title);
     return header;
 }
 
 function renderPisiNodeCustomization(panel, context) {
     const { node, box } = context;
-    const cardColor = isValidPisiHexColor(node.customization?.cardColor)
-        ? node.customization.cardColor
-        : resolvePisiCustomizationValue('mapNodeBoxColor');
-    const titleColor = isValidPisiHexColor(node.customization?.titleColor)
-        ? node.customization.titleColor
-        : resolvePisiCustomizationValue('mapNodeTitleColor');
+    const cardColor = isValidPisiHexColor(node.customization?.cardColor) ? node.customization.cardColor : resolvePisiCustomizationValue('mapNodeBoxColor');
+    const titleColor = isValidPisiHexColor(node.customization?.titleColor) ? node.customization.titleColor : resolvePisiCustomizationValue('mapNodeTitleColor');
 
-    const card = makePisiSelectionColorRow(
-        'pisi-selected-node-card-color',
-        'Node box',
-        cardColor
-    );
-    const title = makePisiSelectionColorRow(
-        'pisi-selected-node-title-color',
-        'Node box title',
-        titleColor
-    );
+    const card = makePisiSelectionColorRow('pisi-selected-node-card-color', 'Node box', cardColor);
+    const title = makePisiSelectionColorRow('pisi-selected-node-title-color', 'Node box title', titleColor);
     card.input.addEventListener('input', () => {
         if (setPisiMapNodeCustomization(node, 'cardColor', card.input.value)) {
             window.scheduleMapLayoutSave?.();
@@ -744,11 +586,7 @@ function renderPisiNodeCustomization(panel, context) {
         }
     });
 
-    const reset = makePisiCustomizeElement(
-        'button',
-        'pisi-selection-customize-reset',
-        'Bu öğenin özelleştirmesini kaldır'
-    );
+    const reset = makePisiCustomizeElement('button', 'pisi-selection-customize-reset', 'Bu öğenin özelleştirmesini kaldır');
     reset.type = 'button';
     reset.disabled = !Object.keys(node.customization || {}).length;
     reset.addEventListener('click', async () => {
@@ -762,11 +600,7 @@ function renderPisiNodeCustomization(panel, context) {
         makePisiSelectionHeader('Seçili not kartı', getPisiMapNodeTitle(node)),
         card.row,
         title.row,
-        makePisiCustomizeElement(
-            'p',
-            'pisi-selection-customize-note',
-            'Bu renkler yalnızca seçili not kartına uygulanır ve varsayılanların önüne geçer.'
-        ),
+        makePisiCustomizeElement('p', 'pisi-selection-customize-note', 'Bu renkler yalnızca seçili not kartına uygulanır ve varsayılanların önüne geçer.'),
         reset
     );
 }
@@ -774,13 +608,8 @@ function renderPisiNodeCustomization(panel, context) {
 function renderPisiEdgeCustomization(panel, context) {
     const { edge } = context;
     const originalCustomization = { ...(edge.customization || {}) };
-    const color = getPisiMapEdgeCustomizationColor(edge) ||
-        getPisiMapEdgeDefaultColor(edge);
-    const row = makePisiSelectionColorRow(
-        'pisi-selected-edge-color',
-        'Bağlantı rengi',
-        color
-    );
+    const color = getPisiMapEdgeCustomizationColor(edge) || getPisiMapEdgeDefaultColor(edge);
+    const row = makePisiSelectionColorRow('pisi-selected-edge-color', 'Bağlantı rengi', color);
     row.input.addEventListener('input', () => {
         if (!isValidPisiHexColor(row.input.value)) return;
         edge.customization = {
@@ -791,17 +620,10 @@ function renderPisiEdgeCustomization(panel, context) {
     });
     row.input.addEventListener('change', async () => {
         row.input.disabled = true;
-        await persistPisiMapEdgeCustomization(
-            edge.id,
-            originalCustomization
-        );
+        await persistPisiMapEdgeCustomization(edge.id, originalCustomization);
     });
 
-    const reset = makePisiCustomizeElement(
-        'button',
-        'pisi-selection-customize-reset',
-        'Bu öğenin özelleştirmesini kaldır'
-    );
+    const reset = makePisiCustomizeElement('button', 'pisi-selection-customize-reset', 'Bu öğenin özelleştirmesini kaldır');
     reset.type = 'button';
     reset.disabled = !getPisiMapEdgeCustomizationColor(edge);
     reset.addEventListener('click', async () => {
@@ -813,16 +635,9 @@ function renderPisiEdgeCustomization(panel, context) {
     });
 
     panel.append(
-        makePisiSelectionHeader(
-            'Seçili bağlantı',
-            pisiCustomizeTranslate('Bağlantı')
-        ),
+        makePisiSelectionHeader('Seçili bağlantı', pisiCustomizeTranslate('Bağlantı')),
         row.row,
-        makePisiCustomizeElement(
-            'p',
-            'pisi-selection-customize-note',
-            'Bu renk yalnızca seçili bağlantıya uygulanır ve varsayılan rengin önüne geçer.'
-        ),
+        makePisiCustomizeElement('p', 'pisi-selection-customize-note', 'Bu renk yalnızca seçili bağlantıya uygulanır ve varsayılan rengin önüne geçer.'),
         reset
     );
 }
@@ -834,11 +649,7 @@ function renderPisiMapCustomizationPanel() {
 
     const context = getPisiMapCustomizationContext();
     if (!context.mapOpen) {
-        panel.appendChild(makePisiCustomizeElement(
-            'div',
-            'pisi-selection-customize-empty',
-            'Özelleştirmek için orta alanda bir map aç.'
-        ));
+        panel.appendChild(makePisiCustomizeElement('div', 'pisi-selection-customize-empty', 'Özelleştirmek için orta alanda bir map aç.'));
         return;
     }
     if (context.kind === 'node') {
@@ -850,19 +661,17 @@ function renderPisiMapCustomizationPanel() {
         return;
     }
 
-    panel.appendChild(makePisiCustomizeElement(
-        'div',
-        'pisi-selection-customize-empty',
-        context.kind === 'multiple'
-            ? 'Tek bir not kartı seç.'
-            : 'Bir not kartı veya bağlantı seç.'
-    ));
+    panel.appendChild(
+        makePisiCustomizeElement(
+            'div',
+            'pisi-selection-customize-empty',
+            context.kind === 'multiple' ? 'Tek bir not kartı seç.' : 'Bir not kartı veya bağlantı seç.'
+        )
+    );
 }
 
 function syncPisiMapCustomizationTab() {
-    const button = document.querySelector(
-        '.right-panel-tab[data-right-tab="customizations"]'
-    );
+    const button = document.querySelector('.right-panel-tab[data-right-tab="customizations"]');
     const context = getPisiMapCustomizationContext();
     const enabled = context.mapOpen;
 
@@ -872,15 +681,11 @@ function syncPisiMapCustomizationTab() {
         }
         button.disabled = !enabled;
         button.setAttribute('aria-disabled', enabled ? 'false' : 'true');
-        button.title = pisiCustomizeTranslate(
-            enabled ? 'Customize' : 'Özelleştirmek için orta alanda bir map aç.'
-        );
+        button.title = pisiCustomizeTranslate(enabled ? 'Customize' : 'Özelleştirmek için orta alanda bir map aç.');
         button.setAttribute('aria-label', button.title);
 
         if (!enabled && button.classList.contains('active')) {
-            document.querySelector(
-                '.right-panel-tab[data-right-tab="missions"]'
-            )?.click();
+            document.querySelector('.right-panel-tab[data-right-tab="missions"]')?.click();
         }
     }
     renderPisiMapCustomizationPanel();
@@ -892,22 +697,10 @@ function setupPisiCustomizations() {
 
     if (document.body?.dataset.pisiCustomizationBound !== '1') {
         document.body.dataset.pisiCustomizationBound = '1';
-        document.addEventListener(
-            'pisi:map-customization-context-changed',
-            syncPisiMapCustomizationTab
-        );
-        document.addEventListener(
-            'pisi:theme-changed',
-            syncPisiMapCustomizationTab
-        );
-        document.addEventListener(
-            'pisi:customization-defaults-changed',
-            syncPisiMapCustomizationTab
-        );
-        document.addEventListener(
-            'pisi:language-changed',
-            syncPisiMapCustomizationTab
-        );
+        document.addEventListener('pisi:map-customization-context-changed', syncPisiMapCustomizationTab);
+        document.addEventListener('pisi:theme-changed', syncPisiMapCustomizationTab);
+        document.addEventListener('pisi:customization-defaults-changed', syncPisiMapCustomizationTab);
+        document.addEventListener('pisi:language-changed', syncPisiMapCustomizationTab);
     }
     syncPisiMapCustomizationTab();
 }
@@ -917,81 +710,109 @@ applyPisiCustomizationSettings(loadPisiCustomizationSettings());
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "PISI_CUSTOMIZATION_STORAGE_KEY": {
+    PISI_CUSTOMIZATION_STORAGE_KEY: {
         enumerable: true,
-        get() { return PISI_CUSTOMIZATION_STORAGE_KEY; }
+        get() {
+            return PISI_CUSTOMIZATION_STORAGE_KEY;
+        }
     },
-    "PISI_DEFAULT_CUSTOMIZATION": {
+    PISI_DEFAULT_CUSTOMIZATION: {
         enumerable: true,
-        get() { return PISI_DEFAULT_CUSTOMIZATION; }
+        get() {
+            return PISI_DEFAULT_CUSTOMIZATION;
+        }
     },
-    "PISI_CUSTOMIZATION_CSS_VARIABLES": {
+    PISI_CUSTOMIZATION_CSS_VARIABLES: {
         enumerable: true,
-        get() { return PISI_CUSTOMIZATION_CSS_VARIABLES; }
+        get() {
+            return PISI_CUSTOMIZATION_CSS_VARIABLES;
+        }
     },
-    "loadPisiCustomizationSettings": {
+    loadPisiCustomizationSettings: {
         enumerable: true,
-        get() { return loadPisiCustomizationSettings; }
+        get() {
+            return loadPisiCustomizationSettings;
+        }
     },
-    "savePisiCustomizationSettings": {
+    savePisiCustomizationSettings: {
         enumerable: true,
-        get() { return savePisiCustomizationSettings; }
+        get() {
+            return savePisiCustomizationSettings;
+        }
     },
-    "isValidPisiHexColor": {
+    isValidPisiHexColor: {
         enumerable: true,
-        get() { return isValidPisiHexColor; }
+        get() {
+            return isValidPisiHexColor;
+        }
     },
-    "normalizePisiSizeValue": {
+    normalizePisiSizeValue: {
         enumerable: true,
-        get() { return normalizePisiSizeValue; }
+        get() {
+            return normalizePisiSizeValue;
+        }
     },
-    "resolvePisiCustomizationValue": {
+    resolvePisiCustomizationValue: {
         enumerable: true,
-        get() { return resolvePisiCustomizationValue; }
+        get() {
+            return resolvePisiCustomizationValue;
+        }
     },
-    "applyPisiCustomizationSettings": {
+    applyPisiCustomizationSettings: {
         enumerable: true,
-        get() { return applyPisiCustomizationSettings; }
+        get() {
+            return applyPisiCustomizationSettings;
+        }
     },
-    "syncPisiCustomizationInputs": {
+    syncPisiCustomizationInputs: {
         enumerable: true,
-        get() { return syncPisiCustomizationInputs; }
+        get() {
+            return syncPisiCustomizationInputs;
+        }
     },
-    "renderPisiCustomizationPreferences": {
+    renderPisiCustomizationPreferences: {
         enumerable: true,
-        get() { return renderPisiCustomizationPreferences; }
+        get() {
+            return renderPisiCustomizationPreferences;
+        }
     },
-    "applyPisiMapNodeCustomization": {
+    applyPisiMapNodeCustomization: {
         enumerable: true,
-        get() { return applyPisiMapNodeCustomization; }
+        get() {
+            return applyPisiMapNodeCustomization;
+        }
     },
-    "getPisiMapEdgeCustomizationColor": {
+    getPisiMapEdgeCustomizationColor: {
         enumerable: true,
-        get() { return getPisiMapEdgeCustomizationColor; }
+        get() {
+            return getPisiMapEdgeCustomizationColor;
+        }
     },
-    "getPisiMapCustomizationContext": {
+    getPisiMapCustomizationContext: {
         enumerable: true,
-        get() { return getPisiMapCustomizationContext; }
+        get() {
+            return getPisiMapCustomizationContext;
+        }
     },
-    "renderPisiMapCustomizationPanel": {
+    renderPisiMapCustomizationPanel: {
         enumerable: true,
-        get() { return renderPisiMapCustomizationPanel; }
+        get() {
+            return renderPisiMapCustomizationPanel;
+        }
     },
-    "syncPisiMapCustomizationTab": {
+    syncPisiMapCustomizationTab: {
         enumerable: true,
-        get() { return syncPisiMapCustomizationTab; }
+        get() {
+            return syncPisiMapCustomizationTab;
+        }
     },
-    "setupPisiCustomizations": {
+    setupPisiCustomizations: {
         enumerable: true,
-        get() { return setupPisiCustomizations; }
+        get() {
+            return setupPisiCustomizations;
+        }
     }
 });
-registerModule("shell.customizations", moduleApi);
+registerModule('shell.customizations', moduleApi);
 
-export {
-    applyPisiTheme,
-    getPisiThemePreference,
-    normalizePisiTheme,
-    renderPisiCustomizationPreferences,
-    setPisiThemePreference
-};
+export { applyPisiTheme, getPisiThemePreference, normalizePisiTheme, renderPisiCustomizationPreferences, setPisiThemePreference };

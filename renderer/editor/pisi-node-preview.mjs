@@ -1,4 +1,4 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 
 function bindNodeModalControls() {
     const closeModalBtn = document.getElementById('node-modal-close');
@@ -30,15 +30,13 @@ function bindNodeModalControls() {
             if (!modalOverlay?.classList.contains('visible')) return;
 
             if (event.key === 'Tab') {
-                const focusable = Array.from(modalOverlay.querySelectorAll(
-                    'button:not([disabled]), input:not([disabled]), [contenteditable="true"], [tabindex]:not([tabindex="-1"])'
-                )).filter((element) => !element.hidden);
+                const focusable = Array.from(
+                    modalOverlay.querySelectorAll('button:not([disabled]), input:not([disabled]), [contenteditable="true"], [tabindex]:not([tabindex="-1"])')
+                ).filter((element) => !element.hidden);
 
                 if (focusable.length) {
                     const currentIndex = focusable.indexOf(document.activeElement);
-                    const nextIndex = event.shiftKey
-                        ? (currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1)
-                        : (currentIndex + 1) % focusable.length;
+                    const nextIndex = event.shiftKey ? (currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1) : (currentIndex + 1) % focusable.length;
                     event.preventDefault();
                     focusable[nextIndex].focus();
                 }
@@ -260,9 +258,7 @@ function appendPisiHoverPreviewContent(layer, title, parsed) {
     }
 
     const text = document.createElement('div');
-    text.textContent = parsed.text || (parsed.image
-        ? 'Bu node yalnızca bir tuval içeriyor.'
-        : 'Bu node henüz boş.');
+    text.textContent = parsed.text || (parsed.image ? 'Bu node yalnızca bir tuval içeriyor.' : 'Bu node henüz boş.');
     Object.assign(text.style, {
         maxHeight: '190px',
         overflow: 'hidden',
@@ -371,91 +367,137 @@ function setupPisiNodePreviews() {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "bindNodeModalControls": {
+    bindNodeModalControls: {
         enumerable: true,
-        get() { return bindNodeModalControls; }
+        get() {
+            return bindNodeModalControls;
+        }
     },
-    "PISI_NODE_PREVIEW_DELAY_MS": {
+    PISI_NODE_PREVIEW_DELAY_MS: {
         enumerable: true,
-        get() { return PISI_NODE_PREVIEW_DELAY_MS; }
+        get() {
+            return PISI_NODE_PREVIEW_DELAY_MS;
+        }
     },
-    "pisiNodePreviewTimer": {
+    pisiNodePreviewTimer: {
         enumerable: true,
-        get() { return pisiNodePreviewTimer; },
-        set(value) { pisiNodePreviewTimer = value; }
+        get() {
+            return pisiNodePreviewTimer;
+        },
+        set(value) {
+            pisiNodePreviewTimer = value;
+        }
     },
-    "pisiNodePreviewRequest": {
+    pisiNodePreviewRequest: {
         enumerable: true,
-        get() { return pisiNodePreviewRequest; },
-        set(value) { pisiNodePreviewRequest = value; }
+        get() {
+            return pisiNodePreviewRequest;
+        },
+        set(value) {
+            pisiNodePreviewRequest = value;
+        }
     },
-    "hidePisiCanvasHints": {
+    hidePisiCanvasHints: {
         enumerable: true,
-        get() { return hidePisiCanvasHints; }
+        get() {
+            return hidePisiCanvasHints;
+        }
     },
-    "parsePisiNodePreviewContent": {
+    parsePisiNodePreviewContent: {
         enumerable: true,
-        get() { return parsePisiNodePreviewContent; }
+        get() {
+            return parsePisiNodePreviewContent;
+        }
     },
-    "findPisiMapNodeForBox": {
+    findPisiMapNodeForBox: {
         enumerable: true,
-        get() { return findPisiMapNodeForBox; }
+        get() {
+            return findPisiMapNodeForBox;
+        }
     },
-    "stylePisiCanvasThumbnail": {
+    stylePisiCanvasThumbnail: {
         enumerable: true,
-        get() { return stylePisiCanvasThumbnail; }
+        get() {
+            return stylePisiCanvasThumbnail;
+        }
     },
-    "refreshPisiMapNodeCanvasPreview": {
+    refreshPisiMapNodeCanvasPreview: {
         enumerable: true,
-        get() { return refreshPisiMapNodeCanvasPreview; }
+        get() {
+            return refreshPisiMapNodeCanvasPreview;
+        }
     },
-    "refreshPisiMapNodePreviewFromDisk": {
+    refreshPisiMapNodePreviewFromDisk: {
         enumerable: true,
-        get() { return refreshPisiMapNodePreviewFromDisk; }
+        get() {
+            return refreshPisiMapNodePreviewFromDisk;
+        }
     },
-    "refreshAllPisiMapNodePreviewsFromDisk": {
+    refreshAllPisiMapNodePreviewsFromDisk: {
         enumerable: true,
-        get() { return refreshAllPisiMapNodePreviewsFromDisk; }
+        get() {
+            return refreshAllPisiMapNodePreviewsFromDisk;
+        }
     },
-    "stylePisiHoverLayer": {
+    stylePisiHoverLayer: {
         enumerable: true,
-        get() { return stylePisiHoverLayer; }
+        get() {
+            return stylePisiHoverLayer;
+        }
     },
-    "getPisiNodePreviewLayer": {
+    getPisiNodePreviewLayer: {
         enumerable: true,
-        get() { return getPisiNodePreviewLayer; }
+        get() {
+            return getPisiNodePreviewLayer;
+        }
     },
-    "hidePisiNodeHoverPreview": {
+    hidePisiNodeHoverPreview: {
         enumerable: true,
-        get() { return hidePisiNodeHoverPreview; }
+        get() {
+            return hidePisiNodeHoverPreview;
+        }
     },
-    "positionPisiNodeHoverPreview": {
+    positionPisiNodeHoverPreview: {
         enumerable: true,
-        get() { return positionPisiNodeHoverPreview; }
+        get() {
+            return positionPisiNodeHoverPreview;
+        }
     },
-    "appendPisiHoverPreviewContent": {
+    appendPisiHoverPreviewContent: {
         enumerable: true,
-        get() { return appendPisiHoverPreviewContent; }
+        get() {
+            return appendPisiHoverPreviewContent;
+        }
     },
-    "showPisiNodeHoverPreview": {
+    showPisiNodeHoverPreview: {
         enumerable: true,
-        get() { return showPisiNodeHoverPreview; }
+        get() {
+            return showPisiNodeHoverPreview;
+        }
     },
-    "schedulePisiNodeHoverPreview": {
+    schedulePisiNodeHoverPreview: {
         enumerable: true,
-        get() { return schedulePisiNodeHoverPreview; }
+        get() {
+            return schedulePisiNodeHoverPreview;
+        }
     },
-    "processPisiPreviewAddedNode": {
+    processPisiPreviewAddedNode: {
         enumerable: true,
-        get() { return processPisiPreviewAddedNode; }
+        get() {
+            return processPisiPreviewAddedNode;
+        }
     },
-    "bindPisiMapNodePreviewEvents": {
+    bindPisiMapNodePreviewEvents: {
         enumerable: true,
-        get() { return bindPisiMapNodePreviewEvents; }
+        get() {
+            return bindPisiMapNodePreviewEvents;
+        }
     },
-    "setupPisiNodePreviews": {
+    setupPisiNodePreviews: {
         enumerable: true,
-        get() { return setupPisiNodePreviews; }
+        get() {
+            return setupPisiNodePreviews;
+        }
     }
 });
-registerModule("editor.preview", moduleApi);
+registerModule('editor.preview', moduleApi);

@@ -1,6 +1,6 @@
-import { registerModule } from "../core/module-registry.mjs";
-import { ensurePisiSearchIndex } from "../search/pisi-search-index.mjs";
-import { PISI_TODO_REPEAT_OPTIONS, getPisiTodoRepeatOption } from "../tags/pisi-todo-utils.mjs";
+import { registerModule } from '../core/module-registry.mjs';
+import { ensurePisiSearchIndex } from '../search/pisi-search-index.mjs';
+import { PISI_TODO_REPEAT_OPTIONS, getPisiTodoRepeatOption } from '../tags/pisi-todo-utils.mjs';
 
 const pisiQuickAddRepeatPolicyState = {
     observer: null,
@@ -14,7 +14,9 @@ function pisiQuickAddRepeatTranslate(value) {
 }
 
 function normalizePisiQuickAddPath(value) {
-    return String(value || '').replace(/[\\/]+/g, '/').toLowerCase();
+    return String(value || '')
+        .replace(/[\\/]+/g, '/')
+        .toLowerCase();
 }
 
 /** @param {Document | Element | Node} [root] */
@@ -38,9 +40,7 @@ function removePisiTodoCardRepeatControls(root = document) {
 function makePisiQuickAddDateField(form) {
     if (!form) return null;
 
-    form.querySelector('input[name="dateExpression"]')
-        ?.closest('.pisi-quick-field')
-        ?.remove();
+    form.querySelector('input[name="dateExpression"]')?.closest('.pisi-quick-field')?.remove();
     form.querySelector('.pisi-date-parse-preview')?.remove();
 
     const existing = form.querySelector('input[name="pisiDate"]');
@@ -77,10 +77,7 @@ async function relabelPisiQuickAddNodeOptions(form) {
     }
 
     const documents = Array.from(index?.documents?.values?.() || []);
-    const byPath = new Map(documents.map((record) => [
-        normalizePisiQuickAddPath(record.path),
-        record
-    ]));
+    const byPath = new Map(documents.map((record) => [normalizePisiQuickAddPath(record.path), record]));
 
     for (const option of Array.from(select.options || [])) {
         if (!option.value) {
@@ -90,14 +87,8 @@ async function relabelPisiQuickAddNodeOptions(form) {
         const record = byPath.get(normalizePisiQuickAddPath(option.value));
         if (!record) continue;
 
-        const mapNames = Array.from(new Set(
-            (record.memberships || [])
-                .map((membership) => String(membership?.mapTitle || '').trim())
-                .filter(Boolean)
-        ));
-        const mapLabel = mapNames.length
-            ? mapNames.join(' / ')
-            : pisiQuickAddRepeatTranslate('Inbox');
+        const mapNames = Array.from(new Set((record.memberships || []).map((membership) => String(membership?.mapTitle || '').trim()).filter(Boolean)));
+        const mapLabel = mapNames.length ? mapNames.join(' / ') : pisiQuickAddRepeatTranslate('Inbox');
         const nodeLabel = String(record.title || '').trim() || pisiQuickAddRepeatTranslate('Node');
         option.textContent = `${mapLabel} — ${nodeLabel}`;
     }
@@ -107,26 +98,22 @@ async function relabelPisiQuickAddNodeOptions(form) {
 function bindPisiQuickAddPolicySubmission(form, repeatSelect) {
     if (!form || form.dataset.pisiQuickAddPolicyBound === 'true') return false;
     form.dataset.pisiQuickAddPolicyBound = 'true';
-    form.addEventListener('submit', () => {
-        pisiQuickAddRepeatPolicyState.pendingRepeat = getPisiTodoRepeatOption(
-            repeatSelect?.value
-        ).value;
-        pisiQuickAddRepeatPolicyState.pendingDate = String(
-            form.querySelector('input[name="pisiDate"]')?.value || ''
-        ).trim() || null;
-    }, { capture: true });
+    form.addEventListener(
+        'submit',
+        () => {
+            pisiQuickAddRepeatPolicyState.pendingRepeat = getPisiTodoRepeatOption(repeatSelect?.value).value;
+            pisiQuickAddRepeatPolicyState.pendingDate = String(form.querySelector('input[name="pisiDate"]')?.value || '').trim() || null;
+        },
+        { capture: true }
+    );
     return true;
 }
 
 function makePisiQuickAddRepeatField(form) {
     if (!form) return null;
 
-    form.querySelector('input[name="durationMinutes"]')
-        ?.closest('.pisi-quick-field')
-        ?.remove();
-    form.querySelector('input[name="actualMinutes"]')
-        ?.closest('.pisi-quick-field')
-        ?.remove();
+    form.querySelector('input[name="durationMinutes"]')?.closest('.pisi-quick-field')?.remove();
+    form.querySelector('input[name="actualMinutes"]')?.closest('.pisi-quick-field')?.remove();
 
     makePisiQuickAddDateField(form);
     void relabelPisiQuickAddNodeOptions(form);
@@ -181,10 +168,7 @@ function patchPisiQuickAddRepeatCommand() {
     pisiQuickAddRepeatPolicyState.originalDomainCommand = originalCommand;
 
     domain.command = async (name, payload = {}) => {
-        if (
-            name !== 'task.capture.v1' ||
-            pisiQuickAddRepeatPolicyState.pendingRepeat === null
-        ) {
+        if (name !== 'task.capture.v1' || pisiQuickAddRepeatPolicyState.pendingRepeat === null) {
             return originalCommand(name, payload);
         }
 

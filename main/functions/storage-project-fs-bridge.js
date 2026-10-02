@@ -152,9 +152,7 @@ function installPisiStorageProjectFsBridge() {
     };
 
     fs.readdirSync = function pisiStorageReaddirSync(targetPath, options) {
-        const encoding = typeof options === 'string'
-            ? options
-            : options?.encoding;
+        const encoding = typeof options === 'string' ? options : options?.encoding;
         if (String(encoding || 'utf8').toLowerCase() === 'buffer') {
             return original.readdirSync(targetPath, options);
         }
@@ -188,9 +186,7 @@ function installPisiStorageProjectFsBridge() {
     };
 
     fs.mkdirSync = function pisiStorageMkdirSync(targetPath, options) {
-        const recursive = options && typeof options === 'object'
-            ? options.recursive === true
-            : false;
+        const recursive = options && typeof options === 'object' ? options.recursive === true : false;
         if (!recursive) return original.mkdirSync(targetPath, options);
         const target = resolvePisiStorageBridgeTarget(targetPath);
         if (!target) return original.mkdirSync(targetPath, options);

@@ -1,23 +1,14 @@
 import { registerModule } from '../core/module-registry.mjs';
-import {
-    getPisiDoubleDotCommandsPreference,
-    getPisiLatexCommandsPreference
-} from './pisi-editor-command-preferences.mjs';
-import {
-    buildPisiUnifiedCommandItems,
-    closePisiUnifiedCommandMenu,
-    pisiUnifiedCommandState
-} from './pisi-unified-command-menu.mjs';
-import {
-    buildPisiWritingCommandItems,
-    comparePisiExtendedUnifiedItems,
-    runPisiExtendedUnifiedCommandItem
-} from './pisi-unified-command-formatting.mjs';
+import { getPisiDoubleDotCommandsPreference, getPisiLatexCommandsPreference } from './pisi-editor-command-preferences.mjs';
+import { buildPisiUnifiedCommandItems, closePisiUnifiedCommandMenu, pisiUnifiedCommandState } from './pisi-unified-command-menu.mjs';
+import { buildPisiWritingCommandItems, comparePisiExtendedUnifiedItems, runPisiExtendedUnifiedCommandItem } from './pisi-unified-command-formatting.mjs';
 
 const PISI_EDITOR_TOKEN_CHARS = 'A-Za-z0-9ğüşöçıİĞÜŞÖÇ_-';
 
 function normalizePisiCommandId(value = '') {
-    return String(value || '').trim().toLocaleLowerCase('tr-TR');
+    return String(value || '')
+        .trim()
+        .toLocaleLowerCase('tr-TR');
 }
 
 function getPisiTokenAtCaret(editor, mode = 'any') {
@@ -39,17 +30,13 @@ function getPisiTokenAtCaret(editor, mode = 'any') {
     let trigger = '';
 
     if (mode === 'tag' || mode === 'any') {
-        const tagRegex = new RegExp(
-            `(^|\\s)(#[${PISI_EDITOR_TOKEN_CHARS}]*(?:\\.[${PISI_EDITOR_TOKEN_CHARS}]*)*)$`
-        );
+        const tagRegex = new RegExp(`(^|\\s)(#[${PISI_EDITOR_TOKEN_CHARS}]*(?:\\.[${PISI_EDITOR_TOKEN_CHARS}]*)*)$`);
         match = beforeText.match(tagRegex);
         if (match) trigger = '#';
     }
 
     if (!match && (mode === 'command' || mode === 'any')) {
-        const commandRegex = new RegExp(
-            `(^|\\s)((?:\\.\\.|/)[${PISI_EDITOR_TOKEN_CHARS}]*(?:\\.[${PISI_EDITOR_TOKEN_CHARS}]*)*)$`
-        );
+        const commandRegex = new RegExp(`(^|\\s)((?:\\.\\.|/)[${PISI_EDITOR_TOKEN_CHARS}]*(?:\\.[${PISI_EDITOR_TOKEN_CHARS}]*)*)$`);
         match = beforeText.match(commandRegex);
         if (match) trigger = match[2].startsWith('..') ? '..' : '/';
     }
@@ -76,9 +63,7 @@ function buildPisiHashTagItems(command) {
 
     const body = String(command.body || '').trim();
     const lowerBody = body.toLocaleLowerCase('tr-TR');
-    const suggestions = typeof window.collectPisiUserTagSuggestions === 'function'
-        ? window.collectPisiUserTagSuggestions(command.editor)
-        : [];
+    const suggestions = typeof window.collectPisiUserTagSuggestions === 'function' ? window.collectPisiUserTagSuggestions(command.editor) : [];
 
     const items = (Array.isArray(suggestions) ? suggestions : [])
         .filter((tag) => !/^(?:todo(?:\.|$)|done$)/i.test(String(tag || '')))
@@ -98,13 +83,7 @@ function buildPisiHashTagItems(command) {
         return item.label.toLocaleLowerCase('tr-TR') === lowerBody;
     });
 
-    if (
-        body &&
-        !exact &&
-        typeof window.isValidPisiUserTag === 'function' &&
-        window.isValidPisiUserTag(body) &&
-        !/^(?:todo(?:\.|$)|done$)/i.test(body)
-    ) {
+    if (body && !exact && typeof window.isValidPisiUserTag === 'function' && window.isValidPisiUserTag(body) && !/^(?:todo(?:\.|$)|done$)/i.test(body)) {
         items.unshift({
             kind: 'new-user',
             id: body,
@@ -172,12 +151,9 @@ function buildPisiFinalCommandItems(command) {
     if (command.trigger === '..' && !getPisiDoubleDotCommandsPreference()) return [];
 
     const writingItems = buildPisiWritingCommandItems(command);
-    const baseItems = buildPisiUnifiedCommandItems(command)
-        .map(normalizePisiBlockCommandItem);
+    const baseItems = buildPisiUnifiedCommandItems(command).map(normalizePisiBlockCommandItem);
     const candidates = [...writingItems, ...baseItems];
-    const allowedItems = getPisiLatexCommandsPreference()
-        ? candidates
-        : candidates.filter(isPisiEssentialCommandItem);
+    const allowedItems = getPisiLatexCommandsPreference() ? candidates : candidates.filter(isPisiEssentialCommandItem);
 
     const seen = new Set();
     return allowedItems
@@ -207,22 +183,17 @@ function syncPisiCommandMenuSelection() {
     const menu = getPisiCommandMenuElement();
     if (!menu || !pisiUnifiedCommandState.active) return;
     menu.querySelectorAll('.pisi-unified-command-option').forEach((option) => {
-        option.classList.toggle(
-            'active',
-            Number(option.dataset.pisiUnifiedIndex) === pisiUnifiedCommandState.selectedIndex
-        );
+        option.classList.toggle('active', Number(option.dataset.pisiUnifiedIndex) === pisiUnifiedCommandState.selectedIndex);
     });
-    menu.querySelector(
-        `.pisi-unified-command-option[data-pisi-unified-index="${pisiUnifiedCommandState.selectedIndex}"]`
-    )?.scrollIntoView?.({ block: 'nearest' });
+    menu.querySelector(`.pisi-unified-command-option[data-pisi-unified-index="${pisiUnifiedCommandState.selectedIndex}"]`)?.scrollIntoView?.({
+        block: 'nearest'
+    });
 }
 
 function movePisiCommandMenuSelection(delta) {
     const count = pisiUnifiedCommandState.items.length;
     if (!count) return false;
-    pisiUnifiedCommandState.selectedIndex = (
-        pisiUnifiedCommandState.selectedIndex + delta + count
-    ) % count;
+    pisiUnifiedCommandState.selectedIndex = (pisiUnifiedCommandState.selectedIndex + delta + count) % count;
     syncPisiCommandMenuSelection();
     return true;
 }
@@ -243,11 +214,7 @@ function renderPisiRoutedUnifiedMenu(editor, command) {
 
     const previousBody = pisiUnifiedCommandState.command?.body;
     const previousTrigger = pisiUnifiedCommandState.command?.trigger;
-    if (
-        pisiUnifiedCommandState.editor !== editor ||
-        previousBody !== command.body ||
-        previousTrigger !== command.trigger
-    ) {
+    if (pisiUnifiedCommandState.editor !== editor || previousBody !== command.body || previousTrigger !== command.trigger) {
         pisiUnifiedCommandState.selectedIndex = 0;
     }
 
@@ -255,10 +222,7 @@ function renderPisiRoutedUnifiedMenu(editor, command) {
     pisiUnifiedCommandState.editor = editor;
     pisiUnifiedCommandState.command = command;
     pisiUnifiedCommandState.items = items;
-    pisiUnifiedCommandState.selectedIndex = Math.min(
-        pisiUnifiedCommandState.selectedIndex,
-        items.length - 1
-    );
+    pisiUnifiedCommandState.selectedIndex = Math.min(pisiUnifiedCommandState.selectedIndex, items.length - 1);
 
     const fragment = document.createDocumentFragment();
     let previousCategory = '';
@@ -341,18 +305,17 @@ function schedulePisiEditorTokenRouting(editor) {
 function getExactPisiCommandMenuItem(command) {
     const body = normalizePisiCommandId(command?.body);
     if (!body) return null;
-    return pisiUnifiedCommandState.items.find((item) => {
-        return normalizePisiCommandId(item.id) === body;
-    }) || null;
+    return (
+        pisiUnifiedCommandState.items.find((item) => {
+            return normalizePisiCommandId(item.id) === body;
+        }) || null
+    );
 }
 
 function handlePisiEditorTokenKeydown(editor, event) {
     if (event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
 
-    if (
-        pisiUnifiedCommandState.active &&
-        pisiUnifiedCommandState.editor === editor
-    ) {
+    if (pisiUnifiedCommandState.active && pisiUnifiedCommandState.editor === editor) {
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
             event.preventDefault();
             event.stopImmediatePropagation();
@@ -365,11 +328,7 @@ function handlePisiEditorTokenKeydown(editor, event) {
             if (!item) return;
             event.preventDefault();
             event.stopImmediatePropagation();
-            void runPisiRoutedCommandItem(
-                editor,
-                pisiUnifiedCommandState.command,
-                item
-            );
+            void runPisiRoutedCommandItem(editor, pisiUnifiedCommandState.command, item);
             return;
         }
 
@@ -401,10 +360,7 @@ function handlePisiEditorTokenKeydown(editor, event) {
     if (!command) return;
     if (command.trigger === '..' && !getPisiDoubleDotCommandsPreference()) return;
 
-    if (
-        !pisiUnifiedCommandState.active ||
-        pisiUnifiedCommandState.editor !== editor
-    ) {
+    if (!pisiUnifiedCommandState.active || pisiUnifiedCommandState.editor !== editor) {
         renderPisiRoutedUnifiedMenu(editor, command);
     }
 
@@ -420,9 +376,13 @@ function bindPisiEditorTokenRouting(editor) {
     if (!editor || editor.dataset.pisiTokenRoutingBound === '1') return false;
     editor.dataset.pisiTokenRoutingBound = '1';
 
-    editor.addEventListener('keydown', (event) => {
-        handlePisiEditorTokenKeydown(editor, event);
-    }, true);
+    editor.addEventListener(
+        'keydown',
+        (event) => {
+            handlePisiEditorTokenKeydown(editor, event);
+        },
+        true
+    );
     editor.addEventListener('input', () => schedulePisiEditorTokenRouting(editor));
     editor.addEventListener('keyup', () => schedulePisiEditorTokenRouting(editor));
     editor.addEventListener('click', () => schedulePisiEditorTokenRouting(editor));
@@ -430,10 +390,7 @@ function bindPisiEditorTokenRouting(editor) {
 }
 
 function refreshPisiEditorTokenRouting() {
-    [
-        document.getElementById('center-node-editor-content'),
-        document.getElementById('node-modal-content')
-    ].filter(Boolean).forEach((editor) => {
+    [document.getElementById('center-node-editor-content'), document.getElementById('node-modal-content')].filter(Boolean).forEach((editor) => {
         bindPisiEditorTokenRouting(editor);
         schedulePisiEditorTokenRouting(editor);
     });

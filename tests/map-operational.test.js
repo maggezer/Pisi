@@ -12,9 +12,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 let corePromise = null;
 function loadCore() {
     if (!corePromise) {
-        corePromise = import(pathToFileURL(
-            path.join(root, 'renderer/map/pisi-map-operational-core.mjs')
-        ).href);
+        corePromise = import(pathToFileURL(path.join(root, 'renderer/map/pisi-map-operational-core.mjs')).href);
     }
     return corePromise;
 }
@@ -44,10 +42,7 @@ function task(id, nodePath, options = {}) {
 
 test('blocked ve overdue durumları canonical task dependencylerinden node seviyesinde türetilir', async () => {
     const core = await loadCore();
-    const nodes = [
-        node('node_A', 'A', '/project/A.node'),
-        node('node_B', 'B', '/project/B.node')
-    ];
+    const nodes = [node('node_A', 'A', '/project/A.node'), node('node_B', 'B', '/project/B.node')];
     const tasks = [
         task('task_A', '/project/A.node', {
             dueDate: '2026-08-20',
@@ -59,11 +54,7 @@ test('blocked ve overdue durumları canonical task dependencylerinden node seviy
             priority: 1
         })
     ];
-    const states = core.buildPisiOperationalNodeStates(
-        nodes,
-        tasks,
-        Date.parse('2026-08-15T12:00:00Z')
-    );
+    const states = core.buildPisiOperationalNodeStates(nodes, tasks, Date.parse('2026-08-15T12:00:00Z'));
 
     assert.equal(states.get('node_A').blocked, false);
     assert.equal(states.get('node_A').overdue, false);
@@ -74,11 +65,7 @@ test('blocked ve overdue durumları canonical task dependencylerinden node seviy
 
 test('task dependency overlay yalnız unresolved cross-node dependencyleri üretir', async () => {
     const core = await loadCore();
-    const nodes = [
-        node('node_A', 'A', '/project/A.node'),
-        node('node_B', 'B', '/project/B.node'),
-        node('node_C', 'C', '/project/C.node')
-    ];
+    const nodes = [node('node_A', 'A', '/project/A.node'), node('node_B', 'B', '/project/B.node'), node('node_C', 'C', '/project/C.node')];
     const tasks = [
         task('task_A', '/project/A.node'),
         task('task_B', '/project/B.node', { dependencies: ['task_A'] }),
@@ -88,13 +75,15 @@ test('task dependency overlay yalnız unresolved cross-node dependencyleri üret
     const visible = new Set(['node_A', 'node_B', 'node_C']);
     const projections = core.buildPisiTaskDependencyProjections(nodes, tasks, visible);
 
-    assert.deepEqual(projections, [{
-        id: 'task-dependency:node_A->node_B',
-        sourceId: 'node_A',
-        targetId: 'node_B',
-        blockedTaskId: 'task_B',
-        dependencyTaskId: 'task_A'
-    }]);
+    assert.deepEqual(projections, [
+        {
+            id: 'task-dependency:node_A->node_B',
+            sourceId: 'node_A',
+            targetId: 'node_B',
+            blockedTaskId: 'task_B',
+            dependencyTaskId: 'task_A'
+        }
+    ]);
 });
 
 test('focused neighbor görünümü semantic graph üzerinde deterministic 1-3 hop BFS uygular', async () => {
@@ -106,27 +95,14 @@ test('focused neighbor görünümü semantic graph üzerinde deterministic 1-3 h
         { sourceId: 'node_X', targetId: 'node_Y' }
     ];
 
-    assert.deepEqual(
-        [...core.collectPisiOperationalNeighborIds('node_A', edges, 1)].sort(),
-        ['node_A', 'node_B']
-    );
-    assert.deepEqual(
-        [...core.collectPisiOperationalNeighborIds('node_A', edges, 2)].sort(),
-        ['node_A', 'node_B', 'node_C']
-    );
-    assert.deepEqual(
-        [...core.collectPisiOperationalNeighborIds('node_A', edges, 3)].sort(),
-        ['node_A', 'node_B', 'node_C', 'node_D']
-    );
+    assert.deepEqual([...core.collectPisiOperationalNeighborIds('node_A', edges, 1)].sort(), ['node_A', 'node_B']);
+    assert.deepEqual([...core.collectPisiOperationalNeighborIds('node_A', edges, 2)].sort(), ['node_A', 'node_B', 'node_C']);
+    assert.deepEqual([...core.collectPisiOperationalNeighborIds('node_A', edges, 3)].sort(), ['node_A', 'node_B', 'node_C', 'node_D']);
 });
 
 test('operational scope blocked, overdue, next-action ve query filtrelerini tek projectionda uygular', async () => {
     const core = await loadCore();
-    const nodes = [
-        node('node_A', 'Alpha', '/project/A.node'),
-        node('node_B', 'Beta', '/project/B.node'),
-        node('node_C', 'Gamma', '/project/C.node')
-    ];
+    const nodes = [node('node_A', 'Alpha', '/project/A.node'), node('node_B', 'Beta', '/project/B.node'), node('node_C', 'Gamma', '/project/C.node')];
     const tasks = [
         task('task_A', '/project/A.node'),
         task('task_B', '/project/B.node', {
@@ -134,29 +110,13 @@ test('operational scope blocked, overdue, next-action ve query filtrelerini tek 
             dependencies: ['task_A']
         })
     ];
-    const states = core.buildPisiOperationalNodeStates(
-        nodes,
-        tasks,
-        Date.parse('2026-08-15T12:00:00Z')
-    );
+    const states = core.buildPisiOperationalNodeStates(nodes, tasks, Date.parse('2026-08-15T12:00:00Z'));
     const edges = [];
 
-    assert.deepEqual(
-        [...core.getPisiOperationalVisibleNodeIds(nodes, edges, states, { mode: 'blocked' })],
-        ['node_B']
-    );
-    assert.deepEqual(
-        [...core.getPisiOperationalVisibleNodeIds(nodes, edges, states, { mode: 'overdue' })],
-        ['node_B']
-    );
-    assert.deepEqual(
-        [...core.getPisiOperationalVisibleNodeIds(nodes, edges, states, { mode: 'missing-next-action' })],
-        ['node_C']
-    );
-    assert.deepEqual(
-        [...core.getPisiOperationalVisibleNodeIds(nodes, edges, states, { mode: 'all', query: 'alpha preview' })],
-        ['node_A']
-    );
+    assert.deepEqual([...core.getPisiOperationalVisibleNodeIds(nodes, edges, states, { mode: 'blocked' })], ['node_B']);
+    assert.deepEqual([...core.getPisiOperationalVisibleNodeIds(nodes, edges, states, { mode: 'overdue' })], ['node_B']);
+    assert.deepEqual([...core.getPisiOperationalVisibleNodeIds(nodes, edges, states, { mode: 'missing-next-action' })], ['node_C']);
+    assert.deepEqual([...core.getPisiOperationalVisibleNodeIds(nodes, edges, states, { mode: 'all', query: 'alpha preview' })], ['node_A']);
 });
 
 test('owner operational feature is fully retired and stale owner scope falls back to all', async () => {
@@ -187,29 +147,27 @@ test('relationship type filtresi node membershipi değiştirmeden yalnız semant
     const filtered = core.getPisiOperationalVisibleEdges(edges, visible, {
         relationshipTypes: ['stream']
     });
-    assert.deepEqual(filtered.map((edge) => edge.id), ['edge_2']);
+    assert.deepEqual(
+        filtered.map((edge) => edge.id),
+        ['edge_2']
+    );
     assert.equal(visible.size, 3);
 });
 
 test('sıradaki çalışma önerisi blocked nodeu dışlar ve overdue/priority ile deterministik sıralar', async () => {
     const core = await loadCore();
-    const nodes = [
-        node('node_A', 'Alpha', '/project/A.node'),
-        node('node_B', 'Beta', '/project/B.node'),
-        node('node_C', 'Gamma', '/project/C.node')
-    ];
+    const nodes = [node('node_A', 'Alpha', '/project/A.node'), node('node_B', 'Beta', '/project/B.node'), node('node_C', 'Gamma', '/project/C.node')];
     const tasks = [
         task('task_A', '/project/A.node', { priority: 4 }),
         task('task_B', '/project/B.node', { priority: 1, dependencies: ['task_A'] }),
         task('task_C', '/project/C.node', { priority: 2, dueDate: '2026-08-10' })
     ];
-    const states = core.buildPisiOperationalNodeStates(
-        nodes,
-        tasks,
-        Date.parse('2026-08-15T12:00:00Z')
-    );
+    const states = core.buildPisiOperationalNodeStates(nodes, tasks, Date.parse('2026-08-15T12:00:00Z'));
     const ranked = core.rankPisiOperationalNextNodes(nodes, states);
-    assert.deepEqual(ranked.map((item) => item.node.id), ['node_C', 'node_A']);
+    assert.deepEqual(
+        ranked.map((item) => item.node.id),
+        ['node_C', 'node_A']
+    );
 });
 
 test('operational state map state içinde kalır; relationship store veya task store authoritysine yazılmaz', () => {

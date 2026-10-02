@@ -6,16 +6,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
-const read = (relativePath) => fs.readFileSync(
-    path.join(root, relativePath),
-    'utf8'
-);
+const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), 'utf8');
 
 test('Vincendo is bundled locally, licensed, and exposed in the editor font list', () => {
-    const fontPath = path.join(
-        root,
-        'assets/fonts/vincendo-regular.woff2'
-    );
+    const fontPath = path.join(root, 'assets/fonts/vincendo-regular.woff2');
     const fontBytes = fs.readFileSync(fontPath);
     const license = read('assets/fonts/vincendo-OFL.txt');
     const css = read('styles/105-bundled-vincendo.css');
@@ -29,16 +23,10 @@ test('Vincendo is bundled locally, licensed, and exposed in the editor font list
     assert.match(license, /Copyright .*2024 GGBotNet/i);
     assert.match(license, /Reserved Font Name "Vincendo"/i);
 
-    assert.match(css, /font-family:\s*"Vincendo"/);
-    assert.match(
-        css,
-        /\.\.\/assets\/fonts\/vincendo-regular\.woff2/
-    );
+    assert.match(css, /font-family:\s*["\']Vincendo["\']/);
+    assert.match(css, /\.\.\/assets\/fonts\/vincendo-regular\.woff2/);
     assert.doesNotMatch(css, /https?:\/\//i);
-    assert.match(
-        styleRoot,
-        /105-bundled-vincendo\.css/
-    );
+    assert.match(styleRoot, /105-bundled-vincendo\.css/);
 
     assert.match(fontOptions, /value:\s*'Vincendo'/);
     assert.match(fontOptions, /label:\s*'Vincendo'/);

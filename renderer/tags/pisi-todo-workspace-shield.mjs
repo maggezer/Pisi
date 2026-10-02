@@ -25,10 +25,7 @@ function bindPisiTodoWorkspaceShield() {
     workspace.dataset.eventShieldBound = '1';
 
     const syncActiveState = () => {
-        host.classList.toggle(
-            'pisi-todo-workspace-active',
-            workspace.hidden !== true
-        );
+        host.classList.toggle('pisi-todo-workspace-active', workspace.hidden !== true);
     };
 
     for (const eventName of PISI_TODO_BLOCKED_EVENTS) {
@@ -52,7 +49,4 @@ if (document.readyState === 'loading') {
     bindPisiTodoWorkspaceShield();
 }
 
-export {
-    PISI_TODO_BLOCKED_EVENTS,
-    bindPisiTodoWorkspaceShield
-};
+export { PISI_TODO_BLOCKED_EVENTS, bindPisiTodoWorkspaceShield };

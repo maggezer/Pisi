@@ -44,7 +44,11 @@ registerMainModule('main.filesystemCore', {
 });
 registerMainModule('main.pathSecurity', {
     getDefaultNodeConnectionTypes: () => ({
-        'up-hub': [], 'down-hub': [], 'co-level': [], upstream: [], downstream: []
+        'up-hub': [],
+        'down-hub': [],
+        'co-level': [],
+        upstream: [],
+        downstream: []
     })
 });
 registerMainModule('main.mapSemanticCore', {
@@ -58,10 +62,8 @@ registerMainModule('main.mapSemanticCore', {
             seen.add(id);
             const view = {
                 relationshipId: id,
-                sourcePort: ['top', 'right', 'bottom', 'left'].includes(raw.sourcePort)
-                    ? raw.sourcePort : 'bottom',
-                targetPort: ['top', 'right', 'bottom', 'left'].includes(raw.targetPort)
-                    ? raw.targetPort : 'top'
+                sourcePort: ['top', 'right', 'bottom', 'left'].includes(raw.sourcePort) ? raw.sourcePort : 'bottom',
+                targetPort: ['top', 'right', 'bottom', 'left'].includes(raw.targetPort) ? raw.targetPort : 'top'
             };
             if (raw.customization?.color && /^#[0-9a-fA-F]{6}$/.test(raw.customization.color)) {
                 view.customization = { color: raw.customization.color.toLowerCase() };
@@ -76,7 +78,10 @@ let storedTasks = [];
 let storedRelationships = [];
 registerMainModule('main.taskStore', {
     readPisiTaskStore: () => ({ version: 1, tasks: storedTasks }),
-    writePisiTaskStore: (_project, store) => { storedTasks = store.tasks; return store; }
+    writePisiTaskStore: (_project, store) => {
+        storedTasks = store.tasks;
+        return store;
+    }
 });
 registerMainModule('main.relationshipStore', {
     readPisiRelationshipStore: () => ({ ok: true, relationships: storedRelationships }),
@@ -97,30 +102,47 @@ test('desktop adapter node, map, görev ve config kayıtlarını kayıpsız roun
         const mapSidecar = sidecar('Harita', '.map', mapId);
         const nodeSidecar = sidecar('Not', '.node', nodeId);
         fs.mkdirSync(path.join(project, mapSidecar));
-        fs.writeFileSync(path.join(project, 'Harita.map'), JSON.stringify({
-            pisi: { version: 1, type: 'map', id: mapId, title: 'Harita', sidecar: mapSidecar },
-            map: {
-                nodes: [{ id: nodeId, x: 10, y: 20 }],
-                relationshipViews: [],
-                relationshipViewVersion: 1,
-                collapsedHubs: [],
-                camera: { x: 0, y: 0, zoom: 1 }
-            }
-        }));
-        fs.writeFileSync(path.join(project, mapSidecar, 'Not.node'), JSON.stringify({
-            pisi: {
-                version: 1, type: 'node', id: nodeId, title: 'Not', parentMap: mapId,
-                sidecar: nodeSidecar, futureMetadata: { keep: true }
-            },
-            content: '<p>İlk</p>', properties: { durum: 'aktif' },
-            attachments: [{ path: 'attachment.bin' }], futureTopLevel: ['kept']
-        }));
+        fs.writeFileSync(
+            path.join(project, 'Harita.map'),
+            JSON.stringify({
+                pisi: { version: 1, type: 'map', id: mapId, title: 'Harita', sidecar: mapSidecar },
+                map: {
+                    nodes: [{ id: nodeId, x: 10, y: 20 }],
+                    relationshipViews: [],
+                    relationshipViewVersion: 1,
+                    collapsedHubs: [],
+                    camera: { x: 0, y: 0, zoom: 1 }
+                }
+            })
+        );
+        fs.writeFileSync(
+            path.join(project, mapSidecar, 'Not.node'),
+            JSON.stringify({
+                pisi: {
+                    version: 1,
+                    type: 'node',
+                    id: nodeId,
+                    title: 'Not',
+                    parentMap: mapId,
+                    sidecar: nodeSidecar,
+                    futureMetadata: { keep: true }
+                },
+                content: '<p>İlk</p>',
+                properties: { durum: 'aktif' },
+                attachments: [{ path: 'attachment.bin' }],
+                futureTopLevel: ['kept']
+            })
+        );
         fs.mkdirSync(path.join(project, mapSidecar, nodeSidecar));
         fs.writeFileSync(path.join(project, mapSidecar, nodeSidecar, 'attachment.bin'), Buffer.from([0, 1, 2, 255]));
-        storedTasks = [{
-            id: 'task_alpha', title: 'Görev', status: 'todo',
-            source: { nodePath: path.join(project, mapSidecar, 'Not.node'), blockId: 'block_1' }
-        }];
+        storedTasks = [
+            {
+                id: 'task_alpha',
+                title: 'Görev',
+                status: 'todo',
+                source: { nodePath: path.join(project, mapSidecar, 'Not.node'), blockId: 'block_1' }
+            }
+        ];
         storedRelationships = [];
 
         const entities = adapter.exportPisiSyncEntities(project);
@@ -147,47 +169,46 @@ test('desktop adapter node, map, görev ve config kayıtlarını kayıpsız roun
         assert.deepEqual(exportedNode.payload.native.pisi.futureMetadata, { keep: true });
         assert.deepEqual(exportedNode.payload.native.futureTopLevel, ['kept']);
         assert.equal(exportedNode.payload.native.pisi.sidecar, nodeSidecar);
-        assert.deepEqual(
-            fs.readFileSync(path.join(project, mapSidecar, nodeSidecar, 'attachment.bin')),
-            Buffer.from([0, 1, 2, 255])
-        );
+        assert.deepEqual(fs.readFileSync(path.join(project, mapSidecar, nodeSidecar, 'attachment.bin')), Buffer.from([0, 1, 2, 255]));
         assert.equal(exportedTask.payload.source.documentId, nodeId);
 
-        const propertyRecord = records.find((record) =>
-            record.kind === 'config' && record.id === 'propertySchema'
-        );
+        const propertyRecord = records.find((record) => record.kind === 'config' && record.id === 'propertySchema');
         propertyRecord.payload.value = [{ id: 'prop_status', name: 'Durum', type: 'text' }];
-        const merged = adapter.applyPisiSyncRecords(project, records, [{
-            loser: {
-                ...structuredClone(propertyRecord),
-                payload: { value: [
-                    { id: 'prop_status', name: 'Durum', type: 'number' },
-                    { id: 'prop_owner', name: 'Sahip', type: 'text' }
-                ] },
-                version: { counter: 7, deviceId: 'device_mobile' }
+        const merged = adapter.applyPisiSyncRecords(project, records, [
+            {
+                loser: {
+                    ...structuredClone(propertyRecord),
+                    payload: {
+                        value: [
+                            { id: 'prop_status', name: 'Durum', type: 'number' },
+                            { id: 'prop_owner', name: 'Sahip', type: 'text' }
+                        ]
+                    },
+                    version: { counter: 7, deviceId: 'device_mobile' }
+                }
             }
-        }]);
+        ]);
         assert.equal(merged.conflicts, 1);
-        const mergedSchema = adapter.exportPisiSyncEntities(project)
-            .find((entity) => entity.kind === 'config' && entity.id === 'propertySchema');
+        const mergedSchema = adapter.exportPisiSyncEntities(project).find((entity) => entity.kind === 'config' && entity.id === 'propertySchema');
         assert.equal(mergedSchema.payload.value.length, 3);
         assert.ok(mergedSchema.payload.value.some(({ name }) => name.includes('Sync çakışması')));
 
-        const secondRecords = records.map((record) => record === propertyRecord
-            ? { ...record, payload: structuredClone(mergedSchema.payload) }
-            : record);
-        adapter.applyPisiSyncRecords(project, secondRecords, [{
-            loser: {
-                ...structuredClone(propertyRecord),
-                payload: { value: [
-                    { id: 'prop_status', name: 'Durum', type: 'number' },
-                    { id: 'prop_owner', name: 'Sahip', type: 'text' }
-                ] },
-                version: { counter: 7, deviceId: 'device_mobile' }
+        const secondRecords = records.map((record) => (record === propertyRecord ? { ...record, payload: structuredClone(mergedSchema.payload) } : record));
+        adapter.applyPisiSyncRecords(project, secondRecords, [
+            {
+                loser: {
+                    ...structuredClone(propertyRecord),
+                    payload: {
+                        value: [
+                            { id: 'prop_status', name: 'Durum', type: 'number' },
+                            { id: 'prop_owner', name: 'Sahip', type: 'text' }
+                        ]
+                    },
+                    version: { counter: 7, deviceId: 'device_mobile' }
+                }
             }
-        }]);
-        const repeatedSchema = adapter.exportPisiSyncEntities(project)
-            .find((entity) => entity.kind === 'config' && entity.id === 'propertySchema');
+        ]);
+        const repeatedSchema = adapter.exportPisiSyncEntities(project).find((entity) => entity.kind === 'config' && entity.id === 'propertySchema');
         assert.equal(repeatedSchema.payload.value.length, 3, 'çakışma kopyası tekrarlanmamalı');
     } finally {
         fs.rmSync(project, { recursive: true, force: true });
@@ -203,28 +224,41 @@ test('desktop sync round-trips property map references without reparenting sourc
         fs.mkdirSync(path.join(project, mapSidecar), { recursive: true });
         fs.mkdirSync(path.join(project, 'Notlar'), { recursive: true });
 
-        fs.writeFileSync(path.join(project, 'Notlar', 'Kaynak.node'), JSON.stringify({
-            pisi: {
-                version: 1, type: 'node', id: nodeId, title: 'Kaynak',
-                parentMap: 'none', sidecar: sidecar('Kaynak', '.node', nodeId)
-            },
-            content: '<p>Asıl içerik</p>'
-        }));
-        fs.writeFileSync(path.join(project, 'Durum haritası.map'), JSON.stringify({
-            pisi: {
-                version: 1, type: 'map', id: mapId,
-                title: 'Durum haritası', sidecar: mapSidecar
-            },
-            map: {
-                nodes: [{ id: nodeId, x: 100, y: 120, width: 220, height: 92 }],
-                references: [{ id: nodeId, path: 'Notlar/Kaynak.node' }],
-                relationshipViews: [],
-                relationshipViewVersion: 1,
-                collapsedHubs: [],
-                generated: { kind: 'properties', property: 'durum' },
-                camera: { x: 20, y: 20, zoom: 0.85 }
-            }
-        }));
+        fs.writeFileSync(
+            path.join(project, 'Notlar', 'Kaynak.node'),
+            JSON.stringify({
+                pisi: {
+                    version: 1,
+                    type: 'node',
+                    id: nodeId,
+                    title: 'Kaynak',
+                    parentMap: 'none',
+                    sidecar: sidecar('Kaynak', '.node', nodeId)
+                },
+                content: '<p>Asıl içerik</p>'
+            })
+        );
+        fs.writeFileSync(
+            path.join(project, 'Durum haritası.map'),
+            JSON.stringify({
+                pisi: {
+                    version: 1,
+                    type: 'map',
+                    id: mapId,
+                    title: 'Durum haritası',
+                    sidecar: mapSidecar
+                },
+                map: {
+                    nodes: [{ id: nodeId, x: 100, y: 120, width: 220, height: 92 }],
+                    references: [{ id: nodeId, path: 'Notlar/Kaynak.node' }],
+                    relationshipViews: [],
+                    relationshipViewVersion: 1,
+                    collapsedHubs: [],
+                    generated: { kind: 'properties', property: 'durum' },
+                    camera: { x: 20, y: 20, zoom: 0.85 }
+                }
+            })
+        );
 
         storedTasks = [];
         storedRelationships = [];
@@ -251,17 +285,14 @@ test('desktop sync round-trips property map references without reparenting sourc
         assert.deepEqual(exportedMap.payload.map.references, [{ id: nodeId }]);
         assert.equal(exportedSource.payload.parentMap, 'none');
 
-        const mapFile = JSON.parse(
-            fs.readFileSync(path.join(project, 'Durum haritası.map'), 'utf8')
-        );
-        assert.deepEqual(mapFile.map.references, [{
-            id: nodeId,
-            path: 'Kaynak.node'
-        }]);
-        assert.equal(
-            fs.existsSync(path.join(project, mapSidecar, 'Kaynak.node')),
-            false
-        );
+        const mapFile = JSON.parse(fs.readFileSync(path.join(project, 'Durum haritası.map'), 'utf8'));
+        assert.deepEqual(mapFile.map.references, [
+            {
+                id: nodeId,
+                path: 'Kaynak.node'
+            }
+        ]);
+        assert.equal(fs.existsSync(path.join(project, mapSidecar, 'Kaynak.node')), false);
     } finally {
         fs.rmSync(project, { recursive: true, force: true });
     }
@@ -277,48 +308,69 @@ test('desktop map sync preserves semantic relationship views, ports, type and co
         const mapSidecar = sidecar('Semantic', '.map', mapId);
         fs.mkdirSync(path.join(project, mapSidecar), { recursive: true });
 
-        fs.writeFileSync(path.join(project, 'Semantic.map'), JSON.stringify({
-            pisi: {
-                version: 1, type: 'map', id: mapId, title: 'Semantic', sidecar: mapSidecar
-            },
-            map: {
-                nodes: [
-                    { id: parentId, x: 10, y: 20 },
-                    { id: childId, x: 320, y: 180 }
-                ],
-                relationshipViews: [{
-                    relationshipId: edgeId,
-                    sourcePort: 'right',
-                    targetPort: 'top',
-                    customization: { color: '#112233' }
-                }],
-                relationshipViewVersion: 1,
-                collapsedHubs: [`${parentId}::right`],
-                camera: { x: 15, y: -20, zoom: 1.25 }
-            }
-        }));
-        for (const [id, title] of [[parentId, 'Parent'], [childId, 'Child']]) {
-            fs.writeFileSync(path.join(project, mapSidecar, `${title}.node`), JSON.stringify({
+        fs.writeFileSync(
+            path.join(project, 'Semantic.map'),
+            JSON.stringify({
                 pisi: {
-                    version: 1, type: 'node', id, title, parentMap: mapId,
-                    sidecar: sidecar(title, '.node', id)
+                    version: 1,
+                    type: 'map',
+                    id: mapId,
+                    title: 'Semantic',
+                    sidecar: mapSidecar
                 },
-                content: `<p>${title}</p>`
-            }));
+                map: {
+                    nodes: [
+                        { id: parentId, x: 10, y: 20 },
+                        { id: childId, x: 320, y: 180 }
+                    ],
+                    relationshipViews: [
+                        {
+                            relationshipId: edgeId,
+                            sourcePort: 'right',
+                            targetPort: 'top',
+                            customization: { color: '#112233' }
+                        }
+                    ],
+                    relationshipViewVersion: 1,
+                    collapsedHubs: [`${parentId}::right`],
+                    camera: { x: 15, y: -20, zoom: 1.25 }
+                }
+            })
+        );
+        for (const [id, title] of [
+            [parentId, 'Parent'],
+            [childId, 'Child']
+        ]) {
+            fs.writeFileSync(
+                path.join(project, mapSidecar, `${title}.node`),
+                JSON.stringify({
+                    pisi: {
+                        version: 1,
+                        type: 'node',
+                        id,
+                        title,
+                        parentMap: mapId,
+                        sidecar: sidecar(title, '.node', id)
+                    },
+                    content: `<p>${title}</p>`
+                })
+            );
         }
 
         storedTasks = [];
-        storedRelationships = [{
-            id: edgeId,
-            sourceId: parentId,
-            targetId: childId,
-            type: 'down-hub',
-            sourceRole: 'down-hub',
-            targetRole: 'up-hub',
-            direction: 'directed',
-            createdAt: '2026-09-26T10:00:00.000Z',
-            updatedAt: '2026-09-26T10:00:00.000Z'
-        }];
+        storedRelationships = [
+            {
+                id: edgeId,
+                sourceId: parentId,
+                targetId: childId,
+                type: 'down-hub',
+                sourceRole: 'down-hub',
+                targetRole: 'up-hub',
+                direction: 'directed',
+                createdAt: '2026-09-26T10:00:00.000Z',
+                updatedAt: '2026-09-26T10:00:00.000Z'
+            }
+        ];
 
         const entities = adapter.exportPisiSyncEntities(project);
         const mapEntity = entities.find(({ kind, id }) => kind === 'map' && id === mapId);
@@ -326,12 +378,14 @@ test('desktop map sync preserves semantic relationship views, ports, type and co
 
         assert.equal(mapEntity.payload.map.edges, undefined);
         assert.equal(mapEntity.payload.map.collapsedAnchors, undefined);
-        assert.deepEqual(mapEntity.payload.map.relationshipViews, [{
-            relationshipId: edgeId,
-            sourcePort: 'right',
-            targetPort: 'top',
-            customization: { color: '#112233' }
-        }]);
+        assert.deepEqual(mapEntity.payload.map.relationshipViews, [
+            {
+                relationshipId: edgeId,
+                sourcePort: 'right',
+                targetPort: 'top',
+                customization: { color: '#112233' }
+            }
+        ]);
         assert.deepEqual(mapEntity.payload.map.collapsedHubs, [`${parentId}::right`]);
         assert.equal(parentEntity.payload.relations[0].id, edgeId);
         assert.equal(parentEntity.payload.relations[0].type, 'down-hub');
@@ -383,16 +437,17 @@ test('DriveSync conflict-named duplicate files remain visible as stable separate
     try {
         const data = (content) => ({
             pisi: {
-                version: 1, type: 'node', id: 'node_same', title: 'Ortak',
-                sidecar: sidecar('Ortak', '.node', 'node_same'), parentMap: 'none'
+                version: 1,
+                type: 'node',
+                id: 'node_same',
+                title: 'Ortak',
+                sidecar: sidecar('Ortak', '.node', 'node_same'),
+                parentMap: 'none'
             },
             content
         });
         fs.writeFileSync(path.join(project, 'Ortak.node'), JSON.stringify(data('asıl')));
-        fs.writeFileSync(
-            path.join(project, 'Ortak (conflict 2026-08-23-12-30-45).node'),
-            JSON.stringify(data('çakışan'))
-        );
+        fs.writeFileSync(path.join(project, 'Ortak (conflict 2026-08-23-12-30-45).node'), JSON.stringify(data('çakışan')));
         storedTasks = [];
         storedRelationships = [];
 
@@ -433,35 +488,45 @@ test('reparenting a node moves its binary sidecar beside the new desktop path', 
         const nodeSidecar = sidecar('Ekli', '.node', nodeId);
         fs.mkdirSync(path.join(project, mapASidecar, nodeSidecar), { recursive: true });
         fs.mkdirSync(path.join(project, mapBSidecar), { recursive: true });
-        fs.writeFileSync(path.join(project, 'A.map'), JSON.stringify({
-            pisi: { version: 1, type: 'map', id: mapA, title: 'A', sidecar: mapASidecar },
-            map: {
-                nodes: [{ id: nodeId }],
-                relationshipViews: [],
-                relationshipViewVersion: 1,
-                collapsedHubs: []
-            }
-        }));
-        fs.writeFileSync(path.join(project, 'B.map'), JSON.stringify({
-            pisi: { version: 1, type: 'map', id: mapB, title: 'B', sidecar: mapBSidecar },
-            map: {
-                nodes: [],
-                relationshipViews: [],
-                relationshipViewVersion: 1,
-                collapsedHubs: []
-            }
-        }));
-        fs.writeFileSync(path.join(project, mapASidecar, 'Ekli.node'), JSON.stringify({
-            pisi: {
-                version: 1, type: 'node', id: nodeId, title: 'Ekli',
-                sidecar: nodeSidecar, parentMap: mapA
-            },
-            content: 'ekli'
-        }));
         fs.writeFileSync(
-            path.join(project, mapASidecar, nodeSidecar, 'asset.bin'),
-            Buffer.from([9, 8, 7, 6])
+            path.join(project, 'A.map'),
+            JSON.stringify({
+                pisi: { version: 1, type: 'map', id: mapA, title: 'A', sidecar: mapASidecar },
+                map: {
+                    nodes: [{ id: nodeId }],
+                    relationshipViews: [],
+                    relationshipViewVersion: 1,
+                    collapsedHubs: []
+                }
+            })
         );
+        fs.writeFileSync(
+            path.join(project, 'B.map'),
+            JSON.stringify({
+                pisi: { version: 1, type: 'map', id: mapB, title: 'B', sidecar: mapBSidecar },
+                map: {
+                    nodes: [],
+                    relationshipViews: [],
+                    relationshipViewVersion: 1,
+                    collapsedHubs: []
+                }
+            })
+        );
+        fs.writeFileSync(
+            path.join(project, mapASidecar, 'Ekli.node'),
+            JSON.stringify({
+                pisi: {
+                    version: 1,
+                    type: 'node',
+                    id: nodeId,
+                    title: 'Ekli',
+                    sidecar: nodeSidecar,
+                    parentMap: mapA
+                },
+                content: 'ekli'
+            })
+        );
+        fs.writeFileSync(path.join(project, mapASidecar, nodeSidecar, 'asset.bin'), Buffer.from([9, 8, 7, 6]));
         storedTasks = [];
         storedRelationships = [];
 
@@ -477,10 +542,7 @@ test('reparenting a node moves its binary sidecar beside the new desktop path', 
         }));
         adapter.applyPisiSyncRecords(project, records, []);
 
-        assert.deepEqual(
-            fs.readFileSync(path.join(project, mapBSidecar, nodeSidecar, 'asset.bin')),
-            Buffer.from([9, 8, 7, 6])
-        );
+        assert.deepEqual(fs.readFileSync(path.join(project, mapBSidecar, nodeSidecar, 'asset.bin')), Buffer.from([9, 8, 7, 6]));
         assert.equal(fs.existsSync(path.join(project, mapASidecar, nodeSidecar)), false);
     } finally {
         fs.rmSync(project, { recursive: true, force: true });
@@ -493,16 +555,22 @@ test('sync-created desktop names are NFC, case-safe, bounded and Windows compati
         storedTasks = [];
         storedRelationships = [];
         const id = `node_${'a'.repeat(96)}`;
-        adapter.applyPisiSyncRecords(project, [{
-            key: `node:${id}`,
-            kind: 'node',
-            id,
-            deleted: false,
-            hash: 'windows-name',
-            version: { counter: 1, deviceId: 'device_test' },
-            updatedAt: '2026-08-23T12:50:00.000Z',
-            payload: { title: 'CON', content: 'safe', parentMap: 'none' }
-        }], []);
+        adapter.applyPisiSyncRecords(
+            project,
+            [
+                {
+                    key: `node:${id}`,
+                    kind: 'node',
+                    id,
+                    deleted: false,
+                    hash: 'windows-name',
+                    version: { counter: 1, deviceId: 'device_test' },
+                    updatedAt: '2026-08-23T12:50:00.000Z',
+                    payload: { title: 'CON', content: 'safe', parentMap: 'none' }
+                }
+            ],
+            []
+        );
         const inventory = adapter.readProjectDocuments(project);
         const name = path.basename(inventory.documents[0].path);
 

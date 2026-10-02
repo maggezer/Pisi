@@ -6,20 +6,12 @@ const PISI_MAP_EDGE_KEEP_SELECTION_SELECTOR = [
 ].join(', ');
 
 function shouldKeepPisiMapEdgeSelection(target) {
-    return Boolean(
-        target &&
-        typeof target.closest === 'function' &&
-        target.closest(PISI_MAP_EDGE_KEEP_SELECTION_SELECTOR)
-    );
+    return Boolean(target && typeof target.closest === 'function' && target.closest(PISI_MAP_EDGE_KEEP_SELECTION_SELECTOR));
 }
 
 function blurFocusedPisiMapEdge() {
     const activeElement = document.activeElement;
-    if (
-        !activeElement ||
-        typeof activeElement.closest !== 'function' ||
-        !activeElement.closest('.map-edge-group[data-edge-id]')
-    ) {
+    if (!activeElement || typeof activeElement.closest !== 'function' || !activeElement.closest('.map-edge-group[data-edge-id]')) {
         return false;
     }
 
@@ -28,9 +20,7 @@ function blurFocusedPisiMapEdge() {
 }
 
 function clearPisiMapEdgeSelectionFromOutsideClick() {
-    const selectedGroups = Array.from(
-        document.querySelectorAll('.map-edge-group.selected')
-    );
+    const selectedGroups = Array.from(document.querySelectorAll('.map-edge-group.selected'));
     const hadSelection = Boolean(window.selectedMapEdgeId) || selectedGroups.length > 0;
     const focusCleared = blurFocusedPisiMapEdge();
 
@@ -40,9 +30,7 @@ function clearPisiMapEdgeSelectionFromOutsideClick() {
     });
 
     if (hadSelection) {
-        document.dispatchEvent(new CustomEvent(
-            'pisi:map-customization-context-changed'
-        ));
+        document.dispatchEvent(new CustomEvent('pisi:map-customization-context-changed'));
     }
 
     return hadSelection || focusCleared;
@@ -53,10 +41,6 @@ function handlePisiMapEdgeOutsideMouseDown(event) {
     clearPisiMapEdgeSelectionFromOutsideClick();
 }
 
-document.addEventListener(
-    'mousedown',
-    handlePisiMapEdgeOutsideMouseDown,
-    true
-);
+document.addEventListener('mousedown', handlePisiMapEdgeOutsideMouseDown, true);
 
 export {};

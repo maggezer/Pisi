@@ -1,631 +1,631 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+    push:
+        tags:
+            - 'v*.*.*'
 
 permissions:
-  contents: read
+    contents: read
 
 concurrency:
-  group: release-${{ github.ref }}
-  cancel-in-progress: false
+    group: release-${{ github.ref }}
+    cancel-in-progress: false
 
 jobs:
-  validate:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    validate:
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: npm
 
-      - name: Verify tag matches package version
-        shell: bash
-        run: |
-          version=$(node -p "require('./package.json').version")
-          expected_tag="v$version"
-          if [ "${{ github.ref_name }}" != "$expected_tag" ]; then
-            echo "Release tag ${{ github.ref_name }} does not match package.json version $version (expected $expected_tag)." >&2
-            exit 1
-          fi
-          if [ ! -f "docs/releases/$expected_tag.md" ]; then
-            echo "Missing release notes: docs/releases/$expected_tag.md" >&2
-            exit 1
-          fi
+            - name: Verify tag matches package version
+              shell: bash
+              run: |
+                  version=$(node -p "require('./package.json').version")
+                  expected_tag="v$version"
+                  if [ "${{ github.ref_name }}" != "$expected_tag" ]; then
+                    echo "Release tag ${{ github.ref_name }} does not match package.json version $version (expected $expected_tag)." >&2
+                    exit 1
+                  fi
+                  if [ ! -f "docs/releases/$expected_tag.md" ]; then
+                    echo "Missing release notes: docs/releases/$expected_tag.md" >&2
+                    exit 1
+                  fi
 
-      - name: Install dependencies without Electron binary
+            - name: Install dependencies without Electron binary
+              env:
+                  ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+              run: npm ci
+
+            - name: Require clean dependency audit
+              run: npm audit --audit-level=moderate
+
+            - name: Check repository formatting
+              run: npm run format:check
+
+            - name: Validate source
+              run: npm run validate:source
+
+    windows-release:
+        needs: validate
+        permissions:
+            contents: write
+        runs-on: windows-latest
+        timeout-minutes: 45
         env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
-        run: npm ci
-
-      - name: Require clean dependency audit
-        run: npm audit --audit-level=moderate
-
-      - name: Check repository formatting
-        run: npm run format:check
-
-      - name: Validate source
-        run: npm run validate:source
-
-  windows-release:
-    needs: validate
-    permissions:
-      contents: write
-    runs-on: windows-latest
-    timeout-minutes: 45
-    env:
-      WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
-      WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
-      PISI_WINDOWS_CERT_SHA1: ${{ secrets.PISI_WINDOWS_CERT_SHA1 }}
-      PISI_UPDATE_FEED_URL: ${{ vars.PISI_UPDATE_FEED_URL }}
-      PISI_UPDATE_CHANNEL: ${{ vars.PISI_UPDATE_CHANNEL || 'beta' }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Detect optional Windows code-signing identity
-        shell: pwsh
-        run: |
-          $hasCscLink = -not [string]::IsNullOrWhiteSpace($env:WIN_CSC_LINK)
-          $hasStoreCertificate = -not [string]::IsNullOrWhiteSpace($env:PISI_WINDOWS_CERT_SHA1)
-
-          if ($hasCscLink -and $hasStoreCertificate) {
-            throw "Configure exactly one Windows signing mode: WIN_CSC_LINK or PISI_WINDOWS_CERT_SHA1."
-          }
-
-          if ($hasCscLink -and [string]::IsNullOrWhiteSpace($env:WIN_CSC_KEY_PASSWORD)) {
-            throw "WIN_CSC_KEY_PASSWORD is required when WIN_CSC_LINK is used."
-          }
-
-          if ($hasStoreCertificate) {
-            $thumbprint = ($env:PISI_WINDOWS_CERT_SHA1 -replace '\s', '').ToUpperInvariant()
-
-            if ($thumbprint -notmatch '^[A-F0-9]{40}$') {
-              throw "PISI_WINDOWS_CERT_SHA1 must be a 40-character SHA-1 certificate thumbprint."
-            }
-
-            $certificate = Get-ChildItem Cert:\CurrentUser\My -CodeSigningCert |
-              Where-Object { $_.Thumbprint -eq $thumbprint } |
-              Select-Object -First 1
-
-            if (-not $certificate) {
-              throw "The configured signing certificate is not available in CurrentUser\\My. Load the HSM/cloud signing provider before the build."
-            }
-
-            Write-Host "Signing mode: Windows certificate store / HSM provider"
-            Write-Host "Signing subject: $($certificate.Subject)"
-          }
-          elseif ($hasCscLink) {
-            Write-Host "Signing mode: electron-builder WIN_CSC_LINK"
-          }
-          else {
-            Write-Warning "No Windows code-signing identity configured. GitHub beta EXE artifacts will be unsigned."
-          }
-
-          $enabled = $hasCscLink -or $hasStoreCertificate
-          "PISI_SIGNING_ENABLED=$($enabled.ToString().ToLowerInvariant())" >> $env:GITHUB_ENV
-
-      - name: Build Windows installers
-        shell: pwsh
-        run: |
-          $arguments = @(
-            'run',
-            'dist:installer',
-            '--',
-            '--x64',
-            '--arm64',
-            '--publish',
-            'never',
-            '-c.extraMetadata.pisiDistribution=nsis',
-            "-c.extraMetadata.pisiUpdateChannel=$env:PISI_UPDATE_CHANNEL"
-          )
-
-          if (-not [string]::IsNullOrWhiteSpace($env:PISI_UPDATE_FEED_URL)) {
-            $arguments += "-c.extraMetadata.pisiUpdateFeedUrl=$env:PISI_UPDATE_FEED_URL"
-          }
-
-          if ($env:PISI_SIGNING_ENABLED -eq 'true') {
-            $arguments += '-c.forceCodeSigning=true'
-          }
-
-          if (-not [string]::IsNullOrWhiteSpace($env:PISI_WINDOWS_CERT_SHA1)) {
-            $thumbprint = ($env:PISI_WINDOWS_CERT_SHA1 -replace '\s', '').ToUpperInvariant()
-            $arguments += "-c.win.signtoolOptions.certificateSha1=$thumbprint"
-          }
-
-          & npm @arguments
-          if ($LASTEXITCODE -ne 0) {
-            exit $LASTEXITCODE
-          }
-
-      - name: Collect installer assets
-        shell: pwsh
-        run: |
-          $version = node -p "require('./package.json').version"
-          New-Item -ItemType Directory -Force release | Out-Null
-
-          $targets = @(
-            @{ Arch = 'x64'; Source = "dist/Pisi-$version-win-x64.exe" },
-            @{ Arch = 'arm64'; Source = "dist/Pisi-$version-win-arm64.exe" }
-          )
-
-          foreach ($target in $targets) {
-            if (-not (Test-Path $target.Source)) {
-              throw "Missing installer build: $($target.Source)"
-            }
-            Copy-Item $target.Source "release/Pisi-$version-Setup-$($target.Arch).exe"
-          }
-
-          Remove-Item 'dist/*.exe' -Force -ErrorAction SilentlyContinue
-
-      - name: Build Windows portable packages
-        shell: pwsh
-        run: |
-          $arguments = @(
-            'run',
-            'dist:portable',
-            '--',
-            '--x64',
-            '--arm64',
-            '--publish',
-            'never',
-            '-c.extraMetadata.pisiDistribution=portable',
-            "-c.extraMetadata.pisiUpdateChannel=$env:PISI_UPDATE_CHANNEL"
-          )
-
-          if ($env:PISI_SIGNING_ENABLED -eq 'true') {
-            $arguments += '-c.forceCodeSigning=true'
-          }
-
-          if (-not [string]::IsNullOrWhiteSpace($env:PISI_WINDOWS_CERT_SHA1)) {
-            $thumbprint = ($env:PISI_WINDOWS_CERT_SHA1 -replace '\s', '').ToUpperInvariant()
-            $arguments += "-c.win.signtoolOptions.certificateSha1=$thumbprint"
-          }
-
-          & npm @arguments
-          if ($LASTEXITCODE -ne 0) {
-            exit $LASTEXITCODE
-          }
-
-      - name: Collect portable assets and checksums
-        shell: pwsh
-        run: |
-          $version = node -p "require('./package.json').version"
-
-          $targets = @(
-            @{ Arch = 'x64'; Source = "dist/Pisi-$version-win-x64.exe" },
-            @{ Arch = 'arm64'; Source = "dist/Pisi-$version-win-arm64.exe" }
-          )
-
-          foreach ($target in $targets) {
-            if (-not (Test-Path $target.Source)) {
-              throw "Missing portable build: $($target.Source)"
-            }
-            Copy-Item $target.Source "release/Pisi-$version-Portable-$($target.Arch).exe"
-          }
-
-          $assetNames = @(
-            "Pisi-$version-Setup-x64.exe",
-            "Pisi-$version-Setup-arm64.exe",
-            "Pisi-$version-Portable-x64.exe",
-            "Pisi-$version-Portable-arm64.exe"
-          )
-
-          $hashLines = foreach ($assetName in $assetNames) {
-            $assetPath = Join-Path release $assetName
-            if (-not (Test-Path $assetPath)) {
-              throw "Missing release asset: $assetPath"
-            }
-            $hash = (Get-FileHash -Algorithm SHA256 $assetPath).Hash.ToLowerInvariant()
-            "$hash  $assetName"
-          }
-
-          $hashLines | Set-Content -Encoding utf8NoBOM release/SHA256SUMS.txt
-
-      - name: Create direct auto-update feed manifest
-        shell: pwsh
-        run: |
-          $version = node -p "require('./package.json').version"
-
-          $x64Name = "Pisi-$version-Setup-x64.exe"
-          $arm64Name = "Pisi-$version-Setup-arm64.exe"
-
-          $x64Hash = (Get-FileHash -Algorithm SHA256 (Join-Path release $x64Name)).Hash.ToLowerInvariant()
-          $arm64Hash = (Get-FileHash -Algorithm SHA256 (Join-Path release $arm64Name)).Hash.ToLowerInvariant()
-
-          $manifest = [ordered]@{
-            schemaVersion = 1
-            channel = $env:PISI_UPDATE_CHANNEL
-            version = $version
-            files = [ordered]@{
-              x64 = [ordered]@{
-                url = $x64Name
-                sha256 = $x64Hash
-              }
-              arm64 = [ordered]@{
-                url = $arm64Name
-                sha256 = $arm64Hash
-              }
-            }
-          }
-
-          $manifest | ConvertTo-Json -Depth 6 | Set-Content -Encoding utf8NoBOM release/latest.json
-
-      - name: Verify Windows Authenticode signatures
-        if: env.PISI_SIGNING_ENABLED == 'true'
-        shell: pwsh
-        run: |
-          $version = node -p "require('./package.json').version"
-          ./scripts/verify-windows-signatures.ps1 -Path @(
-            "release/Pisi-$version-Setup-x64.exe",
-            "release/Pisi-$version-Setup-arm64.exe",
-            "release/Pisi-$version-Portable-x64.exe",
-            "release/Pisi-$version-Portable-arm64.exe"
-          )
-
-      - name: Record unsigned beta release
-        if: env.PISI_SIGNING_ENABLED != 'true'
-        shell: pwsh
-        run: |
-          Add-Content $env:GITHUB_STEP_SUMMARY "### Windows signing"
-          Add-Content $env:GITHUB_STEP_SUMMARY ""
-          Add-Content $env:GITHUB_STEP_SUMMARY "No signing identity was configured. The GitHub beta Setup/Portable EXE files are intentionally unsigned."
-          Add-Content $env:GITHUB_STEP_SUMMARY "The Microsoft Store MSIX pipeline is separate; Store submission packages are unsigned before upload and are signed by Microsoft during publishing."
-
-      - name: Upload Windows release artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: pisi-release-windows
-          path: |
-            release/Pisi-*-Setup-x64.exe
-            release/Pisi-*-Setup-arm64.exe
-            release/Pisi-*-Portable-x64.exe
-            release/Pisi-*-Portable-arm64.exe
-            release/SHA256SUMS.txt
-            release/latest.json
-          if-no-files-found: error
-          retention-days: 14
-
-  macos-release:
-    needs: validate
-    runs-on: macos-latest
-    timeout-minutes: 60
-    env:
-      CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
-      CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
-      PISI_APPLE_API_KEY_BASE64: ${{ secrets.PISI_APPLE_API_KEY_BASE64 }}
-      APPLE_API_KEY_ID: ${{ secrets.PISI_APPLE_API_KEY_ID }}
-      APPLE_API_ISSUER: ${{ secrets.PISI_APPLE_API_ISSUER }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Detect optional macOS signing and notarization
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          has_signing=false
-          if [[ -n "${CSC_LINK:-}" ]]; then
-            has_signing=true
-          fi
-
-          api_key_set=false
-          api_id_set=false
-          api_issuer_set=false
-          [[ -n "${PISI_APPLE_API_KEY_BASE64:-}" ]] && api_key_set=true
-          [[ -n "${APPLE_API_KEY_ID:-}" ]] && api_id_set=true
-          [[ -n "${APPLE_API_ISSUER:-}" ]] && api_issuer_set=true
-
-          notarize=false
-          if [[ "$api_key_set" == true || "$api_id_set" == true || "$api_issuer_set" == true ]]; then
-            if [[ "$api_key_set" != true || "$api_id_set" != true || "$api_issuer_set" != true ]]; then
-              echo "Apple notarization credentials are incomplete." >&2
-              exit 1
-            fi
-            if [[ "$has_signing" != true ]]; then
-              echo "Apple notarization credentials are configured, but MAC_CSC_LINK is missing." >&2
-              exit 1
-            fi
-
-            key_path="$RUNNER_TEMP/AuthKey_${APPLE_API_KEY_ID}.p8"
-            printf '%s' "$PISI_APPLE_API_KEY_BASE64" | base64 --decode > "$key_path"
-            chmod 600 "$key_path"
-            echo "APPLE_API_KEY=$key_path" >> "$GITHUB_ENV"
-            notarize=true
-          fi
-
-          echo "PISI_MAC_SIGNING_ENABLED=$has_signing" >> "$GITHUB_ENV"
-          echo "PISI_MAC_NOTARIZE_ENABLED=$notarize" >> "$GITHUB_ENV"
-
-          if [[ "$has_signing" == true && "$notarize" == true ]]; then
-            echo "macOS mode: Developer ID signing + notarization"
-          elif [[ "$has_signing" == true ]]; then
-            echo "macOS mode: Developer ID signing without notarization"
-          else
-            echo "::warning::No Developer ID certificate configured. macOS artifacts will be unsigned."
-          fi
-
-      - name: Build macOS x64, ARM64 and universal packages
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          args=(
-            run dist:mac --
-            -c.extraMetadata.pisiDistribution=macos
-          )
-
-          if [[ "$PISI_MAC_SIGNING_ENABLED" != "true" ]]; then
-            args+=(
-              -c.mac.identity=null
-              -c.mac.hardenedRuntime=false
-              -c.mac.notarize=false
-            )
-          elif [[ "$PISI_MAC_NOTARIZE_ENABLED" == "true" ]]; then
-            args+=(-c.mac.notarize=true)
-          else
-            args+=(-c.mac.notarize=false)
-          fi
-
-          npm "${args[@]}"
-
-      - name: Verify macOS code signatures
-        if: env.PISI_MAC_SIGNING_ENABLED == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          found=0
-          while IFS= read -r -d '' app_bundle; do
-            found=1
-            codesign --verify --deep --strict --verbose=2 "$app_bundle"
-          done < <(find dist -type d -name 'Pisi.app' -print0)
-          [[ "$found" -eq 1 ]] || {
-            echo "No Pisi.app bundle was found for signature verification." >&2
-            exit 1
-          }
-
-      - name: Verify macOS notarization and stapling
-        if: env.PISI_MAC_NOTARIZE_ENABLED == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
-          found=0
-          while IFS= read -r -d '' app_bundle; do
-            found=1
-            spctl --assess --verbose --type execute "$app_bundle"
-            xcrun stapler validate "$app_bundle"
-          done < <(find dist -type d -name 'Pisi.app' -print0)
-          [[ "$found" -eq 1 ]] || {
-            echo "No Pisi.app bundle was found for notarization verification." >&2
-            exit 1
-          }
-
-      - name: Collect macOS packages and checksums
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p release-macos
-
-          find dist -maxdepth 1 -type f \( -name '*.dmg' -o -name '*.zip' \) -exec cp {} release-macos/ \;
-
-          count=$(find release-macos -maxdepth 1 -type f \( -name '*.dmg' -o -name '*.zip' \) | wc -l | tr -d ' ')
-          if [[ "$count" -lt 6 ]]; then
-            echo "Expected x64, ARM64 and universal DMG/ZIP packages; found $count artifacts." >&2
-            find release-macos -maxdepth 1 -type f -print
-            exit 1
-          fi
-
-          (
-            cd release-macos
-            shasum -a 256 *.dmg *.zip > SHA256SUMS-macOS.txt
-          )
-
-      - name: Record unsigned macOS warning
-        if: env.PISI_MAC_SIGNING_ENABLED != 'true'
-        shell: bash
-        run: |
-          {
-            echo "### macOS signing"
-            echo
-            echo "Developer ID credentials are not configured. DMG/ZIP artifacts are unsigned and can trigger Gatekeeper."
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Upload macOS release artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: pisi-release-macos
-          path: release-macos/*
-          if-no-files-found: error
-          retention-days: 14
-
-  linux-release:
-    needs: validate
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    env:
-      PISI_GPG_PRIVATE_KEY_BASE64: ${{ secrets.PISI_GPG_PRIVATE_KEY_BASE64 }}
-      PISI_GPG_PASSPHRASE: ${{ secrets.PISI_GPG_PASSPHRASE }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build Linux AppImage and deb packages
-        run: npm run dist:linux -- -c.extraMetadata.pisiDistribution=linux
-
-      - name: Verify Linux packages
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          mapfile -t debs < <(find dist -maxdepth 1 -type f -name '*.deb' -print)
-          mapfile -t appimages < <(find dist -maxdepth 1 -type f -name '*.AppImage' -print)
-
-          [[ "${#debs[@]}" -ge 2 ]] || {
-            echo "Expected x64 and ARM64 deb packages." >&2
-            exit 1
-          }
-          [[ "${#appimages[@]}" -ge 2 ]] || {
-            echo "Expected x64 and ARM64 AppImage packages." >&2
-            exit 1
-          }
-
-          for package in "${debs[@]}"; do
-            dpkg-deb --info "$package" >/dev/null
-          done
-          for package in "${appimages[@]}"; do
-            file "$package" | grep -Eq 'ELF|AppImage|executable'
-          done
-
-      - name: Collect Linux packages and checksums
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p release-linux
-          cp dist/*.AppImage release-linux/
-          cp dist/*.deb release-linux/
-
-          (
-            cd release-linux
-            sha256sum *.AppImage *.deb > SHA256SUMS-Linux.txt
-          )
-
-      - name: Optionally sign Linux checksums with GPG
-        if: env.PISI_GPG_PRIVATE_KEY_BASE64 != ''
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          key_file="$RUNNER_TEMP/pisi-release-key.asc"
-          printf '%s' "$PISI_GPG_PRIVATE_KEY_BASE64" | base64 --decode > "$key_file"
-          chmod 600 "$key_file"
-          gpg --batch --import "$key_file"
-
-          args=(
-            --batch
-            --yes
-            --armor
-            --detach-sign
-            --output release-linux/SHA256SUMS-Linux.txt.asc
-          )
-
-          if [[ -n "${PISI_GPG_PASSPHRASE:-}" ]]; then
-            args+=(
-              --pinentry-mode loopback
-              --passphrase "$PISI_GPG_PASSPHRASE"
-            )
-          fi
-
-          gpg "${args[@]}" release-linux/SHA256SUMS-Linux.txt
-          gpg --verify release-linux/SHA256SUMS-Linux.txt.asc release-linux/SHA256SUMS-Linux.txt
-
-      - name: Upload Linux release artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: pisi-release-linux
-          path: release-linux/*
-          if-no-files-found: error
-          retention-days: 14
-
-  publish-release:
-    needs:
-      - windows-release
-      - macos-release
-      - linux-release
-    permissions:
-      contents: write
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download all platform artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: pisi-release-*
-          merge-multiple: true
-          path: final-release
-
-      - name: Verify release payload
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          version=$(node -p "require('./package.json').version")
-
-          required=(
-            "Pisi-$version-Setup-x64.exe"
-            "Pisi-$version-Setup-arm64.exe"
-            "Pisi-$version-Portable-x64.exe"
-            "Pisi-$version-Portable-arm64.exe"
-            "latest.json"
-            "SHA256SUMS.txt"
-            "SHA256SUMS-macOS.txt"
-            "SHA256SUMS-Linux.txt"
-          )
-
-          for file in "${required[@]}"; do
-            [[ -f "final-release/$file" ]] || {
-              echo "Missing release artifact: $file" >&2
-              exit 1
-            }
-          done
-
-          find final-release -maxdepth 1 -type f -print | sort
-
-      - name: Publish GitHub beta release
+            WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+            WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+            PISI_WINDOWS_CERT_SHA1: ${{ secrets.PISI_WINDOWS_CERT_SHA1 }}
+            PISI_UPDATE_FEED_URL: ${{ vars.PISI_UPDATE_FEED_URL }}
+            PISI_UPDATE_CHANNEL: ${{ vars.PISI_UPDATE_CHANNEL || 'beta' }}
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: npm
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Detect optional Windows code-signing identity
+              shell: pwsh
+              run: |
+                  $hasCscLink = -not [string]::IsNullOrWhiteSpace($env:WIN_CSC_LINK)
+                  $hasStoreCertificate = -not [string]::IsNullOrWhiteSpace($env:PISI_WINDOWS_CERT_SHA1)
+
+                  if ($hasCscLink -and $hasStoreCertificate) {
+                    throw "Configure exactly one Windows signing mode: WIN_CSC_LINK or PISI_WINDOWS_CERT_SHA1."
+                  }
+
+                  if ($hasCscLink -and [string]::IsNullOrWhiteSpace($env:WIN_CSC_KEY_PASSWORD)) {
+                    throw "WIN_CSC_KEY_PASSWORD is required when WIN_CSC_LINK is used."
+                  }
+
+                  if ($hasStoreCertificate) {
+                    $thumbprint = ($env:PISI_WINDOWS_CERT_SHA1 -replace '\s', '').ToUpperInvariant()
+
+                    if ($thumbprint -notmatch '^[A-F0-9]{40}$') {
+                      throw "PISI_WINDOWS_CERT_SHA1 must be a 40-character SHA-1 certificate thumbprint."
+                    }
+
+                    $certificate = Get-ChildItem Cert:\CurrentUser\My -CodeSigningCert |
+                      Where-Object { $_.Thumbprint -eq $thumbprint } |
+                      Select-Object -First 1
+
+                    if (-not $certificate) {
+                      throw "The configured signing certificate is not available in CurrentUser\\My. Load the HSM/cloud signing provider before the build."
+                    }
+
+                    Write-Host "Signing mode: Windows certificate store / HSM provider"
+                    Write-Host "Signing subject: $($certificate.Subject)"
+                  }
+                  elseif ($hasCscLink) {
+                    Write-Host "Signing mode: electron-builder WIN_CSC_LINK"
+                  }
+                  else {
+                    Write-Warning "No Windows code-signing identity configured. GitHub beta EXE artifacts will be unsigned."
+                  }
+
+                  $enabled = $hasCscLink -or $hasStoreCertificate
+                  "PISI_SIGNING_ENABLED=$($enabled.ToString().ToLowerInvariant())" >> $env:GITHUB_ENV
+
+            - name: Build Windows installers
+              shell: pwsh
+              run: |
+                  $arguments = @(
+                    'run',
+                    'dist:installer',
+                    '--',
+                    '--x64',
+                    '--arm64',
+                    '--publish',
+                    'never',
+                    '-c.extraMetadata.pisiDistribution=nsis',
+                    "-c.extraMetadata.pisiUpdateChannel=$env:PISI_UPDATE_CHANNEL"
+                  )
+
+                  if (-not [string]::IsNullOrWhiteSpace($env:PISI_UPDATE_FEED_URL)) {
+                    $arguments += "-c.extraMetadata.pisiUpdateFeedUrl=$env:PISI_UPDATE_FEED_URL"
+                  }
+
+                  if ($env:PISI_SIGNING_ENABLED -eq 'true') {
+                    $arguments += '-c.forceCodeSigning=true'
+                  }
+
+                  if (-not [string]::IsNullOrWhiteSpace($env:PISI_WINDOWS_CERT_SHA1)) {
+                    $thumbprint = ($env:PISI_WINDOWS_CERT_SHA1 -replace '\s', '').ToUpperInvariant()
+                    $arguments += "-c.win.signtoolOptions.certificateSha1=$thumbprint"
+                  }
+
+                  & npm @arguments
+                  if ($LASTEXITCODE -ne 0) {
+                    exit $LASTEXITCODE
+                  }
+
+            - name: Collect installer assets
+              shell: pwsh
+              run: |
+                  $version = node -p "require('./package.json').version"
+                  New-Item -ItemType Directory -Force release | Out-Null
+
+                  $targets = @(
+                    @{ Arch = 'x64'; Source = "dist/Pisi-$version-win-x64.exe" },
+                    @{ Arch = 'arm64'; Source = "dist/Pisi-$version-win-arm64.exe" }
+                  )
+
+                  foreach ($target in $targets) {
+                    if (-not (Test-Path $target.Source)) {
+                      throw "Missing installer build: $($target.Source)"
+                    }
+                    Copy-Item $target.Source "release/Pisi-$version-Setup-$($target.Arch).exe"
+                  }
+
+                  Remove-Item 'dist/*.exe' -Force -ErrorAction SilentlyContinue
+
+            - name: Build Windows portable packages
+              shell: pwsh
+              run: |
+                  $arguments = @(
+                    'run',
+                    'dist:portable',
+                    '--',
+                    '--x64',
+                    '--arm64',
+                    '--publish',
+                    'never',
+                    '-c.extraMetadata.pisiDistribution=portable',
+                    "-c.extraMetadata.pisiUpdateChannel=$env:PISI_UPDATE_CHANNEL"
+                  )
+
+                  if ($env:PISI_SIGNING_ENABLED -eq 'true') {
+                    $arguments += '-c.forceCodeSigning=true'
+                  }
+
+                  if (-not [string]::IsNullOrWhiteSpace($env:PISI_WINDOWS_CERT_SHA1)) {
+                    $thumbprint = ($env:PISI_WINDOWS_CERT_SHA1 -replace '\s', '').ToUpperInvariant()
+                    $arguments += "-c.win.signtoolOptions.certificateSha1=$thumbprint"
+                  }
+
+                  & npm @arguments
+                  if ($LASTEXITCODE -ne 0) {
+                    exit $LASTEXITCODE
+                  }
+
+            - name: Collect portable assets and checksums
+              shell: pwsh
+              run: |
+                  $version = node -p "require('./package.json').version"
+
+                  $targets = @(
+                    @{ Arch = 'x64'; Source = "dist/Pisi-$version-win-x64.exe" },
+                    @{ Arch = 'arm64'; Source = "dist/Pisi-$version-win-arm64.exe" }
+                  )
+
+                  foreach ($target in $targets) {
+                    if (-not (Test-Path $target.Source)) {
+                      throw "Missing portable build: $($target.Source)"
+                    }
+                    Copy-Item $target.Source "release/Pisi-$version-Portable-$($target.Arch).exe"
+                  }
+
+                  $assetNames = @(
+                    "Pisi-$version-Setup-x64.exe",
+                    "Pisi-$version-Setup-arm64.exe",
+                    "Pisi-$version-Portable-x64.exe",
+                    "Pisi-$version-Portable-arm64.exe"
+                  )
+
+                  $hashLines = foreach ($assetName in $assetNames) {
+                    $assetPath = Join-Path release $assetName
+                    if (-not (Test-Path $assetPath)) {
+                      throw "Missing release asset: $assetPath"
+                    }
+                    $hash = (Get-FileHash -Algorithm SHA256 $assetPath).Hash.ToLowerInvariant()
+                    "$hash  $assetName"
+                  }
+
+                  $hashLines | Set-Content -Encoding utf8NoBOM release/SHA256SUMS.txt
+
+            - name: Create direct auto-update feed manifest
+              shell: pwsh
+              run: |
+                  $version = node -p "require('./package.json').version"
+
+                  $x64Name = "Pisi-$version-Setup-x64.exe"
+                  $arm64Name = "Pisi-$version-Setup-arm64.exe"
+
+                  $x64Hash = (Get-FileHash -Algorithm SHA256 (Join-Path release $x64Name)).Hash.ToLowerInvariant()
+                  $arm64Hash = (Get-FileHash -Algorithm SHA256 (Join-Path release $arm64Name)).Hash.ToLowerInvariant()
+
+                  $manifest = [ordered]@{
+                    schemaVersion = 1
+                    channel = $env:PISI_UPDATE_CHANNEL
+                    version = $version
+                    files = [ordered]@{
+                      x64 = [ordered]@{
+                        url = $x64Name
+                        sha256 = $x64Hash
+                      }
+                      arm64 = [ordered]@{
+                        url = $arm64Name
+                        sha256 = $arm64Hash
+                      }
+                    }
+                  }
+
+                  $manifest | ConvertTo-Json -Depth 6 | Set-Content -Encoding utf8NoBOM release/latest.json
+
+            - name: Verify Windows Authenticode signatures
+              if: env.PISI_SIGNING_ENABLED == 'true'
+              shell: pwsh
+              run: |
+                  $version = node -p "require('./package.json').version"
+                  ./scripts/verify-windows-signatures.ps1 -Path @(
+                    "release/Pisi-$version-Setup-x64.exe",
+                    "release/Pisi-$version-Setup-arm64.exe",
+                    "release/Pisi-$version-Portable-x64.exe",
+                    "release/Pisi-$version-Portable-arm64.exe"
+                  )
+
+            - name: Record unsigned beta release
+              if: env.PISI_SIGNING_ENABLED != 'true'
+              shell: pwsh
+              run: |
+                  Add-Content $env:GITHUB_STEP_SUMMARY "### Windows signing"
+                  Add-Content $env:GITHUB_STEP_SUMMARY ""
+                  Add-Content $env:GITHUB_STEP_SUMMARY "No signing identity was configured. The GitHub beta Setup/Portable EXE files are intentionally unsigned."
+                  Add-Content $env:GITHUB_STEP_SUMMARY "The Microsoft Store MSIX pipeline is separate; Store submission packages are unsigned before upload and are signed by Microsoft during publishing."
+
+            - name: Upload Windows release artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: pisi-release-windows
+                  path: |
+                      release/Pisi-*-Setup-x64.exe
+                      release/Pisi-*-Setup-arm64.exe
+                      release/Pisi-*-Portable-x64.exe
+                      release/Pisi-*-Portable-arm64.exe
+                      release/SHA256SUMS.txt
+                      release/latest.json
+                  if-no-files-found: error
+                  retention-days: 14
+
+    macos-release:
+        needs: validate
+        runs-on: macos-latest
+        timeout-minutes: 60
         env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
+            CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+            CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+            PISI_APPLE_API_KEY_BASE64: ${{ secrets.PISI_APPLE_API_KEY_BASE64 }}
+            APPLE_API_KEY_ID: ${{ secrets.PISI_APPLE_API_KEY_ID }}
+            APPLE_API_ISSUER: ${{ secrets.PISI_APPLE_API_ISSUER }}
 
-          version=$(node -p "require('./package.json').version")
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-          mapfile -t assets < <(find final-release -maxdepth 1 -type f -print | sort)
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: npm
 
-          gh release create "v$version" "${assets[@]}" \
-            --title "Pisi $version Beta" \
-            --notes-file "docs/releases/v$version.md" \
-            --verify-tag \
-            --prerelease
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Detect optional macOS signing and notarization
+              shell: bash
+              run: |
+                  set -euo pipefail
+
+                  has_signing=false
+                  if [[ -n "${CSC_LINK:-}" ]]; then
+                    has_signing=true
+                  fi
+
+                  api_key_set=false
+                  api_id_set=false
+                  api_issuer_set=false
+                  [[ -n "${PISI_APPLE_API_KEY_BASE64:-}" ]] && api_key_set=true
+                  [[ -n "${APPLE_API_KEY_ID:-}" ]] && api_id_set=true
+                  [[ -n "${APPLE_API_ISSUER:-}" ]] && api_issuer_set=true
+
+                  notarize=false
+                  if [[ "$api_key_set" == true || "$api_id_set" == true || "$api_issuer_set" == true ]]; then
+                    if [[ "$api_key_set" != true || "$api_id_set" != true || "$api_issuer_set" != true ]]; then
+                      echo "Apple notarization credentials are incomplete." >&2
+                      exit 1
+                    fi
+                    if [[ "$has_signing" != true ]]; then
+                      echo "Apple notarization credentials are configured, but MAC_CSC_LINK is missing." >&2
+                      exit 1
+                    fi
+
+                    key_path="$RUNNER_TEMP/AuthKey_${APPLE_API_KEY_ID}.p8"
+                    printf '%s' "$PISI_APPLE_API_KEY_BASE64" | base64 --decode > "$key_path"
+                    chmod 600 "$key_path"
+                    echo "APPLE_API_KEY=$key_path" >> "$GITHUB_ENV"
+                    notarize=true
+                  fi
+
+                  echo "PISI_MAC_SIGNING_ENABLED=$has_signing" >> "$GITHUB_ENV"
+                  echo "PISI_MAC_NOTARIZE_ENABLED=$notarize" >> "$GITHUB_ENV"
+
+                  if [[ "$has_signing" == true && "$notarize" == true ]]; then
+                    echo "macOS mode: Developer ID signing + notarization"
+                  elif [[ "$has_signing" == true ]]; then
+                    echo "macOS mode: Developer ID signing without notarization"
+                  else
+                    echo "::warning::No Developer ID certificate configured. macOS artifacts will be unsigned."
+                  fi
+
+            - name: Build macOS x64, ARM64 and universal packages
+              shell: bash
+              run: |
+                  set -euo pipefail
+
+                  args=(
+                    run dist:mac --
+                    -c.extraMetadata.pisiDistribution=macos
+                  )
+
+                  if [[ "$PISI_MAC_SIGNING_ENABLED" != "true" ]]; then
+                    args+=(
+                      -c.mac.identity=null
+                      -c.mac.hardenedRuntime=false
+                      -c.mac.notarize=false
+                    )
+                  elif [[ "$PISI_MAC_NOTARIZE_ENABLED" == "true" ]]; then
+                    args+=(-c.mac.notarize=true)
+                  else
+                    args+=(-c.mac.notarize=false)
+                  fi
+
+                  npm "${args[@]}"
+
+            - name: Verify macOS code signatures
+              if: env.PISI_MAC_SIGNING_ENABLED == 'true'
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  found=0
+                  while IFS= read -r -d '' app_bundle; do
+                    found=1
+                    codesign --verify --deep --strict --verbose=2 "$app_bundle"
+                  done < <(find dist -type d -name 'Pisi.app' -print0)
+                  [[ "$found" -eq 1 ]] || {
+                    echo "No Pisi.app bundle was found for signature verification." >&2
+                    exit 1
+                  }
+
+            - name: Verify macOS notarization and stapling
+              if: env.PISI_MAC_NOTARIZE_ENABLED == 'true'
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  found=0
+                  while IFS= read -r -d '' app_bundle; do
+                    found=1
+                    spctl --assess --verbose --type execute "$app_bundle"
+                    xcrun stapler validate "$app_bundle"
+                  done < <(find dist -type d -name 'Pisi.app' -print0)
+                  [[ "$found" -eq 1 ]] || {
+                    echo "No Pisi.app bundle was found for notarization verification." >&2
+                    exit 1
+                  }
+
+            - name: Collect macOS packages and checksums
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  mkdir -p release-macos
+
+                  find dist -maxdepth 1 -type f \( -name '*.dmg' -o -name '*.zip' \) -exec cp {} release-macos/ \;
+
+                  count=$(find release-macos -maxdepth 1 -type f \( -name '*.dmg' -o -name '*.zip' \) | wc -l | tr -d ' ')
+                  if [[ "$count" -lt 6 ]]; then
+                    echo "Expected x64, ARM64 and universal DMG/ZIP packages; found $count artifacts." >&2
+                    find release-macos -maxdepth 1 -type f -print
+                    exit 1
+                  fi
+
+                  (
+                    cd release-macos
+                    shasum -a 256 *.dmg *.zip > SHA256SUMS-macOS.txt
+                  )
+
+            - name: Record unsigned macOS warning
+              if: env.PISI_MAC_SIGNING_ENABLED != 'true'
+              shell: bash
+              run: |
+                  {
+                    echo "### macOS signing"
+                    echo
+                    echo "Developer ID credentials are not configured. DMG/ZIP artifacts are unsigned and can trigger Gatekeeper."
+                  } >> "$GITHUB_STEP_SUMMARY"
+
+            - name: Upload macOS release artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: pisi-release-macos
+                  path: release-macos/*
+                  if-no-files-found: error
+                  retention-days: 14
+
+    linux-release:
+        needs: validate
+        runs-on: ubuntu-latest
+        timeout-minutes: 45
+        env:
+            PISI_GPG_PRIVATE_KEY_BASE64: ${{ secrets.PISI_GPG_PRIVATE_KEY_BASE64 }}
+            PISI_GPG_PASSPHRASE: ${{ secrets.PISI_GPG_PASSPHRASE }}
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: npm
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Build Linux AppImage and deb packages
+              run: npm run dist:linux -- -c.extraMetadata.pisiDistribution=linux
+
+            - name: Verify Linux packages
+              shell: bash
+              run: |
+                  set -euo pipefail
+
+                  mapfile -t debs < <(find dist -maxdepth 1 -type f -name '*.deb' -print)
+                  mapfile -t appimages < <(find dist -maxdepth 1 -type f -name '*.AppImage' -print)
+
+                  [[ "${#debs[@]}" -ge 2 ]] || {
+                    echo "Expected x64 and ARM64 deb packages." >&2
+                    exit 1
+                  }
+                  [[ "${#appimages[@]}" -ge 2 ]] || {
+                    echo "Expected x64 and ARM64 AppImage packages." >&2
+                    exit 1
+                  }
+
+                  for package in "${debs[@]}"; do
+                    dpkg-deb --info "$package" >/dev/null
+                  done
+                  for package in "${appimages[@]}"; do
+                    file "$package" | grep -Eq 'ELF|AppImage|executable'
+                  done
+
+            - name: Collect Linux packages and checksums
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  mkdir -p release-linux
+                  cp dist/*.AppImage release-linux/
+                  cp dist/*.deb release-linux/
+
+                  (
+                    cd release-linux
+                    sha256sum *.AppImage *.deb > SHA256SUMS-Linux.txt
+                  )
+
+            - name: Optionally sign Linux checksums with GPG
+              if: env.PISI_GPG_PRIVATE_KEY_BASE64 != ''
+              shell: bash
+              run: |
+                  set -euo pipefail
+
+                  key_file="$RUNNER_TEMP/pisi-release-key.asc"
+                  printf '%s' "$PISI_GPG_PRIVATE_KEY_BASE64" | base64 --decode > "$key_file"
+                  chmod 600 "$key_file"
+                  gpg --batch --import "$key_file"
+
+                  args=(
+                    --batch
+                    --yes
+                    --armor
+                    --detach-sign
+                    --output release-linux/SHA256SUMS-Linux.txt.asc
+                  )
+
+                  if [[ -n "${PISI_GPG_PASSPHRASE:-}" ]]; then
+                    args+=(
+                      --pinentry-mode loopback
+                      --passphrase "$PISI_GPG_PASSPHRASE"
+                    )
+                  fi
+
+                  gpg "${args[@]}" release-linux/SHA256SUMS-Linux.txt
+                  gpg --verify release-linux/SHA256SUMS-Linux.txt.asc release-linux/SHA256SUMS-Linux.txt
+
+            - name: Upload Linux release artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: pisi-release-linux
+                  path: release-linux/*
+                  if-no-files-found: error
+                  retention-days: 14
+
+    publish-release:
+        needs:
+            - windows-release
+            - macos-release
+            - linux-release
+        permissions:
+            contents: write
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Download all platform artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  pattern: pisi-release-*
+                  merge-multiple: true
+                  path: final-release
+
+            - name: Verify release payload
+              shell: bash
+              run: |
+                  set -euo pipefail
+
+                  version=$(node -p "require('./package.json').version")
+
+                  required=(
+                    "Pisi-$version-Setup-x64.exe"
+                    "Pisi-$version-Setup-arm64.exe"
+                    "Pisi-$version-Portable-x64.exe"
+                    "Pisi-$version-Portable-arm64.exe"
+                    "latest.json"
+                    "SHA256SUMS.txt"
+                    "SHA256SUMS-macOS.txt"
+                    "SHA256SUMS-Linux.txt"
+                  )
+
+                  for file in "${required[@]}"; do
+                    [[ -f "final-release/$file" ]] || {
+                      echo "Missing release artifact: $file" >&2
+                      exit 1
+                    }
+                  done
+
+                  find final-release -maxdepth 1 -type f -print | sort
+
+            - name: Publish GitHub beta release
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              shell: bash
+              run: |
+                  set -euo pipefail
+
+                  version=$(node -p "require('./package.json').version")
+
+                  mapfile -t assets < <(find final-release -maxdepth 1 -type f -print | sort)
+
+                  gh release create "v$version" "${assets[@]}" \
+                    --title "Pisi $version Beta" \
+                    --notes-file "docs/releases/v$version.md" \
+                    --verify-tag \
+                    --prerelease

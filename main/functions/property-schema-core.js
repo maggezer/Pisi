@@ -4,20 +4,16 @@ const crypto = require('crypto');
 
 const PISI_PROPERTY_SCHEMA_VERSION = 1;
 const PISI_PROPERTY_SCHEMA_RELATIVE_PATH = '.pisi/properties.json';
-const PISI_EDITABLE_PROPERTY_TYPES = Object.freeze([
-    'text', 'number', 'multiselect', 'relation'
-]);
-const PISI_INTERNAL_PROPERTY_TYPES = Object.freeze([
-    ...PISI_EDITABLE_PROPERTY_TYPES,
-    'rollup'
-]);
+const PISI_EDITABLE_PROPERTY_TYPES = Object.freeze(['text', 'number', 'multiselect', 'relation']);
+const PISI_INTERNAL_PROPERTY_TYPES = Object.freeze([...PISI_EDITABLE_PROPERTY_TYPES, 'rollup']);
 const PISI_PROPERTY_TYPE_SET = new Set(PISI_INTERNAL_PROPERTY_TYPES);
-const PISI_ROLLUP_AGGREGATES = new Set([
-    'count', 'sum', 'average', 'min', 'max', 'unique', 'join'
-]);
+const PISI_ROLLUP_AGGREGATES = new Set(['count', 'sum', 'average', 'min', 'max', 'unique', 'join']);
 
 function normalizePropertyName(value = '') {
-    return String(value ?? '').replace(/\s+/g, ' ').trim().slice(0, 120);
+    return String(value ?? '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 120);
 }
 
 function normalizePropertyNameKey(value = '') {
@@ -34,7 +30,9 @@ function normalizePropertyNameKey(value = '') {
 }
 
 function normalizePropertyType(value = 'text') {
-    return String(value || 'text').trim().toLowerCase();
+    return String(value || 'text')
+        .trim()
+        .toLowerCase();
 }
 
 function isSupportedPropertyType(value) {
@@ -76,13 +74,13 @@ function isEmptyPropertyValue(value) {
 }
 
 function normalizeStringArray(value, limit, itemLimit) {
-    const source = Array.isArray(value)
-        ? value
-        : (value === null || value === undefined || value === '' ? [] : String(value).split(','));
+    const source = Array.isArray(value) ? value : value === null || value === undefined || value === '' ? [] : String(value).split(',');
     const result = [];
     const seen = new Set();
     for (const raw of source) {
-        const item = String(raw ?? '').trim().slice(0, itemLimit);
+        const item = String(raw ?? '')
+            .trim()
+            .slice(0, itemLimit);
         if (!item || seen.has(item)) continue;
         seen.add(item);
         result.push(item);
@@ -93,9 +91,7 @@ function normalizeStringArray(value, limit, itemLimit) {
 
 function normalizeRollupValue(value = {}) {
     /** @type {Record<string, any>} */
-    const source = value && typeof value === 'object' && !Array.isArray(value)
-        ? value
-        : {};
+    const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
     const aggregate = String(source.aggregate || 'count');
     return {
         relationProperty: normalizeStablePropertyId(source.relationProperty || source.relationPropertyId) || '',
@@ -138,9 +134,7 @@ function validatePropertyValue(type, value, options = {}) {
             return { ok: true, normalized: null };
         }
         const numeric = typeof value === 'number' ? value : Number(value);
-        return Number.isFinite(numeric)
-            ? { ok: true, normalized: numeric }
-            : { ok: false, code: 'PROPERTY_VALUE_INVALID', normalized: value };
+        return Number.isFinite(numeric) ? { ok: true, normalized: numeric } : { ok: false, code: 'PROPERTY_VALUE_INVALID', normalized: value };
     }
     if (resolvedType === 'multiselect' || resolvedType === 'relation') {
         if (!Array.isArray(value)) {
@@ -173,8 +167,7 @@ function canLosslesslyChangePropertyType(fromType, toType, value) {
     const to = normalizePropertyType(toType);
     if (from === to || isEmptyPropertyValue(value)) return true;
     if (to === 'number') {
-        return (typeof value === 'number' && Number.isFinite(value)) ||
-            (typeof value === 'string' && value.trim() !== '' && Number.isFinite(Number(value)));
+        return (typeof value === 'number' && Number.isFinite(value)) || (typeof value === 'string' && value.trim() !== '' && Number.isFinite(Number(value)));
     }
     if (to === 'text') return typeof value === 'string';
     if (to === 'multiselect' || to === 'relation') {
@@ -200,9 +193,7 @@ function normalizePropertyDefinition(definition = {}, fallback = {}) {
 function makePropertySchema(definitions = [], options = {}) {
     return {
         version: PISI_PROPERTY_SCHEMA_VERSION,
-        definitions: definitions
-            .map((item) => normalizePropertyDefinition(item))
-            .filter(Boolean),
+        definitions: definitions.map((item) => normalizePropertyDefinition(item)).filter(Boolean),
         conflicts: Array.isArray(options.conflicts) ? options.conflicts : [],
         updatedAt: options.updatedAt || new Date().toISOString()
     };

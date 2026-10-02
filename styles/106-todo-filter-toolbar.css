@@ -23,11 +23,7 @@
     padding: 0;
     border: 1px solid var(--border-color, #4a5059);
     border-radius: 9px;
-    background: color-mix(
-        in srgb,
-        var(--accent-color, #f39c12) 9%,
-        var(--panel-bg, #252526)
-    );
+    background: color-mix(in srgb, var(--accent-color, #f39c12) 9%, var(--panel-bg, #252526));
     color: var(--text-color, #f2f4f7);
     display: inline-flex;
     align-items: center;
@@ -56,16 +52,16 @@
 }
 
 #right-tab-missions .pisi-missions-filter-trigger::before {
-    content: "";
+    content: '';
     width: 21px;
     height: 21px;
     flex: 0 0 21px;
     background: currentColor;
-    -webkit-mask-image: url("../assets/todo/filter.svg");
+    -webkit-mask-image: url('../assets/todo/filter.svg');
     -webkit-mask-position: center;
     -webkit-mask-repeat: no-repeat;
     -webkit-mask-size: contain;
-    mask-image: url("../assets/todo/filter.svg");
+    mask-image: url('../assets/todo/filter.svg');
     mask-position: center;
     mask-repeat: no-repeat;
     mask-size: contain;
@@ -76,13 +72,9 @@
 }
 
 #right-tab-missions .pisi-missions-filter-trigger:hover,
-#right-tab-missions .pisi-missions-filter-trigger[aria-expanded="true"] {
+#right-tab-missions .pisi-missions-filter-trigger[aria-expanded='true'] {
     border-color: var(--accent-color, #f39c12);
-    background: color-mix(
-        in srgb,
-        var(--accent-color, #f39c12) 18%,
-        var(--panel-bg, #252526)
-    );
+    background: color-mix(in srgb, var(--accent-color, #f39c12) 18%, var(--panel-bg, #252526));
     color: var(--accent-color, #f39c12);
     transform: translateY(-1px);
 }
@@ -93,11 +85,7 @@
 
 #right-tab-missions .pisi-missions-filter-trigger:focus-visible {
     border-color: var(--accent-color, #f39c12);
-    outline: 2px solid color-mix(
-        in srgb,
-        var(--accent-color, #f39c12) 72%,
-        white
-    );
+    outline: 2px solid color-mix(in srgb, var(--accent-color, #f39c12) 72%, white);
     outline-offset: 2px;
 }
 
@@ -122,12 +110,8 @@
     border-radius: 9px;
     appearance: none;
     -webkit-appearance: none;
-    background-color: color-mix(
-        in srgb,
-        var(--accent-color, #f39c12) 9%,
-        var(--panel-bg, #252526)
-    );
-    background-image: url("../assets/todo/status-filter.svg");
+    background-color: color-mix(in srgb, var(--accent-color, #f39c12) 9%, var(--panel-bg, #252526));
+    background-image: url('../assets/todo/status-filter.svg');
     background-position: center;
     background-repeat: no-repeat;
     background-size: 21px 21px;
@@ -144,11 +128,7 @@
 
 #right-tab-missions .pisi-missions-status-filter:hover {
     border-color: var(--accent-color, #f39c12);
-    background-color: color-mix(
-        in srgb,
-        var(--accent-color, #f39c12) 18%,
-        var(--panel-bg, #252526)
-    );
+    background-color: color-mix(in srgb, var(--accent-color, #f39c12) 18%, var(--panel-bg, #252526));
     transform: translateY(-1px);
 }
 
@@ -159,11 +139,7 @@
 #right-tab-missions .pisi-missions-status-filter:focus,
 #right-tab-missions .pisi-missions-status-filter:focus-visible {
     border-color: var(--accent-color, #f39c12);
-    outline: 2px solid color-mix(
-        in srgb,
-        var(--accent-color, #f39c12) 72%,
-        white
-    );
+    outline: 2px solid color-mix(in srgb, var(--accent-color, #f39c12) 72%, white);
     outline-offset: 2px;
     box-shadow: none;
 }
@@ -182,11 +158,7 @@
     padding: 0 9px;
     border: 1px solid var(--border-color, #4a5059);
     border-radius: 8px;
-    background: color-mix(
-        in srgb,
-        var(--accent-color, #f39c12) 5%,
-        var(--panel-bg, #252526)
-    );
+    background: color-mix(in srgb, var(--accent-color, #f39c12) 5%, var(--panel-bg, #252526));
     color: var(--muted-text-color, #b8c0cb);
     display: inline-flex;
     align-items: center;
@@ -208,7 +180,7 @@
 }
 
 #right-tab-missions .pisi-missions-completed-toggle::before {
-    content: "";
+    content: '';
     width: 8px;
     height: 8px;
     flex: 0 0 8px;
@@ -224,40 +196,24 @@
 
 #right-tab-missions .pisi-missions-completed-toggle:hover:not(:disabled) {
     border-color: var(--accent-color, #f39c12);
-    background: color-mix(
-        in srgb,
-        var(--accent-color, #f39c12) 12%,
-        var(--panel-bg, #252526)
-    );
+    background: color-mix(in srgb, var(--accent-color, #f39c12) 12%, var(--panel-bg, #252526));
     color: var(--text-color, #f2f4f7);
     transform: translateY(-1px);
 }
 
-#right-tab-missions .pisi-missions-completed-toggle[aria-pressed="true"] {
+#right-tab-missions .pisi-missions-completed-toggle[aria-pressed='true'] {
     border-color: var(--accent-color, #f39c12);
-    background: color-mix(
-        in srgb,
-        var(--accent-color, #f39c12) 17%,
-        var(--panel-bg, #252526)
-    );
+    background: color-mix(in srgb, var(--accent-color, #f39c12) 17%, var(--panel-bg, #252526));
     color: var(--accent-color, #f39c12);
     box-shadow:
-        inset 0 0 0 1px color-mix(
-            in srgb,
-            var(--accent-color, #f39c12) 18%,
-            transparent
-        ),
+        inset 0 0 0 1px color-mix(in srgb, var(--accent-color, #f39c12) 18%, transparent),
         inset 0 1px 0 rgb(255 255 255 / 5%);
 }
 
-#right-tab-missions .pisi-missions-completed-toggle[aria-pressed="true"]::before {
+#right-tab-missions .pisi-missions-completed-toggle[aria-pressed='true']::before {
     border-color: var(--accent-color, #f39c12);
     background: var(--accent-color, #f39c12);
-    box-shadow: inset 0 0 0 2px color-mix(
-        in srgb,
-        var(--panel-bg, #252526) 78%,
-        transparent
-    );
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--panel-bg, #252526) 78%, transparent);
 }
 
 #right-tab-missions .pisi-missions-completed-toggle:active:not(:disabled) {
@@ -266,11 +222,7 @@
 
 #right-tab-missions .pisi-missions-completed-toggle:focus-visible {
     border-color: var(--accent-color, #f39c12);
-    outline: 2px solid color-mix(
-        in srgb,
-        var(--accent-color, #f39c12) 72%,
-        white
-    );
+    outline: 2px solid color-mix(in srgb, var(--accent-color, #f39c12) 72%, white);
     outline-offset: 2px;
 }
 
@@ -279,41 +231,41 @@
     cursor: default;
 }
 
-html[data-pisi-theme="light"] #right-tab-missions .pisi-missions-filter-trigger,
-html[data-pisi-theme="light"] #right-tab-missions .pisi-missions-status-filter,
-html[data-pisi-theme="light"] #right-tab-missions .pisi-missions-completed-toggle {
+html[data-pisi-theme='light'] #right-tab-missions .pisi-missions-filter-trigger,
+html[data-pisi-theme='light'] #right-tab-missions .pisi-missions-status-filter,
+html[data-pisi-theme='light'] #right-tab-missions .pisi-missions-completed-toggle {
     border-color: var(--pisi-theme-border-strong);
     background-color: var(--pisi-theme-surface-alt);
     color: var(--pisi-theme-text);
     box-shadow: 0 2px 6px var(--pisi-theme-shadow);
 }
 
-html[data-pisi-theme="light"] #right-tab-missions .pisi-missions-filter-trigger:hover,
-html[data-pisi-theme="light"] #right-tab-missions .pisi-missions-filter-trigger[aria-expanded="true"],
-html[data-pisi-theme="light"] #right-tab-missions .pisi-missions-status-filter:hover,
-html[data-pisi-theme="light"] #right-tab-missions .pisi-missions-completed-toggle:hover:not(:disabled) {
+html[data-pisi-theme='light'] #right-tab-missions .pisi-missions-filter-trigger:hover,
+html[data-pisi-theme='light'] #right-tab-missions .pisi-missions-filter-trigger[aria-expanded='true'],
+html[data-pisi-theme='light'] #right-tab-missions .pisi-missions-status-filter:hover,
+html[data-pisi-theme='light'] #right-tab-missions .pisi-missions-completed-toggle:hover:not(:disabled) {
     border-color: #b66b00;
     background-color: #fff4e1;
     color: #a85f00;
 }
 
-html[data-pisi-theme="light"] #right-tab-missions .pisi-missions-completed-toggle[aria-pressed="true"] {
+html[data-pisi-theme='light'] #right-tab-missions .pisi-missions-completed-toggle[aria-pressed='true'] {
     border-color: #b66b00;
     background: #fff1d9;
     color: #a85f00;
 }
 
-html[data-pisi-theme="light"] #right-tab-missions .pisi-missions-completed-toggle::before {
+html[data-pisi-theme='light'] #right-tab-missions .pisi-missions-completed-toggle::before {
     box-shadow: inset 0 0 0 2px var(--pisi-theme-surface-alt);
 }
 
-html[data-pisi-theme="light"] #right-tab-missions .pisi-missions-completed-toggle[aria-pressed="true"]::before {
+html[data-pisi-theme='light'] #right-tab-missions .pisi-missions-completed-toggle[aria-pressed='true']::before {
     border-color: #b66b00;
     background: #b66b00;
     box-shadow: inset 0 0 0 2px #fff1d9;
 }
 
-html[data-pisi-theme="light"] #right-tab-missions .pisi-missions-status-filter option {
+html[data-pisi-theme='light'] #right-tab-missions .pisi-missions-status-filter option {
     background: #ffffff;
     color: #20252c;
 }

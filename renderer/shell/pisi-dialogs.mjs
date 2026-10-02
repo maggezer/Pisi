@@ -1,4 +1,4 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 
 function pisiConfirm(message, options = {}) {
     return new Promise((resolve) => {
@@ -51,11 +51,7 @@ function pisiConfirm(message, options = {}) {
             overlay.remove();
 
             resetPisiKeyboardAndPointerState();
-            if (
-                previouslyFocused &&
-                previouslyFocused.isConnected &&
-                typeof previouslyFocused.focus === 'function'
-            ) {
+            if (previouslyFocused && previouslyFocused.isConnected && typeof previouslyFocused.focus === 'function') {
                 previouslyFocused.focus({ preventScroll: true });
             }
 
@@ -89,9 +85,7 @@ function pisiConfirm(message, options = {}) {
                 if (!focusable.length) return;
 
                 const currentIndex = focusable.indexOf(document.activeElement);
-                const nextIndex = event.shiftKey
-                    ? (currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1)
-                    : (currentIndex + 1) % focusable.length;
+                const nextIndex = event.shiftKey ? (currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1) : (currentIndex + 1) % focusable.length;
 
                 event.preventDefault();
                 focusable[nextIndex].focus();
@@ -133,9 +127,11 @@ function pisiConfirm(message, options = {}) {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "pisiConfirm": {
+    pisiConfirm: {
         enumerable: true,
-        get() { return pisiConfirm; }
+        get() {
+            return pisiConfirm;
+        }
     }
 });
-registerModule("shell.dialogs", moduleApi);
+registerModule('shell.dialogs', moduleApi);

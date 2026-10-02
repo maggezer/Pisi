@@ -15,11 +15,7 @@ function isSameOrInsideAtomicPath(candidatePath, parentPath) {
     const candidate = normalizeAtomicPath(candidatePath);
     const parent = normalizeAtomicPath(parentPath);
     const relative = path.relative(parent, candidate);
-    return relative === '' || (
-        relative !== '..' &&
-        !relative.startsWith(`..${path.sep}`) &&
-        !path.isAbsolute(relative)
-    );
+    return relative === '' || (relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative));
 }
 
 function assertAtomicProjectPath(projectFolder, targetPath) {
@@ -39,7 +35,9 @@ function fsyncFileBestEffort(filePath) {
     } catch {
     } finally {
         if (descriptor !== null) {
-            try { fs.closeSync(descriptor); } catch {}
+            try {
+                fs.closeSync(descriptor);
+            } catch {}
         }
     }
 }
@@ -53,7 +51,9 @@ function fsyncDirectoryBestEffort(directoryPath) {
     } catch {
     } finally {
         if (descriptor !== null) {
-            try { fs.closeSync(descriptor); } catch {}
+            try {
+                fs.closeSync(descriptor);
+            } catch {}
         }
     }
 }
@@ -73,10 +73,14 @@ function writeJsonDurable(filePath, data) {
         fsyncDirectoryBestEffort(directory);
     } finally {
         if (descriptor !== null) {
-            try { fs.closeSync(descriptor); } catch {}
+            try {
+                fs.closeSync(descriptor);
+            } catch {}
         }
         if (fs.existsSync(tempPath)) {
-            try { fs.unlinkSync(tempPath); } catch {}
+            try {
+                fs.unlinkSync(tempPath);
+            } catch {}
         }
     }
 }
@@ -92,10 +96,7 @@ function copyPathRecursive(sourcePath, destinationPath) {
             if (entry.isSymbolicLink()) {
                 throw new Error(`Atomic snapshot symlink içeremez: ${path.join(sourcePath, entry.name)}`);
             }
-            copyPathRecursive(
-                path.join(sourcePath, entry.name),
-                path.join(destinationPath, entry.name)
-            );
+            copyPathRecursive(path.join(sourcePath, entry.name), path.join(destinationPath, entry.name));
         }
         fsyncDirectoryBestEffort(destinationPath);
         return 'directory';
@@ -122,11 +123,7 @@ function readAtomicManifest(transactionDirectory) {
     const manifestPath = path.join(transactionDirectory, 'manifest.json');
     const raw = fs.readFileSync(manifestPath, 'utf8');
     const manifest = JSON.parse(raw);
-    if (
-        manifest?.version !== PISI_ATOMIC_MUTATION_VERSION ||
-        !manifest?.id ||
-        !Array.isArray(manifest?.entries)
-    ) {
+    if (manifest?.version !== PISI_ATOMIC_MUTATION_VERSION || !manifest?.id || !Array.isArray(manifest?.entries)) {
         throw new Error('Atomic mutation manifest geçersiz.');
     }
     return manifest;
@@ -174,8 +171,9 @@ function beginAtomicMutation(projectFolder, commandName, options = {}) {
 }
 
 function isAtomicInternalPath(transaction, targetPath) {
-    return isSameOrInsideAtomicPath(targetPath, transaction.directoryPath) ||
-        isSameOrInsideAtomicPath(targetPath, getAtomicMutationRoot(transaction.projectRoot));
+    return (
+        isSameOrInsideAtomicPath(targetPath, transaction.directoryPath) || isSameOrInsideAtomicPath(targetPath, getAtomicMutationRoot(transaction.projectRoot))
+    );
 }
 
 function getAtomicEntryTarget(transaction, entry) {
@@ -184,10 +182,12 @@ function getAtomicEntryTarget(transaction, entry) {
 
 function findAtomicEntryCoveringPath(transaction, targetPath) {
     const normalized = normalizeAtomicPath(targetPath);
-    return transaction.manifest.entries.find((entry) => {
-        const entryTarget = getAtomicEntryTarget(transaction, entry);
-        return isSameOrInsideAtomicPath(normalized, entryTarget);
-    }) || null;
+    return (
+        transaction.manifest.entries.find((entry) => {
+            const entryTarget = getAtomicEntryTarget(transaction, entry);
+            return isSameOrInsideAtomicPath(normalized, entryTarget);
+        }) || null
+    );
 }
 
 function capturePathBeforeMutation(transaction, targetPath) {
@@ -205,9 +205,7 @@ function capturePathBeforeMutation(transaction, targetPath) {
     const existed = fs.existsSync(safeTarget);
     const index = transaction.manifest.entries.length;
     const snapshotRelative = existed ? `snapshots/${String(index).padStart(5, '0')}` : null;
-    const snapshotPath = snapshotRelative
-        ? path.join(transaction.directoryPath, ...snapshotRelative.split('/'))
-        : null;
+    const snapshotPath = snapshotRelative ? path.join(transaction.directoryPath, ...snapshotRelative.split('/')) : null;
     let type = 'missing';
     if (existed) {
         type = copyPathRecursive(safeTarget, snapshotPath);
@@ -250,9 +248,7 @@ function restoreAtomicEntries(transaction) {
     for (const entry of byDepthAsc) {
         if (!entry.existed) continue;
         const target = path.join(transaction.projectRoot, ...entry.path.split('/'));
-        const snapshot = entry.snapshot
-            ? path.join(transaction.directoryPath, ...entry.snapshot.split('/'))
-            : null;
+        const snapshot = entry.snapshot ? path.join(transaction.directoryPath, ...entry.snapshot.split('/')) : null;
         if (!snapshot || !fs.existsSync(snapshot)) {
             errors.push(`${entry.path} snapshot bulunamadı.`);
             continue;
@@ -279,7 +275,9 @@ function cleanupKnownAtomicTemps(projectFolder) {
         for (const entry of entries) {
             const fullPath = path.join(current, entry.name);
             if (entry.isDirectory() && /^\.pisi-delete-[A-Za-z0-9_-]+$/i.test(entry.name)) {
-                try { fs.rmSync(fullPath, { recursive: true, force: true }); } catch {}
+                try {
+                    fs.rmSync(fullPath, { recursive: true, force: true });
+                } catch {}
                 continue;
             }
             if (
@@ -319,9 +317,7 @@ function rollbackAtomicMutation(transaction, options = {}) {
     transaction.manifest.phase = 'rolled-back';
     persistAtomicManifest(transaction);
     cleanupKnownAtomicTemps(transaction.projectRoot);
-    const cleanup = options.cleanup === false
-        ? { cleanupPending: true, warning: null }
-        : cleanupAtomicTransactionDirectory(transaction);
+    const cleanup = options.cleanup === false ? { cleanupPending: true, warning: null } : cleanupAtomicTransactionDirectory(transaction);
     return {
         ok: true,
         id: transaction.id,
@@ -334,9 +330,7 @@ function commitAtomicMutation(transaction, options = {}) {
     transaction.manifest.phase = 'committed';
     transaction.manifest.committedAt = new Date().toISOString();
     persistAtomicManifest(transaction);
-    const cleanup = options.cleanup === false
-        ? { cleanupPending: true, warning: null }
-        : cleanupAtomicTransactionDirectory(transaction);
+    const cleanup = options.cleanup === false ? { cleanupPending: true, warning: null } : cleanupAtomicTransactionDirectory(transaction);
     return {
         ok: true,
         id: transaction.id,

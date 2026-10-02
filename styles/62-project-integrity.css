@@ -34,7 +34,7 @@
     background: rgba(255, 255, 255, 0.035);
 }
 
-.pisi-integrity-status[data-healthy="0"] {
+.pisi-integrity-status[data-healthy='0'] {
     border-color: rgba(248, 81, 73, 0.36);
     background: rgba(248, 81, 73, 0.07);
 }
@@ -74,16 +74,16 @@
     white-space: nowrap;
 }
 
-.pisi-integrity-metric[data-severity="critical"],
-.pisi-integrity-metric[data-severity="error"] {
+.pisi-integrity-metric[data-severity='critical'],
+.pisi-integrity-metric[data-severity='error'] {
     border-color: rgba(248, 81, 73, 0.28);
 }
 
-.pisi-integrity-metric[data-severity="warning"] {
+.pisi-integrity-metric[data-severity='warning'] {
     border-color: rgba(210, 153, 34, 0.32);
 }
 
-.pisi-integrity-metric[data-severity="safe"] {
+.pisi-integrity-metric[data-severity='safe'] {
     border-color: rgba(63, 185, 80, 0.28);
 }
 
@@ -147,18 +147,18 @@
     white-space: nowrap;
 }
 
-.pisi-integrity-plan-item[data-safety="safe"] > span:first-child,
-.pisi-integrity-repair-note[data-safety="safe"] > span:first-child {
+.pisi-integrity-plan-item[data-safety='safe'] > span:first-child,
+.pisi-integrity-repair-note[data-safety='safe'] > span:first-child {
     background: rgba(63, 185, 80, 0.13);
 }
 
-.pisi-integrity-plan-item[data-safety="review"] > span:first-child,
-.pisi-integrity-repair-note[data-safety="review"] > span:first-child {
+.pisi-integrity-plan-item[data-safety='review'] > span:first-child,
+.pisi-integrity-repair-note[data-safety='review'] > span:first-child {
     background: rgba(210, 153, 34, 0.15);
 }
 
-.pisi-integrity-plan-item[data-safety="manual"] > span:first-child,
-.pisi-integrity-repair-note[data-safety="manual"] > span:first-child {
+.pisi-integrity-plan-item[data-safety='manual'] > span:first-child,
+.pisi-integrity-repair-note[data-safety='manual'] > span:first-child {
     background: rgba(248, 81, 73, 0.12);
 }
 
@@ -181,16 +181,16 @@
     background: rgba(255, 255, 255, 0.025);
 }
 
-.pisi-integrity-issue-row[data-severity="critical"],
-.pisi-integrity-issue-row[data-severity="error"] {
+.pisi-integrity-issue-row[data-severity='critical'],
+.pisi-integrity-issue-row[data-severity='error'] {
     border-left-color: rgba(248, 81, 73, 0.85);
 }
 
-.pisi-integrity-issue-row[data-severity="warning"] {
+.pisi-integrity-issue-row[data-severity='warning'] {
     border-left-color: rgba(210, 153, 34, 0.85);
 }
 
-.pisi-integrity-issue-row[data-severity="info"] {
+.pisi-integrity-issue-row[data-severity='info'] {
     border-left-color: rgba(88, 166, 255, 0.75);
 }
 
@@ -223,20 +223,20 @@
     overflow-wrap: anywhere;
 }
 
-html[data-theme="light"] .pisi-integrity-rebuild-help,
-html[data-theme="light"] .pisi-integrity-status span,
-html[data-theme="light"] .pisi-integrity-metric span,
-html[data-theme="light"] .pisi-integrity-authorities span,
-html[data-theme="light"] .pisi-integrity-plan p,
-html[data-theme="light"] .pisi-integrity-issue-head code,
-html[data-theme="light"] .pisi-integrity-issue-path {
+html[data-theme='light'] .pisi-integrity-rebuild-help,
+html[data-theme='light'] .pisi-integrity-status span,
+html[data-theme='light'] .pisi-integrity-metric span,
+html[data-theme='light'] .pisi-integrity-authorities span,
+html[data-theme='light'] .pisi-integrity-plan p,
+html[data-theme='light'] .pisi-integrity-issue-head code,
+html[data-theme='light'] .pisi-integrity-issue-path {
     color: #626b78;
 }
 
-html[data-theme="light"] .pisi-integrity-status,
-html[data-theme="light"] .pisi-integrity-metric,
-html[data-theme="light"] .pisi-integrity-plan,
-html[data-theme="light"] .pisi-integrity-issue-row {
+html[data-theme='light'] .pisi-integrity-status,
+html[data-theme='light'] .pisi-integrity-metric,
+html[data-theme='light'] .pisi-integrity-plan,
+html[data-theme='light'] .pisi-integrity-issue-row {
     border-color: rgba(15, 23, 42, 0.12);
     background: rgba(15, 23, 42, 0.02);
 }

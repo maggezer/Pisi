@@ -12,30 +12,17 @@ function getPisiSheetFieldTypeIcon(type) {
     return PISI_SHEET_FIELD_TYPE_ICONS[type] || 'Aa';
 }
 
-function configurePisiSheetColumnIconControl(
-    input,
-    preview,
-    field,
-    typeSelect,
-    onChange,
-    translate
-) {
+function configurePisiSheetColumnIconControl(input, preview, field, typeSelect, onChange, translate) {
     input.type = 'text';
-    input.className =
-        'pisi-sheet-column-icon-input';
+    input.className = 'pisi-sheet-column-icon-input';
     input.maxLength = 12;
     input.value = field.icon || '';
-    input.setAttribute(
-        'aria-label',
-        translate('İkon')
-    );
+    input.setAttribute('aria-label', translate('İkon'));
 
     const sync = (type = typeSelect.value) => {
-        const fallback =
-            getPisiSheetFieldTypeIcon(type);
+        const fallback = getPisiSheetFieldTypeIcon(type);
         input.placeholder = fallback;
-        preview.textContent =
-            input.value.trim() || fallback;
+        preview.textContent = input.value.trim() || fallback;
     };
 
     input.addEventListener('input', () => {
@@ -50,7 +37,4 @@ function configurePisiSheetColumnIconControl(
     return sync;
 }
 
-export {
-    configurePisiSheetColumnIconControl,
-    getPisiSheetFieldTypeIcon
-};
+export { configurePisiSheetColumnIconControl, getPisiSheetFieldTypeIcon };

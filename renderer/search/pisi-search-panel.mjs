@@ -1,10 +1,7 @@
 import { registerModule } from '../core/module-registry.mjs';
 import { pisiSearchPathKey } from './pisi-search-core.mjs';
 import { searchPisiAdvancedIndex } from './pisi-search-query.mjs';
-import {
-    ensurePisiEnhancedLiveSearchIndex,
-    getPisiStaleSearchIndex
-} from './pisi-search-enhanced-index.mjs';
+import { ensurePisiEnhancedLiveSearchIndex, getPisiStaleSearchIndex } from './pisi-search-enhanced-index.mjs';
 import { makePisiSearchRecentMap } from './pisi-search-history.mjs';
 import { openPisiSearchResult } from './pisi-global-search.mjs';
 
@@ -24,16 +21,29 @@ function makePisiRightSearchElement(tagName, className, text) {
 }
 
 function getPisiRightSearchKindLabel(kind) {
-    return {
-        map: 'Map', node: 'Node', content: 'İçerik', task: 'Görev',
-        tag: 'Etiket', table: 'Tablo'
-    }[kind] || 'Sonuç';
+    return (
+        {
+            map: 'Map',
+            node: 'Node',
+            content: 'İçerik',
+            task: 'Görev',
+            tag: 'Etiket',
+            table: 'Tablo'
+        }[kind] || 'Sonuç'
+    );
 }
 
 function getPisiRightSearchKindIcon(kind) {
-    return {
-        map: '⌘', node: '◆', content: '¶', task: '✓', tag: '#', table: '▦'
-    }[kind] || '•';
+    return (
+        {
+            map: '⌘',
+            node: '◆',
+            content: '¶',
+            task: '✓',
+            tag: '#',
+            table: '▦'
+        }[kind] || '•'
+    );
 }
 
 function getPisiRightSearchDisplayPath(value = '') {
@@ -43,9 +53,7 @@ function getPisiRightSearchDisplayPath(value = '') {
         .filter((segment) => {
             return !/^(?:nd|inv)_.+__(?:map|node)_[A-Za-z0-9_-]+$/i.test(segment);
         })
-        .map((segment) => segment.replace(
-            /__(?:node|map)_[A-Za-z0-9_-]+(?=\.(?:node|map)$)/i, ''
-        ))
+        .map((segment) => segment.replace(/__(?:node|map)_[A-Za-z0-9_-]+(?=\.(?:node|map)$)/i, ''))
         .join(' / ');
 }
 
@@ -62,9 +70,7 @@ function setPisiRightSearchStatus(state, message, mode = '') {
 }
 
 function renderPisiRightSearchEmpty(state, message) {
-    state.results.replaceChildren(makePisiRightSearchElement(
-        'div', 'pisi-right-search-empty', pisiRightSearchTranslate(message)
-    ));
+    state.results.replaceChildren(makePisiRightSearchElement('div', 'pisi-right-search-empty', pisiRightSearchTranslate(message)));
     state.input.removeAttribute('aria-activedescendant');
 }
 
@@ -77,9 +83,7 @@ function selectPisiRightSearchResult(state, nextIndex, scroll = true) {
         row.setAttribute('aria-selected', selected ? 'true' : 'false');
         if (selected && scroll) row.scrollIntoView({ block: 'nearest' });
     });
-    state.input.setAttribute(
-        'aria-activedescendant', `pisi-right-search-result-${state.selectedIndex}`
-    );
+    state.input.setAttribute('aria-activedescendant', `pisi-right-search-result-${state.selectedIndex}`);
 }
 
 function makePisiRightSearchResult(state, result, index) {
@@ -89,18 +93,11 @@ function makePisiRightSearchResult(state, result, index) {
     row.setAttribute('role', 'option');
     if (state.recentById.has(result.id)) row.classList.add('recent');
 
-    const icon = makePisiRightSearchElement(
-        'span', 'pisi-right-search-result-icon', getPisiRightSearchKindIcon(result.kind)
-    );
+    const icon = makePisiRightSearchElement('span', 'pisi-right-search-result-icon', getPisiRightSearchKindIcon(result.kind));
     icon.setAttribute('aria-hidden', 'true');
     const body = makePisiRightSearchElement('span', 'pisi-right-search-result-body');
-    const title = makePisiRightSearchElement(
-        'strong', 'pisi-right-search-result-title', result.title || result.nodeTitle || 'Node'
-    );
-    const kind = makePisiRightSearchElement(
-        'span', 'pisi-right-search-result-kind',
-        pisiRightSearchTranslate(getPisiRightSearchKindLabel(result.kind))
-    );
+    const title = makePisiRightSearchElement('strong', 'pisi-right-search-result-title', result.title || result.nodeTitle || 'Node');
+    const kind = makePisiRightSearchElement('span', 'pisi-right-search-result-kind', pisiRightSearchTranslate(getPisiRightSearchKindLabel(result.kind)));
     const titleRow = makePisiRightSearchElement('span', 'pisi-right-search-result-title-row');
     titleRow.append(title, kind);
     if (result.fuzzyMatch) {
@@ -111,9 +108,7 @@ function makePisiRightSearchResult(state, result, index) {
     body.appendChild(titleRow);
     const preview = getPisiRightSearchPreview(result);
     if (preview) {
-        body.appendChild(makePisiRightSearchElement(
-            'span', 'pisi-right-search-result-preview', preview
-        ));
+        body.appendChild(makePisiRightSearchElement('span', 'pisi-right-search-result-preview', preview));
     }
     row.append(icon, body);
     row.addEventListener('mouseenter', () => {
@@ -129,9 +124,7 @@ function getPisiRightSearchOptions(state) {
     return {
         limit: PISI_RIGHT_SEARCH_LIMIT,
         recentById: state.recentById,
-        currentNodePathKey: pisiSearchPathKey(
-            window.activeModalNode?.path || window.activeCenterNode?.path || ''
-        ),
+        currentNodePathKey: pisiSearchPathKey(window.activeModalNode?.path || window.activeCenterNode?.path || ''),
         currentMapPathKey: pisiSearchPathKey(window.activeMapPath || ''),
         now: Date.now()
     };
@@ -142,20 +135,11 @@ function renderPisiRightSearchResults(state) {
         renderPisiRightSearchEmpty(state, 'Arama indeksi hazırlanıyor…');
         return;
     }
-    state.matches = searchPisiAdvancedIndex(
-        state.index,
-        state.input.value,
-        getPisiRightSearchOptions(state)
-    );
-    state.selectedIndex = Math.min(
-        state.selectedIndex,
-        Math.max(0, state.matches.length - 1)
-    );
+    state.matches = searchPisiAdvancedIndex(state.index, state.input.value, getPisiRightSearchOptions(state));
+    state.selectedIndex = Math.min(state.selectedIndex, Math.max(0, state.matches.length - 1));
     if (!state.matches.length) {
         setPisiRightSearchStatus(state, 'Sonuç bulunamadı.', 'empty');
-        renderPisiRightSearchEmpty(
-            state, 'Farklı bir başlık, görev, etiket veya dosya yolu dene.'
-        );
+        renderPisiRightSearchEmpty(state, 'Farklı bir başlık, görev, etiket veya dosya yolu dene.');
         return;
     }
     const suffix = state.index.complete ? '' : ' · ' + pisiRightSearchTranslate('İndeks kısmi');
@@ -172,23 +156,17 @@ function renderPisiRightSearchResults(state) {
 function handlePisiRightSearchKeydown(state, event) {
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault();
-        selectPisiRightSearchResult(
-            state, state.selectedIndex + (event.key === 'ArrowDown' ? 1 : -1)
-        );
+        selectPisiRightSearchResult(state, state.selectedIndex + (event.key === 'ArrowDown' ? 1 : -1));
         return;
     }
     if (event.key === 'PageDown' || event.key === 'PageUp') {
         event.preventDefault();
-        selectPisiRightSearchResult(
-            state, state.selectedIndex + (event.key === 'PageDown' ? 6 : -6)
-        );
+        selectPisiRightSearchResult(state, state.selectedIndex + (event.key === 'PageDown' ? 6 : -6));
         return;
     }
     if (event.key === 'Home' || event.key === 'End') {
         event.preventDefault();
-        selectPisiRightSearchResult(
-            state, event.key === 'Home' ? 0 : state.matches.length - 1
-        );
+        selectPisiRightSearchResult(state, event.key === 'Home' ? 0 : state.matches.length - 1);
         return;
     }
     if (event.key === 'Enter') {
@@ -215,18 +193,12 @@ function makePisiRightSearchState(page) {
     input.type = 'search';
     input.autocomplete = 'off';
     input.spellcheck = false;
-    input.placeholder = pisiRightSearchTranslate(
-        'Node, içerik, görev, etiket, map, tablo veya dosya yolu ara'
-    );
+    input.placeholder = pisiRightSearchTranslate('Node, içerik, görev, etiket, map, tablo veya dosya yolu ara');
     input.setAttribute('aria-controls', 'pisi-right-search-results');
     input.setAttribute('aria-autocomplete', 'list');
     inputRow.append(icon, input);
-    const syntax = makePisiRightSearchElement(
-        'div', 'pisi-right-search-syntax', 'type:task · map:… · status:todo · #tag'
-    );
-    const status = makePisiRightSearchElement(
-        'div', 'pisi-right-search-status', pisiRightSearchTranslate('Arama indeksi hazırlanıyor…')
-    );
+    const syntax = makePisiRightSearchElement('div', 'pisi-right-search-syntax', 'type:task · map:… · status:todo · #tag');
+    const status = makePisiRightSearchElement('div', 'pisi-right-search-status', pisiRightSearchTranslate('Arama indeksi hazırlanıyor…'));
     status.setAttribute('role', 'status');
     const results = makePisiRightSearchElement('div', 'pisi-right-search-results');
     results.id = 'pisi-right-search-results';
@@ -235,7 +207,10 @@ function makePisiRightSearchState(page) {
     page.appendChild(panel);
 
     const state = {
-        page, input, status, results,
+        page,
+        input,
+        status,
+        results,
         index: null,
         matches: [],
         selectedIndex: 0,
@@ -293,9 +268,7 @@ function installPisiRightSearchPanel() {
         button.title = pisiRightSearchTranslate('Global arama ve hızlı geçiş (Ctrl+P)');
         button.setAttribute('aria-label', button.title);
         button.setAttribute('aria-controls', 'right-tab-search');
-        const icon = makePisiRightSearchElement(
-            'span', 'pisi-right-tab-icon pisi-right-tab-icon-search'
-        );
+        const icon = makePisiRightSearchElement('span', 'pisi-right-tab-icon pisi-right-tab-icon-search');
         icon.setAttribute('aria-hidden', 'true');
         button.appendChild(icon);
         button.addEventListener('click', () => {
@@ -349,7 +322,4 @@ const moduleApi = {
 };
 registerModule('search.rightPanel', moduleApi);
 
-export {
-    activatePisiRightSearchPanel,
-    installPisiRightSearchPanel
-};
+export { activatePisiRightSearchPanel, installPisiRightSearchPanel };

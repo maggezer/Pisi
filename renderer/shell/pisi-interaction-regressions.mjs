@@ -85,18 +85,11 @@ function handlePisiMapOpenWhileRenaming(event) {
 }
 
 function insertPisiEditorTab(event) {
-    if (
-        event.key !== 'Tab' ||
-        event.ctrlKey ||
-        event.metaKey ||
-        event.altKey
-    ) {
+    if (event.key !== 'Tab' || event.ctrlKey || event.metaKey || event.altKey) {
         return false;
     }
 
-    const editor = event.target?.closest?.(
-        '.pisi-rich-editor[contenteditable="true"]'
-    );
+    const editor = event.target?.closest?.('.pisi-rich-editor[contenteditable="true"]');
     const nestedEditable = event.target?.closest?.('[contenteditable="true"]');
 
     // Normal editör blokları contenteditable özelliğini üst editörden miras
@@ -108,10 +101,7 @@ function insertPisiEditorTab(event) {
     if (!selection?.rangeCount) return false;
 
     const range = selection.getRangeAt(0);
-    if (
-        range.startContainer !== editor &&
-        !editor.contains(range.startContainer)
-    ) {
+    if (range.startContainer !== editor && !editor.contains(range.startContainer)) {
         return false;
     }
 
@@ -181,9 +171,7 @@ function closePisiAppMenuForModal() {
 }
 
 function syncPisiModalChrome() {
-    const modalVisible = document
-        .getElementById('node-modal-overlay')
-        ?.classList.contains('visible');
+    const modalVisible = document.getElementById('node-modal-overlay')?.classList.contains('visible');
     const appMenuButton = document.getElementById('pisi-app-menu-button');
 
     if (modalVisible) {
@@ -192,10 +180,7 @@ function syncPisiModalChrome() {
 
     if (appMenuButton) {
         appMenuButton.disabled = Boolean(modalVisible);
-        appMenuButton.setAttribute(
-            'aria-disabled',
-            String(Boolean(modalVisible))
-        );
+        appMenuButton.setAttribute('aria-disabled', String(Boolean(modalVisible)));
     }
 
     removePisiTitlebarLanguageToggle();
@@ -223,11 +208,7 @@ function installPisiInteractionRegressionFixes() {
 }
 
 if (document.readyState === 'loading') {
-    document.addEventListener(
-        'DOMContentLoaded',
-        installPisiInteractionRegressionFixes,
-        { once: true }
-    );
+    document.addEventListener('DOMContentLoaded', installPisiInteractionRegressionFixes, { once: true });
 } else {
     installPisiInteractionRegressionFixes();
 }

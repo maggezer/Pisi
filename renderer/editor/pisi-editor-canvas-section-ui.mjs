@@ -3,39 +3,29 @@ import {
     ensurePisiEditableLineAfter,
     normalizePisiCompositeBlockLayout,
     selectPisiCompositeAlignmentBlock
-} from "./pisi-editor-composite-blocks.mjs";
+} from './pisi-editor-composite-blocks.mjs';
 
 const PISI_CANVAS_DEFAULT_TITLE = 'Canvas';
 const pisiBoundCanvasSectionHeaders = new WeakSet();
 
 function normalizePisiCanvasSectionTitle(value) {
-    return String(
-        value || PISI_CANVAS_DEFAULT_TITLE
-    ).trim().slice(0, 80) ||
-        PISI_CANVAS_DEFAULT_TITLE;
+    return (
+        String(value || PISI_CANVAS_DEFAULT_TITLE)
+            .trim()
+            .slice(0, 80) || PISI_CANVAS_DEFAULT_TITLE
+    );
 }
 
 function getPisiCanvasSectionBlock(canvas) {
-    return canvas?.closest?.(
-        '.pisi-canvas-block'
-    ) || null;
+    return canvas?.closest?.('.pisi-canvas-block') || null;
 }
 
 function syncPisiCanvasSectionTitleWidth(input) {
     if (!input) return;
 
-    const length = Math.max(
-        6,
-        String(input.value || '').length
-    );
+    const length = Math.max(6, String(input.value || '').length);
 
-    input.style.width =
-        String(
-            Math.min(
-                360,
-                Math.max(92, length * 7.4 + 22)
-            )
-        ) + 'px';
+    input.style.width = String(Math.min(360, Math.max(92, length * 7.4 + 22))) + 'px';
 }
 
 function clearPisiCanvasDocumentSelection(block) {
@@ -43,10 +33,7 @@ function clearPisiCanvasDocumentSelection(block) {
 
     if (!selection || !selection.rangeCount) return;
 
-    const ranges = Array.from(
-        { length: selection.rangeCount },
-        (_, index) => selection.getRangeAt(index)
-    );
+    const ranges = Array.from({ length: selection.rangeCount }, (_, index) => selection.getRangeAt(index));
     const intersects = ranges.some((range) => {
         try {
             return range.intersectsNode(block);
@@ -61,9 +48,7 @@ function clearPisiCanvasDocumentSelection(block) {
 }
 
 function notifyPisiCanvasSectionChanged(block) {
-    const editor = block?.closest?.(
-        '.pisi-rich-editor'
-    );
+    const editor = block?.closest?.('.pisi-rich-editor');
 
     if (!editor) return;
 
@@ -77,84 +62,39 @@ function notifyPisiCanvasSectionChanged(block) {
 
 function getPisiCanvasSectionLabels(collapsed) {
     return {
-        toggle: collapsed
-            ? (
-                window.pisiT?.("Canvas'ı aç") ||
-                "Canvas'ı aç"
-            )
-            : (
-                window.pisiT?.("Canvas'ı kapat") ||
-                "Canvas'ı kapat"
-            ),
-        title:
-            window.pisiT?.('Canvas başlığı') ||
-            'Canvas başlığı',
-        copy:
-            window.pisiT?.("Canvas'ı kopyala") ||
-            "Canvas'ı kopyala",
-        newLine:
-            window.pisiT?.('Canvas altına satır ekle') ||
-            'Canvas altına satır ekle',
-        delete:
-            window.pisiT?.("Canvas'ı sil") ||
-            "Canvas'ı sil"
+        toggle: collapsed ? window.pisiT?.("Canvas'ı aç") || "Canvas'ı aç" : window.pisiT?.("Canvas'ı kapat") || "Canvas'ı kapat",
+        title: window.pisiT?.('Canvas başlığı') || 'Canvas başlığı',
+        copy: window.pisiT?.("Canvas'ı kopyala") || "Canvas'ı kopyala",
+        newLine: window.pisiT?.('Canvas altına satır ekle') || 'Canvas altına satır ekle',
+        delete: window.pisiT?.("Canvas'ı sil") || "Canvas'ı sil"
     };
 }
 
-function syncPisiCanvasSectionState(
-    canvas,
-    header
-) {
-    const block =
-        getPisiCanvasSectionBlock(canvas);
+function syncPisiCanvasSectionState(canvas, header) {
+    const block = getPisiCanvasSectionBlock(canvas);
 
     if (!block || !header) return null;
 
-    const title =
-        normalizePisiCanvasSectionTitle(
-            block.dataset.pisiCanvasTitle
-        );
-    const collapsed =
-        block.dataset.pisiCanvasCollapsed === '1';
-    const labels =
-        getPisiCanvasSectionLabels(collapsed);
+    const title = normalizePisiCanvasSectionTitle(block.dataset.pisiCanvasTitle);
+    const collapsed = block.dataset.pisiCanvasCollapsed === '1';
+    const labels = getPisiCanvasSectionLabels(collapsed);
 
     block.dataset.pisiCanvasTitle = title;
-    block.dataset.pisiCanvasCollapsed =
-        collapsed ? '1' : '0';
-    block.classList.toggle(
-        'pisi-canvas-collapsed',
-        collapsed
-    );
+    block.dataset.pisiCanvasCollapsed = collapsed ? '1' : '0';
+    block.classList.toggle('pisi-canvas-collapsed', collapsed);
 
-    const toggle = header.querySelector(
-        '[data-pisi-canvas-section-toggle]'
-    );
-    const input = header.querySelector(
-        '[data-pisi-canvas-section-title]'
-    );
+    const toggle = header.querySelector('[data-pisi-canvas-section-toggle]');
+    const input = header.querySelector('[data-pisi-canvas-section-title]');
 
     if (toggle) {
-        toggle.setAttribute(
-            'aria-expanded',
-            collapsed ? 'false' : 'true'
-        );
-        toggle.setAttribute(
-            'aria-label',
-            labels.toggle
-        );
+        toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        toggle.setAttribute('aria-label', labels.toggle);
         toggle.title = labels.toggle;
     }
 
-    if (
-        input &&
-        document.activeElement !== input
-    ) {
+    if (input && document.activeElement !== input) {
         input.value = title;
-        input.setAttribute(
-            'aria-label',
-            labels.title
-        );
+        input.setAttribute('aria-label', labels.title);
         syncPisiCanvasSectionTitleWidth(input);
     }
 
@@ -164,24 +104,13 @@ function syncPisiCanvasSectionState(
     };
 }
 
-function commitPisiCanvasSectionTitle(
-    canvas,
-    input
-) {
-    const block =
-        getPisiCanvasSectionBlock(canvas);
+function commitPisiCanvasSectionTitle(canvas, input) {
+    const block = getPisiCanvasSectionBlock(canvas);
 
     if (!block || !input) return false;
 
-    const next =
-        normalizePisiCanvasSectionTitle(
-            input.value
-        );
-    const original =
-        normalizePisiCanvasSectionTitle(
-            input.dataset.pisiCanvasOriginalTitle ||
-            block.dataset.pisiCanvasTitle
-        );
+    const next = normalizePisiCanvasSectionTitle(input.value);
+    const original = normalizePisiCanvasSectionTitle(input.dataset.pisiCanvasOriginalTitle || block.dataset.pisiCanvasTitle);
     const changed = original !== next;
 
     block.dataset.pisiCanvasTitle = next;
@@ -196,42 +125,27 @@ function commitPisiCanvasSectionTitle(
     return changed;
 }
 
-function togglePisiCanvasSection(
-    canvas,
-    header
-) {
-    const block =
-        getPisiCanvasSectionBlock(canvas);
+function togglePisiCanvasSection(canvas, header) {
+    const block = getPisiCanvasSectionBlock(canvas);
 
     if (!block) return false;
 
-    const collapsed =
-        block.dataset.pisiCanvasCollapsed !== '1';
+    const collapsed = block.dataset.pisiCanvasCollapsed !== '1';
 
-    block.dataset.pisiCanvasCollapsed =
-        collapsed ? '1' : '0';
+    block.dataset.pisiCanvasCollapsed = collapsed ? '1' : '0';
 
-    syncPisiCanvasSectionState(
-        canvas,
-        header
-    );
+    syncPisiCanvasSectionState(canvas, header);
     notifyPisiCanvasSectionChanged(block);
     return true;
 }
 
 function deletePisiCanvasSection(canvas) {
-    const block =
-        getPisiCanvasSectionBlock(canvas);
-    const editor =
-        block?.closest?.('.pisi-rich-editor') ||
-        block?.parentElement ||
-        null;
+    const block = getPisiCanvasSectionBlock(canvas);
+    const editor = block?.closest?.('.pisi-rich-editor') || block?.parentElement || null;
 
     if (!block || !editor) return false;
 
-    if (
-        window.__pisiPaintState?.activeCanvas === canvas
-    ) {
+    if (window.__pisiPaintState?.activeCanvas === canvas) {
         window.__pisiPaintState.activeCanvas = null;
     }
 
@@ -261,22 +175,16 @@ function createPisiCanvasSectionHeader(canvas) {
     const newLine = document.createElement('button');
     const remove = document.createElement('button');
 
-    header.className =
-        'pisi-canvas-section-header';
+    header.className = 'pisi-canvas-section-header';
     header.dataset.pisiCanvasSectionHeader = '1';
-    header.setAttribute(
-        'contenteditable',
-        'false'
-    );
+    header.setAttribute('contenteditable', 'false');
 
     toggle.type = 'button';
-    toggle.className =
-        'pisi-canvas-section-toggle';
+    toggle.className = 'pisi-canvas-section-toggle';
     toggle.dataset.pisiCanvasSectionToggle = '1';
 
     title.type = 'text';
-    title.className =
-        'pisi-canvas-section-title';
+    title.className = 'pisi-canvas-section-title';
     title.dataset.pisiCanvasSectionTitle = '1';
     title.maxLength = 80;
     title.autocomplete = 'off';
@@ -301,13 +209,9 @@ function createPisiCanvasSectionHeader(canvas) {
         event.preventDefault();
         event.stopPropagation();
 
-        const block =
-            getPisiCanvasSectionBlock(canvas);
+        const block = getPisiCanvasSectionBlock(canvas);
         clearPisiCanvasDocumentSelection(block);
-        togglePisiCanvasSection(
-            canvas,
-            header
-        );
+        togglePisiCanvasSection(canvas, header);
     });
 
     const stopEditorEvent = (event) => {
@@ -328,35 +232,23 @@ function createPisiCanvasSectionHeader(canvas) {
         'compositionupdate',
         'compositionend'
     ].forEach((type) => {
-        title.addEventListener(
-            type,
-            stopEditorEvent
-        );
+        title.addEventListener(type, stopEditorEvent);
     });
 
     const selectCanvasBlock = () => {
-        const block =
-            getPisiCanvasSectionBlock(canvas);
+        const block = getPisiCanvasSectionBlock(canvas);
 
         selectPisiCompositeAlignmentBlock(block);
     };
 
-    title.addEventListener(
-        'pointerdown',
-        selectCanvasBlock
-    );
+    title.addEventListener('pointerdown', selectCanvasBlock);
 
     title.addEventListener('focus', () => {
-        const block =
-            getPisiCanvasSectionBlock(canvas);
+        const block = getPisiCanvasSectionBlock(canvas);
 
         clearPisiCanvasDocumentSelection(block);
         selectPisiCompositeAlignmentBlock(block);
-        title.dataset.pisiCanvasOriginalTitle =
-            String(
-                block?.dataset.pisiCanvasTitle ||
-                PISI_CANVAS_DEFAULT_TITLE
-            );
+        title.dataset.pisiCanvasOriginalTitle = String(block?.dataset.pisiCanvasTitle || PISI_CANVAS_DEFAULT_TITLE);
     });
 
     title.addEventListener('beforeinput', (event) => {
@@ -366,12 +258,10 @@ function createPisiCanvasSectionHeader(canvas) {
     title.addEventListener('input', (event) => {
         event.stopPropagation();
 
-        const block =
-            getPisiCanvasSectionBlock(canvas);
+        const block = getPisiCanvasSectionBlock(canvas);
 
         if (block) {
-            block.dataset.pisiCanvasTitle =
-                String(title.value || '').slice(0, 80);
+            block.dataset.pisiCanvasTitle = String(title.value || '').slice(0, 80);
         }
 
         syncPisiCanvasSectionTitleWidth(title);
@@ -379,10 +269,7 @@ function createPisiCanvasSectionHeader(canvas) {
 
     title.addEventListener('change', (event) => {
         event.stopPropagation();
-        commitPisiCanvasSectionTitle(
-            canvas,
-            title
-        );
+        commitPisiCanvasSectionTitle(canvas, title);
     });
 
     remove.addEventListener('click', (event) => {
@@ -397,12 +284,8 @@ function createPisiCanvasSectionHeader(canvas) {
 
         if (event.key === 'Enter') {
             event.preventDefault();
-            commitPisiCanvasSectionTitle(
-                canvas,
-                title
-            );
-            const block =
-                getPisiCanvasSectionBlock(canvas);
+            commitPisiCanvasSectionTitle(canvas, title);
+            const block = getPisiCanvasSectionBlock(canvas);
             title.blur();
             ensurePisiEditableLineAfter(block);
             return;
@@ -412,107 +295,60 @@ function createPisiCanvasSectionHeader(canvas) {
 
         event.preventDefault();
 
-        const block =
-            getPisiCanvasSectionBlock(canvas);
-        const original =
-            title.dataset.pisiCanvasOriginalTitle ||
-            PISI_CANVAS_DEFAULT_TITLE;
+        const block = getPisiCanvasSectionBlock(canvas);
+        const original = title.dataset.pisiCanvasOriginalTitle || PISI_CANVAS_DEFAULT_TITLE;
 
         if (block) {
             block.dataset.pisiCanvasTitle = original;
         }
 
-        title.value =
-            normalizePisiCanvasSectionTitle(
-                original
-            );
+        title.value = normalizePisiCanvasSectionTitle(original);
         syncPisiCanvasSectionTitleWidth(title);
         title.blur();
     });
 
-    header.append(
-        toggle,
-        title,
-        copy,
-        newLine,
-        remove
-    );
+    header.append(toggle, title, copy, newLine, remove);
     pisiBoundCanvasSectionHeaders.add(header);
 
-    const labels = getPisiCanvasSectionLabels(
-        getPisiCanvasSectionBlock(canvas)
-            ?.dataset.pisiCanvasCollapsed === '1'
-    );
-    copy.setAttribute(
-        'aria-label',
-        labels.copy
-    );
+    const labels = getPisiCanvasSectionLabels(getPisiCanvasSectionBlock(canvas)?.dataset.pisiCanvasCollapsed === '1');
+    copy.setAttribute('aria-label', labels.copy);
     copy.title = labels.copy;
 
-    newLine.setAttribute(
-        'aria-label',
-        labels.newLine
-    );
+    newLine.setAttribute('aria-label', labels.newLine);
     newLine.title = labels.newLine;
 
-    remove.setAttribute(
-        'aria-label',
-        labels.delete
-    );
+    remove.setAttribute('aria-label', labels.delete);
     remove.title = labels.delete;
 
     return header;
 }
 
 function ensurePisiCanvasSectionHeader(canvas) {
-    const block =
-        getPisiCanvasSectionBlock(canvas);
+    const block = getPisiCanvasSectionBlock(canvas);
 
     if (!block) return null;
 
     ensurePisiCompositeAlignment(block);
     normalizePisiCompositeBlockLayout(block);
 
-    block.classList.remove(
-        'pisi-editor-block',
-        'pisi-block-active'
-    );
+    block.classList.remove('pisi-editor-block', 'pisi-block-active');
     delete block.dataset.pisiBlockId;
     delete block.dataset.pisiBlockType;
 
-    block
-        .querySelectorAll(
-            ':scope > .pisi-canvas-toolbar-hint'
-        )
-        .forEach((element) => element.remove());
+    block.querySelectorAll(':scope > .pisi-canvas-toolbar-hint').forEach((element) => element.remove());
 
-    const headers = Array.from(
-        block.children
-    ).filter((child) => (
-        child.classList?.contains(
-            'pisi-canvas-section-header'
-        )
-    ));
-    let header = headers.find((candidate) => (
-        pisiBoundCanvasSectionHeaders.has(candidate) &&
-        candidate.dataset
-            ?.pisiCanvasSectionHeader === '1' &&
-        candidate.querySelector(
-            '[data-pisi-canvas-section-toggle]'
-        ) &&
-        candidate.querySelector(
-            '[data-pisi-canvas-section-title]'
-        ) &&
-        candidate.querySelector(
-            '[data-pisi-composite-copy]'
-        ) &&
-        candidate.querySelector(
-            '[data-pisi-composite-new-line]'
-        ) &&
-        candidate.querySelector(
-            '[data-pisi-canvas-section-delete]'
-        )
-    )) || null;
+    const headers = Array.from(block.children).filter((child) => child.classList?.contains('pisi-canvas-section-header'));
+    let header =
+        headers.find(
+            (candidate) =>
+                pisiBoundCanvasSectionHeaders.has(candidate) &&
+                candidate.dataset?.pisiCanvasSectionHeader === '1' &&
+                candidate.querySelector('[data-pisi-canvas-section-toggle]') &&
+                candidate.querySelector('[data-pisi-canvas-section-title]') &&
+                candidate.querySelector('[data-pisi-composite-copy]') &&
+                candidate.querySelector('[data-pisi-composite-new-line]') &&
+                candidate.querySelector('[data-pisi-canvas-section-delete]')
+        ) || null;
 
     for (const candidate of headers) {
         if (candidate !== header) {
@@ -521,15 +357,11 @@ function ensurePisiCanvasSectionHeader(canvas) {
     }
 
     if (!header) {
-        header =
-            createPisiCanvasSectionHeader(canvas);
+        header = createPisiCanvasSectionHeader(canvas);
         block.prepend(header);
     }
 
-    syncPisiCanvasSectionState(
-        canvas,
-        header
-    );
+    syncPisiCanvasSectionState(canvas, header);
 
     return header;
 }
@@ -539,20 +371,12 @@ if (typeof document !== 'undefined') {
         'click',
         (event) => {
             const target = event.target;
-            const button = target instanceof Element
-                ? target.closest(
-                    '[data-pisi-canvas-section-delete]'
-                )
-                : null;
+            const button = target instanceof Element ? target.closest('[data-pisi-canvas-section-delete]') : null;
 
             if (!button) return;
 
-            const block = button.closest(
-                '.pisi-canvas-block'
-            );
-            const canvas = block?.querySelector(
-                'canvas[data-pisi-canvas]'
-            );
+            const block = button.closest('.pisi-canvas-block');
+            const canvas = block?.querySelector('canvas[data-pisi-canvas]');
 
             if (!canvas) return;
 
@@ -564,7 +388,4 @@ if (typeof document !== 'undefined') {
     );
 }
 
-export {
-    ensurePisiCanvasSectionHeader,
-    normalizePisiCanvasSectionTitle
-};
+export { ensurePisiCanvasSectionHeader, normalizePisiCanvasSectionTitle };

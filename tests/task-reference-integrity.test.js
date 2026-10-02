@@ -52,9 +52,7 @@ function makeProject() {
 function putTask(taskStore, project, index, overrides = {}) {
     const id = overrides.id || `task_ref_${String(index).padStart(3, '0')}`;
     const nodePath = overrides.nodePath || path.join(project, 'nodes', `Node ${index}.node`);
-    const mapPath = overrides.mapPath === undefined
-        ? path.join(project, 'Project.map')
-        : overrides.mapPath;
+    const mapPath = overrides.mapPath === undefined ? path.join(project, 'Project.map') : overrides.mapPath;
     const blockId = overrides.blockId || `block-ref-${String(index).padStart(3, '0')}`;
     const result = taskStore.upsertPisiFirstClassTask(project, {
         id,
@@ -75,9 +73,7 @@ function putTask(taskStore, project, index, overrides = {}) {
 }
 
 const modules = loadTaskModules();
-const navigationCorePromise = import(
-    pathToFileURL(path.join(root, 'renderer/navigation/pisi-navigation-core.mjs')).href
-);
+const navigationCorePromise = import(pathToFileURL(path.join(root, 'renderer/navigation/pisi-navigation-core.mjs')).href);
 
 test('node rename rewrites nodePath while taskId and blockId remain stable', () => {
     const project = makeProject();
@@ -89,9 +85,7 @@ test('node rename rewrites nodePath while taskId and blockId remain stable', () 
             before.push(putTask(modules.taskStore, project, index, { nodePath: oldPath }));
         }
 
-        const rewritten = modules.integrity.rewritePisiTaskSourcePaths(project, [
-            { oldPath, newPath }
-        ]);
+        const rewritten = modules.integrity.rewritePisiTaskSourcePaths(project, [{ oldPath, newPath }]);
         assert.equal(rewritten.ok, true);
         assert.equal(rewritten.updated, 20);
 
@@ -117,11 +111,13 @@ test('folder and map move rewrite descendant nodePath and mapPath without changi
         const before = [];
 
         for (let index = 0; index < 20; index += 1) {
-            before.push(putTask(modules.taskStore, project, 100 + index, {
-                nodePath: path.join(oldSidecar, 'nested', `Node ${index}.node`),
-                mapPath: oldMap,
-                blockId: `block-move-${index}`
-            }));
+            before.push(
+                putTask(modules.taskStore, project, 100 + index, {
+                    nodePath: path.join(oldSidecar, 'nested', `Node ${index}.node`),
+                    mapPath: oldMap,
+                    blockId: `block-move-${index}`
+                })
+            );
         }
 
         const rewritten = modules.integrity.rewritePisiTaskSourcePaths(project, [
@@ -136,10 +132,7 @@ test('folder and map move rewrite descendant nodePath and mapPath without changi
             assert.equal(after[index].id, before[index].id);
             assert.equal(after[index].source.blockId, before[index].source.blockId);
             assert.equal(after[index].source.mapPath, newMap);
-            assert.equal(
-                after[index].source.nodePath,
-                path.join(newSidecar, 'nested', `Node ${index}.node`)
-            );
+            assert.equal(after[index].source.nodePath, path.join(newSidecar, 'nested', `Node ${index}.node`));
         }
     } finally {
         fs.rmSync(project, { recursive: true, force: true });
@@ -153,18 +146,14 @@ test('moving a task between nodes and changing blockId preserves canonical taskI
             nodePath: path.join(project, 'A.node'),
             blockId: 'block-before'
         });
-        const moved = modules.taskStore.updatePisiFirstClassTask(
-            project,
-            task.id,
-            {
-                source: {
-                    ...task.source,
-                    nodePath: path.join(project, 'B.node'),
-                    blockId: 'block-after',
-                    nodeTitle: 'B'
-                }
+        const moved = modules.taskStore.updatePisiFirstClassTask(project, task.id, {
+            source: {
+                ...task.source,
+                nodePath: path.join(project, 'B.node'),
+                blockId: 'block-after',
+                nodeTitle: 'B'
             }
-        );
+        });
         assert.equal(moved.ok, true);
         assert.equal(moved.task.id, task.id);
         assert.equal(moved.task.source.nodePath, path.join(project, 'B.node'));
@@ -184,25 +173,28 @@ test('deleted task identity disappears and a stale projection is explicitly reje
             modules.taskStore.listPisiFirstClassTasks(project).tasks.some((item) => item.id === task.id),
             false
         );
-        assert.equal(
-            modules.taskStore.updatePisiFirstClassTask(project, task.id, { title: 'stale' }).ok,
-            false
-        );
+        assert.equal(modules.taskStore.updatePisiFirstClassTask(project, task.id, { title: 'stale' }).ok, false);
 
         const { shouldRejectMissingPisiCanonicalTask } = await navigationCorePromise;
         assert.equal(
-            shouldRejectMissingPisiCanonicalTask({
-                taskId: task.id,
-                nodePath: task.source.nodePath,
-                blockId: task.source.blockId
-            }, null),
+            shouldRejectMissingPisiCanonicalTask(
+                {
+                    taskId: task.id,
+                    nodePath: task.source.nodePath,
+                    blockId: task.source.blockId
+                },
+                null
+            ),
             true
         );
         assert.equal(
-            shouldRejectMissingPisiCanonicalTask({
-                nodePath: task.source.nodePath,
-                blockId: task.source.blockId
-            }, null),
+            shouldRejectMissingPisiCanonicalTask(
+                {
+                    nodePath: task.source.nodePath,
+                    blockId: task.source.blockId
+                },
+                null
+            ),
             false,
             'generic non-task block links retain their legacy fallback'
         );
@@ -212,10 +204,7 @@ test('deleted task identity disappears and a stale projection is explicitly reje
 });
 
 test('recovery rejects stale copies and deterministically selects the exact moved task', async () => {
-    const {
-        isPisiTaskNavigationCandidateAccepted,
-        selectPisiTaskNavigationCandidate
-    } = await navigationCorePromise;
+    const { isPisiTaskNavigationCandidateAccepted, selectPisiTaskNavigationCandidate } = await navigationCorePromise;
 
     for (let index = 0; index < 50; index += 1) {
         const taskId = `task_recovery_${String(index).padStart(3, '0')}`;
@@ -249,24 +238,11 @@ test('recovery rejects stale copies and deterministically selects the exact move
             sourceText: target.sourceText
         };
 
+        assert.equal(isPisiTaskNavigationCandidateAccepted(staleCopy, target, { scope: 'recovery' }), false);
+        assert.equal(isPisiTaskNavigationCandidateAccepted(unprovenCopy, target, { scope: 'recovery' }), false);
+        assert.equal(isPisiTaskNavigationCandidateAccepted(movedExact, target, { scope: 'recovery' }), true);
         assert.equal(
-            isPisiTaskNavigationCandidateAccepted(staleCopy, target, { scope: 'recovery' }),
-            false
-        );
-        assert.equal(
-            isPisiTaskNavigationCandidateAccepted(unprovenCopy, target, { scope: 'recovery' }),
-            false
-        );
-        assert.equal(
-            isPisiTaskNavigationCandidateAccepted(movedExact, target, { scope: 'recovery' }),
-            true
-        );
-        assert.equal(
-            selectPisiTaskNavigationCandidate(
-                [staleCopy, unprovenCopy, movedExact],
-                target,
-                { scope: 'recovery' }
-            )?.candidate,
+            selectPisiTaskNavigationCandidate([staleCopy, unprovenCopy, movedExact], target, { scope: 'recovery' })?.candidate,
             movedExact,
             `recovery case ${index + 1}/50 selected a stale reference`
         );
@@ -281,21 +257,42 @@ test('direct canonical node keeps blockId fallback only when no conflicting task
         nodePath: '/project/Node.node'
     };
 
-    assert.equal(isPisiTaskNavigationCandidateAccepted({
-        blockId: 'block-direct',
-        nodePath: '/project/Node.node'
-    }, target, { scope: 'direct' }), true);
+    assert.equal(
+        isPisiTaskNavigationCandidateAccepted(
+            {
+                blockId: 'block-direct',
+                nodePath: '/project/Node.node'
+            },
+            target,
+            { scope: 'direct' }
+        ),
+        true
+    );
 
-    assert.equal(isPisiTaskNavigationCandidateAccepted({
-        taskId: 'task_conflict_0001',
-        blockId: 'block-direct',
-        nodePath: '/project/Node.node'
-    }, target, { scope: 'direct' }), false);
+    assert.equal(
+        isPisiTaskNavigationCandidateAccepted(
+            {
+                taskId: 'task_conflict_0001',
+                blockId: 'block-direct',
+                nodePath: '/project/Node.node'
+            },
+            target,
+            { scope: 'direct' }
+        ),
+        false
+    );
 
-    assert.equal(isPisiTaskNavigationCandidateAccepted({
-        blockId: 'block-direct',
-        nodePath: '/project/Other.node'
-    }, target, { scope: 'direct' }), false);
+    assert.equal(
+        isPisiTaskNavigationCandidateAccepted(
+            {
+                blockId: 'block-direct',
+                nodePath: '/project/Other.node'
+            },
+            target,
+            { scope: 'direct' }
+        ),
+        false
+    );
 });
 
 test('task identity survives editor sanitation and recovery repairs canonical source fields', () => {

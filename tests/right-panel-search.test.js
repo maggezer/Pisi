@@ -24,30 +24,16 @@ test('arama soldan kaldırılır ve gerçek sağ panel sekmesine taşınır', ()
     assert.match(panel, /searchPisiAdvancedIndex/);
     assert.match(panel, /makePisiSearchRecentMap/);
     assert.match(panel, /openPisiSearchResult/);
-    assert.ok(manifest.some((entry) => (
-        entry.module === 'search.rightPanel' &&
-        entry.path === 'renderer/search/pisi-search-panel.mjs'
-    )));
+    assert.ok(manifest.some((entry) => entry.module === 'search.rightPanel' && entry.path === 'renderer/search/pisi-search-panel.mjs'));
 });
 
 test('arama sonuçları teknik node kimliklerini kullanıcıya göstermez', () => {
     const panel = read('renderer/search/pisi-search-panel.mjs');
-    const helperSource = panel.slice(
-        panel.indexOf('function getPisiRightSearchDisplayPath'),
-        panel.indexOf('function getPisiRightSearchPreview')
-    );
-    const getDisplayPath = Function(
-        `${helperSource}; return getPisiRightSearchDisplayPath;`
-    )();
+    const helperSource = panel.slice(panel.indexOf('function getPisiRightSearchDisplayPath'), panel.indexOf('function getPisiRightSearchPreview'));
+    const getDisplayPath = Function(`${helperSource}; return getPisiRightSearchDisplayPath;`)();
 
-    assert.equal(
-        getDisplayPath('nd_Proje__map_24fc/Plan__node_f35a-91b2.node'),
-        'Plan.node'
-    );
-    assert.equal(
-        getDisplayPath('Belgeler/Plan__node_f35a-91b2.node'),
-        'Belgeler / Plan.node'
-    );
+    assert.equal(getDisplayPath('nd_Proje__map_24fc/Plan__node_f35a-91b2.node'), 'Plan.node');
+    assert.equal(getDisplayPath('Belgeler/Plan__node_f35a-91b2.node'), 'Belgeler / Plan.node');
     assert.match(panel, /getPisiRightSearchPreview\(result\)/);
     assert.match(panel, /openPisiSearchResult\(result/);
     assert.doesNotMatch(panel, /\[result\.mapTitle, result\.relativePath\]/);
@@ -59,10 +45,7 @@ test('Links dahil dinamik sekmeler her tıklamada güncel durumdan seçilir', ()
     const source = read('renderer/shell/pisi-window.mjs');
 
     assert.match(source, /async function activatePisiRightPanelTab/);
-    assert.match(
-        source,
-        /document\.querySelectorAll\('\.right-panel-tab\[data-right-tab\]'\)/
-    );
+    assert.match(source, /document\.querySelectorAll\('\.right-panel-tab\[data-right-tab\]'\)/);
     assert.match(source, /item\.classList\.toggle\('active', selected\)/);
     assert.match(source, /aria-selected', selected \? 'true' : 'false'/);
     assert.match(source, /void activatePisiRightPanelTab\(button\)/);
@@ -77,7 +60,7 @@ test('sağ arama yüzeyi koyu ve açık tema stillerine sahiptir', () => {
     assert.match(searchCss, /\.pisi-right-search-result\.selected/);
     assert.match(searchCss, /assets\/right-tabs\/search\.svg/);
     assert.match(enhancementCss, /\.pisi-right-search-syntax/);
-    assert.match(enhancementCss, /html\[data-theme="light"\]/);
+    assert.match(enhancementCss, /html\[data-theme=["\']light["\']\]/);
     assert.match(lightCss, /\.pisi-right-search-input-row/);
     assert.match(lightCss, /\.pisi-right-search-result\.selected/);
     assert.doesNotMatch(searchCss, /\.pisi-right-search-result-context/);

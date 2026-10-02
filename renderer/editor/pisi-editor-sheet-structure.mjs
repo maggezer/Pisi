@@ -1,4 +1,4 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 function getPisiSheetColumnLabel(table, colIndex) {
     const field = getPisiSheetField(table, colIndex);
 
@@ -6,18 +6,10 @@ function getPisiSheetColumnLabel(table, colIndex) {
 }
 
 function setPisiSheetColumnLabel(table, colIndex, value) {
-    const label = renamePisiSheetField(
-        table,
-        colIndex,
-        value
-    );
+    const label = renamePisiSheetField(table, colIndex, value);
     if (!label) return null;
 
-    const labelElement = table.querySelector(
-        'thead th[data-col-header="' +
-        colIndex +
-        '"] .pisi-sheet-col-label'
-    );
+    const labelElement = table.querySelector('thead th[data-col-header="' + colIndex + '"] .pisi-sheet-col-label');
 
     if (labelElement) {
         labelElement.textContent = label;
@@ -35,12 +27,7 @@ function refreshPisiSheetCellMetadata(table) {
 }
 
 function getPisiSheetMutationFocus(table) {
-    return (
-        getPisiSheetSelection(table)?.focus ||
-        getPisiSheetSelectionFocus(table) ||
-        getPisiSheetPointByIndex(table, 0, 0) ||
-        { row: 0, col: 0 }
-    );
+    return getPisiSheetSelection(table)?.focus || getPisiSheetSelectionFocus(table) || getPisiSheetPointByIndex(table, 0, 0) || { row: 0, col: 0 };
 }
 
 function updatePisiSheetFormulaReferences(table, change) {
@@ -55,13 +42,8 @@ function addPisiSheetRow(table, afterRowIndex = null) {
     }
 
     const focus = getPisiSheetMutationFocus(table);
-    const after = Number.isInteger(afterRowIndex)
-        ? afterRowIndex
-        : focus.row;
-    const insertIndex = Math.max(
-        0,
-        Math.min(dimensions.rows, after + 1)
-    );
+    const after = Number.isInteger(afterRowIndex) ? afterRowIndex : focus.row;
+    const insertIndex = Math.max(0, Math.min(dimensions.rows, after + 1));
     const colCount = Math.max(1, dimensions.cols);
 
     insertPisiSheetItem(table, insertIndex);
@@ -73,11 +55,7 @@ function addPisiSheetRow(table, afterRowIndex = null) {
     refreshPisiSheetCellMetadata(table);
     recalcPisiSheet(table);
 
-    const nextCell = getPisiSheetCell(
-        table,
-        insertIndex,
-        Math.min(focus.col, colCount - 1)
-    );
+    const nextCell = getPisiSheetCell(table, insertIndex, Math.min(focus.col, colCount - 1));
 
     if (nextCell) {
         selectPisiSheetCell(nextCell, { focus: true });
@@ -94,13 +72,8 @@ function addPisiSheetColumn(table, afterColIndex = null) {
     }
 
     const focus = getPisiSheetMutationFocus(table);
-    const after = Number.isInteger(afterColIndex)
-        ? afterColIndex
-        : focus.col;
-    const insertIndex = Math.max(
-        0,
-        Math.min(dimensions.cols, after + 1)
-    );
+    const after = Number.isInteger(afterColIndex) ? afterColIndex : focus.col;
+    const insertIndex = Math.max(0, Math.min(dimensions.cols, after + 1));
 
     insertPisiSheetField(table, insertIndex);
     updatePisiSheetFormulaReferences(table, {
@@ -112,11 +85,7 @@ function addPisiSheetColumn(table, afterColIndex = null) {
     recalcPisiSheet(table);
 
     const next = getPisiSheetDimensions(table);
-    const nextCell = getPisiSheetCell(
-        table,
-        Math.min(focus.row, next.rows - 1),
-        insertIndex
-    );
+    const nextCell = getPisiSheetCell(table, Math.min(focus.row, next.rows - 1), insertIndex);
 
     if (nextCell) {
         selectPisiSheetCell(nextCell, { focus: true });
@@ -130,22 +99,11 @@ function deletePisiSheetRows(table) {
     if (dimensions.rows <= 1) return false;
 
     const selection = getPisiSheetSelection(table);
-    const rect = selection
-        ? getPisiSheetSelectionRect(
-            selection.anchor,
-            selection.focus
-        )
-        : null;
+    const rect = selection ? getPisiSheetSelectionRect(selection.anchor, selection.focus) : null;
     const focus = getPisiSheetMutationFocus(table);
     const start = rect?.rowStart ?? focus.row;
-    const requestedCount = rect
-        ? rect.rowEnd - rect.rowStart + 1
-        : 1;
-    const count = Math.min(
-        requestedCount,
-        dimensions.rows - 1,
-        dimensions.rows - start
-    );
+    const requestedCount = rect ? rect.rowEnd - rect.rowStart + 1 : 1;
+    const count = Math.min(requestedCount, dimensions.rows - 1, dimensions.rows - start);
 
     if (count < 1) return false;
 
@@ -159,11 +117,7 @@ function deletePisiSheetRows(table) {
     recalcPisiSheet(table);
 
     const next = getPisiSheetDimensions(table);
-    const nextCell = getPisiSheetCell(
-        table,
-        Math.min(start, next.rows - 1),
-        Math.min(focus.col, next.cols - 1)
-    );
+    const nextCell = getPisiSheetCell(table, Math.min(start, next.rows - 1), Math.min(focus.col, next.cols - 1));
 
     if (nextCell) {
         selectPisiSheetCell(nextCell, { focus: true });
@@ -177,22 +131,11 @@ function deletePisiSheetColumns(table) {
     if (dimensions.cols <= 1) return false;
 
     const selection = getPisiSheetSelection(table);
-    const rect = selection
-        ? getPisiSheetSelectionRect(
-            selection.anchor,
-            selection.focus
-        )
-        : null;
+    const rect = selection ? getPisiSheetSelectionRect(selection.anchor, selection.focus) : null;
     const focus = getPisiSheetMutationFocus(table);
     const start = rect?.colStart ?? focus.col;
-    const requestedCount = rect
-        ? rect.colEnd - rect.colStart + 1
-        : 1;
-    const count = Math.min(
-        requestedCount,
-        dimensions.cols - 1,
-        dimensions.cols - start
-    );
+    const requestedCount = rect ? rect.colEnd - rect.colStart + 1 : 1;
+    const count = Math.min(requestedCount, dimensions.cols - 1, dimensions.cols - start);
 
     if (count < 1) return false;
 
@@ -206,11 +149,7 @@ function deletePisiSheetColumns(table) {
     recalcPisiSheet(table);
 
     const next = getPisiSheetDimensions(table);
-    const nextCell = getPisiSheetCell(
-        table,
-        Math.min(focus.row, next.rows - 1),
-        Math.min(start, next.cols - 1)
-    );
+    const nextCell = getPisiSheetCell(table, Math.min(focus.row, next.rows - 1), Math.min(start, next.cols - 1));
 
     if (nextCell) {
         selectPisiSheetCell(nextCell, { focus: true });
@@ -219,11 +158,7 @@ function deletePisiSheetColumns(table) {
     return true;
 }
 
-function applyPisiSheetCellFormat(
-    table,
-    action,
-    value = null
-) {
+function applyPisiSheetCellFormat(table, action, value = null) {
     const cells = getPisiSelectedSheetCells(table);
     if (!cells.length) return false;
 
@@ -245,28 +180,20 @@ function applyPisiSheetCellFormat(
         });
     } else if (action === 'toggleUnderline') {
         const enable = !cells.every((cell) => {
-            return cell.style.textDecorationLine
-                .split(/\s+/)
-                .includes('underline');
+            return cell.style.textDecorationLine.split(/\s+/).includes('underline');
         });
         cells.forEach((cell) => {
-            const values = new Set(
-                cell.style.textDecorationLine.split(/\s+/).filter(Boolean)
-            );
+            const values = new Set(cell.style.textDecorationLine.split(/\s+/).filter(Boolean));
             if (enable) values.add('underline');
             else values.delete('underline');
             cell.style.textDecorationLine = [...values].join(' ');
         });
     } else if (action === 'toggleStrikeThrough') {
         const enable = !cells.every((cell) => {
-            return cell.style.textDecorationLine
-                .split(/\s+/)
-                .includes('line-through');
+            return cell.style.textDecorationLine.split(/\s+/).includes('line-through');
         });
         cells.forEach((cell) => {
-            const values = new Set(
-                cell.style.textDecorationLine.split(/\s+/).filter(Boolean)
-            );
+            const values = new Set(cell.style.textDecorationLine.split(/\s+/).filter(Boolean));
             if (enable) values.add('line-through');
             else values.delete('line-through');
             cell.style.textDecorationLine = [...values].join(' ');
@@ -277,13 +204,13 @@ function applyPisiSheetCellFormat(
         });
     } else if (action === 'fontSize' && value) {
         const sizes = {
-            '1': '8px',
-            '2': '10px',
-            '3': '12px',
-            '4': '14px',
-            '5': '18px',
-            '6': '24px',
-            '7': '32px'
+            1: '8px',
+            2: '10px',
+            3: '12px',
+            4: '14px',
+            5: '18px',
+            6: '24px',
+            7: '32px'
         };
         const size = sizes[String(value)] || String(value);
         cells.forEach((cell) => {
@@ -366,12 +293,7 @@ function applyPisiSheetCellFormat(
 
         if (!position) return;
 
-        setPisiSheetCellFormat(
-            table,
-            position.row,
-            position.col,
-            capturePisiSheetCellFormat(cell)
-        );
+        setPisiSheetCellFormat(table, position.row, position.col, capturePisiSheetCellFormat(cell));
     });
 
     renderPisiSheetSelection(table);
@@ -386,11 +308,7 @@ function clearPisiSheetSelectedCells(table) {
         const position = getPisiSheetCellPosition(cell);
         if (!position) return;
 
-        clearPisiSheetCell(
-            table,
-            position.row,
-            position.col
-        );
+        clearPisiSheetCell(table, position.row, position.col);
         pisiEditedSheetCells.delete(cell);
     });
 
@@ -398,7 +316,6 @@ function clearPisiSheetSelectedCells(table) {
     schedulePisiSheetEditorNotification(table);
     return true;
 }
-
 
 function schedulePisiSheetEditorNotification(table) {
     persistPisiSheetDatabase(table);
@@ -422,9 +339,7 @@ function schedulePisiSheetEditorNotification(table) {
 }
 
 function setPisiSheetToolbarStatus(toolbar, message) {
-    const status = toolbar?.querySelector(
-        '[data-pisi-sheet-status]'
-    );
+    const status = toolbar?.querySelector('[data-pisi-sheet-status]');
 
     if (status) {
         status.textContent = String(message || '');
@@ -433,17 +348,10 @@ function setPisiSheetToolbarStatus(toolbar, message) {
 
 function syncPisiSheetToolbarForTable(table) {
     const editor = getEditorForPisiElement(table);
-    const toolbar = editor
-        ? document.querySelector(
-            `.pisi-editor-toolbar[data-editor-target="${editor.id}"]`
-        )
-        : null;
+    const toolbar = editor ? document.querySelector(`.pisi-editor-toolbar[data-editor-target="${editor.id}"]`) : null;
 
     if (toolbar) {
-        toolbar.classList.toggle(
-            'pisi-table-context',
-            Boolean(table)
-        );
+        toolbar.classList.toggle('pisi-table-context', Boolean(table));
     }
 
     syncPisiSheetToolbarState(toolbar, table);
@@ -452,128 +360,123 @@ function syncPisiSheetToolbarForTable(table) {
 function syncPisiSheetToolbarState(toolbar, table) {
     if (!toolbar) return;
 
-    const dimensions = table
-        ? getPisiSheetDimensions(table)
-        : { rows: 0, cols: 0 };
+    const dimensions = table ? getPisiSheetDimensions(table) : { rows: 0, cols: 0 };
 
-    toolbar
-        .querySelectorAll('[data-pisi-excel-action]')
-        .forEach((button) => {
-            button.disabled = !table;
-        });
+    toolbar.querySelectorAll('[data-pisi-excel-action]').forEach((button) => {
+        button.disabled = !table;
+    });
 
     const setDisabled = (action, disabled) => {
-        const button = toolbar.querySelector(
-            `[data-pisi-excel-action="${action}"]`
-        );
+        const button = toolbar.querySelector(`[data-pisi-excel-action="${action}"]`);
 
         if (button) {
             button.disabled = disabled;
         }
     };
 
-    setDisabled(
-        'addRow',
-        !table || dimensions.rows >= PISI_SHEET_MAX_ROWS
-    );
-    setDisabled(
-        'deleteRow',
-        !table || dimensions.rows <= 1
-    );
-    setDisabled(
-        'addCol',
-        !table || dimensions.cols >= PISI_SHEET_MAX_COLS
-    );
-    setDisabled(
-        'deleteCol',
-        !table || dimensions.cols <= 1
-    );
+    setDisabled('addRow', !table || dimensions.rows >= PISI_SHEET_MAX_ROWS);
+    setDisabled('deleteRow', !table || dimensions.rows <= 1);
+    setDisabled('addCol', !table || dimensions.cols >= PISI_SHEET_MAX_COLS);
+    setDisabled('deleteCol', !table || dimensions.cols <= 1);
 
-    const status = toolbar.querySelector(
-        '[data-pisi-sheet-status]'
-    );
+    const status = toolbar.querySelector('[data-pisi-sheet-status]');
 
     if (status && table) {
         const selection = getPisiSheetSelection(table);
-        const rect = selection
-            ? getPisiSheetSelectionRect(
-                selection.anchor,
-                selection.focus
-            )
-            : null;
-        const selectedRows = rect
-            ? rect.rowEnd - rect.rowStart + 1
-            : 1;
-        const selectedCols = rect
-            ? rect.colEnd - rect.colStart + 1
-            : 1;
-        const selectionLabel =
-            selectedRows > 1 || selectedCols > 1
-                ? ` · ${selectedRows}×${selectedCols} seçili`
-                : '';
+        const rect = selection ? getPisiSheetSelectionRect(selection.anchor, selection.focus) : null;
+        const selectedRows = rect ? rect.rowEnd - rect.rowStart + 1 : 1;
+        const selectedCols = rect ? rect.colEnd - rect.colStart + 1 : 1;
+        const selectionLabel = selectedRows > 1 || selectedCols > 1 ? ` · ${selectedRows}×${selectedCols} seçili` : '';
 
-        status.textContent =
-            `${dimensions.rows} × ${dimensions.cols}${selectionLabel}`;
+        status.textContent = `${dimensions.rows} × ${dimensions.cols}${selectionLabel}`;
     }
 }
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "setPisiSheetColumnLabel": {
+    setPisiSheetColumnLabel: {
         enumerable: true,
-        get() { return setPisiSheetColumnLabel; }
+        get() {
+            return setPisiSheetColumnLabel;
+        }
     },
-    "refreshPisiSheetCellMetadata": {
+    refreshPisiSheetCellMetadata: {
         enumerable: true,
-        get() { return refreshPisiSheetCellMetadata; }
+        get() {
+            return refreshPisiSheetCellMetadata;
+        }
     },
-    "getPisiSheetMutationFocus": {
+    getPisiSheetMutationFocus: {
         enumerable: true,
-        get() { return getPisiSheetMutationFocus; }
+        get() {
+            return getPisiSheetMutationFocus;
+        }
     },
-    "updatePisiSheetFormulaReferences": {
+    updatePisiSheetFormulaReferences: {
         enumerable: true,
-        get() { return updatePisiSheetFormulaReferences; }
+        get() {
+            return updatePisiSheetFormulaReferences;
+        }
     },
-    "addPisiSheetRow": {
+    addPisiSheetRow: {
         enumerable: true,
-        get() { return addPisiSheetRow; }
+        get() {
+            return addPisiSheetRow;
+        }
     },
-    "addPisiSheetColumn": {
+    addPisiSheetColumn: {
         enumerable: true,
-        get() { return addPisiSheetColumn; }
+        get() {
+            return addPisiSheetColumn;
+        }
     },
-    "deletePisiSheetRows": {
+    deletePisiSheetRows: {
         enumerable: true,
-        get() { return deletePisiSheetRows; }
+        get() {
+            return deletePisiSheetRows;
+        }
     },
-    "deletePisiSheetColumns": {
+    deletePisiSheetColumns: {
         enumerable: true,
-        get() { return deletePisiSheetColumns; }
+        get() {
+            return deletePisiSheetColumns;
+        }
     },
-    "applyPisiSheetCellFormat": {
+    applyPisiSheetCellFormat: {
         enumerable: true,
-        get() { return applyPisiSheetCellFormat; }
+        get() {
+            return applyPisiSheetCellFormat;
+        }
     },
-    "clearPisiSheetSelectedCells": {
+    clearPisiSheetSelectedCells: {
         enumerable: true,
-        get() { return clearPisiSheetSelectedCells; }
+        get() {
+            return clearPisiSheetSelectedCells;
+        }
     },
-    "schedulePisiSheetEditorNotification": {
+    schedulePisiSheetEditorNotification: {
         enumerable: true,
-        get() { return schedulePisiSheetEditorNotification; }
+        get() {
+            return schedulePisiSheetEditorNotification;
+        }
     },
-    "setPisiSheetToolbarStatus": {
+    setPisiSheetToolbarStatus: {
         enumerable: true,
-        get() { return setPisiSheetToolbarStatus; }
+        get() {
+            return setPisiSheetToolbarStatus;
+        }
     },
-    "syncPisiSheetToolbarForTable": {
+    syncPisiSheetToolbarForTable: {
         enumerable: true,
-        get() { return syncPisiSheetToolbarForTable; }
+        get() {
+            return syncPisiSheetToolbarForTable;
+        }
     },
-    "syncPisiSheetToolbarState": {
+    syncPisiSheetToolbarState: {
         enumerable: true,
-        get() { return syncPisiSheetToolbarState; }
+        get() {
+            return syncPisiSheetToolbarState;
+        }
     }
 });
-registerModule("editor.sheetStructure", moduleApi);
+registerModule('editor.sheetStructure', moduleApi);

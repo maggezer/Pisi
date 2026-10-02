@@ -1,11 +1,11 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 import {
     PISI_TODO_FILTER_OPTIONS,
     PISI_TODO_STATUS_OPTIONS,
     getPisiTodoStatusOption,
     matchesPisiTodoFilter,
     parsePisiTodoTagValue
-} from "./pisi-todo-utils.mjs";
+} from './pisi-todo-utils.mjs';
 
 function pisiTodoTranslateFirstRelease(value) {
     return window.pisiT?.(value) ?? String(value ?? '');
@@ -23,14 +23,10 @@ function formatPisiMissionDateFirstRelease(date) {
 function getPisiMissionsFromIndexFirstRelease(options = {}) {
     const missions = [];
     const includeCompleted = options.includeCompleted === true;
-    const sourceIndex = Array.isArray(pisiTagsPanelState.missionIndex)
-        ? pisiTagsPanelState.missionIndex
-        : [];
+    const sourceIndex = Array.isArray(pisiTagsPanelState.missionIndex) ? pisiTagsPanelState.missionIndex : [];
 
     for (const block of sourceIndex) {
-        const doneFor = new Set(
-            (Array.isArray(block.doneFor) ? block.doneFor : []).map(normalizePisiUserTag)
-        );
+        const doneFor = new Set((Array.isArray(block.doneFor) ? block.doneFor : []).map(normalizePisiUserTag));
         const todoStates = block.todoStates || {};
         const todoSources = block.todoSources || {};
 
@@ -56,11 +52,7 @@ function getPisiMissionsFromIndexFirstRelease(options = {}) {
 
                 completed
             };
-            missions.push(
-                typeof window.enhancePisiMissionSecondRelease === 'function'
-                    ? window.enhancePisiMissionSecondRelease(mission, block)
-                    : mission
-            );
+            missions.push(typeof window.enhancePisiMissionSecondRelease === 'function' ? window.enhancePisiMissionSecondRelease(mission, block) : mission);
         }
     }
 
@@ -74,9 +66,7 @@ function getPisiMissionsFromIndexFirstRelease(options = {}) {
         const bDate = b.finishDate?.getTime?.() ?? Number.POSITIVE_INFINITY;
         return aDate !== bDate ? aDate - bDate : b.priority - a.priority;
     });
-    return typeof window.sortPisiMissionsSecondRelease === 'function'
-        ? window.sortPisiMissionsSecondRelease(missions)
-        : missions;
+    return typeof window.sortPisiMissionsSecondRelease === 'function' ? window.sortPisiMissionsSecondRelease(missions) : missions;
 }
 
 function escapePisiTodoRegExp(value = '') {
@@ -87,12 +77,11 @@ function getPisiMissionDisplayTextFirstRelease(mission) {
     if (String(mission?.sourceText || '').trim()) {
         return String(mission.sourceText).replace(/\s+/g, ' ').trim();
     }
-    let text = String(mission?.text || '').replace(/\s+/g, ' ').trim();
+    let text = String(mission?.text || '')
+        .replace(/\s+/g, ' ')
+        .trim();
     if (mission?.todoTag) {
-        text = text.replace(new RegExp(
-            `(^|\\s)(?:#|\\.\\.)?${escapePisiTodoRegExp(mission.todoTag)}(?=\\s|$)`,
-            'gi'
-        ), ' ');
+        text = text.replace(new RegExp(`(^|\\s)(?:#|\\.\\.)?${escapePisiTodoRegExp(mission.todoTag)}(?=\\s|$)`, 'gi'), ' ');
     }
     return text
         .replace(/(^|\s)(?:#|\.\.)?todo\.[1-9]\.(?:\d{2}-\d{2}-(?:\d{2}|\d{4})|none)(?=\s|$)/gi, ' ')
@@ -112,8 +101,7 @@ function getPisiMissionFilterCountsFirstRelease(missions) {
 }
 
 function removePisiMissionBadgesFirstRelease() {
-    document.querySelectorAll('.pisi-mission-node-badge, .pisi-mission-tree-badge-host')
-        .forEach((element) => element.remove());
+    document.querySelectorAll('.pisi-mission-node-badge, .pisi-mission-tree-badge-host').forEach((element) => element.remove());
 }
 
 function syncPisiMissionBadgesFirstRelease(missions = []) {
@@ -157,12 +145,8 @@ function syncPisiMissionBadgesFirstRelease(missions = []) {
 function closePisiMissionFilterMenuFirstRelease() {
     pisiTagsPanelState.missionFilterOpen = false;
 
-    const trigger = document.querySelector(
-        '.pisi-missions-filter-trigger'
-    );
-    const popover = document.querySelector(
-        '.pisi-missions-filter-popover'
-    );
+    const trigger = document.querySelector('.pisi-missions-filter-trigger');
+    const popover = document.querySelector('.pisi-missions-filter-popover');
 
     trigger?.setAttribute('aria-expanded', 'false');
     if (popover) popover.hidden = true;
@@ -217,16 +201,17 @@ function renderPisiMissionsPanelFirstRelease() {
     const showCompleted = pisiTagsPanelState.showCompletedMissions === true;
     const filter = PISI_TODO_FILTER_OPTIONS.some((item) => {
         return item.value === pisiTagsPanelState.missionFilter;
-    }) ? pisiTagsPanelState.missionFilter : 'all';
+    })
+        ? pisiTagsPanelState.missionFilter
+        : 'all';
     pisiTagsPanelState.missionFilter = filter;
-    const completionFiltered = showCompleted
-        ? allMissions
-        : allMissions.filter((mission) => !mission.completed);
+    const completionFiltered = showCompleted ? allMissions : allMissions.filter((mission) => !mission.completed);
     const counts = getPisiMissionFilterCountsFirstRelease(completionFiltered);
     const missions = completionFiltered.filter((mission) => {
-        return matchesPisiTodoFilter(mission, filter) &&
-            (typeof window.matchesPisiMissionStatusFilterSecondRelease !== 'function' ||
-                window.matchesPisiMissionStatusFilterSecondRelease(mission));
+        return (
+            matchesPisiTodoFilter(mission, filter) &&
+            (typeof window.matchesPisiMissionStatusFilterSecondRelease !== 'function' || window.matchesPisiMissionStatusFilterSecondRelease(mission))
+        );
     });
 
     toolbar.innerHTML = '';
@@ -235,9 +220,10 @@ function renderPisiMissionsPanelFirstRelease() {
     const toolbarRow = document.createElement('div');
     toolbarRow.className = 'pisi-missions-toolbar-row';
 
-    const activeFilterOption = PISI_TODO_FILTER_OPTIONS.find((option) => {
-        return option.value === filter;
-    }) || PISI_TODO_FILTER_OPTIONS[0];
+    const activeFilterOption =
+        PISI_TODO_FILTER_OPTIONS.find((option) => {
+            return option.value === filter;
+        }) || PISI_TODO_FILTER_OPTIONS[0];
     const filterMenu = document.createElement('div');
     filterMenu.className = 'pisi-missions-filter-menu';
 
@@ -245,11 +231,9 @@ function renderPisiMissionsPanelFirstRelease() {
     filterTrigger.type = 'button';
     filterTrigger.className = 'pisi-missions-filter-trigger';
     filterTrigger.setAttribute('aria-haspopup', 'menu');
-    filterTrigger.setAttribute(
-        'aria-expanded',
-        pisiTagsPanelState.missionFilterOpen === true ? 'true' : 'false'
-    );
-    filterTrigger.innerHTML =         `<span>${pisiTodoTranslateFirstRelease(activeFilterOption.label)}</span>` +
+    filterTrigger.setAttribute('aria-expanded', pisiTagsPanelState.missionFilterOpen === true ? 'true' : 'false');
+    filterTrigger.innerHTML =
+        `<span>${pisiTodoTranslateFirstRelease(activeFilterOption.label)}</span>` +
         `<span class="pisi-missions-filter-trigger-count">${counts.get(filter) || 0}</span>`;
 
     const filterPopover = document.createElement('div');
@@ -265,7 +249,8 @@ function renderPisiMissionsPanelFirstRelease() {
         optionButton.classList.toggle('active', isActive);
         optionButton.setAttribute('role', 'menuitemradio');
         optionButton.setAttribute('aria-checked', isActive ? 'true' : 'false');
-        optionButton.innerHTML =             `<span class="pisi-missions-filter-check">${isActive ? '✓' : ''}</span>` +
+        optionButton.innerHTML =
+            `<span class="pisi-missions-filter-check">${isActive ? '✓' : ''}</span>` +
             `<span class="pisi-missions-filter-label">${pisiTodoTranslateFirstRelease(option.label)}</span>` +
             `<span class="pisi-missions-filter-count">${counts.get(option.value) || 0}</span>`;
         optionButton.addEventListener('click', (event) => {
@@ -301,9 +286,9 @@ function renderPisiMissionsPanelFirstRelease() {
     completedToggle.type = 'button';
     completedToggle.className = 'pisi-missions-completed-toggle';
     completedToggle.setAttribute('aria-pressed', showCompleted ? 'true' : 'false');
-    completedToggle.textContent = pisiTodoTranslateFirstRelease(showCompleted
-        ? `Tamamlananları gizle (${completedCount})`
-        : `Tamamlananları göster (${completedCount})`);
+    completedToggle.textContent = pisiTodoTranslateFirstRelease(
+        showCompleted ? `Tamamlananları gizle (${completedCount})` : `Tamamlananları göster (${completedCount})`
+    );
     completedToggle.disabled = completedCount === 0;
     completedToggle.addEventListener('click', () => {
         pisiTagsPanelState.showCompletedMissions = !showCompleted;
@@ -315,9 +300,7 @@ function renderPisiMissionsPanelFirstRelease() {
     syncPisiMissionBadgesFirstRelease(allMissions);
 
     if (!missions.length) {
-        const message = filter === 'all'
-            ? (showCompleted ? 'Bu projede görev yok.' : 'Bu projede açık görev yok.')
-            : 'Bu filtrede görev yok.';
+        const message = filter === 'all' ? (showCompleted ? 'Bu projede görev yok.' : 'Bu projede açık görev yok.') : 'Bu filtrede görev yok.';
         list.innerHTML = `<div class="right-panel-empty">${pisiTodoTranslateFirstRelease(message)}</div>`;
         return;
     }
@@ -331,12 +314,8 @@ function renderPisiMissionsPanelFirstRelease() {
         card.dataset.missionId = mission.missionId || '';
         card.dataset.parentId = mission.parentId || '';
         card.classList.toggle('completed', mission.completed === true);
-        const workorder = Number.isFinite(mission.workorder)
-            ? mission.workorder.toFixed(2)
-            : '—';
-        const location = mission.mapTitle
-            ? `${mission.mapTitle} › ${mission.nodeTitle}`
-            : mission.nodeTitle;
+        const workorder = Number.isFinite(mission.workorder) ? mission.workorder.toFixed(2) : '—';
+        const location = mission.mapTitle ? `${mission.mapTitle} › ${mission.nodeTitle}` : mission.nodeTitle;
         const statusOptions = PISI_TODO_STATUS_OPTIONS.map((option) => {
             const selected = option.value === mission.status ? ' selected' : '';
             return `<option value="${option.value}"${selected}>${pisiTodoTranslateFirstRelease(option.label)}</option>`;
@@ -381,20 +360,16 @@ function renderPisiMissionsPanelFirstRelease() {
         checkbox.addEventListener('click', async (event) => {
             event.stopPropagation();
             checkbox.disabled = true;
-            const result = typeof window.togglePisiMissionCompletionSecondRelease === 'function'
-                ? await window.togglePisiMissionCompletionSecondRelease(
-                    mission,
-                    checkbox.checked
-                )
-                : (checkbox.checked
-                    ? await markPisiMissionDone(mission)
-                    : await reopenPisiMission(mission));
+            const result =
+                typeof window.togglePisiMissionCompletionSecondRelease === 'function'
+                    ? await window.togglePisiMissionCompletionSecondRelease(mission, checkbox.checked)
+                    : checkbox.checked
+                      ? await markPisiMissionDone(mission)
+                      : await reopenPisiMission(mission);
             if (!result?.ok) {
                 checkbox.checked = mission.completed === true;
                 checkbox.disabled = false;
-                alert(result?.error || (mission.completed
-                    ? 'Görev yeniden açılamadı.'
-                    : 'Görev tamamlandı olarak işaretlenemedi.'));
+                alert(result?.error || (mission.completed ? 'Görev yeniden açılamadı.' : 'Görev tamamlandı olarak işaretlenemedi.'));
                 return;
             }
             await refreshPisiMissionsFirstRelease('completion-change');
@@ -466,11 +441,7 @@ function capturePisiTodoSelection(editor) {
 
 function applyPisiTodoSelectionToEditor(editor, todoTag, command) {
     if (!command?.block || !todoTag) return;
-    const range = makeRangeInElementByTextOffsets(
-        command.block,
-        command.selectionStartInText,
-        command.selectionEndInText
-    );
+    const range = makeRangeInElementByTextOffsets(command.block, command.selectionStartInText, command.selectionEndInText);
     if (!range || range.collapsed) return;
     const source = document.createElement('span');
     source.className = 'pisi-todo-source';
@@ -489,10 +460,11 @@ function applyPisiTodoSelectionToEditor(editor, todoTag, command) {
 
 function findPisiMissionTodoTagElementFirstRelease(block, mission) {
     const target = normalizePisiUserTag(mission?.todoTag).toLowerCase();
-    return Array.from(block?.querySelectorAll?.('.pisi-user-tag[data-pisi-tag]') || [])
-        .find((element) => normalizePisiUserTag(
-            element.dataset.pisiTag || element.textContent || ''
-        ).toLowerCase() === target) || null;
+    return (
+        Array.from(block?.querySelectorAll?.('.pisi-user-tag[data-pisi-tag]') || []).find(
+            (element) => normalizePisiUserTag(element.dataset.pisiTag || element.textContent || '').toLowerCase() === target
+        ) || null
+    );
 }
 
 function setPisiMissionStatusInBlockFirstRelease(block, mission, status) {
@@ -534,20 +506,14 @@ async function savePisiMissionMutationFirstRelease(mission, mutateBlock) {
                 const ok = await saveCurrentCenterNodeEditor();
                 return { ok, error: ok ? '' : 'Node kaydedilemedi.' };
             }
-            return window.pisiProject?.saveNodeContent?.(
-                mission.nodePath,
-                getPisiEditorContent(editor)
-            );
+            return window.pisiProject?.saveNodeContent?.(mission.nodePath, getPisiEditorContent(editor));
         });
     }
 
     if (samePisiPathForTags(activeModalNode?.path, mission.nodePath)) {
         const editor = document.getElementById('node-modal-content');
         const result = await applyEditor(editor, () => {
-            return window.pisiProject?.saveNodeContent?.(
-                mission.nodePath,
-                getPisiEditorContent(editor)
-            );
+            return window.pisiProject?.saveNodeContent?.(mission.nodePath, getPisiEditorContent(editor));
         });
         if (result?.ok && activeModalNode) activeModalNode.dirty = false;
         return result;
@@ -561,13 +527,8 @@ async function savePisiMissionMutationFirstRelease(mission, mutateBlock) {
     const change = mutateBlock(block);
     if (change.missing) return { ok: false, error: 'Görev etiketi bulunamadı.' };
     if (!change.changed) return { ok: true, unchanged: true };
-    const result = await window.pisiProject?.saveNodeContent?.(
-        mission.nodePath,
-        template.innerHTML
-    );
-    return result?.ok
-        ? { ok: true }
-        : { ok: false, error: result?.error || 'Node kaydedilemedi.' };
+    const result = await window.pisiProject?.saveNodeContent?.(mission.nodePath, template.innerHTML);
+    return result?.ok ? { ok: true } : { ok: false, error: result?.error || 'Node kaydedilemedi.' };
 }
 
 async function setPisiMissionStatusFirstRelease(mission, status) {
@@ -603,4 +564,4 @@ const moduleApi = {
     savePisiMissionMutationFirstRelease,
     setPisiMissionStatusFirstRelease
 };
-registerModule("tags.todoFirstRelease", moduleApi);
+registerModule('tags.todoFirstRelease', moduleApi);

@@ -51,10 +51,7 @@ test('operational mutation camera yan etkisinden ayrı domain commanddır', () =
     assert.match(mainDomain, /'map\.operational\.mutate\.v1'/);
     assert.match(mainDomain, /mapOperationalStore\.savePisiOperationalMapState/);
     assert.match(mainDomain, /delete camera\.operationalPayload/);
-    assert.match(
-        mainDomain,
-        /executePisiDomainCommand\(\s*'map\.operational\.mutate\.v1'/
-    );
+    assert.match(mainDomain, /executePisiDomainCommand\(\s*'map\.operational\.mutate\.v1'/);
 });
 
 test('compatibility IPC core task ve map çağrılarını domain dispatchere reroute eder', () => {

@@ -16,9 +16,7 @@ function normalizeDocumentMetadata(projectFolder, payload) {
         persist: true,
         ensureSidecar: true
     });
-    return result.ok
-        ? { ok: true, path: payload.path, changed: result.changed || false }
-        : result;
+    return result.ok ? { ok: true, path: payload.path, changed: result.changed || false } : result;
 }
 
 function ensureDocumentSidecar(projectFolder, payload) {
@@ -27,20 +25,14 @@ function ensureDocumentSidecar(projectFolder, payload) {
         persist: true,
         ensureSidecar: true
     });
-    return result.ok
-        ? { ok: true, path: payload.path, sidecarPath: result.sidecarPath }
-        : result;
+    return result.ok ? { ok: true, path: payload.path, sidecarPath: result.sidecarPath } : result;
 }
 
 function normalizeMapOperationalState(projectFolder, payload) {
     const filePath = shared.absolutePath(projectFolder, payload.path);
     const current = mapOperationalStore.readPisiOperationalMapState(filePath);
     if (!current.ok) return current;
-    return mapOperationalStore.writePisiOperationalMapState(
-        filePath,
-        current.state,
-        current.mapInfo
-    );
+    return mapOperationalStore.writePisiOperationalMapState(filePath, current.state, current.mapInfo);
 }
 
 function applySafeRepair(projectFolder, repair) {
@@ -65,13 +57,8 @@ function rebuildDerivedState(projectFolder, auditAfter) {
     const context = { issues: [] };
     const inventory = documents.collectDocumentInventory(projectRoot, context);
     const relationshipState = relationshipStore.readPisiRelationshipStore(projectRoot);
-    const relationships = Array.isArray(relationshipState.relationships)
-        ? relationshipState.relationships
-        : [];
-    const derived = mapSemanticCore.derivePisiConnectionTypesFromRelationships(
-        Array.from(inventory.nodeById.keys()),
-        relationships
-    );
+    const relationships = Array.isArray(relationshipState.relationships) ? relationshipState.relationships : [];
+    const derived = mapSemanticCore.derivePisiConnectionTypesFromRelationships(Array.from(inventory.nodeById.keys()), relationships);
     let nodesUpdated = 0;
     let mapsUpdated = 0;
 
@@ -98,18 +85,14 @@ function rebuildDerivedState(projectFolder, auditAfter) {
         });
         if (!info.ok || !info.data.map) continue;
         let changed = false;
-        const views = mapSemanticCore.normalizePisiRelationshipViews(
-            info.data.map.relationshipViews
-        );
+        const views = mapSemanticCore.normalizePisiRelationshipViews(info.data.map.relationshipViews);
         if (JSON.stringify(views) !== JSON.stringify(info.data.map.relationshipViews || [])) {
             info.data.map.relationshipViews = views;
             info.data.map.relationshipViewVersion = mapSemanticCore.PISI_MAP_RELATIONSHIP_VIEW_VERSION;
             changed = true;
         }
         if (info.data.map.operational !== undefined) {
-            const operational = mapOperationalStore.normalizePisiOperationalMapState(
-                info.data.map.operational
-            );
+            const operational = mapOperationalStore.normalizePisiOperationalMapState(info.data.map.operational);
             if (JSON.stringify(operational) !== JSON.stringify(info.data.map.operational)) {
                 info.data.map.operational = operational;
                 changed = true;

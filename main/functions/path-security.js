@@ -6,16 +6,11 @@ const fs = require('fs');
 const crypto = require('crypto');
 const { registerMainModule } = require('../module-registry');
 
-const pisiTestUserDataPath = String(
-    process.env.PISI_TEST_USER_DATA || ''
-).trim();
+const pisiTestUserDataPath = String(process.env.PISI_TEST_USER_DATA || '').trim();
 
 if (!app.isPackaged && pisiTestUserDataPath) {
     const resolvedUserDataPath = path.resolve(pisiTestUserDataPath);
-    const resolvedSessionDataPath = path.join(
-        resolvedUserDataPath,
-        'session'
-    );
+    const resolvedSessionDataPath = path.join(resolvedUserDataPath, 'session');
 
     fs.mkdirSync(resolvedUserDataPath, { recursive: true });
     fs.mkdirSync(resolvedSessionDataPath, { recursive: true });
@@ -24,11 +19,7 @@ if (!app.isPackaged && pisiTestUserDataPath) {
     app.setPath('sessionData', resolvedSessionDataPath);
 }
 
-const PISI_WINDOWS_RENAME_RETRY_CODES = new Set([
-    'EPERM',
-    'EACCES',
-    'EBUSY'
-]);
+const PISI_WINDOWS_RENAME_RETRY_CODES = new Set(['EPERM', 'EACCES', 'EBUSY']);
 const PISI_WINDOWS_RENAME_MAX_ATTEMPTS = 8;
 const PISI_WINDOWS_RENAME_RETRY_DELAY_MS = 35;
 const PISI_INTERNAL_DIRECTORY_GRACE_MS = 1200;
@@ -37,15 +28,10 @@ const recentInternalDirectoryChanges = new Map();
 function markInternalDirectoryChange(filePath) {
     if (!filePath) return;
 
-    const directoryPath = normalizePathForCompare(
-        path.dirname(path.resolve(filePath))
-    );
+    const directoryPath = normalizePathForCompare(path.dirname(path.resolve(filePath)));
     if (!directoryPath) return;
 
-    recentInternalDirectoryChanges.set(
-        directoryPath,
-        Date.now() + PISI_INTERNAL_DIRECTORY_GRACE_MS
-    );
+    recentInternalDirectoryChanges.set(directoryPath, Date.now() + PISI_INTERNAL_DIRECTORY_GRACE_MS);
 }
 
 function hasRecentInternalDirectoryChange(directoryPath) {
@@ -62,16 +48,10 @@ function hasRecentInternalDirectoryChange(directoryPath) {
     return (recentInternalDirectoryChanges.get(normalizedDirectory) || 0) > now;
 }
 
-
 function getInternalFileChangeSignature(filePath) {
     try {
         const stats = fs.statSync(filePath);
-        return [
-            stats.isDirectory() ? 'directory' : 'file',
-            stats.size,
-            stats.mtimeMs,
-            stats.ctimeMs
-        ].join(':');
+        return [stats.isDirectory() ? 'directory' : 'file', stats.size, stats.mtimeMs, stats.ctimeMs].join(':');
     } catch (error) {
         return error?.code === 'ENOENT' ? 'missing' : null;
     }
@@ -154,10 +134,7 @@ function hasRecentInternalFileChangeInside(directoryPath) {
             return true;
         }
 
-        if (
-            getInternalFileChangeSignature(changedPath) ===
-            entry.signature
-        ) {
+        if (getInternalFileChangeSignature(changedPath) === entry.signature) {
             return true;
         }
 
@@ -197,9 +174,7 @@ function relaxPisiWindowsRenamePermissions(filePath) {
 function renamePathInternal(oldPath, newPath) {
     markInternalFileChange(oldPath, newPath);
 
-    const maxAttempts = process.platform === 'win32'
-        ? PISI_WINDOWS_RENAME_MAX_ATTEMPTS
-        : 1;
+    const maxAttempts = process.platform === 'win32' ? PISI_WINDOWS_RENAME_MAX_ATTEMPTS : 1;
     let lastError = null;
 
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
@@ -220,9 +195,7 @@ function renamePathInternal(oldPath, newPath) {
                 return;
             }
 
-            const retryable = process.platform === 'win32' &&
-                PISI_WINDOWS_RENAME_RETRY_CODES.has(error?.code) &&
-                attempt + 1 < maxAttempts;
+            const retryable = process.platform === 'win32' && PISI_WINDOWS_RENAME_RETRY_CODES.has(error?.code) && attempt + 1 < maxAttempts;
 
             if (!retryable) {
                 sealInternalFileChange(oldPath, newPath);
@@ -230,9 +203,7 @@ function renamePathInternal(oldPath, newPath) {
             }
 
             relaxPisiWindowsRenamePermissions(oldPath);
-            waitForPisiWindowsRenameRetry(
-                PISI_WINDOWS_RENAME_RETRY_DELAY_MS * (attempt + 1)
-            );
+            waitForPisiWindowsRenameRetry(PISI_WINDOWS_RENAME_RETRY_DELAY_MS * (attempt + 1));
         }
     }
 
@@ -264,11 +235,7 @@ function writeSettings(settings) {
     const settingsPath = getSettingsPath();
 
     try {
-        writeFileAtomic(
-            settingsPath,
-            JSON.stringify(settings, null, 2),
-            { backup: false }
-        );
+        writeFileAtomic(settingsPath, JSON.stringify(settings, null, 2), { backup: false });
     } catch (error) {
         console.error('[PISI] Settings yazılamadı:', error);
     }
@@ -328,12 +295,7 @@ function keepWindowStateInsideDisplay(state) {
     const visibleOnSomeDisplay = displays.some((display) => {
         const area = display.workArea;
 
-        return (
-            x < area.x + area.width &&
-            x + width > area.x &&
-            y < area.y + area.height &&
-            y + height > area.y
-        );
+        return x < area.x + area.width && x + width > area.x && y < area.y + area.height && y + height > area.y;
     });
 
     if (!visibleOnSomeDisplay) {
@@ -360,14 +322,15 @@ function saveWindowState() {
     const isFullScreen = mainWindow.isFullScreen();
 
     const previousState = settings.windowState || {};
-    const bounds = (!isMaximized && !isFullScreen)
-        ? mainWindow.getBounds()
-        : {
-            x: previousState.x,
-            y: previousState.y,
-            width: previousState.width,
-            height: previousState.height
-        };
+    const bounds =
+        !isMaximized && !isFullScreen
+            ? mainWindow.getBounds()
+            : {
+                  x: previousState.x,
+                  y: previousState.y,
+                  width: previousState.width,
+                  height: previousState.height
+              };
 
     settings.windowState = {
         x: bounds.x,
@@ -400,10 +363,7 @@ function isPisiVisibleFile(fileName) {
 function isPisiManagedSidecarFolder(folderName) {
     if (!folderName) return false;
 
-    return (
-        folderName === '.pisi.lock' ||
-        /^(?:inv|nd)_.+__(?:node|map)_[A-Za-z0-9_-]{1,96}$/.test(folderName)
-    );
+    return folderName === '.pisi.lock' || /^(?:inv|nd)_.+__(?:node|map)_[A-Za-z0-9_-]{1,96}$/.test(folderName);
 }
 
 function getPisiFileExt(fileNameOrPath) {
@@ -465,19 +425,13 @@ function getUniquePisiPhysicalPath(dir, wantedTitle, ext, id, currentPath = null
 
     const plainPath = path.join(dir, cleanTitle + ext);
 
-    if (
-        !fs.existsSync(plainPath) ||
-        (currentPath && normalizePathForCompare(plainPath) === normalizePathForCompare(currentPath))
-    ) {
+    if (!fs.existsSync(plainPath) || (currentPath && normalizePathForCompare(plainPath) === normalizePathForCompare(currentPath))) {
         return plainPath;
     }
 
     const hybridPath = path.join(dir, `${cleanTitle}__${id}${ext}`);
 
-    if (
-        !fs.existsSync(hybridPath) ||
-        (currentPath && normalizePathForCompare(hybridPath) === normalizePathForCompare(currentPath))
-    ) {
+    if (!fs.existsSync(hybridPath) || (currentPath && normalizePathForCompare(hybridPath) === normalizePathForCompare(currentPath))) {
         return hybridPath;
     }
 
@@ -486,10 +440,7 @@ function getUniquePisiPhysicalPath(dir, wantedTitle, ext, id, currentPath = null
     while (true) {
         const fallbackPath = path.join(dir, `${cleanTitle}__${id}_${counter}${ext}`);
 
-        if (
-            !fs.existsSync(fallbackPath) ||
-            (currentPath && normalizePathForCompare(fallbackPath) === normalizePathForCompare(currentPath))
-        ) {
+        if (!fs.existsSync(fallbackPath) || (currentPath && normalizePathForCompare(fallbackPath) === normalizePathForCompare(currentPath))) {
             return fallbackPath;
         }
 
@@ -498,9 +449,7 @@ function getUniquePisiPhysicalPath(dir, wantedTitle, ext, id, currentPath = null
 }
 
 function sanitizeForSidecarName(name) {
-    return sanitizePisiBaseName(name)
-        .replace(/\s+/g, ' ')
-        .slice(0, 80);
+    return sanitizePisiBaseName(name).replace(/\s+/g, ' ').slice(0, 80);
 }
 
 function generatePisiId(ext) {
@@ -510,16 +459,9 @@ function generatePisiId(ext) {
 
 function normalizePisiId(value, ext = '') {
     const id = String(value || '').trim();
-    const expectedPrefix = ext === '.map'
-        ? 'map_'
-        : (ext === '.node' ? 'node_' : '');
+    const expectedPrefix = ext === '.map' ? 'map_' : ext === '.node' ? 'node_' : '';
 
-    if (
-        !id ||
-        id.length > 101 ||
-        !/^(?:map|node)_[A-Za-z0-9_-]+$/.test(id) ||
-        (expectedPrefix && !id.startsWith(expectedPrefix))
-    ) {
+    if (!id || id.length > 101 || !/^(?:map|node)_[A-Za-z0-9_-]+$/.test(id) || (expectedPrefix && !id.startsWith(expectedPrefix))) {
         return null;
     }
 
@@ -528,11 +470,11 @@ function normalizePisiId(value, ext = '') {
 
 function getDefaultNodeConnectionTypes() {
     return {
-        "up-hub": [],
-        "down-hub": [],
-        "co-level": [],
-        "upstream": [],
-        "downstream": []
+        'up-hub': [],
+        'down-hub': [],
+        'co-level': [],
+        upstream: [],
+        downstream: []
     };
 }
 
@@ -544,11 +486,11 @@ function normalizeNodeConnectionTypes(value) {
     }
 
     return {
-        "up-hub": Array.isArray(value["up-hub"]) ? value["up-hub"] : [],
-        "down-hub": Array.isArray(value["down-hub"]) ? value["down-hub"] : [],
-        "co-level": Array.isArray(value["co-level"]) ? value["co-level"] : [],
-        "upstream": Array.isArray(value["upstream"]) ? value["upstream"] : [],
-        "downstream": Array.isArray(value["downstream"]) ? value["downstream"] : []
+        'up-hub': Array.isArray(value['up-hub']) ? value['up-hub'] : [],
+        'down-hub': Array.isArray(value['down-hub']) ? value['down-hub'] : [],
+        'co-level': Array.isArray(value['co-level']) ? value['co-level'] : [],
+        upstream: Array.isArray(value['upstream']) ? value['upstream'] : [],
+        downstream: Array.isArray(value['downstream']) ? value['downstream'] : []
     };
 }
 
@@ -564,129 +506,191 @@ function normalizeConnectionRole(role) {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "getInternalFileChangeSignature": {
+    getInternalFileChangeSignature: {
         enumerable: true,
-        get() { return getInternalFileChangeSignature; }
+        get() {
+            return getInternalFileChangeSignature;
+        }
     },
-    "pruneExpiredInternalFileChanges": {
+    pruneExpiredInternalFileChanges: {
         enumerable: true,
-        get() { return pruneExpiredInternalFileChanges; }
+        get() {
+            return pruneExpiredInternalFileChanges;
+        }
     },
-    "markInternalFileChange": {
+    markInternalFileChange: {
         enumerable: true,
-        get() { return markInternalFileChange; }
+        get() {
+            return markInternalFileChange;
+        }
     },
-    "sealInternalFileChange": {
+    sealInternalFileChange: {
         enumerable: true,
-        get() { return sealInternalFileChange; }
+        get() {
+            return sealInternalFileChange;
+        }
     },
-    "isRecentInternalFileChange": {
+    isRecentInternalFileChange: {
         enumerable: true,
-        get() { return isRecentInternalFileChange; }
+        get() {
+            return isRecentInternalFileChange;
+        }
     },
-    "hasRecentInternalFileChangeInside": {
+    hasRecentInternalFileChangeInside: {
         enumerable: true,
-        get() { return hasRecentInternalFileChangeInside; }
+        get() {
+            return hasRecentInternalFileChangeInside;
+        }
     },
-    "hasRecentInternalDirectoryChange": {
+    hasRecentInternalDirectoryChange: {
         enumerable: true,
-        get() { return hasRecentInternalDirectoryChange; }
+        get() {
+            return hasRecentInternalDirectoryChange;
+        }
     },
-    "renamePathInternal": {
+    renamePathInternal: {
         enumerable: true,
-        get() { return renamePathInternal; }
+        get() {
+            return renamePathInternal;
+        }
     },
-    "getSettingsPath": {
+    getSettingsPath: {
         enumerable: true,
-        get() { return getSettingsPath; }
+        get() {
+            return getSettingsPath;
+        }
     },
-    "readSettings": {
+    readSettings: {
         enumerable: true,
-        get() { return readSettings; }
+        get() {
+            return readSettings;
+        }
     },
-    "writeSettings": {
+    writeSettings: {
         enumerable: true,
-        get() { return writeSettings; }
+        get() {
+            return writeSettings;
+        }
     },
-    "getDefaultWindowState": {
+    getDefaultWindowState: {
         enumerable: true,
-        get() { return getDefaultWindowState; }
+        get() {
+            return getDefaultWindowState;
+        }
     },
-    "getSavedWindowState": {
+    getSavedWindowState: {
         enumerable: true,
-        get() { return getSavedWindowState; }
+        get() {
+            return getSavedWindowState;
+        }
     },
-    "keepWindowStateInsideDisplay": {
+    keepWindowStateInsideDisplay: {
         enumerable: true,
-        get() { return keepWindowStateInsideDisplay; }
+        get() {
+            return keepWindowStateInsideDisplay;
+        }
     },
-    "saveWindowState": {
+    saveWindowState: {
         enumerable: true,
-        get() { return saveWindowState; }
+        get() {
+            return saveWindowState;
+        }
     },
-    "scheduleWindowStateSave": {
+    scheduleWindowStateSave: {
         enumerable: true,
-        get() { return scheduleWindowStateSave; }
+        get() {
+            return scheduleWindowStateSave;
+        }
     },
-    "isPisiVisibleFile": {
+    isPisiVisibleFile: {
         enumerable: true,
-        get() { return isPisiVisibleFile; }
+        get() {
+            return isPisiVisibleFile;
+        }
     },
-    "isPisiManagedSidecarFolder": {
+    isPisiManagedSidecarFolder: {
         enumerable: true,
-        get() { return isPisiManagedSidecarFolder; }
+        get() {
+            return isPisiManagedSidecarFolder;
+        }
     },
-    "getPisiFileExt": {
+    getPisiFileExt: {
         enumerable: true,
-        get() { return getPisiFileExt; }
+        get() {
+            return getPisiFileExt;
+        }
     },
-    "getPisiTypeFromExt": {
+    getPisiTypeFromExt: {
         enumerable: true,
-        get() { return getPisiTypeFromExt; }
+        get() {
+            return getPisiTypeFromExt;
+        }
     },
-    "getPisiSidecarPrefix": {
+    getPisiSidecarPrefix: {
         enumerable: true,
-        get() { return getPisiSidecarPrefix; }
+        get() {
+            return getPisiSidecarPrefix;
+        }
     },
-    "sanitizePisiBaseName": {
+    sanitizePisiBaseName: {
         enumerable: true,
-        get() { return sanitizePisiBaseName; }
+        get() {
+            return sanitizePisiBaseName;
+        }
     },
-    "stripPisiIdSuffix": {
+    stripPisiIdSuffix: {
         enumerable: true,
-        get() { return stripPisiIdSuffix; }
+        get() {
+            return stripPisiIdSuffix;
+        }
     },
-    "getVisibleTitleFromFilePath": {
+    getVisibleTitleFromFilePath: {
         enumerable: true,
-        get() { return getVisibleTitleFromFilePath; }
+        get() {
+            return getVisibleTitleFromFilePath;
+        }
     },
-    "getUniquePisiPhysicalPath": {
+    getUniquePisiPhysicalPath: {
         enumerable: true,
-        get() { return getUniquePisiPhysicalPath; }
+        get() {
+            return getUniquePisiPhysicalPath;
+        }
     },
-    "sanitizeForSidecarName": {
+    sanitizeForSidecarName: {
         enumerable: true,
-        get() { return sanitizeForSidecarName; }
+        get() {
+            return sanitizeForSidecarName;
+        }
     },
-    "generatePisiId": {
+    generatePisiId: {
         enumerable: true,
-        get() { return generatePisiId; }
+        get() {
+            return generatePisiId;
+        }
     },
-    "normalizePisiId": {
+    normalizePisiId: {
         enumerable: true,
-        get() { return normalizePisiId; }
+        get() {
+            return normalizePisiId;
+        }
     },
-    "getDefaultNodeConnectionTypes": {
+    getDefaultNodeConnectionTypes: {
         enumerable: true,
-        get() { return getDefaultNodeConnectionTypes; }
+        get() {
+            return getDefaultNodeConnectionTypes;
+        }
     },
-    "normalizeNodeConnectionTypes": {
+    normalizeNodeConnectionTypes: {
         enumerable: true,
-        get() { return normalizeNodeConnectionTypes; }
+        get() {
+            return normalizeNodeConnectionTypes;
+        }
     },
-    "normalizeConnectionRole": {
+    normalizeConnectionRole: {
         enumerable: true,
-        get() { return normalizeConnectionRole; }
+        get() {
+            return normalizeConnectionRole;
+        }
     }
 });
-registerMainModule("main.pathSecurity", moduleApi);
+registerMainModule('main.pathSecurity', moduleApi);

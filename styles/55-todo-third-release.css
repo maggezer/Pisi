@@ -281,7 +281,7 @@
     white-space: nowrap;
 }
 
-.pisi-third-calendar-task[data-status="blocked"] {
+.pisi-third-calendar-task[data-status='blocked'] {
     background: color-mix(in srgb, #d85a5a 18%, var(--panel-bg));
 }
 

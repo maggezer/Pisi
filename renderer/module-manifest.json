@@ -1,1101 +1,1048 @@
 [
-  {
-    "module": "editor.paint",
-    "path": "renderer/editor/pisi-editor-paint.mjs",
-    "bindings": [
-      "getPisiToolbarEditor",
-      "notifyPisiEditorChanged",
-      "runPisiEditorCommand",
-      "buildPisiRichToolbarControls",
-      "buildPisiPaintToolbarControls",
-      "buildPisiExcelToolbarControls",
-      "setupPisiRichToolbars",
-      "switchPisiToolbarTab",
-      "getPisiPaintState",
-      "updatePisiPaintStateFromToolbar",
-      "setPisiPaintTool",
-      "getPisiToolbarNumber",
-      "runPisiPaintAction",
-      "insertPisiCanvasFromToolbar",
-      "insertPisiCanvas",
-      "insertHtmlIntoPisiEditor",
-      "bindPisiAdvancedEditorDropTargets",
-      "movePisiCaretToPoint",
-      "initializePisiAdvancedEditorContent",
-      "pisiBoundPaintCanvases",
-      "pisiLoadedPaintImages",
-      "pisiPendingPaintImages",
-      "pisiDirtyPaintCanvases",
-      "resetPisiCanvasToWhite",
-      "ensurePisiCanvasWhiteBackground",
-      "hydratePisiPaintCanvases",
-      "bindPisiCanvas",
-      "selectPisiCanvas",
-      "getPisiCanvasPoint",
-      "drawPisiCanvasShape",
-      "savePisiCanvasData",
-      "getEditorForPisiElement"
-    ]
-  },
-  {
-    "module": "editor.documentInk",
-    "path": "renderer/editor/pisi-editor-document-ink.mjs",
-    "bindings": [
-      "PISI_DOCUMENT_INK_MAX_WIDTH",
-      "PISI_DOCUMENT_INK_MAX_HEIGHT",
-      "getPisiDocumentInkLayer",
-      "getPisiDocumentInkCanvas",
-      "hasPisiEmbeddedPaintCanvas",
-      "getPisiDocumentInkExtent",
-      "resizePisiDocumentInkCanvas",
-      "ensurePisiDocumentInkLayer",
-      "savePisiDocumentInkData",
-      "savePisiDocumentInkForEditor",
-      "hydratePisiDocumentInk",
-      "bindPisiDocumentInkCanvas",
-      "deactivatePisiDocumentInk",
-      "activatePisiDocumentInk",
-      "syncPisiDocumentInkForPaintTool",
-      "bindPisiInkSurfaces"
-    ]
-  },
-  {
-    "module": "editor.toolbarPopovers",
-    "path": "renderer/editor/pisi-editor-toolbar-popovers.mjs",
-    "bindings": [
-      "PISI_TOOLBAR_COLORS",
-      "PISI_TOOLBAR_SYMBOLS",
-      "closePisiToolbarPopover",
-      "positionPisiToolbarPopover",
-      "createPisiToolbarPopover",
-      "openPisiToolbarColorPopover",
-      "openPisiToolbarSymbolPopover"
-    ]
-  },
-  {
-    "module": "editor.toolbarMenus",
-    "path": "renderer/editor/pisi-editor-toolbar-menus.mjs",
-    "bindings": [
-      "PISI_TOOLBAR_FORMULA_GROUPS",
-      "getPisiPersonalFormulas",
-      "savePisiPersonalFormula",
-      "applyPisiToolbarFormula",
-      "openPisiToolbarFormulaPopover",
-      "openPisiToolbarSizePopover",
-      "openPisiToolbarShapePopover"
-    ]
-  },
-  {
-    "module": "editor.unifiedToolbar",
-    "path": "renderer/editor/pisi-editor-unified-toolbar.mjs",
-    "bindings": [
-      "PISI_FONT_SIZE_LABELS",
-      "buildPisiUnifiedToolbarMarkup",
-      "getPisiUnifiedToolbarActiveTable",
-      "runPisiUnifiedTextCommand",
-      "insertPisiToolbarSymbol",
-      "openPisiToolbarTodo",
-      "syncPisiUnifiedToolbarContext",
-      "bindPisiUnifiedToolbarEvents",
-      "setupPisiUnifiedToolbar",
-      "getPisiToolbarIconPath",
-      "syncPisiToolbarIconTheme"
-    ]
-  },
-  {
-    "module": "editor.sheetDatabase",
-    "path": "renderer/editor/pisi-editor-sheet-database.mjs",
-    "bindings": [
-      "PISI_SHEET_DATABASE_VERSION",
-      "PISI_SHEET_DEFAULT_COLUMN_WIDTH",
-      "PISI_SHEET_FORMAT_PROPERTIES",
-      "pisiSheetDatabases",
-      "createPisiSheetDatabase",
-      "normalizePisiSheetDatabase",
-      "attachPisiSheetDatabase",
-      "getPisiSheetDatabase",
-      "persistPisiSheetDatabase",
-      "getPisiSheetTableView",
-      "getPisiSheetOrderedFields",
-      "getPisiSheetDatabaseDimensions",
-      "getPisiSheetField",
-      "getPisiSheetItem",
-      "getPisiSheetCellSource",
-      "setPisiSheetCellSource",
-      "setPisiSheetCellFormat",
-      "clearPisiSheetCell",
-      "renamePisiSheetField",
-      "setPisiSheetFieldWidth",
-      "setPisiSheetFieldHidden",
-      "isPisiSheetFieldHidden",
-      "updatePisiSheetField",
-      "insertPisiSheetItem",
-      "deletePisiSheetItems",
-      "insertPisiSheetField",
-      "deletePisiSheetFields",
-      "transformPisiSheetDatabaseFormulas"
-    ]
-  },
-  {
-    "module": "editor.sheetFieldTypesUi",
-    "path": "renderer/editor/pisi-editor-sheet-field-types-ui.mjs",
-    "bindings": [
-      "renderPisiSheetTypedCell",
-      "beginPisiSheetTypedCellEdit",
-      "togglePisiSheetCheckboxCell",
-      "closePisiSheetTypedCellEditor",
-      "isPisiSheetTypedEditorTarget"
-    ]
-  },
-  {
-    "module": "editor.sheetViewQuery",
-    "path": "renderer/editor/pisi-editor-sheet-view-query.mjs",
-    "bindings": [
-      "getPisiSheetActiveViewFilters",
-      "getPisiSheetActiveViewSorts",
-      "getPisiSheetViewRecords",
-      "getPisiSheetVisibleRowIndices",
-      "getPisiSheetNextVisibleRowIndex",
-      "refreshPisiSheetViewQuery",
-      "setPisiSheetViewFilters",
-      "setPisiSheetViewSorts",
-      "addPisiSheetViewFilterCondition",
-      "addPisiSheetViewFilterGroup",
-      "updatePisiSheetViewFilterNode",
-      "removePisiSheetViewFilterNode",
-      "addPisiSheetViewSort",
-      "updatePisiSheetViewSort",
-      "removePisiSheetViewSort",
-      "movePisiSheetViewSort"
-    ]
-  },
-  {
-    "module": "editor.sheetDatabaseDom",
-    "path": "renderer/editor/pisi-editor-sheet-database-dom.mjs",
-    "bindings": [
-      "capturePisiSheetCellFormat",
-      "applyPisiSheetCellFormatToDom",
-      "hydratePisiSheetDatabase",
-      "renderPisiSheetDatabase",
-      "renderPisiSheetCellFromDatabase"
-    ]
-  },
-  {
-    "module": "editor.sheet",
-    "path": "renderer/editor/pisi-editor-sheet.mjs",
-    "bindings": [
-      "runPisiExcelAction",
-      "insertPisiSheet",
-      "buildPisiSheetHtml",
-      "PISI_SHEET_MAX_ROWS",
-      "PISI_SHEET_MAX_COLS",
-      "PISI_SHEET_MAX_RANGE_CELLS",
-      "pisiBoundSheets",
-      "pisiEditedSheetCells",
-      "getActivePisiSheetForEditor",
-      "applyPisiSheetFormula",
-      "commitPisiSheetCell",
-      "recalcPisiSheet",
-      "evaluatePisiSheetFormula",
-      "evaluatePisiArithmeticExpression",
-      "getPisiSheetCellNumericValue",
-      "getPisiSheetCellValue",
-      "getPisiSheetRangeValues",
-      "parsePisiCellRef",
-      "pisiColumnName",
-      "pisiColumnIndex",
-      "formatPisiSheetNumber"
-    ]
-  },
-  {
-    "module": "editor.sheetSelectionState",
-    "path": "renderer/editor/pisi-editor-sheet-selection-state.mjs",
-    "bindings": [
-      "pisiSheetSelections",
-      "getPisiSheetSelectionGroupIdFromDatabase",
-      "resolvePisiSheetSelectionPoint",
-      "getPisiSheetPointByIndexFromDatabase",
-      "getPisiSheetSelectionStateForDatabase",
-      "setPisiSheetSelectionStateForDatabase",
-      "clearPisiSheetSelectionStateForDatabase",
-      "getPisiSheetSelectionForDatabase",
-      "getPisiSheetSelectionFocusForDatabase",
-      "getPisiSheetActivePointForDatabase",
-      "getPisiSheetSelectionRect",
-      "getPisiSelectedSheetPointsForDatabase",
-      "getPisiSheetActiveGroupId",
-      "pisiSheetHeaderSelections",
-      "getPisiSheetHeaderSelectionStateForDatabase",
-      "setPisiSheetHeaderSelectionStateForDatabase",
-      "clearPisiSheetHeaderSelectionStateForDatabase",
-      "getPisiSheetHeaderSelectionForDatabase",
-      "clearPisiSheetAllSelectionStateForDatabase"
-    ]
-  },
-  {
-    "module": "editor.sheetHeaderSelection",
-    "path": "renderer/editor/pisi-editor-sheet-header-selection.mjs",
-    "bindings": [
-      "getPisiSheetHeaderSelection",
-      "getPisiSheetSelection",
-      "getPisiSelectedSheetPoints",
-      "selectPisiSheetRow",
-      "selectPisiSheetColumn",
-      "getPisiSheetVisibleColumnIndices",
-      "getPisiSheetNextVisibleColumn"
-    ]
-  },
-  {
-    "module": "editor.sheetSelection",
-    "path": "renderer/editor/pisi-editor-sheet-selection.mjs",
-    "bindings": [
-      "getPisiSheetDimensions",
-      "getPisiSheetSelectionGroupId",
-      "getPisiSheetSelectionState",
-      "setPisiSheetSelectionState",
-      "getPisiSheetSelectionFocus",
-      "getPisiSheetActivePoint",
-      "getPisiSheetActiveTable",
-      "getPisiSheetPointByIndex",
-      "syncPisiSheetSelectionProjection",
-      "getPisiSheetCellPosition",
-      "getPisiSheetCell",
-      "getPisiSelectedSheetCells",
-      "isPisiSheetCellSelected",
-      "renderPisiSheetSelection",
-      "setPisiSheetRangeSelection",
-      "ensurePisiSheetCellVisible",
-      "selectPisiSheetCell",
-      "selectAllPisiSheetCells",
-      "focusPisiSheetCell",
-      "syncPisiSheetFormulaInput",
-      "beginPisiSheetCellEdit",
-      "markPisiSheetCellEditFormulaReference",
-      "getPisiSheetCellEditState",
-      "finishPisiSheetCellEdit",
-      "isPisiSheetEditingCell",
-      "extendPisiSheetSelectionByKeyboard",
-      "movePisiSheetCellFocus",
-      "reconcilePisiSheetSelection",
-      "clearPisiSheetSelection"
-    ]
-  },
-  {
-    "module": "editor.sheetFormulaReference",
-    "path": "renderer/editor/pisi-editor-sheet-formula-reference.mjs",
-    "bindings": [
-      "beginPisiSheetFormulaReferencePick",
-      "updatePisiSheetFormulaReferencePick",
-      "finishPisiSheetFormulaReferencePick",
-      "closePisiSheetFormulaReferenceSession",
-      "movePisiSheetFormulaReferenceByKeyboard",
-      "isPisiSheetFormulaReferenceKeyboardNavigationActive",
-      "isPisiSheetFormulaReferencePicking",
-      "isPisiSheetFormulaInputActive",
-      "pisiSheetPointToReference",
-      "pisiSheetPointsToReference",
-      "applyPisiSheetFormulaInputOnEnter",
-      "trackPisiSheetFormulaInput",
-      "clearPisiSheetFormulaInputSession",
-      "handlePisiSheetFormulaReferenceKeydown"
-    ]
-  },
-  {
-    "module": "editor.sheetKeyboard",
-    "path": "renderer/editor/pisi-editor-sheet-keyboard.mjs",
-    "bindings": [
-      "handlePisiSheetSelectionKeydown",
-      "handlePisiSheetOutsidePointerDown"
-    ]
-  },
-  {
-    "module": "editor.sheetViewState",
-    "path": "renderer/editor/pisi-editor-sheet-view-state.mjs",
-    "bindings": [
-      "clonePisiSheetTableView",
-      "setPisiSheetActiveView",
-      "refreshPisiSheetActiveView",
-      "activatePisiSheetView"
-    ]
-  },
-  {
-    "module": "editor.sheetViewRulesUi",
-    "path": "renderer/editor/pisi-editor-sheet-view-rules-ui.mjs",
-    "bindings": [
-      "openPisiSheetViewRulesPanel",
-      "closePisiSheetViewRulesPanel",
-      "renderPisiSheetViewRulesPanel"
-    ]
-  },
-  {
-    "module": "editor.sheetColumnReorder",
-    "path": "renderer/editor/pisi-editor-sheet-column-reorder.mjs",
-    "bindings": [
-      "movePisiSheetField",
-      "movePisiSheetColumn",
-      "bindPisiSheetColumnReorder",
-      "getPisiSheetColumnDropIndex"
-    ]
-  },
-  {
-    "module": "editor.sheetColumnProperties",
-    "path": "renderer/editor/pisi-editor-sheet-column-properties.mjs",
-    "bindings": [
-      "PISI_SHEET_MIN_COLUMN_WIDTH",
-      "PISI_SHEET_MAX_COLUMN_WIDTH",
-      "PISI_SHEET_AUTO_FIT_MIN_WIDTH",
-      "PISI_SHEET_AUTO_FIT_MAX_WIDTH",
-      "PISI_SHEET_RESIZE_SNAP_PX",
-      "setPisiSheetColumnWidth",
-      "getPisiSheetColumnAutoFitWidth",
-      "autoFitPisiSheetColumn",
-      "startPisiSheetColumnResize",
-      "closePisiSheetColumnMenu",
-      "openPisiSheetColumnMenu"
-    ]
-  },
-  {
-    "module": "editor.sheetInteractions",
-    "path": "renderer/editor/pisi-editor-sheet-interactions.mjs",
-    "bindings": [
-      "pisiSheetNotifyTimers",
-      "hydratePisiSheets"
-    ]
-  },
-  {
-    "module": "editor.sheetStructure",
-    "path": "renderer/editor/pisi-editor-sheet-structure.mjs",
-    "bindings": [
-      "setPisiSheetColumnLabel",
-      "refreshPisiSheetCellMetadata",
-      "getPisiSheetMutationFocus",
-      "updatePisiSheetFormulaReferences",
-      "addPisiSheetRow",
-      "addPisiSheetColumn",
-      "deletePisiSheetRows",
-      "deletePisiSheetColumns",
-      "applyPisiSheetCellFormat",
-      "clearPisiSheetSelectedCells",
-      "schedulePisiSheetEditorNotification",
-      "setPisiSheetToolbarStatus",
-      "syncPisiSheetToolbarForTable",
-      "syncPisiSheetToolbarState"
-    ]
-  },
-  {
-    "module": "shell.window",
-    "path": "renderer/shell/pisi-window.mjs",
-    "bindings": [
-      "setupWindowControls",
-      "bindRightPanelTabs",
-      "setupCenterFileTabs",
-      "setupPisiAppMenu"
-    ]
-  },
-  {
-    "module": "shell.tabs",
-    "path": "renderer/shell/pisi-tabs.mjs",
-    "bindings": [
-      "getPisiOpenTabsState",
-      "pisiSameTabPath",
-      "getPisiOpenTabType",
-      "getPisiOpenTabTitle",
-      "clonePisiTabItem",
-      "ensurePisiOpenTab",
-      "openPisiFileTab",
-      "activatePisiOpenTab",
-      "closePisiOpenTab",
-      "removePisiOpenTabByPath",
-      "resetPisiOpenTabs",
-      "updatePisiOpenTabAfterRename",
-      "replacePisiClientPathPrefix",
-      "applyPisiPathChanges",
-      "isPisiPathAtOrBelow",
-      "removePisiOpenTabsForDeletedPaths",
-      "pisiClientPathsOverlap",
-      "getActiveMapTabItemForReload",
-      "isExternalChangeRelevantToActiveMap",
-      "confirmPisiExternalReload",
-      "reloadPisiWorkspaceAfterExternalChange",
-      "pisiFileSystemRefreshTail",
-      "handlePisiExternalFileSystemChange",
-      "renamePisiOpenTabTitle"
-    ]
-  },
-  {
-    "module": "shell.startup",
-    "path": "renderer/shell/pisi-startup.mjs",
-    "bindings": [
-      "beginPisiOpenTabTitleRename",
-      "selectPisiTreeFileByPath",
-      "renderPisiOpenTabs",
-      "setupProjectStartup",
-      "createPisiFileInCurrentProject",
-      "refocusPisiRenderer",
-      "focusPisiTextInput",
-      "escapePisiConfirmText",
-      "resetPisiKeyboardAndPointerState"
-    ]
-  },
-  {
-    "module": "shell.dialogs",
-    "path": "renderer/shell/pisi-dialogs.mjs",
-    "bindings": [
-      "pisiConfirm"
-    ]
-  },
-  {
-    "module": "shell.commandCenter",
-    "path": "renderer/shell/pisi-command-center.mjs",
-    "bindings": [
-      "pisiCommandCenterState",
-      "ensurePisiCommandCenter",
-      "registerPisiCommandCenterPage",
-      "renderPisiCommandCenterPage",
-      "openPisiCommandCenter",
-      "closePisiCommandCenter",
-      "initializePisiCommandCenter"
-    ]
-  },
-  {
-    "module": "sync.settings",
-    "path": "renderer/sync/pisi-sync-settings.mjs",
-    "bindings": [
-      "pisiSyncTranslate",
-      "formatPisiSyncTime",
-      "getPisiRendererSyncStatus",
-      "makePisiSyncButton",
-      "refreshPisiSyncSettings",
-      "runPisiRendererSync",
-      "renderPisiSyncSettings",
-      "schedulePisiAutoSync",
-      "initializePisiSyncSettings"
-    ]
-  },
-  {
-    "module": "shell.customizations",
-    "path": "renderer/shell/pisi-customizations.mjs",
-    "bindings": [
-      "PISI_CUSTOMIZATION_STORAGE_KEY",
-      "PISI_DEFAULT_CUSTOMIZATION",
-      "PISI_CUSTOMIZATION_CSS_VARIABLES",
-      "loadPisiCustomizationSettings",
-      "savePisiCustomizationSettings",
-      "isValidPisiHexColor",
-      "normalizePisiSizeValue",
-      "resolvePisiCustomizationValue",
-      "applyPisiCustomizationSettings",
-      "syncPisiCustomizationInputs",
-      "renderPisiCustomizationPreferences",
-      "applyPisiMapNodeCustomization",
-      "getPisiMapEdgeCustomizationColor",
-      "getPisiMapCustomizationContext",
-      "renderPisiMapCustomizationPanel",
-      "syncPisiMapCustomizationTab",
-      "setupPisiCustomizations"
-    ]
-  },
-  {
-    "module": "tree.project",
-    "path": "renderer/tree/pisi-project.mjs",
-    "bindings": [
-      "MAP_ZOOM_STEP",
-      "MAP_ZOOM_MIN",
-      "MAP_ZOOM_MAX",
-      "MAP_ZOOM_HOLD_INTERVAL",
-      "getPisiProjectTitleFromPath",
-      "updatePisiProjectTitle",
-      "suppressNextFileSystemRefresh",
-      "shouldSuppressFileSystemRefresh",
-      "validateCurrentProject",
-      "pisiProjectRefreshSequence",
-      "pisiProjectRefreshTail",
-      "pisiProjectRefreshWaiters",
-      "resolvePisiProjectRefreshWaiters",
-      "refreshCurrentProjectTree",
-      "showProjectModal",
-      "hideProjectModal",
-      "chooseAndLoadProject",
-      "loadProject",
-      "pisiTreeRootRenderId",
-      "isCurrentPisiTreeRootRender",
-      "renderFolderTree"
-    ]
-  },
-  {
-    "module": "tree.dragDrop",
-    "path": "renderer/tree/pisi-tree-dnd.mjs",
-    "bindings": [
-      "getPisiTreeDragStateItem",
-      "setPisiTreeDragStateItem",
-      "clonePisiTreeDragItem",
-      "getClientPathBaseName",
-      "getAncestorMapItemForTreeNode",
-      "isTreeDropInsideDraggedNode",
-      "canDropTreeItemOnTarget",
-      "reparentMapNodeFromTreeDrop",
-      "moveTreeItemToFolder",
-      "handleTreeDrop",
-      "bindTreeRowDragAndDrop",
-      "bindFileTreeRootDropZone",
-      "createTreeNode",
-      "deleteTreePisiItem",
-      "handleDeletedMapFromTree"
-    ]
-  },
-  {
-    "module": "tree.view",
-    "path": "renderer/tree/pisi-tree-view.mjs",
-    "bindings": [
-      "handleDeletedNodeFromTree",
-      "findTreeNodeByPath",
-      "getDirectTreeChildrenContainer",
-      "rememberExpandedPathsUnder",
-      "refreshActiveMapTreeBranch",
-      "findTreeNodeByPisiId",
-      "ensureTreeChildrenContainer",
-      "setTreeNodeLevelRecursive",
-      "dedupeTreeNodeByPisiId",
-      "moveTreeNodeUnderParent",
-      "animateTreeRow",
-      "appendTreeItemToContainer",
-      "makeTreeItemFromCreateResult",
-      "updateTreeItemAfterRename",
-      "normalizeClientPath",
-      "sameClientPath",
-      "findMapNodeBoxByPath",
-      "animateMapBox",
-      "updateOpenMapNodeAfterRename",
-      "appendMapNodeBox",
-      "createNodeUnderMapFromTree",
-      "selectTreeFile",
-      "startRenameSelectedTreeFile",
-      "startRenameTreeFile",
-      "loadFolderChildren",
-      "makeTreeItemFromMapNode",
-      "getTreeRolesFromEdge",
-      "buildMapNodeTreeItems",
-      "loadSyntheticTreeChildren",
-      "loadMapTreeChildren"
-    ]
-  },
-  {
-    "module": "map.workspace",
-    "path": "renderer/map/pisi-map-workspace.mjs",
-    "bindings": [
-      "isMapFileName",
-      "isNodeFileName",
-      "getFileIcon",
-      "samePisiWorkspacePath",
-      "openMapInWorkspace",
-      "clearMapWorkspace",
-      "createMapNodeBox",
-      "bindMapNodeBoxEvents",
-      "bindMapNodeDrag",
-      "bindMapNodeResize",
-      "collectMapLayout",
-      "scheduleMapLayoutSave",
-      "saveCurrentMapLayout",
-      "startMapNodeTitleEdit",
-      "setPisiEditorContent",
-      "getPisiEditorContent",
-      "markdownTextToPisiEditorHtml"
-    ]
-  },
-  {
-    "module": "map.creation",
-    "path": "renderer/map/pisi-map-creation.mjs",
-    "bindings": [
-      "getMapWorldPointFromClient",
-      "isMapBlankEventTarget",
-      "createMapNodeBoxAtClientPoint",
-      "hidePisiMapContextMenu",
-      "showPisiMapContextMenu",
-      "bindMapCreationEvents"
-    ]
-  },
-  {
-    "module": "editor.node",
-    "path": "renderer/editor/pisi-node-editor.mjs",
-    "bindings": [
-      "sanitizePisiEditorHtml",
-      "dispatchPisiActiveNodeChanged",
-      "openNodeModalFromBox",
-      "closeNodeModalAndSave",
-      "closeNodeModalWithoutSaving",
-      "getCenterNodeEditorElements",
-      "bindCenterNodeEditorControls",
-      "scheduleCenterNodeEditorSave",
-      "openCenterNodeEditor",
-      "pisiCenterSaveTail",
-      "saveCurrentCenterNodeEditor",
-      "performCurrentCenterNodeEditorSave",
-      "clearCenterNodeEditor",
-      "flushPisiPendingSaves"
-    ]
-  },
-  {
-    "module": "tags.editorBlocks",
-    "path": "renderer/tags/pisi-editor-blocks.mjs",
-    "bindings": [
-      "makePisiBlockId",
-      "isPisiEditorBlockElement",
-      "decoratePisiEditorBlock",
-      "ensurePisiEditorBlocks",
-      "getPisiBlockElementsFromContainer",
-      "createPisiInertHtmlTemplate"
-    ]
-  },
-  {
-    "module": "tags.index",
-    "path": "renderer/tags/pisi-tag-index.mjs",
-    "bindings": [
-      "bindPisiBlockIndexControls",
-      "bindPisiTagPickerOutsideClose",
-      "extractPisiTagsFromBlock",
-      "refreshPisiTagsPanelSoon",
-      "resetPisiTagsForProject",
-      "refreshPisiTagsPanel",
-      "normalizeClientPathForTags",
-      "samePisiPathForTags",
-      "getPisiTagsActiveMapPath",
-      "getPisiTagsActiveMapNodes",
-      "collectPisiDiaryTagNodeItems",
-      "extractPisiTagBlocksForNodeItem",
-      "isPisiMissionNodeFileName",
-      "isPisiMissionMapFileName",
-      "makePisiMissionNodeItem",
-      "collectPisiMissionNodeItemsFromFolder",
-      "buildPisiMissionBlockIndex",
-      "buildPisiTagBlockIndex",
-      "extractPisiTagBlocksFromHtmlDetailed",
-      "extractPisiTagBlocksFromHtml",
-      "persistPisiAssignedBlockIds",
-      "refreshPisiMissionIndex",
-      "bindPisiMissionIndexInvalidation"
-    ]
-  },
-  {
-    "module": "tags.panels",
-    "path": "renderer/tags/pisi-tag-panels.mjs",
-    "bindings": [
-      "ensurePisiTagsPanelDom",
-      "renderPisiTagsPanel",
-      "parsePisiTodoTag",
-      "formatPisiMissionDate",
-      "getPisiMissionsFromIndex",
-      "escapePisiMissionRegExp",
-      "getPisiMissionDisplayText",
-      "renderPisiMissionsPanel",
-      "normalizePisiBlockText",
-      "createPisiDoneTagElement",
-      "blockHasPisiDoneTag",
-      "blockHasPisiTag",
-      "appendPisiDoneTagToBlock",
-      "removePisiDoneTagFromBlock",
-      "findPisiMissionBlockInContainer",
-      "setPisiMissionCompletionInBlock",
-      "rollbackPisiMissionBlock",
-      "setPisiMissionCompletion"
-    ]
-  },
-  {
-    "module": "tags.todoNavigation",
-    "path": "renderer/tags/pisi-todo-navigation.mjs",
-    "bindings": [
-      "openPisiTagBlockResult",
-      "highlightPisiEditorBlock",
-      "bindPisiMissionHighlightSanitizer"
-    ]
-  },
-  {
-    "module": "tags.editor",
-    "path": "renderer/tags/pisi-tag-editor.mjs",
-    "bindings": [
-      "markPisiMissionDone",
-      "reopenPisiMission",
-      "isPisiTodoCommand",
-      "isPisiDoneCommand",
-      "buildPisiTodoPriorityItems",
-      "openPisiTodoPriorityMenu",
-      "openPisiTodoDateMenu",
-      "bindPisiTagControls",
-      "bindPisiTagControlsForEditor",
-      "collectPisiUserTagsFromEditor",
-      "collectPisiUserTagSuggestions",
-      "openPisiTagMenuForEditor",
-      "applyPisiTagMenuItem",
-      "closePisiTagMenu",
-      "movePisiTagSelection",
-      "applyPisiUserTagToEditor",
-      "normalizePisiUserTag",
-      "isValidPisiUserTag",
-      "makeRangeInElementByTextOffsets",
-      "getPisiCurrentEditorBlock",
-      "placeCaretAtEnd",
-      "positionPisiTagMenuAtSelection",
-      "getSelectionClientRect",
-      "pisiEscapeHtml",
-      "escapeHtml"
-    ]
-  },
-  {
-    "module": "tags.todoSecondRelease",
-    "path": "renderer/tags/pisi-todo-second-release.mjs",
-    "bindings": [
-      "pisiTodoSecondReleaseState",
-      "makePisiMissionIdSecondRelease",
-      "getPisiSubtaskParentIdSecondRelease",
-      "enhancePisiMissionSecondRelease",
-      "sortPisiMissionsSecondRelease",
-      "matchesPisiMissionStatusFilterSecondRelease",
-      "appendPisiMissionSecondReleaseToolbar",
-      "enhancePisiMissionCardSecondRelease",
-      "setPisiMissionRepeatSecondRelease",
-      "setPisiMissionOrderSecondRelease",
-      "addPisiSubtaskSecondRelease",
-      "createNextPisiRecurringMissionSecondRelease",
-      "togglePisiMissionCompletionSecondRelease",
-      "persistPisiMissionManualOrderSecondRelease"
-    ]
-  },
-  {
-    "module": "tags.todoFirstRelease",
-    "path": "renderer/tags/pisi-todo-first-release.mjs",
-    "bindings": [
-      "pisiTodoTranslateFirstRelease",
-      "formatPisiMissionDateFirstRelease",
-      "getPisiMissionsFromIndexFirstRelease",
-      "getPisiMissionDisplayTextFirstRelease",
-      "getPisiMissionFilterCountsFirstRelease",
-      "removePisiMissionBadgesFirstRelease",
-      "syncPisiMissionBadgesFirstRelease",
-      "renderPisiMissionsPanelFirstRelease",
-      "createPisiUserTagElement",
-      "getPisiSelectionTextOffset",
-      "capturePisiTodoSelection",
-      "applyPisiTodoSelectionToEditor",
-      "findPisiMissionTodoTagElementFirstRelease",
-      "setPisiMissionStatusInBlockFirstRelease",
-      "savePisiMissionMutationFirstRelease",
-      "setPisiMissionStatusFirstRelease"
-    ]
-  },
-  {
-    "module": "tags.todoBlocks",
-    "path": "renderer/tags/pisi-todo-blocks.mjs",
-    "bindings": [
-      "normalizePisiTodoBlockTag",
-      "getPisiTodoTagFromBlock",
-      "isPisiTodoBlockCompleted",
-      "ensurePisiTodoBlockMarker",
-      "syncPisiTodoBlockMarkers",
-      "setPisiTodoBlockCompletion",
-      "applyPisiTodoTagToEditor",
-      "createPisiTodoBlockCommand",
-      "openPisiTodoPickerForEditor",
-      "applyPisiDoneCommandToEditor"
-    ]
-  },
-  {
-    "module": "search.index",
-    "path": "renderer/search/pisi-search-index.mjs",
-    "bindings": [
-      "ensurePisiSearchIndex",
-      "invalidatePisiSearchIndex",
-      "refreshPisiSearchIndex",
-      "createPisiSearchDocumentRecord",
-      "getPisiSearchCurrentNodePath",
-      "getPisiSearchLiveIndex",
-      "getPisiSearchCacheStats",
-      "getPisiSearchMetadataSignature",
-      "getPisiSearchDocumentSignature",
-      "applyPisiSearchFilesystemDelta"
-    ]
-  },
-  {
-    "module": "search.global",
-    "path": "renderer/search/pisi-global-search.mjs",
-    "bindings": [
-      "openPisiGlobalSearch",
-      "closePisiGlobalSearch",
-      "openPisiSearchResult",
-      "focusPisiSearchMapBox",
-      "highlightPisiSearchEditorTarget"
-    ]
-  },
-  {
-    "module": "search.rightPanel",
-    "path": "renderer/search/pisi-search-panel.mjs",
-    "bindings": [
-      "installPisiRightSearchPanel",
-      "activatePisiRightSearchPanel"
-    ]
-  },
-  {
-    "module": "search.linksPanel",
-    "path": "renderer/search/pisi-links-panel.mjs",
-    "bindings": [
-      "installPisiLinksPanel",
-      "refreshPisiLinksPanel",
-      "schedulePisiLinksPanelRefresh"
-    ]
-  },
-  {
-    "module": "productivity.quickCapture",
-    "path": "renderer/productivity/pisi-quick-capture.mjs",
-    "bindings": [
-      "pisiQuickCaptureState",
-      "formatPisiTaskMinutes",
-      "initializePisiQuickCapture",
-      "openPisiQuickAddModal",
-      "closePisiQuickAddModal"
-    ]
-  },
-  {
-    "module": "data.structuredViews",
-    "path": "renderer/data/pisi-structured-views.mjs",
-    "bindings": [
-      "pisiStructuredViewState",
-      "appendPisiPropertyRow",
-      "collectPisiMapPropertyDefinitions",
-      "createPisiPropertyRow",
-      "collectPisiPropertyRows",
-      "getPisiNodePropertyMapContext",
-      "getPisiActiveMapPropertyContext",
-      "readPisiPropertyControlValue",
-      "renderPisiNodeProperties",
-      "renderPisiBases"
-    ]
-  },
-  {
-    "module": "data.basesDialog",
-    "path": "renderer/data/pisi-bases-dialog.mjs",
-    "bindings": [
-      "pisiBasesDialogState",
-      "closePisiBasesDialog",
-      "ensurePisiBasesDialog",
-      "initializePisiBasesDialog",
-      "installPisiBasesMapTrigger",
-      "openPisiBasesDialog",
-      "renderPisiBasesDialogBody",
-      "syncPisiBasesMapTrigger"
-    ]
-  },
-  {
-    "module": "data.propertyTemplates",
-    "path": "renderer/data/pisi-property-templates.mjs",
-    "bindings": [
-      "renderPisiPropertyTemplatesPage",
-      "initializePisiPropertyTemplates"
-    ]
-  },
-  {
-    "module": "data.rollupBlocks",
-    "path": "renderer/data/pisi-rollup-blocks.mjs",
-    "bindings": [
-      "pisiRollupBlockState",
-      "hydratePisiRollupBlocks",
-      "insertPisiRollupBlock",
-      "openPisiRollupDialog",
-      "renderPisiRollupBlock",
-      "initializePisiRollupBlocks"
-    ]
-  },
-  {
-    "module": "data.nodePropertiesUi",
-    "path": "renderer/data/pisi-node-properties-ui.mjs",
-    "bindings": [
-      "pisiNodePropertiesUiState",
-      "installPisiNodePropertyDrawers",
-      "togglePisiNodePropertiesDrawer",
-      "renderPisiNodePropertiesInfo",
-      "syncPisiNodePropertiesTab",
-      "initializePisiNodePropertiesUi"
-    ]
-  },
-  {
-    "module": "portability.panel",
-    "path": "renderer/portability/pisi-portability-panel.mjs",
-    "bindings": [
-      "makePisiSimpleDiff",
-      "showPisiHistoryPreview",
-      "renderPisiHistory",
-      "renderPisiBackups",
-      "renderPisiExportActions",
-      "renderPisiIntegrityReport",
-      "renderPisiIntegritySettings",
-      "openPisiHistoryDialog",
-      "openPisiExportDialog",
-      "runPisiImportAction",
-      "handlePisiPortabilityAction",
-      "initializePisiPortabilityActions"
-    ]
-  },
-  {
-    "module": "editor.preview",
-    "path": "renderer/editor/pisi-node-preview.mjs",
-    "bindings": [
-      "bindNodeModalControls",
-      "PISI_NODE_PREVIEW_DELAY_MS",
-      "pisiNodePreviewTimer",
-      "pisiNodePreviewRequest",
-      "hidePisiCanvasHints",
-      "parsePisiNodePreviewContent",
-      "findPisiMapNodeForBox",
-      "stylePisiCanvasThumbnail",
-      "refreshPisiMapNodeCanvasPreview",
-      "refreshPisiMapNodePreviewFromDisk",
-      "refreshAllPisiMapNodePreviewsFromDisk",
-      "stylePisiHoverLayer",
-      "getPisiNodePreviewLayer",
-      "hidePisiNodeHoverPreview",
-      "positionPisiNodeHoverPreview",
-      "appendPisiHoverPreviewContent",
-      "showPisiNodeHoverPreview",
-      "schedulePisiNodeHoverPreview",
-      "processPisiPreviewAddedNode",
-      "bindPisiMapNodePreviewEvents",
-      "setupPisiNodePreviews"
-    ]
-  },
-  {
-    "module": "map.interactions",
-    "path": "renderer/map/pisi-map-interactions.mjs",
-    "bindings": [
-      "getTreeItemDisplayName",
-      "getConnectionDataFromEvent",
-      "isHierarchyEdge",
-      "getCollapsedHubPortSet",
-      "makeCollapsedHubPortKey",
-      "hasOutgoingHubEdgesFromPort",
-      "collectCollapsedHubNodeIds",
-      "syncCollapsedHubNodeVisibility",
-      "isHubEdgeCollapsed",
-      "syncHubPortCollapseVisuals",
-      "toggleHubConnectionsFromPort",
-      "convertEdgeToStream",
-      "targetAlreadyHasUpHub",
-      "enforceSingleParentForTarget",
-      "getConnectionClass",
-      "getPortPoint",
-      "getMousePointInCanvas",
-      "getPortDirection",
-      "offsetPoint",
-      "getDistance",
-      "getMapConnectionVisualMetrics",
-      "syncMapConnectionZoomStyles",
-      "makeConnectionPathFromBoxes",
-      "makeTempConnectionPath",
-      "ensureTempEdgePath",
-      "clearTempEdgePath",
-      "applyMapCamera",
-      "clampMapZoom",
-      "zoomMapAtClientPoint",
-      "zoomMapFromCenter",
-      "saveActiveMapCameraSoon",
-      "scheduleMapCameraSave",
-      "flushActiveMapCameraSave",
-      "bindMapZoomEvents",
-      "bindMapZoomControls",
-      "bindHoldZoomButton",
-      "clearSelectedMapNodes",
-      "getSelectedMapNodeBoxes",
-      "getClientSelectionRect",
-      "rectsIntersect",
-      "rectContainsRect",
-      "applyMapBoxSelection",
-      "updateMapSelectionBoxVisual",
-      "setupMapCanvasPan"
-    ]
-  },
-  {
-    "module": "map.edges",
-    "path": "renderer/map/pisi-map-edges.mjs",
-    "bindings": [
-      "persistPisiMapConnection",
-      "pisiKeyboardConnectionSource",
-      "notifyPisiMapCustomizationContextChanged",
-      "selectPisiMapEdge",
-      "resetPisiMapConnectionInteractions",
-      "bindMapPortEvents",
-      "deleteMapEdge",
-      "createMapEdgeDeleteButton",
-      "getMapEdgePathMidpoint",
-      "updateMapEdgeDeleteButtonPosition",
-      "pisiConnectionDrawFrame",
-      "getPisiMapEdgeMarkerId",
-      "ensurePisiMapEdgeMarker",
-      "applyPisiMapEdgeCustomization",
-      "bindPisiMapEdgeSelection",
-      "scheduleDrawMapConnections",
-      "drawMapConnections"
-    ]
-  },
-  {
-    "module": "map.export",
-    "path": "renderer/map/pisi-map-export.mjs",
-    "bindings": [
-      "escapePisiMapExportXml",
-      "collectPisiMapExportNodes",
-      "getPisiMapExportBounds",
-      "makePisiMapExportConnectionPath",
-      "buildPisiMapExportSvg",
-      "rasterizePisiMapExportSvg",
-      "closePisiMapExportMenu",
-      "syncPisiMapExportControl",
-      "exportCurrentPisiMap",
-      "ensurePisiMapExportControl",
-      "updatePisiMapExportTranslations",
-      "initializePisiMapExport"
-    ]
-  },
-  {
-    "module": "core.commands",
-    "path": "renderer/core/pisi-command-registry.mjs",
-    "bindings": [
-      "PISI_SHORTCUT_STORAGE_KEY",
-      "normalizePisiShortcut",
-      "getPisiEventShortcut",
-      "registerPisiCommand",
-      "listPisiCommands",
-      "runPisiCommand",
-      "getPisiCommandShortcut",
-      "findPisiShortcutConflict",
-      "setPisiCommandShortcut",
-      "resetPisiCommandShortcut",
-      "openPisiCommandPalette",
-      "closePisiCommandPalette",
-      "renderPisiShortcutSettings",
-      "initializePisiCommandRegistry",
-      "formatPisiShortcutForDisplay"
-    ]
-  },
-  {
-    "module": "editor.blocks",
-    "path": "renderer/editor/pisi-block-editor.mjs",
-    "bindings": [
-      "PISI_BLOCK_TYPES",
-      "PISI_BLOCK_SLASH_COMMANDS",
-      "pisiBlocksEditorState",
-      "pisiBlockMarkdownToHtml",
-      "pisiBlockHtmlToMarkdown",
-      "getPisiBlockType",
-      "getPisiActiveBlocksEditor",
-      "getPisiActiveBlock",
-      "hydratePisiBlockTaskMarker",
-      "decoratePisiBlockTypes",
-      "applyPisiBlockType",
-      "movePisiBlock",
-      "duplicatePisiBlock",
-      "deletePisiBlock",
-      "copyPisiBlockReference",
-      "selectPisiBlock",
-      "bindPisiBlocksEditor",
-      "openPisiMarkdownSource",
-      "closePisiMarkdownSource",
-      "addPisiBlockBelow",
-      "initializePisiBlocksEditor"
-    ]
-  }
+    {
+        "module": "editor.paint",
+        "path": "renderer/editor/pisi-editor-paint.mjs",
+        "bindings": [
+            "getPisiToolbarEditor",
+            "notifyPisiEditorChanged",
+            "runPisiEditorCommand",
+            "buildPisiRichToolbarControls",
+            "buildPisiPaintToolbarControls",
+            "buildPisiExcelToolbarControls",
+            "setupPisiRichToolbars",
+            "switchPisiToolbarTab",
+            "getPisiPaintState",
+            "updatePisiPaintStateFromToolbar",
+            "setPisiPaintTool",
+            "getPisiToolbarNumber",
+            "runPisiPaintAction",
+            "insertPisiCanvasFromToolbar",
+            "insertPisiCanvas",
+            "insertHtmlIntoPisiEditor",
+            "bindPisiAdvancedEditorDropTargets",
+            "movePisiCaretToPoint",
+            "initializePisiAdvancedEditorContent",
+            "pisiBoundPaintCanvases",
+            "pisiLoadedPaintImages",
+            "pisiPendingPaintImages",
+            "pisiDirtyPaintCanvases",
+            "resetPisiCanvasToWhite",
+            "ensurePisiCanvasWhiteBackground",
+            "hydratePisiPaintCanvases",
+            "bindPisiCanvas",
+            "selectPisiCanvas",
+            "getPisiCanvasPoint",
+            "drawPisiCanvasShape",
+            "savePisiCanvasData",
+            "getEditorForPisiElement"
+        ]
+    },
+    {
+        "module": "editor.documentInk",
+        "path": "renderer/editor/pisi-editor-document-ink.mjs",
+        "bindings": [
+            "PISI_DOCUMENT_INK_MAX_WIDTH",
+            "PISI_DOCUMENT_INK_MAX_HEIGHT",
+            "getPisiDocumentInkLayer",
+            "getPisiDocumentInkCanvas",
+            "hasPisiEmbeddedPaintCanvas",
+            "getPisiDocumentInkExtent",
+            "resizePisiDocumentInkCanvas",
+            "ensurePisiDocumentInkLayer",
+            "savePisiDocumentInkData",
+            "savePisiDocumentInkForEditor",
+            "hydratePisiDocumentInk",
+            "bindPisiDocumentInkCanvas",
+            "deactivatePisiDocumentInk",
+            "activatePisiDocumentInk",
+            "syncPisiDocumentInkForPaintTool",
+            "bindPisiInkSurfaces"
+        ]
+    },
+    {
+        "module": "editor.toolbarPopovers",
+        "path": "renderer/editor/pisi-editor-toolbar-popovers.mjs",
+        "bindings": [
+            "PISI_TOOLBAR_COLORS",
+            "PISI_TOOLBAR_SYMBOLS",
+            "closePisiToolbarPopover",
+            "positionPisiToolbarPopover",
+            "createPisiToolbarPopover",
+            "openPisiToolbarColorPopover",
+            "openPisiToolbarSymbolPopover"
+        ]
+    },
+    {
+        "module": "editor.toolbarMenus",
+        "path": "renderer/editor/pisi-editor-toolbar-menus.mjs",
+        "bindings": [
+            "PISI_TOOLBAR_FORMULA_GROUPS",
+            "getPisiPersonalFormulas",
+            "savePisiPersonalFormula",
+            "applyPisiToolbarFormula",
+            "openPisiToolbarFormulaPopover",
+            "openPisiToolbarSizePopover",
+            "openPisiToolbarShapePopover"
+        ]
+    },
+    {
+        "module": "editor.unifiedToolbar",
+        "path": "renderer/editor/pisi-editor-unified-toolbar.mjs",
+        "bindings": [
+            "PISI_FONT_SIZE_LABELS",
+            "buildPisiUnifiedToolbarMarkup",
+            "getPisiUnifiedToolbarActiveTable",
+            "runPisiUnifiedTextCommand",
+            "insertPisiToolbarSymbol",
+            "openPisiToolbarTodo",
+            "syncPisiUnifiedToolbarContext",
+            "bindPisiUnifiedToolbarEvents",
+            "setupPisiUnifiedToolbar",
+            "getPisiToolbarIconPath",
+            "syncPisiToolbarIconTheme"
+        ]
+    },
+    {
+        "module": "editor.sheetDatabase",
+        "path": "renderer/editor/pisi-editor-sheet-database.mjs",
+        "bindings": [
+            "PISI_SHEET_DATABASE_VERSION",
+            "PISI_SHEET_DEFAULT_COLUMN_WIDTH",
+            "PISI_SHEET_FORMAT_PROPERTIES",
+            "pisiSheetDatabases",
+            "createPisiSheetDatabase",
+            "normalizePisiSheetDatabase",
+            "attachPisiSheetDatabase",
+            "getPisiSheetDatabase",
+            "persistPisiSheetDatabase",
+            "getPisiSheetTableView",
+            "getPisiSheetOrderedFields",
+            "getPisiSheetDatabaseDimensions",
+            "getPisiSheetField",
+            "getPisiSheetItem",
+            "getPisiSheetCellSource",
+            "setPisiSheetCellSource",
+            "setPisiSheetCellFormat",
+            "clearPisiSheetCell",
+            "renamePisiSheetField",
+            "setPisiSheetFieldWidth",
+            "setPisiSheetFieldHidden",
+            "isPisiSheetFieldHidden",
+            "updatePisiSheetField",
+            "insertPisiSheetItem",
+            "deletePisiSheetItems",
+            "insertPisiSheetField",
+            "deletePisiSheetFields",
+            "transformPisiSheetDatabaseFormulas"
+        ]
+    },
+    {
+        "module": "editor.sheetFieldTypesUi",
+        "path": "renderer/editor/pisi-editor-sheet-field-types-ui.mjs",
+        "bindings": [
+            "renderPisiSheetTypedCell",
+            "beginPisiSheetTypedCellEdit",
+            "togglePisiSheetCheckboxCell",
+            "closePisiSheetTypedCellEditor",
+            "isPisiSheetTypedEditorTarget"
+        ]
+    },
+    {
+        "module": "editor.sheetViewQuery",
+        "path": "renderer/editor/pisi-editor-sheet-view-query.mjs",
+        "bindings": [
+            "getPisiSheetActiveViewFilters",
+            "getPisiSheetActiveViewSorts",
+            "getPisiSheetViewRecords",
+            "getPisiSheetVisibleRowIndices",
+            "getPisiSheetNextVisibleRowIndex",
+            "refreshPisiSheetViewQuery",
+            "setPisiSheetViewFilters",
+            "setPisiSheetViewSorts",
+            "addPisiSheetViewFilterCondition",
+            "addPisiSheetViewFilterGroup",
+            "updatePisiSheetViewFilterNode",
+            "removePisiSheetViewFilterNode",
+            "addPisiSheetViewSort",
+            "updatePisiSheetViewSort",
+            "removePisiSheetViewSort",
+            "movePisiSheetViewSort"
+        ]
+    },
+    {
+        "module": "editor.sheetDatabaseDom",
+        "path": "renderer/editor/pisi-editor-sheet-database-dom.mjs",
+        "bindings": [
+            "capturePisiSheetCellFormat",
+            "applyPisiSheetCellFormatToDom",
+            "hydratePisiSheetDatabase",
+            "renderPisiSheetDatabase",
+            "renderPisiSheetCellFromDatabase"
+        ]
+    },
+    {
+        "module": "editor.sheet",
+        "path": "renderer/editor/pisi-editor-sheet.mjs",
+        "bindings": [
+            "runPisiExcelAction",
+            "insertPisiSheet",
+            "buildPisiSheetHtml",
+            "PISI_SHEET_MAX_ROWS",
+            "PISI_SHEET_MAX_COLS",
+            "PISI_SHEET_MAX_RANGE_CELLS",
+            "pisiBoundSheets",
+            "pisiEditedSheetCells",
+            "getActivePisiSheetForEditor",
+            "applyPisiSheetFormula",
+            "commitPisiSheetCell",
+            "recalcPisiSheet",
+            "evaluatePisiSheetFormula",
+            "evaluatePisiArithmeticExpression",
+            "getPisiSheetCellNumericValue",
+            "getPisiSheetCellValue",
+            "getPisiSheetRangeValues",
+            "parsePisiCellRef",
+            "pisiColumnName",
+            "pisiColumnIndex",
+            "formatPisiSheetNumber"
+        ]
+    },
+    {
+        "module": "editor.sheetSelectionState",
+        "path": "renderer/editor/pisi-editor-sheet-selection-state.mjs",
+        "bindings": [
+            "pisiSheetSelections",
+            "getPisiSheetSelectionGroupIdFromDatabase",
+            "resolvePisiSheetSelectionPoint",
+            "getPisiSheetPointByIndexFromDatabase",
+            "getPisiSheetSelectionStateForDatabase",
+            "setPisiSheetSelectionStateForDatabase",
+            "clearPisiSheetSelectionStateForDatabase",
+            "getPisiSheetSelectionForDatabase",
+            "getPisiSheetSelectionFocusForDatabase",
+            "getPisiSheetActivePointForDatabase",
+            "getPisiSheetSelectionRect",
+            "getPisiSelectedSheetPointsForDatabase",
+            "getPisiSheetActiveGroupId",
+            "pisiSheetHeaderSelections",
+            "getPisiSheetHeaderSelectionStateForDatabase",
+            "setPisiSheetHeaderSelectionStateForDatabase",
+            "clearPisiSheetHeaderSelectionStateForDatabase",
+            "getPisiSheetHeaderSelectionForDatabase",
+            "clearPisiSheetAllSelectionStateForDatabase"
+        ]
+    },
+    {
+        "module": "editor.sheetHeaderSelection",
+        "path": "renderer/editor/pisi-editor-sheet-header-selection.mjs",
+        "bindings": [
+            "getPisiSheetHeaderSelection",
+            "getPisiSheetSelection",
+            "getPisiSelectedSheetPoints",
+            "selectPisiSheetRow",
+            "selectPisiSheetColumn",
+            "getPisiSheetVisibleColumnIndices",
+            "getPisiSheetNextVisibleColumn"
+        ]
+    },
+    {
+        "module": "editor.sheetSelection",
+        "path": "renderer/editor/pisi-editor-sheet-selection.mjs",
+        "bindings": [
+            "getPisiSheetDimensions",
+            "getPisiSheetSelectionGroupId",
+            "getPisiSheetSelectionState",
+            "setPisiSheetSelectionState",
+            "getPisiSheetSelectionFocus",
+            "getPisiSheetActivePoint",
+            "getPisiSheetActiveTable",
+            "getPisiSheetPointByIndex",
+            "syncPisiSheetSelectionProjection",
+            "getPisiSheetCellPosition",
+            "getPisiSheetCell",
+            "getPisiSelectedSheetCells",
+            "isPisiSheetCellSelected",
+            "renderPisiSheetSelection",
+            "setPisiSheetRangeSelection",
+            "ensurePisiSheetCellVisible",
+            "selectPisiSheetCell",
+            "selectAllPisiSheetCells",
+            "focusPisiSheetCell",
+            "syncPisiSheetFormulaInput",
+            "beginPisiSheetCellEdit",
+            "markPisiSheetCellEditFormulaReference",
+            "getPisiSheetCellEditState",
+            "finishPisiSheetCellEdit",
+            "isPisiSheetEditingCell",
+            "extendPisiSheetSelectionByKeyboard",
+            "movePisiSheetCellFocus",
+            "reconcilePisiSheetSelection",
+            "clearPisiSheetSelection"
+        ]
+    },
+    {
+        "module": "editor.sheetFormulaReference",
+        "path": "renderer/editor/pisi-editor-sheet-formula-reference.mjs",
+        "bindings": [
+            "beginPisiSheetFormulaReferencePick",
+            "updatePisiSheetFormulaReferencePick",
+            "finishPisiSheetFormulaReferencePick",
+            "closePisiSheetFormulaReferenceSession",
+            "movePisiSheetFormulaReferenceByKeyboard",
+            "isPisiSheetFormulaReferenceKeyboardNavigationActive",
+            "isPisiSheetFormulaReferencePicking",
+            "isPisiSheetFormulaInputActive",
+            "pisiSheetPointToReference",
+            "pisiSheetPointsToReference",
+            "applyPisiSheetFormulaInputOnEnter",
+            "trackPisiSheetFormulaInput",
+            "clearPisiSheetFormulaInputSession",
+            "handlePisiSheetFormulaReferenceKeydown"
+        ]
+    },
+    {
+        "module": "editor.sheetKeyboard",
+        "path": "renderer/editor/pisi-editor-sheet-keyboard.mjs",
+        "bindings": ["handlePisiSheetSelectionKeydown", "handlePisiSheetOutsidePointerDown"]
+    },
+    {
+        "module": "editor.sheetViewState",
+        "path": "renderer/editor/pisi-editor-sheet-view-state.mjs",
+        "bindings": ["clonePisiSheetTableView", "setPisiSheetActiveView", "refreshPisiSheetActiveView", "activatePisiSheetView"]
+    },
+    {
+        "module": "editor.sheetViewRulesUi",
+        "path": "renderer/editor/pisi-editor-sheet-view-rules-ui.mjs",
+        "bindings": ["openPisiSheetViewRulesPanel", "closePisiSheetViewRulesPanel", "renderPisiSheetViewRulesPanel"]
+    },
+    {
+        "module": "editor.sheetColumnReorder",
+        "path": "renderer/editor/pisi-editor-sheet-column-reorder.mjs",
+        "bindings": ["movePisiSheetField", "movePisiSheetColumn", "bindPisiSheetColumnReorder", "getPisiSheetColumnDropIndex"]
+    },
+    {
+        "module": "editor.sheetColumnProperties",
+        "path": "renderer/editor/pisi-editor-sheet-column-properties.mjs",
+        "bindings": [
+            "PISI_SHEET_MIN_COLUMN_WIDTH",
+            "PISI_SHEET_MAX_COLUMN_WIDTH",
+            "PISI_SHEET_AUTO_FIT_MIN_WIDTH",
+            "PISI_SHEET_AUTO_FIT_MAX_WIDTH",
+            "PISI_SHEET_RESIZE_SNAP_PX",
+            "setPisiSheetColumnWidth",
+            "getPisiSheetColumnAutoFitWidth",
+            "autoFitPisiSheetColumn",
+            "startPisiSheetColumnResize",
+            "closePisiSheetColumnMenu",
+            "openPisiSheetColumnMenu"
+        ]
+    },
+    {
+        "module": "editor.sheetInteractions",
+        "path": "renderer/editor/pisi-editor-sheet-interactions.mjs",
+        "bindings": ["pisiSheetNotifyTimers", "hydratePisiSheets"]
+    },
+    {
+        "module": "editor.sheetStructure",
+        "path": "renderer/editor/pisi-editor-sheet-structure.mjs",
+        "bindings": [
+            "setPisiSheetColumnLabel",
+            "refreshPisiSheetCellMetadata",
+            "getPisiSheetMutationFocus",
+            "updatePisiSheetFormulaReferences",
+            "addPisiSheetRow",
+            "addPisiSheetColumn",
+            "deletePisiSheetRows",
+            "deletePisiSheetColumns",
+            "applyPisiSheetCellFormat",
+            "clearPisiSheetSelectedCells",
+            "schedulePisiSheetEditorNotification",
+            "setPisiSheetToolbarStatus",
+            "syncPisiSheetToolbarForTable",
+            "syncPisiSheetToolbarState"
+        ]
+    },
+    {
+        "module": "shell.window",
+        "path": "renderer/shell/pisi-window.mjs",
+        "bindings": ["setupWindowControls", "bindRightPanelTabs", "setupCenterFileTabs", "setupPisiAppMenu"]
+    },
+    {
+        "module": "shell.tabs",
+        "path": "renderer/shell/pisi-tabs.mjs",
+        "bindings": [
+            "getPisiOpenTabsState",
+            "pisiSameTabPath",
+            "getPisiOpenTabType",
+            "getPisiOpenTabTitle",
+            "clonePisiTabItem",
+            "ensurePisiOpenTab",
+            "openPisiFileTab",
+            "activatePisiOpenTab",
+            "closePisiOpenTab",
+            "removePisiOpenTabByPath",
+            "resetPisiOpenTabs",
+            "updatePisiOpenTabAfterRename",
+            "replacePisiClientPathPrefix",
+            "applyPisiPathChanges",
+            "isPisiPathAtOrBelow",
+            "removePisiOpenTabsForDeletedPaths",
+            "pisiClientPathsOverlap",
+            "getActiveMapTabItemForReload",
+            "isExternalChangeRelevantToActiveMap",
+            "confirmPisiExternalReload",
+            "reloadPisiWorkspaceAfterExternalChange",
+            "pisiFileSystemRefreshTail",
+            "handlePisiExternalFileSystemChange",
+            "renamePisiOpenTabTitle"
+        ]
+    },
+    {
+        "module": "shell.startup",
+        "path": "renderer/shell/pisi-startup.mjs",
+        "bindings": [
+            "beginPisiOpenTabTitleRename",
+            "selectPisiTreeFileByPath",
+            "renderPisiOpenTabs",
+            "setupProjectStartup",
+            "createPisiFileInCurrentProject",
+            "refocusPisiRenderer",
+            "focusPisiTextInput",
+            "escapePisiConfirmText",
+            "resetPisiKeyboardAndPointerState"
+        ]
+    },
+    {
+        "module": "shell.dialogs",
+        "path": "renderer/shell/pisi-dialogs.mjs",
+        "bindings": ["pisiConfirm"]
+    },
+    {
+        "module": "shell.commandCenter",
+        "path": "renderer/shell/pisi-command-center.mjs",
+        "bindings": [
+            "pisiCommandCenterState",
+            "ensurePisiCommandCenter",
+            "registerPisiCommandCenterPage",
+            "renderPisiCommandCenterPage",
+            "openPisiCommandCenter",
+            "closePisiCommandCenter",
+            "initializePisiCommandCenter"
+        ]
+    },
+    {
+        "module": "sync.settings",
+        "path": "renderer/sync/pisi-sync-settings.mjs",
+        "bindings": [
+            "pisiSyncTranslate",
+            "formatPisiSyncTime",
+            "getPisiRendererSyncStatus",
+            "makePisiSyncButton",
+            "refreshPisiSyncSettings",
+            "runPisiRendererSync",
+            "renderPisiSyncSettings",
+            "schedulePisiAutoSync",
+            "initializePisiSyncSettings"
+        ]
+    },
+    {
+        "module": "shell.customizations",
+        "path": "renderer/shell/pisi-customizations.mjs",
+        "bindings": [
+            "PISI_CUSTOMIZATION_STORAGE_KEY",
+            "PISI_DEFAULT_CUSTOMIZATION",
+            "PISI_CUSTOMIZATION_CSS_VARIABLES",
+            "loadPisiCustomizationSettings",
+            "savePisiCustomizationSettings",
+            "isValidPisiHexColor",
+            "normalizePisiSizeValue",
+            "resolvePisiCustomizationValue",
+            "applyPisiCustomizationSettings",
+            "syncPisiCustomizationInputs",
+            "renderPisiCustomizationPreferences",
+            "applyPisiMapNodeCustomization",
+            "getPisiMapEdgeCustomizationColor",
+            "getPisiMapCustomizationContext",
+            "renderPisiMapCustomizationPanel",
+            "syncPisiMapCustomizationTab",
+            "setupPisiCustomizations"
+        ]
+    },
+    {
+        "module": "tree.project",
+        "path": "renderer/tree/pisi-project.mjs",
+        "bindings": [
+            "MAP_ZOOM_STEP",
+            "MAP_ZOOM_MIN",
+            "MAP_ZOOM_MAX",
+            "MAP_ZOOM_HOLD_INTERVAL",
+            "getPisiProjectTitleFromPath",
+            "updatePisiProjectTitle",
+            "suppressNextFileSystemRefresh",
+            "shouldSuppressFileSystemRefresh",
+            "validateCurrentProject",
+            "pisiProjectRefreshSequence",
+            "pisiProjectRefreshTail",
+            "pisiProjectRefreshWaiters",
+            "resolvePisiProjectRefreshWaiters",
+            "refreshCurrentProjectTree",
+            "showProjectModal",
+            "hideProjectModal",
+            "chooseAndLoadProject",
+            "loadProject",
+            "pisiTreeRootRenderId",
+            "isCurrentPisiTreeRootRender",
+            "renderFolderTree"
+        ]
+    },
+    {
+        "module": "tree.dragDrop",
+        "path": "renderer/tree/pisi-tree-dnd.mjs",
+        "bindings": [
+            "getPisiTreeDragStateItem",
+            "setPisiTreeDragStateItem",
+            "clonePisiTreeDragItem",
+            "getClientPathBaseName",
+            "getAncestorMapItemForTreeNode",
+            "isTreeDropInsideDraggedNode",
+            "canDropTreeItemOnTarget",
+            "reparentMapNodeFromTreeDrop",
+            "moveTreeItemToFolder",
+            "handleTreeDrop",
+            "bindTreeRowDragAndDrop",
+            "bindFileTreeRootDropZone",
+            "createTreeNode",
+            "deleteTreePisiItem",
+            "handleDeletedMapFromTree"
+        ]
+    },
+    {
+        "module": "tree.view",
+        "path": "renderer/tree/pisi-tree-view.mjs",
+        "bindings": [
+            "handleDeletedNodeFromTree",
+            "findTreeNodeByPath",
+            "getDirectTreeChildrenContainer",
+            "rememberExpandedPathsUnder",
+            "refreshActiveMapTreeBranch",
+            "findTreeNodeByPisiId",
+            "ensureTreeChildrenContainer",
+            "setTreeNodeLevelRecursive",
+            "dedupeTreeNodeByPisiId",
+            "moveTreeNodeUnderParent",
+            "animateTreeRow",
+            "appendTreeItemToContainer",
+            "makeTreeItemFromCreateResult",
+            "updateTreeItemAfterRename",
+            "normalizeClientPath",
+            "sameClientPath",
+            "findMapNodeBoxByPath",
+            "animateMapBox",
+            "updateOpenMapNodeAfterRename",
+            "appendMapNodeBox",
+            "createNodeUnderMapFromTree",
+            "selectTreeFile",
+            "startRenameSelectedTreeFile",
+            "startRenameTreeFile",
+            "loadFolderChildren",
+            "makeTreeItemFromMapNode",
+            "getTreeRolesFromEdge",
+            "buildMapNodeTreeItems",
+            "loadSyntheticTreeChildren",
+            "loadMapTreeChildren"
+        ]
+    },
+    {
+        "module": "map.workspace",
+        "path": "renderer/map/pisi-map-workspace.mjs",
+        "bindings": [
+            "isMapFileName",
+            "isNodeFileName",
+            "getFileIcon",
+            "samePisiWorkspacePath",
+            "openMapInWorkspace",
+            "clearMapWorkspace",
+            "createMapNodeBox",
+            "bindMapNodeBoxEvents",
+            "bindMapNodeDrag",
+            "bindMapNodeResize",
+            "collectMapLayout",
+            "scheduleMapLayoutSave",
+            "saveCurrentMapLayout",
+            "startMapNodeTitleEdit",
+            "setPisiEditorContent",
+            "getPisiEditorContent",
+            "markdownTextToPisiEditorHtml"
+        ]
+    },
+    {
+        "module": "map.creation",
+        "path": "renderer/map/pisi-map-creation.mjs",
+        "bindings": [
+            "getMapWorldPointFromClient",
+            "isMapBlankEventTarget",
+            "createMapNodeBoxAtClientPoint",
+            "hidePisiMapContextMenu",
+            "showPisiMapContextMenu",
+            "bindMapCreationEvents"
+        ]
+    },
+    {
+        "module": "editor.node",
+        "path": "renderer/editor/pisi-node-editor.mjs",
+        "bindings": [
+            "sanitizePisiEditorHtml",
+            "dispatchPisiActiveNodeChanged",
+            "openNodeModalFromBox",
+            "closeNodeModalAndSave",
+            "closeNodeModalWithoutSaving",
+            "getCenterNodeEditorElements",
+            "bindCenterNodeEditorControls",
+            "scheduleCenterNodeEditorSave",
+            "openCenterNodeEditor",
+            "pisiCenterSaveTail",
+            "saveCurrentCenterNodeEditor",
+            "performCurrentCenterNodeEditorSave",
+            "clearCenterNodeEditor",
+            "flushPisiPendingSaves"
+        ]
+    },
+    {
+        "module": "tags.editorBlocks",
+        "path": "renderer/tags/pisi-editor-blocks.mjs",
+        "bindings": [
+            "makePisiBlockId",
+            "isPisiEditorBlockElement",
+            "decoratePisiEditorBlock",
+            "ensurePisiEditorBlocks",
+            "getPisiBlockElementsFromContainer",
+            "createPisiInertHtmlTemplate"
+        ]
+    },
+    {
+        "module": "tags.index",
+        "path": "renderer/tags/pisi-tag-index.mjs",
+        "bindings": [
+            "bindPisiBlockIndexControls",
+            "bindPisiTagPickerOutsideClose",
+            "extractPisiTagsFromBlock",
+            "refreshPisiTagsPanelSoon",
+            "resetPisiTagsForProject",
+            "refreshPisiTagsPanel",
+            "normalizeClientPathForTags",
+            "samePisiPathForTags",
+            "getPisiTagsActiveMapPath",
+            "getPisiTagsActiveMapNodes",
+            "collectPisiDiaryTagNodeItems",
+            "extractPisiTagBlocksForNodeItem",
+            "isPisiMissionNodeFileName",
+            "isPisiMissionMapFileName",
+            "makePisiMissionNodeItem",
+            "collectPisiMissionNodeItemsFromFolder",
+            "buildPisiMissionBlockIndex",
+            "buildPisiTagBlockIndex",
+            "extractPisiTagBlocksFromHtmlDetailed",
+            "extractPisiTagBlocksFromHtml",
+            "persistPisiAssignedBlockIds",
+            "refreshPisiMissionIndex",
+            "bindPisiMissionIndexInvalidation"
+        ]
+    },
+    {
+        "module": "tags.panels",
+        "path": "renderer/tags/pisi-tag-panels.mjs",
+        "bindings": [
+            "ensurePisiTagsPanelDom",
+            "renderPisiTagsPanel",
+            "parsePisiTodoTag",
+            "formatPisiMissionDate",
+            "getPisiMissionsFromIndex",
+            "escapePisiMissionRegExp",
+            "getPisiMissionDisplayText",
+            "renderPisiMissionsPanel",
+            "normalizePisiBlockText",
+            "createPisiDoneTagElement",
+            "blockHasPisiDoneTag",
+            "blockHasPisiTag",
+            "appendPisiDoneTagToBlock",
+            "removePisiDoneTagFromBlock",
+            "findPisiMissionBlockInContainer",
+            "setPisiMissionCompletionInBlock",
+            "rollbackPisiMissionBlock",
+            "setPisiMissionCompletion"
+        ]
+    },
+    {
+        "module": "tags.todoNavigation",
+        "path": "renderer/tags/pisi-todo-navigation.mjs",
+        "bindings": ["openPisiTagBlockResult", "highlightPisiEditorBlock", "bindPisiMissionHighlightSanitizer"]
+    },
+    {
+        "module": "tags.editor",
+        "path": "renderer/tags/pisi-tag-editor.mjs",
+        "bindings": [
+            "markPisiMissionDone",
+            "reopenPisiMission",
+            "isPisiTodoCommand",
+            "isPisiDoneCommand",
+            "buildPisiTodoPriorityItems",
+            "openPisiTodoPriorityMenu",
+            "openPisiTodoDateMenu",
+            "bindPisiTagControls",
+            "bindPisiTagControlsForEditor",
+            "collectPisiUserTagsFromEditor",
+            "collectPisiUserTagSuggestions",
+            "openPisiTagMenuForEditor",
+            "applyPisiTagMenuItem",
+            "closePisiTagMenu",
+            "movePisiTagSelection",
+            "applyPisiUserTagToEditor",
+            "normalizePisiUserTag",
+            "isValidPisiUserTag",
+            "makeRangeInElementByTextOffsets",
+            "getPisiCurrentEditorBlock",
+            "placeCaretAtEnd",
+            "positionPisiTagMenuAtSelection",
+            "getSelectionClientRect",
+            "pisiEscapeHtml",
+            "escapeHtml"
+        ]
+    },
+    {
+        "module": "tags.todoSecondRelease",
+        "path": "renderer/tags/pisi-todo-second-release.mjs",
+        "bindings": [
+            "pisiTodoSecondReleaseState",
+            "makePisiMissionIdSecondRelease",
+            "getPisiSubtaskParentIdSecondRelease",
+            "enhancePisiMissionSecondRelease",
+            "sortPisiMissionsSecondRelease",
+            "matchesPisiMissionStatusFilterSecondRelease",
+            "appendPisiMissionSecondReleaseToolbar",
+            "enhancePisiMissionCardSecondRelease",
+            "setPisiMissionRepeatSecondRelease",
+            "setPisiMissionOrderSecondRelease",
+            "addPisiSubtaskSecondRelease",
+            "createNextPisiRecurringMissionSecondRelease",
+            "togglePisiMissionCompletionSecondRelease",
+            "persistPisiMissionManualOrderSecondRelease"
+        ]
+    },
+    {
+        "module": "tags.todoFirstRelease",
+        "path": "renderer/tags/pisi-todo-first-release.mjs",
+        "bindings": [
+            "pisiTodoTranslateFirstRelease",
+            "formatPisiMissionDateFirstRelease",
+            "getPisiMissionsFromIndexFirstRelease",
+            "getPisiMissionDisplayTextFirstRelease",
+            "getPisiMissionFilterCountsFirstRelease",
+            "removePisiMissionBadgesFirstRelease",
+            "syncPisiMissionBadgesFirstRelease",
+            "renderPisiMissionsPanelFirstRelease",
+            "createPisiUserTagElement",
+            "getPisiSelectionTextOffset",
+            "capturePisiTodoSelection",
+            "applyPisiTodoSelectionToEditor",
+            "findPisiMissionTodoTagElementFirstRelease",
+            "setPisiMissionStatusInBlockFirstRelease",
+            "savePisiMissionMutationFirstRelease",
+            "setPisiMissionStatusFirstRelease"
+        ]
+    },
+    {
+        "module": "tags.todoBlocks",
+        "path": "renderer/tags/pisi-todo-blocks.mjs",
+        "bindings": [
+            "normalizePisiTodoBlockTag",
+            "getPisiTodoTagFromBlock",
+            "isPisiTodoBlockCompleted",
+            "ensurePisiTodoBlockMarker",
+            "syncPisiTodoBlockMarkers",
+            "setPisiTodoBlockCompletion",
+            "applyPisiTodoTagToEditor",
+            "createPisiTodoBlockCommand",
+            "openPisiTodoPickerForEditor",
+            "applyPisiDoneCommandToEditor"
+        ]
+    },
+    {
+        "module": "search.index",
+        "path": "renderer/search/pisi-search-index.mjs",
+        "bindings": [
+            "ensurePisiSearchIndex",
+            "invalidatePisiSearchIndex",
+            "refreshPisiSearchIndex",
+            "createPisiSearchDocumentRecord",
+            "getPisiSearchCurrentNodePath",
+            "getPisiSearchLiveIndex",
+            "getPisiSearchCacheStats",
+            "getPisiSearchMetadataSignature",
+            "getPisiSearchDocumentSignature",
+            "applyPisiSearchFilesystemDelta"
+        ]
+    },
+    {
+        "module": "search.global",
+        "path": "renderer/search/pisi-global-search.mjs",
+        "bindings": ["openPisiGlobalSearch", "closePisiGlobalSearch", "openPisiSearchResult", "focusPisiSearchMapBox", "highlightPisiSearchEditorTarget"]
+    },
+    {
+        "module": "search.rightPanel",
+        "path": "renderer/search/pisi-search-panel.mjs",
+        "bindings": ["installPisiRightSearchPanel", "activatePisiRightSearchPanel"]
+    },
+    {
+        "module": "search.linksPanel",
+        "path": "renderer/search/pisi-links-panel.mjs",
+        "bindings": ["installPisiLinksPanel", "refreshPisiLinksPanel", "schedulePisiLinksPanelRefresh"]
+    },
+    {
+        "module": "productivity.quickCapture",
+        "path": "renderer/productivity/pisi-quick-capture.mjs",
+        "bindings": ["pisiQuickCaptureState", "formatPisiTaskMinutes", "initializePisiQuickCapture", "openPisiQuickAddModal", "closePisiQuickAddModal"]
+    },
+    {
+        "module": "data.structuredViews",
+        "path": "renderer/data/pisi-structured-views.mjs",
+        "bindings": [
+            "pisiStructuredViewState",
+            "appendPisiPropertyRow",
+            "collectPisiMapPropertyDefinitions",
+            "createPisiPropertyRow",
+            "collectPisiPropertyRows",
+            "getPisiNodePropertyMapContext",
+            "getPisiActiveMapPropertyContext",
+            "readPisiPropertyControlValue",
+            "renderPisiNodeProperties",
+            "renderPisiBases"
+        ]
+    },
+    {
+        "module": "data.basesDialog",
+        "path": "renderer/data/pisi-bases-dialog.mjs",
+        "bindings": [
+            "pisiBasesDialogState",
+            "closePisiBasesDialog",
+            "ensurePisiBasesDialog",
+            "initializePisiBasesDialog",
+            "installPisiBasesMapTrigger",
+            "openPisiBasesDialog",
+            "renderPisiBasesDialogBody",
+            "syncPisiBasesMapTrigger"
+        ]
+    },
+    {
+        "module": "data.propertyTemplates",
+        "path": "renderer/data/pisi-property-templates.mjs",
+        "bindings": ["renderPisiPropertyTemplatesPage", "initializePisiPropertyTemplates"]
+    },
+    {
+        "module": "data.rollupBlocks",
+        "path": "renderer/data/pisi-rollup-blocks.mjs",
+        "bindings": [
+            "pisiRollupBlockState",
+            "hydratePisiRollupBlocks",
+            "insertPisiRollupBlock",
+            "openPisiRollupDialog",
+            "renderPisiRollupBlock",
+            "initializePisiRollupBlocks"
+        ]
+    },
+    {
+        "module": "data.nodePropertiesUi",
+        "path": "renderer/data/pisi-node-properties-ui.mjs",
+        "bindings": [
+            "pisiNodePropertiesUiState",
+            "installPisiNodePropertyDrawers",
+            "togglePisiNodePropertiesDrawer",
+            "renderPisiNodePropertiesInfo",
+            "syncPisiNodePropertiesTab",
+            "initializePisiNodePropertiesUi"
+        ]
+    },
+    {
+        "module": "portability.panel",
+        "path": "renderer/portability/pisi-portability-panel.mjs",
+        "bindings": [
+            "makePisiSimpleDiff",
+            "showPisiHistoryPreview",
+            "renderPisiHistory",
+            "renderPisiBackups",
+            "renderPisiExportActions",
+            "renderPisiIntegrityReport",
+            "renderPisiIntegritySettings",
+            "openPisiHistoryDialog",
+            "openPisiExportDialog",
+            "runPisiImportAction",
+            "handlePisiPortabilityAction",
+            "initializePisiPortabilityActions"
+        ]
+    },
+    {
+        "module": "editor.preview",
+        "path": "renderer/editor/pisi-node-preview.mjs",
+        "bindings": [
+            "bindNodeModalControls",
+            "PISI_NODE_PREVIEW_DELAY_MS",
+            "pisiNodePreviewTimer",
+            "pisiNodePreviewRequest",
+            "hidePisiCanvasHints",
+            "parsePisiNodePreviewContent",
+            "findPisiMapNodeForBox",
+            "stylePisiCanvasThumbnail",
+            "refreshPisiMapNodeCanvasPreview",
+            "refreshPisiMapNodePreviewFromDisk",
+            "refreshAllPisiMapNodePreviewsFromDisk",
+            "stylePisiHoverLayer",
+            "getPisiNodePreviewLayer",
+            "hidePisiNodeHoverPreview",
+            "positionPisiNodeHoverPreview",
+            "appendPisiHoverPreviewContent",
+            "showPisiNodeHoverPreview",
+            "schedulePisiNodeHoverPreview",
+            "processPisiPreviewAddedNode",
+            "bindPisiMapNodePreviewEvents",
+            "setupPisiNodePreviews"
+        ]
+    },
+    {
+        "module": "map.interactions",
+        "path": "renderer/map/pisi-map-interactions.mjs",
+        "bindings": [
+            "getTreeItemDisplayName",
+            "getConnectionDataFromEvent",
+            "isHierarchyEdge",
+            "getCollapsedHubPortSet",
+            "makeCollapsedHubPortKey",
+            "hasOutgoingHubEdgesFromPort",
+            "collectCollapsedHubNodeIds",
+            "syncCollapsedHubNodeVisibility",
+            "isHubEdgeCollapsed",
+            "syncHubPortCollapseVisuals",
+            "toggleHubConnectionsFromPort",
+            "convertEdgeToStream",
+            "targetAlreadyHasUpHub",
+            "enforceSingleParentForTarget",
+            "getConnectionClass",
+            "getPortPoint",
+            "getMousePointInCanvas",
+            "getPortDirection",
+            "offsetPoint",
+            "getDistance",
+            "getMapConnectionVisualMetrics",
+            "syncMapConnectionZoomStyles",
+            "makeConnectionPathFromBoxes",
+            "makeTempConnectionPath",
+            "ensureTempEdgePath",
+            "clearTempEdgePath",
+            "applyMapCamera",
+            "clampMapZoom",
+            "zoomMapAtClientPoint",
+            "zoomMapFromCenter",
+            "saveActiveMapCameraSoon",
+            "scheduleMapCameraSave",
+            "flushActiveMapCameraSave",
+            "bindMapZoomEvents",
+            "bindMapZoomControls",
+            "bindHoldZoomButton",
+            "clearSelectedMapNodes",
+            "getSelectedMapNodeBoxes",
+            "getClientSelectionRect",
+            "rectsIntersect",
+            "rectContainsRect",
+            "applyMapBoxSelection",
+            "updateMapSelectionBoxVisual",
+            "setupMapCanvasPan"
+        ]
+    },
+    {
+        "module": "map.edges",
+        "path": "renderer/map/pisi-map-edges.mjs",
+        "bindings": [
+            "persistPisiMapConnection",
+            "pisiKeyboardConnectionSource",
+            "notifyPisiMapCustomizationContextChanged",
+            "selectPisiMapEdge",
+            "resetPisiMapConnectionInteractions",
+            "bindMapPortEvents",
+            "deleteMapEdge",
+            "createMapEdgeDeleteButton",
+            "getMapEdgePathMidpoint",
+            "updateMapEdgeDeleteButtonPosition",
+            "pisiConnectionDrawFrame",
+            "getPisiMapEdgeMarkerId",
+            "ensurePisiMapEdgeMarker",
+            "applyPisiMapEdgeCustomization",
+            "bindPisiMapEdgeSelection",
+            "scheduleDrawMapConnections",
+            "drawMapConnections"
+        ]
+    },
+    {
+        "module": "map.export",
+        "path": "renderer/map/pisi-map-export.mjs",
+        "bindings": [
+            "escapePisiMapExportXml",
+            "collectPisiMapExportNodes",
+            "getPisiMapExportBounds",
+            "makePisiMapExportConnectionPath",
+            "buildPisiMapExportSvg",
+            "rasterizePisiMapExportSvg",
+            "closePisiMapExportMenu",
+            "syncPisiMapExportControl",
+            "exportCurrentPisiMap",
+            "ensurePisiMapExportControl",
+            "updatePisiMapExportTranslations",
+            "initializePisiMapExport"
+        ]
+    },
+    {
+        "module": "core.commands",
+        "path": "renderer/core/pisi-command-registry.mjs",
+        "bindings": [
+            "PISI_SHORTCUT_STORAGE_KEY",
+            "normalizePisiShortcut",
+            "getPisiEventShortcut",
+            "registerPisiCommand",
+            "listPisiCommands",
+            "runPisiCommand",
+            "getPisiCommandShortcut",
+            "findPisiShortcutConflict",
+            "setPisiCommandShortcut",
+            "resetPisiCommandShortcut",
+            "openPisiCommandPalette",
+            "closePisiCommandPalette",
+            "renderPisiShortcutSettings",
+            "initializePisiCommandRegistry",
+            "formatPisiShortcutForDisplay"
+        ]
+    },
+    {
+        "module": "editor.blocks",
+        "path": "renderer/editor/pisi-block-editor.mjs",
+        "bindings": [
+            "PISI_BLOCK_TYPES",
+            "PISI_BLOCK_SLASH_COMMANDS",
+            "pisiBlocksEditorState",
+            "pisiBlockMarkdownToHtml",
+            "pisiBlockHtmlToMarkdown",
+            "getPisiBlockType",
+            "getPisiActiveBlocksEditor",
+            "getPisiActiveBlock",
+            "hydratePisiBlockTaskMarker",
+            "decoratePisiBlockTypes",
+            "applyPisiBlockType",
+            "movePisiBlock",
+            "duplicatePisiBlock",
+            "deletePisiBlock",
+            "copyPisiBlockReference",
+            "selectPisiBlock",
+            "bindPisiBlocksEditor",
+            "openPisiMarkdownSource",
+            "closePisiMarkdownSource",
+            "addPisiBlockBelow",
+            "initializePisiBlocksEditor"
+        ]
+    }
 ]

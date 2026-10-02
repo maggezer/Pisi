@@ -13,9 +13,7 @@ function read(file) {
 
 test('bağlantı silme map durumunu temizler ve node düzenleme odağını çalmaz', () => {
     const edges = read('renderer/map/pisi-map-edges.mjs');
-    const deleteFlow = edges.match(
-        /async function deleteMapEdge\(edgeId\) \{[\s\S]*?\n\}\n\nfunction createMapEdgeDeleteButton/
-    )?.[0] || '';
+    const deleteFlow = edges.match(/async function deleteMapEdge\(edgeId\) \{[\s\S]*?\n\}\n\nfunction createMapEdgeDeleteButton/)?.[0] || '';
 
     assert.match(deleteFlow, /await pisiConfirm\('Bu bağlantı silinsin mi\?'/);
     assert.match(deleteFlow, /resetPisiMapConnectionInteractions\(\)/);
@@ -25,8 +23,5 @@ test('bağlantı silme map durumunu temizler ve node düzenleme odağını çalm
     // açılan rename input veya node editor blur olur ve düzenleme kapanır.
     assert.doesNotMatch(deleteFlow, /resetPisiKeyboardAndPointerState\(\)/);
     assert.doesNotMatch(deleteFlow, /refocusPisiRenderer\(\)/);
-    assert.doesNotMatch(
-        deleteFlow,
-        /setTimeout\(\(\) => \{[\s\S]*?refocusPisiRenderer\(\);[\s\S]*?\}, 80\)/
-    );
+    assert.doesNotMatch(deleteFlow, /setTimeout\(\(\) => \{[\s\S]*?refocusPisiRenderer\(\);[\s\S]*?\}, 80\)/);
 });

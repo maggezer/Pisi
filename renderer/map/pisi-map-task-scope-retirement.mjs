@@ -1,11 +1,6 @@
 import { registerModule } from '../core/module-registry.mjs';
 
-const RETIRED_TASK_SCOPE_MODES = new Set([
-    'active',
-    'blocked',
-    'overdue',
-    'missing-next-action'
-]);
+const RETIRED_TASK_SCOPE_MODES = new Set(['active', 'blocked', 'overdue', 'missing-next-action']);
 
 const retirementState = {
     observer: null,
@@ -29,25 +24,20 @@ async function persistRetiredScope() {
     const current = operational?.operationalState;
     if (!current || !window.activeMapPath || !window.pisiProject?.saveMapCamera) return;
 
-    const result = await window.pisiProject.saveMapCamera(
-        window.activeMapPath,
-        {
-            ...(window.activeMapCamera || { x: 0, y: 0, zoom: 1 }),
-            collapsedHubs: Array.from(window.collapsedHubPorts || []),
-            operationalPayload: {
-                op: 'update',
-                scope: current.scope,
-                display: current.display
-            }
+    const result = await window.pisiProject.saveMapCamera(window.activeMapPath, {
+        ...(window.activeMapCamera || { x: 0, y: 0, zoom: 1 }),
+        collapsedHubs: Array.from(window.collapsedHubPorts || []),
+        operationalPayload: {
+            op: 'update',
+            scope: current.scope,
+            display: current.display
         }
-    );
+    });
 
     if (!result?.operational) return;
     current.scope = result.operational.scope || current.scope;
     current.display = result.operational.display || current.display;
-    current.savedLayouts = Array.isArray(result.operational.savedLayouts)
-        ? result.operational.savedLayouts
-        : current.savedLayouts;
+    current.savedLayouts = Array.isArray(result.operational.savedLayouts) ? result.operational.savedLayouts : current.savedLayouts;
 }
 
 function scheduleRetiredScopePersistence() {
@@ -88,12 +78,14 @@ function bindRetirementHandlers() {
     document.addEventListener('pisi:map-customization-context-changed', scheduleRetirementSweep);
     document.addEventListener('pisi:language-changed', scheduleRetirementSweep);
 
-    document.addEventListener('click', (event) => {
-        const target = event.target?.closest?.(
-            '#pisi-map-operational-restore, #pisi-map-apply-scope'
-        );
-        if (target) scheduleRetirementSweep();
-    }, true);
+    document.addEventListener(
+        'click',
+        (event) => {
+            const target = event.target?.closest?.('#pisi-map-operational-restore, #pisi-map-apply-scope');
+            if (target) scheduleRetirementSweep();
+        },
+        true
+    );
 }
 
 function installTaskScopeRetirement() {
@@ -121,8 +113,4 @@ registerModule('map.taskScopeRetirement', {
 
 installTaskScopeRetirement();
 
-export {
-    installTaskScopeRetirement,
-    removeTaskScopeControl,
-    retireTaskStatusScope
-};
+export { installTaskScopeRetirement, removeTaskScopeControl, retireTaskStatusScope };

@@ -42,10 +42,22 @@ test('table and card projection share one canonical used-column order independen
     const all = buildPisiBaseProjection(documents, definitions, '');
     const filtered = buildPisiBaseProjection(documents, definitions, 'Öncelik:>=5');
 
-    assert.deepEqual(all.columns.map((item) => item.id), ['priority', 'status', 'relation']);
-    assert.deepEqual(filtered.columns.map((item) => item.id), ['priority', 'status', 'relation']);
-    assert.deepEqual(all.cardColumns.map((item) => item.id), ['priority', 'status', 'relation']);
-    assert.deepEqual(filtered.documents.map((item) => item.title), ['Alpha']);
+    assert.deepEqual(
+        all.columns.map((item) => item.id),
+        ['priority', 'status', 'relation']
+    );
+    assert.deepEqual(
+        filtered.columns.map((item) => item.id),
+        ['priority', 'status', 'relation']
+    );
+    assert.deepEqual(
+        all.cardColumns.map((item) => item.id),
+        ['priority', 'status', 'relation']
+    );
+    assert.deepEqual(
+        filtered.documents.map((item) => item.title),
+        ['Alpha']
+    );
 });
 
 test('canonical schema name wins over stale redundant node copies while unused definitions stay hidden', () => {

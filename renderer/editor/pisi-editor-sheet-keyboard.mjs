@@ -1,7 +1,5 @@
-import { registerModule } from "../core/module-registry.mjs";
-import {
-    ensurePisiSheetModelCellRendered
-} from "./pisi-editor-sheet-virtual-scroll.mjs";
+import { registerModule } from '../core/module-registry.mjs';
+import { ensurePisiSheetModelCellRendered } from './pisi-editor-sheet-virtual-scroll.mjs';
 
 function shouldIgnorePisiSheetSelectionKey(event) {
     const target = event.target;
@@ -11,27 +9,17 @@ function shouldIgnorePisiSheetSelectionKey(event) {
     }
 
     if (
-        target.matches(
-            'input, textarea, select, [data-pisi-excel-formula]'
-        ) ||
-        target.closest(
-            '.pisi-editor-toolbar, .pisi-word-toolbar, ' +
-            '.pisi-sheet-typed-editor'
-        )
+        target.matches('input, textarea, select, [data-pisi-excel-formula]') ||
+        target.closest('.pisi-editor-toolbar, .pisi-word-toolbar, ' + '.pisi-sheet-typed-editor')
     ) {
         return true;
     }
 
-    return Boolean(
-        target.closest('td.pisi-sheet-cell-editing')
-    );
+    return Boolean(target.closest('td.pisi-sheet-cell-editing'));
 }
 
 function handlePisiSheetSelectionKeydown(event) {
-    if (
-        event.defaultPrevented ||
-        shouldIgnorePisiSheetSelectionKey(event)
-    ) {
+    if (event.defaultPrevented || shouldIgnorePisiSheetSelectionKey(event)) {
         return;
     }
 
@@ -41,25 +29,10 @@ function handlePisiSheetSelectionKeydown(event) {
     const activePoint = getPisiSheetActivePoint(table);
     if (!activePoint) return;
 
-    const cell =
-        getPisiSheetCell(
-            table,
-            activePoint.row,
-            activePoint.col
-        ) ||
-        ensurePisiSheetModelCellRendered(
-            table,
-            activePoint.row,
-            activePoint.col
-        );
+    const cell = getPisiSheetCell(table, activePoint.row, activePoint.col) || ensurePisiSheetModelCellRendered(table, activePoint.row, activePoint.col);
     if (!cell) return;
 
-    const arrows = [
-        'ArrowUp',
-        'ArrowDown',
-        'ArrowLeft',
-        'ArrowRight'
-    ];
+    const arrows = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
 
     if (event.key === 'Enter' || event.key === 'F2') {
         event.preventDefault();
@@ -72,29 +45,16 @@ function handlePisiSheetSelectionKeydown(event) {
 
     if (event.key === 'Tab') {
         event.preventDefault();
-        movePisiSheetCellFocus(
-            table,
-            cell,
-            0,
-            event.shiftKey ? -1 : 1,
-            {
-                wrap: true,
-                addRowAtEnd: !event.shiftKey
-            }
-        );
+        movePisiSheetCellFocus(table, cell, 0, event.shiftKey ? -1 : 1, {
+            wrap: true,
+            addRowAtEnd: !event.shiftKey
+        });
         return;
     }
 
-    if (
-        event.shiftKey &&
-        arrows.includes(event.key)
-    ) {
+    if (event.shiftKey && arrows.includes(event.key)) {
         event.preventDefault();
-        extendPisiSheetSelectionByKeyboard(
-            table,
-            cell,
-            event.key
-        );
+        extendPisiSheetSelectionByKeyboard(table, cell, event.key);
         return;
     }
 
@@ -109,19 +69,11 @@ function handlePisiSheetSelectionKeydown(event) {
         };
         const delta = deltas[event.key];
 
-        movePisiSheetCellFocus(
-            table,
-            cell,
-            delta[0],
-            delta[1]
-        );
+        movePisiSheetCellFocus(table, cell, delta[0], delta[1]);
         return;
     }
 
-    if (
-        event.key === 'Delete' ||
-        event.key === 'Backspace'
-    ) {
+    if (event.key === 'Delete' || event.key === 'Backspace') {
         event.preventDefault();
         clearPisiSheetSelectedCells(table);
         return;
@@ -133,12 +85,7 @@ function handlePisiSheetSelectionKeydown(event) {
         return;
     }
 
-    if (
-        event.key?.length === 1 &&
-        !event.ctrlKey &&
-        !event.metaKey &&
-        !event.altKey
-    ) {
+    if (event.key?.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
         event.preventDefault();
 
         if (!beginPisiSheetTypedCellEdit(cell)) {
@@ -157,52 +104,38 @@ function handlePisiSheetOutsidePointerDown(event) {
     const target = event.target;
 
     if (!(target instanceof Node)) return;
-    if (
-        target instanceof Element &&
-        isPisiSheetTypedEditorTarget(target)
-    ) {
+    if (target instanceof Element && isPisiSheetTypedEditorTarget(target)) {
         return;
     }
     if (table.contains(target)) return;
 
-    const block = table.closest(
-        '.pisi-sheet-block'
-    );
+    const block = table.closest('.pisi-sheet-block');
     if (block?.contains(target)) return;
 
     const editor = getEditorForPisiElement(table);
-    const toolbar = editor
-        ? document.querySelector(
-            '.pisi-editor-toolbar[data-editor-target="' +
-            editor.id + '"]'
-        )
-        : null;
+    const toolbar = editor ? document.querySelector('.pisi-editor-toolbar[data-editor-target="' + editor.id + '"]') : null;
 
     if (toolbar?.contains(target)) return;
 
     clearPisiSheetSelection(table);
 }
 
-document.addEventListener(
-    'keydown',
-    handlePisiSheetSelectionKeydown,
-    true
-);
-document.addEventListener(
-    'pointerdown',
-    handlePisiSheetOutsidePointerDown,
-    true
-);
+document.addEventListener('keydown', handlePisiSheetSelectionKeydown, true);
+document.addEventListener('pointerdown', handlePisiSheetOutsidePointerDown, true);
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "handlePisiSheetSelectionKeydown": {
+    handlePisiSheetSelectionKeydown: {
         enumerable: true,
-        get() { return handlePisiSheetSelectionKeydown; }
+        get() {
+            return handlePisiSheetSelectionKeydown;
+        }
     },
-    "handlePisiSheetOutsidePointerDown": {
+    handlePisiSheetOutsidePointerDown: {
         enumerable: true,
-        get() { return handlePisiSheetOutsidePointerDown; }
+        get() {
+            return handlePisiSheetOutsidePointerDown;
+        }
     }
 });
-registerModule("editor.sheetKeyboard", moduleApi);
+registerModule('editor.sheetKeyboard', moduleApi);

@@ -1,4 +1,4 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 
 const MAP_ZOOM_STEP = 1.1;
 
@@ -11,9 +11,7 @@ const MAP_ZOOM_HOLD_INTERVAL = 400;
 function getPisiProjectTitleFromPath(folderPath) {
     if (!folderPath) return 'Explorer';
 
-    const parts = String(folderPath)
-        .split(/[\\/]/)
-        .filter(Boolean);
+    const parts = String(folderPath).split(/[\\/]/).filter(Boolean);
 
     return parts[parts.length - 1] || 'Explorer';
 }
@@ -102,18 +100,12 @@ function refreshCurrentProjectTree() {
                 return valid;
             })
             .then((result) => {
-                resolvePisiProjectRefreshWaiters(
-                    batchSequence,
-                    result
-                );
+                resolvePisiProjectRefreshWaiters(batchSequence, result);
                 return result;
             })
             .catch((error) => {
                 console.error('[PISI] Proje ağacı yenilenemedi:', error);
-                resolvePisiProjectRefreshWaiters(
-                    batchSequence,
-                    false
-                );
+                resolvePisiProjectRefreshWaiters(batchSequence, false);
                 return false;
             });
     }, 250);
@@ -132,11 +124,7 @@ function hideProjectModal() {
 }
 
 function normalizePisiProjectSelection(selection) {
-    if (
-        selection?.ok === true &&
-        typeof selection.folderPath === 'string' &&
-        selection.folderPath.trim()
-    ) {
+    if (selection?.ok === true && typeof selection.folderPath === 'string' && selection.folderPath.trim()) {
         return {
             ok: true,
             folderPath: selection.folderPath
@@ -235,9 +223,7 @@ async function loadProject(folderPath) {
     }
 
     if (!folderResult?.ok) {
-        reportPisiProjectLoadError(
-            folderResult?.error || 'Proje klasörü okunamadı.'
-        );
+        reportPisiProjectLoadError(folderResult?.error || 'Proje klasörü okunamadı.');
         showProjectModal();
         return false;
     }
@@ -245,10 +231,7 @@ async function loadProject(folderPath) {
     const previousProjectFolder = window.currentProjectFolder;
 
     window.currentProjectFolder = folderPath;
-    if (
-        typeof invalidatePisiSearchIndex === 'function' &&
-        previousProjectFolder !== folderPath
-    ) {
+    if (typeof invalidatePisiSearchIndex === 'function' && previousProjectFolder !== folderPath) {
         invalidatePisiSearchIndex('project-change');
     }
     updatePisiProjectTitle(folderPath);
@@ -273,10 +256,7 @@ async function loadProject(folderPath) {
         clearMapWorkspace();
     }
 
-    if (
-        typeof resetPisiTagsForProject === 'function' &&
-        previousProjectFolder !== folderPath
-    ) {
+    if (typeof resetPisiTagsForProject === 'function' && previousProjectFolder !== folderPath) {
         resetPisiTagsForProject();
     }
 
@@ -298,10 +278,7 @@ async function loadProject(folderPath) {
 let pisiTreeRootRenderId = 0;
 
 function isCurrentPisiTreeRootRender(renderId, rootPath) {
-    return (
-        renderId === pisiTreeRootRenderId &&
-        sameClientPath(window.currentProjectFolder, rootPath)
-    );
+    return renderId === pisiTreeRootRenderId && sameClientPath(window.currentProjectFolder, rootPath);
 }
 
 async function renderFolderTree(rootPath) {
@@ -333,92 +310,140 @@ async function renderFolderTree(rootPath) {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "MAP_ZOOM_STEP": {
+    MAP_ZOOM_STEP: {
         enumerable: true,
-        get() { return MAP_ZOOM_STEP; }
+        get() {
+            return MAP_ZOOM_STEP;
+        }
     },
-    "MAP_ZOOM_MIN": {
+    MAP_ZOOM_MIN: {
         enumerable: true,
-        get() { return MAP_ZOOM_MIN; }
+        get() {
+            return MAP_ZOOM_MIN;
+        }
     },
-    "MAP_ZOOM_MAX": {
+    MAP_ZOOM_MAX: {
         enumerable: true,
-        get() { return MAP_ZOOM_MAX; }
+        get() {
+            return MAP_ZOOM_MAX;
+        }
     },
-    "MAP_ZOOM_HOLD_INTERVAL": {
+    MAP_ZOOM_HOLD_INTERVAL: {
         enumerable: true,
-        get() { return MAP_ZOOM_HOLD_INTERVAL; }
+        get() {
+            return MAP_ZOOM_HOLD_INTERVAL;
+        }
     },
-    "getPisiProjectTitleFromPath": {
+    getPisiProjectTitleFromPath: {
         enumerable: true,
-        get() { return getPisiProjectTitleFromPath; }
+        get() {
+            return getPisiProjectTitleFromPath;
+        }
     },
-    "updatePisiProjectTitle": {
+    updatePisiProjectTitle: {
         enumerable: true,
-        get() { return updatePisiProjectTitle; }
+        get() {
+            return updatePisiProjectTitle;
+        }
     },
-    "suppressNextFileSystemRefresh": {
+    suppressNextFileSystemRefresh: {
         enumerable: true,
-        get() { return suppressNextFileSystemRefresh; }
+        get() {
+            return suppressNextFileSystemRefresh;
+        }
     },
-    "shouldSuppressFileSystemRefresh": {
+    shouldSuppressFileSystemRefresh: {
         enumerable: true,
-        get() { return shouldSuppressFileSystemRefresh; }
+        get() {
+            return shouldSuppressFileSystemRefresh;
+        }
     },
-    "validateCurrentProject": {
+    validateCurrentProject: {
         enumerable: true,
-        get() { return validateCurrentProject; }
+        get() {
+            return validateCurrentProject;
+        }
     },
-    "pisiProjectRefreshSequence": {
+    pisiProjectRefreshSequence: {
         enumerable: true,
-        get() { return pisiProjectRefreshSequence; },
-        set(value) { pisiProjectRefreshSequence = value; }
+        get() {
+            return pisiProjectRefreshSequence;
+        },
+        set(value) {
+            pisiProjectRefreshSequence = value;
+        }
     },
-    "pisiProjectRefreshTail": {
+    pisiProjectRefreshTail: {
         enumerable: true,
-        get() { return pisiProjectRefreshTail; },
-        set(value) { pisiProjectRefreshTail = value; }
+        get() {
+            return pisiProjectRefreshTail;
+        },
+        set(value) {
+            pisiProjectRefreshTail = value;
+        }
     },
-    "pisiProjectRefreshWaiters": {
+    pisiProjectRefreshWaiters: {
         enumerable: true,
-        get() { return pisiProjectRefreshWaiters; }
+        get() {
+            return pisiProjectRefreshWaiters;
+        }
     },
-    "resolvePisiProjectRefreshWaiters": {
+    resolvePisiProjectRefreshWaiters: {
         enumerable: true,
-        get() { return resolvePisiProjectRefreshWaiters; }
+        get() {
+            return resolvePisiProjectRefreshWaiters;
+        }
     },
-    "refreshCurrentProjectTree": {
+    refreshCurrentProjectTree: {
         enumerable: true,
-        get() { return refreshCurrentProjectTree; }
+        get() {
+            return refreshCurrentProjectTree;
+        }
     },
-    "showProjectModal": {
+    showProjectModal: {
         enumerable: true,
-        get() { return showProjectModal; }
+        get() {
+            return showProjectModal;
+        }
     },
-    "hideProjectModal": {
+    hideProjectModal: {
         enumerable: true,
-        get() { return hideProjectModal; }
+        get() {
+            return hideProjectModal;
+        }
     },
-    "chooseAndLoadProject": {
+    chooseAndLoadProject: {
         enumerable: true,
-        get() { return chooseAndLoadProject; }
+        get() {
+            return chooseAndLoadProject;
+        }
     },
-    "loadProject": {
+    loadProject: {
         enumerable: true,
-        get() { return loadProject; }
+        get() {
+            return loadProject;
+        }
     },
-    "pisiTreeRootRenderId": {
+    pisiTreeRootRenderId: {
         enumerable: true,
-        get() { return pisiTreeRootRenderId; },
-        set(value) { pisiTreeRootRenderId = value; }
+        get() {
+            return pisiTreeRootRenderId;
+        },
+        set(value) {
+            pisiTreeRootRenderId = value;
+        }
     },
-    "isCurrentPisiTreeRootRender": {
+    isCurrentPisiTreeRootRender: {
         enumerable: true,
-        get() { return isCurrentPisiTreeRootRender; }
+        get() {
+            return isCurrentPisiTreeRootRender;
+        }
     },
-    "renderFolderTree": {
+    renderFolderTree: {
         enumerable: true,
-        get() { return renderFolderTree; }
+        get() {
+            return renderFolderTree;
+        }
     }
 });
-registerModule("tree.project", moduleApi);
+registerModule('tree.project', moduleApi);

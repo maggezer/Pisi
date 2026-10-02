@@ -38,10 +38,7 @@ test('Windows signing config uses SHA-256 and RFC3161 timestamping when enabled'
     const signtool = packageJson.build?.win?.signtoolOptions;
 
     assert.deepEqual(signtool?.signingHashAlgorithms, ['sha256']);
-    assert.equal(
-        signtool?.rfc3161TimeStampServer,
-        'http://timestamp.digicert.com'
-    );
+    assert.equal(signtool?.rfc3161TimeStampServer, 'http://timestamp.digicert.com');
 });
 
 test('signature verifier rejects invalid, untimestamped, or mixed-certificate artifacts', () => {

@@ -36,41 +36,21 @@ test('Electron güvenlik sınırları üretim ayarlarında korunur', () => {
 
 test('Electron giriş dosyaları uygulama kökünden yüklenir', () => {
     const electronIpc = read('main/functions/electron-ipc.js');
-    assert.match(
-        electronIpc,
-        /const PISI_APP_ROOT = path\.resolve\(__dirname, '\.\.', '\.\.'\);/
-    );
-    assert.match(
-        electronIpc,
-        /preload: path\.join\(PISI_APP_ROOT, 'preload\.js'\)/
-    );
-    assert.match(
-        electronIpc,
-        /loadFile\(path\.join\(PISI_APP_ROOT, 'index\.html'\)\)/
-    );
-    assert.doesNotMatch(
-        electronIpc,
-        /path\.join\(__dirname, '(?:preload\.js|index\.html)'\)/
-    );
+    assert.match(electronIpc, /const PISI_APP_ROOT = path\.resolve\(__dirname, '\.\.', '\.\.'\);/);
+    assert.match(electronIpc, /preload: path\.join\(PISI_APP_ROOT, 'preload\.js'\)/);
+    assert.match(electronIpc, /loadFile\(path\.join\(PISI_APP_ROOT, 'index\.html'\)\)/);
+    assert.doesNotMatch(electronIpc, /path\.join\(__dirname, '(?:preload\.js|index\.html)'\)/);
 });
 
 test('editör normalizasyonu caret konumunu korur', () => {
     assert.match(editorBlocksSource, /function capturePisiEditorSelection\(/);
     assert.match(editorBlocksSource, /function restorePisiEditorSelection\(/);
-    assert.match(
-        editorBlocksSource,
-        /const selectionSnapshot = preserveSelection[\s\S]*?restorePisiEditorSelection\(editor, selectionSnapshot\)/
-    );
+    assert.match(editorBlocksSource, /const selectionSnapshot = preserveSelection[\s\S]*?restorePisiEditorSelection\(editor, selectionSnapshot\)/);
 
-    const contentFunction = mapWorkspaceSource.match(
-        /function getPisiEditorContent\(editor\) \{[\s\S]*?\n\}/
-    )?.[0] || '';
+    const contentFunction = mapWorkspaceSource.match(/function getPisiEditorContent\(editor\) \{[\s\S]*?\n\}/)?.[0] || '';
 
     assert.match(contentFunction, /const normalizedEditor = editor\.cloneNode\(true\)/);
-    assert.match(
-        contentFunction,
-        /ensurePisiEditorBlocks\(normalizedEditor, \{[\s\S]*?preserveSelection: false/
-    );
+    assert.match(contentFunction, /ensurePisiEditorBlocks\(normalizedEditor, \{[\s\S]*?preserveSelection: false/);
     assert.doesNotMatch(contentFunction, /ensurePisiEditorBlocks\(editor\)/);
 });
 
@@ -89,20 +69,12 @@ test('merkez node editöründe başlık ve kaydet şeridi bulunmaz', () => {
     const html = read('index.html');
     const editorCss = read('styles/40-editor.css');
 
-    assert.doesNotMatch(
-        html,
-        /center-node-editor-(?:header|title|save)/
-    );
-    assert.doesNotMatch(
-        editorCss,
-        /#center-node-editor-(?:header|title|save)/
-    );
+    assert.doesNotMatch(html, /center-node-editor-(?:header|title|save)/);
+    assert.doesNotMatch(editorCss, /#center-node-editor-(?:header|title|save)/);
 });
 
 test('Paint geçici yükleme nitelikleri kalıcı HTML içine yazılmaz', () => {
-    const paintLoadCleanupCount = (
-        rendererSource.match(/removeAttribute\('data-image-loaded'\)/g) || []
-    ).length;
+    const paintLoadCleanupCount = (rendererSource.match(/removeAttribute\('data-image-loaded'\)/g) || []).length;
     assert.ok(paintLoadCleanupCount >= 2);
     assert.doesNotMatch(mapSource, /globallyAllowedAttributes[\s\S]{0,500}data-image-loaded/);
 });
@@ -124,17 +96,13 @@ test('renderer yalnızca tek ES module bootstrap üzerinden yüklenir', () => {
 test('renderer bootstrap yalnızca mevcut modülleri import eder', () => {
     const bootstrapPath = path.join(root, 'renderer', 'bootstrap.mjs');
     const bootstrapSource = fs.readFileSync(bootstrapPath, 'utf8');
-    const imports = [...bootstrapSource.matchAll(/^import\s+["'](.+?)["'];/gm)]
-        .map((match) => match[1]);
+    const imports = [...bootstrapSource.matchAll(/^import\s+["'](.+?)["'];/gm)].map((match) => match[1]);
 
     assert.ok(imports.length > 0, 'Renderer bootstrap import listesi boş olamaz.');
 
     for (const modulePath of imports) {
         const resolvedPath = path.resolve(path.dirname(bootstrapPath), modulePath);
-        assert.ok(
-            fs.existsSync(resolvedPath),
-            `Renderer bootstrap eksik modül import ediyor: ${modulePath}`
-        );
+        assert.ok(fs.existsSync(resolvedPath), `Renderer bootstrap eksik modül import ediyor: ${modulePath}`);
     }
 });
 
@@ -152,7 +120,6 @@ test('kullanılmayan production paketleri geri eklenmez', () => {
     assert.equal(packageJson.devDependencies.electron, '^43.4.2');
     assert.equal(packageJson.devDependencies['electron-builder'], '^26.15.7');
 });
-
 
 test('editör iki görünümde güncel altı bölümlü toolbarı kullanır', () => {
     const html = read('index.html');

@@ -1,4 +1,4 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 
 function isPisiInternalTreeItem(item) {
     const pathName = String(item?.fullPath || '')
@@ -27,35 +27,27 @@ async function handleDeletedNodeFromTree(item, treeNode, result) {
     // Eğer bu node şu an açık map'in içindeyse orta alanı da güncelle.
     const belongsToActiveMap =
         activeMapPath &&
-        (
-            sameClientPath(parentMapPath, activeMapPath) ||
+        (sameClientPath(parentMapPath, activeMapPath) ||
             activeMapNodes.some((node) => {
-                return (
-                    sameClientPath(node.fullPath, item.fullPath) ||
-                    node.id === deletedNodeId
-                );
-            })
-        );
+                return sameClientPath(node.fullPath, item.fullPath) || node.id === deletedNodeId;
+            }));
 
     if (belongsToActiveMap) {
         if (deletedNodeId) {
-            const box = document.querySelector(
-                `.map-node-box[data-node-id="${CSS.escape(deletedNodeId)}"]`
-            );
+            const box = document.querySelector(`.map-node-box[data-node-id="${CSS.escape(deletedNodeId)}"]`);
 
             box?.remove();
         }
 
         activeMapNodes = activeMapNodes.filter((node) => {
-            return (
-                !sameClientPath(node.fullPath, item.fullPath) &&
-                node.id !== deletedNodeId
-            );
+            return !sameClientPath(node.fullPath, item.fullPath) && node.id !== deletedNodeId;
         });
 
-        activeMapEdges = result.edges || activeMapEdges.filter((edge) => {
-            return edge.sourceId !== deletedNodeId && edge.targetId !== deletedNodeId;
-        });
+        activeMapEdges =
+            result.edges ||
+            activeMapEdges.filter((edge) => {
+                return edge.sourceId !== deletedNodeId && edge.targetId !== deletedNodeId;
+            });
 
         drawMapConnections();
 
@@ -137,9 +129,7 @@ async function refreshActiveMapTreeBranch() {
 function findTreeNodeByPisiId(pisiId) {
     if (!pisiId) return null;
 
-    return document.querySelector(
-        `.tree-node[data-pisi-id="${CSS.escape(pisiId)}"]`
-    );
+    return document.querySelector(`.tree-node[data-pisi-id="${CSS.escape(pisiId)}"]`);
 }
 
 function ensureTreeChildrenContainer(treeNode) {
@@ -179,9 +169,7 @@ function setTreeNodeLevelRecursive(treeNode, level) {
 }
 
 function dedupeTreeNodeByPisiId(pisiId, keepNode) {
-    const duplicates = document.querySelectorAll(
-        `.tree-node[data-pisi-id="${CSS.escape(pisiId)}"]`
-    );
+    const duplicates = document.querySelectorAll(`.tree-node[data-pisi-id="${CSS.escape(pisiId)}"]`);
 
     duplicates.forEach((node) => {
         if (node !== keepNode) {
@@ -258,10 +246,7 @@ function updateTreeItemAfterRename(oldPath, result) {
     const treeNode = findTreeNodeByPath(oldPath);
     if (!treeNode) return;
 
-    const displayName =
-        result.metadata?.title ||
-        result.displayName ||
-        result.fileName;
+    const displayName = result.metadata?.title || result.displayName || result.fileName;
 
     treeNode.dataset.path = result.fullPath;
 
@@ -304,12 +289,9 @@ function updateTreeItemAfterRename(oldPath, result) {
 }
 
 function normalizeClientPath(filePath) {
-    const normalized = String(filePath || '')
-        .replace(/[\\/]+/g, '/');
+    const normalized = String(filePath || '').replace(/[\\/]+/g, '/');
 
-    return window.pisiEnvironment?.platform === 'win32'
-        ? normalized.toLowerCase()
-        : normalized;
+    return window.pisiEnvironment?.platform === 'win32' ? normalized.toLowerCase() : normalized;
 }
 
 function sameClientPath(a, b) {
@@ -463,23 +445,23 @@ function startRenameTreeFile(item, row) {
     nameSpan.replaceWith(input);
 
     input.addEventListener('mousedown', (event) => {
-    event.stopPropagation();
+        event.stopPropagation();
     });
 
     input.addEventListener('click', (event) => {
-    event.stopPropagation();
+        event.stopPropagation();
     });
 
     input.addEventListener('dblclick', (event) => {
-    event.stopPropagation();
+        event.stopPropagation();
     });
 
     input.addEventListener('keydown', (event) => {
-    event.stopPropagation();
+        event.stopPropagation();
     });
 
     input.addEventListener('keyup', (event) => {
-    event.stopPropagation();
+        event.stopPropagation();
     });
 
     focusPisiTextInput(input, true);
@@ -521,10 +503,7 @@ function startRenameTreeFile(item, row) {
             const renameSourcePath = item.fullPath || oldPath;
             suppressNextFileSystemRefresh(1500);
 
-            const result = await window.pisiProject?.renamePisiFile?.(
-                renameSourcePath,
-                newBaseName
-            );
+            const result = await window.pisiProject?.renamePisiFile?.(renameSourcePath, newBaseName);
 
             if (!result || !result.ok) {
                 alert(result?.error || 'İsim değiştirilemedi.');
@@ -546,12 +525,12 @@ function startRenameTreeFile(item, row) {
             row.title = result.fullPath;
 
             restoreName(result.metadata?.title || result.displayName || result.fileName);
-            
+
             updateTreeItemAfterRename(renameSourcePath, result);
             updateOpenMapNodeAfterRename(renameSourcePath, result);
 
             if (typeof updatePisiOpenTabAfterRename === 'function') {
-            updatePisiOpenTabAfterRename(renameSourcePath, result);
+                updatePisiOpenTabAfterRename(renameSourcePath, result);
             }
 
             animateTreeRow(row);
@@ -581,20 +560,9 @@ function startRenameTreeFile(item, row) {
     });
 }
 
-async function loadFolderChildren(
-    folderPath,
-    containerEl,
-    level,
-    rootRender = null
-) {
+async function loadFolderChildren(folderPath, containerEl, level, rootRender = null) {
     const rootRenderIsCurrent = () => {
-        return (
-            !rootRender ||
-            isCurrentPisiTreeRootRender(
-                rootRender.renderId,
-                rootRender.rootPath
-            )
-        );
+        return !rootRender || isCurrentPisiTreeRootRender(rootRender.renderId, rootRender.rootPath);
     };
 
     if (!rootRenderIsCurrent()) return false;
@@ -615,9 +583,7 @@ async function loadFolderChildren(
 
     const fragment = document.createDocumentFragment();
 
-    const visibleItems = Array.isArray(result.items)
-        ? result.items.filter((item) => !isPisiInternalTreeItem(item))
-        : [];
+    const visibleItems = Array.isArray(result.items) ? result.items.filter((item) => !isPisiInternalTreeItem(item)) : [];
 
     for (const item of visibleItems) {
         const childNode = await createTreeNode(item, level);
@@ -760,9 +726,7 @@ function buildMapNodeTreeItems(nodes = [], edges = []) {
         const node = nodeById.get(nodeId);
         if (!node) return null;
 
-        const childItems = (childrenByParentId.get(nodeId) || [])
-            .map((childId) => makeItemRecursive(childId, new Set(visited)))
-            .filter(Boolean);
+        const childItems = (childrenByParentId.get(nodeId) || []).map((childId) => makeItemRecursive(childId, new Set(visited))).filter(Boolean);
 
         return makeTreeItemFromMapNode(node, childItems);
     };
@@ -808,10 +772,7 @@ async function loadMapTreeChildren(mapPath, containerEl, level) {
             return;
         }
 
-        const treeItems = buildMapNodeTreeItems(
-            result.nodes || [],
-            result.edges || []
-        );
+        const treeItems = buildMapNodeTreeItems(result.nodes || [], result.edges || []);
 
         const fragment = document.createDocumentFragment();
 
@@ -837,125 +798,185 @@ async function loadMapTreeChildren(mapPath, containerEl, level) {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "handleDeletedNodeFromTree": {
+    handleDeletedNodeFromTree: {
         enumerable: true,
-        get() { return handleDeletedNodeFromTree; }
+        get() {
+            return handleDeletedNodeFromTree;
+        }
     },
-    "findTreeNodeByPath": {
+    findTreeNodeByPath: {
         enumerable: true,
-        get() { return findTreeNodeByPath; }
+        get() {
+            return findTreeNodeByPath;
+        }
     },
-    "getDirectTreeChildrenContainer": {
+    getDirectTreeChildrenContainer: {
         enumerable: true,
-        get() { return getDirectTreeChildrenContainer; }
+        get() {
+            return getDirectTreeChildrenContainer;
+        }
     },
-    "rememberExpandedPathsUnder": {
+    rememberExpandedPathsUnder: {
         enumerable: true,
-        get() { return rememberExpandedPathsUnder; }
+        get() {
+            return rememberExpandedPathsUnder;
+        }
     },
-    "refreshActiveMapTreeBranch": {
+    refreshActiveMapTreeBranch: {
         enumerable: true,
-        get() { return refreshActiveMapTreeBranch; }
+        get() {
+            return refreshActiveMapTreeBranch;
+        }
     },
-    "findTreeNodeByPisiId": {
+    findTreeNodeByPisiId: {
         enumerable: true,
-        get() { return findTreeNodeByPisiId; }
+        get() {
+            return findTreeNodeByPisiId;
+        }
     },
-    "ensureTreeChildrenContainer": {
+    ensureTreeChildrenContainer: {
         enumerable: true,
-        get() { return ensureTreeChildrenContainer; }
+        get() {
+            return ensureTreeChildrenContainer;
+        }
     },
-    "setTreeNodeLevelRecursive": {
+    setTreeNodeLevelRecursive: {
         enumerable: true,
-        get() { return setTreeNodeLevelRecursive; }
+        get() {
+            return setTreeNodeLevelRecursive;
+        }
     },
-    "dedupeTreeNodeByPisiId": {
+    dedupeTreeNodeByPisiId: {
         enumerable: true,
-        get() { return dedupeTreeNodeByPisiId; }
+        get() {
+            return dedupeTreeNodeByPisiId;
+        }
     },
-    "moveTreeNodeUnderParent": {
+    moveTreeNodeUnderParent: {
         enumerable: true,
-        get() { return moveTreeNodeUnderParent; }
+        get() {
+            return moveTreeNodeUnderParent;
+        }
     },
-    "animateTreeRow": {
+    animateTreeRow: {
         enumerable: true,
-        get() { return animateTreeRow; }
+        get() {
+            return animateTreeRow;
+        }
     },
-    "appendTreeItemToContainer": {
+    appendTreeItemToContainer: {
         enumerable: true,
-        get() { return appendTreeItemToContainer; }
+        get() {
+            return appendTreeItemToContainer;
+        }
     },
-    "makeTreeItemFromCreateResult": {
+    makeTreeItemFromCreateResult: {
         enumerable: true,
-        get() { return makeTreeItemFromCreateResult; }
+        get() {
+            return makeTreeItemFromCreateResult;
+        }
     },
-    "updateTreeItemAfterRename": {
+    updateTreeItemAfterRename: {
         enumerable: true,
-        get() { return updateTreeItemAfterRename; }
+        get() {
+            return updateTreeItemAfterRename;
+        }
     },
-    "normalizeClientPath": {
+    normalizeClientPath: {
         enumerable: true,
-        get() { return normalizeClientPath; }
+        get() {
+            return normalizeClientPath;
+        }
     },
-    "sameClientPath": {
+    sameClientPath: {
         enumerable: true,
-        get() { return sameClientPath; }
+        get() {
+            return sameClientPath;
+        }
     },
-    "findMapNodeBoxByPath": {
+    findMapNodeBoxByPath: {
         enumerable: true,
-        get() { return findMapNodeBoxByPath; }
+        get() {
+            return findMapNodeBoxByPath;
+        }
     },
-    "animateMapBox": {
+    animateMapBox: {
         enumerable: true,
-        get() { return animateMapBox; }
+        get() {
+            return animateMapBox;
+        }
     },
-    "updateOpenMapNodeAfterRename": {
+    updateOpenMapNodeAfterRename: {
         enumerable: true,
-        get() { return updateOpenMapNodeAfterRename; }
+        get() {
+            return updateOpenMapNodeAfterRename;
+        }
     },
-    "appendMapNodeBox": {
+    appendMapNodeBox: {
         enumerable: true,
-        get() { return appendMapNodeBox; }
+        get() {
+            return appendMapNodeBox;
+        }
     },
-    "createNodeUnderMapFromTree": {
+    createNodeUnderMapFromTree: {
         enumerable: true,
-        get() { return createNodeUnderMapFromTree; }
+        get() {
+            return createNodeUnderMapFromTree;
+        }
     },
-    "selectTreeFile": {
+    selectTreeFile: {
         enumerable: true,
-        get() { return selectTreeFile; }
+        get() {
+            return selectTreeFile;
+        }
     },
-    "startRenameSelectedTreeFile": {
+    startRenameSelectedTreeFile: {
         enumerable: true,
-        get() { return startRenameSelectedTreeFile; }
+        get() {
+            return startRenameSelectedTreeFile;
+        }
     },
-    "startRenameTreeFile": {
+    startRenameTreeFile: {
         enumerable: true,
-        get() { return startRenameTreeFile; }
+        get() {
+            return startRenameTreeFile;
+        }
     },
-    "loadFolderChildren": {
+    loadFolderChildren: {
         enumerable: true,
-        get() { return loadFolderChildren; }
+        get() {
+            return loadFolderChildren;
+        }
     },
-    "makeTreeItemFromMapNode": {
+    makeTreeItemFromMapNode: {
         enumerable: true,
-        get() { return makeTreeItemFromMapNode; }
+        get() {
+            return makeTreeItemFromMapNode;
+        }
     },
-    "getTreeRolesFromEdge": {
+    getTreeRolesFromEdge: {
         enumerable: true,
-        get() { return getTreeRolesFromEdge; }
+        get() {
+            return getTreeRolesFromEdge;
+        }
     },
-    "buildMapNodeTreeItems": {
+    buildMapNodeTreeItems: {
         enumerable: true,
-        get() { return buildMapNodeTreeItems; }
+        get() {
+            return buildMapNodeTreeItems;
+        }
     },
-    "loadSyntheticTreeChildren": {
+    loadSyntheticTreeChildren: {
         enumerable: true,
-        get() { return loadSyntheticTreeChildren; }
+        get() {
+            return loadSyntheticTreeChildren;
+        }
     },
-    "loadMapTreeChildren": {
+    loadMapTreeChildren: {
         enumerable: true,
-        get() { return loadMapTreeChildren; }
+        get() {
+            return loadMapTreeChildren;
+        }
     }
 });
-registerModule("tree.view", moduleApi);
+registerModule('tree.view', moduleApi);

@@ -54,10 +54,4 @@ if (typeof document !== 'undefined') {
     }
 }
 
-export {
-    getPisiTreePathSegments,
-    initializePisiInternalTreeFilter,
-    installPisiInternalTreeFilter,
-    isPisiInternalTreePath,
-    removePisiInternalTreeNodes
-};
+export { getPisiTreePathSegments, initializePisiInternalTreeFilter, installPisiInternalTreeFilter, isPisiInternalTreePath, removePisiInternalTreeNodes };

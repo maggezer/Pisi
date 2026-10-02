@@ -1,16 +1,13 @@
-const PISI_INLINE_TEXT_COMMANDS = Object.freeze([
-    'bold',
-    'italic',
-    'underline',
-    'strikeThrough'
-]);
+const PISI_INLINE_TEXT_COMMANDS = Object.freeze(['bold', 'italic', 'underline', 'strikeThrough']);
 
 function isPisiInlineTextCommand(command) {
     return PISI_INLINE_TEXT_COMMANDS.includes(String(command || ''));
 }
 
 function parsePisiFontWeight(value) {
-    const normalized = String(value || '').trim().toLowerCase();
+    const normalized = String(value || '')
+        .trim()
+        .toLowerCase();
     if (normalized === 'bold' || normalized === 'bolder') return 700;
     if (normalized === 'normal' || normalized === 'lighter') return 400;
     const parsed = Number.parseInt(normalized, 10);
@@ -18,11 +15,7 @@ function parsePisiFontWeight(value) {
 }
 
 function parsePisiTextDecorations(style = {}) {
-    const raw = String(
-        style.textDecorationLine ||
-        style.textDecoration ||
-        ''
-    ).toLowerCase();
+    const raw = String(style.textDecorationLine || style.textDecoration || '').toLowerCase();
     const values = new Set();
     if (raw.includes('underline')) values.add('underline');
     if (raw.includes('line-through')) values.add('line-through');
@@ -42,9 +35,7 @@ function resolvePisiInlineTextMutation(command, style = {}) {
     if (normalized === 'italic') {
         return {
             property: 'fontStyle',
-            value: String(style.fontStyle || '').toLowerCase() === 'italic'
-                ? 'normal'
-                : 'italic'
+            value: String(style.fontStyle || '').toLowerCase() === 'italic' ? 'normal' : 'italic'
         };
     }
 
@@ -62,10 +53,4 @@ function resolvePisiInlineTextMutation(command, style = {}) {
     return null;
 }
 
-export {
-    PISI_INLINE_TEXT_COMMANDS,
-    isPisiInlineTextCommand,
-    parsePisiFontWeight,
-    parsePisiTextDecorations,
-    resolvePisiInlineTextMutation
-};
+export { PISI_INLINE_TEXT_COMMANDS, isPisiInlineTextCommand, parsePisiFontWeight, parsePisiTextDecorations, resolvePisiInlineTextMutation };

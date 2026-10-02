@@ -105,9 +105,7 @@ function makePisiTrashCounts(item) {
         [item.relationshipCount, pisiTrashText('relationships')],
         [item.mapReferenceCount, pisiTrashText('mapReferences')]
     ].filter(([count]) => Number(count) > 0);
-    return counts.length
-        ? counts.map(([count, label]) => `${count} ${label}`).join(' · ')
-        : '—';
+    return counts.length ? counts.map(([count, label]) => `${count} ${label}`).join(' · ') : '—';
 }
 
 async function refreshPisiTrashProjectTree() {
@@ -121,9 +119,7 @@ function renderPisiTrashError(container, result) {
     const error = document.createElement('div');
     error.className = 'pisi-trash-error';
     const title = document.createElement('strong');
-    title.textContent = result?.code === 'TRASH_RESTORE_CONFLICT'
-        ? pisiTrashText('restoreConflict')
-        : pisiTrashText('operationFailed');
+    title.textContent = result?.code === 'TRASH_RESTORE_CONFLICT' ? pisiTrashText('restoreConflict') : pisiTrashText('operationFailed');
     error.appendChild(title);
     if (result?.error && result.code !== 'TRASH_RESTORE_CONFLICT') {
         const detail = document.createElement('span');
@@ -175,46 +171,38 @@ function makePisiTrashItemCard(item, rerender) {
 
     const actions = document.createElement('div');
     actions.className = 'pisi-trash-card-actions';
-    const restore = makePisiTrashActionButton(
-        pisiTrashText('restore'),
-        'pisi-trash-btn primary',
-        async () => {
-            restore.disabled = true;
-            permanent.disabled = true;
-            const result = await commandPisiDomain('trash.restore.v1', {
-                projectFolder: window.currentProjectFolder,
-                trashId: item.id
-            });
-            if (!result?.ok) {
-                restore.disabled = false;
-                permanent.disabled = false;
-                renderPisiTrashError(card, result);
-                return;
-            }
-            await refreshPisiTrashProjectTree();
-            await rerender();
+    const restore = makePisiTrashActionButton(pisiTrashText('restore'), 'pisi-trash-btn primary', async () => {
+        restore.disabled = true;
+        permanent.disabled = true;
+        const result = await commandPisiDomain('trash.restore.v1', {
+            projectFolder: window.currentProjectFolder,
+            trashId: item.id
+        });
+        if (!result?.ok) {
+            restore.disabled = false;
+            permanent.disabled = false;
+            renderPisiTrashError(card, result);
+            return;
         }
-    );
-    const permanent = makePisiTrashActionButton(
-        pisiTrashText('deletePermanently'),
-        'pisi-trash-btn danger',
-        async () => {
-            if (!window.confirm(pisiTrashText('confirmDelete'))) return;
-            restore.disabled = true;
-            permanent.disabled = true;
-            const result = await commandPisiDomain('trash.delete-permanently.v1', {
-                projectFolder: window.currentProjectFolder,
-                trashId: item.id
-            });
-            if (!result?.ok) {
-                restore.disabled = false;
-                permanent.disabled = false;
-                renderPisiTrashError(card, result);
-                return;
-            }
-            await rerender();
+        await refreshPisiTrashProjectTree();
+        await rerender();
+    });
+    const permanent = makePisiTrashActionButton(pisiTrashText('deletePermanently'), 'pisi-trash-btn danger', async () => {
+        if (!window.confirm(pisiTrashText('confirmDelete'))) return;
+        restore.disabled = true;
+        permanent.disabled = true;
+        const result = await commandPisiDomain('trash.delete-permanently.v1', {
+            projectFolder: window.currentProjectFolder,
+            trashId: item.id
+        });
+        if (!result?.ok) {
+            restore.disabled = false;
+            permanent.disabled = false;
+            renderPisiTrashError(card, result);
+            return;
         }
-    );
+        await rerender();
+    });
     actions.append(restore, permanent);
     card.append(copy, actions);
     return card;
@@ -237,26 +225,18 @@ async function renderPisiTrashPage(container) {
 
     const headerActions = document.createElement('div');
     headerActions.className = 'pisi-trash-header-actions';
-    const refresh = makePisiTrashActionButton(
-        pisiTrashText('refresh'),
-        'pisi-trash-btn',
-        () => renderPisiTrashPage(container)
-    );
-    const empty = makePisiTrashActionButton(
-        pisiTrashText('empty'),
-        'pisi-trash-btn danger',
-        async () => {
-            if (!window.confirm(pisiTrashText('confirmEmpty'))) return;
-            empty.disabled = true;
-            const result = await commandPisiDomain('trash.empty.v1', { projectFolder });
-            if (!result?.ok) {
-                empty.disabled = false;
-                renderPisiTrashError(page, result);
-                return;
-            }
-            await renderPisiTrashPage(container);
+    const refresh = makePisiTrashActionButton(pisiTrashText('refresh'), 'pisi-trash-btn', () => renderPisiTrashPage(container));
+    const empty = makePisiTrashActionButton(pisiTrashText('empty'), 'pisi-trash-btn danger', async () => {
+        if (!window.confirm(pisiTrashText('confirmEmpty'))) return;
+        empty.disabled = true;
+        const result = await commandPisiDomain('trash.empty.v1', { projectFolder });
+        if (!result?.ok) {
+            empty.disabled = false;
+            renderPisiTrashError(page, result);
+            return;
         }
-    );
+        await renderPisiTrashPage(container);
+    });
     headerActions.append(refresh, empty);
     header.append(heading, headerActions);
     page.appendChild(header);
@@ -304,11 +284,4 @@ const moduleApi = {
 
 registerModule('shell.trash', moduleApi);
 
-export {
-    PISI_TRASH_TEXT,
-    describePisiTrashConflict,
-    formatPisiTrashDate,
-    makePisiTrashCounts,
-    pisiTrashText,
-    renderPisiTrashPage
-};
+export { PISI_TRASH_TEXT, describePisiTrashConflict, formatPisiTrashDate, makePisiTrashCounts, pisiTrashText, renderPisiTrashPage };

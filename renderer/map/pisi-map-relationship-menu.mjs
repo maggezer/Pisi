@@ -68,10 +68,7 @@ function positionRelationshipMenu() {
     if (!button || !menu || menu.hidden) return;
     const rect = button.getBoundingClientRect();
     const menuWidth = Math.max(150, menu.offsetWidth || 150);
-    const left = Math.min(
-        Math.max(8, rect.left),
-        Math.max(8, window.innerWidth - menuWidth - 8)
-    );
+    const left = Math.min(Math.max(8, rect.left), Math.max(8, window.innerWidth - menuWidth - 8));
     menu.style.left = `${Math.round(left)}px`;
     menu.style.top = `${Math.round(rect.bottom + 6)}px`;
 }
@@ -188,20 +185,28 @@ function bindRelationshipMenuHandlers() {
     if (relationshipMenuState.handlersBound) return;
     relationshipMenuState.handlersBound = true;
 
-    document.addEventListener('mousedown', (event) => {
-        const menu = relationshipMenuState.menu;
-        const button = relationshipMenuState.button;
-        if (!menu || menu.hidden) return;
-        if (menu.contains(event.target) || button?.contains(event.target)) return;
-        closeRelationshipMenu();
-    }, true);
+    document.addEventListener(
+        'mousedown',
+        (event) => {
+            const menu = relationshipMenuState.menu;
+            const button = relationshipMenuState.button;
+            if (!menu || menu.hidden) return;
+            if (menu.contains(event.target) || button?.contains(event.target)) return;
+            closeRelationshipMenu();
+        },
+        true
+    );
 
-    document.addEventListener('keydown', (event) => {
-        if (event.key !== 'Escape' || relationshipMenuState.menu?.hidden) return;
-        event.preventDefault();
-        closeRelationshipMenu();
-        relationshipMenuState.button?.focus();
-    }, true);
+    document.addEventListener(
+        'keydown',
+        (event) => {
+            if (event.key !== 'Escape' || relationshipMenuState.menu?.hidden) return;
+            event.preventDefault();
+            closeRelationshipMenu();
+            relationshipMenuState.button?.focus();
+        },
+        true
+    );
 
     document.addEventListener('pisi:language-changed', scheduleRelationshipPlacement);
     document.addEventListener('pisi:map-customization-context-changed', scheduleRelationshipPlacement);
@@ -239,10 +244,4 @@ registerModule('map.relationshipMenu', {
 
 installRelationshipMenu();
 
-export {
-    applyRelationship,
-    closeRelationshipMenu,
-    installRelationshipMenu,
-    placeRelationshipButton,
-    syncRelationshipMenu
-};
+export { applyRelationship, closeRelationshipMenu, installRelationshipMenu, placeRelationshipButton, syncRelationshipMenu };

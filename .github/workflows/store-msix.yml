@@ -1,202 +1,202 @@
 name: Microsoft Store MSIX
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
-  workflow_dispatch:
-    inputs:
-      publish:
-        description: 'Publish the generated MSIX bundle to Microsoft Store'
-        required: true
-        type: boolean
-        default: false
+    push:
+        tags:
+            - 'v*.*.*'
+    workflow_dispatch:
+        inputs:
+            publish:
+                description: 'Publish the generated MSIX bundle to Microsoft Store'
+                required: true
+                type: boolean
+                default: false
 
 permissions:
-  contents: read
+    contents: read
 
 concurrency:
-  group: store-msix-${{ github.ref }}
-  cancel-in-progress: false
+    group: store-msix-${{ github.ref }}
+    cancel-in-progress: false
 
 jobs:
-  store-package:
-    if: ${{ vars.PISI_STORE_IDENTITY_NAME != '' && vars.PISI_STORE_PUBLISHER != '' && vars.PISI_STORE_PUBLISHER_DISPLAY_NAME != '' }}
-    runs-on: windows-latest
-    timeout-minutes: 45
-    env:
-      PISI_STORE_IDENTITY_NAME: ${{ vars.PISI_STORE_IDENTITY_NAME }}
-      PISI_STORE_PUBLISHER: ${{ vars.PISI_STORE_PUBLISHER }}
-      PISI_STORE_PUBLISHER_DISPLAY_NAME: ${{ vars.PISI_STORE_PUBLISHER_DISPLAY_NAME }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-
-      - name: Setup Windows App CLI
-        uses: microsoft/setup-WinAppCli@v0.2
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Verify release tag when tag-triggered
-        if: github.event_name == 'push'
-        shell: pwsh
-        run: |
-          $version = node -p "require('./package.json').version"
-          $expectedTag = "v$version"
-          if ("${{ github.ref_name }}" -ne $expectedTag) {
-            throw "Store package tag ${{ github.ref_name }} does not match package.json version $version (expected $expectedTag)."
-          }
-
-      - name: Build Store x64 layout
-        run: npm run dist:store:x64
-
-      - name: Build Store ARM64 layout
-        run: npm run dist:store:arm64
-
-      - name: Prepare Store manifest and assets
-        shell: pwsh
-        run: |
-          $x64Exe = Get-ChildItem -Path dist-store/x64 -Filter Pisi.exe -File -Recurse |
-            Select-Object -First 1
-          $arm64Exe = Get-ChildItem -Path dist-store/arm64 -Filter Pisi.exe -File -Recurse |
-            Select-Object -First 1
-
-          if (-not $x64Exe) {
-            throw "Could not find the x64 Pisi.exe Store layout."
-          }
-          if (-not $arm64Exe) {
-            throw "Could not find the ARM64 Pisi.exe Store layout."
-          }
-
-          $manifest = Join-Path $PWD 'dist-store/Package.appxmanifest'
-
-          ./scripts/prepare-store-msix.ps1 `
-            -X64Layout $x64Exe.Directory.FullName `
-            -Arm64Layout $arm64Exe.Directory.FullName `
-            -ManifestPath $manifest `
-            -IdentityName $env:PISI_STORE_IDENTITY_NAME `
-            -Publisher $env:PISI_STORE_PUBLISHER `
-            -PublisherDisplayName $env:PISI_STORE_PUBLISHER_DISPLAY_NAME
-
-          "PISI_STORE_X64_LAYOUT=$($x64Exe.Directory.FullName)" >> $env:GITHUB_ENV
-          "PISI_STORE_ARM64_LAYOUT=$($arm64Exe.Directory.FullName)" >> $env:GITHUB_ENV
-          "PISI_STORE_MANIFEST=$manifest" >> $env:GITHUB_ENV
-
-      - name: Build unsigned Store MSIX bundle
-        shell: pwsh
-        run: |
-          $version = node -p "require('./package.json').version"
-          New-Item -ItemType Directory -Force store-release | Out-Null
-
-          $bundle = Join-Path $PWD "store-release/Pisi-$version-Store-x64-arm64.msixbundle"
-
-          winapp pack `
-            "$env:PISI_STORE_X64_LAYOUT" `
-            "$env:PISI_STORE_ARM64_LAYOUT" `
-            --manifest "$env:PISI_STORE_MANIFEST" `
-            --output "$bundle" `
-            --no-sign `
-            --quiet
-
-          if ($LASTEXITCODE -ne 0) {
-            exit $LASTEXITCODE
-          }
-          if (-not (Test-Path -LiteralPath $bundle -PathType Leaf)) {
-            throw "MSIX bundle was not produced: $bundle"
-          }
-
-          "PISI_STORE_BUNDLE=$bundle" >> $env:GITHUB_ENV
-
-      - name: Create Store upload package and checksums
-        shell: pwsh
-        run: |
-          $version = node -p "require('./package.json').version"
-          $uploadZip = Join-Path $PWD "store-release/Pisi-$version-Store.msixupload.zip"
-          $upload = Join-Path $PWD "store-release/Pisi-$version-Store.msixupload"
-
-          Compress-Archive -LiteralPath "$env:PISI_STORE_BUNDLE" -DestinationPath $uploadZip -Force
-          Move-Item -LiteralPath $uploadZip -Destination $upload -Force
-
-          $artifacts = @(
-            $env:PISI_STORE_BUNDLE,
-            $upload
-          )
-
-          $hashLines = foreach ($artifact in $artifacts) {
-            $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $artifact).Hash.ToLowerInvariant()
-            "$hash  $([System.IO.Path]::GetFileName($artifact))"
-          }
-
-          $hashLines | Set-Content -Encoding utf8NoBOM store-release/SHA256SUMS.txt
-          "PISI_STORE_UPLOAD=$upload" >> $env:GITHUB_ENV
-
-      - name: Upload Store-ready package
-        uses: actions/upload-artifact@v4
-        with:
-          name: pisi-microsoft-store-${{ github.ref_name }}
-          path: |
-            store-release/*.msixbundle
-            store-release/*.msixupload
-            store-release/SHA256SUMS.txt
-          if-no-files-found: error
-          retention-days: 30
-
-      - name: Require Microsoft Store publishing configuration
-        if: (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && vars.PISI_STORE_AUTO_PUBLISH == 'true')
-        shell: pwsh
+    store-package:
+        if: ${{ vars.PISI_STORE_IDENTITY_NAME != '' && vars.PISI_STORE_PUBLISHER != '' && vars.PISI_STORE_PUBLISHER_DISPLAY_NAME != '' }}
+        runs-on: windows-latest
+        timeout-minutes: 45
         env:
-          PISI_STORE_PRODUCT_ID: ${{ vars.PISI_STORE_PRODUCT_ID }}
-          PISI_STORE_TENANT_ID: ${{ secrets.PISI_STORE_TENANT_ID }}
-          PISI_STORE_SELLER_ID: ${{ secrets.PISI_STORE_SELLER_ID }}
-          PISI_STORE_CLIENT_ID: ${{ secrets.PISI_STORE_CLIENT_ID }}
-          PISI_STORE_CLIENT_SECRET: ${{ secrets.PISI_STORE_CLIENT_SECRET }}
-        run: |
-          $required = @{
-            PISI_STORE_PRODUCT_ID = $env:PISI_STORE_PRODUCT_ID
-            PISI_STORE_TENANT_ID = $env:PISI_STORE_TENANT_ID
-            PISI_STORE_SELLER_ID = $env:PISI_STORE_SELLER_ID
-            PISI_STORE_CLIENT_ID = $env:PISI_STORE_CLIENT_ID
-            PISI_STORE_CLIENT_SECRET = $env:PISI_STORE_CLIENT_SECRET
-          }
+            PISI_STORE_IDENTITY_NAME: ${{ vars.PISI_STORE_IDENTITY_NAME }}
+            PISI_STORE_PUBLISHER: ${{ vars.PISI_STORE_PUBLISHER }}
+            PISI_STORE_PUBLISHER_DISPLAY_NAME: ${{ vars.PISI_STORE_PUBLISHER_DISPLAY_NAME }}
 
-          $missing = @($required.GetEnumerator() | Where-Object { [string]::IsNullOrWhiteSpace($_.Value) } | ForEach-Object { $_.Key })
-          if ($missing.Count -gt 0) {
-            throw "Microsoft Store publishing configuration is incomplete: $($missing -join ', ')"
-          }
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      - name: Setup Microsoft Store Developer CLI
-        if: (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && vars.PISI_STORE_AUTO_PUBLISH == 'true')
-        uses: microsoft/microsoft-store-apppublisher@v1.1
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: npm
 
-      - name: Configure Microsoft Store credentials
-        if: (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && vars.PISI_STORE_AUTO_PUBLISH == 'true')
-        shell: pwsh
-        env:
-          PISI_STORE_TENANT_ID: ${{ secrets.PISI_STORE_TENANT_ID }}
-          PISI_STORE_SELLER_ID: ${{ secrets.PISI_STORE_SELLER_ID }}
-          PISI_STORE_CLIENT_ID: ${{ secrets.PISI_STORE_CLIENT_ID }}
-          PISI_STORE_CLIENT_SECRET: ${{ secrets.PISI_STORE_CLIENT_SECRET }}
-        run: |
-          msstore reconfigure `
-            --tenantId "$env:PISI_STORE_TENANT_ID" `
-            --sellerId "$env:PISI_STORE_SELLER_ID" `
-            --clientId "$env:PISI_STORE_CLIENT_ID" `
-            --clientSecret "$env:PISI_STORE_CLIENT_SECRET"
+            - name: Setup Windows App CLI
+              uses: microsoft/setup-WinAppCli@v0.2
 
-      - name: Publish package to Microsoft Store
-        if: (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && vars.PISI_STORE_AUTO_PUBLISH == 'true')
-        shell: pwsh
-        env:
-          PISI_STORE_PRODUCT_ID: ${{ vars.PISI_STORE_PRODUCT_ID }}
-        run: |
-          msstore publish "$PWD" `
-            --inputFile "$env:PISI_STORE_UPLOAD" `
-            --appId "$env:PISI_STORE_PRODUCT_ID"
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Verify release tag when tag-triggered
+              if: github.event_name == 'push'
+              shell: pwsh
+              run: |
+                  $version = node -p "require('./package.json').version"
+                  $expectedTag = "v$version"
+                  if ("${{ github.ref_name }}" -ne $expectedTag) {
+                    throw "Store package tag ${{ github.ref_name }} does not match package.json version $version (expected $expectedTag)."
+                  }
+
+            - name: Build Store x64 layout
+              run: npm run dist:store:x64
+
+            - name: Build Store ARM64 layout
+              run: npm run dist:store:arm64
+
+            - name: Prepare Store manifest and assets
+              shell: pwsh
+              run: |
+                  $x64Exe = Get-ChildItem -Path dist-store/x64 -Filter Pisi.exe -File -Recurse |
+                    Select-Object -First 1
+                  $arm64Exe = Get-ChildItem -Path dist-store/arm64 -Filter Pisi.exe -File -Recurse |
+                    Select-Object -First 1
+
+                  if (-not $x64Exe) {
+                    throw "Could not find the x64 Pisi.exe Store layout."
+                  }
+                  if (-not $arm64Exe) {
+                    throw "Could not find the ARM64 Pisi.exe Store layout."
+                  }
+
+                  $manifest = Join-Path $PWD 'dist-store/Package.appxmanifest'
+
+                  ./scripts/prepare-store-msix.ps1 `
+                    -X64Layout $x64Exe.Directory.FullName `
+                    -Arm64Layout $arm64Exe.Directory.FullName `
+                    -ManifestPath $manifest `
+                    -IdentityName $env:PISI_STORE_IDENTITY_NAME `
+                    -Publisher $env:PISI_STORE_PUBLISHER `
+                    -PublisherDisplayName $env:PISI_STORE_PUBLISHER_DISPLAY_NAME
+
+                  "PISI_STORE_X64_LAYOUT=$($x64Exe.Directory.FullName)" >> $env:GITHUB_ENV
+                  "PISI_STORE_ARM64_LAYOUT=$($arm64Exe.Directory.FullName)" >> $env:GITHUB_ENV
+                  "PISI_STORE_MANIFEST=$manifest" >> $env:GITHUB_ENV
+
+            - name: Build unsigned Store MSIX bundle
+              shell: pwsh
+              run: |
+                  $version = node -p "require('./package.json').version"
+                  New-Item -ItemType Directory -Force store-release | Out-Null
+
+                  $bundle = Join-Path $PWD "store-release/Pisi-$version-Store-x64-arm64.msixbundle"
+
+                  winapp pack `
+                    "$env:PISI_STORE_X64_LAYOUT" `
+                    "$env:PISI_STORE_ARM64_LAYOUT" `
+                    --manifest "$env:PISI_STORE_MANIFEST" `
+                    --output "$bundle" `
+                    --no-sign `
+                    --quiet
+
+                  if ($LASTEXITCODE -ne 0) {
+                    exit $LASTEXITCODE
+                  }
+                  if (-not (Test-Path -LiteralPath $bundle -PathType Leaf)) {
+                    throw "MSIX bundle was not produced: $bundle"
+                  }
+
+                  "PISI_STORE_BUNDLE=$bundle" >> $env:GITHUB_ENV
+
+            - name: Create Store upload package and checksums
+              shell: pwsh
+              run: |
+                  $version = node -p "require('./package.json').version"
+                  $uploadZip = Join-Path $PWD "store-release/Pisi-$version-Store.msixupload.zip"
+                  $upload = Join-Path $PWD "store-release/Pisi-$version-Store.msixupload"
+
+                  Compress-Archive -LiteralPath "$env:PISI_STORE_BUNDLE" -DestinationPath $uploadZip -Force
+                  Move-Item -LiteralPath $uploadZip -Destination $upload -Force
+
+                  $artifacts = @(
+                    $env:PISI_STORE_BUNDLE,
+                    $upload
+                  )
+
+                  $hashLines = foreach ($artifact in $artifacts) {
+                    $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $artifact).Hash.ToLowerInvariant()
+                    "$hash  $([System.IO.Path]::GetFileName($artifact))"
+                  }
+
+                  $hashLines | Set-Content -Encoding utf8NoBOM store-release/SHA256SUMS.txt
+                  "PISI_STORE_UPLOAD=$upload" >> $env:GITHUB_ENV
+
+            - name: Upload Store-ready package
+              uses: actions/upload-artifact@v4
+              with:
+                  name: pisi-microsoft-store-${{ github.ref_name }}
+                  path: |
+                      store-release/*.msixbundle
+                      store-release/*.msixupload
+                      store-release/SHA256SUMS.txt
+                  if-no-files-found: error
+                  retention-days: 30
+
+            - name: Require Microsoft Store publishing configuration
+              if: (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && vars.PISI_STORE_AUTO_PUBLISH == 'true')
+              shell: pwsh
+              env:
+                  PISI_STORE_PRODUCT_ID: ${{ vars.PISI_STORE_PRODUCT_ID }}
+                  PISI_STORE_TENANT_ID: ${{ secrets.PISI_STORE_TENANT_ID }}
+                  PISI_STORE_SELLER_ID: ${{ secrets.PISI_STORE_SELLER_ID }}
+                  PISI_STORE_CLIENT_ID: ${{ secrets.PISI_STORE_CLIENT_ID }}
+                  PISI_STORE_CLIENT_SECRET: ${{ secrets.PISI_STORE_CLIENT_SECRET }}
+              run: |
+                  $required = @{
+                    PISI_STORE_PRODUCT_ID = $env:PISI_STORE_PRODUCT_ID
+                    PISI_STORE_TENANT_ID = $env:PISI_STORE_TENANT_ID
+                    PISI_STORE_SELLER_ID = $env:PISI_STORE_SELLER_ID
+                    PISI_STORE_CLIENT_ID = $env:PISI_STORE_CLIENT_ID
+                    PISI_STORE_CLIENT_SECRET = $env:PISI_STORE_CLIENT_SECRET
+                  }
+
+                  $missing = @($required.GetEnumerator() | Where-Object { [string]::IsNullOrWhiteSpace($_.Value) } | ForEach-Object { $_.Key })
+                  if ($missing.Count -gt 0) {
+                    throw "Microsoft Store publishing configuration is incomplete: $($missing -join ', ')"
+                  }
+
+            - name: Setup Microsoft Store Developer CLI
+              if: (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && vars.PISI_STORE_AUTO_PUBLISH == 'true')
+              uses: microsoft/microsoft-store-apppublisher@v1.1
+
+            - name: Configure Microsoft Store credentials
+              if: (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && vars.PISI_STORE_AUTO_PUBLISH == 'true')
+              shell: pwsh
+              env:
+                  PISI_STORE_TENANT_ID: ${{ secrets.PISI_STORE_TENANT_ID }}
+                  PISI_STORE_SELLER_ID: ${{ secrets.PISI_STORE_SELLER_ID }}
+                  PISI_STORE_CLIENT_ID: ${{ secrets.PISI_STORE_CLIENT_ID }}
+                  PISI_STORE_CLIENT_SECRET: ${{ secrets.PISI_STORE_CLIENT_SECRET }}
+              run: |
+                  msstore reconfigure `
+                    --tenantId "$env:PISI_STORE_TENANT_ID" `
+                    --sellerId "$env:PISI_STORE_SELLER_ID" `
+                    --clientId "$env:PISI_STORE_CLIENT_ID" `
+                    --clientSecret "$env:PISI_STORE_CLIENT_SECRET"
+
+            - name: Publish package to Microsoft Store
+              if: (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && vars.PISI_STORE_AUTO_PUBLISH == 'true')
+              shell: pwsh
+              env:
+                  PISI_STORE_PRODUCT_ID: ${{ vars.PISI_STORE_PRODUCT_ID }}
+              run: |
+                  msstore publish "$PWD" `
+                    --inputFile "$env:PISI_STORE_UPLOAD" `
+                    --appId "$env:PISI_STORE_PRODUCT_ID"

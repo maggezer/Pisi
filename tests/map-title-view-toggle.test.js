@@ -13,16 +13,26 @@ test('title toggle defaults to full, stays pressed, redraws edges and restores p
         const elements = new Map([['map-canvas', { dataset: {} }]]);
         let redraws = 0;
         const context = vm.createContext({
-            localStorage: { getItem: key => saved.get(key), setItem: (key, value) => saved.set(key, value) },
+            localStorage: { getItem: (key) => saved.get(key), setItem: (key, value) => saved.set(key, value) },
             document: {
-                getElementById: id => elements.get(id),
+                getElementById: (id) => elements.get(id),
                 createElement: () => ({
-                    dataset: {}, attributes: {}, listeners: {},
-                    setAttribute(key, value) { this.attributes[key] = value; },
-                    addEventListener(key, callback) { this.listeners[key] = callback; }
+                    dataset: {},
+                    attributes: {},
+                    listeners: {},
+                    setAttribute(key, value) {
+                        this.attributes[key] = value;
+                    },
+                    addEventListener(key, callback) {
+                        this.listeners[key] = callback;
+                    }
                 })
             },
-            window: { scheduleDrawMapConnections() { redraws++; } },
+            window: {
+                scheduleDrawMapConnections() {
+                    redraws++;
+                }
+            },
             t: () => 'Titles only'
         });
         vm.runInContext(code, context);

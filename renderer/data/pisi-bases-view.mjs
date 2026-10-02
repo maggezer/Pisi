@@ -1,14 +1,6 @@
 import { openPisiSearchResult } from '../search/pisi-global-search.mjs';
-import {
-    materializePisiDatabaseDocuments,
-    normalizePisiPropertyCollection
-} from './pisi-properties-core.mjs';
-import {
-    buildPisiBaseProjection,
-    formatPisiBasePropertyValue,
-    normalizePisiBaseDefinitions,
-    normalizePisiBaseLayout
-} from './pisi-bases-core.mjs';
+import { materializePisiDatabaseDocuments, normalizePisiPropertyCollection } from './pisi-properties-core.mjs';
+import { buildPisiBaseProjection, formatPisiBasePropertyValue, normalizePisiBaseDefinitions, normalizePisiBaseLayout } from './pisi-bases-core.mjs';
 
 const pisiBasesViewState = {
     layout: 'table',
@@ -30,10 +22,7 @@ function makePisiBasesButton(label, className = '') {
 }
 
 function getPisiBasesNodeLabel(node) {
-    return node?.metadata?.title ||
-        String(node?.fileName || '').replace(/\.node$/i, '') ||
-        node?.fullPath ||
-        pisiBasesViewTranslate('Node');
+    return node?.metadata?.title || String(node?.fileName || '').replace(/\.node$/i, '') || node?.fullPath || pisiBasesViewTranslate('Node');
 }
 
 function makePisiBasesDatabaseDocuments(nodes = [], mapPath = null) {
@@ -88,19 +77,12 @@ async function loadPisiBasesContext() {
 
     const anchorNode = nodes.find((node) => node?.fullPath);
     if (anchorNode && typeof window.pisiProject?.getNodePropertyContext === 'function') {
-        const schemaContext = await window.pisiProject.getNodePropertyContext(
-            anchorNode.fullPath,
-            mapPath
-        );
+        const schemaContext = await window.pisiProject.getNodePropertyContext(anchorNode.fullPath, mapPath);
         if (!schemaContext?.ok) {
-            throw new Error(
-                schemaContext?.error || 'Property schema yüklenemedi.'
-            );
+            throw new Error(schemaContext?.error || 'Property schema yüklenemedi.');
         }
         nodes = Array.isArray(schemaContext.nodes) ? schemaContext.nodes : nodes;
-        propertyDefinitions = normalizePisiBaseDefinitions(
-            schemaContext.propertyDefinitions
-        );
+        propertyDefinitions = normalizePisiBaseDefinitions(schemaContext.propertyDefinitions);
     } else {
         propertyDefinitions = collectPisiBasesFallbackDefinitions(nodes);
     }
@@ -109,12 +91,16 @@ async function loadPisiBasesContext() {
 
 function normalizePisiBasesSavedView(view = {}) {
     const id = String(view.id || '').trim();
-    const name = String(view.name || '').trim().slice(0, 120);
+    const name = String(view.name || '')
+        .trim()
+        .slice(0, 120);
     if (!id || !name) return null;
     return {
         id,
         name,
-        query: String(view.query || '').trim().slice(0, 2000),
+        query: String(view.query || '')
+            .trim()
+            .slice(0, 2000),
         layout: normalizePisiBaseLayout(view.layout),
         updatedAt: view.updatedAt || null
     };
@@ -179,10 +165,7 @@ function renderPisiBasesTable(host, projection, sourceDocuments) {
         for (const column of projection.columns) {
             const cell = document.createElement('td');
             cell.dataset.propertyId = column.id;
-            cell.textContent = formatPisiBasePropertyValue(
-                rowRecord.properties.get(column.id),
-                sourceDocuments
-            );
+            cell.textContent = formatPisiBasePropertyValue(rowRecord.properties.get(column.id), sourceDocuments);
             row.appendChild(cell);
         }
         body.appendChild(row);
@@ -208,10 +191,7 @@ function renderPisiBasesCards(host, projection, sourceDocuments) {
             const name = document.createElement('span');
             name.textContent = column.name;
             const value = document.createElement('strong');
-            value.textContent = formatPisiBasePropertyValue(
-                rowRecord.properties.get(column.id),
-                sourceDocuments
-            );
+            value.textContent = formatPisiBasePropertyValue(rowRecord.properties.get(column.id), sourceDocuments);
             row.append(name, value);
             card.appendChild(row);
         }
@@ -245,14 +225,11 @@ function renderPisiBasesSavedViewControls(host, queryInput, rerenderAll) {
     save.addEventListener('click', async () => {
         const name = prompt(pisiBasesViewTranslate('Görünüm adı'));
         if (!name) return;
-        const result = await window.pisiProject?.saveView?.(
-            window.currentProjectFolder,
-            {
-                name,
-                query: pisiBasesViewState.query,
-                layout: normalizePisiBaseLayout(pisiBasesViewState.layout)
-            }
-        );
+        const result = await window.pisiProject?.saveView?.(window.currentProjectFolder, {
+            name,
+            query: pisiBasesViewState.query,
+            layout: normalizePisiBaseLayout(pisiBasesViewState.layout)
+        });
         if (!result?.ok) {
             alert(result?.error || pisiBasesViewTranslate('Görünüm kaydedilemedi.'));
             return;
@@ -264,10 +241,7 @@ function renderPisiBasesSavedViewControls(host, queryInput, rerenderAll) {
     const remove = makePisiBasesButton('Filtreyi sil', 'pisi-secondary-button');
     remove.addEventListener('click', async () => {
         if (!select.value) return;
-        const result = await window.pisiProject?.deleteView?.(
-            window.currentProjectFolder,
-            select.value
-        );
+        const result = await window.pisiProject?.deleteView?.(window.currentProjectFolder, select.value);
         if (!result?.ok) {
             alert(result?.error || pisiBasesViewTranslate('Görünüm silinemedi.'));
             return;
@@ -292,9 +266,7 @@ async function renderPisiBasesView(container, options = {}) {
     const title = document.createElement('h2');
     title.textContent = pisiBasesViewTranslate('Bases-lite');
     const context = await loadPisiBasesContext();
-    const sourceDocuments = materializePisiDatabaseDocuments(
-        makePisiBasesDatabaseDocuments(context.nodes, context.mapPath)
-    );
+    const sourceDocuments = materializePisiDatabaseDocuments(makePisiBasesDatabaseDocuments(context.nodes, context.mapPath));
     const definitions = normalizePisiBaseDefinitions(context.propertyDefinitions);
     await loadPisiBasesSavedViews();
 
@@ -311,21 +283,13 @@ async function renderPisiBasesView(container, options = {}) {
     const actions = document.createElement('div');
     actions.className = 'pisi-bases-actions';
 
-    let currentProjection = buildPisiBaseProjection(
-        sourceDocuments,
-        definitions,
-        pisiBasesViewState.query
-    );
+    let currentProjection = buildPisiBaseProjection(sourceDocuments, definitions, pisiBasesViewState.query);
     const rerenderResults = () => {
         pisiBasesViewState.query = query.value.trim().slice(0, 2000);
         pisiBasesViewState.layout = normalizePisiBaseLayout(pisiBasesViewState.layout);
         tableButton.classList.toggle('active', pisiBasesViewState.layout === 'table');
         cardsButton.classList.toggle('active', pisiBasesViewState.layout === 'cards');
-        currentProjection = buildPisiBaseProjection(
-            sourceDocuments,
-            definitions,
-            pisiBasesViewState.query
-        );
+        currentProjection = buildPisiBaseProjection(sourceDocuments, definitions, pisiBasesViewState.query);
         results.replaceChildren();
         if (pisiBasesViewState.layout === 'cards') {
             renderPisiBasesCards(results, currentProjection, sourceDocuments);
@@ -356,20 +320,14 @@ async function renderPisiBasesView(container, options = {}) {
 
     const createMap = makePisiBasesButton('Sonuçlardan map üret', 'pisi-primary-button');
     createMap.addEventListener('click', async () => {
-        const titleValue = prompt(
-            pisiBasesViewTranslate('Map adı'),
-            pisiBasesViewTranslate('Özellik görünümü')
-        );
+        const titleValue = prompt(pisiBasesViewTranslate('Map adı'), pisiBasesViewTranslate('Özellik görünümü'));
         if (!titleValue) return;
         createMap.disabled = true;
-        const result = await window.pisiProject?.createPropertyMap?.(
-            window.currentProjectFolder,
-            {
-                title: titleValue,
-                query: currentProjection.query,
-                nodePaths: currentProjection.documents.map((item) => item.path)
-            }
-        );
+        const result = await window.pisiProject?.createPropertyMap?.(window.currentProjectFolder, {
+            title: titleValue,
+            query: currentProjection.query,
+            nodePaths: currentProjection.documents.map((item) => item.path)
+        });
         if (!result?.ok) {
             alert(result?.error || pisiBasesViewTranslate('Map oluşturulamadı.'));
             createMap.disabled = false;

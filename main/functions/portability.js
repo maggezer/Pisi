@@ -45,10 +45,12 @@ function stripPisiTaskMetadataHtml(value = '') {
 }
 
 function pisiHtmlToPlainText(html = '') {
-    return decodePisiHtmlEntities(stripPisiTaskMetadataHtml(stripPisiUnsafeExportHtml(html))
-        .replace(/<br\s*\/?>/gi, '\n')
-        .replace(/<\/(?:p|div|h[1-6]|li|blockquote|tr|table)>/gi, '\n')
-        .replace(/<[^>]+>/g, ' '))
+    return decodePisiHtmlEntities(
+        stripPisiTaskMetadataHtml(stripPisiUnsafeExportHtml(html))
+            .replace(/<br\s*\/?>/gi, '\n')
+            .replace(/<\/(?:p|div|h[1-6]|li|blockquote|tr|table)>/gi, '\n')
+            .replace(/<[^>]+>/g, ' ')
+    )
         .replace(/[ \t]+\n/g, '\n')
         .replace(/\n[ \t]+/g, '\n')
         .replace(/\n{3,}/g, '\n\n')
@@ -61,10 +63,9 @@ function pisiHtmlToMarkdown(html = '') {
     value = value.replace(
         /<(div|p|blockquote|pre)\b[^>]*data-pisi-block-type=["'](bullet|number|task|quote|code)["'][^>]*>([\s\S]*?)<\/\1>/gi,
         (_all, _tag, type, body) => {
-            const cleanBody = String(body || '').replace(
-                /<span\b[^>]*class=["'][^"']*pisi-block-task-marker[^"']*["'][^>]*>[\s\S]*?<\/span>/gi,
-                ''
-            ).trim();
+            const cleanBody = String(body || '')
+                .replace(/<span\b[^>]*class=["'][^"']*pisi-block-task-marker[^"']*["'][^>]*>[\s\S]*?<\/span>/gi, '')
+                .trim();
             if (type === 'bullet') return `\n- ${cleanBody}\n`;
             if (type === 'number') return `\n1. ${cleanBody}\n`;
             if (type === 'task') {
@@ -102,14 +103,17 @@ function pisiHtmlToMarkdown(html = '') {
 }
 
 function pisiMarkdownToHtml(markdown = '') {
-    const lines = String(markdown || '').replace(/\r\n?/g, '\n').split('\n');
+    const lines = String(markdown || '')
+        .replace(/\r\n?/g, '\n')
+        .split('\n');
     const output = [];
     let listOpen = false;
-    const inline = (value) => escapePisiPortableHtml(value)
-        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-        .replace(/`([^`]+)`/g, '<code>$1</code>')
-        .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2">$1</a>');
+    const inline = (value) =>
+        escapePisiPortableHtml(value)
+            .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+            .replace(/`([^`]+)`/g, '<code>$1</code>')
+            .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2">$1</a>');
     for (const rawLine of lines) {
         const line = rawLine.trimEnd();
         const heading = line.match(/^(#{1,6})\s+(.+)$/);
@@ -174,8 +178,7 @@ function snapshotPisiNodeVersion(nodePath, reason = 'save') {
         fs.mkdirSync(historyDirectory, { recursive: true });
         const raw = fs.readFileSync(nodePath, 'utf-8');
         const hash = crypto.createHash('sha256').update(raw).digest('hex').slice(0, 16);
-        const existing = fs.readdirSync(historyDirectory)
-            .filter((name) => name.endsWith(`-${hash}.json`));
+        const existing = fs.readdirSync(historyDirectory).filter((name) => name.endsWith(`-${hash}.json`));
         if (existing.length) return { ok: true, skipped: true, duplicate: true };
         const fileName = `${Date.now()}-${pisiSafeTimestamp()}-${hash}.json`;
         const snapshot = {
@@ -188,7 +191,8 @@ function snapshotPisiNodeVersion(nodePath, reason = 'save') {
         };
         const snapshotPath = path.join(historyDirectory, fileName);
         writeFileAtomic(snapshotPath, JSON.stringify(snapshot, null, 2), { backup: false });
-        const versions = fs.readdirSync(historyDirectory)
+        const versions = fs
+            .readdirSync(historyDirectory)
             .filter((name) => name.endsWith('.json'))
             .sort()
             .reverse();
@@ -206,15 +210,9 @@ function saveNodeContentWithHistory(nodePath, content = '', options = {}) {
         const current = getPisiDocument(nodePath);
         if (!current.ok) return current;
 
-        const normalizedIncoming = editorAssets.normalizePisiEditorAssets(
-            String(content || ''),
-            { writeAssets: false }
-        ).content;
+        const normalizedIncoming = editorAssets.normalizePisiEditorAssets(String(content || ''), { writeAssets: false }).content;
 
-        if (
-            String(current.data?.content || '') ===
-            String(normalizedIncoming || '')
-        ) {
+        if (String(current.data?.content || '') === String(normalizedIncoming || '')) {
             return {
                 ok: true,
                 unchanged: true,
@@ -236,7 +234,8 @@ function listPisiNodeHistory(nodePath) {
     try {
         const directory = getPisiHistoryDirectory(nodePath);
         if (!directory || !fs.existsSync(directory)) return { ok: true, versions: [] };
-        const versions = fs.readdirSync(directory)
+        const versions = fs
+            .readdirSync(directory)
             .filter((name) => /^\d+-.+\.json$/.test(name))
             .sort()
             .reverse()
@@ -251,7 +250,8 @@ function listPisiNodeHistory(nodePath) {
                     hash: result.data.hash || '',
                     preview: stripPreviewText(result.data.data.content || '')
                 };
-            }).filter(Boolean);
+            })
+            .filter(Boolean);
         return { ok: true, versions };
     } catch (error) {
         return { ok: false, error: error.message, versions: [] };
@@ -303,9 +303,7 @@ function pisiPropertiesFrontmatter(properties = {}) {
     if (!entries.length) return '';
     const lines = ['---'];
     for (const property of entries) {
-        const value = Array.isArray(property.value)
-            ? property.value.join(', ')
-            : String(property.value ?? '');
+        const value = Array.isArray(property.value) ? property.value.join(', ') : String(property.value ?? '');
         lines.push(`${property.name}: ${JSON.stringify(value)}`);
     }
     lines.push('---', '');
@@ -314,9 +312,7 @@ function pisiPropertiesFrontmatter(properties = {}) {
 
 function pisiExportHtmlDocument(info) {
     const title = escapePisiPortableHtml(info.metadata.title || 'Pisi');
-    const content = stripPisiTaskMetadataHtml(
-        stripPisiUnsafeExportHtml(info.data.content || '')
-    );
+    const content = stripPisiTaskMetadataHtml(stripPisiUnsafeExportHtml(info.data.content || ''));
     return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>${title}</title><style>body{font:16px/1.6 system-ui;max-width:900px;margin:40px auto;padding:0 24px;color:#202124}table{border-collapse:collapse}td,th{border:1px solid #bbb;padding:6px}img,canvas{max-width:100%}blockquote{border-left:3px solid #888;padding-left:16px;color:#555}</style></head><body><h1>${title}</h1>${content}</body></html>`;
 }
 
@@ -326,7 +322,7 @@ function pisiCrc32(buffer) {
         pisiCrcTable = Array.from({ length: 256 }, (_unused, index) => {
             let value = index;
             for (let bit = 0; bit < 8; bit += 1) {
-                value = (value & 1) ? (0xedb88320 ^ (value >>> 1)) : (value >>> 1);
+                value = value & 1 ? 0xedb88320 ^ (value >>> 1) : value >>> 1;
             }
             return value >>> 0;
         });
@@ -384,8 +380,14 @@ function makePisiDocxBuffer(info) {
         .join('');
     const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${paragraphs}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr></w:body></w:document>`;
     return makePisiStoredZip([
-        { name: '[Content_Types].xml', data: '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>' },
-        { name: '_rels/.rels', data: '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>' },
+        {
+            name: '[Content_Types].xml',
+            data: '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>'
+        },
+        {
+            name: '_rels/.rels',
+            data: '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>'
+        },
         { name: 'word/document.xml', data: documentXml }
     ]);
 }
@@ -432,13 +434,10 @@ function validatePisiMapExportSvg(value) {
     if (!/^<svg[\s>]/i.test(svg) || !/<\/svg>$/i.test(svg)) {
         return { ok: false, error: 'Harita SVG verisi geçersiz.' };
     }
-    const hasUnsafeElement = /<(?:script|foreignObject|iframe|object|embed)\b/i
-        .test(svg);
-    const hasUnsafeAttribute = (svg.match(/<[^>]+>/g) || []).some((tag) => (
-        /\son[a-z]+\s*=/i.test(tag) ||
-        /\s(?:(?:xlink:)?href|src)\s*=\s*["'](?:https?:|file:|javascript:)/i
-            .test(tag)
-    ));
+    const hasUnsafeElement = /<(?:script|foreignObject|iframe|object|embed)\b/i.test(svg);
+    const hasUnsafeAttribute = (svg.match(/<[^>]+>/g) || []).some(
+        (tag) => /\son[a-z]+\s*=/i.test(tag) || /\s(?:(?:xlink:)?href|src)\s*=\s*["'](?:https?:|file:|javascript:)/i.test(tag)
+    );
     if (hasUnsafeElement || hasUnsafeAttribute) {
         return { ok: false, error: 'Harita SVG verisi güvenli değil.' };
     }
@@ -446,9 +445,7 @@ function validatePisiMapExportSvg(value) {
 }
 
 function decodePisiMapExportPng(value) {
-    const match = String(value || '').match(
-        /^data:image\/png;base64,([a-z0-9+/=\r\n]+)$/i
-    );
+    const match = String(value || '').match(/^data:image\/png;base64,([a-z0-9+/=\r\n]+)$/i);
     if (!match) return { ok: false, error: 'PNG verisi geçersiz.' };
     const buffer = Buffer.from(match[1], 'base64');
     if (!buffer.length || buffer.length > PISI_MAP_EXPORT_MAX_PNG_BYTES) {
@@ -495,7 +492,8 @@ async function exportPisiMapGraphic(mapPath, payload = {}) {
     }
 
     const page = getPisiMapExportPageSize(payload.width, payload.height);
-    const html = '<!doctype html><html><head><meta charset="utf-8">' +
+    const html =
+        '<!doctype html><html><head><meta charset="utf-8">' +
         `<style>@page{size:${page.width}px ${page.height}px;margin:0}` +
         `html,body{margin:0;width:${page.width}px;height:${page.height}px;` +
         'overflow:hidden;background:transparent}' +
@@ -510,9 +508,7 @@ async function exportPisiMapGraphic(mapPath, payload = {}) {
         }
     });
     try {
-        const dataUrl = `data:text/html;charset=utf-8;base64,${
-            Buffer.from(html, 'utf8').toString('base64')
-        }`;
+        const dataUrl = `data:text/html;charset=utf-8;base64,${Buffer.from(html, 'utf8').toString('base64')}`;
         await printWindow.loadURL(dataUrl);
         const buffer = await printWindow.webContents.printToPDF({
             printBackground: true,
@@ -567,7 +563,9 @@ function stripPisiMarkdownFrontmatter(markdown) {
         if (separator < 1) continue;
         const name = line.slice(0, separator).trim();
         let value = line.slice(separator + 1).trim();
-        try { value = JSON.parse(value); } catch {}
+        try {
+            value = JSON.parse(value);
+        } catch {}
         const id = normalizePisiPropertyId(name);
         properties[id] = { id, name, type: 'text', value: String(value ?? '') };
     }
@@ -609,15 +607,18 @@ function listPisiAtomicBackups(projectFolder, filePath = null) {
         const candidates = filePath
             ? [`${filePath}.pisi-backup`]
             : walkPisiFiles(projectFolder, (_path, name) => name.endsWith('.pisi-backup'), { maxFiles: 5000 });
-        const backups = candidates.filter((candidate) => fs.existsSync(candidate)).map((backupPath) => {
-            const stat = fs.statSync(backupPath);
-            return {
-                backupId: path.relative(projectFolder, backupPath).split(path.sep).join('/'),
-                targetPath: backupPath.slice(0, -'.pisi-backup'.length),
-                updatedAt: stat.mtime.toISOString(),
-                size: stat.size
-            };
-        }).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+        const backups = candidates
+            .filter((candidate) => fs.existsSync(candidate))
+            .map((backupPath) => {
+                const stat = fs.statSync(backupPath);
+                return {
+                    backupId: path.relative(projectFolder, backupPath).split(path.sep).join('/'),
+                    targetPath: backupPath.slice(0, -'.pisi-backup'.length),
+                    updatedAt: stat.mtime.toISOString(),
+                    size: stat.size
+                };
+            })
+            .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
         return { ok: true, backups };
     } catch (error) {
         return { ok: false, error: error.message, backups: [] };

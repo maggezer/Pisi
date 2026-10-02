@@ -1,16 +1,69 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 
 const PISI_TOOLBAR_COLORS = [
-    '#000000', '#404040', '#737373', '#a6a6a6', '#d9d9d9', '#ffffff',
-    '#c00000', '#ff0000', '#ffc000', '#ffff00', '#92d050', '#00b050',
-    '#00b0f0', '#0070c0', '#002060', '#7030a0', '#f4b183', '#ffd966',
-    '#a9d18e', '#9dc3e6', '#8ea9db', '#b4a7d6', '#f8cbad', '#fff2cc'
+    '#000000',
+    '#404040',
+    '#737373',
+    '#a6a6a6',
+    '#d9d9d9',
+    '#ffffff',
+    '#c00000',
+    '#ff0000',
+    '#ffc000',
+    '#ffff00',
+    '#92d050',
+    '#00b050',
+    '#00b0f0',
+    '#0070c0',
+    '#002060',
+    '#7030a0',
+    '#f4b183',
+    '#ffd966',
+    '#a9d18e',
+    '#9dc3e6',
+    '#8ea9db',
+    '#b4a7d6',
+    '#f8cbad',
+    '#fff2cc'
 ];
 
 const PISI_TOOLBAR_SYMBOLS = [
-    '©', '®', '™', '°', '±', '×', '÷', '≠', '≈', '≤', '≥', '∞',
-    '→', '←', '↑', '↓', '↔', '✓', '✕', '★', '☆', '•', '§', '¶',
-    'α', 'β', 'γ', 'δ', 'π', 'Σ', '√', '€', '£', '¥', '₺', '₿'
+    '©',
+    '®',
+    '™',
+    '°',
+    '±',
+    '×',
+    '÷',
+    '≠',
+    '≈',
+    '≤',
+    '≥',
+    '∞',
+    '→',
+    '←',
+    '↑',
+    '↓',
+    '↔',
+    '✓',
+    '✕',
+    '★',
+    '☆',
+    '•',
+    '§',
+    '¶',
+    'α',
+    'β',
+    'γ',
+    'δ',
+    'π',
+    'Σ',
+    '√',
+    '€',
+    '£',
+    '¥',
+    '₺',
+    '₿'
 ];
 
 let pisiToolbarPopover = null;
@@ -26,10 +79,7 @@ function positionPisiToolbarPopover(popover, anchor) {
     if (!popover || !anchor) return;
     const rect = anchor.getBoundingClientRect();
     const margin = 8;
-    const left = Math.min(
-        Math.max(margin, rect.left),
-        Math.max(margin, window.innerWidth - popover.offsetWidth - margin)
-    );
+    const left = Math.min(Math.max(margin, rect.left), Math.max(margin, window.innerWidth - popover.offsetWidth - margin));
     let top = rect.bottom + 5;
     if (top + popover.offsetHeight > window.innerHeight - margin) {
         top = Math.max(margin, rect.top - popover.offsetHeight - 5);
@@ -63,11 +113,7 @@ function openPisiToolbarColorPopover(toolbar, anchor, mode) {
         <label class="pisi-office-custom-color">Özel renk<input type="color" value="#f39c12"></label>
     `;
     const applyColor = (color) => {
-        runPisiUnifiedTextCommand(
-            toolbar,
-            mode === 'highlight' ? 'hiliteColor' : 'foreColor',
-            color
-        );
+        runPisiUnifiedTextCommand(toolbar, mode === 'highlight' ? 'hiliteColor' : 'foreColor', color);
         closePisiToolbarPopover();
     };
     const grid = popover.querySelector('.pisi-office-color-grid');
@@ -105,11 +151,15 @@ function openPisiToolbarSymbolPopover(toolbar, anchor) {
 }
 
 function bindPisiToolbarPopoverDismissal() {
-    document.addEventListener('pointerdown', (event) => {
-        if (!pisiToolbarPopover) return;
-        if (pisiToolbarPopover.contains(event.target) || pisiToolbarPopoverAnchor?.contains?.(event.target)) return;
-        closePisiToolbarPopover();
-    }, true);
+    document.addEventListener(
+        'pointerdown',
+        (event) => {
+            if (!pisiToolbarPopover) return;
+            if (pisiToolbarPopover.contains(event.target) || pisiToolbarPopoverAnchor?.contains?.(event.target)) return;
+            closePisiToolbarPopover();
+        },
+        true
+    );
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') closePisiToolbarPopover();
     });
@@ -121,12 +171,47 @@ bindPisiToolbarPopoverDismissal();
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    PISI_TOOLBAR_COLORS: { enumerable: true, get() { return PISI_TOOLBAR_COLORS; } },
-    PISI_TOOLBAR_SYMBOLS: { enumerable: true, get() { return PISI_TOOLBAR_SYMBOLS; } },
-    closePisiToolbarPopover: { enumerable: true, get() { return closePisiToolbarPopover; } },
-    positionPisiToolbarPopover: { enumerable: true, get() { return positionPisiToolbarPopover; } },
-    createPisiToolbarPopover: { enumerable: true, get() { return createPisiToolbarPopover; } },
-    openPisiToolbarColorPopover: { enumerable: true, get() { return openPisiToolbarColorPopover; } },
-    openPisiToolbarSymbolPopover: { enumerable: true, get() { return openPisiToolbarSymbolPopover; } }
+    PISI_TOOLBAR_COLORS: {
+        enumerable: true,
+        get() {
+            return PISI_TOOLBAR_COLORS;
+        }
+    },
+    PISI_TOOLBAR_SYMBOLS: {
+        enumerable: true,
+        get() {
+            return PISI_TOOLBAR_SYMBOLS;
+        }
+    },
+    closePisiToolbarPopover: {
+        enumerable: true,
+        get() {
+            return closePisiToolbarPopover;
+        }
+    },
+    positionPisiToolbarPopover: {
+        enumerable: true,
+        get() {
+            return positionPisiToolbarPopover;
+        }
+    },
+    createPisiToolbarPopover: {
+        enumerable: true,
+        get() {
+            return createPisiToolbarPopover;
+        }
+    },
+    openPisiToolbarColorPopover: {
+        enumerable: true,
+        get() {
+            return openPisiToolbarColorPopover;
+        }
+    },
+    openPisiToolbarSymbolPopover: {
+        enumerable: true,
+        get() {
+            return openPisiToolbarSymbolPopover;
+        }
+    }
 });
 registerModule('editor.toolbarPopovers', moduleApi);

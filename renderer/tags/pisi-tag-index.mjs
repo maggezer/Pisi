@@ -1,5 +1,5 @@
-import { registerModule } from "../core/module-registry.mjs";
-import { extractPisiTodoMetadataFromBlock } from "./pisi-todo-utils.mjs";
+import { registerModule } from '../core/module-registry.mjs';
+import { extractPisiTodoMetadataFromBlock } from './pisi-todo-utils.mjs';
 
 let pisiMissionIndexRefreshSequence = 0;
 let pisiMissionIndexRefreshPromise = null;
@@ -7,10 +7,7 @@ let pisiMissionIndexFileSystemUnsubscribe = null;
 let pisiMissionIndexInvalidationTimer = null;
 
 function bindPisiBlockIndexControls() {
-    const editors = [
-        document.getElementById('node-modal-content'),
-        document.getElementById('center-node-editor-content')
-    ].filter(Boolean);
+    const editors = [document.getElementById('node-modal-content'), document.getElementById('center-node-editor-content')].filter(Boolean);
     for (const editor of editors) {
         if (editor.dataset.pisiBlockIndexBound === '1') continue;
         editor.dataset.pisiBlockIndexBound = '1';
@@ -78,9 +75,11 @@ function resetPisiTagsForProject() {
         missionLoading: false,
         missionError: null,
         missionLastSyncedAt: null,
-        showCompletedMissions: false, missionFilter: 'all',
+        showCompletedMissions: false,
+        missionFilter: 'all',
         missionFilterOpen: false,
-        missionStatusFilter: 'all', missionSort: 'smart'
+        missionStatusFilter: 'all',
+        missionSort: 'smart'
     };
 
     if (typeof closePisiTagMenu === 'function') {
@@ -98,18 +97,18 @@ function resetPisiTagsForProject() {
 }
 
 function dispatchPisiMissionIndexUpdated(detail = {}) {
-    document.dispatchEvent(new CustomEvent('pisi:mission-index-updated', {
-        detail: {
-            count: Array.isArray(pisiTagsPanelState.missionIndex)
-                ? pisiTagsPanelState.missionIndex.length
-                : 0,
-            complete: pisiTagsPanelState.missionIndexComplete === true,
-            loading: pisiTagsPanelState.missionLoading === true,
-            error: pisiTagsPanelState.missionError || null,
-            syncedAt: pisiTagsPanelState.missionLastSyncedAt || null,
-            ...detail
-        }
-    }));
+    document.dispatchEvent(
+        new CustomEvent('pisi:mission-index-updated', {
+            detail: {
+                count: Array.isArray(pisiTagsPanelState.missionIndex) ? pisiTagsPanelState.missionIndex.length : 0,
+                complete: pisiTagsPanelState.missionIndexComplete === true,
+                loading: pisiTagsPanelState.missionLoading === true,
+                error: pisiTagsPanelState.missionError || null,
+                syncedAt: pisiTagsPanelState.missionLastSyncedAt || null,
+                ...detail
+            }
+        })
+    );
 }
 
 async function refreshPisiMissionIndex(options = {}) {
@@ -141,30 +140,18 @@ async function refreshPisiMissionIndex(options = {}) {
     const refreshPromise = (async () => {
         try {
             const result = await buildPisiMissionBlockIndex();
-            const stale = requestId !== pisiMissionIndexRefreshSequence ||
-                projectFolder !== window.currentProjectFolder;
+            const stale = requestId !== pisiMissionIndexRefreshSequence || projectFolder !== window.currentProjectFolder;
             if (stale) return { ...result, stale: true };
 
-            pisiTagsPanelState.missionIndex = Array.isArray(result?.blocks)
-                ? result.blocks
-                : [];
+            pisiTagsPanelState.missionIndex = Array.isArray(result?.blocks) ? result.blocks : [];
             pisiTagsPanelState.missionIndexComplete = result?.complete === true;
             pisiTagsPanelState.missionLoading = false;
-            pisiTagsPanelState.missionError = result?.complete === false
-                ? (result?.errors || []).filter(Boolean).join('\n') ||
-                    'Görevlerin bir bölümü okunamadı.'
-                : null;
+            pisiTagsPanelState.missionError =
+                result?.complete === false ? (result?.errors || []).filter(Boolean).join('\n') || 'Görevlerin bir bölümü okunamadı.' : null;
             pisiTagsPanelState.missionLastSyncedAt = Date.now();
 
-            if (
-                options.syncDiary !== false &&
-                pisiTagsPanelState.missionIndexComplete &&
-                typeof syncPisiDiaryFromMissionIndex === 'function'
-            ) {
-                await syncPisiDiaryFromMissionIndex(
-                    pisiTagsPanelState.missionIndex,
-                    { complete: true }
-                );
+            if (options.syncDiary !== false && pisiTagsPanelState.missionIndexComplete && typeof syncPisiDiaryFromMissionIndex === 'function') {
+                await syncPisiDiaryFromMissionIndex(pisiTagsPanelState.missionIndex, { complete: true });
             }
 
             window.renderPisiMissionsPanel?.();
@@ -173,25 +160,19 @@ async function refreshPisiMissionIndex(options = {}) {
             });
             return result;
         } catch (error) {
-            if (
-                requestId !== pisiMissionIndexRefreshSequence ||
-                projectFolder !== window.currentProjectFolder
-            ) {
+            if (requestId !== pisiMissionIndexRefreshSequence || projectFolder !== window.currentProjectFolder) {
                 return { blocks: [], complete: false, stale: true, errors: [] };
             }
 
             pisiTagsPanelState.missionLoading = false;
-            pisiTagsPanelState.missionError =
-                error?.message || 'Görevler eşitlenemedi.';
+            pisiTagsPanelState.missionError = error?.message || 'Görevler eşitlenemedi.';
             window.renderPisiMissionsPanel?.();
             dispatchPisiMissionIndexUpdated({
                 reason: options.reason || 'refresh-error'
             });
             console.error('[PISI] Görev indeksi yenilenemedi:', error);
             return {
-                blocks: Array.isArray(pisiTagsPanelState.missionIndex)
-                    ? pisiTagsPanelState.missionIndex
-                    : [],
+                blocks: Array.isArray(pisiTagsPanelState.missionIndex) ? pisiTagsPanelState.missionIndex : [],
                 complete: false,
                 errors: [pisiTagsPanelState.missionError]
             };
@@ -210,9 +191,7 @@ function bindPisiMissionIndexInvalidation() {
     if (pisiMissionIndexFileSystemUnsubscribe) return;
     pisiMissionIndexFileSystemUnsubscribe =
         window.pisiProject?.onFileSystemChanged?.((payload = {}) => {
-            const changedPaths = Array.isArray(payload.changedPaths)
-                ? payload.changedPaths
-                : [];
+            const changedPaths = Array.isArray(payload.changedPaths) ? payload.changedPaths : [];
             const relevant = changedPaths.some((changedPath) => {
                 return /\.(?:node|map)$/i.test(String(changedPath || ''));
             });
@@ -234,15 +213,9 @@ async function refreshPisiTagsPanel() {
 
         pisiTagsPanelState.index = Array.isArray(index) ? index : [];
 
-        const missionsPageIsActive = document
-            .getElementById('right-tab-missions')
-            ?.classList
-            .contains('active');
+        const missionsPageIsActive = document.getElementById('right-tab-missions')?.classList.contains('active');
 
-        if (
-            missionsPageIsActive ||
-            !Array.isArray(pisiTagsPanelState.missionIndex)
-        ) {
+        if (missionsPageIsActive || !Array.isArray(pisiTagsPanelState.missionIndex)) {
             await refreshPisiMissionIndex({
                 force: true,
                 reason: 'panel-refresh'
@@ -260,12 +233,9 @@ async function refreshPisiTagsPanel() {
 }
 
 function normalizeClientPathForTags(filePath) {
-    const normalized = String(filePath || '')
-        .replace(/[\\/]+/g, '/');
+    const normalized = String(filePath || '').replace(/[\\/]+/g, '/');
 
-    return window.pisiEnvironment?.platform === 'win32'
-        ? normalized.toLowerCase()
-        : normalized;
+    return window.pisiEnvironment?.platform === 'win32' ? normalized.toLowerCase() : normalized;
 }
 
 function samePisiPathForTags(a, b) {
@@ -303,12 +273,7 @@ function getPisiTagsActiveMapPath() {
 async function getPisiTagsActiveMapNodes(mapPath) {
     if (!mapPath) return [];
 
-    if (
-        activeMapPath &&
-        samePisiPathForTags(activeMapPath, mapPath) &&
-        Array.isArray(activeMapNodes) &&
-        activeMapNodes.length
-    ) {
+    if (activeMapPath && samePisiPathForTags(activeMapPath, mapPath) && Array.isArray(activeMapNodes) && activeMapNodes.length) {
         return activeMapNodes;
     }
 
@@ -333,9 +298,7 @@ async function collectPisiDiaryTagNodeItems(scanState = null) {
     if (!datesResult?.ok) {
         if (scanState) {
             scanState.complete = false;
-            scanState.errors.push(
-                datesResult?.error || 'Günlük notları listelenemedi.'
-            );
+            scanState.errors.push(datesResult?.error || 'Günlük notları listelenemedi.');
         }
         return [];
     }
@@ -349,9 +312,7 @@ async function collectPisiDiaryTagNodeItems(scanState = null) {
         if (!result?.ok || !result.fullPath) {
             if (scanState) {
                 scanState.complete = false;
-                scanState.errors.push(
-                    result?.error || `Günlük notu okunamadı: ${date}`
-                );
+                scanState.errors.push(result?.error || `Günlük notu okunamadı: ${date}`);
             }
             continue;
         }
@@ -378,12 +339,7 @@ async function extractPisiTagBlocksForNodeItem(node) {
 
     if (!nodePath) return [];
 
-    const fallbackTitle =
-        node.metadata?.title ||
-        node.displayName ||
-        node.fileName ||
-        node.name ||
-        'Node';
+    const fallbackTitle = node.metadata?.title || node.displayName || node.fileName || node.name || 'Node';
 
     let html = '';
     let nodeTitle = fallbackTitle;
@@ -415,10 +371,7 @@ async function extractPisiTagBlocksForNodeItem(node) {
         nodeTitle: node.isDiaryNode ? `Günlük · ${nodeTitle}` : nodeTitle
     });
 
-    if (
-        !samePisiPathForTags(activeCenterNode?.path, nodePath) &&
-        !samePisiPathForTags(activeModalNode?.path, nodePath)
-    ) {
+    if (!samePisiPathForTags(activeCenterNode?.path, nodePath) && !samePisiPathForTags(activeModalNode?.path, nodePath)) {
         await persistPisiAssignedBlockIds({
             nodePath,
             detailed,
@@ -434,11 +387,15 @@ async function extractPisiTagBlocksForNodeItem(node) {
 }
 
 function isPisiMissionNodeFileName(fileName = '') {
-    return String(fileName || '').toLowerCase().endsWith('.node');
+    return String(fileName || '')
+        .toLowerCase()
+        .endsWith('.node');
 }
 
 function isPisiMissionMapFileName(fileName = '') {
-    return String(fileName || '').toLowerCase().endsWith('.map');
+    return String(fileName || '')
+        .toLowerCase()
+        .endsWith('.map');
 }
 
 function makePisiMissionNodeItem(item, context = {}) {
@@ -454,19 +411,11 @@ function makePisiMissionNodeItem(item, context = {}) {
         metadata: item.metadata || null,
         mapPath: context.mapPath || item.mapPath || null,
         mapTitle: context.mapTitle || item.mapTitle || '',
-        displayName:
-            item.displayName ||
-            item.metadata?.title ||
-            String(item.fileName || item.name || '').replace(/\.node$/i, '') ||
-            'Node'
+        displayName: item.displayName || item.metadata?.title || String(item.fileName || item.name || '').replace(/\.node$/i, '') || 'Node'
     };
 }
 
-async function collectPisiMissionNodeItemsFromFolder(
-    folderPath,
-    seenPaths = new Set(),
-    scanState = { complete: true, errors: [] }
-) {
+async function collectPisiMissionNodeItemsFromFolder(folderPath, seenPaths = new Set(), scanState = { complete: true, errors: [] }) {
     const nodes = [];
 
     if (!folderPath) return nodes;
@@ -475,21 +424,13 @@ async function collectPisiMissionNodeItemsFromFolder(
 
     if (!result?.ok || !Array.isArray(result.items)) {
         scanState.complete = false;
-        scanState.errors.push(
-            result?.error || `Klasör listelenemedi: ${folderPath}`
-        );
+        scanState.errors.push(result?.error || `Klasör listelenemedi: ${folderPath}`);
         return nodes;
     }
 
     for (const item of result.items) {
         if (item?.isDirectory) {
-            nodes.push(
-                ...(await collectPisiMissionNodeItemsFromFolder(
-                    item.fullPath,
-                    seenPaths,
-                    scanState
-                ))
-            );
+            nodes.push(...(await collectPisiMissionNodeItemsFromFolder(item.fullPath, seenPaths, scanState)));
             continue;
         }
 
@@ -497,9 +438,7 @@ async function collectPisiMissionNodeItemsFromFolder(
 
         if (isPisiMissionNodeFileName(item.name || item.fileName)) {
             const nodeItem = makePisiMissionNodeItem(item);
-            const normalizedNodePath = normalizeClientPathForTags(
-                nodeItem?.fullPath
-            );
+            const normalizedNodePath = normalizeClientPathForTags(nodeItem?.fullPath);
 
             if (nodeItem && !seenPaths.has(normalizedNodePath)) {
                 seenPaths.add(normalizedNodePath);
@@ -510,36 +449,23 @@ async function collectPisiMissionNodeItemsFromFolder(
         }
 
         if (isPisiMissionMapFileName(item.name || item.fileName)) {
-            const mapNodesResult = await window.pisiProject?.listMapNodes?.(
-                item.fullPath
-            );
+            const mapNodesResult = await window.pisiProject?.listMapNodes?.(item.fullPath);
 
-            const mapNodes = Array.isArray(mapNodesResult?.nodes)
-                ? mapNodesResult.nodes
-                : [];
+            const mapNodes = Array.isArray(mapNodesResult?.nodes) ? mapNodesResult.nodes : [];
 
             if (!mapNodesResult?.ok) {
                 scanState.complete = false;
-                scanState.errors.push(
-                    mapNodesResult?.error ||
-                    `Map node listesi okunamadı: ${item.fullPath}`
-                );
+                scanState.errors.push(mapNodesResult?.error || `Map node listesi okunamadı: ${item.fullPath}`);
             }
 
-            const mapTitle =
-                item.metadata?.title ||
-                item.displayName ||
-                String(item.fileName || item.name || '').replace(/\.map$/i, '') ||
-                'Map';
+            const mapTitle = item.metadata?.title || item.displayName || String(item.fileName || item.name || '').replace(/\.map$/i, '') || 'Map';
 
             for (const mapNode of mapNodes) {
                 const nodeItem = makePisiMissionNodeItem(mapNode, {
                     mapPath: item.fullPath,
                     mapTitle
                 });
-                const normalizedNodePath = normalizeClientPathForTags(
-                    nodeItem?.fullPath
-                );
+                const normalizedNodePath = normalizeClientPathForTags(nodeItem?.fullPath);
 
                 if (nodeItem && !seenPaths.has(normalizedNodePath)) {
                     seenPaths.add(normalizedNodePath);
@@ -577,17 +503,11 @@ async function buildPisiMissionBlockIndex() {
     }
 
     const seenPaths = new Set();
-    const nodeItems = await collectPisiMissionNodeItemsFromFolder(
-        projectFolder,
-        seenPaths,
-        scanState
-    );
+    const nodeItems = await collectPisiMissionNodeItemsFromFolder(projectFolder, seenPaths, scanState);
     const diaryNodeItems = await collectPisiDiaryTagNodeItems(scanState);
 
     for (const diaryNode of diaryNodeItems) {
-        const normalizedDiaryPath = normalizeClientPathForTags(
-            diaryNode?.fullPath
-        );
+        const normalizedDiaryPath = normalizeClientPathForTags(diaryNode?.fullPath);
 
         if (!normalizedDiaryPath || seenPaths.has(normalizedDiaryPath)) {
             continue;
@@ -607,19 +527,15 @@ async function buildPisiMissionBlockIndex() {
 
             ensurePisiEditorBlocks(editor);
 
-            results.push(...extractPisiTagBlocksFromHtml({
-                html: editor?.innerHTML || '',
-                nodePath,
-                mapPath: node.mapPath || null,
-                mapTitle: node.mapTitle || '',
-                nodeTitle:
-                    activeCenterNode.metadata?.title ||
-                    node.metadata?.title ||
-                    node.displayName ||
-                    node.fileName ||
-                    node.name ||
-                    'Node'
-            }));
+            results.push(
+                ...extractPisiTagBlocksFromHtml({
+                    html: editor?.innerHTML || '',
+                    nodePath,
+                    mapPath: node.mapPath || null,
+                    mapTitle: node.mapTitle || '',
+                    nodeTitle: activeCenterNode.metadata?.title || node.metadata?.title || node.displayName || node.fileName || node.name || 'Node'
+                })
+            );
 
             continue;
         }
@@ -629,19 +545,15 @@ async function buildPisiMissionBlockIndex() {
 
             ensurePisiEditorBlocks(editor);
 
-            results.push(...extractPisiTagBlocksFromHtml({
-                html: editor?.innerHTML || '',
-                nodePath,
-                mapPath: node.mapPath || null,
-                mapTitle: node.mapTitle || '',
-                nodeTitle:
-                    activeModalNode.metadata?.title ||
-                    node.metadata?.title ||
-                    node.displayName ||
-                    node.fileName ||
-                    node.name ||
-                    'Node'
-            }));
+            results.push(
+                ...extractPisiTagBlocksFromHtml({
+                    html: editor?.innerHTML || '',
+                    nodePath,
+                    mapPath: node.mapPath || null,
+                    mapTitle: node.mapTitle || '',
+                    nodeTitle: activeModalNode.metadata?.title || node.metadata?.title || node.displayName || node.fileName || node.name || 'Node'
+                })
+            );
 
             continue;
         }
@@ -650,9 +562,7 @@ async function buildPisiMissionBlockIndex() {
 
         if (!doc?.ok) {
             scanState.complete = false;
-            scanState.errors.push(
-                doc?.error || `Node okunamadı: ${nodePath}`
-            );
+            scanState.errors.push(doc?.error || `Node okunamadı: ${nodePath}`);
             continue;
         }
 
@@ -662,13 +572,7 @@ async function buildPisiMissionBlockIndex() {
             nodePath,
             mapPath: node.mapPath || null,
             mapTitle: node.mapTitle || '',
-            nodeTitle:
-                doc.metadata?.title ||
-                node.metadata?.title ||
-                node.displayName ||
-                node.fileName ||
-                node.name ||
-                'Node'
+            nodeTitle: doc.metadata?.title || node.metadata?.title || node.displayName || node.fileName || node.name || 'Node'
         });
 
         results.push(...detailed.blocks);
@@ -680,9 +584,7 @@ async function buildPisiMissionBlockIndex() {
 
         if (!idsPersisted) {
             scanState.complete = false;
-            scanState.errors.push(
-                `Block kimlikleri kaydedilemedi: ${nodePath}`
-            );
+            scanState.errors.push(`Block kimlikleri kaydedilemedi: ${nodePath}`);
         }
     }
 
@@ -702,27 +604,26 @@ async function buildPisiTagBlockIndex() {
     const mapPath = getPisiTagsActiveMapPath();
     const mapNodes = await getPisiTagsActiveMapNodes(mapPath);
     const diaryNodes = await collectPisiDiaryTagNodeItems();
-    const standaloneNode = (
+    const standaloneNode =
         activeCenterNode?.path &&
-        (!mapPath || !Array.isArray(mapNodes) || !mapNodes.some((node) => {
-            return samePisiPathForTags(node?.fullPath, activeCenterNode.path);
-        }))
-    )
-        ? [{
-            ...(activeCenterNode.item || {}),
-            fullPath: activeCenterNode.path,
-            metadata: activeCenterNode.metadata || activeCenterNode.item?.metadata || {},
-            isFile: true,
-            isDirectory: false,
-            type: 'file'
-        }]
-        : [];
+        (!mapPath ||
+            !Array.isArray(mapNodes) ||
+            !mapNodes.some((node) => {
+                return samePisiPathForTags(node?.fullPath, activeCenterNode.path);
+            }))
+            ? [
+                  {
+                      ...(activeCenterNode.item || {}),
+                      fullPath: activeCenterNode.path,
+                      metadata: activeCenterNode.metadata || activeCenterNode.item?.metadata || {},
+                      isFile: true,
+                      isDirectory: false,
+                      type: 'file'
+                  }
+              ]
+            : [];
 
-    const allNodes = [
-        ...(Array.isArray(mapNodes) ? mapNodes : []),
-        ...(Array.isArray(diaryNodes) ? diaryNodes : []),
-        ...standaloneNode
-    ];
+    const allNodes = [...(Array.isArray(mapNodes) ? mapNodes : []), ...(Array.isArray(diaryNodes) ? diaryNodes : []), ...standaloneNode];
 
     for (const node of allNodes) {
         if (!node?.fullPath) continue;
@@ -746,10 +647,7 @@ function extractPisiTagBlocksFromHtmlDetailed({ html, nodePath, nodeTitle, mapPa
     let assignedMissingBlockId = false;
 
     for (const block of blocks) {
-        if (
-            block.classList.contains('pisi-diary-managed-block') ||
-            block.closest('.pisi-diary-managed-block')
-        ) {
+        if (block.classList.contains('pisi-diary-managed-block') || block.closest('.pisi-diary-managed-block')) {
             continue;
         }
 
@@ -759,37 +657,25 @@ function extractPisiTagBlocksFromHtmlDetailed({ html, nodePath, nodeTitle, mapPa
 
         decoratePisiEditorBlock(block);
 
-        const tagElements = Array.from(
-            block.querySelectorAll('.pisi-user-tag[data-pisi-tag]')
-        );
+        const tagElements = Array.from(block.querySelectorAll('.pisi-user-tag[data-pisi-tag]'));
         const tags = Array.from(new Set(extractPisiTagsFromBlock(block)));
         const doneTagElements = tagElements;
-        const {
-            todoStates,
-            todoSources,
-            todoParents,
-            todoRepeats,
-            todoOrders,
-            todoCompletionOffsets
-        } = extractPisiTodoMetadataFromBlock(block, normalizePisiUserTag);
+        const { todoStates, todoSources, todoParents, todoRepeats, todoOrders, todoCompletionOffsets } = extractPisiTodoMetadataFromBlock(
+            block,
+            normalizePisiUserTag
+        );
         const doneFor = doneTagElements
             .filter((tagEl) => {
-                return normalizePisiUserTag(
-                    tagEl.dataset.pisiTag || tagEl.textContent || ''
-                ) === 'done' && Boolean(tagEl.dataset.pisiDoneFor);
+                return normalizePisiUserTag(tagEl.dataset.pisiTag || tagEl.textContent || '') === 'done' && Boolean(tagEl.dataset.pisiDoneFor);
             })
             .map((tagEl) => {
-                return normalizePisiUserTag(
-                    tagEl.dataset.pisiDoneFor || ''
-                );
+                return normalizePisiUserTag(tagEl.dataset.pisiDoneFor || '');
             })
             .filter(Boolean);
 
         if (!tags.length) continue;
 
-        const text = block.textContent
-            .replace(/\s+/g, ' ')
-            .trim();
+        const text = block.textContent.replace(/\s+/g, ' ').trim();
 
         results.push({
             blockId: block.dataset.pisiBlockId,
@@ -798,16 +684,15 @@ function extractPisiTagBlocksFromHtmlDetailed({ html, nodePath, nodeTitle, mapPa
             mapPath,
             mapTitle,
             tags,
-            todoStates, todoSources, todoParents,
-            todoRepeats, todoOrders, todoCompletionOffsets,
+            todoStates,
+            todoSources,
+            todoParents,
+            todoRepeats,
+            todoOrders,
+            todoCompletionOffsets,
             doneFor: Array.from(new Set(doneFor)),
             legacyDone: doneTagElements.some((tagEl) => {
-                return (
-                    normalizePisiUserTag(
-                        tagEl.dataset.pisiTag || tagEl.textContent || ''
-                    ) === 'done' &&
-                    !tagEl.dataset.pisiDoneFor
-                );
+                return normalizePisiUserTag(tagEl.dataset.pisiTag || tagEl.textContent || '') === 'done' && !tagEl.dataset.pisiDoneFor;
             }),
             text,
             html: sanitizePisiEditorHtml(block.outerHTML)
@@ -825,19 +710,12 @@ function extractPisiTagBlocksFromHtml(options) {
     return extractPisiTagBlocksFromHtmlDetailed(options).blocks;
 }
 
-async function persistPisiAssignedBlockIds({
-    nodePath,
-    detailed,
-    originalHtml
-}) {
+async function persistPisiAssignedBlockIds({ nodePath, detailed, originalHtml }) {
     if (!detailed?.assignedMissingBlockId || !nodePath) {
         return true;
     }
 
-    if (
-        samePisiPathForTags(activeCenterNode?.path, nodePath) ||
-        samePisiPathForTags(activeModalNode?.path, nodePath)
-    ) {
+    if (samePisiPathForTags(activeCenterNode?.path, nodePath) || samePisiPathForTags(activeModalNode?.path, nodePath)) {
         return true;
     }
 
@@ -846,16 +724,10 @@ async function persistPisiAssignedBlockIds({
         return true;
     }
 
-    const result = await window.pisiProject?.saveNodeContent?.(
-        nodePath,
-        detailed.html
-    );
+    const result = await window.pisiProject?.saveNodeContent?.(nodePath, detailed.html);
 
     if (!result?.ok) {
-        console.warn(
-            `[PISI] Block kimlikleri kalıcılaştırılamadı (${nodePath}):`,
-            result?.error || 'Bilinmeyen kayıt hatası'
-        );
+        console.warn(`[PISI] Block kimlikleri kalıcılaştırılamadı (${nodePath}):`, result?.error || 'Bilinmeyen kayıt hatası');
         return false;
     }
 
@@ -864,97 +736,143 @@ async function persistPisiAssignedBlockIds({
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "bindPisiBlockIndexControls": {
+    bindPisiBlockIndexControls: {
         enumerable: true,
-        get() { return bindPisiBlockIndexControls; }
+        get() {
+            return bindPisiBlockIndexControls;
+        }
     },
-    "bindPisiTagPickerOutsideClose": {
+    bindPisiTagPickerOutsideClose: {
         enumerable: true,
-        get() { return bindPisiTagPickerOutsideClose; }
+        get() {
+            return bindPisiTagPickerOutsideClose;
+        }
     },
-    "extractPisiTagsFromBlock": {
+    extractPisiTagsFromBlock: {
         enumerable: true,
-        get() { return extractPisiTagsFromBlock; }
+        get() {
+            return extractPisiTagsFromBlock;
+        }
     },
-    "refreshPisiTagsPanelSoon": {
+    refreshPisiTagsPanelSoon: {
         enumerable: true,
-        get() { return refreshPisiTagsPanelSoon; }
+        get() {
+            return refreshPisiTagsPanelSoon;
+        }
     },
-    "resetPisiTagsForProject": {
+    resetPisiTagsForProject: {
         enumerable: true,
-        get() { return resetPisiTagsForProject; }
+        get() {
+            return resetPisiTagsForProject;
+        }
     },
-    "refreshPisiTagsPanel": {
+    refreshPisiTagsPanel: {
         enumerable: true,
-        get() { return refreshPisiTagsPanel; }
+        get() {
+            return refreshPisiTagsPanel;
+        }
     },
-    "refreshPisiMissionIndex": {
+    refreshPisiMissionIndex: {
         enumerable: true,
-        get() { return refreshPisiMissionIndex; }
+        get() {
+            return refreshPisiMissionIndex;
+        }
     },
-    "bindPisiMissionIndexInvalidation": {
+    bindPisiMissionIndexInvalidation: {
         enumerable: true,
-        get() { return bindPisiMissionIndexInvalidation; }
+        get() {
+            return bindPisiMissionIndexInvalidation;
+        }
     },
-    "normalizeClientPathForTags": {
+    normalizeClientPathForTags: {
         enumerable: true,
-        get() { return normalizeClientPathForTags; }
+        get() {
+            return normalizeClientPathForTags;
+        }
     },
-    "samePisiPathForTags": {
+    samePisiPathForTags: {
         enumerable: true,
-        get() { return samePisiPathForTags; }
+        get() {
+            return samePisiPathForTags;
+        }
     },
-    "getPisiTagsActiveMapPath": {
+    getPisiTagsActiveMapPath: {
         enumerable: true,
-        get() { return getPisiTagsActiveMapPath; }
+        get() {
+            return getPisiTagsActiveMapPath;
+        }
     },
-    "getPisiTagsActiveMapNodes": {
+    getPisiTagsActiveMapNodes: {
         enumerable: true,
-        get() { return getPisiTagsActiveMapNodes; }
+        get() {
+            return getPisiTagsActiveMapNodes;
+        }
     },
-    "collectPisiDiaryTagNodeItems": {
+    collectPisiDiaryTagNodeItems: {
         enumerable: true,
-        get() { return collectPisiDiaryTagNodeItems; }
+        get() {
+            return collectPisiDiaryTagNodeItems;
+        }
     },
-    "extractPisiTagBlocksForNodeItem": {
+    extractPisiTagBlocksForNodeItem: {
         enumerable: true,
-        get() { return extractPisiTagBlocksForNodeItem; }
+        get() {
+            return extractPisiTagBlocksForNodeItem;
+        }
     },
-    "isPisiMissionNodeFileName": {
+    isPisiMissionNodeFileName: {
         enumerable: true,
-        get() { return isPisiMissionNodeFileName; }
+        get() {
+            return isPisiMissionNodeFileName;
+        }
     },
-    "isPisiMissionMapFileName": {
+    isPisiMissionMapFileName: {
         enumerable: true,
-        get() { return isPisiMissionMapFileName; }
+        get() {
+            return isPisiMissionMapFileName;
+        }
     },
-    "makePisiMissionNodeItem": {
+    makePisiMissionNodeItem: {
         enumerable: true,
-        get() { return makePisiMissionNodeItem; }
+        get() {
+            return makePisiMissionNodeItem;
+        }
     },
-    "collectPisiMissionNodeItemsFromFolder": {
+    collectPisiMissionNodeItemsFromFolder: {
         enumerable: true,
-        get() { return collectPisiMissionNodeItemsFromFolder; }
+        get() {
+            return collectPisiMissionNodeItemsFromFolder;
+        }
     },
-    "buildPisiMissionBlockIndex": {
+    buildPisiMissionBlockIndex: {
         enumerable: true,
-        get() { return buildPisiMissionBlockIndex; }
+        get() {
+            return buildPisiMissionBlockIndex;
+        }
     },
-    "buildPisiTagBlockIndex": {
+    buildPisiTagBlockIndex: {
         enumerable: true,
-        get() { return buildPisiTagBlockIndex; }
+        get() {
+            return buildPisiTagBlockIndex;
+        }
     },
-    "extractPisiTagBlocksFromHtmlDetailed": {
+    extractPisiTagBlocksFromHtmlDetailed: {
         enumerable: true,
-        get() { return extractPisiTagBlocksFromHtmlDetailed; }
+        get() {
+            return extractPisiTagBlocksFromHtmlDetailed;
+        }
     },
-    "extractPisiTagBlocksFromHtml": {
+    extractPisiTagBlocksFromHtml: {
         enumerable: true,
-        get() { return extractPisiTagBlocksFromHtml; }
+        get() {
+            return extractPisiTagBlocksFromHtml;
+        }
     },
-    "persistPisiAssignedBlockIds": {
+    persistPisiAssignedBlockIds: {
         enumerable: true,
-        get() { return persistPisiAssignedBlockIds; }
+        get() {
+            return persistPisiAssignedBlockIds;
+        }
     }
 });
-registerModule("tags.index", moduleApi);
+registerModule('tags.index', moduleApi);

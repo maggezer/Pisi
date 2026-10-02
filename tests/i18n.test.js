@@ -71,7 +71,7 @@ test('renderer and native Electron dialogs use the localization layer', () => {
     const electronIpc = read('main/functions/electron-ipc.js');
     const mainBootstrap = read('main.js');
 
-    assert.ok(bootstrap.startsWith('import "./core/i18n.mjs";'));
+    assert.match(bootstrap, /^import\s+['"]\.\/core\/i18n\.mjs['"];/);
     assert.match(rendererI18n, /window\.alert =/);
     assert.match(rendererI18n, /window\.confirm =/);
     assert.match(rendererI18n, /window\.prompt =/);

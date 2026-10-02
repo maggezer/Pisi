@@ -16,32 +16,19 @@ function isSameOrInsidePisiBackupPath(candidatePath, parentPath) {
     const candidate = normalizePisiBackupPath(candidatePath);
     const parent = normalizePisiBackupPath(parentPath);
     const relative = path.relative(parent, candidate);
-    return relative === '' || (
-        relative !== '..' &&
-        !relative.startsWith(`..${path.sep}`) &&
-        !path.isAbsolute(relative)
-    );
+    return relative === '' || (relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative));
 }
 
 function getPisiBackupRoot(projectFolder) {
-    return path.join(
-        normalizePisiBackupPath(projectFolder),
-        PISI_BACKUP_ROOT_RELATIVE
-    );
+    return path.join(normalizePisiBackupPath(projectFolder), PISI_BACKUP_ROOT_RELATIVE);
 }
 
 function getPisiAtomicBackupRoot(projectFolder) {
-    return path.join(
-        normalizePisiBackupPath(projectFolder),
-        PISI_ATOMIC_BACKUP_RELATIVE
-    );
+    return path.join(normalizePisiBackupPath(projectFolder), PISI_ATOMIC_BACKUP_RELATIVE);
 }
 
 function getPisiCorruptBackupRoot(projectFolder) {
-    return path.join(
-        normalizePisiBackupPath(projectFolder),
-        PISI_CORRUPT_BACKUP_RELATIVE
-    );
+    return path.join(normalizePisiBackupPath(projectFolder), PISI_CORRUPT_BACKUP_RELATIVE);
 }
 
 function isPisiProjectPath(projectFolder, targetPath) {
@@ -51,10 +38,7 @@ function isPisiProjectPath(projectFolder, targetPath) {
 
 function isPisiBackupStoragePath(projectFolder, targetPath) {
     if (!projectFolder || !targetPath) return false;
-    return isSameOrInsidePisiBackupPath(
-        targetPath,
-        getPisiBackupRoot(projectFolder)
-    );
+    return isSameOrInsidePisiBackupPath(targetPath, getPisiBackupRoot(projectFolder));
 }
 
 function getPisiBackupRelativeTarget(projectFolder, targetPath) {
@@ -64,13 +48,7 @@ function getPisiBackupRelativeTarget(projectFolder, targetPath) {
     if (isPisiBackupStoragePath(projectRoot, target)) return null;
 
     const relative = path.relative(projectRoot, target);
-    if (
-        !relative ||
-        relative === '.' ||
-        relative === '..' ||
-        relative.startsWith(`..${path.sep}`) ||
-        path.isAbsolute(relative)
-    ) {
+    if (!relative || relative === '.' || relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
         return null;
     }
     return relative;
@@ -79,20 +57,14 @@ function getPisiBackupRelativeTarget(projectFolder, targetPath) {
 function getPisiAtomicBackupPath(projectFolder, targetPath) {
     const relative = getPisiBackupRelativeTarget(projectFolder, targetPath);
     if (!relative) return null;
-    return path.join(
-        getPisiAtomicBackupRoot(projectFolder),
-        `${relative}${PISI_BACKUP_SUFFIX}`
-    );
+    return path.join(getPisiAtomicBackupRoot(projectFolder), `${relative}${PISI_BACKUP_SUFFIX}`);
 }
 
 function getPisiCorruptBackupPath(projectFolder, targetPath, digest) {
     const relative = getPisiBackupRelativeTarget(projectFolder, targetPath);
     const safeDigest = String(digest || '').toLowerCase();
     if (!relative || !/^[0-9a-f]{12}$/.test(safeDigest)) return null;
-    return path.join(
-        getPisiCorruptBackupRoot(projectFolder),
-        `${relative}.corrupt-${safeDigest}.bak`
-    );
+    return path.join(getPisiCorruptBackupRoot(projectFolder), `${relative}.corrupt-${safeDigest}.bak`);
 }
 
 function getPisiAtomicBackupTargetPath(projectFolder, backupPath) {
@@ -100,11 +72,7 @@ function getPisiAtomicBackupTargetPath(projectFolder, backupPath) {
     const candidate = normalizePisiBackupPath(backupPath);
     const atomicRoot = getPisiAtomicBackupRoot(projectRoot);
 
-    if (
-        !isPisiProjectPath(projectRoot, candidate) ||
-        !isSameOrInsidePisiBackupPath(candidate, atomicRoot) ||
-        !candidate.endsWith(PISI_BACKUP_SUFFIX)
-    ) {
+    if (!isPisiProjectPath(projectRoot, candidate) || !isSameOrInsidePisiBackupPath(candidate, atomicRoot) || !candidate.endsWith(PISI_BACKUP_SUFFIX)) {
         return null;
     }
 

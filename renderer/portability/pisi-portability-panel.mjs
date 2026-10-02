@@ -1,5 +1,5 @@
-import { registerModule } from "../core/module-registry.mjs";
-import { getPisiSearchCurrentNodePath, invalidatePisiSearchIndex } from "../search/pisi-search-index.mjs";
+import { registerModule } from '../core/module-registry.mjs';
+import { getPisiSearchCurrentNodePath, invalidatePisiSearchIndex } from '../search/pisi-search-index.mjs';
 
 function pisiPortableTranslate(value) {
     return window.pisiT?.(value) ?? String(value ?? '');
@@ -26,12 +26,18 @@ function pisiRendererPlainText(html = '') {
     const template = document.createElement('template');
     template.innerHTML = String(html || '');
     template.content.querySelectorAll('script, style').forEach((element) => element.remove());
-    return String(template.content.textContent || '').replace(/\s+/g, ' ').trim();
+    return String(template.content.textContent || '')
+        .replace(/\s+/g, ' ')
+        .trim();
 }
 
 function makePisiSimpleDiff(previousText, currentText) {
-    const previous = String(previousText || '').split(/\n|(?<=[.!?])\s+/).filter(Boolean);
-    const current = String(currentText || '').split(/\n|(?<=[.!?])\s+/).filter(Boolean);
+    const previous = String(previousText || '')
+        .split(/\n|(?<=[.!?])\s+/)
+        .filter(Boolean);
+    const current = String(currentText || '')
+        .split(/\n|(?<=[.!?])\s+/)
+        .filter(Boolean);
     const previousSet = new Set(previous);
     const currentSet = new Set(current);
     return {
@@ -47,10 +53,7 @@ function showPisiHistoryPreview(version, currentDocument) {
     heading.textContent = `${new Date(version.capturedAt).toLocaleString()} · ${version.reason || 'save'}`;
     const preview = document.createElement('p');
     preview.textContent = version.text || pisiPortableTranslate('Boş sürüm');
-    const diff = makePisiSimpleDiff(
-        version.text,
-        pisiRendererPlainText(currentDocument?.data?.content || '')
-    );
+    const diff = makePisiSimpleDiff(version.text, pisiRendererPlainText(currentDocument?.data?.content || ''));
     const summary = document.createElement('div');
     summary.className = 'pisi-history-diff-summary';
     summary.textContent = `${pisiPortableTranslate('Eklenen')}: ${diff.added.length} · ${pisiPortableTranslate('Kaldırılan')}: ${diff.removed.length}`;
@@ -58,10 +61,8 @@ function showPisiHistoryPreview(version, currentDocument) {
     const detailsTitle = document.createElement('summary');
     detailsTitle.textContent = pisiPortableTranslate('Değişiklikleri göster');
     const diffList = document.createElement('pre');
-    diffList.textContent = [
-        ...diff.removed.map((line) => `− ${line}`),
-        ...diff.added.map((line) => `+ ${line}`)
-    ].join('\n') || pisiPortableTranslate('Metin farkı yok.');
+    diffList.textContent =
+        [...diff.removed.map((line) => `− ${line}`), ...diff.added.map((line) => `+ ${line}`)].join('\n') || pisiPortableTranslate('Metin farkı yok.');
     details.append(detailsTitle, diffList);
     root.append(heading, preview, summary, details);
     return root;
@@ -75,10 +76,7 @@ async function renderPisiHistory(section, nodePath) {
         section.appendChild(list);
         return;
     }
-    const [history, currentDocument] = await Promise.all([
-        window.pisiProject?.listNodeHistory?.(nodePath),
-        window.pisiProject?.getPisiDocument?.(nodePath)
-    ]);
+    const [history, currentDocument] = await Promise.all([window.pisiProject?.listNodeHistory?.(nodePath), window.pisiProject?.getPisiDocument?.(nodePath)]);
     if (!history?.ok) throw new Error(history?.error || 'Geçmiş okunamadı.');
     for (const version of history.versions || []) {
         const row = document.createElement('article');
@@ -92,10 +90,7 @@ async function renderPisiHistory(section, nodePath) {
         const actions = document.createElement('div');
         const preview = makePisiPortableButton('Önizle / karşılaştır');
         preview.addEventListener('click', async () => {
-            const result = await window.pisiProject?.getNodeHistoryVersion?.(
-                nodePath,
-                version.historyId
-            );
+            const result = await window.pisiProject?.getNodeHistoryVersion?.(nodePath, version.historyId);
             if (!result?.ok) return alert(result?.error || pisiPortableTranslate('Sürüm okunamadı.'));
             const existing = row.querySelector('.pisi-history-preview');
             if (existing) existing.remove();
@@ -103,19 +98,13 @@ async function renderPisiHistory(section, nodePath) {
         });
         const restore = makePisiPortableButton('Bu sürümü geri yükle', 'pisi-danger-outline-button');
         restore.addEventListener('click', async () => {
-            const confirmed = await window.pisiConfirm?.(
-                pisiPortableTranslate('Bu sürüm geri yüklensin mi? Mevcut sürüm önce geçmişe kaydedilecek.'),
-                {
-                    title: pisiPortableTranslate('Sürümü geri yükle'),
-                    confirmText: pisiPortableTranslate('Geri yükle'),
-                    cancelText: pisiPortableTranslate('Vazgeç')
-                }
-            );
+            const confirmed = await window.pisiConfirm?.(pisiPortableTranslate('Bu sürüm geri yüklensin mi? Mevcut sürüm önce geçmişe kaydedilecek.'), {
+                title: pisiPortableTranslate('Sürümü geri yükle'),
+                confirmText: pisiPortableTranslate('Geri yükle'),
+                cancelText: pisiPortableTranslate('Vazgeç')
+            });
             if (!confirmed) return;
-            const result = await window.pisiProject?.restoreNodeHistory?.(
-                nodePath,
-                version.historyId
-            );
+            const result = await window.pisiProject?.restoreNodeHistory?.(nodePath, version.historyId);
             if (!result?.ok) return alert(result?.error || pisiPortableTranslate('Sürüm geri yüklenemedi.'));
             invalidatePisiSearchIndex();
             await window.reloadPisiWorkspaceAfterExternalChange?.();
@@ -138,9 +127,7 @@ async function runPisiImportAction(trigger = null) {
     }
     if (trigger) trigger.disabled = true;
     try {
-        const result = await window.pisiProject?.importMarkdownFolder?.(
-            window.currentProjectFolder
-        );
+        const result = await window.pisiProject?.importMarkdownFolder?.(window.currentProjectFolder);
         if (!result?.ok) {
             alert(result?.error || pisiPortableTranslate('İçe aktarma başarısız.'));
             return false;
@@ -165,9 +152,7 @@ async function runPisiProjectMarkdownExport(trigger = null) {
     }
     if (trigger) trigger.disabled = true;
     try {
-        const result = await window.pisiProject?.exportProjectMarkdown?.(
-            window.currentProjectFolder
-        );
+        const result = await window.pisiProject?.exportProjectMarkdown?.(window.currentProjectFolder);
         if (!result?.ok) {
             alert(result?.error || pisiPortableTranslate('Dışa aktarma başarısız.'));
             return false;
@@ -206,10 +191,7 @@ function renderPisiExportActions(section, nodePath) {
         button.addEventListener('click', async () => {
             button.disabled = true;
             try {
-                const result = await window.pisiProject?.exportNode?.(
-                    nodePath,
-                    format[1]
-                );
+                const result = await window.pisiProject?.exportNode?.(nodePath, format[1]);
                 if (!result?.ok) {
                     alert(result?.error || pisiPortableTranslate('Dışa aktarma başarısız.'));
                 }
@@ -225,30 +207,22 @@ function renderPisiExportActions(section, nodePath) {
 }
 
 function renderPisiIntegrityReport(section) {
-    const run = makePisiPortableButton(
-        'Proje bütünlüğünü denetle',
-        'pisi-primary-button'
-    );
+    const run = makePisiPortableButton('Proje bütünlüğünü denetle', 'pisi-primary-button');
     const report = document.createElement('div');
     report.className = 'pisi-integrity-report';
 
     if (!window.currentProjectFolder) {
         run.disabled = true;
-        report.textContent = pisiPortableTranslate(
-            'Proje bütünlüğü için bir proje açın.'
-        );
+        report.textContent = pisiPortableTranslate('Proje bütünlüğü için bir proje açın.');
     }
 
     run.addEventListener('click', async () => {
         run.disabled = true;
         report.textContent = pisiPortableTranslate('Denetleniyor…');
         try {
-            const result = await window.pisiProject?.auditIntegrity?.(
-                window.currentProjectFolder
-            );
+            const result = await window.pisiProject?.auditIntegrity?.(window.currentProjectFolder);
             if (!result?.ok) {
-                report.textContent =
-                    result?.error || pisiPortableTranslate('Denetim başarısız.');
+                report.textContent = result?.error || pisiPortableTranslate('Denetim başarısız.');
                 return;
             }
             const summary = document.createElement('strong');
@@ -256,9 +230,7 @@ function renderPisiIntegrityReport(section) {
                 ? pisiPortableTranslate('Proje bütünlüğü sağlıklı.')
                 : pisiPortableTranslate('Proje bütünlüğünde hata bulundu.');
             const counts = document.createElement('span');
-            counts.textContent =
-                `${result.summary.nodes} node · ${result.summary.maps} map · `
-                + `${result.summary.issues} ${pisiPortableTranslate('sorun')}`;
+            counts.textContent = `${result.summary.nodes} node · ${result.summary.maps} map · ` + `${result.summary.issues} ${pisiPortableTranslate('sorun')}`;
             const list = document.createElement('div');
             list.className = 'pisi-integrity-issues';
             for (const issue of result.issues.slice(0, 200)) {
@@ -269,8 +241,7 @@ function renderPisiIntegrityReport(section) {
             }
             report.replaceChildren(summary, counts, list);
         } catch (error) {
-            report.textContent =
-                error?.message || pisiPortableTranslate('Denetim başarısız.');
+            report.textContent = error?.message || pisiPortableTranslate('Denetim başarısız.');
         } finally {
             run.disabled = !window.currentProjectFolder;
         }
@@ -279,10 +250,7 @@ function renderPisiIntegrityReport(section) {
 }
 
 async function renderPisiBackups(section, nodePath) {
-    const result = await window.pisiProject?.listBackups?.(
-        window.currentProjectFolder,
-        nodePath
-    );
+    const result = await window.pisiProject?.listBackups?.(window.currentProjectFolder, nodePath);
     if (!result?.ok) throw new Error(result?.error || 'Yedekler okunamadı.');
     const list = document.createElement('div');
     list.className = 'pisi-backup-list';
@@ -293,19 +261,13 @@ async function renderPisiBackups(section, nodePath) {
         info.textContent = `${new Date(backup.updatedAt).toLocaleString()} · ${Math.ceil(backup.size / 1024)} KB`;
         const restore = makePisiPortableButton('Yedeği geri yükle', 'pisi-danger-outline-button');
         restore.addEventListener('click', async () => {
-            const confirmed = await window.pisiConfirm?.(
-                pisiPortableTranslate('Atomik yedek geri yüklensin mi?'),
-                {
-                    title: pisiPortableTranslate('Yedekten geri yükle'),
-                    confirmText: pisiPortableTranslate('Geri yükle'),
-                    cancelText: pisiPortableTranslate('Vazgeç')
-                }
-            );
+            const confirmed = await window.pisiConfirm?.(pisiPortableTranslate('Atomik yedek geri yüklensin mi?'), {
+                title: pisiPortableTranslate('Yedekten geri yükle'),
+                confirmText: pisiPortableTranslate('Geri yükle'),
+                cancelText: pisiPortableTranslate('Vazgeç')
+            });
             if (!confirmed) return;
-            const restored = await window.pisiProject?.restoreBackup?.(
-                window.currentProjectFolder,
-                backup.backupId
-            );
+            const restored = await window.pisiProject?.restoreBackup?.(window.currentProjectFolder, backup.backupId);
             if (!restored?.ok) return alert(restored?.error || pisiPortableTranslate('Yedek geri yüklenemedi.'));
             invalidatePisiSearchIndex();
             await window.reloadPisiWorkspaceAfterExternalChange?.();
@@ -319,11 +281,11 @@ async function renderPisiBackups(section, nodePath) {
 }
 
 const pisiPortabilityDialogState = {
-    "overlay": null,
-    "dialog": null,
-    "title": null,
-    "body": null,
-    "opener": null
+    overlay: null,
+    dialog: null,
+    title: null,
+    body: null,
+    opener: null
 };
 
 function closePisiPortabilityDialog() {
@@ -397,8 +359,7 @@ async function openPisiPortabilityDialog(titleText, render, opener = null) {
     } catch (error) {
         const message = document.createElement('div');
         message.className = 'pisi-command-center-error';
-        message.textContent =
-            error?.message || pisiPortableTranslate('Sayfa yüklenemedi.');
+        message.textContent = error?.message || pisiPortableTranslate('Sayfa yüklenemedi.');
         state.body.replaceChildren(message);
     } finally {
         state.body.removeAttribute('aria-busy');
@@ -419,10 +380,7 @@ async function openPisiHistoryDialog(opener = null) {
             const history = makePisiPortableSection('Yerel sürüm geçmişi');
             const backups = makePisiPortableSection('Yedekten geri yükleme');
             body.append(history, backups);
-            await Promise.all([
-                renderPisiHistory(history, nodePath),
-                renderPisiBackups(backups, nodePath)
-            ]);
+            await Promise.all([renderPisiHistory(history, nodePath), renderPisiBackups(backups, nodePath)]);
         },
         opener
     );
@@ -451,9 +409,7 @@ function renderPisiIntegritySettings(container) {
     section.classList.add('pisi-integrity-settings');
     const description = document.createElement('p');
     description.className = 'pisi-portable-description';
-    description.textContent = pisiPortableTranslate(
-        'Geçerli proje klasöründeki node, map, bağlantı ve yan dosya tutarlılığını denetler.'
-    );
+    description.textContent = pisiPortableTranslate('Geçerli proje klasöründeki node, map, bağlantı ve yan dosya tutarlılığını denetler.');
     section.appendChild(description);
     renderPisiIntegrityReport(section);
     container.appendChild(section);
@@ -471,19 +427,13 @@ function initializePisiPortabilityActions() {
     initializePisiPortabilityActions.bound = true;
 
     document.addEventListener('pisi:portability-action', (event) => {
-        void handlePisiPortabilityAction(
-            event.detail?.action,
-            event.detail?.trigger || null
-        );
+        void handlePisiPortabilityAction(event.detail?.action, event.detail?.trigger || null);
     });
     document.addEventListener('pisi:render-settings-sections', (event) => {
         renderPisiIntegritySettings(event.detail?.container);
     });
     document.addEventListener('keydown', (event) => {
-        if (
-            event.key === 'Escape'
-            && pisiPortabilityDialogState.overlay?.hidden === false
-        ) {
+        if (event.key === 'Escape' && pisiPortabilityDialogState.overlay?.hidden === false) {
             event.preventDefault();
             closePisiPortabilityDialog();
         }

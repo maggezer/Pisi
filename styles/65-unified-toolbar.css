@@ -112,14 +112,10 @@
    Ignore stale cell/text active flags while a composite block is selected. */
 .pisi-unified-toolbar.pisi-composite-context
     .pisi-toolbar-align-grid
-    .pisi-ribbon-btn.active:not(
-        [data-pisi-composite-alignment-active]
-    ):not(:hover):not(:focus-visible),
+    .pisi-ribbon-btn.active:not([data-pisi-composite-alignment-active]):not(:hover):not(:focus-visible),
 .pisi-unified-toolbar.pisi-composite-context
     .pisi-toolbar-align-grid
-    .pisi-ribbon-btn[aria-pressed="true"]:not(
-        [data-pisi-composite-alignment-active]
-    ):not(:hover):not(:focus-visible) {
+    .pisi-ribbon-btn[aria-pressed='true']:not([data-pisi-composite-alignment-active]):not(:hover):not(:focus-visible) {
     border-color: #46484e;
     background: linear-gradient(180deg, #36373b 0%, #2d2e32 100%);
     box-shadow: none;
@@ -140,10 +136,16 @@
     background: #202124;
     color: #dedee0;
     padding: 0 25px 0 8px;
-    font: 12px "Segoe UI", Tahoma, sans-serif;
+    font:
+        12px 'Segoe UI',
+        Tahoma,
+        sans-serif;
     outline: none;
     cursor: pointer;
-    transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
+    transition:
+        border-color 120ms ease,
+        background 120ms ease,
+        box-shadow 120ms ease;
 }
 
 .pisi-office-select:hover,
@@ -181,10 +183,17 @@
     background: linear-gradient(180deg, #36373b 0%, #2d2e32 100%);
     color: #e3e3e5;
     padding: 0 6px;
-    font: 700 11px/1 "Segoe UI", Tahoma, sans-serif;
+    font:
+        700 11px/1 'Segoe UI',
+        Tahoma,
+        sans-serif;
     cursor: pointer;
     user-select: none;
-    transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease, transform 80ms ease;
+    transition:
+        border-color 120ms ease,
+        background 120ms ease,
+        box-shadow 120ms ease,
+        transform 80ms ease;
 }
 
 .pisi-ribbon-btn:hover:not(:disabled),
@@ -203,7 +212,7 @@
 }
 
 .pisi-ribbon-btn.active,
-.pisi-ribbon-btn[aria-pressed="true"] {
+.pisi-ribbon-btn[aria-pressed='true'] {
     border-color: #f39c12;
     background: linear-gradient(180deg, #5c411f 0%, #473319 100%);
     box-shadow: inset 0 0 0 1px rgba(255, 190, 90, 0.18);
@@ -234,7 +243,7 @@
 }
 
 .pisi-ribbon-dropdown::after {
-    content: "";
+    content: '';
     position: absolute;
     right: 4px;
     bottom: 4px;
@@ -304,7 +313,9 @@
     background: #18191b;
     color: #eceef1;
     padding: 3px 7px;
-    font: 12px Consolas, monospace;
+    font:
+        12px Consolas,
+        monospace;
 }
 
 .pisi-sheet-formula-input:focus {
@@ -506,7 +517,7 @@
     background: #f7f7f8;
     color: #202124;
     box-shadow: 0 10px 32px rgba(0, 0, 0, 0.38);
-    font-family: "Segoe UI", Arial, sans-serif;
+    font-family: 'Segoe UI', Arial, sans-serif;
 }
 
 .pisi-office-popover-title {
@@ -634,7 +645,9 @@
 }
 
 .pisi-office-formula-item span {
-    font: 11px Consolas, monospace;
+    font:
+        11px Consolas,
+        monospace;
     color: #555b65;
 }
 
@@ -682,7 +695,9 @@
 
 .pisi-office-size-control output {
     color: #444951;
-    font: 11px Consolas, monospace;
+    font:
+        11px Consolas,
+        monospace;
     text-align: right;
 }
 
@@ -706,7 +721,6 @@
     text-align: center;
 }
 
-
 /* Sheet Phase 2 */
 .pisi-sheet-table td.pisi-sheet-cell-selected {
     box-shadow: inset 0 0 0 1px rgba(243, 156, 18, 0.48);
@@ -719,5 +733,3 @@
 .pisi-sheet-table.pisi-sheet-drag-selecting td {
     user-select: none;
 }
-
-

@@ -1,17 +1,22 @@
-import { registerModule } from "../core/module-registry.mjs";
-import { registerPisiCommandCenterPage } from "../shell/pisi-command-center.mjs";
-import { getPisiSearchCurrentNodePath } from "../search/pisi-search-index.mjs";
-import { normalizePisiPropertyCollection } from "./pisi-properties-core.mjs";
+import { registerModule } from '../core/module-registry.mjs';
+import { registerPisiCommandCenterPage } from '../shell/pisi-command-center.mjs';
+import { getPisiSearchCurrentNodePath } from '../search/pisi-search-index.mjs';
+import { normalizePisiPropertyCollection } from './pisi-properties-core.mjs';
 
 function pisiPropertyTemplatesTranslate(value) {
     return window.pisiT?.(value) ?? String(value ?? '');
 }
 
 function getPisiPropertyTemplateNodeTitle(nodePath, documentResult) {
-    return documentResult?.metadata?.title ||
+    return (
+        documentResult?.metadata?.title ||
         documentResult?.data?.pisi?.title ||
-        String(nodePath || '').split(/[\\/]/).pop()?.replace(/\.node$/i, '') ||
-        pisiPropertyTemplatesTranslate('Node');
+        String(nodePath || '')
+            .split(/[\\/]/)
+            .pop()
+            ?.replace(/\.node$/i, '') ||
+        pisiPropertyTemplatesTranslate('Node')
+    );
 }
 
 function makePisiPropertyTemplateField(labelText, control) {
@@ -33,14 +38,10 @@ function makePisiPropertyTemplateEmpty(message) {
 async function renderPisiPropertyTemplateList(host, status) {
     host.replaceChildren();
     host.setAttribute('aria-busy', 'true');
-    const result = await window.pisiProject?.listDatabaseTemplates?.(
-        window.currentProjectFolder
-    );
+    const result = await window.pisiProject?.listDatabaseTemplates?.(window.currentProjectFolder);
     host.removeAttribute('aria-busy');
     if (!result?.ok) {
-        host.appendChild(makePisiPropertyTemplateEmpty(
-            result?.error || 'Şablonlar yüklenemedi.'
-        ));
+        host.appendChild(makePisiPropertyTemplateEmpty(result?.error || 'Şablonlar yüklenemedi.'));
         return;
     }
     const templates = Array.isArray(result.templates) ? result.templates : [];
@@ -57,8 +58,12 @@ async function renderPisiPropertyTemplateList(host, status) {
         const title = document.createElement('strong');
         title.textContent = template.name;
         const detail = document.createElement('span');
-        detail.textContent = template.description ||
-            properties.slice(0, 5).map((property) => property.name).join(' · ') ||
+        detail.textContent =
+            template.description ||
+            properties
+                .slice(0, 5)
+                .map((property) => property.name)
+                .join(' · ') ||
             pisiPropertyTemplatesTranslate('Boş property şablonu');
         copy.append(title, detail);
         const meta = document.createElement('div');
@@ -75,10 +80,7 @@ async function renderPisiPropertyTemplateList(host, status) {
             if (!confirm(pisiPropertyTemplatesTranslate('Bu property şablonu silinsin mi?'))) return;
             remove.disabled = true;
             status.textContent = pisiPropertyTemplatesTranslate('Şablon siliniyor…');
-            const deleteResult = await window.pisiProject?.deleteDatabaseTemplate?.(
-                window.currentProjectFolder,
-                template.id
-            );
+            const deleteResult = await window.pisiProject?.deleteDatabaseTemplate?.(window.currentProjectFolder, template.id);
             if (!deleteResult?.ok) {
                 status.textContent = deleteResult?.error || pisiPropertyTemplatesTranslate('Şablon silinemedi.');
                 remove.disabled = false;
@@ -101,9 +103,7 @@ async function renderPisiPropertyTemplatesPage(container) {
     const title = document.createElement('h2');
     title.textContent = pisiPropertyTemplatesTranslate('Templates');
     const intro = document.createElement('p');
-    intro.textContent = pisiPropertyTemplatesTranslate(
-        'Tekrar kullanacağınız property yapılarını açık node üzerinden yönetin.'
-    );
+    intro.textContent = pisiPropertyTemplatesTranslate('Tekrar kullanacağınız property yapılarını açık node üzerinden yönetin.');
     heading.append(title, intro);
 
     const section = document.createElement('article');
@@ -112,9 +112,7 @@ async function renderPisiPropertyTemplatesPage(container) {
     const sectionTitle = document.createElement('h3');
     sectionTitle.textContent = pisiPropertyTemplatesTranslate('Property şablonları');
     const sectionDescription = document.createElement('p');
-    sectionDescription.textContent = pisiPropertyTemplatesTranslate(
-        'Açık node’un kaydedilmiş propertylerini yeni node’larda kullanmak üzere saklayın.'
-    );
+    sectionDescription.textContent = pisiPropertyTemplatesTranslate('Açık node’un kaydedilmiş propertylerini yeni node’larda kullanmak üzere saklayın.');
     sectionHeading.append(sectionTitle, sectionDescription);
 
     const workspace = document.createElement('div');
@@ -132,12 +130,8 @@ async function renderPisiPropertyTemplatesPage(container) {
     description.placeholder = pisiPropertyTemplatesTranslate('Şablon açıklaması');
 
     const nodePath = getPisiSearchCurrentNodePath();
-    const documentResult = nodePath
-        ? await window.pisiProject?.getPisiDocument?.(nodePath)
-        : null;
-    const properties = documentResult?.ok
-        ? normalizePisiPropertyCollection(documentResult.data?.properties)
-        : [];
+    const documentResult = nodePath ? await window.pisiProject?.getPisiDocument?.(nodePath) : null;
+    const properties = documentResult?.ok ? normalizePisiPropertyCollection(documentResult.data?.properties) : [];
     const source = document.createElement('div');
     source.className = 'pisi-property-template-source';
     const sourceLabel = document.createElement('span');
@@ -158,24 +152,14 @@ async function renderPisiPropertyTemplatesPage(container) {
     const status = document.createElement('span');
     status.className = 'pisi-command-inline-status pisi-property-template-status';
     if (!nodePath) {
-        status.textContent = pisiPropertyTemplatesTranslate(
-            'Property template oluşturmak için bir node açın.'
-        );
+        status.textContent = pisiPropertyTemplatesTranslate('Property template oluşturmak için bir node açın.');
     } else if (documentResult?.ok && !properties.length) {
-        status.textContent = pisiPropertyTemplatesTranslate(
-            'Açık node’da kaydedilmiş property yok.'
-        );
+        status.textContent = pisiPropertyTemplatesTranslate('Açık node’da kaydedilmiş property yok.');
     } else if (!documentResult?.ok) {
         status.textContent = documentResult?.error || pisiPropertyTemplatesTranslate('Node okunamadı.');
     }
 
-    form.append(
-        makePisiPropertyTemplateField('Şablon adı', name),
-        makePisiPropertyTemplateField('Şablon açıklaması', description),
-        source,
-        create,
-        status
-    );
+    form.append(makePisiPropertyTemplateField('Şablon adı', name), makePisiPropertyTemplateField('Şablon açıklaması', description), source, create, status);
     const list = document.createElement('div');
     list.className = 'pisi-property-template-list';
     workspace.append(form, list);
@@ -189,15 +173,12 @@ async function renderPisiPropertyTemplatesPage(container) {
         if (!cleanName || !documentResult?.ok || !properties.length) return;
         create.disabled = true;
         status.textContent = pisiPropertyTemplatesTranslate('Şablon kaydediliyor…');
-        const result = await window.pisiProject?.saveDatabaseTemplate?.(
-            window.currentProjectFolder,
-            {
-                name: cleanName,
-                description: description.value.trim(),
-                nodeType: documentResult.data?.pisi?.nodeType || 'note',
-                properties
-            }
-        );
+        const result = await window.pisiProject?.saveDatabaseTemplate?.(window.currentProjectFolder, {
+            name: cleanName,
+            description: description.value.trim(),
+            nodeType: documentResult.data?.pisi?.nodeType || 'note',
+            properties
+        });
         create.disabled = false;
         if (!result?.ok) {
             status.textContent = result?.error || pisiPropertyTemplatesTranslate('Şablon kaydedilemedi.');

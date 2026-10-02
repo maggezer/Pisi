@@ -11,7 +11,9 @@ function listTrackedFiles() {
     return execFileSync('git', ['ls-files', '-z'], {
         cwd: root,
         encoding: 'utf8'
-    }).split('\0').filter(Boolean);
+    })
+        .split('\0')
+        .filter(Boolean);
 }
 
 function isProductionFile(file) {
@@ -31,24 +33,17 @@ function isTextFile(file) {
 }
 
 function addBrandingErrors(file, content) {
-    const checked = content.replace(
-        /https?:\/\/github\.com\/maggezer\/Kedi\b/gi,
-        ''
-    );
+    const checked = content.replace(/https?:\/\/github\.com\/maggezer\/Kedi\b/gi, '');
     checked.split(/\r?\n/).forEach((line, index) => {
         if (/kedi/i.test(line)) {
-            errors.push(
-                `Eski Kedi adı kaldı: ${file}:${index + 1}: ${line.trim().slice(0, 180)}`
-            );
+            errors.push(`Eski Kedi adı kaldı: ${file}:${index + 1}: ${line.trim().slice(0, 180)}`);
         }
     });
 }
 
 function addAssetReferenceErrors(file, content) {
     const references = new Set();
-    for (const match of content.matchAll(
-        /(?:^|["'`(\s])((?:\.\.\/)*assets\/[A-Za-z0-9._/-]+)/g
-    )) {
+    for (const match of content.matchAll(/(?:^|["'`(\s])((?:\.\.\/)*assets\/[A-Za-z0-9._/-]+)/g)) {
         references.add(match[1].replace(/[.,;:!?]+$/, ''));
     }
 
@@ -76,22 +71,14 @@ for (const file of productionFiles) {
     addAssetReferenceErrors(file, content);
 }
 
-const requiredAssets = [
-    'assets/pisi.ico',
-    'assets/pisi.png',
-    'assets/win-min.png',
-    'assets/win-max.png',
-    'assets/win-close.png'
-];
+const requiredAssets = ['assets/pisi.ico', 'assets/pisi.png', 'assets/win-min.png', 'assets/win-max.png', 'assets/win-close.png'];
 for (const asset of requiredAssets) {
     if (!fs.existsSync(path.join(root, asset))) {
         errors.push(`Zorunlu Pisi asseti bulunamadı: ${asset}`);
     }
 }
 
-const packageJson = JSON.parse(
-    fs.readFileSync(path.join(root, 'package.json'), 'utf8')
-);
+const packageJson = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
 if (packageJson.name !== 'pisi') {
     errors.push('package.json name alanı pisi değil.');
 }
@@ -105,9 +92,7 @@ if (packageJson.build?.win?.icon !== 'assets/pisi.ico') {
     errors.push('Windows build ikonu assets/pisi.ico değil.');
 }
 
-console.log(
-    `Pisi branding denetimi: ${productionFiles.length} production dosyası incelendi.`
-);
+console.log(`Pisi branding denetimi: ${productionFiles.length} production dosyası incelendi.`);
 
 if (errors.length) {
     console.error(`Pisi branding denetiminde ${errors.length} sorun bulundu:`);

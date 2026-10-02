@@ -203,7 +203,7 @@ Missions, diary ve sağ panel özellikleri korunuyor.
 ## 29-07-2026-5
 
 - CSP’de yalnızca dinamik stil nitelikleri için `style-src-attr
-  'unsafe-inline'` açıldı. Harici stiller hâlâ yalnızca uygulama kaynağından
+'unsafe-inline'` açıldı. Harici stiller hâlâ yalnızca uygulama kaynağından
   yükleniyor; script tarafında `unsafe-inline` ve `unsafe-eval` açılmadı.
   Böylece özelleştirme renkleri, tree girintileri, map konumları ve güvenlik
   temizleyicisinden geçen zengin metin stilleri konsol ihlali üretmeden
@@ -247,4 +247,3 @@ biçimlendirme seçeneği kaldırılmadı.
   ayrıştırıcısında destekleniyor.
 - Sheet Phase 2 regresyonları dahil güncel doğrulama **571/571 test** ve
   Electron E2E ile yeşildir.
-

@@ -129,7 +129,9 @@ function resolvePisiUpdateConfiguration() {
         };
     }
 
-    const distribution = String(metadata.pisiDistribution || '').trim().toLowerCase();
+    const distribution = String(metadata.pisiDistribution || '')
+        .trim()
+        .toLowerCase();
 
     if (distribution === 'portable') {
         return {
@@ -151,9 +153,7 @@ function resolvePisiUpdateConfiguration() {
         };
     }
 
-    const feed = normalizeFeedBaseUrl(
-        process.env.PISI_UPDATE_FEED_URL || metadata.pisiUpdateFeedUrl
-    );
+    const feed = normalizeFeedBaseUrl(process.env.PISI_UPDATE_FEED_URL || metadata.pisiUpdateFeedUrl);
 
     return {
         mode: feed ? 'direct' : 'direct-unconfigured',
@@ -165,9 +165,9 @@ function resolvePisiUpdateConfiguration() {
 }
 
 function parseSemver(version) {
-    const match = String(version || '').trim().match(
-        /^v?(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/
-    );
+    const match = String(version || '')
+        .trim()
+        .match(/^v?(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/);
     if (!match) return null;
 
     return {
@@ -227,7 +227,9 @@ function normalizeManifestFile(manifest, arch, feed) {
         throw new Error('Update feed does not provide an installer for this architecture.');
     }
 
-    const sha256 = String(file.sha256 || '').trim().toLowerCase();
+    const sha256 = String(file.sha256 || '')
+        .trim()
+        .toLowerCase();
     if (!/^[a-f0-9]{64}$/.test(sha256)) {
         throw new Error('Update installer SHA-256 is missing or invalid.');
     }
@@ -326,10 +328,7 @@ async function ensureDownloadedInstaller(version, file) {
     await fs.promises.mkdir(updateDirectory, { recursive: true });
 
     const safeVersion = String(version).replace(/[^0-9A-Za-z.-]/g, '_');
-    const finalPath = path.join(
-        updateDirectory,
-        'Pisi-' + safeVersion + '-Setup-' + process.arch + '.exe'
-    );
+    const finalPath = path.join(updateDirectory, 'Pisi-' + safeVersion + '-Setup-' + process.arch + '.exe');
     const tempPath = finalPath + '.download';
 
     try {
@@ -357,17 +356,11 @@ async function ensureDownloadedInstaller(version, file) {
         }
 
         const contentLength = Number(response.headers.get('content-length') || 0);
-        if (
-            Number.isFinite(contentLength) &&
-            contentLength > PISI_UPDATE_INSTALLER_MAX_BYTES
-        ) {
+        if (Number.isFinite(contentLength) && contentLength > PISI_UPDATE_INSTALLER_MAX_BYTES) {
             throw new Error('Update installer is unexpectedly large.');
         }
 
-        await pipeline(
-            Readable.fromWeb(/** @type {any} */ (response.body)),
-            fs.createWriteStream(tempPath, { flags: 'wx' })
-        );
+        await pipeline(Readable.fromWeb(/** @type {any} */ (response.body)), fs.createWriteStream(tempPath, { flags: 'wx' }));
 
         const stat = await fs.promises.stat(tempPath);
         if (stat.size <= 0 || stat.size > PISI_UPDATE_INSTALLER_MAX_BYTES) {
@@ -397,19 +390,14 @@ async function showDownloadedUpdatePrompt(version) {
         title: translateUpdateText('Pisi güncellemesi hazır'),
         message: translateUpdateText('Yeni bir Pisi sürümü indirildi.'),
         detail: 'Pisi ' + version + ' ' + translateUpdateText('yüklenmeye hazır. Güncelleme için uygulama kapatılacak.'),
-        buttons: [
-            translateUpdateText('Şimdi yükle'),
-            translateUpdateText('Daha sonra')
-        ],
+        buttons: [translateUpdateText('Şimdi yükle'), translateUpdateText('Daha sonra')],
         defaultId: 0,
         cancelId: 1,
         noLink: true
     };
 
     const owner = BrowserWindow.getAllWindows().find((window) => !window.isDestroyed());
-    const result = owner
-        ? await dialog.showMessageBox(owner, options)
-        : await dialog.showMessageBox(options);
+    const result = owner ? await dialog.showMessageBox(owner, options) : await dialog.showMessageBox(options);
 
     if (result.response === 0) {
         await installPendingPisiUpdate();
@@ -465,10 +453,7 @@ async function checkPisiForUpdates(options = {}) {
             const manifest = await fetchPisiUpdateManifest(configuration);
             const lastCheckAt = new Date().toISOString();
 
-            if (
-                !manifest.compatible ||
-                compareSemver(manifest.version, configuration.currentVersion) <= 0
-            ) {
+            if (!manifest.compatible || compareSemver(manifest.version, configuration.currentVersion) <= 0) {
                 patchUpdateState({
                     checking: false,
                     availableVersion: null,
@@ -490,10 +475,7 @@ async function checkPisiForUpdates(options = {}) {
                 error: null
             });
 
-            const installerPath = await ensureDownloadedInstaller(
-                manifest.version,
-                manifest.file
-            );
+            const installerPath = await ensureDownloadedInstaller(manifest.version, manifest.file);
 
             pendingInstaller = {
                 version: manifest.version,

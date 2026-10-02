@@ -20,16 +20,7 @@ test('project fs bridge loads after runtime operation hooks and atomic hardening
 
 test('wave two routes document map and sidecar metadata IO but keeps atomic bytes physical', () => {
     const bridge = read('main/functions/storage-project-fs-bridge.js');
-    for (const method of [
-        'existsSync',
-        'readFileSync',
-        'readdirSync',
-        'statSync',
-        'mkdirSync',
-        'renameSync',
-        'unlinkSync',
-        'rmSync'
-    ]) {
+    for (const method of ['existsSync', 'readFileSync', 'readdirSync', 'statSync', 'mkdirSync', 'renameSync', 'unlinkSync', 'rmSync']) {
         assert.match(bridge, new RegExp(`fs\\.${method}\\s*=`));
     }
 

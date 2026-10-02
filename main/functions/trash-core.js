@@ -12,7 +12,9 @@ function normalizePisiTrashId(value) {
 }
 
 function normalizePisiTrashRelativePath(value) {
-    const raw = String(value || '').replace(/\\/g, '/').replace(/^\/+/, '');
+    const raw = String(value || '')
+        .replace(/\\/g, '/')
+        .replace(/^\/+/, '');
     if (!raw || raw === '.' || raw.includes('\0')) return null;
     const parts = raw.split('/');
     if (parts.some((part) => !part || part === '.' || part === '..')) return null;
@@ -20,7 +22,9 @@ function normalizePisiTrashRelativePath(value) {
 }
 
 function normalizePisiTrashComparePath(value) {
-    const normalized = String(value || '').replace(/[\\/]+/g, '/').replace(/^\.\//, '');
+    const normalized = String(value || '')
+        .replace(/[\\/]+/g, '/')
+        .replace(/^\.\//, '');
     return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
 }
 
@@ -29,10 +33,7 @@ function isPisiTrashPathCovered(candidate, roots = []) {
     if (!cleanCandidate) return false;
     return (Array.isArray(roots) ? roots : []).some((root) => {
         const cleanRoot = normalizePisiTrashComparePath(root);
-        return cleanRoot && (
-            cleanCandidate === cleanRoot ||
-            cleanCandidate.startsWith(`${cleanRoot}/`)
-        );
+        return cleanRoot && (cleanCandidate === cleanRoot || cleanCandidate.startsWith(`${cleanRoot}/`));
     });
 }
 
@@ -46,9 +47,7 @@ function getPisiTrashItemKind(targetPath, stat = null) {
 
 function isPisiTaskAffectedByTrash(task, roots = []) {
     const source = task?.source || {};
-    return [source.nodePath, source.mapPath]
-        .filter(Boolean)
-        .some((storedPath) => isPisiTrashPathCovered(storedPath, roots));
+    return [source.nodePath, source.mapPath].filter(Boolean).some((storedPath) => isPisiTrashPathCovered(storedPath, roots));
 }
 
 function splitPisiTrashTaskStore(tasks = [], roots = []) {
@@ -76,8 +75,7 @@ function mergePisiTrashTaskDependencies(tasks = [], dependencyRefs = [], restore
         const task = byId.get(ref?.taskId);
         if (!task) continue;
         const current = Array.isArray(task.dependencies) ? task.dependencies : [];
-        const additions = (Array.isArray(ref.dependencies) ? ref.dependencies : [])
-            .filter((id) => restoredIds.has(id));
+        const additions = (Array.isArray(ref.dependencies) ? ref.dependencies : []).filter((id) => restoredIds.has(id));
         task.dependencies = Array.from(new Set([...current, ...additions]));
     }
     return Array.from(byId.values());
@@ -87,10 +85,7 @@ function splitPisiTrashRelationships(relationships = [], nodeIds = new Set()) {
     const archived = [];
     const remaining = [];
     for (const relationship of Array.isArray(relationships) ? relationships : []) {
-        if (
-            nodeIds.has(relationship?.sourceId) ||
-            nodeIds.has(relationship?.targetId)
-        ) archived.push(relationship);
+        if (nodeIds.has(relationship?.sourceId) || nodeIds.has(relationship?.targetId)) archived.push(relationship);
         else remaining.push(relationship);
     }
     return { archived, remaining };

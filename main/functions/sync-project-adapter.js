@@ -26,16 +26,12 @@ function comparePath(value) {
 }
 
 function isDriveSyncConflictPath(value) {
-    return / \(conflict \d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\)(?: \(\d+\))?\.(?:node|map)$/i
-        .test(String(value || ''));
+    return / \(conflict \d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\)(?: \(\d+\))?\.(?:node|map)$/i.test(String(value || ''));
 }
 
 function isSafeSidecarName(value) {
     const name = String(value || '').normalize('NFC');
-    if (
-        !name || name.length > 180 || path.basename(name) !== name ||
-        /[<>:"|?*\u0000-\u001f]/.test(name) || /[. ]$/.test(name)
-    ) return false;
+    if (!name || name.length > 180 || path.basename(name) !== name || /[<>:"|?*\u0000-\u001f]/.test(name) || /[. ]$/.test(name)) return false;
     const stem = name.split('.')[0].toUpperCase();
     return !/^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/.test(stem);
 }
@@ -59,10 +55,10 @@ function readProjectDocuments(projectFolder) {
     const documents = [];
     const byId = new Map();
     const byPath = new Map();
-    const entries = [...walked.entries].sort((left, right) => (
-        Number(isDriveSyncConflictPath(left.key)) - Number(isDriveSyncConflictPath(right.key)) ||
-        String(left.key).localeCompare(String(right.key))
-    ));
+    const entries = [...walked.entries].sort(
+        (left, right) =>
+            Number(isDriveSyncConflictPath(left.key)) - Number(isDriveSyncConflictPath(right.key)) || String(left.key).localeCompare(String(right.key))
+    );
     const fileConflicts = [];
     for (const entry of entries) {
         const read = storage.readJson(entry.key);
@@ -74,10 +70,7 @@ function readProjectDocuments(projectFolder) {
         const kind = data.pisi.type;
         const namedConflict = isDriveSyncConflictPath(entry.key);
         const duplicate = byId.get(id);
-        const alreadyIsolated = Boolean(
-            namedConflict && data.pisi.conflictOf &&
-            new RegExp(`^${kind}_conflict_[A-Za-z0-9_-]+$`).test(id)
-        );
+        const alreadyIsolated = Boolean(namedConflict && data.pisi.conflictOf && new RegExp(`^${kind}_conflict_[A-Za-z0-9_-]+$`).test(id));
         if ((namedConflict && !alreadyIsolated) || duplicate) {
             const originalId = id;
             const suffix = syncCore.hashString(`${entry.key}:${originalId}:${JSON.stringify(data)}`);
@@ -91,7 +84,9 @@ function readProjectDocuments(projectFolder) {
                 conflictSourcePath: entry.key
             };
             fileConflicts.push({
-                kind, originalId, conflictId: id,
+                kind,
+                originalId,
+                conflictId: id,
                 originalPath: duplicate?.key || null,
                 conflictPath: entry.key,
                 source: namedConflict ? 'drivesync-filename' : 'duplicate-pisi-id'
@@ -117,18 +112,20 @@ function canonicalNodePayload(row, relationships) {
         blocks: Array.isArray(data.blocks) ? clone(data.blocks) : [],
         tags: Array.isArray(data.tags) ? clone(data.tags) : [],
         properties: data.properties && typeof data.properties === 'object' ? clone(data.properties) : {},
-        relations: relationships.filter(({ sourceId }) => sourceId === row.id).map((item) => ({
-            id: item.id,
-            targetId: item.targetId,
-            type: item.type,
-            sourceRole: item.sourceRole,
-            targetRole: item.targetRole,
-            direction: item.direction,
-            label: item.label,
-            properties: item.properties,
-            createdAt: item.createdAt,
-            updatedAt: item.updatedAt
-        })),
+        relations: relationships
+            .filter(({ sourceId }) => sourceId === row.id)
+            .map((item) => ({
+                id: item.id,
+                targetId: item.targetId,
+                type: item.type,
+                sourceRole: item.sourceRole,
+                targetRole: item.targetRole,
+                direction: item.direction,
+                label: item.label,
+                properties: item.properties,
+                createdAt: item.createdAt,
+                updatedAt: item.updatedAt
+            })),
         sources: Array.isArray(data.sources) ? clone(data.sources) : [],
         parentMap: data.pisi.parentMap || 'none',
         documentKind: data.documentKind || (data.dateKey ? 'journal' : 'note'),
@@ -155,25 +152,18 @@ function canonicalMapPayload(row) {
             nodes: clone(Array.isArray(map.nodes) ? map.nodes : []),
             references: (Array.isArray(map.references) ? map.references : [])
                 .map((reference) => ({ id: String(reference?.id || '') }))
-                .filter((reference, index, all) => (
-                    /^node_[A-Za-z0-9_-]+$/.test(reference.id) &&
-                    all.findIndex((item) => item.id === reference.id) === index
-                )),
-            relationshipViews: clone(
-                semantic.normalizePisiRelationshipViews(map.relationshipViews)
-            ),
+                .filter((reference, index, all) => /^node_[A-Za-z0-9_-]+$/.test(reference.id) && all.findIndex((item) => item.id === reference.id) === index),
+            relationshipViews: clone(semantic.normalizePisiRelationshipViews(map.relationshipViews)),
             relationshipViewVersion: semantic.PISI_MAP_RELATIONSHIP_VIEW_VERSION,
             camera: clone(map.camera || { x: 0, y: 0, zoom: 1 }),
-            collapsedHubs: Array.from(new Set(
-                (Array.isArray(map.collapsedHubs) ? map.collapsedHubs : [])
-                    .map((value) => String(value || ''))
-                    .filter((value) => (
-                        /^(?:node_[A-Za-z0-9_-]+)::(?:top|right|bottom|left)$/.test(value)
-                    ))
-            )).slice(0, 10000),
-            generated: map.generated && typeof map.generated === 'object'
-                ? clone(map.generated)
-                : null
+            collapsedHubs: Array.from(
+                new Set(
+                    (Array.isArray(map.collapsedHubs) ? map.collapsedHubs : [])
+                        .map((value) => String(value || ''))
+                        .filter((value) => /^(?:node_[A-Za-z0-9_-]+)::(?:top|right|bottom|left)$/.test(value))
+                )
+            ).slice(0, 10000),
+            generated: map.generated && typeof map.generated === 'object' ? clone(map.generated) : null
         },
         tags: Array.isArray(data.tags) ? clone(data.tags) : [],
         properties: data.properties && typeof data.properties === 'object' ? clone(data.properties) : {},
@@ -193,9 +183,7 @@ function resolveTaskSourceIds(projectFolder, task, byPath) {
     const source = task.source || {};
     const findId = (value, kind) => {
         if (!value) return null;
-        const absolute = path.isAbsolute(value)
-            ? path.resolve(value)
-            : path.resolve(projectFolder, String(value).replace(/\//g, path.sep));
+        const absolute = path.isAbsolute(value) ? path.resolve(value) : path.resolve(projectFolder, String(value).replace(/\//g, path.sep));
         const row = byPath.get(comparePath(absolute));
         return row?.kind === kind ? row.id : null;
     };
@@ -210,8 +198,7 @@ function resolveTaskSourceIds(projectFolder, task, byPath) {
 
 function exportPisiSyncEntities(projectFolder) {
     const inventory = readProjectDocuments(projectFolder);
-    const relationshipsResult = modules['main.relationshipStore']
-        .readPisiRelationshipStore(projectFolder);
+    const relationshipsResult = modules['main.relationshipStore'].readPisiRelationshipStore(projectFolder);
     if (!relationshipsResult.ok) throw new Error(relationshipsResult.error);
     const taskStore = modules['main.taskStore'].readPisiTaskStore(projectFolder);
     const storage = getStorage(projectFolder);
@@ -219,9 +206,7 @@ function exportPisiSyncEntities(projectFolder) {
     const entities = inventory.documents.map((row) => ({
         kind: row.kind,
         id: row.id,
-        payload: row.kind === 'map'
-            ? canonicalMapPayload(row)
-            : canonicalNodePayload(row, relationshipsResult.relationships)
+        payload: row.kind === 'map' ? canonicalMapPayload(row) : canonicalNodePayload(row, relationshipsResult.relationships)
     }));
     for (const task of taskStore.tasks) {
         entities.push({
@@ -239,13 +224,28 @@ function exportPisiSyncEntities(projectFolder) {
     const templates = readConfig(storage, CONFIG_FILES.templates, { templates: [] });
     entities.push(
         { kind: 'config', id: 'propertySchema', payload: { value: clone(propertySchema.definitions || []) } },
-        { kind: 'config', id: 'savedViews', payload: { value: (savedViews.views || []).map((view) => ({
-            ...clone(view), type: view.type || view.layout || 'table', layout: view.layout || view.type || 'table'
-        })) } },
-        { kind: 'config', id: 'templates', payload: { value: (templates.templates || []).map((template) => ({
-            ...clone(template), kind: template.kind || template.nodeType || 'note',
-            nodeType: template.nodeType || template.kind || 'note'
-        })) } }
+        {
+            kind: 'config',
+            id: 'savedViews',
+            payload: {
+                value: (savedViews.views || []).map((view) => ({
+                    ...clone(view),
+                    type: view.type || view.layout || 'table',
+                    layout: view.layout || view.type || 'table'
+                }))
+            }
+        },
+        {
+            kind: 'config',
+            id: 'templates',
+            payload: {
+                value: (templates.templates || []).map((template) => ({
+                    ...clone(template),
+                    kind: template.kind || template.nodeType || 'note',
+                    nodeType: template.nodeType || template.kind || 'note'
+                }))
+            }
+        }
     );
     return entities;
 }
@@ -265,15 +265,8 @@ function sanitizeTitle(value, fallback, maximum = 100) {
 
 function uniqueFilePath(directory, title, extension, id, occupied) {
     const maximum = Math.max(8, 180 - 2 - String(id).length - extension.length);
-    const clean = sanitizeTitle(
-        title,
-        extension === '.map' ? 'Senkronize Harita' : 'Senkronize Node',
-        maximum
-    );
-    const candidates = [
-        `${clean}${extension}`,
-        `${clean}__${id}${extension}`
-    ];
+    const clean = sanitizeTitle(title, extension === '.map' ? 'Senkronize Harita' : 'Senkronize Node', maximum);
+    const candidates = [`${clean}${extension}`, `${clean}__${id}${extension}`];
     let index = 1;
     while (true) {
         const name = candidates.shift() || `${clean}__${id}_${index++}${extension}`;
@@ -290,19 +283,17 @@ function makeDocumentData(record, existingData, parentMap = 'none') {
     const payload = record.payload || {};
     const extension = record.kind === 'map' ? '.map' : '.node';
     const expectedPrefix = record.kind === 'map' ? 'map_' : 'node_';
-    if (
-        !record.id.startsWith(expectedPrefix) ||
-        record.id.length > 101 ||
-        !/^(?:map|node)_[A-Za-z0-9_-]+$/.test(record.id)
-    ) throw new Error(`Sync kaydı geçersiz Pisi kimliği taşıyor: ${record.id}`);
-    const native = payload.native && typeof payload.native === 'object'
-        ? clone(payload.native) : null;
-    const data = native || modules['main.filesystemCore'].createPisiDocumentData({
-        ext: extension,
-        title: payload.title,
-        id: record.id,
-        parentMap
-    });
+    if (!record.id.startsWith(expectedPrefix) || record.id.length > 101 || !/^(?:map|node)_[A-Za-z0-9_-]+$/.test(record.id))
+        throw new Error(`Sync kaydı geçersiz Pisi kimliği taşıyor: ${record.id}`);
+    const native = payload.native && typeof payload.native === 'object' ? clone(payload.native) : null;
+    const data =
+        native ||
+        modules['main.filesystemCore'].createPisiDocumentData({
+            ext: extension,
+            title: payload.title,
+            id: record.id,
+            parentMap
+        });
     const now = new Date().toISOString();
     data.pisi = {
         ...(existingData?.pisi || {}),
@@ -329,33 +320,24 @@ function makeDocumentData(record, existingData, parentMap = 'none') {
         if (payload.sheet != null) data.sheet = clone(payload.sheet);
         if (payload.view != null) data.view = clone(payload.view);
     } else {
-        const incomingMap = payload.map && typeof payload.map === 'object'
-            ? payload.map
-            : {};
+        const incomingMap = payload.map && typeof payload.map === 'object' ? payload.map : {};
         const semantic = modules['main.mapSemanticCore'];
         data.map = {
             nodes: clone(Array.isArray(incomingMap.nodes) ? incomingMap.nodes : []),
             references: (Array.isArray(incomingMap.references) ? incomingMap.references : [])
                 .map((reference) => ({ id: String(reference?.id || '') }))
-                .filter((reference, index, all) => (
-                    /^node_[A-Za-z0-9_-]+$/.test(reference.id) &&
-                    all.findIndex((item) => item.id === reference.id) === index
-                )),
-            relationshipViews: clone(
-                semantic.normalizePisiRelationshipViews(incomingMap.relationshipViews)
-            ),
+                .filter((reference, index, all) => /^node_[A-Za-z0-9_-]+$/.test(reference.id) && all.findIndex((item) => item.id === reference.id) === index),
+            relationshipViews: clone(semantic.normalizePisiRelationshipViews(incomingMap.relationshipViews)),
             relationshipViewVersion: semantic.PISI_MAP_RELATIONSHIP_VIEW_VERSION,
             camera: clone(incomingMap.camera || { x: 0, y: 0, zoom: 1 }),
-            collapsedHubs: Array.from(new Set(
-                (Array.isArray(incomingMap.collapsedHubs) ? incomingMap.collapsedHubs : [])
-                    .map((value) => String(value || ''))
-                    .filter((value) => (
-                        /^(?:node_[A-Za-z0-9_-]+)::(?:top|right|bottom|left)$/.test(value)
-                    ))
-            )).slice(0, 10000),
-            generated: incomingMap.generated && typeof incomingMap.generated === 'object'
-                ? clone(incomingMap.generated)
-                : null
+            collapsedHubs: Array.from(
+                new Set(
+                    (Array.isArray(incomingMap.collapsedHubs) ? incomingMap.collapsedHubs : [])
+                        .map((value) => String(value || ''))
+                        .filter((value) => /^(?:node_[A-Za-z0-9_-]+)::(?:top|right|bottom|left)$/.test(value))
+                )
+            ).slice(0, 10000),
+            generated: incomingMap.generated && typeof incomingMap.generated === 'object' ? clone(incomingMap.generated) : null
         };
         data.tags = clone(payload.tags || []);
         data.properties = clone(payload.properties || {});
@@ -385,9 +367,7 @@ function makeConflictRecords(records, conflicts) {
         if (loser.kind === 'config' && Array.isArray(loser.payload?.value)) {
             const target = live.find((record) => record.kind === 'config' && record.id === loser.id);
             if (!target || !Array.isArray(target.payload?.value)) continue;
-            const byId = new Map(target.payload.value.map((item) => [
-                String(item?.id || syncCore.hashValue(item)), item
-            ]));
+            const byId = new Map(target.payload.value.map((item) => [String(item?.id || syncCore.hashValue(item)), item]));
             for (const item of loser.payload.value) {
                 const itemId = String(item?.id || syncCore.hashValue(item));
                 const current = byId.get(itemId);
@@ -410,15 +390,15 @@ function makeConflictRecords(records, conflicts) {
             continue;
         }
         if (!['node', 'map', 'task'].includes(loser.kind)) continue;
-        const suffix = syncCore.hashString(
-            `${loser.kind}:${loser.id}:${loser.version?.deviceId}:${loser.hash}`
-        );
+        const suffix = syncCore.hashString(`${loser.kind}:${loser.id}:${loser.version?.deviceId}:${loser.hash}`);
         const prefix = loser.kind === 'map' ? 'map' : loser.kind === 'task' ? 'task' : 'node';
         const id = `${prefix}_conflict_${suffix}`;
         const key = `${loser.kind}:${id}`;
         if (occupied.has(key)) continue;
         live.push({
-            ...clone(loser), key, id,
+            ...clone(loser),
+            key,
+            id,
             payload: {
                 ...clone(loser.payload),
                 title: `${loser.payload?.title || 'Başlıksız'} (Sync çakışması - ${String(loser.version?.deviceId || 'cihaz').slice(0, 24)})`,
@@ -445,9 +425,7 @@ function applyPisiSyncRecords(projectFolder, records, conflicts = []) {
 
     for (const record of liveDocuments.filter(({ kind }) => kind === 'map')) {
         const existing = inventory.byId.get(record.id);
-        const filePath = existing?.path || uniqueFilePath(
-            projectFolder, record.payload?.title, '.map', record.id, occupied
-        );
+        const filePath = existing?.path || uniqueFilePath(projectFolder, record.payload?.title, '.map', record.id, occupied);
         const data = makeDocumentData(record, existing?.data);
         const expectedSidecar = generatedSidecarName(data.pisi.title, '.map', record.id);
         if (!isSafeSidecarName(data.pisi.sidecar)) data.pisi.sidecar = expectedSidecar;
@@ -455,8 +433,11 @@ function applyPisiSyncRecords(projectFolder, records, conflicts = []) {
         fs.mkdirSync(sidecarPath, { recursive: true });
         mapPaths.set(record.id, { filePath, sidecarPath });
         planned.push({
-            kind: 'map', recordId: record.id,
-            filePath, data, oldPath: existing?.path || null
+            kind: 'map',
+            recordId: record.id,
+            filePath,
+            data,
+            oldPath: existing?.path || null
         });
     }
     for (const record of liveDocuments.filter(({ kind }) => kind === 'node')) {
@@ -465,41 +446,35 @@ function applyPisiSyncRecords(projectFolder, records, conflicts = []) {
         const desiredDirectory = mapPaths.get(parentMap)?.sidecarPath || projectFolder;
         let filePath = existing?.path || null;
         if (!filePath || path.resolve(path.dirname(filePath)) !== path.resolve(desiredDirectory)) {
-            filePath = uniqueFilePath(
-                desiredDirectory, record.payload?.title, '.node', record.id, occupied
-            );
+            filePath = uniqueFilePath(desiredDirectory, record.payload?.title, '.node', record.id, occupied);
         }
         const data = makeDocumentData(record, existing?.data, parentMap);
         if (!isSafeSidecarName(data.pisi.sidecar)) {
             data.pisi.sidecar = generatedSidecarName(data.pisi.title, '.node', record.id);
         }
         const oldSidecar = existing?.data?.pisi?.sidecar;
-        const oldSidecarPath = existing && isSafeSidecarName(oldSidecar)
-            ? path.join(path.dirname(existing.path), oldSidecar) : null;
-        const newSidecarPath = isSafeSidecarName(data.pisi.sidecar)
-            ? path.join(path.dirname(filePath), data.pisi.sidecar) : null;
+        const oldSidecarPath = existing && isSafeSidecarName(oldSidecar) ? path.join(path.dirname(existing.path), oldSidecar) : null;
+        const newSidecarPath = isSafeSidecarName(data.pisi.sidecar) ? path.join(path.dirname(filePath), data.pisi.sidecar) : null;
         planned.push({
-            kind: 'node', recordId: record.id,
-            filePath, data, oldPath: existing?.path || null,
-            oldSidecarPath, newSidecarPath
+            kind: 'node',
+            recordId: record.id,
+            filePath,
+            data,
+            oldPath: existing?.path || null,
+            oldSidecarPath,
+            newSidecarPath
         });
     }
 
-    const nodePathById = new Map(
-        planned
-            .filter((item) => item.kind === 'node')
-            .map((item) => [item.recordId, item.filePath])
-    );
+    const nodePathById = new Map(planned.filter((item) => item.kind === 'node').map((item) => [item.recordId, item.filePath]));
     for (const item of planned.filter((entry) => entry.kind === 'map')) {
         item.data.map.references = (item.data.map.references || [])
             .map((reference) => {
-                const nodePath = nodePathById.get(reference.id)
-                    || inventory.byId.get(reference.id)?.path;
+                const nodePath = nodePathById.get(reference.id) || inventory.byId.get(reference.id)?.path;
                 if (!nodePath) return null;
                 return {
                     id: reference.id,
-                    path: path.relative(projectFolder, nodePath)
-                        .split(path.sep).join('/')
+                    path: path.relative(projectFolder, nodePath).split(path.sep).join('/')
                 };
             })
             .filter(Boolean);
@@ -507,20 +482,21 @@ function applyPisiSyncRecords(projectFolder, records, conflicts = []) {
 
     for (const item of planned) {
         if (
-            item.oldSidecarPath && item.newSidecarPath &&
+            item.oldSidecarPath &&
+            item.newSidecarPath &&
             comparePath(item.oldSidecarPath) !== comparePath(item.newSidecarPath) &&
-            fs.existsSync(item.oldSidecarPath) && fs.existsSync(item.newSidecarPath)
+            fs.existsSync(item.oldSidecarPath) &&
+            fs.existsSync(item.newSidecarPath)
         ) {
             throw new Error(`Sync sidecar hedefi zaten var; ekler otomatik birleştirilmedi: ${item.newSidecarPath}`);
         }
     }
-    modules['main.filesystemCore'].writePisiDocumentsTransaction(
-        planned.map(({ filePath, data }) => ({ filePath, data }))
-    );
+    modules['main.filesystemCore'].writePisiDocumentsTransaction(planned.map(({ filePath, data }) => ({ filePath, data })));
     const trashPaths = new Set();
     for (const item of planned) {
         if (
-            item.oldSidecarPath && item.newSidecarPath &&
+            item.oldSidecarPath &&
+            item.newSidecarPath &&
             comparePath(item.oldSidecarPath) !== comparePath(item.newSidecarPath) &&
             fs.existsSync(item.oldSidecarPath)
         ) {
@@ -537,9 +513,7 @@ function applyPisiSyncRecords(projectFolder, records, conflicts = []) {
         .filter((row) => !liveIds.has(row.id))
         .sort((left, right) => Number(right.kind === 'map') - Number(left.kind === 'map'));
     for (const row of deletions) {
-        if (movedSidecarRoots.some((root) => (
-            comparePath(row.path) === root || comparePath(row.path).startsWith(`${root}${path.sep}`)
-        ))) continue;
+        if (movedSidecarRoots.some((root) => comparePath(row.path) === root || comparePath(row.path).startsWith(`${root}${path.sep}`))) continue;
         const moved = moveToSyncTrash(projectFolder, row.path, stamp);
         if (moved) trashPaths.add(moved);
         const sidecar = row.data?.pisi?.sidecar;
@@ -555,51 +529,65 @@ function applyPisiSyncRecords(projectFolder, records, conflicts = []) {
     }
 
     const finalInventory = readProjectDocuments(projectFolder);
-    const tasks = preserved.live.filter(({ kind }) => kind === 'task').map(({ id, payload }) => {
-        if (!/^task_[A-Za-z0-9._:-]{4,180}$/.test(String(id || ''))) {
-            throw new Error(`Sync kaydı geçersiz görev kimliği taşıyor: ${id}`);
-        }
-        const node = finalInventory.byId.get(payload?.source?.documentId);
-        const map = finalInventory.byId.get(payload?.source?.mapId);
-        return {
-            ...clone(payload), id,
-            source: {
-                nodePath: node?.path || null,
-                blockId: payload?.source?.blockId || null,
-                mapPath: map?.path || null,
-                nodeTitle: payload?.source?.nodeTitle || node?.data?.pisi?.title || '',
-                mapTitle: payload?.source?.mapTitle || map?.data?.pisi?.title || ''
+    const tasks = preserved.live
+        .filter(({ kind }) => kind === 'task')
+        .map(({ id, payload }) => {
+            if (!/^task_[A-Za-z0-9._:-]{4,180}$/.test(String(id || ''))) {
+                throw new Error(`Sync kaydı geçersiz görev kimliği taşıyor: ${id}`);
             }
-        };
-    });
+            const node = finalInventory.byId.get(payload?.source?.documentId);
+            const map = finalInventory.byId.get(payload?.source?.mapId);
+            return {
+                ...clone(payload),
+                id,
+                source: {
+                    nodePath: node?.path || null,
+                    blockId: payload?.source?.blockId || null,
+                    mapPath: map?.path || null,
+                    nodeTitle: payload?.source?.nodeTitle || node?.data?.pisi?.title || '',
+                    mapTitle: payload?.source?.mapTitle || map?.data?.pisi?.title || ''
+                }
+            };
+        });
     modules['main.taskStore'].writePisiTaskStore(projectFolder, { tasks });
 
     const relationships = [];
-    const liveNodeIds = new Set(
-        preserved.live.filter(({ kind }) => kind === 'node').map(({ id }) => id)
-    );
+    const liveNodeIds = new Set(preserved.live.filter(({ kind }) => kind === 'node').map(({ id }) => id));
     for (const record of preserved.live.filter(({ kind }) => kind === 'node')) {
         for (const relation of record.payload?.relations || []) {
             if (!relation?.targetId || !liveNodeIds.has(relation.targetId)) continue;
             relationships.push({ ...clone(relation), sourceId: record.id });
         }
     }
-    const relationshipResult = modules['main.relationshipStore']
-        .writePisiRelationshipStore(projectFolder, relationships);
+    const relationshipResult = modules['main.relationshipStore'].writePisiRelationshipStore(projectFolder, relationships);
     if (!relationshipResult.ok) throw new Error(relationshipResult.error);
 
     const storage = getStorage(projectFolder);
-    const configs = new Map(preserved.live.filter(({ kind }) => kind === 'config')
-        .map((record) => [record.id, record.payload?.value]));
+    const configs = new Map(preserved.live.filter(({ kind }) => kind === 'config').map((record) => [record.id, record.payload?.value]));
     const configWrites = [
         [CONFIG_FILES.propertySchema, { version: 1, definitions: clone(configs.get('propertySchema') || []) }],
-        [CONFIG_FILES.savedViews, { version: 1, views: (configs.get('savedViews') || []).map((view) => ({
-            ...clone(view), layout: view.layout || view.type || 'table', type: view.type || view.layout || 'table'
-        })) }],
-        [CONFIG_FILES.templates, { version: 1, templates: (configs.get('templates') || []).map((template) => ({
-            ...clone(template), nodeType: template.nodeType || template.kind || 'note',
-            kind: template.kind || template.nodeType || 'note'
-        })) }]
+        [
+            CONFIG_FILES.savedViews,
+            {
+                version: 1,
+                views: (configs.get('savedViews') || []).map((view) => ({
+                    ...clone(view),
+                    layout: view.layout || view.type || 'table',
+                    type: view.type || view.layout || 'table'
+                }))
+            }
+        ],
+        [
+            CONFIG_FILES.templates,
+            {
+                version: 1,
+                templates: (configs.get('templates') || []).map((template) => ({
+                    ...clone(template),
+                    nodeType: template.nodeType || template.kind || 'note',
+                    kind: template.kind || template.nodeType || 'note'
+                }))
+            }
+        ]
     ];
     for (const [key, value] of configWrites) {
         const written = storage.writeJson(key, value, { backup: true, newline: true });

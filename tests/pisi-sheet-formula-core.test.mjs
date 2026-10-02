@@ -1,10 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
-    PISI_FORMULA_CATALOG,
-    evaluatePisiFormulaExpression
-} from '../renderer/editor/pisi-editor-sheet-formula-core.mjs';
+import { PISI_FORMULA_CATALOG, evaluatePisiFormulaExpression } from '../renderer/editor/pisi-editor-sheet-formula-core.mjs';
 
 function formulaValue(formula, context = {}) {
     const result = evaluatePisiFormulaExpression(formula, context);
@@ -24,9 +21,7 @@ const cells = {
 const context = {
     locale: 'tr-TR',
     resolveCell(ref) {
-        return Object.hasOwn(cells, ref)
-            ? { ok: true, value: cells[ref] }
-            : { ok: false, error: '#REF!' };
+        return Object.hasOwn(cells, ref) ? { ok: true, value: cells[ref] } : { ok: false, error: '#REF!' };
     },
     resolveRange(start, end) {
         const ranges = {
@@ -35,17 +30,12 @@ const context = {
             'A3:B3': ['Pisi', '']
         };
         const values = ranges[`${start}:${end}`];
-        return values
-            ? { ok: true, values }
-            : { ok: false, error: '#REF!' };
+        return values ? { ok: true, values } : { ok: false, error: '#REF!' };
     }
 };
 
 test('mantıksal formüller karşılaştırma, kısa devre ve hata yakalama uygular', () => {
-    assert.equal(
-        formulaValue('=IF(A1>10,CONCAT("P","isi"),1/0)', context),
-        'Pisi'
-    );
+    assert.equal(formulaValue('=IF(A1>10,CONCAT("P","isi"),1/0)', context), 'Pisi');
     assert.equal(formulaValue('=AND(A1>0,B1=4)', context), true);
     assert.equal(formulaValue('=OR(A2>0,NOT(FALSE()))', context), true);
     assert.equal(formulaValue('=XOR(TRUE,FALSE,TRUE)', context), false);
@@ -59,14 +49,8 @@ test('metin formülleri hücre, Unicode ve aralık değerleriyle çalışır', (
     assert.equal(formulaValue('=RIGHT("Merhaba",4)'), 'haba');
     assert.equal(formulaValue('=MID("Merhaba",2,4)'), 'erha');
     assert.equal(formulaValue('=TRIM(B2)', context), 'merhaba dünya');
-    assert.equal(
-        formulaValue('=SUBSTITUTE("bir iki bir","bir","üç",2)'),
-        'bir iki üç'
-    );
-    assert.equal(
-        formulaValue('=TEXTJOIN(" / ",TRUE,A3:B3)', context),
-        'Pisi'
-    );
+    assert.equal(formulaValue('=SUBSTITUTE("bir iki bir","bir","üç",2)'), 'bir iki üç');
+    assert.equal(formulaValue('=TEXTJOIN(" / ",TRUE,A3:B3)', context), 'Pisi');
 });
 
 test('absolute hücre referansları normal hücrelerle aynı hesaplanır', () => {

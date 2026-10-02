@@ -1,16 +1,6 @@
-const PISI_WORD_FONT_FAMILIES = Object.freeze([
-    'Aptos',
-    'Calibri',
-    'Segoe UI',
-    'Arial',
-    'Times New Roman',
-    'Georgia',
-    'Consolas'
-]);
+const PISI_WORD_FONT_FAMILIES = Object.freeze(['Aptos', 'Calibri', 'Segoe UI', 'Arial', 'Times New Roman', 'Georgia', 'Consolas']);
 
-const PISI_WORD_FONT_SIZES = Object.freeze([
-    8, 9, 10, 11, 12, 14, 15, 16, 18, 20, 24, 28, 32, 36, 48, 72
-]);
+const PISI_WORD_FONT_SIZES = Object.freeze([8, 9, 10, 11, 12, 14, 15, 16, 18, 20, 24, 28, 32, 36, 48, 72]);
 
 const PISI_WORD_BLOCK_TYPES = Object.freeze({
     div: 'paragraph',
@@ -34,18 +24,14 @@ function getPisiWordEditor(toolbar) {
 function getPisiWordToolbarForEditor(editor) {
     if (!editor?.id) return null;
     return document.querySelector(
-        `.pisi-editor-toolbar[data-editor-target="${CSS.escape(editor.id)}"], ` +
-        `.pisi-word-toolbar[data-editor-target="${CSS.escape(editor.id)}"]`
+        `.pisi-editor-toolbar[data-editor-target="${CSS.escape(editor.id)}"], ` + `.pisi-word-toolbar[data-editor-target="${CSS.escape(editor.id)}"]`
     );
 }
 
 function getPisiWordRangeInsideEditor(editor, selection = window.getSelection?.()) {
     if (!editor || !selection?.rangeCount) return null;
     const range = selection.getRangeAt(0);
-    if (
-        !editor.contains(range.startContainer) ||
-        !editor.contains(range.endContainer)
-    ) {
+    if (!editor.contains(range.startContainer) || !editor.contains(range.endContainer)) {
         return null;
     }
     return range;
@@ -63,10 +49,7 @@ function restorePisiWordSelection(toolbar) {
     const editor = getPisiWordEditor(toolbar);
     const savedRange = pisiWordToolbarSelections.get(toolbar);
     if (!editor || !savedRange) return false;
-    if (
-        !savedRange.startContainer?.isConnected ||
-        !savedRange.endContainer?.isConnected
-    ) {
+    if (!savedRange.startContainer?.isConnected || !savedRange.endContainer?.isConnected) {
         pisiWordToolbarSelections.delete(toolbar);
         return false;
     }
@@ -84,9 +67,7 @@ function getPisiWordRange(toolbar) {
     const liveRange = getPisiWordRangeInsideEditor(editor);
     if (liveRange) return liveRange;
     const savedRange = pisiWordToolbarSelections.get(toolbar);
-    return savedRange?.startContainer?.isConnected
-        ? savedRange
-        : null;
+    return savedRange?.startContainer?.isConnected ? savedRange : null;
 }
 
 function getPisiWordElementFromRange(editor, range) {
@@ -94,10 +75,7 @@ function getPisiWordElementFromRange(editor, range) {
     let node = range.startContainer;
 
     if (node === editor && node.nodeType === Node.ELEMENT_NODE) {
-        node = node.childNodes[Math.min(
-            range.startOffset,
-            Math.max(0, node.childNodes.length - 1)
-        )] || editor;
+        node = node.childNodes[Math.min(range.startOffset, Math.max(0, node.childNodes.length - 1))] || editor;
     }
 
     if (node?.nodeType === Node.TEXT_NODE) node = node.parentElement;
@@ -114,15 +92,11 @@ function getPisiWordActiveCell(editor) {
 function getPisiWordProbeElement(toolbar) {
     const editor = getPisiWordEditor(toolbar);
     if (!editor) return null;
-    return getPisiWordActiveCell(editor) ||
-        getPisiWordElementFromRange(editor, getPisiWordRange(toolbar)) ||
-        editor;
+    return getPisiWordActiveCell(editor) || getPisiWordElementFromRange(editor, getPisiWordRange(toolbar)) || editor;
 }
 
 function getPisiWordBlock(editor, node) {
-    const element = node?.nodeType === Node.TEXT_NODE
-        ? node.parentElement
-        : node;
+    const element = node?.nodeType === Node.TEXT_NODE ? node.parentElement : node;
     const block = element?.closest?.('.pisi-editor-block');
     return block && editor?.contains(block) ? block : null;
 }
@@ -163,9 +137,7 @@ function ensurePisiWordSelectOption(select, value, label = value) {
 }
 
 function setPisiWordCommandPressed(toolbar, command, pressed) {
-    const button = toolbar?.querySelector(
-        `button[data-pisi-unified-command="${command}"]`
-    );
+    const button = toolbar?.querySelector(`button[data-pisi-unified-command="${command}"]`);
     if (!button) return;
     button.classList.toggle('active', Boolean(pressed));
     button.setAttribute('aria-pressed', String(Boolean(pressed)));
@@ -174,16 +146,16 @@ function setPisiWordCommandPressed(toolbar, command, pressed) {
 function getPisiWordBlockStyleValue(editor, probe) {
     const block = getPisiWordBlock(editor, probe);
     if (!block) return 'div';
-    const type = typeof window.getPisiBlockType === 'function'
-        ? window.getPisiBlockType(block)
-        : block.dataset.pisiBlockType;
-    return {
-        heading1: 'h1',
-        heading2: 'h2',
-        heading3: 'h3',
-        quote: 'blockquote',
-        code: 'pre'
-    }[type] || 'div';
+    const type = typeof window.getPisiBlockType === 'function' ? window.getPisiBlockType(block) : block.dataset.pisiBlockType;
+    return (
+        {
+            heading1: 'h1',
+            heading2: 'h2',
+            heading3: 'h3',
+            quote: 'blockquote',
+            code: 'pre'
+        }[type] || 'div'
+    );
 }
 
 function syncPisiWordToolbarState(toolbar) {
@@ -209,14 +181,11 @@ function syncPisiWordToolbarState(toolbar) {
     }
 
     const numericWeight = Number.parseInt(style.fontWeight, 10);
-    const bold = style.fontWeight === 'bold' ||
-        (Number.isFinite(numericWeight) && numericWeight >= 600);
+    const bold = style.fontWeight === 'bold' || (Number.isFinite(numericWeight) && numericWeight >= 600);
     const decorations = String(style.textDecorationLine || '');
     const verticalAlign = String(style.verticalAlign || '').toLowerCase();
     const block = getPisiWordBlock(editor, probe);
-    const blockType = block && typeof window.getPisiBlockType === 'function'
-        ? window.getPisiBlockType(block)
-        : block?.dataset?.pisiBlockType;
+    const blockType = block && typeof window.getPisiBlockType === 'function' ? window.getPisiBlockType(block) : block?.dataset?.pisiBlockType;
 
     setPisiWordCommandPressed(toolbar, 'bold', bold);
     setPisiWordCommandPressed(toolbar, 'italic', style.fontStyle === 'italic');
@@ -224,45 +193,18 @@ function syncPisiWordToolbarState(toolbar) {
     setPisiWordCommandPressed(toolbar, 'strikeThrough', decorations.includes('line-through'));
     setPisiWordCommandPressed(toolbar, 'subscript', verticalAlign === 'sub');
     setPisiWordCommandPressed(toolbar, 'superscript', verticalAlign === 'super');
-    setPisiWordCommandPressed(
-        toolbar,
-        'insertUnorderedList',
-        Boolean(probe.closest?.('ul')) || blockType === 'bullet'
-    );
-    setPisiWordCommandPressed(
-        toolbar,
-        'insertOrderedList',
-        Boolean(probe.closest?.('ol')) || blockType === 'number'
-    );
+    setPisiWordCommandPressed(toolbar, 'insertUnorderedList', Boolean(probe.closest?.('ul')) || blockType === 'bullet');
+    setPisiWordCommandPressed(toolbar, 'insertOrderedList', Boolean(probe.closest?.('ol')) || blockType === 'number');
 
     const alignTarget = block || probe;
     const align = String(getComputedStyle(alignTarget).textAlign || '').toLowerCase();
-    const compositeOwnsAlignment =
-        toolbar.classList.contains(
-            'pisi-composite-context'
-        );
+    const compositeOwnsAlignment = toolbar.classList.contains('pisi-composite-context');
 
     if (!compositeOwnsAlignment) {
-        setPisiWordCommandPressed(
-            toolbar,
-            'justifyLeft',
-            ['left', 'start', ''].includes(align)
-        );
-        setPisiWordCommandPressed(
-            toolbar,
-            'justifyCenter',
-            align === 'center'
-        );
-        setPisiWordCommandPressed(
-            toolbar,
-            'justifyRight',
-            ['right', 'end'].includes(align)
-        );
-        setPisiWordCommandPressed(
-            toolbar,
-            'justifyFull',
-            align === 'justify'
-        );
+        setPisiWordCommandPressed(toolbar, 'justifyLeft', ['left', 'start', ''].includes(align));
+        setPisiWordCommandPressed(toolbar, 'justifyCenter', align === 'center');
+        setPisiWordCommandPressed(toolbar, 'justifyRight', ['right', 'end'].includes(align));
+        setPisiWordCommandPressed(toolbar, 'justifyFull', align === 'justify');
     }
 }
 
@@ -272,10 +214,12 @@ function notifyPisiWordEditorChanged(editor) {
         window.notifyPisiEditorChanged(editor);
         return;
     }
-    editor.dispatchEvent(new InputEvent('input', {
-        bubbles: true,
-        inputType: 'formatSet'
-    }));
+    editor.dispatchEvent(
+        new InputEvent('input', {
+            bubbles: true,
+            inputType: 'formatSet'
+        })
+    );
 }
 
 function selectPisiWordRange(range) {
@@ -332,14 +276,13 @@ function applyPisiWordInlineStyle(toolbar, property, value) {
             range.selectNodeContents(span);
             selectPisiWordRange(range);
         } else {
-            const blocks = Array.from(editor.querySelectorAll('.pisi-editor-block'))
-                .filter((block) => {
-                    try {
-                        return range.intersectsNode(block);
-                    } catch {
-                        return false;
-                    }
-                });
+            const blocks = Array.from(editor.querySelectorAll('.pisi-editor-block')).filter((block) => {
+                try {
+                    return range.intersectsNode(block);
+                } catch {
+                    return false;
+                }
+            });
             blocks.forEach((block) => {
                 block.style[property] = value;
             });
@@ -384,9 +327,7 @@ function applyPisiWordSheetFormat(toolbar, command, value) {
     if (!table || typeof window.applyPisiSheetCellFormat !== 'function') return false;
 
     const action = command === 'fontName' ? 'fontFamily' : 'fontSize';
-    const formattedValue = command === 'fontSize'
-        ? `${normalizePisiWordFontSize(value)}px`
-        : value;
+    const formattedValue = command === 'fontSize' ? `${normalizePisiWordFontSize(value)}px` : value;
     const changed = window.applyPisiSheetCellFormat(table, action, formattedValue);
     if (changed) {
         window.schedulePisiSheetEditorNotification?.(table);
@@ -420,11 +361,7 @@ function handlePisiWordToolbarChange(event, toolbar) {
     if (command === 'fontName') {
         applyPisiWordInlineStyle(toolbar, 'fontFamily', select.value);
     } else {
-        applyPisiWordInlineStyle(
-            toolbar,
-            'fontSize',
-            `${normalizePisiWordFontSize(select.value)}px`
-        );
+        applyPisiWordInlineStyle(toolbar, 'fontSize', `${normalizePisiWordFontSize(select.value)}px`);
     }
 }
 
@@ -435,22 +372,26 @@ function configurePisiWordToolbarControls(toolbar) {
 
     if (fontSelect && fontSelect.dataset.pisiWordOptions !== '1') {
         fontSelect.dataset.pisiWordOptions = '1';
-        fontSelect.replaceChildren(...PISI_WORD_FONT_FAMILIES.map((family) => {
-            const option = document.createElement('option');
-            option.value = family;
-            option.textContent = family;
-            return option;
-        }));
+        fontSelect.replaceChildren(
+            ...PISI_WORD_FONT_FAMILIES.map((family) => {
+                const option = document.createElement('option');
+                option.value = family;
+                option.textContent = family;
+                return option;
+            })
+        );
     }
 
     if (sizeSelect && sizeSelect.dataset.pisiWordOptions !== '1') {
         sizeSelect.dataset.pisiWordOptions = '1';
-        sizeSelect.replaceChildren(...PISI_WORD_FONT_SIZES.map((size) => {
-            const option = document.createElement('option');
-            option.value = String(size);
-            option.textContent = String(size);
-            return option;
-        }));
+        sizeSelect.replaceChildren(
+            ...PISI_WORD_FONT_SIZES.map((size) => {
+                const option = document.createElement('option');
+                option.value = String(size);
+                option.textContent = String(size);
+                return option;
+            })
+        );
     }
 
     if (styleSelect && styleSelect.dataset.pisiWordOptions !== '1') {
@@ -463,12 +404,14 @@ function configurePisiWordToolbarControls(toolbar) {
             ['blockquote', 'Quote'],
             ['pre', 'Code']
         ];
-        styleSelect.replaceChildren(...records.map(([value, label]) => {
-            const option = document.createElement('option');
-            option.value = value;
-            option.textContent = label;
-            return option;
-        }));
+        styleSelect.replaceChildren(
+            ...records.map(([value, label]) => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = label;
+                return option;
+            })
+        );
     }
 
     syncPisiWordToolbarState(toolbar);
@@ -476,14 +419,14 @@ function configurePisiWordToolbarControls(toolbar) {
 
 function getPisiWordHeadingLevel(block) {
     if (!block) return 0;
-    const type = typeof window.getPisiBlockType === 'function'
-        ? window.getPisiBlockType(block)
-        : block.dataset.pisiBlockType;
-    return {
-        heading1: 1,
-        heading2: 2,
-        heading3: 3
-    }[type] || 0;
+    const type = typeof window.getPisiBlockType === 'function' ? window.getPisiBlockType(block) : block.dataset.pisiBlockType;
+    return (
+        {
+            heading1: 1,
+            heading2: 2,
+            heading3: 3
+        }[type] || 0
+    );
 }
 
 function syncPisiWordHeadingCollapse(editor) {
@@ -495,17 +438,11 @@ function syncPisiWordHeadingCollapse(editor) {
     for (const block of blocks) {
         const level = getPisiWordHeadingLevel(block);
         if (level) {
-            while (
-                collapsedLevels.length &&
-                collapsedLevels[collapsedLevels.length - 1] >= level
-            ) {
+            while (collapsedLevels.length && collapsedLevels[collapsedLevels.length - 1] >= level) {
                 collapsedLevels.pop();
             }
 
-            block.classList.toggle(
-                'pisi-heading-section-hidden',
-                collapsedLevels.length > 0
-            );
+            block.classList.toggle('pisi-heading-section-hidden', collapsedLevels.length > 0);
 
             if (block.classList.contains('pisi-heading-collapsed')) {
                 collapsedLevels.push(level);
@@ -514,10 +451,7 @@ function syncPisiWordHeadingCollapse(editor) {
         }
 
         block.classList.remove('pisi-heading-collapsed');
-        block.classList.toggle(
-            'pisi-heading-section-hidden',
-            collapsedLevels.length > 0
-        );
+        block.classList.toggle('pisi-heading-section-hidden', collapsedLevels.length > 0);
     }
 }
 
@@ -548,20 +482,24 @@ function bindPisiWordEditor(editor) {
     editor.addEventListener('keyup', () => queueMicrotask(sync));
     editor.addEventListener('input', () => queueMicrotask(sync));
 
-    editor.addEventListener('pointerdown', (event) => {
-        const block = event.target?.closest?.('.pisi-editor-block');
-        const level = getPisiWordHeadingLevel(block);
-        if (!level || !editor.contains(block)) return;
-        const rect = block.getBoundingClientRect();
-        if (event.clientX > rect.left + 26) return;
+    editor.addEventListener(
+        'pointerdown',
+        (event) => {
+            const block = event.target?.closest?.('.pisi-editor-block');
+            const level = getPisiWordHeadingLevel(block);
+            if (!level || !editor.contains(block)) return;
+            const rect = block.getBoundingClientRect();
+            if (event.clientX > rect.left + 26) return;
 
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-        togglePisiWordHeading(block);
-        const toolbar = getPisiWordToolbarForEditor(editor);
-        if (toolbar) syncPisiWordToolbarState(toolbar);
-    }, true);
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+            togglePisiWordHeading(block);
+            const toolbar = getPisiWordToolbarForEditor(editor);
+            if (toolbar) syncPisiWordToolbarState(toolbar);
+        },
+        true
+    );
 
     syncPisiWordHeadingCollapse(editor);
 }
@@ -570,42 +508,46 @@ function bindPisiWordToolbar(toolbar) {
     if (!toolbar || pisiWordBoundToolbars.has(toolbar)) return;
     pisiWordBoundToolbars.add(toolbar);
 
-    toolbar.addEventListener('pointerdown', () => {
-        rememberPisiWordSelection(toolbar);
-    }, true);
-
-    toolbar.addEventListener('change', (event) => {
-        handlePisiWordToolbarChange(event, toolbar);
-    }, true);
-
-    toolbar.addEventListener('click', (event) => {
-        const textControl = event.target?.closest?.(
-            'button[data-pisi-unified-command], [data-pisi-color-trigger], [data-pisi-symbol-trigger], [data-pisi-todo-trigger]'
-        );
-        if (!textControl) return;
-
-        const command =
-            textControl.dataset?.pisiUnifiedCommand || '';
-        const compositeAlignmentCommand =
-            toolbar.classList.contains(
-                'pisi-composite-context'
-            ) &&
-            [
-                'justifyLeft',
-                'justifyCenter',
-                'justifyRight'
-            ].includes(command);
-
-        if (compositeAlignmentCommand) {
-            return;
-        }
-
-        restorePisiWordSelection(toolbar);
-        queueMicrotask(() => {
+    toolbar.addEventListener(
+        'pointerdown',
+        () => {
             rememberPisiWordSelection(toolbar);
-            syncPisiWordToolbarState(toolbar);
-        });
-    }, true);
+        },
+        true
+    );
+
+    toolbar.addEventListener(
+        'change',
+        (event) => {
+            handlePisiWordToolbarChange(event, toolbar);
+        },
+        true
+    );
+
+    toolbar.addEventListener(
+        'click',
+        (event) => {
+            const textControl = event.target?.closest?.(
+                'button[data-pisi-unified-command], [data-pisi-color-trigger], [data-pisi-symbol-trigger], [data-pisi-todo-trigger]'
+            );
+            if (!textControl) return;
+
+            const command = textControl.dataset?.pisiUnifiedCommand || '';
+            const compositeAlignmentCommand =
+                toolbar.classList.contains('pisi-composite-context') && ['justifyLeft', 'justifyCenter', 'justifyRight'].includes(command);
+
+            if (compositeAlignmentCommand) {
+                return;
+            }
+
+            restorePisiWordSelection(toolbar);
+            queueMicrotask(() => {
+                rememberPisiWordSelection(toolbar);
+                syncPisiWordToolbarState(toolbar);
+            });
+        },
+        true
+    );
 
     const observer = new MutationObserver(() => {
         configurePisiWordToolbarControls(toolbar);
@@ -615,10 +557,8 @@ function bindPisiWordToolbar(toolbar) {
 }
 
 function bindAllPisiWordBehavior() {
-    document.querySelectorAll('.pisi-editor-toolbar, .pisi-word-toolbar')
-        .forEach(bindPisiWordToolbar);
-    document.querySelectorAll('.pisi-rich-editor')
-        .forEach(bindPisiWordEditor);
+    document.querySelectorAll('.pisi-editor-toolbar, .pisi-word-toolbar').forEach(bindPisiWordToolbar);
+    document.querySelectorAll('.pisi-rich-editor').forEach(bindPisiWordEditor);
 }
 
 function installPisiWordBehavior() {
@@ -635,12 +575,11 @@ function installPisiWordBehavior() {
     }
 
     document.addEventListener('selectionchange', () => {
-        document.querySelectorAll('.pisi-editor-toolbar, .pisi-word-toolbar')
-            .forEach((toolbar) => {
-                if (rememberPisiWordSelection(toolbar)) {
-                    syncPisiWordToolbarState(toolbar);
-                }
-            });
+        document.querySelectorAll('.pisi-editor-toolbar, .pisi-word-toolbar').forEach((toolbar) => {
+            if (rememberPisiWordSelection(toolbar)) {
+                syncPisiWordToolbarState(toolbar);
+            }
+        });
     });
 
     document.addEventListener('pisi:active-node-changed', () => {

@@ -6,14 +6,8 @@ const path = require('node:path');
 const test = require('node:test');
 
 const root = path.resolve(__dirname, '..');
-const interactionCss = fs.readFileSync(
-    path.join(root, 'styles/92-interaction-fixes.css'),
-    'utf8'
-);
-const popoverSource = fs.readFileSync(
-    path.join(root, 'renderer/editor/pisi-editor-toolbar-popovers.mjs'),
-    'utf8'
-);
+const interactionCss = fs.readFileSync(path.join(root, 'styles/92-interaction-fixes.css'), 'utf8');
+const popoverSource = fs.readFileSync(path.join(root, 'renderer/editor/pisi-editor-toolbar-popovers.mjs'), 'utf8');
 
 function readZIndex(selectorPattern) {
     const block = interactionCss.match(selectorPattern)?.[0] || '';
@@ -22,19 +16,12 @@ function readZIndex(selectorPattern) {
 }
 
 test('toolbar popovers are portalled to body', () => {
-    assert.match(
-        popoverSource,
-        /document\.body\.appendChild\(popover\)/u
-    );
+    assert.match(popoverSource, /document\.body\.appendChild\(popover\)/u);
 });
 
 test('toolbar popovers render above the node modal', () => {
-    const modalZ = readZIndex(
-        /html body #node-modal-overlay\s*\{[^}]*\}/u
-    );
-    const popoverZ = readZIndex(
-        /html body > \.pisi-office-popover\s*\{[^}]*\}/u
-    );
+    const modalZ = readZIndex(/html body #node-modal-overlay\s*\{[^}]*\}/u);
+    const popoverZ = readZIndex(/html body > \.pisi-office-popover\s*\{[^}]*\}/u);
 
     assert.equal(modalZ, 30000);
     assert.equal(popoverZ, 32000);

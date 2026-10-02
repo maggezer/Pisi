@@ -1,9 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {
-    getPisiPostponePreset,
-    parsePisiTurkishDateExpression
-} from '../renderer/productivity/pisi-date-parser.mjs';
+import { getPisiPostponePreset, parsePisiTurkishDateExpression } from '../renderer/productivity/pisi-date-parser.mjs';
 
 const NOW = new Date(2026, 7, 6, 10, 30, 0, 0);
 
@@ -25,10 +22,7 @@ test('Türkçe tekrar ifadelerini tanır', () => {
     assert.equal(biweekly.repeat, 'biweekly');
     assert.equal(biweekly.scheduledAt, '2026-08-20');
 
-    const afterCompletion = parsePisiTurkishDateExpression(
-        'görev tamamlandıktan üç gün sonra',
-        NOW
-    );
+    const afterCompletion = parsePisiTurkishDateExpression('görev tamamlandıktan üç gün sonra', NOW);
     assert.equal(afterCompletion.repeat, 'after-completion');
     assert.equal(afterCompletion.completionOffsetDays, 3);
 });

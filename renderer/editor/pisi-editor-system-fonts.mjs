@@ -1,4 +1,4 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 
 // Comic Sans is never bundled: Pisi only asks the operating system for it.
 // Comic Neue and Vincendo are bundled locally under SIL OFL 1.1.
@@ -41,9 +41,7 @@ function ensurePisiEditorExtraFontOptions(root = document) {
 
     collectPisiFontSelects(root).forEach((select) => {
         for (const font of PISI_EDITOR_EXTRA_FONT_OPTIONS) {
-            const exists = Array.from(select.options || []).some((option) => (
-                option.value === font.value || option.textContent === font.label
-            ));
+            const exists = Array.from(select.options || []).some((option) => option.value === font.value || option.textContent === font.label);
             if (exists) continue;
 
             const option = document.createElement('option');
@@ -82,10 +80,7 @@ function setupPisiEditorSystemFonts() {
         for (const mutation of mutations) {
             for (const node of mutation.addedNodes || []) {
                 if (node?.nodeType !== Node.ELEMENT_NODE) continue;
-                if (
-                    node.matches?.('.pisi-font-family-select') ||
-                    node.querySelector?.('.pisi-font-family-select')
-                ) {
+                if (node.matches?.('.pisi-font-family-select') || node.querySelector?.('.pisi-font-family-select')) {
                     ensurePisiEditorExtraFontOptions(node);
                 }
             }
@@ -106,30 +101,34 @@ function setupPisiEditorSystemFonts() {
     };
 
     if (document.readyState === 'loading') {
-        document.addEventListener(
-            'DOMContentLoaded',
-            reconcileAfterToolbarSetup,
-            { once: true }
-        );
+        document.addEventListener('DOMContentLoaded', reconcileAfterToolbarSetup, { once: true });
     } else {
         reconcileAfterToolbarSetup();
     }
 
     // Last-line guarantee for toolbars that are rebuilt later (modal/center
     // editor). Reconcile synchronously before the native select opens.
-    document.addEventListener('mousedown', (event) => {
-        const select = event.target?.closest?.('.pisi-font-family-select');
-        if (!select) return;
-        ensurePisiEditorExtraFontOptions(select);
-        void window.loadPisiComicNeueFont?.();
-    }, true);
+    document.addEventListener(
+        'mousedown',
+        (event) => {
+            const select = event.target?.closest?.('.pisi-font-family-select');
+            if (!select) return;
+            ensurePisiEditorExtraFontOptions(select);
+            void window.loadPisiComicNeueFont?.();
+        },
+        true
+    );
 
-    document.addEventListener('focusin', (event) => {
-        const select = event.target?.closest?.('.pisi-font-family-select');
-        if (!select) return;
-        ensurePisiEditorExtraFontOptions(select);
-        void window.loadPisiComicNeueFont?.();
-    }, true);
+    document.addEventListener(
+        'focusin',
+        (event) => {
+            const select = event.target?.closest?.('.pisi-font-family-select');
+            if (!select) return;
+            ensurePisiEditorExtraFontOptions(select);
+            void window.loadPisiComicNeueFont?.();
+        },
+        true
+    );
 }
 
 setupPisiEditorSystemFonts();

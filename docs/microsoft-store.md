@@ -117,7 +117,6 @@ Authenticode signing for those direct-download executables is optional. If a
 public signing identity is configured later, the release workflow automatically
 uses and verifies it.
 
-
 ## Store-managed automatic updates
 
 Pisi does not run its direct updater inside an MSIX/Store installation.

@@ -1,4 +1,4 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 
 function makePisiBlockId() {
     if (window.crypto?.randomUUID) {
@@ -13,11 +13,7 @@ function isPisiEditorBlockElement(element) {
 
     if (
         element.matches?.(
-            '.pisi-sheet-block, ' +
-            '.pisi-sheet-caret-anchor, ' +
-            '[data-pisi-sheet-block], ' +
-            '.pisi-canvas-block, ' +
-            '[data-pisi-canvas-block]'
+            '.pisi-sheet-block, ' + '.pisi-sheet-caret-anchor, ' + '[data-pisi-sheet-block], ' + '.pisi-canvas-block, ' + '[data-pisi-canvas-block]'
         )
     ) {
         return false;
@@ -108,9 +104,7 @@ function resolvePisiEditorTextPosition(editor, targetOffset) {
 
 function isValidPisiEditorRangeOffset(node, offset) {
     if (!node || !Number.isInteger(offset) || offset < 0) return false;
-    const limit = node.nodeType === Node.TEXT_NODE
-        ? node.nodeValue?.length || 0
-        : node.childNodes?.length || 0;
+    const limit = node.nodeType === Node.TEXT_NODE ? node.nodeValue?.length || 0 : node.childNodes?.length || 0;
     return offset <= limit;
 }
 
@@ -145,9 +139,7 @@ function ensurePisiEditorBlocks(editor, options = {}) {
     if (!editor) return;
 
     const preserveSelection = options.preserveSelection !== false;
-    const selectionSnapshot = preserveSelection
-        ? capturePisiEditorSelection(editor)
-        : null;
+    const selectionSnapshot = preserveSelection ? capturePisiEditorSelection(editor) : null;
 
     try {
         const childNodes = Array.from(editor.childNodes);
@@ -189,8 +181,7 @@ function ensurePisiEditorBlocks(editor, options = {}) {
             }
         }
 
-        editor.querySelectorAll('h1,h2,h3,h4,h5,h6,p,li,blockquote,pre')
-            .forEach(decoratePisiEditorBlock);
+        editor.querySelectorAll('h1,h2,h3,h4,h5,h6,p,li,blockquote,pre').forEach(decoratePisiEditorBlock);
     } finally {
         if (selectionSnapshot) {
             restorePisiEditorSelection(editor, selectionSnapshot);
@@ -214,29 +205,41 @@ function createPisiInertHtmlTemplate(html = '') {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "makePisiBlockId": {
+    makePisiBlockId: {
         enumerable: true,
-        get() { return makePisiBlockId; }
+        get() {
+            return makePisiBlockId;
+        }
     },
-    "isPisiEditorBlockElement": {
+    isPisiEditorBlockElement: {
         enumerable: true,
-        get() { return isPisiEditorBlockElement; }
+        get() {
+            return isPisiEditorBlockElement;
+        }
     },
-    "decoratePisiEditorBlock": {
+    decoratePisiEditorBlock: {
         enumerable: true,
-        get() { return decoratePisiEditorBlock; }
+        get() {
+            return decoratePisiEditorBlock;
+        }
     },
-    "ensurePisiEditorBlocks": {
+    ensurePisiEditorBlocks: {
         enumerable: true,
-        get() { return ensurePisiEditorBlocks; }
+        get() {
+            return ensurePisiEditorBlocks;
+        }
     },
-    "getPisiBlockElementsFromContainer": {
+    getPisiBlockElementsFromContainer: {
         enumerable: true,
-        get() { return getPisiBlockElementsFromContainer; }
+        get() {
+            return getPisiBlockElementsFromContainer;
+        }
     },
-    "createPisiInertHtmlTemplate": {
+    createPisiInertHtmlTemplate: {
         enumerable: true,
-        get() { return createPisiInertHtmlTemplate; }
+        get() {
+            return createPisiInertHtmlTemplate;
+        }
     }
 });
-registerModule("tags.editorBlocks", moduleApi);
+registerModule('tags.editorBlocks', moduleApi);

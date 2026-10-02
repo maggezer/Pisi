@@ -1,34 +1,30 @@
-import { registerModule } from "../core/module-registry.mjs";
-import {
-    getPisiActiveCompositeAlignmentBlock,
-    getPisiCompositeAlignment,
-    setPisiCompositeAlignment
-} from "./pisi-editor-composite-blocks.mjs";
+import { registerModule } from '../core/module-registry.mjs';
+import { getPisiActiveCompositeAlignmentBlock, getPisiCompositeAlignment, setPisiCompositeAlignment } from './pisi-editor-composite-blocks.mjs';
 
 const PISI_FONT_SIZE_LABELS = {
-    '1': '8',
-    '2': '10',
-    '3': '12',
-    '4': '14',
-    '5': '18',
-    '6': '24',
-    '7': '32'
+    1: '8',
+    2: '10',
+    3: '12',
+    4: '14',
+    5: '18',
+    6: '24',
+    7: '32'
 };
 
 const PISI_TOOLBAR_ICON_ROOT = 'assets/toolbar';
 const PISI_TOOLBAR_LIGHT_ICON_ROOT = `${PISI_TOOLBAR_ICON_ROOT}/light`;
 
 function normalizePisiToolbarIconTheme(theme) {
-    return String(theme || '').trim().toLowerCase() === 'light'
+    return String(theme || '')
+        .trim()
+        .toLowerCase() === 'light'
         ? 'light'
         : 'dark';
 }
 
 function getPisiToolbarIconPath(name, theme = document.documentElement.dataset.pisiTheme) {
     const normalized = normalizePisiToolbarIconTheme(theme);
-    const root = normalized === 'light'
-        ? PISI_TOOLBAR_LIGHT_ICON_ROOT
-        : PISI_TOOLBAR_ICON_ROOT;
+    const root = normalized === 'light' ? PISI_TOOLBAR_LIGHT_ICON_ROOT : PISI_TOOLBAR_ICON_ROOT;
     return `${root}/${name}.svg`;
 }
 
@@ -41,17 +37,11 @@ function pisiToolbarTranslate(value) {
     return window.pisiT?.(value) ?? String(value ?? '');
 }
 
-function syncPisiToolbarIconTheme(
-    root = document,
-    theme = document.documentElement.dataset.pisiTheme
-) {
+function syncPisiToolbarIconTheme(root = document, theme = document.documentElement.dataset.pisiTheme) {
     const normalized = normalizePisiToolbarIconTheme(theme);
 
     root.querySelectorAll('[data-pisi-toolbar-icon]').forEach((icon) => {
-        const nextSrc = getPisiToolbarIconPath(
-            icon.dataset.pisiToolbarIcon,
-            normalized
-        );
+        const nextSrc = getPisiToolbarIconPath(icon.dataset.pisiToolbarIcon, normalized);
 
         if (icon.getAttribute('src') !== nextSrc) {
             icon.setAttribute('src', nextSrc);
@@ -209,73 +199,39 @@ function getPisiUnifiedToolbarActiveTable(toolbar) {
     return getPisiSheetActiveTable(editor);
 }
 
-function syncPisiCompositeAlignmentToolbar(
-    toolbar,
-    block
-) {
-    const alignment = block
-        ? getPisiCompositeAlignment(block)
-        : null;
+function syncPisiCompositeAlignmentToolbar(toolbar, block) {
+    const alignment = block ? getPisiCompositeAlignment(block) : null;
     const commands = {
         justifyLeft: 'left',
         justifyCenter: 'center',
         justifyRight: 'right'
     };
 
-    Object.entries(commands).forEach(
-        ([command, target]) => {
-            const button = toolbar.querySelector(
-                'button[data-pisi-unified-command="' +
-                command +
-                '"]'
-            );
+    Object.entries(commands).forEach(([command, target]) => {
+        const button = toolbar.querySelector('button[data-pisi-unified-command="' + command + '"]');
 
-            if (!button) return;
+        if (!button) return;
 
-            const active =
-                Boolean(block) &&
-                alignment === target;
+        const active = Boolean(block) && alignment === target;
 
-            button.classList.toggle(
-                'active',
-                active
-            );
-            button.setAttribute(
-                'aria-pressed',
-                String(active)
-            );
-            button.toggleAttribute(
-                'data-pisi-composite-alignment-active',
-                active
-            );
-        }
-    );
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+        button.toggleAttribute('data-pisi-composite-alignment-active', active);
+    });
 }
 
 function runPisiUnifiedTextCommand(toolbar, command, value = null) {
     const editor = getPisiToolbarEditor(toolbar);
-    const compositeBlock =
-        editor
-            ? getPisiActiveCompositeAlignmentBlock(
-                editor
-            )
-            : null;
+    const compositeBlock = editor ? getPisiActiveCompositeAlignmentBlock(editor) : null;
     const compositeActions = {
         justifyLeft: 'left',
         justifyCenter: 'center',
         justifyRight: 'right'
     };
-    const compositeAlignment =
-        compositeActions[command];
+    const compositeAlignment = compositeActions[command];
 
-    if (
-        compositeBlock &&
-        compositeAlignment
-    ) {
-        setPisiCompositeAlignment(
-            compositeBlock,
-            compositeAlignment
-        );
+    if (compositeBlock && compositeAlignment) {
+        setPisiCompositeAlignment(compositeBlock, compositeAlignment);
 
         /* Clear any stale Sheet/text alignment state first, then
            re-apply the composite block state immediately. */
@@ -292,9 +248,7 @@ function runPisiUnifiedTextCommand(toolbar, command, value = null) {
         return;
     }
 
-    const table = compositeBlock
-        ? null
-        : getPisiUnifiedToolbarActiveTable(toolbar);
+    const table = compositeBlock ? null : getPisiUnifiedToolbarActiveTable(toolbar);
     const tableActions = {
         bold: 'toggleBold',
         italic: 'toggleItalic',
@@ -342,33 +296,14 @@ function openPisiToolbarTodo(toolbar) {
 
 function syncPisiUnifiedToolbarContext(toolbar) {
     const editor = getPisiToolbarEditor(toolbar);
-    const compositeBlock =
-        editor
-            ? getPisiActiveCompositeAlignmentBlock(
-                editor
-            )
-            : null;
-    const table = compositeBlock
-        ? null
-        : getPisiUnifiedToolbarActiveTable(toolbar);
+    const compositeBlock = editor ? getPisiActiveCompositeAlignmentBlock(editor) : null;
+    const table = compositeBlock ? null : getPisiUnifiedToolbarActiveTable(toolbar);
 
-    toolbar.classList.toggle(
-        'pisi-table-context',
-        Boolean(table)
-    );
-    toolbar.classList.toggle(
-        'pisi-composite-context',
-        Boolean(compositeBlock)
-    );
+    toolbar.classList.toggle('pisi-table-context', Boolean(table));
+    toolbar.classList.toggle('pisi-composite-context', Boolean(compositeBlock));
 
-    syncPisiSheetToolbarState(
-        toolbar,
-        table
-    );
-    syncPisiCompositeAlignmentToolbar(
-        toolbar,
-        compositeBlock
-    );
+    syncPisiSheetToolbarState(toolbar, table);
+    syncPisiCompositeAlignmentToolbar(toolbar, compositeBlock);
 }
 
 function bindPisiUnifiedToolbarEvents(toolbar) {
@@ -379,13 +314,15 @@ function bindPisiUnifiedToolbarEvents(toolbar) {
     toolbar.addEventListener('click', (event) => {
         const portabilityTrigger = event.target.closest('[data-pisi-portability-action]');
         if (portabilityTrigger) {
-            document.dispatchEvent(new CustomEvent('pisi:portability-action', {
-                detail: {
-                    action: portabilityTrigger.dataset.pisiPortabilityAction,
-                    trigger: portabilityTrigger,
-                    editorTarget: toolbar.dataset.editorTarget || null
-                }
-            }));
+            document.dispatchEvent(
+                new CustomEvent('pisi:portability-action', {
+                    detail: {
+                        action: portabilityTrigger.dataset.pisiPortabilityAction,
+                        trigger: portabilityTrigger,
+                        editorTarget: toolbar.dataset.editorTarget || null
+                    }
+                })
+            );
             return;
         }
 
@@ -403,11 +340,7 @@ function bindPisiUnifiedToolbarEvents(toolbar) {
 
         const color = event.target.closest('[data-pisi-color-trigger]');
         if (color) {
-            openPisiToolbarColorPopover(
-                toolbar,
-                color,
-                color.dataset.pisiColorTrigger
-            );
+            openPisiToolbarColorPopover(toolbar, color, color.dataset.pisiColorTrigger);
             return;
         }
 
@@ -426,21 +359,19 @@ function bindPisiUnifiedToolbarEvents(toolbar) {
 
         const rollupTrigger = event.target.closest('[data-pisi-rollup-trigger]');
         if (rollupTrigger) {
-            document.dispatchEvent(new CustomEvent('pisi:rollup-block-request', {
-                detail: {
-                    editorTarget: toolbar.dataset.editorTarget || null
-                }
-            }));
+            document.dispatchEvent(
+                new CustomEvent('pisi:rollup-block-request', {
+                    detail: {
+                        editorTarget: toolbar.dataset.editorTarget || null
+                    }
+                })
+            );
             return;
         }
 
         const formula = event.target.closest('[data-pisi-formula-trigger]');
         if (formula) {
-            openPisiToolbarFormulaPopover(
-                toolbar,
-                formula,
-                formula.dataset.pisiFormulaTrigger
-            );
+            openPisiToolbarFormulaPopover(toolbar, formula, formula.dataset.pisiFormulaTrigger);
             return;
         }
 
@@ -459,11 +390,7 @@ function bindPisiUnifiedToolbarEvents(toolbar) {
         const sizeTrigger = event.target.closest('[data-pisi-size-trigger]');
         if (sizeTrigger) {
             setPisiPaintTool(toolbar, sizeTrigger.dataset.pisiSizeTool);
-            openPisiToolbarSizePopover(
-                toolbar,
-                sizeTrigger,
-                sizeTrigger.dataset.pisiSizeTrigger
-            );
+            openPisiToolbarSizePopover(toolbar, sizeTrigger, sizeTrigger.dataset.pisiSizeTrigger);
             return;
         }
 
@@ -482,19 +409,12 @@ function bindPisiUnifiedToolbarEvents(toolbar) {
     toolbar.addEventListener('change', (event) => {
         const command = event.target.closest('select[data-pisi-unified-command]');
         if (command) {
-            runPisiUnifiedTextCommand(
-                toolbar,
-                command.dataset.pisiUnifiedCommand,
-                command.value
-            );
+            runPisiUnifiedTextCommand(toolbar, command.dataset.pisiUnifiedCommand, command.value);
             return;
         }
 
         if (event.target.matches('[data-pisi-paint-width], [data-pisi-paint-height]')) {
-            event.target.value = String(Math.max(
-                Number(event.target.min) || 1,
-                Math.min(Number(event.target.max) || 1600, Number(event.target.value) || 1)
-            ));
+            event.target.value = String(Math.max(Number(event.target.min) || 1, Math.min(Number(event.target.max) || 1600, Number(event.target.value) || 1)));
         }
     });
 
@@ -531,22 +451,10 @@ function bindPisiUnifiedToolbarEvents(toolbar) {
     });
 
     const editor = getPisiToolbarEditor(toolbar);
-    editor?.addEventListener(
-        'focusin',
-        () => syncPisiUnifiedToolbarContext(toolbar)
-    );
-    editor?.addEventListener(
-        'pointerup',
-        () => syncPisiUnifiedToolbarContext(toolbar)
-    );
-    editor?.addEventListener(
-        'pisi:composite-context-changed',
-        () => syncPisiUnifiedToolbarContext(toolbar)
-    );
-    editor?.addEventListener(
-        'pisi:composite-alignment-changed',
-        () => syncPisiUnifiedToolbarContext(toolbar)
-    );
+    editor?.addEventListener('focusin', () => syncPisiUnifiedToolbarContext(toolbar));
+    editor?.addEventListener('pointerup', () => syncPisiUnifiedToolbarContext(toolbar));
+    editor?.addEventListener('pisi:composite-context-changed', () => syncPisiUnifiedToolbarContext(toolbar));
+    editor?.addEventListener('pisi:composite-alignment-changed', () => syncPisiUnifiedToolbarContext(toolbar));
 }
 
 function setupPisiUnifiedToolbar(toolbar) {
@@ -560,16 +468,71 @@ function setupPisiUnifiedToolbar(toolbar) {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    PISI_FONT_SIZE_LABELS: { enumerable: true, get() { return PISI_FONT_SIZE_LABELS; } },
-    getPisiToolbarIconPath: { enumerable: true, get() { return getPisiToolbarIconPath; } },
-    syncPisiToolbarIconTheme: { enumerable: true, get() { return syncPisiToolbarIconTheme; } },
-    buildPisiUnifiedToolbarMarkup: { enumerable: true, get() { return buildPisiUnifiedToolbarMarkup; } },
-    getPisiUnifiedToolbarActiveTable: { enumerable: true, get() { return getPisiUnifiedToolbarActiveTable; } },
-    runPisiUnifiedTextCommand: { enumerable: true, get() { return runPisiUnifiedTextCommand; } },
-    insertPisiToolbarSymbol: { enumerable: true, get() { return insertPisiToolbarSymbol; } },
-    openPisiToolbarTodo: { enumerable: true, get() { return openPisiToolbarTodo; } },
-    syncPisiUnifiedToolbarContext: { enumerable: true, get() { return syncPisiUnifiedToolbarContext; } },
-    bindPisiUnifiedToolbarEvents: { enumerable: true, get() { return bindPisiUnifiedToolbarEvents; } },
-    setupPisiUnifiedToolbar: { enumerable: true, get() { return setupPisiUnifiedToolbar; } }
+    PISI_FONT_SIZE_LABELS: {
+        enumerable: true,
+        get() {
+            return PISI_FONT_SIZE_LABELS;
+        }
+    },
+    getPisiToolbarIconPath: {
+        enumerable: true,
+        get() {
+            return getPisiToolbarIconPath;
+        }
+    },
+    syncPisiToolbarIconTheme: {
+        enumerable: true,
+        get() {
+            return syncPisiToolbarIconTheme;
+        }
+    },
+    buildPisiUnifiedToolbarMarkup: {
+        enumerable: true,
+        get() {
+            return buildPisiUnifiedToolbarMarkup;
+        }
+    },
+    getPisiUnifiedToolbarActiveTable: {
+        enumerable: true,
+        get() {
+            return getPisiUnifiedToolbarActiveTable;
+        }
+    },
+    runPisiUnifiedTextCommand: {
+        enumerable: true,
+        get() {
+            return runPisiUnifiedTextCommand;
+        }
+    },
+    insertPisiToolbarSymbol: {
+        enumerable: true,
+        get() {
+            return insertPisiToolbarSymbol;
+        }
+    },
+    openPisiToolbarTodo: {
+        enumerable: true,
+        get() {
+            return openPisiToolbarTodo;
+        }
+    },
+    syncPisiUnifiedToolbarContext: {
+        enumerable: true,
+        get() {
+            return syncPisiUnifiedToolbarContext;
+        }
+    },
+    bindPisiUnifiedToolbarEvents: {
+        enumerable: true,
+        get() {
+            return bindPisiUnifiedToolbarEvents;
+        }
+    },
+    setupPisiUnifiedToolbar: {
+        enumerable: true,
+        get() {
+            return setupPisiUnifiedToolbar;
+        }
+    }
 });
 registerModule('editor.unifiedToolbar', moduleApi);

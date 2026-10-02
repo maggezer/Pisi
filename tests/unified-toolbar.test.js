@@ -37,11 +37,7 @@ test('editor preserves the current six-section toolbar selection', () => {
 test('unified text controls also target selected table cells', () => {
     const toolbar = read('renderer/editor/pisi-editor-unified-toolbar.mjs');
     const structure = read('renderer/editor/pisi-editor-sheet-structure.mjs');
-    for (const action of [
-        'toggleBold', 'toggleItalic', 'toggleUnderline',
-        'toggleStrikeThrough', 'fontFamily', 'fontSize',
-        'textColor', 'fillColor'
-    ]) {
+    for (const action of ['toggleBold', 'toggleItalic', 'toggleUnderline', 'toggleStrikeThrough', 'fontFamily', 'fontSize', 'textColor', 'fillColor']) {
         assert.match(toolbar + structure, new RegExp(action));
     }
 });

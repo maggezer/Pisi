@@ -1,5 +1,5 @@
-import { registerModule } from "../core/module-registry.mjs";
-import { PISI_FORMULA_CATALOG } from "./pisi-editor-sheet-formula-core.mjs";
+import { registerModule } from '../core/module-registry.mjs';
+import { PISI_FORMULA_CATALOG } from './pisi-editor-sheet-formula-core.mjs';
 
 const PISI_TOOLBAR_FORMULA_GROUPS = PISI_FORMULA_CATALOG;
 
@@ -8,9 +8,7 @@ const PISI_PERSONAL_FORMULAS_KEY = 'pisi.personalFormulas.v1';
 function getPisiPersonalFormulas() {
     try {
         const parsed = JSON.parse(localStorage.getItem(PISI_PERSONAL_FORMULAS_KEY) || '[]');
-        return Array.isArray(parsed)
-            ? parsed.filter((item) => item?.name && item?.formula)
-            : [];
+        return Array.isArray(parsed) ? parsed.filter((item) => item?.name && item?.formula) : [];
     } catch {
         return [];
     }
@@ -56,9 +54,7 @@ function openPisiToolbarFormulaPopover(toolbar, anchor, groupName) {
         <div class="pisi-office-formula-list"></div>
     `;
     const list = popover.querySelector('.pisi-office-formula-list');
-    const formulas = groupName === 'personal'
-        ? getPisiPersonalFormulas()
-        : (PISI_TOOLBAR_FORMULA_GROUPS[groupName] || []);
+    const formulas = groupName === 'personal' ? getPisiPersonalFormulas() : PISI_TOOLBAR_FORMULA_GROUPS[groupName] || [];
 
     formulas.forEach((item) => {
         const button = document.createElement('button');
@@ -153,12 +149,47 @@ function openPisiToolbarShapePopover(toolbar, anchor) {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    PISI_TOOLBAR_FORMULA_GROUPS: { enumerable: true, get() { return PISI_TOOLBAR_FORMULA_GROUPS; } },
-    getPisiPersonalFormulas: { enumerable: true, get() { return getPisiPersonalFormulas; } },
-    savePisiPersonalFormula: { enumerable: true, get() { return savePisiPersonalFormula; } },
-    applyPisiToolbarFormula: { enumerable: true, get() { return applyPisiToolbarFormula; } },
-    openPisiToolbarFormulaPopover: { enumerable: true, get() { return openPisiToolbarFormulaPopover; } },
-    openPisiToolbarSizePopover: { enumerable: true, get() { return openPisiToolbarSizePopover; } },
-    openPisiToolbarShapePopover: { enumerable: true, get() { return openPisiToolbarShapePopover; } }
+    PISI_TOOLBAR_FORMULA_GROUPS: {
+        enumerable: true,
+        get() {
+            return PISI_TOOLBAR_FORMULA_GROUPS;
+        }
+    },
+    getPisiPersonalFormulas: {
+        enumerable: true,
+        get() {
+            return getPisiPersonalFormulas;
+        }
+    },
+    savePisiPersonalFormula: {
+        enumerable: true,
+        get() {
+            return savePisiPersonalFormula;
+        }
+    },
+    applyPisiToolbarFormula: {
+        enumerable: true,
+        get() {
+            return applyPisiToolbarFormula;
+        }
+    },
+    openPisiToolbarFormulaPopover: {
+        enumerable: true,
+        get() {
+            return openPisiToolbarFormulaPopover;
+        }
+    },
+    openPisiToolbarSizePopover: {
+        enumerable: true,
+        get() {
+            return openPisiToolbarSizePopover;
+        }
+    },
+    openPisiToolbarShapePopover: {
+        enumerable: true,
+        get() {
+            return openPisiToolbarShapePopover;
+        }
+    }
 });
 registerModule('editor.toolbarMenus', moduleApi);

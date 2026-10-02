@@ -11,14 +11,10 @@ function rebindPisiVersionHistoryIpc() {
                 type: 'file',
                 extensions: ['.node']
             });
-            return history.saveNodeContentWithBoundedHistory(
-                safeNodePath,
-                content,
-                {
-                    projectFolder: globalThis.activeProjectFolder,
-                    reason: 'editor-save'
-                }
-            );
+            return history.saveNodeContentWithBoundedHistory(safeNodePath, content, {
+                projectFolder: globalThis.activeProjectFolder,
+                reason: 'editor-save'
+            });
         });
     });
 
@@ -42,11 +38,7 @@ function rebindPisiVersionHistoryIpc() {
                 type: 'file',
                 extensions: ['.node']
             });
-            return history.getPisiNodeHistoryVersionBounded(
-                safeNodePath,
-                historyId,
-                { projectFolder: globalThis.activeProjectFolder }
-            );
+            return history.getPisiNodeHistoryVersionBounded(safeNodePath, historyId, { projectFolder: globalThis.activeProjectFolder });
         });
     });
 
@@ -58,15 +50,11 @@ function rebindPisiVersionHistoryIpc() {
                 extensions: ['.node']
             });
             const projectFolder = globalThis.activeProjectFolder;
-            return await Promise.resolve(runPisiAtomicMutation(
-                projectFolder,
-                'version-history.restore.v1',
-                () => history.restorePisiNodeHistoryVersionBounded(
-                    safeNodePath,
-                    historyId,
-                    { projectFolder }
+            return await Promise.resolve(
+                runPisiAtomicMutation(projectFolder, 'version-history.restore.v1', () =>
+                    history.restorePisiNodeHistoryVersionBounded(safeNodePath, historyId, { projectFolder })
                 )
-            ));
+            );
         });
     });
 

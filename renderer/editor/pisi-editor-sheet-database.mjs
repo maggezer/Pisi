@@ -1,23 +1,19 @@
-import { registerModule } from "../core/module-registry.mjs";
-import {
-    transformPisiSheetFormulaReferences
-} from "./pisi-editor-sheet-model.mjs";
+import { registerModule } from '../core/module-registry.mjs';
+import { transformPisiSheetFormulaReferences } from './pisi-editor-sheet-model.mjs';
 import {
     isPisiSheetEmptyStoredValue,
     normalizePisiSheetFieldOptions,
     normalizePisiSheetFieldType,
     normalizePisiSheetNumberFormat,
     normalizePisiSheetStoredValue
-} from "./pisi-editor-sheet-field-types-core.mjs";
-import {
-    normalizePisiSheetPaginationConfig
-} from "./pisi-editor-sheet-pagination-core.mjs";
+} from './pisi-editor-sheet-field-types-core.mjs';
+import { normalizePisiSheetPaginationConfig } from './pisi-editor-sheet-pagination-core.mjs';
 import {
     makePisiSheetEmptyFilterTree,
     normalizePisiSheetFilterTree,
     normalizePisiSheetConditionalColors,
     normalizePisiSheetSorts
-} from "./pisi-editor-sheet-view-query-core.mjs";
+} from './pisi-editor-sheet-view-query-core.mjs';
 
 const PISI_SHEET_DATABASE_VERSION = 1;
 const PISI_SHEET_DEFAULT_COLUMN_WIDTH = 96;
@@ -43,11 +39,7 @@ function createPisiSheetDatabaseId(prefix) {
 
     if (uuid) return prefix + '-' + uuid;
 
-    return (
-        prefix + '-' +
-        Date.now().toString(36) + '-' +
-        Math.random().toString(36).slice(2, 10)
-    );
+    return prefix + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
 }
 
 function pisiSheetDatabaseColumnName(index) {
@@ -65,63 +57,36 @@ function pisiSheetDatabaseColumnName(index) {
 
 function createPisiSheetField(index, options = {}) {
     return {
-        id: String(
-            options.id ||
-            createPisiSheetDatabaseId('field')
-        ),
-        name: String(
-            options.name ||
-            pisiSheetDatabaseColumnName(index)
-        ).slice(0, 80),
-        type: normalizePisiSheetFieldType(
-            options.type || 'text'
-        ),
+        id: String(options.id || createPisiSheetDatabaseId('field')),
+        name: String(options.name || pisiSheetDatabaseColumnName(index)).slice(0, 80),
+        type: normalizePisiSheetFieldType(options.type || 'text'),
         description: String(options.description || '').slice(0, 240),
-        icon: String(options.icon || '').trim().slice(0, 12),
-        options: normalizePisiSheetFieldOptions(
-            options.options
-        ),
-        numberFormat: normalizePisiSheetNumberFormat(
-            options.numberFormat
-        ),
+        icon: String(options.icon || '')
+            .trim()
+            .slice(0, 12),
+        options: normalizePisiSheetFieldOptions(options.options),
+        numberFormat: normalizePisiSheetNumberFormat(options.numberFormat),
         wrap: options.wrap === true,
         pin: options.pin === true,
         width:
-            options.width !== null &&
-            options.width !== undefined &&
-            Number.isFinite(Number(options.width)) &&
-            Number(options.width) > 0
-                ? Math.max(
-                    25,
-                    Math.round(Number(options.width))
-                )
+            options.width !== null && options.width !== undefined && Number.isFinite(Number(options.width)) && Number(options.width) > 0
+                ? Math.max(25, Math.round(Number(options.width)))
                 : PISI_SHEET_DEFAULT_COLUMN_WIDTH
     };
 }
 
 function createPisiSheetItem(options = {}) {
     return {
-        id: String(
-            options.id ||
-            createPisiSheetDatabaseId('item')
-        ),
-        values:
-            options.values &&
-            typeof options.values === 'object'
-                ? options.values
-                : {}
+        id: String(options.id || createPisiSheetDatabaseId('item')),
+        values: options.values && typeof options.values === 'object' ? options.values : {}
     };
 }
 
 function createPisiSheetTableView(fields, options = {}) {
-    const pagination =
-        normalizePisiSheetPaginationConfig(options);
+    const pagination = normalizePisiSheetPaginationConfig(options);
 
     return {
-        id: String(
-            options.id ||
-            createPisiSheetDatabaseId('view')
-        ),
+        id: String(options.id || createPisiSheetDatabaseId('view')),
         type: 'table',
         name: String(options.name || 'Table'),
         fieldOrder: fields.map((field) => field.id),
@@ -129,9 +94,7 @@ function createPisiSheetTableView(fields, options = {}) {
         filters: makePisiSheetEmptyFilterTree(),
         sorts: [],
         conditionalColors: [],
-        searchQuery: String(
-            options.searchQuery || ''
-        ).slice(0, 240),
+        searchQuery: String(options.searchQuery || '').slice(0, 240),
         page: pagination.page,
         pageSize: pagination.pageSize,
         virtualScroll: pagination.virtualScroll
@@ -141,20 +104,17 @@ function createPisiSheetTableView(fields, options = {}) {
 function createPisiSheetDatabase(rows = 5, cols = 5, options = {}) {
     const rowCount = Math.max(1, Number(rows) || 1);
     const colCount = Math.max(1, Number(cols) || 1);
-    const fields = Array.from(
-        { length: colCount },
-        (_, index) => createPisiSheetField(index)
-    );
-    const items = Array.from(
-        { length: rowCount },
-        () => createPisiSheetItem()
-    );
+    const fields = Array.from({ length: colCount }, (_, index) => createPisiSheetField(index));
+    const items = Array.from({ length: rowCount }, () => createPisiSheetItem());
     const view = createPisiSheetTableView(fields);
 
     return {
         version: PISI_SHEET_DATABASE_VERSION,
         databaseId: createPisiSheetDatabaseId('database'),
-        title: String(options.title || 'Sheet').trim().slice(0, 80) || 'Sheet',
+        title:
+            String(options.title || 'Sheet')
+                .trim()
+                .slice(0, 80) || 'Sheet',
         collapsed: options.collapsed === true,
         fields,
         items,
@@ -168,35 +128,21 @@ function normalizePisiSheetCellRecord(record) {
         return null;
     }
 
-    const value = normalizePisiSheetStoredValue(
-        record.value
-    );
-    const formula = record.formula
-        ? String(record.formula)
-        : null;
+    const value = normalizePisiSheetStoredValue(record.value);
+    const formula = record.formula ? String(record.formula) : null;
     const format = {};
 
-    if (
-        record.format &&
-        typeof record.format === 'object'
-    ) {
+    if (record.format && typeof record.format === 'object') {
         for (const property of PISI_SHEET_FORMAT_PROPERTIES) {
             const styleValue = record.format[property];
 
-            if (
-                typeof styleValue === 'string' &&
-                styleValue
-            ) {
+            if (typeof styleValue === 'string' && styleValue) {
                 format[property] = styleValue;
             }
         }
     }
 
-    if (
-        isPisiSheetEmptyStoredValue(value) &&
-        !formula &&
-        Object.keys(format).length === 0
-    ) {
+    if (isPisiSheetEmptyStoredValue(value) && !formula && Object.keys(format).length === 0) {
         return null;
     }
 
@@ -208,9 +154,7 @@ function normalizePisiSheetDatabase(database) {
         return null;
     }
 
-    const rawFields = Array.isArray(database.fields)
-        ? database.fields
-        : [];
+    const rawFields = Array.isArray(database.fields) ? database.fields : [];
     const fields = rawFields.map((field, index) => {
         return createPisiSheetField(index, {
             id: field?.id,
@@ -231,23 +175,15 @@ function normalizePisiSheetDatabase(database) {
     }
 
     const fieldIds = new Set(fields.map((field) => field.id));
-    const rawItems = Array.isArray(database.items)
-        ? database.items
-        : [];
+    const rawItems = Array.isArray(database.items) ? database.items : [];
     const items = rawItems.map((item) => {
         const values = {};
 
-        if (
-            item?.values &&
-            typeof item.values === 'object'
-        ) {
-            for (const [fieldId, record] of Object.entries(
-                item.values
-            )) {
+        if (item?.values && typeof item.values === 'object') {
+            for (const [fieldId, record] of Object.entries(item.values)) {
                 if (!fieldIds.has(fieldId)) continue;
 
-                const normalized =
-                    normalizePisiSheetCellRecord(record);
+                const normalized = normalizePisiSheetCellRecord(record);
 
                 if (normalized) {
                     values[fieldId] = normalized;
@@ -265,59 +201,28 @@ function normalizePisiSheetDatabase(database) {
         items.push(createPisiSheetItem());
     }
 
-    const rawViews = Array.isArray(database.views)
-        ? database.views
-        : [];
+    const rawViews = Array.isArray(database.views) ? database.views : [];
     const views = rawViews
         .filter((view) => view?.type === 'table')
         .map((view) => {
-            const ordered = Array.isArray(view.fieldOrder)
-                ? view.fieldOrder.filter(
-                    (id) => fieldIds.has(id)
-                )
-                : [];
-            const missing = fields
-                .map((field) => field.id)
-                .filter((id) => !ordered.includes(id));
+            const ordered = Array.isArray(view.fieldOrder) ? view.fieldOrder.filter((id) => fieldIds.has(id)) : [];
+            const missing = fields.map((field) => field.id).filter((id) => !ordered.includes(id));
 
-            const pagination =
-                normalizePisiSheetPaginationConfig(view);
+            const pagination = normalizePisiSheetPaginationConfig(view);
 
             return {
-                id: String(
-                    view.id ||
-                    createPisiSheetDatabaseId('view')
-                ),
+                id: String(view.id || createPisiSheetDatabaseId('view')),
                 type: 'table',
                 name: String(view.name || 'Table'),
                 fieldOrder: [...ordered, ...missing],
-                hiddenFieldIds: Array.isArray(
-                    view.hiddenFieldIds
-                )
-                    ? view.hiddenFieldIds.filter(
-                        (id) => fieldIds.has(id)
-                    )
-                    : [],
-                filters: normalizePisiSheetFilterTree(
-                    view.filters,
-                    fieldIds
-                ),
-                sorts: normalizePisiSheetSorts(
-                    view.sorts,
-                    fieldIds
-                ),
-                conditionalColors:
-                    normalizePisiSheetConditionalColors(
-                        view.conditionalColors,
-                        fields
-                    ),
-                searchQuery: String(
-                    view.searchQuery || ''
-                ).slice(0, 240),
+                hiddenFieldIds: Array.isArray(view.hiddenFieldIds) ? view.hiddenFieldIds.filter((id) => fieldIds.has(id)) : [],
+                filters: normalizePisiSheetFilterTree(view.filters, fieldIds),
+                sorts: normalizePisiSheetSorts(view.sorts, fieldIds),
+                conditionalColors: normalizePisiSheetConditionalColors(view.conditionalColors, fields),
+                searchQuery: String(view.searchQuery || '').slice(0, 240),
                 page: pagination.page,
                 pageSize: pagination.pageSize,
-                virtualScroll:
-                    pagination.virtualScroll
+                virtualScroll: pagination.virtualScroll
             };
         });
 
@@ -325,17 +230,15 @@ function normalizePisiSheetDatabase(database) {
         views.push(createPisiSheetTableView(fields));
     }
 
-    const activeView = views.find(
-        (view) => view.id === database.activeViewId
-    ) || views[0];
+    const activeView = views.find((view) => view.id === database.activeViewId) || views[0];
 
     return {
         version: PISI_SHEET_DATABASE_VERSION,
-        databaseId: String(
-            database.databaseId ||
-            createPisiSheetDatabaseId('database')
-        ),
-        title: String(database.title || 'Sheet').trim().slice(0, 80) || 'Sheet',
+        databaseId: String(database.databaseId || createPisiSheetDatabaseId('database')),
+        title:
+            String(database.title || 'Sheet')
+                .trim()
+                .slice(0, 80) || 'Sheet',
         collapsed: database.collapsed === true,
         fields,
         items,
@@ -360,9 +263,7 @@ function requirePisiSheetDatabase(table) {
     const database = getPisiSheetDatabase(table);
 
     if (!database) {
-        throw new Error(
-            '[PISI] Sheet database is not hydrated.'
-        );
+        throw new Error('[PISI] Sheet database is not hydrated.');
     }
 
     return database;
@@ -383,26 +284,14 @@ function persistPisiSheetDatabase(table) {
 }
 
 function getPisiSheetTableView(database) {
-    return (
-        database.views.find(
-            (view) => view.id === database.activeViewId
-        ) ||
-        database.views.find(
-            (view) => view.type === 'table'
-        ) ||
-        database.views[0]
-    );
+    return database.views.find((view) => view.id === database.activeViewId) || database.views.find((view) => view.type === 'table') || database.views[0];
 }
 
 function getPisiSheetOrderedFields(database) {
     const view = getPisiSheetTableView(database);
-    const byId = new Map(
-        database.fields.map((field) => [field.id, field])
-    );
+    const byId = new Map(database.fields.map((field) => [field.id, field]));
 
-    return view.fieldOrder
-        .map((id) => byId.get(id))
-        .filter(Boolean);
+    return view.fieldOrder.map((id) => byId.get(id)).filter(Boolean);
 }
 
 function getPisiSheetDatabaseDimensions(table) {
@@ -424,12 +313,7 @@ function getPisiSheetItem(table, rowIndex) {
     return database.items[rowIndex] || null;
 }
 
-function getPisiSheetCellRecord(
-    table,
-    rowIndex,
-    colIndex,
-    create = false
-) {
+function getPisiSheetCellRecord(table, rowIndex, colIndex, create = false) {
     const item = getPisiSheetItem(table, rowIndex);
     const field = getPisiSheetField(table, colIndex);
 
@@ -450,36 +334,21 @@ function getPisiSheetCellRecord(
 }
 
 function getPisiSheetCellSource(table, rowIndex, colIndex) {
-    const record = getPisiSheetCellRecord(
-        table,
-        rowIndex,
-        colIndex,
-        false
-    );
+    const record = getPisiSheetCellRecord(table, rowIndex, colIndex, false);
 
     return {
-        value: normalizePisiSheetStoredValue(
-            record?.value
-        ),
-        formula: record?.formula
-            ? String(record.formula)
-            : null,
+        value: normalizePisiSheetStoredValue(record?.value),
+        formula: record?.formula ? String(record.formula) : null,
         format: record?.format || {}
     };
 }
 
-function compactPisiSheetCellRecord(
-    table,
-    rowIndex,
-    colIndex
-) {
+function compactPisiSheetCellRecord(table, rowIndex, colIndex) {
     const item = getPisiSheetItem(table, rowIndex);
     const field = getPisiSheetField(table, colIndex);
     if (!item || !field) return;
 
-    const normalized = normalizePisiSheetCellRecord(
-        item.values[field.id]
-    );
+    const normalized = normalizePisiSheetCellRecord(item.values[field.id]);
 
     if (normalized) {
         item.values[field.id] = normalized;
@@ -488,36 +357,19 @@ function compactPisiSheetCellRecord(
     }
 }
 
-function setPisiSheetCellSource(
-    table,
-    rowIndex,
-    colIndex,
-    source = {}
-) {
-    const record = getPisiSheetCellRecord(
-        table,
-        rowIndex,
-        colIndex,
-        true
-    );
+function setPisiSheetCellSource(table, rowIndex, colIndex, source = {}) {
+    const record = getPisiSheetCellRecord(table, rowIndex, colIndex, true);
     if (!record) return false;
 
-    record.value = normalizePisiSheetStoredValue(
-        source.value
-    );
-    record.formula = source.formula
-        ? String(source.formula)
-        : null;
+    record.value = normalizePisiSheetStoredValue(source.value);
+    record.formula = source.formula ? String(source.formula) : null;
 
     compactPisiSheetCellRecord(table, rowIndex, colIndex);
     persistPisiSheetDatabase(table);
     return true;
 }
 
-export function setPisiSheetCellRecordsBatch(
-    table,
-    changes = []
-) {
+export function setPisiSheetCellRecordsBatch(table, changes = []) {
     const database = requirePisiSheetDatabase(table);
     const fields = getPisiSheetOrderedFields(database);
     let changed = false;
@@ -528,23 +380,14 @@ export function setPisiSheetCellRecordsBatch(
         const item = database.items[rowIndex];
         const field = fields[colIndex];
 
-        if (
-            !Number.isInteger(rowIndex) ||
-            !Number.isInteger(colIndex) ||
-            !item ||
-            !field
-        ) {
+        if (!Number.isInteger(rowIndex) || !Number.isInteger(colIndex) || !item || !field) {
             continue;
         }
 
         const normalized = normalizePisiSheetCellRecord({
             value: change?.value,
             formula: change?.formula,
-            format:
-                change?.format &&
-                typeof change.format === 'object'
-                    ? structuredClone(change.format)
-                    : {}
+            format: change?.format && typeof change.format === 'object' ? structuredClone(change.format) : {}
         });
 
         if (normalized) {
@@ -563,18 +406,8 @@ export function setPisiSheetCellRecordsBatch(
     return changed;
 }
 
-function setPisiSheetCellFormat(
-    table,
-    rowIndex,
-    colIndex,
-    format = {}
-) {
-    const record = getPisiSheetCellRecord(
-        table,
-        rowIndex,
-        colIndex,
-        true
-    );
+function setPisiSheetCellFormat(table, rowIndex, colIndex, format = {}) {
+    const record = getPisiSheetCellRecord(table, rowIndex, colIndex, true);
     if (!record) return false;
 
     record.format = {};
@@ -600,10 +433,7 @@ function clearPisiSheetCell(table, rowIndex, colIndex) {
 
     const record = item.values[field.id];
 
-    if (
-        record?.format &&
-        Object.keys(record.format).length
-    ) {
+    if (record?.format && Object.keys(record.format).length) {
         item.values[field.id] = {
             value: '',
             formula: null,
@@ -623,8 +453,9 @@ function renamePisiSheetField(table, colIndex, name) {
 
     const fallback = pisiSheetDatabaseColumnName(colIndex);
     field.name =
-        String(name || '').trim().slice(0, 80) ||
-        fallback;
+        String(name || '')
+            .trim()
+            .slice(0, 80) || fallback;
 
     persistPisiSheetDatabase(table);
     return field.name;
@@ -635,10 +466,7 @@ function setPisiSheetFieldWidth(table, colIndex, width) {
     if (!field) return false;
 
     const numeric = Number(width);
-    field.width =
-        Number.isFinite(numeric) && numeric > 0
-            ? Math.round(numeric)
-            : null;
+    field.width = Number.isFinite(numeric) && numeric > 0 ? Math.round(numeric) : null;
 
     persistPisiSheetDatabase(table);
     return true;
@@ -650,43 +478,35 @@ function updatePisiSheetField(table, colIndex, patch = {}) {
         return null;
     }
 
-    const nextPatch =
-        /** @type {Record<string, any>} */ (patch);
+    const nextPatch = /** @type {Record<string, any>} */ (patch);
 
     if (Object.hasOwn(nextPatch, 'name')) {
         field.name =
-            String(nextPatch.name || '').trim().slice(0, 80) ||
-            pisiSheetDatabaseColumnName(colIndex);
+            String(nextPatch.name || '')
+                .trim()
+                .slice(0, 80) || pisiSheetDatabaseColumnName(colIndex);
     }
 
     if (Object.hasOwn(nextPatch, 'description')) {
-        field.description = String(
-            nextPatch.description || ''
-        ).slice(0, 240);
+        field.description = String(nextPatch.description || '').slice(0, 240);
     }
 
     if (Object.hasOwn(nextPatch, 'icon')) {
-        field.icon = String(
-            nextPatch.icon || ''
-        ).trim().slice(0, 12);
+        field.icon = String(nextPatch.icon || '')
+            .trim()
+            .slice(0, 12);
     }
 
     if (Object.hasOwn(nextPatch, 'type')) {
-        field.type = normalizePisiSheetFieldType(
-            nextPatch.type
-        );
+        field.type = normalizePisiSheetFieldType(nextPatch.type);
     }
 
     if (Object.hasOwn(nextPatch, 'options')) {
-        field.options = normalizePisiSheetFieldOptions(
-            nextPatch.options
-        );
+        field.options = normalizePisiSheetFieldOptions(nextPatch.options);
     }
 
     if (Object.hasOwn(nextPatch, 'numberFormat')) {
-        field.numberFormat = normalizePisiSheetNumberFormat(
-            nextPatch.numberFormat
-        );
+        field.numberFormat = normalizePisiSheetNumberFormat(nextPatch.numberFormat);
     }
 
     if (Object.hasOwn(nextPatch, 'wrap')) {
@@ -706,17 +526,10 @@ function isPisiSheetFieldHidden(table, colIndex) {
     const field = getPisiSheetField(table, colIndex);
     const view = getPisiSheetTableView(database);
 
-    return Boolean(
-        field &&
-        view?.hiddenFieldIds?.includes(field.id)
-    );
+    return Boolean(field && view?.hiddenFieldIds?.includes(field.id));
 }
 
-function setPisiSheetFieldHidden(
-    table,
-    colIndex,
-    hidden = true
-) {
+function setPisiSheetFieldHidden(table, colIndex, hidden = true) {
     const database = requirePisiSheetDatabase(table);
     const field = getPisiSheetField(table, colIndex);
     const view = getPisiSheetTableView(database);
@@ -736,22 +549,11 @@ function setPisiSheetFieldHidden(
     return true;
 }
 
-
 function insertPisiSheetItem(table, index) {
     const database = requirePisiSheetDatabase(table);
-    const insertIndex = Math.max(
-        0,
-        Math.min(
-            database.items.length,
-            Number(index) || 0
-        )
-    );
+    const insertIndex = Math.max(0, Math.min(database.items.length, Number(index) || 0));
 
-    database.items.splice(
-        insertIndex,
-        0,
-        createPisiSheetItem()
-    );
+    database.items.splice(insertIndex, 0, createPisiSheetItem());
 
     persistPisiSheetDatabase(table);
     return database.items[insertIndex];
@@ -775,13 +577,7 @@ function deletePisiSheetItems(table, index, count = 1) {
 function insertPisiSheetField(table, index) {
     const database = requirePisiSheetDatabase(table);
     const view = getPisiSheetTableView(database);
-    const insertIndex = Math.max(
-        0,
-        Math.min(
-            view.fieldOrder.length,
-            Number(index) || 0
-        )
-    );
+    const insertIndex = Math.max(0, Math.min(view.fieldOrder.length, Number(index) || 0));
     const field = createPisiSheetField(insertIndex);
 
     database.fields.push(field);
@@ -796,25 +592,15 @@ function deletePisiSheetFields(table, index, count = 1) {
     const view = getPisiSheetTableView(database);
     const start = Math.max(0, Number(index) || 0);
     const amount = Math.max(1, Number(count) || 1);
-    const removedIds = view.fieldOrder.splice(
-        start,
-        amount
-    );
+    const removedIds = view.fieldOrder.splice(start, amount);
     const removed = new Set(removedIds);
 
-    view.hiddenFieldIds = (view.hiddenFieldIds || [])
-        .filter((fieldId) => !removed.has(fieldId));
+    view.hiddenFieldIds = (view.hiddenFieldIds || []).filter((fieldId) => !removed.has(fieldId));
 
-    database.fields = database.fields.filter(
-        (field) => !removed.has(field.id)
-    );
+    database.fields = database.fields.filter((field) => !removed.has(field.id));
 
     for (const tableView of database.views) {
-        tableView.conditionalColors =
-            normalizePisiSheetConditionalColors(
-                tableView.conditionalColors,
-                database.fields
-            );
+        tableView.conditionalColors = normalizePisiSheetConditionalColors(tableView.conditionalColors, database.fields);
     }
 
     for (const item of database.items) {
@@ -840,11 +626,7 @@ function transformPisiSheetDatabaseFormulas(table, change) {
         for (const record of Object.values(item.values)) {
             if (!record?.formula) continue;
 
-            record.formula =
-                transformPisiSheetFormulaReferences(
-                    record.formula,
-                    change
-                );
+            record.formula = transformPisiSheetFormulaReferences(record.formula, change);
         }
     }
 
@@ -853,117 +635,173 @@ function transformPisiSheetDatabaseFormulas(table, change) {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "PISI_SHEET_DATABASE_VERSION": {
+    PISI_SHEET_DATABASE_VERSION: {
         enumerable: true,
-        get() { return PISI_SHEET_DATABASE_VERSION; }
+        get() {
+            return PISI_SHEET_DATABASE_VERSION;
+        }
     },
-    "PISI_SHEET_DEFAULT_COLUMN_WIDTH": {
+    PISI_SHEET_DEFAULT_COLUMN_WIDTH: {
         enumerable: true,
-        get() { return PISI_SHEET_DEFAULT_COLUMN_WIDTH; }
+        get() {
+            return PISI_SHEET_DEFAULT_COLUMN_WIDTH;
+        }
     },
-    "PISI_SHEET_FORMAT_PROPERTIES": {
+    PISI_SHEET_FORMAT_PROPERTIES: {
         enumerable: true,
-        get() { return PISI_SHEET_FORMAT_PROPERTIES; }
+        get() {
+            return PISI_SHEET_FORMAT_PROPERTIES;
+        }
     },
-    "pisiSheetDatabases": {
+    pisiSheetDatabases: {
         enumerable: true,
-        get() { return pisiSheetDatabases; }
+        get() {
+            return pisiSheetDatabases;
+        }
     },
-    "createPisiSheetDatabase": {
+    createPisiSheetDatabase: {
         enumerable: true,
-        get() { return createPisiSheetDatabase; }
+        get() {
+            return createPisiSheetDatabase;
+        }
     },
-    "normalizePisiSheetDatabase": {
+    normalizePisiSheetDatabase: {
         enumerable: true,
-        get() { return normalizePisiSheetDatabase; }
+        get() {
+            return normalizePisiSheetDatabase;
+        }
     },
-    "attachPisiSheetDatabase": {
+    attachPisiSheetDatabase: {
         enumerable: true,
-        get() { return attachPisiSheetDatabase; }
+        get() {
+            return attachPisiSheetDatabase;
+        }
     },
-    "getPisiSheetDatabase": {
+    getPisiSheetDatabase: {
         enumerable: true,
-        get() { return getPisiSheetDatabase; }
+        get() {
+            return getPisiSheetDatabase;
+        }
     },
-    "persistPisiSheetDatabase": {
+    persistPisiSheetDatabase: {
         enumerable: true,
-        get() { return persistPisiSheetDatabase; }
+        get() {
+            return persistPisiSheetDatabase;
+        }
     },
-    "getPisiSheetTableView": {
+    getPisiSheetTableView: {
         enumerable: true,
-        get() { return getPisiSheetTableView; }
+        get() {
+            return getPisiSheetTableView;
+        }
     },
-    "getPisiSheetOrderedFields": {
+    getPisiSheetOrderedFields: {
         enumerable: true,
-        get() { return getPisiSheetOrderedFields; }
+        get() {
+            return getPisiSheetOrderedFields;
+        }
     },
-    "getPisiSheetDatabaseDimensions": {
+    getPisiSheetDatabaseDimensions: {
         enumerable: true,
-        get() { return getPisiSheetDatabaseDimensions; }
+        get() {
+            return getPisiSheetDatabaseDimensions;
+        }
     },
-    "getPisiSheetField": {
+    getPisiSheetField: {
         enumerable: true,
-        get() { return getPisiSheetField; }
+        get() {
+            return getPisiSheetField;
+        }
     },
-    "getPisiSheetItem": {
+    getPisiSheetItem: {
         enumerable: true,
-        get() { return getPisiSheetItem; }
+        get() {
+            return getPisiSheetItem;
+        }
     },
-    "getPisiSheetCellSource": {
+    getPisiSheetCellSource: {
         enumerable: true,
-        get() { return getPisiSheetCellSource; }
+        get() {
+            return getPisiSheetCellSource;
+        }
     },
-    "setPisiSheetCellSource": {
+    setPisiSheetCellSource: {
         enumerable: true,
-        get() { return setPisiSheetCellSource; }
+        get() {
+            return setPisiSheetCellSource;
+        }
     },
-    "setPisiSheetCellFormat": {
+    setPisiSheetCellFormat: {
         enumerable: true,
-        get() { return setPisiSheetCellFormat; }
+        get() {
+            return setPisiSheetCellFormat;
+        }
     },
-    "clearPisiSheetCell": {
+    clearPisiSheetCell: {
         enumerable: true,
-        get() { return clearPisiSheetCell; }
+        get() {
+            return clearPisiSheetCell;
+        }
     },
-    "renamePisiSheetField": {
+    renamePisiSheetField: {
         enumerable: true,
-        get() { return renamePisiSheetField; }
+        get() {
+            return renamePisiSheetField;
+        }
     },
-    "setPisiSheetFieldWidth": {
+    setPisiSheetFieldWidth: {
         enumerable: true,
-        get() { return setPisiSheetFieldWidth; }
+        get() {
+            return setPisiSheetFieldWidth;
+        }
     },
-    "updatePisiSheetField": {
+    updatePisiSheetField: {
         enumerable: true,
-        get() { return updatePisiSheetField; }
+        get() {
+            return updatePisiSheetField;
+        }
     },
-    "isPisiSheetFieldHidden": {
+    isPisiSheetFieldHidden: {
         enumerable: true,
-        get() { return isPisiSheetFieldHidden; }
+        get() {
+            return isPisiSheetFieldHidden;
+        }
     },
-    "setPisiSheetFieldHidden": {
+    setPisiSheetFieldHidden: {
         enumerable: true,
-        get() { return setPisiSheetFieldHidden; }
+        get() {
+            return setPisiSheetFieldHidden;
+        }
     },
-    "insertPisiSheetItem": {
+    insertPisiSheetItem: {
         enumerable: true,
-        get() { return insertPisiSheetItem; }
+        get() {
+            return insertPisiSheetItem;
+        }
     },
-    "deletePisiSheetItems": {
+    deletePisiSheetItems: {
         enumerable: true,
-        get() { return deletePisiSheetItems; }
+        get() {
+            return deletePisiSheetItems;
+        }
     },
-    "insertPisiSheetField": {
+    insertPisiSheetField: {
         enumerable: true,
-        get() { return insertPisiSheetField; }
+        get() {
+            return insertPisiSheetField;
+        }
     },
-    "deletePisiSheetFields": {
+    deletePisiSheetFields: {
         enumerable: true,
-        get() { return deletePisiSheetFields; }
+        get() {
+            return deletePisiSheetFields;
+        }
     },
-    "transformPisiSheetDatabaseFormulas": {
+    transformPisiSheetDatabaseFormulas: {
         enumerable: true,
-        get() { return transformPisiSheetDatabaseFormulas; }
+        get() {
+            return transformPisiSheetDatabaseFormulas;
+        }
     }
 });
-registerModule("editor.sheetDatabase", moduleApi);
+registerModule('editor.sheetDatabase', moduleApi);

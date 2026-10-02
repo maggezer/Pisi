@@ -9,8 +9,8 @@
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
     grid-template-areas:
-        "priority task check"
-        "controls controls controls";
+        'priority task check'
+        'controls controls controls';
     align-items: center;
     column-gap: 8px;
     row-gap: 6px;
@@ -89,7 +89,7 @@
     appearance: none;
     -webkit-appearance: none;
     background-color: var(--panel-bg, #2d2d30);
-    background-image: url("../assets/todo/status-filter.svg");
+    background-image: url('../assets/todo/status-filter.svg');
     background-repeat: no-repeat;
     background-position: center;
     background-size: 17px 17px;
@@ -144,16 +144,16 @@
 }
 
 .pisi-mission-compact-card .pisi-mission-planning-icon-menu > .pisi-mission-planning-icon::marker {
-    content: "";
+    content: '';
 }
 
 .pisi-mission-compact-card .pisi-mission-planning-icon-menu > .pisi-mission-planning-icon::before {
-    content: "";
+    content: '';
     width: 17px;
     height: 17px;
     background: currentColor;
-    -webkit-mask: url("../assets/todo/workspace.svg") center / contain no-repeat;
-    mask: url("../assets/todo/workspace.svg") center / contain no-repeat;
+    -webkit-mask: url('../assets/todo/workspace.svg') center / contain no-repeat;
+    mask: url('../assets/todo/workspace.svg') center / contain no-repeat;
 }
 
 .pisi-mission-compact-card .pisi-mission-planning-icon-menu > .pisi-mission-planning-icon:hover,

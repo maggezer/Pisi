@@ -35,46 +35,49 @@ test('integrity issue identities are deterministic but distinct by code path and
 });
 
 test('integrity summary separates severity and repair safety', () => {
-    const report = integrity.makePisiIntegrityReport([
-        {
-            severity: 'critical',
-            code: 'duplicate-id',
-            message: 'duplicate',
-            repair: {
-                safety: 'manual',
-                action: 'resolve-id',
-                description: 'manual'
+    const report = integrity.makePisiIntegrityReport(
+        [
+            {
+                severity: 'critical',
+                code: 'duplicate-id',
+                message: 'duplicate',
+                repair: {
+                    safety: 'manual',
+                    action: 'resolve-id',
+                    description: 'manual'
+                }
+            },
+            {
+                severity: 'warning',
+                code: 'missing-sidecar',
+                message: 'sidecar',
+                repair: {
+                    safety: 'safe',
+                    action: 'ensure-sidecar',
+                    description: 'safe'
+                }
+            },
+            {
+                severity: 'error',
+                code: 'task-source',
+                message: 'source',
+                repair: {
+                    safety: 'review',
+                    action: 'review-task',
+                    description: 'review'
+                }
             }
-        },
+        ],
         {
-            severity: 'warning',
-            code: 'missing-sidecar',
-            message: 'sidecar',
-            repair: {
-                safety: 'safe',
-                action: 'ensure-sidecar',
-                description: 'safe'
-            }
-        },
-        {
-            severity: 'error',
-            code: 'task-source',
-            message: 'source',
-            repair: {
-                safety: 'review',
-                action: 'review-task',
-                description: 'review'
-            }
+            files: 4,
+            nodes: 2,
+            maps: 1,
+            tasks: 3,
+            relationships: 2,
+            trashItems: 1,
+            mutationJournals: 1
         }
-    ], {
-        files: 4,
-        nodes: 2,
-        maps: 1,
-        tasks: 3,
-        relationships: 2,
-        trashItems: 1,
-        mutationJournals: 1
-    });
+    );
 
     assert.equal(report.healthy, false);
     assert.equal(report.clean, false);
@@ -112,23 +115,19 @@ test('integrity ID validation keeps canonical identity namespaces distinct', () 
 
 test('integrity project path guard rejects traversal outside project', () => {
     const root = process.platform === 'win32' ? 'C:\\Pisi\\Project' : '/tmp/Pisi/Project';
-    const inside = process.platform === 'win32'
-        ? 'C:\\Pisi\\Project\\Map.node'
-        : '/tmp/Pisi/Project/Map.node';
-    const outside = process.platform === 'win32'
-        ? 'C:\\Pisi\\Elsewhere\\Map.node'
-        : '/tmp/Pisi/Elsewhere/Map.node';
+    const inside = process.platform === 'win32' ? 'C:\\Pisi\\Project\\Map.node' : '/tmp/Pisi/Project/Map.node';
+    const outside = process.platform === 'win32' ? 'C:\\Pisi\\Elsewhere\\Map.node' : '/tmp/Pisi/Elsewhere/Map.node';
     assert.equal(integrity.isPisiIntegrityPathInsideProject(root, inside), true);
     assert.equal(integrity.isPisiIntegrityPathInsideProject(root, outside), false);
 });
 
 test('duplicate collector reports later occurrences without losing first owner', () => {
-    const duplicates = integrity.collectDuplicateValues(
-        [{ id: 'a' }, { id: 'b' }, { id: 'a' }, { id: 'a' }],
-        (item) => item.id
+    const duplicates = integrity.collectDuplicateValues([{ id: 'a' }, { id: 'b' }, { id: 'a' }, { id: 'a' }], (item) => item.id);
+    assert.deepEqual(
+        duplicates.map((item) => [item.value, item.firstIndex, item.index]),
+        [
+            ['a', 0, 2],
+            ['a', 0, 3]
+        ]
     );
-    assert.deepEqual(duplicates.map((item) => [item.value, item.firstIndex, item.index]), [
-        ['a', 0, 2],
-        ['a', 0, 3]
-    ]);
 });

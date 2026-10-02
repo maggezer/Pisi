@@ -32,7 +32,7 @@
 
 /* An empty dock zone must not consume panel height. The runtime can still dock
    into the right panel through its bottom-edge fallback hit target. */
-#right-panel > .pisi-calendar-dock-zone[data-calendar-dock-zone="right"] {
+#right-panel > .pisi-calendar-dock-zone[data-calendar-dock-zone='right'] {
     grid-row: 3;
     align-self: end;
     width: 100%;
@@ -45,7 +45,7 @@
 
 /* Once the calendar is actually docked, its row has an explicit, protected
    height. Search/content can shrink only inside the middle grid row. */
-#right-panel > .pisi-calendar-dock-zone[data-calendar-dock-zone="right"].has-calendar {
+#right-panel > .pisi-calendar-dock-zone[data-calendar-dock-zone='right'].has-calendar {
     height: min(300px, 35vh);
     min-height: 180px;
     margin-top: 10px;

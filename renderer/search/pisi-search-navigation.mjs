@@ -6,22 +6,22 @@ const PISI_SEARCH_EDITOR_FOCUS_CLASS = 'pisi-search-editor-focus';
 let pisiSearchHighlightTimer = null;
 
 function selectPisiSearchMapMembership(result = {}) {
-    const memberships = Array.isArray(result.memberships)
-        ? result.memberships.filter((item) => item?.mapPath)
-        : [];
+    const memberships = Array.isArray(result.memberships) ? result.memberships.filter((item) => item?.mapPath) : [];
     const activeMapKey = pisiSearchPathKey(window.activeMapPath || '');
     const current = memberships.find((membership) => {
         return activeMapKey && pisiSearchPathKey(membership.mapPath) === activeMapKey;
     });
     if (current) return current;
     if (result.mapPath) {
-        return memberships.find((membership) => {
-            return pisiSearchPathKey(membership.mapPath) === pisiSearchPathKey(result.mapPath);
-        }) || {
-            mapPath: result.mapPath,
-            mapTitle: result.mapTitle || '',
-            mapItem: result.mapItem || null
-        };
+        return (
+            memberships.find((membership) => {
+                return pisiSearchPathKey(membership.mapPath) === pisiSearchPathKey(result.mapPath);
+            }) || {
+                mapPath: result.mapPath,
+                mapTitle: result.mapTitle || '',
+                mapItem: result.mapItem || null
+            }
+        );
     }
     return memberships[0] || null;
 }
@@ -74,8 +74,9 @@ function getPisiSearchNodeItem(result) {
 async function waitForPisiSearchMapBox(nodePath) {
     const key = pisiSearchPathKey(nodePath);
     for (let attempt = 0; attempt < 30; attempt += 1) {
-        const box = Array.from(document.querySelectorAll('.map-node-box[data-node-path]'))
-            .find((candidate) => pisiSearchPathKey(candidate.dataset.nodePath) === key);
+        const box = Array.from(document.querySelectorAll('.map-node-box[data-node-path]')).find(
+            (candidate) => pisiSearchPathKey(candidate.dataset.nodePath) === key
+        );
         if (box) return box;
         await new Promise((resolve) => setTimeout(resolve, 40));
     }
@@ -83,8 +84,7 @@ async function waitForPisiSearchMapBox(nodePath) {
 }
 
 function clearPisiSearchMapFocus() {
-    document.querySelectorAll('.' + PISI_SEARCH_MAP_FOCUS_CLASS)
-        .forEach((element) => element.classList.remove(PISI_SEARCH_MAP_FOCUS_CLASS));
+    document.querySelectorAll('.' + PISI_SEARCH_MAP_FOCUS_CLASS).forEach((element) => element.classList.remove(PISI_SEARCH_MAP_FOCUS_CLASS));
 }
 
 function focusPisiSearchMapBox(box, nodePath) {
@@ -92,8 +92,8 @@ function focusPisiSearchMapBox(box, nodePath) {
     clearPisiSearchMapFocus();
     const node = Array.isArray(window.activeMapNodes)
         ? window.activeMapNodes.find((candidate) => {
-            return pisiSearchPathKey(candidate?.fullPath) === pisiSearchPathKey(nodePath);
-        })
+              return pisiSearchPathKey(candidate?.fullPath) === pisiSearchPathKey(nodePath);
+          })
         : null;
     const canvas = document.getElementById('map-canvas');
     const rect = canvas?.getBoundingClientRect();
@@ -114,9 +114,13 @@ function focusPisiSearchMapBox(box, nodePath) {
     window.clearSelectedMapNodes?.();
     box.classList.add('selected', PISI_SEARCH_MAP_FOCUS_CLASS);
     box.focus({ preventScroll: true });
-    box.addEventListener('animationend', () => {
-        box.classList.remove(PISI_SEARCH_MAP_FOCUS_CLASS);
-    }, { once: true });
+    box.addEventListener(
+        'animationend',
+        () => {
+            box.classList.remove(PISI_SEARCH_MAP_FOCUS_CLASS);
+        },
+        { once: true }
+    );
     return true;
 }
 
@@ -132,21 +136,19 @@ function findPisiSearchEditorTarget(editor, result) {
         .trim()
         .slice(0, 120);
     if (!preview) return null;
-    return Array.from(editor.querySelectorAll(
-        '.pisi-editor-block, p, li, h1, h2, h3, h4, h5, h6, table'
-    )).find((element) => {
-        return String(element.textContent || '').replace(/\s+/g, ' ').includes(preview);
-    }) || null;
+    return (
+        Array.from(editor.querySelectorAll('.pisi-editor-block, p, li, h1, h2, h3, h4, h5, h6, table')).find((element) => {
+            return String(element.textContent || '')
+                .replace(/\s+/g, ' ')
+                .includes(preview);
+        }) || null
+    );
 }
 
 function highlightPisiSearchEditorTarget(result) {
     clearTimeout(pisiSearchHighlightTimer);
-    document.querySelectorAll('.' + PISI_SEARCH_EDITOR_FOCUS_CLASS)
-        .forEach((element) => element.classList.remove(PISI_SEARCH_EDITOR_FOCUS_CLASS));
-    for (const editor of [
-        document.getElementById('node-modal-content'),
-        document.getElementById('center-node-editor-content')
-    ]) {
+    document.querySelectorAll('.' + PISI_SEARCH_EDITOR_FOCUS_CLASS).forEach((element) => element.classList.remove(PISI_SEARCH_EDITOR_FOCUS_CLASS));
+    for (const editor of [document.getElementById('node-modal-content'), document.getElementById('center-node-editor-content')]) {
         const target = findPisiSearchEditorTarget(editor, result);
         if (!target) continue;
         target.classList.add(PISI_SEARCH_EDITOR_FOCUS_CLASS);
@@ -194,9 +196,11 @@ async function showPisiSearchResultOnMap(result) {
 function rememberSuccessfulPisiSearchNavigation(result) {
     if (!window.currentProjectFolder || !result?.id) return;
     rememberPisiSearchResult(window.currentProjectFolder, result);
-    document.dispatchEvent(new CustomEvent('pisi:search-history-updated', {
-        detail: { id: result.id }
-    }));
+    document.dispatchEvent(
+        new CustomEvent('pisi:search-history-updated', {
+            detail: { id: result.id }
+        })
+    );
 }
 
 async function openPisiSearchResult(result, options = {}) {
@@ -216,18 +220,20 @@ async function openPisiSearchResult(result, options = {}) {
     }
 
     if (opened) rememberSuccessfulPisiSearchNavigation(result);
-    document.dispatchEvent(new CustomEvent('pisi:global-search-navigation-complete', {
-        detail: {
-            ok: Boolean(opened),
-            id: result.id || null,
-            kind: result.kind || null,
-            taskId: result.taskId || null,
-            blockId: result.blockId || null,
-            nodePath: result.nodePath || null,
-            mapPath: selectPisiSearchMapMembership(result)?.mapPath || result.mapPath || null,
-            mapOnly: options.mapOnly === true
-        }
-    }));
+    document.dispatchEvent(
+        new CustomEvent('pisi:global-search-navigation-complete', {
+            detail: {
+                ok: Boolean(opened),
+                id: result.id || null,
+                kind: result.kind || null,
+                taskId: result.taskId || null,
+                blockId: result.blockId || null,
+                nodePath: result.nodePath || null,
+                mapPath: selectPisiSearchMapMembership(result)?.mapPath || result.mapPath || null,
+                mapOnly: options.mapOnly === true
+            }
+        })
+    );
     return Boolean(opened);
 }
 

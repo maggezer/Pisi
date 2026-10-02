@@ -27,12 +27,9 @@ test('Mind Map primary actions fit on one row and Reset sits at layout row right
     const layoutEnd = panel.indexOf('function enhanceMindMapToolbar', layoutStart);
     const layoutBlock = panel.slice(layoutStart, layoutEnd);
     assert.match(layoutBlock, /'pisi-map-operational-reset'/);
-    assert.ok(
-        layoutBlock.indexOf("'pisi-map-operational-reset'") >
-        layoutBlock.indexOf("'pisi-map-operational-delete-layout'")
-    );
+    assert.ok(layoutBlock.indexOf("'pisi-map-operational-reset'") > layoutBlock.indexOf("'pisi-map-operational-delete-layout'"));
 
     const availableWidth = 280 - 16 - 8;
-    const requiredWidth = (7 * 30) + (6 * 2);
+    const requiredWidth = 7 * 30 + 6 * 2;
     assert.ok(requiredWidth <= availableWidth);
 });

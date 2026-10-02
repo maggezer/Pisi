@@ -101,10 +101,12 @@ function movePisiItem(sourcePath, destinationFolderPath, options = {}) {
                 oldPath: sourcePath,
                 fullPath: newDirPath,
                 fileName: path.basename(newDirPath),
-                pathChanges: [{
-                    oldPath: sourcePath,
-                    newPath: newDirPath
-                }],
+                pathChanges: [
+                    {
+                        oldPath: sourcePath,
+                        newPath: newDirPath
+                    }
+                ],
                 isDirectory: true,
                 isFile: false
             };
@@ -126,17 +128,11 @@ function movePisiItem(sourcePath, destinationFolderPath, options = {}) {
         const id = info.metadata.id;
         const title = sanitizePisiBaseName(info.metadata.title || getVisibleTitleFromFilePath(sourcePath, ext, id));
         const newPath = getUniquePisiPhysicalPath(destinationFolderPath, title, ext, id);
-        const oldSidecarPath = info.sidecarPath && fs.existsSync(info.sidecarPath)
-            ? info.sidecarPath
-            : null;
+        const oldSidecarPath = info.sidecarPath && fs.existsSync(info.sidecarPath) ? info.sidecarPath : null;
         originalSidecarPath = oldSidecarPath;
         const desiredSidecarName = getPisiSidecarName(title, ext, id);
-        const desiredSidecarPath = desiredSidecarName
-            ? path.join(destinationFolderPath, desiredSidecarName)
-            : null;
-        const oldParentMapPath = ext === '.node'
-            ? findParentMapPathForNode(sourcePath, info)
-            : null;
+        const desiredSidecarPath = desiredSidecarName ? path.join(destinationFolderPath, desiredSidecarName) : null;
+        const oldParentMapPath = ext === '.node' ? findParentMapPathForNode(sourcePath, info) : null;
 
         if (
             oldSidecarPath &&
@@ -156,11 +152,7 @@ function movePisiItem(sourcePath, destinationFolderPath, options = {}) {
             fileMoved = true;
         }
 
-        if (
-            oldSidecarPath &&
-            desiredSidecarPath &&
-            normalizePathForCompare(oldSidecarPath) !== normalizePathForCompare(desiredSidecarPath)
-        ) {
+        if (oldSidecarPath && desiredSidecarPath && normalizePathForCompare(oldSidecarPath) !== normalizePathForCompare(desiredSidecarPath)) {
             renamePathInternal(oldSidecarPath, desiredSidecarPath);
             movedSidecarPath = desiredSidecarPath;
             sidecarMoved = true;
@@ -216,10 +208,12 @@ function movePisiItem(sourcePath, destinationFolderPath, options = {}) {
                     newPath
                 },
                 ...(oldSidecarPath && ensuredAfter.sidecarPath
-                    ? [{
-                        oldPath: oldSidecarPath,
-                        newPath: ensuredAfter.sidecarPath
-                    }]
+                    ? [
+                          {
+                              oldPath: oldSidecarPath,
+                              newPath: ensuredAfter.sidecarPath
+                          }
+                      ]
                     : [])
             ],
             isDirectory: false,
@@ -229,13 +223,7 @@ function movePisiItem(sourcePath, destinationFolderPath, options = {}) {
         const rollbackErrors = [];
 
         try {
-            if (
-                sidecarMoved &&
-                movedSidecarPath &&
-                originalSidecarPath &&
-                fs.existsSync(movedSidecarPath) &&
-                !fs.existsSync(originalSidecarPath)
-            ) {
+            if (sidecarMoved && movedSidecarPath && originalSidecarPath && fs.existsSync(movedSidecarPath) && !fs.existsSync(originalSidecarPath)) {
                 renamePathInternal(movedSidecarPath, originalSidecarPath);
             }
         } catch (rollbackError) {
@@ -243,25 +231,12 @@ function movePisiItem(sourcePath, destinationFolderPath, options = {}) {
         }
 
         try {
-            if (
-                fileMoved &&
-                movedPath &&
-                fs.existsSync(movedPath) &&
-                !fs.existsSync(sourcePath)
-            ) {
+            if (fileMoved && movedPath && fs.existsSync(movedPath) && !fs.existsSync(sourcePath)) {
                 renamePathInternal(movedPath, sourcePath);
             }
 
-            if (
-                !sourceWasDirectory &&
-                originalContent !== null &&
-                fs.existsSync(sourcePath)
-            ) {
-                writeFileAtomic(
-                    sourcePath,
-                    originalContent,
-                    { backup: false }
-                );
+            if (!sourceWasDirectory && originalContent !== null && fs.existsSync(sourcePath)) {
+                writeFileAtomic(sourcePath, originalContent, { backup: false });
             }
         } catch (rollbackError) {
             rollbackErrors.push(rollbackError.message);
@@ -269,9 +244,7 @@ function movePisiItem(sourcePath, destinationFolderPath, options = {}) {
 
         return {
             ok: false,
-            error: rollbackErrors.length
-                ? `${error.message} Geri alma tamamlanamadı: ${rollbackErrors.join(' | ')}`
-                : error.message,
+            error: rollbackErrors.length ? `${error.message} Geri alma tamamlanamadı: ${rollbackErrors.join(' | ')}` : error.message,
             rolledBack: rollbackErrors.length === 0
         };
     }
@@ -292,15 +265,9 @@ function getPisiDocument(filePath, options = {}) {
 
         let data = ensured.data;
 
-        if (
-            options.hydrateEditorAssets === true &&
-            ensured.metadata?.type === 'node'
-        ) {
+        if (options.hydrateEditorAssets === true && ensured.metadata?.type === 'node') {
             data = structuredClone(ensured.data);
-            data.content = editorAssets.hydratePisiEditorAssets(
-                data.content || '',
-                { sidecarPath: ensured.sidecarPath }
-            );
+            data.content = editorAssets.hydratePisiEditorAssets(data.content || '', { sidecarPath: ensured.sidecarPath });
         }
 
         return {
@@ -410,87 +377,75 @@ function listNodesForMap(mapPath) {
         let changed = false;
         const seenNodeIds = new Set();
 
-        const nodes = nodeFiles.map((nodePath, index) => {
-            const nodeInfo = ensurePisiFileMetadata(nodePath);
+        const nodes = nodeFiles
+            .map((nodePath, index) => {
+                const nodeInfo = ensurePisiFileMetadata(nodePath);
 
-            if (!nodeInfo.ok) {
-                return null;
-            }
+                if (!nodeInfo.ok) {
+                    return null;
+                }
 
-            const nodeId = nodeInfo.metadata.id;
+                const nodeId = nodeInfo.metadata.id;
 
-            if (seenNodeIds.has(nodeId)) {
-                throw new Error(
-                    `Map içinde aynı PISI kimliğine sahip iki node bulundu: ${nodeId}`
-                );
-            }
+                if (seenNodeIds.has(nodeId)) {
+                    throw new Error(`Map içinde aynı PISI kimliğine sahip iki node bulundu: ${nodeId}`);
+                }
 
-            seenNodeIds.add(nodeId);
+                seenNodeIds.add(nodeId);
 
-            let layout = mapInfo.data.map.nodes.find((item) => item.id === nodeId);
+                let layout = mapInfo.data.map.nodes.find((item) => item.id === nodeId);
 
-            if (!layout) {
-                layout = {
-                    id: nodeId,
-                    ...getDefaultNodeLayout(index)
-                };
+                if (!layout) {
+                    layout = {
+                        id: nodeId,
+                        ...getDefaultNodeLayout(index)
+                    };
 
-                mapInfo.data.map.nodes.push(layout);
-                changed = true;
-            }
-
-            const fallbackLayout = getDefaultNodeLayout(index);
-            const normalizedLayout = normalizePisiNodeLayout(
-                layout,
-                fallbackLayout
-            );
-            const normalizedCustomization = normalizePisiMapNodeCustomization(
-                layout.customization
-            );
-
-            if (
-                layout.x !== normalizedLayout.x ||
-                layout.y !== normalizedLayout.y ||
-                layout.width !== normalizedLayout.width ||
-                layout.height !== normalizedLayout.height
-            ) {
-                Object.assign(layout, normalizedLayout);
-                changed = true;
-            }
-
-            if (Object.keys(normalizedCustomization).length) {
-                if (
-                    JSON.stringify(layout.customization || {}) !==
-                    JSON.stringify(normalizedCustomization)
-                ) {
-                    layout.customization = normalizedCustomization;
+                    mapInfo.data.map.nodes.push(layout);
                     changed = true;
                 }
-            } else if (Object.prototype.hasOwnProperty.call(layout, 'customization')) {
-                delete layout.customization;
-                changed = true;
-            }
 
-            return {
-                id: nodeId,
-                fullPath: nodePath,
-                fileName: path.basename(nodePath),
-                metadata: nodeInfo.metadata,
-                properties: nodeInfo.data.properties || {},
-                content: nodeInfo.data.content || '',
-                preview: stripPreviewText(nodeInfo.data.content || ''),
-                layout: normalizedLayout,
-                customization: normalizedCustomization,
-                isReference: false
-            };
-        }).filter(Boolean);
+                const fallbackLayout = getDefaultNodeLayout(index);
+                const normalizedLayout = normalizePisiNodeLayout(layout, fallbackLayout);
+                const normalizedCustomization = normalizePisiMapNodeCustomization(layout.customization);
+
+                if (
+                    layout.x !== normalizedLayout.x ||
+                    layout.y !== normalizedLayout.y ||
+                    layout.width !== normalizedLayout.width ||
+                    layout.height !== normalizedLayout.height
+                ) {
+                    Object.assign(layout, normalizedLayout);
+                    changed = true;
+                }
+
+                if (Object.keys(normalizedCustomization).length) {
+                    if (JSON.stringify(layout.customization || {}) !== JSON.stringify(normalizedCustomization)) {
+                        layout.customization = normalizedCustomization;
+                        changed = true;
+                    }
+                } else if (Object.prototype.hasOwnProperty.call(layout, 'customization')) {
+                    delete layout.customization;
+                    changed = true;
+                }
+
+                return {
+                    id: nodeId,
+                    fullPath: nodePath,
+                    fileName: path.basename(nodePath),
+                    metadata: nodeInfo.metadata,
+                    properties: nodeInfo.data.properties || {},
+                    content: nodeInfo.data.content || '',
+                    preview: stripPreviewText(nodeInfo.data.content || ''),
+                    layout: normalizedLayout,
+                    customization: normalizedCustomization,
+                    isReference: false
+                };
+            })
+            .filter(Boolean);
 
         if (typeof globalThis.collectPisiMapReferenceNodes === 'function') {
-            const referenceResult = globalThis.collectPisiMapReferenceNodes(
-                mapInfo,
-                seenNodeIds,
-                nodes.length
-            );
+            const referenceResult = globalThis.collectPisiMapReferenceNodes(mapInfo, seenNodeIds, nodes.length);
             nodes.push(...referenceResult.nodes);
             changed = changed || referenceResult.changed;
         }
@@ -505,10 +460,7 @@ function listNodesForMap(mapPath) {
         }
 
         const normalizedCamera = normalizePisiMapCamera(mapInfo.data.map.camera);
-        if (
-            JSON.stringify(normalizedCamera) !==
-            JSON.stringify(mapInfo.data.map.camera)
-        ) {
+        if (JSON.stringify(normalizedCamera) !== JSON.stringify(mapInfo.data.map.camera)) {
             mapInfo.data.map.camera = normalizedCamera;
             changed = true;
         }
@@ -524,7 +476,6 @@ function listNodesForMap(mapPath) {
             nodes,
             edges: []
         };
-
     } catch (error) {
         return {
             ok: false,
@@ -553,35 +504,22 @@ function saveMapNodeLayout(mapPath, nodeLayouts = []) {
             mapInfo.data.map.nodes = [];
         }
 
-        const knownNodeIds = new Set(
-            mapInfo.data.map.nodes
-                .map((item) => item?.id)
-                .filter(Boolean)
-        );
+        const knownNodeIds = new Set(mapInfo.data.map.nodes.map((item) => item?.id).filter(Boolean));
 
-        for (const incoming of Array.isArray(nodeLayouts)
-            ? nodeLayouts.slice(0, 5000)
-            : []) {
+        for (const incoming of Array.isArray(nodeLayouts) ? nodeLayouts.slice(0, 5000) : []) {
             const incomingId = normalizePisiId(incoming?.id, '.node');
             if (!incomingId || !knownNodeIds.has(incomingId)) continue;
 
-            let stored = mapInfo.data.map.nodes.find(
-                (item) => item.id === incomingId
-            );
+            let stored = mapInfo.data.map.nodes.find((item) => item.id === incomingId);
 
             if (!stored) {
                 stored = { id: incomingId };
                 mapInfo.data.map.nodes.push(stored);
             }
 
-            Object.assign(
-                stored,
-                normalizePisiNodeLayout(incoming, stored)
-            );
+            Object.assign(stored, normalizePisiNodeLayout(incoming, stored));
 
-            const customization = normalizePisiMapNodeCustomization(
-                incoming.customization
-            );
+            const customization = normalizePisiMapNodeCustomization(incoming.customization);
             if (Object.keys(customization).length) {
                 stored.customization = customization;
             } else {
@@ -660,13 +598,10 @@ function saveNodeContent(nodePath, content = '') {
             };
         }
 
-        const normalizedContent = editorAssets.normalizePisiEditorAssets(
-            String(content || ''),
-            {
-                sidecarPath: nodeInfo.sidecarPath,
-                writeAssets: true
-            }
-        );
+        const normalizedContent = editorAssets.normalizePisiEditorAssets(String(content || ''), {
+            sidecarPath: nodeInfo.sidecarPath,
+            writeAssets: true
+        });
 
         nodeInfo.data.content = normalizedContent.content;
         nodeInfo.data.pisi.updatedAt = new Date().toISOString();
@@ -735,61 +670,89 @@ function getAllNodeDocsInMap(mapPath) {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "getUniqueDirectoryPath": {
+    getUniqueDirectoryPath: {
         enumerable: true,
-        get() { return getUniqueDirectoryPath; }
+        get() {
+            return getUniqueDirectoryPath;
+        }
     },
-    "isPathInsideDirectory": {
+    isPathInsideDirectory: {
         enumerable: true,
-        get() { return isPathInsideDirectory; }
+        get() {
+            return isPathInsideDirectory;
+        }
     },
-    "movePisiItem": {
+    movePisiItem: {
         enumerable: true,
-        get() { return movePisiItem; }
+        get() {
+            return movePisiItem;
+        }
     },
-    "getPisiDocument": {
+    getPisiDocument: {
         enumerable: true,
-        get() { return getPisiDocument; }
+        get() {
+            return getPisiDocument;
+        }
     },
-    "stripPreviewText": {
+    stripPreviewText: {
         enumerable: true,
-        get() { return stripPreviewText; }
+        get() {
+            return stripPreviewText;
+        }
     },
-    "getDefaultNodeLayout": {
+    getDefaultNodeLayout: {
         enumerable: true,
-        get() { return getDefaultNodeLayout; }
+        get() {
+            return getDefaultNodeLayout;
+        }
     },
-    "finiteNumberInRange": {
+    finiteNumberInRange: {
         enumerable: true,
-        get() { return finiteNumberInRange; }
+        get() {
+            return finiteNumberInRange;
+        }
     },
-    "normalizePisiNodeLayout": {
+    normalizePisiNodeLayout: {
         enumerable: true,
-        get() { return normalizePisiNodeLayout; }
+        get() {
+            return normalizePisiNodeLayout;
+        }
     },
-    "normalizePisiMapCamera": {
+    normalizePisiMapCamera: {
         enumerable: true,
-        get() { return normalizePisiMapCamera; }
+        get() {
+            return normalizePisiMapCamera;
+        }
     },
-    "listNodesForMap": {
+    listNodesForMap: {
         enumerable: true,
-        get() { return listNodesForMap; }
+        get() {
+            return listNodesForMap;
+        }
     },
-    "saveMapNodeLayout": {
+    saveMapNodeLayout: {
         enumerable: true,
-        get() { return saveMapNodeLayout; }
+        get() {
+            return saveMapNodeLayout;
+        }
     },
-    "saveMapCamera": {
+    saveMapCamera: {
         enumerable: true,
-        get() { return saveMapCamera; }
+        get() {
+            return saveMapCamera;
+        }
     },
-    "saveNodeContent": {
+    saveNodeContent: {
         enumerable: true,
-        get() { return saveNodeContent; }
+        get() {
+            return saveNodeContent;
+        }
     },
-    "getAllNodeDocsInMap": {
+    getAllNodeDocsInMap: {
         enumerable: true,
-        get() { return getAllNodeDocsInMap; }
+        get() {
+            return getAllNodeDocsInMap;
+        }
     }
 });
-registerMainModule("main.mapStore", moduleApi);
+registerMainModule('main.mapStore', moduleApi);

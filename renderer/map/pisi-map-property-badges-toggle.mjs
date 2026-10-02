@@ -29,17 +29,16 @@ function syncPisiPropertyBadgesVisibility() {
 function setPisiPropertyBadgesVisible(enabled) {
     const normalized = enabled === true;
     try {
-        localStorage.setItem(
-            PISI_PROPERTY_BADGES_VISIBLE_STORAGE_KEY,
-            normalized ? '1' : '0'
-        );
+        localStorage.setItem(PISI_PROPERTY_BADGES_VISIBLE_STORAGE_KEY, normalized ? '1' : '0');
     } catch (error) {
         console.warn('[PISI] Property badge visibility could not be saved:', error);
     }
     syncPisiPropertyBadgesVisibility();
-    document.dispatchEvent(new CustomEvent('pisi:map-property-badges-visibility-changed', {
-        detail: { enabled: normalized }
-    }));
+    document.dispatchEvent(
+        new CustomEvent('pisi:map-property-badges-visibility-changed', {
+            detail: { enabled: normalized }
+        })
+    );
     return normalized;
 }
 
@@ -95,16 +94,16 @@ function bindPisiPropertyBadgesToggle() {
     const panel = document.getElementById('right-tab-mindmap') || document.body;
     if (!propertyBadgesToggleObserver && panel) {
         propertyBadgesToggleObserver = new MutationObserver((mutations) => {
-            const relevant = mutations.some((mutation) => (
-                [...mutation.addedNodes, ...mutation.removedNodes].some((node) => (
-                    node?.nodeType === Node.ELEMENT_NODE && (
-                        node.id === 'pisi-map-operational-work' ||
-                        node.id === PISI_PROPERTY_BADGES_TOGGLE_ID ||
-                        node.matches?.('.pisi-mindmap-icon-actions') ||
-                        node.querySelector?.('#pisi-map-operational-work, .pisi-mindmap-icon-actions')
-                    )
-                ))
-            ));
+            const relevant = mutations.some((mutation) =>
+                [...mutation.addedNodes, ...mutation.removedNodes].some(
+                    (node) =>
+                        node?.nodeType === Node.ELEMENT_NODE &&
+                        (node.id === 'pisi-map-operational-work' ||
+                            node.id === PISI_PROPERTY_BADGES_TOGGLE_ID ||
+                            node.matches?.('.pisi-mindmap-icon-actions') ||
+                            node.querySelector?.('#pisi-map-operational-work, .pisi-mindmap-icon-actions'))
+                )
+            );
             if (relevant) schedulePisiPropertyBadgesToggleInstall();
         });
         propertyBadgesToggleObserver.observe(panel, { childList: true, subtree: true });

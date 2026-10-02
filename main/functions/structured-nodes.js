@@ -5,12 +5,8 @@ const fs = require('fs');
 const crypto = require('crypto');
 const { registerMainModule } = require('../module-registry');
 
-const PISI_PROPERTY_TYPES = new Set([
-    'text', 'number', 'multiselect', 'relation', 'rollup'
-]);
-const PISI_ROLLUP_AGGREGATES = new Set([
-    'count', 'sum', 'average', 'min', 'max', 'unique', 'join'
-]);
+const PISI_PROPERTY_TYPES = new Set(['text', 'number', 'multiselect', 'relation', 'rollup']);
+const PISI_ROLLUP_AGGREGATES = new Set(['count', 'sum', 'average', 'min', 'max', 'unique', 'join']);
 
 function normalizePisiPropertyId(value = '') {
     const normalized = String(value || '')
@@ -44,29 +40,25 @@ function normalizePisiPropertyValue(type, value) {
     if (type === 'rollup') {
         const rollup = value && typeof value === 'object' ? value : {};
         return {
-            relationProperty: normalizePisiPropertyReference(
-                rollup.relationProperty || rollup.relationPropertyId || ''
-            ),
-            targetProperty: normalizePisiPropertyReference(
-                rollup.targetProperty || rollup.targetPropertyId || ''
-            ),
-            aggregate: PISI_ROLLUP_AGGREGATES.has(String(rollup.aggregate || ''))
-                ? String(rollup.aggregate)
-                : 'count',
+            relationProperty: normalizePisiPropertyReference(rollup.relationProperty || rollup.relationPropertyId || ''),
+            targetProperty: normalizePisiPropertyReference(rollup.targetProperty || rollup.targetPropertyId || ''),
+            aggregate: PISI_ROLLUP_AGGREGATES.has(String(rollup.aggregate || '')) ? String(rollup.aggregate) : 'count',
             separator: String(rollup.separator || ', ').slice(0, 20)
         };
     }
-    return String(value ?? '').trim().slice(0, 10000);
+    return String(value ?? '')
+        .trim()
+        .slice(0, 10000);
 }
 
 function normalizePisiProperties(properties = {}) {
     const result = {};
-    const entries = properties && typeof properties === 'object' && !Array.isArray(properties)
-        ? Object.entries(properties)
-        : [];
+    const entries = properties && typeof properties === 'object' && !Array.isArray(properties) ? Object.entries(properties) : [];
     for (const [rawId, raw] of entries.slice(0, 250)) {
         if (!raw || typeof raw !== 'object') continue;
-        const name = String(raw.name || rawId || '').trim().slice(0, 120);
+        const name = String(raw.name || rawId || '')
+            .trim()
+            .slice(0, 120);
         if (!name) continue;
         const id = normalizePisiPropertyId(raw.id || rawId || name);
         const type = String(raw.type || '').toLowerCase();
@@ -90,10 +82,7 @@ function savePisiNodeProperties(nodePath, properties = {}) {
             return { ok: false, error: 'Özellikler yalnızca node dosyasına kaydedilebilir.' };
         }
         if (typeof globalThis.snapshotPisiNodeVersion === 'function') {
-            const snapshot = globalThis.snapshotPisiNodeVersion(
-                nodePath,
-                'properties-save'
-            );
+            const snapshot = globalThis.snapshotPisiNodeVersion(nodePath, 'properties-save');
             if (!snapshot.ok) return snapshot;
         }
         nodeInfo.data.properties = normalizePisiProperties(properties);
@@ -119,9 +108,7 @@ function readPisiSavedViews(projectFolder) {
     if (!fs.existsSync(filePath)) return { ok: true, views: [] };
     const result = readJsonFileResult(filePath);
     if (!result.ok) return { ok: false, error: result.error, views: [] };
-    const views = Array.isArray(result.data?.views)
-        ? result.data.views.filter((item) => item?.id && item?.name).slice(0, 200)
-        : [];
+    const views = Array.isArray(result.data?.views) ? result.data.views.filter((item) => item?.id && item?.name).slice(0, 200) : [];
     return { ok: true, views };
 }
 
@@ -129,23 +116,22 @@ function savePisiSavedView(projectFolder, view = {}) {
     try {
         const current = readPisiSavedViews(projectFolder);
         if (!current.ok) return current;
-        const id = /^view_[A-Za-z0-9_-]+$/.test(String(view.id || ''))
-            ? String(view.id)
-            : `view_${crypto.randomUUID()}`;
+        const id = /^view_[A-Za-z0-9_-]+$/.test(String(view.id || '')) ? String(view.id) : `view_${crypto.randomUUID()}`;
         const clean = {
             id,
-            name: String(view.name || '').trim().slice(0, 120),
-            query: String(view.query || '').trim().slice(0, 2000),
+            name: String(view.name || '')
+                .trim()
+                .slice(0, 120),
+            query: String(view.query || '')
+                .trim()
+                .slice(0, 2000),
             layout: ['table', 'cards'].includes(view.layout) ? view.layout : 'table',
             updatedAt: new Date().toISOString()
         };
         if (!clean.name) return { ok: false, error: 'Görünüm adı gerekli.' };
         const views = current.views.filter((item) => item.id !== id);
         views.push(clean);
-        writeFileAtomic(
-            getPisiViewsPath(projectFolder),
-            JSON.stringify({ version: 1, views }, null, 2)
-        );
+        writeFileAtomic(getPisiViewsPath(projectFolder), JSON.stringify({ version: 1, views }, null, 2));
         return { ok: true, view: clean, views };
     } catch (error) {
         return { ok: false, error: error.message };
@@ -157,10 +143,7 @@ function deletePisiSavedView(projectFolder, viewId) {
         const current = readPisiSavedViews(projectFolder);
         if (!current.ok) return current;
         const views = current.views.filter((item) => item.id !== String(viewId || ''));
-        writeFileAtomic(
-            getPisiViewsPath(projectFolder),
-            JSON.stringify({ version: 1, views }, null, 2)
-        );
+        writeFileAtomic(getPisiViewsPath(projectFolder), JSON.stringify({ version: 1, views }, null, 2));
         return { ok: true, views };
     } catch (error) {
         return { ok: false, error: error.message };
@@ -172,21 +155,23 @@ function getPisiTemplatesPath(projectFolder) {
 }
 
 function normalizePisiDatabaseTemplate(template = {}) {
-    const id = /^template_[A-Za-z0-9_-]+$/.test(String(template.id || ''))
-        ? String(template.id)
-        : `template_${crypto.randomUUID()}`;
-    const name = String(template.name || '').trim().slice(0, 120);
+    const id = /^template_[A-Za-z0-9_-]+$/.test(String(template.id || '')) ? String(template.id) : `template_${crypto.randomUUID()}`;
+    const name = String(template.name || '')
+        .trim()
+        .slice(0, 120);
     if (!name) return null;
     return {
         id,
         name,
-        nodeType: String(template.nodeType || 'note').trim().slice(0, 80),
-        description: String(template.description || '').trim().slice(0, 500),
+        nodeType: String(template.nodeType || 'note')
+            .trim()
+            .slice(0, 80),
+        description: String(template.description || '')
+            .trim()
+            .slice(0, 500),
         content: String(template.content || '').slice(0, 2000000),
         properties: normalizePisiProperties(template.properties || {}),
-        updatedAt: /^\d{4}-\d{2}-\d{2}T/.test(String(template.updatedAt || ''))
-            ? String(template.updatedAt)
-            : new Date().toISOString()
+        updatedAt: /^\d{4}-\d{2}-\d{2}T/.test(String(template.updatedAt || '')) ? String(template.updatedAt) : new Date().toISOString()
     };
 }
 
@@ -195,9 +180,8 @@ function readPisiDatabaseTemplates(projectFolder) {
     if (!fs.existsSync(filePath)) return { ok: true, templates: [] };
     const result = readJsonFileResult(filePath);
     if (!result.ok) return { ok: false, error: result.error, templates: [] };
-    const templates = (Array.isArray(result.data?.templates)
-        ? result.data.templates
-        : []).map((template) => normalizePisiDatabaseTemplate(template))
+    const templates = (Array.isArray(result.data?.templates) ? result.data.templates : [])
+        .map((template) => normalizePisiDatabaseTemplate(template))
         .filter(Boolean)
         .slice(0, 200);
     return { ok: true, templates };
@@ -212,10 +196,7 @@ function savePisiDatabaseTemplate(projectFolder, template = {}) {
         clean.updatedAt = new Date().toISOString();
         const templates = current.templates.filter((item) => item.id !== clean.id);
         templates.push(clean);
-        writeFileAtomic(
-            getPisiTemplatesPath(projectFolder),
-            JSON.stringify({ version: 1, templates }, null, 2)
-        );
+        writeFileAtomic(getPisiTemplatesPath(projectFolder), JSON.stringify({ version: 1, templates }, null, 2));
         return { ok: true, template: clean, templates };
     } catch (error) {
         return { ok: false, error: error.message };
@@ -229,10 +210,7 @@ function deletePisiDatabaseTemplate(projectFolder, templateId) {
         const templates = current.templates.filter((item) => {
             return item.id !== String(templateId || '');
         });
-        writeFileAtomic(
-            getPisiTemplatesPath(projectFolder),
-            JSON.stringify({ version: 1, templates }, null, 2)
-        );
+        writeFileAtomic(getPisiTemplatesPath(projectFolder), JSON.stringify({ version: 1, templates }, null, 2));
         return { ok: true, templates };
     } catch (error) {
         return { ok: false, error: error.message };
@@ -257,14 +235,10 @@ function applyPisiDatabaseTemplate(nodePath, templateId, options = {}) {
             if (!snapshot.ok) return snapshot;
         }
         const existing = normalizePisiProperties(nodeInfo.data.properties || {});
-        nodeInfo.data.properties = options.replaceProperties === true
-            ? template.properties
-            : { ...existing, ...template.properties };
+        nodeInfo.data.properties = options.replaceProperties === true ? template.properties : { ...existing, ...template.properties };
         if (options.applyContent === true && template.content) {
             const currentContent = String(nodeInfo.data.content || '');
-            nodeInfo.data.content = options.contentMode === 'replace'
-                ? template.content
-                : `${currentContent}${currentContent ? '\n' : ''}${template.content}`;
+            nodeInfo.data.content = options.contentMode === 'replace' ? template.content : `${currentContent}${currentContent ? '\n' : ''}${template.content}`;
         }
         nodeInfo.data.pisi.nodeType = template.nodeType || nodeInfo.data.pisi.nodeType || 'note';
         nodeInfo.data.pisi.updatedAt = new Date().toISOString();
@@ -374,14 +348,9 @@ function collectPisiMapReferenceNodes(mapInfo, seenNodeIds, startIndex = 0) {
             changed = true;
         }
         const normalizedLayout = normalizePisiNodeLayout(layout, getDefaultNodeLayout(index));
-        const normalizedCustomization = normalizePisiMapNodeCustomization(
-            layout.customization
-        );
+        const normalizedCustomization = normalizePisiMapNodeCustomization(layout.customization);
         if (Object.keys(normalizedCustomization).length) {
-            if (
-                JSON.stringify(layout.customization || {}) !==
-                JSON.stringify(normalizedCustomization)
-            ) {
+            if (JSON.stringify(layout.customization || {}) !== JSON.stringify(normalizedCustomization)) {
                 layout.customization = normalizedCustomization;
                 changed = true;
             }
@@ -413,16 +382,12 @@ function detachPisiMapReference(mapPath, nodeId) {
         const mapInfo = ensurePisiFileMetadata(mapPath);
         if (!mapInfo.ok) return mapInfo;
         const id = normalizePisiId(nodeId, '.node');
-        const before = Array.isArray(mapInfo.data.map?.references)
-            ? mapInfo.data.map.references.length
-            : 0;
-        mapInfo.data.map.references = (mapInfo.data.map.references || [])
-            .filter((item) => item.id !== id);
+        const before = Array.isArray(mapInfo.data.map?.references) ? mapInfo.data.map.references.length : 0;
+        mapInfo.data.map.references = (mapInfo.data.map.references || []).filter((item) => item.id !== id);
         if (before === mapInfo.data.map.references.length) {
             return { ok: false, error: 'Map referansı bulunamadı.' };
         }
-        mapInfo.data.map.nodes = (mapInfo.data.map.nodes || [])
-            .filter((item) => item.id !== id);
+        mapInfo.data.map.nodes = (mapInfo.data.map.nodes || []).filter((item) => item.id !== id);
         mapInfo.data.pisi.updatedAt = new Date().toISOString();
         writePisiDocument(mapPath, mapInfo.data);
         return { ok: true, detached: true, nodeId: id };

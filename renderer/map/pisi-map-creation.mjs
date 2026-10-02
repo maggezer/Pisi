@@ -1,4 +1,4 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 
 function getMapWorldPointFromClient(clientX, clientY) {
     const canvas = document.getElementById('map-canvas');
@@ -56,10 +56,7 @@ async function createMapNodeBoxAtClientPoint(clientX, clientY) {
         height: Number(node.layout?.height || 92)
     };
 
-    activeMapNodes = [
-        ...activeMapNodes.filter((item) => item.id !== node.id),
-        node
-    ];
+    activeMapNodes = [...activeMapNodes.filter((item) => item.id !== node.id), node];
 
     appendMapNodeBox(node);
     await saveCurrentMapLayout();
@@ -150,7 +147,7 @@ function bindMapCreationEvents() {
     window.addEventListener('blur', hidePisiMapContextMenu);
 }
 
-registerModule("map.creation", {
+registerModule('map.creation', {
     getMapWorldPointFromClient,
     isMapBlankEventTarget,
     createMapNodeBoxAtClientPoint,

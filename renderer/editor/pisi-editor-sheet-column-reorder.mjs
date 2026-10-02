@@ -1,39 +1,21 @@
-import { registerModule } from "../core/module-registry.mjs";
-import {
-    transformPisiSheetFormulaReferences
-} from "./pisi-editor-sheet-model.mjs";
+import { registerModule } from '../core/module-registry.mjs';
+import { transformPisiSheetFormulaReferences } from './pisi-editor-sheet-model.mjs';
 
 const pisiBoundSheetColumnReorder = new WeakSet();
 let pisiSheetColumnDrag = null;
 
-function movePisiSheetField(
-    table,
-    fromIndex,
-    toIndex
-) {
+function movePisiSheetField(table, fromIndex, toIndex) {
     const database = getPisiSheetDatabase(table);
-    const view = database
-        ? getPisiSheetTableView(database)
-        : null;
+    const view = database ? getPisiSheetTableView(database) : null;
     const order = view?.fieldOrder || [];
     const from = Number(fromIndex);
     const requestedTo = Number(toIndex);
 
-    if (
-        !database ||
-        !view ||
-        !Number.isInteger(from) ||
-        !Number.isInteger(requestedTo) ||
-        from < 0 ||
-        from >= order.length
-    ) {
+    if (!database || !view || !Number.isInteger(from) || !Number.isInteger(requestedTo) || from < 0 || from >= order.length) {
         return null;
     }
 
-    const to = Math.max(
-        0,
-        Math.min(order.length - 1, requestedTo)
-    );
+    const to = Math.max(0, Math.min(order.length - 1, requestedTo));
 
     if (from === to) {
         return {
@@ -48,25 +30,17 @@ function movePisiSheetField(
     const [fieldId] = order.splice(from, 1);
     order.splice(to, 0, fieldId);
 
-    const nextIndexById = new Map(
-        order.map((id, index) => [id, index])
-    );
-    const indexMap = previousOrder.map(
-        (id) => nextIndexById.get(id)
-    );
+    const nextIndexById = new Map(order.map((id, index) => [id, index]));
+    const indexMap = previousOrder.map((id) => nextIndexById.get(id));
 
     for (const item of database.items) {
         for (const record of Object.values(item.values)) {
             if (!record?.formula) continue;
 
-            record.formula =
-                transformPisiSheetFormulaReferences(
-                    record.formula,
-                    {
-                        type: 'reorder-col',
-                        indexMap
-                    }
-                );
+            record.formula = transformPisiSheetFormulaReferences(record.formula, {
+                type: 'reorder-col',
+                indexMap
+            });
         }
     }
 
@@ -80,22 +54,13 @@ function movePisiSheetField(
     };
 }
 
-function movePisiSheetColumn(
-    table,
-    fromIndex,
-    toIndex,
-    options = {}
-) {
+function movePisiSheetColumn(table, fromIndex, toIndex, options = {}) {
     finishPisiSheetCellEdit(table, {
         commit: true,
         refocus: false
     });
 
-    const result = movePisiSheetField(
-        table,
-        fromIndex,
-        toIndex
-    );
+    const result = movePisiSheetField(table, fromIndex, toIndex);
 
     if (!result) return null;
 
@@ -104,11 +69,7 @@ function movePisiSheetColumn(
     reconcilePisiSheetSelection(table);
 
     if (options.select !== false) {
-        selectPisiSheetColumn(
-            table,
-            result.toIndex,
-            false
-        );
+        selectPisiSheetColumn(table, result.toIndex, false);
     }
 
     schedulePisiSheetEditorNotification(table);
@@ -116,22 +77,14 @@ function movePisiSheetColumn(
 }
 
 function clearPisiSheetColumnDropIndicators(table) {
-    table?.querySelectorAll(
-        '.pisi-sheet-col-drop-before, ' +
-        '.pisi-sheet-col-drop-after'
-    ).forEach((header) => {
-        header.classList.remove(
-            'pisi-sheet-col-drop-before',
-            'pisi-sheet-col-drop-after'
-        );
+    table?.querySelectorAll('.pisi-sheet-col-drop-before, ' + '.pisi-sheet-col-drop-after').forEach((header) => {
+        header.classList.remove('pisi-sheet-col-drop-before', 'pisi-sheet-col-drop-after');
     });
 }
 
 function getPisiSheetColumnDropTarget(header, event) {
     const rect = header.getBoundingClientRect();
-    const after =
-        event.clientX >=
-        rect.left + rect.width / 2;
+    const after = event.clientX >= rect.left + rect.width / 2;
 
     return {
         colIndex: Number(header.dataset.colHeader),
@@ -139,54 +92,32 @@ function getPisiSheetColumnDropTarget(header, event) {
     };
 }
 
-function getPisiSheetColumnDropIndex(
-    fromIndex,
-    targetIndex,
-    after,
-    count
-) {
-    let insertionIndex =
-        targetIndex + (after ? 1 : 0);
+function getPisiSheetColumnDropIndex(fromIndex, targetIndex, after, count) {
+    let insertionIndex = targetIndex + (after ? 1 : 0);
 
     if (fromIndex < insertionIndex) {
         insertionIndex -= 1;
     }
 
-    return Math.max(
-        0,
-        Math.min(count - 1, insertionIndex)
-    );
+    return Math.max(0, Math.min(count - 1, insertionIndex));
 }
 
 function bindPisiSheetColumnReorder(table) {
-    if (
-        !table ||
-        pisiBoundSheetColumnReorder.has(table)
-    ) {
+    if (!table || pisiBoundSheetColumnReorder.has(table)) {
         return;
     }
 
     pisiBoundSheetColumnReorder.add(table);
 
     table.addEventListener('dragstart', (event) => {
-        const label = event.target.closest(
-            '.pisi-sheet-col-label'
-        );
-        const header = label?.closest(
-            'th[data-col-header]'
-        );
+        const label = event.target.closest('.pisi-sheet-col-label');
+        const header = label?.closest('th[data-col-header]');
 
-        if (
-            !label ||
-            !header ||
-            !table.contains(header)
-        ) {
+        if (!label || !header || !table.contains(header)) {
             return;
         }
 
-        const fromIndex = Number(
-            header.dataset.colHeader
-        );
+        const fromIndex = Number(header.dataset.colHeader);
 
         if (!Number.isInteger(fromIndex)) return;
 
@@ -196,41 +127,24 @@ function bindPisiSheetColumnReorder(table) {
             fieldId: header.dataset.pisiColId || ''
         };
 
-        table.classList.add(
-            'pisi-sheet-column-dragging'
-        );
-        header.classList.add(
-            'pisi-sheet-column-drag-source'
-        );
+        table.classList.add('pisi-sheet-column-dragging');
+        header.classList.add('pisi-sheet-column-drag-source');
 
         if (event.dataTransfer) {
             event.dataTransfer.effectAllowed = 'move';
-            event.dataTransfer.setData(
-                'text/plain',
-                pisiSheetColumnDrag.fieldId
-            );
+            event.dataTransfer.setData('text/plain', pisiSheetColumnDrag.fieldId);
         }
     });
 
     table.addEventListener('dragover', (event) => {
         const drag = pisiSheetColumnDrag;
-        const header = event.target.closest(
-            'th[data-col-header]'
-        );
+        const header = event.target.closest('th[data-col-header]');
 
-        if (
-            !drag ||
-            drag.table !== table ||
-            !header ||
-            !table.contains(header)
-        ) {
+        if (!drag || drag.table !== table || !header || !table.contains(header)) {
             return;
         }
 
-        const target = getPisiSheetColumnDropTarget(
-            header,
-            event
-        );
+        const target = getPisiSheetColumnDropTarget(header, event);
 
         if (!Number.isInteger(target.colIndex)) {
             return;
@@ -243,73 +157,39 @@ function bindPisiSheetColumnReorder(table) {
         }
 
         clearPisiSheetColumnDropIndicators(table);
-        header.classList.add(
-            target.after
-                ? 'pisi-sheet-col-drop-after'
-                : 'pisi-sheet-col-drop-before'
-        );
+        header.classList.add(target.after ? 'pisi-sheet-col-drop-after' : 'pisi-sheet-col-drop-before');
     });
 
     table.addEventListener('drop', (event) => {
         const drag = pisiSheetColumnDrag;
-        const header = event.target.closest(
-            'th[data-col-header]'
-        );
+        const header = event.target.closest('th[data-col-header]');
 
-        if (
-            !drag ||
-            drag.table !== table ||
-            !header ||
-            !table.contains(header)
-        ) {
+        if (!drag || drag.table !== table || !header || !table.contains(header)) {
             return;
         }
 
-        const target = getPisiSheetColumnDropTarget(
-            header,
-            event
-        );
-        const count =
-            getPisiSheetDatabaseDimensions(table).cols;
-        const toIndex = getPisiSheetColumnDropIndex(
-            drag.fromIndex,
-            target.colIndex,
-            target.after,
-            count
-        );
+        const target = getPisiSheetColumnDropTarget(header, event);
+        const count = getPisiSheetDatabaseDimensions(table).cols;
+        const toIndex = getPisiSheetColumnDropIndex(drag.fromIndex, target.colIndex, target.after, count);
 
         event.preventDefault();
         event.stopPropagation();
 
         clearPisiSheetColumnDropIndicators(table);
         pisiSheetColumnDrag = null;
-        table.classList.remove(
-            'pisi-sheet-column-dragging'
-        );
+        table.classList.remove('pisi-sheet-column-dragging');
 
-        movePisiSheetColumn(
-            table,
-            drag.fromIndex,
-            toIndex
-        );
+        movePisiSheetColumn(table, drag.fromIndex, toIndex);
     });
 
     table.addEventListener('dragend', () => {
         clearPisiSheetColumnDropIndicators(table);
-        table.classList.remove(
-            'pisi-sheet-column-dragging'
-        );
-        table.querySelectorAll(
-            '.pisi-sheet-column-drag-source'
-        ).forEach((header) => {
-            header.classList.remove(
-                'pisi-sheet-column-drag-source'
-            );
+        table.classList.remove('pisi-sheet-column-dragging');
+        table.querySelectorAll('.pisi-sheet-column-drag-source').forEach((header) => {
+            header.classList.remove('pisi-sheet-column-drag-source');
         });
 
-        if (
-            pisiSheetColumnDrag?.table === table
-        ) {
+        if (pisiSheetColumnDrag?.table === table) {
             pisiSheetColumnDrag = null;
         }
     });
@@ -317,21 +197,29 @@ function bindPisiSheetColumnReorder(table) {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "movePisiSheetField": {
+    movePisiSheetField: {
         enumerable: true,
-        get() { return movePisiSheetField; }
+        get() {
+            return movePisiSheetField;
+        }
     },
-    "movePisiSheetColumn": {
+    movePisiSheetColumn: {
         enumerable: true,
-        get() { return movePisiSheetColumn; }
+        get() {
+            return movePisiSheetColumn;
+        }
     },
-    "bindPisiSheetColumnReorder": {
+    bindPisiSheetColumnReorder: {
         enumerable: true,
-        get() { return bindPisiSheetColumnReorder; }
+        get() {
+            return bindPisiSheetColumnReorder;
+        }
     },
-    "getPisiSheetColumnDropIndex": {
+    getPisiSheetColumnDropIndex: {
         enumerable: true,
-        get() { return getPisiSheetColumnDropIndex; }
+        get() {
+            return getPisiSheetColumnDropIndex;
+        }
     }
 });
-registerModule("editor.sheetColumnReorder", moduleApi);
+registerModule('editor.sheetColumnReorder', moduleApi);

@@ -19,7 +19,9 @@ let overlayVisibilityFrame = null;
 
 function getPisiStoredOverlayVisibility(storageKey) {
     try {
-        const value = String(localStorage.getItem(storageKey) || '').trim().toLowerCase();
+        const value = String(localStorage.getItem(storageKey) || '')
+            .trim()
+            .toLowerCase();
         if (!value) return false;
         return ['1', 'true', 'on', 'visible'].includes(value);
     } catch {
@@ -63,10 +65,7 @@ function applyPisiMindMapOverlayPreferences() {
             display[preference.stateKey] = enabled;
             changed = true;
         }
-        syncPisiOverlayButton(
-            document.getElementById(preference.buttonId),
-            enabled
-        );
+        syncPisiOverlayButton(document.getElementById(preference.buttonId), enabled);
     }
 
     if (changed) operational?.schedulePisiOperationalRender?.();
@@ -104,25 +103,17 @@ function bindPisiMindMapOverlayVisibilityHandlers() {
         }
     });
 
-    document.addEventListener(
-        'pisi:map-customization-context-changed',
-        schedulePisiMindMapOverlayPreferenceSync
-    );
+    document.addEventListener('pisi:map-customization-context-changed', schedulePisiMindMapOverlayPreferenceSync);
 }
 
 function mutationTouchesPisiMindMapOverlayControls(mutation) {
     if (mutation.type === 'attributes') {
-        return PISI_MAP_OVERLAY_PREFERENCES.some((preference) => (
-            mutation.target?.id === preference.buttonId
-        ));
+        return PISI_MAP_OVERLAY_PREFERENCES.some((preference) => mutation.target?.id === preference.buttonId);
     }
 
     return [...mutation.addedNodes, ...mutation.removedNodes].some((node) => {
         if (node?.nodeType !== Node.ELEMENT_NODE) return false;
-        return PISI_MAP_OVERLAY_PREFERENCES.some((preference) => (
-            node.id === preference.buttonId ||
-            node.querySelector?.(`#${preference.buttonId}`)
-        ));
+        return PISI_MAP_OVERLAY_PREFERENCES.some((preference) => node.id === preference.buttonId || node.querySelector?.(`#${preference.buttonId}`));
     });
 }
 
@@ -146,11 +137,7 @@ function bindPisiMindMapOverlayVisibilityDefaults() {
 }
 
 if (document.readyState === 'loading') {
-    document.addEventListener(
-        'DOMContentLoaded',
-        bindPisiMindMapOverlayVisibilityDefaults,
-        { once: true }
-    );
+    document.addEventListener('DOMContentLoaded', bindPisiMindMapOverlayVisibilityDefaults, { once: true });
 } else {
     bindPisiMindMapOverlayVisibilityDefaults();
 }

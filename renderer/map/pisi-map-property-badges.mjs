@@ -1,10 +1,6 @@
 import { registerModule } from '../core/module-registry.mjs';
-import {
-    getPisiActiveMapPropertyContext
-} from '../data/pisi-structured-views.mjs';
-import {
-    normalizePisiPropertyCollection
-} from '../data/pisi-properties-core.mjs';
+import { getPisiActiveMapPropertyContext } from '../data/pisi-structured-views.mjs';
+import { normalizePisiPropertyCollection } from '../data/pisi-properties-core.mjs';
 
 const PISI_MAP_PROPERTY_BADGES_STORAGE_KEY = 'pisi.map.propertyBadges.v1';
 const PISI_MAP_PROPERTY_BADGE_TYPES = new Set(['text', 'number', 'multiselect']);
@@ -47,22 +43,30 @@ function t(key) {
 }
 
 function normalizePisiBadgePath(value = '') {
-    const normalized = String(value || '').replace(/[\\/]+/g, '/').replace(/\/+$/g, '');
-    return window.pisiEnvironment?.platform === 'win32'
-        ? normalized.toLowerCase()
-        : normalized;
+    const normalized = String(value || '')
+        .replace(/[\\/]+/g, '/')
+        .replace(/\/+$/g, '');
+    return window.pisiEnvironment?.platform === 'win32' ? normalized.toLowerCase() : normalized;
 }
 
 function normalizePisiBadgePropertyName(value = '') {
-    return String(value || '').trim().toLocaleLowerCase('tr-TR');
+    return String(value || '')
+        .trim()
+        .toLocaleLowerCase('tr-TR');
 }
 
 function normalizePisiMapPropertyBadgeSelection(raw = {}) {
-    const name = String(raw.name || '').trim().slice(0, 160);
-    const type = String(raw.type || '').trim().toLowerCase();
+    const name = String(raw.name || '')
+        .trim()
+        .slice(0, 160);
+    const type = String(raw.type || '')
+        .trim()
+        .toLowerCase();
     if (!name || !PISI_MAP_PROPERTY_BADGE_TYPES.has(type)) return null;
     return {
-        id: String(raw.id || '').trim().slice(0, 180),
+        id: String(raw.id || '')
+            .trim()
+            .slice(0, 180),
         name,
         type
     };
@@ -112,39 +116,36 @@ function savePisiMapPropertyBadgeSelections(selections, mapPath = window.activeM
     }
     syncPisiMapPropertyBadges();
     refreshPisiPropertyBadgePreferences();
-    document.dispatchEvent(new CustomEvent('pisi:map-property-badges-changed', {
-        detail: { mapPath, selections: normalized }
-    }));
+    document.dispatchEvent(
+        new CustomEvent('pisi:map-property-badges-changed', {
+            detail: { mapPath, selections: normalized }
+        })
+    );
     return normalized;
 }
 
 function findPisiBadgeProperty(node, selection) {
     const wantedId = String(selection?.id || '').trim();
     const wantedName = normalizePisiBadgePropertyName(selection?.name);
-    return normalizePisiPropertyCollection(node?.properties).find((property) => {
-        if (!PISI_MAP_PROPERTY_BADGE_TYPES.has(property.type)) return false;
-        return (wantedId && property.id === wantedId) ||
-            normalizePisiBadgePropertyName(property.name) === wantedName;
-    }) || null;
+    return (
+        normalizePisiPropertyCollection(node?.properties).find((property) => {
+            if (!PISI_MAP_PROPERTY_BADGE_TYPES.has(property.type)) return false;
+            return (wantedId && property.id === wantedId) || normalizePisiBadgePropertyName(property.name) === wantedName;
+        }) || null
+    );
 }
 
 function getPisiBadgePropertyValues(property) {
     if (!property) return [];
     if (property.type === 'multiselect') {
-        const values = Array.isArray(property.value)
-            ? property.value
-            : String(property.value ?? '').split(',');
-        return values
-            .map((value) => String(value ?? '').trim())
-            .filter(Boolean);
+        const values = Array.isArray(property.value) ? property.value : String(property.value ?? '').split(',');
+        return values.map((value) => String(value ?? '').trim()).filter(Boolean);
     }
     if (property.type === 'number') {
         if (property.value === null || property.value === undefined || property.value === '') return [];
         return [String(property.value)];
     }
-    const value = Array.isArray(property.value)
-        ? property.value.map(String).join(', ')
-        : String(property.value ?? '').trim();
+    const value = Array.isArray(property.value) ? property.value.map(String).join(', ') : String(property.value ?? '').trim();
     return value ? [value] : [];
 }
 
@@ -185,16 +186,9 @@ function syncPisiMapPropertyBadgeForNode(box, node, selections = null) {
 
 function syncPisiMapPropertyBadges() {
     const selections = getPisiMapPropertyBadgeSelections();
-    const nodes = new Map(
-        (Array.isArray(window.activeMapNodes) ? window.activeMapNodes : [])
-            .map((node) => [String(node?.id || ''), node])
-    );
+    const nodes = new Map((Array.isArray(window.activeMapNodes) ? window.activeMapNodes : []).map((node) => [String(node?.id || ''), node]));
     document.querySelectorAll('.map-node-box[data-node-id]').forEach((box) => {
-        syncPisiMapPropertyBadgeForNode(
-            box,
-            nodes.get(String(box.dataset.nodeId || '')),
-            selections
-        );
+        syncPisiMapPropertyBadgeForNode(box, nodes.get(String(box.dataset.nodeId || '')), selections);
     });
 }
 
@@ -237,10 +231,7 @@ function renderPisiBadgeTypeMenu(menu, definitions, onChooseType) {
     const grid = document.createElement('div');
     grid.className = 'pisi-badge-picker-grid';
     for (const type of ['text', 'number', 'multiselect']) {
-        const button = makeBadgePreferenceButton(
-            getBadgeTypeLabel(type),
-            'pisi-badge-picker-option'
-        );
+        const button = makeBadgePreferenceButton(getBadgeTypeLabel(type), 'pisi-badge-picker-option');
         button.dataset.badgeType = type;
         button.addEventListener('click', () => onChooseType(type));
         grid.appendChild(button);
@@ -259,9 +250,7 @@ function renderPisiBadgePropertyMenu(menu, definitions, type, onBack, onChoose) 
     header.append(back, title);
     menu.appendChild(header);
 
-    const selectedNames = new Set(
-        getPisiMapPropertyBadgeSelections().map((item) => normalizePisiBadgePropertyName(item.name))
-    );
+    const selectedNames = new Set(getPisiMapPropertyBadgeSelections().map((item) => normalizePisiBadgePropertyName(item.name)));
     const matches = definitions.filter((definition) => definition.type === type);
     if (!matches.length) {
         const empty = document.createElement('div');
@@ -274,10 +263,7 @@ function renderPisiBadgePropertyMenu(menu, definitions, type, onBack, onChoose) 
     const list = document.createElement('div');
     list.className = 'pisi-badge-property-list';
     for (const definition of matches) {
-        const button = makeBadgePreferenceButton(
-            definition.name,
-            'pisi-badge-picker-option pisi-badge-property-option'
-        );
+        const button = makeBadgePreferenceButton(definition.name, 'pisi-badge-picker-option pisi-badge-property-option');
         const alreadySelected = selectedNames.has(normalizePisiBadgePropertyName(definition.name));
         button.disabled = alreadySelected;
         button.dataset.propertyId = definition.id;
@@ -319,10 +305,9 @@ function renderPisiSelectedBadgeList(host) {
         remove.setAttribute('aria-label', remove.title);
         remove.addEventListener('click', () => {
             savePisiMapPropertyBadgeSelections(
-                getPisiMapPropertyBadgeSelections().filter((item) => (
-                    normalizePisiBadgePropertyName(item.name) !==
-                    normalizePisiBadgePropertyName(selection.name)
-                ))
+                getPisiMapPropertyBadgeSelections().filter(
+                    (item) => normalizePisiBadgePropertyName(item.name) !== normalizePisiBadgePropertyName(selection.name)
+                )
             );
         });
         row.append(copy, remove);
@@ -371,21 +356,14 @@ function installPisiPropertyBadgePreferences() {
     add.addEventListener('click', async () => {
         if (!window.activeMapPath) return;
         const definitions = await getPisiBadgePropertyDefinitions();
-        const showTypes = () => renderPisiBadgeTypeMenu(
-            picker,
-            definitions,
-            (type) => renderPisiBadgePropertyMenu(
-                picker,
-                definitions,
-                type,
-                showTypes,
-                (definition) => {
+        const showTypes = () =>
+            renderPisiBadgeTypeMenu(picker, definitions, (type) =>
+                renderPisiBadgePropertyMenu(picker, definitions, type, showTypes, (definition) => {
                     const next = [...getPisiMapPropertyBadgeSelections(), definition];
                     savePisiMapPropertyBadgeSelections(next);
                     picker.hidden = true;
-                }
-            )
-        );
+                })
+            );
         showTypes();
         picker.hidden = false;
     });
@@ -412,9 +390,7 @@ function handlePisiBadgeNodePropertiesChanged(event) {
     const detail = event?.detail || {};
     const pathKey = normalizePisiBadgePath(detail.path);
     if (pathKey && detail.properties && Array.isArray(window.activeMapNodes)) {
-        const node = window.activeMapNodes.find((item) => (
-            normalizePisiBadgePath(item?.fullPath) === pathKey
-        ));
+        const node = window.activeMapNodes.find((item) => normalizePisiBadgePath(item?.fullPath) === pathKey);
         if (node) node.properties = detail.properties;
     }
     syncPisiMapPropertyBadges();
@@ -436,14 +412,14 @@ function bindPisiMapPropertyBadges() {
 
     if (!preferenceObserver && document.body) {
         preferenceObserver = new MutationObserver((mutations) => {
-            const preferencesAdded = mutations.some((mutation) => (
-                [...mutation.addedNodes].some((node) => (
-                    node?.nodeType === Node.ELEMENT_NODE && (
-                        node.matches?.('.pisi-preferences-page, #pisi-customize-preferences') ||
-                        node.querySelector?.('.pisi-preferences-page, #pisi-customize-preferences')
-                    )
-                ))
-            ));
+            const preferencesAdded = mutations.some((mutation) =>
+                [...mutation.addedNodes].some(
+                    (node) =>
+                        node?.nodeType === Node.ELEMENT_NODE &&
+                        (node.matches?.('.pisi-preferences-page, #pisi-customize-preferences') ||
+                            node.querySelector?.('.pisi-preferences-page, #pisi-customize-preferences'))
+                )
+            );
             if (preferencesAdded) requestAnimationFrame(installPisiPropertyBadgePreferences);
         });
         preferenceObserver.observe(document.body, { childList: true, subtree: true });

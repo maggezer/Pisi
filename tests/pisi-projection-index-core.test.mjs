@@ -7,10 +7,7 @@ import {
     createPisiRebuildableProjectionIndex,
     makePisiProjectionSourceFingerprint
 } from '../renderer/search/pisi-projection-index-core.mjs';
-import {
-    PISI_SEARCH_MEMORY_DRIVER_ID,
-    createPisiRebuildableSearchIndex
-} from '../renderer/search/pisi-search-index-adapter.mjs';
+import { PISI_SEARCH_MEMORY_DRIVER_ID, createPisiRebuildableSearchIndex } from '../renderer/search/pisi-search-index-adapter.mjs';
 import { searchPisiIndex } from '../renderer/search/pisi-search-core.mjs';
 
 test('projection fingerprint is deterministic and independent of source enumeration order', () => {
@@ -24,9 +21,9 @@ test('projection fingerprint is deterministic and independent of source enumerat
 
 test('rebuildable search projection exposes a versioned disposable manifest', () => {
     const index = createPisiRebuildableSearchIndex('search-test');
-    const snapshot = index.replaceAll([
-        { id: 'node:a', kind: 'node', title: 'Alpha', searchFields: [{ kind: 'title', value: 'Alpha' }] }
-    ], { sourceFingerprint: 'fp1:test' });
+    const snapshot = index.replaceAll([{ id: 'node:a', kind: 'node', title: 'Alpha', searchFields: [{ kind: 'title', value: 'Alpha' }] }], {
+        sourceFingerprint: 'fp1:test'
+    });
 
     assert.equal(snapshot.projection.contractVersion, PISI_PROJECTION_INDEX_CONTRACT_VERSION);
     assert.equal(snapshot.projection.schemaVersion, 1);
@@ -39,22 +36,29 @@ test('rebuildable search projection exposes a versioned disposable manifest', ()
 
 test('delta gateway upserts and removes records without changing the consumer index shape', () => {
     const index = createPisiRebuildableSearchIndex('search-test');
-    index.replaceAll([
-        { id: 'node:a', kind: 'node', title: 'Alpha', searchFields: [{ kind: 'title', value: 'Alpha' }] },
-        { id: 'task:old', kind: 'task', title: 'Old task', searchFields: [{ kind: 'task', value: 'Old task' }] }
-    ], { sourceFingerprint: 'fp1:before' });
+    index.replaceAll(
+        [
+            { id: 'node:a', kind: 'node', title: 'Alpha', searchFields: [{ kind: 'title', value: 'Alpha' }] },
+            { id: 'task:old', kind: 'task', title: 'Old task', searchFields: [{ kind: 'task', value: 'Old task' }] }
+        ],
+        { sourceFingerprint: 'fp1:before' }
+    );
 
-    const delta = index.applyDelta({
-        remove: ['task:old'],
-        upsert: [
-            { id: 'task:new', kind: 'task', title: 'New task', searchFields: [{ kind: 'task', value: 'New task' }] }
-        ]
-    }, { sourceFingerprint: 'fp1:after' });
+    const delta = index.applyDelta(
+        {
+            remove: ['task:old'],
+            upsert: [{ id: 'task:new', kind: 'task', title: 'New task', searchFields: [{ kind: 'task', value: 'New task' }] }]
+        },
+        { sourceFingerprint: 'fp1:after' }
+    );
 
     assert.equal(delta.ok, true);
     assert.ok(Array.isArray(delta.records));
     assert.ok(delta.accelerator?.postings instanceof Map);
-    assert.deepEqual(delta.records.map((record) => record.id), ['node:a', 'task:new']);
+    assert.deepEqual(
+        delta.records.map((record) => record.id),
+        ['node:a', 'task:new']
+    );
     assert.equal(delta.projection.sourceFingerprint, 'fp1:after');
     assert.equal(searchPisiIndex(delta, 'new task')[0]?.id, 'task:new');
     assert.equal(searchPisiIndex(delta, 'old task').length, 0);
@@ -83,15 +87,21 @@ test('generic projection contract owns lifecycle but not domain semantics', () =
     let records = [];
     const driver = {
         id: 'test-driver',
-        replaceAll(next) { records = [...next]; },
+        replaceAll(next) {
+            records = [...next];
+        },
         applyDelta({ upsert = [], remove = [] }) {
             const removed = new Set(remove);
             const byId = new Map(records.filter((record) => !removed.has(record.id)).map((record) => [record.id, record]));
             upsert.forEach((record) => byId.set(record.id, record));
             records = [...byId.values()];
         },
-        snapshot() { return { records: [...records], payload: 'opaque' }; },
-        clear() { records = []; }
+        snapshot() {
+            return { records: [...records], payload: 'opaque' };
+        },
+        clear() {
+            records = [];
+        }
     };
     const projection = createPisiRebuildableProjectionIndex({
         name: 'opaque-projection',

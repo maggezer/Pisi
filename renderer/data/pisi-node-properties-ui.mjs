@@ -1,14 +1,7 @@
-import { registerModule } from "../core/module-registry.mjs";
-import { getPisiSearchCurrentNodePath } from "../search/pisi-search-index.mjs";
-import {
-    PISI_NODE_PROPERTY_TYPES,
-    materializePisiDatabaseDocuments,
-    normalizePisiPropertyCollection
-} from "./pisi-properties-core.mjs";
-import {
-    getPisiNodePropertyMapContext,
-    renderPisiNodeProperties
-} from "./pisi-structured-views.mjs";
+import { registerModule } from '../core/module-registry.mjs';
+import { getPisiSearchCurrentNodePath } from '../search/pisi-search-index.mjs';
+import { PISI_NODE_PROPERTY_TYPES, materializePisiDatabaseDocuments, normalizePisiPropertyCollection } from './pisi-properties-core.mjs';
+import { getPisiNodePropertyMapContext, renderPisiNodeProperties } from './pisi-structured-views.mjs';
 
 const pisiNodePropertiesUiState = {
     bound: false,
@@ -39,9 +32,7 @@ function setPisiNodePropertiesDrawerOpen(record, open) {
     record.frame.dataset.propertiesOpen = open ? 'true' : 'false';
     record.drawer.hidden = !open;
     record.button.setAttribute('aria-expanded', open ? 'true' : 'false');
-    const label = pisiNodePropertiesTranslate(
-        open ? 'Özellikleri gizle' : 'Özellikleri göster'
-    );
+    const label = pisiNodePropertiesTranslate(open ? 'Özellikleri gizle' : 'Özellikleri göster');
     record.button.title = label;
     record.button.setAttribute('aria-label', label);
     if (!open) record.renderGeneration += 1;
@@ -73,9 +64,7 @@ async function renderPisiNodePropertiesDrawer(record) {
     } catch (error) {
         if (!record.open || generation !== record.renderGeneration) return false;
         console.error('[PISI] Node Properties drawer could not be rendered:', error);
-        record.drawer.replaceChildren(
-            makePisiNodePropertiesEmpty('Özellikler yüklenemedi.')
-        );
+        record.drawer.replaceChildren(makePisiNodePropertiesEmpty('Özellikler yüklenemedi.'));
         return false;
     } finally {
         if (generation === record.renderGeneration) {
@@ -90,9 +79,7 @@ function resolvePisiNodePropertiesDrawer(target) {
     }
     if (target?.drawer && target?.button) return target;
     const frame = target?.closest?.('.pisi-node-toolbar-frame');
-    return frame
-        ? pisiNodePropertiesUiState.drawers.get(frame.dataset.editorTarget)
-        : null;
+    return frame ? pisiNodePropertiesUiState.drawers.get(frame.dataset.editorTarget) : null;
 }
 
 async function togglePisiNodePropertiesDrawer(target) {
@@ -109,9 +96,7 @@ async function togglePisiNodePropertiesDrawer(target) {
 }
 
 function installPisiNodePropertyDrawers() {
-    const toolbars = document.querySelectorAll(
-        '.pisi-editor-toolbar[data-editor-target]'
-    );
+    const toolbars = document.querySelectorAll('.pisi-editor-toolbar[data-editor-target]');
     for (const toolbar of toolbars) {
         if (toolbar.closest('.pisi-node-toolbar-frame')) continue;
         const editorTarget = toolbar.dataset.editorTarget;
@@ -126,10 +111,7 @@ function installPisiNodePropertyDrawers() {
         drawer.id = `pisi-node-properties-drawer-${editorTarget}`;
         drawer.className = 'pisi-node-properties-drawer';
         drawer.setAttribute('role', 'region');
-        drawer.setAttribute(
-            'aria-label',
-            pisiNodePropertiesTranslate('Node özellikleri')
-        );
+        drawer.setAttribute('aria-label', pisiNodePropertiesTranslate('Node özellikleri'));
         drawer.hidden = true;
 
         const button = document.createElement('button');
@@ -221,10 +203,7 @@ function getPisiNodeSystemProperties(metadata = {}) {
 }
 
 async function getPisiNodePropertiesSnapshot(nodePath) {
-    const [documentResult, propertyContext] = await Promise.all([
-        window.pisiProject?.getPisiDocument?.(nodePath),
-        getPisiNodePropertyMapContext(nodePath)
-    ]);
+    const [documentResult, propertyContext] = await Promise.all([window.pisiProject?.getPisiDocument?.(nodePath), getPisiNodePropertyMapContext(nodePath)]);
     if (!documentResult?.ok) {
         throw new Error(documentResult?.error || 'Node okunamadı.');
     }
@@ -233,9 +212,7 @@ async function getPisiNodePropertiesSnapshot(nodePath) {
     const mapDocuments = (propertyContext.nodes || []).map((item) => ({
         ...item,
         path: item.fullPath,
-        title: item.metadata?.title ||
-            String(item.fileName || '').replace(/\.node$/i, '') ||
-            item.fullPath
+        title: item.metadata?.title || String(item.fileName || '').replace(/\.node$/i, '') || item.fullPath
     }));
     const indexedRecord = mapDocuments.find((item) => {
         return pisiNodePropertiesPathKey(item?.path) === targetKey;
@@ -248,35 +225,23 @@ async function getPisiNodePropertiesSnapshot(nodePath) {
         properties: documentResult.data?.properties || {}
     };
     const databaseDocuments = indexedRecord
-        ? mapDocuments.map((item) => (
-            pisiNodePropertiesPathKey(item?.path) === targetKey
-                ? currentRecord
-                : item
-        ))
+        ? mapDocuments.map((item) => (pisiNodePropertiesPathKey(item?.path) === targetKey ? currentRecord : item))
         : [...mapDocuments, currentRecord];
     const materialized = databaseDocuments.length
-        ? materializePisiDatabaseDocuments(databaseDocuments)
-            .find((item) => pisiNodePropertiesPathKey(item?.path) === targetKey)
+        ? materializePisiDatabaseDocuments(databaseDocuments).find((item) => pisiNodePropertiesPathKey(item?.path) === targetKey)
         : null;
 
     return {
         path: nodePath,
         title: currentRecord.title,
         systemProperties: getPisiNodeSystemProperties(currentRecord.metadata),
-        properties: normalizePisiPropertyCollection(
-            materialized?.properties || currentRecord.properties
-        )
+        properties: normalizePisiPropertyCollection(materialized?.properties || currentRecord.properties)
     };
 }
 
 function getPisiVisibleNodeProperties(snapshot = {}) {
-    return [
-        ...(snapshot.systemProperties || []),
-        ...(snapshot.properties || [])
-    ].filter((property) => {
-        return property.system !== true &&
-            property.type !== 'system' &&
-            property.type !== 'relation';
+    return [...(snapshot.systemProperties || []), ...(snapshot.properties || [])].filter((property) => {
+        return property.system !== true && property.type !== 'system' && property.type !== 'relation';
     });
 }
 
@@ -286,9 +251,7 @@ async function renderPisiNodePropertiesInfo() {
     const nodePath = getPisiSearchCurrentNodePath();
     const generation = ++pisiNodePropertiesUiState.infoGeneration;
     if (!nodePath) {
-        host.replaceChildren(
-            makePisiNodePropertiesEmpty('Özellikleri görmek için bir node aç.')
-        );
+        host.replaceChildren(makePisiNodePropertiesEmpty('Özellikleri görmek için bir node aç.'));
         return false;
     }
 
@@ -302,17 +265,14 @@ async function renderPisiNodePropertiesInfo() {
         const snapshot = await getPisiNodePropertiesSnapshot(nodePath);
         if (
             generation !== pisiNodePropertiesUiState.infoGeneration ||
-            pisiNodePropertiesPathKey(getPisiSearchCurrentNodePath()) !==
-                pisiNodePropertiesPathKey(nodePath)
+            pisiNodePropertiesPathKey(getPisiSearchCurrentNodePath()) !== pisiNodePropertiesPathKey(nodePath)
         ) {
             return false;
         }
 
         const visibleProperties = getPisiVisibleNodeProperties(snapshot);
         if (!visibleProperties.length) {
-            host.replaceChildren(
-                makePisiNodePropertiesEmpty('Bu node için özellik tanımlanmamış.')
-            );
+            host.replaceChildren(makePisiNodePropertiesEmpty('Bu node için özellik tanımlanmamış.'));
             return true;
         }
 
@@ -341,9 +301,7 @@ async function renderPisiNodePropertiesInfo() {
     } catch (error) {
         if (generation !== pisiNodePropertiesUiState.infoGeneration) return false;
         console.error('[PISI] Read-only Node Properties could not be rendered:', error);
-        host.replaceChildren(
-            makePisiNodePropertiesEmpty('Özellikler yüklenemedi.')
-        );
+        host.replaceChildren(makePisiNodePropertiesEmpty('Özellikler yüklenemedi.'));
         return false;
     } finally {
         if (generation === pisiNodePropertiesUiState.infoGeneration) {
@@ -353,13 +311,9 @@ async function renderPisiNodePropertiesInfo() {
 }
 
 function syncPisiNodePropertiesTab(detail = {}) {
-    const button = document.querySelector(
-        '.right-panel-tab[data-right-tab="properties"]'
-    );
+    const button = document.querySelector('.right-panel-tab[data-right-tab="properties"]');
     if (!button) return false;
-    const nodePath = Object.prototype.hasOwnProperty.call(detail, 'path')
-        ? detail.path
-        : getPisiSearchCurrentNodePath();
+    const nodePath = Object.prototype.hasOwnProperty.call(detail, 'path') ? detail.path : getPisiSearchCurrentNodePath();
     const enabled = Boolean(nodePath);
     button.disabled = !enabled;
     button.setAttribute('aria-disabled', enabled ? 'false' : 'true');
@@ -367,13 +321,9 @@ function syncPisiNodePropertiesTab(detail = {}) {
     if (!enabled) {
         pisiNodePropertiesUiState.infoGeneration += 1;
         const host = document.getElementById('pisi-node-properties-info');
-        host?.replaceChildren(
-            makePisiNodePropertiesEmpty('Özellikleri görmek için bir node aç.')
-        );
+        host?.replaceChildren(makePisiNodePropertiesEmpty('Özellikleri görmek için bir node aç.'));
         if (button.classList.contains('active')) {
-            document.querySelector(
-                '.right-panel-tab[data-right-tab="missions"]'
-            )?.click();
+            document.querySelector('.right-panel-tab[data-right-tab="missions"]')?.click();
         }
     } else if (button.classList.contains('active')) {
         void renderPisiNodePropertiesInfo();
@@ -389,9 +339,7 @@ function initializePisiNodePropertiesUi() {
     }
     pisiNodePropertiesUiState.bound = true;
 
-    const tabButton = document.querySelector(
-        '.right-panel-tab[data-right-tab="properties"]'
-    );
+    const tabButton = document.querySelector('.right-panel-tab[data-right-tab="properties"]');
     tabButton?.addEventListener('click', () => {
         if (!tabButton.disabled) void renderPisiNodePropertiesInfo();
     });
@@ -410,10 +358,7 @@ function initializePisiNodePropertiesUi() {
 
     document.addEventListener('pisi:node-properties-changed', (event) => {
         const activePath = getPisiSearchCurrentNodePath();
-        if (
-            pisiNodePropertiesPathKey(event.detail?.path) !==
-            pisiNodePropertiesPathKey(activePath)
-        ) {
+        if (pisiNodePropertiesPathKey(event.detail?.path) !== pisiNodePropertiesPathKey(activePath)) {
             return;
         }
         if (event.detail?.refreshEditor) {
@@ -421,9 +366,7 @@ function initializePisiNodePropertiesUi() {
                 if (record.open) void renderPisiNodePropertiesDrawer(record);
             }
         }
-        const propertiesTab = document.querySelector(
-            '.right-panel-tab[data-right-tab="properties"]'
-        );
+        const propertiesTab = document.querySelector('.right-panel-tab[data-right-tab="properties"]');
         if (propertiesTab?.classList.contains('active')) {
             void renderPisiNodePropertiesInfo();
         }

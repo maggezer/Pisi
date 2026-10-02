@@ -23,7 +23,7 @@
 
 #pisi-app-menu-button:hover,
 #pisi-app-menu-button:focus-visible,
-#pisi-app-menu-button[aria-expanded="true"] {
+#pisi-app-menu-button[aria-expanded='true'] {
     background: #333;
     outline: none;
 }
@@ -80,21 +80,21 @@
     outline: none;
 }
 
-.pisi-app-menu-item[data-pisi-app-menu-action="import"] {
+.pisi-app-menu-item[data-pisi-app-menu-action='import'] {
     margin-top: 5px;
     border-top: 1px solid #3b3b3b;
     border-radius: 0;
     padding-top: 9px;
 }
 
-.pisi-app-menu-item[data-pisi-app-menu-action="guide"] {
+.pisi-app-menu-item[data-pisi-app-menu-action='guide'] {
     margin-top: 5px;
     border-top: 1px solid #3b3b3b;
     border-radius: 0;
     padding-top: 9px;
 }
 
-.pisi-app-menu-item[data-pisi-app-menu-action="quit"] {
+.pisi-app-menu-item[data-pisi-app-menu-action='quit'] {
     margin-top: 5px;
     border-top: 1px solid #3b3b3b;
     border-radius: 0 0 5px 5px;

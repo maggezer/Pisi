@@ -10,10 +10,7 @@ const PISI_TASK_STORE_DIR = '.pisi';
 const PISI_TASK_STORE_FILE = 'tasks.json';
 const PISI_TASK_STORE_KEY = `${PISI_TASK_STORE_DIR}/${PISI_TASK_STORE_FILE}`;
 const PISI_TASK_STATUSES = new Set(['todo', 'doing', 'waiting', 'blocked', 'done']);
-const PISI_TASK_REPEATS = new Set([
-    'none', 'daily', 'weekdays', 'weekly', 'biweekly',
-    'monthly', 'after-completion'
-]);
+const PISI_TASK_REPEATS = new Set(['none', 'daily', 'weekdays', 'weekly', 'biweekly', 'monthly', 'after-completion']);
 
 function getPisiTaskStorage(projectFolder) {
     return storageLayer.getPisiProjectStorage(projectFolder);
@@ -32,20 +29,14 @@ function isPisiTaskPathInsideProject(projectFolder, targetPath) {
     const root = path.resolve(projectFolder);
     const resolved = path.resolve(targetPath);
     const relative = path.relative(root, resolved);
-    return relative === '' || (
-        relative !== '..' &&
-        !relative.startsWith(`..${path.sep}`) &&
-        !path.isAbsolute(relative)
-    );
+    return relative === '' || (relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative));
 }
 
 function normalizePisiTaskStoredPath(projectFolder, targetPath) {
     if (!targetPath) return null;
     const raw = String(targetPath).trim();
     if (!raw) return null;
-    const resolved = path.isAbsolute(raw)
-        ? path.resolve(raw)
-        : path.resolve(projectFolder, raw.replace(/\//g, path.sep));
+    const resolved = path.isAbsolute(raw) ? path.resolve(raw) : path.resolve(projectFolder, raw.replace(/\//g, path.sep));
     if (!isPisiTaskPathInsideProject(projectFolder, resolved)) {
         throw new Error('Görev kaynağı proje klasörünün dışında olamaz.');
     }
@@ -54,10 +45,7 @@ function normalizePisiTaskStoredPath(projectFolder, targetPath) {
 
 function hydratePisiTaskStoredPath(projectFolder, storedPath) {
     if (!storedPath) return null;
-    const resolved = path.resolve(
-        projectFolder,
-        String(storedPath).replace(/\//g, path.sep)
-    );
+    const resolved = path.resolve(projectFolder, String(storedPath).replace(/\//g, path.sep));
     return isPisiTaskPathInsideProject(projectFolder, resolved) ? resolved : null;
 }
 
@@ -81,9 +69,7 @@ function readPisiTaskStore(projectFolder) {
         };
     }
     if (!result.ok || !result.data || !Array.isArray(result.data.tasks)) {
-        throw new Error(
-            `Görev deposu okunamadı: ${result.error || 'Geçersiz tasks.json'}`
-        );
+        throw new Error(`Görev deposu okunamadı: ${result.error || 'Geçersiz tasks.json'}`);
     }
     return {
         version: PISI_TASK_STORE_VERSION,
@@ -119,42 +105,33 @@ function normalizePisiFirstClassTaskId(value) {
 
 function normalizePisiFirstClassTaskIso(value, allowTime = true) {
     const raw = String(value || '').trim();
-    const expression = allowTime
-        ? /^(\d{4})-(\d{2})-(\d{2})(?:T([01]\d|2[0-3]):([0-5]\d))?$/
-        : /^(\d{4})-(\d{2})-(\d{2})$/;
+    const expression = allowTime ? /^(\d{4})-(\d{2})-(\d{2})(?:T([01]\d|2[0-3]):([0-5]\d))?$/ : /^(\d{4})-(\d{2})-(\d{2})$/;
     const match = raw.match(expression);
     if (!match) return null;
-    const date = new Date(
-        Number(match[1]),
-        Number(match[2]) - 1,
-        Number(match[3]),
-        Number(match[4] || 0),
-        Number(match[5] || 0)
-    );
-    if (
-        date.getFullYear() !== Number(match[1]) ||
-        date.getMonth() !== Number(match[2]) - 1 ||
-        date.getDate() !== Number(match[3])
-    ) return null;
+    const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), Number(match[4] || 0), Number(match[5] || 0));
+    if (date.getFullYear() !== Number(match[1]) || date.getMonth() !== Number(match[2]) - 1 || date.getDate() !== Number(match[3])) return null;
     return raw;
 }
 
 function normalizePisiFirstClassTaskStatus(value, completed = false) {
     if (completed === true) return 'done';
-    const status = String(value || 'todo').trim().toLowerCase();
+    const status = String(value || 'todo')
+        .trim()
+        .toLowerCase();
     return PISI_TASK_STATUSES.has(status) ? status : 'todo';
 }
 
 function normalizePisiFirstClassTaskRepeat(value) {
-    const repeat = String(value || 'none').trim().toLowerCase();
+    const repeat = String(value || 'none')
+        .trim()
+        .toLowerCase();
     return PISI_TASK_REPEATS.has(repeat) ? repeat : 'none';
 }
 
 function normalizePisiFirstClassDependencies(value, taskId) {
-    return Array.from(new Set((Array.isArray(value) ? value : [])
-        .map((item) => String(item || '').trim())
-        .filter((item) => /^task_[A-Za-z0-9._:-]{4,180}$/.test(item))))
-        .filter((item) => item !== taskId);
+    return Array.from(
+        new Set((Array.isArray(value) ? value : []).map((item) => String(item || '').trim()).filter((item) => /^task_[A-Za-z0-9._:-]{4,180}$/.test(item)))
+    ).filter((item) => item !== taskId);
 }
 
 function normalizePisiFirstClassSource(projectFolder, source = {}, fallback = {}) {
@@ -172,57 +149,29 @@ function normalizePisiFirstClassSource(projectFolder, source = {}, fallback = {}
 function normalizePisiFirstClassTask(projectFolder, payload = {}, existing = null) {
     const now = new Date().toISOString();
     const id = existing?.id || normalizePisiFirstClassTaskId(payload.id);
-    const priority = Math.max(1, Math.min(5, Number(
-        payload.priority ?? existing?.priority ?? 3
-    ) || 3));
-    const status = normalizePisiFirstClassTaskStatus(
-        payload.status ?? existing?.status ?? 'todo',
-        payload.completed === true
-    );
-    const dueDate = normalizePisiFirstClassTaskIso(
-        payload.dueDate ?? existing?.dueDate ?? '',
-        false
-    );
-    const scheduledAt = normalizePisiFirstClassTaskIso(
-        payload.scheduledAt ?? existing?.scheduledAt ?? ''
-    );
-    const deadline = normalizePisiFirstClassTaskIso(
-        payload.deadline ?? existing?.deadline ?? ''
-    );
-    const reminderAt = normalizePisiFirstClassTaskIso(
-        payload.reminderAt ?? existing?.reminderAt ?? ''
-    );
-    const title = String(
-        payload.title ?? payload.text ?? existing?.title ?? ''
-    ).replace(/\s+/g, ' ').trim();
-    const repeat = normalizePisiFirstClassTaskRepeat(
-        payload.repeat ?? existing?.repeat ?? 'none'
-    );
-    const durationMinutes = Math.max(0, Math.min(
-        1440,
-        Number(payload.durationMinutes ?? existing?.durationMinutes ?? 0) || 0
-    ));
-    const actualMinutes = Math.max(0, Math.min(
-        100000,
-        Number(payload.actualMinutes ?? existing?.actualMinutes ?? 0) || 0
-    ));
-    const completionOffsetDays = Math.max(0, Math.min(
-        3650,
-        Number(payload.completionOffsetDays ?? existing?.completionOffsetDays ?? 0) || 0
-    ));
+    const priority = Math.max(1, Math.min(5, Number(payload.priority ?? existing?.priority ?? 3) || 3));
+    const status = normalizePisiFirstClassTaskStatus(payload.status ?? existing?.status ?? 'todo', payload.completed === true);
+    const dueDate = normalizePisiFirstClassTaskIso(payload.dueDate ?? existing?.dueDate ?? '', false);
+    const scheduledAt = normalizePisiFirstClassTaskIso(payload.scheduledAt ?? existing?.scheduledAt ?? '');
+    const deadline = normalizePisiFirstClassTaskIso(payload.deadline ?? existing?.deadline ?? '');
+    const reminderAt = normalizePisiFirstClassTaskIso(payload.reminderAt ?? existing?.reminderAt ?? '');
+    const title = String(payload.title ?? payload.text ?? existing?.title ?? '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    const repeat = normalizePisiFirstClassTaskRepeat(payload.repeat ?? existing?.repeat ?? 'none');
+    const durationMinutes = Math.max(0, Math.min(1440, Number(payload.durationMinutes ?? existing?.durationMinutes ?? 0) || 0));
+    const actualMinutes = Math.max(0, Math.min(100000, Number(payload.actualMinutes ?? existing?.actualMinutes ?? 0) || 0));
+    const completionOffsetDays = Math.max(0, Math.min(3650, Number(payload.completionOffsetDays ?? existing?.completionOffsetDays ?? 0) || 0));
     const rawOrder = Number(payload.manualOrder ?? existing?.manualOrder ?? Date.now());
     const manualOrder = Number.isFinite(rawOrder) ? rawOrder : Date.now();
-    const todoTag = String(
-        payload.todoTag ?? existing?.todoTag ?? `todo.${priority}.none`
-    ).trim().toLowerCase();
-    const reminderMode = String(
-        payload.reminderMode ?? existing?.reminderMode ?? 'none'
-    ).trim().toLowerCase() || 'none';
-    const source = normalizePisiFirstClassSource(
-        projectFolder,
-        payload.source || {},
-        existing?.source || {}
-    );
+    const todoTag = String(payload.todoTag ?? existing?.todoTag ?? `todo.${priority}.none`)
+        .trim()
+        .toLowerCase();
+    const reminderMode =
+        String(payload.reminderMode ?? existing?.reminderMode ?? 'none')
+            .trim()
+            .toLowerCase() || 'none';
+    const source = normalizePisiFirstClassSource(projectFolder, payload.source || {}, existing?.source || {});
 
     return {
         id,
@@ -238,18 +187,13 @@ function normalizePisiFirstClassTask(projectFolder, payload = {}, existing = nul
         actualMinutes,
         repeat,
         completionOffsetDays: completionOffsetDays || null,
-        dependencies: normalizePisiFirstClassDependencies(
-            payload.dependencies ?? existing?.dependencies ?? [],
-            id
-        ),
+        dependencies: normalizePisiFirstClassDependencies(payload.dependencies ?? existing?.dependencies ?? [], id),
         manualOrder,
         todoTag,
         source,
         createdAt: existing?.createdAt || payload.createdAt || now,
         updatedAt: now,
-        completedAt: status === 'done'
-            ? (payload.completedAt || existing?.completedAt || now)
-            : null
+        completedAt: status === 'done' ? payload.completedAt || existing?.completedAt || now : null
     };
 }
 
@@ -277,9 +221,7 @@ function listPisiFirstClassTasks(projectFolder) {
 function upsertPisiFirstClassTask(projectFolder, payload = {}) {
     const store = readPisiTaskStore(projectFolder);
     const requestedId = String(payload.id || '').trim();
-    const index = requestedId
-        ? store.tasks.findIndex((task) => task.id === requestedId)
-        : -1;
+    const index = requestedId ? store.tasks.findIndex((task) => task.id === requestedId) : -1;
     const existing = index >= 0 ? store.tasks[index] : null;
     const task = normalizePisiFirstClassTask(projectFolder, payload, existing);
     if (index >= 0) store.tasks[index] = task;
@@ -297,11 +239,7 @@ function updatePisiFirstClassTask(projectFolder, taskId, patch = {}) {
     const index = store.tasks.findIndex((task) => task.id === taskId);
     if (index < 0) return { ok: false, error: 'Görev bulunamadı.' };
     const current = store.tasks[index];
-    const task = normalizePisiFirstClassTask(
-        projectFolder,
-        { ...current, ...patch, id: taskId },
-        current
-    );
+    const task = normalizePisiFirstClassTask(projectFolder, { ...current, ...patch, id: taskId }, current);
     store.tasks[index] = task;
     writePisiTaskStore(projectFolder, store);
     return { ok: true, task: hydratePisiFirstClassTask(projectFolder, task) };
@@ -328,11 +266,7 @@ function syncPisiFirstClassTaskIndex(projectFolder, payload = {}) {
         if (!item || typeof item !== 'object') continue;
         const id = normalizePisiFirstClassTaskId(item.id);
         const existing = byId.get(id) || null;
-        const task = normalizePisiFirstClassTask(
-            projectFolder,
-            { ...item, id },
-            existing
-        );
+        const task = normalizePisiFirstClassTask(projectFolder, { ...item, id }, existing);
         byId.set(id, task);
         seen.add(id);
         if (existing) updated += 1;
@@ -377,11 +311,7 @@ function hashPisiTaskIdentity(value) {
 }
 
 function getPisiTaskIdForSource(nodePath, blockId, todoTag) {
-    const key = [
-        normalizePisiTaskIdentityPath(nodePath),
-        String(blockId || ''),
-        String(todoTag || '')
-    ].map(encodeURIComponent).join('::');
+    const key = [normalizePisiTaskIdentityPath(nodePath), String(blockId || ''), String(todoTag || '')].map(encodeURIComponent).join('::');
     return `task_source_${hashPisiTaskIdentity(key)}`;
 }
 
@@ -391,9 +321,7 @@ function parsePisiTaskPriority(todoTag, fallback = 3) {
 }
 
 function parsePisiTaskDueDateFromTag(todoTag) {
-    const match = String(todoTag || '').match(
-        /^todo\.[1-5]\.(\d{2})-(\d{2})-(\d{4})$/i
-    );
+    const match = String(todoTag || '').match(/^todo\.[1-5]\.(\d{2})-(\d{2})-(\d{4})$/i);
     return match ? `${match[3]}-${match[2]}-${match[1]}` : null;
 }
 
@@ -402,17 +330,10 @@ function registerQuickCapturedTask(projectFolder, payload, result) {
     if (!sourceTask?.nodePath || !sourceTask?.blockId || !sourceTask?.todoTag) {
         return result;
     }
-    const taskId = getPisiTaskIdForSource(
-        sourceTask.nodePath,
-        sourceTask.blockId,
-        sourceTask.todoTag
-    );
-    const deadline = normalizePisiFirstClassTaskIso(
-        payload?.deadline || sourceTask.deadline || ''
-    );
+    const taskId = getPisiTaskIdForSource(sourceTask.nodePath, sourceTask.blockId, sourceTask.todoTag);
+    const deadline = normalizePisiFirstClassTaskIso(payload?.deadline || sourceTask.deadline || '');
     const dueDate = normalizePisiFirstClassTaskIso(
-        payload?.dueDate || (deadline ? deadline.slice(0, 10) : '') ||
-            parsePisiTaskDueDateFromTag(sourceTask.todoTag) || '',
+        payload?.dueDate || (deadline ? deadline.slice(0, 10) : '') || parsePisiTaskDueDateFromTag(sourceTask.todoTag) || '',
         false
     );
     const stored = upsertPisiFirstClassTask(projectFolder, {
@@ -458,32 +379,25 @@ function installPisiFirstClassTaskCaptureBridge() {
 
     taskCapture.quickAddPisiTask = function firstClassQuickAdd(projectFolder, payload = {}) {
         try {
-            const operation = String(payload?.op || 'add').trim().toLowerCase();
+            const operation = String(payload?.op || 'add')
+                .trim()
+                .toLowerCase();
             if (operation === 'list') return listPisiFirstClassTasks(projectFolder);
             if (operation === 'upsert') {
                 return upsertPisiFirstClassTask(projectFolder, payload.task || payload);
             }
             if (operation === 'update') {
-                return updatePisiFirstClassTask(
-                    projectFolder,
-                    String(payload.taskId || payload.id || ''),
-                    payload.patch || payload.task || {}
-                );
+                return updatePisiFirstClassTask(projectFolder, String(payload.taskId || payload.id || ''), payload.patch || payload.task || {});
             }
             if (operation === 'delete') {
-                return deletePisiFirstClassTask(
-                    projectFolder,
-                    String(payload.taskId || payload.id || '')
-                );
+                return deletePisiFirstClassTask(projectFolder, String(payload.taskId || payload.id || ''));
             }
             if (operation === 'sync-index') {
                 return syncPisiFirstClassTaskIndex(projectFolder, payload);
             }
 
             const result = originalQuickAddPisiTask(projectFolder, payload);
-            return result?.ok
-                ? registerQuickCapturedTask(projectFolder, payload, result)
-                : result;
+            return result?.ok ? registerQuickCapturedTask(projectFolder, payload, result) : result;
         } catch (error) {
             return { ok: false, error: error.message };
         }

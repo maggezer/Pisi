@@ -74,11 +74,7 @@ test('restore captures Trash item as one atomic ancestor before moving payload o
 });
 
 test('permanent delete and empty Trash remain explicit atomic domain commands', () => {
-    for (const command of [
-        'trash.restore.v1',
-        'trash.delete-permanently.v1',
-        'trash.empty.v1'
-    ]) {
+    for (const command of ['trash.restore.v1', 'trash.delete-permanently.v1', 'trash.empty.v1']) {
         assert.match(domain, new RegExp(command.replaceAll('.', '\\.')));
     }
     assert.match(domain, /PISI_ATOMIC_DOMAIN_COMMANDS\.add\(command\)/);

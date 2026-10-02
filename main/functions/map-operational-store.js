@@ -7,36 +7,10 @@ const documentStore = modules['main.documentStore'];
 const filesystemCore = modules['main.filesystemCore'];
 
 const PISI_OPERATIONAL_MAP_VERSION = 2;
-const PISI_OPERATIONAL_SCOPE_MODES = new Set([
-    'all',
-    'active',
-    'blocked',
-    'overdue',
-    'missing-next-action',
-    'neighbors',
-    'manual'
-]);
-const PISI_OPERATIONAL_SCOPE_STRATEGIES = new Set([
-    'live',
-    'snapshot'
-]);
-const PISI_OPERATIONAL_RELATIONSHIP_TYPES = new Set([
-    'down-hub',
-    'stream',
-    'co-level'
-]);
-const PISI_OPERATIONAL_PROPERTY_OPERATORS = new Set([
-    'exists',
-    'not-empty',
-    'equals',
-    'not-equals',
-    'contains',
-    'one-of',
-    'gt',
-    'gte',
-    'lt',
-    'lte'
-]);
+const PISI_OPERATIONAL_SCOPE_MODES = new Set(['all', 'active', 'blocked', 'overdue', 'missing-next-action', 'neighbors', 'manual']);
+const PISI_OPERATIONAL_SCOPE_STRATEGIES = new Set(['live', 'snapshot']);
+const PISI_OPERATIONAL_RELATIONSHIP_TYPES = new Set(['down-hub', 'stream', 'co-level']);
+const PISI_OPERATIONAL_PROPERTY_OPERATORS = new Set(['exists', 'not-empty', 'equals', 'not-equals', 'contains', 'one-of', 'gt', 'gte', 'lt', 'lte']);
 
 function finitePisiOperationalNumber(value, fallback, min, max) {
     const number = Number(value);
@@ -45,54 +19,53 @@ function finitePisiOperationalNumber(value, fallback, min, max) {
 }
 
 function normalizePisiOperationalPropertyFilter(raw = {}) {
-    const property = String(
-        raw.property || raw.propertyId || raw.name || ''
-    ).trim().toLowerCase().slice(0, 120);
+    const property = String(raw.property || raw.propertyId || raw.name || '')
+        .trim()
+        .toLowerCase()
+        .slice(0, 120);
     if (!property) return null;
-    const operator = PISI_OPERATIONAL_PROPERTY_OPERATORS.has(String(raw.operator || ''))
-        ? String(raw.operator)
-        : 'contains';
+    const operator = PISI_OPERATIONAL_PROPERTY_OPERATORS.has(String(raw.operator || '')) ? String(raw.operator) : 'contains';
     return {
         property,
         operator,
         value: ['exists', 'not-empty'].includes(operator)
             ? ''
-            : String(raw.value ?? '').trim().slice(0, 2400)
+            : String(raw.value ?? '')
+                  .trim()
+                  .slice(0, 2400)
     };
 }
 
 function normalizePisiOperationalScope(raw = {}) {
-    const strategy = PISI_OPERATIONAL_SCOPE_STRATEGIES.has(String(raw.strategy || ''))
-        ? String(raw.strategy)
-        : 'live';
-    const mode = PISI_OPERATIONAL_SCOPE_MODES.has(String(raw.mode || ''))
-        ? String(raw.mode)
-        : 'all';
-    const relationshipTypes = Array.from(new Set(
-        (Array.isArray(raw.relationshipTypes) ? raw.relationshipTypes : [])
-            .map((value) => String(value || ''))
-            .filter((value) => PISI_OPERATIONAL_RELATIONSHIP_TYPES.has(value))
-    ));
+    const strategy = PISI_OPERATIONAL_SCOPE_STRATEGIES.has(String(raw.strategy || '')) ? String(raw.strategy) : 'live';
+    const mode = PISI_OPERATIONAL_SCOPE_MODES.has(String(raw.mode || '')) ? String(raw.mode) : 'all';
+    const relationshipTypes = Array.from(
+        new Set(
+            (Array.isArray(raw.relationshipTypes) ? raw.relationshipTypes : [])
+                .map((value) => String(value || ''))
+                .filter((value) => PISI_OPERATIONAL_RELATIONSHIP_TYPES.has(value))
+        )
+    );
     const propertyFilters = (Array.isArray(raw.propertyFilters) ? raw.propertyFilters : [])
         .map(normalizePisiOperationalPropertyFilter)
         .filter(Boolean)
         .slice(0, 20);
-    const includedNodeIds = Array.from(new Set(
-        (Array.isArray(raw.includedNodeIds) ? raw.includedNodeIds : [])
-            .map((value) => String(value || ''))
-            .filter((value) => /^node_[A-Za-z0-9_-]+$/.test(value))
-    )).slice(0, 5000);
-    const focusRootNodeId = /^node_[A-Za-z0-9_-]+$/.test(
-        String(raw.focusRootNodeId || '')
-    )
-        ? String(raw.focusRootNodeId)
-        : null;
+    const includedNodeIds = Array.from(
+        new Set(
+            (Array.isArray(raw.includedNodeIds) ? raw.includedNodeIds : [])
+                .map((value) => String(value || ''))
+                .filter((value) => /^node_[A-Za-z0-9_-]+$/.test(value))
+        )
+    ).slice(0, 5000);
+    const focusRootNodeId = /^node_[A-Za-z0-9_-]+$/.test(String(raw.focusRootNodeId || '')) ? String(raw.focusRootNodeId) : null;
     const focusDepth = Math.min(3, Math.max(1, Number(raw.focusDepth) || 1));
 
     return {
         strategy,
         mode,
-        query: String(raw.query || '').trim().slice(0, 240),
+        query: String(raw.query || '')
+            .trim()
+            .slice(0, 240),
         relationshipTypes,
         propertyFilters,
         includedNodeIds,
@@ -120,9 +93,7 @@ function normalizePisiOperationalLayoutNode(raw = {}) {
         width: finitePisiOperationalNumber(raw.width, 220, 150, 4000),
         height: finitePisiOperationalNumber(raw.height, 92, 74, 4000)
     };
-    const customization = filesystemCore.normalizePisiMapNodeCustomization(
-        raw.customization
-    );
+    const customization = filesystemCore.normalizePisiMapNodeCustomization(raw.customization);
     if (Object.keys(customization).length) node.customization = customization;
     return node;
 }
@@ -132,29 +103,26 @@ function normalizePisiOperationalCamera(raw = {}) {
         x: finitePisiOperationalNumber(raw.x, 0, -1000000, 1000000),
         y: finitePisiOperationalNumber(raw.y, 0, -1000000, 1000000),
         zoom: finitePisiOperationalNumber(raw.zoom, 1, 0.1, 3),
-        collapsedHubs: Array.from(new Set(
-            (Array.isArray(raw.collapsedHubs) ? raw.collapsedHubs : [])
-                .map((value) => String(value || ''))
-                .filter((value) => {
-                    return /^(?:node_[A-Za-z0-9_-]+)::(?:top|right|bottom|left)$/.test(value);
-                })
-        )).slice(0, 10000)
+        collapsedHubs: Array.from(
+            new Set(
+                (Array.isArray(raw.collapsedHubs) ? raw.collapsedHubs : [])
+                    .map((value) => String(value || ''))
+                    .filter((value) => {
+                        return /^(?:node_[A-Za-z0-9_-]+)::(?:top|right|bottom|left)$/.test(value);
+                    })
+            )
+        ).slice(0, 10000)
     };
 }
 
 function normalizePisiSavedOperationalLayout(raw = {}) {
-    const id = /^layout_[A-Za-z0-9_-]+$/.test(String(raw.id || ''))
-        ? String(raw.id)
-        : `layout_${crypto.randomUUID()}`;
-    const name = String(raw.name || '').trim().slice(0, 120);
+    const id = /^layout_[A-Za-z0-9_-]+$/.test(String(raw.id || '')) ? String(raw.id) : `layout_${crypto.randomUUID()}`;
+    const name = String(raw.name || '')
+        .trim()
+        .slice(0, 120);
     if (!name) return null;
-    const nodes = (Array.isArray(raw.nodes) ? raw.nodes : [])
-        .map(normalizePisiOperationalLayoutNode)
-        .filter(Boolean)
-        .slice(0, 5000);
-    const timestamp = /^\d{4}-\d{2}-\d{2}T/.test(String(raw.updatedAt || ''))
-        ? String(raw.updatedAt)
-        : new Date().toISOString();
+    const nodes = (Array.isArray(raw.nodes) ? raw.nodes : []).map(normalizePisiOperationalLayoutNode).filter(Boolean).slice(0, 5000);
+    const timestamp = /^\d{4}-\d{2}-\d{2}T/.test(String(raw.updatedAt || '')) ? String(raw.updatedAt) : new Date().toISOString();
     return {
         id,
         name,
@@ -167,14 +135,12 @@ function normalizePisiSavedOperationalLayout(raw = {}) {
 }
 
 function normalizePisiSavedOperationalScope(raw = {}) {
-    const id = /^scope_[A-Za-z0-9_-]+$/.test(String(raw.id || ''))
-        ? String(raw.id)
-        : `scope_${crypto.randomUUID()}`;
-    const name = String(raw.name || '').trim().slice(0, 120);
+    const id = /^scope_[A-Za-z0-9_-]+$/.test(String(raw.id || '')) ? String(raw.id) : `scope_${crypto.randomUUID()}`;
+    const name = String(raw.name || '')
+        .trim()
+        .slice(0, 120);
     if (!name) return null;
-    const timestamp = /^\d{4}-\d{2}-\d{2}T/.test(String(raw.updatedAt || ''))
-        ? String(raw.updatedAt)
-        : new Date().toISOString();
+    const timestamp = /^\d{4}-\d{2}-\d{2}T/.test(String(raw.updatedAt || '')) ? String(raw.updatedAt) : new Date().toISOString();
     return {
         id,
         name,
@@ -184,14 +150,8 @@ function normalizePisiSavedOperationalScope(raw = {}) {
 }
 
 function normalizePisiOperationalMapState(raw = {}) {
-    const savedLayouts = (Array.isArray(raw.savedLayouts) ? raw.savedLayouts : [])
-        .map(normalizePisiSavedOperationalLayout)
-        .filter(Boolean)
-        .slice(-20);
-    const savedScopes = (Array.isArray(raw.savedScopes) ? raw.savedScopes : [])
-        .map(normalizePisiSavedOperationalScope)
-        .filter(Boolean)
-        .slice(-40);
+    const savedLayouts = (Array.isArray(raw.savedLayouts) ? raw.savedLayouts : []).map(normalizePisiSavedOperationalLayout).filter(Boolean).slice(-20);
+    const savedScopes = (Array.isArray(raw.savedScopes) ? raw.savedScopes : []).map(normalizePisiSavedOperationalScope).filter(Boolean).slice(-40);
     return {
         version: PISI_OPERATIONAL_MAP_VERSION,
         scope: normalizePisiOperationalScope(raw.scope),

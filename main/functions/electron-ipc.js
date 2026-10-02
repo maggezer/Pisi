@@ -22,11 +22,7 @@ function startProjectWatcher(folderPath) {
 
 function folderExistsAndIsDirectory(folderPath) {
     try {
-        return Boolean(
-            folderPath &&
-            fs.existsSync(folderPath) &&
-            fs.statSync(folderPath).isDirectory()
-        );
+        return Boolean(folderPath && fs.existsSync(folderPath) && fs.statSync(folderPath).isDirectory());
     } catch {
         return false;
     }
@@ -35,13 +31,9 @@ function folderExistsAndIsDirectory(folderPath) {
 function normalizePathForCompare(targetPath) {
     if (!targetPath) return '';
 
-    const normalized = path
-        .resolve(targetPath)
-        .replace(/[\\/]+/g, '/');
+    const normalized = path.resolve(targetPath).replace(/[\\/]+/g, '/');
 
-    return process.platform === 'win32'
-        ? normalized.toLowerCase()
-        : normalized;
+    return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
 }
 
 function isSameOrInsidePath(candidatePath, parentPath) {
@@ -109,11 +101,7 @@ function assertProjectPath(inputPath, options = {}) {
     } else {
         let ancestorPath = path.dirname(resolvedPath);
 
-        while (
-            !fs.existsSync(ancestorPath) &&
-            isSameOrInsidePath(ancestorPath, projectRoot) &&
-            ancestorPath !== path.dirname(ancestorPath)
-        ) {
+        while (!fs.existsSync(ancestorPath) && isSameOrInsidePath(ancestorPath, projectRoot) && ancestorPath !== path.dirname(ancestorPath)) {
             ancestorPath = path.dirname(ancestorPath);
         }
 
@@ -187,11 +175,7 @@ function normalizeProjectLockPid(value) {
 }
 
 function isProjectLockOwnedByCurrentInstance(lockData) {
-    return Boolean(
-        lockData &&
-        lockData.instanceId === pisiInstanceId &&
-        normalizeProjectLockPid(lockData.pid) === process.pid
-    );
+    return Boolean(lockData && lockData.instanceId === pisiInstanceId && normalizeProjectLockPid(lockData.pid) === process.pid);
 }
 
 function isProjectLockHeldByAnotherProcess(lockData) {
@@ -278,9 +262,7 @@ function acquireProjectLock(folderPath) {
             let existingLock = null;
 
             try {
-                existingLock = JSON.parse(
-                    fs.readFileSync(lockPath, 'utf-8')
-                );
+                existingLock = JSON.parse(fs.readFileSync(lockPath, 'utf-8'));
             } catch {}
 
             if (isProjectLockOwnedByCurrentInstance(existingLock)) {
@@ -311,11 +293,15 @@ function acquireProjectLock(folderPath) {
             lockCreated = true;
             fs.writeFileSync(
                 descriptor,
-                JSON.stringify({
-                    pid: process.pid,
-                    instanceId: pisiInstanceId,
-                    openedAt: new Date().toISOString()
-                }, null, 2),
+                JSON.stringify(
+                    {
+                        pid: process.pid,
+                        instanceId: pisiInstanceId,
+                        openedAt: new Date().toISOString()
+                    },
+                    null,
+                    2
+                ),
                 'utf-8'
             );
             fs.fsyncSync(descriptor);
@@ -340,10 +326,7 @@ function acquireProjectLock(folderPath) {
             try {
                 removeProjectLockFile(lockPath);
             } catch (cleanupError) {
-                console.warn(
-                    '[PISI] Yarım kalan proje kilidi temizlenemedi:',
-                    cleanupError.message
-                );
+                console.warn('[PISI] Yarım kalan proje kilidi temizlenemedi:', cleanupError.message);
             }
         }
 
@@ -362,17 +345,11 @@ function tryLockProjectFolder(folderPath) {
     const realFolderPath = inspected.folderPath;
 
     try {
-        if (
-            activeProjectFolder &&
-            normalizePathForCompare(activeProjectFolder) ===
-                normalizePathForCompare(realFolderPath)
-        ) {
+        if (activeProjectFolder && normalizePathForCompare(activeProjectFolder) === normalizePathForCompare(realFolderPath)) {
             let currentLock = null;
 
             try {
-                currentLock = JSON.parse(
-                    fs.readFileSync(activeProjectLockPath, 'utf-8')
-                );
+                currentLock = JSON.parse(fs.readFileSync(activeProjectLockPath, 'utf-8'));
             } catch {}
 
             if (isProjectLockOwnedByCurrentInstance(currentLock)) {
@@ -447,9 +424,7 @@ function unlockProjectFolder() {
 
     if (activeProjectLockPath && fs.existsSync(activeProjectLockPath)) {
         try {
-            const lockData = JSON.parse(
-                fs.readFileSync(activeProjectLockPath, 'utf-8')
-            );
+            const lockData = JSON.parse(fs.readFileSync(activeProjectLockPath, 'utf-8'));
 
             if (isProjectLockOwnedByCurrentInstance(lockData)) {
                 removeProjectLockFile(activeProjectLockPath);
@@ -464,14 +439,12 @@ function unlockProjectFolder() {
 }
 
 function createWindow() {
-
     ensureWindowsDevShortcut(app, shell);
     const savedWindowState = getSavedWindowState();
     const appIcon = nativeImage.createFromPath(appIconPath);
     const hasAppIcon = !appIcon.isEmpty();
 
     mainWindow = new BrowserWindow({
-        
         width: savedWindowState.width,
         height: savedWindowState.height,
         x: savedWindowState.x,
@@ -504,22 +477,17 @@ function createWindow() {
     }
 
     if (!app.isPackaged) {
-    mainWindow.webContents.on('before-input-event', (event, input) => {
-        const key = String(input.key || '').toLowerCase();
+        mainWindow.webContents.on('before-input-event', (event, input) => {
+            const key = String(input.key || '').toLowerCase();
 
-        const isDevToolsShortcut =
-            input.type === 'keyDown' &&
-            (
-                key === 'f12' ||
-                (input.control && input.shift && key === 'i')
-            );
+            const isDevToolsShortcut = input.type === 'keyDown' && (key === 'f12' || (input.control && input.shift && key === 'i'));
 
-        if (!isDevToolsShortcut) return;
+            if (!isDevToolsShortcut) return;
 
-        event.preventDefault();
-        mainWindow.webContents.toggleDevTools();
-    });
-}
+            event.preventDefault();
+            mainWindow.webContents.toggleDevTools();
+        });
+    }
 
     Menu.setApplicationMenu(null);
 
@@ -532,9 +500,7 @@ function createWindow() {
     });
 
     mainWindow.webContents.session.setPermissionCheckHandler(() => false);
-    mainWindow.webContents.session.setPermissionRequestHandler(
-        (_webContents, _permission, callback) => callback(false)
-    );
+    mainWindow.webContents.session.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
 
     mainWindow.loadFile(path.join(PISI_APP_ROOT, 'index.html'));
 
@@ -583,89 +549,119 @@ function createWindow() {
         closeRequestTimer = setTimeout(() => {
             closeRequestInFlight = false;
             closeRequestTimer = null;
-            dialog.showMessageBox(mainWindow, {
-                type: 'warning',
-                title: translatePisiMain('PISI kapatılamadı'),
-                message: translatePisiMain('Bekleyen kayıtların tamamlandığı doğrulanamadı.'),
-                detail: translatePisiMain('Veri kaybını önlemek için pencere açık bırakıldı.')
-            }).catch(() => {});
+            dialog
+                .showMessageBox(mainWindow, {
+                    type: 'warning',
+                    title: translatePisiMain('PISI kapatılamadı'),
+                    message: translatePisiMain('Bekleyen kayıtların tamamlandığı doğrulanamadı.'),
+                    detail: translatePisiMain('Veri kaybını önlemek için pencere açık bırakıldı.')
+                })
+                .catch(() => {});
         }, 30000);
     });
 
     mainWindow.once('ready-to-show', () => {
         if (savedWindowState.isFullScreen) {
             mainWindow.setFullScreen(true);
-        }
-
-        else if (savedWindowState.isMaximized) {
+        } else if (savedWindowState.isMaximized) {
             mainWindow.maximize();
         }
 
-            mainWindow.show();
-});
+        mainWindow.show();
+    });
 }
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "startProjectWatcher": {
+    startProjectWatcher: {
         enumerable: true,
-        get() { return startProjectWatcher; }
+        get() {
+            return startProjectWatcher;
+        }
     },
-    "folderExistsAndIsDirectory": {
+    folderExistsAndIsDirectory: {
         enumerable: true,
-        get() { return folderExistsAndIsDirectory; }
+        get() {
+            return folderExistsAndIsDirectory;
+        }
     },
-    "normalizePathForCompare": {
+    normalizePathForCompare: {
         enumerable: true,
-        get() { return normalizePathForCompare; }
+        get() {
+            return normalizePathForCompare;
+        }
     },
-    "isSameOrInsidePath": {
+    isSameOrInsidePath: {
         enumerable: true,
-        get() { return isSameOrInsidePath; }
+        get() {
+            return isSameOrInsidePath;
+        }
     },
-    "assertNoSymbolicLinksBetween": {
+    assertNoSymbolicLinksBetween: {
         enumerable: true,
-        get() { return assertNoSymbolicLinksBetween; }
+        get() {
+            return assertNoSymbolicLinksBetween;
+        }
     },
-    "assertProjectPath": {
+    assertProjectPath: {
         enumerable: true,
-        get() { return assertProjectPath; }
+        get() {
+            return assertProjectPath;
+        }
     },
-    "projectOperation": {
+    projectOperation: {
         enumerable: true,
-        get() { return projectOperation; }
+        get() {
+            return projectOperation;
+        }
     },
-    "asyncProjectOperation": {
+    asyncProjectOperation: {
         enumerable: true,
-        get() { return asyncProjectOperation; }
+        get() {
+            return asyncProjectOperation;
+        }
     },
-    "hideFileOnWindows": {
+    hideFileOnWindows: {
         enumerable: true,
-        get() { return hideFileOnWindows; }
+        get() {
+            return hideFileOnWindows;
+        }
     },
-    "isProcessAlive": {
+    isProcessAlive: {
         enumerable: true,
-        get() { return isProcessAlive; }
+        get() {
+            return isProcessAlive;
+        }
     },
-    "acquireProjectLock": {
+    acquireProjectLock: {
         enumerable: true,
-        get() { return acquireProjectLock; }
+        get() {
+            return acquireProjectLock;
+        }
     },
-    "tryLockProjectFolder": {
+    tryLockProjectFolder: {
         enumerable: true,
-        get() { return tryLockProjectFolder; }
+        get() {
+            return tryLockProjectFolder;
+        }
     },
-    "lockProjectFolder": {
+    lockProjectFolder: {
         enumerable: true,
-        get() { return lockProjectFolder; }
+        get() {
+            return lockProjectFolder;
+        }
     },
-    "unlockProjectFolder": {
+    unlockProjectFolder: {
         enumerable: true,
-        get() { return unlockProjectFolder; }
+        get() {
+            return unlockProjectFolder;
+        }
     },
-    "createWindow": {
+    createWindow: {
         enumerable: true,
-        get() { return createWindow; }
+        get() {
+            return createWindow;
+        }
     }
 });
-registerMainModule("main.electronIpc", moduleApi);
+registerMainModule('main.electronIpc', moduleApi);

@@ -29,14 +29,7 @@ const {
     summarizePisiTrashManifest
 } = trashCore;
 
-const PISI_TRASH_DELETE_RETRY_CODES = new Set([
-    'EBUSY',
-    'EMFILE',
-    'ENFILE',
-    'ENOTEMPTY',
-    'EPERM',
-    'EACCES'
-]);
+const PISI_TRASH_DELETE_RETRY_CODES = new Set(['EBUSY', 'EMFILE', 'ENFILE', 'ENOTEMPTY', 'EPERM', 'EACCES']);
 
 const PISI_TRASH_DELETE_OPTIONS = Object.freeze({
     recursive: true,
@@ -71,11 +64,7 @@ function isSameOrInsidePisiTrashPath(candidatePath, parentPath) {
     const candidate = path.resolve(candidatePath);
     const parent = path.resolve(parentPath);
     const relative = path.relative(parent, candidate);
-    return relative === '' || (
-        relative !== '..' &&
-        !relative.startsWith(`..${path.sep}`) &&
-        !path.isAbsolute(relative)
-    );
+    return relative === '' || (relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative));
 }
 
 function makePisiTrashDeletePathWritable(candidatePath, rootPath) {
@@ -103,10 +92,7 @@ function removePisiTrashPathWithRetry(targetPath) {
             if (!PISI_TRASH_DELETE_RETRY_CODES.has(error?.code)) break;
 
             makePisiTrashDeletePathWritable(resolved, resolved);
-            if (
-                typeof error?.path === 'string' &&
-                isSameOrInsidePisiTrashPath(error.path, resolved)
-            ) {
+            if (typeof error?.path === 'string' && isSameOrInsidePisiTrashPath(error.path, resolved)) {
                 makePisiTrashDeletePathWritable(error.path, resolved);
                 makePisiTrashDeletePathWritable(path.dirname(error.path), resolved);
             }
@@ -157,17 +143,15 @@ function fromPisiTrashRelativePath(projectFolder, storedPath) {
 function ensurePisiTrashDirectories(projectFolder) {
     const root = getPisiTrashItemsRoot(projectFolder);
     fs.mkdirSync(root, { recursive: true });
-    try { globalThis.hideFileOnWindows?.(path.join(projectFolder, '.pisi')); } catch {}
+    try {
+        globalThis.hideFileOnWindows?.(path.join(projectFolder, '.pisi'));
+    } catch {}
     return root;
 }
 
 function writePisiTrashManifest(projectFolder, manifest) {
     const manifestPath = getPisiTrashManifestPath(projectFolder, manifest.id);
-    filesystemCore.writeFileAtomic(
-        manifestPath,
-        `${JSON.stringify(manifest, null, 2)}\n`,
-        { backup: false }
-    );
+    filesystemCore.writeFileAtomic(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, { backup: false });
     return manifestPath;
 }
 
@@ -182,11 +166,7 @@ function readPisiTrashManifest(projectFolder, trashId) {
         };
     }
     const manifest = result.data;
-    if (
-        manifest.version !== PISI_TRASH_VERSION ||
-        normalizePisiTrashId(manifest.id) !== normalizePisiTrashId(trashId) ||
-        !Array.isArray(manifest.entries)
-    ) {
+    if (manifest.version !== PISI_TRASH_VERSION || normalizePisiTrashId(manifest.id) !== normalizePisiTrashId(trashId) || !Array.isArray(manifest.entries)) {
         return { ok: false, code: 'TRASH_ITEM_INVALID', error: 'Trash manifest geçersiz.' };
     }
     return { ok: true, manifest, manifestPath };
@@ -276,9 +256,7 @@ function getPisiTrashRoots(projectFolder, targetPath) {
     if (kind === 'node' || kind === 'map') {
         primaryInfo = documentStore.ensurePisiFileMetadata(safeTarget);
         if (!primaryInfo.ok) throw new Error(primaryInfo.error || 'Pisi öğesi okunamadı.');
-        const sidecarPath = primaryInfo.metadata.sidecar
-            ? path.join(path.dirname(safeTarget), primaryInfo.metadata.sidecar)
-            : null;
+        const sidecarPath = primaryInfo.metadata.sidecar ? path.join(path.dirname(safeTarget), primaryInfo.metadata.sidecar) : null;
         if (sidecarPath && fs.existsSync(sidecarPath)) roots.push(sidecarPath);
         if (kind === 'node') {
             parentMapPath = projectOperations.findParentMapPathForNode(safeTarget, primaryInfo);
@@ -304,10 +282,9 @@ function collectPisiTrashMapReferences(projectFolder, coveredRoots, nodeIds, rel
         const info = documentStore.ensurePisiFileMetadata(filePath);
         if (!info.ok || !info.data?.map) return;
         const mapData = info.data.map;
-        const nodes = (Array.isArray(mapData.nodes) ? mapData.nodes : [])
-            .filter((node) => nodeIds.has(node?.id))
-            .map(deepClonePisiTrashValue);
-        const views = mapSemanticCore.normalizePisiRelationshipViews(mapData.relationshipViews)
+        const nodes = (Array.isArray(mapData.nodes) ? mapData.nodes : []).filter((node) => nodeIds.has(node?.id)).map(deepClonePisiTrashValue);
+        const views = mapSemanticCore
+            .normalizePisiRelationshipViews(mapData.relationshipViews)
             .filter((view) => relationshipIdSet.has(view.relationshipId))
             .map(deepClonePisiTrashValue);
         const legacyEdges = (Array.isArray(mapData.edges) ? mapData.edges : [])
@@ -316,9 +293,9 @@ function collectPisiTrashMapReferences(projectFolder, coveredRoots, nodeIds, rel
         if (!nodes.length && !views.length && !legacyEdges.length) return;
 
         references.push({ mapPath: relative, nodes, relationshipViews: views, legacyEdges });
-        mapData.nodes = (Array.isArray(mapData.nodes) ? mapData.nodes : [])
-            .filter((node) => !nodeIds.has(node?.id));
-        mapData.relationshipViews = mapSemanticCore.normalizePisiRelationshipViews(mapData.relationshipViews)
+        mapData.nodes = (Array.isArray(mapData.nodes) ? mapData.nodes : []).filter((node) => !nodeIds.has(node?.id));
+        mapData.relationshipViews = mapSemanticCore
+            .normalizePisiRelationshipViews(mapData.relationshipViews)
             .filter((view) => !relationshipIdSet.has(view.relationshipId));
         if (Array.isArray(mapData.edges)) {
             mapData.edges = mapData.edges.filter((edge) => {
@@ -334,10 +311,7 @@ function collectPisiTrashMapReferences(projectFolder, coveredRoots, nodeIds, rel
 
 function archivePisiTrashReferences(projectFolder, coveredRoots, identity) {
     const taskState = taskStore.readPisiTaskStore(projectFolder);
-    const taskSplit = splitPisiTrashTaskStore(
-        deepClonePisiTrashValue(taskState.tasks),
-        coveredRoots
-    );
+    const taskSplit = splitPisiTrashTaskStore(deepClonePisiTrashValue(taskState.tasks), coveredRoots);
     if (taskSplit.archived.length || taskSplit.dependencyRefs.length) {
         taskStore.writePisiTaskStore(projectFolder, {
             ...taskState,
@@ -346,10 +320,7 @@ function archivePisiTrashReferences(projectFolder, coveredRoots, identity) {
     }
 
     const relationshipState = relationshipStore.readPisiRelationshipStore(projectFolder);
-    const relationshipSplit = splitPisiTrashRelationships(
-        relationshipState.relationships,
-        identity.nodeIds
-    );
+    const relationshipSplit = splitPisiTrashRelationships(relationshipState.relationships, identity.nodeIds);
     if (relationshipSplit.archived.length) {
         relationshipStore.writePisiRelationshipStore(projectFolder, relationshipSplit.remaining);
     }
@@ -402,9 +373,7 @@ function movePisiPathToTrash(projectFolder, targetPath) {
             label: path.basename(target.safeTarget),
             deletedAt,
             originalTarget: toPisiTrashRelativePath(projectRoot, target.safeTarget),
-            parentMapPath: target.parentMapPath
-                ? toPisiTrashRelativePath(projectRoot, target.parentMapPath)
-                : null,
+            parentMapPath: target.parentMapPath ? toPisiTrashRelativePath(projectRoot, target.parentMapPath) : null,
             entries,
             nodeIds: Array.from(identity.nodeIds),
             mapIds: Array.from(identity.mapIds),
@@ -477,10 +446,7 @@ function preflightPisiTrashRestore(projectFolder, manifest) {
     const currentRelationships = relationshipStore.readPisiRelationshipStore(projectFolder);
     let preparedRelationships = currentRelationships.relationships;
     for (const relationship of manifest.references?.relationships || []) {
-        if (
-            !availableNodeIds.has(relationship.sourceId) ||
-            !availableNodeIds.has(relationship.targetId)
-        ) {
+        if (!availableNodeIds.has(relationship.sourceId) || !availableNodeIds.has(relationship.targetId)) {
             conflicts.push({
                 type: 'relationship-endpoint-missing',
                 id: relationship.id,
@@ -493,10 +459,7 @@ function preflightPisiTrashRestore(projectFolder, manifest) {
             conflicts.push({ type: 'relationship-id', id: relationship.id });
             continue;
         }
-        const prepared = relationshipStore.prepareSemanticRelationshipUpsert(
-            preparedRelationships,
-            relationship
-        );
+        const prepared = relationshipStore.prepareSemanticRelationshipUpsert(preparedRelationships, relationship);
         if (!prepared.ok) {
             conflicts.push({
                 type: prepared.code || 'relationship-conflict',
@@ -538,8 +501,7 @@ function restorePisiTrashMapReferences(projectFolder, references, restoredRelati
             continue;
         }
         const mapData = info.data.map;
-        const currentNodeIds = new Set((Array.isArray(mapData.nodes) ? mapData.nodes : [])
-            .map((node) => node?.id).filter(Boolean));
+        const currentNodeIds = new Set((Array.isArray(mapData.nodes) ? mapData.nodes : []).map((node) => node?.id).filter(Boolean));
         mapData.nodes = [
             ...(Array.isArray(mapData.nodes) ? mapData.nodes : []),
             ...(reference.nodes || []).filter((node) => node?.id && !currentNodeIds.has(node.id))
@@ -549,16 +511,17 @@ function restorePisiTrashMapReferences(projectFolder, references, restoredRelati
         mapData.relationshipViews = [
             ...currentViews,
             ...(reference.relationshipViews || []).filter((view) => {
-                return relationshipIds.has(view?.relationshipId) &&
-                    !currentViewIds.has(view.relationshipId);
+                return relationshipIds.has(view?.relationshipId) && !currentViewIds.has(view.relationshipId);
             })
         ];
         mapData.relationshipViewVersion = mapSemanticCore.PISI_MAP_RELATIONSHIP_VIEW_VERSION;
         if (Array.isArray(mapData.edges)) {
             const currentEdgeIds = new Set(mapData.edges.map((edge) => edge?.id).filter(Boolean));
-            mapData.edges.push(...(reference.legacyEdges || []).filter((edge) => {
-                return edge?.id && !currentEdgeIds.has(edge.id);
-            }));
+            mapData.edges.push(
+                ...(reference.legacyEdges || []).filter((edge) => {
+                    return edge?.id && !currentEdgeIds.has(edge.id);
+                })
+            );
         }
         info.data.pisi.updatedAt = new Date().toISOString();
         changes.push({ filePath: mapPath, data: info.data });
@@ -599,28 +562,17 @@ function restorePisiTrashItem(projectFolder, trashId) {
         const restoredTaskIds = new Set(restoredTasks.map((task) => task.id));
         const taskState = taskStore.readPisiTaskStore(projectRoot);
         let mergedTasks = [...taskState.tasks, ...restoredTasks];
-        mergedTasks = mergePisiTrashTaskDependencies(
-            mergedTasks,
-            manifest.references?.taskDependencyRefs || [],
-            restoredTaskIds
-        );
+        mergedTasks = mergePisiTrashTaskDependencies(mergedTasks, manifest.references?.taskDependencyRefs || [], restoredTaskIds);
         if (restoredTasks.length || (manifest.references?.taskDependencyRefs || []).length) {
             taskStore.writePisiTaskStore(projectRoot, { ...taskState, tasks: mergedTasks });
         }
 
         const restoredRelationships = manifest.references?.relationships || [];
         if (restoredRelationships.length) {
-            relationshipStore.writePisiRelationshipStore(
-                projectRoot,
-                preflight.preparedRelationships
-            );
+            relationshipStore.writePisiRelationshipStore(projectRoot, preflight.preparedRelationships);
         }
         const restoredRelationshipIds = restoredRelationships.map((item) => item.id);
-        const warnings = restorePisiTrashMapReferences(
-            projectRoot,
-            manifest.references?.mapReferences || [],
-            restoredRelationshipIds
-        );
+        const warnings = restorePisiTrashMapReferences(projectRoot, manifest.references?.mapReferences || [], restoredRelationshipIds);
 
         const cleanup = removePisiTrashPathWithRetry(itemDirectory);
         if (!cleanup.ok) {

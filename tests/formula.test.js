@@ -8,15 +8,8 @@ const test = require('node:test');
 const vm = require('node:vm');
 const { extractFunction } = require('./source-helper');
 
-const appSource = fs.readFileSync(
-    path.resolve(__dirname, '..', 'renderer/editor/pisi-editor-sheet.mjs'),
-    'utf8'
-);
-const formulaCorePath = path.resolve(
-    __dirname,
-    '..',
-    'renderer/editor/pisi-editor-sheet-formula-core.mjs'
-);
+const appSource = fs.readFileSync(path.resolve(__dirname, '..', 'renderer/editor/pisi-editor-sheet.mjs'), 'utf8');
+const formulaCorePath = path.resolve(__dirname, '..', 'renderer/editor/pisi-editor-sheet-formula-core.mjs');
 const formulaFunctionNames = [
     'getPisiSheetFormulaLocale',
     'evaluatePisiSheetFormulaResult',
@@ -31,59 +24,54 @@ const formulaFunctionNames = [
     'pisiColumnIndex'
 ];
 
-const formulaTestApiPromise = import(pathToFileURL(formulaCorePath).href)
-    .then(({ evaluatePisiFormulaExpression }) => {
-        const formulaSource = `
+const formulaTestApiPromise = import(pathToFileURL(formulaCorePath).href).then(({ evaluatePisiFormulaExpression }) => {
+    const formulaSource = `
             const PISI_SHEET_MAX_RANGE_CELLS = 80 * 26;
-            ${formulaFunctionNames
-                .map((name) => extractFunction(appSource, name))
-                .join('\n')}
+            ${formulaFunctionNames.map((name) => extractFunction(appSource, name)).join('\n')}
             globalThis.pisiFormulaTestApi = {
                 evaluatePisiSheetFormula,
                 evaluatePisiArithmeticExpression
             };
         `;
-        const formulaContext = {
-            evaluatePisiFormulaExpression,
-            getPisiSheetDatabaseDimensions(table) {
-                return {
-                    rows: table.__rowCount,
-                    cols: table.__colCount
-                };
-            },
-            getPisiSheetCellSource(table, row, col) {
-                return table.__sources.get(
-                    row + ':' + col
-                ) || {
+    const formulaContext = {
+        evaluatePisiFormulaExpression,
+        getPisiSheetDatabaseDimensions(table) {
+            return {
+                rows: table.__rowCount,
+                cols: table.__colCount
+            };
+        },
+        getPisiSheetCellSource(table, row, col) {
+            return (
+                table.__sources.get(row + ':' + col) || {
                     value: '',
                     formula: null,
                     format: {}
-                };
-            },
-            window: {
-                pisiI18n: {
-                    getLanguage() {
-                        return 'eng';
-                    }
+                }
+            );
+        },
+        window: {
+            pisiI18n: {
+                getLanguage() {
+                    return 'eng';
                 }
             }
-        };
-        vm.createContext(formulaContext);
-        vm.runInContext(formulaSource, formulaContext);
-        return formulaContext.pisiFormulaTestApi;
-    });
+        }
+    };
+    vm.createContext(formulaContext);
+    vm.runInContext(formulaSource, formulaContext);
+    return formulaContext.pisiFormulaTestApi;
+});
 
 function columnIndex(name) {
-    return String(name || '')
-        .toUpperCase()
-        .split('')
-        .reduce((sum, character) => {
-            return (
-                sum * 26 +
-                character.charCodeAt(0) -
-                64
-            );
-        }, 0) - 1;
+    return (
+        String(name || '')
+            .toUpperCase()
+            .split('')
+            .reduce((sum, character) => {
+                return sum * 26 + character.charCodeAt(0) - 64;
+            }, 0) - 1
+    );
 }
 
 function makeTable(values, rowCount = 2, colCount = 2) {
@@ -100,15 +88,15 @@ function makeTable(values, rowCount = 2, colCount = 2) {
             row + ':' + col,
             typeof raw === 'object'
                 ? {
-                    value: String(raw.text || ''),
-                    formula: raw.formula || null,
-                    format: {}
-                }
+                      value: String(raw.text || ''),
+                      formula: raw.formula || null,
+                      format: {}
+                  }
                 : {
-                    value: String(raw),
-                    formula: null,
-                    format: {}
-                }
+                      value: String(raw),
+                      formula: null,
+                      format: {}
+                  }
         );
     }
 
@@ -125,11 +113,7 @@ test('aritmetik ayrıştırıcı öncelik ve parantezleri güvenli hesaplar', as
     assert.equal(evaluatePisiArithmeticExpression('2 + 3 * 4'), 14);
     assert.equal(evaluatePisiArithmeticExpression('(2 + 3) * -4'), -20);
     assert.ok(Number.isNaN(evaluatePisiArithmeticExpression('1 / 0')));
-    assert.ok(
-        Number.isNaN(
-            evaluatePisiArithmeticExpression('globalThis.process')
-        )
-    );
+    assert.ok(Number.isNaN(evaluatePisiArithmeticExpression('globalThis.process')));
 });
 
 test('SUM, COUNT ve AVG boş hücreleri doğru ele alır', async () => {
@@ -161,21 +145,6 @@ test('döngüsel formül ve tablo dışı dev aralık hata üretir', async () =>
         B2: '4'
     });
 
-    assert.ok(
-        Number.isNaN(
-            evaluatePisiSheetFormula(
-                cyclicTable,
-                '=B1',
-                new Set(['A1'])
-            )
-        )
-    );
-    assert.ok(
-        Number.isNaN(
-            evaluatePisiSheetFormula(
-                smallTable,
-                '=SUM(A1:ZZZ999999)'
-            )
-        )
-    );
+    assert.ok(Number.isNaN(evaluatePisiSheetFormula(cyclicTable, '=B1', new Set(['A1']))));
+    assert.ok(Number.isNaN(evaluatePisiSheetFormula(smallTable, '=SUM(A1:ZZZ999999)')));
 });

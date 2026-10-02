@@ -1,31 +1,31 @@
 name: Electron E2E
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
+    push:
+        branches:
+            - main
+    pull_request:
 
 permissions:
-  contents: read
+    contents: read
 
 jobs:
-  electron-smoke-e2e:
-    runs-on: ubuntu-latest
-    timeout-minutes: 8
+    electron-smoke-e2e:
+        runs-on: ubuntu-latest
+        timeout-minutes: 8
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: npm
 
-      - name: Install full Electron dependencies
-        run: npm ci
+            - name: Install full Electron dependencies
+              run: npm ci
 
-      - name: Run Electron startup E2E
-        run: xvfb-run -a npm run test:e2e
+            - name: Run Electron startup E2E
+              run: xvfb-run -a npm run test:e2e

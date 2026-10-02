@@ -17,28 +17,20 @@ test('toolbar sections use separators and alignment controls use a fixed 2x2 gri
     assert.match(css, /pisi-toolbar-section[\s\S]*border-right: 1px solid #3a3b40/);
     assert.match(css, /pisi-toolbar-section[\s\S]*background: transparent/);
 
-    const order = [
-        'justifyLeft',
-        'justifyRight',
-        'justifyCenter',
-        'justifyFull'
-    ].map((command) => toolbar.indexOf(`data-pisi-unified-command="${command}"`));
+    const order = ['justifyLeft', 'justifyRight', 'justifyCenter', 'justifyFull'].map((command) => toolbar.indexOf(`data-pisi-unified-command="${command}"`));
     assert.ok(order.every((position) => position >= 0));
-    assert.deepEqual([...order].sort((a, b) => a - b), order);
+    assert.deepEqual(
+        [...order].sort((a, b) => a - b),
+        order
+    );
 
     const actionStack = toolbar.indexOf('pisi-toolbar-text-action-stack');
     const alignGrid = toolbar.indexOf('pisi-toolbar-align-grid');
     assert.ok(actionStack >= 0 && alignGrid > actionStack);
     assert.doesNotMatch(toolbar, /pisi-toolbar-section-reserved/);
     assert.doesNotMatch(css, /pisi-toolbar-section-reserved/);
-    assert.match(
-        css,
-        /pisi-toolbar-section:not\(\.pisi-toolbar-section-drawing\):last-child[\s\S]*border-right: 0/
-    );
-    assert.match(
-        css,
-        /pisi-unified-toolbar > \.pisi-toolbar-section-drawing[\s\S]*border-right: 1px solid #3a3b40/
-    );
+    assert.match(css, /pisi-toolbar-section:not\(\.pisi-toolbar-section-drawing\):last-child[\s\S]*border-right: 0/);
+    assert.match(css, /pisi-unified-toolbar > \.pisi-toolbar-section-drawing[\s\S]*border-right: 1px solid #3a3b40/);
     assert.match(css, /grid-template-columns: minmax\(0, 1fr\) 56px/);
     assert.match(css, /grid-template-columns: 250px 118px 226px 104px 236px 44px/);
     assert.match(toolbar, /data-pisi-excel-formula/);
@@ -81,20 +73,8 @@ test('canvas dimensions provide four-digit input space', () => {
 
 test('font selector stays left aligned and paint split buttons use fixed widths', () => {
     const css = read('styles/70-components.css');
-    assert.match(
-        css,
-        /pisi-toolbar-section-text \.pisi-toolbar-section-row-top[\s\S]*justify-content: flex-start/
-    );
-    assert.match(
-        css,
-        /pisi-toolbar-section-drawing \.pisi-toolbar-draw-grid[\s\S]*grid-template-columns: repeat\(2, 44px\)/
-    );
-    assert.match(
-        css,
-        /pisi-toolbar-section-drawing \.pisi-ribbon-split[\s\S]*grid-template-columns: 26px 18px/
-    );
-    assert.match(
-        css,
-        /pisi-toolbar-section-drawing \.pisi-ribbon-split \.pisi-ribbon-btn[\s\S]*width: 26px/
-    );
+    assert.match(css, /pisi-toolbar-section-text \.pisi-toolbar-section-row-top[\s\S]*justify-content: flex-start/);
+    assert.match(css, /pisi-toolbar-section-drawing \.pisi-toolbar-draw-grid[\s\S]*grid-template-columns: repeat\(2, 44px\)/);
+    assert.match(css, /pisi-toolbar-section-drawing \.pisi-ribbon-split[\s\S]*grid-template-columns: 26px 18px/);
+    assert.match(css, /pisi-toolbar-section-drawing \.pisi-ribbon-split \.pisi-ribbon-btn[\s\S]*width: 26px/);
 });

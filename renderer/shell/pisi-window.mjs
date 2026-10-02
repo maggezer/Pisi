@@ -1,4 +1,4 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 
 const PISI_APP_MENU_LABELS = {
     tr: {
@@ -62,9 +62,11 @@ function handlePisiAppMenuAction(action) {
     }
 
     if (action === 'import' || action === 'export') {
-        document.dispatchEvent(new CustomEvent('pisi:portability-action', {
-            detail: { action, source: 'app-menu' }
-        }));
+        document.dispatchEvent(
+            new CustomEvent('pisi:portability-action', {
+                detail: { action, source: 'app-menu' }
+            })
+        );
         return;
     }
 
@@ -122,15 +124,7 @@ function setupPisiAppMenu() {
         menu.setAttribute('role', 'menu');
         menu.hidden = true;
 
-        for (const action of [
-            'settings',
-            'preferences',
-            'import',
-            'export',
-            'guide',
-            'feedback',
-            'quit'
-        ]) {
+        for (const action of ['settings', 'preferences', 'import', 'export', 'guide', 'feedback', 'quit']) {
             const item = document.createElement('button');
             item.type = 'button';
             item.className = 'pisi-app-menu-item';
@@ -192,9 +186,7 @@ function setupWindowControls() {
     function setMaximizedIcon(isMaximized) {
         if (!maxIcon) return;
 
-        maxIcon.src = isMaximized
-            ? 'assets/win-restore.png'
-            : 'assets/win-max.png';
+        maxIcon.src = isMaximized ? 'assets/win-restore.png' : 'assets/win-max.png';
 
         maxIcon.alt = isMaximized ? 'Geri Al' : 'Büyüt';
 
@@ -242,9 +234,7 @@ function setupWindowControls() {
 
                 const saved = await flushPisiPendingSaves();
                 if (!saved) {
-                    alert(
-                        'PISI kapatılmadı: bekleyen değişikliklerden en az biri kaydedilemedi.'
-                    );
+                    alert('PISI kapatılmadı: bekleyen değişikliklerden en az biri kaydedilemedi.');
                 }
                 return saved;
             }) || null;
@@ -253,26 +243,18 @@ function setupWindowControls() {
 
 async function activatePisiRightPanelTab(button) {
     const target = button?.dataset.rightTab;
-    if (
-        !target ||
-        button.disabled ||
-        button.getAttribute('aria-disabled') === 'true'
-    ) {
+    if (!target || button.disabled || button.getAttribute('aria-disabled') === 'true') {
         return false;
     }
 
-    document.querySelectorAll('.right-panel-tab[data-right-tab]')
-        .forEach((item) => {
-            const selected = item === button;
-            item.classList.toggle('active', selected);
-            item.setAttribute('aria-selected', selected ? 'true' : 'false');
-        });
+    document.querySelectorAll('.right-panel-tab[data-right-tab]').forEach((item) => {
+        const selected = item === button;
+        item.classList.toggle('active', selected);
+        item.setAttribute('aria-selected', selected ? 'true' : 'false');
+    });
 
     document.querySelectorAll('.right-tab-page').forEach((page) => {
-        page.classList.toggle(
-            'active',
-            page.id === `right-tab-${target}`
-        );
+        page.classList.toggle('active', page.id === `right-tab-${target}`);
     });
 
     const rightPanelContent = document.getElementById('right-panel-content');
@@ -290,10 +272,7 @@ async function activatePisiRightPanelTab(button) {
         } else if (typeof window.refreshPisiTagsPanel === 'function') {
             await window.refreshPisiTagsPanel();
         }
-    } else if (
-        target === 'tags' &&
-        typeof window.refreshPisiTagsPanel === 'function'
-    ) {
+    } else if (target === 'tags' && typeof window.refreshPisiTagsPanel === 'function') {
         await window.refreshPisiTagsPanel();
     }
 
@@ -312,17 +291,12 @@ async function activatePisiRightPanelTab(button) {
 }
 
 function bindRightPanelTabs() {
-    const tabButtons = Array.from(document.querySelectorAll(
-        '.right-panel-tab[data-right-tab]'
-    ));
+    const tabButtons = Array.from(document.querySelectorAll('.right-panel-tab[data-right-tab]'));
     if (!tabButtons.length || !document.querySelector('.right-tab-page')) return;
 
     for (const button of tabButtons) {
         button.setAttribute('role', 'tab');
-        button.setAttribute(
-            'aria-selected',
-            button.classList.contains('active') ? 'true' : 'false'
-        );
+        button.setAttribute('aria-selected', button.classList.contains('active') ? 'true' : 'false');
         if (button.dataset.bound === '1') continue;
         button.dataset.bound = '1';
         button.addEventListener('click', () => {
@@ -360,21 +334,29 @@ function setupCenterFileTabs() {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "setupPisiAppMenu": {
+    setupPisiAppMenu: {
         enumerable: true,
-        get() { return setupPisiAppMenu; }
+        get() {
+            return setupPisiAppMenu;
+        }
     },
-    "setupWindowControls": {
+    setupWindowControls: {
         enumerable: true,
-        get() { return setupWindowControls; }
+        get() {
+            return setupWindowControls;
+        }
     },
-    "bindRightPanelTabs": {
+    bindRightPanelTabs: {
         enumerable: true,
-        get() { return bindRightPanelTabs; }
+        get() {
+            return bindRightPanelTabs;
+        }
     },
-    "setupCenterFileTabs": {
+    setupCenterFileTabs: {
         enumerable: true,
-        get() { return setupCenterFileTabs; }
+        get() {
+            return setupCenterFileTabs;
+        }
     }
 });
-registerModule("shell.window", moduleApi);
+registerModule('shell.window', moduleApi);

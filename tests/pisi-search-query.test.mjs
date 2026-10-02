@@ -3,11 +3,7 @@ import assert from 'node:assert/strict';
 import { performance } from 'node:perf_hooks';
 
 import { buildPisiSearchAccelerator } from '../renderer/search/pisi-search-core.mjs';
-import {
-    boundedPisiEditDistance,
-    parsePisiSearchQuery,
-    searchPisiAdvancedIndex
-} from '../renderer/search/pisi-search-query.mjs';
+import { boundedPisiEditDistance, parsePisiSearchQuery, searchPisiAdvancedIndex } from '../renderer/search/pisi-search-query.mjs';
 
 function makeIndex(records) {
     return {
@@ -32,16 +28,12 @@ function makeRecord(id, kind, title, extra = {}) {
         nodePathKey: extra.nodePathKey,
         mapPathKey: extra.mapPathKey,
         memberships: extra.memberships || [],
-        searchFields: extra.searchFields || [
-            { kind: kind === 'task' ? 'task' : 'title', value: title }
-        ]
+        searchFields: extra.searchFields || [{ kind: kind === 'task' ? 'task' : 'title', value: title }]
     };
 }
 
 test('advanced query parser separates quoted terms and navigation filters', () => {
-    const parsed = parsePisiSearchQuery(
-        'type:task map:Makale status:todo priority:5 #review "final abstract"'
-    );
+    const parsed = parsePisiSearchQuery('type:task map:Makale status:todo priority:5 #review "final abstract"');
     assert.deepEqual([...parsed.filters.kinds], ['task']);
     assert.deepEqual(parsed.filters.maps, ['makale']);
     assert.deepEqual(parsed.filters.statuses, ['todo']);
@@ -55,7 +47,10 @@ test('advanced query parser separates quoted terms and navigation filters', () =
 test('filter-only queries return matching canonical task projection', () => {
     const index = makeIndex([
         makeRecord('task:a', 'task', 'Abstract düzelt', {
-            mapTitle: 'Makale', status: 'todo', priority: 5, tag: 'todo.5.none',
+            mapTitle: 'Makale',
+            status: 'todo',
+            priority: 5,
+            tag: 'todo.5.none',
             searchFields: [
                 { kind: 'task', value: 'Abstract düzelt' },
                 { kind: 'map', value: 'Makale' },
@@ -63,51 +58,58 @@ test('filter-only queries return matching canonical task projection', () => {
             ]
         }),
         makeRecord('task:b', 'task', 'Grafik düzelt', {
-            mapTitle: 'Makale', status: 'done', priority: 5, tag: 'todo.5.none'
+            mapTitle: 'Makale',
+            status: 'done',
+            priority: 5,
+            tag: 'todo.5.none'
         }),
         makeRecord('node:a', 'node', 'Makale')
     ]);
-    const results = searchPisiAdvancedIndex(
-        index,
-        'type:task map:Makale status:todo priority:5',
-        { limit: 20 }
+    const results = searchPisiAdvancedIndex(index, 'type:task map:Makale status:todo priority:5', { limit: 20 });
+    assert.deepEqual(
+        results.map((item) => item.id),
+        ['task:a']
     );
-    assert.deepEqual(results.map((item) => item.id), ['task:a']);
 });
 
 test('tag shorthand and kind chips intersect instead of broadening results', () => {
     const index = makeIndex([
         makeRecord('task:a', 'task', 'Review task', {
-            tag: 'review', tags: ['review'],
+            tag: 'review',
+            tags: ['review'],
             searchFields: [{ kind: 'tag', value: 'review' }]
         }),
         makeRecord('tag:a', 'tag', 'Review tag', {
-            tag: 'review', tags: ['review'],
+            tag: 'review',
+            tags: ['review'],
             searchFields: [{ kind: 'tag', value: 'review' }]
         })
     ]);
     const results = searchPisiAdvancedIndex(index, '#review', {
         kinds: new Set(['task'])
     });
-    assert.deepEqual(results.map((item) => item.id), ['task:a']);
+    assert.deepEqual(
+        results.map((item) => item.id),
+        ['task:a']
+    );
 });
 
 test('bounded fuzzy matching is used only when exact trigram candidates are absent', () => {
     assert.equal(boundedPisiEditDistance('goldbach', 'goldbch', 2), 1);
-    const exactIndex = makeIndex([
-        makeRecord('exact', 'node', 'Gldbach'),
-        makeRecord('alternative', 'node', 'Goldbach')
-    ]);
+    const exactIndex = makeIndex([makeRecord('exact', 'node', 'Gldbach'), makeRecord('alternative', 'node', 'Goldbach')]);
     const exactResults = searchPisiAdvancedIndex(exactIndex, 'gldbach');
-    assert.deepEqual(exactResults.map((item) => item.id), ['exact']);
+    assert.deepEqual(
+        exactResults.map((item) => item.id),
+        ['exact']
+    );
     assert.equal(exactResults[0].fuzzyMatch, false);
 
-    const fuzzyIndex = makeIndex([
-        makeRecord('fuzzy', 'node', 'Goldbach'),
-        makeRecord('unrelated', 'node', 'Mekanik')
-    ]);
+    const fuzzyIndex = makeIndex([makeRecord('fuzzy', 'node', 'Goldbach'), makeRecord('unrelated', 'node', 'Mekanik')]);
     const fuzzyResults = searchPisiAdvancedIndex(fuzzyIndex, 'goldbch');
-    assert.deepEqual(fuzzyResults.map((item) => item.id), ['fuzzy']);
+    assert.deepEqual(
+        fuzzyResults.map((item) => item.id),
+        ['fuzzy']
+    );
     assert.equal(fuzzyResults[0].fuzzyMatch, true);
 });
 
@@ -117,9 +119,7 @@ test('project-local recency and current map context improve quick-switch ranking
         makeRecord('recent', 'node', 'Beta', { mapPathKey: 'map-b' }),
         makeRecord('current-map', 'node', 'Gamma', { mapPathKey: 'map-current' })
     ]);
-    const recentById = new Map([
-        ['recent', { lastOpened: 10_000, openCount: 8 }]
-    ]);
+    const recentById = new Map([['recent', { lastOpened: 10_000, openCount: 8 }]]);
     const results = searchPisiAdvancedIndex(index, '', {
         recentById,
         currentMapPathKey: 'map-current',
@@ -139,7 +139,10 @@ test('property fields make node metadata searchable without creating a new autho
         })
     ]);
     const results = searchPisiAdvancedIndex(index, 'wnbmov');
-    assert.deepEqual(results.map((item) => item.id), ['node:sample']);
+    assert.deepEqual(
+        results.map((item) => item.id),
+        ['node:sample']
+    );
     assert.equal(results[0].matchedField, 'property');
 });
 

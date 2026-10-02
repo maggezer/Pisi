@@ -39,5 +39,5 @@ test('proje eylem butonları tema, odak ve basma durumlarını taşır', () => {
     assert.match(foundation, /\.project-action-btn \{[\s\S]*width: 32px;[\s\S]*height: 32px/);
     assert.match(foundation, /\.project-action-btn:hover \{[\s\S]*border-color: #f39c12/);
     assert.match(foundation, /\.project-action-btn:focus-visible/);
-    assert.match(themes, /html\[data-pisi-theme="light"\] \.project-action-btn/);
+    assert.match(themes, /html\[data-pisi-theme=["\']light["\']\] \.project-action-btn/);
 });

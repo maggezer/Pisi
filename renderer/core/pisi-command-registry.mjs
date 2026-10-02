@@ -1,4 +1,4 @@
-import { registerModule } from "./module-registry.mjs";
+import { registerModule } from './module-registry.mjs';
 
 const PISI_SHORTCUT_STORAGE_KEY = 'pisi.shortcuts.v1';
 const pisiCommandRegistry = new Map();
@@ -6,7 +6,9 @@ let pisiShortcutOverrides = loadPisiShortcutOverrides();
 let pisiCommandPaletteState = null;
 
 function normalizePisiCommandId(value = '') {
-    const id = String(value || '').trim().toLowerCase();
+    const id = String(value || '')
+        .trim()
+        .toLowerCase();
     if (!/^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$/.test(id)) {
         throw new TypeError('Komut kimliği geçersiz.');
     }
@@ -15,17 +17,29 @@ function normalizePisiCommandId(value = '') {
 
 function normalizePisiShortcut(value = '') {
     const aliases = {
-        control: 'Ctrl', ctrl: 'Ctrl', meta: 'Meta', cmd: 'Meta', command: 'Meta',
-        mod: 'Mod', alt: 'Alt', option: 'Alt', shift: 'Shift', escape: 'Escape',
-        esc: 'Escape', space: 'Space', slash: '/', plus: '+'
+        control: 'Ctrl',
+        ctrl: 'Ctrl',
+        meta: 'Meta',
+        cmd: 'Meta',
+        command: 'Meta',
+        mod: 'Mod',
+        alt: 'Alt',
+        option: 'Alt',
+        shift: 'Shift',
+        escape: 'Escape',
+        esc: 'Escape',
+        space: 'Space',
+        slash: '/',
+        plus: '+'
     };
-    const pieces = String(value || '').split('+').map((item) => item.trim()).filter(Boolean);
+    const pieces = String(value || '')
+        .split('+')
+        .map((item) => item.trim())
+        .filter(Boolean);
     const modifiers = new Set();
     let key = '';
     for (const piece of pieces) {
-        const normalized = aliases[piece.toLowerCase()] || (
-            piece.length === 1 ? piece.toUpperCase() : piece
-        );
+        const normalized = aliases[piece.toLowerCase()] || (piece.length === 1 ? piece.toUpperCase() : piece);
         if (['Mod', 'Ctrl', 'Meta', 'Alt', 'Shift'].includes(normalized)) {
             modifiers.add(normalized);
         } else {
@@ -33,10 +47,7 @@ function normalizePisiShortcut(value = '') {
         }
     }
     if (!key) return '';
-    return [
-        ...['Mod', 'Ctrl', 'Meta', 'Alt', 'Shift'].filter((item) => modifiers.has(item)),
-        key
-    ].join('+');
+    return [...['Mod', 'Ctrl', 'Meta', 'Alt', 'Shift'].filter((item) => modifiers.has(item)), key].join('+');
 }
 
 function getPisiEventShortcut(event) {
@@ -65,25 +76,16 @@ function savePisiShortcutOverrides() {
 }
 
 function getPisiCommandShortcut(commandOrId) {
-    const command = typeof commandOrId === 'string'
-        ? pisiCommandRegistry.get(normalizePisiCommandId(commandOrId))
-        : commandOrId;
+    const command = typeof commandOrId === 'string' ? pisiCommandRegistry.get(normalizePisiCommandId(commandOrId)) : commandOrId;
     if (!command) return '';
     const override = pisiShortcutOverrides[command.id];
-    return override === null
-        ? ''
-        : normalizePisiShortcut(override || command.defaultShortcut || '');
+    return override === null ? '' : normalizePisiShortcut(override || command.defaultShortcut || '');
 }
 
 function formatPisiShortcutForDisplay(shortcut) {
     const normalized = normalizePisiShortcut(shortcut);
     if (!normalized) return '';
-    const platform = String(
-        globalThis.navigator?.userAgentData?.platform ||
-        globalThis.navigator?.platform ||
-        globalThis.navigator?.userAgent ||
-        ''
-    );
+    const platform = String(globalThis.navigator?.userAgentData?.platform || globalThis.navigator?.platform || globalThis.navigator?.userAgent || '');
     const modifier = /mac|iphone|ipad|ipod/i.test(platform) ? '⌘' : 'Ctrl';
     return normalized.replace(/\bMod\b/g, modifier);
 }
@@ -91,9 +93,11 @@ function formatPisiShortcutForDisplay(shortcut) {
 function findPisiShortcutConflict(shortcut, exceptId = '') {
     const normalized = normalizePisiShortcut(shortcut);
     if (!normalized) return null;
-    return Array.from(pisiCommandRegistry.values()).find((command) => {
-        return command.id !== exceptId && getPisiCommandShortcut(command) === normalized;
-    }) || null;
+    return (
+        Array.from(pisiCommandRegistry.values()).find((command) => {
+            return command.id !== exceptId && getPisiCommandShortcut(command) === normalized;
+        }) || null
+    );
 }
 
 function setPisiCommandShortcut(id, shortcut, options = {}) {
@@ -107,9 +111,11 @@ function setPisiCommandShortcut(id, shortcut, options = {}) {
     if (conflict) pisiShortcutOverrides[conflict.id] = null;
     pisiShortcutOverrides[commandId] = normalized || null;
     savePisiShortcutOverrides();
-    document.dispatchEvent(new CustomEvent('pisi:shortcuts-changed', {
-        detail: { id: commandId, shortcut: normalized, conflict: conflict?.id || null }
-    }));
+    document.dispatchEvent(
+        new CustomEvent('pisi:shortcuts-changed', {
+            detail: { id: commandId, shortcut: normalized, conflict: conflict?.id || null }
+        })
+    );
     return { ok: true, shortcut: normalized, replaced: conflict?.id || null };
 }
 
@@ -117,9 +123,11 @@ function resetPisiCommandShortcut(id) {
     const commandId = normalizePisiCommandId(id);
     delete pisiShortcutOverrides[commandId];
     savePisiShortcutOverrides();
-    document.dispatchEvent(new CustomEvent('pisi:shortcuts-changed', {
-        detail: { id: commandId, reset: true }
-    }));
+    document.dispatchEvent(
+        new CustomEvent('pisi:shortcuts-changed', {
+            detail: { id: commandId, reset: true }
+        })
+    );
     return getPisiCommandShortcut(commandId);
 }
 
@@ -138,15 +146,19 @@ function registerPisiCommand(command = {}) {
         allowInInput: command.allowInInput === true
     });
     pisiCommandRegistry.set(id, record);
-    document.dispatchEvent(new CustomEvent('pisi:commands-changed', {
-        detail: { action: 'registered', command: record }
-    }));
+    document.dispatchEvent(
+        new CustomEvent('pisi:commands-changed', {
+            detail: { action: 'registered', command: record }
+        })
+    );
     return () => {
         if (pisiCommandRegistry.get(id) !== record) return false;
         pisiCommandRegistry.delete(id);
-        document.dispatchEvent(new CustomEvent('pisi:commands-changed', {
-            detail: { action: 'unregistered', command: record }
-        }));
+        document.dispatchEvent(
+            new CustomEvent('pisi:commands-changed', {
+                detail: { action: 'unregistered', command: record }
+            })
+        );
         return true;
     };
 }
@@ -171,9 +183,11 @@ async function runPisiCommand(id, context = {}) {
             projectFolder: window.currentProjectFolder || null,
             activeNodePath: window.activeModalNode?.path || window.activeCenterNode?.path || null
         });
-        document.dispatchEvent(new CustomEvent('pisi:command-ran', {
-            detail: { id: command.id }
-        }));
+        document.dispatchEvent(
+            new CustomEvent('pisi:command-ran', {
+                detail: { id: command.id }
+            })
+        );
         return { ok: true, value };
     } catch (error) {
         console.error('[PISI] Komut çalıştırılamadı:', command.id, error);
@@ -253,12 +267,15 @@ function ensurePisiCommandPalette() {
 }
 
 function renderPisiCommandPalette(state = ensurePisiCommandPalette()) {
-    const query = String(state.input.value || '').toLocaleLowerCase('tr-TR').trim();
-    state.matches = listPisiCommands().filter((command) => {
-        if (!query) return true;
-        return `${command.label} ${command.description} ${command.category}`
-            .toLocaleLowerCase('tr-TR').includes(query);
-    }).slice(0, 60);
+    const query = String(state.input.value || '')
+        .toLocaleLowerCase('tr-TR')
+        .trim();
+    state.matches = listPisiCommands()
+        .filter((command) => {
+            if (!query) return true;
+            return `${command.label} ${command.description} ${command.category}`.toLocaleLowerCase('tr-TR').includes(query);
+        })
+        .slice(0, 60);
     state.selected = Math.min(state.selected, Math.max(0, state.matches.length - 1));
     const fragment = document.createDocumentFragment();
     state.matches.forEach((command, index) => {
@@ -269,9 +286,7 @@ function renderPisiCommandPalette(state = ensurePisiCommandPalette()) {
         const label = document.createElement('span');
         label.textContent = window.pisiT?.(command.label) || command.label;
         const shortcut = document.createElement('kbd');
-        shortcut.textContent = formatPisiShortcutForDisplay(
-            getPisiCommandShortcut(command)
-        );
+        shortcut.textContent = formatPisiShortcutForDisplay(getPisiCommandShortcut(command));
         button.append(label, shortcut);
         button.addEventListener('click', () => {
             closePisiCommandPalette();
@@ -318,9 +333,7 @@ function renderPisiShortcutSettings(container) {
         const key = document.createElement('button');
         key.type = 'button';
         key.className = 'pisi-shortcut-capture';
-        key.textContent = formatPisiShortcutForDisplay(
-            getPisiCommandShortcut(command)
-        ) || (window.pisiT?.('Atanmamış') || 'Atanmamış');
+        key.textContent = formatPisiShortcutForDisplay(getPisiCommandShortcut(command)) || window.pisiT?.('Atanmamış') || 'Atanmamış';
         key.addEventListener('click', () => {
             key.textContent = window.pisiT?.('Yeni kısayola basın…') || 'Yeni kısayola basın…';
             key.classList.add('capturing');
@@ -332,9 +345,7 @@ function renderPisiShortcutSettings(container) {
             event.stopImmediatePropagation();
             if (event.key === 'Escape') {
                 key.classList.remove('capturing');
-                key.textContent = formatPisiShortcutForDisplay(
-                    getPisiCommandShortcut(command)
-                ) || 'Atanmamış';
+                key.textContent = formatPisiShortcutForDisplay(getPisiCommandShortcut(command)) || 'Atanmamış';
                 return;
             }
             const shortcut = getPisiEventShortcut(event);
@@ -343,7 +354,7 @@ function renderPisiShortcutSettings(container) {
             if (!result.ok) {
                 const replace = confirm(
                     `${window.pisiT?.('Kısayol çakışması') || 'Kısayol çakışması'}: ${result.conflict.label}. ` +
-                    `${window.pisiT?.('Mevcut atamayı değiştir?') || 'Mevcut atamayı değiştir?'}`
+                        `${window.pisiT?.('Mevcut atamayı değiştir?') || 'Mevcut atamayı değiştir?'}`
                 );
                 if (replace) setPisiCommandShortcut(command.id, shortcut, { replace: true });
             }

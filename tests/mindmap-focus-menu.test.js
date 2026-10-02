@@ -49,5 +49,5 @@ test('Focus degree dropdown has dedicated dark and light theme styling', () => {
     assert.match(styleRoot, /111-mindmap-focus-menu\.css/);
     assert.match(css, /\.pisi-map-focus-degree-menu\s*\{/);
     assert.match(css, /\.pisi-map-focus-degree-menu\[hidden\]/);
-    assert.match(css, /html\[data-pisi-theme="light"\] body \.pisi-map-focus-degree-menu/);
+    assert.match(css, /html\[data-pisi-theme=["\']light["\']\] body \.pisi-map-focus-degree-menu/);
 });

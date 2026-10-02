@@ -7,14 +7,8 @@ const test = require('node:test');
 const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
-const dismissSource = fs.readFileSync(
-    path.join(root, 'renderer/map/pisi-map-edge-selection-dismiss.mjs'),
-    'utf8'
-);
-const bootstrapSource = fs.readFileSync(
-    path.join(root, 'renderer/bootstrap.mjs'),
-    'utf8'
-);
+const dismissSource = fs.readFileSync(path.join(root, 'renderer/map/pisi-map-edge-selection-dismiss.mjs'), 'utf8');
+const bootstrapSource = fs.readFileSync(path.join(root, 'renderer/bootstrap.mjs'), 'utf8');
 
 function loadDismissHarness() {
     let mouseDownHandler = null;
@@ -54,14 +48,16 @@ function loadDismissHarness() {
             },
             querySelectorAll(selector) {
                 assert.equal(selector, '.map-edge-group.selected');
-                return [{
-                    classList: {
-                        remove(className) {
-                            assert.equal(className, 'selected');
-                            removedSelectedClasses += 1;
+                return [
+                    {
+                        classList: {
+                            remove(className) {
+                                assert.equal(className, 'selected');
+                                removedSelectedClasses += 1;
+                            }
                         }
                     }
-                }];
+                ];
             },
             dispatchEvent(event) {
                 dispatched.push(event.type);
@@ -103,10 +99,7 @@ test('clicking canvas outside a selected map edge clears state, class and focus'
     assert.equal(harness.context.window.selectedMapEdgeId, null);
     assert.equal(harness.getRemovedCount(), 1);
     assert.equal(harness.getBlurredFocusCount(), 1);
-    assert.deepEqual(
-        harness.dispatched,
-        ['pisi:map-customization-context-changed']
-    );
+    assert.deepEqual(harness.dispatched, ['pisi:map-customization-context-changed']);
 });
 
 test('clicking the edge itself keeps the current edge selection and focus', () => {
@@ -134,12 +127,8 @@ test('edge customize controls are explicit selection-preserving targets', () => 
 });
 
 test('outside-click dismissal loads immediately after map edge interactions', () => {
-    const edgeIndex = bootstrapSource.indexOf(
-        'import "./map/pisi-map-edges.mjs";'
-    );
-    const dismissIndex = bootstrapSource.indexOf(
-        'import "./map/pisi-map-edge-selection-dismiss.mjs";'
-    );
+    const edgeIndex = bootstrapSource.search(/import\s+['"]\.\/map\/pisi-map-edges\.mjs['"];/);
+    const dismissIndex = bootstrapSource.search(/import\s+['"]\.\/map\/pisi-map-edge-selection-dismiss\.mjs['"];/);
 
     assert.ok(edgeIndex >= 0);
     assert.ok(dismissIndex > edgeIndex);

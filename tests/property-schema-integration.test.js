@@ -65,11 +65,13 @@ function resetProject({ withSchema = true } = {}) {
     if (withSchema) {
         writeJson(schemaStore.getPisiPropertySchemaPath(projectFolder), {
             version: 1,
-            definitions: [{
-                id: 'status_a',
-                name: 'Durum',
-                type: 'multiselect'
-            }],
+            definitions: [
+                {
+                    id: 'status_a',
+                    name: 'Durum',
+                    type: 'multiselect'
+                }
+            ],
             conflicts: [],
             updatedAt: '2026-01-01T00:00:00.000Z'
         });
@@ -95,16 +97,14 @@ test('missing property schema creates an empty canonical schema without migratin
 
 test('renaming a property changes the project definition and every matching node name but never its ID', () => {
     resetProject();
-    const save = mutations.savePisiNodePropertiesBySchema(
-        projectFolder,
-        path.join(projectFolder, 'A.node'),
-        [{
+    const save = mutations.savePisiNodePropertiesBySchema(projectFolder, path.join(projectFolder, 'A.node'), [
+        {
             id: 'status_a',
             name: 'Aşama',
             type: 'multiselect',
             value: ['Aktif']
-        }]
-    );
+        }
+    ]);
 
     assert.equal(save.ok, true);
     const schema = schemaStore.readPisiPropertySchema(projectFolder).schema;
@@ -120,37 +120,28 @@ test('project-wide type change fails before mutation when an existing value is i
     resetProject();
     const beforeA = fs.readFileSync(path.join(projectFolder, 'A.node'), 'utf8');
     const beforeB = fs.readFileSync(path.join(projectFolder, 'B.node'), 'utf8');
-    const beforeSchema = fs.readFileSync(
-        schemaStore.getPisiPropertySchemaPath(projectFolder),
-        'utf8'
-    );
+    const beforeSchema = fs.readFileSync(schemaStore.getPisiPropertySchemaPath(projectFolder), 'utf8');
 
-    const save = mutations.savePisiNodePropertiesBySchema(
-        projectFolder,
-        path.join(projectFolder, 'A.node'),
-        [{ id: 'status_a', name: 'Durum', type: 'number', value: 1 }]
-    );
+    const save = mutations.savePisiNodePropertiesBySchema(projectFolder, path.join(projectFolder, 'A.node'), [
+        { id: 'status_a', name: 'Durum', type: 'number', value: 1 }
+    ]);
 
     assert.equal(save.ok, false);
     assert.equal(save.code, 'PROPERTY_TYPE_CHANGE_CONFLICT');
     assert.equal(fs.readFileSync(path.join(projectFolder, 'A.node'), 'utf8'), beforeA);
     assert.equal(fs.readFileSync(path.join(projectFolder, 'B.node'), 'utf8'), beforeB);
-    assert.equal(
-        fs.readFileSync(schemaStore.getPisiPropertySchemaPath(projectFolder), 'utf8'),
-        beforeSchema
-    );
+    assert.equal(fs.readFileSync(schemaStore.getPisiPropertySchemaPath(projectFolder), 'utf8'), beforeSchema);
 });
 
 test('removing a property value from one node does not delete its project definition', () => {
     resetProject();
-    const save = mutations.savePisiNodePropertiesBySchema(
-        projectFolder,
-        path.join(projectFolder, 'A.node'),
-        []
-    );
+    const save = mutations.savePisiNodePropertiesBySchema(projectFolder, path.join(projectFolder, 'A.node'), []);
 
     assert.equal(save.ok, true);
     assert.deepEqual(readJson(path.join(projectFolder, 'A.node')).properties, {});
     const schema = schemaStore.readPisiPropertySchema(projectFolder).schema;
-    assert.equal(schema.definitions.some((item) => item.id === 'status_a'), true);
+    assert.equal(
+        schema.definitions.some((item) => item.id === 'status_a'),
+        true
+    );
 });

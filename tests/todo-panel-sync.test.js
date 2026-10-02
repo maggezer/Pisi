@@ -14,8 +14,7 @@ test('sağ panel görevleri bağımsız ve yarış korumalı indeks akışından
     assert.match(index, /async function refreshPisiMissionIndex/);
     assert.match(index, /pisiMissionIndexRefreshSequence/);
     assert.ok(
-        index.indexOf('if (pisiMissionIndexRefreshPromise') <
-        index.indexOf('const requestId = ++pisiMissionIndexRefreshSequence'),
+        index.indexOf('if (pisiMissionIndexRefreshPromise') < index.indexOf('const requestId = ++pisiMissionIndexRefreshSequence'),
         'devam eden eşitlemeye katılmak aktif isteği eski hale getirmemeli'
     );
     assert.match(index, /projectFolder !== window\.currentProjectFolder/);
@@ -52,10 +51,7 @@ test('takvim günlükleri normal klasör taramasından ayrı olarak görev indek
     const missionBuilder = index.slice(start, end);
 
     assert.match(missionBuilder, /const seenPaths = new Set\(\)/);
-    assert.match(
-        missionBuilder,
-        /collectPisiMissionNodeItemsFromFolder\([\s\S]*?seenPaths,[\s\S]*?scanState/
-    );
+    assert.match(missionBuilder, /collectPisiMissionNodeItemsFromFolder\([\s\S]*?seenPaths,[\s\S]*?scanState/);
     assert.match(missionBuilder, /await collectPisiDiaryTagNodeItems\(scanState\)/);
     assert.match(missionBuilder, /seenPaths\.has\(normalizedDiaryPath\)/);
     assert.match(missionBuilder, /nodeItems\.push\(diaryNode\)/);

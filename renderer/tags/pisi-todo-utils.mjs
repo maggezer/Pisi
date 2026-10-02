@@ -39,10 +39,7 @@ export const PISI_TODO_SORT_OPTIONS = Object.freeze([
     Object.freeze({ value: 'manual', label: 'Manuel sıra' })
 ]);
 
-export const PISI_TODO_STATUS_FILTER_OPTIONS = Object.freeze([
-    Object.freeze({ value: 'all', label: 'Tüm durumlar' }),
-    ...PISI_TODO_STATUS_OPTIONS
-]);
+export const PISI_TODO_STATUS_FILTER_OPTIONS = Object.freeze([Object.freeze({ value: 'all', label: 'Tüm durumlar' }), ...PISI_TODO_STATUS_OPTIONS]);
 
 export function getPisiTodoPriorityOption(value) {
     const priority = Number(value);
@@ -50,33 +47,38 @@ export function getPisiTodoPriorityOption(value) {
 }
 
 export function getPisiTodoStatusOption(value) {
-    const normalized = String(value || '').trim().toLowerCase();
-    return PISI_TODO_STATUS_OPTIONS.find((item) => item.value === normalized) ||
-        PISI_TODO_STATUS_OPTIONS[0];
+    const normalized = String(value || '')
+        .trim()
+        .toLowerCase();
+    return PISI_TODO_STATUS_OPTIONS.find((item) => item.value === normalized) || PISI_TODO_STATUS_OPTIONS[0];
 }
 
 export function getPisiTodoFilterOption(value) {
-    const normalized = String(value || '').trim().toLowerCase();
-    return PISI_TODO_FILTER_OPTIONS.find((item) => item.value === normalized) ||
-        PISI_TODO_FILTER_OPTIONS[0];
+    const normalized = String(value || '')
+        .trim()
+        .toLowerCase();
+    return PISI_TODO_FILTER_OPTIONS.find((item) => item.value === normalized) || PISI_TODO_FILTER_OPTIONS[0];
 }
 
 export function getPisiTodoRepeatOption(value) {
-    const normalized = String(value || '').trim().toLowerCase();
-    return PISI_TODO_REPEAT_OPTIONS.find((item) => item.value === normalized) ||
-        PISI_TODO_REPEAT_OPTIONS[0];
+    const normalized = String(value || '')
+        .trim()
+        .toLowerCase();
+    return PISI_TODO_REPEAT_OPTIONS.find((item) => item.value === normalized) || PISI_TODO_REPEAT_OPTIONS[0];
 }
 
 export function getPisiTodoSortOption(value) {
-    const normalized = String(value || '').trim().toLowerCase();
-    return PISI_TODO_SORT_OPTIONS.find((item) => item.value === normalized) ||
-        PISI_TODO_SORT_OPTIONS[0];
+    const normalized = String(value || '')
+        .trim()
+        .toLowerCase();
+    return PISI_TODO_SORT_OPTIONS.find((item) => item.value === normalized) || PISI_TODO_SORT_OPTIONS[0];
 }
 
 export function getPisiTodoStatusFilterOption(value) {
-    const normalized = String(value || '').trim().toLowerCase();
-    return PISI_TODO_STATUS_FILTER_OPTIONS.find((item) => item.value === normalized) ||
-        PISI_TODO_STATUS_FILTER_OPTIONS[0];
+    const normalized = String(value || '')
+        .trim()
+        .toLowerCase();
+    return PISI_TODO_STATUS_FILTER_OPTIONS.find((item) => item.value === normalized) || PISI_TODO_STATUS_FILTER_OPTIONS[0];
 }
 
 function normalizePisiTodoTagValue(value) {
@@ -97,11 +99,7 @@ function parsePisiTodoIsoDate(value) {
     const day = Number(match[3]);
     const date = new Date(year, month - 1, day);
 
-    if (
-        date.getFullYear() !== year ||
-        date.getMonth() !== month - 1 ||
-        date.getDate() !== day
-    ) {
+    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
         return null;
     }
 
@@ -123,7 +121,9 @@ export function formatPisiTodoTag(priorityValue, isoDate) {
 
     if (!priorityOption) return null;
 
-    const normalizedDate = String(isoDate ?? '').trim().toLowerCase();
+    const normalizedDate = String(isoDate ?? '')
+        .trim()
+        .toLowerCase();
     if (!normalizedDate || normalizedDate === 'none' || normalizedDate === 'undated') {
         return `todo.${priority}.none`;
     }
@@ -138,18 +138,11 @@ export function formatPisiTodoTag(priorityValue, isoDate) {
     return `todo.${priority}.${day}-${month}-${year}`;
 }
 
-export function getNextPisiTodoDate(
-    finishDate,
-    repeatValue,
-    now = new Date(),
-    completionOffsetDays = 1
-) {
+export function getNextPisiTodoDate(finishDate, repeatValue, now = new Date(), completionOffsetDays = 1) {
     const repeat = getPisiTodoRepeatOption(repeatValue).value;
     if (repeat === 'none') return null;
 
-    const base = finishDate instanceof Date && !Number.isNaN(finishDate.getTime())
-        ? new Date(finishDate)
-        : new Date(now);
+    const base = finishDate instanceof Date && !Number.isNaN(finishDate.getTime()) ? new Date(finishDate) : new Date(now);
     base.setHours(0, 0, 0, 0);
 
     if (repeat === 'daily') {
@@ -177,17 +170,13 @@ export function getNextPisiTodoDate(
     if (repeat === 'after-completion') {
         const completionBase = new Date(now);
         completionBase.setHours(0, 0, 0, 0);
-        completionBase.setDate(
-            completionBase.getDate() + Math.max(1, Number(completionOffsetDays) || 1)
-        );
+        completionBase.setDate(completionBase.getDate() + Math.max(1, Number(completionOffsetDays) || 1));
         return completionBase;
     }
 
     if (repeat === 'monthly') {
         const day = base.getDate();
-        const targetYear = base.getMonth() === 11
-            ? base.getFullYear() + 1
-            : base.getFullYear();
+        const targetYear = base.getMonth() === 11 ? base.getFullYear() + 1 : base.getFullYear();
         const targetMonth = (base.getMonth() + 1) % 12;
         const lastDay = new Date(targetYear, targetMonth + 1, 0).getDate();
         return new Date(targetYear, targetMonth, Math.min(day, lastDay));
@@ -239,25 +228,15 @@ export function extractPisiTodoMetadataFromBlock(block, normalizeTag = normalize
     }
 
     const normalize = (value) => String(normalizeTag(value) || '').toLowerCase();
-    const sourceElements = Array.from(
-        block.querySelectorAll('.pisi-todo-source[data-pisi-todo-for]')
-    );
+    const sourceElements = Array.from(block.querySelectorAll('.pisi-todo-source[data-pisi-todo-for]'));
 
     for (const tagEl of block.querySelectorAll('.pisi-user-tag[data-pisi-tag]')) {
-        const normalizedTag = normalize(
-            tagEl.dataset.pisiTag || tagEl.textContent || ''
-        );
+        const normalizedTag = normalize(tagEl.dataset.pisiTag || tagEl.textContent || '');
         if (!/^todo\./i.test(normalizedTag)) continue;
 
-        todoStates[normalizedTag] = String(
-            tagEl.dataset.pisiTodoStatus || 'todo'
-        ).toLowerCase();
-        todoParents[normalizedTag] = String(
-            tagEl.dataset.pisiTodoParent || ''
-        );
-        todoRepeats[normalizedTag] = getPisiTodoRepeatOption(
-            tagEl.dataset.pisiTodoRepeat
-        ).value;
+        todoStates[normalizedTag] = String(tagEl.dataset.pisiTodoStatus || 'todo').toLowerCase();
+        todoParents[normalizedTag] = String(tagEl.dataset.pisiTodoParent || '');
+        todoRepeats[normalizedTag] = getPisiTodoRepeatOption(tagEl.dataset.pisiTodoRepeat).value;
 
         const rawOrder = Number(tagEl.dataset.pisiTodoOrder);
         if (Number.isFinite(rawOrder)) {
@@ -290,9 +269,7 @@ export function extractPisiTodoMetadataFromBlock(block, normalizeTag = normalize
 
 export function parsePisiTodoTagValue(tag, now = new Date()) {
     const normalized = normalizePisiTodoTagValue(tag);
-    const match = normalized.match(
-        /^todo\.([1-9])\.(?:(\d{2})-(\d{2})-(\d{2}|\d{4})|none)$/
-    );
+    const match = normalized.match(/^todo\.([1-9])\.(?:(\d{2})-(\d{2})-(\d{2}|\d{4})|none)$/);
 
     if (!match) return null;
 
@@ -304,16 +281,10 @@ export function parsePisiTodoTagValue(tag, now = new Date()) {
     if (match[2]) {
         const day = Number(match[2]);
         const month = Number(match[3]);
-        const year = match[4].length === 2
-            ? 2000 + Number(match[4])
-            : Number(match[4]);
+        const year = match[4].length === 2 ? 2000 + Number(match[4]) : Number(match[4]);
         finishDate = new Date(year, month - 1, day);
 
-        if (
-            finishDate.getFullYear() !== year ||
-            finishDate.getMonth() !== month - 1 ||
-            finishDate.getDate() !== day
-        ) {
+        if (finishDate.getFullYear() !== year || finishDate.getMonth() !== month - 1 || finishDate.getDate() !== day) {
             return null;
         }
 
@@ -322,9 +293,7 @@ export function parsePisiTodoTagValue(tag, now = new Date()) {
 
     const today = new Date(now);
     today.setHours(0, 0, 0, 0);
-    const daysLeft = finishDate
-        ? Math.floor((finishDate.getTime() - today.getTime()) / 86400000)
-        : null;
+    const daysLeft = finishDate ? Math.floor((finishDate.getTime() - today.getTime()) / 86400000) : null;
 
     return {
         tag: normalized,

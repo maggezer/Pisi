@@ -1,8 +1,5 @@
 import { registerModule } from '../core/module-registry.mjs';
-import {
-    getPisiRelationshipLabelsPreference,
-    setPisiRelationshipLabelsPreference
-} from './pisi-map-operational-render.mjs';
+import { getPisiRelationshipLabelsPreference, setPisiRelationshipLabelsPreference } from './pisi-map-operational-render.mjs';
 
 let labelsPreferenceObserver = null;
 
@@ -64,18 +61,18 @@ function installLabelsPreferenceRow() {
     button.setAttribute('aria-label', 'Labels');
     syncPreferenceButton(button);
     button.addEventListener('click', () => {
-        const enabled = setPisiRelationshipLabelsPreference(
-            !getPisiRelationshipLabelsPreference()
-        );
+        const enabled = setPisiRelationshipLabelsPreference(!getPisiRelationshipLabelsPreference());
         const operational = window.Pisi?.modules?.['map.operational'];
         if (operational?.operationalState?.display) {
             operational.operationalState.display.showRelationshipLabels = enabled;
         }
         syncPreferenceButton(button);
         operational?.schedulePisiOperationalRender?.();
-        document.dispatchEvent(new CustomEvent('pisi:relationship-labels-preference-changed', {
-            detail: { enabled }
-        }));
+        document.dispatchEvent(
+            new CustomEvent('pisi:relationship-labels-preference-changed', {
+                detail: { enabled }
+            })
+        );
     });
 
     row.append(label, button);
@@ -100,10 +97,11 @@ function bindLabelsPreference() {
         labelsPreferenceObserver = new MutationObserver((mutations) => {
             const relevant = mutations.some((mutation) => {
                 return [...mutation.addedNodes].some((node) => {
-                    return node?.nodeType === Node.ELEMENT_NODE && (
-                        node.id === 'pisi-map-operational-labels' ||
-                        node.matches?.('.pisi-preferences-page, .pisi-command-center-body') ||
-                        node.querySelector?.('#pisi-map-operational-labels, .pisi-preferences-page, .pisi-command-center-body')
+                    return (
+                        node?.nodeType === Node.ELEMENT_NODE &&
+                        (node.id === 'pisi-map-operational-labels' ||
+                            node.matches?.('.pisi-preferences-page, .pisi-command-center-body') ||
+                            node.querySelector?.('#pisi-map-operational-labels, .pisi-preferences-page, .pisi-command-center-body'))
                     );
                 });
             });
@@ -132,8 +130,4 @@ registerModule('map.labelPreference', {
     syncOperationalLabelsPreference
 });
 
-export {
-    bindLabelsPreference,
-    installLabelsPreferenceRow,
-    syncOperationalLabelsPreference
-};
+export { bindLabelsPreference, installLabelsPreferenceRow, syncOperationalLabelsPreference };

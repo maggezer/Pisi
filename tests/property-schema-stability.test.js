@@ -79,10 +79,7 @@ test('Project Integrity audits property authority invalid type value drift and m
 
 test('1.0 property surface does not add formula nested database or automation types', () => {
     const core = read('main/functions/property-schema-core.js');
-    const editableBlock = core.slice(
-        core.indexOf('PISI_EDITABLE_PROPERTY_TYPES'),
-        core.indexOf('PISI_INTERNAL_PROPERTY_TYPES')
-    );
+    const editableBlock = core.slice(core.indexOf('PISI_EDITABLE_PROPERTY_TYPES'), core.indexOf('PISI_INTERNAL_PROPERTY_TYPES'));
     for (const type of ['text', 'number', 'multiselect', 'relation']) {
         assert.match(editableBlock, new RegExp(`'${type}'`));
     }

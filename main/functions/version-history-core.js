@@ -14,11 +14,7 @@ const PISI_VERSION_HISTORY_INDEX_FILE = 'index.json';
 const PISI_VERSION_HISTORY_ID_PATTERN = /^\d+-[^/\\]+\.(?:json|json\.gz)$/;
 
 function pisiVersionHistoryProjectFolder(nodePath, options = {}) {
-    return path.resolve(
-        options.projectFolder ||
-        globalThis.activeProjectFolder ||
-        path.dirname(nodePath)
-    );
+    return path.resolve(options.projectFolder || globalThis.activeProjectFolder || path.dirname(nodePath));
 }
 
 function pisiVersionHistoryDirectory(nodePath, options = {}) {
@@ -43,18 +39,13 @@ function isPisiVersionHistoryId(value) {
 
 function pisiVersionHistorySnapshotNames(directory) {
     if (!directory || !fs.existsSync(directory)) return [];
-    return fs.readdirSync(directory)
-        .filter(isPisiVersionHistoryId)
-        .sort()
-        .reverse();
+    return fs.readdirSync(directory).filter(isPisiVersionHistoryId).sort().reverse();
 }
 
 function readPisiVersionHistorySnapshotFile(snapshotPath) {
     try {
         const bytes = fs.readFileSync(snapshotPath);
-        const raw = snapshotPath.endsWith('.json.gz')
-            ? zlib.gunzipSync(bytes).toString('utf8')
-            : bytes.toString('utf8');
+        const raw = snapshotPath.endsWith('.json.gz') ? zlib.gunzipSync(bytes).toString('utf8') : bytes.toString('utf8');
         return { ok: true, data: JSON.parse(raw), raw };
     } catch (error) {
         return { ok: false, error: error.message, data: null };
@@ -65,7 +56,11 @@ function pisiVersionHistoryPreview(snapshot) {
     const content = String(snapshot?.data?.content || '');
     const stripPreview = globalThis.stripPreviewText;
     if (typeof stripPreview === 'function') return stripPreview(content);
-    return content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 240);
+    return content
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 240);
 }
 
 function normalizePisiVersionHistoryEntry(entry, directory) {
@@ -241,11 +236,7 @@ function snapshotPisiNodeVersionBounded(nodePath, reason = 'save', options = {})
         }
 
         const entry = makePisiVersionHistoryEntry(directory, historyId, snapshot);
-        const retention = prunePisiVersionHistory(
-            directory,
-            [entry, ...existingEntries],
-            options
-        );
+        const retention = prunePisiVersionHistory(directory, [entry, ...existingEntries], options);
         return {
             ok: true,
             historyId,
@@ -275,8 +266,7 @@ function listPisiNodeHistoryBounded(nodePath, options = {}) {
                 maxVersions: PISI_VERSION_HISTORY_MAX_VERSIONS
             };
         }
-        const entries = getPisiVersionHistoryEntries(context.directory)
-            .slice(0, PISI_VERSION_HISTORY_MAX_VERSIONS);
+        const entries = getPisiVersionHistoryEntries(context.directory).slice(0, PISI_VERSION_HISTORY_MAX_VERSIONS);
         return {
             ok: true,
             versions: entries.map((entry) => ({ ...entry })),
@@ -308,9 +298,10 @@ function getPisiNodeHistoryVersionBounded(nodePath, historyId, options = {}) {
             capturedAt: result.data.capturedAt,
             reason: result.data.reason,
             data: result.data.data,
-            text: typeof toPlainText === 'function'
-                ? toPlainText(result.data.data.content || '')
-                : String(result.data.data.content || '').replace(/<[^>]+>/g, ' ')
+            text:
+                typeof toPlainText === 'function'
+                    ? toPlainText(result.data.data.content || '')
+                    : String(result.data.data.content || '').replace(/<[^>]+>/g, ' ')
         };
     } catch (error) {
         return { ok: false, error: error.message };
@@ -324,15 +315,9 @@ function saveNodeContentWithBoundedHistory(nodePath, content = '', options = {})
         const current = getDocument(nodePath);
         if (!current?.ok) return current;
 
-        const normalizedIncoming = editorAssets.normalizePisiEditorAssets(
-            String(content || ''),
-            { writeAssets: false }
-        ).content;
+        const normalizedIncoming = editorAssets.normalizePisiEditorAssets(String(content || ''), { writeAssets: false }).content;
 
-        if (
-            String(current.data?.content || '') ===
-            String(normalizedIncoming || '')
-        ) {
+        if (String(current.data?.content || '') === String(normalizedIncoming || '')) {
             return {
                 ok: true,
                 unchanged: true,
@@ -342,11 +327,7 @@ function saveNodeContentWithBoundedHistory(nodePath, content = '', options = {})
                 preview: globalThis.stripPreviewText?.(current.data.content || '') || ''
             };
         }
-        const snapshot = snapshotPisiNodeVersionBounded(
-            nodePath,
-            options.reason || 'save',
-            options
-        );
+        const snapshot = snapshotPisiNodeVersionBounded(nodePath, options.reason || 'save', options);
         if (!snapshot.ok) return snapshot;
         return saveContent(nodePath, content);
     } catch (error) {

@@ -1,87 +1,61 @@
-const PISI_OPERATIONAL_SCOPE_MODES = new Set([
-    'all',
-    'active',
-    'blocked',
-    'overdue',
-    'missing-next-action',
-    'neighbors',
-    'manual'
-]);
+const PISI_OPERATIONAL_SCOPE_MODES = new Set(['all', 'active', 'blocked', 'overdue', 'missing-next-action', 'neighbors', 'manual']);
 
-const PISI_OPERATIONAL_SCOPE_STRATEGIES = new Set([
-    'live',
-    'snapshot'
-]);
+const PISI_OPERATIONAL_SCOPE_STRATEGIES = new Set(['live', 'snapshot']);
 
-const PISI_OPERATIONAL_RELATIONSHIP_TYPES = new Set([
-    'down-hub',
-    'stream',
-    'co-level'
-]);
+const PISI_OPERATIONAL_RELATIONSHIP_TYPES = new Set(['down-hub', 'stream', 'co-level']);
 
-const PISI_OPERATIONAL_PROPERTY_OPERATORS = new Set([
-    'exists',
-    'not-empty',
-    'equals',
-    'not-equals',
-    'contains',
-    'one-of',
-    'gt',
-    'gte',
-    'lt',
-    'lte'
-]);
+const PISI_OPERATIONAL_PROPERTY_OPERATORS = new Set(['exists', 'not-empty', 'equals', 'not-equals', 'contains', 'one-of', 'gt', 'gte', 'lt', 'lte']);
 
 function normalizePisiOperationalPath(value = '') {
     const normalized = String(value || '').replace(/[\\/]+/g, '/');
-    return globalThis.window?.pisiEnvironment?.platform === 'win32'
-        ? normalized.toLowerCase()
-        : normalized;
+    return globalThis.window?.pisiEnvironment?.platform === 'win32' ? normalized.toLowerCase() : normalized;
 }
 
 function normalizePisiOperationalPropertyFilter(raw = {}) {
-    const property = String(
-        raw.property || raw.propertyId || raw.name || ''
-    ).trim().toLowerCase().slice(0, 120);
+    const property = String(raw.property || raw.propertyId || raw.name || '')
+        .trim()
+        .toLowerCase()
+        .slice(0, 120);
     if (!property) return null;
-    const operator = PISI_OPERATIONAL_PROPERTY_OPERATORS.has(String(raw.operator || ''))
-        ? String(raw.operator)
-        : 'contains';
+    const operator = PISI_OPERATIONAL_PROPERTY_OPERATORS.has(String(raw.operator || '')) ? String(raw.operator) : 'contains';
     return {
         property,
         operator,
         value: ['exists', 'not-empty'].includes(operator)
             ? ''
-            : String(raw.value ?? '').trim().slice(0, 2400)
+            : String(raw.value ?? '')
+                  .trim()
+                  .slice(0, 2400)
     };
 }
 
 function normalizePisiOperationalScope(raw = {}) {
     return {
-        strategy: PISI_OPERATIONAL_SCOPE_STRATEGIES.has(String(raw.strategy || ''))
-            ? String(raw.strategy)
-            : 'live',
-        mode: PISI_OPERATIONAL_SCOPE_MODES.has(String(raw.mode || ''))
-            ? String(raw.mode)
-            : 'all',
-        query: String(raw.query || '').trim().toLowerCase().slice(0, 240),
-        relationshipTypes: Array.from(new Set(
-            (Array.isArray(raw.relationshipTypes) ? raw.relationshipTypes : [])
-                .map((value) => String(value || ''))
-                .filter((value) => PISI_OPERATIONAL_RELATIONSHIP_TYPES.has(value))
-        )),
+        strategy: PISI_OPERATIONAL_SCOPE_STRATEGIES.has(String(raw.strategy || '')) ? String(raw.strategy) : 'live',
+        mode: PISI_OPERATIONAL_SCOPE_MODES.has(String(raw.mode || '')) ? String(raw.mode) : 'all',
+        query: String(raw.query || '')
+            .trim()
+            .toLowerCase()
+            .slice(0, 240),
+        relationshipTypes: Array.from(
+            new Set(
+                (Array.isArray(raw.relationshipTypes) ? raw.relationshipTypes : [])
+                    .map((value) => String(value || ''))
+                    .filter((value) => PISI_OPERATIONAL_RELATIONSHIP_TYPES.has(value))
+            )
+        ),
         propertyFilters: (Array.isArray(raw.propertyFilters) ? raw.propertyFilters : [])
             .map(normalizePisiOperationalPropertyFilter)
             .filter(Boolean)
             .slice(0, 20),
-        includedNodeIds: Array.from(new Set(
-            (Array.isArray(raw.includedNodeIds) ? raw.includedNodeIds : [])
-                .map((value) => String(value || ''))
-                .filter((value) => /^node_[A-Za-z0-9_-]+$/.test(value))
-        )),
-        focusRootNodeId: /^node_[A-Za-z0-9_-]+$/.test(String(raw.focusRootNodeId || ''))
-            ? String(raw.focusRootNodeId)
-            : null,
+        includedNodeIds: Array.from(
+            new Set(
+                (Array.isArray(raw.includedNodeIds) ? raw.includedNodeIds : [])
+                    .map((value) => String(value || ''))
+                    .filter((value) => /^node_[A-Za-z0-9_-]+$/.test(value))
+            )
+        ),
+        focusRootNodeId: /^node_[A-Za-z0-9_-]+$/.test(String(raw.focusRootNodeId || '')) ? String(raw.focusRootNodeId) : null,
         focusDepth: Math.min(3, Math.max(1, Number(raw.focusDepth) || 1))
     };
 }
@@ -120,9 +94,7 @@ function isPisiOperationalTaskBlocked(task, taskById) {
 }
 
 function getPisiOperationalPropertyEntries(node) {
-    const properties = node?.properties && typeof node.properties === 'object'
-        ? node.properties
-        : {};
+    const properties = node?.properties && typeof node.properties === 'object' ? node.properties : {};
     return Object.entries(properties).map(([id, property]) => ({
         id: String(property?.id || id || '').toLowerCase(),
         name: String(property?.name || id || '').toLowerCase(),
@@ -131,16 +103,26 @@ function getPisiOperationalPropertyEntries(node) {
 }
 
 function getPisiOperationalPropertyEntry(node, propertyKey) {
-    const key = String(propertyKey || '').trim().toLowerCase();
+    const key = String(propertyKey || '')
+        .trim()
+        .toLowerCase();
     if (!key) return null;
-    return getPisiOperationalPropertyEntries(node).find((property) => {
-        return property.id === key || property.name === key;
-    }) || null;
+    return (
+        getPisiOperationalPropertyEntries(node).find((property) => {
+            return property.id === key || property.name === key;
+        }) || null
+    );
 }
 
 function normalizePisiOperationalComparableValues(value) {
     if (Array.isArray(value)) {
-        return value.map((item) => String(item ?? '').trim().toLowerCase()).filter(Boolean);
+        return value
+            .map((item) =>
+                String(item ?? '')
+                    .trim()
+                    .toLowerCase()
+            )
+            .filter(Boolean);
     }
     if (value === null || value === undefined) return [];
     return [String(value).trim().toLowerCase()];
@@ -162,12 +144,19 @@ function nodeMatchesPisiOperationalPropertyFilter(node, rawFilter = {}) {
     if (!entry) return filter.operator === 'not-equals';
 
     const values = normalizePisiOperationalComparableValues(entry.value);
-    const expected = String(filter.value || '').trim().toLowerCase();
+    const expected = String(filter.value || '')
+        .trim()
+        .toLowerCase();
     if (filter.operator === 'equals') return values.some((value) => value === expected);
     if (filter.operator === 'not-equals') return values.every((value) => value !== expected);
     if (filter.operator === 'contains') return values.some((value) => value.includes(expected));
     if (filter.operator === 'one-of') {
-        const wanted = new Set(expected.split(',').map((value) => value.trim()).filter(Boolean));
+        const wanted = new Set(
+            expected
+                .split(',')
+                .map((value) => value.trim())
+                .filter(Boolean)
+        );
         return values.some((value) => wanted.has(value));
     }
 
@@ -198,9 +187,7 @@ function getPisiOperationalReviewedAt(node) {
 }
 
 function buildPisiOperationalNodeStates(nodes = [], tasks = [], now = Date.now()) {
-    const taskById = new Map(
-        (Array.isArray(tasks) ? tasks : []).map((task) => [String(task?.id || ''), task])
-    );
+    const taskById = new Map((Array.isArray(tasks) ? tasks : []).map((task) => [String(task?.id || ''), task]));
     const tasksByNodePath = new Map();
     for (const task of Array.isArray(tasks) ? tasks : []) {
         const nodePath = normalizePisiOperationalPath(task?.source?.nodePath);
@@ -209,40 +196,38 @@ function buildPisiOperationalNodeStates(nodes = [], tasks = [], now = Date.now()
         tasksByNodePath.get(nodePath).push(task);
     }
 
-    return new Map((Array.isArray(nodes) ? nodes : []).map((node) => {
-        const nodeTasks = tasksByNodePath.get(
-            normalizePisiOperationalPath(node?.fullPath)
-        ) || [];
-        const openTasks = nodeTasks.filter((task) => !isPisiOperationalTaskDone(task));
-        const blockedTasks = openTasks.filter((task) => {
-            return isPisiOperationalTaskBlocked(task, taskById);
-        });
-        const overdueTasks = openTasks.filter((task) => {
-            return isPisiOperationalTaskOverdue(task, now);
-        });
-        const reviewedAt = getPisiOperationalReviewedAt(node);
-        const updatedAt = Date.parse(String(node?.metadata?.updatedAt || ''));
-        const changedSinceReview = reviewedAt !== null &&
-            Number.isFinite(updatedAt) &&
-            updatedAt > reviewedAt;
-        const state = {
-            nodeId: node?.id || '',
-            tasks: nodeTasks,
-            openTasks,
-            blockedTasks,
-            overdueTasks,
-            completedTasks: nodeTasks.filter(isPisiOperationalTaskDone),
-            blocked: blockedTasks.length > 0,
-            overdue: overdueTasks.length > 0,
-            missingNextAction: openTasks.length === 0,
-            changedSinceReview,
-            highestPriority: openTasks.reduce((best, task) => {
-                const priority = Math.min(5, Math.max(1, Number(task?.priority) || 3));
-                return Math.max(best, priority);
-            }, 1)
-        };
-        return [node?.id || '', state];
-    }));
+    return new Map(
+        (Array.isArray(nodes) ? nodes : []).map((node) => {
+            const nodeTasks = tasksByNodePath.get(normalizePisiOperationalPath(node?.fullPath)) || [];
+            const openTasks = nodeTasks.filter((task) => !isPisiOperationalTaskDone(task));
+            const blockedTasks = openTasks.filter((task) => {
+                return isPisiOperationalTaskBlocked(task, taskById);
+            });
+            const overdueTasks = openTasks.filter((task) => {
+                return isPisiOperationalTaskOverdue(task, now);
+            });
+            const reviewedAt = getPisiOperationalReviewedAt(node);
+            const updatedAt = Date.parse(String(node?.metadata?.updatedAt || ''));
+            const changedSinceReview = reviewedAt !== null && Number.isFinite(updatedAt) && updatedAt > reviewedAt;
+            const state = {
+                nodeId: node?.id || '',
+                tasks: nodeTasks,
+                openTasks,
+                blockedTasks,
+                overdueTasks,
+                completedTasks: nodeTasks.filter(isPisiOperationalTaskDone),
+                blocked: blockedTasks.length > 0,
+                overdue: overdueTasks.length > 0,
+                missingNextAction: openTasks.length === 0,
+                changedSinceReview,
+                highestPriority: openTasks.reduce((best, task) => {
+                    const priority = Math.min(5, Math.max(1, Number(task?.priority) || 3));
+                    return Math.max(best, priority);
+                }, 1)
+            };
+            return [node?.id || '', state];
+        })
+    );
 }
 
 function collectPisiOperationalNeighborIds(rootNodeId, edges = [], depth = 1) {
@@ -278,7 +263,9 @@ function collectPisiOperationalNeighborIds(rootNodeId, edges = [], depth = 1) {
 }
 
 function nodeMatchesPisiOperationalQuery(node, query) {
-    const clean = String(query || '').trim().toLowerCase();
+    const clean = String(query || '')
+        .trim()
+        .toLowerCase();
     if (!clean) return true;
     const haystack = [
         node?.metadata?.title,
@@ -288,7 +275,9 @@ function nodeMatchesPisiOperationalQuery(node, query) {
             property.name,
             Array.isArray(property.value) ? property.value.join(' ') : property.value
         ])
-    ].map((value) => String(value || '').toLowerCase()).join(' ');
+    ]
+        .map((value) => String(value || '').toLowerCase())
+        .join(' ');
     return clean.split(/\s+/).every((term) => haystack.includes(term));
 }
 
@@ -296,18 +285,10 @@ function getPisiOperationalVisibleNodeIds(nodes, edges, nodeStates, rawScope = {
     const scope = normalizePisiOperationalScope(rawScope);
     const manualIds = new Set(scope.includedNodeIds);
     if (scope.strategy === 'snapshot') {
-        return new Set((Array.isArray(nodes) ? nodes : [])
-            .map((node) => node?.id)
-            .filter((nodeId) => manualIds.has(nodeId)));
+        return new Set((Array.isArray(nodes) ? nodes : []).map((node) => node?.id).filter((nodeId) => manualIds.has(nodeId)));
     }
 
-    const neighborIds = scope.focusRootNodeId
-        ? collectPisiOperationalNeighborIds(
-            scope.focusRootNodeId,
-            edges,
-            scope.focusDepth
-        )
-        : null;
+    const neighborIds = scope.focusRootNodeId ? collectPisiOperationalNeighborIds(scope.focusRootNodeId, edges, scope.focusDepth) : null;
     const visible = new Set();
 
     for (const node of Array.isArray(nodes) ? nodes : []) {
@@ -325,10 +306,7 @@ function getPisiOperationalVisibleNodeIds(nodes, edges, nodeStates, rawScope = {
         if (accepted && !nodeMatchesPisiOperationalQuery(node, scope.query)) {
             accepted = false;
         }
-        if (accepted && !nodeMatchesPisiOperationalPropertyFilters(
-            node,
-            scope.propertyFilters
-        )) {
+        if (accepted && !nodeMatchesPisiOperationalPropertyFilters(node, scope.propertyFilters)) {
             accepted = false;
         }
         if (accepted) visible.add(node?.id);
@@ -348,34 +326,21 @@ function getPisiOperationalVisibleEdges(edges = [], visibleNodeIds, rawScope = {
 }
 
 function buildPisiTaskDependencyProjections(nodes = [], tasks = [], visibleNodeIds = null) {
-    const nodeIdByPath = new Map(
-        (Array.isArray(nodes) ? nodes : []).map((node) => [
-            normalizePisiOperationalPath(node?.fullPath),
-            node?.id
-        ])
-    );
-    const taskById = new Map(
-        (Array.isArray(tasks) ? tasks : []).map((task) => [String(task?.id || ''), task])
-    );
+    const nodeIdByPath = new Map((Array.isArray(nodes) ? nodes : []).map((node) => [normalizePisiOperationalPath(node?.fullPath), node?.id]));
+    const taskById = new Map((Array.isArray(tasks) ? tasks : []).map((task) => [String(task?.id || ''), task]));
     const seen = new Set();
     const result = [];
 
     for (const task of Array.isArray(tasks) ? tasks : []) {
         if (isPisiOperationalTaskDone(task)) continue;
-        const targetNodeId = nodeIdByPath.get(
-            normalizePisiOperationalPath(task?.source?.nodePath)
-        );
+        const targetNodeId = nodeIdByPath.get(normalizePisiOperationalPath(task?.source?.nodePath));
         if (!targetNodeId) continue;
         for (const dependencyId of Array.isArray(task?.dependencies) ? task.dependencies : []) {
             const dependency = taskById.get(String(dependencyId || ''));
             if (!dependency || isPisiOperationalTaskDone(dependency)) continue;
-            const sourceNodeId = nodeIdByPath.get(
-                normalizePisiOperationalPath(dependency?.source?.nodePath)
-            );
+            const sourceNodeId = nodeIdByPath.get(normalizePisiOperationalPath(dependency?.source?.nodePath));
             if (!sourceNodeId || sourceNodeId === targetNodeId) continue;
-            if (visibleNodeIds && (
-                !visibleNodeIds.has(sourceNodeId) || !visibleNodeIds.has(targetNodeId)
-            )) continue;
+            if (visibleNodeIds && (!visibleNodeIds.has(sourceNodeId) || !visibleNodeIds.has(targetNodeId))) continue;
             const key = `${sourceNodeId}->${targetNodeId}`;
             if (seen.has(key)) continue;
             seen.add(key);
@@ -397,17 +362,11 @@ function rankPisiOperationalNextNodes(nodes = [], nodeStates = {}) {
         .map((node) => {
             const state = stateMap.get(node?.id) || {};
             if (state.blocked || !(state.openTasks?.length > 0)) return null;
-            const score =
-                (state.overdueTasks?.length || 0) * 100 +
-                (state.highestPriority || 1) * 15 +
-                (state.openTasks?.length || 0) * 2;
+            const score = (state.overdueTasks?.length || 0) * 100 + (state.highestPriority || 1) * 15 + (state.openTasks?.length || 0) * 2;
             return { node, state, score };
         })
         .filter(Boolean)
-        .sort((a, b) => b.score - a.score ||
-            String(a.node?.metadata?.title || '').localeCompare(
-                String(b.node?.metadata?.title || '')
-            ));
+        .sort((a, b) => b.score - a.score || String(a.node?.metadata?.title || '').localeCompare(String(b.node?.metadata?.title || '')));
 }
 
 function getPisiOperationalRelationshipLabel(edge = {}) {

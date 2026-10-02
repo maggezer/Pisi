@@ -19,9 +19,10 @@ function parsePisiSheetReference(reference) {
 
     if (!match) return null;
 
-    const col = match[2].split('').reduce((sum, character) => {
-        return sum * 26 + character.charCodeAt(0) - 64;
-    }, 0) - 1;
+    const col =
+        match[2].split('').reduce((sum, character) => {
+            return sum * 26 + character.charCodeAt(0) - 64;
+        }, 0) - 1;
 
     return {
         col,
@@ -36,87 +37,42 @@ function formatPisiSheetReference(reference) {
         return '#REF!';
     }
 
-    return [
-        reference.absoluteCol ? '$' : '',
-        pisiSheetColumnName(reference.col),
-        reference.absoluteRow ? '$' : '',
-        reference.row + 1
-    ].join('');
+    return [reference.absoluteCol ? '$' : '', pisiSheetColumnName(reference.col), reference.absoluteRow ? '$' : '', reference.row + 1].join('');
 }
 
-function shiftPisiSheetReference(
-    reference,
-    rowDelta,
-    colDelta
-) {
+function shiftPisiSheetReference(reference, rowDelta, colDelta) {
     const parsed = parsePisiSheetReference(reference);
     if (!parsed) return reference;
 
     const next = {
         ...parsed,
-        row: parsed.absoluteRow
-            ? parsed.row
-            : parsed.row + rowDelta,
-        col: parsed.absoluteCol
-            ? parsed.col
-            : parsed.col + colDelta
+        row: parsed.absoluteRow ? parsed.row : parsed.row + rowDelta,
+        col: parsed.absoluteCol ? parsed.col : parsed.col + colDelta
     };
 
     return formatPisiSheetReference(next);
 }
 
-function shiftPisiSheetRangeReference(
-    startRef,
-    endRef,
-    rowDelta,
-    colDelta
-) {
-    return [
-        shiftPisiSheetReference(
-            startRef,
-            rowDelta,
-            colDelta
-        ),
-        shiftPisiSheetReference(
-            endRef,
-            rowDelta,
-            colDelta
-        )
-    ].join(':');
+function shiftPisiSheetRangeReference(startRef, endRef, rowDelta, colDelta) {
+    return [shiftPisiSheetReference(startRef, rowDelta, colDelta), shiftPisiSheetReference(endRef, rowDelta, colDelta)].join(':');
 }
 
-export function shiftPisiSheetFormulaReferences(
-    formula,
-    rowDelta = 0,
-    colDelta = 0
-) {
+export function shiftPisiSheetFormulaReferences(formula, rowDelta = 0, colDelta = 0) {
     const source = String(formula || '');
     const rowShift = Math.trunc(Number(rowDelta) || 0);
     const colShift = Math.trunc(Number(colDelta) || 0);
 
-    return source.replace(
-        /"(?:[^"]|"")*"|(?<![A-Z0-9_.$])\$?[A-Z]+\$?\d+(?::\$?[A-Z]+\$?\d+)?(?![A-Z0-9_.$]|\s*\()/gi,
-        (token) => {
-            if (token.startsWith('"')) return token;
+    return source.replace(/"(?:[^"]|"")*"|(?<![A-Z0-9_.$])\$?[A-Z]+\$?\d+(?::\$?[A-Z]+\$?\d+)?(?![A-Z0-9_.$]|\s*\()/gi, (token) => {
+        if (token.startsWith('"')) return token;
 
-            const parts = token.split(':');
+        const parts = token.split(':');
 
-            if (parts.length === 2) {
-                return shiftPisiSheetRangeReference(
-                    parts[0].toUpperCase(),
-                    parts[1].toUpperCase(),
-                    rowShift,
-                    colShift
-                );
-            }
-
-            return shiftPisiSheetReference(
-                token.toUpperCase(),
-                rowShift,
-                colShift
-            );
+        if (parts.length === 2) {
+            return shiftPisiSheetRangeReference(parts[0].toUpperCase(), parts[1].toUpperCase(), rowShift, colShift);
         }
-    );
+
+        return shiftPisiSheetReference(token.toUpperCase(), rowShift, colShift);
+    });
 }
 
 function transformPisiSheetAxisValue(value, change) {
@@ -165,36 +121,24 @@ function transformPisiSheetAxisRange(start, end, change) {
         return null;
     }
 
-    const firstSurvivor = low < index
-        ? low
-        : Math.max(low, deleteEnd + 1);
-    const lastSurvivor = high > deleteEnd
-        ? high
-        : Math.min(high, index - 1);
+    const firstSurvivor = low < index ? low : Math.max(low, deleteEnd + 1);
+    const lastSurvivor = high > deleteEnd ? high : Math.min(high, index - 1);
 
     if (firstSurvivor > lastSurvivor) return null;
 
-    const mapSurvivor = (value) => (
-        value > deleteEnd ? value - count : value
-    );
+    const mapSurvivor = (value) => (value > deleteEnd ? value - count : value);
     const mappedLow = mapSurvivor(firstSurvivor);
     const mappedHigh = mapSurvivor(lastSurvivor);
 
-    return ascending
-        ? [mappedLow, mappedHigh]
-        : [mappedHigh, mappedLow];
+    return ascending ? [mappedLow, mappedHigh] : [mappedHigh, mappedLow];
 }
 
 function getPisiSheetReorderedColumnIndex(col, change) {
-    const indexMap = Array.isArray(change?.indexMap)
-        ? change.indexMap
-        : [];
+    const indexMap = Array.isArray(change?.indexMap) ? change.indexMap : [];
 
     const mapped = Number(indexMap[col]);
 
-    return Number.isInteger(mapped) && mapped >= 0
-        ? mapped
-        : col;
+    return Number.isInteger(mapped) && mapped >= 0 ? mapped : col;
 }
 
 function transformPisiSheetReorderedReference(reference, change) {
@@ -203,18 +147,11 @@ function transformPisiSheetReorderedReference(reference, change) {
 
     return formatPisiSheetReference({
         ...parsed,
-        col: getPisiSheetReorderedColumnIndex(
-            parsed.col,
-            change
-        )
+        col: getPisiSheetReorderedColumnIndex(parsed.col, change)
     });
 }
 
-function transformPisiSheetReorderedRange(
-    startRef,
-    endRef,
-    change
-) {
+function transformPisiSheetReorderedRange(startRef, endRef, change) {
     const start = parsePisiSheetReference(startRef);
     const end = parsePisiSheetReference(endRef);
 
@@ -226,17 +163,8 @@ function transformPisiSheetReorderedRange(
     const colEnd = Math.max(start.col, end.col);
     const mappedCols = [];
 
-    for (
-        let col = colStart;
-        col <= colEnd;
-        col += 1
-    ) {
-        mappedCols.push(
-            getPisiSheetReorderedColumnIndex(
-                col,
-                change
-            )
-        );
+    for (let col = colStart; col <= colEnd; col += 1) {
+        mappedCols.push(getPisiSheetReorderedColumnIndex(col, change));
     }
 
     mappedCols.sort((a, b) => a - b);
@@ -246,10 +174,7 @@ function transformPisiSheetReorderedRange(
     for (const col of mappedCols) {
         const current = groups.at(-1);
 
-        if (
-            current &&
-            col === current.end + 1
-        ) {
+        if (current && col === current.end + 1) {
             current.end = col;
         } else {
             groups.push({
@@ -259,21 +184,20 @@ function transformPisiSheetReorderedRange(
         }
     }
 
-    return groups.map((group) => {
-        const nextStart = {
-            ...start,
-            col: group.start
-        };
-        const nextEnd = {
-            ...end,
-            col: group.end
-        };
+    return groups
+        .map((group) => {
+            const nextStart = {
+                ...start,
+                col: group.start
+            };
+            const nextEnd = {
+                ...end,
+                col: group.end
+            };
 
-        return [
-            formatPisiSheetReference(nextStart),
-            formatPisiSheetReference(nextEnd)
-        ].join(':');
-    }).join(',');
+            return [formatPisiSheetReference(nextStart), formatPisiSheetReference(nextEnd)].join(':');
+        })
+        .join(',');
 }
 
 function getPisiSheetAxisChange(change) {
@@ -297,10 +221,7 @@ function getPisiSheetAxisChange(change) {
 
 function transformPisiSheetReference(reference, change) {
     if (change?.type === 'reorder-col') {
-        return transformPisiSheetReorderedReference(
-            reference,
-            change
-        );
+        return transformPisiSheetReorderedReference(reference, change);
     }
 
     const parsed = parsePisiSheetReference(reference);
@@ -310,10 +231,7 @@ function transformPisiSheetReference(reference, change) {
 
     const next = { ...parsed };
     const value = next[axisChange.axis];
-    const transformed = transformPisiSheetAxisValue(
-        value,
-        axisChange
-    );
+    const transformed = transformPisiSheetAxisValue(value, axisChange);
 
     if (transformed === null) return '#REF!';
 
@@ -323,11 +241,7 @@ function transformPisiSheetReference(reference, change) {
 
 function transformPisiSheetRangeReference(startRef, endRef, change) {
     if (change?.type === 'reorder-col') {
-        return transformPisiSheetReorderedRange(
-            startRef,
-            endRef,
-            change
-        );
+        return transformPisiSheetReorderedRange(startRef, endRef, change);
     }
 
     const start = parsePisiSheetReference(startRef);
@@ -338,11 +252,7 @@ function transformPisiSheetRangeReference(startRef, endRef, change) {
         return `${startRef}:${endRef}`;
     }
 
-    const transformedRange = transformPisiSheetAxisRange(
-        start[axisChange.axis],
-        end[axisChange.axis],
-        axisChange
-    );
+    const transformedRange = transformPisiSheetAxisRange(start[axisChange.axis], end[axisChange.axis], axisChange);
 
     if (!transformedRange) return '#REF!';
 
@@ -351,33 +261,20 @@ function transformPisiSheetRangeReference(startRef, endRef, change) {
     nextStart[axisChange.axis] = transformedRange[0];
     nextEnd[axisChange.axis] = transformedRange[1];
 
-    return [
-        formatPisiSheetReference(nextStart),
-        formatPisiSheetReference(nextEnd)
-    ].join(':');
+    return [formatPisiSheetReference(nextStart), formatPisiSheetReference(nextEnd)].join(':');
 }
 
 export function transformPisiSheetFormulaReferences(formula, change) {
     const source = String(formula || '');
 
-    return source.replace(
-        /"(?:[^"]|"")*"|(?<![A-Z0-9_.$])\$?[A-Z]+\$?\d+(?::\$?[A-Z]+\$?\d+)?(?![A-Z0-9_.$]|\s*\()/gi,
-        (token) => {
-            if (token.startsWith('"')) return token;
+    return source.replace(/"(?:[^"]|"")*"|(?<![A-Z0-9_.$])\$?[A-Z]+\$?\d+(?::\$?[A-Z]+\$?\d+)?(?![A-Z0-9_.$]|\s*\()/gi, (token) => {
+        if (token.startsWith('"')) return token;
 
-            const parts = token.split(':');
-            if (parts.length === 2) {
-                return transformPisiSheetRangeReference(
-                    parts[0].toUpperCase(),
-                    parts[1].toUpperCase(),
-                    change
-                );
-            }
-
-            return transformPisiSheetReference(
-                token.toUpperCase(),
-                change
-            );
+        const parts = token.split(':');
+        if (parts.length === 2) {
+            return transformPisiSheetRangeReference(parts[0].toUpperCase(), parts[1].toUpperCase(), change);
         }
-    );
+
+        return transformPisiSheetReference(token.toUpperCase(), change);
+    });
 }

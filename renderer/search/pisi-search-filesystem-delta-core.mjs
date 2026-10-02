@@ -21,10 +21,7 @@ function uniquePisiSearchPaths(paths = []) {
 }
 
 function classifyPisiSearchChangedPaths(paths = [], options = {}) {
-    const maxPaths = Math.max(
-        1,
-        Number(options.maxPaths) || PISI_SEARCH_SCOPED_DELTA_MAX_PATHS
-    );
+    const maxPaths = Math.max(1, Number(options.maxPaths) || PISI_SEARCH_SCOPED_DELTA_MAX_PATHS);
     const uniquePaths = uniquePisiSearchPaths(paths);
     const nodePaths = [];
     const mapPaths = [];
@@ -87,10 +84,7 @@ function removePisiSearchMapMemberships(memberships = [], mapPath = '') {
 
 function upsertPisiSearchMapMembership(memberships = [], membership = null) {
     if (!membership?.mapPath) return Array.from(memberships || []);
-    return [
-        ...removePisiSearchMapMemberships(memberships, membership.mapPath),
-        membership
-    ];
+    return [...removePisiSearchMapMemberships(memberships, membership.mapPath), membership];
 }
 
 function replacePisiSearchNodeRecords(records = [], nodePath = '', nextRecords = []) {
@@ -107,10 +101,7 @@ function replacePisiSearchMapRecord(records = [], mapPath = '', nextRecord = nul
     const mapKey = pisiSearchPathKey(mapPath);
     return [
         ...(Array.isArray(records) ? records : []).filter((record) => {
-            return !(
-                record?.kind === 'map' &&
-                pisiSearchPathKey(record?.mapPath) === mapKey
-            );
+            return !(record?.kind === 'map' && pisiSearchPathKey(record?.mapPath) === mapKey);
         }),
         ...(nextRecord ? [nextRecord] : [])
     ];

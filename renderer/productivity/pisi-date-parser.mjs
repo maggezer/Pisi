@@ -130,10 +130,7 @@ function parsePisiExplicitDate(expression, now) {
         if (year < 100) year += 2000;
         const result = new Date(year, Number(numeric[2]) - 1, Number(numeric[1]));
         if (!numeric[3] && result < makePisiLocalDate(now)) result.setFullYear(year + 1);
-        if (
-            result.getDate() === Number(numeric[1]) &&
-            result.getMonth() === Number(numeric[2]) - 1
-        ) return result;
+        if (result.getDate() === Number(numeric[1]) && result.getMonth() === Number(numeric[2]) - 1) return result;
     }
 
     const names = Object.keys(PISI_TURKISH_MONTHS).join('|');
@@ -208,11 +205,7 @@ function parsePisiTurkishDateExpression(value, nowValue = new Date()) {
         return new RegExp(`\\b${name}\\b`).test(expression);
     });
     if (weekdayName && !target) {
-        target = getPisiNextWeekday(
-            now,
-            PISI_TURKISH_WEEKDAYS[weekdayName],
-            /\bgelecek\b/.test(expression)
-        );
+        target = getPisiNextWeekday(now, PISI_TURKISH_WEEKDAYS[weekdayName], /\bgelecek\b/.test(expression));
         result.matched.push('weekday');
     }
 
@@ -247,9 +240,7 @@ function parsePisiTurkishDateExpression(value, nowValue = new Date()) {
         result.matched.push('daily');
     }
 
-    const completion = expression.match(
-        /\bgorev tamamlandiktan\s+([a-z0-9]+)\s+gun sonra\b/
-    );
+    const completion = expression.match(/\bgorev tamamlandiktan\s+([a-z0-9]+)\s+gun sonra\b/);
     if (completion) {
         result.completionOffsetDays = parsePisiTurkishNumber(completion[1]) || 1;
         result.repeat = 'after-completion';

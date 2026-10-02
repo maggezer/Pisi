@@ -1,33 +1,75 @@
 import { registerModule } from '../core/module-registry.mjs';
-import {
-    normalizePisiOperationalDisplay,
-    normalizePisiOperationalPropertyFilter,
-    normalizePisiOperationalScope
-} from './pisi-map-operational-core.mjs';
+import { normalizePisiOperationalDisplay, normalizePisiOperationalPropertyFilter, normalizePisiOperationalScope } from './pisi-map-operational-core.mjs';
 
 const scopedMapState = { mapPath: null, savedScopes: [], loading: false, persistTimer: null, observer: null };
 const text = {
     tr: {
-        live: 'Canlı scope', snapshot: 'Snapshot', freeze: 'Görünümü dondur', refresh: 'Snapshot yenile',
-        property: 'Özellik', value: 'Değer', add: 'Filtre ekle', saved: 'Kaydedilmiş scope', save: 'Scope kaydet',
-        apply: 'Uygula', remove: 'Sil', dim: 'Filtrelenenleri soldur', scopeName: 'Scope adı',
-        noVisible: 'Dondurulacak görünür node yok.', saveFailed: 'Scope kaydedilemedi.',
-        contains: 'içerir', equals: 'eşittir', notEquals: 'eşit değildir', oneOf: 'şunlardan biri',
-        exists: 'var', notEmpty: 'boş değil', gt: '>', gte: '≥', lt: '<', lte: '≤'
+        live: 'Canlı scope',
+        snapshot: 'Snapshot',
+        freeze: 'Görünümü dondur',
+        refresh: 'Snapshot yenile',
+        property: 'Özellik',
+        value: 'Değer',
+        add: 'Filtre ekle',
+        saved: 'Kaydedilmiş scope',
+        save: 'Scope kaydet',
+        apply: 'Uygula',
+        remove: 'Sil',
+        dim: 'Filtrelenenleri soldur',
+        scopeName: 'Scope adı',
+        noVisible: 'Dondurulacak görünür node yok.',
+        saveFailed: 'Scope kaydedilemedi.',
+        contains: 'içerir',
+        equals: 'eşittir',
+        notEquals: 'eşit değildir',
+        oneOf: 'şunlardan biri',
+        exists: 'var',
+        notEmpty: 'boş değil',
+        gt: '>',
+        gte: '≥',
+        lt: '<',
+        lte: '≤'
     },
     eng: {
-        live: 'Live scope', snapshot: 'Snapshot', freeze: 'Freeze view', refresh: 'Refresh snapshot',
-        property: 'Property', value: 'Value', add: 'Add filter', saved: 'Saved scope', save: 'Save scope',
-        apply: 'Apply', remove: 'Delete', dim: 'Dim filtered', scopeName: 'Scope name',
-        noVisible: 'There are no visible nodes to freeze.', saveFailed: 'Scope could not be saved.',
-        contains: 'contains', equals: 'equals', notEquals: 'does not equal', oneOf: 'is one of',
-        exists: 'exists', notEmpty: 'is not empty', gt: '>', gte: '≥', lt: '<', lte: '≤'
+        live: 'Live scope',
+        snapshot: 'Snapshot',
+        freeze: 'Freeze view',
+        refresh: 'Refresh snapshot',
+        property: 'Property',
+        value: 'Value',
+        add: 'Add filter',
+        saved: 'Saved scope',
+        save: 'Save scope',
+        apply: 'Apply',
+        remove: 'Delete',
+        dim: 'Dim filtered',
+        scopeName: 'Scope name',
+        noVisible: 'There are no visible nodes to freeze.',
+        saveFailed: 'Scope could not be saved.',
+        contains: 'contains',
+        equals: 'equals',
+        notEquals: 'does not equal',
+        oneOf: 'is one of',
+        exists: 'exists',
+        notEmpty: 'is not empty',
+        gt: '>',
+        gte: '≥',
+        lt: '<',
+        lte: '≤'
     }
 };
 
 const operatorKeys = {
-    contains: 'contains', equals: 'equals', 'not-equals': 'notEquals', 'one-of': 'oneOf',
-    exists: 'exists', 'not-empty': 'notEmpty', gt: 'gt', gte: 'gte', lt: 'lt', lte: 'lte'
+    contains: 'contains',
+    equals: 'equals',
+    'not-equals': 'notEquals',
+    'one-of': 'oneOf',
+    exists: 'exists',
+    'not-empty': 'notEmpty',
+    gt: 'gt',
+    gte: 'gte',
+    lt: 'lt',
+    lte: 'lte'
 };
 
 function t(key) {
@@ -35,8 +77,12 @@ function t(key) {
     return text[lang][key] || text.tr[key] || key;
 }
 
-function operational() { return window.Pisi?.modules?.['map.operational'] || null; }
-function state() { return operational()?.operationalState || null; }
+function operational() {
+    return window.Pisi?.modules?.['map.operational'] || null;
+}
+function state() {
+    return operational()?.operationalState || null;
+}
 function option(value, label) {
     const el = document.createElement('option');
     el.value = value;
@@ -86,7 +132,9 @@ function propertyOptions() {
     const seen = new Map();
     for (const node of Array.isArray(window.activeMapNodes) ? window.activeMapNodes : []) {
         for (const [rawId, prop] of Object.entries(node?.properties || {})) {
-            const id = String(prop?.id || rawId || '').trim().toLowerCase();
+            const id = String(prop?.id || rawId || '')
+                .trim()
+                .toLowerCase();
             if (id && !seen.has(id)) seen.set(id, String(prop?.name || rawId || id).trim());
         }
     }
@@ -171,8 +219,10 @@ function rebuildLabels() {
     const value = document.getElementById('pisi-map-scope-value');
     if (value) value.placeholder = t('value');
     const labels = {
-        'pisi-map-add-property-filter': 'add', 'pisi-map-save-scope': 'save',
-        'pisi-map-apply-scope': 'apply', 'pisi-map-delete-scope': 'remove'
+        'pisi-map-add-property-filter': 'add',
+        'pisi-map-save-scope': 'save',
+        'pisi-map-apply-scope': 'apply',
+        'pisi-map-delete-scope': 'remove'
     };
     for (const [id, key] of Object.entries(labels)) {
         const el = document.getElementById(id);
@@ -258,8 +308,10 @@ async function deletePisiSavedScope() {
 
 function bindExistingCriteria() {
     const bindings = [
-        ['pisi-map-operational-scope', 'change'], ['pisi-map-operational-query', 'input'],
-        ['pisi-map-operational-depth', 'change'], ['pisi-map-operational-focus', 'click']
+        ['pisi-map-operational-scope', 'change'],
+        ['pisi-map-operational-query', 'input'],
+        ['pisi-map-operational-depth', 'change'],
+        ['pisi-map-operational-focus', 'click']
     ];
     for (const [id, eventName] of bindings) {
         const el = document.getElementById(id);
@@ -318,7 +370,8 @@ function createControls() {
     const group = document.createElement('div');
     group.id = 'pisi-map-scope-controls';
     group.className = 'pisi-map-scope-controls';
-    group.innerHTML = '<select id="pisi-map-scope-strategy"></select><button type="button" id="pisi-map-freeze-scope"></button><select id="pisi-map-scope-property"></select><select id="pisi-map-scope-operator"></select><input id="pisi-map-scope-value" type="text"><button type="button" id="pisi-map-add-property-filter"></button><div id="pisi-map-scope-filter-chips" class="pisi-map-scope-filter-chips"></div><select id="pisi-map-saved-scope"></select><button type="button" id="pisi-map-save-scope"></button><button type="button" id="pisi-map-apply-scope"></button><button type="button" id="pisi-map-delete-scope"></button><button type="button" id="pisi-map-dim-filtered"></button>';
+    group.innerHTML =
+        '<select id="pisi-map-scope-strategy"></select><button type="button" id="pisi-map-freeze-scope"></button><select id="pisi-map-scope-property"></select><select id="pisi-map-scope-operator"></select><input id="pisi-map-scope-value" type="text"><button type="button" id="pisi-map-add-property-filter"></button><div id="pisi-map-scope-filter-chips" class="pisi-map-scope-filter-chips"></div><select id="pisi-map-saved-scope"></select><button type="button" id="pisi-map-save-scope"></button><button type="button" id="pisi-map-apply-scope"></button><button type="button" id="pisi-map-delete-scope"></button><button type="button" id="pisi-map-dim-filtered"></button>';
     bar.appendChild(group);
     bindNewControls();
     rebuildLabels();
@@ -368,9 +421,7 @@ function bindScopedFilterableMaps() {
             }
             const mapNodesChanged = mutations.some((mutation) => {
                 return [...mutation.addedNodes, ...mutation.removedNodes].some((node) => {
-                    return node?.nodeType === Node.ELEMENT_NODE && (
-                        node.matches?.('.map-node-box') || node.querySelector?.('.map-node-box')
-                    );
+                    return node?.nodeType === Node.ELEMENT_NODE && (node.matches?.('.map-node-box') || node.querySelector?.('.map-node-box'));
                 });
             });
             if (mapNodesChanged) renderPropertyOptions();
@@ -381,12 +432,26 @@ function bindScopedFilterableMaps() {
 }
 
 registerModule('map.scopedFilters', {
-    addPisiPropertyFilter, applyPisiSavedScope, bindScopedFilterableMaps, capturePisiScopeSnapshot,
-    refreshPisiScopeSnapshot, deletePisiSavedScope, loadScopedMapState, savePisiCurrentScope, scopedMapState
+    addPisiPropertyFilter,
+    applyPisiSavedScope,
+    bindScopedFilterableMaps,
+    capturePisiScopeSnapshot,
+    refreshPisiScopeSnapshot,
+    deletePisiSavedScope,
+    loadScopedMapState,
+    savePisiCurrentScope,
+    scopedMapState
 });
 bindScopedFilterableMaps();
 
 export {
-    addPisiPropertyFilter, applyPisiSavedScope, bindScopedFilterableMaps, capturePisiScopeSnapshot,
-    refreshPisiScopeSnapshot, deletePisiSavedScope, loadScopedMapState, savePisiCurrentScope, scopedMapState
+    addPisiPropertyFilter,
+    applyPisiSavedScope,
+    bindScopedFilterableMaps,
+    capturePisiScopeSnapshot,
+    refreshPisiScopeSnapshot,
+    deletePisiSavedScope,
+    loadScopedMapState,
+    savePisiCurrentScope,
+    scopedMapState
 };

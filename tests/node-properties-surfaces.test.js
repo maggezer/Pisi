@@ -27,14 +27,8 @@ test('Properties düzenleyicisi node toolbarının açılır alanında yaşar', 
 test('sağ Properties sekmesi yalnız aktif node bilgisini gösterir', () => {
     const html = read('index.html');
     const source = read('renderer/data/pisi-node-properties-ui.mjs');
-    const section = html.slice(
-        html.indexOf('<section id="right-tab-properties"'),
-        html.indexOf('<section id="right-tab-customizations"')
-    );
-    const infoRenderer = source.slice(
-        source.indexOf('async function renderPisiNodePropertiesInfo()'),
-        source.indexOf('function syncPisiNodePropertiesTab')
-    );
+    const section = html.slice(html.indexOf('<section id="right-tab-properties"'), html.indexOf('<section id="right-tab-customizations"'));
+    const infoRenderer = source.slice(source.indexOf('async function renderPisiNodePropertiesInfo()'), source.indexOf('function syncPisiNodePropertiesTab'));
 
     assert.match(html, /data-right-tab="properties"/);
     assert.match(html, /id="pisi-node-properties-info"/);
@@ -64,15 +58,11 @@ test('Properties yüzeyleri koyu ve açık tema ile özel sekme ikonuna sahiptir
     assert.match(systemCss, /\.pisi-properties-info-row/);
     assert.doesNotMatch(systemCss, /\.pisi-properties-info-header/);
     assert.doesNotMatch(systemCss, /\.pisi-properties-readonly-badge/);
-    assert.match(lightCss, /data-pisi-theme="light"[^\n]*\.pisi-node-properties-drawer/);
+    assert.match(lightCss, /data-pisi-theme=["\']light["\'][^\n]*\.pisi-node-properties-drawer/);
     assert.match(tabCss, /assets\/right-tabs\/properties\.svg/);
     assert.match(icon, /viewBox="0 0 24 24"/);
     assert.doesNotMatch(icon, /<script\b/i);
-    for (const key of [
-        'Özellikleri göster',
-        'Özellikleri gizle',
-        'Bu node için özellik tanımlanmamış.'
-    ]) {
+    for (const key of ['Özellikleri göster', 'Özellikleri gizle', 'Bu node için özellik tanımlanmamış.']) {
         assert.equal(typeof tr[key], 'string', key);
         assert.equal(typeof eng[key], 'string', key);
     }

@@ -1,5 +1,3 @@
-
-
 .pisi-rename-input {
     -webkit-app-region: no-drag;
     -webkit-user-select: text;
@@ -21,7 +19,6 @@
     font: inherit;
 }
 
-
 .tree-inline-action-btn:hover {
     background-color: transparent;
     border-color: transparent;
@@ -32,7 +29,7 @@
     outline: none;
 }
 
-.tree-action-img[src=""],
+.tree-action-img[src=''],
 .tree-action-img:not([src]) {
     display: none;
 }
@@ -103,8 +100,7 @@
     position: absolute;
     inset: 0;
     overflow: hidden;
-    background: radial-gradient(#333 1px, transparent 1px),
-        #1e1e1e;
+    background: radial-gradient(#333 1px, transparent 1px), #1e1e1e;
     background-size: 28px 28px;
     cursor: default;
 }
@@ -126,7 +122,7 @@
     background: var(--pisi-map-node-box-color);
     border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
     border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     color: #d4d4d4;
     font-family: var(--pisi-map-node-font-family);
     overflow: visible;
@@ -139,19 +135,21 @@
 }
 
 .map-node-box::before {
-    content: "";
+    content: '';
     position: absolute;
     inset: 0 auto 0 0;
     width: 4px;
     border-radius: 9px 0 0 9px;
     background: var(--pisi-map-node-title-color);
-    opacity: .9;
+    opacity: 0.9;
     pointer-events: none;
 }
 
 .map-node-box.selected {
     border-color: #f39c12;
-    box-shadow: 0 0 0 2px rgba(243,156,18,0.22), 0 5px 14px rgba(0,0,0,0.24);
+    box-shadow:
+        0 0 0 2px rgba(243, 156, 18, 0.22),
+        0 5px 14px rgba(0, 0, 0, 0.24);
 }
 
 .map-node-title {
@@ -185,7 +183,7 @@
 
 .map-node-box.pisi-map-hub-node .map-node-title {
     font-weight: 900;
-    letter-spacing: .035em;
+    letter-spacing: 0.035em;
     background: color-mix(in srgb, var(--pisi-map-node-title-color) 15%, transparent);
 }
 
@@ -217,7 +215,7 @@
     z-index: 5;
     font-size: 12px;
     font-weight: 700;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.45);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
 }
 
 .map-node-box:hover .map-node-btn {
@@ -244,8 +242,11 @@
     border: 2px solid #252526;
     border-radius: 50% 50% 42% 42%;
     opacity: 0;
-    transform: scale(.72);
-    transition: opacity .14s ease, transform .14s ease, background .14s ease;
+    transform: scale(0.72);
+    transition:
+        opacity 0.14s ease,
+        transform 0.14s ease,
+        background 0.14s ease;
     z-index: 4;
     cursor: crosshair;
 }
@@ -256,28 +257,28 @@
 }
 
 .map-port.hub-collapsed::after {
-    content: "+" attr(data-collapsed-count);
+    content: '+' attr(data-collapsed-count);
 }
 
-#map-canvas[data-node-view="title"] .map-node-box {
+#map-canvas[data-node-view='title'] .map-node-box {
     min-height: 42px;
     height: 42px;
     max-height: 42px;
     box-shadow: none;
 }
 
-#map-canvas[data-node-view="title"] .map-node-title {
+#map-canvas[data-node-view='title'] .map-node-title {
     flex-basis: 42px;
     height: 42px;
     border-bottom: 0;
     padding-block: 7px;
 }
 
-#map-canvas[data-node-view="title"] .map-node-preview,
-#map-canvas[data-node-view="title"] .map-node-resize,
-#map-canvas[data-node-view="title"] .pisi-map-property-badges,
-#map-canvas[data-node-view="title"] .pisi-map-work-badges,
-#map-canvas[data-node-view="title"] .pisi-map-task-count-badge {
+#map-canvas[data-node-view='title'] .map-node-preview,
+#map-canvas[data-node-view='title'] .map-node-resize,
+#map-canvas[data-node-view='title'] .pisi-map-property-badges,
+#map-canvas[data-node-view='title'] .pisi-map-work-badges,
+#map-canvas[data-node-view='title'] .pisi-map-task-count-badge {
     display: none;
 }
 
@@ -326,7 +327,7 @@
     display: none;
     align-items: center;
     justify-content: center;
-    background: rgba(0,0,0,0.62);
+    background: rgba(0, 0, 0, 0.62);
     backdrop-filter: blur(4px);
 }
 
@@ -343,7 +344,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 24px 80px rgba(0,0,0,0.65);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.65);
 }
 
 #node-modal-header {
@@ -391,7 +392,7 @@
     padding: 24px;
     background: #1e1e1e;
     color: #d4d4d4;
-    font-family: "Segoe UI", Tahoma, sans-serif;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
     font-size: 15px;
     line-height: 1.55;
     overflow: auto;
@@ -405,12 +406,14 @@
 @keyframes pisiMapNodePulse {
     0% {
         border-color: #f39c12;
-        box-shadow: 0 0 0 3px rgba(243,156,18,0.28), 0 8px 24px rgba(0,0,0,0.35);
+        box-shadow:
+            0 0 0 3px rgba(243, 156, 18, 0.28),
+            0 8px 24px rgba(0, 0, 0, 0.35);
     }
 
     100% {
         border-color: #444;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
     }
 }
 
@@ -468,11 +471,11 @@
 }
 
 /* Compact cards retain editing and connection controls on hover or focus. */
-#map-canvas[data-node-view="title"] .map-node-box:focus-within .map-node-delete {
+#map-canvas[data-node-view='title'] .map-node-box:focus-within .map-node-delete {
     display: flex;
 }
 
-#map-canvas[data-node-view="title"] .map-node-box:focus-within .map-port {
+#map-canvas[data-node-view='title'] .map-node-box:focus-within .map-port {
     opacity: 1;
     transform: scale(1);
 }

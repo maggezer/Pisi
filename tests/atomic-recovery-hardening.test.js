@@ -66,11 +66,7 @@ test('normal commit exits mut namespace before journal deletion', () => {
     try {
         const target = path.join(fixture.project, 'note.node');
         write(target, 'old');
-        const tx = atomic.beginAtomicMutation(
-            fixture.project,
-            'cleanup-hardening',
-            { transactionId: 'mut_cleanup_hardening' }
-        );
+        const tx = atomic.beginAtomicMutation(fixture.project, 'cleanup-hardening', { transactionId: 'mut_cleanup_hardening' });
         atomic.capturePathBeforeMutation(tx, target);
         write(target, 'new');
 
@@ -81,8 +77,14 @@ test('normal commit exits mut namespace before journal deletion', () => {
         assert.equal(result.ok, true);
         assert.equal(result.cleanupPending, false);
         assert.equal(fs.existsSync(tx.directoryPath), false);
-        assert.equal(leftovers.some((name) => name.startsWith('mut_')), false);
-        assert.equal(leftovers.some((name) => name.startsWith('.cleanup_atomic_')), false);
+        assert.equal(
+            leftovers.some((name) => name.startsWith('mut_')),
+            false
+        );
+        assert.equal(
+            leftovers.some((name) => name.startsWith('.cleanup_atomic_')),
+            false
+        );
         assert.equal(fs.readFileSync(target, 'utf8'), 'new');
     } finally {
         fixture.cleanup();
@@ -90,10 +92,7 @@ test('normal commit exits mut namespace before journal deletion', () => {
 });
 
 test('hardening source keeps Windows transient cleanup retries', () => {
-    const source = fs.readFileSync(
-        path.join(__dirname, '..', 'main/functions/atomic-recovery-hardening.js'),
-        'utf8'
-    );
+    const source = fs.readFileSync(path.join(__dirname, '..', 'main/functions/atomic-recovery-hardening.js'), 'utf8');
 
     assert.match(source, /'EPERM'/);
     assert.match(source, /'EACCES'/);

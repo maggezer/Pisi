@@ -42,20 +42,20 @@
     color: #f5b64e;
 }
 
-html[data-pisi-theme="light"] .pisi-preference-toggle-row,
+html[data-pisi-theme='light'] .pisi-preference-toggle-row,
 body.pisi-light-theme .pisi-preference-toggle-row {
     border-color: rgba(0, 0, 0, 0.1);
     background: rgba(0, 0, 0, 0.025);
 }
 
-html[data-pisi-theme="light"] .pisi-preference-toggle-button,
+html[data-pisi-theme='light'] .pisi-preference-toggle-button,
 body.pisi-light-theme .pisi-preference-toggle-button {
     border-color: #c8cdd4;
     background: #f2f4f7;
     color: #67707c;
 }
 
-html[data-pisi-theme="light"] .pisi-preference-toggle-button.active,
+html[data-pisi-theme='light'] .pisi-preference-toggle-button.active,
 body.pisi-light-theme .pisi-preference-toggle-button.active {
     border-color: #d98606;
     background: #fff1d7;

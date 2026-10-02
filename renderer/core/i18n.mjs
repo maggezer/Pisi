@@ -32,9 +32,7 @@ function getPisiSupplementalLanguage() {
 function rebuildPisiSupplementalReverseIndex() {
     const reverse = new Map();
     for (const language of ['tr', 'eng']) {
-        for (const [source, rendered] of Object.entries(
-            pisiSupplementalTranslations[language] || {}
-        )) {
+        for (const [source, rendered] of Object.entries(pisiSupplementalTranslations[language] || {})) {
             if (!reverse.has(source)) reverse.set(source, source);
             if (!reverse.has(rendered)) reverse.set(rendered, source);
         }
@@ -69,9 +67,7 @@ function translatePisiUiText(value) {
 }
 
 function isPisiSupplementalUserContent(node) {
-    const element = node?.nodeType === Node.ELEMENT_NODE
-        ? node
-        : node?.parentElement;
+    const element = node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement;
     return Boolean(element?.closest?.(PISI_SUPPLEMENTAL_USER_CONTENT_SELECTOR));
 }
 
@@ -108,9 +104,7 @@ function applyPisiSupplementalRoot(root = document) {
             applyPisiSupplementalTextNode(root);
             return;
         }
-        const elements = root.nodeType === Node.ELEMENT_NODE
-            ? [root, ...root.querySelectorAll('*')]
-            : [...document.querySelectorAll('*')];
+        const elements = root.nodeType === Node.ELEMENT_NODE ? [root, ...root.querySelectorAll('*')] : [...document.querySelectorAll('*')];
         for (const element of elements) {
             applyPisiSupplementalAttributes(element);
             for (const child of element.childNodes) {
@@ -176,8 +170,4 @@ await initializePisiSupplementalTranslations().catch((error) => {
     console.error('[Pisi] Renderer supplemental localization could not initialize:', error);
 });
 
-export {
-    applyPisiSupplementalRoot,
-    translatePisiSupplementalText,
-    translatePisiUiText
-};
+export { applyPisiSupplementalRoot, translatePisiSupplementalText, translatePisiUiText };

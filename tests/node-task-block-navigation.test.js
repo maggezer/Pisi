@@ -10,9 +10,7 @@ const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 async function loadCore() {
-    return import(pathToFileURL(
-        path.join(root, 'renderer/navigation/pisi-navigation-core.mjs')
-    ).href);
+    return import(pathToFileURL(path.join(root, 'renderer/navigation/pisi-navigation-core.mjs')).href);
 }
 
 test('task navigation exact identity has deterministic priority', async () => {
@@ -136,15 +134,8 @@ test('task navigation exact identity has deterministic priority', async () => {
 
     assert.equal(cases.length, 50);
     for (const [index, scenario] of cases.entries()) {
-        const result = selectPisiTaskNavigationCandidate(
-            scenario.candidates,
-            scenario.target
-        );
-        assert.equal(
-            result?.candidate,
-            scenario.expected,
-            `navigation core case ${index + 1}/50 failed`
-        );
+        const result = selectPisiTaskNavigationCandidate(scenario.candidates, scenario.target);
+        assert.equal(result?.candidate, scenario.expected, `navigation core case ${index + 1}/50 failed`);
     }
 });
 

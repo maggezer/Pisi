@@ -1,5 +1,5 @@
-import { registerModule } from "../core/module-registry.mjs";
-import { renderPisiBasesView } from "./pisi-bases-view.mjs";
+import { registerModule } from '../core/module-registry.mjs';
+import { renderPisiBasesView } from './pisi-bases-view.mjs';
 
 const pisiBasesDialogState = {
     body: null,
@@ -19,12 +19,7 @@ function pisiBasesTranslate(value) {
 
 function isPisiBasesMapAvailable() {
     const canvas = document.getElementById('map-canvas');
-    return Boolean(
-        window.activeMapPath &&
-        canvas &&
-        !canvas.hidden &&
-        canvas.style.display !== 'none'
-    );
+    return Boolean(window.activeMapPath && canvas && !canvas.hidden && canvas.style.display !== 'none');
 }
 
 function updatePisiBasesDialogLabels() {
@@ -37,10 +32,7 @@ function updatePisiBasesDialogLabels() {
         pisiBasesDialogState.title.textContent = pisiBasesTranslate('Bases-lite');
     }
     if (pisiBasesDialogState.dialog) {
-        pisiBasesDialogState.dialog.setAttribute(
-            'aria-label',
-            pisiBasesTranslate('Bases-lite')
-        );
+        pisiBasesDialogState.dialog.setAttribute('aria-label', pisiBasesTranslate('Bases-lite'));
     }
     if (pisiBasesDialogState.closeButton) {
         const closeLabel = pisiBasesTranslate('Kapat');

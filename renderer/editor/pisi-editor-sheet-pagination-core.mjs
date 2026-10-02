@@ -12,63 +12,29 @@ function clampPisiSheetInteger(value, min, max, fallback) {
 }
 
 function normalizePisiSheetPaginationConfig(view = {}) {
-    const pageSize = clampPisiSheetInteger(
-        view.pageSize,
-        PISI_SHEET_MIN_PAGE_SIZE,
-        PISI_SHEET_MAX_PAGE_SIZE,
-        PISI_SHEET_DEFAULT_PAGE_SIZE
-    );
-    const page = clampPisiSheetInteger(
-        view.page,
-        1,
-        Number.MAX_SAFE_INTEGER,
-        1
-    );
-    const rawVirtual =
-        view.virtualScroll &&
-        typeof view.virtualScroll === 'object'
-            ? view.virtualScroll
-            : {};
+    const pageSize = clampPisiSheetInteger(view.pageSize, PISI_SHEET_MIN_PAGE_SIZE, PISI_SHEET_MAX_PAGE_SIZE, PISI_SHEET_DEFAULT_PAGE_SIZE);
+    const page = clampPisiSheetInteger(view.page, 1, Number.MAX_SAFE_INTEGER, 1);
+    const rawVirtual = view.virtualScroll && typeof view.virtualScroll === 'object' ? view.virtualScroll : {};
 
     return {
         page,
         pageSize,
         virtualScroll: {
             enabled: rawVirtual.enabled !== false,
-            rowHeight: clampPisiSheetInteger(
-                rawVirtual.rowHeight,
-                24,
-                64,
-                PISI_SHEET_VIRTUAL_ROW_HEIGHT
-            ),
-            overscan: clampPisiSheetInteger(
-                rawVirtual.overscan,
-                2,
-                40,
-                PISI_SHEET_VIRTUAL_OVERSCAN
-            )
+            rowHeight: clampPisiSheetInteger(rawVirtual.rowHeight, 24, 64, PISI_SHEET_VIRTUAL_ROW_HEIGHT),
+            overscan: clampPisiSheetInteger(rawVirtual.overscan, 2, 40, PISI_SHEET_VIRTUAL_OVERSCAN)
         }
     };
 }
 
 function paginatePisiSheetRecords(records, config = {}) {
     const source = Array.isArray(records) ? records : [];
-    const normalized =
-        normalizePisiSheetPaginationConfig(config);
+    const normalized = normalizePisiSheetPaginationConfig(config);
     const total = source.length;
-    const pageCount = Math.max(
-        1,
-        Math.ceil(total / normalized.pageSize)
-    );
-    const page = Math.max(
-        1,
-        Math.min(normalized.page, pageCount)
-    );
+    const pageCount = Math.max(1, Math.ceil(total / normalized.pageSize));
+    const page = Math.max(1, Math.min(normalized.page, pageCount));
     const start = (page - 1) * normalized.pageSize;
-    const end = Math.min(
-        total,
-        start + normalized.pageSize
-    );
+    const end = Math.min(total, start + normalized.pageSize);
 
     return {
         ...normalized,
@@ -82,25 +48,10 @@ function paginatePisiSheetRecords(records, config = {}) {
 }
 
 function computePisiSheetVirtualWindow(options = {}) {
-    const count = Math.max(
-        0,
-        Math.trunc(Number(options.count) || 0)
-    );
-    const rowHeight = clampPisiSheetInteger(
-        options.rowHeight,
-        24,
-        64,
-        PISI_SHEET_VIRTUAL_ROW_HEIGHT
-    );
-    const overscan = clampPisiSheetInteger(
-        options.overscan,
-        2,
-        40,
-        PISI_SHEET_VIRTUAL_OVERSCAN
-    );
-    const enabled =
-        options.enabled !== false &&
-        count > PISI_SHEET_VIRTUAL_THRESHOLD;
+    const count = Math.max(0, Math.trunc(Number(options.count) || 0));
+    const rowHeight = clampPisiSheetInteger(options.rowHeight, 24, 64, PISI_SHEET_VIRTUAL_ROW_HEIGHT);
+    const overscan = clampPisiSheetInteger(options.overscan, 2, 40, PISI_SHEET_VIRTUAL_OVERSCAN);
+    const enabled = options.enabled !== false && count > PISI_SHEET_VIRTUAL_THRESHOLD;
 
     if (!enabled) {
         return {
@@ -114,64 +65,23 @@ function computePisiSheetVirtualWindow(options = {}) {
         };
     }
 
-    const viewportHeight = Math.max(
-        rowHeight * 12,
-        Number(options.viewportHeight) || 0
-    );
-    const visibleCount = Math.max(
-        12,
-        Math.ceil(viewportHeight / rowHeight)
-    );
-    const forcedIndex = Number.isInteger(
-        options.forcedIndex
-    )
-        ? Math.max(
-            0,
-            Math.min(
-                count - 1,
-                options.forcedIndex
-            )
-        )
-        : null;
+    const viewportHeight = Math.max(rowHeight * 12, Number(options.viewportHeight) || 0);
+    const visibleCount = Math.max(12, Math.ceil(viewportHeight / rowHeight));
+    const forcedIndex = Number.isInteger(options.forcedIndex) ? Math.max(0, Math.min(count - 1, options.forcedIndex)) : null;
 
     let start;
 
     if (forcedIndex !== null) {
-        start = Math.max(
-            0,
-            forcedIndex -
-            Math.floor(visibleCount / 2) -
-            overscan
-        );
+        start = Math.max(0, forcedIndex - Math.floor(visibleCount / 2) - overscan);
     } else {
-        start = Math.max(
-            0,
-            Math.floor(
-                Math.max(
-                    0,
-                    Number(options.scrollTop) || 0
-                ) / rowHeight
-            ) - overscan
-        );
+        start = Math.max(0, Math.floor(Math.max(0, Number(options.scrollTop) || 0) / rowHeight) - overscan);
     }
 
-    let end = Math.min(
-        count,
-        start + visibleCount + overscan * 2
-    );
+    let end = Math.min(count, start + visibleCount + overscan * 2);
 
-    if (
-        forcedIndex !== null &&
-        forcedIndex >= end
-    ) {
-        end = Math.min(
-            count,
-            forcedIndex + overscan + 1
-        );
-        start = Math.max(
-            0,
-            end - visibleCount - overscan * 2
-        );
+    if (forcedIndex !== null && forcedIndex >= end) {
+        end = Math.min(count, forcedIndex + overscan + 1);
+        start = Math.max(0, end - visibleCount - overscan * 2);
     }
 
     return {
@@ -179,8 +89,7 @@ function computePisiSheetVirtualWindow(options = {}) {
         start,
         end,
         topHeight: start * rowHeight,
-        bottomHeight:
-            Math.max(0, count - end) * rowHeight,
+        bottomHeight: Math.max(0, count - end) * rowHeight,
         rowHeight,
         overscan
     };

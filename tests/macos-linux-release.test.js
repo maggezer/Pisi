@@ -74,10 +74,7 @@ test('one final release is created after all platform jobs', () => {
 test('cross-platform release workflow and entitlements remain parseable', () => {
     assert.doesNotThrow(() => yaml.load(read('.github/workflows/release.yml')));
 
-    for (const plist of [
-        'build/entitlements.mac.plist',
-        'build/entitlements.mac.inherit.plist'
-    ]) {
+    for (const plist of ['build/entitlements.mac.plist', 'build/entitlements.mac.inherit.plist']) {
         const content = read(plist);
         assert.match(content, /com\.apple\.security\.cs\.allow-jit/);
         assert.match(content, /com\.apple\.security\.cs\.allow-unsigned-executable-memory/);

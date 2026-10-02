@@ -35,20 +35,20 @@ global.document = {
     body: null,
     head: { appendChild() {} },
     addEventListener() {},
-    querySelector() { return null; },
-    getElementById() { return null; }
+    querySelector() {
+        return null;
+    },
+    getElementById() {
+        return null;
+    }
 };
 
 let modulesPromise = null;
 function loadModules() {
     if (!modulesPromise) {
         modulesPromise = (async () => {
-            const preferences = await import(pathToFileURL(
-                path.join(root, 'renderer/editor/pisi-editor-command-preferences.mjs')
-            ).href);
-            const routing = await import(pathToFileURL(
-                path.join(root, 'renderer/editor/pisi-editor-command-routing.mjs')
-            ).href);
+            const preferences = await import(pathToFileURL(path.join(root, 'renderer/editor/pisi-editor-command-preferences.mjs')).href);
+            const routing = await import(pathToFileURL(path.join(root, 'renderer/editor/pisi-editor-command-routing.mjs')).href);
             return { preferences, routing };
         })();
     }
@@ -89,30 +89,12 @@ test('LaTeX support off leaves only todo and done for / and ..', async () => {
         assert.deepEqual(ids(items), new Set(['todo', 'done']));
         assert.ok(items.every((item) => ['todo-start', 'todo-done'].includes(item.kind)));
 
-        assert.deepEqual(
-            routing.buildPisiFinalCommandItems({ trigger, body: 'bold' }),
-            []
-        );
-        assert.deepEqual(
-            routing.buildPisiFinalCommandItems({ trigger, body: 'italic' }),
-            []
-        );
-        assert.deepEqual(
-            routing.buildPisiFinalCommandItems({ trigger, body: 'paragraph' }),
-            []
-        );
-        assert.deepEqual(
-            routing.buildPisiFinalCommandItems({ trigger, body: 'frac' }),
-            []
-        );
-        assert.equal(
-            routing.buildPisiFinalCommandItems({ trigger, body: 'todo' }).length,
-            1
-        );
-        assert.equal(
-            routing.buildPisiFinalCommandItems({ trigger, body: 'done' }).length,
-            1
-        );
+        assert.deepEqual(routing.buildPisiFinalCommandItems({ trigger, body: 'bold' }), []);
+        assert.deepEqual(routing.buildPisiFinalCommandItems({ trigger, body: 'italic' }), []);
+        assert.deepEqual(routing.buildPisiFinalCommandItems({ trigger, body: 'paragraph' }), []);
+        assert.deepEqual(routing.buildPisiFinalCommandItems({ trigger, body: 'frac' }), []);
+        assert.equal(routing.buildPisiFinalCommandItems({ trigger, body: 'todo' }).length, 1);
+        assert.equal(routing.buildPisiFinalCommandItems({ trigger, body: 'done' }).length, 1);
     }
 });
 
@@ -122,21 +104,12 @@ test('.. master preference still disables even todo and done', async () => {
     preferences.setPisiLatexCommandsPreference(false);
     preferences.setPisiDoubleDotCommandsPreference(false);
 
-    assert.deepEqual(
-        routing.buildPisiFinalCommandItems({ trigger: '..', body: '' }),
-        []
-    );
-    assert.deepEqual(
-        routing.buildPisiFinalCommandItems({ trigger: '..', body: 'todo' }),
-        []
-    );
+    assert.deepEqual(routing.buildPisiFinalCommandItems({ trigger: '..', body: '' }), []);
+    assert.deepEqual(routing.buildPisiFinalCommandItems({ trigger: '..', body: 'todo' }), []);
 });
 
 test('all routed menu execution paths pass through the preference gate', () => {
-    const source = fs.readFileSync(
-        path.join(root, 'renderer/editor/pisi-editor-command-routing.mjs'),
-        'utf8'
-    );
+    const source = fs.readFileSync(path.join(root, 'renderer/editor/pisi-editor-command-routing.mjs'), 'utf8');
     const directRunnerCalls = source.match(/runPisiExtendedUnifiedCommandItem\(/g) || [];
 
     assert.equal(directRunnerCalls.length, 1);

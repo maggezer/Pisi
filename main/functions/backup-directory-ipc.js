@@ -21,32 +21,26 @@ function listCentralizedPisiAtomicBackups(projectFolder, filePath = null) {
             };
         }
 
-        const backupPath = backupStorage.getPisiAtomicBackupPath(
-            projectFolder,
-            filePath
-        );
+        const backupPath = backupStorage.getPisiAtomicBackupPath(projectFolder, filePath);
         if (!backupPath || !fs.existsSync(backupPath)) {
             return { ok: true, backups: [] };
         }
 
-        const targetPath = backupStorage.getPisiAtomicBackupTargetPath(
-            projectFolder,
-            backupPath
-        );
+        const targetPath = backupStorage.getPisiAtomicBackupTargetPath(projectFolder, backupPath);
         if (!targetPath) return { ok: true, backups: [] };
 
         const stat = fs.statSync(backupPath);
         return {
             ok: true,
-            backups: [{
-                backupId: path.relative(projectFolder, backupPath)
-                    .split(path.sep)
-                    .join('/'),
-                targetPath,
-                updatedAt: stat.mtime.toISOString(),
-                size: stat.size,
-                centralized: true
-            }]
+            backups: [
+                {
+                    backupId: path.relative(projectFolder, backupPath).split(path.sep).join('/'),
+                    targetPath,
+                    updatedAt: stat.mtime.toISOString(),
+                    size: stat.size,
+                    centralized: true
+                }
+            ]
         };
     } catch (error) {
         return { ok: false, error: error.message, backups: [] };
@@ -57,18 +51,11 @@ function restoreCentralizedPisiAtomicBackup(projectFolder, backupId) {
     try {
         const backupPath = path.resolve(projectFolder, String(backupId || ''));
         const relative = path.relative(projectFolder, backupPath);
-        if (
-            relative.startsWith('..') ||
-            path.isAbsolute(relative) ||
-            !fs.existsSync(backupPath)
-        ) {
+        if (relative.startsWith('..') || path.isAbsolute(relative) || !fs.existsSync(backupPath)) {
             return { ok: false, error: 'Geçersiz yedek yolu.' };
         }
 
-        const targetPath = backupStorage.getPisiAtomicBackupTargetPath(
-            projectFolder,
-            backupPath
-        );
+        const targetPath = backupStorage.getPisiAtomicBackupTargetPath(projectFolder, backupPath);
         if (!targetPath) {
             return { ok: false, error: 'Geçersiz yedek yolu.' };
         }
@@ -81,14 +68,8 @@ function restoreCentralizedPisiAtomicBackup(projectFolder, backupId) {
             };
         }
 
-        if (
-            fs.existsSync(targetPath) &&
-            path.extname(targetPath).toLowerCase() === '.node'
-        ) {
-            const snapshot = snapshotPisiNodeVersion(
-                targetPath,
-                'before-backup-restore'
-            );
+        if (fs.existsSync(targetPath) && path.extname(targetPath).toLowerCase() === '.node') {
+            const snapshot = snapshotPisiNodeVersion(targetPath, 'before-backup-restore');
             if (!snapshot.ok) return snapshot;
         }
 
@@ -97,10 +78,10 @@ function restoreCentralizedPisiAtomicBackup(projectFolder, backupId) {
         return {
             ok: true,
             targetPath,
-            backupId: path.relative(projectFolder, backupStorage.getPisiAtomicBackupPath(
-                projectFolder,
-                targetPath
-            ) || backupPath).split(path.sep).join('/')
+            backupId: path
+                .relative(projectFolder, backupStorage.getPisiAtomicBackupPath(projectFolder, targetPath) || backupPath)
+                .split(path.sep)
+                .join('/')
         };
     } catch (error) {
         return { ok: false, error: error.message };
@@ -115,16 +96,10 @@ function bindCentralizedPisiBackupIpc() {
                 type: 'directory'
             });
             if (!filePath) {
-                return listCentralizedPisiAtomicBackups(
-                    safeProjectFolder,
-                    null
-                );
+                return listCentralizedPisiAtomicBackups(safeProjectFolder, null);
             }
             const safeFilePath = assertProjectPath(filePath, { type: 'file' });
-            return listCentralizedPisiAtomicBackups(
-                safeProjectFolder,
-                safeFilePath
-            );
+            return listCentralizedPisiAtomicBackups(safeProjectFolder, safeFilePath);
         });
     });
 
@@ -134,10 +109,7 @@ function bindCentralizedPisiBackupIpc() {
             const safeProjectFolder = assertProjectPath(projectFolder, {
                 type: 'directory'
             });
-            return restoreCentralizedPisiAtomicBackup(
-                safeProjectFolder,
-                backupId
-            );
+            return restoreCentralizedPisiAtomicBackup(safeProjectFolder, backupId);
         });
     });
 }

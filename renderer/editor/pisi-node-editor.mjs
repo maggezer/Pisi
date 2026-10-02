@@ -1,18 +1,18 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 
 function dispatchPisiActiveNodeChanged(reason = 'update') {
     const activeNode = activeModalNode || activeCenterNode || null;
-    document.dispatchEvent(new CustomEvent('pisi:active-node-changed', {
-        detail: {
-            reason,
-            path: activeNode?.path || null,
-            mapPath: activeNode?.mapPath || null,
-            metadata: activeNode?.metadata || null,
-            source: activeModalNode
-                ? 'modal'
-                : (activeCenterNode ? 'center' : null)
-        }
-    }));
+    document.dispatchEvent(
+        new CustomEvent('pisi:active-node-changed', {
+            detail: {
+                reason,
+                path: activeNode?.path || null,
+                mapPath: activeNode?.mapPath || null,
+                metadata: activeNode?.metadata || null,
+                source: activeModalNode ? 'modal' : activeCenterNode ? 'center' : null
+            }
+        })
+    );
 }
 
 function sanitizePisiEditorHtml(html = '') {
@@ -22,29 +22,53 @@ function sanitizePisiEditorHtml(html = '') {
     wrapper
         .querySelectorAll(
             '.pisi-sheet-section-header, ' +
-            '.pisi-sheet-search-row, ' +
-            '.pisi-sheet-search, ' +
-            '.pisi-sheet-pagination, ' +
-            '.pisi-sheet-drag-fill-handle, ' +
-            '.pisi-canvas-section-header'
+                '.pisi-sheet-search-row, ' +
+                '.pisi-sheet-search, ' +
+                '.pisi-sheet-pagination, ' +
+                '.pisi-sheet-drag-fill-handle, ' +
+                '.pisi-canvas-section-header'
         )
         .forEach((element) => element.remove());
 
-    wrapper
-        .querySelectorAll(
-            '.pisi-composite-alignment-active'
-        )
-        .forEach((element) => {
-            element.classList.remove(
-                'pisi-composite-alignment-active'
-            );
-        });
+    wrapper.querySelectorAll('.pisi-composite-alignment-active').forEach((element) => {
+        element.classList.remove('pisi-composite-alignment-active');
+    });
 
     const allowedTags = new Set([
-        'A', 'B', 'BLOCKQUOTE', 'BR', 'CANVAS', 'CODE', 'DIV', 'EM',
-        'FONT', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'I', 'IMG', 'LI',
-        'OL', 'P', 'PRE', 'S', 'SPAN', 'STRONG', 'SUB', 'SUP', 'TABLE',
-        'TBODY', 'TD', 'TH', 'THEAD', 'TR', 'U', 'UL'
+        'A',
+        'B',
+        'BLOCKQUOTE',
+        'BR',
+        'CANVAS',
+        'CODE',
+        'DIV',
+        'EM',
+        'FONT',
+        'H1',
+        'H2',
+        'H3',
+        'H4',
+        'H5',
+        'H6',
+        'I',
+        'IMG',
+        'LI',
+        'OL',
+        'P',
+        'PRE',
+        'S',
+        'SPAN',
+        'STRONG',
+        'SUB',
+        'SUP',
+        'TABLE',
+        'TBODY',
+        'TD',
+        'TH',
+        'THEAD',
+        'TR',
+        'U',
+        'UL'
     ]);
     const globallyAllowedAttributes = new Set([
         'class',
@@ -89,9 +113,7 @@ function sanitizePisiEditorHtml(html = '') {
         'text-decoration'
     ]);
 
-    wrapper
-        .querySelectorAll('script, style, iframe, object, embed, link, meta, base, form, input, button')
-        .forEach((element) => element.remove());
+    wrapper.querySelectorAll('script, style, iframe, object, embed, link, meta, base, form, input, button').forEach((element) => element.remove());
 
     Array.from(wrapper.querySelectorAll('*')).forEach((element) => {
         if (!allowedTags.has(element.tagName)) {
@@ -113,18 +135,10 @@ function sanitizePisiEditorHtml(html = '') {
                         const separatorIndex = declaration.indexOf(':');
                         if (separatorIndex < 1) return '';
 
-                        const property = declaration
-                            .slice(0, separatorIndex)
-                            .trim()
-                            .toLowerCase();
-                        const propertyValue = declaration
-                            .slice(separatorIndex + 1)
-                            .trim();
+                        const property = declaration.slice(0, separatorIndex).trim().toLowerCase();
+                        const propertyValue = declaration.slice(separatorIndex + 1).trim();
 
-                        if (
-                            !allowedStyleProperties.has(property) ||
-                            /url\s*\(|expression\s*\(|@import/i.test(propertyValue)
-                        ) {
+                        if (!allowedStyleProperties.has(property) || /url\s*\(|expression\s*\(|@import/i.test(propertyValue)) {
                             return '';
                         }
 
@@ -160,9 +174,7 @@ function sanitizePisiEditorHtml(html = '') {
                 if (name === 'data-pisi-canvas-block') {
                     allowed = value === '1';
                 } else if (name === 'data-pisi-canvas-title') {
-                    allowed =
-                        value.length <= 80 &&
-                        !/[\u0000-\u001f\u007f]/.test(value);
+                    allowed = value.length <= 80 && !/[\u0000-\u001f\u007f]/.test(value);
                 } else if (name === 'data-pisi-canvas-collapsed') {
                     allowed = /^(?:0|1)$/.test(value);
                 } else if (name === 'data-pisi-composite-align') {
@@ -171,14 +183,7 @@ function sanitizePisiEditorHtml(html = '') {
             }
 
             if (element.tagName === 'CANVAS') {
-                allowed = [
-                    'width',
-                    'height',
-                    'data-pisi-canvas',
-                    'data-pisi-document-ink',
-                    'data-pisi-asset',
-                    'data-image'
-                ].includes(name);
+                allowed = ['width', 'height', 'data-pisi-canvas', 'data-pisi-document-ink', 'data-pisi-asset', 'data-image'].includes(name);
 
                 if (name === 'data-image') {
                     allowed = /^data:image\/png;base64,/i.test(value);
@@ -190,27 +195,16 @@ function sanitizePisiEditorHtml(html = '') {
             }
 
             if (['TABLE', 'TD'].includes(element.tagName)) {
-                allowed = allowed || [
-                    'data-pisi-sheet',
-                    'data-formula',
-                    'data-cell',
-                    'data-row',
-                    'data-col'
-                ].includes(name);
+                allowed = allowed || ['data-pisi-sheet', 'data-formula', 'data-cell', 'data-row', 'data-col'].includes(name);
             }
 
             if (element.tagName === 'TABLE') {
                 if (name === 'data-pisi-database-id') {
-                    allowed =
-                        /^database-[A-Za-z0-9_-]{8,160}$/.test(
-                            value
-                        );
+                    allowed = /^database-[A-Za-z0-9_-]{8,160}$/.test(value);
                 }
 
                 if (name === 'data-pisi-sheet-asset') {
-                    allowed = /^sheet\/[a-f0-9]{64}\.json$/i.test(
-                        value
-                    );
+                    allowed = /^sheet\/[a-f0-9]{64}\.json$/i.test(value);
                 }
 
                 if (name === 'data-pisi-sheet-model') {
@@ -230,10 +224,7 @@ function sanitizePisiEditorHtml(html = '') {
                             );
 
                             if (validSnapshot) {
-                                element.setAttribute(
-                                    attribute.name,
-                                    JSON.stringify(snapshot)
-                                );
+                                element.setAttribute(attribute.name, JSON.stringify(snapshot));
                                 allowed = true;
                             }
                         } catch {
@@ -264,27 +255,13 @@ function sanitizePisiEditorHtml(html = '') {
         }
 
         if (element.tagName === 'CANVAS') {
-            const isDocumentInk = element.hasAttribute(
-                'data-pisi-document-ink'
-            );
+            const isDocumentInk = element.hasAttribute('data-pisi-document-ink');
             const maxWidth = isDocumentInk ? 4096 : 1600;
             const maxHeight = isDocumentInk ? 4096 : 1200;
             const fallbackWidth = isDocumentInk ? 1 : 520;
             const fallbackHeight = isDocumentInk ? 1 : 320;
-            const width = Math.min(
-                maxWidth,
-                Math.max(
-                    1,
-                    Number(element.getAttribute('width')) || fallbackWidth
-                )
-            );
-            const height = Math.min(
-                maxHeight,
-                Math.max(
-                    1,
-                    Number(element.getAttribute('height')) || fallbackHeight
-                )
-            );
+            const width = Math.min(maxWidth, Math.max(1, Number(element.getAttribute('width')) || fallbackWidth));
+            const height = Math.min(maxHeight, Math.max(1, Number(element.getAttribute('height')) || fallbackHeight));
 
             element.setAttribute('width', String(width));
             element.setAttribute('height', String(height));
@@ -303,10 +280,7 @@ function sanitizePisiEditorHtml(html = '') {
 
         if (element.hasAttribute('contenteditable')) {
             const value = element.getAttribute('contenteditable');
-            element.setAttribute(
-                'contenteditable',
-                value === 'false' ? 'false' : 'true'
-            );
+            element.setAttribute('contenteditable', value === 'false' ? 'false' : 'true');
         }
     });
 
@@ -325,10 +299,7 @@ function clearPisiEditorCaret(editor) {
     if (!selection?.rangeCount) return;
 
     const range = selection.getRangeAt(0);
-    if (
-        editor.contains(range.startContainer) ||
-        editor.contains(range.endContainer)
-    ) {
+    if (editor.contains(range.startContainer) || editor.contains(range.endContainer)) {
         selection.removeAllRanges();
     }
 }
@@ -375,8 +346,7 @@ async function openNodeModalFromBox(box) {
             titleInput.addEventListener('input', () => {
                 if (!activeModalNode) return;
                 activeModalNode.dirty = true;
-                activeModalNode.revision =
-                    Number(activeModalNode.revision || 0) + 1;
+                activeModalNode.revision = Number(activeModalNode.revision || 0) + 1;
             });
         }
     }
@@ -389,8 +359,7 @@ async function openNodeModalFromBox(box) {
             contentInput.addEventListener('input', () => {
                 if (!activeModalNode) return;
                 activeModalNode.dirty = true;
-                activeModalNode.revision =
-                    Number(activeModalNode.revision || 0) + 1;
+                activeModalNode.revision = Number(activeModalNode.revision || 0) + 1;
             });
         }
 
@@ -426,10 +395,7 @@ async function closeNodeModalAndSave() {
         if (title && title !== oldTitle) {
             suppressNextFileSystemRefresh(1500);
 
-            const renameResult = await window.pisiProject?.renamePisiFile?.(
-                nodePath,
-                title
-            );
+            const renameResult = await window.pisiProject?.renamePisiFile?.(nodePath, title);
 
             if (renameResult && renameResult.ok) {
                 nodePath = renameResult.fullPath;
@@ -441,9 +407,8 @@ async function closeNodeModalAndSave() {
                 updateOpenMapNodeAfterRename(oldPath, renameResult);
 
                 if (typeof refreshActiveMapTreeBranch === 'function') {
-                await refreshActiveMapTreeBranch();
+                    await refreshActiveMapTreeBranch();
                 }
-
             } else {
                 alert(renameResult?.error || 'Node başlığı değiştirilemedi.');
 
@@ -454,10 +419,7 @@ async function closeNodeModalAndSave() {
         }
 
         suppressNextFileSystemRefresh(3000);
-        const saveResult = await window.pisiProject?.saveNodeContent?.(
-            nodePath,
-            content
-        );
+        const saveResult = await window.pisiProject?.saveNodeContent?.(nodePath, content);
 
         if (!saveResult || !saveResult.ok) {
             alert(saveResult?.error || 'Node kaydedilemedi.');
@@ -540,8 +502,7 @@ function bindCenterNodeEditorControls() {
         titleInput.addEventListener('input', () => {
             if (!activeCenterNode) return;
             activeCenterNode.dirty = true;
-            activeCenterNode.revision =
-                Number(activeCenterNode.revision || 0) + 1;
+            activeCenterNode.revision = Number(activeCenterNode.revision || 0) + 1;
             scheduleCenterNodeEditorSave();
         });
 
@@ -564,8 +525,7 @@ function bindCenterNodeEditorControls() {
         contentEditor.addEventListener('input', () => {
             if (activeCenterNode) {
                 activeCenterNode.dirty = true;
-                activeCenterNode.revision =
-                    Number(activeCenterNode.revision || 0) + 1;
+                activeCenterNode.revision = Number(activeCenterNode.revision || 0) + 1;
             }
             refreshPisiTagsPanelSoon();
             scheduleCenterNodeEditorSave();
@@ -595,10 +555,7 @@ async function openCenterNodeEditor(nodeItem) {
 
     bindCenterNodeEditorControls();
 
-    if (
-        activeCenterNode?.path &&
-        !samePisiWorkspacePath(activeCenterNode.path, nodeItem.fullPath)
-    ) {
+    if (activeCenterNode?.path && !samePisiWorkspacePath(activeCenterNode.path, nodeItem.fullPath)) {
         const saved = await saveCurrentCenterNodeEditor();
         if (!saved) return false;
     }
@@ -617,13 +574,7 @@ async function openCenterNodeEditor(nodeItem) {
 
     clearMapWorkspace();
 
-    const {
-        wrapper,
-        titleInput,
-        contentEditor,
-        placeholder,
-        mapCanvas
-    } = getCenterNodeEditorElements();
+    const { wrapper, titleInput, contentEditor, placeholder, mapCanvas } = getCenterNodeEditorElements();
 
     if (placeholder) {
         placeholder.style.display = 'none';
@@ -651,10 +602,7 @@ async function openCenterNodeEditor(nodeItem) {
     };
 
     if (titleInput) {
-        titleInput.value =
-            result.metadata?.title ||
-            nodeItem.metadata?.title ||
-            String(nodeItem.fileName || nodeItem.name || '').replace(/\.node$/i, '');
+        titleInput.value = result.metadata?.title || nodeItem.metadata?.title || String(nodeItem.fileName || nodeItem.name || '').replace(/\.node$/i, '');
     }
 
     if (contentEditor) {
@@ -682,9 +630,7 @@ let pisiCenterSaveTail = Promise.resolve(true);
 function saveCurrentCenterNodeEditor() {
     if (!activeCenterNode?.path) return true;
 
-    const saveTask = pisiCenterSaveTail
-        .catch(() => false)
-        .then(() => performCurrentCenterNodeEditorSave());
+    const saveTask = pisiCenterSaveTail.catch(() => false).then(() => performCurrentCenterNodeEditorSave());
 
     pisiCenterSaveTail = saveTask;
     return saveTask;
@@ -710,10 +656,7 @@ async function performCurrentCenterNodeEditorSave() {
         if (title && title !== oldTitle) {
             suppressNextFileSystemRefresh(3000);
 
-            const renameResult = await window.pisiProject?.renamePisiFile?.(
-                nodePath,
-                title
-            );
+            const renameResult = await window.pisiProject?.renamePisiFile?.(nodePath, title);
 
             if (!renameResult || !renameResult.ok) {
                 alert(renameResult?.error || 'Node başlığı değiştirilemedi.');
@@ -746,10 +689,7 @@ async function performCurrentCenterNodeEditorSave() {
         }
 
         suppressNextFileSystemRefresh(3000);
-        const saveResult = await window.pisiProject?.saveNodeContent?.(
-            nodePath,
-            content
-        );
+        const saveResult = await window.pisiProject?.saveNodeContent?.(nodePath, content);
 
         if (!saveResult || !saveResult.ok) {
             alert(saveResult?.error || 'Node kaydedilemedi.');
@@ -781,11 +721,7 @@ function clearCenterNodeEditor() {
     clearTimeout(centerNodeSaveTimer);
     centerNodeSaveTimer = null;
 
-    const {
-        wrapper,
-        titleInput,
-        contentEditor
-    } = getCenterNodeEditorElements();
+    const { wrapper, titleInput, contentEditor } = getCenterNodeEditorElements();
 
     if (titleInput) {
         titleInput.value = '';
@@ -837,62 +773,92 @@ async function flushPisiPendingSaves() {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "sanitizePisiEditorHtml": {
+    sanitizePisiEditorHtml: {
         enumerable: true,
-        get() { return sanitizePisiEditorHtml; }
+        get() {
+            return sanitizePisiEditorHtml;
+        }
     },
-    "dispatchPisiActiveNodeChanged": {
+    dispatchPisiActiveNodeChanged: {
         enumerable: true,
-        get() { return dispatchPisiActiveNodeChanged; }
+        get() {
+            return dispatchPisiActiveNodeChanged;
+        }
     },
-    "openNodeModalFromBox": {
+    openNodeModalFromBox: {
         enumerable: true,
-        get() { return openNodeModalFromBox; }
+        get() {
+            return openNodeModalFromBox;
+        }
     },
-    "closeNodeModalAndSave": {
+    closeNodeModalAndSave: {
         enumerable: true,
-        get() { return closeNodeModalAndSave; }
+        get() {
+            return closeNodeModalAndSave;
+        }
     },
-    "closeNodeModalWithoutSaving": {
+    closeNodeModalWithoutSaving: {
         enumerable: true,
-        get() { return closeNodeModalWithoutSaving; }
+        get() {
+            return closeNodeModalWithoutSaving;
+        }
     },
-    "getCenterNodeEditorElements": {
+    getCenterNodeEditorElements: {
         enumerable: true,
-        get() { return getCenterNodeEditorElements; }
+        get() {
+            return getCenterNodeEditorElements;
+        }
     },
-    "bindCenterNodeEditorControls": {
+    bindCenterNodeEditorControls: {
         enumerable: true,
-        get() { return bindCenterNodeEditorControls; }
+        get() {
+            return bindCenterNodeEditorControls;
+        }
     },
-    "scheduleCenterNodeEditorSave": {
+    scheduleCenterNodeEditorSave: {
         enumerable: true,
-        get() { return scheduleCenterNodeEditorSave; }
+        get() {
+            return scheduleCenterNodeEditorSave;
+        }
     },
-    "openCenterNodeEditor": {
+    openCenterNodeEditor: {
         enumerable: true,
-        get() { return openCenterNodeEditor; }
+        get() {
+            return openCenterNodeEditor;
+        }
     },
-    "pisiCenterSaveTail": {
+    pisiCenterSaveTail: {
         enumerable: true,
-        get() { return pisiCenterSaveTail; },
-        set(value) { pisiCenterSaveTail = value; }
+        get() {
+            return pisiCenterSaveTail;
+        },
+        set(value) {
+            pisiCenterSaveTail = value;
+        }
     },
-    "saveCurrentCenterNodeEditor": {
+    saveCurrentCenterNodeEditor: {
         enumerable: true,
-        get() { return saveCurrentCenterNodeEditor; }
+        get() {
+            return saveCurrentCenterNodeEditor;
+        }
     },
-    "performCurrentCenterNodeEditorSave": {
+    performCurrentCenterNodeEditorSave: {
         enumerable: true,
-        get() { return performCurrentCenterNodeEditorSave; }
+        get() {
+            return performCurrentCenterNodeEditorSave;
+        }
     },
-    "clearCenterNodeEditor": {
+    clearCenterNodeEditor: {
         enumerable: true,
-        get() { return clearCenterNodeEditor; }
+        get() {
+            return clearCenterNodeEditor;
+        }
     },
-    "flushPisiPendingSaves": {
+    flushPisiPendingSaves: {
         enumerable: true,
-        get() { return flushPisiPendingSaves; }
+        get() {
+            return flushPisiPendingSaves;
+        }
     }
 });
-registerModule("editor.node", moduleApi);
+registerModule('editor.node', moduleApi);

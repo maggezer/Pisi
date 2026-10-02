@@ -33,10 +33,7 @@ function getPisiLatexCommandsPreference() {
 }
 
 function setPisiLatexCommandsPreference(enabled) {
-    const normalized = writePisiBooleanPreference(
-        PISI_LATEX_COMMANDS_STORAGE_KEY,
-        enabled
-    );
+    const normalized = writePisiBooleanPreference(PISI_LATEX_COMMANDS_STORAGE_KEY, enabled);
     if (!normalized) {
         window.closePisiUnifiedCommandMenu?.();
     }
@@ -93,9 +90,11 @@ function makePisiEditorPreferenceRow({ id, labelText, descriptionText, getValue,
     button.addEventListener('click', () => {
         const enabled = setValue(!getValue());
         syncPisiEditorPreferenceButton(button, enabled);
-        document.dispatchEvent(new CustomEvent('pisi:editor-command-preferences-changed', {
-            detail: { key: eventKey, enabled }
-        }));
+        document.dispatchEvent(
+            new CustomEvent('pisi:editor-command-preferences-changed', {
+                detail: { key: eventKey, enabled }
+            })
+        );
     });
 
     row.append(body, button);
@@ -111,14 +110,8 @@ function installPisiEditorCommandPreferenceRows() {
 
     let group = page.querySelector('#pisi-editor-command-preferences');
     if (group) {
-        syncPisiEditorPreferenceButton(
-            group.querySelector('#pisi-preference-latex-commands button'),
-            getPisiLatexCommandsPreference()
-        );
-        syncPisiEditorPreferenceButton(
-            group.querySelector('#pisi-preference-double-dot-commands button'),
-            getPisiDoubleDotCommandsPreference()
-        );
+        syncPisiEditorPreferenceButton(group.querySelector('#pisi-preference-latex-commands button'), getPisiLatexCommandsPreference());
+        syncPisiEditorPreferenceButton(group.querySelector('#pisi-preference-double-dot-commands button'), getPisiDoubleDotCommandsPreference());
         return true;
     }
 
@@ -166,9 +159,10 @@ function bindPisiEditorCommandPreferences() {
         editorCommandPreferenceObserver = new MutationObserver((mutations) => {
             const relevant = mutations.some((mutation) => {
                 return [...mutation.addedNodes].some((node) => {
-                    return node?.nodeType === Node.ELEMENT_NODE && (
-                        node.matches?.('.pisi-preferences-page, .pisi-command-center-body') ||
-                        node.querySelector?.('.pisi-preferences-page, .pisi-command-center-body')
+                    return (
+                        node?.nodeType === Node.ELEMENT_NODE &&
+                        (node.matches?.('.pisi-preferences-page, .pisi-command-center-body') ||
+                            node.querySelector?.('.pisi-preferences-page, .pisi-command-center-body'))
                     );
                 });
             });

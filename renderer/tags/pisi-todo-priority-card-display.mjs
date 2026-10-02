@@ -120,25 +120,23 @@ function normalizePisiTodoPriorityCard(card) {
     });
 
     const top = card.querySelector('.pisi-mission-top');
-    const status = top?.querySelector('.pisi-mission-status') ||
-        card.querySelector('.pisi-mission-status');
+    const status = top?.querySelector('.pisi-mission-status') || card.querySelector('.pisi-mission-status');
     const meta = card.querySelector('.pisi-mission-meta');
     if (!top || !status) return changed;
 
     let badge = card.querySelector('.pisi-mission-workorder-priority');
     if (!badge) {
-        badge = Array.from(meta?.querySelectorAll?.(':scope > span') || []).find((item) => {
-            return Boolean(getPisiTodoWorkorderPriorityValue(item.textContent));
-        }) || null;
+        badge =
+            Array.from(meta?.querySelectorAll?.(':scope > span') || []).find((item) => {
+                return Boolean(getPisiTodoWorkorderPriorityValue(item.textContent));
+            }) || null;
     }
     if (!badge) return changed;
 
     const parsed = getPisiTodoWorkorderPriorityValue(badge.textContent);
     if (parsed) {
         badge.textContent = parsed.displayValue;
-        badge.dataset.priorityValue = parsed.numericValue === null
-            ? ''
-            : String(parsed.numericValue);
+        badge.dataset.priorityValue = parsed.numericValue === null ? '' : String(parsed.numericValue);
     }
 
     badge.classList.add('pisi-mission-workorder-priority');
@@ -147,11 +145,8 @@ function normalizePisiTodoPriorityCard(card) {
 }
 
 function applyPisiTodoPriorityTones(root = document) {
-    const badges = Array.from(
-        root.querySelectorAll('.pisi-mission-workorder-priority')
-    );
-    const finite = badges.map((badge) => Number(badge.dataset.priorityValue))
-        .filter((value) => Number.isFinite(value));
+    const badges = Array.from(root.querySelectorAll('.pisi-mission-workorder-priority'));
+    const finite = badges.map((badge) => Number(badge.dataset.priorityValue)).filter((value) => Number.isFinite(value));
     const min = finite.length ? Math.min(...finite) : null;
     const max = finite.length ? Math.max(...finite) : null;
 
@@ -201,21 +196,18 @@ function bindPisiTodoPriorityCardDisplay() {
 
     if (!todoPriorityCardObserver && document.body) {
         todoPriorityCardObserver = new MutationObserver((mutations) => {
-            const touchesTodoCards = mutations.some((mutation) => (
-                [...mutation.addedNodes].some((node) => (
-                    node?.nodeType === Node.ELEMENT_NODE &&
-                    (
-                        node.matches?.(
-                            '.pisi-mission-card, .pisi-mission-meta, .pisi-mission-top, ' +
-                            '.pisi-mission-main, .pisi-mission-node, .pisi-third-planning'
+            const touchesTodoCards = mutations.some((mutation) =>
+                [...mutation.addedNodes].some(
+                    (node) =>
+                        node?.nodeType === Node.ELEMENT_NODE &&
+                        (node.matches?.(
+                            '.pisi-mission-card, .pisi-mission-meta, .pisi-mission-top, ' + '.pisi-mission-main, .pisi-mission-node, .pisi-third-planning'
                         ) ||
-                        node.querySelector?.(
-                            '.pisi-mission-card, .pisi-mission-meta, .pisi-mission-top, ' +
-                            '.pisi-mission-main, .pisi-mission-node, .pisi-third-planning'
-                        )
-                    )
-                ))
-            ));
+                            node.querySelector?.(
+                                '.pisi-mission-card, .pisi-mission-meta, .pisi-mission-top, ' + '.pisi-mission-main, .pisi-mission-node, .pisi-third-planning'
+                            ))
+                )
+            );
             if (touchesTodoCards) schedulePisiTodoPriorityCardNormalization();
         });
         todoPriorityCardObserver.observe(document.body, {

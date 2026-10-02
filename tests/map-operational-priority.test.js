@@ -28,17 +28,13 @@ function task(id, nodePath, priority) {
 }
 
 test('operational Next respects Pisi priority direction: 5 outranks 1', async () => {
-    const core = await import(pathToFileURL(
-        path.join(root, 'renderer/map/pisi-map-operational-core.mjs')
-    ).href);
-    const nodes = [
-        node('node_low', '/project/low.node'),
-        node('node_high', '/project/high.node')
-    ];
-    const states = core.buildPisiOperationalNodeStates(nodes, [
-        task('task_low', '/project/low.node', 1),
-        task('task_high', '/project/high.node', 5)
-    ], Date.parse('2026-08-15T12:00:00Z'));
+    const core = await import(pathToFileURL(path.join(root, 'renderer/map/pisi-map-operational-core.mjs')).href);
+    const nodes = [node('node_low', '/project/low.node'), node('node_high', '/project/high.node')];
+    const states = core.buildPisiOperationalNodeStates(
+        nodes,
+        [task('task_low', '/project/low.node', 1), task('task_high', '/project/high.node', 5)],
+        Date.parse('2026-08-15T12:00:00Z')
+    );
 
     assert.equal(states.get('node_high').highestPriority, 5);
     assert.deepEqual(

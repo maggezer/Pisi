@@ -18,12 +18,15 @@ function checkPng(bytes) {
         let crc = 0xffffffff;
         for (const value of bytes.subarray(offset + 4, end - 4)) {
             crc ^= value;
-            for (let bit = 0; bit < 8; bit++) crc = (crc >>> 1) ^ ((crc & 1) ? 0xedb88320 : 0);
+            for (let bit = 0; bit < 8; bit++) crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
         }
         assert.equal((crc ^ 0xffffffff) >>> 0, bytes.readUInt32BE(end - 4), type + ' checksum');
         if (type === 'IDAT') data.push(bytes.subarray(offset + 8, end - 4));
         offset = end;
-        if (type === 'IEND') { ended = true; break; }
+        if (type === 'IEND') {
+            ended = true;
+            break;
+        }
     }
     assert.ok(ended, 'missing PNG end');
     assert.equal(offset, bytes.length);

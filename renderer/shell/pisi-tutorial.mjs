@@ -1,8 +1,5 @@
 import { registerModule } from '../core/module-registry.mjs';
-import {
-    closePisiCommandCenter,
-    registerPisiCommandCenterPage
-} from './pisi-command-center.mjs';
+import { closePisiCommandCenter, registerPisiCommandCenterPage } from './pisi-command-center.mjs';
 
 const PISI_TUTORIAL_COMPLETED_KEY = 'pisi.tutorial.v1.completed';
 
@@ -30,7 +27,8 @@ const tutorialText = {
         step: 'Adım',
         of: '/',
         welcomeTitle: "Pisi'ye hoş geldin",
-        welcomeBody: 'Bu kısa rehber sana Pisi’nin temel alanlarını gösterecek. İstediğin zaman Workspace Center içindeki Tutorial sayfasından yeniden başlatabilirsin.',
+        welcomeBody:
+            'Bu kısa rehber sana Pisi’nin temel alanlarını gösterecek. İstediğin zaman Workspace Center içindeki Tutorial sayfasından yeniden başlatabilirsin.',
         explorerTitle: 'Explorer',
         explorerBody: 'Projendeki map ve node dosyaları burada görünür. Dosyaları açabilir, yeniden adlandırabilir ve ağaç içinde taşıyabilirsin.',
         projectTitle: 'Proje araçları',
@@ -198,10 +196,7 @@ function positionTutorialCard(target) {
         left = rect.left - cardWidth - gap;
     }
     if (left < margin) {
-        left = Math.max(margin, Math.min(
-            viewportWidth - cardWidth - margin,
-            rect.left + rect.width / 2 - cardWidth / 2
-        ));
+        left = Math.max(margin, Math.min(viewportWidth - cardWidth - margin, rect.left + rect.width / 2 - cardWidth / 2));
     }
 
     let top = rect.top;
@@ -250,10 +245,7 @@ function renderTutorialStep() {
     back.disabled = tutorialState.stepIndex === 0;
 
     const isLast = tutorialState.stepIndex === tutorialSteps.length - 1;
-    const next = makeTutorialButton(
-        'pisi-tutorial-button pisi-tutorial-primary',
-        isLast ? () => finishPisiTutorial(true) : nextPisiTutorialStep
-    );
+    const next = makeTutorialButton('pisi-tutorial-button pisi-tutorial-primary', isLast ? () => finishPisiTutorial(true) : nextPisiTutorialStep);
     next.textContent = tt(isLast ? 'finish' : 'next');
 
     navigation.append(back, next);
@@ -267,10 +259,7 @@ function renderTutorialStep() {
 
 function nextPisiTutorialStep() {
     if (!tutorialState.active) return;
-    tutorialState.stepIndex = Math.min(
-        tutorialSteps.length - 1,
-        tutorialState.stepIndex + 1
-    );
+    tutorialState.stepIndex = Math.min(tutorialSteps.length - 1, tutorialState.stepIndex + 1);
     renderTutorialStep();
 }
 

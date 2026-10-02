@@ -1,8 +1,5 @@
 import { registerModule } from '../core/module-registry.mjs';
-import {
-    closePisiUnifiedCommandMenu,
-    runPisiUnifiedCommandItem
-} from './pisi-unified-command-menu.mjs';
+import { closePisiUnifiedCommandMenu, runPisiUnifiedCommandItem } from './pisi-unified-command-menu.mjs';
 
 const PISI_WRITING_COMMANDS = Object.freeze([
     Object.freeze({
@@ -136,53 +133,40 @@ const PISI_WRITING_CATEGORY_ORDER = Object.freeze({
 });
 
 function normalizePisiWritingSearch(value = '') {
-    return String(value || '').trim().toLocaleLowerCase('tr-TR');
+    return String(value || '')
+        .trim()
+        .toLocaleLowerCase('tr-TR');
 }
 
 function matchesPisiWritingCommand(item, query) {
     const clean = normalizePisiWritingSearch(query);
     if (!clean) return true;
-    const haystack = [
-        item.id,
-        item.label,
-        item.description,
-        item.category,
-        ...(Array.isArray(item.aliases) ? item.aliases : [])
-    ].map(normalizePisiWritingSearch).join(' ');
+    const haystack = [item.id, item.label, item.description, item.category, ...(Array.isArray(item.aliases) ? item.aliases : [])]
+        .map(normalizePisiWritingSearch)
+        .join(' ');
     return haystack.includes(clean);
 }
 
 function buildPisiWritingCommandItems(command) {
     if (!command || !['/', '..'].includes(command.trigger)) return [];
-    return PISI_WRITING_COMMANDS
-        .filter((record) => matchesPisiWritingCommand(record, command.body))
-        .map((record) => ({
-            ...record,
-            kind: 'format',
-            typedToken: `${command.trigger}${record.id}`
-        }));
+    return PISI_WRITING_COMMANDS.filter((record) => matchesPisiWritingCommand(record, command.body)).map((record) => ({
+        ...record,
+        kind: 'format',
+        typedToken: `${command.trigger}${record.id}`
+    }));
 }
 
 function comparePisiExtendedUnifiedItems(a, b) {
-    const category =
-        (PISI_WRITING_CATEGORY_ORDER[a.category] || 99) -
-        (PISI_WRITING_CATEGORY_ORDER[b.category] || 99);
+    const category = (PISI_WRITING_CATEGORY_ORDER[a.category] || 99) - (PISI_WRITING_CATEGORY_ORDER[b.category] || 99);
     if (category) return category;
-    return String(a.id || a.label || '').localeCompare(
-        String(b.id || b.label || ''),
-        'tr'
-    );
+    return String(a.id || a.label || '').localeCompare(String(b.id || b.label || ''), 'tr');
 }
 
 function makePisiWritingRange(command) {
     if (!command?.block || typeof window.makeRangeInElementByTextOffsets !== 'function') {
         return null;
     }
-    const range = window.makeRangeInElementByTextOffsets(
-        command.block,
-        command.tokenStartInText,
-        command.tokenEndInText
-    );
+    const range = window.makeRangeInElementByTextOffsets(command.block, command.tokenStartInText, command.tokenEndInText);
     if (!range) return null;
     range.deleteContents();
     range.collapse(true);
@@ -201,14 +185,8 @@ function applyPisiNativeWritingCommand(editor, command, item) {
         selection.addRange(range);
     }
 
-    const changed = document.execCommand(
-        item.execCommand,
-        false,
-        item.value ?? null
-    );
-    const input = typeof InputEvent === 'function'
-        ? new InputEvent('input', { bubbles: true, inputType: 'formatSet' })
-        : new Event('input', { bubbles: true });
+    const changed = document.execCommand(item.execCommand, false, item.value ?? null);
+    const input = typeof InputEvent === 'function' ? new InputEvent('input', { bubbles: true, inputType: 'formatSet' }) : new Event('input', { bubbles: true });
     editor.dispatchEvent(input);
     return changed !== false;
 }

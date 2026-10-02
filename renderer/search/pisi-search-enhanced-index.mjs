@@ -1,14 +1,7 @@
 import { registerModule } from '../core/module-registry.mjs';
 import { pisiSearchPathKey } from './pisi-search-core.mjs';
-import {
-    ensurePisiSearchIndex,
-    getPisiSearchCurrentNodePath,
-    getPisiSearchLiveIndex
-} from './pisi-search-index.mjs';
-import {
-    buildPisiDisposableSearchSnapshot,
-    createPisiRebuildableSearchIndex
-} from './pisi-search-index-adapter.mjs';
+import { ensurePisiSearchIndex, getPisiSearchCurrentNodePath, getPisiSearchLiveIndex } from './pisi-search-index.mjs';
+import { buildPisiDisposableSearchSnapshot, createPisiRebuildableSearchIndex } from './pisi-search-index-adapter.mjs';
 import { makePisiProjectionSourceFingerprint } from './pisi-projection-index-core.mjs';
 
 const PISI_SEARCH_PROPERTY_VALUE_LIMIT = 1400;
@@ -27,18 +20,17 @@ function normalizePisiSearchPropertyValue(value, depth = 0) {
     }
     if (depth >= 2) return '';
     if (Array.isArray(value)) {
-        return value.slice(0, 40)
+        return value
+            .slice(0, 40)
             .map((item) => normalizePisiSearchPropertyValue(item, depth + 1))
             .filter(Boolean)
             .join(' ')
             .slice(0, PISI_SEARCH_PROPERTY_VALUE_LIMIT);
     }
     if (typeof value === 'object') {
-        return Object.entries(value).slice(0, 40)
-            .flatMap(([key, item]) => [
-                key,
-                normalizePisiSearchPropertyValue(item, depth + 1)
-            ])
+        return Object.entries(value)
+            .slice(0, 40)
+            .flatMap(([key, item]) => [key, normalizePisiSearchPropertyValue(item, depth + 1)])
             .filter(Boolean)
             .join(' ')
             .slice(0, PISI_SEARCH_PROPERTY_VALUE_LIMIT);
@@ -50,7 +42,8 @@ function makePisiSearchPropertyFields(properties = {}) {
     const entries = Array.isArray(properties)
         ? properties.map((item, index) => [String(item?.name || item?.key || index), item?.value ?? item])
         : Object.entries(properties && typeof properties === 'object' ? properties : {});
-    return entries.slice(0, PISI_SEARCH_PROPERTY_FIELD_LIMIT)
+    return entries
+        .slice(0, PISI_SEARCH_PROPERTY_FIELD_LIMIT)
         .map(([name, value]) => ({
             kind: 'property',
             value: `${String(name || '')} ${normalizePisiSearchPropertyValue(value)}`.trim(),
@@ -90,11 +83,13 @@ function getPisiRecordMemberships(index, record) {
     const documentRecord = getPisiDocumentForRecord(index, record);
     if (Array.isArray(documentRecord?.memberships)) return documentRecord.memberships;
     if (record?.mapPath) {
-        return [{
-            mapPath: record.mapPath,
-            mapTitle: record.mapTitle || '',
-            mapItem: record.mapItem || null
-        }];
+        return [
+            {
+                mapPath: record.mapPath,
+                mapTitle: record.mapTitle || '',
+                mapItem: record.mapItem || null
+            }
+        ];
     }
     return [];
 }
@@ -120,10 +115,7 @@ function enhancePisiBaseSearchRecord(index, record) {
     if (!propertyFields.length) return enhanced;
     return {
         ...enhanced,
-        searchFields: [
-            ...(Array.isArray(record.searchFields) ? record.searchFields : []),
-            ...propertyFields
-        ]
+        searchFields: [...(Array.isArray(record.searchFields) ? record.searchFields : []), ...propertyFields]
     };
 }
 
@@ -134,13 +126,15 @@ function getPisiTaskSourceDocument(index, task) {
 }
 
 function selectPisiTaskMembership(documentRecord, task) {
-    const memberships = Array.isArray(documentRecord?.memberships)
-        ? documentRecord.memberships
-        : [];
+    const memberships = Array.isArray(documentRecord?.memberships) ? documentRecord.memberships : [];
     const sourceMapKey = pisiSearchPathKey(task?.source?.mapPath || '');
-    return memberships.find((membership) => {
-        return sourceMapKey && pisiSearchPathKey(membership?.mapPath) === sourceMapKey;
-    }) || memberships[0] || null;
+    return (
+        memberships.find((membership) => {
+            return sourceMapKey && pisiSearchPathKey(membership?.mapPath) === sourceMapKey;
+        }) ||
+        memberships[0] ||
+        null
+    );
 }
 
 function makePisiCanonicalTaskSearchRecord(index, task) {
@@ -156,61 +150,67 @@ function makePisiCanonicalTaskSearchRecord(index, task) {
     const previewParts = [nodeTitle, mapTitle, deadline].filter(Boolean);
     const memberships = Array.isArray(documentRecord?.memberships)
         ? documentRecord.memberships
-        : (mapPath ? [{ mapPath, mapTitle, mapItem: membership?.mapItem || null }] : []);
-    return addPisiSearchPathKeys({
-        id: `task:${task.id}`,
-        kind: 'task',
-        taskId: task.id,
-        title: task.title || 'Task',
-        nodeTitle,
-        nodePath,
-        nodeItem: documentRecord?.nodeItem || null,
-        blockId: task.source.blockId || null,
-        mapPath,
-        mapTitle,
-        mapItem: membership?.mapItem || null,
-        relativePath,
-        todoTag: task.todoTag || '',
-        tag: task.todoTag || '',
-        tags: task.todoTag ? [task.todoTag] : [],
-        status: task.status || 'todo',
-        priority: Number(task.priority) || 3,
-        dueDate: task.dueDate || null,
-        scheduledAt: task.scheduledAt || null,
-        deadline: task.deadline || null,
-        sourceText: task.title || '',
-        preview: previewParts.join(' · '),
-        canonical: true,
-        searchFields: [
-            { kind: 'task', value: task.title || '', weight: 125 },
-            { kind: 'title', value: task.title || '', weight: 132 },
-            { kind: 'tag', value: task.todoTag || '', weight: 105 },
-            { kind: 'title', value: nodeTitle, weight: 88 },
-            { kind: 'map', value: mapTitle, weight: 66 },
-            { kind: 'path', value: relativePath, weight: 48 },
-            { kind: 'status', value: task.status || '', weight: 35 },
-            { kind: 'priority', value: String(Number(task.priority) || 3), weight: 28 }
-        ]
-    }, memberships);
+        : mapPath
+          ? [{ mapPath, mapTitle, mapItem: membership?.mapItem || null }]
+          : [];
+    return addPisiSearchPathKeys(
+        {
+            id: `task:${task.id}`,
+            kind: 'task',
+            taskId: task.id,
+            title: task.title || 'Task',
+            nodeTitle,
+            nodePath,
+            nodeItem: documentRecord?.nodeItem || null,
+            blockId: task.source.blockId || null,
+            mapPath,
+            mapTitle,
+            mapItem: membership?.mapItem || null,
+            relativePath,
+            todoTag: task.todoTag || '',
+            tag: task.todoTag || '',
+            tags: task.todoTag ? [task.todoTag] : [],
+            status: task.status || 'todo',
+            priority: Number(task.priority) || 3,
+            dueDate: task.dueDate || null,
+            scheduledAt: task.scheduledAt || null,
+            deadline: task.deadline || null,
+            sourceText: task.title || '',
+            preview: previewParts.join(' · '),
+            canonical: true,
+            searchFields: [
+                { kind: 'task', value: task.title || '', weight: 125 },
+                { kind: 'title', value: task.title || '', weight: 132 },
+                { kind: 'tag', value: task.todoTag || '', weight: 105 },
+                { kind: 'title', value: nodeTitle, weight: 88 },
+                { kind: 'map', value: mapTitle, weight: 66 },
+                { kind: 'path', value: relativePath, weight: 48 },
+                { kind: 'status', value: task.status || '', weight: 35 },
+                { kind: 'priority', value: String(Number(task.priority) || 3), weight: 28 }
+            ]
+        },
+        memberships
+    );
 }
 
 function makePisiEnhancedSourceFingerprint(baseIndex, tasks = getPisiCanonicalSearchTasks()) {
     const parts = [];
     for (const record of Array.isArray(baseIndex?.records) ? baseIndex.records : []) {
-        parts.push([
-            'base',
-            record?.id || '',
-            record?.nodeItem?.metadata?.updatedAt || '',
-            record?.nodeItem?.metadata?.id || '',
-            record?.kind || ''
-        ].join(':'));
+        parts.push(['base', record?.id || '', record?.nodeItem?.metadata?.updatedAt || '', record?.nodeItem?.metadata?.id || '', record?.kind || ''].join(':'));
     }
     for (const task of Array.isArray(tasks) ? tasks : []) {
-        parts.push([
-            'task', task?.id || '', task?.updatedAt || '', task?.status || '',
-            task?.priority || '', task?.title || '', task?.source?.nodePath || '',
-            task?.source?.blockId || ''
-        ].join(':'));
+        parts.push(
+            [
+                'task',
+                task?.id || '',
+                task?.updatedAt || '',
+                task?.status || '',
+                task?.priority || '',
+                task?.title || '',
+                task?.source?.nodePath || '',
+                task?.source?.blockId || ''
+            ].join(':')
+        );
     }
     return makePisiProjectionSourceFingerprint(parts);
 }
@@ -288,17 +288,16 @@ function applyPisiCanonicalTaskSearchDelta(projectFolder = window.currentProject
     const cached = pisiSearchProjectionByProject.get(projectKey);
     if (!cached?.projection || !cached?.baseIndex) return null;
     const tasks = getPisiCanonicalSearchTasks();
-    const taskRecords = tasks
-        .map((task) => makePisiCanonicalTaskSearchRecord(cached.baseIndex, task))
-        .filter(Boolean);
-    const existingTaskIds = (cached.index?.records || [])
-        .filter((record) => record?.kind === 'task')
-        .map((record) => record.id);
+    const taskRecords = tasks.map((task) => makePisiCanonicalTaskSearchRecord(cached.baseIndex, task)).filter(Boolean);
+    const existingTaskIds = (cached.index?.records || []).filter((record) => record?.kind === 'task').map((record) => record.id);
     const sourceFingerprint = makePisiEnhancedSourceFingerprint(cached.baseIndex, tasks);
-    const delta = cached.projection.applyDelta({
-        remove: existingTaskIds,
-        upsert: taskRecords
-    }, { sourceFingerprint });
+    const delta = cached.projection.applyDelta(
+        {
+            remove: existingTaskIds,
+            upsert: taskRecords
+        },
+        { sourceFingerprint }
+    );
     if (!delta.ok) {
         cached.projection.invalidate('task-delta-rebuild-required');
         pisiSearchProjectionByProject.delete(projectKey);
@@ -318,10 +317,7 @@ function applyPisiCanonicalTaskSearchDelta(projectFolder = window.currentProject
 async function ensurePisiEnhancedSearchIndex(options = {}) {
     const projectFolder = window.currentProjectFolder;
     if (!projectFolder) return null;
-    const [baseIndex] = await Promise.all([
-        ensurePisiSearchIndex(options),
-        ensurePisiCanonicalSearchTasks(projectFolder)
-    ]);
+    const [baseIndex] = await Promise.all([ensurePisiSearchIndex(options), ensurePisiCanonicalSearchTasks(projectFolder)]);
     return makePisiEnhancedSearchIndex(baseIndex);
 }
 
@@ -329,10 +325,7 @@ async function ensurePisiEnhancedLiveSearchIndex(options = {}) {
     const base = await ensurePisiSearchIndex(options);
     if (!base) return null;
     await ensurePisiCanonicalSearchTasks(base.projectFolder);
-    const live = getPisiSearchLiveIndex(
-        base,
-        options.targetPath || getPisiSearchCurrentNodePath()
-    );
+    const live = getPisiSearchLiveIndex(base, options.targetPath || getPisiSearchCurrentNodePath());
     if (live === base) return makePisiEnhancedSearchIndex(base);
     return makePisiEnhancedSearchIndex(live, { transient: true });
 }
@@ -357,29 +350,35 @@ function invalidatePisiEnhancedSearchProjection(reason = 'source-changed', proje
 function schedulePisiSearchWarmup(delay = 120) {
     clearTimeout(pisiSearchWarmupTimer);
     if (!window.currentProjectFolder) return;
-    pisiSearchWarmupTimer = setTimeout(() => {
-        pisiSearchWarmupTimer = null;
-        const run = () => void ensurePisiEnhancedSearchIndex().catch((error) => {
-            console.warn('[PISI] Search warmup failed:', error);
-        });
-        if (typeof requestIdleCallback === 'function') {
-            requestIdleCallback(run, { timeout: 1200 });
-        } else {
-            run();
-        }
-    }, Math.max(0, Number(delay) || 0));
+    pisiSearchWarmupTimer = setTimeout(
+        () => {
+            pisiSearchWarmupTimer = null;
+            const run = () =>
+                void ensurePisiEnhancedSearchIndex().catch((error) => {
+                    console.warn('[PISI] Search warmup failed:', error);
+                });
+            if (typeof requestIdleCallback === 'function') {
+                requestIdleCallback(run, { timeout: 1200 });
+            } else {
+                run();
+            }
+        },
+        Math.max(0, Number(delay) || 0)
+    );
 }
 
 document.addEventListener('pisi:task-store-updated', () => {
     pisiSearchTaskGeneration += 1;
     const index = applyPisiCanonicalTaskSearchDelta();
-    document.dispatchEvent(new CustomEvent('pisi:enhanced-search-index-updated', {
-        detail: {
-            reason: 'tasks',
-            mode: index ? 'delta' : 'rebuild-required',
-            projection: index?.projection || null
-        }
-    }));
+    document.dispatchEvent(
+        new CustomEvent('pisi:enhanced-search-index-updated', {
+            detail: {
+                reason: 'tasks',
+                mode: index ? 'delta' : 'rebuild-required',
+                projection: index?.projection || null
+            }
+        })
+    );
 });
 
 document.addEventListener('pisi:search-index-invalidated', (event) => {

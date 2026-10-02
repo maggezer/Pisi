@@ -1,4 +1,4 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 
 function isMapFileName(fileName = '') {
     return fileName.toLowerCase().endsWith('.map');
@@ -28,9 +28,7 @@ function samePisiWorkspacePath(a, b) {
     const normalizedA = normalize(a);
     const normalizedB = normalize(b);
 
-    return window.pisiEnvironment?.platform === 'win32'
-        ? normalizedA.toLowerCase() === normalizedB.toLowerCase()
-        : normalizedA === normalizedB;
+    return window.pisiEnvironment?.platform === 'win32' ? normalizedA.toLowerCase() === normalizedB.toLowerCase() : normalizedA === normalizedB;
 }
 
 async function openMapInWorkspace(mapItem) {
@@ -43,11 +41,7 @@ async function openMapInWorkspace(mapItem) {
         if (!saved) return false;
     }
 
-    if (
-        activeMapPath &&
-        !samePisiWorkspacePath(activeMapPath, mapItem.fullPath) &&
-        typeof saveCurrentMapLayout === 'function'
-    ) {
+    if (activeMapPath && !samePisiWorkspacePath(activeMapPath, mapItem.fullPath) && typeof saveCurrentMapLayout === 'function') {
         const layoutSaved = await saveCurrentMapLayout();
         if (!layoutSaved) return false;
     }
@@ -92,14 +86,8 @@ async function openMapInWorkspace(mapItem) {
     canvas.style.display = 'block';
     board.innerHTML = '';
 
-    activeMapCamera =
-    result.map?.data?.map?.camera ||
-    { x: 0, y: 0, zoom: 1 };
-    collapsedHubPorts = new Set(
-        Array.isArray(result.map?.data?.map?.collapsedHubs)
-            ? result.map.data.map.collapsedHubs
-            : []
-    );
+    activeMapCamera = result.map?.data?.map?.camera || { x: 0, y: 0, zoom: 1 };
+    collapsedHubPorts = new Set(Array.isArray(result.map?.data?.map?.collapsedHubs) ? result.map.data.map.collapsedHubs : []);
 
     applyMapCamera();
     setupMapCanvasPan();
@@ -111,8 +99,8 @@ async function openMapInWorkspace(mapItem) {
     activeMapEdges = result.edges || [];
 
     for (const node of activeMapNodes) {
-    const box = createMapNodeBox(node);
-    board.appendChild(box);
+        const box = createMapNodeBox(node);
+        board.appendChild(box);
     }
 
     drawMapConnections();
@@ -120,9 +108,7 @@ async function openMapInWorkspace(mapItem) {
         syncHubPortCollapseVisuals();
     }
 
-    document.dispatchEvent(new CustomEvent(
-        'pisi:map-customization-context-changed'
-    ));
+    document.dispatchEvent(new CustomEvent('pisi:map-customization-context-changed'));
 
     refreshPisiTagsPanelSoon();
     return true;
@@ -164,9 +150,7 @@ function clearMapWorkspace() {
         placeholder.style.display = 'flex';
     }
 
-    document.dispatchEvent(new CustomEvent(
-        'pisi:map-customization-context-changed'
-    ));
+    document.dispatchEvent(new CustomEvent('pisi:map-customization-context-changed'));
 
     refreshPisiTagsPanelSoon();
 }
@@ -178,8 +162,7 @@ function createMapNodeBox(node) {
     box.dataset.nodePath = node.fullPath;
     box.dataset.pisiReference = node.isReference ? 'true' : 'false';
     box.classList.toggle('pisi-map-reference-node', node.isReference === true);
-    const hierarchyChildren = (Array.isArray(activeMapEdges) ? activeMapEdges : [])
-        .filter((edge) => edge?.sourceId === node.id && edge?.type === 'down-hub');
+    const hierarchyChildren = (Array.isArray(activeMapEdges) ? activeMapEdges : []).filter((edge) => edge?.sourceId === node.id && edge?.type === 'down-hub');
     box.classList.toggle('pisi-map-hub-node', hierarchyChildren.length > 0);
     box.style.left = `${node.layout.x}px`;
     box.style.top = `${node.layout.y}px`;
@@ -223,31 +206,29 @@ function bindMapNodeBoxEvents(box, node) {
     const resizeHandle = box.querySelector('.map-node-resize');
 
     box.addEventListener('mousedown', (event) => {
-    if (event.button !== 0) return;
+        if (event.button !== 0) return;
 
-    if (
-        event.target.closest('.map-node-btn') ||
-        event.target.closest('.map-node-resize') ||
-        event.target.closest('.map-port') ||
-        event.target.closest('.map-node-title-input') ||
-        event.target.closest('.map-node-title[contenteditable="true"]')
-    ) {
-        return;
-    }
+        if (
+            event.target.closest('.map-node-btn') ||
+            event.target.closest('.map-node-resize') ||
+            event.target.closest('.map-port') ||
+            event.target.closest('.map-node-title-input') ||
+            event.target.closest('.map-node-title[contenteditable="true"]')
+        ) {
+            return;
+        }
 
-    // Seçili grubun içindeysek seçimi bozma.
-    // Böylece seçili node'lardan birini sol tıkla sürükleyince grup birlikte taşınır.
-    selectedMapEdgeId = null;
-    document.querySelectorAll('.map-edge-group.selected').forEach((group) => {
-        group.classList.remove('selected');
-    });
-    if (!box.classList.contains('selected')) {
-        clearSelectedMapNodes();
-        box.classList.add('selected');
-    }
-    document.dispatchEvent(new CustomEvent(
-        'pisi:map-customization-context-changed'
-    ));
+        // Seçili grubun içindeysek seçimi bozma.
+        // Böylece seçili node'lardan birini sol tıkla sürükleyince grup birlikte taşınır.
+        selectedMapEdgeId = null;
+        document.querySelectorAll('.map-edge-group.selected').forEach((group) => {
+            group.classList.remove('selected');
+        });
+        if (!box.classList.contains('selected')) {
+            clearSelectedMapNodes();
+            box.classList.add('selected');
+        }
+        document.dispatchEvent(new CustomEvent('pisi:map-customization-context-changed'));
     });
 
     bindMapNodeDrag(box);
@@ -298,8 +279,7 @@ function bindMapNodeBoxEvents(box, node) {
         event.stopPropagation();
         const previous = lastRightClick;
         lastRightClick = { time: event.timeStamp, x: event.clientX, y: event.clientY };
-        if (previous && event.timeStamp - previous.time <= 500 &&
-            Math.hypot(event.clientX - previous.x, event.clientY - previous.y) <= 6) {
+        if (previous && event.timeStamp - previous.time <= 500 && Math.hypot(event.clientX - previous.x, event.clientY - previous.y) <= 6) {
             lastRightClick = null;
             openNodeModalFromBox(box);
         }
@@ -326,19 +306,18 @@ function bindMapNodeBoxEvents(box, node) {
         resetPisiKeyboardAndPointerState();
 
         const isReference = node.isReference === true;
-        const ok = await pisiConfirm(
-        isReference ? 'Bu node yalnızca map görünümünden kaldırılsın mı?' : 'Bu node dosyası silinsin mi?', {
-        title: isReference ? 'Map referansını kaldır' : 'Node sil',
-        confirmText: isReference ? 'Kaldır' : 'Sil',
-        cancelText: 'Vazgeç',
-        danger: !isReference
+        const ok = await pisiConfirm(isReference ? 'Bu node yalnızca map görünümünden kaldırılsın mı?' : 'Bu node dosyası silinsin mi?', {
+            title: isReference ? 'Map referansını kaldır' : 'Node sil',
+            confirmText: isReference ? 'Kaldır' : 'Sil',
+            cancelText: 'Vazgeç',
+            danger: !isReference
         });
 
         resetPisiKeyboardAndPointerState();
 
-    if (!ok) return;
+        if (!ok) return;
 
-    suppressNextFileSystemRefresh(3000);
+        suppressNextFileSystemRefresh(3000);
 
         const result = isReference
             ? await window.pisiProject?.detachMapReference?.(activeMapPath, node.id)
@@ -356,24 +335,21 @@ function bindMapNodeBoxEvents(box, node) {
         box.remove();
 
         activeMapEdges = Array.isArray(result.edges)
-        ? result.edges
-        : activeMapEdges.filter((edge) => {
-            return edge.sourceId !== node.id && edge.targetId !== node.id;
-        });
+            ? result.edges
+            : activeMapEdges.filter((edge) => {
+                  return edge.sourceId !== node.id && edge.targetId !== node.id;
+              });
 
         drawMapConnections();
 
         activeMapNodes = activeMapNodes.filter((item) => item.id !== node.id);
 
-        document.dispatchEvent(new CustomEvent(
-            'pisi:map-customization-context-changed'
-        ));
+        document.dispatchEvent(new CustomEvent('pisi:map-customization-context-changed'));
 
         await saveCurrentMapLayout();
 
         if (typeof refreshActiveMapTreeBranch === 'function') {
-    
-        await refreshActiveMapTreeBranch();
+            await refreshActiveMapTreeBranch();
         }
 
         refreshPisiTagsPanelSoon();
@@ -383,9 +359,8 @@ function bindMapNodeBoxEvents(box, node) {
         refocusPisiRenderer();
 
         setTimeout(() => {
-        refocusPisiRenderer();
+            refocusPisiRenderer();
         }, 80);
-
     });
 }
 
@@ -427,10 +402,7 @@ function bindMapNodeDrag(box) {
             const dx = (moveEvent.clientX - startX) / dragZoom;
             const dy = (moveEvent.clientY - startY) / dragZoom;
 
-            if (
-                Math.abs(moveEvent.clientX - startX) +
-                Math.abs(moveEvent.clientY - startY) > 4
-            ) {
+            if (Math.abs(moveEvent.clientX - startX) + Math.abs(moveEvent.clientY - startY) > 4) {
                 hasDragged = true;
             }
 
@@ -454,10 +426,7 @@ function bindMapNodeDrag(box) {
                 item.box.classList.remove('dragging');
             }
 
-            const moved = hasDragged || (
-                Math.abs(upEvent.clientX - startX) +
-                Math.abs(upEvent.clientY - startY) > 4
-            );
+            const moved = hasDragged || Math.abs(upEvent.clientX - startX) + Math.abs(upEvent.clientY - startY) > 4;
 
             if (moved) {
                 clearSelectedMapNodes();
@@ -515,9 +484,7 @@ function bindMapNodeResize(box, handle) {
 
 function collectMapLayout() {
     return Array.from(document.querySelectorAll('.map-node-box')).map((box) => {
-        const node = activeMapNodes.find((item) => (
-            item?.id === box.dataset.nodeId
-        ));
+        const node = activeMapNodes.find((item) => item?.id === box.dataset.nodeId);
         return {
             id: box.dataset.nodeId,
             x: parseFloat(box.style.left || '0'),
@@ -546,10 +513,7 @@ async function saveCurrentMapLayout() {
     const layout = collectMapLayout();
 
     try {
-        const result = await window.pisiProject?.saveMapLayout?.(
-            mapPath,
-            layout
-        );
+        const result = await window.pisiProject?.saveMapLayout?.(mapPath, layout);
 
         return Boolean(result?.ok);
     } catch (error) {
@@ -575,25 +539,25 @@ async function startMapNodeTitleEdit(box, node) {
 
     titleEl.textContent = '';
     titleEl.appendChild(input);
-    
+
     input.addEventListener('mousedown', (event) => {
-    event.stopPropagation();
+        event.stopPropagation();
     });
 
     input.addEventListener('click', (event) => {
-    event.stopPropagation();
+        event.stopPropagation();
     });
 
     input.addEventListener('dblclick', (event) => {
-    event.stopPropagation();
+        event.stopPropagation();
     });
 
     input.addEventListener('keydown', (event) => {
-    event.stopPropagation();
+        event.stopPropagation();
     });
 
     input.addEventListener('keyup', (event) => {
-    event.stopPropagation();
+        event.stopPropagation();
     });
 
     focusPisiTextInput(input, true);
@@ -621,10 +585,7 @@ async function startMapNodeTitleEdit(box, node) {
 
             suppressNextFileSystemRefresh(3000);
 
-            const result = await window.pisiProject?.renamePisiFile?.(
-                oldPath,
-                newTitle
-            );
+            const result = await window.pisiProject?.renamePisiFile?.(oldPath, newTitle);
 
             if (!result || !result.ok) {
                 alert(result?.error || 'Node adı değiştirilemedi.');
@@ -640,21 +601,17 @@ async function startMapNodeTitleEdit(box, node) {
 
             box.dataset.nodePath = result.fullPath;
 
-            const cleanTitle =
-                result.metadata?.title ||
-                result.fileName.replace(/\.node$/i, '');
+            const cleanTitle = result.metadata?.title || result.fileName.replace(/\.node$/i, '');
 
             restoreTitle(cleanTitle);
 
-            document.dispatchEvent(new CustomEvent(
-                'pisi:map-customization-context-changed'
-            ));
+            document.dispatchEvent(new CustomEvent('pisi:map-customization-context-changed'));
 
             updateTreeItemAfterRename(oldPath, result);
             updateOpenMapNodeAfterRename(oldPath, result);
 
             if (typeof refreshActiveMapTreeBranch === 'function') {
-            await refreshActiveMapTreeBranch();
+                await refreshActiveMapTreeBranch();
             }
 
             if (typeof animateMapBox === 'function') {
@@ -747,93 +704,129 @@ function getPisiEditorContent(editor) {
 function markdownTextToPisiEditorHtml(text = '') {
     const lines = String(text || '').split('\n');
 
-    return lines.map((line) => {
-        const headingMatch = line.match(/^\s*(#{2,5})\s+(.*)$/);
+    return lines
+        .map((line) => {
+            const headingMatch = line.match(/^\s*(#{2,5})\s+(.*)$/);
 
-        if (headingMatch) {
-            const level = headingMatch[1].length;
-            const title = headingMatch[2] || '';
+            if (headingMatch) {
+                const level = headingMatch[1].length;
+                const title = headingMatch[2] || '';
 
-            return `<h${level}>${escapeHtml(title)}</h${level}>`;
-        }
+                return `<h${level}>${escapeHtml(title)}</h${level}>`;
+            }
 
-        if (!line.trim()) {
-            return '<div><br></div>';
-        }
+            if (!line.trim()) {
+                return '<div><br></div>';
+            }
 
-        return `<div>${escapeHtml(line)}</div>`;
-    }).join('');
+            return `<div>${escapeHtml(line)}</div>`;
+        })
+        .join('');
 }
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "isMapFileName": {
+    isMapFileName: {
         enumerable: true,
-        get() { return isMapFileName; }
+        get() {
+            return isMapFileName;
+        }
     },
-    "isNodeFileName": {
+    isNodeFileName: {
         enumerable: true,
-        get() { return isNodeFileName; }
+        get() {
+            return isNodeFileName;
+        }
     },
-    "getFileIcon": {
+    getFileIcon: {
         enumerable: true,
-        get() { return getFileIcon; }
+        get() {
+            return getFileIcon;
+        }
     },
-    "samePisiWorkspacePath": {
+    samePisiWorkspacePath: {
         enumerable: true,
-        get() { return samePisiWorkspacePath; }
+        get() {
+            return samePisiWorkspacePath;
+        }
     },
-    "openMapInWorkspace": {
+    openMapInWorkspace: {
         enumerable: true,
-        get() { return openMapInWorkspace; }
+        get() {
+            return openMapInWorkspace;
+        }
     },
-    "clearMapWorkspace": {
+    clearMapWorkspace: {
         enumerable: true,
-        get() { return clearMapWorkspace; }
+        get() {
+            return clearMapWorkspace;
+        }
     },
-    "createMapNodeBox": {
+    createMapNodeBox: {
         enumerable: true,
-        get() { return createMapNodeBox; }
+        get() {
+            return createMapNodeBox;
+        }
     },
-    "bindMapNodeBoxEvents": {
+    bindMapNodeBoxEvents: {
         enumerable: true,
-        get() { return bindMapNodeBoxEvents; }
+        get() {
+            return bindMapNodeBoxEvents;
+        }
     },
-    "bindMapNodeDrag": {
+    bindMapNodeDrag: {
         enumerable: true,
-        get() { return bindMapNodeDrag; }
+        get() {
+            return bindMapNodeDrag;
+        }
     },
-    "bindMapNodeResize": {
+    bindMapNodeResize: {
         enumerable: true,
-        get() { return bindMapNodeResize; }
+        get() {
+            return bindMapNodeResize;
+        }
     },
-    "collectMapLayout": {
+    collectMapLayout: {
         enumerable: true,
-        get() { return collectMapLayout; }
+        get() {
+            return collectMapLayout;
+        }
     },
-    "scheduleMapLayoutSave": {
+    scheduleMapLayoutSave: {
         enumerable: true,
-        get() { return scheduleMapLayoutSave; }
+        get() {
+            return scheduleMapLayoutSave;
+        }
     },
-    "saveCurrentMapLayout": {
+    saveCurrentMapLayout: {
         enumerable: true,
-        get() { return saveCurrentMapLayout; }
+        get() {
+            return saveCurrentMapLayout;
+        }
     },
-    "startMapNodeTitleEdit": {
+    startMapNodeTitleEdit: {
         enumerable: true,
-        get() { return startMapNodeTitleEdit; }
+        get() {
+            return startMapNodeTitleEdit;
+        }
     },
-    "setPisiEditorContent": {
+    setPisiEditorContent: {
         enumerable: true,
-        get() { return setPisiEditorContent; }
+        get() {
+            return setPisiEditorContent;
+        }
     },
-    "getPisiEditorContent": {
+    getPisiEditorContent: {
         enumerable: true,
-        get() { return getPisiEditorContent; }
+        get() {
+            return getPisiEditorContent;
+        }
     },
-    "markdownTextToPisiEditorHtml": {
+    markdownTextToPisiEditorHtml: {
         enumerable: true,
-        get() { return markdownTextToPisiEditorHtml; }
+        get() {
+            return markdownTextToPisiEditorHtml;
+        }
     }
 });
-registerModule("map.workspace", moduleApi);
+registerModule('map.workspace', moduleApi);

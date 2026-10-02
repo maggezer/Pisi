@@ -23,7 +23,10 @@ function scanRootSelectors(css) {
     const skipString = (start, quote) => {
         let i = start + 1;
         while (i < css.length) {
-            if (css[i] === '\\') { i += 2; continue; }
+            if (css[i] === '\\') {
+                i += 2;
+                continue;
+            }
             if (css[i] === quote) return i + 1;
             i += 1;
         }
@@ -34,20 +37,39 @@ function scanRootSelectors(css) {
         return end === -1 ? css.length : end + 2;
     };
     while (index < css.length) {
-        if (css.startsWith('/*', index)) { index = skipComment(index); continue; }
-        if (css[index] === '"' || css[index] === "'") { index = skipString(index, css[index]); continue; }
-        if (css[index] !== '{') { index += 1; continue; }
+        if (css.startsWith('/*', index)) {
+            index = skipComment(index);
+            continue;
+        }
+        if (css[index] === '"' || css[index] === "'") {
+            index = skipString(index, css[index]);
+            continue;
+        }
+        if (css[index] !== '{') {
+            index += 1;
+            continue;
+        }
         const open = index;
         let depth = 1;
         index += 1;
         while (index < css.length && depth > 0) {
-            if (css.startsWith('/*', index)) { index = skipComment(index); continue; }
-            if (css[index] === '"' || css[index] === "'") { index = skipString(index, css[index]); continue; }
+            if (css.startsWith('/*', index)) {
+                index = skipComment(index);
+                continue;
+            }
+            if (css[index] === '"' || css[index] === "'") {
+                index = skipString(index, css[index]);
+                continue;
+            }
             if (css[index] === '{') depth += 1;
             if (css[index] === '}') depth -= 1;
             index += 1;
         }
-        const prelude = css.slice(cursor, open).replace(/\/\*[\s\S]*?\*\//g, '').trim().replace(/\s+/g, ' ');
+        const prelude = css
+            .slice(cursor, open)
+            .replace(/\/\*[\s\S]*?\*\//g, '')
+            .trim()
+            .replace(/\s+/g, ' ');
         if (prelude && !prelude.startsWith('@')) selectors.push(prelude);
         cursor = index;
     }
@@ -136,12 +158,7 @@ function splitTopLevelObjectEntries(objectSource) {
         else if (char === ']') bracket -= 1;
         else if (char === '(') paren += 1;
         else if (char === ')') paren -= 1;
-        else if (
-            char === ',' &&
-            brace === 0 &&
-            bracket === 0 &&
-            paren === 0
-        ) {
+        else if (char === ',' && brace === 0 && bracket === 0 && paren === 0) {
             entries.push(body.slice(start, index));
             start = index + 1;
         }
@@ -172,11 +189,7 @@ function moduleApiKeys(objectSource) {
 
 function resolveModuleApiObject(source, identifier, beforeIndex) {
     const defineNeedle = 'Object.defineProperties(' + identifier + ',';
-    const declarationNeedles = [
-        'const ' + identifier + ' =',
-        'let ' + identifier + ' =',
-        'var ' + identifier + ' ='
-    ];
+    const declarationNeedles = ['const ' + identifier + ' =', 'let ' + identifier + ' =', 'var ' + identifier + ' ='];
 
     let ownerIndex = source.lastIndexOf(defineNeedle, beforeIndex);
     for (const needle of declarationNeedles) {
@@ -197,10 +210,7 @@ function resolveModuleApiObject(source, identifier, beforeIndex) {
 
 function scanModuleRegistrations(file, registerName) {
     const source = read(file);
-    const pattern = new RegExp(
-        '\\b' + registerName + '\\s*\\(\\s*(["\\\'])([^"\\\']+)\\1\\s*,',
-        'g'
-    );
+    const pattern = new RegExp('\\b' + registerName + '\\s*\\(\\s*(["\\\'])([^"\\\']+)\\1\\s*,', 'g');
     const result = [];
     let match;
 
@@ -243,18 +253,12 @@ function auditSourceModuleOwnership(manifests) {
     const bindingOwners = new Map();
 
     for (const registration of registrations) {
-        const world = registration.path.startsWith('renderer/')
-            ? 'renderer'
-            : 'main';
+        const world = registration.path.startsWith('renderer/') ? 'renderer' : 'main';
         const moduleKey = world + '::' + registration.module;
         const previousModulePath = moduleOwners.get(moduleKey);
 
         if (previousModulePath && previousModulePath !== registration.path) {
-            errors.push(
-                'Module owner collision [' + world + '] ' +
-                registration.module + ': ' +
-                previousModulePath + ' / ' + registration.path
-            );
+            errors.push('Module owner collision [' + world + '] ' + registration.module + ': ' + previousModulePath + ' / ' + registration.path);
         } else if (!previousModulePath) {
             moduleOwners.set(moduleKey, registration.path);
         }
@@ -264,10 +268,18 @@ function auditSourceModuleOwnership(manifests) {
             const previous = bindingOwners.get(bindingKey);
             if (previous) {
                 errors.push(
-                    'Source binding collision [' + world + '] ' +
-                    binding + ': ' +
-                    previous.module + ' @ ' + previous.path + ' / ' +
-                    registration.module + ' @ ' + registration.path
+                    'Source binding collision [' +
+                        world +
+                        '] ' +
+                        binding +
+                        ': ' +
+                        previous.module +
+                        ' @ ' +
+                        previous.path +
+                        ' / ' +
+                        registration.module +
+                        ' @ ' +
+                        registration.path
                 );
             } else {
                 bindingOwners.set(bindingKey, registration);
@@ -277,16 +289,10 @@ function auditSourceModuleOwnership(manifests) {
 
     for (const manifest of manifests) {
         for (const entry of manifest) {
-            const matches = registrations.filter((registration) => (
-                registration.module === entry.module &&
-                registration.path === entry.path
-            ));
+            const matches = registrations.filter((registration) => registration.module === entry.module && registration.path === entry.path);
 
             if (!matches.length) {
-                errors.push(
-                    'Manifest owner has no source registration: ' +
-                    entry.module + ' @ ' + entry.path
-                );
+                errors.push('Manifest owner has no source registration: ' + entry.module + ' @ ' + entry.path);
                 continue;
             }
 
@@ -297,17 +303,11 @@ function auditSourceModuleOwnership(manifests) {
             const extra = [...actual].filter((binding) => !expected.has(binding));
 
             if (missing.length) {
-                errors.push(
-                    'Manifest binding missing in source ' + entry.module + ': ' +
-                    missing.join(', ')
-                );
+                errors.push('Manifest binding missing in source ' + entry.module + ': ' + missing.join(', '));
             }
 
             if (extra.length) {
-                errors.push(
-                    'Unowned source binding ' + entry.module + ': ' +
-                    extra.join(', ')
-                );
+                errors.push('Unowned source binding ' + entry.module + ': ' + extra.join(', '));
             }
         }
     }
@@ -329,17 +329,18 @@ if (/<script[^>]+src="(?:app|renderer\/[^\"]+)\.js"/.test(html)) {
 }
 
 for (const oldFile of [
-    'app.js', 'renderer/pisi-tree.js', 'renderer/pisi-map-workspace.js',
-    'renderer/pisi-tags.js', 'renderer/pisi-calendar.js',
-    'renderer/pisi-node-modal.js', 'renderer/pisi-map-connections.js'
+    'app.js',
+    'renderer/pisi-tree.js',
+    'renderer/pisi-map-workspace.js',
+    'renderer/pisi-tags.js',
+    'renderer/pisi-calendar.js',
+    'renderer/pisi-node-modal.js',
+    'renderer/pisi-map-connections.js'
 ]) {
     if (fs.existsSync(path.join(root, oldFile))) errors.push('Legacy renderer file remains: ' + oldFile);
 }
 
-const manifests = [
-    JSON.parse(read('renderer/module-manifest.json')),
-    JSON.parse(read('main/module-manifest.json'))
-];
+const manifests = [JSON.parse(read('renderer/module-manifest.json')), JSON.parse(read('main/module-manifest.json'))];
 for (const manifest of manifests) {
     const owners = new Map();
     for (const module of manifest) {
@@ -361,9 +362,7 @@ try {
 
 for (const file of walk('renderer', '.mjs')) {
     const lines = read(file).split(/\r?\n/).length;
-    const limit = file === 'renderer/tags/pisi-todo-third-release.mjs'
-        ? 1050
-        : 1000;
+    const limit = file === 'renderer/tags/pisi-todo-third-release.mjs' ? 1050 : 1000;
     if (file !== 'renderer/runtime.mjs' && lines > limit) {
         errors.push('Renderer module too large (' + lines + '): ' + file);
     }
@@ -392,6 +391,8 @@ if (errors.length) {
 }
 console.log(
     'Architecture boundaries, source ownership (' +
-    ownershipAudit.modules + ' modules / ' +
-    ownershipAudit.bindings + ' bindings), CSS cascade and module sizes are valid.'
+        ownershipAudit.modules +
+        ' modules / ' +
+        ownershipAudit.bindings +
+        ' bindings), CSS cascade and module sizes are valid.'
 );

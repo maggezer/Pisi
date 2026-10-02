@@ -6,39 +6,36 @@ const path = require('node:path');
 const test = require('node:test');
 
 const root = path.resolve(__dirname, '..');
-const toolbar = fs.readFileSync(
-    path.join(root, 'renderer/editor/pisi-editor-unified-toolbar.mjs'),
-    'utf8'
-);
+const toolbar = fs.readFileSync(path.join(root, 'renderer/editor/pisi-editor-unified-toolbar.mjs'), 'utf8');
 
 const iconNames = [
-    "bold",
-    "italic",
-    "strike",
-    "underline",
-    "align-left",
-    "align-center",
-    "align-right",
-    "align-justify",
-    "font-color",
-    "highlight",
-    "symbol",
-    "subscript",
-    "superscript",
-    "bullet-list",
-    "number-list",
-    "formula-logical",
-    "formula-text",
-    "formula-math",
-    "formula-personal",
-    "table",
-    "canvas",
-    "pen",
-    "brush",
-    "eraser",
-    "shape",
-    "lasso",
-    "chevron-down"
+    'bold',
+    'italic',
+    'strike',
+    'underline',
+    'align-left',
+    'align-center',
+    'align-right',
+    'align-justify',
+    'font-color',
+    'highlight',
+    'symbol',
+    'subscript',
+    'superscript',
+    'bullet-list',
+    'number-list',
+    'formula-logical',
+    'formula-text',
+    'formula-math',
+    'formula-personal',
+    'table',
+    'canvas',
+    'pen',
+    'brush',
+    'eraser',
+    'shape',
+    'lasso',
+    'chevron-down'
 ];
 
 test('toolbar uses complete dark and light Pisi SVG icon sets', () => {

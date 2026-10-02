@@ -126,12 +126,7 @@ test('aktif node olayı ve proje değişimi ilişki indeksini yeniler', () => {
 test('arama arayüzünün Türkçe ve İngilizce anahtarları eşlenmiştir', () => {
     const turkish = JSON.parse(read('locales/lang-tr.json')).strings;
     const english = JSON.parse(read('locales/lang-eng.json')).strings;
-    const required = [
-        'Global arama ve hızlı geçiş',
-        'Bağlantılar',
-        'Bağlantısız bahsetmeler',
-        'Map içinde göster'
-    ];
+    const required = ['Global arama ve hızlı geçiş', 'Bağlantılar', 'Bağlantısız bahsetmeler', 'Map içinde göster'];
 
     for (const key of required) {
         assert.equal(typeof turkish[key], 'string');

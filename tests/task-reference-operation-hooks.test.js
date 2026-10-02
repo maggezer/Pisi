@@ -31,18 +31,13 @@ test('task reference hooks replace the original IPC handlers only after runtime 
     const hooks = read('main/functions/task-reference-operation-hooks.js');
 
     assert.ok(
-        bootstrap.indexOf('main/runtime') <
-        bootstrap.indexOf('task-reference-operation-hooks'),
+        bootstrap.indexOf('main/runtime') < bootstrap.indexOf('task-reference-operation-hooks'),
         'operation hooks must load after the original runtime handlers'
     );
 
-    for (const channel of [
-        'project:rename-pisi-file',
-        'project:move-pisi-item'
-    ]) {
+    for (const channel of ['project:rename-pisi-file', 'project:move-pisi-item']) {
         assert.ok(hooks.includes(`ipcMain.removeHandler('${channel}')`));
-        assert.ok(hooks.includes(`ipcMain.handle('${channel}'`) ||
-            hooks.includes(`'${channel}',`));
+        assert.ok(hooks.includes(`ipcMain.handle('${channel}'`) || hooks.includes(`'${channel}',`));
     }
 
     assert.match(hooks, /taskReferences:/);

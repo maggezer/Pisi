@@ -9,11 +9,7 @@ function isPisiReferencePathInside(basePath, targetPath) {
     const base = path.resolve(basePath);
     const target = path.resolve(targetPath);
     const relative = path.relative(base, target);
-    return relative === '' || (
-        relative !== '..' &&
-        !relative.startsWith(`..${path.sep}`) &&
-        !path.isAbsolute(relative)
-    );
+    return relative === '' || (relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative));
 }
 
 function normalizePisiReferenceStoredPath(projectFolder, targetPath) {
@@ -27,10 +23,7 @@ function normalizePisiReferenceStoredPath(projectFolder, targetPath) {
 
 function hydratePisiReferenceStoredPath(projectFolder, storedPath) {
     if (!storedPath) return null;
-    const resolved = path.resolve(
-        projectFolder,
-        String(storedPath).replace(/\//g, path.sep)
-    );
+    const resolved = path.resolve(projectFolder, String(storedPath).replace(/\//g, path.sep));
     return isPisiReferencePathInside(projectFolder, resolved) ? resolved : null;
 }
 
@@ -42,10 +35,7 @@ function normalizePisiTaskPathChanges(projectFolder, pathChanges = []) {
             if (!oldPath || !newPath) return null;
             const oldResolved = path.resolve(oldPath);
             const newResolved = path.resolve(newPath);
-            if (
-                !isPisiReferencePathInside(projectFolder, oldResolved) ||
-                !isPisiReferencePathInside(projectFolder, newResolved)
-            ) {
+            if (!isPisiReferencePathInside(projectFolder, oldResolved) || !isPisiReferencePathInside(projectFolder, newResolved)) {
                 throw new Error('Görev source path değişimi proje sınırları içinde kalmalı.');
             }
             return { oldPath: oldResolved, newPath: newResolved };
@@ -84,16 +74,8 @@ function rewritePisiTaskSourcePaths(projectFolder, pathChanges = []) {
 
         for (const task of store.tasks) {
             const source = task?.source || {};
-            const nodePath = rewritePisiTaskStoredReference(
-                projectFolder,
-                source.nodePath,
-                changes
-            );
-            const mapPath = rewritePisiTaskStoredReference(
-                projectFolder,
-                source.mapPath,
-                changes
-            );
+            const nodePath = rewritePisiTaskStoredReference(projectFolder, source.nodePath, changes);
+            const mapPath = rewritePisiTaskStoredReference(projectFolder, source.mapPath, changes);
             if (nodePath === source.nodePath && mapPath === source.mapPath) continue;
 
             task.source = {

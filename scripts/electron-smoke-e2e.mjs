@@ -14,17 +14,9 @@ const projectPath = path.join(tempRoot, 'project');
 
 await fs.mkdir(userDataPath, { recursive: true });
 await fs.mkdir(projectPath, { recursive: true });
-await fs.writeFile(
-    path.join(userDataPath, 'pisi-settings.json'),
-    JSON.stringify({ lastProjectFolder: projectPath }, null, 2),
-    'utf8'
-);
+await fs.writeFile(path.join(userDataPath, 'pisi-settings.json'), JSON.stringify({ lastProjectFolder: projectPath }, null, 2), 'utf8');
 
-const args = [
-    '--remote-debugging-port=' + port,
-    ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []),
-    repoRoot
-];
+const args = ['--remote-debugging-port=' + port, ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []), repoRoot];
 
 const child = spawn(electronPath, args, {
     cwd: repoRoot,
@@ -57,10 +49,7 @@ async function waitForPage(timeoutMs = 15000) {
             const response = await fetch('http://127.0.0.1:' + port + '/json/list');
             if (response.ok) {
                 const pages = await response.json();
-                const page = pages.find((item) => (
-                    item.type === 'page' &&
-                    String(item.url || '').startsWith('file:')
-                ));
+                const page = pages.find((item) => item.type === 'page' && String(item.url || '').startsWith('file:'));
                 if (page?.webSocketDebuggerUrl) return page;
             }
         } catch {}
@@ -111,11 +100,7 @@ class CdpClient {
             returnByValue: true
         });
         if (response.exceptionDetails) {
-            throw new Error(
-                response.exceptionDetails.exception?.description ||
-                response.exceptionDetails.text ||
-                'Renderer evaluation failed'
-            );
+            throw new Error(response.exceptionDetails.exception?.description || response.exceptionDetails.text || 'Renderer evaluation failed');
         }
         return response.result?.value;
     }
@@ -126,16 +111,13 @@ class CdpClient {
 }
 
 async function waitForRendererState(cdp, timeoutMs = 15000) {
-    const expression = "(() => ({ readyState: document.readyState, currentProjectFolder: window.currentProjectFolder || null, projectModalVisible: document.getElementById('project-modal')?.classList.contains('visible') === true, projectTitle: document.getElementById('project-title')?.textContent || '', tagsBound: document.querySelector('[data-right-tab=\\\"tags\\\"]')?.dataset.bound || null }))()";
+    const expression =
+        "(() => ({ readyState: document.readyState, currentProjectFolder: window.currentProjectFolder || null, projectModalVisible: document.getElementById('project-modal')?.classList.contains('visible') === true, projectTitle: document.getElementById('project-title')?.textContent || '', tagsBound: document.querySelector('[data-right-tab=\\\"tags\\\"]')?.dataset.bound || null }))()";
     const started = Date.now();
 
     while (Date.now() - started < timeoutMs) {
         const state = await cdp.evaluate(expression);
-        if (
-            state?.readyState === 'complete' &&
-            state.currentProjectFolder &&
-            state.tagsBound === '1'
-        ) {
+        if (state?.readyState === 'complete' && state.currentProjectFolder && state.tagsBound === '1') {
             return state;
         }
         await sleep(150);
@@ -155,10 +137,7 @@ try {
     const actualProject = path.resolve(startup.currentProjectFolder);
 
     if (actualProject !== expectedProject) {
-        throw new Error(
-            'Last project was not restored. Expected ' +
-            expectedProject + ' but got ' + actualProject
-        );
+        throw new Error('Last project was not restored. Expected ' + expectedProject + ' but got ' + actualProject);
     }
     if (startup.projectModalVisible) {
         throw new Error('Project chooser stayed visible after restoring the last project.');
@@ -184,40 +163,24 @@ try {
     })()`);
 
     if (!watcherProbe?.ok || !watcherProbe.fullPath) {
-        throw new Error(
-            'Internal watcher probe file could not be created: ' +
-            JSON.stringify(watcherProbe)
-        );
+        throw new Error('Internal watcher probe file could not be created: ' + JSON.stringify(watcherProbe));
     }
 
     await sleep(1000);
 
-    const internalWatchCount = await cdp.evaluate(
-        'window.__pisiFsWatchProbeCount || 0'
-    );
+    const internalWatchCount = await cdp.evaluate('window.__pisiFsWatchProbeCount || 0');
     if (internalWatchCount !== 0) {
-        throw new Error(
-            'Internal Pisi write leaked as external filesystem refresh: ' +
-            internalWatchCount
-        );
+        throw new Error('Internal Pisi write leaked as external filesystem refresh: ' + internalWatchCount);
     }
 
     await sleep(500);
     const probeText = await fs.readFile(watcherProbe.fullPath, 'utf8');
-    await fs.writeFile(
-        watcherProbe.fullPath,
-        probeText + '\n',
-        'utf8'
-    );
+    await fs.writeFile(watcherProbe.fullPath, probeText + '\n', 'utf8');
     await sleep(900);
 
-    const externalWatchCount = await cdp.evaluate(
-        'window.__pisiFsWatchProbeCount || 0'
-    );
+    const externalWatchCount = await cdp.evaluate('window.__pisiFsWatchProbeCount || 0');
     if (externalWatchCount < 1) {
-        throw new Error(
-            'External filesystem change was not delivered to renderer.'
-        );
+        throw new Error('External filesystem change was not delivered to renderer.');
     }
 
     await cdp.evaluate(`(async () => {
@@ -228,13 +191,12 @@ try {
         );
     })()`);
 
-    const clickExpression = "(() => { const button = document.querySelector('[data-right-tab=\\\"tags\\\"]'); if (!button) return { ok: false, reason: 'tags button missing' }; button.click(); return { ok: true, buttonActive: button.classList.contains('active'), pageActive: document.getElementById('right-tab-tags')?.classList.contains('active') === true }; })()";
+    const clickExpression =
+        "(() => { const button = document.querySelector('[data-right-tab=\\\"tags\\\"]'); if (!button) return { ok: false, reason: 'tags button missing' }; button.click(); return { ok: true, buttonActive: button.classList.contains('active'), pageActive: document.getElementById('right-tab-tags')?.classList.contains('active') === true }; })()";
     const clickResult = await cdp.evaluate(clickExpression);
 
     if (!clickResult?.ok || !clickResult.buttonActive || !clickResult.pageActive) {
-        throw new Error(
-            'Right-panel interaction failed: ' + JSON.stringify(clickResult)
-        );
+        throw new Error('Right-panel interaction failed: ' + JSON.stringify(clickResult));
     }
 
     const sheetResult = await cdp.evaluate(`(() => {
@@ -3858,132 +3820,66 @@ try {
         !sheetResult.typedStages?.viewQuery?.ui?.panelPresent ||
         !sheetResult.typedStages.viewQuery.ui.filterGroupPresent ||
         !sheetResult.typedStages.viewQuery.ui.sortListPresent ||
-        JSON.stringify(
-            sheetResult.typedStages.viewQuery.ui.logicValues
-        ) !== JSON.stringify(['and', 'or']) ||
+        JSON.stringify(sheetResult.typedStages.viewQuery.ui.logicValues) !== JSON.stringify(['and', 'or']) ||
         sheetResult.typedStages.viewQuery.filterDomOrder?.length !== 1 ||
-        sheetResult.typedStages.viewQuery.filterDomOrder?.[0] !==
-            sheetResult.typedStages.viewQuery.originalItemOrder?.[1] ||
-        JSON.stringify(
-            sheetResult.typedStages.viewQuery.filterVisibleRows
-        ) !== JSON.stringify([1]) ||
-        sheetResult.typedStages.viewQuery.filterConfigBeforeReopen
-            ?.children?.length !== 2 ||
-        sheetResult.typedStages.viewQuery.filterConfigAfterReopen
-            ?.children?.length !== 2 ||
-        JSON.stringify(
-            sheetResult.typedStages.viewQuery.filterDomOrderAfterReopen
-        ) !== JSON.stringify(
-            sheetResult.typedStages.viewQuery.filterDomOrder
-        ) ||
-        JSON.stringify(
-            sheetResult.typedStages.viewQuery.sortModelOrder
-        ) !== JSON.stringify(
-            sheetResult.typedStages.viewQuery.originalItemOrder
-        ) ||
-        JSON.stringify(
-            sheetResult.typedStages.viewQuery.sortDomOrder
-        ) !== JSON.stringify([
-            sheetResult.typedStages.viewQuery.originalItemOrder?.[0],
-            sheetResult.typedStages.viewQuery.originalItemOrder?.[3],
-            sheetResult.typedStages.viewQuery.originalItemOrder?.[1],
-            sheetResult.typedStages.viewQuery.originalItemOrder?.[2]
-        ]) ||
+        sheetResult.typedStages.viewQuery.filterDomOrder?.[0] !== sheetResult.typedStages.viewQuery.originalItemOrder?.[1] ||
+        JSON.stringify(sheetResult.typedStages.viewQuery.filterVisibleRows) !== JSON.stringify([1]) ||
+        sheetResult.typedStages.viewQuery.filterConfigBeforeReopen?.children?.length !== 2 ||
+        sheetResult.typedStages.viewQuery.filterConfigAfterReopen?.children?.length !== 2 ||
+        JSON.stringify(sheetResult.typedStages.viewQuery.filterDomOrderAfterReopen) !== JSON.stringify(sheetResult.typedStages.viewQuery.filterDomOrder) ||
+        JSON.stringify(sheetResult.typedStages.viewQuery.sortModelOrder) !== JSON.stringify(sheetResult.typedStages.viewQuery.originalItemOrder) ||
+        JSON.stringify(sheetResult.typedStages.viewQuery.sortDomOrder) !==
+            JSON.stringify([
+                sheetResult.typedStages.viewQuery.originalItemOrder?.[0],
+                sheetResult.typedStages.viewQuery.originalItemOrder?.[3],
+                sheetResult.typedStages.viewQuery.originalItemOrder?.[1],
+                sheetResult.typedStages.viewQuery.originalItemOrder?.[2]
+            ]) ||
         sheetResult.typedStages.viewQuery.sortsBeforeReopen?.length !== 2 ||
         sheetResult.typedStages.viewQuery.sortsAfterReopen?.length !== 2 ||
-        JSON.stringify(
-            sheetResult.typedStages.viewQuery.sortDomOrderAfterReopen
-        ) !== JSON.stringify(
-            sheetResult.typedStages.viewQuery.sortDomOrder
-        ) ||
+        JSON.stringify(sheetResult.typedStages.viewQuery.sortDomOrderAfterReopen) !== JSON.stringify(sheetResult.typedStages.viewQuery.sortDomOrder) ||
         typeof sheetResult.typedStages?.rawBefore?.number !== 'number' ||
         sheetResult.typedStages.rawBefore.number !== 1234.5 ||
         sheetResult.typedStages.rawBefore.date !== '2026-09-30' ||
         sheetResult.typedStages.rawBefore.select !== 'done' ||
-        JSON.stringify(
-            sheetResult.typedStages.rawBefore.mSelect
-        ) !== JSON.stringify(['todo', 'done']) ||
+        JSON.stringify(sheetResult.typedStages.rawBefore.mSelect) !== JSON.stringify(['todo', 'done']) ||
         sheetResult.typedStages.rawBefore.checkbox !== true ||
         sheetResult.typedStages.rawBefore.percent !== 0.34 ||
-        !/₺|TL/.test(
-            sheetResult.typedStages.displayBefore.number
-        ) ||
+        !/₺|TL/.test(sheetResult.typedStages.displayBefore.number) ||
         !sheetResult.typedStages.displayBefore.date ||
-        sheetResult.typedStages.displayBefore.date ===
-            '2026-09-30' ||
+        sheetResult.typedStages.displayBefore.date === '2026-09-30' ||
         sheetResult.typedStages.displayBefore.select !== 'Done' ||
         !sheetResult.typedStages.displayBefore.multi.includes('Todo') ||
         !sheetResult.typedStages.displayBefore.multi.includes('Done') ||
         !sheetResult.typedStages.displayBefore.percent.includes('34') ||
         !sheetResult.typedStages.displayBefore.percent.includes('%') ||
         sheetResult.typedStages.displayBefore.chipCount !== 2 ||
-        sheetResult.typedStages.displayBefore.doneChipColor !==
-            '#81c784' ||
-        sheetResult.typedStages.displayBefore.checkboxChecked !==
-            'true' ||
-        JSON.stringify(
-            sheetResult.typedStages.typeOptions
-        ) !== JSON.stringify([
-            'text',
-            'number',
-            'date',
-            'select',
-            'mSelect',
-            'checkbox',
-            'formula'
-        ]) ||
-        sheetResult.typedStages.numberFormat !==
-            'currency-TRY' ||
+        sheetResult.typedStages.displayBefore.doneChipColor !== '#81c784' ||
+        sheetResult.typedStages.displayBefore.checkboxChecked !== 'true' ||
+        JSON.stringify(sheetResult.typedStages.typeOptions) !== JSON.stringify(['text', 'number', 'date', 'select', 'mSelect', 'checkbox', 'formula']) ||
+        sheetResult.typedStages.numberFormat !== 'currency-TRY' ||
         sheetResult.typedStages.decimals !== '2' ||
         !sheetResult.typedStages.optionEditorVisible ||
         sheetResult.typedStages.optionEditorRows !== 2 ||
-        JSON.stringify(
-            sheetResult.typedStages.optionEditorColors
-        ) !== JSON.stringify([
-            '#e57373',
-            '#81c784'
-        ]) ||
+        JSON.stringify(sheetResult.typedStages.optionEditorColors) !== JSON.stringify(['#e57373', '#81c784']) ||
         sheetResult.typedStages.checkboxAfterClick !== false ||
         sheetResult.typedStages.selectAfterPick !== 'todo' ||
-        JSON.stringify(
-            sheetResult.typedStages.multiAfterToggle
-        ) !== JSON.stringify(['todo']) ||
-        sheetResult.typedStages.dateAfterPick !==
-            '2026-10-05' ||
-        typeof sheetResult.typedStages.rawAfterReopen.number !==
-            'number' ||
-        sheetResult.typedStages.rawAfterReopen.number !==
-            1234.5 ||
-        sheetResult.typedStages.rawAfterReopen.date !==
-            '2026-10-05' ||
-        sheetResult.typedStages.rawAfterReopen.select !==
-            'todo' ||
-        JSON.stringify(
-            sheetResult.typedStages.rawAfterReopen.mSelect
-        ) !== JSON.stringify(['todo']) ||
+        JSON.stringify(sheetResult.typedStages.multiAfterToggle) !== JSON.stringify(['todo']) ||
+        sheetResult.typedStages.dateAfterPick !== '2026-10-05' ||
+        typeof sheetResult.typedStages.rawAfterReopen.number !== 'number' ||
+        sheetResult.typedStages.rawAfterReopen.number !== 1234.5 ||
+        sheetResult.typedStages.rawAfterReopen.date !== '2026-10-05' ||
+        sheetResult.typedStages.rawAfterReopen.select !== 'todo' ||
+        JSON.stringify(sheetResult.typedStages.rawAfterReopen.mSelect) !== JSON.stringify(['todo']) ||
         sheetResult.typedStages.rawAfterReopen.checkbox !== true ||
         sheetResult.typedStages.rawAfterReopen.percent !== 0.34 ||
-        JSON.stringify(
-            sheetResult.typedStages.reopenMetadata.types
-        ) !== JSON.stringify([
-            'number',
-            'date',
-            'select',
-            'mSelect',
-            'checkbox',
-            'number'
-        ]) ||
-        sheetResult.typedStages.reopenMetadata.selectOptions?.[0]?.id !==
-            'todo' ||
-        sheetResult.typedStages.reopenMetadata.selectOptions?.[0]?.color !==
-            '#e57373' ||
-        sheetResult.typedStages.reopenMetadata.numberFormat?.style !==
-            'currency-TRY' ||
-        sheetResult.typedStages.reopenMetadata.percentFormat?.style !==
-            'percent' ||
+        JSON.stringify(sheetResult.typedStages.reopenMetadata.types) !== JSON.stringify(['number', 'date', 'select', 'mSelect', 'checkbox', 'number']) ||
+        sheetResult.typedStages.reopenMetadata.selectOptions?.[0]?.id !== 'todo' ||
+        sheetResult.typedStages.reopenMetadata.selectOptions?.[0]?.color !== '#e57373' ||
+        sheetResult.typedStages.reopenMetadata.numberFormat?.style !== 'currency-TRY' ||
+        sheetResult.typedStages.reopenMetadata.percentFormat?.style !== 'percent' ||
         sheetResult.typedStages.reopenMetadata.chips !== 1 ||
-        sheetResult.typedStages.reopenMetadata.checkboxChecked !==
-            'true' ||
+        sheetResult.typedStages.reopenMetadata.checkboxChecked !== 'true' ||
         !sheetResult.hasTableTrigger ||
         !sheetResult.hasRollupTrigger ||
         !sheetResult.mainButtonsStacked ||
@@ -4080,13 +3976,10 @@ try {
         sheetResult.modelShapeAfterCommit.items !== 5 ||
         sheetResult.modelShapeAfterCommit.views !== 1 ||
         !sheetResult.modelShapeAfterCommit.activeViewId ||
-        sheetResult.modelShapeAfterCommit.firstFieldId !==
-            sheetResult.originalColId ||
-        sheetResult.modelShapeAfterCommit.firstItemId !==
-            sheetResult.originalRowId ||
+        sheetResult.modelShapeAfterCommit.firstFieldId !== sheetResult.originalColId ||
+        sheetResult.modelShapeAfterCommit.firstItemId !== sheetResult.originalRowId ||
         sheetResult.serializedDatabaseVersion !== 1 ||
-        sheetResult.serializedDatabaseId !==
-            sheetResult.modelShapeAfterCommit.databaseId ||
+        sheetResult.serializedDatabaseId !== sheetResult.modelShapeAfterCommit.databaseId ||
         sheetResult.headerHeight > sheetResult.bodyHeight ||
         sheetResult.rowHeaderWidth > 40 ||
         sheetResult.rowHeaderHeight > 30 ||
@@ -4162,18 +4055,7 @@ try {
         sheetResult.stage5AfterShiftTab !== 'D2' ||
         sheetResult.stage5BackspaceModelValue !== '' ||
         sheetResult.stage5BackspaceRenderedValue !== '' ||
-        JSON.stringify(sheetResult.stage5VisibilityCells) !==
-            JSON.stringify([
-                'C3',
-                'D3',
-                'D2',
-                'E2',
-                'E3',
-                'D3',
-                'D2',
-                'E2',
-                'D2'
-            ]) ||
+        JSON.stringify(sheetResult.stage5VisibilityCells) !== JSON.stringify(['C3', 'D3', 'D2', 'E2', 'E3', 'D3', 'D2', 'E2', 'D2']) ||
         !sheetResult.stage5VisibilityAllNearest ||
         !sheetResult.stage5EscapeClearedSelection ||
         !sheetResult.stage5EscapeClearedActive ||
@@ -4191,18 +4073,13 @@ try {
         sheetResult.stage8LabelContentEditable !== '' ||
         !sheetResult.columnMenuPresent ||
         sheetResult.stage8FieldAfterProperties?.name !== 'Project' ||
-        sheetResult.stage8FieldAfterProperties?.description !==
-            'Project identifier' ||
+        sheetResult.stage8FieldAfterProperties?.description !== 'Project identifier' ||
         sheetResult.stage8FieldAfterProperties?.type !== 'number' ||
         sheetResult.stage8FieldAfterProperties?.wrap !== true ||
         sheetResult.stage8FieldAfterProperties?.pin !== true ||
         sheetResult.stage8FieldAfterProperties?.width !== 142 ||
         !sheetResult.stage8PinnedHeaderPresent ||
-        ![
-            'normal',
-            'pre-wrap',
-            'break-spaces'
-        ].includes(sheetResult.stage8WrappedWhiteSpace) ||
+        !['normal', 'pre-wrap', 'break-spaces'].includes(sheetResult.stage8WrappedWhiteSpace) ||
         !sheetResult.stage8HiddenAfterAction ||
         !sheetResult.stage8HiddenRestored ||
         !sheetResult.stage8DeleteActionPresent ||
@@ -4212,35 +4089,17 @@ try {
         !sheetResult.hasColumnResizer ||
         sheetResult.widthAfterAutoFit < 64 ||
         sheetResult.widthAfterAutoFit > 480 ||
-        Math.abs(
-            sheetResult.modelWidthAfterAutoFit -
-            sheetResult.widthAfterAutoFit
-        ) > 2 ||
-        Math.abs(
-            sheetResult.widthAfterSnapAttempt -
-            sheetResult.widthAfterAutoFit
-        ) > 2 ||
-        sheetResult.widthAfterResize <
-            sheetResult.widthBeforeResize + 40 ||
-        Math.abs(
-            sheetResult.bodyWidthAfterResize -
-            sheetResult.widthAfterResize
-        ) > 2 ||
-        Math.abs(
-            sheetResult.modelWidthAfterResize -
-            sheetResult.widthAfterResize
-        ) > 2 ||
+        Math.abs(sheetResult.modelWidthAfterAutoFit - sheetResult.widthAfterAutoFit) > 2 ||
+        Math.abs(sheetResult.widthAfterSnapAttempt - sheetResult.widthAfterAutoFit) > 2 ||
+        sheetResult.widthAfterResize < sheetResult.widthBeforeResize + 40 ||
+        Math.abs(sheetResult.bodyWidthAfterResize - sheetResult.widthAfterResize) > 2 ||
+        Math.abs(sheetResult.modelWidthAfterResize - sheetResult.widthAfterResize) > 2 ||
         sheetResult.stage10PinnedPosition0 !== 'sticky' ||
         sheetResult.stage10PinnedPosition1 !== 'sticky' ||
         sheetResult.stage10PinnedLeft0 !== '36px' ||
-        Number.parseFloat(
-            sheetResult.stage10PinnedLeft1
-        ) <= 36 ||
+        Number.parseFloat(sheetResult.stage10PinnedLeft1) <= 36 ||
         !sheetResult.stage10Scrollable ||
-        Math.abs(
-            sheetResult.stage10AfterScrollLeft -
-            sheetResult.stage10BeforeScrollLeft
-        ) > 2 ||
+        Math.abs(sheetResult.stage10AfterScrollLeft - sheetResult.stage10BeforeScrollLeft) > 2 ||
         sheetResult.stage10LastPinnedCount !== 1 ||
         !sheetResult.stage12MainViewId ||
         !sheetResult.stage12TechnicalViewId ||
@@ -4251,26 +4110,17 @@ try {
         sheetResult.stage13OrderAfter?.length !== 5 ||
         sheetResult.stage13MoveTo !== 2 ||
         sheetResult.stage13MovedIndex !== 2 ||
-        sheetResult.stage13OrderAfter?.[0] !==
-            sheetResult.stage13OrderBefore?.[1] ||
-        sheetResult.stage13OrderAfter?.[2] !==
-            sheetResult.stage13OriginalFirstFieldId ||
+        sheetResult.stage13OrderAfter?.[0] !== sheetResult.stage13OrderBefore?.[1] ||
+        sheetResult.stage13OrderAfter?.[2] !== sheetResult.stage13OriginalFirstFieldId ||
         String(sheetResult.stage13MovedData) !== '10' ||
         sheetResult.stage13MovedHeaderLabel !== 'Project' ||
         !sheetResult.stage13MovedHeaderPinned ||
         sheetResult.stage13FormulaValueBefore !== '30' ||
-        sheetResult.stage13FormulaSource !==
-            '=SUM(A1:A1,C1:C1)' ||
+        sheetResult.stage13FormulaSource !== '=SUM(A1:A1,C1:C1)' ||
         sheetResult.stage13FormulaValueAfter !== '30' ||
         !sheetResult.stage13NewFirstFieldId ||
         !sheetResult.contextMenuPresent ||
-        JSON.stringify(sheetResult.contextMenuActions) !==
-            JSON.stringify([
-                'addRow',
-                'deleteRow',
-                'addCol',
-                'deleteCol'
-            ]) ||
+        JSON.stringify(sheetResult.contextMenuActions) !== JSON.stringify(['addRow', 'deleteRow', 'addCol', 'deleteCol']) ||
         !sheetResult.contextMenuClosedAfterAction ||
         sheetResult.rowsAfter !== sheetResult.rowsBefore + 1 ||
         sheetResult.modelRowsAfterAdd !== sheetResult.rowsAfter ||
@@ -4278,40 +4128,22 @@ try {
         !sheetResult.selectionBeforeDomReplace ||
         !sheetResult.selectionAfterDomReplace ||
         !sheetResult.groupIdBeforeDomReplace ||
-        sheetResult.groupIdAfterDomReplace !==
-            sheetResult.groupIdBeforeDomReplace ||
-        sheetResult.selectionBeforeDomReplace.groupId !==
-            sheetResult.groupIdBeforeDomReplace ||
-        sheetResult.selectionAfterDomReplace.groupId !==
-            sheetResult.groupIdBeforeDomReplace ||
-        sheetResult.focusAfterDomReplace?.rowId !==
-            sheetResult.focusBeforeDomReplace?.rowId ||
-        sheetResult.focusAfterDomReplace?.colId !==
-            sheetResult.focusBeforeDomReplace?.colId ||
-        sheetResult.focusAfterDomReplace?.groupId !==
-            sheetResult.groupIdBeforeDomReplace ||
+        sheetResult.groupIdAfterDomReplace !== sheetResult.groupIdBeforeDomReplace ||
+        sheetResult.selectionBeforeDomReplace.groupId !== sheetResult.groupIdBeforeDomReplace ||
+        sheetResult.selectionAfterDomReplace.groupId !== sheetResult.groupIdBeforeDomReplace ||
+        sheetResult.focusAfterDomReplace?.rowId !== sheetResult.focusBeforeDomReplace?.rowId ||
+        sheetResult.focusAfterDomReplace?.colId !== sheetResult.focusBeforeDomReplace?.colId ||
+        sheetResult.focusAfterDomReplace?.groupId !== sheetResult.groupIdBeforeDomReplace ||
         sheetResult.selectedAfterDomReplace < 1 ||
-        sheetResult.activeTableDatabaseId !==
-            sheetResult.groupIdBeforeDomReplace ||
-        sheetResult.stableRowIdAfterAdd !==
-            sheetResult.originalRowId ||
-        sheetResult.stableColIdAfterAdd !==
-            sheetResult.stage13NewFirstFieldId ||
+        sheetResult.activeTableDatabaseId !== sheetResult.groupIdBeforeDomReplace ||
+        sheetResult.stableRowIdAfterAdd !== sheetResult.originalRowId ||
+        sheetResult.stableColIdAfterAdd !== sheetResult.stage13NewFirstFieldId ||
         sheetResult.renamedHeaderAfterAdd !== 'Project' ||
-        Math.abs(
-            sheetResult.widthAfterAdd -
-            sheetResult.widthAfterResize
-        ) > 2 ||
-        Math.abs(
-            sheetResult.widthAfterDomReplace -
-            sheetResult.widthAfterResize
-        ) > 2 ||
+        Math.abs(sheetResult.widthAfterAdd - sheetResult.widthAfterResize) > 2 ||
+        Math.abs(sheetResult.widthAfterDomReplace - sheetResult.widthAfterResize) > 2 ||
         sheetResult.tablePopoverPresent
     ) {
-        throw new Error(
-            'Sheet state/edit architecture failed: ' +
-            JSON.stringify(sheetResult)
-        );
+        throw new Error('Sheet state/edit architecture failed: ' + JSON.stringify(sheetResult));
     }
 
     const canvasToolbarStateResult = await cdp.evaluate(`(async () => {
@@ -4469,22 +4301,12 @@ try {
         canvasToolbarStateResult.centerState?.right ||
         canvasToolbarStateResult.alignment !== 'center'
     ) {
-        throw new Error(
-            'Canvas alignment toolbar state race failed: ' +
-            JSON.stringify(canvasToolbarStateResult)
-        );
+        throw new Error('Canvas alignment toolbar state race failed: ' + JSON.stringify(canvasToolbarStateResult));
     }
 
     await sleep(300);
 
-    const fatalPatterns = [
-        /Uncaught Error:/i,
-        /ReferenceError:/i,
-        /TypeError:/i,
-        /SyntaxError:/i,
-        /ERR_MODULE_NOT_FOUND/i,
-        /Renderer process crashed/i
-    ];
+    const fatalPatterns = [/Uncaught Error:/i, /ReferenceError:/i, /TypeError:/i, /SyntaxError:/i, /ERR_MODULE_NOT_FOUND/i, /Renderer process crashed/i];
     const fatal = fatalPatterns.find((pattern) => pattern.test(logs));
     if (fatal) {
         throw new Error('Renderer log contains fatal error matching ' + fatal + '\n' + logs);

@@ -7,7 +7,11 @@ import {
 } from './pisi-search-filesystem-delta-core.mjs';
 
 function getPisiSearchFileName(path = '') {
-    return String(path || '').split(/[\\/]/).pop() || '';
+    return (
+        String(path || '')
+            .split(/[\\/]/)
+            .pop() || ''
+    );
 }
 
 function getPisiSearchParentPath(filePath = '') {
@@ -52,12 +56,12 @@ function createPisiSearchFilesystemDeltaController(options = {}) {
         }
         const targetKey = pisiSearchPathKey(filePath);
         const fileName = getPisiSearchFileName(filePath).toLocaleLowerCase('en-US');
-        const item = result.items.find((candidate) => {
-            if (pisiSearchPathKey(candidate?.fullPath) === targetKey) return true;
-            const candidateName = String(candidate?.name || candidate?.fileName || '')
-                .toLocaleLowerCase('en-US');
-            return candidateName === fileName;
-        }) || null;
+        const item =
+            result.items.find((candidate) => {
+                if (pisiSearchPathKey(candidate?.fullPath) === targetKey) return true;
+                const candidateName = String(candidate?.name || candidate?.fileName || '').toLocaleLowerCase('en-US');
+                return candidateName === fileName;
+            }) || null;
         return { ok: true, exists: Boolean(item), item };
     }
 
@@ -66,8 +70,7 @@ function createPisiSearchFilesystemDeltaController(options = {}) {
         const memberships = [];
         for (const map of maps || []) {
             const node = (map.nodes || []).find((candidate) => {
-                return (nodeId && candidate?.id === nodeId) ||
-                    pisiSearchPathKey(candidate?.path) === pathKey;
+                return (nodeId && candidate?.id === nodeId) || pisiSearchPathKey(candidate?.path) === pathKey;
             });
             if (node) memberships.push(makeMembership(map, node));
         }
@@ -76,27 +79,29 @@ function createPisiSearchFilesystemDeltaController(options = {}) {
 
     function recacheDocument(documentRecord) {
         if (!documentRecord?.path) return;
-        cacheDocument({
-            path: documentRecord.path,
-            item: documentRecord.nodeItem,
-            content: documentRecord.html,
-            metadata: documentRecord.metadata,
-            properties: documentRecord.properties,
-            memberships: documentRecord.memberships
-        }, documentRecord);
+        cacheDocument(
+            {
+                path: documentRecord.path,
+                item: documentRecord.nodeItem,
+                content: documentRecord.html,
+                metadata: documentRecord.metadata,
+                properties: documentRecord.properties,
+                memberships: documentRecord.memberships
+            },
+            documentRecord
+        );
     }
 
     async function applyMapDelta(state, mapPath) {
         const mapKey = pisiSearchPathKey(mapPath);
-        const previousMap = state.maps.find((map) => {
-            return pisiSearchPathKey(map?.path) === mapKey;
-        }) || null;
+        const previousMap =
+            state.maps.find((map) => {
+                return pisiSearchPathKey(map?.path) === mapKey;
+            }) || null;
         const probe = await inspectPath(mapPath);
         if (!probe.ok) return { ok: false, error: probe.error };
 
-        const affectedNodePaths = new Set(
-            (previousMap?.nodes || []).map((node) => node.path).filter(Boolean)
-        );
+        const affectedNodePaths = new Set((previousMap?.nodes || []).map((node) => node.path).filter(Boolean));
 
         if (!probe.exists) {
             state.maps = state.maps.filter((map) => {
@@ -108,10 +113,7 @@ function createPisiSearchFilesystemDeltaController(options = {}) {
                 if (!current) continue;
                 const next = {
                     ...current,
-                    memberships: removePisiSearchMapMemberships(
-                        current.memberships,
-                        mapPath
-                    )
+                    memberships: removePisiSearchMapMemberships(current.memberships, mapPath)
                 };
                 state.documents.set(nodeKey, next);
                 recacheDocument(next);
@@ -149,10 +151,7 @@ function createPisiSearchFilesystemDeltaController(options = {}) {
             const nodeKey = pisiSearchPathKey(node.fullPath);
             const current = state.documents.get(nodeKey) || null;
             const membership = makeMembership(nextMap, node);
-            const memberships = upsertPisiSearchMapMembership(
-                current?.memberships || [],
-                membership
-            );
+            const memberships = upsertPisiSearchMapMembership(current?.memberships || [], membership);
             const metadata = node.metadata || current?.metadata || {};
             const properties = node.properties || current?.properties || {};
             const rawNode = {
@@ -169,9 +168,7 @@ function createPisiSearchFilesystemDeltaController(options = {}) {
                     metadata,
                     properties
                 },
-                content: node.content !== undefined
-                    ? String(node.content || '')
-                    : String(current?.html || ''),
+                content: node.content !== undefined ? String(node.content || '') : String(current?.html || ''),
                 metadata,
                 properties,
                 memberships
@@ -187,10 +184,7 @@ function createPisiSearchFilesystemDeltaController(options = {}) {
             state.affectedNodePaths.add(nodePath);
         }
 
-        state.maps = [
-            ...state.maps.filter((map) => pisiSearchPathKey(map?.path) !== mapKey),
-            nextMap
-        ];
+        state.maps = [...state.maps.filter((map) => pisiSearchPathKey(map?.path) !== mapKey), nextMap];
         state.changedMapPaths.add(mapPath);
         return { ok: true };
     }
@@ -217,9 +211,7 @@ function createPisiSearchFilesystemDeltaController(options = {}) {
         const current = state.documents.get(nodeKey) || null;
         const metadata = result.metadata || result.data?.pisi || current?.metadata || {};
         const properties = result.data?.properties || current?.properties || {};
-        let memberships = Array.isArray(current?.memberships)
-            ? current.memberships
-            : [];
+        let memberships = Array.isArray(current?.memberships) ? current.memberships : [];
         if (!memberships.length) {
             memberships = inferMemberships(state.maps, nodePath, metadata?.id);
         }
@@ -276,21 +268,14 @@ function createPisiSearchFilesystemDeltaController(options = {}) {
         let records = Array.isArray(baseIndex.records) ? baseIndex.records : [];
         for (const nodePath of state.affectedNodePaths) {
             const documentRecord = state.documents.get(pisiSearchPathKey(nodePath));
-            records = replacePisiSearchNodeRecords(
-                records,
-                nodePath,
-                documentRecord ? createRecordsForDocument(documentRecord) : []
-            );
+            records = replacePisiSearchNodeRecords(records, nodePath, documentRecord ? createRecordsForDocument(documentRecord) : []);
         }
         for (const mapPath of state.changedMapPaths) {
-            const map = state.maps.find((candidate) => {
-                return pisiSearchPathKey(candidate?.path) === pisiSearchPathKey(mapPath);
-            }) || null;
-            records = replacePisiSearchMapRecord(
-                records,
-                mapPath,
-                map ? makeMapSearchRecord(map, state.projectFolder) : null
-            );
+            const map =
+                state.maps.find((candidate) => {
+                    return pisiSearchPathKey(candidate?.path) === pisiSearchPathKey(mapPath);
+                }) || null;
+            records = replacePisiSearchMapRecord(records, mapPath, map ? makeMapSearchRecord(map, state.projectFolder) : null);
         }
         return records;
     }
@@ -300,20 +285,18 @@ function createPisiSearchFilesystemDeltaController(options = {}) {
         const startGeneration = getIndexGeneration();
         const projectFolder = getProjectFolder();
         const projectKey = pisiSearchPathKey(projectFolder);
-        if (
-            !baseIndex ||
-            baseIndex.projectKey !== projectKey ||
-            hasBuildPromise()
-        ) {
+        if (!baseIndex || baseIndex.projectKey !== projectKey || hasBuildPromise()) {
             return { ok: false, rebuild: true, reason: 'base-index-not-ready' };
         }
 
         const state = {
             projectFolder,
-            maps: Array.isArray(baseIndex.maps) ? baseIndex.maps.map((map) => ({
-                ...map,
-                nodes: Array.isArray(map.nodes) ? map.nodes.map((node) => ({ ...node })) : []
-            })) : [],
+            maps: Array.isArray(baseIndex.maps)
+                ? baseIndex.maps.map((map) => ({
+                      ...map,
+                      nodes: Array.isArray(map.nodes) ? map.nodes.map((node) => ({ ...node })) : []
+                  }))
+                : [],
             documents: new Map(baseIndex.documents || []),
             affectedNodePaths: new Set(),
             changedMapPaths: new Set(),
@@ -342,16 +325,10 @@ function createPisiSearchFilesystemDeltaController(options = {}) {
             };
         }
 
-        resolvedNodes.filter((entry) => entry.mode === 'upsert')
-            .forEach((entry) => applyNodeUpsert(state, entry));
-        resolvedNodes.filter((entry) => entry.mode === 'remove')
-            .forEach((entry) => applyNodeRemove(state, entry.nodePath));
+        resolvedNodes.filter((entry) => entry.mode === 'upsert').forEach((entry) => applyNodeUpsert(state, entry));
+        resolvedNodes.filter((entry) => entry.mode === 'remove').forEach((entry) => applyNodeRemove(state, entry.nodePath));
 
-        if (
-            getBaseIndex() !== baseIndex ||
-            getIndexGeneration() !== startGeneration ||
-            pisiSearchPathKey(getProjectFolder()) !== projectKey
-        ) {
+        if (getBaseIndex() !== baseIndex || getIndexGeneration() !== startGeneration || pisiSearchPathKey(getProjectFolder()) !== projectKey) {
             return { ok: false, superseded: true, reason: 'delta-superseded' };
         }
 
@@ -400,10 +377,7 @@ function createPisiSearchFilesystemDeltaController(options = {}) {
                 try {
                     const result = await apply(classification);
                     if (!result?.ok && !result?.superseded) {
-                        invalidate(
-                            result?.reason || 'filesystem-delta-fallback',
-                            changedPaths
-                        );
+                        invalidate(result?.reason || 'filesystem-delta-fallback', changedPaths);
                     }
                     return result;
                 } catch (error) {
@@ -420,7 +394,9 @@ function createPisiSearchFilesystemDeltaController(options = {}) {
     return {
         apply,
         queue,
-        isActive() { return deltaActive; }
+        isActive() {
+            return deltaActive;
+        }
     };
 }
 

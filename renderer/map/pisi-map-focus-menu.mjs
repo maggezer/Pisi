@@ -38,9 +38,7 @@ function getOperationalModule() {
 }
 
 function getSelectedMapNodeBox() {
-    const boxes = Array.from(document.querySelectorAll(
-        '.map-node-box.selected:not(.pisi-operational-filter-hidden)'
-    ));
+    const boxes = Array.from(document.querySelectorAll('.map-node-box.selected:not(.pisi-operational-filter-hidden)'));
     return boxes.length === 1 ? boxes[0] : null;
 }
 
@@ -85,10 +83,7 @@ function positionFocusMenu() {
     if (!menu || !button || menu.hidden) return;
     const rect = button.getBoundingClientRect();
     const menuWidth = Math.max(138, menu.offsetWidth || 138);
-    const left = Math.min(
-        Math.max(8, rect.left),
-        Math.max(8, window.innerWidth - menuWidth - 8)
-    );
+    const left = Math.min(Math.max(8, rect.left), Math.max(8, window.innerWidth - menuWidth - 8));
     menu.style.left = `${Math.round(left)}px`;
     menu.style.top = `${Math.round(rect.bottom + 6)}px`;
 }
@@ -96,10 +91,7 @@ function positionFocusMenu() {
 function syncFocusMenuSelection() {
     const current = String(focusMenuState.lastDegree || '1');
     focusMenuState.menu?.querySelectorAll('[data-pisi-focus-degree]').forEach((option) => {
-        option.setAttribute(
-            'aria-checked',
-            option.dataset.pisiFocusDegree === current ? 'true' : 'false'
-        );
+        option.setAttribute('aria-checked', option.dataset.pisiFocusDegree === current ? 'true' : 'false');
     });
 }
 
@@ -157,24 +149,19 @@ async function persistOperationalScope() {
     const operational = getOperationalModule();
     const state = operational?.operationalState;
     if (!state || !window.activeMapPath || !window.pisiProject?.saveMapCamera) return;
-    const result = await window.pisiProject.saveMapCamera(
-        window.activeMapPath,
-        {
-            ...(window.activeMapCamera || { x: 0, y: 0, zoom: 1 }),
-            collapsedHubs: Array.from(window.collapsedHubPorts || []),
-            operationalPayload: {
-                op: 'update',
-                scope: state.scope,
-                display: state.display
-            }
+    const result = await window.pisiProject.saveMapCamera(window.activeMapPath, {
+        ...(window.activeMapCamera || { x: 0, y: 0, zoom: 1 }),
+        collapsedHubs: Array.from(window.collapsedHubPorts || []),
+        operationalPayload: {
+            op: 'update',
+            scope: state.scope,
+            display: state.display
         }
-    );
+    });
     if (!result?.operational) return;
     state.scope = result.operational.scope || state.scope;
     state.display = result.operational.display || state.display;
-    state.savedLayouts = Array.isArray(result.operational.savedLayouts)
-        ? result.operational.savedLayouts
-        : state.savedLayouts;
+    state.savedLayouts = Array.isArray(result.operational.savedLayouts) ? result.operational.savedLayouts : state.savedLayouts;
 }
 
 async function applyFocusDegree(degree) {
@@ -253,20 +240,28 @@ function bindGlobalFocusMenuHandlers() {
     if (focusMenuState.outsideBound) return;
     focusMenuState.outsideBound = true;
 
-    document.addEventListener('mousedown', (event) => {
-        const menu = focusMenuState.menu;
-        const button = focusMenuState.button;
-        if (!menu || menu.hidden) return;
-        if (menu.contains(event.target) || button?.contains(event.target)) return;
-        closeFocusMenu();
-    }, true);
+    document.addEventListener(
+        'mousedown',
+        (event) => {
+            const menu = focusMenuState.menu;
+            const button = focusMenuState.button;
+            if (!menu || menu.hidden) return;
+            if (menu.contains(event.target) || button?.contains(event.target)) return;
+            closeFocusMenu();
+        },
+        true
+    );
 
-    document.addEventListener('keydown', (event) => {
-        if (event.key !== 'Escape' || focusMenuState.menu?.hidden) return;
-        event.preventDefault();
-        closeFocusMenu();
-        focusMenuState.button?.focus();
-    }, true);
+    document.addEventListener(
+        'keydown',
+        (event) => {
+            if (event.key !== 'Escape' || focusMenuState.menu?.hidden) return;
+            event.preventDefault();
+            closeFocusMenu();
+            focusMenuState.button?.focus();
+        },
+        true
+    );
 
     window.addEventListener('resize', positionFocusMenu);
     window.addEventListener('scroll', positionFocusMenu, true);
@@ -282,8 +277,10 @@ function initializeFocusDegreeMenu() {
     const host = document.getElementById('right-panel-content') || document.body;
     if (!focusMenuState.observer && host) {
         focusMenuState.observer = new MutationObserver(() => {
-            if (!document.getElementById('pisi-map-operational-depth') &&
-                document.getElementById('pisi-map-operational-focus')?.dataset.pisiFocusDegreeMenu === '1') {
+            if (
+                !document.getElementById('pisi-map-operational-depth') &&
+                document.getElementById('pisi-map-operational-focus')?.dataset.pisiFocusDegreeMenu === '1'
+            ) {
                 return;
             }
             requestAnimationFrame(installFocusDegreeMenu);
@@ -302,10 +299,4 @@ registerModule('map.focusMenu', {
 
 initializeFocusDegreeMenu();
 
-export {
-    applyFocusDegree,
-    closeFocusMenu,
-    collectConnectedNodeIds,
-    initializeFocusDegreeMenu,
-    installFocusDegreeMenu
-};
+export { applyFocusDegree, closeFocusMenu, collectConnectedNodeIds, initializeFocusDegreeMenu, installFocusDegreeMenu };

@@ -53,8 +53,7 @@ test('diary canonical tasklardan üretilen read-only projectiondır ve task HTML
     assert.doesNotMatch(rendererGuard, /html:\s*block\.html/);
     assert.match(rendererGuard, /syncPisiDiaryFromMissionIndex = syncPisiDiaryFromCanonicalTasks/);
     assert.ok(
-        bootstrap.indexOf('./runtime.mjs') <
-            bootstrap.indexOf('./tags/pisi-source-of-truth.mjs'),
+        bootstrap.indexOf('./runtime.mjs') < bootstrap.indexOf('./tags/pisi-source-of-truth.mjs'),
         'canonical diary override runtime calendar kurulduktan sonra yüklenmeli'
     );
 });
@@ -88,8 +87,7 @@ test('semantic relationship otoritesi proje storeudur; map yalnız presentation 
     assert.match(hooks, /mapStateAuthority:/);
     assert.doesNotMatch(hooks, /syncMapConnectionMetadata\(/);
     assert.ok(
-        bootstrap.indexOf('relationship-store') <
-            bootstrap.indexOf('map-semantic-operation-hooks'),
+        bootstrap.indexOf('relationship-store') < bootstrap.indexOf('map-semantic-operation-hooks'),
         'canonical relationship store map IPC adapterından önce yüklenmeli'
     );
 });
@@ -111,8 +109,5 @@ test('map node konumu yalnız map layout kaydına yazılır', () => {
     const layoutWriter = mapStore.slice(start, end);
 
     assert.match(layoutWriter, /mapInfo\.data\.map\.nodes/);
-    assert.doesNotMatch(
-        layoutWriter,
-        /nodeInfo\.data\.pisi\.(?:x|y|width|height)/
-    );
+    assert.doesNotMatch(layoutWriter, /nodeInfo\.data\.pisi\.(?:x|y|width|height)/);
 });

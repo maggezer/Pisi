@@ -1,43 +1,43 @@
 name: Probe Pisi v0.11.0 Release
 
 on:
-  push:
-    branches:
-      - chatgpt/tag-v0.11.0-20260820
-    paths:
-      - .github/workflows/probe-release-v0.11.0.yml
+    push:
+        branches:
+            - chatgpt/tag-v0.11.0-20260820
+        paths:
+            - .github/workflows/probe-release-v0.11.0.yml
 
 permissions:
-  contents: write
+    contents: write
 
 jobs:
-  probe:
-    runs-on: ubuntu-latest
-    env:
-      HELPER_BRANCH: chatgpt/tag-v0.11.0-20260820
-    steps:
-      - name: Checkout helper
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Probe tag and release
-        shell: bash
+    probe:
+        runs-on: ubuntu-latest
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set +e
-          git fetch origin main --tags
-          tag_commit=$(git rev-list -n 1 v0.11.0 2>/dev/null)
-          release_view=$(gh release view v0.11.0 --json tagName,name,isPrerelease,url 2>&1)
-          release_exit=$?
-          {
-            echo "tag_commit=$tag_commit"
-            echo "release_exit=$release_exit"
-            echo "release_view=$release_view"
-          } > probe.txt
-          content=$(base64 -w0 probe.txt)
-          gh api --method PUT "repos/$GITHUB_REPOSITORY/contents/.release-probe-v0.11.0.txt" \
-            -f message='Record v0.11.0 release probe' \
-            -f content="$content" \
-            -f branch="$HELPER_BRANCH"
+            HELPER_BRANCH: chatgpt/tag-v0.11.0-20260820
+        steps:
+            - name: Checkout helper
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Probe tag and release
+              shell: bash
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  set +e
+                  git fetch origin main --tags
+                  tag_commit=$(git rev-list -n 1 v0.11.0 2>/dev/null)
+                  release_view=$(gh release view v0.11.0 --json tagName,name,isPrerelease,url 2>&1)
+                  release_exit=$?
+                  {
+                    echo "tag_commit=$tag_commit"
+                    echo "release_exit=$release_exit"
+                    echo "release_view=$release_view"
+                  } > probe.txt
+                  content=$(base64 -w0 probe.txt)
+                  gh api --method PUT "repos/$GITHUB_REPOSITORY/contents/.release-probe-v0.11.0.txt" \
+                    -f message='Record v0.11.0 release probe' \
+                    -f content="$content" \
+                    -f branch="$HELPER_BRANCH"

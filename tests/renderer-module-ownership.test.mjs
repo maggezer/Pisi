@@ -3,9 +3,7 @@ import assert from 'node:assert/strict';
 
 globalThis.window = {};
 
-const registry = await import(
-    '../renderer/core/module-registry.mjs?ownership-regression=1'
-);
+const registry = await import('../renderer/core/module-registry.mjs?ownership-regression=1');
 
 test('renderer module ownership rejects duplicate bindings', () => {
     registry.registerModule('test.alpha', {
@@ -13,23 +11,18 @@ test('renderer module ownership rejects duplicate bindings', () => {
     });
 
     assert.throws(
-        () => registry.registerModule('test.beta', {
-            alphaBinding: () => 'beta'
-        }),
+        () =>
+            registry.registerModule('test.beta', {
+                alphaBinding: () => 'beta'
+            }),
         /Renderer binding collision: alphaBinding/
     );
 });
 
 test('renderer boot ownership can only be claimed once', () => {
-    assert.equal(
-        registry.claimRendererBoot('test.runtime', 'tests/first'),
-        true
-    );
+    assert.equal(registry.claimRendererBoot('test.runtime', 'tests/first'), true);
 
-    assert.throws(
-        () => registry.claimRendererBoot('test.runtime', 'tests/second'),
-        /Renderer boot collision: test\.runtime/
-    );
+    assert.throws(() => registry.claimRendererBoot('test.runtime', 'tests/second'), /Renderer boot collision: test\.runtime/);
 });
 
 test('renderer namespace replacement is rejected', () => {
@@ -37,9 +30,10 @@ test('renderer namespace replacement is rejected', () => {
     globalThis.window.Pisi = {};
 
     assert.throws(
-        () => registry.registerModule('test.namespace', {
-            namespaceBinding: true
-        }),
+        () =>
+            registry.registerModule('test.namespace', {
+                namespaceBinding: true
+            }),
         /Pisi namespace was replaced/
     );
 
@@ -56,14 +50,12 @@ test('renderer registry seal blocks late registrations', () => {
     assert.equal(Object.isFrozen(globalThis.window.Pisi.modules), true);
 
     assert.throws(
-        () => registry.registerModule('test.late', {
-            lateBinding: true
-        }),
+        () =>
+            registry.registerModule('test.late', {
+                lateBinding: true
+            }),
         /registry is sealed/
     );
 
-    assert.throws(
-        () => registry.sealRendererModuleRegistry(),
-        /sealed twice/
-    );
+    assert.throws(() => registry.sealRendererModuleRegistry(), /sealed twice/);
 });

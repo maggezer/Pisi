@@ -1,8 +1,4 @@
-import {
-    filterPisiPropertyDocuments,
-    normalizePisiPropertyCollection,
-    resolvePisiRelationDocuments
-} from './pisi-properties-core.mjs';
+import { filterPisiPropertyDocuments, normalizePisiPropertyCollection, resolvePisiRelationDocuments } from './pisi-properties-core.mjs';
 
 const PISI_BASE_TABLE_COLUMN_LIMIT = 30;
 const PISI_BASE_CARD_COLUMN_LIMIT = 8;
@@ -34,7 +30,9 @@ function normalizePisiBaseDefinitions(definitions = []) {
     for (const raw of Array.isArray(definitions) ? definitions : []) {
         const id = String(raw?.id || '').trim();
         const name = String(raw?.name || '').trim();
-        const type = String(raw?.type || 'text').trim().toLowerCase();
+        const type = String(raw?.type || 'text')
+            .trim()
+            .toLowerCase();
         if (!id || !name || seen.has(id)) continue;
         seen.add(id);
         result.push({
@@ -48,25 +46,23 @@ function normalizePisiBaseDefinitions(definitions = []) {
 }
 
 function canonicalizePisiBaseDocuments(documents = [], definitions = []) {
-    const definitionById = new Map(
-        normalizePisiBaseDefinitions(definitions)
-            .map((definition) => [definition.id, definition])
-    );
+    const definitionById = new Map(normalizePisiBaseDefinitions(definitions).map((definition) => [definition.id, definition]));
     return Array.from(documents || []).map((documentRecord) => {
-        const normalizedProperties = normalizePisiPropertyCollection(
-            documentRecord?.properties
-        );
+        const normalizedProperties = normalizePisiPropertyCollection(documentRecord?.properties);
         const properties = Object.fromEntries(
             normalizedProperties.map((property) => {
                 const definition = definitionById.get(property.id);
                 if (!definition) return [property.id, property];
-                return [property.id, {
-                    ...property,
-                    id: definition.id,
-                    name: definition.name,
-                    type: definition.type,
-                    system: definition.system === true || property.system === true
-                }];
+                return [
+                    property.id,
+                    {
+                        ...property,
+                        id: definition.id,
+                        name: definition.name,
+                        type: definition.type,
+                        system: definition.system === true || property.system === true
+                    }
+                ];
             })
         );
         return {
@@ -130,8 +126,7 @@ function comparePisiBaseDocuments(a, b) {
     const pathB = pisiBasePathKey(b?.relativePath || b?.path);
     const byPath = pathA.localeCompare(pathB, 'en', { numeric: true });
     if (byPath) return byPath;
-    return String(a?.metadata?.id || a?.id || '')
-        .localeCompare(String(b?.metadata?.id || b?.id || ''), 'en');
+    return String(a?.metadata?.id || a?.id || '').localeCompare(String(b?.metadata?.id || b?.id || ''), 'en');
 }
 
 function sortPisiBaseDocuments(documents = []) {
@@ -139,10 +134,7 @@ function sortPisiBaseDocuments(documents = []) {
 }
 
 function makePisiBasePropertyLookup(documentRecord) {
-    return new Map(
-        normalizePisiPropertyCollection(documentRecord?.properties)
-            .map((property) => [property.id, property])
-    );
+    return new Map(normalizePisiPropertyCollection(documentRecord?.properties).map((property) => [property.id, property]));
 }
 
 function formatPisiBaseScalar(value) {
@@ -162,21 +154,14 @@ function formatPisiBaseScalar(value) {
 function formatPisiBasePropertyValue(property, documents = []) {
     if (!property) return '—';
     if (property.type === 'relation') {
-        const rawValues = Array.isArray(property.value)
-            ? property.value.map(String).filter(Boolean)
-            : [];
+        const rawValues = Array.isArray(property.value) ? property.value.map(String).filter(Boolean) : [];
         if (!rawValues.length) return '—';
         const resolved = resolvePisiRelationDocuments(property, documents);
         const labelByKey = new Map();
         for (const documentRecord of resolved) {
             const label = String(documentRecord.title || documentRecord.relativePath || documentRecord.path || '').trim();
             if (!label) continue;
-            for (const candidate of [
-                documentRecord.path,
-                documentRecord.relativePath,
-                documentRecord.fileName,
-                documentRecord.metadata?.id
-            ]) {
+            for (const candidate of [documentRecord.path, documentRecord.relativePath, documentRecord.fileName, documentRecord.metadata?.id]) {
                 const key = pisiBasePathKey(candidate);
                 if (key) labelByKey.set(key, label);
             }
@@ -184,9 +169,7 @@ function formatPisiBasePropertyValue(property, documents = []) {
         return rawValues.map((value) => labelByKey.get(pisiBasePathKey(value)) || value).join(', ');
     }
     if (Array.isArray(property.value)) {
-        const values = property.value
-            .map(formatPisiBaseScalar)
-            .filter((value) => value !== '—');
+        const values = property.value.map(formatPisiBaseScalar).filter((value) => value !== '—');
         return values.length ? values.join(', ') : '—';
     }
     return formatPisiBaseScalar(property.value);

@@ -31,13 +31,7 @@ test('Rollup blok içinde hesaplanır ve çift tıklamayla yeniden düzenlenir',
     const rollupBlocks = read('renderer/data/pisi-rollup-blocks.mjs');
     const styles = read('styles/59-platform-system.css');
 
-    for (const label of [
-        'Relation özelliği',
-        'Hedef property',
-        'Hesaplama',
-        'Rollup bloğunu düzenle',
-        'Rollup bloğunu kaydet'
-    ]) {
+    for (const label of ['Relation özelliği', 'Hedef property', 'Hesaplama', 'Rollup bloğunu düzenle', 'Rollup bloğunu kaydet']) {
         assert.ok(rollupBlocks.includes(label), label);
     }
     assert.match(rollupBlocks, /computePisiRollupValue\(/);
@@ -83,11 +77,7 @@ test('Rollup yapılandırması node içeriğinde ve Markdown geçişinde korunur
     assert.match(blocks, /\{\{pisi-rollup:/);
     assert.match(blocks, /block\.dataset\.pisiRollupRelation/);
     assert.match(blocks, /block\.dataset\.pisiRollupTarget/);
-    for (const attribute of [
-        'data-pisi-rollup-relation',
-        'data-pisi-rollup-target',
-        'data-pisi-rollup-aggregate'
-    ]) {
+    for (const attribute of ['data-pisi-rollup-relation', 'data-pisi-rollup-target', 'data-pisi-rollup-aggregate']) {
         assert.ok(editor.includes(`'${attribute}'`), attribute);
     }
     assert.match(bootstrap, /data\/pisi-rollup-blocks\.mjs/);
@@ -100,6 +90,6 @@ test('Rollup açık ve koyu temada ayrı yüzey renkleri kullanır', () => {
 
     assert.match(dark, /\.pisi-rollup-block-overlay/);
     assert.match(dark, /\.pisi-rollup-block-editor-field > select/);
-    assert.match(light, /data-pisi-theme="light"[\s\S]*\.pisi-rollup-block/);
-    assert.match(light, /data-pisi-theme="light"[\s\S]*\.pisi-rollup-block-dialog/);
+    assert.match(light, /data-pisi-theme=["\']light["\'][\s\S]*\.pisi-rollup-block/);
+    assert.match(light, /data-pisi-theme=["\']light["\'][\s\S]*\.pisi-rollup-block-dialog/);
 });

@@ -12,9 +12,7 @@ function registerMainModule(moduleName, api) {
     for (const key of Object.keys(api)) {
         const previousOwner = bindingOwners.get(key);
         if (previousOwner && previousOwner !== moduleName) {
-            throw new Error(
-                '[PISI] Main binding collision: ' + key + ' (' + previousOwner + ' / ' + moduleName + ')'
-            );
+            throw new Error('[PISI] Main binding collision: ' + key + ' (' + previousOwner + ' / ' + moduleName + ')');
         }
         if (Object.prototype.hasOwnProperty.call(moduleApi, key)) {
             throw new Error('[PISI] Main binding registered twice: ' + moduleName + '.' + key);

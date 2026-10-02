@@ -1,15 +1,8 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 
 const PISI_DOCUMENT_INK_MAX_WIDTH = 4096;
 const PISI_DOCUMENT_INK_MAX_HEIGHT = 4096;
-const PISI_DOCUMENT_INK_TOOLS = new Set([
-    'pencil',
-    'brush',
-    'eraser',
-    'line',
-    'rect',
-    'ellipse'
-]);
+const PISI_DOCUMENT_INK_TOOLS = new Set(['pencil', 'brush', 'eraser', 'line', 'rect', 'ellipse']);
 
 const pisiBoundDocumentInkCanvases = new WeakSet();
 const pisiLoadedDocumentInkImages = new WeakMap();
@@ -26,29 +19,20 @@ function getPisiDocumentInkLayer(editor) {
 }
 
 function getPisiDocumentInkCanvas(editor) {
-    return getPisiDocumentInkLayer(editor)?.querySelector(
-        'canvas[data-pisi-document-ink]'
-    ) || null;
+    return getPisiDocumentInkLayer(editor)?.querySelector('canvas[data-pisi-document-ink]') || null;
 }
 
 function getPisiDocumentInkToolbar(editor) {
     if (!editor?.id) return null;
-    return document.querySelector(
-        `.pisi-editor-toolbar[data-editor-target="${editor.id}"]`
-    );
+    return document.querySelector(`.pisi-editor-toolbar[data-editor-target="${editor.id}"]`);
 }
 
 function hasPisiEmbeddedPaintCanvas(editor) {
-    return Boolean(
-        editor?.querySelector('canvas[data-pisi-canvas]')
-    );
+    return Boolean(editor?.querySelector('canvas[data-pisi-canvas]'));
 }
 
 function clampPisiDocumentInkDimension(value, maximum) {
-    return Math.max(
-        1,
-        Math.min(maximum, Math.ceil(Number(value) || 1))
-    );
+    return Math.max(1, Math.min(maximum, Math.ceil(Number(value) || 1)));
 }
 
 function getPisiDocumentInkExtent(editor) {
@@ -59,27 +43,13 @@ function getPisiDocumentInkExtent(editor) {
     Array.from(editor?.children || []).forEach((child) => {
         if (child === layer) return;
 
-        width = Math.max(
-            width,
-            Number(child.offsetLeft || 0) +
-                Number(child.offsetWidth || 0) + 24
-        );
-        height = Math.max(
-            height,
-            Number(child.offsetTop || 0) +
-                Number(child.offsetHeight || 0) + 24
-        );
+        width = Math.max(width, Number(child.offsetLeft || 0) + Number(child.offsetWidth || 0) + 24);
+        height = Math.max(height, Number(child.offsetTop || 0) + Number(child.offsetHeight || 0) + 24);
     });
 
     return {
-        width: clampPisiDocumentInkDimension(
-            width,
-            PISI_DOCUMENT_INK_MAX_WIDTH
-        ),
-        height: clampPisiDocumentInkDimension(
-            height,
-            PISI_DOCUMENT_INK_MAX_HEIGHT
-        )
+        width: clampPisiDocumentInkDimension(width, PISI_DOCUMENT_INK_MAX_WIDTH),
+        height: clampPisiDocumentInkDimension(height, PISI_DOCUMENT_INK_MAX_HEIGHT)
     };
 }
 
@@ -94,10 +64,7 @@ function resizePisiDocumentInkCanvas(editor, canvas = null) {
     targetCanvas.style.width = `${dimensions.width}px`;
     targetCanvas.style.height = `${dimensions.height}px`;
 
-    if (
-        targetCanvas.width === dimensions.width &&
-        targetCanvas.height === dimensions.height
-    ) {
+    if (targetCanvas.width === dimensions.width && targetCanvas.height === dimensions.height) {
         return false;
     }
 
@@ -181,82 +148,63 @@ function savePisiDocumentInkForEditor(editor) {
 function hydratePisiDocumentInk(editor) {
     if (!editor) return;
 
-    editor
-        .querySelectorAll('canvas[data-pisi-document-ink]')
-        .forEach((canvas) => {
-            canvas.removeAttribute('data-image-loaded');
-            bindPisiDocumentInkCanvas(canvas);
+    editor.querySelectorAll('canvas[data-pisi-document-ink]').forEach((canvas) => {
+        canvas.removeAttribute('data-image-loaded');
+        bindPisiDocumentInkCanvas(canvas);
+        resizePisiDocumentInkCanvas(editor, canvas);
+
+        const storedImage = canvas.dataset.image || '';
+        if (!storedImage) {
+            const context = canvas.getContext('2d');
+            context?.clearRect(0, 0, canvas.width, canvas.height);
+            pisiLoadedDocumentInkImages.delete(canvas);
+            pisiPendingDocumentInkImages.delete(canvas);
+            return;
+        }
+
+        if (pisiLoadedDocumentInkImages.get(canvas) === storedImage || pisiPendingDocumentInkImages.get(canvas) === storedImage) {
+            return;
+        }
+
+        const image = new Image();
+        pisiPendingDocumentInkImages.set(canvas, storedImage);
+
+        image.onload = () => {
+            if (pisiPendingDocumentInkImages.get(canvas) !== storedImage) {
+                return;
+            }
+
             resizePisiDocumentInkCanvas(editor, canvas);
+            const context = canvas.getContext('2d');
+            context?.clearRect(0, 0, canvas.width, canvas.height);
+            context?.drawImage(image, 0, 0, canvas.width, canvas.height);
 
-            const storedImage = canvas.dataset.image || '';
-            if (!storedImage) {
-                const context = canvas.getContext('2d');
-                context?.clearRect(0, 0, canvas.width, canvas.height);
-                pisiLoadedDocumentInkImages.delete(canvas);
+            pisiLoadedDocumentInkImages.set(canvas, storedImage);
+            pisiPendingDocumentInkImages.delete(canvas);
+            pisiDirtyDocumentInkCanvases.delete(canvas);
+        };
+
+        image.onerror = () => {
+            if (pisiPendingDocumentInkImages.get(canvas) === storedImage) {
                 pisiPendingDocumentInkImages.delete(canvas);
-                return;
             }
+        };
 
-            if (
-                pisiLoadedDocumentInkImages.get(canvas) === storedImage ||
-                pisiPendingDocumentInkImages.get(canvas) === storedImage
-            ) {
-                return;
-            }
-
-            const image = new Image();
-            pisiPendingDocumentInkImages.set(canvas, storedImage);
-
-            image.onload = () => {
-                if (
-                    pisiPendingDocumentInkImages.get(canvas) !==
-                    storedImage
-                ) {
-                    return;
-                }
-
-                resizePisiDocumentInkCanvas(editor, canvas);
-                const context = canvas.getContext('2d');
-                context?.clearRect(0, 0, canvas.width, canvas.height);
-                context?.drawImage(
-                    image,
-                    0,
-                    0,
-                    canvas.width,
-                    canvas.height
-                );
-
-                pisiLoadedDocumentInkImages.set(canvas, storedImage);
-                pisiPendingDocumentInkImages.delete(canvas);
-                pisiDirtyDocumentInkCanvases.delete(canvas);
-            };
-
-            image.onerror = () => {
-                if (
-                    pisiPendingDocumentInkImages.get(canvas) ===
-                    storedImage
-                ) {
-                    pisiPendingDocumentInkImages.delete(canvas);
-                }
-            };
-
-            image.src = storedImage;
-        });
+        image.src = storedImage;
+    });
 }
 
 function getPisiDocumentInkPoint(canvas, event) {
     const rect = canvas.getBoundingClientRect();
     return {
-        x: (event.clientX - rect.left) *
-            (canvas.width / Math.max(1, rect.width)),
-        y: (event.clientY - rect.top) *
-            (canvas.height / Math.max(1, rect.height))
+        x: (event.clientX - rect.left) * (canvas.width / Math.max(1, rect.width)),
+        y: (event.clientY - rect.top) * (canvas.height / Math.max(1, rect.height))
     };
 }
 
 function drawPisiDocumentInkDot(context, state, point) {
     const brushScale = state.tool === 'brush' ? 1.6 : 1;
-    const radius = Math.max(0.5, Number(state.size || 1) * brushScale / 2);
+    const radius = Math.max(0.5, (Number(state.size || 1) * brushScale) / 2);
 
     context.save();
     context.globalAlpha = state.tool === 'brush' ? 0.55 : 1;
@@ -274,10 +222,7 @@ function drawPisiDocumentInkSegment(context, state, from, to) {
     context.globalAlpha = state.tool === 'brush' ? 0.55 : 1;
     context.lineCap = 'round';
     context.lineJoin = 'round';
-    context.lineWidth = Math.max(
-        1,
-        Number(state.size || 1) * brushScale
-    );
+    context.lineWidth = Math.max(1, Number(state.size || 1) * brushScale);
     context.strokeStyle = state.color;
     context.beginPath();
     context.moveTo(from.x, from.y);
@@ -296,12 +241,7 @@ function erasePisiDocumentInkSegment(context, from, to, size) {
         const x = from.x + (to.x - from.x) * progress;
         const y = from.y + (to.y - from.y) * progress;
 
-        context.clearRect(
-            x - eraseSize / 2,
-            y - eraseSize / 2,
-            eraseSize,
-            eraseSize
-        );
+        context.clearRect(x - eraseSize / 2, y - eraseSize / 2, eraseSize, eraseSize);
     }
 }
 
@@ -318,11 +258,7 @@ function bindPisiDocumentInkCanvas(canvas) {
         const editor = canvas.closest('.pisi-rich-editor');
         const state = getPisiPaintState();
 
-        if (
-            !editor?.classList.contains('pisi-document-ink-active') ||
-            !PISI_DOCUMENT_INK_TOOLS.has(state.tool) ||
-            pisiPendingDocumentInkImages.has(canvas)
-        ) {
+        if (!editor?.classList.contains('pisi-document-ink-active') || !PISI_DOCUMENT_INK_TOOLS.has(state.tool) || pisiPendingDocumentInkImages.has(canvas)) {
             return;
         }
 
@@ -336,9 +272,7 @@ function bindPisiDocumentInkCanvas(canvas) {
         drawing = true;
         start = getPisiDocumentInkPoint(canvas, event);
         previous = start;
-        snapshot = ['line', 'rect', 'ellipse'].includes(state.tool)
-            ? context.getImageData(0, 0, canvas.width, canvas.height)
-            : null;
+        snapshot = ['line', 'rect', 'ellipse'].includes(state.tool) ? context.getImageData(0, 0, canvas.width, canvas.height) : null;
         pisiDirtyDocumentInkCanvases.add(canvas);
 
         if (canvas.setPointerCapture) {
@@ -346,12 +280,7 @@ function bindPisiDocumentInkCanvas(canvas) {
         }
 
         if (state.tool === 'eraser') {
-            erasePisiDocumentInkSegment(
-                context,
-                start,
-                start,
-                state.size
-            );
+            erasePisiDocumentInkSegment(context, start, start, state.size);
         } else if (['pencil', 'brush'].includes(state.tool)) {
             drawPisiDocumentInkDot(context, state, start);
         }
@@ -369,19 +298,9 @@ function bindPisiDocumentInkCanvas(canvas) {
         if (!context) return;
 
         if (state.tool === 'eraser') {
-            erasePisiDocumentInkSegment(
-                context,
-                previous,
-                point,
-                state.size
-            );
+            erasePisiDocumentInkSegment(context, previous, point, state.size);
         } else if (['pencil', 'brush'].includes(state.tool)) {
-            drawPisiDocumentInkSegment(
-                context,
-                state,
-                previous,
-                point
-            );
+            drawPisiDocumentInkSegment(context, state, previous, point);
         } else {
             if (snapshot) {
                 context.putImageData(snapshot, 0, 0);
@@ -403,9 +322,7 @@ function bindPisiDocumentInkCanvas(canvas) {
         snapshot = null;
 
         savePisiDocumentInkData(canvas);
-        notifyPisiEditorChanged(
-            canvas.closest('.pisi-rich-editor')
-        );
+        notifyPisiEditorChanged(canvas.closest('.pisi-rich-editor'));
     };
 
     canvas.addEventListener('pointerup', finish);
@@ -414,9 +331,7 @@ function bindPisiDocumentInkCanvas(canvas) {
 
 function clearPisiDocumentInkToolHighlight(editor) {
     const toolbar = getPisiDocumentInkToolbar(editor);
-    toolbar
-        ?.querySelectorAll('[data-pisi-paint-tool].active')
-        .forEach((button) => button.classList.remove('active'));
+    toolbar?.querySelectorAll('[data-pisi-paint-tool].active').forEach((button) => button.classList.remove('active'));
 }
 
 function deactivatePisiDocumentInk(editor = null, options = {}) {
@@ -438,23 +353,13 @@ function activatePisiDocumentInk(toolbar) {
     const editor = getPisiToolbarEditor(toolbar);
     const state = getPisiPaintState();
 
-    if (
-        !editor ||
-        hasPisiEmbeddedPaintCanvas(editor) ||
-        !PISI_DOCUMENT_INK_TOOLS.has(state.tool)
-    ) {
+    if (!editor || hasPisiEmbeddedPaintCanvas(editor) || !PISI_DOCUMENT_INK_TOOLS.has(state.tool)) {
         deactivatePisiDocumentInk(editor);
         return false;
     }
 
-    if (
-        pisiActiveInkSurface &&
-        pisiActiveInkSurface !== editor
-    ) {
-        deactivatePisiDocumentInk(
-            pisiActiveInkSurface,
-            { clearToolHighlight: true }
-        );
+    if (pisiActiveInkSurface && pisiActiveInkSurface !== editor) {
+        deactivatePisiDocumentInk(pisiActiveInkSurface, { clearToolHighlight: true });
     }
 
     const canvas = ensurePisiDocumentInkLayer(editor);
@@ -502,18 +407,14 @@ function bindPisiInkSurface(editor) {
 }
 
 function bindPisiInkSurfaces() {
-    document
-        .querySelectorAll('.pisi-rich-editor')
-        .forEach((editor) => bindPisiInkSurface(editor));
+    document.querySelectorAll('.pisi-rich-editor').forEach((editor) => bindPisiInkSurface(editor));
 }
 
 function handlePisiDocumentInkToolbarClick(event) {
     const shapeItem = event.target.closest('.pisi-office-shape-item');
     if (shapeItem && pisiLastDocumentInkShapeToolbar) {
         queueMicrotask(() => {
-            syncPisiDocumentInkForPaintTool(
-                pisiLastDocumentInkShapeToolbar
-            );
+            syncPisiDocumentInkForPaintTool(pisiLastDocumentInkShapeToolbar);
         });
         return;
     }
@@ -529,19 +430,12 @@ function handlePisiDocumentInkToolbarClick(event) {
         return;
     }
 
-    if (
-        event.target.closest(
-            '[data-pisi-paint-action="createCanvas"]'
-        )
-    ) {
+    if (event.target.closest('[data-pisi-paint-action="createCanvas"]')) {
         deactivatePisiDocumentInk(editor);
         return;
     }
 
-    if (
-        event.target.closest('[data-pisi-paint-tool]') ||
-        event.target.closest('[data-pisi-size-trigger]')
-    ) {
+    if (event.target.closest('[data-pisi-paint-tool]') || event.target.closest('[data-pisi-size-trigger]')) {
         queueMicrotask(() => {
             syncPisiDocumentInkForPaintTool(toolbar);
         });
@@ -552,46 +446,31 @@ function handlePisiDocumentInkToolbarClick(event) {
         return;
     }
 
-    deactivatePisiDocumentInk(
-        editor,
-        { clearToolHighlight: true }
-    );
+    deactivatePisiDocumentInk(editor, { clearToolHighlight: true });
 }
 
 function setupPisiDocumentInkRuntime() {
     bindPisiInkSurfaces();
 
-    document.addEventListener(
-        'click',
-        handlePisiDocumentInkToolbarClick
-    );
+    document.addEventListener('click', handlePisiDocumentInkToolbarClick);
 
     document.addEventListener('keydown', (event) => {
         if (event.key !== 'Escape') return;
-        deactivatePisiDocumentInk(
-            pisiActiveInkSurface,
-            { clearToolHighlight: true }
-        );
+        deactivatePisiDocumentInk(pisiActiveInkSurface, { clearToolHighlight: true });
     });
 
     window.addEventListener('resize', () => {
-        document
-            .querySelectorAll('.pisi-rich-editor')
-            .forEach((editor) => {
-                const canvas = getPisiDocumentInkCanvas(editor);
-                if (canvas) {
-                    resizePisiDocumentInkCanvas(editor, canvas);
-                }
-            });
+        document.querySelectorAll('.pisi-rich-editor').forEach((editor) => {
+            const canvas = getPisiDocumentInkCanvas(editor);
+            if (canvas) {
+                resizePisiDocumentInkCanvas(editor, canvas);
+            }
+        });
     });
 }
 
 if (document.readyState === 'loading') {
-    document.addEventListener(
-        'DOMContentLoaded',
-        setupPisiDocumentInkRuntime,
-        { once: true }
-    );
+    document.addEventListener('DOMContentLoaded', setupPisiDocumentInkRuntime, { once: true });
 } else {
     setupPisiDocumentInkRuntime();
 }
@@ -600,67 +479,99 @@ const moduleApi = {};
 Object.defineProperties(moduleApi, {
     PISI_DOCUMENT_INK_MAX_WIDTH: {
         enumerable: true,
-        get() { return PISI_DOCUMENT_INK_MAX_WIDTH; }
+        get() {
+            return PISI_DOCUMENT_INK_MAX_WIDTH;
+        }
     },
     PISI_DOCUMENT_INK_MAX_HEIGHT: {
         enumerable: true,
-        get() { return PISI_DOCUMENT_INK_MAX_HEIGHT; }
+        get() {
+            return PISI_DOCUMENT_INK_MAX_HEIGHT;
+        }
     },
     getPisiDocumentInkLayer: {
         enumerable: true,
-        get() { return getPisiDocumentInkLayer; }
+        get() {
+            return getPisiDocumentInkLayer;
+        }
     },
     getPisiDocumentInkCanvas: {
         enumerable: true,
-        get() { return getPisiDocumentInkCanvas; }
+        get() {
+            return getPisiDocumentInkCanvas;
+        }
     },
     hasPisiEmbeddedPaintCanvas: {
         enumerable: true,
-        get() { return hasPisiEmbeddedPaintCanvas; }
+        get() {
+            return hasPisiEmbeddedPaintCanvas;
+        }
     },
     getPisiDocumentInkExtent: {
         enumerable: true,
-        get() { return getPisiDocumentInkExtent; }
+        get() {
+            return getPisiDocumentInkExtent;
+        }
     },
     resizePisiDocumentInkCanvas: {
         enumerable: true,
-        get() { return resizePisiDocumentInkCanvas; }
+        get() {
+            return resizePisiDocumentInkCanvas;
+        }
     },
     ensurePisiDocumentInkLayer: {
         enumerable: true,
-        get() { return ensurePisiDocumentInkLayer; }
+        get() {
+            return ensurePisiDocumentInkLayer;
+        }
     },
     savePisiDocumentInkData: {
         enumerable: true,
-        get() { return savePisiDocumentInkData; }
+        get() {
+            return savePisiDocumentInkData;
+        }
     },
     savePisiDocumentInkForEditor: {
         enumerable: true,
-        get() { return savePisiDocumentInkForEditor; }
+        get() {
+            return savePisiDocumentInkForEditor;
+        }
     },
     hydratePisiDocumentInk: {
         enumerable: true,
-        get() { return hydratePisiDocumentInk; }
+        get() {
+            return hydratePisiDocumentInk;
+        }
     },
     bindPisiDocumentInkCanvas: {
         enumerable: true,
-        get() { return bindPisiDocumentInkCanvas; }
+        get() {
+            return bindPisiDocumentInkCanvas;
+        }
     },
     deactivatePisiDocumentInk: {
         enumerable: true,
-        get() { return deactivatePisiDocumentInk; }
+        get() {
+            return deactivatePisiDocumentInk;
+        }
     },
     activatePisiDocumentInk: {
         enumerable: true,
-        get() { return activatePisiDocumentInk; }
+        get() {
+            return activatePisiDocumentInk;
+        }
     },
     syncPisiDocumentInkForPaintTool: {
         enumerable: true,
-        get() { return syncPisiDocumentInkForPaintTool; }
+        get() {
+            return syncPisiDocumentInkForPaintTool;
+        }
     },
     bindPisiInkSurfaces: {
         enumerable: true,
-        get() { return bindPisiInkSurfaces; }
+        get() {
+            return bindPisiInkSurfaces;
+        }
     }
 });
 registerModule('editor.documentInk', moduleApi);

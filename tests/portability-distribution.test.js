@@ -26,16 +26,14 @@ test('portability tools are distributed without a command-center portability pag
 test('toolbar keeps history, export, and import as a right-aligned vertical stack', () => {
     const toolbar = read('renderer/editor/pisi-editor-unified-toolbar.mjs');
     const css = read('styles/65-unified-toolbar.css');
-    const actions = ['history', 'export', 'import'].map((action) =>
-        toolbar.indexOf(`data-pisi-portability-action="${action}"`)
-    );
+    const actions = ['history', 'export', 'import'].map((action) => toolbar.indexOf(`data-pisi-portability-action="${action}"`));
 
     assert.ok(actions.every((position) => position >= 0));
-    assert.deepEqual([...actions].sort((a, b) => a - b), actions);
-    assert.ok(
-        toolbar.indexOf('pisi-toolbar-section-portability')
-            > toolbar.indexOf('pisi-toolbar-section-drawing')
+    assert.deepEqual(
+        [...actions].sort((a, b) => a - b),
+        actions
     );
+    assert.ok(toolbar.indexOf('pisi-toolbar-section-portability') > toolbar.indexOf('pisi-toolbar-section-drawing'));
     assert.match(toolbar, /detail: {[\s\S]*action: portabilityTrigger\.dataset\.pisiPortabilityAction/);
     assert.match(css, /pisi-toolbar-section-portability[\s\S]*margin-left: auto/);
     assert.match(css, /pisi-toolbar-portability-stack[\s\S]*grid-template-rows: repeat\(3, 26px\)/);

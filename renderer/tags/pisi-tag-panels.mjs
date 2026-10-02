@@ -1,5 +1,5 @@
-import { registerModule } from "../core/module-registry.mjs";
-import { parsePisiTodoTagValue } from "./pisi-todo-utils.mjs";
+import { registerModule } from '../core/module-registry.mjs';
+import { parsePisiTodoTagValue } from './pisi-todo-utils.mjs';
 
 function ensurePisiTagsPanelDom() {
     const panel = document.getElementById('pisi-tags-panel');
@@ -49,37 +49,31 @@ function renderPisiTagsPanel() {
         return;
     }
 
-    const {
-        pickerButton,
-        pickerMenu,
-        resultsEl
-    } = dom;
+    const { pickerButton, pickerMenu, resultsEl } = dom;
 
-    const index = Array.isArray(pisiTagsPanelState.index)
-        ? pisiTagsPanelState.index
-        : [];
+    const index = Array.isArray(pisiTagsPanelState.index) ? pisiTagsPanelState.index : [];
 
     const counts = new Map();
 
-for (const block of index) {
-    const blockTags = Array.isArray(block.tags) ? block.tags : [];
+    for (const block of index) {
+        const blockTags = Array.isArray(block.tags) ? block.tags : [];
 
-    for (const tag of blockTags) {
-        const normalizedTag = normalizePisiUserTag(tag);
+        for (const tag of blockTags) {
+            const normalizedTag = normalizePisiUserTag(tag);
 
-        // Missions'a özel ..todo.priority.finishdate etiketleri
-        // Tags sekmesinde listelenmesin.
-        if (parsePisiTodoTag(normalizedTag)) {
-            continue;
+            // Missions'a özel ..todo.priority.finishdate etiketleri
+            // Tags sekmesinde listelenmesin.
+            if (parsePisiTodoTag(normalizedTag)) {
+                continue;
+            }
+
+            counts.set(normalizedTag, (counts.get(normalizedTag) || 0) + 1);
         }
-
-        counts.set(normalizedTag, (counts.get(normalizedTag) || 0) + 1);
     }
-}
 
-const tags = Array.from(counts.keys()).sort((a, b) => {
-    return a.localeCompare(b, 'tr');
-});
+    const tags = Array.from(counts.keys()).sort((a, b) => {
+        return a.localeCompare(b, 'tr');
+    });
 
     if (!tags.length) {
         pisiTagsPanelState.selectedTag = null;
@@ -99,10 +93,7 @@ const tags = Array.from(counts.keys()).sort((a, b) => {
         return;
     }
 
-    if (
-        pisiTagsPanelState.selectedTag &&
-        !counts.has(pisiTagsPanelState.selectedTag)
-    ) {
+    if (pisiTagsPanelState.selectedTag && !counts.has(pisiTagsPanelState.selectedTag)) {
         pisiTagsPanelState.selectedTag = null;
     }
 
@@ -112,10 +103,7 @@ const tags = Array.from(counts.keys()).sort((a, b) => {
 
     pickerButton.disabled = false;
     pickerButton.textContent = `#${selectedTag} (${counts.get(selectedTag)})`;
-    pickerButton.setAttribute(
-        'aria-expanded',
-        pisiTagsPanelState.dropdownOpen ? 'true' : 'false'
-    );
+    pickerButton.setAttribute('aria-expanded', pisiTagsPanelState.dropdownOpen ? 'true' : 'false');
 
     pickerButton.onclick = (event) => {
         event.preventDefault();
@@ -153,11 +141,13 @@ const tags = Array.from(counts.keys()).sort((a, b) => {
         pickerMenu.appendChild(option);
     }
 
-   const matchingBlocks = index.filter((block) => {
-    return Array.isArray(block.tags) &&
-        block.tags.some((tag) => {
-            return normalizePisiUserTag(tag) === selectedTag;
-        });
+    const matchingBlocks = index.filter((block) => {
+        return (
+            Array.isArray(block.tags) &&
+            block.tags.some((tag) => {
+                return normalizePisiUserTag(tag) === selectedTag;
+            })
+        );
     });
 
     resultsEl.innerHTML = '';
@@ -235,32 +225,24 @@ function createPisiDoneTagElement(todoTag) {
 function blockHasPisiDoneTag(block, todoTag = null) {
     const normalizedTodoTag = normalizePisiUserTag(todoTag);
 
-    return Array.from(block.querySelectorAll('.pisi-user-tag[data-pisi-tag]'))
-        .some((tagEl) => {
-            const isDone = normalizePisiUserTag(
-                tagEl.dataset.pisiTag || tagEl.textContent || ''
-            ) === 'done';
+    return Array.from(block.querySelectorAll('.pisi-user-tag[data-pisi-tag]')).some((tagEl) => {
+        const isDone = normalizePisiUserTag(tagEl.dataset.pisiTag || tagEl.textContent || '') === 'done';
 
-            if (!isDone) return false;
-            if (!normalizedTodoTag) return true;
+        if (!isDone) return false;
+        if (!normalizedTodoTag) return true;
 
-            const doneFor = normalizePisiUserTag(
-                tagEl.dataset.pisiDoneFor || ''
-            );
+        const doneFor = normalizePisiUserTag(tagEl.dataset.pisiDoneFor || '');
 
-            return !doneFor || doneFor === normalizedTodoTag;
-        });
+        return !doneFor || doneFor === normalizedTodoTag;
+    });
 }
 
 function blockHasPisiTag(block, targetTag) {
     const normalizedTarget = normalizePisiUserTag(targetTag);
 
-    return Array.from(block.querySelectorAll('.pisi-user-tag[data-pisi-tag]'))
-        .some((tagEl) => {
-            return normalizePisiUserTag(
-                tagEl.dataset.pisiTag || tagEl.textContent || ''
-            ) === normalizedTarget;
-        });
+    return Array.from(block.querySelectorAll('.pisi-user-tag[data-pisi-tag]')).some((tagEl) => {
+        return normalizePisiUserTag(tagEl.dataset.pisiTag || tagEl.textContent || '') === normalizedTarget;
+    });
 }
 
 function appendPisiDoneTagToBlock(block, todoTag) {
@@ -281,20 +263,11 @@ function removePisiDoneTagFromBlock(block, todoTag) {
     const normalizedTodoTag = normalizePisiUserTag(todoTag);
     let removed = false;
 
-    Array.from(
-        block.querySelectorAll('.pisi-user-tag[data-pisi-tag]')
-    ).forEach((tagEl) => {
-        const isDone = normalizePisiUserTag(
-            tagEl.dataset.pisiTag || tagEl.textContent || ''
-        ) === 'done';
-        const doneFor = normalizePisiUserTag(
-            tagEl.dataset.pisiDoneFor || ''
-        );
+    Array.from(block.querySelectorAll('.pisi-user-tag[data-pisi-tag]')).forEach((tagEl) => {
+        const isDone = normalizePisiUserTag(tagEl.dataset.pisiTag || tagEl.textContent || '') === 'done';
+        const doneFor = normalizePisiUserTag(tagEl.dataset.pisiDoneFor || '');
 
-        if (
-            isDone &&
-            (!doneFor || !normalizedTodoTag || doneFor === normalizedTodoTag)
-        ) {
+        if (isDone && (!doneFor || !normalizedTodoTag || doneFor === normalizedTodoTag)) {
             tagEl.remove();
             removed = true;
         }
@@ -322,17 +295,11 @@ function findPisiMissionBlockInContainer(container, mission) {
 
         if (!hasTodo) continue;
 
-        if (
-            mission.blockId &&
-            block.dataset.pisiBlockId === mission.blockId
-        ) {
+        if (mission.blockId && block.dataset.pisiBlockId === mission.blockId) {
             return block;
         }
 
-        if (
-            !textFallback &&
-            normalizePisiBlockText(block.textContent) === targetText
-        ) {
+        if (!textFallback && normalizePisiBlockText(block.textContent) === targetText) {
             textFallback = block;
         }
 
@@ -353,9 +320,7 @@ function setPisiMissionCompletionInBlock(block, mission, completed) {
     }
 
     const previousHtml = block.innerHTML;
-    const changed = completed
-        ? appendPisiDoneTagToBlock(block, mission.todoTag)
-        : removePisiDoneTagFromBlock(block, mission.todoTag);
+    const changed = completed ? appendPisiDoneTagToBlock(block, mission.todoTag) : removePisiDoneTagFromBlock(block, mission.todoTag);
 
     window.syncPisiTodoBlockMarkers?.(block);
 
@@ -398,11 +363,7 @@ async function setPisiMissionCompletion(mission, completed) {
                 };
             }
 
-            const change = setPisiMissionCompletionInBlock(
-                block,
-                mission,
-                completed
-            );
+            const change = setPisiMissionCompletionInBlock(block, mission, completed);
 
             if (!change.changed) {
                 return {
@@ -411,9 +372,11 @@ async function setPisiMissionCompletion(mission, completed) {
                 };
             }
 
-            editor.dispatchEvent(new Event('input', {
-                bubbles: true
-            }));
+            editor.dispatchEvent(
+                new Event('input', {
+                    bubbles: true
+                })
+            );
 
             let saveSucceeded = false;
             let saveError = 'Node kaydedilemedi.';
@@ -421,10 +384,7 @@ async function setPisiMissionCompletion(mission, completed) {
             if (typeof saveCurrentCenterNodeEditor === 'function') {
                 saveSucceeded = await saveCurrentCenterNodeEditor();
             } else {
-                const saveResult = await window.pisiProject?.saveNodeContent?.(
-                    mission.nodePath,
-                    getPisiEditorContent(editor)
-                );
+                const saveResult = await window.pisiProject?.saveNodeContent?.(mission.nodePath, getPisiEditorContent(editor));
 
                 saveSucceeded = saveResult?.ok === true;
                 saveError = saveResult?.error || saveError;
@@ -455,11 +415,7 @@ async function setPisiMissionCompletion(mission, completed) {
                 };
             }
 
-            const change = setPisiMissionCompletionInBlock(
-                block,
-                mission,
-                completed
-            );
+            const change = setPisiMissionCompletionInBlock(block, mission, completed);
 
             if (!change.changed) {
                 return {
@@ -468,14 +424,13 @@ async function setPisiMissionCompletion(mission, completed) {
                 };
             }
 
-            editor.dispatchEvent(new Event('input', {
-                bubbles: true
-            }));
-
-            const saveResult = await window.pisiProject?.saveNodeContent?.(
-                mission.nodePath,
-                getPisiEditorContent(editor)
+            editor.dispatchEvent(
+                new Event('input', {
+                    bubbles: true
+                })
             );
+
+            const saveResult = await window.pisiProject?.saveNodeContent?.(mission.nodePath, getPisiEditorContent(editor));
 
             if (!saveResult?.ok) {
                 rollbackPisiMissionBlock(block, change.previousHtml);
@@ -504,10 +459,7 @@ async function setPisiMissionCompletion(mission, completed) {
 
         const template = createPisiInertHtmlTemplate(doc.data?.content || '');
 
-        const block = findPisiMissionBlockInContainer(
-            template.content,
-            mission
-        );
+        const block = findPisiMissionBlockInContainer(template.content, mission);
 
         if (!block) {
             return {
@@ -516,11 +468,7 @@ async function setPisiMissionCompletion(mission, completed) {
             };
         }
 
-        const change = setPisiMissionCompletionInBlock(
-            block,
-            mission,
-            completed
-        );
+        const change = setPisiMissionCompletionInBlock(block, mission, completed);
 
         if (!change.changed) {
             return {
@@ -529,10 +477,7 @@ async function setPisiMissionCompletion(mission, completed) {
             };
         }
 
-        const saveResult = await window.pisiProject?.saveNodeContent?.(
-            mission.nodePath,
-            template.innerHTML
-        );
+        const saveResult = await window.pisiProject?.saveNodeContent?.(mission.nodePath, template.innerHTML);
 
         if (!saveResult?.ok) {
             return {
@@ -547,88 +492,120 @@ async function setPisiMissionCompletion(mission, completed) {
 
         return {
             ok: false,
-            error:
-                error.message ||
-                (completed
-                    ? 'Görev tamamlandı olarak işaretlenemedi.'
-                    : 'Görev yeniden açılamadı.')
+            error: error.message || (completed ? 'Görev tamamlandı olarak işaretlenemedi.' : 'Görev yeniden açılamadı.')
         };
     }
 }
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "ensurePisiTagsPanelDom": {
+    ensurePisiTagsPanelDom: {
         enumerable: true,
-        get() { return ensurePisiTagsPanelDom; }
+        get() {
+            return ensurePisiTagsPanelDom;
+        }
     },
-    "renderPisiTagsPanel": {
+    renderPisiTagsPanel: {
         enumerable: true,
-        get() { return renderPisiTagsPanel; }
+        get() {
+            return renderPisiTagsPanel;
+        }
     },
-    "parsePisiTodoTag": {
+    parsePisiTodoTag: {
         enumerable: true,
-        get() { return parsePisiTodoTag; }
+        get() {
+            return parsePisiTodoTag;
+        }
     },
-    "formatPisiMissionDate": {
+    formatPisiMissionDate: {
         enumerable: true,
-        get() { return formatPisiMissionDate; }
+        get() {
+            return formatPisiMissionDate;
+        }
     },
-    "getPisiMissionsFromIndex": {
+    getPisiMissionsFromIndex: {
         enumerable: true,
-        get() { return getPisiMissionsFromIndex; }
+        get() {
+            return getPisiMissionsFromIndex;
+        }
     },
-    "escapePisiMissionRegExp": {
+    escapePisiMissionRegExp: {
         enumerable: true,
-        get() { return escapePisiMissionRegExp; }
+        get() {
+            return escapePisiMissionRegExp;
+        }
     },
-    "getPisiMissionDisplayText": {
+    getPisiMissionDisplayText: {
         enumerable: true,
-        get() { return getPisiMissionDisplayText; }
+        get() {
+            return getPisiMissionDisplayText;
+        }
     },
-    "renderPisiMissionsPanel": {
+    renderPisiMissionsPanel: {
         enumerable: true,
-        get() { return renderPisiMissionsPanel; }
+        get() {
+            return renderPisiMissionsPanel;
+        }
     },
-    "normalizePisiBlockText": {
+    normalizePisiBlockText: {
         enumerable: true,
-        get() { return normalizePisiBlockText; }
+        get() {
+            return normalizePisiBlockText;
+        }
     },
-    "createPisiDoneTagElement": {
+    createPisiDoneTagElement: {
         enumerable: true,
-        get() { return createPisiDoneTagElement; }
+        get() {
+            return createPisiDoneTagElement;
+        }
     },
-    "blockHasPisiDoneTag": {
+    blockHasPisiDoneTag: {
         enumerable: true,
-        get() { return blockHasPisiDoneTag; }
+        get() {
+            return blockHasPisiDoneTag;
+        }
     },
-    "blockHasPisiTag": {
+    blockHasPisiTag: {
         enumerable: true,
-        get() { return blockHasPisiTag; }
+        get() {
+            return blockHasPisiTag;
+        }
     },
-    "appendPisiDoneTagToBlock": {
+    appendPisiDoneTagToBlock: {
         enumerable: true,
-        get() { return appendPisiDoneTagToBlock; }
+        get() {
+            return appendPisiDoneTagToBlock;
+        }
     },
-    "removePisiDoneTagFromBlock": {
+    removePisiDoneTagFromBlock: {
         enumerable: true,
-        get() { return removePisiDoneTagFromBlock; }
+        get() {
+            return removePisiDoneTagFromBlock;
+        }
     },
-    "findPisiMissionBlockInContainer": {
+    findPisiMissionBlockInContainer: {
         enumerable: true,
-        get() { return findPisiMissionBlockInContainer; }
+        get() {
+            return findPisiMissionBlockInContainer;
+        }
     },
-    "setPisiMissionCompletionInBlock": {
+    setPisiMissionCompletionInBlock: {
         enumerable: true,
-        get() { return setPisiMissionCompletionInBlock; }
+        get() {
+            return setPisiMissionCompletionInBlock;
+        }
     },
-    "rollbackPisiMissionBlock": {
+    rollbackPisiMissionBlock: {
         enumerable: true,
-        get() { return rollbackPisiMissionBlock; }
+        get() {
+            return rollbackPisiMissionBlock;
+        }
     },
-    "setPisiMissionCompletion": {
+    setPisiMissionCompletion: {
         enumerable: true,
-        get() { return setPisiMissionCompletion; }
+        get() {
+            return setPisiMissionCompletion;
+        }
     }
 });
-registerModule("tags.panels", moduleApi);
+registerModule('tags.panels', moduleApi);

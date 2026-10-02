@@ -9,9 +9,7 @@ function extractFunction(source, functionName) {
     }
 
     const signatureEnd = source.indexOf(') {', start);
-    const bodyStart = signatureEnd >= 0
-        ? signatureEnd + 2
-        : source.indexOf('{', start);
+    const bodyStart = signatureEnd >= 0 ? signatureEnd + 2 : source.indexOf('{', start);
     if (bodyStart < 0) {
         throw new Error(`Fonksiyon gövdesi bulunamadı: ${functionName}`);
     }
@@ -64,10 +62,7 @@ function extractFunction(source, functionName) {
                 regexCharacterClass = true;
             } else if (character === ']') {
                 regexCharacterClass = false;
-            } else if (
-                character === '/' &&
-                !regexCharacterClass
-            ) {
+            } else if (character === '/' && !regexCharacterClass) {
                 regex = false;
                 previousSignificant = '/';
             }
@@ -91,11 +86,7 @@ function extractFunction(source, functionName) {
             continue;
         }
 
-        if (
-            character === '/' &&
-            (!previousSignificant ||
-                '([{:;,=!?&|'.includes(previousSignificant))
-        ) {
+        if (character === '/' && (!previousSignificant || '([{:;,=!?&|'.includes(previousSignificant))) {
             regex = true;
             regexCharacterClass = false;
             escaped = false;

@@ -1,4 +1,4 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 
 function beginPisiOpenTabTitleRename(tab, titleEl) {
     if (!tab || !titleEl || titleEl.dataset.renaming === '1') return;
@@ -60,10 +60,7 @@ function beginPisiOpenTabTitleRename(tab, titleEl) {
 }
 
 function selectPisiTreeFileByPath(path) {
-    if (
-        typeof findTreeNodeByPath !== 'function' ||
-        typeof selectTreeFile !== 'function'
-    ) {
+    if (typeof findTreeNodeByPath !== 'function' || typeof selectTreeFile !== 'function') {
         return;
     }
 
@@ -145,9 +142,6 @@ function renderPisiOpenTabs() {
 }
 
 async function setupProjectStartup() {
-
-
-
     const projectModal = document.getElementById('project-modal');
     const modalChooseBtn = document.getElementById('modal-choose-project-btn');
     const changeProjectBtn = document.getElementById('change-project-btn');
@@ -158,7 +152,6 @@ async function setupProjectStartup() {
     window.pisiProject?.onFileSystemChanged?.((payload) => {
         handlePisiExternalFileSystemChange(payload);
     });
-   
 
     modalChooseBtn?.addEventListener('click', async () => {
         await chooseAndLoadProject();
@@ -169,11 +162,11 @@ async function setupProjectStartup() {
     });
 
     addMapBtn?.addEventListener('click', async () => {
-    await createPisiFileInCurrentProject('.map');
+        await createPisiFileInCurrentProject('.map');
     });
 
     addNodeBtn?.addEventListener('click', async () => {
-    await createPisiFileInCurrentProject('.node');
+        await createPisiFileInCurrentProject('.node');
     });
 
     const lastFolder = await window.pisiProject?.getLastFolder?.();
@@ -199,10 +192,7 @@ async function createPisiFileInCurrentProject(ext) {
 
     suppressNextFileSystemRefresh(1500);
 
-    const result = await window.pisiProject?.createPisiFile?.(
-        window.currentProjectFolder,
-        ext
-    );
+    const result = await window.pisiProject?.createPisiFile?.(window.currentProjectFolder, ext);
 
     if (!result || !result.ok) {
         alert(result?.error || 'Dosya oluşturulamadı.');
@@ -278,12 +268,7 @@ function focusPisiTextInput(input, shouldSelect = true) {
 }
 
 function escapePisiConfirmText(value = '') {
-    return String(value)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
+    return String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
 }
 
 function resetPisiKeyboardAndPointerState() {
@@ -332,41 +317,59 @@ function resetPisiKeyboardAndPointerState() {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "beginPisiOpenTabTitleRename": {
+    beginPisiOpenTabTitleRename: {
         enumerable: true,
-        get() { return beginPisiOpenTabTitleRename; }
+        get() {
+            return beginPisiOpenTabTitleRename;
+        }
     },
-    "selectPisiTreeFileByPath": {
+    selectPisiTreeFileByPath: {
         enumerable: true,
-        get() { return selectPisiTreeFileByPath; }
+        get() {
+            return selectPisiTreeFileByPath;
+        }
     },
-    "renderPisiOpenTabs": {
+    renderPisiOpenTabs: {
         enumerable: true,
-        get() { return renderPisiOpenTabs; }
+        get() {
+            return renderPisiOpenTabs;
+        }
     },
-    "setupProjectStartup": {
+    setupProjectStartup: {
         enumerable: true,
-        get() { return setupProjectStartup; }
+        get() {
+            return setupProjectStartup;
+        }
     },
-    "createPisiFileInCurrentProject": {
+    createPisiFileInCurrentProject: {
         enumerable: true,
-        get() { return createPisiFileInCurrentProject; }
+        get() {
+            return createPisiFileInCurrentProject;
+        }
     },
-    "refocusPisiRenderer": {
+    refocusPisiRenderer: {
         enumerable: true,
-        get() { return refocusPisiRenderer; }
+        get() {
+            return refocusPisiRenderer;
+        }
     },
-    "focusPisiTextInput": {
+    focusPisiTextInput: {
         enumerable: true,
-        get() { return focusPisiTextInput; }
+        get() {
+            return focusPisiTextInput;
+        }
     },
-    "escapePisiConfirmText": {
+    escapePisiConfirmText: {
         enumerable: true,
-        get() { return escapePisiConfirmText; }
+        get() {
+            return escapePisiConfirmText;
+        }
     },
-    "resetPisiKeyboardAndPointerState": {
+    resetPisiKeyboardAndPointerState: {
         enumerable: true,
-        get() { return resetPisiKeyboardAndPointerState; }
+        get() {
+            return resetPisiKeyboardAndPointerState;
+        }
     }
 });
-registerModule("shell.startup", moduleApi);
+registerModule('shell.startup', moduleApi);

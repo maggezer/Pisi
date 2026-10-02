@@ -1,61 +1,36 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 
 function getPisiSheetHeaderSelection(table) {
-    return getPisiSheetHeaderSelectionForDatabase(
-        getPisiSheetDatabase(table)
-    );
+    return getPisiSheetHeaderSelectionForDatabase(getPisiSheetDatabase(table));
 }
 
 function getPisiSheetSelection(table) {
     const database = getPisiSheetDatabase(table);
 
-    return (
-        getPisiSheetSelectionForDatabase(database) ||
-        getPisiSheetHeaderSelectionForDatabase(database)
-    );
+    return getPisiSheetSelectionForDatabase(database) || getPisiSheetHeaderSelectionForDatabase(database);
 }
 
 function getPisiSelectedSheetPoints(table) {
     const database = getPisiSheetDatabase(table);
-    const cellSelection =
-        getPisiSheetSelectionForDatabase(database);
+    const cellSelection = getPisiSheetSelectionForDatabase(database);
 
     if (cellSelection) {
-        return getPisiSelectedSheetPointsForDatabase(
-            database
-        );
+        return getPisiSelectedSheetPointsForDatabase(database);
     }
 
-    const headerSelection =
-        getPisiSheetHeaderSelectionForDatabase(database);
+    const headerSelection = getPisiSheetHeaderSelectionForDatabase(database);
 
     if (!headerSelection) return [];
 
-    const rect = getPisiSheetSelectionRect(
-        headerSelection.anchor,
-        headerSelection.focus
-    );
+    const rect = getPisiSheetSelectionRect(headerSelection.anchor, headerSelection.focus);
 
     if (!rect) return [];
 
     const points = [];
 
-    for (
-        let row = rect.rowStart;
-        row <= rect.rowEnd;
-        row += 1
-    ) {
-        for (
-            let col = rect.colStart;
-            col <= rect.colEnd;
-            col += 1
-        ) {
-            const point =
-                getPisiSheetPointByIndexFromDatabase(
-                    database,
-                    row,
-                    col
-                );
+    for (let row = rect.rowStart; row <= rect.rowEnd; row += 1) {
+        for (let col = rect.colStart; col <= rect.colEnd; col += 1) {
+            const point = getPisiSheetPointByIndexFromDatabase(database, row, col);
 
             if (point) points.push(point);
         }
@@ -70,50 +45,32 @@ function selectPisiSheetRow(table, rowIndex, extend = false) {
 
     if (!database || !item) return;
 
-    const previous =
-        getPisiSheetHeaderSelectionForDatabase(database);
-    const anchorId =
-        extend && previous?.mode === 'row'
-            ? previous.anchorId
-            : item.id;
+    const previous = getPisiSheetHeaderSelectionForDatabase(database);
+    const anchorId = extend && previous?.mode === 'row' ? previous.anchorId : item.id;
 
-    setPisiSheetHeaderSelectionStateForDatabase(
-        database,
-        {
-            mode: 'row',
-            anchorId,
-            focusId: item.id
-        }
-    );
+    setPisiSheetHeaderSelectionStateForDatabase(database, {
+        mode: 'row',
+        anchorId,
+        focusId: item.id
+    });
 
     syncPisiSheetSelectionProjection(table);
 }
 
-function selectPisiSheetColumn(
-    table,
-    colIndex,
-    extend = false
-) {
+function selectPisiSheetColumn(table, colIndex, extend = false) {
     const database = getPisiSheetDatabase(table);
     const field = getPisiSheetField(table, colIndex);
 
     if (!database || !field) return;
 
-    const previous =
-        getPisiSheetHeaderSelectionForDatabase(database);
-    const anchorId =
-        extend && previous?.mode === 'column'
-            ? previous.anchorId
-            : field.id;
+    const previous = getPisiSheetHeaderSelectionForDatabase(database);
+    const anchorId = extend && previous?.mode === 'column' ? previous.anchorId : field.id;
 
-    setPisiSheetHeaderSelectionStateForDatabase(
-        database,
-        {
-            mode: 'column',
-            anchorId,
-            focusId: field.id
-        }
-    );
+    setPisiSheetHeaderSelectionStateForDatabase(database, {
+        mode: 'column',
+        anchorId,
+        focusId: field.id
+    });
 
     syncPisiSheetSelectionProjection(table);
 }
@@ -131,64 +88,64 @@ function getPisiSheetVisibleColumnIndices(table) {
     return indices;
 }
 
-function getPisiSheetNextVisibleColumn(
-    table,
-    startCol,
-    direction
-) {
+function getPisiSheetNextVisibleColumn(table, startCol, direction) {
     const visible = getPisiSheetVisibleColumnIndices(table);
     if (!visible.length) return startCol;
 
     if (direction > 0) {
-        return (
-            visible.find((col) => col > startCol) ??
-            visible[visible.length - 1]
-        );
+        return visible.find((col) => col > startCol) ?? visible[visible.length - 1];
     }
 
     if (direction < 0) {
-        return (
-            [...visible]
-                .reverse()
-                .find((col) => col < startCol) ??
-            visible[0]
-        );
+        return [...visible].reverse().find((col) => col < startCol) ?? visible[0];
     }
 
-    return visible.includes(startCol)
-        ? startCol
-        : visible[0];
+    return visible.includes(startCol) ? startCol : visible[0];
 }
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "getPisiSheetHeaderSelection": {
+    getPisiSheetHeaderSelection: {
         enumerable: true,
-        get() { return getPisiSheetHeaderSelection; }
+        get() {
+            return getPisiSheetHeaderSelection;
+        }
     },
-    "getPisiSheetSelection": {
+    getPisiSheetSelection: {
         enumerable: true,
-        get() { return getPisiSheetSelection; }
+        get() {
+            return getPisiSheetSelection;
+        }
     },
-    "getPisiSelectedSheetPoints": {
+    getPisiSelectedSheetPoints: {
         enumerable: true,
-        get() { return getPisiSelectedSheetPoints; }
+        get() {
+            return getPisiSelectedSheetPoints;
+        }
     },
-    "selectPisiSheetRow": {
+    selectPisiSheetRow: {
         enumerable: true,
-        get() { return selectPisiSheetRow; }
+        get() {
+            return selectPisiSheetRow;
+        }
     },
-    "selectPisiSheetColumn": {
+    selectPisiSheetColumn: {
         enumerable: true,
-        get() { return selectPisiSheetColumn; }
+        get() {
+            return selectPisiSheetColumn;
+        }
     },
-    "getPisiSheetVisibleColumnIndices": {
+    getPisiSheetVisibleColumnIndices: {
         enumerable: true,
-        get() { return getPisiSheetVisibleColumnIndices; }
+        get() {
+            return getPisiSheetVisibleColumnIndices;
+        }
     },
-    "getPisiSheetNextVisibleColumn": {
+    getPisiSheetNextVisibleColumn: {
         enumerable: true,
-        get() { return getPisiSheetNextVisibleColumn; }
+        get() {
+            return getPisiSheetNextVisibleColumn;
+        }
     }
 });
-registerModule("editor.sheetHeaderSelection", moduleApi);
+registerModule('editor.sheetHeaderSelection', moduleApi);

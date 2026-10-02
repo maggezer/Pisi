@@ -9,34 +9,13 @@ const vm = require('node:vm');
 const { extractFunction } = require('./source-helper');
 
 const root = path.resolve(__dirname, '..');
-const electronSource = fs.readFileSync(
-    path.join(root, 'main', 'functions', 'electron-ipc.js'),
-    'utf8'
-);
-const runtimeSource = fs.readFileSync(
-    path.join(root, 'main', 'runtime.js'),
-    'utf8'
-);
-const projectSource = fs.readFileSync(
-    path.join(root, 'renderer', 'tree', 'pisi-project.mjs'),
-    'utf8'
-);
-const startupSource = fs.readFileSync(
-    path.join(root, 'renderer', 'shell', 'pisi-startup.mjs'),
-    'utf8'
-);
-const pathSecuritySource = fs.readFileSync(
-    path.join(root, 'main', 'functions', 'path-security.js'),
-    'utf8'
-);
-const projectOperationsSource = fs.readFileSync(
-    path.join(root, 'main', 'functions', 'project-operations.js'),
-    'utf8'
-);
-const tabsSource = fs.readFileSync(
-    path.join(root, 'renderer', 'shell', 'pisi-tabs.mjs'),
-    'utf8'
-);
+const electronSource = fs.readFileSync(path.join(root, 'main', 'functions', 'electron-ipc.js'), 'utf8');
+const runtimeSource = fs.readFileSync(path.join(root, 'main', 'runtime.js'), 'utf8');
+const projectSource = fs.readFileSync(path.join(root, 'renderer', 'tree', 'pisi-project.mjs'), 'utf8');
+const startupSource = fs.readFileSync(path.join(root, 'renderer', 'shell', 'pisi-startup.mjs'), 'utf8');
+const pathSecuritySource = fs.readFileSync(path.join(root, 'main', 'functions', 'path-security.js'), 'utf8');
+const projectOperationsSource = fs.readFileSync(path.join(root, 'main', 'functions', 'project-operations.js'), 'utf8');
+const tabsSource = fs.readFileSync(path.join(root, 'renderer', 'shell', 'pisi-tabs.mjs'), 'utf8');
 
 function loadProjectLockApi(options = {}) {
     const functionNames = [
@@ -49,9 +28,7 @@ function loadProjectLockApi(options = {}) {
     ];
     const source = `
         const pisiInstanceId = 'current-instance';
-        ${functionNames
-            .map((name) => extractFunction(electronSource, name))
-            .join('\n')}
+        ${functionNames.map((name) => extractFunction(electronSource, name)).join('\n')}
         globalThis.projectLockApi = {
             acquireProjectLock,
             inspectProjectFolder
@@ -96,11 +73,14 @@ test('aynı PID ile kalmış stale proje kilidi güvenle geri alınır', (t) => 
         fs.rmSync(folderPath, { recursive: true, force: true });
     });
 
-    fs.writeFileSync(lockPath, JSON.stringify({
-        pid: String(process.pid),
-        instanceId: 'crashed-instance',
-        openedAt: '2026-01-01T00:00:00.000Z'
-    }));
+    fs.writeFileSync(
+        lockPath,
+        JSON.stringify({
+            pid: String(process.pid),
+            instanceId: 'crashed-instance',
+            openedAt: '2026-01-01T00:00:00.000Z'
+        })
+    );
 
     const api = loadProjectLockApi({
         alivePids: [process.pid]
@@ -135,18 +115,12 @@ test('başka çalışan sürecin proje kilidi korunur ve açık hata döner', (t
 
     assert.equal(result.ok, false);
     assert.equal(result.code, 'PROJECT_IN_USE');
-    assert.deepEqual(
-        JSON.parse(fs.readFileSync(lockPath, 'utf8')),
-        existingLock
-    );
+    assert.deepEqual(JSON.parse(fs.readFileSync(lockPath, 'utf8')), existingLock);
 });
 
 test('erişilemeyen proje yolu yapılandırılmış hata döndürür', () => {
     const api = loadProjectLockApi();
-    const missingPath = path.join(
-        os.tmpdir(),
-        `pisi-missing-${Date.now()}-${process.pid}`
-    );
+    const missingPath = path.join(os.tmpdir(), `pisi-missing-${Date.now()}-${process.pid}`);
     const result = api.inspectProjectFolder(missingPath);
 
     assert.equal(result.ok, false);
@@ -199,34 +173,16 @@ test('proje ancak dosya ağacı başarıyla yüklendikten sonra açılmış say�
 });
 
 test('dosya izleyici Pisi iç yazılarını coalesce eder ve gereksiz tam refresh yapmaz', () => {
-    assert.match(
-        pathSecuritySource,
-        /PISI_INTERNAL_DIRECTORY_GRACE_MS = 1200/
-    );
-    assert.match(
-        pathSecuritySource,
-        /function hasRecentInternalDirectoryChange\(/
-    );
-    assert.match(
-        projectOperationsSource,
-        /isRecentInternalFileChange\(changedPath\)[\s\S]*hasRecentInternalDirectoryChange\(directoryPath\)/
-    );
-    assert.match(
-        projectOperationsSource,
-        /eventType === 'rename'[\s\S]*syncProjectWatchers\(activeProjectFolder\)/
-    );
+    assert.match(pathSecuritySource, /PISI_INTERNAL_DIRECTORY_GRACE_MS = 1200/);
+    assert.match(pathSecuritySource, /function hasRecentInternalDirectoryChange\(/);
+    assert.match(projectOperationsSource, /isRecentInternalFileChange\(changedPath\)[\s\S]*hasRecentInternalDirectoryChange\(directoryPath\)/);
+    assert.match(projectOperationsSource, /eventType === 'rename'[\s\S]*syncProjectWatchers\(activeProjectFolder\)/);
 
-    const handler = tabsSource.match(
-        /function handlePisiExternalFileSystemChange\(payload = \{\}\) \{[\s\S]*?\n\}/
-    )?.[0] || '';
+    const handler = tabsSource.match(/function handlePisiExternalFileSystemChange\(payload = \{\}\) \{[\s\S]*?\n\}/)?.[0] || '';
 
     assert.match(handler, /pisiPendingFileSystemPaths\.add/);
     assert.match(handler, /setTimeout\(\(\) =>/);
     assert.doesNotMatch(handler, /await refreshCurrentProjectTree\(\)/);
 
-    assert.match(
-        tabsSource,
-        /if \(refreshTree\) \{\s*await refreshCurrentProjectTree\(\)/
-    );
+    assert.match(tabsSource, /if \(refreshTree\) \{\s*await refreshCurrentProjectTree\(\)/);
 });
-

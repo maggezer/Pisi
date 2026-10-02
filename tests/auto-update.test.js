@@ -52,10 +52,7 @@ test('Store packaging marks its distribution and supports opt-in tag auto-publis
     assert.match(packageJson.scripts['dist:store:x64'], /pisiDistribution=store/);
     assert.match(packageJson.scripts['dist:store:arm64'], /pisiDistribution=store/);
     assert.match(workflow, /PISI_STORE_AUTO_PUBLISH/);
-    assert.match(
-        workflow,
-        /github\.event_name == 'push' && vars\.PISI_STORE_AUTO_PUBLISH == 'true'/
-    );
+    assert.match(workflow, /github\.event_name == 'push' && vars\.PISI_STORE_AUTO_PUBLISH == 'true'/);
 });
 
 test('Windows release and Store workflow YAML remain parseable', () => {

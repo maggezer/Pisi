@@ -20,6 +20,6 @@ test('right panel exposes enough inner width for seven Mind Map icon actions', (
     const horizontalPadding = 16;
     const iconWidth = 32;
     const gap = 6;
-    const required = (7 * iconWidth) + (6 * gap);
+    const required = 7 * iconWidth + 6 * gap;
     assert.ok(rightPanelWidth - horizontalPadding >= required);
 });

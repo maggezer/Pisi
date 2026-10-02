@@ -27,8 +27,4 @@ function getPisiMapConnectionMetrics(zoomValue) {
     return metrics;
 }
 
-export {
-    getPisiMapConnectionMetrics,
-    normalizePisiMapRenderZoom,
-    PISI_MAP_CONNECTION_BASE_METRICS
-};
+export { getPisiMapConnectionMetrics, normalizePisiMapRenderZoom, PISI_MAP_CONNECTION_BASE_METRICS };

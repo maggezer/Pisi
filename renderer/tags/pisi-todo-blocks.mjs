@@ -1,5 +1,5 @@
-import { registerModule } from "../core/module-registry.mjs";
-import { parsePisiTodoTagValue } from "./pisi-todo-utils.mjs";
+import { registerModule } from '../core/module-registry.mjs';
+import { parsePisiTodoTagValue } from './pisi-todo-utils.mjs';
 
 function normalizePisiTodoBlockTag(value) {
     if (typeof window.normalizePisiUserTag === 'function') {
@@ -14,9 +14,7 @@ function normalizePisiTodoBlockTag(value) {
 }
 
 function getPisiTodoTagElementsFromBlock(block) {
-    return Array.from(
-        block?.querySelectorAll?.('.pisi-user-tag[data-pisi-tag]') || []
-    ).filter((element) => {
+    return Array.from(block?.querySelectorAll?.('.pisi-user-tag[data-pisi-tag]') || []).filter((element) => {
         const value = element.dataset.pisiTag || element.textContent || '';
         return Boolean(parsePisiTodoTagValue(value));
     });
@@ -24,9 +22,7 @@ function getPisiTodoTagElementsFromBlock(block) {
 
 function getPisiTodoTagFromBlock(block) {
     const element = getPisiTodoTagElementsFromBlock(block)[0];
-    return element
-        ? normalizePisiTodoBlockTag(element.dataset.pisiTag || element.textContent)
-        : '';
+    return element ? normalizePisiTodoBlockTag(element.dataset.pisiTag || element.textContent) : '';
 }
 
 function markPisiTaskMetadataElement(element) {
@@ -39,12 +35,8 @@ function markPisiTaskMetadataElement(element) {
 
 function getPisiDoneTagElementsFromBlock(block, todoTag = '') {
     const normalizedTodoTag = normalizePisiTodoBlockTag(todoTag);
-    return Array.from(
-        block?.querySelectorAll?.('.pisi-user-tag[data-pisi-tag]') || []
-    ).filter((element) => {
-        if (normalizePisiTodoBlockTag(
-            element.dataset.pisiTag || element.textContent
-        ) !== 'done') {
+    return Array.from(block?.querySelectorAll?.('.pisi-user-tag[data-pisi-tag]') || []).filter((element) => {
+        if (normalizePisiTodoBlockTag(element.dataset.pisiTag || element.textContent) !== 'done') {
             return false;
         }
         const doneFor = normalizePisiTodoBlockTag(element.dataset.pisiDoneFor);
@@ -76,11 +68,7 @@ function ensurePisiTodoBlockMarker(block, todoTag = getPisiTodoTagFromBlock(bloc
     if (marker.parentElement !== block || block.firstChild !== marker) {
         block.prepend(marker);
     }
-    if (
-        !marker.nextSibling ||
-        marker.nextSibling.nodeType !== Node.TEXT_NODE ||
-        !/^\s/.test(marker.nextSibling.nodeValue || '')
-    ) {
+    if (!marker.nextSibling || marker.nextSibling.nodeType !== Node.TEXT_NODE || !/^\s/.test(marker.nextSibling.nodeValue || '')) {
         marker.after(document.createTextNode(' '));
     }
 
@@ -88,10 +76,7 @@ function ensurePisiTodoBlockMarker(block, todoTag = getPisiTodoTagFromBlock(bloc
     marker.textContent = completed ? '☑' : '☐';
     marker.setAttribute('role', 'checkbox');
     marker.setAttribute('aria-checked', String(completed));
-    marker.setAttribute(
-        'aria-label',
-        completed ? 'Görevi yeniden aç' : 'Görevi tamamla'
-    );
+    marker.setAttribute('aria-label', completed ? 'Görevi yeniden aç' : 'Görevi tamamla');
     marker.tabIndex = 0;
     window.hydratePisiBlockTaskMarker?.(block, marker);
     return marker;
@@ -116,9 +101,8 @@ function syncPisiTodoBlockMarkers(container) {
 }
 
 function makePisiTodoTagElement(todoTag) {
-    const element = typeof window.createPisiUserTagElement === 'function'
-        ? window.createPisiUserTagElement(todoTag, { status: 'todo' })
-        : document.createElement('span');
+    const element =
+        typeof window.createPisiUserTagElement === 'function' ? window.createPisiUserTagElement(todoTag, { status: 'todo' }) : document.createElement('span');
     if (!element.dataset.pisiTag) {
         element.className = 'pisi-user-tag';
         element.dataset.pisiTag = todoTag;
@@ -132,9 +116,7 @@ function makePisiTodoTagElement(todoTag) {
 function upsertPisiTodoBlockMetadata(block, todoTag) {
     const normalizedTodoTag = normalizePisiTodoBlockTag(todoTag);
     const existing = getPisiTodoTagElementsFromBlock(block)[0];
-    const previousTodoTag = existing
-        ? normalizePisiTodoBlockTag(existing.dataset.pisiTag || existing.textContent)
-        : '';
+    const previousTodoTag = existing ? normalizePisiTodoBlockTag(existing.dataset.pisiTag || existing.textContent) : '';
     const element = existing || makePisiTodoTagElement(normalizedTodoTag);
 
     element.dataset.pisiTag = normalizedTodoTag;
@@ -161,29 +143,17 @@ function upsertPisiTodoBlockMetadata(block, todoTag) {
 }
 
 function removePisiTodoCommandToken(command) {
-    if (
-        !command?.block ||
-        !Number.isFinite(command.tokenStartInText) ||
-        !Number.isFinite(command.tokenEndInText)
-    ) {
+    if (!command?.block || !Number.isFinite(command.tokenStartInText) || !Number.isFinite(command.tokenEndInText)) {
         return false;
     }
-    const range = window.makeRangeInElementByTextOffsets?.(
-        command.block,
-        command.tokenStartInText,
-        command.tokenEndInText
-    );
+    const range = window.makeRangeInElementByTextOffsets?.(command.block, command.tokenStartInText, command.tokenEndInText);
     if (!range) return false;
     range.deleteContents();
     return true;
 }
 
 function wrapPisiTodoSelection(command, todoTag) {
-    const range = window.makeRangeInElementByTextOffsets?.(
-        command.block,
-        command.selectionStartInText,
-        command.selectionEndInText
-    );
+    const range = window.makeRangeInElementByTextOffsets?.(command.block, command.selectionStartInText, command.selectionEndInText);
     if (!range || range.collapsed) return null;
     const source = document.createElement('span');
     source.className = 'pisi-todo-source';
@@ -204,10 +174,7 @@ function ensurePisiTodoSourceForBlock(block, todoTag) {
     source.className = 'pisi-todo-source';
     source.dataset.pisiTodoFor = todoTag;
     const contentNodes = Array.from(block.childNodes).filter((node) => {
-        return !(
-            node.nodeType === Node.ELEMENT_NODE &&
-            node.matches('.pisi-block-task-marker, .pisi-user-tag[data-pisi-tag]')
-        );
+        return !(node.nodeType === Node.ELEMENT_NODE && node.matches('.pisi-block-task-marker, .pisi-user-tag[data-pisi-tag]'));
     });
     contentNodes.forEach((node) => source.appendChild(node));
     if (!source.textContent && !source.querySelector('*')) {
@@ -221,23 +188,17 @@ function ensurePisiTodoSourceForBlock(block, todoTag) {
 }
 
 function setPisiTodoBlockCompletion(block, completed, options = {}) {
-    const todoTag = normalizePisiTodoBlockTag(
-        options.todoTag || getPisiTodoTagFromBlock(block)
-    );
+    const todoTag = normalizePisiTodoBlockTag(options.todoTag || getPisiTodoTagFromBlock(block));
     if (!block || !todoTag) return false;
 
     const wasCompleted = isPisiTodoBlockCompleted(block, todoTag);
     let changed = false;
     if (Boolean(completed) !== wasCompleted) {
-        changed = completed
-            ? Boolean(window.appendPisiDoneTagToBlock?.(block, todoTag))
-            : Boolean(window.removePisiDoneTagFromBlock?.(block, todoTag));
+        changed = completed ? Boolean(window.appendPisiDoneTagToBlock?.(block, todoTag)) : Boolean(window.removePisiDoneTagFromBlock?.(block, todoTag));
     }
     syncPisiTodoBlockMarkers(block);
     if (changed && options.dispatch !== false) {
-        block.closest('.pisi-rich-editor')?.dispatchEvent(
-            new Event('input', { bubbles: true })
-        );
+        block.closest('.pisi-rich-editor')?.dispatchEvent(new Event('input', { bubbles: true }));
     }
     return changed;
 }
@@ -276,10 +237,7 @@ function getPisiTodoCommandBlock(editor, preferredBlock = null) {
     if (preferredBlock && editor.contains(preferredBlock)) return preferredBlock;
     const selection = window.getSelection?.();
     if (selection?.anchorNode && editor.contains(selection.anchorNode)) {
-        const selectedBlock = window.getPisiCurrentEditorBlock?.(
-            editor,
-            selection.anchorNode
-        );
+        const selectedBlock = window.getPisiCurrentEditorBlock?.(editor, selection.anchorNode);
         if (selectedBlock && selectedBlock !== editor) return selectedBlock;
     }
     const activeBlock = window.getPisiActiveBlock?.();
@@ -289,9 +247,7 @@ function getPisiTodoCommandBlock(editor, preferredBlock = null) {
 
 function createPisiTodoBlockCommand(editor, options = {}) {
     if (!editor) return null;
-    const selectionCommand = options.captureSelection === false
-        ? null
-        : window.capturePisiTodoSelection?.(editor);
+    const selectionCommand = options.captureSelection === false ? null : window.capturePisiTodoSelection?.(editor);
     if (selectionCommand) {
         return {
             ...selectionCommand,
@@ -332,9 +288,7 @@ function applyPisiDoneCommandToEditor(editor, commandOverride = null) {
     setPisiTodoBlockCompletion(block, true, { todoTag, dispatch: false });
     window.closePisiTagMenu?.();
     editor.focus({ preventScroll: true });
-    window.placeCaretAtEnd?.(
-        block.querySelector('.pisi-todo-source') || block
-    );
+    window.placeCaretAtEnd?.(block.querySelector('.pisi-todo-source') || block);
     editor.dispatchEvent(new Event('input', { bubbles: true }));
     return true;
 }

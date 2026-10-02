@@ -1,37 +1,37 @@
 name: CI
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
+    push:
+        branches:
+            - main
+    pull_request:
 
 permissions:
-  contents: read
+    contents: read
 
 jobs:
-  validate:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    validate:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: npm
 
-      - name: Install dependencies without Electron binary
-        run: npm ci --ignore-scripts
+            - name: Install dependencies without Electron binary
+              run: npm ci --ignore-scripts
 
-      - name: Dependency audit report
-        run: npm run audit || true
+            - name: Dependency audit report
+              run: npm run audit || true
 
-      - name: Check repository formatting
-        run: npm run format:check
+            - name: Check repository formatting
+              run: npm run format:check
 
-      - name: Validate source
-        run: npm run validate:source
+            - name: Validate source
+              run: npm run validate:source

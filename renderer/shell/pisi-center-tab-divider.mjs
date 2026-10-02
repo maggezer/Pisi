@@ -9,8 +9,7 @@ function updatePisiCenterTabDivider() {
     const tabs = document.getElementById('center-tabs');
     if (!toolbar || !tabs) return 0;
 
-    const openTabs = Array.from(tabs.querySelectorAll('.center-tab'))
-        .filter((tab) => !tab.hidden && tab.getClientRects().length > 0);
+    const openTabs = Array.from(tabs.querySelectorAll('.center-tab')).filter((tab) => !tab.hidden && tab.getClientRects().length > 0);
     const lastTab = openTabs.at(-1) || null;
 
     if (!lastTab) {
@@ -22,15 +21,9 @@ function updatePisiCenterTabDivider() {
     const lastTabRect = lastTab.getBoundingClientRect();
     const tabsStyle = getComputedStyle(tabs);
     const trailingGap = Math.max(0, Number.parseFloat(tabsStyle.paddingLeft) || 0);
-    const width = Math.max(0, Math.min(
-        toolbar.clientWidth,
-        lastTabRect.right - toolbarRect.left + trailingGap
-    ));
+    const width = Math.max(0, Math.min(toolbar.clientWidth, lastTabRect.right - toolbarRect.left + trailingGap));
 
-    toolbar.style.setProperty(
-        '--pisi-center-divider-width',
-        `${Math.ceil(width)}px`
-    );
+    toolbar.style.setProperty('--pisi-center-divider-width', `${Math.ceil(width)}px`);
     return width;
 }
 
@@ -50,9 +43,7 @@ function bindPisiCenterTabDivider() {
     schedulePisiCenterTabDividerUpdate();
 
     if (!centerDividerObserver) {
-        centerDividerObserver = new MutationObserver(
-            schedulePisiCenterTabDividerUpdate
-        );
+        centerDividerObserver = new MutationObserver(schedulePisiCenterTabDividerUpdate);
         centerDividerObserver.observe(tabs, {
             childList: true,
             subtree: true,
@@ -63,9 +54,7 @@ function bindPisiCenterTabDivider() {
     }
 
     if (!centerDividerResizeObserver && typeof ResizeObserver === 'function') {
-        centerDividerResizeObserver = new ResizeObserver(
-            schedulePisiCenterTabDividerUpdate
-        );
+        centerDividerResizeObserver = new ResizeObserver(schedulePisiCenterTabDividerUpdate);
         centerDividerResizeObserver.observe(toolbar);
         centerDividerResizeObserver.observe(tabs);
     }
@@ -91,8 +80,4 @@ registerModule('shell.centerTabDivider', {
     updatePisiCenterTabDivider
 });
 
-export {
-    bindPisiCenterTabDivider,
-    schedulePisiCenterTabDividerUpdate,
-    updatePisiCenterTabDivider
-};
+export { bindPisiCenterTabDivider, schedulePisiCenterTabDividerUpdate, updatePisiCenterTabDivider };

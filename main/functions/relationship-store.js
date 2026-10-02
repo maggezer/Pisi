@@ -26,18 +26,13 @@ function normalizeRelationshipProperties(value) {
 
     const clean = {};
     for (const [rawKey, rawValue] of Object.entries(value).slice(0, 100)) {
-        const key = String(rawKey || '').trim().slice(0, 120);
+        const key = String(rawKey || '')
+            .trim()
+            .slice(0, 120);
         if (!key) continue;
 
-        if (
-            rawValue === null ||
-            typeof rawValue === 'string' ||
-            typeof rawValue === 'number' ||
-            typeof rawValue === 'boolean'
-        ) {
-            clean[key] = typeof rawValue === 'string'
-                ? rawValue.slice(0, 4000)
-                : rawValue;
+        if (rawValue === null || typeof rawValue === 'string' || typeof rawValue === 'number' || typeof rawValue === 'boolean') {
+            clean[key] = typeof rawValue === 'string' ? rawValue.slice(0, 4000) : rawValue;
         }
     }
     return clean;
@@ -48,12 +43,8 @@ function normalizePisiSemanticRelationship(raw = {}, options = {}) {
     if (!edge) return null;
 
     const now = new Date().toISOString();
-    const id = /^edge_[A-Za-z0-9_-]{1,101}$/.test(String(raw.id || ''))
-        ? String(raw.id)
-        : `edge_${crypto.randomUUID()}`;
-    const createdAt = /^\d{4}-\d{2}-\d{2}T/.test(String(raw.createdAt || ''))
-        ? String(raw.createdAt)
-        : (options.createdAt || now);
+    const id = /^edge_[A-Za-z0-9_-]{1,101}$/.test(String(raw.id || '')) ? String(raw.id) : `edge_${crypto.randomUUID()}`;
+    const createdAt = /^\d{4}-\d{2}-\d{2}T/.test(String(raw.createdAt || '')) ? String(raw.createdAt) : options.createdAt || now;
     const relationship = {
         id,
         sourceId: edge.sourceId,
@@ -63,12 +54,12 @@ function normalizePisiSemanticRelationship(raw = {}, options = {}) {
         targetRole: edge.targetRole,
         direction: edge.type === 'co-level' ? 'undirected' : 'directed',
         createdAt,
-        updatedAt: /^\d{4}-\d{2}-\d{2}T/.test(String(raw.updatedAt || ''))
-            ? String(raw.updatedAt)
-            : now
+        updatedAt: /^\d{4}-\d{2}-\d{2}T/.test(String(raw.updatedAt || '')) ? String(raw.updatedAt) : now
     };
 
-    const label = String(raw.label || '').trim().slice(0, 500);
+    const label = String(raw.label || '')
+        .trim()
+        .slice(0, 500);
     if (label) relationship.label = label;
 
     const properties = normalizeRelationshipProperties(raw.properties);
@@ -111,26 +102,15 @@ function normalizeRelationshipCollection(rawRelationships = []) {
                     sourceRole: 'downstream',
                     targetRole: 'upstream'
                 });
-                warnings.push(
-                    `İkinci semantic parent stream olarak kurtarıldı: ${relationship.id}`
-                );
-            } else if (
-                !existingParent &&
-                filesystemCore.wouldCreatePisiHierarchyCycle(
-                    parentByChild,
-                    relationship.sourceId,
-                    relationship.targetId
-                )
-            ) {
+                warnings.push(`İkinci semantic parent stream olarak kurtarıldı: ${relationship.id}`);
+            } else if (!existingParent && filesystemCore.wouldCreatePisiHierarchyCycle(parentByChild, relationship.sourceId, relationship.targetId)) {
                 relationship = normalizePisiSemanticRelationship({
                     ...relationship,
                     type: 'stream',
                     sourceRole: 'downstream',
                     targetRole: 'upstream'
                 });
-                warnings.push(
-                    `Döngü oluşturan semantic relationship stream olarak kurtarıldı: ${relationship.id}`
-                );
+                warnings.push(`Döngü oluşturan semantic relationship stream olarak kurtarıldı: ${relationship.id}`);
             } else if (!existingParent) {
                 parentByChild.set(relationship.targetId, relationship.sourceId);
             }
@@ -192,14 +172,18 @@ function writePisiRelationshipStore(projectFolder, relationships = []) {
     const normalized = normalizeRelationshipCollection(relationships);
     const storage = getPisiRelationshipStorage(projectFolder);
     const filePath = storage.resolvePath(PISI_RELATIONSHIP_STORE_KEY);
-    const written = storage.writeJson(PISI_RELATIONSHIP_STORE_KEY, {
-        version: PISI_RELATIONSHIP_STORE_VERSION,
-        relationships: normalized.relationships
-    }, {
-        backup: true,
-        newline: false,
-        hiddenParent: true
-    });
+    const written = storage.writeJson(
+        PISI_RELATIONSHIP_STORE_KEY,
+        {
+            version: PISI_RELATIONSHIP_STORE_VERSION,
+            relationships: normalized.relationships
+        },
+        {
+            backup: true,
+            newline: false,
+            hiddenParent: true
+        }
+    );
     if (!written.ok) {
         return {
             ok: false,
@@ -221,14 +205,11 @@ function listPisiSemanticRelationships(projectFolder, options = {}) {
     const current = readPisiRelationshipStore(projectFolder);
     if (!current.ok) return current;
 
-    const wantedNodeIds = options.nodeIds instanceof Set
-        ? options.nodeIds
-        : new Set(Array.isArray(options.nodeIds) ? options.nodeIds : []);
+    const wantedNodeIds = options.nodeIds instanceof Set ? options.nodeIds : new Set(Array.isArray(options.nodeIds) ? options.nodeIds : []);
     const relationships = wantedNodeIds.size
         ? current.relationships.filter((relationship) => {
-            return wantedNodeIds.has(relationship.sourceId) &&
-                wantedNodeIds.has(relationship.targetId);
-        })
+              return wantedNodeIds.has(relationship.sourceId) && wantedNodeIds.has(relationship.targetId);
+          })
         : current.relationships;
 
     return {
@@ -271,15 +252,12 @@ function prepareSemanticRelationshipUpsert(currentRelationships, raw, options = 
     incoming.updatedAt = new Date().toISOString();
 
     const withoutCurrent = currentRelationships.filter((relationship) => {
-        return relationship.id !== incoming.id &&
-            getPisiRelationshipSemanticKey(relationship) !== incomingKey;
+        return relationship.id !== incoming.id && getPisiRelationshipSemanticKey(relationship) !== incomingKey;
     });
 
     if (filesystemCore.isHierarchyEdge(incoming)) {
         const existingParent = withoutCurrent.find((relationship) => {
-            return filesystemCore.isHierarchyEdge(relationship) &&
-                relationship.targetId === incoming.targetId &&
-                relationship.sourceId !== incoming.sourceId;
+            return filesystemCore.isHierarchyEdge(relationship) && relationship.targetId === incoming.targetId && relationship.sourceId !== incoming.sourceId;
         });
 
         if (existingParent) {
@@ -301,13 +279,7 @@ function prepareSemanticRelationshipUpsert(currentRelationships, raw, options = 
                     parentByChild.set(relationship.targetId, relationship.sourceId);
                 });
 
-            if (
-                filesystemCore.wouldCreatePisiHierarchyCycle(
-                    parentByChild,
-                    incoming.sourceId,
-                    incoming.targetId
-                )
-            ) {
+            if (filesystemCore.wouldCreatePisiHierarchyCycle(parentByChild, incoming.sourceId, incoming.targetId)) {
                 return {
                     ok: false,
                     code: 'HIERARCHY_CYCLE',
@@ -329,17 +301,10 @@ function upsertPisiSemanticRelationship(projectFolder, raw, options = {}) {
         const current = readPisiRelationshipStore(projectFolder);
         if (!current.ok) return current;
 
-        const prepared = prepareSemanticRelationshipUpsert(
-            current.relationships,
-            raw,
-            options
-        );
+        const prepared = prepareSemanticRelationshipUpsert(current.relationships, raw, options);
         if (!prepared.ok) return prepared;
 
-        const written = writePisiRelationshipStore(
-            projectFolder,
-            prepared.relationships
-        );
+        const written = writePisiRelationshipStore(projectFolder, prepared.relationships);
         return {
             ...written,
             relationship: prepared.relationship
@@ -377,15 +342,13 @@ function deletePisiSemanticRelationshipsForNode(projectFolder, nodeId) {
         const current = readPisiRelationshipStore(projectFolder);
         if (!current.ok) return current;
         const removed = current.relationships.filter((relationship) => {
-            return relationship.sourceId === safeNodeId ||
-                relationship.targetId === safeNodeId;
+            return relationship.sourceId === safeNodeId || relationship.targetId === safeNodeId;
         });
         if (!removed.length) {
             return { ok: true, removed: 0, relationships: current.relationships };
         }
         const remaining = current.relationships.filter((relationship) => {
-            return relationship.sourceId !== safeNodeId &&
-                relationship.targetId !== safeNodeId;
+            return relationship.sourceId !== safeNodeId && relationship.targetId !== safeNodeId;
         });
         const written = writePisiRelationshipStore(projectFolder, remaining);
         return { ...written, removed: removed.length };
@@ -405,10 +368,7 @@ function reparentPisiSemanticRelationship(projectFolder, childId, parentId) {
         const current = readPisiRelationshipStore(projectFolder);
         if (!current.ok) return current;
         const withoutOldParent = current.relationships.filter((relationship) => {
-            return !(
-                filesystemCore.isHierarchyEdge(relationship) &&
-                relationship.targetId === safeChildId
-            );
+            return !(filesystemCore.isHierarchyEdge(relationship) && relationship.targetId === safeChildId);
         });
         const replacement = normalizePisiSemanticRelationship({
             sourceId: safeParentId,
@@ -419,10 +379,7 @@ function reparentPisiSemanticRelationship(projectFolder, childId, parentId) {
             sourceRole: 'down-hub',
             targetRole: 'up-hub'
         });
-        const prepared = prepareSemanticRelationshipUpsert(
-            withoutOldParent,
-            replacement
-        );
+        const prepared = prepareSemanticRelationshipUpsert(withoutOldParent, replacement);
         if (!prepared.ok) return prepared;
         const written = writePisiRelationshipStore(projectFolder, prepared.relationships);
         return { ...written, relationship: prepared.relationship };

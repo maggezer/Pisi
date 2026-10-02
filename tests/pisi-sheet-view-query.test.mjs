@@ -128,33 +128,9 @@ test('nested filter tree supports AND and OR groups', () => {
 
     const now = new Date('2026-09-30T12:00:00Z');
 
-    assert.equal(
-        evaluatePisiSheetFilterTree(
-            database,
-            items[0],
-            tree,
-            now
-        ),
-        true
-    );
-    assert.equal(
-        evaluatePisiSheetFilterTree(
-            database,
-            items[1],
-            tree,
-            now
-        ),
-        true
-    );
-    assert.equal(
-        evaluatePisiSheetFilterTree(
-            database,
-            items[2],
-            tree,
-            now
-        ),
-        false
-    );
+    assert.equal(evaluatePisiSheetFilterTree(database, items[0], tree, now), true);
+    assert.equal(evaluatePisiSheetFilterTree(database, items[1], tree, now), true);
+    assert.equal(evaluatePisiSheetFilterTree(database, items[2], tree, now), false);
 });
 
 test('Status = Done AND Deadline < Today keeps only matching rows', () => {
@@ -184,19 +160,13 @@ test('Status = Done AND Deadline < Today keeps only matching rows', () => {
     };
 
     assert.deepEqual(
-        getPisiSheetViewItemRecords(
-            database,
-            view,
-            new Date('2026-09-30T12:00:00Z')
-        ).map((record) => record.item.id),
+        getPisiSheetViewItemRecords(database, view, new Date('2026-09-30T12:00:00Z')).map((record) => record.item.id),
         ['a', 'd']
     );
 });
 
 test('multi-sort uses criteria priority without mutating database items', () => {
-    const originalIds = database.items.map(
-        (item) => item.id
-    );
+    const originalIds = database.items.map((item) => item.id);
     const view = {
         filters: {
             type: 'group',
@@ -219,10 +189,7 @@ test('multi-sort uses criteria priority without mutating database items', () => 
     };
 
     assert.deepEqual(
-        getPisiSheetViewItemRecords(
-            database,
-            view
-        ).map((record) => record.item.id),
+        getPisiSheetViewItemRecords(database, view).map((record) => record.item.id),
         ['d', 'c', 'b', 'a']
     );
 
@@ -233,9 +200,7 @@ test('multi-sort uses criteria priority without mutating database items', () => 
 });
 
 test('legacy filter arrays normalize into an AND tree and invalid sorts are removed', () => {
-    const fieldIds = new Set(
-        fields.map((field) => field.id)
-    );
+    const fieldIds = new Set(fields.map((field) => field.id));
     const filters = normalizePisiSheetFilterTree(
         [
             {
@@ -255,10 +220,7 @@ test('legacy filter arrays normalize into an AND tree and invalid sorts are remo
     assert.equal(filters.type, 'group');
     assert.equal(filters.logic, 'and');
     assert.equal(filters.children.length, 1);
-    assert.equal(
-        filters.children[0].fieldId,
-        'status'
-    );
+    assert.equal(filters.children[0].fieldId, 'status');
 
     assert.deepEqual(
         normalizePisiSheetSorts(
@@ -277,14 +239,10 @@ test('legacy filter arrays normalize into an AND tree and invalid sorts are remo
                 }
             ],
             fieldIds
-        ).map((sort) => [
-            sort.fieldId,
-            sort.direction
-        ]),
+        ).map((sort) => [sort.fieldId, sort.direction]),
         [['priority', 'desc']]
     );
 });
-
 
 test('conditional colors reuse typed conditions for row and cell targets', () => {
     const rules = [
@@ -308,32 +266,17 @@ test('conditional colors reuse typed conditions for row and cell targets', () =>
     const now = new Date('2026-09-30T12:00:00Z');
 
     assert.deepEqual(
-        getPisiSheetConditionalColorMatches(
-            database,
-            items[0],
-            rules,
-            now
-        ).map((rule) => rule.id),
+        getPisiSheetConditionalColorMatches(database, items[0], rules, now).map((rule) => rule.id),
         ['status-row', 'deadline-cell']
     );
 
     assert.deepEqual(
-        getPisiSheetConditionalColorMatches(
-            database,
-            items[1],
-            rules,
-            now
-        ).map((rule) => rule.id),
+        getPisiSheetConditionalColorMatches(database, items[1], rules, now).map((rule) => rule.id),
         ['status-row']
     );
 
     assert.deepEqual(
-        getPisiSheetConditionalColorMatches(
-            database,
-            items[2],
-            rules,
-            now
-        ).map((rule) => rule.id),
+        getPisiSheetConditionalColorMatches(database, items[2], rules, now).map((rule) => rule.id),
         ['deadline-cell']
     );
 });
@@ -387,47 +330,31 @@ test('conditional color normalization removes invalid rules', () => {
     assert.equal(rules[0].tone, 'red');
 });
 
-
 test('all-field search matches text select labels numbers and dates', () => {
     assert.deepEqual(
-        getPisiSheetViewItemRecords(
-            database,
-            { searchQuery: 'done' }
-        ).map((record) => record.item.id),
+        getPisiSheetViewItemRecords(database, { searchQuery: 'done' }).map((record) => record.item.id),
         ['a', 'b', 'd']
     );
 
     assert.deepEqual(
-        getPisiSheetViewItemRecords(
-            database,
-            { searchQuery: '5' }
-        ).map((record) => record.item.id),
+        getPisiSheetViewItemRecords(database, { searchQuery: '5' }).map((record) => record.item.id),
         ['b', 'c', 'd']
     );
 
     assert.deepEqual(
-        getPisiSheetViewItemRecords(
-            database,
-            { searchQuery: '2026-09-28' }
-        ).map((record) => record.item.id),
+        getPisiSheetViewItemRecords(database, { searchQuery: '2026-09-28' }).map((record) => record.item.id),
         ['c']
     );
 });
 
 test('all-field search uses AND tokens across different columns', () => {
     assert.deepEqual(
-        getPisiSheetViewItemRecords(
-            database,
-            { searchQuery: 'done alpha' }
-        ).map((record) => record.item.id),
+        getPisiSheetViewItemRecords(database, { searchQuery: 'done alpha' }).map((record) => record.item.id),
         ['b']
     );
 
     assert.deepEqual(
-        getPisiSheetViewItemRecords(
-            database,
-            { searchQuery: 'todo 5 gamma' }
-        ).map((record) => record.item.id),
+        getPisiSheetViewItemRecords(database, { searchQuery: 'todo 5 gamma' }).map((record) => record.item.id),
         ['c']
     );
 });
@@ -451,43 +378,34 @@ test('all-field search is Turkish-character and case insensitive', () => {
         ]
     };
 
-    assert.equal(
-        getPisiSheetViewItemRecords(
-            localizedDatabase,
-            { searchQuery: 'ISIL caliskan' }
-        ).length,
-        1
-    );
+    assert.equal(getPisiSheetViewItemRecords(localizedDatabase, { searchQuery: 'ISIL caliskan' }).length, 1);
 });
 
 test('search is applied before typed filters and sorting', () => {
-    const records = getPisiSheetViewItemRecords(
-        database,
-        {
-            searchQuery: 'done',
-            filters: {
-                type: 'group',
-                id: 'root',
-                logic: 'and',
-                children: [
-                    {
-                        type: 'condition',
-                        id: 'priority-high',
-                        fieldId: 'priority',
-                        operator: 'gte',
-                        value: 5
-                    }
-                ]
-            },
-            sorts: [
+    const records = getPisiSheetViewItemRecords(database, {
+        searchQuery: 'done',
+        filters: {
+            type: 'group',
+            id: 'root',
+            logic: 'and',
+            children: [
                 {
-                    id: 'deadline-asc',
-                    fieldId: 'deadline',
-                    direction: 'asc'
+                    type: 'condition',
+                    id: 'priority-high',
+                    fieldId: 'priority',
+                    operator: 'gte',
+                    value: 5
                 }
             ]
-        }
-    );
+        },
+        sorts: [
+            {
+                id: 'deadline-asc',
+                fieldId: 'deadline',
+                direction: 'asc'
+            }
+        ]
+    });
 
     assert.deepEqual(
         records.map((record) => record.item.id),

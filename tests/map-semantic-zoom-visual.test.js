@@ -5,14 +5,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 
-const css = fs.readFileSync(
-    path.join(__dirname, '..', 'styles', '10-tree-and-map.css'),
-    'utf8'
-);
+const css = fs.readFileSync(path.join(__dirname, '..', 'styles', '10-tree-and-map.css'), 'utf8');
 
 test('manual title view constrains saved inline node height to enlarged title height', () => {
-    const selector = '#map-canvas[data-node-view="title"] .map-node-box';
-    const start = css.indexOf(selector);
+    const start = css.search(/#map-canvas\[data-node-view=['"]title['"]\]\s+\.map-node-box/);
     const end = css.indexOf('}', start);
     const rule = css.slice(start, end);
 
@@ -28,8 +24,5 @@ test('node title and preview fonts scale existing preferences by one and a half'
 });
 
 test('manual title view removes preview and node controls', () => {
-    assert.match(
-        css,
-        /data-node-view="title"[^}]*\.map-node-preview[\s\S]*?display:\s*none/
-    );
+    assert.match(css, /data-node-view=["\']title["\'][^}]*\.map-node-preview[\s\S]*?display:\s*none/);
 });

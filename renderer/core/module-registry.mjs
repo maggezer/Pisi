@@ -10,9 +10,7 @@ function getPisiRoot() {
     }
 
     if (registryRoot && window.Pisi !== registryRoot) {
-        throw new Error(
-            '[PISI] Renderer Pisi namespace was replaced after module registry initialization.'
-        );
+        throw new Error('[PISI] Renderer Pisi namespace was replaced after module registry initialization.');
     }
 
     if (!registryRoot) {
@@ -36,10 +34,7 @@ export function claimRendererBoot(scope, owner) {
 
     const previousOwner = bootOwners.get(cleanScope);
     if (previousOwner) {
-        throw new Error(
-            '[PISI] Renderer boot collision: ' +
-            cleanScope + ' (' + previousOwner + ' / ' + cleanOwner + ')'
-        );
+        throw new Error('[PISI] Renderer boot collision: ' + cleanScope + ' (' + previousOwner + ' / ' + cleanOwner + ')');
     }
 
     bootOwners.set(cleanScope, cleanOwner);
@@ -48,10 +43,7 @@ export function claimRendererBoot(scope, owner) {
 
 export function registerModule(moduleName, api) {
     if (registrySealed) {
-        throw new Error(
-            '[PISI] Renderer module registry is sealed; late registration rejected: ' +
-            moduleName
-        );
+        throw new Error('[PISI] Renderer module registry is sealed; late registration rejected: ' + moduleName);
     }
 
     const cleanModuleName = String(moduleName || '').trim();
@@ -60,23 +52,17 @@ export function registerModule(moduleName, api) {
     }
 
     if (!api || typeof api !== 'object') {
-        throw new TypeError(
-            '[PISI] Renderer module API must be an object: ' + cleanModuleName
-        );
+        throw new TypeError('[PISI] Renderer module API must be an object: ' + cleanModuleName);
     }
 
     const pisi = getPisiRoot();
 
     if (moduleNames.has(cleanModuleName)) {
-        throw new Error(
-            '[PISI] Renderer module already registered: ' + cleanModuleName
-        );
+        throw new Error('[PISI] Renderer module already registered: ' + cleanModuleName);
     }
 
     if (Object.prototype.hasOwnProperty.call(pisi.modules, cleanModuleName)) {
-        throw new Error(
-            '[PISI] Renderer module namespace already exists: ' + cleanModuleName
-        );
+        throw new Error('[PISI] Renderer module namespace already exists: ' + cleanModuleName);
     }
 
     const keys = Object.keys(api);
@@ -84,19 +70,13 @@ export function registerModule(moduleName, api) {
 
     for (const key of keys) {
         if (localKeys.has(key)) {
-            throw new Error(
-                '[PISI] Renderer binding registered twice in module: ' +
-                cleanModuleName + '.' + key
-            );
+            throw new Error('[PISI] Renderer binding registered twice in module: ' + cleanModuleName + '.' + key);
         }
         localKeys.add(key);
 
         const previousOwner = bindingOwners.get(key);
         if (previousOwner && previousOwner !== cleanModuleName) {
-            throw new Error(
-                '[PISI] Renderer binding collision: ' +
-                key + ' (' + previousOwner + ' / ' + cleanModuleName + ')'
-            );
+            throw new Error('[PISI] Renderer binding collision: ' + key + ' (' + previousOwner + ' / ' + cleanModuleName + ')');
         }
 
         if (Object.prototype.hasOwnProperty.call(window, key)) {
@@ -125,9 +105,7 @@ export function registerModule(moduleName, api) {
             },
             set(value) {
                 if (!apiDescriptor?.set) {
-                    throw new TypeError(
-                        '[PISI] Read-only renderer binding: ' + key
-                    );
+                    throw new TypeError('[PISI] Read-only renderer binding: ' + key);
                 }
                 api[key] = value;
             }

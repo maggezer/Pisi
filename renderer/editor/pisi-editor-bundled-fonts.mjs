@@ -1,4 +1,4 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 
 // Comic Neue Regular (latin, WOFF2) from Fontsource / Comic Neue Project.
 // Licensed under SIL Open Font License 1.1; see assets/fonts/comic-neue-OFL.txt.
@@ -458,9 +458,7 @@ function ensurePisiComicNeueFontOption(root = document) {
     if (!root?.querySelectorAll) return 0;
     let added = 0;
     root.querySelectorAll('.pisi-font-family-select').forEach((select) => {
-        const exists = Array.from(select.options || []).some((option) => (
-            option.value === 'Comic Neue'
-        ));
+        const exists = Array.from(select.options || []).some((option) => option.value === 'Comic Neue');
         if (exists) return;
         const option = document.createElement('option');
         option.value = 'Comic Neue';
@@ -478,11 +476,7 @@ function loadPisiComicNeueFont() {
         try {
             if (!globalThis.FontFace || !document.fonts) return false;
             if (document.fonts.check('12px "Comic Neue"')) return true;
-            const face = new FontFace(
-                'Comic Neue',
-                decodePisiBundledFont(PISI_COMIC_NEUE_REGULAR_BASE64),
-                { style: 'normal', weight: '400', display: 'swap' }
-            );
+            const face = new FontFace('Comic Neue', decodePisiBundledFont(PISI_COMIC_NEUE_REGULAR_BASE64), { style: 'normal', weight: '400', display: 'swap' });
             await face.load();
             document.fonts.add(face);
             document.documentElement.dataset.pisiComicNeueReady = '1';
@@ -508,10 +502,7 @@ function setupPisiBundledFonts() {
         for (const mutation of mutations) {
             for (const node of mutation.addedNodes || []) {
                 if (node?.nodeType !== Node.ELEMENT_NODE) continue;
-                if (
-                    node.matches?.('.pisi-font-family-select') ||
-                    node.querySelector?.('.pisi-font-family-select')
-                ) {
+                if (node.matches?.('.pisi-font-family-select') || node.querySelector?.('.pisi-font-family-select')) {
                     ensurePisiComicNeueFontOption(node.parentElement || node);
                 }
             }

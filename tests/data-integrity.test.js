@@ -14,9 +14,7 @@ const mainSource = readMainSource();
 
 function loadMainHelpers(functionNames, exports) {
     const source = `
-        ${functionNames
-            .map((name) => extractFunction(mainSource, name))
-            .join('\n')}
+        ${functionNames.map((name) => extractFunction(mainSource, name)).join('\n')}
         globalThis.testApi = { ${exports.join(', ')} };
     `;
     const context = {
@@ -26,13 +24,7 @@ function loadMainHelpers(functionNames, exports) {
         Map,
         path,
         Set,
-        PISI_CONNECTION_KEYS: [
-            'up-hub',
-            'down-hub',
-            'co-level',
-            'upstream',
-            'downstream'
-        ],
+        PISI_CONNECTION_KEYS: ['up-hub', 'down-hub', 'co-level', 'upstream', 'downstream'],
         PISI_DIARY_MANAGED_START: '<!--PISI_DIARY_MANAGED_START-->',
         PISI_DIARY_MANAGED_END: '<!--PISI_DIARY_MANAGED_END-->',
         markInternalFileChange() {},
@@ -52,21 +44,21 @@ function plain(value) {
 }
 
 test('edge onarımı self-loop, tekrar, ikinci parent ve döngüyü güvenli temizler', () => {
-    const api = loadMainHelpers([
-        'normalizePisiId',
-        'normalizeConnectionRole',
-        'normalizePisiCustomizationColor',
-        'normalizePisiMapEdgeCustomization',
-        'normalizeMapEdge',
-        'isHierarchyEdge',
-        'convertEdgeToStream',
-        'getPisiEdgeSemanticKey',
-        'wouldCreatePisiHierarchyCycle',
-        'normalizePisiMapEdges'
-    ], [
-        'normalizeMapEdge',
-        'normalizePisiMapEdges'
-    ]);
+    const api = loadMainHelpers(
+        [
+            'normalizePisiId',
+            'normalizeConnectionRole',
+            'normalizePisiCustomizationColor',
+            'normalizePisiMapEdgeCustomization',
+            'normalizeMapEdge',
+            'isHierarchyEdge',
+            'convertEdgeToStream',
+            'getPisiEdgeSemanticKey',
+            'wouldCreatePisiHierarchyCycle',
+            'normalizePisiMapEdges'
+        ],
+        ['normalizeMapEdge', 'normalizePisiMapEdges']
+    );
     const hierarchy = (id, sourceId, targetId) => ({
         id,
         sourceId,
@@ -76,37 +68,36 @@ test('edge onarımı self-loop, tekrar, ikinci parent ve döngüyü güvenli tem
         targetRole: 'up-hub'
     });
     const validIds = new Set(['node_a', 'node_b', 'node_c']);
-    const normalized = api.normalizePisiMapEdges([
-        hierarchy('edge_ab', 'node_a', 'node_b'),
-        hierarchy('edge_ab_copy', 'node_a', 'node_b'),
-        hierarchy('edge_cb', 'node_c', 'node_b'),
-        hierarchy('edge_ba', 'node_b', 'node_a'),
-        hierarchy('edge_self', 'node_a', 'node_a')
-    ], validIds);
+    const normalized = api.normalizePisiMapEdges(
+        [
+            hierarchy('edge_ab', 'node_a', 'node_b'),
+            hierarchy('edge_ab_copy', 'node_a', 'node_b'),
+            hierarchy('edge_cb', 'node_c', 'node_b'),
+            hierarchy('edge_ba', 'node_b', 'node_a'),
+            hierarchy('edge_self', 'node_a', 'node_a')
+        ],
+        validIds
+    );
 
     assert.equal(normalized.edges.length, 3);
-    assert.equal(
-        normalized.edges.filter((edge) => edge.type === 'down-hub').length,
-        1
-    );
-    assert.equal(
-        normalized.edges.filter((edge) => edge.type === 'stream').length,
-        2
-    );
+    assert.equal(normalized.edges.filter((edge) => edge.type === 'down-hub').length, 1);
+    assert.equal(normalized.edges.filter((edge) => edge.type === 'stream').length, 2);
     assert.ok(normalized.warnings.length >= 3);
 
     assert.deepEqual(
-        plain(api.normalizeMapEdge({
-            id: 'edge_mismatch',
-            sourceId: 'node_a',
-            targetId: 'node_b',
-            type: 'co-level',
-            sourceRole: 'downstream',
-            targetRole: 'upstream',
-            customization: {
-                color: '#ABCDEF'
-            }
-        })),
+        plain(
+            api.normalizeMapEdge({
+                id: 'edge_mismatch',
+                sourceId: 'node_a',
+                targetId: 'node_b',
+                type: 'co-level',
+                sourceRole: 'downstream',
+                targetRole: 'upstream',
+                customization: {
+                    color: '#ABCDEF'
+                }
+            })
+        ),
         {
             id: 'edge_mismatch',
             sourceId: 'node_a',
@@ -124,21 +115,19 @@ test('edge onarımı self-loop, tekrar, ikinci parent ve döngüyü güvenli tem
 });
 
 test('layout ve kamera sayıları güvenli aralıklara sıkıştırılır', () => {
-    const api = loadMainHelpers([
-        'finiteNumberInRange',
-        'normalizePisiNodeLayout',
-        'normalizePisiMapCamera'
-    ], [
-        'normalizePisiNodeLayout',
-        'normalizePisiMapCamera'
-    ]);
+    const api = loadMainHelpers(
+        ['finiteNumberInRange', 'normalizePisiNodeLayout', 'normalizePisiMapCamera'],
+        ['normalizePisiNodeLayout', 'normalizePisiMapCamera']
+    );
 
     assert.deepEqual(
-        plain(api.normalizePisiMapCamera({
-            x: Infinity,
-            y: -5000000,
-            zoom: 50
-        })),
+        plain(
+            api.normalizePisiMapCamera({
+                x: Infinity,
+                y: -5000000,
+                zoom: 50
+            })
+        ),
         {
             x: 0,
             y: -1000000,
@@ -146,12 +135,14 @@ test('layout ve kamera sayıları güvenli aralıklara sıkıştırılır', () =
         }
     );
     assert.deepEqual(
-        plain(api.normalizePisiNodeLayout({
-            x: NaN,
-            y: 12,
-            width: -10,
-            height: 9000
-        })),
+        plain(
+            api.normalizePisiNodeLayout({
+                x: NaN,
+                y: 12,
+                width: -10,
+                height: 9000
+            })
+        ),
         {
             x: 80,
             y: 12,
@@ -162,11 +153,7 @@ test('layout ve kamera sayıları güvenli aralıklara sıkıştırılır', () =
 });
 
 test('diary temizleyicisi çalıştırılabilir HTML özelliklerini kaldırır', () => {
-    const api = loadMainHelpers([
-        'sanitizePisiDiaryBlockHtml'
-    ], [
-        'sanitizePisiDiaryBlockHtml'
-    ]);
+    const api = loadMainHelpers(['sanitizePisiDiaryBlockHtml'], ['sanitizePisiDiaryBlockHtml']);
     const sanitized = api.sanitizePisiDiaryBlockHtml(`
         <div onclick="steal()" style="color:red">
             güvenli
@@ -183,11 +170,7 @@ test('diary temizleyicisi çalıştırılabilir HTML özelliklerini kaldırır',
 });
 
 test('diary managed alanı çıkarılırken manuel boşluklar korunur', () => {
-    const api = loadMainHelpers([
-        'stripPisiDiaryManagedSection'
-    ], [
-        'stripPisiDiaryManagedSection'
-    ]);
+    const api = loadMainHelpers(['stripPisiDiaryManagedSection'], ['stripPisiDiaryManagedSection']);
     const content = [
         '  manuel başlangıç\n',
         '<!--PISI_DIARY_MANAGED_START-->',
@@ -196,81 +179,51 @@ test('diary managed alanı çıkarılırken manuel boşluklar korunur', () => {
         '\nmanuel son  '
     ].join('');
 
-    assert.equal(
-        api.stripPisiDiaryManagedSection(content),
-        '  manuel başlangıç\n\nmanuel son  '
-    );
+    assert.equal(api.stripPisiDiaryManagedSection(content), '  manuel başlangıç\n\nmanuel son  ');
 });
 
 test('normal kullanıcı diary klasörü marker eklenmeden korunur', (t) => {
-    const projectFolder = fs.mkdtempSync(
-        path.join(os.tmpdir(), 'pisi-diary-guard-')
-    );
+    const projectFolder = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-diary-guard-'));
     const diaryFolder = path.join(projectFolder, 'diary');
     fs.mkdirSync(diaryFolder);
-    fs.writeFileSync(
-        path.join(diaryFolder, 'kullanici-notu.txt'),
-        'korunacak',
-        'utf8'
-    );
+    fs.writeFileSync(path.join(diaryFolder, 'kullanici-notu.txt'), 'korunacak', 'utf8');
     t.after(() => {
         fs.rmSync(projectFolder, { recursive: true, force: true });
     });
 
-    const api = loadMainHelpers([
-        'normalizePisiDiaryIsoDate',
-        'readJsonFileResult',
-        'isPisiManagedDiaryFolder',
-        'ensurePisiDiaryFolder'
-    ], [
-        'ensurePisiDiaryFolder'
-    ]);
+    const api = loadMainHelpers(
+        ['normalizePisiDiaryIsoDate', 'readJsonFileResult', 'isPisiManagedDiaryFolder', 'ensurePisiDiaryFolder'],
+        ['ensurePisiDiaryFolder']
+    );
     const result = api.ensurePisiDiaryFolder(projectFolder);
 
     assert.equal(result.ok, false);
     assert.match(result.error, /kullanıcı klasörünü korumak/i);
-    assert.equal(
-        fs.existsSync(path.join(diaryFolder, '.pisi-diary')),
-        false
-    );
+    assert.equal(fs.existsSync(path.join(diaryFolder, '.pisi-diary')), false);
 });
 
 test('boş diary klasörü güvenle Pisi yönetimine alınır', (t) => {
-    const projectFolder = fs.mkdtempSync(
-        path.join(os.tmpdir(), 'pisi-empty-diary-')
-    );
+    const projectFolder = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-empty-diary-'));
     t.after(() => {
         fs.rmSync(projectFolder, { recursive: true, force: true });
     });
 
-    const api = loadMainHelpers([
-        'normalizePisiDiaryIsoDate',
-        'readJsonFileResult',
-        'isPisiManagedDiaryFolder',
-        'ensurePisiDiaryFolder'
-    ], [
-        'ensurePisiDiaryFolder'
-    ]);
+    const api = loadMainHelpers(
+        ['normalizePisiDiaryIsoDate', 'readJsonFileResult', 'isPisiManagedDiaryFolder', 'ensurePisiDiaryFolder'],
+        ['ensurePisiDiaryFolder']
+    );
 
     const diaryFolder = path.join(projectFolder, 'diary');
     fs.mkdirSync(diaryFolder);
 
     const result = api.ensurePisiDiaryFolder(projectFolder);
     assert.equal(result.ok, true);
-    assert.equal(
-        fs.existsSync(path.join(diaryFolder, '.pisi-diary')),
-        true
-    );
-    assert.equal(
-        fs.existsSync(path.join(diaryFolder, '.kedi-diary')),
-        false
-    );
+    assert.equal(fs.existsSync(path.join(diaryFolder, '.pisi-diary')), true);
+    assert.equal(fs.existsSync(path.join(diaryFolder, '.kedi-diary')), false);
 });
 
 test('watcher PISI kaydını dış değişiklikten dosya imzasıyla ayırır', (t) => {
-    const folder = fs.mkdtempSync(
-        path.join(os.tmpdir(), 'pisi-watcher-')
-    );
+    const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-watcher-'));
     const filePath = path.join(folder, 'not.node');
     t.after(() => {
         fs.rmSync(folder, { recursive: true, force: true });
@@ -293,9 +246,7 @@ test('watcher PISI kaydını dış değişiklikten dosya imzasıyla ayırır', (
         const recentInternalDirectoryChanges = new Map();
         const PISI_INTERNAL_CHANGE_TTL_MS = 6000;
         const PISI_INTERNAL_DIRECTORY_GRACE_MS = 1200;
-        ${functionNames
-            .map((name) => extractFunction(mainSource, name))
-            .join('\n')}
+        ${functionNames.map((name) => extractFunction(mainSource, name)).join('\n')}
         globalThis.watcherApi = {
             markInternalFileChange,
             sealInternalFileChange,
@@ -318,31 +269,12 @@ test('watcher PISI kaydını dış değişiklikten dosya imzasıyla ayırır', (
     fs.writeFileSync(filePath, 'PISI kaydı', 'utf8');
     context.watcherApi.sealInternalFileChange(filePath);
 
-    assert.equal(
-        context.watcherApi.isRecentInternalFileChange(filePath),
-        true
-    );
-    assert.equal(
-        context.watcherApi.hasRecentInternalFileChangeInside(folder),
-        true
-    );
-    assert.equal(
-        context.watcherApi.hasRecentInternalDirectoryChange(folder),
-        true
-    );
+    assert.equal(context.watcherApi.isRecentInternalFileChange(filePath), true);
+    assert.equal(context.watcherApi.hasRecentInternalFileChangeInside(folder), true);
+    assert.equal(context.watcherApi.hasRecentInternalDirectoryChange(folder), true);
 
-    fs.writeFileSync(
-        filePath,
-        'PISI dışındaki daha yeni ve farklı kayıt',
-        'utf8'
-    );
+    fs.writeFileSync(filePath, 'PISI dışındaki daha yeni ve farklı kayıt', 'utf8');
 
-    assert.equal(
-        context.watcherApi.isRecentInternalFileChange(filePath),
-        false
-    );
-    assert.equal(
-        context.watcherApi.hasRecentInternalFileChangeInside(folder),
-        false
-    );
+    assert.equal(context.watcherApi.isRecentInternalFileChange(filePath), false);
+    assert.equal(context.watcherApi.hasRecentInternalFileChangeInside(folder), false);
 });

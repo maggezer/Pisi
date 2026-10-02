@@ -24,10 +24,7 @@ test('restore rejects missing semantic relationship endpoints', () => {
 });
 
 test('restored map views retain presentation schema version', () => {
-    assert.match(
-        store,
-        /mapData\.relationshipViewVersion = mapSemanticCore\.PISI_MAP_RELATIONSHIP_VIEW_VERSION/
-    );
+    assert.match(store, /mapData\.relationshipViewVersion = mapSemanticCore\.PISI_MAP_RELATIONSHIP_VIEW_VERSION/);
 });
 
 test('legacy OS trash remains outside new destructive domain route', () => {

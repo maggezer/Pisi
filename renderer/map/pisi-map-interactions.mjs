@@ -1,14 +1,12 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 import {
     collectPisiCollapsedHubCounts,
     collectPisiCollapsedHubNodeIds,
     isPisiHierarchyEdge,
     isPisiMapEdgeHiddenByCollapsedHub,
     makePisiCollapsedHubPortKey
-} from "./pisi-map-collapse-core.mjs";
-import {
-    getPisiMapConnectionMetrics
-} from "./pisi-map-zoom-core.mjs";
+} from './pisi-map-collapse-core.mjs';
+import { getPisiMapConnectionMetrics } from './pisi-map-zoom-core.mjs';
 function getTreeItemDisplayName(item) {
     if (!item) return '';
     if (item.metadata?.title) {
@@ -78,18 +76,16 @@ function makeCollapsedHubPortKey(nodeId, port) {
 }
 
 function hasOutgoingHubEdgesFromPort(nodeId, port) {
-    return Array.isArray(activeMapEdges) && activeMapEdges.some((edge) => {
-        return isHierarchyEdge(edge) &&
-            edge.sourceId === nodeId &&
-            (edge.sourcePort || 'right') === (port || 'right');
-    });
+    return (
+        Array.isArray(activeMapEdges) &&
+        activeMapEdges.some((edge) => {
+            return isHierarchyEdge(edge) && edge.sourceId === nodeId && (edge.sourcePort || 'right') === (port || 'right');
+        })
+    );
 }
 
 function collectCollapsedHubNodeIds() {
-    return collectPisiCollapsedHubNodeIds(
-        activeMapEdges,
-        Array.from(getCollapsedHubPortSet())
-    );
+    return collectPisiCollapsedHubNodeIds(activeMapEdges, Array.from(getCollapsedHubPortSet()));
 }
 
 function syncCollapsedHubNodeVisibility() {
@@ -110,20 +106,14 @@ function syncCollapsedHubNodeVisibility() {
     });
 
     if (selectionChanged) {
-        document.dispatchEvent(new CustomEvent(
-            'pisi:map-customization-context-changed'
-        ));
+        document.dispatchEvent(new CustomEvent('pisi:map-customization-context-changed'));
     }
 
     return hiddenNodeIds;
 }
 
 function isHubEdgeCollapsed(edge, hiddenNodeIds = collectCollapsedHubNodeIds()) {
-    return isPisiMapEdgeHiddenByCollapsedHub(
-        edge,
-        Array.from(hiddenNodeIds || []),
-        Array.from(getCollapsedHubPortSet())
-    );
+    return isPisiMapEdgeHiddenByCollapsedHub(edge, Array.from(hiddenNodeIds || []), Array.from(getCollapsedHubPortSet()));
 }
 
 function syncHubPortCollapseVisuals() {
@@ -133,17 +123,12 @@ function syncHubPortCollapseVisuals() {
         delete port.dataset.collapsedCount;
     });
 
-    const collapsedCounts = collectPisiCollapsedHubCounts(
-        Array.isArray(activeMapEdges) ? activeMapEdges : [],
-        getCollapsedHubPortSet()
-    );
+    const collapsedCounts = collectPisiCollapsedHubCounts(Array.isArray(activeMapEdges) ? activeMapEdges : [], getCollapsedHubPortSet());
     for (const key of getCollapsedHubPortSet()) {
         const [nodeId, port] = String(key).split('::');
         if (!nodeId || !port) continue;
 
-        const portEl = document.querySelector(
-            `.map-node-box[data-node-id="${CSS.escape(nodeId)}"] .map-port.${CSS.escape(port)}`
-        );
+        const portEl = document.querySelector(`.map-node-box[data-node-id="${CSS.escape(nodeId)}"] .map-port.${CSS.escape(port)}`);
 
         if (portEl) {
             const hiddenCount = collapsedCounts.get(key) || 0;
@@ -202,9 +187,7 @@ function enforceSingleParentForTarget(edge, edges = []) {
     }
 
     if (targetAlreadyHasUpHub(edge.targetId, edges, edge.sourceId)) {
-        console.warn(
-            '[PISI] Hedef node zaten bir up-hub bağlantısına sahip. Yeni bağlantı stream olarak kaydedildi.'
-        );
+        console.warn('[PISI] Hedef node zaten bir up-hub bağlantısına sahip. Yeni bağlantı stream olarak kaydedildi.');
 
         return convertEdgeToStream(edge);
     }
@@ -213,9 +196,7 @@ function enforceSingleParentForTarget(edge, edges = []) {
 }
 
 function getConnectionClass(edgeOrType) {
-    const type = typeof edgeOrType === 'string'
-        ? edgeOrType
-        : edgeOrType?.type;
+    const type = typeof edgeOrType === 'string' ? edgeOrType : edgeOrType?.type;
 
     if (type === 'co-level' || type === 'colevel') return 'co-level';
     if (type === 'stream' || type === 'upstream' || type === 'downstream') return 'stream';
@@ -280,18 +261,9 @@ function syncMapConnectionZoomStyles(svg = document.getElementById('map-connecti
     const metrics = getMapConnectionVisualMetrics();
     if (!svg) return metrics;
 
-    svg.style.setProperty(
-        '--pisi-map-edge-stroke-width',
-        `${metrics.edgeStrokeWidth}px`
-    );
-    svg.style.setProperty(
-        '--pisi-map-edge-hover-stroke-width',
-        `${metrics.edgeHoverStrokeWidth}px`
-    );
-    svg.style.setProperty(
-        '--pisi-map-temp-edge-stroke-width',
-        `${metrics.tempEdgeStrokeWidth}px`
-    );
+    svg.style.setProperty('--pisi-map-edge-stroke-width', `${metrics.edgeStrokeWidth}px`);
+    svg.style.setProperty('--pisi-map-edge-hover-stroke-width', `${metrics.edgeHoverStrokeWidth}px`);
+    svg.style.setProperty('--pisi-map-temp-edge-stroke-width', `${metrics.tempEdgeStrokeWidth}px`);
 
     return metrics;
 }
@@ -319,10 +291,7 @@ function makeConnectionPathFromBoxes(sourceBox, sourcePort, targetBox, targetPor
     const end = offsetPoint(targetBase, targetDir, targetOffset);
 
     const distance = getDistance(start, end);
-    const control = Math.max(
-        metrics.connectionControlMin,
-        Math.min(metrics.connectionControlMax, distance * 0.38)
-    );
+    const control = Math.max(metrics.connectionControlMin, Math.min(metrics.connectionControlMax, distance * 0.38));
 
     const c1 = {
         x: start.x + sourceDir.x * control,
@@ -346,10 +315,7 @@ function makeTempConnectionPath(sourceBox, sourcePort, mousePoint) {
 
     const start = offsetPoint(sourceBase, sourceDir, endpointOffset);
     const distance = getDistance(start, mousePoint);
-    const control = Math.max(
-        metrics.tempControlMin,
-        Math.min(metrics.tempControlMax, distance * 0.35)
-    );
+    const control = Math.max(metrics.tempControlMin, Math.min(metrics.tempControlMax, distance * 0.35));
 
     const c1 = {
         x: start.x + sourceDir.x * control,
@@ -363,9 +329,7 @@ function ensureTempEdgePath() {
     const svg = document.getElementById('map-connections');
     if (!svg) return null;
 
-    let path = /** @type {SVGPathElement | null} */ (
-        document.querySelector('#map-temp-edge')
-    );
+    let path = /** @type {SVGPathElement | null} */ (document.querySelector('#map-temp-edge'));
 
     if (!path) {
         path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -410,9 +374,7 @@ function zoomMapAtClientPoint(clientX, clientY, direction) {
     const rect = canvas.getBoundingClientRect();
 
     const oldZoom = activeMapCamera.zoom || 1;
-    const zoomFactor = direction > 0
-        ? MAP_ZOOM_STEP
-        : 1 / MAP_ZOOM_STEP;
+    const zoomFactor = direction > 0 ? MAP_ZOOM_STEP : 1 / MAP_ZOOM_STEP;
 
     const newZoom = clampMapZoom(oldZoom * zoomFactor);
 
@@ -441,11 +403,7 @@ function zoomMapFromCenter(direction) {
 
     const rect = canvas.getBoundingClientRect();
 
-    zoomMapAtClientPoint(
-        rect.left + rect.width / 2,
-        rect.top + rect.height / 2,
-        direction
-    );
+    zoomMapAtClientPoint(rect.left + rect.width / 2, rect.top + rect.height / 2, direction);
 }
 
 function saveActiveMapCameraSoon() {
@@ -460,10 +418,7 @@ function saveActiveMapCameraSoon() {
 
     mapCameraSaveTimer = setTimeout(async () => {
         mapCameraSaveTimer = null;
-        window.pisiProject?.saveMapCamera?.(
-            mapPath,
-            camera
-        );
+        window.pisiProject?.saveMapCamera?.(mapPath, camera);
     }, 350);
 }
 
@@ -478,13 +433,10 @@ async function flushActiveMapCameraSave() {
     if (!activeMapPath) return true;
 
     try {
-        const result = await window.pisiProject?.saveMapCamera?.(
-            activeMapPath,
-            {
-                ...activeMapCamera,
-                collapsedHubs: Array.from(getCollapsedHubPortSet())
-            }
-        );
+        const result = await window.pisiProject?.saveMapCamera?.(activeMapPath, {
+            ...activeMapCamera,
+            collapsedHubs: Array.from(getCollapsedHubPortSet())
+        });
 
         return Boolean(result?.ok);
     } catch (error) {
@@ -502,20 +454,20 @@ function bindMapZoomEvents() {
 
     mapZoomEventsBound = true;
 
-    canvas.addEventListener('wheel', (event) => {
-        if (!activeMapPath) return;
+    canvas.addEventListener(
+        'wheel',
+        (event) => {
+            if (!activeMapPath) return;
 
-        event.preventDefault();
-        event.stopPropagation();
+            event.preventDefault();
+            event.stopPropagation();
 
-        const direction = event.deltaY < 0 ? 1 : -1;
+            const direction = event.deltaY < 0 ? 1 : -1;
 
-        zoomMapAtClientPoint(
-            event.clientX,
-            event.clientY,
-            direction
-        );
-    }, { passive: false });
+            zoomMapAtClientPoint(event.clientX, event.clientY, direction);
+        },
+        { passive: false }
+    );
 }
 
 function bindMapZoomControls() {
@@ -575,9 +527,7 @@ function clearSelectedMapNodes() {
         box.classList.remove('selected');
     });
     if (changed) {
-        document.dispatchEvent(new CustomEvent(
-            'pisi:map-customization-context-changed'
-        ));
+        document.dispatchEvent(new CustomEvent('pisi:map-customization-context-changed'));
     }
 }
 
@@ -598,21 +548,11 @@ function getClientSelectionRect(startX, startY, currentX, currentY) {
 }
 
 function rectsIntersect(a, b) {
-    return (
-        a.left <= b.right &&
-        a.right >= b.left &&
-        a.top <= b.bottom &&
-        a.bottom >= b.top
-    );
+    return a.left <= b.right && a.right >= b.left && a.top <= b.bottom && a.bottom >= b.top;
 }
 
 function rectContainsRect(outer, inner) {
-    return (
-        inner.left >= outer.left &&
-        inner.right <= outer.right &&
-        inner.top >= outer.top &&
-        inner.bottom <= outer.bottom
-    );
+    return inner.left >= outer.left && inner.right <= outer.right && inner.top >= outer.top && inner.bottom <= outer.bottom;
 }
 
 function applyMapBoxSelection(selectionRect) {
@@ -622,9 +562,7 @@ function applyMapBoxSelection(selectionRect) {
         group.classList.remove('selected');
     });
 
-    const boxes = Array.from(document.querySelectorAll(
-        '.map-node-box:not(.pisi-hub-descendant-hidden)'
-    ));
+    const boxes = Array.from(document.querySelectorAll('.map-node-box:not(.pisi-hub-descendant-hidden)'));
 
     for (const box of boxes) {
         const boxRect = box.getBoundingClientRect();
@@ -637,17 +575,13 @@ function applyMapBoxSelection(selectionRect) {
         };
 
         const shouldSelect =
-            selectionRect.direction === 'left-to-right'
-                ? rectsIntersect(selectionRect, normalizedBoxRect)
-                : rectContainsRect(selectionRect, normalizedBoxRect);
+            selectionRect.direction === 'left-to-right' ? rectsIntersect(selectionRect, normalizedBoxRect) : rectContainsRect(selectionRect, normalizedBoxRect);
 
         if (shouldSelect) {
             box.classList.add('selected');
         }
     }
-    document.dispatchEvent(new CustomEvent(
-        'pisi:map-customization-context-changed'
-    ));
+    document.dispatchEvent(new CustomEvent('pisi:map-customization-context-changed'));
 }
 
 function updateMapSelectionBoxVisual(selectionState, event) {
@@ -657,12 +591,7 @@ function updateMapSelectionBoxVisual(selectionState, event) {
 
     const canvasRect = canvas.getBoundingClientRect();
 
-    const selectionRect = getClientSelectionRect(
-        selectionState.startX,
-        selectionState.startY,
-        event.clientX,
-        event.clientY
-    );
+    const selectionRect = getClientSelectionRect(selectionState.startX, selectionState.startY, event.clientX, event.clientY);
 
     selectionState.direction = selectionRect.direction;
 
@@ -671,15 +600,9 @@ function updateMapSelectionBoxVisual(selectionState, event) {
     selectionState.element.style.width = `${selectionRect.width}px`;
     selectionState.element.style.height = `${selectionRect.height}px`;
 
-    selectionState.element.classList.toggle(
-        'right-to-left',
-        selectionRect.direction === 'right-to-left'
-    );
+    selectionState.element.classList.toggle('right-to-left', selectionRect.direction === 'right-to-left');
 
-    selectionState.element.classList.toggle(
-        'left-to-right',
-        selectionRect.direction === 'left-to-right'
-    );
+    selectionState.element.classList.toggle('left-to-right', selectionRect.direction === 'left-to-right');
 }
 
 function setupMapCanvasPan() {
@@ -718,11 +641,8 @@ function setupMapCanvasPan() {
         if (event.button === 0) {
             clearSelectedMapNodes();
             selectedMapEdgeId = null;
-            document.querySelectorAll('.map-edge-group.selected')
-                .forEach((group) => group.classList.remove('selected'));
-            document.dispatchEvent(new CustomEvent(
-                'pisi:map-customization-context-changed'
-            ));
+            document.querySelectorAll('.map-edge-group.selected').forEach((group) => group.classList.remove('selected'));
+            document.dispatchEvent(new CustomEvent('pisi:map-customization-context-changed'));
             isPanning = true;
 
             startX = event.clientX;
@@ -764,9 +684,7 @@ function setupMapCanvasPan() {
             currentMapBoxSelection.lastX = event.clientX;
             currentMapBoxSelection.lastY = event.clientY;
 
-            const moveDistance =
-                Math.abs(event.clientX - currentMapBoxSelection.startX) +
-                Math.abs(event.clientY - currentMapBoxSelection.startY);
+            const moveDistance = Math.abs(event.clientX - currentMapBoxSelection.startX) + Math.abs(event.clientY - currentMapBoxSelection.startY);
 
             if (moveDistance > 4) {
                 currentMapBoxSelection.hasMoved = true;
@@ -788,12 +706,7 @@ function setupMapCanvasPan() {
         if (currentMapBoxSelection) {
             const selectionState = currentMapBoxSelection;
 
-            const selectionRect = getClientSelectionRect(
-                selectionState.startX,
-                selectionState.startY,
-                event.clientX,
-                event.clientY
-            );
+            const selectionRect = getClientSelectionRect(selectionState.startX, selectionState.startY, event.clientX, event.clientY);
 
             if (selectionState.hasMoved) {
                 applyMapBoxSelection(selectionRect);
@@ -818,181 +731,269 @@ function setupMapCanvasPan() {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "getTreeItemDisplayName": {
+    getTreeItemDisplayName: {
         enumerable: true,
-        get() { return getTreeItemDisplayName; }
+        get() {
+            return getTreeItemDisplayName;
+        }
     },
-    "getConnectionDataFromEvent": {
+    getConnectionDataFromEvent: {
         enumerable: true,
-        get() { return getConnectionDataFromEvent; }
+        get() {
+            return getConnectionDataFromEvent;
+        }
     },
-    "isHierarchyEdge": {
+    isHierarchyEdge: {
         enumerable: true,
-        get() { return isHierarchyEdge; }
+        get() {
+            return isHierarchyEdge;
+        }
     },
-    "getCollapsedHubPortSet": {
+    getCollapsedHubPortSet: {
         enumerable: true,
-        get() { return getCollapsedHubPortSet; }
+        get() {
+            return getCollapsedHubPortSet;
+        }
     },
-    "makeCollapsedHubPortKey": {
+    makeCollapsedHubPortKey: {
         enumerable: true,
-        get() { return makeCollapsedHubPortKey; }
+        get() {
+            return makeCollapsedHubPortKey;
+        }
     },
-    "hasOutgoingHubEdgesFromPort": {
+    hasOutgoingHubEdgesFromPort: {
         enumerable: true,
-        get() { return hasOutgoingHubEdgesFromPort; }
+        get() {
+            return hasOutgoingHubEdgesFromPort;
+        }
     },
-    "collectCollapsedHubNodeIds": {
+    collectCollapsedHubNodeIds: {
         enumerable: true,
-        get() { return collectCollapsedHubNodeIds; }
+        get() {
+            return collectCollapsedHubNodeIds;
+        }
     },
-    "syncCollapsedHubNodeVisibility": {
+    syncCollapsedHubNodeVisibility: {
         enumerable: true,
-        get() { return syncCollapsedHubNodeVisibility; }
+        get() {
+            return syncCollapsedHubNodeVisibility;
+        }
     },
-    "isHubEdgeCollapsed": {
+    isHubEdgeCollapsed: {
         enumerable: true,
-        get() { return isHubEdgeCollapsed; }
+        get() {
+            return isHubEdgeCollapsed;
+        }
     },
-    "syncHubPortCollapseVisuals": {
+    syncHubPortCollapseVisuals: {
         enumerable: true,
-        get() { return syncHubPortCollapseVisuals; }
+        get() {
+            return syncHubPortCollapseVisuals;
+        }
     },
-    "toggleHubConnectionsFromPort": {
+    toggleHubConnectionsFromPort: {
         enumerable: true,
-        get() { return toggleHubConnectionsFromPort; }
+        get() {
+            return toggleHubConnectionsFromPort;
+        }
     },
-    "convertEdgeToStream": {
+    convertEdgeToStream: {
         enumerable: true,
-        get() { return convertEdgeToStream; }
+        get() {
+            return convertEdgeToStream;
+        }
     },
-    "targetAlreadyHasUpHub": {
+    targetAlreadyHasUpHub: {
         enumerable: true,
-        get() { return targetAlreadyHasUpHub; }
+        get() {
+            return targetAlreadyHasUpHub;
+        }
     },
-    "enforceSingleParentForTarget": {
+    enforceSingleParentForTarget: {
         enumerable: true,
-        get() { return enforceSingleParentForTarget; }
+        get() {
+            return enforceSingleParentForTarget;
+        }
     },
-    "getConnectionClass": {
+    getConnectionClass: {
         enumerable: true,
-        get() { return getConnectionClass; }
+        get() {
+            return getConnectionClass;
+        }
     },
-    "getPortPoint": {
+    getPortPoint: {
         enumerable: true,
-        get() { return getPortPoint; }
+        get() {
+            return getPortPoint;
+        }
     },
-    "getMousePointInCanvas": {
+    getMousePointInCanvas: {
         enumerable: true,
-        get() { return getMousePointInCanvas; }
+        get() {
+            return getMousePointInCanvas;
+        }
     },
-    "getPortDirection": {
+    getPortDirection: {
         enumerable: true,
-        get() { return getPortDirection; }
+        get() {
+            return getPortDirection;
+        }
     },
-    "offsetPoint": {
+    offsetPoint: {
         enumerable: true,
-        get() { return offsetPoint; }
+        get() {
+            return offsetPoint;
+        }
     },
-    "getDistance": {
+    getDistance: {
         enumerable: true,
-        get() { return getDistance; }
+        get() {
+            return getDistance;
+        }
     },
-    "getMapConnectionVisualMetrics": {
+    getMapConnectionVisualMetrics: {
         enumerable: true,
-        get() { return getMapConnectionVisualMetrics; }
+        get() {
+            return getMapConnectionVisualMetrics;
+        }
     },
-    "syncMapConnectionZoomStyles": {
+    syncMapConnectionZoomStyles: {
         enumerable: true,
-        get() { return syncMapConnectionZoomStyles; }
+        get() {
+            return syncMapConnectionZoomStyles;
+        }
     },
-    "makeConnectionPathFromBoxes": {
+    makeConnectionPathFromBoxes: {
         enumerable: true,
-        get() { return makeConnectionPathFromBoxes; }
+        get() {
+            return makeConnectionPathFromBoxes;
+        }
     },
-    "makeTempConnectionPath": {
+    makeTempConnectionPath: {
         enumerable: true,
-        get() { return makeTempConnectionPath; }
+        get() {
+            return makeTempConnectionPath;
+        }
     },
-    "ensureTempEdgePath": {
+    ensureTempEdgePath: {
         enumerable: true,
-        get() { return ensureTempEdgePath; }
+        get() {
+            return ensureTempEdgePath;
+        }
     },
-    "clearTempEdgePath": {
+    clearTempEdgePath: {
         enumerable: true,
-        get() { return clearTempEdgePath; }
+        get() {
+            return clearTempEdgePath;
+        }
     },
-    "applyMapCamera": {
+    applyMapCamera: {
         enumerable: true,
-        get() { return applyMapCamera; }
+        get() {
+            return applyMapCamera;
+        }
     },
-    "clampMapZoom": {
+    clampMapZoom: {
         enumerable: true,
-        get() { return clampMapZoom; }
+        get() {
+            return clampMapZoom;
+        }
     },
-    "zoomMapAtClientPoint": {
+    zoomMapAtClientPoint: {
         enumerable: true,
-        get() { return zoomMapAtClientPoint; }
+        get() {
+            return zoomMapAtClientPoint;
+        }
     },
-    "zoomMapFromCenter": {
+    zoomMapFromCenter: {
         enumerable: true,
-        get() { return zoomMapFromCenter; }
+        get() {
+            return zoomMapFromCenter;
+        }
     },
-    "saveActiveMapCameraSoon": {
+    saveActiveMapCameraSoon: {
         enumerable: true,
-        get() { return saveActiveMapCameraSoon; }
+        get() {
+            return saveActiveMapCameraSoon;
+        }
     },
-    "scheduleMapCameraSave": {
+    scheduleMapCameraSave: {
         enumerable: true,
-        get() { return scheduleMapCameraSave; }
+        get() {
+            return scheduleMapCameraSave;
+        }
     },
-    "flushActiveMapCameraSave": {
+    flushActiveMapCameraSave: {
         enumerable: true,
-        get() { return flushActiveMapCameraSave; }
+        get() {
+            return flushActiveMapCameraSave;
+        }
     },
-    "bindMapZoomEvents": {
+    bindMapZoomEvents: {
         enumerable: true,
-        get() { return bindMapZoomEvents; }
+        get() {
+            return bindMapZoomEvents;
+        }
     },
-    "bindMapZoomControls": {
+    bindMapZoomControls: {
         enumerable: true,
-        get() { return bindMapZoomControls; }
+        get() {
+            return bindMapZoomControls;
+        }
     },
-    "bindHoldZoomButton": {
+    bindHoldZoomButton: {
         enumerable: true,
-        get() { return bindHoldZoomButton; }
+        get() {
+            return bindHoldZoomButton;
+        }
     },
-    "clearSelectedMapNodes": {
+    clearSelectedMapNodes: {
         enumerable: true,
-        get() { return clearSelectedMapNodes; }
+        get() {
+            return clearSelectedMapNodes;
+        }
     },
-    "getSelectedMapNodeBoxes": {
+    getSelectedMapNodeBoxes: {
         enumerable: true,
-        get() { return getSelectedMapNodeBoxes; }
+        get() {
+            return getSelectedMapNodeBoxes;
+        }
     },
-    "getClientSelectionRect": {
+    getClientSelectionRect: {
         enumerable: true,
-        get() { return getClientSelectionRect; }
+        get() {
+            return getClientSelectionRect;
+        }
     },
-    "rectsIntersect": {
+    rectsIntersect: {
         enumerable: true,
-        get() { return rectsIntersect; }
+        get() {
+            return rectsIntersect;
+        }
     },
-    "rectContainsRect": {
+    rectContainsRect: {
         enumerable: true,
-        get() { return rectContainsRect; }
+        get() {
+            return rectContainsRect;
+        }
     },
-    "applyMapBoxSelection": {
+    applyMapBoxSelection: {
         enumerable: true,
-        get() { return applyMapBoxSelection; }
+        get() {
+            return applyMapBoxSelection;
+        }
     },
-    "updateMapSelectionBoxVisual": {
+    updateMapSelectionBoxVisual: {
         enumerable: true,
-        get() { return updateMapSelectionBoxVisual; }
+        get() {
+            return updateMapSelectionBoxVisual;
+        }
     },
-    "setupMapCanvasPan": {
+    setupMapCanvasPan: {
         enumerable: true,
-        get() { return setupMapCanvasPan; }
+        get() {
+            return setupMapCanvasPan;
+        }
     }
 });
-registerModule("map.interactions", moduleApi);
+registerModule('map.interactions', moduleApi);

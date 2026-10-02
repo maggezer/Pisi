@@ -76,9 +76,7 @@ function recoverPisiDomainProjectIfNeeded() {
     if (!projectFolder || !atomicMutation?.recoverPisiAtomicMutations) return;
     const recovery = atomicMutation.recoverPisiAtomicMutations(projectFolder);
     if (!recovery.ok) {
-        throw new Error(
-            `Yarım kalan atomic mutation kurtarılamadı: ${recovery.warnings.join(' | ')}`
-        );
+        throw new Error(`Yarım kalan atomic mutation kurtarılamadı: ${recovery.warnings.join(' | ')}`);
     }
 }
 
@@ -132,9 +130,10 @@ function executePisiDomainCommand(name, payload = {}) {
     try {
         const invoke = () => handler(payload || {});
         const projectFolder = globalThis.activeProjectFolder;
-        const result = shouldRunPisiCommandAtomically(commandName, payload) && projectFolder
-            ? atomicMutation.runPisiAtomicMutation(projectFolder, commandName, invoke)
-            : invoke();
+        const result =
+            shouldRunPisiCommandAtomically(commandName, payload) && projectFolder
+                ? atomicMutation.runPisiAtomicMutation(projectFolder, commandName, invoke)
+                : invoke();
         if (result && typeof result.then === 'function') {
             return result.catch((error) => normalizePisiDomainCommandFailure(error));
         }
@@ -149,11 +148,7 @@ function assertPisiDomainProjectRoot(projectFolder) {
         type: 'directory'
     });
     const activeProjectFolder = globalThis.activeProjectFolder;
-    if (
-        !activeProjectFolder ||
-        electronIpc.normalizePathForCompare(safeProjectFolder) !==
-            electronIpc.normalizePathForCompare(activeProjectFolder)
-    ) {
+    if (!activeProjectFolder || electronIpc.normalizePathForCompare(safeProjectFolder) !== electronIpc.normalizePathForCompare(activeProjectFolder)) {
         throw new Error('Domain işlemi yalnız aktif proje kökünde çalışabilir.');
     }
     return safeProjectFolder;
@@ -207,8 +202,7 @@ function attachRequiredPisiTaskReferenceRewrite(result) {
             ...withReferences,
             ok: false,
             code: 'TASK_REFERENCE_REWRITE_FAILED',
-            error: withReferences.taskReferences.error ||
-                'Task source referansları güncellenemedi.'
+            error: withReferences.taskReferences.error || 'Task source referansları güncellenemedi.'
         };
     }
     return withReferences;
@@ -216,30 +210,20 @@ function attachRequiredPisiTaskReferenceRewrite(result) {
 
 function installPisiDomainContracts() {
     registerPisiDomainQuery('task.list.v1', (payload) => {
-        return taskStore.listPisiFirstClassTasks(
-            assertPisiDomainProjectRoot(payload.projectFolder)
-        );
+        return taskStore.listPisiFirstClassTasks(assertPisiDomainProjectRoot(payload.projectFolder));
     });
 
     registerPisiDomainQuery('document.read.v1', (payload) => {
-        return mapStore.getPisiDocument(
-            assertPisiDomainDocumentPath(payload.filePath)
-        );
+        return mapStore.getPisiDocument(assertPisiDomainDocumentPath(payload.filePath));
     });
 
     registerPisiDomainQuery('map.projection.v1', (payload) => {
-        return mapSemanticOperations.getPisiMapSemanticProjection(
-            assertPisiDomainMapPath(payload.mapPath)
-        );
+        return mapSemanticOperations.getPisiMapSemanticProjection(assertPisiDomainMapPath(payload.mapPath));
     });
 
     registerPisiDomainQuery('map.operational.v1', (payload) => {
-        const result = mapOperationalStore.readPisiOperationalMapState(
-            assertPisiDomainMapPath(payload.mapPath)
-        );
-        return result.ok
-            ? { ok: true, operational: result.state }
-            : result;
+        const result = mapOperationalStore.readPisiOperationalMapState(assertPisiDomainMapPath(payload.mapPath));
+        return result.ok ? { ok: true, operational: result.state } : result;
     });
 
     registerPisiDomainCommand('task.capture.v1', (payload) => {
@@ -254,18 +238,11 @@ function installPisiDomainContracts() {
 
     registerPisiDomainCommand('task.update.v1', (payload) => {
         const safeProjectFolder = assertPisiDomainProjectRoot(payload.projectFolder);
-        return taskStore.updatePisiFirstClassTask(
-            safeProjectFolder,
-            String(payload.taskId || ''),
-            payload.patch || {}
-        );
+        return taskStore.updatePisiFirstClassTask(safeProjectFolder, String(payload.taskId || ''), payload.patch || {});
     });
 
     registerPisiDomainCommand('task.delete.v1', (payload) => {
-        return taskStore.deletePisiFirstClassTask(
-            assertPisiDomainProjectRoot(payload.projectFolder),
-            String(payload.taskId || '')
-        );
+        return taskStore.deletePisiFirstClassTask(assertPisiDomainProjectRoot(payload.projectFolder), String(payload.taskId || ''));
     });
 
     registerPisiDomainCommand('task.sync-projection.v1', (payload) => {
@@ -278,10 +255,7 @@ function installPisiDomainContracts() {
     });
 
     registerPisiDomainCommand('map.relationship.upsert.v1', (payload) => {
-        return mapSemanticOperations.upsertPisiMapSemanticConnection(
-            assertPisiDomainMapPath(payload.mapPath),
-            payload.relationship || payload.edge || {}
-        );
+        return mapSemanticOperations.upsertPisiMapSemanticConnection(assertPisiDomainMapPath(payload.mapPath), payload.relationship || payload.edge || {});
     });
 
     registerPisiDomainCommand('map.relationship.delete.v1', (payload) => {
@@ -301,17 +275,11 @@ function installPisiDomainContracts() {
 
     registerPisiDomainCommand('map.layout.save.v1', (payload) => {
         const safeMapPath = assertPisiDomainMapPath(payload.mapPath);
-        return mapStore.saveMapNodeLayout(
-            safeMapPath,
-            Array.isArray(payload.nodes) ? payload.nodes : []
-        );
+        return mapStore.saveMapNodeLayout(safeMapPath, Array.isArray(payload.nodes) ? payload.nodes : []);
     });
 
     registerPisiDomainCommand('map.operational.mutate.v1', (payload) => {
-        return mapOperationalStore.savePisiOperationalMapState(
-            assertPisiDomainMapPath(payload.mapPath),
-            payload.operation || payload.operationalPayload || {}
-        );
+        return mapOperationalStore.savePisiOperationalMapState(assertPisiDomainMapPath(payload.mapPath), payload.operation || payload.operationalPayload || {});
     });
 
     registerPisiDomainCommand('map.camera.save.v1', (payload) => {
@@ -322,10 +290,7 @@ function installPisiDomainContracts() {
         if (!cameraResult.ok) return cameraResult;
         const operation = payload.operationalPayload || payload.camera?.operationalPayload;
         if (!operation) return cameraResult;
-        const operationalResult = executePisiDomainCommand(
-            'map.operational.mutate.v1',
-            { mapPath: safeMapPath, operation }
-        );
+        const operationalResult = executePisiDomainCommand('map.operational.mutate.v1', { mapPath: safeMapPath, operation });
         if (!operationalResult.ok) return operationalResult;
         return {
             ...cameraResult,
@@ -335,10 +300,7 @@ function installPisiDomainContracts() {
 
     registerPisiDomainCommand('map.reference.detach.v1', (payload) => {
         const safeMapPath = assertPisiDomainMapPath(payload.mapPath);
-        const detached = structuredNodes.detachPisiMapReference(
-            safeMapPath,
-            String(payload.nodeId || '')
-        );
+        const detached = structuredNodes.detachPisiMapReference(safeMapPath, String(payload.nodeId || ''));
         if (!detached.ok) return detached;
         const refreshed = mapSemanticOperations.getPisiMapSemanticProjection(safeMapPath);
         return {
@@ -348,9 +310,7 @@ function installPisiDomainContracts() {
     });
 
     registerPisiDomainCommand('map.node.create.v1', (payload) => {
-        return documentStore.createNodeUnderMap(
-            assertPisiDomainMapPath(payload.mapPath)
-        );
+        return documentStore.createNodeUnderMap(assertPisiDomainMapPath(payload.mapPath));
     });
 
     registerPisiDomainCommand('project.item.rename.v1', (payload) => {
@@ -358,36 +318,20 @@ function installPisiDomainContracts() {
             type: 'file',
             extensions: ['.map', '.node']
         });
-        return attachRequiredPisiTaskReferenceRewrite(
-            documentStore.renamePisiFile(safeOldPath, payload.newBaseName)
-        );
+        return attachRequiredPisiTaskReferenceRewrite(documentStore.renamePisiFile(safeOldPath, payload.newBaseName));
     });
 
     registerPisiDomainCommand('project.item.move.v1', (payload) => {
         const safeSourcePath = electronIpc.assertProjectPath(payload.sourcePath);
-        const safeDestinationPath = electronIpc.assertProjectPath(
-            payload.destinationFolderPath,
-            { type: 'directory' }
-        );
-        if (
-            electronIpc.normalizePathForCompare(safeSourcePath) ===
-            electronIpc.normalizePathForCompare(globalThis.activeProjectFolder)
-        ) {
+        const safeDestinationPath = electronIpc.assertProjectPath(payload.destinationFolderPath, { type: 'directory' });
+        if (electronIpc.normalizePathForCompare(safeSourcePath) === electronIpc.normalizePathForCompare(globalThis.activeProjectFolder)) {
             throw new Error('Aktif proje kökü taşınamaz.');
         }
         const safeOptions = { ...(payload.options || {}) };
         if (safeOptions.parentMapPath) {
-            safeOptions.parentMapPath = assertPisiDomainMapPath(
-                safeOptions.parentMapPath
-            );
+            safeOptions.parentMapPath = assertPisiDomainMapPath(safeOptions.parentMapPath);
         }
-        return attachRequiredPisiTaskReferenceRewrite(
-            mapStore.movePisiItem(
-                safeSourcePath,
-                safeDestinationPath,
-                safeOptions
-            )
-        );
+        return attachRequiredPisiTaskReferenceRewrite(mapStore.movePisiItem(safeSourcePath, safeDestinationPath, safeOptions));
     });
 
     registerPisiDomainCommand('project.item.delete.v1', async (payload) => {
@@ -400,10 +344,7 @@ function installPisiDomainContracts() {
 
     registerPisiDomainCommand('project.path.delete.v1', async (payload) => {
         const safeTargetPath = electronIpc.assertProjectPath(payload.targetPath);
-        if (
-            electronIpc.normalizePathForCompare(safeTargetPath) ===
-            electronIpc.normalizePathForCompare(globalThis.activeProjectFolder)
-        ) {
+        if (electronIpc.normalizePathForCompare(safeTargetPath) === electronIpc.normalizePathForCompare(globalThis.activeProjectFolder)) {
             throw new Error('Aktif proje kökü bu işlemle silinemez.');
         }
         atomicMutation.capturePisiAtomicPathBeforeChange(safeTargetPath);
@@ -521,105 +462,70 @@ function bindPisiDomainCompatibilityIpc() {
 
     ipcMain.removeHandler('project:upsert-map-connection');
     ipcMain.handle('project:upsert-map-connection', (_event, mapPath, edge) => {
-        return electronIpc.projectOperation(() => executePisiDomainCommand(
-            'map.relationship.upsert.v1',
-            { mapPath, edge }
-        ));
+        return electronIpc.projectOperation(() => executePisiDomainCommand('map.relationship.upsert.v1', { mapPath, edge }));
     });
 
     ipcMain.removeHandler('project:delete-map-connection');
     ipcMain.handle('project:delete-map-connection', (_event, mapPath, edgeId) => {
-        return electronIpc.projectOperation(() => executePisiDomainCommand(
-            'map.relationship.delete.v1',
-            { mapPath, edgeId }
-        ));
+        return electronIpc.projectOperation(() => executePisiDomainCommand('map.relationship.delete.v1', { mapPath, edgeId }));
     });
 
     ipcMain.removeHandler('project:reparent-map-node');
     ipcMain.handle('project:reparent-map-node', (_event, mapPath, childId, parentId) => {
-        return electronIpc.projectOperation(() => executePisiDomainCommand(
-            'map.relationship.reparent.v1',
-            { mapPath, childId, parentId }
-        ));
+        return electronIpc.projectOperation(() => executePisiDomainCommand('map.relationship.reparent.v1', { mapPath, childId, parentId }));
     });
 
     ipcMain.removeHandler('project:save-map-layout');
     ipcMain.handle('project:save-map-layout', (_event, mapPath, nodeLayouts) => {
-        return electronIpc.projectOperation(() => executePisiDomainCommand(
-            'map.layout.save.v1',
-            { mapPath, nodes: nodeLayouts }
-        ));
+        return electronIpc.projectOperation(() => executePisiDomainCommand('map.layout.save.v1', { mapPath, nodes: nodeLayouts }));
     });
 
     ipcMain.removeHandler('project:save-map-camera');
     ipcMain.handle('project:save-map-camera', (_event, mapPath, camera = {}) => {
-        return electronIpc.projectOperation(() => executePisiDomainCommand(
-            'map.camera.save.v1',
-            {
+        return electronIpc.projectOperation(() =>
+            executePisiDomainCommand('map.camera.save.v1', {
                 mapPath,
                 camera,
                 operationalPayload: camera?.operationalPayload
-            }
-        ));
+            })
+        );
     });
 
     ipcMain.removeHandler('project:detach-map-reference');
     ipcMain.handle('project:detach-map-reference', (_event, mapPath, nodeId) => {
-        return electronIpc.projectOperation(() => executePisiDomainCommand(
-            'map.reference.detach.v1',
-            { mapPath, nodeId }
-        ));
+        return electronIpc.projectOperation(() => executePisiDomainCommand('map.reference.detach.v1', { mapPath, nodeId }));
     });
 
     ipcMain.removeHandler('project:create-node-under-map');
     ipcMain.handle('project:create-node-under-map', (_event, mapPath) => {
-        return electronIpc.projectOperation(() => executePisiDomainCommand(
-            'map.node.create.v1',
-            { mapPath }
-        ));
+        return electronIpc.projectOperation(() => executePisiDomainCommand('map.node.create.v1', { mapPath }));
     });
 
     ipcMain.removeHandler('project:rename-pisi-file');
     ipcMain.handle('project:rename-pisi-file', (_event, oldPath, newBaseName) => {
-        return electronIpc.projectOperation(() => executePisiDomainCommand(
-            'project.item.rename.v1',
-            { oldPath, newBaseName }
-        ));
+        return electronIpc.projectOperation(() => executePisiDomainCommand('project.item.rename.v1', { oldPath, newBaseName }));
     });
 
     ipcMain.removeHandler('project:move-pisi-item');
-    ipcMain.handle(
-        'project:move-pisi-item',
-        (_event, sourcePath, destinationFolderPath, options) => {
-            return electronIpc.projectOperation(() => executePisiDomainCommand(
-                'project.item.move.v1',
-                { sourcePath, destinationFolderPath, options: options || {} }
-            ));
-        }
-    );
+    ipcMain.handle('project:move-pisi-item', (_event, sourcePath, destinationFolderPath, options) => {
+        return electronIpc.projectOperation(() =>
+            executePisiDomainCommand('project.item.move.v1', { sourcePath, destinationFolderPath, options: options || {} })
+        );
+    });
 
     ipcMain.removeHandler('project:delete-pisi-file');
     ipcMain.handle('project:delete-pisi-file', (_event, targetPath) => {
-        return electronIpc.asyncProjectOperation(() => executePisiDomainCommand(
-            'project.item.delete.v1',
-            { targetPath }
-        ));
+        return electronIpc.asyncProjectOperation(() => executePisiDomainCommand('project.item.delete.v1', { targetPath }));
     });
 
     ipcMain.removeHandler('project:delete-node-from-map');
     ipcMain.handle('project:delete-node-from-map', (_event, nodePath) => {
-        return electronIpc.asyncProjectOperation(() => executePisiDomainCommand(
-            'project.item.delete.v1',
-            { targetPath: nodePath }
-        ));
+        return electronIpc.asyncProjectOperation(() => executePisiDomainCommand('project.item.delete.v1', { targetPath: nodePath }));
     });
 
     ipcMain.removeHandler('project:delete-path');
     ipcMain.handle('project:delete-path', (_event, targetPath) => {
-        return electronIpc.asyncProjectOperation(() => executePisiDomainCommand(
-            'project.path.delete.v1',
-            { targetPath }
-        ));
+        return electronIpc.asyncProjectOperation(() => executePisiDomainCommand('project.path.delete.v1', { targetPath }));
     });
 }
 

@@ -1,97 +1,97 @@
 name: Diagnose Pisi v0.11.0 Build
 
 on:
-  push:
-    branches:
-      - chatgpt/tag-v0.11.0-20260820
-    paths:
-      - .github/workflows/diagnose-build-v0.11.0.yml
+    push:
+        branches:
+            - chatgpt/tag-v0.11.0-20260820
+        paths:
+            - .github/workflows/diagnose-build-v0.11.0.yml
 
 permissions:
-  contents: write
+    contents: write
 
 jobs:
-  diagnose-build:
-    runs-on: windows-latest
-    timeout-minutes: 60
-    env:
-      HELPER_BRANCH: chatgpt/tag-v0.11.0-20260820
-    steps:
-      - name: Checkout release commit
-        uses: actions/checkout@v4
-        with:
-          ref: c49c7a415cfdfb84d8af1b41ae771d527ee34c83
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Diagnose Windows builds
-        id: builds
-        shell: pwsh
-        continue-on-error: true
-        run: |
-          $ErrorActionPreference = 'Continue'
-          $version = '0.11.0'
-          $installerExit = -1
-          $installerAssets = $false
-          $portableExit = -1
-          $portableAssets = $false
-
-          & npm run dist:installer -- --x64 --arm64 --publish never *> installer.log
-          $installerExit = $LASTEXITCODE
-          Get-Content installer.log
-          if ($installerExit -eq 0) {
-            $installerAssets = (Test-Path "dist/Pisi-$version-win-x64.exe") -and (Test-Path "dist/Pisi-$version-win-arm64.exe")
-          }
-
-          if ($installerExit -eq 0 -and $installerAssets) {
-            Remove-Item 'dist/*.exe' -Force -ErrorAction SilentlyContinue
-            & npm run dist:portable -- --x64 --arm64 --publish never *> portable.log
-            $portableExit = $LASTEXITCODE
-            Get-Content portable.log
-            if ($portableExit -eq 0) {
-              $portableAssets = (Test-Path "dist/Pisi-$version-win-x64.exe") -and (Test-Path "dist/Pisi-$version-win-arm64.exe")
-            }
-          } else {
-            'portable build skipped' | Set-Content portable.log
-          }
-
-          "installer_exit=$installerExit" | Set-Content build-status.txt
-          "installer_assets=$installerAssets" | Add-Content build-status.txt
-          "portable_exit=$portableExit" | Add-Content build-status.txt
-          "portable_assets=$portableAssets" | Add-Content build-status.txt
-
-          if ($installerExit -ne 0 -or -not $installerAssets -or $portableExit -ne 0 -or -not $portableAssets) {
-            exit 1
-          }
-
-      - name: Record build diagnostics
-        if: always()
-        shell: pwsh
+    diagnose-build:
+        runs-on: windows-latest
+        timeout-minutes: 60
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if (-not (Test-Path build-status.txt)) { 'build-status missing' | Set-Content build-status.txt }
-          if (-not (Test-Path installer.log)) { 'installer log missing' | Set-Content installer.log }
-          if (-not (Test-Path portable.log)) { 'portable log missing' | Set-Content portable.log }
+            HELPER_BRANCH: chatgpt/tag-v0.11.0-20260820
+        steps:
+            - name: Checkout release commit
+              uses: actions/checkout@v4
+              with:
+                  ref: c49c7a415cfdfb84d8af1b41ae771d527ee34c83
 
-          $files = @{
-            '.release-build-diagnostic-v0.11.0.txt' = 'build-status.txt'
-            '.release-installer-v0.11.0.log' = 'installer.log'
-            '.release-portable-v0.11.0.log' = 'portable.log'
-          }
-          foreach ($entry in $files.GetEnumerator()) {
-            $bytes = [System.IO.File]::ReadAllBytes($entry.Value)
-            $content = [Convert]::ToBase64String($bytes)
-            gh api --method PUT "repos/$env:GITHUB_REPOSITORY/contents/$($entry.Key)" `
-              -f message="Record $($entry.Key)" `
-              -f content="$content" `
-              -f branch="$env:HELPER_BRANCH"
-            if ($LASTEXITCODE -ne 0) { throw "Failed to write $($entry.Key)" }
-          }
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: npm
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Diagnose Windows builds
+              id: builds
+              shell: pwsh
+              continue-on-error: true
+              run: |
+                  $ErrorActionPreference = 'Continue'
+                  $version = '0.11.0'
+                  $installerExit = -1
+                  $installerAssets = $false
+                  $portableExit = -1
+                  $portableAssets = $false
+
+                  & npm run dist:installer -- --x64 --arm64 --publish never *> installer.log
+                  $installerExit = $LASTEXITCODE
+                  Get-Content installer.log
+                  if ($installerExit -eq 0) {
+                    $installerAssets = (Test-Path "dist/Pisi-$version-win-x64.exe") -and (Test-Path "dist/Pisi-$version-win-arm64.exe")
+                  }
+
+                  if ($installerExit -eq 0 -and $installerAssets) {
+                    Remove-Item 'dist/*.exe' -Force -ErrorAction SilentlyContinue
+                    & npm run dist:portable -- --x64 --arm64 --publish never *> portable.log
+                    $portableExit = $LASTEXITCODE
+                    Get-Content portable.log
+                    if ($portableExit -eq 0) {
+                      $portableAssets = (Test-Path "dist/Pisi-$version-win-x64.exe") -and (Test-Path "dist/Pisi-$version-win-arm64.exe")
+                    }
+                  } else {
+                    'portable build skipped' | Set-Content portable.log
+                  }
+
+                  "installer_exit=$installerExit" | Set-Content build-status.txt
+                  "installer_assets=$installerAssets" | Add-Content build-status.txt
+                  "portable_exit=$portableExit" | Add-Content build-status.txt
+                  "portable_assets=$portableAssets" | Add-Content build-status.txt
+
+                  if ($installerExit -ne 0 -or -not $installerAssets -or $portableExit -ne 0 -or -not $portableAssets) {
+                    exit 1
+                  }
+
+            - name: Record build diagnostics
+              if: always()
+              shell: pwsh
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  if (-not (Test-Path build-status.txt)) { 'build-status missing' | Set-Content build-status.txt }
+                  if (-not (Test-Path installer.log)) { 'installer log missing' | Set-Content installer.log }
+                  if (-not (Test-Path portable.log)) { 'portable log missing' | Set-Content portable.log }
+
+                  $files = @{
+                    '.release-build-diagnostic-v0.11.0.txt' = 'build-status.txt'
+                    '.release-installer-v0.11.0.log' = 'installer.log'
+                    '.release-portable-v0.11.0.log' = 'portable.log'
+                  }
+                  foreach ($entry in $files.GetEnumerator()) {
+                    $bytes = [System.IO.File]::ReadAllBytes($entry.Value)
+                    $content = [Convert]::ToBase64String($bytes)
+                    gh api --method PUT "repos/$env:GITHUB_REPOSITORY/contents/$($entry.Key)" `
+                      -f message="Record $($entry.Key)" `
+                      -f content="$content" `
+                      -f branch="$env:HELPER_BRANCH"
+                    if ($LASTEXITCODE -ne 0) { throw "Failed to write $($entry.Key)" }
+                  }

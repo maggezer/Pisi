@@ -10,12 +10,12 @@
 }
 
 .add-node-under-map-btn {
-    background-image: url("../assets/icons/create-node.svg");
+    background-image: url('../assets/icons/create-node.svg');
 }
 
 .add-node-under-map-btn:hover,
 .add-node-under-map-btn:focus-visible {
-    background-image: url("../assets/icons/create-node.svg");
+    background-image: url('../assets/icons/create-node.svg');
     background-color: rgba(243, 156, 18, 0.16);
     border-color: #f39c12;
     color: #ffb347;
@@ -23,11 +23,11 @@
 }
 
 .tree-row-actions:not(:has(.add-node-under-map-btn)) .delete-tree-item-btn {
-    background-image: url("../assets/icons/delete-node.svg");
+    background-image: url('../assets/icons/delete-node.svg');
 }
 
 .tree-row-actions:has(.add-node-under-map-btn) .delete-tree-item-btn {
-    background-image: url("../assets/icons/delete-map.svg");
+    background-image: url('../assets/icons/delete-map.svg');
 }
 
 .pisi-project-action-icon {
@@ -42,15 +42,15 @@
 }
 
 .pisi-project-action-icon-map {
-    background-image: url("../assets/icons/create-map.svg");
+    background-image: url('../assets/icons/create-map.svg');
 }
 
 .pisi-project-action-icon-node {
-    background-image: url("../assets/icons/create-node.svg");
+    background-image: url('../assets/icons/create-node.svg');
 }
 
 .pisi-project-action-icon-project {
-    background-image: url("../assets/icons/change-project.svg");
+    background-image: url('../assets/icons/change-project.svg');
 }
 
 .add-node-under-map-btn .tree-action-img,
@@ -67,7 +67,7 @@
 
 #left-panel input,
 #left-panel textarea,
-#left-panel [contenteditable="true"],
-#left-panel [contenteditable="plaintext-only"] {
+#left-panel [contenteditable='true'],
+#left-panel [contenteditable='plaintext-only'] {
     cursor: text;
 }

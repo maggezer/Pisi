@@ -62,9 +62,7 @@ function normalizeMapEdge(edge) {
     const targetPort = ports.has(edge.targetPort) ? edge.targetPort : 'top';
 
     const normalizedEdge = {
-        id: /^edge_[A-Za-z0-9_-]{1,101}$/.test(String(edge.id || ''))
-            ? String(edge.id)
-            : `edge_${crypto.randomUUID()}`,
+        id: /^edge_[A-Za-z0-9_-]{1,101}$/.test(String(edge.id || '')) ? String(edge.id) : `edge_${crypto.randomUUID()}`,
         sourceId,
         targetId,
 
@@ -78,9 +76,7 @@ function normalizeMapEdge(edge) {
         targetRole
     };
 
-    const customization = normalizePisiMapEdgeCustomization(
-        edge.customization
-    );
+    const customization = normalizePisiMapEdgeCustomization(edge.customization);
     if (Object.keys(customization).length) {
         normalizedEdge.customization = customization;
     }
@@ -89,11 +85,7 @@ function normalizeMapEdge(edge) {
 }
 
 function isHierarchyEdge(edge) {
-    return (
-        edge?.type === 'down-hub' &&
-        edge?.sourceRole === 'down-hub' &&
-        edge?.targetRole === 'up-hub'
-    );
+    return edge?.type === 'down-hub' && edge?.sourceRole === 'down-hub' && edge?.targetRole === 'up-hub';
 }
 
 function convertEdgeToStream(edge) {
@@ -142,13 +134,7 @@ function getPisiEdgeSemanticKey(edge) {
         return `co-level:${pair[0]}:${pair[1]}`;
     }
 
-    return [
-        normalized.type,
-        normalized.sourceId,
-        normalized.targetId,
-        normalized.sourceRole,
-        normalized.targetRole
-    ].join(':');
+    return [normalized.type, normalized.sourceId, normalized.targetId, normalized.sourceRole, normalized.targetRole].join(':');
 }
 
 function wouldCreatePisiHierarchyCycle(parentByChild, parentId, childId) {
@@ -177,13 +163,7 @@ function normalizePisiMapEdges(rawEdges = [], validNodeIds = null) {
             continue;
         }
 
-        if (
-            validNodeIds &&
-            (
-                !validNodeIds.has(edge.sourceId) ||
-                !validNodeIds.has(edge.targetId)
-            )
-        ) {
+        if (validNodeIds && (!validNodeIds.has(edge.sourceId) || !validNodeIds.has(edge.targetId))) {
             warnings.push(`Eksik node referanslı bağlantı atlandı: ${edge.id}`);
             continue;
         }
@@ -191,26 +171,12 @@ function normalizePisiMapEdges(rawEdges = [], validNodeIds = null) {
         if (isHierarchyEdge(edge)) {
             const existingParentId = parentByChild.get(edge.targetId);
 
-            if (
-                existingParentId &&
-                existingParentId !== edge.sourceId
-            ) {
+            if (existingParentId && existingParentId !== edge.sourceId) {
                 edge = convertEdgeToStream(edge);
-                warnings.push(
-                    `İkinci parent bağlantısı stream olarak kurtarıldı: ${edge.id}`
-                );
-            } else if (
-                !existingParentId &&
-                wouldCreatePisiHierarchyCycle(
-                    parentByChild,
-                    edge.sourceId,
-                    edge.targetId
-                )
-            ) {
+                warnings.push(`İkinci parent bağlantısı stream olarak kurtarıldı: ${edge.id}`);
+            } else if (!existingParentId && wouldCreatePisiHierarchyCycle(parentByChild, edge.sourceId, edge.targetId)) {
                 edge = convertEdgeToStream(edge);
-                warnings.push(
-                    `Döngü oluşturan bağlantı stream olarak kurtarıldı: ${edge.id}`
-                );
+                warnings.push(`Döngü oluşturan bağlantı stream olarak kurtarıldı: ${edge.id}`);
             } else if (!existingParentId) {
                 parentByChild.set(edge.targetId, edge.sourceId);
             }
@@ -340,10 +306,7 @@ function resolvePisiAtomicBackupPath(targetPath, options = {}) {
     if (options.backup === false) return null;
 
     const projectFolder = globalThis.activeProjectFolder;
-    if (
-        projectFolder &&
-        backupStorage.isPisiProjectPath(projectFolder, targetPath)
-    ) {
+    if (projectFolder && backupStorage.isPisiProjectPath(projectFolder, targetPath)) {
         if (backupStorage.isPisiBackupStoragePath(projectFolder, targetPath)) {
             return null;
         }
@@ -357,18 +320,11 @@ function writeFileAtomic(filePath, content, options = {}) {
     const targetPath = path.resolve(filePath);
     const directoryPath = path.dirname(targetPath);
     const baseName = path.basename(targetPath);
-    const tempPath = path.join(
-        directoryPath,
-        `.${baseName}.${process.pid}.${crypto.randomUUID()}.tmp`
-    );
+    const tempPath = path.join(directoryPath, `.${baseName}.${process.pid}.${crypto.randomUUID()}.tmp`);
     const backupPath = resolvePisiAtomicBackupPath(targetPath, options);
     let backupTempPath = null;
     let descriptor = null;
-    markInternalFileChange(
-        targetPath,
-        tempPath,
-        ...(backupPath ? [backupPath] : [])
-    );
+    markInternalFileChange(targetPath, tempPath, ...(backupPath ? [backupPath] : []));
 
     try {
         descriptor = fs.openSync(tempPath, 'wx', 0o600);
@@ -388,11 +344,7 @@ function writeFileAtomic(filePath, content, options = {}) {
 
         renamePathInternal(tempPath, targetPath);
         fsyncDirectoryBestEffort(directoryPath);
-        sealInternalFileChange(
-            targetPath,
-            tempPath,
-            ...(backupPath ? [backupPath] : [])
-        );
+        sealInternalFileChange(targetPath, tempPath, ...(backupPath ? [backupPath] : []));
     } catch (error) {
         if (descriptor !== null) {
             try {
@@ -407,10 +359,7 @@ function writeFileAtomic(filePath, content, options = {}) {
                 }
             } catch {}
         }
-        sealInternalFileChange(
-            tempPath,
-            ...(backupTempPath ? [backupTempPath] : [])
-        );
+        sealInternalFileChange(tempPath, ...(backupTempPath ? [backupTempPath] : []));
 
         throw error;
     }
@@ -435,9 +384,7 @@ function writePisiDocumentsTransaction(changes = []) {
     const originals = uniqueChanges.map((change) => ({
         filePath: change.filePath,
         existed: fs.existsSync(change.filePath),
-        content: fs.existsSync(change.filePath)
-            ? fs.readFileSync(change.filePath, 'utf-8')
-            : null
+        content: fs.existsSync(change.filePath) ? fs.readFileSync(change.filePath, 'utf-8') : null
     }));
     const written = [];
 
@@ -450,34 +397,27 @@ function writePisiDocumentsTransaction(changes = []) {
         const rollbackErrors = [];
 
         for (const original of originals.reverse()) {
-            if (!written.some((writtenPath) => {
-                return normalizePathForCompare(writtenPath) ===
-                    normalizePathForCompare(original.filePath);
-            })) {
+            if (
+                !written.some((writtenPath) => {
+                    return normalizePathForCompare(writtenPath) === normalizePathForCompare(original.filePath);
+                })
+            ) {
                 continue;
             }
 
             try {
                 if (original.existed) {
-                    writeFileAtomic(
-                        original.filePath,
-                        original.content,
-                        { backup: false }
-                    );
+                    writeFileAtomic(original.filePath, original.content, { backup: false });
                 } else if (fs.existsSync(original.filePath)) {
                     fs.unlinkSync(original.filePath);
                 }
             } catch (rollbackError) {
-                rollbackErrors.push(
-                    `${original.filePath}: ${rollbackError.message}`
-                );
+                rollbackErrors.push(`${original.filePath}: ${rollbackError.message}`);
             }
         }
 
         if (rollbackErrors.length) {
-            throw new Error(
-                `${error.message} Geri alma tamamlanamadı: ${rollbackErrors.join(' | ')}`
-            );
+            throw new Error(`${error.message} Geri alma tamamlanamadı: ${rollbackErrors.join(' | ')}`);
         }
 
         throw error;
@@ -487,21 +427,10 @@ function writePisiDocumentsTransaction(changes = []) {
 function backupCorruptPisiFile(filePath) {
     try {
         const raw = fs.readFileSync(filePath);
-        const digest = crypto
-            .createHash('sha256')
-            .update(raw)
-            .digest('hex')
-            .slice(0, 12);
+        const digest = crypto.createHash('sha256').update(raw).digest('hex').slice(0, 12);
         const projectFolder = globalThis.activeProjectFolder;
-        const managedBackupPath = projectFolder
-            ? backupStorage.getPisiCorruptBackupPath(
-                projectFolder,
-                filePath,
-                digest
-            )
-            : null;
-        const backupPath = managedBackupPath ||
-            `${filePath}.corrupt-${digest}.bak`;
+        const managedBackupPath = projectFolder ? backupStorage.getPisiCorruptBackupPath(projectFolder, filePath, digest) : null;
+        const backupPath = managedBackupPath || `${filePath}.corrupt-${digest}.bak`;
 
         backupStorage.ensurePisiBackupParent(backupPath);
         if (!fs.existsSync(backupPath)) {
@@ -526,22 +455,14 @@ function findExistingSidecarById(dir, ext, id) {
     try {
         const entries = fs.readdirSync(dir, { withFileTypes: true });
         const matches = entries.filter((entry) => {
-            return (
-                entry.isDirectory() &&
-                entry.name.startsWith(prefix) &&
-                entry.name.endsWith(suffix)
-            );
+            return entry.isDirectory() && entry.name.startsWith(prefix) && entry.name.endsWith(suffix);
         });
 
         if (matches.length > 1) {
-            throw new Error(
-                `Aynı kimliğe bağlı birden fazla yan klasör bulundu: ${safeId}`
-            );
+            throw new Error(`Aynı kimliğe bağlı birden fazla yan klasör bulundu: ${safeId}`);
         }
 
-        return matches.length === 1
-            ? path.join(dir, matches[0].name)
-            : null;
+        return matches.length === 1 ? path.join(dir, matches[0].name) : null;
     } catch (error) {
         if (String(error.message || '').includes('birden fazla yan klasör')) {
             throw error;
@@ -552,89 +473,131 @@ function findExistingSidecarById(dir, ext, id) {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "normalizePisiCustomizationColor": {
+    normalizePisiCustomizationColor: {
         enumerable: true,
-        get() { return normalizePisiCustomizationColor; }
+        get() {
+            return normalizePisiCustomizationColor;
+        }
     },
-    "normalizePisiMapNodeCustomization": {
+    normalizePisiMapNodeCustomization: {
         enumerable: true,
-        get() { return normalizePisiMapNodeCustomization; }
+        get() {
+            return normalizePisiMapNodeCustomization;
+        }
     },
-    "normalizePisiMapEdgeCustomization": {
+    normalizePisiMapEdgeCustomization: {
         enumerable: true,
-        get() { return normalizePisiMapEdgeCustomization; }
+        get() {
+            return normalizePisiMapEdgeCustomization;
+        }
     },
-    "normalizeMapEdge": {
+    normalizeMapEdge: {
         enumerable: true,
-        get() { return normalizeMapEdge; }
+        get() {
+            return normalizeMapEdge;
+        }
     },
-    "isHierarchyEdge": {
+    isHierarchyEdge: {
         enumerable: true,
-        get() { return isHierarchyEdge; }
+        get() {
+            return isHierarchyEdge;
+        }
     },
-    "convertEdgeToStream": {
+    convertEdgeToStream: {
         enumerable: true,
-        get() { return convertEdgeToStream; }
+        get() {
+            return convertEdgeToStream;
+        }
     },
-    "enforceSingleParentForTargetInMap": {
+    enforceSingleParentForTargetInMap: {
         enumerable: true,
-        get() { return enforceSingleParentForTargetInMap; }
+        get() {
+            return enforceSingleParentForTargetInMap;
+        }
     },
-    "getPisiEdgeSemanticKey": {
+    getPisiEdgeSemanticKey: {
         enumerable: true,
-        get() { return getPisiEdgeSemanticKey; }
+        get() {
+            return getPisiEdgeSemanticKey;
+        }
     },
-    "wouldCreatePisiHierarchyCycle": {
+    wouldCreatePisiHierarchyCycle: {
         enumerable: true,
-        get() { return wouldCreatePisiHierarchyCycle; }
+        get() {
+            return wouldCreatePisiHierarchyCycle;
+        }
     },
-    "normalizePisiMapEdges": {
+    normalizePisiMapEdges: {
         enumerable: true,
-        get() { return normalizePisiMapEdges; }
+        get() {
+            return normalizePisiMapEdges;
+        }
     },
-    "resetNodeConnectionTypes": {
+    resetNodeConnectionTypes: {
         enumerable: true,
-        get() { return resetNodeConnectionTypes; }
+        get() {
+            return resetNodeConnectionTypes;
+        }
     },
-    "getPisiSidecarName": {
+    getPisiSidecarName: {
         enumerable: true,
-        get() { return getPisiSidecarName; }
+        get() {
+            return getPisiSidecarName;
+        }
     },
-    "createPisiDocumentData": {
+    createPisiDocumentData: {
         enumerable: true,
-        get() { return createPisiDocumentData; }
+        get() {
+            return createPisiDocumentData;
+        }
     },
-    "readJsonFileResult": {
+    readJsonFileResult: {
         enumerable: true,
-        get() { return readJsonFileResult; }
+        get() {
+            return readJsonFileResult;
+        }
     },
-    "readJsonFileSafe": {
+    readJsonFileSafe: {
         enumerable: true,
-        get() { return readJsonFileSafe; }
+        get() {
+            return readJsonFileSafe;
+        }
     },
-    "fsyncDirectoryBestEffort": {
+    fsyncDirectoryBestEffort: {
         enumerable: true,
-        get() { return fsyncDirectoryBestEffort; }
+        get() {
+            return fsyncDirectoryBestEffort;
+        }
     },
-    "writeFileAtomic": {
+    writeFileAtomic: {
         enumerable: true,
-        get() { return writeFileAtomic; }
+        get() {
+            return writeFileAtomic;
+        }
     },
-    "writePisiDocument": {
+    writePisiDocument: {
         enumerable: true,
-        get() { return writePisiDocument; }
+        get() {
+            return writePisiDocument;
+        }
     },
-    "writePisiDocumentsTransaction": {
+    writePisiDocumentsTransaction: {
         enumerable: true,
-        get() { return writePisiDocumentsTransaction; }
+        get() {
+            return writePisiDocumentsTransaction;
+        }
     },
-    "backupCorruptPisiFile": {
+    backupCorruptPisiFile: {
         enumerable: true,
-        get() { return backupCorruptPisiFile; }
+        get() {
+            return backupCorruptPisiFile;
+        }
     },
-    "findExistingSidecarById": {
+    findExistingSidecarById: {
         enumerable: true,
-        get() { return findExistingSidecarById; }
+        get() {
+            return findExistingSidecarById;
+        }
     }
 });
-registerMainModule("main.filesystemCore", moduleApi);
+registerMainModule('main.filesystemCore', moduleApi);

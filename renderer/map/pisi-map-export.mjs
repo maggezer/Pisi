@@ -1,4 +1,4 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 
 const PISI_MAP_EXPORT_PADDING = 220;
 const PISI_MAP_EXPORT_MAX_DIMENSION = 8192;
@@ -21,10 +21,7 @@ function getPisiMapExportNumber(value, fallback = 0) {
 
 function getPisiMapExportColor(value, fallback) {
     const color = String(value || '').trim();
-    return !color || color === 'none' || color === 'transparent' ||
-        color === 'rgba(0, 0, 0, 0)'
-        ? fallback
-        : color;
+    return !color || color === 'none' || color === 'transparent' || color === 'rgba(0, 0, 0, 0)' ? fallback : color;
 }
 
 function isPisiMapExportNodeVisible(box) {
@@ -37,22 +34,14 @@ function isPisiMapExportNodeVisible(box) {
 }
 
 function collectPisiMapExportNodes() {
-    return [...document.querySelectorAll(
-        '#map-board .map-node-box[data-node-id]'
-    )].filter(isPisiMapExportNodeVisible).map((box) => {
+    return [...document.querySelectorAll('#map-board .map-node-box[data-node-id]')].filter(isPisiMapExportNodeVisible).map((box) => {
         const titleEl = box.querySelector('.map-node-title');
         const previewEl = box.querySelector('.map-node-preview');
         const boxStyle = getComputedStyle(box);
         const titleStyle = titleEl ? getComputedStyle(titleEl) : boxStyle;
         const previewStyle = previewEl ? getComputedStyle(previewEl) : boxStyle;
-        const width = Math.max(
-            1,
-            getPisiMapExportNumber(box.style.width, box.offsetWidth || 220)
-        );
-        const height = Math.max(
-            1,
-            getPisiMapExportNumber(box.style.height, box.offsetHeight || 92)
-        );
+        const width = Math.max(1, getPisiMapExportNumber(box.style.width, box.offsetWidth || 220));
+        const height = Math.max(1, getPisiMapExportNumber(box.style.height, box.offsetHeight || 92));
 
         return {
             id: String(box.dataset.nodeId || ''),
@@ -62,30 +51,15 @@ function collectPisiMapExportNodes() {
             height,
             title: titleEl?.textContent?.trim() || 'Node',
             preview: previewEl?.textContent?.trim() || '',
-            boxColor: getPisiMapExportColor(
-                boxStyle.backgroundColor,
-                '#252526'
-            ),
-            titleColor: getPisiMapExportColor(
-                titleStyle.color,
-                '#f39c12'
-            ),
-            previewColor: getPisiMapExportColor(
-                previewStyle.color,
-                '#aaaaaa'
-            ),
+            boxColor: getPisiMapExportColor(boxStyle.backgroundColor, '#252526'),
+            titleColor: getPisiMapExportColor(titleStyle.color, '#f39c12'),
+            previewColor: getPisiMapExportColor(previewStyle.color, '#aaaaaa'),
             titleFontFamily: titleStyle.fontFamily || '"Segoe UI", sans-serif',
             previewFontFamily: previewStyle.fontFamily || '"Segoe UI", sans-serif',
             titleFontWeight: titleStyle.fontWeight || '800',
             previewFontWeight: previewStyle.fontWeight || '600',
-            titleSize: Math.max(
-                9,
-                getPisiMapExportNumber(titleStyle.fontSize, 13)
-            ),
-            previewSize: Math.max(
-                8,
-                getPisiMapExportNumber(previewStyle.fontSize, 12)
-            )
+            titleSize: Math.max(9, getPisiMapExportNumber(titleStyle.fontSize, 13)),
+            previewSize: Math.max(8, getPisiMapExportNumber(previewStyle.fontSize, 12))
         };
     });
 }
@@ -99,14 +73,8 @@ function getPisiMapExportBounds(nodes) {
     return {
         x: Math.floor(minX - PISI_MAP_EXPORT_PADDING),
         y: Math.floor(minY - PISI_MAP_EXPORT_PADDING),
-        width: Math.max(
-            1,
-            Math.ceil(maxX - minX + PISI_MAP_EXPORT_PADDING * 2)
-        ),
-        height: Math.max(
-            1,
-            Math.ceil(maxY - minY + PISI_MAP_EXPORT_PADDING * 2)
-        )
+        width: Math.max(1, Math.ceil(maxX - minX + PISI_MAP_EXPORT_PADDING * 2)),
+        height: Math.max(1, Math.ceil(maxY - minY + PISI_MAP_EXPORT_PADDING * 2))
     };
 }
 
@@ -137,43 +105,29 @@ function offsetPisiMapExportPoint(point, direction, distance) {
     };
 }
 
-function makePisiMapExportConnectionPath(
-    sourceNode,
-    sourcePort,
-    targetNode,
-    targetPort,
-    edgeType
-) {
+function makePisiMapExportConnectionPath(sourceNode, sourcePort, targetNode, targetPort, edgeType) {
     const sourceDirection = getPisiMapExportPortDirection(sourcePort);
     const targetDirection = getPisiMapExportPortDirection(targetPort);
-    const source = offsetPisiMapExportPoint(
-        getPisiMapExportPortPoint(sourceNode, sourcePort),
-        sourceDirection,
-        edgeType === 'co-level' ? 9 : 2
-    );
-    const target = offsetPisiMapExportPoint(
-        getPisiMapExportPortPoint(targetNode, targetPort),
-        targetDirection,
-        9
-    );
+    const source = offsetPisiMapExportPoint(getPisiMapExportPortPoint(sourceNode, sourcePort), sourceDirection, edgeType === 'co-level' ? 9 : 2);
+    const target = offsetPisiMapExportPoint(getPisiMapExportPortPoint(targetNode, targetPort), targetDirection, 9);
     const distance = Math.hypot(target.x - source.x, target.y - source.y);
     const control = Math.max(40, Math.min(180, distance * 0.38));
     const c1 = offsetPisiMapExportPoint(source, sourceDirection, control);
     const c2 = offsetPisiMapExportPoint(target, targetDirection, control);
 
-    return `M ${source.x} ${source.y} C ${c1.x} ${c1.y}, ` +
-        `${c2.x} ${c2.y}, ${target.x} ${target.y}`;
+    return `M ${source.x} ${source.y} C ${c1.x} ${c1.y}, ` + `${c2.x} ${c2.y}, ${target.x} ${target.y}`;
 }
 
 function getPisiMapExportMeasureContext() {
     if (pisiMapExportMeasureContext) return pisiMapExportMeasureContext;
-    pisiMapExportMeasureContext = document.createElement('canvas')
-        .getContext('2d');
+    pisiMapExportMeasureContext = document.createElement('canvas').getContext('2d');
     return pisiMapExportMeasureContext;
 }
 
 function fitPisiMapExportLine(text, maxWidth, font) {
-    const value = String(text || '').replace(/\s+/g, ' ').trim();
+    const value = String(text || '')
+        .replace(/\s+/g, ' ')
+        .trim();
     const context = getPisiMapExportMeasureContext();
     if (!value || !context) return value;
     context.font = font;
@@ -213,9 +167,7 @@ function wrapPisiMapExportText(text, maxWidth, font, maxLines) {
             }
 
             if (line) lines.push(line);
-            line = context.measureText(word).width <= maxWidth
-                ? word
-                : fitPisiMapExportLine(word, maxWidth, font);
+            line = context.measureText(word).width <= maxWidth ? word : fitPisiMapExportLine(word, maxWidth, font);
             if (lines.length >= maxLines) break;
         }
 
@@ -224,29 +176,20 @@ function wrapPisiMapExportText(text, maxWidth, font, maxLines) {
     }
 
     if (lines.length === maxLines) {
-        const sourceWords = String(text || '').trim().split(/\s+/).length;
+        const sourceWords = String(text || '')
+            .trim()
+            .split(/\s+/).length;
         const lineWords = lines.join(' ').trim().split(/\s+/).length;
         if (sourceWords > lineWords && !lines[maxLines - 1].endsWith('…')) {
-            lines[maxLines - 1] = fitPisiMapExportLine(
-                `${lines[maxLines - 1]}…`,
-                maxWidth,
-                font
-            );
+            lines[maxLines - 1] = fitPisiMapExportLine(`${lines[maxLines - 1]}…`, maxWidth, font);
         }
     }
     return lines;
 }
 
 function getPisiMapExportEdgeColor(edge, livePath, isLight) {
-    const fallback = edge.type === 'co-level'
-        ? '#34ace0'
-        : edge.type === 'stream'
-            ? '#2ecc71'
-            : '#f39c12';
-    return getPisiMapExportColor(
-        livePath ? getComputedStyle(livePath).stroke : '',
-        isLight && edge.type === 'down-hub' ? '#c97900' : fallback
-    );
+    const fallback = edge.type === 'co-level' ? '#34ace0' : edge.type === 'stream' ? '#2ecc71' : '#f39c12';
+    return getPisiMapExportColor(livePath ? getComputedStyle(livePath).stroke : '', isLight && edge.type === 'down-hub' ? '#c97900' : fallback);
 }
 
 function buildPisiMapExportSvg() {
@@ -262,10 +205,7 @@ function buildPisiMapExportSvg() {
     const grid = isLight ? '#cfd4da' : '#333333';
     const cardBorder = isLight ? '#b9c0c8' : '#444444';
     const titleDivider = isLight ? '#cbd0d6' : '#333333';
-    const edges = typeof activeMapEdges !== 'undefined' &&
-        Array.isArray(activeMapEdges)
-        ? activeMapEdges
-        : [];
+    const edges = typeof activeMapEdges !== 'undefined' && Array.isArray(activeMapEdges) ? activeMapEdges : [];
     const markerDefs = [];
     const edgeMarkup = [];
 
@@ -274,101 +214,78 @@ function buildPisiMapExportSvg() {
         const targetNode = nodeById.get(String(edge.targetId || ''));
         if (!sourceNode || !targetNode) return;
 
-        const selector = `.map-edge-group[data-edge-id="${
-            CSS.escape(String(edge.id || ''))
-        }"] .map-edge`;
+        const selector = `.map-edge-group[data-edge-id="${CSS.escape(String(edge.id || ''))}"] .map-edge`;
         const livePath = document.querySelector(selector);
         if (!livePath) return;
 
-        const type = ['co-level', 'stream'].includes(edge.type)
-            ? edge.type
-            : 'down-hub';
+        const type = ['co-level', 'stream'].includes(edge.type) ? edge.type : 'down-hub';
         const color = getPisiMapExportEdgeColor(edge, livePath, isLight);
         const markerId = `pisi-export-arrow-${index}`;
-        const pathData = makePisiMapExportConnectionPath(
-            sourceNode,
-            edge.sourcePort || 'right',
-            targetNode,
-            edge.targetPort || 'left',
-            type
-        );
+        const pathData = makePisiMapExportConnectionPath(sourceNode, edge.sourcePort || 'right', targetNode, edge.targetPort || 'left', type);
 
         markerDefs.push(
             `<marker id="${markerId}" viewBox="0 0 10 10" refX="9" ` +
-            'refY="5" markerWidth="4" markerHeight="4" ' +
-            'orient="auto-start-reverse" markerUnits="strokeWidth">' +
-            `<path d="M 0 0 L 10 5 L 0 10 z" fill="${
-                escapePisiMapExportXml(color)
-            }"/></marker>`
+                'refY="5" markerWidth="4" markerHeight="4" ' +
+                'orient="auto-start-reverse" markerUnits="strokeWidth">' +
+                `<path d="M 0 0 L 10 5 L 0 10 z" fill="${escapePisiMapExportXml(color)}"/></marker>`
         );
         edgeMarkup.push(
-            `<path d="${pathData}" fill="none" stroke="${
-                escapePisiMapExportXml(color)
-            }" stroke-width="2.7" stroke-linecap="round" ` +
-            `stroke-linejoin="round" marker-end="url(#${markerId})"` +
-            (type === 'co-level'
-                ? ` marker-start="url(#${markerId})"`
-                : '') +
-            '/>'
+            `<path d="${pathData}" fill="none" stroke="${escapePisiMapExportXml(color)}" stroke-width="2.7" stroke-linecap="round" ` +
+                `stroke-linejoin="round" marker-end="url(#${markerId})"` +
+                (type === 'co-level' ? ` marker-start="url(#${markerId})"` : '') +
+                '/>'
         );
     });
 
-    const nodeMarkup = nodes.map((node) => {
-        const titleFont = `${node.titleFontWeight} ${node.titleSize}px ${
-            node.titleFontFamily
-        }`;
-        const previewFont = `${node.previewFontWeight} ${node.previewSize}px ${
-            node.previewFontFamily
-        }`;
-        const title = fitPisiMapExportLine(
-            node.title,
-            Math.max(20, node.width - 32),
-            titleFont
-        );
-        const previewLines = wrapPisiMapExportText(
-            node.preview,
-            Math.max(20, node.width - 24),
-            previewFont,
-            Math.max(0, Math.floor((node.height - 49) / (node.previewSize * 1.4)))
-        );
-        const previewTspans = previewLines.map((line, index) => (
-            `<tspan x="${node.x + 12}" dy="${
-                index === 0 ? 0 : node.previewSize * 1.4
-            }">${escapePisiMapExportXml(line)}</tspan>`
-        )).join('');
+    const nodeMarkup = nodes
+        .map((node) => {
+            const titleFont = `${node.titleFontWeight} ${node.titleSize}px ${node.titleFontFamily}`;
+            const previewFont = `${node.previewFontWeight} ${node.previewSize}px ${node.previewFontFamily}`;
+            const title = fitPisiMapExportLine(node.title, Math.max(20, node.width - 32), titleFont);
+            const previewLines = wrapPisiMapExportText(
+                node.preview,
+                Math.max(20, node.width - 24),
+                previewFont,
+                Math.max(0, Math.floor((node.height - 49) / (node.previewSize * 1.4)))
+            );
+            const previewTspans = previewLines
+                .map((line, index) => `<tspan x="${node.x + 12}" dy="${index === 0 ? 0 : node.previewSize * 1.4}">${escapePisiMapExportXml(line)}</tspan>`)
+                .join('');
 
-        return `<g filter="url(#pisi-export-card-shadow)">` +
-            `<rect x="${node.x}" y="${node.y}" width="${node.width}" ` +
-            `height="${node.height}" rx="10" fill="${
-                escapePisiMapExportXml(node.boxColor)
-            }" stroke="${cardBorder}"/>` +
-            `<line x1="${node.x}" y1="${node.y + 30}" ` +
-            `x2="${node.x + node.width}" y2="${node.y + 30}" ` +
-            `stroke="${titleDivider}"/>` +
-            `<text x="${node.x + node.width / 2}" y="${node.y + 20}" ` +
-            `fill="${escapePisiMapExportXml(node.titleColor)}" ` +
-            `font-family="${escapePisiMapExportXml(node.titleFontFamily)}" ` +
-            `font-size="${node.titleSize}" font-weight="${
-                escapePisiMapExportXml(node.titleFontWeight)
-            }" text-anchor="middle">${
-                escapePisiMapExportXml(title)
-            }</text>` +
-            (previewTspans
-                ? `<text x="${node.x + 12}" y="${node.y + 49}" ` +
-                    `fill="${escapePisiMapExportXml(node.previewColor)}" ` +
-                    `font-family="${
-                        escapePisiMapExportXml(node.previewFontFamily)
-                    }" font-size="${node.previewSize}" font-weight="${
-                        escapePisiMapExportXml(node.previewFontWeight)
-                    }">${previewTspans}</text>`
-                : '') +
-            '</g>';
-    }).join('');
+            return (
+                `<g filter="url(#pisi-export-card-shadow)">` +
+                `<rect x="${node.x}" y="${node.y}" width="${node.width}" ` +
+                `height="${node.height}" rx="10" fill="${escapePisiMapExportXml(node.boxColor)}" stroke="${cardBorder}"/>` +
+                `<line x1="${node.x}" y1="${node.y + 30}" ` +
+                `x2="${node.x + node.width}" y2="${node.y + 30}" ` +
+                `stroke="${titleDivider}"/>` +
+                `<text x="${node.x + node.width / 2}" y="${node.y + 20}" ` +
+                `fill="${escapePisiMapExportXml(node.titleColor)}" ` +
+                `font-family="${escapePisiMapExportXml(node.titleFontFamily)}" ` +
+                `font-size="${node.titleSize}" font-weight="${escapePisiMapExportXml(node.titleFontWeight)}" text-anchor="middle">${escapePisiMapExportXml(
+                    title
+                )}</text>` +
+                (previewTspans
+                    ? `<text x="${node.x + 12}" y="${node.y + 49}" ` +
+                      `fill="${escapePisiMapExportXml(node.previewColor)}" ` +
+                      `font-family="${escapePisiMapExportXml(node.previewFontFamily)}" font-size="${node.previewSize}" font-weight="${escapePisiMapExportXml(
+                          node.previewFontWeight
+                      )}">${previewTspans}</text>`
+                    : '') +
+                '</g>'
+            );
+        })
+        .join('');
 
-    const mapTitle = typeof activeMapPath !== 'undefined'
-        ? String(activeMapPath || '').split(/[\\/]/).pop()?.replace(/\.map$/i, '')
-        : 'Pisi Map';
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" ` +
+    const mapTitle =
+        typeof activeMapPath !== 'undefined'
+            ? String(activeMapPath || '')
+                  .split(/[\\/]/)
+                  .pop()
+                  ?.replace(/\.map$/i, '')
+            : 'Pisi Map';
+    const svg =
+        `<svg xmlns="http://www.w3.org/2000/svg" ` +
         `width="${bounds.width}" height="${bounds.height}" ` +
         `viewBox="${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}">` +
         `<title>${escapePisiMapExportXml(mapTitle || 'Pisi Map')}</title>` +
@@ -379,7 +296,9 @@ function buildPisiMapExportSvg() {
         '<filter id="pisi-export-card-shadow" x="-30%" y="-30%" ' +
         'width="160%" height="180%"><feDropShadow dx="0" dy="7" ' +
         'stdDeviation="9" flood-color="#000000" flood-opacity="0.28"/>' +
-        '</filter>' + markerDefs.join('') + '</defs>' +
+        '</filter>' +
+        markerDefs.join('') +
+        '</defs>' +
         `<rect x="${bounds.x}" y="${bounds.y}" width="${bounds.width}" ` +
         `height="${bounds.height}" fill="${background}"/>` +
         `<rect x="${bounds.x}" y="${bounds.y}" width="${bounds.width}" ` +
@@ -406,22 +325,19 @@ function readPisiMapExportBlobAsDataUrl(blob) {
 
 async function rasterizePisiMapExportSvg(svg, width, height) {
     const baseScale = 2;
-    const scale = Math.max(0.01, Math.min(
-        baseScale,
-        PISI_MAP_EXPORT_MAX_DIMENSION / width,
-        PISI_MAP_EXPORT_MAX_DIMENSION / height,
-        Math.sqrt(PISI_MAP_EXPORT_MAX_PIXELS / (width * height))
-    ));
+    const scale = Math.max(
+        0.01,
+        Math.min(
+            baseScale,
+            PISI_MAP_EXPORT_MAX_DIMENSION / width,
+            PISI_MAP_EXPORT_MAX_DIMENSION / height,
+            Math.sqrt(PISI_MAP_EXPORT_MAX_PIXELS / (width * height))
+        )
+    );
     const outputWidth = Math.max(1, Math.round(width * scale));
     const outputHeight = Math.max(1, Math.round(height * scale));
-    const sizedSvg = svg.replace(
-        /width="[^"]+" height="[^"]+"/,
-        `width="${outputWidth}" height="${outputHeight}"`
-    );
-    const objectUrl = URL.createObjectURL(new Blob(
-        [sizedSvg],
-        { type: 'image/svg+xml;charset=utf-8' }
-    ));
+    const sizedSvg = svg.replace(/width="[^"]+" height="[^"]+"/, `width="${outputWidth}" height="${outputHeight}"`);
+    const objectUrl = URL.createObjectURL(new Blob([sizedSvg], { type: 'image/svg+xml;charset=utf-8' }));
 
     try {
         const image = new Image();
@@ -438,12 +354,7 @@ async function rasterizePisiMapExportSvg(svg, width, height) {
         if (!context) throw new Error('PNG çizim alanı oluşturulamadı.');
         context.drawImage(image, 0, 0, outputWidth, outputHeight);
         const blob = await new Promise((resolve, reject) => {
-            canvas.toBlob(
-                (value) => value
-                    ? resolve(value)
-                    : reject(new Error('PNG dosyası oluşturulamadı.')),
-                'image/png'
-            );
+            canvas.toBlob((value) => (value ? resolve(value) : reject(new Error('PNG dosyası oluşturulamadı.'))), 'image/png');
         });
         return readPisiMapExportBlobAsDataUrl(blob);
     } finally {
@@ -502,11 +413,7 @@ async function exportCurrentPisiMap(format) {
             height: snapshot.height
         };
         if (normalized === 'png') {
-            payload.pngDataUrl = await rasterizePisiMapExportSvg(
-                snapshot.svg,
-                snapshot.width,
-                snapshot.height
-            );
+            payload.pngDataUrl = await rasterizePisiMapExportSvg(snapshot.svg, snapshot.width, snapshot.height);
         }
 
         const result = await window.pisiProject?.exportMap?.(mapPath, payload);
@@ -519,8 +426,7 @@ async function exportCurrentPisiMap(format) {
     } finally {
         if (trigger) {
             trigger.removeAttribute('aria-busy');
-            trigger.title = window.pisiT?.('Haritayı dışa aktar') ||
-                'Haritayı dışa aktar';
+            trigger.title = window.pisiT?.('Haritayı dışa aktar') || 'Haritayı dışa aktar';
         }
         syncPisiMapExportControl();
     }
@@ -595,10 +501,7 @@ function updatePisiMapExportTranslations() {
 function initializePisiMapExport() {
     ensurePisiMapExportControl();
     syncPisiMapExportControl();
-    document.addEventListener(
-        'pisi:map-customization-context-changed',
-        syncPisiMapExportControl
-    );
+    document.addEventListener('pisi:map-customization-context-changed', syncPisiMapExportControl);
     document.addEventListener('pisi:language-changed', () => {
         updatePisiMapExportTranslations();
         syncPisiMapExportControl();

@@ -1,10 +1,5 @@
-import { registerModule } from "../core/module-registry.mjs";
-import {
-    PISI_TODO_PRIORITY_OPTIONS,
-    formatPisiTodoTag,
-    getPisiTodoPriorityOption,
-    getPisiTodayIsoDate
-} from "./pisi-todo-utils.mjs";
+import { registerModule } from '../core/module-registry.mjs';
+import { PISI_TODO_PRIORITY_OPTIONS, formatPisiTodoTag, getPisiTodoPriorityOption, getPisiTodayIsoDate } from './pisi-todo-utils.mjs';
 
 async function markPisiMissionDone(mission) {
     return setPisiMissionCompletion(mission, true);
@@ -15,11 +10,19 @@ async function reopenPisiMission(mission) {
 }
 
 function isPisiTodoCommand(command) {
-    return String(command?.body || '').trim().toLowerCase() === 'todo';
+    return (
+        String(command?.body || '')
+            .trim()
+            .toLowerCase() === 'todo'
+    );
 }
 
 function isPisiDoneCommand(command) {
-    return String(command?.body || '').trim().toLowerCase() === 'done';
+    return (
+        String(command?.body || '')
+            .trim()
+            .toLowerCase() === 'done'
+    );
 }
 
 function buildPisiTodoPriorityItems() {
@@ -83,9 +86,7 @@ function openPisiTodoDateMenu(editor, priorityValue, commandOverride = null) {
         </div>
     `;
 
-    const dateInput = /** @type {HTMLInputElement | null} */ (
-        menu.querySelector('.pisi-todo-date-input')
-    );
+    const dateInput = /** @type {HTMLInputElement | null} */ (menu.querySelector('.pisi-todo-date-input'));
     const backButton = menu.querySelector('.pisi-todo-back');
     const undatedButton = menu.querySelector('.pisi-todo-undated');
     const applyButton = menu.querySelector('.pisi-todo-apply');
@@ -101,11 +102,7 @@ function openPisiTodoDateMenu(editor, priorityValue, commandOverride = null) {
 
         dateInput?.setCustomValidity('');
 
-        const applied = window.applyPisiTodoTagToEditor?.(
-            editor,
-            todoTag,
-            command
-        );
+        const applied = window.applyPisiTodoTagToEditor?.(editor, todoTag, command);
         if (!applied && command.sourceSelection === true) {
             applyPisiTodoSelectionToEditor(editor, todoTag, command);
         } else if (!applied) {
@@ -162,10 +159,7 @@ function bindPisiTagControls() {
     const menu = document.getElementById('pisi-tag-menu');
     if (!menu) return;
 
-    const editors = [
-        document.getElementById('node-modal-content'),
-        document.getElementById('center-node-editor-content')
-    ].filter(Boolean);
+    const editors = [document.getElementById('node-modal-content'), document.getElementById('center-node-editor-content')].filter(Boolean);
 
     for (const editor of editors) {
         bindPisiTagControlsForEditor(editor);
@@ -177,11 +171,7 @@ function bindPisiTagControls() {
     document.addEventListener('mousedown', (event) => {
         if (!pisiTagMenuState.active) return;
         const activeEditor = pisiTagMenuState.editor;
-        if (
-            event.target.closest('#pisi-tag-menu') ||
-            event.target === activeEditor ||
-            activeEditor?.contains(event.target)
-        ) {
+        if (event.target.closest('#pisi-tag-menu') || event.target === activeEditor || activeEditor?.contains(event.target)) {
             return;
         }
         closePisiTagMenu();
@@ -243,9 +233,7 @@ function collectPisiUserTagsFromEditor(editor) {
     if (!editor) return;
 
     editor.querySelectorAll('.pisi-user-tag[data-pisi-tag]').forEach((tagEl) => {
-        const tag = normalizePisiUserTag(
-            tagEl.dataset.pisiTag || tagEl.textContent || ''
-        );
+        const tag = normalizePisiUserTag(tagEl.dataset.pisiTag || tagEl.textContent || '');
         if (tag) PISI_USER_TAG_CACHE.add(tag);
     });
 }
@@ -353,15 +341,11 @@ function movePisiTagSelection(delta) {
     if (!pisiTagMenuState.active || !pisiTagMenuState.items.length) return;
 
     const count = pisiTagMenuState.items.length;
-    pisiTagMenuState.selectedIndex =
-        (pisiTagMenuState.selectedIndex + delta + count) % count;
+    pisiTagMenuState.selectedIndex = (pisiTagMenuState.selectedIndex + delta + count) % count;
 
     const menu = document.getElementById('pisi-tag-menu');
     menu?.querySelectorAll('.pisi-tag-option').forEach((option, index) => {
-        option.classList.toggle(
-            'active',
-            index === pisiTagMenuState.selectedIndex
-        );
+        option.classList.toggle('active', index === pisiTagMenuState.selectedIndex);
     });
 }
 
@@ -371,11 +355,7 @@ function applyPisiUserTagToEditor(editor, rawTag, commandOverride = null) {
 
     if (!command || !tag || !isValidPisiUserTag(tag)) return false;
 
-    const range = makeRangeInElementByTextOffsets(
-        command.block,
-        command.tokenStartInText,
-        command.tokenEndInText
-    );
+    const range = makeRangeInElementByTextOffsets(command.block, command.tokenStartInText, command.tokenEndInText);
     if (!range) return false;
 
     const tagEl = createPisiUserTagElement(tag);
@@ -515,31 +495,156 @@ function escapeHtml(value) {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    markPisiMissionDone: { enumerable: true, get() { return markPisiMissionDone; } },
-    reopenPisiMission: { enumerable: true, get() { return reopenPisiMission; } },
-    isPisiTodoCommand: { enumerable: true, get() { return isPisiTodoCommand; } },
-    isPisiDoneCommand: { enumerable: true, get() { return isPisiDoneCommand; } },
-    buildPisiTodoPriorityItems: { enumerable: true, get() { return buildPisiTodoPriorityItems; } },
-    openPisiTodoPriorityMenu: { enumerable: true, get() { return openPisiTodoPriorityMenu; } },
-    openPisiTodoDateMenu: { enumerable: true, get() { return openPisiTodoDateMenu; } },
-    bindPisiTagControls: { enumerable: true, get() { return bindPisiTagControls; } },
-    bindPisiTagControlsForEditor: { enumerable: true, get() { return bindPisiTagControlsForEditor; } },
-    collectPisiUserTagsFromEditor: { enumerable: true, get() { return collectPisiUserTagsFromEditor; } },
-    collectPisiUserTagSuggestions: { enumerable: true, get() { return collectPisiUserTagSuggestions; } },
-    openPisiTagMenuForEditor: { enumerable: true, get() { return openPisiTagMenuForEditor; } },
-    applyPisiTagMenuItem: { enumerable: true, get() { return applyPisiTagMenuItem; } },
-    closePisiTagMenu: { enumerable: true, get() { return closePisiTagMenu; } },
-    movePisiTagSelection: { enumerable: true, get() { return movePisiTagSelection; } },
-    applyPisiUserTagToEditor: { enumerable: true, get() { return applyPisiUserTagToEditor; } },
-    normalizePisiUserTag: { enumerable: true, get() { return normalizePisiUserTag; } },
-    isValidPisiUserTag: { enumerable: true, get() { return isValidPisiUserTag; } },
-    makeRangeInElementByTextOffsets: { enumerable: true, get() { return makeRangeInElementByTextOffsets; } },
-    getPisiCurrentEditorBlock: { enumerable: true, get() { return getPisiCurrentEditorBlock; } },
-    placeCaretAtEnd: { enumerable: true, get() { return placeCaretAtEnd; } },
-    positionPisiTagMenuAtSelection: { enumerable: true, get() { return positionPisiTagMenuAtSelection; } },
-    getSelectionClientRect: { enumerable: true, get() { return getSelectionClientRect; } },
-    pisiEscapeHtml: { enumerable: true, get() { return pisiEscapeHtml; } },
-    escapeHtml: { enumerable: true, get() { return escapeHtml; } }
+    markPisiMissionDone: {
+        enumerable: true,
+        get() {
+            return markPisiMissionDone;
+        }
+    },
+    reopenPisiMission: {
+        enumerable: true,
+        get() {
+            return reopenPisiMission;
+        }
+    },
+    isPisiTodoCommand: {
+        enumerable: true,
+        get() {
+            return isPisiTodoCommand;
+        }
+    },
+    isPisiDoneCommand: {
+        enumerable: true,
+        get() {
+            return isPisiDoneCommand;
+        }
+    },
+    buildPisiTodoPriorityItems: {
+        enumerable: true,
+        get() {
+            return buildPisiTodoPriorityItems;
+        }
+    },
+    openPisiTodoPriorityMenu: {
+        enumerable: true,
+        get() {
+            return openPisiTodoPriorityMenu;
+        }
+    },
+    openPisiTodoDateMenu: {
+        enumerable: true,
+        get() {
+            return openPisiTodoDateMenu;
+        }
+    },
+    bindPisiTagControls: {
+        enumerable: true,
+        get() {
+            return bindPisiTagControls;
+        }
+    },
+    bindPisiTagControlsForEditor: {
+        enumerable: true,
+        get() {
+            return bindPisiTagControlsForEditor;
+        }
+    },
+    collectPisiUserTagsFromEditor: {
+        enumerable: true,
+        get() {
+            return collectPisiUserTagsFromEditor;
+        }
+    },
+    collectPisiUserTagSuggestions: {
+        enumerable: true,
+        get() {
+            return collectPisiUserTagSuggestions;
+        }
+    },
+    openPisiTagMenuForEditor: {
+        enumerable: true,
+        get() {
+            return openPisiTagMenuForEditor;
+        }
+    },
+    applyPisiTagMenuItem: {
+        enumerable: true,
+        get() {
+            return applyPisiTagMenuItem;
+        }
+    },
+    closePisiTagMenu: {
+        enumerable: true,
+        get() {
+            return closePisiTagMenu;
+        }
+    },
+    movePisiTagSelection: {
+        enumerable: true,
+        get() {
+            return movePisiTagSelection;
+        }
+    },
+    applyPisiUserTagToEditor: {
+        enumerable: true,
+        get() {
+            return applyPisiUserTagToEditor;
+        }
+    },
+    normalizePisiUserTag: {
+        enumerable: true,
+        get() {
+            return normalizePisiUserTag;
+        }
+    },
+    isValidPisiUserTag: {
+        enumerable: true,
+        get() {
+            return isValidPisiUserTag;
+        }
+    },
+    makeRangeInElementByTextOffsets: {
+        enumerable: true,
+        get() {
+            return makeRangeInElementByTextOffsets;
+        }
+    },
+    getPisiCurrentEditorBlock: {
+        enumerable: true,
+        get() {
+            return getPisiCurrentEditorBlock;
+        }
+    },
+    placeCaretAtEnd: {
+        enumerable: true,
+        get() {
+            return placeCaretAtEnd;
+        }
+    },
+    positionPisiTagMenuAtSelection: {
+        enumerable: true,
+        get() {
+            return positionPisiTagMenuAtSelection;
+        }
+    },
+    getSelectionClientRect: {
+        enumerable: true,
+        get() {
+            return getSelectionClientRect;
+        }
+    },
+    pisiEscapeHtml: {
+        enumerable: true,
+        get() {
+            return pisiEscapeHtml;
+        }
+    },
+    escapeHtml: {
+        enumerable: true,
+        get() {
+            return escapeHtml;
+        }
+    }
 });
 
 registerModule('tags.editor', moduleApi);

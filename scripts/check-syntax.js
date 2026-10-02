@@ -5,10 +5,7 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 const projectRoot = path.resolve(__dirname, '..');
-const ignoredDirectories = new Set([
-    '.git', 'coverage', 'dist', 'node_modules', 'out', 'release',
-    'android', '.gradle', 'build'
-]);
+const ignoredDirectories = new Set(['.git', 'coverage', 'dist', 'node_modules', 'out', 'release', 'android', '.gradle', 'build']);
 
 function collectJavaScriptFiles(directoryPath) {
     const files = [];

@@ -53,7 +53,8 @@ for (const key of trKeys) {
     }
 }
 
-const turkishLeakPattern = /\b(?:görev|kaydedilemedi|bulunamadı|oluştur(?:ulamadı)?|seç(?:ildi)?|sil(?:insin|inemedi)?|kapat(?:ılamadı)?|değil|dosya|proje|klasör|bağlantı|özellik|ayar(?:ları)?|görünüm|tarih|renk|başlık|metin|işlem|hata|için|üzerine|yeniden|taşınsın|açılamadı|okunamadı|değiştirilemedi)\b/iu;
+const turkishLeakPattern =
+    /\b(?:görev|kaydedilemedi|bulunamadı|oluştur(?:ulamadı)?|seç(?:ildi)?|sil(?:insin|inemedi)?|kapat(?:ılamadı)?|değil|dosya|proje|klasör|bağlantı|özellik|ayar(?:ları)?|görünüm|tarih|renk|başlık|metin|işlem|hata|için|üzerine|yeniden|taşınsın|açılamadı|okunamadı|değiştirilemedi)\b/iu;
 for (const key of enKeys) {
     const value = enStrings[key];
     if (typeof value !== 'string') continue;
@@ -62,7 +63,8 @@ for (const key of enKeys) {
     }
 }
 
-const englishLeakPattern = /\b(?:Brush|Canvas|Diary|Mission|Settings|Customize|Explorer|Choose tag|Financial formulas|Finish date|Font color|Font size|Font type|Formulas|Clear formatting|Indent|Outdent|Align left|Align center|Align right|Horizontal rule|Labels|Badges|Fuzzy match|Editor commands|blocked by)\b/u;
+const englishLeakPattern =
+    /\b(?:Brush|Canvas|Diary|Mission|Settings|Customize|Explorer|Choose tag|Financial formulas|Finish date|Font color|Font size|Font type|Formulas|Clear formatting|Indent|Outdent|Align left|Align center|Align right|Horizontal rule|Labels|Badges|Fuzzy match|Editor commands|blocked by)\b/u;
 for (const key of trKeys) {
     const value = trStrings[key];
     if (typeof value !== 'string') continue;
@@ -90,7 +92,9 @@ const EXPLICIT_LOCALIZED_UI_FILES = new Set([
 ]);
 
 function requireKey(value, location) {
-    const clean = String(value || '').replace(/\s+/g, ' ').trim();
+    const clean = String(value || '')
+        .replace(/\s+/g, ' ')
+        .trim();
     if (!clean || clean.endsWith('\\')) return;
     if (TECHNICAL_UI_LITERALS.has(clean)) return;
     if (/^(?:PISI|Pisi|html|×|＋|−|⋯|⋮⋮|‹|›|🧭|[🗺️📄📁⚠️✓✕]+)$/.test(clean)) return;
@@ -156,10 +160,7 @@ for (const file of rendererUiFiles) {
     for (const { re, name } of uiPatterns) {
         if (name === 'UI record' && EXPLICIT_LOCALIZED_UI_FILES.has(file)) continue;
         for (const match of source.matchAll(re)) {
-            const value = match[1]
-                .replace(/\\n/g, ' ')
-                .replace(/\\'/g, "'")
-                .replace(/\\"/g, '"');
+            const value = match[1].replace(/\\n/g, ' ').replace(/\\'/g, "'").replace(/\\"/g, '"');
             requireKey(value, `${file} ${name}`);
         }
     }
@@ -167,10 +168,7 @@ for (const file of rendererUiFiles) {
 
 for (const file of walkSourceFiles('main')) {
     const source = read(file);
-    for (const pattern of [
-        /translatePisiMain\(\s*'([^']+)'/g,
-        /translatePisiMain\(\s*"([^"]+)"/g
-    ]) {
+    for (const pattern of [/translatePisiMain\(\s*'([^']+)'/g, /translatePisiMain\(\s*"([^"]+)"/g]) {
         for (const match of source.matchAll(pattern)) {
             requireKey(match[1], file + ' translatePisiMain');
         }
@@ -200,9 +198,9 @@ for (const marker of [
     "ipcRenderer.invoke('app:get-language')",
     "ipcRenderer.invoke('app:set-language'",
     "contextBridge.exposeInMainWorld('pisiI18n'",
-    "characterData: true",
-    "attributes: true",
-    "pisi-language-select"
+    'characterData: true',
+    'attributes: true',
+    'pisi-language-select'
 ]) {
     if (!preload.includes(marker)) addError('Missing preload i18n marker: ' + marker);
 }
@@ -223,4 +221,10 @@ if (errors.length) {
     console.error(errors.join('\n'));
     process.exit(1);
 }
-console.log('Pisi i18n catalogs, full renderer UI coverage and language plumbing are valid (' + trKeys.length + ' keys across ' + rendererUiFiles.length + ' renderer modules).');
+console.log(
+    'Pisi i18n catalogs, full renderer UI coverage and language plumbing are valid (' +
+        trKeys.length +
+        ' keys across ' +
+        rendererUiFiles.length +
+        ' renderer modules).'
+);

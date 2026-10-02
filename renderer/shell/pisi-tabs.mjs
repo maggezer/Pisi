@@ -1,4 +1,4 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 
 function getPisiOpenTabsState() {
     if (!window.Pisi) {
@@ -48,12 +48,7 @@ function getPisiOpenTabType(item) {
 }
 
 function getPisiOpenTabTitle(item) {
-    const rawName =
-        item?.metadata?.title ||
-        item?.displayName ||
-        item?.name ||
-        item?.fileName ||
-        'Untitled';
+    const rawName = item?.metadata?.title || item?.displayName || item?.name || item?.fileName || 'Untitled';
 
     return String(rawName).replace(/\.(map|node)$/i, '');
 }
@@ -124,45 +119,33 @@ async function activatePisiOpenTab(path) {
 
     if (!tab) return false;
 
-    const alreadyActive =
-        state.activeTabPath &&
-        pisiSameTabPath(state.activeTabPath, tab.path);
+    const alreadyActive = state.activeTabPath && pisiSameTabPath(state.activeTabPath, tab.path);
 
-    const alreadyLoaded =
-        typeof activeMapPath !== 'undefined' &&
-        activeMapPath &&
-        pisiSameTabPath(activeMapPath, tab.path);
+    const alreadyLoaded = typeof activeMapPath !== 'undefined' && activeMapPath && pisiSameTabPath(activeMapPath, tab.path);
 
     state.activeTabPath = tab.path;
     renderPisiOpenTabs();
 
     if (alreadyActive && alreadyLoaded) {
         selectPisiTreeFileByPath(tab.path);
-        document.dispatchEvent(new CustomEvent(
-            'pisi:map-customization-context-changed'
-        ));
+        document.dispatchEvent(new CustomEvent('pisi:map-customization-context-changed'));
         return true;
     }
 
     if (
-    typeof saveCurrentCenterNodeEditor === 'function' &&
-    activeCenterNode &&
-    (!activeCenterNode.path || !pisiSameTabPath(activeCenterNode.path, tab.path))
+        typeof saveCurrentCenterNodeEditor === 'function' &&
+        activeCenterNode &&
+        (!activeCenterNode.path || !pisiSameTabPath(activeCenterNode.path, tab.path))
     ) {
-    const saved = await saveCurrentCenterNodeEditor();
-    if (!saved) {
-        state.activeTabPath = previousActiveTabPath;
-        renderPisiOpenTabs();
-        return false;
-    }
+        const saved = await saveCurrentCenterNodeEditor();
+        if (!saved) {
+            state.activeTabPath = previousActiveTabPath;
+            renderPisiOpenTabs();
+            return false;
+        }
     }
 
-    if (
-        typeof saveCurrentMapLayout === 'function' &&
-        typeof activeMapPath !== 'undefined' &&
-        activeMapPath &&
-        !pisiSameTabPath(activeMapPath, tab.path)
-    ) {
+    if (typeof saveCurrentMapLayout === 'function' && typeof activeMapPath !== 'undefined' && activeMapPath && !pisiSameTabPath(activeMapPath, tab.path)) {
         const layoutSaved = await saveCurrentMapLayout();
         if (!layoutSaved) {
             state.activeTabPath = previousActiveTabPath;
@@ -190,9 +173,7 @@ async function activatePisiOpenTab(path) {
     }
 
     selectPisiTreeFileByPath(tab.path);
-    document.dispatchEvent(new CustomEvent(
-        'pisi:map-customization-context-changed'
-    ));
+    document.dispatchEvent(new CustomEvent('pisi:map-customization-context-changed'));
     return true;
 }
 
@@ -202,25 +183,14 @@ async function closePisiOpenTab(path, event) {
 
     const state = getPisiOpenTabsState();
 
-    const isActive =
-        state.activeTabPath &&
-        pisiSameTabPath(state.activeTabPath, path);
+    const isActive = state.activeTabPath && pisiSameTabPath(state.activeTabPath, path);
 
-    if (
-        isActive &&
-        typeof saveCurrentCenterNodeEditor === 'function' &&
-        activeCenterNode
-    ) {
+    if (isActive && typeof saveCurrentCenterNodeEditor === 'function' && activeCenterNode) {
         const saved = await saveCurrentCenterNodeEditor();
         if (!saved) return false;
     }
 
-    if (
-        isActive &&
-        typeof saveCurrentMapLayout === 'function' &&
-        typeof activeMapPath !== 'undefined' &&
-        activeMapPath
-    ) {
+    if (isActive && typeof saveCurrentMapLayout === 'function' && typeof activeMapPath !== 'undefined' && activeMapPath) {
         const layoutSaved = await saveCurrentMapLayout();
         if (!layoutSaved) return false;
     }
@@ -236,17 +206,10 @@ async function removePisiOpenTabByPath(path) {
         return pisiSameTabPath(tab.path, path);
     });
 
-    const wasActive =
-        state.activeTabPath &&
-        pisiSameTabPath(state.activeTabPath, path);
+    const wasActive = state.activeTabPath && pisiSameTabPath(state.activeTabPath, path);
 
     if (index === -1) {
-        if (
-            typeof activeMapPath !== 'undefined' &&
-            activeMapPath &&
-            pisiSameTabPath(activeMapPath, path) &&
-            typeof clearMapWorkspace === 'function'
-        ) {
+        if (typeof activeMapPath !== 'undefined' && activeMapPath && pisiSameTabPath(activeMapPath, path) && typeof clearMapWorkspace === 'function') {
             clearMapWorkspace();
         }
 
@@ -269,7 +232,7 @@ async function removePisiOpenTabByPath(path) {
     }
 
     state.activeTabPath = null;
-    
+
     if (typeof clearCenterNodeEditor === 'function') {
         clearCenterNodeEditor();
     }
@@ -301,9 +264,7 @@ function updatePisiOpenTabAfterRename(oldPath, result) {
 
     if (tab) {
         tab.path = result.fullPath;
-        tab.title =
-            result.metadata?.title ||
-            String(result.fileName || '').replace(/\.(map|node)$/i, '');
+        tab.title = result.metadata?.title || String(result.fileName || '').replace(/\.(map|node)$/i, '');
 
         tab.item = {
             ...tab.item,
@@ -322,11 +283,7 @@ function updatePisiOpenTabAfterRename(oldPath, result) {
         state.activeTabPath = result.fullPath;
     }
 
-    if (
-        typeof activeMapPath !== 'undefined' &&
-        activeMapPath &&
-        pisiSameTabPath(activeMapPath, oldPath)
-    ) {
+    if (typeof activeMapPath !== 'undefined' && activeMapPath && pisiSameTabPath(activeMapPath, oldPath)) {
         activeMapPath = result.fullPath;
     }
 
@@ -341,20 +298,17 @@ function replacePisiClientPathPrefix(targetPath, oldPrefix, newPrefix) {
     if (!targetPath || !oldPrefix || !newPrefix) return targetPath;
 
     const normalizedTarget = String(targetPath).replace(/[\\/]+/g, '/');
-    const normalizedOld = String(oldPrefix).replace(/[\\/]+/g, '/').replace(/\/+$/g, '');
-    const normalizedNew = String(newPrefix).replace(/[\\/]+/g, '/').replace(/\/+$/g, '');
+    const normalizedOld = String(oldPrefix)
+        .replace(/[\\/]+/g, '/')
+        .replace(/\/+$/g, '');
+    const normalizedNew = String(newPrefix)
+        .replace(/[\\/]+/g, '/')
+        .replace(/\/+$/g, '');
     const caseInsensitive = window.pisiEnvironment?.platform === 'win32';
-    const comparableTarget = caseInsensitive
-        ? normalizedTarget.toLowerCase()
-        : normalizedTarget;
-    const comparableOld = caseInsensitive
-        ? normalizedOld.toLowerCase()
-        : normalizedOld;
+    const comparableTarget = caseInsensitive ? normalizedTarget.toLowerCase() : normalizedTarget;
+    const comparableOld = caseInsensitive ? normalizedOld.toLowerCase() : normalizedOld;
 
-    if (
-        comparableTarget !== comparableOld &&
-        !comparableTarget.startsWith(`${comparableOld}/`)
-    ) {
+    if (comparableTarget !== comparableOld && !comparableTarget.startsWith(`${comparableOld}/`)) {
         return targetPath;
     }
 
@@ -362,20 +316,14 @@ function replacePisiClientPathPrefix(targetPath, oldPrefix, newPrefix) {
 }
 
 function applyPisiPathChanges(pathChanges = []) {
-    const changes = pathChanges
-        .filter((change) => change?.oldPath && change?.newPath)
-        .sort((a, b) => String(b.oldPath).length - String(a.oldPath).length);
+    const changes = pathChanges.filter((change) => change?.oldPath && change?.newPath).sort((a, b) => String(b.oldPath).length - String(a.oldPath).length);
 
     if (!changes.length) return;
 
     const replacePath = (targetPath) => {
         let nextPath = targetPath;
         for (const change of changes) {
-            nextPath = replacePisiClientPathPrefix(
-                nextPath,
-                change.oldPath,
-                change.newPath
-            );
+            nextPath = replacePisiClientPathPrefix(nextPath, change.oldPath, change.newPath);
         }
         return nextPath;
     };
@@ -412,23 +360,17 @@ function applyPisiPathChanges(pathChanges = []) {
     if (activeCenterNode?.path) {
         activeCenterNode.path = replacePath(activeCenterNode.path);
         if (activeCenterNode.item?.fullPath) {
-            activeCenterNode.item.fullPath = replacePath(
-                activeCenterNode.item.fullPath
-            );
+            activeCenterNode.item.fullPath = replacePath(activeCenterNode.item.fullPath);
         }
         if (activeCenterNode.item?.sidecarPath) {
-            activeCenterNode.item.sidecarPath = replacePath(
-                activeCenterNode.item.sidecarPath
-            );
+            activeCenterNode.item.sidecarPath = replacePath(activeCenterNode.item.sidecarPath);
         }
     }
 
     if (activeModalNode?.path) {
         activeModalNode.path = replacePath(activeModalNode.path);
         if (activeModalNode.box?.dataset.nodePath) {
-            activeModalNode.box.dataset.nodePath = replacePath(
-                activeModalNode.box.dataset.nodePath
-            );
+            activeModalNode.box.dataset.nodePath = replacePath(activeModalNode.box.dataset.nodePath);
         }
     }
 
@@ -436,11 +378,7 @@ function applyPisiPathChanges(pathChanges = []) {
 }
 
 function isPisiPathAtOrBelow(targetPath, prefixPath) {
-    return replacePisiClientPathPrefix(
-        targetPath,
-        prefixPath,
-        '__PISI_MATCH__'
-    ) !== targetPath;
+    return replacePisiClientPathPrefix(targetPath, prefixPath, '__PISI_MATCH__') !== targetPath;
 }
 
 async function removePisiOpenTabsForDeletedPaths(paths = []) {
@@ -471,11 +409,7 @@ async function removePisiOpenTabsForDeletedPaths(paths = []) {
         }
     }
 
-    if (
-        typeof activeMapPath !== 'undefined' &&
-        activeMapPath &&
-        isDeletedPath(activeMapPath)
-    ) {
+    if (typeof activeMapPath !== 'undefined' && activeMapPath && isDeletedPath(activeMapPath)) {
         if (typeof clearMapWorkspace === 'function') {
             clearMapWorkspace();
         }
@@ -496,10 +430,7 @@ async function removePisiOpenTabsForDeletedPaths(paths = []) {
 function pisiClientPathsOverlap(firstPath, secondPath) {
     if (!firstPath || !secondPath) return false;
 
-    return (
-        isPisiPathAtOrBelow(firstPath, secondPath) ||
-        isPisiPathAtOrBelow(secondPath, firstPath)
-    );
+    return isPisiPathAtOrBelow(firstPath, secondPath) || isPisiPathAtOrBelow(secondPath, firstPath);
 }
 
 function getActiveMapTabItemForReload() {
@@ -527,22 +458,14 @@ function getActiveMapTabItemForReload() {
 }
 
 function isExternalChangeRelevantToActiveMap(changedPaths) {
-    if (
-        typeof activeMapPath === 'undefined' ||
-        !activeMapPath ||
-        !Array.isArray(changedPaths)
-    ) {
+    if (typeof activeMapPath === 'undefined' || !activeMapPath || !Array.isArray(changedPaths)) {
         return false;
     }
 
     const mapItem = getActiveMapTabItemForReload();
-    const relevantPaths = [
-        activeMapPath,
-        mapItem?.sidecarPath,
-        ...(Array.isArray(activeMapNodes)
-            ? activeMapNodes.map((node) => node?.fullPath)
-            : [])
-    ].filter(Boolean);
+    const relevantPaths = [activeMapPath, mapItem?.sidecarPath, ...(Array.isArray(activeMapNodes) ? activeMapNodes.map((node) => node?.fullPath) : [])].filter(
+        Boolean
+    );
 
     return changedPaths.some((changedPath) => {
         return relevantPaths.some((relevantPath) => {
@@ -569,10 +492,7 @@ async function reloadPisiWorkspaceAfterExternalChange(changedPaths) {
     if (
         activeCenterNode?.path &&
         changedPaths.some((changedPath) => {
-            return pisiClientPathsOverlap(
-                changedPath,
-                activeCenterNode.path
-            );
+            return pisiClientPathsOverlap(changedPath, activeCenterNode.path);
         })
     ) {
         if (activeCenterNode.dirty) {
@@ -599,13 +519,13 @@ async function reloadPisiWorkspaceAfterExternalChange(changedPaths) {
     if (!mapItem || typeof openMapInWorkspace !== 'function') return;
 
     const modalPath = activeModalNode?.path || null;
-    const modalWasAffected = modalPath && changedPaths.some((changedPath) => {
-        return pisiClientPathsOverlap(changedPath, modalPath);
-    });
+    const modalWasAffected =
+        modalPath &&
+        changedPaths.some((changedPath) => {
+            return pisiClientPathsOverlap(changedPath, modalPath);
+        });
     const hasPendingMapSave = Boolean(mapSaveTimer || mapCameraSaveTimer);
-    const hasUnsavedWork =
-        hasPendingMapSave ||
-        (modalWasAffected && activeModalNode?.dirty);
+    const hasUnsavedWork = hasPendingMapSave || (modalWasAffected && activeModalNode?.dirty);
 
     if (hasUnsavedWork) {
         const reload = await confirmPisiExternalReload(
@@ -627,9 +547,7 @@ async function reloadPisiWorkspaceAfterExternalChange(changedPaths) {
 
     if (reloaded && modalWasAffected && modalPath) {
         const escapedPath = CSS.escape(modalPath);
-        const newBox = document.querySelector(
-            `.map-node-box[data-node-path="${escapedPath}"]`
-        );
+        const newBox = document.querySelector(`.map-node-box[data-node-path="${escapedPath}"]`);
 
         if (newBox && typeof openNodeModalFromBox === 'function') {
             await openNodeModalFromBox(newBox);
@@ -668,27 +586,18 @@ function flushPisiExternalFileSystemChanges() {
 }
 
 function handlePisiExternalFileSystemChange(payload = {}) {
-    if (
-        typeof shouldSuppressFileSystemRefresh === 'function' &&
-        shouldSuppressFileSystemRefresh()
-    ) {
+    if (typeof shouldSuppressFileSystemRefresh === 'function' && shouldSuppressFileSystemRefresh()) {
         return pisiFileSystemRefreshTail;
     }
 
-    const changedPaths = Array.isArray(payload?.changedPaths)
-        ? payload.changedPaths.filter(Boolean)
-        : [];
+    const changedPaths = Array.isArray(payload?.changedPaths) ? payload.changedPaths.filter(Boolean) : [];
 
     changedPaths.forEach((changedPath) => {
         pisiPendingFileSystemPaths.add(changedPath);
     });
 
     const reason = String(payload?.reason || '').toLowerCase();
-    if (
-        !changedPaths.length ||
-        reason === 'rename' ||
-        reason === 'filesystem'
-    ) {
+    if (!changedPaths.length || reason === 'rename' || reason === 'filesystem') {
         pisiPendingFileSystemTreeRefresh = true;
     }
 
@@ -709,11 +618,7 @@ async function renamePisiOpenTabTitle(tab, newTitle) {
     }
 
     try {
-        if (
-            typeof saveCurrentCenterNodeEditor === 'function' &&
-            activeCenterNode?.path &&
-            pisiSameTabPath(activeCenterNode.path, tab.path)
-        ) {
+        if (typeof saveCurrentCenterNodeEditor === 'function' && activeCenterNode?.path && pisiSameTabPath(activeCenterNode.path, tab.path)) {
             const centerSaved = await saveCurrentCenterNodeEditor();
             if (!centerSaved) {
                 renderPisiOpenTabs();
@@ -721,12 +626,7 @@ async function renamePisiOpenTabTitle(tab, newTitle) {
             }
         }
 
-        if (
-            typeof saveCurrentMapLayout === 'function' &&
-            typeof activeMapPath !== 'undefined' &&
-            activeMapPath &&
-            pisiSameTabPath(activeMapPath, tab.path)
-        ) {
+        if (typeof saveCurrentMapLayout === 'function' && typeof activeMapPath !== 'undefined' && activeMapPath && pisiSameTabPath(activeMapPath, tab.path)) {
             const layoutSaved = await saveCurrentMapLayout();
             if (!layoutSaved) {
                 alert('Map yerleşimi kaydedilemedi; başlık değiştirilmedi.');
@@ -746,9 +646,7 @@ async function renamePisiOpenTabTitle(tab, newTitle) {
             return false;
         }
 
-        if (
-            typeof updateTreeItemAfterRename === 'function'
-        ) {
+        if (typeof updateTreeItemAfterRename === 'function') {
             updateTreeItemAfterRename(oldPath, result);
         }
 
@@ -792,102 +690,152 @@ async function renamePisiOpenTabTitle(tab, newTitle) {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "getPisiOpenTabsState": {
+    getPisiOpenTabsState: {
         enumerable: true,
-        get() { return getPisiOpenTabsState; }
+        get() {
+            return getPisiOpenTabsState;
+        }
     },
-    "pisiSameTabPath": {
+    pisiSameTabPath: {
         enumerable: true,
-        get() { return pisiSameTabPath; }
+        get() {
+            return pisiSameTabPath;
+        }
     },
-    "getPisiOpenTabType": {
+    getPisiOpenTabType: {
         enumerable: true,
-        get() { return getPisiOpenTabType; }
+        get() {
+            return getPisiOpenTabType;
+        }
     },
-    "getPisiOpenTabTitle": {
+    getPisiOpenTabTitle: {
         enumerable: true,
-        get() { return getPisiOpenTabTitle; }
+        get() {
+            return getPisiOpenTabTitle;
+        }
     },
-    "clonePisiTabItem": {
+    clonePisiTabItem: {
         enumerable: true,
-        get() { return clonePisiTabItem; }
+        get() {
+            return clonePisiTabItem;
+        }
     },
-    "ensurePisiOpenTab": {
+    ensurePisiOpenTab: {
         enumerable: true,
-        get() { return ensurePisiOpenTab; }
+        get() {
+            return ensurePisiOpenTab;
+        }
     },
-    "openPisiFileTab": {
+    openPisiFileTab: {
         enumerable: true,
-        get() { return openPisiFileTab; }
+        get() {
+            return openPisiFileTab;
+        }
     },
-    "activatePisiOpenTab": {
+    activatePisiOpenTab: {
         enumerable: true,
-        get() { return activatePisiOpenTab; }
+        get() {
+            return activatePisiOpenTab;
+        }
     },
-    "closePisiOpenTab": {
+    closePisiOpenTab: {
         enumerable: true,
-        get() { return closePisiOpenTab; }
+        get() {
+            return closePisiOpenTab;
+        }
     },
-    "removePisiOpenTabByPath": {
+    removePisiOpenTabByPath: {
         enumerable: true,
-        get() { return removePisiOpenTabByPath; }
+        get() {
+            return removePisiOpenTabByPath;
+        }
     },
-    "resetPisiOpenTabs": {
+    resetPisiOpenTabs: {
         enumerable: true,
-        get() { return resetPisiOpenTabs; }
+        get() {
+            return resetPisiOpenTabs;
+        }
     },
-    "updatePisiOpenTabAfterRename": {
+    updatePisiOpenTabAfterRename: {
         enumerable: true,
-        get() { return updatePisiOpenTabAfterRename; }
+        get() {
+            return updatePisiOpenTabAfterRename;
+        }
     },
-    "replacePisiClientPathPrefix": {
+    replacePisiClientPathPrefix: {
         enumerable: true,
-        get() { return replacePisiClientPathPrefix; }
+        get() {
+            return replacePisiClientPathPrefix;
+        }
     },
-    "applyPisiPathChanges": {
+    applyPisiPathChanges: {
         enumerable: true,
-        get() { return applyPisiPathChanges; }
+        get() {
+            return applyPisiPathChanges;
+        }
     },
-    "isPisiPathAtOrBelow": {
+    isPisiPathAtOrBelow: {
         enumerable: true,
-        get() { return isPisiPathAtOrBelow; }
+        get() {
+            return isPisiPathAtOrBelow;
+        }
     },
-    "removePisiOpenTabsForDeletedPaths": {
+    removePisiOpenTabsForDeletedPaths: {
         enumerable: true,
-        get() { return removePisiOpenTabsForDeletedPaths; }
+        get() {
+            return removePisiOpenTabsForDeletedPaths;
+        }
     },
-    "pisiClientPathsOverlap": {
+    pisiClientPathsOverlap: {
         enumerable: true,
-        get() { return pisiClientPathsOverlap; }
+        get() {
+            return pisiClientPathsOverlap;
+        }
     },
-    "getActiveMapTabItemForReload": {
+    getActiveMapTabItemForReload: {
         enumerable: true,
-        get() { return getActiveMapTabItemForReload; }
+        get() {
+            return getActiveMapTabItemForReload;
+        }
     },
-    "isExternalChangeRelevantToActiveMap": {
+    isExternalChangeRelevantToActiveMap: {
         enumerable: true,
-        get() { return isExternalChangeRelevantToActiveMap; }
+        get() {
+            return isExternalChangeRelevantToActiveMap;
+        }
     },
-    "confirmPisiExternalReload": {
+    confirmPisiExternalReload: {
         enumerable: true,
-        get() { return confirmPisiExternalReload; }
+        get() {
+            return confirmPisiExternalReload;
+        }
     },
-    "reloadPisiWorkspaceAfterExternalChange": {
+    reloadPisiWorkspaceAfterExternalChange: {
         enumerable: true,
-        get() { return reloadPisiWorkspaceAfterExternalChange; }
+        get() {
+            return reloadPisiWorkspaceAfterExternalChange;
+        }
     },
-    "pisiFileSystemRefreshTail": {
+    pisiFileSystemRefreshTail: {
         enumerable: true,
-        get() { return pisiFileSystemRefreshTail; },
-        set(value) { pisiFileSystemRefreshTail = value; }
+        get() {
+            return pisiFileSystemRefreshTail;
+        },
+        set(value) {
+            pisiFileSystemRefreshTail = value;
+        }
     },
-    "handlePisiExternalFileSystemChange": {
+    handlePisiExternalFileSystemChange: {
         enumerable: true,
-        get() { return handlePisiExternalFileSystemChange; }
+        get() {
+            return handlePisiExternalFileSystemChange;
+        }
     },
-    "renamePisiOpenTabTitle": {
+    renamePisiOpenTabTitle: {
         enumerable: true,
-        get() { return renamePisiOpenTabTitle; }
+        get() {
+            return renamePisiOpenTabTitle;
+        }
     }
 });
-registerModule("shell.tabs", moduleApi);
+registerModule('shell.tabs', moduleApi);

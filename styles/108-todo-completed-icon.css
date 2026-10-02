@@ -10,7 +10,7 @@
 }
 
 #right-tab-missions :is(.pisi-missions-completed-toggle)::before {
-    content: "";
+    content: '';
     width: 18px;
     height: 18px;
     flex: 0 0 18px;
@@ -18,19 +18,19 @@
     border-radius: 0;
     background: currentColor;
     box-shadow: none;
-    -webkit-mask-image: url("../assets/todo/completed.svg");
+    -webkit-mask-image: url('../assets/todo/completed.svg');
     -webkit-mask-position: center;
     -webkit-mask-repeat: no-repeat;
     -webkit-mask-size: contain;
-    mask-image: url("../assets/todo/completed.svg");
+    mask-image: url('../assets/todo/completed.svg');
     mask-position: center;
     mask-repeat: no-repeat;
     mask-size: contain;
 }
 
-#right-tab-missions :is(.pisi-missions-completed-toggle)[aria-pressed="true"]::before,
-html[data-pisi-theme="light"] #right-tab-missions :is(.pisi-missions-completed-toggle)::before,
-html[data-pisi-theme="light"] #right-tab-missions :is(.pisi-missions-completed-toggle)[aria-pressed="true"]::before {
+#right-tab-missions :is(.pisi-missions-completed-toggle)[aria-pressed='true']::before,
+html[data-pisi-theme='light'] #right-tab-missions :is(.pisi-missions-completed-toggle)::before,
+html[data-pisi-theme='light'] #right-tab-missions :is(.pisi-missions-completed-toggle)[aria-pressed='true']::before {
     border: 0;
     background: currentColor;
     box-shadow: none;

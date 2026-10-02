@@ -1,9 +1,5 @@
-import { registerModule } from "../core/module-registry.mjs";
-import {
-    PISI_TODO_STATUS_OPTIONS,
-    getPisiTodayIsoDate,
-    matchesPisiTodoFilter
-} from "./pisi-todo-utils.mjs";
+import { registerModule } from '../core/module-registry.mjs';
+import { PISI_TODO_STATUS_OPTIONS, getPisiTodayIsoDate, matchesPisiTodoFilter } from './pisi-todo-utils.mjs';
 
 const PISI_TODO_THIRD_VIEWS = Object.freeze([
     Object.freeze({ value: 'list', label: 'Liste' }),
@@ -83,13 +79,11 @@ function getPisiMissionTagFromHtmlThirdRelease(mission) {
     const template = document.createElement('template');
     template.innerHTML = String(mission?.html || '');
     const target = normalizePisiThirdTag(mission?.todoTag);
-    return Array.from(
-        template.content.querySelectorAll('.pisi-user-tag[data-pisi-tag]')
-    ).find((element) => {
-        return normalizePisiThirdTag(
-            element.dataset.pisiTag || element.textContent || ''
-        ) === target;
-    }) || null;
+    return (
+        Array.from(template.content.querySelectorAll('.pisi-user-tag[data-pisi-tag]')).find((element) => {
+            return normalizePisiThirdTag(element.dataset.pisiTag || element.textContent || '') === target;
+        }) || null
+    );
 }
 
 function parsePisiMissionDependenciesThirdRelease(mission) {
@@ -97,16 +91,21 @@ function parsePisiMissionDependenciesThirdRelease(mission) {
     const raw = String(tag?.dataset?.pisiTodoParent || '');
     if (!raw.startsWith('dep:')) return [];
 
-    return Array.from(new Set(raw.slice(4)
-        .split('|')
-        .map((value) => {
-            try {
-                return decodeURIComponent(value);
-            } catch {
-                return '';
-            }
-        })
-        .filter(Boolean)));
+    return Array.from(
+        new Set(
+            raw
+                .slice(4)
+                .split('|')
+                .map((value) => {
+                    try {
+                        return decodeURIComponent(value);
+                    } catch {
+                        return '';
+                    }
+                })
+                .filter(Boolean)
+        )
+    );
 }
 
 function parsePisiMissionReminderThirdRelease(mission) {
@@ -115,9 +114,7 @@ function parsePisiMissionReminderThirdRelease(mission) {
         return className.startsWith('pisi-todo-reminder-');
     });
     const value = String(reminderClass || '').replace('pisi-todo-reminder-', '');
-    return PISI_TODO_REMINDER_OPTIONS.some((option) => option.value === value)
-        ? value
-        : 'none';
+    return PISI_TODO_REMINDER_OPTIONS.some((option) => option.value === value) ? value : 'none';
 }
 
 function getPisiMissionTitleThirdRelease(mission) {
@@ -128,9 +125,7 @@ function getPisiMissionTitleThirdRelease(mission) {
 }
 
 function getPisiMissionDateKeyThirdRelease(mission) {
-    return mission?.finishDate instanceof Date && !Number.isNaN(mission.finishDate.getTime())
-        ? getPisiTodayIsoDate(mission.finishDate)
-        : '';
+    return mission?.finishDate instanceof Date && !Number.isNaN(mission.finishDate.getTime()) ? getPisiTodayIsoDate(mission.finishDate) : '';
 }
 
 function enhancePisiMissionsThirdRelease(missions = []) {
@@ -142,13 +137,9 @@ function enhancePisiMissionsThirdRelease(missions = []) {
     const byId = new Map(enhanced.map((mission) => [mission.missionId, mission]));
 
     for (const mission of enhanced) {
-        mission.dependencyMissions = mission.dependencies
-            .map((id) => byId.get(id))
-            .filter(Boolean);
-        mission.missingDependencies = mission.dependencies
-            .filter((id) => !byId.has(id));
-        mission.incompleteDependencies = mission.dependencyMissions
-            .filter((dependency) => !dependency.completed);
+        mission.dependencyMissions = mission.dependencies.map((id) => byId.get(id)).filter(Boolean);
+        mission.missingDependencies = mission.dependencies.filter((id) => !byId.has(id));
+        mission.incompleteDependencies = mission.dependencyMissions.filter((dependency) => !dependency.completed);
         mission.dependencyBlocked = mission.incompleteDependencies.length > 0;
         mission.effectiveStatus = mission.dependencyBlocked ? 'blocked' : mission.status;
     }
@@ -158,9 +149,7 @@ function enhancePisiMissionsThirdRelease(missions = []) {
 
 function getPisiThirdAllMissions() {
     if (typeof window.getPisiMissionsFromIndexFirstRelease !== 'function') return [];
-    return enhancePisiMissionsThirdRelease(
-        window.getPisiMissionsFromIndexFirstRelease({ includeCompleted: true })
-    );
+    return enhancePisiMissionsThirdRelease(window.getPisiMissionsFromIndexFirstRelease({ includeCompleted: true }));
 }
 
 function getPisiThirdVisibleMissions(allMissions) {
@@ -214,12 +203,8 @@ async function mutatePisiMissionTagThirdRelease(mission, mutate) {
 }
 
 async function setPisiMissionDependenciesThirdRelease(mission, dependencyIds = []) {
-    const normalized = Array.from(new Set(dependencyIds
-        .map(String)
-        .filter((id) => id && id !== mission?.missionId)));
-    const value = normalized.length
-        ? `dep:${normalized.map(encodeURIComponent).join('|')}`
-        : '';
+    const normalized = Array.from(new Set(dependencyIds.map(String).filter((id) => id && id !== mission?.missionId)));
+    const value = normalized.length ? `dep:${normalized.map(encodeURIComponent).join('|')}` : '';
 
     const result = await mutatePisiMissionTagThirdRelease(mission, (tag) => {
         if (String(tag.dataset.pisiTodoParent || '') === value) return false;
@@ -235,7 +220,9 @@ async function setPisiMissionDependenciesThirdRelease(mission, dependencyIds = [
 async function setPisiMissionReminderThirdRelease(mission, reminderValue) {
     const reminder = PISI_TODO_REMINDER_OPTIONS.some((option) => {
         return option.value === reminderValue;
-    }) ? reminderValue : 'none';
+    })
+        ? reminderValue
+        : 'none';
 
     const result = await mutatePisiMissionTagThirdRelease(mission, (tag) => {
         Array.from(tag.classList).forEach((className) => {
@@ -277,10 +264,7 @@ function appendPisiTodoThirdViewSwitcher(toolbar) {
         const button = makePisiThirdButton(view.label, 'pisi-third-view-button');
         button.dataset.view = view.value;
         button.classList.toggle('active', pisiTodoThirdReleaseState.view === view.value);
-        button.setAttribute(
-            'aria-pressed',
-            pisiTodoThirdReleaseState.view === view.value ? 'true' : 'false'
-        );
+        button.setAttribute('aria-pressed', pisiTodoThirdReleaseState.view === view.value ? 'true' : 'false');
         button.addEventListener('click', () => {
             pisiTodoThirdReleaseState.view = view.value;
             savePisiTodoThirdPreference('view', view.value);
@@ -338,9 +322,7 @@ function appendPisiMissionPlanningControlsThirdRelease(card, mission, allMission
     details.className = 'pisi-third-planning';
     const summary = document.createElement('summary');
     const count = mission.dependencies.length;
-    summary.textContent = count
-        ? `${pisiTodoThirdTranslate('Planlama')} · ${count}`
-        : pisiTodoThirdTranslate('Planlama');
+    summary.textContent = count ? `${pisiTodoThirdTranslate('Planlama')} · ${count}` : pisiTodoThirdTranslate('Planlama');
     details.appendChild(summary);
 
     const body = document.createElement('div');
@@ -373,8 +355,7 @@ function appendPisiMissionPlanningControlsThirdRelease(card, mission, allMission
 
     allMissions
         .filter((candidate) => {
-            return candidate.missionId !== mission.missionId &&
-                !mission.dependencies.includes(candidate.missionId);
+            return candidate.missionId !== mission.missionId && !mission.dependencies.includes(candidate.missionId);
         })
         .forEach((candidate) => {
             const option = document.createElement('option');
@@ -386,20 +367,13 @@ function appendPisiMissionPlanningControlsThirdRelease(card, mission, allMission
     addDependency.addEventListener('change', async () => {
         const dependencyId = addDependency.value;
         if (!dependencyId) return;
-        if (wouldCreatePisiDependencyCycleThirdRelease(
-            mission.missionId,
-            dependencyId,
-            allMissions
-        )) {
+        if (wouldCreatePisiDependencyCycleThirdRelease(mission.missionId, dependencyId, allMissions)) {
             addDependency.value = '';
             alert(pisiTodoThirdTranslate('Bu bağımlılık döngü oluşturur.'));
             return;
         }
         addDependency.disabled = true;
-        const result = await setPisiMissionDependenciesThirdRelease(
-            mission,
-            [...mission.dependencies, dependencyId]
-        );
+        const result = await setPisiMissionDependenciesThirdRelease(mission, [...mission.dependencies, dependencyId]);
         if (!result?.ok) {
             addDependency.disabled = false;
             alert(result?.error || 'Bağımlılık kaydedilemedi.');
@@ -424,10 +398,7 @@ function appendPisiMissionPlanningControlsThirdRelease(card, mission, allMission
     }
     reminderSelect.addEventListener('change', async () => {
         reminderSelect.disabled = true;
-        const result = await setPisiMissionReminderThirdRelease(
-            mission,
-            reminderSelect.value
-        );
+        const result = await setPisiMissionReminderThirdRelease(mission, reminderSelect.value);
         if (!result?.ok) {
             reminderSelect.value = mission.reminder;
             reminderSelect.disabled = false;
@@ -516,10 +487,7 @@ function renderPisiTodoThirdKanban(list, missions) {
             const missionId = event.dataTransfer.getData('text/plain');
             const mission = missions.find((item) => item.missionId === missionId);
             if (!mission || mission.status === status.value) return;
-            const result = await window.setPisiMissionStatusFirstRelease?.(
-                mission,
-                status.value
-            );
+            const result = await window.setPisiMissionStatusFirstRelease?.(mission, status.value);
             if (!result?.ok) alert(result?.error || 'Görev durumu değiştirilemedi.');
             window.refreshPisiTagsPanelSoon?.();
         });
@@ -562,11 +530,7 @@ function renderPisiTodoThirdCalendar(list, missions) {
         year: 'numeric'
     });
     previous.addEventListener('click', () => {
-        setPisiCalendarCursorThirdRelease(new Date(
-            cursor.getFullYear(),
-            cursor.getMonth() - 1,
-            1
-        ));
+        setPisiCalendarCursorThirdRelease(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1));
         schedulePisiTodoThirdReleaseApply(true);
     });
     today.addEventListener('click', () => {
@@ -575,11 +539,7 @@ function renderPisiTodoThirdCalendar(list, missions) {
         schedulePisiTodoThirdReleaseApply(true);
     });
     next.addEventListener('click', () => {
-        setPisiCalendarCursorThirdRelease(new Date(
-            cursor.getFullYear(),
-            cursor.getMonth() + 1,
-            1
-        ));
+        setPisiCalendarCursorThirdRelease(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1));
         schedulePisiTodoThirdReleaseApply(true);
     });
     nav.append(previous, today, title, next);
@@ -634,10 +594,7 @@ function renderPisiTodoThirdCalendar(list, missions) {
         label.textContent = `${pisiTodoThirdTranslate('Tarihsiz')} (${undated.length})`;
         tray.appendChild(label);
         undated.forEach((mission) => {
-            tray.appendChild(makePisiThirdMissionButton(
-                mission,
-                'pisi-third-undated-task'
-            ));
+            tray.appendChild(makePisiThirdMissionButton(mission, 'pisi-third-undated-task'));
         });
         root.appendChild(tray);
     }
@@ -654,17 +611,13 @@ function renderPisiTodoThirdTimeline(list, missions) {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const dated = missions
-        .filter((mission) => mission.finishDate)
-        .sort((a, b) => String(a.finishDate).localeCompare(String(b.finishDate)));
+    const dated = missions.filter((mission) => mission.finishDate).sort((a, b) => String(a.finishDate).localeCompare(String(b.finishDate)));
 
     for (const mission of dated) {
         const due = new Date(mission.finishDate);
         due.setHours(0, 0, 0, 0);
-        const dayOffset = Math.round(
-            (due.getTime() - today.getTime()) / 86400000
-        );
-        const position = Math.max(0, Math.min(30, dayOffset)) / 30 * 100;
+        const dayOffset = Math.round((due.getTime() - today.getTime()) / 86400000);
+        const position = (Math.max(0, Math.min(30, dayOffset)) / 30) * 100;
         const row = document.createElement('div');
         row.className = 'pisi-third-timeline-row';
         row.classList.toggle('overdue', dayOffset < 0);
@@ -695,10 +648,7 @@ function renderPisiTodoThirdTimeline(list, missions) {
         label.textContent = `${pisiTodoThirdTranslate('Tarihsiz')} (${undated.length})`;
         tray.appendChild(label);
         undated.forEach((mission) => {
-            tray.appendChild(makePisiThirdMissionButton(
-                mission,
-                'pisi-third-undated-task'
-            ));
+            tray.appendChild(makePisiThirdMissionButton(mission, 'pisi-third-undated-task'));
         });
         root.appendChild(tray);
     }
@@ -730,7 +680,7 @@ function appendPisiThirdProgressRow(container, label, value, total) {
     const track = document.createElement('div');
     track.className = 'pisi-third-progress-track';
     const bar = document.createElement('span');
-    bar.style.width = `${total ? Math.round(value / total * 100) : 0}%`;
+    bar.style.width = `${total ? Math.round((value / total) * 100) : 0}%`;
     track.appendChild(bar);
     row.append(header, track);
     container.appendChild(row);
@@ -748,7 +698,7 @@ function renderPisiTodoThirdStats(list, missions) {
     const overdue = missions.filter((mission) => {
         return !mission.completed && mission.dateBucket === 'overdue';
     }).length;
-    const rate = total ? Math.round(completed / total * 100) : 0;
+    const rate = total ? Math.round((completed / total) * 100) : 0;
 
     const cards = document.createElement('div');
     cards.className = 'pisi-third-stat-cards';
@@ -834,17 +784,13 @@ function getPisiReminderTimestampThirdRelease(mission) {
 }
 
 function getPisiReminderSeenKeyThirdRelease(mission) {
-    return getPisiTodoThirdStorageKey(
-        `reminded:${encodeURIComponent(mission.missionId)}:${mission.reminder}:${getPisiMissionDateKeyThirdRelease(mission)}`
-    );
+    return getPisiTodoThirdStorageKey(`reminded:${encodeURIComponent(mission.missionId)}:${mission.reminder}:${getPisiMissionDateKeyThirdRelease(mission)}`);
 }
 
 function showPisiReminderBannerThirdRelease(mission) {
     const panel = document.getElementById('pisi-missions-panel');
     if (!panel) return;
-    const existing = panel.querySelector(
-        `.pisi-third-reminder-banner[data-mission-id="${CSS.escape(mission.missionId)}"]`
-    );
+    const existing = panel.querySelector(`.pisi-third-reminder-banner[data-mission-id="${CSS.escape(mission.missionId)}"]`);
     if (existing) return;
 
     const banner = document.createElement('div');
@@ -954,10 +900,7 @@ function initializePisiTodoThirdRelease() {
         }, 250);
     }
     if (!pisiTodoThirdReleaseState.reminderTimer) {
-        pisiTodoThirdReleaseState.reminderTimer = setInterval(
-            checkPisiTodoRemindersThirdRelease,
-            60000
-        );
+        pisiTodoThirdReleaseState.reminderTimer = setInterval(checkPisiTodoRemindersThirdRelease, 60000);
     }
 }
 

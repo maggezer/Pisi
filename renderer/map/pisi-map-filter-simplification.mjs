@@ -1,8 +1,5 @@
 import { registerModule } from '../core/module-registry.mjs';
-import {
-    normalizePisiOperationalDisplay,
-    normalizePisiOperationalScope
-} from './pisi-map-operational-core.mjs';
+import { normalizePisiOperationalDisplay, normalizePisiOperationalScope } from './pisi-map-operational-core.mjs';
 
 const filterText = {
     tr: {
@@ -93,9 +90,7 @@ async function persistOperational(payload) {
         current.display = normalizePisiOperationalDisplay(result.operational.display);
         const scoped = scopedFiltersModule()?.scopedMapState;
         if (scoped) {
-            scoped.savedScopes = Array.isArray(result.operational.savedScopes)
-                ? result.operational.savedScopes
-                : [];
+            scoped.savedScopes = Array.isArray(result.operational.savedScopes) ? result.operational.savedScopes : [];
         }
     }
 
@@ -254,13 +249,7 @@ function installSimplifiedFilterControls() {
     const activeLabel = ensureSectionLabel(group, 'active', chips);
     const savedLabel = ensureSectionLabel(group, 'saved', saved);
 
-    orderSimplifiedFilterControlsOnce(group, [
-        property, operator, value, add,
-        activeLabel, chips,
-        savedLabel, saved,
-        save, apply, remove,
-        freeze
-    ]);
+    orderSimplifiedFilterControlsOnce(group, [property, operator, value, add, activeLabel, chips, savedLabel, saved, save, apply, remove, freeze]);
 
     setText(add, t('addFilter'));
     syncSavedFilterLabels();
@@ -288,12 +277,9 @@ function scheduleSimplifiedFilterSync() {
 }
 
 function mutationTouchesFilterControls(mutation) {
-    return [...mutation.addedNodes, ...mutation.removedNodes].some((node) => (
-        node?.nodeType === Node.ELEMENT_NODE && (
-            node.id === 'pisi-map-scope-controls' ||
-            node.querySelector?.('#pisi-map-scope-controls')
-        )
-    ));
+    return [...mutation.addedNodes, ...mutation.removedNodes].some(
+        (node) => node?.nodeType === Node.ELEMENT_NODE && (node.id === 'pisi-map-scope-controls' || node.querySelector?.('#pisi-map-scope-controls'))
+    );
 }
 
 function bindSimplifiedFilterControls() {

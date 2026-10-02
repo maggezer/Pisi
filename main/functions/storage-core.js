@@ -3,31 +3,19 @@
 const path = require('path');
 
 const PISI_STORAGE_CONTRACT_VERSION = 1;
-const PISI_STORAGE_DRIVER_METHODS = Object.freeze([
-    'exists',
-    'mkdir',
-    'readText',
-    'writeText',
-    'list',
-    'stat',
-    'rename',
-    'remove'
-]);
+const PISI_STORAGE_DRIVER_METHODS = Object.freeze(['exists', 'mkdir', 'readText', 'writeText', 'list', 'stat', 'rename', 'remove']);
 
 function normalizePisiStorageKey(input = '.') {
-    let raw = String(input ?? '').trim().replace(/\\/g, '/');
+    let raw = String(input ?? '')
+        .trim()
+        .replace(/\\/g, '/');
     if (!raw || raw === '.') return '.';
     if (/^[A-Za-z]:/.test(raw) || raw.startsWith('/')) {
         throw new Error('Storage anahtarı mutlak yol olamaz.');
     }
     raw = raw.replace(/^\.\/+/, '');
     const normalized = path.posix.normalize(raw);
-    if (
-        !normalized ||
-        normalized === '..' ||
-        normalized.startsWith('../') ||
-        path.posix.isAbsolute(normalized)
-    ) {
+    if (!normalized || normalized === '..' || normalized.startsWith('../') || path.posix.isAbsolute(normalized)) {
         throw new Error('Storage anahtarı proje kökünün dışına çıkamaz.');
     }
     return normalized === '.' ? '.' : normalized;
@@ -37,20 +25,14 @@ function isSameOrInsidePisiStoragePath(candidatePath, rootPath) {
     const candidate = path.resolve(String(candidatePath || ''));
     const root = path.resolve(String(rootPath || ''));
     const relative = path.relative(root, candidate);
-    return relative === '' || (
-        relative !== '..' &&
-        !relative.startsWith(`..${path.sep}`) &&
-        !path.isAbsolute(relative)
-    );
+    return relative === '' || (relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative));
 }
 
 function resolvePisiStoragePath(projectRoot, key = '.') {
     const root = path.resolve(String(projectRoot || ''));
     if (!root) throw new Error('Storage için proje kökü gerekli.');
     const normalized = normalizePisiStorageKey(key);
-    const target = normalized === '.'
-        ? root
-        : path.resolve(root, ...normalized.split('/'));
+    const target = normalized === '.' ? root : path.resolve(root, ...normalized.split('/'));
     if (!isSameOrInsidePisiStoragePath(target, root)) {
         throw new Error('Storage yolu proje kökünün dışına çıkamaz.');
     }
@@ -64,9 +46,7 @@ function getPisiStorageKeyForPath(projectRoot, targetPath) {
         throw new Error('Dosya proje storage kökünün dışında.');
     }
     const relative = path.relative(root, target);
-    return relative
-        ? normalizePisiStorageKey(relative.split(path.sep).join('/'))
-        : '.';
+    return relative ? normalizePisiStorageKey(relative.split(path.sep).join('/')) : '.';
 }
 
 function assertPisiStorageDriver(driver) {
@@ -92,11 +72,17 @@ function storageFailure(error, code, extra = {}) {
 
 function normalizeStorageExtensions(extensions) {
     if (!Array.isArray(extensions) || !extensions.length) return null;
-    return new Set(extensions.map((value) => {
-        const raw = String(value || '').trim().toLowerCase();
-        if (!raw) return '';
-        return raw.startsWith('.') ? raw : `.${raw}`;
-    }).filter(Boolean));
+    return new Set(
+        extensions
+            .map((value) => {
+                const raw = String(value || '')
+                    .trim()
+                    .toLowerCase();
+                if (!raw) return '';
+                return raw.startsWith('.') ? raw : `.${raw}`;
+            })
+            .filter(Boolean)
+    );
 }
 
 function createPisiProjectStorage(projectRoot, driver) {
@@ -214,9 +200,7 @@ function createPisiProjectStorage(projectRoot, driver) {
     }
 
     function writeJson(key, value, options = {}) {
-        const spacing = Number.isInteger(options.space)
-            ? Math.max(0, Math.min(8, options.space))
-            : 2;
+        const spacing = Number.isInteger(options.space) ? Math.max(0, Math.min(8, options.space)) : 2;
         let content = JSON.stringify(value, null, spacing);
         if (options.newline !== false) content += '\n';
         return writeText(key, content, options);
@@ -241,9 +225,7 @@ function createPisiProjectStorage(projectRoot, driver) {
                 };
             }
             const entries = safeDriver.list(targetPath, options).map((entry) => {
-                const childKey = normalized === '.'
-                    ? normalizePisiStorageKey(entry.name)
-                    : normalizePisiStorageKey(`${normalized}/${entry.name}`);
+                const childKey = normalized === '.' ? normalizePisiStorageKey(entry.name) : normalizePisiStorageKey(`${normalized}/${entry.name}`);
                 return {
                     name: entry.name,
                     key: childKey,
@@ -265,9 +247,7 @@ function createPisiProjectStorage(projectRoot, driver) {
 
     function walk(key = '.', options = {}) {
         const extensions = normalizeStorageExtensions(options.extensions);
-        const ignore = new Set((Array.isArray(options.ignore) ? options.ignore : [])
-            .map((value) => String(value || '').trim())
-            .filter(Boolean));
+        const ignore = new Set((Array.isArray(options.ignore) ? options.ignore : []).map((value) => String(value || '').trim()).filter(Boolean));
         const maxFiles = Math.max(1, Math.min(100000, Number(options.maxFiles) || 100000));
         const files = [];
         const visit = (currentKey) => {

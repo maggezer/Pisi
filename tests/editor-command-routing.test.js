@@ -127,15 +127,9 @@ let modulesPromise = null;
 function loadModules() {
     if (!modulesPromise) {
         modulesPromise = (async () => {
-            const preferences = await import(pathToFileURL(
-                path.join(root, 'renderer/editor/pisi-editor-command-preferences.mjs')
-            ).href);
-            const unified = await import(pathToFileURL(
-                path.join(root, 'renderer/editor/pisi-unified-command-menu.mjs')
-            ).href);
-            const routing = await import(pathToFileURL(
-                path.join(root, 'renderer/editor/pisi-editor-command-routing.mjs')
-            ).href);
+            const preferences = await import(pathToFileURL(path.join(root, 'renderer/editor/pisi-editor-command-preferences.mjs')).href);
+            const unified = await import(pathToFileURL(path.join(root, 'renderer/editor/pisi-unified-command-menu.mjs')).href);
+            const routing = await import(pathToFileURL(path.join(root, 'renderer/editor/pisi-editor-command-routing.mjs')).href);
             return { preferences, routing, unified };
         })();
     }
@@ -259,14 +253,8 @@ test('/ and .. build one command menu with formatting, lists, todo/done and LaTe
         assert.ok(ids.has('done'));
         assert.ok(ids.has('frac'));
 
-        assert.equal(
-            items.find((item) => item.id === 'bullet')?.category,
-            'Formatting · Lists'
-        );
-        assert.equal(
-            items.find((item) => item.id === 'number')?.category,
-            'Formatting · Lists'
-        );
+        assert.equal(items.find((item) => item.id === 'bullet')?.category, 'Formatting · Lists');
+        assert.equal(items.find((item) => item.id === 'number')?.category, 'Formatting · Lists');
     }
 });
 
@@ -283,17 +271,11 @@ test('standard LaTeX snippets are available by default and disappear when prefer
     assert.match(byId.get('int')?.template || '', /^\\int_/);
     assert.match(byId.get('matrix')?.template || '', /^\\begin\{matrix\}/);
 
-    assert.ok(
-        routing.buildPisiFinalCommandItems({ trigger: '/', body: '' })
-            .some((item) => item.kind === 'latex')
-    );
+    assert.ok(routing.buildPisiFinalCommandItems({ trigger: '/', body: '' }).some((item) => item.kind === 'latex'));
 
     preferences.setPisiLatexCommandsPreference(false);
     assert.equal(preferences.getPisiLatexCommandsPreference(), false);
-    assert.ok(
-        !routing.buildPisiFinalCommandItems({ trigger: '/', body: '' })
-            .some((item) => item.kind === 'latex')
-    );
+    assert.ok(!routing.buildPisiFinalCommandItems({ trigger: '/', body: '' }).some((item) => item.kind === 'latex'));
 });
 
 test('routed /frac menu click removes the token and inserts the LaTeX template', async () => {
@@ -404,7 +386,7 @@ test('production source has one / and .. menu renderer and no legacy menu/parser
     assert.match(routing, /function renderPisiRoutedUnifiedMenu/);
     assert.match(routing, /function buildPisiFinalCommandItems/);
     assert.match(routing, /runPisiExtendedUnifiedCommandItem\(editor, command, item\)/);
-    assert.match(routing, /editor\.addEventListener\('keydown',[\s\S]*true\);/);
+    assert.match(routing, /editor\.addEventListener\(\s*'keydown'\s*,[\s\S]*?true\s*\);/);
 
     assert.doesNotMatch(unified, /addEventListener\('keydown'|initializePisiUnifiedEditorCommandMenu|renderPisiUnifiedCommandMenu/);
     assert.doesNotMatch(formatting, /installPisiUnifiedCommandFormatting|renderPisiExtendedUnifiedMenu|addEventListener\('input'/);

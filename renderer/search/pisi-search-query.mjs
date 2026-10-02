@@ -1,15 +1,26 @@
-import {
-    getPisiSearchCandidates,
-    normalizePisiSearchText
-} from './pisi-search-core.mjs';
+import { getPisiSearchCandidates, normalizePisiSearchText } from './pisi-search-core.mjs';
 
 const PISI_SEARCH_QUERY_KIND_ALIASES = Object.freeze({
-    node: 'node', nodes: 'node', not: 'node',
-    map: 'map', maps: 'map', harita: 'map',
-    task: 'task', tasks: 'task', gorev: 'task', görev: 'task',
-    tag: 'tag', tags: 'tag', etiket: 'tag',
-    content: 'content', text: 'content', icerik: 'content', içerik: 'content',
-    table: 'table', tables: 'table', tablo: 'table'
+    node: 'node',
+    nodes: 'node',
+    not: 'node',
+    map: 'map',
+    maps: 'map',
+    harita: 'map',
+    task: 'task',
+    tasks: 'task',
+    gorev: 'task',
+    görev: 'task',
+    tag: 'tag',
+    tags: 'tag',
+    etiket: 'tag',
+    content: 'content',
+    text: 'content',
+    icerik: 'content',
+    içerik: 'content',
+    table: 'table',
+    tables: 'table',
+    tablo: 'table'
 });
 
 const PISI_SEARCH_QUERY_FIELD_WEIGHTS = Object.freeze({
@@ -25,22 +36,18 @@ const PISI_SEARCH_QUERY_FIELD_WEIGHTS = Object.freeze({
     priority: 28
 });
 
-const PISI_SEARCH_FUZZY_FIELDS = new Set([
-    'title', 'task', 'tag', 'property', 'map', 'path'
-]);
+const PISI_SEARCH_FUZZY_FIELDS = new Set(['title', 'task', 'tag', 'property', 'map', 'path']);
 
-const PISI_SEARCH_FILTER_KEYS = new Set([
-    'type', 'kind', 'map', 'path', 'tag', 'status', 'priority'
-]);
+const PISI_SEARCH_FILTER_KEYS = new Set(['type', 'kind', 'map', 'path', 'tag', 'status', 'priority']);
 
 function cleanPisiSearchQueryValue(value = '') {
-    return String(value || '').trim().replace(/^['"]|['"]$/g, '');
+    return String(value || '')
+        .trim()
+        .replace(/^['"]|['"]$/g, '');
 }
 
 function normalizePisiSearchKind(value = '') {
-    return PISI_SEARCH_QUERY_KIND_ALIASES[
-        normalizePisiSearchText(value).replace(/\s+/g, '')
-    ] || '';
+    return PISI_SEARCH_QUERY_KIND_ALIASES[normalizePisiSearchText(value).replace(/\s+/g, '')] || '';
 }
 
 function tokenizeQuotedPisiSearchQuery(query = '') {
@@ -68,9 +75,7 @@ function parsePisiSearchQuery(query = '') {
     const phrases = [];
 
     for (const token of tokenizeQuotedPisiSearchQuery(query)) {
-        const hashTag = !token.quoted && token.raw.startsWith('#')
-            ? cleanPisiSearchQueryValue(token.raw.slice(1))
-            : '';
+        const hashTag = !token.quoted && token.raw.startsWith('#') ? cleanPisiSearchQueryValue(token.raw.slice(1)) : '';
         if (hashTag) {
             filters.tags.push(normalizePisiSearchText(hashTag));
             continue;
@@ -120,24 +125,21 @@ function parsePisiSearchQuery(query = '') {
         textQuery: [...phrases, ...terms].join(' ').trim(),
         hasText: Boolean(terms.length || phrases.length),
         hasFilters: Boolean(
-            filters.kinds.size || filters.maps.length || filters.paths.length ||
-            filters.tags.length || filters.statuses.length || filters.priorities.length
+            filters.kinds.size || filters.maps.length || filters.paths.length || filters.tags.length || filters.statuses.length || filters.priorities.length
         )
     };
 }
 
 function getPisiAdvancedSearchFields(record = {}) {
-    const fields = Array.isArray(record.searchFields)
-        ? record.searchFields
-        : [];
-    return fields.map((field) => ({
-        kind: field?.kind || 'content',
-        value: String(field?.value || ''),
-        normalized: normalizePisiSearchText(field?.value || ''),
-        weight: Number(field?.weight) ||
-            PISI_SEARCH_QUERY_FIELD_WEIGHTS[field?.kind] ||
-            PISI_SEARCH_QUERY_FIELD_WEIGHTS.content
-    })).filter((field) => field.normalized);
+    const fields = Array.isArray(record.searchFields) ? record.searchFields : [];
+    return fields
+        .map((field) => ({
+            kind: field?.kind || 'content',
+            value: String(field?.value || ''),
+            normalized: normalizePisiSearchText(field?.value || ''),
+            weight: Number(field?.weight) || PISI_SEARCH_QUERY_FIELD_WEIGHTS[field?.kind] || PISI_SEARCH_QUERY_FIELD_WEIGHTS.content
+        }))
+        .filter((field) => field.normalized);
 }
 
 function boundedPisiEditDistance(a = '', b = '', maxDistance = 2) {
@@ -154,11 +156,7 @@ function boundedPisiEditDistance(a = '', b = '', maxDistance = 2) {
         let rowMin = current[0];
         for (let j = 1; j <= right.length; j += 1) {
             const cost = left[i - 1] === right[j - 1] ? 0 : 1;
-            const value = Math.min(
-                previous[j] + 1,
-                current[j - 1] + 1,
-                previous[j - 1] + cost
-            );
+            const value = Math.min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + cost);
             current[j] = value;
             rowMin = Math.min(rowMin, value);
         }
@@ -197,10 +195,7 @@ function getPisiTokenFieldScore(field, token, allowFuzzy) {
 
 function getPisiRecordMapText(record = {}) {
     const memberships = Array.isArray(record.memberships) ? record.memberships : [];
-    return normalizePisiSearchText([
-        record.mapTitle || '',
-        ...memberships.map((membership) => membership?.mapTitle || '')
-    ].join(' '));
+    return normalizePisiSearchText([record.mapTitle || '', ...memberships.map((membership) => membership?.mapTitle || '')].join(' '));
 }
 
 function recordPassesPisiSearchFilters(record, filters) {
@@ -214,11 +209,7 @@ function recordPassesPisiSearchFilters(record, filters) {
         if (!filters.paths.every((needle) => pathText.includes(needle))) return false;
     }
     if (filters.tags.length) {
-        const tagText = normalizePisiSearchText([
-            record?.tag || '',
-            record?.todoTag || '',
-            ...(Array.isArray(record?.tags) ? record.tags : [])
-        ].join(' '));
+        const tagText = normalizePisiSearchText([record?.tag || '', record?.todoTag || '', ...(Array.isArray(record?.tags) ? record.tags : [])].join(' '));
         if (!filters.tags.every((needle) => tagText.includes(needle))) return false;
     }
     if (filters.statuses.length) {
@@ -299,18 +290,13 @@ function scorePisiAdvancedSearchRecord(record, parsed, options = {}) {
     const currentMapKey = String(options.currentMapPathKey || '');
     if (currentNodeKey && String(record?.nodePathKey || '') === currentNodeKey) score += 38;
     if (currentMapKey) {
-        const mapKeys = new Set([
-            record?.mapPathKey,
-            ...(Array.isArray(record?.memberships)
-                ? record.memberships.map((item) => item?.mapPathKey)
-                : [])
-        ].filter(Boolean));
+        const mapKeys = new Set(
+            [record?.mapPathKey, ...(Array.isArray(record?.memberships) ? record.memberships.map((item) => item?.mapPathKey) : [])].filter(Boolean)
+        );
         if (mapKeys.has(currentMapKey)) score += 28;
     }
 
-    const recent = options.recentById instanceof Map
-        ? options.recentById.get(String(record?.id || ''))
-        : null;
+    const recent = options.recentById instanceof Map ? options.recentById.get(String(record?.id || '')) : null;
     if (recent) {
         const ageHours = Math.max(0, (Number(options.now) || Date.now()) - Number(recent.lastOpened || 0)) / 3600000;
         score += Math.max(0, 125 - Math.min(100, ageHours * 2));
@@ -327,12 +313,8 @@ function getPisiAdvancedCandidates(index, parsed) {
     if (Array.isArray(exact) && exact.length) return exact;
     // Exact trigram intersection returning no candidates is the expected typo path.
     // Limit fuzzy fallback to navigation-oriented records plus bounded content records.
-    const navigation = records.filter((record) => [
-        'node', 'map', 'task', 'tag'
-    ].includes(record?.kind));
-    const content = records.filter((record) => [
-        'content', 'table'
-    ].includes(record?.kind)).slice(0, 2500);
+    const navigation = records.filter((record) => ['node', 'map', 'task', 'tag'].includes(record?.kind));
+    const content = records.filter((record) => ['content', 'table'].includes(record?.kind)).slice(0, 2500);
     return [...navigation, ...content];
 }
 
@@ -340,13 +322,9 @@ function searchPisiAdvancedIndex(index, query = '', options = {}) {
     const parsed = parsePisiSearchQuery(query);
     const limit = Math.max(1, Math.min(250, Number(options.limit) || 80));
     const candidates = getPisiAdvancedCandidates(index, parsed);
-    const kindFilter = options.kinds instanceof Set
-        ? options.kinds
-        : new Set(Array.isArray(options.kinds) ? options.kinds : []);
+    const kindFilter = options.kinds instanceof Set ? options.kinds : new Set(Array.isArray(options.kinds) ? options.kinds : []);
     const filters = kindFilter.size
-        ? { ...parsed.filters, kinds: new Set([
-            ...parsed.filters.kinds.size ? parsed.filters.kinds : kindFilter
-        ]) }
+        ? { ...parsed.filters, kinds: new Set([...(parsed.filters.kinds.size ? parsed.filters.kinds : kindFilter)]) }
         : parsed.filters;
     const effectiveParsed = filters === parsed.filters ? parsed : { ...parsed, filters };
 
@@ -369,9 +347,7 @@ function searchPisiAdvancedIndex(index, query = '', options = {}) {
             const aRecent = options.recentById?.get?.(String(a.record?.id || ''))?.lastOpened || 0;
             const bRecent = options.recentById?.get?.(String(b.record?.id || ''))?.lastOpened || 0;
             if (bRecent !== aRecent) return bRecent - aRecent;
-            const titleOrder = String(a.record?.title || '').localeCompare(
-                String(b.record?.title || ''), 'tr'
-            );
+            const titleOrder = String(a.record?.title || '').localeCompare(String(b.record?.title || ''), 'tr');
             return titleOrder || a.originalIndex - b.originalIndex;
         })
         .slice(0, limit)

@@ -14,8 +14,7 @@ function isPisiTodoThirdDomStable() {
     if (!toolbar.querySelector('.pisi-third-view-switcher')) return false;
 
     if (state.view !== 'list') {
-        return list.dataset.pisiThirdView === state.view &&
-            Boolean(list.firstElementChild);
+        return list.dataset.pisiThirdView === state.view && Boolean(list.firstElementChild);
     }
 
     const cards = Array.from(list.querySelectorAll('.pisi-mission-card'));

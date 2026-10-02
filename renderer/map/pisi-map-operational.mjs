@@ -1,12 +1,6 @@
 import { registerModule } from '../core/module-registry.mjs';
-import {
-    normalizePisiOperationalDisplay,
-    normalizePisiOperationalScope
-} from './pisi-map-operational-core.mjs';
-import {
-    clearPisiOperationalMapRender,
-    renderPisiOperationalMap
-} from './pisi-map-operational-render.mjs';
+import { normalizePisiOperationalDisplay, normalizePisiOperationalScope } from './pisi-map-operational-core.mjs';
+import { clearPisiOperationalMapRender, renderPisiOperationalMap } from './pisi-map-operational-render.mjs';
 
 const operationalState = {
     mapPath: null,
@@ -23,26 +17,64 @@ const operationalState = {
 
 const operationalText = {
     tr: {
-        search: 'Map içinde ara', all: 'Tümü', active: 'Aktif iş', blocked: 'Blocked',
-        overdue: 'Geciken', missing: 'Next action yok',
-        relations: 'Tüm ilişkiler', hierarchy: 'Hierarchy', flow: 'Flow', peer: 'Peer',
-        focus: 'Komşulara odaklan', linked: 'Bağlı node oluştur',
-        deps: 'Dependencies', labels: 'Labels', work: 'Work badges',
-        layout: 'Layout seç', save: 'Layout kaydet', restore: 'Geri yükle',
-        remove: 'Sil', reset: 'Reset', layoutName: 'Layout adı', cancel: 'İptal', noSelection: 'Bir node seç.',
-        createFailed: 'Bağlı node oluşturulamadı.', saveFailed: 'Operational map kaydedilemedi.',
-        visible: 'görünür', blockedShort: 'blocked', overdueShort: 'geciken'
+        search: 'Map içinde ara',
+        all: 'Tümü',
+        active: 'Aktif iş',
+        blocked: 'Blocked',
+        overdue: 'Geciken',
+        missing: 'Next action yok',
+        relations: 'Tüm ilişkiler',
+        hierarchy: 'Hierarchy',
+        flow: 'Flow',
+        peer: 'Peer',
+        focus: 'Komşulara odaklan',
+        linked: 'Bağlı node oluştur',
+        deps: 'Dependencies',
+        labels: 'Labels',
+        work: 'Work badges',
+        layout: 'Layout seç',
+        save: 'Layout kaydet',
+        restore: 'Geri yükle',
+        remove: 'Sil',
+        reset: 'Reset',
+        layoutName: 'Layout adı',
+        cancel: 'İptal',
+        noSelection: 'Bir node seç.',
+        createFailed: 'Bağlı node oluşturulamadı.',
+        saveFailed: 'Operational map kaydedilemedi.',
+        visible: 'görünür',
+        blockedShort: 'blocked',
+        overdueShort: 'geciken'
     },
     eng: {
-        search: 'Search map', all: 'All', active: 'Active work', blocked: 'Blocked',
-        overdue: 'Overdue', missing: 'Missing next action',
-        relations: 'All relationships', hierarchy: 'Hierarchy', flow: 'Flow', peer: 'Peer',
-        focus: 'Focus neighbors', linked: 'Create linked node',
-        deps: 'Dependencies', labels: 'Labels', work: 'Work badges',
-        layout: 'Choose layout', save: 'Save layout', restore: 'Restore',
-        remove: 'Delete', reset: 'Reset', layoutName: 'Layout name', cancel: 'Cancel', noSelection: 'Select a node.',
-        createFailed: 'Linked node could not be created.', saveFailed: 'Operational map could not be saved.',
-        visible: 'visible', blockedShort: 'blocked', overdueShort: 'overdue'
+        search: 'Search map',
+        all: 'All',
+        active: 'Active work',
+        blocked: 'Blocked',
+        overdue: 'Overdue',
+        missing: 'Missing next action',
+        relations: 'All relationships',
+        hierarchy: 'Hierarchy',
+        flow: 'Flow',
+        peer: 'Peer',
+        focus: 'Focus neighbors',
+        linked: 'Create linked node',
+        deps: 'Dependencies',
+        labels: 'Labels',
+        work: 'Work badges',
+        layout: 'Choose layout',
+        save: 'Save layout',
+        restore: 'Restore',
+        remove: 'Delete',
+        reset: 'Reset',
+        layoutName: 'Layout name',
+        cancel: 'Cancel',
+        noSelection: 'Select a node.',
+        createFailed: 'Linked node could not be created.',
+        saveFailed: 'Operational map could not be saved.',
+        visible: 'visible',
+        blockedShort: 'blocked',
+        overdueShort: 'overdue'
     }
 };
 
@@ -67,9 +99,7 @@ function getPisiOperationalMapItem() {
 }
 
 function getSelectedOperationalNodeBox() {
-    const boxes = Array.from(document.querySelectorAll(
-        '.map-node-box.selected:not(.pisi-operational-filter-hidden)'
-    ));
+    const boxes = Array.from(document.querySelectorAll('.map-node-box.selected:not(.pisi-operational-filter-hidden)'));
     return boxes.length === 1 ? boxes[0] : null;
 }
 
@@ -135,11 +165,15 @@ function requestPisiName({ title = '', label = '', initialValue = '', confirmLab
             }
             dialog.close('save');
         });
-        dialog.addEventListener('close', () => {
-            const value = dialog.returnValue === 'save' ? input.value.trim() : '';
-            dialog.remove();
-            resolve(value || null);
-        }, { once: true });
+        dialog.addEventListener(
+            'close',
+            () => {
+                const value = dialog.returnValue === 'save' ? input.value.trim() : '';
+                dialog.remove();
+                resolve(value || null);
+            },
+            { once: true }
+        );
 
         document.body.appendChild(dialog);
         dialog.showModal();
@@ -152,20 +186,15 @@ function requestPisiName({ title = '', label = '', initialValue = '', confirmLab
 
 async function persistPisiOperationalPayload(payload) {
     if (!window.activeMapPath || !window.pisiProject?.saveMapCamera) return null;
-    const result = await window.pisiProject.saveMapCamera(
-        window.activeMapPath,
-        {
-            ...(window.activeMapCamera || { x: 0, y: 0, zoom: 1 }),
-            collapsedHubs: Array.from(window.collapsedHubPorts || []),
-            operationalPayload: payload
-        }
-    );
+    const result = await window.pisiProject.saveMapCamera(window.activeMapPath, {
+        ...(window.activeMapCamera || { x: 0, y: 0, zoom: 1 }),
+        collapsedHubs: Array.from(window.collapsedHubPorts || []),
+        operationalPayload: payload
+    });
     if (result?.operational) {
         operationalState.scope = normalizePisiOperationalScope(result.operational.scope);
         operationalState.display = normalizePisiOperationalDisplay(result.operational.display);
-        operationalState.savedLayouts = Array.isArray(result.operational.savedLayouts)
-            ? result.operational.savedLayouts
-            : [];
+        operationalState.savedLayouts = Array.isArray(result.operational.savedLayouts) ? result.operational.savedLayouts : [];
     }
     return result;
 }
@@ -174,9 +203,7 @@ function schedulePisiOperationalPersistence() {
     clearTimeout(operationalState.persistTimer);
     operationalState.persistTimer = setTimeout(async () => {
         operationalState.persistTimer = null;
-        const result = await persistPisiOperationalPayload(
-            getOperationalPayload('update')
-        );
+        const result = await persistPisiOperationalPayload(getOperationalPayload('update'));
         if (result && !result.ok) console.error('[PISI]', t('saveFailed'), result.error);
     }, 350);
 }
@@ -189,8 +216,9 @@ function updatePisiOperationalSummary() {
         `${summary.visible}/${summary.total} ${t('visible')}`,
         summary.blocked ? `${summary.blocked} ${t('blockedShort')}` : '',
         summary.overdue ? `${summary.overdue} ${t('overdueShort')}` : ''
-    ].filter(Boolean).join(' · ');
-
+    ]
+        .filter(Boolean)
+        .join(' · ');
 }
 
 function schedulePisiOperationalRender() {
@@ -198,10 +226,7 @@ function schedulePisiOperationalRender() {
     if (operationalState.renderFrame !== null) return;
     operationalState.renderFrame = requestAnimationFrame(() => {
         operationalState.renderFrame = null;
-        operationalState.lastRender = renderPisiOperationalMap(
-            operationalState.scope,
-            operationalState.display
-        );
+        operationalState.lastRender = renderPisiOperationalMap(operationalState.scope, operationalState.display);
         updatePisiOperationalSummary();
         updatePisiOperationalControlState();
     });
@@ -226,9 +251,7 @@ function syncPisiOperationalControlsFromState() {
     const query = document.getElementById('pisi-map-operational-query');
     const relation = document.getElementById('pisi-map-operational-relation');
     const depth = document.getElementById('pisi-map-operational-depth');
-    if (scope) scope.value = operationalState.scope.mode === 'neighbors'
-        ? 'all'
-        : operationalState.scope.mode;
+    if (scope) scope.value = operationalState.scope.mode === 'neighbors' ? 'all' : operationalState.scope.mode;
     if (query) query.value = operationalState.scope.query || '';
     if (relation) relation.value = operationalState.scope.relationshipTypes[0] || 'all';
     if (depth) depth.value = String(operationalState.scope.focusDepth || 1);
@@ -322,16 +345,15 @@ function createPisiOperationalBar() {
     depth.id = 'pisi-map-operational-depth';
     depth.append(makeOption('1', '1-hop'), makeOption('2', '2-hop'), makeOption('3', '3-hop'));
 
-    const ids = [
-        'focus', 'deps', 'labels', 'work',
-        'save-layout', 'restore', 'delete-layout', 'reset'
-    ];
-    const buttons = Object.fromEntries(ids.map((id) => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.id = `pisi-map-operational-${id}`;
-        return [id, button];
-    }));
+    const ids = ['focus', 'deps', 'labels', 'work', 'save-layout', 'restore', 'delete-layout', 'reset'];
+    const buttons = Object.fromEntries(
+        ids.map((id) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.id = `pisi-map-operational-${id}`;
+            return [id, button];
+        })
+    );
     const layout = document.createElement('select');
     layout.id = 'pisi-map-operational-layout';
     const summary = document.createElement('span');
@@ -339,11 +361,20 @@ function createPisiOperationalBar() {
     summary.className = 'pisi-map-operational-summary';
 
     bar.append(
-        scope, query, relation, depth,
+        scope,
+        query,
+        relation,
+        depth,
         buttons.focus,
-        buttons.deps, buttons.labels, buttons.work,
-        layout, buttons['save-layout'], buttons.restore,
-        buttons['delete-layout'], buttons.reset, summary
+        buttons.deps,
+        buttons.labels,
+        buttons.work,
+        layout,
+        buttons['save-layout'],
+        buttons.restore,
+        buttons['delete-layout'],
+        buttons.reset,
+        summary
     );
     canvas.appendChild(bar);
     bindPisiOperationalControls();
@@ -363,14 +394,14 @@ function bindPisiOperationalControls() {
         schedulePisiOperationalPersistence();
     });
     query?.addEventListener('input', () => {
-        operationalState.scope.query = String(query.value || '').trim().toLowerCase();
+        operationalState.scope.query = String(query.value || '')
+            .trim()
+            .toLowerCase();
         schedulePisiOperationalRender();
         schedulePisiOperationalPersistence();
     });
     relation?.addEventListener('change', () => {
-        operationalState.scope.relationshipTypes = relation.value === 'all'
-            ? []
-            : [relation.value];
+        operationalState.scope.relationshipTypes = relation.value === 'all' ? [] : [relation.value];
         schedulePisiOperationalRender();
         schedulePisiOperationalPersistence();
     });
@@ -419,13 +450,15 @@ async function createPisiOperationalLinkedNode() {
     }
     const x = parseFloat(sourceBox.style.left || '0') + sourceBox.offsetWidth + 120;
     const y = parseFloat(sourceBox.style.top || '0');
-    await window.pisiProject?.saveMapLayout?.(mapPath, [{
-        id: created.node.id,
-        x,
-        y,
-        width: Number(created.node.layout?.width || 220),
-        height: Number(created.node.layout?.height || 92)
-    }]);
+    await window.pisiProject?.saveMapLayout?.(mapPath, [
+        {
+            id: created.node.id,
+            x,
+            y,
+            width: Number(created.node.layout?.width || 220),
+            height: Number(created.node.layout?.height || 92)
+        }
+    ]);
     const linked = await window.pisiProject?.upsertMapConnection?.(mapPath, {
         sourceId,
         targetId: created.node.id,
@@ -477,16 +510,11 @@ async function restorePisiOperationalLayout() {
     await window.pisiProject?.saveMapLayout?.(window.activeMapPath, layout.nodes || []);
     operationalState.scope = normalizePisiOperationalScope(layout.scope);
     operationalState.display = normalizePisiOperationalDisplay(layout.display);
-    const result = await window.pisiProject?.saveMapCamera?.(
-        window.activeMapPath,
-        {
-            ...(layout.camera || {}),
-            collapsedHubs: Array.isArray(layout.camera?.collapsedHubs)
-                ? layout.camera.collapsedHubs
-                : [],
-            operationalPayload: getOperationalPayload('update')
-        }
-    );
+    const result = await window.pisiProject?.saveMapCamera?.(window.activeMapPath, {
+        ...(layout.camera || {}),
+        collapsedHubs: Array.isArray(layout.camera?.collapsedHubs) ? layout.camera.collapsedHubs : [],
+        operationalPayload: getOperationalPayload('update')
+    });
     if (!result?.ok) return alert(result?.error || t('saveFailed'));
     await window.openMapInWorkspace?.(getPisiOperationalMapItem());
 }
@@ -541,9 +569,8 @@ async function loadPisiOperationalMapState(force = false) {
 
 function mutationTouchesOperationalMap(mutation) {
     return [...mutation.addedNodes, ...mutation.removedNodes].some((node) => {
-        return node?.nodeType === Node.ELEMENT_NODE && (
-            node.matches?.('.map-node-box, .map-edge-group') ||
-            node.querySelector?.('.map-node-box, .map-edge-group')
+        return (
+            node?.nodeType === Node.ELEMENT_NODE && (node.matches?.('.map-node-box, .map-edge-group') || node.querySelector?.('.map-node-box, .map-edge-group'))
         );
     });
 }

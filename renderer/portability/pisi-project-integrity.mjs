@@ -3,7 +3,8 @@ import { registerModule } from '../core/module-registry.mjs';
 const PISI_INTEGRITY_UI = {
     tr: {
         title: 'Proje bütünlüğü',
-        description: 'Canonical task/relationship store’ları, node/map kimlikleri, map state, property/ek hedefleri, Trash ve atomic recovery kayıtlarını birlikte denetler.',
+        description:
+            'Canonical task/relationship store’ları, node/map kimlikleri, map state, property/ek hedefleri, Trash ve atomic recovery kayıtlarını birlikte denetler.',
         audit: 'Projeyi denetle',
         auditing: 'Denetleniyor…',
         healthy: 'Kritik bütünlük hatası yok.',
@@ -12,7 +13,8 @@ const PISI_INTEGRITY_UI = {
         applySafe: 'Güvenli onarımları uygula',
         applying: 'Onarılıyor…',
         rebuild: 'Türetilmiş durumu yeniden oluştur',
-        rebuildDescription: 'Node connectionTypes cache’i ile map-local operational/presentation state yeniden oluşturulur. .pisi/tasks.json ve .pisi/relationships.json değiştirilmez.',
+        rebuildDescription:
+            'Node connectionTypes cache’i ile map-local operational/presentation state yeniden oluşturulur. .pisi/tasks.json ve .pisi/relationships.json değiştirilmez.',
         confirmRepairs: 'Aşağıdaki güvenli onarımlar tek atomic transaction içinde uygulanacak:',
         confirmRebuild: 'Türetilmiş state yeniden oluşturulsun mu? Canonical task ve relationship authority değişmeyecek.',
         repairPlan: 'Onarım planı',
@@ -25,13 +27,22 @@ const PISI_INTEGRITY_UI = {
         auditFailed: 'Project Integrity denetimi başarısız.',
         repairFailed: 'Project Integrity onarımı başarısız.',
         rebuildFailed: 'Türetilmiş state yeniden oluşturulamadı.',
-        files: 'dosya', nodes: 'node', maps: 'map', tasks: 'görev',
-        relationships: 'ilişki', trash: 'Trash', journals: 'journal',
-        critical: 'kritik', errors: 'hata', warnings: 'uyarı', safeRepairs: 'güvenli onarım'
+        files: 'dosya',
+        nodes: 'node',
+        maps: 'map',
+        tasks: 'görev',
+        relationships: 'ilişki',
+        trash: 'Trash',
+        journals: 'journal',
+        critical: 'kritik',
+        errors: 'hata',
+        warnings: 'uyarı',
+        safeRepairs: 'güvenli onarım'
     },
     eng: {
         title: 'Project Integrity',
-        description: 'Audits canonical task/relationship stores together with node/map identities, map state, property/attachment targets, Trash, and atomic recovery records.',
+        description:
+            'Audits canonical task/relationship stores together with node/map identities, map state, property/attachment targets, Trash, and atomic recovery records.',
         audit: 'Audit project',
         auditing: 'Auditing…',
         healthy: 'No critical integrity errors.',
@@ -40,7 +51,8 @@ const PISI_INTEGRITY_UI = {
         applySafe: 'Apply safe repairs',
         applying: 'Repairing…',
         rebuild: 'Rebuild derived state',
-        rebuildDescription: 'Rebuilds node connectionTypes cache and map-local operational/presentation state. It does not modify .pisi/tasks.json or .pisi/relationships.json.',
+        rebuildDescription:
+            'Rebuilds node connectionTypes cache and map-local operational/presentation state. It does not modify .pisi/tasks.json or .pisi/relationships.json.',
         confirmRepairs: 'The following safe repairs will run inside one atomic transaction:',
         confirmRebuild: 'Rebuild derived state? Canonical task and relationship authorities will remain unchanged.',
         repairPlan: 'Repair plan',
@@ -53,9 +65,17 @@ const PISI_INTEGRITY_UI = {
         auditFailed: 'Project Integrity audit failed.',
         repairFailed: 'Project Integrity repair failed.',
         rebuildFailed: 'Derived state could not be rebuilt.',
-        files: 'files', nodes: 'nodes', maps: 'maps', tasks: 'tasks',
-        relationships: 'relationships', trash: 'Trash', journals: 'journals',
-        critical: 'critical', errors: 'errors', warnings: 'warnings', safeRepairs: 'safe repairs'
+        files: 'files',
+        nodes: 'nodes',
+        maps: 'maps',
+        tasks: 'tasks',
+        relationships: 'relationships',
+        trash: 'Trash',
+        journals: 'journals',
+        critical: 'critical',
+        errors: 'errors',
+        warnings: 'warnings',
+        safeRepairs: 'safe repairs'
     }
 };
 
@@ -143,11 +163,7 @@ function makeRepairPlan(report) {
     const title = document.createElement('h3');
     title.textContent = integrityText('repairPlan');
     section.appendChild(title);
-    const repairs = [
-        ...(report.repairPlan?.safe || []),
-        ...(report.repairPlan?.review || []),
-        ...(report.repairPlan?.manual || [])
-    ];
+    const repairs = [...(report.repairPlan?.safe || []), ...(report.repairPlan?.review || []), ...(report.repairPlan?.manual || [])];
     if (!repairs.length) {
         const empty = document.createElement('p');
         empty.textContent = integrityText('clean');
@@ -177,9 +193,7 @@ function renderIntegrityReport(root, report) {
     status.className = 'pisi-integrity-status';
     status.dataset.healthy = report.healthy ? '1' : '0';
     const label = document.createElement('strong');
-    label.textContent = report.clean
-        ? integrityText('clean')
-        : report.healthy ? integrityText('healthy') : integrityText('unhealthy');
+    label.textContent = report.clean ? integrityText('clean') : report.healthy ? integrityText('healthy') : integrityText('unhealthy');
     const timestamp = document.createElement('span');
     timestamp.textContent = report.auditedAt ? new Date(report.auditedAt).toLocaleString() : '';
     status.append(label, timestamp);
@@ -187,11 +201,16 @@ function renderIntegrityReport(root, report) {
     const metrics = document.createElement('div');
     metrics.className = 'pisi-integrity-metrics';
     for (const item of [
-        ['files', report.summary?.files], ['nodes', report.summary?.nodes],
-        ['maps', report.summary?.maps], ['tasks', report.summary?.tasks],
-        ['relationships', report.summary?.relationships], ['trash', report.summary?.trashItems],
-        ['journals', report.summary?.mutationJournals], ['critical', report.summary?.critical, 'critical'],
-        ['errors', report.summary?.errors, 'error'], ['warnings', report.summary?.warnings, 'warning'],
+        ['files', report.summary?.files],
+        ['nodes', report.summary?.nodes],
+        ['maps', report.summary?.maps],
+        ['tasks', report.summary?.tasks],
+        ['relationships', report.summary?.relationships],
+        ['trash', report.summary?.trashItems],
+        ['journals', report.summary?.mutationJournals],
+        ['critical', report.summary?.critical, 'critical'],
+        ['errors', report.summary?.errors, 'error'],
+        ['warnings', report.summary?.warnings, 'warning'],
         ['safeRepairs', report.summary?.safeRepairs, 'safe']
     ]) {
         metrics.appendChild(makeMetric(integrityText(item[0]), item[1], item[2]));
@@ -202,11 +221,7 @@ function renderIntegrityReport(root, report) {
     const authorityLabel = document.createElement('strong');
     authorityLabel.textContent = integrityText('authority');
     const authorityValue = document.createElement('span');
-    authorityValue.textContent = [
-        report.authorities?.tasks,
-        report.authorities?.relationships,
-        report.authorities?.mapState
-    ].filter(Boolean).join(' · ');
+    authorityValue.textContent = [report.authorities?.tasks, report.authorities?.relationships, report.authorities?.mapState].filter(Boolean).join(' · ');
     authorities.append(authorityLabel, authorityValue);
 
     const issues = document.createElement('div');
@@ -218,17 +233,15 @@ function renderIntegrityReport(root, report) {
 async function confirmSafeRepairs(report) {
     const safe = report.repairPlan?.safe || [];
     if (!safe.length) return false;
-    const preview = safe.slice(0, 12)
+    const preview = safe
+        .slice(0, 12)
         .map((repair) => `• ${repair.description}${repair.path ? ` (${repair.path})` : ''}`)
         .join('\n');
-    return window.pisiConfirm?.(
-        `${integrityText('confirmRepairs')}\n\n${preview}${safe.length > 12 ? `\n… +${safe.length - 12}` : ''}`,
-        {
-            title: integrityText('title'),
-            confirmText: integrityText('applySafe'),
-            cancelText: window.pisiT?.('Vazgeç') || 'Vazgeç'
-        }
-    );
+    return window.pisiConfirm?.(`${integrityText('confirmRepairs')}\n\n${preview}${safe.length > 12 ? `\n… +${safe.length - 12}` : ''}`, {
+        title: integrityText('title'),
+        confirmText: integrityText('applySafe'),
+        cancelText: window.pisiT?.('Vazgeç') || 'Vazgeç'
+    });
 }
 
 function buildPisiExpandedIntegritySection(container) {
@@ -288,7 +301,10 @@ function buildPisiExpandedIntegritySection(container) {
         audit.disabled = repair.disabled = rebuild.disabled = true;
         reportRoot.textContent = integrityText('applying');
         try {
-            const result = await runIntegrityTransport('repair', safe.map((item) => item.id));
+            const result = await runIntegrityTransport(
+                'repair',
+                safe.map((item) => item.id)
+            );
             if (!result?.ok) throw new Error(result?.error || integrityText('repairFailed'));
             currentReport = result.after || null;
             if (currentReport) renderIntegrityReport(reportRoot, currentReport);
@@ -353,12 +369,4 @@ const moduleApi = {
 registerModule('portability.integrity', moduleApi);
 initializePisiExpandedIntegrity();
 
-export {
-    PISI_INTEGRITY_UI,
-    buildPisiExpandedIntegritySection,
-    integrityText,
-    makeIssueRow,
-    makeRepairPlan,
-    renderIntegrityReport,
-    runIntegrityTransport
-};
+export { PISI_INTEGRITY_UI, buildPisiExpandedIntegritySection, integrityText, makeIssueRow, makeRepairPlan, renderIntegrityReport, runIntegrityTransport };

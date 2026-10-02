@@ -1,4 +1,4 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 import {
     createPisiSheetViewRuleId,
     getPisiSheetConditionalColorMatches,
@@ -7,110 +7,65 @@ import {
     normalizePisiSheetConditionalColors,
     normalizePisiSheetFilterTree,
     normalizePisiSheetSorts
-} from "./pisi-editor-sheet-view-query-core.mjs";
+} from './pisi-editor-sheet-view-query-core.mjs';
 
 function getPisiSheetActiveViewFilters(table) {
     const database = getPisiSheetDatabase(table);
-    const view = database
-        ? getPisiSheetTableView(database)
-        : null;
+    const view = database ? getPisiSheetTableView(database) : null;
 
     return view?.filters || makePisiSheetEmptyFilterTree();
 }
 
 function getPisiSheetActiveViewSorts(table) {
     const database = getPisiSheetDatabase(table);
-    const view = database
-        ? getPisiSheetTableView(database)
-        : null;
+    const view = database ? getPisiSheetTableView(database) : null;
 
-    return Array.isArray(view?.sorts)
-        ? view.sorts
-        : [];
+    return Array.isArray(view?.sorts) ? view.sorts : [];
 }
 
 function getPisiSheetActiveViewSearchQuery(table) {
     const database = getPisiSheetDatabase(table);
-    const view = database
-        ? getPisiSheetTableView(database)
-        : null;
+    const view = database ? getPisiSheetTableView(database) : null;
 
     return String(view?.searchQuery || '');
 }
 
 function getPisiSheetActiveViewConditionalColors(table) {
     const database = getPisiSheetDatabase(table);
-    const view = database
-        ? getPisiSheetTableView(database)
-        : null;
+    const view = database ? getPisiSheetTableView(database) : null;
 
-    return Array.isArray(view?.conditionalColors)
-        ? view.conditionalColors
-        : [];
+    return Array.isArray(view?.conditionalColors) ? view.conditionalColors : [];
 }
 
-function getPisiSheetConditionalColorMatchesForItem(
-    table,
-    item
-) {
+function getPisiSheetConditionalColorMatchesForItem(table, item) {
     const database = getPisiSheetDatabase(table);
-    const view = database
-        ? getPisiSheetTableView(database)
-        : null;
+    const view = database ? getPisiSheetTableView(database) : null;
 
-    return database
-        ? getPisiSheetConditionalColorMatches(
-            database,
-            item,
-            view?.conditionalColors
-        )
-        : [];
+    return database ? getPisiSheetConditionalColorMatches(database, item, view?.conditionalColors) : [];
 }
 
 function getPisiSheetViewRecords(table) {
     const database = getPisiSheetDatabase(table);
-    const view = database
-        ? getPisiSheetTableView(database)
-        : null;
+    const view = database ? getPisiSheetTableView(database) : null;
 
-    return database
-        ? getPisiSheetViewItemRecords(
-            database,
-            view
-        )
-        : [];
+    return database ? getPisiSheetViewItemRecords(database, view) : [];
 }
 
 function getPisiSheetVisibleRowIndices(table) {
-    return getPisiSheetViewRecords(table)
-        .map((record) => record.modelIndex);
+    return getPisiSheetViewRecords(table).map((record) => record.modelIndex);
 }
 
-function getPisiSheetNextVisibleRowIndex(
-    table,
-    currentRow,
-    direction
-) {
+function getPisiSheetNextVisibleRowIndex(table, currentRow, direction) {
     const visible = getPisiSheetVisibleRowIndices(table);
     if (!visible.length) return currentRow;
 
     const currentIndex = visible.indexOf(currentRow);
 
     if (currentIndex < 0) {
-        return direction < 0
-            ? visible.at(-1)
-            : visible[0];
+        return direction < 0 ? visible.at(-1) : visible[0];
     }
 
-    const nextIndex = Math.max(
-        0,
-        Math.min(
-            visible.length - 1,
-            currentIndex + (
-                direction < 0 ? -1 : 1
-            )
-        )
-    );
+    const nextIndex = Math.max(0, Math.min(visible.length - 1, currentIndex + (direction < 0 ? -1 : 1)));
 
     return visible[nextIndex];
 }
@@ -120,29 +75,16 @@ function refreshPisiSheetViewQuery(table) {
     recalcPisiSheet(table);
 
     const active = getPisiSheetActivePoint(table);
-    const visibleRows =
-        new Set(getPisiSheetVisibleRowIndices(table));
+    const visibleRows = new Set(getPisiSheetVisibleRowIndices(table));
 
-    if (
-        active &&
-        !visibleRows.has(active.row)
-    ) {
+    if (active && !visibleRows.has(active.row)) {
         clearPisiSheetSelection(table);
 
-        const firstRow =
-            getPisiSheetVisibleRowIndices(table)[0];
-        const firstCol =
-            getPisiSheetVisibleColumnIndices(table)[0];
+        const firstRow = getPisiSheetVisibleRowIndices(table)[0];
+        const firstCol = getPisiSheetVisibleColumnIndices(table)[0];
 
-        if (
-            Number.isInteger(firstRow) &&
-            Number.isInteger(firstCol)
-        ) {
-            const cell = getPisiSheetCell(
-                table,
-                firstRow,
-                firstCol
-            );
+        if (Number.isInteger(firstRow) && Number.isInteger(firstCol)) {
+            const cell = getPisiSheetCell(table, firstRow, firstCol);
             if (cell) {
                 selectPisiSheetCell(cell);
             }
@@ -154,19 +96,12 @@ function refreshPisiSheetViewQuery(table) {
     persistPisiSheetDatabase(table);
     schedulePisiSheetEditorNotification(table);
 
-    return getPisiSheetTableView(
-        getPisiSheetDatabase(table)
-    );
+    return getPisiSheetTableView(getPisiSheetDatabase(table));
 }
 
-function setPisiSheetViewSearchQuery(
-    table,
-    query
-) {
+function setPisiSheetViewSearchQuery(table, query) {
     const database = getPisiSheetDatabase(table);
-    const view = database
-        ? getPisiSheetTableView(database)
-        : null;
+    const view = database ? getPisiSheetTableView(database) : null;
 
     if (!database || !view) return null;
 
@@ -179,9 +114,7 @@ function setPisiSheetViewSearchQuery(
     view.searchQuery = next;
     view.page = 1;
 
-    const block = table.closest(
-        '.pisi-sheet-block'
-    );
+    const block = table.closest('.pisi-sheet-block');
 
     if (block) block.scrollTop = 0;
 
@@ -191,23 +124,15 @@ function setPisiSheetViewSearchQuery(
 
 function setPisiSheetViewFilters(table, filters) {
     const database = getPisiSheetDatabase(table);
-    const view = database
-        ? getPisiSheetTableView(database)
-        : null;
+    const view = database ? getPisiSheetTableView(database) : null;
 
     if (!database || !view) return null;
 
     view.page = 1;
-    const filterBlock =
-        table.closest('.pisi-sheet-block');
+    const filterBlock = table.closest('.pisi-sheet-block');
     if (filterBlock) filterBlock.scrollTop = 0;
 
-    view.filters = normalizePisiSheetFilterTree(
-        filters,
-        new Set(
-            database.fields.map((field) => field.id)
-        )
-    );
+    view.filters = normalizePisiSheetFilterTree(filters, new Set(database.fields.map((field) => field.id)));
 
     refreshPisiSheetViewQuery(table);
     return view.filters;
@@ -215,106 +140,62 @@ function setPisiSheetViewFilters(table, filters) {
 
 function setPisiSheetViewSorts(table, sorts) {
     const database = getPisiSheetDatabase(table);
-    const view = database
-        ? getPisiSheetTableView(database)
-        : null;
+    const view = database ? getPisiSheetTableView(database) : null;
 
     if (!database || !view) return null;
 
     view.page = 1;
-    const sortBlock =
-        table.closest('.pisi-sheet-block');
+    const sortBlock = table.closest('.pisi-sheet-block');
     if (sortBlock) sortBlock.scrollTop = 0;
 
-    view.sorts = normalizePisiSheetSorts(
-        sorts,
-        new Set(
-            database.fields.map((field) => field.id)
-        )
-    );
+    view.sorts = normalizePisiSheetSorts(sorts, new Set(database.fields.map((field) => field.id)));
 
     refreshPisiSheetViewQuery(table);
     return view.sorts;
 }
 
-function setPisiSheetViewConditionalColors(
-    table,
-    rules
-) {
+function setPisiSheetViewConditionalColors(table, rules) {
     const database = getPisiSheetDatabase(table);
-    const view = database
-        ? getPisiSheetTableView(database)
-        : null;
+    const view = database ? getPisiSheetTableView(database) : null;
 
     if (!database || !view) return null;
 
-    view.conditionalColors =
-        normalizePisiSheetConditionalColors(
-            rules,
-            database.fields
-        );
+    view.conditionalColors = normalizePisiSheetConditionalColors(rules, database.fields);
 
     refreshPisiSheetViewQuery(table);
     return view.conditionalColors;
 }
 
-function findPisiSheetFilterNode(
-    node,
-    id
-) {
+function findPisiSheetFilterNode(node, id) {
     if (!node || !id) return null;
     if (node.id === id) return node;
 
     for (const child of node.children || []) {
-        const match = findPisiSheetFilterNode(
-            child,
-            id
-        );
+        const match = findPisiSheetFilterNode(child, id);
         if (match) return match;
     }
 
     return null;
 }
 
-function findPisiSheetFilterParent(
-    node,
-    id
-) {
+function findPisiSheetFilterParent(node, id) {
     if (!node?.children || !id) return null;
 
-    if (
-        node.children.some(
-            (child) => child.id === id
-        )
-    ) {
+    if (node.children.some((child) => child.id === id)) {
         return node;
     }
 
     for (const child of node.children) {
-        const match = findPisiSheetFilterParent(
-            child,
-            id
-        );
+        const match = findPisiSheetFilterParent(child, id);
         if (match) return match;
     }
 
     return null;
 }
 
-function addPisiSheetViewFilterCondition(
-    table,
-    groupId,
-    condition = {}
-) {
-    const tree = structuredClone(
-        getPisiSheetActiveViewFilters(table)
-    );
-    const group =
-        findPisiSheetFilterNode(
-            tree,
-            groupId
-        ) ||
-        tree;
+function addPisiSheetViewFilterCondition(table, groupId, condition = {}) {
+    const tree = structuredClone(getPisiSheetActiveViewFilters(table));
+    const group = findPisiSheetFilterNode(tree, groupId) || tree;
 
     if (group?.type !== 'group') return null;
 
@@ -324,122 +205,58 @@ function addPisiSheetViewFilterCondition(
     group.children.push({
         type: 'condition',
         id: createPisiSheetViewRuleId('filter'),
-        fieldId: String(
-            condition.fieldId ||
-            firstField?.id ||
-            ''
-        ),
-        operator: String(
-            condition.operator || 'is'
-        ),
+        fieldId: String(condition.fieldId || firstField?.id || ''),
+        operator: String(condition.operator || 'is'),
         value: condition.value ?? ''
     });
 
-    return setPisiSheetViewFilters(
-        table,
-        tree
-    );
+    return setPisiSheetViewFilters(table, tree);
 }
 
-function addPisiSheetViewFilterGroup(
-    table,
-    parentId,
-    logic = 'and'
-) {
-    const tree = structuredClone(
-        getPisiSheetActiveViewFilters(table)
-    );
-    const parent =
-        findPisiSheetFilterNode(
-            tree,
-            parentId
-        ) ||
-        tree;
+function addPisiSheetViewFilterGroup(table, parentId, logic = 'and') {
+    const tree = structuredClone(getPisiSheetActiveViewFilters(table));
+    const parent = findPisiSheetFilterNode(tree, parentId) || tree;
 
     if (parent?.type !== 'group') return null;
 
     parent.children.push({
         ...makePisiSheetEmptyFilterTree(logic),
-        id: createPisiSheetViewRuleId(
-            'filter-group'
-        )
+        id: createPisiSheetViewRuleId('filter-group')
     });
 
-    return setPisiSheetViewFilters(
-        table,
-        tree
-    );
+    return setPisiSheetViewFilters(table, tree);
 }
 
-function updatePisiSheetViewFilterNode(
-    table,
-    nodeId,
-    patch = {}
-) {
-    const tree = structuredClone(
-        getPisiSheetActiveViewFilters(table)
-    );
-    const node = findPisiSheetFilterNode(
-        tree,
-        nodeId
-    );
+function updatePisiSheetViewFilterNode(table, nodeId, patch = {}) {
+    const tree = structuredClone(getPisiSheetActiveViewFilters(table));
+    const node = findPisiSheetFilterNode(tree, nodeId);
 
     if (!node) return null;
 
-    Object.assign(
-        node,
-        /** @type {Record<string, any>} */ (patch)
-    );
+    Object.assign(node, /** @type {Record<string, any>} */ (patch));
 
-    return setPisiSheetViewFilters(
-        table,
-        tree
-    );
+    return setPisiSheetViewFilters(table, tree);
 }
 
-function removePisiSheetViewFilterNode(
-    table,
-    nodeId
-) {
-    const tree = structuredClone(
-        getPisiSheetActiveViewFilters(table)
-    );
+function removePisiSheetViewFilterNode(table, nodeId) {
+    const tree = structuredClone(getPisiSheetActiveViewFilters(table));
 
     if (tree.id === nodeId) {
-        return setPisiSheetViewFilters(
-            table,
-            makePisiSheetEmptyFilterTree()
-        );
+        return setPisiSheetViewFilters(table, makePisiSheetEmptyFilterTree());
     }
 
-    const parent = findPisiSheetFilterParent(
-        tree,
-        nodeId
-    );
+    const parent = findPisiSheetFilterParent(tree, nodeId);
     if (!parent) return null;
 
-    parent.children = parent.children.filter(
-        (child) => child.id !== nodeId
-    );
+    parent.children = parent.children.filter((child) => child.id !== nodeId);
 
-    return setPisiSheetViewFilters(
-        table,
-        tree
-    );
+    return setPisiSheetViewFilters(table, tree);
 }
 
-function addPisiSheetViewSort(
-    table,
-    fieldId,
-    direction = 'asc'
-) {
-    const sorts = structuredClone(
-        getPisiSheetActiveViewSorts(table)
-    );
+function addPisiSheetViewSort(table, fieldId, direction = 'asc') {
+    const sorts = structuredClone(getPisiSheetActiveViewSorts(table));
 
-    const existing = sorts.find(
-        (sort) => sort.fieldId === fieldId
-    );
+    const existing = sorts.find((sort) => sort.fieldId === fieldId);
 
     if (existing) {
         existing.direction = direction;
@@ -451,192 +268,92 @@ function addPisiSheetViewSort(
         });
     }
 
-    return setPisiSheetViewSorts(
-        table,
-        sorts
-    );
+    return setPisiSheetViewSorts(table, sorts);
 }
 
-function updatePisiSheetViewSort(
-    table,
-    sortId,
-    patch = {}
-) {
-    const sorts = structuredClone(
-        getPisiSheetActiveViewSorts(table)
-    );
-    const sort = sorts.find(
-        (candidate) => candidate.id === sortId
-    );
+function updatePisiSheetViewSort(table, sortId, patch = {}) {
+    const sorts = structuredClone(getPisiSheetActiveViewSorts(table));
+    const sort = sorts.find((candidate) => candidate.id === sortId);
 
     if (!sort) return null;
 
-    Object.assign(
-        sort,
-        /** @type {Record<string, any>} */ (patch)
-    );
+    Object.assign(sort, /** @type {Record<string, any>} */ (patch));
 
+    return setPisiSheetViewSorts(table, sorts);
+}
+
+function removePisiSheetViewSort(table, sortId) {
     return setPisiSheetViewSorts(
         table,
-        sorts
+        getPisiSheetActiveViewSorts(table).filter((sort) => sort.id !== sortId)
     );
 }
 
-function removePisiSheetViewSort(
-    table,
-    sortId
-) {
-    return setPisiSheetViewSorts(
-        table,
-        getPisiSheetActiveViewSorts(table)
-            .filter(
-                (sort) => sort.id !== sortId
-            )
-    );
-}
-
-function movePisiSheetViewSort(
-    table,
-    sortId,
-    delta
-) {
-    const sorts = structuredClone(
-        getPisiSheetActiveViewSorts(table)
-    );
-    const index = sorts.findIndex(
-        (sort) => sort.id === sortId
-    );
+function movePisiSheetViewSort(table, sortId, delta) {
+    const sorts = structuredClone(getPisiSheetActiveViewSorts(table));
+    const index = sorts.findIndex((sort) => sort.id === sortId);
 
     if (index < 0) return null;
 
-    const next = Math.max(
-        0,
-        Math.min(
-            sorts.length - 1,
-            index + Number(delta || 0)
-        )
-    );
+    const next = Math.max(0, Math.min(sorts.length - 1, index + Number(delta || 0)));
 
     if (next === index) return sorts;
 
     const [sort] = sorts.splice(index, 1);
     sorts.splice(next, 0, sort);
 
-    return setPisiSheetViewSorts(
-        table,
-        sorts
-    );
+    return setPisiSheetViewSorts(table, sorts);
 }
 
-function addPisiSheetViewConditionalColor(
-    table,
-    rule = {}
-) {
+function addPisiSheetViewConditionalColor(table, rule = {}) {
     const database = getPisiSheetDatabase(table);
     const firstField = database?.fields?.[0];
-    const rules = structuredClone(
-        getPisiSheetActiveViewConditionalColors(
-            table
-        )
-    );
+    const rules = structuredClone(getPisiSheetActiveViewConditionalColors(table));
 
     rules.push({
-        id: createPisiSheetViewRuleId(
-            'conditional-color'
-        ),
-        fieldId: String(
-            rule.fieldId ||
-            firstField?.id ||
-            ''
-        ),
-        operator: String(
-            rule.operator || 'is'
-        ),
+        id: createPisiSheetViewRuleId('conditional-color'),
+        fieldId: String(rule.fieldId || firstField?.id || ''),
+        operator: String(rule.operator || 'is'),
         value: rule.value ?? '',
         target: String(rule.target || 'row'),
         tone: String(rule.tone || 'red')
     });
 
-    return setPisiSheetViewConditionalColors(
-        table,
-        rules
-    );
+    return setPisiSheetViewConditionalColors(table, rules);
 }
 
-function updatePisiSheetViewConditionalColor(
-    table,
-    ruleId,
-    patch = {}
-) {
-    const rules = structuredClone(
-        getPisiSheetActiveViewConditionalColors(
-            table
-        )
-    );
-    const rule = rules.find(
-        (candidate) => candidate.id === ruleId
-    );
+function updatePisiSheetViewConditionalColor(table, ruleId, patch = {}) {
+    const rules = structuredClone(getPisiSheetActiveViewConditionalColors(table));
+    const rule = rules.find((candidate) => candidate.id === ruleId);
 
     if (!rule) return null;
 
-    Object.assign(
-        rule,
-        /** @type {Record<string, any>} */ (patch)
-    );
+    Object.assign(rule, /** @type {Record<string, any>} */ (patch));
 
+    return setPisiSheetViewConditionalColors(table, rules);
+}
+
+function removePisiSheetViewConditionalColor(table, ruleId) {
     return setPisiSheetViewConditionalColors(
         table,
-        rules
+        getPisiSheetActiveViewConditionalColors(table).filter((rule) => rule.id !== ruleId)
     );
 }
 
-function removePisiSheetViewConditionalColor(
-    table,
-    ruleId
-) {
-    return setPisiSheetViewConditionalColors(
-        table,
-        getPisiSheetActiveViewConditionalColors(
-            table
-        ).filter(
-            (rule) => rule.id !== ruleId
-        )
-    );
-}
-
-function movePisiSheetViewConditionalColor(
-    table,
-    ruleId,
-    delta
-) {
-    const rules = structuredClone(
-        getPisiSheetActiveViewConditionalColors(
-            table
-        )
-    );
-    const index = rules.findIndex(
-        (rule) => rule.id === ruleId
-    );
+function movePisiSheetViewConditionalColor(table, ruleId, delta) {
+    const rules = structuredClone(getPisiSheetActiveViewConditionalColors(table));
+    const index = rules.findIndex((rule) => rule.id === ruleId);
 
     if (index < 0) return null;
 
-    const next = Math.max(
-        0,
-        Math.min(
-            rules.length - 1,
-            index + Number(delta || 0)
-        )
-    );
+    const next = Math.max(0, Math.min(rules.length - 1, index + Number(delta || 0)));
 
     if (next === index) return rules;
 
     const [rule] = rules.splice(index, 1);
     rules.splice(next, 0, rule);
 
-    return setPisiSheetViewConditionalColors(
-        table,
-        rules
-    );
+    return setPisiSheetViewConditionalColors(table, rules);
 }
 
 export {
@@ -654,69 +371,101 @@ export {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "getPisiSheetActiveViewFilters": {
+    getPisiSheetActiveViewFilters: {
         enumerable: true,
-        get() { return getPisiSheetActiveViewFilters; }
+        get() {
+            return getPisiSheetActiveViewFilters;
+        }
     },
-    "getPisiSheetActiveViewSorts": {
+    getPisiSheetActiveViewSorts: {
         enumerable: true,
-        get() { return getPisiSheetActiveViewSorts; }
+        get() {
+            return getPisiSheetActiveViewSorts;
+        }
     },
-    "getPisiSheetViewRecords": {
+    getPisiSheetViewRecords: {
         enumerable: true,
-        get() { return getPisiSheetViewRecords; }
+        get() {
+            return getPisiSheetViewRecords;
+        }
     },
-    "getPisiSheetVisibleRowIndices": {
+    getPisiSheetVisibleRowIndices: {
         enumerable: true,
-        get() { return getPisiSheetVisibleRowIndices; }
+        get() {
+            return getPisiSheetVisibleRowIndices;
+        }
     },
-    "getPisiSheetNextVisibleRowIndex": {
+    getPisiSheetNextVisibleRowIndex: {
         enumerable: true,
-        get() { return getPisiSheetNextVisibleRowIndex; }
+        get() {
+            return getPisiSheetNextVisibleRowIndex;
+        }
     },
-    "refreshPisiSheetViewQuery": {
+    refreshPisiSheetViewQuery: {
         enumerable: true,
-        get() { return refreshPisiSheetViewQuery; }
+        get() {
+            return refreshPisiSheetViewQuery;
+        }
     },
-    "setPisiSheetViewFilters": {
+    setPisiSheetViewFilters: {
         enumerable: true,
-        get() { return setPisiSheetViewFilters; }
+        get() {
+            return setPisiSheetViewFilters;
+        }
     },
-    "setPisiSheetViewSorts": {
+    setPisiSheetViewSorts: {
         enumerable: true,
-        get() { return setPisiSheetViewSorts; }
+        get() {
+            return setPisiSheetViewSorts;
+        }
     },
-    "addPisiSheetViewFilterCondition": {
+    addPisiSheetViewFilterCondition: {
         enumerable: true,
-        get() { return addPisiSheetViewFilterCondition; }
+        get() {
+            return addPisiSheetViewFilterCondition;
+        }
     },
-    "addPisiSheetViewFilterGroup": {
+    addPisiSheetViewFilterGroup: {
         enumerable: true,
-        get() { return addPisiSheetViewFilterGroup; }
+        get() {
+            return addPisiSheetViewFilterGroup;
+        }
     },
-    "updatePisiSheetViewFilterNode": {
+    updatePisiSheetViewFilterNode: {
         enumerable: true,
-        get() { return updatePisiSheetViewFilterNode; }
+        get() {
+            return updatePisiSheetViewFilterNode;
+        }
     },
-    "removePisiSheetViewFilterNode": {
+    removePisiSheetViewFilterNode: {
         enumerable: true,
-        get() { return removePisiSheetViewFilterNode; }
+        get() {
+            return removePisiSheetViewFilterNode;
+        }
     },
-    "addPisiSheetViewSort": {
+    addPisiSheetViewSort: {
         enumerable: true,
-        get() { return addPisiSheetViewSort; }
+        get() {
+            return addPisiSheetViewSort;
+        }
     },
-    "updatePisiSheetViewSort": {
+    updatePisiSheetViewSort: {
         enumerable: true,
-        get() { return updatePisiSheetViewSort; }
+        get() {
+            return updatePisiSheetViewSort;
+        }
     },
-    "removePisiSheetViewSort": {
+    removePisiSheetViewSort: {
         enumerable: true,
-        get() { return removePisiSheetViewSort; }
+        get() {
+            return removePisiSheetViewSort;
+        }
     },
-    "movePisiSheetViewSort": {
+    movePisiSheetViewSort: {
         enumerable: true,
-        get() { return movePisiSheetViewSort; }
+        get() {
+            return movePisiSheetViewSort;
+        }
     }
 });
-registerModule("editor.sheetViewQuery", moduleApi);
+registerModule('editor.sheetViewQuery', moduleApi);

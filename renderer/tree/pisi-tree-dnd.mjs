@@ -1,4 +1,4 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 
 const PISI_TREE_FILE_CLICK_DELAY_MS = 280;
 let pendingPisiTreeFileClick = null;
@@ -26,12 +26,7 @@ function schedulePisiTreeFileClick(item, row) {
         const treeNode = row?.closest?.('.tree-node');
         const currentItem = treeNode?.__pisiItem || item;
 
-        if (
-            !row?.isConnected ||
-            row.dataset.renaming === '1' ||
-            !currentItem ||
-            currentItem.isDirectory
-        ) {
+        if (!row?.isConnected || row.dataset.renaming === '1' || !currentItem || currentItem.isDirectory) {
             return;
         }
 
@@ -84,7 +79,9 @@ function clonePisiTreeDragItem(item) {
 }
 
 function getClientPathBaseName(filePath = '') {
-    const parts = String(filePath || '').split(/[\\/]/).filter(Boolean);
+    const parts = String(filePath || '')
+        .split(/[\\/]/)
+        .filter(Boolean);
     return parts[parts.length - 1] || '';
 }
 
@@ -151,11 +148,7 @@ async function reparentMapNodeFromTreeDrop(childItem, parentItem, mapItem) {
 
     suppressNextFileSystemRefresh(3000);
 
-    const result = await window.pisiProject?.reparentMapNode?.(
-        mapItem.fullPath,
-        childId,
-        parentId
-    );
+    const result = await window.pisiProject?.reparentMapNode?.(mapItem.fullPath, childId, parentId);
 
     if (!result?.ok) {
         alert(result?.error || 'Node taşınamadı.');
@@ -181,11 +174,7 @@ async function moveTreeItemToFolder(sourceItem, destinationFolderPath, options =
 
     suppressNextFileSystemRefresh(5000);
 
-    const result = await window.pisiProject?.movePisiItem?.(
-        sourceItem.fullPath,
-        destinationFolderPath,
-        options
-    );
+    const result = await window.pisiProject?.movePisiItem?.(sourceItem.fullPath, destinationFolderPath, options);
 
     if (!result?.ok) {
         alert(result?.error || 'Öğe taşınamadı.');
@@ -194,29 +183,22 @@ async function moveTreeItemToFolder(sourceItem, destinationFolderPath, options =
 
     if (typeof updatePisiOpenTabAfterRename === 'function' && result.isFile) {
         updatePisiOpenTabAfterRename(sourceItem.fullPath, result);
-    } else if (
-        Array.isArray(result.pathChanges) &&
-        typeof applyPisiPathChanges === 'function'
-    ) {
+    } else if (Array.isArray(result.pathChanges) && typeof applyPisiPathChanges === 'function') {
         applyPisiPathChanges(result.pathChanges);
     }
 
-    if (
-        activeCenterNode?.path &&
-        result.fullPath &&
-        sameClientPath(activeCenterNode.path, sourceItem.fullPath)
-    ) {
+    if (activeCenterNode?.path && result.fullPath && sameClientPath(activeCenterNode.path, sourceItem.fullPath)) {
         activeCenterNode.path = result.fullPath;
         activeCenterNode.metadata = result.metadata || activeCenterNode.metadata;
     }
 
     await refreshCurrentProjectTree();
 
-    const affectedOpenMap = activeMapPath && (
-        sameClientPath(activeMapPath, result.parentMapPath) ||
-        sameClientPath(activeMapPath, result.oldParentMapPath) ||
-        sameClientPath(activeMapPath, sourceItem.fullPath)
-    );
+    const affectedOpenMap =
+        activeMapPath &&
+        (sameClientPath(activeMapPath, result.parentMapPath) ||
+            sameClientPath(activeMapPath, result.oldParentMapPath) ||
+            sameClientPath(activeMapPath, sourceItem.fullPath));
 
     if (affectedOpenMap && typeof openMapInWorkspace === 'function') {
         const mapPath = activeMapPath;
@@ -270,10 +252,7 @@ function bindTreeRowDragAndDrop(row, node, item, isRoot = false) {
     row.draggable = true;
 
     row.addEventListener('dragstart', (event) => {
-        if (
-            event.target.closest('.tree-rename-input') ||
-            event.target.closest('.tree-row-actions')
-        ) {
+        if (event.target.closest('.tree-rename-input') || event.target.closest('.tree-row-actions')) {
             event.preventDefault();
             return;
         }
@@ -376,7 +355,7 @@ async function createTreeNode(item, level = 0, isRoot = false) {
     node.__pisiItem = item;
 
     if (item.metadata?.id) {
-    node.dataset.pisiId = item.metadata.id;
+        node.dataset.pisiId = item.metadata.id;
     }
 
     const row = document.createElement('div');
@@ -400,58 +379,58 @@ async function createTreeNode(item, level = 0, isRoot = false) {
     name.textContent = getTreeItemDisplayName(item);
 
     if (!isRoot) {
-    const toggle = document.createElement('span');
-    toggle.className = 'tree-toggle';
-    toggle.textContent = canHaveChildren ? '▶' : '';
+        const toggle = document.createElement('span');
+        toggle.className = 'tree-toggle';
+        toggle.textContent = canHaveChildren ? '▶' : '';
 
-    const icon = document.createElement('span');
-    icon.className = 'tree-icon';
-    icon.textContent = item.isDirectory ? '📁' : getFileIcon(item.name);
+        const icon = document.createElement('span');
+        icon.className = 'tree-icon';
+        icon.textContent = item.isDirectory ? '📁' : getFileIcon(item.name);
 
-    row.appendChild(toggle);
-    row.appendChild(icon);
+        row.appendChild(toggle);
+        row.appendChild(icon);
     }
 
     row.appendChild(name);
 
     if (isMapFile || isNodeFile) {
-    const actions = document.createElement('div');
-    actions.className = 'tree-row-actions';
+        const actions = document.createElement('div');
+        actions.className = 'tree-row-actions';
 
-    if (isMapFile) {
-        const addNodeBtn = document.createElement('button');
-        addNodeBtn.className = 'tree-inline-action-btn add-node-under-map-btn';
-        addNodeBtn.title = 'Bu map altında node oluştur';
+        if (isMapFile) {
+            const addNodeBtn = document.createElement('button');
+            addNodeBtn.className = 'tree-inline-action-btn add-node-under-map-btn';
+            addNodeBtn.title = 'Bu map altında node oluştur';
 
-        addNodeBtn.innerHTML = `
+            addNodeBtn.innerHTML = `
             <img src="assets/add-node.png" alt="+" class="tree-action-img">
             <span class="tree-action-fallback">+</span>
         `;
 
-        addNodeBtn.addEventListener('click', async (event) => {
+            addNodeBtn.addEventListener('click', async (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                await createNodeUnderMapFromTree(item, node);
+            });
+
+            actions.appendChild(addNodeBtn);
+        }
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'tree-inline-action-btn delete-tree-item-btn';
+        deleteBtn.title = isMapFile ? 'Map sil' : 'Node sil';
+        deleteBtn.innerHTML = `<span class="tree-action-fallback">×</span>`;
+
+        deleteBtn.addEventListener('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
 
-            await createNodeUnderMapFromTree(item, node);
+            await deleteTreePisiItem(item, node);
         });
 
-        actions.appendChild(addNodeBtn);
-    }
-
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'tree-inline-action-btn delete-tree-item-btn';
-    deleteBtn.title = isMapFile ? 'Map sil' : 'Node sil';
-    deleteBtn.innerHTML = `<span class="tree-action-fallback">×</span>`;
-
-    deleteBtn.addEventListener('click', async (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-
-        await deleteTreePisiItem(item, node);
-    });
-
-    actions.appendChild(deleteBtn);
-    row.appendChild(actions);
+        actions.appendChild(deleteBtn);
+        row.appendChild(actions);
     }
 
     node.appendChild(row);
@@ -464,7 +443,7 @@ async function createTreeNode(item, level = 0, isRoot = false) {
         node.appendChild(children);
 
         const childFolderPath = item.isDirectory ? item.fullPath : null;
-        
+
         async function toggleChildren() {
             const willExpand = !node.classList.contains('expanded');
 
@@ -473,20 +452,18 @@ async function createTreeNode(item, level = 0, isRoot = false) {
                 expandedTreePaths.add(item.fullPath);
                 row.setAttribute('aria-expanded', 'true');
 
-             if (children.dataset.loaded !== '1') {
-            
-                if (isMapFile) {
-                await loadMapTreeChildren(item.fullPath, children, level + 1);
+                if (children.dataset.loaded !== '1') {
+                    if (isMapFile) {
+                        await loadMapTreeChildren(item.fullPath, children, level + 1);
                     } else if (hasSyntheticChildren) {
-                await loadSyntheticTreeChildren(item.children, children, level + 1);
+                        await loadSyntheticTreeChildren(item.children, children, level + 1);
                     } else if (childFolderPath) {
-                await loadFolderChildren(childFolderPath, children, level + 1);
+                        await loadFolderChildren(childFolderPath, children, level + 1);
+                    }
+
+                    children.dataset.loaded = '1';
                 }
-
-                children.dataset.loaded = '1';
-            }
             } else {
-
                 node.classList.remove('expanded');
                 expandedTreePaths.delete(item.fullPath);
                 row.setAttribute('aria-expanded', 'false');
@@ -542,46 +519,46 @@ async function createTreeNode(item, level = 0, isRoot = false) {
         }
 
         if (!isRoot) {
-    row.addEventListener('click', async (event) => {
-        if (event.target.closest('.tree-rename-input')) return;
-        if (event.target.closest('.tree-row-actions')) return;
-        if (event.target.closest('.tree-toggle')) return;
+            row.addEventListener('click', async (event) => {
+                if (event.target.closest('.tree-rename-input')) return;
+                if (event.target.closest('.tree-row-actions')) return;
+                if (event.target.closest('.tree-toggle')) return;
 
-        event.preventDefault();
-        event.stopPropagation();
+                event.preventDefault();
+                event.stopPropagation();
 
-        if (!item.isDirectory) {
-            selectTreeFile(item, row);
+                if (!item.isDirectory) {
+                    selectTreeFile(item, row);
 
-            if (event.detail > 1) {
+                    if (event.detail > 1) {
+                        cancelPendingPisiTreeFileClick();
+                        return;
+                    }
+
+                    schedulePisiTreeFileClick(item, row);
+                    return;
+                }
+
+                await toggleChildren();
+            });
+        }
+
+        if (!isRoot) {
+            row.addEventListener('dblclick', (event) => {
+                if (event.target.closest('.tree-rename-input')) return;
+                if (event.target.closest('.tree-row-actions')) return;
+                if (event.target.closest('.tree-toggle')) return;
+
+                event.preventDefault();
+                event.stopPropagation();
                 cancelPendingPisiTreeFileClick();
-                return;
-            }
 
-            schedulePisiTreeFileClick(item, row);
-            return;
+                if (!item.isDirectory) {
+                    selectTreeFile(item, row);
+                    startRenameTreeFile(item, row);
+                }
+            });
         }
-
-        await toggleChildren();
-    });
-}
-
-if (!isRoot) {
-    row.addEventListener('dblclick', (event) => {
-        if (event.target.closest('.tree-rename-input')) return;
-        if (event.target.closest('.tree-row-actions')) return;
-        if (event.target.closest('.tree-toggle')) return;
-
-        event.preventDefault();
-        event.stopPropagation();
-        cancelPendingPisiTreeFileClick();
-
-        if (!item.isDirectory) {
-            selectTreeFile(item, row);
-            startRenameTreeFile(item, row);
-        }
-    });
-}
 
         if (isRoot || expandedTreePaths.has(item.fullPath)) {
             node.classList.add('expanded');
@@ -589,19 +566,18 @@ if (!isRoot) {
             row.setAttribute('aria-expanded', 'true');
 
             if (isMapFile) {
-            await loadMapTreeChildren(item.fullPath, children, level + 1);
-            children.dataset.loaded = '1';
-        } else if (hasSyntheticChildren) {
-            await loadSyntheticTreeChildren(item.children, children, level + 1);
-            children.dataset.loaded = '1';
-        } else if (childFolderPath) {
-            await loadFolderChildren(childFolderPath, children, level + 1);
-            children.dataset.loaded = '1';
-        }
+                await loadMapTreeChildren(item.fullPath, children, level + 1);
+                children.dataset.loaded = '1';
+            } else if (hasSyntheticChildren) {
+                await loadSyntheticTreeChildren(item.children, children, level + 1);
+                children.dataset.loaded = '1';
+            } else if (childFolderPath) {
+                await loadFolderChildren(childFolderPath, children, level + 1);
+                children.dataset.loaded = '1';
+            }
         }
     } else {
         row.addEventListener('click', async (event) => {
-
             if (event.target.closest('.tree-rename-input')) return;
 
             event.preventDefault();
@@ -618,7 +594,6 @@ if (!isRoot) {
         });
 
         row.addEventListener('dblclick', (event) => {
-
             if (event.target.closest('.tree-rename-input')) return;
 
             event.preventDefault();
@@ -648,88 +623,56 @@ async function deleteTreePisiItem(item, treeNode) {
 
     if (isMapFile) {
         const listResult = await window.pisiProject?.listMapNodes?.(item.fullPath);
-        childNodeCount = Array.isArray(listResult?.nodes)
-            ? listResult.nodes.length
-            : 0;
+        childNodeCount = Array.isArray(listResult?.nodes) ? listResult.nodes.length : 0;
     }
 
     const confirmationMessage = isMapFile
         ? `"${visibleName}" map'i ve içindeki ${childNodeCount} node Çöp Kutusu'na taşınsın mı?`
         : `"${visibleName}" node'u Çöp Kutusu'na taşınsın mı?`;
-    const ok = typeof pisiConfirm === 'function'
-        ? await pisiConfirm(confirmationMessage, {
-            title: isMapFile ? 'Map sil' : 'Node sil',
-            confirmText: 'Çöp Kutusu’na taşı',
-            cancelText: 'Vazgeç',
-            danger: true
-        })
-        : confirm(confirmationMessage);
+    const ok =
+        typeof pisiConfirm === 'function'
+            ? await pisiConfirm(confirmationMessage, {
+                  title: isMapFile ? 'Map sil' : 'Node sil',
+                  confirmText: 'Çöp Kutusu’na taşı',
+                  cancelText: 'Vazgeç',
+                  danger: true
+              })
+            : confirm(confirmationMessage);
 
     if (!ok) return;
 
     try {
         const centerWasExactTarget = Boolean(
-            isNodeFile &&
-            typeof activeCenterNode !== 'undefined' &&
-            activeCenterNode?.path &&
-            sameClientPath(
-                activeCenterNode.path,
-                item.fullPath
-            )
+            isNodeFile && typeof activeCenterNode !== 'undefined' && activeCenterNode?.path && sameClientPath(activeCenterNode.path, item.fullPath)
         );
         const modalWasExactTarget = Boolean(
-            isNodeFile &&
-            typeof activeModalNode !== 'undefined' &&
-            activeModalNode?.path &&
-            sameClientPath(
-                activeModalNode.path,
-                item.fullPath
-            )
+            isNodeFile && typeof activeModalNode !== 'undefined' && activeModalNode?.path && sameClientPath(activeModalNode.path, item.fullPath)
         );
-        const modalTargetBox =
-            modalWasExactTarget
-                ? activeModalNode?.box || null
-                : null;
+        const modalTargetBox = modalWasExactTarget ? activeModalNode?.box || null : null;
 
         if (typeof flushPisiPendingSaves === 'function') {
-            const saved =
-                await flushPisiPendingSaves();
+            const saved = await flushPisiPendingSaves();
 
             if (!saved) return;
         }
 
         let deletePath = item.fullPath;
 
-        if (
-            centerWasExactTarget &&
-            typeof activeCenterNode !== 'undefined' &&
-            activeCenterNode?.path
-        ) {
+        if (centerWasExactTarget && typeof activeCenterNode !== 'undefined' && activeCenterNode?.path) {
             deletePath = activeCenterNode.path;
-        } else if (
-            modalWasExactTarget &&
-            modalTargetBox?.dataset?.nodePath
-        ) {
+        } else if (modalWasExactTarget && modalTargetBox?.dataset?.nodePath) {
             deletePath = modalTargetBox.dataset.nodePath;
         }
 
-        const liveTreeNode =
-            findTreeNodeByPath(deletePath);
+        const liveTreeNode = findTreeNodeByPath(deletePath);
 
         if (liveTreeNode) {
             treeNode = liveTreeNode;
-            item =
-                liveTreeNode.__pisiItem ||
-                {
-                    ...item,
-                    fullPath: deletePath
-                };
-        } else if (
-            !sameClientPath(
-                deletePath,
-                item.fullPath
-            )
-        ) {
+            item = liveTreeNode.__pisiItem || {
+                ...item,
+                fullPath: deletePath
+            };
+        } else if (!sameClientPath(deletePath, item.fullPath)) {
             item = {
                 ...item,
                 fullPath: deletePath
@@ -738,10 +681,7 @@ async function deleteTreePisiItem(item, treeNode) {
 
         suppressNextFileSystemRefresh(8000);
 
-        const result =
-            await window.pisiProject?.deletePisiFile?.(
-                item.fullPath
-            );
+        const result = await window.pisiProject?.deletePisiFile?.(item.fullPath);
 
         if (!result || !result.ok) {
             alert(result?.error || 'Dosya silinemedi.');
@@ -775,9 +715,7 @@ async function handleDeletedMapFromTree(item, treeNode, result = {}) {
         await removePisiOpenTabsForDeletedPaths([
             item.fullPath,
             result.deletedSidecarPath || item.sidecarPath,
-            ...(Array.isArray(result.childNodePaths)
-                ? result.childNodePaths
-                : [])
+            ...(Array.isArray(result.childNodePaths) ? result.childNodePaths : [])
         ]);
         return;
     }
@@ -789,65 +727,95 @@ async function handleDeletedMapFromTree(item, treeNode, result = {}) {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "getPisiTreeDragStateItem": {
+    getPisiTreeDragStateItem: {
         enumerable: true,
-        get() { return getPisiTreeDragStateItem; }
+        get() {
+            return getPisiTreeDragStateItem;
+        }
     },
-    "setPisiTreeDragStateItem": {
+    setPisiTreeDragStateItem: {
         enumerable: true,
-        get() { return setPisiTreeDragStateItem; }
+        get() {
+            return setPisiTreeDragStateItem;
+        }
     },
-    "clonePisiTreeDragItem": {
+    clonePisiTreeDragItem: {
         enumerable: true,
-        get() { return clonePisiTreeDragItem; }
+        get() {
+            return clonePisiTreeDragItem;
+        }
     },
-    "getClientPathBaseName": {
+    getClientPathBaseName: {
         enumerable: true,
-        get() { return getClientPathBaseName; }
+        get() {
+            return getClientPathBaseName;
+        }
     },
-    "getAncestorMapItemForTreeNode": {
+    getAncestorMapItemForTreeNode: {
         enumerable: true,
-        get() { return getAncestorMapItemForTreeNode; }
+        get() {
+            return getAncestorMapItemForTreeNode;
+        }
     },
-    "isTreeDropInsideDraggedNode": {
+    isTreeDropInsideDraggedNode: {
         enumerable: true,
-        get() { return isTreeDropInsideDraggedNode; }
+        get() {
+            return isTreeDropInsideDraggedNode;
+        }
     },
-    "canDropTreeItemOnTarget": {
+    canDropTreeItemOnTarget: {
         enumerable: true,
-        get() { return canDropTreeItemOnTarget; }
+        get() {
+            return canDropTreeItemOnTarget;
+        }
     },
-    "reparentMapNodeFromTreeDrop": {
+    reparentMapNodeFromTreeDrop: {
         enumerable: true,
-        get() { return reparentMapNodeFromTreeDrop; }
+        get() {
+            return reparentMapNodeFromTreeDrop;
+        }
     },
-    "moveTreeItemToFolder": {
+    moveTreeItemToFolder: {
         enumerable: true,
-        get() { return moveTreeItemToFolder; }
+        get() {
+            return moveTreeItemToFolder;
+        }
     },
-    "handleTreeDrop": {
+    handleTreeDrop: {
         enumerable: true,
-        get() { return handleTreeDrop; }
+        get() {
+            return handleTreeDrop;
+        }
     },
-    "bindTreeRowDragAndDrop": {
+    bindTreeRowDragAndDrop: {
         enumerable: true,
-        get() { return bindTreeRowDragAndDrop; }
+        get() {
+            return bindTreeRowDragAndDrop;
+        }
     },
-    "bindFileTreeRootDropZone": {
+    bindFileTreeRootDropZone: {
         enumerable: true,
-        get() { return bindFileTreeRootDropZone; }
+        get() {
+            return bindFileTreeRootDropZone;
+        }
     },
-    "createTreeNode": {
+    createTreeNode: {
         enumerable: true,
-        get() { return createTreeNode; }
+        get() {
+            return createTreeNode;
+        }
     },
-    "deleteTreePisiItem": {
+    deleteTreePisiItem: {
         enumerable: true,
-        get() { return deleteTreePisiItem; }
+        get() {
+            return deleteTreePisiItem;
+        }
     },
-    "handleDeletedMapFromTree": {
+    handleDeletedMapFromTree: {
         enumerable: true,
-        get() { return handleDeletedMapFromTree; }
+        get() {
+            return handleDeletedMapFromTree;
+        }
     }
 });
-registerModule("tree.dragDrop", moduleApi);
+registerModule('tree.dragDrop', moduleApi);

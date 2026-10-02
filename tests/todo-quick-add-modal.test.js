@@ -31,11 +31,7 @@ test('sağ To-do başlığı eşit kare, sağa yaslı ve yalnız ikonlu eylemler
 test('Tasks sekmesi çalışma merkezinden tamamen kaldırılır ve Quick Add modalda kalır', () => {
     const capture = read('renderer/productivity/pisi-quick-capture.mjs');
     const commandCenter = read('renderer/shell/pisi-command-center.mjs');
-    const css = [
-        read('styles/58-roadmap-workspace.css'),
-        read('styles/90-themes.css'),
-        read('styles/91-light-theme-tuning.css')
-    ].join('\n');
+    const css = [read('styles/58-roadmap-workspace.css'), read('styles/90-themes.css'), read('styles/91-light-theme-tuning.css')].join('\n');
 
     assert.match(capture, /function ensurePisiQuickAddModal/);
     assert.match(capture, /async function openPisiQuickAddModal/);

@@ -13,25 +13,13 @@ test('Verdana is the application and rich-editor default while Vincendo remains 
     const customization = read('renderer/shell/pisi-customizations.mjs');
     const toolbar = read('renderer/editor/pisi-editor-unified-toolbar.mjs');
 
-    assert.match(
-        css,
-        /html,\s*\nbody,[\s\S]*font-family:\s*Verdana, Geneva, Tahoma, sans-serif/
-    );
+    assert.match(css, /html,\s*\nbody,[\s\S]*font-family:\s*Verdana, Geneva, Tahoma, sans-serif/);
     assert.match(
         css,
         /#center-node-editor-content,[\s\S]*#node-modal-content,[\s\S]*\.pisi-rich-editor[\s\S]*font-family:\s*Verdana, Geneva, Tahoma, sans-serif/
     );
 
-    assert.match(
-        customization,
-        /\['"Vincendo", "Segoe UI", Tahoma, sans-serif', 'Vincendo'\]/
-    );
-    assert.match(
-        customization,
-        /\['Verdana, Geneva, sans-serif', 'Verdana'\]/
-    );
-    assert.match(
-        toolbar,
-        /<option value="Vincendo"(?: selected)?>Vincendo<\/option>/
-    );
+    assert.match(customization, /\['"Vincendo", "Segoe UI", Tahoma, sans-serif', 'Vincendo'\]/);
+    assert.match(customization, /\['Verdana, Geneva, sans-serif', 'Verdana'\]/);
+    assert.match(toolbar, /<option value="Vincendo"(?: selected)?>Vincendo<\/option>/);
 });

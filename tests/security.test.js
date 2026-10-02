@@ -23,9 +23,7 @@ function loadValidationApi(projectFolder) {
     ];
     const source = `
         let activeProjectFolder = ${JSON.stringify(projectFolder)};
-        ${functionNames
-            .map((name) => extractFunction(mainSource, name))
-            .join('\n')}
+        ${functionNames.map((name) => extractFunction(mainSource, name)).join('\n')}
         globalThis.pisiValidationApi = {
             sanitizePisiBaseName,
             normalizePisiId,
@@ -81,10 +79,7 @@ test('proje yolu sınırı dış erişimi ve symlink kaçışını engeller', (t
         }),
         path.resolve(nodePath)
     );
-    assert.throws(
-        () => api.assertProjectPath(path.join(outsideRoot, 'escape.node')),
-        /dışında|bulunamadı/
-    );
+    assert.throws(() => api.assertProjectPath(path.join(outsideRoot, 'escape.node')), /dışında|bulunamadı/);
 
     const linkPath = path.join(projectRoot, 'outside-link');
     try {
@@ -95,9 +90,10 @@ test('proje yolu sınırı dış erişimi ve symlink kaçışını engeller', (t
     }
 
     assert.throws(
-        () => api.assertProjectPath(path.join(linkPath, 'escape.node'), {
-            mustExist: false
-        }),
+        () =>
+            api.assertProjectPath(path.join(linkPath, 'escape.node'), {
+                mustExist: false
+            }),
         /symlink|bağlantı/
     );
 });

@@ -16,23 +16,11 @@ function escapePisiTaskHtml(value = '') {
 
 function normalizePisiTaskIso(value, allowTime = true) {
     const raw = String(value || '').trim();
-    const expression = allowTime
-        ? /^(\d{4})-(\d{2})-(\d{2})(?:T([01]\d|2[0-3]):([0-5]\d))?$/
-        : /^(\d{4})-(\d{2})-(\d{2})$/;
+    const expression = allowTime ? /^(\d{4})-(\d{2})-(\d{2})(?:T([01]\d|2[0-3]):([0-5]\d))?$/ : /^(\d{4})-(\d{2})-(\d{2})$/;
     const match = raw.match(expression);
     if (!match) return '';
-    const date = new Date(
-        Number(match[1]),
-        Number(match[2]) - 1,
-        Number(match[3]),
-        Number(match[4] || 0),
-        Number(match[5] || 0)
-    );
-    if (
-        date.getFullYear() !== Number(match[1]) ||
-        date.getMonth() !== Number(match[2]) - 1 ||
-        date.getDate() !== Number(match[3])
-    ) return '';
+    const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), Number(match[4] || 0), Number(match[5] || 0));
+    if (date.getFullYear() !== Number(match[1]) || date.getMonth() !== Number(match[2]) - 1 || date.getDate() !== Number(match[3])) return '';
     return raw;
 }
 
@@ -85,35 +73,23 @@ function getOrCreatePisiInboxNode(projectFolder) {
 
 function normalizePisiCaptureRepeat(value) {
     const repeat = String(value || '').toLowerCase();
-    return [
-        'none', 'daily', 'weekdays', 'weekly', 'biweekly',
-        'monthly', 'after-completion'
-    ].includes(repeat) ? repeat : 'none';
+    return ['none', 'daily', 'weekdays', 'weekly', 'biweekly', 'monthly', 'after-completion'].includes(repeat) ? repeat : 'none';
 }
 
 function makePisiTaskCaptureBlock(payload = {}) {
-    const text = String(payload.text || '').replace(/\s+/g, ' ').trim();
+    const text = String(payload.text || '')
+        .replace(/\s+/g, ' ')
+        .trim();
     if (!text) throw new Error('Görev metni boş olamaz.');
     const scheduledAt = normalizePisiTaskIso(payload.scheduledAt);
     const deadline = normalizePisiTaskIso(payload.deadline);
     const reminderAt = normalizePisiTaskIso(payload.reminderAt);
     const repeat = normalizePisiCaptureRepeat(payload.repeat);
-    const tag = pisiTodoTagFromCapture(
-        payload.priority,
-        scheduledAt || deadline
-    );
+    const tag = pisiTodoTagFromCapture(payload.priority, scheduledAt || deadline);
     const duration = Math.max(0, Math.min(1440, Number(payload.durationMinutes) || 0));
     const actual = Math.max(0, Math.min(100000, Number(payload.actualMinutes) || 0));
-    const completionOffset = Math.max(
-        0,
-        Math.min(3650, Number(payload.completionOffsetDays) || 0)
-    );
-    const attrs = [
-        `data-pisi-tag="${tag}"`,
-        'data-pisi-todo-status="todo"',
-        `data-pisi-todo-repeat="${repeat}"`,
-        `data-pisi-todo-order="${Date.now()}"`
-    ];
+    const completionOffset = Math.max(0, Math.min(3650, Number(payload.completionOffsetDays) || 0));
+    const attrs = [`data-pisi-tag="${tag}"`, 'data-pisi-todo-status="todo"', `data-pisi-todo-repeat="${repeat}"`, `data-pisi-todo-order="${Date.now()}"`];
     if (scheduledAt) attrs.push(`data-pisi-todo-scheduled-at="${scheduledAt}"`);
     if (deadline) attrs.push(`data-pisi-todo-deadline="${deadline}"`);
     if (reminderAt) attrs.push(`data-pisi-todo-reminder-at="${reminderAt}"`);
@@ -137,10 +113,7 @@ function quickAddPisiTask(projectFolder, payload = {}) {
         let nodeInfo = null;
         if (payload.nodePath) {
             const nodePath = path.resolve(String(payload.nodePath));
-            if (
-                path.extname(nodePath).toLowerCase() !== '.node' ||
-                !fs.existsSync(nodePath)
-            ) throw new Error('Seçilen hedef node bulunamadı.');
+            if (path.extname(nodePath).toLowerCase() !== '.node' || !fs.existsSync(nodePath)) throw new Error('Seçilen hedef node bulunamadı.');
             nodeInfo = getPisiDocument(nodePath);
         } else {
             nodeInfo = getOrCreatePisiInboxNode(projectFolder);

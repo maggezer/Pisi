@@ -13,9 +13,7 @@ const read = (file) => fs.readFileSync(path.join(sourceRoot, file), 'utf8');
 let corePromise = null;
 function loadCore() {
     if (!corePromise) {
-        corePromise = import(pathToFileURL(
-            path.join(sourceRoot, 'renderer/map/pisi-map-operational-core.mjs')
-        ).href);
+        corePromise = import(pathToFileURL(path.join(sourceRoot, 'renderer/map/pisi-map-operational-core.mjs')).href);
     }
     return corePromise;
 }
@@ -36,13 +34,18 @@ function property(id, name, type, value) {
 }
 
 function emptyStates(nodes) {
-    return new Map(nodes.map((item) => [item.id, {
-        openTasks: [],
-        blocked: false,
-        overdue: false,
-        missingNextAction: true,
-        ownerMissing: true
-    }]));
+    return new Map(
+        nodes.map((item) => [
+            item.id,
+            {
+                openTasks: [],
+                blocked: false,
+                overdue: false,
+                missingNextAction: true,
+                ownerMissing: true
+            }
+        ])
+    );
 }
 
 test('live scoped map property filtrelerini text, multiselect ve number alanlarında AND olarak uygular', async () => {
@@ -64,19 +67,14 @@ test('live scoped map property filtrelerini text, multiselect ve number alanlar�
             score: property('score', 'Score', 'number', 9)
         })
     ];
-    const visible = core.getPisiOperationalVisibleNodeIds(
-        nodes,
-        [],
-        emptyStates(nodes),
-        {
-            strategy: 'live',
-            propertyFilters: [
-                { property: 'status', operator: 'one-of', value: 'Research, Build' },
-                { property: 'owner', operator: 'contains', value: 'ali' },
-                { property: 'score', operator: 'gte', value: '5' }
-            ]
-        }
-    );
+    const visible = core.getPisiOperationalVisibleNodeIds(nodes, [], emptyStates(nodes), {
+        strategy: 'live',
+        propertyFilters: [
+            { property: 'status', operator: 'one-of', value: 'Research, Build' },
+            { property: 'owner', operator: 'contains', value: 'ali' },
+            { property: 'score', operator: 'gte', value: '5' }
+        ]
+    });
     assert.deepEqual([...visible], ['node_A']);
 });
 
@@ -90,19 +88,12 @@ test('snapshot scope criteria değişse bile captured node membershipini sabit t
             stage: property('stage', 'Stage', 'text', 'archive')
         })
     ];
-    const visible = core.getPisiOperationalVisibleNodeIds(
-        nodes,
-        [],
-        emptyStates(nodes),
-        {
-            strategy: 'snapshot',
-            includedNodeIds: ['node_B'],
-            query: 'alpha',
-            propertyFilters: [
-                { property: 'stage', operator: 'equals', value: 'active' }
-            ]
-        }
-    );
+    const visible = core.getPisiOperationalVisibleNodeIds(nodes, [], emptyStates(nodes), {
+        strategy: 'snapshot',
+        includedNodeIds: ['node_B'],
+        query: 'alpha',
+        propertyFilters: [{ property: 'stage', operator: 'equals', value: 'active' }]
+    });
     assert.deepEqual([...visible], ['node_B']);
 });
 
@@ -126,19 +117,21 @@ test('property filter normalizasyonu yalnız desteklenen operatorleri ve bounded
 test('relationship filtresi snapshot node membershipinden bağımsız edge projectionı olarak kalır', async () => {
     const core = await loadCore();
     const nodes = [node('node_A', 'Alpha'), node('node_B', 'Beta'), node('node_C', 'Gamma')];
-    const visible = core.getPisiOperationalVisibleNodeIds(
-        nodes,
-        [],
-        emptyStates(nodes),
-        { strategy: 'snapshot', includedNodeIds: ['node_A', 'node_B'] }
+    const visible = core.getPisiOperationalVisibleNodeIds(nodes, [], emptyStates(nodes), { strategy: 'snapshot', includedNodeIds: ['node_A', 'node_B'] });
+    const edges = core.getPisiOperationalVisibleEdges(
+        [
+            { id: 'edge_1', sourceId: 'node_A', targetId: 'node_B', type: 'stream' },
+            { id: 'edge_2', sourceId: 'node_A', targetId: 'node_B', type: 'co-level' },
+            { id: 'edge_3', sourceId: 'node_B', targetId: 'node_C', type: 'stream' }
+        ],
+        visible,
+        { relationshipTypes: ['stream'] }
     );
-    const edges = core.getPisiOperationalVisibleEdges([
-        { id: 'edge_1', sourceId: 'node_A', targetId: 'node_B', type: 'stream' },
-        { id: 'edge_2', sourceId: 'node_A', targetId: 'node_B', type: 'co-level' },
-        { id: 'edge_3', sourceId: 'node_B', targetId: 'node_C', type: 'stream' }
-    ], visible, { relationshipTypes: ['stream'] });
     assert.deepEqual([...visible], ['node_A', 'node_B']);
-    assert.deepEqual(edges.map((edge) => edge.id), ['edge_1']);
+    assert.deepEqual(
+        edges.map((edge) => edge.id),
+        ['edge_1']
+    );
 });
 
 test('map operational store saved scopesu layouttan bağımsız ve map-local olarak persist eder', () => {

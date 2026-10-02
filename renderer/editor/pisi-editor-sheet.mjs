@@ -1,36 +1,14 @@
-import { registerModule } from "../core/module-registry.mjs";
-import { evaluatePisiFormulaExpression } from "./pisi-editor-sheet-formula-core.mjs";
-import {
-    normalizePisiSheetTypedValue
-} from "./pisi-editor-sheet-field-types-core.mjs";
+import { registerModule } from '../core/module-registry.mjs';
+import { evaluatePisiFormulaExpression } from './pisi-editor-sheet-formula-core.mjs';
+import { normalizePisiSheetTypedValue } from './pisi-editor-sheet-field-types-core.mjs';
 
 function runPisiExcelAction(toolbar, action, actionValue = null) {
     const editor = getPisiToolbarEditor(toolbar);
     if (!editor) return;
 
     if (action === 'insertTable') {
-        const rows = Math.max(
-            1,
-            Math.min(
-                PISI_SHEET_MAX_ROWS,
-                getPisiToolbarNumber(
-                    toolbar,
-                    '[data-pisi-excel-rows]',
-                    5
-                )
-            )
-        );
-        const cols = Math.max(
-            1,
-            Math.min(
-                PISI_SHEET_MAX_COLS,
-                getPisiToolbarNumber(
-                    toolbar,
-                    '[data-pisi-excel-cols]',
-                    5
-                )
-            )
-        );
+        const rows = Math.max(1, Math.min(PISI_SHEET_MAX_ROWS, getPisiToolbarNumber(toolbar, '[data-pisi-excel-rows]', 5)));
+        const cols = Math.max(1, Math.min(PISI_SHEET_MAX_COLS, getPisiToolbarNumber(toolbar, '[data-pisi-excel-cols]', 5)));
 
         insertPisiSheet(editor, rows, cols);
         return;
@@ -38,10 +16,7 @@ function runPisiExcelAction(toolbar, action, actionValue = null) {
 
     const table = getActivePisiSheetForEditor(editor);
     if (!table) {
-        setPisiSheetToolbarStatus(
-            toolbar,
-            'Önce bir tablo veya hücre seç.'
-        );
+        setPisiSheetToolbarStatus(toolbar, 'Önce bir tablo veya hücre seç.');
         return;
     }
 
@@ -50,42 +25,28 @@ function runPisiExcelAction(toolbar, action, actionValue = null) {
     if (action === 'addRow') {
         changed = addPisiSheetRow(table);
         if (!changed) {
-            setPisiSheetToolbarStatus(
-                toolbar,
-                `${PISI_SHEET_MAX_ROWS} satır sınırına ulaşıldı.`
-            );
+            setPisiSheetToolbarStatus(toolbar, `${PISI_SHEET_MAX_ROWS} satır sınırına ulaşıldı.`);
         }
     } else if (action === 'deleteRow') {
         changed = deletePisiSheetRows(table);
         if (!changed) {
-            setPisiSheetToolbarStatus(
-                toolbar,
-                'Tabloda en az bir satır kalmalı.'
-            );
+            setPisiSheetToolbarStatus(toolbar, 'Tabloda en az bir satır kalmalı.');
         }
     } else if (action === 'addCol') {
         changed = addPisiSheetColumn(table);
         if (!changed) {
-            setPisiSheetToolbarStatus(
-                toolbar,
-                `${PISI_SHEET_MAX_COLS} sütun sınırına ulaşıldı.`
-            );
+            setPisiSheetToolbarStatus(toolbar, `${PISI_SHEET_MAX_COLS} sütun sınırına ulaşıldı.`);
         }
     } else if (action === 'deleteCol') {
         changed = deletePisiSheetColumns(table);
         if (!changed) {
-            setPisiSheetToolbarStatus(
-                toolbar,
-                'Tabloda en az bir sütun kalmalı.'
-            );
+            setPisiSheetToolbarStatus(toolbar, 'Tabloda en az bir sütun kalmalı.');
         }
     } else if (action === 'recalc') {
         recalcPisiSheet(table);
         changed = true;
     } else if (action === 'applyFormula') {
-        const input = toolbar.querySelector(
-            '[data-pisi-excel-formula]'
-        );
+        const input = toolbar.querySelector('[data-pisi-excel-formula]');
         applyPisiSheetFormula(table, input?.value || '');
         changed = true;
     } else if (
@@ -111,11 +72,7 @@ function runPisiExcelAction(toolbar, action, actionValue = null) {
             'fillColor'
         ].includes(action)
     ) {
-        changed = applyPisiSheetCellFormat(
-            table,
-            action,
-            actionValue
-        );
+        changed = applyPisiSheetCellFormat(table, action, actionValue);
     }
 
     syncPisiSheetToolbarState(toolbar, table);
@@ -137,22 +94,12 @@ function insertPisiSheet(editor, rows = 5, cols = 5) {
 
     const selection = window.getSelection?.();
     const anchorNode = selection?.anchorNode || null;
-    const anchorElement = anchorNode?.nodeType === Node.ELEMENT_NODE
-        ? anchorNode
-        : anchorNode?.parentElement;
-    const currentBlock = anchorElement?.closest?.(
-        '.pisi-editor-block'
-    );
-    const canUseCurrentBlock = Boolean(
-        currentBlock &&
-        editor.contains(currentBlock) &&
-        !currentBlock.closest('.pisi-sheet-block')
-    );
+    const anchorElement = anchorNode?.nodeType === Node.ELEMENT_NODE ? anchorNode : anchorNode?.parentElement;
+    const currentBlock = anchorElement?.closest?.('.pisi-editor-block');
+    const canUseCurrentBlock = Boolean(currentBlock && editor.contains(currentBlock) && !currentBlock.closest('.pisi-sheet-block'));
 
     if (canUseCurrentBlock) {
-        const isEmpty = !String(
-            currentBlock.textContent || ''
-        ).trim();
+        const isEmpty = !String(currentBlock.textContent || '').trim();
 
         if (isEmpty) {
             currentBlock.replaceWith(block);
@@ -178,18 +125,12 @@ function insertPisiSheet(editor, rows = 5, cols = 5) {
 }
 
 function escapePisiSheetModelAttribute(value) {
-    return String(value)
-        .replaceAll('&', '&amp;')
-        .replaceAll('"', '&quot;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;');
+    return String(value).replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
 
 function buildPisiSheetHtml(rows, cols) {
     const database = createPisiSheetDatabase(rows, cols);
-    const serialized = escapePisiSheetModelAttribute(
-        JSON.stringify(database)
-    );
+    const serialized = escapePisiSheetModelAttribute(JSON.stringify(database));
 
     return (
         '<table class="pisi-sheet-table" ' +
@@ -206,15 +147,13 @@ function buildPisiSheetHtml(rows, cols) {
     );
 }
 
-
 // Safety caps keep a single SheetDatabase responsive while allowing
 // substantially larger tables than the original 80 x 26 grid.
 const PISI_SHEET_MAX_ROWS = 10000;
 
 const PISI_SHEET_MAX_COLS = 80;
 
-const PISI_SHEET_MAX_RANGE_CELLS =
-    PISI_SHEET_MAX_ROWS * PISI_SHEET_MAX_COLS;
+const PISI_SHEET_MAX_RANGE_CELLS = PISI_SHEET_MAX_ROWS * PISI_SHEET_MAX_COLS;
 
 const pisiBoundSheets = new WeakSet();
 
@@ -223,26 +162,17 @@ const pisiEditedSheetCells = new WeakSet();
 function getActivePisiSheetForEditor(editor) {
     if (!editor) return null;
 
-    return (
-        getPisiSheetActiveTable(editor) ||
-        editor.querySelector('table[data-pisi-sheet]')
-    );
+    return getPisiSheetActiveTable(editor) || editor.querySelector('table[data-pisi-sheet]');
 }
 
-
 function applyPisiSheetFormula(table, formula) {
-    const position =
-        getPisiSheetSelectionFocus(table) ||
-        getPisiSheetPointByIndex(table, 0, 0);
+    const position = getPisiSheetSelectionFocus(table) || getPisiSheetPointByIndex(table, 0, 0);
 
     if (!position) return;
 
     const value = String(formula || '').trim();
 
-    const field = getPisiSheetField(
-        table,
-        position.col
-    );
+    const field = getPisiSheetField(table, position.col);
 
     setPisiSheetCellSource(
         table,
@@ -251,18 +181,14 @@ function applyPisiSheetFormula(table, formula) {
         value.startsWith('=')
             ? { value: '', formula: value }
             : {
-                value: normalizePisiSheetTypedValue(
-                    field,
-                    value
-                ),
-                formula: null
-            }
+                  value: normalizePisiSheetTypedValue(field, value),
+                  formula: null
+              }
     );
 
     recalcPisiSheet(table);
     reconcilePisiSheetSelection(table);
 }
-
 
 function commitPisiSheetCell(cell, options = {}) {
     if (!cell) return;
@@ -273,14 +199,9 @@ function commitPisiSheetCell(cell, options = {}) {
     if (!table || !position) return;
 
     const value = String(cell.textContent || '').trim();
-    const formulaMode =
-        options.forceFormula === true ||
-        value.startsWith('=');
+    const formulaMode = options.forceFormula === true || value.startsWith('=');
 
-    const field = getPisiSheetField(
-        table,
-        position.col
-    );
+    const field = getPisiSheetField(table, position.col);
 
     setPisiSheetCellSource(
         table,
@@ -289,17 +210,13 @@ function commitPisiSheetCell(cell, options = {}) {
         formulaMode
             ? { value: '', formula: value }
             : {
-                value: normalizePisiSheetTypedValue(
-                    field,
-                    value
-                ),
-                formula: null
-            }
+                  value: normalizePisiSheetTypedValue(field, value),
+                  formula: null
+              }
     );
 
     pisiEditedSheetCells.delete(cell);
 }
-
 
 function recalcPisiSheet(table) {
     if (!table) return;
@@ -308,58 +225,28 @@ function recalcPisiSheet(table) {
 
     for (let row = 0; row < dimensions.rows; row += 1) {
         for (let col = 0; col < dimensions.cols; col += 1) {
-            const source = getPisiSheetCellSource(
-                table,
-                row,
-                col
-            );
+            const source = getPisiSheetCellSource(table, row, col);
 
             if (!source.formula) {
-                renderPisiSheetCellFromDatabase(
-                    table,
-                    row,
-                    col,
-                    source.value
-                );
+                renderPisiSheetCellFromDatabase(table, row, col, source.value);
                 continue;
             }
 
             if (source.formula.includes('#REF!')) {
-                renderPisiSheetCellFromDatabase(
-                    table,
-                    row,
-                    col,
-                    '#REF!'
-                );
+                renderPisiSheetCellFromDatabase(table, row, col, '#REF!');
                 continue;
             }
 
-            const ref =
-                pisiColumnName(col) +
-                String(row + 1);
-            const result = evaluatePisiSheetFormulaResult(
-                table,
-                source.formula,
-                new Set([ref])
-            );
+            const ref = pisiColumnName(col) + String(row + 1);
+            const result = evaluatePisiSheetFormulaResult(table, source.formula, new Set([ref]));
 
-            renderPisiSheetCellFromDatabase(
-                table,
-                row,
-                col,
-                result.ok
-                    ? formatPisiSheetValue(result.value)
-                    : result.error
-            );
+            renderPisiSheetCellFromDatabase(table, row, col, result.ok ? formatPisiSheetValue(result.value) : result.error);
         }
     }
 }
 
-
 function getPisiSheetFormulaLocale() {
-    return window.pisiI18n?.getLanguage?.() === 'tr'
-        ? 'tr-TR'
-        : 'en-US';
+    return window.pisiI18n?.getLanguage?.() === 'tr' ? 'tr-TR' : 'en-US';
 }
 
 function evaluatePisiSheetFormulaResult(table, formula, stack = new Set()) {
@@ -367,20 +254,11 @@ function evaluatePisiSheetFormulaResult(table, formula, stack = new Set()) {
         locale: getPisiSheetFormulaLocale(),
         resolveCell(ref) {
             const result = getPisiSheetCellValue(table, ref, stack);
-            return result.error
-                ? { ok: false, error: '#ERR' }
-                : { ok: true, value: result.value };
+            return result.error ? { ok: false, error: '#ERR' } : { ok: true, value: result.value };
         },
         resolveRange(startRef, endRef) {
-            const range = getPisiSheetRangeCellValues(
-                table,
-                startRef,
-                endRef,
-                stack
-            );
-            return range.error
-                ? { ok: false, error: '#ERR' }
-                : { ok: true, values: range.values };
+            const range = getPisiSheetRangeCellValues(table, startRef, endRef, stack);
+            return range.error ? { ok: false, error: '#ERR' } : { ok: true, values: range.values };
         }
     });
 }
@@ -392,9 +270,7 @@ function evaluatePisiSheetFormula(table, formula, stack = new Set()) {
 
 function evaluatePisiArithmeticExpression(expression) {
     const result = evaluatePisiFormulaExpression(expression);
-    return result.ok && typeof result.value === 'number'
-        ? result.value
-        : NaN;
+    return result.ok && typeof result.value === 'number' ? result.value : NaN;
 }
 
 function formatPisiSheetValue(value) {
@@ -415,13 +291,7 @@ function getPisiSheetCellValue(table, ref, stack = new Set()) {
     const position = parsePisiCellRef(ref);
     const dimensions = getPisiSheetDatabaseDimensions(table);
 
-    if (
-        !position ||
-        position.row < 0 ||
-        position.col < 0 ||
-        position.row >= dimensions.rows ||
-        position.col >= dimensions.cols
-    ) {
+    if (!position || position.row < 0 || position.col < 0 || position.row >= dimensions.rows || position.col >= dimensions.cols) {
         return {
             value: NaN,
             numeric: false,
@@ -429,11 +299,7 @@ function getPisiSheetCellValue(table, ref, stack = new Set()) {
         };
     }
 
-    const source = getPisiSheetCellSource(
-        table,
-        position.row,
-        position.col
-    );
+    const source = getPisiSheetCellSource(table, position.row, position.col);
 
     if (source.formula) {
         if (stack.has(ref)) {
@@ -447,25 +313,16 @@ function getPisiSheetCellValue(table, ref, stack = new Set()) {
         const nextStack = new Set(stack);
         nextStack.add(ref);
 
-        const result = evaluatePisiSheetFormulaResult(
-            table,
-            source.formula,
-            nextStack
-        );
+        const result = evaluatePisiSheetFormulaResult(table, source.formula, nextStack);
 
         return {
             value: result.ok ? result.value : null,
-            numeric:
-                result.ok &&
-                typeof result.value === 'number',
+            numeric: result.ok && typeof result.value === 'number',
             error: !result.ok
         };
     }
 
-    if (
-        typeof source.value === 'number' &&
-        Number.isFinite(source.value)
-    ) {
+    if (typeof source.value === 'number' && Number.isFinite(source.value)) {
         return {
             value: source.value,
             numeric: true,
@@ -508,13 +365,7 @@ function getPisiSheetCellValue(table, ref, stack = new Set()) {
     };
 }
 
-
-function getPisiSheetRangeCellValues(
-    table,
-    startRef,
-    endRef,
-    stack = new Set()
-) {
+function getPisiSheetRangeCellValues(table, startRef, endRef, stack = new Set()) {
     const start = parsePisiCellRef(startRef);
     const end = parsePisiCellRef(endRef);
     const dimensions = getPisiSheetDatabaseDimensions(table);
@@ -544,9 +395,7 @@ function getPisiSheetRangeCellValues(
     const rowMax = Math.max(start.row, end.row);
     const colMin = Math.min(start.col, end.col);
     const colMax = Math.max(start.col, end.col);
-    const rangeSize =
-        (rowMax - rowMin + 1) *
-        (colMax - colMin + 1);
+    const rangeSize = (rowMax - rowMin + 1) * (colMax - colMin + 1);
 
     if (rangeSize > PISI_SHEET_MAX_RANGE_CELLS) {
         return {
@@ -557,11 +406,7 @@ function getPisiSheetRangeCellValues(
 
     for (let row = rowMin; row <= rowMax; row += 1) {
         for (let col = colMin; col <= colMax; col += 1) {
-            const result = getPisiSheetCellValue(
-                table,
-                pisiColumnName(col) + String(row + 1),
-                stack
-            );
+            const result = getPisiSheetCellValue(table, pisiColumnName(col) + String(row + 1), stack);
 
             if (result.error) {
                 return {
@@ -580,14 +425,8 @@ function getPisiSheetRangeCellValues(
     };
 }
 
-
 function getPisiSheetRangeValues(table, startRef, endRef, stack = new Set()) {
-    const range = getPisiSheetRangeCellValues(
-        table,
-        startRef,
-        endRef,
-        stack
-    );
+    const range = getPisiSheetRangeCellValues(table, startRef, endRef, stack);
 
     if (range.error) return range;
 
@@ -627,9 +466,14 @@ function pisiColumnName(index) {
 }
 
 function pisiColumnIndex(name) {
-    return String(name || '').toUpperCase().split('').reduce((sum, char) => {
-        return sum * 26 + char.charCodeAt(0) - 64;
-    }, 0) - 1;
+    return (
+        String(name || '')
+            .toUpperCase()
+            .split('')
+            .reduce((sum, char) => {
+                return sum * 26 + char.charCodeAt(0) - 64;
+            }, 0) - 1
+    );
 }
 
 function formatPisiSheetNumber(value) {
@@ -640,89 +484,131 @@ function formatPisiSheetNumber(value) {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "runPisiExcelAction": {
+    runPisiExcelAction: {
         enumerable: true,
-        get() { return runPisiExcelAction; }
+        get() {
+            return runPisiExcelAction;
+        }
     },
-    "insertPisiSheet": {
+    insertPisiSheet: {
         enumerable: true,
-        get() { return insertPisiSheet; }
+        get() {
+            return insertPisiSheet;
+        }
     },
-    "buildPisiSheetHtml": {
+    buildPisiSheetHtml: {
         enumerable: true,
-        get() { return buildPisiSheetHtml; }
+        get() {
+            return buildPisiSheetHtml;
+        }
     },
-    "PISI_SHEET_MAX_ROWS": {
+    PISI_SHEET_MAX_ROWS: {
         enumerable: true,
-        get() { return PISI_SHEET_MAX_ROWS; }
+        get() {
+            return PISI_SHEET_MAX_ROWS;
+        }
     },
-    "PISI_SHEET_MAX_COLS": {
+    PISI_SHEET_MAX_COLS: {
         enumerable: true,
-        get() { return PISI_SHEET_MAX_COLS; }
+        get() {
+            return PISI_SHEET_MAX_COLS;
+        }
     },
-    "PISI_SHEET_MAX_RANGE_CELLS": {
+    PISI_SHEET_MAX_RANGE_CELLS: {
         enumerable: true,
-        get() { return PISI_SHEET_MAX_RANGE_CELLS; }
+        get() {
+            return PISI_SHEET_MAX_RANGE_CELLS;
+        }
     },
-    "pisiBoundSheets": {
+    pisiBoundSheets: {
         enumerable: true,
-        get() { return pisiBoundSheets; }
+        get() {
+            return pisiBoundSheets;
+        }
     },
-    "pisiEditedSheetCells": {
+    pisiEditedSheetCells: {
         enumerable: true,
-        get() { return pisiEditedSheetCells; }
+        get() {
+            return pisiEditedSheetCells;
+        }
     },
-    "getActivePisiSheetForEditor": {
+    getActivePisiSheetForEditor: {
         enumerable: true,
-        get() { return getActivePisiSheetForEditor; }
+        get() {
+            return getActivePisiSheetForEditor;
+        }
     },
-    "applyPisiSheetFormula": {
+    applyPisiSheetFormula: {
         enumerable: true,
-        get() { return applyPisiSheetFormula; }
+        get() {
+            return applyPisiSheetFormula;
+        }
     },
-    "commitPisiSheetCell": {
+    commitPisiSheetCell: {
         enumerable: true,
-        get() { return commitPisiSheetCell; }
+        get() {
+            return commitPisiSheetCell;
+        }
     },
-    "recalcPisiSheet": {
+    recalcPisiSheet: {
         enumerable: true,
-        get() { return recalcPisiSheet; }
+        get() {
+            return recalcPisiSheet;
+        }
     },
-    "evaluatePisiSheetFormula": {
+    evaluatePisiSheetFormula: {
         enumerable: true,
-        get() { return evaluatePisiSheetFormula; }
+        get() {
+            return evaluatePisiSheetFormula;
+        }
     },
-    "evaluatePisiArithmeticExpression": {
+    evaluatePisiArithmeticExpression: {
         enumerable: true,
-        get() { return evaluatePisiArithmeticExpression; }
+        get() {
+            return evaluatePisiArithmeticExpression;
+        }
     },
-    "getPisiSheetCellNumericValue": {
+    getPisiSheetCellNumericValue: {
         enumerable: true,
-        get() { return getPisiSheetCellNumericValue; }
+        get() {
+            return getPisiSheetCellNumericValue;
+        }
     },
-    "getPisiSheetCellValue": {
+    getPisiSheetCellValue: {
         enumerable: true,
-        get() { return getPisiSheetCellValue; }
+        get() {
+            return getPisiSheetCellValue;
+        }
     },
-    "getPisiSheetRangeValues": {
+    getPisiSheetRangeValues: {
         enumerable: true,
-        get() { return getPisiSheetRangeValues; }
+        get() {
+            return getPisiSheetRangeValues;
+        }
     },
-    "parsePisiCellRef": {
+    parsePisiCellRef: {
         enumerable: true,
-        get() { return parsePisiCellRef; }
+        get() {
+            return parsePisiCellRef;
+        }
     },
-    "pisiColumnName": {
+    pisiColumnName: {
         enumerable: true,
-        get() { return pisiColumnName; }
+        get() {
+            return pisiColumnName;
+        }
     },
-    "pisiColumnIndex": {
+    pisiColumnIndex: {
         enumerable: true,
-        get() { return pisiColumnIndex; }
+        get() {
+            return pisiColumnIndex;
+        }
     },
-    "formatPisiSheetNumber": {
+    formatPisiSheetNumber: {
         enumerable: true,
-        get() { return formatPisiSheetNumber; }
+        get() {
+            return formatPisiSheetNumber;
+        }
     }
 });
-registerModule("editor.sheet", moduleApi);
+registerModule('editor.sheet', moduleApi);

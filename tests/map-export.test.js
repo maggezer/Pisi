@@ -14,10 +14,7 @@ test('açık harita sağ üst menüden PNG veya PDF olarak dışa aktarılır', 
     const manifest = JSON.parse(read('renderer/module-manifest.json'));
 
     assert.match(bootstrap, /\.\/map\/pisi-map-export\.mjs/);
-    assert.ok(manifest.some((entry) => (
-        entry.module === 'map.export' &&
-        entry.path === 'renderer/map/pisi-map-export.mjs'
-    )));
+    assert.ok(manifest.some((entry) => entry.module === 'map.export' && entry.path === 'renderer/map/pisi-map-export.mjs'));
     assert.match(exporter, /id = 'pisi-map-export-control'/);
     assert.match(exporter, /data-map-export-format="png"/);
     assert.match(exporter, /data-map-export-format="pdf"/);
@@ -59,8 +56,7 @@ test('PNG yüksek çözünürlükte rasterize edilir, PDF SVG vektörünü korur
     assert.match(portability, /function decodePisiMapExportPng/);
     assert.match(portability, /printToPDF\(\{/);
     assert.match(portability, /preferCSSPageSize: true/);
-    assert.ok(mainManifest.find((entry) => entry.module === 'main.portability')
-        .bindings.includes('exportPisiMapGraphic'));
+    assert.ok(mainManifest.find((entry) => entry.module === 'main.portability').bindings.includes('exportPisiMapGraphic'));
 });
 
 test('export düğmesi, menüsü, ikonu ve metinleri iki temada tanımlıdır', () => {
@@ -74,18 +70,13 @@ test('export düğmesi, menüsü, ikonu ve metinleri iki temada tanımlıdır', 
     assert.match(mapCss, /#pisi-map-export-control[\s\S]*right: 64px/);
     assert.match(mapCss, /assets\/icons\/export-map\.svg/);
     assert.match(mapCss, /\.pisi-map-export-menu/);
-    assert.match(lightCss, /data-pisi-theme="light"[^\n]*\.pisi-map-export-trigger/);
-    assert.match(lightCss, /data-pisi-theme="light"[^\n]*\.pisi-map-export-menu/);
+    assert.match(lightCss, /data-pisi-theme=["\']light["\'][^\n]*\.pisi-map-export-trigger/);
+    assert.match(lightCss, /data-pisi-theme=["\']light["\'][^\n]*\.pisi-map-export-menu/);
     assert.match(icon, /viewBox="0 0 24 24"/);
     assert.doesNotMatch(icon, /<script\b|on\w+=/i);
     assert.equal(icons.actions.exportMap, 'assets/icons/export-map.svg');
 
-    for (const key of [
-        'Haritayı dışa aktar',
-        'PNG olarak dışa aktar',
-        'PDF olarak dışa aktar',
-        'Harita dışa aktarılamadı.'
-    ]) {
+    for (const key of ['Haritayı dışa aktar', 'PNG olarak dışa aktar', 'PDF olarak dışa aktar', 'Harita dışa aktarılamadı.']) {
         assert.equal(typeof tr[key], 'string', key);
         assert.equal(typeof eng[key], 'string', key);
     }

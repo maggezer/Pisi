@@ -65,18 +65,15 @@ contextBridge.exposeInMainWorld('pisiProject', {
 
     createPisiFile: (folderPath, ext) => ipcRenderer.invoke('project:create-pisi-file', folderPath, ext),
     renamePisiFile: (oldPath, newBaseName) => ipcRenderer.invoke('project:rename-pisi-file', oldPath, newBaseName),
-    movePisiItem: (sourcePath, destinationFolderPath, options) => ipcRenderer.invoke('project:move-pisi-item', sourcePath, destinationFolderPath, options || {}),
+    movePisiItem: (sourcePath, destinationFolderPath, options) =>
+        ipcRenderer.invoke('project:move-pisi-item', sourcePath, destinationFolderPath, options || {}),
     createNodeUnderMap: (mapPath) => ipcRenderer.invoke('project:create-node-under-map', mapPath),
     getOrCreateDiaryNode: (projectFolder, isoDate) => ipcRenderer.invoke('project:get-or-create-diary-node', projectFolder, isoDate),
     listDiaryDates: (projectFolder) => ipcRenderer.invoke('project:list-diary-dates', projectFolder),
     syncDiaryMissions: (projectFolder, entries) => ipcRenderer.invoke('project:sync-diary-missions', projectFolder, entries),
 
     listMapNodes: (mapPath) => ipcRenderer.invoke('project:list-map-nodes', mapPath),
-    getNodePropertyContext: (nodePath, preferredMapPath) => ipcRenderer.invoke(
-        'project:get-node-property-context',
-        nodePath,
-        preferredMapPath || null
-    ),
+    getNodePropertyContext: (nodePath, preferredMapPath) => ipcRenderer.invoke('project:get-node-property-context', nodePath, preferredMapPath || null),
     saveMapLayout: (mapPath, nodeLayouts) => ipcRenderer.invoke('project:save-map-layout', mapPath, nodeLayouts),
     saveNodeContent: (nodePath, content) => ipcRenderer.invoke('project:save-node-content', nodePath, content),
     quickAddTask: (projectFolder, payload) => ipcRenderer.invoke('project:quick-add-task', projectFolder, payload),
@@ -134,16 +131,8 @@ contextBridge.exposeInMainWorld('pisiSync', {
 
 contextBridge.exposeInMainWorld('pisiTrash', {
     list: (projectFolder) => ipcRenderer.invoke('project:list-trash', projectFolder),
-    restore: (projectFolder, trashId) => ipcRenderer.invoke(
-        'project:restore-trash-item',
-        projectFolder,
-        trashId
-    ),
-    deletePermanently: (projectFolder, trashId) => ipcRenderer.invoke(
-        'project:delete-trash-item',
-        projectFolder,
-        trashId
-    ),
+    restore: (projectFolder, trashId) => ipcRenderer.invoke('project:restore-trash-item', projectFolder, trashId),
+    deletePermanently: (projectFolder, trashId) => ipcRenderer.invoke('project:delete-trash-item', projectFolder, trashId),
     empty: (projectFolder) => ipcRenderer.invoke('project:empty-trash', projectFolder)
 });
 
@@ -264,9 +253,7 @@ function pisiTranslate(source) {
 }
 
 function pisiIsUserContentNode(node) {
-    const element = node?.nodeType === Node.ELEMENT_NODE
-        ? node
-        : node?.parentElement;
+    const element = node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement;
     return Boolean(element?.closest(PISI_USER_CONTENT_SELECTOR));
 }
 
@@ -337,11 +324,12 @@ function pisiApplyToRoot(root = document) {
             return;
         }
 
-        const elements = root.nodeType === Node.ELEMENT_NODE
-            ? [root, ...root.querySelectorAll('*')]
-            : root.nodeType === Node.DOCUMENT_NODE
-                ? [...document.querySelectorAll('*')]
-                : [];
+        const elements =
+            root.nodeType === Node.ELEMENT_NODE
+                ? [root, ...root.querySelectorAll('*')]
+                : root.nodeType === Node.DOCUMENT_NODE
+                  ? [...document.querySelectorAll('*')]
+                  : [];
 
         for (const element of elements) {
             pisiTranslateAttributes(element);
@@ -367,9 +355,7 @@ function pisiSyncLanguageControls() {
     const toggle = document.getElementById('pisi-language-toggle');
     if (toggle) {
         toggle.textContent = pisiLanguage === 'tr' ? 'EN' : 'TR';
-        toggle.title = pisiLanguage === 'tr'
-            ? pisiTranslateCore('İngilizceye geç')
-            : pisiTranslateCore('Türkçeye geç');
+        toggle.title = pisiLanguage === 'tr' ? pisiTranslateCore('İngilizceye geç') : pisiTranslateCore('Türkçeye geç');
         toggle.setAttribute('aria-label', toggle.title);
     }
 
@@ -400,7 +386,11 @@ async function pisiSetLanguage(language, options = {}) {
     const detail = { language: pisiLanguage };
     document.dispatchEvent(new CustomEvent('pisi:language-changed', { detail }));
     for (const listener of pisiLanguageListeners) {
-        try { listener(detail); } catch (error) { console.error(error); }
+        try {
+            listener(detail);
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     return pisiLanguage;
@@ -458,7 +448,7 @@ function pisiInstallObserver() {
 const pisiLocalizationReady = (async () => {
     let configuredLanguage = localStorage.getItem(PISI_LANGUAGE_STORAGE_KEY) || 'tr';
     try {
-        configuredLanguage = await ipcRenderer.invoke('app:get-language') || configuredLanguage;
+        configuredLanguage = (await ipcRenderer.invoke('app:get-language')) || configuredLanguage;
     } catch {
         // Older builds may not expose the language IPC yet.
     }

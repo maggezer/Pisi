@@ -8,17 +8,12 @@ function attachPisiTaskReferenceRewrite(result) {
         return result;
     }
 
-    const rewrite = modules['main.taskReferenceIntegrity']
-        ?.rewritePisiTaskSourcePathsForPathChanges;
-    const taskReferences = typeof rewrite === 'function'
-        ? rewrite(result.pathChanges)
-        : { ok: false, updated: 0, error: 'Task reference integrity modülü bulunamadı.' };
+    const rewrite = modules['main.taskReferenceIntegrity']?.rewritePisiTaskSourcePathsForPathChanges;
+    const taskReferences =
+        typeof rewrite === 'function' ? rewrite(result.pathChanges) : { ok: false, updated: 0, error: 'Task reference integrity modülü bulunamadı.' };
 
     if (!taskReferences?.ok) {
-        console.warn(
-            '[PISI] Task source yolları işlem sonrasında güncellenemedi:',
-            taskReferences?.error || 'Bilinmeyen hata'
-        );
+        console.warn('[PISI] Task source yolları işlem sonrasında güncellenemedi:', taskReferences?.error || 'Bilinmeyen hata');
     }
 
     return {
@@ -35,51 +30,31 @@ function bindPisiTaskReferenceOperationHooks() {
                 type: 'file',
                 extensions: ['.map', '.node']
             });
-            return attachPisiTaskReferenceRewrite(
-                renamePisiFile(safeOldPath, newBaseName)
-            );
+            return attachPisiTaskReferenceRewrite(renamePisiFile(safeOldPath, newBaseName));
         });
     });
 
     ipcMain.removeHandler('project:move-pisi-item');
-    ipcMain.handle(
-        'project:move-pisi-item',
-        (_event, sourcePath, destinationFolderPath, options) => {
-            return projectOperation(() => {
-                const safeSourcePath = assertProjectPath(sourcePath);
-                const safeDestinationPath = assertProjectPath(
-                    destinationFolderPath,
-                    { type: 'directory' }
-                );
+    ipcMain.handle('project:move-pisi-item', (_event, sourcePath, destinationFolderPath, options) => {
+        return projectOperation(() => {
+            const safeSourcePath = assertProjectPath(sourcePath);
+            const safeDestinationPath = assertProjectPath(destinationFolderPath, { type: 'directory' });
 
-                if (
-                    normalizePathForCompare(safeSourcePath) ===
-                    normalizePathForCompare(activeProjectFolder)
-                ) {
-                    throw new Error('Aktif proje kökü taşınamaz.');
-                }
+            if (normalizePathForCompare(safeSourcePath) === normalizePathForCompare(activeProjectFolder)) {
+                throw new Error('Aktif proje kökü taşınamaz.');
+            }
 
-                const safeOptions = { ...(options || {}) };
-                if (safeOptions.parentMapPath) {
-                    safeOptions.parentMapPath = assertProjectPath(
-                        safeOptions.parentMapPath,
-                        {
-                            type: 'file',
-                            extensions: ['.map']
-                        }
-                    );
-                }
+            const safeOptions = { ...(options || {}) };
+            if (safeOptions.parentMapPath) {
+                safeOptions.parentMapPath = assertProjectPath(safeOptions.parentMapPath, {
+                    type: 'file',
+                    extensions: ['.map']
+                });
+            }
 
-                return attachPisiTaskReferenceRewrite(
-                    movePisiItem(
-                        safeSourcePath,
-                        safeDestinationPath,
-                        safeOptions
-                    )
-                );
-            });
-        }
-    );
+            return attachPisiTaskReferenceRewrite(movePisiItem(safeSourcePath, safeDestinationPath, safeOptions));
+        });
+    });
 }
 
 bindPisiTaskReferenceOperationHooks();

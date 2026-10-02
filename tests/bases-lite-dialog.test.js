@@ -67,8 +67,8 @@ test('Bases-lite düğmesi, penceresi ve özel ikonu iki temaya uygundur', () =>
 
     assert.match(mapCss, /assets\/icons\/bases-lite\.svg/);
     assert.match(dark, /\.pisi-bases-dialog/);
-    assert.match(light, /data-pisi-theme="light"[^\n]*\.pisi-map-bases-trigger/);
-    assert.match(light, /data-pisi-theme="light"[^\n]*\.pisi-bases-dialog/);
+    assert.match(light, /data-pisi-theme=["\']light["\'][^\n]*\.pisi-map-bases-trigger/);
+    assert.match(light, /data-pisi-theme=["\']light["\'][^\n]*\.pisi-bases-dialog/);
     assert.equal(icons.actions.basesLite, 'assets/icons/bases-lite.svg');
     assert.match(icon, /viewBox="0 0 24 24"/);
     assert.doesNotMatch(icon, /<script\b|on\w+=/i);

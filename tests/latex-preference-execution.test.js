@@ -26,20 +26,20 @@ global.document = {
     body: null,
     head: { appendChild() {} },
     addEventListener() {},
-    querySelector() { return null; },
-    getElementById() { return null; }
+    querySelector() {
+        return null;
+    },
+    getElementById() {
+        return null;
+    }
 };
 
 let modulesPromise = null;
 function loadModules() {
     if (!modulesPromise) {
         modulesPromise = (async () => {
-            const preferences = await import(pathToFileURL(
-                path.join(root, 'renderer/editor/pisi-editor-command-preferences.mjs')
-            ).href);
-            const unified = await import(pathToFileURL(
-                path.join(root, 'renderer/editor/pisi-unified-command-menu.mjs')
-            ).href);
+            const preferences = await import(pathToFileURL(path.join(root, 'renderer/editor/pisi-editor-command-preferences.mjs')).href);
+            const unified = await import(pathToFileURL(path.join(root, 'renderer/editor/pisi-unified-command-menu.mjs')).href);
             return { preferences, unified };
         })();
     }
@@ -55,10 +55,7 @@ test('LaTeX preference gates both menu item creation and execution', async () =>
 
     preferences.setPisiLatexCommandsPreference(false);
     assert.equal(preferences.getPisiLatexCommandsPreference(), false);
-    assert.deepEqual(
-        unified.makePisiUnifiedLatexItems({ trigger: '/', body: 'frac' }),
-        []
-    );
+    assert.deepEqual(unified.makePisiUnifiedLatexItems({ trigger: '/', body: 'frac' }), []);
 
     let rangeRequests = 0;
     window.makeRangeInElementByTextOffsets = () => {
@@ -86,14 +83,8 @@ test('LaTeX preference gates both menu item creation and execution', async () =>
         kind: 'latex'
     };
 
-    assert.equal(
-        await unified.runPisiUnifiedCommandItem(editor, command, item),
-        false
-    );
-    assert.equal(
-        unified.insertPisiLatexTemplate(editor, command, item.template),
-        false
-    );
+    assert.equal(await unified.runPisiUnifiedCommandItem(editor, command, item), false);
+    assert.equal(unified.insertPisiLatexTemplate(editor, command, item.template), false);
     assert.equal(rangeRequests, 0);
 });
 
@@ -112,7 +103,7 @@ test('switching LaTeX off immediately closes stale unified command state', async
             remove() {}
         }
     };
-    document.getElementById = (id) => id === 'pisi-tag-menu' ? menu : null;
+    document.getElementById = (id) => (id === 'pisi-tag-menu' ? menu : null);
     unified.pisiUnifiedCommandState.active = true;
     unified.pisiUnifiedCommandState.editor = {};
     unified.pisiUnifiedCommandState.command = { trigger: '/', body: 'frac' };

@@ -62,10 +62,7 @@ test('filesystem hooks capture rename write mkdir unlink and rm boundaries', () 
 test('bulk mutation is bounded and recursive batch command is not allowed', () => {
     assert.match(domain, /operations\.length > 100/);
     assert.match(domain, /PISI_BATCH_MUTATION_COMMANDS/);
-    const allowedBlock = domain.slice(
-        domain.indexOf('const PISI_BATCH_MUTATION_COMMANDS'),
-        domain.indexOf('function registerPisiDomainQuery')
-    );
+    const allowedBlock = domain.slice(domain.indexOf('const PISI_BATCH_MUTATION_COMMANDS'), domain.indexOf('function registerPisiDomainQuery'));
     assert.doesNotMatch(allowedBlock, /project\.batch\.v1/);
 });
 
@@ -114,8 +111,5 @@ test('destructive compatibility IPC handlers are rebound after legacy hooks', ()
         assert.match(domain, new RegExp(`removeHandler\\('${channel}'\\)`));
     }
     const main = read('main.js');
-    assert.ok(
-        main.indexOf('./main/functions/domain-command-query') >
-        main.indexOf('./main/functions/task-reference-operation-hooks')
-    );
+    assert.ok(main.indexOf('./main/functions/domain-command-query') > main.indexOf('./main/functions/task-reference-operation-hooks'));
 });

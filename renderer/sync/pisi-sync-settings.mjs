@@ -9,13 +9,21 @@ function pisiSyncTranslate(value) {
 
 function formatPisiSyncTime(value) {
     if (!value) return pisiSyncTranslate('Henüz senkronize edilmedi');
-    try { return new Date(value).toLocaleString(); } catch { return String(value); }
+    try {
+        return new Date(value).toLocaleString();
+    } catch {
+        return String(value);
+    }
 }
 
 async function getPisiRendererSyncStatus() {
-    return window.pisiSync?.getStatus?.() || {
-        ok: false, configured: false, error: pisiSyncTranslate('Sync köprüsü kullanılamıyor.')
-    };
+    return (
+        window.pisiSync?.getStatus?.() || {
+            ok: false,
+            configured: false,
+            error: pisiSyncTranslate('Sync köprüsü kullanılamıyor.')
+        }
+    );
 }
 
 function makePisiSyncButton(label, className = 'pisi-sync-button') {
@@ -36,12 +44,10 @@ async function refreshPisiSyncSettings(section) {
     const select = section.querySelector('[data-pisi-sync-select]');
     section.dataset.configured = status.configured ? 'true' : 'false';
     section.setAttribute('aria-busy', pisiSyncBusy || status.running ? 'true' : 'false');
-    state.textContent = status.configured
-        ? `${pisiSyncTranslate('Bağlı klasör')}: ${status.folderName}`
-        : pisiSyncTranslate('Ortak klasör bağlı değil');
+    state.textContent = status.configured ? `${pisiSyncTranslate('Bağlı klasör')}: ${status.folderName}` : pisiSyncTranslate('Ortak klasör bağlı değil');
     detail.textContent = status.configured
         ? `${pisiSyncTranslate('Son senkronizasyon')}: ${formatPisiSyncTime(status.lastSyncAt)}`
-        : (status.error || pisiSyncTranslate('Google Drive, OneDrive veya başka bir ortak klasör seçin.'));
+        : status.error || pisiSyncTranslate('Google Drive, OneDrive veya başka bir ortak klasör seçin.');
     run.hidden = !status.configured;
     disconnect.hidden = !status.configured;
     run.disabled = pisiSyncBusy || status.running;
@@ -128,9 +134,11 @@ function renderPisiSyncSettings(container) {
             await refreshPisiSyncSettings(section);
         }
     });
-    run.addEventListener('click', () => runPisiRendererSync('manual', section).catch((error) => {
-        window.alert(error?.message || pisiSyncTranslate('Senkronizasyon başarısız.'));
-    }));
+    run.addEventListener('click', () =>
+        runPisiRendererSync('manual', section).catch((error) => {
+            window.alert(error?.message || pisiSyncTranslate('Senkronizasyon başarısız.'));
+        })
+    );
     disconnect.addEventListener('click', async () => {
         if (!window.confirm(pisiSyncTranslate('Sync bağlantısı kesilsin mi? Yerel proje dosyaları korunur.'))) return;
         await window.pisiSync?.disconnect?.();
@@ -144,7 +152,9 @@ function schedulePisiAutoSync(reason = 'local-change', delay = 5000) {
     pisiSyncAutoTimer = setTimeout(async () => {
         const status = await getPisiRendererSyncStatus();
         if (!status.configured || pisiSyncBusy) return;
-        try { await runPisiRendererSync(reason); } catch (error) {
+        try {
+            await runPisiRendererSync(reason);
+        } catch (error) {
             console.warn('[PISI Sync]', error.message);
         }
     }, delay);
@@ -166,8 +176,7 @@ function initializePisiSyncSettings() {
     window.pisiProject?.onFileSystemChanged?.((payload = {}) => {
         const relevant = (payload.changedPaths || []).some((filePath) => {
             const normalized = `/${String(filePath).replace(/\\/g, '/').replace(/^\/+/, '')}`;
-            return !normalized.includes('/.pisi/sync-state.json') &&
-                !normalized.includes('/.pisi/sync-trash/');
+            return !normalized.includes('/.pisi/sync-state.json') && !normalized.includes('/.pisi/sync-trash/');
         });
         if (relevant) schedulePisiAutoSync('filesystem-change', 2500);
     });
@@ -191,11 +200,4 @@ const moduleApi = {
 registerModule('sync.settings', moduleApi);
 initializePisiSyncSettings();
 
-export {
-    formatPisiSyncTime,
-    getPisiRendererSyncStatus,
-    initializePisiSyncSettings,
-    renderPisiSyncSettings,
-    runPisiRendererSync,
-    schedulePisiAutoSync
-};
+export { formatPisiSyncTime, getPisiRendererSyncStatus, initializePisiSyncSettings, renderPisiSyncSettings, runPisiRendererSync, schedulePisiAutoSync };

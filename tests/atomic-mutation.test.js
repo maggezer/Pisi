@@ -35,11 +35,7 @@ test('crash after first file write recovers completely to old state', () => {
         write(a, 'A-old');
         write(b, 'B-old');
 
-        const tx = atomic.beginAtomicMutation(
-            fixture.project,
-            'fault.after-first-write',
-            { transactionId: 'mut_fault_first_write' }
-        );
+        const tx = atomic.beginAtomicMutation(fixture.project, 'fault.after-first-write', { transactionId: 'mut_fault_first_write' });
         atomic.capturePathBeforeMutation(tx, a);
         write(a, 'A-new');
         assert.equal(read(a), 'A-new');
@@ -62,11 +58,7 @@ test('crash between multi-file writes never leaves 50/50 state', () => {
         });
         paths.forEach((target, index) => write(target, `old-${index}`));
 
-        const tx = atomic.beginAtomicMutation(
-            fixture.project,
-            'fault.middle-of-bulk',
-            { transactionId: 'mut_fault_bulk' }
-        );
+        const tx = atomic.beginAtomicMutation(fixture.project, 'fault.middle-of-bulk', { transactionId: 'mut_fault_bulk' });
         atomic.capturePathBeforeMutation(tx, paths[0]);
         write(paths[0], 'new-0');
         atomic.capturePathBeforeMutation(tx, paths[1]);
@@ -87,17 +79,10 @@ test('crash after rename restores source tree and removes destination tree', () 
         const destination = path.join(fixture.project, 'Moved');
         write(path.join(source, 'nested', 'note.node'), 'original');
 
-        const tx = atomic.beginAtomicMutation(
-            fixture.project,
-            'fault.after-rename',
-            { transactionId: 'mut_fault_rename' }
-        );
+        const tx = atomic.beginAtomicMutation(fixture.project, 'fault.after-rename', { transactionId: 'mut_fault_rename' });
         atomic.captureRenameBeforeMutation(tx, source, destination);
         fs.renameSync(source, destination);
-        const covering = atomic.capturePathBeforeMutation(
-            tx,
-            path.join(destination, 'nested', 'note.node')
-        );
+        const covering = atomic.capturePathBeforeMutation(tx, path.join(destination, 'nested', 'note.node'));
         write(path.join(destination, 'nested', 'note.node'), 'changed-after-move');
 
         assert.equal(covering.path, 'Moved');
@@ -114,11 +99,7 @@ test('newly created file and directory are removed on recovery', () => {
     try {
         const createdDir = path.join(fixture.project, 'new-sidecar');
         const createdFile = path.join(createdDir, 'new.node');
-        const tx = atomic.beginAtomicMutation(
-            fixture.project,
-            'fault.after-create',
-            { transactionId: 'mut_fault_create' }
-        );
+        const tx = atomic.beginAtomicMutation(fixture.project, 'fault.after-create', { transactionId: 'mut_fault_create' });
         atomic.capturePathBeforeMutation(tx, createdDir);
         write(createdFile, 'new');
 
@@ -134,11 +115,7 @@ test('durable committed marker makes restart keep the new state', () => {
     try {
         const target = path.join(fixture.project, 'committed.node');
         write(target, 'old');
-        const tx = atomic.beginAtomicMutation(
-            fixture.project,
-            'fault.after-commit-marker',
-            { transactionId: 'mut_fault_committed' }
-        );
+        const tx = atomic.beginAtomicMutation(fixture.project, 'fault.after-commit-marker', { transactionId: 'mut_fault_committed' });
         atomic.capturePathBeforeMutation(tx, target);
         write(target, 'new');
         atomic.commitAtomicMutation(tx, { cleanup: false });
@@ -161,11 +138,7 @@ test('rollback restores pre-existing destination as well as source', () => {
         const destination = path.join(fixture.project, 'destination.node');
         write(source, 'source-old');
         write(destination, 'destination-old');
-        const tx = atomic.beginAtomicMutation(
-            fixture.project,
-            'replace-existing',
-            { transactionId: 'mut_replace_existing' }
-        );
+        const tx = atomic.beginAtomicMutation(fixture.project, 'replace-existing', { transactionId: 'mut_replace_existing' });
         atomic.captureRenameBeforeMutation(tx, source, destination);
         fs.rmSync(destination);
         fs.renameSync(source, destination);
@@ -183,15 +156,8 @@ test('atomic core refuses project escape and symlink snapshots', () => {
     try {
         const outside = path.join(path.dirname(fixture.project), 'outside.node');
         write(outside, 'outside');
-        const tx = atomic.beginAtomicMutation(
-            fixture.project,
-            'security',
-            { transactionId: 'mut_security_guard' }
-        );
-        assert.throws(
-            () => atomic.capturePathBeforeMutation(tx, outside),
-            /proje klasörünün dışına/
-        );
+        const tx = atomic.beginAtomicMutation(fixture.project, 'security', { transactionId: 'mut_security_guard' });
+        assert.throws(() => atomic.capturePathBeforeMutation(tx, outside), /proje klasörünün dışına/);
         atomic.rollbackAtomicMutation(tx);
         fs.rmSync(outside, { force: true });
     } finally {
@@ -200,14 +166,8 @@ test('atomic core refuses project escape and symlink snapshots', () => {
 });
 
 test('domain layer routes destructive and bulk operations through atomic mutation runner', () => {
-    const domain = fs.readFileSync(
-        path.join(__dirname, '..', 'main/functions/domain-command-query.js'),
-        'utf8'
-    );
-    const runtime = fs.readFileSync(
-        path.join(__dirname, '..', 'main/functions/atomic-mutation.js'),
-        'utf8'
-    );
+    const domain = fs.readFileSync(path.join(__dirname, '..', 'main/functions/domain-command-query.js'), 'utf8');
+    const runtime = fs.readFileSync(path.join(__dirname, '..', 'main/functions/atomic-mutation.js'), 'utf8');
 
     for (const command of [
         'task.capture.v1',
@@ -230,10 +190,7 @@ test('domain layer routes destructive and bulk operations through atomic mutatio
 });
 
 test('rename and move task-reference failure is an atomic failure rather than partial success', () => {
-    const domain = fs.readFileSync(
-        path.join(__dirname, '..', 'main/functions/domain-command-query.js'),
-        'utf8'
-    );
+    const domain = fs.readFileSync(path.join(__dirname, '..', 'main/functions/domain-command-query.js'), 'utf8');
     assert.match(domain, /TASK_REFERENCE_REWRITE_FAILED/);
     assert.match(domain, /attachRequiredPisiTaskReferenceRewrite/);
     assert.match(domain, /project\.item\.rename\.v1/);
@@ -241,10 +198,7 @@ test('rename and move task-reference failure is an atomic failure rather than pa
 });
 
 test('startup project listing gates visible state behind atomic recovery', () => {
-    const domain = fs.readFileSync(
-        path.join(__dirname, '..', 'main/functions/domain-command-query.js'),
-        'utf8'
-    );
+    const domain = fs.readFileSync(path.join(__dirname, '..', 'main/functions/domain-command-query.js'), 'utf8');
     assert.match(domain, /removeHandler\('project:list-folder'\)/);
     assert.match(domain, /recoverPisiDomainProjectIfNeeded\(\)/);
     assert.match(domain, /projectOperations\.safeListFolder/);

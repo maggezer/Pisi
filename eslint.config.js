@@ -16,10 +16,7 @@ function loadManifestGlobals(relativePath) {
     const filePath = path.join(__dirname, relativePath);
     if (!fs.existsSync(filePath)) return {};
     const manifest = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    return Object.fromEntries(
-        manifest.flatMap((entry) => entry.bindings || [])
-            .map((name) => [name, 'writable'])
-    );
+    return Object.fromEntries(manifest.flatMap((entry) => entry.bindings || []).map((name) => [name, 'writable']));
 }
 
 function collectPatternNames(pattern, names) {
@@ -92,10 +89,7 @@ const preloadBrowserGlobals = {
 
 module.exports = [
     {
-        ignores: [
-            'dist/**', 'node_modules/**', 'android/**/build/**',
-            'android/.gradle/**', '.gradle/**'
-        ]
+        ignores: ['dist/**', 'node_modules/**', 'android/**/build/**', 'android/.gradle/**', '.gradle/**']
     },
     {
         files: ['eslint.config.js', 'preload.js', 'scripts/**/*.js', 'tests/**/*.js'],

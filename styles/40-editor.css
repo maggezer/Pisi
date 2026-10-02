@@ -1,5 +1,3 @@
-
-
 .pisi-tag-picker-count {
     flex: 0 0 auto;
     min-width: 22px;
@@ -37,7 +35,6 @@
     cursor: text;
 }
 
-
 #center-node-editor-content {
     flex: 1;
     min-height: 0;
@@ -48,7 +45,7 @@
     padding: 24px;
     background: #1e1e1e;
     color: #d4d4d4;
-    font-family: "Segoe UI", Tahoma, sans-serif;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
     font-size: 15px;
     line-height: 1.55;
     white-space: normal;
@@ -89,7 +86,7 @@
 }
 
 #center-node-editor-content:empty::before {
-    content: "Node içeriği...";
+    content: 'Node içeriği...';
     color: #555;
     pointer-events: none;
 }
@@ -101,7 +98,7 @@
     --pisi-map-stream-color: #2ecc71;
     --pisi-map-node-box-color: #252526;
     --pisi-map-node-title-color: #f39c12;
-    --pisi-map-node-font-family: "Segoe UI Variable Text", "Segoe UI", Arial, sans-serif;
+    --pisi-map-node-font-family: 'Segoe UI Variable Text', 'Segoe UI', Arial, sans-serif;
 
     --pisi-map-node-title-size: 13px;
     --pisi-map-node-text-size: 12px;
@@ -163,7 +160,7 @@
 }
 
 .pisi-customize-group summary::after {
-    content: "⌄";
+    content: '⌄';
     margin-left: auto;
     color: #888;
     transition: transform 0.14s ease;
@@ -232,7 +229,6 @@
 
 /* FIX: RIGHT PANEL TAB VISIBILITY AND TAGS POSITION */
 #right-panel-content {
-   
     min-height: 0;
     display: block;
     overflow-y: auto;

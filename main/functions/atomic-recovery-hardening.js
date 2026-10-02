@@ -8,14 +8,7 @@ const core = require('./atomic-mutation-core');
 
 const PISI_ATOMIC_RECOVERY_HARDENING_VERSION = 1;
 const PISI_ATOMIC_CLEANUP_PREFIX = '.cleanup_atomic_';
-const PISI_ATOMIC_CLEANUP_RETRY_CODES = new Set([
-    'EBUSY',
-    'EMFILE',
-    'ENFILE',
-    'ENOTEMPTY',
-    'EPERM',
-    'EACCES'
-]);
+const PISI_ATOMIC_CLEANUP_RETRY_CODES = new Set(['EBUSY', 'EMFILE', 'ENFILE', 'ENOTEMPTY', 'EPERM', 'EACCES']);
 const PISI_ATOMIC_CLEANUP_OPTIONS = Object.freeze({
     recursive: true,
     force: true,
@@ -50,10 +43,7 @@ function removePisiAtomicCleanupPath(targetPath, mutationRoot) {
             lastError = error;
             if (!PISI_ATOMIC_CLEANUP_RETRY_CODES.has(error?.code)) break;
             makePisiAtomicCleanupPathWritable(targetPath, mutationRoot);
-            if (
-                typeof error?.path === 'string' &&
-                core.isSameOrInsideAtomicPath(error.path, mutationRoot)
-            ) {
+            if (typeof error?.path === 'string' && core.isSameOrInsideAtomicPath(error.path, mutationRoot)) {
                 makePisiAtomicCleanupPathWritable(error.path, mutationRoot);
                 makePisiAtomicCleanupPathWritable(path.dirname(error.path), mutationRoot);
             }
@@ -72,10 +62,7 @@ function quarantinePisiAtomicTransactionDirectory(directoryPath, mutationRoot) {
         return { cleanupPending: false, warning: null };
     }
 
-    const quarantinePath = path.join(
-        mutationRoot,
-        `${PISI_ATOMIC_CLEANUP_PREFIX}${crypto.randomUUID()}`
-    );
+    const quarantinePath = path.join(mutationRoot, `${PISI_ATOMIC_CLEANUP_PREFIX}${crypto.randomUUID()}`);
     let cleanupTarget = directoryPath;
     let renameError = null;
 
@@ -97,9 +84,7 @@ function quarantinePisiAtomicTransactionDirectory(directoryPath, mutationRoot) {
         return { cleanupPending: false, warning: null };
     }
 
-    const detail = renameError && cleanupTarget === directoryPath
-        ? `${renameError.message} | ${removal.error}`
-        : removal.error;
+    const detail = renameError && cleanupTarget === directoryPath ? `${renameError.message} | ${removal.error}` : removal.error;
     return {
         cleanupPending: true,
         warning: `Atomic journal temizliği ertelendi: ${detail}`
@@ -183,10 +168,7 @@ function recoverPisiAtomicMutationsHardened(projectFolder) {
         // interrupted initial journal creation or, more commonly on Windows,
         // an interrupted cleanup that already removed manifest.json.
         if (!fs.existsSync(manifestPath)) {
-            const cleanup = quarantinePisiAtomicTransactionDirectory(
-                directoryPath,
-                mutationRoot
-            );
+            const cleanup = quarantinePisiAtomicTransactionDirectory(directoryPath, mutationRoot);
             if (cleanup.cleanupPending) {
                 cleanupPending += 1;
                 if (cleanup.warning) warnings.push(`${entry.name}: ${cleanup.warning}`);
@@ -215,10 +197,7 @@ function recoverPisiAtomicMutationsHardened(projectFolder) {
         };
 
         if (manifest.phase === 'committed') {
-            const cleanup = quarantinePisiAtomicTransactionDirectory(
-                directoryPath,
-                mutationRoot
-            );
+            const cleanup = quarantinePisiAtomicTransactionDirectory(directoryPath, mutationRoot);
             if (cleanup.cleanupPending) {
                 cleanupPending += 1;
                 if (cleanup.warning) warnings.push(`${manifest.id}: ${cleanup.warning}`);
@@ -263,20 +242,14 @@ function installPisiAtomicRecoveryHardening() {
     core.commitAtomicMutation = function pisiHardenedAtomicCommit(transaction, options = {}) {
         const result = originalCommit(transaction, { ...options, cleanup: false });
         if (options.cleanup === false) return result;
-        const cleanup = quarantinePisiAtomicTransactionDirectory(
-            transaction.directoryPath,
-            core.getAtomicMutationRoot(transaction.projectRoot)
-        );
+        const cleanup = quarantinePisiAtomicTransactionDirectory(transaction.directoryPath, core.getAtomicMutationRoot(transaction.projectRoot));
         return { ...result, ...cleanup };
     };
 
     core.rollbackAtomicMutation = function pisiHardenedAtomicRollback(transaction, options = {}) {
         const result = originalRollback(transaction, { ...options, cleanup: false });
         if (!result.ok || options.cleanup === false) return result;
-        const cleanup = quarantinePisiAtomicTransactionDirectory(
-            transaction.directoryPath,
-            core.getAtomicMutationRoot(transaction.projectRoot)
-        );
+        const cleanup = quarantinePisiAtomicTransactionDirectory(transaction.directoryPath, core.getAtomicMutationRoot(transaction.projectRoot));
         return { ...result, ...cleanup };
     };
 

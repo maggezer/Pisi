@@ -49,11 +49,7 @@ function capturePisiAtomicMkdirBeforeChange(targetPath) {
     const projectRoot = transaction.projectRoot;
     let candidate = path.resolve(targetPath);
     let topMissing = candidate;
-    while (
-        core.isSameOrInsideAtomicPath(candidate, projectRoot) &&
-        !fs.existsSync(path.dirname(candidate)) &&
-        path.dirname(candidate) !== candidate
-    ) {
+    while (core.isSameOrInsideAtomicPath(candidate, projectRoot) && !fs.existsSync(path.dirname(candidate)) && path.dirname(candidate) !== candidate) {
         candidate = path.dirname(candidate);
         topMissing = candidate;
     }
@@ -121,9 +117,7 @@ function finishPisiAtomicMutation(transaction, result) {
     if (result?.ok === false) {
         const rollback = core.rollbackAtomicMutation(transaction);
         if (!rollback.ok) {
-            recoveredPisiAtomicProjects.delete(
-                normalizePisiAtomicProjectKey(transaction.projectRoot)
-            );
+            recoveredPisiAtomicProjects.delete(normalizePisiAtomicProjectKey(transaction.projectRoot));
             return {
                 ...result,
                 ok: false,
@@ -160,12 +154,8 @@ function finishPisiAtomicMutation(transaction, result) {
     } catch (commitError) {
         const rollback = core.rollbackAtomicMutation(transaction);
         if (!rollback.ok) {
-            recoveredPisiAtomicProjects.delete(
-                normalizePisiAtomicProjectKey(transaction.projectRoot)
-            );
-            const error = new Error(
-                `${commitError.message} Atomic rollback başarısız: ${rollback.errors.join(' | ')}`
-            );
+            recoveredPisiAtomicProjects.delete(normalizePisiAtomicProjectKey(transaction.projectRoot));
+            const error = new Error(`${commitError.message} Atomic rollback başarısız: ${rollback.errors.join(' | ')}`);
             error.code = 'ATOMIC_ROLLBACK_FAILED';
             throw error;
         }
@@ -176,12 +166,8 @@ function finishPisiAtomicMutation(transaction, result) {
 function failPisiAtomicMutation(transaction, error) {
     const rollback = core.rollbackAtomicMutation(transaction);
     if (!rollback.ok) {
-        recoveredPisiAtomicProjects.delete(
-            normalizePisiAtomicProjectKey(transaction.projectRoot)
-        );
-        const wrapped = new Error(
-            `${error.message} Atomic rollback başarısız: ${rollback.errors.join(' | ')}`
-        );
+        recoveredPisiAtomicProjects.delete(normalizePisiAtomicProjectKey(transaction.projectRoot));
+        const wrapped = new Error(`${error.message} Atomic rollback başarısız: ${rollback.errors.join(' | ')}`);
         wrapped.code = 'ATOMIC_ROLLBACK_FAILED';
         throw wrapped;
     }
@@ -207,13 +193,7 @@ function releasePisiAtomicProjectQueue(projectKey, queue) {
     Promise.resolve().then(() => {
         let result;
         try {
-            result = executePisiQueuedAtomicMutation(
-                next.projectFolder,
-                next.commandName,
-                next.operation,
-                projectKey,
-                queue
-            );
+            result = executePisiQueuedAtomicMutation(next.projectFolder, next.commandName, next.operation, projectKey, queue);
         } catch (error) {
             next.reject(error);
             return;
@@ -222,19 +202,11 @@ function releasePisiAtomicProjectQueue(projectKey, queue) {
     });
 }
 
-function executePisiQueuedAtomicMutation(
-    projectFolder,
-    commandName,
-    operation,
-    projectKey,
-    queue
-) {
+function executePisiQueuedAtomicMutation(projectFolder, commandName, operation, projectKey, queue) {
     const recovery = ensurePisiAtomicRecovery(projectFolder);
     if (!recovery.ok) {
         releasePisiAtomicProjectQueue(projectKey, queue);
-        const error = new Error(
-            `Yarım kalan atomic mutation kurtarılamadı: ${recovery.warnings.join(' | ')}`
-        );
+        const error = new Error(`Yarım kalan atomic mutation kurtarılamadı: ${recovery.warnings.join(' | ')}`);
         error.code = 'ATOMIC_RECOVERY_REQUIRED';
         throw error;
     }
@@ -254,12 +226,14 @@ function executePisiQueuedAtomicMutation(
     }
 
     if (result && typeof result.then === 'function') {
-        return result.then(
-            (resolved) => finishPisiAtomicMutation(transaction, resolved),
-            (error) => failPisiAtomicMutation(transaction, error)
-        ).finally(() => {
-            releasePisiAtomicProjectQueue(projectKey, queue);
-        });
+        return result
+            .then(
+                (resolved) => finishPisiAtomicMutation(transaction, resolved),
+                (error) => failPisiAtomicMutation(transaction, error)
+            )
+            .finally(() => {
+                releasePisiAtomicProjectQueue(projectKey, queue);
+            });
     }
 
     try {
@@ -298,13 +272,7 @@ function runPisiAtomicMutation(projectFolder, commandName, operation) {
         });
     }
     queue.busy = true;
-    return executePisiQueuedAtomicMutation(
-        projectFolder,
-        commandName,
-        operation,
-        projectKey,
-        queue
-    );
+    return executePisiQueuedAtomicMutation(projectFolder, commandName, operation, projectKey, queue);
 }
 
 installPisiAtomicFilesystemHooks();

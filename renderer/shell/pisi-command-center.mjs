@@ -1,9 +1,5 @@
-import { registerModule } from "../core/module-registry.mjs";
-import {
-    getPisiThemePreference,
-    renderPisiCustomizationPreferences,
-    setPisiThemePreference
-} from "./pisi-customizations.mjs";
+import { registerModule } from '../core/module-registry.mjs';
+import { getPisiThemePreference, renderPisiCustomizationPreferences, setPisiThemePreference } from './pisi-customizations.mjs';
 
 const pisiCommandCenterState = {
     pages: new Map(),
@@ -209,11 +205,7 @@ function makePisiThemeOption(theme, label, description, activeTheme, onSelect) {
     const preview = document.createElement('span');
     preview.className = `pisi-theme-preview ${theme}`;
     preview.setAttribute('aria-hidden', 'true');
-    preview.append(
-        document.createElement('span'),
-        document.createElement('span'),
-        document.createElement('span')
-    );
+    preview.append(document.createElement('span'), document.createElement('span'), document.createElement('span'));
 
     const copy = document.createElement('span');
     copy.className = 'pisi-theme-option-copy';
@@ -241,9 +233,11 @@ function renderPisiSettingsPage(container) {
     page.appendChild(heading);
     container.appendChild(page);
 
-    document.dispatchEvent(new CustomEvent('pisi:render-settings-sections', {
-        detail: { container: page }
-    }));
+    document.dispatchEvent(
+        new CustomEvent('pisi:render-settings-sections', {
+            detail: { container: page }
+        })
+    );
 }
 
 function renderPisiPreferencesPage(container) {
@@ -263,9 +257,7 @@ function renderPisiPreferencesPage(container) {
     const appearanceTitle = document.createElement('h3');
     appearanceTitle.textContent = getPisiApplicationText('appearance');
     const appearanceDescription = document.createElement('p');
-    appearanceDescription.textContent = getPisiApplicationText(
-        'appearanceDescription'
-    );
+    appearanceDescription.textContent = getPisiApplicationText('appearanceDescription');
     appearanceHeading.append(appearanceTitle, appearanceDescription);
 
     const options = document.createElement('div');
@@ -273,10 +265,7 @@ function renderPisiPreferencesPage(container) {
 
     const syncThemeOptions = (activeTheme) => {
         options.querySelectorAll('.pisi-theme-option').forEach((button) => {
-            button.setAttribute(
-                'aria-pressed',
-                button.dataset.theme === activeTheme ? 'true' : 'false'
-            );
+            button.setAttribute('aria-pressed', button.dataset.theme === activeTheme ? 'true' : 'false');
         });
     };
 
@@ -287,20 +276,8 @@ function renderPisiPreferencesPage(container) {
 
     const activeTheme = getPisiThemePreference();
     options.append(
-        makePisiThemeOption(
-            'dark',
-            getPisiApplicationText('dark'),
-            getPisiApplicationText('darkDescription'),
-            activeTheme,
-            selectTheme
-        ),
-        makePisiThemeOption(
-            'light',
-            getPisiApplicationText('light'),
-            getPisiApplicationText('lightDescription'),
-            activeTheme,
-            selectTheme
-        )
+        makePisiThemeOption('dark', getPisiApplicationText('dark'), getPisiApplicationText('darkDescription'), activeTheme, selectTheme),
+        makePisiThemeOption('light', getPisiApplicationText('light'), getPisiApplicationText('lightDescription'), activeTheme, selectTheme)
     );
 
     page.append(heading, appearanceHeading, options);
@@ -334,10 +311,7 @@ function initializePisiCommandCenter() {
             window.pisiI18n?.onLanguageChanged?.(() => {
                 if (!pisiCommandCenterState.overlay?.isConnected) return;
                 renderPisiCommandCenterNavigation();
-                pisiCommandCenterState.dialog?.setAttribute(
-                    'aria-label',
-                    pisiCommandTranslate('Pisi çalışma merkezi')
-                );
+                pisiCommandCenterState.dialog?.setAttribute('aria-label', pisiCommandTranslate('Pisi çalışma merkezi'));
                 if (!pisiCommandCenterState.overlay?.hidden) {
                     renderPisiCommandCenterPage();
                 }

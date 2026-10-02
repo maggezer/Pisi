@@ -1,4 +1,4 @@
-import { buildPisiSearchAccelerator } from "../search/pisi-search-core.mjs";
+import { buildPisiSearchAccelerator } from '../search/pisi-search-core.mjs';
 
 const PISI_PROJECTION_WRITE_WINDOW_MS = 3500;
 
@@ -15,9 +15,7 @@ function getPisiSourceProjectKey() {
     const raw = String(window.currentProjectFolder || '')
         .replace(/[\\/]+/g, '/')
         .replace(/\/+$/g, '');
-    return window.pisiEnvironment?.platform === 'win32'
-        ? raw.toLowerCase()
-        : raw;
+    return window.pisiEnvironment?.platform === 'win32' ? raw.toLowerCase() : raw;
 }
 
 function ensurePisiSourceProjectState() {
@@ -34,8 +32,7 @@ function ensurePisiSourceProjectState() {
 
 function markPisiTaskProjectionWriteIntent() {
     ensurePisiSourceProjectState();
-    pisiSourceOfTruthState.projectionWriteUntil =
-        Date.now() + PISI_PROJECTION_WRITE_WINDOW_MS;
+    pisiSourceOfTruthState.projectionWriteUntil = Date.now() + PISI_PROJECTION_WRITE_WINDOW_MS;
 }
 
 function hasPisiTaskProjectionWriteIntent() {
@@ -43,21 +40,14 @@ function hasPisiTaskProjectionWriteIntent() {
 }
 
 function stripPisiMigrationFields(task = {}) {
-    const {
-        embeddedTaskId: _embeddedTaskId,
-        legacyMissionId: _legacyMissionId,
-        ...canonicalTask
-    } = task;
+    const { embeddedTaskId: _embeddedTaskId, legacyMissionId: _legacyMissionId, ...canonicalTask } = task;
     return canonicalTask;
 }
 
 function getPisiLegacyTaskSnapshot() {
-    const blocks = Array.isArray(window.pisiTagsPanelState?.missionIndex)
-        ? [...window.pisiTagsPanelState.missionIndex]
-        : [];
+    const blocks = Array.isArray(window.pisiTagsPanelState?.missionIndex) ? [...window.pisiTagsPanelState.missionIndex] : [];
     if (typeof window.buildPisiTasksFromLegacyIndex !== 'function') return [];
-    return window.buildPisiTasksFromLegacyIndex(blocks)
-        .map(stripPisiMigrationFields);
+    return window.buildPisiTasksFromLegacyIndex(blocks).map(stripPisiMigrationFields);
 }
 
 async function refreshCanonicalPisiTasks() {
@@ -81,9 +71,7 @@ async function ensurePisiLegacyTaskMigration() {
 
     const projectFolder = window.currentProjectFolder;
     const projectKey = getPisiSourceProjectKey();
-    const migrationSnapshot = window.pisiTagsPanelState?.missionIndexComplete === true
-        ? getPisiLegacyTaskSnapshot()
-        : null;
+    const migrationSnapshot = window.pisiTagsPanelState?.missionIndexComplete === true ? getPisiLegacyTaskSnapshot() : null;
 
     const promise = (async () => {
         const status = await window.pisiProject.quickAddTask(projectFolder, {
@@ -153,17 +141,14 @@ async function syncControlledPisiTaskProjection(reason = 'ui') {
             return { ok: false, stale: true };
         }
 
-        const result = await window.pisiProject.quickAddTask(
-            projectFolder,
-            {
-                op: 'sync-index',
-                allowProjectionWrite: true,
-                projectionReason: reason,
-                complete: true,
-                pruneMissing: true,
-                tasks
-            }
-        );
+        const result = await window.pisiProject.quickAddTask(projectFolder, {
+            op: 'sync-index',
+            allowProjectionWrite: true,
+            projectionReason: reason,
+            complete: true,
+            pruneMissing: true,
+            tasks
+        });
         if (result?.ok && projectKey === getPisiSourceProjectKey()) {
             await refreshCanonicalPisiTasks();
         }
@@ -192,45 +177,43 @@ function bindPisiTaskProjectionWriteIntents() {
     };
     document.addEventListener('change', markFromPanel, true);
     document.addEventListener('drop', markFromPanel, true);
-    document.addEventListener('input', (event) => {
-        if (event.target?.closest?.(
-            '#center-node-editor-content, #node-modal-content'
-        )) {
-            markPisiTaskProjectionWriteIntent();
-        }
-    }, true);
-    document.addEventListener('click', (event) => {
-        if (!event.target?.closest?.('#pisi-missions-panel')) return;
-        if (event.target.closest(
-            '.pisi-mission-check, .pisi-third-chip-remove, .pisi-mission-drag-handle'
-        )) {
-            markPisiTaskProjectionWriteIntent();
-        }
-    }, true);
+    document.addEventListener(
+        'input',
+        (event) => {
+            if (event.target?.closest?.('#center-node-editor-content, #node-modal-content')) {
+                markPisiTaskProjectionWriteIntent();
+            }
+        },
+        true
+    );
+    document.addEventListener(
+        'click',
+        (event) => {
+            if (!event.target?.closest?.('#pisi-missions-panel')) return;
+            if (event.target.closest('.pisi-mission-check, .pisi-third-chip-remove, .pisi-mission-drag-handle')) {
+                markPisiTaskProjectionWriteIntent();
+            }
+        },
+        true
+    );
 }
 
 function getPisiCanonicalTaskDate(task = {}) {
     const scheduled = String(task.scheduledAt || '').slice(0, 10);
     const due = String(task.dueDate || '').slice(0, 10);
     const deadline = String(task.deadline || '').slice(0, 10);
-    return /^\d{4}-\d{2}-\d{2}$/.test(scheduled)
-        ? scheduled
-        : (/^\d{4}-\d{2}-\d{2}$/.test(due) ? due : deadline);
+    return /^\d{4}-\d{2}-\d{2}$/.test(scheduled) ? scheduled : /^\d{4}-\d{2}-\d{2}$/.test(due) ? due : deadline;
 }
 
 function getPisiCanonicalDiaryEntries() {
-    const tasks = Array.isArray(window.pisiFirstClassTaskState?.tasks)
-        ? window.pisiFirstClassTaskState.tasks
-        : [];
+    const tasks = Array.isArray(window.pisiFirstClassTaskState?.tasks) ? window.pisiFirstClassTaskState.tasks : [];
 
     return tasks
         .filter((task) => task?.id && task.status !== 'done')
         .map((task) => {
             const date = getPisiCanonicalTaskDate(task);
             if (!date) return null;
-            const dependencies = Array.isArray(task.dependencies)
-                ? task.dependencies
-                : [];
+            const dependencies = Array.isArray(task.dependencies) ? task.dependencies : [];
             return {
                 date,
                 tag: task.todoTag || `todo.${task.priority || 3}.none`,
@@ -266,10 +249,7 @@ async function syncPisiDiaryFromCanonicalTasks(_index, options = {}) {
     const signature = `${projectKey}:${JSON.stringify(entries)}`;
     if (signature === pisiSourceOfTruthState.diarySignature) return null;
 
-    const result = await window.pisiProject.syncDiaryMissions(
-        window.currentProjectFolder,
-        { entries, complete: true }
-    );
+    const result = await window.pisiProject.syncDiaryMissions(window.currentProjectFolder, { entries, complete: true });
     if (result?.ok && projectKey === getPisiSourceProjectKey()) {
         pisiSourceOfTruthState.diarySignature = signature;
         await window.refreshPisiCalendarDates?.();
@@ -288,9 +268,7 @@ function installPisiCanonicalDiaryProjection() {
 
 function makePisiCanonicalTaskSearchRecord(task = {}) {
     const nodePath = task.source?.nodePath || null;
-    const fileName = nodePath
-        ? String(nodePath).split(/[\\/]/).pop()
-        : '';
+    const fileName = nodePath ? String(nodePath).split(/[\\/]/).pop() : '';
     return {
         id: `task:${task.id}`,
         kind: 'task',
@@ -316,13 +294,8 @@ function makePisiCanonicalTaskSearchRecord(task = {}) {
 
 function projectCanonicalPisiTasksIntoSearchIndex(index) {
     if (!index || !Array.isArray(index.records)) return index;
-    const tasks = Array.isArray(window.pisiFirstClassTaskState?.tasks)
-        ? window.pisiFirstClassTaskState.tasks
-        : [];
-    const records = [
-        ...index.records.filter((record) => record?.kind !== 'task'),
-        ...tasks.map(makePisiCanonicalTaskSearchRecord)
-    ];
+    const tasks = Array.isArray(window.pisiFirstClassTaskState?.tasks) ? window.pisiFirstClassTaskState.tasks : [];
+    const records = [...index.records.filter((record) => record?.kind !== 'task'), ...tasks.map(makePisiCanonicalTaskSearchRecord)];
     index.records = records;
     index.accelerator = buildPisiSearchAccelerator(records);
     if (index.performance) {

@@ -1,21 +1,15 @@
-import { registerModule } from "../core/module-registry.mjs";
-import {
-    getPisiActiveBlock,
-    getPisiActiveBlocksEditor,
-    selectPisiBlock
-} from "../editor/pisi-block-editor.mjs";
+import { registerModule } from '../core/module-registry.mjs';
+import { getPisiActiveBlock, getPisiActiveBlocksEditor, selectPisiBlock } from '../editor/pisi-block-editor.mjs';
 import {
     PISI_ROLLUP_AGGREGATES,
     collectPisiPropertyColumns,
     computePisiRollupValue,
     normalizePisiPropertyCollection,
     resolvePisiRelationDocuments
-} from "./pisi-properties-core.mjs";
-import { getPisiNodePropertyMapContext } from "./pisi-structured-views.mjs";
+} from './pisi-properties-core.mjs';
+import { getPisiNodePropertyMapContext } from './pisi-structured-views.mjs';
 
-const PISI_ROLLUP_AGGREGATE_VALUES = new Set(
-    PISI_ROLLUP_AGGREGATES.map((item) => item.value)
-);
+const PISI_ROLLUP_AGGREGATE_VALUES = new Set(PISI_ROLLUP_AGGREGATES.map((item) => item.value));
 const pisiHydratedRollupBlocks = new WeakSet();
 const pisiRollupRenderGenerations = new WeakMap();
 
@@ -49,9 +43,7 @@ function getPisiRollupEditorNodePath(editor) {
 
 function resolvePisiRollupRequestEditor(editorTarget = null) {
     const requested = editorTarget ? document.getElementById(editorTarget) : null;
-    const editor = requested?.matches?.('.pisi-rich-editor')
-        ? requested
-        : getPisiActiveBlocksEditor();
+    const editor = requested?.matches?.('.pisi-rich-editor') ? requested : getPisiActiveBlocksEditor();
     return getPisiRollupEditorNodePath(editor) ? editor : null;
 }
 
@@ -69,17 +61,12 @@ function writePisiRollupBlockConfig(block, config = {}) {
     if (!block) return false;
     block.dataset.pisiRollupRelation = String(config.relationProperty || '').slice(0, 160);
     block.dataset.pisiRollupTarget = String(config.targetProperty || '').slice(0, 160);
-    block.dataset.pisiRollupAggregate = PISI_ROLLUP_AGGREGATE_VALUES.has(config.aggregate)
-        ? config.aggregate
-        : 'count';
+    block.dataset.pisiRollupAggregate = PISI_ROLLUP_AGGREGATE_VALUES.has(config.aggregate) ? config.aggregate : 'count';
     return true;
 }
 
 function getPisiRollupNodeTitle(node) {
-    return node?.metadata?.title ||
-        String(node?.fileName || '').replace(/\.node$/i, '') ||
-        node?.fullPath ||
-        pisiRollupBlockTranslate('Node');
+    return node?.metadata?.title || String(node?.fileName || '').replace(/\.node$/i, '') || node?.fullPath || pisiRollupBlockTranslate('Node');
 }
 
 async function loadPisiRollupBlockContext(block) {
@@ -87,10 +74,7 @@ async function loadPisiRollupBlockContext(block) {
     const nodePath = getPisiRollupEditorNodePath(editor);
     if (!nodePath) throw new Error(pisiRollupBlockTranslate('Rollup için açık bir node gerekli.'));
 
-    const [documentResult, mapContext] = await Promise.all([
-        window.pisiProject?.getPisiDocument?.(nodePath),
-        getPisiNodePropertyMapContext(nodePath)
-    ]);
+    const [documentResult, mapContext] = await Promise.all([window.pisiProject?.getPisiDocument?.(nodePath), getPisiNodePropertyMapContext(nodePath)]);
     if (!documentResult?.ok) {
         throw new Error(documentResult?.error || pisiRollupBlockTranslate('Node okunamadı.'));
     }
@@ -115,9 +99,7 @@ async function loadPisiRollupBlockContext(block) {
         properties: documentResult.data?.properties || {}
     };
     const databaseDocuments = indexedRecord
-        ? documents.map((record) => (
-            pisiRollupPathKey(record.path) === targetKey ? currentRecord : record
-        ))
+        ? documents.map((record) => (pisiRollupPathKey(record.path) === targetKey ? currentRecord : record))
         : [...documents, currentRecord];
 
     return {
@@ -130,25 +112,22 @@ async function loadPisiRollupBlockContext(block) {
 }
 
 function getPisiRollupRelationDefinitions(context) {
-    return (context?.currentProperties || [])
-        .filter((property) => property.type === 'relation')
-        .sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+    return (context?.currentProperties || []).filter((property) => property.type === 'relation').sort((a, b) => a.name.localeCompare(b.name, 'tr'));
 }
 
 function getPisiRollupRelationProperty(context, relationId) {
     const key = String(relationId || '').toLocaleLowerCase('tr-TR');
-    return getPisiRollupRelationDefinitions(context).find((property) => {
-        return [property.id, property.name]
-            .some((value) => String(value || '').toLocaleLowerCase('tr-TR') === key);
-    }) || null;
+    return (
+        getPisiRollupRelationDefinitions(context).find((property) => {
+            return [property.id, property.name].some((value) => String(value || '').toLocaleLowerCase('tr-TR') === key);
+        }) || null
+    );
 }
 
 function getPisiRollupTargetDefinitions(context, relationId) {
     const relation = getPisiRollupRelationProperty(context, relationId);
-    const related = relation
-        ? resolvePisiRelationDocuments(relation, context?.documents || [])
-        : [];
-    const source = related.length ? related : (context?.documents || []);
+    const related = relation ? resolvePisiRelationDocuments(relation, context?.documents || []) : [];
+    const source = related.length ? related : context?.documents || [];
     return collectPisiPropertyColumns(source)
         .filter((property) => property.type !== 'rollup')
         .sort((a, b) => a.name.localeCompare(b.name, 'tr'));
@@ -205,33 +184,22 @@ async function renderPisiRollupBlock(block, providedContext = null) {
 
     const config = readPisiRollupBlockConfig(block);
     if (!config.relationProperty) {
-        renderPisiRollupBlockMessage(
-            block,
-            'Yapılandırılmamış Rollup',
-            'pisi-rollup-block-empty'
-        );
+        renderPisiRollupBlockMessage(block, 'Yapılandırılmamış Rollup', 'pisi-rollup-block-empty');
         return true;
     }
 
-    renderPisiRollupBlockMessage(
-        block,
-        'Rollup hesaplanıyor…',
-        'pisi-rollup-block-loading'
-    );
+    renderPisiRollupBlockMessage(block, 'Rollup hesaplanıyor…', 'pisi-rollup-block-loading');
     try {
-        const context = providedContext || await loadPisiRollupBlockContext(block);
+        const context = providedContext || (await loadPisiRollupBlockContext(block));
         if (!block.isConnected || pisiRollupRenderGenerations.get(block) !== generation) {
             return false;
         }
         const relation = getPisiRollupRelationProperty(context, config.relationProperty);
-        const target = getPisiRollupTargetDefinitions(context, config.relationProperty)
-            .find((property) => [property.id, property.name].includes(config.targetProperty));
-        const rollupProperty = { type: 'rollup', value: config };
-        const result = computePisiRollupValue(
-            context.currentRecord,
-            rollupProperty,
-            context.documents
+        const target = getPisiRollupTargetDefinitions(context, config.relationProperty).find((property) =>
+            [property.id, property.name].includes(config.targetProperty)
         );
+        const rollupProperty = { type: 'rollup', value: config };
+        const result = computePisiRollupValue(context.currentRecord, rollupProperty, context.documents);
         const value = document.createElement('div');
         value.className = 'pisi-rollup-block-value';
         value.textContent = formatPisiRollupBlockValue(result);
@@ -239,19 +207,13 @@ async function renderPisiRollupBlock(block, providedContext = null) {
         detail.className = 'pisi-rollup-block-detail';
         const relationLabel = relation?.name || config.relationProperty;
         const targetLabel = target?.name || config.targetProperty;
-        detail.textContent = targetLabel
-            ? `${relationLabel} → ${targetLabel}`
-            : relationLabel;
+        detail.textContent = targetLabel ? `${relationLabel} → ${targetLabel}` : relationLabel;
         block.replaceChildren(makePisiRollupBlockHeader(config.aggregate), value, detail);
         return true;
     } catch (error) {
         console.error('[PISI] Rollup block could not be rendered:', error);
         if (pisiRollupRenderGenerations.get(block) !== generation) return false;
-        renderPisiRollupBlockMessage(
-            block,
-            'Rollup hesaplanamadı.',
-            'pisi-rollup-block-error'
-        );
+        renderPisiRollupBlockMessage(block, 'Rollup hesaplanamadı.', 'pisi-rollup-block-error');
         return false;
     }
 }
@@ -278,9 +240,7 @@ function hydratePisiRollupBlock(block, options = {}) {
 
 function hydratePisiRollupBlocks(editor = getPisiActiveBlocksEditor(), options = {}) {
     if (!editor) return 0;
-    const blocks = editor.querySelectorAll(
-        '.pisi-editor-block[data-pisi-block-type="rollup"]'
-    );
+    const blocks = editor.querySelectorAll('.pisi-editor-block[data-pisi-block-type="rollup"]');
     blocks.forEach((block) => hydratePisiRollupBlock(block, options));
     return blocks.length;
 }
@@ -400,11 +360,7 @@ function renderPisiRollupDialog(context, config) {
     const populateTargets = (selectedValue = '') => {
         const placeholder = document.createElement('option');
         placeholder.value = '';
-        placeholder.textContent = pisiRollupBlockTranslate(
-            aggregateSelect.value === 'count'
-                ? 'Kayıt sayısı için hedef gerekmez'
-                : 'Hedef property seçin'
-        );
+        placeholder.textContent = pisiRollupBlockTranslate(aggregateSelect.value === 'count' ? 'Kayıt sayısı için hedef gerekmez' : 'Hedef property seçin');
         targetSelect.replaceChildren(placeholder);
         const targets = getPisiRollupTargetDefinitions(context, relationSelect.value);
         let selected = false;
@@ -452,9 +408,7 @@ function renderPisiRollupDialog(context, config) {
     });
 
     if (!relations.length) {
-        status.textContent = pisiRollupBlockTranslate(
-            'Bu node’da Relation property yok. Önce property toolbarından Relation ekleyin.'
-        );
+        status.textContent = pisiRollupBlockTranslate('Bu node’da Relation property yok. Önce property toolbarından Relation ekleyin.');
     }
     populateTargets(config.targetProperty);
     form.append(
@@ -504,8 +458,7 @@ function insertPisiRollupBlock(editorTarget = null) {
     if (!editor) return false;
     const block = document.createElement('div');
     block.className = 'pisi-editor-block pisi-rollup-block';
-    block.dataset.pisiBlockId = window.makePisiBlockId?.() ||
-        `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    block.dataset.pisiBlockId = window.makePisiBlockId?.() || `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
     block.dataset.pisiBlockType = 'rollup';
     writePisiRollupBlockConfig(block, { aggregate: 'count' });
     block.contentEditable = 'false';
@@ -559,11 +512,4 @@ if (document.readyState === 'loading') {
     initializePisiRollupBlocks();
 }
 
-export {
-    hydratePisiRollupBlocks,
-    initializePisiRollupBlocks,
-    insertPisiRollupBlock,
-    openPisiRollupDialog,
-    pisiRollupBlockState,
-    renderPisiRollupBlock
-};
+export { hydratePisiRollupBlocks, initializePisiRollupBlocks, insertPisiRollupBlock, openPisiRollupDialog, pisiRollupBlockState, renderPisiRollupBlock };

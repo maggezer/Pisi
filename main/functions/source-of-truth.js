@@ -6,10 +6,10 @@ function listCanonicalPisiTasks(projectFolder, originalQuickAdd) {
     const result = originalQuickAdd(projectFolder, { op: 'list' });
     return result?.ok
         ? {
-            ...result,
-            canonical: true,
-            authority: '.pisi/tasks.json'
-        }
+              ...result,
+              canonical: true,
+              authority: '.pisi/tasks.json'
+          }
         : result;
 }
 
@@ -24,23 +24,20 @@ function installPisiSingleSourceTaskGuard() {
 
     const guardedQuickAdd = function singleSourceQuickAdd(projectFolder, payload = {}) {
         try {
-            const operation = String(payload?.op || 'add').trim().toLowerCase();
+            const operation = String(payload?.op || 'add')
+                .trim()
+                .toLowerCase();
 
             if (operation === 'sync-index') {
-                const explicitProjectionWrite =
-                    payload.allowProjectionWrite === true ||
-                    payload.complete === false;
+                const explicitProjectionWrite = payload.allowProjectionWrite === true || payload.complete === false;
 
                 if (!explicitProjectionWrite) {
-                    const canonical = listCanonicalPisiTasks(
-                        projectFolder,
-                        originalQuickAdd
-                    );
+                    const canonical = listCanonicalPisiTasks(projectFolder, originalQuickAdd);
                     return canonical?.ok
                         ? {
-                            ...canonical,
-                            ignoredProjectionWrite: true
-                        }
+                              ...canonical,
+                              ignoredProjectionWrite: true
+                          }
                         : canonical;
                 }
             }

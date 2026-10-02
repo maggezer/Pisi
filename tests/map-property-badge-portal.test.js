@@ -16,7 +16,7 @@ test('badge picker preferences overflowundan body portalına çıkarılır', () 
     assert.match(source, /window\.innerWidth/);
     assert.match(source, /window\.innerHeight/);
     assert.match(source, /positionPisiBadgePickerPortal/);
-    assert.match(source, /document\.addEventListener\('scroll'/);
+    assert.match(source, /document\.addEventListener\(\s*'scroll'/);
     assert.match(source, /window\.addEventListener\('resize'/);
 });
 

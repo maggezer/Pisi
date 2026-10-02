@@ -1,15 +1,10 @@
-import { registerModule } from "../core/module-registry.mjs";
-import {
-    getPisiSheetTypedDisplayParts,
-    normalizePisiSheetFieldOptions
-} from "./pisi-editor-sheet-field-types-core.mjs";
+import { registerModule } from '../core/module-registry.mjs';
+import { getPisiSheetTypedDisplayParts, normalizePisiSheetFieldOptions } from './pisi-editor-sheet-field-types-core.mjs';
 
 let pisiSheetTypedEditor = null;
 
 function getPisiSheetTypedLocale() {
-    return window.pisiI18n?.getLanguage?.() === 'eng'
-        ? 'en-GB'
-        : 'tr-TR';
+    return window.pisiI18n?.getLanguage?.() === 'eng' ? 'en-GB' : 'tr-TR';
 }
 
 function clearPisiSheetTypedCellClasses(cell) {
@@ -23,84 +18,40 @@ function clearPisiSheetTypedCellClasses(cell) {
     );
 }
 
-function renderPisiSheetTypedCell(
-    table,
-    cell,
-    rowIndex,
-    colIndex,
-    displayValue = undefined
-) {
+function renderPisiSheetTypedCell(table, cell, rowIndex, colIndex, displayValue = undefined) {
     if (!table || !cell) return false;
 
-    const field = getPisiSheetField(
-        table,
-        colIndex
-    );
+    const field = getPisiSheetField(table, colIndex);
     if (!field) return false;
 
-    const source = getPisiSheetCellSource(
-        table,
-        rowIndex,
-        colIndex
-    );
-    const value =
-        displayValue !== undefined
-            ? displayValue
-            : source.value;
-    const parts = getPisiSheetTypedDisplayParts(
-        field,
-        value,
-        getPisiSheetTypedLocale()
-    );
+    const source = getPisiSheetCellSource(table, rowIndex, colIndex);
+    const value = displayValue !== undefined ? displayValue : source.value;
+    const parts = getPisiSheetTypedDisplayParts(field, value, getPisiSheetTypedLocale());
 
     clearPisiSheetTypedCellClasses(cell);
-    cell.dataset.pisiSheetFieldType =
-        String(field.type || 'text');
+    cell.dataset.pisiSheetFieldType = String(field.type || 'text');
     cell.replaceChildren();
 
     if (field.type === 'number') {
-        cell.classList.add(
-            'pisi-sheet-cell-typed',
-            'pisi-sheet-cell-number'
-        );
+        cell.classList.add('pisi-sheet-cell-typed', 'pisi-sheet-cell-number');
     } else if (field.type === 'date') {
-        cell.classList.add(
-            'pisi-sheet-cell-typed',
-            'pisi-sheet-cell-date'
-        );
+        cell.classList.add('pisi-sheet-cell-typed', 'pisi-sheet-cell-date');
     } else if (field.type === 'select') {
-        cell.classList.add(
-            'pisi-sheet-cell-typed',
-            'pisi-sheet-cell-select'
-        );
+        cell.classList.add('pisi-sheet-cell-typed', 'pisi-sheet-cell-select');
     } else if (field.type === 'mSelect') {
-        cell.classList.add(
-            'pisi-sheet-cell-typed',
-            'pisi-sheet-cell-mselect'
-        );
+        cell.classList.add('pisi-sheet-cell-typed', 'pisi-sheet-cell-mselect');
     } else if (field.type === 'checkbox') {
-        cell.classList.add(
-            'pisi-sheet-cell-typed',
-            'pisi-sheet-cell-checkbox'
-        );
+        cell.classList.add('pisi-sheet-cell-typed', 'pisi-sheet-cell-checkbox');
     }
 
     if (parts.kind === 'checkbox') {
         const button = document.createElement('button');
         button.type = 'button';
-        button.className =
-            'pisi-sheet-checkbox-control';
+        button.className = 'pisi-sheet-checkbox-control';
         button.dataset.pisiSheetCheckbox = '1';
-        button.setAttribute(
-            'role',
-            'checkbox'
-        );
-        button.setAttribute(
-            'aria-checked',
-            parts.checked ? 'true' : 'false'
-        );
-        button.textContent =
-            parts.checked ? '✓' : '';
+        button.setAttribute('role', 'checkbox');
+        button.setAttribute('aria-checked', parts.checked ? 'true' : 'false');
+        button.textContent = parts.checked ? '✓' : '';
         cell.appendChild(button);
         return true;
     }
@@ -111,10 +62,7 @@ function renderPisiSheetTypedCell(
             span.className = 'pisi-sheet-option-chip';
             span.textContent = chip.label;
             span.dataset.pisiSheetOptionId = chip.id;
-            span.style.setProperty(
-                '--pisi-sheet-chip-color',
-                chip.color
-            );
+            span.style.setProperty('--pisi-sheet-chip-color', chip.color);
             cell.appendChild(span);
         }
 
@@ -132,192 +80,95 @@ function closePisiSheetTypedCellEditor() {
     pisiSheetTypedEditor = null;
 }
 
-function positionPisiSheetTypedEditor(
-    element,
-    cell
-) {
+function positionPisiSheetTypedEditor(element, cell) {
     const rect = cell.getBoundingClientRect();
     const margin = 8;
 
     document.body.appendChild(element);
 
-    const popupRect =
-        element.getBoundingClientRect();
+    const popupRect = element.getBoundingClientRect();
 
-    element.style.left =
-        String(Math.max(
-            margin,
-            Math.min(
-                rect.left,
-                window.innerWidth -
-                    popupRect.width -
-                    margin
-            )
-        )) + 'px';
+    element.style.left = String(Math.max(margin, Math.min(rect.left, window.innerWidth - popupRect.width - margin))) + 'px';
 
-    element.style.top =
-        String(Math.max(
-            margin,
-            Math.min(
-                rect.bottom + 4,
-                window.innerHeight -
-                    popupRect.height -
-                    margin
-            )
-        )) + 'px';
+    element.style.top = String(Math.max(margin, Math.min(rect.bottom + 4, window.innerHeight - popupRect.height - margin))) + 'px';
 }
 
-function commitPisiSheetTypedValue(
-    table,
-    cell,
-    rowIndex,
-    colIndex,
-    value
-) {
-    setPisiSheetCellSource(
-        table,
-        rowIndex,
-        colIndex,
-        {
-            value,
-            formula: null
-        }
-    );
-    renderPisiSheetTypedCell(
-        table,
-        cell,
-        rowIndex,
-        colIndex
-    );
+function commitPisiSheetTypedValue(table, cell, rowIndex, colIndex, value) {
+    setPisiSheetCellSource(table, rowIndex, colIndex, {
+        value,
+        formula: null
+    });
+    renderPisiSheetTypedCell(table, cell, rowIndex, colIndex);
     selectPisiSheetCell(cell);
     syncPisiSheetFormulaInput(cell);
     schedulePisiSheetEditorNotification(table);
 }
 
 function togglePisiSheetCheckboxCell(cell) {
-    const table = cell?.closest?.(
-        'table[data-pisi-sheet]'
-    );
-    const position =
-        getPisiSheetCellPosition(cell);
+    const table = cell?.closest?.('table[data-pisi-sheet]');
+    const position = getPisiSheetCellPosition(cell);
 
     if (!table || !position) return false;
 
-    const field = getPisiSheetField(
-        table,
-        position.col
-    );
+    const field = getPisiSheetField(table, position.col);
 
     if (field?.type !== 'checkbox') {
         return false;
     }
 
-    const source = getPisiSheetCellSource(
-        table,
-        position.row,
-        position.col
-    );
+    const source = getPisiSheetCellSource(table, position.row, position.col);
     const next = source.value !== true;
 
-    commitPisiSheetTypedValue(
-        table,
-        cell,
-        position.row,
-        position.col,
-        next
-    );
+    commitPisiSheetTypedValue(table, cell, position.row, position.col, next);
 
     return true;
 }
 
-function makePisiSheetOptionChoice(
-    option,
-    selected
-) {
+function makePisiSheetOptionChoice(option, selected) {
     const button = document.createElement('button');
     const dot = document.createElement('span');
     const label = document.createElement('span');
 
     button.type = 'button';
-    button.className =
-        'pisi-sheet-option-choice';
+    button.className = 'pisi-sheet-option-choice';
     button.dataset.pisiSheetOptionId = option.id;
-    button.setAttribute(
-        'aria-pressed',
-        selected ? 'true' : 'false'
-    );
+    button.setAttribute('aria-pressed', selected ? 'true' : 'false');
 
     dot.className = 'pisi-sheet-option-dot';
-    dot.style.setProperty(
-        '--pisi-sheet-option-color',
-        option.color
-    );
+    dot.style.setProperty('--pisi-sheet-option-color', option.color);
     label.textContent = option.label;
 
     button.append(dot, label);
     return button;
 }
 
-function openPisiSheetSelectEditor(
-    table,
-    cell,
-    position,
-    field
-) {
-    const source = getPisiSheetCellSource(
-        table,
-        position.row,
-        position.col
-    );
-    const options = normalizePisiSheetFieldOptions(
-        field.options
-    );
+function openPisiSheetSelectEditor(table, cell, position, field) {
+    const source = getPisiSheetCellSource(table, position.row, position.col);
+    const options = normalizePisiSheetFieldOptions(field.options);
     const popup = document.createElement('div');
     const list = document.createElement('div');
     const clear = document.createElement('button');
 
-    popup.className =
-        'pisi-sheet-typed-editor pisi-sheet-select-editor';
+    popup.className = 'pisi-sheet-typed-editor pisi-sheet-select-editor';
     popup.setAttribute('role', 'dialog');
-    list.className =
-        'pisi-sheet-option-choice-list';
+    list.className = 'pisi-sheet-option-choice-list';
 
     const isMulti = field.type === 'mSelect';
-    const selected = new Set(
-        isMulti && Array.isArray(source.value)
-            ? source.value
-            : (
-                source.value
-                    ? [String(source.value)]
-                    : []
-            )
-    );
+    const selected = new Set(isMulti && Array.isArray(source.value) ? source.value : source.value ? [String(source.value)] : []);
 
     if (!options.length) {
         const empty = document.createElement('div');
-        empty.className =
-            'pisi-sheet-typed-editor-empty';
-        empty.textContent =
-            window.pisiT?.('Seçenek tanımlanmamış') ||
-            'Seçenek tanımlanmamış';
+        empty.className = 'pisi-sheet-typed-editor-empty';
+        empty.textContent = window.pisiT?.('Seçenek tanımlanmamış') || 'Seçenek tanımlanmamış';
         list.appendChild(empty);
     }
 
     for (const option of options) {
-        const choice = makePisiSheetOptionChoice(
-            option,
-            selected.has(option.id)
-        );
+        const choice = makePisiSheetOptionChoice(option, selected.has(option.id));
 
         choice.addEventListener('click', () => {
             if (!isMulti) {
-                commitPisiSheetTypedValue(
-                    table,
-                    cell,
-                    position.row,
-                    position.col,
-                    option.id
-                );
+                commitPisiSheetTypedValue(table, cell, position.row, position.col, option.id);
                 closePisiSheetTypedCellEditor();
                 return;
             }
@@ -328,59 +179,32 @@ function openPisiSheetSelectEditor(
                 selected.add(option.id);
             }
 
-            choice.setAttribute(
-                'aria-pressed',
-                selected.has(option.id)
-                    ? 'true'
-                    : 'false'
-            );
+            choice.setAttribute('aria-pressed', selected.has(option.id) ? 'true' : 'false');
 
-            commitPisiSheetTypedValue(
-                table,
-                cell,
-                position.row,
-                position.col,
-                [...selected]
-            );
+            commitPisiSheetTypedValue(table, cell, position.row, position.col, [...selected]);
         });
 
         list.appendChild(choice);
     }
 
     clear.type = 'button';
-    clear.className =
-        'pisi-sheet-typed-editor-clear';
-    clear.textContent =
-        window.pisiT?.('Temizle') || 'Temizle';
+    clear.className = 'pisi-sheet-typed-editor-clear';
+    clear.textContent = window.pisiT?.('Temizle') || 'Temizle';
     clear.addEventListener('click', () => {
-        commitPisiSheetTypedValue(
-            table,
-            cell,
-            position.row,
-            position.col,
-            isMulti ? [] : ''
-        );
+        commitPisiSheetTypedValue(table, cell, position.row, position.col, isMulti ? [] : '');
 
         if (!isMulti) {
             closePisiSheetTypedCellEditor();
         } else {
             selected.clear();
-            list.querySelectorAll(
-                '.pisi-sheet-option-choice'
-            ).forEach((choice) => {
-                choice.setAttribute(
-                    'aria-pressed',
-                    'false'
-                );
+            list.querySelectorAll('.pisi-sheet-option-choice').forEach((choice) => {
+                choice.setAttribute('aria-pressed', 'false');
             });
         }
     });
 
     popup.append(list, clear);
-    positionPisiSheetTypedEditor(
-        popup,
-        cell
-    );
+    positionPisiSheetTypedEditor(popup, cell);
 
     pisiSheetTypedEditor = {
         table,
@@ -391,60 +215,35 @@ function openPisiSheetSelectEditor(
     popup.querySelector('button')?.focus();
 }
 
-function openPisiSheetDateEditor(
-    table,
-    cell,
-    position
-) {
-    const source = getPisiSheetCellSource(
-        table,
-        position.row,
-        position.col
-    );
+function openPisiSheetDateEditor(table, cell, position) {
+    const source = getPisiSheetCellSource(table, position.row, position.col);
     const popup = document.createElement('div');
     const input = document.createElement('input');
     const actions = document.createElement('div');
     const clear = document.createElement('button');
     const apply = document.createElement('button');
 
-    popup.className =
-        'pisi-sheet-typed-editor pisi-sheet-date-editor';
+    popup.className = 'pisi-sheet-typed-editor pisi-sheet-date-editor';
 
     input.type = 'date';
-    input.className =
-        'pisi-sheet-date-input';
+    input.className = 'pisi-sheet-date-input';
     input.value = String(source.value || '');
 
-    actions.className =
-        'pisi-sheet-typed-editor-actions';
+    actions.className = 'pisi-sheet-typed-editor-actions';
 
     clear.type = 'button';
-    clear.textContent =
-        window.pisiT?.('Temizle') || 'Temizle';
+    clear.textContent = window.pisiT?.('Temizle') || 'Temizle';
 
     apply.type = 'button';
-    apply.textContent =
-        window.pisiT?.('Uygula') || 'Uygula';
+    apply.textContent = window.pisiT?.('Uygula') || 'Uygula';
 
     clear.addEventListener('click', () => {
-        commitPisiSheetTypedValue(
-            table,
-            cell,
-            position.row,
-            position.col,
-            ''
-        );
+        commitPisiSheetTypedValue(table, cell, position.row, position.col, '');
         closePisiSheetTypedCellEditor();
     });
 
     apply.addEventListener('click', () => {
-        commitPisiSheetTypedValue(
-            table,
-            cell,
-            position.row,
-            position.col,
-            input.value
-        );
+        commitPisiSheetTypedValue(table, cell, position.row, position.col, input.value);
         closePisiSheetTypedCellEditor();
     });
 
@@ -461,10 +260,7 @@ function openPisiSheetDateEditor(
     actions.append(clear, apply);
     popup.append(input, actions);
 
-    positionPisiSheetTypedEditor(
-        popup,
-        cell
-    );
+    positionPisiSheetTypedEditor(popup, cell);
 
     pisiSheetTypedEditor = {
         table,
@@ -476,28 +272,15 @@ function openPisiSheetDateEditor(
 }
 
 function beginPisiSheetTypedCellEdit(cell) {
-    const table = cell?.closest?.(
-        'table[data-pisi-sheet]'
-    );
-    const position =
-        getPisiSheetCellPosition(cell);
+    const table = cell?.closest?.('table[data-pisi-sheet]');
+    const position = getPisiSheetCellPosition(cell);
 
     if (!table || !position) return false;
 
-    const field = getPisiSheetField(
-        table,
-        position.col
-    );
+    const field = getPisiSheetField(table, position.col);
     const type = field?.type;
 
-    if (
-        ![
-            'date',
-            'select',
-            'mSelect',
-            'checkbox'
-        ].includes(type)
-    ) {
+    if (!['date', 'select', 'mSelect', 'checkbox'].includes(type)) {
         return false;
     }
 
@@ -510,79 +293,77 @@ function beginPisiSheetTypedCellEdit(cell) {
     }
 
     if (type === 'date') {
-        openPisiSheetDateEditor(
-            table,
-            cell,
-            position
-        );
+        openPisiSheetDateEditor(table, cell, position);
         return true;
     }
 
-    openPisiSheetSelectEditor(
-        table,
-        cell,
-        position,
-        field
-    );
+    openPisiSheetSelectEditor(table, cell, position, field);
 
     return true;
 }
 
 function isPisiSheetTypedEditorTarget(target) {
-    return Boolean(
-        target instanceof Element &&
-        target.closest('.pisi-sheet-typed-editor')
-    );
+    return Boolean(target instanceof Element && target.closest('.pisi-sheet-typed-editor'));
 }
 
-document.addEventListener('pointerdown', (event) => {
-    if (!pisiSheetTypedEditor) return;
-    if (isPisiSheetTypedEditorTarget(event.target)) {
-        return;
-    }
+document.addEventListener(
+    'pointerdown',
+    (event) => {
+        if (!pisiSheetTypedEditor) return;
+        if (isPisiSheetTypedEditorTarget(event.target)) {
+            return;
+        }
 
-    if (
-        event.target instanceof Node &&
-        pisiSheetTypedEditor.cell.contains(
-            event.target
-        )
-    ) {
-        return;
-    }
+        if (event.target instanceof Node && pisiSheetTypedEditor.cell.contains(event.target)) {
+            return;
+        }
 
-    closePisiSheetTypedCellEditor();
-}, true);
-
-document.addEventListener('keydown', (event) => {
-    if (
-        event.key === 'Escape' &&
-        pisiSheetTypedEditor
-    ) {
         closePisiSheetTypedCellEditor();
-    }
-}, true);
+    },
+    true
+);
+
+document.addEventListener(
+    'keydown',
+    (event) => {
+        if (event.key === 'Escape' && pisiSheetTypedEditor) {
+            closePisiSheetTypedCellEditor();
+        }
+    },
+    true
+);
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "renderPisiSheetTypedCell": {
+    renderPisiSheetTypedCell: {
         enumerable: true,
-        get() { return renderPisiSheetTypedCell; }
+        get() {
+            return renderPisiSheetTypedCell;
+        }
     },
-    "beginPisiSheetTypedCellEdit": {
+    beginPisiSheetTypedCellEdit: {
         enumerable: true,
-        get() { return beginPisiSheetTypedCellEdit; }
+        get() {
+            return beginPisiSheetTypedCellEdit;
+        }
     },
-    "togglePisiSheetCheckboxCell": {
+    togglePisiSheetCheckboxCell: {
         enumerable: true,
-        get() { return togglePisiSheetCheckboxCell; }
+        get() {
+            return togglePisiSheetCheckboxCell;
+        }
     },
-    "closePisiSheetTypedCellEditor": {
+    closePisiSheetTypedCellEditor: {
         enumerable: true,
-        get() { return closePisiSheetTypedCellEditor; }
+        get() {
+            return closePisiSheetTypedCellEditor;
+        }
     },
-    "isPisiSheetTypedEditorTarget": {
+    isPisiSheetTypedEditorTarget: {
         enumerable: true,
-        get() { return isPisiSheetTypedEditorTarget; }
+        get() {
+            return isPisiSheetTypedEditorTarget;
+        }
     }
 });
-registerModule("editor.sheetFieldTypesUi", moduleApi);
+registerModule('editor.sheetFieldTypesUi', moduleApi);

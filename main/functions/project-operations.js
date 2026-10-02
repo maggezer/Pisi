@@ -27,13 +27,9 @@ function findParentMapPathForNode(nodePath, nodeInfo = null) {
 
         if (!mapInfo.ok) continue;
 
-        const sameSidecar =
-            mapInfo.metadata.sidecar === nodeSidecarFolderName;
+        const sameSidecar = mapInfo.metadata.sidecar === nodeSidecarFolderName;
 
-        const sameParentId =
-            nodeInfo?.metadata?.parentMap &&
-            nodeInfo.metadata.parentMap !== 'none' &&
-            mapInfo.metadata.id === nodeInfo.metadata.parentMap;
+        const sameParentId = nodeInfo?.metadata?.parentMap && nodeInfo.metadata.parentMap !== 'none' && mapInfo.metadata.id === nodeInfo.metadata.parentMap;
 
         if (sameSidecar || sameParentId) {
             return mapPath;
@@ -49,9 +45,7 @@ function removeLegacyNodeRelationship(metadata, otherNodeId) {
     }
 
     for (const key of PISI_CONNECTION_KEYS) {
-        metadata.connectionTypes[key] = Array.isArray(metadata.connectionTypes[key])
-            ? metadata.connectionTypes[key].filter((id) => id !== otherNodeId)
-            : [];
+        metadata.connectionTypes[key] = Array.isArray(metadata.connectionTypes[key]) ? metadata.connectionTypes[key].filter((id) => id !== otherNodeId) : [];
     }
 }
 
@@ -92,11 +86,7 @@ function cleanupDeletedNodeFromParentMap(parentMapPath, deletedNodeId, deletionT
     mapInfo.data.pisi.updatedAt = new Date().toISOString();
 
     if (deletionTransaction) {
-        writePisiDeletionMetadata(
-            deletionTransaction,
-            parentMapPath,
-            mapInfo.data
-        );
+        writePisiDeletionMetadata(deletionTransaction, parentMapPath, mapInfo.data);
     } else {
         pendingDocumentChanges.push({
             filePath: parentMapPath,
@@ -130,11 +120,7 @@ function cleanupDeletedNodeFromParentMap(parentMapPath, deletedNodeId, deletionT
                 nodeInfo.data.pisi.updatedAt = new Date().toISOString();
 
                 if (deletionTransaction) {
-                    writePisiDeletionMetadata(
-                        deletionTransaction,
-                        nodePath,
-                        nodeInfo.data
-                    );
+                    writePisiDeletionMetadata(deletionTransaction, nodePath, nodeInfo.data);
                 } else {
                     pendingDocumentChanges.push({
                         filePath: nodePath,
@@ -162,15 +148,11 @@ function writePisiDeletionMetadata(transaction, filePath, data) {
     }
 
     let backup = transaction.metadataBackups.find((entry) => {
-        return normalizePathForCompare(entry.originalPath) ===
-            normalizePathForCompare(filePath);
+        return normalizePathForCompare(entry.originalPath) === normalizePathForCompare(filePath);
     });
 
     if (!backup) {
-        const backupPath = path.join(
-            transaction.directoryPath,
-            `metadata-${transaction.metadataBackups.length}.bak`
-        );
+        const backupPath = path.join(transaction.directoryPath, `metadata-${transaction.metadataBackups.length}.bak`);
 
         fs.copyFileSync(filePath, backupPath);
         backup = {
@@ -184,9 +166,7 @@ function writePisiDeletionMetadata(transaction, filePath, data) {
 }
 
 function createPisiDeletionTransaction(targetPath) {
-    const directoryPath = fs.mkdtempSync(
-        path.join(path.dirname(targetPath), '.pisi-delete-')
-    );
+    const directoryPath = fs.mkdtempSync(path.join(path.dirname(targetPath), '.pisi-delete-'));
     markInternalFileChange(directoryPath);
 
     return {
@@ -201,10 +181,7 @@ function stagePisiDeletionPath(transaction, originalPath) {
         return;
     }
 
-    const stagedPath = path.join(
-        transaction.directoryPath,
-        path.basename(originalPath)
-    );
+    const stagedPath = path.join(transaction.directoryPath, path.basename(originalPath));
 
     if (fs.existsSync(stagedPath)) {
         throw new Error(`Geçici silme hedefi zaten var: ${stagedPath}`);
@@ -221,16 +198,12 @@ function rollbackPisiDeletionTransaction(transaction) {
     const rollbackErrors = [];
 
     if (!fs.existsSync(transaction.directoryPath)) {
-        return [
-            'Geçici silme klasörü bulunamadığı için otomatik geri alma yapılamadı.'
-        ];
+        return ['Geçici silme klasörü bulunamadığı için otomatik geri alma yapılamadı.'];
     }
 
     for (const backup of [...transaction.metadataBackups].reverse()) {
         if (!fs.existsSync(backup.backupPath)) {
-            rollbackErrors.push(
-                `${backup.originalPath} için metadata yedeği bulunamadı.`
-            );
+            rollbackErrors.push(`${backup.originalPath} için metadata yedeği bulunamadı.`);
             continue;
         }
 
@@ -238,18 +211,14 @@ function rollbackPisiDeletionTransaction(transaction) {
             fs.copyFileSync(backup.backupPath, backup.originalPath);
             fs.unlinkSync(backup.backupPath);
         } catch (error) {
-            rollbackErrors.push(
-                `${backup.originalPath} metadata geri yüklenemedi: ${error.message}`
-            );
+            rollbackErrors.push(`${backup.originalPath} metadata geri yüklenemedi: ${error.message}`);
         }
     }
 
     for (const staged of [...transaction.stagedPaths].reverse()) {
         if (!fs.existsSync(staged.stagedPath)) {
             if (!fs.existsSync(staged.originalPath)) {
-                rollbackErrors.push(
-                    `${staged.originalPath} için geçici yedek bulunamadı.`
-                );
+                rollbackErrors.push(`${staged.originalPath} için geçici yedek bulunamadı.`);
             }
             continue;
         }
@@ -261,23 +230,16 @@ function rollbackPisiDeletionTransaction(transaction) {
 
             renamePathInternal(staged.stagedPath, staged.originalPath);
         } catch (error) {
-            rollbackErrors.push(
-                `${staged.originalPath} geri taşınamadı: ${error.message}`
-            );
+            rollbackErrors.push(`${staged.originalPath} geri taşınamadı: ${error.message}`);
         }
     }
 
     try {
-        if (
-            fs.existsSync(transaction.directoryPath) &&
-            fs.readdirSync(transaction.directoryPath).length === 0
-        ) {
+        if (fs.existsSync(transaction.directoryPath) && fs.readdirSync(transaction.directoryPath).length === 0) {
             fs.rmdirSync(transaction.directoryPath);
         }
     } catch (error) {
-        rollbackErrors.push(
-            `Geçici silme klasörü temizlenemedi: ${error.message}`
-        );
+        rollbackErrors.push(`Geçici silme klasörü temizlenemedi: ${error.message}`);
     }
 
     return rollbackErrors;
@@ -310,25 +272,16 @@ async function deletePisiFile(targetPath) {
         }
 
         const dir = path.dirname(targetPath);
-        const sidecarPath = info.metadata.sidecar
-            ? path.join(dir, info.metadata.sidecar)
-            : null;
+        const sidecarPath = info.metadata.sidecar ? path.join(dir, info.metadata.sidecar) : null;
 
-        const deletedNodeId = ext === '.node'
-            ? info.metadata.id
-            : null;
-        const parentMapPath = ext === '.node'
-            ? findParentMapPathForNode(targetPath, info)
-            : null;
+        const deletedNodeId = ext === '.node' ? info.metadata.id : null;
+        const parentMapPath = ext === '.node' ? findParentMapPathForNode(targetPath, info) : null;
         const childNodePaths = [];
 
         if (ext === '.map' && sidecarPath && fs.existsSync(sidecarPath)) {
             const entries = fs.readdirSync(sidecarPath, { withFileTypes: true });
             for (const entry of entries) {
-                if (
-                    entry.isFile() &&
-                    entry.name.toLowerCase().endsWith('.node')
-                ) {
+                if (entry.isFile() && entry.name.toLowerCase().endsWith('.node')) {
                     childNodePaths.push(path.join(sidecarPath, entry.name));
                 }
             }
@@ -353,11 +306,7 @@ async function deletePisiFile(targetPath) {
             };
         }
 
-        const cleanupResult = cleanupDeletedNodeFromParentMap(
-            parentMapPath,
-            deletedNodeId,
-            transaction
-        );
+        const cleanupResult = cleanupDeletedNodeFromParentMap(parentMapPath, deletedNodeId, transaction);
 
         await shell.trashItem(path.resolve(transaction.directoryPath));
 
@@ -371,15 +320,11 @@ async function deletePisiFile(targetPath) {
             movedToTrash: true
         };
     } catch (error) {
-        const rollbackErrors = transaction
-            ? rollbackPisiDeletionTransaction(transaction)
-            : [];
+        const rollbackErrors = transaction ? rollbackPisiDeletionTransaction(transaction) : [];
 
         return {
             ok: false,
-            error: rollbackErrors.length > 0
-                ? `${error.message} Geri alma tamamlanamadı: ${rollbackErrors.join(' | ')}`
-                : error.message,
+            error: rollbackErrors.length > 0 ? `${error.message} Geri alma tamamlanamadı: ${rollbackErrors.join(' | ')}` : error.message,
             rolledBack: Boolean(transaction) && rollbackErrors.length === 0
         };
     }
@@ -424,10 +369,7 @@ function isPisiManagedDiaryFolder(folderPath) {
             }
 
             const result = readJsonFileResult(path.join(folderPath, entry.name));
-            return Boolean(
-                result.ok &&
-                normalizePisiDiaryIsoDate(result.data?.pisi?.diaryDate)
-            );
+            return Boolean(result.ok && normalizePisiDiaryIsoDate(result.data?.pisi?.diaryDate));
         });
     } catch {
         return false;
@@ -450,20 +392,11 @@ function safeListFolder(folderPath) {
             .filter((entry) => {
                 if (isPisiManagedSidecarFolder(entry.name)) return false;
 
-                if (
-                    entry.isDirectory() &&
-                    entry.name.toLowerCase() === '.pisi-history'
-                ) {
+                if (entry.isDirectory() && entry.name.toLowerCase() === '.pisi-history') {
                     return false;
                 }
 
-                if (
-                    entry.isDirectory() &&
-                    (
-                        entry.name.startsWith('.pisi-delete-') ||
-                        entry.name.startsWith('.pisi-transaction-')
-                    )
-                ) {
+                if (entry.isDirectory() && (entry.name.startsWith('.pisi-delete-') || entry.name.startsWith('.pisi-transaction-'))) {
                     return false;
                 }
 
@@ -526,13 +459,13 @@ function safeListFolder(folderPath) {
             ok: true,
             items
         };
-        } catch (error) {
+    } catch (error) {
         return {
             ok: false,
             error: error.message,
             items: []
         };
-        }
+    }
 }
 
 function stopProjectWatcher() {
@@ -573,13 +506,7 @@ function notifyProjectChanged(reason = 'changed', changedPath = null) {
 
 function shouldWatchProjectDirectory(directoryPath) {
     const name = path.basename(directoryPath).toLowerCase();
-    return ![
-        '.git',
-        '.pisi-history',
-        'node_modules',
-        'dist',
-        'coverage'
-    ].includes(name);
+    return !['.git', '.pisi-history', 'node_modules', 'dist', 'coverage'].includes(name);
 }
 
 function collectProjectDirectories(rootPath) {
@@ -610,9 +537,7 @@ function collectProjectDirectories(rootPath) {
 function syncProjectWatchers(folderPath) {
     if (!folderPath || !fs.existsSync(folderPath)) return;
 
-    const wantedDirectories = new Set(
-        collectProjectDirectories(folderPath).map(normalizePathForCompare)
-    );
+    const wantedDirectories = new Set(collectProjectDirectories(folderPath).map(normalizePathForCompare));
 
     for (const [directoryKey, watcher] of projectWatchers) {
         if (!wantedDirectories.has(directoryKey)) {
@@ -628,126 +553,134 @@ function syncProjectWatchers(folderPath) {
         if (projectWatchers.has(directoryKey)) continue;
 
         try {
-            const watcher = fs.watch(
-                directoryPath,
-                { recursive: false },
-                (eventType, fileName) => {
-                    const changedPath = fileName
-                        ? path.join(directoryPath, String(fileName))
-                        : directoryPath;
-                    const isInternalChange = fileName
-                        ? (
-                            isRecentInternalFileChange(changedPath) ||
-                            hasRecentInternalDirectoryChange(directoryPath)
-                        )
-                        : (
-                            hasRecentInternalDirectoryChange(directoryPath) ||
-                            hasRecentInternalFileChangeInside(directoryPath)
-                        );
+            const watcher = fs.watch(directoryPath, { recursive: false }, (eventType, fileName) => {
+                const changedPath = fileName ? path.join(directoryPath, String(fileName)) : directoryPath;
+                const isInternalChange = fileName
+                    ? isRecentInternalFileChange(changedPath) || hasRecentInternalDirectoryChange(directoryPath)
+                    : hasRecentInternalDirectoryChange(directoryPath) || hasRecentInternalFileChangeInside(directoryPath);
 
-                    if (!isInternalChange) {
-                        notifyProjectChanged(
-                            eventType || 'filesystem',
-                            changedPath
-                        );
-                    }
-
-                    if (
-                        eventType === 'rename' ||
-                        !fileName
-                    ) {
-                        clearTimeout(projectWatcherRescanTimer);
-                        projectWatcherRescanTimer = setTimeout(() => {
-                            if (activeProjectFolder) {
-                                syncProjectWatchers(activeProjectFolder);
-                            }
-                        }, 450);
-                    }
+                if (!isInternalChange) {
+                    notifyProjectChanged(eventType || 'filesystem', changedPath);
                 }
-            );
+
+                if (eventType === 'rename' || !fileName) {
+                    clearTimeout(projectWatcherRescanTimer);
+                    projectWatcherRescanTimer = setTimeout(() => {
+                        if (activeProjectFolder) {
+                            syncProjectWatchers(activeProjectFolder);
+                        }
+                    }, 450);
+                }
+            });
 
             watcher.on('error', (error) => {
-                console.warn(
-                    `[PISI] Watcher hatası (${directoryPath}):`,
-                    error.message
-                );
+                console.warn(`[PISI] Watcher hatası (${directoryPath}):`, error.message);
             });
 
             projectWatchers.set(directoryKey, watcher);
         } catch (error) {
-            console.warn(
-                `[PISI] Klasör izlenemedi (${directoryPath}):`,
-                error.message
-            );
+            console.warn(`[PISI] Klasör izlenemedi (${directoryPath}):`, error.message);
         }
     }
 }
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "findParentMapPathForNode": {
+    findParentMapPathForNode: {
         enumerable: true,
-        get() { return findParentMapPathForNode; }
+        get() {
+            return findParentMapPathForNode;
+        }
     },
-    "cleanupDeletedNodeFromParentMap": {
+    cleanupDeletedNodeFromParentMap: {
         enumerable: true,
-        get() { return cleanupDeletedNodeFromParentMap; }
+        get() {
+            return cleanupDeletedNodeFromParentMap;
+        }
     },
-    "writePisiDeletionMetadata": {
+    writePisiDeletionMetadata: {
         enumerable: true,
-        get() { return writePisiDeletionMetadata; }
+        get() {
+            return writePisiDeletionMetadata;
+        }
     },
-    "createPisiDeletionTransaction": {
+    createPisiDeletionTransaction: {
         enumerable: true,
-        get() { return createPisiDeletionTransaction; }
+        get() {
+            return createPisiDeletionTransaction;
+        }
     },
-    "stagePisiDeletionPath": {
+    stagePisiDeletionPath: {
         enumerable: true,
-        get() { return stagePisiDeletionPath; }
+        get() {
+            return stagePisiDeletionPath;
+        }
     },
-    "rollbackPisiDeletionTransaction": {
+    rollbackPisiDeletionTransaction: {
         enumerable: true,
-        get() { return rollbackPisiDeletionTransaction; }
+        get() {
+            return rollbackPisiDeletionTransaction;
+        }
     },
-    "deletePisiFile": {
+    deletePisiFile: {
         enumerable: true,
-        get() { return deletePisiFile; }
+        get() {
+            return deletePisiFile;
+        }
     },
-    "deleteNodeFromMap": {
+    deleteNodeFromMap: {
         enumerable: true,
-        get() { return deleteNodeFromMap; }
+        get() {
+            return deleteNodeFromMap;
+        }
     },
-    "deleteProjectPath": {
+    deleteProjectPath: {
         enumerable: true,
-        get() { return deleteProjectPath; }
+        get() {
+            return deleteProjectPath;
+        }
     },
-    "isPisiManagedDiaryFolder": {
+    isPisiManagedDiaryFolder: {
         enumerable: true,
-        get() { return isPisiManagedDiaryFolder; }
+        get() {
+            return isPisiManagedDiaryFolder;
+        }
     },
-    "safeListFolder": {
+    safeListFolder: {
         enumerable: true,
-        get() { return safeListFolder; }
+        get() {
+            return safeListFolder;
+        }
     },
-    "stopProjectWatcher": {
+    stopProjectWatcher: {
         enumerable: true,
-        get() { return stopProjectWatcher; }
+        get() {
+            return stopProjectWatcher;
+        }
     },
-    "notifyProjectChanged": {
+    notifyProjectChanged: {
         enumerable: true,
-        get() { return notifyProjectChanged; }
+        get() {
+            return notifyProjectChanged;
+        }
     },
-    "shouldWatchProjectDirectory": {
+    shouldWatchProjectDirectory: {
         enumerable: true,
-        get() { return shouldWatchProjectDirectory; }
+        get() {
+            return shouldWatchProjectDirectory;
+        }
     },
-    "collectProjectDirectories": {
+    collectProjectDirectories: {
         enumerable: true,
-        get() { return collectProjectDirectories; }
+        get() {
+            return collectProjectDirectories;
+        }
     },
-    "syncProjectWatchers": {
+    syncProjectWatchers: {
         enumerable: true,
-        get() { return syncProjectWatchers; }
+        get() {
+            return syncProjectWatchers;
+        }
     }
 });
-registerMainModule("main.projectOperations", moduleApi);
+registerMainModule('main.projectOperations', moduleApi);

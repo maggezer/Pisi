@@ -1,7 +1,7 @@
-import { registerModule } from "../core/module-registry.mjs";
-import { registerPisiCommand } from "../core/pisi-command-registry.mjs";
-import { ensurePisiSearchIndex, invalidatePisiSearchIndex } from "../search/pisi-search-index.mjs";
-import { parsePisiTurkishDateExpression } from "./pisi-date-parser.mjs";
+import { registerModule } from '../core/module-registry.mjs';
+import { registerPisiCommand } from '../core/pisi-command-registry.mjs';
+import { ensurePisiSearchIndex, invalidatePisiSearchIndex } from '../search/pisi-search-index.mjs';
+import { parsePisiTurkishDateExpression } from './pisi-date-parser.mjs';
 
 const pisiQuickCaptureState = {
     observer: null,
@@ -89,11 +89,7 @@ function buildPisiQuickAddForm(container, index, options = {}) {
     form.className = 'pisi-quick-add-form';
     const text = makePisiQuickInput('text', 'text', 'Görev nedir?');
     text.required = true;
-    const dateExpression = makePisiQuickInput(
-        'text',
-        'dateExpression',
-        'yarın 14:00, her pazartesi…'
-    );
+    const dateExpression = makePisiQuickInput('text', 'dateExpression', 'yarın 14:00, her pazartesi…');
     const parsePreview = document.createElement('div');
     parsePreview.className = 'pisi-date-parse-preview empty';
     renderPisiDateParsePreview(parsePreview, '');
@@ -188,10 +184,11 @@ function closePisiQuickAddModal() {
 }
 
 function getPisiQuickAddFocusableElements(dialog) {
-    return Array.from(dialog.querySelectorAll(
-        'button:not([disabled]), input:not([disabled]), select:not([disabled]), ' +
-        'textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-    )).filter((element) => !element.hidden && element.offsetParent !== null);
+    return Array.from(
+        dialog.querySelectorAll(
+            'button:not([disabled]), input:not([disabled]), select:not([disabled]), ' + 'textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+    ).filter((element) => !element.hidden && element.offsetParent !== null);
 }
 
 function handlePisiQuickAddModalKeydown(event) {
@@ -245,9 +242,7 @@ function ensurePisiQuickAddModal() {
     title.id = 'pisi-quick-add-title';
     title.textContent = pisiQuickTranslate('Görev ekle');
     const description = document.createElement('p');
-    description.textContent = pisiQuickTranslate(
-        'Inbox’a veya seçili node’a hızlı görev ekler.'
-    );
+    description.textContent = pisiQuickTranslate('Inbox’a veya seçili node’a hızlı görev ekler.');
     copy.append(title, description);
     heading.append(icon, copy);
 
@@ -289,9 +284,7 @@ async function openPisiQuickAddModal() {
     if (!window.currentProjectFolder) {
         const empty = document.createElement('div');
         empty.className = 'pisi-quick-add-empty';
-        empty.textContent = pisiQuickTranslate(
-            'Görev eklemek için önce bir proje klasörü seçin.'
-        );
+        empty.textContent = pisiQuickTranslate('Görev eklemek için önce bir proje klasörü seçin.');
         state.body.replaceChildren(empty);
         state.body.removeAttribute('aria-busy');
         state.close.focus();
@@ -305,10 +298,7 @@ async function openPisiQuickAddModal() {
 
     try {
         const index = await ensurePisiSearchIndex();
-        if (
-            requestId !== pisiQuickCaptureState.modalOpenSequence ||
-            state.overlay.hidden
-        ) {
+        if (requestId !== pisiQuickCaptureState.modalOpenSequence || state.overlay.hidden) {
             return false;
         }
         state.body.replaceChildren();
@@ -342,9 +332,7 @@ function enhancePisiExistingMissionCards() {
             if (!mission?.html) return;
             const template = document.createElement('template');
             template.innerHTML = mission.html;
-            const tag = template.content.querySelector(
-                '.pisi-user-tag[data-pisi-todo-duration-minutes]'
-            );
+            const tag = template.content.querySelector('.pisi-user-tag[data-pisi-todo-duration-minutes]');
             const duration = Number(tag?.dataset.pisiTodoDurationMinutes) || 0;
             if (!duration) return;
             const badge = document.createElement('span');
@@ -387,8 +375,4 @@ const moduleApi = {
 registerModule('productivity.quickCapture', moduleApi);
 initializePisiQuickCapture();
 
-export {
-    closePisiQuickAddModal,
-    formatPisiTaskMinutes,
-    openPisiQuickAddModal
-};
+export { closePisiQuickAddModal, formatPisiTaskMinutes, openPisiQuickAddModal };

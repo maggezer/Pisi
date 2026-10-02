@@ -30,38 +30,38 @@ Basitleştirilmiş örnek:
 
 ```json
 {
-  "pisi": {
-    "version": 1,
-    "type": "node",
-    "id": "node_00000000-0000-4000-8000-000000000000",
-    "title": "Örnek Node",
-    "sidecar": "inv_Örnek Node__node_00000000-0000-4000-8000-000000000000",
-    "createdAt": "2026-07-29T12:00:00.000Z",
-    "updatedAt": "2026-07-29T12:00:00.000Z",
-    "parentMap": "none",
-    "connectionTypes": {
-      "up-hub": [],
-      "down-hub": [],
-      "co-level": [],
-      "upstream": [],
-      "downstream": []
-    }
-  },
-  "properties": {
-    "status": {
-      "id": "status",
-      "name": "Durum",
-      "type": "select",
-      "value": "Devam ediyor"
+    "pisi": {
+        "version": 1,
+        "type": "node",
+        "id": "node_00000000-0000-4000-8000-000000000000",
+        "title": "Örnek Node",
+        "sidecar": "inv_Örnek Node__node_00000000-0000-4000-8000-000000000000",
+        "createdAt": "2026-07-29T12:00:00.000Z",
+        "updatedAt": "2026-07-29T12:00:00.000Z",
+        "parentMap": "none",
+        "connectionTypes": {
+            "up-hub": [],
+            "down-hub": [],
+            "co-level": [],
+            "upstream": [],
+            "downstream": []
+        }
     },
-    "priority": {
-      "id": "priority",
-      "name": "Öncelik",
-      "type": "number",
-      "value": 4
-    }
-  },
-  "content": "<div class=\"pisi-editor-block\">Not içeriği</div>"
+    "properties": {
+        "status": {
+            "id": "status",
+            "name": "Durum",
+            "type": "select",
+            "value": "Devam ediyor"
+        },
+        "priority": {
+            "id": "priority",
+            "name": "Öncelik",
+            "type": "number",
+            "value": 4
+        }
+    },
+    "content": "<div class=\"pisi-editor-block\">Not içeriği</div>"
 }
 ```
 
@@ -87,44 +87,44 @@ Basitleştirilmiş örnek:
 
 ```json
 {
-  "pisi": {
-    "version": 1,
-    "type": "map",
-    "id": "map_00000000-0000-4000-8000-000000000000",
-    "title": "Örnek Map",
-    "sidecar": "nd_Örnek Map__map_00000000-0000-4000-8000-000000000000",
-    "createdAt": "2026-07-29T12:00:00.000Z",
-    "updatedAt": "2026-07-29T12:00:00.000Z"
-  },
-  "map": {
-    "nodes": [
-      {
-        "id": "node_00000000-0000-4000-8000-000000000000",
-        "x": 80,
-        "y": 80,
-        "width": 220,
-        "height": 92
-      }
-    ],
-    "edges": [
-      {
-        "id": "edge_00000000-0000-4000-8000-000000000000",
-        "sourceId": "node_...",
-        "targetId": "node_...",
-        "sourcePort": "bottom",
-        "targetPort": "top",
-        "type": "down-hub",
-        "sourceRole": "down-hub",
-        "targetRole": "up-hub"
-      }
-    ],
-    "camera": {
-      "x": 0,
-      "y": 0,
-      "zoom": 1
+    "pisi": {
+        "version": 1,
+        "type": "map",
+        "id": "map_00000000-0000-4000-8000-000000000000",
+        "title": "Örnek Map",
+        "sidecar": "nd_Örnek Map__map_00000000-0000-4000-8000-000000000000",
+        "createdAt": "2026-07-29T12:00:00.000Z",
+        "updatedAt": "2026-07-29T12:00:00.000Z"
     },
-    "collapsedHubs": []
-  }
+    "map": {
+        "nodes": [
+            {
+                "id": "node_00000000-0000-4000-8000-000000000000",
+                "x": 80,
+                "y": 80,
+                "width": 220,
+                "height": 92
+            }
+        ],
+        "edges": [
+            {
+                "id": "edge_00000000-0000-4000-8000-000000000000",
+                "sourceId": "node_...",
+                "targetId": "node_...",
+                "sourcePort": "bottom",
+                "targetPort": "top",
+                "type": "down-hub",
+                "sourceRole": "down-hub",
+                "targetRole": "up-hub"
+            }
+        ],
+        "camera": {
+            "x": 0,
+            "y": 0,
+            "zoom": 1
+        },
+        "collapsedHubs": []
+    }
 }
 ```
 

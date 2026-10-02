@@ -12,98 +12,106 @@ const crypto = require('crypto');
 
 let mainWindow = null;
 
-
 const moduleApi1 = {};
 Object.defineProperties(moduleApi1, {
-    "mainWindow": {
+    mainWindow: {
         enumerable: true,
-        get() { return mainWindow; },
-        set(value) { mainWindow = value; }
+        get() {
+            return mainWindow;
+        },
+        set(value) {
+            mainWindow = value;
+        }
     }
 });
-registerMainModule("main.runtime", moduleApi1);
-
+registerMainModule('main.runtime', moduleApi1);
 
 let allowWindowClose = false;
 
-
 const moduleApi2 = {};
 Object.defineProperties(moduleApi2, {
-    "allowWindowClose": {
+    allowWindowClose: {
         enumerable: true,
-        get() { return allowWindowClose; },
-        set(value) { allowWindowClose = value; }
+        get() {
+            return allowWindowClose;
+        },
+        set(value) {
+            allowWindowClose = value;
+        }
     }
 });
-registerMainModule("main.runtime", moduleApi2);
-
+registerMainModule('main.runtime', moduleApi2);
 
 let closeRequestInFlight = false;
 
-
 const moduleApi3 = {};
 Object.defineProperties(moduleApi3, {
-    "closeRequestInFlight": {
+    closeRequestInFlight: {
         enumerable: true,
-        get() { return closeRequestInFlight; },
-        set(value) { closeRequestInFlight = value; }
+        get() {
+            return closeRequestInFlight;
+        },
+        set(value) {
+            closeRequestInFlight = value;
+        }
     }
 });
-registerMainModule("main.runtime", moduleApi3);
-
+registerMainModule('main.runtime', moduleApi3);
 
 let closeRequestTimer = null;
 
-
 const moduleApi4 = {};
 Object.defineProperties(moduleApi4, {
-    "closeRequestTimer": {
+    closeRequestTimer: {
         enumerable: true,
-        get() { return closeRequestTimer; },
-        set(value) { closeRequestTimer = value; }
+        get() {
+            return closeRequestTimer;
+        },
+        set(value) {
+            closeRequestTimer = value;
+        }
     }
 });
-registerMainModule("main.runtime", moduleApi4);
-
+registerMainModule('main.runtime', moduleApi4);
 
 const recentInternalFileChanges = new Map();
 
-
 const moduleApi5 = {};
 Object.defineProperties(moduleApi5, {
-    "recentInternalFileChanges": {
+    recentInternalFileChanges: {
         enumerable: true,
-        get() { return recentInternalFileChanges; }
+        get() {
+            return recentInternalFileChanges;
+        }
     }
 });
-registerMainModule("main.runtime", moduleApi5);
-
+registerMainModule('main.runtime', moduleApi5);
 
 const PISI_INTERNAL_CHANGE_TTL_MS = 6000;
 
-
 const moduleApi6 = {};
 Object.defineProperties(moduleApi6, {
-    "PISI_INTERNAL_CHANGE_TTL_MS": {
+    PISI_INTERNAL_CHANGE_TTL_MS: {
         enumerable: true,
-        get() { return PISI_INTERNAL_CHANGE_TTL_MS; }
+        get() {
+            return PISI_INTERNAL_CHANGE_TTL_MS;
+        }
     }
 });
-registerMainModule("main.runtime", moduleApi6);
-
+registerMainModule('main.runtime', moduleApi6);
 
 const appIconPath = path.join(app.getAppPath(), 'assets', 'pisi.png');
 
-
 const moduleApi7 = {};
 Object.defineProperties(moduleApi7, {
-    "appIconPath": {
+    appIconPath: {
         enumerable: true,
-        get() { return appIconPath; }
+        get() {
+            return appIconPath;
+        }
     }
 });
-registerMainModule("main.runtime", moduleApi7);
-
+registerMainModule('main.runtime', moduleApi7);
 
 if (process.platform === 'win32') {
     app.setAppUserModelId(require('./functions/windows-app-identity').getWindowsAppIdentity(app).appId);
@@ -111,145 +119,147 @@ if (process.platform === 'win32') {
 
 scheduleWindowStateSave.timer = null;
 
-const PISI_CONNECTION_KEYS = [
-    'up-hub',
-    'down-hub',
-    'co-level',
-    'upstream',
-    'downstream'
-];
-
+const PISI_CONNECTION_KEYS = ['up-hub', 'down-hub', 'co-level', 'upstream', 'downstream'];
 
 const moduleApi8 = {};
 Object.defineProperties(moduleApi8, {
-    "PISI_CONNECTION_KEYS": {
+    PISI_CONNECTION_KEYS: {
         enumerable: true,
-        get() { return PISI_CONNECTION_KEYS; }
+        get() {
+            return PISI_CONNECTION_KEYS;
+        }
     }
 });
-registerMainModule("main.runtime", moduleApi8);
-
+registerMainModule('main.runtime', moduleApi8);
 
 const PISI_DIARY_MANAGED_START = '<!--PISI_DIARY_MANAGED_START-->';
 
-
 const moduleApi9 = {};
 Object.defineProperties(moduleApi9, {
-    "PISI_DIARY_MANAGED_START": {
+    PISI_DIARY_MANAGED_START: {
         enumerable: true,
-        get() { return PISI_DIARY_MANAGED_START; }
+        get() {
+            return PISI_DIARY_MANAGED_START;
+        }
     }
 });
-registerMainModule("main.runtime", moduleApi9);
-
+registerMainModule('main.runtime', moduleApi9);
 
 const PISI_DIARY_MANAGED_END = '<!--PISI_DIARY_MANAGED_END-->';
 
-
 const moduleApi10 = {};
 Object.defineProperties(moduleApi10, {
-    "PISI_DIARY_MANAGED_END": {
+    PISI_DIARY_MANAGED_END: {
         enumerable: true,
-        get() { return PISI_DIARY_MANAGED_END; }
+        get() {
+            return PISI_DIARY_MANAGED_END;
+        }
     }
 });
-registerMainModule("main.runtime", moduleApi10);
-
+registerMainModule('main.runtime', moduleApi10);
 
 let activeProjectFolder = null;
 
-
 const moduleApi11 = {};
 Object.defineProperties(moduleApi11, {
-    "activeProjectFolder": {
+    activeProjectFolder: {
         enumerable: true,
-        get() { return activeProjectFolder; },
-        set(value) { activeProjectFolder = value; }
+        get() {
+            return activeProjectFolder;
+        },
+        set(value) {
+            activeProjectFolder = value;
+        }
     }
 });
-registerMainModule("main.runtime", moduleApi11);
-
+registerMainModule('main.runtime', moduleApi11);
 
 let activeProjectLockPath = null;
 
-
 const moduleApi12 = {};
 Object.defineProperties(moduleApi12, {
-    "activeProjectLockPath": {
+    activeProjectLockPath: {
         enumerable: true,
-        get() { return activeProjectLockPath; },
-        set(value) { activeProjectLockPath = value; }
+        get() {
+            return activeProjectLockPath;
+        },
+        set(value) {
+            activeProjectLockPath = value;
+        }
     }
 });
-registerMainModule("main.runtime", moduleApi12);
-
+registerMainModule('main.runtime', moduleApi12);
 
 const pisiInstanceId = crypto.randomUUID();
 
-
 const moduleApi13 = {};
 Object.defineProperties(moduleApi13, {
-    "pisiInstanceId": {
+    pisiInstanceId: {
         enumerable: true,
-        get() { return pisiInstanceId; }
+        get() {
+            return pisiInstanceId;
+        }
     }
 });
-registerMainModule("main.runtime", moduleApi13);
-
+registerMainModule('main.runtime', moduleApi13);
 
 const projectWatchers = new Map();
 
-
 const moduleApi14 = {};
 Object.defineProperties(moduleApi14, {
-    "projectWatchers": {
+    projectWatchers: {
         enumerable: true,
-        get() { return projectWatchers; }
+        get() {
+            return projectWatchers;
+        }
     }
 });
-registerMainModule("main.runtime", moduleApi14);
-
+registerMainModule('main.runtime', moduleApi14);
 
 let projectWatchTimer = null;
 
-
 const moduleApi15 = {};
 Object.defineProperties(moduleApi15, {
-    "projectWatchTimer": {
+    projectWatchTimer: {
         enumerable: true,
-        get() { return projectWatchTimer; },
-        set(value) { projectWatchTimer = value; }
+        get() {
+            return projectWatchTimer;
+        },
+        set(value) {
+            projectWatchTimer = value;
+        }
     }
 });
-registerMainModule("main.runtime", moduleApi15);
-
+registerMainModule('main.runtime', moduleApi15);
 
 let projectWatcherRescanTimer = null;
 
-
 const moduleApi16 = {};
 Object.defineProperties(moduleApi16, {
-    "projectWatcherRescanTimer": {
+    projectWatcherRescanTimer: {
         enumerable: true,
-        get() { return projectWatcherRescanTimer; },
-        set(value) { projectWatcherRescanTimer = value; }
+        get() {
+            return projectWatcherRescanTimer;
+        },
+        set(value) {
+            projectWatcherRescanTimer = value;
+        }
     }
 });
-registerMainModule("main.runtime", moduleApi16);
-
+registerMainModule('main.runtime', moduleApi16);
 
 const pendingProjectChangedPaths = new Set();
 
-
 const moduleApi17 = {};
 Object.defineProperties(moduleApi17, {
-    "pendingProjectChangedPaths": {
+    pendingProjectChangedPaths: {
         enumerable: true,
-        get() { return pendingProjectChangedPaths; }
+        get() {
+            return pendingProjectChangedPaths;
+        }
     }
 });
-registerMainModule("main.runtime", moduleApi17);
-
+registerMainModule('main.runtime', moduleApi17);
 
 ipcMain.on('window:minimize', () => {
     if (mainWindow) mainWindow.minimize();
@@ -305,14 +315,6 @@ ipcMain.handle('app:set-language', (_event, language) => {
     return setPisiLanguage(language);
 });
 
-
-
-
-
-
-
-
-
 ipcMain.handle('project:get-pisi-document', (_event, filePath) => {
     return projectOperation(() => {
         const safeFilePath = assertProjectPath(filePath, {
@@ -324,8 +326,6 @@ ipcMain.handle('project:get-pisi-document', (_event, filePath) => {
         });
     });
 });
-
-
 
 ipcMain.handle('project:get-node-property-context', (_event, nodePath, preferredMapPath) => {
     return projectOperation(() => {
@@ -345,11 +345,10 @@ ipcMain.handle('project:get-node-property-context', (_event, nodePath, preferred
                 extensions: ['.map']
             });
             const preferredResult = listNodesForMap(safePreferredMapPath);
-            const belongsToPreferredMap = preferredResult?.ok &&
+            const belongsToPreferredMap =
+                preferredResult?.ok &&
                 preferredResult.nodes.some((node) => {
-                    return node.id === nodeInfo.metadata?.id ||
-                        normalizePathForCompare(node.fullPath) ===
-                            normalizePathForCompare(safeNodePath);
+                    return node.id === nodeInfo.metadata?.id || normalizePathForCompare(node.fullPath) === normalizePathForCompare(safeNodePath);
                 });
             if (belongsToPreferredMap) {
                 mapPath = safePreferredMapPath;
@@ -377,8 +376,6 @@ ipcMain.handle('project:get-node-property-context', (_event, nodePath, preferred
         };
     });
 });
-
-
 
 ipcMain.handle('project:save-node-content', (_event, nodePath, content) => {
     return projectOperation(() => {
@@ -478,11 +475,7 @@ ipcMain.handle('project:apply-database-template', (_event, nodePath, templateId,
             type: 'file',
             extensions: ['.node']
         });
-        return applyPisiDatabaseTemplate(
-            safeNodePath,
-            templateId,
-            options || {}
-        );
+        return applyPisiDatabaseTemplate(safeNodePath, templateId, options || {});
     });
 });
 
@@ -492,17 +485,15 @@ ipcMain.handle('project:create-property-map', (_event, projectFolder, options) =
             type: 'directory'
         });
         const safeOptions = { ...(options || {}) };
-        safeOptions.nodePaths = (Array.isArray(safeOptions.nodePaths)
-            ? safeOptions.nodePaths
-            : []).map((nodePath) => assertProjectPath(nodePath, {
-            type: 'file',
-            extensions: ['.node']
-        }));
+        safeOptions.nodePaths = (Array.isArray(safeOptions.nodePaths) ? safeOptions.nodePaths : []).map((nodePath) =>
+            assertProjectPath(nodePath, {
+                type: 'file',
+                extensions: ['.node']
+            })
+        );
         return createPisiPropertyMap(safeProjectFolder, safeOptions);
     });
 });
-
-
 
 ipcMain.handle('project:export-map', (_event, mapPath, payload) => {
     return asyncProjectOperation(async () => {
@@ -586,10 +577,12 @@ ipcMain.handle('project:list-backups', (_event, projectFolder, filePath) => {
         const safeProjectFolder = assertProjectPath(projectFolder, {
             type: 'directory'
         });
-        const safeFilePath = filePath ? assertProjectPath(filePath, {
-            type: 'file',
-            extensions: ['.node', '.map']
-        }) : null;
+        const safeFilePath = filePath
+            ? assertProjectPath(filePath, {
+                  type: 'file',
+                  extensions: ['.node', '.map']
+              })
+            : null;
         return listPisiAtomicBackups(safeProjectFolder, safeFilePath);
     });
 });
@@ -627,10 +620,7 @@ ipcMain.handle('project:delete-path', (_event, targetPath) => {
     return asyncProjectOperation(async () => {
         const safeTargetPath = assertProjectPath(targetPath);
 
-        if (
-            normalizePathForCompare(safeTargetPath) ===
-            normalizePathForCompare(activeProjectFolder)
-        ) {
+        if (normalizePathForCompare(safeTargetPath) === normalizePathForCompare(activeProjectFolder)) {
             throw new Error('Aktif proje kökü bu işlemle silinemez.');
         }
 
@@ -654,10 +644,7 @@ ipcMain.handle('project:get-or-create-diary-node', (_event, projectFolder, isoDa
             type: 'directory'
         });
 
-        if (
-            normalizePathForCompare(safeProjectFolder) !==
-            normalizePathForCompare(activeProjectFolder)
-        ) {
+        if (normalizePathForCompare(safeProjectFolder) !== normalizePathForCompare(activeProjectFolder)) {
             throw new Error('Diary yalnızca aktif proje kökünde kullanılabilir.');
         }
 
@@ -700,29 +687,19 @@ ipcMain.handle('project:move-pisi-item', (_event, sourcePath, destinationFolderP
             type: 'directory'
         });
 
-        if (
-            normalizePathForCompare(safeSourcePath) ===
-            normalizePathForCompare(activeProjectFolder)
-        ) {
+        if (normalizePathForCompare(safeSourcePath) === normalizePathForCompare(activeProjectFolder)) {
             throw new Error('Aktif proje kökü taşınamaz.');
         }
 
         const safeOptions = { ...(options || {}) };
         if (safeOptions.parentMapPath) {
-            safeOptions.parentMapPath = assertProjectPath(
-                safeOptions.parentMapPath,
-                {
-                    type: 'file',
-                    extensions: ['.map']
-                }
-            );
+            safeOptions.parentMapPath = assertProjectPath(safeOptions.parentMapPath, {
+                type: 'file',
+                extensions: ['.map']
+            });
         }
 
-        return movePisiItem(
-            safeSourcePath,
-            safeDestinationPath,
-            safeOptions
-        );
+        return movePisiItem(safeSourcePath, safeDestinationPath, safeOptions);
     });
 });
 
@@ -774,10 +751,9 @@ ipcMain.handle('project:choose-folder', async () => {
             type: 'error',
             title: translatePisiMain('Proje açılamadı'),
             message: translatePisiMain('Seçilen proje klasörü kilitlenemedi.'),
-            detail: [
-                lockResult.error,
-                translatePisiMain('Klasör başka bir PISI sürecinde açık olabilir veya erişim izni olmayabilir.')
-            ].filter(Boolean).join('\n\n')
+            detail: [lockResult.error, translatePisiMain('Klasör başka bir PISI sürecinde açık olabilir veya erişim izni olmayabilir.')]
+                .filter(Boolean)
+                .join('\n\n')
         });
         return {
             ok: false,
@@ -804,10 +780,7 @@ ipcMain.handle('project:set-last-folder', (_event, folderPath) => {
                 type: 'directory'
             });
 
-            if (
-                normalizePathForCompare(safeFolderPath) !==
-                normalizePathForCompare(activeProjectFolder)
-            ) {
+            if (normalizePathForCompare(safeFolderPath) !== normalizePathForCompare(activeProjectFolder)) {
                 throw new Error('Yalnızca aktif proje son proje olarak kaydedilebilir.');
             }
         }
@@ -843,16 +816,16 @@ ipcMain.handle('project:folder-exists', (_event, folderPath) => {
 
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
 
-
 const moduleApi18 = {};
 Object.defineProperties(moduleApi18, {
-    "hasSingleInstanceLock": {
+    hasSingleInstanceLock: {
         enumerable: true,
-        get() { return hasSingleInstanceLock; }
+        get() {
+            return hasSingleInstanceLock;
+        }
     }
 });
-registerMainModule("main.runtime", moduleApi18);
-
+registerMainModule('main.runtime', moduleApi18);
 
 if (!hasSingleInstanceLock) {
     app.quit();

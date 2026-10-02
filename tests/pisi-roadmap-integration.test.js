@@ -17,22 +17,35 @@ test('çekirdek platform modülleri bootstrap ve preload köprüsünde kayıtlı
         'data/pisi-structured-views.mjs',
         'portability/pisi-portability-panel.mjs',
         'editor/pisi-block-editor.mjs'
-    ]) assert.ok(bootstrap.includes(marker), marker);
+    ])
+        assert.ok(bootstrap.includes(marker), marker);
     for (const marker of [
-        'quickAddTask', 'saveNodeProperties', 'getNodePropertyContext', 'createPropertyMap',
-        'exportProjectMarkdown', 'listNodeHistory', 'auditIntegrity',
-        'restoreBackup', 'listDatabaseTemplates',
+        'quickAddTask',
+        'saveNodeProperties',
+        'getNodePropertyContext',
+        'createPropertyMap',
+        'exportProjectMarkdown',
+        'listNodeHistory',
+        'auditIntegrity',
+        'restoreBackup',
+        'listDatabaseTemplates',
         'applyDatabaseTemplate'
-    ]) assert.ok(preload.includes(marker), marker);
+    ])
+        assert.ok(preload.includes(marker), marker);
     for (const channel of [
-        'project:quick-add-task', 'project:save-node-properties',
+        'project:quick-add-task',
+        'project:save-node-properties',
         'project:get-node-property-context',
-        'project:create-property-map', 'project:export-node',
-        'project:import-markdown', 'project:list-node-history',
-        'project:audit-integrity', 'project:restore-backup',
+        'project:create-property-map',
+        'project:export-node',
+        'project:import-markdown',
+        'project:list-node-history',
+        'project:audit-integrity',
+        'project:restore-backup',
         'project:list-database-templates',
         'project:apply-database-template'
-    ]) assert.ok(runtime.includes(channel), channel);
+    ])
+        assert.ok(runtime.includes(channel), channel);
 });
 
 test('Araştırma yüzeyi ve web yakalama hattı ilk sürümden çıkarılmıştır', () => {
@@ -49,26 +62,14 @@ test('Araştırma yüzeyi ve web yakalama hattı ilk sürümden çıkarılmışt
     const tr = JSON.parse(read('locales/lang-tr.json')).strings;
     const eng = JSON.parse(read('locales/lang-eng.json')).strings;
 
-    assert.equal(
-        fs.existsSync(path.join(root, 'renderer/research/pisi-research-panel.mjs')),
-        false
-    );
-    assert.equal(
-        fs.existsSync(path.join(root, 'main/functions/research.js')),
-        false
-    );
+    assert.equal(fs.existsSync(path.join(root, 'renderer/research/pisi-research-panel.mjs')), false);
+    assert.equal(fs.existsSync(path.join(root, 'main/functions/research.js')), false);
     assert.doesNotMatch(
         [bootstrap, preload, runtime, mainEntry].join('\n'),
         /pisi-research|captureWebSource|capture-web-source|functions\/research|core\.source/
     );
-    assert.doesNotMatch(
-        [search, editor, portability].join('\n'),
-        /data-pisi-citation|data-pisi-block-ref|extractPisiDirectPaths/
-    );
-    assert.doesNotMatch(
-        roadmapCss,
-        /pisi-(?:research|web-capture|citation|source-library|block-reference)/
-    );
+    assert.doesNotMatch([search, editor, portability].join('\n'), /data-pisi-citation|data-pisi-block-ref|extractPisiDirectPaths/);
+    assert.doesNotMatch(roadmapCss, /pisi-(?:research|web-capture|citation|source-library|block-reference)/);
     assert.ok(!rendererManifest.some((entry) => entry.module === 'research.panel'));
     assert.ok(!mainManifest.some((entry) => entry.module === 'main.research'));
     assert.equal(Object.hasOwn(tr, 'Araştırma'), false);
@@ -83,7 +84,8 @@ test('görev süreleri ve blok türleri sanitizer tarafından korunur', () => {
         'data-pisi-todo-duration-minutes',
         'data-pisi-todo-actual-minutes',
         'data-pisi-block-type'
-    ]) assert.ok(editor.includes(attribute), attribute);
+    ])
+        assert.ok(editor.includes(attribute), attribute);
 });
 
 test('alt görev hiyerarşisi kaldırılmış, görev bağımlılıkları korunmuştur', () => {
@@ -123,12 +125,7 @@ test('Plugins ve Team altyapıları ilk sürümden tamamen çıkarılmıştır',
     const eng = JSON.parse(read('locales/lang-eng.json')).strings;
     const readme = read('README.md');
 
-    for (const file of [
-        'renderer/core/pisi-extension-api.mjs',
-        'renderer/team/pisi-team-api.mjs',
-        'main/functions/team-api.js',
-        'docs/pisi-platform-api.md'
-    ]) {
+    for (const file of ['renderer/core/pisi-extension-api.mjs', 'renderer/team/pisi-team-api.mjs', 'main/functions/team-api.js', 'docs/pisi-platform-api.md']) {
         assert.equal(fs.existsSync(path.join(root, file)), false, file);
     }
 
@@ -137,9 +134,7 @@ test('Plugins ve Team altyapıları ilk sürümden tamamen çıkarılmıştır',
         /pisi-extension-api|pisi-team-api|pisiTeamTransport|team:(?:get|save|list|append)|mountPisiToolbarExtensions/
     );
     assert.doesNotMatch(platformStyles, /pisi-(?:extension|team)|pisi-api-version-badge/);
-    assert.ok(!rendererManifest.some((entry) =>
-        entry.module === 'core.extensions' || entry.module === 'team.api'
-    ));
+    assert.ok(!rendererManifest.some((entry) => entry.module === 'core.extensions' || entry.module === 'team.api'));
     assert.ok(!mainManifest.some((entry) => entry.module === 'main.teamApi'));
     assert.equal(
         Object.keys(tr).some((key) => /Eklenti|Team|provider eklentisi/i.test(key)),
@@ -162,11 +157,7 @@ test('editör imleci otomatik kayıtta korunur, Enter yeni satıra bırakılır 
     assert.match(nodeEditor, /clearPisiEditorCaret/);
     assert.doesNotMatch(nodeEditor, /focusPisiEditorAtEnd/);
     assert.equal(
-        (
-            nodeEditor.match(
-                /suppressNextFileSystemRefresh\(3000\);\s*const saveResult = await window\.pisiProject\?\.saveNodeContent/g
-            ) || []
-        ).length,
+        (nodeEditor.match(/suppressNextFileSystemRefresh\(3000\);\s*const saveResult = await window\.pisiProject\?\.saveNodeContent/g) || []).length,
         2
     );
     assert.match(tabs, /shouldSuppressFileSystemRefresh\(\)/);
@@ -184,9 +175,7 @@ test('Pisi geçmişi gizlenir ve yeniden adlandırma alanları klavyeyi korur', 
     const map = read('renderer/map/pisi-map-workspace.mjs');
     const commands = read('renderer/core/pisi-command-registry.mjs');
     const styles = read('styles/10-tree-and-map.css');
-    const focusHelper = startup.match(
-        /function focusPisiTextInput\(input, shouldSelect = true\) \{[\s\S]*?\n\}/
-    )?.[0] || '';
+    const focusHelper = startup.match(/function focusPisiTextInput\(input, shouldSelect = true\) \{[\s\S]*?\n\}/)?.[0] || '';
 
     assert.match(operations, /entry\.name\.toLowerCase\(\) === '\.pisi-history'/);
     assert.match(operations, /'\.pisi-history',[\s\S]*'node_modules'/);
@@ -211,15 +200,9 @@ test('map seçimi, ağaç tıklamaları ve node yazma odağı birbirine karışm
 
     assert.match(treeDnd, /PISI_TREE_FILE_CLICK_DELAY_MS/);
     assert.match(treeDnd, /if \(event\.detail > 1\) \{\s*cancelPendingPisiTreeFileClick\(\)/);
-    assert.match(
-        treeDnd,
-        /row\.addEventListener\('dblclick'[\s\S]*?cancelPendingPisiTreeFileClick\(\);[\s\S]*?startRenameTreeFile/
-    );
+    assert.match(treeDnd, /row\.addEventListener\('dblclick'[\s\S]*?cancelPendingPisiTreeFileClick\(\);[\s\S]*?startRenameTreeFile/);
     assert.equal((treeDnd.match(/await openPisiFileTab/g) || []).length, 1);
-    assert.match(
-        map,
-        /const moved = hasDragged[\s\S]*?if \(moved\) \{\s*clearSelectedMapNodes\(\);/
-    );
+    assert.match(map, /const moved = hasDragged[\s\S]*?if \(moved\) \{\s*clearSelectedMapNodes\(\);/);
     assert.match(treeView, /result\.items\.filter\(\(item\) => !isPisiInternalTreeItem\(item\)\)/);
     assert.match(treeView, /return name === '\.pisi-history'/);
     assert.match(nodeEditor, /function ensurePisiEditorWritable\(editor\)/);
@@ -239,10 +222,7 @@ test('map portu kendi alt node ağacını ve bu ağa bağlı çizgileri daraltı
     assert.match(styles, /\.map-node-box\.pisi-hub-descendant-hidden \{\s*display: none;/);
     assert.match(styles, /\.map-port\.hub-collapsed/);
     assert.match(interactions, /\.map-node-box:not\(\.pisi-hub-descendant-hidden\)/);
-    assert.match(
-        read('renderer/map/pisi-map-workspace.mjs'),
-        /width: box\.offsetWidth \|\| parseFloat\(box\.style\.width/
-    );
+    assert.match(read('renderer/map/pisi-map-workspace.mjs'), /width: box\.offsetWidth \|\| parseFloat\(box\.style\.width/);
 });
 
 test('map ok uçları ve çizgileri node zoom oranını izler', () => {
@@ -256,10 +236,7 @@ test('map ok uçları ve çizgileri node zoom oranını izler', () => {
     assert.match(interactions, /syncMapConnectionZoomStyles\(\)/);
     assert.match(edges, /syncMapConnectionZoomStyles\(svg\)/);
     assert.match(mapStyles, /stroke-width: var\(--pisi-map-edge-stroke-width, 2\.5px\)/);
-    assert.match(
-        interactionStyles,
-        /stroke-width: var\(--pisi-map-temp-edge-stroke-width, 2px\)/
-    );
+    assert.match(interactionStyles, /stroke-width: var\(--pisi-map-temp-edge-stroke-width, 2px\)/);
     assert.match(html, /markerUnits="strokeWidth"/);
 });
 

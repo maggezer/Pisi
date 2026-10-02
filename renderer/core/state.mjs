@@ -4,11 +4,9 @@
 
     Object.assign(previousPisi, {
         state: {
-
-
             activeCenterNode: previousState.activeCenterNode ?? null,
             centerNodeSaveTimer: previousState.centerNodeSaveTimer ?? null,
-            
+
             activeMapPath: previousState.activeMapPath ?? null,
             activeMapNodes: previousState.activeMapNodes ?? [],
             activeMapEdges: previousState.activeMapEdges ?? [],
@@ -27,57 +25,40 @@
             currentMapBoxSelection: previousState.currentMapBoxSelection ?? null,
             selectedMapEdgeId: previousState.selectedMapEdgeId ?? null,
 
-            collapsedHubPorts:
-                previousState.collapsedHubPorts instanceof Set
-                    ? previousState.collapsedHubPorts
-                    : new Set(),
+            collapsedHubPorts: previousState.collapsedHubPorts instanceof Set ? previousState.collapsedHubPorts : new Set(),
 
             projectRefreshTimer: previousState.projectRefreshTimer ?? null,
             selectedTreeItem: previousState.selectedTreeItem ?? null,
 
-            expandedTreePaths:
-                previousState.expandedTreePaths instanceof Set
-                    ? previousState.expandedTreePaths
-                    : new Set(),
+            expandedTreePaths: previousState.expandedTreePaths instanceof Set ? previousState.expandedTreePaths : new Set(),
 
-            suppressFileSystemRefreshUntil:
-                previousState.suppressFileSystemRefreshUntil ?? 0,
+            suppressFileSystemRefreshUntil: previousState.suppressFileSystemRefreshUntil ?? 0,
 
-            pisiTagsPanelState:
-                previousState.pisiTagsPanelState ?? {
-                    selectedTag: null,
-                    index: []
-                },
+            pisiTagsPanelState: previousState.pisiTagsPanelState ?? {
+                selectedTag: null,
+                index: []
+            },
 
-            pisiTagsPanelRefreshTimer:
-                previousState.pisiTagsPanelRefreshTimer ?? null,
+            pisiTagsPanelRefreshTimer: previousState.pisiTagsPanelRefreshTimer ?? null,
 
-            PISI_USER_TAG_CACHE:
-                previousState.PISI_USER_TAG_CACHE instanceof Set
-                    ? previousState.PISI_USER_TAG_CACHE
-                    : new Set(),
+            PISI_USER_TAG_CACHE: previousState.PISI_USER_TAG_CACHE instanceof Set ? previousState.PISI_USER_TAG_CACHE : new Set(),
 
-            pisiTagMenuState:
-                previousState.pisiTagMenuState ?? {
-                    active: false,
-                    mode: null,
-                    editor: null,
-                    command: null,
-                    items: [],
-                    selectedIndex: 0,
-                    todoPriority: null
-                },
+            pisiTagMenuState: previousState.pisiTagMenuState ?? {
+                active: false,
+                mode: null,
+                editor: null,
+                command: null,
+                items: [],
+                selectedIndex: 0,
+                todoPriority: null
+            },
 
-            openTabs: Array.isArray(previousState.openTabs)
-            ? previousState.openTabs
-            : [],
+            openTabs: Array.isArray(previousState.openTabs) ? previousState.openTabs : [],
 
             activeTabPath: previousState.activeTabPath ?? null,
 
-            pisiCalendarState: previousState.pisiCalendarState ?? null,
+            pisiCalendarState: previousState.pisiCalendarState ?? null
         },
-
-        
 
         api: window.pisiProject,
 
@@ -140,8 +121,7 @@
         'pisiCalendarState',
 
         'activeCenterNode',
-        'centerNodeSaveTimer',
-
+        'centerNodeSaveTimer'
     ].forEach(definePisiStateBridge);
 })();
 

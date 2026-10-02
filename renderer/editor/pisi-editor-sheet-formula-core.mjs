@@ -72,9 +72,7 @@ function tokenizePisiFormula(source) {
             continue;
         }
 
-        const number = input.slice(index).match(
-            /^(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?/
-        );
+        const number = input.slice(index).match(/^(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?/);
         if (number) {
             tokens.push({ type: 'number', value: Number(number[0]) });
             index += number[0].length;
@@ -188,10 +186,7 @@ function parsePisiFormula(source) {
 
             if (match(':')) {
                 const end = take();
-                if (
-                    end.type !== 'identifier' ||
-                    !PISI_CELL_REFERENCE.test(String(end.value))
-                ) {
+                if (end.type !== 'identifier' || !PISI_CELL_REFERENCE.test(String(end.value))) {
                     formulaError('Invalid cell range');
                 }
                 return {
@@ -307,17 +302,13 @@ function isPisiRange(value) {
 
 function flattenPisiFormulaValues(values) {
     return values.flatMap((value) => {
-        return isPisiRange(value)
-            ? flattenPisiFormulaValues(value.values)
-            : [value];
+        return isPisiRange(value) ? flattenPisiFormulaValues(value.values) : [value];
     });
 }
 
 function tryPisiFormulaNumber(value) {
     if (typeof value === 'number') {
-        return Number.isFinite(value)
-            ? { ok: true, value }
-            : { ok: false, value: NaN };
+        return Number.isFinite(value) ? { ok: true, value } : { ok: false, value: NaN };
     }
     if (typeof value === 'boolean') {
         return { ok: true, value: value ? 1 : 0 };
@@ -328,9 +319,7 @@ function tryPisiFormulaNumber(value) {
     if (typeof value === 'string') {
         const clean = value.trim();
         if (!clean) return { ok: true, value: 0 };
-        const normalized = /^[-+]?\d+,\d+(?:[eE][-+]?\d+)?$/.test(clean)
-            ? clean.replace(',', '.')
-            : clean;
+        const normalized = /^[-+]?\d+,\d+(?:[eE][-+]?\d+)?$/.test(clean) ? clean.replace(',', '.') : clean;
         const number = Number(normalized);
         if (Number.isFinite(number)) return { ok: true, value: number };
     }
@@ -348,7 +337,9 @@ function toPisiFormulaBoolean(value) {
     if (isPisiRange(value)) formulaError('Range cannot be used as a scalar');
     if (typeof value === 'boolean') return value;
     if (typeof value === 'number') return value !== 0;
-    const clean = String(value ?? '').trim().toUpperCase();
+    const clean = String(value ?? '')
+        .trim()
+        .toUpperCase();
     if (!clean || clean === 'FALSE' || clean === '0') return false;
     return true;
 }
@@ -363,10 +354,7 @@ function toPisiFormulaText(value) {
 function getPisiFormulaNumbers(values, ignoreText = true) {
     const numbers = [];
     for (const value of flattenPisiFormulaValues(values)) {
-        if (
-            ignoreText &&
-            (value === '' || value === null || value === undefined)
-        ) {
+        if (ignoreText && (value === '' || value === null || value === undefined)) {
             continue;
         }
         const result = tryPisiFormulaNumber(value);
@@ -416,9 +404,7 @@ function resolvePisiFormulaCell(context, ref) {
     }
     const result = context.resolveCell(ref);
     if (result?.ok === false) formulaError(result.error);
-    return result && Object.hasOwn(result, 'value')
-        ? result.value
-        : result;
+    return result && Object.hasOwn(result, 'value') ? result.value : result;
 }
 
 function resolvePisiFormulaRange(context, start, end) {
@@ -427,9 +413,7 @@ function resolvePisiFormulaRange(context, start, end) {
     }
     const result = context.resolveRange(start, end);
     if (result?.ok === false) formulaError(result.error);
-    const values = result && Object.hasOwn(result, 'values')
-        ? result.values
-        : result;
+    const values = result && Object.hasOwn(result, 'values') ? result.values : result;
     if (!Array.isArray(values)) formulaError('Invalid cell range');
     return { [PISI_RANGE_VALUE]: true, values };
 }
@@ -457,7 +441,9 @@ function evaluatePisiFormulaCall(node, context) {
         ensurePisiFormulaArity(args, 2, 3);
         return toPisiFormulaBoolean(evaluatePisiFormulaNode(args[0], context))
             ? evaluatePisiFormulaNode(args[1], context)
-            : (args[2] ? evaluatePisiFormulaNode(args[2], context) : false);
+            : args[2]
+              ? evaluatePisiFormulaNode(args[2], context)
+              : false;
     }
 
     if (name === 'IFERROR') {
@@ -474,9 +460,7 @@ function evaluatePisiFormulaCall(node, context) {
         if (!args.length) formulaError('Logical function requires arguments');
         let truthyCount = 0;
         for (const arg of args) {
-            const values = flattenPisiFormulaValues([
-                evaluatePisiFormulaNode(arg, context)
-            ]);
+            const values = flattenPisiFormulaValues([evaluatePisiFormulaNode(arg, context)]);
             for (const value of values) {
                 const truthy = toPisiFormulaBoolean(value);
                 if (name === 'AND' && !truthy) return false;
@@ -512,9 +496,7 @@ function evaluatePisiFormulaCall(node, context) {
         if (name === 'SUM') return numbers.reduce((sum, item) => sum + item, 0);
         if (name === 'COUNT') return numbers.length;
         if (name === 'PRODUCT') {
-            return numbers.length
-                ? numbers.reduce((product, item) => product * item, 1)
-                : 0;
+            return numbers.length ? numbers.reduce((product, item) => product * item, 1) : 0;
         }
         if (name === 'SUMSQ') {
             return numbers.reduce((sum, item) => sum + item ** 2, 0);
@@ -527,9 +509,7 @@ function evaluatePisiFormulaCall(node, context) {
         if (name === 'MAX') return Math.max(...numbers);
         const sorted = [...numbers].sort((a, b) => a - b);
         const middle = Math.floor(sorted.length / 2);
-        return sorted.length % 2
-            ? sorted[middle]
-            : (sorted[middle - 1] + sorted[middle]) / 2;
+        return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
     }
 
     if (name === 'ABS' || name === 'SIGN' || name === 'SQRT') {
@@ -544,9 +524,7 @@ function evaluatePisiFormulaCall(node, context) {
     if (['ROUND', 'ROUNDUP', 'ROUNDDOWN'].includes(name)) {
         ensurePisiFormulaArity(values, 1, 2);
         const digits = values.length > 1 ? number(1) : 0;
-        const mode = name === 'ROUNDUP'
-            ? 'up'
-            : (name === 'ROUNDDOWN' ? 'down' : 'nearest');
+        const mode = name === 'ROUNDUP' ? 'up' : name === 'ROUNDDOWN' ? 'down' : 'nearest';
         return roundPisiFormulaNumber(number(0), digits, mode);
     }
 
@@ -605,8 +583,8 @@ function evaluatePisiFormulaCall(node, context) {
         LN: Math.log,
         LOG10: Math.log10,
         LOG2: Math.log2,
-        DEGREES: (value) => value * 180 / Math.PI,
-        RADIANS: (value) => value * Math.PI / 180
+        DEGREES: (value) => (value * 180) / Math.PI,
+        RADIANS: (value) => (value * Math.PI) / 180
     };
     if (unaryMath[name]) {
         ensurePisiFormulaArity(values, 1);
@@ -640,9 +618,7 @@ function evaluatePisiFormulaCall(node, context) {
         const characters = Array.from(text(0));
         const count = values.length > 1 ? Math.trunc(number(1)) : 1;
         if (count < 0) formulaError('Negative character count');
-        return name === 'LEFT'
-            ? characters.slice(0, count).join('')
-            : characters.slice(Math.max(0, characters.length - count)).join('');
+        return name === 'LEFT' ? characters.slice(0, count).join('') : characters.slice(Math.max(0, characters.length - count)).join('');
     }
 
     if (name === 'MID') {
@@ -650,15 +626,15 @@ function evaluatePisiFormulaCall(node, context) {
         const start = Math.trunc(number(1));
         const count = Math.trunc(number(2));
         if (start < 1 || count < 0) formulaError('Invalid text range');
-        return Array.from(text(0)).slice(start - 1, start - 1 + count).join('');
+        return Array.from(text(0))
+            .slice(start - 1, start - 1 + count)
+            .join('');
     }
 
     if (name === 'UPPER' || name === 'LOWER') {
         ensurePisiFormulaArity(values, 1);
         const locale = context.locale || undefined;
-        return name === 'UPPER'
-            ? text(0).toLocaleUpperCase(locale)
-            : text(0).toLocaleLowerCase(locale);
+        return name === 'UPPER' ? text(0).toLocaleUpperCase(locale) : text(0).toLocaleLowerCase(locale);
     }
 
     if (name === 'TRIM') {

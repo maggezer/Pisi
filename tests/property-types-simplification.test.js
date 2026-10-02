@@ -10,14 +10,8 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 test('property menüsü yalnız Metin, Sayı, Tags ve Relation türlerini sunar', () => {
     const core = read('renderer/data/pisi-properties-core.mjs');
-    const menuTypes = core.slice(
-        core.indexOf('const PISI_NODE_PROPERTY_TYPES'),
-        core.indexOf('const PISI_ROLLUP_AGGREGATES')
-    );
-    const aggregates = core.slice(
-        core.indexOf('const PISI_ROLLUP_AGGREGATES'),
-        core.indexOf('function normalizePisiNodePropertyType')
-    );
+    const menuTypes = core.slice(core.indexOf('const PISI_NODE_PROPERTY_TYPES'), core.indexOf('const PISI_ROLLUP_AGGREGATES'));
+    const aggregates = core.slice(core.indexOf('const PISI_ROLLUP_AGGREGATES'), core.indexOf('function normalizePisiNodePropertyType'));
 
     for (const type of ['text', 'number', 'multiselect', 'relation']) {
         assert.match(menuTypes, new RegExp(`value: '${type}'`));
@@ -65,10 +59,7 @@ test('sistem metadata ve Relation sağ Properties panelinde gösterilmez', () =>
     assert.match(propertiesUi, /property\.type !== 'relation'/);
     assert.match(propertiesUi, /for \(const property of visibleProperties\)/);
     assert.match(propertiesUi, /makePisiNodePropertiesEmpty\('Bu node için özellik tanımlanmamış\.'/);
-    assert.doesNotMatch(
-        propertiesUi,
-        /for \(const property of \[\.\.\.snapshot\.systemProperties, \.\.\.snapshot\.properties\]\)/
-    );
+    assert.doesNotMatch(propertiesUi, /for \(const property of \[\.\.\.snapshot\.systemProperties, \.\.\.snapshot\.properties\]\)/);
     for (const key of ['Sistem', 'Node ID', 'Oluşturulma tarihi', 'Değiştirilme tarihi']) {
         assert.equal(typeof tr[key], 'string', key);
         assert.equal(typeof eng[key], 'string', key);

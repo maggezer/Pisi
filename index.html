@@ -1,334 +1,246 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta
-        http-equiv="Content-Security-Policy"
-        content="default-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; script-src 'self'; img-src 'self' data:; font-src 'self';"
-    >
-    <title>PISI</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div id="window-frame">
-        <div id="window-title">
-            <img id="window-logo" src="assets/pisi.png" alt="PISI">
-            <span>PISI</span>
-        </div>
-
-        <div id="window-controls">
-            <button class="window-btn" id="win-min" title="Küçült">
-                <img src="assets/win-min.png" alt="Küçült">
-            </button>
-
-            <button class="window-btn" id="win-max" title="Büyüt">
-                <img id="win-max-icon" src="assets/win-max.png" alt="Büyüt">
-            </button>
-
-            <button class="window-btn close" id="win-close" title="Kapat">
-                <img src="assets/win-close.png" alt="Kapat">
-            </button>
-        </div>
-    </div>
-
-    <div id="pisi-app">
-        <main id="main-layout">
-            <aside id="left-panel" class="panel">
-                <div id="project-header">
-                <div id="project-title" class="panel-title">Explorer</div>
-
-                    <div id="project-actions">
-                    <button
-                        id="add-map-btn"
-                        class="project-action-btn"
-                        title="Yeni Map oluştur"
-                        aria-label="Yeni Map oluştur"
-                    >
-                        <span class="pisi-project-action-icon pisi-project-action-icon-map" aria-hidden="true"></span>
-                    </button>
-                    <button
-                        id="add-node-btn"
-                        class="project-action-btn"
-                        title="Yeni Node oluştur"
-                        aria-label="Yeni Node oluştur"
-                    >
-                        <span class="pisi-project-action-icon pisi-project-action-icon-node" aria-hidden="true"></span>
-                    </button>
-                    <button
-                        id="change-project-btn"
-                        class="project-action-btn"
-                        title="Proje klasörü değiştir"
-                        aria-label="Proje klasörü değiştir"
-                    >
-                        <span class="pisi-project-action-icon pisi-project-action-icon-project" aria-hidden="true"></span>
-                    </button>
-                    </div>
-                </div>
-
-                <div id="file-tree"></div>
-            </aside>
-
-            <section id="center-panel">
-                <div id="center-toolbar">
-                    <div id="center-tabs" class="center-tabs"></div>
-                </div>
-
-                
-                <div id="workspace">
-                    <div class="workspace-placeholder" id="workspace-placeholder">
-                      Bir map seçildiğinde zihin haritası burada görünecek.
-                    </div>
-
-                    <div id="map-canvas" hidden>
-                        <svg id="map-connections">
-                            <defs>
-    <!-- Tek yönlü ok: çizgi okun tabanında biter, ok ileri doğru uzar -->
-    <marker
-        id="arrow-downhub"
-        viewBox="0 -5 10 10"
-        refX="0"
-        refY="0"
-        markerWidth="7"
-        markerHeight="7"
-        orient="auto"
-        markerUnits="strokeWidth"
-    >
-        <path d="M 0 -5 L 10 0 L 0 5 z"></path>
-    </marker>
-
-    <marker
-        id="arrow-stream"
-        viewBox="0 -5 10 10"
-        refX="0"
-        refY="0"
-        markerWidth="7"
-        markerHeight="7"
-        orient="auto"
-        markerUnits="strokeWidth"
-    >
-        <path d="M 0 -5 L 10 0 L 0 5 z"></path>
-    </marker>
-
-    <!-- Co-level bitiş oku -->
-    <marker
-        id="arrow-colevel"
-        viewBox="0 -5 10 10"
-        refX="0"
-        refY="0"
-        markerWidth="7"
-        markerHeight="7"
-        orient="auto"
-        markerUnits="strokeWidth"
-    >
-        <path d="M 0 -5 L 10 0 L 0 5 z"></path>
-    </marker>
-
-    <!-- Co-level başlangıç oku: çizginin başlangıcından geriye doğru uzar -->
-    <marker
-        id="arrow-colevel-start"
-        viewBox="-10 -5 10 10"
-        refX="0"
-        refY="0"
-        markerWidth="7"
-        markerHeight="7"
-        orient="auto"
-        markerUnits="strokeWidth"
-    >
-        <path d="M 0 -5 L -10 0 L 0 5 z"></path>
-    </marker>
-        </defs>
-                        </svg>
-
-                        <div id="map-zoom-controls">
-        <button id="map-zoom-in" class="map-zoom-btn" title="Zoom in">＋</button>
-        <button id="map-zoom-out" class="map-zoom-btn" title="Zoom out">−</button>
-                        </div>
-
-                        <div id="map-board"></div>
-                        </div>
-
-                <div id="center-node-editor" class="center-node-editor" hidden>
-                    <div
-                        class="pisi-word-toolbar pisi-editor-toolbar"
-                        data-editor-target="center-node-editor-content"
-                    >
-                            <div class="pisi-unified-toolbar-root"></div>
-                        </div>
-
-                    <div
-                    id="center-node-editor-content"
-                    class="pisi-rich-editor"
-                    contenteditable="true"
-                    spellcheck="true"
-                    ></div>
-                </div>
-                
-                    </div>
-
-                <div id="node-modal-overlay">
-                    <div
-                        id="node-modal"
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="node-modal-title"
-                    >
-                        <div id="node-modal-header">
-                            <input
-                                id="node-modal-title"
-                                type="text"
-                                aria-label="Node başlığı"
-                            >
-                            <button
-                                id="node-modal-close"
-                                type="button"
-                                aria-label="Kaydedip kapat"
-                                title="Kaydedip kapat"
-                            >×</button>
-                        </div>
-                        <div
-                            class="pisi-word-toolbar pisi-editor-toolbar"
-                            data-editor-target="node-modal-content"
-                        >
-                            <div class="pisi-unified-toolbar-root"></div>
-                        </div>
-
-                    <div id="node-modal-content" class="pisi-rich-editor" contenteditable="true" spellcheck="true"></div>
-                    </div>
-                </div>
-
-                <div id="pisi-tag-menu" class="pisi-tag-menu" hidden></div>
-
-              
-            </section>
-
-            <aside id="right-panel" class="panel">
-                <div id="right-panel-tabs">
-                    <button
-                        class="right-panel-tab active"
-                        data-right-tab="missions"
-                        title="ToDo"
-                        aria-label="ToDo"
-                    >
-                        <span
-                            class="pisi-right-tab-icon pisi-right-tab-icon-todo"
-                            aria-hidden="true"
-                        ></span>
-                    </button>
-
-                    <button
-                        class="right-panel-tab"
-                        data-right-tab="tags"
-                        title="Tags"
-                        aria-label="Tags"
-                    >
-                        <span
-                            class="pisi-right-tab-icon pisi-right-tab-icon-tags"
-                            aria-hidden="true"
-                        ></span>
-                    </button>
-
-                    <button
-                        class="right-panel-tab"
-                        data-right-tab="properties"
-                        title="Özellikler"
-                        aria-label="Özellikler"
-                        aria-controls="right-tab-properties"
-                        aria-disabled="true"
-                        disabled
-                    >
-                        <span
-                            class="pisi-right-tab-icon pisi-right-tab-icon-properties"
-                            aria-hidden="true"
-                        ></span>
-                    </button>
-
-                    <button
-                        class="right-panel-tab"
-                        data-right-tab="customizations"
-                        title="Customize"
-                        aria-label="Customize"
-                        aria-controls="right-tab-customizations"
-                        aria-disabled="true"
-                        disabled
-                    >
-                        <span
-                            class="pisi-right-tab-icon pisi-right-tab-icon-customize"
-                            aria-hidden="true"
-                        ></span>
-                    </button>
-                </div>
-
-                <div id="right-panel-content">
-                    <section id="right-tab-missions" class="right-tab-page active">
-                        <div
-                            id="pisi-todo-panel-actions-host"
-                            class="pisi-todo-panel-actions-host"
-                        ></div>
-
-                        <div id="pisi-missions-panel">
-                            <div id="pisi-missions-list" class="pisi-missions-list">
-                                <div class="right-panel-empty">
-                                    Missions için önce orta alanda bir map aç.
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-
-                    <section id="right-tab-properties" class="right-tab-page">
-
-                        <div id="pisi-node-properties-info" class="pisi-node-properties-info">
-                            <div class="right-panel-empty">
-                                Özellikleri görmek için bir node aç.
-                            </div>
-                        </div>
-                    </section>
-
-                    <section id="right-tab-customizations" class="right-tab-page">
-
-                        <div id="pisi-map-customize-panel"></div>
-                    </section>
-
-                    <section id="right-tab-tags" class="right-tab-page">
-
-
-                        <div id="pisi-tags-panel">
-                            <div class="pisi-tag-picker">
-                                <button id="pisi-tag-picker-button" type="button">
-                                    Choose tag
-                                </button>
-
-                                <div
-                                    id="pisi-tag-picker-menu"
-                                    class="pisi-tag-picker-menu"
-                                    hidden
-                                ></div>
-                            </div>
-
-                            <div id="pisi-tag-block-results" class="pisi-tag-block-results"></div>
-                        </div>
-                    </section>
-                </div>
-            </aside>
-        </main>
-    </div>
-
-    <div id="project-modal">
-        <div id="project-modal-card">
-            <div class="modal-logo-row">
-                <img src="assets/pisi.png" alt="PISI">
-                <h2>PISI Proje Klasörü</h2>
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            http-equiv="Content-Security-Policy"
+            content="default-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; script-src 'self'; img-src 'self' data:; font-src 'self';"
+        />
+        <title>PISI</title>
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <div id="window-frame">
+            <div id="window-title">
+                <img id="window-logo" src="assets/pisi.png" alt="PISI" />
+                <span>PISI</span>
             </div>
 
-            <p>
-                Başlamak için notlarının tutulacağı bir proje klasörü seç.
-                PISI bu klasörü hatırlayacak ve sonraki açılışlarda doğrudan buradan başlayacak.
-            </p>
+            <div id="window-controls">
+                <button class="window-btn" id="win-min" title="Küçült">
+                    <img src="assets/win-min.png" alt="Küçült" />
+                </button>
 
-            <button id="modal-choose-project-btn">
-                📁 Proje Klasörü Seç
-            </button>
+                <button class="window-btn" id="win-max" title="Büyüt">
+                    <img id="win-max-icon" src="assets/win-max.png" alt="Büyüt" />
+                </button>
+
+                <button class="window-btn close" id="win-close" title="Kapat">
+                    <img src="assets/win-close.png" alt="Kapat" />
+                </button>
+            </div>
         </div>
-    </div>
-    <script type="module" src="renderer/bootstrap.mjs"></script>
-</body>
+
+        <div id="pisi-app">
+            <main id="main-layout">
+                <aside id="left-panel" class="panel">
+                    <div id="project-header">
+                        <div id="project-title" class="panel-title">Explorer</div>
+
+                        <div id="project-actions">
+                            <button id="add-map-btn" class="project-action-btn" title="Yeni Map oluştur" aria-label="Yeni Map oluştur">
+                                <span class="pisi-project-action-icon pisi-project-action-icon-map" aria-hidden="true"></span>
+                            </button>
+                            <button id="add-node-btn" class="project-action-btn" title="Yeni Node oluştur" aria-label="Yeni Node oluştur">
+                                <span class="pisi-project-action-icon pisi-project-action-icon-node" aria-hidden="true"></span>
+                            </button>
+                            <button id="change-project-btn" class="project-action-btn" title="Proje klasörü değiştir" aria-label="Proje klasörü değiştir">
+                                <span class="pisi-project-action-icon pisi-project-action-icon-project" aria-hidden="true"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="file-tree"></div>
+                </aside>
+
+                <section id="center-panel">
+                    <div id="center-toolbar">
+                        <div id="center-tabs" class="center-tabs"></div>
+                    </div>
+
+                    <div id="workspace">
+                        <div class="workspace-placeholder" id="workspace-placeholder">Bir map seçildiğinde zihin haritası burada görünecek.</div>
+
+                        <div id="map-canvas" hidden>
+                            <svg id="map-connections">
+                                <defs>
+                                    <!-- Tek yönlü ok: çizgi okun tabanında biter, ok ileri doğru uzar -->
+                                    <marker
+                                        id="arrow-downhub"
+                                        viewBox="0 -5 10 10"
+                                        refX="0"
+                                        refY="0"
+                                        markerWidth="7"
+                                        markerHeight="7"
+                                        orient="auto"
+                                        markerUnits="strokeWidth"
+                                    >
+                                        <path d="M 0 -5 L 10 0 L 0 5 z"></path>
+                                    </marker>
+
+                                    <marker
+                                        id="arrow-stream"
+                                        viewBox="0 -5 10 10"
+                                        refX="0"
+                                        refY="0"
+                                        markerWidth="7"
+                                        markerHeight="7"
+                                        orient="auto"
+                                        markerUnits="strokeWidth"
+                                    >
+                                        <path d="M 0 -5 L 10 0 L 0 5 z"></path>
+                                    </marker>
+
+                                    <!-- Co-level bitiş oku -->
+                                    <marker
+                                        id="arrow-colevel"
+                                        viewBox="0 -5 10 10"
+                                        refX="0"
+                                        refY="0"
+                                        markerWidth="7"
+                                        markerHeight="7"
+                                        orient="auto"
+                                        markerUnits="strokeWidth"
+                                    >
+                                        <path d="M 0 -5 L 10 0 L 0 5 z"></path>
+                                    </marker>
+
+                                    <!-- Co-level başlangıç oku: çizginin başlangıcından geriye doğru uzar -->
+                                    <marker
+                                        id="arrow-colevel-start"
+                                        viewBox="-10 -5 10 10"
+                                        refX="0"
+                                        refY="0"
+                                        markerWidth="7"
+                                        markerHeight="7"
+                                        orient="auto"
+                                        markerUnits="strokeWidth"
+                                    >
+                                        <path d="M 0 -5 L -10 0 L 0 5 z"></path>
+                                    </marker>
+                                </defs>
+                            </svg>
+
+                            <div id="map-zoom-controls">
+                                <button id="map-zoom-in" class="map-zoom-btn" title="Zoom in">＋</button>
+                                <button id="map-zoom-out" class="map-zoom-btn" title="Zoom out">−</button>
+                            </div>
+
+                            <div id="map-board"></div>
+                        </div>
+
+                        <div id="center-node-editor" class="center-node-editor" hidden>
+                            <div class="pisi-word-toolbar pisi-editor-toolbar" data-editor-target="center-node-editor-content">
+                                <div class="pisi-unified-toolbar-root"></div>
+                            </div>
+
+                            <div id="center-node-editor-content" class="pisi-rich-editor" contenteditable="true" spellcheck="true"></div>
+                        </div>
+                    </div>
+
+                    <div id="node-modal-overlay">
+                        <div id="node-modal" role="dialog" aria-modal="true" aria-labelledby="node-modal-title">
+                            <div id="node-modal-header">
+                                <input id="node-modal-title" type="text" aria-label="Node başlığı" />
+                                <button id="node-modal-close" type="button" aria-label="Kaydedip kapat" title="Kaydedip kapat">×</button>
+                            </div>
+                            <div class="pisi-word-toolbar pisi-editor-toolbar" data-editor-target="node-modal-content">
+                                <div class="pisi-unified-toolbar-root"></div>
+                            </div>
+
+                            <div id="node-modal-content" class="pisi-rich-editor" contenteditable="true" spellcheck="true"></div>
+                        </div>
+                    </div>
+
+                    <div id="pisi-tag-menu" class="pisi-tag-menu" hidden></div>
+                </section>
+
+                <aside id="right-panel" class="panel">
+                    <div id="right-panel-tabs">
+                        <button class="right-panel-tab active" data-right-tab="missions" title="ToDo" aria-label="ToDo">
+                            <span class="pisi-right-tab-icon pisi-right-tab-icon-todo" aria-hidden="true"></span>
+                        </button>
+
+                        <button class="right-panel-tab" data-right-tab="tags" title="Tags" aria-label="Tags">
+                            <span class="pisi-right-tab-icon pisi-right-tab-icon-tags" aria-hidden="true"></span>
+                        </button>
+
+                        <button
+                            class="right-panel-tab"
+                            data-right-tab="properties"
+                            title="Özellikler"
+                            aria-label="Özellikler"
+                            aria-controls="right-tab-properties"
+                            aria-disabled="true"
+                            disabled
+                        >
+                            <span class="pisi-right-tab-icon pisi-right-tab-icon-properties" aria-hidden="true"></span>
+                        </button>
+
+                        <button
+                            class="right-panel-tab"
+                            data-right-tab="customizations"
+                            title="Customize"
+                            aria-label="Customize"
+                            aria-controls="right-tab-customizations"
+                            aria-disabled="true"
+                            disabled
+                        >
+                            <span class="pisi-right-tab-icon pisi-right-tab-icon-customize" aria-hidden="true"></span>
+                        </button>
+                    </div>
+
+                    <div id="right-panel-content">
+                        <section id="right-tab-missions" class="right-tab-page active">
+                            <div id="pisi-todo-panel-actions-host" class="pisi-todo-panel-actions-host"></div>
+
+                            <div id="pisi-missions-panel">
+                                <div id="pisi-missions-list" class="pisi-missions-list">
+                                    <div class="right-panel-empty">Missions için önce orta alanda bir map aç.</div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section id="right-tab-properties" class="right-tab-page">
+                            <div id="pisi-node-properties-info" class="pisi-node-properties-info">
+                                <div class="right-panel-empty">Özellikleri görmek için bir node aç.</div>
+                            </div>
+                        </section>
+
+                        <section id="right-tab-customizations" class="right-tab-page">
+                            <div id="pisi-map-customize-panel"></div>
+                        </section>
+
+                        <section id="right-tab-tags" class="right-tab-page">
+                            <div id="pisi-tags-panel">
+                                <div class="pisi-tag-picker">
+                                    <button id="pisi-tag-picker-button" type="button">Choose tag</button>
+
+                                    <div id="pisi-tag-picker-menu" class="pisi-tag-picker-menu" hidden></div>
+                                </div>
+
+                                <div id="pisi-tag-block-results" class="pisi-tag-block-results"></div>
+                            </div>
+                        </section>
+                    </div>
+                </aside>
+            </main>
+        </div>
+
+        <div id="project-modal">
+            <div id="project-modal-card">
+                <div class="modal-logo-row">
+                    <img src="assets/pisi.png" alt="PISI" />
+                    <h2>PISI Proje Klasörü</h2>
+                </div>
+
+                <p>
+                    Başlamak için notlarının tutulacağı bir proje klasörü seç. PISI bu klasörü hatırlayacak ve sonraki açılışlarda doğrudan buradan başlayacak.
+                </p>
+
+                <button id="modal-choose-project-btn">📁 Proje Klasörü Seç</button>
+            </div>
+        </div>
+        <script type="module" src="renderer/bootstrap.mjs"></script>
+    </body>
 </html>

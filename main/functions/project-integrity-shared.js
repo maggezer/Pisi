@@ -4,24 +4,15 @@ const fs = require('fs');
 const path = require('path');
 const integrityCore = require('./project-integrity-core');
 
-const PISI_INTEGRITY_SKIP_DIRS = new Set([
-    '.git', 'node_modules', '.pisi', '.pisi-history'
-]);
+const PISI_INTEGRITY_SKIP_DIRS = new Set(['.git', 'node_modules', '.pisi', '.pisi-history']);
 const PISI_LOCAL_ATTACHMENT_EXT = /\.(?:png|jpe?g|gif|webp|svg|pdf|docx?|xlsx?|csv|txt|zip|json)$/i;
 
 function relativePath(projectFolder, targetPath) {
-    return integrityCore.normalizePisiIntegrityPath(
-        path.relative(path.resolve(projectFolder), path.resolve(targetPath))
-    );
+    return integrityCore.normalizePisiIntegrityPath(path.relative(path.resolve(projectFolder), path.resolve(targetPath)));
 }
 
 function absolutePath(projectFolder, storedPath) {
-    const target = path.resolve(
-        projectFolder,
-        ...integrityCore.normalizePisiIntegrityPath(storedPath)
-            .split('/')
-            .filter(Boolean)
-    );
+    const target = path.resolve(projectFolder, ...integrityCore.normalizePisiIntegrityPath(storedPath).split('/').filter(Boolean));
     if (!integrityCore.isPisiIntegrityPathInsideProject(projectFolder, target)) {
         throw new Error('Integrity yolu proje dışına çıkamaz.');
     }
@@ -74,9 +65,7 @@ function pushIssue(context, raw) {
 
 function setRepair(issue, safety, action, description, payload = {}) {
     issue.repair = integrityCore.normalizePisiIntegrityRepair({
-        id: integrityCore.makePisiIntegrityIssueId([
-            'repair', issue.code, issue.path, issue.entityId || '', action
-        ]),
+        id: integrityCore.makePisiIntegrityIssueId(['repair', issue.code, issue.path, issue.entityId || '', action]),
         safety,
         action,
         description,
@@ -88,13 +77,7 @@ function setRepair(issue, safety, action, description, payload = {}) {
 function issue(context, raw, repair = null) {
     const result = pushIssue(context, raw);
     if (repair) {
-        setRepair(
-            result,
-            repair.safety,
-            repair.action,
-            repair.description,
-            repair.payload || {}
-        );
+        setRepair(result, repair.safety, repair.action, repair.description, repair.payload || {});
     }
     return result;
 }

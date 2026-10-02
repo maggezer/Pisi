@@ -42,12 +42,7 @@ const mindMapPrimaryActionIds = [
     'pisi-map-dim-filtered'
 ];
 
-const mindMapFilterControlIds = [
-    'pisi-map-operational-scope',
-    'pisi-map-operational-relation',
-    'pisi-map-operational-depth',
-    'pisi-map-scope-controls'
-];
+const mindMapFilterControlIds = ['pisi-map-operational-scope', 'pisi-map-operational-relation', 'pisi-map-operational-depth', 'pisi-map-scope-controls'];
 
 const titleViewStorageKey = 'pisi.map.titleOnly.v1';
 let titleOnly = false;
@@ -137,22 +132,30 @@ function bindMindMapDocumentHandlers() {
     if (mindMapDocumentHandlersBound) return;
     mindMapDocumentHandlersBound = true;
 
-    document.addEventListener('mousedown', (event) => {
-        const button = getMindMapFilterButton();
-        const menu = getMindMapFilterMenu();
-        if (!button || !menu || menu.hidden) return;
-        const target = event.target instanceof Node ? event.target : null;
-        if (target && (button.contains(target) || menu.contains(target))) return;
-        setMindMapFilterMenuOpen(false);
-    }, true);
+    document.addEventListener(
+        'mousedown',
+        (event) => {
+            const button = getMindMapFilterButton();
+            const menu = getMindMapFilterMenu();
+            if (!button || !menu || menu.hidden) return;
+            const target = event.target instanceof Node ? event.target : null;
+            if (target && (button.contains(target) || menu.contains(target))) return;
+            setMindMapFilterMenuOpen(false);
+        },
+        true
+    );
 
-    document.addEventListener('keydown', (event) => {
-        if (event.key !== 'Escape') return;
-        const menu = getMindMapFilterMenu();
-        if (!menu || menu.hidden) return;
-        setMindMapFilterMenuOpen(false);
-        getMindMapFilterButton()?.focus();
-    }, true);
+    document.addEventListener(
+        'keydown',
+        (event) => {
+            if (event.key !== 'Escape') return;
+            const menu = getMindMapFilterMenu();
+            if (!menu || menu.hidden) return;
+            setMindMapFilterMenuOpen(false);
+            getMindMapFilterButton()?.focus();
+        },
+        true
+    );
 }
 
 function syncMindMapPanelLabels() {
@@ -346,10 +349,7 @@ function bindMindMapToolbarObserver() {
     mindMapPanelObserver = new MutationObserver((mutations) => {
         const toolbarTouched = mutations.some((mutation) => {
             return [...mutation.addedNodes, ...mutation.removedNodes].some((node) => {
-                return node?.nodeType === Node.ELEMENT_NODE && (
-                    node.id === 'pisi-map-operational-bar' ||
-                    node.querySelector?.('#pisi-map-operational-bar')
-                );
+                return node?.nodeType === Node.ELEMENT_NODE && (node.id === 'pisi-map-operational-bar' || node.querySelector?.('#pisi-map-operational-bar'));
             });
         });
         if (toolbarTouched) requestAnimationFrame(moveMindMapToolbarToRightPanel);
@@ -382,10 +382,4 @@ registerModule('map.rightPanel', {
     setMindMapFilterMenuOpen
 });
 
-export {
-    enhanceMindMapToolbar,
-    installMindMapRightPanel,
-    moveMindMapToolbarToRightPanel,
-    refreshMindMapRightPanel,
-    setMindMapFilterMenuOpen
-};
+export { enhanceMindMapToolbar, installMindMapRightPanel, moveMindMapToolbarToRightPanel, refreshMindMapRightPanel, setMindMapFilterMenuOpen };

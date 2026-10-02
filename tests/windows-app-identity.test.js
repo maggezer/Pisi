@@ -9,7 +9,9 @@ test('development process, window and shortcut share a separate stable Windows i
     const source = fs.readFileSync(path.join(__dirname, '../main/functions/windows-app-identity.js'), 'utf8');
     const output = { exports: {} };
     vm.runInNewContext(source, {
-        module: output, console, process: { platform: 'win32', execPath: 'C:\\Electron\\electron.exe' },
+        module: output,
+        console,
+        process: { platform: 'win32', execPath: 'C:\\Electron\\electron.exe' },
         require(name) {
             if (name === 'path') return path.win32;
             if (name === 'fs') return { mkdirSync() {}, existsSync: () => false };
@@ -18,11 +20,17 @@ test('development process, window and shortcut share a separate stable Windows i
     });
     const { getWindowsAppIdentity, ensureWindowsDevShortcut } = output.exports;
     const app = {
-        isPackaged: false, getAppPath: () => 'C:\\Projects\\Pisi Notes',
+        isPackaged: false,
+        getAppPath: () => 'C:\\Projects\\Pisi Notes',
         getPath: () => 'C:\\Users\\User\\AppData\\Roaming'
     };
     let written;
-    const shell = { writeShortcutLink(file, operation, options) { written = { file, operation, options }; return true; } };
+    const shell = {
+        writeShortcutLink(file, operation, options) {
+            written = { file, operation, options };
+            return true;
+        }
+    };
     const identity = getWindowsAppIdentity(app);
     assert.match(identity.appId, /^com\.mumin\.pisi\.dev\./);
     assert.equal(identity.appId, getWindowsAppIdentity(app).appId);

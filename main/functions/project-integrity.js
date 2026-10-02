@@ -15,11 +15,7 @@ function auditPisiProjectIntegrity(projectFolder) {
     const inventory = documents.collectDocumentInventory(projectRoot, context);
     const tasks = authorities.auditTasks(projectRoot, context);
     const relationships = authorities.auditRelationships(projectRoot, context, inventory);
-    const propertySchema = properties.auditPisiPropertySchema(
-        projectRoot,
-        context,
-        inventory
-    );
+    const propertySchema = properties.auditPisiPropertySchema(projectRoot, context, inventory);
 
     for (const doc of inventory.docs) {
         documents.auditNodeProperties(context, doc);
@@ -27,28 +23,21 @@ function auditPisiProjectIntegrity(projectFolder) {
     }
     documents.auditMaps(projectRoot, context, inventory, relationships.byId);
     documents.auditNodeParentMap(context, inventory);
-    documents.auditDerivedConnections(
-        context,
-        inventory,
-        relationships.relationships
-    );
+    documents.auditDerivedConnections(context, inventory, relationships.relationships);
 
     const trashItems = recovery.auditTrash(projectRoot, context);
     const mutationJournals = recovery.auditAtomic(projectRoot, context);
     /** @type {any} */
-    const report = shared.integrityCore.makePisiIntegrityReport(
-        context.issues,
-        {
-            files: inventory.files.length,
-            nodes: inventory.nodeById.size,
-            maps: inventory.mapById.size,
-            tasks: tasks.tasks.length,
-            relationships: relationships.relationships.length,
-            propertyDefinitions: propertySchema.definitions.length,
-            trashItems,
-            mutationJournals
-        }
-    );
+    const report = shared.integrityCore.makePisiIntegrityReport(context.issues, {
+        files: inventory.files.length,
+        nodes: inventory.nodeById.size,
+        maps: inventory.mapById.size,
+        tasks: tasks.tasks.length,
+        relationships: relationships.relationships.length,
+        propertyDefinitions: propertySchema.definitions.length,
+        trashItems,
+        mutationJournals
+    });
     report.repairPlan = shared.makeRepairPlan(report.issues);
     report.authorities = {
         tasks: '.pisi/tasks.json',
@@ -63,13 +52,9 @@ function auditPisiProjectIntegrity(projectFolder) {
 
 function repairPisiProjectIntegrity(projectFolder, repairIds = []) {
     const before = auditPisiProjectIntegrity(projectFolder);
-    const requested = new Set(
-        (Array.isArray(repairIds) ? repairIds : []).map(String)
-    );
+    const requested = new Set((Array.isArray(repairIds) ? repairIds : []).map(String));
     const safe = before.repairPlan?.safe || [];
-    const selected = requested.size
-        ? safe.filter((repair) => requested.has(repair.id))
-        : safe;
+    const selected = requested.size ? safe.filter((repair) => requested.has(repair.id)) : safe;
 
     if (!selected.length) {
         return {
@@ -110,10 +95,7 @@ function repairPisiProjectIntegrity(projectFolder, repairIds = []) {
 }
 
 function rebuildPisiDerivedIntegrityState(projectFolder) {
-    return repairs.rebuildDerivedState(
-        projectFolder,
-        auditPisiProjectIntegrity
-    );
+    return repairs.rebuildDerivedState(projectFolder, auditPisiProjectIntegrity);
 }
 
 const moduleApi = {

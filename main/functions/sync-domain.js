@@ -19,7 +19,6 @@ const SNAPSHOT_INDEX_FORMAT = 'pisi-sync-device-index';
 const SNAPSHOT_CHUNK_FORMAT = 'pisi-sync-device-chunk';
 const runningProjects = new Map();
 
-
 const PISI_SYNC_EDITOR_ASSETS_RELATIVE = path.join('.pisi-sync', 'assets');
 
 function isSameOrInsidePath(candidatePath, rootPath) {
@@ -27,33 +26,22 @@ function isSameOrInsidePath(candidatePath, rootPath) {
     const root = path.resolve(rootPath);
     const relative = path.relative(root, candidate);
 
-    return relative === '' || (
-        relative !== '..' &&
-        !relative.startsWith(`..${path.sep}`) &&
-        !path.isAbsolute(relative)
-    );
+    return relative === '' || (relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative));
 }
 
 function listPisiSyncEditorAssetReferences(content = '') {
     const references = [];
     const seen = new Set();
     const source = String(content || '');
-    const attributePattern =
-        /\sdata-pisi-(?:asset|sheet-asset)\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))/gi;
+    const attributePattern = /\sdata-pisi-(?:asset|sheet-asset)\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))/gi;
     let match;
 
     while ((match = attributePattern.exec(source))) {
-        const relativePath = String(
-            match[1] ?? match[2] ?? match[3] ?? ''
-        );
+        const relativePath = String(match[1] ?? match[2] ?? match[3] ?? '');
 
         let descriptor = null;
-        const paintMatch = relativePath.match(
-            editorAssets.PISI_PAINT_ASSET_PATTERN
-        );
-        const sheetMatch = relativePath.match(
-            editorAssets.PISI_SHEET_ASSET_PATTERN
-        );
+        const paintMatch = relativePath.match(editorAssets.PISI_PAINT_ASSET_PATTERN);
+        const sheetMatch = relativePath.match(editorAssets.PISI_SHEET_ASSET_PATTERN);
 
         if (paintMatch) {
             descriptor = {
@@ -83,37 +71,21 @@ function listPisiSyncEditorAssetReferences(content = '') {
 function getPisiSyncNodeSidecarPath(projectFolder, entity) {
     const payload = entity?.payload;
     const relativePath = String(payload?.relativePath || '').trim();
-    const sidecarName = String(
-        payload?.native?.pisi?.sidecar || ''
-    ).trim();
+    const sidecarName = String(payload?.native?.pisi?.sidecar || '').trim();
 
-    if (
-        !relativePath ||
-        !sidecarName ||
-        path.basename(sidecarName) !== sidecarName ||
-        sidecarName === '.' ||
-        sidecarName === '..'
-    ) {
+    if (!relativePath || !sidecarName || path.basename(sidecarName) !== sidecarName || sidecarName === '.' || sidecarName === '..') {
         return null;
     }
 
     const nodePath = path.resolve(projectFolder, relativePath);
 
-    if (
-        !isSameOrInsidePath(nodePath, projectFolder) ||
-        path.extname(nodePath).toLowerCase() !== '.node'
-    ) {
+    if (!isSameOrInsidePath(nodePath, projectFolder) || path.extname(nodePath).toLowerCase() !== '.node') {
         return null;
     }
 
-    const sidecarPath = path.resolve(
-        path.dirname(nodePath),
-        sidecarName
-    );
+    const sidecarPath = path.resolve(path.dirname(nodePath), sidecarName);
 
-    return isSameOrInsidePath(sidecarPath, projectFolder)
-        ? sidecarPath
-        : null;
+    return isSameOrInsidePath(sidecarPath, projectFolder) ? sidecarPath : null;
 }
 
 function inspectPisiSyncEditorAsset(filePath, descriptor) {
@@ -134,11 +106,7 @@ function inspectPisiSyncEditorAsset(filePath, descriptor) {
 
         const stat = fs.statSync(filePath);
 
-        if (
-            !stat.isFile() ||
-            stat.size < 1 ||
-            stat.size > descriptor.maxBytes
-        ) {
+        if (!stat.isFile() || stat.size < 1 || stat.size > descriptor.maxBytes) {
             return {
                 exists: true,
                 valid: false,
@@ -147,10 +115,7 @@ function inspectPisiSyncEditorAsset(filePath, descriptor) {
         }
 
         const buffer = fs.readFileSync(filePath);
-        const actualHash = crypto
-            .createHash('sha256')
-            .update(buffer)
-            .digest('hex');
+        const actualHash = crypto.createHash('sha256').update(buffer).digest('hex');
 
         if (actualHash !== descriptor.hash) {
             return {
@@ -160,13 +125,7 @@ function inspectPisiSyncEditorAsset(filePath, descriptor) {
             };
         }
 
-        if (
-            descriptor.kind === 'paint' &&
-            !Buffer.from([
-                0x89, 0x50, 0x4e, 0x47,
-                0x0d, 0x0a, 0x1a, 0x0a
-            ]).equals(buffer.subarray(0, 8))
-        ) {
+        if (descriptor.kind === 'paint' && !Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).equals(buffer.subarray(0, 8))) {
             return {
                 exists: true,
                 valid: false,
@@ -215,17 +174,10 @@ function inspectPisiSyncEditorAsset(filePath, descriptor) {
 
 function writePisiSyncEditorAsset(destinationPath, buffer) {
     const directory = path.dirname(destinationPath);
-    const temporaryPath = path.join(
-        directory,
-        `.${path.basename(destinationPath)}.${process.pid}.${crypto.randomUUID()}.tmp`
-    );
+    const temporaryPath = path.join(directory, `.${path.basename(destinationPath)}.${process.pid}.${crypto.randomUUID()}.tmp`);
     let descriptor = null;
 
-    globalThis.markInternalFileChange?.(
-        directory,
-        destinationPath,
-        temporaryPath
-    );
+    globalThis.markInternalFileChange?.(directory, destinationPath, temporaryPath);
 
     fs.mkdirSync(directory, { recursive: true });
 
@@ -242,11 +194,7 @@ function writePisiSyncEditorAsset(destinationPath, buffer) {
 
         fs.renameSync(temporaryPath, destinationPath);
 
-        globalThis.sealInternalFileChange?.(
-            directory,
-            destinationPath,
-            temporaryPath
-        );
+        globalThis.sealInternalFileChange?.(directory, destinationPath, temporaryPath);
     } catch (error) {
         if (descriptor !== null) {
             try {
@@ -265,11 +213,7 @@ function writePisiSyncEditorAsset(destinationPath, buffer) {
     }
 }
 
-function reconcilePisiSyncEditorAssets(
-    projectFolder,
-    syncFolder,
-    entities = []
-) {
+function reconcilePisiSyncEditorAssets(projectFolder, syncFolder, entities = []) {
     const warnings = [];
     let uploaded = 0;
     let downloaded = 0;
@@ -277,70 +221,43 @@ function reconcilePisiSyncEditorAssets(
     for (const entity of entities) {
         if (entity?.kind !== 'node') continue;
 
-        const references = listPisiSyncEditorAssetReferences(
-            entity?.payload?.content || ''
-        );
+        const references = listPisiSyncEditorAssetReferences(entity?.payload?.content || '');
 
         if (!references.length) continue;
 
-        const sidecarPath = getPisiSyncNodeSidecarPath(
-            projectFolder,
-            entity
-        );
+        const sidecarPath = getPisiSyncNodeSidecarPath(projectFolder, entity);
 
         if (!sidecarPath) {
-            warnings.push(
-                `Editor asset sidecar yolu çözülemedi: ${entity?.id || 'node'}`
-            );
+            warnings.push(`Editor asset sidecar yolu çözülemedi: ${entity?.id || 'node'}`);
             continue;
         }
 
         for (const descriptor of references) {
             const parts = descriptor.relativePath.split('/');
             const localPath = path.join(sidecarPath, ...parts);
-            const remotePath = path.join(
-                syncFolder,
-                PISI_SYNC_EDITOR_ASSETS_RELATIVE,
-                ...parts
-            );
+            const remotePath = path.join(syncFolder, PISI_SYNC_EDITOR_ASSETS_RELATIVE, ...parts);
 
-            const local = inspectPisiSyncEditorAsset(
-                localPath,
-                descriptor
-            );
-            const remote = inspectPisiSyncEditorAsset(
-                remotePath,
-                descriptor
-            );
+            const local = inspectPisiSyncEditorAsset(localPath, descriptor);
+            const remote = inspectPisiSyncEditorAsset(remotePath, descriptor);
 
             try {
                 if (local.valid && !remote.valid) {
-                    writePisiSyncEditorAsset(
-                        remotePath,
-                        local.buffer
-                    );
+                    writePisiSyncEditorAsset(remotePath, local.buffer);
                     uploaded += 1;
                     continue;
                 }
 
                 if (!local.valid && remote.valid) {
-                    writePisiSyncEditorAsset(
-                        localPath,
-                        remote.buffer
-                    );
+                    writePisiSyncEditorAsset(localPath, remote.buffer);
                     downloaded += 1;
                     continue;
                 }
 
                 if (!local.valid && !remote.valid) {
-                    warnings.push(
-                        `Editor asset bulunamadı veya bozuk: ${descriptor.relativePath}`
-                    );
+                    warnings.push(`Editor asset bulunamadı veya bozuk: ${descriptor.relativePath}`);
                 }
             } catch (error) {
-                warnings.push(
-                    `Editor asset sync hatası (${descriptor.relativePath}): ${error.message}`
-                );
+                warnings.push(`Editor asset sync hatası (${descriptor.relativePath}): ${error.message}`);
             }
         }
     }
@@ -353,10 +270,7 @@ function reconcilePisiSyncEditorAssets(
 }
 
 function projectKey(projectFolder) {
-    return crypto.createHash('sha256')
-        .update(path.resolve(projectFolder).toLowerCase())
-        .digest('hex')
-        .slice(0, 24);
+    return crypto.createHash('sha256').update(path.resolve(projectFolder).toLowerCase()).digest('hex').slice(0, 24);
 }
 
 function defaultDeviceName() {
@@ -365,13 +279,11 @@ function defaultDeviceName() {
 
 function getGlobalConfig() {
     const settings = modules['main.pathSecurity'].readSettings();
-    const sync = settings.pisiSync && typeof settings.pisiSync === 'object'
-        ? settings.pisiSync : {};
+    const sync = settings.pisiSync && typeof settings.pisiSync === 'object' ? settings.pisiSync : {};
     return {
         settings,
         sync: {
-            deviceId: /^device_[A-Za-z0-9._:-]{4,180}$/.test(String(sync.deviceId || ''))
-                ? sync.deviceId : `device_${crypto.randomUUID()}`,
+            deviceId: /^device_[A-Za-z0-9._:-]{4,180}$/.test(String(sync.deviceId || '')) ? sync.deviceId : `device_${crypto.randomUUID()}`,
             deviceName: String(sync.deviceName || defaultDeviceName()).slice(0, 120),
             projects: sync.projects && typeof sync.projects === 'object' ? sync.projects : {}
         }
@@ -404,9 +316,7 @@ function assertFolder(folderPath, projectFolder) {
     const relativeFromProject = path.relative(projectFolder, folder);
     const relativeFromSync = path.relative(folder, projectFolder);
     if (relativeFromProject === '') return folder;
-    const nested = (relative) => relative === '' || (
-        relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative)
-    );
+    const nested = (relative) => relative === '' || (relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative));
     if (nested(relativeFromProject) || nested(relativeFromSync)) {
         throw new Error('Proje kökünün kendisini seçin; proje içindeki bir alt klasör veya üst klasör kullanılamaz.');
     }
@@ -419,9 +329,7 @@ function atomicWriteJson(filePath, value) {
         throw new Error('Sync anlık görüntüsü 48 MB sınırını aşıyor. Büyük çizimleri ayrı yedekleyin.');
     }
     fs.mkdirSync(path.dirname(filePath), { recursive: true });
-    const temporary = path.join(
-        path.dirname(filePath), `.${path.basename(filePath)}.${process.pid}.${crypto.randomUUID()}.tmp`
-    );
+    const temporary = path.join(path.dirname(filePath), `.${path.basename(filePath)}.${process.pid}.${crypto.randomUUID()}.tmp`);
     const previous = `${temporary}.previous`;
     let descriptor = null;
     try {
@@ -432,7 +340,9 @@ function atomicWriteJson(filePath, value) {
         descriptor = null;
         if (process.platform === 'win32' && fs.existsSync(filePath)) {
             fs.renameSync(filePath, previous);
-            try { fs.renameSync(temporary, filePath); } catch (error) {
+            try {
+                fs.renameSync(temporary, filePath);
+            } catch (error) {
                 fs.renameSync(previous, filePath);
                 throw error;
             }
@@ -441,10 +351,18 @@ function atomicWriteJson(filePath, value) {
             fs.renameSync(temporary, filePath);
         }
     } finally {
-        if (descriptor !== null) try { fs.closeSync(descriptor); } catch {}
-        if (fs.existsSync(temporary)) try { fs.unlinkSync(temporary); } catch {}
+        if (descriptor !== null)
+            try {
+                fs.closeSync(descriptor);
+            } catch {}
+        if (fs.existsSync(temporary))
+            try {
+                fs.unlinkSync(temporary);
+            } catch {}
         if (fs.existsSync(previous) && fs.existsSync(filePath)) {
-            try { fs.unlinkSync(previous); } catch {}
+            try {
+                fs.unlinkSync(previous);
+            } catch {}
         }
     }
 }
@@ -460,7 +378,9 @@ function readJson(filePath, options = {}) {
     if (!stat.isFile() || stat.size > MAX_SNAPSHOT_BYTES) {
         throw new Error(`Sync dosyası geçersiz veya çok büyük: ${path.basename(filePath)}`);
     }
-    try { return JSON.parse(fs.readFileSync(filePath, 'utf8')); } catch {
+    try {
+        return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    } catch {
         throw new Error(`Sync dosyası bozuk: ${path.basename(filePath)}`);
     }
 }
@@ -516,11 +436,10 @@ function writeDeviceSnapshot(folder, snapshot) {
     });
     const keep = new Set(['index.json', ...chunks]);
     for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
-        if (
-            entry.isFile() && /^[A-Za-z0-9._:-]+\.json$/.test(entry.name) &&
-            !keep.has(entry.name)
-        ) {
-            try { fs.unlinkSync(path.join(directory, entry.name)); } catch {}
+        if (entry.isFile() && /^[A-Za-z0-9._:-]+\.json$/.test(entry.name) && !keep.has(entry.name)) {
+            try {
+                fs.unlinkSync(path.join(directory, entry.name));
+            } catch {}
         }
     }
 }
@@ -531,8 +450,13 @@ function readLocalState(projectFolder, deviceId) {
     const data = read.ok && !read.missing ? read.data : {};
     if (data?.deviceId !== deviceId) {
         return {
-            deviceId, projectId: null, clock: 0, records: [], handledConflicts: [],
-            lastSyncAt: null, lastResult: null
+            deviceId,
+            projectId: null,
+            clock: 0,
+            records: [],
+            handledConflicts: [],
+            lastSyncAt: null,
+            lastResult: null
         };
     }
     return {
@@ -540,8 +464,7 @@ function readLocalState(projectFolder, deviceId) {
         projectId: data.projectId || null,
         clock: Math.max(0, Number(data.clock) || 0),
         records: Array.isArray(data.records) ? data.records : [],
-        handledConflicts: Array.isArray(data.handledConflicts)
-            ? data.handledConflicts.slice(-256) : [],
+        handledConflicts: Array.isArray(data.handledConflicts) ? data.handledConflicts.slice(-256) : [],
         lastSyncAt: data.lastSyncAt || null,
         lastResult: data.lastResult || null
     };
@@ -550,7 +473,9 @@ function readLocalState(projectFolder, deviceId) {
 function writeLocalState(projectFolder, state) {
     const storage = storageLayer.getPisiProjectStorage(projectFolder);
     const result = storage.writeJson(LOCAL_STATE_KEY, state, {
-        backup: false, newline: true, hiddenParent: true
+        backup: false,
+        newline: true,
+        hiddenParent: true
     });
     if (!result.ok) throw new Error(result.error || 'Yerel sync durumu yazılamadı.');
 }
@@ -596,19 +521,21 @@ function readSnapshots(folder, projectId) {
             warnings.push(error.message);
         }
     }
-    const deviceDirectories = entries.filter((entry) =>
-        entry.isDirectory() && !entry.isSymbolicLink() &&
-        /^device_[A-Za-z0-9._:-]{4,180}$/.test(entry.name)
-    ).slice(0, 200);
+    const deviceDirectories = entries
+        .filter((entry) => entry.isDirectory() && !entry.isSymbolicLink() && /^device_[A-Za-z0-9._:-]{4,180}$/.test(entry.name))
+        .slice(0, 200);
     for (const entry of deviceDirectories) {
         try {
             const deviceDirectory = path.join(directory, entry.name);
             const index = readJson(path.join(deviceDirectory, 'index.json'));
             if (
-                index?.format !== SNAPSHOT_INDEX_FORMAT || index.version !== 1 ||
-                index.projectId !== projectId || !Array.isArray(index.chunks) ||
+                index?.format !== SNAPSHOT_INDEX_FORMAT ||
+                index.version !== 1 ||
+                index.projectId !== projectId ||
+                !Array.isArray(index.chunks) ||
                 index.chunks.length > 500
-            ) continue;
+            )
+                continue;
             const records = [];
             for (const name of index.chunks) {
                 if (!/^g[A-Za-z0-9_:-]{4,80}_\d{4}\.json$/.test(String(name))) {
@@ -616,10 +543,13 @@ function readSnapshots(folder, projectId) {
                 }
                 const chunk = readJson(path.join(deviceDirectory, name));
                 if (
-                    chunk?.format !== SNAPSHOT_CHUNK_FORMAT || chunk.version !== 1 ||
-                    chunk.projectId !== projectId || chunk.deviceId !== index.deviceId ||
+                    chunk?.format !== SNAPSHOT_CHUNK_FORMAT ||
+                    chunk.version !== 1 ||
+                    chunk.projectId !== projectId ||
+                    chunk.deviceId !== index.deviceId ||
                     !Array.isArray(chunk.records)
-                ) throw new Error('Sync parçası doğrulanamadı.');
+                )
+                    throw new Error('Sync parçası doğrulanamadı.');
                 records.push(...chunk.records);
             }
             snapshots.push(syncCore.makeDeviceSnapshot({ ...index, records }));
@@ -636,7 +566,9 @@ function collectConflicts(baseRecords, localRecords, snapshots, ownDeviceId, han
     for (const snapshot of snapshots) {
         if (snapshot.deviceId === ownDeviceId) continue;
         const plan = syncCore.planMergedRecords({
-            baseRecords, localRecords, remoteRecords: snapshot.records || []
+            baseRecords,
+            localRecords,
+            remoteRecords: snapshot.records || []
         });
         for (const conflict of plan.conflicts) {
             const signature = `${conflict.key}:${conflict.loser?.hash}:${conflict.loser?.version?.deviceId}`;
@@ -651,9 +583,7 @@ function collectConflicts(baseRecords, localRecords, snapshots, ownDeviceId, han
 
 function preserveRemoteDefaultsOnFirstJoin(entities, remoteRecords, stateRecords) {
     if (stateRecords.length) return entities;
-    const remote = new Set((remoteRecords || [])
-        .filter((record) => !record.deleted)
-        .map((record) => record.key));
+    const remote = new Set((remoteRecords || []).filter((record) => !record.deleted).map((record) => record.key));
     return entities.filter((entity) => {
         if (entity.kind !== 'config' || !remote.has(`config:${entity.id}`)) return true;
         const value = entity.payload?.value;
@@ -673,21 +603,14 @@ async function performPisiSync(projectFolder, folder, reason = 'manual') {
         foldedBefore.records,
         state.records
     );
-    const editorAssetsBefore = reconcilePisiSyncEditorAssets(
-        projectFolder,
-        folder,
-        entities
-    );
+    const editorAssetsBefore = reconcilePisiSyncEditorAssets(projectFolder, folder, entities);
     const prepared = syncCore.prepareDeviceRecords({
         entities,
         baseRecords: state.records,
         deviceId,
         clock: Math.max(state.clock, foldedBefore.clock)
     });
-    const detectedConflicts = collectConflicts(
-        state.records, prepared.records, remote.snapshots, deviceId,
-        state.handledConflicts
-    );
+    const detectedConflicts = collectConflicts(state.records, prepared.records, remote.snapshots, deviceId, state.handledConflicts);
     const conflicts = detectedConflicts.conflicts;
     const localSnapshot = syncCore.makeDeviceSnapshot({
         projectId: state.projectId,
@@ -702,20 +625,16 @@ async function performPisiSync(projectFolder, folder, reason = 'manual') {
         localRecords: prepared.records,
         remoteRecords: folded.records
     });
-    const applied = plan.apply.length || conflicts.length
-        ? await Promise.resolve(modules['main.atomicMutation'].runPisiAtomicMutation(
-            projectFolder,
-            'sync.apply.v1',
-            () => modules['main.syncProjectAdapter']
-                .applyPisiSyncRecords(projectFolder, plan.records, conflicts)
-        ))
-        : { documents: 0, tasks: 0, conflicts: 0, recoveredToSyncTrash: 0 };
+    const applied =
+        plan.apply.length || conflicts.length
+            ? await Promise.resolve(
+                  modules['main.atomicMutation'].runPisiAtomicMutation(projectFolder, 'sync.apply.v1', () =>
+                      modules['main.syncProjectAdapter'].applyPisiSyncRecords(projectFolder, plan.records, conflicts)
+                  )
+              )
+            : { documents: 0, tasks: 0, conflicts: 0, recoveredToSyncTrash: 0 };
     const finalEntities = modules['main.syncProjectAdapter'].exportPisiSyncEntities(projectFolder);
-    const editorAssetsAfter = reconcilePisiSyncEditorAssets(
-        projectFolder,
-        folder,
-        finalEntities
-    );
+    const editorAssetsAfter = reconcilePisiSyncEditorAssets(projectFolder, folder, finalEntities);
     const finalized = syncCore.prepareDeviceRecords({
         entities: finalEntities,
         baseRecords: plan.records,
@@ -729,9 +648,8 @@ async function performPisiSync(projectFolder, folder, reason = 'manual') {
         records: finalized.records,
         clock: finalized.clock
     });
-    const ownSnapshotIsCurrent = remote.snapshots.some((item) =>
-        item.deviceId === deviceId &&
-        syncCore.hashValue(item.records || []) === syncCore.hashValue(snapshot.records)
+    const ownSnapshotIsCurrent = remote.snapshots.some(
+        (item) => item.deviceId === deviceId && syncCore.hashValue(item.records || []) === syncCore.hashValue(snapshot.records)
     );
     if (!ownSnapshotIsCurrent) writeDeviceSnapshot(folder, snapshot);
     const baseSummary = syncCore.summarizeSyncPlan(plan);
@@ -739,20 +657,12 @@ async function performPisiSync(projectFolder, folder, reason = 'manual') {
         ...baseSummary,
         conflicts: applied.conflicts,
         recoveredToSyncTrash: applied.recoveredToSyncTrash,
-        filesVerified: finalized.records.filter((record) =>
-            !record.deleted && (record.kind === 'node' || record.kind === 'map')
-        ).length,
-        warnings: [
-            ...remote.warnings,
-            ...editorAssetsBefore.warnings,
-            ...editorAssetsAfter.warnings
-        ],
-        editorAssetsUploaded:
-            editorAssetsBefore.uploaded + editorAssetsAfter.uploaded,
-        editorAssetsDownloaded:
-            editorAssetsBefore.downloaded + editorAssetsAfter.downloaded,
-        devices: new Set(remote.snapshots.map((item) => item.deviceId).filter(Boolean)).size +
-            (remote.snapshots.some((item) => item.deviceId === deviceId) ? 0 : 1),
+        filesVerified: finalized.records.filter((record) => !record.deleted && (record.kind === 'node' || record.kind === 'map')).length,
+        warnings: [...remote.warnings, ...editorAssetsBefore.warnings, ...editorAssetsAfter.warnings],
+        editorAssetsUploaded: editorAssetsBefore.uploaded + editorAssetsAfter.uploaded,
+        editorAssetsDownloaded: editorAssetsBefore.downloaded + editorAssetsAfter.downloaded,
+        devices:
+            new Set(remote.snapshots.map((item) => item.deviceId).filter(Boolean)).size + (remote.snapshots.some((item) => item.deviceId === deviceId) ? 0 : 1),
         reason,
         syncedAt: new Date().toISOString()
     };
@@ -761,10 +671,7 @@ async function performPisiSync(projectFolder, folder, reason = 'manual') {
         projectId: state.projectId,
         clock: finalized.clock,
         records: finalized.records,
-        handledConflicts: Array.from(new Set([
-            ...state.handledConflicts,
-            ...detectedConflicts.signatures
-        ])).slice(-256),
+        handledConflicts: Array.from(new Set([...state.handledConflicts, ...detectedConflicts.signatures])).slice(-256),
         lastSyncAt: result.syncedAt,
         lastResult: result
     });
@@ -780,9 +687,12 @@ function runPisiSync(options = {}) {
     const folder = assertFolder(configured.folder, projectFolder);
     const key = projectKey(projectFolder);
     if (!runningProjects.has(key)) {
-        runningProjects.set(key, Promise.resolve().then(() => performPisiSync(
-            projectFolder, folder, String(options.reason || 'manual')
-        )).finally(() => runningProjects.delete(key)));
+        runningProjects.set(
+            key,
+            Promise.resolve()
+                .then(() => performPisiSync(projectFolder, folder, String(options.reason || 'manual')))
+                .finally(() => runningProjects.delete(key))
+        );
     }
     return runningProjects.get(key);
 }
@@ -796,9 +706,7 @@ async function selectPisiSyncFolder() {
         properties: ['openDirectory', 'createDirectory']
     };
     const owner = globalThis.mainWindow;
-    const selection = owner
-        ? await dialog.showOpenDialog(owner, options)
-        : await dialog.showOpenDialog(options);
+    const selection = owner ? await dialog.showOpenDialog(owner, options) : await dialog.showOpenDialog(options);
     if (selection.canceled || !selection.filePaths?.[0]) return { ok: false, canceled: true };
     const folder = assertFolder(selection.filePaths[0], projectFolder);
     const config = getGlobalConfig();
@@ -821,9 +729,7 @@ function getPisiSyncStatus() {
             configured: Boolean(config.folder && fs.existsSync(config.folder)),
             folderName: config.folder ? path.basename(config.folder) : '',
             folderPath: config.folder || '',
-            usesProjectRoot: Boolean(
-                config.folder && path.resolve(config.folder) === path.resolve(projectFolder)
-            ),
+            usesProjectRoot: Boolean(config.folder && path.resolve(config.folder) === path.resolve(projectFolder)),
             projectId: state.projectId,
             deviceId: config.sync.deviceId,
             lastSyncAt: state.lastSyncAt,

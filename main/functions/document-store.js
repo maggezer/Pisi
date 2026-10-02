@@ -18,7 +18,7 @@ function ensurePisiSidecar(filePath, metadata) {
 
     const existingById = findExistingSidecarById(dir, ext, safeId);
 
-        if (existingById && normalizePathForCompare(existingById) !== normalizePathForCompare(desiredPath)) {
+    if (existingById && normalizePathForCompare(existingById) !== normalizePathForCompare(desiredPath)) {
         if (!fs.existsSync(desiredPath)) {
             renamePathInternal(existingById, desiredPath);
         }
@@ -49,15 +49,8 @@ function ensurePisiFileMetadata(filePath, options = {}) {
     const readResult = readJsonFileResult(filePath);
     let changed = false;
 
-    if (
-        !readResult.ok ||
-        !readResult.data ||
-        typeof readResult.data !== 'object' ||
-        Array.isArray(readResult.data)
-    ) {
-        const backupPath = persist
-            ? backupCorruptPisiFile(filePath)
-            : null;
+    if (!readResult.ok || !readResult.data || typeof readResult.data !== 'object' || Array.isArray(readResult.data)) {
+        const backupPath = persist ? backupCorruptPisiFile(filePath) : null;
 
         return {
             ok: false,
@@ -100,12 +93,8 @@ function ensurePisiFileMetadata(filePath, options = {}) {
         };
     }
 
-    const diaryDate = ext === '.node'
-        ? normalizePisiDiaryIsoDate(data.pisi.diaryDate)
-        : null;
-    const cleanVisibleTitle = diaryDate
-        ? makePisiDiaryNodeTitle(diaryDate)
-        : getVisibleTitleFromFilePath(filePath, ext, data.pisi.id);
+    const diaryDate = ext === '.node' ? normalizePisiDiaryIsoDate(data.pisi.diaryDate) : null;
+    const cleanVisibleTitle = diaryDate ? makePisiDiaryNodeTitle(diaryDate) : getVisibleTitleFromFilePath(filePath, ext, data.pisi.id);
 
     if (data.pisi.title !== cleanVisibleTitle) {
         data.pisi.title = cleanVisibleTitle;
@@ -140,23 +129,15 @@ function ensurePisiFileMetadata(filePath, options = {}) {
             changed = true;
         }
 
-        const normalizedConnections = normalizeNodeConnectionTypes(
-            data.pisi.connectionTypes
-        );
+        const normalizedConnections = normalizeNodeConnectionTypes(data.pisi.connectionTypes);
 
-        if (
-            JSON.stringify(data.pisi.connectionTypes) !==
-            JSON.stringify(normalizedConnections)
-        ) {
+        if (JSON.stringify(data.pisi.connectionTypes) !== JSON.stringify(normalizedConnections)) {
             data.pisi.connectionTypes = normalizedConnections;
             changed = true;
         }
     }
 
-    if (
-        ext === '.map' &&
-        (!data.map || typeof data.map !== 'object' || Array.isArray(data.map))
-    ) {
+    if (ext === '.map' && (!data.map || typeof data.map !== 'object' || Array.isArray(data.map))) {
         data.map = {
             nodes: [],
             relationshipViews: [],
@@ -179,25 +160,13 @@ function ensurePisiFileMetadata(filePath, options = {}) {
         }
     }
 
-    const desiredSidecarName = getPisiSidecarName(
-        data.pisi.title,
-        ext,
-        data.pisi.id
-    );
-    const desiredSidecarPath = desiredSidecarName
-        ? path.join(path.dirname(filePath), desiredSidecarName)
-        : null;
+    const desiredSidecarName = getPisiSidecarName(data.pisi.title, ext, data.pisi.id);
+    const desiredSidecarPath = desiredSidecarName ? path.join(path.dirname(filePath), desiredSidecarName) : null;
     const sidecarPath = ensureSidecar
         ? ensurePisiSidecar(filePath, data.pisi)
-        : (
-            desiredSidecarPath && fs.existsSync(desiredSidecarPath)
-                ? desiredSidecarPath
-                : findExistingSidecarById(
-                    path.dirname(filePath),
-                    ext,
-                    data.pisi.id
-                )
-        );
+        : desiredSidecarPath && fs.existsSync(desiredSidecarPath)
+          ? desiredSidecarPath
+          : findExistingSidecarById(path.dirname(filePath), ext, data.pisi.id);
 
     if (changed && persist) {
         writePisiDocument(filePath, data);
@@ -229,9 +198,7 @@ function createUniquePisiFile(folderPath, ext, options = {}) {
         };
     }
 
-    const baseName = ext === '.map'
-        ? translatePisiMain('Yeni Map')
-        : translatePisiMain('Yeni Node');
+    const baseName = ext === '.map' ? translatePisiMain('Yeni Map') : translatePisiMain('Yeni Node');
 
     let fileName = baseName + ext;
     let fullPath = path.join(folderPath, fileName);
@@ -277,11 +244,7 @@ function normalizePisiDiaryIsoDate(value) {
     const day = Number(match[3]);
     const date = new Date(year, month - 1, day);
 
-    if (
-        date.getFullYear() !== year ||
-        date.getMonth() !== month - 1 ||
-        date.getDate() !== day
-    ) {
+    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
         return null;
     }
 
@@ -333,11 +296,7 @@ function ensurePisiDiaryFolder(projectFolder) {
     sealInternalFileChange(diaryFolder);
 
     if (!fs.existsSync(markerPath)) {
-        writeFileAtomic(
-            markerPath,
-            'Bu klasör PISI diary özelliği tarafından yönetilir.\n',
-            { backup: false }
-        );
+        writeFileAtomic(markerPath, 'Bu klasör PISI diary özelliği tarafından yönetilir.\n', { backup: false });
     }
 
     return {
@@ -396,23 +355,16 @@ function getOrCreateDiaryNode(projectFolder, isoDate) {
 
         if (
             ensured.data?.pisi &&
-            (
-                ensured.data.pisi.diaryDate !== normalizedDate ||
+            (ensured.data.pisi.diaryDate !== normalizedDate ||
                 ensured.data.pisi.parentMap !== 'diary' ||
-                ensured.data.pisi.title !== makePisiDiaryNodeTitle(normalizedDate)
-            )
+                ensured.data.pisi.title !== makePisiDiaryNodeTitle(normalizedDate))
         ) {
             ensured.data.pisi.diaryDate = normalizedDate;
             ensured.data.pisi.parentMap = 'diary';
             ensured.data.pisi.title = makePisiDiaryNodeTitle(normalizedDate);
             ensured.data.pisi.updatedAt = new Date().toISOString();
-            const repairedSidecarPath = ensurePisiSidecar(
-                nodePath,
-                ensured.data.pisi
-            );
-            ensured.data.pisi.sidecar = repairedSidecarPath
-                ? path.basename(repairedSidecarPath)
-                : ensured.data.pisi.sidecar;
+            const repairedSidecarPath = ensurePisiSidecar(nodePath, ensured.data.pisi);
+            ensured.data.pisi.sidecar = repairedSidecarPath ? path.basename(repairedSidecarPath) : ensured.data.pisi.sidecar;
             writePisiDocument(nodePath, ensured.data);
             ensured.metadata = ensured.data.pisi;
             ensured.sidecarPath = repairedSidecarPath;
@@ -465,14 +417,8 @@ function sanitizePisiDiaryBlockHtml(html = '') {
         .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '')
         .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '')
         .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '')
-        .replace(
-            /\s(href|src|xlink:href|formaction)\s*=\s*(["'])\s*(?:javascript|vbscript|data\s*:\s*text\/html)[\s\S]*?\2/gi,
-            ''
-        )
-        .replace(
-            /\s(href|src|xlink:href|formaction)\s*=\s*(?:javascript|vbscript|data\s*:\s*text\/html)[^\s>]*/gi,
-            ''
-        )
+        .replace(/\s(href|src|xlink:href|formaction)\s*=\s*(["'])\s*(?:javascript|vbscript|data\s*:\s*text\/html)[\s\S]*?\2/gi, '')
+        .replace(/\s(href|src|xlink:href|formaction)\s*=\s*(?:javascript|vbscript|data\s*:\s*text\/html)[^\s>]*/gi, '')
         .replace(/\sstyle\s*=\s*(["'])[\s\S]*?(?:expression\s*\(|url\s*\(\s*["']?\s*(?:javascript|vbscript|data\s*:\s*text\/html))[\s\S]*?\1/gi, '')
         .replace(/\sstyle\s*=\s*[^\s>]*(?:expression\s*\(|url\s*\()[^\s>]*/gi, '');
 }
@@ -483,21 +429,24 @@ function normalizePisiDiarySyncEntry(entry) {
     const date = normalizePisiDiaryIsoDate(entry?.date);
     if (!date) return null;
 
-    const nodePath = String(entry.nodePath || '').trim().slice(0, 32768);
-    const blockId = String(entry.blockId || '').trim().slice(0, 500);
-    const tag = String(entry.tag || '').trim().slice(0, 200);
-    const text = String(entry.text || '').trim().slice(0, 250000);
+    const nodePath = String(entry.nodePath || '')
+        .trim()
+        .slice(0, 32768);
+    const blockId = String(entry.blockId || '')
+        .trim()
+        .slice(0, 500);
+    const tag = String(entry.tag || '')
+        .trim()
+        .slice(0, 200);
+    const text = String(entry.text || '')
+        .trim()
+        .slice(0, 250000);
     if (!nodePath || !tag) return null;
 
-    const sourceIdentity = blockId || crypto
-        .createHash('sha256')
-        .update(text)
-        .digest('hex');
+    const sourceIdentity = blockId || crypto.createHash('sha256').update(text).digest('hex');
     const sourceKey = [nodePath, sourceIdentity, tag].join('::');
     const rawPriority = Number(entry.priority);
-    const priority = Number.isFinite(rawPriority)
-        ? Math.max(-1000000, Math.min(1000000, rawPriority))
-        : 0;
+    const priority = Number.isFinite(rawPriority) ? Math.max(-1000000, Math.min(1000000, rawPriority)) : 0;
     const allowedStatuses = new Set(['todo', 'doing', 'waiting', 'blocked']);
     const allowedRepeats = new Set(['none', 'daily', 'weekdays', 'weekly', 'monthly']);
     const status = String(entry.status || 'todo').toLowerCase();
@@ -515,13 +464,9 @@ function normalizePisiDiarySyncEntry(entry) {
         status: allowedStatuses.has(status) ? status : 'todo',
         repeat: allowedRepeats.has(repeat) ? repeat : 'none',
         parentId: String(entry.parentId || '').slice(0, 2000),
-        manualOrder: Number.isFinite(rawOrder)
-            ? Math.max(0, Math.min(1000000, rawOrder))
-            : null,
+        manualOrder: Number.isFinite(rawOrder) ? Math.max(0, Math.min(1000000, rawOrder)) : null,
         text,
-        html: sanitizePisiDiaryBlockHtml(
-            String(entry.html || '').slice(0, 2000000)
-        )
+        html: sanitizePisiDiaryBlockHtml(String(entry.html || '').slice(0, 2000000))
     };
 }
 function buildPisiDiaryManagedSection(isoDate, entries = []) {
@@ -550,23 +495,24 @@ function buildPisiDiaryManagedSection(isoDate, entries = []) {
             return b.priority - a.priority;
         })
         .map((entry) => {
-        const safeSourceKey = escapeHtmlForPisiDiary(entry.sourceKey);
-        const safeNodeTitle = escapeHtmlForPisiDiary(entry.nodeTitle || 'Node');
-        const safeTag = escapeHtmlForPisiDiary(entry.tag || '');
-        const safeText = escapeHtmlForPisiDiary(entry.text || '');
-        const safeStatus = escapeHtmlForPisiDiary(statusLabels[entry.status] || statusLabels.todo);
-        const safeRepeat = escapeHtmlForPisiDiary(repeatLabels[entry.repeat] || '');
-        const safeParent = escapeHtmlForPisiDiary(entry.parentId || '');
-        const parentClass = entry.parentId ? ' has-parent' : '';
-        const repeatMeta = safeRepeat ? ` · ${safeRepeat}` : '';
-        const blockHtml = entry.html || `<div>${safeText || '(boş blok)'}</div>`;
+            const safeSourceKey = escapeHtmlForPisiDiary(entry.sourceKey);
+            const safeNodeTitle = escapeHtmlForPisiDiary(entry.nodeTitle || 'Node');
+            const safeTag = escapeHtmlForPisiDiary(entry.tag || '');
+            const safeText = escapeHtmlForPisiDiary(entry.text || '');
+            const safeStatus = escapeHtmlForPisiDiary(statusLabels[entry.status] || statusLabels.todo);
+            const safeRepeat = escapeHtmlForPisiDiary(repeatLabels[entry.repeat] || '');
+            const safeParent = escapeHtmlForPisiDiary(entry.parentId || '');
+            const parentClass = entry.parentId ? ' has-parent' : '';
+            const repeatMeta = safeRepeat ? ` · ${safeRepeat}` : '';
+            const blockHtml = entry.html || `<div>${safeText || '(boş blok)'}</div>`;
 
-        return `
+            return `
 <div class="pisi-diary-managed-block${parentClass}" data-pisi-diary-source="${safeSourceKey}" data-pisi-diary-status="${entry.status}" data-pisi-diary-parent="${safeParent}">
     <div class="pisi-diary-managed-meta">${safeNodeTitle} · ..${safeTag} · ${safeStatus}${repeatMeta}</div>
     ${blockHtml}
 </div>`;
-    }).join('\n');
+        })
+        .join('\n');
 
     return `${PISI_DIARY_MANAGED_START}
 <h3>Görevler · ${safeDate}</h3>
@@ -578,7 +524,8 @@ function listPisiDiaryNodePaths(projectFolder) {
 
     if (!fs.existsSync(diaryFolder)) return [];
 
-    return fs.readdirSync(diaryFolder, { withFileTypes: true })
+    return fs
+        .readdirSync(diaryFolder, { withFileTypes: true })
         .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.node'))
         .map((entry) => path.join(diaryFolder, entry.name));
 }
@@ -595,10 +542,7 @@ function listPisiDiaryDates(projectFolder) {
 
         const diaryFolder = path.join(projectFolder, 'diary');
 
-        if (
-            !fs.existsSync(diaryFolder) ||
-            !isPisiManagedDiaryFolder(diaryFolder)
-        ) {
+        if (!fs.existsSync(diaryFolder) || !isPisiManagedDiaryFolder(diaryFolder)) {
             return {
                 ok: true,
                 dates: []
@@ -663,13 +607,7 @@ function syncDiaryMissions(projectFolder, payload = {}) {
             };
         }
 
-        if (
-            !entriesInput.length &&
-            (
-                !fs.existsSync(diaryFolderPath) ||
-                !isPisiManagedDiaryFolder(diaryFolderPath)
-            )
-        ) {
+        if (!entriesInput.length && (!fs.existsSync(diaryFolderPath) || !isPisiManagedDiaryFolder(diaryFolderPath))) {
             return {
                 ok: true,
                 updatedCount: 0,
@@ -730,18 +668,14 @@ function syncDiaryMissions(projectFolder, payload = {}) {
 
             if (!ensured.ok || ensured.metadata?.type !== 'node') continue;
 
-            const fileDate =
-                normalizePisiDiaryIsoDate(ensured.data?.pisi?.diaryDate) ||
-                normalizePisiDiaryIsoDate(path.basename(nodePath, '.node'));
+            const fileDate = normalizePisiDiaryIsoDate(ensured.data?.pisi?.diaryDate) || normalizePisiDiaryIsoDate(path.basename(nodePath, '.node'));
 
             if (!fileDate) continue;
 
             const manualContent = stripPisiDiaryManagedSection(ensured.data.content || '');
             const entries = entriesByDate.get(fileDate) || [];
             const managedSection = buildPisiDiaryManagedSection(fileDate, entries);
-            const nextContent = managedSection
-                ? `${manualContent}${managedSection}`
-                : manualContent;
+            const nextContent = managedSection ? `${manualContent}${managedSection}` : manualContent;
 
             if (nextContent !== String(ensured.data.content || '')) {
                 ensured.data.content = nextContent;
@@ -810,18 +744,15 @@ function createNodeUnderMap(mapPath) {
         });
 
         const nodeList = listNodesForMap(mapPath);
-        const createdNode = nodeList.ok
-        ? nodeList.nodes.find((node) => node.id === nodeInfo.metadata.id)
-        : null;
+        const createdNode = nodeList.ok ? nodeList.nodes.find((node) => node.id === nodeInfo.metadata.id) : null;
 
         return {
-        ...nodeInfo,
-        parentMap: mapId,
-        mapPath,
-        mapSidecarPath,
-        node: createdNode
+            ...nodeInfo,
+            parentMap: mapId,
+            mapPath,
+            mapSidecarPath,
+            node: createdNode
         };
-        
     } catch (error) {
         return {
             ok: false,
@@ -861,10 +792,7 @@ function renamePisiFile(oldPath, newBaseName) {
         const dir = path.dirname(oldPath);
         const id = ensuredBefore.metadata.id;
         originalContent = fs.readFileSync(oldPath, 'utf-8');
-        oldSidecarPath = ensuredBefore.sidecarPath &&
-            fs.existsSync(ensuredBefore.sidecarPath)
-            ? ensuredBefore.sidecarPath
-            : null;
+        oldSidecarPath = ensuredBefore.sidecarPath && fs.existsSync(ensuredBefore.sidecarPath) ? ensuredBefore.sidecarPath : null;
 
         let cleanTitle = sanitizePisiBaseName(newBaseName);
 
@@ -875,24 +803,15 @@ function renamePisiFile(oldPath, newBaseName) {
 
         // Aynı görünen title'a izin veriyoruz.
         // Eğer plain dosya adı doluysa gerçek dosya adı title__id.ext olur.
-        newPath = getUniquePisiPhysicalPath(
-            dir,
-            cleanTitle,
-            ext,
-            id,
-            oldPath
-        );
+        newPath = getUniquePisiPhysicalPath(dir, cleanTitle, ext, id, oldPath);
         const newSidecarName = getPisiSidecarName(cleanTitle, ext, id);
-        newSidecarPath = newSidecarName
-            ? path.join(dir, newSidecarName)
-            : null;
+        newSidecarPath = newSidecarName ? path.join(dir, newSidecarName) : null;
 
         if (
             oldSidecarPath &&
             newSidecarPath &&
             fs.existsSync(newSidecarPath) &&
-            normalizePathForCompare(oldSidecarPath) !==
-                normalizePathForCompare(newSidecarPath)
+            normalizePathForCompare(oldSidecarPath) !== normalizePathForCompare(newSidecarPath)
         ) {
             return {
                 ok: false,
@@ -905,12 +824,7 @@ function renamePisiFile(oldPath, newBaseName) {
             fileMoved = true;
         }
 
-        if (
-            oldSidecarPath &&
-            newSidecarPath &&
-            normalizePathForCompare(oldSidecarPath) !==
-                normalizePathForCompare(newSidecarPath)
-        ) {
+        if (oldSidecarPath && newSidecarPath && normalizePathForCompare(oldSidecarPath) !== normalizePathForCompare(newSidecarPath)) {
             renamePathInternal(oldSidecarPath, newSidecarPath);
             sidecarMoved = true;
         }
@@ -941,10 +855,12 @@ function renamePisiFile(oldPath, newBaseName) {
                     newPath
                 },
                 ...(oldSidecarPath && ensuredAfter.sidecarPath
-                    ? [{
-                        oldPath: oldSidecarPath,
-                        newPath: ensuredAfter.sidecarPath
-                    }]
+                    ? [
+                          {
+                              oldPath: oldSidecarPath,
+                              newPath: ensuredAfter.sidecarPath
+                          }
+                      ]
                     : [])
             ]
         };
@@ -952,13 +868,7 @@ function renamePisiFile(oldPath, newBaseName) {
         const rollbackErrors = [];
 
         try {
-            if (
-                sidecarMoved &&
-                newSidecarPath &&
-                oldSidecarPath &&
-                fs.existsSync(newSidecarPath) &&
-                !fs.existsSync(oldSidecarPath)
-            ) {
+            if (sidecarMoved && newSidecarPath && oldSidecarPath && fs.existsSync(newSidecarPath) && !fs.existsSync(oldSidecarPath)) {
                 renamePathInternal(newSidecarPath, oldSidecarPath);
             }
         } catch (rollbackError) {
@@ -966,12 +876,7 @@ function renamePisiFile(oldPath, newBaseName) {
         }
 
         try {
-            if (
-                fileMoved &&
-                newPath &&
-                fs.existsSync(newPath) &&
-                !fs.existsSync(oldPath)
-            ) {
+            if (fileMoved && newPath && fs.existsSync(newPath) && !fs.existsSync(oldPath)) {
                 renamePathInternal(newPath, oldPath);
             }
 
@@ -984,9 +889,7 @@ function renamePisiFile(oldPath, newBaseName) {
 
         return {
             ok: false,
-            error: rollbackErrors.length
-                ? `${error.message} Geri alma tamamlanamadı: ${rollbackErrors.join(' | ')}`
-                : error.message,
+            error: rollbackErrors.length ? `${error.message} Geri alma tamamlanamadı: ${rollbackErrors.join(' | ')}` : error.message,
             rolledBack: rollbackErrors.length === 0
         };
     }
@@ -994,77 +897,113 @@ function renamePisiFile(oldPath, newBaseName) {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "ensurePisiSidecar": {
+    ensurePisiSidecar: {
         enumerable: true,
-        get() { return ensurePisiSidecar; }
+        get() {
+            return ensurePisiSidecar;
+        }
     },
-    "ensurePisiFileMetadata": {
+    ensurePisiFileMetadata: {
         enumerable: true,
-        get() { return ensurePisiFileMetadata; }
+        get() {
+            return ensurePisiFileMetadata;
+        }
     },
-    "createUniquePisiFile": {
+    createUniquePisiFile: {
         enumerable: true,
-        get() { return createUniquePisiFile; }
+        get() {
+            return createUniquePisiFile;
+        }
     },
-    "normalizePisiDiaryIsoDate": {
+    normalizePisiDiaryIsoDate: {
         enumerable: true,
-        get() { return normalizePisiDiaryIsoDate; }
+        get() {
+            return normalizePisiDiaryIsoDate;
+        }
     },
-    "ensurePisiDiaryFolder": {
+    ensurePisiDiaryFolder: {
         enumerable: true,
-        get() { return ensurePisiDiaryFolder; }
+        get() {
+            return ensurePisiDiaryFolder;
+        }
     },
-    "makePisiDiaryNodeTitle": {
+    makePisiDiaryNodeTitle: {
         enumerable: true,
-        get() { return makePisiDiaryNodeTitle; }
+        get() {
+            return makePisiDiaryNodeTitle;
+        }
     },
-    "getPisiDiaryNodePath": {
+    getPisiDiaryNodePath: {
         enumerable: true,
-        get() { return getPisiDiaryNodePath; }
+        get() {
+            return getPisiDiaryNodePath;
+        }
     },
-    "getOrCreateDiaryNode": {
+    getOrCreateDiaryNode: {
         enumerable: true,
-        get() { return getOrCreateDiaryNode; }
+        get() {
+            return getOrCreateDiaryNode;
+        }
     },
-    "stripPisiDiaryManagedSection": {
+    stripPisiDiaryManagedSection: {
         enumerable: true,
-        get() { return stripPisiDiaryManagedSection; }
+        get() {
+            return stripPisiDiaryManagedSection;
+        }
     },
-    "escapeHtmlForPisiDiary": {
+    escapeHtmlForPisiDiary: {
         enumerable: true,
-        get() { return escapeHtmlForPisiDiary; }
+        get() {
+            return escapeHtmlForPisiDiary;
+        }
     },
-    "sanitizePisiDiaryBlockHtml": {
+    sanitizePisiDiaryBlockHtml: {
         enumerable: true,
-        get() { return sanitizePisiDiaryBlockHtml; }
+        get() {
+            return sanitizePisiDiaryBlockHtml;
+        }
     },
-    "normalizePisiDiarySyncEntry": {
+    normalizePisiDiarySyncEntry: {
         enumerable: true,
-        get() { return normalizePisiDiarySyncEntry; }
+        get() {
+            return normalizePisiDiarySyncEntry;
+        }
     },
-    "buildPisiDiaryManagedSection": {
+    buildPisiDiaryManagedSection: {
         enumerable: true,
-        get() { return buildPisiDiaryManagedSection; }
+        get() {
+            return buildPisiDiaryManagedSection;
+        }
     },
-    "listPisiDiaryNodePaths": {
+    listPisiDiaryNodePaths: {
         enumerable: true,
-        get() { return listPisiDiaryNodePaths; }
+        get() {
+            return listPisiDiaryNodePaths;
+        }
     },
-    "listPisiDiaryDates": {
+    listPisiDiaryDates: {
         enumerable: true,
-        get() { return listPisiDiaryDates; }
+        get() {
+            return listPisiDiaryDates;
+        }
     },
-    "syncDiaryMissions": {
+    syncDiaryMissions: {
         enumerable: true,
-        get() { return syncDiaryMissions; }
+        get() {
+            return syncDiaryMissions;
+        }
     },
-    "createNodeUnderMap": {
+    createNodeUnderMap: {
         enumerable: true,
-        get() { return createNodeUnderMap; }
+        get() {
+            return createNodeUnderMap;
+        }
     },
-    "renamePisiFile": {
+    renamePisiFile: {
         enumerable: true,
-        get() { return renamePisiFile; }
+        get() {
+            return renamePisiFile;
+        }
     }
 });
-registerMainModule("main.documentStore", moduleApi);
+registerMainModule('main.documentStore', moduleApi);

@@ -24,9 +24,15 @@ function loadCustomizationRuntime(initialStorage = {}) {
     const document = {
         documentElement,
         body: { dataset: {} },
-        querySelectorAll() { return []; },
-        querySelector() { return null; },
-        getElementById() { return null; },
+        querySelectorAll() {
+            return [];
+        },
+        querySelector() {
+            return null;
+        },
+        getElementById() {
+            return null;
+        },
         dispatchEvent() {}
     };
     const context = {
@@ -34,15 +40,21 @@ function loadCustomizationRuntime(initialStorage = {}) {
         document,
         window: { pisiI18n: null },
         localStorage: {
-            getItem(key) { return storage.get(key) ?? null; },
-            setItem(key, value) { storage.set(key, String(value)); }
+            getItem(key) {
+                return storage.get(key) ?? null;
+            },
+            setItem(key, value) {
+                storage.set(key, String(value));
+            }
         },
         CustomEvent: class CustomEvent {},
         registerModule() {}
     };
-    const source = read('renderer/shell/pisi-customizations.mjs')
-        .replace(/^import[^\n]+\n/, '')
-        .replace(/\nexport\s*\{[\s\S]*?\};\s*$/, '') + `
+    const source =
+        read('renderer/shell/pisi-customizations.mjs')
+            .replace(/^import[^\n]+\n/, '')
+            .replace(/\nexport\s*\{[\s\S]*?\};\s*$/, '') +
+        `
 globalThis.__pisiThemeTest = {
     applyPisiMapNodeCustomization,
     resolvePisiCustomizationValue,
@@ -86,12 +98,12 @@ test('light palette son CSS katmanında ana Pisi yüzeylerini kapsar', () => {
     const themes = read('styles/90-themes.css');
 
     assert.match(style, /styles\/90-themes\.css/);
-    assert.match(themes, /html\[data-pisi-theme="light"\] body/);
-    assert.match(themes, /html\[data-pisi-theme="light"\] #map-canvas/);
-    assert.match(themes, /html\[data-pisi-theme="light"\] #center-node-editor-content/);
-    assert.match(themes, /html\[data-pisi-theme="light"\] \.pisi-editor-toolbar/);
-    assert.match(themes, /html\[data-pisi-theme="light"\] \.pisi-command-center-dialog/);
-    assert.match(themes, /html\[data-pisi-theme="light"\] \.pisi-mission-card/);
+    assert.match(themes, /html\[data-pisi-theme=["\']light["\']\] body/);
+    assert.match(themes, /html\[data-pisi-theme=["\']light["\']\] #map-canvas/);
+    assert.match(themes, /html\[data-pisi-theme=["\']light["\']\] #center-node-editor-content/);
+    assert.match(themes, /html\[data-pisi-theme=["\']light["\']\] \.pisi-editor-toolbar/);
+    assert.match(themes, /html\[data-pisi-theme=["\']light["\']\] \.pisi-command-center-dialog/);
+    assert.match(themes, /html\[data-pisi-theme=["\']light["\']\] \.pisi-mission-card/);
 });
 
 test('map node varsayılanı iki yönde tema ile değişir, açık kullanıcı rengi korunur', () => {
@@ -108,7 +120,6 @@ test('map node varsayılanı iki yönde tema ile değişir, açık kullanıcı r
     assert.match(customizations, /root\.style\.setProperty\(cssVariable, value\)/);
 });
 
-
 test('map node fontu ve boyutları Preferences ayarlarından uygulanır', () => {
     const runtime = loadCustomizationRuntime({
         'pisi.customization.v1': JSON.stringify({
@@ -118,10 +129,7 @@ test('map node fontu ve boyutları Preferences ayarlarından uygulanır', () => 
         })
     });
 
-    assert.equal(
-        runtime.cssVariables.get('--pisi-map-node-font-family'),
-        'Verdana, Geneva, sans-serif'
-    );
+    assert.equal(runtime.cssVariables.get('--pisi-map-node-font-family'), 'Verdana, Geneva, sans-serif');
     assert.equal(runtime.cssVariables.get('--pisi-map-node-title-size'), '17px');
     assert.equal(runtime.cssVariables.get('--pisi-map-node-text-size'), '15px');
 });
@@ -139,11 +147,11 @@ test('node kartı tipografi seçicisi okunaklı varsayılan ve iki tema stili su
     assert.match(customizations, /Segoe UI Variable Text/);
     assert.match(customizations, /Verdana, Geneva, sans-serif/);
     assert.match(customizations, /className = 'pisi-map-font-select'/);
-    assert.match(variables, /--pisi-map-node-font-family: "Segoe UI Variable Text"/);
+    assert.match(variables, /--pisi-map-node-font-family:\s*["\']Segoe UI Variable Text["\']/);
     assert.match(mapCss, /font-family: var\(--pisi-map-node-font-family\)/);
     assert.match(mapCss, /\.map-node-preview[\s\S]*?font-weight: 600;/);
     assert.match(preferencesCss, /\.pisi-map-font-select/);
-    assert.match(lightCss, /data-pisi-theme="light"[^\n]*\.pisi-map-font-select/);
+    assert.match(lightCss, /data-pisi-theme=["\']light["\'][^\n]*\.pisi-map-font-select/);
     for (const key of ['Nodebox font', 'Varsayılanlara dön']) {
         assert.equal(typeof tr[key], 'string', key);
         assert.equal(typeof eng[key], 'string', key);
@@ -158,31 +166,22 @@ test('eski açık tema rengi koyu temaya geçerken yenilenir', () => {
         })
     });
 
-    assert.equal(
-        runtime.cssVariables.get('--pisi-map-node-box-color'),
-        '#ffffff'
-    );
+    assert.equal(runtime.cssVariables.get('--pisi-map-node-box-color'), '#ffffff');
 
     runtime.api.setPisiThemePreference('dark');
 
     assert.equal(runtime.documentElement.dataset.pisiTheme, 'dark');
-    assert.equal(
-        runtime.cssVariables.get('--pisi-map-node-box-color'),
-        '#252526'
-    );
+    assert.equal(runtime.cssVariables.get('--pisi-map-node-box-color'), '#252526');
 });
 
 test('açıkça seçilen global ve node özel renkleri tema varsayılanını ezer', () => {
     const runtime = loadCustomizationRuntime({
         'pisi.theme.v1': 'dark'
     });
-    const explicitWhite = runtime.api.resolvePisiCustomizationValue(
-        'mapNodeBoxColor',
-        {
-            mapNodeBoxColor: '#ffffff',
-            _explicitThemeColorKeys: ['mapNodeBoxColor']
-        }
-    );
+    const explicitWhite = runtime.api.resolvePisiCustomizationValue('mapNodeBoxColor', {
+        mapNodeBoxColor: '#ffffff',
+        _explicitThemeColorKeys: ['mapNodeBoxColor']
+    });
     assert.equal(explicitWhite, '#ffffff');
 
     const nodeVariables = new Map();
@@ -200,8 +199,5 @@ test('açıkça seçilen global ve node özel renkleri tema varsayılanını eze
     runtime.api.applyPisiMapNodeCustomization(box, {
         customization: { cardColor: '#dec0de' }
     });
-    assert.equal(
-        nodeVariables.get('--pisi-map-node-box-color'),
-        '#dec0de'
-    );
+    assert.equal(nodeVariables.get('--pisi-map-node-box-color'), '#dec0de');
 });

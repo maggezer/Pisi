@@ -1,58 +1,28 @@
-import { registerModule } from "../core/module-registry.mjs";
-import {
-    makePisiSheetEmptyFilterTree
-} from "./pisi-editor-sheet-view-query-core.mjs";
+import { registerModule } from '../core/module-registry.mjs';
+import { makePisiSheetEmptyFilterTree } from './pisi-editor-sheet-view-query-core.mjs';
 
 function createPisiSheetViewId() {
     const uuid = globalThis.crypto?.randomUUID?.();
 
-    return uuid
-        ? 'view-' + uuid
-        : (
-            'view-' +
-            Date.now().toString(36) + '-' +
-            Math.random().toString(36).slice(2, 10)
-        );
+    return uuid ? 'view-' + uuid : 'view-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
 }
 
-function clonePisiSheetTableView(
-    table,
-    name = ''
-) {
+function clonePisiSheetTableView(table, name = '') {
     const database = getPisiSheetDatabase(table);
-    const active = database
-        ? getPisiSheetTableView(database)
-        : null;
+    const active = database ? getPisiSheetTableView(database) : null;
 
     if (!database || !active) return null;
 
     const view = {
         id: createPisiSheetViewId(),
         type: 'table',
-        name: String(
-            name ||
-            active.name ||
-            'Table'
-        ).slice(0, 80),
+        name: String(name || active.name || 'Table').slice(0, 80),
         fieldOrder: [...active.fieldOrder],
-        hiddenFieldIds: [
-            ...(active.hiddenFieldIds || [])
-        ],
-        filters: structuredClone(
-            active.filters || makePisiSheetEmptyFilterTree()
-        ),
-        sorts: Array.isArray(active.sorts)
-            ? structuredClone(active.sorts)
-            : [],
-        conditionalColors:
-            Array.isArray(active.conditionalColors)
-                ? structuredClone(
-                    active.conditionalColors
-                )
-                : [],
-        searchQuery: String(
-            active.searchQuery || ''
-        ).slice(0, 240),
+        hiddenFieldIds: [...(active.hiddenFieldIds || [])],
+        filters: structuredClone(active.filters || makePisiSheetEmptyFilterTree()),
+        sorts: Array.isArray(active.sorts) ? structuredClone(active.sorts) : [],
+        conditionalColors: Array.isArray(active.conditionalColors) ? structuredClone(active.conditionalColors) : [],
+        searchQuery: String(active.searchQuery || '').slice(0, 240),
         page: Number(active.page) || 1,
         pageSize: Number(active.pageSize) || 250,
         virtualScroll: structuredClone(
@@ -73,12 +43,7 @@ function setPisiSheetActiveView(table, viewId) {
     const database = getPisiSheetDatabase(table);
     if (!database) return null;
 
-    const view = database.views.find(
-        (candidate) => (
-            candidate.type === 'table' &&
-            candidate.id === viewId
-        )
-    );
+    const view = database.views.find((candidate) => candidate.type === 'table' && candidate.id === viewId);
 
     if (!view) return null;
 
@@ -92,10 +57,7 @@ function refreshPisiSheetActiveView(table) {
 }
 
 function activatePisiSheetView(table, viewId) {
-    const view = setPisiSheetActiveView(
-        table,
-        viewId
-    );
+    const view = setPisiSheetActiveView(table, viewId);
 
     if (!view) return null;
 
@@ -105,21 +67,29 @@ function activatePisiSheetView(table, viewId) {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "clonePisiSheetTableView": {
+    clonePisiSheetTableView: {
         enumerable: true,
-        get() { return clonePisiSheetTableView; }
+        get() {
+            return clonePisiSheetTableView;
+        }
     },
-    "setPisiSheetActiveView": {
+    setPisiSheetActiveView: {
         enumerable: true,
-        get() { return setPisiSheetActiveView; }
+        get() {
+            return setPisiSheetActiveView;
+        }
     },
-    "refreshPisiSheetActiveView": {
+    refreshPisiSheetActiveView: {
         enumerable: true,
-        get() { return refreshPisiSheetActiveView; }
+        get() {
+            return refreshPisiSheetActiveView;
+        }
     },
-    "activatePisiSheetView": {
+    activatePisiSheetView: {
         enumerable: true,
-        get() { return activatePisiSheetView; }
+        get() {
+            return activatePisiSheetView;
+        }
     }
 });
-registerModule("editor.sheetViewState", moduleApi);
+registerModule('editor.sheetViewState', moduleApi);

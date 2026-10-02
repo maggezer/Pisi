@@ -24,8 +24,5 @@ test('node modal close button sits flush in the top-right corner without a frame
 test('node modal close polish stylesheet is loaded last', () => {
     const style = read('style.css');
     assert.match(style, /styles\/101-node-modal-close\.css/);
-    assert.ok(
-        style.indexOf('styles/101-node-modal-close.css') >
-        style.indexOf('styles/100-map-task-count-badge.css')
-    );
+    assert.ok(style.indexOf('styles/101-node-modal-close.css') > style.indexOf('styles/100-map-task-count-badge.css'));
 });

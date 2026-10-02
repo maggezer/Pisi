@@ -6,7 +6,7 @@
     margin-top: 0;
 }
 
-html[data-pisi-theme="light"] #pisi-tag-menu .pisi-unified-command-option.format .pisi-tag-option-code,
+html[data-pisi-theme='light'] #pisi-tag-menu .pisi-unified-command-option.format .pisi-tag-option-code,
 body.pisi-light-theme #pisi-tag-menu .pisi-unified-command-option.format .pisi-tag-option-code {
     color: #7c3aed;
 }

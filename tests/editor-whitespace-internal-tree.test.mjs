@@ -10,9 +10,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 let treeFilterPromise = null;
 function loadTreeFilter() {
     if (!treeFilterPromise) {
-        treeFilterPromise = import(pathToFileURL(
-            path.join(root, 'renderer/tree/pisi-tree-internal-filter.mjs')
-        ).href);
+        treeFilterPromise = import(pathToFileURL(path.join(root, 'renderer/tree/pisi-tree-internal-filter.mjs')).href);
     }
     return treeFilterPromise;
 }
@@ -22,10 +20,7 @@ test('rich editor preserves repeated spaces as visible caret width', () => {
     const whitespaceStyles = read('styles/99-editor-whitespace.css');
 
     assert.match(styleIndex, /99-editor-whitespace\.css/);
-    assert.match(
-        whitespaceStyles,
-        /\.pisi-rich-editor \.pisi-editor-block,[\s\S]*\.pisi-rich-editor \.pisi-typing-style/
-    );
+    assert.match(whitespaceStyles, /\.pisi-rich-editor \.pisi-editor-block,[\s\S]*\.pisi-rich-editor \.pisi-typing-style/);
     assert.match(whitespaceStyles, /white-space: break-spaces;/);
 });
 

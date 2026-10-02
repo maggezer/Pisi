@@ -3,11 +3,7 @@ function makePisiCollapsedHubPortKey(nodeId, port) {
 }
 
 function isPisiHierarchyEdge(edge) {
-    return (
-        edge?.type === 'down-hub' &&
-        edge?.sourceRole === 'down-hub' &&
-        edge?.targetRole === 'up-hub'
-    );
+    return edge?.type === 'down-hub' && edge?.sourceRole === 'down-hub' && edge?.targetRole === 'up-hub';
 }
 
 function normalizePisiCollapsedHubKeys(collapsedHubPortKeys) {
@@ -35,11 +31,7 @@ function collectPisiCollapsedHubNodeIds(edges = [], collapsedHubPortKeys = []) {
         }
         hierarchyChildren.get(sourceId).push(targetId);
 
-        if (
-            collapsedKeys.has(
-                makePisiCollapsedHubPortKey(sourceId, edge.sourcePort || 'right')
-            )
-        ) {
+        if (collapsedKeys.has(makePisiCollapsedHubPortKey(sourceId, edge.sourcePort || 'right'))) {
             if (!collapsedBranches.has(sourceId)) {
                 collapsedBranches.set(sourceId, []);
             }
@@ -77,42 +69,22 @@ function collectPisiCollapsedHubCounts(edges = [], collapsedHubPortKeys = []) {
     for (const key of keys) {
         const [nodeId, port = 'right'] = String(key).split('::');
         if (!nodeId) continue;
-        const hidden = collectPisiCollapsedHubNodeIds(
-            edges,
-            [makePisiCollapsedHubPortKey(nodeId, port)]
-        );
+        const hidden = collectPisiCollapsedHubNodeIds(edges, [makePisiCollapsedHubPortKey(nodeId, port)]);
         counts.set(makePisiCollapsedHubPortKey(nodeId, port), hidden.size);
     }
     return counts;
 }
 
-function isPisiMapEdgeHiddenByCollapsedHub(
-    edge,
-    hiddenNodeIds = [],
-    collapsedHubPortKeys = []
-) {
-    const hiddenIds = hiddenNodeIds instanceof Set
-        ? hiddenNodeIds
-        : new Set(Array.isArray(hiddenNodeIds) ? hiddenNodeIds : []);
+function isPisiMapEdgeHiddenByCollapsedHub(edge, hiddenNodeIds = [], collapsedHubPortKeys = []) {
+    const hiddenIds = hiddenNodeIds instanceof Set ? hiddenNodeIds : new Set(Array.isArray(hiddenNodeIds) ? hiddenNodeIds : []);
 
-    if (
-        hiddenIds.has(String(edge?.sourceId || '')) ||
-        hiddenIds.has(String(edge?.targetId || ''))
-    ) {
+    if (hiddenIds.has(String(edge?.sourceId || '')) || hiddenIds.has(String(edge?.targetId || ''))) {
         return true;
     }
 
     if (!isPisiHierarchyEdge(edge)) return false;
 
-    return normalizePisiCollapsedHubKeys(collapsedHubPortKeys).has(
-        makePisiCollapsedHubPortKey(edge.sourceId, edge.sourcePort || 'right')
-    );
+    return normalizePisiCollapsedHubKeys(collapsedHubPortKeys).has(makePisiCollapsedHubPortKey(edge.sourceId, edge.sourcePort || 'right'));
 }
 
-export {
-    collectPisiCollapsedHubCounts,
-    collectPisiCollapsedHubNodeIds,
-    isPisiHierarchyEdge,
-    isPisiMapEdgeHiddenByCollapsedHub,
-    makePisiCollapsedHubPortKey
-};
+export { collectPisiCollapsedHubCounts, collectPisiCollapsedHubNodeIds, isPisiHierarchyEdge, isPisiMapEdgeHiddenByCollapsedHub, makePisiCollapsedHubPortKey };

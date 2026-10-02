@@ -9,70 +9,21 @@ const { pathToFileURL } = require('node:url');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const readJson = (file) => JSON.parse(read(file));
-const utilsPromise = import(
-    pathToFileURL(path.join(root, 'renderer/tags/pisi-todo-utils.mjs')).href
-);
+const utilsPromise = import(pathToFileURL(path.join(root, 'renderer/tags/pisi-todo-utils.mjs')).href);
 
 test('tekrarlayan görev tarihleri tüm desteklenen tekrar türlerinde ilerler', async () => {
-    const {
-        PISI_TODO_REPEAT_OPTIONS,
-        getNextPisiTodoDate,
-        getPisiTodayIsoDate
-    } = await utilsPromise;
+    const { PISI_TODO_REPEAT_OPTIONS, getNextPisiTodoDate, getPisiTodayIsoDate } = await utilsPromise;
 
     assert.deepEqual(
         PISI_TODO_REPEAT_OPTIONS.map((option) => option.value),
-        [
-            'none',
-            'daily',
-            'weekdays',
-            'weekly',
-            'biweekly',
-            'after-completion',
-            'monthly'
-        ]
+        ['none', 'daily', 'weekdays', 'weekly', 'biweekly', 'after-completion', 'monthly']
     );
-    assert.equal(
-        getPisiTodayIsoDate(
-            getNextPisiTodoDate(new Date(2026, 7, 5), 'daily')
-        ),
-        '2026-08-06'
-    );
-    assert.equal(
-        getPisiTodayIsoDate(
-            getNextPisiTodoDate(new Date(2026, 7, 7), 'weekdays')
-        ),
-        '2026-08-10'
-    );
-    assert.equal(
-        getPisiTodayIsoDate(
-            getNextPisiTodoDate(new Date(2026, 7, 5), 'weekly')
-        ),
-        '2026-08-12'
-    );
-    assert.equal(
-        getPisiTodayIsoDate(
-            getNextPisiTodoDate(new Date(2026, 7, 5), 'biweekly')
-        ),
-        '2026-08-19'
-    );
-    assert.equal(
-        getPisiTodayIsoDate(
-            getNextPisiTodoDate(
-                new Date(2026, 7, 5),
-                'after-completion',
-                new Date(2026, 7, 20),
-                3
-            )
-        ),
-        '2026-08-23'
-    );
-    assert.equal(
-        getPisiTodayIsoDate(
-            getNextPisiTodoDate(new Date(2026, 0, 31), 'monthly')
-        ),
-        '2026-02-28'
-    );
+    assert.equal(getPisiTodayIsoDate(getNextPisiTodoDate(new Date(2026, 7, 5), 'daily')), '2026-08-06');
+    assert.equal(getPisiTodayIsoDate(getNextPisiTodoDate(new Date(2026, 7, 7), 'weekdays')), '2026-08-10');
+    assert.equal(getPisiTodayIsoDate(getNextPisiTodoDate(new Date(2026, 7, 5), 'weekly')), '2026-08-12');
+    assert.equal(getPisiTodayIsoDate(getNextPisiTodoDate(new Date(2026, 7, 5), 'biweekly')), '2026-08-19');
+    assert.equal(getPisiTodayIsoDate(getNextPisiTodoDate(new Date(2026, 7, 5), 'after-completion', new Date(2026, 7, 20), 3)), '2026-08-23');
+    assert.equal(getPisiTodayIsoDate(getNextPisiTodoDate(new Date(2026, 0, 31), 'monthly')), '2026-02-28');
 });
 
 test('tekrar ve manuel sıra metadata alanları indeks ve sanitizer zincirinde korunur', () => {
@@ -80,10 +31,7 @@ test('tekrar ve manuel sıra metadata alanları indeks ve sanitizer zincirinde k
     const index = read('renderer/tags/pisi-tag-index.mjs');
     const editor = read('renderer/editor/pisi-node-editor.mjs');
 
-    for (const token of [
-        'data-pisi-todo-repeat',
-        'data-pisi-todo-order'
-    ]) {
+    for (const token of ['data-pisi-todo-repeat', 'data-pisi-todo-order']) {
         assert.match(editor, new RegExp(token));
     }
     assert.match(utils, /todoRepeats/);

@@ -1,4 +1,4 @@
-import { claimRendererBoot } from "./core/module-registry.mjs";
+import { claimRendererBoot } from './core/module-registry.mjs';
 
 claimRendererBoot('renderer.runtime', 'renderer/runtime.mjs');
 
@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     bindRightPanelTabs();
     setupPisiCustomizations();
     setupPisiRichToolbars();
-    
+
     bindPisiTagControls();
     bindPisiBlockIndexControls();
 
@@ -35,10 +35,7 @@ document.addEventListener('keydown', (event) => {
 
 // From renderer/pisi-calendar.js:1
 (function initPisiCalendarModule() {
-    const MONTH_NAMES = [
-        'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
-        'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
-    ];
+    const MONTH_NAMES = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 
     const WEEKDAY_NAMES = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 
@@ -131,9 +128,7 @@ document.addEventListener('keydown', (event) => {
 
     function readCalendarStateFromStorage() {
         try {
-            return JSON.parse(
-                localStorage.getItem(getCalendarStorageKey()) || 'null'
-            );
+            return JSON.parse(localStorage.getItem(getCalendarStorageKey()) || 'null');
         } catch {
             return null;
         }
@@ -332,10 +327,7 @@ document.addEventListener('keydown', (event) => {
         calendar.style.top = `${state.y}px`;
     }
 
-    function clampFloatingCalendarPosition(
-        calendar = ensureCalendarDom(),
-        state = getCalendarState()
-    ) {
+    function clampFloatingCalendarPosition(calendar = ensureCalendarDom(), state = getCalendarState()) {
         if (!calendar || state.dock !== 'float') return;
 
         const rect = calendar.getBoundingClientRect();
@@ -412,9 +404,7 @@ document.addEventListener('keydown', (event) => {
 
             clearCalendarDockZoneState();
             const currentDock = getCalendarState().dock;
-            const currentZone = currentDock === 'left' || currentDock === 'right'
-                ? getCalendarDockZone(currentDock)
-                : null;
+            const currentZone = currentDock === 'left' || currentDock === 'right' ? getCalendarDockZone(currentDock) : null;
 
             currentZone?.classList.add('has-calendar');
             saveCalendarStateToStorage();
@@ -436,18 +426,12 @@ document.addEventListener('keydown', (event) => {
         const target = getCalendarDockTargetFromPoint(x, y);
 
         document.querySelectorAll('.pisi-calendar-dock-zone').forEach((zone) => {
-            zone.classList.toggle(
-                'active-drop-target',
-                Boolean(target) && zone.dataset.calendarDockZone === target
-            );
+            zone.classList.toggle('active-drop-target', Boolean(target) && zone.dataset.calendarDockZone === target);
         });
     }
 
     function getCalendarDockTargetFromPoint(x, y) {
-        const zones = [
-            getCalendarDockZone('left'),
-            getCalendarDockZone('right')
-        ].filter(Boolean);
+        const zones = [getCalendarDockZone('left'), getCalendarDockZone('right')].filter(Boolean);
 
         for (const zone of zones) {
             const rect = zone.getBoundingClientRect();
@@ -545,9 +529,7 @@ document.addEventListener('keydown', (event) => {
 
             button.type = 'button';
             button.className = 'pisi-calendar-day';
-            button.title = diaryDates.has(isoDate)
-                ? `${isoDate} · diary node var`
-                : isoDate;
+            button.title = diaryDates.has(isoDate) ? `${isoDate} · diary node var` : isoDate;
             button.dataset.date = isoDate;
             button.innerHTML = `<span class="pisi-calendar-day-number">${dayDate.getDate()}</span>`;
 
@@ -591,9 +573,7 @@ document.addEventListener('keydown', (event) => {
 
         try {
             const result = await window.pisiProject.listDiaryDates(projectFolder);
-            const requestIsCurrent =
-                requestId === diaryDatesRefreshRequestId &&
-                projectKey === getCurrentCalendarProjectKey();
+            const requestIsCurrent = requestId === diaryDatesRefreshRequestId && projectKey === getCurrentCalendarProjectKey();
 
             if (requestIsCurrent && result?.ok) {
                 state.diaryDates = Array.isArray(result.dates) ? result.dates : [];
@@ -603,10 +583,10 @@ document.addEventListener('keydown', (event) => {
             return requestIsCurrent
                 ? result
                 : {
-                    ok: false,
-                    stale: true,
-                    error: 'Eski projeye ait takvim yanıtı yok sayıldı.'
-                };
+                      ok: false,
+                      stale: true,
+                      error: 'Eski projeye ait takvim yanıtı yok sayıldı.'
+                  };
         } catch (error) {
             console.error('[PISI] Diary tarihleri okunamadı:', error);
             return {
@@ -634,10 +614,7 @@ document.addEventListener('keydown', (event) => {
         saveCalendarStateToStorage();
         renderCalendar();
 
-        const result = await window.pisiProject?.getOrCreateDiaryNode?.(
-            window.currentProjectFolder,
-            isoDate
-        );
+        const result = await window.pisiProject?.getOrCreateDiaryNode?.(window.currentProjectFolder, isoDate);
 
         if (!result?.ok) {
             alert(result?.error || 'Diary node oluşturulamadı.');
@@ -688,19 +665,13 @@ document.addEventListener('keydown', (event) => {
         diarySyncInProgress = true;
 
         try {
-            const result = await window.pisiProject.syncDiaryMissions(
-                request.projectFolder,
-                {
-                    entries: request.entries,
-                    complete: true
-                }
-            );
+            const result = await window.pisiProject.syncDiaryMissions(request.projectFolder, {
+                entries: request.entries,
+                complete: true
+            });
 
             if (result?.ok) {
-                lastDiarySyncSignatureByProject.set(
-                    request.projectKey,
-                    request.signature
-                );
+                lastDiarySyncSignatureByProject.set(request.projectKey, request.signature);
 
                 if (request.projectKey === getCurrentCalendarProjectKey()) {
                     await refreshPisiCalendarDates();
@@ -720,11 +691,7 @@ document.addEventListener('keydown', (event) => {
             const nextRequest = pendingDiarySyncRequest;
             pendingDiarySyncRequest = null;
 
-            if (
-                nextRequest &&
-                nextRequest.signature !==
-                    lastDiarySyncSignatureByProject.get(nextRequest.projectKey)
-            ) {
+            if (nextRequest && nextRequest.signature !== lastDiarySyncSignatureByProject.get(nextRequest.projectKey)) {
                 queueMicrotask(() => {
                     runPisiDiarySync(nextRequest);
                 });
@@ -748,19 +715,13 @@ document.addEventListener('keydown', (event) => {
             };
         }
 
-        const sourceIndex = Array.isArray(index)
-            ? index
-            : (Array.isArray(pisiTagsPanelState?.missionIndex) ? pisiTagsPanelState.missionIndex : []);
+        const sourceIndex = Array.isArray(index) ? index : Array.isArray(pisiTagsPanelState?.missionIndex) ? pisiTagsPanelState.missionIndex : [];
 
         const entries = [];
 
         for (const block of sourceIndex) {
             const tags = Array.isArray(block.tags) ? block.tags : [];
-            const doneFor = new Set(
-                Array.isArray(block.doneFor)
-                    ? block.doneFor.map(normalizePisiUserTag)
-                    : []
-            );
+            const doneFor = new Set(Array.isArray(block.doneFor) ? block.doneFor.map(normalizePisiUserTag) : []);
             const hasLegacyDone = block.legacyDone === true;
 
             for (const tag of tags) {
@@ -792,21 +753,21 @@ document.addEventListener('keydown', (event) => {
             }
         }
 
-        const signature = JSON.stringify(entries.map((entry) => ({
-            date: entry.date,
-            tag: entry.tag,
-            nodePath: entry.nodePath,
-            blockId: entry.blockId,
-            text: entry.text,
-            status: entry.status,
-            repeat: entry.repeat,
-            parentId: entry.parentId,
-            manualOrder: entry.manualOrder
-        })));
+        const signature = JSON.stringify(
+            entries.map((entry) => ({
+                date: entry.date,
+                tag: entry.tag,
+                nodePath: entry.nodePath,
+                blockId: entry.blockId,
+                text: entry.text,
+                status: entry.status,
+                repeat: entry.repeat,
+                parentId: entry.parentId,
+                manualOrder: entry.manualOrder
+            }))
+        );
 
-        if (
-            signature === lastDiarySyncSignatureByProject.get(projectKey)
-        ) {
+        if (signature === lastDiarySyncSignatureByProject.get(projectKey)) {
             return null;
         }
 
@@ -901,21 +862,14 @@ window.addEventListener('keydown', (event) => {
     let cancelled = false;
 
     if (pisiKeyboardConnectionSource) {
-        pisiKeyboardConnectionSource.portEl?.classList.remove(
-            'connecting-source'
-        );
-        pisiKeyboardConnectionSource.portEl?.setAttribute(
-            'aria-label',
-            `${pisiKeyboardConnectionSource.sourcePort} bağlantı portu`
-        );
+        pisiKeyboardConnectionSource.portEl?.classList.remove('connecting-source');
+        pisiKeyboardConnectionSource.portEl?.setAttribute('aria-label', `${pisiKeyboardConnectionSource.sourcePort} bağlantı portu`);
         pisiKeyboardConnectionSource = null;
         cancelled = true;
     }
 
     if (currentConnectionDrag) {
-        const sourcePortEl = currentConnectionDrag.sourceBox?.querySelector(
-            `.map-port.${currentConnectionDrag.sourcePort}`
-        );
+        const sourcePortEl = currentConnectionDrag.sourceBox?.querySelector(`.map-port.${currentConnectionDrag.sourcePort}`);
         sourcePortEl?.classList.remove('connecting-source');
         currentConnectionDrag = null;
         clearTempEdgePath();
@@ -936,14 +890,7 @@ window.addEventListener('mousemove', (event) => {
     const temp = ensureTempEdgePath();
 
     if (temp) {
-    temp.setAttribute(
-        'd',
-        makeTempConnectionPath(
-            currentConnectionDrag.sourceBox,
-            currentConnectionDrag.sourcePort,
-            mouse
-        )
-    );
+        temp.setAttribute('d', makeTempConnectionPath(currentConnectionDrag.sourceBox, currentConnectionDrag.sourcePort, mouse));
     }
 });
 
@@ -952,20 +899,16 @@ window.addEventListener('mouseup', async (event) => {
     if (!currentConnectionDrag) return;
 
     const targetPortEl = event.target.closest?.('.map-port');
-    const sourcePortEl = currentConnectionDrag.sourceBox.querySelector(
-        `.map-port.${currentConnectionDrag.sourcePort}`
-    );
+    const sourcePortEl = currentConnectionDrag.sourceBox.querySelector(`.map-port.${currentConnectionDrag.sourcePort}`);
 
     sourcePortEl?.classList.remove('connecting-source');
 
-    const clickDistance = Math.abs(event.clientX - (currentConnectionDrag.startClientX || event.clientX)) +
+    const clickDistance =
+        Math.abs(event.clientX - (currentConnectionDrag.startClientX || event.clientX)) +
         Math.abs(event.clientY - (currentConnectionDrag.startClientY || event.clientY));
 
     if (targetPortEl === sourcePortEl && clickDistance <= 4 && currentConnectionDrag.type === 'down-hub') {
-        toggleHubConnectionsFromPort(
-            currentConnectionDrag.sourceId,
-            currentConnectionDrag.sourcePort
-        );
+        toggleHubConnectionsFromPort(currentConnectionDrag.sourceId, currentConnectionDrag.sourcePort);
 
         currentConnectionDrag = null;
         clearTempEdgePath();
@@ -995,16 +938,16 @@ window.addEventListener('mouseup', async (event) => {
         return;
     }
 
-let edgePayload = {
-    sourceId: currentConnectionDrag.sourceId,
-    targetId,
-    sourcePort: currentConnectionDrag.sourcePort,
-    targetPort,
+    let edgePayload = {
+        sourceId: currentConnectionDrag.sourceId,
+        targetId,
+        sourcePort: currentConnectionDrag.sourcePort,
+        targetPort,
 
-    type: currentConnectionDrag.type,
-    sourceRole: currentConnectionDrag.sourceRole,
-    targetRole: currentConnectionDrag.targetRole
-};
+        type: currentConnectionDrag.type,
+        sourceRole: currentConnectionDrag.sourceRole,
+        targetRole: currentConnectionDrag.targetRole
+    };
 
     const result = await persistPisiMapConnection(edgePayload);
 
@@ -1019,7 +962,6 @@ let edgePayload = {
 
     currentConnectionDrag = null;
     clearTempEdgePath();
-
 });
 
 export {};

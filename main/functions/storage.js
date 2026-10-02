@@ -71,10 +71,7 @@ function assertPisiStoragePathSafe(projectRoot, targetPath, options = {}) {
 function writePisiStorageFileFallback(filePath, content) {
     return runPisiStorageDriverIo(() => {
         const directory = path.dirname(filePath);
-        const temporary = path.join(
-            directory,
-            `.${path.basename(filePath)}.${process.pid}.${crypto.randomUUID()}.tmp`
-        );
+        const temporary = path.join(directory, `.${path.basename(filePath)}.${process.pid}.${crypto.randomUUID()}.tmp`);
         let descriptor = null;
         try {
             descriptor = fs.openSync(temporary, 'wx', 0o600);
@@ -85,10 +82,14 @@ function writePisiStorageFileFallback(filePath, content) {
             fs.renameSync(temporary, filePath);
         } finally {
             if (descriptor !== null) {
-                try { fs.closeSync(descriptor); } catch {}
+                try {
+                    fs.closeSync(descriptor);
+                } catch {}
             }
             if (fs.existsSync(temporary)) {
-                try { fs.unlinkSync(temporary); } catch {}
+                try {
+                    fs.unlinkSync(temporary);
+                } catch {}
             }
         }
     });
@@ -112,7 +113,9 @@ function createPisiFileStorageDriver(projectFolder) {
                 assertPisiStoragePathSafe(projectRoot, targetPath);
                 fs.mkdirSync(targetPath, { recursive: options.recursive !== false });
                 if (options.hidden === true) {
-                    try { globalThis.hideFileOnWindows?.(targetPath); } catch {}
+                    try {
+                        globalThis.hideFileOnWindows?.(targetPath);
+                    } catch {}
                 }
             });
         },

@@ -89,7 +89,7 @@ test('To-do çalışma alanı koyu ve açık tema paletlerini kendi kapsamında 
     const css = read('styles/56-todo-workspace.css');
 
     assert.match(css, /#workspace\.pisi-todo-workspace-active\s*\{[\s\S]*--pisi-todo-bg: #181a1f/);
-    assert.match(css, /html\[data-pisi-theme="light"\] #workspace\.pisi-todo-workspace-active\s*\{[\s\S]*--pisi-todo-bg: #eceff3/);
+    assert.match(css, /html\[data-pisi-theme=["\']light["\']\] #workspace\.pisi-todo-workspace-active\s*\{[\s\S]*--pisi-todo-bg: #eceff3/);
     assert.match(css, /--panel-bg: var\(--pisi-todo-card\)/);
     assert.match(css, /--pisi-theme-surface: var\(--pisi-todo-card\)/);
     assert.match(css, /color-scheme: light/);
@@ -110,4 +110,3 @@ test('To-do görünümleri iki temada okunabilir yüzey ve odak durumları sunar
     assert.match(css, /\.pisi-todo-workspace-content \.pisi-third-calendar-day\.today/);
     assert.match(css, /\.pisi-todo-workspace-content \.pisi-third-stat-card strong/);
 });
-

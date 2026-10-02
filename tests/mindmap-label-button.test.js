@@ -27,7 +27,7 @@ test('property Badges has its own persistent Mind Map visibility toggle beside W
     assert.match(toggle, /workButton\.insertAdjacentElement\('afterend', button\)/);
     assert.match(toggle, /dataset\.pisiToolIcon = 'labels'/);
     assert.match(toggle, /setPisiPropertyBadgesVisible\(!getPisiPropertyBadgesVisible\(\)\)/);
-    assert.match(toggleCss, /data-pisi-property-badges-visible="false"/);
+    assert.match(toggleCss, /data-pisi-property-badges-visible=["\']false["\']/);
 });
 
 test('property badges and Work badges remain independent render layers', () => {

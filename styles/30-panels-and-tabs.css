@@ -1,7 +1,5 @@
-
-
 .pisi-user-tag::before {
-    content: "#";
+    content: '#';
     opacity: 0.65;
     margin-right: 2px;
 }
@@ -311,7 +309,7 @@
 }
 
 #pisi-tag-picker-button::after {
-    content: "⌄";
+    content: '⌄';
     position: absolute;
     right: 11px;
     top: 50%;
@@ -343,7 +341,7 @@
     border: 1px solid #444;
     border-radius: 10px;
     background: #252526;
-    box-shadow: 0 14px 38px rgba(0,0,0,0.58);
+    box-shadow: 0 14px 38px rgba(0, 0, 0, 0.58);
 }
 
 .pisi-tag-picker-menu[hidden] {

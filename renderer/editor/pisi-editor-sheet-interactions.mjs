@@ -1,4 +1,4 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 
 const pisiSheetNotifyTimers = new WeakMap();
 
@@ -14,10 +14,7 @@ function getPisiSheetContextToolbar(table) {
     const editor = getEditorForPisiElement(table);
     if (!editor) return null;
 
-    return document.querySelector(
-        '.pisi-editor-toolbar[data-editor-target="' +
-        editor.id + '"]'
-    );
+    return document.querySelector('.pisi-editor-toolbar[data-editor-target="' + editor.id + '"]');
 }
 
 function runPisiSheetContextAction(table, action) {
@@ -77,21 +74,14 @@ function openPisiSheetContextMenu(table, clientX, clientY) {
 
     menu.className = 'pisi-sheet-context-menu';
     menu.setAttribute('role', 'menu');
-    menu.setAttribute(
-        'aria-label',
-        window.pisiT?.('Tablo satır ve sütun işlemleri') ||
-            'Tablo satır ve sütun işlemleri'
-    );
+    menu.setAttribute('aria-label', window.pisiT?.('Tablo satır ve sütun işlemleri') || 'Tablo satır ve sütun işlemleri');
 
     actions.forEach(({ action, label, disabled }) => {
         const button = document.createElement('button');
 
         button.type = 'button';
         button.setAttribute('role', 'menuitem');
-        button.setAttribute(
-            'data-pisi-sheet-context-action',
-            action
-        );
+        button.setAttribute('data-pisi-sheet-context-action', action);
         button.textContent = label;
         button.disabled = disabled;
 
@@ -109,63 +99,60 @@ function openPisiSheetContextMenu(table, clientX, clientY) {
     const margin = 8;
     const rect = menu.getBoundingClientRect();
 
-    menu.style.left = String(Math.max(
-        margin,
-        Math.min(
-            clientX,
-            window.innerWidth - rect.width - margin
-        )
-    )) + 'px';
-    menu.style.top = String(Math.max(
-        margin,
-        Math.min(
-            clientY,
-            window.innerHeight - rect.height - margin
-        )
-    )) + 'px';
+    menu.style.left = String(Math.max(margin, Math.min(clientX, window.innerWidth - rect.width - margin))) + 'px';
+    menu.style.top = String(Math.max(margin, Math.min(clientY, window.innerHeight - rect.height - margin))) + 'px';
 }
 
-document.addEventListener('pointerdown', (event) => {
-    if (
-        pisiSheetContextMenu &&
-        !pisiSheetContextMenu.contains(event.target)
-    ) {
-        closePisiSheetContextMenu();
-    }
-}, true);
+document.addEventListener(
+    'pointerdown',
+    (event) => {
+        if (pisiSheetContextMenu && !pisiSheetContextMenu.contains(event.target)) {
+            closePisiSheetContextMenu();
+        }
+    },
+    true
+);
 
-document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-        closePisiSheetContextMenu();
-    }
-}, true);
+document.addEventListener(
+    'keydown',
+    (event) => {
+        if (event.key === 'Escape') {
+            closePisiSheetContextMenu();
+        }
+    },
+    true
+);
 
-document.addEventListener('scroll', () => {
-    closePisiSheetContextMenu();
-    closePisiSheetColumnMenu();
-}, true);
+document.addEventListener(
+    'scroll',
+    () => {
+        closePisiSheetContextMenu();
+        closePisiSheetColumnMenu();
+    },
+    true
+);
 
 window.addEventListener('blur', () => {
     closePisiSheetContextMenu();
     closePisiSheetColumnMenu();
 });
 
-document.addEventListener('mouseup', () => {
-    finishPisiSheetFormulaReferencePick();
+document.addEventListener(
+    'mouseup',
+    () => {
+        finishPisiSheetFormulaReferencePick();
 
-    if (pisiSheetDragSelection?.table) {
-        pisiSheetDragSelection.table.classList.remove(
-            'pisi-sheet-drag-selecting'
-        );
-    }
+        if (pisiSheetDragSelection?.table) {
+            pisiSheetDragSelection.table.classList.remove('pisi-sheet-drag-selecting');
+        }
 
-    pisiSheetDragSelection = null;
-}, true);
+        pisiSheetDragSelection = null;
+    },
+    true
+);
 
 function cleanupPisiSheetTransientChrome(table) {
-    const block = table?.closest?.(
-        '.pisi-sheet-block'
-    );
+    const block = table?.closest?.('.pisi-sheet-block');
 
     if (!block) return false;
 
@@ -182,39 +169,18 @@ function cleanupPisiSheetTransientChrome(table) {
         },
         {
             className: 'pisi-sheet-search',
-            selectors: [
-                '[data-pisi-sheet-search-input]',
-                '[data-pisi-sheet-search-status]',
-                '[data-pisi-sheet-search-clear]'
-            ]
+            selectors: ['[data-pisi-sheet-search-input]', '[data-pisi-sheet-search-status]', '[data-pisi-sheet-search-clear]']
         },
         {
             className: 'pisi-sheet-pagination',
-            selectors: [
-                '[data-pisi-sheet-page-previous]',
-                '[data-pisi-sheet-page-next]',
-                '[data-pisi-sheet-page-status]',
-                '[data-pisi-sheet-page-size]'
-            ]
+            selectors: ['[data-pisi-sheet-page-previous]', '[data-pisi-sheet-page-next]', '[data-pisi-sheet-page-status]', '[data-pisi-sheet-page-size]']
         }
     ];
     let changed = false;
 
     for (const spec of specs) {
-        const candidates = Array.from(
-            block.children
-        ).filter((child) => (
-            child.classList?.contains(
-                spec.className
-            )
-        ));
-        const valid = candidates.find(
-            (candidate) => spec.selectors.every(
-                (selector) => candidate.querySelector(
-                    selector
-                )
-            )
-        ) || null;
+        const candidates = Array.from(block.children).filter((child) => child.classList?.contains(spec.className));
+        const valid = candidates.find((candidate) => spec.selectors.every((selector) => candidate.querySelector(selector))) || null;
 
         for (const candidate of candidates) {
             if (candidate !== valid) {
@@ -258,32 +224,18 @@ function hydratePisiSheets(root = document) {
         });
 
         table.addEventListener('click', (/** @type {MouseEvent} */ event) => {
-            const checkbox = event.target.closest(
-                '[data-pisi-sheet-checkbox]'
-            );
-            const checkboxCell = checkbox?.closest(
-                'td[data-cell]'
-            );
+            const checkbox = event.target.closest('[data-pisi-sheet-checkbox]');
+            const checkboxCell = checkbox?.closest('td[data-cell]');
 
-            if (
-                checkbox &&
-                checkboxCell &&
-                table.contains(checkboxCell)
-            ) {
+            if (checkbox && checkboxCell && table.contains(checkboxCell)) {
                 event.preventDefault();
                 event.stopPropagation();
-                togglePisiSheetCheckboxCell(
-                    checkboxCell
-                );
+                togglePisiSheetCheckboxCell(checkboxCell);
                 return;
             }
 
-            const header = event.target.closest(
-                'thead th[data-col-header]'
-            );
-            const resizer = event.target.closest(
-                '[data-pisi-sheet-col-resizer]'
-            );
+            const header = event.target.closest('thead th[data-col-header]');
+            const resizer = event.target.closest('[data-pisi-sheet-col-resizer]');
 
             if (header && table.contains(header) && !resizer) {
                 event.preventDefault();
@@ -293,22 +245,15 @@ function hydratePisiSheets(root = document) {
         });
 
         table.addEventListener('dblclick', (/** @type {MouseEvent} */ event) => {
-            const resizer = event.target.closest(
-                '[data-pisi-sheet-col-resizer]'
-            );
+            const resizer = event.target.closest('[data-pisi-sheet-col-resizer]');
 
             if (resizer && table.contains(resizer)) {
-                const colIndex = Number(
-                    resizer.dataset.pisiSheetColResizer
-                );
+                const colIndex = Number(resizer.dataset.pisiSheetColResizer);
 
                 if (Number.isInteger(colIndex)) {
                     event.preventDefault();
                     event.stopPropagation();
-                    autoFitPisiSheetColumn(
-                        table,
-                        colIndex
-                    );
+                    autoFitPisiSheetColumn(table, colIndex);
                 }
                 return;
             }
@@ -332,19 +277,11 @@ function hydratePisiSheets(root = document) {
         });
 
         table.addEventListener('contextmenu', (/** @type {MouseEvent} */ event) => {
-            const rowHeader = event.target.closest(
-                'tbody th[data-row-header]'
-            );
-            const colHeader = event.target.closest(
-                'thead th[data-col-header]'
-            );
+            const rowHeader = event.target.closest('tbody th[data-row-header]');
+            const colHeader = event.target.closest('thead th[data-col-header]');
             const cell = event.target.closest('td[data-cell]');
 
-            if (
-                (!rowHeader && !colHeader && !cell) ||
-                !(event.target instanceof Node) ||
-                !table.contains(event.target)
-            ) {
+            if ((!rowHeader && !colHeader && !cell) || !(event.target instanceof Node) || !table.contains(event.target)) {
                 return;
             }
 
@@ -357,35 +294,18 @@ function hydratePisiSheets(root = document) {
             });
 
             if (rowHeader) {
-                selectPisiSheetRow(
-                    table,
-                    Number(rowHeader.dataset.rowHeader),
-                    false
-                );
+                selectPisiSheetRow(table, Number(rowHeader.dataset.rowHeader), false);
             } else if (colHeader) {
-                selectPisiSheetColumn(
-                    table,
-                    Number(colHeader.dataset.colHeader),
-                    false
-                );
-            } else if (
-                cell &&
-                !isPisiSheetCellSelected(table, cell)
-            ) {
+                selectPisiSheetColumn(table, Number(colHeader.dataset.colHeader), false);
+            } else if (cell && !isPisiSheetCellSelected(table, cell)) {
                 selectPisiSheetCell(cell);
             }
 
-            openPisiSheetContextMenu(
-                table,
-                event.clientX,
-                event.clientY
-            );
+            openPisiSheetContextMenu(table, event.clientX, event.clientY);
         });
 
         table.addEventListener('mousedown', (/** @type {MouseEvent} */ event) => {
-            const resizer = event.target.closest(
-                '[data-pisi-sheet-col-resizer]'
-            );
+            const resizer = event.target.closest('[data-pisi-sheet-col-resizer]');
 
             if (resizer && table.contains(resizer)) {
                 if (event.button !== 0) return;
@@ -394,17 +314,11 @@ function hydratePisiSheets(root = document) {
                 event.stopPropagation();
                 closePisiSheetColumnMenu();
                 closePisiSheetContextMenu();
-                startPisiSheetColumnResize(
-                    table,
-                    resizer,
-                    event
-                );
+                startPisiSheetColumnResize(table, resizer, event);
                 return;
             }
 
-            const colHeader = event.target.closest(
-                'thead th[data-col-header]'
-            );
+            const colHeader = event.target.closest('thead th[data-col-header]');
 
             if (colHeader && table.contains(colHeader)) {
                 if (event.button === 0) {
@@ -414,12 +328,8 @@ function hydratePisiSheets(root = document) {
                 return;
             }
 
-            const rowHeader = event.target.closest(
-                'tbody th[data-row-header]'
-            );
-            const cornerHeader = event.target.closest(
-                'thead th[data-pisi-sheet-corner]'
-            );
+            const rowHeader = event.target.closest('tbody th[data-row-header]');
+            const cornerHeader = event.target.closest('thead th[data-pisi-sheet-corner]');
             const cell = event.target.closest('td[data-cell]');
 
             if (cornerHeader && table.contains(cornerHeader)) {
@@ -438,29 +348,15 @@ function hydratePisiSheets(root = document) {
                     commit: true,
                     refocus: false
                 });
-                selectPisiSheetRow(
-                    table,
-                    Number(rowHeader.dataset.rowHeader),
-                    event.shiftKey
-                );
+                selectPisiSheetRow(table, Number(rowHeader.dataset.rowHeader), event.shiftKey);
                 return;
             }
 
-            if (
-                !cell ||
-                !table.contains(cell) ||
-                event.button !== 0
-            ) {
+            if (!cell || !table.contains(cell) || event.button !== 0) {
                 return;
             }
 
-            if (
-                beginPisiSheetFormulaReferencePick(
-                    table,
-                    cell,
-                    event
-                )
-            ) {
+            if (beginPisiSheetFormulaReferencePick(table, cell, event)) {
                 pisiSheetDragSelection = null;
                 return;
             }
@@ -501,13 +397,7 @@ function hydratePisiSheets(root = document) {
 
             if (!cell || !table.contains(cell)) return;
 
-            if (
-                updatePisiSheetFormulaReferencePick(
-                    table,
-                    cell,
-                    event
-                )
-            ) {
+            if (updatePisiSheetFormulaReferencePick(table, cell, event)) {
                 return;
             }
 
@@ -518,10 +408,7 @@ function hydratePisiSheets(root = document) {
             const point = getPisiSheetCellPosition(cell);
 
             if (!point) return;
-            if (
-                drag.last.rowId === point.rowId &&
-                drag.last.colId === point.colId
-            ) {
+            if (drag.last.rowId === point.rowId && drag.last.colId === point.colId) {
                 return;
             }
 
@@ -529,41 +416,23 @@ function hydratePisiSheets(root = document) {
             drag.last = point;
             table.classList.add('pisi-sheet-drag-selecting');
 
-            setPisiSheetRangeSelection(
-                table,
-                drag.anchor,
-                point,
-                {
-                    mode: 'range',
-                    active: point,
-                    ensureVisible: true
-                }
-            );
+            setPisiSheetRangeSelection(table, drag.anchor, point, {
+                mode: 'range',
+                active: point,
+                ensureVisible: true
+            });
         });
 
         table.addEventListener('keydown', (event) => {
             const cell = event.target.closest('td[data-cell]');
 
-            if (
-                !cell ||
-                !table.contains(cell) ||
-                !isPisiSheetEditingCell(table, cell)
-            ) {
+            if (!cell || !table.contains(cell) || !isPisiSheetEditingCell(table, cell)) {
                 return;
             }
 
             if (
-                [
-                    'ArrowUp',
-                    'ArrowDown',
-                    'ArrowLeft',
-                    'ArrowRight'
-                ].includes(event.key) &&
-                movePisiSheetFormulaReferenceByKeyboard(
-                    table,
-                    event.key,
-                    { extend: event.shiftKey }
-                )
+                ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key) &&
+                movePisiSheetFormulaReferenceByKeyboard(table, event.key, { extend: event.shiftKey })
             ) {
                 event.preventDefault();
                 event.stopPropagation();
@@ -587,12 +456,7 @@ function hydratePisiSheets(root = document) {
                     commit: true,
                     refocus: false
                 });
-                movePisiSheetCellFocus(
-                    table,
-                    cell,
-                    event.shiftKey ? -1 : 1,
-                    0
-                );
+                movePisiSheetCellFocus(table, cell, event.shiftKey ? -1 : 1, 0);
                 return;
             }
 
@@ -603,27 +467,17 @@ function hydratePisiSheets(root = document) {
                     commit: true,
                     refocus: false
                 });
-                movePisiSheetCellFocus(
-                    table,
-                    cell,
-                    0,
-                    event.shiftKey ? -1 : 1,
-                    {
-                        wrap: true,
-                        addRowAtEnd: !event.shiftKey
-                    }
-                );
+                movePisiSheetCellFocus(table, cell, 0, event.shiftKey ? -1 : 1, {
+                    wrap: true,
+                    addRowAtEnd: !event.shiftKey
+                });
             }
         });
 
         table.addEventListener('input', (event) => {
             const cell = event.target.closest('td[data-cell]');
 
-            if (
-                !cell ||
-                !table.contains(cell) ||
-                !isPisiSheetEditingCell(table, cell)
-            ) {
+            if (!cell || !table.contains(cell) || !isPisiSheetEditingCell(table, cell)) {
                 return;
             }
 
@@ -634,19 +488,11 @@ function hydratePisiSheets(root = document) {
         table.addEventListener('focusout', (event) => {
             const cell = event.target.closest('td[data-cell]');
 
-            if (
-                !cell ||
-                !table.contains(cell) ||
-                !isPisiSheetEditingCell(table, cell)
-            ) {
+            if (!cell || !table.contains(cell) || !isPisiSheetEditingCell(table, cell)) {
                 return;
             }
 
-            if (
-                isPisiSheetFormulaReferenceKeyboardNavigationActive(
-                    table
-                )
-            ) {
+            if (isPisiSheetFormulaReferenceKeyboardNavigationActive(table)) {
                 return;
             }
 
@@ -660,13 +506,17 @@ function hydratePisiSheets(root = document) {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "pisiSheetNotifyTimers": {
+    pisiSheetNotifyTimers: {
         enumerable: true,
-        get() { return pisiSheetNotifyTimers; }
+        get() {
+            return pisiSheetNotifyTimers;
+        }
     },
-    "hydratePisiSheets": {
+    hydratePisiSheets: {
         enumerable: true,
-        get() { return hydratePisiSheets; }
+        get() {
+            return hydratePisiSheets;
+        }
     }
 });
-registerModule("editor.sheetInteractions", moduleApi);
+registerModule('editor.sheetInteractions', moduleApi);

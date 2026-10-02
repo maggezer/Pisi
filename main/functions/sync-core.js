@@ -24,9 +24,7 @@ function stableStringify(value) {
     const keys = Object.keys(value)
         .filter((key) => value[key] !== undefined)
         .sort();
-    return '{' + keys.map((key) => (
-        JSON.stringify(key) + ':' + stableStringify(value[key])
-    )).join(',') + '}';
+    return '{' + keys.map((key) => JSON.stringify(key) + ':' + stableStringify(value[key])).join(',') + '}';
 }
 
 function hashString(value) {
@@ -47,17 +45,13 @@ function hashValue(value) {
 }
 
 function makeEntityKey(kind, id) {
-    return assertSafeToken(kind, 'Varlık türü') + ':' +
-        assertSafeToken(id, 'Varlık kimliği');
+    return assertSafeToken(kind, 'Varlık türü') + ':' + assertSafeToken(id, 'Varlık kimliği');
 }
 
 function normalizeVersion(version = {}) {
     return {
         counter: Math.max(0, Math.floor(Number(version.counter) || 0)),
-        deviceId: assertSafeToken(
-            version.deviceId || 'device-unknown',
-            'Cihaz kimliği'
-        )
+        deviceId: assertSafeToken(version.deviceId || 'device-unknown', 'Cihaz kimliği')
     };
 }
 
@@ -71,11 +65,7 @@ function compareVersions(left, right) {
 function normalizeEntity(entity = {}) {
     const kind = assertSafeToken(entity.kind, 'Varlık türü');
     const id = assertSafeToken(entity.id, 'Varlık kimliği');
-    if (
-        !entity.payload ||
-        typeof entity.payload !== 'object' ||
-        Array.isArray(entity.payload)
-    ) {
+    if (!entity.payload || typeof entity.payload !== 'object' || Array.isArray(entity.payload)) {
         throw new TypeError('Senkronizasyon varlığı nesne payload taşımalı.');
     }
     return {
@@ -91,10 +81,7 @@ function normalizeRecord(record = {}) {
     const id = assertSafeToken(record.id, 'Kayıt kimliği');
     const deleted = record.deleted === true;
     const payload = deleted ? null : record.payload;
-    if (
-        !deleted &&
-        (!payload || typeof payload !== 'object' || Array.isArray(payload))
-    ) {
+    if (!deleted && (!payload || typeof payload !== 'object' || Array.isArray(payload))) {
         throw new TypeError('Canlı senkronizasyon kaydı payload taşımalı.');
     }
     return {
@@ -104,9 +91,9 @@ function normalizeRecord(record = {}) {
         deleted,
         hash: deleted ? 'deleted' : String(record.hash || hashValue(payload)),
         version: normalizeVersion(record.version),
-        ancestors: Array.from(new Set((Array.isArray(record.ancestors) ? record.ancestors : [])
-            .map((value) => String(value || '').slice(0, 300))
-            .filter(Boolean))).slice(0, 32),
+        ancestors: Array.from(
+            new Set((Array.isArray(record.ancestors) ? record.ancestors : []).map((value) => String(value || '').slice(0, 300)).filter(Boolean))
+        ).slice(0, 32),
         updatedAt: String(record.updatedAt || new Date(0).toISOString()),
         payload: deleted ? null : clone(payload)
     };
@@ -114,9 +101,7 @@ function normalizeRecord(record = {}) {
 
 function recordsToMap(records = []) {
     const map = new Map();
-    const source = records instanceof Map
-        ? Array.from(records.values())
-        : Array.isArray(records) ? records : Object.values(records || {});
+    const source = records instanceof Map ? Array.from(records.values()) : Array.isArray(records) ? records : Object.values(records || {});
     source.forEach((record) => {
         const normalized = normalizeRecord(record);
         map.set(normalized.key, normalized);
@@ -125,22 +110,13 @@ function recordsToMap(records = []) {
 }
 
 function sameRecordContent(left, right) {
-    return Boolean(
-        left && right &&
-        left.deleted === right.deleted &&
-        left.hash === right.hash
-    );
+    return Boolean(left && right && left.deleted === right.deleted && left.hash === right.hash);
 }
 
 function recordSignature(record) {
     if (!record) return '';
     const version = normalizeVersion(record.version);
-    return [
-        version.counter,
-        version.deviceId,
-        record.deleted === true ? '1' : '0',
-        String(record.hash || '')
-    ].join('|');
+    return [version.counter, version.deviceId, record.deleted === true ? '1' : '0', String(record.hash || '')].join('|');
 }
 
 function recordDescendsFrom(record, ancestor) {
@@ -151,16 +127,13 @@ function recordDescendsFrom(record, ancestor) {
 
 function nextAncestors(previous) {
     if (!previous) return [];
-    return Array.from(new Set([
-        recordSignature(previous), ...(previous.ancestors || [])
-    ])).slice(0, 32);
+    return Array.from(new Set([recordSignature(previous), ...(previous.ancestors || [])])).slice(0, 32);
 }
 
 function changedSince(record, previous) {
     if (!record) return false;
     if (!previous) return true;
-    return compareVersions(record.version, previous.version) >= 0 &&
-        !sameRecordContent(record, previous);
+    return compareVersions(record.version, previous.version) >= 0 && !sameRecordContent(record, previous);
 }
 
 function nextVersion(clock, deviceId) {
@@ -177,13 +150,7 @@ function nextVersion(clock, deviceId) {
  *   now?: string
  * }} [options]
  */
-function prepareDeviceRecords({
-    entities = [],
-    baseRecords = [],
-    deviceId,
-    clock = 0,
-    now = new Date().toISOString()
-} = {}) {
+function prepareDeviceRecords({ entities = [], baseRecords = [], deviceId, clock = 0, now = new Date().toISOString() } = {}) {
     const safeDeviceId = assertSafeToken(deviceId, 'Cihaz kimliği');
     const base = recordsToMap(baseRecords);
     const local = new Map();
@@ -196,10 +163,7 @@ function prepareDeviceRecords({
     }
 
     const counter = {
-        value: Math.max(
-            Math.floor(Number(clock) || 0),
-            ...Array.from(base.values(), (record) => record.version.counter)
-        )
+        value: Math.max(Math.floor(Number(clock) || 0), ...Array.from(base.values(), (record) => record.version.counter))
     };
     const records = [];
 
@@ -268,25 +232,17 @@ function foldDeviceSnapshots(snapshots = [], projectId = null) {
         }
         for (const raw of Array.isArray(snapshot.records) ? snapshot.records : []) {
             const record = normalizeRecord(raw);
-            winners.set(
-                record.key,
-                chooseWinningRecord(winners.get(record.key), record)
-            );
+            winners.set(record.key, chooseWinningRecord(winners.get(record.key), record));
             clock = Math.max(clock, record.version.counter);
         }
     }
     return {
-        records: Array.from(winners.values())
-            .sort((a, b) => a.key.localeCompare(b.key)),
+        records: Array.from(winners.values()).sort((a, b) => a.key.localeCompare(b.key)),
         clock
     };
 }
 
-function planMergedRecords({
-    baseRecords = [],
-    localRecords = [],
-    remoteRecords = []
-} = {}) {
+function planMergedRecords({ baseRecords = [], localRecords = [], remoteRecords = [] } = {}) {
     const base = recordsToMap(baseRecords);
     const local = recordsToMap(localRecords);
     const remote = recordsToMap(remoteRecords);
@@ -305,20 +261,11 @@ function planMergedRecords({
         const previous = base.get(key);
         const localChanged = changedSince(localRecord, previous);
         const remoteChanged = changedSince(remoteRecord, previous);
-        const hasLineage = Boolean(
-            localRecord?.ancestors?.length || remoteRecord?.ancestors?.length
-        );
+        const hasLineage = Boolean(localRecord?.ancestors?.length || remoteRecord?.ancestors?.length);
         const concurrent = Boolean(
-            localRecord && remoteRecord &&
-            !recordDescendsFrom(localRecord, remoteRecord) &&
-            !recordDescendsFrom(remoteRecord, localRecord)
+            localRecord && remoteRecord && !recordDescendsFrom(localRecord, remoteRecord) && !recordDescendsFrom(remoteRecord, localRecord)
         );
-        if (
-            localRecord &&
-            remoteRecord &&
-            (hasLineage ? concurrent : (localChanged && remoteChanged)) &&
-            !sameRecordContent(localRecord, remoteRecord)
-        ) {
+        if (localRecord && remoteRecord && (hasLineage ? concurrent : localChanged && remoteChanged) && !sameRecordContent(localRecord, remoteRecord)) {
             conflicts.push({
                 key,
                 base: previous || null,
@@ -339,11 +286,7 @@ function planMergedRecords({
 /**
  * @param {{projectId?: string, createdBy?: string, createdAt?: string}} [options]
  */
-function makeSyncManifest({
-    projectId,
-    createdBy,
-    createdAt = new Date().toISOString()
-} = {}) {
+function makeSyncManifest({ projectId, createdBy, createdAt = new Date().toISOString() } = {}) {
     return {
         format: PISI_SYNC_PROTOCOL,
         version: PISI_SYNC_VERSION,
@@ -354,14 +297,8 @@ function makeSyncManifest({
 }
 
 function validateSyncManifest(manifest) {
-    if (
-        !manifest ||
-        manifest.format !== PISI_SYNC_PROTOCOL ||
-        manifest.version !== PISI_SYNC_VERSION
-    ) {
-        throw new Error(
-            'Seçilen klasörde geçerli bir Pisi Sync manifesti yok.'
-        );
+    if (!manifest || manifest.format !== PISI_SYNC_PROTOCOL || manifest.version !== PISI_SYNC_VERSION) {
+        throw new Error('Seçilen klasörde geçerli bir Pisi Sync manifesti yok.');
     }
     return makeSyncManifest(manifest);
 }
@@ -376,14 +313,7 @@ function validateSyncManifest(manifest) {
  *   createdAt?: string
  * }} [options]
  */
-function makeDeviceSnapshot({
-    projectId,
-    deviceId,
-    deviceName,
-    records,
-    clock,
-    createdAt = new Date().toISOString()
-} = {}) {
+function makeDeviceSnapshot({ projectId, deviceId, deviceName, records, clock, createdAt = new Date().toISOString() } = {}) {
     return {
         format: PISI_SYNC_DEVICE_SNAPSHOT,
         version: PISI_SYNC_VERSION,
@@ -392,8 +322,7 @@ function makeDeviceSnapshot({
         deviceName: String(deviceName || 'Pisi cihazı').slice(0, 120),
         clock: Math.max(0, Math.floor(Number(clock) || 0)),
         createdAt,
-        records: Array.from(recordsToMap(records).values())
-            .sort((a, b) => a.key.localeCompare(b.key))
+        records: Array.from(recordsToMap(records).values()).sort((a, b) => a.key.localeCompare(b.key))
     };
 }
 

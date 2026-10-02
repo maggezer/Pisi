@@ -61,11 +61,7 @@ function writePisiSearchHistory(projectFolder, entries, storage = globalThis.loc
     }
 }
 
-function rememberPisiSearchResult(
-    projectFolder,
-    result,
-    options = {}
-) {
+function rememberPisiSearchResult(projectFolder, result, options = {}) {
     const id = String(result?.id || '').trim();
     if (!projectFolder || !id) return [];
     const storage = options.storage ?? globalThis.localStorage;
@@ -82,19 +78,13 @@ function rememberPisiSearchResult(
         lastOpened: now,
         openCount: Math.min(9999, Number(previous?.openCount || 0) + 1)
     });
-    const merged = [
-        next,
-        ...entries.filter((entry) => entry.id !== id)
-    ].filter(Boolean).slice(0, PISI_SEARCH_HISTORY_LIMIT);
+    const merged = [next, ...entries.filter((entry) => entry.id !== id)].filter(Boolean).slice(0, PISI_SEARCH_HISTORY_LIMIT);
     writePisiSearchHistory(projectFolder, merged, storage);
     return merged;
 }
 
 function makePisiSearchRecentMap(projectFolder, storage = globalThis.localStorage) {
-    return new Map(
-        readPisiSearchHistory(projectFolder, storage)
-            .map((entry) => [entry.id, entry])
-    );
+    return new Map(readPisiSearchHistory(projectFolder, storage).map((entry) => [entry.id, entry]));
 }
 
 function clearPisiSearchHistory(projectFolder, storage = globalThis.localStorage) {

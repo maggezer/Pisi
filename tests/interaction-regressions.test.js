@@ -10,10 +10,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 test('interaction regression layer is loaded by renderer bootstrap', () => {
     const bootstrap = read('renderer/bootstrap.mjs');
-    assert.match(
-        bootstrap,
-        /import "\.\/shell\/pisi-interaction-regressions\.mjs";/
-    );
+    assert.match(bootstrap, /import\s+["\']\.\/shell\/pisi-interaction-regressions\.mjs["\'];/);
 });
 
 test('map edge deletion has one canonical handler and does not steal editor focus', () => {
@@ -27,33 +24,21 @@ test('map edge deletion has one canonical handler and does not steal editor focu
 
     // A delayed renderer/body refocus can blur a rename input or editor that
     // the user opens immediately after deleting an edge.
-    assert.doesNotMatch(
-        edges,
-        /setTimeout\([\s\S]{0,160}refocusPisiRenderer/
-    );
+    assert.doesNotMatch(edges, /setTimeout\([\s\S]{0,160}refocusPisiRenderer/);
     assert.doesNotMatch(edges, /resetPisiKeyboardAndPointerState\(\)/);
 
     // Deletion must not be duplicated by the regression capture layer.
     assert.doesNotMatch(regressions, /deletePisiMapEdgeSafely/);
     assert.doesNotMatch(regressions, /handlePisiMapEdgeDeleteCapture/);
-    assert.doesNotMatch(
-        regressions,
-        /addEventListener\('click',\s*handlePisiMapEdgeDeleteCapture/
-    );
+    assert.doesNotMatch(regressions, /addEventListener\('click',\s*handlePisiMapEdgeDeleteCapture/);
 });
 
 test('map rename closes outside without leaking the same pointer event', () => {
     const source = read('renderer/shell/pisi-interaction-regressions.mjs');
 
     assert.match(source, /querySelector\('\.map-node-title-input'\)/);
-    assert.match(
-        source,
-        /document\.addEventListener\('mousedown', finishPisiMapRenameOnOutsidePointer, true\)/
-    );
-    assert.match(
-        source,
-        /document\.addEventListener\('contextmenu', finishPisiMapRenameOnOutsideContextMenu, true\)/
-    );
+    assert.match(source, /document\.addEventListener\('mousedown', finishPisiMapRenameOnOutsidePointer, true\)/);
+    assert.match(source, /document\.addEventListener\('contextmenu', finishPisiMapRenameOnOutsideContextMenu, true\)/);
     assert.match(source, /event\.preventDefault\(\)/);
     assert.match(source, /event\.stopImmediatePropagation\(\)/);
     assert.match(source, /input\.blur\(\)/);
@@ -89,10 +74,7 @@ test('visible node modal owns Escape before background rename handlers', () => {
     assert.match(source, /modalOverlay\?\.classList\.contains\('visible'\)/);
     assert.match(source, /event\.stopImmediatePropagation\(\)/);
     assert.match(source, /window\.closeNodeModalAndSave\?\.\(\)/);
-    assert.match(
-        source,
-        /document\.addEventListener\('keydown', handlePisiNodeModalEscapeCapture, true\)/
-    );
+    assert.match(source, /document\.addEventListener\('keydown', handlePisiNodeModalEscapeCapture, true\)/);
 });
 
 test('node modal blocks Pisi menu and titlebar language toggle is removed', () => {

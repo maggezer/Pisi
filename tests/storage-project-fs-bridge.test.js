@@ -28,7 +28,10 @@ test('active project document and sidecar fs operations route through project st
             assert.equal(fs.statSync(nodePath).isFile(), true);
 
             const initialEntries = fs.readdirSync(project, { withFileTypes: true });
-            assert.equal(initialEntries.some((entry) => entry.name === 'Alpha.node' && entry.isFile()), true);
+            assert.equal(
+                initialEntries.some((entry) => entry.name === 'Alpha.node' && entry.isFile()),
+                true
+            );
 
             fs.mkdirSync(sidecarPath, { recursive: true });
             assert.equal(fs.statSync(sidecarPath).isDirectory(), true);
@@ -57,10 +60,14 @@ test('storage driver IO does not recurse back into the fs bridge', () => {
     try {
         bridge.runPisiStorageBridgeForProject(project, () => {
             const storage = storageLayer.getPisiProjectStorage(project);
-            const write = storage.writeJson('.pisi/bridge-driver.json', {
-                version: 1,
-                ok: true
-            }, { backup: false });
+            const write = storage.writeJson(
+                '.pisi/bridge-driver.json',
+                {
+                    version: 1,
+                    ok: true
+                },
+                { backup: false }
+            );
             assert.equal(write.ok, true);
 
             const read = storage.readJson('.pisi/bridge-driver.json');

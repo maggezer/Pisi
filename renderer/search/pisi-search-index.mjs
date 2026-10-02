@@ -1,9 +1,5 @@
-import { registerModule } from "../core/module-registry.mjs";
-import {
-    PISI_SEARCH_FIELD_WEIGHTS,
-    buildPisiSearchAccelerator,
-    pisiSearchPathKey
-} from "./pisi-search-core.mjs";
+import { registerModule } from '../core/module-registry.mjs';
+import { PISI_SEARCH_FIELD_WEIGHTS, buildPisiSearchAccelerator, pisiSearchPathKey } from './pisi-search-core.mjs';
 import { classifyPisiSearchChangedPaths } from './pisi-search-filesystem-delta-core.mjs';
 import { createPisiSearchFilesystemDeltaController } from './pisi-search-filesystem-delta.mjs';
 
@@ -45,11 +41,17 @@ function yieldPisiSearchBuild() {
 }
 
 function cleanPisiSearchText(value = '') {
-    return String(value || '').replace(/\s+/g, ' ').trim();
+    return String(value || '')
+        .replace(/\s+/g, ' ')
+        .trim();
 }
 
 function getPisiSearchFileName(path = '') {
-    return String(path || '').split(/[\\/]/).pop() || '';
+    return (
+        String(path || '')
+            .split(/[\\/]/)
+            .pop() || ''
+    );
 }
 
 function getPisiSearchRelativePath(path, projectFolder) {
@@ -57,23 +59,11 @@ function getPisiSearchRelativePath(path, projectFolder) {
     const normalizedProject = String(projectFolder || '')
         .replace(/[\\/]+/g, '/')
         .replace(/\/+$/g, '');
-    const comparisonPath = window.pisiEnvironment?.platform === 'win32'
-        ? normalizedPath.toLowerCase()
-        : normalizedPath;
-    const comparisonProject = window.pisiEnvironment?.platform === 'win32'
-        ? normalizedProject.toLowerCase()
-        : normalizedProject;
+    const comparisonPath = window.pisiEnvironment?.platform === 'win32' ? normalizedPath.toLowerCase() : normalizedPath;
+    const comparisonProject = window.pisiEnvironment?.platform === 'win32' ? normalizedProject.toLowerCase() : normalizedProject;
 
-    if (
-        comparisonProject &&
-        (
-            comparisonPath === comparisonProject ||
-            comparisonPath.startsWith(comparisonProject + '/')
-        )
-    ) {
-        return normalizedPath
-            .slice(normalizedProject.length)
-            .replace(/^\/+/, '') || getPisiSearchFileName(path);
+    if (comparisonProject && (comparisonPath === comparisonProject || comparisonPath.startsWith(comparisonProject + '/'))) {
+        return normalizedPath.slice(normalizedProject.length).replace(/^\/+/, '') || getPisiSearchFileName(path);
     }
 
     return normalizedPath;
@@ -81,26 +71,16 @@ function getPisiSearchRelativePath(path, projectFolder) {
 
 function getPisiSearchNodeTitle(item, metadata = {}) {
     return cleanPisiSearchText(
-        metadata?.title ||
-        item?.metadata?.title ||
-        item?.displayName ||
-        String(item?.fileName || item?.name || '').replace(/\.node$/i, '') ||
-        'Node'
+        metadata?.title || item?.metadata?.title || item?.displayName || String(item?.fileName || item?.name || '').replace(/\.node$/i, '') || 'Node'
     );
 }
 
 function getPisiSearchMapTitle(item) {
-    return cleanPisiSearchText(
-        item?.metadata?.title ||
-        item?.displayName ||
-        String(item?.fileName || item?.name || '').replace(/\.map$/i, '') ||
-        'Map'
-    );
+    return cleanPisiSearchText(item?.metadata?.title || item?.displayName || String(item?.fileName || item?.name || '').replace(/\.map$/i, '') || 'Map');
 }
 
 function getPisiSearchBlockId(element) {
-    return element?.closest?.('[data-pisi-block-id]')
-        ?.getAttribute('data-pisi-block-id') || null;
+    return element?.closest?.('[data-pisi-block-id]')?.getAttribute('data-pisi-block-id') || null;
 }
 
 function extractPisiDirectTitles(container, plainText) {
@@ -114,11 +94,7 @@ function extractPisiDirectTitles(container, plainText) {
     }
 
     container.querySelectorAll('a').forEach((anchor) => {
-        const title = cleanPisiSearchText(
-            anchor.dataset?.pisiNodeTitle ||
-            anchor.textContent ||
-            ''
-        );
+        const title = cleanPisiSearchText(anchor.dataset?.pisiNodeTitle || anchor.textContent || '');
         if (title) titles.push(title);
     });
 
@@ -128,24 +104,17 @@ function extractPisiDirectTitles(container, plainText) {
 function extractPisiUnlinkedText(container, plainText) {
     const clone = container.cloneNode(true);
     clone.querySelectorAll('a').forEach((anchor) => anchor.remove());
-    return cleanPisiSearchText(
-        (clone.textContent || plainText).replace(
-            /\[\[[^\]\n]{1,200}\]\]/g,
-            ' '
-        )
-    );
+    return cleanPisiSearchText((clone.textContent || plainText).replace(/\[\[[^\]\n]{1,200}\]\]/g, ' '));
 }
 
 function extractPisiSearchTags(container) {
-    return Array.from(container.querySelectorAll(
-        '.pisi-user-tag[data-pisi-tag]'
-    )).map((element) => ({
-        value: cleanPisiSearchText(
-            element.dataset.pisiTag || element.textContent || ''
-        ).replace(/^(?:\.\.|#|\/)/, ''),
-        blockId: getPisiSearchBlockId(element),
-        element
-    })).filter((tag) => tag.value);
+    return Array.from(container.querySelectorAll('.pisi-user-tag[data-pisi-tag]'))
+        .map((element) => ({
+            value: cleanPisiSearchText(element.dataset.pisiTag || element.textContent || '').replace(/^(?:\.\.|#|\/)/, ''),
+            blockId: getPisiSearchBlockId(element),
+            element
+        }))
+        .filter((tag) => tag.value);
 }
 
 function extractPisiSearchTasks(container, tags) {
@@ -153,23 +122,16 @@ function extractPisiSearchTasks(container, tags) {
 
     for (const tag of tags) {
         if (!/^todo\./i.test(tag.value)) continue;
-        const block = tag.element.closest(
-            '.pisi-editor-block, p, div, li, h1, h2, h3, h4, h5, h6'
-        );
+        const block = tag.element.closest('.pisi-editor-block, p, div, li, h1, h2, h3, h4, h5, h6');
         const normalizedTodo = tag.value.toLocaleLowerCase('tr-TR');
-        const source = Array.from(
-            block?.querySelectorAll?.(
-                '.pisi-todo-source[data-pisi-todo-for]'
-            ) || []
-        ).find((candidate) => {
-            return cleanPisiSearchText(
-                candidate.dataset.pisiTodoFor || ''
-            ).replace(/^(?:\.\.|#|\/)/, '')
-                .toLocaleLowerCase('tr-TR') === normalizedTodo;
+        const source = Array.from(block?.querySelectorAll?.('.pisi-todo-source[data-pisi-todo-for]') || []).find((candidate) => {
+            return (
+                cleanPisiSearchText(candidate.dataset.pisiTodoFor || '')
+                    .replace(/^(?:\.\.|#|\/)/, '')
+                    .toLocaleLowerCase('tr-TR') === normalizedTodo
+            );
         });
-        const text = cleanPisiSearchText(
-            source?.textContent || block?.textContent || tag.value
-        );
+        const text = cleanPisiSearchText(source?.textContent || block?.textContent || tag.value);
 
         tasks.push({
             text,
@@ -183,48 +145,44 @@ function extractPisiSearchTasks(container, tags) {
 }
 
 function extractPisiSearchContentBlocks(container) {
-    let elements = Array.from(container.querySelectorAll(
-        '.pisi-editor-block[data-pisi-block-id]'
-    ));
+    let elements = Array.from(container.querySelectorAll('.pisi-editor-block[data-pisi-block-id]'));
 
     if (!elements.length) {
-        elements = Array.from(container.querySelectorAll(
-            'h1, h2, h3, h4, h5, h6, p, li, blockquote, pre'
-        ));
+        elements = Array.from(container.querySelectorAll('h1, h2, h3, h4, h5, h6, p, li, blockquote, pre'));
     }
 
-    const blocks = elements.slice(0, 5000).map((element, index) => {
-        const references = [];
-        const sourceText = String(element.textContent || '');
-        for (const match of sourceText.matchAll(/\[\[([^\]\n#]+)#\^?([^\]\n]+)\]\]/g)) {
-            references.push({
-                raw: match[0],
-                target: cleanPisiSearchText(match[1]),
-                blockId: cleanPisiSearchText(match[2]),
-                kind: 'link'
-            });
-        }
-        for (const match of sourceText.matchAll(/\(\((blk_[A-Za-z0-9_-]+)\)\)/g)) {
-            references.push({
-                raw: match[0],
-                target: '',
-                blockId: match[1],
-                kind: 'mention'
-            });
-        }
-        const clone = element.cloneNode(true);
-        clone.querySelectorAll(
-            'table, canvas, .pisi-user-tag, .pisi-todo-source'
-        ).forEach((child) => child.remove());
-        return {
-            text: cleanPisiSearchText(clone.textContent || ''),
-            blockId: element.getAttribute('data-pisi-block-id') || null,
-            blockType: element.getAttribute('data-pisi-block-type') ||
-                element.tagName.toLowerCase(),
-            references,
-            order: index
-        };
-    }).filter((block) => block.text);
+    const blocks = elements
+        .slice(0, 5000)
+        .map((element, index) => {
+            const references = [];
+            const sourceText = String(element.textContent || '');
+            for (const match of sourceText.matchAll(/\[\[([^\]\n#]+)#\^?([^\]\n]+)\]\]/g)) {
+                references.push({
+                    raw: match[0],
+                    target: cleanPisiSearchText(match[1]),
+                    blockId: cleanPisiSearchText(match[2]),
+                    kind: 'link'
+                });
+            }
+            for (const match of sourceText.matchAll(/\(\((blk_[A-Za-z0-9_-]+)\)\)/g)) {
+                references.push({
+                    raw: match[0],
+                    target: '',
+                    blockId: match[1],
+                    kind: 'mention'
+                });
+            }
+            const clone = element.cloneNode(true);
+            clone.querySelectorAll('table, canvas, .pisi-user-tag, .pisi-todo-source').forEach((child) => child.remove());
+            return {
+                text: cleanPisiSearchText(clone.textContent || ''),
+                blockId: element.getAttribute('data-pisi-block-id') || null,
+                blockType: element.getAttribute('data-pisi-block-type') || element.tagName.toLowerCase(),
+                references,
+                order: index
+            };
+        })
+        .filter((block) => block.text);
 
     if (!blocks.length) {
         const text = cleanPisiSearchText(container.textContent || '');
@@ -242,10 +200,12 @@ function extractPisiSearchContentBlocks(container) {
 }
 
 function extractPisiSearchTables(container) {
-    return Array.from(container.querySelectorAll('table')).map((table) => ({
-        text: cleanPisiSearchText(table.textContent || ''),
-        blockId: getPisiSearchBlockId(table)
-    })).filter((table) => table.text);
+    return Array.from(container.querySelectorAll('table'))
+        .map((table) => ({
+            text: cleanPisiSearchText(table.textContent || ''),
+            blockId: getPisiSearchBlockId(table)
+        }))
+        .filter((table) => table.text);
 }
 
 function makePisiSearchMembership(map, node) {
@@ -263,9 +223,7 @@ function createPisiSearchDocumentRecord(rawNode, projectFolder) {
     template.innerHTML = String(rawNode?.content || '');
     const container = template.content;
 
-    container.querySelectorAll(
-        'script, style, iframe, object, embed, .pisi-canvas-toolbar-hint'
-    ).forEach((element) => element.remove());
+    container.querySelectorAll('script, style, iframe, object, embed, .pisi-canvas-toolbar-hint').forEach((element) => element.remove());
 
     const plainText = cleanPisiSearchText(container.textContent || '');
     const tags = extractPisiSearchTags(container);
@@ -276,9 +234,7 @@ function createPisiSearchDocumentRecord(rawNode, projectFolder) {
 
     return {
         path,
-        fileName: rawNode.item?.fileName ||
-            rawNode.item?.name ||
-            getPisiSearchFileName(path),
+        fileName: rawNode.item?.fileName || rawNode.item?.name || getPisiSearchFileName(path),
         title,
         metadata: rawNode.metadata || rawNode.item?.metadata || {},
         properties: rawNode.properties || rawNode.item?.properties || {},
@@ -300,9 +256,7 @@ function createPisiSearchDocumentRecord(rawNode, projectFolder) {
         tables: extractPisiSearchTables(container),
         tags: tags.map(({ value, blockId }) => ({ value, blockId })),
         tasks,
-        memberships: Array.isArray(rawNode.memberships)
-            ? rawNode.memberships
-            : [],
+        memberships: Array.isArray(rawNode.memberships) ? rawNode.memberships : [],
         relativePath
     };
 }
@@ -325,39 +279,36 @@ function makePisiSearchRecordBase(documentRecord) {
 function createPisiSearchRecordsForDocument(documentRecord) {
     const base = makePisiSearchRecordBase(documentRecord);
     /** @type {Array<Record<string, any>>} */
-    const records = [{
-        ...base,
-        id: 'node:' + pisiSearchPathKey(documentRecord.path),
-        kind: 'node',
-        preview: documentRecord.memberships.length
-            ? documentRecord.memberships.map((item) => item.mapTitle).join(', ')
-            : documentRecord.relativePath,
-        searchFields: [
-            {
-                kind: 'title',
-                value: documentRecord.title,
-                weight: PISI_SEARCH_FIELD_WEIGHTS.title
-            },
-            {
-                kind: 'map',
-                value: documentRecord.memberships
-                    .map((item) => item.mapTitle)
-                    .join(' '),
-                weight: PISI_SEARCH_FIELD_WEIGHTS.map
-            },
-            {
-                kind: 'path',
-                value: documentRecord.relativePath,
-                weight: PISI_SEARCH_FIELD_WEIGHTS.path
-            }
-        ]
-    }];
+    const records = [
+        {
+            ...base,
+            id: 'node:' + pisiSearchPathKey(documentRecord.path),
+            kind: 'node',
+            preview: documentRecord.memberships.length ? documentRecord.memberships.map((item) => item.mapTitle).join(', ') : documentRecord.relativePath,
+            searchFields: [
+                {
+                    kind: 'title',
+                    value: documentRecord.title,
+                    weight: PISI_SEARCH_FIELD_WEIGHTS.title
+                },
+                {
+                    kind: 'map',
+                    value: documentRecord.memberships.map((item) => item.mapTitle).join(' '),
+                    weight: PISI_SEARCH_FIELD_WEIGHTS.map
+                },
+                {
+                    kind: 'path',
+                    value: documentRecord.relativePath,
+                    weight: PISI_SEARCH_FIELD_WEIGHTS.path
+                }
+            ]
+        }
+    ];
 
     documentRecord.contentBlocks.forEach((block, index) => {
         records.push({
             ...base,
-            id: 'content:' + pisiSearchPathKey(documentRecord.path) +
-                ':' + (block.blockId || index),
+            id: 'content:' + pisiSearchPathKey(documentRecord.path) + ':' + (block.blockId || index),
             kind: 'content',
             blockId: block.blockId,
             preview: block.text,
@@ -368,8 +319,7 @@ function createPisiSearchRecordsForDocument(documentRecord) {
     documentRecord.tasks.forEach((task, index) => {
         records.push({
             ...base,
-            id: 'task:' + pisiSearchPathKey(documentRecord.path) +
-                ':' + (task.blockId || index) + ':' + task.todoTag,
+            id: 'task:' + pisiSearchPathKey(documentRecord.path) + ':' + (task.blockId || index) + ':' + task.todoTag,
             kind: 'task',
             blockId: task.blockId,
             todoTag: task.todoTag,
@@ -387,8 +337,7 @@ function createPisiSearchRecordsForDocument(documentRecord) {
         .forEach((tag, index) => {
             records.push({
                 ...base,
-                id: 'tag:' + pisiSearchPathKey(documentRecord.path) +
-                    ':' + (tag.blockId || index) + ':' + tag.value,
+                id: 'tag:' + pisiSearchPathKey(documentRecord.path) + ':' + (tag.blockId || index) + ':' + tag.value,
                 kind: 'tag',
                 blockId: tag.blockId,
                 tag: tag.value,
@@ -400,8 +349,7 @@ function createPisiSearchRecordsForDocument(documentRecord) {
     documentRecord.tables.forEach((table, index) => {
         records.push({
             ...base,
-            id: 'table:' + pisiSearchPathKey(documentRecord.path) +
-                ':' + (table.blockId || index),
+            id: 'table:' + pisiSearchPathKey(documentRecord.path) + ':' + (table.blockId || index),
             kind: 'table',
             blockId: table.blockId,
             preview: table.text,
@@ -443,8 +391,7 @@ function upsertPisiRawNode(rawNodes, item, content, metadata, membership) {
     if (
         membership &&
         !node.memberships.some((existing) => {
-            return pisiSearchPathKey(existing.mapPath) ===
-                pisiSearchPathKey(membership.mapPath);
+            return pisiSearchPathKey(existing.mapPath) === pisiSearchPathKey(membership.mapPath);
         })
     ) {
         node.memberships.push(membership);
@@ -452,9 +399,7 @@ function upsertPisiRawNode(rawNodes, item, content, metadata, membership) {
 }
 
 function makePisiSearchMapRecord(item, mapResult) {
-    const fileName = String(
-        item?.name || item?.fileName || getPisiSearchFileName(item?.fullPath)
-    );
+    const fileName = String(item?.name || item?.fileName || getPisiSearchFileName(item?.fullPath));
     const mapRecord = {
         path: item.fullPath,
         title: getPisiSearchMapTitle(item),
@@ -533,13 +478,7 @@ async function scanPisiSearchFolder(folderPath, context) {
         const fileName = String(item.name || item.fileName || '');
 
         if (/\.node$/i.test(fileName)) {
-            upsertPisiRawNode(
-                context.rawNodes,
-                { ...item, fileName, name: fileName },
-                null,
-                item.metadata,
-                null
-            );
+            upsertPisiRawNode(context.rawNodes, { ...item, fileName, name: fileName }, null, item.metadata, null);
             continue;
         }
         if (!/\.map$/i.test(fileName)) continue;
@@ -562,13 +501,7 @@ async function scanPisiSearchFolder(folderPath, context) {
                 isFile: true,
                 isDirectory: false
             };
-            upsertPisiRawNode(
-                context.rawNodes,
-                nodeItem,
-                node.content,
-                node.metadata,
-                makePisiSearchMembership(mapRecord, node)
-            );
+            upsertPisiRawNode(context.rawNodes, nodeItem, node.content, node.metadata, makePisiSearchMembership(mapRecord, node));
         }
     }
 }
@@ -578,10 +511,7 @@ async function hydratePisiStandaloneNodes(rawNodes, context) {
     for (const node of rawNodes.values()) {
         if (node.content || node.memberships.length) continue;
         const cached = pisiSearchDocumentCache.get(pisiSearchPathKey(node.path));
-        if (
-            cached &&
-            cached.metadataSignature === getPisiSearchMetadataSignature(node)
-        ) {
+        if (cached && cached.metadataSignature === getPisiSearchMetadataSignature(node)) {
             node.content = cached.document.html;
             node.metadata = cached.document.metadata;
             node.properties = cached.document.properties;
@@ -593,9 +523,11 @@ async function hydratePisiStandaloneNodes(rawNodes, context) {
     for (let offset = 0; offset < pending.length; offset += 12) {
         if (context.generation !== pisiSearchIndexGeneration) return;
         const batch = pending.slice(offset, offset + 12);
-        const results = await Promise.all(batch.map((node) => {
-            return window.pisiProject?.getPisiDocument?.(node.path);
-        }));
+        const results = await Promise.all(
+            batch.map((node) => {
+                return window.pisiProject?.getPisiDocument?.(node.path);
+            })
+        );
 
         results.forEach((result, index) => {
             const node = batch[index];
@@ -655,9 +587,7 @@ async function buildPisiSearchIndex(projectFolder, generation) {
                     ...cached.document.nodeItem,
                     ...(rawNode.item || {})
                 },
-                memberships: Array.isArray(rawNode.memberships)
-                    ? rawNode.memberships
-                    : []
+                memberships: Array.isArray(rawNode.memberships) ? rawNode.memberships : []
             };
             context.reusedDocuments += 1;
         } else {
@@ -709,11 +639,7 @@ async function ensurePisiSearchIndex(options = {}) {
     if (!options.force && pisiSearchIndexCache?.projectKey === projectKey) {
         return pisiSearchIndexCache;
     }
-    if (
-        !options.force &&
-        pisiSearchBuildPromise &&
-        pisiSearchBuildPromise.projectKey === projectKey
-    ) {
+    if (!options.force && pisiSearchBuildPromise && pisiSearchBuildPromise.projectKey === projectKey) {
         return pisiSearchBuildPromise.promise;
     }
 
@@ -722,10 +648,7 @@ async function ensurePisiSearchIndex(options = {}) {
         .then((index) => {
             if (index && generation === pisiSearchIndexGeneration) {
                 pisiSearchIndexCache = index;
-                document.dispatchEvent(new CustomEvent(
-                    'pisi:search-index-ready',
-                    { detail: { index, mode: 'rebuild' } }
-                ));
+                document.dispatchEvent(new CustomEvent('pisi:search-index-ready', { detail: { index, mode: 'rebuild' } }));
             }
             return index;
         })
@@ -756,10 +679,7 @@ function invalidatePisiSearchIndex(reason = 'filesystem', changedPaths = []) {
     pisiSearchIndexGeneration += 1;
     pisiSearchIndexCache = null;
     pisiSearchBuildPromise = null;
-    document.dispatchEvent(new CustomEvent(
-        'pisi:search-index-invalidated',
-        { detail: { reason, changedPaths: paths } }
-    ));
+    document.dispatchEvent(new CustomEvent('pisi:search-index-invalidated', { detail: { reason, changedPaths: paths } }));
 }
 
 function refreshPisiSearchIndex() {
@@ -769,7 +689,9 @@ function refreshPisiSearchIndex() {
 
 const pisiSearchFilesystemDeltaController = createPisiSearchFilesystemDeltaController({
     getBaseIndex: () => pisiSearchIndexCache,
-    setBaseIndex: (index) => { pisiSearchIndexCache = index; },
+    setBaseIndex: (index) => {
+        pisiSearchIndexCache = index;
+    },
     getIndexGeneration: () => pisiSearchIndexGeneration,
     hasBuildPromise: () => Boolean(pisiSearchBuildPromise),
     getProjectFolder: () => window.currentProjectFolder,
@@ -798,27 +720,24 @@ function getPisiSearchLiveIndex(index, targetPath) {
     if (!previous) return index;
 
     let editor = null;
-    if (
-        activeModalNode?.path &&
-        pisiSearchPathKey(activeModalNode.path) === targetKey
-    ) {
+    if (activeModalNode?.path && pisiSearchPathKey(activeModalNode.path) === targetKey) {
         editor = document.getElementById('node-modal-content');
-    } else if (
-        activeCenterNode?.path &&
-        pisiSearchPathKey(activeCenterNode.path) === targetKey
-    ) {
+    } else if (activeCenterNode?.path && pisiSearchPathKey(activeCenterNode.path) === targetKey) {
         editor = document.getElementById('center-node-editor-content');
     }
     if (!editor) return index;
 
-    const liveDocument = createPisiSearchDocumentRecord({
-        path: previous.path,
-        item: previous.nodeItem,
-        metadata: previous.metadata,
-        properties: previous.properties,
-        memberships: previous.memberships,
-        content: editor.innerHTML
-    }, index.projectFolder);
+    const liveDocument = createPisiSearchDocumentRecord(
+        {
+            path: previous.path,
+            item: previous.nodeItem,
+            metadata: previous.metadata,
+            properties: previous.properties,
+            memberships: previous.memberships,
+            content: editor.innerHTML
+        },
+        index.projectFolder
+    );
     const documents = new Map(index.documents);
     documents.set(targetKey, liveDocument);
     const records = [
@@ -849,9 +768,7 @@ function bindPisiSearchIndexInvalidation() {
     if (pisiSearchFileSystemUnsubscribe) return;
     pisiSearchFileSystemUnsubscribe =
         window.pisiProject?.onFileSystemChanged?.((payload = {}) => {
-            const paths = Array.isArray(payload.changedPaths)
-                ? payload.changedPaths.filter(Boolean)
-                : [];
+            const paths = Array.isArray(payload.changedPaths) ? payload.changedPaths.filter(Boolean) : [];
             const classification = classifyPisiSearchChangedPaths(paths);
             if (classification.mode === 'ignore') return;
             if (classification.mode === 'rebuild') {
@@ -859,10 +776,7 @@ function bindPisiSearchIndexInvalidation() {
                 return;
             }
             if (!pisiSearchIndexCache || pisiSearchBuildPromise) {
-                invalidatePisiSearchIndex(
-                    'filesystem-base-not-ready',
-                    classification.uniquePaths
-                );
+                invalidatePisiSearchIndex('filesystem-base-not-ready', classification.uniquePaths);
                 return;
             }
             void pisiSearchFilesystemDeltaController.queue(classification);
@@ -877,43 +791,63 @@ const moduleApi = {};
 Object.defineProperties(moduleApi, {
     ensurePisiSearchIndex: {
         enumerable: true,
-        get() { return ensurePisiSearchIndex; }
+        get() {
+            return ensurePisiSearchIndex;
+        }
     },
     invalidatePisiSearchIndex: {
         enumerable: true,
-        get() { return invalidatePisiSearchIndex; }
+        get() {
+            return invalidatePisiSearchIndex;
+        }
     },
     refreshPisiSearchIndex: {
         enumerable: true,
-        get() { return refreshPisiSearchIndex; }
+        get() {
+            return refreshPisiSearchIndex;
+        }
     },
     applyPisiSearchFilesystemDelta: {
         enumerable: true,
-        get() { return applyPisiSearchFilesystemDelta; }
+        get() {
+            return applyPisiSearchFilesystemDelta;
+        }
     },
     createPisiSearchDocumentRecord: {
         enumerable: true,
-        get() { return createPisiSearchDocumentRecord; }
+        get() {
+            return createPisiSearchDocumentRecord;
+        }
     },
     getPisiSearchCurrentNodePath: {
         enumerable: true,
-        get() { return getPisiSearchCurrentNodePath; }
+        get() {
+            return getPisiSearchCurrentNodePath;
+        }
     },
     getPisiSearchLiveIndex: {
         enumerable: true,
-        get() { return getPisiSearchLiveIndex; }
+        get() {
+            return getPisiSearchLiveIndex;
+        }
     },
     getPisiSearchCacheStats: {
         enumerable: true,
-        get() { return getPisiSearchCacheStats; }
+        get() {
+            return getPisiSearchCacheStats;
+        }
     },
     getPisiSearchMetadataSignature: {
         enumerable: true,
-        get() { return getPisiSearchMetadataSignature; }
+        get() {
+            return getPisiSearchMetadataSignature;
+        }
     },
     getPisiSearchDocumentSignature: {
         enumerable: true,
-        get() { return getPisiSearchDocumentSignature; }
+        get() {
+            return getPisiSearchDocumentSignature;
+        }
     }
 });
 registerModule('search.index', moduleApi);

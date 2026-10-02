@@ -23,7 +23,7 @@ test('relationship filter is exposed as an icon menu beside Focus neighbors', ()
     assert.match(moduleSource, /pisi-map-operational-relationship-button/);
     assert.match(moduleSource, /dataset\.pisiToolIcon\s*=\s*'relationship'/);
     assert.match(moduleSource, /focus\.insertAdjacentElement\('afterend', button\)/);
-    assert.match(css, /data-pisi-tool-icon="relationship"/);
+    assert.match(css, /data-pisi-tool-icon=["\']relationship["\']/);
     assert.match(css, /21\.428571%/);
 });
 

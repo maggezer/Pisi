@@ -11,13 +11,13 @@ const PISI_SUPPORTED_LANGUAGES = new Set(['tr', 'eng']);
 const pisiMainLocaleCache = new Map();
 
 function normalizePisiLanguage(language) {
-    const normalized = String(language || '').trim().toLowerCase();
+    const normalized = String(language || '')
+        .trim()
+        .toLowerCase();
     if (normalized === 'en' || normalized === 'en-us' || normalized === 'en-gb') {
         return 'eng';
     }
-    return PISI_SUPPORTED_LANGUAGES.has(normalized)
-        ? normalized
-        : PISI_DEFAULT_LANGUAGE;
+    return PISI_SUPPORTED_LANGUAGES.has(normalized) ? normalized : PISI_DEFAULT_LANGUAGE;
 }
 
 function getPisiLanguage() {
@@ -43,11 +43,7 @@ function loadPisiMainLocale(language) {
     const cached = pisiMainLocaleCache.get(normalized);
     if (cached) return cached;
 
-    const localePath = path.join(
-        app.getAppPath(),
-        'locales',
-        `lang-${normalized}.json`
-    );
+    const localePath = path.join(app.getAppPath(), 'locales', `lang-${normalized}.json`);
 
     let locale = { language: normalized, strings: {} };
     try {

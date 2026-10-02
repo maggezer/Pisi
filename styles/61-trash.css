@@ -137,34 +137,34 @@
     font-size: 12px;
 }
 
-html[data-theme="light"] .pisi-trash-header p,
-html[data-theme="light"] .pisi-trash-meta,
-html[data-theme="light"] .pisi-trash-kind,
-html[data-theme="light"] .pisi-trash-empty {
+html[data-theme='light'] .pisi-trash-header p,
+html[data-theme='light'] .pisi-trash-meta,
+html[data-theme='light'] .pisi-trash-kind,
+html[data-theme='light'] .pisi-trash-empty {
     color: #626b78;
 }
 
-html[data-theme="light"] .pisi-trash-card,
-html[data-theme="light"] .pisi-trash-btn,
-html[data-theme="light"] .pisi-trash-empty {
+html[data-theme='light'] .pisi-trash-card,
+html[data-theme='light'] .pisi-trash-btn,
+html[data-theme='light'] .pisi-trash-empty {
     border-color: rgba(15, 23, 42, 0.13);
 }
 
-html[data-theme="light"] .pisi-trash-card {
+html[data-theme='light'] .pisi-trash-card {
     background: rgba(15, 23, 42, 0.015);
 }
 
-html[data-theme="light"] .pisi-trash-btn {
+html[data-theme='light'] .pisi-trash-btn {
     background: rgba(15, 23, 42, 0.035);
 }
 
-html[data-theme="light"] .pisi-trash-btn:hover:not(:disabled),
-html[data-theme="light"] .pisi-trash-btn:focus-visible:not(:disabled) {
+html[data-theme='light'] .pisi-trash-btn:hover:not(:disabled),
+html[data-theme='light'] .pisi-trash-btn:focus-visible:not(:disabled) {
     background: rgba(15, 23, 42, 0.075);
     border-color: rgba(15, 23, 42, 0.22);
 }
 
-html[data-theme="light"] .pisi-trash-kind {
+html[data-theme='light'] .pisi-trash-kind {
     background: rgba(15, 23, 42, 0.055);
 }
 

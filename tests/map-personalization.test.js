@@ -31,10 +31,7 @@ test('Customize yalnız görünür bir map varken etkinleşir ve en sağdadır',
     const tabs = read('renderer/shell/pisi-tabs.mjs');
     const css = read('styles/20-map-interactions.css');
 
-    assert.match(
-        html,
-        /data-right-tab="customizations"[\s\S]*aria-disabled="true"[\s\S]*disabled/
-    );
+    assert.match(html, /data-right-tab="customizations"[\s\S]*aria-disabled="true"[\s\S]*disabled/);
     assert.match(customizations, /window\.activeMapPath/);
     assert.match(customizations, /!canvas\.hidden/);
     assert.match(customizations, /button\.disabled = !enabled/);
@@ -42,10 +39,7 @@ test('Customize yalnız görünür bir map varken etkinleşir ve en sağdadır',
     assert.match(customizations, /pisi:map-customization-context-changed/);
     assert.match(tabs, /pisi:map-customization-context-changed/);
     assert.match(windowSource, /button\.disabled/);
-    assert.match(
-        css,
-        /data-right-tab="customizations"\] \{ order: 70; \}/
-    );
+    assert.match(css, /data-right-tab=["\']customizations["\']\]\s*\{[\s\S]*?order:\s*70;/);
 });
 
 test('node kartı renkleri map kaydında tutulur ve global varsayılanı ezer', () => {
@@ -94,6 +88,6 @@ test('kişiselleştirme yüzeyleri açık ve koyu tema stillerini taşır', () =
     assert.match(dark, /#pisi-map-customize-panel/);
     assert.match(dark, /\.pisi-selection-customize-row/);
     assert.match(themes, /\.pisi-preferences-customization/);
-    assert.match(themes, /html\[data-pisi-theme="light"\] \.pisi-selection-customize-row/);
-    assert.match(themes, /html\[data-pisi-theme="light"\] \.pisi-selection-customize-reset/);
+    assert.match(themes, /html\[data-pisi-theme=["\']light["\']\] \.pisi-selection-customize-row/);
+    assert.match(themes, /html\[data-pisi-theme=["\']light["\']\] \.pisi-selection-customize-reset/);
 });

@@ -9,7 +9,9 @@ const PISI_PROJECTION_INDEX_STATES = Object.freeze({
 });
 
 function normalizeProjectionIndexToken(value = '') {
-    return String(value ?? '').trim().slice(0, 500);
+    return String(value ?? '')
+        .trim()
+        .slice(0, 500);
 }
 
 function hashProjectionIndexText(value = '') {
@@ -40,14 +42,8 @@ function assertPisiProjectionIndexDriver(driver) {
 }
 
 function normalizeProjectionDelta(delta = {}) {
-    const upsert = Array.isArray(delta.upsert)
-        ? delta.upsert.filter((record) => record && typeof record === 'object' && record.id)
-        : [];
-    const remove = Array.from(new Set(
-        (Array.isArray(delta.remove) ? delta.remove : [])
-            .map((id) => String(id || '').trim())
-            .filter(Boolean)
-    ));
+    const upsert = Array.isArray(delta.upsert) ? delta.upsert.filter((record) => record && typeof record === 'object' && record.id) : [];
+    const remove = Array.from(new Set((Array.isArray(delta.remove) ? delta.remove : []).map((id) => String(id || '').trim()).filter(Boolean)));
     return { upsert, remove };
 }
 
@@ -149,9 +145,7 @@ function createPisiRebuildableProjectionIndex(options = {}) {
             publish({
                 state: PISI_PROJECTION_INDEX_STATES.READY,
                 generation,
-                sourceFingerprint: normalizeProjectionIndexToken(
-                    metadata.sourceFingerprint || manifest.sourceFingerprint
-                ),
+                sourceFingerprint: normalizeProjectionIndexToken(metadata.sourceFingerprint || manifest.sourceFingerprint),
                 builtAt: Number(metadata.builtAt) || Date.now(),
                 recordCount: Array.isArray(snapshot?.records) ? snapshot.records.length : 0,
                 staleReason: null,
@@ -189,9 +183,7 @@ function createPisiRebuildableProjectionIndex(options = {}) {
     }
 
     function isCompatible(candidate = {}) {
-        return candidate?.contractVersion === PISI_PROJECTION_INDEX_CONTRACT_VERSION &&
-            candidate?.schemaVersion === schemaVersion &&
-            candidate?.name === name;
+        return candidate?.contractVersion === PISI_PROJECTION_INDEX_CONTRACT_VERSION && candidate?.schemaVersion === schemaVersion && candidate?.name === name;
     }
 
     return Object.freeze({

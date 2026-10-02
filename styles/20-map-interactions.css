@@ -1,5 +1,3 @@
-
-
 #arrow-colevel path {
     fill: #34ace0;
 }
@@ -54,7 +52,7 @@
     cursor: grabbing;
 }
 
-.map-node-title[contenteditable="true"],
+.map-node-title[contenteditable='true'],
 .map-node-title-input {
     cursor: text;
 }
@@ -69,7 +67,9 @@
     flex-direction: column;
     gap: 8px;
     opacity: 0.45;
-    transition: opacity 0.18s ease, transform 0.18s ease;
+    transition:
+        opacity 0.18s ease,
+        transform 0.18s ease;
 }
 
 #map-zoom-controls:hover {
@@ -83,7 +83,9 @@
     right: 18px;
     z-index: 20;
     opacity: 0.55;
-    transition: opacity 0.18s ease, transform 0.18s ease;
+    transition:
+        opacity 0.18s ease,
+        transform 0.18s ease;
 }
 
 #pisi-map-export-control {
@@ -92,7 +94,9 @@
     right: 64px;
     z-index: 21;
     opacity: 0.55;
-    transition: opacity 0.18s ease, transform 0.18s ease;
+    transition:
+        opacity 0.18s ease,
+        transform 0.18s ease;
 }
 
 #pisi-bases-map-control[hidden],
@@ -146,7 +150,7 @@
 .pisi-map-bases-trigger:focus-visible,
 .pisi-map-export-trigger:hover,
 .pisi-map-export-trigger:focus-visible,
-.pisi-map-export-trigger[aria-expanded="true"] {
+.pisi-map-export-trigger[aria-expanded='true'] {
     background: rgba(45, 45, 48, 0.96);
     border-color: #f39c12;
     outline: none;
@@ -164,8 +168,8 @@
     display: inline-block;
     flex: 0 0 auto;
     background: currentColor;
-    -webkit-mask: url("../assets/icons/bases-lite.svg") center / contain no-repeat;
-    mask: url("../assets/icons/bases-lite.svg") center / contain no-repeat;
+    -webkit-mask: url('../assets/icons/bases-lite.svg') center / contain no-repeat;
+    mask: url('../assets/icons/bases-lite.svg') center / contain no-repeat;
 }
 
 .pisi-map-export-icon {
@@ -174,8 +178,8 @@
     display: inline-block;
     flex: 0 0 auto;
     background: currentColor;
-    -webkit-mask: url("../assets/icons/export-map.svg") center / contain no-repeat;
-    mask: url("../assets/icons/export-map.svg") center / contain no-repeat;
+    -webkit-mask: url('../assets/icons/export-map.svg') center / contain no-repeat;
+    mask: url('../assets/icons/export-map.svg') center / contain no-repeat;
 }
 
 .pisi-map-export-menu {
@@ -237,7 +241,9 @@
 .map-edge-delete {
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.12s ease, transform 0.12s ease;
+    transition:
+        opacity 0.12s ease,
+        transform 0.12s ease;
 }
 
 .map-edge-hit {
@@ -341,7 +347,6 @@
     position: relative;
 }
 
-
 #right-panel-tabs::-webkit-scrollbar {
     height: 4px;
 }
@@ -389,43 +394,56 @@
 }
 
 .pisi-right-tab-icon-todo {
-    -webkit-mask-image: url("../assets/right-tabs/todo.svg");
-    mask-image: url("../assets/right-tabs/todo.svg");
+    -webkit-mask-image: url('../assets/right-tabs/todo.svg');
+    mask-image: url('../assets/right-tabs/todo.svg');
 }
 
 .pisi-right-tab-icon-tags {
-    -webkit-mask-image: url("../assets/right-tabs/tags.svg");
-    mask-image: url("../assets/right-tabs/tags.svg");
+    -webkit-mask-image: url('../assets/right-tabs/tags.svg');
+    mask-image: url('../assets/right-tabs/tags.svg');
 }
 
 .pisi-right-tab-icon-customize {
-    -webkit-mask-image: url("../assets/right-tabs/customize.svg");
-    mask-image: url("../assets/right-tabs/customize.svg");
+    -webkit-mask-image: url('../assets/right-tabs/customize.svg');
+    mask-image: url('../assets/right-tabs/customize.svg');
 }
 
 .pisi-right-tab-icon-links {
-    -webkit-mask-image: url("../assets/right-tabs/links.svg");
-    mask-image: url("../assets/right-tabs/links.svg");
+    -webkit-mask-image: url('../assets/right-tabs/links.svg');
+    mask-image: url('../assets/right-tabs/links.svg');
 }
 
 .pisi-right-tab-icon-search {
-    -webkit-mask-image: url("../assets/right-tabs/search.svg");
-    mask-image: url("../assets/right-tabs/search.svg");
+    -webkit-mask-image: url('../assets/right-tabs/search.svg');
+    mask-image: url('../assets/right-tabs/search.svg');
 }
 
 .pisi-right-tab-icon-properties {
-    -webkit-mask-image: url("../assets/right-tabs/properties.svg");
-    mask-image: url("../assets/right-tabs/properties.svg");
+    -webkit-mask-image: url('../assets/right-tabs/properties.svg');
+    mask-image: url('../assets/right-tabs/properties.svg');
 }
 
-.right-panel-tab[data-right-tab="missions"] { order: 10; }
-.right-panel-tab[data-right-tab="tags"] { order: 20; }
-.right-panel-tab[data-right-tab^="extension-"] { order: 40; }
-.right-panel-tab[data-right-tab="links"] { order: 50; }
-.right-panel-tab[data-right-tab="search"] { order: 60; }
-.right-panel-tab[data-right-tab="properties"] { order: 65; }
-.right-panel-tab[data-right-tab="customizations"] { order: 70; }
-
+.right-panel-tab[data-right-tab='missions'] {
+    order: 10;
+}
+.right-panel-tab[data-right-tab='tags'] {
+    order: 20;
+}
+.right-panel-tab[data-right-tab^='extension-'] {
+    order: 40;
+}
+.right-panel-tab[data-right-tab='links'] {
+    order: 50;
+}
+.right-panel-tab[data-right-tab='search'] {
+    order: 60;
+}
+.right-panel-tab[data-right-tab='properties'] {
+    order: 65;
+}
+.right-panel-tab[data-right-tab='customizations'] {
+    order: 70;
+}
 
 .right-panel-tab:hover {
     background: #333;
@@ -450,7 +468,7 @@
 }
 
 .right-panel-tab:disabled,
-.right-panel-tab[aria-disabled="true"] {
+.right-panel-tab[aria-disabled='true'] {
     opacity: 0.34;
     color: #737373;
     cursor: not-allowed;
@@ -458,13 +476,12 @@
 }
 
 .right-panel-tab:disabled:hover,
-.right-panel-tab[aria-disabled="true"]:hover {
+.right-panel-tab[aria-disabled='true']:hover {
     background: transparent;
     color: #737373;
     border-color: transparent;
     transform: none;
 }
-
 
 .right-tab-page {
     display: none;
@@ -497,7 +514,7 @@
     border: 1px solid #444;
     border-radius: 10px;
     background: #252526;
-    box-shadow: 0 14px 38px rgba(0,0,0,0.58);
+    box-shadow: 0 14px 38px rgba(0, 0, 0, 0.58);
 }
 
 .pisi-tag-menu[hidden] {
@@ -572,7 +589,7 @@
 }
 
 #node-modal-content:empty::before {
-    content: "Node içeriği...";
+    content: 'Node içeriği...';
     color: #555;
     pointer-events: none;
 }
@@ -594,7 +611,6 @@
     cursor: default;
     user-select: none;
 }
-
 
 .pisi-tag-option.todo-start .pisi-tag-option-code,
 .pisi-tag-option.todo-priority .pisi-tag-option-code {

@@ -1,158 +1,158 @@
 {
-  "name": "pisi",
-  "version": "0.11.0",
-  "description": "Pisi desktop knowledge mapping app",
-  "main": "main.js",
-  "author": "Mumin Biyiklioglu",
-  "license": "ISC",
-  "scripts": {
-    "start": "electron .",
-    "check:syntax": "node scripts/check-syntax.js",
-    "lint": "eslint .",
-    "test": "node --test",
-    "validate": "npm run format:check && npm run validate:source",
-    "audit": "npm audit --audit-level=high",
-    "dist": "electron-builder",
-    "dist:win": "electron-builder --win",
-    "dist:portable": "electron-builder --win portable",
-    "dist:installer": "electron-builder --win nsis",
-    "check:architecture": "node scripts/check-architecture.js",
-    "check:branding": "node scripts/check-pisi-branding.js",
-    "check:i18n": "node scripts/check-i18n.js",
-    "test:e2e": "node scripts/electron-smoke-e2e.mjs",
-    "check:types": "node scripts/generate-checkjs-globals.js && tsc -p tsconfig.checkjs.json",
-    "dist:store:x64": "electron-builder --win dir --x64 --publish never -c.directories.output=dist-store/x64 -c.extraMetadata.pisiDistribution=store",
-    "dist:store:arm64": "electron-builder --win dir --arm64 --publish never -c.directories.output=dist-store/arm64 -c.extraMetadata.pisiDistribution=store",
-    "dist:mac": "electron-builder --mac dmg zip --x64 --arm64 --universal --publish never",
-    "dist:linux": "electron-builder --linux AppImage deb --x64 --arm64 --publish never",
-    "format": "prettier . --write --ignore-unknown",
-    "format:check": "prettier . --check --ignore-unknown",
-    "validate:source": "npm run check:syntax && npm run check:architecture && npm run check:branding && npm run check:i18n && npm run check:types && npm run lint && npm test"
-  },
-  "build": {
-    "appId": "com.mumin.pisi",
-    "productName": "Pisi",
-    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
-    "asar": true,
-    "directories": {
-      "output": "dist"
+    "name": "pisi",
+    "version": "0.11.0",
+    "description": "Pisi desktop knowledge mapping app",
+    "main": "main.js",
+    "author": "Mumin Biyiklioglu",
+    "license": "ISC",
+    "scripts": {
+        "start": "electron .",
+        "check:syntax": "node scripts/check-syntax.js",
+        "lint": "eslint .",
+        "test": "node --test",
+        "validate": "npm run format:check && npm run validate:source",
+        "audit": "npm audit --audit-level=high",
+        "dist": "electron-builder",
+        "dist:win": "electron-builder --win",
+        "dist:portable": "electron-builder --win portable",
+        "dist:installer": "electron-builder --win nsis",
+        "check:architecture": "node scripts/check-architecture.js",
+        "check:branding": "node scripts/check-pisi-branding.js",
+        "check:i18n": "node scripts/check-i18n.js",
+        "test:e2e": "node scripts/electron-smoke-e2e.mjs",
+        "check:types": "node scripts/generate-checkjs-globals.js && tsc -p tsconfig.checkjs.json",
+        "dist:store:x64": "electron-builder --win dir --x64 --publish never -c.directories.output=dist-store/x64 -c.extraMetadata.pisiDistribution=store",
+        "dist:store:arm64": "electron-builder --win dir --arm64 --publish never -c.directories.output=dist-store/arm64 -c.extraMetadata.pisiDistribution=store",
+        "dist:mac": "electron-builder --mac dmg zip --x64 --arm64 --universal --publish never",
+        "dist:linux": "electron-builder --linux AppImage deb --x64 --arm64 --publish never",
+        "format": "prettier . --write --ignore-unknown",
+        "format:check": "prettier . --check --ignore-unknown",
+        "validate:source": "npm run check:syntax && npm run check:architecture && npm run check:branding && npm run check:i18n && npm run check:types && npm run lint && npm test"
     },
-    "files": [
-      "main.js",
-      "main/**/*",
-      "preload.js",
-      "index.html",
-      "style.css",
-      "renderer/**/*",
-      "assets/**/*",
-      "locales/**/*",
-      "package.json",
-      "styles/**/*"
-    ],
-    "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
+    "build": {
+        "appId": "com.mumin.pisi",
+        "productName": "Pisi",
+        "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+        "asar": true,
+        "directories": {
+            "output": "dist"
         },
-        {
-          "target": "portable",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        }
-      ],
-      "icon": "assets/pisi.ico",
-      "signtoolOptions": {
-        "signingHashAlgorithms": [
-          "sha256"
+        "files": [
+            "main.js",
+            "main/**/*",
+            "preload.js",
+            "index.html",
+            "style.css",
+            "renderer/**/*",
+            "assets/**/*",
+            "locales/**/*",
+            "package.json",
+            "styles/**/*"
         ],
-        "rfc3161TimeStampServer": "http://timestamp.digicert.com"
-      }
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "shortcutName": "Pisi"
-    },
-    "mac": {
-      "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "x64",
-            "arm64",
-            "universal"
-          ]
+        "win": {
+            "target": [
+                {
+                    "target": "nsis",
+                    "arch": [
+                        "x64",
+                        "arm64"
+                    ]
+                },
+                {
+                    "target": "portable",
+                    "arch": [
+                        "x64",
+                        "arm64"
+                    ]
+                }
+            ],
+            "icon": "assets/pisi.ico",
+            "signtoolOptions": {
+                "signingHashAlgorithms": [
+                    "sha256"
+                ],
+                "rfc3161TimeStampServer": "http://timestamp.digicert.com"
+            }
         },
-        {
-          "target": "zip",
-          "arch": [
-            "x64",
-            "arm64",
-            "universal"
-          ]
-        }
-      ],
-      "icon": "assets/pisi.png",
-      "category": "public.app-category.productivity",
-      "hardenedRuntime": true,
-      "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.inherit.plist",
-      "notarize": false
-    },
-    "dmg": {
-      "title": "Pisi ${version}",
-      "iconSize": 96,
-      "contents": [
-        {
-          "x": 130,
-          "y": 220
+        "nsis": {
+            "oneClick": false,
+            "allowToChangeInstallationDirectory": true,
+            "createDesktopShortcut": true,
+            "createStartMenuShortcut": true,
+            "shortcutName": "Pisi"
         },
-        {
-          "x": 410,
-          "y": 220,
-          "type": "link",
-          "path": "/Applications"
-        }
-      ]
-    },
-    "linux": {
-      "target": [
-        {
-          "target": "AppImage",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
+        "mac": {
+            "target": [
+                {
+                    "target": "dmg",
+                    "arch": [
+                        "x64",
+                        "arm64",
+                        "universal"
+                    ]
+                },
+                {
+                    "target": "zip",
+                    "arch": [
+                        "x64",
+                        "arm64",
+                        "universal"
+                    ]
+                }
+            ],
+            "icon": "assets/pisi.png",
+            "category": "public.app-category.productivity",
+            "hardenedRuntime": true,
+            "entitlements": "build/entitlements.mac.plist",
+            "entitlementsInherit": "build/entitlements.mac.inherit.plist",
+            "notarize": false
         },
-        {
-          "target": "deb",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
+        "dmg": {
+            "title": "Pisi ${version}",
+            "iconSize": 96,
+            "contents": [
+                {
+                    "x": 130,
+                    "y": 220
+                },
+                {
+                    "x": 410,
+                    "y": 220,
+                    "type": "link",
+                    "path": "/Applications"
+                }
+            ]
+        },
+        "linux": {
+            "target": [
+                {
+                    "target": "AppImage",
+                    "arch": [
+                        "x64",
+                        "arm64"
+                    ]
+                },
+                {
+                    "target": "deb",
+                    "arch": [
+                        "x64",
+                        "arm64"
+                    ]
+                }
+            ],
+            "icon": "assets/pisi.png",
+            "category": "Office",
+            "executableName": "pisi",
+            "maintainer": "Mumin Biyiklioglu",
+            "synopsis": "Pisi desktop knowledge mapping app",
+            "description": "Pisi desktop knowledge mapping app"
         }
-      ],
-      "icon": "assets/pisi.png",
-      "category": "Office",
-      "executableName": "pisi",
-      "maintainer": "Mumin Biyiklioglu",
-      "synopsis": "Pisi desktop knowledge mapping app",
-      "description": "Pisi desktop knowledge mapping app"
+    },
+    "devDependencies": {
+        "electron": "^43.4.2",
+        "electron-builder": "^26.15.7",
+        "eslint": "^10.8.0",
+        "typescript": "5.9.3",
+        "prettier": "3.9.9"
     }
-  },
-  "devDependencies": {
-    "electron": "^43.4.2",
-    "electron-builder": "^26.15.7",
-    "eslint": "^10.8.0",
-    "typescript": "5.9.3",
-    "prettier": "3.9.9"
-  }
 }

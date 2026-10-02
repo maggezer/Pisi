@@ -37,10 +37,7 @@ test('Workspace Center Templates sayfası property template oluşturma ve silmey
     const source = read('renderer/data/pisi-property-templates.mjs');
 
     assert.match(bootstrap, /\.\/data\/pisi-property-templates\.mjs/);
-    assert.ok(manifest.some((entry) => (
-        entry.module === 'data.propertyTemplates' &&
-        entry.path === 'renderer/data/pisi-property-templates.mjs'
-    )));
+    assert.ok(manifest.some((entry) => entry.module === 'data.propertyTemplates' && entry.path === 'renderer/data/pisi-property-templates.mjs'));
     assert.match(source, /id: 'templates'/);
     assert.match(source, /label: 'Templates'/);
     assert.match(source, /Property şablonları/);
@@ -57,8 +54,8 @@ test('property template yüzeyleri açık/koyu temaya ve iki dile sahiptir', () 
     const tr = JSON.parse(read('locales/lang-tr.json')).strings;
     const eng = JSON.parse(read('locales/lang-eng.json')).strings;
 
-    assert.match(lightStyles, /data-pisi-theme="light"[^\n]*\.pisi-property-template-trigger/);
-    assert.match(lightStyles, /data-pisi-theme="light"[^\n]*\.pisi-property-template-section/);
+    assert.match(lightStyles, /data-pisi-theme=["\']light["\'][^\n]*\.pisi-property-template-trigger/);
+    assert.match(lightStyles, /data-pisi-theme=["\']light["\'][^\n]*\.pisi-property-template-section/);
     for (const key of [
         'Şablon seç',
         'Templates',

@@ -37,9 +37,7 @@ function walkPisiPropertyNodePaths(projectFolder) {
     if (!result.ok) {
         throw new Error(result.error || 'Property node taraması başarısız.');
     }
-    return result.entries
-        .map((entry) => entry.path)
-        .sort((a, b) => a.localeCompare(b, 'en'));
+    return result.entries.map((entry) => entry.path).sort((a, b) => a.localeCompare(b, 'en'));
 }
 
 function readPisiPropertySchema(projectFolder) {
@@ -132,12 +130,8 @@ function collectPisiPropertyCarriers(projectFolder) {
         const read = readJsonWithoutMutation(projectFolder, nodePath);
         if (!read.ok || read.data?.pisi?.type !== 'node') continue;
         if (!read.data.properties || typeof read.data.properties !== 'object') continue;
-        carriers.push(makePropertyCarrier(
-            'node',
-            nodePath,
-            read.data.pisi.id || nodePath,
-            read.data.properties,
-            (properties, reason = 'property-schema-migration') => {
+        carriers.push(
+            makePropertyCarrier('node', nodePath, read.data.pisi.id || nodePath, read.data.properties, (properties, reason = 'property-schema-migration') => {
                 const latest = readJsonWithoutMutation(projectFolder, nodePath);
                 if (!latest.ok || latest.data?.pisi?.type !== 'node') {
                     throw new Error(`Property migration sırasında node okunamadı: ${nodePath}`);
@@ -149,8 +143,8 @@ function collectPisiPropertyCarriers(projectFolder) {
                 latest.data.properties = properties;
                 latest.data.pisi.updatedAt = new Date().toISOString();
                 writePisiDocument(nodePath, latest.data);
-            }
-        ));
+            })
+        );
     }
 
     const templatePath = storage.resolvePath(PISI_PROPERTY_TEMPLATE_FILE);
@@ -159,18 +153,13 @@ function collectPisiPropertyCarriers(projectFolder) {
         if (read.ok && Array.isArray(read.data?.templates)) {
             read.data.templates.forEach((template, index) => {
                 if (!template?.properties || typeof template.properties !== 'object') return;
-                carriers.push(makePropertyCarrier(
-                    'template',
-                    templatePath,
-                    template.id || `template-${index}`,
-                    template.properties,
-                    (properties) => {
+                carriers.push(
+                    makePropertyCarrier('template', templatePath, template.id || `template-${index}`, template.properties, (properties) => {
                         const latest = readJsonWithoutMutation(projectFolder, templatePath);
                         if (!latest.ok || !Array.isArray(latest.data?.templates)) {
                             throw new Error('Property migration sırasında template store okunamadı.');
                         }
-                        const target = latest.data.templates.find((item) => item?.id === template.id)
-                            || latest.data.templates[index];
+                        const target = latest.data.templates.find((item) => item?.id === template.id) || latest.data.templates[index];
                         if (!target) throw new Error('Property migration sırasında template bulunamadı.');
                         target.properties = properties;
                         target.updatedAt = new Date().toISOString();
@@ -181,8 +170,8 @@ function collectPisiPropertyCarriers(projectFolder) {
                         if (!written.ok) {
                             throw new Error(written.error || 'Property template store yazılamadı.');
                         }
-                    }
-                ));
+                    })
+                );
             });
         }
     }
@@ -250,31 +239,30 @@ function rewritePropertyDefinitionUses(projectFolder, definition, previousType =
                 ok: false,
                 code: 'PROPERTY_TYPE_CHANGE_CONFLICT',
                 error: `“${definition.name}” property türü veri kaybetmeden değiştirilemiyor.`,
-                conflicts: uses.filter((item) => !contract.canLosslesslyChangePropertyType(
-                    item.property.type || previousType,
-                    definition.type,
-                    item.property.value
-                )).map((item) => ({
-                    carrier: item.carrier.kind,
-                    ownerId: item.carrier.ownerId,
-                    path: item.carrier.filePath
-                }))
+                conflicts: uses
+                    .filter((item) => !contract.canLosslesslyChangePropertyType(item.property.type || previousType, definition.type, item.property.value))
+                    .map((item) => ({
+                        carrier: item.carrier.kind,
+                        ownerId: item.carrier.ownerId,
+                        path: item.carrier.filePath
+                    }))
             };
         }
-        if (previousType !== definition.type && !contract.canLosslesslyChangePropertyType(
-            use.property.type || previousType,
-            definition.type,
-            use.property.value
-        )) {
+        if (
+            previousType !== definition.type &&
+            !contract.canLosslesslyChangePropertyType(use.property.type || previousType, definition.type, use.property.value)
+        ) {
             return {
                 ok: false,
                 code: 'PROPERTY_TYPE_CHANGE_CONFLICT',
                 error: `“${definition.name}” property türü veri kaybetmeden değiştirilemiyor.`,
-                conflicts: [{
-                    carrier: use.carrier.kind,
-                    ownerId: use.carrier.ownerId,
-                    path: use.carrier.filePath
-                }]
+                conflicts: [
+                    {
+                        carrier: use.carrier.kind,
+                        ownerId: use.carrier.ownerId,
+                        path: use.carrier.filePath
+                    }
+                ]
             };
         }
         let record = grouped.get(use.carrier);
@@ -313,9 +301,7 @@ function resolveSubmittedProperty(schema, submitted, indexes) {
     const byName = indexes.byName.get(contract.normalizePropertyNameKey(name));
     if (!definition && byName) definition = byName;
     if (!definition) {
-        const id = rawId && !indexes.occupied.has(rawId)
-            ? rawId
-            : contract.makeNewPropertyId(name, type, indexes.occupied);
+        const id = rawId && !indexes.occupied.has(rawId) ? rawId : contract.makeNewPropertyId(name, type, indexes.occupied);
         definition = { id, name, type };
         schema.definitions.push(definition);
         indexes.byId.set(id, definition);
@@ -396,11 +382,7 @@ function savePisiNodePropertiesStable(projectFolder, nodePath, properties = []) 
         }
 
         for (const change of changedDefinitions.values()) {
-            const rewrite = rewritePropertyDefinitionUses(
-                projectFolder,
-                change.definition,
-                change.previousType
-            );
+            const rewrite = rewritePropertyDefinitionUses(projectFolder, change.definition, change.previousType);
             if (!rewrite.ok) return rewrite;
         }
 
@@ -442,9 +424,7 @@ function stabilizeTemplateProperties(schema, properties) {
         let definition = rawId ? indexes.byId.get(rawId) : null;
         if (!definition) definition = indexes.byName.get(contract.normalizePropertyNameKey(name));
         if (!definition) {
-            const id = rawId && !indexes.occupied.has(rawId)
-                ? rawId
-                : contract.makeNewPropertyId(name, type, indexes.occupied);
+            const id = rawId && !indexes.occupied.has(rawId) ? rawId : contract.makeNewPropertyId(name, type, indexes.occupied);
             definition = { id, name, type };
             schema.definitions.push(definition);
             indexes.byId.set(id, definition);
@@ -496,10 +476,7 @@ function applyPisiDatabaseTemplateStable(projectFolder, nodePath, templateId, op
         if (!current?.ok) return current;
         const template = current.templates.find((item) => item.id === String(templateId || ''));
         if (!template) return { ok: false, error: 'Şablon bulunamadı.' };
-        const normalized = stabilizeTemplateProperties(
-            JSON.parse(JSON.stringify(ensured.schema)),
-            template.properties || {}
-        );
+        const normalized = stabilizeTemplateProperties(JSON.parse(JSON.stringify(ensured.schema)), template.properties || {});
         if (!normalized.ok) return normalized;
         const indexes = getPisiPropertyDefinitionIndexes(ensured.schema);
         for (const property of Object.values(normalized.properties)) {
@@ -519,9 +496,9 @@ function applyPisiDatabaseTemplateStable(projectFolder, nodePath, templateId, op
 function getPisiPropertySchemaDefinitions(projectFolder) {
     const ensured = ensurePisiPropertySchema(projectFolder);
     if (ensured?.then) {
-        return ensured.then((result) => result?.ok
-            ? { ok: true, version: result.schema.version, definitions: result.schema.definitions, conflicts: result.schema.conflicts || [] }
-            : result);
+        return ensured.then((result) =>
+            result?.ok ? { ok: true, version: result.schema.version, definitions: result.schema.definitions, conflicts: result.schema.conflicts || [] } : result
+        );
     }
     return ensured?.ok
         ? { ok: true, version: ensured.schema.version, definitions: ensured.schema.definitions, conflicts: ensured.schema.conflicts || [] }

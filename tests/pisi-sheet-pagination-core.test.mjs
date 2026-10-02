@@ -8,21 +8,15 @@ import {
 } from '../renderer/editor/pisi-editor-sheet-pagination-core.mjs';
 
 test('pagination clamps page and slices records without changing source order', () => {
-    const records = Array.from(
-        { length: 10000 },
-        (_, index) => ({ id: index + 1 })
-    );
+    const records = Array.from({ length: 10000 }, (_, index) => ({ id: index + 1 }));
 
-    const page = paginatePisiSheetRecords(
-        records,
-        {
-            page: 3,
-            pageSize: 250,
-            virtualScroll: {
-                enabled: true
-            }
+    const page = paginatePisiSheetRecords(records, {
+        page: 3,
+        pageSize: 250,
+        virtualScroll: {
+            enabled: true
         }
-    );
+    });
 
     assert.equal(page.page, 3);
     assert.equal(page.pageSize, 250);
@@ -37,27 +31,20 @@ test('pagination clamps page and slices records without changing source order', 
 });
 
 test('pagination normalizes unsafe page values and page sizes', () => {
-    const normalized =
-        normalizePisiSheetPaginationConfig({
-            page: -10,
-            pageSize: 50000,
-            virtualScroll: {
-                enabled: true,
-                rowHeight: 2,
-                overscan: 999
-            }
-        });
+    const normalized = normalizePisiSheetPaginationConfig({
+        page: -10,
+        pageSize: 50000,
+        virtualScroll: {
+            enabled: true,
+            rowHeight: 2,
+            overscan: 999
+        }
+    });
 
     assert.equal(normalized.page, 1);
     assert.equal(normalized.pageSize, 1000);
-    assert.equal(
-        normalized.virtualScroll.rowHeight,
-        24
-    );
-    assert.equal(
-        normalized.virtualScroll.overscan,
-        40
-    );
+    assert.equal(normalized.virtualScroll.rowHeight, 24);
+    assert.equal(normalized.virtualScroll.overscan, 40);
 });
 
 test('virtual window renders a bounded row window with spacer heights', () => {
@@ -74,14 +61,8 @@ test('virtual window renders a bounded row window with spacer heights', () => {
     assert.ok(window.start > 0);
     assert.ok(window.end < 250);
     assert.ok(window.end - window.start < 50);
-    assert.equal(
-        window.topHeight,
-        window.start * 28
-    );
-    assert.equal(
-        window.bottomHeight,
-        (250 - window.end) * 28
-    );
+    assert.equal(window.topHeight, window.start * 28);
+    assert.equal(window.bottomHeight, (250 - window.end) * 28);
 });
 
 test('forced virtual index keeps a selected off-DOM row in the render window', () => {

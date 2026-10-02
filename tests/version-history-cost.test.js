@@ -52,13 +52,17 @@ test('retention is bounded by count and bytes while always preserving the newest
         maxVersions: 50,
         maxBytes: 100
     });
-    assert.deepEqual(selected.keep.map((entry) => entry.historyId), ['3-a.json.gz']);
-    assert.deepEqual(selected.remove.map((entry) => entry.historyId), ['2-b.json.gz', '1-c.json.gz']);
+    assert.deepEqual(
+        selected.keep.map((entry) => entry.historyId),
+        ['3-a.json.gz']
+    );
+    assert.deepEqual(
+        selected.remove.map((entry) => entry.historyId),
+        ['2-b.json.gz', '1-c.json.gz']
+    );
     assert.equal(selected.bytes, 80);
 
-    const oversized = history.selectPisiVersionHistoryRetention([
-        makeEntry('4-big.json.gz', '2026-08-16T04:00:00.000Z', 500)
-    ], { maxBytes: 100 });
+    const oversized = history.selectPisiVersionHistoryRetention([makeEntry('4-big.json.gz', '2026-08-16T04:00:00.000Z', 500)], { maxBytes: 100 });
     assert.equal(oversized.keep.length, 1);
     assert.equal(oversized.keep[0].historyId, '4-big.json.gz');
 });
@@ -76,21 +80,13 @@ test('new snapshots are gzip compressed, indexed, deduplicated and readable', (t
     t.after(() => fs.rmSync(fixture.projectFolder, { recursive: true, force: true }));
     fixture.writeNode(`<p>${'repeatable text '.repeat(5000)}</p>`);
 
-    const first = history.snapshotPisiNodeVersionBounded(
-        fixture.nodePath,
-        'editor-save',
-        fixture.options
-    );
+    const first = history.snapshotPisiNodeVersionBounded(fixture.nodePath, 'editor-save', fixture.options);
     assert.equal(first.ok, true);
     assert.equal(first.compressed, true);
     assert.match(first.historyId, /\.json\.gz$/);
     assert.ok(first.storedBytes < first.rawBytes);
 
-    const duplicate = history.snapshotPisiNodeVersionBounded(
-        fixture.nodePath,
-        'editor-save',
-        fixture.options
-    );
+    const duplicate = history.snapshotPisiNodeVersionBounded(fixture.nodePath, 'editor-save', fixture.options);
     assert.equal(duplicate.ok, true);
     assert.equal(duplicate.duplicate, true);
 
@@ -99,24 +95,12 @@ test('new snapshots are gzip compressed, indexed, deduplicated and readable', (t
     assert.equal(listed.versions.length, 1);
     assert.equal(listed.versions[0].historyId, first.historyId);
     assert.equal(listed.versions[0].compressed, true);
-    assert.equal(
-        fs.existsSync(path.join(
-            fixture.projectFolder,
-            '.pisi-history',
-            'node_history_cost',
-            'index.json'
-        )),
-        true
-    );
+    assert.equal(fs.existsSync(path.join(fixture.projectFolder, '.pisi-history', 'node_history_cost', 'index.json')), true);
 
-    const loaded = history.getPisiNodeHistoryVersionBounded(
-        fixture.nodePath,
-        first.historyId,
-        {
-            ...fixture.options,
-            pisiHtmlToPlainText: (value) => String(value).replace(/<[^>]+>/g, '')
-        }
-    );
+    const loaded = history.getPisiNodeHistoryVersionBounded(fixture.nodePath, first.historyId, {
+        ...fixture.options,
+        pisiHtmlToPlainText: (value) => String(value).replace(/<[^>]+>/g, '')
+    });
     assert.equal(loaded.ok, true);
     assert.match(loaded.text, /repeatable text/);
 });
@@ -139,21 +123,14 @@ test('byte budget prunes older snapshots instead of letting a large node multipl
     assert.equal(second.ok, true);
     assert.equal(second.retainedVersions, 1);
 
-    const directory = path.join(
-        fixture.projectFolder,
-        '.pisi-history',
-        'node_history_cost'
-    );
+    const directory = path.join(fixture.projectFolder, '.pisi-history', 'node_history_cost');
     const snapshots = fs.readdirSync(directory).filter((name) => /\.json\.gz$/.test(name));
     assert.deepEqual(snapshots, [second.historyId]);
 });
 
 test('version-history IPC hooks replace unbounded save/list routes and skip project-wide backup scans', () => {
     const root = path.resolve(__dirname, '..');
-    const hooks = fs.readFileSync(
-        path.join(root, 'main/functions/version-history-operation-hooks.js'),
-        'utf8'
-    );
+    const hooks = fs.readFileSync(path.join(root, 'main/functions/version-history-operation-hooks.js'), 'utf8');
     const main = fs.readFileSync(path.join(root, 'main.js'), 'utf8');
 
     for (const channel of [
@@ -170,7 +147,5 @@ test('version-history IPC hooks replace unbounded save/list routes and skip proj
     assert.match(hooks, /listPisiNodeHistoryBounded/);
     assert.match(hooks, /runPisiAtomicMutation\([\s\S]*version-history\.restore\.v1/);
     assert.match(hooks, /if \(!filePath\)[\s\S]*skippedProjectScan: true/);
-    assert.ok(
-        main.indexOf('version-history-operation-hooks') > main.indexOf('main/runtime')
-    );
+    assert.ok(main.indexOf('version-history-operation-hooks') > main.indexOf('main/runtime'));
 });

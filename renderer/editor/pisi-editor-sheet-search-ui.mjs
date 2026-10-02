@@ -1,7 +1,4 @@
-import {
-    getPisiSheetActiveViewSearchQuery,
-    setPisiSheetViewSearchQuery
-} from "./pisi-editor-sheet-view-query.mjs";
+import { getPisiSheetActiveViewSearchQuery, setPisiSheetViewSearchQuery } from './pisi-editor-sheet-view-query.mjs';
 
 const pisiSheetSearchTimers = new WeakMap();
 const pisiBoundSheetSearchControls = new WeakSet();
@@ -15,63 +12,36 @@ function clearPisiSheetSearchTimer(table) {
     }
 }
 
-function commitPisiSheetSearch(
-    table,
-    value
-) {
+function commitPisiSheetSearch(table, value) {
     clearPisiSheetSearchTimer(table);
-    setPisiSheetViewSearchQuery(
-        table,
-        value
-    );
+    setPisiSheetViewSearchQuery(table, value);
 }
 
-function schedulePisiSheetSearch(
-    table,
-    value
-) {
+function schedulePisiSheetSearch(table, value) {
     clearPisiSheetSearchTimer(table);
 
     const timer = setTimeout(() => {
         pisiSheetSearchTimers.delete(table);
-        setPisiSheetViewSearchQuery(
-            table,
-            value
-        );
+        setPisiSheetViewSearchQuery(table, value);
     }, 120);
 
     pisiSheetSearchTimers.set(table, timer);
 }
 
-function ensurePisiSheetSearchControl(
-    table,
-    info = {}
-) {
-    const block = table?.closest?.(
-        '.pisi-sheet-block'
-    );
+function ensurePisiSheetSearchControl(table, info = {}) {
+    const block = table?.closest?.('.pisi-sheet-block');
 
     if (!block) return null;
 
-    const controls = Array.from(
-        block.querySelectorAll(
-            ':scope > .pisi-sheet-search, ' +
-            ':scope > .pisi-sheet-search-row ' +
-            '> .pisi-sheet-search'
-        )
-    );
-    let control = controls.find((child) => (
-        pisiBoundSheetSearchControls.has(child) &&
-        child.querySelector(
-            '[data-pisi-sheet-search-input]'
-        ) &&
-        child.querySelector(
-            '[data-pisi-sheet-search-status]'
-        ) &&
-        child.querySelector(
-            '[data-pisi-sheet-search-clear]'
-        )
-    )) || null;
+    const controls = Array.from(block.querySelectorAll(':scope > .pisi-sheet-search, ' + ':scope > .pisi-sheet-search-row ' + '> .pisi-sheet-search'));
+    let control =
+        controls.find(
+            (child) =>
+                pisiBoundSheetSearchControls.has(child) &&
+                child.querySelector('[data-pisi-sheet-search-input]') &&
+                child.querySelector('[data-pisi-sheet-search-status]') &&
+                child.querySelector('[data-pisi-sheet-search-clear]')
+        ) || null;
 
     for (const candidate of controls) {
         if (candidate !== control) {
@@ -82,10 +52,7 @@ function ensurePisiSheetSearchControl(
     if (!control) {
         control = document.createElement('div');
         control.className = 'pisi-sheet-search';
-        control.setAttribute(
-            'contenteditable',
-            'false'
-        );
+        control.setAttribute('contenteditable', 'false');
 
         const icon = document.createElement('span');
         const input = document.createElement('input');
@@ -101,29 +68,17 @@ function ensurePisiSheetSearchControl(
         input.maxLength = 240;
         input.autocomplete = 'off';
         input.spellcheck = false;
-        input.placeholder =
-            window.pisiT?.('Sheet içinde ara') ||
-            'Sheet içinde ara';
-        input.setAttribute(
-            'aria-label',
-            window.pisiT?.('Sheet içinde ara') ||
-            'Sheet içinde ara'
-        );
+        input.placeholder = window.pisiT?.('Sheet içinde ara') || 'Sheet içinde ara';
+        input.setAttribute('aria-label', window.pisiT?.('Sheet içinde ara') || 'Sheet içinde ara');
 
-        status.className =
-            'pisi-sheet-search-status';
+        status.className = 'pisi-sheet-search-status';
         status.dataset.pisiSheetSearchStatus = '1';
 
         clear.type = 'button';
-        clear.className =
-            'pisi-sheet-search-clear';
+        clear.className = 'pisi-sheet-search-clear';
         clear.dataset.pisiSheetSearchClear = '1';
         clear.textContent = '×';
-        clear.setAttribute(
-            'aria-label',
-            window.pisiT?.('Aramayı temizle') ||
-            'Aramayı temizle'
-        );
+        clear.setAttribute('aria-label', window.pisiT?.('Aramayı temizle') || 'Aramayı temizle');
 
         const stopSearchEditorEvent = (event) => {
             event.stopPropagation();
@@ -143,24 +98,15 @@ function ensurePisiSheetSearchControl(
             'compositionupdate',
             'compositionend'
         ].forEach((type) => {
-            input.addEventListener(
-                type,
-                stopSearchEditorEvent
-            );
+            input.addEventListener(type, stopSearchEditorEvent);
         });
 
-        input.addEventListener(
-            'beforeinput',
-            stopSearchEditorEvent
-        );
+        input.addEventListener('beforeinput', stopSearchEditorEvent);
 
         input.addEventListener('input', (event) => {
             event.stopPropagation();
             clear.hidden = !input.value;
-            schedulePisiSheetSearch(
-                table,
-                input.value
-            );
+            schedulePisiSheetSearch(table, input.value);
         });
 
         input.addEventListener('keydown', (event) => {
@@ -173,10 +119,7 @@ function ensurePisiSheetSearchControl(
             if (input.value) {
                 input.value = '';
                 clear.hidden = true;
-                commitPisiSheetSearch(
-                    table,
-                    ''
-                );
+                commitPisiSheetSearch(table, '');
             } else {
                 input.blur();
             }
@@ -187,33 +130,17 @@ function ensurePisiSheetSearchControl(
             event.stopPropagation();
             input.value = '';
             clear.hidden = true;
-            commitPisiSheetSearch(
-                table,
-                ''
-            );
+            commitPisiSheetSearch(table, '');
             input.focus();
         });
 
-        control.append(
-            icon,
-            input,
-            status,
-            clear
-        );
+        control.append(icon, input, status, clear);
         pisiBoundSheetSearchControls.add(control);
     }
 
-    let searchRow = Array.from(
-        block.children
-    ).find((child) => (
-        child.classList?.contains(
-            'pisi-sheet-search-row'
-        )
-    )) || null;
+    let searchRow = Array.from(block.children).find((child) => child.classList?.contains('pisi-sheet-search-row')) || null;
 
-    block.querySelectorAll(
-        ':scope > .pisi-sheet-search-row'
-    ).forEach((candidate) => {
+    block.querySelectorAll(':scope > .pisi-sheet-search-row').forEach((candidate) => {
         if (candidate !== searchRow) {
             candidate.remove();
         }
@@ -221,13 +148,9 @@ function ensurePisiSheetSearchControl(
 
     if (!searchRow) {
         searchRow = document.createElement('div');
-        searchRow.className =
-            'pisi-sheet-search-row';
+        searchRow.className = 'pisi-sheet-search-row';
         searchRow.dataset.pisiSheetSearchRow = '1';
-        searchRow.setAttribute(
-            'contenteditable',
-            'false'
-        );
+        searchRow.setAttribute('contenteditable', 'false');
         block.insertBefore(searchRow, table);
     }
 
@@ -235,23 +158,12 @@ function ensurePisiSheetSearchControl(
         searchRow.appendChild(control);
     }
 
-    const input = control.querySelector(
-        '[data-pisi-sheet-search-input]'
-    );
-    const status = control.querySelector(
-        '[data-pisi-sheet-search-status]'
-    );
-    const clear = control.querySelector(
-        '[data-pisi-sheet-search-clear]'
-    );
-    const query =
-        getPisiSheetActiveViewSearchQuery(table);
+    const input = control.querySelector('[data-pisi-sheet-search-input]');
+    const status = control.querySelector('[data-pisi-sheet-search-status]');
+    const clear = control.querySelector('[data-pisi-sheet-search-clear]');
+    const query = getPisiSheetActiveViewSearchQuery(table);
 
-    if (
-        input &&
-        document.activeElement !== input &&
-        input.value !== query
-    ) {
+    if (input && document.activeElement !== input && input.value !== query) {
         input.value = query;
     }
 
@@ -260,24 +172,12 @@ function ensurePisiSheetSearchControl(
     }
 
     if (status) {
-        status.textContent = query
-            ? String(Number(info.total) || 0) +
-                ' ' +
-                (
-                    window.pisiT?.('sonuç') ||
-                    'sonuç'
-                )
-            : '';
+        status.textContent = query ? String(Number(info.total) || 0) + ' ' + (window.pisiT?.('sonuç') || 'sonuç') : '';
     }
 
-    control.classList.toggle(
-        'active',
-        Boolean(query)
-    );
+    control.classList.toggle('active', Boolean(query));
 
     return control;
 }
 
-export {
-    ensurePisiSheetSearchControl
-};
+export { ensurePisiSheetSearchControl };

@@ -18,9 +18,13 @@ test('filesystem storage keeps project-relative writes inside the project root',
     const project = makeProject();
     try {
         const storage = storageLayer.getPisiProjectStorage(project);
-        const written = storage.writeJson('.pisi/value.json', { value: 'ok' }, {
-            backup: false
-        });
+        const written = storage.writeJson(
+            '.pisi/value.json',
+            { value: 'ok' },
+            {
+                backup: false
+            }
+        );
         assert.equal(written.ok, true);
         assert.equal(fs.existsSync(path.join(project, '.pisi', 'value.json')), true);
         assert.deepEqual(storage.readJson('.pisi/value.json').data, { value: 'ok' });
@@ -48,18 +52,16 @@ test('filesystem storage rejects symlink escape instead of following it', (t) =>
         assert.equal(read.ok, false);
         assert.match(read.error, /symlink|junction/i);
     } finally {
-        try { storageLayer.clearPisiProjectStorageCache(project); } catch {}
+        try {
+            storageLayer.clearPisiProjectStorageCache(project);
+        } catch {}
         fs.rmSync(project, { recursive: true, force: true });
         fs.rmSync(outside, { recursive: true, force: true });
     }
 });
 
 test('canonical metadata stores use the shared storage port instead of direct fs access', () => {
-    for (const file of [
-        'main/functions/task-store.js',
-        'main/functions/relationship-store.js',
-        'main/functions/property-schema-store.js'
-    ]) {
+    for (const file of ['main/functions/task-store.js', 'main/functions/relationship-store.js', 'main/functions/property-schema-store.js']) {
         const source = readSource(file);
         assert.match(source, /require\('\.\/storage'\)/, file);
         assert.match(source, /getPisiProjectStorage/, file);

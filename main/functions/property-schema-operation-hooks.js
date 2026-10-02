@@ -32,10 +32,10 @@ function getPisiStableNodePropertyContext(nodePath, preferredMapPath) {
                 extensions: ['.map']
             });
             const preferredResult = listNodesForMap(safePreferredMapPath);
-            const belongsToPreferredMap = preferredResult?.ok &&
+            const belongsToPreferredMap =
+                preferredResult?.ok &&
                 preferredResult.nodes.some((node) => {
-                    return node.id === nodeInfo.metadata?.id ||
-                        normalizePathForCompare(node.fullPath) === normalizePathForCompare(safeNodePath);
+                    return node.id === nodeInfo.metadata?.id || normalizePathForCompare(node.fullPath) === normalizePathForCompare(safeNodePath);
                 });
             if (belongsToPreferredMap) {
                 mapPath = safePreferredMapPath;
@@ -87,11 +87,7 @@ function rebindPisiPropertySchemaIpc() {
                 type: 'file',
                 extensions: ['.node']
             });
-            return savePisiNodePropertiesBySchema(
-                active.projectFolder,
-                safeNodePath,
-                properties || {}
-            );
+            return savePisiNodePropertiesBySchema(active.projectFolder, safeNodePath, properties || {});
         });
     });
 
@@ -104,11 +100,13 @@ function rebindPisiPropertySchemaIpc() {
             const schema = await Promise.resolve(ensurePisiPropertySchema(safeProjectFolder));
             if (!schema?.ok) return schema;
             const result = readPisiDatabaseTemplates(safeProjectFolder);
-            return result?.ok ? {
-                ...result,
-                propertyDefinitions: schema.schema.definitions,
-                propertySchemaVersion: schema.schema.version
-            } : result;
+            return result?.ok
+                ? {
+                      ...result,
+                      propertyDefinitions: schema.schema.definitions,
+                      propertySchemaVersion: schema.schema.version
+                  }
+                : result;
         });
     });
 
@@ -131,12 +129,7 @@ function rebindPisiPropertySchemaIpc() {
                 type: 'file',
                 extensions: ['.node']
             });
-            return applyPisiDatabaseTemplateStable(
-                active.projectFolder,
-                safeNodePath,
-                templateId,
-                options || {}
-            );
+            return applyPisiDatabaseTemplateStable(active.projectFolder, safeNodePath, templateId, options || {});
         });
     });
 }

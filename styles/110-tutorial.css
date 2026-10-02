@@ -162,42 +162,42 @@
     outline: none;
 }
 
-html[data-pisi-theme="light"] body .pisi-tutorial-card {
+html[data-pisi-theme='light'] body .pisi-tutorial-card {
     border-color: rgb(216 132 0 / 72%);
     background: #ffffff;
     color: #20242a;
     box-shadow: 0 18px 46px rgb(31 38 48 / 24%);
 }
 
-html[data-pisi-theme="light"] body .pisi-tutorial-progress,
-html[data-pisi-theme="light"] body .pisi-tutorial-page-heading p {
+html[data-pisi-theme='light'] body .pisi-tutorial-progress,
+html[data-pisi-theme='light'] body .pisi-tutorial-page-heading p {
     color: #68717c;
 }
 
-html[data-pisi-theme="light"] body .pisi-tutorial-body {
+html[data-pisi-theme='light'] body .pisi-tutorial-body {
     color: #343a43;
 }
 
-html[data-pisi-theme="light"] body .pisi-tutorial-button {
+html[data-pisi-theme='light'] body .pisi-tutorial-button {
     border-color: #b7bec7;
     background: #f5f6f7;
     color: #252a31;
 }
 
-html[data-pisi-theme="light"] body .pisi-tutorial-primary,
-html[data-pisi-theme="light"] body .pisi-tutorial-page-start {
+html[data-pisi-theme='light'] body .pisi-tutorial-primary,
+html[data-pisi-theme='light'] body .pisi-tutorial-page-start {
     border-color: #d88400;
     background: #f39c12;
     color: #171717;
 }
 
-html[data-pisi-theme="light"] body .pisi-tutorial-skip {
+html[data-pisi-theme='light'] body .pisi-tutorial-skip {
     border-color: transparent;
     background: transparent;
     color: #69727d;
 }
 
-html[data-pisi-theme="light"] body .pisi-tutorial-page-card {
+html[data-pisi-theme='light'] body .pisi-tutorial-page-card {
     border-color: #c7cdd4;
     background: #ffffff;
 }

@@ -33,12 +33,17 @@ test('tasks sourced from deleted roots are archived and surviving dependencies a
         }
     ];
     const split = trash.splitPisiTrashTaskStore(tasks, ['Folder']);
-    assert.deepEqual(split.archived.map((task) => task.id), ['task_deleted']);
+    assert.deepEqual(
+        split.archived.map((task) => task.id),
+        ['task_deleted']
+    );
     assert.deepEqual(split.remaining[0].dependencies, ['task_other']);
-    assert.deepEqual(split.dependencyRefs, [{
-        taskId: 'task_live',
-        dependencies: ['task_deleted']
-    }]);
+    assert.deepEqual(split.dependencyRefs, [
+        {
+            taskId: 'task_live',
+            dependencies: ['task_deleted']
+        }
+    ]);
 });
 
 test('restoring tasks merges only archived dependency edges and keeps later dependencies', () => {
@@ -51,10 +56,7 @@ test('restoring tasks merges only archived dependency edges and keeps later depe
         [{ taskId: 'task_live', dependencies: ['task_deleted', 'task_not_restored'] }],
         new Set(['task_deleted'])
     );
-    assert.deepEqual(
-        restored.find((task) => task.id === 'task_live').dependencies,
-        ['task_added_later', 'task_deleted']
-    );
+    assert.deepEqual(restored.find((task) => task.id === 'task_live').dependencies, ['task_added_later', 'task_deleted']);
 });
 
 test('semantic relationships touching deleted node identities are archived', () => {
@@ -63,12 +65,15 @@ test('semantic relationships touching deleted node identities are archived', () 
         { id: 'edge_b', sourceId: 'node_live', targetId: 'node_deleted_2' },
         { id: 'edge_c', sourceId: 'node_live', targetId: 'node_other' }
     ];
-    const split = trash.splitPisiTrashRelationships(
-        relationships,
-        new Set(['node_deleted', 'node_deleted_2'])
+    const split = trash.splitPisiTrashRelationships(relationships, new Set(['node_deleted', 'node_deleted_2']));
+    assert.deepEqual(
+        split.archived.map((edge) => edge.id),
+        ['edge_a', 'edge_b']
     );
-    assert.deepEqual(split.archived.map((edge) => edge.id), ['edge_a', 'edge_b']);
-    assert.deepEqual(split.remaining.map((edge) => edge.id), ['edge_c']);
+    assert.deepEqual(
+        split.remaining.map((edge) => edge.id),
+        ['edge_c']
+    );
 });
 
 test('trash summary exposes reviewable linked-record counts without payload internals', () => {

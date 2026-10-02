@@ -9,15 +9,10 @@ const { pathToFileURL } = require('node:url');
 const root = path.resolve(__dirname, '..');
 const read = (filePath) => fs.readFileSync(path.join(root, filePath), 'utf8');
 const readJson = (filePath) => JSON.parse(read(filePath));
-const utilsPromise = import(
-    pathToFileURL(path.join(root, 'renderer/tags/pisi-todo-utils.mjs')).href
-);
+const utilsPromise = import(pathToFileURL(path.join(root, 'renderer/tags/pisi-todo-utils.mjs')).href);
 
 test('todo önem dereceleri 1-5 ve mevcut sözdizimi korunur', async () => {
-    const {
-        PISI_TODO_PRIORITY_OPTIONS,
-        formatPisiTodoTag
-    } = await utilsPromise;
+    const { PISI_TODO_PRIORITY_OPTIONS, formatPisiTodoTag } = await utilsPromise;
 
     assert.deepEqual(
         PISI_TODO_PRIORITY_OPTIONS.map(({ value, label }) => ({ value, label })),
@@ -37,10 +32,7 @@ test('todo önem dereceleri 1-5 ve mevcut sözdizimi korunur', async () => {
 });
 
 test('tarihsiz görev mevcut todo sözdiziminin geriye uyumlu uzantısıdır', async () => {
-    const {
-        formatPisiTodoTag,
-        parsePisiTodoTagValue
-    } = await utilsPromise;
+    const { formatPisiTodoTag, parsePisiTodoTagValue } = await utilsPromise;
 
     assert.equal(formatPisiTodoTag(2, 'none'), 'todo.2.none');
     assert.equal(formatPisiTodoTag(2, ''), 'todo.2.none');
@@ -70,11 +62,7 @@ test('eski 6-9 todo etiketleri very high olarak geriye dönük okunur', async ()
 });
 
 test('bugün, yaklaşan, geciken ve tarihsiz filtreleri doğru sınıflandırır', async () => {
-    const {
-        getPisiTodoDateBucket,
-        matchesPisiTodoFilter,
-        parsePisiTodoTagValue
-    } = await utilsPromise;
+    const { getPisiTodoDateBucket, matchesPisiTodoFilter, parsePisiTodoTagValue } = await utilsPromise;
     const now = new Date(2026, 7, 4);
     const today = parsePisiTodoTagValue('todo.3.04-08-2026', now);
     const upcoming = parsePisiTodoTagValue('todo.3.10-08-2026', now);
@@ -96,10 +84,7 @@ test('bugün, yaklaşan, geciken ve tarihsiz filtreleri doğru sınıflandırır
 });
 
 test('görev durumları mevcut tamamlanma etiketinden bağımsız tutulur', async () => {
-    const {
-        PISI_TODO_STATUS_OPTIONS,
-        getPisiTodoStatusOption
-    } = await utilsPromise;
+    const { PISI_TODO_STATUS_OPTIONS, getPisiTodoStatusOption } = await utilsPromise;
 
     assert.deepEqual(
         PISI_TODO_STATUS_OPTIONS.map(({ value }) => value),

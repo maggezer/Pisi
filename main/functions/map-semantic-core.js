@@ -9,11 +9,7 @@ const PISI_MAP_RELATIONSHIP_VIEW_VERSION = 1;
 const PISI_MAP_PORTS = new Set(['top', 'right', 'bottom', 'left']);
 
 function normalizePisiRelationshipView(raw = {}) {
-    const relationshipId = /^edge_[A-Za-z0-9_-]{1,101}$/.test(
-        String(raw.relationshipId || '')
-    )
-        ? String(raw.relationshipId)
-        : '';
+    const relationshipId = /^edge_[A-Za-z0-9_-]{1,101}$/.test(String(raw.relationshipId || '')) ? String(raw.relationshipId) : '';
     if (!relationshipId) return null;
 
     const view = {
@@ -21,9 +17,7 @@ function normalizePisiRelationshipView(raw = {}) {
         sourcePort: PISI_MAP_PORTS.has(raw.sourcePort) ? raw.sourcePort : 'bottom',
         targetPort: PISI_MAP_PORTS.has(raw.targetPort) ? raw.targetPort : 'top'
     };
-    const customization = filesystemCore.normalizePisiMapEdgeCustomization(
-        raw.customization
-    );
+    const customization = filesystemCore.normalizePisiMapEdgeCustomization(raw.customization);
     if (Object.keys(customization).length) {
         view.customization = customization;
     }
@@ -56,10 +50,7 @@ function upsertPisiRelationshipView(mapData, relationship, presentation = {}) {
     const view = makePisiRelationshipView(relationship, presentation);
     if (!view) return null;
     const current = normalizePisiRelationshipViews(mapData.relationshipViews);
-    mapData.relationshipViews = [
-        ...current.filter((item) => item.relationshipId !== view.relationshipId),
-        view
-    ];
+    mapData.relationshipViews = [...current.filter((item) => item.relationshipId !== view.relationshipId), view];
     mapData.relationshipViewVersion = PISI_MAP_RELATIONSHIP_VIEW_VERSION;
     return view;
 }
@@ -99,16 +90,11 @@ function projectPisiSemanticRelationshipToMapEdge(relationship, rawView = null) 
 }
 
 function projectPisiRelationshipsForMap(relationships = [], rawViews = []) {
-    const views = new Map(
-        normalizePisiRelationshipViews(rawViews)
-            .map((view) => [view.relationshipId, view])
-    );
+    const views = new Map(normalizePisiRelationshipViews(rawViews).map((view) => [view.relationshipId, view]));
     return (Array.isArray(relationships) ? relationships : [])
         .map((relationship) => {
             const view = views.get(relationship.id);
-            return view
-                ? projectPisiSemanticRelationshipToMapEdge(relationship, view)
-                : null;
+            return view ? projectPisiSemanticRelationshipToMapEdge(relationship, view) : null;
         })
         .filter(Boolean);
 }
@@ -139,10 +125,7 @@ function derivePisiConnectionTypesFromRelationships(nodeIds = [], relationships 
 }
 
 function applyPisiDerivedConnectionTypes(nodes = [], relationships = []) {
-    const byId = derivePisiConnectionTypesFromRelationships(
-        nodes.map((node) => node?.id).filter(Boolean),
-        relationships
-    );
+    const byId = derivePisiConnectionTypesFromRelationships(nodes.map((node) => node?.id).filter(Boolean), relationships);
     for (const node of nodes) {
         if (!node?.id || !byId.has(node.id)) continue;
         if (!node.metadata || typeof node.metadata !== 'object') {
@@ -154,16 +137,9 @@ function applyPisiDerivedConnectionTypes(nodes = [], relationships = []) {
 }
 
 function assertPisiMapViewHasNoSemanticFields(view = {}) {
-    return ![
-        'sourceId',
-        'targetId',
-        'type',
-        'sourceRole',
-        'targetRole',
-        'direction',
-        'label',
-        'properties'
-    ].some((key) => Object.prototype.hasOwnProperty.call(view, key));
+    return !['sourceId', 'targetId', 'type', 'sourceRole', 'targetRole', 'direction', 'label', 'properties'].some((key) =>
+        Object.prototype.hasOwnProperty.call(view, key)
+    );
 }
 
 const moduleApi = {

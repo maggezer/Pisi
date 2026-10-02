@@ -16,7 +16,9 @@ const PISI_ROLLUP_AGGREGATES = Object.freeze([
 ]);
 
 function normalizePisiNodePropertyType(type = 'text') {
-    return String(type || 'text').trim().toLowerCase();
+    return String(type || 'text')
+        .trim()
+        .toLowerCase();
 }
 
 /** @param {any} [value] */
@@ -36,16 +38,16 @@ function normalizePisiPropertySearch(value = '') {
 }
 
 function normalizePisiPropertyCollection(properties = {}) {
-    const entries = Array.isArray(properties)
-        ? properties.map((item) => [item?.id || item?.name, item])
-        : Object.entries(properties || {});
-    return entries.map(([id, property]) => ({
-        id: String(property?.id || id || ''),
-        name: String(property?.name || id || ''),
-        type: normalizePisiNodePropertyType(property?.type),
-        value: property?.value,
-        system: property?.system === true
-    })).filter((property) => property.id && property.name);
+    const entries = Array.isArray(properties) ? properties.map((item) => [item?.id || item?.name, item]) : Object.entries(properties || {});
+    return entries
+        .map(([id, property]) => ({
+            id: String(property?.id || id || ''),
+            name: String(property?.name || id || ''),
+            type: normalizePisiNodePropertyType(property?.type),
+            value: property?.value,
+            system: property?.system === true
+        }))
+        .filter((property) => property.id && property.name);
 }
 
 function pisiPropertyPathKey(value = '') {
@@ -57,9 +59,7 @@ function pisiPropertyPathKey(value = '') {
 
 function resolvePisiRelationDocuments(property, documents = []) {
     if (property?.type !== 'relation') return [];
-    const values = Array.isArray(property.value)
-        ? property.value
-        : String(property.value || '').split(',');
+    const values = Array.isArray(property.value) ? property.value : String(property.value || '').split(',');
     const records = Array.from(documents || []);
     const resolved = [];
     const seen = new Set();
@@ -69,13 +69,11 @@ function resolvePisiRelationDocuments(property, documents = []) {
         const pathKey = pisiPropertyPathKey(value);
         const textKey = normalizePisiPropertySearch(value.replace(/\.node$/i, ''));
         const match = records.find((documentRecord) => {
-            return [
-                documentRecord.path,
-                documentRecord.relativePath,
-                documentRecord.fileName,
-                documentRecord.metadata?.id
-            ].some((candidate) => pisiPropertyPathKey(candidate) === pathKey) ||
-                normalizePisiPropertySearch(documentRecord.title) === textKey;
+            return (
+                [documentRecord.path, documentRecord.relativePath, documentRecord.fileName, documentRecord.metadata?.id].some(
+                    (candidate) => pisiPropertyPathKey(candidate) === pathKey
+                ) || normalizePisiPropertySearch(documentRecord.title) === textKey
+            );
         });
         if (match && !seen.has(pisiPropertyPathKey(match.path))) {
             seen.add(pisiPropertyPathKey(match.path));
@@ -89,11 +87,9 @@ function getPisiRollupTargetValues(relatedDocuments, targetProperty) {
     const target = normalizePisiPropertySearch(targetProperty);
     const values = [];
     for (const documentRecord of relatedDocuments) {
-        const property = normalizePisiPropertyCollection(documentRecord.properties)
-            .find((item) => {
-                return normalizePisiPropertySearch(item.id) === target ||
-                    normalizePisiPropertySearch(item.name) === target;
-            });
+        const property = normalizePisiPropertyCollection(documentRecord.properties).find((item) => {
+            return normalizePisiPropertySearch(item.id) === target || normalizePisiPropertySearch(item.name) === target;
+        });
         if (!property) continue;
         if (Array.isArray(property.value)) values.push(...property.value);
         else values.push(property.value);
@@ -124,26 +120,16 @@ function aggregatePisiRollupValues(values = [], aggregate = 'count', separator =
 
 function computePisiRollupValue(documentRecord, property, documents = []) {
     if (property?.type !== 'rollup') return property?.value;
-    const config = property.value && typeof property.value === 'object'
-        ? property.value
-        : {};
+    const config = property.value && typeof property.value === 'object' ? property.value : {};
     const relationId = normalizePisiPropertySearch(config.relationProperty || '');
-    const relation = normalizePisiPropertyCollection(documentRecord?.properties)
-        .find((item) => {
-            return item.type === 'relation' && (
-                normalizePisiPropertySearch(item.id) === relationId ||
-                normalizePisiPropertySearch(item.name) === relationId
-            );
-        });
+    const relation = normalizePisiPropertyCollection(documentRecord?.properties).find((item) => {
+        return item.type === 'relation' && (normalizePisiPropertySearch(item.id) === relationId || normalizePisiPropertySearch(item.name) === relationId);
+    });
     if (!relation) return null;
     const related = resolvePisiRelationDocuments(relation, documents);
     if (config.aggregate === 'count' && !config.targetProperty) return related.length;
     const values = getPisiRollupTargetValues(related, config.targetProperty || '');
-    return aggregatePisiRollupValues(
-        values,
-        config.aggregate || 'count',
-        config.separator || ', '
-    );
+    return aggregatePisiRollupValues(values, config.aggregate || 'count', config.separator || ', ');
 }
 
 function materializePisiDatabaseDocuments(documents = []) {
@@ -152,12 +138,15 @@ function materializePisiDatabaseDocuments(documents = []) {
         const properties = Object.fromEntries(
             normalizePisiPropertyCollection(documentRecord.properties).map((property) => {
                 if (property.type !== 'rollup') return [property.id, property];
-                return [property.id, {
-                    ...property,
-                    rollup: property.value,
-                    value: computePisiRollupValue(documentRecord, property, records),
-                    derived: true
-                }];
+                return [
+                    property.id,
+                    {
+                        ...property,
+                        rollup: property.value,
+                        value: computePisiRollupValue(documentRecord, property, records),
+                        derived: true
+                    }
+                ];
             })
         );
         return { ...documentRecord, properties };
@@ -171,9 +160,7 @@ function parsePisiPropertyQuery(query = '') {
     while ((match = expression.exec(String(query || ''))) !== null) {
         let operator = match[2];
         let value = match[3] ?? match[4] ?? match[5] ?? '';
-        const prefixedOperator = operator === ':'
-            ? String(value).match(/^(>=|<=|!=|>|<|=)(.*)$/)
-            : null;
+        const prefixedOperator = operator === ':' ? String(value).match(/^(>=|<=|!=|>|<|=)(.*)$/) : null;
         if (prefixedOperator) {
             operator = prefixedOperator[1];
             value = prefixedOperator[2];
@@ -199,11 +186,9 @@ function getPisiDocumentPropertyValue(documentRecord, field) {
     if (['map', 'harita'].includes(normalized)) {
         return (documentRecord?.memberships || []).map((item) => item.mapTitle || '');
     }
-    const property = normalizePisiPropertyCollection(documentRecord?.properties)
-        .find((item) => {
-            return normalizePisiPropertySearch(item.id) === normalized ||
-                normalizePisiPropertySearch(item.name) === normalized;
-        });
+    const property = normalizePisiPropertyCollection(documentRecord?.properties).find((item) => {
+        return normalizePisiPropertySearch(item.id) === normalized || normalizePisiPropertySearch(item.name) === normalized;
+    });
     return property?.value;
 }
 
@@ -220,9 +205,7 @@ function pisiComparablePropertyValue(value) {
 }
 
 function matchesPisiPropertyClause(documentRecord, clause) {
-    const actual = pisiComparablePropertyValue(
-        getPisiDocumentPropertyValue(documentRecord, clause.field)
-    );
+    const actual = pisiComparablePropertyValue(getPisiDocumentPropertyValue(documentRecord, clause.field));
     const expected = pisiComparablePropertyValue(clause.value);
     const values = Array.isArray(actual) ? actual : [actual];
     if (clause.operator === '!=') {
@@ -230,9 +213,7 @@ function matchesPisiPropertyClause(documentRecord, clause) {
     }
     if (clause.operator === ':' || clause.operator === '~') {
         return values.some((value) => {
-            return normalizePisiPropertySearch(value).includes(
-                normalizePisiPropertySearch(expected)
-            );
+            return normalizePisiPropertySearch(value).includes(normalizePisiPropertySearch(expected));
         });
     }
     if (clause.operator === '=') return values.some((value) => value === expected);
@@ -253,9 +234,10 @@ function matchesPisiPropertyQuery(documentRecord, query = '') {
         const haystack = [
             documentRecord?.title,
             documentRecord?.relativePath,
-            ...normalizePisiPropertyCollection(documentRecord?.properties)
-                .flatMap((property) => [property.name, property.value])
-        ].flat().join(' ');
+            ...normalizePisiPropertyCollection(documentRecord?.properties).flatMap((property) => [property.name, property.value])
+        ]
+            .flat()
+            .join(' ');
         return normalizePisiPropertySearch(haystack).includes(needle);
     }
     return clauses.every((clause) => matchesPisiPropertyClause(documentRecord, clause));

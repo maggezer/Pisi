@@ -1,22 +1,9 @@
 import { registerModule } from '../core/module-registry.mjs';
-import {
-    isPisiInlineTextCommand,
-    parsePisiTextDecorations,
-    resolvePisiInlineTextMutation
-} from './pisi-editor-text-format-core.mjs';
+import { isPisiInlineTextCommand, parsePisiTextDecorations, resolvePisiInlineTextMutation } from './pisi-editor-text-format-core.mjs';
 
 const pisiAuthoritativeSelections = new WeakMap();
 const pisiAuthorityTypingStyles = new WeakMap();
-const PISI_AUTHORITY_NAVIGATION_KEYS = new Set([
-    'ArrowLeft',
-    'ArrowRight',
-    'ArrowUp',
-    'ArrowDown',
-    'Home',
-    'End',
-    'PageUp',
-    'PageDown'
-]);
+const PISI_AUTHORITY_NAVIGATION_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown']);
 
 function getPisiAuthorityEditorFromTarget(target) {
     const editor = target?.closest?.('.pisi-rich-editor');
@@ -35,8 +22,7 @@ function getPisiAuthorityEditorForToolbar(toolbar) {
 function getPisiAuthorityToolbarForEditor(editor) {
     if (!editor?.id) return null;
     return document.querySelector(
-        `.pisi-editor-toolbar[data-editor-target="${CSS.escape(editor.id)}"], ` +
-        `.pisi-word-toolbar[data-editor-target="${CSS.escape(editor.id)}"]`
+        `.pisi-editor-toolbar[data-editor-target="${CSS.escape(editor.id)}"], ` + `.pisi-word-toolbar[data-editor-target="${CSS.escape(editor.id)}"]`
     );
 }
 
@@ -53,9 +39,7 @@ function getPisiAuthorityCurrentRange(editor) {
     const live = getPisiAuthorityRangeInsideEditor(editor);
     if (live) return live;
     const saved = pisiAuthoritativeSelections.get(editor);
-    return saved?.startContainer?.isConnected && saved?.endContainer?.isConnected
-        ? saved
-        : null;
+    return saved?.startContainer?.isConnected && saved?.endContainer?.isConnected ? saved : null;
 }
 
 function rememberPisiAuthoritySelection(editor) {
@@ -94,15 +78,10 @@ function getPisiAuthorityElementFromRange(editor, range) {
     if (!editor || !range) return null;
     let node = range.startContainer;
     if (node === editor && node.nodeType === Node.ELEMENT_NODE) {
-        node = node.childNodes[Math.min(
-            range.startOffset,
-            Math.max(0, node.childNodes.length - 1)
-        )] || editor;
+        node = node.childNodes[Math.min(range.startOffset, Math.max(0, node.childNodes.length - 1))] || editor;
     }
     if (node?.nodeType === Node.TEXT_NODE) node = node.parentElement;
-    return node?.nodeType === Node.ELEMENT_NODE && editor.contains(node)
-        ? node
-        : editor;
+    return node?.nodeType === Node.ELEMENT_NODE && editor.contains(node) ? node : editor;
 }
 
 function getPisiAuthorityBlock(editor, node) {
@@ -114,9 +93,7 @@ function getPisiAuthorityBlock(editor, node) {
 function getPisiAuthorityTypingStyle(editor, property = null) {
     const state = pisiAuthorityTypingStyles.get(editor) || null;
     if (!property) return state ? { ...state } : null;
-    return state && Object.prototype.hasOwnProperty.call(state, property)
-        ? state[property]
-        : null;
+    return state && Object.prototype.hasOwnProperty.call(state, property) ? state[property] : null;
 }
 
 function setPisiAuthorityTypingStyle(editor, property, value) {
@@ -140,9 +117,7 @@ function notifyPisiAuthorityEditorChanged(editor, inputType = 'formatSet', data 
         window.notifyPisiEditorChanged(editor);
         return;
     }
-    const event = typeof InputEvent === 'function'
-        ? new InputEvent('input', { bubbles: true, inputType, data })
-        : new Event('input', { bubbles: true });
+    const event = typeof InputEvent === 'function' ? new InputEvent('input', { bubbles: true, inputType, data }) : new Event('input', { bubbles: true });
     editor.dispatchEvent(event);
 }
 
@@ -176,13 +151,9 @@ function getPisiAuthorityDecorationsAtRange(editor, range) {
 function getPisiAuthorityEffectiveStyle(editor, range) {
     const probe = getPisiAuthorityElementFromRange(editor, range);
     const computed = probe ? getComputedStyle(probe) : {};
-    const typing = range?.collapsed
-        ? (pisiAuthorityTypingStyles.get(editor) || {})
-        : {};
+    const typing = range?.collapsed ? pisiAuthorityTypingStyles.get(editor) || {} : {};
     const decorations = getPisiAuthorityDecorationsAtRange(editor, range);
-    const decorationValue = decorations.size
-        ? Array.from(decorations).join(' ')
-        : 'none';
+    const decorationValue = decorations.size ? Array.from(decorations).join(' ') : 'none';
     const effectiveDecoration = typing.textDecoration ?? decorationValue;
 
     return {
@@ -230,19 +201,14 @@ function removePisiAuthorityDecorationsFromSubtree(root, removedDecorations) {
             changed = true;
         });
         if (!changed) return;
-        element.style.textDecoration = decorations.size
-            ? Array.from(decorations).join(' ')
-            : 'none';
+        element.style.textDecoration = decorations.size ? Array.from(decorations).join(' ') : 'none';
     });
 }
 
 function getPisiAuthorityDecorationAncestor(editor, node, removedDecorations) {
     let element = node?.nodeType === Node.TEXT_NODE ? node.parentElement : node;
     while (element && element !== editor) {
-        if (
-            element.matches?.('.pisi-inline-command-style, .pisi-typing-style') &&
-            removedDecorations.size
-        ) {
+        if (element.matches?.('.pisi-inline-command-style, .pisi-typing-style') && removedDecorations.size) {
             const decorations = parsePisiTextDecorations({
                 textDecoration: element.style?.textDecoration || element.style?.textDecorationLine
             });
@@ -263,16 +229,8 @@ function splitPisiAuthorityDecorationSelection(editor, range, mutation, style) {
     const removedDecorations = getPisiAuthorityRemovedDecorations(style, mutation);
     if (!removedDecorations.size) return false;
 
-    const startSpan = getPisiAuthorityDecorationAncestor(
-        editor,
-        range.startContainer,
-        removedDecorations
-    );
-    const endSpan = getPisiAuthorityDecorationAncestor(
-        editor,
-        range.endContainer,
-        removedDecorations
-    );
+    const startSpan = getPisiAuthorityDecorationAncestor(editor, range.startContainer, removedDecorations);
+    const endSpan = getPisiAuthorityDecorationAncestor(editor, range.endContainer, removedDecorations);
     if (!startSpan || startSpan !== endSpan) return false;
 
     const beforeRange = document.createRange();
@@ -281,10 +239,7 @@ function splitPisiAuthorityDecorationSelection(editor, range, mutation, style) {
     const beforeFragment = beforeRange.cloneContents();
 
     const selectedFragment = range.cloneContents();
-    removePisiAuthorityDecorationsFromSubtree(
-        selectedFragment,
-        removedDecorations
-    );
+    removePisiAuthorityDecorationsFromSubtree(selectedFragment, removedDecorations);
 
     const afterRange = document.createRange();
     afterRange.selectNodeContents(startSpan);
@@ -324,11 +279,7 @@ function splitPisiAuthorityDecorationCaret(editor, range, mutation, style) {
     const removedDecorations = getPisiAuthorityRemovedDecorations(style, mutation);
     if (!removedDecorations.size) return false;
 
-    const span = getPisiAuthorityDecorationAncestor(
-        editor,
-        range.startContainer,
-        removedDecorations
-    );
+    const span = getPisiAuthorityDecorationAncestor(editor, range.startContainer, removedDecorations);
     if (!span || !span.parentNode) return false;
 
     const beforeRange = document.createRange();
@@ -392,14 +343,13 @@ function applyPisiAuthorityMutationToRange(editor, range, mutation, command, sty
     const endBlock = getPisiAuthorityBlock(editor, range.endContainer);
 
     if (startBlock && endBlock && startBlock !== endBlock) {
-        const blocks = Array.from(editor.querySelectorAll('.pisi-editor-block'))
-            .filter((block) => {
-                try {
-                    return range.intersectsNode(block);
-                } catch {
-                    return false;
-                }
-            });
+        const blocks = Array.from(editor.querySelectorAll('.pisi-editor-block')).filter((block) => {
+            try {
+                return range.intersectsNode(block);
+            } catch {
+                return false;
+            }
+        });
         blocks.forEach((block) => {
             block.style[mutation.property] = mutation.value;
         });
@@ -423,8 +373,7 @@ function getPisiAuthorityCommandActive(editor, command) {
     const style = getPisiAuthorityEffectiveStyle(editor, range);
 
     if (command === 'bold') {
-        return Number.parseInt(style.fontWeight, 10) >= 600 ||
-            String(style.fontWeight || '').toLowerCase() === 'bold';
+        return Number.parseInt(style.fontWeight, 10) >= 600 || String(style.fontWeight || '').toLowerCase() === 'bold';
     }
     if (command === 'italic') {
         return String(style.fontStyle || '').toLowerCase() === 'italic';
@@ -442,9 +391,7 @@ function syncPisiAuthorityToolbarTypingState(editor) {
     ['bold', 'italic', 'underline', 'strikeThrough'].forEach((command) => {
         const active = getPisiAuthorityCommandActive(editor, command);
         if (active === null) return;
-        const button = toolbar.querySelector(
-            `button[data-pisi-unified-command="${command}"]`
-        );
+        const button = toolbar.querySelector(`button[data-pisi-unified-command="${command}"]`);
         if (!button) return;
         button.classList.toggle('active', active);
         button.setAttribute('aria-pressed', String(active));
@@ -469,13 +416,7 @@ function applyPisiAuthoritativeInlineCommand(editor, range, command) {
     const mutation = resolvePisiInlineTextMutation(command, style);
     if (!mutation) return false;
 
-    const changed = applyPisiAuthorityMutationToRange(
-        editor,
-        range,
-        mutation,
-        command,
-        style
-    );
+    const changed = applyPisiAuthorityMutationToRange(editor, range, mutation, command, style);
     if (!changed) return false;
 
     notifyPisiAuthorityEditorChanged(editor);
@@ -488,11 +429,7 @@ function makePisiAuthorityCommandRange(command) {
     if (!command?.block || typeof window.makeRangeInElementByTextOffsets !== 'function') {
         return null;
     }
-    const range = window.makeRangeInElementByTextOffsets(
-        command.block,
-        command.tokenStartInText,
-        command.tokenEndInText
-    );
+    const range = window.makeRangeInElementByTextOffsets(command.block, command.tokenStartInText, command.tokenEndInText);
     if (!range) return null;
     range.deleteContents();
     range.collapse(true);
@@ -551,9 +488,7 @@ function makePisiAuthorityTypingSignature(styles) {
 
 function getPisiAuthorityTypingSpan(editor, range, signature) {
     if (!range?.collapsed || range.startContainer?.nodeType !== Node.TEXT_NODE) return null;
-    const span = range.startContainer.parentElement?.closest?.(
-        '.pisi-typing-style[data-pisi-authority-typing="1"]'
-    );
+    const span = range.startContainer.parentElement?.closest?.('.pisi-typing-style[data-pisi-authority-typing="1"]');
     if (!span || !editor.contains(span)) return null;
     return span.dataset.pisiAuthoritySignature === signature ? span : null;
 }
@@ -637,10 +572,7 @@ function initializePisiEditorCommandAuthority() {
     window.addEventListener('input', handlePisiAuthorityPostEditorEvent);
 
     document.addEventListener('selectionchange', () => {
-        [
-            document.getElementById('center-node-editor-content'),
-            document.getElementById('node-modal-content')
-        ].filter(Boolean).forEach((editor) => {
+        [document.getElementById('center-node-editor-content'), document.getElementById('node-modal-content')].filter(Boolean).forEach((editor) => {
             if (!rememberPisiAuthoritySelection(editor)) return;
             queueMicrotask(() => syncPisiAuthorityToolbarState(editor));
         });

@@ -122,11 +122,18 @@ test('project storage contract works through a replaceable driver', () => {
     const storage = createPisiProjectStorage(root, driver);
 
     assert.equal(storage.contractVersion, PISI_STORAGE_CONTRACT_VERSION);
-    const written = storage.writeJson('.pisi/example.json', { value: 42 }, {
-        backup: false
-    });
+    const written = storage.writeJson(
+        '.pisi/example.json',
+        { value: 42 },
+        {
+            backup: false
+        }
+    );
     assert.equal(written.ok, true);
-    assert.equal(driver.calls.some((call) => call[0] === 'writeText'), true);
+    assert.equal(
+        driver.calls.some((call) => call[0] === 'writeText'),
+        true
+    );
 
     const read = storage.readJson('.pisi/example.json');
     assert.equal(read.ok, true);
@@ -158,8 +165,5 @@ test('walk is bounded, ignores requested directories and filters extensions', ()
         maxFiles: 10
     });
     assert.equal(result.ok, true);
-    assert.deepEqual(
-        result.entries.map((entry) => entry.key).sort(),
-        ['folder/three.node', 'one.node']
-    );
+    assert.deepEqual(result.entries.map((entry) => entry.key).sort(), ['folder/three.node', 'one.node']);
 });

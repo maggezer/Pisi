@@ -1,26 +1,19 @@
-import { registerModule } from "../core/module-registry.mjs";
+import { registerModule } from '../core/module-registry.mjs';
 
 async function persistPisiMapConnection(edgePayload) {
     suppressNextFileSystemRefresh(1500);
 
-    let result = await window.pisiProject?.upsertMapConnection?.(
-        activeMapPath,
-        edgePayload
-    );
+    let result = await window.pisiProject?.upsertMapConnection?.(activeMapPath, edgePayload);
 
     if (result?.code === 'SECOND_PARENT_CONFIRM_REQUIRED') {
-        const confirmed = typeof pisiConfirm === 'function'
-            ? await pisiConfirm(
-                'Bu node zaten bir parent’a sahip. Bağlantı hiyerarşi yerine stream ilişkisi olarak kaydedilsin mi?',
-                {
-                    title: 'İkinci parent',
-                    confirmText: 'Stream olarak ekle',
-                    cancelText: 'Vazgeç'
-                }
-            )
-            : confirm(
-                'Bu node zaten bir parent’a sahip. Bağlantı stream ilişkisi olarak kaydedilsin mi?'
-            );
+        const confirmed =
+            typeof pisiConfirm === 'function'
+                ? await pisiConfirm('Bu node zaten bir parent’a sahip. Bağlantı hiyerarşi yerine stream ilişkisi olarak kaydedilsin mi?', {
+                      title: 'İkinci parent',
+                      confirmText: 'Stream olarak ekle',
+                      cancelText: 'Vazgeç'
+                  })
+                : confirm('Bu node zaten bir parent’a sahip. Bağlantı stream ilişkisi olarak kaydedilsin mi?');
 
         if (!confirmed) {
             return {
@@ -29,13 +22,10 @@ async function persistPisiMapConnection(edgePayload) {
             };
         }
 
-        result = await window.pisiProject?.upsertMapConnection?.(
-            activeMapPath,
-            {
-                ...(result.suggestedEdge || edgePayload),
-                confirmSecondParentAsStream: true
-            }
-        );
+        result = await window.pisiProject?.upsertMapConnection?.(activeMapPath, {
+            ...(result.suggestedEdge || edgePayload),
+            confirmSecondParentAsStream: true
+        });
     }
 
     if (!result?.ok) return result;
@@ -77,9 +67,7 @@ function translatePisiMapEdgeMenuText(value) {
 }
 
 function getPisiMapEdgeById(edgeId) {
-    return Array.isArray(activeMapEdges)
-        ? activeMapEdges.find((edge) => edge?.id === edgeId) || null
-        : null;
+    return Array.isArray(activeMapEdges) ? activeMapEdges.find((edge) => edge?.id === edgeId) || null : null;
 }
 
 function closePisiMapEdgeMenu() {
@@ -101,11 +89,8 @@ function positionPisiMapEdgeMenu(menu, anchor) {
     const width = menu.offsetWidth || 190;
     const height = menu.offsetHeight || 170;
 
-    let left = rect.left + (rect.width / 2) - (width / 2);
-    left = Math.max(
-        margin,
-        Math.min(left, Math.max(margin, window.innerWidth - width - margin))
-    );
+    let left = rect.left + rect.width / 2 - width / 2;
+    left = Math.max(margin, Math.min(left, Math.max(margin, window.innerWidth - width - margin)));
 
     let top = rect.bottom + gap;
     if (top + height > window.innerHeight - margin) {
@@ -117,10 +102,7 @@ function positionPisiMapEdgeMenu(menu, anchor) {
 }
 
 function prunePisiStaleCollapsedHubPorts() {
-    if (
-        typeof getCollapsedHubPortSet !== 'function' ||
-        typeof hasOutgoingHubEdgesFromPort !== 'function'
-    ) {
+    if (typeof getCollapsedHubPortSet !== 'function' || typeof hasOutgoingHubEdgesFromPort !== 'function') {
         return false;
     }
 
@@ -148,9 +130,7 @@ function prunePisiStaleCollapsedHubPorts() {
 
 async function changePisiMapEdgeType(edgeId, nextType) {
     const edge = getPisiMapEdgeById(edgeId);
-    const option = PISI_MAP_EDGE_TYPE_OPTIONS.find(
-        (candidate) => candidate.type === nextType
-    );
+    const option = PISI_MAP_EDGE_TYPE_OPTIONS.find((candidate) => candidate.type === nextType);
 
     if (!activeMapPath || !edge || !option) {
         return {
@@ -230,10 +210,7 @@ function openPisiMapEdgeMenu(edgeId, anchor) {
     menu.className = 'pisi-map-edge-menu';
     menu.dataset.edgeId = edgeId;
     menu.setAttribute('role', 'menu');
-    menu.setAttribute(
-        'aria-label',
-        translatePisiMapEdgeMenuText('Bağlantı seçenekleri')
-    );
+    menu.setAttribute('aria-label', translatePisiMapEdgeMenuText('Bağlantı seçenekleri'));
 
     const typeLabel = document.createElement('div');
     typeLabel.className = 'pisi-map-edge-menu-label';
@@ -282,16 +259,17 @@ function openPisiMapEdgeMenu(edgeId, anchor) {
 }
 
 function bindPisiMapEdgeMenuDismissal() {
-    document.addEventListener('pointerdown', (event) => {
-        if (!pisiMapEdgeMenu) return;
-        if (
-            pisiMapEdgeMenu.contains(event.target) ||
-            pisiMapEdgeMenuAnchor?.contains?.(event.target)
-        ) {
-            return;
-        }
-        closePisiMapEdgeMenu();
-    }, true);
+    document.addEventListener(
+        'pointerdown',
+        (event) => {
+            if (!pisiMapEdgeMenu) return;
+            if (pisiMapEdgeMenu.contains(event.target) || pisiMapEdgeMenuAnchor?.contains?.(event.target)) {
+                return;
+            }
+            closePisiMapEdgeMenu();
+        },
+        true
+    );
 
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
@@ -306,43 +284,31 @@ function bindPisiMapEdgeMenuDismissal() {
 bindPisiMapEdgeMenuDismissal();
 
 function notifyPisiMapCustomizationContextChanged() {
-    document.dispatchEvent(new CustomEvent(
-        'pisi:map-customization-context-changed'
-    ));
+    document.dispatchEvent(new CustomEvent('pisi:map-customization-context-changed'));
 }
 
 function selectPisiMapEdge(edgeId) {
     if (!edgeId) return false;
-    const edgeExists = Array.isArray(activeMapEdges) && activeMapEdges.some(
-        (edge) => edge?.id === edgeId
-    );
+    const edgeExists = Array.isArray(activeMapEdges) && activeMapEdges.some((edge) => edge?.id === edgeId);
     if (!edgeExists) return false;
 
     clearSelectedMapNodes();
     selectedMapEdgeId = edgeId;
-    document.querySelectorAll('.map-edge-group[data-edge-id]')
-        .forEach((group) => {
-            group.classList.toggle(
-                'selected',
-                group.dataset.edgeId === edgeId
-            );
-        });
+    document.querySelectorAll('.map-edge-group[data-edge-id]').forEach((group) => {
+        group.classList.toggle('selected', group.dataset.edgeId === edgeId);
+    });
     notifyPisiMapCustomizationContextChanged();
     return true;
 }
 
 function resetPisiMapConnectionInteractions() {
     closePisiMapEdgeMenu();
-    pisiKeyboardConnectionSource?.portEl?.classList.remove(
-        'connecting-source'
-    );
+    pisiKeyboardConnectionSource?.portEl?.classList.remove('connecting-source');
     pisiKeyboardConnectionSource = null;
 
     const sourcePort = currentConnectionDrag?.sourcePort;
     if (sourcePort) {
-        currentConnectionDrag.sourceBox
-            ?.querySelector?.(`.map-port.${CSS.escape(sourcePort)}`)
-            ?.classList?.remove('connecting-source');
+        currentConnectionDrag.sourceBox?.querySelector?.(`.map-port.${CSS.escape(sourcePort)}`)?.classList?.remove('connecting-source');
     }
     currentConnectionDrag = null;
 
@@ -365,27 +331,27 @@ function bindMapPortEvents(box) {
             event.preventDefault();
             event.stopPropagation();
 
-const sourcePort = portEl.dataset.port;
-const sourceId = box.dataset.nodeId;
-const connectionData = getConnectionDataFromEvent(event);
+            const sourcePort = portEl.dataset.port;
+            const sourceId = box.dataset.nodeId;
+            const connectionData = getConnectionDataFromEvent(event);
 
-currentConnectionDrag = {
-    sourceBox: box,
-    sourceId,
-    sourcePort,
-    startClientX: event.clientX,
-    startClientY: event.clientY,
-    ...connectionData
-};
+            currentConnectionDrag = {
+                sourceBox: box,
+                sourceId,
+                sourcePort,
+                startClientX: event.clientX,
+                startClientY: event.clientY,
+                ...connectionData
+            };
 
             portEl.classList.add('connecting-source');
 
-        const mouse = getMousePointInCanvas(event);
-        const temp = ensureTempEdgePath();
+            const mouse = getMousePointInCanvas(event);
+            const temp = ensureTempEdgePath();
 
-        if (temp) {
-            temp.setAttribute('d', makeTempConnectionPath(box, sourcePort, mouse));
-        }
+            if (temp) {
+                temp.setAttribute('d', makeTempConnectionPath(box, sourcePort, mouse));
+            }
         });
 
         portEl.addEventListener('keydown', async (event) => {
@@ -402,26 +368,17 @@ currentConnectionDrag = {
                     ...getConnectionDataFromEvent(event)
                 };
                 portEl.classList.add('connecting-source');
-                portEl.setAttribute(
-                    'aria-label',
-                    'Bağlantı kaynağı seçildi; hedef portta Enter’a bas'
-                );
+                portEl.setAttribute('aria-label', 'Bağlantı kaynağı seçildi; hedef portta Enter’a bas');
                 return;
             }
 
             const source = pisiKeyboardConnectionSource;
             source.portEl.classList.remove('connecting-source');
-            source.portEl.setAttribute(
-                'aria-label',
-                `${source.sourcePort} bağlantı portu`
-            );
+            source.portEl.setAttribute('aria-label', `${source.sourcePort} bağlantı portu`);
             pisiKeyboardConnectionSource = null;
 
             if (source.box === box && source.portEl === portEl) {
-                toggleHubConnectionsFromPort(
-                    source.sourceId,
-                    source.sourcePort
-                );
+                toggleHubConnectionsFromPort(source.sourceId, source.sourcePort);
                 return;
             }
 
@@ -453,14 +410,15 @@ async function deleteMapEdge(edgeId) {
     // taşımıyoruz. Confirm diyaloğu kendi focus yaşam döngüsünü yönetiyor.
     resetPisiMapConnectionInteractions();
 
-    const ok = typeof pisiConfirm === 'function'
-        ? await pisiConfirm('Bu bağlantı silinsin mi?', {
-            title: 'Bağlantıyı sil',
-            confirmText: 'Sil',
-            cancelText: 'Vazgeç',
-            danger: true
-        })
-        : confirm('Bu bağlantı silinsin mi?');
+    const ok =
+        typeof pisiConfirm === 'function'
+            ? await pisiConfirm('Bu bağlantı silinsin mi?', {
+                  title: 'Bağlantıyı sil',
+                  confirmText: 'Sil',
+                  cancelText: 'Vazgeç',
+                  danger: true
+              })
+            : confirm('Bu bağlantı silinsin mi?');
 
     if (!ok) {
         resetPisiMapConnectionInteractions();
@@ -470,19 +428,18 @@ async function deleteMapEdge(edgeId) {
     try {
         suppressNextFileSystemRefresh(8000);
 
-        const result = await window.pisiProject?.deleteMapConnection?.(
-            activeMapPath,
-            edgeId
-        );
+        const result = await window.pisiProject?.deleteMapConnection?.(activeMapPath, edgeId);
 
         if (!result || !result.ok) {
             alert(result?.error || 'Bağlantı silinemedi.');
             return;
         }
 
-        activeMapEdges = result.edges || activeMapEdges.filter((edge) => {
-            return edge.id !== edgeId;
-        });
+        activeMapEdges =
+            result.edges ||
+            activeMapEdges.filter((edge) => {
+                return edge.id !== edgeId;
+            });
 
         prunePisiStaleCollapsedHubPorts();
         drawMapConnections();
@@ -537,11 +494,7 @@ function createMapEdgeDeleteButton(edge, pathData) {
         event.preventDefault();
         event.stopPropagation();
 
-        if (
-            pisiMapEdgeMenu &&
-            pisiMapEdgeMenuEdgeId === edge.id &&
-            pisiMapEdgeMenuAnchor === group
-        ) {
+        if (pisiMapEdgeMenu && pisiMapEdgeMenuEdgeId === edge.id && pisiMapEdgeMenuAnchor === group) {
             closePisiMapEdgeMenu();
             return;
         }
@@ -576,10 +529,7 @@ function updateMapEdgeDeleteButtonPosition(group, pathData) {
     if (!point) return;
     group.setAttribute('transform', `translate(${point.x}, ${point.y})`);
 
-    if (
-        pisiMapEdgeMenu &&
-        pisiMapEdgeMenuAnchor === group
-    ) {
+    if (pisiMapEdgeMenu && pisiMapEdgeMenuAnchor === group) {
         positionPisiMapEdgeMenu(pisiMapEdgeMenu, group);
     }
 }
@@ -590,14 +540,7 @@ function getPisiMapEdgeMarkerId(edgeId, role) {
     return `pisi-edge-marker-${edgeId}-${role}`;
 }
 
-function ensurePisiMapEdgeMarker(
-    svg,
-    edge,
-    baseMarkerId,
-    role,
-    color,
-    liveMarkerIds
-) {
+function ensurePisiMapEdgeMarker(svg, edge, baseMarkerId, role, color, liveMarkerIds) {
     const markerId = getPisiMapEdgeMarkerId(edge.id, role);
     let marker = svg.querySelector(`#${CSS.escape(markerId)}`);
     if (!marker) {
@@ -616,15 +559,8 @@ function ensurePisiMapEdgeMarker(
     return markerId;
 }
 
-function applyPisiMapEdgeCustomization(
-    svg,
-    pathEl,
-    edge,
-    liveMarkerIds
-) {
-    const color = typeof getPisiMapEdgeCustomizationColor === 'function'
-        ? getPisiMapEdgeCustomizationColor(edge)
-        : '';
+function applyPisiMapEdgeCustomization(svg, pathEl, edge, liveMarkerIds) {
+    const color = typeof getPisiMapEdgeCustomizationColor === 'function' ? getPisiMapEdgeCustomizationColor(edge) : '';
     pathEl.style.removeProperty('stroke');
     pathEl.style.removeProperty('marker-start');
     pathEl.style.removeProperty('marker-end');
@@ -632,38 +568,15 @@ function applyPisiMapEdgeCustomization(
 
     pathEl.style.stroke = color;
     if (edge.type === 'co-level') {
-        const startId = ensurePisiMapEdgeMarker(
-            svg,
-            edge,
-            'arrow-colevel-start',
-            'start',
-            color,
-            liveMarkerIds
-        );
-        const endId = ensurePisiMapEdgeMarker(
-            svg,
-            edge,
-            'arrow-colevel',
-            'end',
-            color,
-            liveMarkerIds
-        );
+        const startId = ensurePisiMapEdgeMarker(svg, edge, 'arrow-colevel-start', 'start', color, liveMarkerIds);
+        const endId = ensurePisiMapEdgeMarker(svg, edge, 'arrow-colevel', 'end', color, liveMarkerIds);
         if (startId) pathEl.style.markerStart = `url(#${startId})`;
         if (endId) pathEl.style.markerEnd = `url(#${endId})`;
         return;
     }
 
-    const baseMarkerId = edge.type === 'stream'
-        ? 'arrow-stream'
-        : 'arrow-downhub';
-    const markerId = ensurePisiMapEdgeMarker(
-        svg,
-        edge,
-        baseMarkerId,
-        'end',
-        color,
-        liveMarkerIds
-    );
+    const baseMarkerId = edge.type === 'stream' ? 'arrow-stream' : 'arrow-downhub';
+    const markerId = ensurePisiMapEdgeMarker(svg, edge, baseMarkerId, 'end', color, liveMarkerIds);
     if (markerId) pathEl.style.markerEnd = `url(#${markerId})`;
 }
 
@@ -712,31 +625,19 @@ function drawMapConnections() {
             continue;
         }
 
-        const sourceBox = document.querySelector(
-            `.map-node-box[data-node-id="${CSS.escape(edge.sourceId)}"]`
-        );
+        const sourceBox = document.querySelector(`.map-node-box[data-node-id="${CSS.escape(edge.sourceId)}"]`);
 
-        const targetBox = document.querySelector(
-            `.map-node-box[data-node-id="${CSS.escape(edge.targetId)}"]`
-        );
+        const targetBox = document.querySelector(`.map-node-box[data-node-id="${CSS.escape(edge.targetId)}"]`);
 
         if (!sourceBox || !targetBox) continue;
 
         const sourcePort = edge.sourcePort || 'right';
         const targetPort = edge.targetPort || 'left';
 
-        const pathData = makeConnectionPathFromBoxes(
-            sourceBox,
-            sourcePort,
-            targetBox,
-            targetPort,
-            edge.type
-        );
+        const pathData = makeConnectionPathFromBoxes(sourceBox, sourcePort, targetBox, targetPort, edge.type);
 
         liveEdgeIds.add(edge.id);
-        let groupEl = svg.querySelector(
-            `.map-edge-group[data-edge-id="${CSS.escape(edge.id)}"]`
-        );
+        let groupEl = svg.querySelector(`.map-edge-group[data-edge-id="${CSS.escape(edge.id)}"]`);
         let hitPathEl = groupEl?.querySelector('.map-edge-hit') || null;
         let pathEl = groupEl?.querySelector('.map-edge') || null;
         let menuTriggerEl = groupEl?.querySelector('.map-edge-menu-trigger') || null;
@@ -768,17 +669,9 @@ function drawMapConnections() {
         bindPisiMapEdgeSelection(groupEl, hitPathEl);
 
         hitPathEl.setAttribute('d', pathData);
-        pathEl.setAttribute(
-            'class',
-            `map-edge ${getConnectionClass(edge)}`
-        );
+        pathEl.setAttribute('class', `map-edge ${getConnectionClass(edge)}`);
         pathEl.setAttribute('d', pathData);
-        applyPisiMapEdgeCustomization(
-            svg,
-            pathEl,
-            edge,
-            liveMarkerIds
-        );
+        applyPisiMapEdgeCustomization(svg, pathEl, edge, liveMarkerIds);
         groupEl.classList.toggle('selected', edge.id === selectedMapEdgeId);
 
         if (menuTriggerEl) {
@@ -795,10 +688,9 @@ function drawMapConnections() {
         }
     });
 
-    svg.querySelectorAll('marker[data-pisi-edge-marker="true"]')
-        .forEach((marker) => {
-            if (!liveMarkerIds.has(marker.id)) marker.remove();
-        });
+    svg.querySelectorAll('marker[data-pisi-edge-marker="true"]').forEach((marker) => {
+        if (!liveMarkerIds.has(marker.id)) marker.remove();
+    });
 
     if (selectedMapEdgeId && !liveEdgeIds.has(selectedMapEdgeId)) {
         selectedMapEdgeId = null;
@@ -808,75 +700,113 @@ function drawMapConnections() {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "persistPisiMapConnection": {
+    persistPisiMapConnection: {
         enumerable: true,
-        get() { return persistPisiMapConnection; }
+        get() {
+            return persistPisiMapConnection;
+        }
     },
-    "pisiKeyboardConnectionSource": {
+    pisiKeyboardConnectionSource: {
         enumerable: true,
-        get() { return pisiKeyboardConnectionSource; },
-        set(value) { pisiKeyboardConnectionSource = value; }
+        get() {
+            return pisiKeyboardConnectionSource;
+        },
+        set(value) {
+            pisiKeyboardConnectionSource = value;
+        }
     },
-    "notifyPisiMapCustomizationContextChanged": {
+    notifyPisiMapCustomizationContextChanged: {
         enumerable: true,
-        get() { return notifyPisiMapCustomizationContextChanged; }
+        get() {
+            return notifyPisiMapCustomizationContextChanged;
+        }
     },
-    "selectPisiMapEdge": {
+    selectPisiMapEdge: {
         enumerable: true,
-        get() { return selectPisiMapEdge; }
+        get() {
+            return selectPisiMapEdge;
+        }
     },
-    "resetPisiMapConnectionInteractions": {
+    resetPisiMapConnectionInteractions: {
         enumerable: true,
-        get() { return resetPisiMapConnectionInteractions; }
+        get() {
+            return resetPisiMapConnectionInteractions;
+        }
     },
-    "bindMapPortEvents": {
+    bindMapPortEvents: {
         enumerable: true,
-        get() { return bindMapPortEvents; }
+        get() {
+            return bindMapPortEvents;
+        }
     },
-    "deleteMapEdge": {
+    deleteMapEdge: {
         enumerable: true,
-        get() { return deleteMapEdge; }
+        get() {
+            return deleteMapEdge;
+        }
     },
-    "createMapEdgeDeleteButton": {
+    createMapEdgeDeleteButton: {
         enumerable: true,
-        get() { return createMapEdgeDeleteButton; }
+        get() {
+            return createMapEdgeDeleteButton;
+        }
     },
-    "getMapEdgePathMidpoint": {
+    getMapEdgePathMidpoint: {
         enumerable: true,
-        get() { return getMapEdgePathMidpoint; }
+        get() {
+            return getMapEdgePathMidpoint;
+        }
     },
-    "updateMapEdgeDeleteButtonPosition": {
+    updateMapEdgeDeleteButtonPosition: {
         enumerable: true,
-        get() { return updateMapEdgeDeleteButtonPosition; }
+        get() {
+            return updateMapEdgeDeleteButtonPosition;
+        }
     },
-    "pisiConnectionDrawFrame": {
+    pisiConnectionDrawFrame: {
         enumerable: true,
-        get() { return pisiConnectionDrawFrame; },
-        set(value) { pisiConnectionDrawFrame = value; }
+        get() {
+            return pisiConnectionDrawFrame;
+        },
+        set(value) {
+            pisiConnectionDrawFrame = value;
+        }
     },
-    "getPisiMapEdgeMarkerId": {
+    getPisiMapEdgeMarkerId: {
         enumerable: true,
-        get() { return getPisiMapEdgeMarkerId; }
+        get() {
+            return getPisiMapEdgeMarkerId;
+        }
     },
-    "ensurePisiMapEdgeMarker": {
+    ensurePisiMapEdgeMarker: {
         enumerable: true,
-        get() { return ensurePisiMapEdgeMarker; }
+        get() {
+            return ensurePisiMapEdgeMarker;
+        }
     },
-    "applyPisiMapEdgeCustomization": {
+    applyPisiMapEdgeCustomization: {
         enumerable: true,
-        get() { return applyPisiMapEdgeCustomization; }
+        get() {
+            return applyPisiMapEdgeCustomization;
+        }
     },
-    "bindPisiMapEdgeSelection": {
+    bindPisiMapEdgeSelection: {
         enumerable: true,
-        get() { return bindPisiMapEdgeSelection; }
+        get() {
+            return bindPisiMapEdgeSelection;
+        }
     },
-    "scheduleDrawMapConnections": {
+    scheduleDrawMapConnections: {
         enumerable: true,
-        get() { return scheduleDrawMapConnections; }
+        get() {
+            return scheduleDrawMapConnections;
+        }
     },
-    "drawMapConnections": {
+    drawMapConnections: {
         enumerable: true,
-        get() { return drawMapConnections; }
+        get() {
+            return drawMapConnections;
+        }
     }
 });
-registerModule("map.edges", moduleApi);
+registerModule('map.edges', moduleApi);

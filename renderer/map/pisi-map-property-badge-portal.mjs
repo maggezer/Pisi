@@ -21,9 +21,7 @@ function getPisiBadgePickerAnchor() {
 }
 
 function getPisiBadgePickerPortal() {
-    return document.querySelector(
-        `body > ${PISI_BADGE_PICKER_SELECTOR}.${PISI_BADGE_PICKER_PORTAL_CLASS}`
-    );
+    return document.querySelector(`body > ${PISI_BADGE_PICKER_SELECTOR}.${PISI_BADGE_PICKER_PORTAL_CLASS}`);
 }
 
 function syncPisiBadgePickerPortalLayer(picker = getPisiBadgePickerPortal()) {
@@ -32,10 +30,7 @@ function syncPisiBadgePickerPortalLayer(picker = getPisiBadgePickerPortal()) {
     let zIndex = PISI_BADGE_PICKER_TOP_LAYER_Z_INDEX;
     const commandCenterOverlay = document.getElementById('pisi-command-center-overlay');
     if (commandCenterOverlay?.isConnected) {
-        const overlayZIndex = Number.parseInt(
-            window.getComputedStyle(commandCenterOverlay).zIndex,
-            10
-        );
+        const overlayZIndex = Number.parseInt(window.getComputedStyle(commandCenterOverlay).zIndex, 10);
         if (Number.isFinite(overlayZIndex)) {
             zIndex = Math.max(zIndex, overlayZIndex + 1);
         }
@@ -62,16 +57,13 @@ function positionPisiBadgePickerPortal(picker = getPisiBadgePickerPortal()) {
     const gap = PISI_BADGE_PICKER_GAP;
     const anchorRect = anchor.getBoundingClientRect();
 
-    const availableWidth = Math.max(160, viewportWidth - (padding * 2));
+    const availableWidth = Math.max(160, viewportWidth - padding * 2);
     const initialRect = picker.getBoundingClientRect();
     const pickerWidth = Math.min(initialRect.width || 270, availableWidth);
     picker.style.width = `${Math.round(pickerWidth)}px`;
 
     const pickerRect = picker.getBoundingClientRect();
-    const left = Math.min(
-        Math.max(padding, anchorRect.left),
-        Math.max(padding, viewportWidth - pickerRect.width - padding)
-    );
+    const left = Math.min(Math.max(padding, anchorRect.left), Math.max(padding, viewportWidth - pickerRect.width - padding));
 
     const belowTop = anchorRect.bottom + gap;
     const belowSpace = viewportHeight - belowTop - padding;
@@ -82,10 +74,7 @@ function positionPisiBadgePickerPortal(picker = getPisiBadgePickerPortal()) {
         top = anchorRect.top - gap - Math.min(pickerRect.height, aboveSpace);
     }
 
-    top = Math.min(
-        Math.max(padding, top),
-        Math.max(padding, viewportHeight - pickerRect.height - padding)
-    );
+    top = Math.min(Math.max(padding, top), Math.max(padding, viewportHeight - pickerRect.height - padding));
 
     picker.style.left = `${Math.round(left)}px`;
     picker.style.top = `${Math.round(top)}px`;
@@ -95,9 +84,7 @@ function positionPisiBadgePickerPortal(picker = getPisiBadgePickerPortal()) {
 function portalizePisiBadgePicker(picker) {
     if (!(picker instanceof Element) || !picker.matches(PISI_BADGE_PICKER_SELECTOR)) return false;
 
-    document.querySelectorAll(
-        `body > ${PISI_BADGE_PICKER_SELECTOR}.${PISI_BADGE_PICKER_PORTAL_CLASS}`
-    ).forEach((existing) => {
+    document.querySelectorAll(`body > ${PISI_BADGE_PICKER_SELECTOR}.${PISI_BADGE_PICKER_PORTAL_CLASS}`).forEach((existing) => {
         if (existing !== picker) existing.remove();
     });
 
@@ -133,16 +120,12 @@ function installPisiBadgePickerPortal() {
                     mutation.type === 'attributes' &&
                     mutation.attributeName === 'hidden' &&
                     mutation.target instanceof Element &&
-                    mutation.target.matches(
-                        `${PISI_BADGE_PICKER_SELECTOR}.${PISI_BADGE_PICKER_PORTAL_CLASS}`
-                    ) &&
+                    mutation.target.matches(`${PISI_BADGE_PICKER_SELECTOR}.${PISI_BADGE_PICKER_PORTAL_CLASS}`) &&
                     !mutation.target.hidden
                 ) {
                     const target = mutation.target;
                     requestAnimationFrame(() => {
-                        positionPisiBadgePickerPortal(
-                            /** @type {Element} */ (target)
-                        );
+                        positionPisiBadgePickerPortal(/** @type {Element} */ (target));
                     });
                 }
             }
@@ -155,28 +138,40 @@ function installPisiBadgePickerPortal() {
         });
     }
 
-    document.addEventListener('mousedown', (event) => {
-        const picker = getPisiBadgePickerPortal();
-        if (!picker || picker.hidden) return;
-        const anchor = getPisiBadgePickerAnchor();
-        const target = event.target instanceof Node ? event.target : null;
-        if (target && (picker.contains(target) || anchor?.contains(target))) return;
-        picker.hidden = true;
-    }, true);
+    document.addEventListener(
+        'mousedown',
+        (event) => {
+            const picker = getPisiBadgePickerPortal();
+            if (!picker || picker.hidden) return;
+            const anchor = getPisiBadgePickerAnchor();
+            const target = event.target instanceof Node ? event.target : null;
+            if (target && (picker.contains(target) || anchor?.contains(target))) return;
+            picker.hidden = true;
+        },
+        true
+    );
 
-    document.addEventListener('scroll', () => {
-        positionPisiBadgePickerPortal();
-    }, true);
+    document.addEventListener(
+        'scroll',
+        () => {
+            positionPisiBadgePickerPortal();
+        },
+        true
+    );
 
     window.addEventListener('resize', () => {
         positionPisiBadgePickerPortal();
     });
 
-    document.addEventListener('keydown', (event) => {
-        if (event.key !== 'Escape') return;
-        const picker = getPisiBadgePickerPortal();
-        if (picker && !picker.hidden) picker.hidden = true;
-    }, true);
+    document.addEventListener(
+        'keydown',
+        (event) => {
+            if (event.key !== 'Escape') return;
+            const picker = getPisiBadgePickerPortal();
+            if (picker && !picker.hidden) picker.hidden = true;
+        },
+        true
+    );
 }
 
 if (document.readyState === 'loading') {
@@ -185,10 +180,4 @@ if (document.readyState === 'loading') {
     installPisiBadgePickerPortal();
 }
 
-export {
-    getPisiBadgePickerPortal,
-    installPisiBadgePickerPortal,
-    portalizePisiBadgePicker,
-    positionPisiBadgePickerPortal,
-    syncPisiBadgePickerPortalLayer
-};
+export { getPisiBadgePickerPortal, installPisiBadgePickerPortal, portalizePisiBadgePicker, positionPisiBadgePickerPortal, syncPisiBadgePickerPortalLayer };

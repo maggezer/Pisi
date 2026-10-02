@@ -1,311 +1,295 @@
 [
-  {
-    "module": "main.pathSecurity",
-    "path": "main/functions/path-security.js",
-    "bindings": [
-      "getInternalFileChangeSignature",
-      "pruneExpiredInternalFileChanges",
-      "markInternalFileChange",
-      "sealInternalFileChange",
-      "isRecentInternalFileChange",
-      "hasRecentInternalFileChangeInside",
-      "hasRecentInternalDirectoryChange",
-      "renamePathInternal",
-      "getSettingsPath",
-      "readSettings",
-      "writeSettings",
-      "getDefaultWindowState",
-      "getSavedWindowState",
-      "keepWindowStateInsideDisplay",
-      "saveWindowState",
-      "scheduleWindowStateSave",
-      "isPisiVisibleFile",
-      "isPisiManagedSidecarFolder",
-      "getPisiFileExt",
-      "getPisiTypeFromExt",
-      "getPisiSidecarPrefix",
-      "sanitizePisiBaseName",
-      "stripPisiIdSuffix",
-      "getVisibleTitleFromFilePath",
-      "getUniquePisiPhysicalPath",
-      "sanitizeForSidecarName",
-      "generatePisiId",
-      "normalizePisiId",
-      "getDefaultNodeConnectionTypes",
-      "normalizeNodeConnectionTypes",
-      "normalizeConnectionRole"
-    ]
-  },
-  {
-    "module": "main.i18n",
-    "path": "main/functions/i18n.js",
-    "bindings": [
-      "normalizePisiLanguage",
-      "getPisiLanguage",
-      "setPisiLanguage",
-      "translatePisiMain"
-    ]
-  },
-  {
-    "module": "main.filesystemCore",
-    "path": "main/functions/filesystem-core.js",
-    "bindings": [
-      "normalizePisiCustomizationColor",
-      "normalizePisiMapNodeCustomization",
-      "normalizePisiMapEdgeCustomization",
-      "normalizeMapEdge",
-      "isHierarchyEdge",
-      "convertEdgeToStream",
-      "enforceSingleParentForTargetInMap",
-      "getPisiEdgeSemanticKey",
-      "wouldCreatePisiHierarchyCycle",
-      "normalizePisiMapEdges",
-      "resetNodeConnectionTypes",
-      "getPisiSidecarName",
-      "createPisiDocumentData",
-      "readJsonFileResult",
-      "readJsonFileSafe",
-      "fsyncDirectoryBestEffort",
-      "writeFileAtomic",
-      "writePisiDocument",
-      "writePisiDocumentsTransaction",
-      "backupCorruptPisiFile",
-      "findExistingSidecarById"
-    ]
-  },
-  {
-    "module": "main.atomicMutation",
-    "path": "main/functions/atomic-mutation.js",
-    "bindings": [
-      "runPisiAtomicMutation",
-      "PISI_ATOMIC_MUTATION_VERSION",
-      "getActivePisiAtomicMutation",
-      "capturePisiAtomicPathBeforeChange",
-      "capturePisiAtomicRenameBeforeChange",
-      "recoverPisiAtomicMutations",
-      "ensurePisiAtomicRecovery"
-    ]
-  },
-  {
-    "module": "main.documentStore",
-    "path": "main/functions/document-store.js",
-    "bindings": [
-      "ensurePisiSidecar",
-      "ensurePisiFileMetadata",
-      "createUniquePisiFile",
-      "normalizePisiDiaryIsoDate",
-      "ensurePisiDiaryFolder",
-      "makePisiDiaryNodeTitle",
-      "getPisiDiaryNodePath",
-      "getOrCreateDiaryNode",
-      "stripPisiDiaryManagedSection",
-      "escapeHtmlForPisiDiary",
-      "sanitizePisiDiaryBlockHtml",
-      "normalizePisiDiarySyncEntry",
-      "buildPisiDiaryManagedSection",
-      "listPisiDiaryNodePaths",
-      "listPisiDiaryDates",
-      "syncDiaryMissions",
-      "createNodeUnderMap",
-      "renamePisiFile"
-    ]
-  },
-  {
-    "module": "main.mapStore",
-    "path": "main/functions/map-store.js",
-    "bindings": [
-      "getUniqueDirectoryPath",
-      "isPathInsideDirectory",
-      "movePisiItem",
-      "getPisiDocument",
-      "stripPreviewText",
-      "getDefaultNodeLayout",
-      "finiteNumberInRange",
-      "normalizePisiNodeLayout",
-      "normalizePisiMapCamera",
-      "listNodesForMap",
-      "saveMapNodeLayout",
-      "saveMapCamera",
-      "saveNodeContent",
-      "getAllNodeDocsInMap"
-    ]
-  },
-  {
-    "module": "main.projectOperations",
-    "path": "main/functions/project-operations.js",
-    "bindings": [
-      "findParentMapPathForNode",
-      "cleanupDeletedNodeFromParentMap",
-      "writePisiDeletionMetadata",
-      "createPisiDeletionTransaction",
-      "stagePisiDeletionPath",
-      "rollbackPisiDeletionTransaction",
-      "deletePisiFile",
-      "deleteNodeFromMap",
-      "deleteProjectPath",
-      "isPisiManagedDiaryFolder",
-      "safeListFolder",
-      "stopProjectWatcher",
-      "notifyProjectChanged",
-      "shouldWatchProjectDirectory",
-      "collectProjectDirectories",
-      "syncProjectWatchers"
-    ]
-  },
-  {
-    "module": "main.taskCapture",
-    "path": "main/functions/task-capture.js",
-    "bindings": [
-      "escapePisiTaskHtml",
-      "normalizePisiTaskIso",
-      "pisiTodoTagFromCapture",
-      "findPisiInboxNode",
-      "getOrCreatePisiInboxNode",
-      "makePisiTaskCaptureBlock",
-      "quickAddPisiTask"
-    ]
-  },
-  {
-    "module": "main.structuredNodes",
-    "path": "main/functions/structured-nodes.js",
-    "bindings": [
-      "normalizePisiPropertyId",
-      "normalizePisiPropertyReference",
-      "normalizePisiPropertyValue",
-      "normalizePisiProperties",
-      "savePisiNodeProperties",
-      "readPisiSavedViews",
-      "savePisiSavedView",
-      "deletePisiSavedView",
-      "normalizePisiDatabaseTemplate",
-      "readPisiDatabaseTemplates",
-      "savePisiDatabaseTemplate",
-      "deletePisiDatabaseTemplate",
-      "applyPisiDatabaseTemplate",
-      "createPisiPropertyMap",
-      "resolvePisiMapReference",
-      "collectPisiMapReferenceNodes",
-      "detachPisiMapReference"
-    ]
-  },
-  {
-    "module": "main.propertySchemaStore",
-    "path": "main/functions/property-schema-store.js",
-    "bindings": [
-      "PISI_PROPERTY_SCHEMA_VERSION",
-      "PISI_PROPERTY_SCHEMA_RELATIVE_PATH",
-      "PISI_EDITABLE_PROPERTY_TYPES",
-      "PISI_INTERNAL_PROPERTY_TYPES",
-      "getPisiPropertySchemaPath",
-      "readPisiPropertySchema",
-      "ensurePisiPropertySchema",
-      "getPisiPropertySchemaDefinitions",
-      "collectPisiPropertyCarriers",
-      "savePisiNodePropertiesStable",
-      "savePisiDatabaseTemplateStable",
-      "applyPisiDatabaseTemplateStable",
-      "stabilizeTemplateProperties",
-      "propertySchemaContract"
-    ]
-  },
-  {
-    "module": "main.propertySchemaMutations",
-    "path": "main/functions/property-schema-mutations.js",
-    "bindings": [
-      "savePisiNodePropertiesBySchema",
-      "preparePisiPropertyDefinitionRewrite",
-      "resolveSubmittedPisiPropertyDefinition"
-    ]
-  },
-  {
-    "module": "main.syncProjectAdapter",
-    "path": "main/functions/sync-project-adapter.js",
-    "bindings": [
-      "CONFIG_FILES",
-      "readProjectDocuments",
-      "exportPisiSyncEntities",
-      "applyPisiSyncRecords"
-    ]
-  },
-  {
-    "module": "main.projectIntegrity",
-    "path": "main/functions/project-integrity.js",
-    "bindings": [
-      "PISI_INTEGRITY_VERSION",
-      "walkIntegrityProjectDocuments",
-      "extractLocalAttachmentCandidates",
-      "collectPisiDocumentInventory",
-      "auditPisiProjectIntegrity",
-      "repairPisiProjectIntegrity",
-      "rebuildPisiDerivedIntegrityState",
-      "makeRepairPlan"
-    ]
-  },
-  {
-    "module": "main.portability",
-    "path": "main/functions/portability.js",
-    "bindings": [
-      "decodePisiHtmlEntities",
-      "pisiHtmlToPlainText",
-      "pisiHtmlToMarkdown",
-      "pisiMarkdownToHtml",
-      "snapshotPisiNodeVersion",
-      "saveNodeContentWithHistory",
-      "listPisiNodeHistory",
-      "getPisiNodeHistoryVersion",
-      "restorePisiNodeHistoryVersion",
-      "makePisiDocxBuffer",
-      "exportPisiNodeDocument",
-      "exportPisiMapGraphic",
-      "exportPisiProjectMarkdown",
-      "importPisiMarkdownFolder",
-      "listPisiAtomicBackups",
-      "restorePisiAtomicBackup"
-    ]
-  },
-  {
-    "module": "main.autoUpdate",
-    "path": "main/functions/auto-update.js",
-    "bindings": [
-      "initializePisiAutoUpdate"
-    ]
-  },
-  {
-    "module": "main.electronIpc",
-    "path": "main/functions/electron-ipc.js",
-    "bindings": [
-      "startProjectWatcher",
-      "folderExistsAndIsDirectory",
-      "normalizePathForCompare",
-      "isSameOrInsidePath",
-      "assertNoSymbolicLinksBetween",
-      "assertProjectPath",
-      "projectOperation",
-      "asyncProjectOperation",
-      "hideFileOnWindows",
-      "isProcessAlive",
-      "acquireProjectLock",
-      "tryLockProjectFolder",
-      "lockProjectFolder",
-      "unlockProjectFolder",
-      "createWindow"
-    ]
-  },
-  {
-    "module": "main.syncDomain",
-    "path": "main/functions/sync-domain.js",
-    "bindings": [
-      "MANIFEST_RELATIVE",
-      "DEVICES_RELATIVE",
-      "atomicWriteJson",
-      "readSnapshots",
-      "performPisiSync",
-      "runPisiSync",
-      "selectPisiSyncFolder",
-      "getPisiSyncStatus",
-      "disconnectPisiSync",
-      "installPisiSyncIpc",
-      "assertFolder"
-    ]
-  }
+    {
+        "module": "main.pathSecurity",
+        "path": "main/functions/path-security.js",
+        "bindings": [
+            "getInternalFileChangeSignature",
+            "pruneExpiredInternalFileChanges",
+            "markInternalFileChange",
+            "sealInternalFileChange",
+            "isRecentInternalFileChange",
+            "hasRecentInternalFileChangeInside",
+            "hasRecentInternalDirectoryChange",
+            "renamePathInternal",
+            "getSettingsPath",
+            "readSettings",
+            "writeSettings",
+            "getDefaultWindowState",
+            "getSavedWindowState",
+            "keepWindowStateInsideDisplay",
+            "saveWindowState",
+            "scheduleWindowStateSave",
+            "isPisiVisibleFile",
+            "isPisiManagedSidecarFolder",
+            "getPisiFileExt",
+            "getPisiTypeFromExt",
+            "getPisiSidecarPrefix",
+            "sanitizePisiBaseName",
+            "stripPisiIdSuffix",
+            "getVisibleTitleFromFilePath",
+            "getUniquePisiPhysicalPath",
+            "sanitizeForSidecarName",
+            "generatePisiId",
+            "normalizePisiId",
+            "getDefaultNodeConnectionTypes",
+            "normalizeNodeConnectionTypes",
+            "normalizeConnectionRole"
+        ]
+    },
+    {
+        "module": "main.i18n",
+        "path": "main/functions/i18n.js",
+        "bindings": ["normalizePisiLanguage", "getPisiLanguage", "setPisiLanguage", "translatePisiMain"]
+    },
+    {
+        "module": "main.filesystemCore",
+        "path": "main/functions/filesystem-core.js",
+        "bindings": [
+            "normalizePisiCustomizationColor",
+            "normalizePisiMapNodeCustomization",
+            "normalizePisiMapEdgeCustomization",
+            "normalizeMapEdge",
+            "isHierarchyEdge",
+            "convertEdgeToStream",
+            "enforceSingleParentForTargetInMap",
+            "getPisiEdgeSemanticKey",
+            "wouldCreatePisiHierarchyCycle",
+            "normalizePisiMapEdges",
+            "resetNodeConnectionTypes",
+            "getPisiSidecarName",
+            "createPisiDocumentData",
+            "readJsonFileResult",
+            "readJsonFileSafe",
+            "fsyncDirectoryBestEffort",
+            "writeFileAtomic",
+            "writePisiDocument",
+            "writePisiDocumentsTransaction",
+            "backupCorruptPisiFile",
+            "findExistingSidecarById"
+        ]
+    },
+    {
+        "module": "main.atomicMutation",
+        "path": "main/functions/atomic-mutation.js",
+        "bindings": [
+            "runPisiAtomicMutation",
+            "PISI_ATOMIC_MUTATION_VERSION",
+            "getActivePisiAtomicMutation",
+            "capturePisiAtomicPathBeforeChange",
+            "capturePisiAtomicRenameBeforeChange",
+            "recoverPisiAtomicMutations",
+            "ensurePisiAtomicRecovery"
+        ]
+    },
+    {
+        "module": "main.documentStore",
+        "path": "main/functions/document-store.js",
+        "bindings": [
+            "ensurePisiSidecar",
+            "ensurePisiFileMetadata",
+            "createUniquePisiFile",
+            "normalizePisiDiaryIsoDate",
+            "ensurePisiDiaryFolder",
+            "makePisiDiaryNodeTitle",
+            "getPisiDiaryNodePath",
+            "getOrCreateDiaryNode",
+            "stripPisiDiaryManagedSection",
+            "escapeHtmlForPisiDiary",
+            "sanitizePisiDiaryBlockHtml",
+            "normalizePisiDiarySyncEntry",
+            "buildPisiDiaryManagedSection",
+            "listPisiDiaryNodePaths",
+            "listPisiDiaryDates",
+            "syncDiaryMissions",
+            "createNodeUnderMap",
+            "renamePisiFile"
+        ]
+    },
+    {
+        "module": "main.mapStore",
+        "path": "main/functions/map-store.js",
+        "bindings": [
+            "getUniqueDirectoryPath",
+            "isPathInsideDirectory",
+            "movePisiItem",
+            "getPisiDocument",
+            "stripPreviewText",
+            "getDefaultNodeLayout",
+            "finiteNumberInRange",
+            "normalizePisiNodeLayout",
+            "normalizePisiMapCamera",
+            "listNodesForMap",
+            "saveMapNodeLayout",
+            "saveMapCamera",
+            "saveNodeContent",
+            "getAllNodeDocsInMap"
+        ]
+    },
+    {
+        "module": "main.projectOperations",
+        "path": "main/functions/project-operations.js",
+        "bindings": [
+            "findParentMapPathForNode",
+            "cleanupDeletedNodeFromParentMap",
+            "writePisiDeletionMetadata",
+            "createPisiDeletionTransaction",
+            "stagePisiDeletionPath",
+            "rollbackPisiDeletionTransaction",
+            "deletePisiFile",
+            "deleteNodeFromMap",
+            "deleteProjectPath",
+            "isPisiManagedDiaryFolder",
+            "safeListFolder",
+            "stopProjectWatcher",
+            "notifyProjectChanged",
+            "shouldWatchProjectDirectory",
+            "collectProjectDirectories",
+            "syncProjectWatchers"
+        ]
+    },
+    {
+        "module": "main.taskCapture",
+        "path": "main/functions/task-capture.js",
+        "bindings": [
+            "escapePisiTaskHtml",
+            "normalizePisiTaskIso",
+            "pisiTodoTagFromCapture",
+            "findPisiInboxNode",
+            "getOrCreatePisiInboxNode",
+            "makePisiTaskCaptureBlock",
+            "quickAddPisiTask"
+        ]
+    },
+    {
+        "module": "main.structuredNodes",
+        "path": "main/functions/structured-nodes.js",
+        "bindings": [
+            "normalizePisiPropertyId",
+            "normalizePisiPropertyReference",
+            "normalizePisiPropertyValue",
+            "normalizePisiProperties",
+            "savePisiNodeProperties",
+            "readPisiSavedViews",
+            "savePisiSavedView",
+            "deletePisiSavedView",
+            "normalizePisiDatabaseTemplate",
+            "readPisiDatabaseTemplates",
+            "savePisiDatabaseTemplate",
+            "deletePisiDatabaseTemplate",
+            "applyPisiDatabaseTemplate",
+            "createPisiPropertyMap",
+            "resolvePisiMapReference",
+            "collectPisiMapReferenceNodes",
+            "detachPisiMapReference"
+        ]
+    },
+    {
+        "module": "main.propertySchemaStore",
+        "path": "main/functions/property-schema-store.js",
+        "bindings": [
+            "PISI_PROPERTY_SCHEMA_VERSION",
+            "PISI_PROPERTY_SCHEMA_RELATIVE_PATH",
+            "PISI_EDITABLE_PROPERTY_TYPES",
+            "PISI_INTERNAL_PROPERTY_TYPES",
+            "getPisiPropertySchemaPath",
+            "readPisiPropertySchema",
+            "ensurePisiPropertySchema",
+            "getPisiPropertySchemaDefinitions",
+            "collectPisiPropertyCarriers",
+            "savePisiNodePropertiesStable",
+            "savePisiDatabaseTemplateStable",
+            "applyPisiDatabaseTemplateStable",
+            "stabilizeTemplateProperties",
+            "propertySchemaContract"
+        ]
+    },
+    {
+        "module": "main.propertySchemaMutations",
+        "path": "main/functions/property-schema-mutations.js",
+        "bindings": ["savePisiNodePropertiesBySchema", "preparePisiPropertyDefinitionRewrite", "resolveSubmittedPisiPropertyDefinition"]
+    },
+    {
+        "module": "main.syncProjectAdapter",
+        "path": "main/functions/sync-project-adapter.js",
+        "bindings": ["CONFIG_FILES", "readProjectDocuments", "exportPisiSyncEntities", "applyPisiSyncRecords"]
+    },
+    {
+        "module": "main.projectIntegrity",
+        "path": "main/functions/project-integrity.js",
+        "bindings": [
+            "PISI_INTEGRITY_VERSION",
+            "walkIntegrityProjectDocuments",
+            "extractLocalAttachmentCandidates",
+            "collectPisiDocumentInventory",
+            "auditPisiProjectIntegrity",
+            "repairPisiProjectIntegrity",
+            "rebuildPisiDerivedIntegrityState",
+            "makeRepairPlan"
+        ]
+    },
+    {
+        "module": "main.portability",
+        "path": "main/functions/portability.js",
+        "bindings": [
+            "decodePisiHtmlEntities",
+            "pisiHtmlToPlainText",
+            "pisiHtmlToMarkdown",
+            "pisiMarkdownToHtml",
+            "snapshotPisiNodeVersion",
+            "saveNodeContentWithHistory",
+            "listPisiNodeHistory",
+            "getPisiNodeHistoryVersion",
+            "restorePisiNodeHistoryVersion",
+            "makePisiDocxBuffer",
+            "exportPisiNodeDocument",
+            "exportPisiMapGraphic",
+            "exportPisiProjectMarkdown",
+            "importPisiMarkdownFolder",
+            "listPisiAtomicBackups",
+            "restorePisiAtomicBackup"
+        ]
+    },
+    {
+        "module": "main.autoUpdate",
+        "path": "main/functions/auto-update.js",
+        "bindings": ["initializePisiAutoUpdate"]
+    },
+    {
+        "module": "main.electronIpc",
+        "path": "main/functions/electron-ipc.js",
+        "bindings": [
+            "startProjectWatcher",
+            "folderExistsAndIsDirectory",
+            "normalizePathForCompare",
+            "isSameOrInsidePath",
+            "assertNoSymbolicLinksBetween",
+            "assertProjectPath",
+            "projectOperation",
+            "asyncProjectOperation",
+            "hideFileOnWindows",
+            "isProcessAlive",
+            "acquireProjectLock",
+            "tryLockProjectFolder",
+            "lockProjectFolder",
+            "unlockProjectFolder",
+            "createWindow"
+        ]
+    },
+    {
+        "module": "main.syncDomain",
+        "path": "main/functions/sync-domain.js",
+        "bindings": [
+            "MANIFEST_RELATIVE",
+            "DEVICES_RELATIVE",
+            "atomicWriteJson",
+            "readSnapshots",
+            "performPisiSync",
+            "runPisiSync",
+            "selectPisiSyncFolder",
+            "getPisiSyncStatus",
+            "disconnectPisiSync",
+            "installPisiSyncIpc",
+            "assertFolder"
+        ]
+    }
 ]

@@ -32,9 +32,7 @@ function makeFilesystemCoreStub() {
             targetRole = 'co-level';
         }
         const edge = {
-            id: /^edge_[A-Za-z0-9_-]+$/.test(String(raw.id || ''))
-                ? String(raw.id)
-                : 'edge_generated',
+            id: /^edge_[A-Za-z0-9_-]+$/.test(String(raw.id || '')) ? String(raw.id) : 'edge_generated',
             sourceId,
             targetId,
             sourcePort: ports.has(raw.sourcePort) ? raw.sourcePort : 'bottom',
@@ -54,9 +52,7 @@ function makeFilesystemCoreStub() {
         normalizeMapEdge,
         normalizePisiMapEdgeCustomization(value = {}) {
             const color = String(value.color || '');
-            return /^#[0-9a-fA-F]{6}$/.test(color)
-                ? { color: color.toLowerCase() }
-                : {};
+            return /^#[0-9a-fA-F]{6}$/.test(color) ? { color: color.toLowerCase() } : {};
         },
         getPisiEdgeSemanticKey(raw) {
             const edge = normalizeMapEdge(raw);
@@ -65,18 +61,10 @@ function makeFilesystemCoreStub() {
                 const pair = [edge.sourceId, edge.targetId].sort();
                 return `co-level:${pair[0]}:${pair[1]}`;
             }
-            return [
-                edge.type,
-                edge.sourceId,
-                edge.targetId,
-                edge.sourceRole,
-                edge.targetRole
-            ].join(':');
+            return [edge.type, edge.sourceId, edge.targetId, edge.sourceRole, edge.targetRole].join(':');
         },
         isHierarchyEdge(edge) {
-            return edge?.type === 'down-hub' &&
-                edge?.sourceRole === 'down-hub' &&
-                edge?.targetRole === 'up-hub';
+            return edge?.type === 'down-hub' && edge?.sourceRole === 'down-hub' && edge?.targetRole === 'up-hub';
         },
         wouldCreatePisiHierarchyCycle(parentByChild, parentId, childId) {
             let current = parentId;
@@ -141,26 +129,20 @@ const modules = loadSeparationModules();
 test('semantic relationship store never persists map geometry or visual customization', () => {
     const project = makeProject();
     try {
-        const saved = modules.relationshipStore.upsertPisiSemanticRelationship(
-            project,
-            {
-                id: 'edge_sep_001',
-                sourceId: 'node_A',
-                targetId: 'node_B',
-                type: 'stream',
-                sourcePort: 'left',
-                targetPort: 'right',
-                customization: { color: '#ABCDEF' },
-                label: 'supports',
-                properties: { weight: 2 }
-            }
-        );
+        const saved = modules.relationshipStore.upsertPisiSemanticRelationship(project, {
+            id: 'edge_sep_001',
+            sourceId: 'node_A',
+            targetId: 'node_B',
+            type: 'stream',
+            sourcePort: 'left',
+            targetPort: 'right',
+            customization: { color: '#ABCDEF' },
+            label: 'supports',
+            properties: { weight: 2 }
+        });
         assert.equal(saved.ok, true);
 
-        const persisted = JSON.parse(fs.readFileSync(
-            path.join(project, '.pisi', 'relationships.json'),
-            'utf8'
-        ));
+        const persisted = JSON.parse(fs.readFileSync(path.join(project, '.pisi', 'relationships.json'), 'utf8'));
         assert.equal(persisted.relationships.length, 1);
         const relationship = persisted.relationships[0];
         assert.equal(relationship.id, 'edge_sep_001');
@@ -188,17 +170,13 @@ test('map relationshipViews contain presentation only and reject semantic duplic
         targetRole: 'up-hub'
     };
 
-    const view = modules.mapCore.upsertPisiRelationshipView(
-        mapData,
-        relationship,
-        {
-            sourcePort: 'right',
-            targetPort: 'left',
-            customization: { color: '#112233' },
-            sourceId: 'node_WRONG',
-            type: 'stream'
-        }
-    );
+    const view = modules.mapCore.upsertPisiRelationshipView(mapData, relationship, {
+        sourcePort: 'right',
+        targetPort: 'left',
+        customization: { color: '#112233' },
+        sourceId: 'node_WRONG',
+        type: 'stream'
+    });
 
     assert.deepEqual(view, {
         relationshipId: 'edge_view_001',
@@ -222,24 +200,18 @@ test('the same semantic relationship can have independent presentation in differ
         type: 'co-level'
     });
 
-    const mapA = modules.mapCore.projectPisiSemanticRelationshipToMapEdge(
-        relationship,
-        {
-            relationshipId: relationship.id,
-            sourcePort: 'right',
-            targetPort: 'left',
-            customization: { color: '#111111' }
-        }
-    );
-    const mapB = modules.mapCore.projectPisiSemanticRelationshipToMapEdge(
-        relationship,
-        {
-            relationshipId: relationship.id,
-            sourcePort: 'bottom',
-            targetPort: 'top',
-            customization: { color: '#eeeeee' }
-        }
-    );
+    const mapA = modules.mapCore.projectPisiSemanticRelationshipToMapEdge(relationship, {
+        relationshipId: relationship.id,
+        sourcePort: 'right',
+        targetPort: 'left',
+        customization: { color: '#111111' }
+    });
+    const mapB = modules.mapCore.projectPisiSemanticRelationshipToMapEdge(relationship, {
+        relationshipId: relationship.id,
+        sourcePort: 'bottom',
+        targetPort: 'top',
+        customization: { color: '#eeeeee' }
+    });
 
     assert.equal(mapA.id, mapB.id);
     assert.equal(mapA.sourceId, mapB.sourceId);
@@ -276,11 +248,7 @@ test('map placement and camera state can change without mutating semantic relati
         mapState.camera = { x: 220, y: 180, zoom: 1.7 };
 
         assert.equal(fs.readFileSync(storePath, 'utf8'), before);
-        assert.equal(
-            modules.relationshipStore.listPisiSemanticRelationships(project)
-                .relationships[0].id,
-            'edge_state_001'
-        );
+        assert.equal(modules.relationshipStore.listPisiSemanticRelationships(project).relationships[0].id, 'edge_state_001');
     } finally {
         fs.rmSync(project, { recursive: true, force: true });
     }
@@ -289,12 +257,15 @@ test('map placement and camera state can change without mutating semantic relati
 test('semantic hierarchy constraints are project-wide instead of map-local', () => {
     const project = makeProject();
     try {
-        assert.equal(modules.relationshipStore.upsertPisiSemanticRelationship(project, {
-            id: 'edge_parent_A',
-            sourceId: 'node_A',
-            targetId: 'node_C',
-            type: 'down-hub'
-        }).ok, true);
+        assert.equal(
+            modules.relationshipStore.upsertPisiSemanticRelationship(project, {
+                id: 'edge_parent_A',
+                sourceId: 'node_A',
+                targetId: 'node_C',
+                type: 'down-hub'
+            }).ok,
+            true
+        );
 
         const secondParent = modules.relationshipStore.upsertPisiSemanticRelationship(project, {
             id: 'edge_parent_B',
@@ -318,12 +289,15 @@ test('semantic hierarchy constraints are project-wide instead of map-local', () 
         assert.equal(confirmed.ok, true);
         assert.equal(confirmed.relationship.type, 'stream');
 
-        assert.equal(modules.relationshipStore.upsertPisiSemanticRelationship(project, {
-            id: 'edge_chain_AB',
-            sourceId: 'node_A',
-            targetId: 'node_B',
-            type: 'down-hub'
-        }).ok, true);
+        assert.equal(
+            modules.relationshipStore.upsertPisiSemanticRelationship(project, {
+                id: 'edge_chain_AB',
+                sourceId: 'node_A',
+                targetId: 'node_B',
+                type: 'down-hub'
+            }).ok,
+            true
+        );
 
         const cycle = modules.relationshipStore.upsertPisiSemanticRelationship(project, {
             id: 'edge_cycle_CA',
@@ -371,8 +345,7 @@ test('runtime IPC contract exposes only canonical semantic relationship writes',
     const hooks = read('main/functions/map-semantic-operation-hooks.js');
 
     assert.ok(
-        bootstrap.indexOf('main/runtime') <
-            bootstrap.indexOf('map-semantic-operation-hooks'),
+        bootstrap.indexOf('main/runtime') < bootstrap.indexOf('map-semantic-operation-hooks'),
         'canonical semantic IPC hooks load after runtime initialization'
     );
 
@@ -386,10 +359,7 @@ test('runtime IPC contract exposes only canonical semantic relationship writes',
         'project:detach-map-reference'
     ]) {
         assert.ok(hooks.includes(`ipcMain.handle('${channel}'`));
-        assert.equal(
-            read('main/runtime.js').includes(`ipcMain.handle('${channel}'`),
-            false
-        );
+        assert.equal(read('main/runtime.js').includes(`ipcMain.handle('${channel}'`), false);
         assert.equal(hooks.includes(`ipcMain.removeHandler('${channel}')`), false);
     }
 

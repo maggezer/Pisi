@@ -3,110 +3,59 @@ import {
     getPisiSheetDragFillSeriesValue,
     getPisiSheetDragFillSourcePoint,
     isPisiSheetPointInFillRect
-} from "./pisi-editor-sheet-drag-fill-core.mjs";
-import {
-    shiftPisiSheetFormulaReferences
-} from "./pisi-editor-sheet-model.mjs";
-import {
-    setPisiSheetCellRecordsBatch
-} from "./pisi-editor-sheet-database.mjs";
+} from './pisi-editor-sheet-drag-fill-core.mjs';
+import { shiftPisiSheetFormulaReferences } from './pisi-editor-sheet-model.mjs';
+import { setPisiSheetCellRecordsBatch } from './pisi-editor-sheet-database.mjs';
 
 let pisiSheetDragFillState = null;
 const pisiSheetDragFillPreviewCells = new Set();
 
 function clearPisiSheetDragFillPreview() {
     for (const cell of pisiSheetDragFillPreviewCells) {
-        cell.classList.remove(
-            'pisi-sheet-drag-fill-preview'
-        );
+        cell.classList.remove('pisi-sheet-drag-fill-preview');
     }
 
     pisiSheetDragFillPreviewCells.clear();
 }
 
 function clearPisiSheetDragFillHandle(table) {
-    table?.querySelectorAll?.(
-        '[data-pisi-sheet-drag-fill-handle]'
-    ).forEach((handle) => handle.remove());
+    table?.querySelectorAll?.('[data-pisi-sheet-drag-fill-handle]').forEach((handle) => handle.remove());
 
-    table?.querySelectorAll?.(
-        '.pisi-sheet-fill-handle-cell'
-    ).forEach((cell) => {
-        cell.classList.remove(
-            'pisi-sheet-fill-handle-cell'
-        );
+    table?.querySelectorAll?.('.pisi-sheet-fill-handle-cell').forEach((cell) => {
+        cell.classList.remove('pisi-sheet-fill-handle-cell');
     });
 }
 
-function renderPisiSheetDragFillPreview(
-    table,
-    sourceRect,
-    fillRect
-) {
+function renderPisiSheetDragFillPreview(table, sourceRect, fillRect) {
     clearPisiSheetDragFillPreview();
 
     if (!table || !sourceRect || !fillRect) return;
 
-    table.querySelectorAll(
-        'tbody td[data-cell]'
-    ).forEach((cell) => {
-        const point =
-            getPisiSheetCellPosition(cell);
+    table.querySelectorAll('tbody td[data-cell]').forEach((cell) => {
+        const point = getPisiSheetCellPosition(cell);
 
-        if (
-            !point ||
-            !isPisiSheetPointInFillRect(
-                point.row,
-                point.col,
-                fillRect
-            ) ||
-            isPisiSheetPointInFillRect(
-                point.row,
-                point.col,
-                sourceRect
-            )
-        ) {
+        if (!point || !isPisiSheetPointInFillRect(point.row, point.col, fillRect) || isPisiSheetPointInFillRect(point.row, point.col, sourceRect)) {
             return;
         }
 
-        cell.classList.add(
-            'pisi-sheet-drag-fill-preview'
-        );
+        cell.classList.add('pisi-sheet-drag-fill-preview');
         pisiSheetDragFillPreviewCells.add(cell);
     });
 }
 
-function getPisiSheetDragFillSourceMatrix(
-    table,
-    sourceRect
-) {
+function getPisiSheetDragFillSourceMatrix(table, sourceRect) {
     const matrix = [];
 
-    for (
-        let row = sourceRect.rowStart;
-        row <= sourceRect.rowEnd;
-        row += 1
-    ) {
+    for (let row = sourceRect.rowStart; row <= sourceRect.rowEnd; row += 1) {
         const line = [];
 
-        for (
-            let col = sourceRect.colStart;
-            col <= sourceRect.colEnd;
-            col += 1
-        ) {
-            const source =
-                getPisiSheetCellSource(
-                    table,
-                    row,
-                    col
-                );
+        for (let col = sourceRect.colStart; col <= sourceRect.colEnd; col += 1) {
+            const source = getPisiSheetCellSource(table, row, col);
 
             line.push({
                 value: source.value,
                 formula: source.formula,
-                format: structuredClone(
-                    source.format || {}
-                )
+                format: structuredClone(source.format || {})
             });
         }
 
@@ -116,31 +65,18 @@ function getPisiSheetDragFillSourceMatrix(
     return matrix;
 }
 
-function getPisiSheetDragFillMatrixSource(
-    matrix,
-    sourceRect,
-    sourcePoint
-) {
-    return matrix[
-        sourcePoint.row - sourceRect.rowStart
-    ]?.[
-        sourcePoint.col - sourceRect.colStart
-    ] || {
-        value: '',
-        formula: null,
-        format: {}
-    };
+function getPisiSheetDragFillMatrixSource(matrix, sourceRect, sourcePoint) {
+    return (
+        matrix[sourcePoint.row - sourceRect.rowStart]?.[sourcePoint.col - sourceRect.colStart] || {
+            value: '',
+            formula: null,
+            format: {}
+        }
+    );
 }
 
-function applyPisiSheetDragFill(
-    table,
-    sourceRect,
-    targetPoint
-) {
-    const fillRect = getPisiSheetDragFillRect(
-        sourceRect,
-        targetPoint
-    );
+function applyPisiSheetDragFill(table, sourceRect, targetPoint) {
+    const fillRect = getPisiSheetDragFillRect(sourceRect, targetPoint);
 
     if (!fillRect) return false;
 
@@ -153,116 +89,47 @@ function applyPisiSheetDragFill(
         return false;
     }
 
-    const matrix =
-        getPisiSheetDragFillSourceMatrix(
-            table,
-            sourceRect
-        );
-    const sourceValues = matrix.map((line) => (
-        line.map((source) => source.value)
-    ));
-    const canUseSeries = matrix.every((line) => (
-        line.every((source) => !source.formula)
-    ));
+    const matrix = getPisiSheetDragFillSourceMatrix(table, sourceRect);
+    const sourceValues = matrix.map((line) => line.map((source) => source.value));
+    const canUseSeries = matrix.every((line) => line.every((source) => !source.formula));
     const changes = [];
 
-    for (
-        let row = fillRect.rowStart;
-        row <= fillRect.rowEnd;
-        row += 1
-    ) {
-        for (
-            let col = fillRect.colStart;
-            col <= fillRect.colEnd;
-            col += 1
-        ) {
-            if (
-                isPisiSheetPointInFillRect(
-                    row,
-                    col,
-                    sourceRect
-                )
-            ) {
+    for (let row = fillRect.rowStart; row <= fillRect.rowEnd; row += 1) {
+        for (let col = fillRect.colStart; col <= fillRect.colEnd; col += 1) {
+            if (isPisiSheetPointInFillRect(row, col, sourceRect)) {
                 continue;
             }
 
-            const sourcePoint =
-                getPisiSheetDragFillSourcePoint(
-                    sourceRect,
-                    row,
-                    col
-                );
-            const source =
-                getPisiSheetDragFillMatrixSource(
-                    matrix,
-                    sourceRect,
-                    sourcePoint
-                );
-            const seriesValue = canUseSeries
-                ? getPisiSheetDragFillSeriesValue(
-                    sourceRect,
-                    sourceValues,
-                    row,
-                    col
-                )
-                : null;
+            const sourcePoint = getPisiSheetDragFillSourcePoint(sourceRect, row, col);
+            const source = getPisiSheetDragFillMatrixSource(matrix, sourceRect, sourcePoint);
+            const seriesValue = canUseSeries ? getPisiSheetDragFillSeriesValue(sourceRect, sourceValues, row, col) : null;
 
             changes.push({
                 row,
                 col,
-                value:
-                    seriesValue !== null
-                        ? seriesValue
-                        : source.value,
-                formula: source.formula
-                    ? shiftPisiSheetFormulaReferences(
-                        source.formula,
-                        row - sourcePoint.row,
-                        col - sourcePoint.col
-                    )
-                    : null,
-                format: structuredClone(
-                    source.format || {}
-                )
+                value: seriesValue !== null ? seriesValue : source.value,
+                formula: source.formula ? shiftPisiSheetFormulaReferences(source.formula, row - sourcePoint.row, col - sourcePoint.col) : null,
+                format: structuredClone(source.format || {})
             });
         }
     }
 
-    if (
-        !changes.length ||
-        !setPisiSheetCellRecordsBatch(
-            table,
-            changes
-        )
-    ) {
+    if (!changes.length || !setPisiSheetCellRecordsBatch(table, changes)) {
         return false;
     }
 
     recalcPisiSheet(table);
     renderPisiSheetDatabase(table);
 
-    const anchor = getPisiSheetPointByIndex(
-        table,
-        fillRect.rowStart,
-        fillRect.colStart
-    );
-    const focus = getPisiSheetPointByIndex(
-        table,
-        fillRect.rowEnd,
-        fillRect.colEnd
-    );
+    const anchor = getPisiSheetPointByIndex(table, fillRect.rowStart, fillRect.colStart);
+    const focus = getPisiSheetPointByIndex(table, fillRect.rowEnd, fillRect.colEnd);
 
     if (anchor && focus) {
-        setPisiSheetRangeSelection(
-            table,
-            anchor,
-            focus,
-            {
-                mode: 'range',
-                active: focus,
-                ensureVisible: true
-            }
-        );
+        setPisiSheetRangeSelection(table, anchor, focus, {
+            mode: 'range',
+            active: focus,
+            ensureVisible: true
+        });
     } else {
         reconcilePisiSheetSelection(table);
     }
@@ -271,14 +138,8 @@ function applyPisiSheetDragFill(
     return true;
 }
 
-function updatePisiSheetDragFillTarget(
-    table,
-    cell
-) {
-    if (
-        !pisiSheetDragFillState ||
-        pisiSheetDragFillState.table !== table
-    ) {
+function updatePisiSheetDragFillTarget(table, cell) {
+    if (!pisiSheetDragFillState || pisiSheetDragFillState.table !== table) {
         return false;
     }
 
@@ -287,36 +148,21 @@ function updatePisiSheetDragFillTarget(
 
     const state = pisiSheetDragFillState;
 
-    if (
-        state.target?.rowId === point.rowId &&
-        state.target?.colId === point.colId
-    ) {
+    if (state.target?.rowId === point.rowId && state.target?.colId === point.colId) {
         return true;
     }
 
     state.target = point;
 
-    const fillRect = getPisiSheetDragFillRect(
-        state.sourceRect,
-        point
-    );
+    const fillRect = getPisiSheetDragFillRect(state.sourceRect, point);
 
-    renderPisiSheetDragFillPreview(
-        table,
-        state.sourceRect,
-        fillRect
-    );
+    renderPisiSheetDragFillPreview(table, state.sourceRect, fillRect);
 
     return true;
 }
 
-function maybeAutoScrollPisiSheetDragFill(
-    table,
-    event
-) {
-    const block = table.closest(
-        '.pisi-sheet-block'
-    );
+function maybeAutoScrollPisiSheetDragFill(table, event) {
+    const block = table.closest('.pisi-sheet-block');
     if (!block) return;
 
     const rect = block.getBoundingClientRect();
@@ -325,9 +171,7 @@ function maybeAutoScrollPisiSheetDragFill(
 
     if (event.clientY < rect.top + edge) {
         delta = -28;
-    } else if (
-        event.clientY > rect.bottom - edge
-    ) {
+    } else if (event.clientY > rect.bottom - edge) {
         delta = 28;
     }
 
@@ -336,16 +180,8 @@ function maybeAutoScrollPisiSheetDragFill(
     }
 }
 
-function startPisiSheetDragFill(
-    table,
-    sourceRect,
-    event
-) {
-    if (
-        !table ||
-        !sourceRect ||
-        event.button !== 0
-    ) {
+function startPisiSheetDragFill(table, sourceRect, event) {
+    if (!table || !sourceRect || event.button !== 0) {
         return;
     }
 
@@ -363,9 +199,7 @@ function startPisiSheetDragFill(
         target: null
     };
 
-    table.classList.add(
-        'pisi-sheet-drag-filling'
-    );
+    table.classList.add('pisi-sheet-drag-filling');
 }
 
 function finishPisiSheetDragFill() {
@@ -374,9 +208,7 @@ function finishPisiSheetDragFill() {
     if (!state) return false;
 
     pisiSheetDragFillState = null;
-    state.table.classList.remove(
-        'pisi-sheet-drag-filling'
-    );
+    state.table.classList.remove('pisi-sheet-drag-filling');
 
     clearPisiSheetDragFillPreview();
 
@@ -385,11 +217,7 @@ function finishPisiSheetDragFill() {
         return false;
     }
 
-    const changed = applyPisiSheetDragFill(
-        state.table,
-        state.sourceRect,
-        state.target
-    );
+    const changed = applyPisiSheetDragFill(state.table, state.sourceRect, state.target);
 
     if (!changed) {
         renderPisiSheetSelection(state.table);
@@ -398,10 +226,7 @@ function finishPisiSheetDragFill() {
     return changed;
 }
 
-function renderPisiSheetDragFillHandle(
-    table,
-    selection
-) {
+function renderPisiSheetDragFillHandle(table, selection) {
     clearPisiSheetDragFillHandle(table);
 
     if (
@@ -409,62 +234,38 @@ function renderPisiSheetDragFillHandle(
         !selection ||
         ['row', 'column'].includes(selection.mode) ||
         getPisiSheetCellEditState(table) ||
-        table.classList.contains(
-            'pisi-sheet-formula-reference-mode'
-        )
+        table.classList.contains('pisi-sheet-formula-reference-mode')
     ) {
         return null;
     }
 
-    const sourceRect =
-        getPisiSheetSelectionRect(
-            selection.anchor,
-            selection.focus
-        );
+    const sourceRect = getPisiSheetSelectionRect(selection.anchor, selection.focus);
 
     if (!sourceRect) return null;
 
-    const cell = getPisiSheetCell(
-        table,
-        sourceRect.rowEnd,
-        sourceRect.colEnd
-    );
+    const cell = getPisiSheetCell(table, sourceRect.rowEnd, sourceRect.colEnd);
 
     if (!cell || cell.hidden) return null;
 
     const handle = document.createElement('span');
 
-    handle.className =
-        'pisi-sheet-drag-fill-handle';
+    handle.className = 'pisi-sheet-drag-fill-handle';
     handle.dataset.pisiSheetDragFillHandle = '1';
     handle.setAttribute('role', 'button');
-    handle.setAttribute(
-        'aria-label',
-        window.pisiT?.('Doldurma tutamacı') ||
-            'Doldurma tutamacı'
-    );
+    handle.setAttribute('aria-label', window.pisiT?.('Doldurma tutamacı') || 'Doldurma tutamacı');
     handle.setAttribute('contenteditable', 'false');
 
-    handle.addEventListener(
-        'mousedown',
-        (/** @type {MouseEvent} */ event) => {
-            event.stopImmediatePropagation();
-            startPisiSheetDragFill(
-                table,
-                sourceRect,
-                event
-            );
-        }
-    );
+    handle.addEventListener('mousedown', (/** @type {MouseEvent} */ event) => {
+        event.stopImmediatePropagation();
+        startPisiSheetDragFill(table, sourceRect, event);
+    });
 
     handle.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopImmediatePropagation();
     });
 
-    cell.classList.add(
-        'pisi-sheet-fill-handle-cell'
-    );
+    cell.classList.add('pisi-sheet-fill-handle-cell');
     cell.appendChild(handle);
 
     return handle;
@@ -476,28 +277,14 @@ document.addEventListener(
         const state = pisiSheetDragFillState;
         if (!state || !(event.buttons & 1)) return;
 
-        maybeAutoScrollPisiSheetDragFill(
-            state.table,
-            event
-        );
+        maybeAutoScrollPisiSheetDragFill(state.table, event);
 
-        const target = document.elementFromPoint(
-            event.clientX,
-            event.clientY
-        );
-        const cell = target instanceof Element
-            ? target.closest('td[data-cell]')
-            : null;
+        const target = document.elementFromPoint(event.clientX, event.clientY);
+        const cell = target instanceof Element ? target.closest('td[data-cell]') : null;
 
-        if (
-            cell &&
-            state.table.contains(cell)
-        ) {
+        if (cell && state.table.contains(cell)) {
             event.preventDefault();
-            updatePisiSheetDragFillTarget(
-                state.table,
-                cell
-            );
+            updatePisiSheetDragFillTarget(state.table, cell);
         }
     },
     true
@@ -514,15 +301,9 @@ document.addEventListener(
 window.addEventListener('blur', () => {
     if (!pisiSheetDragFillState) return;
 
-    pisiSheetDragFillState.table.classList.remove(
-        'pisi-sheet-drag-filling'
-    );
+    pisiSheetDragFillState.table.classList.remove('pisi-sheet-drag-filling');
     pisiSheetDragFillState = null;
     clearPisiSheetDragFillPreview();
 });
 
-export {
-    applyPisiSheetDragFill,
-    clearPisiSheetDragFillHandle,
-    renderPisiSheetDragFillHandle
-};
+export { applyPisiSheetDragFill, clearPisiSheetDragFillHandle, renderPisiSheetDragFillHandle };

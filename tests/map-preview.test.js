@@ -7,31 +7,17 @@ const test = require('node:test');
 const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
-const mapSource = fs.readFileSync(
-    path.join(root, 'main/functions/map-store.js'),
-    'utf8'
-);
-const css = fs.readFileSync(
-    path.join(root, 'styles/10-tree-and-map.css'),
-    'utf8'
-);
+const mapSource = fs.readFileSync(path.join(root, 'main/functions/map-store.js'), 'utf8');
+const css = fs.readFileSync(path.join(root, 'styles/10-tree-and-map.css'), 'utf8');
 
 test('map node önizlemesi non-breaking space değerlerini normal boşluğa çevirir', () => {
-    const functionSource = mapSource.match(
-        /function stripPreviewText\(value = ''\) \{[\s\S]*?\n\}/
-    )?.[0];
+    const functionSource = mapSource.match(/function stripPreviewText\(value = ''\) \{[\s\S]*?\n\}/)?.[0];
 
     assert.ok(functionSource, 'stripPreviewText fonksiyonu bulunamadı.');
     const stripPreviewText = vm.runInNewContext(`(${functionSource})`);
 
-    assert.equal(
-        stripPreviewText('<div>#etiket&nbsp;deneme</div>'),
-        '#etiket deneme'
-    );
-    assert.equal(
-        stripPreviewText('A&#160;B&#xA0;C\u00a0D'),
-        'A B C D'
-    );
+    assert.equal(stripPreviewText('<div>#etiket&nbsp;deneme</div>'), '#etiket deneme');
+    assert.equal(stripPreviewText('A&#160;B&#xA0;C\u00a0D'), 'A B C D');
 });
 
 test('map node başlığı normal ve düzenleme görünümünde ortalanır', () => {

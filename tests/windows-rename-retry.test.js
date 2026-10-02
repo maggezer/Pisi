@@ -5,10 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 
-const source = fs.readFileSync(
-    path.resolve(__dirname, '..', 'main/functions/path-security.js'),
-    'utf8'
-);
+const source = fs.readFileSync(path.resolve(__dirname, '..', 'main/functions/path-security.js'), 'utf8');
 
 test('Windows rename retries transient permission and busy errors', () => {
     assert.match(source, /PISI_WINDOWS_RENAME_RETRY_CODES[\s\S]*?'EPERM'[\s\S]*?'EACCES'[\s\S]*?'EBUSY'/);
@@ -19,10 +16,7 @@ test('Windows rename retries transient permission and busy errors', () => {
 });
 
 test('rename treats already-achieved destination state as success', () => {
-    assert.match(
-        source,
-        /if \(!sourceExists && destinationExists\) \{[\s\S]*?sealInternalFileChange\(oldPath, newPath\);[\s\S]*?return;/
-    );
+    assert.match(source, /if \(!sourceExists && destinationExists\) \{[\s\S]*?sealInternalFileChange\(oldPath, newPath\);[\s\S]*?return;/);
 });
 
 test('rename seals watcher state both on success and terminal failure', () => {

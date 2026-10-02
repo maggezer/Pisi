@@ -2,8 +2,8 @@
     display: none;
 }
 
-#pisi-map-operational-focus[data-pisi-focus-degree-menu="1"]::after {
-    content: "";
+#pisi-map-operational-focus[data-pisi-focus-degree-menu='1']::after {
+    content: '';
     position: absolute;
     right: 3px;
     bottom: 3px;
@@ -16,7 +16,7 @@
     pointer-events: none;
 }
 
-#pisi-map-operational-focus[data-pisi-focus-degree-menu="1"][aria-expanded="true"] {
+#pisi-map-operational-focus[data-pisi-focus-degree-menu='1'][aria-expanded='true'] {
     border-color: rgba(118, 168, 255, 0.62);
     background: rgba(93, 137, 216, 0.22);
 }
@@ -54,29 +54,29 @@
 
 .pisi-map-focus-degree-menu button:hover,
 .pisi-map-focus-degree-menu button:focus-visible,
-.pisi-map-focus-degree-menu button[aria-checked="true"] {
+.pisi-map-focus-degree-menu button[aria-checked='true'] {
     background: rgba(93, 137, 216, 0.22);
     outline: none;
 }
 
-html[data-pisi-theme="light"] body #pisi-map-operational-focus[data-pisi-focus-degree-menu="1"][aria-expanded="true"],
-body.pisi-light-theme #pisi-map-operational-focus[data-pisi-focus-degree-menu="1"][aria-expanded="true"] {
+html[data-pisi-theme='light'] body #pisi-map-operational-focus[data-pisi-focus-degree-menu='1'][aria-expanded='true'],
+body.pisi-light-theme #pisi-map-operational-focus[data-pisi-focus-degree-menu='1'][aria-expanded='true'] {
     border-color: rgba(70, 112, 185, 0.48);
     background: rgba(70, 112, 185, 0.1);
 }
 
-html[data-pisi-theme="light"] body .pisi-map-focus-degree-menu,
+html[data-pisi-theme='light'] body .pisi-map-focus-degree-menu,
 body.pisi-light-theme .pisi-map-focus-degree-menu {
     border-color: rgba(0, 0, 0, 0.12);
     background: #ffffff;
     box-shadow: 0 10px 26px rgba(31, 38, 48, 0.16);
 }
 
-html[data-pisi-theme="light"] body .pisi-map-focus-degree-menu button:hover,
+html[data-pisi-theme='light'] body .pisi-map-focus-degree-menu button:hover,
 body.pisi-light-theme .pisi-map-focus-degree-menu button:hover,
-html[data-pisi-theme="light"] body .pisi-map-focus-degree-menu button:focus-visible,
+html[data-pisi-theme='light'] body .pisi-map-focus-degree-menu button:focus-visible,
 body.pisi-light-theme .pisi-map-focus-degree-menu button:focus-visible,
-html[data-pisi-theme="light"] body .pisi-map-focus-degree-menu button[aria-checked="true"],
-body.pisi-light-theme .pisi-map-focus-degree-menu button[aria-checked="true"] {
+html[data-pisi-theme='light'] body .pisi-map-focus-degree-menu button[aria-checked='true'],
+body.pisi-light-theme .pisi-map-focus-degree-menu button[aria-checked='true'] {
     background: rgba(70, 112, 185, 0.1);
 }

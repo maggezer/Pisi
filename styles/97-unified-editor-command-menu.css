@@ -60,7 +60,7 @@
     min-width: 0;
     overflow: hidden;
     color: #f4b34b;
-    font-family: "Cascadia Code", Consolas, monospace;
+    font-family: 'Cascadia Code', Consolas, monospace;
     font-size: 12px;
     font-weight: 800;
     text-overflow: ellipsis;
@@ -91,33 +91,33 @@
     white-space: nowrap;
 }
 
-html[data-pisi-theme="light"] #pisi-tag-menu.pisi-unified-command-menu,
+html[data-pisi-theme='light'] #pisi-tag-menu.pisi-unified-command-menu,
 body.pisi-light-theme #pisi-tag-menu.pisi-unified-command-menu {
     border-color: #c9ced6;
     background: #ffffff;
     box-shadow: 0 18px 46px rgb(36 44 55 / 24%);
 }
 
-html[data-pisi-theme="light"] .pisi-unified-command-category,
+html[data-pisi-theme='light'] .pisi-unified-command-category,
 body.pisi-light-theme .pisi-unified-command-category {
     color: #747b86;
     background: #ffffff;
     border-bottom-color: rgb(0 0 0 / 7%);
 }
 
-html[data-pisi-theme="light"] #pisi-tag-menu .pisi-unified-command-option,
+html[data-pisi-theme='light'] #pisi-tag-menu .pisi-unified-command-option,
 body.pisi-light-theme #pisi-tag-menu .pisi-unified-command-option {
     color: #252a31;
 }
 
-html[data-pisi-theme="light"] #pisi-tag-menu .pisi-unified-command-option:hover,
-html[data-pisi-theme="light"] #pisi-tag-menu .pisi-unified-command-option.active,
+html[data-pisi-theme='light'] #pisi-tag-menu .pisi-unified-command-option:hover,
+html[data-pisi-theme='light'] #pisi-tag-menu .pisi-unified-command-option.active,
 body.pisi-light-theme #pisi-tag-menu .pisi-unified-command-option:hover,
 body.pisi-light-theme #pisi-tag-menu .pisi-unified-command-option.active {
     background: #fff2dc;
 }
 
-html[data-pisi-theme="light"] #pisi-tag-menu .pisi-unified-command-option .pisi-tag-option-desc,
+html[data-pisi-theme='light'] #pisi-tag-menu .pisi-unified-command-option .pisi-tag-option-desc,
 body.pisi-light-theme #pisi-tag-menu .pisi-unified-command-option .pisi-tag-option-desc {
     color: #66707c;
 }

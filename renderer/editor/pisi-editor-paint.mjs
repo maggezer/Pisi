@@ -1,10 +1,6 @@
-import { registerModule } from "../core/module-registry.mjs";
-import {
-    ensurePisiCanvasSectionHeader
-} from "./pisi-editor-canvas-section-ui.mjs";
-import {
-    selectPisiCompositeAlignmentBlock
-} from "./pisi-editor-composite-blocks.mjs";
+import { registerModule } from '../core/module-registry.mjs';
+import { ensurePisiCanvasSectionHeader } from './pisi-editor-canvas-section-ui.mjs';
+import { selectPisiCompositeAlignmentBlock } from './pisi-editor-composite-blocks.mjs';
 
 function getPisiToolbarEditor(toolbar) {
     if (!toolbar) return null;
@@ -20,17 +16,16 @@ function notifyPisiEditorChanged(editor, rehydrate = true) {
         ensurePisiEditorBlocks(editor);
     }
 
-    if (
-        rehydrate &&
-        typeof initializePisiAdvancedEditorContent === 'function'
-    ) {
+    if (rehydrate && typeof initializePisiAdvancedEditorContent === 'function') {
         initializePisiAdvancedEditorContent(editor);
     }
 
-    editor.dispatchEvent(new InputEvent('input', {
-        bubbles: true,
-        inputType: 'formatSet'
-    }));
+    editor.dispatchEvent(
+        new InputEvent('input', {
+            bubbles: true,
+            inputType: 'formatSet'
+        })
+    );
 
     if (typeof refreshPisiTagsPanelSoon === 'function') {
         refreshPisiTagsPanelSoon();
@@ -285,23 +280,12 @@ function insertPisiCanvas(editor, width = 520, height = 320) {
 
     const selection = window.getSelection?.();
     const anchorNode = selection?.anchorNode || null;
-    const anchorElement =
-        anchorNode?.nodeType === Node.ELEMENT_NODE
-            ? anchorNode
-            : anchorNode?.parentElement;
-    const currentBlock = anchorElement?.closest?.(
-        '.pisi-editor-block'
-    );
-    const canUseCurrentBlock = Boolean(
-        currentBlock &&
-        editor.contains(currentBlock) &&
-        !currentBlock.closest('.pisi-canvas-block')
-    );
+    const anchorElement = anchorNode?.nodeType === Node.ELEMENT_NODE ? anchorNode : anchorNode?.parentElement;
+    const currentBlock = anchorElement?.closest?.('.pisi-editor-block');
+    const canUseCurrentBlock = Boolean(currentBlock && editor.contains(currentBlock) && !currentBlock.closest('.pisi-canvas-block'));
 
     if (canUseCurrentBlock) {
-        const isEmpty = !String(
-            currentBlock.textContent || ''
-        ).trim();
+        const isEmpty = !String(currentBlock.textContent || '').trim();
 
         if (isEmpty) {
             currentBlock.replaceWith(block);
@@ -450,10 +434,7 @@ function hydratePisiPaintCanvases(root = document) {
             return;
         }
 
-        if (
-            pisiLoadedPaintImages.get(canvas) === storedImage ||
-            pisiPendingPaintImages.get(canvas) === storedImage
-        ) {
+        if (pisiLoadedPaintImages.get(canvas) === storedImage || pisiPendingPaintImages.get(canvas) === storedImage) {
             return;
         }
 
@@ -498,9 +479,7 @@ function bindPisiCanvas(canvas) {
         event.stopPropagation();
 
         const state = getPisiPaintState();
-        const wasSelected =
-            canvas.classList.contains('selected') &&
-            state.activeCanvas === canvas;
+        const wasSelected = canvas.classList.contains('selected') && state.activeCanvas === canvas;
 
         selectPisiCanvas(canvas);
 
@@ -514,9 +493,7 @@ function bindPisiCanvas(canvas) {
         drawing = true;
         start = getPisiCanvasPoint(canvas, event);
         const paintTool = getPisiPaintState().tool;
-        snapshot = ['line', 'rect', 'ellipse'].includes(paintTool)
-            ? context.getImageData(0, 0, canvas.width, canvas.height)
-            : null;
+        snapshot = ['line', 'rect', 'ellipse'].includes(paintTool) ? context.getImageData(0, 0, canvas.width, canvas.height) : null;
         pisiDirtyPaintCanvases.add(canvas);
 
         if (canvas.setPointerCapture) {
@@ -585,18 +562,14 @@ function bindPisiCanvas(canvas) {
 }
 
 function selectPisiCanvas(canvas) {
-    document.querySelectorAll(
-        '.pisi-paint-canvas.selected'
-    ).forEach((existing) => {
+    document.querySelectorAll('.pisi-paint-canvas.selected').forEach((existing) => {
         existing.classList.remove('selected');
     });
 
     canvas.classList.add('selected');
     getPisiPaintState().activeCanvas = canvas;
 
-    selectPisiCompositeAlignmentBlock(
-        canvas.closest('.pisi-canvas-block')
-    );
+    selectPisiCompositeAlignmentBlock(canvas.closest('.pisi-canvas-block'));
 }
 
 function getPisiCanvasPoint(canvas, event) {
@@ -639,11 +612,7 @@ function savePisiCanvasData(canvas) {
         const storedImage = canvas.dataset.image || '';
         const loadedImage = pisiLoadedPaintImages.get(canvas) || '';
 
-        if (
-            storedImage &&
-            loadedImage !== storedImage &&
-            !pisiDirtyPaintCanvases.has(canvas)
-        ) {
+        if (storedImage && loadedImage !== storedImage && !pisiDirtyPaintCanvases.has(canvas)) {
             return storedImage;
         }
 
@@ -668,133 +637,197 @@ function getEditorForPisiElement(element) {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    "getPisiToolbarEditor": {
+    getPisiToolbarEditor: {
         enumerable: true,
-        get() { return getPisiToolbarEditor; }
+        get() {
+            return getPisiToolbarEditor;
+        }
     },
-    "notifyPisiEditorChanged": {
+    notifyPisiEditorChanged: {
         enumerable: true,
-        get() { return notifyPisiEditorChanged; }
+        get() {
+            return notifyPisiEditorChanged;
+        }
     },
-    "runPisiEditorCommand": {
+    runPisiEditorCommand: {
         enumerable: true,
-        get() { return runPisiEditorCommand; }
+        get() {
+            return runPisiEditorCommand;
+        }
     },
-    "buildPisiRichToolbarControls": {
+    buildPisiRichToolbarControls: {
         enumerable: true,
-        get() { return buildPisiRichToolbarControls; }
+        get() {
+            return buildPisiRichToolbarControls;
+        }
     },
-    "buildPisiPaintToolbarControls": {
+    buildPisiPaintToolbarControls: {
         enumerable: true,
-        get() { return buildPisiPaintToolbarControls; }
+        get() {
+            return buildPisiPaintToolbarControls;
+        }
     },
-    "buildPisiExcelToolbarControls": {
+    buildPisiExcelToolbarControls: {
         enumerable: true,
-        get() { return buildPisiExcelToolbarControls; }
+        get() {
+            return buildPisiExcelToolbarControls;
+        }
     },
-    "setupPisiRichToolbars": {
+    setupPisiRichToolbars: {
         enumerable: true,
-        get() { return setupPisiRichToolbars; }
+        get() {
+            return setupPisiRichToolbars;
+        }
     },
-    "switchPisiToolbarTab": {
+    switchPisiToolbarTab: {
         enumerable: true,
-        get() { return switchPisiToolbarTab; }
+        get() {
+            return switchPisiToolbarTab;
+        }
     },
-    "getPisiPaintState": {
+    getPisiPaintState: {
         enumerable: true,
-        get() { return getPisiPaintState; }
+        get() {
+            return getPisiPaintState;
+        }
     },
-    "updatePisiPaintStateFromToolbar": {
+    updatePisiPaintStateFromToolbar: {
         enumerable: true,
-        get() { return updatePisiPaintStateFromToolbar; }
+        get() {
+            return updatePisiPaintStateFromToolbar;
+        }
     },
-    "setPisiPaintTool": {
+    setPisiPaintTool: {
         enumerable: true,
-        get() { return setPisiPaintTool; }
+        get() {
+            return setPisiPaintTool;
+        }
     },
-    "getPisiToolbarNumber": {
+    getPisiToolbarNumber: {
         enumerable: true,
-        get() { return getPisiToolbarNumber; }
+        get() {
+            return getPisiToolbarNumber;
+        }
     },
-    "runPisiPaintAction": {
+    runPisiPaintAction: {
         enumerable: true,
-        get() { return runPisiPaintAction; }
+        get() {
+            return runPisiPaintAction;
+        }
     },
-    "insertPisiCanvasFromToolbar": {
+    insertPisiCanvasFromToolbar: {
         enumerable: true,
-        get() { return insertPisiCanvasFromToolbar; }
+        get() {
+            return insertPisiCanvasFromToolbar;
+        }
     },
-    "insertPisiCanvas": {
+    insertPisiCanvas: {
         enumerable: true,
-        get() { return insertPisiCanvas; }
+        get() {
+            return insertPisiCanvas;
+        }
     },
-    "insertHtmlIntoPisiEditor": {
+    insertHtmlIntoPisiEditor: {
         enumerable: true,
-        get() { return insertHtmlIntoPisiEditor; }
+        get() {
+            return insertHtmlIntoPisiEditor;
+        }
     },
-    "bindPisiAdvancedEditorDropTargets": {
+    bindPisiAdvancedEditorDropTargets: {
         enumerable: true,
-        get() { return bindPisiAdvancedEditorDropTargets; }
+        get() {
+            return bindPisiAdvancedEditorDropTargets;
+        }
     },
-    "movePisiCaretToPoint": {
+    movePisiCaretToPoint: {
         enumerable: true,
-        get() { return movePisiCaretToPoint; }
+        get() {
+            return movePisiCaretToPoint;
+        }
     },
-    "initializePisiAdvancedEditorContent": {
+    initializePisiAdvancedEditorContent: {
         enumerable: true,
-        get() { return initializePisiAdvancedEditorContent; }
+        get() {
+            return initializePisiAdvancedEditorContent;
+        }
     },
-    "pisiBoundPaintCanvases": {
+    pisiBoundPaintCanvases: {
         enumerable: true,
-        get() { return pisiBoundPaintCanvases; }
+        get() {
+            return pisiBoundPaintCanvases;
+        }
     },
-    "pisiLoadedPaintImages": {
+    pisiLoadedPaintImages: {
         enumerable: true,
-        get() { return pisiLoadedPaintImages; }
+        get() {
+            return pisiLoadedPaintImages;
+        }
     },
-    "pisiPendingPaintImages": {
+    pisiPendingPaintImages: {
         enumerable: true,
-        get() { return pisiPendingPaintImages; }
+        get() {
+            return pisiPendingPaintImages;
+        }
     },
-    "pisiDirtyPaintCanvases": {
+    pisiDirtyPaintCanvases: {
         enumerable: true,
-        get() { return pisiDirtyPaintCanvases; }
+        get() {
+            return pisiDirtyPaintCanvases;
+        }
     },
-    "resetPisiCanvasToWhite": {
+    resetPisiCanvasToWhite: {
         enumerable: true,
-        get() { return resetPisiCanvasToWhite; }
+        get() {
+            return resetPisiCanvasToWhite;
+        }
     },
-    "ensurePisiCanvasWhiteBackground": {
+    ensurePisiCanvasWhiteBackground: {
         enumerable: true,
-        get() { return ensurePisiCanvasWhiteBackground; }
+        get() {
+            return ensurePisiCanvasWhiteBackground;
+        }
     },
-    "hydratePisiPaintCanvases": {
+    hydratePisiPaintCanvases: {
         enumerable: true,
-        get() { return hydratePisiPaintCanvases; }
+        get() {
+            return hydratePisiPaintCanvases;
+        }
     },
-    "bindPisiCanvas": {
+    bindPisiCanvas: {
         enumerable: true,
-        get() { return bindPisiCanvas; }
+        get() {
+            return bindPisiCanvas;
+        }
     },
-    "selectPisiCanvas": {
+    selectPisiCanvas: {
         enumerable: true,
-        get() { return selectPisiCanvas; }
+        get() {
+            return selectPisiCanvas;
+        }
     },
-    "getPisiCanvasPoint": {
+    getPisiCanvasPoint: {
         enumerable: true,
-        get() { return getPisiCanvasPoint; }
+        get() {
+            return getPisiCanvasPoint;
+        }
     },
-    "drawPisiCanvasShape": {
+    drawPisiCanvasShape: {
         enumerable: true,
-        get() { return drawPisiCanvasShape; }
+        get() {
+            return drawPisiCanvasShape;
+        }
     },
-    "savePisiCanvasData": {
+    savePisiCanvasData: {
         enumerable: true,
-        get() { return savePisiCanvasData; }
+        get() {
+            return savePisiCanvasData;
+        }
     },
-    "getEditorForPisiElement": {
+    getEditorForPisiElement: {
         enumerable: true,
-        get() { return getEditorForPisiElement; }
+        get() {
+            return getEditorForPisiElement;
+        }
     }
 });
-registerModule("editor.paint", moduleApi);
+registerModule('editor.paint', moduleApi);

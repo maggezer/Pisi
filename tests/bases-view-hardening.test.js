@@ -46,7 +46,7 @@ test('Bases saved views keep current query/layout scope and invalid layout fails
     const core = read('renderer/data/pisi-bases-core.mjs');
     const store = read('main/functions/structured-nodes.js');
 
-    assert.match(view, /query: String\(view\.query \|\| ''\).*slice\(0, 2000\)/);
+    assert.match(view, /query:\s*String\(view\.query \|\| ''\)\s*\.trim\(\)\s*\.slice\(0,\s*2000\)/);
     assert.match(view, /layout: normalizePisiBaseLayout\(view\.layout\)/);
     assert.match(core, /return PISI_BASE_LAYOUTS\.includes\(layout\) \? layout : 'table'/);
     assert.match(store, /layout: \['table', 'cards'\]\.includes\(view\.layout\) \? view\.layout : 'table'/);

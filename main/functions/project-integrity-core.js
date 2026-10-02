@@ -12,7 +12,9 @@ const PISI_INTEGRITY_TASK_ID = /^task_[A-Za-z0-9._:-]{4,180}$/;
 const PISI_INTEGRITY_RELATIONSHIP_ID = /^edge_[A-Za-z0-9_-]{1,101}$/;
 
 function normalizePisiIntegrityPath(value = '') {
-    return String(value || '').replace(/\\/g, '/').replace(/^\.\//, '');
+    return String(value || '')
+        .replace(/\\/g, '/')
+        .replace(/^\.\//, '');
 }
 
 function normalizePisiIntegrityComparePath(value = '') {
@@ -24,25 +26,17 @@ function isPisiIntegrityPathInsideProject(projectFolder, targetPath) {
     const root = path.resolve(String(projectFolder || ''));
     const target = path.resolve(String(targetPath || ''));
     const relative = path.relative(root, target);
-    return relative === '' || (
-        relative !== '..' &&
-        !relative.startsWith(`..${path.sep}`) &&
-        !path.isAbsolute(relative)
-    );
+    return relative === '' || (relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative));
 }
 
 function makePisiIntegrityIssueId(parts = []) {
-    const key = (Array.isArray(parts) ? parts : [parts])
-        .map((value) => String(value ?? ''))
-        .join('\u001f');
+    const key = (Array.isArray(parts) ? parts : [parts]).map((value) => String(value ?? '')).join('\u001f');
     return `integrity_${crypto.createHash('sha256').update(key).digest('hex').slice(0, 20)}`;
 }
 
 function normalizePisiIntegrityRepair(raw = null) {
     if (!raw || typeof raw !== 'object') return null;
-    const safety = PISI_INTEGRITY_REPAIR_SAFETY.has(String(raw.safety || ''))
-        ? String(raw.safety)
-        : 'manual';
+    const safety = PISI_INTEGRITY_REPAIR_SAFETY.has(String(raw.safety || '')) ? String(raw.safety) : 'manual';
     const action = String(raw.action || '').trim();
     const description = String(raw.description || '').trim();
     if (!action || !description) return null;
@@ -51,28 +45,19 @@ function normalizePisiIntegrityRepair(raw = null) {
         safety,
         action,
         description,
-        payload: raw.payload && typeof raw.payload === 'object'
-            ? raw.payload
-            : {}
+        payload: raw.payload && typeof raw.payload === 'object' ? raw.payload : {}
     };
 }
 
 function makePisiIntegrityIssue(raw = {}) {
-    const severity = PISI_INTEGRITY_SEVERITIES.has(String(raw.severity || ''))
-        ? String(raw.severity)
-        : 'warning';
+    const severity = PISI_INTEGRITY_SEVERITIES.has(String(raw.severity || '')) ? String(raw.severity) : 'warning';
     const code = String(raw.code || 'unknown').trim() || 'unknown';
     const issuePath = normalizePisiIntegrityPath(raw.path || '');
     const entityId = String(raw.entityId || '');
     const message = String(raw.message || '').trim() || code;
     const repair = normalizePisiIntegrityRepair(raw.repair);
     return {
-        id: String(raw.id || makePisiIntegrityIssueId([
-            code,
-            issuePath,
-            entityId,
-            message
-        ])),
+        id: String(raw.id || makePisiIntegrityIssueId([code, issuePath, entityId, message])),
         severity,
         code,
         domain: String(raw.domain || 'project'),
@@ -85,12 +70,14 @@ function makePisiIntegrityIssue(raw = {}) {
 }
 
 function severityRank(value) {
-    return {
-        critical: 4,
-        error: 3,
-        warning: 2,
-        info: 1
-    }[value] || 0;
+    return (
+        {
+            critical: 4,
+            error: 3,
+            warning: 2,
+            info: 1
+        }[value] || 0
+    );
 }
 
 function sortPisiIntegrityIssues(issues = []) {

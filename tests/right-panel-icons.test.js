@@ -7,14 +7,7 @@ const test = require('node:test');
 
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
-const iconNames = [
-    'todo',
-    'tags',
-    'customize',
-    'links',
-    'search',
-    'properties'
-];
+const iconNames = ['todo', 'tags', 'customize', 'links', 'search', 'properties'];
 
 test('altı ana sağ panel sekmesi yalnız özel ikonlarla gösterilir', () => {
     const html = read('index.html');
@@ -30,10 +23,7 @@ test('altı ana sağ panel sekmesi yalnız özel ikonlarla gösterilir', () => {
     assert.match(html, /aria-label="ToDo"/);
     assert.equal(typeof tr.ToDo, 'string');
     assert.equal(typeof eng.ToDo, 'string');
-    assert.doesNotMatch(
-        html,
-        /data-right-tab="(?:missions|tags|customizations)"[^>]*>\s*(?:ToDo|Tags|Customize)\s*</s
-    );
+    assert.doesNotMatch(html, /data-right-tab="(?:missions|tags|customizations)"[^>]*>\s*(?:ToDo|Tags|Customize)\s*</s);
     assert.match(links, /pisi-right-tab-icon-links/);
     assert.match(links, /button\.setAttribute\('aria-label', button\.title\)/);
     assert.match(search, /pisi-right-tab-icon-search/);
@@ -58,10 +48,10 @@ test('sağ panel sekmeleri kare, sıralı ve ortalanmıştır', () => {
     assert.match(css, /#right-panel-tabs \{[\s\S]*justify-content: center/);
     assert.match(css, /\.right-panel-tab \{[\s\S]*width: 32px;[\s\S]*height: 32px/);
     assert.match(css, /\.pisi-right-tab-icon \{[\s\S]*background: currentColor/);
-    assert.match(css, /data-right-tab="links"\] \{ order: 50; \}/);
-    assert.match(css, /data-right-tab="search"\] \{ order: 60; \}/);
-    assert.match(css, /data-right-tab="properties"\] \{ order: 65; \}/);
-    assert.match(css, /data-right-tab="customizations"\] \{ order: 70; \}/);
+    assert.match(css, /data-right-tab=["\']links["\']\]\s*\{[\s\S]*?order:\s*50;/);
+    assert.match(css, /data-right-tab=["\']search["\']\]\s*\{[\s\S]*?order:\s*60;/);
+    assert.match(css, /data-right-tab=["\']properties["\']\]\s*\{[\s\S]*?order:\s*65;/);
+    assert.match(css, /data-right-tab=["\']customizations["\']\]\s*\{[\s\S]*?order:\s*70;/);
     for (const name of iconNames) {
         assert.match(css, new RegExp(`assets/right-tabs/${name}\\.svg`));
     }

@@ -26,9 +26,7 @@ const css = read('styles/62-project-integrity.css');
 const auditSources = [service, shared, documents, authorities, recovery].join('\n');
 
 test('Project Integrity exclusively owns the public audit binding', () => {
-    const owners = mainManifest
-        .filter((entry) => entry.bindings.includes('auditPisiProjectIntegrity'))
-        .map((entry) => entry.module);
+    const owners = mainManifest.filter((entry) => entry.bindings.includes('auditPisiProjectIntegrity')).map((entry) => entry.module);
 
     assert.deepEqual(owners, ['main.projectIntegrity']);
     assert.match(service, /function auditPisiProjectIntegrity\(/);
@@ -50,13 +48,20 @@ test('Project Integrity detects identity reference task and hierarchy corruption
     assert.match(documents, /code: `\$\{type\}-duplicate-id`/);
     for (const code of [
         'task-duplicate-id',
-        'task-source-node-missing', 'task-dependency-missing',
-        'relationship-duplicate-id', 'relationship-endpoint-missing',
-        'relationship-semantic-duplicate', 'relationship-second-parent',
-        'relationship-hierarchy-cycle', 'map-reference-broken',
-        'map-layout-orphan', 'map-relationship-view-orphan',
-        'node-parent-map-mismatch', 'attachment-target-missing',
-        'trash-payload-missing', 'atomic-rollback-failed'
+        'task-source-node-missing',
+        'task-dependency-missing',
+        'relationship-duplicate-id',
+        'relationship-endpoint-missing',
+        'relationship-semantic-duplicate',
+        'relationship-second-parent',
+        'relationship-hierarchy-cycle',
+        'map-reference-broken',
+        'map-layout-orphan',
+        'map-relationship-view-orphan',
+        'node-parent-map-mismatch',
+        'attachment-target-missing',
+        'trash-payload-missing',
+        'atomic-rollback-failed'
     ]) {
         assert.match(auditSources, new RegExp(code));
     }
@@ -64,9 +69,14 @@ test('Project Integrity detects identity reference task and hierarchy corruption
 
 test('ambiguous identity and semantic repairs are never classified as safe', () => {
     for (const action of [
-        'resolve-duplicate-id', 'recover-task-id', 'resolve-duplicate-task-id',
-        'repair-task-source', 'recover-relationship-id', 'merge-semantic-duplicates',
-        'resolve-second-parent', 'resolve-hierarchy-cycle'
+        'resolve-duplicate-id',
+        'recover-task-id',
+        'resolve-duplicate-task-id',
+        'repair-task-source',
+        'recover-relationship-id',
+        'merge-semantic-duplicates',
+        'resolve-second-parent',
+        'resolve-hierarchy-cycle'
     ]) {
         const index = auditSources.indexOf(`action: '${action}'`);
         assert.ok(index >= 0, `missing ${action}`);
@@ -76,17 +86,13 @@ test('ambiguous identity and semantic repairs are never classified as safe', () 
 });
 
 test('safe repairs are bounded and explained before mutation', () => {
-    for (const action of [
-        'normalize-document-metadata',
-        'ensure-document-sidecar',
-        'normalize-map-operational-state'
-    ]) {
+    for (const action of ['normalize-document-metadata', 'ensure-document-sidecar', 'normalize-map-operational-state']) {
         assert.match(auditSources + repairs, new RegExp(action));
     }
     assert.doesNotMatch(repairs, /run-atomic-recovery/);
     assert.match(renderer, /confirmSafeRepairs/);
     assert.match(renderer, /confirmRepairs/);
-    assert.match(renderer, /safe\.slice\(0, 12\)/);
+    assert.match(renderer, /safe\s*\.slice\(0,\s*12\)/);
     assert.match(renderer, /pisiConfirm/);
 });
 
@@ -99,7 +105,7 @@ test('atomic journal findings do not trigger nested recovery inside integrity re
 
 test('graph-wide connection cache repair is review-only and routed to derived rebuild', () => {
     assert.match(documents, /node-derived-connections-stale/);
-    assert.match(documents, /safety: 'review', action: 'rebuild-derived-state'/);
+    assert.match(documents, /safety:\s*'review'[\s\S]*?action:\s*'rebuild-derived-state'/);
     assert.match(repairs, /rebuildDerivedState/);
     assert.match(repairs, /Array\.from\(inventory\.nodeById\.keys\(\)\)/);
 });
@@ -125,8 +131,8 @@ test('existing preload audit bridge remains bounded and transports explicit inte
     assert.doesNotMatch(preload, /rebuildIntegrityDerived:/);
     assert.match(domain, /normalizeIntegrityTransportRequest/);
     assert.match(domain, /\['audit', 'repair', 'rebuild-derived'\]/);
-    assert.match(renderer, /runIntegrityTransport\('repair'/);
-    assert.match(renderer, /runIntegrityTransport\('rebuild-derived'/);
+    assert.match(renderer, /runIntegrityTransport\(\s*'repair'/);
+    assert.match(renderer, /runIntegrityTransport\(\s*'rebuild-derived'/);
 });
 
 test('Project Integrity orchestrator stays thin and composes bounded audit modules', () => {
@@ -163,5 +169,5 @@ test('Project Integrity UI and styles load after portability base panel', () => 
     assert.match(style, /styles\/62-project-integrity\.css/);
     assert.match(css, /\.pisi-integrity-metrics/);
     assert.match(css, /\.pisi-integrity-issue-row/);
-    assert.match(css, /html\[data-theme="light"\]/);
+    assert.match(css, /html\[data-theme=["\']light["\']\]/);
 });
