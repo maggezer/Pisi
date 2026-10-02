@@ -363,7 +363,7 @@ async function ensureDownloadedInstaller(version, file) {
         }
 
         await pipeline(
-            Readable.fromWeb(response.body),
+            Readable.fromWeb(/** @type {any} */ (response.body)),
             fs.createWriteStream(tempPath, { flags: 'wx' })
         );
 
@@ -389,6 +389,7 @@ async function showDownloadedUpdatePrompt(version) {
     if (lastPromptedVersion === version) return;
     lastPromptedVersion = version;
 
+    /** @type {import('electron').MessageBoxOptions} */
     const options = {
         type: 'info',
         title: translateUpdateText('Pisi güncellemesi hazır'),
