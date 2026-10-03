@@ -36,12 +36,7 @@ function findParentMapPathForNode(nodePath, nodeInfo = null) {
     return null;
 }
 
-function cleanupDeletedNodeFromParentMap(
-    parentMapPath,
-    deletedNodeId,
-    deletionTransaction = null,
-    removedRelationshipIds = []
-) {
+function cleanupDeletedNodeFromParentMap(parentMapPath, deletedNodeId, deletionTransaction = null, removedRelationshipIds = []) {
     if (!parentMapPath || !deletedNodeId || !fs.existsSync(parentMapPath)) {
         return {
             parentMapPath: null,
@@ -103,10 +98,7 @@ function backupPisiDeletionFile(transaction, filePath) {
 
     if (backup) return backup;
 
-    const backupPath = path.join(
-        transaction.directoryPath,
-        `file-${transaction.fileBackups.length}.bak`
-    );
+    const backupPath = path.join(transaction.directoryPath, `file-${transaction.fileBackups.length}.bak`);
 
     fs.copyFileSync(filePath, backupPath);
     backup = {
@@ -129,10 +121,7 @@ function writePisiDeletionMetadata(transaction, filePath, data) {
 
 function deletePisiCanonicalRelationshipsForNodes(transaction, nodeIds) {
     const relationshipStore = modules['main.relationshipStore'];
-    if (
-        !relationshipStore ||
-        typeof relationshipStore.deletePisiSemanticRelationshipsForNodes !== 'function'
-    ) {
+    if (!relationshipStore || typeof relationshipStore.deletePisiSemanticRelationshipsForNodes !== 'function') {
         throw new Error('Canonical relationship store yüklenmemiş.');
     }
 
@@ -144,10 +133,7 @@ function deletePisiCanonicalRelationshipsForNodes(transaction, nodeIds) {
     const relationshipStorePath = relationshipStore.getPisiRelationshipStorePath(projectFolder);
     backupPisiDeletionFile(transaction, relationshipStorePath);
 
-    const result = relationshipStore.deletePisiSemanticRelationshipsForNodes(
-        projectFolder,
-        nodeIds
-    );
+    const result = relationshipStore.deletePisiSemanticRelationshipsForNodes(projectFolder, nodeIds);
     if (!result?.ok) {
         throw new Error(result?.error || 'Canonical relationship temizliği tamamlanamadı.');
     }
