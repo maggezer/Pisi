@@ -2,6 +2,7 @@ import { getPisiSearchCurrentNodePath, invalidatePisiSearchIndex } from '../sear
 import { PISI_NODE_PROPERTY_TYPES, PISI_ROLLUP_AGGREGATES, normalizePisiPropertyCollection } from './pisi-properties-core.mjs';
 import {
     dispatchPisiNodePropertiesChanged,
+    getPisiMapNodeLabel,
     getPisiNodePropertyMapContext,
     getPisiPropertyTypeLabel,
     makePisiRollupField,
@@ -10,6 +11,19 @@ import {
     pisiPropertyNameKey,
     pisiStructuredTranslate
 } from './pisi-structured-view-helpers.mjs';
+
+function makePisiPropertyIconButton(label, iconName) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'pisi-property-icon-button';
+    button.title = pisiStructuredTranslate(label);
+    button.setAttribute('aria-label', pisiStructuredTranslate(label));
+    const icon = document.createElement('span');
+    icon.className = `pisi-property-action-icon pisi-property-action-icon-${iconName}`;
+    icon.setAttribute('aria-hidden', 'true');
+    button.appendChild(icon);
+    return button;
+}
 
 function makePisiRelationPropertyPicker(property, context) {
     const picker = document.createElement('details');
