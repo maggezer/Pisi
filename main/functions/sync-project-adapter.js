@@ -305,7 +305,7 @@ function makeDocumentData(record, existingData, parentMap = 'none') {
     };
     if (record.kind === 'node') {
         data.pisi.parentMap = parentMap || payload.parentMap || 'none';
-        data.pisi.connectionTypes ||= modules['main.pathSecurity'].getDefaultNodeConnectionTypes();
+        delete data.pisi.connectionTypes;
         data.content = String(payload.content || '');
         data.blocks = clone(payload.blocks || []);
         data.tags = clone(payload.tags || []);
