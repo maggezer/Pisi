@@ -80,15 +80,15 @@ function auditPropertyDefinitionSet(context, schema) {
             context,
             {
                 severity: 'error',
-                code: `property-schema-migration-${String(conflict?.code || 'conflict')}`,
+                code: `property-schema-conflict-${String(conflict?.code || 'conflict')}`,
                 path: conflict?.path,
                 entityId: conflict?.propertyId || conflict?.ownerId,
-                message: `Property schema migration çakışması çözülmemiş: ${String(conflict?.code || 'conflict')}`
+                message: `Property schema çakışması çözülmemiş: ${String(conflict?.code || 'conflict')}`
             },
             {
                 safety: 'review',
-                action: 'resolve-property-schema-migration',
-                description: 'Çakışan property kimliği/türü/değerini inceleyip explicit migration kararı verin.'
+                action: 'resolve-property-schema-conflict',
+                description: 'Çakışan property kimliği, türü veya değerini canonical schema kurallarına göre inceleyip çözün.'
             }
         );
     }
@@ -117,8 +117,8 @@ function auditNodePropertyAgainstSchema(context, doc, indexes) {
                 },
                 {
                     safety: 'review',
-                    action: 'migrate-node-property-id',
-                    description: 'Project schema eşleşmesine göre stable ID ata; ad benzerliği tek başına yeterli değil.'
+                    action: 'resolve-node-property-id',
+                    description: 'Project schema eşleşmesini doğrulayıp canonical stable ID belirleyin; ad benzerliği tek başına yeterli değil.'
                 }
             );
             continue;
@@ -189,8 +189,8 @@ function auditNodePropertyAgainstSchema(context, doc, indexes) {
                     },
                     {
                         safety: 'review',
-                        action: 'migrate-property-type',
-                        description: 'Tüm project kullanımlarında lossless conversion doğrulanmadan property türünü değiştirmeyin.'
+                        action: 'resolve-property-type-drift',
+                        description: 'Canonical tür ile mevcut değerlerin uyumunu tüm project kullanımlarında doğrulamadan türü değiştirmeyin.'
                     }
                 );
             }
@@ -209,7 +209,7 @@ function auditNodePropertyAgainstSchema(context, doc, indexes) {
                 {
                     safety: 'manual',
                     action: 'resolve-invalid-property-type',
-                    description: 'Bilinmeyen type sessizce text türüne dönüştürülmez; explicit migration gerekir.'
+                    description: 'Bilinmeyen type sessizce text türüne dönüştürülmez; canonical tür kullanıcı tarafından açıkça belirlenmelidir.'
                 }
             );
         }
@@ -261,8 +261,8 @@ function auditTemplateProperties(projectFolder, context, indexes) {
                     },
                     {
                         safety: 'review',
-                        action: 'migrate-template-property-schema',
-                        description: 'Template property kimliğini project schema ile eşleştir.'
+                        action: 'register-or-remap-template-property',
+                        description: 'Template property kimliğini mevcut canonical project schema definitionı ile eşleştirin veya yeni definition olarak kaydedin.'
                     }
                 );
                 continue;
@@ -315,15 +315,15 @@ function auditPisiPropertySchema(projectFolder, context, inventory) {
             issueProperty(
                 context,
                 {
-                    severity: 'warning',
-                    code: 'property-schema-missing',
+                    severity: 'critical',
+                    code: 'property-schema-authority-missing',
                     path: schemaStore.PISI_PROPERTY_SCHEMA_RELATIVE_PATH,
-                    message: 'Node property verisi var ancak project-level property schema henüz oluşturulmamış.'
+                    message: 'Node property verisi var ancak canonical project-level property schema bulunmuyor.'
                 },
                 {
                     safety: 'review',
-                    action: 'migrate-property-schema',
-                    description: 'Mevcut stable ID/ad/type verisini tarayıp project-level schema v1 migrationı çalıştır.'
+                    action: 'recover-property-schema-authority',
+                    description: 'Canonical schema dosyasını yedek/Version History üzerinden kurtarın veya property verisini açıkça yeniden tanımlayın; node verisinden otomatik schema üretmeyin.'
                 }
             );
         }
