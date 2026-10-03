@@ -7,6 +7,15 @@ const test = require('node:test');
 
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+const structuredViewFiles = [
+    'renderer/data/pisi-structured-views.mjs',
+    'renderer/data/pisi-structured-view-state.mjs',
+    'renderer/data/pisi-structured-view-helpers.mjs',
+    'renderer/data/pisi-structured-view-query.mjs',
+    'renderer/data/pisi-structured-view-property-ui.mjs',
+    'renderer/data/pisi-structured-view-ui.mjs'
+];
+const readStructuredViews = () => structuredViewFiles.map(read).join('\n');
 
 test('property menüsü yalnız Metin, Sayı, Tags ve Relation türlerini sunar', () => {
     const core = read('renderer/data/pisi-properties-core.mjs');
@@ -24,7 +33,7 @@ test('property menüsü yalnız Metin, Sayı, Tags ve Relation türlerini sunar'
 });
 
 test('Rollup yalnız ana toolbardan node bloğu olarak eklenir ve property menüsü değildir', () => {
-    const structured = read('renderer/data/pisi-structured-views.mjs');
+    const structured = readStructuredViews();
     const propertiesUi = read('renderer/data/pisi-node-properties-ui.mjs');
     const rollupBlocks = read('renderer/data/pisi-rollup-blocks.mjs');
     const styles = read('styles/58-workspaces-platform.css');
