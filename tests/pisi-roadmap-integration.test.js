@@ -260,7 +260,8 @@ test('günlük takvimi açılan günü seçili bırakmaz ve dil değişikliğini
     assert.match(runtime, /todayButton\.textContent = translatePisiCalendarText\('Bugün'\)/);
     assert.match(runtime, /document\.addEventListener\('pisi:language-changed'/);
     assert.match(runtime, /opened && getCalendarState\(\) === state && state\.selectedDate === isoDate/);
-    assert.match(runtime, /state\.selectedDate = null;\s*saveCalendarStateToStorage\(\);\s*renderCalendar\(\);/);
+    assert.match(runtime, /state\.selectedDate = null;\s*saveCalendarStateToStorage\(\);\s*renderPisiCalendarCallback\?\.\(\);/);
+    assert.match(runtime, /configurePisiCalendarDiary\(\{ renderCalendar \}\)/);
     assert.doesNotMatch(runtime, /selectedDate: state\.selectedDate/);
     assert.match(styles, /\.pisi-calendar-footer \{[\s\S]*?justify-content: center;/);
     assert.match(styles, /\.pisi-calendar-today-btn \{[\s\S]*?flex: 0 0 auto;[\s\S]*?width: fit-content;/);

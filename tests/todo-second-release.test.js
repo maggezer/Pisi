@@ -9,6 +9,24 @@ const { pathToFileURL } = require('node:url');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const readJson = (file) => JSON.parse(read(file));
+const rendererRuntimeFiles = [
+    'renderer/runtime.mjs',
+    'renderer/runtime-lifecycle.mjs',
+    'renderer/runtime-events.mjs',
+    'renderer/calendar/pisi-calendar-state.mjs',
+    'renderer/calendar/pisi-calendar-ui.mjs',
+    'renderer/calendar/pisi-calendar-diary.mjs',
+    'renderer/calendar/pisi-calendar-runtime.mjs'
+];
+const documentStoreFiles = [
+    'main/functions/document-store.js',
+    'main/functions/document-store-io.js',
+    'main/functions/document-store-metadata.js',
+    'main/functions/document-store-diary.js',
+    'main/functions/document-store-mutations.js'
+];
+const readRendererRuntime = () => rendererRuntimeFiles.map(read).join('\n');
+const readDocumentStore = () => documentStoreFiles.map(read).join('\n');
 const utilsPromise = import(pathToFileURL(path.join(root, 'renderer/tags/pisi-todo-utils.mjs')).href);
 
 test('tekrarlayan görev tarihleri tüm desteklenen tekrar türlerinde ilerler', async () => {
@@ -73,8 +91,8 @@ test('manuel sıralama artık görevleri parent hiyerarşisine göre kısıtlama
 });
 
 test('günlük node eşitlemesi durum ve tekrar bilgisini taşır', () => {
-    const runtime = read('renderer/runtime.mjs');
-    const store = read('main/functions/document-store.js');
+    const runtime = readRendererRuntime();
+    const store = readDocumentStore();
 
     assert.match(runtime, /status: String\(block\.todoStates/);
     assert.match(runtime, /repeat: String\(block\.todoRepeats/);

@@ -7,9 +7,17 @@ const test = require('node:test');
 
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+const documentStoreFiles = [
+    'main/functions/document-store.js',
+    'main/functions/document-store-io.js',
+    'main/functions/document-store-metadata.js',
+    'main/functions/document-store-diary.js',
+    'main/functions/document-store-mutations.js'
+];
+const readDocumentStore = () => documentStoreFiles.map(read).join('\n');
 
 test('rename and move operations expose pathChanges consumed by task reference hooks', () => {
-    const documentStore = read('main/functions/document-store.js');
+    const documentStore = readDocumentStore();
     const mapStore = read('main/functions/map-store.js');
     const hooks = read('main/functions/task-reference-operation-hooks.js');
 
