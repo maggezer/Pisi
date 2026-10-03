@@ -34,7 +34,8 @@ test('property şeması ve node seçenekleri yalnız aktif node mapinden alını
     assert.match(structured, /makePisiRelationPropertyPicker/);
     assert.match(structured, /context\.propertyDefinitions/);
     assert.match(structured, /getPisiActiveMapPropertyContext/);
-    assert.match(structured, /makePisiMapDatabaseDocuments\(propertyContext\)/);
+    assert.match(structured, /function makePisiMapDatabaseDocuments\(context\)/);
+    assert.match(structured, /materializePisiStructuredDocuments\(propertyContext\)/);
     assert.doesNotMatch(structured, /ensurePisiSearchIndex/);
     const facade = read('renderer/data/pisi-structured-views.mjs');
     const state = read('renderer/data/pisi-structured-view-state.mjs');
