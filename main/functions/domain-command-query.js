@@ -223,6 +223,13 @@ function installPisiDomainContracts() {
         return result.ok ? { ok: true, operational: result.state } : result;
     });
 
+    registerPisiDomainQuery('project.folder.list.v1', (payload) => {
+        const safeFolderPath = electronIpc.assertProjectPath(payload.folderPath, {
+            type: 'directory'
+        });
+        return projectOperations.safeListFolder(safeFolderPath);
+    });
+
     registerPisiDomainCommand('task.capture.v1', (payload) => {
         const { safeProjectFolder, task } = normalizePisiDomainTaskPayload(payload);
         return taskCapture.quickAddPisiTask(safeProjectFolder, task);
@@ -399,144 +406,20 @@ function installPisiDomainContracts() {
     });
 }
 
-function bindPisiDomainCompatibilityIpc() {
-    ipcMain.removeHandler('project:quick-add-task');
-    ipcMain.handle('project:quick-add-task', (_event, projectFolder, payload = {}) => {
-        return electronIpc.projectOperation(() => {
-            const operation = String(payload?.op || 'add').toLowerCase();
-            if (operation === 'list') {
-                return executePisiDomainQuery('task.list.v1', { projectFolder });
-            }
-            if (operation === 'upsert') {
-                return executePisiDomainCommand('task.upsert.v1', {
-                    projectFolder,
-                    task: payload.task || payload
-                });
-            }
-            if (operation === 'update') {
-                return executePisiDomainCommand('task.update.v1', {
-                    projectFolder,
-                    taskId: payload.taskId || payload.id,
-                    patch: payload.patch || payload.task || {}
-                });
-            }
-            if (operation === 'delete') {
-                return executePisiDomainCommand('task.delete.v1', {
-                    projectFolder,
-                    taskId: payload.taskId || payload.id
-                });
-            }
-            if (operation === 'sync-index') {
-                return executePisiDomainCommand('task.sync-projection.v1', {
-                    projectFolder,
-                    complete: payload.complete,
-                    pruneMissing: payload.pruneMissing,
-                    tasks: payload.tasks
-                });
-            }
-            return executePisiDomainCommand('task.capture.v1', {
-                projectFolder,
-                task: payload
-            });
-        });
+function bindPisiDomainIpc() {
+    ipcMain.removeHandler('pisi:domain-query');
+    ipcMain.handle('pisi:domain-query', (_event, name, payload = {}) => {
+        return electronIpc.projectOperation(() => executePisiDomainQuery(name, payload));
     });
 
-    ipcMain.removeHandler('project:get-pisi-document');
-    ipcMain.handle('project:get-pisi-document', (_event, filePath) => {
-        return electronIpc.projectOperation(() => {
-            return executePisiDomainQuery('document.read.v1', { filePath });
-        });
-    });
-
-    ipcMain.removeHandler('project:list-folder');
-    ipcMain.handle('project:list-folder', (_event, folderPath) => {
-        return electronIpc.projectOperation(() => {
-            recoverPisiDomainProjectIfNeeded();
-            const safeFolderPath = electronIpc.assertProjectPath(folderPath, {
-                type: 'directory'
-            });
-            return projectOperations.safeListFolder(safeFolderPath);
-        });
-    });
-
-    ipcMain.removeHandler('project:list-map-nodes');
-    ipcMain.handle('project:list-map-nodes', (_event, mapPath) => {
-        return electronIpc.projectOperation(() => {
-            return executePisiDomainQuery('map.projection.v1', { mapPath });
-        });
-    });
-
-    ipcMain.removeHandler('project:upsert-map-connection');
-    ipcMain.handle('project:upsert-map-connection', (_event, mapPath, edge) => {
-        return electronIpc.projectOperation(() => executePisiDomainCommand('map.relationship.upsert.v1', { mapPath, edge }));
-    });
-
-    ipcMain.removeHandler('project:delete-map-connection');
-    ipcMain.handle('project:delete-map-connection', (_event, mapPath, edgeId) => {
-        return electronIpc.projectOperation(() => executePisiDomainCommand('map.relationship.delete.v1', { mapPath, edgeId }));
-    });
-
-    ipcMain.removeHandler('project:reparent-map-node');
-    ipcMain.handle('project:reparent-map-node', (_event, mapPath, childId, parentId) => {
-        return electronIpc.projectOperation(() => executePisiDomainCommand('map.relationship.reparent.v1', { mapPath, childId, parentId }));
-    });
-
-    ipcMain.removeHandler('project:save-map-layout');
-    ipcMain.handle('project:save-map-layout', (_event, mapPath, nodeLayouts) => {
-        return electronIpc.projectOperation(() => executePisiDomainCommand('map.layout.save.v1', { mapPath, nodes: nodeLayouts }));
-    });
-
-    ipcMain.removeHandler('project:save-map-camera');
-    ipcMain.handle('project:save-map-camera', (_event, mapPath, camera = {}) => {
-        return electronIpc.projectOperation(() =>
-            executePisiDomainCommand('map.camera.save.v1', {
-                mapPath,
-                camera,
-                operationalPayload: camera?.operationalPayload
-            })
-        );
-    });
-
-    ipcMain.removeHandler('project:detach-map-reference');
-    ipcMain.handle('project:detach-map-reference', (_event, mapPath, nodeId) => {
-        return electronIpc.projectOperation(() => executePisiDomainCommand('map.reference.detach.v1', { mapPath, nodeId }));
-    });
-
-    ipcMain.removeHandler('project:create-node-under-map');
-    ipcMain.handle('project:create-node-under-map', (_event, mapPath) => {
-        return electronIpc.projectOperation(() => executePisiDomainCommand('map.node.create.v1', { mapPath }));
-    });
-
-    ipcMain.removeHandler('project:rename-pisi-file');
-    ipcMain.handle('project:rename-pisi-file', (_event, oldPath, newBaseName) => {
-        return electronIpc.projectOperation(() => executePisiDomainCommand('project.item.rename.v1', { oldPath, newBaseName }));
-    });
-
-    ipcMain.removeHandler('project:move-pisi-item');
-    ipcMain.handle('project:move-pisi-item', (_event, sourcePath, destinationFolderPath, options) => {
-        return electronIpc.projectOperation(() =>
-            executePisiDomainCommand('project.item.move.v1', { sourcePath, destinationFolderPath, options: options || {} })
-        );
-    });
-
-    ipcMain.removeHandler('project:delete-pisi-file');
-    ipcMain.handle('project:delete-pisi-file', (_event, targetPath) => {
-        return electronIpc.asyncProjectOperation(() => executePisiDomainCommand('project.item.delete.v1', { targetPath }));
-    });
-
-    ipcMain.removeHandler('project:delete-node-from-map');
-    ipcMain.handle('project:delete-node-from-map', (_event, nodePath) => {
-        return electronIpc.asyncProjectOperation(() => executePisiDomainCommand('project.item.delete.v1', { targetPath: nodePath }));
-    });
-
-    ipcMain.removeHandler('project:delete-path');
-    ipcMain.handle('project:delete-path', (_event, targetPath) => {
-        return electronIpc.asyncProjectOperation(() => executePisiDomainCommand('project.path.delete.v1', { targetPath }));
+    ipcMain.removeHandler('pisi:domain-command');
+    ipcMain.handle('pisi:domain-command', (_event, name, payload = {}) => {
+        return electronIpc.asyncProjectOperation(() => executePisiDomainCommand(name, payload));
     });
 }
 
 installPisiDomainContracts();
-bindPisiDomainCompatibilityIpc();
+bindPisiDomainIpc();
 
 const moduleApi = {
     PISI_DOMAIN_CONTRACT_VERSION,
@@ -546,8 +429,7 @@ const moduleApi = {
     registerPisiDomainQuery,
     registerPisiDomainCommand,
     executePisiDomainQuery,
-    executePisiDomainCommand,
-    bindPisiDomainCompatibilityIpc
+    executePisiDomainCommand
 };
 
 registerMainModule('main.domainCommandQuery', moduleApi);
