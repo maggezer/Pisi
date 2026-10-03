@@ -19,7 +19,7 @@ test('Electron E2E suite includes real node and map persistence workflows', () =
 
     for (const marker of [
         "document.getElementById('add-node-btn')",
-        "document.getElementById('center-node-editor-save')",
+        "key: 's', ctrlKey: true",
         'Input.insertText',
         'closeTab(cdp, nodePath)',
         "document.getElementById('add-map-btn')",
