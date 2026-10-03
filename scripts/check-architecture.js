@@ -362,7 +362,7 @@ try {
 
 for (const file of walk('renderer', '.mjs')) {
     const lines = read(file).split(/\r?\n/).length;
-    const limit = file === 'renderer/tags/pisi-todo-third-release.mjs' ? 1050 : 1000;
+    const limit = file.startsWith('renderer/tags/pisi-todo-third-') ? 650 : 1000;
     if (file !== 'renderer/runtime.mjs' && lines > limit) {
         errors.push('Renderer module too large (' + lines + '): ' + file);
     }

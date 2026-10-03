@@ -7,6 +7,13 @@ const test = require('node:test');
 
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+const todoThirdFiles = [
+    'renderer/tags/pisi-todo-third-release.mjs',
+    'renderer/tags/pisi-todo-third-model.mjs',
+    'renderer/tags/pisi-todo-third-query.mjs',
+    'renderer/tags/pisi-todo-third-ui.mjs'
+];
+const readTodoThirdSource = () => todoThirdFiles.map(read).join('\n');
 
 test('üçüncü sürüm modülü ve görünüm stilleri bootstrap zincirine bağlıdır', () => {
     const bootstrap = read('renderer/bootstrap.mjs');
@@ -14,11 +21,18 @@ test('üçüncü sürüm modülü ve görünüm stilleri bootstrap zincirine ba�
 
     assert.match(bootstrap, /pisi-todo-third-release\.mjs/);
     assert.match(bootstrap, /pisi-todo-third-release-guard\.mjs/);
+    const facade = read('renderer/tags/pisi-todo-third-release.mjs');
+    assert.match(facade, /pisi-todo-third-model\.mjs/);
+    assert.match(facade, /pisi-todo-third-query\.mjs/);
+    assert.match(facade, /pisi-todo-third-ui\.mjs/);
+    for (const file of todoThirdFiles) {
+        assert.ok(read(file).split(/\r?\n/).length <= 650, `${file} yeniden büyük bir domain dosyasına dönüştü`);
+    }
     assert.match(styles, /50-productivity\.css/);
 });
 
 test('görev bağımlılıkları kalıcı metadata, çoklu seçim ve döngü koruması sağlar', () => {
-    const source = read('renderer/tags/pisi-todo-third-release.mjs');
+    const source = readTodoThirdSource();
 
     assert.match(source, /data(?:set)?\.pisiTodoParent/);
     assert.match(source, /dep:/);
@@ -31,7 +45,7 @@ test('görev bağımlılıkları kalıcı metadata, çoklu seçim ve döngü kor
 });
 
 test('kanban, takvim, zaman çizelgesi ve istatistik görünümü sağlanır', () => {
-    const source = read('renderer/tags/pisi-todo-third-release.mjs');
+    const source = readTodoThirdSource();
     const css = read('styles/50-productivity.css');
 
     assert.match(source, /renderPisiTodoThirdKanban/);
@@ -46,7 +60,7 @@ test('kanban, takvim, zaman çizelgesi ve istatistik görünümü sağlanır', (
 });
 
 test('hatırlatmalar görev etiketi sınıfında saklanır ve tek seferlik bildirilir', () => {
-    const source = read('renderer/tags/pisi-todo-third-release.mjs');
+    const source = readTodoThirdSource();
 
     assert.match(source, /pisi-todo-reminder-/);
     assert.match(source, /due-morning/);
@@ -68,7 +82,7 @@ test('yeniden çizim koruması alternatif görünümde mutation döngüsünü en
 });
 
 test('üçüncü sürüm alt görev sistemini yeniden getirmez', () => {
-    const source = read('renderer/tags/pisi-todo-third-release.mjs');
+    const source = readTodoThirdSource();
 
     assert.doesNotMatch(source, /addPisiSubtask/);
     assert.doesNotMatch(source, /pisi-mission-add-child/);
