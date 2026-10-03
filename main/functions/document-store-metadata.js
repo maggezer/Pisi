@@ -98,10 +98,8 @@ function ensurePisiFileMetadata(filePath, options = {}) {
             changed = true;
         }
 
-        const normalizedConnections = normalizeNodeConnectionTypes(data.pisi.connectionTypes);
-
-        if (JSON.stringify(data.pisi.connectionTypes) !== JSON.stringify(normalizedConnections)) {
-            data.pisi.connectionTypes = normalizedConnections;
+        if (Object.prototype.hasOwnProperty.call(data.pisi, 'connectionTypes')) {
+            delete data.pisi.connectionTypes;
             changed = true;
         }
     }
