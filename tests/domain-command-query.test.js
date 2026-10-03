@@ -10,6 +10,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 const mainDomain = read('main/functions/domain-command-query.js');
 const rendererDomain = read('renderer/domain/pisi-domain-client.mjs');
+const preload = read('preload.js');
 
 test('domain contract command ve query registrylerini ayrı ve versioned tutar', () => {
     assert.match(mainDomain, /PISI_DOMAIN_CONTRACT_VERSION\s*=\s*1/);
@@ -54,10 +55,19 @@ test('operational mutation camera yan etkisinden ayrı domain commanddır', () =
     assert.match(mainDomain, /executePisiDomainCommand\(\s*'map\.operational\.mutate\.v1'/);
 });
 
-test('compatibility IPC core task ve map çağrılarını domain dispatchere reroute eder', () => {
+test('main ve preload yalnız canonical domain IPC transportunu kullanır', () => {
+    assert.match(mainDomain, /removeHandler\('pisi:domain-query'\)/);
+    assert.match(mainDomain, /handle\('pisi:domain-query'/);
+    assert.match(mainDomain, /removeHandler\('pisi:domain-command'\)/);
+    assert.match(mainDomain, /handle\('pisi:domain-command'/);
+    assert.match(preload, /exposeInMainWorld\('pisiDomain'/);
+    assert.match(preload, /invokePisiDomainQuery/);
+    assert.match(preload, /invokePisiDomainCommand/);
+
     for (const channel of [
         'project:quick-add-task',
         'project:get-pisi-document',
+        'project:list-folder',
         'project:list-map-nodes',
         'project:upsert-map-connection',
         'project:delete-map-connection',
@@ -65,13 +75,16 @@ test('compatibility IPC core task ve map çağrılarını domain dispatchere rer
         'project:save-map-layout',
         'project:save-map-camera',
         'project:detach-map-reference',
-        'project:create-node-under-map'
+        'project:create-node-under-map',
+        'project:rename-pisi-file',
+        'project:move-pisi-item',
+        'project:delete-pisi-file',
+        'project:delete-node-from-map',
+        'project:delete-path'
     ]) {
-        assert.match(mainDomain, new RegExp(`removeHandler\\('${channel}'\\)`));
-        assert.match(mainDomain, new RegExp(`handle\\('${channel}'`));
+        assert.equal(mainDomain.includes(channel), false, channel);
+        assert.equal(preload.includes(channel), false, channel);
     }
-    assert.match(mainDomain, /executePisiDomainQuery/);
-    assert.match(mainDomain, /executePisiDomainCommand/);
 });
 
 test('domain path guard aktif proje kökü ve typed document yollarını zorunlu kılar', () => {
@@ -82,13 +95,13 @@ test('domain path guard aktif proje kökü ve typed document yollarını zorunlu
     assert.match(mainDomain, /extensions:\s*\['\.map', '\.node'\]/);
 });
 
-test('renderer domain client semantic isimleri compatibility transporttan ayırır', () => {
+test('renderer domain client canonical preload transportunu doğrudan kullanır', () => {
     assert.match(rendererDomain, /registerModule\('domain\.client'/);
-    assert.match(rendererDomain, /case 'task\.capture\.v1'/);
-    assert.match(rendererDomain, /case 'task\.sync-projection\.v1'/);
-    assert.match(rendererDomain, /case 'map\.relationship\.upsert\.v1'/);
-    assert.match(rendererDomain, /case 'map\.operational\.mutate\.v1'/);
-    assert.match(rendererDomain, /case 'map\.node\.create-linked\.v1'/);
+    assert.match(rendererDomain, /window\.pisiDomain/);
+    assert.match(rendererDomain, /getPisiDomainApi\(\)\.query/);
+    assert.match(rendererDomain, /getPisiDomainApi\(\)\.command/);
+    assert.match(rendererDomain, /map\.node\.create-linked\.v1/);
+    assert.doesNotMatch(rendererDomain, /window\.pisiProject|quickAddTask|upsertMapConnection|deleteMapConnection/);
 });
 
 test('Quick Add UI storage API yerine task capture domain commandını çağırır', () => {
