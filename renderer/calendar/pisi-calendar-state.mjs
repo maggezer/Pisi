@@ -14,13 +14,6 @@ const pisiCalendarRuntimeState = {
         return window.pisiI18n?.translate?.(value) ?? String(value ?? '');
     }
 
-    let calendarDragState = null;
-    let pisiCalendarRuntimeState.calendarStateProjectKey = null;
-    const lastDiarySyncSignatureByProject = new Map();
-    let diarySyncInProgress = false;
-    let pisiCalendarRuntimeState.pendingDiarySyncRequest = null;
-    let pisiCalendarRuntimeState.diaryDatesRefreshRequestId = 0;
-
     function normalizeCalendarProjectKey(folderPath) {
         const normalized = String(folderPath || '')
             .replace(/[\\/]+/g, '/')
