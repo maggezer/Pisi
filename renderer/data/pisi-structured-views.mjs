@@ -1,9 +1,5 @@
 import { registerModule } from '../core/module-registry.mjs';
-import {
-    collectPisiMapPropertyDefinitions,
-    getPisiActiveMapPropertyContext,
-    getPisiNodePropertyMapContext
-} from './pisi-structured-view-helpers.mjs';
+import { collectPisiMapPropertyDefinitions, getPisiActiveMapPropertyContext, getPisiNodePropertyMapContext } from './pisi-structured-view-helpers.mjs';
 import {
     appendPisiPropertyRow,
     collectPisiPropertyRows,

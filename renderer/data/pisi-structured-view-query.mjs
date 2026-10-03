@@ -1,8 +1,4 @@
-import {
-    collectPisiPropertyColumns,
-    filterPisiPropertyDocuments,
-    materializePisiDatabaseDocuments
-} from './pisi-properties-core.mjs';
+import { collectPisiPropertyColumns, filterPisiPropertyDocuments, materializePisiDatabaseDocuments } from './pisi-properties-core.mjs';
 import { getPisiMapNodeLabel } from './pisi-structured-view-helpers.mjs';
 
 function makePisiMapDatabaseDocuments(context) {
@@ -35,9 +31,4 @@ function collectPisiStructuredPropertyColumns(documents) {
     return collectPisiPropertyColumns(documents);
 }
 
-export {
-    collectPisiStructuredPropertyColumns,
-    filterAndSortPisiStructuredDocuments,
-    makePisiMapDatabaseDocuments,
-    materializePisiStructuredDocuments
-};
+export { collectPisiStructuredPropertyColumns, filterAndSortPisiStructuredDocuments, makePisiMapDatabaseDocuments, materializePisiStructuredDocuments };

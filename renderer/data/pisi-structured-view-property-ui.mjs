@@ -471,10 +471,4 @@ async function renderPisiNodeProperties(container) {
     container.appendChild(section);
 }
 
-export {
-    appendPisiPropertyRow,
-    collectPisiPropertyRows,
-    createPisiPropertyRow,
-    readPisiPropertyControlValue,
-    renderPisiNodeProperties
-};
+export { appendPisiPropertyRow, collectPisiPropertyRows, createPisiPropertyRow, readPisiPropertyControlValue, renderPisiNodeProperties };

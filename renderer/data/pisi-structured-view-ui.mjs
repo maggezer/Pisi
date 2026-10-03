@@ -11,13 +11,7 @@ import {
     filterAndSortPisiStructuredDocuments,
     materializePisiStructuredDocuments
 } from './pisi-structured-view-query.mjs';
-import {
-    applyPisiSavedView,
-    deletePisiSavedView,
-    loadPisiSavedViews,
-    pisiStructuredViewState,
-    savePisiSavedView
-} from './pisi-structured-view-state.mjs';
+import { applyPisiSavedView, deletePisiSavedView, loadPisiSavedViews, pisiStructuredViewState, savePisiSavedView } from './pisi-structured-view-state.mjs';
 
 function makePisiBaseOpenButton(documentRecord) {
     const button = makePisiStructuredButton(documentRecord.title, 'pisi-base-open');
