@@ -142,7 +142,6 @@ function renderPisiOpenTabs() {
 }
 
 async function setupProjectStartup() {
-    const projectModal = document.getElementById('project-modal');
     const modalChooseBtn = document.getElementById('modal-choose-project-btn');
     const changeProjectBtn = document.getElementById('change-project-btn');
 

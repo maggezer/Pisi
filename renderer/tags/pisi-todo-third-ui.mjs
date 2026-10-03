@@ -56,7 +56,7 @@ function makePisiThirdMissionButton(mission, className) {
     return button;
 }
 
-function appendPisiDependencyChipThirdRelease(container, mission, dependency, allMissions) {
+function appendPisiDependencyChipThirdRelease(container, mission, dependency, _allMissions) {
     const chip = document.createElement('span');
     chip.className = 'pisi-third-dependency-chip';
     chip.classList.toggle('completed', dependency?.completed === true);

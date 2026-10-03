@@ -253,7 +253,6 @@ function selectPisiSheetCell(cell, options = {}) {
 }
 
 function selectAllPisiSheetCells(table) {
-    const dimensions = getPisiSheetDimensions(table);
 
     if (!dimensions.rows || !dimensions.cols) return;
 
