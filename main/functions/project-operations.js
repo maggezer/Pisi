@@ -1,7 +1,6 @@
-import { app, BrowserWindow, Menu, ipcMain, dialog, screen, shell } from '../electron-bridge.js';
+import { shell } from '../electron-bridge.js';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
-import * as crypto from 'node:crypto';
 import { registerMainModule } from '../module-registry.js';
 
 function findParentMapPathForNode(nodePath, nodeInfo = null) {

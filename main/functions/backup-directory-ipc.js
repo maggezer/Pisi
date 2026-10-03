@@ -3,11 +3,6 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as backupStorage from './backup-storage.js';
 
-function normalizeBackupTargetKey(targetPath) {
-    const resolved = path.resolve(String(targetPath || ''));
-    return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
-}
-
 function listCentralizedPisiAtomicBackups(projectFolder, filePath = null) {
     try {
         if (!filePath) {

@@ -1,11 +1,9 @@
-import { app, BrowserWindow, Menu, ipcMain, dialog, screen, shell, nativeImage } from '../electron-bridge.js';
+import { app, BrowserWindow, Menu, dialog, shell, nativeImage } from '../electron-bridge.js';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
-import * as crypto from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { registerMainModule } from '../module-registry.js';
-import * as backupStorage from './backup-storage.js';
 import { getWindowsAppIdentity, ensureWindowsDevShortcut } from './windows-app-identity.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

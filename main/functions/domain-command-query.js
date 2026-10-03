@@ -1,4 +1,3 @@
-import * as path from 'node:path';
 import { ipcMain } from '../electron-bridge.js';
 import { modules, registerMainModule } from '../module-registry.js';
 

@@ -116,7 +116,7 @@ function normalizePropertyValue(type, value) {
     return String(value ?? '').slice(0, 10000);
 }
 
-function validatePropertyValue(type, value, options = {}) {
+function validatePropertyValue(type, value, _options = {}) {
     const resolvedType = normalizePropertyType(type);
     if (!PISI_PROPERTY_TYPE_SET.has(resolvedType)) {
         return { ok: false, code: 'PROPERTY_TYPE_INVALID', normalized: value };

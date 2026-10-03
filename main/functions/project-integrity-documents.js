@@ -3,7 +3,6 @@ import * as path from 'node:path';
 import { modules } from '../module-registry.js';
 import * as shared from './project-integrity-shared.js';
 
-const filesystemCore = modules['main.filesystemCore'];
 const mapSemanticCore = modules['main.mapSemanticCore'];
 const mapOperationalStore = modules['main.mapOperationalStore'];
 
