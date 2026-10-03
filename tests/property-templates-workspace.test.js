@@ -7,9 +7,18 @@ const test = require('node:test');
 
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+const structuredViewFiles = [
+    'renderer/data/pisi-structured-views.mjs',
+    'renderer/data/pisi-structured-view-state.mjs',
+    'renderer/data/pisi-structured-view-helpers.mjs',
+    'renderer/data/pisi-structured-view-query.mjs',
+    'renderer/data/pisi-structured-view-property-ui.mjs',
+    'renderer/data/pisi-structured-view-ui.mjs'
+];
+const readStructuredViews = () => structuredViewFiles.map(read).join('\n');
 
 test('property drawer yalnız alt-sağ template seçici ile add/save ikonlarını gösterir', () => {
-    const structured = read('renderer/data/pisi-structured-views.mjs');
+    const structured = readStructuredViews();
     const styles = read('styles/58-workspaces-platform.css');
     const legacyStyles = read('styles/58-workspaces-platform.css');
     const icon = read('assets/properties/template.svg');

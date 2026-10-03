@@ -7,9 +7,18 @@ const test = require('node:test');
 
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+const structuredViewFiles = [
+    'renderer/data/pisi-structured-views.mjs',
+    'renderer/data/pisi-structured-view-state.mjs',
+    'renderer/data/pisi-structured-view-helpers.mjs',
+    'renderer/data/pisi-structured-view-query.mjs',
+    'renderer/data/pisi-structured-view-property-ui.mjs',
+    'renderer/data/pisi-structured-view-ui.mjs'
+];
+const readStructuredViews = () => structuredViewFiles.map(read).join('\n');
 
 test('Rollup ana toolbar üzerinden property paneli açmadan node bloğu ekler', () => {
-    const structured = read('renderer/data/pisi-structured-views.mjs');
+    const structured = readStructuredViews();
     const toolbar = read('renderer/editor/pisi-editor-unified-toolbar.mjs');
     const propertiesUi = read('renderer/data/pisi-node-properties-ui.mjs');
     const rollupBlocks = read('renderer/data/pisi-rollup-blocks.mjs');
