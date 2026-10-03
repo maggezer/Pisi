@@ -1,6 +1,5 @@
 /* P3.7 consolidated bundle: compatibility fixes kept in original cascade order. */
 
-
 /* ===== Source: styles/92-interaction-fixes.css ===== */
 /* Node modal must own the entire application surface, including the titlebar. */
 html body #pisi-app-menu {
@@ -30,7 +29,6 @@ html body > .pisi-office-popover {
     z-index: 32000;
     pointer-events: auto;
 }
-
 
 /* ===== Source: styles/93-node-action-icons.css ===== */
 /* Dedicated Pisi node and map action assets. */
@@ -107,7 +105,6 @@ html body > .pisi-office-popover {
     cursor: text;
 }
 
-
 /* ===== Source: styles/94-editor-word-behavior.css ===== */
 /* Word-like text state and collapsible heading affordances. */
 .pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading1'],
@@ -175,7 +172,6 @@ html body > .pisi-office-popover {
     background: linear-gradient(180deg, #5c411f 0%, #473319 100%);
     box-shadow: inset 0 0 0 1px rgba(255, 190, 90, 0.18);
 }
-
 
 /* ===== Source: styles/95-right-search-calendar-fix.css ===== */
 /* Right panel content and calendar ownership.
@@ -259,7 +255,6 @@ html body > .pisi-office-popover {
     overscroll-behavior: contain;
 }
 
-
 /* ===== Source: styles/96-light-white-surfaces.css ===== */
 /* Light theme: keep the map canvas and right-panel tab strip on the same clean white surface used elsewhere. */
 html[data-pisi-theme='light'] body #workspace,
@@ -271,7 +266,6 @@ html[data-pisi-theme='light'] body #map-canvas {
 html[data-pisi-theme='light'] body #right-panel > #right-panel-tabs {
     background: #ffffff;
 }
-
 
 /* ===== Source: styles/97-unified-editor-command-menu.css ===== */
 /* Unified '/' and '..' editor command menu. */
@@ -398,7 +392,6 @@ body.pisi-light-theme #pisi-tag-menu .pisi-unified-command-option .pisi-tag-opti
     color: #66707c;
 }
 
-
 /* ===== Source: styles/98-unified-editor-formatting.css ===== */
 #pisi-tag-menu .pisi-unified-command-option.format .pisi-tag-option-code {
     color: #d8b4fe;
@@ -413,14 +406,12 @@ body.pisi-light-theme #pisi-tag-menu .pisi-unified-command-option.format .pisi-t
     color: #7c3aed;
 }
 
-
 /* ===== Source: styles/99-editor-whitespace.css ===== */
 /* Rich-text whitespace must occupy real layout width so repeated spaces move the caret. */
 .pisi-rich-editor .pisi-editor-block,
 .pisi-rich-editor .pisi-typing-style {
     white-space: break-spaces;
 }
-
 
 /* ===== Source: styles/100-map-task-count-badge.css ===== */
 .map-node-box > .map-node-open {
@@ -459,7 +450,6 @@ html[data-pisi-theme='light'] .pisi-map-task-count-badge {
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
 }
 
-
 /* ===== Source: styles/101-node-modal-close.css ===== */
 #node-modal > #node-modal-header {
     position: relative;
@@ -495,7 +485,6 @@ html[data-pisi-theme='light'] .pisi-map-task-count-badge {
     outline-offset: -3px;
 }
 
-
 /* ===== Source: styles/102-light-map-node-selection.css ===== */
 html[data-pisi-theme='light'] body .map-node-box.selected {
     border-color: var(--pisi-theme-accent, #f39c12);
@@ -503,7 +492,6 @@ html[data-pisi-theme='light'] body .map-node-box.selected {
         0 0 0 2px rgb(243 156 18 / 25%),
         0 8px 24px var(--pisi-theme-shadow);
 }
-
 
 /* ===== Source: styles/103-map-edge-menu.css ===== */
 .map-edge-menu-trigger {
@@ -722,7 +710,6 @@ html[data-pisi-theme='light'] .pisi-map-edge-menu-separator {
 html[data-pisi-theme='light'] .pisi-map-edge-menu-delete {
     color: #a83232;
 }
-
 
 /* ===== Source: styles/104-toolbar-data-stack.css ===== */
 .pisi-unified-toolbar > .pisi-toolbar-section.pisi-toolbar-section-excel {

@@ -17,14 +17,12 @@ const expectedImports = [
     './styles/65-shared-ui.css',
     './styles/90-themes.css',
     './styles/92-compatibility.css',
-    './styles/105-feature-polish.css',
+    './styles/105-feature-polish.css'
 ];
 
 test('global CSS uses the consolidated bundle manifest', () => {
     const source = fs.readFileSync(stylePath, 'utf8');
-    const imports = [...source.matchAll(/@import url\('([^']+)'\) layer\(pisi\);/g)].map(
-        (match) => match[1],
-    );
+    const imports = [...source.matchAll(/@import url\('([^']+)'\) layer\(pisi\);/g)].map((match) => match[1]);
 
     assert.deepEqual(imports, expectedImports);
     assert.equal(new Set(imports).size, imports.length);

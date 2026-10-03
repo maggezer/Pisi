@@ -1,6 +1,5 @@
 /* P3.7 consolidated bundle: feature polish and late overrides in original cascade order. */
 
-
 /* ===== Source: styles/105-bundled-vincendo.css ===== */
 /* Optional bundled Vincendo editor/map font. The application default is set separately. */
 @font-face {
@@ -10,7 +9,6 @@
     font-weight: 400;
     font-display: swap;
 }
-
 
 /* ===== Source: styles/106-todo-filter-toolbar.css ===== */
 /* Right-panel Todo: icon filters on the left of the top action row. */
@@ -285,7 +283,6 @@ html[data-pisi-theme='light'] #right-tab-missions .pisi-missions-status-filter o
     color: #20252c;
 }
 
-
 /* ===== Source: styles/107-verdana-default.css ===== */
 /* Pisi global UI typeface. */
 html,
@@ -302,7 +299,6 @@ textarea {
 .pisi-rich-editor {
     font-family: Verdana, Geneva, Tahoma, sans-serif;
 }
-
 
 /* ===== Source: styles/108-todo-completed-icon.css ===== */
 /* Right-panel Todo: completed visibility is an icon-only toggle. */
@@ -343,7 +339,6 @@ html[data-pisi-theme='light'] #right-tab-missions :is(.pisi-missions-completed-t
     box-shadow: none;
 }
 
-
 /* ===== Source: styles/109-light-map-zoom.css ===== */
 html[data-pisi-theme='light'] body #map-zoom-in.map-zoom-btn,
 html[data-pisi-theme='light'] body #map-zoom-out.map-zoom-btn {
@@ -364,7 +359,6 @@ html[data-pisi-theme='light'] body #map-zoom-out.map-zoom-btn:focus-visible {
     border-color: #d88400;
     outline: none;
 }
-
 
 /* ===== Source: styles/110-tutorial.css ===== */
 .pisi-tutorial-overlay {
@@ -582,7 +576,6 @@ html[data-pisi-theme='light'] body .pisi-tutorial-page-card {
     }
 }
 
-
 /* ===== Source: styles/111-mindmap-focus-menu.css ===== */
 #pisi-map-operational-depth {
     display: none;
@@ -667,12 +660,10 @@ body.pisi-light-theme .pisi-map-focus-degree-menu button[aria-checked='true'] {
     background: rgba(70, 112, 185, 0.1);
 }
 
-
 /* ===== Source: styles/112-mindmap-task-scope-retired.css ===== */
 #pisi-map-operational-scope {
     display: none;
 }
-
 
 /* ===== Source: styles/113-mindmap-relationship-menu.css ===== */
 #pisi-map-operational-relation {
@@ -715,7 +706,6 @@ body.pisi-light-theme #right-tab-mindmap #pisi-map-operational-relationship-butt
     background: rgba(70, 112, 185, 0.1);
 }
 
-
 /* ===== Source: styles/114-right-panel-inner-width.css ===== */
 /* Give every right-panel tab a little more usable horizontal space. */
 #main-layout > #right-panel {
@@ -729,7 +719,6 @@ body.pisi-light-theme #right-tab-mindmap #pisi-map-operational-relationship-butt
         grid-template-columns: 220px minmax(260px, 1fr) 280px;
     }
 }
-
 
 /* ===== Source: styles/115-mindmap-actions-single-row.css ===== */
 /* Keep the seven Mind Map primary actions on one compact row. */
@@ -761,7 +750,6 @@ body.pisi-light-theme #right-tab-mindmap #pisi-map-operational-relationship-butt
     justify-self: end;
 }
 
-
 /* ===== Source: styles/116-right-panel-top-polish.css ===== */
 /* Give the Todo top action row a little breathing room from the tab strip. */
 #right-tab-missions.right-tab-page > .pisi-todo-panel-actions-host {
@@ -790,7 +778,6 @@ body.pisi-light-theme #right-tab-mindmap #pisi-map-operational-relationship-butt
     display: none;
 }
 
-
 /* ===== Source: styles/117-center-divider-polish.css ===== */
 /* Keep the center tab strip visually continuous with the workspace. */
 #center-panel > #center-toolbar {
@@ -802,7 +789,6 @@ body.pisi-light-theme #right-tab-mindmap #pisi-map-operational-relationship-butt
     border-top: 0;
     box-shadow: none;
 }
-
 
 /* ===== Source: styles/118-center-dynamic-divider.css ===== */
 /* Dynamic center divider: only reaches the last open center tab. */
@@ -824,7 +810,6 @@ body.pisi-light-theme #right-tab-mindmap #pisi-map-operational-relationship-butt
 html[data-pisi-theme='light'] #center-panel > div#center-toolbar::after {
     background: var(--pisi-theme-border);
 }
-
 
 /* ===== Source: styles/119-todo-priority-card-display.css ===== */
 /* Compact Todo card: priority + task + completion on top, controls below. */
@@ -1039,7 +1024,6 @@ html[data-pisi-theme='light'] #center-panel > div#center-toolbar::after {
     color: var(--text-secondary, #888);
     background: transparent;
 }
-
 
 /* ===== Source: styles/120-calendar-light-dock-fix.css ===== */
 /* Calendar light-theme polish and drag/dock visibility. */

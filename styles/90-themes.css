@@ -1,6 +1,5 @@
 /* P3.7 consolidated bundle: theme definitions and light-theme tuning. */
 
-
 /* ===== Source: styles/90-themes.css ===== */
 html[data-pisi-theme='dark'] {
     --pisi-theme-accent: #f39c12;
@@ -670,7 +669,6 @@ html[data-pisi-theme='light'] .pisi-theme-option[aria-pressed='true'] {
         grid-template-columns: 1fr;
     }
 }
-
 
 /* ===== Source: styles/91-light-theme-tuning.css ===== */
 html[data-pisi-theme='light']:root {

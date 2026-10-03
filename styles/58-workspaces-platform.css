@@ -1,6 +1,5 @@
 /* P3.7 consolidated bundle: workspace/platform surfaces and system panels. */
 
-
 /* ===== Source: styles/58-roadmap-workspace.css ===== */
 .pisi-command-center-overlay {
     position: fixed;
@@ -1648,7 +1647,6 @@ html[data-pisi-theme='light'] .pisi-quick-add-error {
     }
 }
 
-
 /* ===== Source: styles/59-platform-system.css ===== */
 /* Block editor and command registry */
 
@@ -2369,7 +2367,6 @@ html[data-pisi-theme='light'] .pisi-quick-add-error {
     }
 }
 
-
 /* ===== Source: styles/60-customization.css ===== */
 /* Dock içindeki takvim artık ayrı pencere gibi görünmesin */
 .pisi-calendar-dock-zone.has-calendar > .pisi-calendar {
@@ -2778,7 +2775,6 @@ html[data-pisi-theme='light'] .pisi-quick-add-error {
     letter-spacing: 0.04em;
 }
 
-
 /* ===== Source: styles/61-trash.css ===== */
 .pisi-trash-page {
     display: flex;
@@ -2968,7 +2964,6 @@ html[data-theme='light'] .pisi-trash-kind {
         justify-content: flex-start;
     }
 }
-
 
 /* ===== Source: styles/62-project-integrity.css ===== */
 .pisi-integrity-expanded {
@@ -3224,7 +3219,6 @@ html[data-theme='light'] .pisi-integrity-issue-row {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
-
 
 /* ===== Source: styles/63-sync.css ===== */
 .pisi-sync-settings {

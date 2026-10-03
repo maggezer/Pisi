@@ -1,6 +1,5 @@
 /* P3.7 consolidated bundle: shared toolbar, document ink and reusable components. */
 
-
 /* ===== Source: styles/65-unified-toolbar.css ===== */
 .pisi-editor-toolbar {
     min-height: 102px;
@@ -738,7 +737,6 @@
     user-select: none;
 }
 
-
 /* ===== Source: styles/66-document-ink.css ===== */
 /* Transparent document-level ink layer used when no embedded canvas exists. */
 .pisi-rich-editor:has(> .pisi-document-ink-layer) {
@@ -774,7 +772,6 @@
     cursor: crosshair;
     user-select: none;
 }
-
 
 /* ===== Source: styles/70-components.css ===== */
 .pisi-canvas-block {

@@ -1,6 +1,5 @@
 /* P3.7 consolidated bundle: shell, tree/map and panel layout. */
 
-
 /* ===== Source: styles/01-app-menu.css ===== */
 #pisi-app-menu {
     position: relative;
@@ -104,7 +103,6 @@
     border-radius: 0 0 5px 5px;
     padding-top: 9px;
 }
-
 
 /* ===== Source: styles/10-tree-and-map.css ===== */
 .pisi-rename-input {
@@ -588,7 +586,6 @@
     opacity: 1;
     transform: scale(1);
 }
-
 
 /* ===== Source: styles/20-map-interactions.css ===== */
 #arrow-colevel path {
@@ -1293,7 +1290,6 @@
     color: #8ee8b5;
     font-weight: 750;
 }
-
 
 /* ===== Source: styles/30-panels-and-tabs.css ===== */
 .pisi-user-tag::before {

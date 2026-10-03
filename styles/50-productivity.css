@@ -1,6 +1,5 @@
 /* P3.7 consolidated bundle: productivity, Todo, search and links. */
 
-
 /* ===== Source: styles/50-tags-and-missions.css ===== */
 .pisi-mission-card.completed .pisi-mission-text {
     text-decoration: line-through;
@@ -753,7 +752,6 @@ body.pisi-calendar-is-dragging .pisi-calendar-dock-zone:hover::after {
     border-left-color: #e74c3c;
 }
 
-
 /* ===== Source: styles/55-todo-third-release.css ===== */
 /* TODO THIRD RELEASE */
 
@@ -1244,7 +1242,6 @@ body.pisi-calendar-is-dragging .pisi-calendar-dock-zone:hover::after {
         grid-template-columns: 1fr;
     }
 }
-
 
 /* ===== Source: styles/56-todo-workspace.css ===== */
 /* DEDICATED TODO WORKSPACE */
@@ -1760,7 +1757,6 @@ html[data-pisi-theme='light'] #workspace.pisi-todo-workspace-active {
         grid-template-columns: repeat(2, minmax(130px, 1fr));
     }
 }
-
 
 /* ===== Source: styles/57-search-and-links.css ===== */
 @keyframes pisi-search-map-pulse {
@@ -2376,7 +2372,6 @@ html[data-pisi-theme='light'] #workspace.pisi-todo-workspace-active {
         transition: none;
     }
 }
-
 
 /* ===== Source: styles/57-search-navigation-enhancements.css ===== */
 .pisi-global-search-filters {
