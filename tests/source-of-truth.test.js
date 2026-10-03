@@ -93,13 +93,28 @@ test('semantic relationship otoritesi proje storeudur; map yalnız presentation 
 });
 
 test('node connectionTypes semantic store üzerinden yalnız query-time projectiondır', () => {
+    const relationshipStore = read('main/functions/relationship-store.js');
     const mapCore = read('main/functions/map-semantic-core.js');
     const hooks = read('main/functions/map-semantic-operation-hooks.js');
+    const projectOperations = read('main/functions/project-operations.js');
+    const domainCommands = read('main/functions/domain-command-query.js');
 
     assert.match(mapCore, /derivePisiConnectionTypesFromRelationships/);
     assert.match(mapCore, /node\.metadata\.connectionTypes = byId\.get\(node\.id\)/);
     assert.match(hooks, /applyPisiDerivedConnectionTypes/);
     assert.doesNotMatch(hooks, /writePisiDocumentsTransaction/);
+
+    assert.match(relationshipStore, /deletePisiSemanticRelationshipsForNodes/);
+    assert.match(projectOperations, /deletePisiCanonicalRelationshipsForNodes/);
+    assert.match(projectOperations, /relationshipViews/);
+    assert.doesNotMatch(
+        projectOperations,
+        /removeLegacyNodeRelationship|mapInfo\.data\.map\.edges|data\.pisi\.connectionTypes/
+    );
+    assert.match(
+        domainCommands,
+        /getPisiMapSemanticProjection\(\s*result\.parentMapPath\s*\)/
+    );
 });
 
 test('map node konumu yalnız map layout kaydına yazılır', () => {
