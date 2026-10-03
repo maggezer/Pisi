@@ -245,10 +245,10 @@ try {
         );
     });
 
-    const saveClicked = await cdp.evaluate(
-        "(() => { const button = document.getElementById('center-node-editor-save'); if (!button) return false; button.click(); return true; })()"
+    const saveShortcutDispatched = await cdp.evaluate(
+        "(() => { const editor = document.getElementById('center-node-editor-content'); if (!editor) return false; editor.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 's', ctrlKey: true })); return true; })()"
     );
-    if (!saveClicked) throw new Error('Center node Save button is missing.');
+    if (!saveShortcutDispatched) throw new Error('Center node Ctrl+S shortcut could not be dispatched.');
 
     await waitUntil('node content persisted to disk', async () => {
         try {
