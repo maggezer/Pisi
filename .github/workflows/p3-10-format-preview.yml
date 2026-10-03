@@ -1,0 +1,24 @@
+name: P3.10 Format Preview
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Show Prettier diff
+        run: |
+          npx prettier scripts/electron-user-workflow-e2e.mjs tests/electron-user-workflow-e2e-coverage.test.js pisi-update.md package.json .github/workflows/electron-e2e.yml --write
+          git diff -- scripts/electron-user-workflow-e2e.mjs tests/electron-user-workflow-e2e-coverage.test.js pisi-update.md package.json .github/workflows/electron-e2e.yml
