@@ -103,11 +103,11 @@ test('atomic journal findings do not trigger nested recovery inside integrity re
     assert.doesNotMatch(repairs, /recoverPisiAtomicMutations/);
 });
 
-test('graph-wide connection cache repair is review-only and routed to derived rebuild', () => {
-    assert.match(documents, /node-derived-connections-stale/);
-    assert.match(documents, /safety:\s*'review'[\s\S]*?action:\s*'rebuild-derived-state'/);
+test('query-time connection projections are never audited or rebuilt as persisted cache', () => {
+    assert.doesNotMatch(documents, /node-derived-connections-stale|connectionTypes cache/);
+    assert.doesNotMatch(repairs, /connectionTypes|derivePisiConnectionTypesFromRelationships/);
     assert.match(repairs, /rebuildDerivedState/);
-    assert.match(repairs, /Array\.from\(inventory\.nodeById\.keys\(\)\)/);
+    assert.match(repairs, /normalizePisiRelationshipViews/);
 });
 
 test('derived rebuild explicitly preserves task and relationship authorities', () => {
