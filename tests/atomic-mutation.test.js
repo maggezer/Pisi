@@ -199,9 +199,11 @@ test('rename and move task-reference failure is an atomic failure rather than pa
 
 test('startup project listing gates visible state behind atomic recovery', () => {
     const domain = fs.readFileSync(path.join(__dirname, '..', 'main/functions/domain-command-query.js'), 'utf8');
-    assert.match(domain, /removeHandler\('project:list-folder'\)/);
+    assert.match(domain, /registerPisiDomainQuery\('project\.folder\.list\.v1'/);
+    assert.match(domain, /handle\('pisi:domain-query'/);
     assert.match(domain, /recoverPisiDomainProjectIfNeeded\(\)/);
     assert.match(domain, /projectOperations\.safeListFolder/);
+    assert.equal(domain.includes('project:list-folder'), false);
 });
 
 test('atomic journal is loaded before mutating storage services', () => {
