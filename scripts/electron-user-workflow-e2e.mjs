@@ -362,7 +362,7 @@ try {
             JSON.stringify(mapPath) +
             "); const node = Array.isArray(listed?.nodes) ? listed.nodes.find((item) => item?.id === " +
             JSON.stringify(movedNode.id) +
-            "); return node ? { ok: listed.ok === true, fullPath: node.fullPath, layout: node.layout } : null; })()"
+            ") : null; return node ? { ok: listed.ok === true, fullPath: node.fullPath, layout: node.layout } : null; })()"
     );
 
     if (!persistedMapNode?.ok || path.resolve(persistedMapNode.fullPath) !== path.resolve(movedNode.fullPath)) {
