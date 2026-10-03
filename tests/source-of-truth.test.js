@@ -111,10 +111,7 @@ test('node connectionTypes semantic store üzerinden yalnız query-time projecti
         projectOperations,
         /removeLegacyNodeRelationship|mapInfo\.data\.map\.edges|data\.pisi\.connectionTypes/
     );
-    assert.match(
-        domainCommands,
-        /getPisiMapSemanticProjection\(\s*result\.parentMapPath\s*\)/
-    );
+    assert.match(domainCommands, /getPisiMapSemanticProjection\(\s*result\.parentMapPath\s*\)/);
 });
 
 test('map node konumu yalnız map layout kaydına yazılır', () => {
