@@ -27,5 +27,5 @@ jobs:
             - name: Install full Electron dependencies
               run: npm ci
 
-            - name: Run Electron startup E2E
+            - name: Run Electron E2E suite
               run: xvfb-run -a npm run test:e2e

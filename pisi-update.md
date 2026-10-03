@@ -1,5 +1,16 @@
 # PISI Güncelleme Takip Dosyası
 
+## 03-10-2026 — P3.10 E2E kullanıcı senaryoları
+
+- Electron E2E artık smoke/startup kontrollerine ek olarak gerçek kullanıcı
+  akışını çalıştırıyor: node oluşturma, editörde yazma, kaydetme, sekmeyi
+  kapatıp yeniden açınca içeriğin diskten geri gelmesi.
+- Map oluşturma, standalone node'u tree drag/drop ile map altına taşıma, map
+  node'unu sürükleyerek yerleşimi değiştirme ve map kapatılıp yeniden
+  açıldığında hem üyeliğin hem koordinatların korunması doğrulanıyor.
+- Senaryo ayrı `electron-user-workflow-e2e.mjs` dosyasında tutuluyor;
+  mevcut ayrıntılı smoke E2E ile ardışık çalışıyor.
+
 ## 03-10-2026 — P3.7 CSS konsolidasyonu / CI düzeltmesi
 
 - Önceki konsolidasyondaki 51 global CSS dosyasının içeriği ve yükleme sırası
