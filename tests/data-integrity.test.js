@@ -114,6 +114,50 @@ test('edge onarımı self-loop, tekrar, ikinci parent ve döngüyü güvenli tem
     );
 });
 
+test('node silme canonical relationship store içinden tüm bağlı ilişkileri topluca kaldırır', () => {
+    let writtenRelationships = null;
+    const source = `
+        ${extractFunction(mainSource, 'deletePisiSemanticRelationshipsForNodes')}
+        globalThis.deleteRelationshipsForNodes = deletePisiSemanticRelationshipsForNodes;
+    `;
+    const context = {
+        Array,
+        Set,
+        pathSecurity: {
+            normalizePisiId(value) {
+                const id = String(value || '');
+                return /^node_[A-Za-z0-9_-]+$/.test(id) ? id : '';
+            }
+        },
+        readPisiRelationshipStore() {
+            return {
+                ok: true,
+                relationships: [
+                    { id: 'edge_ab', sourceId: 'node_a', targetId: 'node_b' },
+                    { id: 'edge_bc', sourceId: 'node_b', targetId: 'node_c' },
+                    { id: 'edge_cd', sourceId: 'node_c', targetId: 'node_d' }
+                ]
+            };
+        },
+        writePisiRelationshipStore(_projectFolder, relationships) {
+            writtenRelationships = relationships;
+            return { ok: true, relationships };
+        }
+    };
+
+    vm.createContext(context);
+    vm.runInContext(source, context);
+
+    const result = context.deleteRelationshipsForNodes('/project', ['node_b']);
+
+    assert.equal(result.ok, true);
+    assert.equal(result.removed, 2);
+    assert.deepEqual(plain(result.removedRelationshipIds), ['edge_ab', 'edge_bc']);
+    assert.deepEqual(plain(writtenRelationships), [
+        { id: 'edge_cd', sourceId: 'node_c', targetId: 'node_d' }
+    ]);
+});
+
 test('layout ve kamera sayıları güvenli aralıklara sıkıştırılır', () => {
     const api = loadMainHelpers(
         ['finiteNumberInRange', 'normalizePisiNodeLayout', 'normalizePisiMapCamera'],
