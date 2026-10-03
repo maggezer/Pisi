@@ -91,7 +91,7 @@ test('görev süreleri ve blok türleri sanitizer tarafından korunur', () => {
 test('alt görev hiyerarşisi kaldırılmış, görev bağımlılıkları korunmuştur', () => {
     const secondRelease = read('renderer/tags/pisi-todo-second-release.mjs');
     const utils = read('renderer/tags/pisi-todo-utils.mjs');
-    const thirdRelease = read('renderer/tags/pisi-todo-third-release.mjs');
+    const thirdRelease = [read('renderer/tags/pisi-todo-third-release.mjs'), read('renderer/tags/pisi-todo-third-model.mjs')].join('\n');
 
     assert.doesNotMatch(secondRelease, /subtask:/);
     assert.doesNotMatch(secondRelease, /pisi-mission-add-child/);
