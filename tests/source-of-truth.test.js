@@ -59,10 +59,7 @@ test('diary canonical tasklardan üretilen read-only projectiondır ve task HTML
 });
 
 test('progress canonical task projectionundan türetilir', () => {
-    const todo = [
-        read('renderer/tags/pisi-todo-third-release.mjs'),
-        read('renderer/tags/pisi-todo-third-ui.mjs')
-    ].join('\n');
+    const todo = [read('renderer/tags/pisi-todo-third-release.mjs'), read('renderer/tags/pisi-todo-third-ui.mjs')].join('\n');
 
     assert.match(todo, /getPisiThirdAllMissions\(\)/);
     assert.match(todo, /completed\s*=\s*missions\.filter/);
