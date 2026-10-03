@@ -7,11 +7,21 @@ const test = require('node:test');
 
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+const rendererRuntimeFiles = [
+    'renderer/runtime.mjs',
+    'renderer/runtime-lifecycle.mjs',
+    'renderer/runtime-events.mjs',
+    'renderer/calendar/pisi-calendar-state.mjs',
+    'renderer/calendar/pisi-calendar-ui.mjs',
+    'renderer/calendar/pisi-calendar-diary.mjs',
+    'renderer/calendar/pisi-calendar-runtime.mjs'
+];
+const readRendererRuntime = () => rendererRuntimeFiles.map(read).join('\n');
 
 test('calendar drag exposes equal left and right dock targets slightly larger than the calendar', () => {
     const base = read('styles/92-compatibility.css');
     const fix = read('styles/105-feature-polish.css');
-    const runtime = read('renderer/runtime.mjs');
+    const runtime = readRendererRuntime();
     const entry = read('style.css');
 
     assert.match(base, /#right-panel > \.pisi-calendar-dock-zone\[data-calendar-dock-zone=["\']right["\']\] \{[\s\S]*?height: 0;[\s\S]*?overflow: hidden;/);

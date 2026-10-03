@@ -362,14 +362,22 @@ try {
 
 for (const file of walk('renderer', '.mjs')) {
     const lines = read(file).split(/\r?\n/).length;
-    const limit = file.startsWith('renderer/tags/pisi-todo-third-') || file.startsWith('renderer/data/pisi-structured-view') ? 650 : 1000;
-    if (file !== 'renderer/runtime.mjs' && lines > limit) {
+    const limit =
+        file.startsWith('renderer/tags/pisi-todo-third-') ||
+        file.startsWith('renderer/data/pisi-structured-view') ||
+        file.startsWith('renderer/calendar/pisi-calendar-')
+            ? 650
+            : file.startsWith('renderer/runtime')
+              ? 300
+              : 1000;
+    if (lines > limit) {
         errors.push('Renderer module too large (' + lines + '): ' + file);
     }
 }
 for (const file of walk('main/functions', '.js')) {
     const lines = read(file).split(/\r?\n/).length;
-    if (lines > 1100) errors.push('Main domain module too large (' + lines + '): ' + file);
+    const limit = file.startsWith('main/functions/document-store') ? 650 : 1100;
+    if (lines > limit) errors.push('Main domain module too large (' + lines + '): ' + file);
 }
 if (read('main.mjs').split(/\r?\n/).length > 40) errors.push('main.mjs is not a thin bootstrap.');
 
