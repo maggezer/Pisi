@@ -336,9 +336,7 @@ function deletePisiSemanticRelationship(projectFolder, relationshipId) {
 function deletePisiSemanticRelationshipsForNodes(projectFolder, nodeIds = []) {
     try {
         const safeNodeIds = new Set(
-            (Array.isArray(nodeIds) ? nodeIds : [nodeIds])
-                .map((nodeId) => pathSecurity.normalizePisiId(nodeId, '.node'))
-                .filter(Boolean)
+            (Array.isArray(nodeIds) ? nodeIds : [nodeIds]).map((nodeId) => pathSecurity.normalizePisiId(nodeId, '.node')).filter(Boolean)
         );
         if (!safeNodeIds.size) {
             return { ok: false, error: 'Geçerli node kimliği bulunamadı.' };

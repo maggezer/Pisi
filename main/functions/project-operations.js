@@ -62,9 +62,7 @@ function cleanupDeletedNodeFromParentMap(parentMapPath, deletedNodeId, deletionT
     });
 
     const removedRelationshipIdSet = new Set(
-        (Array.isArray(removedRelationshipIds) ? removedRelationshipIds : [])
-            .map((relationshipId) => String(relationshipId || ''))
-            .filter(Boolean)
+        (Array.isArray(removedRelationshipIds) ? removedRelationshipIds : []).map((relationshipId) => String(relationshipId || '')).filter(Boolean)
     );
 
     if (Array.isArray(mapInfo.data.map.relationshipViews) && removedRelationshipIdSet.size) {
@@ -304,12 +302,7 @@ async function deletePisiFile(targetPath) {
             };
         }
 
-        const cleanupResult = cleanupDeletedNodeFromParentMap(
-            parentMapPath,
-            deletedNodeId,
-            transaction,
-            relationshipCleanup.removedRelationshipIds
-        );
+        const cleanupResult = cleanupDeletedNodeFromParentMap(parentMapPath, deletedNodeId, transaction, relationshipCleanup.removedRelationshipIds);
 
         await shell.trashItem(path.resolve(transaction.directoryPath));
 
@@ -328,10 +321,7 @@ async function deletePisiFile(targetPath) {
 
         return {
             ok: false,
-            error:
-                rollbackErrors.length > 0
-                    ? `${error.message} Geri alma tamamlanamadı: ${rollbackErrors.join(' | ')}`
-                    : error.message,
+            error: rollbackErrors.length > 0 ? `${error.message} Geri alma tamamlanamadı: ${rollbackErrors.join(' | ')}` : error.message,
             rolledBack: Boolean(transaction) && rollbackErrors.length === 0
         };
     }

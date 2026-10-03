@@ -111,10 +111,7 @@ test('node connectionTypes semantic store üzerinden yalnız query-time projecti
     assert.match(relationshipStore, /deletePisiSemanticRelationshipsForNodes/);
     assert.match(projectOperations, /deletePisiCanonicalRelationshipsForNodes/);
     assert.match(projectOperations, /relationshipViews/);
-    assert.doesNotMatch(
-        projectOperations,
-        /removeLegacyNodeRelationship|mapInfo\.data\.map\.edges|data\.pisi\.connectionTypes/
-    );
+    assert.doesNotMatch(projectOperations, /removeLegacyNodeRelationship|mapInfo\.data\.map\.edges|data\.pisi\.connectionTypes/);
     assert.match(domainCommands, /getPisiMapSemanticProjection\(\s*result\.parentMapPath\s*\)/);
 
     assert.doesNotMatch(filesystemCore, /base\.pisi\.connectionTypes|resetNodeConnectionTypes/);

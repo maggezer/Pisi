@@ -153,9 +153,7 @@ test('node silme canonical relationship store içinden tüm bağlı ilişkileri 
     assert.equal(result.ok, true);
     assert.equal(result.removed, 2);
     assert.deepEqual(plain(result.removedRelationshipIds), ['edge_ab', 'edge_bc']);
-    assert.deepEqual(plain(writtenRelationships), [
-        { id: 'edge_cd', sourceId: 'node_c', targetId: 'node_d' }
-    ]);
+    assert.deepEqual(plain(writtenRelationships), [{ id: 'edge_cd', sourceId: 'node_c', targetId: 'node_d' }]);
 });
 
 test('node document writer connectionTypes projectionını diske yazmaz', () => {
