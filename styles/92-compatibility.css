@@ -1,0 +1,733 @@
+/* P3.7 consolidated bundle: compatibility fixes kept in original cascade order. */
+
+
+/* ===== Source: styles/92-interaction-fixes.css ===== */
+/* Node modal must own the entire application surface, including the titlebar. */
+html body #pisi-app-menu {
+    z-index: 7000;
+}
+
+html body #pisi-app-menu-dropdown {
+    z-index: 7001;
+}
+
+html body #node-modal-overlay {
+    z-index: 30000;
+    pointer-events: auto;
+    background: rgba(0, 0, 0, 0.66);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+}
+
+/* The shared #tag / command popup lives outside the editor/modal DOM. */
+html body #pisi-tag-menu {
+    z-index: 31000;
+    pointer-events: auto;
+}
+
+/* Toolbar popovers are portalled to body; keep them above an open node modal. */
+html body > .pisi-office-popover {
+    z-index: 32000;
+    pointer-events: auto;
+}
+
+
+/* ===== Source: styles/93-node-action-icons.css ===== */
+/* Dedicated Pisi node and map action assets. */
+.add-node-under-map-btn,
+.delete-tree-item-btn {
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 17px 17px;
+    width: 22px;
+    height: 22px;
+    flex-basis: 22px;
+}
+
+.add-node-under-map-btn {
+    background-image: url('../assets/icons/create-node.svg');
+}
+
+.add-node-under-map-btn:hover,
+.add-node-under-map-btn:focus-visible {
+    background-image: url('../assets/icons/create-node.svg');
+    background-color: rgba(243, 156, 18, 0.16);
+    border-color: #f39c12;
+    color: #ffb347;
+    outline: none;
+}
+
+.tree-row-actions:not(:has(.add-node-under-map-btn)) .delete-tree-item-btn {
+    background-image: url('../assets/icons/delete-node.svg');
+}
+
+.tree-row-actions:has(.add-node-under-map-btn) .delete-tree-item-btn {
+    background-image: url('../assets/icons/delete-map.svg');
+}
+
+.pisi-project-action-icon {
+    width: 22px;
+    height: 22px;
+    display: block;
+    flex: 0 0 22px;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    pointer-events: none;
+}
+
+.pisi-project-action-icon-map {
+    background-image: url('../assets/icons/create-map.svg');
+}
+
+.pisi-project-action-icon-node {
+    background-image: url('../assets/icons/create-node.svg');
+}
+
+.pisi-project-action-icon-project {
+    background-image: url('../assets/icons/change-project.svg');
+}
+
+.add-node-under-map-btn .tree-action-img,
+.add-node-under-map-btn .tree-action-fallback,
+.delete-tree-item-btn .tree-action-fallback {
+    display: none;
+}
+
+/* The tree keeps the regular arrow cursor, including draggable/action rows. */
+#left-panel,
+#left-panel * {
+    cursor: default;
+}
+
+#left-panel input,
+#left-panel textarea,
+#left-panel [contenteditable='true'],
+#left-panel [contenteditable='plaintext-only'] {
+    cursor: text;
+}
+
+
+/* ===== Source: styles/94-editor-word-behavior.css ===== */
+/* Word-like text state and collapsible heading affordances. */
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading1'],
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading2'],
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading3'] {
+    position: relative;
+    padding-left: 24px;
+}
+
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading1']::before,
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading2']::before,
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading3']::before {
+    content: '▾';
+    position: absolute;
+    left: 3px;
+    top: 0.08em;
+    width: 17px;
+    color: #8e9198;
+    font-size: 0.68em;
+    line-height: 1.5;
+    text-align: center;
+    pointer-events: none;
+    user-select: none;
+}
+
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block.pisi-heading-collapsed::before {
+    content: '▸';
+    color: #f39c12;
+}
+
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block.pisi-heading-section-hidden {
+    display: none;
+}
+
+.pisi-rich-editor.pisi-block-system > h1.pisi-editor-block[data-pisi-block-type='heading1'] {
+    margin: 0.62em 0 0.36em;
+    color: var(--pisi-node-header-color);
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.pisi-rich-editor.pisi-block-system > h2.pisi-editor-block[data-pisi-block-type='heading2'] {
+    margin: 0.58em 0 0.34em;
+    color: var(--pisi-node-header-color);
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1.22;
+}
+
+.pisi-rich-editor.pisi-block-system > h3.pisi-editor-block[data-pisi-block-type='heading3'] {
+    margin: 0.54em 0 0.32em;
+    color: var(--pisi-node-header-color);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.24;
+}
+
+.pisi-rich-editor .pisi-typing-style:empty {
+    display: inline;
+}
+
+.pisi-editor-toolbar .pisi-ribbon-btn[aria-pressed='true'] {
+    border-color: #f39c12;
+    background: linear-gradient(180deg, #5c411f 0%, #473319 100%);
+    box-shadow: inset 0 0 0 1px rgba(255, 190, 90, 0.18);
+}
+
+
+/* ===== Source: styles/95-right-search-calendar-fix.css ===== */
+/* Right panel content and calendar ownership.
+   The base panel grid lives in 00-foundation.css; this file only owns the
+   search/calendar behavior layered on top of that structure. */
+#right-panel > #right-panel-tabs {
+    min-width: 0;
+    min-height: 0;
+}
+
+#right-panel > #right-panel-content {
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Only the selected right-panel page participates in layout. */
+#right-panel-content > .right-tab-page {
+    display: none;
+    height: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+}
+
+#right-panel-content > .right-tab-page.active {
+    display: block;
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* An empty dock zone must not consume panel height. The runtime can still dock
+   into the right panel through its bottom-edge fallback hit target. */
+#right-panel > .pisi-calendar-dock-zone[data-calendar-dock-zone='right'] {
+    grid-row: 3;
+    align-self: end;
+    width: 100%;
+    height: 0;
+    min-height: 0;
+    margin-top: 0;
+    flex: none;
+    overflow: hidden;
+}
+
+/* Once the calendar is actually docked, its row has an explicit, protected
+   height. Search/content can shrink only inside the middle grid row. */
+#right-panel > .pisi-calendar-dock-zone[data-calendar-dock-zone='right'].has-calendar {
+    height: min(300px, 35vh);
+    min-height: 180px;
+    margin-top: 10px;
+}
+
+/* Global Search fills only the middle grid row. */
+#right-tab-search.pisi-search-page.active {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#right-tab-search .pisi-right-search-panel {
+    flex: 1 1 0;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+#right-tab-search .pisi-right-search-results {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+}
+
+
+/* ===== Source: styles/96-light-white-surfaces.css ===== */
+/* Light theme: keep the map canvas and right-panel tab strip on the same clean white surface used elsewhere. */
+html[data-pisi-theme='light'] body #workspace,
+html[data-pisi-theme='light'] body #map-canvas {
+    background: radial-gradient(var(--pisi-theme-grid) 1px, transparent 1px), #ffffff;
+    background-size: 28px 28px;
+}
+
+html[data-pisi-theme='light'] body #right-panel > #right-panel-tabs {
+    background: #ffffff;
+}
+
+
+/* ===== Source: styles/97-unified-editor-command-menu.css ===== */
+/* Unified '/' and '..' editor command menu. */
+#pisi-tag-menu.pisi-unified-command-menu {
+    position: fixed;
+    z-index: 31000;
+    width: min(460px, calc(100vw - 24px));
+    max-height: min(430px, calc(100vh - 32px));
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 6px;
+    border: 1px solid #454851;
+    border-radius: 11px;
+    background: #25262a;
+    box-shadow: 0 18px 52px rgb(0 0 0 / 52%);
+    pointer-events: auto;
+}
+
+#pisi-tag-menu.pisi-unified-command-menu[hidden] {
+    display: none;
+}
+
+.pisi-unified-command-category {
+    position: sticky;
+    top: -6px;
+    z-index: 1;
+    margin: 3px -1px 4px;
+    padding: 7px 9px 5px;
+    color: #8e949e;
+    background: #25262a;
+    border-bottom: 1px solid rgb(255 255 255 / 6%);
+    font-size: 10px;
+    font-weight: 850;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    user-select: none;
+}
+
+#pisi-tag-menu .pisi-unified-command-option {
+    width: 100%;
+    min-height: 38px;
+    display: grid;
+    grid-template-columns: minmax(120px, 0.8fr) minmax(0, 1.4fr);
+    align-items: center;
+    gap: 12px;
+    padding: 7px 9px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #d9dce2;
+    text-align: left;
+    cursor: pointer;
+}
+
+#pisi-tag-menu .pisi-unified-command-option:hover,
+#pisi-tag-menu .pisi-unified-command-option.active {
+    background: rgb(243 156 18 / 13%);
+    box-shadow: inset 2px 0 #f39c12;
+}
+
+#pisi-tag-menu .pisi-unified-command-option .pisi-tag-option-code {
+    min-width: 0;
+    overflow: hidden;
+    color: #f4b34b;
+    font-family: 'Cascadia Code', Consolas, monospace;
+    font-size: 12px;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#pisi-tag-menu .pisi-unified-command-option.latex .pisi-tag-option-code {
+    color: #8bc8ff;
+}
+
+#pisi-tag-menu .pisi-unified-command-option.todo-start .pisi-tag-option-code,
+#pisi-tag-menu .pisi-unified-command-option.todo-done .pisi-tag-option-code {
+    color: #7fd89a;
+}
+
+#pisi-tag-menu .pisi-unified-command-option.user .pisi-tag-option-code,
+#pisi-tag-menu .pisi-unified-command-option.new-user .pisi-tag-option-code {
+    color: #9fc8ff;
+}
+
+#pisi-tag-menu .pisi-unified-command-option .pisi-tag-option-desc {
+    min-width: 0;
+    overflow: hidden;
+    color: #a9adb5;
+    font-size: 11px;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+html[data-pisi-theme='light'] #pisi-tag-menu.pisi-unified-command-menu,
+body.pisi-light-theme #pisi-tag-menu.pisi-unified-command-menu {
+    border-color: #c9ced6;
+    background: #ffffff;
+    box-shadow: 0 18px 46px rgb(36 44 55 / 24%);
+}
+
+html[data-pisi-theme='light'] .pisi-unified-command-category,
+body.pisi-light-theme .pisi-unified-command-category {
+    color: #747b86;
+    background: #ffffff;
+    border-bottom-color: rgb(0 0 0 / 7%);
+}
+
+html[data-pisi-theme='light'] #pisi-tag-menu .pisi-unified-command-option,
+body.pisi-light-theme #pisi-tag-menu .pisi-unified-command-option {
+    color: #252a31;
+}
+
+html[data-pisi-theme='light'] #pisi-tag-menu .pisi-unified-command-option:hover,
+html[data-pisi-theme='light'] #pisi-tag-menu .pisi-unified-command-option.active,
+body.pisi-light-theme #pisi-tag-menu .pisi-unified-command-option:hover,
+body.pisi-light-theme #pisi-tag-menu .pisi-unified-command-option.active {
+    background: #fff2dc;
+}
+
+html[data-pisi-theme='light'] #pisi-tag-menu .pisi-unified-command-option .pisi-tag-option-desc,
+body.pisi-light-theme #pisi-tag-menu .pisi-unified-command-option .pisi-tag-option-desc {
+    color: #66707c;
+}
+
+
+/* ===== Source: styles/98-unified-editor-formatting.css ===== */
+#pisi-tag-menu .pisi-unified-command-option.format .pisi-tag-option-code {
+    color: #d8b4fe;
+}
+
+#pisi-tag-menu .pisi-unified-command-category:first-child {
+    margin-top: 0;
+}
+
+html[data-pisi-theme='light'] #pisi-tag-menu .pisi-unified-command-option.format .pisi-tag-option-code,
+body.pisi-light-theme #pisi-tag-menu .pisi-unified-command-option.format .pisi-tag-option-code {
+    color: #7c3aed;
+}
+
+
+/* ===== Source: styles/99-editor-whitespace.css ===== */
+/* Rich-text whitespace must occupy real layout width so repeated spaces move the caret. */
+.pisi-rich-editor .pisi-editor-block,
+.pisi-rich-editor .pisi-typing-style {
+    white-space: break-spaces;
+}
+
+
+/* ===== Source: styles/100-map-task-count-badge.css ===== */
+.map-node-box > .map-node-open {
+    display: none;
+}
+
+.map-node-box[data-node-path] > .pisi-mission-node-badge {
+    display: none;
+}
+
+.pisi-map-task-count-badge {
+    position: absolute;
+    top: 5px;
+    right: 7px;
+    z-index: 5;
+    min-width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    background: #f39c12;
+    color: #1e1e1e;
+    box-shadow: none;
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+}
+
+html[data-pisi-theme='light'] .pisi-map-task-count-badge {
+    border-color: rgba(0, 0, 0, 0.12);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
+}
+
+
+/* ===== Source: styles/101-node-modal-close.css ===== */
+#node-modal > #node-modal-header {
+    position: relative;
+    padding: 0 48px 0 14px;
+}
+
+#node-modal #node-modal-close {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 0 13px 0 8px;
+    background: transparent;
+    box-shadow: none;
+    color: #a8a8a8;
+    font-size: 22px;
+    font-weight: 400;
+    line-height: 1;
+}
+
+#node-modal #node-modal-close:hover {
+    background: rgba(231, 76, 60, 0.14);
+    color: #ffffff;
+}
+
+#node-modal #node-modal-close:focus-visible {
+    outline: 2px solid #f39c12;
+    outline-offset: -3px;
+}
+
+
+/* ===== Source: styles/102-light-map-node-selection.css ===== */
+html[data-pisi-theme='light'] body .map-node-box.selected {
+    border-color: var(--pisi-theme-accent, #f39c12);
+    box-shadow:
+        0 0 0 2px rgb(243 156 18 / 25%),
+        0 8px 24px var(--pisi-theme-shadow);
+}
+
+
+/* ===== Source: styles/103-map-edge-menu.css ===== */
+.map-edge-menu-trigger {
+    opacity: 0;
+    pointer-events: none;
+    transition:
+        opacity 0.12s ease,
+        transform 0.12s ease;
+}
+
+.map-edge-group:hover .map-edge-menu-trigger,
+.map-edge-group.selected .map-edge-menu-trigger {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.map-edge-menu-hit {
+    fill: rgba(45, 45, 48, 0.96);
+    stroke: rgba(243, 156, 18, 0.88);
+    stroke-width: 1.5px;
+    cursor: pointer;
+}
+
+.map-edge-menu-dots {
+    fill: #f5f5f5;
+    font-size: 16px;
+    font-weight: 900;
+    text-anchor: middle;
+    dominant-baseline: central;
+    pointer-events: none;
+    user-select: none;
+}
+
+.map-edge-menu-trigger:hover .map-edge-menu-hit,
+.map-edge-menu-trigger:focus .map-edge-menu-hit,
+.map-edge-menu-trigger[aria-expanded='true'] .map-edge-menu-hit {
+    fill: rgba(58, 58, 62, 1);
+    stroke: #f39c12;
+    stroke-width: 2px;
+}
+
+.map-edge-menu-trigger:focus {
+    outline: none;
+}
+
+.pisi-map-edge-menu {
+    position: fixed;
+    z-index: 16000;
+    width: 206px;
+    display: grid;
+    gap: 4px;
+    padding: 7px;
+    border: 1px solid #4a4a4f;
+    border-radius: 10px;
+    background: rgba(37, 37, 38, 0.98);
+    color: #e8e8e8;
+    box-shadow: 0 16px 42px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+}
+
+.pisi-map-edge-menu-label {
+    padding: 4px 7px 5px;
+    color: #999da4;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.pisi-map-edge-menu-option {
+    width: 100%;
+    min-height: 34px;
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) 18px;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 8px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: transparent;
+    color: #e8e8e8;
+    font:
+        650 12px/1.2 'Segoe UI',
+        Tahoma,
+        sans-serif;
+    text-align: left;
+    cursor: pointer;
+}
+
+.pisi-map-edge-menu-option:hover,
+.pisi-map-edge-menu-option:focus-visible {
+    border-color: rgba(243, 156, 18, 0.55);
+    background: rgba(243, 156, 18, 0.11);
+    outline: none;
+}
+
+.pisi-map-edge-menu-type.current {
+    background: rgba(243, 156, 18, 0.16);
+    color: #ffbd58;
+}
+
+.pisi-map-edge-menu-type.current::after {
+    content: '✓';
+    color: #f39c12;
+    font-size: 13px;
+    font-weight: 900;
+    text-align: center;
+}
+
+.pisi-map-edge-menu-swatch {
+    position: relative;
+    width: 30px;
+    height: 12px;
+    display: block;
+}
+
+.pisi-map-edge-menu-swatch::before {
+    content: '';
+    position: absolute;
+    left: 1px;
+    right: 4px;
+    top: 5px;
+    border-top: 2px solid currentColor;
+}
+
+.pisi-map-edge-menu-swatch::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 2px;
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-left: 6px solid currentColor;
+}
+
+.pisi-map-edge-menu-swatch.down-hub {
+    color: var(--pisi-map-downhub-color);
+}
+
+.pisi-map-edge-menu-swatch.co-level {
+    color: var(--pisi-map-colevel-color);
+}
+
+.pisi-map-edge-menu-swatch.co-level::before {
+    right: 1px;
+}
+
+.pisi-map-edge-menu-swatch.co-level::after {
+    border: 0;
+    left: 0;
+    right: auto;
+    top: 2px;
+    width: 0;
+    height: 0;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    border-right: 6px solid currentColor;
+}
+
+.pisi-map-edge-menu-swatch.stream {
+    color: var(--pisi-map-stream-color);
+}
+
+.pisi-map-edge-menu-separator {
+    height: 1px;
+    margin: 3px 4px;
+    background: #46464b;
+}
+
+.pisi-map-edge-menu-delete {
+    grid-template-columns: 1fr;
+    color: #ff8585;
+}
+
+.pisi-map-edge-menu-delete:hover,
+.pisi-map-edge-menu-delete:focus-visible {
+    border-color: rgba(231, 76, 60, 0.68);
+    background: rgba(231, 76, 60, 0.14);
+}
+
+html[data-pisi-theme='light'] .map-edge-menu-hit {
+    fill: rgba(255, 255, 255, 0.98);
+    stroke: #c97800;
+}
+
+html[data-pisi-theme='light'] .map-edge-menu-dots {
+    fill: #6f4100;
+}
+
+html[data-pisi-theme='light'] .pisi-map-edge-menu {
+    border-color: #c7cdd6;
+    background: rgba(255, 255, 255, 0.98);
+    color: #252a31;
+    box-shadow: 0 16px 36px rgba(31, 38, 48, 0.22);
+}
+
+html[data-pisi-theme='light'] .pisi-map-edge-menu-label {
+    color: #737c88;
+}
+
+html[data-pisi-theme='light'] .pisi-map-edge-menu-option {
+    color: #252a31;
+}
+
+html[data-pisi-theme='light'] .pisi-map-edge-menu-type.current {
+    color: #7d4700;
+    background: #fff0d6;
+}
+
+html[data-pisi-theme='light'] .pisi-map-edge-menu-separator {
+    background: #d8dde4;
+}
+
+html[data-pisi-theme='light'] .pisi-map-edge-menu-delete {
+    color: #a83232;
+}
+
+
+/* ===== Source: styles/104-toolbar-data-stack.css ===== */
+.pisi-unified-toolbar > .pisi-toolbar-section.pisi-toolbar-section-excel {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}

@@ -182,11 +182,17 @@ paketleme ve dokümantasyon başlıklarında yeniden denetlendi.
   Mevcut Paint ve Excel özelliği korunarak ertelendi.
 - **92:** Listelenen kullanılmayan yardımcı fonksiyonlar, özellik kaybı riski
   oluşturmamak için bu toplu düzeltmede silinmedi.
-- **98, 101:** Tam CSS konsolidasyonu ve ana domain dosyalarını daha küçük
-  modüllere bölme ayrı, geniş kapsamlı refactor olarak bırakıldı.
+- **101:** Ana domain dosyalarını daha küçük modüllere bölme ayrı, geniş
+  kapsamlı refactor olarak bırakıldı.
 
 ### Sonradan tamamlanan kalite / release maddeleri
 
+- **98 / P3.7:** Global CSS konsolidasyonu tamamlandı. `style.css` 51 ayrı
+  global import yerine 9 semantik bundle yüklüyor; eski tek-fix numbered CSS
+  parçaları bundle'lara kaynak sırası korunarak taşındı. Renderer altındaki
+  modül-sahipli lazy CSS dosyaları bilinçli olarak ayrı bırakıldı ve yeni
+  `css-consolidation` testi global stil mimarisinin yeniden parçalanmasını
+  engelliyor.
 - **100 / P3.6:** Renderer ve Electron ana süreç domainleri ES module’a geçirildi.
   Uygulama `main.mjs` ile başlıyor; `main/package.json` `type: module` sınırını
   tanımlıyor ve mimari kontrolü ana süreçte `require` / `module.exports`
