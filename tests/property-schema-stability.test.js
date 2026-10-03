@@ -36,10 +36,13 @@ test('normal property save and context IPC are rebound through stable schema lay
 test('schema authority is versioned and does not store per-node values', () => {
     const core = read('main/functions/property-schema-core.js');
     const store = read('main/functions/property-schema-store.js');
+    const mutations = read('main/functions/property-schema-mutations.js');
     assert.match(core, /PISI_PROPERTY_SCHEMA_VERSION = 1/);
     assert.match(core, /\.pisi\/properties\.json/);
     assert.match(store, /definitions:/);
     assert.doesNotMatch(store, /nodeValues|valuesByNode|propertyValues/);
+    assert.doesNotMatch(store, /property-schema-migration|Property migration|nested property schema migration/i);
+    assert.doesNotMatch(mutations, /nested migration|schema migration/i);
 });
 
 test('rename preserves stable ID and type changes are lossless-or-fail project-wide', () => {
