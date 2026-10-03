@@ -262,7 +262,8 @@ function auditTemplateProperties(projectFolder, context, indexes) {
                     {
                         safety: 'review',
                         action: 'register-or-remap-template-property',
-                        description: 'Template property kimliğini mevcut canonical project schema definitionı ile eşleştirin veya yeni definition olarak kaydedin.'
+                        description:
+                            'Template property kimliğini mevcut canonical project schema definitionı ile eşleştirin veya yeni definition olarak kaydedin.'
                     }
                 );
                 continue;
@@ -323,7 +324,8 @@ function auditPisiPropertySchema(projectFolder, context, inventory) {
                 {
                     safety: 'review',
                     action: 'recover-property-schema-authority',
-                    description: 'Canonical schema dosyasını yedek/Version History üzerinden kurtarın veya property verisini açıkça yeniden tanımlayın; node verisinden otomatik schema üretmeyin.'
+                    description:
+                        'Canonical schema dosyasını yedek/Version History üzerinden kurtarın veya property verisini açıkça yeniden tanımlayın; node verisinden otomatik schema üretmeyin.'
                 }
             );
         }

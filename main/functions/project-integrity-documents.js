@@ -554,12 +554,4 @@ function auditDocumentsAndMaps(projectFolder, context, relationships) {
     return inventory;
 }
 
-export {
-    collectDocumentInventory,
-    auditNodeProperties,
-    auditAttachments,
-    resolveMapReference,
-    auditMaps,
-    auditNodeParentMap,
-    auditDocumentsAndMaps
-};
+export { collectDocumentInventory, auditNodeProperties, auditAttachments, resolveMapReference, auditMaps, auditNodeParentMap, auditDocumentsAndMaps };
