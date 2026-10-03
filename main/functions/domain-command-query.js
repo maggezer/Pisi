@@ -336,7 +336,18 @@ function installPisiDomainContracts() {
             type: 'file',
             extensions: ['.map', '.node']
         });
-        return projectOperations.deletePisiFile(safeTargetPath);
+        const result = await projectOperations.deletePisiFile(safeTargetPath);
+        if (!result?.ok || result.type !== 'node' || !result.parentMapPath) {
+            return result;
+        }
+
+        const refreshed = mapSemanticOperations.getPisiMapSemanticProjection(
+            result.parentMapPath
+        );
+        return {
+            ...result,
+            edges: refreshed.ok ? refreshed.edges : []
+        };
     });
 
     registerPisiDomainCommand('project.path.delete.v1', async (payload) => {
