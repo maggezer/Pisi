@@ -14,7 +14,7 @@ test('üçüncü sürüm modülü ve görünüm stilleri bootstrap zincirine ba�
 
     assert.match(bootstrap, /pisi-todo-third-release\.mjs/);
     assert.match(bootstrap, /pisi-todo-third-release-guard\.mjs/);
-    assert.match(styles, /55-todo-third-release\.css/);
+    assert.match(styles, /50-productivity\.css/);
 });
 
 test('görev bağımlılıkları kalıcı metadata, çoklu seçim ve döngü koruması sağlar', () => {
@@ -32,7 +32,7 @@ test('görev bağımlılıkları kalıcı metadata, çoklu seçim ve döngü kor
 
 test('kanban, takvim, zaman çizelgesi ve istatistik görünümü sağlanır', () => {
     const source = read('renderer/tags/pisi-todo-third-release.mjs');
-    const css = read('styles/55-todo-third-release.css');
+    const css = read('styles/50-productivity.css');
 
     assert.match(source, /renderPisiTodoThirdKanban/);
     assert.match(source, /renderPisiTodoThirdCalendar/);

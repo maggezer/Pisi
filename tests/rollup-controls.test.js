@@ -29,7 +29,7 @@ test('Rollup ana toolbar üzerinden property paneli açmadan node bloğu ekler',
 
 test('Rollup blok içinde hesaplanır ve çift tıklamayla yeniden düzenlenir', () => {
     const rollupBlocks = read('renderer/data/pisi-rollup-blocks.mjs');
-    const styles = read('styles/59-platform-system.css');
+    const styles = read('styles/58-workspaces-platform.css');
 
     for (const label of ['Relation özelliği', 'Hedef property', 'Hesaplama', 'Rollup bloğunu düzenle', 'Rollup bloğunu kaydet']) {
         assert.ok(rollupBlocks.includes(label), label);
@@ -85,8 +85,8 @@ test('Rollup yapılandırması node içeriğinde ve Markdown geçişinde korunur
 });
 
 test('Rollup açık ve koyu temada ayrı yüzey renkleri kullanır', () => {
-    const dark = read('styles/59-platform-system.css');
-    const light = read('styles/91-light-theme-tuning.css');
+    const dark = read('styles/58-workspaces-platform.css');
+    const light = read('styles/90-themes.css');
 
     assert.match(dark, /\.pisi-rollup-block-overlay/);
     assert.match(dark, /\.pisi-rollup-block-editor-field > select/);

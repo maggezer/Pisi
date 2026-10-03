@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
+const { readCssSection } = require('./source-bundle');
 
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
@@ -14,13 +15,13 @@ test('özel To-do çalışma alanı bootstrap ve stil zincirine bağlıdır', ()
 
     assert.match(bootstrap, /pisi-todo-workspace\.mjs/);
     assert.match(bootstrap, /pisi-todo-workspace-shield\.mjs/);
-    assert.match(styles, /56-todo-workspace\.css/);
+    assert.match(styles, /50-productivity\.css/);
 });
 
 test('sağ paneldeki başlıksız To-do eylem alanı iki kompakt düğme taşır', () => {
     const html = read('index.html');
     const source = read('renderer/tags/pisi-todo-workspace.mjs');
-    const css = read('styles/56-todo-workspace.css');
+    const css = readCssSection('styles/50-productivity.css', '56-todo-workspace.css');
 
     assert.match(html, /id="pisi-todo-panel-actions-host"/);
     assert.match(source, /getElementById\('pisi-todo-panel-actions-host'\)/);
@@ -50,7 +51,7 @@ test('genel görünümler merkezdeki özel çalışma alanına aktarılır', () 
 
 test('sağ alandaki To-do toolbarı ve görev listesi korunur', () => {
     const source = read('renderer/tags/pisi-todo-workspace.mjs');
-    const css = read('styles/56-todo-workspace.css');
+    const css = readCssSection('styles/50-productivity.css', '56-todo-workspace.css');
 
     assert.match(source, /state\.view = 'list'/);
     assert.match(source, /renderPisiMissionsPanelFirstRelease/);
@@ -70,7 +71,7 @@ test('özel To-do dosyası merkez sekmelerinde açılıp kapatılabilir', () => 
 });
 
 test('To-do çalışma alanı opaktır ve arkadaki merkez yüzeylerini kilitler', () => {
-    const css = read('styles/56-todo-workspace.css');
+    const css = readCssSection('styles/50-productivity.css', '56-todo-workspace.css');
     const shield = read('renderer/tags/pisi-todo-workspace-shield.mjs');
 
     assert.match(css, /background-color: var\(--pisi-todo-bg\)/);
@@ -86,7 +87,7 @@ test('To-do çalışma alanı opaktır ve arkadaki merkez yüzeylerini kilitler'
 });
 
 test('To-do çalışma alanı koyu ve açık tema paletlerini kendi kapsamında uygular', () => {
-    const css = read('styles/56-todo-workspace.css');
+    const css = readCssSection('styles/50-productivity.css', '56-todo-workspace.css');
 
     assert.match(css, /#workspace\.pisi-todo-workspace-active\s*\{[\s\S]*--pisi-todo-bg: #181a1f/);
     assert.match(css, /html\[data-pisi-theme=["\']light["\']\] #workspace\.pisi-todo-workspace-active\s*\{[\s\S]*--pisi-todo-bg: #eceff3/);
@@ -98,7 +99,7 @@ test('To-do çalışma alanı koyu ve açık tema paletlerini kendi kapsamında 
 });
 
 test('To-do görünümleri iki temada okunabilir yüzey ve odak durumları sunar', () => {
-    const css = read('styles/56-todo-workspace.css');
+    const css = readCssSection('styles/50-productivity.css', '56-todo-workspace.css');
 
     assert.match(css, /--pisi-todo-text: #f2f4f7/);
     assert.match(css, /--pisi-todo-muted: #b8c0cb/);

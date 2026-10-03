@@ -106,7 +106,7 @@ test('görev durumları mevcut tamamlanma etiketinden bağımsız tutulur', asyn
 test('..todo ve seçili metin aynı öncelik/tarih akışını kullanır', () => {
     const editor = read('renderer/tags/pisi-tag-editor.mjs');
     const firstRelease = read('renderer/tags/pisi-todo-first-release.mjs');
-    const css = read('styles/20-map-interactions.css');
+    const css = read('styles/10-shell-map-panels.css');
 
     assert.match(editor, /isPisiTodoCommand\(command\)/);
     assert.match(editor, /openPisiTodoPriorityMenu\(editor, command\)/);
@@ -137,7 +137,7 @@ test('görev indeksi node ve map kaynağı ile durum/kaynak metnini taşır', ()
 test('görev kartına tıklama kaynağı açar ve node badge sayıları gösterilir', () => {
     const firstRelease = read('renderer/tags/pisi-todo-first-release.mjs');
     const navigation = read('renderer/tags/pisi-todo-navigation.mjs');
-    const css = read('styles/50-tags-and-missions.css');
+    const css = read('styles/50-productivity.css');
 
     assert.match(firstRelease, /openPisiTagBlockResult\(mission\)/);
     assert.match(firstRelease, /mapTitle.*nodeTitle/s);

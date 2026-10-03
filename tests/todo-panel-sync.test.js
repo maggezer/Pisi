@@ -59,9 +59,9 @@ test('takvim günlükleri normal klasör taramasından ayrı olarak görev indek
 
 test('node açıldığında To-do katmanı kapanır ve tema okunabilirliği korunur', () => {
     const panel = read('renderer/tags/pisi-todo-first-release.mjs');
-    const panelCss = read('styles/50-tags-and-missions.css');
+    const panelCss = read('styles/50-productivity.css');
     const workspace = read('renderer/tags/pisi-todo-workspace.mjs');
-    const workspaceCss = read('styles/56-todo-workspace.css');
+    const workspaceCss = read('styles/50-productivity.css');
 
     assert.match(workspace, /'pisi:active-node-changed'/);
     assert.match(workspace, /event\.detail\?\.reason !== 'center-open'/);

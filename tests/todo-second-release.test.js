@@ -43,7 +43,7 @@ test('tekrar ve manuel sıra metadata alanları indeks ve sanitizer zincirinde k
 test('ikinci sürüm paneli alt görev arayüzü olmadan tekrar, filtre ve sürükle bırak sağlar', () => {
     const source = read('renderer/tags/pisi-todo-second-release.mjs');
     const firstRelease = read('renderer/tags/pisi-todo-first-release.mjs');
-    const css = read('styles/50-tags-and-missions.css');
+    const css = read('styles/50-productivity.css');
 
     assert.doesNotMatch(source, /pisi-mission-add-child/);
     assert.doesNotMatch(source, /pisi-mission-child-progress/);

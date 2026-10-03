@@ -92,9 +92,9 @@ mimari kontrollerini; branding/i18n kontrollerini; `checkJs: true` ile çalışa
 TypeScript tip denetimini; ESLint kurallarını ve otomatik regresyon testlerini
 çalıştırır. Aynı doğrulama `main` push’larında ve pull request’lerde GitHub
 Actions üzerinde de çalışır. CI ayrıca `npm run audit` sonucunu raporlar.
-2 Ekim 2026 tarihli güncel `main` doğrulamasında dependency audit
-**0 vulnerability**, `tsc --checkJs` **0 hata** ve Node regresyon testleri
-**638/638 başarılı** durumdadır.
+3 Ekim 2026 tarihli CSS konsolidasyonu doğrulamasında `npm run validate`
+başarılıdır: `tsc --checkJs` **0 hata**, Node regresyon testleri **643/643 başarılı**.
+2 Ekim 2026 dependency audit sonucu **0 vulnerability**'dir.
 
 ## Arama ve bağlantılar
 

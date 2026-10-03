@@ -4,12 +4,12 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
 const moduleSource = fs.readFileSync(path.join(root, 'renderer/tags/pisi-todo-priority-card-display.mjs'), 'utf8');
-const css = fs.readFileSync(path.join(root, 'styles/119-todo-priority-card-display.css'), 'utf8');
+const css = fs.readFileSync(path.join(root, 'styles/105-feature-polish.css'), 'utf8');
 const bootstrap = fs.readFileSync(path.join(root, 'renderer/bootstrap.mjs'), 'utf8');
 const styleIndex = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
 
 assert.match(bootstrap, /pisi-todo-priority-card-display\.mjs/, 'Todo priority display cleanup should load from bootstrap');
-assert.match(styleIndex, /119-todo-priority-card-display\.css/, 'Todo priority display stylesheet should be loaded');
+assert.match(styleIndex, /105-feature-polish\.css/, 'Todo priority display stylesheet should be loaded');
 assert.match(css, /\.pisi-mission-meta\s*>\s*\.pisi-mission-priority/, 'legacy Priority: N · Label badge should remain hidden');
 assert.match(css, /\.pisi-mission-node/, 'Map and node location should be hidden from Todo task cards immediately');
 assert.match(css, /span:first-child:not\(\.pisi-mission-priority\)/, 'the leading date metadata should be hidden before runtime cleanup');

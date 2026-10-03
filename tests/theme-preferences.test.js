@@ -137,9 +137,9 @@ test('map node fontu ve boyutları Preferences ayarlarından uygulanır', () => 
 test('node kartı tipografi seçicisi okunaklı varsayılan ve iki tema stili sunar', () => {
     const customizations = read('renderer/shell/pisi-customizations.mjs');
     const variables = read('styles/40-editor.css');
-    const mapCss = read('styles/10-tree-and-map.css');
-    const preferencesCss = read('styles/60-customization.css');
-    const lightCss = read('styles/91-light-theme-tuning.css');
+    const mapCss = read('styles/10-shell-map-panels.css');
+    const preferencesCss = read('styles/58-workspaces-platform.css');
+    const lightCss = read('styles/90-themes.css');
     const tr = JSON.parse(read('locales/lang-tr.json')).strings;
     const eng = JSON.parse(read('locales/lang-eng.json')).strings;
 

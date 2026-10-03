@@ -40,3 +40,15 @@ moving them into the global bundles.
 4. Put truly module-local lazy styles beside the renderer module.
 5. Update `tests/css-consolidation.test.mjs` if the global architecture
    intentionally changes.
+
+## Regression tests
+
+Tests read the current bundle path, not a removed pre-consolidation file.
+For checks scoped to one historical source section (especially negative
+assertions), use `readCssSection` from `tests/source-bundle.js`. It reads the
+real bundle and fails if the section marker is missing; it does not recreate
+legacy stylesheets or change production loading. Cascade-order checks within
+a bundle compare the relevant section positions, not the same import twice.
+
+The consolidation tests also protect the global entry point, desktop package
+inclusion and relative asset URLs. Run `npm run validate` after CSS changes.

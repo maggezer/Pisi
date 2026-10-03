@@ -30,15 +30,15 @@ Kalan işler artık kaynak kodundan çok yayın ortamına bağlıdır:
 
 ## Doğrulama durumu
 
-2 Ekim 2026 tarihli güncel `main` doğrulamasında:
+3 Ekim 2026 tarihli CSS konsolidasyonu kaynak doğrulamasında:
 
 - `npm run format:check`: **başarılı**,
-- `npm audit`: **0 vulnerability**,
+- `npm audit` (2 Ekim 2026): **0 vulnerability**,
 - `tsconfig.checkjs.json` içinde `checkJs: true`; `tsc`: **0 hata**,
-- checkJs global üretimi: **1047 runtime-owned identifier**,
+- checkJs global üretimi: **1036 runtime-owned identifier**,
 - architecture ownership: **121 module / 1277 binding**,
-- Node regresyon testleri: **638/638 başarılı**,
-- Electron E2E: **başarılı**.
+- Node regresyon testleri: **643/643 başarılı**,
+- Electron E2E (2 Ekim 2026): **başarılı**.
 
 Sheet Phase 2 kapsamında 300 × 80 güvenlik sınırı, satır/sütun silme, gerçek
 dikdörtgen çoklu seçim, toplu hücre biçimlendirme ve yapısal formül referansı

@@ -10,7 +10,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 test('sol panel proje eylemleri özel SVG ikonlarla gösterilir', () => {
     const html = read('index.html');
-    const css = read('styles/93-node-action-icons.css');
+    const css = read('styles/92-compatibility.css');
     const registry = JSON.parse(read('assets/icons/icons.json'));
 
     assert.match(html, /id="add-map-btn"[^>]*[\s\S]*?pisi-project-action-icon-map/);

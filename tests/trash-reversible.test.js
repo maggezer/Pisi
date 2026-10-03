@@ -16,7 +16,7 @@ const rendererDomain = read('renderer/domain/pisi-domain-client.mjs');
 const rendererTrash = read('renderer/shell/pisi-trash.mjs');
 const bootstrap = read('renderer/bootstrap.mjs');
 const style = read('style.css');
-const trashCss = read('styles/61-trash.css');
+const trashCss = read('styles/58-workspaces-platform.css');
 
 test('project delete commands are rebound to project-local reversible Trash', () => {
     assert.match(domain, /pisiDomainCommands\.set\('project\.item\.delete\.v1'/);
@@ -138,7 +138,7 @@ test('Trash UI ships in both Turkish and English and refreshes the project tree 
 
 test('Trash page and styles are part of bootstrap and layered CSS', () => {
     assert.match(bootstrap, /\.\/shell\/pisi-trash\.mjs/);
-    assert.match(style, /styles\/61-trash\.css/);
+    assert.match(style, /styles\/58-workspaces-platform\.css/);
     assert.match(trashCss, /\.pisi-trash-page/);
     assert.match(trashCss, /html\[data-theme=(?:"light"|'light')\]/);
 });

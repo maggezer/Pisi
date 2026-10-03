@@ -9,7 +9,7 @@ const root = path.resolve(__dirname, '..');
 const read = (relativePath) => fs.readFileSync(path.join(root, relativePath), 'utf8');
 
 test('Verdana is the application and rich-editor default while Vincendo remains available', () => {
-    const css = read('styles/107-verdana-default.css');
+    const css = read('styles/105-feature-polish.css');
     const customization = read('renderer/shell/pisi-customizations.mjs');
     const toolbar = read('renderer/editor/pisi-editor-unified-toolbar.mjs');
 

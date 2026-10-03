@@ -10,8 +10,8 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 test('property drawer yalnız alt-sağ template seçici ile add/save ikonlarını gösterir', () => {
     const structured = read('renderer/data/pisi-structured-views.mjs');
-    const styles = read('styles/58-roadmap-workspace.css');
-    const legacyStyles = read('styles/59-platform-system.css');
+    const styles = read('styles/58-workspaces-platform.css');
+    const legacyStyles = read('styles/58-workspaces-platform.css');
     const icon = read('assets/properties/template.svg');
 
     assert.match(structured, /className = 'pisi-property-footer'/);
@@ -50,7 +50,7 @@ test('Workspace Center Templates sayfası property template oluşturma ve silmey
 });
 
 test('property template yüzeyleri açık/koyu temaya ve iki dile sahiptir', () => {
-    const lightStyles = read('styles/91-light-theme-tuning.css');
+    const lightStyles = read('styles/90-themes.css');
     const tr = JSON.parse(read('locales/lang-tr.json')).strings;
     const eng = JSON.parse(read('locales/lang-eng.json')).strings;
 

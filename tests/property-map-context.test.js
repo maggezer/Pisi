@@ -31,7 +31,7 @@ test('property şeması ve node seçenekleri yalnız aktif node mapinden alını
 
 test('property adı önerisi türü devralır, değeri temizler ve ikon aksiyonları kullanır', () => {
     const structured = read('renderer/data/pisi-structured-views.mjs');
-    const css = read('styles/58-roadmap-workspace.css');
+    const css = read('styles/58-workspaces-platform.css');
 
     assert.match(structured, /className = 'pisi-property-suggestions'/);
     assert.match(structured, /normalized\.type = definition\.type/);

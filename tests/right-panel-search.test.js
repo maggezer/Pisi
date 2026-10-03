@@ -52,9 +52,9 @@ test('Links dahil dinamik sekmeler her tıklamada güncel durumdan seçilir', ()
 });
 
 test('sağ arama yüzeyi koyu ve açık tema stillerine sahiptir', () => {
-    const searchCss = read('styles/57-search-and-links.css');
-    const enhancementCss = read('styles/57-search-navigation-enhancements.css');
-    const lightCss = read('styles/91-light-theme-tuning.css');
+    const searchCss = read('styles/50-productivity.css');
+    const enhancementCss = read('styles/50-productivity.css');
+    const lightCss = read('styles/90-themes.css');
 
     assert.match(searchCss, /\.pisi-right-search-input-row/);
     assert.match(searchCss, /\.pisi-right-search-result\.selected/);

@@ -6,7 +6,7 @@ const path = require('node:path');
 const test = require('node:test');
 
 const root = path.resolve(__dirname, '..');
-const interactionCss = fs.readFileSync(path.join(root, 'styles/92-interaction-fixes.css'), 'utf8');
+const interactionCss = fs.readFileSync(path.join(root, 'styles/92-compatibility.css'), 'utf8');
 const popoverSource = fs.readFileSync(path.join(root, 'renderer/editor/pisi-editor-toolbar-popovers.mjs'), 'utf8');
 
 function readZIndex(selectorPattern) {

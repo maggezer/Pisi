@@ -10,7 +10,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 test('sağ To-do başlığı eşit kare, sağa yaslı ve yalnız ikonlu eylemleri taşır', () => {
     const workspace = read('renderer/tags/pisi-todo-workspace.mjs');
-    const css = read('styles/56-todo-workspace.css');
+    const css = read('styles/50-productivity.css');
 
     assert.match(workspace, /pisi-todo-panel-actions/);
     assert.match(workspace, /id = 'pisi-todo-quick-add'/);
@@ -31,7 +31,7 @@ test('sağ To-do başlığı eşit kare, sağa yaslı ve yalnız ikonlu eylemler
 test('Tasks sekmesi çalışma merkezinden tamamen kaldırılır ve Quick Add modalda kalır', () => {
     const capture = read('renderer/productivity/pisi-quick-capture.mjs');
     const commandCenter = read('renderer/shell/pisi-command-center.mjs');
-    const css = [read('styles/58-roadmap-workspace.css'), read('styles/90-themes.css'), read('styles/91-light-theme-tuning.css')].join('\n');
+    const css = [read('styles/58-workspaces-platform.css'), read('styles/90-themes.css'), read('styles/90-themes.css')].join('\n');
 
     assert.match(capture, /function ensurePisiQuickAddModal/);
     assert.match(capture, /async function openPisiQuickAddModal/);
@@ -74,7 +74,7 @@ test('Ctrl+M görev ekleme modalını açar ve kısayol sayfasında okunur gör�
 });
 
 test('görev ekleme modalı koyu ve açık temalarda ayrı, okunabilir paletler kullanır', () => {
-    const css = read('styles/58-roadmap-workspace.css');
+    const css = read('styles/58-workspaces-platform.css');
 
     assert.match(css, /\.pisi-quick-add-overlay \{[\s\S]*--pisi-quick-modal-bg: #20242b/);
     assert.match(css, /\.pisi-quick-add-overlay\[hidden\]/);

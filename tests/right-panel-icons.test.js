@@ -33,7 +33,7 @@ test('altı ana sağ panel sekmesi yalnız özel ikonlarla gösterilir', () => {
 test('blok grafiği sağ panelden ve Workspace Centerdan tamamen kaldırılmıştır', () => {
     const bootstrap = read('renderer/bootstrap.mjs');
     const manifest = read('renderer/module-manifest.json');
-    const css = read('styles/20-map-interactions.css');
+    const css = read('styles/10-shell-map-panels.css');
 
     assert.doesNotMatch(bootstrap, /pisi-block-graph/);
     assert.doesNotMatch(manifest, /search\.blockGraph|pisi-block-graph/);
@@ -43,7 +43,7 @@ test('blok grafiği sağ panelden ve Workspace Centerdan tamamen kaldırılmış
 });
 
 test('sağ panel sekmeleri kare, sıralı ve ortalanmıştır', () => {
-    const css = read('styles/20-map-interactions.css');
+    const css = read('styles/10-shell-map-panels.css');
 
     assert.match(css, /#right-panel-tabs \{[\s\S]*justify-content: center/);
     assert.match(css, /\.right-panel-tab \{[\s\S]*width: 32px;[\s\S]*height: 32px/);

@@ -27,7 +27,7 @@ test('Rollup yalnız ana toolbardan node bloğu olarak eklenir ve property menü
     const structured = read('renderer/data/pisi-structured-views.mjs');
     const propertiesUi = read('renderer/data/pisi-node-properties-ui.mjs');
     const rollupBlocks = read('renderer/data/pisi-rollup-blocks.mjs');
-    const styles = read('styles/58-roadmap-workspace.css');
+    const styles = read('styles/58-workspaces-platform.css');
 
     assert.doesNotMatch(propertiesUi, /pisi:property-rollup-request|addPisiToolbarRollup/);
     assert.match(rollupBlocks, /pisi:rollup-block-request/);

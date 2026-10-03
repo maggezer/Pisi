@@ -1,5 +1,19 @@
 # PISI Güncelleme Takip Dosyası
 
+## 03-10-2026 — P3.7 CSS konsolidasyonu / CI düzeltmesi
+
+- Önceki konsolidasyondaki 51 global CSS dosyasının içeriği ve yükleme sırası
+  9 bundle içinde eksiksiz korunuyor; önceki commit ile karşılaştırıldı.
+- CI'ın okuduğu kaldırılmış CSS dosya yolları güncel bundle yollarına taşındı.
+- Modal kapatma stili sıralama testi artık aynı importu kendisiyle değil,
+  bundle içindeki ilgili kaynak bölümlerinin sırasını karşılaştırıyor.
+- To-do ve map seçimi negatif stil kontrolleri ilgili kaynak bölümüyle
+  sınırlandı; diğer bileşenlerin geçerli kuralları yanlış hata üretmiyor.
+- CSS giriş noktası, masaüstü paketleme kapsamı, yerel asset URL'leri ve iç içe
+  import yasağı regresyon denetimine alındı.
+- `npm run validate`: format, syntax, architecture, branding, i18n, checkJs,
+  lint ve **643/643 test başarılı**.
+
 ## 29-07-2026-1
 
 - `w1`, `w2` ve `w3` silindi.

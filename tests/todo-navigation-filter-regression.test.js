@@ -27,7 +27,7 @@ test('Todo source navigation targets the active node and never persists highligh
 
 test('Todo date filters render inside one dropdown trigger', () => {
     const source = read('renderer/tags/pisi-todo-first-release.mjs');
-    const css = read('styles/50-tags-and-missions.css');
+    const css = read('styles/50-productivity.css');
 
     assert.match(source, /pisi-missions-filter-trigger/);
     assert.match(source, /pisi-missions-filter-popover/);

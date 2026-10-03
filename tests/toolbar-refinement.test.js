@@ -10,7 +10,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 test('toolbar sections use separators and alignment controls use a fixed 2x2 grid', () => {
     const toolbar = read('renderer/editor/pisi-editor-unified-toolbar.mjs');
-    const css = read('styles/65-unified-toolbar.css');
+    const css = read('styles/65-shared-ui.css');
     assert.match(toolbar, /data-pisi-unified-command="justifyFull"/);
     assert.match(toolbar, /pisiToolbarIcon\('align-justify'\)/);
     assert.match(css, /pisi-toolbar-align-grid[\s\S]*repeat\(2, 26px\)/);
@@ -49,7 +49,7 @@ test('toolbar sections use separators and alignment controls use a fixed 2x2 gri
 
 test('Table ve Rollup butonları formül butonlarıyla aynı ölçüdedir', () => {
     const toolbar = read('renderer/editor/pisi-editor-unified-toolbar.mjs');
-    const css = read('styles/65-unified-toolbar.css');
+    const css = read('styles/65-shared-ui.css');
 
     assert.match(toolbar, /data-pisi-table-trigger/);
     assert.match(toolbar, /data-pisi-rollup-trigger/);
@@ -59,20 +59,20 @@ test('Table ve Rollup butonları formül butonlarıyla aynı ölçüdedir', () =
 
 test('table cells support justify and compact style buttons stay fixed width', () => {
     const sheet = read('renderer/editor/pisi-editor-sheet-structure.mjs');
-    const css = read('styles/65-unified-toolbar.css');
+    const css = read('styles/65-shared-ui.css');
     assert.match(sheet, /action === 'alignJustify'/);
     assert.match(sheet, /textAlign = 'justify'/);
     assert.match(css, /pisi-toolbar-style-grid \.pisi-ribbon-btn[\s\S]*width: 26px/);
 });
 
 test('canvas dimensions provide four-digit input space', () => {
-    const css = read('styles/65-unified-toolbar.css');
+    const css = read('styles/65-shared-ui.css');
     assert.match(css, /pisi-toolbar-dimension-row[\s\S]*repeat\(2, 52px\)/);
     assert.match(css, /pisi-ribbon-number[\s\S]*min-width: 52px/);
 });
 
 test('font selector stays left aligned and paint split buttons use fixed widths', () => {
-    const css = read('styles/70-components.css');
+    const css = read('styles/65-shared-ui.css');
     assert.match(css, /pisi-toolbar-section-text \.pisi-toolbar-section-row-top[\s\S]*justify-content: flex-start/);
     assert.match(css, /pisi-toolbar-section-drawing \.pisi-toolbar-draw-grid[\s\S]*grid-template-columns: repeat\(2, 44px\)/);
     assert.match(css, /pisi-toolbar-section-drawing \.pisi-ribbon-split[\s\S]*grid-template-columns: 26px 18px/);

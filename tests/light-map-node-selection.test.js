@@ -4,10 +4,11 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
+const { readCssSection } = require('./source-bundle');
 
 const root = path.resolve(__dirname, '..');
 const styleSource = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
-const selectionSource = fs.readFileSync(path.join(root, 'styles/92-compatibility.css'), 'utf8');
+const selectionSource = readCssSection('styles/92-compatibility.css', '102-light-map-node-selection.css');
 
 test('light theme selected map node keeps the orange selection border', () => {
     assert.match(selectionSource, /html\[data-pisi-theme=["\']light["\']\]\s+body\s+\.map-node-box\.selected/);

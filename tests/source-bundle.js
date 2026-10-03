@@ -26,4 +26,13 @@ function readRendererSource() {
     return readMany(collect('renderer', '.mjs'));
 }
 
-module.exports = { collect, readMainSource, readRendererSource, readMany };
+function readCssSection(bundle, sectionName) {
+    const source = fs.readFileSync(path.join(root, bundle), 'utf8');
+    const marker = `/* ===== Source: styles/${sectionName} ===== */`;
+    const start = source.indexOf(marker);
+    if (start < 0) throw new Error(`Missing CSS section: ${bundle} -> ${sectionName}`);
+    const end = source.indexOf('/* ===== Source:', start + marker.length);
+    return source.slice(start + marker.length, end < 0 ? source.length : end);
+}
+
+module.exports = { collect, readMainSource, readRendererSource, readMany, readCssSection };

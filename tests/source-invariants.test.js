@@ -123,7 +123,7 @@ test('kullanılmayan production paketleri geri eklenmez', () => {
 
 test('editör iki görünümde güncel altı bölümlü toolbarı kullanır', () => {
     const html = read('index.html');
-    const css = read('styles/65-unified-toolbar.css');
+    const css = read('styles/65-shared-ui.css');
     const toolbarSource = read('renderer/editor/pisi-editor-unified-toolbar.mjs');
 
     assert.equal((html.match(/pisi-unified-toolbar-root/g) || []).length, 2);
