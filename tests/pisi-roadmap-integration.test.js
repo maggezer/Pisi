@@ -7,6 +7,16 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+const rendererRuntimeFiles = [
+    'renderer/runtime.mjs',
+    'renderer/runtime-lifecycle.mjs',
+    'renderer/runtime-events.mjs',
+    'renderer/calendar/pisi-calendar-state.mjs',
+    'renderer/calendar/pisi-calendar-ui.mjs',
+    'renderer/calendar/pisi-calendar-diary.mjs',
+    'renderer/calendar/pisi-calendar-runtime.mjs'
+];
+const readRendererRuntime = () => rendererRuntimeFiles.map(read).join('\n');
 
 test('çekirdek platform modülleri bootstrap ve preload köprüsünde kayıtlıdır', () => {
     const bootstrap = read('renderer/bootstrap.mjs');
@@ -241,7 +251,7 @@ test('map ok uçları ve çizgileri node zoom oranını izler', () => {
 });
 
 test('günlük takvimi açılan günü seçili bırakmaz ve dil değişikliğini izler', () => {
-    const runtime = read('renderer/runtime.mjs');
+    const runtime = readRendererRuntime();
     const styles = read('styles/50-productivity.css');
 
     assert.match(runtime, /function translatePisiCalendarText\(value\)/);
@@ -250,7 +260,8 @@ test('günlük takvimi açılan günü seçili bırakmaz ve dil değişikliğini
     assert.match(runtime, /todayButton\.textContent = translatePisiCalendarText\('Bugün'\)/);
     assert.match(runtime, /document\.addEventListener\('pisi:language-changed'/);
     assert.match(runtime, /opened && getCalendarState\(\) === state && state\.selectedDate === isoDate/);
-    assert.match(runtime, /state\.selectedDate = null;\s*saveCalendarStateToStorage\(\);\s*renderCalendar\(\);/);
+    assert.match(runtime, /state\.selectedDate = null;\s*saveCalendarStateToStorage\(\);\s*renderPisiCalendarCallback\?\.\(\);/);
+    assert.match(runtime, /configurePisiCalendarDiary\(\{ renderCalendar \}\)/);
     assert.doesNotMatch(runtime, /selectedDate: state\.selectedDate/);
     assert.match(styles, /\.pisi-calendar-footer \{[\s\S]*?justify-content: center;/);
     assert.match(styles, /\.pisi-calendar-today-btn \{[\s\S]*?flex: 0 0 auto;[\s\S]*?width: fit-content;/);

@@ -7,6 +7,16 @@ const test = require('node:test');
 
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+const rendererRuntimeFiles = [
+    'renderer/runtime.mjs',
+    'renderer/runtime-lifecycle.mjs',
+    'renderer/runtime-events.mjs',
+    'renderer/calendar/pisi-calendar-state.mjs',
+    'renderer/calendar/pisi-calendar-ui.mjs',
+    'renderer/calendar/pisi-calendar-diary.mjs',
+    'renderer/calendar/pisi-calendar-runtime.mjs'
+];
+const readRendererRuntime = () => rendererRuntimeFiles.map(read).join('\n');
 
 test('sol panele dock edilen takvim merkez sekmelerin arkasında kalmaz', () => {
     const styles = read('styles/50-productivity.css');
@@ -19,7 +29,7 @@ test('sol panele dock edilen takvim merkez sekmelerin arkasında kalmaz', () => 
 test('sag panel Search ve dock edilmis takvimi ayri layout satirlarinda tutar', () => {
     const foundation = read('styles/00-foundation.css');
     const styles = read('styles/92-compatibility.css');
-    const runtime = read('renderer/runtime.mjs');
+    const runtime = readRendererRuntime();
     const windowModule = read('renderer/shell/pisi-window.mjs');
 
     assert.match(foundation, /#right-panel \{[\s\S]*?display: grid;[\s\S]*?grid-template-rows: auto minmax\(0, 1fr\) auto;[\s\S]*?overflow: hidden;/);

@@ -16,6 +16,14 @@ const structuredViewFiles = [
     'renderer/data/pisi-structured-view-ui.mjs'
 ];
 const readStructuredViews = () => structuredViewFiles.map(read).join('\n');
+const documentStoreFiles = [
+    'main/functions/document-store.js',
+    'main/functions/document-store-io.js',
+    'main/functions/document-store-metadata.js',
+    'main/functions/document-store-diary.js',
+    'main/functions/document-store-mutations.js'
+];
+const readDocumentStore = () => documentStoreFiles.map(read).join('\n');
 
 test('property menüsü yalnız Metin, Sayı, Tags ve Relation türlerini sunar', () => {
     const core = read('renderer/data/pisi-properties-core.mjs');
@@ -49,7 +57,7 @@ test('Rollup yalnız ana toolbardan node bloğu olarak eklenir ve property menü
 
 test('sistem metadata ve Relation sağ Properties panelinde gösterilmez', () => {
     const filesystem = read('main/functions/filesystem-core.js');
-    const documentStore = read('main/functions/document-store.js');
+    const documentStore = readDocumentStore();
     const propertiesUi = read('renderer/data/pisi-node-properties-ui.mjs');
     const tr = JSON.parse(read('locales/lang-tr.json')).strings;
     const eng = JSON.parse(read('locales/lang-eng.json')).strings;
