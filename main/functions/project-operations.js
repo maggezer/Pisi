@@ -1,7 +1,7 @@
 import { shell } from '../electron-bridge.js';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
-import { registerMainModule } from '../module-registry.js';
+import { modules, registerMainModule } from '../module-registry.js';
 
 function findParentMapPathForNode(nodePath, nodeInfo = null) {
     const nodeDir = path.dirname(nodePath);
@@ -36,21 +36,16 @@ function findParentMapPathForNode(nodePath, nodeInfo = null) {
     return null;
 }
 
-function removeLegacyNodeRelationship(metadata, otherNodeId) {
-    if (!metadata.connectionTypes) {
-        metadata.connectionTypes = getDefaultNodeConnectionTypes();
-    }
-
-    for (const key of PISI_CONNECTION_KEYS) {
-        metadata.connectionTypes[key] = Array.isArray(metadata.connectionTypes[key]) ? metadata.connectionTypes[key].filter((id) => id !== otherNodeId) : [];
-    }
-}
-
-function cleanupDeletedNodeFromParentMap(parentMapPath, deletedNodeId, deletionTransaction = null) {
+function cleanupDeletedNodeFromParentMap(
+    parentMapPath,
+    deletedNodeId,
+    deletionTransaction = null,
+    removedRelationshipIds = []
+) {
     if (!parentMapPath || !deletedNodeId || !fs.existsSync(parentMapPath)) {
         return {
             parentMapPath: null,
-            edges: []
+            removedRelationshipIds: []
         };
     }
 
@@ -59,7 +54,7 @@ function cleanupDeletedNodeFromParentMap(parentMapPath, deletedNodeId, deletionT
     if (!mapInfo.ok || !mapInfo.data.map) {
         return {
             parentMapPath,
-            edges: []
+            removedRelationshipIds: []
         };
     }
 
@@ -67,75 +62,59 @@ function cleanupDeletedNodeFromParentMap(parentMapPath, deletedNodeId, deletionT
         mapInfo.data.map.nodes = [];
     }
 
-    if (!Array.isArray(mapInfo.data.map.edges)) {
-        mapInfo.data.map.edges = [];
-    }
-
     mapInfo.data.map.nodes = mapInfo.data.map.nodes.filter((node) => {
         return node.id !== deletedNodeId;
     });
 
-    mapInfo.data.map.edges = mapInfo.data.map.edges.filter((edge) => {
-        return edge.sourceId !== deletedNodeId && edge.targetId !== deletedNodeId;
-    });
+    const removedRelationshipIdSet = new Set(
+        (Array.isArray(removedRelationshipIds) ? removedRelationshipIds : [])
+            .map((relationshipId) => String(relationshipId || ''))
+            .filter(Boolean)
+    );
 
-    const pendingDocumentChanges = [];
+    if (Array.isArray(mapInfo.data.map.relationshipViews) && removedRelationshipIdSet.size) {
+        mapInfo.data.map.relationshipViews = mapInfo.data.map.relationshipViews.filter((view) => {
+            return !removedRelationshipIdSet.has(String(view?.relationshipId || ''));
+        });
+    }
+
     mapInfo.data.pisi.updatedAt = new Date().toISOString();
 
     if (deletionTransaction) {
         writePisiDeletionMetadata(deletionTransaction, parentMapPath, mapInfo.data);
     } else {
-        pendingDocumentChanges.push({
-            filePath: parentMapPath,
-            data: mapInfo.data
-        });
-    }
-
-    // Kalan node dosyalarının connectionTypes alanından silinen node id'sini düş.
-    const sidecarPath = mapInfo.sidecarPath;
-
-    if (sidecarPath && fs.existsSync(sidecarPath)) {
-        const entries = fs.readdirSync(sidecarPath, { withFileTypes: true });
-
-        for (const entry of entries) {
-            if (!entry.isFile() || !entry.name.toLowerCase().endsWith('.node')) {
-                continue;
-            }
-
-            const nodePath = path.join(sidecarPath, entry.name);
-            const nodeInfo = ensurePisiFileMetadata(nodePath);
-
-            if (!nodeInfo.ok) continue;
-
-            const before = JSON.stringify(nodeInfo.data.pisi.connectionTypes);
-
-            removeLegacyNodeRelationship(nodeInfo.data.pisi, deletedNodeId);
-
-            const after = JSON.stringify(nodeInfo.data.pisi.connectionTypes);
-
-            if (before !== after) {
-                nodeInfo.data.pisi.updatedAt = new Date().toISOString();
-
-                if (deletionTransaction) {
-                    writePisiDeletionMetadata(deletionTransaction, nodePath, nodeInfo.data);
-                } else {
-                    pendingDocumentChanges.push({
-                        filePath: nodePath,
-                        data: nodeInfo.data
-                    });
-                }
-            }
-        }
-    }
-
-    if (!deletionTransaction) {
-        writePisiDocumentsTransaction(pendingDocumentChanges);
+        writePisiDocument(parentMapPath, mapInfo.data);
     }
 
     return {
         parentMapPath,
-        edges: mapInfo.data.map.edges
+        removedRelationshipIds: Array.from(removedRelationshipIdSet)
     };
+}
+
+function backupPisiDeletionFile(transaction, filePath) {
+    if (!transaction || !filePath || !fs.existsSync(filePath)) {
+        return null;
+    }
+
+    let backup = transaction.fileBackups.find((entry) => {
+        return normalizePathForCompare(entry.originalPath) === normalizePathForCompare(filePath);
+    });
+
+    if (backup) return backup;
+
+    const backupPath = path.join(
+        transaction.directoryPath,
+        `file-${transaction.fileBackups.length}.bak`
+    );
+
+    fs.copyFileSync(filePath, backupPath);
+    backup = {
+        originalPath: filePath,
+        backupPath
+    };
+    transaction.fileBackups.push(backup);
+    return backup;
 }
 
 function writePisiDeletionMetadata(transaction, filePath, data) {
@@ -144,22 +123,36 @@ function writePisiDeletionMetadata(transaction, filePath, data) {
         return;
     }
 
-    let backup = transaction.metadataBackups.find((entry) => {
-        return normalizePathForCompare(entry.originalPath) === normalizePathForCompare(filePath);
-    });
+    backupPisiDeletionFile(transaction, filePath);
+    writePisiDocument(filePath, data);
+}
 
-    if (!backup) {
-        const backupPath = path.join(transaction.directoryPath, `metadata-${transaction.metadataBackups.length}.bak`);
-
-        fs.copyFileSync(filePath, backupPath);
-        backup = {
-            originalPath: filePath,
-            backupPath
-        };
-        transaction.metadataBackups.push(backup);
+function deletePisiCanonicalRelationshipsForNodes(transaction, nodeIds) {
+    const relationshipStore = modules['main.relationshipStore'];
+    if (
+        !relationshipStore ||
+        typeof relationshipStore.deletePisiSemanticRelationshipsForNodes !== 'function'
+    ) {
+        throw new Error('Canonical relationship store yüklenmemiş.');
     }
 
-    writePisiDocument(filePath, data);
+    const projectFolder = globalThis.activeProjectFolder;
+    if (!projectFolder) {
+        throw new Error('Aktif proje klasörü yok.');
+    }
+
+    const relationshipStorePath = relationshipStore.getPisiRelationshipStorePath(projectFolder);
+    backupPisiDeletionFile(transaction, relationshipStorePath);
+
+    const result = relationshipStore.deletePisiSemanticRelationshipsForNodes(
+        projectFolder,
+        nodeIds
+    );
+    if (!result?.ok) {
+        throw new Error(result?.error || 'Canonical relationship temizliği tamamlanamadı.');
+    }
+
+    return result;
 }
 
 function createPisiDeletionTransaction(targetPath) {
@@ -169,7 +162,7 @@ function createPisiDeletionTransaction(targetPath) {
     return {
         directoryPath,
         stagedPaths: [],
-        metadataBackups: []
+        fileBackups: []
     };
 }
 
@@ -198,9 +191,9 @@ function rollbackPisiDeletionTransaction(transaction) {
         return ['Geçici silme klasörü bulunamadığı için otomatik geri alma yapılamadı.'];
     }
 
-    for (const backup of [...transaction.metadataBackups].reverse()) {
+    for (const backup of [...transaction.fileBackups].reverse()) {
         if (!fs.existsSync(backup.backupPath)) {
-            rollbackErrors.push(`${backup.originalPath} için metadata yedeği bulunamadı.`);
+            rollbackErrors.push(`${backup.originalPath} için işlem yedeği bulunamadı.`);
             continue;
         }
 
@@ -208,7 +201,7 @@ function rollbackPisiDeletionTransaction(transaction) {
             fs.copyFileSync(backup.backupPath, backup.originalPath);
             fs.unlinkSync(backup.backupPath);
         } catch (error) {
-            rollbackErrors.push(`${backup.originalPath} metadata geri yüklenemedi: ${error.message}`);
+            rollbackErrors.push(`${backup.originalPath} geri yüklenemedi: ${error.message}`);
         }
     }
 
@@ -274,12 +267,24 @@ async function deletePisiFile(targetPath) {
         const deletedNodeId = ext === '.node' ? info.metadata.id : null;
         const parentMapPath = ext === '.node' ? findParentMapPathForNode(targetPath, info) : null;
         const childNodePaths = [];
+        const childNodeIds = [];
 
         if (ext === '.map' && sidecarPath && fs.existsSync(sidecarPath)) {
             const entries = fs.readdirSync(sidecarPath, { withFileTypes: true });
             for (const entry of entries) {
-                if (entry.isFile() && entry.name.toLowerCase().endsWith('.node')) {
-                    childNodePaths.push(path.join(sidecarPath, entry.name));
+                if (!entry.isFile() || !entry.name.toLowerCase().endsWith('.node')) {
+                    continue;
+                }
+
+                const childNodePath = path.join(sidecarPath, entry.name);
+                childNodePaths.push(childNodePath);
+
+                const childInfo = ensurePisiFileMetadata(childNodePath, {
+                    persist: false,
+                    ensureSidecar: false
+                });
+                if (childInfo?.ok && childInfo.metadata?.id) {
+                    childNodeIds.push(childInfo.metadata.id);
                 }
             }
         }
@@ -287,6 +292,14 @@ async function deletePisiFile(targetPath) {
         transaction = createPisiDeletionTransaction(targetPath);
         stagePisiDeletionPath(transaction, targetPath);
         stagePisiDeletionPath(transaction, sidecarPath);
+
+        const relationshipNodeIds = ext === '.node' ? [deletedNodeId] : childNodeIds;
+        const relationshipCleanup = relationshipNodeIds.filter(Boolean).length
+            ? deletePisiCanonicalRelationshipsForNodes(transaction, relationshipNodeIds)
+            : {
+                  removed: 0,
+                  removedRelationshipIds: []
+              };
 
         if (ext === '.map') {
             await shell.trashItem(path.resolve(transaction.directoryPath));
@@ -299,11 +312,18 @@ async function deletePisiFile(targetPath) {
                 deletedSidecarPath: sidecarPath,
                 childNodePaths,
                 childNodeCount: childNodePaths.length,
+                removedRelationshipCount: relationshipCleanup.removed || 0,
+                removedRelationshipIds: relationshipCleanup.removedRelationshipIds || [],
                 movedToTrash: true
             };
         }
 
-        const cleanupResult = cleanupDeletedNodeFromParentMap(parentMapPath, deletedNodeId, transaction);
+        const cleanupResult = cleanupDeletedNodeFromParentMap(
+            parentMapPath,
+            deletedNodeId,
+            transaction,
+            relationshipCleanup.removedRelationshipIds
+        );
 
         await shell.trashItem(path.resolve(transaction.directoryPath));
 
@@ -313,7 +333,8 @@ async function deletePisiFile(targetPath) {
             deletedPath: targetPath,
             deletedNodeId,
             parentMapPath: cleanupResult.parentMapPath,
-            edges: cleanupResult.edges,
+            removedRelationshipCount: relationshipCleanup.removed || 0,
+            removedRelationshipIds: cleanupResult.removedRelationshipIds,
             movedToTrash: true
         };
     } catch (error) {
@@ -321,7 +342,10 @@ async function deletePisiFile(targetPath) {
 
         return {
             ok: false,
-            error: rollbackErrors.length > 0 ? `${error.message} Geri alma tamamlanamadı: ${rollbackErrors.join(' | ')}` : error.message,
+            error:
+                rollbackErrors.length > 0
+                    ? `${error.message} Geri alma tamamlanamadı: ${rollbackErrors.join(' | ')}`
+                    : error.message,
             rolledBack: Boolean(transaction) && rollbackErrors.length === 0
         };
     }
