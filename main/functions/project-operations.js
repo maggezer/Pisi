@@ -320,7 +320,7 @@ async function deletePisiFile(targetPath) {
             deletedNodeId,
             parentMapPath: cleanupResult.parentMapPath,
             removedRelationshipCount: relationshipCleanup.removed || 0,
-            removedRelationshipIds: cleanupResult.removedRelationshipIds,
+            removedRelationshipIds: relationshipCleanup.removedRelationshipIds || [],
             movedToTrash: true
         };
     } catch (error) {
