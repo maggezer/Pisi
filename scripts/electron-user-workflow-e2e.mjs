@@ -133,7 +133,7 @@ async function waitForRendererState(cdp, timeoutMs = 15000) {
         'interactive renderer',
         async () => {
             const state = await cdp.evaluate(
-                "(() => ({ readyState: document.readyState, currentProjectFolder: window.currentProjectFolder || null, tagsBound: document.querySelector('[data-right-tab=\\\"tags\\\"]')?.dataset.bound || null }))()"
+                '(() => ({ readyState: document.readyState, currentProjectFolder: window.currentProjectFolder || null, tagsBound: document.querySelector(\'[data-right-tab=\\"tags\\"]\')?.dataset.bound || null }))()'
             );
             return state?.readyState === 'complete' && state.currentProjectFolder && state.tagsBound === '1' ? state : null;
         },
@@ -183,9 +183,7 @@ async function closeTab(cdp, targetPath) {
     if (!closed) throw new Error('Open tab could not be closed: ' + targetPath);
 
     await waitUntil('tab close ' + targetPath, async () => {
-        return cdp.evaluate(
-            "(() => !Array.from(document.querySelectorAll('.center-tab')).some((candidate) => candidate.title === " + serializedPath + '))()'
-        );
+        return cdp.evaluate("(() => !Array.from(document.querySelectorAll('.center-tab')).some((candidate) => candidate.title === " + serializedPath + '))()');
     });
 }
 
@@ -240,9 +238,7 @@ try {
     await cdp.request('Input.insertText', { text: contentMarker });
 
     await waitUntil('typed node content', async () => {
-        return cdp.evaluate(
-            "document.getElementById('center-node-editor-content')?.textContent?.includes(" + JSON.stringify(contentMarker) + ') === true'
-        );
+        return cdp.evaluate("document.getElementById('center-node-editor-content')?.textContent?.includes(" + JSON.stringify(contentMarker) + ') === true');
     });
 
     const saveShortcutDispatched = await cdp.evaluate(
@@ -290,9 +286,9 @@ try {
 
     const movedNode = await waitUntil('node moved under map', async () => {
         const result = await cdp.evaluate(
-            "(async () => { const listed = await window.pisiProject?.listMapNodes?.(" +
+            '(async () => { const listed = await window.pisiProject?.listMapNodes?.(' +
                 JSON.stringify(mapPath) +
-                "); const node = Array.isArray(listed?.nodes) ? listed.nodes.find((item) => item?.fullPath) : null; return node ? { ok: listed.ok === true, fullPath: node.fullPath, id: node.id } : null; })()"
+                '); const node = Array.isArray(listed?.nodes) ? listed.nodes.find((item) => item?.fullPath) : null; return node ? { ok: listed.ok === true, fullPath: node.fullPath, id: node.id } : null; })()'
         );
         return result?.ok && result.fullPath ? result : null;
     });
@@ -316,9 +312,7 @@ try {
 
     await waitUntil('map workspace active', async () => {
         return cdp.evaluate(
-            "(() => window.Pisi?.state?.activeTabPath === " +
-                JSON.stringify(mapPath) +
-                " && document.getElementById('map-canvas')?.hidden === false)()"
+            '(() => window.Pisi?.state?.activeTabPath === ' + JSON.stringify(mapPath) + " && document.getElementById('map-canvas')?.hidden === false)()"
         );
     });
 
@@ -358,11 +352,11 @@ try {
     }
 
     const persistedMapNode = await cdp.evaluate(
-        "(async () => { const listed = await window.pisiProject?.listMapNodes?.(" +
+        '(async () => { const listed = await window.pisiProject?.listMapNodes?.(' +
             JSON.stringify(mapPath) +
-            "); const node = Array.isArray(listed?.nodes) ? listed.nodes.find((item) => item?.id === " +
+            '); const node = Array.isArray(listed?.nodes) ? listed.nodes.find((item) => item?.id === ' +
             JSON.stringify(movedNode.id) +
-            ") : null; return node ? { ok: listed.ok === true, fullPath: node.fullPath, layout: node.layout } : null; })()"
+            ') : null; return node ? { ok: listed.ok === true, fullPath: node.fullPath, layout: node.layout } : null; })()'
     );
 
     if (!persistedMapNode?.ok || path.resolve(persistedMapNode.fullPath) !== path.resolve(movedNode.fullPath)) {
