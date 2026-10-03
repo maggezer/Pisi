@@ -195,10 +195,6 @@ function normalizePisiMapEdges(rawEdges = [], validNodeIds = null) {
     };
 }
 
-function resetNodeConnectionTypes(metadata) {
-    metadata.connectionTypes = getDefaultNodeConnectionTypes();
-}
-
 function getPisiSidecarName(title, ext, id) {
     const prefix = getPisiSidecarPrefix(ext);
     const safeId = normalizePisiId(id, ext);
@@ -227,7 +223,6 @@ function createPisiDocumentData({ ext, title, id, parentMap = 'none' }) {
 
     if (ext === '.node') {
         base.pisi.parentMap = parentMap || 'none';
-        base.pisi.connectionTypes = getDefaultNodeConnectionTypes();
 
         return {
             ...base,
@@ -363,7 +358,22 @@ function writeFileAtomic(filePath, content, options = {}) {
 }
 
 function writePisiDocument(filePath, data) {
-    writeFileAtomic(filePath, JSON.stringify(data, null, 2));
+    let serializableData = data;
+
+    if (
+        getPisiFileExt(filePath) === '.node' &&
+        data?.pisi &&
+        typeof data.pisi === 'object' &&
+        Object.prototype.hasOwnProperty.call(data.pisi, 'connectionTypes')
+    ) {
+        serializableData = {
+            ...data,
+            pisi: { ...data.pisi }
+        };
+        delete serializableData.pisi.connectionTypes;
+    }
+
+    writeFileAtomic(filePath, JSON.stringify(serializableData, null, 2));
 }
 
 function writePisiDocumentsTransaction(changes = []) {
@@ -528,12 +538,6 @@ Object.defineProperties(moduleApi, {
         enumerable: true,
         get() {
             return normalizePisiMapEdges;
-        }
-    },
-    resetNodeConnectionTypes: {
-        enumerable: true,
-        get() {
-            return resetNodeConnectionTypes;
         }
     },
     getPisiSidecarName: {
