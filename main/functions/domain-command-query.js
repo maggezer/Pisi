@@ -341,9 +341,7 @@ function installPisiDomainContracts() {
             return result;
         }
 
-        const refreshed = mapSemanticOperations.getPisiMapSemanticProjection(
-            result.parentMapPath
-        );
+        const refreshed = mapSemanticOperations.getPisiMapSemanticProjection(result.parentMapPath);
         return {
             ...result,
             edges: refreshed.ok ? refreshed.edges : []
