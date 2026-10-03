@@ -84,7 +84,9 @@ function getPisiReminderTimestampThirdRelease(mission) {
 }
 
 function getPisiReminderSeenKeyThirdRelease(mission) {
-    return getPisiTodoThirdStorageKey(`reminded:${encodeURIComponent(mission.missionId)}:${mission.reminder}:${getPisiMissionDateKeyThirdRelease(mission)}`);
+    return getPisiTodoThirdStorageKey(
+        `reminded:${encodeURIComponent(mission.missionId)}:${mission.reminder}:${getPisiMissionDateKeyThirdRelease(mission)}`
+    );
 }
 
 function sortPisiThirdMissionsByFinishDate(missions = []) {
