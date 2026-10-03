@@ -98,6 +98,10 @@ test('node connectionTypes semantic store üzerinden yalnız query-time projecti
     const hooks = read('main/functions/map-semantic-operation-hooks.js');
     const projectOperations = read('main/functions/project-operations.js');
     const domainCommands = read('main/functions/domain-command-query.js');
+    const filesystemCore = read('main/functions/filesystem-core.js');
+    const documentMetadata = read('main/functions/document-store-metadata.js');
+    const syncAdapter = read('main/functions/sync-project-adapter.js');
+    const pathSecurity = read('main/functions/path-security.js');
 
     assert.match(mapCore, /derivePisiConnectionTypesFromRelationships/);
     assert.match(mapCore, /node\.metadata\.connectionTypes = byId\.get\(node\.id\)/);
@@ -112,6 +116,12 @@ test('node connectionTypes semantic store üzerinden yalnız query-time projecti
         /removeLegacyNodeRelationship|mapInfo\.data\.map\.edges|data\.pisi\.connectionTypes/
     );
     assert.match(domainCommands, /getPisiMapSemanticProjection\(\s*result\.parentMapPath\s*\)/);
+
+    assert.doesNotMatch(filesystemCore, /base\.pisi\.connectionTypes|resetNodeConnectionTypes/);
+    assert.match(filesystemCore, /delete serializableData\.pisi\.connectionTypes/);
+    assert.match(documentMetadata, /delete data\.pisi\.connectionTypes/);
+    assert.match(syncAdapter, /delete data\.pisi\.connectionTypes/);
+    assert.doesNotMatch(pathSecurity, /normalizeNodeConnectionTypes/);
 });
 
 test('map node konumu yalnız map layout kaydına yazılır', () => {
