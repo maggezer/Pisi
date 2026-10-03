@@ -9,7 +9,6 @@ document.addEventListener('keydown', (event) => {
     }
 });
 
-
 // From renderer/pisi-node-modal.js:365
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {

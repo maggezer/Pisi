@@ -12,29 +12,29 @@ import {
 configurePisiCalendarDiary({ renderCalendar });
 setPisiCalendarDateOpenHandler(openDiaryNodeForDate);
 
-    function resetPisiCalendarForProject(folderPath) {
-        pisiCalendarRuntimeState.calendarStateProjectKey = null;
-        activateCalendarProjectState(folderPath);
+function resetPisiCalendarForProject(folderPath) {
+    pisiCalendarRuntimeState.calendarStateProjectKey = null;
+    activateCalendarProjectState(folderPath);
 
-        const calendar = document.getElementById('pisi-calendar');
-        if (calendar) {
-            renderCalendar();
-            refreshPisiCalendarDates();
-        }
-    }
-
-    function setupPisiCalendar() {
-        ensureCalendarDockZones();
-        ensureCalendarDom();
-        bindGlobalCalendarDragEvents();
+    const calendar = document.getElementById('pisi-calendar');
+    if (calendar) {
         renderCalendar();
         refreshPisiCalendarDates();
     }
+}
 
-    function refreshPisiCalendar() {
-        renderCalendar();
-        refreshPisiCalendarDates();
-    }
+function setupPisiCalendar() {
+    ensureCalendarDockZones();
+    ensureCalendarDom();
+    bindGlobalCalendarDragEvents();
+    renderCalendar();
+    refreshPisiCalendarDates();
+}
+
+function refreshPisiCalendar() {
+    renderCalendar();
+    refreshPisiCalendarDates();
+}
 
 window.setupPisiCalendar = setupPisiCalendar;
 window.refreshPisiCalendar = refreshPisiCalendar;
