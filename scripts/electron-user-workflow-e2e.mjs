@@ -259,9 +259,7 @@ try {
     await clickTreePath(cdp, nodePath);
 
     await waitUntil('node content restored after reopen', async () => {
-        return cdp.evaluate(
-            "document.getElementById('center-node-editor-content')?.textContent?.includes(" + JSON.stringify(contentMarker) + ') === true'
-        );
+        return cdp.evaluate("document.getElementById('center-node-editor-content')?.textContent?.includes(" + JSON.stringify(contentMarker) + ') === true');
     });
     await closeTab(cdp, nodePath);
 
