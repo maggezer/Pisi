@@ -21,7 +21,6 @@ function auditPisiProjectIntegrity(projectFolder) {
     }
     documents.auditMaps(projectRoot, context, inventory, relationships.byId);
     documents.auditNodeParentMap(context, inventory);
-    documents.auditDerivedConnections(context, inventory, relationships.relationships);
 
     const trashItems = recovery.auditTrash(projectRoot, context);
     const mutationJournals = recovery.auditAtomic(projectRoot, context);
