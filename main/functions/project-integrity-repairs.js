@@ -4,7 +4,6 @@ import * as documents from './project-integrity-documents.js';
 
 import * as path from 'node:path';
 const documentStore = modules['main.documentStore'];
-const relationshipStore = modules['main.relationshipStore'];
 const mapSemanticCore = modules['main.mapSemanticCore'];
 const mapOperationalStore = modules['main.mapOperationalStore'];
 const filesystemCore = modules['main.filesystemCore'];
@@ -55,27 +54,7 @@ function rebuildDerivedState(projectFolder, auditAfter) {
     const projectRoot = path.resolve(projectFolder);
     const context = { issues: [] };
     const inventory = documents.collectDocumentInventory(projectRoot, context);
-    const relationshipState = relationshipStore.readPisiRelationshipStore(projectRoot);
-    const relationships = Array.isArray(relationshipState.relationships) ? relationshipState.relationships : [];
-    const derived = mapSemanticCore.derivePisiConnectionTypesFromRelationships(Array.from(inventory.nodeById.keys()), relationships);
-    let nodesUpdated = 0;
     let mapsUpdated = 0;
-
-    for (const [nodeId, doc] of inventory.nodeById) {
-        const expected = derived.get(nodeId);
-        if (!expected || JSON.stringify(doc.metadata?.connectionTypes || {}) === JSON.stringify(expected)) {
-            continue;
-        }
-        const info = documentStore.ensurePisiFileMetadata(doc.filePath, {
-            persist: false,
-            ensureSidecar: false
-        });
-        if (!info.ok) return info;
-        info.data.pisi.connectionTypes = expected;
-        info.data.pisi.updatedAt = new Date().toISOString();
-        filesystemCore.writePisiDocument(doc.filePath, info.data);
-        nodesUpdated += 1;
-    }
 
     for (const doc of inventory.docs.filter((item) => item.type === 'map')) {
         const info = documentStore.ensurePisiFileMetadata(doc.filePath, {
@@ -106,7 +85,7 @@ function rebuildDerivedState(projectFolder, auditAfter) {
 
     return {
         ok: true,
-        nodesUpdated,
+        nodesUpdated: 0,
         mapsUpdated,
         authorityChanged: false,
         preservedAuthorities: ['.pisi/tasks.json', '.pisi/relationships.json'],
