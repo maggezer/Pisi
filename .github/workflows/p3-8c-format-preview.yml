@@ -1,0 +1,24 @@
+name: P3.8-C Format Preview
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Show Prettier diff
+        run: |
+          npx prettier             renderer/calendar/pisi-calendar-diary.mjs             renderer/calendar/pisi-calendar-runtime.mjs             renderer/calendar/pisi-calendar-state.mjs             renderer/calendar/pisi-calendar-ui.mjs             renderer/runtime-events.mjs             --write
+          git diff --             renderer/calendar/pisi-calendar-diary.mjs             renderer/calendar/pisi-calendar-runtime.mjs             renderer/calendar/pisi-calendar-state.mjs             renderer/calendar/pisi-calendar-ui.mjs             renderer/runtime-events.mjs
