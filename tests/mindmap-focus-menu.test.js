@@ -11,7 +11,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const focusMenu = read('renderer/map/pisi-map-focus-menu.mjs');
 const bootstrap = read('renderer/bootstrap.mjs');
 const styleRoot = read('style.css');
-const css = read('styles/111-mindmap-focus-menu.css');
+const css = read('styles/105-feature-polish.css');
 
 test('standalone hop control is retired at runtime and Focus neighbors owns the degree menu', () => {
     assert.match(bootstrap, /\.\/map\/pisi-map-focus-menu\.mjs/);
@@ -46,7 +46,7 @@ test('Focus degree state is rendered and persisted through the existing operatio
 });
 
 test('Focus degree dropdown has dedicated dark and light theme styling', () => {
-    assert.match(styleRoot, /111-mindmap-focus-menu\.css/);
+    assert.match(styleRoot, /105-feature-polish\.css/);
     assert.match(css, /\.pisi-map-focus-degree-menu\s*\{/);
     assert.match(css, /\.pisi-map-focus-degree-menu\[hidden\]/);
     assert.match(css, /html\[data-pisi-theme=["\']light["\']\] body \.pisi-map-focus-degree-menu/);

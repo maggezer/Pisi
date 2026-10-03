@@ -10,7 +10,7 @@ const edgeSource = fs.readFileSync(path.join(root, 'renderer/map/pisi-map-edges.
 const dismissSource = fs.readFileSync(path.join(root, 'renderer/map/pisi-map-edge-selection-dismiss.mjs'), 'utf8');
 const relationshipSource = fs.readFileSync(path.join(root, 'main/functions/relationship-store.js'), 'utf8');
 const styleSource = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
-const menuStyleSource = fs.readFileSync(path.join(root, 'styles/103-map-edge-menu.css'), 'utf8');
+const menuStyleSource = fs.readFileSync(path.join(root, 'styles/92-compatibility.css'), 'utf8');
 
 test('selected map edge exposes a three-type connection menu instead of an x delete button', () => {
     assert.match(edgeSource, /type:\s*'down-hub'[\s\S]*sourceRole:\s*'down-hub'[\s\S]*targetRole:\s*'up-hub'/);
@@ -46,7 +46,7 @@ test('connection menu interaction keeps the edge selected while menu items are c
 });
 
 test('connection menu stylesheet is loaded and supports both themes', () => {
-    assert.match(styleSource, /styles\/103-map-edge-menu\.css/);
+    assert.match(styleSource, /styles\/92-compatibility\.css/);
     assert.match(menuStyleSource, /\.map-edge-menu-trigger/);
     assert.match(menuStyleSource, /\.pisi-map-edge-menu/);
     assert.match(menuStyleSource, /\.pisi-map-edge-menu-type\.current/);

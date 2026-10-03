@@ -23,7 +23,7 @@ test('Sheet and Canvas use full-width section chrome with aligned inner content'
     const composite = read('renderer/editor/pisi-editor-composite-blocks.mjs');
     const sheetSection = read('renderer/editor/pisi-editor-sheet-section-ui.mjs');
     const canvasSection = read('renderer/editor/pisi-editor-canvas-section-ui.mjs');
-    const css = read('styles/70-components.css');
+    const css = read('styles/65-shared-ui.css');
 
     assert.match(composite, /function normalizePisiCompositeBlockLayout\(block\)/);
     assert.match(composite, /'margin-left'[\s\S]{0,220}'margin-right'/);
@@ -46,7 +46,7 @@ test('Sheet alignment comes from blank chrome, not title/search/table controls',
     const search = read('renderer/editor/pisi-editor-sheet-search-ui.mjs');
     const section = read('renderer/editor/pisi-editor-sheet-section-ui.mjs');
     const composite = read('renderer/editor/pisi-editor-composite-blocks.mjs');
-    const css = read('styles/70-components.css');
+    const css = read('styles/65-shared-ui.css');
 
     assert.match(composite, /function isPisiSheetBlankAlignmentTarget/);
     assert.match(composite, /\.pisi-sheet-table,/);

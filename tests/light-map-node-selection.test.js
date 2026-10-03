@@ -7,7 +7,7 @@ const test = require('node:test');
 
 const root = path.resolve(__dirname, '..');
 const styleSource = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
-const selectionSource = fs.readFileSync(path.join(root, 'styles/102-light-map-node-selection.css'), 'utf8');
+const selectionSource = fs.readFileSync(path.join(root, 'styles/92-compatibility.css'), 'utf8');
 
 test('light theme selected map node keeps the orange selection border', () => {
     assert.match(selectionSource, /html\[data-pisi-theme=["\']light["\']\]\s+body\s+\.map-node-box\.selected/);
@@ -17,7 +17,7 @@ test('light theme selected map node keeps the orange selection border', () => {
 
 test('external rectangular node selection frame is no longer loaded', () => {
     assert.doesNotMatch(styleSource, /102-map-node-selection-rectangle\.css/);
-    assert.match(styleSource, /102-light-map-node-selection\.css/);
+    assert.match(styleSource, /92-compatibility\.css/);
     assert.doesNotMatch(selectionSource, /::after/);
     assert.doesNotMatch(selectionSource, /inset:\s*-6px/);
 });

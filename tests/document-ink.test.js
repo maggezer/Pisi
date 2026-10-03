@@ -11,7 +11,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const inkSource = read('renderer/editor/pisi-editor-document-ink.mjs');
 const bootstrapSource = read('renderer/bootstrap.mjs');
 const styleSource = read('style.css');
-const inkCss = read('styles/66-document-ink.css');
+const inkCss = read('styles/65-shared-ui.css');
 const nodeEditorSource = read('renderer/editor/pisi-node-editor.mjs');
 const mapWorkspaceSource = read('renderer/map/pisi-map-workspace.mjs');
 
@@ -44,5 +44,5 @@ test('yazı aracına geçmek veya Escape belge çizimini kapatır', () => {
 
 test('belge mürekkep modülü bootstrap ve stil zincirine bağlıdır', () => {
     assert.match(bootstrapSource, /import\s+["\']\.\/editor\/pisi-editor-document-ink\.mjs["\'];/);
-    assert.match(styleSource, /styles\/66-document-ink\.css/);
+    assert.match(styleSource, /styles\/65-shared-ui\.css/);
 });

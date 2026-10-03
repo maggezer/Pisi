@@ -11,7 +11,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 test('Mind Map task-status scope control is retired from the UI', () => {
     const retirement = read('renderer/map/pisi-map-task-scope-retirement.mjs');
     const bootstrap = read('renderer/bootstrap.mjs');
-    const css = read('styles/112-mindmap-task-scope-retired.css');
+    const css = read('styles/105-feature-polish.css');
 
     assert.match(retirement, /pisi-map-operational-scope/);
     assert.match(retirement, /control\.remove\(\)/);

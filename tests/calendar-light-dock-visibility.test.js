@@ -9,8 +9,8 @@ const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 test('calendar drag exposes equal left and right dock targets slightly larger than the calendar', () => {
-    const base = read('styles/95-right-search-calendar-fix.css');
-    const fix = read('styles/120-calendar-light-dock-fix.css');
+    const base = read('styles/92-compatibility.css');
+    const fix = read('styles/105-feature-polish.css');
     const runtime = read('renderer/runtime.mjs');
     const entry = read('style.css');
 
@@ -23,13 +23,13 @@ test('calendar drag exposes equal left and right dock targets slightly larger th
     assert.match(fix, /max-width: calc\(100% - 4px\);/);
     assert.match(fix, /\.active-drop-target,[\s\S]*?\.active-drop-target \{[\s\S]*?z-index: 7001;/);
 
-    const baseIndex = entry.indexOf('95-right-search-calendar-fix.css');
-    const fixIndex = entry.indexOf('120-calendar-light-dock-fix.css');
+    const baseIndex = entry.indexOf('92-compatibility.css');
+    const fixIndex = entry.indexOf('105-feature-polish.css');
     assert.ok(baseIndex >= 0 && fixIndex > baseIndex);
 });
 
 test('compact calendar month controls have explicit light-theme styling', () => {
-    const fix = read('styles/120-calendar-light-dock-fix.css');
+    const fix = read('styles/105-feature-polish.css');
 
     assert.match(fix, /html\[data-pisi-theme=["\']light["\']\] body \.pisi-calendar \{[\s\S]*?background: #ffffff;[\s\S]*?color-scheme: light;/);
     assert.match(fix, /html\[data-pisi-theme=["\']light["\']\] body \.pisi-calendar-month-label \{[\s\S]*?color: var\(--pisi-theme-text, #20252c\);/);

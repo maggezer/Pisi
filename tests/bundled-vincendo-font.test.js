@@ -12,7 +12,7 @@ test('Vincendo is bundled locally, licensed, and exposed in the editor font list
     const fontPath = path.join(root, 'assets/fonts/vincendo-regular.woff2');
     const fontBytes = fs.readFileSync(fontPath);
     const license = read('assets/fonts/vincendo-OFL.txt');
-    const css = read('styles/105-bundled-vincendo.css');
+    const css = read('styles/105-feature-polish.css');
     const styleRoot = read('style.css');
     const fontOptions = read('renderer/editor/pisi-editor-system-fonts.mjs');
 
@@ -26,7 +26,7 @@ test('Vincendo is bundled locally, licensed, and exposed in the editor font list
     assert.match(css, /font-family:\s*["\']Vincendo["\']/);
     assert.match(css, /\.\.\/assets\/fonts\/vincendo-regular\.woff2/);
     assert.doesNotMatch(css, /https?:\/\//i);
-    assert.match(styleRoot, /105-bundled-vincendo\.css/);
+    assert.match(styleRoot, /105-feature-polish\.css/);
 
     assert.match(fontOptions, /value:\s*'Vincendo'/);
     assert.match(fontOptions, /label:\s*'Vincendo'/);

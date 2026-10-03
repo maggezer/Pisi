@@ -3,12 +3,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
-const css = fs.readFileSync(path.join(root, 'styles/118-center-dynamic-divider.css'), 'utf8');
+const css = fs.readFileSync(path.join(root, 'styles/105-feature-polish.css'), 'utf8');
 const moduleSource = fs.readFileSync(path.join(root, 'renderer/shell/pisi-center-tab-divider.mjs'), 'utf8');
 const styleIndex = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
 const bootstrap = fs.readFileSync(path.join(root, 'renderer/bootstrap.mjs'), 'utf8');
 
-assert.match(styleIndex, /118-center-dynamic-divider\.css/, 'dynamic center divider stylesheet should be loaded');
+assert.match(styleIndex, /105-feature-polish\.css/, 'dynamic center divider stylesheet should be loaded');
 assert.match(bootstrap, /pisi-center-tab-divider\.mjs/, 'dynamic center divider module should be loaded');
 assert.match(css, /width:\s*var\(--pisi-center-divider-width,\s*0px\)/, 'divider width should be controlled by the measured last tab edge');
 assert.match(moduleSource, /querySelectorAll\('\.center-tab'\)/, 'divider should measure open center tabs');

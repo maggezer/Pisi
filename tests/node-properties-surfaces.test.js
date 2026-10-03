@@ -43,9 +43,9 @@ test('sağ Properties sekmesi yalnız aktif node bilgisini gösterir', () => {
 });
 
 test('Properties yüzeyleri koyu ve açık tema ile özel sekme ikonuna sahiptir', () => {
-    const systemCss = read('styles/59-platform-system.css');
-    const lightCss = read('styles/91-light-theme-tuning.css');
-    const tabCss = read('styles/20-map-interactions.css');
+    const systemCss = read('styles/58-workspaces-platform.css');
+    const lightCss = read('styles/90-themes.css');
+    const tabCss = read('styles/10-shell-map-panels.css');
     const icon = read('assets/right-tabs/properties.svg');
     const tr = JSON.parse(read('locales/lang-tr.json')).strings;
     const eng = JSON.parse(read('locales/lang-eng.json')).strings;

@@ -25,7 +25,7 @@ test('portability tools are distributed without a command-center portability pag
 
 test('toolbar keeps history, export, and import as a right-aligned vertical stack', () => {
     const toolbar = read('renderer/editor/pisi-editor-unified-toolbar.mjs');
-    const css = read('styles/65-unified-toolbar.css');
+    const css = read('styles/65-shared-ui.css');
     const actions = ['history', 'export', 'import'].map((action) => toolbar.indexOf(`data-pisi-portability-action="${action}"`));
 
     assert.ok(actions.every((position) => position >= 0));

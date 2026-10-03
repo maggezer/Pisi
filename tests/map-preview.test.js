@@ -8,7 +8,7 @@ const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 const mapSource = fs.readFileSync(path.join(root, 'main/functions/map-store.js'), 'utf8');
-const css = fs.readFileSync(path.join(root, 'styles/10-tree-and-map.css'), 'utf8');
+const css = fs.readFileSync(path.join(root, 'styles/10-shell-map-panels.css'), 'utf8');
 
 test('map node önizlemesi non-breaking space değerlerini normal boşluğa çevirir', () => {
     const functionSource = mapSource.match(/function stripPreviewText\(value = ''\) \{[\s\S]*?\n\}/)?.[0];

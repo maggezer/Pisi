@@ -60,8 +60,8 @@ test('PNG yüksek çözünürlükte rasterize edilir, PDF SVG vektörünü korur
 });
 
 test('export düğmesi, menüsü, ikonu ve metinleri iki temada tanımlıdır', () => {
-    const mapCss = read('styles/20-map-interactions.css');
-    const lightCss = read('styles/91-light-theme-tuning.css');
+    const mapCss = read('styles/10-shell-map-panels.css');
+    const lightCss = read('styles/90-themes.css');
     const icon = read('assets/icons/export-map.svg');
     const icons = JSON.parse(read('assets/icons/icons.json'));
     const tr = JSON.parse(read('locales/lang-tr.json')).strings;

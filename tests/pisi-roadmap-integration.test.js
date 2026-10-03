@@ -56,7 +56,7 @@ test('Araştırma yüzeyi ve web yakalama hattı ilk sürümden çıkarılmışt
     const search = read('renderer/search/pisi-search-index.mjs');
     const editor = read('renderer/editor/pisi-node-editor.mjs');
     const portability = read('main/functions/portability.js');
-    const roadmapCss = read('styles/58-roadmap-workspace.css');
+    const roadmapCss = read('styles/58-workspaces-platform.css');
     const rendererManifest = JSON.parse(read('renderer/module-manifest.json'));
     const mainManifest = JSON.parse(read('main/module-manifest.json'));
     const tr = JSON.parse(read('locales/lang-tr.json')).strings;
@@ -118,7 +118,7 @@ test('Plugins ve Team altyapıları ilk sürümden tamamen çıkarılmıştır',
     const runtime = read('main/runtime.js');
     const mainEntry = read('main.mjs');
     const toolbar = read('renderer/editor/pisi-editor-unified-toolbar.mjs');
-    const platformStyles = read('styles/59-platform-system.css');
+    const platformStyles = read('styles/58-workspaces-platform.css');
     const rendererManifest = JSON.parse(read('renderer/module-manifest.json'));
     const mainManifest = JSON.parse(read('main/module-manifest.json'));
     const tr = JSON.parse(read('locales/lang-tr.json')).strings;
@@ -152,7 +152,7 @@ test('editör imleci otomatik kayıtta korunur, Enter yeni satıra bırakılır 
     const blocks = read('renderer/editor/pisi-block-editor.mjs');
     const routing = read('renderer/editor/pisi-editor-command-routing.mjs');
     const tabs = read('renderer/shell/pisi-tabs.mjs');
-    const platformStyles = read('styles/59-platform-system.css');
+    const platformStyles = read('styles/58-workspaces-platform.css');
 
     assert.match(nodeEditor, /clearPisiEditorCaret/);
     assert.doesNotMatch(nodeEditor, /focusPisiEditorAtEnd/);
@@ -174,7 +174,7 @@ test('Pisi geçmişi gizlenir ve yeniden adlandırma alanları klavyeyi korur', 
     const tree = read('renderer/tree/pisi-tree-view.mjs');
     const map = read('renderer/map/pisi-map-workspace.mjs');
     const commands = read('renderer/core/pisi-command-registry.mjs');
-    const styles = read('styles/10-tree-and-map.css');
+    const styles = read('styles/10-shell-map-panels.css');
     const focusHelper = startup.match(/function focusPisiTextInput\(input, shouldSelect = true\) \{[\s\S]*?\n\}/)?.[0] || '';
 
     assert.match(operations, /entry\.name\.toLowerCase\(\) === '\.pisi-history'/);
@@ -213,7 +213,7 @@ test('map seçimi, ağaç tıklamaları ve node yazma odağı birbirine karışm
 test('map portu kendi alt node ağacını ve bu ağa bağlı çizgileri daraltır', () => {
     const interactions = read('renderer/map/pisi-map-interactions.mjs');
     const edges = read('renderer/map/pisi-map-edges.mjs');
-    const styles = read('styles/20-map-interactions.css');
+    const styles = read('styles/10-shell-map-panels.css');
 
     assert.match(interactions, /collectPisiCollapsedHubNodeIds/);
     assert.match(interactions, /pisi-hub-descendant-hidden/);
@@ -228,8 +228,8 @@ test('map portu kendi alt node ağacını ve bu ağa bağlı çizgileri daraltı
 test('map ok uçları ve çizgileri node zoom oranını izler', () => {
     const interactions = read('renderer/map/pisi-map-interactions.mjs');
     const edges = read('renderer/map/pisi-map-edges.mjs');
-    const mapStyles = read('styles/10-tree-and-map.css');
-    const interactionStyles = read('styles/20-map-interactions.css');
+    const mapStyles = read('styles/10-shell-map-panels.css');
+    const interactionStyles = read('styles/10-shell-map-panels.css');
     const html = read('index.html');
 
     assert.match(interactions, /getPisiMapConnectionMetrics\(activeMapCamera\?\.zoom\)/);
@@ -242,7 +242,7 @@ test('map ok uçları ve çizgileri node zoom oranını izler', () => {
 
 test('günlük takvimi açılan günü seçili bırakmaz ve dil değişikliğini izler', () => {
     const runtime = read('renderer/runtime.mjs');
-    const styles = read('styles/50-tags-and-missions.css');
+    const styles = read('styles/50-productivity.css');
 
     assert.match(runtime, /function translatePisiCalendarText\(value\)/);
     assert.match(runtime, /monthLabel\.textContent = `\$\{translatePisiCalendarText\(monthName\)\} \$\{state\.year\}`/);
@@ -260,7 +260,7 @@ test('mantıksal, metin ve bilimsel tablo formülleri etkin hesap motoruna bağl
     const sheet = read('renderer/editor/pisi-editor-sheet.mjs');
     const formulaCore = read('renderer/editor/pisi-editor-sheet-formula-core.mjs');
     const menus = read('renderer/editor/pisi-editor-toolbar-menus.mjs');
-    const styles = read('styles/65-unified-toolbar.css');
+    const styles = read('styles/65-shared-ui.css');
 
     assert.match(sheet, /import \{ evaluatePisiFormulaExpression \}/);
     assert.match(sheet, /formatPisiSheetValue\(result\.value\)/);

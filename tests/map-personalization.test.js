@@ -29,7 +29,7 @@ test('Customize yalnız görünür bir map varken etkinleşir ve en sağdadır',
     const customizations = read('renderer/shell/pisi-customizations.mjs');
     const windowSource = read('renderer/shell/pisi-window.mjs');
     const tabs = read('renderer/shell/pisi-tabs.mjs');
-    const css = read('styles/20-map-interactions.css');
+    const css = read('styles/10-shell-map-panels.css');
 
     assert.match(html, /data-right-tab="customizations"[\s\S]*aria-disabled="true"[\s\S]*disabled/);
     assert.match(customizations, /window\.activeMapPath/);
@@ -48,7 +48,7 @@ test('node kartı renkleri map kaydında tutulur ve global varsayılanı ezer', 
     const references = read('main/functions/structured-nodes.js');
     const workspace = read('renderer/map/pisi-map-workspace.mjs');
     const customizations = read('renderer/shell/pisi-customizations.mjs');
-    const mapCss = read('styles/10-tree-and-map.css');
+    const mapCss = read('styles/10-shell-map-panels.css');
 
     assert.match(filesystem, /normalizePisiMapNodeCustomization/);
     assert.match(mapStore, /layout\.customization/);
@@ -82,7 +82,7 @@ test('seçili bağlantının rengi yalnız o edge üzerinde saklanır ve çizili
 });
 
 test('kişiselleştirme yüzeyleri açık ve koyu tema stillerini taşır', () => {
-    const dark = read('styles/60-customization.css');
+    const dark = read('styles/58-workspaces-platform.css');
     const themes = read('styles/90-themes.css');
 
     assert.match(dark, /#pisi-map-customize-panel/);

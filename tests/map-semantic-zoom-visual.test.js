@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 
-const css = fs.readFileSync(path.join(__dirname, '..', 'styles', '10-tree-and-map.css'), 'utf8');
+const css = fs.readFileSync(path.join(__dirname, '..', 'styles', '10-shell-map-panels.css'), 'utf8');
 
 test('manual title view constrains saved inline node height to enlarged title height', () => {
     const start = css.search(/#map-canvas\[data-node-view=['"]title['"]\]\s+\.map-node-box/);

@@ -20,7 +20,7 @@ test('Canvas uses Sheet-style section chrome and persistent metadata', () => {
     const nodeEditor = fs.readFileSync(path.join(root, 'renderer/editor/pisi-node-editor.mjs'), 'utf8');
     const blocks = fs.readFileSync(path.join(root, 'renderer/tags/pisi-editor-blocks.mjs'), 'utf8');
     const blockEditor = fs.readFileSync(path.join(root, 'renderer/editor/pisi-block-editor.mjs'), 'utf8');
-    const css = fs.readFileSync(path.join(root, 'styles/70-components.css'), 'utf8');
+    const css = fs.readFileSync(path.join(root, 'styles/65-shared-ui.css'), 'utf8');
 
     assert.match(paint, /ensurePisiCanvasSectionHeader/);
     assert.match(paint, /block\.dataset\.pisiCanvasTitle = 'Canvas'/);

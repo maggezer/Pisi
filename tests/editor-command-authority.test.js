@@ -131,8 +131,8 @@ test('legacy slash popup and legacy slash tag parser are deleted from production
     const blocks = read('renderer/editor/pisi-block-editor.mjs');
     const tags = read('renderer/tags/pisi-tag-editor.mjs');
     const routing = read('renderer/editor/pisi-editor-command-routing.mjs');
-    const platformStyles = read('styles/59-platform-system.css');
-    const interactionStyles = read('styles/92-interaction-fixes.css');
+    const platformStyles = read('styles/58-workspaces-platform.css');
+    const interactionStyles = read('styles/92-compatibility.css');
 
     assert.doesNotMatch(blocks, /ensurePisiSlashMenu|renderPisiSlashMenu|openPisiSlashMenu|isPisiSlashMenuOpen/);
     assert.doesNotMatch(blocks, /pisi-block-slash-menu|pisi-block-slash-item/);

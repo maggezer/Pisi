@@ -31,7 +31,7 @@ test('Property Badges default off but remain user-toggleable', () => {
 });
 
 test('Dim Filtered is pinned top-right and Reset stays below at the right edge', () => {
-    const css = read('styles/115-mindmap-actions-single-row.css');
+    const css = read('styles/105-feature-polish.css');
     const panel = read('renderer/map/pisi-map-right-panel.mjs');
 
     assert.match(css, /#pisi-map-dim-filtered\.pisi-mindmap-icon-button\s*\{[^}]*margin-left:\s*auto;/s);

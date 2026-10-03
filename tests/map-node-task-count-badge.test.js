@@ -10,7 +10,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 test('node modal open button is removed and open task count stays inside the card', () => {
     const render = read('renderer/map/pisi-map-operational-render.mjs');
-    const css = read('styles/100-map-task-count-badge.css');
+    const css = read('styles/92-compatibility.css');
 
     assert.match(render, /box\.querySelector\('\.map-node-open'\)\?\.remove\(\)/);
     assert.match(render, /function makePisiTaskCountBadge\(openCount\)/);
@@ -28,7 +28,7 @@ test('node modal open button is removed and open task count stays inside the car
 });
 
 test('legacy mission task badge no longer appears on map node boxes', () => {
-    const css = read('styles/100-map-task-count-badge.css');
+    const css = read('styles/92-compatibility.css');
 
     assert.match(css, /\.map-node-box\[data-node-path\] > \.pisi-mission-node-badge\s*\{[\s\S]*?display:\s*none/);
 });
@@ -42,5 +42,5 @@ test('double click modal opening remains available after removing the corner but
 
 test('task count badge stylesheet is loaded after existing map styles', () => {
     const style = read('style.css');
-    assert.match(style, /styles\/100-map-task-count-badge\.css/);
+    assert.match(style, /styles\/92-compatibility\.css/);
 });

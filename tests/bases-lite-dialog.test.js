@@ -25,7 +25,7 @@ test('Bases-lite Workspace Center yerine map sağ üst düğmesinden açılır',
 });
 
 test('map Bases-lite düğmesi zoom kontrolleriyle aynı sağ çizgide ve üsttedir', () => {
-    const css = read('styles/20-map-interactions.css');
+    const css = read('styles/10-shell-map-panels.css');
     const creation = read('renderer/map/pisi-map-creation.mjs');
     const interactions = read('renderer/map/pisi-map-interactions.mjs');
 
@@ -40,7 +40,7 @@ test('özel Bases-lite penceresi sağlamlaştırılmış ortak projection görü
     const dialog = read('renderer/data/pisi-bases-dialog.mjs');
     const view = read('renderer/data/pisi-bases-view.mjs');
     const core = read('renderer/data/pisi-bases-core.mjs');
-    const css = read('styles/58-roadmap-workspace.css');
+    const css = read('styles/58-workspaces-platform.css');
 
     assert.match(dialog, /className = 'pisi-bases-dialog'/);
     assert.match(dialog, /setAttribute\('aria-modal', 'true'\)/);
@@ -57,9 +57,9 @@ test('özel Bases-lite penceresi sağlamlaştırılmış ortak projection görü
 });
 
 test('Bases-lite düğmesi, penceresi ve özel ikonu iki temaya uygundur', () => {
-    const dark = read('styles/58-roadmap-workspace.css');
-    const light = read('styles/91-light-theme-tuning.css');
-    const mapCss = read('styles/20-map-interactions.css');
+    const dark = read('styles/58-workspaces-platform.css');
+    const light = read('styles/90-themes.css');
+    const mapCss = read('styles/10-shell-map-panels.css');
     const icon = read('assets/icons/bases-lite.svg');
     const icons = JSON.parse(read('assets/icons/icons.json'));
     const tr = JSON.parse(read('locales/lang-tr.json')).strings;

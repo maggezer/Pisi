@@ -11,7 +11,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const moduleSource = read('renderer/map/pisi-map-relationship-menu.mjs');
 const bootstrap = read('renderer/bootstrap.mjs');
 const style = read('style.css');
-const css = read('styles/113-mindmap-relationship-menu.css');
+const css = read('styles/105-feature-polish.css');
 
 test('All relationships select is retired from visible Mind Map filters', () => {
     assert.match(css, /#pisi-map-operational-relation\s*\{[^}]*display:\s*none\s*;/s);
@@ -36,5 +36,5 @@ test('relationship menu preserves all existing relationship filter choices', () 
 
 test('relationship menu module and stylesheet are loaded', () => {
     assert.match(bootstrap, /\.\/map\/pisi-map-relationship-menu\.mjs/);
-    assert.match(style, /113-mindmap-relationship-menu\.css/);
+    assert.match(style, /105-feature-polish\.css/);
 });

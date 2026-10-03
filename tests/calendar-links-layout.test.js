@@ -9,7 +9,7 @@ const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 test('sol panele dock edilen takvim merkez sekmelerin arkasında kalmaz', () => {
-    const styles = read('styles/50-tags-and-missions.css');
+    const styles = read('styles/50-productivity.css');
 
     assert.match(styles, /#main-layout > #left-panel \{[\s\S]*?position: relative;[\s\S]*?z-index: 2;[\s\S]*?isolation: isolate;/);
     assert.match(styles, /\.pisi-calendar-dock-zone \{[\s\S]*?position: relative;[\s\S]*?z-index: 1;/);
@@ -18,7 +18,7 @@ test('sol panele dock edilen takvim merkez sekmelerin arkasında kalmaz', () => 
 
 test('sag panel Search ve dock edilmis takvimi ayri layout satirlarinda tutar', () => {
     const foundation = read('styles/00-foundation.css');
-    const styles = read('styles/95-right-search-calendar-fix.css');
+    const styles = read('styles/92-compatibility.css');
     const runtime = read('renderer/runtime.mjs');
     const windowModule = read('renderer/shell/pisi-window.mjs');
 
@@ -45,7 +45,7 @@ test('sag panel Search ve dock edilmis takvimi ayri layout satirlarinda tutar', 
 
 test('Links paneli node adı ve kimlik-yol özet kartını üretmez', () => {
     const links = read('renderer/search/pisi-links-panel.mjs');
-    const styles = [read('styles/57-search-and-links.css'), read('styles/91-light-theme-tuning.css')].join('\n');
+    const styles = [read('styles/50-productivity.css'), read('styles/90-themes.css')].join('\n');
 
     assert.doesNotMatch(links, /pisi-links-summary/);
     assert.doesNotMatch(links, /replaceChildren\(summary,/);

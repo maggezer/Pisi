@@ -25,7 +25,7 @@ test('todo ve done bütün editör girişlerinden aynı blok görev modeline ba�
     const toolbar = read('renderer/editor/pisi-editor-unified-toolbar.mjs');
     const todoBlocks = read('renderer/tags/pisi-todo-blocks.mjs');
     const sanitizer = read('renderer/editor/pisi-node-editor.mjs');
-    const styles = read('styles/59-platform-system.css');
+    const styles = read('styles/58-workspaces-platform.css');
 
     assert.match(bootstrap, /tags\/pisi-todo-blocks\.mjs/);
     assert.match(routing, /function buildPisiFinalCommandItems/);

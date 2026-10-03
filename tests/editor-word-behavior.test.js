@@ -57,7 +57,7 @@ test('font changes use real sizes and keep a collapsed caret typing style', () =
 
 test('style selector matches the block model and headings can collapse sections', () => {
     const source = read('renderer/editor/pisi-editor-word-behavior.mjs');
-    const styles = read('styles/94-editor-word-behavior.css');
+    const styles = read('styles/92-compatibility.css');
     const styleIndex = read('style.css');
 
     assert.match(source, /h1: 'heading1'/);
@@ -68,7 +68,7 @@ test('style selector matches the block model and headings can collapse sections'
     assert.match(source, /pisi-heading-section-hidden/);
     assert.match(source, /togglePisiWordHeading/);
 
-    assert.match(styleIndex, /94-editor-word-behavior\.css/);
+    assert.match(styleIndex, /92-compatibility\.css/);
     assert.match(styles, /content:\s*["\']▾["\']/);
     assert.match(styles, /content:\s*["\']▸["\']/);
     assert.match(styles, /pisi-heading-section-hidden/);

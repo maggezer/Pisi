@@ -27,9 +27,9 @@ test('arama modülleri bootstrap ve stil zincirine bağlıdır', () => {
         assert.match(bootstrap, new RegExp('search/' + moduleName.replace('.', '\\.')));
     }
     assert.doesNotMatch(bootstrap, /search\/pisi-block-graph\.mjs/);
-    assert.match(styles, /57-search-and-links\.css/);
-    assert.match(styles, /57-search-navigation-enhancements\.css/);
-    assert.match(styles, /59-platform-system\.css/);
+    assert.match(styles, /50-productivity\.css/);
+    assert.match(styles, /50-productivity\.css/);
+    assert.match(styles, /58-workspaces-platform\.css/);
 });
 
 test('hızlı geçiş klavye, filtre ve map odağı davranışlarını taşır', () => {
