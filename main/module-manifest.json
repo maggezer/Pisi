@@ -32,14 +32,18 @@
             "generatePisiId",
             "normalizePisiId",
             "getDefaultNodeConnectionTypes",
-            "normalizeNodeConnectionTypes",
             "normalizeConnectionRole"
         ]
     },
     {
         "module": "main.i18n",
         "path": "main/functions/i18n.js",
-        "bindings": ["normalizePisiLanguage", "getPisiLanguage", "setPisiLanguage", "translatePisiMain"]
+        "bindings": [
+            "normalizePisiLanguage",
+            "getPisiLanguage",
+            "setPisiLanguage",
+            "translatePisiMain"
+        ]
     },
     {
         "module": "main.filesystemCore",
@@ -55,7 +59,6 @@
             "getPisiEdgeSemanticKey",
             "wouldCreatePisiHierarchyCycle",
             "normalizePisiMapEdges",
-            "resetNodeConnectionTypes",
             "getPisiSidecarName",
             "createPisiDocumentData",
             "readJsonFileResult",
@@ -206,12 +209,21 @@
     {
         "module": "main.propertySchemaMutations",
         "path": "main/functions/property-schema-mutations.js",
-        "bindings": ["savePisiNodePropertiesBySchema", "preparePisiPropertyDefinitionRewrite", "resolveSubmittedPisiPropertyDefinition"]
+        "bindings": [
+            "savePisiNodePropertiesBySchema",
+            "preparePisiPropertyDefinitionRewrite",
+            "resolveSubmittedPisiPropertyDefinition"
+        ]
     },
     {
         "module": "main.syncProjectAdapter",
         "path": "main/functions/sync-project-adapter.js",
-        "bindings": ["CONFIG_FILES", "readProjectDocuments", "exportPisiSyncEntities", "applyPisiSyncRecords"]
+        "bindings": [
+            "CONFIG_FILES",
+            "readProjectDocuments",
+            "exportPisiSyncEntities",
+            "applyPisiSyncRecords"
+        ]
     },
     {
         "module": "main.projectIntegrity",
@@ -252,7 +264,9 @@
     {
         "module": "main.autoUpdate",
         "path": "main/functions/auto-update.js",
-        "bindings": ["initializePisiAutoUpdate"]
+        "bindings": [
+            "initializePisiAutoUpdate"
+        ]
     },
     {
         "module": "main.electronIpc",
