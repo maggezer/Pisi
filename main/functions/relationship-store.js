@@ -333,26 +333,50 @@ function deletePisiSemanticRelationship(projectFolder, relationshipId) {
     }
 }
 
-function deletePisiSemanticRelationshipsForNode(projectFolder, nodeId) {
+function deletePisiSemanticRelationshipsForNodes(projectFolder, nodeIds = []) {
     try {
-        const safeNodeId = pathSecurity.normalizePisiId(nodeId, '.node');
-        if (!safeNodeId) return { ok: false, error: 'Geçersiz node kimliği.' };
+        const safeNodeIds = new Set(
+            (Array.isArray(nodeIds) ? nodeIds : [nodeIds])
+                .map((nodeId) => pathSecurity.normalizePisiId(nodeId, '.node'))
+                .filter(Boolean)
+        );
+        if (!safeNodeIds.size) {
+            return { ok: false, error: 'Geçerli node kimliği bulunamadı.' };
+        }
+
         const current = readPisiRelationshipStore(projectFolder);
         if (!current.ok) return current;
-        const removed = current.relationships.filter((relationship) => {
-            return relationship.sourceId === safeNodeId || relationship.targetId === safeNodeId;
+
+        const removedRelationships = current.relationships.filter((relationship) => {
+            return safeNodeIds.has(relationship.sourceId) || safeNodeIds.has(relationship.targetId);
         });
-        if (!removed.length) {
-            return { ok: true, removed: 0, relationships: current.relationships };
+        const removedRelationshipIds = removedRelationships.map((relationship) => relationship.id);
+
+        if (!removedRelationships.length) {
+            return {
+                ok: true,
+                removed: 0,
+                removedRelationshipIds: [],
+                relationships: current.relationships
+            };
         }
+
         const remaining = current.relationships.filter((relationship) => {
-            return relationship.sourceId !== safeNodeId && relationship.targetId !== safeNodeId;
+            return !safeNodeIds.has(relationship.sourceId) && !safeNodeIds.has(relationship.targetId);
         });
         const written = writePisiRelationshipStore(projectFolder, remaining);
-        return { ...written, removed: removed.length };
+        return {
+            ...written,
+            removed: removedRelationships.length,
+            removedRelationshipIds
+        };
     } catch (error) {
         return { ok: false, error: error.message };
     }
+}
+
+function deletePisiSemanticRelationshipsForNode(projectFolder, nodeId) {
+    return deletePisiSemanticRelationshipsForNodes(projectFolder, [nodeId]);
 }
 
 function reparentPisiSemanticRelationship(projectFolder, childId, parentId) {
@@ -399,6 +423,7 @@ const moduleApi = {
     prepareSemanticRelationshipUpsert,
     upsertPisiSemanticRelationship,
     deletePisiSemanticRelationship,
+    deletePisiSemanticRelationshipsForNodes,
     deletePisiSemanticRelationshipsForNode,
     reparentPisiSemanticRelationship
 };
