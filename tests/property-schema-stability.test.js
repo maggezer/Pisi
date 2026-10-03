@@ -59,7 +59,7 @@ test('removing a node value does not implicitly delete schema definitions', () =
     assert.doesNotMatch(mutations, /deleteDefinition|removeDefinition/);
 });
 
-test('Project Integrity audits property authority invalid type value drift and migration conflicts', () => {
+test('Project Integrity audits canonical property authority, invalid type, value drift and schema conflicts', () => {
     const integrity = read('main/functions/project-integrity-properties.js');
     const orchestrator = read('main/functions/project-integrity.js');
     for (const code of [
@@ -73,6 +73,9 @@ test('Project Integrity audits property authority invalid type value drift and m
     ]) {
         assert.ok(integrity.includes(code), code);
     }
+    assert.match(integrity, /property-schema-authority-missing/);
+    assert.match(integrity, /resolve-property-schema-conflict/);
+    assert.doesNotMatch(integrity, /migration|migrate-/i);
     assert.match(orchestrator, /properties\.auditPisiPropertySchema/);
     assert.match(orchestrator, /properties: '\.pisi\/properties\.json'/);
 });
