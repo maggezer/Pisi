@@ -129,10 +129,10 @@ function collectPisiPropertyCarriers(projectFolder) {
         if (!read.ok || read.data?.pisi?.type !== 'node') continue;
         if (!read.data.properties || typeof read.data.properties !== 'object') continue;
         carriers.push(
-            makePropertyCarrier('node', nodePath, read.data.pisi.id || nodePath, read.data.properties, (properties, reason = 'property-schema-migration') => {
+            makePropertyCarrier('node', nodePath, read.data.pisi.id || nodePath, read.data.properties, (properties, reason = 'property-schema-change') => {
                 const latest = readJsonWithoutMutation(projectFolder, nodePath);
                 if (!latest.ok || latest.data?.pisi?.type !== 'node') {
-                    throw new Error(`Property migration sırasında node okunamadı: ${nodePath}`);
+                    throw new Error(`Property güncellemesi sırasında node okunamadı: ${nodePath}`);
                 }
                 if (typeof globalThis.snapshotPisiNodeVersion === 'function') {
                     const snapshot = globalThis.snapshotPisiNodeVersion(nodePath, reason);
@@ -155,10 +155,10 @@ function collectPisiPropertyCarriers(projectFolder) {
                     makePropertyCarrier('template', templatePath, template.id || `template-${index}`, template.properties, (properties) => {
                         const latest = readJsonWithoutMutation(projectFolder, templatePath);
                         if (!latest.ok || !Array.isArray(latest.data?.templates)) {
-                            throw new Error('Property migration sırasında template store okunamadı.');
+                            throw new Error('Property güncellemesi sırasında template store okunamadı.');
                         }
                         const target = latest.data.templates.find((item) => item?.id === template.id) || latest.data.templates[index];
-                        if (!target) throw new Error('Property migration sırasında template bulunamadı.');
+                        if (!target) throw new Error('Property güncellemesi sırasında template bulunamadı.');
                         target.properties = properties;
                         target.updatedAt = new Date().toISOString();
                         const written = storage.writeJson(PISI_PROPERTY_TEMPLATE_FILE, latest.data, {
@@ -339,7 +339,7 @@ function resolveSubmittedProperty(schema, submitted, indexes) {
 function savePisiNodePropertiesStable(projectFolder, nodePath, properties = []) {
     return runPisiAtomicMutation(projectFolder, 'property.node.save.v1', () => {
         const ensured = ensurePisiPropertySchema(projectFolder);
-        if (ensured?.then) throw new Error('Nested property schema migration beklenmedik şekilde async döndü.');
+        if (ensured?.then) throw new Error('Nested property schema ensure beklenmedik şekilde async döndü.');
         if (!ensured?.ok) return ensured;
         const schema = JSON.parse(JSON.stringify(ensured.schema));
         const indexes = getPisiPropertyDefinitionIndexes(schema);
