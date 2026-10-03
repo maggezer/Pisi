@@ -1,6 +1,6 @@
 import { registerMainModule } from './module-registry.js';
 
-import { app, BrowserWindow, Menu, ipcMain, dialog, screen, shell } from './electron-bridge.js';
+import { app, BrowserWindow, ipcMain, dialog } from './electron-bridge.js';
 
 import * as path from 'node:path';
 

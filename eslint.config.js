@@ -12,6 +12,18 @@ const correctnessRules = {
     'no-unsafe-finally': 'error'
 };
 
+const unusedRules = {
+    'no-unused-vars': [
+        'error',
+        {
+            args: 'after-used',
+            argsIgnorePattern: '^_',
+            caughtErrors: 'none',
+            ignoreRestSiblings: true
+        }
+    ]
+};
+
 function loadManifestGlobals(relativePath) {
     const filePath = path.join(__dirname, relativePath);
     if (!fs.existsSync(filePath)) return {};
@@ -111,11 +123,11 @@ module.exports = [
                 ...loadRuntimeGlobals('main/runtime.js')
             }
         },
-        rules: { ...correctnessRules, 'no-undef': 'error' }
+        rules: { ...correctnessRules, ...unusedRules, 'no-undef': 'error' }
     },
     {
         files: ['renderer/**/*.mjs'],
         languageOptions: { ecmaVersion: 'latest', sourceType: 'module' },
-        rules: correctnessRules
+        rules: { ...correctnessRules, ...unusedRules }
     }
 ];

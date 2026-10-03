@@ -430,7 +430,6 @@ function isPisiSheetEditingCell(table, cell) {
 
 function extendPisiSheetSelectionByKeyboard(table, cell, key) {
     const current = normalizePisiSheetSelection(table);
-    const dimensions = getPisiSheetDimensions(table);
     const position = current?.focus || getPisiSheetCellPosition(cell);
 
     if (!position) return;

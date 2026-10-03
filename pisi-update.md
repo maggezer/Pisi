@@ -201,6 +201,17 @@ paketleme ve dokümantasyon başlıklarında yeniden denetlendi.
 
 ### Sonradan tamamlanan kalite / release maddeleri
 
+- **92 / P3.9:** Temmuz auditinde listelenen eski sekiz kullanılmayan helper
+  (`getConnectionRoleFromPort`, `getEdgeVisualTypeFromRoles`,
+  `getNodeDocByIdInMap`, `getDirectTreeRow`,
+  `updateTreeAfterSavedConnection`, `updateMapBoxAfterRename`,
+  `getEditableBaseName`, `getBaseName`) sonraki modülerleştirmelerde zaten
+  ortadan kalkmıştı. Güncel repo `no-unused-vars` ile yeniden tarandı; kalan
+  ölü helper, import, local değişken ve kullanılmayan parametre artıkları
+  temizlendi. `no-unused-vars` artık main ve renderer production kaynaklarında
+  kalıcı ESLint kuralı olduğundan aynı bakım borcunun yeniden birikmesi CI
+  tarafından engelleniyor.
+
 - **98 / P3.7:** Global CSS konsolidasyonu tamamlandı. `style.css` 51 ayrı
   global import yerine 9 semantik bundle yüklüyor; eski tek-fix numbered CSS
   parçaları bundle'lara kaynak sırası korunarak taşındı. Renderer altındaki

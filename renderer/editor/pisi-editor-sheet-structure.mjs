@@ -1,10 +1,4 @@
 import { registerModule } from '../core/module-registry.mjs';
-function getPisiSheetColumnLabel(table, colIndex) {
-    const field = getPisiSheetField(table, colIndex);
-
-    return field?.name || pisiColumnName(colIndex);
-}
-
 function setPisiSheetColumnLabel(table, colIndex, value) {
     const label = renamePisiSheetField(table, colIndex, value);
     if (!label) return null;
