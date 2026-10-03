@@ -542,31 +542,6 @@ function auditNodeParentMap(context, inventory) {
     }
 }
 
-function auditDerivedConnections(context, inventory, relationships) {
-    const derived = mapSemanticCore.derivePisiConnectionTypesFromRelationships(Array.from(inventory.nodeById.keys()), relationships);
-    for (const [nodeId, doc] of inventory.nodeById) {
-        const expected = derived.get(nodeId);
-        if (!expected || JSON.stringify(doc.metadata?.connectionTypes || {}) === JSON.stringify(expected)) continue;
-        shared.issue(
-            context,
-            {
-                severity: 'warning',
-                code: 'node-derived-connections-stale',
-                domain: 'derived',
-                path: doc.storedPath,
-                entityId: nodeId,
-                message: 'Node connectionTypes cache’i canonical relationship store ile uyuşmuyor.'
-            },
-            {
-                safety: 'review',
-                action: 'rebuild-derived-state',
-                description:
-                    'Bu cache proje çapındaki canonical relationship graphından yeniden hesaplanmalıdır; “Türetilmiş durumu yeniden oluştur” akışını kullanın.'
-            }
-        );
-    }
-}
-
 function auditDocumentsAndMaps(projectFolder, context, relationships) {
     const inventory = collectDocumentInventory(projectFolder, context);
     for (const doc of inventory.docs) {
@@ -576,7 +551,6 @@ function auditDocumentsAndMaps(projectFolder, context, relationships) {
     const relationshipsById = new Map((Array.isArray(relationships) ? relationships : []).filter((item) => item?.id).map((item) => [item.id, item]));
     auditMaps(projectFolder, context, inventory, relationshipsById);
     auditNodeParentMap(context, inventory);
-    auditDerivedConnections(context, inventory, relationships || []);
     return inventory;
 }
 
@@ -587,6 +561,5 @@ export {
     resolveMapReference,
     auditMaps,
     auditNodeParentMap,
-    auditDerivedConnections,
     auditDocumentsAndMaps
 };
