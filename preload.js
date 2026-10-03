@@ -55,28 +55,79 @@ contextBridge.exposeInMainWorld('pisiUpdates', {
     }
 });
 
+function invokePisiDomainQuery(name, payload = {}) {
+    return ipcRenderer.invoke('pisi:domain-query', name, payload || {});
+}
+
+function invokePisiDomainCommand(name, payload = {}) {
+    return ipcRenderer.invoke('pisi:domain-command', name, payload || {});
+}
+
+function invokePisiTaskOperation(projectFolder, payload = {}) {
+    const operation = String(payload?.op || 'add').toLowerCase();
+    if (operation === 'list') {
+        return invokePisiDomainQuery('task.list.v1', { projectFolder });
+    }
+    if (operation === 'upsert') {
+        return invokePisiDomainCommand('task.upsert.v1', {
+            projectFolder,
+            task: payload.task || payload
+        });
+    }
+    if (operation === 'update') {
+        return invokePisiDomainCommand('task.update.v1', {
+            projectFolder,
+            taskId: payload.taskId || payload.id,
+            patch: payload.patch || payload.task || {}
+        });
+    }
+    if (operation === 'delete') {
+        return invokePisiDomainCommand('task.delete.v1', {
+            projectFolder,
+            taskId: payload.taskId || payload.id
+        });
+    }
+    if (operation === 'sync-index') {
+        return invokePisiDomainCommand('task.sync-projection.v1', {
+            projectFolder,
+            complete: payload.complete,
+            pruneMissing: payload.pruneMissing,
+            tasks: payload.tasks
+        });
+    }
+    return invokePisiDomainCommand('task.capture.v1', {
+        projectFolder,
+        task: payload
+    });
+}
+
+contextBridge.exposeInMainWorld('pisiDomain', {
+    query: (name, payload) => invokePisiDomainQuery(name, payload),
+    command: (name, payload) => invokePisiDomainCommand(name, payload)
+});
+
 contextBridge.exposeInMainWorld('pisiProject', {
     getLastFolder: () => ipcRenderer.invoke('project:get-last-folder'),
     chooseFolder: () => ipcRenderer.invoke('project:choose-folder'),
     setLastFolder: (folderPath) => ipcRenderer.invoke('project:set-last-folder', folderPath),
-    listFolder: (folderPath) => ipcRenderer.invoke('project:list-folder', folderPath),
-    deletePath: (targetPath) => ipcRenderer.invoke('project:delete-path', targetPath),
+    listFolder: (folderPath) => invokePisiDomainQuery('project.folder.list.v1', { folderPath }),
+    deletePath: (targetPath) => invokePisiDomainCommand('project.path.delete.v1', { targetPath }),
     folderExists: (folderPath) => ipcRenderer.invoke('project:folder-exists', folderPath),
 
     createPisiFile: (folderPath, ext) => ipcRenderer.invoke('project:create-pisi-file', folderPath, ext),
-    renamePisiFile: (oldPath, newBaseName) => ipcRenderer.invoke('project:rename-pisi-file', oldPath, newBaseName),
+    renamePisiFile: (oldPath, newBaseName) => invokePisiDomainCommand('project.item.rename.v1', { oldPath, newBaseName }),
     movePisiItem: (sourcePath, destinationFolderPath, options) =>
-        ipcRenderer.invoke('project:move-pisi-item', sourcePath, destinationFolderPath, options || {}),
-    createNodeUnderMap: (mapPath) => ipcRenderer.invoke('project:create-node-under-map', mapPath),
+        invokePisiDomainCommand('project.item.move.v1', { sourcePath, destinationFolderPath, options: options || {} }),
+    createNodeUnderMap: (mapPath) => invokePisiDomainCommand('map.node.create.v1', { mapPath }),
     getOrCreateDiaryNode: (projectFolder, isoDate) => ipcRenderer.invoke('project:get-or-create-diary-node', projectFolder, isoDate),
     listDiaryDates: (projectFolder) => ipcRenderer.invoke('project:list-diary-dates', projectFolder),
     syncDiaryMissions: (projectFolder, entries) => ipcRenderer.invoke('project:sync-diary-missions', projectFolder, entries),
 
-    listMapNodes: (mapPath) => ipcRenderer.invoke('project:list-map-nodes', mapPath),
+    listMapNodes: (mapPath) => invokePisiDomainQuery('map.projection.v1', { mapPath }),
     getNodePropertyContext: (nodePath, preferredMapPath) => ipcRenderer.invoke('project:get-node-property-context', nodePath, preferredMapPath || null),
-    saveMapLayout: (mapPath, nodeLayouts) => ipcRenderer.invoke('project:save-map-layout', mapPath, nodeLayouts),
+    saveMapLayout: (mapPath, nodeLayouts) => invokePisiDomainCommand('map.layout.save.v1', { mapPath, nodes: nodeLayouts }),
     saveNodeContent: (nodePath, content) => ipcRenderer.invoke('project:save-node-content', nodePath, content),
-    quickAddTask: (projectFolder, payload) => ipcRenderer.invoke('project:quick-add-task', projectFolder, payload),
+    quickAddTask: (projectFolder, payload) => invokePisiTaskOperation(projectFolder, payload),
     saveNodeProperties: (nodePath, properties) => ipcRenderer.invoke('project:save-node-properties', nodePath, properties),
     listSavedViews: (projectFolder) => ipcRenderer.invoke('project:list-saved-views', projectFolder),
     saveView: (projectFolder, view) => ipcRenderer.invoke('project:save-view', projectFolder, view),
@@ -86,7 +137,7 @@ contextBridge.exposeInMainWorld('pisiProject', {
     deleteDatabaseTemplate: (projectFolder, templateId) => ipcRenderer.invoke('project:delete-database-template', projectFolder, templateId),
     applyDatabaseTemplate: (nodePath, templateId, options) => ipcRenderer.invoke('project:apply-database-template', nodePath, templateId, options || {}),
     createPropertyMap: (projectFolder, options) => ipcRenderer.invoke('project:create-property-map', projectFolder, options),
-    detachMapReference: (mapPath, nodeId) => ipcRenderer.invoke('project:detach-map-reference', mapPath, nodeId),
+    detachMapReference: (mapPath, nodeId) => invokePisiDomainCommand('map.reference.detach.v1', { mapPath, nodeId }),
 
     exportMap: (mapPath, payload) => ipcRenderer.invoke('project:export-map', mapPath, payload || {}),
     exportNode: (nodePath, format) => ipcRenderer.invoke('project:export-node', nodePath, format),
@@ -99,16 +150,16 @@ contextBridge.exposeInMainWorld('pisiProject', {
     listBackups: (projectFolder, filePath) => ipcRenderer.invoke('project:list-backups', projectFolder, filePath || null),
     restoreBackup: (projectFolder, backupId) => ipcRenderer.invoke('project:restore-backup', projectFolder, backupId),
 
-    getPisiDocument: (filePath) => ipcRenderer.invoke('project:get-pisi-document', filePath),
-    deleteNodeFromMap: (nodePath) => ipcRenderer.invoke('project:delete-node-from-map', nodePath),
+    getPisiDocument: (filePath) => invokePisiDomainQuery('document.read.v1', { filePath }),
+    deleteNodeFromMap: (nodePath) => invokePisiDomainCommand('project.item.delete.v1', { targetPath: nodePath }),
 
-    upsertMapConnection: (mapPath, edge) => ipcRenderer.invoke('project:upsert-map-connection', mapPath, edge),
-    reparentMapNode: (mapPath, childId, parentId) => ipcRenderer.invoke('project:reparent-map-node', mapPath, childId, parentId),
+    upsertMapConnection: (mapPath, edge) => invokePisiDomainCommand('map.relationship.upsert.v1', { mapPath, edge }),
+    reparentMapNode: (mapPath, childId, parentId) => invokePisiDomainCommand('map.relationship.reparent.v1', { mapPath, childId, parentId }),
 
-    deleteMapConnection: (mapPath, edgeId) => ipcRenderer.invoke('project:delete-map-connection', mapPath, edgeId),
-    saveMapCamera: (mapPath, camera) => ipcRenderer.invoke('project:save-map-camera', mapPath, camera),
+    deleteMapConnection: (mapPath, edgeId) => invokePisiDomainCommand('map.relationship.delete.v1', { mapPath, edgeId }),
+    saveMapCamera: (mapPath, camera) => invokePisiDomainCommand('map.camera.save.v1', { mapPath, camera }),
 
-    deletePisiFile: (targetPath) => ipcRenderer.invoke('project:delete-pisi-file', targetPath),
+    deletePisiFile: (targetPath) => invokePisiDomainCommand('project.item.delete.v1', { targetPath }),
 
     onFileSystemChanged: (callback) => {
         const listener = (_event, payload) => {
