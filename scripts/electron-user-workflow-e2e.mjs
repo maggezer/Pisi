@@ -301,8 +301,26 @@ try {
         throw new Error('Tree drag reported success but the node path did not move into the map sidecar.');
     }
 
+    await waitUntil('tree refresh after node-to-map drop', async () => {
+        return cdp.evaluate(
+            "(() => { const paths = Array.from(document.querySelectorAll('.tree-node[data-path]')).map((node) => node.dataset.path); return !paths.includes(" +
+                JSON.stringify(nodePath) +
+                ') && paths.includes(' +
+                JSON.stringify(mapPath) +
+                '); })()'
+        );
+    });
+
     await waitForTreePath(cdp, mapPath);
     await clickTreePath(cdp, mapPath);
+
+    await waitUntil('map workspace active', async () => {
+        return cdp.evaluate(
+            "(() => window.Pisi?.state?.activeTabPath === " +
+                JSON.stringify(mapPath) +
+                " && document.getElementById('map-canvas')?.hidden === false)()"
+        );
+    });
 
     const beforeDrag = await waitUntil('map node visible', async () => {
         return cdp.evaluate(
