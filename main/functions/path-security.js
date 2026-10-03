@@ -476,22 +476,6 @@ function getDefaultNodeConnectionTypes() {
     };
 }
 
-function normalizeNodeConnectionTypes(value) {
-    const defaults = getDefaultNodeConnectionTypes();
-
-    if (!value || typeof value !== 'object' || Array.isArray(value)) {
-        return defaults;
-    }
-
-    return {
-        'up-hub': Array.isArray(value['up-hub']) ? value['up-hub'] : [],
-        'down-hub': Array.isArray(value['down-hub']) ? value['down-hub'] : [],
-        'co-level': Array.isArray(value['co-level']) ? value['co-level'] : [],
-        upstream: Array.isArray(value['upstream']) ? value['upstream'] : [],
-        downstream: Array.isArray(value['downstream']) ? value['downstream'] : []
-    };
-}
-
 function normalizeConnectionRole(role) {
     const value = String(role || '').trim();
 
@@ -676,12 +660,6 @@ Object.defineProperties(moduleApi, {
         enumerable: true,
         get() {
             return getDefaultNodeConnectionTypes;
-        }
-    },
-    normalizeNodeConnectionTypes: {
-        enumerable: true,
-        get() {
-            return normalizeNodeConnectionTypes;
         }
     },
     normalizeConnectionRole: {
