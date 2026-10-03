@@ -158,6 +158,44 @@ test('node silme canonical relationship store içinden tüm bağlı ilişkileri 
     ]);
 });
 
+test('node document writer connectionTypes projectionını diske yazmaz', () => {
+    let writtenContent = null;
+    const source = `
+        ${extractFunction(mainSource, 'writePisiDocument')}
+        globalThis.writeDocument = writePisiDocument;
+    `;
+    const context = {
+        Object,
+        JSON,
+        getPisiFileExt(filePath) {
+            return path.extname(filePath).toLowerCase();
+        },
+        writeFileAtomic(_filePath, content) {
+            writtenContent = content;
+        }
+    };
+
+    vm.createContext(context);
+    vm.runInContext(source, context);
+
+    const data = {
+        pisi: {
+            type: 'node',
+            id: 'node_a',
+            connectionTypes: {
+                'up-hub': ['node_b']
+            }
+        },
+        content: 'test'
+    };
+
+    context.writeDocument('/project/test.node', data);
+
+    const written = JSON.parse(writtenContent);
+    assert.equal(Object.prototype.hasOwnProperty.call(written.pisi, 'connectionTypes'), false);
+    assert.equal(Object.prototype.hasOwnProperty.call(data.pisi, 'connectionTypes'), true);
+});
+
 test('layout ve kamera sayıları güvenli aralıklara sıkıştırılır', () => {
     const api = loadMainHelpers(
         ['finiteNumberInRange', 'normalizePisiNodeLayout', 'normalizePisiMapCamera'],
