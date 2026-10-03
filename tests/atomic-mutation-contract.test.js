@@ -100,7 +100,8 @@ test('atomic hardening loads after the domain registry', () => {
     assert.ok(hardeningIndex > domainIndex);
 });
 
-test('destructive compatibility IPC handlers are rebound after legacy hooks', () => {
+test('destructive commands are exposed only through canonical domain IPC after operation hooks', () => {
+    assert.match(domain, /handle\('pisi:domain-command'/);
     for (const channel of [
         'project:rename-pisi-file',
         'project:move-pisi-item',
@@ -108,7 +109,7 @@ test('destructive compatibility IPC handlers are rebound after legacy hooks', ()
         'project:delete-node-from-map',
         'project:delete-path'
     ]) {
-        assert.match(domain, new RegExp(`removeHandler\\('${channel}'\\)`));
+        assert.equal(domain.includes(channel), false, channel);
     }
     const main = read('main.mjs');
     assert.ok(main.indexOf('./main/functions/domain-command-query') > main.indexOf('./main/functions/task-reference-operation-hooks'));
