@@ -1,9 +1,5 @@
 import { getPisiTodayIsoDate, matchesPisiTodoFilter } from './pisi-todo-utils.mjs';
-import {
-    getPisiTodoThirdStorageKey,
-    parsePisiMissionDependenciesThirdRelease,
-    parsePisiMissionReminderThirdRelease
-} from './pisi-todo-third-model.mjs';
+import { getPisiTodoThirdStorageKey, parsePisiMissionDependenciesThirdRelease, parsePisiMissionReminderThirdRelease } from './pisi-todo-third-model.mjs';
 
 function getPisiMissionTitleThirdRelease(mission) {
     const text = window.getPisiMissionDisplayTextFirstRelease?.(mission);
@@ -84,9 +80,7 @@ function getPisiReminderTimestampThirdRelease(mission) {
 }
 
 function getPisiReminderSeenKeyThirdRelease(mission) {
-    return getPisiTodoThirdStorageKey(
-        `reminded:${encodeURIComponent(mission.missionId)}:${mission.reminder}:${getPisiMissionDateKeyThirdRelease(mission)}`
-    );
+    return getPisiTodoThirdStorageKey(`reminded:${encodeURIComponent(mission.missionId)}:${mission.reminder}:${getPisiMissionDateKeyThirdRelease(mission)}`);
 }
 
 function sortPisiThirdMissionsByFinishDate(missions = []) {
