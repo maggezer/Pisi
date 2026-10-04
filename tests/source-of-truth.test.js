@@ -8,6 +8,16 @@ const test = require('node:test');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
+test('single source-of-truth documentation canonical-only mimariyi anlatır', () => {
+    const docs = read('docs/single-source-of-truth.md');
+
+    assert.match(docs, /\.pisi\/tasks\.json.*authoritative task store/);
+    assert.match(docs, /\.pisi\/relationships\.json.*authoritative project-wide/);
+    assert.match(docs, /connectionTypes.*derived at query time.*never persisted as semantic state/);
+    assert.match(docs, /map\.edges.*not part of the current persistence contract.*not migrated on access/);
+    assert.doesNotMatch(docs, /one-time legacy migration marker|migrated on map access|after migration/i);
+});
+
 test('task store tek semantik otoritedir; projection yazımları canonical store üzerinden korunur', () => {
     const mainGuard = read('main/functions/source-of-truth.js');
     const mainBootstrap = read('main.mjs');
