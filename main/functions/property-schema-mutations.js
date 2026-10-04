@@ -170,7 +170,7 @@ function savePisiNodePropertiesBySchema(projectFolder, nodePath, properties = {}
     return runPisiAtomicMutation(projectFolder, 'property.node.save.v1', () => {
         const ensured = schemaStore.ensurePisiPropertySchema(projectFolder);
         if (ensured?.then) {
-            throw new Error('Property schema nested ensure senkron tamamlanamadı.');
+            throw new Error('Property schema hazırlığı beklenmedik şekilde async döndü.');
         }
         if (!ensured?.ok) return ensured;
         const schema = cloneSchema(ensured.schema);
