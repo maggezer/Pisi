@@ -59,7 +59,7 @@ Kurallar:
 - Renderer aktif projenin gerçek yolu dışına çıkamaz; symlink/junction kaçışı
   reddedilir.
 
-## Proje hçerindeki temel dosyalar
+## Proje içindeki temel dosyalar
 
 Basitleştirilmiş yapı:
 
