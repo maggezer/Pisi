@@ -18,6 +18,22 @@ test('single source-of-truth documentation canonical-only mimariyi anlatır', ()
     assert.doesNotMatch(docs, /one-time legacy migration marker|migrated on map access|after migration/i);
 });
 
+test('pisi-definition canonical mimariyi authority sınırlarıyla tanımlar', () => {
+    const docs = read('pisi-definition.md');
+
+    assert.match(docs, /\.pisi\/tasks\.json/);
+    assert.match(docs, /\.pisi\/relationships\.json/);
+    assert.match(docs, /\.pisi\/properties\.json/);
+    assert.match(docs, /connectionTypes.*canonical state değildir.*diske yazılmaz/s);
+    assert.match(docs, /map\.edges.*current persistence contract'ın\s+parçası değildir/s);
+    assert.match(docs, /data-pisi-asset="paint\/<sha256>\.png"/);
+    assert.match(docs, /data-pisi-sheet-asset="sheet\/<sha256>\.json"/);
+    assert.match(docs, /Canonical priority aralığı \*\*1-5\*\*/);
+    assert.match(docs, /project-local reversible\s+Trash/s);
+    assert.doesNotMatch(docs, /"edges"\s*:\s*\[/);
+    assert.doesNotMatch(docs, /"connectionTypes"\s*:/);
+});
+
 test('task store tek semantik otoritedir; projection yazımları canonical store üzerinden korunur', () => {
     const mainGuard = read('main/functions/source-of-truth.js');
     const mainBootstrap = read('main.mjs');
