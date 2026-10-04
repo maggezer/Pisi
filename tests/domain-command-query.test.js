@@ -56,6 +56,8 @@ test('operational mutation camera yan etkisinden ayrı domain commanddır', () =
 });
 
 test('main ve preload yalnız canonical domain IPC transportunu kullanır', () => {
+    assert.doesNotMatch(mainDomain, /bindPisiDomainCompatibilityIpc/);
+    assert.match(mainDomain, /function bindPisiDomainIpc\(\)/);
     assert.match(mainDomain, /removeHandler\('pisi:domain-query'\)/);
     assert.match(mainDomain, /handle\('pisi:domain-query'/);
     assert.match(mainDomain, /removeHandler\('pisi:domain-command'\)/);
