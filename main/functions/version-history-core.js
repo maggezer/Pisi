@@ -193,6 +193,35 @@ function prunePisiVersionHistory(directory, entries, options = {}) {
     return selected;
 }
 
+function prunePisiVersionHistoryEditorAssets(context, retainedEntries = []) {
+    const sidecarPath = context?.info?.sidecarPath;
+    if (!sidecarPath || !fs.existsSync(sidecarPath)) {
+        return { ok: true, skipped: true, reason: 'sidecar-missing' };
+    }
+
+    const references = new Set(editorAssets.collectPisiEditorAssetReferences(context?.info?.data?.content || ''));
+
+    for (const entry of retainedEntries || []) {
+        const snapshotPath = path.join(context.directory, entry.historyId);
+        const result = readPisiVersionHistorySnapshotFile(snapshotPath);
+
+        if (!result.ok || !result.data?.data) {
+            return {
+                ok: true,
+                skipped: true,
+                reason: 'retained-history-unreadable',
+                historyId: entry.historyId
+            };
+        }
+
+        for (const reference of editorAssets.collectPisiEditorAssetReferences(result.data.data.content || '')) {
+            references.add(reference);
+        }
+    }
+
+    return editorAssets.prunePisiEditorAssetStore(sidecarPath, references);
+}
+
 function snapshotPisiNodeVersionBounded(nodePath, reason = 'save', options = {}) {
     try {
         if (!fs.existsSync(nodePath)) return { ok: true, skipped: true };
@@ -235,6 +264,7 @@ function snapshotPisiNodeVersionBounded(nodePath, reason = 'save', options = {})
 
         const entry = makePisiVersionHistoryEntry(directory, historyId, snapshot);
         const retention = prunePisiVersionHistory(directory, [entry, ...existingEntries], options);
+        const assetGc = prunePisiVersionHistoryEditorAssets(context, retention.keep);
         return {
             ok: true,
             historyId,
@@ -244,7 +274,8 @@ function snapshotPisiNodeVersionBounded(nodePath, reason = 'save', options = {})
             storedBytes: entry.size,
             storageBytes: retention.bytes,
             storageBudgetBytes: retention.maxBytes,
-            retainedVersions: retention.keep.length
+            retainedVersions: retention.keep.length,
+            assetGc
         };
     } catch (error) {
         return { ok: false, error: error.message };
