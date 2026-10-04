@@ -156,3 +156,28 @@ test('map node konumu yalnız map layout kaydına yazılır', () => {
     assert.match(layoutWriter, /mapInfo\.data\.map\.nodes/);
     assert.doesNotMatch(layoutWriter, /nodeInfo\.data\.pisi\.(?:x|y|width|height)/);
 });
+
+
+test('aktif mimari dokümanları kaldırılmış geçiş planlarını taşımaz', () => {
+    const domain = read('docs/domain-command-query.md');
+    const properties = read('docs/property-schema.md');
+    const storage = read('docs/storage-abstraction.md');
+    const integrity = read('docs/project-integrity.md');
+    const trash = read('docs/trash-restore-test-matrix.md');
+    const readme = read('README.md');
+
+    assert.match(domain, /pisi:domain-query.*pisi:domain-command/s);
+    assert.doesNotMatch(domain, /compatibility transport|first migrated UI flow|legacy call/i);
+
+    assert.match(properties, /missing canonical schema is not reconstructed/i);
+    assert.doesNotMatch(properties, /supported legacy aliases|deterministic migration ID|## Legacy migration/i);
+
+    assert.match(storage, /Project filesystem bridge/);
+    assert.doesNotMatch(storage, /task-store-migration|transitional architecture|First adoption wave|Second adoption wave/i);
+
+    assert.match(integrity, /relationshipViews/);
+    assert.doesNotMatch(integrity, /incomplete legacy metadata migration|legacy `map\.edges`|connectionTypes.*rebuild|backward-compatible audit form/is);
+
+    assert.doesNotMatch(trash, /legacy `map\.edges`|legacy edge/i);
+    assert.doesNotMatch(readme, /Eski global adlar/);
+});

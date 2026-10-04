@@ -1,5 +1,28 @@
 # PISI Güncelleme Takip Dosyası
 
+> Bu dosya tarihsel değişiklik günlüğüdür; eski tarihlerde yazılmış “ertelendi”,
+> geçiş, uyumluluk veya eski veri biçimi notları aktif mimari sözleşme değildir.
+> Güncel mimari için `pisi-definition.md`, `docs/single-source-of-truth.md`,
+> `docs/domain-command-query.md`, `docs/storage-abstraction.md` ve ilgili
+> domain belgeleri esas alınır.
+
+## 04-10-2026 — P2.4 canonical mimari doküman temizliği
+
+- Domain command/query belgesi tek `pisi:domain-query` / `pisi:domain-command`
+  transportuna göre yeniden yazıldı; kaldırılmış compatibility IPC geçiş anlatımı
+  çıkarıldı.
+- Property schema belgesinden legacy alias/migration akışları kaldırıldı; eksik
+  veya desteklenmeyen property state’inin otomatik dönüştürülmediği canonical-only
+  kuralı netleştirildi.
+- Storage belgesinden kaldırılmış task migration marker’ı ve “transitional
+  compatibility architecture” anlatımı çıkarıldı; aktif ProjectStorage +
+  project-fs bridge sınırı tanımlandı.
+- Project Integrity ve Trash restore belgeleri current-contract audit/rebuild
+  davranışına hizalandı; `map.edges` / persisted `connectionTypes` eski mimari
+  beklentileri aktif dokümantasyondan çıkarıldı.
+- README’de runtime state köprüsü canonical state’ten ayrıldı; stale Sheet,
+  paketleme ve sabit test-sayısı bilgileri güncellendi.
+
 ## 03-10-2026 — P3.10 E2E kullanıcı senaryoları
 
 - Electron E2E artık smoke/startup kontrollerine ek olarak gerçek kullanıcı

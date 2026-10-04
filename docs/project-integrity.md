@@ -1,14 +1,16 @@
 # Project Integrity
 
-Project Integrity is Pisi's project-wide consistency audit and bounded repair surface. It lives in **Settings** and treats the canonical stores and recovery layers as first-class project state rather than auditing only `.node` and `.map` JSON files.
+Project Integrity is Pisi's project-wide consistency audit and bounded repair surface. It lives in **Settings** and evaluates canonical authorities, document/map state and recovery layers together.
 
 ## Authorities
 
 Project Integrity follows the same ownership boundaries as the runtime:
 
-- canonical tasks: `.pisi/tasks.json`
-- canonical semantic relationships: `.pisi/relationships.json`
-- map membership, references, layout, camera, relationship presentation, operational scopes/layouts: `.map` documents
+- tasks: `.pisi/tasks.json`
+- semantic relationships: `.pisi/relationships.json`
+- property definitions: `.pisi/properties.json`
+- node content/property values: `.node`
+- map membership, references, layout, camera, relationship presentation and operational state: `.map`
 - reversible deleted state: `.pisi/trash/items`
 - crash recovery journals: `.pisi/mutations`
 
@@ -18,75 +20,81 @@ Derived caches and projections are never promoted to authority.
 
 The audit covers:
 
-1. **Documents and identities** — invalid JSON, missing/unsafe metadata, duplicate node/map IDs, type mismatches, missing sidecars, incomplete legacy metadata migration.
-2. **Tasks** — invalid/duplicate task IDs, unsupported status/priority, missing source node/map paths, self/missing/duplicate dependencies.
-3. **Semantic relationships** — invalid/duplicate relationship IDs, missing endpoints, duplicate semantic keys, second parents, hierarchy cycles.
-4. **Map state** — broken/duplicate references, orphan/duplicate layout records, orphan relationship views, views whose endpoints are outside map membership, legacy `map.edges`, stale operational state.
-5. **Node consistency** — invalid property payloads, parent-map mismatches and stale `connectionTypes` derived cache.
+1. **Documents and identities** — invalid JSON, missing/unsafe metadata, duplicate node/map IDs, type mismatches and missing managed sidecars.
+2. **Tasks** — invalid/duplicate task IDs, unsupported status/priority, missing source node/map paths and invalid dependencies.
+3. **Semantic relationships** — invalid/duplicate relationship IDs, missing endpoints, duplicate semantic keys, second parents and hierarchy cycles.
+4. **Map state** — broken/duplicate references, orphan/duplicate layout records, malformed/orphan relationship views, endpoints outside map membership and stale operational state.
+5. **Property schema and node values** — missing/unreadable schema authority, invalid/duplicate definitions, orphan property IDs, name/type drift, unsupported types and invalid values.
 6. **Attachments** — missing local `src` / `href` targets referenced from node content.
-7. **Trash** — invalid manifests, duplicate restore destinations, invalid identities, missing or escaping payload paths.
+7. **Trash** — invalid manifests, duplicate restore destinations, invalid identities and missing/escaping payload paths.
 8. **Atomic recovery** — invalid journals, unfinished mutations, committed cleanup residue and rollback failures.
+
+Unsupported current-contract data is reported as an integrity problem. The audit does not convert it into canonical state.
 
 ## Severity
 
 - `critical`: data identity or recovery ambiguity that can make state unsafe.
 - `error`: authoritative references or invariants are broken.
-- `warning`: project remains usable but state is stale, orphaned, incomplete or needs review.
-- `info`: migration/cleanup information that does not make the project unhealthy.
+- `warning`: the project remains usable but state is stale, orphaned, incomplete or needs review.
+- `info`: non-blocking cleanup or diagnostic information.
 
 A project is `healthy` when it has no `critical` or `error` findings. `clean` additionally requires zero warnings/info findings.
 
 ## Repair safety
 
-Every repairable issue is classified before any mutation occurs:
+Every repairable issue is classified before any mutation occurs.
 
 ### Safe
 
-Safe repairs are deterministic and cannot choose between competing user meanings. Examples include recreating a missing managed sidecar for a document with a valid stable ID, normalizing map-local operational state, and completing unambiguous metadata normalization.
+Safe repairs are deterministic and cannot choose between competing user meanings. Current examples include normalizing valid document metadata, recreating a missing managed sidecar and normalizing map-local operational state.
 
-The Settings UI shows the exact safe repair descriptions before the user confirms. Selected safe repairs run through `integrity.repair.v1`, which joins the existing per-project atomic mutation queue. If one repair fails, the transaction fails and the atomic layer restores the pre-command state.
+The Settings UI shows the exact safe repair descriptions before confirmation. Selected safe repairs run through `integrity.repair.v1` inside the existing per-project atomic mutation queue.
 
-Atomic recovery itself is deliberately **not** run from inside this bulk repair transaction. Residual mutation journals are reported as review/manual recovery findings; actual recovery remains in the startup/domain recovery gate so Project Integrity never creates a nested transaction that tries to recover its own active journal.
+Atomic recovery is deliberately not run from inside this repair transaction. Residual mutation journals are reported for review; actual recovery remains in the startup/domain recovery gate.
 
 ### Review
 
-Review repairs have a plausible mechanical fix but can change user-visible meaning. Examples include removing a dangling task dependency, deduplicating a map layout/reference, normalizing property payloads, deciding whether an orphan presentation record should be removed, or retrying cleanup/recovery after inspecting a residual mutation journal. Project Integrity reports these but does not include them in **Apply safe repairs**.
+Review repairs have a plausible mechanical fix but can change user-visible meaning. Examples include dangling task dependencies, duplicate map layout/reference records, property schema/value drift and orphan presentation records.
+
+They are reported but are not included in **Apply safe repairs**.
 
 ### Manual
 
-Manual issues contain identity or semantic ambiguity and must never be auto-fixed. Duplicate node/map/task/relationship IDs, task source identity loss, missing semantic endpoints, second parents, hierarchy cycles, invalid authority stores, damaged Trash payloads, and failed/invalid recovery journals fall in this class.
+Manual issues contain identity or semantic ambiguity and must never be auto-fixed. Examples include duplicate identities, missing semantic endpoints, second parents, hierarchy cycles, damaged authority stores, damaged Trash payloads and invalid recovery journals.
 
 ## Rebuild derived state
 
-**Rebuild derived state** is separate from issue-level safe repair because graph-wide caches must be computed with the whole canonical graph, not a partial node view. It currently rebuilds:
+**Rebuild derived state** is separate from issue-level safe repair. It currently normalizes only map-owned derived/presentation state:
 
-- node `connectionTypes` from canonical `.pisi/relationships.json`;
-- normalized map `relationshipViews` presentation state;
-- normalized map-local operational state.
+- `relationshipViews`
+- map-local operational state
 
-The rebuild explicitly does **not** write `.pisi/tasks.json` or `.pisi/relationships.json`. The result reports `authorityChanged: false` and names the preserved authority files.
+It does not reconstruct tasks, semantic relationships or property definitions from projections. The result keeps canonical authority files unchanged.
 
 ## Transport and domain boundary
 
-The existing renderer `auditIntegrity` preload bridge remains the only exposed integrity transport. Plain string input is the backward-compatible audit form. Explicit envelopes select `audit`, `repair`, or `rebuild-derived`; the main process maps those to versioned domain contracts:
+Project Integrity registers versioned contracts with the main domain dispatcher:
 
 - `integrity.audit.v1` — query, read-only
 - `integrity.repair.v1` — atomic command
 - `integrity.rebuild-derived.v1` — atomic command
 
-Unknown actions fall back to audit rather than dynamically dispatching arbitrary commands.
+The Settings UI reaches these contracts through the narrow `window.pisiProject.auditIntegrity` preload surface and the `project:audit-integrity` IPC adapter. The adapter only normalizes the request shape and dispatches one of the three explicit contracts; it does not contain a separate repair/storage implementation.
+
+Unknown actions resolve to the audit action rather than dynamically dispatching arbitrary commands.
 
 ## Fail-closed rules
 
 Project Integrity does not:
 
-- generate a replacement stable ID for a duplicate or missing identity and pretend references stayed correct;
+- generate replacement stable IDs for ambiguous identities and pretend references stayed correct;
 - reconstruct task authority from diary/Todo/search projections;
 - reconstruct semantic authority from map presentation state;
+- reconstruct property schema authority from node values;
 - silently choose which of two hierarchy parents is correct;
-- automatically convert a hierarchy relationship to stream;
+- automatically reinterpret a hierarchy relationship as another semantic type;
 - delete damaged Trash or atomic recovery records merely to make the audit green;
 - run atomic recovery from inside its own atomic repair transaction;
 - treat permanent deletion as a repair strategy.
 
-The audit is intended to expose uncertainty instead of hiding it.
+The audit exposes uncertainty instead of hiding it.

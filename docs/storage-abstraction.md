@@ -2,19 +2,19 @@
 
 ## Purpose
 
-The storage abstraction gives main-process stores one project-scoped I/O contract without changing any Pisi authority or on-disk schema.
+The storage abstraction gives main-process code one project-scoped I/O contract without redefining Pisi authorities or on-disk semantics.
 
-It is intentionally a technical boundary, not a new repository of truth.
+It is a technical boundary, not a repository of truth.
 
-The current stack is:
+The active stack is:
 
 1. **Domain commands / services** decide what a mutation means.
-2. **Atomic mutation** groups persistent mutations and provides crash recovery.
+2. **Atomic mutation** groups persistent semantic mutations and provides crash recovery.
 3. **Authority stores** own task, relationship, property and document semantics.
 4. **Project storage** converts project-relative keys into safe I/O operations.
-5. **filesystemCore / Node fs** perform the physical file operation.
+5. **filesystemCore / Node fs** perform physical file operations.
 
-Storage therefore never decides what a task, relationship, property, map or node means.
+Storage does not decide what a task, relationship, property, map or node means.
 
 ## Contract
 
@@ -26,12 +26,12 @@ Storage therefore never decides what a task, relationship, property, map or node
 - `writeText` / `writeJson`;
 - directory creation;
 - bounded recursive walk;
-- stat;
+- stat/existence checks;
 - rename;
 - remove;
 - explicit root-delete rejection.
 
-The contract accepts a driver. The active 1.0 driver is the filesystem driver in `main/functions/storage.js`. Tests also exercise the contract through an in-memory driver, proving that store code does not need to know the physical backend.
+The contract accepts a driver. The production driver is implemented in `main/functions/storage.js`; tests can use an in-memory driver.
 
 ## Filesystem driver safety
 
@@ -40,71 +40,63 @@ The filesystem driver:
 - canonicalizes the project root;
 - refuses paths outside that root;
 - refuses symlink/junction traversal;
-- verifies the real path of existing targets remains inside the project;
-- delegates production writes to `writeFileAtomic` when the normal Pisi bootstrap is active;
-- uses a temporary-file + rename fallback only when the storage module is exercised standalone, such as unit tests;
-- marks its own physical I/O with a driver guard so compatibility routing cannot recurse back into the storage port.
+- verifies existing targets remain inside the project;
+- delegates production text writes to `writeFileAtomic` when the normal bootstrap is active;
+- uses a temporary-file + rename fallback only when the storage module is exercised standalone;
+- marks its own physical I/O with a driver guard so routed filesystem calls cannot recurse into the storage port.
 
-This does **not** replace the atomic mutation layer. Atomic mutation remains the transaction/recovery boundary for multi-file semantic operations.
+Atomic mutation remains the transaction/recovery boundary for multi-file semantic operations.
 
-## First adoption wave
+## Direct authority-store usage
 
-The first stores moved directly to the storage port are:
+The canonical stores use project storage for their scoped persistence, including:
 
-- `.pisi/tasks.json` — canonical first-class task authority;
-- `.pisi/relationships.json` — canonical semantic relationship authority;
-- `.pisi/properties.json` — canonical project property-definition authority;
-- `.pisi/task-store-migration.json` — task single-source migration marker;
-- property schema migration scans and `.pisi-templates.json` access.
+- `.pisi/tasks.json` — task authority;
+- `.pisi/relationships.json` — semantic relationship authority;
+- `.pisi/properties.json` — property-definition authority;
+- project property-template persistence used by the property domain.
 
-Their paths and JSON formats are unchanged. No data migration is required by this abstraction.
+The storage layer preserves each store's schema and does not reinterpret records.
 
-## Second adoption wave: documents, maps and sidecars
+## Project filesystem bridge
 
-`main/functions/storage-project-fs-bridge.js` closes most remaining direct project-file I/O behind the same storage port without rewriting mature document/map semantics in one risky change.
+`main/functions/storage-project-fs-bridge.js` routes project-scoped filesystem operations used by document, map and sidecar code through the same storage safety boundary.
 
-After the runtime and all operation hooks are installed, project-scoped filesystem calls are routed as follows:
+After runtime hooks are installed, the bridge covers project-local:
 
-- UTF-8 `.node` / `.map` and project file reads → storage `readText`;
-- directory listing used by map/node and sidecar discovery → storage `list`;
-- existence and stat checks → storage `exists` / `stat`;
-- recursive sidecar and project directory creation → storage `ensureDirectory`;
-- project-internal rename/move → storage `rename`;
-- project-internal unlink/remove → storage `remove`.
+- UTF-8 document/map reads;
+- directory listing used by node/map and sidecar discovery;
+- existence/stat checks;
+- directory creation;
+- rename/move;
+- unlink/remove.
 
-The bridge is path-scoped. App settings, paths outside the active project, project lock files, `.git`, `node_modules`, and `.pisi/mutations` remain at the infrastructure layer.
+The bridge is path-scoped. App settings, paths outside the active project, project lock files, `.git`, `node_modules` and `.pisi/mutations` remain infrastructure-level paths.
 
-Binary reads also remain physical I/O. This is intentional because Version History gzip payloads, attachments and other binary resources do not belong to the text-document storage contract.
+Binary reads remain physical I/O. Version History gzip payloads, attachments and other binary resources are not text-document storage records.
 
-`writeFileAtomic`, including its temporary file, fsync and backup mechanics, also remains a physical filesystem primitive. The bridge does not replace `openSync`, `writeFileSync` or `copyFileSync`. Document/map code therefore keeps the existing crash-safe byte-write implementation while its project metadata/read/list/move/remove access is centralized through project storage.
+`writeFileAtomic`, including temporary-file, fsync and backup mechanics, also remains a physical filesystem primitive. The bridge does not replace `openSync`, `writeFileSync` or `copyFileSync`.
 
-This compatibility bridge is transitional architecture, not a second storage model. It lets mature document/map code keep its behavior while making the storage boundary observable and replaceable. Future refactors may replace individual legacy calls with direct `ProjectStorage` methods without changing the on-disk format or domain contracts.
+The bridge is an active I/O adapter only. It does not own semantics and it is not a second persistence model.
 
-## Authority boundaries remain unchanged
+## Authority boundaries
 
-The following are not converted into a second authority:
+Storage routing never changes the source-of-truth contract:
 
-- `.node` files remain node content/property-value authority for each node;
-- `.map` files remain map membership/presentation/operational-state authority;
-- `.pisi/tasks.json` remains canonical task authority;
-- `.pisi/relationships.json` remains canonical semantic relationship authority;
-- `.pisi/properties.json` remains canonical property-definition authority;
-- `.pisi/mutations` remains temporary crash-recovery state;
-- `.pisi/trash` remains reversible deletion payload state;
-- `.pisi-history` remains recovery/version-history state;
-- search indexes and quick-navigation MRU remain rebuildable projections.
+- `.node` owns node content and node property values;
+- `.map` owns map membership, layout, camera, presentation and operational state;
+- `.pisi/tasks.json` owns tasks;
+- `.pisi/relationships.json` owns semantic relationships;
+- `.pisi/properties.json` owns property definitions;
+- `.pisi/mutations` is temporary crash-recovery state;
+- `.pisi/trash` is reversible deletion payload state;
+- `.pisi-history` is recovery/version-history state;
+- search indexes and quick-navigation MRU are rebuildable projections.
 
-The storage bridge never interprets task IDs, semantic relationships, property definitions, map relationship views or operational scopes. It only routes project-relative I/O.
+The storage layer never interprets task IDs, semantic relationships, property definitions, relationship views or operational scopes.
 
 ## Backend rule
 
-A future backend such as SQLite may only replace or supplement the storage driver when the data can still be reconstructed or mapped without redefining Pisi authority boundaries.
+A future physical backend may replace or supplement the storage driver only if the same authority boundaries remain explicit.
 
-In particular:
-
-- SQLite must not silently become a second task authority beside `.pisi/tasks.json`;
-- semantic relationships must still have one canonical owner;
-- map presentation state must not be promoted into semantic authority;
-- atomic mutation and recovery guarantees must remain explicit.
-
-If a future storage backend changes the canonical persistence format, that is a separate migration/versioning decision, not an implementation detail of this abstraction.
+A backend must not silently become a second task, relationship or property authority. Any future change to a canonical persistence format must be an explicit versioned product decision rather than an implementation side effect of the storage adapter.

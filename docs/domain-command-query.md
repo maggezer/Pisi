@@ -1,31 +1,37 @@
 # Domain Command / Query Layer
 
-Pisi now has an explicit domain boundary between UI/transport code and storage services.
+Pisi uses one versioned domain boundary for semantic reads and mutations. UI code does not choose authority files or storage-shaped IPC handlers.
 
-## Boundary
+## Runtime boundary
 
-The intended direction is:
+The active direction is:
 
-`UI / view -> renderer domain client -> compatibility transport -> main domain command/query -> domain service -> storage`
+`UI / view -> renderer domain client or preload API facade -> pisi:domain-query / pisi:domain-command -> main domain dispatcher -> domain service -> authority store / project storage`
 
-The compatibility transport remains because the existing preload API is already part of the app surface. Its task/map handlers are rebound after the legacy runtime and semantic hooks, so callers keep working while storage decisions move behind the domain contracts.
+`main/functions/domain-command-query.js` owns the generic IPC transport and the core v1 contracts. Domain extension modules can register additional versioned contracts against the same dispatcher.
+
+Task, map and project methods exposed through `window.pisiProject` are convenience facades in `preload.js`. Where a domain contract exists, those methods invoke the same `pisi:domain-query` or `pisi:domain-command` channel; they do not create a second semantic path.
 
 ## Contract rules
 
-- Queries read domain state and do not intentionally mutate authoritative domain data.
-- Commands express mutations and enforce domain/path rules before reaching storage.
-- Contract names are versioned (`*.v1`).
-- Unknown command/query names fail closed; there is no dynamic method-name dispatch into modules or stores.
-- Paths are still validated against the active project boundary before domain services are called.
+- Queries read domain state and do not intentionally mutate authoritative data.
+- Commands express semantic mutations and validate project/path boundaries before reaching services.
+- Contract names are explicit and versioned as `*.v1`.
+- Unknown command/query names fail closed.
+- The active project root and document extensions are validated in the main process.
+- Multi-file semantic mutations use the atomic mutation boundary when required.
 
-## Initial v1 queries
+## Core v1 queries
 
 - `task.list.v1`
 - `document.read.v1`
 - `map.projection.v1`
 - `map.operational.v1`
+- `project.folder.list.v1`
 
-## Initial v1 commands
+Additional domains register their own contracts. Project Integrity, for example, registers `integrity.audit.v1` through its domain module.
+
+## Core v1 commands
 
 ### Tasks
 
@@ -35,9 +41,9 @@ The compatibility transport remains because the existing preload API is already 
 - `task.delete.v1`
 - `task.sync-projection.v1`
 
-Task commands use the first-class task/capture services. The domain layer does not read or write `.pisi/tasks.json` itself.
+Task commands use the task capture/store services. The dispatcher does not interpret `.pisi/tasks.json` records itself.
 
-### Maps / relationships
+### Maps and relationships
 
 - `map.relationship.upsert.v1`
 - `map.relationship.delete.v1`
@@ -48,13 +54,30 @@ Task commands use the first-class task/capture services. The domain layer does n
 - `map.reference.detach.v1`
 - `map.node.create.v1`
 
-Semantic relationship commands go through `main.mapSemanticOperationHooks`; they do not write `.pisi/relationships.json` directly. Operational state remains map-local view state. Camera persistence and operational mutation are separate domain intentions even though the compatibility transport can carry both in one legacy call.
+Semantic relationship commands go through the semantic relationship services. They do not write `.pisi/relationships.json` directly from transport code. Map layout, camera and operational state remain map-owned presentation/working state.
 
-## Renderer client
+### Project mutations
 
-`renderer/domain/pisi-domain-client.mjs` exposes `query(name, payload)` and `command(name, payload)` under `Pisi.modules['domain.client']`.
+- `project.item.rename.v1`
+- `project.item.move.v1`
+- `project.item.delete.v1`
+- `project.path.delete.v1`
+- `project.batch.v1`
 
-New feature code should prefer semantic calls such as:
+Rename/move/delete commands keep task references and related semantic state inside the same domain mutation boundary. Batch mutation accepts only an allowlisted set of versioned commands and stops on the first failed operation.
+
+## Renderer domain client
+
+`renderer/domain/pisi-domain-client.mjs` exposes:
+
+- `query(name, payload)`
+- `command(name, payload)`
+
+under `Pisi.modules['domain.client']`.
+
+Feature code should use semantic contracts instead of selecting an authority file or inventing a storage-specific operation.
+
+Example:
 
 ```js
 await domain.command('task.capture.v1', {
@@ -63,19 +86,23 @@ await domain.command('task.capture.v1', {
 });
 ```
 
-rather than selecting a storage-shaped preload method itself.
+Renderer-only compositions may combine several domain calls, but they do not become persisted authorities.
 
-The first migrated UI flow is Quick Add. Existing task/map callers continue to work because the main-process compatibility IPC handlers now delegate to the same domain dispatcher.
+## Atomicity and recovery
+
+Before domain reads are surfaced, unfinished project mutation journals are recovered through the atomic mutation layer. Commands marked atomic execute through the per-project transaction boundary.
+
+A failed command returns a normalized domain error and must not leave a partially committed semantic mutation.
 
 ## Source-of-truth boundaries
 
-This layer does not introduce another data store.
+The domain layer is routing and policy, not storage.
 
-- first-class task authority remains `.pisi/tasks.json` behind `main.taskStore`;
-- semantic relationship authority remains `.pisi/relationships.json` behind semantic relationship services;
-- map membership/layout/camera/operational scope remain map state;
-- queries return projections and do not become parallel persisted copies.
+- task authority: `.pisi/tasks.json`
+- semantic relationship authority: `.pisi/relationships.json`
+- property definition authority: `.pisi/properties.json`
+- node content/property values: `.node`
+- map membership/layout/camera/presentation/operational state: `.map`
+- search/diary/editor views: rebuildable or transient projections
 
-## Next architecture step
-
-Mutation transaction/recovery can now sit beneath a small set of domain commands rather than being duplicated across UI handlers. That is the main reason this boundary is established before broader recovery/integrity work.
+No query result, renderer cache or transport payload becomes a parallel source of truth.

@@ -62,8 +62,9 @@ style.css                             Uygulama stilleri
 tests/                                Formül, yol güvenliği ve regresyon testleri
 ```
 
-Ortak çalışma durumu `window.Pisi.state` altında tutulur. Eski global adlar,
-mevcut özelliklerin uyumluluğu için bu state’e köprülenmiştir.
+Ortak çalışma durumu `window.Pisi.state` altında tutulur. Bazı renderer modüllerinin
+kullandığı top-level `window` erişimleri accessor üzerinden aynı state alanına
+yönlendirilir; ayrı persisted state veya semantic authority oluşturmaz.
 
 ## Çalıştırma
 
@@ -92,9 +93,9 @@ mimari kontrollerini; branding/i18n kontrollerini; `checkJs: true` ile çalışa
 TypeScript tip denetimini; ESLint kurallarını ve otomatik regresyon testlerini
 çalıştırır. Aynı doğrulama `main` push’larında ve pull request’lerde GitHub
 Actions üzerinde de çalışır. CI ayrıca `npm run audit` sonucunu raporlar.
-3 Ekim 2026 tarihli CSS konsolidasyonu doğrulamasında `npm run validate`
-başarılıdır: `tsc --checkJs` **0 hata**, Node regresyon testleri **643/643 başarılı**.
-2 Ekim 2026 dependency audit sonucu **0 vulnerability**'dir.
+Güncel `main` için format, source validation, Electron E2E ve dependency audit
+GitHub Actions üzerinde zorunlu doğrulamalardır. Sabit test sayıları dokümana
+otorite olarak yazılmaz; geçerli sonuç CI çalıştırmasının kendisidir.
 
 ## Arama ve bağlantılar
 
@@ -162,8 +163,8 @@ npm run dist:portable
 Windows NSIS ve portable çıktıları x64 ile ARM64 için üretilir. Çıktı adı
 ürün, sürüm, işletim sistemi ve mimariyi içerir. `v*.*.*` etiketiyle çalışan
 release workflow’u doğrulama, Windows paketleme, SHA256 üretimi ve GitHub beta
-release oluşturma adımlarını otomatikleştirir. Code signing henüz yapılandırılmış
-değildir.
+release oluşturma adımlarını otomatikleştirir. Code signing hattı optional
+çalışır; gerçek imza için yayın ortamında sertifika/kimlik bilgileri gerekir.
 
 ## Proje verileri
 
@@ -177,14 +178,15 @@ korunabilir. Bozuk JSON otomatik olarak boş içerikle ezilmez.
 
 ## Mevcut sınırlar
 
-- Sheet, DOM tabanlı çalışma modelini kontrollü tutmak için 300 × 80 güvenlik
-  sınırı uygular. Satır/sütun silme, fare/klavye ile dikdörtgen çoklu seçim,
-  seçili aralığa toplu biçimlendirme ve yapısal formül referansı güncelleme
-  desteklenir.
-- Windows paketleri henüz code-signed değildir; SmartScreen ilk çalıştırmada
-  uyarı gösterebilir.
-- macOS/Linux paket hedefleri, platform imzalama/notarization ve otomatik
-  güncelleme yayın altyapısı henüz yapılandırılmamıştır.
+- Sheet, 10.000 × 80 güvenlik sınırı uygular. Satır/sütun silme, fare/klavye ile
+  dikdörtgen çoklu seçim, toplu hücre biçimlendirme ve yapısal formül referansı
+  güncelleme desteklenir.
+- GitHub üzerinden doğrudan dağıtılan Windows paketlerinin gerçek code-signing
+  kimliği yayın ortamında sağlanmalıdır; aksi durumda SmartScreen uyarısı
+  görülebilir.
+- macOS/Linux paket hedefleri yapılandırılmıştır. macOS production dağıtımı için
+  Apple signing/notarization kimlik bilgileri; direct auto-update için production
+  feed; Microsoft Store için gerçek submission hesabı dış yayın bağımlılıklarıdır.
 - Electron ana süreç ve renderer domainleri ES module olarak çalışır. Ana süreç
   `main.mjs` üzerinden başlar ve `main/package.json` altında `type: module` ile
   korunur. `preload.js`, `sandbox: true` Electron preload ortamının sınırlı

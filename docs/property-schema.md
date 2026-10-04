@@ -1,73 +1,76 @@
 # Stable Property Schema
 
-Pisi 1.0 treats property definitions as project-level schema entities. Node files remain the readable authority for a node's property values, while `.pisi/properties.json` is the authority for property identity, name and type.
+Pisi uses a project-level canonical property schema. Node files remain the authority for each node's property values, while `.pisi/properties.json` is the authority for property identity, name and type.
 
-## Scope
+## Current property types
 
-The editable 1.0 property types remain deliberately small:
+Editable property types:
 
 - `text` — Metin
 - `number` — Sayı
 - `multiselect` — Tags
 - `relation` — Relation
 
-`rollup` remains an internal persisted property used by the existing Rollup block/runtime. It is not added back to the property type menu. Pisi 1.0 does not add Formula, nested databases, automation, date/select/checkbox/node property types or a new expression language.
+`rollup` is an internal persisted property used by the Rollup block/runtime. It is not exposed as an editable property type.
+
+Supported Rollup aggregates are `count`, `sum`, `average`, `min`, `max`, `unique` and `join`.
 
 ## Authority boundary
 
-`.pisi/properties.json` contains only schema definitions and migration metadata. It never stores per-node values.
+`.pisi/properties.json` stores project-level definitions. A definition has:
 
-A definition has a stable `id`, a user-visible `name`, and a canonical `type`. Node files store values under that stable ID and retain `name`/`type` as redundant readable copies. Those copies must match the project schema and are audited by Project Integrity.
+- stable `id`
+- user-visible `name`
+- canonical `type`
+- optional `system` flag
 
-Relation target choices may still be scoped to the active map as a UI decision. That does not change the project-level identity of the Relation definition itself.
+The schema file also carries its schema version, explicit conflict records and `updatedAt` metadata.
+
+Node files store values under the stable property ID and retain readable `name` / `type` copies. Those copies are redundant and must agree with the project schema.
+
+The schema never stores per-node values.
 
 ## Stable identity
 
-Property rename changes the schema name, not the property ID. The redundant name copy is propagated to every node/template using the ID in the same atomic mutation.
+Creating a definition assigns one stable ID. Renaming a property changes the schema name without changing that ID, and the readable copies in nodes/templates are propagated inside the same atomic mutation.
 
-Removing a property from one node removes only that node's value. It does not implicitly delete the project definition, because another node/template may still use the stable ID and because silent schema deletion would make restore/import ambiguous.
+Removing a property from one node removes only that node's value. It does not implicitly delete the project definition because other nodes or templates may still use the same ID.
 
-New definitions receive a stable ID once and persist it. Legacy properties that do not carry a usable ID receive a deterministic migration ID. Compatible legacy definitions with the same normalized name and type are migrated to one canonical ID.
+A missing canonical schema is not reconstructed from node payloads. If property-bearing nodes exist while `.pisi/properties.json` is missing or unreadable, Project Integrity reports an authority problem instead of guessing definitions.
 
 ## Type changes
 
-A type change is a project-schema operation, not a local row decoration. Pisi inspects every node/template use of the stable ID before the change is written. The change proceeds only when all existing values are empty or can be converted without semantic loss. Otherwise the entire command returns `PROPERTY_TYPE_CHANGE_CONFLICT` and the atomic mutation leaves the project unchanged.
+A type change is a project-schema operation, not a local UI decoration.
 
-Rollup cannot be converted to or from an editable property type through the property menu.
+Before a type change is written, Pisi validates every node/template use of the stable ID. The operation proceeds only when existing values are empty or can be converted without semantic loss. Otherwise the command fails and the atomic mutation leaves the project unchanged.
 
-## Legacy migration
+`rollup` cannot be converted to or from an editable property type through the property menu.
 
-The supported legacy aliases are:
-
-- `date` → `text`
-- `select` → `multiselect`
-- `node` → `relation`
-- `checkbox` → `multiselect`
-
-Migration is versioned at schema version 1. Unknown property types are not silently converted to text. Duplicate IDs, ambiguous same-name/different-type definitions, invalid values and carrier-local duplicate results are recorded as explicit migration conflicts and surfaced by Project Integrity.
-
-The old `checked-percent` Rollup aggregate is recognized as legacy data but is not a current aggregate. It requires explicit review rather than a silent behavior change.
+Unsupported property types are not silently mapped to a current type. They are invalid current-contract data and must be resolved explicitly.
 
 ## Templates
 
-Database/property templates use the same stable property IDs. Saving a template can register a genuinely new project definition, but it cannot silently change the type of an existing definition. Applying a template validates its property IDs/names/types against the current project schema before the existing template application path runs.
+Database/property templates use the same stable property IDs as the project schema.
+
+Saving a template may register a genuinely new definition, but it cannot silently change the type of an existing definition. Applying a template validates property IDs, names and types against the active project schema before values are written.
 
 ## Integrity checks
 
-Project Integrity includes `.pisi/properties.json` as a canonical authority and reports, among other cases:
+Project Integrity treats `.pisi/properties.json` as canonical authority and reports, among other cases:
 
 - missing or unreadable schema when property values exist;
-- invalid/duplicate definition IDs;
+- invalid or duplicate definition IDs;
 - duplicate normalized names under different IDs;
-- unresolved migration conflicts;
+- explicit unresolved schema conflicts;
 - node properties whose IDs are absent from the schema;
 - node/template name or type drift from the canonical definition;
 - unsupported property types;
-- values incompatible with the canonical type;
-- legacy property types that still require migration.
+- values incompatible with the canonical type.
 
-Ambiguous or lossy cases are review/manual repairs. They are never automatically coerced just to make the integrity report green.
+Ambiguous or lossy cases are review/manual repairs. Project Integrity does not invent IDs or coerce unknown types merely to make the report green.
 
 ## Atomicity
 
-Schema migration, node property save, rename propagation, type migration and template schema mutation run inside the existing project atomic mutation system. A failure before commit must leave either the old complete state or the new complete state; a half-renamed/half-converted project is not an acceptable outcome.
+Node property save, schema definition changes, rename propagation, lossless type changes and template schema mutations run inside the project atomic mutation system where the operation spans persisted state.
+
+A failed multi-file property operation must leave either the old complete state or the new complete state.
