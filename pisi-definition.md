@@ -17,18 +17,16 @@ kaynağın yerine geçmez.
 
 ## Canonical otorite matrisi
 
-| Veri alanı | Kalıcı canonical otorite | Canonical olmayan / türetilmiş görünüm |
-|---|---|---|
-| Node içeriği ve node property değerleri | `.node` | Editor DOM, arama kayıtları |
-| Görevler | `.pisi/tasks.json` | Node Todo markup'ı, diary, Todo/Calendar görünümü, task search records |
-| Semantik node ilişkileri | `.pisi/relationships.json` | Map edge projection'ı, node `connectionTypes` |
-| Property tanımı/kimliği/türü | `.pisi/properties.json` | Node içindeki okunabilir `name` / `type` kopyaları |
-| Map üyeliği, yerleşim, kamera ve presentation | `.map` | Renderer map state'i |
-| Paint/Sheet ağır editor verisi | Node sidecar içindeki content-addressed asset dosyaları | Renderer'daki `data-image` ve `data-pisi-sheet-model` hydration verisi |
-| Arama indeksi | Yok; yeniden üretilebilir projection | Bellekteki trigram/search index |
-| Version History | `.pisi-history/` recovery verisi | Canonical uygulama durumu değildir |
-| Reversible Trash | `.pisi/trash/items/` recovery verisi | Canonical canlı uygulama durumu değildir |
-| Crash recovery | `.pisi/mutations/` geçici journal | Canonical semantik store değildir |
+- Node içeriği ve node property değerleri: canonical otorite `.node`; Editor DOM ve arama kayıtları projection'dır.
+- Görevler: canonical otorite `.pisi/tasks.json`; Node Todo markup'ı, diary, Todo/Calendar görünümü ve task search records projection'dır.
+- Semantik node ilişkileri: canonical otorite `.pisi/relationships.json`; map edge görünümü ve node `connectionTypes` projection'dır.
+- Property tanımı, kimliği ve türü: canonical otorite `.pisi/properties.json`; node içindeki okunabilir `name` / `type` kopyaları otorite değildir.
+- Map üyeliği, yerleşim, kamera ve presentation: canonical otorite `.map`; renderer map state'i projection'dır.
+- Paint/Sheet ağır editor verisi: canonical otorite node sidecar içindeki content-addressed asset dosyalarıdır; renderer'daki `data-image` ve `data-pisi-sheet-model` transient hydration verisidir.
+- Arama indeksi: kalıcı canonical otoritesi yoktur; bellek içi trigram/search index yeniden üretilebilir projection'dır.
+- Version History: `.pisi-history/` recovery verisidir; canonical canlı uygulama durumu değildir.
+- Reversible Trash: `.pisi/trash/items/` recovery verisidir; canonical canlı uygulama durumu değildir.
+- Crash recovery: `.pisi/mutations/` geçici journal'dır; canonical semantik store değildir.
 
 `.node`, `.map` ve `.pisi/*` store'ları birbirinin yerine veri üretmez. Bir
 canonical store eksik veya bozuksa projection'lardan sessizce yeniden
