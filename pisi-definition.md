@@ -105,25 +105,27 @@ Basitleştirilmiş canonical örnek:
 
 ```json
 {
-  "pisi": {
-    "version": 1,
-    "type": "node",
-    "id": "node_00000000-0000-4000-8000-000000000000",
-    "title": "Örnek Node",
-    "sidecar": "inv_Örnek Node__node_00000000-0000-4000-8000-000000000000",
-    "createdAt": "2026-10-04T12:00:00.000Z",
-    "updatedAt": "2026-10-04T12:00:00.000Z",
-    "parentMap": "none"
-  },
-  "properties": {
-    "status_a": {
-      "id": "status_a",
-      "name": "Durum",
-      "type": "multiselect",
-      "value": ["Devam ediyor"]
-    }
-  },
-  "content": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"block_...\">Not içeriği</div>"
+    "pisi": {
+        "version": 1,
+        "type": "node",
+        "id": "node_00000000-0000-4000-8000-000000000000",
+        "title": "Örnek Node",
+        "sidecar": "inv_Örnek Node__node_00000000-0000-4000-8000-000000000000",
+        "createdAt": "2026-10-04T12:00:00.000Z",
+        "updatedAt": "2026-10-04T12:00:00.000Z",
+        "parentMap": "none"
+    },
+    "properties": {
+        "status_a": {
+            "id": "status_a",
+            "name": "Durum",
+            "type": "multiselect",
+            "value": [
+                "Devam ediyor"
+            ]
+        }
+    },
+    "content": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"block_...\">Not içeriği</div>"
 }
 ```
 
@@ -196,46 +198,46 @@ Basitleştirilmiş canonical örnek:
 
 ```json
 {
-  "pisi": {
-    "version": 1,
-    "type": "map",
-    "id": "map_00000000-0000-4000-8000-000000000000",
-    "title": "Örnek Map",
-    "sidecar": "nd_Örnek Map__map_00000000-0000-4000-8000-000000000000",
-    "createdAt": "2026-10-04T12:00:00.000Z",
-    "updatedAt": "2026-10-04T12:00:00.000Z"
-  },
-  "map": {
-    "nodes": [
-      {
-        "id": "node_00000000-0000-4000-8000-000000000000",
-        "x": 80,
-        "y": 80,
-        "width": 220,
-        "height": 92
-      }
-    ],
-    "references": [
-      {
-        "id": "node_11111111-1111-4111-8111-111111111111",
-        "path": "Notes/Standalone.node"
-      }
-    ],
-    "relationshipViews": [
-      {
-        "relationshipId": "edge_00000000-0000-4000-8000-000000000000",
-        "sourcePort": "bottom",
-        "targetPort": "top"
-      }
-    ],
-    "relationshipViewVersion": 1,
-    "camera": {
-      "x": 0,
-      "y": 0,
-      "zoom": 1
+    "pisi": {
+        "version": 1,
+        "type": "map",
+        "id": "map_00000000-0000-4000-8000-000000000000",
+        "title": "Örnek Map",
+        "sidecar": "nd_Örnek Map__map_00000000-0000-4000-8000-000000000000",
+        "createdAt": "2026-10-04T12:00:00.000Z",
+        "updatedAt": "2026-10-04T12:00:00.000Z"
     },
-    "collapsedHubs": []
-  }
+    "map": {
+        "nodes": [
+            {
+                "id": "node_00000000-0000-4000-8000-000000000000",
+                "x": 80,
+                "y": 80,
+                "width": 220,
+                "height": 92
+            }
+        ],
+        "references": [
+            {
+                "id": "node_11111111-1111-4111-8111-111111111111",
+                "path": "Notes/Standalone.node"
+            }
+        ],
+        "relationshipViews": [
+            {
+                "relationshipId": "edge_00000000-0000-4000-8000-000000000000",
+                "sourcePort": "bottom",
+                "targetPort": "top"
+            }
+        ],
+        "relationshipViewVersion": 1,
+        "camera": {
+            "x": 0,
+            "y": 0,
+            "zoom": 1
+        },
+        "collapsedHubs": []
+    }
 }
 ```
 
@@ -273,20 +275,20 @@ Basitleştirilmiş kayıt:
 
 ```json
 {
-  "version": 1,
-  "relationships": [
-    {
-      "id": "edge_00000000-0000-4000-8000-000000000000",
-      "sourceId": "node_A",
-      "targetId": "node_B",
-      "type": "down-hub",
-      "sourceRole": "down-hub",
-      "targetRole": "up-hub",
-      "direction": "directed",
-      "createdAt": "2026-10-04T12:00:00.000Z",
-      "updatedAt": "2026-10-04T12:00:00.000Z"
-    }
-  ]
+    "version": 1,
+    "relationships": [
+        {
+            "id": "edge_00000000-0000-4000-8000-000000000000",
+            "sourceId": "node_A",
+            "targetId": "node_B",
+            "type": "down-hub",
+            "sourceRole": "down-hub",
+            "targetRole": "up-hub",
+            "direction": "directed",
+            "createdAt": "2026-10-04T12:00:00.000Z",
+            "updatedAt": "2026-10-04T12:00:00.000Z"
+        }
+    ]
 }
 ```
 
@@ -385,15 +387,9 @@ Node kaydı sırasında:
 Persisted HTML yalnız referansı taşır:
 
 ```html
-<canvas
-  data-pisi-canvas="1"
-  data-pisi-asset="paint/<sha256>.png"
-></canvas>
+<canvas data-pisi-canvas="1" data-pisi-asset="paint/<sha256>.png"></canvas>
 
-<table
-  data-pisi-sheet="1"
-  data-pisi-sheet-asset="sheet/<sha256>.json"
-></table>
+<table data-pisi-sheet="1" data-pisi-sheet-asset="sheet/<sha256>.json"></table>
 ```
 
 Node açılırken renderer için transient hydration yapılır:
