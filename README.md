@@ -44,7 +44,7 @@ takvim işlevlerini tek bir proje klasöründe birleştirir.
 ## Kaynak yapısı
 
 ```text
-main.js                               İnce Electron bootstrap
+main.mjs                              İnce Electron bootstrap
 main/functions/                       Dosya, görev, özellik, geçmiş ve IPC domainleri
 preload.js                            Sınırlı ve doğrulanmış renderer köprüsü
 renderer/bootstrap.mjs                Renderer ES module başlangıcı
