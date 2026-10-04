@@ -16,6 +16,8 @@ function makeEntry(historyId, capturedAt, size) {
 function makeFixture() {
     const projectFolder = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-history-cost-'));
     const nodePath = path.join(projectFolder, 'Large.node');
+    const sidecarPath = path.join(projectFolder, 'Large - node_history_cost.pisi-node');
+    fs.mkdirSync(sidecarPath, { recursive: true });
     const metadata = {
         version: 1,
         type: 'node',
@@ -28,7 +30,7 @@ function makeFixture() {
     };
     const ensurePisiFileMetadata = () => {
         const data = JSON.parse(fs.readFileSync(nodePath, 'utf8'));
-        return { ok: true, metadata: data.pisi, data };
+        return { ok: true, metadata: data.pisi, data, sidecarPath };
     };
     const writeFileAtomic = (filePath, content) => {
         fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -37,6 +39,7 @@ function makeFixture() {
     return {
         projectFolder,
         nodePath,
+        sidecarPath,
         writeNode,
         options: { projectFolder, ensurePisiFileMetadata, writeFileAtomic }
     };
@@ -126,6 +129,42 @@ test('byte budget prunes older snapshots instead of letting a large node multipl
     const directory = path.join(fixture.projectFolder, '.pisi-history', 'node_history_cost');
     const snapshots = fs.readdirSync(directory).filter((name) => /\.json\.gz$/.test(name));
     assert.deepEqual(snapshots, [second.historyId]);
+});
+
+test('history retention garbage-collects sidecar assets no longer referenced by live content or kept snapshots', async (t) => {
+    const fixture = makeFixture();
+    t.after(() => fs.rmSync(fixture.projectFolder, { recursive: true, force: true }));
+
+    const paintDirectory = path.join(fixture.sidecarPath, 'paint');
+    fs.mkdirSync(paintDirectory, { recursive: true });
+
+    const firstBytes = Buffer.from('first-paint-asset');
+    const secondBytes = Buffer.from('second-paint-asset');
+    const firstHash = crypto.createHash('sha256').update(firstBytes).digest('hex');
+    const secondHash = crypto.createHash('sha256').update(secondBytes).digest('hex');
+    const firstAsset = path.join(paintDirectory, `${firstHash}.png`);
+    const secondAsset = path.join(paintDirectory, `${secondHash}.png`);
+
+    fs.writeFileSync(firstAsset, firstBytes);
+    fixture.writeNode(`<canvas data-pisi-canvas="1" data-pisi-asset="paint/${firstHash}.png"></canvas>`);
+
+    const options = { ...fixture.options, maxVersions: 1, maxBytes: 1024 * 1024 };
+    const first = history.snapshotPisiNodeVersionBounded(fixture.nodePath, 'save', options);
+    assert.equal(first.ok, true);
+    assert.equal(fs.existsSync(firstAsset), true);
+
+    await new Promise((resolve) => setTimeout(resolve, 2));
+
+    fs.writeFileSync(secondAsset, secondBytes);
+    fixture.writeNode(`<canvas data-pisi-canvas="1" data-pisi-asset="paint/${secondHash}.png"></canvas>`);
+    const second = history.snapshotPisiNodeVersionBounded(fixture.nodePath, 'save', options);
+
+    assert.equal(second.ok, true);
+    assert.equal(second.retainedVersions, 1);
+    assert.equal(second.assetGc?.ok, true);
+    assert.ok(second.assetGc?.removed?.includes(`paint/${firstHash}.png`));
+    assert.equal(fs.existsSync(firstAsset), false);
+    assert.equal(fs.existsSync(secondAsset), true);
 });
 
 test('version-history IPC hooks replace unbounded save/list routes and skip project-wide backup scans', () => {
