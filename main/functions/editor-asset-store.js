@@ -482,9 +482,7 @@ function prunePisiEditorAssetStore(sidecarPath, referencedAssets = []) {
 
     const rawReferences = referencedAssets instanceof Set ? Array.from(referencedAssets) : Array.from(referencedAssets || []);
     const references = new Set(
-        rawReferences
-            .map((value) => String(value || ''))
-            .filter((value) => PISI_PAINT_ASSET_PATTERN.test(value) || PISI_SHEET_ASSET_PATTERN.test(value))
+        rawReferences.map((value) => String(value || '')).filter((value) => PISI_PAINT_ASSET_PATTERN.test(value) || PISI_SHEET_ASSET_PATTERN.test(value))
     );
     const kept = [];
     const removed = [];
