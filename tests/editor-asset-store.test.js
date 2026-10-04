@@ -9,6 +9,8 @@ const test = require('node:test');
 const {
     getPisiPaintAssetReference,
     getPisiSheetAssetReference,
+    collectPisiEditorAssetReferences,
+    prunePisiEditorAssetStore,
     normalizePisiEditorPaintAssets,
     hydratePisiEditorPaintAssets,
     normalizePisiEditorSheetAssets,
@@ -264,4 +266,35 @@ test('Sheet normalization without writes is safe for history comparisons', () =>
     assert.equal(normalized.written.length, 0);
     assert.doesNotMatch(normalized.content, /data-pisi-sheet-model=/i);
     assert.match(normalized.content, /data-pisi-sheet-asset="sheet\/[a-f0-9]{64}\.json"/i);
+});
+
+
+test('Editor asset GC keeps live references and removes only orphan canonical Paint/Sheet files', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-editor-asset-gc-'));
+    const sidecar = path.join(root, 'Note.pisi-node');
+    fs.mkdirSync(sidecar, { recursive: true });
+
+    try {
+        const keptPaint = normalizePisiEditorPaintAssets(makeCanvasHtml(makePng(82)), { sidecarPath: sidecar });
+        const orphanPaint = normalizePisiEditorPaintAssets(makeCanvasHtml(makePng(83)), { sidecarPath: sidecar });
+        const keptSheet = normalizePisiEditorSheetAssets(makeSheetHtml(makeSheetSnapshot(71)), { sidecarPath: sidecar });
+        const orphanSheet = normalizePisiEditorSheetAssets(makeSheetHtml(makeSheetSnapshot(72)), { sidecarPath: sidecar });
+        const unknownPath = path.join(sidecar, 'paint', 'manual-note.txt');
+        fs.writeFileSync(unknownPath, 'leave me alone', 'utf8');
+
+        const references = collectPisiEditorAssetReferences(keptPaint.content + keptSheet.content);
+        const gc = prunePisiEditorAssetStore(sidecar, references);
+
+        assert.equal(gc.ok, true);
+        assert.deepEqual(gc.kept, [keptPaint.assets[0], keptSheet.assets[0]].sort());
+        assert.deepEqual(gc.removed, [orphanPaint.assets[0], orphanSheet.assets[0]].sort());
+        assert.equal(fs.existsSync(path.join(sidecar, ...keptPaint.assets[0].split('/'))), true);
+        assert.equal(fs.existsSync(path.join(sidecar, ...keptSheet.assets[0].split('/'))), true);
+        assert.equal(fs.existsSync(path.join(sidecar, ...orphanPaint.assets[0].split('/'))), false);
+        assert.equal(fs.existsSync(path.join(sidecar, ...orphanSheet.assets[0].split('/'))), false);
+        assert.equal(fs.existsSync(unknownPath), true);
+        assert.ok(gc.ignored.includes('paint/manual-note.txt'));
+    } finally {
+        fs.rmSync(root, { recursive: true, force: true });
+    }
 });
