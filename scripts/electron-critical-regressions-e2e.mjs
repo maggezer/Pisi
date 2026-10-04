@@ -213,7 +213,7 @@ async function clickTreePath(app, targetPath) {
 async function waitForNodeEditor(app, nodePath) {
     await waitUntil(app, 'center node editor ' + nodePath, async () => {
         return app.cdp.evaluate(
-            "(() => window.Pisi?.state?.activeTabPath === " +
+            '(() => window.Pisi?.state?.activeTabPath === ' +
                 JSON.stringify(nodePath) +
                 " && document.getElementById('center-node-editor')?.hidden === false && Boolean(document.getElementById('center-node-editor-content')))()"
         );
@@ -250,9 +250,7 @@ async function typeAndSaveNode(app, nodePath, marker) {
     await app.cdp.request('Input.insertText', { text: marker });
 
     await waitUntil(app, 'typed persistence marker', async () => {
-        return app.cdp.evaluate(
-            "document.getElementById('center-node-editor-content')?.textContent?.includes(" + JSON.stringify(marker) + ') === true'
-        );
+        return app.cdp.evaluate("document.getElementById('center-node-editor-content')?.textContent?.includes(" + JSON.stringify(marker) + ') === true');
     });
 
     const saved = await app.cdp.evaluate(
@@ -427,9 +425,7 @@ async function testCompositeDeleteThenTreeDelete(app, kind) {
 
     await waitUntil(app, kind + ' tree item removed', async () => {
         return app.cdp.evaluate(
-            "(() => !Array.from(document.querySelectorAll('.tree-node[data-path]')).some((candidate) => candidate.dataset.path === " +
-                serializedPath +
-                '))()'
+            "(() => !Array.from(document.querySelectorAll('.tree-node[data-path]')).some((candidate) => candidate.dataset.path === " + serializedPath + '))()'
         );
     });
 
