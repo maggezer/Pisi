@@ -4,8 +4,6 @@ const PISI_PROJECTION_WRITE_WINDOW_MS = 3500;
 
 const pisiSourceOfTruthState = {
     projectKey: '',
-    migrationPromise: null,
-    migrationComplete: false,
     projectionWriteUntil: 0,
     projectionSyncPromise: null,
     diarySignature: ''
@@ -22,8 +20,6 @@ function ensurePisiSourceProjectState() {
     const key = getPisiSourceProjectKey();
     if (key === pisiSourceOfTruthState.projectKey) return key;
     pisiSourceOfTruthState.projectKey = key;
-    pisiSourceOfTruthState.migrationPromise = null;
-    pisiSourceOfTruthState.migrationComplete = false;
     pisiSourceOfTruthState.projectionWriteUntil = 0;
     pisiSourceOfTruthState.projectionSyncPromise = null;
     pisiSourceOfTruthState.diarySignature = '';
@@ -39,15 +35,15 @@ function hasPisiTaskProjectionWriteIntent() {
     return Date.now() <= pisiSourceOfTruthState.projectionWriteUntil;
 }
 
-function stripPisiMigrationFields(task = {}) {
+function stripPisiTaskProjectionFields(task = {}) {
     const { embeddedTaskId: _embeddedTaskId, legacyMissionId: _legacyMissionId, ...canonicalTask } = task;
     return canonicalTask;
 }
 
-function getPisiLegacyTaskSnapshot() {
+function getPisiTaskProjectionSnapshot() {
     const blocks = Array.isArray(window.pisiTagsPanelState?.missionIndex) ? [...window.pisiTagsPanelState.missionIndex] : [];
     if (typeof window.buildPisiTasksFromLegacyIndex !== 'function') return [];
-    return window.buildPisiTasksFromLegacyIndex(blocks).map(stripPisiMigrationFields);
+    return window.buildPisiTasksFromLegacyIndex(blocks).map(stripPisiTaskProjectionFields);
 }
 
 async function refreshCanonicalPisiTasks() {
@@ -57,74 +53,13 @@ async function refreshCanonicalPisiTasks() {
     return null;
 }
 
-async function ensurePisiLegacyTaskMigration() {
-    ensurePisiSourceProjectState();
-    if (pisiSourceOfTruthState.migrationComplete) {
-        return { ok: true, complete: true };
-    }
-    if (pisiSourceOfTruthState.migrationPromise) {
-        return pisiSourceOfTruthState.migrationPromise;
-    }
-    if (!window.currentProjectFolder || !window.pisiProject?.quickAddTask) {
-        return { ok: false, pending: true };
-    }
-
-    const projectFolder = window.currentProjectFolder;
-    const projectKey = getPisiSourceProjectKey();
-    const migrationSnapshot = window.pisiTagsPanelState?.missionIndexComplete === true ? getPisiLegacyTaskSnapshot() : null;
-
-    const promise = (async () => {
-        const status = await window.pisiProject.quickAddTask(projectFolder, {
-            op: 'migration-status'
-        });
-        if (!status?.ok) return status;
-        if (projectKey !== getPisiSourceProjectKey()) {
-            return { ok: false, stale: true };
-        }
-        if (status.complete) {
-            pisiSourceOfTruthState.migrationComplete = true;
-            return status;
-        }
-
-        if (!Array.isArray(migrationSnapshot)) {
-            return { ok: true, complete: false, pending: true };
-        }
-
-        const imported = await window.pisiProject.quickAddTask(projectFolder, {
-            op: 'sync-index',
-            allowProjectionWrite: true,
-            projectionReason: 'legacy-migration',
-            complete: true,
-            pruneMissing: true,
-            tasks: migrationSnapshot
-        });
-        if (!imported?.ok) return imported;
-
-        const completed = await window.pisiProject.quickAddTask(projectFolder, {
-            op: 'complete-migration'
-        });
-        if (!completed?.ok) return completed;
-        if (projectKey !== getPisiSourceProjectKey()) {
-            return { ok: false, stale: true };
-        }
-
-        pisiSourceOfTruthState.migrationComplete = true;
-        await refreshCanonicalPisiTasks();
-        return completed;
-    })().finally(() => {
-        if (projectKey === getPisiSourceProjectKey()) {
-            pisiSourceOfTruthState.migrationPromise = null;
-        }
-    });
-
-    pisiSourceOfTruthState.migrationPromise = promise;
-    return promise;
-}
-
 async function syncControlledPisiTaskProjection(reason = 'ui') {
     ensurePisiSourceProjectState();
     if (!window.currentProjectFolder || !window.pisiProject?.quickAddTask) {
         return { ok: false, error: 'Aktif proje yok.' };
+    }
+    if (window.pisiTagsPanelState?.missionIndexComplete !== true) {
+        return { ok: false, incomplete: true };
     }
     if (pisiSourceOfTruthState.projectionSyncPromise) {
         return pisiSourceOfTruthState.projectionSyncPromise;
@@ -132,15 +67,9 @@ async function syncControlledPisiTaskProjection(reason = 'ui') {
 
     const projectFolder = window.currentProjectFolder;
     const projectKey = getPisiSourceProjectKey();
-    const tasks = getPisiLegacyTaskSnapshot();
+    const tasks = getPisiTaskProjectionSnapshot();
 
     const promise = (async () => {
-        const migration = await ensurePisiLegacyTaskMigration();
-        if (!migration?.ok || migration.pending) return migration;
-        if (projectKey !== getPisiSourceProjectKey()) {
-            return { ok: false, stale: true };
-        }
-
         const result = await window.pisiProject.quickAddTask(projectFolder, {
             op: 'sync-index',
             allowProjectionWrite: true,
@@ -322,7 +251,6 @@ function bindPisiSourceOfTruthEvents() {
     document.addEventListener('pisi:mission-index-updated', (event) => {
         ensurePisiSourceProjectState();
         if (event.detail?.complete !== true) return;
-        void ensurePisiLegacyTaskMigration();
         const reason = String(event.detail?.reason || '');
         if (isPisiControlledMissionRefresh(reason)) {
             void syncControlledPisiTaskProjection(reason);
@@ -337,11 +265,9 @@ function bindPisiSourceOfTruthEvents() {
     document.addEventListener('DOMContentLoaded', () => {
         ensurePisiSourceProjectState();
         installPisiCanonicalDiaryProjection();
-        void ensurePisiLegacyTaskMigration();
     });
 }
 
-window.ensurePisiLegacyTaskMigration = ensurePisiLegacyTaskMigration;
 window.syncControlledPisiTaskProjection = syncControlledPisiTaskProjection;
 window.projectCanonicalPisiTasksIntoSearchIndex = projectCanonicalPisiTasksIntoSearchIndex;
 
