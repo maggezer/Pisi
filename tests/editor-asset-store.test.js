@@ -268,7 +268,6 @@ test('Sheet normalization without writes is safe for history comparisons', () =>
     assert.match(normalized.content, /data-pisi-sheet-asset="sheet\/[a-f0-9]{64}\.json"/i);
 });
 
-
 test('Editor asset GC keeps live references and removes only orphan canonical Paint/Sheet files', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-editor-asset-gc-'));
     const sidecar = path.join(root, 'Note.pisi-node');
