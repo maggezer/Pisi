@@ -439,6 +439,121 @@ function hydratePisiEditorSheetAssets(content = '', options = {}) {
     });
 }
 
+function collectPisiEditorAssetReferences(content = '') {
+    const references = new Set();
+
+    String(content || '').replace(/<canvas\b[^>]*>/gi, (canvasTag) => {
+        if (!hasPisiHtmlAttribute(canvasTag, 'data-pisi-canvas')) {
+            return canvasTag;
+        }
+
+        const reference = getPisiHtmlAttribute(canvasTag, 'data-pisi-asset');
+        if (PISI_PAINT_ASSET_PATTERN.test(String(reference || ''))) {
+            references.add(String(reference));
+        }
+        return canvasTag;
+    });
+
+    String(content || '').replace(/<table\b[^>]*>/gi, (tableTag) => {
+        if (!hasPisiHtmlAttribute(tableTag, 'data-pisi-sheet')) {
+            return tableTag;
+        }
+
+        const reference = getPisiHtmlAttribute(tableTag, 'data-pisi-sheet-asset');
+        if (PISI_SHEET_ASSET_PATTERN.test(String(reference || ''))) {
+            references.add(String(reference));
+        }
+        return tableTag;
+    });
+
+    return Array.from(references).sort();
+}
+
+function prunePisiEditorAssetStore(sidecarPath, referencedAssets = []) {
+    if (!sidecarPath || !fs.existsSync(sidecarPath)) {
+        return {
+            ok: true,
+            skipped: true,
+            kept: [],
+            removed: [],
+            ignored: []
+        };
+    }
+
+    const rawReferences = referencedAssets instanceof Set ? Array.from(referencedAssets) : Array.from(referencedAssets || []);
+    const references = new Set(
+        rawReferences
+            .map((value) => String(value || ''))
+            .filter((value) => PISI_PAINT_ASSET_PATTERN.test(value) || PISI_SHEET_ASSET_PATTERN.test(value))
+    );
+    const kept = [];
+    const removed = [];
+    const ignored = [];
+
+    const stores = [
+        {
+            directoryName: 'paint',
+            filePattern: /^[a-f0-9]{64}\.png$/,
+            relativePath(name) {
+                return `paint/${name}`;
+            }
+        },
+        {
+            directoryName: 'sheet',
+            filePattern: /^[a-f0-9]{64}\.json$/,
+            relativePath(name) {
+                return `sheet/${name}`;
+            }
+        }
+    ];
+
+    try {
+        for (const store of stores) {
+            const directory = path.join(sidecarPath, store.directoryName);
+            if (!fs.existsSync(directory)) continue;
+
+            for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+                const relativePath = store.relativePath(entry.name);
+
+                if (!entry.isFile() || !store.filePattern.test(entry.name)) {
+                    ignored.push(relativePath);
+                    continue;
+                }
+
+                if (references.has(relativePath)) {
+                    kept.push(relativePath);
+                    continue;
+                }
+
+                const assetPath = path.join(directory, entry.name);
+                globalThis.markInternalFileChange?.(directory, assetPath);
+                try {
+                    fs.unlinkSync(assetPath);
+                    removed.push(relativePath);
+                } finally {
+                    globalThis.sealInternalFileChange?.(directory, assetPath);
+                }
+            }
+        }
+
+        return {
+            ok: true,
+            skipped: false,
+            kept: kept.sort(),
+            removed: removed.sort(),
+            ignored: ignored.sort()
+        };
+    } catch (error) {
+        return {
+            ok: false,
+            error: error?.message || String(error || 'Editor asset cleanup başarısız.'),
+            kept: kept.sort(),
+            removed: removed.sort(),
+            ignored: ignored.sort()
+        };
+    }
+}
+
 function normalizePisiEditorAssets(content = '', options = {}) {
     const paint = normalizePisiEditorPaintAssets(content, options);
     const sheet = normalizePisiEditorSheetAssets(paint.content, options);
@@ -462,6 +577,8 @@ export {
     decodePisiPaintPngDataUrl,
     getPisiPaintAssetReference,
     getPisiSheetAssetReference,
+    collectPisiEditorAssetReferences,
+    prunePisiEditorAssetStore,
     normalizePisiEditorPaintAssets,
     hydratePisiEditorPaintAssets,
     normalizePisiEditorSheetAssets,
