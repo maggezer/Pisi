@@ -120,9 +120,7 @@ Basitleştirilmiş canonical örnek:
             "id": "status_a",
             "name": "Durum",
             "type": "multiselect",
-            "value": [
-                "Devam ediyor"
-            ]
+            "value": ["Devam ediyor"]
         }
     },
     "content": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"block_...\">Not içeriği</div>"
