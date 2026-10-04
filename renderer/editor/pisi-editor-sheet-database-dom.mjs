@@ -83,16 +83,7 @@ function makePisiSheetVirtualSpacerRow(height, columnCount) {
     return row;
 }
 
-function readLegacyPisiSheetColumnArray(table, key) {
-    try {
-        const value = JSON.parse(table?.dataset?.[key] || '[]');
-        return Array.isArray(value) ? value : [];
-    } catch {
-        return [];
-    }
-}
-
-function legacyPisiSheetColumnName(index) {
+function getPisiSheetColumnAddress(index) {
     let name = '';
     let value = Number(index) + 1;
 
@@ -103,63 +94,6 @@ function legacyPisiSheetColumnName(index) {
     }
 
     return name;
-}
-
-function migratePisiSheetDatabaseFromDom(table) {
-    const rows = Array.from(table.querySelectorAll('tbody tr'));
-    const colCount = Math.max(1, ...rows.map((row) => row.querySelectorAll('td').length));
-    const legacyIds = readLegacyPisiSheetColumnArray(table, 'pisiColumnIds');
-    const legacyLabels = readLegacyPisiSheetColumnArray(table, 'pisiColumnLabels');
-    const legacyWidths = readLegacyPisiSheetColumnArray(table, 'pisiColumnWidths');
-
-    const seed = createPisiSheetDatabase(Math.max(1, rows.length), colCount);
-
-    seed.fields.forEach((field, colIndex) => {
-        const header = table.querySelector('thead th[data-col-header="' + colIndex + '"]');
-        const label = header?.querySelector('.pisi-sheet-col-label')?.textContent?.trim();
-        const width = Number(legacyWidths[colIndex] || header?.style?.width?.replace('px', '') || 0);
-
-        field.id = String(legacyIds[colIndex] || header?.dataset?.pisiColId || field.id);
-        field.name = String(legacyLabels[colIndex] || label || legacyPisiSheetColumnName(colIndex)).slice(0, 80);
-        field.width = width > 0 ? Math.round(width) : PISI_SHEET_DEFAULT_COLUMN_WIDTH;
-        field.wrap = false;
-        field.pin = false;
-        field.description = '';
-    });
-
-    const view = seed.views[0];
-    view.fieldOrder = seed.fields.map((field) => field.id);
-
-    seed.items.forEach((item, rowIndex) => {
-        const row = rows[rowIndex];
-
-        if (!row) return;
-
-        const cells = Array.from(row.querySelectorAll('td'));
-
-        item.id = String(row.dataset.pisiRowId || cells[0]?.dataset?.pisiRowId || item.id);
-
-        cells.forEach((cell, colIndex) => {
-            const field = seed.fields[colIndex];
-            if (!field) return;
-
-            const value = cell.dataset.formula ? '' : String(cell.textContent || '').trim();
-            const formula = cell.dataset.formula || null;
-            const format = capturePisiSheetCellFormat(cell);
-
-            if (value || formula || Object.keys(format).length) {
-                item.values[field.id] = {
-                    value,
-                    formula,
-                    format
-                };
-            }
-        });
-    });
-
-    seed.databaseId = String(table.dataset.pisiDatabaseId || seed.databaseId);
-
-    return normalizePisiSheetDatabase(seed);
 }
 
 function hydratePisiSheetDatabase(table) {
@@ -179,9 +113,7 @@ function hydratePisiSheetDatabase(table) {
         }
     }
 
-    if (!database) {
-        database = migratePisiSheetDatabaseFromDom(table);
-    }
+    if (!database) return null;
 
     attachPisiSheetDatabase(table, database);
     persistPisiSheetDatabase(table);
@@ -314,7 +246,7 @@ function renderPisiSheetDatabase(table, options = {}) {
             cell.dataset.col = String(colIndex);
             cell.dataset.pisiRowId = item.id;
             cell.dataset.pisiColId = field.id;
-            cell.dataset.cell = legacyPisiSheetColumnName(colIndex) + String(rowIndex + 1);
+            cell.dataset.cell = getPisiSheetColumnAddress(colIndex) + String(rowIndex + 1);
 
             if (field.width) {
                 const size = String(field.width) + 'px';

@@ -33,7 +33,7 @@ function getPisiMissionsFromIndexFirstRelease(options = {}) {
         for (const tag of Array.isArray(block.tags) ? block.tags : []) {
             const todo = parsePisiTodoTagValue(normalizePisiUserTag(tag));
             if (!todo) continue;
-            const completed = block.legacyDone === true || doneFor.has(todo.tag);
+            const completed = doneFor.has(todo.tag);
             if (completed && !includeCompleted) continue;
             const status = getPisiTodoStatusOption(todoStates[todo.tag]);
             const mission = {

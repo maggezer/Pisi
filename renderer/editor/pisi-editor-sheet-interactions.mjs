@@ -203,7 +203,7 @@ function hydratePisiSheets(root = document) {
             return;
         }
 
-        hydratePisiSheetDatabase(table);
+        if (!hydratePisiSheetDatabase(table)) return;
         renderPisiSheetDatabase(table);
         recalcPisiSheet(table);
         reconcilePisiSheetSelection(table);

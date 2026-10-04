@@ -14,7 +14,7 @@ function setup() {
     const window = {
         currentProjectFolder: '/project',
         pisiTagsPanelState: { missionIndexComplete: true, missionIndex: [{ id: 'task_1' }] },
-        buildPisiTasksFromLegacyIndex: (blocks) => blocks.map((block) => ({ ...block, embeddedTaskId: block.id, legacyMissionId: 'old' })),
+        buildPisiTasksFromProjection: (blocks) => blocks,
         pisiProject: {
             quickAddTask: async (project, payload) => {
                 calls.push({ project, payload });
@@ -57,7 +57,7 @@ test('controlled status and completion changes write directly to the canonical t
         assert.equal(calls[0].payload.tasks[0].embeddedTaskId, undefined);
         assert.equal(calls[0].payload.tasks[0].legacyMissionId, undefined);
         assert.equal(refreshes.length, 1);
-        assert.equal(refreshes[0].syncLegacy, false);
+        assert.equal(refreshes[0], undefined);
     }
 });
 

@@ -35,20 +35,17 @@ function hasPisiTaskProjectionWriteIntent() {
     return Date.now() <= pisiSourceOfTruthState.projectionWriteUntil;
 }
 
-function stripPisiTaskProjectionFields(task = {}) {
-    const { embeddedTaskId: _embeddedTaskId, legacyMissionId: _legacyMissionId, ...canonicalTask } = task;
-    return canonicalTask;
-}
-
 function getPisiTaskProjectionSnapshot() {
     const blocks = Array.isArray(window.pisiTagsPanelState?.missionIndex) ? [...window.pisiTagsPanelState.missionIndex] : [];
-    if (typeof window.buildPisiTasksFromLegacyIndex !== 'function') return [];
-    return window.buildPisiTasksFromLegacyIndex(blocks).map(stripPisiTaskProjectionFields);
+    if (typeof window.buildPisiTasksFromProjection !== 'function') {
+        throw new Error('Görev projection servisi hazır değil.');
+    }
+    return window.buildPisiTasksFromProjection(blocks);
 }
 
 async function refreshCanonicalPisiTasks() {
     if (typeof window.refreshPisiFirstClassTaskStore === 'function') {
-        return window.refreshPisiFirstClassTaskStore({ syncLegacy: false });
+        return window.refreshPisiFirstClassTaskStore();
     }
     return null;
 }
@@ -67,7 +64,12 @@ async function syncControlledPisiTaskProjection(reason = 'ui') {
 
     const projectFolder = window.currentProjectFolder;
     const projectKey = getPisiSourceProjectKey();
-    const tasks = getPisiTaskProjectionSnapshot();
+    let tasks;
+    try {
+        tasks = getPisiTaskProjectionSnapshot();
+    } catch (error) {
+        return { ok: false, error: error.message };
+    }
 
     const promise = (async () => {
         const result = await window.pisiProject.quickAddTask(projectFolder, {

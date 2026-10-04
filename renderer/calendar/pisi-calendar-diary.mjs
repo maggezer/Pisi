@@ -176,7 +176,6 @@ async function syncPisiDiaryFromMissionIndex(index, options = {}) {
     for (const block of sourceIndex) {
         const tags = Array.isArray(block.tags) ? block.tags : [];
         const doneFor = new Set(Array.isArray(block.doneFor) ? block.doneFor.map(normalizePisiUserTag) : []);
-        const hasLegacyDone = block.legacyDone === true;
 
         for (const tag of tags) {
             if (typeof parsePisiTodoTag !== 'function') continue;
@@ -184,7 +183,7 @@ async function syncPisiDiaryFromMissionIndex(index, options = {}) {
             const todo = parsePisiTodoTag(tag);
 
             if (!todo) continue;
-            if (hasLegacyDone || doneFor.has(todo.tag)) continue;
+            if (doneFor.has(todo.tag)) continue;
 
             const date = formatMissionDateForDiary(todo.finishDate);
 

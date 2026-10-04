@@ -12,7 +12,6 @@ const pisiFirstClassTaskState = {
     queued: false,
     refreshTimer: null,
     editorTimer: null,
-    assigningRefs: false,
     patchedMissionIdentity: false,
     fileSystemUnsubscribe: null
 };
@@ -22,14 +21,6 @@ function normalizePisiFirstClassPath(value) {
         return window.normalizeClientPathForTags(value);
     }
     return String(value || '').replace(/[\\/]+/g, '/');
-}
-
-function samePisiFirstClassPath(a, b) {
-    if (!a || !b) return false;
-    if (typeof window.samePisiPathForTags === 'function') {
-        return window.samePisiPathForTags(a, b);
-    }
-    return normalizePisiFirstClassPath(a) === normalizePisiFirstClassPath(b);
 }
 
 function normalizePisiFirstClassTag(value) {
@@ -44,26 +35,7 @@ function normalizePisiFirstClassTag(value) {
         .toLowerCase();
 }
 
-function makePisiLegacyMissionId(block, todoTag) {
-    return [normalizePisiFirstClassPath(block?.nodePath), String(block?.blockId || ''), String(todoTag || '')].map(encodeURIComponent).join('::');
-}
-
-function hashPisiLegacyTaskKey(value) {
-    const input = String(value || '');
-    let hashA = 0x811c9dc5;
-    let hashB = 0x9e3779b9;
-    for (let index = 0; index < input.length; index += 1) {
-        const code = input.charCodeAt(index);
-        hashA ^= code;
-        hashA = Math.imul(hashA, 0x01000193) >>> 0;
-        hashB ^= (code + index) >>> 0;
-        hashB = Math.imul(hashB, 0x85ebca6b) >>> 0;
-    }
-    return `${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}`;
-}
-
-function makePisiFirstClassTaskId(legacyKey = '') {
-    if (legacyKey) return `task_legacy_${hashPisiLegacyTaskKey(legacyKey)}`;
+function makePisiFirstClassTaskId() {
     const uuid = globalThis.crypto?.randomUUID?.();
     if (uuid) return `task_${uuid}`;
     return `task_${Date.now()}_${Math.random().toString(16).slice(2)}`;
@@ -86,7 +58,7 @@ function getPisiTaskIdFromHtml(html = '') {
     return String(block?.dataset?.pisiTaskId || tag?.dataset?.pisiTaskId || '').trim();
 }
 
-function getPisiLegacyTaskTagMetadata(block, todoTag) {
+function getPisiTaskTagMetadata(block, todoTag) {
     const template = document.createElement('template');
     template.innerHTML = String(block?.html || '');
     const target = normalizePisiFirstClassTag(todoTag);
@@ -116,7 +88,7 @@ function formatPisiFirstClassDate(date) {
     return `${year}-${month}-${day}`;
 }
 
-function getPisiLegacyTaskTitle(block, todoTag) {
+function getPisiTaskProjectionTitle(block, todoTag) {
     const source = String(block?.todoSources?.[todoTag] || '')
         .replace(/\s+/g, ' ')
         .trim();
@@ -131,7 +103,7 @@ function getPisiLegacyTaskTitle(block, todoTag) {
         .trim();
 }
 
-function getPisiLegacyDependencies(rawValue, oldIdToTaskId) {
+function getPisiTaskDependencies(rawValue) {
     const raw = String(rawValue || '');
     if (!raw.startsWith('dep:')) return [];
     return Array.from(
@@ -147,47 +119,36 @@ function getPisiLegacyDependencies(rawValue, oldIdToTaskId) {
                     }
                 })
                 .filter(Boolean)
-                .map((id) => oldIdToTaskId.get(id) || id)
                 .filter((id) => String(id).startsWith('task_'))
         )
     );
 }
 
-function buildPisiTasksFromLegacyIndex(blocks = []) {
+function buildPisiTasksFromProjection(blocks = []) {
     const entries = [];
-    const oldIdToTaskId = new Map();
-    const usedTaskIds = new Map();
+    const usedTaskIds = new Set();
 
     for (const block of blocks) {
         const todoTags = (Array.isArray(block?.tags) ? block.tags : []).map(normalizePisiFirstClassTag).filter((tag) => Boolean(parsePisiTodoTagValue(tag)));
         for (const todoTag of todoTags) {
-            const legacyMissionId = makePisiLegacyMissionId(block, todoTag);
-            const metadata = getPisiLegacyTaskTagMetadata(block, todoTag);
-            const embeddedTaskId = getPisiTaskIdFromHtml(block?.html) || metadata.taskId;
-            let taskId = embeddedTaskId || makePisiFirstClassTaskId(legacyMissionId);
-            const previousLegacyKey = usedTaskIds.get(taskId);
-            if (previousLegacyKey && previousLegacyKey !== legacyMissionId) {
-                taskId = makePisiFirstClassTaskId(`duplicate:${legacyMissionId}`);
+            const metadata = getPisiTaskTagMetadata(block, todoTag);
+            const taskId = String(metadata.taskId || block?.taskId || getPisiTaskIdFromHtml(block?.html) || '').trim();
+            if (!taskId || !getPisiFirstClassTask(taskId)) {
+                throw new Error('Görev projection kaydı canonical görev kimliği içermiyor.');
             }
-            usedTaskIds.set(taskId, legacyMissionId);
-            const entry = {
-                block,
-                todoTag,
-                legacyMissionId,
-                embeddedTaskId,
-                taskId,
-                metadata
-            };
-            entries.push(entry);
-            oldIdToTaskId.set(legacyMissionId, taskId);
+            if (usedTaskIds.has(taskId)) {
+                throw new Error('Görev projection kaydında yinelenen görev kimliği.');
+            }
+            usedTaskIds.add(taskId);
+            entries.push({ block, todoTag, taskId, metadata });
         }
     }
 
     return entries.map((entry) => {
-        const { block, todoTag, taskId, embeddedTaskId, metadata } = entry;
+        const { block, todoTag, taskId, metadata } = entry;
         const todo = parsePisiTodoTagValue(todoTag);
         const doneFor = new Set((Array.isArray(block?.doneFor) ? block.doneFor : []).map(normalizePisiFirstClassTag));
-        const completed = block?.legacyDone === true || doneFor.has(todoTag);
+        const completed = doneFor.has(todoTag);
         const status = completed ? 'done' : String(block?.todoStates?.[todoTag] || 'todo').toLowerCase();
         const parentValue = block?.todoParents?.[todoTag] || '';
         const rawOrder = Number(block?.todoOrders?.[todoTag]);
@@ -195,9 +156,7 @@ function buildPisiTasksFromLegacyIndex(blocks = []) {
 
         return {
             id: taskId,
-            embeddedTaskId,
-            legacyMissionId: entry.legacyMissionId,
-            title: getPisiLegacyTaskTitle(block, todoTag),
+            title: getPisiTaskProjectionTitle(block, todoTag),
             status,
             priority: todo?.priority || 3,
             dueDate: metadata.deadline ? metadata.deadline.slice(0, 10) : metadata.scheduledAt ? null : formatPisiFirstClassDate(todo?.finishDate),
@@ -209,7 +168,7 @@ function buildPisiTasksFromLegacyIndex(blocks = []) {
             actualMinutes: metadata.actualMinutes || 0,
             repeat: getPisiTodoRepeatOption(block?.todoRepeats?.[todoTag]).value,
             completionOffsetDays: Number.isFinite(rawOffset) && rawOffset > 0 ? rawOffset : null,
-            dependencies: getPisiLegacyDependencies(parentValue, oldIdToTaskId),
+            dependencies: getPisiTaskDependencies(parentValue),
             manualOrder: Number.isFinite(rawOrder) ? rawOrder : Date.now(),
             todoTag,
             source: {
@@ -221,13 +180,6 @@ function buildPisiTasksFromLegacyIndex(blocks = []) {
             }
         };
     });
-}
-
-function findPisiTaskBlock(container, blockId) {
-    if (!container || !blockId) return null;
-    return (
-        Array.from(container.querySelectorAll?.('.pisi-editor-block[data-pisi-block-id]') || []).find((block) => block.dataset.pisiBlockId === blockId) || null
-    );
 }
 
 function setPisiTaskReferenceOnBlock(block, taskId, todoTag = '', dependencies = null) {
@@ -251,76 +203,6 @@ function setPisiTaskReferenceOnBlock(block, taskId, todoTag = '', dependencies =
         }
     }
     return changed;
-}
-
-async function persistPisiLegacyTaskReferences(tasks = []) {
-    const pending = tasks.filter((task) => {
-        return task?.id && task?.source?.nodePath && task?.source?.blockId && task.embeddedTaskId !== task.id;
-    });
-    if (!pending.length) return;
-
-    const groups = new Map();
-    for (const task of pending) {
-        const key = normalizePisiFirstClassPath(task.source.nodePath);
-        if (!groups.has(key)) groups.set(key, []);
-        groups.get(key).push(task);
-    }
-
-    pisiFirstClassTaskState.assigningRefs = true;
-    try {
-        for (const group of groups.values()) {
-            const nodePath = group[0]?.source?.nodePath;
-            if (!nodePath) continue;
-
-            const activeCenter = window.activeCenterNode?.path;
-            const activeModal = window.activeModalNode?.path;
-            let editor = null;
-            let save = null;
-
-            if (samePisiFirstClassPath(activeCenter, nodePath)) {
-                editor = document.getElementById('center-node-editor-content');
-                save = async () => {
-                    if (typeof window.saveCurrentCenterNodeEditor === 'function') {
-                        return window.saveCurrentCenterNodeEditor();
-                    }
-                    return window.pisiProject?.saveNodeContent?.(nodePath, window.getPisiEditorContent?.(editor) || editor?.innerHTML || '');
-                };
-            } else if (samePisiFirstClassPath(activeModal, nodePath)) {
-                editor = document.getElementById('node-modal-content');
-                save = async () => window.pisiProject?.saveNodeContent?.(nodePath, window.getPisiEditorContent?.(editor) || editor?.innerHTML || '');
-            }
-
-            if (editor) {
-                let changed = false;
-                for (const task of group) {
-                    const block = findPisiTaskBlock(editor, task.source.blockId);
-                    changed = setPisiTaskReferenceOnBlock(block, task.id, task.todoTag, task.dependencies) || changed;
-                    task.embeddedTaskId = task.id;
-                }
-                if (changed) {
-                    editor.dispatchEvent(new Event('input', { bubbles: true }));
-                    await save?.();
-                }
-                continue;
-            }
-
-            const doc = await window.pisiProject?.getPisiDocument?.(nodePath);
-            if (!doc?.ok) continue;
-            const template = document.createElement('template');
-            template.innerHTML = String(doc.data?.content || '');
-            let changed = false;
-            for (const task of group) {
-                const block = findPisiTaskBlock(template.content, task.source.blockId);
-                changed = setPisiTaskReferenceOnBlock(block, task.id, task.todoTag, task.dependencies) || changed;
-                task.embeddedTaskId = task.id;
-            }
-            if (changed) {
-                await window.pisiProject?.saveNodeContent?.(nodePath, template.innerHTML);
-            }
-        }
-    } finally {
-        pisiFirstClassTaskState.assigningRefs = false;
-    }
 }
 
 function makePisiTaskSyntheticHtml(task, todoTag) {
@@ -375,7 +257,6 @@ function taskToPisiMissionBlock(task) {
         todoOrders: { [todoTag]: Number(task?.manualOrder) || 0 },
         todoCompletionOffsets: Number(task?.completionOffsetDays) > 0 ? { [todoTag]: Number(task.completionOffsetDays) } : {},
         doneFor: completed ? [todoTag] : [],
-        legacyDone: false,
         text: task?.title || '',
         html: makePisiTaskSyntheticHtml(task, todoTag)
     };
@@ -426,7 +307,7 @@ function installPisiFirstClassMissionIndex(tasks = []) {
     );
 }
 
-async function refreshPisiFirstClassTaskStore(options = {}) {
+async function refreshPisiFirstClassTaskStore() {
     const projectFolder = window.currentProjectFolder;
     if (!projectFolder || !window.pisiProject?.quickAddTask) {
         setPisiFirstClassTaskCache([]);
@@ -442,24 +323,6 @@ async function refreshPisiFirstClassTaskStore(options = {}) {
     pisiFirstClassTaskState.projectKey = projectKey;
     try {
         patchPisiMissionIdentity();
-        const state = window.pisiTagsPanelState || {};
-        const legacyBlocks = Array.isArray(options.legacyBlocks) ? options.legacyBlocks : Array.isArray(state.missionIndex) ? state.missionIndex : [];
-        let migratedTasks = [];
-
-        if (options.syncLegacy !== false && state.missionIndexComplete === true) {
-            migratedTasks = buildPisiTasksFromLegacyIndex(legacyBlocks);
-            await persistPisiLegacyTaskReferences(migratedTasks);
-            const syncResult = await window.pisiProject.quickAddTask(projectFolder, {
-                op: 'sync-index',
-                complete: true,
-                pruneMissing: true,
-                tasks: migratedTasks.map(({ embeddedTaskId, legacyMissionId, ...task }) => task)
-            });
-            if (!syncResult?.ok) {
-                throw new Error(syncResult?.error || 'Görev deposu eşitlenemedi.');
-            }
-        }
-
         const result = await window.pisiProject.quickAddTask(projectFolder, { op: 'list' });
         if (!result?.ok) {
             throw new Error(result?.error || 'Görev deposu okunamadı.');
@@ -479,16 +342,16 @@ async function refreshPisiFirstClassTaskStore(options = {}) {
         pisiFirstClassTaskState.syncing = false;
         if (pisiFirstClassTaskState.queued) {
             pisiFirstClassTaskState.queued = false;
-            schedulePisiFirstClassTaskRefresh({ syncLegacy: true });
+            schedulePisiFirstClassTaskRefresh();
         }
     }
 }
 
-function schedulePisiFirstClassTaskRefresh(options = {}) {
+function schedulePisiFirstClassTaskRefresh() {
     clearTimeout(pisiFirstClassTaskState.refreshTimer);
     pisiFirstClassTaskState.refreshTimer = setTimeout(() => {
         pisiFirstClassTaskState.refreshTimer = null;
-        void refreshPisiFirstClassTaskStore(options);
+        void refreshPisiFirstClassTaskStore();
     }, PISI_TASK_STORE_SYNC_DELAY);
 }
 
@@ -519,14 +382,7 @@ function buildPisiTaskFromEditorBlock(block, context) {
     const todoTag = normalizePisiFirstClassTag(tagElement.dataset.pisiTag || tagElement.textContent || '');
     const todo = parsePisiTodoTagValue(todoTag);
     if (!todo) return null;
-    const legacyKey = makePisiLegacyMissionId(
-        {
-            nodePath: context.nodePath,
-            blockId: block.dataset.pisiBlockId
-        },
-        todoTag
-    );
-    const taskId = String(block.dataset.pisiTaskId || tagElement.dataset.pisiTaskId || '').trim() || makePisiFirstClassTaskId(legacyKey);
+    const taskId = String(block.dataset.pisiTaskId || tagElement.dataset.pisiTaskId || '').trim() || makePisiFirstClassTaskId();
     setPisiTaskReferenceOnBlock(block, taskId, todoTag);
     const source = block.querySelector('.pisi-todo-source[data-pisi-todo-for]');
     const done = Array.from(tags).some((tag) => {
@@ -534,7 +390,7 @@ function buildPisiTaskFromEditorBlock(block, context) {
             return false;
         }
         const doneFor = normalizePisiFirstClassTag(tag.dataset.pisiDoneFor || '');
-        return !doneFor || doneFor === todoTag;
+        return doneFor === todoTag;
     });
     const reminderClass = Array.from(tagElement.classList).find((className) => {
         return className.startsWith('pisi-todo-reminder-');
@@ -602,12 +458,11 @@ async function syncPisiEditorTasks(editor) {
         tasks
     });
     if (result?.ok) {
-        schedulePisiFirstClassTaskRefresh({ syncLegacy: false });
+        schedulePisiFirstClassTaskRefresh();
     }
 }
 
 function handlePisiEditorInputForTasks(event) {
-    if (pisiFirstClassTaskState.assigningRefs) return;
     const editor =
         event.target?.closest?.('#center-node-editor-content, #node-modal-content') ||
         (event.target?.matches?.('#center-node-editor-content, #node-modal-content') ? event.target : null);
@@ -631,15 +486,10 @@ function bindPisiFirstClassTaskStore() {
     patchPisiMissionIdentity();
     document.addEventListener('input', handlePisiEditorInputForTasks, true);
     document.addEventListener('pisi:mission-index-updated', (event) => {
-        const complete = event.detail?.complete === true;
-        if (!complete || !window.currentProjectFolder) return;
-        const legacyBlocks = Array.isArray(window.pisiTagsPanelState?.missionIndex) ? [...window.pisiTagsPanelState.missionIndex] : [];
-        schedulePisiFirstClassTaskRefresh({
-            syncLegacy: true,
-            legacyBlocks
-        });
+        if (event.detail?.complete === true && window.currentProjectFolder) {
+            schedulePisiFirstClassTaskRefresh();
+        }
     });
-
     if (!pisiFirstClassTaskState.fileSystemUnsubscribe) {
         pisiFirstClassTaskState.fileSystemUnsubscribe =
             window.pisiProject?.onFileSystemChanged?.((payload = {}) => {
@@ -647,19 +497,19 @@ function bindPisiFirstClassTaskStore() {
                 if (!paths.some((filePath) => /[\\/]\.pisi[\\/]tasks\.json$/i.test(String(filePath || '')))) {
                     return;
                 }
-                schedulePisiFirstClassTaskRefresh({ syncLegacy: false });
+                schedulePisiFirstClassTaskRefresh();
             }) || null;
     }
 
     if (window.currentProjectFolder) {
-        schedulePisiFirstClassTaskRefresh({ syncLegacy: false });
+        schedulePisiFirstClassTaskRefresh();
     }
 }
 
 const moduleApi = {
     pisiFirstClassTaskState,
     makePisiFirstClassTaskId,
-    buildPisiTasksFromLegacyIndex,
+    buildPisiTasksFromProjection,
     taskToPisiMissionBlock,
     getPisiFirstClassTask,
     refreshPisiFirstClassTaskStore,
@@ -673,7 +523,7 @@ bindPisiFirstClassTaskStore();
 
 export {
     bindPisiFirstClassTaskStore,
-    buildPisiTasksFromLegacyIndex,
+    buildPisiTasksFromProjection,
     getPisiFirstClassTask,
     makePisiFirstClassTaskId,
     pisiFirstClassTaskState,

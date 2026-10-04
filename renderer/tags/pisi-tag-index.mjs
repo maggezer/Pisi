@@ -691,9 +691,6 @@ function extractPisiTagBlocksFromHtmlDetailed({ html, nodePath, nodeTitle, mapPa
             todoOrders,
             todoCompletionOffsets,
             doneFor: Array.from(new Set(doneFor)),
-            legacyDone: doneTagElements.some((tagEl) => {
-                return normalizePisiUserTag(tagEl.dataset.pisiTag || tagEl.textContent || '') === 'done' && !tagEl.dataset.pisiDoneFor;
-            }),
             text,
             html: sanitizePisiEditorHtml(block.outerHTML)
         });

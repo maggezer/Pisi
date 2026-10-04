@@ -188,7 +188,7 @@ test('Sheet Database 1. aşama DOM dışı state ve view model kullanır', () =>
     assert.match(fieldTypesUi, /pisi-sheet-option-chip/);
     assert.match(fieldTypesUi, /input\.type = 'date'/);
 
-    assert.match(databaseDom, /migratePisiSheetDatabaseFromDom/);
+    assert.doesNotMatch(databaseDom, /migratePisiSheetDatabaseFromDom|readLegacyPisiSheetColumnArray/);
     assert.match(databaseDom, /hydratePisiSheetDatabase/);
     assert.match(databaseDom, /renderPisiSheetDatabase/);
     assert.match(databaseDom, /pisiRowId/);

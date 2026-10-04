@@ -66,7 +66,7 @@ async function ensurePisiCanonicalSearchTasks(projectFolder) {
         return getPisiCanonicalSearchTasks();
     }
     if (typeof taskModule?.refreshPisiFirstClassTaskStore === 'function') {
-        const result = await taskModule.refreshPisiFirstClassTaskStore({ syncLegacy: false });
+        const result = await taskModule.refreshPisiFirstClassTaskStore();
         if (result?.ok || Array.isArray(result?.tasks)) {
             pisiSearchTaskLoadedProjectKey = projectKey;
         }

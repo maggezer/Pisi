@@ -285,21 +285,13 @@ function collectPisiTrashMapReferences(projectFolder, coveredRoots, nodeIds, rel
             .normalizePisiRelationshipViews(mapData.relationshipViews)
             .filter((view) => relationshipIdSet.has(view.relationshipId))
             .map(deepClonePisiTrashValue);
-        const legacyEdges = (Array.isArray(mapData.edges) ? mapData.edges : [])
-            .filter((edge) => nodeIds.has(edge?.sourceId) || nodeIds.has(edge?.targetId))
-            .map(deepClonePisiTrashValue);
-        if (!nodes.length && !views.length && !legacyEdges.length) return;
+        if (!nodes.length && !views.length) return;
 
-        references.push({ mapPath: relative, nodes, relationshipViews: views, legacyEdges });
+        references.push({ mapPath: relative, nodes, relationshipViews: views });
         mapData.nodes = (Array.isArray(mapData.nodes) ? mapData.nodes : []).filter((node) => !nodeIds.has(node?.id));
         mapData.relationshipViews = mapSemanticCore
             .normalizePisiRelationshipViews(mapData.relationshipViews)
             .filter((view) => !relationshipIdSet.has(view.relationshipId));
-        if (Array.isArray(mapData.edges)) {
-            mapData.edges = mapData.edges.filter((edge) => {
-                return !nodeIds.has(edge?.sourceId) && !nodeIds.has(edge?.targetId);
-            });
-        }
         info.data.pisi.updatedAt = new Date().toISOString();
         changes.push({ filePath, data: info.data });
     });
@@ -513,14 +505,6 @@ function restorePisiTrashMapReferences(projectFolder, references, restoredRelati
             })
         ];
         mapData.relationshipViewVersion = mapSemanticCore.PISI_MAP_RELATIONSHIP_VIEW_VERSION;
-        if (Array.isArray(mapData.edges)) {
-            const currentEdgeIds = new Set(mapData.edges.map((edge) => edge?.id).filter(Boolean));
-            mapData.edges.push(
-                ...(reference.legacyEdges || []).filter((edge) => {
-                    return edge?.id && !currentEdgeIds.has(edge.id);
-                })
-            );
-        }
         info.data.pisi.updatedAt = new Date().toISOString();
         changes.push({ filePath: mapPath, data: info.data });
     }
