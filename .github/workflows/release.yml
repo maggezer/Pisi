@@ -47,7 +47,7 @@ jobs:
               run: npm ci
 
             - name: Require clean dependency audit
-              run: npm audit --audit-level=moderate
+              run: npm run audit
 
             - name: Check repository formatting
               run: npm run format:check
