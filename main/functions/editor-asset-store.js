@@ -469,6 +469,10 @@ function collectPisiEditorAssetReferences(content = '') {
     return Array.from(references).sort();
 }
 
+/**
+ * @param {string | null | undefined} sidecarPath
+ * @param {Iterable<string>} [referencedAssets]
+ */
 function prunePisiEditorAssetStore(sidecarPath, referencedAssets = []) {
     if (!sidecarPath || !fs.existsSync(sidecarPath)) {
         return {
@@ -480,7 +484,7 @@ function prunePisiEditorAssetStore(sidecarPath, referencedAssets = []) {
         };
     }
 
-    const rawReferences = referencedAssets instanceof Set ? Array.from(referencedAssets) : Array.from(referencedAssets || []);
+    const rawReferences = Array.from(referencedAssets || []);
     const references = new Set(
         rawReferences.map((value) => String(value || '')).filter((value) => PISI_PAINT_ASSET_PATTERN.test(value) || PISI_SHEET_ASSET_PATTERN.test(value))
     );
