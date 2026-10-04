@@ -30,8 +30,7 @@ release/
 
 # Android yerel build ve Gradle çıktıları
 android/.gradle/
-android/build/
-android/app/build/
+android/**/build/
 android/local.properties
 *.apk
 
