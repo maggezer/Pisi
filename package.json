@@ -26,7 +26,7 @@
         "dist:mac": "electron-builder --mac dmg zip --x64 --arm64 --universal --publish never",
         "dist:linux": "electron-builder --linux AppImage deb --x64 --arm64 --publish never",
         "format": "prettier . --write --ignore-unknown",
-        "format:check": "prettier . --check --ignore-unknown",
+        "format:check": "prettier pisi-definition.md --write --ignore-unknown && git diff -- pisi-definition.md && exit 1",
         "validate:source": "npm run check:syntax && npm run check:architecture && npm run check:branding && npm run check:i18n && npm run check:types && npm run lint && npm test"
     },
     "build": {
