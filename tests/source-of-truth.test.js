@@ -175,10 +175,7 @@ test('aktif mimari dokümanları kaldırılmış geçiş planlarını taşımaz'
     assert.doesNotMatch(storage, /task-store-migration|transitional architecture|First adoption wave|Second adoption wave/i);
 
     assert.match(integrity, /relationshipViews/);
-    assert.doesNotMatch(
-        integrity,
-        /incomplete legacy metadata migration|legacy `map\.edges`|connectionTypes.*rebuild|backward-compatible audit form/is
-    );
+    assert.doesNotMatch(integrity, /incomplete legacy metadata migration|legacy `map\.edges`|connectionTypes.*rebuild|backward-compatible audit form/is);
 
     assert.doesNotMatch(trash, /legacy `map\.edges`|legacy edge/i);
     assert.doesNotMatch(readme, /Eski global adlar/);
