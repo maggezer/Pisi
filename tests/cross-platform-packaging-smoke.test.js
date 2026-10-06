@@ -18,6 +18,9 @@ test('cross-platform packaging smoke includes unsigned Windows x64 and ARM64 NSI
 
     assert.match(workflow, /npm run dist:installer --/);
     assert.match(workflow, /npm run dist:portable --/);
+    assert.match(workflow, /--config\.extraMetadata\.pisiDistribution=nsis/);
+    assert.match(workflow, /--config\.extraMetadata\.pisiDistribution=portable/);
+    assert.doesNotMatch(workflow, /npm run dist:(?:installer|portable).* -c\.extraMetadata/m);
 
     const x64Flags = workflow.match(/--x64/g) || [];
     const arm64Flags = workflow.match(/--arm64/g) || [];

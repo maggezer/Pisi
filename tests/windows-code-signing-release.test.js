@@ -21,7 +21,7 @@ test('Windows beta release supports optional Authenticode signing', () => {
     assert.match(workflow, /GitHub beta EXE artifacts will be unsigned/);
     assert.doesNotMatch(workflow, /Production releases must never be unsigned/);
 
-    const forceSigningMatches = workflow.match(/-c\.forceCodeSigning=true/g) || [];
+    const forceSigningMatches = workflow.match(/--config\.forceCodeSigning=true/g) || [];
     assert.equal(forceSigningMatches.length, 2);
 
     const verifyIndex = workflow.indexOf('Verify Windows Authenticode signatures');

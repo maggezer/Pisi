@@ -134,21 +134,21 @@ jobs:
                     '--arm64',
                     '--publish',
                     'never',
-                    '-c.extraMetadata.pisiDistribution=nsis',
-                    "-c.extraMetadata.pisiUpdateChannel=$env:PISI_UPDATE_CHANNEL"
+                    '--config.extraMetadata.pisiDistribution=nsis',
+                    "--config.extraMetadata.pisiUpdateChannel=$env:PISI_UPDATE_CHANNEL"
                   )
 
                   if (-not [string]::IsNullOrWhiteSpace($env:PISI_UPDATE_FEED_URL)) {
-                    $arguments += "-c.extraMetadata.pisiUpdateFeedUrl=$env:PISI_UPDATE_FEED_URL"
+                    $arguments += "--config.extraMetadata.pisiUpdateFeedUrl=$env:PISI_UPDATE_FEED_URL"
                   }
 
                   if ($env:PISI_SIGNING_ENABLED -eq 'true') {
-                    $arguments += '-c.forceCodeSigning=true'
+                    $arguments += '--config.forceCodeSigning=true'
                   }
 
                   if (-not [string]::IsNullOrWhiteSpace($env:PISI_WINDOWS_CERT_SHA1)) {
                     $thumbprint = ($env:PISI_WINDOWS_CERT_SHA1 -replace '\s', '').ToUpperInvariant()
-                    $arguments += "-c.win.signtoolOptions.certificateSha1=$thumbprint"
+                    $arguments += "--config.win.signtoolOptions.certificateSha1=$thumbprint"
                   }
 
                   & npm @arguments
@@ -187,17 +187,17 @@ jobs:
                     '--arm64',
                     '--publish',
                     'never',
-                    '-c.extraMetadata.pisiDistribution=portable',
-                    "-c.extraMetadata.pisiUpdateChannel=$env:PISI_UPDATE_CHANNEL"
+                    '--config.extraMetadata.pisiDistribution=portable',
+                    "--config.extraMetadata.pisiUpdateChannel=$env:PISI_UPDATE_CHANNEL"
                   )
 
                   if ($env:PISI_SIGNING_ENABLED -eq 'true') {
-                    $arguments += '-c.forceCodeSigning=true'
+                    $arguments += '--config.forceCodeSigning=true'
                   }
 
                   if (-not [string]::IsNullOrWhiteSpace($env:PISI_WINDOWS_CERT_SHA1)) {
                     $thumbprint = ($env:PISI_WINDOWS_CERT_SHA1 -replace '\s', '').ToUpperInvariant()
-                    $arguments += "-c.win.signtoolOptions.certificateSha1=$thumbprint"
+                    $arguments += "--config.win.signtoolOptions.certificateSha1=$thumbprint"
                   }
 
                   & npm @arguments

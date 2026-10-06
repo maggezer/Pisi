@@ -45,7 +45,7 @@ jobs:
             - name: Build unsigned Windows NSIS packages
               shell: pwsh
               run: |
-                  npm run dist:installer -- --x64 --arm64 --publish never -c.extraMetadata.pisiDistribution=nsis
+                  npm run dist:installer -- --x64 --arm64 --publish never --config.extraMetadata.pisiDistribution=nsis
 
                   if ($LASTEXITCODE -ne 0) {
                     exit $LASTEXITCODE
@@ -93,7 +93,7 @@ jobs:
             - name: Build unsigned Windows Portable packages
               shell: pwsh
               run: |
-                  npm run dist:portable -- --x64 --arm64 --publish never -c.extraMetadata.pisiDistribution=portable
+                  npm run dist:portable -- --x64 --arm64 --publish never --config.extraMetadata.pisiDistribution=portable
 
                   if ($LASTEXITCODE -ne 0) {
                     exit $LASTEXITCODE
