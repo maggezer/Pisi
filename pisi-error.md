@@ -79,8 +79,10 @@ olarak değil, **production environment bağımlılığı** olarak sınıflandı
 ## 3. Tagged release / Store hattının end-to-end kanıtı
 
 **[Orta · release validation]** Cross-platform Packaging Smoke son
-package-related `main` çalışmasında macOS ve Linux paket setlerini başarıyla
-doğrulamıştır.
+package-related `main` çalışmasında Windows, macOS ve Linux paket setlerini
+başarıyla doğrulamıştır. Windows smoke gerçek `windows-latest` runner’da
+NSIS x64/ARM64 ve Portable x64/ARM64 olmak üzere dört EXE üretmiş; dosyaların
+varlığı, boyutu ve PE `MZ` imzası doğrulanmıştır.
 
 Buna karşılık mevcut Actions geçmişinde henüz bir **Release** veya
 **Microsoft Store MSIX** workflow run’ı görünmüyor. Bu nedenle şu iki akış
@@ -115,8 +117,8 @@ Bunlar bug değil, dağıtım kanalına göre kasıtlı sınırlardır:
 - fresh dependency audit: **8 moderate vulnerability / CI blocker**,
 - Electron E2E: **başarılı**; startup/smoke, gerçek node+map persistence akışı
   ve kritik task/Sheet/Canvas restart regresyonları geçti,
-- Cross-platform Packaging Smoke: son package-related `main` çalışması
-  **başarılı**.
+- Cross-platform Packaging Smoke: Windows + macOS + Linux job’ları
+  **başarılı**; Windows NSIS/Portable x64+ARM64 gerçek paket üretimi doğrulandı.
 
 Audit gate nedeniyle 6 Ekim run’ında format/source-validation adımları
 çalıştırılmadı. Son tam başarılı source validation 4 Ekim 2026’daki aynı runtime

@@ -189,6 +189,12 @@ Microsoft Store yönetir; NSIS direct updater yalnız public HTTPS
 `PISI_UPDATE_FEED_URL` yapılandırılmışsa çalışır; Portable build bilinçli
 olarak self-update yapmaz.
 
+Package-related `main` değişikliklerinde `Cross-platform Packaging Smoke`
+gerçek platform runner’larında Windows unsigned NSIS + Portable x64/ARM64,
+macOS DMG/ZIP x64/ARM64/universal ve Linux AppImage/DEB x64/ARM64 paketlerini
+üretip doğrular. Windows smoke dört EXE’nin varlığını, boş olmadığını ve PE
+`MZ` imzasını kontrol eder; signing credentials gerektirmez.
+
 ## Proje verileri
 
 PISI, kullanıcı notlarını uygulama veritabanına taşımadan seçilen proje

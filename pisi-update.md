@@ -1,5 +1,24 @@
 # PISI Güncelleme Takip Dosyası
 
+## 06-10-2026 — P2.3 Windows packaging smoke
+
+- `Cross-platform Packaging Smoke` workflow’una gerçek `windows-latest` job’ı
+  eklendi.
+- Signing auto-discovery kapalı smoke build’de NSIS x64/ARM64 ve Portable
+  x64/ARM64 paketleri ayrı ayrı üretiliyor.
+- Dört Windows EXE’nin varlığı, sıfırdan büyük boyutu ve PE `MZ` imzası
+  doğrulanıyor.
+- Smoke ilk koşuda Windows PowerShell/npm üzerinden kısa
+  `-c.extraMetadata...` override biçiminin electron-builder tarafından config
+  dosya yolu gibi yorumlandığını yakaladı. Windows smoke ve gerçek release
+  workflow’u `--config.*` uzun biçimine geçirildi.
+- Regresyon testi Windows/macOS/Linux job’larının tek parse edilebilir packaging
+  workflow’unda kalmasını ve Windows x64/ARM64 NSIS + Portable sözleşmesini
+  koruyor.
+- GitHub Actions run `37459640076`: Windows, macOS ve Linux packaging smoke
+  job’larının tamamı başarılı.
+
+
 > Bu dosya tarihsel değişiklik günlüğüdür; eski tarihlerde yazılmış “ertelendi”,
 > geçiş, uyumluluk veya eski veri biçimi notları aktif mimari sözleşme değildir.
 > Güncel mimari için `pisi-definition.md`, `docs/single-source-of-truth.md`,
