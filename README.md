@@ -38,8 +38,8 @@ takvim işlevlerini tek bir proje klasöründe birleştirir.
   sürüklenebilir/dock edilebilir takvim
 - Türkçe/İngilizce arayüz, light/dark tema ve değiştirilebilir arayüz tercihleri
 - Proje dışı yol erişimini engelleyen IPC sınırı ve HTML allowlist sanitizer
-- Atomik yazma, proje kilidi, kapanışta kayıt kuyruğunu boşaltma ve silmede
-  sistem çöp kutusu
+- Atomik yazma, proje kilidi, kapanışta kayıt kuyruğunu boşaltma ve
+  project-local reversible Trash
 
 ## Kaynak yapısı
 
@@ -134,10 +134,11 @@ referanslar kullanır ve map’ten kaldırma kaynak node’u silmez.
 
 ## Taşınabilirlik
 
-Her içerik değişikliğinden önce node’un tam JSON sürümü
-`.pisi-history/<node-id>/` altında saklanır ve son 50 sürüm korunur. Atomik
-`.pisi-backup` dosyaları geri yüklenebilir. Geri yükleme öncesinde mevcut node
-ayrıca geçmişe alınır.
+İçerik değişikliklerinde node’un tam JSON snapshot’ı
+`.pisi-history/<node-id>/` altında gzip sıkıştırmalı olarak tutulur. Her node
+için en fazla 50 sürüm ve normal durumda 24 MiB history bütçesi korunur; restore
+öncesinde mevcut node ayrıca `before-restore` snapshot’ına alınır. Atomik
+`.pisi-backup` dosyaları Version History’den ayrı kurtarma katmanıdır.
 
 İçe ve dışa aktarma akışları proje verilerini taşımaya yardımcı olur. Sürüm
 geçmişi ile Project Integrity kontrolleri yerel proje dosyaları üzerinde çalışır;
@@ -153,18 +154,40 @@ ve çakışma metadatasıdır. Silmeler kurtarılabilir, eşzamanlı düzenlemel
 çakışma kopyasıyla korunur. Kurulum ve kabul testi için
 [`docs/pisi-sync-guide-tr.md`](docs/pisi-sync-guide-tr.md) dosyasına bakın.
 
-## Paketleme
+## Paketleme ve dağıtım
+
+Yerel paketleme komutları:
 
 ```bash
 npm run dist:installer
 npm run dist:portable
+npm run dist:mac
+npm run dist:linux
 ```
 
-Windows NSIS ve portable çıktıları x64 ile ARM64 için üretilir. Çıktı adı
-ürün, sürüm, işletim sistemi ve mimariyi içerir. `v*.*.*` etiketiyle çalışan
-release workflow’u doğrulama, Windows paketleme, SHA256 üretimi ve GitHub beta
-release oluşturma adımlarını otomatikleştirir. Code signing hattı optional
-çalışır; gerçek imza için yayın ortamında sertifika/kimlik bilgileri gerekir.
+Tagged `v*.*.*` release hattı önce audit/format/source validation çalıştırır,
+ardından aynı beta release için şu paketleri üretir:
+
+- Windows x64/ARM64 NSIS Setup ve Portable,
+- macOS x64/ARM64/universal DMG ve ZIP,
+- Linux x64/ARM64 AppImage ve DEB,
+- platform checksum dosyaları.
+
+Windows direct-download Authenticode signing optional’dır; kimlik sağlanırsa
+workflow final EXE imzalarını ayrıca doğrular. macOS signing/notarization da
+Developer ID ve App Store Connect kimlik bilgileri sağlandığında etkinleşir.
+Linux checksum manifesti isteğe bağlı OpenPGP detached signature alabilir.
+
+Microsoft Store ayrı `Microsoft Store MSIX` workflow’udur. Partner Center
+identity değerleri yapılandırıldığında x64 + ARM64 unsigned MSIX bundle ve
+`.msixupload` üretir; Store yayımlama aşamasında paketi Microsoft imzalar.
+Partner Center credentials varsa yayın manuel olarak veya
+`PISI_STORE_AUTO_PUBLISH=true` ile tag sonrasında otomatik başlatılabilir.
+
+Güncelleme kanalları dağıtım tipine göre ayrıdır: Store/MSIX güncellemelerini
+Microsoft Store yönetir; NSIS direct updater yalnız public HTTPS
+`PISI_UPDATE_FEED_URL` yapılandırılmışsa çalışır; Portable build bilinçli
+olarak self-update yapmaz.
 
 ## Proje verileri
 
@@ -172,22 +195,35 @@ PISI, kullanıcı notlarını uygulama veritabanına taşımadan seçilen proje
 klasöründe tutar. `.map` ve `.node` biçimlerinin tam tanımı
 [`pisi-definition.md`](pisi-definition.md) dosyasındadır.
 
-Dosya silme işlemleri sistem çöp kutusuna gider. JSON yazımları aynı klasörde
-geçici dosya ve rename ile yapılır; önceki sürüm `.pisi-backup` olarak
-korunabilir. Bozuk JSON otomatik olarak boş içerikle ezilmez.
+Node, map, klasör ve desteklenen proje yolu silmeleri varsayılan olarak
+`.pisi/trash/items/` altındaki project-local reversible Trash’a gider. Trash;
+payload ile birlikte canonical task/relationship ve map presentation
+referanslarını güvenli restore için arşivler. Kalıcı silme ve Trash’i tamamen
+boşaltma ayrı, açık kullanıcı işlemleridir.
+
+JSON yazımları aynı klasörde geçici dosya ve rename ile atomik yapılır; önceki
+sürüm `.pisi-backup` olarak korunabilir. Bozuk JSON otomatik olarak boş
+içerikle ezilmez.
 
 ## Mevcut sınırlar
 
 - Sheet, 10.000 × 80 güvenlik sınırı uygular. Satır/sütun silme, fare/klavye ile
   dikdörtgen çoklu seçim, toplu hücre biçimlendirme ve yapısal formül referansı
   güncelleme desteklenir.
-- GitHub üzerinden doğrudan dağıtılan Windows paketlerinin gerçek code-signing
-  kimliği yayın ortamında sağlanmalıdır; aksi durumda SmartScreen uyarısı
-  görülebilir.
-- macOS/Linux paket hedefleri yapılandırılmıştır. macOS production dağıtımı için
-  Apple signing/notarization kimlik bilgileri; direct auto-update için production
-  feed; Microsoft Store için gerçek submission hesabı dış yayın bağımlılıklarıdır.
+- GitHub direct-download Windows paketleri signing identity olmadan üretilebilir;
+  unsigned beta EXE’leri SmartScreen/Unknown Publisher uyarısı gösterebilir.
+- Direct NSIS auto-update kodu hazırdır ancak public HTTPS update feed
+  yapılandırılmadığında updater devre dışıdır. Portable build self-update yapmaz.
+- macOS paketleri signing identity olmadan test/beta amacıyla üretilebilir;
+  production direct dağıtımında Developer ID signing/notarization dış
+  yapılandırması gerekir.
+- Microsoft Store paketleme/publish hattı kaynakta hazırdır ancak gerçek Store
+  identity, ürün kaydı ve Partner Center credentials repository dışı yayın
+  bağımlılıklarıdır.
 - Electron ana süreç ve renderer domainleri ES module olarak çalışır. Ana süreç
   `main.mjs` üzerinden başlar ve `main/package.json` altında `type: module` ile
   korunur. `preload.js`, `sandbox: true` Electron preload ortamının sınırlı
   `require` API'si nedeniyle bilinçli olarak CommonJS sınırında tutulur.
+
+Güncel açık/production bağımlılıkları için
+[`pisi-error.md`](pisi-error.md) dosyasına bakın.
