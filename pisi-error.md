@@ -8,7 +8,42 @@ Bu kayıt “uygulamada başka bug olamaz” anlamına gelmez; amacı eski migra
 tamamlanmış roadmap maddeleri veya stale test sayıları yerine **mevcut kaynak
 durumunu** göstermektir.
 
-## 1. Production dağıtım kimlikleri ve dış servisler
+## 1. Dependency audit yeniden blokluyor
+
+**[Orta · security/build · CI blocker]** 6 Ekim 2026’da fresh
+`npm audit --audit-level=moderate` taraması yeni yayımlanan
+`GHSA-hp3w-g68c-fv3c` advisory’sini yakaladı ve **8 moderate vulnerability**
+raporladı.
+
+Kilitli dependency zinciri:
+
+```text
+electron-builder@26.15.7 / app-builder-lib@26.15.7
+  -> @electron/get@3.1.0
+  -> global-agent@3.0.0
+  -> roarr@2.15.4
+  -> sprintf-js@1.1.3
+```
+
+Advisory, `sprintf-js` tarafında sınırsız precision specifier ile denial of
+service riskidir. Bu zincirdeki paketler `package-lock.json` içinde
+**dev dependency** olarak işaretlidir; yani bulgu Pisi’nin paketlenmiş runtime
+uygulamasındaki doğrudan kullanıcı dependency’si değildir. Buna rağmen CI ve
+Release workflow’ları moderate seviyeyi zorunlu gate yaptığı için current
+`main` CI audit adımında durmaktadır.
+
+`npm audit` şu anda çözüm olarak `npm audit fix --force` ile
+`electron-builder@26.5.0` kurulmasını öneriyor. Bu, mevcut
+`electron-builder@26.15.7` sürümünden geriye giden ve npm tarafından breaking
+change olarak sınıflandırılan bir çözüm olduğundan körlemesine uygulanmamalıdır.
+Doğru çözüm; upstream uyumlu fix geldiğinde güncellemek veya packaging/Store/
+macOS/Linux hatlarını yeniden doğrulayarak kontrollü dependency çözümü
+uygulamaktır.
+
+**Current CI sonucu:** audit ❌; bu run’da format ve `validate:source` audit
+gate yüzünden çalıştırılmadı. Aynı commit için Electron E2E ✅ geçti.
+
+## 2. Production dağıtım kimlikleri ve dış servisler
 
 **[Orta · release/environment]** Paketleme ve update kodu kaynakta hazırdır,
 ancak production dağıtımın bazı parçaları repository dışı kimlik ve servis
@@ -41,11 +76,11 @@ Bu değerlerin GitHub Secrets/Variables tarafında gerçekten tanımlı olup olm
 kaynak kodundan güvenilir biçimde çıkarılamaz; doküman bunları “kod eksik”
 olarak değil, **production environment bağımlılığı** olarak sınıflandırır.
 
-## 2. Tagged release / Store hattının end-to-end kanıtı
+## 3. Tagged release / Store hattının end-to-end kanıtı
 
-**[Orta · release validation]** Current Actions geçmişinde source-level CI ve
-Electron E2E başarılıdır. Cross-platform Packaging Smoke da son package-related
-`main` çalışmasında macOS ve Linux paket setlerini başarıyla doğrulamıştır.
+**[Orta · release validation]** Cross-platform Packaging Smoke son
+package-related `main` çalışmasında macOS ve Linux paket setlerini başarıyla
+doğrulamıştır.
 
 Buna karşılık mevcut Actions geçmişinde henüz bir **Release** veya
 **Microsoft Store MSIX** workflow run’ı görünmüyor. Bu nedenle şu iki akış
@@ -55,10 +90,11 @@ end-to-end çalıştırılmış kabul edilmemelidir:
 1. gerçek `v*.*.*` tag → bütün platform paketleri → tek GitHub beta release,
 2. gerçek Partner Center identity → MSIX bundle/upload → Store submission.
 
-Public beta/Store yayını öncesinde bu iki yol gerçek release environment ile en
-az bir kez çalıştırılıp artifact ve publish sonucu doğrulanmalıdır.
+Public beta/Store yayını öncesinde dependency audit yeniden yeşile döndürüldükten
+sonra bu iki yol gerçek release environment ile en az bir kez çalıştırılıp
+artifact ve publish sonucu doğrulanmalıdır.
 
-## 3. Bilinçli update davranışları
+## 4. Bilinçli update davranışları
 
 Bunlar bug değil, dağıtım kanalına göre kasıtlı sınırlardır:
 
@@ -70,27 +106,34 @@ Bunlar bug değil, dağıtım kanalına göre kasıtlı sınırlardır:
 - Portable build self-update yapmaz.
 - Development ve diğer distribution modlarında direct updater devre dışıdır.
 
-## 4. Güncel doğrulama snapshot’ı
+## 5. Güncel doğrulama snapshot’ı
 
-6 Ekim 2026’da current `main` kaynak durumu yeniden kontrol edildi. Son
-başarılı `main` CI/E2E çalışmasının doğruladığı durum:
+6 Ekim 2026 current `main` kontrolü:
 
 - package version: **0.11.0**,
 - CI runtime: **Node.js 24**,
-- `npm audit --audit-level=moderate`: **0 vulnerability**,
+- fresh dependency audit: **8 moderate vulnerability / CI blocker**,
+- Electron E2E: **başarılı**; startup/smoke, gerçek node+map persistence akışı
+  ve kritik task/Sheet/Canvas restart regresyonları geçti,
+- Cross-platform Packaging Smoke: son package-related `main` çalışması
+  **başarılı**.
+
+Audit gate nedeniyle 6 Ekim run’ında format/source-validation adımları
+çalıştırılmadı. Son tam başarılı source validation 4 Ekim 2026’daki aynı runtime
+kod tabanında şu snapshot’ı doğrulamıştı:
+
 - repository Prettier check: **başarılı**,
 - syntax check: **372 JavaScript/ES module dosyası**,
 - architecture ownership: **121 module / 1275 binding**,
 - i18n doğrulaması: **990 key / 149 renderer module**,
 - checkJs global üretimi: **1033 runtime-owned identifier**,
 - TypeScript `checkJs`: **başarılı / 0 hata**,
-- Node regresyon testleri: **664/664 başarılı**,
-- Electron E2E: **başarılı**; startup/smoke, gerçek node+map persistence akışı
-  ve kritik task/Sheet/Canvas restart regresyonları çalıştırılıyor,
-- Cross-platform Packaging Smoke: son package-related `main` çalışması
-  **başarılı**.
+- Node regresyon testleri: **664/664 başarılı**.
 
-## 5. Tamamlanmış olup açık sayılmaması gereken maddeler
+Bu metrikler “bugünkü CI yeşil” anlamında kullanılmamalıdır; current blocker
+dependency audit’tir.
+
+## 6. Tamamlanmış olup açık sayılmaması gereken maddeler
 
 Aşağıdakiler artık `pisi-error.md` için açık değildir:
 
@@ -98,7 +141,7 @@ Aşağıdakiler artık `pisi-error.md` için açık değildir:
 - canonical task / relationship / property authority ayrımı,
 - generated Android/Capacitor ağacının desktop `main` içinden kaldırılması,
 - repository-wide Prettier ve zorunlu CI format gate,
-- CI/release dependency audit gate,
+- CI/release dependency audit gate’in zorunlu hale getirilmesi,
 - Electron main/renderer ESM geçişi,
 - reversible project-local Trash,
 - Project Integrity + atomic mutation/recovery,
