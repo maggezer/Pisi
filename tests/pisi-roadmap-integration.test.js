@@ -203,7 +203,7 @@ test('Pisi geçmişi gizlenir ve yeniden adlandırma alanları klavyeyi korur', 
 
 test('map seçimi, ağaç tıklamaları ve node yazma odağı birbirine karışmaz', () => {
     const treeDnd = read('renderer/tree/pisi-tree-dnd.mjs');
-    const treeView = read('renderer/tree/pisi-tree-view.mjs');
+    const treeLoading = read('renderer/tree/pisi-tree-loading.mjs');
     const map = read('renderer/map/pisi-map-workspace.mjs');
     const nodeEditor = read('renderer/editor/pisi-node-editor.mjs');
     const editorStyles = read('styles/40-editor.css');
@@ -213,37 +213,39 @@ test('map seçimi, ağaç tıklamaları ve node yazma odağı birbirine karışm
     assert.match(treeDnd, /row\.addEventListener\('dblclick'[\s\S]*?cancelPendingPisiTreeFileClick\(\);[\s\S]*?startRenameTreeFile/);
     assert.equal((treeDnd.match(/await openPisiFileTab/g) || []).length, 1);
     assert.match(map, /const moved = hasDragged[\s\S]*?if \(moved\) \{\s*clearSelectedMapNodes\(\);/);
-    assert.match(treeView, /result\.items\.filter\(\(item\) => !isPisiInternalTreeItem\(item\)\)/);
-    assert.match(treeView, /return name === '\.pisi-history'/);
+    assert.match(treeLoading, /result\.items\.filter\(\(item\) => !isPisiInternalTreeItem\(item\)\)/);
+    assert.match(treeLoading, /return name === '\.pisi-history'/);
     assert.match(nodeEditor, /function ensurePisiEditorWritable\(editor\)/);
     assert.match(nodeEditor, /editor\.contentEditable = 'true'/);
     assert.match(editorStyles, /\.pisi-rich-editor \{[\s\S]*?user-select: text;[\s\S]*?pointer-events: auto;/);
 });
 
 test('map portu kendi alt node ağacını ve bu ağa bağlı çizgileri daraltır', () => {
-    const interactions = read('renderer/map/pisi-map-interactions.mjs');
+    const hubInteractions = read('renderer/map/pisi-map-hub-interactions.mjs');
+    const canvasInteractions = read('renderer/map/pisi-map-canvas-interactions.mjs');
     const edges = read('renderer/map/pisi-map-edges.mjs');
     const styles = read('styles/10-shell-map-panels.css');
 
-    assert.match(interactions, /collectPisiCollapsedHubNodeIds/);
-    assert.match(interactions, /pisi-hub-descendant-hidden/);
+    assert.match(hubInteractions, /collectPisiCollapsedHubNodeIds/);
+    assert.match(hubInteractions, /pisi-hub-descendant-hidden/);
     assert.match(edges, /syncCollapsedHubNodeVisibility\(\)/);
     assert.match(edges, /isHubEdgeCollapsed\(edge, hiddenNodeIds\)/);
     assert.match(styles, /\.map-node-box\.pisi-hub-descendant-hidden \{\s*display: none;/);
     assert.match(styles, /\.map-port\.hub-collapsed/);
-    assert.match(interactions, /\.map-node-box:not\(\.pisi-hub-descendant-hidden\)/);
+    assert.match(canvasInteractions, /\.map-node-box:not\(\.pisi-hub-descendant-hidden\)/);
     assert.match(read('renderer/map/pisi-map-workspace.mjs'), /width: box\.offsetWidth \|\| parseFloat\(box\.style\.width/);
 });
 
 test('map ok uçları ve çizgileri node zoom oranını izler', () => {
-    const interactions = read('renderer/map/pisi-map-interactions.mjs');
+    const connectionInteractions = read('renderer/map/pisi-map-connection-interactions.mjs');
+    const cameraInteractions = read('renderer/map/pisi-map-camera-interactions.mjs');
     const edges = read('renderer/map/pisi-map-edges.mjs');
     const mapStyles = read('styles/10-shell-map-panels.css');
     const interactionStyles = read('styles/10-shell-map-panels.css');
     const html = read('index.html');
 
-    assert.match(interactions, /getPisiMapConnectionMetrics\(activeMapCamera\?\.zoom\)/);
-    assert.match(interactions, /syncMapConnectionZoomStyles\(\)/);
+    assert.match(connectionInteractions, /getPisiMapConnectionMetrics\(activeMapCamera\?\.zoom\)/);
+    assert.match(cameraInteractions, /syncMapConnectionZoomStyles\(\)/);
     assert.match(edges, /syncMapConnectionZoomStyles\(svg\)/);
     assert.match(mapStyles, /stroke-width: var\(--pisi-map-edge-stroke-width, 2\.5px\)/);
     assert.match(interactionStyles, /stroke-width: var\(--pisi-map-temp-edge-stroke-width, 2px\)/);
