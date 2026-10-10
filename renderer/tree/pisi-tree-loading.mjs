@@ -1,5 +1,3 @@
-
-
 export function isPisiInternalTreeItem(item) {
     const pathName = String(item?.fullPath || '')
         .split(/[\\/]/)
