@@ -1,5 +1,3 @@
-import { isPisiHierarchyEdge } from './pisi-map-collapse-core.mjs';
-
 export function getConnectionDataFromEvent(event) {
     // Ctrl / Cmd: denk bağlam
     if (event.ctrlKey || event.metaKey) {
