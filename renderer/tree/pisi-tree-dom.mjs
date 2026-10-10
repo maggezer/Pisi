@@ -1,5 +1,3 @@
-
-
 export function findTreeNodeByPath(targetPath) {
     if (!targetPath) return null;
 
