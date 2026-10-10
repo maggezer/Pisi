@@ -27,7 +27,7 @@ test('Bases-lite Workspace Center yerine map sağ üst düğmesinden açılır',
 test('map Bases-lite düğmesi zoom kontrolleriyle aynı sağ çizgide ve üsttedir', () => {
     const css = read('styles/10-shell-map-panels.css');
     const creation = read('renderer/map/pisi-map-creation.mjs');
-    const interactions = read('renderer/map/pisi-map-interactions.mjs');
+    const interactions = read('renderer/map/pisi-map-canvas-interactions.mjs');
 
     assert.match(css, /#map-zoom-controls\s*\{[\s\S]*right: 18px;[\s\S]*bottom: 18px;/);
     assert.match(css, /#pisi-bases-map-control\s*\{[\s\S]*top: 18px;[\s\S]*right: 18px;/);
