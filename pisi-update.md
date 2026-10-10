@@ -1,5 +1,15 @@
 # PISI Güncelleme Takip Dosyası
 
+## 10-10-2026 — P2.1 Store zorunlu doğrulama kapısı
+
+- Store workflow’una tag ve manuel tetiklemelerde koşulsuz çalışan audit,
+  format ve kaynak doğrulama job’ı eklendi.
+- Paketleme ve aynı job içindeki yayın adımları `needs: validate` ve başarılı
+  validation sonucu şartına bağlandı; iki checkout aynı `github.sha` kullanır.
+- Store kimlikleri yokken de validation çalışır; paketleme yine atlanır.
+- Workflow regresyon testi tetiklemeleri, aynı commit doğrulamasını, zorunlu
+  adımları ve paketleme/yayın bağımlılığını YAML üzerinden kontrol eder.
+
 ## 10-10-2026 — P1.2 Sheet entity round-trip düzeltmesi
 
 - Sidecar JSON doğrulaması HTML attribute çözümlemesinden ayrıldı; ham JSON

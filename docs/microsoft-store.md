@@ -51,7 +51,20 @@ The first three values are used to generate `Package.appxmanifest`.
 They must match the values assigned to the Store product.
 
 Until the three identity variables are configured, the Store packaging job is
-skipped. Normal CI and GitHub beta releases are unaffected.
+skipped. The validation job still runs. Normal CI and GitHub beta releases are unaffected.
+
+## Required validation
+
+Both tag-triggered and manual runs first execute an independent `validate` job
+for the exact `github.sha` that the packaging job checks out. It installs locked
+dependencies without lifecycle scripts, enforces `npm run audit`, checks formatting,
+and runs `npm run validate:source` (syntax, architecture, branding, i18n, checkJs,
+lint and regression tests).
+
+`store-package` depends on successful validation. A failed or cancelled gate
+blocks packaging, artifact upload and Store submission, including manual runs
+with `publish: true` and automatic tag publication. Validation requires no Store
+identity or publishing credentials and does not rely on a separate CI/Release run.
 
 ## Package-only operation
 

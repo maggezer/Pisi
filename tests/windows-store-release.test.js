@@ -4,12 +4,42 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
+const yaml = require('js-yaml');
 
 const root = path.resolve(__dirname, '..');
 
 function read(relativePath) {
     return fs.readFileSync(path.join(root, relativePath), 'utf8');
 }
+
+test('Store packaging and publishing require successful validation of the same commit for every trigger', () => {
+    const workflow = yaml.load(read('.github/workflows/store-msix.yml'));
+    assert.deepEqual(workflow.on.push.tags, ['v*.*.*']);
+    assert.ok(workflow.on.workflow_dispatch);
+    const validation = workflow.jobs.validate;
+    const packaging = workflow.jobs['store-package'];
+    assert.equal(validation.if, undefined, 'validation must run for tag and manual runs without Store credentials');
+    assert.equal(validation['continue-on-error'], undefined);
+    assert.equal(packaging.needs, 'validate');
+    assert.match(packaging.if, /needs\.validate\.result == 'success'/);
+    assert.doesNotMatch(packaging.if, /always\(|\|\|/);
+    for (const job of [validation, packaging]) {
+        const checkout = job.steps.find((step) => step.uses?.startsWith('actions/checkout@'));
+        assert.equal(checkout.with.ref, '${{ github.sha }}');
+    }
+    const commands = ['npm ci --ignore-scripts', 'npm run audit', 'npm run format:check', 'npm run validate:source'];
+    let previousIndex = -1;
+    for (const command of commands) {
+        const index = validation.steps.findIndex((step) => step.run === command);
+        assert.ok(index > previousIndex, `${command} must be mandatory and ordered`);
+        const step = validation.steps[index];
+        assert.equal(step.if, undefined);
+        assert.equal(step['continue-on-error'], undefined);
+        previousIndex = index;
+    }
+    assert.ok(packaging.steps.some((step) => step.run?.includes('msstore publish')));
+    assert.deepEqual(Object.keys(workflow.jobs).sort(), ['store-package', 'validate']);
+});
 
 test('Store pipeline builds a multi-architecture unsigned MSIX bundle', () => {
     const workflow = read('.github/workflows/store-msix.yml');

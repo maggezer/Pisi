@@ -20,8 +20,37 @@ concurrency:
     cancel-in-progress: false
 
 jobs:
+    validate:
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v5
+              with:
+                  ref: ${{ github.sha }}
+
+            - name: Setup Node
+              uses: actions/setup-node@v5
+              with:
+                  node-version: 24
+                  cache: npm
+
+            - name: Install dependencies without Electron binary
+              run: npm ci --ignore-scripts
+
+            - name: Enforce dependency audit policy
+              run: npm run audit
+
+            - name: Check repository formatting
+              run: npm run format:check
+
+            - name: Validate source
+              run: npm run validate:source
+
     store-package:
-        if: ${{ vars.PISI_STORE_IDENTITY_NAME != '' && vars.PISI_STORE_PUBLISHER != '' && vars.PISI_STORE_PUBLISHER_DISPLAY_NAME != '' }}
+        needs: validate
+        if: ${{ needs.validate.result == 'success' && vars.PISI_STORE_IDENTITY_NAME != '' && vars.PISI_STORE_PUBLISHER != '' && vars.PISI_STORE_PUBLISHER_DISPLAY_NAME != '' }}
         runs-on: windows-latest
         timeout-minutes: 45
         env:
@@ -32,6 +61,8 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v5
+              with:
+                  ref: ${{ github.sha }}
 
             - name: Setup Node
               uses: actions/setup-node@v5
