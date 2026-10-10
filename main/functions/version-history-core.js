@@ -9,7 +9,7 @@ const PISI_VERSION_HISTORY_INDEX_VERSION = 1;
 const PISI_VERSION_HISTORY_MAX_VERSIONS = 50;
 const PISI_VERSION_HISTORY_MAX_BYTES = 24 * 1024 * 1024;
 const PISI_VERSION_HISTORY_INDEX_FILE = 'index.json';
-const PISI_VERSION_HISTORY_ID_PATTERN = /^\d+-[^/\\]+\.(?:json|json\.gz)$/;
+const PISI_VERSION_HISTORY_ID_PATTERN = /^\d+-[^/\\]+\.json\.gz$/;
 
 function pisiVersionHistoryProjectFolder(nodePath, options = {}) {
     return path.resolve(options.projectFolder || globalThis.activeProjectFolder || path.dirname(nodePath));
@@ -43,7 +43,7 @@ function pisiVersionHistorySnapshotNames(directory) {
 function readPisiVersionHistorySnapshotFile(snapshotPath) {
     try {
         const bytes = fs.readFileSync(snapshotPath);
-        const raw = snapshotPath.endsWith('.json.gz') ? zlib.gunzipSync(bytes).toString('utf8') : bytes.toString('utf8');
+        const raw = zlib.gunzipSync(bytes).toString('utf8');
         return { ok: true, data: JSON.parse(raw), raw };
     } catch (error) {
         return { ok: false, error: error.message, data: null };
@@ -75,7 +75,7 @@ function normalizePisiVersionHistoryEntry(entry, directory) {
         hash: String(entry?.hash || '').slice(0, 64),
         preview: String(entry?.preview || '').slice(0, 500),
         size,
-        compressed: historyId.endsWith('.json.gz')
+        compressed: true
     };
 }
 

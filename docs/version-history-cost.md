@@ -18,7 +18,7 @@ Atomic `.pisi-backup` files are separate from Version History. `writeFileAtomic(
 
 New versions are stored as `.json.gz` files. The payload remains the complete node document so restore semantics do not depend on a delta chain. This deliberately favors recovery simplicity over a more fragile incremental history format.
 
-Legacy `.json` history remains readable. No destructive migration is required.
+Uncompressed legacy `.json` snapshots are no longer supported. Only `.json.gz` snapshot files are accepted by the current history reader.
 
 Each node history directory also receives a small `index.json` containing only:
 
@@ -30,7 +30,7 @@ Each node history directory also receives a small `index.json` containing only:
 - stored byte size;
 - compression marker.
 
-Normal History listing reads this index plus directory names instead of opening and parsing every full snapshot. If an old history directory has no valid index, Pisi can still fall back to the legacy scan. The next captured version rebuilds and writes the index.
+Normal History listing reads this index plus directory names instead of opening and parsing every full snapshot. If the current index is missing or invalid, Pisi rebuilds entries from valid `.json.gz` snapshots. The next captured version writes the refreshed index. This is an index-recovery mechanism, not support for legacy uncompressed history.
 
 ## Retention policy
 

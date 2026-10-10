@@ -70,8 +70,8 @@ test('retention is bounded by count and bytes while always preserving the newest
     assert.equal(oversized.keep[0].historyId, '4-big.json.gz');
 });
 
-test('history IDs support legacy JSON and compressed JSON without accepting traversal', () => {
-    assert.equal(history.isPisiVersionHistoryId('123-test.json'), true);
+test('history IDs accept only gzip snapshots without accepting traversal', () => {
+    assert.equal(history.isPisiVersionHistoryId('123-test.json'), false);
     assert.equal(history.isPisiVersionHistoryId('123-test.json.gz'), true);
     assert.equal(history.isPisiVersionHistoryId('../123-test.json.gz'), false);
     assert.equal(history.isPisiVersionHistoryId('123\\test.json.gz'), false);
