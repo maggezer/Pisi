@@ -26,7 +26,6 @@ import {
 } from './pisi-tree-mutations.mjs';
 import { selectTreeFile, startRenameSelectedTreeFile, startRenameTreeFile } from './pisi-tree-rename.mjs';
 import {
-    isPisiInternalTreeItem,
     loadFolderChildren,
     makeTreeItemFromMapNode,
     getTreeRolesFromEdge,
