@@ -1,5 +1,15 @@
 # PISI Güncelleme Takip Dosyası
 
+## 10-10-2026 — P1.1 History restore asset koruması
+
+- `before-restore` snapshot’ı alınırken retention hedef history kaydını budasa
+  bile geri getirilecek Canvas/Sheet sidecar referansları GC’den korunur.
+- Koruma yalnız restore işlemine aittir; ilgisiz orphan asset temizliği devam
+  eder ve geri yazımdan sonra dosyaları canlı node içeriği korur.
+- Varsayılan 50 sürüm sınırı ve byte bütçesi için iki regresyon testi eklendi;
+  hedef snapshot gerçekten silinirken PNG/JSON byte bütünlüğü ve yeniden
+  hydrate edilen içerik doğrulanır.
+
 ## 10-10-2026 — P3.2 compatibility kalıntılarının temizlenmesi
 
 - Kaldırılmış alt görev sisteminin etkisiz `getPisiSubtaskParentIdSecondRelease`

@@ -8,6 +8,7 @@ const path = require('node:path');
 const test = require('node:test');
 
 const history = require('../main/functions/version-history-core');
+const editorAssets = require('../main/functions/editor-asset-store');
 
 function makeEntry(historyId, capturedAt, size) {
     return { historyId, capturedAt, size, reason: 'save', hash: historyId };
@@ -166,6 +167,58 @@ test('history retention garbage-collects sidecar assets no longer referenced by 
     assert.equal(fs.existsSync(firstAsset), false);
     assert.equal(fs.existsSync(secondAsset), true);
 });
+
+for (const limit of ['count', 'bytes']) {
+    test(`restore preserves target Canvas and Sheet assets when ${limit} retention evicts the target snapshot`, (t) => {
+        t.mock.timers.enable({ apis: ['Date'], now: new Date('2026-10-10T10:00:00Z') });
+        const fixture = makeFixture();
+        t.after(() => fs.rmSync(fixture.projectFolder, { recursive: true, force: true }));
+        const png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+afo0AAAAASUVORK5CYII=';
+        const model = { databaseId: 'history-restore-sheet', fields: [], items: [{ value: 'retained cell' }], views: [] };
+        const content =
+            `<canvas data-pisi-canvas="1" data-image="data:image/png;base64,${png}"></canvas>` +
+            `<table data-pisi-sheet="1" data-pisi-sheet-model='${JSON.stringify(model)}'></table>`;
+        const normalized = editorAssets.normalizePisiEditorAssets(content, { sidecarPath: fixture.sidecarPath });
+        const expectedAssets = normalized.assets.map((reference) => ({
+            path: path.join(fixture.sidecarPath, reference),
+            bytes: fs.readFileSync(path.join(fixture.sidecarPath, reference))
+        }));
+        assert.equal(expectedAssets.length, 2);
+        const hydrated = editorAssets.hydratePisiEditorAssets(normalized.content, { sidecarPath: fixture.sidecarPath });
+        const options = {
+            ...fixture.options,
+            ...(limit === 'bytes' ? { maxBytes: 1 } : {}),
+            writePisiDocument: (nodePath, data) => fs.writeFileSync(nodePath, JSON.stringify(data))
+        };
+        fixture.writeNode(normalized.content);
+        const target = history.snapshotPisiNodeVersionBounded(fixture.nodePath, 'save', options);
+        assert.equal(target.ok, true);
+        const count = limit === 'count' ? history.PISI_VERSION_HISTORY_MAX_VERSIONS : 1;
+        for (let index = 1; index < count; index++) {
+            t.mock.timers.tick(1);
+            fixture.writeNode(`<p>revision ${index}</p>`);
+            assert.equal(history.snapshotPisiNodeVersionBounded(fixture.nodePath, 'save', options).ok, true);
+        }
+        assert.equal(history.listPisiNodeHistoryBounded(fixture.nodePath, options).versions.length, count);
+        t.mock.timers.tick(1);
+        fixture.writeNode('<p>current unsnapshotted content</p>');
+        // Unrelated garbage must still be collected during restore.
+        const orphan = path.join(fixture.sidecarPath, 'paint', `${'f'.repeat(64)}.png`);
+        fs.writeFileSync(orphan, 'orphan');
+        const restored = history.restorePisiNodeHistoryVersionBounded(fixture.nodePath, target.historyId, options);
+        assert.equal(restored.ok, true, restored.error);
+        assert.equal(fs.existsSync(target.snapshotPath), false, 'target snapshot must actually be evicted');
+        assert.equal(fs.existsSync(orphan), false, 'GC remains enabled');
+        for (const asset of expectedAssets) assert.deepEqual(fs.readFileSync(asset.path), asset.bytes);
+        const document = JSON.parse(fs.readFileSync(fixture.nodePath, 'utf8'));
+        assert.equal(document.content, normalized.content);
+        assert.equal(editorAssets.hydratePisiEditorAssets(document.content, { sidecarPath: fixture.sidecarPath }), hydrated);
+        // Protection is scoped to restore; subsequent snapshots use the live document.
+        t.mock.timers.tick(1);
+        assert.equal(history.snapshotPisiNodeVersionBounded(fixture.nodePath, 'save', options).ok, true);
+        for (const asset of expectedAssets) assert.deepEqual(fs.readFileSync(asset.path), asset.bytes);
+    });
+}
 
 test('version-history IPC hooks replace unbounded save/list routes and skip project-wide backup scans', () => {
     const root = path.resolve(__dirname, '..');

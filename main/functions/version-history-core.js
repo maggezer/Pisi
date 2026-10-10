@@ -193,13 +193,14 @@ function prunePisiVersionHistory(directory, entries, options = {}) {
     return selected;
 }
 
-function prunePisiVersionHistoryEditorAssets(context, retainedEntries = []) {
+function prunePisiVersionHistoryEditorAssets(context, retainedEntries = [], protectedReferences = []) {
     const sidecarPath = context?.info?.sidecarPath;
     if (!sidecarPath || !fs.existsSync(sidecarPath)) {
         return { ok: true, skipped: true, reason: 'sidecar-missing' };
     }
 
     const references = new Set(editorAssets.collectPisiEditorAssetReferences(context?.info?.data?.content || ''));
+    for (const reference of protectedReferences) references.add(reference);
 
     for (const entry of retainedEntries || []) {
         const snapshotPath = path.join(context.directory, entry.historyId);
@@ -264,7 +265,7 @@ function snapshotPisiNodeVersionBounded(nodePath, reason = 'save', options = {})
 
         const entry = makePisiVersionHistoryEntry(directory, historyId, snapshot);
         const retention = prunePisiVersionHistory(directory, [entry, ...existingEntries], options);
-        const assetGc = prunePisiVersionHistoryEditorAssets(context, retention.keep);
+        const assetGc = prunePisiVersionHistoryEditorAssets(context, retention.keep, options.protectedEditorAssetReferences);
         return {
             ok: true,
             historyId,
@@ -374,7 +375,12 @@ function restorePisiNodeHistoryVersionBounded(nodePath, historyId, options = {})
         if (version.data?.pisi?.id !== current.metadata?.id) {
             return { ok: false, error: 'Sürüm başka bir node kimliğine ait.' };
         }
-        const snapshot = snapshotPisiNodeVersionBounded(nodePath, 'before-restore', options);
+        // Retention may evict the target snapshot while capturing the current
+        // document. Keep its assets alive until the restored document owns them.
+        const snapshot = snapshotPisiNodeVersionBounded(nodePath, 'before-restore', {
+            ...options,
+            protectedEditorAssetReferences: editorAssets.collectPisiEditorAssetReferences(version.data.content || '')
+        });
         if (!snapshot.ok) return snapshot;
         const restoredData = JSON.parse(JSON.stringify(version.data));
         restoredData.pisi.updatedAt = new Date().toISOString();
