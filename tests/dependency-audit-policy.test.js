@@ -6,11 +6,7 @@ const path = require('node:path');
 const test = require('node:test');
 
 const root = path.resolve(__dirname, '..');
-const {
-    KNOWN_DEV_AUDIT_EXCEPTION,
-    validateKnownDevAuditException,
-    validateRuntimeAudit
-} = require('../scripts/audit-dependencies.js');
+const { KNOWN_DEV_AUDIT_EXCEPTION, validateKnownDevAuditException, validateRuntimeAudit } = require('../scripts/audit-dependencies.js');
 
 function readJson(relativePath) {
     return JSON.parse(fs.readFileSync(path.join(root, relativePath), 'utf8'));

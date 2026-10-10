@@ -68,7 +68,6 @@ function getTreeItemDisplayName(item) {
     return item.name || '';
 }
 
-
 function isHierarchyEdge(edge) {
     return isPisiHierarchyEdge(edge);
 }
@@ -97,7 +96,6 @@ function enforceSingleParentForTarget(edge, edges = []) {
 
     return edge;
 }
-
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {

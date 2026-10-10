@@ -16,7 +16,6 @@
 - Regresyon testleri exception’ın dar kapsamını ve CI/Release audit gate’lerinin
   bastırılmadığını doğrular.
 
-
 ## 06-10-2026 — P2.3 Windows packaging smoke
 
 - `Cross-platform Packaging Smoke` workflow’una gerçek `windows-latest` job’ı
@@ -34,7 +33,6 @@
   koruyor.
 - GitHub Actions run `37459640076`: Windows, macOS ve Linux packaging smoke
   job’larının tamamı başarılı.
-
 
 > Bu dosya tarihsel değişiklik günlüğüdür; eski tarihlerde yazılmış “ertelendi”,
 > geçiş, uyumluluk veya eski veri biçimi notları aktif mimari sözleşme değildir.
