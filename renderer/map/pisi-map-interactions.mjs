@@ -7,6 +7,17 @@ import {
     makePisiCollapsedHubPortKey
 } from './pisi-map-collapse-core.mjs';
 import { getPisiMapConnectionMetrics } from './pisi-map-zoom-core.mjs';
+import {
+    getConnectionDataFromEvent,
+    convertEdgeToStream,
+    getConnectionClass,
+    getPortDirection,
+    offsetPoint,
+    getDistance,
+    getClientSelectionRect,
+    rectsIntersect,
+    rectContainsRect
+} from './pisi-map-interaction-helpers.mjs';
 function getTreeItemDisplayName(item) {
     if (!item) return '';
     if (item.metadata?.title) {
@@ -25,32 +36,6 @@ function getTreeItemDisplayName(item) {
     return item.name || '';
 }
 
-function getConnectionDataFromEvent(event) {
-    // Ctrl / Cmd: denk bağlam
-    if (event.ctrlKey || event.metaKey) {
-        return {
-            type: 'co-level',
-            sourceRole: 'co-level',
-            targetRole: 'co-level'
-        };
-    }
-
-    // Alt: süreç ilişkisi
-    if (event.altKey) {
-        return {
-            type: 'stream',
-            sourceRole: 'downstream',
-            targetRole: 'upstream'
-        };
-    }
-
-    // Normal sürükleme: hiyerarşik ilişki
-    return {
-        type: 'down-hub',
-        sourceRole: 'down-hub',
-        targetRole: 'up-hub'
-    };
-}
 
 function isHierarchyEdge(edge) {
     return isPisiHierarchyEdge(edge);
@@ -160,14 +145,6 @@ function toggleHubConnectionsFromPort(nodeId, port) {
     return true;
 }
 
-function convertEdgeToStream(edge) {
-    return {
-        ...edge,
-        type: 'stream',
-        sourceRole: 'downstream',
-        targetRole: 'upstream'
-    };
-}
 
 function targetAlreadyHasUpHub(targetId, edges = [], ignoreSourceId = null) {
     return edges.some((edge) => {
@@ -195,14 +172,6 @@ function enforceSingleParentForTarget(edge, edges = []) {
     return edge;
 }
 
-function getConnectionClass(edgeOrType) {
-    const type = typeof edgeOrType === 'string' ? edgeOrType : edgeOrType?.type;
-
-    if (type === 'co-level' || type === 'colevel') return 'co-level';
-    if (type === 'stream' || type === 'upstream' || type === 'downstream') return 'stream';
-
-    return 'down-hub';
-}
 
 function getPortPoint(box, port) {
     const canvas = document.getElementById('map-canvas');
@@ -230,28 +199,8 @@ function getMousePointInCanvas(event) {
     };
 }
 
-function getPortDirection(port) {
-    if (port === 'top') return { x: 0, y: -1 };
-    if (port === 'right') return { x: 1, y: 0 };
-    if (port === 'bottom') return { x: 0, y: 1 };
-    if (port === 'left') return { x: -1, y: 0 };
 
-    return { x: 1, y: 0 };
-}
 
-function offsetPoint(point, direction, distance) {
-    return {
-        x: point.x + direction.x * distance,
-        y: point.y + direction.y * distance
-    };
-}
-
-function getDistance(a, b) {
-    const dx = b.x - a.x;
-    const dy = b.y - a.y;
-
-    return Math.sqrt(dx * dx + dy * dy);
-}
 
 function getMapConnectionVisualMetrics() {
     return getPisiMapConnectionMetrics(activeMapCamera?.zoom);
@@ -535,25 +484,8 @@ function getSelectedMapNodeBoxes() {
     return Array.from(document.querySelectorAll('.map-node-box.selected'));
 }
 
-function getClientSelectionRect(startX, startY, currentX, currentY) {
-    return {
-        left: Math.min(startX, currentX),
-        right: Math.max(startX, currentX),
-        top: Math.min(startY, currentY),
-        bottom: Math.max(startY, currentY),
-        width: Math.abs(currentX - startX),
-        height: Math.abs(currentY - startY),
-        direction: currentX >= startX ? 'left-to-right' : 'right-to-left'
-    };
-}
 
-function rectsIntersect(a, b) {
-    return a.left <= b.right && a.right >= b.left && a.top <= b.bottom && a.bottom >= b.top;
-}
 
-function rectContainsRect(outer, inner) {
-    return inner.left >= outer.left && inner.right <= outer.right && inner.top >= outer.top && inner.bottom <= outer.bottom;
-}
 
 function applyMapBoxSelection(selectionRect) {
     clearSelectedMapNodes();
