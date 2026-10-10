@@ -181,7 +181,7 @@ test('editör imleci otomatik kayıtta korunur, Enter yeni satıra bırakılır 
 test('Pisi geçmişi gizlenir ve yeniden adlandırma alanları klavyeyi korur', () => {
     const operations = read('main/functions/project-operations.js');
     const startup = read('renderer/shell/pisi-startup.mjs');
-    const tree = read('renderer/tree/pisi-tree-view.mjs');
+    const tree = read('renderer/tree/pisi-tree-rename.mjs');
     const map = read('renderer/map/pisi-map-workspace.mjs');
     const commands = read('renderer/core/pisi-command-registry.mjs');
     const styles = read('styles/10-shell-map-panels.css');
