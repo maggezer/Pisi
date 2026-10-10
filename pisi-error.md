@@ -84,17 +84,21 @@ başarıyla doğrulamıştır. Windows smoke gerçek `windows-latest` runner’d
 NSIS x64/ARM64 ve Portable x64/ARM64 olmak üzere dört EXE üretmiş; dosyaların
 varlığı, boyutu ve PE `MZ` imzası doğrulanmıştır.
 
-Buna karşılık mevcut Actions geçmişinde henüz bir **Release** veya
-**Microsoft Store MSIX** workflow run’ı görünmüyor. Bu nedenle şu iki akış
-kaynak/test seviyesinde korunuyor olsa da gerçek repository environment ile
-end-to-end çalıştırılmış kabul edilmemelidir:
+GitHub'da 20 Ağustos 2026 tarihli **v0.11.0 Beta** yayını vardır; dört Windows
+EXE ve checksum dosyası içerir. Bu eski yayın, güncel cross-platform release ve
+Store workflow'larının uçtan uca çalıştığını kanıtlamaz. “Hiç release yok”
+şeklindeki önceki ifade yanlıştı.
 
-1. gerçek `v*.*.*` tag → bütün platform paketleri → tek GitHub beta release,
-2. gerçek Partner Center identity → MSIX bundle/upload → Store submission.
+Güncel kod için **0.11.1** sürümü ve `docs/releases/v0.11.1.md` hazırlanmıştır.
+P2.2 şu iki sonuç gözlenene kadar açık kalır:
 
-Public beta/Store yayını öncesinde dependency audit yeniden yeşile döndürüldükten
-sonra bu iki yol gerçek release environment ile en az bir kez çalıştırılıp
-artifact ve publish sonucu doğrulanmalıdır.
+1. `v0.11.1` tag → güncel Windows/macOS/Linux paketleri ve `latest.json` →
+   GitHub beta release; artifact/checksum sonucu doğrulanmış olmalı,
+2. gerçek Partner Center identity → MSIX bundle/upload → Store submission;
+   atlanmış Store job'ı başarı kanıtı sayılmaz.
+
+Eski `v0.11.0` tag'i taşınmamalı ve yayımlanmış dosyalar değiştirilmemelidir.
+Store kimlikleri ve yayın credentials'ının varlığı kaynak kodundan belirlenemez.
 
 ## 4. Bilinçli update davranışları
 

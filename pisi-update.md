@@ -1,5 +1,14 @@
 # PISI Güncelleme Takip Dosyası
 
+## 10-10-2026 — P2.2 release hazırlığı (uçtan uca doğrulama bekliyor)
+
+- Mevcut `v0.11.0` beta yayını doğrulandı; eski tag ve asset’ler korunur.
+- Yeni yayın çakışmasını önlemek için package/lockfile sürümü `0.11.1` oldu
+  ve bu sürümün yayın notları eklendi.
+- Açıklar kaydındaki hiç release olmadığı ifadesi düzeltildi.
+- P2.2 ancak gerçek yeni tag yayını ve Partner Center submission sonucu
+  doğrulandığında kapatılacaktır; hazırlık commit’i tamamlanma kanıtı değildir.
+
 ## 10-10-2026 — P2.1 Store zorunlu doğrulama kapısı
 
 - Store workflow’una tag ve manuel tetiklemelerde koşulsuz çalışan audit,
