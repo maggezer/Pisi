@@ -1,4 +1,10 @@
-import { collectPisiCollapsedHubCounts, collectPisiCollapsedHubNodeIds, isPisiHierarchyEdge, isPisiMapEdgeHiddenByCollapsedHub, makePisiCollapsedHubPortKey } from './pisi-map-collapse-core.mjs';
+import {
+    collectPisiCollapsedHubCounts,
+    collectPisiCollapsedHubNodeIds,
+    isPisiHierarchyEdge,
+    isPisiMapEdgeHiddenByCollapsedHub,
+    makePisiCollapsedHubPortKey
+} from './pisi-map-collapse-core.mjs';
 import { saveActiveMapCameraSoon } from './pisi-map-camera-interactions.mjs';
 
 export function getCollapsedHubPortSet() {
