@@ -11,10 +11,45 @@ import {
     rectsIntersect,
     rectContainsRect
 } from './pisi-map-interaction-helpers.mjs';
-import { getCollapsedHubPortSet, makeCollapsedHubPortKey, hasOutgoingHubEdgesFromPort, collectCollapsedHubNodeIds, syncCollapsedHubNodeVisibility, isHubEdgeCollapsed, syncHubPortCollapseVisuals, toggleHubConnectionsFromPort } from './pisi-map-hub-interactions.mjs';
-import { getPortPoint, getMousePointInCanvas, getMapConnectionVisualMetrics, syncMapConnectionZoomStyles, makeConnectionPathFromBoxes, makeTempConnectionPath, ensureTempEdgePath, clearTempEdgePath } from './pisi-map-connection-interactions.mjs';
-import { applyMapCamera, clampMapZoom, zoomMapAtClientPoint, zoomMapFromCenter, saveActiveMapCameraSoon, scheduleMapCameraSave, flushActiveMapCameraSave, bindMapZoomEvents, bindMapZoomControls, bindHoldZoomButton } from './pisi-map-camera-interactions.mjs';
-import { clearSelectedMapNodes, getSelectedMapNodeBoxes, applyMapBoxSelection, updateMapSelectionBoxVisual, setupMapCanvasPan } from './pisi-map-canvas-interactions.mjs';
+import {
+    getCollapsedHubPortSet,
+    makeCollapsedHubPortKey,
+    hasOutgoingHubEdgesFromPort,
+    collectCollapsedHubNodeIds,
+    syncCollapsedHubNodeVisibility,
+    isHubEdgeCollapsed,
+    syncHubPortCollapseVisuals,
+    toggleHubConnectionsFromPort
+} from './pisi-map-hub-interactions.mjs';
+import {
+    getPortPoint,
+    getMousePointInCanvas,
+    getMapConnectionVisualMetrics,
+    syncMapConnectionZoomStyles,
+    makeConnectionPathFromBoxes,
+    makeTempConnectionPath,
+    ensureTempEdgePath,
+    clearTempEdgePath
+} from './pisi-map-connection-interactions.mjs';
+import {
+    applyMapCamera,
+    clampMapZoom,
+    zoomMapAtClientPoint,
+    zoomMapFromCenter,
+    saveActiveMapCameraSoon,
+    scheduleMapCameraSave,
+    flushActiveMapCameraSave,
+    bindMapZoomEvents,
+    bindMapZoomControls,
+    bindHoldZoomButton
+} from './pisi-map-camera-interactions.mjs';
+import {
+    clearSelectedMapNodes,
+    getSelectedMapNodeBoxes,
+    applyMapBoxSelection,
+    updateMapSelectionBoxVisual,
+    setupMapCanvasPan
+} from './pisi-map-canvas-interactions.mjs';
 function getTreeItemDisplayName(item) {
     if (!item) return '';
     if (item.metadata?.title) {
