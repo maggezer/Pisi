@@ -33,11 +33,6 @@ function makePisiMissionIdSecondRelease(mission = {}) {
     return [normalizePisiSecondPath(mission.nodePath), String(mission.blockId || ''), String(mission.todoTag || '')].map(encodeURIComponent).join('::');
 }
 
-// Public binding kept inert for module-manifest compatibility.
-function getPisiSubtaskParentIdSecondRelease() {
-    return '';
-}
-
 function getPisiTodoSecondProjectKey() {
     return normalizePisiSecondPath(window.currentProjectFolder || 'no-project');
 }
@@ -350,15 +345,6 @@ async function setPisiMissionOrderSecondRelease(mission, order) {
     );
 }
 
-// Public binding kept inert for module-manifest compatibility.
-async function addPisiSubtaskSecondRelease() {
-    return {
-        ok: false,
-        removed: true,
-        error: pisiTodoSecondTranslate('Alt görev sistemi kaldırıldı; bunun yerine alt node içinde görev oluşturun.')
-    };
-}
-
 async function createNextPisiRecurringMissionSecondRelease(mission) {
     const repeat = getPisiTodoRepeatOption(mission.repeat).value;
     if (repeat === 'none') return { ok: true, skipped: true };
@@ -544,7 +530,6 @@ function enhancePisiMissionCardSecondRelease({ card, mission, list }) {
 const moduleApi = {
     pisiTodoSecondReleaseState,
     makePisiMissionIdSecondRelease,
-    getPisiSubtaskParentIdSecondRelease,
     enhancePisiMissionSecondRelease,
     sortPisiMissionsSecondRelease,
     matchesPisiMissionStatusFilterSecondRelease,
@@ -552,7 +537,6 @@ const moduleApi = {
     enhancePisiMissionCardSecondRelease,
     setPisiMissionRepeatSecondRelease,
     setPisiMissionOrderSecondRelease,
-    addPisiSubtaskSecondRelease,
     createNextPisiRecurringMissionSecondRelease,
     togglePisiMissionCompletionSecondRelease,
     persistPisiMissionManualOrderSecondRelease
@@ -563,7 +547,6 @@ registerModule('tags.todoSecondRelease', moduleApi);
 export {
     pisiTodoSecondReleaseState,
     makePisiMissionIdSecondRelease,
-    getPisiSubtaskParentIdSecondRelease,
     enhancePisiMissionSecondRelease,
     sortPisiMissionsSecondRelease,
     matchesPisiMissionStatusFilterSecondRelease,
@@ -571,7 +554,6 @@ export {
     enhancePisiMissionCardSecondRelease,
     setPisiMissionRepeatSecondRelease,
     setPisiMissionOrderSecondRelease,
-    addPisiSubtaskSecondRelease,
     createNextPisiRecurringMissionSecondRelease,
     togglePisiMissionCompletionSecondRelease,
     persistPisiMissionManualOrderSecondRelease

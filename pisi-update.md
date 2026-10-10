@@ -1,5 +1,16 @@
 # PISI Güncelleme Takip Dosyası
 
+## 10-10-2026 — P3.2 compatibility kalıntılarının temizlenmesi
+
+- Kaldırılmış alt görev sisteminin etkisiz `getPisiSubtaskParentIdSecondRelease`
+  ve `addPisiSubtaskSecondRelease` fonksiyonları, module API/export ve manifest
+  kayıtlarıyla birlikte kaldırıldı.
+- Yalnız bu etkisiz yolun kullandığı TR/EN hata çevirileri temizlendi.
+- Font modülündeki kullanılmayan `ensurePisiEditorSystemFontOptions` ve
+  `PISI_SYSTEM_FONT_OPTIONS` alias’ları kaldırıldı; mevcut extra-font API korundu.
+- Mevcut regresyon kontrolleri kaldırılan compatibility yüzeylerini artık
+  zorunlu tutmayacak biçimde güncellendi.
+
 ## 10-10-2026 — sprintf-js / electron-builder audit policy
 
 - `GHSA-hp3w-g68c-fv3c` için upstream patched npm sürümü olmadığı doğrulandı.

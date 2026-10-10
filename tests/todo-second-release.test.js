@@ -67,7 +67,7 @@ test('ikinci sürüm paneli alt görev arayüzü olmadan tekrar, filtre ve sür�
     assert.doesNotMatch(source, /pisi-mission-child-progress/);
     assert.doesNotMatch(source, /childCount|completedChildren|mission\.depth/);
     assert.doesNotMatch(source, /block\.todoParents/);
-    assert.match(source, /Alt görev sistemi kaldırıldı/);
+    assert.doesNotMatch(source, /getPisiSubtaskParentIdSecondRelease|addPisiSubtaskSecondRelease/);
     assert.match(source, /createNextPisiRecurringMissionSecondRelease/);
     assert.match(source, /getPisiTodayIsoDate\(nextDate\)/);
     assert.doesNotMatch(source, /nextDate\.toISOString\(\)\.slice/);

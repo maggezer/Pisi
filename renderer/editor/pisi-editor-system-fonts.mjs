@@ -56,12 +56,6 @@ function ensurePisiEditorExtraFontOptions(root = document) {
     return added;
 }
 
-// Backward-compatible name used by earlier tests/integration points.
-/** @param {Document | Element | Node} [root] */
-function ensurePisiEditorSystemFontOptions(root = document) {
-    return ensurePisiEditorExtraFontOptions(root);
-}
-
 function refreshPisiEditorExtraFontOptions() {
     ensurePisiEditorExtraFontOptions(document);
     // Bundled-font module owns the actual Comic Neue FontFace load.
@@ -135,10 +129,8 @@ setupPisiEditorSystemFonts();
 
 const moduleApi = {
     PISI_EDITOR_EXTRA_FONT_OPTIONS,
-    PISI_SYSTEM_FONT_OPTIONS: PISI_EDITOR_EXTRA_FONT_OPTIONS,
     collectPisiFontSelects,
     ensurePisiEditorExtraFontOptions,
-    ensurePisiEditorSystemFontOptions,
     refreshPisiEditorExtraFontOptions,
     setupPisiEditorSystemFonts
 };

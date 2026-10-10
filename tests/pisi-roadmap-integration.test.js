@@ -106,7 +106,7 @@ test('alt görev hiyerarşisi kaldırılmış, görev bağımlılıkları korunm
     assert.doesNotMatch(secondRelease, /subtask:/);
     assert.doesNotMatch(secondRelease, /pisi-mission-add-child/);
     assert.doesNotMatch(secondRelease, /completedChildren|mission\.depth|block\.todoParents/);
-    assert.match(secondRelease, /Alt görev sistemi kaldırıldı/);
+    assert.doesNotMatch(secondRelease, /getPisiSubtaskParentIdSecondRelease|addPisiSubtaskSecondRelease/);
     assert.match(utils, /todoParents/);
     assert.match(thirdRelease, /startsWith\('dep:'\)/);
     assert.match(thirdRelease, /pisiTodoParent/);

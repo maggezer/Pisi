@@ -34,6 +34,7 @@ test('Comic Sans and Comic Neue are reconciled into every editor font list', () 
     assert.match(moduleSource, /document\.addEventListener\(\s*'mousedown'/);
     assert.match(moduleSource, /document\.addEventListener\(\s*'focusin'/);
     assert.match(moduleSource, /loadPisiComicNeueFont/);
+    assert.doesNotMatch(moduleSource, /ensurePisiEditorSystemFontOptions|PISI_SYSTEM_FONT_OPTIONS/);
     assert.doesNotMatch(moduleSource, /@font-face/i);
     assert.doesNotMatch(moduleSource, /https?:\/\//i);
     assert.match(bootstrap, /import\s+["\']\.\/editor\/pisi-editor-system-fonts\.mjs["\'];/);

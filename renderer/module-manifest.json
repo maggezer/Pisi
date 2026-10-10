@@ -714,7 +714,6 @@
         "bindings": [
             "pisiTodoSecondReleaseState",
             "makePisiMissionIdSecondRelease",
-            "getPisiSubtaskParentIdSecondRelease",
             "enhancePisiMissionSecondRelease",
             "sortPisiMissionsSecondRelease",
             "matchesPisiMissionStatusFilterSecondRelease",
@@ -722,7 +721,6 @@
             "enhancePisiMissionCardSecondRelease",
             "setPisiMissionRepeatSecondRelease",
             "setPisiMissionOrderSecondRelease",
-            "addPisiSubtaskSecondRelease",
             "createNextPisiRecurringMissionSecondRelease",
             "togglePisiMissionCompletionSecondRelease",
             "persistPisiMissionManualOrderSecondRelease"
