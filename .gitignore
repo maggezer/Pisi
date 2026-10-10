@@ -38,3 +38,14 @@ release/
 
 # Generated JavaScript type-check declarations
 .pisi-types/
+
+# Microsoft Store staging (npm run dist:store:x64 / dist:store:arm64)
+/dist-store/
+
+# Locally exported Windows Store submission packages
+/*.msix
+/*.msixbundle
+/*.msixupload
+/*.appx
+/*.appxbundle
+/*.appxupload
