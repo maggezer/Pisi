@@ -33,7 +33,9 @@ function setPisiHtmlAttribute(tag, attributeName, value) {
     const withoutExisting = removePisiHtmlAttribute(tag, attributeName);
     const safeValue = String(value || '')
         .replace(/&/g, '&amp;')
-        .replace(/"/g, '&quot;');
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
     return withoutExisting.replace(/\s*\/?>$/, (ending) => ` ${attributeName}="${safeValue}"${ending.trimStart()}`);
 }
 
@@ -213,35 +215,29 @@ function hydratePisiEditorPaintAssets(content = '', options = {}) {
 }
 
 function decodePisiHtmlAttributeValue(value) {
-    return String(value || '')
-        .replace(/&#x([0-9a-f]+);/gi, (_match, hex) => {
-            const codePoint = Number.parseInt(hex, 16);
-            return Number.isInteger(codePoint) && codePoint <= 0x10ffff ? String.fromCodePoint(codePoint) : '';
-        })
-        .replace(/&#(\d+);/g, (_match, decimal) => {
-            const codePoint = Number.parseInt(decimal, 10);
-            return Number.isInteger(codePoint) && codePoint <= 0x10ffff ? String.fromCodePoint(codePoint) : '';
-        })
-        .replace(/&quot;/gi, '"')
-        .replace(/&apos;|&#39;/gi, "'")
-        .replace(/&lt;/gi, '<')
-        .replace(/&gt;/gi, '>')
-        .replace(/&amp;/gi, '&');
+    // Decode the HTML boundary once; decoded text can itself contain literal
+    // entity spellings (for example &#38;quot; must remain &quot;).
+    return String(value || '').replace(/&(?:#x([0-9a-f]+)|#(\d+)|(quot|apos|lt|gt|amp));/gi, (_match, hex, decimal, named) => {
+        if (named) return { quot: '"', apos: "'", lt: '<', gt: '>', amp: '&' }[named.toLowerCase()];
+        const codePoint = Number.parseInt(hex || decimal, hex ? 16 : 10);
+        return Number.isInteger(codePoint) && codePoint <= 0x10ffff ? String.fromCodePoint(codePoint) : '';
+    });
 }
 
 function normalizePisiSheetSnapshot(value) {
-    const decoded = decodePisiHtmlAttributeValue(value);
-    if (!decoded) {
+    // Sidecar JSON and object serialization are already raw data, not HTML.
+    const source = String(value || '');
+    if (!source) {
         return { ok: false, error: 'Sheet modeli boş.' };
     }
 
-    if (Buffer.byteLength(decoded, 'utf8') > PISI_SHEET_MAX_BYTES) {
+    if (Buffer.byteLength(source, 'utf8') > PISI_SHEET_MAX_BYTES) {
         return { ok: false, error: 'Sheet modeli izin verilen boyutu aşıyor.' };
     }
 
     let snapshot;
     try {
-        snapshot = JSON.parse(decoded);
+        snapshot = JSON.parse(source);
     } catch {
         return { ok: false, error: 'Sheet modeli geçerli JSON değil.' };
     }
@@ -378,7 +374,7 @@ function normalizePisiEditorSheetAssets(content = '', options = {}) {
             return tableTag;
         }
 
-        const reference = getPisiSheetAssetReference(modelValue);
+        const reference = getPisiSheetAssetReference(decodePisiHtmlAttributeValue(modelValue));
         assets.push(reference.relativePath);
 
         if (writeAssets) {

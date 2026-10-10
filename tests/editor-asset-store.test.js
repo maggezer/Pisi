@@ -201,6 +201,55 @@ test('Sheet sidecar asset hydrates to transient renderer model data', () => {
     }
 });
 
+function makeEntitySheetSnapshot() {
+    const snapshot = makeSheetSnapshot(91);
+    snapshot.items[0].values['field-a'].value = `&lt;b&gt; &quot; &#39; &#x27; &amp; &apos; &amp;quot; &#38;quot; <b> " ' Türkçe 🐱`;
+    snapshot.items[0].values['field-a'].formula = '=IF(A1>2,"&quot;","&lt;")';
+    return snapshot;
+}
+
+test('Sheet asset references preserve literal entities in raw JSON and object inputs', () => {
+    const snapshot = makeEntitySheetSnapshot();
+    const fromObject = getPisiSheetAssetReference(snapshot);
+    const fromJson = getPisiSheetAssetReference(JSON.stringify(snapshot));
+    assert.deepEqual(JSON.parse(fromObject.json), snapshot);
+    assert.deepEqual(JSON.parse(fromJson.json), snapshot);
+    assert.equal(fromObject.hash, fromJson.hash);
+    assert.throws(() => getPisiSheetAssetReference('{invalid JSON'), /geçerli JSON değil/);
+});
+
+for (const ampersand of ['&amp;', '&#38;', '&#x26;']) {
+    test(`Sheet save/reopen preserves entities with ${ampersand} attribute encoding`, (t) => {
+        const sidecar = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-sheet-entities-'));
+        t.after(() => fs.rmSync(sidecar, { recursive: true, force: true }));
+        const snapshot = makeEntitySheetSnapshot();
+        const expectedJson = JSON.stringify(snapshot);
+        for (const quote of ['"', "'"]) {
+            const encoded = expectedJson.replace(/&/g, ampersand).replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            let html = `<table data-pisi-sheet="1" data-pisi-sheet-model=${quote}${encoded}${quote}></table>`;
+            let originalReference;
+            for (let cycle = 0; cycle < 3; cycle++) {
+                const stored = normalizePisiEditorSheetAssets(html, { sidecarPath: sidecar });
+                assert.equal(stored.assets.length, 1);
+                originalReference ||= stored.assets[0];
+                assert.equal(stored.assets[0], originalReference, 'reopen must not change the content hash');
+                assert.equal(fs.readFileSync(path.join(sidecar, stored.assets[0]), 'utf8'), expectedJson);
+                html = hydratePisiEditorSheetAssets(stored.content, { sidecarPath: sidecar });
+                const attribute = html.match(/data-pisi-sheet-model="([^"]*)"/);
+                assert.ok(attribute, 'reopen must hydrate a model instead of silently dropping it');
+                const decoded = attribute[1]
+                    .replace(/&quot;/g, '"')
+                    .replace(/&lt;/g, '<')
+                    .replace(/&gt;/g, '>')
+                    .replace(/&amp;/g, '&');
+                assert.deepEqual(JSON.parse(decoded), snapshot);
+                if (cycle > 0) assert.deepEqual(stored.written, [], 'unchanged content reuses the same sidecar');
+            }
+        }
+        assert.equal(fs.readdirSync(path.join(sidecar, 'sheet')).length, 1);
+    });
+}
+
 test('Saving the same Sheet model twice reuses the same asset file', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-sheet-dedupe-'));
     const sidecar = path.join(root, 'Note.pisi-node');

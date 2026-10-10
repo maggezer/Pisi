@@ -1,5 +1,16 @@
 # PISI Güncelleme Takip Dosyası
 
+## 10-10-2026 — P1.2 Sheet entity round-trip düzeltmesi
+
+- Sidecar JSON doğrulaması HTML attribute çözümlemesinden ayrıldı; ham JSON
+  ve object girdilerindeki literal entity metinleri değiştirilmez.
+- HTML attribute sınırında named/numeric entity çözümlemesi tek geçişte yapılır;
+  çözülmüş ampersand üzerinden ikinci kez entity çözümlemesi uygulanmaz.
+- Hydration sırasında `<` ve `>` attribute içinde escape edilir; tekrar
+  kaydetmede tablo etiketi ayrıştırılması bozulmaz.
+- Dört regresyon testi ham JSON/object girdilerini, iki tırnak türünü, üç
+  ampersand kodlamasını ve üç save/reopen döngüsünde model/hash bütünlüğünü kapsar.
+
 ## 10-10-2026 — P1.1 History restore asset koruması
 
 - `before-restore` snapshot’ı alınırken retention hedef history kaydını budasa
