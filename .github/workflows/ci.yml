@@ -27,7 +27,7 @@ jobs:
             - name: Install dependencies without Electron binary
               run: npm ci --ignore-scripts
 
-            - name: Require clean dependency audit
+            - name: Enforce dependency audit policy
               run: npm run audit
 
             - name: Check repository formatting

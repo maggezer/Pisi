@@ -1,5 +1,22 @@
 # PISI Güncelleme Takip Dosyası
 
+## 10-10-2026 — sprintf-js / electron-builder audit policy
+
+- `GHSA-hp3w-g68c-fv3c` için upstream patched npm sürümü olmadığı doğrulandı.
+- Risk yalnız `electron-builder@26.15.7` altındaki dev-tooling zincirinde;
+  production/runtime dependency ağacında değildir.
+- Genel `audit || true` veya `npm audit fix --force` downgrade yerine
+  `scripts/audit-dependencies.js` ile fail-closed iki katmanlı audit eklendi.
+- Runtime audit moderate+ seviyede sıfır bulgu ister.
+- Full audit yalnız exact advisory + exact sekiz package + pinned lockfile node
+  ve sürümler + `dev: true` koşulları aynı anda sağlanırsa geçici exception’ı
+  kabul eder.
+- Advisory/severity/package/node/version drift veya runtime’a sızma CI ve Release
+  audit gate’ini tekrar kırar.
+- Regresyon testleri exception’ın dar kapsamını ve CI/Release audit gate’lerinin
+  bastırılmadığını doğrular.
+
+
 ## 06-10-2026 — P2.3 Windows packaging smoke
 
 - `Cross-platform Packaging Smoke` workflow’una gerçek `windows-latest` job’ı

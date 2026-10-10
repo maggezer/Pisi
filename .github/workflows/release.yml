@@ -46,7 +46,7 @@ jobs:
                   ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
               run: npm ci
 
-            - name: Require clean dependency audit
+            - name: Enforce dependency audit policy
               run: npm run audit
 
             - name: Check repository formatting

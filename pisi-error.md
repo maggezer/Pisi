@@ -8,14 +8,20 @@ Bu kayıt “uygulamada başka bug olamaz” anlamına gelmez; amacı eski migra
 tamamlanmış roadmap maddeleri veya stale test sayıları yerine **mevcut kaynak
 durumunu** göstermektir.
 
-## 1. Dependency audit yeniden blokluyor
+## 1. Geçici dev-tooling audit istisnası
 
-**[Orta · security/build · CI blocker]** 6 Ekim 2026’da fresh
-`npm audit --audit-level=moderate` taraması yeni yayımlanan
-`GHSA-hp3w-g68c-fv3c` advisory’sini yakaladı ve **8 moderate vulnerability**
-raporladı.
+**[Düşük · security/build · izleniyor]** `GHSA-hp3w-g68c-fv3c`,
+`sprintf-js <=1.1.3` için moderate DoS advisory’sidir. 10 Ekim 2026
+itibarıyla upstream tarafından yayımlanmış patched npm sürümü yoktur.
 
-Kilitli dependency zinciri:
+Pisi bu bulguyu genel olarak bastırmaz. `npm run audit` artık iki katmanlı,
+fail-closed politika uygular:
+
+1. `npm audit --omit=dev --audit-level=moderate` ile production/runtime
+   dependency ağacı **istisnasız temiz** olmak zorundadır.
+2. Full audit yalnızca tam olarak `GHSA-hp3w-g68c-fv3c` advisory’sine bağlı
+   sekiz moderate bulguyu, yalnız aşağıdaki pinned dev-tooling zincirinde kaldığı
+   sürece geçici olarak kabul eder:
 
 ```text
 electron-builder@26.15.7 / app-builder-lib@26.15.7
@@ -25,23 +31,17 @@ electron-builder@26.15.7 / app-builder-lib@26.15.7
   -> sprintf-js@1.1.3
 ```
 
-Advisory, `sprintf-js` tarafında sınırsız precision specifier ile denial of
-service riskidir. Bu zincirdeki paketler `package-lock.json` içinde
-**dev dependency** olarak işaretlidir; yani bulgu Pisi’nin paketlenmiş runtime
-uygulamasındaki doğrudan kullanıcı dependency’si değildir. Buna rağmen CI ve
-Release workflow’ları moderate seviyeyi zorunlu gate yaptığı için current
-`main` CI audit adımında durmaktadır.
+Audit guard; advisory kimliği, severity toplamı, package isimleri, lockfile node
+yolları, exact sürümler ve `dev: true` sınırını doğrular. Yeni bir advisory,
+high/critical severity, package/node/version drift veya zincirin runtime
+dependency’ye taşınması halinde CI/Release yeniden otomatik olarak kırılır.
 
-`npm audit` şu anda çözüm olarak `npm audit fix --force` ile
-`electron-builder@26.5.0` kurulmasını öneriyor. Bu, mevcut
-`electron-builder@26.15.7` sürümünden geriye giden ve npm tarafından breaking
-change olarak sınıflandırılan bir çözüm olduğundan körlemesine uygulanmamalıdır.
-Doğru çözüm; upstream uyumlu fix geldiğinde güncellemek veya packaging/Store/
-macOS/Linux hatlarını yeniden doğrulayarak kontrollü dependency çözümü
-uygulamaktır.
+`npm audit fix --force` tarafından önerilen `electron-builder@26.5.0`
+downgrade uygulanmamıştır. Upstream patched sürüm yayımladığında istisna
+kaldırılıp normal full-clean audit’e dönülmelidir.
 
-**Current CI sonucu:** audit ❌; bu run’da format ve `validate:source` audit
-gate yüzünden çalıştırılmadı. Aynı commit için Electron E2E ✅ geçti.
+**Current blocker durumu:** bu advisory artık kontrollü dev-only exception olduğu
+için CI blocker değildir; runtime audit temiz kalmak zorundadır.
 
 ## 2. Production dağıtım kimlikleri ve dış servisler
 
@@ -114,15 +114,13 @@ Bunlar bug değil, dağıtım kanalına göre kasıtlı sınırlardır:
 
 - package version: **0.11.0**,
 - CI runtime: **Node.js 24**,
-- fresh dependency audit: **8 moderate vulnerability / CI blocker**,
+- runtime dependency audit: **moderate+ temiz**; full audit’te yalnız fail-closed `GHSA-hp3w-g68c-fv3c` dev-tooling exception’ı izinli,
 - Electron E2E: **başarılı**; startup/smoke, gerçek node+map persistence akışı
   ve kritik task/Sheet/Canvas restart regresyonları geçti,
 - Cross-platform Packaging Smoke: Windows + macOS + Linux job’ları
   **başarılı**; Windows NSIS/Portable x64+ARM64 gerçek paket üretimi doğrulandı.
 
-Audit gate nedeniyle 6 Ekim run’ında format/source-validation adımları
-çalıştırılmadı. Son tam başarılı source validation 4 Ekim 2026’daki aynı runtime
-kod tabanında şu snapshot’ı doğrulamıştı:
+6 Ekim snapshot’ındaki eski audit blocker bilgisi artık tarihsel referanstır. Güncel audit guard runtime ağacını ayrı doğrular ve yalnız exact dev-tooling exception’ına izin verir. Source-validation metrikleri yeni CI koşusuyla yeniden doğrulanmalıdır:
 
 - repository Prettier check: **başarılı**,
 - syntax check: **372 JavaScript/ES module dosyası**,
@@ -132,8 +130,7 @@ kod tabanında şu snapshot’ı doğrulamıştı:
 - TypeScript `checkJs`: **başarılı / 0 hata**,
 - Node regresyon testleri: **664/664 başarılı**.
 
-Bu metrikler “bugünkü CI yeşil” anlamında kullanılmamalıdır; current blocker
-dependency audit’tir.
+Bu metriklerin güncel sayıları CI her çalıştığında yeniden üretilir; audit politikası artık yeni veya kapsamı genişleyen bulguları fail-closed biçimde engeller.
 
 ## 6. Tamamlanmış olup açık sayılmaması gereken maddeler
 
