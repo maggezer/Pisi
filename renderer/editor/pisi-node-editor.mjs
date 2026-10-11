@@ -1,4 +1,5 @@
 import { registerModule } from '../core/module-registry.mjs';
+import { getPisiEditorAssetRecoveryWarning } from './pisi-editor-asset-recovery.mjs';
 
 function dispatchPisiActiveNodeChanged(reason = 'update') {
     const activeNode = activeModalNode || activeCenterNode || null;
@@ -364,6 +365,8 @@ async function openNodeModalFromBox(box) {
         }
 
         setPisiEditorContent(contentInput, result.data.content || '');
+        const recoveryWarning = getPisiEditorAssetRecoveryWarning(result.data?.content || '');
+        if (recoveryWarning) alert(recoveryWarning);
         clearPisiEditorCaret(contentInput);
         refreshPisiTagsPanelSoon();
     }
@@ -391,6 +394,11 @@ async function closeNodeModalAndSave() {
         const oldTitle = activeModalNode.metadata?.title || '';
         const title = titleInput?.value?.trim() || oldTitle;
         const content = getPisiEditorContent(contentInput);
+        const recoveryWarning = getPisiEditorAssetRecoveryWarning(content);
+        if (recoveryWarning) {
+            alert(recoveryWarning);
+            return false;
+        }
 
         if (title && title !== oldTitle) {
             suppressNextFileSystemRefresh(1500);
@@ -608,6 +616,8 @@ async function openCenterNodeEditor(nodeItem) {
     if (contentEditor) {
         ensurePisiEditorWritable(contentEditor);
         setPisiEditorContent(contentEditor, result.data?.content || '');
+        const recoveryWarning = getPisiEditorAssetRecoveryWarning(result.data?.content || '');
+        if (recoveryWarning) alert(recoveryWarning);
         clearPisiEditorCaret(contentEditor);
     }
 
@@ -652,6 +662,11 @@ async function performCurrentCenterNodeEditorSave() {
         const oldTitle = activeCenterNode.metadata?.title || '';
         const title = titleInput?.value?.trim() || oldTitle;
         const content = getPisiEditorContent(contentEditor);
+        const recoveryWarning = getPisiEditorAssetRecoveryWarning(content);
+        if (recoveryWarning) {
+            alert(recoveryWarning);
+            return false;
+        }
 
         if (title && title !== oldTitle) {
             suppressNextFileSystemRefresh(3000);
