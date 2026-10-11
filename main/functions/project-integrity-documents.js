@@ -2,6 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { modules } from '../module-registry.js';
 import * as shared from './project-integrity-shared.js';
+import { collectPisiEditorAssetReferences } from './editor-asset-store.js';
 
 const mapSemanticCore = modules['main.mapSemanticCore'];
 const mapOperationalStore = modules['main.mapOperationalStore'];
@@ -227,11 +228,17 @@ function auditNodeProperties(context, doc) {
 
 function auditAttachments(projectFolder, context, doc) {
     if (doc.type !== 'node' || typeof doc.data?.content !== 'string') return;
-    for (const reference of shared.extractLocalAttachmentCandidates(doc.data.content)) {
+    const editorReferences = new Set(collectPisiEditorAssetReferences(doc.data.content));
+    const references = new Set([...shared.extractLocalAttachmentCandidates(doc.data.content), ...editorReferences]);
+    for (const reference of references) {
         const direct = path.resolve(path.dirname(doc.filePath), reference);
         const sidecar = doc.sidecarPath ? path.resolve(doc.sidecarPath, reference) : null;
-        const directExists = shared.integrityCore.isPisiIntegrityPathInsideProject(projectFolder, direct) && fs.existsSync(direct);
-        const sidecarExists = sidecar && shared.integrityCore.isPisiIntegrityPathInsideProject(projectFolder, sidecar) && fs.existsSync(sidecar);
+        // Canvas/Sheet references are relative only to the owning node sidecar.
+        // A same-named file beside the node must not mask a missing editor asset.
+        const directExists =
+            !editorReferences.has(reference) && shared.integrityCore.isPisiIntegrityPathInsideProject(projectFolder, direct) && fs.existsSync(direct);
+        const sidecarExists =
+            sidecar && shared.integrityCore.isPisiIntegrityPathInsideProject(projectFolder, sidecar) && fs.existsSync(sidecar) && fs.statSync(sidecar).isFile();
         if (!directExists && !sidecarExists) {
             shared.issue(
                 context,

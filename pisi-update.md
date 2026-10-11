@@ -1,5 +1,16 @@
 # PISI Güncelleme Takip Dosyası
 
+## 11-10-2026 — P2.3 Canvas/Sheet integrity taraması
+
+- Attachment taraması canonical asset referans toplayıcısını kullanarak
+  `data-pisi-asset` ve `data-pisi-sheet-asset` hedeflerini de denetler.
+- Canvas/Sheet dosyaları yalnız sahibi olan node sidecarında aranır; node
+  yanındaki aynı adlı dosya veya hedefteki bir klasör eksik asset’i gizlemez.
+- Eksik hedefler mevcut manuel attachment kurtarma uyarısıyla raporlanır;
+  tekrarlanan referanslar tekilleştirilir, belge içeriği değiştirilmez.
+- Regresyon testleri eksik/mevcut asset, eksik sidecar, yanlış konumdaki dosya
+  ve normal src/href eklerinin taranmasını doğrular.
+
 ## 11-10-2026 — P1.4 history restore konum bütünlüğü
 
 - History restore geçmişteki belge içeriğini geri getirirken güncel `pisi`
