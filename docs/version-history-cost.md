@@ -51,6 +51,7 @@ The budget applies to Version History only. The single sibling `.pisi-backup` ma
 - New snapshots are written atomically with backup generation disabled for the snapshot and its index; history does not create backups of its own backups.
 - Editor saves remain on the normal lightweight save path; they are not wrapped in a full project mutation journal merely to create history.
 - Explicit Version History restore is rare and now runs inside the existing atomic mutation layer.
+- Restore recovers the historical document payload while preserving the current `pisi` metadata (identity, title, sidecar, parent map and system roles). Only `updatedAt` is refreshed; history cannot undo a move or rename or revive a removed role.
 - Existing history ownership check remains: a version cannot be restored into a different node identity.
 
 ## Backup listing cost

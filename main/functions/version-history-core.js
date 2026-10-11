@@ -383,7 +383,10 @@ function restorePisiNodeHistoryVersionBounded(nodePath, historyId, options = {})
         });
         if (!snapshot.ok) return snapshot;
         const restoredData = JSON.parse(JSON.stringify(version.data));
-        restoredData.pisi.updatedAt = new Date().toISOString();
+        // History restores document state, not filesystem/project membership.
+        // Keep current identity, title, sidecar and parentMap after moves/renames;
+        // replacing the whole metadata object also avoids reviving removed roles.
+        restoredData.pisi = { ...current.metadata, updatedAt: new Date().toISOString() };
         const writeDocument = options.writePisiDocument || globalThis.writePisiDocument;
         writeDocument(nodePath, restoredData);
         return { ok: true, fullPath: nodePath, restoredHistoryId: historyId };

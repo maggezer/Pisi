@@ -241,3 +241,62 @@ test('version-history IPC hooks replace unbounded save/list routes and skip proj
     assert.match(hooks, /if \(!filePath\)[\s\S]*skippedProjectScan: true/);
     assert.ok(main.indexOf('version-history-operation-hooks') > main.indexOf('main/runtime'));
 });
+
+for (const parentMap of ['map_destination', 'none']) {
+    test(`history restore preserves renamed node placement in ${parentMap}`, (t) => {
+        const fixture = makeFixture();
+        t.after(() => fs.rmSync(fixture.projectFolder, { recursive: true, force: true }));
+        fixture.writeNode('<p>historical content</p>');
+        const original = JSON.parse(fs.readFileSync(fixture.nodePath, 'utf8'));
+        original.pisi.parentMap = 'map_source';
+        original.pisi.sidecar = path.basename(fixture.sidecarPath);
+        original.pisi.systemRole = 'old-role';
+        original.properties = { status: 'historical' };
+        fs.writeFileSync(fixture.nodePath, JSON.stringify(original));
+        const target = history.snapshotPisiNodeVersionBounded(fixture.nodePath, 'save', fixture.options);
+        assert.equal(target.ok, true);
+
+        const destination = path.join(fixture.projectFolder, parentMap);
+        fs.mkdirSync(destination);
+        const movedPath = path.join(destination, 'Renamed.node');
+        const movedSidecar = path.join(destination, 'Renamed - node_history_cost.pisi-node');
+        fs.renameSync(fixture.nodePath, movedPath);
+        fs.renameSync(fixture.sidecarPath, movedSidecar);
+        const current = structuredClone(original);
+        current.pisi = {
+            version: 1,
+            type: 'node',
+            id: original.pisi.id,
+            title: 'Renamed',
+            sidecar: path.basename(movedSidecar),
+            parentMap,
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-02-01T00:00:00.000Z'
+        };
+        current.content = '<p>current content</p>';
+        current.properties = { status: 'current' };
+        fs.writeFileSync(movedPath, JSON.stringify(current));
+        const options = {
+            ...fixture.options,
+            ensurePisiFileMetadata: (filePath) => {
+                const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+                return { ok: true, metadata: data.pisi, data, sidecarPath: movedSidecar };
+            },
+            writePisiDocument: (filePath, data) => fs.writeFileSync(filePath, JSON.stringify(data))
+        };
+        const result = history.restorePisiNodeHistoryVersionBounded(movedPath, target.historyId, options);
+        assert.equal(result.ok, true, result.error);
+        const restored = JSON.parse(fs.readFileSync(movedPath, 'utf8'));
+        assert.deepEqual(restored.pisi, { ...current.pisi, updatedAt: restored.pisi.updatedAt });
+        assert.notEqual(restored.pisi.updatedAt, current.pisi.updatedAt);
+        assert.equal(restored.content, original.content);
+        assert.deepEqual(restored.properties, original.properties);
+        assert.equal(fs.existsSync(fixture.nodePath), false);
+        assert.equal(fs.existsSync(fixture.sidecarPath), false);
+        assert.equal(fs.existsSync(movedSidecar), true);
+        const versions = history.listPisiNodeHistoryBounded(movedPath, options);
+        const beforeRestore = versions.versions.find((entry) => entry.reason === 'before-restore');
+        assert.ok(beforeRestore);
+        assert.deepEqual(history.getPisiNodeHistoryVersionBounded(movedPath, beforeRestore.historyId, options).data, current);
+    });
+}

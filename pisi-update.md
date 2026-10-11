@@ -1,5 +1,15 @@
 # PISI Güncelleme Takip Dosyası
 
+## 11-10-2026 — P1.4 history restore konum bütünlüğü
+
+- History restore geçmişteki belge içeriğini geri getirirken güncel `pisi`
+  metadata’sını korur; yalnız `updatedAt` yenilenir.
+- Taşıma/yeniden adlandırma sonrası parentMap, başlık ve sidecar bilgileri
+  eski snapshot değerlerine dönmez; kaldırılmış sistem rolleri yeniden oluşmaz.
+- Haritaya ve harita dışına taşınan, yeniden adlandırılan notlar için testler
+  içerik/property geri yüklemesini, güncel metadata’yı ve restore öncesi güvenlik
+  snapshot’ını doğrular.
+
 ## 11-10-2026 — P1.3 tek canonical history üreticisi
 
 - Portability içindeki sıkıştırılmamış `.json` history üretici/okuyucu/restore
