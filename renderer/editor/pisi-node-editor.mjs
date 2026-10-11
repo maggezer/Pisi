@@ -332,7 +332,8 @@ async function openNodeModalFromBox(box) {
         metadata: result.metadata,
         returnFocus: document.activeElement,
         dirty: false,
-        revision: 0
+        revision: 0,
+        assetRecoveryWarning: getPisiEditorAssetRecoveryWarning(result.data?.content || '')
     };
 
     const overlay = document.getElementById('node-modal-overlay');
@@ -394,7 +395,7 @@ async function closeNodeModalAndSave() {
         const oldTitle = activeModalNode.metadata?.title || '';
         const title = titleInput?.value?.trim() || oldTitle;
         const content = getPisiEditorContent(contentInput);
-        const recoveryWarning = getPisiEditorAssetRecoveryWarning(content);
+        const recoveryWarning = activeModalNode.assetRecoveryWarning || getPisiEditorAssetRecoveryWarning(content);
         if (recoveryWarning) {
             alert(recoveryWarning);
             return false;
@@ -606,7 +607,8 @@ async function openCenterNodeEditor(nodeItem) {
         },
         metadata: result.metadata || {},
         dirty: false,
-        revision: 0
+        revision: 0,
+        assetRecoveryWarning: getPisiEditorAssetRecoveryWarning(result.data?.content || '')
     };
 
     if (titleInput) {
@@ -662,7 +664,7 @@ async function performCurrentCenterNodeEditorSave() {
         const oldTitle = activeCenterNode.metadata?.title || '';
         const title = titleInput?.value?.trim() || oldTitle;
         const content = getPisiEditorContent(contentEditor);
-        const recoveryWarning = getPisiEditorAssetRecoveryWarning(content);
+        const recoveryWarning = activeCenterNode.assetRecoveryWarning || getPisiEditorAssetRecoveryWarning(content);
         if (recoveryWarning) {
             alert(recoveryWarning);
             return false;
