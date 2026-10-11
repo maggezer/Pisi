@@ -10,15 +10,21 @@ export function isPisiInternalTreeItem(item) {
     return name === '.pisi-history';
 }
 
-export async function loadFolderChildren(folderPath, containerEl, level, rootRender = null) {
-    const rootRenderIsCurrent = () => {
-        return !rootRender || isCurrentPisiTreeRootRender(rootRender.renderId, rootRender.rootPath);
-    };
+const folderTreeLoadRequests = new WeakMap();
 
-    if (!rootRenderIsCurrent()) return false;
+export async function loadFolderChildren(folderPath, containerEl, level, rootRender = null) {
+    const request = {};
+    const projectFolder = window.currentProjectFolder;
+    folderTreeLoadRequests.set(containerEl, request);
+    const isCurrent = () =>
+        folderTreeLoadRequests.get(containerEl) === request &&
+        window.currentProjectFolder === projectFolder &&
+        (!rootRender || isCurrentPisiTreeRootRender(rootRender.renderId, rootRender.rootPath));
+
+    if (!isCurrent()) return false;
 
     const result = await window.pisiProject?.listFolder?.(folderPath);
-    if (!rootRenderIsCurrent()) return false;
+    if (!isCurrent()) return false;
 
     if (!result || !result.ok) {
         const fragment = document.createDocumentFragment();
@@ -37,10 +43,11 @@ export async function loadFolderChildren(folderPath, containerEl, level, rootRen
 
     for (const item of visibleItems) {
         const childNode = await createTreeNode(item, level);
-        if (!rootRenderIsCurrent()) return false;
+        if (!isCurrent()) return false;
         fragment.appendChild(childNode);
     }
 
+    if (!isCurrent()) return false;
     containerEl.replaceChildren(fragment);
     return true;
 }
