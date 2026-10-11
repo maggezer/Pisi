@@ -1,5 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
+const require = createRequire(import.meta.url);
+const { hydratePisiEditorAssets } = require('../main/functions/editor-asset-store.js');
+
 import { getUnresolvedPisiEditorAssets, getPisiEditorAssetRecoveryWarning } from '../renderer/editor/pisi-editor-asset-recovery.mjs';
 
 const paint = 'paint/' + 'a'.repeat(64) + '.png';
@@ -30,4 +37,26 @@ test('missing assets are de-duplicated and unrelated tags are ignored', () => {
 
 test('missing sheet remains detectable when other canvas data is hydrated', () => {
     assert.deepEqual(getUnresolvedPisiEditorAssets(canvas(' data-image="data:image/png;base64,AAAA"') + table()), [sheet]);
+});
+
+test('missing sidecar files preserve their references and trigger recovery warning', (t) => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-sidecar-recovery-'));
+    t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+    const stored = canvas() + table();
+    const hydrated = hydratePisiEditorAssets(stored, { sidecarPath: root });
+    assert.equal(hydrated, stored);
+    assert.deepEqual(getUnresolvedPisiEditorAssets(hydrated), [paint, sheet]);
+});
+
+test('corrupted sidecar hashes preserve references and trigger recovery warning', (t) => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-sidecar-corrupt-'));
+    t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+    fs.mkdirSync(path.join(root, 'paint'));
+    fs.mkdirSync(path.join(root, 'sheet'));
+    fs.writeFileSync(path.join(root, paint), 'not a valid PNG');
+    fs.writeFileSync(path.join(root, sheet), '{"databaseId":"invalid"}');
+    const stored = canvas() + table();
+    const hydrated = hydratePisiEditorAssets(stored, { sidecarPath: root });
+    assert.equal(hydrated, stored);
+    assert.ok(getPisiEditorAssetRecoveryWarning(hydrated));
 });
