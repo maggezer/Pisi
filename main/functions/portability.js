@@ -1,9 +1,15 @@
 import { BrowserWindow, dialog } from '../electron-bridge.js';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
-import * as crypto from 'node:crypto';
 import { registerMainModule } from '../module-registry.js';
 import * as editorAssets from './editor-asset-store.js';
+import {
+    snapshotPisiNodeVersionBounded as snapshotPisiNodeVersion,
+    saveNodeContentWithBoundedHistory as saveNodeContentWithHistory,
+    listPisiNodeHistoryBounded as listPisiNodeHistory,
+    getPisiNodeHistoryVersionBounded as getPisiNodeHistoryVersion,
+    restorePisiNodeHistoryVersionBounded as restorePisiNodeHistoryVersion
+} from './version-history-core.js';
 
 function pisiSafeTimestamp(date = new Date()) {
     return date.toISOString().replace(/[:.]/g, '-');
@@ -158,142 +164,6 @@ function walkPisiFiles(root, predicate, options = {}) {
     };
     visit(root);
     return files;
-}
-
-function getPisiHistoryDirectory(nodePath) {
-    const info = ensurePisiFileMetadata(nodePath, { ensureSidecar: false });
-    if (!info.ok || info.metadata.type !== 'node') return null;
-    const projectFolder = globalThis.activeProjectFolder || path.dirname(nodePath);
-    return path.join(projectFolder, '.pisi-history', info.metadata.id);
-}
-
-function snapshotPisiNodeVersion(nodePath, reason = 'save') {
-    try {
-        if (!fs.existsSync(nodePath)) return { ok: true, skipped: true };
-        const info = ensurePisiFileMetadata(nodePath, { ensureSidecar: false });
-        if (!info.ok || info.metadata.type !== 'node') return info;
-        const historyDirectory = getPisiHistoryDirectory(nodePath);
-        fs.mkdirSync(historyDirectory, { recursive: true });
-        const raw = fs.readFileSync(nodePath, 'utf-8');
-        const hash = crypto.createHash('sha256').update(raw).digest('hex').slice(0, 16);
-        const existing = fs.readdirSync(historyDirectory).filter((name) => name.endsWith(`-${hash}.json`));
-        if (existing.length) return { ok: true, skipped: true, duplicate: true };
-        const fileName = `${Date.now()}-${pisiSafeTimestamp()}-${hash}.json`;
-        const snapshot = {
-            version: 1,
-            reason: String(reason || 'save').slice(0, 80),
-            capturedAt: new Date().toISOString(),
-            nodePath: path.relative(globalThis.activeProjectFolder, nodePath),
-            hash,
-            data: info.data
-        };
-        const snapshotPath = path.join(historyDirectory, fileName);
-        writeFileAtomic(snapshotPath, JSON.stringify(snapshot, null, 2), { backup: false });
-        const versions = fs
-            .readdirSync(historyDirectory)
-            .filter((name) => name.endsWith('.json'))
-            .sort()
-            .reverse();
-        for (const stale of versions.slice(50)) {
-            fs.unlinkSync(path.join(historyDirectory, stale));
-        }
-        return { ok: true, historyId: fileName, snapshotPath };
-    } catch (error) {
-        return { ok: false, error: error.message };
-    }
-}
-
-function saveNodeContentWithHistory(nodePath, content = '', options = {}) {
-    try {
-        const current = getPisiDocument(nodePath);
-        if (!current.ok) return current;
-
-        const normalizedIncoming = editorAssets.normalizePisiEditorAssets(String(content || ''), { writeAssets: false }).content;
-
-        if (String(current.data?.content || '') === String(normalizedIncoming || '')) {
-            return {
-                ok: true,
-                unchanged: true,
-                fullPath: nodePath,
-                metadata: current.metadata,
-                content: current.data.content || '',
-                preview: stripPreviewText(current.data.content || '')
-            };
-        }
-        const snapshot = snapshotPisiNodeVersion(nodePath, options.reason || 'save');
-        if (!snapshot.ok) return snapshot;
-        return saveNodeContent(nodePath, content);
-    } catch (error) {
-        return { ok: false, error: error.message };
-    }
-}
-
-function listPisiNodeHistory(nodePath) {
-    try {
-        const directory = getPisiHistoryDirectory(nodePath);
-        if (!directory || !fs.existsSync(directory)) return { ok: true, versions: [] };
-        const versions = fs
-            .readdirSync(directory)
-            .filter((name) => /^\d+-.+\.json$/.test(name))
-            .sort()
-            .reverse()
-            .slice(0, 50)
-            .map((historyId) => {
-                const result = readJsonFileResult(path.join(directory, historyId));
-                if (!result.ok || !result.data?.data?.pisi) return null;
-                return {
-                    historyId,
-                    capturedAt: result.data.capturedAt,
-                    reason: result.data.reason || 'save',
-                    hash: result.data.hash || '',
-                    preview: stripPreviewText(result.data.data.content || '')
-                };
-            })
-            .filter(Boolean);
-        return { ok: true, versions };
-    } catch (error) {
-        return { ok: false, error: error.message, versions: [] };
-    }
-}
-
-function getPisiNodeHistoryVersion(nodePath, historyId) {
-    try {
-        if (!/^\d+-.+\.json$/.test(String(historyId || ''))) {
-            return { ok: false, error: 'Geçersiz sürüm kimliği.' };
-        }
-        const directory = getPisiHistoryDirectory(nodePath);
-        const result = readJsonFileResult(path.join(directory, historyId));
-        if (!result.ok || !result.data?.data) return { ok: false, error: result.error || 'Sürüm bulunamadı.' };
-        return {
-            ok: true,
-            historyId,
-            capturedAt: result.data.capturedAt,
-            reason: result.data.reason,
-            data: result.data.data,
-            text: pisiHtmlToPlainText(result.data.data.content || '')
-        };
-    } catch (error) {
-        return { ok: false, error: error.message };
-    }
-}
-
-function restorePisiNodeHistoryVersion(nodePath, historyId) {
-    try {
-        const version = getPisiNodeHistoryVersion(nodePath, historyId);
-        if (!version.ok) return version;
-        const current = ensurePisiFileMetadata(nodePath, { ensureSidecar: false });
-        if (!current.ok) return current;
-        if (version.data?.pisi?.id !== current.metadata.id) {
-            return { ok: false, error: 'Sürüm başka bir node kimliğine ait.' };
-        }
-        const snapshot = snapshotPisiNodeVersion(nodePath, 'before-restore');
-        if (!snapshot.ok) return snapshot;
-        version.data.pisi.updatedAt = new Date().toISOString();
-        writePisiDocument(nodePath, version.data);
-        return { ok: true, fullPath: nodePath, restoredHistoryId: historyId };
-    } catch (error) {
-        return { ok: false, error: error.message };
-    }
 }
 
 function pisiPropertiesFrontmatter(properties = {}) {
@@ -634,7 +504,10 @@ function restorePisiAtomicBackup(projectFolder, backupId) {
         const backup = readJsonFileResult(backupPath);
         if (!backup.ok || !backup.data?.pisi?.id) return { ok: false, error: 'Yedek geçerli bir Pisi belgesi değil.' };
         if (fs.existsSync(targetPath) && path.extname(targetPath).toLowerCase() === '.node') {
-            const snapshot = snapshotPisiNodeVersion(targetPath, 'before-backup-restore');
+            const snapshot = snapshotPisiNodeVersion(targetPath, 'before-backup-restore', {
+                projectFolder,
+                protectedEditorAssetReferences: editorAssets.collectPisiEditorAssetReferences(backup.data.content || '')
+            });
             if (!snapshot.ok) return snapshot;
         }
         writeFileAtomic(targetPath, fs.readFileSync(backupPath, 'utf8'));

@@ -1,5 +1,17 @@
 # PISI Güncelleme Takip Dosyası
 
+## 11-10-2026 — P1.3 tek canonical history üreticisi
+
+- Portability içindeki sıkıştırılmamış `.json` history üretici/okuyucu/restore
+  uygulamaları kaldırıldı. Mevcut public binding’ler doğrudan bounded gzip
+  history servisine bağlandı; property, template ve task çağrıları da aynı
+  saklama, indeks ve retention politikasını kullanır.
+- Merkezi backup restore canonical snapshot servisini kullanır; geri
+  getirilecek asset referansları snapshot/GC boyunca korunur.
+- Gerçek property/template/backup servislerini çalıştıran entegrasyon testleri
+  geçmiş görünürlüğünü, gzip formatını ve sonraki GC’de asset korunmasını doğrular.
+- Eski `.json` verileri için migration/compatibility okuyucusu eklenmedi.
+
 ## 10-10-2026 — P2.2 release hazırlığı (uçtan uca doğrulama bekliyor)
 
 - Mevcut `v0.11.0` beta yayını doğrulandı; eski tag ve asset’ler korunur.

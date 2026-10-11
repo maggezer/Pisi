@@ -2,6 +2,8 @@ import { ipcMain } from '../electron-bridge.js';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as backupStorage from './backup-storage.js';
+import { snapshotPisiNodeVersionBounded } from './version-history-core.js';
+import { collectPisiEditorAssetReferences } from './editor-asset-store.js';
 
 function listCentralizedPisiAtomicBackups(projectFolder, filePath = null) {
     try {
@@ -62,7 +64,10 @@ function restoreCentralizedPisiAtomicBackup(projectFolder, backupId) {
         }
 
         if (fs.existsSync(targetPath) && path.extname(targetPath).toLowerCase() === '.node') {
-            const snapshot = snapshotPisiNodeVersion(targetPath, 'before-backup-restore');
+            const snapshot = snapshotPisiNodeVersionBounded(targetPath, 'before-backup-restore', {
+                projectFolder,
+                protectedEditorAssetReferences: collectPisiEditorAssetReferences(backup.data.content || '')
+            });
             if (!snapshot.ok) return snapshot;
         }
 
