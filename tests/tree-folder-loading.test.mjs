@@ -13,7 +13,10 @@ function deferred() {
 
 function setup(t) {
     const requests = [];
-    const previous = new Map(['window', 'document', 'createTreeNode'].map((name) => [name, Object.getOwnPropertyDescriptor(globalThis, name)]));
+    const previous = new Map();
+    for (const name of ['window', 'document', 'createTreeNode']) {
+        previous.set(name, Object.getOwnPropertyDescriptor(globalThis, name));
+    }
     t.after(() => {
         for (const [name, descriptor] of previous) {
             if (descriptor) Object.defineProperty(globalThis, name, descriptor);
