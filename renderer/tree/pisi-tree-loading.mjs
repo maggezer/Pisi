@@ -206,9 +206,16 @@ export async function loadSyntheticTreeChildren(items, containerEl, level) {
     containerEl.replaceChildren(fragment);
 }
 
+const mapTreeLoadRequests = new WeakMap();
+
 export async function loadMapTreeChildren(mapPath, containerEl, level) {
+    const request = {};
+    const projectFolder = window.currentProjectFolder;
+    mapTreeLoadRequests.set(containerEl, request);
+    const isCurrent = () => mapTreeLoadRequests.get(containerEl) === request && window.currentProjectFolder === projectFolder;
     try {
         const result = await window.pisiProject?.listMapNodes?.(mapPath);
+        if (!isCurrent()) return;
 
         if (!result || !result.ok) {
             const fragment = document.createDocumentFragment();
@@ -228,11 +235,13 @@ export async function loadMapTreeChildren(mapPath, containerEl, level) {
 
         for (const item of treeItems) {
             const childNode = await createTreeNode(item, level);
+            if (!isCurrent()) return;
             fragment.appendChild(childNode);
         }
 
         containerEl.replaceChildren(fragment);
     } catch (error) {
+        if (!isCurrent()) return;
         console.error('[PISI] Map tree yüklenirken hata:', error);
 
         const fragment = document.createDocumentFragment();

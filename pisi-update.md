@@ -1,5 +1,16 @@
 # PISI Güncelleme Takip Dosyası
 
+## 11-10-2026 — P2.4 map ağacında eski yanıt koruması
+
+- Map dalı yüklemeleri container başına istek kimliği taşır. Daha yeni yükleme
+  başladıysa eski başarı/hata yanıtları DOM’u değiştiremez.
+- Kontrol IPC yanıtından ve asenkron child oluşturma adımlarından sonra,
+  ayrıca hata yakalama yolunda uygulanır; proje değişmişse yanıt atılır.
+- Farklı dallar birbirini engellemez; henüz DOM’a eklenmemiş dalların ilk
+  oluşturulması çalışmaya devam eder.
+- Geciken başarı/hata, child oluşturma yarışı, bağımsız dallar ve proje
+  değişimi regresyon testleriyle doğrulandı.
+
 ## 11-10-2026 — P2.3 Canvas/Sheet integrity taraması
 
 - Attachment taraması canonical asset referans toplayıcısını kullanarak
