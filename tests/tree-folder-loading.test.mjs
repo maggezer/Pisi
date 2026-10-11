@@ -60,7 +60,8 @@ for (const stale of ['success', 'error-result', 'rejection']) {
         await newLoad;
         if (stale === 'rejection') f.requests[0].reject(new Error('old error'));
         else f.requests[0].resolve(stale === 'success' ? f.result('old') : { ok: false, error: 'old error' });
-        await oldLoad;
+        if (stale === 'rejection') await assert.rejects(oldLoad, /old error/);
+        else await oldLoad;
         assert.deepEqual(
             container.children.map((node) => node.textContent),
             ['new']
