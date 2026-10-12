@@ -33,6 +33,7 @@ class CdpClient {
         });
         this.socket.addEventListener('message', (event) => {
             const payload = JSON.parse(String(event.data));
+            if (payload.method === 'Page.javascriptDialogOpening') console.error('[E2E] Unexpected native dialog: ' + payload.params?.message);
             if (!payload.id) return;
             const pending = this.pending.get(payload.id);
             if (!pending) return;
@@ -143,6 +144,7 @@ async function launchElectron(port) {
     app.cdp = new CdpClient(page.webSocketDebuggerUrl);
     await app.cdp.open();
     await app.cdp.request('Runtime.enable');
+    await app.cdp.request('Page.enable');
 
     const startup = await waitUntil(
         app,
