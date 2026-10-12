@@ -29,7 +29,15 @@ function setup(t, { modal = false } = {}) {
     const write = (content) => fs.writeFileSync(nodePath, JSON.stringify({ pisi: { title: 'Note', id: 'node_restore' }, content }));
     const read = () => JSON.parse(fs.readFileSync(nodePath, 'utf8'));
     write('disk before restore');
-    const editor = { innerHTML: 'unsaved text', textContent: 'unsaved text', inert: false };
+    const editor = {
+        innerHTML: 'unsaved text',
+        textContent: 'unsaved text',
+        inert: false,
+        setAttribute() {},
+        getAttribute: () => 'true',
+        removeAttribute() {},
+        before() {}
+    };
     const title = { value: 'Note', inert: false };
     const modalEditor = { ...editor };
     const modalTitle = { ...title };
@@ -60,7 +68,11 @@ function setup(t, { modal = false } = {}) {
             }
         }
     };
-    globalThis.document = { getElementById: (id) => (id === 'node-modal-content' ? modalEditor : modalTitle) };
+    globalThis.document = {
+        getElementById: (id) => (id === 'node-modal-content' ? modalEditor : modalTitle),
+        querySelector: () => null,
+        createElement: () => ({ setAttribute() {}, addEventListener() {}, append() {}, remove() {} })
+    };
     t.after(() => {
         clearTimeout(window.centerNodeSaveTimer);
         globalThis.window = oldWindow;
@@ -150,6 +162,7 @@ test('backup restore does not pre-save dirty DOM and rotate the selected backup'
 
 test('failed restore retains unsaved edits and resumes their save schedule', async (t) => {
     const h = setup(t);
+    h.center.assetRecoveryWarning = '';
     const result = await restorePisiEditorDocument(h.nodePath, async () => ({ ok: false, error: 'disk failure' }));
     assert.equal(result.ok, false);
     assert.equal(h.editor.innerHTML, 'unsaved text');
@@ -205,8 +218,11 @@ test('actual center save queue drains before restore without a self-wait or stal
     const h = setup(t);
     const release = deferred(),
         started = deferred();
+    h.center.assetRecoveryWarning = '';
     const context = {
         activeCenterNode: h.center,
+        isPisiEditorRestorePending,
+        getPisiNodeRecoveryWarning: () => '',
         isPisiEditorWriteBlocked,
         runPisiEditorWrite,
         performCurrentCenterNodeEditorSave: async () => {

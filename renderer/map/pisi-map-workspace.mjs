@@ -42,7 +42,7 @@ async function openMapInWorkspace(mapItem, request = beginPisiWorkspaceNavigatio
     }
 
     if (typeof saveCurrentCenterNodeEditor === 'function' && activeCenterNode) {
-        const saved = await saveCurrentCenterNodeEditor();
+        const saved = await saveCurrentCenterNodeEditor({ allowDiscardRecovery: true });
         if (!isPisiWorkspaceNavigationCurrent(request) || !saved) return false;
     }
 

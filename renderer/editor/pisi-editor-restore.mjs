@@ -1,3 +1,4 @@
+import { applyPisiEditorRecoveryState } from './pisi-editor-recovery-policy.mjs';
 import { getPisiEditorAssetRecoveryWarning } from './pisi-editor-asset-recovery.mjs';
 
 const pendingEditorWrites = new Set();
@@ -116,6 +117,10 @@ export async function restorePisiEditorDocument(nodePath, restore) {
         controls.forEach((element, index) => {
             element.inert = inertStates[index];
         });
+        for (const target of targets) {
+            const active = target.modal ? window.activeModalNode : window.activeCenterNode;
+            if (active === target.node) applyPisiEditorRecoveryState(target.node, target.editor, target.title);
+        }
         restoringDocument = false;
         if (!restored && window.activeCenterNode?.dirty) window.scheduleCenterNodeEditorSave();
     }

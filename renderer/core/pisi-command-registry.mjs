@@ -1,3 +1,4 @@
+import { getPisiNodeRecoveryWarning, protectPisiEditorRecovery } from '../editor/pisi-editor-recovery-policy.mjs';
 import { isPisiEditorWriteBlocked, runPisiEditorWrite } from '../editor/pisi-editor-restore.mjs';
 import { registerModule } from './module-registry.mjs';
 
@@ -409,11 +410,13 @@ function initializePisiCommandRegistry() {
             if (window.activeModalNode) {
                 const modal = window.activeModalNode;
                 const editor = document.getElementById('node-modal-content');
-                const result = await runPisiEditorWrite(() =>
-                    window.pisiProject?.saveNodeContent?.(window.activeModalNode.path, window.getPisiEditorContent?.(editor) || editor?.innerHTML || '')
-                );
+                if (getPisiNodeRecoveryWarning(modal)) return false;
+                const content = window.getPisiEditorContent?.(editor) || editor?.innerHTML || '';
+                if (protectPisiEditorRecovery(modal, editor, document.getElementById('node-modal-title'), content)) return false;
+                const revision = Number(modal.revision || 0);
+                const result = await runPisiEditorWrite(() => window.pisiProject?.saveNodeContent?.(modal.path, content));
                 if (!result?.ok) throw new Error(result?.error || 'Node kaydedilemedi.');
-                if (window.activeModalNode === modal) modal.dirty = false;
+                if (window.activeModalNode === modal && Number(modal.revision || 0) === revision) modal.dirty = false;
                 return result;
             }
             return window.saveCurrentCenterNodeEditor?.();

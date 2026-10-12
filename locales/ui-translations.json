@@ -168,7 +168,13 @@
         "Co-level bağlantı": "Eş düzey bağlantı",
         "Diary node oluşturulamadı.": "Günlük node’u oluşturulamadı.",
         "Diary yalnızca aktif proje kökünde kullanılabilir.": "Günlük yalnızca aktif proje kökünde kullanılabilir.",
-        "Explorer": "Gezgin"
+        "Explorer": "Gezgin",
+        "Geri yüklenen not yeniden okunamadı. Notu kapatıp yeniden açın veya sürüm geçmişinden kurtarın.": "Geri yüklenen not yeniden okunamadı. Notu kapatıp yeniden açın veya sürüm geçmişinden kurtarın.",
+        "Bu not salt okunur açıldı. Kurtarmak için sürüm geçmişini kullanabilirsiniz.": "Bu not salt okunur açıldı. Kurtarmak için sürüm geçmişini kullanabilirsiniz.",
+        "Bu not güvenle kaydedilemiyor. Kaydedilmemiş değişikliklerden vazgeçip devam edilsin mi?": "Bu not güvenle kaydedilemiyor. Kaydedilmemiş değişikliklerden vazgeçip devam edilsin mi?",
+        "Kaydedilmemiş değişiklikler": "Kaydedilmemiş değişiklikler",
+        "Değişikliklerden vazgeç": "Değişikliklerden vazgeç",
+        "Notta kal": "Notta kal"
     },
     "eng": {
         "Sütun adını değiştir": "Rename column",
@@ -339,6 +345,12 @@
         "Co-level bağlantı": "Co-level connection",
         "Diary node oluşturulamadı.": "The diary note could not be created.",
         "Diary yalnızca aktif proje kökünde kullanılabilir.": "Diary can only be used in the active project root.",
-        "Explorer": "Explorer"
+        "Explorer": "Explorer",
+        "Geri yüklenen not yeniden okunamadı. Notu kapatıp yeniden açın veya sürüm geçmişinden kurtarın.": "The restored note could not be read. Close and reopen it, or recover it from version history.",
+        "Bu not salt okunur açıldı. Kurtarmak için sürüm geçmişini kullanabilirsiniz.": "This note is read-only. You can recover it from version history.",
+        "Bu not güvenle kaydedilemiyor. Kaydedilmemiş değişikliklerden vazgeçip devam edilsin mi?": "This note cannot be saved safely. Discard unsaved changes and continue?",
+        "Kaydedilmemiş değişiklikler": "Unsaved changes",
+        "Değişikliklerden vazgeç": "Discard changes",
+        "Notta kal": "Stay in note"
     }
 }

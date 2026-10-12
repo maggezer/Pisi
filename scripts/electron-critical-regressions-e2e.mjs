@@ -550,6 +550,51 @@ async function testHistoryRestoreRefresh(app, kind) {
     if (!content.includes(original) || content.includes(newer)) throw new Error(kind + ' restore was overwritten by stale editor content.');
 }
 
+async function testRecoveryDepartureAndClose(app) {
+    const brokenPath = await createNode(app);
+    await app.cdp.evaluate('saveCurrentCenterNodeEditor()');
+    const healthyPath = await createNode(app);
+    await app.cdp.evaluate('saveCurrentCenterNodeEditor()');
+    const data = JSON.parse(await fs.readFile(brokenPath, 'utf8'));
+    data.content =
+        '<div class="pisi-sheet-block" data-pisi-sheet-block="1"><table data-pisi-sheet="1" data-pisi-sheet-asset="sheet/' +
+        'a'.repeat(64) +
+        '.json"></table></div>';
+    const original = JSON.stringify(data);
+    await fs.writeFile(brokenPath, original, 'utf8');
+    const opened = await app.cdp.evaluate(`(async () => {
+        const opened = await activatePisiOpenTab(${JSON.stringify(brokenPath)});
+        const editor = document.getElementById('center-node-editor-content');
+        return opened && Boolean(activeCenterNode.assetRecoveryWarning) && editor.inert &&
+            document.getElementById('center-node-editor-title').readOnly && Boolean(document.querySelector('.pisi-editor-recovery-notice'));
+    })()`);
+    if (!opened) throw new Error('Damaged note did not open read-only with a recovery notice.');
+    if (!(await app.cdp.evaluate('flushPisiPendingSaves()'))) throw new Error('Unchanged recovery note blocked close flush.');
+    const left = await app.cdp.evaluate(`activatePisiOpenTab(${JSON.stringify(healthyPath)})`);
+    const editable = await app.cdp.evaluate(
+        "!document.getElementById('center-node-editor-content').inert && !document.getElementById('center-node-editor-title').readOnly && !document.querySelector('.pisi-editor-recovery-notice')"
+    );
+    if (!left || !editable) throw new Error('Recovery note blocked navigation or left healthy editor locked.');
+    await app.cdp.evaluate(`activatePisiOpenTab(${JSON.stringify(brokenPath)})`);
+    if (!(await app.cdp.evaluate(`closePisiOpenTab(${JSON.stringify(brokenPath)})`))) throw new Error('Recovery tab could not close.');
+    await app.cdp.evaluate(`openPisiFileTab({fullPath:${JSON.stringify(brokenPath)},name:'recovery.node'})`);
+    const modalClosed = await app.cdp.evaluate(`(async () => {
+        const box = document.createElement('div');
+        box.dataset.nodePath = ${JSON.stringify(brokenPath)};
+        if (!(await openNodeModalFromBox(box))) return false;
+        if (!document.getElementById('node-modal-content').inert) return false;
+        await runPisiCommand('pisi.save');
+        return (await closeNodeModalAndSave()) && !activeModalNode;
+    })()`);
+    if (!modalClosed) throw new Error('Recovery modal could not close safely.');
+    if ((await fs.readFile(brokenPath, 'utf8')) !== original) throw new Error('Recovery UI overwrote the damaged document.');
+    await app.cdp.evaluate('window.electronWindow.close(); true');
+    const deadline = Date.now() + 10000;
+    while (app.child.exitCode === null && Date.now() < deadline) await sleep(100);
+    if (app.child.exitCode === null || app.child.exitCode !== 0) throw new Error('Normal application close failed with an unchanged recovery note.');
+    if ((await fs.readFile(brokenPath, 'utf8')) !== original) throw new Error('Application close overwrote the damaged document.');
+}
+
 function assertNoFatalRendererLog(app) {
     const fatalPatterns = [/Uncaught Error:/i, /ReferenceError:/i, /TypeError:/i, /SyntaxError:/i, /ERR_MODULE_NOT_FOUND/i, /Renderer process crashed/i];
     const fatal = fatalPatterns.find((pattern) => pattern.test(app.logs));
@@ -595,9 +640,10 @@ try {
         );
     });
 
+    await testRecoveryDepartureAndClose(secondApp);
     assertNoFatalRendererLog(secondApp);
     console.log(
-        '[E2E] Critical regressions passed: history/backup restore refresh, task projection write-through, Sheet/Canvas delete-to-tree-delete race, and full restart persistence.'
+        '[E2E] Critical regressions passed: recovery navigation and normal close, history/backup restore refresh, task projection write-through, Sheet/Canvas delete-to-tree-delete race, and full restart persistence.'
     );
 } finally {
     await stopElectron(firstApp);

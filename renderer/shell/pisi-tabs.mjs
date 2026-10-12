@@ -139,7 +139,7 @@ async function activatePisiOpenTab(path) {
         activeCenterNode &&
         (!activeCenterNode.path || !pisiSameTabPath(activeCenterNode.path, tab.path))
     ) {
-        const saved = await saveCurrentCenterNodeEditor();
+        const saved = await saveCurrentCenterNodeEditor({ allowDiscardRecovery: true });
         if (!isPisiWorkspaceNavigationCurrent(request)) return false;
         if (!saved) {
             state.activeTabPath = previousActiveTabPath;
@@ -193,7 +193,7 @@ async function closePisiOpenTab(path, event) {
     if (isActive) beginPisiWorkspaceNavigation();
 
     if (isActive && typeof saveCurrentCenterNodeEditor === 'function' && activeCenterNode) {
-        const saved = await saveCurrentCenterNodeEditor();
+        const saved = await saveCurrentCenterNodeEditor({ allowDiscardRecovery: true });
         if (!saved) return false;
     }
 

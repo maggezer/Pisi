@@ -1,4 +1,10 @@
 import {
+    getPisiNodeRecoveryWarning,
+    applyPisiEditorRecoveryState,
+    protectPisiEditorRecovery,
+    allowPisiRecoveryDeparture
+} from './pisi-editor-recovery-policy.mjs';
+import {
     beginPisiWorkspaceNavigation,
     isPisiWorkspaceNavigationCurrent,
     beginPisiModalNavigation,
@@ -371,6 +377,7 @@ async function openNodeModalFromBox(box) {
     }
 
     if (contentInput) {
+        applyPisiEditorRecoveryState(null, contentInput, titleInput);
         ensurePisiEditorWritable(contentInput);
 
         if (contentInput.dataset.modalDirtyBound !== '1') {
@@ -383,8 +390,7 @@ async function openNodeModalFromBox(box) {
         }
 
         setPisiEditorContent(contentInput, result.data.content || '');
-        const recoveryWarning = getPisiEditorAssetRecoveryWarning(result.data?.content || '');
-        if (recoveryWarning) alert(recoveryWarning);
+        applyPisiEditorRecoveryState(activeModalNode, contentInput, titleInput);
         clearPisiEditorCaret(contentInput);
         refreshPisiTagsPanelSoon();
     }
@@ -399,6 +405,14 @@ async function openNodeModalFromBox(box) {
 function closeNodeModalAndSave() {
     beginPisiModalNavigation();
     const node = activeModalNode;
+    if (isPisiEditorRestorePending()) return false;
+    if (getPisiNodeRecoveryWarning(node)) {
+        return allowPisiRecoveryDeparture(node, true).then((allowed) => {
+            if (!allowed || activeModalNode !== node) return false;
+            closeNodeModalWithoutSaving();
+            return true;
+        });
+    }
     return runPisiEditorWrite(() => performNodeModalCloseAndSave(node));
 }
 
@@ -420,10 +434,12 @@ async function performNodeModalCloseAndSave(node) {
         const oldTitle = node.metadata?.title || '';
         const title = titleInput?.value?.trim() || oldTitle;
         const content = getPisiEditorContent(contentInput);
-        const recoveryWarning = node.assetRecoveryWarning || getPisiEditorAssetRecoveryWarning(content);
+        const recoveryWarning = protectPisiEditorRecovery(node, contentInput, titleInput, content);
         if (recoveryWarning) {
-            alert(recoveryWarning);
-            return false;
+            const allowed = await allowPisiRecoveryDeparture(node, true);
+            if (!allowed || activeModalNode !== node) return false;
+            closeNodeModalWithoutSaving();
+            return true;
         }
 
         if (title && title !== oldTitle) {
@@ -497,6 +513,7 @@ function closeNodeModalWithoutSaving() {
     const contentInput = document.getElementById('node-modal-content');
     const titleInput = document.getElementById('node-modal-title');
 
+    applyPisiEditorRecoveryState(null, contentInput, titleInput);
     const returnFocus = activeModalNode?.returnFocus;
     overlay?.classList.remove('visible');
     if (contentInput) contentInput.innerHTML = '';
@@ -596,7 +613,7 @@ async function openCenterNodeEditor(nodeItem, request = beginPisiWorkspaceNaviga
     bindCenterNodeEditorControls();
 
     if (activeCenterNode?.path && !samePisiWorkspacePath(activeCenterNode.path, nodeItem.fullPath)) {
-        const saved = await saveCurrentCenterNodeEditor();
+        const saved = await saveCurrentCenterNodeEditor({ allowDiscardRecovery: true });
         if (!isPisiWorkspaceNavigationCurrent(request) || !saved) return false;
     }
 
@@ -651,10 +668,10 @@ async function openCenterNodeEditor(nodeItem, request = beginPisiWorkspaceNaviga
     }
 
     if (contentEditor) {
+        applyPisiEditorRecoveryState(null, contentEditor, titleInput);
         ensurePisiEditorWritable(contentEditor);
         setPisiEditorContent(contentEditor, result.data?.content || '');
-        const recoveryWarning = getPisiEditorAssetRecoveryWarning(result.data?.content || '');
-        if (recoveryWarning) alert(recoveryWarning);
+        applyPisiEditorRecoveryState(activeCenterNode, contentEditor, titleInput);
         clearPisiEditorCaret(contentEditor);
     }
 
@@ -674,19 +691,21 @@ async function openCenterNodeEditor(nodeItem, request = beginPisiWorkspaceNaviga
 
 let pisiCenterSaveTail = Promise.resolve(true);
 
-function saveCurrentCenterNodeEditor() {
+function saveCurrentCenterNodeEditor(options = {}) {
+    if (isPisiEditorRestorePending()) return false;
+    if (getPisiNodeRecoveryWarning(activeCenterNode)) return allowPisiRecoveryDeparture(activeCenterNode, options.allowDiscardRecovery === true);
     if (isPisiEditorWriteBlocked()) return false;
     if (!activeCenterNode?.path) return true;
 
     const node = activeCenterNode;
     const previousSave = pisiCenterSaveTail;
-    const saveTask = runPisiEditorWrite(() => previousSave.catch(() => false).then(() => performCurrentCenterNodeEditorSave(node)));
+    const saveTask = runPisiEditorWrite(() => previousSave.catch(() => false).then(() => performCurrentCenterNodeEditorSave(node, options)));
 
     pisiCenterSaveTail = saveTask;
     return saveTask;
 }
 
-async function performCurrentCenterNodeEditorSave(node) {
+async function performCurrentCenterNodeEditorSave(node, options = {}) {
     if (activeCenterNode !== node) return false;
     if (isPisiEditorWriteBlocked()) return false;
     if (!activeCenterNode?.path) return true;
@@ -704,11 +723,8 @@ async function performCurrentCenterNodeEditorSave(node) {
         const oldTitle = node.metadata?.title || '';
         const title = titleInput?.value?.trim() || oldTitle;
         const content = getPisiEditorContent(contentEditor);
-        const recoveryWarning = node.assetRecoveryWarning || getPisiEditorAssetRecoveryWarning(content);
-        if (recoveryWarning) {
-            alert(recoveryWarning);
-            return false;
-        }
+        const recoveryWarning = protectPisiEditorRecovery(node, contentEditor, titleInput, content);
+        if (recoveryWarning) return allowPisiRecoveryDeparture(node, options.allowDiscardRecovery === true);
 
         if (title && title !== oldTitle) {
             suppressNextFileSystemRefresh(3000);
@@ -780,6 +796,7 @@ function clearCenterNodeEditor(preserveNavigation = false) {
     centerNodeSaveTimer = null;
 
     const { wrapper, titleInput, contentEditor } = getCenterNodeEditorElements();
+    applyPisiEditorRecoveryState(null, contentEditor, titleInput);
 
     if (titleInput) {
         titleInput.value = '';
@@ -799,7 +816,7 @@ function clearCenterNodeEditor(preserveNavigation = false) {
 }
 
 async function flushPisiPendingSaves() {
-    if (isPisiEditorWriteBlocked()) return false;
+    if (isPisiEditorRestorePending()) return false;
     clearTimeout(centerNodeSaveTimer);
     clearTimeout(mapSaveTimer);
     clearTimeout(mapCameraSaveTimer);
@@ -813,7 +830,7 @@ async function flushPisiPendingSaves() {
     }
 
     if (activeCenterNode) {
-        const centerSaved = await saveCurrentCenterNodeEditor();
+        const centerSaved = await saveCurrentCenterNodeEditor({ allowDiscardRecovery: true });
         if (!centerSaved) return false;
     }
 

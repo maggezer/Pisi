@@ -65,6 +65,8 @@ function setup() {
         },
         getPisiEditorAssetRecoveryWarning: () => null,
         ensurePisiEditorWritable() {},
+        applyPisiEditorRecoveryState() {},
+        protectPisiEditorRecovery: () => null,
         setPisiEditorContent: (editor, content) => {
             editor.textContent = content;
         },
