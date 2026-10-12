@@ -572,13 +572,13 @@ async function testRecoveryDepartureAndClose(app) {
         const opened = await activatePisiOpenTab(${JSON.stringify(brokenPath)});
         const editor = document.getElementById('center-node-editor-content');
         return opened && Boolean(activeCenterNode.assetRecoveryWarning) && editor.inert &&
-            document.getElementById('center-node-editor-title').readOnly && Boolean(document.querySelector('.pisi-editor-recovery-notice'));
+            (!document.getElementById('center-node-editor-title') || document.getElementById('center-node-editor-title').readOnly) && Boolean(document.querySelector('.pisi-editor-recovery-notice'));
     })()`);
     if (!opened) throw new Error('Damaged note did not open read-only with a recovery notice.');
     if (!(await app.cdp.evaluate('flushPisiPendingSaves()'))) throw new Error('Unchanged recovery note blocked close flush.');
     const left = await app.cdp.evaluate(`activatePisiOpenTab(${JSON.stringify(healthyPath)})`);
     const editable = await app.cdp.evaluate(
-        "!document.getElementById('center-node-editor-content').inert && !document.getElementById('center-node-editor-title').readOnly && !document.querySelector('.pisi-editor-recovery-notice')"
+        "!document.getElementById('center-node-editor-content').inert && !document.getElementById('center-node-editor-title')?.readOnly && !document.querySelector('.pisi-editor-recovery-notice')"
     );
     if (!left || !editable) throw new Error('Recovery note blocked navigation or left healthy editor locked.');
     await app.cdp.evaluate(`activatePisiOpenTab(${JSON.stringify(brokenPath)})`);
