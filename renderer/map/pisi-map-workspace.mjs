@@ -1,3 +1,4 @@
+import { beginPisiWorkspaceNavigation, isPisiWorkspaceNavigationCurrent } from '../editor/pisi-editor-navigation.mjs';
 import { getPisiEditorRestoreGeneration, isPisiEditorRestorePending } from '../editor/pisi-editor-restore.mjs';
 import { registerModule } from '../core/module-registry.mjs';
 
@@ -32,7 +33,8 @@ function samePisiWorkspacePath(a, b) {
     return window.pisiEnvironment?.platform === 'win32' ? normalizedA.toLowerCase() === normalizedB.toLowerCase() : normalizedA === normalizedB;
 }
 
-async function openMapInWorkspace(mapItem) {
+async function openMapInWorkspace(mapItem, request = beginPisiWorkspaceNavigation()) {
+    if (!isPisiWorkspaceNavigationCurrent(request)) return false;
     if (isPisiEditorRestorePending()) return false;
     const restoreGeneration = getPisiEditorRestoreGeneration();
     if (!mapItem || !isMapFileName(mapItem.name || mapItem.fileName)) {
@@ -41,16 +43,19 @@ async function openMapInWorkspace(mapItem) {
 
     if (typeof saveCurrentCenterNodeEditor === 'function' && activeCenterNode) {
         const saved = await saveCurrentCenterNodeEditor();
-        if (!saved) return false;
+        if (!isPisiWorkspaceNavigationCurrent(request) || !saved) return false;
     }
 
     if (activeMapPath && !samePisiWorkspacePath(activeMapPath, mapItem.fullPath) && typeof saveCurrentMapLayout === 'function') {
         const layoutSaved = await saveCurrentMapLayout();
-        if (!layoutSaved) return false;
+        if (!isPisiWorkspaceNavigationCurrent(request) || !layoutSaved) return false;
     }
 
+    const outgoingNode = activeCenterNode;
+    const outgoingRevision = Number(outgoingNode?.revision || 0);
     const result = await window.pisiProject?.listMapNodes?.(mapItem.fullPath);
-    if (isPisiEditorRestorePending() || restoreGeneration !== getPisiEditorRestoreGeneration()) return false;
+    if (activeCenterNode !== outgoingNode || Number(outgoingNode?.revision || 0) !== outgoingRevision) return false;
+    if (!isPisiWorkspaceNavigationCurrent(request) || isPisiEditorRestorePending() || restoreGeneration !== getPisiEditorRestoreGeneration()) return false;
 
     if (!result || !result.ok) {
         alert(result?.error || 'Map yüklenemedi.');
@@ -67,7 +72,7 @@ async function openMapInWorkspace(mapItem) {
     }
 
     if (typeof clearCenterNodeEditor === 'function') {
-        clearCenterNodeEditor();
+        clearCenterNodeEditor(true);
     }
 
     if (typeof ensurePisiOpenTab === 'function') {
@@ -118,7 +123,8 @@ async function openMapInWorkspace(mapItem) {
     return true;
 }
 
-function clearMapWorkspace() {
+function clearMapWorkspace(preserveNavigation = false) {
+    if (!preserveNavigation) beginPisiWorkspaceNavigation();
     const placeholder = document.getElementById('workspace-placeholder');
     const canvas = document.getElementById('map-canvas');
     const board = document.getElementById('map-board');

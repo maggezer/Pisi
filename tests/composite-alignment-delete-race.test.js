@@ -75,5 +75,8 @@ test('tree delete flushes pending editor saves before moving a file and re-resol
     assert.match(deletion, /findTreeNodeByPath\(deletePath\)/);
 
     const nodeEditor = read('renderer/editor/pisi-node-editor.mjs');
-    assert.match(nodeEditor, /function clearCenterNodeEditor\(\)\s*\{\s*clearTimeout\(centerNodeSaveTimer\);\s*centerNodeSaveTimer = null;/);
+    assert.match(
+        nodeEditor,
+        /function clearCenterNodeEditor\(preserveNavigation = false\)\s*\{\s*if \(!preserveNavigation\) beginPisiWorkspaceNavigation\(\);\s*clearTimeout\(centerNodeSaveTimer\);\s*centerNodeSaveTimer = null;/
+    );
 });

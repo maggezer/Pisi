@@ -437,6 +437,30 @@ async function testCompositeDeleteThenTreeDelete(app, kind) {
     }
 }
 
+async function testRapidNodeNavigation(app) {
+    const firstPath = await createNode(app);
+    await typeAndSaveNode(app, firstPath, 'NAVIGATION_FIRST');
+    const lastPath = await createNode(app);
+    await typeAndSaveNode(app, lastPath, 'NAVIGATION_LAST');
+    await app.cdp.evaluate('saveCurrentCenterNodeEditor()');
+    const result = await app.cdp.evaluate(`(async () => {
+        await Promise.all([activatePisiOpenTab(${JSON.stringify(firstPath)}), activatePisiOpenTab(${JSON.stringify(lastPath)})]);
+        return { path: activeCenterNode?.path, tab: window.Pisi.state.activeTabPath, content: document.getElementById('center-node-editor-content')?.textContent };
+    })()`);
+    if (
+        result?.path !== lastPath ||
+        result?.tab !== lastPath ||
+        !result?.content?.includes('NAVIGATION_LAST') ||
+        result?.content?.includes('NAVIGATION_FIRST')
+    ) {
+        throw new Error('Rapid navigation replaced the latest document: ' + JSON.stringify(result));
+    }
+    await app.cdp.evaluate('saveCurrentCenterNodeEditor()');
+    if (!(await readNodeContent(firstPath)).includes('NAVIGATION_FIRST') || !(await readNodeContent(lastPath)).includes('NAVIGATION_LAST')) {
+        throw new Error('Rapid navigation changed the wrong document on disk.');
+    }
+}
+
 async function testHistoryRestoreRefresh(app, kind) {
     const nodePath = await createNode(app);
     const original = 'RESTORE_ORIGINAL_' + kind;
@@ -492,6 +516,7 @@ try {
     firstApp = await launchElectron(9225);
 
     await testTaskProjectionWriteThrough(firstApp);
+    await testRapidNodeNavigation(firstApp);
     await testHistoryRestoreRefresh(firstApp, 'history');
     await testHistoryRestoreRefresh(firstApp, 'backup');
     await testCompositeDeleteThenTreeDelete(firstApp, 'sheet');

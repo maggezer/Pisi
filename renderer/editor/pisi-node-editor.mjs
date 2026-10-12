@@ -1,3 +1,9 @@
+import {
+    beginPisiWorkspaceNavigation,
+    isPisiWorkspaceNavigationCurrent,
+    beginPisiModalNavigation,
+    isPisiModalNavigationCurrent
+} from './pisi-editor-navigation.mjs';
 import { registerModule } from '../core/module-registry.mjs';
 import { getPisiEditorRestoreGeneration, isPisiEditorRestorePending, isPisiEditorWriteBlocked, runPisiEditorWrite } from './pisi-editor-restore.mjs';
 import { getPisiEditorAssetRecoveryWarning } from './pisi-editor-asset-recovery.mjs';
@@ -318,11 +324,18 @@ function ensurePisiEditorWritable(editor) {
 async function openNodeModalFromBox(box) {
     if (isPisiEditorRestorePending()) return false;
     const restoreGeneration = getPisiEditorRestoreGeneration();
+    const request = beginPisiModalNavigation();
     const nodePath = box.dataset.nodePath;
     const propertyMapPath = activeMapPath || null;
 
     const result = await window.pisiProject?.getPisiDocument?.(nodePath);
-    if (isPisiEditorRestorePending() || restoreGeneration !== getPisiEditorRestoreGeneration()) return false;
+    if (
+        !isPisiModalNavigationCurrent(request) ||
+        activeMapPath !== propertyMapPath ||
+        isPisiEditorRestorePending() ||
+        restoreGeneration !== getPisiEditorRestoreGeneration()
+    )
+        return false;
 
     if (!result || !result.ok) {
         alert(result?.error || 'Node açılamadı.');
@@ -384,10 +397,13 @@ async function openNodeModalFromBox(box) {
 }
 
 function closeNodeModalAndSave() {
-    return runPisiEditorWrite(() => performNodeModalCloseAndSave());
+    beginPisiModalNavigation();
+    const node = activeModalNode;
+    return runPisiEditorWrite(() => performNodeModalCloseAndSave(node));
 }
 
-async function performNodeModalCloseAndSave() {
+async function performNodeModalCloseAndSave(node) {
+    if (activeModalNode !== node) return false;
     const overlay = document.getElementById('node-modal-overlay');
     const titleInput = document.getElementById('node-modal-title');
     const contentInput = document.getElementById('node-modal-content');
@@ -398,12 +414,13 @@ async function performNodeModalCloseAndSave() {
     }
 
     try {
-        let nodePath = activeModalNode.path;
+        let nodePath = node.path;
         const oldPath = nodePath;
-        const oldTitle = activeModalNode.metadata?.title || '';
+        const saveRevision = Number(node.revision || 0);
+        const oldTitle = node.metadata?.title || '';
         const title = titleInput?.value?.trim() || oldTitle;
         const content = getPisiEditorContent(contentInput);
-        const recoveryWarning = activeModalNode.assetRecoveryWarning || getPisiEditorAssetRecoveryWarning(content);
+        const recoveryWarning = node.assetRecoveryWarning || getPisiEditorAssetRecoveryWarning(content);
         if (recoveryWarning) {
             alert(recoveryWarning);
             return false;
@@ -416,9 +433,9 @@ async function performNodeModalCloseAndSave() {
 
             if (renameResult && renameResult.ok) {
                 nodePath = renameResult.fullPath;
-                activeModalNode.path = nodePath;
-                activeModalNode.box.dataset.nodePath = nodePath;
-                activeModalNode.metadata = renameResult.metadata;
+                node.path = nodePath;
+                node.box.dataset.nodePath = nodePath;
+                node.metadata = renameResult.metadata;
 
                 updateTreeItemAfterRename(oldPath, renameResult);
                 updateOpenMapNodeAfterRename(oldPath, renameResult);
@@ -443,8 +460,8 @@ async function performNodeModalCloseAndSave() {
             return false;
         }
 
-        const titleEl = activeModalNode.box.querySelector('.map-node-title');
-        const previewEl = activeModalNode.box.querySelector('.map-node-preview');
+        const titleEl = node.box.querySelector('.map-node-title');
+        const previewEl = node.box.querySelector('.map-node-preview');
 
         if (titleEl) {
             titleEl.textContent = saveResult.metadata.title;
@@ -455,12 +472,13 @@ async function performNodeModalCloseAndSave() {
             previewEl.textContent = saveResult.preview || '';
         }
 
-        animateMapBox(activeModalNode.box);
+        animateMapBox(node.box);
 
         closePisiTagMenu();
         refreshPisiTagsPanelSoon();
 
-        const returnFocus = activeModalNode.returnFocus;
+        if (activeModalNode !== node || Number(node.revision || 0) !== saveRevision) return false;
+        const returnFocus = node.returnFocus;
         overlay?.classList.remove('visible');
         activeModalNode = null;
         dispatchPisiActiveNodeChanged('modal-close');
@@ -474,6 +492,7 @@ async function performNodeModalCloseAndSave() {
 }
 
 function closeNodeModalWithoutSaving() {
+    beginPisiModalNavigation();
     const overlay = document.getElementById('node-modal-overlay');
     const contentInput = document.getElementById('node-modal-content');
     const titleInput = document.getElementById('node-modal-title');
@@ -566,7 +585,8 @@ function scheduleCenterNodeEditorSave() {
     }, 800);
 }
 
-async function openCenterNodeEditor(nodeItem) {
+async function openCenterNodeEditor(nodeItem, request = beginPisiWorkspaceNavigation()) {
+    if (!isPisiWorkspaceNavigationCurrent(request)) return false;
     if (isPisiEditorRestorePending()) return false;
     const restoreGeneration = getPisiEditorRestoreGeneration();
     if (!nodeItem?.fullPath) return;
@@ -577,23 +597,26 @@ async function openCenterNodeEditor(nodeItem) {
 
     if (activeCenterNode?.path && !samePisiWorkspacePath(activeCenterNode.path, nodeItem.fullPath)) {
         const saved = await saveCurrentCenterNodeEditor();
-        if (!saved) return false;
+        if (!isPisiWorkspaceNavigationCurrent(request) || !saved) return false;
     }
 
     if (activeMapPath) {
         const layoutSaved = await saveCurrentMapLayout();
-        if (!layoutSaved) return false;
+        if (!isPisiWorkspaceNavigationCurrent(request) || !layoutSaved) return false;
     }
 
+    const outgoingNode = activeCenterNode;
+    const outgoingRevision = Number(outgoingNode?.revision || 0);
     const result = await window.pisiProject?.getPisiDocument?.(nodeItem.fullPath);
-    if (isPisiEditorRestorePending() || restoreGeneration !== getPisiEditorRestoreGeneration()) return false;
+    if (activeCenterNode !== outgoingNode || Number(outgoingNode?.revision || 0) !== outgoingRevision) return false;
+    if (!isPisiWorkspaceNavigationCurrent(request) || isPisiEditorRestorePending() || restoreGeneration !== getPisiEditorRestoreGeneration()) return false;
 
     if (!result || !result.ok) {
         alert(result?.error || 'Node açılamadı.');
         return false;
     }
 
-    clearMapWorkspace();
+    clearMapWorkspace(true);
 
     const { wrapper, titleInput, contentEditor, placeholder, mapCanvas } = getCenterNodeEditorElements();
 
@@ -655,31 +678,33 @@ function saveCurrentCenterNodeEditor() {
     if (isPisiEditorWriteBlocked()) return false;
     if (!activeCenterNode?.path) return true;
 
+    const node = activeCenterNode;
     const previousSave = pisiCenterSaveTail;
-    const saveTask = runPisiEditorWrite(() => previousSave.catch(() => false).then(() => performCurrentCenterNodeEditorSave()));
+    const saveTask = runPisiEditorWrite(() => previousSave.catch(() => false).then(() => performCurrentCenterNodeEditorSave(node)));
 
     pisiCenterSaveTail = saveTask;
     return saveTask;
 }
 
-async function performCurrentCenterNodeEditorSave() {
+async function performCurrentCenterNodeEditorSave(node) {
+    if (activeCenterNode !== node) return false;
     if (isPisiEditorWriteBlocked()) return false;
     if (!activeCenterNode?.path) return true;
 
     const { titleInput, contentEditor, saveBtn } = getCenterNodeEditorElements();
-    const saveRevision = Number(activeCenterNode.revision || 0);
+    const saveRevision = Number(node.revision || 0);
 
     try {
         clearTimeout(centerNodeSaveTimer);
         centerNodeSaveTimer = null;
         saveBtn?.classList.add('saving');
 
-        let nodePath = activeCenterNode.path;
+        let nodePath = node.path;
         const oldPath = nodePath;
-        const oldTitle = activeCenterNode.metadata?.title || '';
+        const oldTitle = node.metadata?.title || '';
         const title = titleInput?.value?.trim() || oldTitle;
         const content = getPisiEditorContent(contentEditor);
-        const recoveryWarning = activeCenterNode.assetRecoveryWarning || getPisiEditorAssetRecoveryWarning(content);
+        const recoveryWarning = node.assetRecoveryWarning || getPisiEditorAssetRecoveryWarning(content);
         if (recoveryWarning) {
             alert(recoveryWarning);
             return false;
@@ -698,10 +723,10 @@ async function performCurrentCenterNodeEditorSave() {
 
             nodePath = renameResult.fullPath;
 
-            activeCenterNode.path = nodePath;
-            activeCenterNode.metadata = renameResult.metadata || {};
-            activeCenterNode.item = {
-                ...activeCenterNode.item,
+            node.path = nodePath;
+            node.metadata = renameResult.metadata || {};
+            node.item = {
+                ...node.item,
                 name: renameResult.fileName,
                 fileName: renameResult.fileName,
                 fullPath: renameResult.fullPath,
@@ -709,7 +734,7 @@ async function performCurrentCenterNodeEditorSave() {
                 metadata: {
                     ...(renameResult.metadata || {})
                 },
-                sidecarPath: renameResult.sidecarPath || activeCenterNode.item?.sidecarPath
+                sidecarPath: renameResult.sidecarPath || node.item?.sidecarPath
             };
 
             updateTreeItemAfterRename(oldPath, renameResult);
@@ -728,11 +753,11 @@ async function performCurrentCenterNodeEditorSave() {
             return false;
         }
 
-        activeCenterNode.metadata = saveResult.metadata || activeCenterNode.metadata;
-        if (Number(activeCenterNode.revision || 0) === saveRevision) {
-            activeCenterNode.dirty = false;
+        node.metadata = saveResult.metadata || node.metadata;
+        if (Number(node.revision || 0) === saveRevision) {
+            node.dirty = false;
         }
-        dispatchPisiActiveNodeChanged('center-save');
+        if (activeCenterNode === node) dispatchPisiActiveNodeChanged('center-save');
 
         if (typeof refreshActiveMapTreeBranch === 'function') {
             await refreshActiveMapTreeBranch();
@@ -749,7 +774,8 @@ async function performCurrentCenterNodeEditorSave() {
     }
 }
 
-function clearCenterNodeEditor() {
+function clearCenterNodeEditor(preserveNavigation = false) {
+    if (!preserveNavigation) beginPisiWorkspaceNavigation();
     clearTimeout(centerNodeSaveTimer);
     centerNodeSaveTimer = null;
 
