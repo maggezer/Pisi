@@ -439,8 +439,8 @@ async function testCompositeDeleteThenTreeDelete(app, kind) {
 
 async function testHistoryRestoreRefresh(app, kind) {
     const nodePath = await createNode(app);
-    const original = 'PISI_RESTORE_ORIGINAL_' + kind;
-    const newer = 'PISI_RESTORE_NEWER_' + kind;
+    const original = 'RESTORE_ORIGINAL_' + kind;
+    const newer = 'RESTORE_NEWER_' + kind;
     await typeAndSaveNode(app, nodePath, original);
     await typeAndSaveNode(app, nodePath, newer);
     // Drain the Ctrl+S completion before opening the real History dialog.
