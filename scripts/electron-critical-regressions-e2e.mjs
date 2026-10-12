@@ -278,7 +278,7 @@ async function typeAndSaveNode(app, nodePath, marker) {
 async function testTaskProjectionWriteThrough(app) {
     const taskId = 'task_e2e_projection_critical';
 
-    const seeded = await app.cdp.evaluate(`(async () => {
+    const created = await app.cdp.evaluate(`(async () => {
         const project = window.currentProjectFolder;
         const taskId = ${JSON.stringify(taskId)};
         const upsert = await window.pisiProject?.quickAddTask?.(project, {
@@ -292,12 +292,17 @@ async function testTaskProjectionWriteThrough(app) {
                 manualOrder: 1
             }
         });
-        if (!upsert?.ok) return { ok: false, stage: 'upsert', result: upsert };
+        return upsert;
+    })()`);
+    if (!created?.ok) throw new Error('Task projection E2E could not create task: ' + JSON.stringify(created));
+    const seeded = await waitUntil(app, 'task projection ready for status update', () =>
+        app.cdp.evaluate(`(async () => {
+        const taskId = ${JSON.stringify(taskId)};
         const refreshed = await window.refreshPisiFirstClassTaskStore?.();
         const block = window.pisiTagsPanelState?.missionIndex?.find((item) => item?.taskId === taskId);
         const tag = block?.todoTag || Object.keys(block?.todoStates || {})[0] || '';
         if (!refreshed?.ok || !block || !tag) {
-            return { ok: false, stage: 'projection-seed', refreshed, block: Boolean(block), tag };
+            return null;
         }
         block.todoStates[tag] = 'doing';
         block.doneFor = [];
@@ -305,7 +310,8 @@ async function testTaskProjectionWriteThrough(app) {
             detail: { complete: true, reason: 'status-change' }
         }));
         return { ok: true, tag };
-    })()`);
+    })()`)
+    );
 
     if (!seeded?.ok) {
         throw new Error('Task projection E2E could not seed status update: ' + JSON.stringify(seeded));
