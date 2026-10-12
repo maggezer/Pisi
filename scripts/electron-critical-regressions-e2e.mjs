@@ -455,7 +455,12 @@ async function testHistoryRestoreRefresh(app, kind) {
         document.getElementById('pisi-confirm-ok')?.click();
         return true;
     })()`);
-    if (!clicked) throw new Error(kind + ' restore button not found.');
+    if (!clicked) {
+        const state = await app.cdp.evaluate(
+            `(async () => ({ body: document.querySelector('.pisi-portability-dialog-body')?.textContent, activePath: activeCenterNode?.path, history: await window.pisiProject.listNodeHistory(${JSON.stringify(nodePath)}) }))()`
+        );
+        throw new Error(kind + ' restore button not found: ' + JSON.stringify(state));
+    }
     await waitUntil(app, kind + ' restore replaces the live editor', async () => {
         return app.cdp.evaluate(`(() => {
             const text = document.getElementById('center-node-editor-content')?.textContent || '';
