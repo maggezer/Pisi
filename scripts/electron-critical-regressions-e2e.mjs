@@ -54,15 +54,21 @@ class CdpClient {
     }
 
     async evaluate(expression) {
-        const response = await this.request('Runtime.evaluate', {
-            expression,
-            awaitPromise: true,
-            returnByValue: true
-        });
-        if (response.exceptionDetails) {
-            throw new Error(response.exceptionDetails.exception?.description || response.exceptionDetails.text || 'Renderer evaluation failed');
+        let timer;
+        try {
+            const response = await Promise.race([
+                this.request('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true }),
+                new Promise((_, reject) => {
+                    timer = setTimeout(() => reject(new Error('Renderer evaluation timed out: ' + expression.slice(0, 120))), 30000);
+                })
+            ]);
+            if (response.exceptionDetails) {
+                throw new Error(response.exceptionDetails.exception?.description || response.exceptionDetails.text || 'Renderer evaluation failed');
+            }
+            return response.result?.value;
+        } finally {
+            clearTimeout(timer);
         }
-        return response.result?.value;
     }
 
     close() {
@@ -438,23 +444,30 @@ async function testCompositeDeleteThenTreeDelete(app, kind) {
 }
 
 async function testSortedSheetSelection(app) {
+    console.log('[E2E] Sorted Sheet: create node');
     await createNode(app);
+    console.log('[E2E] Sorted Sheet: selection and mutations');
     const result = await app.cdp.evaluate(`(() => {
         const editor = document.getElementById('center-node-editor-content');
         editor.focus();
+        console.log('[E2E] Sorted Sheet: insert');
         insertPisiSheet(editor, 5, 2);
+        console.log('[E2E] Sorted Sheet: seed');
         const table = Array.from(editor.querySelectorAll('table[data-pisi-sheet]')).at(-1);
         if (!table) return { ok: false, reason: 'sheet missing' };
         [40,20,50,10,30].forEach((value,row) => setPisiSheetCellSource(table,row,0,{value:String(value)}));
         const database = getPisiSheetDatabase(table);
         setPisiSheetViewSorts(table,[{fieldId:database.fields[0].id,direction:'asc'}]);
+        console.log('[E2E] Sorted Sheet: select');
         selectPisiSheetCell(getPisiSheetCell(table,3,0));
         selectPisiSheetCell(getPisiSheetCell(table,4,0),{extend:true});
         const rows = getPisiSelectedSheetPoints(table).map((point)=>point.row);
         if (JSON.stringify(rows)!==JSON.stringify([3,1,4])) return {ok:false,reason:'wrong rows',rows};
+        console.log('[E2E] Sorted Sheet: format');
         applyPisiSheetCellFormat(table,'toggleBold');
         const bold = [0,1,2,3,4].filter((row)=>getPisiSheetCellSource(table,row,0).format.fontWeight==='700');
         if (JSON.stringify(bold)!==JSON.stringify([1,3,4])) return {ok:false,reason:'wrong format targets',bold};
+        console.log('[E2E] Sorted Sheet: delete');
         deletePisiSheetRows(table);
         const remaining = getPisiSheetDatabase(table).items.map((item)=>item.values[database.fields[0].id]?.value);
         return {ok:JSON.stringify(remaining)===JSON.stringify(['40','50']),remaining};
