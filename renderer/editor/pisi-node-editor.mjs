@@ -1,4 +1,5 @@
 import { registerModule } from '../core/module-registry.mjs';
+import { getPisiEditorRestoreGeneration, isPisiEditorRestorePending, isPisiEditorWriteBlocked, runPisiEditorWrite } from './pisi-editor-restore.mjs';
 import { getPisiEditorAssetRecoveryWarning } from './pisi-editor-asset-recovery.mjs';
 
 function dispatchPisiActiveNodeChanged(reason = 'update') {
@@ -315,10 +316,13 @@ function ensurePisiEditorWritable(editor) {
 }
 
 async function openNodeModalFromBox(box) {
+    if (isPisiEditorRestorePending()) return false;
+    const restoreGeneration = getPisiEditorRestoreGeneration();
     const nodePath = box.dataset.nodePath;
     const propertyMapPath = activeMapPath || null;
 
     const result = await window.pisiProject?.getPisiDocument?.(nodePath);
+    if (isPisiEditorRestorePending() || restoreGeneration !== getPisiEditorRestoreGeneration()) return false;
 
     if (!result || !result.ok) {
         alert(result?.error || 'Node açılamadı.');
@@ -379,7 +383,11 @@ async function openNodeModalFromBox(box) {
     return true;
 }
 
-async function closeNodeModalAndSave() {
+function closeNodeModalAndSave() {
+    return runPisiEditorWrite(() => performNodeModalCloseAndSave());
+}
+
+async function performNodeModalCloseAndSave() {
     const overlay = document.getElementById('node-modal-overlay');
     const titleInput = document.getElementById('node-modal-title');
     const contentInput = document.getElementById('node-modal-content');
@@ -550,6 +558,7 @@ function bindCenterNodeEditorControls() {
 }
 
 function scheduleCenterNodeEditorSave() {
+    if (isPisiEditorWriteBlocked()) return;
     clearTimeout(centerNodeSaveTimer);
 
     centerNodeSaveTimer = setTimeout(() => {
@@ -558,6 +567,8 @@ function scheduleCenterNodeEditorSave() {
 }
 
 async function openCenterNodeEditor(nodeItem) {
+    if (isPisiEditorRestorePending()) return false;
+    const restoreGeneration = getPisiEditorRestoreGeneration();
     if (!nodeItem?.fullPath) return;
 
     const propertyMapPath = nodeItem.mapPath || activeMapPath || null;
@@ -575,6 +586,7 @@ async function openCenterNodeEditor(nodeItem) {
     }
 
     const result = await window.pisiProject?.getPisiDocument?.(nodeItem.fullPath);
+    if (isPisiEditorRestorePending() || restoreGeneration !== getPisiEditorRestoreGeneration()) return false;
 
     if (!result || !result.ok) {
         alert(result?.error || 'Node açılamadı.');
@@ -640,15 +652,18 @@ async function openCenterNodeEditor(nodeItem) {
 let pisiCenterSaveTail = Promise.resolve(true);
 
 function saveCurrentCenterNodeEditor() {
+    if (isPisiEditorWriteBlocked()) return false;
     if (!activeCenterNode?.path) return true;
 
-    const saveTask = pisiCenterSaveTail.catch(() => false).then(() => performCurrentCenterNodeEditorSave());
+    const previousSave = pisiCenterSaveTail;
+    const saveTask = runPisiEditorWrite(() => previousSave.catch(() => false).then(() => performCurrentCenterNodeEditorSave()));
 
     pisiCenterSaveTail = saveTask;
     return saveTask;
 }
 
 async function performCurrentCenterNodeEditorSave() {
+    if (isPisiEditorWriteBlocked()) return false;
     if (!activeCenterNode?.path) return true;
 
     const { titleInput, contentEditor, saveBtn } = getCenterNodeEditorElements();
@@ -758,6 +773,7 @@ function clearCenterNodeEditor() {
 }
 
 async function flushPisiPendingSaves() {
+    if (isPisiEditorWriteBlocked()) return false;
     clearTimeout(centerNodeSaveTimer);
     clearTimeout(mapSaveTimer);
     clearTimeout(mapCameraSaveTimer);

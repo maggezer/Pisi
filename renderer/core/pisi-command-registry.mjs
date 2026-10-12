@@ -1,3 +1,4 @@
+import { isPisiEditorWriteBlocked, runPisiEditorWrite } from '../editor/pisi-editor-restore.mjs';
 import { registerModule } from './module-registry.mjs';
 
 const PISI_SHORTCUT_STORAGE_KEY = 'pisi.shortcuts.v1';
@@ -404,14 +405,15 @@ function initializePisiCommandRegistry() {
         allowInInput: true,
         when: () => Boolean(window.activeModalNode || window.activeCenterNode),
         handler: async () => {
+            if (isPisiEditorWriteBlocked()) return false;
             if (window.activeModalNode) {
+                const modal = window.activeModalNode;
                 const editor = document.getElementById('node-modal-content');
-                const result = await window.pisiProject?.saveNodeContent?.(
-                    window.activeModalNode.path,
-                    window.getPisiEditorContent?.(editor) || editor?.innerHTML || ''
+                const result = await runPisiEditorWrite(() =>
+                    window.pisiProject?.saveNodeContent?.(window.activeModalNode.path, window.getPisiEditorContent?.(editor) || editor?.innerHTML || '')
                 );
                 if (!result?.ok) throw new Error(result?.error || 'Node kaydedilemedi.');
-                window.activeModalNode.dirty = false;
+                if (window.activeModalNode === modal) modal.dirty = false;
                 return result;
             }
             return window.saveCurrentCenterNodeEditor?.();

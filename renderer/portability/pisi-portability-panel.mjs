@@ -1,3 +1,4 @@
+import { restorePisiEditorDocument } from '../editor/pisi-editor-restore.mjs';
 import { registerModule } from '../core/module-registry.mjs';
 import { getPisiSearchCurrentNodePath, invalidatePisiSearchIndex } from '../search/pisi-search-index.mjs';
 
@@ -104,10 +105,9 @@ async function renderPisiHistory(section, nodePath) {
                 cancelText: pisiPortableTranslate('Vazgeç')
             });
             if (!confirmed) return;
-            const result = await window.pisiProject?.restoreNodeHistory?.(nodePath, version.historyId);
+            const result = await restorePisiEditorDocument(nodePath, () => window.pisiProject?.restoreNodeHistory?.(nodePath, version.historyId));
             if (!result?.ok) return alert(result?.error || pisiPortableTranslate('Sürüm geri yüklenemedi.'));
             invalidatePisiSearchIndex();
-            await window.reloadPisiWorkspaceAfterExternalChange?.();
             await openPisiHistoryDialog();
         });
         actions.append(preview, restore);
@@ -267,10 +267,10 @@ async function renderPisiBackups(section, nodePath) {
                 cancelText: pisiPortableTranslate('Vazgeç')
             });
             if (!confirmed) return;
-            const restored = await window.pisiProject?.restoreBackup?.(window.currentProjectFolder, backup.backupId);
+            const projectFolder = window.currentProjectFolder;
+            const restored = await restorePisiEditorDocument(backup.targetPath, () => window.pisiProject?.restoreBackup?.(projectFolder, backup.backupId));
             if (!restored?.ok) return alert(restored?.error || pisiPortableTranslate('Yedek geri yüklenemedi.'));
             invalidatePisiSearchIndex();
-            await window.reloadPisiWorkspaceAfterExternalChange?.();
             await openPisiHistoryDialog();
         });
         row.append(info, restore);

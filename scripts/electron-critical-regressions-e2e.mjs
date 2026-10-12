@@ -437,6 +437,41 @@ async function testCompositeDeleteThenTreeDelete(app, kind) {
     }
 }
 
+async function testHistoryRestoreRefresh(app, kind) {
+    const nodePath = await createNode(app);
+    const original = 'PISI_RESTORE_ORIGINAL_' + kind;
+    const newer = 'PISI_RESTORE_NEWER_' + kind;
+    await typeAndSaveNode(app, nodePath, original);
+    await typeAndSaveNode(app, nodePath, newer);
+    // Drain the Ctrl+S completion before opening the real History dialog.
+    await app.cdp.evaluate('saveCurrentCenterNodeEditor()');
+    await app.cdp.evaluate('openPisiHistoryDialog()');
+    const clicked = await app.cdp.evaluate(`(() => {
+        const rows = Array.from(document.querySelectorAll(${JSON.stringify(kind === 'history' ? '.pisi-history-row' : '.pisi-backup-row')}));
+        const row = ${kind === 'history' ? `rows.find((item) => item.textContent.includes(${JSON.stringify(original)}) && !item.textContent.includes(${JSON.stringify(newer)}))` : 'rows[0]'};
+        const restore = row?.querySelector('.pisi-danger-outline-button');
+        if (!restore) return false;
+        restore.click();
+        document.getElementById('pisi-confirm-ok')?.click();
+        return true;
+    })()`);
+    if (!clicked) throw new Error(kind + ' restore button not found.');
+    await waitUntil(app, kind + ' restore replaces the live editor', async () => {
+        return app.cdp.evaluate(`(() => {
+            const text = document.getElementById('center-node-editor-content')?.textContent || '';
+            return text.includes(${JSON.stringify(original)}) && !text.includes(${JSON.stringify(newer)}) && activeCenterNode?.dirty === false;
+        })()`);
+    });
+    await waitUntil(app, kind + ' dialog refresh finished', () =>
+        app.cdp.evaluate("document.querySelector('.pisi-portability-dialog-body')?.hasAttribute('aria-busy') === false")
+    );
+    await app.cdp.evaluate("document.querySelector('.pisi-portability-dialog-close')?.click()");
+    const saved = await app.cdp.evaluate('saveCurrentCenterNodeEditor()');
+    if (!saved) throw new Error(kind + ' restored editor could not be saved.');
+    const content = await readNodeContent(nodePath);
+    if (!content.includes(original) || content.includes(newer)) throw new Error(kind + ' restore was overwritten by stale editor content.');
+}
+
 function assertNoFatalRendererLog(app) {
     const fatalPatterns = [/Uncaught Error:/i, /ReferenceError:/i, /TypeError:/i, /SyntaxError:/i, /ERR_MODULE_NOT_FOUND/i, /Renderer process crashed/i];
     const fatal = fatalPatterns.find((pattern) => pattern.test(app.logs));
@@ -452,6 +487,8 @@ try {
     firstApp = await launchElectron(9225);
 
     await testTaskProjectionWriteThrough(firstApp);
+    await testHistoryRestoreRefresh(firstApp, 'history');
+    await testHistoryRestoreRefresh(firstApp, 'backup');
     await testCompositeDeleteThenTreeDelete(firstApp, 'sheet');
     await testCompositeDeleteThenTreeDelete(firstApp, 'canvas');
 
@@ -479,7 +516,9 @@ try {
     });
 
     assertNoFatalRendererLog(secondApp);
-    console.log('[E2E] Critical regressions passed: task projection write-through, Sheet/Canvas delete-to-tree-delete race, and full restart persistence.');
+    console.log(
+        '[E2E] Critical regressions passed: history/backup restore refresh, task projection write-through, Sheet/Canvas delete-to-tree-delete race, and full restart persistence.'
+    );
 } finally {
     await stopElectron(firstApp);
     await stopElectron(secondApp);

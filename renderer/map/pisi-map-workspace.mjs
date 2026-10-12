@@ -1,3 +1,4 @@
+import { getPisiEditorRestoreGeneration, isPisiEditorRestorePending } from '../editor/pisi-editor-restore.mjs';
 import { registerModule } from '../core/module-registry.mjs';
 
 function isMapFileName(fileName = '') {
@@ -32,6 +33,8 @@ function samePisiWorkspacePath(a, b) {
 }
 
 async function openMapInWorkspace(mapItem) {
+    if (isPisiEditorRestorePending()) return false;
+    const restoreGeneration = getPisiEditorRestoreGeneration();
     if (!mapItem || !isMapFileName(mapItem.name || mapItem.fileName)) {
         return false;
     }
@@ -47,6 +50,7 @@ async function openMapInWorkspace(mapItem) {
     }
 
     const result = await window.pisiProject?.listMapNodes?.(mapItem.fullPath);
+    if (isPisiEditorRestorePending() || restoreGeneration !== getPisiEditorRestoreGeneration()) return false;
 
     if (!result || !result.ok) {
         alert(result?.error || 'Map yüklenemedi.');
