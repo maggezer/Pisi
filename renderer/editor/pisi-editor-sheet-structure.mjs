@@ -92,21 +92,17 @@ function deletePisiSheetRows(table) {
     const dimensions = getPisiSheetDimensions(table);
     if (dimensions.rows <= 1) return false;
 
-    const selection = getPisiSheetSelection(table);
-    const rect = selection ? getPisiSheetSelectionRect(selection.anchor, selection.focus) : null;
     const focus = getPisiSheetMutationFocus(table);
-    const start = rect?.rowStart ?? focus.row;
-    const requestedCount = rect ? rect.rowEnd - rect.rowStart + 1 : 1;
-    const count = Math.min(requestedCount, dimensions.rows - 1, dimensions.rows - start);
-
-    if (count < 1) return false;
-
-    deletePisiSheetItems(table, start, count);
-    updatePisiSheetFormulaReferences(table, {
-        type: 'delete-row',
-        index: start,
-        count
-    });
+    const selected = [...new Set(getPisiSelectedSheetPoints(table).map((point) => point.row))];
+    if (!selected.length && getPisiSheetSelection(table)) return false;
+    const rows = (selected.length ? selected : [focus.row]).slice(0, dimensions.rows - 1).sort((a, b) => b - a);
+    if (!rows.length) return false;
+    const start = Math.min(...rows);
+    // Delete from the end so each model index and formula transform stays valid.
+    for (const row of rows) {
+        deletePisiSheetItems(table, row, 1);
+        updatePisiSheetFormulaReferences(table, { type: 'delete-row', index: row, count: 1 });
+    }
     refreshPisiSheetCellMetadata(table);
     recalcPisiSheet(table);
 
@@ -124,21 +120,16 @@ function deletePisiSheetColumns(table) {
     const dimensions = getPisiSheetDimensions(table);
     if (dimensions.cols <= 1) return false;
 
-    const selection = getPisiSheetSelection(table);
-    const rect = selection ? getPisiSheetSelectionRect(selection.anchor, selection.focus) : null;
     const focus = getPisiSheetMutationFocus(table);
-    const start = rect?.colStart ?? focus.col;
-    const requestedCount = rect ? rect.colEnd - rect.colStart + 1 : 1;
-    const count = Math.min(requestedCount, dimensions.cols - 1, dimensions.cols - start);
-
-    if (count < 1) return false;
-
-    deletePisiSheetFields(table, start, count);
-    updatePisiSheetFormulaReferences(table, {
-        type: 'delete-col',
-        index: start,
-        count
-    });
+    const selected = [...new Set(getPisiSelectedSheetPoints(table).map((point) => point.col))];
+    if (!selected.length && getPisiSheetSelection(table)) return false;
+    const cols = (selected.length ? selected : [focus.col]).slice(0, dimensions.cols - 1).sort((a, b) => b - a);
+    if (!cols.length) return false;
+    const start = Math.min(...cols);
+    for (const col of cols) {
+        deletePisiSheetFields(table, col, 1);
+        updatePisiSheetFormulaReferences(table, { type: 'delete-col', index: col, count: 1 });
+    }
     refreshPisiSheetCellMetadata(table);
     recalcPisiSheet(table);
 
@@ -153,7 +144,12 @@ function deletePisiSheetColumns(table) {
 }
 
 function applyPisiSheetCellFormat(table, action, value = null) {
-    const cells = getPisiSelectedSheetCells(table);
+    const points = getPisiSelectedSheetPoints(table);
+    const cells = points.map((point) => {
+        const cell = getPisiSheetCell(table, point.row, point.col) || document.createElement('td');
+        applyPisiSheetCellFormatToDom(cell, getPisiSheetCellSource(table, point.row, point.col).format);
+        return cell;
+    });
     if (!cells.length) return false;
 
     if (action === 'toggleBold') {
@@ -282,8 +278,8 @@ function applyPisiSheetCellFormat(table, action, value = null) {
         return false;
     }
 
-    cells.forEach((cell) => {
-        const position = getPisiSheetCellPosition(cell);
+    cells.forEach((cell, index) => {
+        const position = points[index];
 
         if (!position) return;
 
@@ -295,16 +291,13 @@ function applyPisiSheetCellFormat(table, action, value = null) {
 }
 
 function clearPisiSheetSelectedCells(table) {
-    const cells = getPisiSelectedSheetCells(table);
-    if (!cells.length) return false;
-
-    cells.forEach((cell) => {
-        const position = getPisiSheetCellPosition(cell);
-        if (!position) return;
-
-        clearPisiSheetCell(table, position.row, position.col);
-        pisiEditedSheetCells.delete(cell);
-    });
+    const points = getPisiSelectedSheetPoints(table);
+    if (!points.length) return false;
+    for (const point of points) {
+        clearPisiSheetCell(table, point.row, point.col);
+        const cell = getPisiSheetCell(table, point.row, point.col);
+        if (cell) pisiEditedSheetCells.delete(cell);
+    }
 
     recalcPisiSheet(table);
     schedulePisiSheetEditorNotification(table);
@@ -378,7 +371,7 @@ function syncPisiSheetToolbarState(toolbar, table) {
     if (status && table) {
         const selection = getPisiSheetSelection(table);
         const rect = selection ? getPisiSheetSelectionRect(selection.anchor, selection.focus) : null;
-        const selectedRows = rect ? rect.rowEnd - rect.rowStart + 1 : 1;
+        const selectedRows = new Set(getPisiSelectedSheetPoints(table).map((point) => point.row)).size || 1;
         const selectedCols = rect ? rect.colEnd - rect.colStart + 1 : 1;
         const selectionLabel = selectedRows > 1 || selectedCols > 1 ? ` · ${selectedRows}×${selectedCols} seçili` : '';
 

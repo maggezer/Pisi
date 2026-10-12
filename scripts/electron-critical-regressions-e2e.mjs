@@ -437,6 +437,32 @@ async function testCompositeDeleteThenTreeDelete(app, kind) {
     }
 }
 
+async function testSortedSheetSelection(app) {
+    await createNode(app);
+    const result = await app.cdp.evaluate(`(() => {
+        const editor = document.getElementById('center-node-editor-content');
+        editor.focus();
+        insertPisiSheet(editor, 5, 2);
+        const table = Array.from(editor.querySelectorAll('table[data-pisi-sheet]')).at(-1);
+        if (!table) return { ok: false, reason: 'sheet missing' };
+        [40,20,50,10,30].forEach((value,row) => setPisiSheetCellSource(table,row,0,{value:String(value)}));
+        const database = getPisiSheetDatabase(table);
+        setPisiSheetViewSorts(table,[{fieldId:database.fields[0].id,direction:'asc'}]);
+        selectPisiSheetCell(getPisiSheetCell(table,3,0));
+        selectPisiSheetCell(getPisiSheetCell(table,4,0),{extend:true});
+        const rows = getPisiSelectedSheetPoints(table).map((point)=>point.row);
+        if (JSON.stringify(rows)!==JSON.stringify([3,1,4])) return {ok:false,reason:'wrong rows',rows};
+        applyPisiSheetCellFormat(table,'toggleBold');
+        const bold = [0,1,2,3,4].filter((row)=>getPisiSheetCellSource(table,row,0).format.fontWeight==='700');
+        if (JSON.stringify(bold)!==JSON.stringify([1,3,4])) return {ok:false,reason:'wrong format targets',bold};
+        deletePisiSheetRows(table);
+        const remaining = getPisiSheetDatabase(table).items.map((item)=>item.values[database.fields[0].id]?.value);
+        return {ok:JSON.stringify(remaining)===JSON.stringify(['40','50']),remaining};
+    })()`);
+    if (!result?.ok) throw new Error('Sorted Sheet selection regression: ' + JSON.stringify(result));
+    if (!(await app.cdp.evaluate('saveCurrentCenterNodeEditor()'))) throw new Error('Sorted Sheet could not be saved.');
+}
+
 async function testRapidNodeNavigation(app) {
     const firstPath = await createNode(app);
     await typeAndSaveNode(app, firstPath, 'NAVIGATION_FIRST');
@@ -516,6 +542,7 @@ try {
     firstApp = await launchElectron(9225);
 
     await testTaskProjectionWriteThrough(firstApp);
+    await testSortedSheetSelection(firstApp);
     await testRapidNodeNavigation(firstApp);
     await testHistoryRestoreRefresh(firstApp, 'history');
     await testHistoryRestoreRefresh(firstApp, 'backup');

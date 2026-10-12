@@ -1,3 +1,4 @@
+import { getPisiSheetViewAxes } from './pisi-editor-sheet-view-selection.mjs';
 import { registerModule } from '../core/module-registry.mjs';
 import { ensurePisiSheetModelCellRendered } from './pisi-editor-sheet-virtual-scroll.mjs';
 import { clearPisiSheetDragFillHandle, renderPisiSheetDragFillHandle } from './pisi-editor-sheet-drag-fill.mjs';
@@ -127,16 +128,11 @@ function renderPisiSheetSelection(table) {
     }
 
     if (selection?.mode === 'row') {
-        const rect = getPisiSheetSelectionRect(selection.anchor, selection.focus);
-
-        if (rect) {
-            for (let row = rect.rowStart; row <= rect.rowEnd; row += 1) {
-                const header = table.querySelector('tbody th[data-row-header="' + row + '"]');
-
-                if (header) {
-                    header.classList.add('pisi-sheet-header-selected');
-                    renderedHeaders.add(header);
-                }
+        for (const row of new Set(points.map((point) => point.row))) {
+            const header = table.querySelector('tbody th[data-row-header="' + row + '"]');
+            if (header) {
+                header.classList.add('pisi-sheet-header-selected');
+                renderedHeaders.add(header);
             }
         }
     } else if (selection?.mode === 'column') {
@@ -206,9 +202,7 @@ function isPisiSheetCellSelected(table, cell) {
     const selection = normalizePisiSheetSelection(table);
     if (!point || !selection) return false;
 
-    const rect = getPisiSheetSelectionRect(selection.anchor, selection.focus);
-
-    return Boolean(rect && point.row >= rect.rowStart && point.row <= rect.rowEnd && point.col >= rect.colStart && point.col <= rect.colEnd);
+    return getPisiSelectedSheetPoints(table).some((selected) => selected.rowId === point.rowId && selected.colId === point.colId);
 }
 
 function setPisiSheetRangeSelection(table, anchor, focus, options = {}) {
@@ -257,8 +251,9 @@ function selectAllPisiSheetCells(table) {
 
     if (!dimensions.rows || !dimensions.cols) return;
 
-    const anchor = getPisiSheetPointByIndex(table, 0, 0);
-    const focus = getPisiSheetPointByIndex(table, dimensions.rows - 1, dimensions.cols - 1);
+    const axes = getPisiSheetViewAxes(table);
+    const anchor = getPisiSheetPointByIndex(table, axes.rows[0], axes.cols[0]);
+    const focus = getPisiSheetPointByIndex(table, axes.rows.at(-1), axes.cols.at(-1));
 
     if (!anchor || !focus) return;
 

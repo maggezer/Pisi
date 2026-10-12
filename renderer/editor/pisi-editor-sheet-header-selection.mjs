@@ -1,3 +1,4 @@
+import { getPisiSheetViewAxes, getPisiSheetViewSelectionIndices } from './pisi-editor-sheet-view-selection.mjs';
 import { registerModule } from '../core/module-registry.mjs';
 
 function getPisiSheetHeaderSelection(table) {
@@ -12,31 +13,10 @@ function getPisiSheetSelection(table) {
 
 function getPisiSelectedSheetPoints(table) {
     const database = getPisiSheetDatabase(table);
-    const cellSelection = getPisiSheetSelectionForDatabase(database);
-
-    if (cellSelection) {
-        return getPisiSelectedSheetPointsForDatabase(database);
-    }
-
-    const headerSelection = getPisiSheetHeaderSelectionForDatabase(database);
-
-    if (!headerSelection) return [];
-
-    const rect = getPisiSheetSelectionRect(headerSelection.anchor, headerSelection.focus);
-
-    if (!rect) return [];
-
-    const points = [];
-
-    for (let row = rect.rowStart; row <= rect.rowEnd; row += 1) {
-        for (let col = rect.colStart; col <= rect.colEnd; col += 1) {
-            const point = getPisiSheetPointByIndexFromDatabase(database, row, col);
-
-            if (point) points.push(point);
-        }
-    }
-
-    return points;
+    const selection = getPisiSheetSelection(table);
+    return getPisiSheetViewSelectionIndices(getPisiSheetViewAxes(table), selection)
+        .map(({ row, col }) => getPisiSheetPointByIndexFromDatabase(database, row, col))
+        .filter(Boolean);
 }
 
 function selectPisiSheetRow(table, rowIndex, extend = false) {

@@ -1,3 +1,4 @@
+import { getPisiSheetViewAxes, getPisiSheetViewPoint, getPisiSheetViewSelectionRect } from './pisi-editor-sheet-view-selection.mjs';
 import {
     getPisiSheetDragFillRect,
     getPisiSheetDragFillSeriesValue,
@@ -31,8 +32,9 @@ function renderPisiSheetDragFillPreview(table, sourceRect, fillRect) {
 
     if (!table || !sourceRect || !fillRect) return;
 
+    const axes = getPisiSheetViewAxes(table);
     table.querySelectorAll('tbody td[data-cell]').forEach((cell) => {
-        const point = getPisiSheetCellPosition(cell);
+        const point = getPisiSheetViewPoint(axes, getPisiSheetCellPosition(cell));
 
         if (!point || !isPisiSheetPointInFillRect(point.row, point.col, fillRect) || isPisiSheetPointInFillRect(point.row, point.col, sourceRect)) {
             return;
@@ -43,14 +45,14 @@ function renderPisiSheetDragFillPreview(table, sourceRect, fillRect) {
     });
 }
 
-function getPisiSheetDragFillSourceMatrix(table, sourceRect) {
+function getPisiSheetDragFillSourceMatrix(table, sourceRect, axes = getPisiSheetViewAxes(table)) {
     const matrix = [];
 
     for (let row = sourceRect.rowStart; row <= sourceRect.rowEnd; row += 1) {
         const line = [];
 
         for (let col = sourceRect.colStart; col <= sourceRect.colEnd; col += 1) {
-            const source = getPisiSheetCellSource(table, row, col);
+            const source = getPisiSheetCellSource(table, axes.rows[row], axes.cols[col]);
 
             line.push({
                 value: source.value,
@@ -89,7 +91,8 @@ function applyPisiSheetDragFill(table, sourceRect, targetPoint) {
         return false;
     }
 
-    const matrix = getPisiSheetDragFillSourceMatrix(table, sourceRect);
+    const axes = getPisiSheetViewAxes(table);
+    const matrix = getPisiSheetDragFillSourceMatrix(table, sourceRect, axes);
     const sourceValues = matrix.map((line) => line.map((source) => source.value));
     const canUseSeries = matrix.every((line) => line.every((source) => !source.formula));
     const changes = [];
@@ -105,10 +108,12 @@ function applyPisiSheetDragFill(table, sourceRect, targetPoint) {
             const seriesValue = canUseSeries ? getPisiSheetDragFillSeriesValue(sourceRect, sourceValues, row, col) : null;
 
             changes.push({
-                row,
-                col,
+                row: axes.rows[row],
+                col: axes.cols[col],
                 value: seriesValue !== null ? seriesValue : source.value,
-                formula: source.formula ? shiftPisiSheetFormulaReferences(source.formula, row - sourcePoint.row, col - sourcePoint.col) : null,
+                formula: source.formula
+                    ? shiftPisiSheetFormulaReferences(source.formula, axes.rows[row] - axes.rows[sourcePoint.row], axes.cols[col] - axes.cols[sourcePoint.col])
+                    : null,
                 format: structuredClone(source.format || {})
             });
         }
@@ -121,8 +126,8 @@ function applyPisiSheetDragFill(table, sourceRect, targetPoint) {
     recalcPisiSheet(table);
     renderPisiSheetDatabase(table);
 
-    const anchor = getPisiSheetPointByIndex(table, fillRect.rowStart, fillRect.colStart);
-    const focus = getPisiSheetPointByIndex(table, fillRect.rowEnd, fillRect.colEnd);
+    const anchor = getPisiSheetPointByIndex(table, axes.rows[fillRect.rowStart], axes.cols[fillRect.colStart]);
+    const focus = getPisiSheetPointByIndex(table, axes.rows[fillRect.rowEnd], axes.cols[fillRect.colEnd]);
 
     if (anchor && focus) {
         setPisiSheetRangeSelection(table, anchor, focus, {
@@ -143,7 +148,7 @@ function updatePisiSheetDragFillTarget(table, cell) {
         return false;
     }
 
-    const point = getPisiSheetCellPosition(cell);
+    const point = getPisiSheetViewPoint(getPisiSheetViewAxes(table), getPisiSheetCellPosition(cell));
     if (!point) return false;
 
     const state = pisiSheetDragFillState;
@@ -239,11 +244,12 @@ function renderPisiSheetDragFillHandle(table, selection) {
         return null;
     }
 
-    const sourceRect = getPisiSheetSelectionRect(selection.anchor, selection.focus);
+    const axes = getPisiSheetViewAxes(table);
+    const sourceRect = getPisiSheetViewSelectionRect(axes, selection);
 
     if (!sourceRect) return null;
 
-    const cell = getPisiSheetCell(table, sourceRect.rowEnd, sourceRect.colEnd);
+    const cell = getPisiSheetCell(table, axes.rows[sourceRect.rowEnd], axes.cols[sourceRect.colEnd]);
 
     if (!cell || cell.hidden) return null;
 
