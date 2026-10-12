@@ -135,3 +135,29 @@ test('domain katmanları kritik feature modüllerinden önce ve IPC hooklarında
     assert.ok(rendererDomainIndex < bootstrap.indexOf('./productivity/pisi-quick-capture.mjs'));
     assert.ok(rendererDomainIndex < bootstrap.indexOf('./map/pisi-map-operational.mjs'));
 });
+
+test('renderer document query requests hydrated Sheet and Canvas assets after path validation', () => {
+    const vm = require('node:vm');
+    const { extractFunction } = require('./source-helper');
+    const queries = new Map();
+    const calls = [];
+    const context = {
+        registerPisiDomainQuery: (name, handler) => queries.set(name, handler),
+        registerPisiDomainCommand() {},
+        assertPisiDomainDocumentPath: (filePath) => {
+            assert.equal(filePath, 'requested.node');
+            return 'validated.node';
+        },
+        mapStore: {
+            getPisiDocument: (filePath, options) => {
+                calls.push({ filePath, hydrate: options?.hydrateEditorAssets });
+                return { ok: true, data: { content: 'hydrated' } };
+            }
+        }
+    };
+    vm.createContext(context);
+    vm.runInContext(extractFunction(mainDomain, 'installPisiDomainContracts'), context);
+    context.installPisiDomainContracts();
+    assert.equal(queries.get('document.read.v1')({ filePath: 'requested.node' }).data.content, 'hydrated');
+    assert.deepEqual(calls, [{ filePath: 'validated.node', hydrate: true }]);
+});

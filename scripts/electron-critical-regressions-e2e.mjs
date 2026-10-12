@@ -476,6 +476,14 @@ async function testSortedSheetSelection(app) {
     })()`);
     if (!result?.ok) throw new Error('Sorted Sheet selection regression: ' + JSON.stringify(result));
     if (!(await app.cdp.evaluate('saveCurrentCenterNodeEditor()'))) throw new Error('Sorted Sheet could not be saved.');
+    const reopened = await app.cdp.evaluate(`(async () => {
+        const opened = await openCenterNodeEditor(activeCenterNode.item);
+        const table = document.querySelector('#center-node-editor-content table[data-pisi-sheet]');
+        const database = table && getPisiSheetDatabase(table);
+        return opened && !activeCenterNode.assetRecoveryWarning && database?.items.length === 2 &&
+            database.items.map((item) => item.values[database.fields[0].id]?.value).join(',') === '40,50';
+    })()`);
+    if (!reopened) throw new Error('Sorted Sheet selection did not survive save and reopen.');
 }
 
 async function testRapidNodeNavigation(app) {

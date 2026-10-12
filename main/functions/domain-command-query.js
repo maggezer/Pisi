@@ -211,7 +211,7 @@ function installPisiDomainContracts() {
     });
 
     registerPisiDomainQuery('document.read.v1', (payload) => {
-        return mapStore.getPisiDocument(assertPisiDomainDocumentPath(payload.filePath));
+        return mapStore.getPisiDocument(assertPisiDomainDocumentPath(payload.filePath), { hydrateEditorAssets: true });
     });
 
     registerPisiDomainQuery('map.projection.v1', (payload) => {
