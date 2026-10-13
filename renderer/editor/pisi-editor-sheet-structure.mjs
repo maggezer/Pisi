@@ -1,3 +1,5 @@
+import { clearPisiSheetCellsBatch } from './pisi-editor-sheet-database.mjs';
+import { getPisiSheetViewAxes, getPisiSheetViewSelectionIndices } from './pisi-editor-sheet-view-selection.mjs';
 import { registerModule } from '../core/module-registry.mjs';
 function setPisiSheetColumnLabel(table, colIndex, value) {
     const label = renamePisiSheetField(table, colIndex, value);
@@ -291,15 +293,15 @@ function applyPisiSheetCellFormat(table, action, value = null) {
 }
 
 function clearPisiSheetSelectedCells(table) {
-    const points = getPisiSelectedSheetPoints(table);
-    if (!points.length) return false;
-    for (const point of points) {
-        clearPisiSheetCell(table, point.row, point.col);
-        const cell = getPisiSheetCell(table, point.row, point.col);
-        if (cell) pisiEditedSheetCells.delete(cell);
+    // Snapshot the entire view selection before changing values used by filters/sorts.
+    const points = getPisiSheetViewSelectionIndices(getPisiSheetViewAxes(table), getPisiSheetSelection(table));
+    if (!points.length || !clearPisiSheetCellsBatch(table, points)) return false;
+    const selected = new Set(points.map(({ row, col }) => row + ':' + col));
+    for (const cell of table.querySelectorAll('tbody td[data-row][data-col]')) {
+        if (selected.has(cell.dataset.row + ':' + cell.dataset.col)) pisiEditedSheetCells.delete(cell);
     }
 
-    recalcPisiSheet(table);
+    recalcPisiSheet(table, { renderedOnly: true });
     schedulePisiSheetEditorNotification(table);
     return true;
 }

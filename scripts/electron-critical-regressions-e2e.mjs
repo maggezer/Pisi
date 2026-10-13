@@ -451,6 +451,43 @@ async function testCompositeDeleteThenTreeDelete(app, kind) {
     }
 }
 
+async function testLargeSheetClear(app) {
+    await createNode(app);
+    const cleared = await app.cdp.evaluate(`(() => {
+        const editor = document.getElementById('center-node-editor-content');
+        editor.focus();
+        insertPisiSheet(editor, 2, 2);
+        const table = Array.from(editor.querySelectorAll('table[data-pisi-sheet]')).at(-1);
+        const database = getPisiSheetDatabase(table);
+        const [first, last] = database.fields;
+        database.items = Array.from({length: 2000}, (_, row) => ({id: 'bulk-row-' + row, values: {
+            [first.id]: {value: 'value ' + row, formula: null, format: {}},
+            [last.id]: {value: '', formula: '=A1', format: {fontWeight: '700'}}
+        }}));
+        persistPisiSheetDatabase(table);
+        renderPisiSheetDatabase(table);
+        const cell = getPisiSheetCell(table, 0, 0);
+        if (!cell || getPisiSheetCell(table, 1999, 0)) return false;
+        selectPisiSheetCell(cell);
+        table.querySelector('thead th[data-pisi-sheet-corner]').dispatchEvent(new MouseEvent('mousedown', {button: 0, bubbles: true, cancelable: true}));
+        cell.dispatchEvent(new KeyboardEvent('keydown', {key: 'Delete', bubbles: true, cancelable: true}));
+        return database.items.every(item => !item.values[first.id] && item.values[last.id]?.value === '' &&
+            !item.values[last.id]?.formula && item.values[last.id]?.format.fontWeight === '700');
+    })()`);
+    if (!cleared) throw new Error('Large Sheet Delete left selected offscreen values or formulas uncleared.');
+    if (!(await app.cdp.evaluate('saveCurrentCenterNodeEditor()'))) throw new Error('Cleared large Sheet could not be saved.');
+    const reopened = await app.cdp.evaluate(`(async () => {
+        if (!(await openCenterNodeEditor(activeCenterNode.item))) return false;
+        const table = document.querySelector('#center-node-editor-content table[data-pisi-sheet]');
+        const database = table && getPisiSheetDatabase(table);
+        if (!database || activeCenterNode.assetRecoveryWarning || database.items.length !== 2000) return false;
+        const [first, last] = database.fields;
+        return database.items.every(item => !item.values[first.id] && item.values[last.id]?.value === '' &&
+            !item.values[last.id]?.formula && item.values[last.id]?.format.fontWeight === '700');
+    })()`);
+    if (!reopened) throw new Error('Large Sheet bulk clear did not survive save and reopen.');
+}
+
 async function testSortedSheetSelection(app) {
     console.log('[E2E] Sorted Sheet: create node');
     await createNode(app);
@@ -632,6 +669,7 @@ try {
 
     await testTaskProjectionWriteThrough(firstApp);
     await testSortedSheetSelection(firstApp);
+    await testLargeSheetClear(firstApp);
     await testRapidNodeNavigation(firstApp);
     await testHistoryRestoreRefresh(firstApp, 'history');
     await testHistoryRestoreRefresh(firstApp, 'backup');

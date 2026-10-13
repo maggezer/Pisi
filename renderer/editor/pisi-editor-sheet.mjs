@@ -218,12 +218,15 @@ function commitPisiSheetCell(cell, options = {}) {
     pisiEditedSheetCells.delete(cell);
 }
 
-function recalcPisiSheet(table) {
+function recalcPisiSheet(table, options = {}) {
     if (!table) return;
 
     const dimensions = getPisiSheetDatabaseDimensions(table);
+    const rows = options.renderedOnly
+        ? [...new Set(Array.from(table.querySelectorAll('tbody td[data-row][data-col]'), (cell) => Number(cell.dataset.row)))]
+        : Array.from({ length: dimensions.rows }, (_, row) => row);
 
-    for (let row = 0; row < dimensions.rows; row += 1) {
+    for (const row of rows) {
         for (let col = 0; col < dimensions.cols; col += 1) {
             const source = getPisiSheetCellSource(table, row, col);
 

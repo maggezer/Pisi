@@ -425,6 +425,27 @@ function setPisiSheetCellFormat(table, rowIndex, colIndex, format = {}) {
     return true;
 }
 
+export function clearPisiSheetCellsBatch(table, points) {
+    const database = requirePisiSheetDatabase(table);
+    const fields = getPisiSheetOrderedFields(database);
+    let changed = false;
+    for (const { row, col } of points) {
+        if (!Number.isInteger(row) || !Number.isInteger(col)) continue;
+        const item = database.items[row];
+        const field = fields[col];
+        if (!item || !field) continue;
+        const record = item.values[field.id];
+        if (record?.format && Object.keys(record.format).length) {
+            item.values[field.id] = { value: '', formula: null, format: record.format };
+        } else {
+            delete item.values[field.id];
+        }
+        changed = true;
+    }
+    if (changed) persistPisiSheetDatabase(table);
+    return changed;
+}
+
 function clearPisiSheetCell(table, rowIndex, colIndex) {
     const item = getPisiSheetItem(table, rowIndex);
     const field = getPisiSheetField(table, colIndex);

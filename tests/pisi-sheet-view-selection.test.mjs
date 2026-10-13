@@ -64,14 +64,19 @@ test('selection spans the whole view independently of the virtual rendering wind
 test('clear uses selected model points including cells not currently rendered', () => {
     const cleared = [];
     const c = load('pisi-editor-sheet-structure.mjs', ['clearPisiSheetSelectedCells'], {
-        getPisiSelectedSheetPoints: () => selection.getPisiSheetViewSelectionIndices(axes, range),
-        clearPisiSheetCell: (_t, r, col) => cleared.push([r, col]),
+        getPisiSheetViewAxes: () => axes,
+        getPisiSheetSelection: () => range,
+        getPisiSheetViewSelectionIndices: selection.getPisiSheetViewSelectionIndices,
+        clearPisiSheetCellsBatch: (_t, points) => {
+            cleared.push(...points.map(({ row, col }) => [row, col]));
+            return true;
+        },
         getPisiSheetCell: () => null,
         pisiEditedSheetCells: new Set(),
         recalcPisiSheet() {},
         schedulePisiSheetEditorNotification() {}
     });
-    assert.equal(c.clearPisiSheetSelectedCells({}), true);
+    assert.equal(c.clearPisiSheetSelectedCells({ querySelectorAll: () => [] }), true);
     assert.deepEqual(cleared, [
         [3, 0],
         [3, 2],
