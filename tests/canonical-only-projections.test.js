@@ -6,7 +6,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const test = require('node:test');
 const { extractFunction } = require('./source-helper');
-const read = (file) => fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
+const read = (file) => fs.readFileSync(path.join(__dirname, '..', file), 'utf8').replace(/\r\n/g, '\n');
 
 function loadTaskStore() {
     const calls = [];

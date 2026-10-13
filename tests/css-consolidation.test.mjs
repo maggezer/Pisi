@@ -21,7 +21,7 @@ const expectedImports = [
 ];
 
 test('global CSS uses the consolidated bundle manifest', () => {
-    const source = fs.readFileSync(stylePath, 'utf8');
+    const source = fs.readFileSync(stylePath, 'utf8').replace(/\r\n/g, '\n');
     const imports = [...source.matchAll(/@import url\('([^']+)'\) layer\(pisi\);/g)].map((match) => match[1]);
 
     assert.deepEqual(imports, expectedImports);

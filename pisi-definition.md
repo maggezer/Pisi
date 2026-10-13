@@ -395,6 +395,11 @@ Node açılırken renderer için transient hydration yapılır:
 - Paint: `data-image="data:image/png;base64,..."`
 - Sheet: `data-pisi-sheet-model="..."`
 
+Node HTML veya PDF olarak dışa aktarılırken Paint sidecar'ı hash, PNG imzası
+ve boyut sınırına göre doğrulanır; geçerli canvas'lar gömülü PNG `img`
+öğelerine çevrilir. Eksik veya geçersiz Paint verisi boş canvas olarak sessizce
+dışa aktarılmaz.
+
 Bu hydrated alanlar canonical disk formatı değildir; save sırasında yeniden
 sidecar referansına normalize edilir.
 

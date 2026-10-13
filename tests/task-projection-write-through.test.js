@@ -29,7 +29,7 @@ function setup() {
             listeners.get(name).push(callback);
         }
     };
-    const source = fs.readFileSync(path.join(__dirname, '../renderer/tags/pisi-source-of-truth.mjs'), 'utf8');
+    const source = fs.readFileSync(path.join(__dirname, '../renderer/tags/pisi-source-of-truth.mjs'), 'utf8').replace(/\r\n/g, '\n');
     vm.runInNewContext(source.replace(/^import .*;\n/m, '').replace(/export \{\};/, ''), { window, document });
     const emit = (name, detail = {}) => listeners.get(name)?.forEach((callback) => callback({ detail }));
     return { window, calls, refreshes, emit };

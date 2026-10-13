@@ -180,9 +180,40 @@ function pisiPropertiesFrontmatter(properties = {}) {
     return lines.join('\n');
 }
 
+function pisiEmbedPaintImagesForExport(content = '') {
+    let exportError = null;
+    const exported = String(content || '').replace(/<canvas\b[^>]*>(?:[\s\S]*?<\/canvas\s*>)?/gi, (canvasElement) => {
+        const openingTag = canvasElement.match(/^<canvas\b[^>]*>/i)?.[0];
+        if (!openingTag || !/\sdata-pisi-canvas(?:\s*=|\s|\/?>)/i.test(openingTag)) {
+            return canvasElement;
+        }
+
+        const imageAttribute = openingTag.match(/\sdata-image\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+        const imageData = imageAttribute?.[1] ?? imageAttribute?.[2] ?? imageAttribute?.[3] ?? '';
+        const decoded = editorAssets.decodePisiPaintPngDataUrl(imageData);
+        if (!decoded.ok) {
+            exportError = decoded.error || 'Paint canvas PNG verisi dışa aktarılamadı.';
+            return '';
+        }
+
+        const embeddedImage = `data:image/png;base64,${decoded.buffer.toString('base64')}`;
+        const attributes = openingTag
+            .replace(/^<canvas\b/i, '')
+            .replace(/\s(?:data-(?:pisi-canvas|pisi-asset|image)|src)\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+            .replace(/\s*\/?>$/, '');
+        const defaultAlt = /\salt\s*=/i.test(attributes) ? '' : ' alt="Paint canvas"';
+        return `<img src="${embeddedImage}"${defaultAlt}${attributes}>`;
+    });
+
+    if (exportError) {
+        throw new Error(exportError);
+    }
+    return exported;
+}
+
 function pisiExportHtmlDocument(info) {
     const title = escapePisiPortableHtml(info.metadata.title || 'Pisi');
-    const content = stripPisiTaskMetadataHtml(stripPisiUnsafeExportHtml(info.data.content || ''));
+    const content = pisiEmbedPaintImagesForExport(stripPisiTaskMetadataHtml(stripPisiUnsafeExportHtml(info.data.content || '')));
     return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>${title}</title><style>body{font:16px/1.6 system-ui;max-width:900px;margin:40px auto;padding:0 24px;color:#202124}table{border-collapse:collapse}td,th{border:1px solid #bbb;padding:6px}img,canvas{max-width:100%}blockquote{border-left:3px solid #888;padding-left:16px;color:#555}</style></head><body><h1>${title}</h1>${content}</body></html>`;
 }
 
@@ -263,11 +294,11 @@ function makePisiDocxBuffer(info) {
 }
 
 async function exportPisiNodeDocument(nodePath, format) {
-    const info = getPisiDocument(nodePath);
-    if (!info.ok) return info;
     const normalized = String(format || '').toLowerCase();
     const extension = { markdown: 'md', md: 'md', html: 'html', pdf: 'pdf', docx: 'docx' }[normalized];
     if (!extension) return { ok: false, error: 'Desteklenmeyen dışa aktarma biçimi.' };
+    const info = getPisiDocument(nodePath, { hydrateEditorAssets: extension === 'html' || extension === 'pdf' });
+    if (!info.ok) return info;
     const result = await dialog.showSaveDialog(globalThis.mainWindow, {
         title: 'Pisi dışa aktar',
         defaultPath: `${info.metadata.title}.${extension}`,

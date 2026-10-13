@@ -25,7 +25,7 @@ test('Prettier configuration preserves Pisi source conventions and excludes gene
     assert.equal(config.tabWidth, 4);
     assert.equal(config.singleQuote, true);
     assert.equal(config.semi, true);
-    assert.equal(config.endOfLine, 'lf');
+    assert.equal(config.endOfLine, 'auto');
 
     for (const pattern of ['node_modules/', 'dist/', 'dist-store/', 'android/**/build/', '.pisi-types/', 'assets/']) {
         assert.ok(ignore.includes(pattern), 'missing Prettier ignore: ' + pattern);

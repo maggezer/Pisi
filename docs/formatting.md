@@ -1,6 +1,8 @@
 # Repository formatting
 
 Pisi uses Prettier as its repository-wide source formatter.
+Prettier preserves each file's existing line-ending style so validation also
+works in Windows checkouts configured with Git's `core.autocrlf`.
 
 ## Version
 

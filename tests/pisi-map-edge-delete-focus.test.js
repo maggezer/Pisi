@@ -12,7 +12,7 @@ function read(file) {
 }
 
 test('bağlantı silme map durumunu temizler ve node düzenleme odağını çalmaz', () => {
-    const edges = read('renderer/map/pisi-map-edges.mjs');
+    const edges = read('renderer/map/pisi-map-edges.mjs').replace(/\r\n/g, '\n');
     const deleteFlow = edges.match(/async function deleteMapEdge\(edgeId\) \{[\s\S]*?\n\}\n\nfunction createMapEdgeDeleteButton/)?.[0] || '';
 
     assert.match(deleteFlow, /await pisiConfirm\('Bu bağlantı silinsin mi\?'/);

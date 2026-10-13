@@ -6,7 +6,7 @@ const path = require('node:path');
 const test = require('node:test');
 
 const root = path.resolve(__dirname, '..');
-const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+const read = (file) => fs.readFileSync(path.join(root, file), 'utf8').replace(/\r\n/g, '\n');
 const structuredViewFiles = [
     'renderer/data/pisi-structured-views.mjs',
     'renderer/data/pisi-structured-view-state.mjs',
