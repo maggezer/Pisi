@@ -147,11 +147,13 @@ function pisiMarkdownToHtml(markdown = '') {
 
 function walkPisiFiles(root, predicate, options = {}) {
     const files = [];
-    const skip = new Set(['.pisi-history', '.git', 'node_modules']);
+    const skip = new Set(['.pisi', '.pisi-history', '.git', 'node_modules']);
     const visit = (directory) => {
         for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
             if (entry.isSymbolicLink?.()) continue;
-            if (entry.isDirectory() && skip.has(entry.name)) continue;
+            // Recovery payloads are retained on disk but are not active project content.
+            const name = entry.name.toLowerCase();
+            if (entry.isDirectory() && (skip.has(name) || name.startsWith('.pisi-delete-') || name.startsWith('.pisi-transaction-'))) continue;
             const fullPath = path.join(directory, entry.name);
             if (entry.isDirectory()) {
                 if (options.maxFiles && files.length >= options.maxFiles) return;
