@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import { createRequire } from 'node:module';
 import * as recovery from '../renderer/editor/pisi-editor-recovery-policy.mjs';
+import { isPisiEditorWriteBlocked, runPisiEditorWrite } from '../renderer/editor/pisi-editor-restore.mjs';
 const { extractFunction } = createRequire(import.meta.url)('./source-helper.js');
 const source = fs.readFileSync(new URL('../renderer/editor/pisi-node-editor.mjs', import.meta.url), 'utf8');
 function element() {
@@ -94,6 +95,7 @@ function setup(t) {
         'saveCurrentCenterNodeEditor',
         'performCurrentCenterNodeEditorSave',
         'closeNodeModalAndSave',
+        'performNodeModalCloseAndSave',
         'closeNodeModalWithoutSaving',
         'flushPisiPendingSaves'
     ];
@@ -202,4 +204,23 @@ test('a failed post-restore reload permits leaving a clean stale editor but neve
     h.c.isPisiEditorWriteBlocked = () => true;
     assert.equal(await h.c.flushPisiPendingSaves(), true);
     assert.equal(h.counts().writes, 0);
+});
+
+test('failed center reload does not block saving another modal document during exit', async (t) => {
+    const h = setup(t);
+    h.node.assetRecoveryWarning = '';
+    h.node.restoreReloadRequired = true;
+    const modal = { path: 'other.node', dirty: true, revision: 0, metadata: { title: 'Note' }, box: { querySelector: () => null } };
+    h.c.activeModalNode = window.activeModalNode = modal;
+    h.c.isPisiEditorWriteBlocked = isPisiEditorWriteBlocked;
+    h.c.runPisiEditorWrite = runPisiEditorWrite;
+    h.c.suppressNextFileSystemRefresh = () => {};
+    h.c.animateMapBox = () => {};
+    h.c.refreshPisiTagsPanelSoon = () => {};
+    h.c.alert = (message) => assert.fail(message);
+    h.c.console = console;
+    assert.equal(await h.c.flushPisiPendingSaves(), true);
+    assert.equal(h.c.activeModalNode, null);
+    assert.deepEqual(h.counts(), { writes: 1, renames: 0, confirms: 0 });
+    assert.equal(h.node.restoreReloadRequired, true);
 });

@@ -255,3 +255,23 @@ test('both restore buttons use the coordinated editor reload instead of the no-a
     assert.match(source, /restorePisiEditorDocument\(backup.targetPath,/);
     assert.doesNotMatch(source, /reloadPisiWorkspaceAfterExternalChange/);
 });
+
+test('failed reload blocks the affected path but permits unrelated document writes', async (t) => {
+    const h = setup(t);
+    h.center.restoreReloadRequired = true;
+    const other = { path: h.nodePath + '.other' };
+    assert.equal(isPisiEditorWriteBlocked(), true);
+    assert.equal(isPisiEditorWriteBlocked(other), false);
+    assert.equal(await runPisiEditorWrite(() => 'saved other note', other), 'saved other note');
+    assert.equal(await runPisiEditorWrite(() => assert.fail('stale write'), h.center), false);
+    assert.equal(await runPisiEditorWrite(() => assert.fail('duplicate stale write'), { path: h.nodePath }), false);
+    assert.equal(h.read().content, 'disk before restore');
+});
+
+test('scoped queued writes recheck recovery protection before writing', async (t) => {
+    const h = setup(t);
+    const write = runPisiEditorWrite(() => assert.fail('queued stale write'), h.center);
+    h.center.restoreReloadRequired = true;
+    assert.equal(await write, false);
+    assert.equal(h.read().content, 'disk before restore');
+});

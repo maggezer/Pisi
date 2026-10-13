@@ -13,16 +13,28 @@ export function isPisiEditorRestorePending() {
     return restoringDocument;
 }
 
-export function isPisiEditorWriteBlocked() {
-    return restoringDocument || Boolean(window.activeCenterNode?.restoreReloadRequired || window.activeModalNode?.restoreReloadRequired);
+export function isPisiEditorWriteBlocked(node = undefined) {
+    if (restoringDocument) return true;
+    const protectedNodes = [window.activeCenterNode, window.activeModalNode].filter((candidate) => candidate?.restoreReloadRequired);
+    // Unscoped callers remain fail-closed. A failed reload must not prevent
+    // another document from saving, but every copy of the restored path is protected.
+    if (node === undefined) return protectedNodes.length > 0;
+    return Boolean(
+        node?.restoreReloadRequired ||
+        protectedNodes.some(
+            (candidate) =>
+                candidate === node ||
+                (node?.path && candidate.path && (window.samePisiWorkspacePath?.(candidate.path, node.path) ?? candidate.path === node.path))
+        )
+    );
 }
 
 // Track writes already sent to the main process. A restore must follow them,
 // while writes queued by timers/shortcuts during restoration must not run.
-export function runPisiEditorWrite(operation) {
-    if (isPisiEditorWriteBlocked()) return Promise.resolve(false);
+export function runPisiEditorWrite(operation, node = undefined) {
+    if (isPisiEditorWriteBlocked(node)) return Promise.resolve(false);
     const pending = Promise.resolve().then(() => {
-        if (isPisiEditorWriteBlocked()) return false;
+        if (isPisiEditorWriteBlocked(node)) return false;
         return operation();
     });
     pendingEditorWrites.add(pending);

@@ -413,7 +413,7 @@ function closeNodeModalAndSave() {
             return true;
         });
     }
-    return runPisiEditorWrite(() => performNodeModalCloseAndSave(node));
+    return runPisiEditorWrite(() => performNodeModalCloseAndSave(node), node);
 }
 
 async function performNodeModalCloseAndSave(node) {
@@ -594,7 +594,7 @@ function bindCenterNodeEditorControls() {
 }
 
 function scheduleCenterNodeEditorSave() {
-    if (isPisiEditorWriteBlocked()) return;
+    if (isPisiEditorWriteBlocked(activeCenterNode)) return;
     clearTimeout(centerNodeSaveTimer);
 
     centerNodeSaveTimer = setTimeout(() => {
@@ -694,12 +694,12 @@ let pisiCenterSaveTail = Promise.resolve(true);
 function saveCurrentCenterNodeEditor(options = {}) {
     if (isPisiEditorRestorePending()) return false;
     if (getPisiNodeRecoveryWarning(activeCenterNode)) return allowPisiRecoveryDeparture(activeCenterNode, options.allowDiscardRecovery === true);
-    if (isPisiEditorWriteBlocked()) return false;
+    if (isPisiEditorWriteBlocked(activeCenterNode)) return false;
     if (!activeCenterNode?.path) return true;
 
     const node = activeCenterNode;
     const previousSave = pisiCenterSaveTail;
-    const saveTask = runPisiEditorWrite(() => previousSave.catch(() => false).then(() => performCurrentCenterNodeEditorSave(node, options)));
+    const saveTask = runPisiEditorWrite(() => previousSave.catch(() => false).then(() => performCurrentCenterNodeEditorSave(node, options)), node);
 
     pisiCenterSaveTail = saveTask;
     return saveTask;
@@ -707,7 +707,7 @@ function saveCurrentCenterNodeEditor(options = {}) {
 
 async function performCurrentCenterNodeEditorSave(node, options = {}) {
     if (activeCenterNode !== node) return false;
-    if (isPisiEditorWriteBlocked()) return false;
+    if (isPisiEditorWriteBlocked(activeCenterNode)) return false;
     if (!activeCenterNode?.path) return true;
 
     const { titleInput, contentEditor, saveBtn } = getCenterNodeEditorElements();

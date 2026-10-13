@@ -406,7 +406,7 @@ function initializePisiCommandRegistry() {
         allowInInput: true,
         when: () => Boolean(window.activeModalNode || window.activeCenterNode),
         handler: async () => {
-            if (isPisiEditorWriteBlocked()) return false;
+            if (isPisiEditorWriteBlocked(window.activeModalNode || window.activeCenterNode)) return false;
             if (window.activeModalNode) {
                 const modal = window.activeModalNode;
                 const editor = document.getElementById('node-modal-content');
@@ -414,7 +414,7 @@ function initializePisiCommandRegistry() {
                 const content = window.getPisiEditorContent?.(editor) || editor?.innerHTML || '';
                 if (protectPisiEditorRecovery(modal, editor, document.getElementById('node-modal-title'), content)) return false;
                 const revision = Number(modal.revision || 0);
-                const result = await runPisiEditorWrite(() => window.pisiProject?.saveNodeContent?.(modal.path, content));
+                const result = await runPisiEditorWrite(() => window.pisiProject?.saveNodeContent?.(modal.path, content), modal);
                 if (!result?.ok) throw new Error(result?.error || 'Node kaydedilemedi.');
                 if (window.activeModalNode === modal && Number(modal.revision || 0) === revision) modal.dirty = false;
                 return result;

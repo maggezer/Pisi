@@ -594,11 +594,26 @@ async function testRecoveryDepartureAndClose(app) {
     })()`);
     if (!modalClosed) throw new Error('Recovery modal could not close safely.');
     if ((await fs.readFile(brokenPath, 'utf8')) !== original) throw new Error('Recovery UI overwrote the damaged document.');
+    const healthyModalReady = await app.cdp.evaluate(`(async () => {
+        // Simulate a failed post-restore reread while another note is open.
+        activeCenterNode.restoreReloadRequired = true;
+        const box = document.createElement('div');
+        box.dataset.nodePath = ${JSON.stringify(healthyPath)};
+        if (!(await openNodeModalFromBox(box))) return false;
+        const editor = document.getElementById('node-modal-content');
+        setPisiEditorContent(editor, '<p>RECOVERY_OTHER_NOTE_SAVED_ON_EXIT</p>');
+        activeModalNode.dirty = true;
+        activeModalNode.revision = Number(activeModalNode.revision || 0) + 1;
+        return !editor.inert;
+    })()`);
+    if (!healthyModalReady) throw new Error('Healthy modal could not open alongside failed recovery.');
     await app.cdp.evaluate('window.electronWindow.close(); true');
     const deadline = Date.now() + 10000;
     while (app.child.exitCode === null && Date.now() < deadline) await sleep(100);
     if (app.child.exitCode === null || app.child.exitCode !== 0) throw new Error('Normal application close failed with an unchanged recovery note.');
     if ((await fs.readFile(brokenPath, 'utf8')) !== original) throw new Error('Application close overwrote the damaged document.');
+    if (!(await readNodeContent(healthyPath)).includes('RECOVERY_OTHER_NOTE_SAVED_ON_EXIT'))
+        throw new Error('Recovery blocked saving the unrelated modal on exit.');
 }
 
 function assertNoFatalRendererLog(app) {
