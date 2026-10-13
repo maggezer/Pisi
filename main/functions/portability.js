@@ -48,9 +48,83 @@ function stripPisiTaskMetadataHtml(value = '') {
     );
 }
 
+function pisiGetExportSheetRows(tableHtml) {
+    return Array.from(String(tableHtml || '').matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi), (rowMatch) =>
+        Array.from(String(rowMatch[1] || '').matchAll(/<(?:th|td)\b[^>]*>([\s\S]*?)<\/(?:th|td)>/gi), (cellMatch) =>
+            decodePisiHtmlEntities(
+                String(cellMatch[1] || '')
+                    .replace(/<br\s*\/?>/gi, ' ')
+                    .replace(/<[^>]+>/g, '')
+            ).trim()
+        )
+    );
+}
+
+function pisiExportSheetTableToPlainText(tableHtml) {
+    return pisiGetExportSheetRows(tableHtml)
+        .map((row) => row.join(' | '))
+        .join('\n');
+}
+
+function pisiExportSheetTableToMarkdown(tableHtml) {
+    const rows = pisiGetExportSheetRows(tableHtml);
+    if (!rows.length) return '';
+    const formatRow = (row) => `| ${row.map((cell) => cell.replace(/\|/g, '\\|').replace(/\r?\n/g, ' ')).join(' | ')} |`;
+    const separator = `| ${rows[0].map(() => '---').join(' | ')} |`;
+    return [formatRow(rows[0]), separator, ...rows.slice(1).map(formatRow)].join('\n');
+}
+
+function pisiTransformSheetTablesForExport(content = '') {
+    return String(content || '')
+        .replace(/<table\b[^>]*>[\s\S]*?<\/table\s*>/gi, (tableElement) => {
+            const openingTag = tableElement.match(/^<table\b[^>]*>/i)?.[0] || '';
+            if (!/\sdata-pisi-sheet(?:\s*=|\s|\/?>)/i.test(openingTag)) return tableElement;
+
+            const modelAttribute = openingTag.match(/\sdata-pisi-sheet-model\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+            const serialized = modelAttribute?.[1] ?? modelAttribute?.[2] ?? modelAttribute?.[3] ?? '';
+            let model;
+            try {
+                model = JSON.parse(decodePisiHtmlEntities(serialized));
+            } catch {
+                model = null;
+            }
+            if (!model || !Array.isArray(model.fields) || !Array.isArray(model.items)) {
+                throw new Error('Sheet verisi dışa aktarılamadı; yan dosya eksik veya geçersiz.');
+            }
+
+            const fields = model.fields.filter((field) => field && typeof field.id === 'string');
+            const optionsFor = (field) => (Array.isArray(field.options) ? field.options : []);
+            const displayValue = (field, item) => {
+                const record = item?.values?.[field.id];
+                if (!record) return '';
+                const value = record.value !== null && record.value !== undefined && record.value !== '' ? record.value : record.formula || '';
+                if (field.type === 'select') {
+                    const option = optionsFor(field).find((candidate) => candidate.id === value || candidate.label === value);
+                    return option?.label ?? value;
+                }
+                if (field.type === 'mSelect') {
+                    const values = Array.isArray(value) ? value : [];
+                    return values
+                        .map((itemValue) => optionsFor(field).find((option) => option.id === itemValue || option.label === itemValue)?.label ?? itemValue)
+                        .join(', ');
+                }
+                if (field.type === 'checkbox') return value === true ? '☑' : value === false ? '☐' : String(value);
+                return Array.isArray(value) ? value.join(', ') : String(value);
+            };
+            const cell = (tag, value) => `<${tag}>${escapePisiPortableHtml(String(value ?? ''))}</${tag}>`;
+            const header = `<thead><tr>${fields.map((field) => cell('th', field.name || '')).join('')}</tr></thead>`;
+            const rows = model.items.map((item) => `<tr>${fields.map((field) => cell('td', displayValue(field, item))).join('')}</tr>`).join('');
+            return `<table data-pisi-sheet-export="1">${header}<tbody>${rows}</tbody></table>`;
+        })
+        .replace(/<table\b[^>]*\sdata-pisi-sheet(?:\s*=|\s|\/?>)[^>]*\/?>/gi, () => {
+            throw new Error('Sheet verisi dışa aktarılamadı; yan dosya eksik veya geçersiz.');
+        });
+}
+
 function pisiHtmlToPlainText(html = '') {
     return decodePisiHtmlEntities(
-        stripPisiTaskMetadataHtml(stripPisiUnsafeExportHtml(html))
+        stripPisiTaskMetadataHtml(stripPisiUnsafeExportHtml(pisiTransformSheetTablesForExport(html)))
+            .replace(/<table\b[^>]*data-pisi-sheet-export=["']1["'][^>]*>[\s\S]*?<\/table>/gi, pisiExportSheetTableToPlainText)
             .replace(/<br\s*\/?>/gi, '\n')
             .replace(/<\/(?:p|div|h[1-6]|li|blockquote|tr|table)>/gi, '\n')
             .replace(/<[^>]+>/g, ' ')
@@ -63,7 +137,8 @@ function pisiHtmlToPlainText(html = '') {
 }
 
 function pisiHtmlToMarkdown(html = '') {
-    let value = stripPisiTaskMetadataHtml(stripPisiUnsafeExportHtml(html));
+    let value = stripPisiTaskMetadataHtml(stripPisiUnsafeExportHtml(pisiTransformSheetTablesForExport(html)));
+    value = value.replace(/<table\b[^>]*data-pisi-sheet-export=["']1["'][^>]*>[\s\S]*?<\/table>/gi, pisiExportSheetTableToMarkdown);
     value = value.replace(
         /<(div|p|blockquote|pre)\b[^>]*data-pisi-block-type=["'](bullet|number|task|quote|code)["'][^>]*>([\s\S]*?)<\/\1>/gi,
         (_all, _tag, type, body) => {
@@ -180,8 +255,9 @@ function pisiPropertiesFrontmatter(properties = {}) {
     return lines.join('\n');
 }
 
-function pisiEmbedPaintImagesForExport(content = '') {
+function pisiTransformPaintCanvases(content = '', renderImage) {
     let exportError = null;
+    const images = [];
     const exported = String(content || '').replace(/<canvas\b[^>]*>(?:[\s\S]*?<\/canvas\s*>)?/gi, (canvasElement) => {
         const openingTag = canvasElement.match(/^<canvas\b[^>]*>/i)?.[0];
         if (!openingTag || !/\sdata-pisi-canvas(?:\s*=|\s|\/?>)/i.test(openingTag)) {
@@ -196,24 +272,67 @@ function pisiEmbedPaintImagesForExport(content = '') {
             return '';
         }
 
-        const embeddedImage = `data:image/png;base64,${decoded.buffer.toString('base64')}`;
         const attributes = openingTag
             .replace(/^<canvas\b/i, '')
             .replace(/\s(?:data-(?:pisi-canvas|pisi-asset|image)|src)\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
             .replace(/\s*\/?>$/, '');
         const defaultAlt = /\salt\s*=/i.test(attributes) ? '' : ' alt="Paint canvas"';
-        return `<img src="${embeddedImage}"${defaultAlt}${attributes}>`;
+        const image = { buffer: decoded.buffer, attributes, defaultAlt };
+        images.push(image);
+        return renderImage(image);
     });
 
     if (exportError) {
         throw new Error(exportError);
     }
-    return exported;
+    return { content: exported, images };
+}
+
+function pisiEmbedPaintImagesForExport(content = '') {
+    return pisiTransformPaintCanvases(content, ({ buffer, attributes, defaultAlt }) => {
+        const embeddedImage = `data:image/png;base64,${buffer.toString('base64')}`;
+        return `<img src="${embeddedImage}"${defaultAlt}${attributes}>`;
+    }).content;
+}
+
+function pisiLinkPaintImagesForMarkdown(content = '', markdownPath) {
+    const directoryName = `${path.basename(markdownPath, path.extname(markdownPath))}.assets`;
+    const assetDirectory = path.join(path.dirname(markdownPath), directoryName);
+    const sheetContent = pisiTransformSheetTablesForExport(content);
+    const transformed = pisiTransformPaintCanvases(sheetContent, ({ buffer, attributes, defaultAlt }) => {
+        const { hash } = editorAssets.getPisiPaintAssetReference(buffer);
+        const assetName = `paint-${hash}.png`;
+        fs.mkdirSync(assetDirectory, { recursive: true });
+        fs.writeFileSync(path.join(assetDirectory, assetName), buffer);
+        const imagePath = `${encodeURIComponent(directoryName)}/${assetName}`;
+        return `<img src="${imagePath}"${defaultAlt}${attributes}>`;
+    });
+    return transformed.content;
+}
+
+function pisiDocxPaintImageParagraph(image, index) {
+    const width = image.buffer.readUInt32BE(16);
+    const height = image.buffer.readUInt32BE(20);
+    if (!width || !height || width > 32768 || height > 32768) {
+        throw new Error('Paint canvas PNG boyutları geçersiz.');
+    }
+    const maxWidthEmu = 5943600;
+    const widthEmu = Math.min(maxWidthEmu, width * 9525);
+    const heightEmu = Math.round((widthEmu * height) / width);
+    const relationshipId = `rId${index + 1}`;
+    const imageName = `paint-${index + 1}.png`;
+    return {
+        imageName,
+        relationshipId,
+        paragraph: `<w:p><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${widthEmu}" cy="${heightEmu}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:docPr id="${index + 1}" name="Paint canvas ${index + 1}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${index + 1}" name="${imageName}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${relationshipId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${widthEmu}" cy="${heightEmu}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`
+    };
 }
 
 function pisiExportHtmlDocument(info) {
     const title = escapePisiPortableHtml(info.metadata.title || 'Pisi');
-    const content = pisiEmbedPaintImagesForExport(stripPisiTaskMetadataHtml(stripPisiUnsafeExportHtml(info.data.content || '')));
+    const content = pisiEmbedPaintImagesForExport(
+        stripPisiTaskMetadataHtml(stripPisiUnsafeExportHtml(pisiTransformSheetTablesForExport(info.data.content || '')))
+    );
     return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>${title}</title><style>body{font:16px/1.6 system-ui;max-width:900px;margin:40px auto;padding:0 24px;color:#202124}table{border-collapse:collapse}td,th{border:1px solid #bbb;padding:6px}img,canvas{max-width:100%}blockquote{border-left:3px solid #888;padding-left:16px;color:#555}</style></head><body><h1>${title}</h1>${content}</body></html>`;
 }
 
@@ -275,21 +394,39 @@ function makePisiStoredZip(entries) {
 }
 
 function makePisiDocxBuffer(info) {
-    const text = pisiHtmlToPlainText(info.data.content || '');
+    const content = pisiTransformSheetTablesForExport(info.data.content || '');
+    const paintImages = pisiTransformPaintCanvases(content, () => '').images;
+    const text = pisiHtmlToPlainText(content);
     const paragraphs = [info.metadata.title || 'Pisi', ...text.split('\n')]
         .map((line) => `<w:p><w:r><w:t xml:space="preserve">${escapePisiPortableHtml(line)}</w:t></w:r></w:p>`)
         .join('');
-    const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${paragraphs}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr></w:body></w:document>`;
+    const docxImages = paintImages.map(pisiDocxPaintImageParagraph);
+    const imageRelationships = docxImages
+        .map(
+            (image) =>
+                `<Relationship Id="${image.relationshipId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/${image.imageName}"/>`
+        )
+        .join('');
+    const imageContentType = paintImages.length ? '<Default Extension="png" ContentType="image/png"/>' : '';
+    const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>${paragraphs}${docxImages.map((image) => image.paragraph).join('')}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr></w:body></w:document>`;
     return makePisiStoredZip([
         {
             name: '[Content_Types].xml',
-            data: '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>'
+            data: `<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>${imageContentType}<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`
         },
         {
             name: '_rels/.rels',
             data: '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>'
         },
-        { name: 'word/document.xml', data: documentXml }
+        {
+            name: 'word/_rels/document.xml.rels',
+            data: `<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${imageRelationships}</Relationships>`
+        },
+        { name: 'word/document.xml', data: documentXml },
+        ...paintImages.map((image, index) => ({
+            name: `word/media/paint-${index + 1}.png`,
+            data: image.buffer
+        }))
     ]);
 }
 
@@ -297,7 +434,7 @@ async function exportPisiNodeDocument(nodePath, format) {
     const normalized = String(format || '').toLowerCase();
     const extension = { markdown: 'md', md: 'md', html: 'html', pdf: 'pdf', docx: 'docx' }[normalized];
     if (!extension) return { ok: false, error: 'Desteklenmeyen dışa aktarma biçimi.' };
-    const info = getPisiDocument(nodePath, { hydrateEditorAssets: extension === 'html' || extension === 'pdf' });
+    const info = getPisiDocument(nodePath, { hydrateEditorAssets: true });
     if (!info.ok) return info;
     const result = await dialog.showSaveDialog(globalThis.mainWindow, {
         title: 'Pisi dışa aktar',
@@ -306,7 +443,8 @@ async function exportPisiNodeDocument(nodePath, format) {
     });
     if (result.canceled || !result.filePath) return { ok: true, canceled: true };
     if (extension === 'md') {
-        fs.writeFileSync(result.filePath, pisiPropertiesFrontmatter(info.data.properties) + pisiHtmlToMarkdown(info.data.content), 'utf8');
+        const content = pisiLinkPaintImagesForMarkdown(info.data.content, result.filePath);
+        fs.writeFileSync(result.filePath, pisiPropertiesFrontmatter(info.data.properties) + pisiHtmlToMarkdown(content), 'utf8');
     } else if (extension === 'html') {
         fs.writeFileSync(result.filePath, pisiExportHtmlDocument(info), 'utf8');
     } else if (extension === 'docx') {
@@ -439,14 +577,15 @@ async function exportPisiProjectMarkdown(projectFolder) {
     const files = walkPisiFiles(projectFolder, (_filePath, name) => /\.(?:node|map)$/i.test(name));
     let exported = 0;
     for (const filePath of files) {
-        const info = getPisiDocument(filePath);
+        const info = getPisiDocument(filePath, { hydrateEditorAssets: true });
         if (!info.ok) continue;
         const isNode = info.metadata.type === 'node';
         const relative = getPisiPortableRelativePath(projectFolder, filePath, isNode ? 'md' : 'map.json');
         const target = path.join(destination, relative);
         fs.mkdirSync(path.dirname(target), { recursive: true });
         if (isNode) {
-            fs.writeFileSync(target, pisiPropertiesFrontmatter(info.data.properties) + pisiHtmlToMarkdown(info.data.content), 'utf8');
+            const content = pisiLinkPaintImagesForMarkdown(info.data.content, target);
+            fs.writeFileSync(target, pisiPropertiesFrontmatter(info.data.properties) + pisiHtmlToMarkdown(content), 'utf8');
         } else {
             fs.writeFileSync(target, JSON.stringify(info.data.map || {}, null, 2), 'utf8');
         }

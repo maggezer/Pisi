@@ -34,8 +34,15 @@ function setup(t) {
         'stripPisiUnsafeExportHtml',
         'stripPisiTaskMetadataHtml',
         'decodePisiHtmlEntities',
+        'escapePisiPortableHtml',
         'pisiHtmlToPlainText',
         'pisiHtmlToMarkdown',
+        'pisiGetExportSheetRows',
+        'pisiExportSheetTableToPlainText',
+        'pisiExportSheetTableToMarkdown',
+        'pisiTransformSheetTablesForExport',
+        'pisiTransformPaintCanvases',
+        'pisiLinkPaintImagesForMarkdown',
         'exportPisiProjectMarkdown'
     ];
     vm.runInContext(names.map((name) => (source.includes('async function ' + name + '(') ? 'async ' : '') + extractFunction(source, name)).join('\n'), context);

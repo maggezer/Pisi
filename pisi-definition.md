@@ -397,8 +397,16 @@ Node açılırken renderer için transient hydration yapılır:
 
 Node HTML veya PDF olarak dışa aktarılırken Paint sidecar'ı hash, PNG imzası
 ve boyut sınırına göre doğrulanır; geçerli canvas'lar gömülü PNG `img`
-öğelerine çevrilir. Eksik veya geçersiz Paint verisi boş canvas olarak sessizce
-dışa aktarılmaz.
+öğelerine çevrilir. Markdown dışa aktarımı, yanında content-addressed PNG
+dosyalarını ve bağıl image linklerini üretir. DOCX dışa aktarımı PNG dosyalarını
+belgeye ekler ve DrawingML ilişkileri kurar. Proje Markdown dışa aktarımı da
+aynı attachment düzenini her node için korur. Eksik veya geçersiz Paint verisi
+boş canvas olarak sessizce dışa aktarılmaz.
+
+Sheet dışa aktarımında doğrulanmış sidecar snapshot'ı statik tabloya dönüştürülür.
+HTML/PDF görünür hücreleri, Markdown tabloyu, DOCX ise satır ve hücre metnini
+içerir. Sidecar eksik veya geçersizse boş tablo üretmek yerine dışa aktarım hata
+verir.
 
 Bu hydrated alanlar canonical disk formatı değildir; save sırasında yeniden
 sidecar referansına normalize edilir.
