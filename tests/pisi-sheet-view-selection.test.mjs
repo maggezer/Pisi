@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import { createRequire } from 'node:module';
 import { getPisiSheetViewItemRecords } from '../renderer/editor/pisi-editor-sheet-view-query-core.mjs';
+import { formatPisiSheetSelection } from '../renderer/editor/pisi-editor-sheet-format-core.mjs';
 import * as selection from '../renderer/editor/pisi-editor-sheet-view-selection.mjs';
 import * as fill from '../renderer/editor/pisi-editor-sheet-drag-fill-core.mjs';
 import { shiftPisiSheetFormulaReferences } from '../renderer/editor/pisi-editor-sheet-model.mjs';
@@ -145,19 +146,20 @@ test('drag fill shifts formulas by model coordinates rather than visual row dist
     assert.equal(changes.find((x) => x.row === 3 && x.col === 2).formula, '=C4');
 });
 
-test('formatting includes selected cells outside the rendered window', () => {
+test('formatting includes selected cells outside the rendered window without creating DOM cells', () => {
     const written = [];
+    const database = { fields: [{ id: 'a' }, { id: 'hidden' }, { id: 'c' }], items: Array.from({ length: 5 }, () => ({ values: {} })) };
     const c = load('pisi-editor-sheet-structure.mjs', ['applyPisiSheetCellFormat'], {
-        getPisiSelectedSheetPoints: () => selection.getPisiSheetViewSelectionIndices(axes, range),
-        getPisiSheetCell: () => null,
-        document: { createElement: () => ({ style: {} }) },
-        getPisiSheetCellSource: () => ({ format: {} }),
-        applyPisiSheetCellFormatToDom: (cell, format) => Object.assign(cell.style, format),
-        capturePisiSheetCellFormat: (cell) => cell.style,
-        setPisiSheetCellFormat: (_t, row, col, format) => written.push([row, col, format.fontWeight]),
+        getPisiSheetViewAxes: () => axes,
+        getPisiSheetSelection: () => range,
+        getPisiSheetViewSelectionIndices: selection.getPisiSheetViewSelectionIndices,
+        getPisiSheetDatabase: () => database,
+        getPisiSheetOrderedFields: () => database.fields,
+        formatPisiSheetSelection,
+        setPisiSheetCellRecordsBatch: (_t, changes) => written.push(...changes.map(({ row, col, format }) => [row, col, format.fontWeight])),
         renderPisiSheetSelection() {}
     });
-    assert.equal(c.applyPisiSheetCellFormat({}, 'toggleBold'), true);
+    assert.equal(c.applyPisiSheetCellFormat({ querySelectorAll: () => [] }, 'toggleBold'), true);
     assert.deepEqual(
         written,
         [3, 1, 4].flatMap((row) => [0, 2].map((col) => [row, col, '700']))

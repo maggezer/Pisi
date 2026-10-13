@@ -58,7 +58,7 @@ test('Table ve Rollup butonları formül butonlarıyla aynı ölçüdedir', () =
 });
 
 test('table cells support justify and compact style buttons stay fixed width', () => {
-    const sheet = read('renderer/editor/pisi-editor-sheet-structure.mjs');
+    const sheet = read('renderer/editor/pisi-editor-sheet-format-core.mjs');
     const css = read('styles/65-shared-ui.css');
     assert.match(sheet, /action === 'alignJustify'/);
     assert.match(sheet, /textAlign = 'justify'/);

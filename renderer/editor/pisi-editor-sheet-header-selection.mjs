@@ -14,8 +14,14 @@ function getPisiSheetSelection(table) {
 function getPisiSelectedSheetPoints(table) {
     const database = getPisiSheetDatabase(table);
     const selection = getPisiSheetSelection(table);
+    if (!database) return [];
+    const fields = getPisiSheetOrderedFields(database);
     return getPisiSheetViewSelectionIndices(getPisiSheetViewAxes(table), selection)
-        .map(({ row, col }) => getPisiSheetPointByIndexFromDatabase(database, row, col))
+        .map(({ row, col }) => {
+            const item = database.items[row];
+            const field = fields[col];
+            return item && field ? { groupId: database.databaseId, rowId: item.id, colId: field.id, row, col } : null;
+        })
         .filter(Boolean);
 }
 

@@ -470,9 +470,11 @@ async function testLargeSheetClear(app) {
         if (!cell || getPisiSheetCell(table, 1999, 0)) return false;
         selectPisiSheetCell(cell);
         table.querySelector('thead th[data-pisi-sheet-corner]').dispatchEvent(new MouseEvent('mousedown', {button: 0, bubbles: true, cancelable: true}));
+        if (!applyPisiSheetCellFormat(table, 'toggleItalic')) return false;
+        if (!database.items.every((item, row) => item.values[first.id]?.format.fontStyle === 'italic' && item.values[last.id]?.format.fontStyle === 'italic' && item.values[first.id]?.value === 'value ' + row && item.values[last.id]?.formula === '=A1')) return false;
         cell.dispatchEvent(new KeyboardEvent('keydown', {key: 'Delete', bubbles: true, cancelable: true}));
-        return database.items.every(item => !item.values[first.id] && item.values[last.id]?.value === '' &&
-            !item.values[last.id]?.formula && item.values[last.id]?.format.fontWeight === '700');
+        return database.items.every(item => item.values[first.id]?.value === '' && item.values[first.id]?.format.fontStyle === 'italic' && item.values[last.id]?.value === '' &&
+            !item.values[last.id]?.formula && item.values[last.id]?.format.fontWeight === '700' && item.values[last.id]?.format.fontStyle === 'italic');
     })()`);
     if (!cleared) throw new Error('Large Sheet Delete left selected offscreen values or formulas uncleared.');
     if (!(await app.cdp.evaluate('saveCurrentCenterNodeEditor()'))) throw new Error('Cleared large Sheet could not be saved.');
@@ -481,9 +483,10 @@ async function testLargeSheetClear(app) {
         const table = document.querySelector('#center-node-editor-content table[data-pisi-sheet]');
         const database = table && getPisiSheetDatabase(table);
         if (!database || activeCenterNode.assetRecoveryWarning || database.items.length !== 2000) return false;
+        if (table.querySelector('tbody td[data-cell]')?.style.fontStyle !== 'italic') return false;
         const [first, last] = database.fields;
-        return database.items.every(item => !item.values[first.id] && item.values[last.id]?.value === '' &&
-            !item.values[last.id]?.formula && item.values[last.id]?.format.fontWeight === '700');
+        return database.items.every(item => item.values[first.id]?.value === '' && item.values[first.id]?.format.fontStyle === 'italic' && item.values[last.id]?.value === '' &&
+            !item.values[last.id]?.formula && item.values[last.id]?.format.fontWeight === '700' && item.values[last.id]?.format.fontStyle === 'italic');
     })()`);
     if (!reopened) throw new Error('Large Sheet bulk clear did not survive save and reopen.');
 }
