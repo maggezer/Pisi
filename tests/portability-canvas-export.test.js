@@ -92,6 +92,7 @@ function createExportHarness(format, content, sidecarPath, outputPath) {
 
     return {
         run: () => context.exportPisiNodeDocument('paint-note.node', format),
+        toPlainText: (html) => context.pisiHtmlToPlainText(html),
         getLoadedHtml: () => loadedHtml,
         documentOptions
     };
@@ -435,4 +436,9 @@ test('node export rejects Sheet blocks without a hydrated, verified sidecar mode
     } finally {
         fs.rmSync(temporaryRoot, { recursive: true, force: true });
     }
+});
+
+test('plain-text history conversion does not require a hydrated Sheet export model', () => {
+    const harness = createExportHarness('html', '', '', '');
+    assert.equal(harness.toPlainText('<table data-pisi-sheet="1" data-pisi-sheet-asset="sheet/missing.json"></table>'), '');
 });

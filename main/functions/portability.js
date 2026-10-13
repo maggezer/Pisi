@@ -123,7 +123,7 @@ function pisiTransformSheetTablesForExport(content = '') {
 
 function pisiHtmlToPlainText(html = '') {
     return decodePisiHtmlEntities(
-        stripPisiTaskMetadataHtml(stripPisiUnsafeExportHtml(pisiTransformSheetTablesForExport(html)))
+        stripPisiTaskMetadataHtml(stripPisiUnsafeExportHtml(html))
             .replace(/<table\b[^>]*data-pisi-sheet-export=["']1["'][^>]*>[\s\S]*?<\/table>/gi, pisiExportSheetTableToPlainText)
             .replace(/<br\s*\/?>/gi, '\n')
             .replace(/<\/(?:p|div|h[1-6]|li|blockquote|tr|table)>/gi, '\n')
