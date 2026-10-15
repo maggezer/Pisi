@@ -66,3 +66,23 @@ test('sağ arama yüzeyi koyu ve açık tema stillerine sahiptir', () => {
     assert.doesNotMatch(searchCss, /\.pisi-right-search-result-context/);
     assert.doesNotMatch(lightCss, /\.pisi-right-search-result-context/);
 });
+
+test('arka plan arama indeksi güncellemeleri odağı arama çubuğuna zorla çekmez', () => {
+    const panel = read('renderer/search/pisi-search-panel.mjs');
+
+    assert.match(panel, /if \(options\.focus === true && state\.page\.classList\.contains\('active'\)\)/);
+    assert.match(panel, /activatePisiRightSearchPanel\(\{\s*focus:\s*true\s*\}\)/);
+    assert.match(panel, /'pisi:search-index-invalidated'[\s\S]*?shouldDeferRightSearchRefresh/);
+    assert.match(panel, /'pisi:enhanced-search-index-updated'[\s\S]*?shouldDeferRightSearchRefresh/);
+});
+
+test('not yazılırken veya düzenlenirken sağ arama paneli kendini yenilemez', () => {
+    const panel = read('renderer/search/pisi-search-panel.mjs');
+
+    assert.match(panel, /function isUserEditingNote\(\)/);
+    assert.match(panel, /function shouldDeferRightSearchRefresh\(event\)/);
+    assert.match(panel, /state\.pendingRefresh = true/);
+    assert.match(panel, /hadMatches/);
+});
+
+

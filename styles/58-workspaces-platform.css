@@ -2915,34 +2915,34 @@ html[data-pisi-theme='light'] .pisi-quick-add-error {
     font-size: 12px;
 }
 
-html[data-theme='light'] .pisi-trash-header p,
-html[data-theme='light'] .pisi-trash-meta,
-html[data-theme='light'] .pisi-trash-kind,
-html[data-theme='light'] .pisi-trash-empty {
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-trash-header p,
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-trash-meta,
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-trash-kind,
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-trash-empty {
     color: #626b78;
 }
 
-html[data-theme='light'] .pisi-trash-card,
-html[data-theme='light'] .pisi-trash-btn,
-html[data-theme='light'] .pisi-trash-empty {
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-trash-card,
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-trash-btn,
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-trash-empty {
     border-color: rgba(15, 23, 42, 0.13);
 }
 
-html[data-theme='light'] .pisi-trash-card {
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-trash-card {
     background: rgba(15, 23, 42, 0.015);
 }
 
-html[data-theme='light'] .pisi-trash-btn {
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-trash-btn {
     background: rgba(15, 23, 42, 0.035);
 }
 
-html[data-theme='light'] .pisi-trash-btn:hover:not(:disabled),
-html[data-theme='light'] .pisi-trash-btn:focus-visible:not(:disabled) {
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-trash-btn:hover:not(:disabled),
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-trash-btn:focus-visible:not(:disabled) {
     background: rgba(15, 23, 42, 0.075);
     border-color: rgba(15, 23, 42, 0.22);
 }
 
-html[data-theme='light'] .pisi-trash-kind {
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-trash-kind {
     background: rgba(15, 23, 42, 0.055);
 }
 
@@ -3191,20 +3191,20 @@ html[data-theme='light'] .pisi-trash-kind {
     overflow-wrap: anywhere;
 }
 
-html[data-theme='light'] .pisi-integrity-rebuild-help,
-html[data-theme='light'] .pisi-integrity-status span,
-html[data-theme='light'] .pisi-integrity-metric span,
-html[data-theme='light'] .pisi-integrity-authorities span,
-html[data-theme='light'] .pisi-integrity-plan p,
-html[data-theme='light'] .pisi-integrity-issue-head code,
-html[data-theme='light'] .pisi-integrity-issue-path {
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-integrity-rebuild-help,
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-integrity-status span,
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-integrity-metric span,
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-integrity-authorities span,
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-integrity-plan p,
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-integrity-issue-head code,
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-integrity-issue-path {
     color: #626b78;
 }
 
-html[data-theme='light'] .pisi-integrity-status,
-html[data-theme='light'] .pisi-integrity-metric,
-html[data-theme='light'] .pisi-integrity-plan,
-html[data-theme='light'] .pisi-integrity-issue-row {
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-integrity-status,
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-integrity-metric,
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-integrity-plan,
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-integrity-issue-row {
     border-color: rgba(15, 23, 42, 0.12);
     background: rgba(15, 23, 42, 0.02);
 }

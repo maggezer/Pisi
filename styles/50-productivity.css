@@ -2459,31 +2459,31 @@ html[data-pisi-theme='light'] #workspace.pisi-todo-workspace-active {
     font-weight: 750;
 }
 
-html[data-theme='light'] .pisi-global-search-filter {
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-global-search-filter {
     border-color: #cbd2da;
     background: #f5f7f9;
     color: #526071;
 }
 
-html[data-theme='light'] .pisi-global-search-filter:hover,
-html[data-theme='light'] .pisi-global-search-filter:focus-visible {
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-global-search-filter:hover,
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-global-search-filter:focus-visible {
     border-color: #8298ae;
     color: #182534;
 }
 
-html[data-theme='light'] .pisi-global-search-filter.active {
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-global-search-filter.active {
     border-color: #2d7fc4;
     background: #dceeff;
     color: #173b5b;
 }
 
-html[data-theme='light'] .pisi-global-search-syntax,
-html[data-theme='light'] .pisi-right-search-syntax {
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-global-search-syntax,
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-right-search-syntax {
     color: #778494;
 }
 
-html[data-theme='light'] .pisi-global-search-result-fuzzy,
-html[data-theme='light'] .pisi-right-search-result-fuzzy {
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-global-search-result-fuzzy,
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-right-search-result-fuzzy {
     color: #8c621b;
 }
 

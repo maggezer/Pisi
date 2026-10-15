@@ -208,33 +208,89 @@ function makePisiRightSearchState(page) {
 
     const state = {
         page,
+        panel,
         input,
         status,
         results,
         index: null,
         matches: [],
         selectedIndex: 0,
-        recentById: new Map()
+        recentById: new Map(),
+        pendingRefresh: false
     };
     input.addEventListener('input', () => {
         state.selectedIndex = 0;
         renderPisiRightSearchResults(state);
     });
     input.addEventListener('keydown', (event) => handlePisiRightSearchKeydown(state, event));
+    input.addEventListener('focus', () => {
+        if (state.pendingRefresh) {
+            state.pendingRefresh = false;
+            void activatePisiRightSearchPanel({ query: state.input.value, focus: false });
+        }
+    });
+    panel.addEventListener('pointerdown', () => {
+        if (state.pendingRefresh) {
+            state.pendingRefresh = false;
+            void activatePisiRightSearchPanel({ query: state.input.value, focus: false });
+        }
+    });
     return state;
+}
+
+function isUserEditingNote() {
+    if (typeof document === 'undefined') return false;
+    const active = document.activeElement;
+    if (active) {
+        if (active.id === 'pisi-right-search-input' || active.closest?.('.pisi-right-search-panel')) {
+            return false;
+        }
+        if (
+            ('isContentEditable' in active && Boolean(active.isContentEditable)) ||
+            active.id === 'center-node-editor-title' ||
+            active.id === 'node-modal-title' ||
+            active.closest?.(
+                '#center-node-editor-content, #node-modal-content, .pisi-rich-editor, .center-node-editor, .node-modal, #node-modal'
+            ) ||
+            active.matches?.('input:not(#pisi-right-search-input), textarea')
+        ) {
+            return true;
+        }
+    }
+    if (typeof window !== 'undefined' && (window.activeCenterNode?.dirty || window.activeModalNode?.dirty)) {
+        return true;
+    }
+    return false;
+}
+
+function shouldDeferRightSearchRefresh(event) {
+    if (isUserEditingNote()) return true;
+    const changedPaths = event?.detail?.changedPaths;
+    const activePath = typeof window !== 'undefined' ? (window.activeCenterNode?.path || window.activeModalNode?.path) : null;
+    if (activePath && Array.isArray(changedPaths) && changedPaths.length === 1 && changedPaths[0] === activePath) {
+        return true;
+    }
+    return false;
 }
 
 async function activatePisiRightSearchPanel(options = {}) {
     const state = pisiRightSearchState;
     if (!state) return false;
     const requestId = ++pisiRightSearchRequest;
-    if (options.query !== undefined) state.input.value = options.query;
-    state.matches = [];
-    state.selectedIndex = 0;
+    state.pendingRefresh = false;
+    if (options.query !== undefined && state.input.value !== options.query) {
+        state.input.value = options.query;
+    }
+    const hadMatches = state.matches.length > 0;
+    if (!hadMatches) {
+        state.matches = [];
+        state.selectedIndex = 0;
+    }
     state.recentById = makePisiSearchRecentMap(window.currentProjectFolder || '');
     state.index = getPisiStaleSearchIndex(window.currentProjectFolder);
-    if (state.index) renderPisiRightSearchResults(state);
-    else {
+    if (state.index) {
+        renderPisiRightSearchResults(state);
+    } else if (!hadMatches) {
         setPisiRightSearchStatus(state, 'Arama indeksi hazırlanıyor…', 'loading');
         renderPisiRightSearchEmpty(state, 'Arama indeksi hazırlanıyor…');
     }
@@ -249,7 +305,7 @@ async function activatePisiRightSearchPanel(options = {}) {
     state.index = index;
     state.recentById = makePisiSearchRecentMap(window.currentProjectFolder || '');
     renderPisiRightSearchResults(state);
-    if (state.page.classList.contains('active')) {
+    if (options.focus === true && state.page.classList.contains('active')) {
         requestAnimationFrame(() => state.input.focus());
     }
     return true;
@@ -272,7 +328,7 @@ function installPisiRightSearchPanel() {
         icon.setAttribute('aria-hidden', 'true');
         button.appendChild(icon);
         button.addEventListener('click', () => {
-            requestAnimationFrame(() => void activatePisiRightSearchPanel());
+            requestAnimationFrame(() => void activatePisiRightSearchPanel({ focus: true }));
         });
         tabs.appendChild(button);
     }
@@ -298,15 +354,35 @@ function rebuildPisiRightSearchPanelForLanguage() {
 }
 
 document.addEventListener('DOMContentLoaded', installPisiRightSearchPanel);
-document.addEventListener('pisi:search-index-invalidated', () => {
+document.addEventListener('pisi:search-index-invalidated', (event) => {
     const state = pisiRightSearchState;
     if (!state?.page.classList.contains('active')) return;
-    void activatePisiRightSearchPanel({ query: state.input.value });
+    if (shouldDeferRightSearchRefresh(event)) {
+        state.pendingRefresh = true;
+        return;
+    }
+    state.pendingRefresh = false;
+    void activatePisiRightSearchPanel({ query: state.input.value, focus: false });
 });
-document.addEventListener('pisi:enhanced-search-index-updated', () => {
+document.addEventListener('pisi:enhanced-search-index-updated', (event) => {
     const state = pisiRightSearchState;
     if (!state?.page.classList.contains('active')) return;
-    void activatePisiRightSearchPanel({ query: state.input.value });
+    if (shouldDeferRightSearchRefresh(event)) {
+        state.pendingRefresh = true;
+        return;
+    }
+    state.pendingRefresh = false;
+    void activatePisiRightSearchPanel({ query: state.input.value, focus: false });
+});
+document.addEventListener('focusout', () => {
+    const state = pisiRightSearchState;
+    if (!state?.page.classList.contains('active') || !state.pendingRefresh) return;
+    setTimeout(() => {
+        if (state.pendingRefresh && !shouldDeferRightSearchRefresh()) {
+            state.pendingRefresh = false;
+            void activatePisiRightSearchPanel({ query: state.input.value, focus: false });
+        }
+    }, 400);
 });
 document.addEventListener('pisi:search-history-updated', () => {
     const state = pisiRightSearchState;

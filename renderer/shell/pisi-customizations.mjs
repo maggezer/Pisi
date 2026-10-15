@@ -88,7 +88,12 @@ function applyPisiTheme(theme) {
     const normalized = normalizePisiTheme(theme);
     const root = document.documentElement;
     root.dataset.pisiTheme = normalized;
+    root.dataset.theme = normalized;
     root.style.colorScheme = normalized;
+    if (typeof document !== 'undefined' && document.body?.classList) {
+        document.body.classList.toggle('light-theme', normalized === 'light');
+        document.body.classList.toggle('pisi-light-theme', normalized === 'light');
+    }
     return normalized;
 }
 
