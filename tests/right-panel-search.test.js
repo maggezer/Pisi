@@ -84,5 +84,3 @@ test('not yazılırken veya düzenlenirken sağ arama paneli kendini yenilemez',
     assert.match(panel, /state\.pendingRefresh = true/);
     assert.match(panel, /hadMatches/);
 });
-
-

@@ -249,9 +249,7 @@ function isUserEditingNote() {
             ('isContentEditable' in active && Boolean(active.isContentEditable)) ||
             active.id === 'center-node-editor-title' ||
             active.id === 'node-modal-title' ||
-            active.closest?.(
-                '#center-node-editor-content, #node-modal-content, .pisi-rich-editor, .center-node-editor, .node-modal, #node-modal'
-            ) ||
+            active.closest?.('#center-node-editor-content, #node-modal-content, .pisi-rich-editor, .center-node-editor, .node-modal, #node-modal') ||
             active.matches?.('input:not(#pisi-right-search-input), textarea')
         ) {
             return true;
@@ -266,7 +264,7 @@ function isUserEditingNote() {
 function shouldDeferRightSearchRefresh(event) {
     if (isUserEditingNote()) return true;
     const changedPaths = event?.detail?.changedPaths;
-    const activePath = typeof window !== 'undefined' ? (window.activeCenterNode?.path || window.activeModalNode?.path) : null;
+    const activePath = typeof window !== 'undefined' ? window.activeCenterNode?.path || window.activeModalNode?.path : null;
     if (activePath && Array.isArray(changedPaths) && changedPaths.length === 1 && changedPaths[0] === activePath) {
         return true;
     }

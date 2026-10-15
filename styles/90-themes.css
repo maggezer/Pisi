@@ -1622,10 +1622,17 @@ html[data-pisi-theme='light'] body .pisi-shortcut-capture {
 }
 
 /* Light Theme: Composite alignment ribbon buttons */
-html[data-pisi-theme='light'] body .pisi-unified-toolbar.pisi-composite-context .pisi-toolbar-align-grid .pisi-ribbon-btn.active:not([data-pisi-composite-alignment-active]):not(:hover):not(:focus-visible),
-html[data-pisi-theme='light'] body .pisi-unified-toolbar.pisi-composite-context .pisi-toolbar-align-grid .pisi-ribbon-btn[aria-pressed='true']:not([data-pisi-composite-alignment-active]):not(:hover):not(:focus-visible) {
+html[data-pisi-theme='light']
+    body
+    .pisi-unified-toolbar.pisi-composite-context
+    .pisi-toolbar-align-grid
+    .pisi-ribbon-btn.active:not([data-pisi-composite-alignment-active]):not(:hover):not(:focus-visible),
+html[data-pisi-theme='light']
+    body
+    .pisi-unified-toolbar.pisi-composite-context
+    .pisi-toolbar-align-grid
+    .pisi-ribbon-btn[aria-pressed='true']:not([data-pisi-composite-alignment-active]):not(:hover):not(:focus-visible) {
     border-color: #cbd0d6;
     background: linear-gradient(180deg, #ffffff 0%, #e8ebed 100%);
     box-shadow: none;
 }
-
