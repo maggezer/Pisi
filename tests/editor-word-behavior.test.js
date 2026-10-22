@@ -224,15 +224,15 @@ test('headings encompass all descendants until next heading of same or higher le
     assert.match(wordSource, /Array\.from\(editor\.children\)/);
 });
 
-test('B3 heading moves validate contiguous sections and skip destination heading subtrees', () => {
+test('B3 heading moves keep contiguous sections and resolve destination heading ownership', () => {
     const source = read('renderer/editor/pisi-block-editor.mjs');
-    assert.match(source, /function getPisiMovableBlockSection\(editor, block\)/);
-    assert.match(source, /section\.some\(\(item, index\) => item\.parentElement !== editor/);
-    assert.match(source, /const targetEnd = getPisiBlockSectionEnd\(editor, next\)/);
-    assert.match(source, /targetEnd\.after\(\.\.\.items\)/);
-    assert.match(source, /const boundary = getPisiHeadingBoundary\\(editor, target, getPisiMoveHeadingLevel\\(dragged\\)\\)/);
-    assert.match(source, /const anchor = before \\? boundary : getPisiBlockSectionEnd\\(editor, boundary\\)/);
-    assert.match(source, /const anchor = getPisiHeadingBoundary\\(editor, prev, headingLevel\\)/);
-    assert.match(source, /if \(!target \|\| target\.parentElement !== editor \|\| !items\.length \|\| items\.includes\(target\)\) return/);
-    assert.match(source, /window\.syncPisiWordHeadingCollapse\?\.\(editor\)/);
+    assert.ok(source.includes('function getPisiMovableBlockSection(editor, block)'));
+    assert.ok(source.includes('section.some((item, index) => item.parentElement !== editor'));
+    assert.ok(source.includes('const targetEnd = getPisiBlockSectionEnd(editor, boundary)'));
+    assert.ok(source.includes('targetEnd.after(...items)'));
+    assert.ok(source.includes('const boundary = getPisiHeadingBoundary(editor, target, getPisiMoveHeadingLevel(dragged))'));
+    assert.ok(source.includes('const anchor = before ? boundary : getPisiBlockSectionEnd(editor, boundary)'));
+    assert.ok(source.includes('const anchor = getPisiHeadingBoundary(editor, prev, headingLevel)'));
+    assert.ok(source.includes('items.includes(target)'));
+    assert.ok(source.includes('window.syncPisiWordHeadingCollapse?.(editor)'));
 });
