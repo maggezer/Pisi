@@ -272,7 +272,26 @@ function closePisiRoutedMenuForEditor(editor) {
     }
 }
 
+function isPisiTodoStepMenuActive(editor) {
+    const state = window.pisiTagMenuState;
+    if (!state?.active) return false;
+    if (editor && state.editor && state.editor !== editor) return false;
+    return state.mode === 'todo-priority' || state.mode === 'todo-date';
+}
+
 function routePisiEditorToken(editor) {
+    if (isPisiTodoStepMenuActive(editor)) {
+        const state = window.pisiTagMenuState;
+        if (state.mode === 'todo-date' || !state.command?.token) {
+            return state.mode;
+        }
+        const activeCommand = getPisiTokenAtCaret(editor, 'command');
+        if (activeCommand && normalizePisiCommandId(activeCommand.body) === 'todo') {
+            return state.mode;
+        }
+        window.closePisiTagMenu?.();
+    }
+
     const tagCommand = getPisiTokenAtCaret(editor, 'tag');
     if (tagCommand) {
         openPisiHashTagMenu(editor, tagCommand);
@@ -314,6 +333,7 @@ function getExactPisiCommandMenuItem(command) {
 
 function handlePisiEditorTokenKeydown(editor, event) {
     if (event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (isPisiTodoStepMenuActive(editor)) return;
 
     if (pisiUnifiedCommandState.active && pisiUnifiedCommandState.editor === editor) {
         if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {

@@ -57,3 +57,32 @@ test('Markdown çıktısı görünmez todo ve done etiketlerini dışarı sızd�
     assert.match(blockEditor, /data-pisi-tag\^="todo\."/);
     assert.match(blockEditor, /data-pisi-tag="done"/);
 });
+
+test('Görev bloğunda Enter ile alt satıra geçiş, yetim checkbox temizliği ve klavye navigasyonu korunur', () => {
+    const blockEditor = read('renderer/editor/pisi-block-editor.mjs');
+    const todoBlocks = read('renderer/tags/pisi-todo-blocks.mjs');
+    const editorBlocks = read('renderer/tags/pisi-editor-blocks.mjs');
+    const taskStore = read('renderer/tags/pisi-task-store.mjs');
+    const tagEditor = read('renderer/tags/pisi-tag-editor.mjs');
+    const routing = read('renderer/editor/pisi-editor-command-routing.mjs');
+
+    assert.match(blockEditor, /function getPisiSelectionBlock/);
+    assert.match(blockEditor, /function splitPisiTaskBlockOnEnter/);
+    assert.match(blockEditor, /if \(splitPisiTaskBlockOnEnter\(editor, block, event\)\) return;/);
+    assert.match(blockEditor, /function handlePisiTaskBlockBackspace/);
+    assert.match(blockEditor, /if \(handlePisiTaskBlockBackspace\(editor, block, event\)\) return;/);
+    assert.match(todoBlocks, /function cleanupOrphanPisiTodoBlock/);
+    assert.match(todoBlocks, /function removePisiTodoFromBlock/);
+    assert.match(todoBlocks, /function healSplitPisiTodoBlock/);
+    assert.match(todoBlocks, /function ensurePisiTodoSourceTextNode/);
+    assert.match(todoBlocks, /function absorbStrayNodesIntoPisiTodoSource/);
+    assert.match(todoBlocks, /function placeCaretInPisiTodoSource/);
+    assert.doesNotMatch(todoBlocks, /marker\.after\(document\.createTextNode\(' '\)\)/);
+    assert.match(editorBlocks, /const seenBlockIds = new Set\(\);/);
+    assert.match(editorBlocks, /if \(didMutateDom && selectionSnapshot\)/);
+    assert.match(taskStore, /function extractCleanPisiTaskTitleFromBlock/);
+    assert.match(taskStore, /const seenTaskIds = new Set\(\);/);
+    assert.match(tagEditor, /pisiTagMenuState\.mode === 'todo-priority'/);
+    assert.match(tagEditor, /pisiTagMenuState\.mode === 'todo-date'/);
+    assert.match(routing, /function isPisiTodoStepMenuActive/);
+});

@@ -1128,3 +1128,15 @@ html[data-pisi-theme='light'] body .pisi-calendar-day.selected:not(.today) {
     border-color: #c97800;
     color: #8a5100;
 }
+
+html[data-pisi-theme='light'] body .pisi-calendar-day.has-diary-node.has-uncompleted-tasks::after {
+    background: #d63031;
+}
+
+html[data-pisi-theme='light'] body .pisi-calendar-day.has-diary-node.has-completed-tasks::after {
+    background: #27ae60;
+}
+
+html[data-pisi-theme='light'] body .pisi-calendar-day.has-diary-node.has-diary-note-only::after {
+    background: #718096;
+}

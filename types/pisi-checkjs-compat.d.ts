@@ -67,6 +67,7 @@ interface Event {
     readonly shiftKey: boolean;
     readonly ctrlKey: boolean;
     readonly metaKey: boolean;
+    readonly altKey: boolean;
     readonly dataTransfer: DataTransfer | null;
     readonly clientX: number;
     readonly clientY: number;

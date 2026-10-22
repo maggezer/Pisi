@@ -29,7 +29,7 @@ function bindNodeModalControls() {
             const modalOverlay = document.getElementById('node-modal-overlay');
             if (!modalOverlay?.classList.contains('visible')) return;
 
-            if (event.key === 'Tab') {
+            if (event.key === 'Tab' && !event.defaultPrevented) {
                 const focusable = Array.from(
                     modalOverlay.querySelectorAll('button:not([disabled]), input:not([disabled]), [contenteditable="true"], [tabindex]:not([tabindex="-1"])')
                 ).filter((element) => !element.hidden);

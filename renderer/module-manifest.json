@@ -379,6 +379,7 @@
             "ensurePisiOpenTab",
             "openPisiFileTab",
             "activatePisiOpenTab",
+            "cyclePisiOpenTabs",
             "closePisiOpenTab",
             "removePisiOpenTabByPath",
             "resetPisiOpenTabs",
@@ -616,7 +617,8 @@
             "decoratePisiEditorBlock",
             "ensurePisiEditorBlocks",
             "getPisiBlockElementsFromContainer",
-            "createPisiInertHtmlTemplate"
+            "createPisiInertHtmlTemplate",
+            "handlePisiEditorPaste"
         ]
     },
     {

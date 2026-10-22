@@ -664,6 +664,8 @@ function setPisiEditorContent(editor, content = '') {
     if (/<[a-z][\s\S]*>/i.test(value)) {
         editor.innerHTML = sanitizePisiEditorHtml(value);
         ensurePisiEditorBlocks(editor);
+        window.decoratePisiBlockTypes?.(editor);
+        window.syncPisiWordHeadingCollapse?.(editor);
         if (typeof initializePisiAdvancedEditorContent === 'function') {
             initializePisiAdvancedEditorContent(editor);
         }
@@ -672,6 +674,8 @@ function setPisiEditorContent(editor, content = '') {
 
     editor.innerHTML = markdownTextToPisiEditorHtml(value);
     ensurePisiEditorBlocks(editor);
+    window.decoratePisiBlockTypes?.(editor);
+    window.syncPisiWordHeadingCollapse?.(editor);
     if (typeof initializePisiAdvancedEditorContent === 'function') {
         initializePisiAdvancedEditorContent(editor);
     }
@@ -723,6 +727,14 @@ function markdownTextToPisiEditorHtml(text = '') {
                 const title = headingMatch[2] || '';
 
                 return `<h${level}>${escapeHtml(title)}</h${level}>`;
+            }
+
+            const bulletMatch = line.match(/^(\s*)([-*+])\s+(.*)$/);
+            if (bulletMatch) {
+                const indent = Math.min(Math.floor((bulletMatch[1] || '').replace(/\t/g, '  ').length / 2), 6);
+                const indentAttr = indent > 0 ? ` data-pisi-bullet-indent="${indent}" style="--pisi-bullet-indent: ${indent}"` : '';
+                const body = bulletMatch[3] ? escapeHtml(bulletMatch[3]) : '<br>';
+                return `<div class="pisi-editor-block" data-pisi-block-type="bullet"${indentAttr}>${body}</div>`;
             }
 
             if (!line.trim()) {

@@ -59,6 +59,7 @@ jobs:
         needs: validate
         permissions:
             contents: write
+            actions: write
         runs-on: windows-latest
         timeout-minutes: 45
         env:
@@ -302,7 +303,7 @@ jobs:
                       release/SHA256SUMS.txt
                       release/latest.json
                   if-no-files-found: error
-                  retention-days: 14
+                  retention-days: 1
 
     macos-release:
         needs: validate
@@ -465,7 +466,7 @@ jobs:
                   name: pisi-release-macos
                   path: release-macos/*
                   if-no-files-found: error
-                  retention-days: 14
+                  retention-days: 1
 
     linux-release:
         needs: validate
@@ -563,7 +564,7 @@ jobs:
                   name: pisi-release-linux
                   path: release-linux/*
                   if-no-files-found: error
-                  retention-days: 14
+                  retention-days: 1
 
     publish-release:
         needs:
@@ -629,3 +630,15 @@ jobs:
                     --notes-file "docs/releases/v$version.md" \
                     --verify-tag \
                     --prerelease
+
+            - name: Clean up temporary release workflow artifacts
+              if: success()
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  artifact_ids=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" --jq '.artifacts[] | select(.name | startswith("pisi-release-")) | .id' || true)
+                  for id in $artifact_ids; do
+                    gh api -X DELETE "repos/${{ github.repository }}/actions/artifacts/$id" || true
+                  done

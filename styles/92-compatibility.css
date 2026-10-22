@@ -106,17 +106,32 @@ html body > .pisi-office-popover {
 }
 
 /* ===== Source: styles/94-editor-word-behavior.css ===== */
+.pisi-rich-editor p,
+.pisi-rich-editor ul,
+.pisi-rich-editor ol,
+.pisi-rich-editor li,
+.pisi-rich-editor blockquote,
+.pisi-rich-editor pre,
+.pisi-rich-editor .pisi-editor-block:not([data-pisi-block-type^='heading']):not(h1):not(h2):not(h3):not(h4):not(h5):not(h6) {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
 /* Word-like text state and collapsible heading affordances. */
 .pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading1'],
 .pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading2'],
-.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading3'] {
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading3'],
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading4'],
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading5'] {
     position: relative;
     padding-left: 24px;
 }
 
 .pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading1']::before,
 .pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading2']::before,
-.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading3']::before {
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading3']::before,
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading4']::before,
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading5']::before {
     content: '▾';
     position: absolute;
     left: 3px;
@@ -126,8 +141,18 @@ html body > .pisi-office-popover {
     font-size: 0.68em;
     line-height: 1.5;
     text-align: center;
-    pointer-events: none;
+    cursor: pointer;
+    pointer-events: auto;
     user-select: none;
+    border-radius: 3px;
+}
+
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading1']:hover::before,
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading2']:hover::before,
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading3']:hover::before,
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading4']:hover::before,
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading5']:hover::before {
+    color: #f39c12;
 }
 
 .pisi-rich-editor.pisi-block-system > .pisi-editor-block.pisi-heading-collapsed::before {
@@ -136,6 +161,144 @@ html body > .pisi-office-popover {
 }
 
 .pisi-rich-editor.pisi-block-system > .pisi-editor-block.pisi-heading-section-hidden {
+    display: none;
+}
+/* Heading section visual guide hierarchy */
+.pisi-rich-editor.pisi-block-system
+    > .pisi-editor-block[data-pisi-section-level='1']:not([data-pisi-block-type^='heading']):not([data-pisi-block-type='bullet']):not(
+        [data-pisi-block-type='number']
+    ) {
+    border-left: 2px solid rgba(243, 156, 18, 0.22);
+    padding-left: 10px;
+    margin-left: 4px;
+}
+
+.pisi-rich-editor.pisi-block-system
+    > .pisi-editor-block[data-pisi-section-level='2']:not([data-pisi-block-type^='heading']):not([data-pisi-block-type='bullet']):not(
+        [data-pisi-block-type='number']
+    ) {
+    border-left: 2px solid rgba(243, 156, 18, 0.3);
+    padding-left: 10px;
+    margin-left: 12px;
+}
+
+.pisi-rich-editor.pisi-block-system
+    > .pisi-editor-block[data-pisi-section-level='3']:not([data-pisi-block-type^='heading']):not([data-pisi-block-type='bullet']):not(
+        [data-pisi-block-type='number']
+    ) {
+    border-left: 2px solid rgba(243, 156, 18, 0.36);
+    padding-left: 10px;
+    margin-left: 20px;
+}
+
+.pisi-rich-editor.pisi-block-system
+    > .pisi-editor-block[data-pisi-section-level='4']:not([data-pisi-block-type^='heading']):not([data-pisi-block-type='bullet']):not(
+        [data-pisi-block-type='number']
+    ) {
+    border-left: 2px solid rgba(243, 156, 18, 0.42);
+    padding-left: 10px;
+    margin-left: 28px;
+}
+
+.pisi-rich-editor.pisi-block-system
+    > .pisi-editor-block[data-pisi-section-level='5']:not([data-pisi-block-type^='heading']):not([data-pisi-block-type='bullet']):not(
+        [data-pisi-block-type='number']
+    ) {
+    border-left: 2px solid rgba(243, 156, 18, 0.48);
+    padding-left: 10px;
+    margin-left: 36px;
+}
+
+.pisi-rich-editor.pisi-block-system
+    > .pisi-editor-block.pisi-section-break:not([data-pisi-block-type='bullet']):not([data-pisi-block-type^='heading']):not([data-pisi-block-type='number']) {
+    border-left: none;
+    margin-left: 0;
+    padding-left: 0;
+}
+
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block:not([data-pisi-block-type='number']) {
+    counter-reset: pisi-number-block;
+}
+
+/* SiYuan-style collapsible and indented bullet points */
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='bullet'] {
+    padding-left: calc(24px + var(--pisi-bullet-indent, 0) * 22px);
+    position: relative;
+}
+
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='bullet'][data-pisi-bullet-indent='1'] {
+    --pisi-bullet-indent: 1;
+}
+
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='bullet'][data-pisi-bullet-indent='2'] {
+    --pisi-bullet-indent: 2;
+}
+
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='bullet'][data-pisi-bullet-indent='3'] {
+    --pisi-bullet-indent: 3;
+}
+
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='bullet'][data-pisi-bullet-indent='4'] {
+    --pisi-bullet-indent: 4;
+}
+
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='bullet'][data-pisi-bullet-indent='5'] {
+    --pisi-bullet-indent: 5;
+}
+
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='bullet'][data-pisi-bullet-indent='6'] {
+    --pisi-bullet-indent: 6;
+}
+
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='bullet']::before {
+    position: absolute;
+    left: calc(4px + var(--pisi-bullet-indent, 0) * 22px);
+    top: 0.22em;
+    width: 16px;
+    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    content: '•';
+    color: var(--accent-color, #f39c12);
+    cursor: default;
+    user-select: none;
+    transition:
+        transform 0.15s ease,
+        color 0.15s ease,
+        background-color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='bullet'].pisi-bullet-has-children::before {
+    cursor: pointer;
+    color: #f39c12;
+    background: rgba(243, 156, 18, 0.16);
+    box-shadow: 0 0 0 1.5px rgba(243, 156, 18, 0.45);
+}
+
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='bullet'].pisi-bullet-has-children:hover::before {
+    color: #f39c12;
+    background: rgba(243, 156, 18, 0.28);
+    box-shadow: 0 0 0 1.5px #f39c12;
+    transform: scale(1.15);
+}
+
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='bullet'].pisi-bullet-collapsed::before {
+    content: '⦿';
+    color: #f39c12;
+    font-size: 13px;
+    cursor: pointer;
+    background: rgba(243, 156, 18, 0.28);
+    box-shadow: 0 0 0 1.5px #f39c12;
+}
+
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='bullet'].pisi-bullet-collapsed:hover::before {
+    transform: scale(1.15);
+}
+
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block.pisi-bullet-hidden {
     display: none;
 }
 
@@ -157,10 +320,30 @@ html body > .pisi-office-popover {
 
 .pisi-rich-editor.pisi-block-system > h3.pisi-editor-block[data-pisi-block-type='heading3'] {
     margin: 0.54em 0 0.32em;
+
     color: var(--pisi-node-header-color);
+
     font-size: 22px;
+
     font-weight: 800;
+
     line-height: 1.24;
+}
+
+.pisi-rich-editor.pisi-block-system > h4.pisi-editor-block[data-pisi-block-type='heading4'] {
+    margin: 0.5em 0 0.3em;
+    color: var(--pisi-node-header-color);
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.26;
+}
+
+.pisi-rich-editor.pisi-block-system > h5.pisi-editor-block[data-pisi-block-type='heading5'] {
+    margin: 0.46em 0 0.28em;
+    color: var(--pisi-node-header-color);
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.28;
 }
 
 .pisi-rich-editor .pisi-typing-style:empty {

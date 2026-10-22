@@ -314,6 +314,74 @@ function changeCalendarMonth(delta) {
     renderCalendar();
 }
 
+function getCalendarTaskSummaryByDate() {
+    const tasksByDate = new Map();
+
+    const recordTask = (isoDate, status) => {
+        if (!isoDate || !/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return;
+        let entry = tasksByDate.get(isoDate);
+        if (!entry) {
+            entry = { total: 0, open: 0, completed: 0 };
+            tasksByDate.set(isoDate, entry);
+        }
+        entry.total += 1;
+        if (status === 'done') {
+            entry.completed += 1;
+        } else {
+            entry.open += 1;
+        }
+    };
+
+    const firstClassTasks = window.Pisi?.modules?.['tags.taskStore']?.pisiFirstClassTaskState?.tasks || window.pisiFirstClassTaskState?.tasks || [];
+
+    if (Array.isArray(firstClassTasks) && firstClassTasks.length > 0) {
+        for (const task of firstClassTasks) {
+            const scheduled = String(task.scheduledAt || '').slice(0, 10);
+            const due = String(task.dueDate || '').slice(0, 10);
+            const deadline = String(task.deadline || '').slice(0, 10);
+            const isoDate = /^\d{4}-\d{2}-\d{2}$/.test(scheduled)
+                ? scheduled
+                : /^\d{4}-\d{2}-\d{2}$/.test(due)
+                  ? due
+                  : /^\d{4}-\d{2}-\d{2}$/.test(deadline)
+                    ? deadline
+                    : null;
+
+            if (isoDate) {
+                recordTask(isoDate, String(task.status || 'todo').toLowerCase());
+            }
+        }
+    } else {
+        const missionIndex = Array.isArray(window.pisiTagsPanelState?.missionIndex) ? window.pisiTagsPanelState.missionIndex : [];
+
+        for (const block of missionIndex) {
+            const tags = Array.isArray(block?.tags) ? block.tags : [];
+            const doneFor = new Set(Array.isArray(block?.doneFor) ? block.doneFor.map((t) => String(t || '').toLowerCase()) : []);
+
+            for (const tag of tags) {
+                const normTag = String(tag || '').toLowerCase();
+                let todo = null;
+                if (typeof window.parsePisiTodoTag === 'function') {
+                    todo = window.parsePisiTodoTag(tag);
+                }
+                const dateObj = todo?.finishDate;
+                let isoDate = null;
+                if (dateObj instanceof Date && !Number.isNaN(dateObj.getTime())) {
+                    isoDate = toIsoDate(dateObj);
+                } else if (todo?.finishDate && typeof todo.finishDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(todo.finishDate)) {
+                    isoDate = todo.finishDate;
+                }
+                if (isoDate) {
+                    const isCompleted = doneFor.has(normTag) || String(block?.todoStates?.[tag] || '').toLowerCase() === 'done';
+                    recordTask(isoDate, isCompleted ? 'done' : 'todo');
+                }
+            }
+        }
+    }
+
+    return tasksByDate;
+}
+
 function renderCalendar() {
     const calendar = ensureCalendarDom();
     const state = getCalendarState();
@@ -324,6 +392,7 @@ function renderCalendar() {
     const nextButton = calendar.querySelector('[data-calendar-action="next"]');
     const todayButton = calendar.querySelector('[data-calendar-action="today"]');
     const diaryDates = new Set(Array.isArray(state.diaryDates) ? state.diaryDates : []);
+    const taskSummaryByDate = getCalendarTaskSummaryByDate();
 
     if (previousButton) {
         previousButton.title = translatePisiCalendarText('Önceki ay');
@@ -370,7 +439,6 @@ function renderCalendar() {
 
         button.type = 'button';
         button.className = 'pisi-calendar-day';
-        button.title = diaryDates.has(isoDate) ? `${isoDate} · diary node var` : isoDate;
         button.dataset.date = isoDate;
         button.innerHTML = `<span class="pisi-calendar-day-number">${dayDate.getDate()}</span>`;
 
@@ -386,9 +454,24 @@ function renderCalendar() {
             button.classList.add('selected');
         }
 
-        if (diaryDates.has(isoDate)) {
+        const taskSummary = taskSummaryByDate.get(isoDate);
+        let dayTitle = isoDate;
+
+        if (taskSummary && taskSummary.total > 0) {
             button.classList.add('has-diary-node');
+            if (taskSummary.open > 0) {
+                button.classList.add('has-uncompleted-tasks');
+                dayTitle = `${isoDate} · ${translatePisiCalendarText('Tamamlanmamış görev var')}`;
+            } else {
+                button.classList.add('has-completed-tasks');
+                dayTitle = `${isoDate} · ${translatePisiCalendarText('Tüm görevler tamamlandı')}`;
+            }
+        } else if (diaryDates.has(isoDate)) {
+            button.classList.add('has-diary-node', 'has-diary-note-only');
+            dayTitle = `${isoDate} · ${translatePisiCalendarText('Günlük not var')}`;
         }
+
+        button.title = dayTitle;
 
         button.addEventListener('click', async () => {
             await pisiCalendarDateOpenHandler?.(isoDate);
@@ -400,4 +483,12 @@ function renderCalendar() {
     applyCalendarDock();
 }
 
-export { bindGlobalCalendarDragEvents, ensureCalendarDockZones, ensureCalendarDom, renderCalendar, setCalendarDock, setPisiCalendarDateOpenHandler };
+export {
+    bindGlobalCalendarDragEvents,
+    ensureCalendarDockZones,
+    ensureCalendarDom,
+    getCalendarTaskSummaryByDate,
+    renderCalendar,
+    setCalendarDock,
+    setPisiCalendarDateOpenHandler
+};

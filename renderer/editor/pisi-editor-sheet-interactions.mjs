@@ -460,7 +460,7 @@ function hydratePisiSheets(root = document) {
                 return;
             }
 
-            if (event.key === 'Tab') {
+            if (event.key === 'Tab' && !event.ctrlKey && !event.metaKey && !event.altKey) {
                 event.preventDefault();
                 event.stopPropagation();
                 finishPisiSheetCellEdit(table, {

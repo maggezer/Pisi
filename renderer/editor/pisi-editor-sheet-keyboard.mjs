@@ -43,7 +43,7 @@ function handlePisiSheetSelectionKeydown(event) {
         return;
     }
 
-    if (event.key === 'Tab') {
+    if (event.key === 'Tab' && !event.ctrlKey && !event.metaKey && !event.altKey) {
         event.preventDefault();
         movePisiSheetCellFocus(table, cell, 0, event.shiftKey ? -1 : 1, {
             wrap: true,

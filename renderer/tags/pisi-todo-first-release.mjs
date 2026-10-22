@@ -78,6 +78,7 @@ function getPisiMissionDisplayTextFirstRelease(mission) {
         return String(mission.sourceText).replace(/\s+/g, ' ').trim();
     }
     let text = String(mission?.text || '')
+        .replace(/^[☐☑]\s*/, '')
         .replace(/\s+/g, ' ')
         .trim();
     if (mission?.todoTag) {

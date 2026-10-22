@@ -23,6 +23,7 @@ function loadMainHelpers(functionNames, exports) {
         fs,
         Map,
         path,
+        process,
         Set,
         PISI_CONNECTION_KEYS: ['up-hub', 'down-hub', 'co-level', 'upstream', 'downstream'],
         PISI_DIARY_MANAGED_START: '<!--PISI_DIARY_MANAGED_START-->',
@@ -300,6 +301,49 @@ test('boş diary klasörü güvenle Pisi yönetimine alınır', (t) => {
     assert.equal(result.ok, true);
     assert.equal(fs.existsSync(path.join(diaryFolder, '.pisi-diary')), true);
     assert.equal(fs.existsSync(path.join(diaryFolder, '.kedi-diary')), false);
+});
+
+test('yeni oluşturulan diary notu içerik içinde tarih başlığı oluşturmaz', (t) => {
+    const projectFolder = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-diary-no-heading-'));
+    t.after(() => {
+        fs.rmSync(projectFolder, { recursive: true, force: true });
+    });
+
+    const api = loadMainHelpers(
+        [
+            'normalizePathForCompare',
+            'renamePathInternal',
+            'getPisiFileExt',
+            'getPisiTypeFromExt',
+            'getPisiSidecarPrefix',
+            'normalizePisiId',
+            'generatePisiId',
+            'sanitizePisiBaseName',
+            'sanitizeForSidecarName',
+            'getPisiSidecarName',
+            'findExistingSidecarById',
+            'ensurePisiSidecar',
+            'createPisiDocumentData',
+            'readJsonFileResult',
+            'writePisiDocument',
+            'getVisibleTitleFromFilePath',
+            'ensurePisiFileMetadata',
+            'normalizePisiDiaryIsoDate',
+            'makePisiDiaryNodeTitle',
+            'isPisiManagedDiaryFolder',
+            'ensurePisiDiaryFolder',
+            'getPisiDiaryNodePath',
+            'escapeHtmlForPisiDiary',
+            'getOrCreateDiaryNode'
+        ],
+        ['getOrCreateDiaryNode']
+    );
+
+    const result = api.getOrCreateDiaryNode(projectFolder, '2026-10-21');
+    assert.equal(result.ok, true);
+    assert.equal(result.metadata.title, '21-10-2026');
+    assert.equal(result.data.content, '<div><br></div>');
+    assert.doesNotMatch(result.data.content, /<h[1-6]\b/i);
 });
 
 test('watcher PISI kaydını dış değişiklikten dosya imzasıyla ayırır', (t) => {

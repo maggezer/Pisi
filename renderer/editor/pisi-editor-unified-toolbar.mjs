@@ -106,9 +106,11 @@ function buildPisiUnifiedToolbarMarkup() {
                 <div class="pisi-toolbar-section-row pisi-toolbar-section-row-top">
                     <select class="pisi-office-select pisi-style-select" data-pisi-unified-command="formatBlock" title="Styles" aria-label="Styles">
                         <option value="div">Normal</option>
-                        <option value="h2">Heading 1</option>
-                        <option value="h3">Heading 2</option>
-                        <option value="h4">Heading 3</option>
+                        <option value="h1">Heading 1</option>
+                        <option value="h2">Heading 2</option>
+                        <option value="h3">Heading 3</option>
+                        <option value="h4">Heading 4</option>
+                        <option value="h5">Heading 5</option>
                         <option value="blockquote">Quote</option>
                         <option value="pre">Code</option>
                     </select>
@@ -272,6 +274,25 @@ function runPisiUnifiedTextCommand(toolbar, command, value = null) {
             syncPisiSheetToolbarState(toolbar, table);
         }
         return;
+    }
+
+    if ((command === 'insertUnorderedList' || command === 'insertOrderedList') && editor && typeof window.applyPisiBlockType === 'function') {
+        const targetType = command === 'insertUnorderedList' ? 'bullet' : 'number';
+        const block = window.getPisiSelectionBlock?.(editor) || window.getPisiActiveBlock?.() || editor.querySelector('.pisi-editor-block');
+        if (block && editor.contains(block)) {
+            const currentType = window.getPisiBlockType?.(block) || block.dataset?.pisiBlockType;
+            const nextType = currentType === targetType ? 'paragraph' : targetType;
+            const next = window.applyPisiBlockType(block, nextType);
+            if (next) {
+                editor.focus({ preventScroll: true });
+                const isEmpty = !next.textContent?.trim() && !next.querySelector?.('*:not(br)');
+                if (isEmpty) window.placeCaretAtStartOfPisiBlock?.(window.getSelection?.(), next);
+                else window.placeCaretAtEnd?.(next);
+                window.syncPisiWordHeadingCollapse?.(editor);
+                window.syncPisiWordToolbarState?.(toolbar);
+            }
+            return;
+        }
     }
 
     runPisiEditorCommand(toolbar, command, value);

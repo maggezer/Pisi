@@ -12,7 +12,8 @@ import {
     normalizePisiDiarySyncEntry,
     sanitizePisiDiaryBlockHtml,
     stripPisiDiaryManagedSection,
-    syncDiaryMissions
+    syncDiaryMissions,
+    organizeDiaryManualTasks
 } from './document-store-diary.js';
 import { createNodeUnderMap, renamePisiFile } from './document-store-mutations.js';
 
@@ -34,6 +35,7 @@ Object.defineProperties(moduleApi, {
     listPisiDiaryNodePaths: { enumerable: true, get: () => listPisiDiaryNodePaths },
     listPisiDiaryDates: { enumerable: true, get: () => listPisiDiaryDates },
     syncDiaryMissions: { enumerable: true, get: () => syncDiaryMissions },
+    organizeDiaryManualTasks: { enumerable: true, get: () => organizeDiaryManualTasks },
     createNodeUnderMap: { enumerable: true, get: () => createNodeUnderMap },
     renamePisiFile: { enumerable: true, get: () => renamePisiFile }
 });

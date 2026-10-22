@@ -215,3 +215,34 @@ test('a superseded request stops after its pending save instead of starting a re
     assert.equal(await pending, false);
     assert.equal(reads.size, 0);
 });
+
+test('cyclePisiOpenTabs cycles forward and backward across open tabs with wrap-around', async () => {
+    const { c, install } = setup();
+    const state = {
+        activeTabPath: 'a.node',
+        openTabs: ['a.node', 'b.node', 'c.map'].map((path) => ({
+            path,
+            type: path.endsWith('.map') ? 'map' : 'node',
+            item: item(path)
+        }))
+    };
+    c.getPisiOpenTabsState = () => state;
+    c.pisiSameTabPath = (x, y) => x === y;
+    c.renderPisiOpenTabs = () => {};
+    c.selectPisiTreeFileByPath = () => {};
+    c.openCenterNodeEditor = async () => true;
+    c.openMapInWorkspace = async () => true;
+    install('shell/pisi-tabs.mjs', ['activatePisiOpenTab', 'cyclePisiOpenTabs']);
+
+    await c.cyclePisiOpenTabs(1);
+    assert.equal(state.activeTabPath, 'b.node');
+
+    await c.cyclePisiOpenTabs(1);
+    assert.equal(state.activeTabPath, 'c.map');
+
+    await c.cyclePisiOpenTabs(1);
+    assert.equal(state.activeTabPath, 'a.node');
+
+    await c.cyclePisiOpenTabs(-1);
+    assert.equal(state.activeTabPath, 'c.map');
+});

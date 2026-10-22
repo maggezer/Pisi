@@ -9,8 +9,79 @@ import {
 
 let renderPisiCalendarCallback = null;
 
+let pisiDiaryManagedClicksBound = false;
+
+function bindPisiDiaryManagedBlockClicks() {
+    if (typeof document === 'undefined' || pisiDiaryManagedClicksBound) {
+        return;
+    }
+    pisiDiaryManagedClicksBound = true;
+
+    document.addEventListener(
+        'click',
+        async (event) => {
+            const block = event.target?.closest?.('.pisi-diary-managed-block');
+            if (!block) return;
+
+            const marker = event.target?.closest?.('.pisi-block-task-marker, [role="checkbox"]');
+            if (marker) {
+                event.preventDefault();
+                event.stopPropagation();
+                const taskId = marker.dataset.pisiTaskId || block.dataset.pisiTaskId || block.dataset.pisiDiaryBlockId;
+                const nextCompleted = marker.getAttribute('aria-checked') !== 'true';
+                const nextStatus = nextCompleted ? 'done' : 'todo';
+
+                marker.setAttribute('aria-checked', String(nextCompleted));
+                marker.textContent = nextCompleted ? '☑' : '☐';
+                block.dataset.pisiDiaryStatus = nextStatus;
+
+                if (taskId && window.currentProjectFolder && window.pisiProject?.quickAddTask) {
+                    await window.pisiProject.quickAddTask(window.currentProjectFolder, {
+                        op: 'update',
+                        taskId,
+                        patch: { status: nextStatus }
+                    });
+                    if (typeof window.refreshPisiFirstClassTaskStore === 'function') {
+                        await window.refreshPisiFirstClassTaskStore();
+                    }
+                }
+                return;
+            }
+
+            const nodePath = block.dataset.pisiDiaryNodePath;
+            const blockId = block.dataset.pisiDiaryBlockId;
+            const taskId = block.dataset.pisiTaskId;
+            const nodeTitle = block.getAttribute('title')?.replace(/^Nota git:\s*/, '') || '';
+
+            if (nodePath && typeof window.openPisiTagBlockResult === 'function') {
+                event.preventDefault();
+                event.stopPropagation();
+                await window.openPisiTagBlockResult({
+                    nodePath,
+                    blockId,
+                    taskId,
+                    nodeTitle
+                });
+            }
+        },
+        true
+    );
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        const marker = event.target?.closest?.('.pisi-diary-managed-block .pisi-block-task-marker');
+        if (marker && document.activeElement === marker) {
+            event.preventDefault();
+            marker.click();
+        }
+    });
+}
+
+bindPisiDiaryManagedBlockClicks();
+
 function configurePisiCalendarDiary(options = {}) {
     renderPisiCalendarCallback = typeof options.renderCalendar === 'function' ? options.renderCalendar : null;
+    bindPisiDiaryManagedBlockClicks();
 }
 
 async function refreshPisiCalendarDates() {
@@ -242,4 +313,4 @@ async function syncPisiDiaryFromMissionIndex(index, options = {}) {
     return runPisiDiarySync(request);
 }
 
-export { configurePisiCalendarDiary, openDiaryNodeForDate, refreshPisiCalendarDates, syncPisiDiaryFromMissionIndex };
+export { bindPisiDiaryManagedBlockClicks, configurePisiCalendarDiary, openDiaryNodeForDate, refreshPisiCalendarDates, syncPisiDiaryFromMissionIndex };

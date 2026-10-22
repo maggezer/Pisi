@@ -1,11 +1,12 @@
 import { registerModule } from '../core/module-registry.mjs';
 import { registerPisiCommand } from '../core/pisi-command-registry.mjs';
-
 const PISI_BLOCK_TYPES = Object.freeze([
     Object.freeze({ id: 'paragraph', label: 'Paragraf', tag: 'div' }),
     Object.freeze({ id: 'heading1', label: 'Başlık 1', tag: 'h1' }),
     Object.freeze({ id: 'heading2', label: 'Başlık 2', tag: 'h2' }),
     Object.freeze({ id: 'heading3', label: 'Başlık 3', tag: 'h3' }),
+    Object.freeze({ id: 'heading4', label: 'Başlık 4', tag: 'h4' }),
+    Object.freeze({ id: 'heading5', label: 'Başlık 5', tag: 'h5' }),
     Object.freeze({ id: 'quote', label: 'Alıntı', tag: 'blockquote' }),
     Object.freeze({ id: 'code', label: 'Kod', tag: 'pre' }),
     Object.freeze({ id: 'bullet', label: 'Madde işareti', tag: 'div' }),
@@ -13,7 +14,6 @@ const PISI_BLOCK_TYPES = Object.freeze([
     Object.freeze({ id: 'task', label: 'Görev bloğu', tag: 'div' }),
     Object.freeze({ id: 'rollup', label: 'Rollup bloğu', tag: 'div' })
 ]);
-
 const PISI_BLOCK_SLASH_COMMANDS = Object.freeze([
     ...PISI_BLOCK_TYPES.filter((record) => record.id !== 'rollup').map((record) =>
         Object.freeze({
@@ -22,16 +22,9 @@ const PISI_BLOCK_SLASH_COMMANDS = Object.freeze([
             action: record.id === 'task' ? 'todo' : 'block'
         })
     ),
-    Object.freeze({
-        id: 'done',
-        label: 'Tamamlanmış görev',
-        slash: 'done',
-        action: 'done'
-    })
+    Object.freeze({ id: 'done', label: 'Tamamlanmış görev', slash: 'done', action: 'done' })
 ]);
-
 const pisiHydratedTaskMarkers = new WeakSet();
-
 const pisiBlocksEditorState = {
     editor: null,
     block: null,
@@ -40,11 +33,9 @@ const pisiBlocksEditorState = {
     sourceEditor: null,
     sourceTextarea: null
 };
-
 function pisiBlockTranslate(value) {
     return window.pisiT?.(value) ?? String(value ?? '');
 }
-
 function escapePisiBlockHtml(value = '') {
     return String(value || '')
         .replace(/&/g, '&amp;')
@@ -52,12 +43,10 @@ function escapePisiBlockHtml(value = '') {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
 }
-
 function sanitizePisiBlockUrl(value = '') {
     const url = String(value || '').trim();
     return /^(?:https?:|mailto:)/i.test(url) ? url : '';
 }
-
 function pisiInlineMarkdownToHtml(value = '') {
     let html = escapePisiBlockHtml(value);
     html = html.replace(/`([^`\n]+)`/g, '<code>$1</code>');
@@ -70,25 +59,20 @@ function pisiInlineMarkdownToHtml(value = '') {
     });
     return html;
 }
-
-function makePisiBlockHtml(type, content) {
+function makePisiBlockHtml(type, content, indent = 0) {
     const record = PISI_BLOCK_TYPES.find((item) => item.id === type) || PISI_BLOCK_TYPES[0];
     const blockId = window.makePisiBlockId?.() || `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-    return `<${record.tag} class="pisi-editor-block" data-pisi-block-id="${blockId}" data-pisi-block-type="${record.id}">${content || '<br>'}</${record.tag}>`;
+    const indentAttr = indent > 0 ? ` data-pisi-bullet-indent="${indent}" style="--pisi-bullet-indent:${indent};"` : '';
+    return `<${record.tag} class="pisi-editor-block" data-pisi-block-id="${blockId}" data-pisi-block-type="${record.id}"${indentAttr}>${content || '<br>'}</${record.tag}>`;
 }
-
-function encodePisiRollupMarkdownValue(value = '') {
-    return encodeURIComponent(String(value || ''));
-}
-
+const encodePisiRollupMarkdownValue = (value = '') => encodeURIComponent(String(value || ''));
 function decodePisiRollupMarkdownValue(value = '') {
     try {
         return decodeURIComponent(String(value || ''));
-    } catch (_error) {
+    } catch {
         return '';
     }
 }
-
 function makePisiRollupBlockHtml(config = {}) {
     const blockId = window.makePisiBlockId?.() || `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
     const relation = escapePisiBlockHtml(config.relationProperty || '');
@@ -96,7 +80,6 @@ function makePisiRollupBlockHtml(config = {}) {
     const aggregate = /^(?:count|sum|average|min|max|unique|join)$/.test(config.aggregate) ? config.aggregate : 'count';
     return `<div class="pisi-editor-block pisi-rollup-block" data-pisi-block-id="${blockId}" data-pisi-block-type="rollup" data-pisi-rollup-relation="${relation}" data-pisi-rollup-target="${target}" data-pisi-rollup-aggregate="${aggregate}" contenteditable="false"><div class="pisi-rollup-block-loading">Rollup</div></div>`;
 }
-
 function pisiBlockMarkdownToHtml(markdown = '') {
     const lines = String(markdown || '')
         .replace(/\r\n?/g, '\n')
@@ -117,10 +100,15 @@ function pisiBlockMarkdownToHtml(markdown = '') {
             codeLines.push(rawLine);
             continue;
         }
+        if (/^<!--\s*pisi:section-end(?:\s*-->)?/.test(rawLine)) {
+            const blockId = window.makePisiBlockId?.() || `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+            output.push(`<div class="pisi-editor-block pisi-section-break" data-pisi-block-id="${blockId}" data-pisi-section-break="true"><br></div>`);
+            continue;
+        }
         const rollup = rawLine.match(/^\{\{pisi-rollup:([^:]*):([^:]*):(count|sum|average|min|max|unique|join)\}\}$/);
-        const heading = rawLine.match(/^(#{1,3})\s+(.+)$/);
+        const heading = rawLine.match(/^(#{1,5})\s+(.+)$/);
         const task = rawLine.match(/^[-*]\s+\[([ xX])\]\s*(.*)$/);
-        const bullet = rawLine.match(/^[-*+]\s+(.+)$/);
+        const bullet = rawLine.match(/^(\s*)([-*+])\s+(.+)$/);
         const number = rawLine.match(/^\d+[.)]\s+(.+)$/);
         const quote = rawLine.match(/^>\s?(.*)$/);
         if (rollup) {
@@ -142,7 +130,8 @@ function pisiBlockMarkdownToHtml(markdown = '') {
                 )
             );
         } else if (bullet) {
-            output.push(makePisiBlockHtml('bullet', pisiInlineMarkdownToHtml(bullet[1])));
+            const indent = Math.min(Math.floor(bullet[1].replace(/\t/g, '  ').length / 2), 6);
+            output.push(makePisiBlockHtml('bullet', pisiInlineMarkdownToHtml(bullet[3]), indent));
         } else if (number) {
             output.push(makePisiBlockHtml('number', pisiInlineMarkdownToHtml(number[1])));
         } else if (quote) {
@@ -154,7 +143,6 @@ function pisiBlockMarkdownToHtml(markdown = '') {
     if (codeLines) output.push(makePisiBlockHtml('code', escapePisiBlockHtml(codeLines.join('\n'))));
     return output.join('');
 }
-
 function pisiInlineHtmlToMarkdown(element) {
     const visit = (node) => {
         if (node.nodeType === Node.TEXT_NODE) return node.nodeValue || '';
@@ -181,25 +169,24 @@ function pisiInlineHtmlToMarkdown(element) {
     };
     return Array.from(element.childNodes).map(visit).join('').trimEnd();
 }
-
 function getPisiBlockType(block) {
     const explicit = block?.dataset?.pisiBlockType;
     if (PISI_BLOCK_TYPES.some((item) => item.id === explicit)) return explicit;
     const tag = block?.tagName?.toLowerCase();
-    if (/^h[1-3]$/.test(tag)) return `heading${tag.slice(1)}`;
+    if (/^h[1-5]$/.test(tag)) return `heading${tag.slice(1)}`;
     if (tag === 'blockquote') return 'quote';
     if (tag === 'pre') return 'code';
     return 'paragraph';
 }
-
 function pisiBlockHtmlToMarkdown(editor) {
     if (!editor) return '';
     const blocks = Array.from(editor.querySelectorAll('.pisi-editor-block')).filter((block) => {
         const parentBlock = block.parentElement?.closest?.('.pisi-editor-block');
         return !parentBlock || !editor.contains(parentBlock);
     });
+    let numberRun = 0;
     return blocks
-        .map((block, index) => {
+        .map((block) => {
             const type = getPisiBlockType(block);
             if (type === 'rollup') {
                 const relation = encodePisiRollupMarkdownValue(block.dataset.pisiRollupRelation || '');
@@ -210,47 +197,66 @@ function pisiBlockHtmlToMarkdown(editor) {
                 return `{{pisi-rollup:${relation}:${target}:${aggregate}}}`;
             }
             const text = pisiInlineHtmlToMarkdown(block);
+            if (block.classList.contains('pisi-section-break') || block.dataset?.pisiSectionBreak === 'true') {
+                return text ? `<!-- pisi:section-end -->\n${text}` : '<!-- pisi:section-end -->';
+            }
             if (type.startsWith('heading')) return `${'#'.repeat(Number(type.slice(-1)))} ${text}`;
             if (type === 'quote') return `> ${text}`;
             if (type === 'code') return `\`\`\`\n${block.textContent || ''}\n\`\`\``;
-            if (type === 'bullet') return `- ${text}`;
-            if (type === 'number') return `${index + 1}. ${text}`;
+            if (type === 'bullet') {
+                const indent = Number(block.dataset?.pisiBulletIndent || 0);
+                return `${'  '.repeat(indent)}- ${text}`;
+            }
+            if (type === 'number') return `${++numberRun}. ${text}`;
+            numberRun = 0;
             if (type === 'task') {
                 const checked = block.querySelector('.pisi-block-task-marker')?.textContent === '☑';
-                return `- [${checked ? 'x' : ' '}] ${text}`;
+                return `- [${checked ? 'x' : ' '}] ${text.trimStart()}`;
             }
             return text;
         })
         .join('\n');
 }
-
 function getPisiActiveBlocksEditor() {
     if (window.activeModalNode) return document.getElementById('node-modal-content');
     if (window.activeCenterNode) return document.getElementById('center-node-editor-content');
     return pisiBlocksEditorState.editor?.isConnected ? pisiBlocksEditorState.editor : null;
 }
-
+function getPisiSelectionBlock(editor) {
+    if (!editor) return null;
+    const selection = window.getSelection?.();
+    let anchorNode = selection?.anchorNode || (selection?.rangeCount ? selection.getRangeAt(0)?.startContainer : null);
+    if (!anchorNode || !editor.contains?.(anchorNode)) return null;
+    if (anchorNode === editor) {
+        const offset = selection?.anchorNode === editor ? selection.anchorOffset : selection.getRangeAt(0)?.startOffset || 0;
+        anchorNode = editor.childNodes[offset] || editor.childNodes[offset - 1] || null;
+        if (!anchorNode) return null;
+    }
+    const block =
+        window.getPisiCurrentEditorBlock?.(editor, anchorNode) ||
+        (anchorNode.nodeType === Node.ELEMENT_NODE ? anchorNode : anchorNode.parentElement)?.closest?.('.pisi-editor-block');
+    return block && block !== editor && editor.contains?.(block) ? block : null;
+}
 function getPisiActiveBlock() {
     const editor = getPisiActiveBlocksEditor();
     if (!editor) return null;
-    if (pisiBlocksEditorState.block && editor.contains(pisiBlocksEditorState.block)) {
-        return pisiBlocksEditorState.block;
-    }
-    const selection = window.getSelection?.();
-    const block = selection?.anchorNode ? window.getPisiCurrentEditorBlock?.(editor, selection.anchorNode) : null;
-    return block && block !== editor ? block : editor.querySelector('.pisi-editor-block');
+    const selectedBlock = getPisiSelectionBlock(editor);
+    if (selectedBlock) return selectedBlock;
+    if (pisiBlocksEditorState.block && editor.contains(pisiBlocksEditorState.block)) return pisiBlocksEditorState.block;
+    return editor.querySelector('.pisi-editor-block');
 }
-
 function setPisiBlockTaskMarkerState(marker, checked) {
     if (!marker) return;
     marker.contentEditable = 'false';
-    marker.textContent = checked ? '☑' : '☐';
+    const nextText = checked ? '☑' : '☐';
+    if (marker.textContent !== nextText) {
+        marker.textContent = nextText;
+    }
     marker.setAttribute('role', 'checkbox');
     marker.setAttribute('aria-checked', String(Boolean(checked)));
     marker.setAttribute('aria-label', checked ? 'Görevi yeniden aç' : 'Görevi tamamla');
     marker.tabIndex = 0;
 }
-
 function hydratePisiBlockTaskMarker(block, markerOverride = null) {
     const marker = markerOverride || block?.querySelector?.('.pisi-block-task-marker');
     if (!block || !marker) return null;
@@ -258,7 +264,6 @@ function hydratePisiBlockTaskMarker(block, markerOverride = null) {
     setPisiBlockTaskMarkerState(marker, checked);
     if (pisiHydratedTaskMarkers.has(marker)) return marker;
     pisiHydratedTaskMarkers.add(marker);
-
     const toggle = (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -278,7 +283,6 @@ function hydratePisiBlockTaskMarker(block, markerOverride = null) {
     });
     return marker;
 }
-
 function decoratePisiBlockTypes(editor) {
     window.ensurePisiEditorBlocks?.(editor);
     window.syncPisiTodoBlockMarkers?.(editor);
@@ -287,7 +291,6 @@ function decoratePisiBlockTypes(editor) {
         if (getPisiBlockType(block) === 'task') hydratePisiBlockTaskMarker(block);
     });
 }
-
 function replacePisiBlockTag(block, tagName) {
     if (!block || block.tagName.toLowerCase() === tagName) return block;
     const replacement = document.createElement(tagName);
@@ -298,7 +301,6 @@ function replacePisiBlockTag(block, tagName) {
     block.replaceWith(replacement);
     return replacement;
 }
-
 function applyPisiBlockType(block, type) {
     const record = PISI_BLOCK_TYPES.find((item) => item.id === type);
     if (!block || !record) return null;
@@ -306,34 +308,50 @@ function applyPisiBlockType(block, type) {
     const previousType = getPisiBlockType(block);
     let next = replacePisiBlockTag(block, record.tag);
     next.classList.add('pisi-editor-block');
-    next.dataset.pisiBlockType = record.id;
-    if (previousType === 'task' && record.id !== 'task') {
-        next.querySelector('.pisi-block-task-marker')?.remove();
+    if (previousType === 'task' && record.id !== 'task') removePisiTaskMetadataAndMarkerFromBlock(next);
+    if (record.id !== 'bullet') {
+        delete next.dataset.pisiBulletIndent;
+        delete next.dataset.pisiBulletCollapsed;
+        delete next.dataset.pisiBulletHasChildren;
+        next.style?.removeProperty?.('--pisi-bullet-indent');
+        next.classList.remove('pisi-bullet-collapsed', 'pisi-bullet-has-children', 'pisi-bullet-hidden');
     }
+    next.dataset.pisiBlockType = record.id;
+    if (record.id !== 'task' && !next.textContent && !next.querySelector?.('br')) next.innerHTML = '<br>';
     if (record.id === 'task' && !next.querySelector('.pisi-block-task-marker')) {
         const marker = document.createElement('span');
         marker.className = 'pisi-block-task-marker';
         setPisiBlockTaskMarkerState(marker, false);
-        next.prepend(marker, document.createTextNode(' '));
+        next.prepend(marker);
     }
     if (record.id === 'task') hydratePisiBlockTaskMarker(next);
+    window.syncPisiWordHeadingCollapse?.(editor);
     pisiBlocksEditorState.block = next;
     editor?.dispatchEvent(new Event('input', { bubbles: true }));
     selectPisiBlock(editor, next);
     return next;
 }
-
 function movePisiBlock(block, delta) {
     if (!block) return false;
-    const sibling = delta < 0 ? block.previousElementSibling : block.nextElementSibling;
-    if (!sibling) return false;
-    if (delta < 0) sibling.before(block);
-    else sibling.after(block);
+    const editor = block.closest('.pisi-rich-editor');
+    const children =
+        (block.dataset?.pisiBlockType === 'bullet' ? window.getPisiBulletDescendants?.(editor, block) : window.getPisiHeadingSectionBlocks?.(editor, block)) ||
+        [];
+    const items = [block, ...children];
+    if (delta < 0) {
+        const prev = block.previousElementSibling;
+        if (!prev) return false;
+        prev.before(...items);
+    } else {
+        const last = items[items.length - 1];
+        const next = last.nextElementSibling;
+        if (!next) return false;
+        next.after(...items);
+    }
     block.closest('.pisi-rich-editor')?.dispatchEvent(new Event('input', { bubbles: true }));
     selectPisiBlock(block.closest('.pisi-rich-editor'), block);
     return true;
 }
-
 function duplicatePisiBlock(block) {
     if (!block) return null;
     const clone = block.cloneNode(true);
@@ -345,7 +363,6 @@ function duplicatePisiBlock(block) {
     selectPisiBlock(editor, clone);
     return clone;
 }
-
 function deletePisiBlock(block) {
     if (!block) return false;
     const editor = block.closest('.pisi-rich-editor');
@@ -356,7 +373,6 @@ function deletePisiBlock(block) {
     selectPisiBlock(editor, focusTarget || editor?.querySelector('.pisi-editor-block'));
     return true;
 }
-
 function copyPisiBlockReference(block = getPisiActiveBlock()) {
     const editor = block?.closest('.pisi-rich-editor');
     const nodePath = editor?.id === 'node-modal-content' ? window.activeModalNode?.path : window.activeCenterNode?.path;
@@ -365,7 +381,6 @@ function copyPisiBlockReference(block = getPisiActiveBlock()) {
     window.pisiClipboard?.writeText?.(reference);
     return reference;
 }
-
 function selectPisiBlock(editor, block) {
     if (!editor || !block || !editor.contains(block)) return null;
     pisiBlocksEditorState.editor?.querySelectorAll('.pisi-block-active').forEach((item) => item.classList.remove('pisi-block-active'));
@@ -386,16 +401,13 @@ function selectPisiBlock(editor, block) {
     );
     return block;
 }
-
 function getPisiBlockAtEvent(editor, target) {
     if (target?.closest?.('.pisi-sheet-block, ' + '.pisi-sheet-caret-anchor, ' + '.pisi-canvas-block')) {
         return null;
     }
-
     const block = target?.closest?.('.pisi-editor-block');
     return block && editor.contains(block) ? block : null;
 }
-
 function applyPisiMarkdownBlockShortcut(event, block) {
     if (event.key !== ' ' || event.ctrlKey || event.metaKey || event.altKey) return false;
     const marker = String(block.textContent || '').trim();
@@ -403,6 +415,8 @@ function applyPisiMarkdownBlockShortcut(event, block) {
         '#': 'heading1',
         '##': 'heading2',
         '###': 'heading3',
+        '####': 'heading4',
+        '#####': 'heading5',
         '>': 'quote',
         '-': 'bullet',
         '*': 'bullet',
@@ -412,49 +426,352 @@ function applyPisiMarkdownBlockShortcut(event, block) {
     }[marker];
     if (!type) return false;
     event.preventDefault();
-    block.textContent = '';
+    event.stopPropagation();
+    block.innerHTML = type === 'task' ? '' : '<br>';
     const next = applyPisiBlockType(block, type);
-    if (next && !next.childNodes.length) next.appendChild(document.createTextNode(''));
-    next?.focus?.();
+    if (next) {
+        next.closest('.pisi-rich-editor')?.focus?.({ preventScroll: true });
+        if (type === 'task') placeCaretAtEndOfPisiBlock(window.getSelection?.(), next);
+        else placeCaretAtStartOfPisiBlock(window.getSelection?.(), next);
+    }
     return true;
 }
-
-function handlePisiBlocksEditorKeydown(editor, event) {
-    const block = getPisiBlockAtEvent(editor, event.target) || getPisiActiveBlock();
+function placeCaretAtStartOfPisiBlock(selection, block) {
+    if (!selection || !block || typeof document.createRange !== 'function') return;
+    if (!block.textContent && !block.querySelector?.('br')) block.innerHTML = '<br>';
+    const caret = document.createRange();
+    if (block.firstChild && block.firstChild.nodeType === Node.TEXT_NODE && block.firstChild.nodeValue?.length) {
+        caret.setStart(block.firstChild, 0);
+    } else {
+        caret.setStart(block, 0);
+    }
+    caret.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(caret);
+}
+window.placeCaretAtStartOfPisiBlock = placeCaretAtStartOfPisiBlock;
+window.getPisiSelectionBlock = getPisiSelectionBlock;
+function splitPisiTaskBlockOnEnter(editor, block, event) {
+    if (event.key !== 'Enter' || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey || event.isComposing) {
+        return false;
+    }
+    if (window.pisiTagMenuState?.active) return false;
+    const tagMenu = document.getElementById('pisi-tag-menu');
+    if (tagMenu && !tagMenu.hidden) return false;
+    const isTaskBlock = getPisiBlockType(block) === 'task' || Boolean(window.getPisiTodoTagFromBlock?.(block));
+    if (!isTaskBlock) return false;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    window.syncPisiTodoBlockMarkers?.(block);
+    const selection = window.getSelection?.();
+    const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+    if (range && !range.collapsed && block.contains?.(range.startContainer) && block.contains?.(range.endContainer)) {
+        range.deleteContents();
+    }
+    const nextBlock = document.createElement('div');
+    nextBlock.className = 'pisi-editor-block';
+    nextBlock.dataset.pisiBlockId = window.makePisiBlockId?.() || `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    nextBlock.dataset.pisiBlockType = 'paragraph';
+    const source = block.querySelector?.('.pisi-todo-source[data-pisi-todo-for]');
+    let trailingMoved = false;
+    if (range && source && source.contains?.(range.startContainer) && typeof document.createRange === 'function') {
+        const beforeRange = document.createRange();
+        beforeRange.selectNodeContents(source);
+        beforeRange.setEnd(range.startContainer, range.startOffset);
+        const hasLeadingText = Boolean(beforeRange.toString().trim());
+        const afterRange = document.createRange();
+        afterRange.selectNodeContents(source);
+        afterRange.setStart(range.startContainer, range.startOffset);
+        const hasTrailingText = Boolean(afterRange.toString().trim());
+        if (hasLeadingText && hasTrailingText) {
+            const fragment = afterRange.extractContents();
+            fragment.querySelectorAll?.('.pisi-user-tag, .pisi-block-task-marker').forEach((el) => el.remove());
+            if (fragment.textContent?.trim() || fragment.querySelector?.('*:not(br)')) {
+                nextBlock.appendChild(fragment);
+                trailingMoved = true;
+            }
+            if (!source.childNodes?.length) {
+                source.appendChild(document.createTextNode(''));
+            }
+        }
+    }
+    if (!trailingMoved) {
+        nextBlock.innerHTML = '<br>';
+    }
+    block.after(nextBlock);
+    window.syncPisiTodoBlockMarkers?.(block);
+    placeCaretAtStartOfPisiBlock(selection, nextBlock);
+    selectPisiBlock(editor, nextBlock);
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
+    return true;
+}
+function placeCaretAtEndOfPisiBlock(selection, block) {
+    if (!selection || !block || typeof document.createRange !== 'function') return null;
+    const caret = document.createRange();
+    caret.selectNodeContents(block);
+    caret.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(caret);
+    return { node: caret.startContainer, offset: caret.startOffset };
+}
+function isCaretBeforePisiTaskMarker(block, range) {
+    if (!range || !range.collapsed) return false;
+    const marker = block.querySelector?.('.pisi-block-task-marker');
+    if (!marker) return false;
+    if (range.startContainer === block) {
+        return range.startOffset <= Array.prototype.indexOf.call(block.childNodes, marker);
+    }
+    if (marker.contains(range.startContainer)) return false;
+    if (block.contains(range.startContainer) && range.startContainer.compareDocumentPosition(marker) & Node.DOCUMENT_POSITION_FOLLOWING) {
+        const testRange = document.createRange();
+        testRange.selectNodeContents(block);
+        testRange.setEnd(range.startContainer, range.startOffset);
+        return testRange.toString().replace(/[\s\u00A0\u200B]/g, '').length === 0;
+    }
+    return false;
+}
+function isCaretAfterPisiTaskMarkerAtStart(block, source, range) {
+    if (!range || !range.collapsed || isCaretBeforePisiTaskMarker(block, range)) return false;
+    if (range.startContainer === block) {
+        const marker = block.querySelector?.('.pisi-block-task-marker');
+        return range.startOffset === (marker ? Array.prototype.indexOf.call(block.childNodes, marker) : 0) + 1;
+    }
+    const target = source && (range.startContainer === source || source.contains(range.startContainer)) ? source : block;
+    const testRange = document.createRange();
+    testRange.selectNodeContents(target);
+    testRange.setEnd(range.startContainer, range.startOffset);
+    return testRange.toString().replace(/[☐☑\s\u00A0\u200B]/g, '').length === 0;
+}
+function isCaretAtStartOfPisiBlock(block, range) {
+    if (!range || !range.collapsed || !block.contains(range.startContainer)) return false;
+    const testRange = document.createRange();
+    testRange.selectNodeContents(block);
+    testRange.setEnd(range.startContainer, range.startOffset);
+    return testRange.toString().replace(/[\s\u00A0\u200B]/g, '').length === 0;
+}
+function isCaretAtEndOfPisiBlock(block, range) {
+    if (!range || !range.collapsed || !block.contains(range.startContainer)) return false;
+    const testRange = document.createRange();
+    testRange.selectNodeContents(block);
+    testRange.setStart(range.startContainer, range.startOffset);
+    return testRange.toString().replace(/[\s\u00A0\u200B]/g, '').length === 0;
+}
+function removePisiTaskMetadataAndMarkerFromBlock(block) {
     if (!block) return;
+    if (typeof window.removePisiTodoFromBlock === 'function') {
+        window.removePisiTodoFromBlock(block);
+        return;
+    }
+    block.querySelectorAll?.('.pisi-block-task-marker').forEach((el) => {
+        if (el.nextSibling?.nodeType === Node.TEXT_NODE && /^\s+$/.test(el.nextSibling.nodeValue || '')) {
+            el.nextSibling.remove();
+        }
+        el.remove();
+    });
+    block.querySelectorAll?.('.pisi-user-tag[data-pisi-tag], .pisi-task-metadata').forEach((el) => el.remove());
+    Array.from(block.querySelectorAll?.('.pisi-todo-source') || []).forEach((source) => {
+        source.replaceWith(...Array.from(source.childNodes));
+    });
+    if (block.dataset?.pisiTaskId) delete block.dataset.pisiTaskId;
+    block.dataset.pisiBlockType = 'paragraph';
+    if (!block.textContent?.trim() && !block.querySelector?.('*:not(br)')) block.innerHTML = '<br>';
+}
+function revertPisiTaskBlockToParagraph(editor, block, selection) {
+    removePisiTaskMetadataAndMarkerFromBlock(block);
+    placeCaretAtStartOfPisiBlock(selection, block);
+    selectPisiBlock(editor, block);
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
+    return true;
+}
+function isPisiTaskBlockEmpty(block) {
+    if (!block?.matches?.('.pisi-editor-block')) return false;
+    const isTask =
+        getPisiBlockType(block) === 'task' || Boolean(window.getPisiTodoTagFromBlock?.(block)) || Boolean(block.querySelector?.('.pisi-block-task-marker'));
+    if (!isTask) return false;
+    const source = block.querySelector?.('.pisi-todo-source');
+    return !((source ? source.textContent : block.textContent) || '').replace(/[☐☑\s\u00A0\u200B]/g, '');
+}
+function handlePisiTaskBlockBackspace(editor, block, event) {
+    if (event.shiftKey || event.ctrlKey || event.metaKey || event.altKey || event.isComposing) {
+        return false;
+    }
+    if (event.key !== 'Backspace' && event.key !== 'Delete') {
+        return false;
+    }
+    if (window.pisiTagMenuState?.active) return false;
+    const tagMenu = document.getElementById('pisi-tag-menu');
+    if (tagMenu && !tagMenu.hidden) return false;
+    const selection = window.getSelection?.();
+    if (!selection || !selection.rangeCount) return false;
+    const range = selection.getRangeAt(0);
+    const isTask =
+        getPisiBlockType(block) === 'task' || Boolean(window.getPisiTodoTagFromBlock?.(block)) || Boolean(block.querySelector?.('.pisi-block-task-marker'));
+    const source = isTask ? block.querySelector?.('.pisi-todo-source') : null;
+    const rawText = (source ? source.textContent : block.textContent) || '';
+    const cleanText = rawText.replace(/[☐☑\s\u00A0\u200B]/g, '');
+    // --- CASE 1: BACKSPACE ---
+    if (event.key === 'Backspace') {
+        if (isTask && (editor.contains(range.startContainer) || block.contains(range.startContainer))) {
+            const isBeforeMarker = isCaretBeforePisiTaskMarker(block, range);
+            // Subcase 1A: Caret is to the LEFT of the checkbox (|☐)
+            // Backspace looks LEFT! Do NOT delete the checkbox on the right.
+            if (range.collapsed && isBeforeMarker) {
+                const prevBlock = block.previousElementSibling;
+                if (prevBlock && prevBlock.matches?.('.pisi-editor-block')) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    if (!cleanText) {
+                        block.remove();
+                        placeCaretAtEndOfPisiBlock(selection, prevBlock);
+                        selectPisiBlock(editor, prevBlock);
+                    } else {
+                        const prevEnd = placeCaretAtEndOfPisiBlock(selection, prevBlock);
+                        removePisiTaskMetadataAndMarkerFromBlock(block);
+                        while (block.firstChild) {
+                            if (block.firstChild.tagName === 'BR' && prevBlock.textContent?.trim()) {
+                                block.firstChild.remove();
+                                continue;
+                            }
+                            prevBlock.appendChild(block.firstChild);
+                        }
+                        block.remove();
+                        if (prevEnd && selection && typeof document.createRange === 'function') {
+                            const restoreRange = document.createRange();
+                            restoreRange.setStart(prevEnd.node, prevEnd.offset);
+                            restoreRange.collapse(true);
+                            selection.removeAllRanges();
+                            selection.addRange(restoreRange);
+                        }
+                        selectPisiBlock(editor, prevBlock);
+                    }
+                    editor.dispatchEvent(new Event('input', { bubbles: true }));
+                    return true;
+                }
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                return true;
+            }
+            const coversAll = !range.collapsed && Boolean(cleanText) && range.toString().replace(/[☐☑\s\u00A0\u200B]/g, '') === cleanText;
+            if (!cleanText || coversAll || (range.collapsed && isCaretAfterPisiTaskMarkerAtStart(block, source, range))) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                return revertPisiTaskBlockToParagraph(editor, block, selection);
+            }
+        }
+        // Caret at start of a normal block, and previous block is an empty task block
+        if (range.collapsed && isCaretAtStartOfPisiBlock(block, range)) {
+            const prevBlock = block.previousElementSibling;
+            if (isPisiTaskBlockEmpty(prevBlock)) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                prevBlock.remove();
+                placeCaretAtStartOfPisiBlock(selection, block);
+                selectPisiBlock(editor, block);
+                editor.dispatchEvent(new Event('input', { bubbles: true }));
+                return true;
+            }
+        }
+    }
+    // --- CASE 2: DELETE ---
+    if (event.key === 'Delete') {
+        if (isTask && range.collapsed) {
+            // Subcase 2A (|☐ Text) or Subcase 2B (empty task)
+            if (isCaretBeforePisiTaskMarker(block, range) || !cleanText) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                return revertPisiTaskBlockToParagraph(editor, block, selection);
+            }
+        }
+        // Caret at end of block, and next block is an empty task block
+        if (range.collapsed && isCaretAtEndOfPisiBlock(block, range)) {
+            const nextBlock = block.nextElementSibling;
+            if (isPisiTaskBlockEmpty(nextBlock)) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                nextBlock.remove();
+                selectPisiBlock(editor, block);
+                editor.dispatchEvent(new Event('input', { bubbles: true }));
+                return true;
+            }
+        }
+    }
+    return false;
+}
+function handlePisiBlocksEditorKeydown(editor, event) {
+    const block = getPisiSelectionBlock(editor) || getPisiBlockAtEvent(editor, event.target) || getPisiActiveBlock();
+    if (!block) return;
+    if (splitPisiTaskBlockOnEnter(editor, block, event)) return;
+    if (window.handlePisiBulletKeydown?.(editor, event, block)) return;
+    if (window.handlePisiHeadingSectionKeydown?.(editor, event, block)) return;
+    if (handlePisiTaskBlockBackspace(editor, block, event)) return;
     applyPisiMarkdownBlockShortcut(event, block);
 }
-
 function handlePisiBlockDrop(editor, event) {
     const target = getPisiBlockAtEvent(editor, event.target);
     const dragged = editor.querySelector(`.pisi-editor-block[data-pisi-block-id="${CSS.escape(pisiBlocksEditorState.draggedBlockId || '')}"]`);
     if (!target || !dragged || target === dragged) return;
     event.preventDefault();
+    const section =
+        (dragged.dataset?.pisiBlockType === 'bullet'
+            ? window.getPisiBulletDescendants?.(editor, dragged)
+            : window.getPisiHeadingSectionBlocks?.(editor, dragged)) || [];
+    if (section.includes(target)) return;
+    const items = [dragged, ...section];
     const rect = target.getBoundingClientRect();
-    if (event.clientY < rect.top + rect.height / 2) target.before(dragged);
-    else target.after(dragged);
+    if (event.clientY < rect.top + rect.height / 2) target.before(...items);
+    else target.after(...items);
     pisiBlocksEditorState.draggedBlockId = null;
     editor.dispatchEvent(new Event('input', { bubbles: true }));
     selectPisiBlock(editor, dragged);
 }
-
 function bindPisiBlocksEditor(editor) {
     if (!editor || editor.dataset.pisiBlocksEditorBound === '1') return false;
     editor.dataset.pisiBlocksEditorBound = '1';
     editor.classList.add('pisi-block-system');
     decoratePisiBlockTypes(editor);
     editor.addEventListener('focusin', (event) => {
-        const block = getPisiBlockAtEvent(editor, event.target) || getPisiActiveBlock();
+        const block = getPisiSelectionBlock(editor) || getPisiBlockAtEvent(editor, event.target) || getPisiActiveBlock();
         if (block) selectPisiBlock(editor, block);
     });
     editor.addEventListener('pointerup', (event) => {
-        const block = getPisiBlockAtEvent(editor, event.target);
+        const block = getPisiBlockAtEvent(editor, event.target) || getPisiSelectionBlock(editor);
         if (block) selectPisiBlock(editor, block);
     });
     editor.addEventListener('keydown', (event) => handlePisiBlocksEditorKeydown(editor, event));
+    editor.addEventListener('beforeinput', (event) => {
+        const block = getPisiSelectionBlock(editor) || getPisiBlockAtEvent(editor, event.target) || getPisiActiveBlock();
+        if (!block) return;
+        const fakeEvt = (key) => ({
+            key,
+            shiftKey: false,
+            ctrlKey: false,
+            metaKey: false,
+            altKey: false,
+            isComposing: false,
+            preventDefault: () => event.preventDefault(),
+            stopImmediatePropagation: () => event.stopImmediatePropagation()
+        });
+        if (event.inputType === 'insertParagraph') {
+            if (!splitPisiTaskBlockOnEnter(editor, block, fakeEvt('Enter'))) {
+                if (!window.handlePisiBulletKeydown?.(editor, fakeEvt('Enter'), block)) {
+                    window.handlePisiHeadingSectionKeydown?.(editor, fakeEvt('Enter'), block);
+                }
+            }
+        } else if (event.inputType === 'deleteContentBackward') {
+            handlePisiTaskBlockBackspace(editor, block, fakeEvt('Backspace'));
+        } else if (event.inputType === 'deleteContentForward') {
+            handlePisiTaskBlockBackspace(editor, block, fakeEvt('Delete'));
+        }
+    });
+    editor.addEventListener('keyup', () => {
+        const block = getPisiSelectionBlock(editor);
+        if (block && block !== pisiBlocksEditorState.block) {
+            selectPisiBlock(editor, block);
+        }
+    });
     editor.addEventListener('input', () => {
         decoratePisiBlockTypes(editor);
-        const block = getPisiActiveBlock();
+        const block = getPisiSelectionBlock(editor) || getPisiActiveBlock();
         if (block) selectPisiBlock(editor, block);
     });
     editor.addEventListener('dragover', (event) => {
@@ -466,34 +783,16 @@ function bindPisiBlocksEditor(editor) {
     editor.addEventListener('drop', (event) => handlePisiBlockDrop(editor, event));
     return true;
 }
-
 function ensurePisiMarkdownSourceDialog() {
     if (pisiBlocksEditorState.sourceOverlay?.isConnected) return pisiBlocksEditorState.sourceOverlay;
     const overlay = document.createElement('div');
     overlay.className = 'pisi-markdown-source-overlay';
     overlay.hidden = true;
-    const dialog = document.createElement('section');
-    dialog.className = 'pisi-markdown-source-dialog';
-    const header = document.createElement('header');
-    const title = document.createElement('strong');
-    title.textContent = pisiBlockTranslate('Markdown kaynak görünümü');
-    const actions = document.createElement('div');
-    const cancel = document.createElement('button');
-    cancel.type = 'button';
-    cancel.className = 'pisi-secondary-button';
-    cancel.textContent = pisiBlockTranslate('İptal');
-    const apply = document.createElement('button');
-    apply.type = 'button';
-    apply.className = 'pisi-primary-button';
-    apply.textContent = pisiBlockTranslate('WYSIWYG görünümüne uygula');
-    actions.append(cancel, apply);
-    header.append(title, actions);
-    const textarea = document.createElement('textarea');
-    textarea.className = 'pisi-markdown-source-textarea';
-    textarea.spellcheck = false;
-    dialog.append(header, textarea);
-    overlay.appendChild(dialog);
+    overlay.innerHTML = `<section class="pisi-markdown-source-dialog"><header><strong>${pisiBlockTranslate('Markdown kaynak görünümü')}</strong><div><button type="button" class="pisi-secondary-button pisi-cancel-md">${pisiBlockTranslate('İptal')}</button><button type="button" class="pisi-primary-button pisi-apply-md">${pisiBlockTranslate('WYSIWYG görünümüne uygula')}</button></div></header><textarea class="pisi-markdown-source-textarea" spellcheck="false"></textarea></section>`;
     document.body.appendChild(overlay);
+    const cancel = overlay.querySelector('.pisi-cancel-md');
+    const apply = overlay.querySelector('.pisi-apply-md');
+    const textarea = overlay.querySelector('.pisi-markdown-source-textarea');
     cancel.addEventListener('click', closePisiMarkdownSource);
     apply.addEventListener('click', () => {
         const editor = pisiBlocksEditorState.sourceEditor;
@@ -511,7 +810,6 @@ function ensurePisiMarkdownSourceDialog() {
     pisiBlocksEditorState.sourceTextarea = textarea;
     return overlay;
 }
-
 function openPisiMarkdownSource(editor = getPisiActiveBlocksEditor()) {
     if (!editor) return false;
     const overlay = ensurePisiMarkdownSourceDialog();
@@ -521,12 +819,10 @@ function openPisiMarkdownSource(editor = getPisiActiveBlocksEditor()) {
     pisiBlocksEditorState.sourceTextarea.focus();
     return true;
 }
-
 function closePisiMarkdownSource() {
     if (pisiBlocksEditorState.sourceOverlay) pisiBlocksEditorState.sourceOverlay.hidden = true;
     pisiBlocksEditorState.sourceEditor = null;
 }
-
 function addPisiBlockBelow(block = getPisiActiveBlock()) {
     const editor = block?.closest('.pisi-rich-editor') || getPisiActiveBlocksEditor();
     if (!editor) return null;
@@ -542,9 +838,9 @@ function addPisiBlockBelow(block = getPisiActiveBlock()) {
     next.focus();
     return next;
 }
-
 function initializePisiBlocksEditor() {
     const bindAll = () => [document.getElementById('center-node-editor-content'), document.getElementById('node-modal-content')].forEach(bindPisiBlocksEditor);
+    if (document.readyState !== 'loading') bindAll();
     document.addEventListener('DOMContentLoaded', bindAll);
     document.addEventListener('pisi:active-node-changed', () => {
         bindAll();
@@ -590,7 +886,6 @@ function initializePisiBlocksEditor() {
         handler: () => movePisiBlock(getPisiActiveBlock(), 1)
     });
 }
-
 const moduleApi = {
     PISI_BLOCK_TYPES,
     PISI_BLOCK_SLASH_COMMANDS,
@@ -614,10 +909,8 @@ const moduleApi = {
     addPisiBlockBelow,
     initializePisiBlocksEditor
 };
-
 registerModule('editor.blocks', moduleApi);
 initializePisiBlocksEditor();
-
 export {
     PISI_BLOCK_TYPES,
     PISI_BLOCK_SLASH_COMMANDS,

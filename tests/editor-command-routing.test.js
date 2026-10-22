@@ -416,3 +416,59 @@ test('Preferences UI exposes and wires LaTeX and .. command toggles', () => {
     assert.ok(authorityIndex > tagEditorIndex);
     assert.ok(routingIndex > authorityIndex);
 });
+
+test('routePisiEditorToken preserves active todo-priority and todo-date menus on keyup', async () => {
+    const { preferences, routing, unified } = await loadModules();
+    localStorage.clear();
+    preferences.setPisiDoubleDotCommandsPreference(true);
+    resetMenuState(unified);
+
+    const startContainer = {};
+    const block = {};
+    const editor = {
+        contains(node) {
+            return node === startContainer;
+        }
+    };
+    window.getSelection = () => ({
+        rangeCount: 1,
+        isCollapsed: true,
+        getRangeAt() {
+            return {
+                startContainer,
+                startOffset: 6,
+                cloneRange() {
+                    return {
+                        selectNodeContents() {},
+                        setEnd() {},
+                        toString() {
+                            return '..todo';
+                        }
+                    };
+                }
+            };
+        }
+    });
+    window.getPisiCurrentEditorBlock = () => block;
+
+    let closeCalls = 0;
+    window.closePisiTagMenu = () => {
+        closeCalls += 1;
+        window.pisiTagMenuState.active = false;
+    };
+    window.pisiTagMenuState = {
+        active: true,
+        mode: 'todo-priority',
+        editor,
+        command: { trigger: '..', body: 'todo', token: '..todo' }
+    };
+
+    assert.equal(routing.routePisiEditorToken(editor), 'todo-priority');
+    assert.equal(closeCalls, 0);
+    assert.equal(unified.pisiUnifiedCommandState.active, false);
+
+    window.pisiTagMenuState.mode = 'todo-date';
+    assert.equal(routing.routePisiEditorToken(editor), 'todo-date');
+    assert.equal(closeCalls, 0);
+    assert.equal(unified.pisiUnifiedCommandState.active, false);
+});

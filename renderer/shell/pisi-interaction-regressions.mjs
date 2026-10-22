@@ -97,6 +97,10 @@ function insertPisiEditorTab(event) {
     // davranışını korur.
     if (!editor || (nestedEditable && nestedEditable !== editor)) return false;
 
+    if (typeof window.handlePisiBulletKeydown === 'function' && window.handlePisiBulletKeydown(editor, event)) {
+        return true;
+    }
+
     const selection = window.getSelection?.();
     if (!selection?.rangeCount) return false;
 

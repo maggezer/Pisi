@@ -4,6 +4,10 @@ import * as crypto from 'node:crypto';
 import { ensurePisiSidecar } from './document-store-io.js';
 import { ensurePisiFileMetadata, makePisiDiaryNodeTitle, normalizePisiDiaryIsoDate } from './document-store-metadata.js';
 
+const PISI_DIARY_MANAGED_START =
+    typeof globalThis.PISI_DIARY_MANAGED_START === 'string' ? globalThis.PISI_DIARY_MANAGED_START : '<!--PISI_DIARY_MANAGED_START-->';
+const PISI_DIARY_MANAGED_END = typeof globalThis.PISI_DIARY_MANAGED_END === 'string' ? globalThis.PISI_DIARY_MANAGED_END : '<!--PISI_DIARY_MANAGED_END-->';
+
 function ensurePisiDiaryFolder(projectFolder) {
     if (!projectFolder || !fs.existsSync(projectFolder)) {
         return {
@@ -91,7 +95,7 @@ function getOrCreateDiaryNode(projectFolder, isoDate) {
             });
 
             data.pisi.diaryDate = normalizedDate;
-            data.content = `<h2>${escapeHtmlForPisiDiary(title)}</h2><div><br></div>`;
+            data.content = '<div><br></div>';
 
             writePisiDocument(nodePath, data);
             ensurePisiSidecar(nodePath, data.pisi);
@@ -139,12 +143,151 @@ function getOrCreateDiaryNode(projectFolder, isoDate) {
     }
 }
 
+function isSamePisiPath(pathA, pathB, baseFolder = '') {
+    if (!pathA || !pathB) return false;
+    const rawA = String(pathA).trim();
+    const rawB = String(pathB).trim();
+    const resolvedA = baseFolder && !path.isAbsolute(rawA) ? path.resolve(baseFolder, rawA) : path.resolve(rawA);
+    const resolvedB = baseFolder && !path.isAbsolute(rawB) ? path.resolve(baseFolder, rawB) : path.resolve(rawB);
+    return resolvedA.replace(/[\\/]+/g, '/').toLowerCase() === resolvedB.replace(/[\\/]+/g, '/').toLowerCase();
+}
+
+function isTaskBlock(html = '') {
+    if (!html) return false;
+    return /data-pisi-block-type=["']task["']|class=["'][^"']*pisi-block-task-marker|data-pisi-tag=["']todo\.|data-pisi-todo-checkbox|data-pisi-task-id|class=["'][^"']*pisi-todo-source/i.test(
+        html
+    );
+}
+
+function isGorevlerHeading(html = '') {
+    if (!html) return false;
+    return /<h[1-6][^>]*>[\s\S]*?Görevler[\s\S]*?<\/h[1-6]>/i.test(html);
+}
+
+function splitHtmlBlocks(html = '') {
+    const raw = String(html || '').trim();
+    if (!raw) return [];
+
+    const blocks = [];
+    let i = 0;
+    while (i < raw.length) {
+        while (i < raw.length && /\s/.test(raw[i])) i++;
+        if (i >= raw.length) break;
+
+        if (raw[i] === '<') {
+            const tagMatch = raw.slice(i).match(/^<([a-z0-9]+)\b([^>]*)>/i);
+            if (!tagMatch) {
+                const nextTag = raw.indexOf('<', i + 1);
+                const chunk = nextTag === -1 ? raw.slice(i) : raw.slice(i, nextTag);
+                if (chunk.trim()) blocks.push(chunk.trim());
+                i = nextTag === -1 ? raw.length : nextTag;
+                continue;
+            }
+
+            const tagName = tagMatch[1].toLowerCase();
+            const isSelfClosing = tagMatch[0].endsWith('/>') || ['br', 'hr', 'img', 'input'].includes(tagName);
+
+            if (isSelfClosing) {
+                blocks.push(tagMatch[0]);
+                i += tagMatch[0].length;
+                continue;
+            }
+
+            let depth = 1;
+            let cursor = i + tagMatch[0].length;
+            const openRegex = new RegExp('(<' + tagName + '\\b[^>]*>)|(<\\/' + tagName + '>)', 'gi');
+            openRegex.lastIndex = cursor;
+
+            let m;
+            let endIndex = -1;
+            while ((m = openRegex.exec(raw)) !== null) {
+                if (m[1]) {
+                    if (!m[1].endsWith('/>')) {
+                        depth++;
+                    }
+                } else if (m[2]) {
+                    depth--;
+                    if (depth === 0) {
+                        endIndex = openRegex.lastIndex;
+                        break;
+                    }
+                }
+            }
+
+            if (endIndex !== -1) {
+                blocks.push(raw.slice(i, endIndex));
+                i = endIndex;
+            } else {
+                blocks.push(raw.slice(i));
+                break;
+            }
+        } else {
+            const nextTag = raw.indexOf('<', i);
+            const chunk = nextTag === -1 ? raw.slice(i) : raw.slice(i, nextTag);
+            if (chunk.trim()) blocks.push(chunk.trim());
+            i = nextTag === -1 ? raw.length : nextTag;
+        }
+    }
+
+    return blocks;
+}
+
+function organizeDiaryManualTasks(content = '', fileDate = '') {
+    const raw = String(content || '').trim();
+    if (!raw) return content;
+
+    const allBlocks = splitHtmlBlocks(raw);
+    const hasAnyTask = allBlocks.some(isTaskBlock);
+
+    if (!hasAnyTask) {
+        return content;
+    }
+
+    const headingIdx = allBlocks.findIndex(isGorevlerHeading);
+    const taskBlocks = [];
+    const nonTaskBlocks = [];
+    let headingBlock = null;
+
+    if (headingIdx !== -1) {
+        headingBlock = allBlocks[headingIdx];
+        allBlocks.forEach((block, idx) => {
+            if (idx === headingIdx) return;
+            if (isTaskBlock(block)) {
+                taskBlocks.push(block);
+            } else {
+                nonTaskBlocks.push(block);
+            }
+        });
+    } else {
+        headingBlock = '<h3>Görevler · ' + fileDate + '</h3>';
+        allBlocks.forEach((block) => {
+            if (isTaskBlock(block)) {
+                taskBlocks.push(block);
+            } else {
+                nonTaskBlocks.push(block);
+            }
+        });
+    }
+
+    const meaningfulNonTasks = nonTaskBlocks.filter((b) => !/^(?:<div><br><\/div>|<p><br><\/p>|<br\s*\/?>)$/i.test(b.trim()));
+    const resultParts = [];
+    if (meaningfulNonTasks.length > 0) {
+        resultParts.push(meaningfulNonTasks.join('\n'));
+    }
+    resultParts.push(headingBlock);
+    resultParts.push(taskBlocks.join('\n'));
+
+    return resultParts.join('\n');
+}
+
 function stripPisiDiaryManagedSection(content = '') {
     const escapedStart = PISI_DIARY_MANAGED_START.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const escapedEnd = PISI_DIARY_MANAGED_END.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(`${escapedStart}[\\s\\S]*?${escapedEnd}`, 'g');
 
-    return String(content || '').replace(regex, '');
+    let stripped = String(content || '').replace(regex, '');
+    stripped = stripped.replace(/<div\b[^>]*class=["'][^"']*pisi-diary-managed-block[^"']*["'][\s\S]*?<\/div>(?:\s*<\/div>)?/gi, '');
+    return stripped;
 }
 
 function escapeHtmlForPisiDiary(value = '') {
@@ -195,7 +338,7 @@ function normalizePisiDiarySyncEntry(entry) {
     const sourceKey = [nodePath, sourceIdentity, tag].join('::');
     const rawPriority = Number(entry.priority);
     const priority = Number.isFinite(rawPriority) ? Math.max(-1000000, Math.min(1000000, rawPriority)) : 0;
-    const allowedStatuses = new Set(['todo', 'doing', 'waiting', 'blocked']);
+    const allowedStatuses = new Set(['todo', 'doing', 'waiting', 'blocked', 'done']);
     const allowedRepeats = new Set(['none', 'daily', 'weekdays', 'weekly', 'monthly']);
     const status = String(entry.status || 'todo').toLowerCase();
     const repeat = String(entry.repeat || 'none').toLowerCase();
@@ -218,16 +361,10 @@ function normalizePisiDiarySyncEntry(entry) {
     };
 }
 
-function buildPisiDiaryManagedSection(isoDate, entries = []) {
+function buildPisiDiaryManagedSection(isoDate, entries = [], options = {}) {
     if (!entries.length) return '';
 
     const safeDate = escapeHtmlForPisiDiary(isoDate);
-    const statusLabels = {
-        todo: 'Yapılacak',
-        doing: 'Devam ediyor',
-        waiting: 'Beklemede',
-        blocked: 'Engellendi'
-    };
     const repeatLabels = {
         none: '',
         daily: 'Her gün',
@@ -245,28 +382,29 @@ function buildPisiDiaryManagedSection(isoDate, entries = []) {
         })
         .map((entry) => {
             const safeSourceKey = escapeHtmlForPisiDiary(entry.sourceKey);
+            const safeNodePath = escapeHtmlForPisiDiary(entry.nodePath || '');
+            const safeBlockId = escapeHtmlForPisiDiary(entry.blockId || '');
             const safeNodeTitle = escapeHtmlForPisiDiary(entry.nodeTitle || 'Node');
             const safeTag = escapeHtmlForPisiDiary(entry.tag || '');
             const safeText = escapeHtmlForPisiDiary(entry.text || '');
-            const safeStatus = escapeHtmlForPisiDiary(statusLabels[entry.status] || statusLabels.todo);
             const safeRepeat = escapeHtmlForPisiDiary(repeatLabels[entry.repeat] || '');
             const safeParent = escapeHtmlForPisiDiary(entry.parentId || '');
             const parentClass = entry.parentId ? ' has-parent' : '';
             const repeatMeta = safeRepeat ? ` · ${safeRepeat}` : '';
-            const blockHtml = entry.html || `<div>${safeText || '(boş blok)'}</div>`;
+            const isCompleted = entry.status === 'done';
 
-            return `
-<div class="pisi-diary-managed-block${parentClass}" data-pisi-diary-source="${safeSourceKey}" data-pisi-diary-status="${entry.status}" data-pisi-diary-parent="${safeParent}">
-    <div class="pisi-diary-managed-meta">${safeNodeTitle} · ..${safeTag} · ${safeStatus}${repeatMeta}</div>
-    ${blockHtml}
+            return `<div class="pisi-diary-managed-block${parentClass}" data-pisi-diary-source="${safeSourceKey}" data-pisi-diary-node-path="${safeNodePath}" data-pisi-diary-block-id="${safeBlockId}" data-pisi-diary-status="${entry.status}" data-pisi-diary-parent="${safeParent}" data-pisi-task-id="${safeBlockId}" title="Nota git: ${safeNodeTitle}">
+    <span class="pisi-block-task-marker pisi-diary-task-marker" contenteditable="false" role="checkbox" aria-checked="${String(isCompleted)}" aria-label="${isCompleted ? 'Görevi yeniden aç' : 'Görevi tamamla'}" data-pisi-task-id="${safeBlockId}" data-pisi-todo-checkbox="${safeTag}" tabindex="0">${isCompleted ? '☑' : '☐'}</span>
+    <span class="pisi-diary-task-text">${safeText || '(boş blok)'}</span>
+    <span class="pisi-diary-managed-meta" contenteditable="false" title="Nota git: ${safeNodeTitle}">· ${safeNodeTitle}${repeatMeta}</span>
 </div>`;
         })
         .join('\n');
 
-    return `${PISI_DIARY_MANAGED_START}
-<h3>Görevler · ${safeDate}</h3>
-${blocks}
-${PISI_DIARY_MANAGED_END}`;
+    const includeHeading = options.includeHeading !== false;
+    const headingHtml = includeHeading ? `<h3>Görevler · ${safeDate}</h3>\n` : '';
+
+    return `${PISI_DIARY_MANAGED_START}\n${headingHtml}${blocks}\n${PISI_DIARY_MANAGED_END}`;
 }
 
 function listPisiDiaryNodePaths(projectFolder) {
@@ -424,8 +562,24 @@ function syncDiaryMissions(projectFolder, payload = {}) {
 
             const manualContent = stripPisiDiaryManagedSection(ensured.data.content || '');
             const entries = entriesByDate.get(fileDate) || [];
-            const managedSection = buildPisiDiaryManagedSection(fileDate, entries);
-            const nextContent = managedSection ? `${manualContent}${managedSection}` : manualContent;
+
+            const externalEntries = [];
+            for (const entry of entries) {
+                if (!isSamePisiPath(entry.nodePath, nodePath, projectFolder)) {
+                    externalEntries.push(entry);
+                }
+            }
+
+            const organizedManual = organizeDiaryManualTasks(manualContent, fileDate);
+            const hasHeadingInManual = isGorevlerHeading(organizedManual);
+            const managedSection = buildPisiDiaryManagedSection(fileDate, externalEntries, {
+                includeHeading: !hasHeadingInManual
+            });
+            const nextContent = managedSection
+                ? organizedManual
+                    ? `${organizedManual}\n${managedSection}`
+                    : managedSection
+                : organizedManual || '<div><br></div>';
 
             if (nextContent !== String(ensured.data.content || '')) {
                 ensured.data.content = nextContent;
@@ -461,9 +615,13 @@ export {
     escapeHtmlForPisiDiary,
     getOrCreateDiaryNode,
     getPisiDiaryNodePath,
+    isGorevlerHeading,
+    isSamePisiPath,
+    isTaskBlock,
     listPisiDiaryDates,
     listPisiDiaryNodePaths,
     normalizePisiDiarySyncEntry,
+    organizeDiaryManualTasks,
     sanitizePisiDiaryBlockHtml,
     stripPisiDiaryManagedSection,
     syncDiaryMissions

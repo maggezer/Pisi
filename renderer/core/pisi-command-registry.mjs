@@ -28,6 +28,7 @@ function normalizePisiShortcut(value = '') {
         alt: 'Alt',
         option: 'Alt',
         shift: 'Shift',
+        tab: 'Tab',
         escape: 'Escape',
         esc: 'Escape',
         space: 'Space',
@@ -207,8 +208,10 @@ function handlePisiCommandShortcut(event) {
     if (event.target?.classList?.contains('capturing')) return;
     const shortcut = getPisiEventShortcut(event);
     if (!shortcut) return;
+    const ctrlExplicitShortcut = event.ctrlKey ? shortcut.replace(/\bMod\b/, 'Ctrl') : '';
     const command = Array.from(pisiCommandRegistry.values()).find((candidate) => {
-        return getPisiCommandShortcut(candidate) === shortcut;
+        const candidateShortcut = getPisiCommandShortcut(candidate);
+        return candidateShortcut === shortcut || (ctrlExplicitShortcut && candidateShortcut === ctrlExplicitShortcut);
     });
     if (!command) return;
     if (isPisiEditableTarget(event.target) && !command.allowInInput) return;

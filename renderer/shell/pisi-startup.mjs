@@ -139,6 +139,8 @@ function renderPisiOpenTabs() {
 
         tabsEl.appendChild(tabEl);
     }
+
+    tabsEl.querySelector('.center-tab.active')?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
 }
 
 async function setupProjectStartup() {

@@ -1676,7 +1676,7 @@ html[data-pisi-theme='light'] .pisi-quick-add-error {
     position: absolute;
     left: 7px;
     content: '•';
-    color: var(--accent-color);
+    color: var(--accent-color, #f39c12);
 }
 
 .pisi-block-system > [data-pisi-block-type='number'] {
@@ -1701,6 +1701,7 @@ html[data-pisi-theme='light'] .pisi-quick-add-error {
     display: inline-grid;
     width: 18px;
     height: 18px;
+    margin-right: 6px;
     box-sizing: border-box;
     place-items: center;
     vertical-align: middle;
@@ -1732,6 +1733,15 @@ html[data-pisi-theme='light'] .pisi-quick-add-error {
     border-color: #fff;
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 20%, transparent);
     outline: none;
+}
+
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-block-task-marker {
+    border-color: #8c9ba5;
+    background: #ffffff;
+}
+
+:is(html[data-pisi-theme='light'], html[data-theme='light']) .pisi-block-task-marker[aria-checked='true'] {
+    border-color: var(--accent-color);
 }
 
 .pisi-user-tag.pisi-task-metadata,

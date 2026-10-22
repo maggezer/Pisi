@@ -45,6 +45,7 @@ function openPisiTodoPriorityMenu(editor, commandOverride = null) {
         mode: 'todo-priority',
         items: buildPisiTodoPriorityItems()
     });
+    editor?.focus?.({ preventScroll: true });
     return true;
 }
 
@@ -90,8 +91,13 @@ function openPisiTodoDateMenu(editor, priorityValue, commandOverride = null) {
     const backButton = menu.querySelector('.pisi-todo-back');
     const undatedButton = menu.querySelector('.pisi-todo-undated');
     const applyButton = menu.querySelector('.pisi-todo-apply');
+    const focusableControls = [dateInput, backButton, undatedButton, applyButton].filter(Boolean);
+
+    let committed = false;
+    let lastDateKeydownAt = 0;
 
     const commitTodo = (dateValue = dateInput?.value) => {
+        if (committed) return;
         const todoTag = formatPisiTodoTag(priority.value, dateValue);
 
         if (!todoTag) {
@@ -100,6 +106,7 @@ function openPisiTodoDateMenu(editor, priorityValue, commandOverride = null) {
             return;
         }
 
+        committed = true;
         dateInput?.setCustomValidity('');
 
         const applied = window.applyPisiTodoTagToEditor?.(editor, todoTag, command);
@@ -110,43 +117,91 @@ function openPisiTodoDateMenu(editor, priorityValue, commandOverride = null) {
         }
     };
 
+    const goBackToPriority = (event) => {
+        event?.preventDefault?.();
+        event?.stopPropagation?.();
+        openPisiTodoPriorityMenu(editor, command);
+    };
+
+    const applyUndated = (event) => {
+        event?.preventDefault?.();
+        event?.stopPropagation?.();
+        commitTodo('none');
+    };
+
+    const applySelectedDate = (event) => {
+        event?.preventDefault?.();
+        event?.stopPropagation?.();
+        commitTodo();
+    };
+
     dateInput?.addEventListener('mousedown', (event) => {
         event.stopPropagation();
     });
-    dateInput?.addEventListener('change', () => commitTodo());
+    dateInput?.addEventListener('change', () => {
+        if (Date.now() - lastDateKeydownAt > 150) {
+            commitTodo();
+        }
+    });
     dateInput?.addEventListener('keydown', (event) => {
+        lastDateKeydownAt = Date.now();
         if (event.key === 'Enter') {
             event.preventDefault();
+            event.stopPropagation();
             commitTodo();
         } else if (event.key === 'Escape') {
             event.preventDefault();
+            event.stopPropagation();
             closePisiTagMenu();
-            editor.focus();
+            editor?.focus?.({ preventScroll: true });
         }
     });
 
-    backButton?.addEventListener('mousedown', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        openPisiTodoPriorityMenu(editor, command);
-    });
+    backButton?.addEventListener('mousedown', goBackToPriority);
+    backButton?.addEventListener('click', goBackToPriority);
 
-    undatedButton?.addEventListener('mousedown', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        commitTodo('none');
-    });
+    undatedButton?.addEventListener('mousedown', applyUndated);
+    undatedButton?.addEventListener('click', applyUndated);
 
-    applyButton?.addEventListener('mousedown', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        commitTodo();
+    applyButton?.addEventListener('mousedown', applySelectedDate);
+    applyButton?.addEventListener('click', applySelectedDate);
+
+    menu.querySelector('.pisi-todo-picker')?.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            event.stopPropagation();
+            closePisiTagMenu();
+            editor?.focus?.({ preventScroll: true });
+            return;
+        }
+        if (event.key === 'Tab' && focusableControls.length > 1) {
+            const currentIndex = focusableControls.indexOf(document.activeElement);
+            if (currentIndex !== -1) {
+                event.preventDefault();
+                event.stopPropagation();
+                const delta = event.shiftKey ? -1 : 1;
+                const nextIndex = (currentIndex + delta + focusableControls.length) % focusableControls.length;
+                focusableControls[nextIndex]?.focus?.({ preventScroll: true });
+            }
+            return;
+        }
+        if ((event.key === 'ArrowRight' || event.key === 'ArrowLeft') && document.activeElement !== dateInput) {
+            const actionButtons = [backButton, undatedButton, applyButton].filter(Boolean);
+            const buttonIndex = actionButtons.indexOf(document.activeElement);
+            if (buttonIndex !== -1) {
+                event.preventDefault();
+                event.stopPropagation();
+                const delta = event.key === 'ArrowRight' ? 1 : -1;
+                const nextIndex = (buttonIndex + delta + actionButtons.length) % actionButtons.length;
+                actionButtons[nextIndex]?.focus?.({ preventScroll: true });
+            }
+        }
     });
 
     menu.hidden = false;
     positionPisiTagMenuAtSelection();
 
-    dateInput?.focus({ preventScroll: true });
+    dateInput?.focus?.({ preventScroll: true });
     try {
         dateInput?.showPicker?.();
     } catch {
@@ -190,34 +245,68 @@ function bindPisiTagControlsForEditor(editor) {
         refreshPisiTagsPanelSoon();
     });
 
-    editor.addEventListener('keydown', (event) => {
-        if (!pisiTagMenuState.active || pisiTagMenuState.editor !== editor) return;
-        if (pisiTagMenuState.mode === 'todo-date') return;
+    editor.addEventListener(
+        'keydown',
+        (event) => {
+            if (!pisiTagMenuState.active || pisiTagMenuState.editor !== editor) return;
+            if (pisiTagMenuState.mode === 'todo-date') {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    document.querySelector('#pisi-tag-menu .pisi-todo-apply')?.click?.();
+                    return;
+                }
+                if (event.key === 'Escape') {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    closePisiTagMenu();
+                    return;
+                }
+                return;
+            }
 
-        if (event.key === 'ArrowDown') {
-            event.preventDefault();
-            movePisiTagSelection(1);
-            return;
-        }
+            if (pisiTagMenuState.mode === 'todo-priority' && /^[1-5]$/.test(event.key)) {
+                const index = Number(event.key) - 1;
+                const item = pisiTagMenuState.items[index];
+                if (item) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    pisiTagMenuState.selectedIndex = index;
+                    applyPisiTagMenuItem(editor, item);
+                    return;
+                }
+            }
 
-        if (event.key === 'ArrowUp') {
-            event.preventDefault();
-            movePisiTagSelection(-1);
-            return;
-        }
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                movePisiTagSelection(1);
+                return;
+            }
 
-        if (event.key === 'Enter' || event.key === 'Tab') {
-            event.preventDefault();
-            const selectedItem = pisiTagMenuState.items[pisiTagMenuState.selectedIndex];
-            if (selectedItem) applyPisiTagMenuItem(editor, selectedItem);
-            return;
-        }
+            if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                movePisiTagSelection(-1);
+                return;
+            }
 
-        if (event.key === 'Escape') {
-            event.preventDefault();
-            closePisiTagMenu();
-        }
-    });
+            if (event.key === 'Enter' || event.key === 'Tab') {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                const selectedItem = pisiTagMenuState.items[pisiTagMenuState.selectedIndex];
+                if (selectedItem) applyPisiTagMenuItem(editor, selectedItem);
+                return;
+            }
+
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                closePisiTagMenu();
+            }
+        },
+        true
+    );
 
     editor.addEventListener('contextmenu', (event) => {
         const command = capturePisiTodoSelection(editor);
@@ -280,12 +369,14 @@ function openPisiTagMenuForEditor(editor, command) {
             <span class="pisi-tag-option-desc">${pisiEscapeHtml(item.description)}</span>
         `;
 
-        option.addEventListener('mousedown', (event) => {
+        const selectOption = (event) => {
             event.preventDefault();
             event.stopPropagation();
             pisiTagMenuState.selectedIndex = index;
             applyPisiTagMenuItem(editor, item);
-        });
+        };
+        option.addEventListener('mousedown', selectOption);
+        option.addEventListener('click', selectOption);
         menu.appendChild(option);
     });
 
@@ -429,7 +520,7 @@ function makeRangeInElementByTextOffsets(root, startOffset, endOffset) {
 function getPisiCurrentEditorBlock(editor, node) {
     let el = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
     while (el && el !== editor) {
-        if (el.matches && el.matches('div, p, h1, h2, h3, h4, h5, h6')) {
+        if (el.matches && el.matches('.pisi-editor-block, div, p, h1, h2, h3, h4, h5, h6, blockquote, pre, li')) {
             return el;
         }
         el = el.parentElement;

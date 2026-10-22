@@ -183,6 +183,54 @@ async function activatePisiOpenTab(path) {
     return true;
 }
 
+async function cyclePisiOpenTabs(direction = 1) {
+    const state = getPisiOpenTabsState();
+    const tabs = Array.isArray(state.openTabs) ? state.openTabs : [];
+
+    if (!tabs.length) return false;
+    if (tabs.length === 1) {
+        return activatePisiOpenTab(tabs[0].path);
+    }
+
+    const currentIndex = state.activeTabPath ? tabs.findIndex((tab) => pisiSameTabPath(tab.path, state.activeTabPath)) : -1;
+    const step = direction < 0 ? -1 : 1;
+    const nextIndex = currentIndex === -1 ? (step > 0 ? 0 : tabs.length - 1) : (currentIndex + step + tabs.length) % tabs.length;
+    const targetTab = tabs[nextIndex];
+
+    if (!targetTab?.path) return false;
+
+    if (typeof closeNodeModalAndSave === 'function' && typeof activeModalNode !== 'undefined' && activeModalNode) {
+        const modalSaved = await closeNodeModalAndSave();
+        if (!modalSaved) return false;
+    }
+
+    return activatePisiOpenTab(targetTab.path);
+}
+
+function initializePisiTabShortcuts() {
+    if (typeof window === 'undefined' || typeof window.registerPisiCommand !== 'function') return;
+    window.registerPisiCommand({
+        id: 'pisi.tabs.next',
+        label: 'Sonraki sekmeye geç',
+        description: 'Açık çalışma alanı sekmeleri arasında sonraki sekmeye geçer.',
+        category: 'Gezinme',
+        defaultShortcut: 'Mod+Tab',
+        allowInInput: true,
+        when: () => (getPisiOpenTabsState().openTabs?.length || 0) > 0,
+        handler: () => cyclePisiOpenTabs(1)
+    });
+    window.registerPisiCommand({
+        id: 'pisi.tabs.previous',
+        label: 'Önceki sekmeye geç',
+        description: 'Açık çalışma alanı sekmeleri arasında önceki sekmeye geçer.',
+        category: 'Gezinme',
+        defaultShortcut: 'Mod+Shift+Tab',
+        allowInInput: true,
+        when: () => (getPisiOpenTabsState().openTabs?.length || 0) > 0,
+        handler: () => cyclePisiOpenTabs(-1)
+    });
+}
+
 async function closePisiOpenTab(path, event) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
@@ -745,6 +793,12 @@ Object.defineProperties(moduleApi, {
             return activatePisiOpenTab;
         }
     },
+    cyclePisiOpenTabs: {
+        enumerable: true,
+        get() {
+            return cyclePisiOpenTabs;
+        }
+    },
     closePisiOpenTab: {
         enumerable: true,
         get() {
@@ -846,3 +900,4 @@ Object.defineProperties(moduleApi, {
     }
 });
 registerModule('shell.tabs', moduleApi);
+initializePisiTabShortcuts();

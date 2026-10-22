@@ -375,14 +375,48 @@ function getPisiEditorNodeContext(editor) {
     return null;
 }
 
-function buildPisiTaskFromEditorBlock(block, context) {
+function extractCleanPisiTaskTitleFromBlock(block, source, todoTag) {
+    const sourceText = String(source?.textContent || '')
+        .replace(/^[☐☑]\s*/, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    if (typeof block?.cloneNode === 'function') {
+        const clone = block.cloneNode(true);
+        clone.querySelectorAll?.('.pisi-block-task-marker, .pisi-task-metadata, .pisi-user-tag[data-pisi-tag]').forEach((el) => el.remove());
+        const fullText = String(clone.textContent || '')
+            .replace(/^[☐☑]\s*/, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+        if (fullText && fullText.length >= sourceText.length) {
+            return fullText;
+        }
+    }
+    if (sourceText) return sourceText;
+    return String(block?.textContent || '')
+        .replace(/^[☐☑]\s*/, '')
+        .replace(/\s+/g, ' ')
+        .replace(todoTag, ' ')
+        .replace(/\bdone\b/gi, ' ')
+        .trim();
+}
+
+function buildPisiTaskFromEditorBlock(block, context, seenTaskIds = null) {
     const tags = Array.from(block?.querySelectorAll?.('.pisi-user-tag[data-pisi-tag]') || []);
     const tagElement = tags.find((tag) => parsePisiTodoTagValue(normalizePisiFirstClassTag(tag.dataset.pisiTag || tag.textContent || '')));
-    if (!tagElement || !context?.nodePath) return null;
+    if (!tagElement || !context?.nodePath) {
+        if (block?.dataset?.pisiTaskId) {
+            delete block.dataset.pisiTaskId;
+        }
+        return null;
+    }
     const todoTag = normalizePisiFirstClassTag(tagElement.dataset.pisiTag || tagElement.textContent || '');
     const todo = parsePisiTodoTagValue(todoTag);
     if (!todo) return null;
-    const taskId = String(block.dataset.pisiTaskId || tagElement.dataset.pisiTaskId || '').trim() || makePisiFirstClassTaskId();
+    let taskId = String(block.dataset.pisiTaskId || tagElement.dataset.pisiTaskId || '').trim();
+    if (!taskId || (seenTaskIds && seenTaskIds.has(taskId))) {
+        taskId = makePisiFirstClassTaskId();
+    }
+    seenTaskIds?.add(taskId);
     setPisiTaskReferenceOnBlock(block, taskId, todoTag);
     const source = block.querySelector('.pisi-todo-source[data-pisi-todo-for]');
     const done = Array.from(tags).some((tag) => {
@@ -412,11 +446,7 @@ function buildPisiTaskFromEditorBlock(block, context) {
 
     return {
         id: taskId,
-        title: String(source?.textContent || block.textContent || '')
-            .replace(/\s+/g, ' ')
-            .replace(todoTag, ' ')
-            .replace(/\bdone\b/gi, ' ')
-            .trim(),
+        title: extractCleanPisiTaskTitleFromBlock(block, source, todoTag),
         status: done ? 'done' : String(tagElement.dataset.pisiTodoStatus || 'todo').toLowerCase(),
         priority: todo.priority,
         dueDate: tagElement.dataset.pisiTodoDeadline
@@ -446,9 +476,12 @@ async function syncPisiEditorTasks(editor) {
     const projectFolder = window.currentProjectFolder;
     const context = getPisiEditorNodeContext(editor);
     if (!projectFolder || !context || !window.pisiProject?.quickAddTask) return;
+    window.ensurePisiEditorBlocks?.(editor);
+    window.syncPisiTodoBlockMarkers?.(editor);
+    const seenTaskIds = new Set();
     const tasks = Array.from(editor.querySelectorAll('.pisi-editor-block'))
         .filter((block) => !block.closest('.pisi-diary-managed-block'))
-        .map((block) => buildPisiTaskFromEditorBlock(block, context))
+        .map((block) => buildPisiTaskFromEditorBlock(block, context, seenTaskIds))
         .filter(Boolean);
     if (!tasks.length) return;
     const result = await window.pisiProject.quickAddTask(projectFolder, {
@@ -470,9 +503,12 @@ function handlePisiEditorInputForTasks(event) {
 
     const context = getPisiEditorNodeContext(editor);
     if (!context) return;
+    window.ensurePisiEditorBlocks?.(editor);
+    window.syncPisiTodoBlockMarkers?.(editor);
+    const seenTaskIds = new Set();
     for (const block of editor.querySelectorAll('.pisi-editor-block')) {
         if (block.closest('.pisi-diary-managed-block')) continue;
-        buildPisiTaskFromEditorBlock(block, context);
+        buildPisiTaskFromEditorBlock(block, context, seenTaskIds);
     }
 
     clearTimeout(pisiFirstClassTaskState.editorTimer);
@@ -484,7 +520,7 @@ function handlePisiEditorInputForTasks(event) {
 
 function bindPisiFirstClassTaskStore() {
     patchPisiMissionIdentity();
-    document.addEventListener('input', handlePisiEditorInputForTasks, true);
+    document.addEventListener('input', handlePisiEditorInputForTasks);
     document.addEventListener('pisi:mission-index-updated', (event) => {
         if (event.detail?.complete === true && window.currentProjectFolder) {
             schedulePisiFirstClassTaskRefresh();

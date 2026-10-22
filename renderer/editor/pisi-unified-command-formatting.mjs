@@ -193,6 +193,26 @@ function applyPisiNativeWritingCommand(editor, command, item) {
 
 function applyPisiWritingCommand(editor, command, item) {
     if (!editor || !command || !item) return false;
+    if (
+        (item.id === 'indent' || item.id === 'outdent') &&
+        command.block?.dataset?.pisiBlockType === 'bullet' &&
+        typeof window.setPisiBulletIndent === 'function'
+    ) {
+        const range = makePisiWritingRange(command);
+        if (!range) return false;
+        closePisiUnifiedCommandMenu();
+        const current = window.getPisiBulletIndent?.(command.block) || 0;
+        window.setPisiBulletIndent(command.block, item.id === 'indent' ? Math.min(current + 1, 6) : Math.max(current - 1, 0));
+        window.syncPisiWordHeadingCollapse?.(editor);
+        editor.focus({ preventScroll: true });
+        if (!command.block.textContent?.trim() && !command.block.querySelector?.('*:not(br)')) {
+            window.placeCaretAtStartOfPisiBlock?.(window.getSelection?.(), command.block);
+        } else {
+            window.placeCaretAtEnd?.(command.block);
+        }
+        editor.dispatchEvent(new Event('input', { bubbles: true }));
+        return true;
+    }
 
     if (
         typeof window.isPisiInlineTextCommand === 'function' &&

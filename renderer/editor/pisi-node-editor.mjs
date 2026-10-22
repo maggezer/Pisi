@@ -100,6 +100,10 @@ function sanitizePisiEditorHtml(html = '') {
         'data-pisi-tag',
         'data-pisi-done-for',
         'data-pisi-diary-source',
+        'data-pisi-diary-status',
+        'data-pisi-diary-parent',
+        'data-pisi-diary-node-path',
+        'data-pisi-diary-block-id',
         'data-pisi-todo-status',
         'data-pisi-todo-for',
         'data-pisi-todo-parent',
@@ -114,7 +118,14 @@ function sanitizePisiEditorHtml(html = '') {
         'data-pisi-node-title',
         'data-pisi-rollup-relation',
         'data-pisi-rollup-target',
-        'data-pisi-rollup-aggregate'
+        'data-pisi-rollup-aggregate',
+        'data-pisi-bullet-indent',
+        'data-pisi-bullet-collapsed',
+        'data-pisi-bullet-has-children',
+        'data-pisi-section-break',
+        'data-pisi-section-exit',
+        'data-pisi-section-level',
+        'data-pisi-heading-parent'
     ]);
     const allowedStyleProperties = new Set([
         'background-color',
@@ -124,7 +135,8 @@ function sanitizePisiEditorHtml(html = '') {
         'font-style',
         'font-weight',
         'text-align',
-        'text-decoration'
+        'text-decoration',
+        '--pisi-bullet-indent'
     ]);
 
     wrapper.querySelectorAll('script, style, iframe, object, embed, link, meta, base, form, input, button').forEach((element) => element.remove());

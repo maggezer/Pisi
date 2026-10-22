@@ -99,6 +99,7 @@
             "listPisiDiaryNodePaths",
             "listPisiDiaryDates",
             "syncDiaryMissions",
+            "organizeDiaryManualTasks",
             "createNodeUnderMap",
             "renamePisiFile"
         ]

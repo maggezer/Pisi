@@ -229,8 +229,11 @@ export function extractPisiTodoMetadataFromBlock(block, normalizeTag = normalize
 
     const normalize = (value) => String(normalizeTag(value) || '').toLowerCase();
     const sourceElements = Array.from(block.querySelectorAll('.pisi-todo-source[data-pisi-todo-for]'));
+    const todoTagElements = Array.from(block.querySelectorAll('.pisi-user-tag[data-pisi-tag]')).filter((tagEl) => {
+        return /^todo\./i.test(normalize(tagEl.dataset.pisiTag || tagEl.textContent || ''));
+    });
 
-    for (const tagEl of block.querySelectorAll('.pisi-user-tag[data-pisi-tag]')) {
+    for (const tagEl of todoTagElements) {
         const normalizedTag = normalize(tagEl.dataset.pisiTag || tagEl.textContent || '');
         if (!/^todo\./i.test(normalizedTag)) continue;
 
@@ -251,9 +254,21 @@ export function extractPisiTodoMetadataFromBlock(block, normalizeTag = normalize
             return normalize(candidate.dataset.pisiTodoFor || '') === normalizedTag;
         });
         if (sourceEl) {
-            todoSources[normalizedTag] = String(sourceEl.textContent || '')
+            let sourceText = String(sourceEl.textContent || '')
                 .replace(/\s+/g, ' ')
                 .trim();
+            if (todoTagElements.length === 1 && typeof block.cloneNode === 'function') {
+                const clone = block.cloneNode(true);
+                clone.querySelectorAll?.('.pisi-block-task-marker, .pisi-task-metadata, .pisi-user-tag[data-pisi-tag]').forEach((el) => el.remove());
+                const fullText = String(clone.textContent || '')
+                    .replace(/^[☐☑]\s*/, '')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+                if (fullText && fullText.length > sourceText.length) {
+                    sourceText = fullText;
+                }
+            }
+            todoSources[normalizedTag] = sourceText;
         }
     }
 

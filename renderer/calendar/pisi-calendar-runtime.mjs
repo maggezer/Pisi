@@ -65,3 +65,15 @@ document.addEventListener('pisi:language-changed', () => {
         renderCalendar();
     }
 });
+
+document.addEventListener('pisi:task-store-updated', () => {
+    if (document.getElementById('pisi-calendar')) {
+        renderCalendar();
+    }
+});
+
+document.addEventListener('pisi:mission-index-updated', () => {
+    if (document.getElementById('pisi-calendar')) {
+        renderCalendar();
+    }
+});

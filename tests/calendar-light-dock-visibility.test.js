@@ -49,3 +49,13 @@ test('compact calendar month controls have explicit light-theme styling', () => 
     );
     assert.doesNotMatch(fix, /!important\b/);
 });
+
+test('calendar day cells are square and diary indicators are centered in bottom space', () => {
+    const productivity = read('styles/50-productivity.css');
+
+    assert.match(productivity, /\.pisi-calendar-day \{[\s\S]*?aspect-ratio:\s*1;[\s\S]*?\}/);
+    assert.match(
+        productivity,
+        /\.pisi-calendar-day\.has-diary-node::after \{[\s\S]*?position:\s*absolute;[\s\S]*?left:\s*50%;[\s\S]*?bottom:\s*4px;[\s\S]*?width:\s*5px;[\s\S]*?height:\s*5px;/
+    );
+});

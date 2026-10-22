@@ -264,12 +264,19 @@ function applyPisiUnifiedBlock(editor, command, item) {
     const range = makePisiCommandRange(command);
     if (!range) return false;
     range.deleteContents();
+    if (command.block && !command.block.textContent && !command.block.querySelector?.('br')) {
+        command.block.innerHTML = item.blockType === 'task' ? '' : '<br>';
+    }
     const next = window.applyPisiBlockType?.(command.block, item.blockType);
     closePisiUnifiedCommandMenu();
     if (next) {
-        if (!next.textContent && !next.querySelector('br')) next.innerHTML = '<br>';
-        window.placeCaretAtEnd?.(next);
-        next.focus?.();
+        editor?.focus?.({ preventScroll: true });
+        const isEmpty = !next.textContent?.trim() && !next.querySelector?.('*:not(br)');
+        if (isEmpty && typeof window.placeCaretAtStartOfPisiBlock === 'function') {
+            window.placeCaretAtStartOfPisiBlock(window.getSelection?.(), next);
+        } else {
+            window.placeCaretAtEnd?.(next);
+        }
     }
     return Boolean(next);
 }

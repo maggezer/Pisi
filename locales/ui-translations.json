@@ -174,7 +174,14 @@
         "Bu not güvenle kaydedilemiyor. Kaydedilmemiş değişikliklerden vazgeçip devam edilsin mi?": "Bu not güvenle kaydedilemiyor. Kaydedilmemiş değişikliklerden vazgeçip devam edilsin mi?",
         "Kaydedilmemiş değişiklikler": "Kaydedilmemiş değişiklikler",
         "Değişikliklerden vazgeç": "Değişikliklerden vazgeç",
-        "Notta kal": "Notta kal"
+        "Notta kal": "Notta kal",
+        "Sonraki sekmeye geç": "Sonraki sekmeye geç",
+        "Önceki sekmeye geç": "Önceki sekmeye geç",
+        "Açık çalışma alanı sekmeleri arasında sonraki sekmeye geçer.": "Açık çalışma alanı sekmeleri arasında sonraki sekmeye geçer.",
+        "Açık çalışma alanı sekmeleri arasında önceki sekmeye geçer.": "Açık çalışma alanı sekmeleri arasında önceki sekmeye geçer.",
+        "Tamamlanmamış görev var": "Tamamlanmamış görev var",
+        "Tüm görevler tamamlandı": "Tüm görevler tamamlandı",
+        "Günlük not var": "Günlük not var"
     },
     "eng": {
         "Sütun adını değiştir": "Rename column",
@@ -351,6 +358,13 @@
         "Bu not güvenle kaydedilemiyor. Kaydedilmemiş değişikliklerden vazgeçip devam edilsin mi?": "This note cannot be saved safely. Discard unsaved changes and continue?",
         "Kaydedilmemiş değişiklikler": "Unsaved changes",
         "Değişikliklerden vazgeç": "Discard changes",
-        "Notta kal": "Stay in note"
+        "Notta kal": "Stay in note",
+        "Sonraki sekmeye geç": "Switch to next tab",
+        "Önceki sekmeye geç": "Switch to previous tab",
+        "Açık çalışma alanı sekmeleri arasında sonraki sekmeye geçer.": "Switches to the next tab among open workspace tabs.",
+        "Açık çalışma alanı sekmeleri arasında önceki sekmeye geçer.": "Switches to the previous tab among open workspace tabs.",
+        "Tamamlanmamış görev var": "Pending tasks exist",
+        "Tüm görevler tamamlandı": "All tasks completed",
+        "Günlük not var": "Diary note exists"
     }
 }

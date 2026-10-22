@@ -68,18 +68,111 @@ function ensurePisiTodoBlockMarker(block, todoTag = getPisiTodoTagFromBlock(bloc
     if (marker.parentElement !== block || block.firstChild !== marker) {
         block.prepend(marker);
     }
-    if (!marker.nextSibling || marker.nextSibling.nodeType !== Node.TEXT_NODE || !/^\s/.test(marker.nextSibling.nodeValue || '')) {
-        marker.after(document.createTextNode(' '));
+    if (marker.nextSibling?.nodeType === Node.TEXT_NODE && !/\S/.test(marker.nextSibling.nodeValue || '')) {
+        marker.nextSibling.remove();
     }
 
     const completed = isPisiTodoBlockCompleted(block, normalizedTodoTag);
-    marker.textContent = completed ? '☑' : '☐';
+    const nextText = completed ? '☑' : '☐';
+    if (marker.textContent !== nextText) {
+        marker.textContent = nextText;
+    }
     marker.setAttribute('role', 'checkbox');
     marker.setAttribute('aria-checked', String(completed));
     marker.setAttribute('aria-label', completed ? 'Görevi yeniden aç' : 'Görevi tamamla');
     marker.tabIndex = 0;
     window.hydratePisiBlockTaskMarker?.(block, marker);
     return marker;
+}
+
+function cleanupOrphanPisiTodoBlock(block, doneElements = []) {
+    if (!block || block.matches?.('.pisi-diary-managed-block') || block.closest?.('.pisi-diary-managed-block')) return;
+    const orphanMarkers = Array.from(block.querySelectorAll?.('.pisi-block-task-marker') || []).filter(
+        (marker) => !marker.closest?.('.pisi-diary-managed-block')
+    );
+    orphanMarkers.forEach((marker) => {
+        if (marker.nextSibling?.nodeType === Node.TEXT_NODE && /^\s+$/.test(marker.nextSibling.nodeValue || '')) {
+            marker.nextSibling.remove();
+        }
+        marker.remove();
+    });
+    doneElements.forEach((doneEl) => doneEl.remove());
+    Array.from(block.querySelectorAll?.('.pisi-todo-source') || []).forEach((source) => {
+        source.replaceWith(...Array.from(source.childNodes));
+    });
+    if (block.dataset?.pisiTaskId) {
+        delete block.dataset.pisiTaskId;
+    }
+    if (block.dataset?.pisiBlockType === 'task' && !block.querySelector?.('.pisi-block-task-marker')) {
+        block.dataset.pisiBlockType = 'paragraph';
+        if (!block.textContent?.trim() && !block.querySelector?.('br')) {
+            block.innerHTML = '<br>';
+        }
+    }
+}
+
+function removePisiTodoFromBlock(block) {
+    if (!block || block.matches?.('.pisi-diary-managed-block') || block.closest?.('.pisi-diary-managed-block')) return false;
+    block.querySelectorAll?.('.pisi-block-task-marker').forEach((el) => {
+        if (el.closest?.('.pisi-diary-managed-block')) return;
+        if (el.nextSibling?.nodeType === Node.TEXT_NODE && /^\s+$/.test(el.nextSibling.nodeValue || '')) {
+            el.nextSibling.remove();
+        }
+        el.remove();
+    });
+    block.querySelectorAll?.('.pisi-user-tag[data-pisi-tag]').forEach((el) => {
+        const tag = el.dataset?.pisiTag || el.textContent || '';
+        if (/^(?:todo\.|done$)/i.test(tag) || el.classList.contains('pisi-task-metadata')) {
+            el.remove();
+        }
+    });
+    block.querySelectorAll?.('.pisi-task-metadata').forEach((el) => el.remove());
+    Array.from(block.querySelectorAll?.('.pisi-todo-source') || []).forEach((source) => {
+        source.replaceWith(...Array.from(source.childNodes));
+    });
+    if (block.dataset?.pisiTaskId) {
+        delete block.dataset.pisiTaskId;
+    }
+    block.dataset.pisiBlockType = 'paragraph';
+    if (!block.textContent?.trim() && !block.querySelector?.('*:not(br)')) {
+        block.innerHTML = '<br>';
+    }
+    return true;
+}
+
+window.removePisiTodoFromBlock = removePisiTodoFromBlock;
+
+function healSplitPisiTodoBlock(block) {
+    if (!block) return false;
+    const orphanMarker = block.querySelector?.('.pisi-block-task-marker[data-pisi-todo-checkbox]');
+    if (!orphanMarker) return false;
+    const nextBlock = block.nextElementSibling;
+    if (!nextBlock || !nextBlock.matches?.('.pisi-editor-block')) return false;
+    if (nextBlock.querySelector?.('.pisi-block-task-marker')) return false;
+
+    const nextTodoElements = getPisiTodoTagElementsFromBlock(nextBlock);
+    if (!nextTodoElements.length) return false;
+    const nextDoneElements = getPisiDoneTagElementsFromBlock(nextBlock);
+
+    nextTodoElements.forEach((el) => {
+        markPisiTaskMetadataElement(el);
+        block.append(el);
+    });
+    nextDoneElements.forEach((el) => {
+        markPisiTaskMetadataElement(el);
+        block.append(el);
+    });
+
+    if (nextBlock.dataset?.pisiTaskId) {
+        if (!block.dataset?.pisiTaskId) {
+            block.dataset.pisiTaskId = nextBlock.dataset.pisiTaskId;
+        }
+        delete nextBlock.dataset.pisiTaskId;
+    }
+    if (nextBlock.dataset?.pisiBlockId && nextBlock.dataset.pisiBlockId === block.dataset?.pisiBlockId) {
+        nextBlock.dataset.pisiBlockId = window.makePisiBlockId?.() || `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    }
+    return true;
 }
 
 function syncPisiTodoBlockMarkers(container) {
@@ -90,12 +183,24 @@ function syncPisiTodoBlockMarkers(container) {
 
     let synced = 0;
     for (const block of new Set(blocks)) {
-        const todoElements = getPisiTodoTagElementsFromBlock(block);
-        const doneElements = getPisiDoneTagElementsFromBlock(block);
+        if (block.matches?.('.pisi-diary-managed-block') || block.closest?.('.pisi-diary-managed-block')) continue;
+        let todoElements = getPisiTodoTagElementsFromBlock(block);
+        let doneElements = getPisiDoneTagElementsFromBlock(block);
+        if (!todoElements.length && healSplitPisiTodoBlock(block)) {
+            todoElements = getPisiTodoTagElementsFromBlock(block);
+            doneElements = getPisiDoneTagElementsFromBlock(block);
+        }
         todoElements.forEach(markPisiTaskMetadataElement);
         doneElements.forEach(markPisiTaskMetadataElement);
-        if (!todoElements.length) continue;
-        if (ensurePisiTodoBlockMarker(block)) synced += 1;
+        if (!todoElements.length) {
+            cleanupOrphanPisiTodoBlock(block, doneElements);
+            continue;
+        }
+        const todoTag = getPisiTodoTagFromBlock(block);
+        if (ensurePisiTodoBlockMarker(block, todoTag)) synced += 1;
+        if (todoTag) {
+            ensurePisiTodoSourceForBlock(block, todoTag);
+        }
     }
     return synced;
 }
@@ -126,7 +231,7 @@ function upsertPisiTodoBlockMetadata(block, todoTag) {
     markPisiTaskMetadataElement(element);
 
     if (!existing) {
-        block.append(document.createTextNode(' '), element, document.createTextNode(' '));
+        block.append(element);
     }
 
     block.querySelectorAll('.pisi-todo-source[data-pisi-todo-for]').forEach((source) => {
@@ -163,10 +268,122 @@ function wrapPisiTodoSelection(command, todoTag) {
     return source;
 }
 
+function ensurePisiTodoSourceTextNode(source, position = 'end') {
+    if (!source) return null;
+    source.querySelectorAll?.('br').forEach((br) => br.remove());
+    const target = position === 'start' ? source.firstChild : source.lastChild;
+    if (target && target.nodeType === Node.TEXT_NODE) {
+        return target;
+    }
+    const textNode = document.createTextNode('');
+    if (position === 'start' && source.firstChild) {
+        source.insertBefore(textNode, source.firstChild);
+    } else {
+        source.appendChild(textNode);
+    }
+    return textNode;
+}
+
+function absorbStrayNodesIntoPisiTodoSource(block, source) {
+    if (!block || !source) return;
+    const selection = window.getSelection?.();
+    const activeRange = selection?.rangeCount ? selection.getRangeAt(0) : null;
+    const startContainer = activeRange?.startContainer || null;
+    const startOffset = activeRange?.startOffset ?? 0;
+    const selectionInsideBlock = Boolean(startContainer && (startContainer === block || block.contains?.(startContainer)));
+    let restoreCaretNode = null;
+    let restoreCaretOffset = 0;
+
+    const initialChildren = Array.from(block.childNodes);
+    const sourceIndex = initialChildren.indexOf(source);
+
+    initialChildren.forEach((node, index) => {
+        if (node === source) return;
+        const isBeforeSource = sourceIndex === -1 || index < sourceIndex;
+
+        if (node.nodeType === Node.ELEMENT_NODE) {
+            if (node.matches?.('.pisi-block-task-marker, .pisi-user-tag[data-pisi-tag]')) return;
+            if (node.tagName === 'BR') {
+                node.remove();
+                return;
+            }
+            if (isBeforeSource && source.firstChild) {
+                source.insertBefore(node, source.firstChild);
+            } else {
+                source.appendChild(node);
+            }
+            return;
+        }
+
+        if (node.nodeType === Node.TEXT_NODE) {
+            const raw = node.nodeValue || '';
+            if (!/\S/.test(raw)) {
+                const caretWasInWhitespaceNode = startContainer === node || (startContainer === block && (startOffset === index || startOffset === index + 1));
+                node.remove();
+                if (caretWasInWhitespaceNode && !restoreCaretNode) {
+                    const targetText = ensurePisiTodoSourceTextNode(source, isBeforeSource ? 'start' : 'end');
+                    if (targetText) {
+                        restoreCaretNode = targetText;
+                        restoreCaretOffset = isBeforeSource ? 0 : (targetText.nodeValue || '').length;
+                    }
+                }
+                return;
+            }
+
+            let textToMove = raw;
+            if (isBeforeSource && /^\s/.test(raw) && raw.length > 1) {
+                textToMove = raw.slice(1);
+            } else if (!isBeforeSource && /\s$/.test(raw) && raw.length > 1) {
+                textToMove = raw.slice(0, -1);
+            }
+            node.remove();
+            if (!textToMove) return;
+
+            if (!(source.textContent || '')) {
+                const targetText = ensurePisiTodoSourceTextNode(source, 'end');
+                targetText.nodeValue = textToMove;
+                if (selectionInsideBlock) {
+                    restoreCaretNode = targetText;
+                    restoreCaretOffset = textToMove.length;
+                }
+            } else if (isBeforeSource) {
+                const firstText = ensurePisiTodoSourceTextNode(source, 'start');
+                firstText.nodeValue = `${textToMove}${firstText.nodeValue || ''}`;
+                if (selectionInsideBlock) {
+                    restoreCaretNode = firstText;
+                    restoreCaretOffset = textToMove.length;
+                }
+            } else {
+                const lastText = ensurePisiTodoSourceTextNode(source, 'end');
+                const previousLength = (lastText.nodeValue || '').length;
+                lastText.nodeValue = `${lastText.nodeValue || ''}${textToMove}`;
+                if (selectionInsideBlock) {
+                    restoreCaretNode = lastText;
+                    restoreCaretOffset = previousLength + textToMove.length;
+                }
+            }
+        }
+    });
+
+    if (restoreCaretNode && selection && typeof document.createRange === 'function') {
+        try {
+            const nextRange = document.createRange();
+            nextRange.setStart(restoreCaretNode, restoreCaretOffset);
+            nextRange.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(nextRange);
+        } catch {
+            // Caret restore best-effort.
+        }
+    }
+}
+
 function ensurePisiTodoSourceForBlock(block, todoTag) {
     const existing = block.querySelector('.pisi-todo-source[data-pisi-todo-for]');
     if (existing) {
         existing.dataset.pisiTodoFor = todoTag;
+        absorbStrayNodesIntoPisiTodoSource(block, existing);
+        ensurePisiTodoSourceTextNode(existing, 'end');
         return existing;
     }
 
@@ -176,10 +393,18 @@ function ensurePisiTodoSourceForBlock(block, todoTag) {
     const contentNodes = Array.from(block.childNodes).filter((node) => {
         return !(node.nodeType === Node.ELEMENT_NODE && node.matches('.pisi-block-task-marker, .pisi-user-tag[data-pisi-tag]'));
     });
-    contentNodes.forEach((node) => source.appendChild(node));
-    if (!source.textContent && !source.querySelector('*')) {
-        source.appendChild(document.createElement('br'));
-    }
+    contentNodes.forEach((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'BR') {
+            node.remove();
+            return;
+        }
+        if (node.nodeType === Node.TEXT_NODE && !/\S/.test(node.nodeValue || '')) {
+            node.remove();
+            return;
+        }
+        source.appendChild(node);
+    });
+    ensurePisiTodoSourceTextNode(source, 'end');
     const metadata = Array.from(block.children).find((element) => {
         return element.matches('.pisi-user-tag[data-pisi-tag]');
     });
@@ -203,6 +428,25 @@ function setPisiTodoBlockCompletion(block, completed, options = {}) {
     return changed;
 }
 
+function placeCaretInPisiTodoSource(source) {
+    if (!source) return;
+    const textNode = ensurePisiTodoSourceTextNode(source, 'end');
+    window.placeCaretAtEnd?.(source);
+    const selection = window.getSelection?.();
+    if (textNode && selection && typeof document.createRange === 'function') {
+        try {
+            const range = document.createRange();
+            const offset = textNode.nodeValue?.length || 0;
+            range.setStart(textNode, offset);
+            range.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        } catch {
+            // Fallback to placeCaretAtEnd above.
+        }
+    }
+}
+
 function applyPisiTodoTagToEditor(editor, rawTodoTag, command) {
     const parsed = parsePisiTodoTagValue(rawTodoTag);
     const block = command?.block;
@@ -221,6 +465,7 @@ function applyPisiTodoTagToEditor(editor, rawTodoTag, command) {
     upsertPisiTodoBlockMetadata(block, todoTag);
     source.dataset.pisiTodoFor = todoTag;
     ensurePisiTodoBlockMarker(block, todoTag);
+    ensurePisiTodoSourceForBlock(block, todoTag);
     if (command.completeAfterApply === true) {
         setPisiTodoBlockCompletion(block, true, { todoTag, dispatch: false });
     }
@@ -228,8 +473,11 @@ function applyPisiTodoTagToEditor(editor, rawTodoTag, command) {
     window.PISI_USER_TAG_CACHE?.add?.(todoTag);
     window.closePisiTagMenu?.();
     editor.focus({ preventScroll: true });
-    window.placeCaretAtEnd?.(source);
+    placeCaretInPisiTodoSource(source);
+    window.selectPisiBlock?.(editor, block);
     editor.dispatchEvent(new Event('input', { bubbles: true }));
+    placeCaretInPisiTodoSource(source);
+    window.selectPisiBlock?.(editor, block);
     return true;
 }
 

@@ -174,11 +174,10 @@ jobs:
               with:
                   name: pisi-microsoft-store-${{ github.ref_name }}
                   path: |
-                      store-release/*.msixbundle
                       store-release/*.msixupload
                       store-release/SHA256SUMS.txt
                   if-no-files-found: error
-                  retention-days: 30
+                  retention-days: 1
 
             - name: Require Microsoft Store publishing configuration
               if: (github.event_name == 'workflow_dispatch' && inputs.publish) || (github.event_name == 'push' && vars.PISI_STORE_AUTO_PUBLISH == 'true')
