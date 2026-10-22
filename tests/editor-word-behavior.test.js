@@ -230,7 +230,9 @@ test('B3 heading moves validate contiguous sections and skip destination heading
     assert.match(source, /section\.some\(\(item, index\) => item\.parentElement !== editor/);
     assert.match(source, /const targetEnd = getPisiBlockSectionEnd\(editor, next\)/);
     assert.match(source, /targetEnd\.after\(\.\.\.items\)/);
-    assert.match(source, /const anchor = before \? target : getPisiBlockSectionEnd\(editor, target\)/);
+    assert.match(source, /const boundary = getPisiHeadingBoundary\\(editor, target, getPisiMoveHeadingLevel\\(dragged\\)\\)/);
+    assert.match(source, /const anchor = before \\? boundary : getPisiBlockSectionEnd\\(editor, boundary\\)/);
+    assert.match(source, /const anchor = getPisiHeadingBoundary\\(editor, prev, headingLevel\\)/);
     assert.match(source, /if \(!target \|\| target\.parentElement !== editor \|\| !items\.length \|\| items\.includes\(target\)\) return/);
     assert.match(source, /window\.syncPisiWordHeadingCollapse\?\.\(editor\)/);
 });
