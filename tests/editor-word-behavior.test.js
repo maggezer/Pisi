@@ -223,3 +223,14 @@ test('headings encompass all descendants until next heading of same or higher le
     assert.match(wordSource, /currentLevel && currentLevel <= level/);
     assert.match(wordSource, /Array\.from\(editor\.children\)/);
 });
+
+test('B3 heading moves validate contiguous sections and skip destination heading subtrees', () => {
+    const source = read('renderer/editor/pisi-block-editor.mjs');
+    assert.match(source, /function getPisiMovableBlockSection\(editor, block\)/);
+    assert.match(source, /section\.some\(\(item, index\) => item\.parentElement !== editor/);
+    assert.match(source, /const targetEnd = getPisiBlockSectionEnd\(editor, next\)/);
+    assert.match(source, /targetEnd\.after\(\.\.\.items\)/);
+    assert.match(source, /const anchor = before \? target : getPisiBlockSectionEnd\(editor, target\)/);
+    assert.match(source, /if \(!target \|\| target\.parentElement !== editor \|\| !items\.length \|\| items\.includes\(target\)\) return/);
+    assert.match(source, /window\.syncPisiWordHeadingCollapse\?\.\(editor\)/);
+});
