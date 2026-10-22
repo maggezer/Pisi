@@ -387,23 +387,41 @@ function getPisiBlockSectionEnd(editor, block) {
     const section = getPisiMovableBlockSection(editor, block);
     return section.length ? section[section.length - 1] : null;
 }
+function getPisiMoveHeadingLevel(block) {
+    const match = String(block?.dataset?.pisiBlockType || '').match(/^heading([1-5])$/);
+    return match ? Number(match[1]) : 0;
+}
+function getPisiHeadingBoundary(editor, target, movingHeadingLevel) {
+    if (!movingHeadingLevel) return target;
+    // Resolve a paragraph inside another heading's section to its containing
+    // heading at or above the moving heading's level. Never split that section.
+    let current = target;
+    while (current && current.parentElement === editor) {
+        const level = getPisiMoveHeadingLevel(current);
+        if (level && level <= movingHeadingLevel) return current;
+        if (current.dataset?.pisiSectionBreak === 'true' && !current.dataset?.pisiSectionExit) break;
+        current = current.previousElementSibling;
+    }
+    return target;
+}
 function movePisiBlock(block, delta) {
     if (!block || (delta !== -1 && delta !== 1)) return false;
     const editor = block.closest('.pisi-rich-editor');
     const items = getPisiMovableBlockSection(editor, block);
     if (!items.length) return false;
     const last = items[items.length - 1];
+    const headingLevel = getPisiMoveHeadingLevel(block);
     if (delta < 0) {
         const prev = block.previousElementSibling;
         if (!prev) return false;
-        // Never insert a whole section into the middle of its own heading subtree.
-        if (items.includes(prev)) return false;
-        prev.before(...items);
+        const anchor = getPisiHeadingBoundary(editor, prev, headingLevel);
+        if (!anchor || items.includes(anchor)) return false;
+        anchor.before(...items);
     } else {
         const next = last.nextElementSibling;
         if (!next) return false;
-        // A heading is an atomic move target: skip its entire section.
-        const targetEnd = getPisiBlockSectionEnd(editor, next);
+        const boundary = getPisiHeadingBoundary(editor, next, headingLevel);
+        const targetEnd = getPisiBlockSectionEnd(editor, boundary);
         if (!targetEnd || items.includes(targetEnd)) return false;
         targetEnd.after(...items);
     }
@@ -822,7 +840,8 @@ function handlePisiBlockDrop(editor, event) {
     event.preventDefault();
     const rect = target.getBoundingClientRect();
     const before = event.clientY < rect.top + rect.height / 2;
-    const anchor = before ? target : getPisiBlockSectionEnd(editor, target);
+    const boundary = getPisiHeadingBoundary(editor, target, getPisiMoveHeadingLevel(dragged));
+    const anchor = before ? boundary : getPisiBlockSectionEnd(editor, boundary);
     if (!anchor || items.includes(anchor)) return;
     if (before) anchor.before(...items);
     else anchor.after(...items);
