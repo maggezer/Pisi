@@ -213,3 +213,13 @@ test('non-heading blocks require double Enter to exit while 1st Enter inserts li
     assert.match(wordSource, /nextBlock\.dataset\.pisiBlockType = 'paragraph'/);
     assert.match(blockSource, /handlePisiHeadingSectionKeydown/);
 });
+
+test('headings encompass all descendants until next heading of same or higher level and arrow sits in left gutter', () => {
+    const wordSource = read('renderer/editor/pisi-editor-word-behavior.mjs');
+    const styles = read('styles/92-compatibility.css');
+
+    assert.match(styles, /data-pisi-block-type='heading1'][\s\S]*padding-left:\s*0;/);
+    assert.match(styles, /data-pisi-block-type='heading1']::before[\s\S]*left:\s*-22px;/);
+    assert.match(wordSource, /currentLevel && currentLevel <= level/);
+    assert.match(wordSource, /Array\.from\(editor\.children\)/);
+});

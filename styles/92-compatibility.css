@@ -124,7 +124,7 @@ html body > .pisi-office-popover {
 .pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading4'],
 .pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading5'] {
     position: relative;
-    padding-left: 24px;
+    padding-left: 0;
 }
 
 .pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading1']::before,
@@ -134,9 +134,9 @@ html body > .pisi-office-popover {
 .pisi-rich-editor.pisi-block-system > .pisi-editor-block[data-pisi-block-type='heading5']::before {
     content: '▾';
     position: absolute;
-    left: 3px;
-    top: 0.08em;
-    width: 17px;
+    left: -22px;
+    top: 0.1em;
+    width: 18px;
     color: #8e9198;
     font-size: 0.68em;
     line-height: 1.5;
@@ -160,7 +160,9 @@ html body > .pisi-office-popover {
     color: #f39c12;
 }
 
-.pisi-rich-editor.pisi-block-system > .pisi-editor-block.pisi-heading-section-hidden {
+.pisi-rich-editor.pisi-block-system > .pisi-heading-section-hidden,
+.pisi-rich-editor.pisi-block-system > .pisi-editor-block.pisi-heading-section-hidden,
+.pisi-rich-editor > .pisi-heading-section-hidden {
     display: none;
 }
 /* Heading section visual guide hierarchy */

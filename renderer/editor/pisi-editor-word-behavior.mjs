@@ -324,9 +324,9 @@ function getPisiWordHeadingLevel(block) {
 }
 function getPisiActiveHeadingForBlock(editor, targetBlock) {
     if (!editor || !targetBlock) return null;
-    const blocks = Array.from(editor.querySelectorAll('.pisi-editor-block'));
+    const elements = Array.from(editor.children).filter((el) => el.nodeType === Node.ELEMENT_NODE);
     const stack = [];
-    for (const block of blocks) {
+    for (const block of elements) {
         if (block === targetBlock) {
             if (targetBlock.dataset?.pisiSectionExit) {
                 const exitLevel = Number(targetBlock.dataset.pisiSectionExit);
@@ -362,16 +362,12 @@ function getPisiHeadingSectionBlocks(editor, headingBlock) {
     if (!level) return [];
     const result = [];
     let current = headingBlock.nextElementSibling;
-    while (current && current.matches?.('.pisi-editor-block')) {
+    while (current && editor.contains(current)) {
         const currentLevel = getPisiWordHeadingLevel(current);
-        if (currentLevel && currentLevel <= level) {
-            break;
-        }
+        if (currentLevel && currentLevel <= level) break;
         if (current.classList.contains('pisi-section-break') || current.dataset?.pisiSectionBreak === 'true') {
             const exitLevel = current.dataset?.pisiSectionExit ? Number(current.dataset.pisiSectionExit) : null;
-            if (exitLevel === null || exitLevel <= level) {
-                break;
-            }
+            if (exitLevel === null || exitLevel <= level) break;
         }
         result.push(current);
         current = current.nextElementSibling;
@@ -474,7 +470,6 @@ function handlePisiHeadingSectionKeydown(editor, event, blockOverride = null) {
         if (block.dataset?.pisiBlockType === 'bullet' || block.dataset?.pisiBlockType === 'task' || block.dataset?.pisiBlockType === 'number') {
             return false;
         }
-        const activeHeading = getPisiActiveHeadingForBlock(editor, block);
         const isLineEmpty = isPisiCurrentLineEmpty(block, range);
 
         // 1. Enter: Satırda metin varken entera basıldığında yeni blok yapmaz, aynı blok içinde alt satıra geçer
@@ -501,28 +496,6 @@ function handlePisiHeadingSectionKeydown(editor, event, blockOverride = null) {
         event.stopPropagation();
         event.stopImmediatePropagation?.();
 
-        if (isEmpty) {
-            if (activeHeading) {
-                block.classList.add('pisi-section-break');
-                block.dataset.pisiSectionBreak = 'true';
-                block.dataset.pisiSectionExit = String(activeHeading.level);
-                syncPisiWordHeadingCollapse(editor);
-                notifyPisiWordEditorChanged(editor);
-                placePisiWordCaretAtBlockStart(editor, block);
-                return true;
-            }
-            const nextBlock = document.createElement('div');
-            nextBlock.className = 'pisi-editor-block';
-            nextBlock.dataset.pisiBlockId = window.makePisiBlockId?.() || `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-            nextBlock.dataset.pisiBlockType = 'paragraph';
-            nextBlock.innerHTML = '<br>';
-            block.after(nextBlock);
-            placePisiWordCaretAtBlockStart(editor, nextBlock);
-            syncPisiWordHeadingCollapse(editor);
-            notifyPisiWordEditorChanged(editor);
-            return true;
-        }
-
         let trailingFragment = null;
         if (range && block.contains(range.startContainer) && typeof document.createRange === 'function') {
             const afterRange = document.createRange();
@@ -539,11 +512,6 @@ function handlePisiHeadingSectionKeydown(editor, event, blockOverride = null) {
         nextBlock.className = 'pisi-editor-block';
         nextBlock.dataset.pisiBlockId = window.makePisiBlockId?.() || `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
         nextBlock.dataset.pisiBlockType = 'paragraph';
-        if (activeHeading) {
-            nextBlock.classList.add('pisi-section-break');
-            nextBlock.dataset.pisiSectionBreak = 'true';
-            nextBlock.dataset.pisiSectionExit = String(activeHeading.level);
-        }
 
         if (trailingFragment && (trailingFragment.textContent?.trim() || trailingFragment.querySelector?.('*:not(br)'))) {
             nextBlock.appendChild(trailingFragment);
@@ -561,12 +529,12 @@ function handlePisiHeadingSectionKeydown(editor, event, blockOverride = null) {
 }
 function syncPisiWordHeadingCollapse(editor) {
     if (!editor) return;
-    const blocks = Array.from(editor.querySelectorAll('.pisi-editor-block'));
-    blocks.forEach((block) => block.classList.remove('pisi-heading-section-hidden'));
+    const elements = Array.from(editor.children).filter((el) => el.nodeType === Node.ELEMENT_NODE);
+    elements.forEach((el) => el.classList.remove('pisi-heading-section-hidden'));
     const activeHeadingStack = [];
-    for (const block of blocks) {
-        if (block.classList.contains('pisi-section-break') || block.dataset?.pisiSectionBreak === 'true') {
-            const exitLevel = block.dataset?.pisiSectionExit ? Number(block.dataset.pisiSectionExit) : null;
+    for (const el of elements) {
+        if (el.classList.contains('pisi-section-break') || el.dataset?.pisiSectionBreak === 'true') {
+            const exitLevel = el.dataset?.pisiSectionExit ? Number(el.dataset.pisiSectionExit) : null;
             if (exitLevel !== null) {
                 while (activeHeadingStack.length && activeHeadingStack[activeHeadingStack.length - 1].level >= exitLevel) {
                     activeHeadingStack.pop();
@@ -575,32 +543,32 @@ function syncPisiWordHeadingCollapse(editor) {
                 activeHeadingStack.pop();
             }
         }
-        const level = getPisiWordHeadingLevel(block);
-        if (level) {
+        const level = getPisiWordHeadingLevel(el);
+        if (level > 0) {
             while (activeHeadingStack.length && activeHeadingStack[activeHeadingStack.length - 1].level >= level) {
                 activeHeadingStack.pop();
             }
             const isParentCollapsed = activeHeadingStack.some((item) => item.collapsed);
-            block.classList.toggle('pisi-heading-section-hidden', isParentCollapsed);
-            const isCollapsed = block.classList.contains('pisi-heading-collapsed');
+            el.classList.toggle('pisi-heading-section-hidden', isParentCollapsed);
+            const isCollapsed = el.classList.contains('pisi-heading-collapsed');
             activeHeadingStack.push({
-                block,
+                element: el,
                 level,
                 collapsed: isCollapsed
             });
-            block.dataset.pisiSectionLevel = String(level);
+            el.dataset.pisiSectionLevel = String(level);
             continue;
         }
-        block.classList.remove('pisi-heading-collapsed');
+        el.classList.remove('pisi-heading-collapsed');
         const isHidden = activeHeadingStack.some((item) => item.collapsed);
-        block.classList.toggle('pisi-heading-section-hidden', isHidden);
+        el.classList.toggle('pisi-heading-section-hidden', isHidden);
         const activeHeading = activeHeadingStack.length ? activeHeadingStack[activeHeadingStack.length - 1] : null;
         if (activeHeading) {
-            block.dataset.pisiHeadingParent = activeHeading.block.dataset?.pisiBlockId || '';
-            block.dataset.pisiSectionLevel = String(activeHeading.level);
+            el.dataset.pisiHeadingParent = activeHeading.element.dataset?.pisiBlockId || '';
+            el.dataset.pisiSectionLevel = String(activeHeading.level);
         } else {
-            delete block.dataset.pisiHeadingParent;
-            block.dataset.pisiSectionLevel = '0';
+            delete el.dataset.pisiHeadingParent;
+            el.dataset.pisiSectionLevel = '0';
         }
     }
     syncPisiBulletCollapse(editor);
@@ -865,8 +833,8 @@ function bindPisiWordEditor(editor) {
             const level = getPisiWordHeadingLevel(block);
             if (!level) return;
             const rect = block.getBoundingClientRect();
-            if (event.clientX < rect.left - 4 || event.clientX > rect.left + 26) return;
-            if (event.clientY < rect.top || event.clientY > rect.top + 32) return;
+            if (event.clientX < rect.left - 28 || event.clientX > rect.left + 6) return;
+            if (event.clientY < rect.top - 4 || event.clientY > rect.top + 36) return;
             event.preventDefault();
             event.stopPropagation();
             event.stopImmediatePropagation();
@@ -890,7 +858,7 @@ function bindPisiWordEditor(editor) {
             const level = getPisiWordHeadingLevel(block);
             if (!level) return;
             const rect = block.getBoundingClientRect();
-            if (event.clientX <= rect.left + 26 && event.clientY >= rect.top && event.clientY <= rect.top + 32) {
+            if (event.clientX >= rect.left - 28 && event.clientX <= rect.left + 6 && event.clientY >= rect.top - 4 && event.clientY <= rect.top + 36) {
                 event.preventDefault();
                 event.stopPropagation();
             }
