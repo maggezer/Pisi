@@ -181,7 +181,9 @@
         "Açık çalışma alanı sekmeleri arasında önceki sekmeye geçer.": "Açık çalışma alanı sekmeleri arasında önceki sekmeye geçer.",
         "Tamamlanmamış görev var": "Tamamlanmamış görev var",
         "Tüm görevler tamamlandı": "Tüm görevler tamamlandı",
-        "Günlük not var": "Günlük not var"
+        "Günlük not var": "Günlük not var",
+        "Bu belgede tablo veya tuval blokları bulunmaktadır. Markdown kaynağını uygulamak bu blokları sıfırlayabilir. Devam etmek istiyor musunuz?": "Bu belgede tablo veya tuval blokları bulunmaktadır. Markdown kaynağını uygulamak bu blokları sıfırlayabilir. Devam etmek istiyor musunuz?",
+        "Dikkat: Bu notta tablo veya tuval blokları bulunmaktadır. WYSIWYG görünümüne uygulandığında bu bloklar sıfırlanabilir.": "Dikkat: Bu notta tablo veya tuval blokları bulunmaktadır. WYSIWYG görünümüne uygulandığında bu bloklar sıfırlanabilir."
     },
     "eng": {
         "Sütun adını değiştir": "Rename column",
@@ -365,6 +367,8 @@
         "Açık çalışma alanı sekmeleri arasında önceki sekmeye geçer.": "Switches to the previous tab among open workspace tabs.",
         "Tamamlanmamış görev var": "Pending tasks exist",
         "Tüm görevler tamamlandı": "All tasks completed",
-        "Günlük not var": "Diary note exists"
+        "Günlük not var": "Diary note exists",
+        "Bu belgede tablo veya tuval blokları bulunmaktadır. Markdown kaynağını uygulamak bu blokları sıfırlayabilir. Devam etmek istiyor musunuz?": "This document contains table or canvas blocks. Applying the Markdown source may reset these blocks. Do you want to continue?",
+        "Dikkat: Bu notta tablo veya tuval blokları bulunmaktadır. WYSIWYG görünümüne uygulandığında bu bloklar sıfırlanabilir.": "Warning: This document contains table or canvas blocks. Applying to the WYSIWYG view may reset these blocks."
     }
 }

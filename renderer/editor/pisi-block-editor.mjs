@@ -45,7 +45,7 @@ function escapePisiBlockHtml(value = '') {
 }
 function sanitizePisiBlockUrl(value = '') {
     const url = String(value || '').trim();
-    return /^(?:https?:|mailto:)/i.test(url) ? url : '';
+    return /^(?:https?:|mailto:|#|\/|\.)/i.test(url) ? url : '';
 }
 function pisiInlineMarkdownToHtml(value = '') {
     let html = escapePisiBlockHtml(value);
@@ -59,40 +59,71 @@ function pisiInlineMarkdownToHtml(value = '') {
     });
     return html;
 }
-function makePisiBlockHtml(type, content, indent = 0) {
+function extractPisiBlockMeta(block) {
+    const meta = {};
+    const ds = block?.dataset || {};
+    if (ds.pisiBlockId) meta.id = ds.pisiBlockId;
+    if (ds.pisiTaskId) meta.taskId = ds.pisiTaskId;
+    if (ds.pisiHeadingParent) meta.headingParent = ds.pisiHeadingParent;
+    if (ds.pisiTodoParent) meta.todoParent = ds.pisiTodoParent;
+    if (ds.pisiBlockRef) meta.blockRef = ds.pisiBlockRef;
+    if (ds.pisiBulletIndent) meta.indent = Number(ds.pisiBulletIndent);
+    if (ds.pisiBulletCollapsed === 'true') meta.collapsed = true;
+    if (ds.pisiTodoRepeat) meta.repeat = ds.pisiTodoRepeat;
+    if (ds.pisiTodoScheduledAt) meta.scheduledAt = ds.pisiTodoScheduledAt;
+    if (ds.pisiTodoDeadline) meta.deadline = ds.pisiTodoDeadline;
+    if (ds.pisiTodoReminderAt) meta.reminderAt = ds.pisiTodoReminderAt;
+    const tagEl = block.querySelector?.('.pisi-user-tag[data-pisi-tag]');
+    if (tagEl) {
+        const tag = tagEl.dataset.pisiTag;
+        if (tag && tag !== 'done') meta.tag = tag;
+    }
+    return Object.keys(meta).length ? meta : null;
+}
+function buildExtraBlockAttrs(meta) {
+    if (!meta || typeof meta !== 'object') return '';
+    let attrs = '';
+    const map = { taskId: 'data-pisi-task-id', headingParent: 'data-pisi-heading-parent', todoParent: 'data-pisi-todo-parent', blockRef: 'data-pisi-block-ref', repeat: 'data-pisi-todo-repeat', scheduledAt: 'data-pisi-todo-scheduled-at', deadline: 'data-pisi-todo-deadline', reminderAt: 'data-pisi-todo-reminder-at' };
+    for (const [key, attr] of Object.entries(map)) {
+        if (meta[key]) attrs += ` ${attr}="${escapePisiBlockHtml(meta[key])}"`;
+    }
+    if (meta.collapsed) attrs += ' data-pisi-bullet-collapsed="true"';
+    return attrs;
+}
+function makePisiBlockHtml(type, content, indent = 0, meta = null) {
     const record = PISI_BLOCK_TYPES.find((item) => item.id === type) || PISI_BLOCK_TYPES[0];
-    const blockId = window.makePisiBlockId?.() || `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-    const indentAttr = indent > 0 ? ` data-pisi-bullet-indent="${indent}" style="--pisi-bullet-indent:${indent};"` : '';
-    return `<${record.tag} class="pisi-editor-block" data-pisi-block-id="${blockId}" data-pisi-block-type="${record.id}"${indentAttr}>${content || '<br>'}</${record.tag}>`;
+    const blockId = meta?.id || window.makePisiBlockId?.() || `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    const ind = meta?.indent !== undefined ? meta.indent : indent;
+    const indentAttr = ind > 0 ? ` data-pisi-bullet-indent="${ind}" style="--pisi-bullet-indent:${ind};"` : '';
+    const extra = buildExtraBlockAttrs(meta);
+    return `<${record.tag} class="pisi-editor-block" data-pisi-block-id="${blockId}" data-pisi-block-type="${record.id}"${indentAttr}${extra}>${content || '<br>'}</${record.tag}>`;
 }
 const encodePisiRollupMarkdownValue = (value = '') => encodeURIComponent(String(value || ''));
 function decodePisiRollupMarkdownValue(value = '') {
-    try {
-        return decodeURIComponent(String(value || ''));
-    } catch {
-        return '';
-    }
+    try { return decodeURIComponent(String(value || '')); } catch { return ''; }
 }
 function makePisiRollupBlockHtml(config = {}) {
-    const blockId = window.makePisiBlockId?.() || `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    const blockId = config.blockId || window.makePisiBlockId?.() || `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
     const relation = escapePisiBlockHtml(config.relationProperty || '');
     const target = escapePisiBlockHtml(config.targetProperty || '');
     const aggregate = /^(?:count|sum|average|min|max|unique|join)$/.test(config.aggregate) ? config.aggregate : 'count';
-    return `<div class="pisi-editor-block pisi-rollup-block" data-pisi-block-id="${blockId}" data-pisi-block-type="rollup" data-pisi-rollup-relation="${relation}" data-pisi-rollup-target="${target}" data-pisi-rollup-aggregate="${aggregate}" contenteditable="false"><div class="pisi-rollup-block-loading">Rollup</div></div>`;
+    const extra = buildExtraBlockAttrs(config.meta);
+    return `<div class="pisi-editor-block pisi-rollup-block" data-pisi-block-id="${blockId}" data-pisi-block-type="rollup" data-pisi-rollup-relation="${relation}" data-pisi-rollup-target="${target}" data-pisi-rollup-aggregate="${aggregate}" contenteditable="false"${extra}><div class="pisi-rollup-block-loading">Rollup</div></div>`;
 }
 function pisiBlockMarkdownToHtml(markdown = '') {
-    const lines = String(markdown || '')
-        .replace(/\r\n?/g, '\n')
-        .split('\n');
+    const lines = String(markdown || '').replace(/\r\n?/g, '\n').split('\n');
     const output = [];
-    let codeLines = null;
+    let codeLines = null, codeMeta = null;
     for (const rawLine of lines) {
-        if (/^```/.test(rawLine)) {
+        if (/^\`\`\`/.test(rawLine)) {
             if (codeLines) {
-                output.push(makePisiBlockHtml('code', escapePisiBlockHtml(codeLines.join('\n'))));
+                output.push(makePisiBlockHtml('code', escapePisiBlockHtml(codeLines.join('\n')), 0, codeMeta));
                 codeLines = null;
+                codeMeta = null;
             } else {
                 codeLines = [];
+                const m = rawLine.match(/\s*<!--\s*pisi:meta\s+(\{[\s\S]*?\})\s*-->\s*$/);
+                if (m) { try { codeMeta = JSON.parse(m[1]); } catch {} }
             }
             continue;
         }
@@ -100,47 +131,58 @@ function pisiBlockMarkdownToHtml(markdown = '') {
             codeLines.push(rawLine);
             continue;
         }
-        if (/^<!--\s*pisi:section-end(?:\s*-->)?/.test(rawLine)) {
-            const blockId = window.makePisiBlockId?.() || `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+        let meta = null;
+        const metaMatch = rawLine.match(/\s*<!--\s*pisi:meta\s+(\{[\s\S]*?\})\s*-->\s*$/);
+        let line = rawLine;
+        if (metaMatch) {
+            try {
+                meta = JSON.parse(metaMatch[1]);
+                line = rawLine.slice(0, metaMatch.index);
+            } catch {}
+        }
+        if (/^<!--\s*pisi:section-end(?:\s*-->)?/.test(line)) {
+            const blockId = meta?.id || window.makePisiBlockId?.() || `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
             output.push(`<div class="pisi-editor-block pisi-section-break" data-pisi-block-id="${blockId}" data-pisi-section-break="true"><br></div>`);
             continue;
         }
-        const rollup = rawLine.match(/^\{\{pisi-rollup:([^:]*):([^:]*):(count|sum|average|min|max|unique|join)\}\}$/);
-        const heading = rawLine.match(/^(#{1,5})\s+(.+)$/);
-        const task = rawLine.match(/^[-*]\s+\[([ xX])\]\s*(.*)$/);
-        const bullet = rawLine.match(/^(\s*)([-*+])\s+(.+)$/);
-        const number = rawLine.match(/^\d+[.)]\s+(.+)$/);
-        const quote = rawLine.match(/^>\s?(.*)$/);
+        const rollup = line.match(/^\{\{pisi-rollup:([^:]*):([^:]*):(count|sum|average|min|max|unique|join)\}\}/);
+        const heading = line.match(/^(#{1,5})\s+(.+)$/);
+        const task = line.match(/^[-*]\s+\[([ xX])\]\s*(.*)$/);
+        const bullet = line.match(/^(\s*)([-*+])\s+(.+)$/);
+        const number = line.match(/^\d+[.)]\s+(.+)$/);
+        const quote = line.match(/^>\s?(.*)$/);
         if (rollup) {
-            output.push(
-                makePisiRollupBlockHtml({
-                    relationProperty: decodePisiRollupMarkdownValue(rollup[1]),
-                    targetProperty: decodePisiRollupMarkdownValue(rollup[2]),
-                    aggregate: rollup[3]
-                })
-            );
+            output.push(makePisiRollupBlockHtml({ relationProperty: decodePisiRollupMarkdownValue(rollup[1]), targetProperty: decodePisiRollupMarkdownValue(rollup[2]), aggregate: rollup[3], blockId: meta?.id, meta }));
         } else if (heading) {
-            output.push(makePisiBlockHtml(`heading${heading[1].length}`, pisiInlineMarkdownToHtml(heading[2])));
+            output.push(makePisiBlockHtml(`heading${heading[1].length}`, pisiInlineMarkdownToHtml(heading[2]), 0, meta));
         } else if (task) {
             const checked = task[1].toLowerCase() === 'x';
-            output.push(
-                makePisiBlockHtml(
-                    'task',
-                    `<span class="pisi-block-task-marker" contenteditable="false">${checked ? '☑' : '☐'}</span> ${pisiInlineMarkdownToHtml(task[2])}`
-                )
-            );
+            const taskText = pisiInlineMarkdownToHtml(task[2]);
+            let taskContent = '';
+            if (meta?.tag) {
+                const tag = escapePisiBlockHtml(meta.tag);
+                const taskIdAttr = meta.taskId ? ` data-pisi-task-id="${escapePisiBlockHtml(meta.taskId)}"` : '';
+                const marker = `<span class="pisi-block-task-marker" contenteditable="false" data-pisi-todo-checkbox="${tag}" role="checkbox" aria-checked="${checked}">${checked ? '☑' : '☐'}</span>`;
+                const tagEl = `<span class="pisi-user-tag pisi-task-metadata" data-pisi-tag="${tag}"${taskIdAttr} contenteditable="false" aria-hidden="true">${tag}</span>`;
+                const doneEl = checked ? `<span class="pisi-user-tag pisi-task-metadata" data-pisi-tag="done" data-pisi-done-for="${tag}" contenteditable="false" aria-hidden="true">done</span>` : '';
+                const source = `<span class="pisi-todo-source" data-pisi-todo-for="${tag}">${taskText || '&nbsp;'}</span>`;
+                taskContent = `${marker}${tagEl}${doneEl} ${source}`;
+            } else {
+                taskContent = `<span class="pisi-block-task-marker" contenteditable="false">${checked ? '☑' : '☐'}</span> ${taskText}`;
+            }
+            output.push(makePisiBlockHtml('task', taskContent, 0, meta));
         } else if (bullet) {
             const indent = Math.min(Math.floor(bullet[1].replace(/\t/g, '  ').length / 2), 6);
-            output.push(makePisiBlockHtml('bullet', pisiInlineMarkdownToHtml(bullet[3]), indent));
+            output.push(makePisiBlockHtml('bullet', pisiInlineMarkdownToHtml(bullet[3]), indent, meta));
         } else if (number) {
-            output.push(makePisiBlockHtml('number', pisiInlineMarkdownToHtml(number[1])));
+            output.push(makePisiBlockHtml('number', pisiInlineMarkdownToHtml(number[1]), 0, meta));
         } else if (quote) {
-            output.push(makePisiBlockHtml('quote', pisiInlineMarkdownToHtml(quote[1])));
+            output.push(makePisiBlockHtml('quote', pisiInlineMarkdownToHtml(quote[1]), 0, meta));
         } else {
-            output.push(makePisiBlockHtml('paragraph', rawLine ? pisiInlineMarkdownToHtml(rawLine) : '<br>'));
+            output.push(makePisiBlockHtml('paragraph', line ? pisiInlineMarkdownToHtml(line) : '<br>', 0, meta));
         }
     }
-    if (codeLines) output.push(makePisiBlockHtml('code', escapePisiBlockHtml(codeLines.join('\n'))));
+    if (codeLines) output.push(makePisiBlockHtml('code', escapePisiBlockHtml(codeLines.join('\n')), 0, codeMeta));
     return output.join('');
 }
 function pisiInlineHtmlToMarkdown(element) {
@@ -185,37 +227,36 @@ function pisiBlockHtmlToMarkdown(editor) {
         return !parentBlock || !editor.contains(parentBlock);
     });
     let numberRun = 0;
-    return blocks
-        .map((block) => {
-            const type = getPisiBlockType(block);
-            if (type === 'rollup') {
-                const relation = encodePisiRollupMarkdownValue(block.dataset.pisiRollupRelation || '');
-                const target = encodePisiRollupMarkdownValue(block.dataset.pisiRollupTarget || '');
-                const aggregate = /^(?:count|sum|average|min|max|unique|join)$/.test(block.dataset.pisiRollupAggregate)
-                    ? block.dataset.pisiRollupAggregate
-                    : 'count';
-                return `{{pisi-rollup:${relation}:${target}:${aggregate}}}`;
-            }
-            const text = pisiInlineHtmlToMarkdown(block);
-            if (block.classList.contains('pisi-section-break') || block.dataset?.pisiSectionBreak === 'true') {
-                return text ? `<!-- pisi:section-end -->\n${text}` : '<!-- pisi:section-end -->';
-            }
-            if (type.startsWith('heading')) return `${'#'.repeat(Number(type.slice(-1)))} ${text}`;
-            if (type === 'quote') return `> ${text}`;
-            if (type === 'code') return `\`\`\`\n${block.textContent || ''}\n\`\`\``;
-            if (type === 'bullet') {
-                const indent = Number(block.dataset?.pisiBulletIndent || 0);
-                return `${'  '.repeat(indent)}- ${text}`;
-            }
-            if (type === 'number') return `${++numberRun}. ${text}`;
-            numberRun = 0;
-            if (type === 'task') {
-                const checked = block.querySelector('.pisi-block-task-marker')?.textContent === '☑';
-                return `- [${checked ? 'x' : ' '}] ${text.trimStart()}`;
-            }
-            return text;
-        })
-        .join('\n');
+    return blocks.map((block) => {
+        const type = getPisiBlockType(block);
+        const meta = extractPisiBlockMeta(block);
+        const metaStr = meta ? ` <!-- pisi:meta ${JSON.stringify(meta)} -->` : '';
+        if (type === 'rollup') {
+            const relation = encodePisiRollupMarkdownValue(block.dataset.pisiRollupRelation || '');
+            const target = encodePisiRollupMarkdownValue(block.dataset.pisiRollupTarget || '');
+            const aggregate = /^(?:count|sum|average|min|max|unique|join)$/.test(block.dataset.pisiRollupAggregate) ? block.dataset.pisiRollupAggregate : 'count';
+            return `{{pisi-rollup:${relation}:${target}:${aggregate}}}${metaStr}`;
+        }
+        const text = pisiInlineHtmlToMarkdown(block);
+        if (block.classList.contains('pisi-section-break') || block.dataset?.pisiSectionBreak === 'true') {
+            return text ? `<!-- pisi:section-end -->\n${text}` : '<!-- pisi:section-end -->';
+        }
+        if (type.startsWith('heading')) return `${'#'.repeat(Number(type.slice(-1)))} ${text}${metaStr}`;
+        if (type === 'quote') return `> ${text}${metaStr}`;
+        if (type === 'code') return '```\n' + (block.textContent || '') + '\n```' + metaStr;
+        if (type === 'bullet') {
+            const indent = Number(block.dataset?.pisiBulletIndent || 0);
+            return `${'  '.repeat(indent)}- ${text}${metaStr}`;
+        }
+        if (type === 'number') return `${++numberRun}. ${text}${metaStr}`;
+        numberRun = 0;
+        if (type === 'task') {
+            const marker = block.querySelector('.pisi-block-task-marker');
+            const checked = marker?.textContent === '☑' || marker?.getAttribute('aria-checked') === 'true' || Boolean(block.querySelector('.pisi-user-tag[data-pisi-tag="done"]'));
+            return `- [${checked ? 'x' : ' '}] ${text.trimStart()}${metaStr}`;
+        }
+        return `${text}${metaStr}`;
+    }).join('\n');
 }
 function getPisiActiveBlocksEditor() {
     if (window.activeModalNode) return document.getElementById('node-modal-content');
@@ -354,14 +395,62 @@ function movePisiBlock(block, delta) {
 }
 function duplicatePisiBlock(block) {
     if (!block) return null;
-    const clone = block.cloneNode(true);
-    clone.dataset.pisiBlockId = window.makePisiBlockId?.() || `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-    clone.classList.remove('pisi-block-active');
-    block.after(clone);
-    const editor = block.closest('.pisi-rich-editor');
-    editor?.dispatchEvent(new Event('input', { bubbles: true }));
-    selectPisiBlock(editor, clone);
-    return clone;
+    const editor = block.closest?.('.pisi-rich-editor');
+    const children =
+        (block.dataset?.pisiBlockType === 'bullet' ? window.getPisiBulletDescendants?.(editor, block) : window.getPisiHeadingSectionBlocks?.(editor, block)) ||
+        [];
+    const sourceBlocks = [block, ...children];
+    const clones = sourceBlocks.map((item) => item.cloneNode(true));
+    const blockIdMap = new Map();
+    const taskIdMap = new Map();
+    const makeBlockId = () => window.makePisiBlockId?.() || `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    const makeTaskId = () => window.makePisiFirstClassTaskId?.() || `task_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    for (const clone of clones) {
+        const blocks = [clone, ...(clone.querySelectorAll?.('[data-pisi-block-id], .pisi-editor-block') || [])];
+        for (const el of new Set(blocks)) {
+            const oldId = el.dataset?.pisiBlockId;
+            const newId = makeBlockId();
+            if (oldId) blockIdMap.set(oldId, newId);
+            el.dataset.pisiBlockId = newId;
+            if (el.id && oldId && el.id === oldId) el.id = newId;
+        }
+        for (const el of new Set([clone, ...(clone.querySelectorAll?.('[data-pisi-task-id]') || [])])) {
+            const oldTaskId = el.dataset?.pisiTaskId;
+            if (oldTaskId && !taskIdMap.has(oldTaskId)) taskIdMap.set(oldTaskId, makeTaskId());
+            if (oldTaskId) el.dataset.pisiTaskId = taskIdMap.get(oldTaskId);
+        }
+    }
+    const remapAttrs = ['pisiHeadingParent', 'pisiRollupTarget', 'pisiRollupRelation', 'pisiTodoFor', 'pisiDoneFor', 'pisiBlockRef', 'pisiDiaryBlockId', 'pisiDiaryParent'];
+    for (const clone of clones) {
+        for (const el of [clone, ...(clone.querySelectorAll?.('*') || [])]) {
+            el.classList?.remove?.('pisi-block-active', 'pisi-heading-collapsed', 'pisi-heading-section-hidden');
+            if (el.dataset?.pisiTaskId && taskIdMap.has(el.dataset.pisiTaskId)) el.dataset.pisiTaskId = taskIdMap.get(el.dataset.pisiTaskId);
+            for (const attr of remapAttrs) if (el.dataset?.[attr] && blockIdMap.has(el.dataset[attr])) el.dataset[attr] = blockIdMap.get(el.dataset[attr]);
+            if (el.dataset?.pisiTodoParent) {
+                let pVal = el.dataset.pisiTodoParent;
+                for (const [o, n] of taskIdMap) pVal = pVal.split(o).join(n);
+                for (const [o, n] of blockIdMap) pVal = pVal.split(o).join(n);
+                el.dataset.pisiTodoParent = pVal;
+            }
+            if (el.tagName === 'A' && el.getAttribute?.('href')) {
+                let href = el.getAttribute('href');
+                for (const [o, n] of blockIdMap) if (href.includes('#' + o)) href = href.split('#' + o).join('#' + n);
+                el.setAttribute('href', href);
+            }
+        }
+        const markers = clone.querySelectorAll?.('.pisi-block-task-marker');
+        if (markers?.length) markers.forEach((m) => hydratePisiBlockTaskMarker(m.closest('.pisi-editor-block') || clone, m));
+        else hydratePisiBlockTaskMarker(clone);
+    }
+    const lastSource = sourceBlocks[sourceBlocks.length - 1];
+    if (typeof lastSource.after === 'function') lastSource.after(...clones);
+    else if (lastSource.parentNode) {
+        const next = lastSource.nextSibling;
+        clones.forEach((clone) => lastSource.parentNode.insertBefore(clone, next));
+    }
+    editor?.dispatchEvent?.(new Event('input', { bubbles: true }));
+    selectPisiBlock(editor, clones[0]);
+    return clones[0];
 }
 function deletePisiBlock(block) {
     if (!block) return false;
@@ -515,12 +604,10 @@ function placeCaretAtEndOfPisiBlock(selection, block) {
     return { node: caret.startContainer, offset: caret.startOffset };
 }
 function isCaretBeforePisiTaskMarker(block, range) {
-    if (!range || !range.collapsed) return false;
+    if (!range?.collapsed) return false;
     const marker = block.querySelector?.('.pisi-block-task-marker');
     if (!marker) return false;
-    if (range.startContainer === block) {
-        return range.startOffset <= Array.prototype.indexOf.call(block.childNodes, marker);
-    }
+    if (range.startContainer === block) return range.startOffset <= Array.prototype.indexOf.call(block.childNodes, marker);
     if (marker.contains(range.startContainer)) return false;
     if (block.contains(range.startContainer) && range.startContainer.compareDocumentPosition(marker) & Node.DOCUMENT_POSITION_FOLLOWING) {
         const testRange = document.createRange();
@@ -531,7 +618,7 @@ function isCaretBeforePisiTaskMarker(block, range) {
     return false;
 }
 function isCaretAfterPisiTaskMarkerAtStart(block, source, range) {
-    if (!range || !range.collapsed || isCaretBeforePisiTaskMarker(block, range)) return false;
+    if (!range?.collapsed || isCaretBeforePisiTaskMarker(block, range)) return false;
     if (range.startContainer === block) {
         const marker = block.querySelector?.('.pisi-block-task-marker');
         return range.startOffset === (marker ? Array.prototype.indexOf.call(block.childNodes, marker) : 0) + 1;
@@ -543,18 +630,18 @@ function isCaretAfterPisiTaskMarkerAtStart(block, source, range) {
     return testRange.toString().replace(/[☐☑\s\u00A0\u200B]/g, '').length === 0;
 }
 function isCaretAtStartOfPisiBlock(block, range) {
-    if (!range || !range.collapsed || !block.contains(range.startContainer)) return false;
+    if (!range?.collapsed || !block?.contains(range.startContainer)) return false;
     const testRange = document.createRange();
     testRange.selectNodeContents(block);
     testRange.setEnd(range.startContainer, range.startOffset);
-    return testRange.toString().replace(/[\s\u00A0\u200B]/g, '').length === 0;
+    return !testRange.toString().replace(/[\s\u00A0\u200B]/g, '').length;
 }
 function isCaretAtEndOfPisiBlock(block, range) {
-    if (!range || !range.collapsed || !block.contains(range.startContainer)) return false;
+    if (!range?.collapsed || !block?.contains(range.startContainer)) return false;
     const testRange = document.createRange();
     testRange.selectNodeContents(block);
     testRange.setStart(range.startContainer, range.startOffset);
-    return testRange.toString().replace(/[\s\u00A0\u200B]/g, '').length === 0;
+    return !testRange.toString().replace(/[\s\u00A0\u200B]/g, '').length;
 }
 function removePisiTaskMetadataAndMarkerFromBlock(block) {
     if (!block) return;
@@ -741,16 +828,7 @@ function bindPisiBlocksEditor(editor) {
     editor.addEventListener('beforeinput', (event) => {
         const block = getPisiSelectionBlock(editor) || getPisiBlockAtEvent(editor, event.target) || getPisiActiveBlock();
         if (!block) return;
-        const fakeEvt = (key) => ({
-            key,
-            shiftKey: false,
-            ctrlKey: false,
-            metaKey: false,
-            altKey: false,
-            isComposing: false,
-            preventDefault: () => event.preventDefault(),
-            stopImmediatePropagation: () => event.stopImmediatePropagation()
-        });
+        const fakeEvt = (key) => ({ key, shiftKey: false, ctrlKey: false, metaKey: false, altKey: false, isComposing: false, preventDefault: () => event.preventDefault(), stopImmediatePropagation: () => event.stopImmediatePropagation() });
         if (event.inputType === 'insertParagraph') {
             if (!splitPisiTaskBlockOnEnter(editor, block, fakeEvt('Enter'))) {
                 if (!window.handlePisiBulletKeydown?.(editor, fakeEvt('Enter'), block)) {
@@ -788,26 +866,31 @@ function ensurePisiMarkdownSourceDialog() {
     const overlay = document.createElement('div');
     overlay.className = 'pisi-markdown-source-overlay';
     overlay.hidden = true;
-    overlay.innerHTML = `<section class="pisi-markdown-source-dialog"><header><strong>${pisiBlockTranslate('Markdown kaynak görünümü')}</strong><div><button type="button" class="pisi-secondary-button pisi-cancel-md">${pisiBlockTranslate('İptal')}</button><button type="button" class="pisi-primary-button pisi-apply-md">${pisiBlockTranslate('WYSIWYG görünümüne uygula')}</button></div></header><textarea class="pisi-markdown-source-textarea" spellcheck="false"></textarea></section>`;
+    overlay.innerHTML = `<section class="pisi-markdown-source-dialog"><header><strong>${pisiBlockTranslate('Markdown kaynak görünümü')}</strong><div><button type="button" class="pisi-secondary-button pisi-cancel-md">${pisiBlockTranslate('İptal')}</button><button type="button" class="pisi-primary-button pisi-apply-md">${pisiBlockTranslate('WYSIWYG görünümüne uygula')}</button></div></header><div class="pisi-markdown-source-warning" style="display:none;padding:6px 12px;background:#fff3cd;color:#856404;font-size:12px;"></div><textarea class="pisi-markdown-source-textarea" spellcheck="false"></textarea></section>`;
     document.body.appendChild(overlay);
     const cancel = overlay.querySelector('.pisi-cancel-md');
     const apply = overlay.querySelector('.pisi-apply-md');
     const textarea = overlay.querySelector('.pisi-markdown-source-textarea');
+    const warning = overlay.querySelector('.pisi-markdown-source-warning');
     cancel.addEventListener('click', closePisiMarkdownSource);
     apply.addEventListener('click', () => {
         const editor = pisiBlocksEditorState.sourceEditor;
         if (!editor) return closePisiMarkdownSource();
+        if (editor.querySelector?.('.pisi-sheet-block, .pisi-canvas-block, table[data-pisi-sheet]') && typeof window.confirm === 'function') {
+            if (!window.confirm(pisiBlockTranslate('Bu belgede Sheet veya Canvas blokları bulunmaktadır. Markdown kaynağını uygulamak bu blokları sıfırlayabilir. Devam etmek istiyor musunuz?'))) return;
+        }
         editor.innerHTML = pisiBlockMarkdownToHtml(textarea.value);
         decoratePisiBlockTypes(editor);
         editor.dispatchEvent(new Event('input', { bubbles: true }));
         closePisiMarkdownSource();
-        editor.focus();
+        editor.focus?.();
     });
     overlay.addEventListener('mousedown', (event) => {
         if (event.target === overlay) closePisiMarkdownSource();
     });
     pisiBlocksEditorState.sourceOverlay = overlay;
     pisiBlocksEditorState.sourceTextarea = textarea;
+    pisiBlocksEditorState.sourceWarning = warning;
     return overlay;
 }
 function openPisiMarkdownSource(editor = getPisiActiveBlocksEditor()) {
@@ -815,8 +898,13 @@ function openPisiMarkdownSource(editor = getPisiActiveBlocksEditor()) {
     const overlay = ensurePisiMarkdownSourceDialog();
     pisiBlocksEditorState.sourceEditor = editor;
     pisiBlocksEditorState.sourceTextarea.value = pisiBlockHtmlToMarkdown(editor);
+    const hasSpecial = Boolean(editor.querySelector?.('.pisi-sheet-block, .pisi-canvas-block, table[data-pisi-sheet]'));
+    if (pisiBlocksEditorState.sourceWarning) {
+        pisiBlocksEditorState.sourceWarning.style.display = hasSpecial ? 'block' : 'none';
+        pisiBlocksEditorState.sourceWarning.textContent = hasSpecial ? pisiBlockTranslate('Dikkat: Bu notta Sheet veya Canvas blokları bulunmaktadır. WYSIWYG görünümüne uygulandığında bu bloklar sıfırlanabilir.') : '';
+    }
     overlay.hidden = false;
-    pisiBlocksEditorState.sourceTextarea.focus();
+    pisiBlocksEditorState.sourceTextarea.focus?.();
     return true;
 }
 function closePisiMarkdownSource() {
