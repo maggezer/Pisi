@@ -372,25 +372,44 @@ function applyPisiBlockType(block, type) {
     selectPisiBlock(editor, next);
     return next;
 }
+function getPisiMovableBlockSection(editor, block) {
+    if (!editor || !block || block.parentElement !== editor || !block.classList.contains('pisi-editor-block')) return [];
+    const descendants =
+        (block.dataset?.pisiBlockType === 'bullet'
+            ? window.getPisiBulletDescendants?.(editor, block)
+            : window.getPisiHeadingSectionBlocks?.(editor, block)) || [];
+    const section = [block, ...descendants];
+    // A section must be a contiguous sequence of direct editor children.
+    if (section.some((item, index) => item.parentElement !== editor || (index > 0 && section[index - 1].nextElementSibling !== item))) return [];
+    return section;
+}
+function getPisiBlockSectionEnd(editor, block) {
+    const section = getPisiMovableBlockSection(editor, block);
+    return section.length ? section[section.length - 1] : null;
+}
 function movePisiBlock(block, delta) {
-    if (!block) return false;
+    if (!block || (delta !== -1 && delta !== 1)) return false;
     const editor = block.closest('.pisi-rich-editor');
-    const children =
-        (block.dataset?.pisiBlockType === 'bullet' ? window.getPisiBulletDescendants?.(editor, block) : window.getPisiHeadingSectionBlocks?.(editor, block)) ||
-        [];
-    const items = [block, ...children];
+    const items = getPisiMovableBlockSection(editor, block);
+    if (!items.length) return false;
+    const last = items[items.length - 1];
     if (delta < 0) {
         const prev = block.previousElementSibling;
         if (!prev) return false;
+        // Never insert a whole section into the middle of its own heading subtree.
+        if (items.includes(prev)) return false;
         prev.before(...items);
     } else {
-        const last = items[items.length - 1];
         const next = last.nextElementSibling;
         if (!next) return false;
-        next.after(...items);
+        // A heading is an atomic move target: skip its entire section.
+        const targetEnd = getPisiBlockSectionEnd(editor, next);
+        if (!targetEnd || items.includes(targetEnd)) return false;
+        targetEnd.after(...items);
     }
-    block.closest('.pisi-rich-editor')?.dispatchEvent(new Event('input', { bubbles: true }));
-    selectPisiBlock(block.closest('.pisi-rich-editor'), block);
+    window.syncPisiWordHeadingCollapse?.(editor);
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
+    selectPisiBlock(editor, block);
     return true;
 }
 function duplicatePisiBlock(block) {
@@ -795,19 +814,20 @@ function handlePisiBlocksEditorKeydown(editor, event) {
 }
 function handlePisiBlockDrop(editor, event) {
     const target = getPisiBlockAtEvent(editor, event.target);
-    const dragged = editor.querySelector(`.pisi-editor-block[data-pisi-block-id="${CSS.escape(pisiBlocksEditorState.draggedBlockId || '')}"]`);
-    if (!target || !dragged || target === dragged) return;
+    const draggedId = pisiBlocksEditorState.draggedBlockId;
+    if (!draggedId) return;
+    const dragged = Array.from(editor.children).find((item) => item.dataset?.pisiBlockId === draggedId);
+    const items = getPisiMovableBlockSection(editor, dragged);
+    if (!target || target.parentElement !== editor || !items.length || items.includes(target)) return;
     event.preventDefault();
-    const section =
-        (dragged.dataset?.pisiBlockType === 'bullet'
-            ? window.getPisiBulletDescendants?.(editor, dragged)
-            : window.getPisiHeadingSectionBlocks?.(editor, dragged)) || [];
-    if (section.includes(target)) return;
-    const items = [dragged, ...section];
     const rect = target.getBoundingClientRect();
-    if (event.clientY < rect.top + rect.height / 2) target.before(...items);
-    else target.after(...items);
+    const before = event.clientY < rect.top + rect.height / 2;
+    const anchor = before ? target : getPisiBlockSectionEnd(editor, target);
+    if (!anchor || items.includes(anchor)) return;
+    if (before) anchor.before(...items);
+    else anchor.after(...items);
     pisiBlocksEditorState.draggedBlockId = null;
+    window.syncPisiWordHeadingCollapse?.(editor);
     editor.dispatchEvent(new Event('input', { bubbles: true }));
     selectPisiBlock(editor, dragged);
 }
