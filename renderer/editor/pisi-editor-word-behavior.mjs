@@ -322,51 +322,50 @@ function getPisiWordHeadingLevel(block) {
     const type = typeof window.getPisiBlockType === 'function' ? window.getPisiBlockType(block) : block.dataset?.pisiBlockType;
     return { heading1: 1, heading2: 2, heading3: 3, heading4: 4, heading5: 5 }[type] || 0;
 }
+function getPisiSectionExitLevel(block) {
+    if (!block?.classList?.contains('pisi-section-break') && block?.dataset?.pisiSectionBreak !== 'true') return null;
+    const raw = block.dataset?.pisiSectionExit;
+    if (raw == null || raw === '') return null;
+    const level = Number(raw);
+    return Number.isInteger(level) && level >= 1 && level <= 5 ? level : null;
+}
+function applyPisiHeadingSectionExit(stack, block) {
+    if (!block?.classList?.contains('pisi-section-break') && block?.dataset?.pisiSectionBreak !== 'true') return;
+    const exitLevel = getPisiSectionExitLevel(block);
+    if (exitLevel === null) {
+        stack.pop();
+    } else {
+        while (stack.length && stack[stack.length - 1].level >= exitLevel) stack.pop();
+    }
+}
 function getPisiActiveHeadingForBlock(editor, targetBlock) {
-    if (!editor || !targetBlock) return null;
-    const elements = Array.from(editor.children).filter((el) => el.nodeType === Node.ELEMENT_NODE);
+    if (!editor || targetBlock?.parentElement !== editor) return null;
     const stack = [];
-    for (const block of elements) {
+    for (const block of editor.children) {
         if (block === targetBlock) {
-            if (targetBlock.dataset?.pisiSectionExit) {
-                const exitLevel = Number(targetBlock.dataset.pisiSectionExit);
-                while (stack.length && stack[stack.length - 1].level >= exitLevel) {
-                    stack.pop();
-                }
-            }
-            return stack.length ? stack[stack.length - 1] : null;
+            applyPisiHeadingSectionExit(stack, block);
+            return stack.length ? stack[stack.length - 1].block : null;
         }
-        if (block.classList.contains('pisi-section-break') || block.dataset?.pisiSectionBreak === 'true') {
-            const exitLevel = block.dataset?.pisiSectionExit ? Number(block.dataset.pisiSectionExit) : null;
-            if (exitLevel !== null) {
-                while (stack.length && stack[stack.length - 1].level >= exitLevel) {
-                    stack.pop();
-                }
-            } else if (stack.length) {
-                stack.pop();
-            }
-        }
+        applyPisiHeadingSectionExit(stack, block);
         const level = getPisiWordHeadingLevel(block);
         if (level) {
-            while (stack.length && stack[stack.length - 1].level >= level) {
-                stack.pop();
-            }
+            while (stack.length && stack[stack.length - 1].level >= level) stack.pop();
             stack.push({ block, level });
         }
     }
     return null;
 }
 function getPisiHeadingSectionBlocks(editor, headingBlock) {
-    if (!editor || !headingBlock) return [];
+    if (!editor || headingBlock?.parentElement !== editor) return [];
     const level = getPisiWordHeadingLevel(headingBlock);
     if (!level) return [];
     const result = [];
     let current = headingBlock.nextElementSibling;
-    while (current && editor.contains(current)) {
+    while (current && current.parentElement === editor) {
         const currentLevel = getPisiWordHeadingLevel(current);
         if (currentLevel && currentLevel <= level) break;
         if (current.classList.contains('pisi-section-break') || current.dataset?.pisiSectionBreak === 'true') {
-            const exitLevel = current.dataset?.pisiSectionExit ? Number(current.dataset.pisiSectionExit) : null;
+            const exitLevel = getPisiSectionExitLevel(current);
             if (exitLevel === null || exitLevel <= level) break;
         }
         result.push(current);
@@ -533,16 +532,7 @@ function syncPisiWordHeadingCollapse(editor) {
     elements.forEach((el) => el.classList.remove('pisi-heading-section-hidden'));
     const activeHeadingStack = [];
     for (const el of elements) {
-        if (el.classList.contains('pisi-section-break') || el.dataset?.pisiSectionBreak === 'true') {
-            const exitLevel = el.dataset?.pisiSectionExit ? Number(el.dataset.pisiSectionExit) : null;
-            if (exitLevel !== null) {
-                while (activeHeadingStack.length && activeHeadingStack[activeHeadingStack.length - 1].level >= exitLevel) {
-                    activeHeadingStack.pop();
-                }
-            } else if (activeHeadingStack.length) {
-                activeHeadingStack.pop();
-            }
-        }
+        applyPisiHeadingSectionExit(activeHeadingStack, el);
         const level = getPisiWordHeadingLevel(el);
         if (level > 0) {
             while (activeHeadingStack.length && activeHeadingStack[activeHeadingStack.length - 1].level >= level) {
