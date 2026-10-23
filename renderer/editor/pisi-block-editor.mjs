@@ -342,6 +342,16 @@ function replacePisiBlockTag(block, tagName) {
     block.replaceWith(replacement);
     return replacement;
 }
+// Centralized finalization for structural block edits. Keep the existing
+// editor input/save pipeline as the single persistence authority.
+function commitPisiBlockMutation(editor, selectedBlock, options = {}) {
+    if (!editor) return false;
+    if (options.normalize) window.ensurePisiEditorBlocks?.(editor);
+    window.syncPisiWordHeadingCollapse?.(editor);
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
+    if (selectedBlock?.isConnected && editor.contains(selectedBlock)) selectPisiBlock(editor, selectedBlock);
+    return true;
+}
 function applyPisiBlockType(block, type) {
     const record = PISI_BLOCK_TYPES.find((item) => item.id === type);
     if (!block || !record) return null;
@@ -366,10 +376,8 @@ function applyPisiBlockType(block, type) {
         next.prepend(marker);
     }
     if (record.id === 'task') hydratePisiBlockTaskMarker(next);
-    window.syncPisiWordHeadingCollapse?.(editor);
     pisiBlocksEditorState.block = next;
-    editor?.dispatchEvent(new Event('input', { bubbles: true }));
-    selectPisiBlock(editor, next);
+    commitPisiBlockMutation(editor, next);
     return next;
 }
 function getPisiMovableBlockSection(editor, block) {
@@ -425,9 +433,7 @@ function movePisiBlock(block, delta) {
         if (!targetEnd || items.includes(targetEnd)) return false;
         targetEnd.after(...items);
     }
-    window.syncPisiWordHeadingCollapse?.(editor);
-    editor.dispatchEvent(new Event('input', { bubbles: true }));
-    selectPisiBlock(editor, block);
+    commitPisiBlockMutation(editor, block);
     return true;
 }
 function duplicatePisiBlock(block) {
@@ -485,8 +491,7 @@ function duplicatePisiBlock(block) {
         const next = lastSource.nextSibling;
         clones.forEach((clone) => lastSource.parentNode.insertBefore(clone, next));
     }
-    editor?.dispatchEvent?.(new Event('input', { bubbles: true }));
-    selectPisiBlock(editor, clones[0]);
+    commitPisiBlockMutation(editor, clones[0]);
     return clones[0];
 }
 function deletePisiBlock(block) {
@@ -494,9 +499,7 @@ function deletePisiBlock(block) {
     const editor = block.closest('.pisi-rich-editor');
     const focusTarget = block.nextElementSibling || block.previousElementSibling;
     block.remove();
-    window.ensurePisiEditorBlocks?.(editor);
-    editor?.dispatchEvent(new Event('input', { bubbles: true }));
-    selectPisiBlock(editor, focusTarget || editor?.querySelector('.pisi-editor-block'));
+    commitPisiBlockMutation(editor, focusTarget || editor?.querySelector('.pisi-editor-block'), { normalize: true });
     return true;
 }
 function copyPisiBlockReference(block = getPisiActiveBlock()) {
@@ -846,9 +849,7 @@ function handlePisiBlockDrop(editor, event) {
     if (before) anchor.before(...items);
     else anchor.after(...items);
     pisiBlocksEditorState.draggedBlockId = null;
-    window.syncPisiWordHeadingCollapse?.(editor);
-    editor.dispatchEvent(new Event('input', { bubbles: true }));
-    selectPisiBlock(editor, dragged);
+    commitPisiBlockMutation(editor, dragged);
 }
 function bindPisiBlocksEditor(editor) {
     if (!editor || editor.dataset.pisiBlocksEditorBound === '1') return false;
