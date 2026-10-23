@@ -2,6 +2,11 @@ import assert from 'node:assert/strict';
 
 export async function testEditorKeyboard(cdp) {
     const run = (expression) => cdp.evaluate(expression);
+    const task = (text) =>
+        '<div data-pisi-block-type="task"><span class="pisi-block-task-marker" data-pisi-todo-checkbox="todo.1.none" contenteditable="false">☐</span><span class="pisi-user-tag pisi-task-metadata" data-pisi-tag="todo.1.none" contenteditable="false">todo.1.none</span><span class="pisi-todo-source" data-pisi-todo-for="todo.1.none">' +
+        text +
+        '</span></div>';
+
     const setup = async (html, offset = 0) =>
         run(`(() => {
         const editor = document.getElementById('center-node-editor-content');
@@ -25,7 +30,7 @@ export async function testEditorKeyboard(cdp) {
     };
     const blocks = () =>
         run(
-            `Array.from(document.getElementById('center-node-editor-content').children).map(block => ({ type: block.dataset.pisiBlockType, text: block.textContent.replace(/[☐☑]/g, '').trim(), id: block.dataset.pisiBlockId }))`
+            `Array.from(document.getElementById('center-node-editor-content').children).map(block => ({ type: block.dataset.pisiBlockType, text: (() => { const clone = block.cloneNode(true); clone.querySelectorAll('.pisi-task-metadata, .pisi-block-task-marker').forEach(el => el.remove()); return clone.textContent.trim(); })(), id: block.dataset.pisiBlockId }))`
         );
     const beforeInput = (inputType, isComposing = false) =>
         run(`(() => {
@@ -78,7 +83,7 @@ export async function testEditorKeyboard(cdp) {
     }
     for (const type of ['paragraph', 'heading2', 'quote', 'code', 'bullet', 'number', 'task']) {
         const tag = type === 'heading2' ? 'h2' : type === 'quote' ? 'blockquote' : type === 'code' ? 'pre' : 'div';
-        await setup('<' + tag + ' data-pisi-block-type="' + type + '">abcdef</' + tag + '>', 3);
+        await setup(type === 'task' ? task('abcdef') : '<' + tag + ' data-pisi-block-type="' + type + '">abcdef</' + tag + '>', 3);
         await key('Enter', true);
         const result = await blocks();
         assert.equal(result.length, 1, type + ': Shift+Enter stays in block');
@@ -122,7 +127,6 @@ export async function testEditorKeyboard(cdp) {
         await key('Backspace');
         assert.deepEqual(await blocks(), [{ type: 'paragraph', text: 'abcdef', id: original }]);
     }
-    const task = (text) => '<div data-pisi-block-type="task"><span class="pisi-block-task-marker" contenteditable="false">☐</span>' + text + '</div>';
     await setup(task('abcdef'), 3);
     await key('Enter');
     assert.deepEqual(

@@ -692,7 +692,7 @@ function isPisiCaretAtBlockStart(block, range) {
     const testRange = document.createRange();
     testRange.selectNodeContents(block);
     testRange.setEnd(range.startContainer, range.startOffset);
-    return testRange.toString().replace(/[\s\u00A0\u200B]/g, '').length === 0;
+    return testRange.toString().replace(/\u200B/g, '').length === 0;
 }
 function handlePisiBulletKeydown(editor, event, blockOverride = null) {
     if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey || event.isComposing) return false;

@@ -71,7 +71,7 @@ export function createPisiTaskBlockKeyboard({ getPisiBlockType, selectPisiBlock,
             const testRange = document.createRange();
             testRange.selectNodeContents(block);
             testRange.setEnd(range.startContainer, range.startOffset);
-            return testRange.toString().replace(/[\s\u00A0\u200B]/g, '').length === 0;
+            return testRange.toString().replace(/\u200B/g, '').length === 0;
         }
         return false;
     }
@@ -85,21 +85,21 @@ export function createPisiTaskBlockKeyboard({ getPisiBlockType, selectPisiBlock,
         const testRange = document.createRange();
         testRange.selectNodeContents(target);
         testRange.setEnd(range.startContainer, range.startOffset);
-        return testRange.toString().replace(/[☐☑\s\u00A0\u200B]/g, '').length === 0;
+        return testRange.toString().replace(/[☐☑\u200B]/g, '').length === 0;
     }
     function isCaretAtStartOfPisiBlock(block, range) {
         if (!range?.collapsed || !block?.contains(range.startContainer)) return false;
         const testRange = document.createRange();
         testRange.selectNodeContents(block);
         testRange.setEnd(range.startContainer, range.startOffset);
-        return !testRange.toString().replace(/[\s\u00A0\u200B]/g, '').length;
+        return !testRange.toString().replace(/\u200B/g, '').length;
     }
     function isCaretAtEndOfPisiBlock(block, range) {
         if (!range?.collapsed || !block?.contains(range.startContainer)) return false;
         const testRange = document.createRange();
         testRange.selectNodeContents(block);
         testRange.setStart(range.startContainer, range.startOffset);
-        return !testRange.toString().replace(/[\s\u00A0\u200B]/g, '').length;
+        return !testRange.toString().replace(/\u200B/g, '').length;
     }
     function removePisiTaskMetadataAndMarkerFromBlock(block) {
         if (!block) return;
