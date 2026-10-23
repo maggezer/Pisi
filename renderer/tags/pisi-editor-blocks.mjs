@@ -420,7 +420,9 @@ function extractPisiPasteBlocks(html = '', plain = '') {
     const cleanHtml = String(html || '').trim();
 
     if (cleanHtml) {
-        const isInternalPisi = /data-pisi-(?:block-id|tag|todo|done)|pisi-editor-block|pisi-user-tag|pisi-todo-source/i.test(cleanHtml);
+        // Only explicit Pisi block markup opts into the internal paste path.
+        // Third-party HTML can contain generic data-pisi-* attributes.
+        const isInternalPisi = /class=["'][^"']*\\bpisi-editor-block\\b|data-pisi-block-id=["'][^"']+["']/i.test(cleanHtml);
         const template = createPisiInertHtmlTemplate(cleanHtml);
         template.content
             .querySelectorAll('script, style, meta, link, title, head, svg, iframe, object, embed, form, input, button')
@@ -470,7 +472,10 @@ function extractPisiPasteBlocks(html = '', plain = '') {
                     const childMeta = resolvePisiPastedBlockMeta(child, isInternalPisi);
                     const hasBlockChildren = Array.from(child.children).some((grand) => PISI_PASTE_BLOCK_TAGS.has(grand.tagName));
                     if (hasBlockChildren) {
-                        walkContainer(child, childMeta);
+                        // UL/OL are structural wrappers, not independent paragraphs.
+                        // Carry the parent list item's metadata into its inline text,
+                        // but let each nested LI resolve its own list depth and type.
+                        walkContainer(child, child.tagName === 'UL' || child.tagName === 'OL' ? inheritedMeta : childMeta);
                     } else {
                         pushLeafChildNodes(Array.from(child.childNodes), childMeta);
                     }
