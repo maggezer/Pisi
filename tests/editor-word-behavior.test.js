@@ -258,3 +258,14 @@ test('B5 structural block operations share one mutation finalizer', () => {
     assert.match(source, /function deletePisiBlock[\s\S]*?commitPisiBlockMutation\(editor, focusTarget/);
     assert.match(source, /function handlePisiBlockDrop[\s\S]*?commitPisiBlockMutation\(editor, dragged\)/);
 });
+
+test('B6 heading ownership and folding share a validated section-exit rule', () => {
+    const source = read('renderer/editor/pisi-editor-word-behavior.mjs');
+    assert.match(source, /function getPisiSectionExitLevel\(block\)/);
+    assert.match(source, /Number\.isInteger\(level\) && level >= 1 && level <= 5/);
+    assert.match(source, /function applyPisiHeadingSectionExit\(stack, block\)/);
+    assert.match(source, /function getPisiActiveHeadingForBlock[\s\S]*?applyPisiHeadingSectionExit\(stack, block\)/);
+    assert.match(source, /function getPisiHeadingSectionBlocks[\s\S]*?headingBlock\?\.parentElement !== editor/);
+    assert.match(source, /function getPisiHeadingSectionBlocks[\s\S]*?getPisiSectionExitLevel\(current\)/);
+    assert.match(source, /function syncPisiWordHeadingCollapse[\s\S]*?applyPisiHeadingSectionExit\(activeHeadingStack, el\)/);
+});
