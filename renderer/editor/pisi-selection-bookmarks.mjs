@@ -97,7 +97,8 @@ function resolvePoint(editor, point) {
 }
 
 export function isPisiSelectionBookmarkDisplaced(editor, saved) {
-    if (!validScope(editor, saved)) return false;
+    if (!saved) return false;
+    if (!validScope(editor, saved)) return true;
     return [saved.anchor, saved.focus].some((point) => {
         const block = findBlock(editor, point);
         if (!block || block !== point.block || !block.contains(point.node)) return true;

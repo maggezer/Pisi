@@ -457,7 +457,7 @@ function handlePisiAuthorityToolbarPointerDown(event) {
     const toolbar = getPisiAuthorityToolbarFromTarget(event.target);
     if (!toolbar) return;
     const editor = getPisiAuthorityEditorForToolbar(toolbar);
-    if (editor) rememberPisiAuthoritySelection(editor);
+    if (editor) rememberPisiAuthoritySelection(editor, true);
 }
 
 function handlePisiAuthorityToolbarClick(event) {

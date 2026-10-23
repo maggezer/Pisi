@@ -857,7 +857,7 @@ function bindPisiWordEditor(editor) {
 function bindPisiWordToolbar(toolbar) {
     if (!toolbar || pisiWordBoundToolbars.has(toolbar)) return;
     pisiWordBoundToolbars.add(toolbar);
-    toolbar.addEventListener('pointerdown', () => rememberPisiWordSelection(toolbar), true);
+    toolbar.addEventListener('pointerdown', () => rememberPisiWordSelection(toolbar, true), true);
     toolbar.addEventListener('change', (event) => handlePisiWordToolbarChange(event, toolbar), true);
     toolbar.addEventListener(
         'click',
