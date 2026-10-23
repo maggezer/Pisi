@@ -1,3 +1,9 @@
+import {
+    capturePisiSelectionBookmark,
+    resolvePisiSelectionBookmark,
+    restorePisiSelectionBookmark,
+    isPisiSelectionBookmarkDisplaced
+} from './pisi-selection-bookmarks.mjs';
 import { registerModule } from '../core/module-registry.mjs';
 import { isPisiInlineTextCommand, parsePisiTextDecorations, resolvePisiInlineTextMutation } from './pisi-editor-text-format-core.mjs';
 
@@ -37,33 +43,31 @@ function getPisiAuthorityRangeInsideEditor(editor, selection = window.getSelecti
 
 function getPisiAuthorityCurrentRange(editor) {
     const live = getPisiAuthorityRangeInsideEditor(editor);
-    if (live) return live;
     const saved = pisiAuthoritativeSelections.get(editor);
-    return saved?.startContainer?.isConnected && saved?.endContainer?.isConnected ? saved : null;
+    if (live && !isPisiSelectionBookmarkDisplaced(editor, saved)) return live;
+    return resolvePisiSelectionBookmark(editor, saved)?.range || null;
 }
 
-function rememberPisiAuthoritySelection(editor) {
-    const range = getPisiAuthorityRangeInsideEditor(editor);
-    if (!range) return false;
-    pisiAuthoritativeSelections.set(editor, range.cloneRange());
+function rememberPisiAuthoritySelection(editor, force = false) {
+    if (!editor) return false;
+    const saved = pisiAuthoritativeSelections.get(editor);
+    if (!force && isPisiSelectionBookmarkDisplaced(editor, saved)) return false;
+    const bookmark = capturePisiSelectionBookmark(editor);
+    if (!bookmark) return false;
+    pisiAuthoritativeSelections.set(editor, bookmark);
     return true;
 }
 
 function restorePisiAuthoritySelection(editor) {
+    if (!editor) return null;
+    if (!pisiAuthoritativeSelections.has(editor)) rememberPisiAuthoritySelection(editor);
     const saved = pisiAuthoritativeSelections.get(editor);
-    if (!editor || !saved) return null;
-    if (!saved.startContainer?.isConnected || !saved.endContainer?.isConnected) {
+    if (!saved || !restorePisiSelectionBookmark(editor, saved)) {
         pisiAuthoritativeSelections.delete(editor);
         return null;
     }
-
-    const range = saved.cloneRange();
-    editor.focus({ preventScroll: true });
-    const selection = window.getSelection?.();
-    if (!selection) return null;
-    selection.removeAllRanges();
-    selection.addRange(range);
-    return range;
+    rememberPisiAuthoritySelection(editor, true);
+    return getPisiAuthorityRangeInsideEditor(editor);
 }
 
 function selectPisiAuthorityRange(range) {
@@ -412,6 +416,7 @@ function applyPisiAuthoritativeInlineCommand(editor, range, command) {
         clearPisiAuthorityTypingStyles(editor);
     }
 
+    const bookmark = range.collapsed ? null : capturePisiSelectionBookmark(editor);
     const style = getPisiAuthorityEffectiveStyle(editor, range);
     const mutation = resolvePisiInlineTextMutation(command, style);
     if (!mutation) return false;
@@ -419,8 +424,9 @@ function applyPisiAuthoritativeInlineCommand(editor, range, command) {
     const changed = applyPisiAuthorityMutationToRange(editor, range, mutation, command, style);
     if (!changed) return false;
 
+    if (bookmark) restorePisiSelectionBookmark(editor, bookmark);
     notifyPisiAuthorityEditorChanged(editor);
-    rememberPisiAuthoritySelection(editor);
+    rememberPisiAuthoritySelection(editor, true);
     queueMicrotask(() => syncPisiAuthorityToolbarState(editor));
     return true;
 }
@@ -470,11 +476,7 @@ function handlePisiAuthorityToolbarClick(event) {
     event.preventDefault();
     event.stopImmediatePropagation();
 
-    let range = restorePisiAuthoritySelection(editor);
-    if (!range) {
-        editor.focus({ preventScroll: true });
-        range = getPisiAuthorityRangeInsideEditor(editor);
-    }
+    const range = restorePisiAuthoritySelection(editor);
     if (!range) return false;
     return applyPisiAuthoritativeInlineCommand(editor, range, command);
 }
@@ -535,7 +537,7 @@ function handlePisiAuthorityBeforeInput(event) {
     caret.setStart(textNode, nextOffset);
     caret.collapse(true);
     selectPisiAuthorityRange(caret);
-    rememberPisiAuthoritySelection(editor);
+    rememberPisiAuthoritySelection(editor, true);
     notifyPisiAuthorityEditorChanged(editor, 'insertText', event.data);
     queueMicrotask(() => syncPisiAuthorityToolbarState(editor));
 }
@@ -544,7 +546,7 @@ function handlePisiAuthorityEditorPointerUp(event) {
     const editor = getPisiAuthorityEditorFromTarget(event.target);
     if (!editor) return;
     clearPisiAuthorityTypingStyles(editor);
-    rememberPisiAuthoritySelection(editor);
+    rememberPisiAuthoritySelection(editor, true);
     queueMicrotask(() => syncPisiAuthorityToolbarState(editor));
 }
 
@@ -558,11 +560,12 @@ function handlePisiAuthorityNavigationKeydown(event) {
 function handlePisiAuthorityPostEditorEvent(event) {
     const editor = getPisiAuthorityEditorFromTarget(event.target);
     if (!editor) return;
-    rememberPisiAuthoritySelection(editor);
+    rememberPisiAuthoritySelection(editor, true);
     queueMicrotask(() => syncPisiAuthorityToolbarState(editor));
 }
 
 function initializePisiEditorCommandAuthority() {
+    window.addEventListener('pointerdown', handlePisiAuthorityToolbarPointerDown, true);
     window.addEventListener('mousedown', handlePisiAuthorityToolbarPointerDown, true);
     window.addEventListener('click', handlePisiAuthorityToolbarClick, true);
     window.addEventListener('beforeinput', handlePisiAuthorityBeforeInput, true);

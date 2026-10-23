@@ -11,7 +11,9 @@ export async function testEditorSelection(cdp) {
         window.getSelection().setBaseAndExtent(last.firstChild, 4, first.firstChild, 2);
         window.__e7SelectionSaved = window.__e7SelectionApi.capturePisiSelectionBookmark(editor);
         const toolbar = document.querySelector('[data-editor-target="center-node-editor-content"]');
+        window.__e7Trace?.push({op: 'beforepointer', text: window.getSelection().toString(), toolbar: toolbar.outerHTML.slice(0,200)});
         toolbar.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+        window.__e7Trace?.push({op: 'afterpointer', text: window.getSelection().toString()});
         toolbar.querySelector('select[data-pisi-unified-command="fontSize"]').focus();
         for (const block of Array.from(editor.children)) {
             const replacement = document.createElement('h2');
