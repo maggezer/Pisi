@@ -29,6 +29,11 @@ function textTokens(root) {
 }
 
 function capturePoint(editor, node, nativeOffset) {
+    if (node === editor) {
+        const next = editor.childNodes[nativeOffset];
+        node = next || editor.lastChild;
+        nativeOffset = next ? 0 : node?.childNodes.length || 0;
+    }
     const element = node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement;
     if (!element || element === editor || element.closest?.(isolated)) return null;
     const block = element.closest?.('.pisi-editor-block');

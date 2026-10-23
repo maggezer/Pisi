@@ -38,7 +38,7 @@ export async function testEditorSelection(cdp) {
     })()`);
     assert.deepEqual(result.styled, ['cdef', 'uvwx'], 'toolbar must format the original text after a block DOM rebuild: ' + JSON.stringify(result));
     assert.equal(result.text, 'abcdefuvwxyz');
-    assert.equal(result.selection, 'cdefuvwx');
+    assert.equal(result.selection.replace(/\n/g, ''), 'cdefuvwx');
     assert.equal(result.backward, true, 'backward selection direction must survive DOM rebuild and formatting');
     await cdp.evaluate(`(() => {
         const editor = document.getElementById('center-node-editor-content');
@@ -81,6 +81,28 @@ export async function testEditorSelection(cdp) {
         'soft breaks must count as bookmark positions'
     );
 
+    await cdp.evaluate(`(() => {
+        const editor = document.getElementById('center-node-editor-content');
+        window.setPisiEditorContent(editor, '<div>abcdef</div>');
+        editor.focus();
+        window.getSelection().setBaseAndExtent(editor.firstElementChild.firstChild, 4, editor.firstElementChild.firstChild, 1);
+        const toolbar = document.querySelector('.pisi-word-toolbar[data-editor-target="center-node-editor-content"]');
+        toolbar.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+        toolbar.querySelector('select').focus();
+        editor.firstElementChild.innerHTML = '<em>abcdef</em>';
+    })()`);
+    await cdp.evaluate(
+        `document.querySelector('.pisi-word-toolbar[data-editor-target="center-node-editor-content"] button[data-pisi-unified-command="bold"]').click()`
+    );
+    assert.deepEqual(
+        await cdp.evaluate(`(() => {
+        const editor = document.getElementById('center-node-editor-content');
+        return { styled: Array.from(editor.querySelectorAll('.pisi-inline-command-style')).map(el => el.textContent), selected: window.getSelection().toString(), backward: window.getSelection().anchorOffset > window.getSelection().focusOffset };
+    })()`),
+        { styled: ['bcd'], selected: 'bcd', backward: true },
+        'inline authority must restore the same backward selection'
+    );
+
     for (const mutation of ['remove', 'duplicate', 'load']) {
         await cdp.evaluate(`(() => {
             const editor = document.getElementById('center-node-editor-content');
@@ -115,7 +137,11 @@ export async function testEditorSelection(cdp) {
     await change('center-node-editor-content', 'formatBlock', 'h2');
     assert.deepEqual(await cdp.evaluate(`Array.from(document.getElementById('center-node-editor-content').children).map(el => el.tagName)`), ['H2', 'H2']);
     await change();
-    assert.equal(await cdp.evaluate('window.getSelection().toString()'), 'cdefuvwx', 'heading then font formatting must keep the same selection');
+    assert.equal(
+        (await cdp.evaluate('window.getSelection().toString()')).replace(/\n/g, ''),
+        'cdefuvwx',
+        'heading then font formatting must keep the same selection'
+    );
 
     const centerText = await cdp.evaluate(`document.getElementById('center-node-editor-content').textContent`);
     const opened = await cdp.evaluate(`(async () => {
