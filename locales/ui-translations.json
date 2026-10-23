@@ -183,7 +183,9 @@
         "Tüm görevler tamamlandı": "Tüm görevler tamamlandı",
         "Günlük not var": "Günlük not var",
         "Bu belgede tablo veya tuval blokları bulunmaktadır. Markdown kaynağını uygulamak bu blokları sıfırlayabilir. Devam etmek istiyor musunuz?": "Bu belgede tablo veya tuval blokları bulunmaktadır. Markdown kaynağını uygulamak bu blokları sıfırlayabilir. Devam etmek istiyor musunuz?",
-        "Dikkat: Bu notta tablo veya tuval blokları bulunmaktadır. WYSIWYG görünümüne uygulandığında bu bloklar sıfırlanabilir.": "Dikkat: Bu notta tablo veya tuval blokları bulunmaktadır. WYSIWYG görünümüne uygulandığında bu bloklar sıfırlanabilir."
+        "Dikkat: Bu notta tablo veya tuval blokları bulunmaktadır. WYSIWYG görünümüne uygulandığında bu bloklar sıfırlanabilir.": "Dikkat: Bu notta tablo veya tuval blokları bulunmaktadır. WYSIWYG görünümüne uygulandığında bu bloklar sıfırlanabilir.",
+        "Sheet veya Canvas içeren notlarda Markdown kaynağı uygulanamaz. Veri kaybını önlemek için bu blokları ayrı bir nota taşıyın.": "Sheet veya Çizim içeren notlarda Markdown kaynağı uygulanamaz. Veri kaybını önlemek için bu blokları ayrı bir nota taşıyın.",
+        "Dikkat: Bu notta Sheet veya Canvas blokları bulunmaktadır. WYSIWYG görünümüne uygulandığında bu bloklar sıfırlanabilir.": "Dikkat: Bu notta Sheet veya Çizim blokları bulunmaktadır. WYSIWYG görünümüne uygulandığında bu bloklar sıfırlanabilir."
     },
     "eng": {
         "Sütun adını değiştir": "Rename column",
@@ -369,6 +371,8 @@
         "Tüm görevler tamamlandı": "All tasks completed",
         "Günlük not var": "Diary note exists",
         "Bu belgede tablo veya tuval blokları bulunmaktadır. Markdown kaynağını uygulamak bu blokları sıfırlayabilir. Devam etmek istiyor musunuz?": "This document contains table or canvas blocks. Applying the Markdown source may reset these blocks. Do you want to continue?",
-        "Dikkat: Bu notta tablo veya tuval blokları bulunmaktadır. WYSIWYG görünümüne uygulandığında bu bloklar sıfırlanabilir.": "Warning: This document contains table or canvas blocks. Applying to the WYSIWYG view may reset these blocks."
+        "Dikkat: Bu notta tablo veya tuval blokları bulunmaktadır. WYSIWYG görünümüne uygulandığında bu bloklar sıfırlanabilir.": "Warning: This document contains table or canvas blocks. Applying to the WYSIWYG view may reset these blocks.",
+        "Sheet veya Canvas içeren notlarda Markdown kaynağı uygulanamaz. Veri kaybını önlemek için bu blokları ayrı bir nota taşıyın.": "Markdown source cannot be applied to notes containing Sheet or Canvas blocks. Move these blocks to a separate note to prevent data loss.",
+        "Dikkat: Bu notta Sheet veya Canvas blokları bulunmaktadır. WYSIWYG görünümüne uygulandığında bu bloklar sıfırlanabilir.": "Warning: This note contains Sheet or Canvas blocks. Applying the source to the WYSIWYG view may reset these blocks."
     }
 }
