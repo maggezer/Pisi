@@ -225,11 +225,40 @@ function applyPisiWordInlineStyle(toolbar, property, value) {
             range.selectNodeContents(span);
             selectPisiWordRange(range);
         } else {
-            editor.querySelectorAll('.pisi-editor-block').forEach((block) => {
-                try {
-                    if (range.intersectsNode(block)) block.style[property] = value;
-                } catch {}
-            });
+            // Format only the selected text, never entire intersecting blocks.
+            // Snapshot text ranges before editing because DOM Ranges are live.
+            const portions = [];
+            const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
+            while (walker.nextNode()) {
+                const node = walker.currentNode;
+                if (!node.nodeValue?.length || !node.parentElement?.closest('.pisi-editor-block')) continue;
+                if (node.parentElement.closest('[contenteditable="false"]')) continue;
+                if (!range.intersectsNode(node)) continue;
+                const portion = document.createRange();
+                portion.selectNodeContents(node);
+                if (portion.compareBoundaryPoints(Range.START_TO_START, range) < 0) {
+                    portion.setStart(range.startContainer, range.startOffset);
+                }
+                if (portion.compareBoundaryPoints(Range.END_TO_END, range) > 0) {
+                    portion.setEnd(range.endContainer, range.endOffset);
+                }
+                if (!portion.collapsed) portions.push(portion);
+            }
+            if (!portions.length) return false;
+            const styled = [];
+            // Work backwards so changing a later text node does not change
+            // the offsets of ranges targeting earlier selected text.
+            for (let i = portions.length - 1; i >= 0; i--) {
+                const portion = portions[i];
+                const span = makePisiWordStyledSpan(property, value);
+                span.appendChild(portion.extractContents());
+                portion.insertNode(span);
+                styled.unshift(span);
+            }
+            const selectedRange = document.createRange();
+            selectedRange.setStartBefore(styled[0]);
+            selectedRange.setEndAfter(styled[styled.length - 1]);
+            selectPisiWordRange(selectedRange);
         }
     }
     notifyPisiWordEditorChanged(editor);
