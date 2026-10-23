@@ -112,9 +112,20 @@ function capturePisiEditorSelection(editor) {
         };
     };
 
+    const backward = !selection.isCollapsed && selection.anchorNode && selection.focusNode &&
+        (() => {
+            const anchor = document.createRange();
+            anchor.setStart(selection.anchorNode, selection.anchorOffset);
+            anchor.collapse(true);
+            const focus = document.createRange();
+            focus.setStart(selection.focusNode, selection.focusOffset);
+            focus.collapse(true);
+            return anchor.compareBoundaryPoints(Range.START_TO_START, focus) > 0;
+        })();
     return {
         start: makePoint(range.startContainer, range.startOffset),
-        end: makePoint(range.endContainer, range.endOffset)
+        end: makePoint(range.endContainer, range.endOffset),
+        backward: Boolean(backward)
     };
 }
 
@@ -184,6 +195,9 @@ function restorePisiEditorSelection(editor, snapshot) {
         range.setEnd(end.node, end.offset);
         selection.removeAllRanges();
         selection.addRange(range);
+        if (snapshot.backward && !range.collapsed && typeof selection.setBaseAndExtent === 'function') {
+            selection.setBaseAndExtent(range.endContainer, range.endOffset, range.startContainer, range.startOffset);
+        }
     } catch (error) {
         console.warn('[PISI] Editör imleci geri yüklenemedi:', error);
     }
@@ -202,6 +216,9 @@ function ensurePisiEditorBlocks(editor, options = {}) {
     const preserveSelection = options.preserveSelection !== false;
     const selectionSnapshot = preserveSelection ? capturePisiEditorSelection(editor) : null;
     let didMutateDom = false;
+    // Track id changes separately from node replacement: duplicate ids are
+    // common after native paste and previously skipped selection restoration.
+    let didChangeIdentity = false;
 
     try {
         const childNodes = Array.from(editor.childNodes);
@@ -260,18 +277,24 @@ function ensurePisiEditorBlocks(editor, options = {}) {
             }
         }
 
-        editor.querySelectorAll('h1,h2,h3,h4,h5,h6,p,li,blockquote,pre').forEach(decoratePisiEditorBlock);
-
+        // Nested rich-text markup and composite content are not independent
+        // editor blocks. Decorating them creates unstable ids and selections.
+        const blocks = Array.from(editor.children).filter((element) => element.classList?.contains('pisi-editor-block'));
         const seenBlockIds = new Set();
-        editor.querySelectorAll('.pisi-editor-block').forEach((block) => {
+        for (const block of blocks) {
             const currentId = block.dataset?.pisiBlockId;
             if (!currentId || seenBlockIds.has(currentId)) {
-                block.dataset.pisiBlockId = makePisiBlockId();
+                let replacementId;
+                do {
+                    replacementId = makePisiBlockId();
+                } while (seenBlockIds.has(replacementId));
+                block.dataset.pisiBlockId = replacementId;
+                didChangeIdentity = true;
             }
             seenBlockIds.add(block.dataset.pisiBlockId);
-        });
+        }
     } finally {
-        if (didMutateDom && selectionSnapshot) {
+        if ((didMutateDom || didChangeIdentity) && selectionSnapshot) {
             restorePisiEditorSelection(editor, selectionSnapshot);
         }
     }
