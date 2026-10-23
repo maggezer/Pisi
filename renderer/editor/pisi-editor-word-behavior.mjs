@@ -270,24 +270,66 @@ function applyPisiWordBlockStyle(toolbar, tagName) {
     const editor = getPisiWordEditor(toolbar);
     if (!editor) return false;
     restorePisiWordSelection(toolbar);
-    const range = getPisiWordRange(toolbar);
-    const block = getPisiWordBlock(editor, range?.startContainer);
+    const selection = window.getSelection?.();
+    const range = getPisiWordRangeInsideEditor(editor, selection);
+    if (!range) return false;
     const type = PISI_WORD_BLOCK_TYPES[String(tagName || '').toLowerCase()];
-    if (!block || !type || typeof window.applyPisiBlockType !== 'function') {
-        document.execCommand('formatBlock', false, tagName || 'div');
-        notifyPisiWordEditorChanged(editor);
-        return true;
+    const startBlock = getPisiWordBlock(editor, range.startContainer);
+    if (!startBlock || !type || typeof window.applyPisiBlockType !== 'function') return false;
+
+    // Capture offsets relative to the original blocks. Replacing a block tag
+    // moves its text nodes, so absolute DOM ranges are not reliable here.
+    const endBlock = getPisiWordBlock(editor, range.endContainer) || startBlock;
+    const blockStartOffset = (block, container, offset) => {
+        const prefix = document.createRange();
+        prefix.selectNodeContents(block);
+        prefix.setEnd(container, offset);
+        return prefix.toString().length;
+    };
+    const startOffset = blockStartOffset(startBlock, range.startContainer, range.startOffset);
+    const endOffset = blockStartOffset(endBlock, range.endContainer, range.endOffset);
+    const collapsed = range.collapsed;
+    const blocks = Array.from(editor.children).filter((block) => {
+        if (!block.classList.contains('pisi-editor-block')) return false;
+        if (collapsed) return block === startBlock;
+        try {
+            return range.intersectsNode(block) && range.toString().length > 0;
+        } catch {
+            return false;
+        }
+    });
+    if (!blocks.length) blocks.push(startBlock);
+    const converted = new Map();
+    for (const block of blocks) {
+        const next = window.applyPisiBlockType(block, type);
+        if (next) converted.set(block, next);
     }
-    const next = window.applyPisiBlockType(block, type);
-    if (next) {
-        const nextRange = document.createRange();
-        nextRange.selectNodeContents(next);
-        nextRange.collapse(false);
-        selectPisiWordRange(nextRange);
-    }
+    if (!converted.size) return false;
+
+    const resolveOffset = (block, offset) => {
+        const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+        let remaining = offset;
+        let last = null;
+        while (walker.nextNode()) {
+            const node = walker.currentNode;
+            last = node;
+            const length = node.nodeValue?.length || 0;
+            if (remaining <= length) return { node, offset: remaining };
+            remaining -= length;
+        }
+        return last ? { node: last, offset: last.nodeValue?.length || 0 } : { node: block, offset: 0 };
+    };
+    const first = converted.get(startBlock) || startBlock;
+    const last = converted.get(endBlock) || endBlock;
+    const from = resolveOffset(first, startOffset);
+    const to = resolveOffset(last, endOffset);
+    const restored = document.createRange();
+    restored.setStart(from.node, from.offset);
+    restored.setEnd(to.node, to.offset);
+    selectPisiWordRange(restored);
     rememberPisiWordSelection(toolbar);
     syncPisiWordToolbarState(toolbar);
-    return Boolean(next);
+    return true;
 }
 function applyPisiWordSheetFormat(toolbar, command, value) {
     const editor = getPisiWordEditor(toolbar);
