@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 export async function testEditorSelection(cdp) {
     await cdp.evaluate(`import('./renderer/editor/pisi-selection-bookmarks.mjs').then(api => { window.__e7SelectionApi = api; })`);
     await cdp.evaluate(`(() => {
+        window.__e7Trace = [];
         const editor = document.getElementById('center-node-editor-content');
         window.setPisiEditorContent(editor, '<div>abcdef</div><div>uvwxyz</div>');
         editor.focus();
@@ -36,6 +37,7 @@ export async function testEditorSelection(cdp) {
             bookmarkResolvable: Boolean(window.__e7SelectionApi.resolvePisiSelectionBookmark(editor, window.__e7SelectionSaved)),
             ids: Array.from(editor.children).map(el => el.dataset.pisiBlockId),
             html: editor.innerHTML,
+            trace: window.__e7Trace,
             backward: anchor?.closest('.pisi-editor-block') === editor.lastElementChild && focus?.closest('.pisi-editor-block') === editor.firstElementChild
         };
     })()`);
