@@ -236,3 +236,14 @@ test('B3 heading moves keep contiguous sections and resolve destination heading 
     assert.ok(source.includes('items.includes(target)'));
     assert.ok(source.includes('window.syncPisiWordHeadingCollapse?.(editor)'));
 });
+
+test('B4 normalization preserves direct-block identities, caret selection and direction', () => {
+    const source = read('renderer/tags/pisi-editor-blocks.mjs');
+    assert.match(source, /Array\.from\(editor\.children\)\.filter/);
+    assert.match(source, /const seenBlockIds = new Set\(\)/);
+    assert.match(source, /didChangeIdentity = true/);
+    assert.match(source, /didMutateDom \|\| didChangeIdentity/);
+    assert.match(source, /pathBlock\.dataset\?\.pisiBlockId !== point\?\.blockId/);
+    assert.match(source, /selection\.setBaseAndExtent/);
+    assert.doesNotMatch(source, /editor\.querySelectorAll\('h1,h2,h3,h4,h5,h6,p,li,blockquote,pre'\)\.forEach\(decoratePisiEditorBlock\)/);
+});
