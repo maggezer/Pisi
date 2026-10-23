@@ -160,6 +160,14 @@ function isValidPisiEditorRangeOffset(node, offset) {
 
 function resolvePisiEditorSelectionPoint(editor, point) {
     const pathNode = resolvePisiEditorNodePath(editor, point?.nodePath);
+    // A duplicate-id repair may rename the active block. In that case its
+    // original node path remains the most precise caret anchor.
+    const pathBlock = (pathNode?.nodeType === Node.ELEMENT_NODE ? pathNode : pathNode?.parentElement)?.closest?.('.pisi-editor-block');
+    if (pathBlock && editor.contains(pathBlock) && pathBlock.parentElement === editor &&
+        isValidPisiEditorRangeOffset(pathNode, point?.offset) &&
+        pathBlock.dataset?.pisiBlockId !== point?.blockId) {
+        return { node: pathNode, offset: point.offset };
+    }
     if (point?.blockId) {
         const block = Array.from(editor.querySelectorAll?.('.pisi-editor-block') || []).find((candidate) => candidate.dataset?.pisiBlockId === point.blockId);
         if (block) {
