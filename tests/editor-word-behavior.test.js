@@ -247,3 +247,14 @@ test('B4 normalization preserves direct-block identities, caret selection and di
     assert.match(source, /selection\.setBaseAndExtent/);
     assert.doesNotMatch(source, /editor\.querySelectorAll\('h1,h2,h3,h4,h5,h6,p,li,blockquote,pre'\)\.forEach\(decoratePisiEditorBlock\)/);
 });
+
+test('B5 structural block operations share one mutation finalizer', () => {
+    const source = read('renderer/editor/pisi-block-editor.mjs');
+    assert.match(source, /function commitPisiBlockMutation\(editor, selectedBlock, options = \{\}\)/);
+    assert.match(source, /if \(options\.normalize\) window\.ensurePisiEditorBlocks\?\.\(editor\)/);
+    assert.match(source, /function applyPisiBlockType[\s\S]*?commitPisiBlockMutation\(editor, next\)/);
+    assert.match(source, /function movePisiBlock[\s\S]*?commitPisiBlockMutation\(editor, block\)/);
+    assert.match(source, /function duplicatePisiBlock[\s\S]*?commitPisiBlockMutation\(editor, clones\[0\]\)/);
+    assert.match(source, /function deletePisiBlock[\s\S]*?commitPisiBlockMutation\(editor, focusTarget/);
+    assert.match(source, /function handlePisiBlockDrop[\s\S]*?commitPisiBlockMutation\(editor, dragged\)/);
+});
