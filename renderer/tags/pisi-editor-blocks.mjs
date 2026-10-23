@@ -462,13 +462,13 @@ function handlePisiEditorPaste(editor, event) {
             metadata.className = 'pisi-user-tag pisi-task-metadata';
             metadata.dataset.pisiTag = 'todo.1.none';
             metadata.contentEditable = 'false';
-            metadata.textContent = 'todo.1.none';
+            metadata.textContent = metadata.dataset.pisiTag;
             block.replaceChildren(metadata, source);
             if (item.checked) {
                 const done = /** @type {HTMLElement} */ (metadata.cloneNode(true));
                 done.dataset.pisiTag = 'done';
                 done.dataset.pisiDoneFor = 'todo.1.none';
-                done.textContent = 'done';
+                done.textContent = done.dataset.pisiTag;
                 block.prepend(done);
             }
         }

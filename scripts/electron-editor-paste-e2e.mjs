@@ -109,5 +109,17 @@ export async function testEditorPaste(cdp) {
     const persisted = await cdp.evaluate(`window.getPisiEditorContent(document.getElementById('center-node-editor-content'))`);
     assert.match(persisted, /href="#anchor"/);
     assert.match(persisted, /colspan="2"/);
+    result = await paste('<b>replacement</b>', 'replacement', '<div>original</div>', -1);
+    const pastedState = await cdp.evaluate(`window.getPisiEditorContent(document.getElementById('center-node-editor-content'))`);
+    for (const [redo, expected] of [
+        [false, 'original'],
+        [true, 'replacement']
+    ]) {
+        const params = { key: 'z', code: 'KeyZ', windowsVirtualKeyCode: 90, modifiers: redo ? 10 : 2 };
+        await cdp.request('Input.dispatchKeyEvent', { type: 'keyDown', ...params });
+        await cdp.request('Input.dispatchKeyEvent', { type: 'keyUp', ...params });
+        assert.equal(await cdp.evaluate(`document.getElementById('center-node-editor-content').textContent`), expected, 'paste must form one undo/redo step');
+    }
+    assert.equal(await cdp.evaluate(`window.getPisiEditorContent(document.getElementById('center-node-editor-content'))`), pastedState);
     console.log('EDITOR_PASTE_E2E_OK: Word/web/Unicode/code/tables and partial selections');
 }
