@@ -277,3 +277,11 @@ test('B7 nested list paste keeps parent inline content and nested list depth', (
     assert.match(source, /const indent = isNumber \? 0 : Math\.max\(0, Math\.min\(depth - 1, 6\)\)/);
     assert.match(source, /const isInternalPisi = \/class=/);
 });
+
+test('B8 block references reject detached blocks and duplicate identities', () => {
+    const source = read('renderer/editor/pisi-block-editor.mjs');
+    assert.match(source, /function copyPisiBlockReference\(block = getPisiActiveBlock\(\)\)/);
+    assert.match(source, /!block\?\.isConnected \|\| !editor\.contains\(block\)/);
+    assert.match(source, /matches\.length !== 1 \|\| matches\[0\] !== block/);
+    assert.match(source, /if \(!node\?\.path \|\| !blockId\) return false/);
+});
