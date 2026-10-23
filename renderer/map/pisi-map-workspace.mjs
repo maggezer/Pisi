@@ -1,3 +1,4 @@
+import { resetPisiEditorHistory } from '../editor/pisi-editor-history.mjs';
 import { beginPisiWorkspaceNavigation, isPisiWorkspaceNavigationCurrent } from '../editor/pisi-editor-navigation.mjs';
 import { getPisiEditorRestoreGeneration, isPisiEditorRestorePending } from '../editor/pisi-editor-restore.mjs';
 import { registerModule } from '../core/module-registry.mjs';
@@ -669,6 +670,7 @@ function setPisiEditorContent(editor, content = '') {
         if (typeof initializePisiAdvancedEditorContent === 'function') {
             initializePisiAdvancedEditorContent(editor);
         }
+        resetPisiEditorHistory(editor);
         return;
     }
 
@@ -679,6 +681,7 @@ function setPisiEditorContent(editor, content = '') {
     if (typeof initializePisiAdvancedEditorContent === 'function') {
         initializePisiAdvancedEditorContent(editor);
     }
+    resetPisiEditorHistory(editor);
 }
 
 function getPisiEditorContent(editor) {

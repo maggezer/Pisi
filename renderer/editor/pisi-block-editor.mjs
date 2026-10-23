@@ -1,4 +1,5 @@
 import { createPisiTaskBlockKeyboard } from './pisi-task-block-keyboard.mjs';
+import { bindPisiEditorHistory } from './pisi-editor-history.mjs';
 import { registerModule } from '../core/module-registry.mjs';
 import { registerPisiCommand } from '../core/pisi-command-registry.mjs';
 const PISI_BLOCK_TYPES = Object.freeze([
@@ -680,6 +681,7 @@ function bindPisiBlocksEditor(editor) {
     editor.dataset.pisiBlocksEditorBound = '1';
     editor.classList.add('pisi-block-system');
     decoratePisiBlockTypes(editor);
+    bindPisiEditorHistory(editor);
     editor.addEventListener('focusin', (event) => {
         const block = getPisiSelectionBlock(editor) || getPisiBlockAtEvent(editor, event.target) || getPisiActiveBlock();
         if (block) selectPisiBlock(editor, block);
