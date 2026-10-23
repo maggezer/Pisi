@@ -96,7 +96,6 @@ function sanitizePisiEditorHtml(html = '') {
         'aria-label',
         'data-pisi-block-id',
         'data-pisi-block-type',
-        'data-pisi-block-ref',
         'data-pisi-task-id',
         'data-pisi-todo-checkbox',
         'data-pisi-tag',

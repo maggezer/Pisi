@@ -11,7 +11,7 @@ export function rekeyPisiPastedBlocks(blocks, makeId) {
     for (const node of nodes) {
         if (node.dataset.pisiBlockId) node.dataset.pisiBlockId = blockIds.get(node.dataset.pisiBlockId);
         if (node.dataset.pisiTaskId) node.dataset.pisiTaskId = taskIds.get(node.dataset.pisiTaskId);
-        for (const key of ['pisiHeadingParent', 'pisiBlockRef', 'pisiTodoParent']) {
+        for (const key of ['pisiHeadingParent', 'pisiTodoParent']) {
             let value = node.dataset[key];
             if (!value) continue;
             for (const [oldId, newId] of [...blockIds, ...taskIds]) value = value.split(oldId).join(newId);

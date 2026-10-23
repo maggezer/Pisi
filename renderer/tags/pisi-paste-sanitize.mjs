@@ -5,7 +5,7 @@ const pasteTags = new Set(
 );
 const pasteStyles = new Set(['background-color', 'color', 'font-family', 'font-size', 'font-style', 'font-weight', 'text-align', 'text-decoration']);
 const internalData =
-    /^data-pisi-(?:block-id|block-type|task-id|tag|done-for|block-ref|heading-parent|section-break|section-exit|bullet-indent|bullet-collapsed|todo-(?:checkbox|for|parent|status|repeat|order|scheduled-at|deadline|reminder-at|duration-minutes|actual-minutes|completion-offset-days))$/;
+    /^data-pisi-(?:block-id|block-type|task-id|tag|done-for|heading-parent|section-break|section-exit|bullet-indent|bullet-collapsed|todo-(?:checkbox|for|parent|status|repeat|order|scheduled-at|deadline|reminder-at|duration-minutes|actual-minutes|completion-offset-days))$/;
 
 export function safePisiPasteHref(value = '') {
     const href = String(value).trim();

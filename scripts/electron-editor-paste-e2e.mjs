@@ -121,5 +121,34 @@ export async function testEditorPaste(cdp) {
         assert.equal(await cdp.evaluate(`document.getElementById('center-node-editor-content').textContent`), expected, 'paste must form one undo/redo step');
     }
     assert.equal(await cdp.evaluate(`window.getPisiEditorContent(document.getElementById('center-node-editor-content'))`), pastedState);
+    const compositePayload = await cdp.evaluate(`(async () => {
+        const editor = document.getElementById('center-node-editor-content');
+        window.setPisiEditorContent(editor, '<div><br></div>');
+        editor.focus();
+        const range = document.createRange();
+        range.selectNodeContents(editor.firstElementChild);
+        range.collapse(true);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        window.insertPisiSheet(editor, 2, 2);
+        const table = editor.querySelector('table[data-pisi-sheet]');
+        const database = window.getPisiSheetDatabase(table);
+        database.items[0].values[database.fields[0].id] = { value: 'KEEP_CLIPBOARD', formula: null, format: {} };
+        window.persistPisiSheetDatabase(table);
+        window.renderPisiSheetDatabase(table);
+        const module = await import('./renderer/editor/pisi-editor-composite-blocks.mjs');
+        if (!module.copyPisiCompositeBlock(table.closest('.pisi-sheet-block'))) throw new Error('Sheet clipboard copy failed');
+        return window.pisiClipboard.readText();
+    })()`);
+    assert.match(compositePayload, /^PISI_COMPOSITE_BLOCK_V1:/);
+    result = await paste('', compositePayload);
+    assert.match(result.html, /data-pisi-sheet/);
+    assert.equal(await cdp.evaluate(`(() => {
+        const table = document.querySelector('#center-node-editor-content table[data-pisi-sheet]');
+        const model = window.getPisiSheetDatabase(table);
+        return model.items[0].values[model.fields[0].id].value;
+    })()`), 'KEEP_CLIPBOARD');
+    result = await paste('<p>Fresh web text</p>');
+    assert.deepEqual(result.blocks.map(b => b.text), ['Fresh web text'], 'HTML-only clipboard must outrank an older composite copy');
     console.log('EDITOR_PASTE_E2E_OK: Word/web/Unicode/code/tables and partial selections');
 }

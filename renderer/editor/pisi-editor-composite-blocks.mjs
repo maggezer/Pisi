@@ -537,7 +537,9 @@ function readPisiCompositeClipboard(event) {
             return eventPayload;
         }
 
-        if (eventText) {
+        // An actual clipboard event outranks the last in-app composite copy.
+        // HTML-only web/Word content must never resurrect an older Sheet/Canvas.
+        if (eventText || event.clipboardData.getData?.('text/html') || event.clipboardData.types?.length) {
             return null;
         }
     }
