@@ -298,3 +298,18 @@ test('E1 multi-block inline formatting edits selected text nodes, not whole bloc
     assert.match(body, /selectedRange\.setStartBefore\(styled\[0\]\)/);
     assert.doesNotMatch(body, /if \(range\.intersectsNode\(block\)\) block\.style\[property\] = value/);
 });
+
+test('E2 heading formatting preserves caret offsets and formats all selected blocks', () => {
+    const source = read('renderer/editor/pisi-editor-word-behavior.mjs');
+    const start = source.indexOf('function applyPisiWordBlockStyle(');
+    const end = source.indexOf('function applyPisiWordSheetFormat(', start);
+    const body = source.slice(start, end);
+    assert.match(body, /const startOffset = blockStartOffset/);
+    assert.match(body, /const endOffset = blockStartOffset/);
+    assert.match(body, /const blocks = Array\.from\(editor\.children\)\.filter/);
+    assert.match(body, /for \(const block of blocks\)/);
+    assert.match(body, /converted\.set\(block, next\)/);
+    assert.match(body, /restored\.setStart\(from\.node, from\.offset\)/);
+    assert.match(body, /restored\.setEnd\(to\.node, to\.offset\)/);
+    assert.doesNotMatch(body, /nextRange\.collapse\(false\)/);
+});
