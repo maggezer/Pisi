@@ -49,36 +49,17 @@ function getPisiWordRangeInsideEditor(editor, selection = window.getSelection?.(
 function rememberPisiWordSelection(toolbar, force = false) {
     const editor = getPisiWordEditor(toolbar);
     const range = getPisiWordRangeInsideEditor(editor);
-    Reflect.get(window, '__e7Trace')?.push({
-        op: 'remember',
-        force,
-        text: window.getSelection()?.toString(),
-        range: range ? [range.startContainer.nodeName, range.startOffset, range.endContainer.nodeName, range.endOffset] : null
-    });
     if (!range) return false;
     const saved = pisiWordToolbarSelections.get(toolbar);
     if (!force && isPisiSelectionBookmarkDisplaced(editor, saved)) return false;
     const bookmark = capturePisiSelectionBookmark(editor);
     if (!bookmark) return false;
     pisiWordToolbarSelections.set(toolbar, bookmark);
-    Reflect.get(window, '__e7Trace')?.push({
-        op: 'saved',
-        a: bookmark.anchor.offset,
-        f: bookmark.focus.offset,
-        aId: bookmark.anchor.blockId,
-        fId: bookmark.focus.blockId
-    });
     return true;
 }
 function restorePisiWordSelection(toolbar) {
     const editor = getPisiWordEditor(toolbar);
     const saved = pisiWordToolbarSelections.get(toolbar);
-    Reflect.get(window, '__e7Trace')?.push({
-        op: 'restore',
-        a: saved?.anchor.offset,
-        f: saved?.focus.offset,
-        valid: Boolean(editor && resolvePisiSelectionBookmark(editor, saved))
-    });
     if (!editor || !saved) return false;
     if (!restorePisiSelectionBookmark(editor, saved)) {
         pisiWordToolbarSelections.delete(toolbar);

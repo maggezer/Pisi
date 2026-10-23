@@ -1,19 +1,14 @@
 import assert from 'node:assert/strict';
 
 export async function testEditorSelection(cdp) {
-    await cdp.evaluate(`import('./renderer/editor/pisi-selection-bookmarks.mjs').then(api => { window.__e7SelectionApi = api; })`);
     await cdp.evaluate(`(() => {
-        window.__e7Trace = [];
         const editor = document.getElementById('center-node-editor-content');
         window.setPisiEditorContent(editor, '<div>abcdef</div><div>uvwxyz</div>');
         editor.focus();
         const [first, last] = editor.children;
         window.getSelection().setBaseAndExtent(last.firstChild, 4, first.firstChild, 2);
-        window.__e7SelectionSaved = window.__e7SelectionApi.capturePisiSelectionBookmark(editor);
-        const toolbar = document.querySelector('[data-editor-target="center-node-editor-content"]');
-        window.__e7Trace?.push({op: 'beforepointer', text: window.getSelection().toString(), toolbar: toolbar.outerHTML.slice(0,200)});
+        const toolbar = document.querySelector('.pisi-word-toolbar[data-editor-target="center-node-editor-content"]');
         toolbar.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
-        window.__e7Trace?.push({op: 'afterpointer', text: window.getSelection().toString()});
         toolbar.querySelector('select[data-pisi-unified-command="fontSize"]').focus();
         for (const block of Array.from(editor.children)) {
             const replacement = document.createElement('h2');
@@ -25,7 +20,7 @@ export async function testEditorSelection(cdp) {
     })()`);
     const result = await cdp.evaluate(`(() => {
         const editor = document.getElementById('center-node-editor-content');
-        const toolbar = document.querySelector('[data-editor-target="center-node-editor-content"]');
+        const toolbar = document.querySelector('.pisi-word-toolbar[data-editor-target="center-node-editor-content"]');
         const select = toolbar.querySelector('select[data-pisi-unified-command="fontSize"]');
         select.value = '24';
         select.dispatchEvent(new Event('change', { bubbles: true }));
@@ -36,10 +31,8 @@ export async function testEditorSelection(cdp) {
             styled: Array.from(editor.querySelectorAll('[style*="24px"]')).map(el => el.textContent),
             text: editor.textContent,
             selection: selection.toString(),
-            bookmarkResolvable: Boolean(window.__e7SelectionApi.resolvePisiSelectionBookmark(editor, window.__e7SelectionSaved)),
             ids: Array.from(editor.children).map(el => el.dataset.pisiBlockId),
             html: editor.innerHTML,
-            trace: window.__e7Trace,
             backward: anchor?.closest('.pisi-editor-block') === editor.lastElementChild && focus?.closest('.pisi-editor-block') === editor.firstElementChild
         };
     })()`);
@@ -52,14 +45,14 @@ export async function testEditorSelection(cdp) {
         window.setPisiEditorContent(editor, '<div>untouched</div><div>A😀BC</div>');
         editor.focus();
         window.getSelection().setPosition(editor.lastElementChild.firstChild, 3);
-        const toolbar = document.querySelector('[data-editor-target="center-node-editor-content"]');
+        const toolbar = document.querySelector('.pisi-word-toolbar[data-editor-target="center-node-editor-content"]');
         toolbar.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
         toolbar.querySelector('select[data-pisi-unified-command="fontSize"]').focus();
         editor.lastElementChild.innerHTML = '<strong>A😀BC</strong>';
     })()`);
     const change = (editorId = 'center-node-editor-content', command = 'fontSize', value = '24') =>
         cdp.evaluate(`(() => {
-        const toolbar = document.querySelector('[data-editor-target="${editorId}"]');
+        const toolbar = document.querySelector('.pisi-word-toolbar[data-editor-target="${editorId}"]');
         const select = toolbar.querySelector('select[data-pisi-unified-command="${command}"]');
         select.value = '${value}';
         select.dispatchEvent(new Event('change', { bubbles: true }));
@@ -76,7 +69,7 @@ export async function testEditorSelection(cdp) {
         window.setPisiEditorContent(editor, '<div>one<br>two</div>');
         editor.focus();
         window.getSelection().setBaseAndExtent(editor.firstElementChild.lastChild, 1, editor.firstElementChild.lastChild, 3);
-        const toolbar = document.querySelector('[data-editor-target="center-node-editor-content"]');
+        const toolbar = document.querySelector('.pisi-word-toolbar[data-editor-target="center-node-editor-content"]');
         toolbar.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
         toolbar.querySelector('select[data-pisi-unified-command="fontSize"]').focus();
         editor.firstElementChild.innerHTML = '<em>one<br>two</em>';
@@ -94,7 +87,7 @@ export async function testEditorSelection(cdp) {
             window.setPisiEditorContent(editor, '<div class="pisi-editor-block" data-pisi-block-id="blk_bookmark_source">selected</div><div>keep</div>');
             editor.focus();
             window.getSelection().setBaseAndExtent(editor.firstElementChild.firstChild, 1, editor.firstElementChild.firstChild, 5);
-            const toolbar = document.querySelector('[data-editor-target="center-node-editor-content"]');
+            const toolbar = document.querySelector('.pisi-word-toolbar[data-editor-target="center-node-editor-content"]');
             toolbar.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
             toolbar.querySelector('select[data-pisi-unified-command="fontSize"]').focus();
             if ('${mutation}' === 'remove') editor.firstElementChild.remove();
@@ -115,7 +108,7 @@ export async function testEditorSelection(cdp) {
         window.setPisiEditorContent(editor, '<div>abcdef</div><div>uvwxyz</div>');
         editor.focus();
         window.getSelection().setBaseAndExtent(editor.lastElementChild.firstChild, 4, editor.firstElementChild.firstChild, 2);
-        const toolbar = document.querySelector('[data-editor-target="center-node-editor-content"]');
+        const toolbar = document.querySelector('.pisi-word-toolbar[data-editor-target="center-node-editor-content"]');
         toolbar.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
         toolbar.querySelector('select[data-pisi-unified-command="formatBlock"]').focus();
     })()`);
@@ -134,7 +127,7 @@ export async function testEditorSelection(cdp) {
         window.setPisiEditorContent(editor, '<div>modal text</div>');
         editor.focus();
         window.getSelection().setBaseAndExtent(editor.firstElementChild.firstChild, 6, editor.firstElementChild.firstChild, 10);
-        const toolbar = document.querySelector('[data-editor-target="node-modal-content"]');
+        const toolbar = document.querySelector('.pisi-word-toolbar[data-editor-target="node-modal-content"]');
         toolbar.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
         toolbar.querySelector('select[data-pisi-unified-command="fontSize"]').focus();
         editor.firstElementChild.innerHTML = '<strong>modal text</strong>';
