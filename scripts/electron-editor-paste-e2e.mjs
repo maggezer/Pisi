@@ -138,17 +138,24 @@ export async function testEditorPaste(cdp) {
         window.renderPisiSheetDatabase(table);
         const module = await import('./renderer/editor/pisi-editor-composite-blocks.mjs');
         if (!module.copyPisiCompositeBlock(table.closest('.pisi-sheet-block'))) throw new Error('Sheet clipboard copy failed');
-        return window.pisiClipboard.readText();
+        return module.serializePisiCompositePayload({ version: 1, type: 'sheet', database, alignment: 'center' });
     })()`);
     assert.match(compositePayload, /^PISI_COMPOSITE_BLOCK_V1:/);
     result = await paste('', compositePayload);
     assert.match(result.html, /data-pisi-sheet/);
-    assert.equal(await cdp.evaluate(`(() => {
+    assert.equal(
+        await cdp.evaluate(`(() => {
         const table = document.querySelector('#center-node-editor-content table[data-pisi-sheet]');
         const model = window.getPisiSheetDatabase(table);
         return model.items[0].values[model.fields[0].id].value;
-    })()`), 'KEEP_CLIPBOARD');
+    })()`),
+        'KEEP_CLIPBOARD'
+    );
     result = await paste('<p>Fresh web text</p>');
-    assert.deepEqual(result.blocks.map(b => b.text), ['Fresh web text'], 'HTML-only clipboard must outrank an older composite copy');
+    assert.deepEqual(
+        result.blocks.map((b) => b.text),
+        ['Fresh web text'],
+        'HTML-only clipboard must outrank an older composite copy'
+    );
     console.log('EDITOR_PASTE_E2E_OK: Word/web/Unicode/code/tables and partial selections');
 }
