@@ -1,3 +1,4 @@
+import { normalizePisiWordFontFamily, normalizePisiWordFontSize, ensurePisiWordSelectOption } from './pisi-word-font-controls.mjs';
 const PISI_WORD_FONT_FAMILIES = Object.freeze(['Aptos', 'Calibri', 'Segoe UI', 'Arial', 'Times New Roman', 'Georgia', 'Consolas']);
 const PISI_WORD_FONT_SIZES = Object.freeze([8, 9, 10, 11, 12, 14, 15, 16, 18, 20, 24, 28, 32, 36, 48, 72]);
 const PISI_WORD_STYLE_OPTIONS = Object.freeze([
@@ -91,33 +92,6 @@ function getPisiWordBlock(editor, node) {
     const element = node?.nodeType === Node.TEXT_NODE ? node.parentElement : node;
     const block = element?.closest?.('.pisi-editor-block');
     return block && editor?.contains(block) ? block : null;
-}
-function normalizePisiWordFontFamily(value = '') {
-    const first = String(value || '')
-        .split(',')[0]
-        .trim()
-        .replace(/^['"]|['"]$/g, '');
-    return first || 'Segoe UI';
-}
-function normalizePisiWordFontSize(value = '') {
-    const parsed = Number.parseFloat(String(value || '').replace('px', ''));
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : 15;
-}
-function ensurePisiWordSelectOption(select, value, label = value) {
-    if (!select) return;
-    const normalized = String(value);
-    let option = Array.from(select.options).find((item) => item.value === normalized);
-    select.querySelectorAll('option[data-pisi-word-dynamic="1"]').forEach((item) => {
-        if (item.value !== normalized) item.remove();
-    });
-    if (!option) {
-        option = document.createElement('option');
-        option.value = normalized;
-        option.textContent = String(label);
-        option.dataset.pisiWordDynamic = '1';
-        select.appendChild(option);
-    }
-    select.value = normalized;
 }
 function setPisiWordCommandPressed(toolbar, command, pressed) {
     const button = toolbar?.querySelector(`button[data-pisi-unified-command="${command}"]`);
