@@ -83,7 +83,16 @@ function extractPisiBlockMeta(block) {
 function buildExtraBlockAttrs(meta) {
     if (!meta || typeof meta !== 'object') return '';
     let attrs = '';
-    const map = { taskId: 'data-pisi-task-id', headingParent: 'data-pisi-heading-parent', todoParent: 'data-pisi-todo-parent', blockRef: 'data-pisi-block-ref', repeat: 'data-pisi-todo-repeat', scheduledAt: 'data-pisi-todo-scheduled-at', deadline: 'data-pisi-todo-deadline', reminderAt: 'data-pisi-todo-reminder-at' };
+    const map = {
+        taskId: 'data-pisi-task-id',
+        headingParent: 'data-pisi-heading-parent',
+        todoParent: 'data-pisi-todo-parent',
+        blockRef: 'data-pisi-block-ref',
+        repeat: 'data-pisi-todo-repeat',
+        scheduledAt: 'data-pisi-todo-scheduled-at',
+        deadline: 'data-pisi-todo-deadline',
+        reminderAt: 'data-pisi-todo-reminder-at'
+    };
     for (const [key, attr] of Object.entries(map)) {
         if (meta[key]) attrs += ` ${attr}="${escapePisiBlockHtml(meta[key])}"`;
     }
@@ -100,7 +109,11 @@ function makePisiBlockHtml(type, content, indent = 0, meta = null) {
 }
 const encodePisiRollupMarkdownValue = (value = '') => encodeURIComponent(String(value || ''));
 function decodePisiRollupMarkdownValue(value = '') {
-    try { return decodeURIComponent(String(value || '')); } catch { return ''; }
+    try {
+        return decodeURIComponent(String(value || ''));
+    } catch {
+        return '';
+    }
 }
 function makePisiRollupBlockHtml(config = {}) {
     const blockId = config.blockId || window.makePisiBlockId?.() || `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
@@ -111,9 +124,12 @@ function makePisiRollupBlockHtml(config = {}) {
     return `<div class="pisi-editor-block pisi-rollup-block" data-pisi-block-id="${blockId}" data-pisi-block-type="rollup" data-pisi-rollup-relation="${relation}" data-pisi-rollup-target="${target}" data-pisi-rollup-aggregate="${aggregate}" contenteditable="false"${extra}><div class="pisi-rollup-block-loading">Rollup</div></div>`;
 }
 function pisiBlockMarkdownToHtml(markdown = '') {
-    const lines = String(markdown || '').replace(/\r\n?/g, '\n').split('\n');
+    const lines = String(markdown || '')
+        .replace(/\r\n?/g, '\n')
+        .split('\n');
     const output = [];
-    let codeLines = null, codeMeta = null;
+    let codeLines = null,
+        codeMeta = null;
     for (const rawLine of lines) {
         if (/^\`\`\`/.test(rawLine)) {
             if (codeLines) {
@@ -131,7 +147,11 @@ function pisiBlockMarkdownToHtml(markdown = '') {
             } else {
                 codeLines = [];
                 const m = rawLine.match(/\s*<!--\s*pisi:meta\s+(\{[\s\S]*?\})\s*-->\s*$/);
-                if (m) { try { codeMeta = JSON.parse(m[1]); } catch {} }
+                if (m) {
+                    try {
+                        codeMeta = JSON.parse(m[1]);
+                    } catch {}
+                }
             }
             continue;
         }
@@ -150,7 +170,9 @@ function pisiBlockMarkdownToHtml(markdown = '') {
         }
         if (/^<!--\s*pisi:section-end(?:\s*-->)?/.test(line)) {
             const blockId = meta?.id || window.makePisiBlockId?.() || `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-            output.push(`<div class="pisi-editor-block pisi-section-break" data-pisi-block-id="${blockId}" data-pisi-section-break="true"${buildExtraBlockAttrs(meta)}><br></div>`);
+            output.push(
+                `<div class="pisi-editor-block pisi-section-break" data-pisi-block-id="${blockId}" data-pisi-section-break="true"${buildExtraBlockAttrs(meta)}><br></div>`
+            );
             continue;
         }
         const rollup = line.match(/^\{\{pisi-rollup:([^:]*):([^:]*):(count|sum|average|min|max|unique|join)\}\}/);
@@ -160,7 +182,15 @@ function pisiBlockMarkdownToHtml(markdown = '') {
         const number = line.match(/^\d+[.)]\s+(.+)$/);
         const quote = line.match(/^>\s?(.*)$/);
         if (rollup) {
-            output.push(makePisiRollupBlockHtml({ relationProperty: decodePisiRollupMarkdownValue(rollup[1]), targetProperty: decodePisiRollupMarkdownValue(rollup[2]), aggregate: rollup[3], blockId: meta?.id, meta }));
+            output.push(
+                makePisiRollupBlockHtml({
+                    relationProperty: decodePisiRollupMarkdownValue(rollup[1]),
+                    targetProperty: decodePisiRollupMarkdownValue(rollup[2]),
+                    aggregate: rollup[3],
+                    blockId: meta?.id,
+                    meta
+                })
+            );
         } else if (heading) {
             output.push(makePisiBlockHtml(`heading${heading[1].length}`, pisiInlineMarkdownToHtml(heading[2]), 0, meta));
         } else if (task) {
@@ -172,7 +202,9 @@ function pisiBlockMarkdownToHtml(markdown = '') {
                 const taskIdAttr = meta.taskId ? ` data-pisi-task-id="${escapePisiBlockHtml(meta.taskId)}"` : '';
                 const marker = `<span class="pisi-block-task-marker" contenteditable="false" data-pisi-todo-checkbox="${tag}" role="checkbox" aria-checked="${checked}">${checked ? '☑' : '☐'}</span>`;
                 const tagEl = `<span class="pisi-user-tag pisi-task-metadata" data-pisi-tag="${tag}"${taskIdAttr} contenteditable="false" aria-hidden="true">${tag}</span>`;
-                const doneEl = checked ? `<span class="pisi-user-tag pisi-task-metadata" data-pisi-tag="done" data-pisi-done-for="${tag}" contenteditable="false" aria-hidden="true">done</span>` : '';
+                const doneEl = checked
+                    ? `<span class="pisi-user-tag pisi-task-metadata" data-pisi-tag="done" data-pisi-done-for="${tag}" contenteditable="false" aria-hidden="true">done</span>`
+                    : '';
                 const source = `<span class="pisi-todo-source" data-pisi-todo-for="${tag}">${taskText || '&nbsp;'}</span>`;
                 taskContent = `${marker}${tagEl}${doneEl} ${source}`;
             } else {
@@ -235,36 +267,43 @@ function pisiBlockHtmlToMarkdown(editor) {
         return !parentBlock || !editor.contains(parentBlock);
     });
     let numberRun = 0;
-    return blocks.map((block) => {
-        const type = getPisiBlockType(block);
-        const meta = extractPisiBlockMeta(block);
-        const metaStr = meta ? ` <!-- pisi:meta ${JSON.stringify(meta)} -->` : '';
-        if (type === 'rollup') {
-            const relation = encodePisiRollupMarkdownValue(block.dataset.pisiRollupRelation || '');
-            const target = encodePisiRollupMarkdownValue(block.dataset.pisiRollupTarget || '');
-            const aggregate = /^(?:count|sum|average|min|max|unique|join)$/.test(block.dataset.pisiRollupAggregate) ? block.dataset.pisiRollupAggregate : 'count';
-            return `{{pisi-rollup:${relation}:${target}:${aggregate}}}${metaStr}`;
-        }
-        const text = pisiInlineHtmlToMarkdown(block);
-        if (block.classList.contains('pisi-section-break') || block.dataset?.pisiSectionBreak === 'true') {
-            return `<!-- pisi:section-end -->${metaStr}`;
-        }
-        if (type.startsWith('heading')) return `${'#'.repeat(Number(type.slice(-1)))} ${text}${metaStr}`;
-        if (type === 'quote') return `> ${text}${metaStr}`;
-        if (type === 'code') return '```\n' + (block.textContent || '') + '\n```' + metaStr;
-        if (type === 'bullet') {
-            const indent = Number(block.dataset?.pisiBulletIndent || 0);
-            return `${'  '.repeat(indent)}- ${text}${metaStr}`;
-        }
-        if (type === 'number') return `${++numberRun}. ${text}${metaStr}`;
-        numberRun = 0;
-        if (type === 'task') {
-            const marker = block.querySelector('.pisi-block-task-marker');
-            const checked = marker?.textContent === '☑' || marker?.getAttribute('aria-checked') === 'true' || Boolean(block.querySelector('.pisi-user-tag[data-pisi-tag="done"]'));
-            return `- [${checked ? 'x' : ' '}] ${text.trimStart()}${metaStr}`;
-        }
-        return `${text}${metaStr}`;
-    }).join('\n');
+    return blocks
+        .map((block) => {
+            const type = getPisiBlockType(block);
+            const meta = extractPisiBlockMeta(block);
+            const metaStr = meta ? ` <!-- pisi:meta ${JSON.stringify(meta)} -->` : '';
+            if (type === 'rollup') {
+                const relation = encodePisiRollupMarkdownValue(block.dataset.pisiRollupRelation || '');
+                const target = encodePisiRollupMarkdownValue(block.dataset.pisiRollupTarget || '');
+                const aggregate = /^(?:count|sum|average|min|max|unique|join)$/.test(block.dataset.pisiRollupAggregate)
+                    ? block.dataset.pisiRollupAggregate
+                    : 'count';
+                return `{{pisi-rollup:${relation}:${target}:${aggregate}}}${metaStr}`;
+            }
+            const text = pisiInlineHtmlToMarkdown(block);
+            if (block.classList.contains('pisi-section-break') || block.dataset?.pisiSectionBreak === 'true') {
+                return `<!-- pisi:section-end -->${metaStr}`;
+            }
+            if (type.startsWith('heading')) return `${'#'.repeat(Number(type.slice(-1)))} ${text}${metaStr}`;
+            if (type === 'quote') return `> ${text}${metaStr}`;
+            if (type === 'code') return '```\n' + (block.textContent || '') + '\n```' + metaStr;
+            if (type === 'bullet') {
+                const indent = Number(block.dataset?.pisiBulletIndent || 0);
+                return `${'  '.repeat(indent)}- ${text}${metaStr}`;
+            }
+            if (type === 'number') return `${++numberRun}. ${text}${metaStr}`;
+            numberRun = 0;
+            if (type === 'task') {
+                const marker = block.querySelector('.pisi-block-task-marker');
+                const checked =
+                    marker?.textContent === '☑' ||
+                    marker?.getAttribute('aria-checked') === 'true' ||
+                    Boolean(block.querySelector('.pisi-user-tag[data-pisi-tag="done"]'));
+                return `- [${checked ? 'x' : ' '}] ${text.trimStart()}${metaStr}`;
+            }
+            return `${text}${metaStr}`;
+        })
+        .join('\n');
 }
 function getPisiActiveBlocksEditor() {
     if (window.activeModalNode) return document.getElementById('node-modal-content');
@@ -391,9 +430,8 @@ function applyPisiBlockType(block, type) {
 function getPisiMovableBlockSection(editor, block) {
     if (!editor || !block || block.parentElement !== editor || !block.classList.contains('pisi-editor-block')) return [];
     const descendants =
-        (block.dataset?.pisiBlockType === 'bullet'
-            ? window.getPisiBulletDescendants?.(editor, block)
-            : window.getPisiHeadingSectionBlocks?.(editor, block)) || [];
+        (block.dataset?.pisiBlockType === 'bullet' ? window.getPisiBulletDescendants?.(editor, block) : window.getPisiHeadingSectionBlocks?.(editor, block)) ||
+        [];
     const section = [block, ...descendants];
     // A section must be a contiguous sequence of direct editor children.
     if (section.some((item, index) => item.parentElement !== editor || (index > 0 && section[index - 1].nextElementSibling !== item))) return [];
@@ -471,7 +509,16 @@ function duplicatePisiBlock(block) {
             if (oldTaskId) el.dataset.pisiTaskId = taskIdMap.get(oldTaskId);
         }
     }
-    const remapAttrs = ['pisiHeadingParent', 'pisiRollupTarget', 'pisiRollupRelation', 'pisiTodoFor', 'pisiDoneFor', 'pisiBlockRef', 'pisiDiaryBlockId', 'pisiDiaryParent'];
+    const remapAttrs = [
+        'pisiHeadingParent',
+        'pisiRollupTarget',
+        'pisiRollupRelation',
+        'pisiTodoFor',
+        'pisiDoneFor',
+        'pisiBlockRef',
+        'pisiDiaryBlockId',
+        'pisiDiaryParent'
+    ];
     for (const clone of clones) {
         for (const el of [clone, ...(clone.querySelectorAll?.('*') || [])]) {
             el.classList?.remove?.('pisi-block-active', 'pisi-heading-collapsed', 'pisi-heading-section-hidden');
@@ -882,7 +929,16 @@ function bindPisiBlocksEditor(editor) {
     editor.addEventListener('beforeinput', (event) => {
         const block = getPisiSelectionBlock(editor) || getPisiBlockAtEvent(editor, event.target) || getPisiActiveBlock();
         if (!block) return;
-        const fakeEvt = (key) => ({ key, shiftKey: false, ctrlKey: false, metaKey: false, altKey: false, isComposing: false, preventDefault: () => event.preventDefault(), stopImmediatePropagation: () => event.stopImmediatePropagation() });
+        const fakeEvt = (key) => ({
+            key,
+            shiftKey: false,
+            ctrlKey: false,
+            metaKey: false,
+            altKey: false,
+            isComposing: false,
+            preventDefault: () => event.preventDefault(),
+            stopImmediatePropagation: () => event.stopImmediatePropagation()
+        });
         if (event.inputType === 'insertParagraph') {
             if (!splitPisiTaskBlockOnEnter(editor, block, fakeEvt('Enter'))) {
                 if (!window.handlePisiBulletKeydown?.(editor, fakeEvt('Enter'), block)) {
@@ -931,7 +987,11 @@ function ensurePisiMarkdownSourceDialog() {
         const editor = pisiBlocksEditorState.sourceEditor;
         if (!editor) return closePisiMarkdownSource();
         if (editor.querySelector?.('.pisi-sheet-block, .pisi-canvas-block, table[data-pisi-sheet]')) {
-            window.alert?.(pisiBlockTranslate('Sheet veya Canvas içeren notlarda Markdown kaynağı uygulanamaz. Veri kaybını önlemek için bu blokları ayrı bir nota taşıyın.'));
+            window.alert?.(
+                pisiBlockTranslate(
+                    'Sheet veya Canvas içeren notlarda Markdown kaynağı uygulanamaz. Veri kaybını önlemek için bu blokları ayrı bir nota taşıyın.'
+                )
+            );
             return;
         }
         editor.innerHTML = pisiBlockMarkdownToHtml(textarea.value);
@@ -956,7 +1016,9 @@ function openPisiMarkdownSource(editor = getPisiActiveBlocksEditor()) {
     const hasSpecial = Boolean(editor.querySelector?.('.pisi-sheet-block, .pisi-canvas-block, table[data-pisi-sheet]'));
     if (pisiBlocksEditorState.sourceWarning) {
         pisiBlocksEditorState.sourceWarning.style.display = hasSpecial ? 'block' : 'none';
-        pisiBlocksEditorState.sourceWarning.textContent = hasSpecial ? pisiBlockTranslate('Dikkat: Bu notta Sheet veya Canvas blokları bulunmaktadır. WYSIWYG görünümüne uygulandığında bu bloklar sıfırlanabilir.') : '';
+        pisiBlocksEditorState.sourceWarning.textContent = hasSpecial
+            ? pisiBlockTranslate('Dikkat: Bu notta Sheet veya Canvas blokları bulunmaktadır. WYSIWYG görünümüne uygulandığında bu bloklar sıfırlanabilir.')
+            : '';
     }
     overlay.hidden = false;
     pisiBlocksEditorState.sourceTextarea.focus?.();

@@ -112,7 +112,10 @@ function capturePisiEditorSelection(editor) {
         };
     };
 
-    const backward = !selection.isCollapsed && selection.anchorNode && selection.focusNode &&
+    const backward =
+        !selection.isCollapsed &&
+        selection.anchorNode &&
+        selection.focusNode &&
         (() => {
             const anchor = document.createRange();
             anchor.setStart(selection.anchorNode, selection.anchorOffset);
@@ -163,9 +166,13 @@ function resolvePisiEditorSelectionPoint(editor, point) {
     // A duplicate-id repair may rename the active block. In that case its
     // original node path remains the most precise caret anchor.
     const pathBlock = (pathNode?.nodeType === Node.ELEMENT_NODE ? pathNode : pathNode?.parentElement)?.closest?.('.pisi-editor-block');
-    if (pathBlock && editor.contains(pathBlock) && pathBlock.parentElement === editor &&
+    if (
+        pathBlock &&
+        editor.contains(pathBlock) &&
+        pathBlock.parentElement === editor &&
         isValidPisiEditorRangeOffset(pathNode, point?.offset) &&
-        pathBlock.dataset?.pisiBlockId !== point?.blockId) {
+        pathBlock.dataset?.pisiBlockId !== point?.blockId
+    ) {
         return { node: pathNode, offset: point.offset };
     }
     if (point?.blockId) {
