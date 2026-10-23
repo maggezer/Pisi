@@ -208,7 +208,7 @@ test('non-heading blocks require double Enter to exit while 1st Enter inserts li
     const blockSource = read('renderer/editor/pisi-block-editor.mjs');
 
     assert.match(wordSource, /isPisiCurrentLineEmpty/);
-    assert.match(wordSource, /insertLineBreak/);
+    assert.match(wordSource, /insertPisiKeyboardLineBreak\(editor, block, range\)/);
     assert.match(wordSource, /if \(!isLineEmpty\)/);
     assert.match(wordSource, /nextBlock\.dataset\.pisiBlockType = 'paragraph'/);
     assert.match(blockSource, /handlePisiHeadingSectionKeydown/);

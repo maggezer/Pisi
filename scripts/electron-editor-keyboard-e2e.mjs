@@ -33,6 +33,21 @@ export async function testEditorKeyboard(cdp) {
         return !editor.dispatchEvent(new InputEvent('beforeinput', { inputType: ${JSON.stringify(inputType)}, isComposing: ${isComposing}, bubbles: true, cancelable: true }));
     })()`);
 
+    const selectText = (index, start, end = start) =>
+        run(`(() => {
+        const editor = document.getElementById('center-node-editor-content');
+        const block = editor.children[${index}];
+        const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+        let text = walker.nextNode();
+        while (text && text.parentElement.closest('.pisi-block-task-marker, .pisi-task-metadata')) text = walker.nextNode();
+        const range = document.createRange();
+        range.setStart(text || block, ${start});
+        range.setEnd(text || block, ${end});
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        editor.focus();
+    })()`);
+
     // The established two-Enter rule is deliberate: first a soft line, then a new block.
     for (const [tag, type] of [
         ['div', 'paragraph'],
@@ -85,5 +100,77 @@ export async function testEditorKeyboard(cdp) {
     const composingBefore = await blocks();
     assert.equal(await beforeInput('insertParagraph', true), false);
     assert.deepEqual(await blocks(), composingBefore, 'IME composition must not split a heading');
+
+    for (const type of ['bullet', 'number']) {
+        await setup('<div data-pisi-block-type="' + type + '">abcdef</div>', 3);
+        await key('Enter');
+        const split = await blocks();
+        assert.deepEqual(
+            split.map(({ type, text }) => ({ type, text })),
+            [
+                { type, text: 'abc' },
+                { type, text: 'def' }
+            ]
+        );
+        assert.notEqual(split[0].id, split[1].id, 'splitting must allocate a new identity');
+        await setup('<div data-pisi-block-type="' + type + '"><br></div>');
+        await key('Enter');
+        assert.equal((await blocks())[0].type, 'paragraph');
+        assert.equal((await blocks()).length, 1);
+        await setup('<div data-pisi-block-type="' + type + '">abcdef</div>');
+        const original = (await blocks())[0].id;
+        await key('Backspace');
+        assert.deepEqual(await blocks(), [{ type: 'paragraph', text: 'abcdef', id: original }]);
+    }
+    const task = (text) => '<div data-pisi-block-type="task"><span class="pisi-block-task-marker" contenteditable="false">☐</span>' + text + '</div>';
+    await setup(task('abcdef'), 3);
+    await key('Enter');
+    assert.deepEqual(
+        (await blocks()).map(({ type, text }) => ({ type, text })),
+        [
+            { type: 'task', text: 'abc' },
+            { type: 'paragraph', text: 'def' }
+        ]
+    );
+    await setup(task('abcdef'));
+    await key('Enter');
+    assert.deepEqual(
+        (await blocks()).map(({ type, text }) => ({ type, text })),
+        [
+            { type: 'task', text: '' },
+            { type: 'paragraph', text: 'abcdef' }
+        ]
+    );
+    await setup(task(''));
+    await key('Enter');
+    assert.equal((await blocks()).length, 1);
+    assert.equal((await blocks())[0].type, 'paragraph');
+    for (const deletion of ['Backspace', 'Delete']) {
+        await setup(task('abcdef'));
+        await selectText(0, 0, 6);
+        await key(deletion);
+        assert.equal((await blocks())[0].text, '', deletion + ': selected task text must actually be deleted');
+        assert.equal((await blocks())[0].type, 'paragraph');
+    }
+    for (const tag of ['h2', 'blockquote', 'pre']) {
+        await setup('<' + tag + '><br></' + tag + '>');
+        const id = (await blocks())[0].id;
+        await key('Backspace');
+        assert.deepEqual(await blocks(), [{ type: 'paragraph', text: '', id }]);
+    }
+    for (const deletion of ['Backspace', 'Delete']) {
+        await setup('<div>left</div><h2>right</h2>', 4);
+        const id = (await blocks())[0].id;
+        if (deletion === 'Backspace') await selectText(1, 0);
+        await key(deletion);
+        assert.deepEqual(await blocks(), [{ type: 'paragraph', text: 'leftright', id }], deletion + ': preserve the left block identity');
+    }
+    await setup('<div data-pisi-block-type="bullet" data-pisi-bullet-indent="2">abc</div>');
+    await key('Backspace');
+    assert.equal(await run(`document.getElementById('center-node-editor-content').firstElementChild.dataset.pisiBulletIndent`), '1');
+    await setup('<div><strong>alpha</strong></div>', 5);
+    await key('Enter');
+    await key('Enter');
+    assert.equal((await blocks()).length, 2, 'empty styled lines must also exit on the second Enter');
     console.log('EDITOR_KEYBOARD_E2E_OK: block Enter, Shift+Enter, deletion and beforeinput rules');
 }

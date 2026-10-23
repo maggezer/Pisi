@@ -1,5 +1,7 @@
 import { createPisiTaskBlockKeyboard } from './pisi-task-block-keyboard.mjs';
 import { bindPisiEditorHistory } from './pisi-editor-history.mjs';
+import { getPisiBlockKeyboardContext, pisiBeforeInputAsKey, insertPisiKeyboardLineBreak } from './pisi-block-keyboard-context.mjs';
+import { handlePisiBlockBoundaryKey } from './pisi-block-keyboard-boundaries.mjs';
 import { registerModule } from '../core/module-registry.mjs';
 import { registerPisiCommand } from '../core/pisi-command-registry.mjs';
 const PISI_BLOCK_TYPES = Object.freeze([
@@ -650,12 +652,21 @@ function placeCaretAtStartOfPisiBlock(selection, block) {
 window.placeCaretAtStartOfPisiBlock = placeCaretAtStartOfPisiBlock;
 window.getPisiSelectionBlock = getPisiSelectionBlock;
 function handlePisiBlocksEditorKeydown(editor, event) {
-    const block = getPisiSelectionBlock(editor) || getPisiBlockAtEvent(editor, event.target) || getPisiActiveBlock();
-    if (!block) return;
+    const context = getPisiBlockKeyboardContext(editor, event);
+    if (!context) return;
+    const { block, range } = context;
+    if (event.key === 'Enter' && event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey && !window.pisiTagMenuState?.active) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        insertPisiKeyboardLineBreak(editor, block, range);
+        commitPisiBlockMutation(editor, block);
+        return;
+    }
     if (splitPisiTaskBlockOnEnter(editor, block, event)) return;
     if (window.handlePisiBulletKeydown?.(editor, event, block)) return;
     if (window.handlePisiHeadingSectionKeydown?.(editor, event, block)) return;
     if (handlePisiTaskBlockBackspace(editor, block, event)) return;
+    if (handlePisiBlockBoundaryKey(editor, event, removePisiTaskMetadataAndMarkerFromBlock)) return;
     applyPisiMarkdownBlockShortcut(event, block);
 }
 function handlePisiBlockDrop(editor, event) {
@@ -692,29 +703,8 @@ function bindPisiBlocksEditor(editor) {
     });
     editor.addEventListener('keydown', (event) => handlePisiBlocksEditorKeydown(editor, event));
     editor.addEventListener('beforeinput', (event) => {
-        const block = getPisiSelectionBlock(editor) || getPisiBlockAtEvent(editor, event.target) || getPisiActiveBlock();
-        if (!block) return;
-        const fakeEvt = (key) => ({
-            key,
-            shiftKey: false,
-            ctrlKey: false,
-            metaKey: false,
-            altKey: false,
-            isComposing: false,
-            preventDefault: () => event.preventDefault(),
-            stopImmediatePropagation: () => event.stopImmediatePropagation()
-        });
-        if (event.inputType === 'insertParagraph') {
-            if (!splitPisiTaskBlockOnEnter(editor, block, fakeEvt('Enter'))) {
-                if (!window.handlePisiBulletKeydown?.(editor, fakeEvt('Enter'), block)) {
-                    window.handlePisiHeadingSectionKeydown?.(editor, fakeEvt('Enter'), block);
-                }
-            }
-        } else if (event.inputType === 'deleteContentBackward') {
-            handlePisiTaskBlockBackspace(editor, block, fakeEvt('Backspace'));
-        } else if (event.inputType === 'deleteContentForward') {
-            handlePisiTaskBlockBackspace(editor, block, fakeEvt('Delete'));
-        }
+        const keyEvent = pisiBeforeInputAsKey(event);
+        if (keyEvent) handlePisiBlocksEditorKeydown(editor, keyEvent);
     });
     editor.addEventListener('keyup', () => {
         const block = getPisiSelectionBlock(editor);

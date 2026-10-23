@@ -1,6 +1,9 @@
+import { getPisiBlockKeyboardContext } from './pisi-block-keyboard-context.mjs';
+import { mergePisiKeyboardBlocks } from './pisi-block-keyboard-boundaries.mjs';
+
 export function createPisiTaskBlockKeyboard({ getPisiBlockType, selectPisiBlock, placeCaretAtStartOfPisiBlock }) {
     function splitPisiTaskBlockOnEnter(editor, block, event) {
-        if (event.key !== 'Enter' || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey || event.isComposing) {
+        if (event.defaultPrevented || event.key !== 'Enter' || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey || event.isComposing) {
             return false;
         }
         if (window.pisiTagMenuState?.active) return false;
@@ -8,30 +11,26 @@ export function createPisiTaskBlockKeyboard({ getPisiBlockType, selectPisiBlock,
         if (tagMenu && !tagMenu.hidden) return false;
         const isTaskBlock = getPisiBlockType(block) === 'task' || Boolean(window.getPisiTodoTagFromBlock?.(block));
         if (!isTaskBlock) return false;
+        const context = getPisiBlockKeyboardContext(editor, event, block);
+        if (!context) return false;
         event.preventDefault();
         event.stopImmediatePropagation();
         window.syncPisiTodoBlockMarkers?.(block);
-        const selection = window.getSelection?.();
-        const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
-        if (range && !range.collapsed && block.contains?.(range.startContainer) && block.contains?.(range.endContainer)) {
-            range.deleteContents();
-        }
+        const { selection, range } = context;
+        if (!range.collapsed) range.deleteContents();
+        if (isPisiTaskBlockEmpty(block)) return revertPisiTaskBlockToParagraph(editor, block, selection);
         const nextBlock = document.createElement('div');
         nextBlock.className = 'pisi-editor-block';
         nextBlock.dataset.pisiBlockId = window.makePisiBlockId?.() || `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
         nextBlock.dataset.pisiBlockType = 'paragraph';
-        const source = block.querySelector?.('.pisi-todo-source[data-pisi-todo-for]');
+        const source = block.querySelector?.('.pisi-todo-source[data-pisi-todo-for]') || block;
         let trailingMoved = false;
         if (range && source && source.contains?.(range.startContainer) && typeof document.createRange === 'function') {
-            const beforeRange = document.createRange();
-            beforeRange.selectNodeContents(source);
-            beforeRange.setEnd(range.startContainer, range.startOffset);
-            const hasLeadingText = Boolean(beforeRange.toString().trim());
             const afterRange = document.createRange();
             afterRange.selectNodeContents(source);
             afterRange.setStart(range.startContainer, range.startOffset);
             const hasTrailingText = Boolean(afterRange.toString().trim());
-            if (hasLeadingText && hasTrailingText) {
+            if (hasTrailingText) {
                 const fragment = afterRange.extractContents();
                 fragment.querySelectorAll?.('.pisi-user-tag, .pisi-block-task-marker').forEach((el) => el.remove());
                 if (fragment.textContent?.trim() || fragment.querySelector?.('*:not(br)')) {
@@ -138,7 +137,7 @@ export function createPisiTaskBlockKeyboard({ getPisiBlockType, selectPisiBlock,
         return !((source ? source.textContent : block.textContent) || '').replace(/[☐☑\s\u00A0\u200B]/g, '');
     }
     function handlePisiTaskBlockBackspace(editor, block, event) {
-        if (event.shiftKey || event.ctrlKey || event.metaKey || event.altKey || event.isComposing) {
+        if (event.defaultPrevented || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey || event.isComposing) {
             return false;
         }
         if (event.key !== 'Backspace' && event.key !== 'Delete') {
@@ -147,14 +146,21 @@ export function createPisiTaskBlockKeyboard({ getPisiBlockType, selectPisiBlock,
         if (window.pisiTagMenuState?.active) return false;
         const tagMenu = document.getElementById('pisi-tag-menu');
         if (tagMenu && !tagMenu.hidden) return false;
-        const selection = window.getSelection?.();
-        if (!selection || !selection.rangeCount) return false;
-        const range = selection.getRangeAt(0);
+        const context = getPisiBlockKeyboardContext(editor, event, block);
+        if (!context) return false;
+        const { selection, range } = context;
         const isTask =
             getPisiBlockType(block) === 'task' || Boolean(window.getPisiTodoTagFromBlock?.(block)) || Boolean(block.querySelector?.('.pisi-block-task-marker'));
         const source = isTask ? block.querySelector?.('.pisi-todo-source') : null;
         const rawText = (source ? source.textContent : block.textContent) || '';
         const cleanText = rawText.replace(/[☐☑\s\u00A0\u200B]/g, '');
+        const coversAll = isTask && !range.collapsed && Boolean(cleanText) && range.toString().replace(/[☐☑\s\u00A0\u200B]/g, '') === cleanText;
+        if (coversAll) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            range.deleteContents();
+            return revertPisiTaskBlockToParagraph(editor, block, selection);
+        }
         // --- CASE 1: BACKSPACE ---
         if (event.key === 'Backspace') {
             if (isTask && (editor.contains(range.startContainer) || block.contains(range.startContainer))) {
@@ -163,42 +169,17 @@ export function createPisiTaskBlockKeyboard({ getPisiBlockType, selectPisiBlock,
                 // Backspace looks LEFT! Do NOT delete the checkbox on the right.
                 if (range.collapsed && isBeforeMarker) {
                     const prevBlock = block.previousElementSibling;
-                    if (prevBlock && prevBlock.matches?.('.pisi-editor-block')) {
+                    if (prevBlock) {
                         event.preventDefault();
                         event.stopImmediatePropagation();
-                        if (!cleanText) {
-                            block.remove();
-                            placeCaretAtEndOfPisiBlock(selection, prevBlock);
-                            selectPisiBlock(editor, prevBlock);
-                        } else {
-                            const prevEnd = placeCaretAtEndOfPisiBlock(selection, prevBlock);
-                            removePisiTaskMetadataAndMarkerFromBlock(block);
-                            while (block.firstChild) {
-                                if (block.firstChild.tagName === 'BR' && prevBlock.textContent?.trim()) {
-                                    block.firstChild.remove();
-                                    continue;
-                                }
-                                prevBlock.appendChild(block.firstChild);
-                            }
-                            block.remove();
-                            if (prevEnd && selection && typeof document.createRange === 'function') {
-                                const restoreRange = document.createRange();
-                                restoreRange.setStart(prevEnd.node, prevEnd.offset);
-                                restoreRange.collapse(true);
-                                selection.removeAllRanges();
-                                selection.addRange(restoreRange);
-                            }
-                            selectPisiBlock(editor, prevBlock);
-                        }
-                        editor.dispatchEvent(new Event('input', { bubbles: true }));
+                        mergePisiKeyboardBlocks(editor, prevBlock, block, removePisiTaskMetadataAndMarkerFromBlock);
                         return true;
                     }
                     event.preventDefault();
                     event.stopImmediatePropagation();
                     return true;
                 }
-                const coversAll = !range.collapsed && Boolean(cleanText) && range.toString().replace(/[☐☑\s\u00A0\u200B]/g, '') === cleanText;
-                if (!cleanText || coversAll || (range.collapsed && isCaretAfterPisiTaskMarkerAtStart(block, source, range))) {
+                if (!cleanText || (range.collapsed && isCaretAfterPisiTaskMarkerAtStart(block, source, range))) {
                     event.preventDefault();
                     event.stopImmediatePropagation();
                     return revertPisiTaskBlockToParagraph(editor, block, selection);

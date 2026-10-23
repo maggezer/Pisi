@@ -1,3 +1,4 @@
+import { getPisiBlockKeyboardContext, hasPisiKeyboardContent, isPisiKeyboardLineEmpty, insertPisiKeyboardLineBreak } from './pisi-block-keyboard-context.mjs';
 import { normalizePisiWordFontFamily, normalizePisiWordFontSize, ensurePisiWordSelectOption } from './pisi-word-font-controls.mjs';
 const PISI_WORD_FONT_FAMILIES = Object.freeze(['Aptos', 'Calibri', 'Segoe UI', 'Arial', 'Times New Roman', 'Georgia', 'Consolas']);
 const PISI_WORD_FONT_SIZES = Object.freeze([8, 9, 10, 11, 12, 14, 15, 16, 18, 20, 24, 28, 32, 36, 48, 72]);
@@ -423,24 +424,7 @@ function getPisiHeadingSectionBlocks(editor, headingBlock) {
     return result;
 }
 function isPisiCurrentLineEmpty(block, range) {
-    if (!block || !range) return false;
-    if (!block.textContent?.replace(/[\s\u00A0\u200B]/g, '') && !block.querySelector?.('*:not(br)')) return true;
-    const allBrs = Array.from(block.querySelectorAll?.('br') || []);
-    let prevBr = null,
-        nextBr = null;
-    for (const br of allBrs) {
-        try {
-            const comp = range.comparePoint(br, 0);
-            if (comp < 0) prevBr = br;
-            else if (!nextBr) nextBr = br;
-        } catch {}
-    }
-    const lineRange = document.createRange();
-    if (prevBr && block.contains(prevBr)) lineRange.setStartAfter(prevBr);
-    else lineRange.setStart(block, 0);
-    if (nextBr && block.contains(nextBr)) lineRange.setEndBefore(nextBr);
-    else lineRange.setEnd(block, block.childNodes.length);
-    return !lineRange.toString().replace(/[\s\u00A0\u200B]/g, '') && !lineRange.cloneContents?.().querySelector?.('*:not(br)');
+    return isPisiKeyboardLineEmpty(block, range);
 }
 
 function handlePisiHeadingSectionKeydown(editor, event, blockOverride = null) {
@@ -448,14 +432,10 @@ function handlePisiHeadingSectionKeydown(editor, event, blockOverride = null) {
     if (window.pisiTagMenuState?.active) return false;
     const tagMenu = document.getElementById('pisi-tag-menu');
     if (tagMenu && !tagMenu.hidden) return false;
-    const selection = window.getSelection?.();
-    const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
-    const block =
-        blockOverride ||
-        window.getPisiSelectionBlock?.(editor) ||
-        (range?.startContainer?.nodeType === Node.ELEMENT_NODE ? range.startContainer : range?.startContainer?.parentElement)?.closest?.('.pisi-editor-block');
-    if (!block || !editor.contains(block)) return false;
-    const isEmpty = !block.textContent?.replace(/\u200B/g, '').trim() && !block.querySelector?.('*:not(br)');
+    const context = getPisiBlockKeyboardContext(editor, event, blockOverride);
+    if (!context) return false;
+    const { range, block } = context;
+    const isEmpty = !hasPisiKeyboardContent(block);
     const headingLevel = getPisiWordHeadingLevel(block);
     if (event.key === 'Backspace' && (!range || range.collapsed)) {
         if ((block.classList.contains('pisi-section-break') || block.dataset?.pisiSectionBreak === 'true') && isEmpty) {
@@ -469,7 +449,7 @@ function handlePisiHeadingSectionKeydown(editor, event, blockOverride = null) {
             notifyPisiWordEditorChanged(editor);
             return true;
         }
-        if ((headingLevel > 0 || block.dataset?.pisiBlockType === 'quote') && isEmpty && typeof window.applyPisiBlockType === 'function') {
+        if ((headingLevel > 0 || ['quote', 'code'].includes(block.dataset?.pisiBlockType)) && isEmpty && typeof window.applyPisiBlockType === 'function') {
             event.preventDefault();
             event.stopPropagation();
             event.stopImmediatePropagation?.();
@@ -518,6 +498,7 @@ function handlePisiHeadingSectionKeydown(editor, event, blockOverride = null) {
         if (block.dataset?.pisiBlockType === 'bullet' || block.dataset?.pisiBlockType === 'task' || block.dataset?.pisiBlockType === 'number') {
             return false;
         }
+        if (!range.collapsed) range.deleteContents();
         const isLineEmpty = isPisiCurrentLineEmpty(block, range);
 
         // 1. Enter: Satırda metin varken entera basıldığında yeni blok yapmaz, aynı blok içinde alt satıra geçer
@@ -525,15 +506,7 @@ function handlePisiHeadingSectionKeydown(editor, event, blockOverride = null) {
             event.preventDefault();
             event.stopPropagation();
             event.stopImmediatePropagation?.();
-            if (typeof document.execCommand === 'function') {
-                document.execCommand('insertLineBreak');
-            } else if (range) {
-                range.deleteContents();
-                const br = document.createElement('br');
-                range.insertNode(br);
-                range.setStartAfter(br);
-                range.collapse(true);
-            }
+            insertPisiKeyboardLineBreak(editor, block, range);
             syncPisiWordHeadingCollapse(editor);
             notifyPisiWordEditorChanged(editor);
             return true;
@@ -726,18 +699,13 @@ function handlePisiBulletKeydown(editor, event, blockOverride = null) {
     if (window.pisiTagMenuState?.active) return false;
     const tagMenu = document.getElementById('pisi-tag-menu');
     if (tagMenu && !tagMenu.hidden) return false;
-    const selection = window.getSelection?.();
-    const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
-    let block = blockOverride && editor.contains(blockOverride) ? blockOverride : null;
-    if (!block) {
-        let node = range?.startContainer || selection?.anchorNode;
-        if (node === editor && range) node = editor.childNodes[range.startOffset] || editor.childNodes[range.startOffset - 1] || null;
-        block = (node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement)?.closest?.('.pisi-editor-block');
-    }
-    const blockType = block?.dataset?.pisiBlockType;
-    if (!block || (blockType !== 'bullet' && blockType !== 'number') || !editor.contains(block)) return false;
+    const context = getPisiBlockKeyboardContext(editor, event, blockOverride);
+    if (!context) return false;
+    const { range, block } = context;
+    const blockType = block.dataset?.pisiBlockType;
+    if (blockType !== 'bullet' && blockType !== 'number') return false;
     const indent = blockType === 'bullet' ? getPisiBulletIndent(block) : 0;
-    const isEmpty = !block.textContent?.replace(/\u200B/g, '').trim() && !block.querySelector?.('*:not(br)');
+    const isEmpty = !hasPisiKeyboardContent(block);
     const isAtStart = isEmpty || isPisiCaretAtBlockStart(block, range);
     if (event.key === 'Tab' && blockType === 'bullet') {
         event.preventDefault();
@@ -850,6 +818,7 @@ function bindPisiWordEditor(editor) {
     editor.addEventListener('focusin', () => queueMicrotask(sync));
     editor.addEventListener('pointerup', () => queueMicrotask(sync));
     editor.addEventListener('keydown', (event) => {
+        if (editor.dataset.pisiBlocksEditorBound === '1') return;
         if (!handlePisiBulletKeydown(editor, event)) handlePisiHeadingSectionKeydown(editor, event);
     });
     editor.addEventListener('keyup', () => queueMicrotask(sync));
