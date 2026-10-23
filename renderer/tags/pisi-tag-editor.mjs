@@ -1,4 +1,4 @@
-import { canHandlePisiEditorTextEvent } from '../editor/pisi-editor-input-policy.mjs';
+import { canHandlePisiEditorTextEvent, isPisiEditorComposing } from '../editor/pisi-editor-input-policy.mjs';
 import { registerModule } from '../core/module-registry.mjs';
 import { PISI_TODO_PRIORITY_OPTIONS, formatPisiTodoTag, getPisiTodoPriorityOption, getPisiTodayIsoDate } from './pisi-todo-utils.mjs';
 
@@ -145,6 +145,7 @@ function openPisiTodoDateMenu(editor, priorityValue, commandOverride = null) {
         }
     });
     dateInput?.addEventListener('keydown', (event) => {
+        if (event.defaultPrevented || isPisiEditorComposing(editor, event)) return;
         lastDateKeydownAt = Date.now();
         if (event.key === 'Enter') {
             event.preventDefault();
@@ -168,6 +169,7 @@ function openPisiTodoDateMenu(editor, priorityValue, commandOverride = null) {
     applyButton?.addEventListener('click', applySelectedDate);
 
     menu.querySelector('.pisi-todo-picker')?.addEventListener('keydown', (event) => {
+        if (event.defaultPrevented || isPisiEditorComposing(editor, event)) return;
         if (event.key === 'Escape') {
             event.preventDefault();
             event.stopPropagation();

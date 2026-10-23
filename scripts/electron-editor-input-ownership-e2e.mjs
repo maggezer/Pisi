@@ -22,7 +22,7 @@ export async function testEditorInputOwnership(cdp) {
     };
     const text = () => cdp.evaluate(`document.getElementById('center-node-editor-content').textContent`);
 
-    await setup('<div>/h2</div>');
+    await setup('<div>/heading2</div>');
     await cdp.evaluate(`document.getElementById('center-node-editor-content').dispatchEvent(new Event('input', { bubbles: true }))`);
     assert.equal(await cdp.evaluate('window.pisiUnifiedCommandState.active'), true, 'slash command menu must be open');
     await key('Tab');
