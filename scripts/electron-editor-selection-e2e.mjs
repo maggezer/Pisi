@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
 
 export async function testEditorSelection(cdp) {
+    await cdp.evaluate(`import('./renderer/editor/pisi-selection-bookmarks.mjs').then(api => { window.__e7SelectionApi = api; })`);
     await cdp.evaluate(`(() => {
         const editor = document.getElementById('center-node-editor-content');
         window.setPisiEditorContent(editor, '<div>abcdef</div><div>uvwxyz</div>');
         editor.focus();
         const [first, last] = editor.children;
         window.getSelection().setBaseAndExtent(last.firstChild, 4, first.firstChild, 2);
+        window.__e7SelectionSaved = window.__e7SelectionApi.capturePisiSelectionBookmark(editor);
         const toolbar = document.querySelector('[data-editor-target="center-node-editor-content"]');
         toolbar.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
         toolbar.querySelector('select[data-pisi-unified-command="fontSize"]').focus();
@@ -31,10 +33,13 @@ export async function testEditorSelection(cdp) {
             styled: Array.from(editor.querySelectorAll('[style*="24px"]')).map(el => el.textContent),
             text: editor.textContent,
             selection: selection.toString(),
+            bookmarkResolvable: Boolean(window.__e7SelectionApi.resolvePisiSelectionBookmark(editor, window.__e7SelectionSaved)),
+            ids: Array.from(editor.children).map(el => el.dataset.pisiBlockId),
+            html: editor.innerHTML,
             backward: anchor?.closest('.pisi-editor-block') === editor.lastElementChild && focus?.closest('.pisi-editor-block') === editor.firstElementChild
         };
     })()`);
-    assert.deepEqual(result.styled, ['cdef', 'uvwx'], 'toolbar must format the original text after a block DOM rebuild');
+    assert.deepEqual(result.styled, ['cdef', 'uvwx'], 'toolbar must format the original text after a block DOM rebuild: ' + JSON.stringify(result));
     assert.equal(result.text, 'abcdefuvwxyz');
     assert.equal(result.selection, 'cdefuvwx');
     assert.equal(result.backward, true, 'backward selection direction must survive DOM rebuild and formatting');

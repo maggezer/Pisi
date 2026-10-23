@@ -51,7 +51,7 @@ function rememberPisiWordSelection(toolbar, force = false) {
     const range = getPisiWordRangeInsideEditor(editor);
     if (!range) return false;
     const saved = pisiWordToolbarSelections.get(toolbar);
-    if (!force && range.collapsed && isPisiSelectionBookmarkDisplaced(editor, saved)) return false;
+    if (!force && isPisiSelectionBookmarkDisplaced(editor, saved)) return false;
     const bookmark = capturePisiSelectionBookmark(editor);
     if (!bookmark) return false;
     pisiWordToolbarSelections.set(toolbar, bookmark);
@@ -73,7 +73,7 @@ function getPisiWordRange(toolbar) {
     if (!editor) return null;
     const liveRange = getPisiWordRangeInsideEditor(editor);
     const saved = pisiWordToolbarSelections.get(toolbar);
-    if (liveRange && !(liveRange.collapsed && isPisiSelectionBookmarkDisplaced(editor, saved))) return liveRange;
+    if (liveRange && !isPisiSelectionBookmarkDisplaced(editor, saved)) return liveRange;
     return resolvePisiSelectionBookmark(editor, saved)?.range || null;
 }
 function getPisiWordElementFromRange(editor, range) {
@@ -246,7 +246,7 @@ function applyPisiWordInlineStyle(toolbar, property, value) {
     }
     if (bookmark) restorePisiSelectionBookmark(editor, bookmark);
     notifyPisiWordEditorChanged(editor);
-    rememberPisiWordSelection(toolbar);
+    rememberPisiWordSelection(toolbar, true);
     syncPisiWordToolbarState(toolbar);
     return true;
 }
@@ -281,7 +281,7 @@ function applyPisiWordBlockStyle(toolbar, tagName) {
     if (!converted.size) return false;
 
     if (!restorePisiSelectionBookmark(editor, bookmark)) return false;
-    rememberPisiWordSelection(toolbar);
+    rememberPisiWordSelection(toolbar, true);
     syncPisiWordToolbarState(toolbar);
     return true;
 }
@@ -879,7 +879,7 @@ function bindPisiWordToolbar(toolbar) {
                 return;
             }
             queueMicrotask(() => {
-                rememberPisiWordSelection(toolbar);
+                rememberPisiWordSelection(toolbar, true);
                 syncPisiWordToolbarState(toolbar);
             });
         },
