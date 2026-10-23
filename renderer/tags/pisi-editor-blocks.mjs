@@ -42,7 +42,7 @@ function decoratePisiEditorBlock(element) {
         return;
     }
 
-    element.classList.add('pisi-editor-block');
+    if (!element.classList.contains('pisi-editor-block')) element.classList.add('pisi-editor-block');
     for (const prop of [
         'margin',
         'margin-top',
@@ -105,6 +105,7 @@ function capturePisiEditorSelection(editor) {
             blockTextOffset = blockPrefix.toString().length;
         }
         return {
+            node: container,
             nodePath: getPisiEditorNodePath(editor, container),
             offset,
             textOffset: prefix.toString().length,
@@ -164,6 +165,7 @@ function isValidPisiEditorRangeOffset(node, offset) {
 }
 
 function resolvePisiEditorSelectionPoint(editor, point) {
+    if (editor.contains(point?.node) && isValidPisiEditorRangeOffset(point.node, point.offset)) return { node: point.node, offset: point.offset };
     const pathNode = resolvePisiEditorNodePath(editor, point?.nodePath);
     // A duplicate-id repair may rename the active block. In that case its
     // original node path remains the most precise caret anchor.
@@ -250,17 +252,21 @@ function ensurePisiEditorBlocks(editor, options = {}) {
         }
 
         for (const node of childNodes) {
-            if (node.nodeType === Node.TEXT_NODE) {
-                if (!node.textContent.trim()) {
-                    node.remove();
-                    didMutateDom = true;
-                    continue;
+            if (node.parentNode !== editor) continue;
+            const isInline = (candidate) =>
+                candidate?.nodeType === Node.TEXT_NODE ||
+                (candidate?.nodeType === Node.ELEMENT_NODE && /^(SPAN|STRONG|EM|B|I|U|S|STRIKE|A|CODE|SUB|SUP|MARK|IMG)$/i.test(candidate.tagName));
+            if (isInline(node)) {
+                const nodes = [node];
+                while (isInline(nodes[nodes.length - 1].nextSibling)) nodes.push(nodes[nodes.length - 1].nextSibling);
+                if (nodes.every((item) => item.nodeType === Node.TEXT_NODE && !item.textContent.trim())) {
+                    nodes.forEach((item) => item.remove());
+                } else {
+                    const block = document.createElement('div');
+                    node.before(block);
+                    block.append(...nodes);
+                    decoratePisiEditorBlock(block);
                 }
-
-                const block = document.createElement('div');
-                block.textContent = node.textContent;
-                decoratePisiEditorBlock(block);
-                node.replaceWith(block);
                 didMutateDom = true;
                 continue;
             }
@@ -292,6 +298,14 @@ function ensurePisiEditorBlocks(editor, options = {}) {
                     decoratePisiEditorBlock(node);
                 }
             }
+        }
+
+        if (!editor.childNodes.length) {
+            const block = document.createElement('div');
+            block.appendChild(document.createElement('br'));
+            decoratePisiEditorBlock(block);
+            editor.appendChild(block);
+            didMutateDom = true;
         }
 
         // Nested rich-text markup and composite content are not independent
