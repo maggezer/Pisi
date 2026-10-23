@@ -5,6 +5,21 @@ const histories = new WeakMap();
 const bound = new WeakSet();
 const compositeSelector = '.pisi-sheet-block, .pisi-canvas-block, table[data-pisi-sheet], canvas[data-pisi-canvas]';
 const snapshot = (editor) => ({ content: window.getPisiEditorContent(editor), selection: captureHistorySelection(editor) });
+let selectionListenerInstalled = false;
+
+function trackSelection() {
+    if (selectionListenerInstalled) return;
+    selectionListenerInstalled = true;
+    document.addEventListener('selectionchange', () => {
+        const node = window.getSelection()?.anchorNode;
+        const editor = (node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement)?.closest?.('.pisi-rich-editor');
+        const state = histories.get(editor);
+        if (!state || state.pending || state.restoring || state.composing) return;
+        const selection = captureHistorySelection(editor);
+        if (JSON.stringify(selection) !== JSON.stringify(state.history.current().selection)) state.history.boundary();
+        state.history.selection(selection);
+    });
+}
 
 export function resetPisiEditorHistory(editor) {
     if (!editor || histories.get(editor)?.restoring) return;
@@ -39,6 +54,7 @@ function navigate(editor, delta) {
 export function bindPisiEditorHistory(editor) {
     if (!editor || bound.has(editor)) return;
     bound.add(editor);
+    trackSelection();
     if (!histories.has(editor)) resetPisiEditorHistory(editor);
     const nestedControl = (event) => event.target !== editor && event.target?.closest?.('input, textarea, select, ' + compositeSelector);
     editor.addEventListener(

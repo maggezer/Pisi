@@ -25,6 +25,21 @@ export async function testEditorHistory(cdp) {
         document.execCommand('bold');
     })()`);
     states.push(await snapshot());
+    await cdp.evaluate(`(() => {
+        const editor = document.getElementById('center-node-editor-content');
+        const toolbar = document.querySelector('.pisi-editor-toolbar[data-editor-target="center-node-editor-content"], .pisi-word-toolbar[data-editor-target="center-node-editor-content"]');
+        const select = toolbar?.querySelector('select[data-pisi-unified-command="fontSize"]');
+        if (!select) throw new Error('Word font size control missing');
+        const range = document.createRange();
+        range.selectNodeContents(editor.firstElementChild);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        toolbar.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+        select.value = '24';
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        if (!editor.querySelector('[style*="24px"]')) throw new Error('Range font formatting did not run');
+    })()`);
+    states.push(await snapshot());
     await cdp.evaluate(`window.applyPisiBlockType(document.getElementById('center-node-editor-content').firstElementChild, 'heading2')`);
     states.push(await snapshot());
     await cdp.evaluate(`window.movePisiBlock(document.getElementById('center-node-editor-content').firstElementChild, 1)`);
@@ -46,5 +61,26 @@ export async function testEditorHistory(cdp) {
         await shortcut(true);
         assert.equal(await snapshot(), states[i], 'redo must restore document state ' + i);
     }
+    await shortcut(false);
+    await cdp.request('Input.insertText', { text: ' new history branch' });
+    const branch = await snapshot();
+    assert.notEqual(branch, states[states.length - 2]);
+    await shortcut(true);
+    assert.equal(await snapshot(), branch, 'new input after undo must invalidate redo');
+
+    await cdp.evaluate(`window.setPisiEditorContent(document.getElementById('center-node-editor-content'), '<div>Different document</div>')`);
+    const reset = await snapshot();
+    await shortcut(false);
+    assert.equal(await snapshot(), reset, 'loading a document must discard the previous document history');
+    await cdp.evaluate(`window.addPisiBlockBelow(document.getElementById('center-node-editor-content').firstElementChild)`);
+    const added = await snapshot();
+    await cdp.evaluate(
+        `document.getElementById('center-node-editor-content').dispatchEvent(new InputEvent('beforeinput', { bubbles: true, cancelable: true, inputType: 'historyUndo' }))`
+    );
+    assert.equal(await snapshot(), reset, 'native historyUndo input must use the same stack');
+    await cdp.evaluate(
+        `document.getElementById('center-node-editor-content').dispatchEvent(new InputEvent('beforeinput', { bubbles: true, cancelable: true, inputType: 'historyRedo' }))`
+    );
+    assert.equal(await snapshot(), added, 'native historyRedo input must use the same stack');
     console.log('EDITOR_HISTORY_E2E_OK: native typing/formatting and structural edits undo and redo in order');
 }
