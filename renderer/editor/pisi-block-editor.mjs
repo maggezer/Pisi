@@ -504,9 +504,15 @@ function deletePisiBlock(block) {
 }
 function copyPisiBlockReference(block = getPisiActiveBlock()) {
     const editor = block?.closest('.pisi-rich-editor');
-    const nodePath = editor?.id === 'node-modal-content' ? window.activeModalNode?.path : window.activeCenterNode?.path;
-    if (!block?.dataset.pisiBlockId || !nodePath) return false;
-    const reference = `${nodePath}#${block.dataset.pisiBlockId}`;
+    if (!editor || !block?.isConnected || !editor.contains(block)) return false;
+    const node = editor.id === 'node-modal-content' ? window.activeModalNode : editor.id === 'center-node-editor-content' ? window.activeCenterNode : null;
+    const blockId = block.dataset?.pisiBlockId;
+    if (!node?.path || !blockId) return false;
+    // Never publish an ambiguous link while pasted/duplicated blocks still
+    // have a duplicate identity. Normalization will repair the IDs.
+    const matches = Array.from(editor.querySelectorAll('[data-pisi-block-id]')).filter((item) => item.dataset.pisiBlockId === blockId);
+    if (matches.length !== 1 || matches[0] !== block) return false;
+    const reference = `${node.path}#${blockId}`;
     window.pisiClipboard?.writeText?.(reference);
     return reference;
 }
