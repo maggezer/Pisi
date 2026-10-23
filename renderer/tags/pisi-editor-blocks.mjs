@@ -422,7 +422,7 @@ function extractPisiPasteBlocks(html = '', plain = '') {
     if (cleanHtml) {
         // Only explicit Pisi block markup opts into the internal paste path.
         // Third-party HTML can contain generic data-pisi-* attributes.
-        const isInternalPisi = /class=["'][^"']*\\bpisi-editor-block\\b|data-pisi-block-id=["'][^"']+["']/i.test(cleanHtml);
+        const isInternalPisi = /class=["'][^"']*\bpisi-editor-block\b|data-pisi-block-id=["'][^"']+["']/i.test(cleanHtml);
         const template = createPisiInertHtmlTemplate(cleanHtml);
         template.content
             .querySelectorAll('script, style, meta, link, title, head, svg, iframe, object, embed, form, input, button')
