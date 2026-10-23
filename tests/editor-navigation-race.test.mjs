@@ -246,3 +246,25 @@ test('cyclePisiOpenTabs cycles forward and backward across open tabs with wrap-a
     await c.cyclePisiOpenTabs(-1);
     assert.equal(state.activeTabPath, 'c.map');
 });
+
+test('modal read cannot replace center edits made after the shared note was saved', async () => {
+    const { c, reads } = setup();
+    const node = { path: 'a.node', dirty: false, revision: 1 };
+    c.activeCenterNode = node;
+    const opening = c.openNodeModalFromBox({ dataset: { nodePath: 'a.node' } });
+    await new Promise((resolve) => setImmediate(resolve));
+    node.revision++;
+    node.dirty = true;
+    reads.get('a.node').resolve(nodeResult('stale snapshot'));
+    assert.equal(await opening, false);
+    assert.equal(c.activeModalNode, null);
+    assert.equal(c.activeCenterNode, node);
+});
+
+test('modal opening stops before reading if the shared center note did not finish saving', async () => {
+    const { c, reads } = setup();
+    c.activeCenterNode = { path: 'a.node', dirty: true, revision: 1 };
+    c.saveCurrentCenterNodeEditor = async () => false;
+    assert.equal(await c.openNodeModalFromBox({ dataset: { nodePath: 'a.node' } }), false);
+    assert.equal(reads.size, 0);
+});

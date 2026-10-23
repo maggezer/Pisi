@@ -72,6 +72,7 @@ function setup(t) {
     };
     const c = {
         ...recovery,
+        samePisiWorkspacePath: (a, b) => a === b,
         activeCenterNode: node,
         activeModalNode: null,
         window,
