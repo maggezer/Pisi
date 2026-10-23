@@ -243,5 +243,5 @@ export function createPisiTaskBlockKeyboard({ getPisiBlockType, selectPisiBlock,
         }
         return false;
     }
-    return { splitPisiTaskBlockOnEnter, handlePisiTaskBlockBackspace };
+    return { splitPisiTaskBlockOnEnter, handlePisiTaskBlockBackspace, removePisiTaskMetadataAndMarkerFromBlock, placeCaretAtEndOfPisiBlock };
 }

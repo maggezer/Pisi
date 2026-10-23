@@ -25,11 +25,12 @@ const PISI_BLOCK_SLASH_COMMANDS = Object.freeze([
     ),
     Object.freeze({ id: 'done', label: 'Tamamlanmış görev', slash: 'done', action: 'done' })
 ]);
-const { splitPisiTaskBlockOnEnter, handlePisiTaskBlockBackspace } = createPisiTaskBlockKeyboard({
-    getPisiBlockType,
-    selectPisiBlock,
-    placeCaretAtStartOfPisiBlock
-});
+const { splitPisiTaskBlockOnEnter, handlePisiTaskBlockBackspace, removePisiTaskMetadataAndMarkerFromBlock, placeCaretAtEndOfPisiBlock } =
+    createPisiTaskBlockKeyboard({
+        getPisiBlockType,
+        selectPisiBlock,
+        placeCaretAtStartOfPisiBlock
+    });
 const pisiHydratedTaskMarkers = new WeakSet();
 const pisiBlocksEditorState = {
     editor: null,
