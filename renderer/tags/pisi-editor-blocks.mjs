@@ -1,3 +1,4 @@
+import { canHandlePisiEditorTextEvent } from '../editor/pisi-editor-input-policy.mjs';
 import { extractPisiPasteBlocks as parsePisiPasteBlocks } from './pisi-paste-blocks.mjs';
 import { rekeyPisiPastedBlocks } from './pisi-paste-identities.mjs';
 import { registerModule } from '../core/module-registry.mjs';
@@ -350,7 +351,7 @@ function extractPisiPasteBlocks(html = '', plain = '') {
 }
 
 function handlePisiEditorPaste(editor, event) {
-    if (!editor || event?.defaultPrevented) return false;
+    if (!canHandlePisiEditorTextEvent(editor, event)) return false;
     if (
         event.target !== editor &&
         event.target?.closest?.(

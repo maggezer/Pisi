@@ -1,3 +1,4 @@
+import { canHandlePisiEditorTextEvent } from '../editor/pisi-editor-input-policy.mjs';
 import { registerModule } from '../core/module-registry.mjs';
 import { PISI_TODO_PRIORITY_OPTIONS, formatPisiTodoTag, getPisiTodoPriorityOption, getPisiTodayIsoDate } from './pisi-todo-utils.mjs';
 
@@ -248,7 +249,7 @@ function bindPisiTagControlsForEditor(editor) {
     editor.addEventListener(
         'keydown',
         (event) => {
-            if (!pisiTagMenuState.active || pisiTagMenuState.editor !== editor) return;
+            if (!canHandlePisiEditorTextEvent(editor, event) || !pisiTagMenuState.active || pisiTagMenuState.editor !== editor) return;
             if (pisiTagMenuState.mode === 'todo-date') {
                 if (event.key === 'Enter') {
                     event.preventDefault();

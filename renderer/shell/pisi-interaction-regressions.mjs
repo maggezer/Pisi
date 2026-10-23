@@ -1,3 +1,4 @@
+import { canHandlePisiEditorTextEvent, isPisiEditorComposing } from '../editor/pisi-editor-input-policy.mjs';
 const PISI_EDITOR_TAB_TEXT = '\u00a0'.repeat(4);
 const PISI_MAP_RENAME_WAIT_MS = 5000;
 
@@ -95,7 +96,7 @@ function insertPisiEditorTab(event) {
     // Normal editör blokları contenteditable özelliğini üst editörden miras
     // alır. Sheet hücresi gibi kendi editable alanı olan kontroller kendi Tab
     // davranışını korur.
-    if (!editor || (nestedEditable && nestedEditable !== editor)) return false;
+    if (!canHandlePisiEditorTextEvent(editor, event) || (nestedEditable && nestedEditable !== editor)) return false;
 
     if (typeof window.handlePisiBulletKeydown === 'function' && window.handlePisiBulletKeydown(editor, event)) {
         return true;
@@ -128,7 +129,7 @@ function insertPisiEditorTab(event) {
 }
 
 async function handlePisiNodeModalEscapeCapture(event) {
-    if (event.key !== 'Escape') return;
+    if (event.key !== 'Escape' || event.defaultPrevented || isPisiEditorComposing(event.target?.closest?.('.pisi-rich-editor'), event)) return;
 
     const modalOverlay = document.getElementById('node-modal-overlay');
     if (!modalOverlay?.classList.contains('visible')) return;
@@ -138,6 +139,11 @@ async function handlePisiNodeModalEscapeCapture(event) {
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
+
+    if (window.pisiUnifiedCommandState?.active) {
+        window.closePisiUnifiedCommandMenu?.();
+        return;
+    }
 
     const tagMenu = document.getElementById('pisi-tag-menu');
     if (tagMenu && !tagMenu.hidden) {
@@ -206,7 +212,7 @@ function installPisiInteractionRegressionFixes() {
     document.addEventListener('dblclick', handlePisiMapOpenWhileRenaming, true);
     document.addEventListener('click', handlePisiMapOpenWhileRenaming, true);
     document.addEventListener('keydown', handlePisiNodeModalEscapeCapture, true);
-    document.addEventListener('keydown', insertPisiEditorTab, true);
+    document.addEventListener('keydown', insertPisiEditorTab);
     document.addEventListener('pisi:active-node-changed', syncPisiModalChrome);
     document.addEventListener('pisi:language-changed', removePisiTitlebarLanguageToggle);
 }

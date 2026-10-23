@@ -1,3 +1,4 @@
+import { bindPisiEditorComposition, resetPisiEditorComposition, canHandlePisiEditorTextEvent } from './pisi-editor-input-policy.mjs';
 import { createEditorHistory } from './pisi-editor-history-state.mjs';
 import { captureHistorySelection, restoreHistorySelection } from './pisi-editor-history-selection.mjs';
 
@@ -23,6 +24,7 @@ function trackSelection() {
 
 export function resetPisiEditorHistory(editor) {
     if (!editor || histories.get(editor)?.restoring) return;
+    resetPisiEditorComposition(editor);
     histories.set(editor, { history: createEditorHistory(snapshot(editor)), restoring: false, pending: false, kind: '', composing: false });
 }
 
@@ -54,13 +56,14 @@ function navigate(editor, delta) {
 export function bindPisiEditorHistory(editor) {
     if (!editor || bound.has(editor)) return;
     bound.add(editor);
+    bindPisiEditorComposition(editor);
     trackSelection();
     if (!histories.has(editor)) resetPisiEditorHistory(editor);
     const nestedControl = (event) => event.target !== editor && event.target?.closest?.('input, textarea, select, ' + compositeSelector);
     editor.addEventListener(
         'keydown',
         (event) => {
-            if (nestedControl(event) || event.isComposing || event.altKey) return;
+            if (!canHandlePisiEditorTextEvent(editor, event) || nestedControl(event) || event.altKey) return;
             const key = event.key.toLowerCase();
             if ((event.ctrlKey || event.metaKey) && (key === 'z' || key === 'y')) {
                 event.preventDefault();
@@ -76,7 +79,7 @@ export function bindPisiEditorHistory(editor) {
         'beforeinput',
         (event) => {
             const state = histories.get(editor);
-            if (!state || state.restoring || nestedControl(event)) return;
+            if (!state || state.restoring || !canHandlePisiEditorTextEvent(editor, event) || nestedControl(event)) return;
             if (event.inputType === 'historyUndo' || event.inputType === 'historyRedo') {
                 event.preventDefault();
                 event.stopImmediatePropagation();

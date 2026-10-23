@@ -1,3 +1,4 @@
+import { isPisiEditorEventSuppressed } from './pisi-editor-input-policy.mjs';
 import { createPisiTaskBlockKeyboard } from './pisi-task-block-keyboard.mjs';
 import { bindPisiEditorHistory } from './pisi-editor-history.mjs';
 import { getPisiBlockKeyboardContext, pisiBeforeInputAsKey, insertPisiKeyboardLineBreak } from './pisi-block-keyboard-context.mjs';
@@ -377,6 +378,7 @@ function hydratePisiBlockTaskMarker(block, markerOverride = null) {
     };
     marker.addEventListener('click', toggle);
     marker.addEventListener('keydown', (event) => {
+        if (isPisiEditorEventSuppressed(block.closest('.pisi-rich-editor'), event)) return;
         if (event.key === 'Enter' || event.key === ' ') toggle(event);
     });
     return marker;

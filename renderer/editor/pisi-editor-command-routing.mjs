@@ -1,3 +1,4 @@
+import { canHandlePisiEditorTextEvent, isPisiEditorComposing } from './pisi-editor-input-policy.mjs';
 import { registerModule } from '../core/module-registry.mjs';
 import { getPisiDoubleDotCommandsPreference, getPisiLatexCommandsPreference } from './pisi-editor-command-preferences.mjs';
 import { buildPisiUnifiedCommandItems, closePisiUnifiedCommandMenu, pisiUnifiedCommandState } from './pisi-unified-command-menu.mjs';
@@ -280,6 +281,7 @@ function isPisiTodoStepMenuActive(editor) {
 }
 
 function routePisiEditorToken(editor) {
+    if (isPisiEditorComposing(editor)) return null;
     if (isPisiTodoStepMenuActive(editor)) {
         const state = window.pisiTagMenuState;
         if (state.mode === 'todo-date' || !state.command?.token) {
@@ -332,7 +334,7 @@ function getExactPisiCommandMenuItem(command) {
 }
 
 function handlePisiEditorTokenKeydown(editor, event) {
-    if (event.isComposing || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (!canHandlePisiEditorTextEvent(editor, event) || event.ctrlKey || event.metaKey || event.altKey) return;
     if (isPisiTodoStepMenuActive(editor)) return;
 
     if (pisiUnifiedCommandState.active && pisiUnifiedCommandState.editor === editor) {
@@ -404,6 +406,7 @@ function bindPisiEditorTokenRouting(editor) {
         true
     );
     editor.addEventListener('input', () => schedulePisiEditorTokenRouting(editor));
+    editor.addEventListener('compositionend', () => schedulePisiEditorTokenRouting(editor));
     editor.addEventListener('keyup', () => schedulePisiEditorTokenRouting(editor));
     editor.addEventListener('click', () => schedulePisiEditorTokenRouting(editor));
     return true;

@@ -9,6 +9,7 @@ import { testEditorPaste } from './electron-editor-paste-e2e.mjs';
 import { testEditorSelection } from './electron-editor-selection-e2e.mjs';
 import { testEditorNormalization } from './electron-editor-normalization-e2e.mjs';
 import { testEditorAutosave } from './electron-editor-autosave-e2e.mjs';
+import { testEditorInputOwnership } from './electron-editor-input-ownership-e2e.mjs';
 
 const require = createRequire(import.meta.url);
 const electronPath = /** @type {string} */ (require('electron'));
@@ -266,6 +267,7 @@ try {
     await testEditorSelection(cdp);
     await testEditorNormalization(cdp);
     await testEditorAutosave(cdp, nodePath);
+    await testEditorInputOwnership(cdp);
     await cdp.evaluate(`window.setPisiEditorContent(document.getElementById('center-node-editor-content'), ${JSON.stringify(contentMarker)})`);
     await cdp.evaluate(`document.getElementById('center-node-editor-content').dispatchEvent(new Event('input', { bubbles: true }))`);
     await closeTab(cdp, nodePath);

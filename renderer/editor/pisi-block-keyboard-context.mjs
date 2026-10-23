@@ -1,9 +1,9 @@
+import { canHandlePisiEditorTextEvent } from './pisi-editor-input-policy.mjs';
 const isolated = 'input, textarea, select, .pisi-sheet-block, .pisi-canvas-block, table[data-pisi-sheet], canvas[data-pisi-canvas], [contenteditable="false"]';
 const media = 'img, hr, table, canvas, video, audio, iframe, object, [contenteditable="false"]';
 
 export function getPisiBlockKeyboardContext(editor, event, override = null) {
-    if (!editor || event.defaultPrevented || event.isComposing || editor.inert || editor.getAttribute?.('contenteditable') === 'false') return null;
-    if (event.target !== editor && event.target?.closest?.(isolated)) return null;
+    if (!canHandlePisiEditorTextEvent(editor, event)) return null;
     const selection = window.getSelection?.();
     const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
     if (!range || !editor.contains(range.startContainer) || !editor.contains(range.endContainer)) return null;

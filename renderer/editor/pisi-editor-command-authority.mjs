@@ -1,3 +1,4 @@
+import { canHandlePisiEditorTextEvent } from './pisi-editor-input-policy.mjs';
 import {
     capturePisiSelectionBookmark,
     resolvePisiSelectionBookmark,
@@ -496,10 +497,10 @@ function getPisiAuthorityTypingSpan(editor, range, signature) {
 
 function handlePisiAuthorityBeforeInput(event) {
     const editor = getPisiAuthorityEditorFromTarget(event.target);
-    if (!editor) return;
+    if (!canHandlePisiEditorTextEvent(editor, event)) return;
     const styles = pisiAuthorityTypingStyles.get(editor);
     if (!styles || !Object.keys(styles).length) return;
-    if (!['insertText', 'insertCompositionText', 'insertReplacementText'].includes(event.inputType)) {
+    if (!['insertText', 'insertReplacementText'].includes(event.inputType)) {
         return;
     }
     if (typeof event.data !== 'string' || !event.data) return;
@@ -552,7 +553,7 @@ function handlePisiAuthorityEditorPointerUp(event) {
 function handlePisiAuthorityNavigationKeydown(event) {
     if (!PISI_AUTHORITY_NAVIGATION_KEYS.has(event.key)) return;
     const editor = getPisiAuthorityEditorFromTarget(event.target);
-    if (!editor) return;
+    if (!canHandlePisiEditorTextEvent(editor, event)) return;
     clearPisiAuthorityTypingStyles(editor);
 }
 
