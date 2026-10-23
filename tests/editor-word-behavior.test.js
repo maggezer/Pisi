@@ -192,7 +192,7 @@ test('Tab capture handler delegates to SiYuan bullet indentation and block norma
     assert.match(mapSource, /window\.syncPisiWordHeadingCollapse\?\.\(editor\)/);
 });
 
-test('editor paste normalization removes extra blank lines and paragraph spacing from external content', () => {
+test('editor paste normalization delegates content parsing while removing external paragraph spacing', () => {
     const blocksSource = read('renderer/tags/pisi-editor-blocks.mjs');
     const styles = read('styles/92-compatibility.css');
 
@@ -271,11 +271,13 @@ test('B6 heading ownership and folding share a validated section-exit rule', () 
 });
 
 test('B7 nested list paste keeps parent inline content and nested list depth', () => {
-    const source = read('renderer/tags/pisi-editor-blocks.mjs');
-    assert.match(source, /walkContainer\(child, child\.tagName === 'UL' \|\| child\.tagName === 'OL' \? inheritedMeta : childMeta\)/);
-    assert.match(source, /const childMeta = resolvePisiPastedBlockMeta\(child, isInternalPisi\)/);
-    assert.match(source, /indent: isNumber \? 0 : Math\.max\(0, Math\.min\(depth - 1, 6\)\)/);
-    assert.match(source, /const isInternalPisi = \/class=/);
+    const source = read('renderer/tags/pisi-paste-blocks.mjs');
+    assert.match(source, /resolvePisiPastedBlockMeta\(child, internal\)/);
+    assert.match(source, /element\.parentElement\?\.tagName === 'OL'/);
+    assert.match(source, /depth - 1/);
+    assert.match(source, /walk\(child,.*inherited : meta\)/);
+    assert.match(source, /isPisiInternalPaste/);
+    assert.match(source, /pisi-editor-block\[data-pisi-block-id\]\[data-pisi-block-type\]/);
 });
 
 test('B8 block references reject detached blocks and duplicate identities', () => {

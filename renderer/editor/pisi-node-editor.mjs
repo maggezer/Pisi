@@ -1,3 +1,4 @@
+import { safePisiPasteHref } from '../tags/pisi-paste-sanitize.mjs';
 import {
     getPisiNodeRecoveryWarning,
     applyPisiEditorRecoveryState,
@@ -95,6 +96,7 @@ function sanitizePisiEditorHtml(html = '') {
         'aria-label',
         'data-pisi-block-id',
         'data-pisi-block-type',
+        'data-pisi-block-ref',
         'data-pisi-task-id',
         'data-pisi-todo-checkbox',
         'data-pisi-tag',
@@ -181,7 +183,11 @@ function sanitizePisiEditorHtml(html = '') {
             }
 
             if (element.tagName === 'A' && name === 'href') {
-                allowed = /^(?:https?:|mailto:)/i.test(value);
+                allowed = Boolean(safePisiPasteHref(value));
+            }
+
+            if (['TD', 'TH'].includes(element.tagName) && ['colspan', 'rowspan'].includes(name)) {
+                allowed = /^\d{1,3}$/.test(value) && Number(value) > 0;
             }
 
             if (element.tagName === 'IMG') {
