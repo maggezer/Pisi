@@ -269,3 +269,11 @@ test('B6 heading ownership and folding share a validated section-exit rule', () 
     assert.match(source, /function getPisiHeadingSectionBlocks[\s\S]*?getPisiSectionExitLevel\(current\)/);
     assert.match(source, /function syncPisiWordHeadingCollapse[\s\S]*?applyPisiHeadingSectionExit\(activeHeadingStack, el\)/);
 });
+
+test('B7 nested list paste keeps parent inline content and nested list depth', () => {
+    const source = read('renderer/tags/pisi-editor-blocks.mjs');
+    assert.match(source, /walkContainer\(child, child\.tagName === 'UL' \|\| child\.tagName === 'OL' \? inheritedMeta : childMeta\)/);
+    assert.match(source, /const childMeta = resolvePisiPastedBlockMeta\(child, isInternalPisi\)/);
+    assert.match(source, /const indent = isNumber \? 0 : Math\.max\(0, Math\.min\(depth - 1, 6\)\)/);
+    assert.match(source, /const isInternalPisi = \/class=/);
+});
