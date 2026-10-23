@@ -641,9 +641,8 @@ test('Acceptance test B2: sanitizePisiBlockUrl allows anchor and relative links 
     assert.doesNotMatch(html, /href="data:/, 'Data URI scheme must be blocked');
 });
 
-test('Acceptance test B2: Markdown source dialog shows warning and requires confirmation when Sheet or Canvas blocks exist', async () => {
+test('E3: Markdown source cannot overwrite Sheet or Canvas data', async () => {
     const { openPisiMarkdownSource, closePisiMarkdownSource, pisiBlocksEditorState } = await getBlockEditor();
-
     const editorWithSheet = createMockElement('div');
     editorWithSheet.className = 'pisi-rich-editor';
     const sheetBlock = createMockElement('div');
@@ -652,31 +651,25 @@ test('Acceptance test B2: Markdown source dialog shows warning and requires conf
     editorWithSheet.appendChild(sheetBlock);
 
     openPisiMarkdownSource(editorWithSheet);
-
-    // Warning banner should be visible
-    assert.ok(pisiBlocksEditorState.sourceWarning);
     assert.strictEqual(pisiBlocksEditorState.sourceWarning.style.display, 'block');
-    assert.match(pisiBlocksEditorState.sourceWarning.textContent, /tablo veya tuval/);
-
-    // If window.confirm returns false, editor is not overwritten
-    let confirmCalled = false;
-    globalThis.window.confirm = (msg) => {
-        confirmCalled = true;
-        assert.match(msg, /tablo veya tuval/);
-        return false;
-    };
 
     const applyBtn = pisiBlocksEditorState.sourceOverlay.querySelector('.pisi-apply-md');
     pisiBlocksEditorState.sourceTextarea.value = 'Yeni Markdown Metni';
-    applyBtn.dispatchEvent(new globalThis.Event('click'));
-
-    assert.ok(confirmCalled, 'window.confirm must be invoked before overwriting special blocks');
-    assert.strictEqual(editorWithSheet.innerHTML, '', 'Editor innerHTML must not be overwritten when user cancels confirmation');
-
-    // If window.confirm returns true, editor is updated
     globalThis.window.confirm = () => true;
     applyBtn.dispatchEvent(new globalThis.Event('click'));
-    assert.match(editorWithSheet.innerHTML, /Yeni Markdown Metni/, 'Editor innerHTML must be updated when user confirms');
-
+    assert.strictEqual(editorWithSheet.innerHTML, '', 'Special blocks must never be overwritten by Markdown');
     closePisiMarkdownSource();
+});
+
+test('E3: code fence metadata and section break block identities survive Markdown parsing', async () => {
+    const { pisiBlockMarkdownToHtml } = await getBlockEditor();
+    const source = [
+        '```',
+        'some code',
+        '``` <!-- pisi:meta {"id":"blk_code_1"} -->',
+        '<!-- pisi:section-end --> <!-- pisi:meta {"id":"blk_section_1"} -->'
+    ].join('\\n');
+    const html = pisiBlockMarkdownToHtml(source);
+    assert.match(html, /data-pisi-block-id="blk_code_1"/);
+    assert.match(html, /data-pisi-block-id="blk_section_1"/);
 });
