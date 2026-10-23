@@ -487,6 +487,13 @@ async function performNodeModalCloseAndSave(node) {
                 node.path = nodePath;
                 node.box.dataset.nodePath = nodePath;
                 node.metadata = renameResult.metadata;
+                if (centerNode && activeCenterNode === centerNode) {
+                    centerNode.path = nodePath;
+                    centerNode.metadata = renameResult.metadata || centerNode.metadata;
+                    centerNode.item = { ...centerNode.item, fullPath: nodePath, fileName: renameResult.fileName, metadata: centerNode.metadata };
+                    const centerTitle = getCenterNodeEditorElements().titleInput;
+                    if (centerTitle && !centerNode.dirty) centerTitle.value = centerNode.metadata?.title || title;
+                }
 
                 updateTreeItemAfterRename(oldPath, renameResult);
                 updateOpenMapNodeAfterRename(oldPath, renameResult);

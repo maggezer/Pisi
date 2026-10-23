@@ -143,3 +143,20 @@ test('modal save refreshes the center copy before application flush can save it 
     assert.equal(h.centerEditor.innerHTML, 'modal latest');
     assert.equal(h.c.activeModalNode, null);
 });
+
+test('failed modal content save after rename cannot recreate the old path through center autosave', async () => {
+    const h = setup();
+    h.openModal();
+    h.modalTitle.value = 'Renamed';
+    h.c.window.pisiProject.renamePisiFile = async () => ({ ok: true, fullPath: 'renamed.node', fileName: 'renamed.node', metadata: { title: 'Renamed' } });
+    h.c.window.pisiProject.saveNodeContent = async (path) => {
+        h.writes.push(path);
+        return { ok: false, error: 'write failed' };
+    };
+    h.c.alert = () => {};
+    assert.equal(await h.c.closeNodeModalAndSave(), false);
+    assert.equal(h.center.path, 'renamed.node');
+    assert.equal(h.c.activeModalNode.path, 'renamed.node');
+    await h.c.saveCurrentCenterNodeEditor();
+    assert.deepEqual(h.writes, ['renamed.node']);
+});
