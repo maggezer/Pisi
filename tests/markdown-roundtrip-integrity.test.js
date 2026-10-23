@@ -668,7 +668,7 @@ test('E3: code fence metadata and section break block identities survive Markdow
         'some code',
         '``` <!-- pisi:meta {"id":"blk_code_1"} -->',
         '<!-- pisi:section-end --> <!-- pisi:meta {"id":"blk_section_1"} -->'
-    ].join('\\n');
+    ].join('\n');
     const html = pisiBlockMarkdownToHtml(source);
     assert.match(html, /data-pisi-block-id="blk_code_1"/);
     assert.match(html, /data-pisi-block-id="blk_section_1"/);
