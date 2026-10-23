@@ -63,7 +63,6 @@ function restorePisiAuthoritySelection(editor) {
     if (!pisiAuthoritativeSelections.has(editor)) rememberPisiAuthoritySelection(editor);
     const saved = pisiAuthoritativeSelections.get(editor);
     if (!saved || !restorePisiSelectionBookmark(editor, saved)) {
-        pisiAuthoritativeSelections.delete(editor);
         return null;
     }
     rememberPisiAuthoritySelection(editor, true);

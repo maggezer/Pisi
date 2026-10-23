@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { resolvePisiBookmarkOffset } from '../renderer/editor/pisi-selection-bookmarks.mjs';
+import {
+    resolvePisiBookmarkOffset,
+    resetPisiSelectionBookmarks,
+    isPisiSelectionBookmarkDisplaced,
+    resolvePisiSelectionBookmark
+} from '../renderer/editor/pisi-selection-bookmarks.mjs';
 
 const text = (value) => ({ node: { nodeValue: value }, length: value.length, atomic: false });
 
@@ -30,4 +35,13 @@ test('shortened text clamps stale offsets and empty blocks resolve safely', () =
     const root = { childNodes: [] };
     assert.deepEqual(resolvePisiBookmarkOffset([], 10, root), { node: root, offset: 0 });
     assert.deepEqual(resolvePisiBookmarkOffset(tokens, -1, root), { node: tokens[0].node, offset: 0 });
+});
+
+test('document reload invalidates bookmarks before passive selection updates can reuse them', () => {
+    const editor = { id: 'test-editor' };
+    const saved = { editor, scope: '', version: 0 };
+    resetPisiSelectionBookmarks(editor);
+    assert.equal(isPisiSelectionBookmarkDisplaced(editor, saved), true);
+    assert.equal(resolvePisiSelectionBookmark(editor, saved), null);
+    assert.equal(isPisiSelectionBookmarkDisplaced(editor, null), false);
 });

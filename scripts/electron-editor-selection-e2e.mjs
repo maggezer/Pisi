@@ -118,6 +118,7 @@ export async function testEditorSelection(cdp) {
         })()`);
         const before = await cdp.evaluate(`document.getElementById('center-node-editor-content').innerHTML`);
         await change();
+        await change();
         assert.equal(
             await cdp.evaluate(`document.getElementById('center-node-editor-content').innerHTML`),
             before,

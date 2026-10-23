@@ -62,7 +62,6 @@ function restorePisiWordSelection(toolbar) {
     const saved = pisiWordToolbarSelections.get(toolbar);
     if (!editor || !saved) return false;
     if (!restorePisiSelectionBookmark(editor, saved)) {
-        pisiWordToolbarSelections.delete(toolbar);
         return false;
     }
     rememberPisiWordSelection(toolbar, true);
