@@ -323,14 +323,18 @@ function getPisiWordHeadingLevel(block) {
     return { heading1: 1, heading2: 2, heading3: 3, heading4: 4, heading5: 5 }[type] || 0;
 }
 function getPisiSectionExitLevel(block) {
-    if (!block?.classList?.contains('pisi-section-break') && block?.dataset?.pisiSectionBreak !== 'true') return null;
+    if (!block?.classList?.contains('pisi-section-break') && block?.dataset?.pisiSectionBreak !== 'true') {
+        return null;
+    }
     const raw = block.dataset?.pisiSectionExit;
     if (raw == null || raw === '') return null;
     const level = Number(raw);
     return Number.isInteger(level) && level >= 1 && level <= 5 ? level : null;
 }
 function applyPisiHeadingSectionExit(stack, block) {
-    if (!block?.classList?.contains('pisi-section-break') && block?.dataset?.pisiSectionBreak !== 'true') return;
+    if (!block?.classList?.contains('pisi-section-break') && block?.dataset?.pisiSectionBreak !== 'true') {
+        return;
+    }
     const exitLevel = getPisiSectionExitLevel(block);
     if (exitLevel === null) {
         stack.pop();
