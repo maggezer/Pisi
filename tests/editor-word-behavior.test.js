@@ -21,7 +21,7 @@ test('toolbar remembers selection and synchronizes font and command state', () =
     const source = read('renderer/editor/pisi-editor-word-behavior.mjs');
 
     assert.match(source, /const pisiWordToolbarSelections = new WeakMap\(\)/);
-    assert.match(source, /function rememberPisiWordSelection\(toolbar\)/);
+    assert.match(source, /function rememberPisiWordSelection\(toolbar, force = false\)/);
     assert.match(source, /function restorePisiWordSelection\(toolbar\)/);
     assert.match(source, /document\.addEventListener\('selectionchange'/);
     assert.match(source, /getComputedStyle\(probe\)/);
@@ -306,12 +306,10 @@ test('E2 heading formatting preserves caret offsets and formats all selected blo
     const start = source.indexOf('function applyPisiWordBlockStyle(');
     const end = source.indexOf('function applyPisiWordSheetFormat(', start);
     const body = source.slice(start, end);
-    assert.match(body, /const startOffset = blockStartOffset/);
-    assert.match(body, /const endOffset = blockStartOffset/);
+    assert.match(body, /const bookmark = capturePisiSelectionBookmark\(editor\)/);
     assert.match(body, /const blocks = Array\.from\(editor\.children\)\.filter/);
     assert.match(body, /for \(const block of blocks\)/);
     assert.match(body, /converted\.set\(block, next\)/);
-    assert.match(body, /restored\.setStart\(from\.node, from\.offset\)/);
-    assert.match(body, /restored\.setEnd\(to\.node, to\.offset\)/);
+    assert.match(body, /restorePisiSelectionBookmark\(editor, bookmark\)/);
     assert.doesNotMatch(body, /nextRange\.collapse\(false\)/);
 });

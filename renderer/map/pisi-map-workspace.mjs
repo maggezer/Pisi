@@ -1,3 +1,4 @@
+import { resetPisiSelectionBookmarks } from '../editor/pisi-selection-bookmarks.mjs';
 import { resetPisiEditorHistory } from '../editor/pisi-editor-history.mjs';
 import { beginPisiWorkspaceNavigation, isPisiWorkspaceNavigationCurrent } from '../editor/pisi-editor-navigation.mjs';
 import { getPisiEditorRestoreGeneration, isPisiEditorRestorePending } from '../editor/pisi-editor-restore.mjs';
@@ -659,6 +660,7 @@ async function startMapNodeTitleEdit(box, node) {
 
 function setPisiEditorContent(editor, content = '') {
     if (!editor) return;
+    resetPisiSelectionBookmarks(editor);
 
     const value = String(content || '');
 

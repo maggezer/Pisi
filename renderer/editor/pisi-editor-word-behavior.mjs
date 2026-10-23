@@ -1,3 +1,9 @@
+import {
+    capturePisiSelectionBookmark,
+    resolvePisiSelectionBookmark,
+    restorePisiSelectionBookmark,
+    isPisiSelectionBookmarkDisplaced
+} from './pisi-selection-bookmarks.mjs';
 import { getPisiBlockKeyboardContext, hasPisiKeyboardContent, isPisiKeyboardLineEmpty, insertPisiKeyboardLineBreak } from './pisi-block-keyboard-context.mjs';
 import { normalizePisiWordFontFamily, normalizePisiWordFontSize, ensurePisiWordSelectOption } from './pisi-word-font-controls.mjs';
 const PISI_WORD_FONT_FAMILIES = Object.freeze(['Aptos', 'Calibri', 'Segoe UI', 'Arial', 'Times New Roman', 'Georgia', 'Consolas']);
@@ -40,34 +46,35 @@ function getPisiWordRangeInsideEditor(editor, selection = window.getSelection?.(
     const range = selection.getRangeAt(0);
     return editor.contains(range.startContainer) && editor.contains(range.endContainer) ? range : null;
 }
-function rememberPisiWordSelection(toolbar) {
+function rememberPisiWordSelection(toolbar, force = false) {
     const editor = getPisiWordEditor(toolbar);
     const range = getPisiWordRangeInsideEditor(editor);
     if (!range) return false;
-    pisiWordToolbarSelections.set(toolbar, range.cloneRange());
+    const saved = pisiWordToolbarSelections.get(toolbar);
+    if (!force && range.collapsed && isPisiSelectionBookmarkDisplaced(editor, saved)) return false;
+    const bookmark = capturePisiSelectionBookmark(editor);
+    if (!bookmark) return false;
+    pisiWordToolbarSelections.set(toolbar, bookmark);
     return true;
 }
 function restorePisiWordSelection(toolbar) {
     const editor = getPisiWordEditor(toolbar);
-    const savedRange = pisiWordToolbarSelections.get(toolbar);
-    if (!editor || !savedRange) return false;
-    if (!savedRange.startContainer?.isConnected || !savedRange.endContainer?.isConnected) {
+    const saved = pisiWordToolbarSelections.get(toolbar);
+    if (!editor || !saved) return false;
+    if (!restorePisiSelectionBookmark(editor, saved)) {
         pisiWordToolbarSelections.delete(toolbar);
         return false;
     }
-    editor.focus({ preventScroll: true });
-    const selection = window.getSelection?.();
-    if (!selection) return false;
-    selection.removeAllRanges();
-    selection.addRange(savedRange.cloneRange());
+    rememberPisiWordSelection(toolbar, true);
     return true;
 }
 function getPisiWordRange(toolbar) {
     const editor = getPisiWordEditor(toolbar);
+    if (!editor) return null;
     const liveRange = getPisiWordRangeInsideEditor(editor);
-    if (liveRange) return liveRange;
-    const savedRange = pisiWordToolbarSelections.get(toolbar);
-    return savedRange?.startContainer?.isConnected ? savedRange : null;
+    const saved = pisiWordToolbarSelections.get(toolbar);
+    if (liveRange && !(liveRange.collapsed && isPisiSelectionBookmarkDisplaced(editor, saved))) return liveRange;
+    return resolvePisiSelectionBookmark(editor, saved)?.range || null;
 }
 function getPisiWordElementFromRange(editor, range) {
     if (!editor || !range) return null;
@@ -172,10 +179,11 @@ function makePisiWordStyledSpan(property, value) {
 function applyPisiWordInlineStyle(toolbar, property, value) {
     const editor = getPisiWordEditor(toolbar);
     if (!editor) return false;
-    restorePisiWordSelection(toolbar);
+    if (!restorePisiWordSelection(toolbar)) return false;
     const selection = window.getSelection?.();
     const range = getPisiWordRangeInsideEditor(editor, selection);
     if (!range) return false;
+    const bookmark = range.collapsed ? null : capturePisiSelectionBookmark(editor);
     if (range.collapsed) {
         let span = getPisiWordTypingSpan(editor, range);
         if (!span) {
@@ -236,6 +244,7 @@ function applyPisiWordInlineStyle(toolbar, property, value) {
             selectPisiWordRange(selectedRange);
         }
     }
+    if (bookmark) restorePisiSelectionBookmark(editor, bookmark);
     notifyPisiWordEditorChanged(editor);
     rememberPisiWordSelection(toolbar);
     syncPisiWordToolbarState(toolbar);
@@ -244,7 +253,7 @@ function applyPisiWordInlineStyle(toolbar, property, value) {
 function applyPisiWordBlockStyle(toolbar, tagName) {
     const editor = getPisiWordEditor(toolbar);
     if (!editor) return false;
-    restorePisiWordSelection(toolbar);
+    if (!restorePisiWordSelection(toolbar)) return false;
     const selection = window.getSelection?.();
     const range = getPisiWordRangeInsideEditor(editor, selection);
     if (!range) return false;
@@ -252,17 +261,7 @@ function applyPisiWordBlockStyle(toolbar, tagName) {
     const startBlock = getPisiWordBlock(editor, range.startContainer);
     if (!startBlock || !type || typeof window.applyPisiBlockType !== 'function') return false;
 
-    // Capture offsets relative to the original blocks. Replacing a block tag
-    // moves its text nodes, so absolute DOM ranges are not reliable here.
-    const endBlock = getPisiWordBlock(editor, range.endContainer) || startBlock;
-    const blockStartOffset = (block, container, offset) => {
-        const prefix = document.createRange();
-        prefix.selectNodeContents(block);
-        prefix.setEnd(container, offset);
-        return prefix.toString().length;
-    };
-    const startOffset = blockStartOffset(startBlock, range.startContainer, range.startOffset);
-    const endOffset = blockStartOffset(endBlock, range.endContainer, range.endOffset);
+    const bookmark = capturePisiSelectionBookmark(editor);
     const collapsed = range.collapsed;
     const blocks = Array.from(editor.children).filter((block) => {
         if (!block.classList.contains('pisi-editor-block')) return false;
@@ -281,27 +280,7 @@ function applyPisiWordBlockStyle(toolbar, tagName) {
     }
     if (!converted.size) return false;
 
-    const resolveOffset = (block, offset) => {
-        const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
-        let remaining = offset;
-        let last = null;
-        while (walker.nextNode()) {
-            const node = walker.currentNode;
-            last = node;
-            const length = node.nodeValue?.length || 0;
-            if (remaining <= length) return { node, offset: remaining };
-            remaining -= length;
-        }
-        return last ? { node: last, offset: last.nodeValue?.length || 0 } : { node: block, offset: 0 };
-    };
-    const first = converted.get(startBlock) || startBlock;
-    const last = converted.get(endBlock) || endBlock;
-    const from = resolveOffset(first, startOffset);
-    const to = resolveOffset(last, endOffset);
-    const restored = document.createRange();
-    restored.setStart(from.node, from.offset);
-    restored.setEnd(to.node, to.offset);
-    selectPisiWordRange(restored);
+    if (!restorePisiSelectionBookmark(editor, bookmark)) return false;
     rememberPisiWordSelection(toolbar);
     syncPisiWordToolbarState(toolbar);
     return true;
@@ -807,22 +786,22 @@ function togglePisiWordHeading(block) {
 function bindPisiWordEditor(editor) {
     if (!editor || pisiWordBoundEditors.has(editor)) return;
     pisiWordBoundEditors.add(editor);
-    const sync = () => {
+    const sync = (force = false) => {
         syncPisiWordHeadingCollapse(editor);
         const toolbar = getPisiWordToolbarForEditor(editor);
         if (toolbar) {
-            rememberPisiWordSelection(toolbar);
+            rememberPisiWordSelection(toolbar, force);
             syncPisiWordToolbarState(toolbar);
         }
     };
     editor.addEventListener('focusin', () => queueMicrotask(sync));
-    editor.addEventListener('pointerup', () => queueMicrotask(sync));
+    editor.addEventListener('pointerup', () => queueMicrotask(() => sync(true)));
     editor.addEventListener('keydown', (event) => {
         if (editor.dataset.pisiBlocksEditorBound === '1') return;
         if (!handlePisiBulletKeydown(editor, event)) handlePisiHeadingSectionKeydown(editor, event);
     });
-    editor.addEventListener('keyup', () => queueMicrotask(sync));
-    editor.addEventListener('input', () => queueMicrotask(sync));
+    editor.addEventListener('keyup', () => queueMicrotask(() => sync(true)));
+    editor.addEventListener('input', () => queueMicrotask(() => sync(true)));
     editor.addEventListener(
         'pointerdown',
         (event) => {
@@ -893,7 +872,12 @@ function bindPisiWordToolbar(toolbar) {
             if (compositeAlignmentCommand) {
                 return;
             }
-            restorePisiWordSelection(toolbar);
+            if (getPisiWordActiveCell(getPisiWordEditor(toolbar))) return;
+            if (!restorePisiWordSelection(toolbar)) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                return;
+            }
             queueMicrotask(() => {
                 rememberPisiWordSelection(toolbar);
                 syncPisiWordToolbarState(toolbar);
