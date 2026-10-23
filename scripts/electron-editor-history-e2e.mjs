@@ -82,5 +82,53 @@ export async function testEditorHistory(cdp) {
         `document.getElementById('center-node-editor-content').dispatchEvent(new InputEvent('beforeinput', { bubbles: true, cancelable: true, inputType: 'historyRedo' }))`
     );
     assert.equal(await snapshot(), added, 'native historyRedo input must use the same stack');
+
+    await cdp.evaluate(`(() => {
+        const editor = document.getElementById('center-node-editor-content');
+        window.setPisiEditorContent(editor, '<div>Composite history text</div>');
+        editor.focus();
+        const range = document.createRange();
+        range.selectNodeContents(editor.firstElementChild);
+        range.collapse(false);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        window.insertPisiSheet(editor, 2, 2);
+        const table = editor.querySelector('table[data-pisi-sheet]');
+        const database = window.getPisiSheetDatabase(table);
+        database.items[0].values[database.fields[0].id] = { value: 'KEEP_SHEET_HISTORY', formula: null, format: {} };
+        window.persistPisiSheetDatabase(table);
+        window.renderPisiSheetDatabase(table);
+        const toolbar = document.querySelector('[data-editor-target="center-node-editor-content"]');
+        toolbar.querySelector('[data-pisi-paint-action="createCanvas"]').click();
+        const canvas = editor.querySelector('canvas[data-pisi-canvas]');
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(2, 2, 8, 8);
+        window.savePisiCanvasData(canvas);
+        editor.dispatchEvent(new Event('input', { bubbles: true }));
+        const text = editor.firstElementChild;
+        range.selectNodeContents(text);
+        range.collapse(false);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        editor.focus();
+    })()`);
+    await cdp.request('Input.insertText', { text: ' edit beside composites' });
+    await shortcut(false);
+    const composites = await cdp.evaluate(`(async () => {
+        const editor = document.getElementById('center-node-editor-content');
+        const table = editor.querySelector('table[data-pisi-sheet]');
+        const database = table && window.getPisiSheetDatabase(table);
+        const canvas = editor.querySelector('canvas[data-pisi-canvas]');
+        for (let i = 0; i < 20; i += 1) {
+            const pixel = canvas?.getContext('2d').getImageData(4, 4, 1, 1).data;
+            if (pixel?.[0] === 255 && pixel[1] === 0 && pixel[2] === 0 && pixel[3] === 255) {
+                return { sheet: database?.items[0]?.values[database.fields[0].id]?.value, canvas: true };
+            }
+            await new Promise(resolve => setTimeout(resolve, 50));
+        }
+        return { canvas: false };
+    })()`);
+    assert.deepEqual(composites, { sheet: 'KEEP_SHEET_HISTORY', canvas: true }, 'text undo must preserve Sheet values and Canvas pixels');
     console.log('EDITOR_HISTORY_E2E_OK: native typing/formatting and structural edits undo and redo in order');
 }
