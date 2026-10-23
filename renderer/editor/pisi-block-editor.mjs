@@ -117,6 +117,14 @@ function pisiBlockMarkdownToHtml(markdown = '') {
     for (const rawLine of lines) {
         if (/^\`\`\`/.test(rawLine)) {
             if (codeLines) {
+                const closingMeta = rawLine.match(/\s*<!--\s*pisi:meta\s+(\{[\s\S]*?\})\s*-->\s*$/);
+                if (closingMeta) {
+                    try {
+                        codeMeta = JSON.parse(closingMeta[1]);
+                    } catch {
+                        // Keep metadata from the opening fence if closing metadata is malformed.
+                    }
+                }
                 output.push(makePisiBlockHtml('code', escapePisiBlockHtml(codeLines.join('\n')), 0, codeMeta));
                 codeLines = null;
                 codeMeta = null;
@@ -142,7 +150,7 @@ function pisiBlockMarkdownToHtml(markdown = '') {
         }
         if (/^<!--\s*pisi:section-end(?:\s*-->)?/.test(line)) {
             const blockId = meta?.id || window.makePisiBlockId?.() || `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-            output.push(`<div class="pisi-editor-block pisi-section-break" data-pisi-block-id="${blockId}" data-pisi-section-break="true"><br></div>`);
+            output.push(`<div class="pisi-editor-block pisi-section-break" data-pisi-block-id="${blockId}" data-pisi-section-break="true"${buildExtraBlockAttrs(meta)}><br></div>`);
             continue;
         }
         const rollup = line.match(/^\{\{pisi-rollup:([^:]*):([^:]*):(count|sum|average|min|max|unique|join)\}\}/);
@@ -239,7 +247,7 @@ function pisiBlockHtmlToMarkdown(editor) {
         }
         const text = pisiInlineHtmlToMarkdown(block);
         if (block.classList.contains('pisi-section-break') || block.dataset?.pisiSectionBreak === 'true') {
-            return text ? `<!-- pisi:section-end -->\n${text}` : '<!-- pisi:section-end -->';
+            return `<!-- pisi:section-end -->${metaStr}`;
         }
         if (type.startsWith('heading')) return `${'#'.repeat(Number(type.slice(-1)))} ${text}${metaStr}`;
         if (type === 'quote') return `> ${text}${metaStr}`;
@@ -922,8 +930,9 @@ function ensurePisiMarkdownSourceDialog() {
     apply.addEventListener('click', () => {
         const editor = pisiBlocksEditorState.sourceEditor;
         if (!editor) return closePisiMarkdownSource();
-        if (editor.querySelector?.('.pisi-sheet-block, .pisi-canvas-block, table[data-pisi-sheet]') && typeof window.confirm === 'function') {
-            if (!window.confirm(pisiBlockTranslate('Bu belgede Sheet veya Canvas blokları bulunmaktadır. Markdown kaynağını uygulamak bu blokları sıfırlayabilir. Devam etmek istiyor musunuz?'))) return;
+        if (editor.querySelector?.('.pisi-sheet-block, .pisi-canvas-block, table[data-pisi-sheet]')) {
+            window.alert?.(pisiBlockTranslate('Sheet veya Canvas içeren notlarda Markdown kaynağı uygulanamaz. Veri kaybını önlemek için bu blokları ayrı bir nota taşıyın.'));
+            return;
         }
         editor.innerHTML = pisiBlockMarkdownToHtml(textarea.value);
         decoratePisiBlockTypes(editor);
