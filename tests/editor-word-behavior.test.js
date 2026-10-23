@@ -285,3 +285,16 @@ test('B8 block references reject detached blocks and duplicate identities', () =
     assert.match(source, /matches\.length !== 1 \|\| matches\[0\] !== block/);
     assert.match(source, /if \(!node\?\.path \|\| !blockId\) return false/);
 });
+
+test('E1 multi-block inline formatting edits selected text nodes, not whole blocks', () => {
+    const source = read('renderer/editor/pisi-editor-word-behavior.mjs');
+    const start = source.indexOf('function applyPisiWordInlineStyle(');
+    const end = source.indexOf('function applyPisiWordBlockStyle(', start);
+    const body = source.slice(start, end);
+    assert.match(body, /document\.createTreeWalker\(editor, NodeFilter\.SHOW_TEXT\)/);
+    assert.match(body, /range\.intersectsNode\(node\)/);
+    assert.match(body, /portion\.extractContents\(\)/);
+    assert.match(body, /portion\.insertNode\(span\)/);
+    assert.match(body, /selectedRange\.setStartBefore\(styled\[0\]\)/);
+    assert.doesNotMatch(body, /if \(range\.intersectsNode\(block\)\) block\.style\[property\] = value/);
+});
