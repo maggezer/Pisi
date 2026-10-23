@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { testEditorHistory } from './electron-editor-history-e2e.mjs';
+import { testEditorKeyboard } from './electron-editor-keyboard-e2e.mjs';
 
 const require = createRequire(import.meta.url);
 const electronPath = /** @type {string} */ (require('electron'));
@@ -256,6 +257,7 @@ try {
     });
 
     await testEditorHistory(cdp);
+    await testEditorKeyboard(cdp);
     await cdp.evaluate(`window.setPisiEditorContent(document.getElementById('center-node-editor-content'), ${JSON.stringify(contentMarker)})`);
     await cdp.evaluate(`document.getElementById('center-node-editor-content').dispatchEvent(new Event('input', { bubbles: true }))`);
     await closeTab(cdp, nodePath);
