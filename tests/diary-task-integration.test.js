@@ -18,7 +18,7 @@ test('günlük not içinde oluşturulan yerel görevler Görevler başlığı al
 
     // 1. organizeDiaryManualTasks başlık yoksa oluşturur ve görevleri altına alır
     const organized = diaryModule.organizeDiaryManualTasks(sampleLocalTasks, '2026-10-22');
-    assert.match(organized, /^<h3>Görevler · 2026-10-22<\/h3>/);
+    assert.match(organized, /^<div><br><\/div>\n.*<hr><\/div>\n<h3>Görevler<\/h3>/);
     assert.match(organized, /Bölüm dışı danışman atama mümkün mü, sor/);
     assert.match(organized, /Gizli ağ açılmış mı sor/);
 
@@ -30,7 +30,7 @@ test('günlük not içinde oluşturulan yerel görevler Görevler başlığı al
     ].join('\n');
 
     const reorganized = diaryModule.organizeDiaryManualTasks(sampleWithTaskAbove, '2026-10-22');
-    const headingIndex = reorganized.indexOf('<h3>Görevler · 2026-10-22</h3>');
+    const headingIndex = reorganized.indexOf('<h3>Görevler</h3>');
     const upperTaskIndex = reorganized.indexOf('Üstteki yeni görev');
     const lowerTaskIndex = reorganized.indexOf('Alttaki eski görev');
 
@@ -46,7 +46,7 @@ test('günlük not içinde oluşturulan yerel görevler Görevler başlığı al
 
     const withNotes = diaryModule.organizeDiaryManualTasks(sampleWithNotes, '2026-10-22');
     const notePos = withNotes.indexOf('Bugün çok verimli bir gündü.');
-    const noteHeadingPos = withNotes.indexOf('<h3>Görevler · 2026-10-22</h3>');
+    const noteHeadingPos = withNotes.indexOf('<h3>Görevler</h3>');
     const taskPos = withNotes.indexOf('Görev 1');
 
     assert.ok(notePos < noteHeadingPos, 'Günlük notlar Görevler başlığından önce gelmeli');
@@ -155,4 +155,40 @@ test('günlükte listelenen dış görevlerin checkboxları korunur ve hem açı
     assert.match(prodCss, /\.pisi-diary-managed-block \.pisi-diary-task-marker \{[\s\S]*?border:\s*1\.5px solid/);
     assert.match(prodCss, /\.pisi-diary-managed-block \.pisi-diary-task-marker\[aria-checked=['"]true['"]\]::after \{[\s\S]*?content:\s*['"]✓['"]/);
     assert.match(prodCss, /html\[data-pisi-theme=['"]light['"]\][\s\S]*?\.pisi-diary-managed-block \.pisi-diary-task-marker/);
+});
+
+test('diary task separators surround local and external tasks and stay stable across syncs', async () => {
+    const { composePisiDiaryTaskContent } = await import('../main/functions/document-store-diary.js');
+    const local = '<div data-pisi-block-type="task">Local task</div>';
+    const external = [{ nodePath: '/project/other.node', blockId: 'blk_external', sourceKey: 'other', text: 'External task', tag: 'todo.1.28-10-2026' }];
+    for (const notes of ['', '<div><br></div>', '<div>My notes</div>', '<div><hr></div><div>My notes</div>']) {
+        for (const tasks of [local, '']) {
+            for (const entries of [external, []]) {
+                if (!tasks && !entries.length) continue;
+                const input = notes + tasks;
+                const result = composePisiDiaryTaskContent(input, '2026-10-28', entries);
+                assert.equal((result.match(/pisi-diary-task-divider/g) || []).length, 2);
+                assert.equal((result.match(/<h3>Görevler<\/h3>/g) || []).length, 1);
+                assert.ok(result.indexOf('<hr>') < result.indexOf('<h3>Görevler'));
+                if (tasks) assert.ok(result.lastIndexOf('<hr>') > result.indexOf('Local task'));
+                if (entries.length) assert.ok(result.lastIndexOf('<hr>') > result.indexOf('External task'));
+                if (!notes) assert.ok(result.startsWith('<div><br></div>'));
+                if (notes) assert.ok(result.replace(/>\s+</g, '><').startsWith(notes));
+                assert.equal(composePisiDiaryTaskContent(result, '2026-10-28', entries), result);
+            }
+        }
+    }
+});
+
+test('old dated headings are reused and disappearing external tasks leave no automatic rules', async () => {
+    const { composePisiDiaryTaskContent } = await import('../main/functions/document-store-diary.js');
+    const external = [{ text: 'External task', nodePath: '/other.node', blockId: 'external' }];
+    const original = '<div>Notes</div><h3 data-pisi-block-id="heading">Görevler · 28-10-2026</h3>';
+    const result = composePisiDiaryTaskContent(original, '2026-10-28', external);
+    assert.equal((result.match(/Görevler/g) || []).length, 1);
+    assert.match(result, /<h3 data-pisi-block-id="heading">Görevler<\/h3>/);
+    assert.doesNotMatch(result, /Görevler ·/);
+    const removed = composePisiDiaryTaskContent(result, '2026-10-28', []);
+    assert.doesNotMatch(removed, /pisi-diary-task-divider|External task/);
+    assert.match(removed, /Notes/);
 });

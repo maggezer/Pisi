@@ -51,7 +51,7 @@ export function extractPisiPasteBlocks(html = '', plain = '') {
     const emit = (nodes, meta, explicit = false) => {
         const wrapper = document.createElement('div');
         nodes.forEach((node) => wrapper.appendChild(node.cloneNode(true)));
-        if (!explicit && !wrapper.textContent.trim() && !wrapper.querySelector('br, img, table')) return;
+        if (!explicit && !wrapper.textContent.trim() && !wrapper.querySelector('br, hr, img, table')) return;
         blocks.push(meta.type === 'code' ? { ...meta, text: preText(wrapper).replace(/\r\n?/g, '\n') } : { ...meta, html: wrapper.innerHTML });
     };
     const walk = (container, inherited = base) => {

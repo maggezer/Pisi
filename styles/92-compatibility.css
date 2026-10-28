@@ -898,3 +898,11 @@ html[data-pisi-theme='light'] .pisi-map-edge-menu-delete {
     justify-content: center;
     gap: 5px;
 }
+
+/* Horizontal rules stay visible in both editor themes. */
+.pisi-rich-editor hr {
+    border: 0;
+    border-top: 1px solid currentColor;
+    opacity: 0.35;
+    margin: 0.75em 0;
+}

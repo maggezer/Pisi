@@ -25,3 +25,8 @@ single-Enter paragraph splitting. Electron regression tests exercise both
 keyboard events and beforeinput, block identities, caret splits, styled empty
 lines, composition and task deletion. All mutations use the normal input/save
 and editor undo/redo pipeline.
+
+In a paragraph containing only `---`, Enter or Space replaces the marker with a
+horizontal rule and puts the caret in a new paragraph below it. Shift+Enter
+continues to insert a soft line. Code and task blocks do not use this shortcut.
+Horizontal rules survive saving, pasting and Markdown source round-trips.

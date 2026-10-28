@@ -5,7 +5,7 @@ function isTextBlock(editor, block) {
         block?.parentElement === editor &&
         block.matches('.pisi-editor-block') &&
         /^(paragraph|heading[1-5]|quote|code|bullet|number|task)$/.test(block.dataset.pisiBlockType) &&
-        !block.querySelector('table, canvas, img, video, audio, iframe, object, [data-pisi-rollup-relation]')
+        !block.querySelector('hr, table, canvas, img, video, audio, iframe, object, [data-pisi-rollup-relation]')
     );
 }
 

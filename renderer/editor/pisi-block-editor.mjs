@@ -75,6 +75,9 @@ function extractPisiBlockMeta(block) {
     const ds = block?.dataset || {};
     if (ds.pisiBlockId) meta.id = ds.pisiBlockId;
     if (ds.pisiTaskId) meta.taskId = ds.pisiTaskId;
+    if (ds.pisiSectionBreak === 'true') meta.sectionBreak = true;
+    if (ds.pisiSectionExit) meta.sectionExit = ds.pisiSectionExit;
+    if (block.classList.contains('pisi-diary-task-divider')) meta.diaryTaskDivider = true;
     if (ds.pisiHeadingParent) meta.headingParent = ds.pisiHeadingParent;
     if (ds.pisiTodoParent) meta.todoParent = ds.pisiTodoParent;
     if (ds.pisiBlockRef) meta.blockRef = ds.pisiBlockRef;
@@ -95,6 +98,7 @@ function buildExtraBlockAttrs(meta) {
     if (!meta || typeof meta !== 'object') return '';
     let attrs = '';
     const map = {
+        sectionExit: 'data-pisi-section-exit',
         taskId: 'data-pisi-task-id',
         headingParent: 'data-pisi-heading-parent',
         todoParent: 'data-pisi-todo-parent',
@@ -107,6 +111,7 @@ function buildExtraBlockAttrs(meta) {
     for (const [key, attr] of Object.entries(map)) {
         if (meta[key]) attrs += ` ${attr}="${escapePisiBlockHtml(meta[key])}"`;
     }
+    if (meta.sectionBreak) attrs += ' data-pisi-section-break="true"';
     if (meta.collapsed) attrs += ' data-pisi-bullet-collapsed="true"';
     return attrs;
 }
@@ -116,7 +121,7 @@ function makePisiBlockHtml(type, content, indent = 0, meta = null) {
     const ind = meta?.indent !== undefined ? meta.indent : indent;
     const indentAttr = ind > 0 ? ` data-pisi-bullet-indent="${ind}" style="--pisi-bullet-indent:${ind};"` : '';
     const extra = buildExtraBlockAttrs(meta);
-    return `<${record.tag} class="pisi-editor-block" data-pisi-block-id="${blockId}" data-pisi-block-type="${record.id}"${indentAttr}${extra}>${content || '<br>'}</${record.tag}>`;
+    return `<${record.tag} class="pisi-editor-block${meta?.diaryTaskDivider ? ' pisi-diary-task-divider' : ''}" data-pisi-block-id="${blockId}" data-pisi-block-type="${record.id}"${indentAttr}${extra}>${content || '<br>'}</${record.tag}>`;
 }
 const encodePisiRollupMarkdownValue = (value = '') => encodeURIComponent(String(value || ''));
 function decodePisiRollupMarkdownValue(value = '') {
@@ -182,8 +187,12 @@ function pisiBlockMarkdownToHtml(markdown = '') {
         if (/^<!--\s*pisi:section-end(?:\s*-->)?/.test(line)) {
             const blockId = meta?.id || window.makePisiBlockId?.() || `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
             output.push(
-                `<div class="pisi-editor-block pisi-section-break" data-pisi-block-id="${blockId}" data-pisi-section-break="true"${buildExtraBlockAttrs(meta)}><br></div>`
+                `<div class="pisi-editor-block pisi-section-break" data-pisi-block-id="${blockId}"${buildExtraBlockAttrs({ ...meta, sectionBreak: true })}><br></div>`
             );
+            continue;
+        }
+        if (/^\s*---\s*$/.test(line)) {
+            output.push(makePisiBlockHtml('paragraph', '<hr>', 0, meta));
             continue;
         }
         const rollup = line.match(/^\{\{pisi-rollup:([^:]*):([^:]*):(count|sum|average|min|max|unique|join)\}\}/);
@@ -291,6 +300,7 @@ function pisiBlockHtmlToMarkdown(editor) {
                     : 'count';
                 return `{{pisi-rollup:${relation}:${target}:${aggregate}}}${metaStr}`;
             }
+            if (block.querySelector('hr') && !block.textContent.trim()) return `---${metaStr}`;
             const text = pisiInlineHtmlToMarkdown(block);
             if (block.classList.contains('pisi-section-break') || block.dataset?.pisiSectionBreak === 'true') {
                 return `<!-- pisi:section-end -->${metaStr}`;
@@ -610,6 +620,26 @@ function getPisiBlockAtEvent(editor, target) {
     const block = target?.closest?.('.pisi-editor-block');
     return block && editor.contains(block) ? block : null;
 }
+function applyPisiHorizontalRuleShortcut(editor, event, block, range) {
+    if (!['Enter', ' '].includes(event.key) || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return false;
+    if (getPisiBlockType(block) !== 'paragraph' || !range.collapsed || block.textContent.trim() !== '---') return false;
+    const trailing = range.cloneRange();
+    trailing.selectNodeContents(block);
+    trailing.setStart(range.endContainer, range.endOffset);
+    if (trailing.toString().trim() || block.querySelector('hr, img, table, canvas, [contenteditable="false"]')) return false;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    block.innerHTML = '<hr>';
+    const next = document.createElement('div');
+    next.className = 'pisi-editor-block';
+    next.dataset.pisiBlockType = 'paragraph';
+    next.innerHTML = '<br>';
+    block.after(next);
+    window.ensurePisiEditorBlocks?.(editor);
+    placeCaretAtStartOfPisiBlock(window.getSelection?.(), next);
+    commitPisiBlockMutation(editor, next);
+    return true;
+}
 function applyPisiMarkdownBlockShortcut(event, block) {
     if (event.key !== ' ' || event.ctrlKey || event.metaKey || event.altKey) return false;
     const marker = String(block.textContent || '').trim();
@@ -664,6 +694,7 @@ function handlePisiBlocksEditorKeydown(editor, event) {
         commitPisiBlockMutation(editor, block);
         return;
     }
+    if (applyPisiHorizontalRuleShortcut(editor, event, block, range)) return;
     if (splitPisiTaskBlockOnEnter(editor, block, event)) return;
     if (window.handlePisiBulletKeydown?.(editor, event, block)) return;
     if (window.handlePisiHeadingSectionKeydown?.(editor, event, block)) return;

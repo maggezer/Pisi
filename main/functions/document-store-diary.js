@@ -232,52 +232,36 @@ function splitHtmlBlocks(html = '') {
     return blocks;
 }
 
-function organizeDiaryManualTasks(content = '', fileDate = '') {
-    const raw = String(content || '').trim();
-    if (!raw) return content;
+// Only remove separators owned by diary task synchronization, never user rules.
+const PISI_DIARY_TASK_DIVIDER =
+    '<div class="pisi-editor-block pisi-diary-task-divider pisi-section-break" data-pisi-block-type="paragraph" data-pisi-section-break="true" data-pisi-section-exit="1"><hr></div>';
+function stripPisiDiaryTaskDividers(content = '') {
+    return String(content || '').replace(/<div\b[^>]*class=["'][^"']*\bpisi-diary-task-divider\b[^"']*["'][^>]*>\s*<hr\b[^>]*>\s*<\/div>/gi, '');
+}
 
-    const allBlocks = splitHtmlBlocks(raw);
-    const hasAnyTask = allBlocks.some(isTaskBlock);
+function organizeDiaryManualTasks(content = '', fileDate = '', options = {}) {
+    const allBlocks = splitHtmlBlocks(stripPisiDiaryTaskDividers(content));
+    const taskBlocks = allBlocks.filter(isTaskBlock);
+    if (!taskBlocks.length && !options.forceSection) return content;
 
-    if (!hasAnyTask) {
-        return content;
-    }
+    const existingHeading = allBlocks.find(isGorevlerHeading);
+    // Keep the heading's block identity and formatting while removing the date.
+    const heading = existingHeading ? existingHeading.replace(/(<h[1-6]\b[^>]*>)[\s\S]*?(<\/h[1-6]>)/i, '$1Görevler$2') : '<h3>Görevler</h3>';
+    const notes = allBlocks.filter((block) => !isTaskBlock(block) && !isGorevlerHeading(block));
+    return [
+        notes.length ? notes.join('\n') : '<div><br></div>',
+        PISI_DIARY_TASK_DIVIDER,
+        heading,
+        ...taskBlocks,
+        ...(options.closeSection === false ? [] : [PISI_DIARY_TASK_DIVIDER])
+    ].join('\n');
+}
 
-    const headingIdx = allBlocks.findIndex(isGorevlerHeading);
-    const taskBlocks = [];
-    const nonTaskBlocks = [];
-    let headingBlock = null;
-
-    if (headingIdx !== -1) {
-        headingBlock = allBlocks[headingIdx];
-        allBlocks.forEach((block, idx) => {
-            if (idx === headingIdx) return;
-            if (isTaskBlock(block)) {
-                taskBlocks.push(block);
-            } else {
-                nonTaskBlocks.push(block);
-            }
-        });
-    } else {
-        headingBlock = '<h3>Görevler · ' + fileDate + '</h3>';
-        allBlocks.forEach((block) => {
-            if (isTaskBlock(block)) {
-                taskBlocks.push(block);
-            } else {
-                nonTaskBlocks.push(block);
-            }
-        });
-    }
-
-    const meaningfulNonTasks = nonTaskBlocks.filter((b) => !/^(?:<div><br><\/div>|<p><br><\/p>|<br\s*\/?>)$/i.test(b.trim()));
-    const resultParts = [];
-    if (meaningfulNonTasks.length > 0) {
-        resultParts.push(meaningfulNonTasks.join('\n'));
-    }
-    resultParts.push(headingBlock);
-    resultParts.push(taskBlocks.join('\n'));
-
-    return resultParts.join('\n');
+function composePisiDiaryTaskContent(content = '', fileDate = '', externalEntries = []) {
+    const manual = stripPisiDiaryTaskDividers(stripPisiDiaryManagedSection(content)).trim();
+    const organized = organizeDiaryManualTasks(manual, fileDate, { closeSection: !externalEntries.length, forceSection: Boolean(externalEntries.length) });
+    const managed = buildPisiDiaryManagedSection(fileDate, externalEntries, { includeHeading: false });
+    return managed ? `${organized || '<div><br></div>'}\n${managed}` : organized || '<div><br></div>';
 }
 
 function stripPisiDiaryManagedSection(content = '') {
@@ -364,7 +348,6 @@ function normalizePisiDiarySyncEntry(entry) {
 function buildPisiDiaryManagedSection(isoDate, entries = [], options = {}) {
     if (!entries.length) return '';
 
-    const safeDate = escapeHtmlForPisiDiary(isoDate);
     const repeatLabels = {
         none: '',
         daily: 'Her gün',
@@ -402,9 +385,9 @@ function buildPisiDiaryManagedSection(isoDate, entries = [], options = {}) {
         .join('\n');
 
     const includeHeading = options.includeHeading !== false;
-    const headingHtml = includeHeading ? `<h3>Görevler · ${safeDate}</h3>\n` : '';
+    const headingHtml = includeHeading ? `${PISI_DIARY_TASK_DIVIDER}\n<h3>Görevler</h3>\n` : '';
 
-    return `${PISI_DIARY_MANAGED_START}\n${headingHtml}${blocks}\n${PISI_DIARY_MANAGED_END}`;
+    return `${PISI_DIARY_MANAGED_START}\n${headingHtml}${blocks}\n${PISI_DIARY_TASK_DIVIDER}\n${PISI_DIARY_MANAGED_END}`;
 }
 
 function listPisiDiaryNodePaths(projectFolder) {
@@ -570,16 +553,7 @@ function syncDiaryMissions(projectFolder, payload = {}) {
                 }
             }
 
-            const organizedManual = organizeDiaryManualTasks(manualContent, fileDate);
-            const hasHeadingInManual = isGorevlerHeading(organizedManual);
-            const managedSection = buildPisiDiaryManagedSection(fileDate, externalEntries, {
-                includeHeading: !hasHeadingInManual
-            });
-            const nextContent = managedSection
-                ? organizedManual
-                    ? `${organizedManual}\n${managedSection}`
-                    : managedSection
-                : organizedManual || '<div><br></div>';
+            const nextContent = composePisiDiaryTaskContent(manualContent, fileDate, externalEntries);
 
             if (nextContent !== String(ensured.data.content || '')) {
                 ensured.data.content = nextContent;
@@ -622,6 +596,7 @@ export {
     listPisiDiaryNodePaths,
     normalizePisiDiarySyncEntry,
     organizeDiaryManualTasks,
+    composePisiDiaryTaskContent,
     sanitizePisiDiaryBlockHtml,
     stripPisiDiaryManagedSection,
     syncDiaryMissions

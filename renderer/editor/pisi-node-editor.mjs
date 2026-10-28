@@ -65,6 +65,7 @@ function sanitizePisiEditorHtml(html = '') {
         'H4',
         'H5',
         'H6',
+        'HR',
         'I',
         'IMG',
         'LI',

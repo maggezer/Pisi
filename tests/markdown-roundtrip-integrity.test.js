@@ -673,3 +673,25 @@ test('E3: code fence metadata and section break block identities survive Markdow
     assert.match(html, /data-pisi-block-id="blk_code_1"/);
     assert.match(html, /data-pisi-block-id="blk_section_1"/);
 });
+
+test('horizontal rules preserve diary ownership and section boundaries through Markdown', async () => {
+    const { pisiBlockHtmlToMarkdown, pisiBlockMarkdownToHtml } = await getBlockEditor();
+    const editor = createMockElement('div');
+    const divider = createMockElement('div');
+    divider.className = 'pisi-editor-block pisi-diary-task-divider';
+    divider.dataset.pisiBlockId = 'divider';
+    divider.dataset.pisiBlockType = 'paragraph';
+    divider.dataset.pisiSectionBreak = 'true';
+    divider.dataset.pisiSectionExit = '1';
+    divider.appendChild(createMockElement('hr'));
+    editor.appendChild(divider);
+    const markdown = pisiBlockHtmlToMarkdown(editor);
+    assert.ok(markdown.startsWith('---'));
+    const html = pisiBlockMarkdownToHtml(markdown);
+    assert.match(html, /<hr>/);
+    assert.match(html, /pisi-diary-task-divider/);
+    assert.match(html, /data-pisi-block-id="divider"/);
+    assert.match(html, /data-pisi-section-break="true"/);
+    assert.match(html, /data-pisi-section-exit="1"/);
+    assert.match(pisiBlockMarkdownToHtml('```\n---\n```'), /<pre[^>]*>---<\/pre>/);
+});
