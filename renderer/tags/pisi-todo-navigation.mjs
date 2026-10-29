@@ -392,7 +392,10 @@ async function navigatePisiTaskToSource(input = {}) {
     }
 
     const modalAlreadyOnTarget = samePisiPathForTags(activeModalNode?.path, target.nodePath);
-    const centerAlreadyOnTarget = samePisiPathForTags(activeCenterNode?.path, target.nodePath);
+    // To-Do hides the center editor without clearing activeCenterNode. A matching
+    // path alone is not enough: reopen the tab to reveal it and leave To-Do.
+    const centerAlreadyOnTarget =
+        samePisiPathForTags(activeCenterNode?.path, target.nodePath) && document.getElementById('center-node-editor')?.hidden === false;
 
     if (!modalAlreadyOnTarget && activeModalNode) {
         const saved = await window.closeNodeModalAndSave?.();
