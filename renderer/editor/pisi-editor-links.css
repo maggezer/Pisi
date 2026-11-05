@@ -1,0 +1,115 @@
+.pisi-rich-editor a[href] {
+    color: var(--accent-color, #f39c12);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: text;
+}
+
+.pisi-rich-editor[contenteditable='false'] a[href],
+.pisi-rich-editor [contenteditable='false'] a[href] {
+    cursor: pointer;
+}
+
+.pisi-link-tooltip {
+    position: fixed;
+    z-index: 950;
+    max-width: min(480px, calc(100vw - 16px));
+    padding: 6px 9px;
+    border-radius: 6px;
+    background: #20252e;
+    color: #f2f4f7;
+    box-shadow: 0 6px 18px rgb(0 0 0 / 28%);
+    font-size: 12px;
+    line-height: 1.4;
+    pointer-events: none;
+}
+
+.pisi-link-tooltip[hidden],
+.pisi-link-editor[hidden] {
+    display: none;
+}
+
+.pisi-link-tooltip-url {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pisi-link-tooltip-hint {
+    opacity: 0.7;
+}
+
+.pisi-link-editor {
+    position: fixed;
+    z-index: 960;
+    display: grid;
+    gap: 8px;
+    width: min(360px, calc(100vw - 16px));
+    padding: 12px;
+    border: 1px solid #3a414d;
+    border-radius: 8px;
+    background: #20252e;
+    color: #f2f4f7;
+    box-shadow: 0 10px 28px rgb(0 0 0 / 32%);
+}
+
+.pisi-link-editor-field {
+    display: grid;
+    gap: 4px;
+    font-size: 12px;
+}
+
+.pisi-link-editor-field[hidden] {
+    display: none;
+}
+
+.pisi-link-editor-field input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #667085;
+    border-radius: 5px;
+    background: #151920;
+    color: inherit;
+}
+
+.pisi-link-editor-error {
+    min-height: 1em;
+    color: #ff8a80;
+    font-size: 12px;
+}
+
+.pisi-link-editor-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.pisi-link-editor-actions button {
+    padding: 5px 10px;
+    border: 1px solid #3a414d;
+    border-radius: 5px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+}
+
+.pisi-link-editor-actions button[data-pisi-link-action='apply'] {
+    border-color: var(--accent-color, #f39c12);
+    background: color-mix(in srgb, var(--accent-color, #f39c12) 30%, transparent);
+}
+
+.pisi-link-editor-actions button[hidden] {
+    display: none;
+}
+
+:root[data-pisi-theme='light'] .pisi-link-tooltip,
+:root[data-pisi-theme='light'] .pisi-link-editor {
+    border-color: #c9ced6;
+    background: #ffffff;
+    color: #30343a;
+}
+
+:root[data-pisi-theme='light'] .pisi-link-editor-field input {
+    background: #f7f8fa;
+}

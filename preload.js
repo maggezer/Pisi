@@ -180,6 +180,11 @@ contextBridge.exposeInMainWorld('pisiSync', {
     disconnect: () => ipcRenderer.invoke('pisi-sync:disconnect')
 });
 
+contextBridge.exposeInMainWorld('pisiShell', {
+    // Main validates the URL again; only http, https and mailto are ever opened.
+    openExternal: (url) => ipcRenderer.invoke('shell:open-external', typeof url === 'string' ? url : '')
+});
+
 contextBridge.exposeInMainWorld('pisiTrash', {
     list: (projectFolder) => ipcRenderer.invoke('project:list-trash', projectFolder),
     restore: (projectFolder, trashId) => ipcRenderer.invoke('project:restore-trash-item', projectFolder, trashId),

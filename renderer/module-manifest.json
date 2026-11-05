@@ -869,6 +869,11 @@
         ]
     },
     {
+        "module": "editor.links",
+        "path": "renderer/editor/pisi-editor-links.mjs",
+        "bindings": ["pisiLinkState", "openPisiExternalLink", "openPisiLinkDialog", "closePisiLinkDialog", "initializePisiEditorLinks"]
+    },
+    {
         "module": "data.nodePropertiesUi",
         "path": "renderer/data/pisi-node-properties-ui.mjs",
         "bindings": [

@@ -30,7 +30,8 @@ const PISI_BLOCK_SLASH_COMMANDS = Object.freeze([
         })
     ),
     Object.freeze({ id: 'done', label: 'Tamamlanmış görev', slash: 'done', action: 'done' }),
-    Object.freeze({ id: 'image', label: 'Görsel ekle', slash: 'image', action: 'image', aliases: Object.freeze(['gorsel', 'görsel', 'resim']) })
+    Object.freeze({ id: 'image', label: 'Görsel ekle', slash: 'image', action: 'image', aliases: Object.freeze(['gorsel', 'görsel', 'resim']) }),
+    Object.freeze({ id: 'link', label: 'Bağlantı ekle', slash: 'link', action: 'link', aliases: Object.freeze(['baglanti', 'bağlantı', 'url']) })
 ]);
 const { splitPisiTaskBlockOnEnter, handlePisiTaskBlockBackspace, removePisiTaskMetadataAndMarkerFromBlock, placeCaretAtEndOfPisiBlock } =
     createPisiTaskBlockKeyboard({

@@ -4,6 +4,7 @@ import * as fs from 'node:fs';
 import { execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { registerMainModule } from '../module-registry.js';
+import { guardPisiWindowNavigation } from './external-links.js';
 import { getWindowsAppIdentity, ensureWindowsDevShortcut } from './windows-app-identity.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -489,13 +490,7 @@ function createWindow() {
 
     Menu.setApplicationMenu(null);
 
-    mainWindow.webContents.setWindowOpenHandler(() => {
-        return { action: 'deny' };
-    });
-
-    mainWindow.webContents.on('will-navigate', (event) => {
-        event.preventDefault();
-    });
+    guardPisiWindowNavigation(mainWindow.webContents);
 
     mainWindow.webContents.session.setPermissionCheckHandler(() => false);
     mainWindow.webContents.session.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));

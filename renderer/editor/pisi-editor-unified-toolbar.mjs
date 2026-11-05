@@ -91,6 +91,7 @@ function buildPisiUnifiedToolbarMarkup() {
                             <button type="button" class="pisi-ribbon-btn pisi-icon-btn pisi-ribbon-dropdown" data-pisi-color-trigger="font" title="Font color">${pisiToolbarIcon('font-color')}</button>
                             <button type="button" class="pisi-ribbon-btn pisi-icon-btn pisi-ribbon-dropdown" data-pisi-color-trigger="highlight" title="Highlight; tabloda hücre rengi">${pisiToolbarIcon('highlight')}</button>
                             <button type="button" class="pisi-ribbon-btn pisi-icon-btn pisi-ribbon-dropdown" data-pisi-symbol-trigger title="Insert symbol">${pisiToolbarIcon('symbol')}</button>
+                            <button type="button" class="pisi-ribbon-btn pisi-icon-btn" data-pisi-link-trigger title="Bağlantı ekle (Mod+Shift+K)">${pisiToolbarIcon('link')}</button>
                         </div>
                     </div>
                     <div class="pisi-toolbar-align-grid" aria-label="Paragraf hizalama">
@@ -388,6 +389,12 @@ function bindPisiUnifiedToolbarEvents(toolbar) {
                     }
                 })
             );
+            return;
+        }
+
+        const linkTrigger = event.target.closest('[data-pisi-link-trigger]');
+        if (linkTrigger) {
+            document.dispatchEvent(new CustomEvent('pisi:link-edit-request', { detail: { editorTarget: toolbar.dataset.editorTarget || null } }));
             return;
         }
 
