@@ -55,7 +55,7 @@ No GitHub access token is embedded in the application.
 
 ## Private source repository
 
-`maggezer/Kedi` is private. A private GitHub Releases feed is therefore not
+`maggezer/Pisi` is private. A private GitHub Releases feed is therefore not
 safe for desktop auto-update because clients would need a GitHub token.
 
 Do not place `GH_TOKEN`, a personal access token, or repository credentials in
