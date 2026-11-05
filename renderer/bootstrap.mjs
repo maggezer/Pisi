@@ -37,6 +37,7 @@ import './editor/pisi-editor-command-preferences.mjs';
 import './shell/pisi-customizations.mjs';
 import './shell/pisi-trash.mjs';
 import './tree/pisi-project.mjs';
+import './tree/pisi-project-reload.mjs';
 import './tree/pisi-tree-dnd.mjs';
 import './tree/pisi-tree-view.mjs';
 import './tree/pisi-tree-internal-filter.mjs';

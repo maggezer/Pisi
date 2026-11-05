@@ -1,5 +1,16 @@
 # PISI Güncelleme Takip Dosyası
 
+## 05-11-2026 — Klasör tabanlı sync kapatıldı; yeniden yüklemede kayıtlar önce yazılıyor
+
+- `PISI_LEGACY_SYNC_ENABLED = false`: Pisi Sync ayarlar bölümü, otomatik
+  tetikleyiciler ve main sync IPC yazımları devre dışı. Kod ve mevcut
+  `.pisi-sync` / `.pisi/sync-state.json` dosyaları korunuyor.
+- `loadProject` bekleyen editör, modal ve harita kayıtlarını zamanlayıcıları
+  iptal etmeden önce yazar; kayıt başarısızsa yükleme durur.
+- Aynı proje yeniden yüklenirken açık sekmeler, aktif not ve imleç korunur.
+- Yeni testler: `tests/sync-domain-disabled.test.js`,
+  `scripts/electron-sync-reload-e2e.mjs` (`test:e2e` içinde).
+
 ## 05-11-2026 — Diary görev düzenleyicisinde kullanılmayan tarih parametresi kaldırıldı
 
 - `organizeDiaryManualTasks` imzası `(content, options)` oldu. `fileDate`

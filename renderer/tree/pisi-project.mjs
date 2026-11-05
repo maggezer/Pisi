@@ -229,6 +229,27 @@ async function loadProject(folderPath) {
     }
 
     const previousProjectFolder = window.currentProjectFolder;
+    const reloadingSameProject = Boolean(previousProjectFolder) && sameClientPath(previousProjectFolder, folderPath);
+
+    // Pending editor/map saves are written before any timer is cancelled or any
+    // surface is closed. A failed save stops the load so nothing is discarded.
+    if (typeof flushPisiPendingSaves === 'function') {
+        let saved = false;
+        try {
+            saved = await flushPisiPendingSaves();
+        } catch (error) {
+            console.error('[PISI] Bekleyen kayıtlar yazılamadı:', error);
+        }
+        if (!saved) {
+            reportPisiProjectLoadError(
+                window.pisiT?.('Bekleyen değişiklikler kaydedilemedi; proje yeniden yüklenmedi.') ??
+                    'Bekleyen değişiklikler kaydedilemedi; proje yeniden yüklenmedi.'
+            );
+            return false;
+        }
+    }
+
+    const workspaceSnapshot = reloadingSameProject && typeof capturePisiProjectWorkspace === 'function' ? capturePisiProjectWorkspace() : null;
 
     window.currentProjectFolder = folderPath;
     if (typeof invalidatePisiSearchIndex === 'function' && previousProjectFolder !== folderPath) {
@@ -270,6 +291,10 @@ async function loadProject(folderPath) {
         reportPisiProjectLoadError('Proje dosya ağacı yüklenemedi.');
         showProjectModal();
         return false;
+    }
+
+    if (workspaceSnapshot && typeof restorePisiProjectWorkspace === 'function') {
+        await restorePisiProjectWorkspace(workspaceSnapshot);
     }
 
     return true;

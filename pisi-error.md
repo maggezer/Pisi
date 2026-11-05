@@ -99,7 +99,42 @@ için yalnız test kararsızlığı sayılmamalıdır. Sonraki adım: tuştan he
 seçimin editör içinde olduğunu doğrulayan teşhis assertion’ı ve hata anında
 blok kimliği/seçim kaydı.
 
-## 5. Güncel doğrulama snapshot’ı
+## 5. Pisi Sync proje yeniden yüklemesiyle açık notu kapatıyor ve metin kaybettiriyordu
+
+**[Yüksek · sync/editor · çözüldü, özellik kapalı]** Sync yapılandırılmışken
+`renderer/sync/pisi-sync-settings.mjs` her senkrondan sonra
+`window.loadProject()` çağırıyordu. Tetikleyiciler açılış, pencere odağı,
+60 sn’lik zamanlayıcı ve yazmayı bıraktıktan 5 sn sonrasıydı.
+`loadProject` bekleyen 800 ms’lik autosave zamanlayıcısını iptal edip açık
+notu, sekmeleri, modalı (kaydetmeden) ve haritayı kapatıyordu. Sonuç: not,
+yazım bittikten ~7 sn sonra kendiliğinden kapanıyordu; 60 sn’lik tetikleyici
+yazmanın ilk 800 ms’ine denk gelirse metin diske yazılmadan kayboluyordu.
+
+**Çözüm (05-11-2026):**
+
+- Klasör tabanlı sync tek bir bayrakla kapatıldı:
+  `PISI_LEGACY_SYNC_ENABLED = false` (`main/functions/sync-domain.js`).
+  Sync IPC çağrıları `PISI_SYNC_DISABLED` döner; ayarları, `.pisi-sync`’i ve
+  `.pisi/sync-state.json`’u okumaz ve yazmaz. Renderer ne Ayarlar bölümünü
+  çizer ne de otomatik tetikleyicileri kurar. Kod ve mevcut dosyalar korunur.
+- `loadProject`, zamanlayıcıları iptal etmeden ve yüzeyleri kapatmadan önce
+  `flushPisiPendingSaves()` ile bekleyen kayıtları yazar. Kayıt başarısız
+  olursa yükleme durur ve hata gösterilir. Bu tüm çağıranları kapsar
+  (proje değiştirme, açılış).
+- Aynı proje yeniden yüklenirken açık sekmeler, aktif not ve imleç korunur
+  (`renderer/tree/pisi-project-reload.mjs`). Açık modal kaydedilip kapanır ve
+  yeniden açılmaz.
+- Testler: `tests/sync-domain-disabled.test.js`,
+  `scripts/electron-sync-reload-e2e.mjs`.
+
+**Yeni eşleştirme sistemi için kural:** Senkron sonrasında proje bütünüyle
+yeniden yüklenmez; yalnız değişen dosyalar güncellenir. Açık not, sekmeler,
+modal, harita ve imleç senkron yüzünden kapanmamalı ya da yeniden
+çizilmemelidir. Açık bir belge dışarıdan değiştiyse mevcut
+`reloadPisiWorkspaceAfterExternalChange` akışındaki gibi yalnız o belge ele
+alınır ve kaydedilmemiş değişiklik varsa kullanıcıya sorulur.
+
+## 6. Güncel doğrulama snapshot’ı
 
 6 Ekim 2026 current `main` kontrolü:
 
@@ -123,7 +158,7 @@ blok kimliği/seçim kaydı.
 
 Bu metriklerin güncel sayıları CI her çalıştığında yeniden üretilir; audit politikası artık yeni veya kapsamı genişleyen bulguları fail-closed biçimde engeller.
 
-## 6. Tamamlanmış olup açık sayılmaması gereken maddeler
+## 7. Tamamlanmış olup açık sayılmaması gereken maddeler
 
 Aşağıdakiler artık `pisi-error.md` için açık değildir:
 

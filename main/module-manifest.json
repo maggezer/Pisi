@@ -288,7 +288,9 @@
             "getPisiSyncStatus",
             "disconnectPisiSync",
             "installPisiSyncIpc",
-            "assertFolder"
+            "assertFolder",
+            "PISI_SYNC_DISABLED_CODE",
+            "isPisiLegacySyncEnabled"
         ]
     }
 ]

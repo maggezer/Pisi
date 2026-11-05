@@ -17,6 +17,20 @@ const SNAPSHOT_INDEX_FORMAT = 'pisi-sync-device-index';
 const SNAPSHOT_CHUNK_FORMAT = 'pisi-sync-device-chunk';
 const runningProjects = new Map();
 
+// The folder-based legacy sync reloaded the whole project after every run and
+// could drop unsaved editor text. It stays off until Pisi's own sync replaces it.
+// While false, no entry point reads or writes settings, .pisi-sync or sync-state.
+const PISI_LEGACY_SYNC_ENABLED = false;
+const PISI_SYNC_DISABLED_CODE = 'PISI_SYNC_DISABLED';
+
+function isPisiLegacySyncEnabled() {
+    return PISI_LEGACY_SYNC_ENABLED;
+}
+
+function pisiSyncDisabledResult() {
+    return { ok: false, disabled: true, code: PISI_SYNC_DISABLED_CODE, error: 'Pisi Sync yeni eşleştirme sistemi gelene kadar devre dışı.' };
+}
+
 const PISI_SYNC_EDITOR_ASSETS_RELATIVE = path.join('.pisi-sync', 'assets');
 
 function isSameOrInsidePath(candidatePath, rootPath) {
@@ -677,6 +691,7 @@ async function performPisiSync(projectFolder, folder, reason = 'manual') {
 }
 
 function runPisiSync(options = {}) {
+    if (!isPisiLegacySyncEnabled()) return Promise.resolve(pisiSyncDisabledResult());
     const projectFolder = activeProject();
     const configured = configuredFolder(projectFolder);
     if (!configured.folder || !fs.existsSync(configured.folder)) {
@@ -696,6 +711,7 @@ function runPisiSync(options = {}) {
 }
 
 async function selectPisiSyncFolder() {
+    if (!isPisiLegacySyncEnabled()) return pisiSyncDisabledResult();
     const projectFolder = activeProject();
     /** @type {import('electron').OpenDialogOptions} */
     const options = {
@@ -718,12 +734,14 @@ async function selectPisiSyncFolder() {
 }
 
 function getPisiSyncStatus() {
+    if (!isPisiLegacySyncEnabled()) return { ok: true, enabled: false, configured: false, running: false };
     try {
         const projectFolder = activeProject();
         const config = configuredFolder(projectFolder);
         const state = readLocalState(projectFolder, config.sync.deviceId);
         return {
             ok: true,
+            enabled: true,
             configured: Boolean(config.folder && fs.existsSync(config.folder)),
             folderName: config.folder ? path.basename(config.folder) : '',
             folderPath: config.folder || '',
@@ -735,11 +753,12 @@ function getPisiSyncStatus() {
             running: runningProjects.has(projectKey(projectFolder))
         };
     } catch (error) {
-        return { ok: false, configured: false, running: false, error: error.message };
+        return { ok: false, enabled: true, configured: false, running: false, error: error.message };
     }
 }
 
 function disconnectPisiSync() {
+    if (!isPisiLegacySyncEnabled()) return pisiSyncDisabledResult();
     const projectFolder = activeProject();
     const config = getGlobalConfig();
     delete config.sync.projects[projectKey(projectFolder)];
@@ -755,6 +774,8 @@ function installPisiSyncIpc() {
 }
 
 const moduleApi = {
+    PISI_SYNC_DISABLED_CODE,
+    isPisiLegacySyncEnabled,
     MANIFEST_RELATIVE,
     DEVICES_RELATIVE,
     atomicWriteJson,

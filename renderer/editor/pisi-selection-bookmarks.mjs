@@ -140,3 +140,13 @@ export function restorePisiSelectionBookmark(editor, saved) {
     }
     return true;
 }
+
+// A document reload bumps the bookmark version so stale selections are never
+// replayed. A deliberate same-document reload (project reload) may carry the
+// caret over, but only into the same document and only by block identity and
+// text offset; the replaced DOM nodes are never reused.
+export function rebasePisiSelectionBookmark(editor, saved) {
+    if (!saved || saved.editor !== editor || !saved.scope || saved.scope !== documentScope(editor)) return null;
+    const detach = (point) => ({ blockId: point.blockId, offset: point.offset, node: null, nativeOffset: 0, block: null });
+    return { editor, scope: saved.scope, version: versions.get(editor) || 0, anchor: detach(saved.anchor), focus: detach(saved.focus) };
+}
