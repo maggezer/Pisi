@@ -17,7 +17,7 @@ test('günlük not içinde oluşturulan yerel görevler Görevler başlığı al
     ].join('\n');
 
     // 1. organizeDiaryManualTasks başlık yoksa oluşturur ve görevleri altına alır
-    const organized = diaryModule.organizeDiaryManualTasks(sampleLocalTasks, '2026-10-22');
+    const organized = diaryModule.organizeDiaryManualTasks(sampleLocalTasks);
     assert.match(organized, /^<div><br><\/div>\n.*<hr><\/div>\n<h3>Görevler<\/h3>/);
     assert.match(organized, /Bölüm dışı danışman atama mümkün mü, sor/);
     assert.match(organized, /Gizli ağ açılmış mı sor/);
@@ -29,12 +29,13 @@ test('günlük not içinde oluşturulan yerel görevler Görevler başlığı al
         '<div class="pisi-editor-block" data-pisi-block-type="task"><span class="pisi-block-task-marker">☐</span> Alttaki eski görev</div>'
     ].join('\n');
 
-    const reorganized = diaryModule.organizeDiaryManualTasks(sampleWithTaskAbove, '2026-10-22');
+    const reorganized = diaryModule.organizeDiaryManualTasks(sampleWithTaskAbove);
     const headingIndex = reorganized.indexOf('<h3>Görevler</h3>');
     const upperTaskIndex = reorganized.indexOf('Üstteki yeni görev');
     const lowerTaskIndex = reorganized.indexOf('Alttaki eski görev');
 
     assert.ok(headingIndex !== -1);
+    assert.doesNotMatch(reorganized, /Görevler ·|2026-10-22/, 'Mevcut başlıktaki tarih kaldırılmalı');
     assert.ok(upperTaskIndex > headingIndex, 'Üstteki görev başlığın altına geçmiş olmalı');
     assert.ok(lowerTaskIndex > headingIndex, 'Alttaki görev başlığın altında kalmalı');
 
@@ -44,7 +45,7 @@ test('günlük not içinde oluşturulan yerel görevler Görevler başlığı al
         '<div class="pisi-editor-block" data-pisi-block-type="task"><span class="pisi-block-task-marker">☐</span> Görev 1</div>'
     ].join('\n');
 
-    const withNotes = diaryModule.organizeDiaryManualTasks(sampleWithNotes, '2026-10-22');
+    const withNotes = diaryModule.organizeDiaryManualTasks(sampleWithNotes);
     const notePos = withNotes.indexOf('Bugün çok verimli bir gündü.');
     const noteHeadingPos = withNotes.indexOf('<h3>Görevler</h3>');
     const taskPos = withNotes.indexOf('Görev 1');

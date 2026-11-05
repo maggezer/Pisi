@@ -34,6 +34,21 @@ Prettier: 4-space indent, single quotes, no trailing commas, `printWidth` 160.
 
 Commits follow Conventional Commits with a scope, e.g. `fix(editor): …`, `test(editor): …`, `fix(ci): …`, `style(editor): …`.
 
+## Çalışma kuralları (Definition of Done)
+
+Bir iş ancak aşağıdakilerin hepsi sağlandığında bitmiş sayılır:
+
+1. Her iş ayrı bir branch'te yapılır ve tek bir PR olarak açılır. PR başlığı Conventional Commits biçimindedir. Açıklamada ilgili eksik listesi maddesi (ör. `A4`) ile neyin nasıl test edildiği yazılır.
+2. Bitirmeden önce `npm run validate` eksiksiz geçer. Arayüze dokunan değişikliklerde `xvfb-run -a npm run test:e2e` de geçer.
+3. Yeni davranış için davranış testi eklenir:
+    - Saf modüller için modülü doğrudan import eden bir `.mjs` testi yazılır.
+    - Kullanıcı akışı için `scripts/` altındaki CDP kalıbıyla bir Electron E2E testi yazılır.
+    - Kaynak kodu regex ile okuyan yeni test yazılmaz. Dokunulan dosyayı kapsayan eski regex testleri mümkünse davranış testine çevrilir.
+4. Yeni veya değişen kullanıcı metinleri TR ve ENG locale dosyalarına eklenir. Yeni export edilen fonksiyonlar ilgili `module-manifest.json` dosyasına yazılır.
+5. Birden fazla modülü etkileyen işlerde önce plan çıkarılır ve onay beklenir.
+6. Yapılan değişiklik `pisi-update.md` dosyasına tarihli bir girişle yazılır. Doğrulanan ama bu PR'da çözülmeyen yeni bir hata `pisi-error.md` dosyasına eklenir.
+7. Kullanıcı verisini etkileyen değişikliklerde (dosya biçimi, kayıt, silme) mevcut projelerle geriye uyumluluk korunur ya da açık bir geçiş adımı yazılır.
+
 ## Architecture
 
 ### Processes and boundaries

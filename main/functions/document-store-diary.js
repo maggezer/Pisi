@@ -239,7 +239,7 @@ function stripPisiDiaryTaskDividers(content = '') {
     return String(content || '').replace(/<div\b[^>]*class=["'][^"']*\bpisi-diary-task-divider\b[^"']*["'][^>]*>\s*<hr\b[^>]*>\s*<\/div>/gi, '');
 }
 
-function organizeDiaryManualTasks(content = '', _fileDate = '', options = {}) {
+function organizeDiaryManualTasks(content = '', options = {}) {
     const allBlocks = splitHtmlBlocks(stripPisiDiaryTaskDividers(content));
     const taskBlocks = allBlocks.filter(isTaskBlock);
     if (!taskBlocks.length && !options.forceSection) return content;
@@ -259,7 +259,7 @@ function organizeDiaryManualTasks(content = '', _fileDate = '', options = {}) {
 
 function composePisiDiaryTaskContent(content = '', fileDate = '', externalEntries = []) {
     const manual = stripPisiDiaryTaskDividers(stripPisiDiaryManagedSection(content)).trim();
-    const organized = organizeDiaryManualTasks(manual, fileDate, { closeSection: !externalEntries.length, forceSection: Boolean(externalEntries.length) });
+    const organized = organizeDiaryManualTasks(manual, { closeSection: !externalEntries.length, forceSection: Boolean(externalEntries.length) });
     const managed = buildPisiDiaryManagedSection(fileDate, externalEntries, { includeHeading: false });
     return managed ? `${organized || '<div><br></div>'}\n${managed}` : organized || '<div><br></div>';
 }
