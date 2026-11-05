@@ -722,6 +722,7 @@
         "Geçerli proje klasöründeki node, map, bağlantı ve yan dosya tutarlılığını denetler.": "Geçerli proje klasöründeki node, map, bağlantı ve yan dosya tutarlılığını denetler.",
         "Henüz senkronize edilmedi": "Henüz senkronize edilmedi",
         "Sync köprüsü kullanılamıyor.": "Sync köprüsü kullanılamıyor.",
+        "Bekleyen değişiklikler kaydedilemedi; proje yeniden yüklenmedi.": "Bekleyen değişiklikler kaydedilemedi; proje yeniden yüklenmedi.",
         "Bağlı klasör": "Bağlı proje kökü",
         "Ortak klasör bağlı değil": "Proje kökü bağlı değil",
         "Son senkronizasyon": "Son senkronizasyon",

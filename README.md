@@ -146,6 +146,13 @@ kullanıcı verileri harici bir uygulama veritabanına taşınmaz.
 
 ## Cihazlar arası senkronizasyon
 
+> **Şu an kapalı.** Klasör tabanlı Pisi Sync, Pisi'nin kendi eşleştirme sistemi
+> yazılana kadar devre dışıdır (`PISI_LEGACY_SYNC_ENABLED = false`,
+> `main/functions/sync-domain.js`). Ayarlar'daki bölüm görünmez, otomatik
+> senkron çalışmaz ve sync çağrıları dosya yazmaz. Mevcut `.pisi-sync` ve
+> `.pisi/sync-state.json` dosyalarına dokunulmaz. Aşağıdaki açıklama eski
+> sistemi anlatır.
+
 Workspace Center → Ayarlar bölümündeki Pisi Sync; masaüstünde açık olan gerçek
 proje kökünü Android sürümüyle çift yönlü eşitler. Google Drive, OneDrive veya
 iki cihazda aynı klasörü gösteren başka bir sağlayıcı kullanılabilir. Okunabilir

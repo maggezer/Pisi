@@ -438,6 +438,7 @@
             "pisiSyncTranslate",
             "formatPisiSyncTime",
             "getPisiRendererSyncStatus",
+            "isPisiRendererSyncEnabled",
             "makePisiSyncButton",
             "refreshPisiSyncSettings",
             "runPisiRendererSync",
@@ -495,6 +496,11 @@
             "isCurrentPisiTreeRootRender",
             "renderFolderTree"
         ]
+    },
+    {
+        "module": "tree.projectReload",
+        "path": "renderer/tree/pisi-project-reload.mjs",
+        "bindings": ["capturePisiProjectWorkspace", "doesPisiWorkspaceDocumentExist", "restorePisiProjectWorkspace"]
     },
     {
         "module": "tree.dragDrop",

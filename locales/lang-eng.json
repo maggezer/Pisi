@@ -722,6 +722,7 @@
         "Geçerli proje klasöründeki node, map, bağlantı ve yan dosya tutarlılığını denetler.": "Checks note, map, link, and sidecar consistency in the current project folder.",
         "Henüz senkronize edilmedi": "Not synced yet",
         "Sync köprüsü kullanılamıyor.": "The sync bridge is unavailable.",
+        "Bekleyen değişiklikler kaydedilemedi; proje yeniden yüklenmedi.": "Pending changes could not be saved; the project was not reloaded.",
         "Bağlı klasör": "Connected project root",
         "Ortak klasör bağlı değil": "No project root connected",
         "Son senkronizasyon": "Last sync",

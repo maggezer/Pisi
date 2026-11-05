@@ -1,5 +1,11 @@
 # Pisi Desktop ↔ Android ortak proje klasörü
 
+> **Bu özellik şu an kapalıdır.** Klasör tabanlı Pisi Sync, Pisi'nin kendi
+> eşleştirme sistemi gelene kadar devre dışı bırakıldı. Ayarlar'da
+> "Cihazlar arası senkronizasyon" bölümü görünmez ve aşağıdaki adımlar
+> uygulanamaz. Mevcut `.pisi-sync` ve `.pisi/sync-state.json` dosyaları
+> silinmez; yeni sistem geldiğinde bu belge güncellenecektir.
+
 Senkronizasyonun kaynağı okunabilir Pisi proje dosyalarıdır. Desktop ve Android aynı Google Drive/OneDrive proje kökünü kullanır; `.node`, `.map`, `nd_…` yan klasörleri ve `.pisi` authority dosyaları doğrudan bu kökte bulunur. `.pisi-sync` yalnız sürüm, silme ve çakışma metadatasıdır.
 
 ## Kurulum

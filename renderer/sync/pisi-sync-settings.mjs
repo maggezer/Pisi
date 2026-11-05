@@ -2,6 +2,8 @@ import { registerModule } from '../core/module-registry.mjs';
 
 let pisiSyncAutoTimer = null;
 let pisiSyncBusy = false;
+// Resolved once from the main process; the legacy sync flag lives in sync-domain.js.
+let pisiSyncEnabledPromise = null;
 
 function pisiSyncTranslate(value) {
     return window.pisiT?.(value) ?? String(value ?? '');
@@ -24,6 +26,16 @@ async function getPisiRendererSyncStatus() {
             error: pisiSyncTranslate('Sync köprüsü kullanılamıyor.')
         }
     );
+}
+
+function isPisiRendererSyncEnabled() {
+    if (!pisiSyncEnabledPromise) {
+        pisiSyncEnabledPromise = Promise.resolve()
+            .then(() => getPisiRendererSyncStatus())
+            .then((status) => status?.enabled === true)
+            .catch(() => false);
+    }
+    return pisiSyncEnabledPromise;
 }
 
 function makePisiSyncButton(label, className = 'pisi-sync-button') {
@@ -68,7 +80,7 @@ async function refreshPisiSyncSettings(section) {
 }
 
 async function runPisiRendererSync(reason = 'manual', section = null) {
-    if (pisiSyncBusy) return null;
+    if (pisiSyncBusy || !(await isPisiRendererSyncEnabled())) return null;
     pisiSyncBusy = true;
     if (section) await refreshPisiSyncSettings(section);
     try {
@@ -160,9 +172,12 @@ function schedulePisiAutoSync(reason = 'local-change', delay = 5000) {
     }, delay);
 }
 
-function initializePisiSyncSettings() {
+async function initializePisiSyncSettings() {
     if (initializePisiSyncSettings.bound) return;
     initializePisiSyncSettings.bound = true;
+    // While legacy sync is disabled neither the settings section nor any
+    // automatic trigger (focus, interval, input, filesystem, startup) exists.
+    if (!(await isPisiRendererSyncEnabled())) return;
     document.addEventListener('pisi:render-settings-sections', (event) => {
         renderPisiSyncSettings(event.detail?.container);
     });
@@ -189,6 +204,7 @@ const moduleApi = {
     pisiSyncTranslate,
     formatPisiSyncTime,
     getPisiRendererSyncStatus,
+    isPisiRendererSyncEnabled,
     makePisiSyncButton,
     refreshPisiSyncSettings,
     runPisiRendererSync,
@@ -198,6 +214,14 @@ const moduleApi = {
 };
 
 registerModule('sync.settings', moduleApi);
-initializePisiSyncSettings();
+void initializePisiSyncSettings();
 
-export { formatPisiSyncTime, getPisiRendererSyncStatus, initializePisiSyncSettings, renderPisiSyncSettings, runPisiRendererSync, schedulePisiAutoSync };
+export {
+    formatPisiSyncTime,
+    getPisiRendererSyncStatus,
+    initializePisiSyncSettings,
+    isPisiRendererSyncEnabled,
+    renderPisiSyncSettings,
+    runPisiRendererSync,
+    schedulePisiAutoSync
+};
