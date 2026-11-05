@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-**Pisi** is an Electron desktop knowledge-mapping app (the repository name differs from the product name). Notes are `.node` files and knowledge maps are `.map` files: JSON documents stored in a user-chosen project folder. There is no app database. The file formats are specified in `pisi-definition.md`. User-facing docs, `pisi-update.md` (changelog), `pisi-error.md` (known open issues) and many test names/assertion messages are in Turkish.
+**Pisi** is an Electron desktop knowledge-mapping app (GitHub: `maggezer/Pisi`, formerly `maggezer/Kedi`). Notes are `.node` files and knowledge maps are `.map` files: JSON documents stored in a user-chosen project folder. There is no app database. The file formats are specified in `pisi-definition.md`. User-facing docs, `pisi-update.md` (changelog), `pisi-error.md` (known open issues) and many test names/assertion messages are in Turkish.
 
 ## Commands
 
@@ -24,10 +24,11 @@ npm run check:i18n          # TR/ENG locale key parity
 npm run check:branding      # product naming/asset checks on production files
 npm run format              # prettier --write
 npm run validate            # format:check + validate:source; this is the CI gate
+npm run audit               # npm audit at moderate+ for runtime AND full tree; no exceptions (CI runs this first)
 npm run test:e2e            # Electron E2E (needs real Electron; CI runs under xvfb-run -a)
 ```
 
-`validate:source` = `check:syntax → check:architecture → check:branding → check:i18n → check:types → lint → test`. Run `npm run validate` before considering a change done. Additional Electron E2E scripts for the editor live in `scripts/electron-editor-*-e2e.mjs` and can be run directly with `node`.
+`validate:source` = `check:syntax → check:architecture → check:branding → check:i18n → check:types → lint → test`. Run `npm run validate` (and `npm run audit` after dependency changes) before considering a change done. Vulnerable transitive dev dependencies are fixed with range-scoped `overrides` in `package.json` (e.g. `"minimatch@>=7.0.0 <11.0.1"`), not `npm audit fix --force`. Additional Electron E2E scripts for the editor live in `scripts/electron-editor-*-e2e.mjs` and can be run directly with `node`.
 
 Prettier: 4-space indent, single quotes, no trailing commas, `printWidth` 160.
 
@@ -89,7 +90,7 @@ UI strings live in `locales/lang-tr.json`, `locales/lang-eng.json` and `locales/
 
 ### Branding
 
-`check:branding` fails if the old pre-rename project name (the repository's name) appears in any production file (`main/`, `renderer/`, `styles/`, `locales/`, `main.mjs`, `preload.js`, `index.html`, `style.css`, `package*.json`), other than the GitHub repo URL. It also pins `package.json` `name: pisi`, `appId: com.mumin.pisi`, `productName: Pisi` and the icons.
+`check:branding` fails if the old project name `Kedi` (case-insensitive) appears in any production file (`main/`, `renderer/`, `styles/`, `locales/`, `main.mjs`, `preload.js`, `index.html`, `style.css`, `package*.json`), other than the GitHub repo URL. It also pins `package.json` `name: pisi`, `appId: com.mumin.pisi`, `productName: Pisi` and the icons.
 
 ## Tests
 

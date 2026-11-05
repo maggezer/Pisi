@@ -1,5 +1,18 @@
 # PISI Güncelleme Takip Dosyası
 
+## 05-11-2026 — Audit istisnası kaldırıldı ve CI yeniden yeşile döndü
+
+- Kilitli bağımlılıklar semver aralıkları içinde güncellendi; `electron` 43.8.x
+  ve `undici`/`fast-uri` high/moderate advisory’leri kapandı.
+- `GHSA-g3hv-75wg-m249` için yalnız etkilenen `minimatch` 7.x–11.0.0 sürümleri
+  `package.json` `overrides` ile `^11.0.4`’e yükseltildi; eski API kullanan
+  minimatch 3.x/5.x bağımlılıkları değiştirilmedi.
+- `sprintf-js` (`GHSA-hp3w-g68c-fv3c`) bulgusu artık audit’te görünmediği için
+  geçici dev-tooling istisnası kaldırıldı; `npm run audit` runtime ve full
+  ağaçta moderate+ sıfır bulgu ister.
+- `document-store-diary.js` içindeki kullanılmayan parametre lint hatası
+  giderildi.
+
 ## 11-10-2026 — P2.4 map ağacında eski yanıt koruması
 
 - Map dalı yüklemeleri container başına istek kimliği taşır. Daha yeni yükleme

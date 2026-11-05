@@ -239,7 +239,7 @@ function stripPisiDiaryTaskDividers(content = '') {
     return String(content || '').replace(/<div\b[^>]*class=["'][^"']*\bpisi-diary-task-divider\b[^"']*["'][^>]*>\s*<hr\b[^>]*>\s*<\/div>/gi, '');
 }
 
-function organizeDiaryManualTasks(content = '', fileDate = '', options = {}) {
+function organizeDiaryManualTasks(content = '', _fileDate = '', options = {}) {
     const allBlocks = splitHtmlBlocks(stripPisiDiaryTaskDividers(content));
     const taskBlocks = allBlocks.filter(isTaskBlock);
     if (!taskBlocks.length && !options.forceSection) return content;

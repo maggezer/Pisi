@@ -154,5 +154,8 @@
         "eslint": "^10.8.0",
         "typescript": "5.9.3",
         "prettier": "3.9.9"
+    },
+    "overrides": {
+        "minimatch@>=7.0.0 <11.0.1": "^11.0.4"
     }
 }
