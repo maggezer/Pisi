@@ -19,6 +19,11 @@ documents and application metadata are not imported from external HTML.
 - Partial and cross-block replacements retain unselected prefix/suffix text.
   A pasted heading or code block does not absorb the trailing paragraph text.
 - Table cell spans and anchor links remain present in saved editor content.
+- An image-only clipboard (a screenshot, or an image copied from a browser) becomes
+  image blocks stored in the note's sidecar folder. A paste that also carries text
+  (for example a Word selection) keeps the ordinary HTML path. Pisi image blocks
+  copied between notes keep their reference and their file is copied into the
+  target note's sidecar.
 
 Paste uses the ordinary editor input, save and undo/redo pipeline. The Electron
 suite tests the real paste handler with Word/web HTML, Markdown, Pisi blocks,

@@ -856,6 +856,19 @@
         ]
     },
     {
+        "module": "editor.imageBlocks",
+        "path": "renderer/editor/pisi-editor-image-block.mjs",
+        "bindings": [
+            "pisiImageState",
+            "hydratePisiImagesIn",
+            "insertPisiImageFiles",
+            "openPisiImagePicker",
+            "openPisiImageLightbox",
+            "selectPisiImageBlock",
+            "initializePisiImageBlocks"
+        ]
+    },
+    {
         "module": "data.nodePropertiesUi",
         "path": "renderer/data/pisi-node-properties-ui.mjs",
         "bindings": [

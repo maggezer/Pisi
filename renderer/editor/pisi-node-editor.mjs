@@ -1,4 +1,5 @@
 import { safePisiPasteHref } from '../tags/pisi-paste-sanitize.mjs';
+import { isPisiImageBlockAttributeAllowed, isPisiImageElementAttributeAllowed } from './pisi-editor-image-policy.mjs';
 import {
     getPisiNodeRecoveryWarning,
     applyPisiEditorRecoveryState,
@@ -190,20 +191,16 @@ function sanitizePisiEditorHtml(html = '') {
                 allowed = /^\d{1,3}$/.test(value) && Number(value) > 0;
             }
 
-            if (element.tagName === 'IMG') {
-                if (name === 'src') {
-                    allowed = /^(?:data:image\/(?:png|jpeg|gif|webp);base64,|\.{0,2}\/?assets\/)/i.test(value);
-                } else if (['alt', 'width', 'height'].includes(name)) {
-                    allowed = true;
-                }
-            }
+            if (element.tagName === 'IMG') allowed = isPisiImageElementAttributeAllowed(name, value, element.hasAttribute('data-pisi-image-asset'));
 
             if (element.tagName === 'FONT') {
                 allowed = ['color', 'face', 'size'].includes(name);
             }
 
             if (element.tagName === 'DIV') {
-                if (name === 'data-pisi-canvas-block') {
+                const imageBlockAttribute = isPisiImageBlockAttributeAllowed(name, value);
+                if (imageBlockAttribute !== null) allowed = imageBlockAttribute;
+                else if (name === 'data-pisi-canvas-block') {
                     allowed = value === '1';
                 } else if (name === 'data-pisi-canvas-title') {
                     allowed = value.length <= 80 && !/[\u0000-\u001f\u007f]/.test(value);

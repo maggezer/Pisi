@@ -82,7 +82,7 @@ test('Rollup yapılandırması node içeriğinde ve Markdown geçişinde korunur
     const manifest = JSON.parse(read('renderer/module-manifest.json'));
 
     assert.match(blocks, /id: 'rollup', label: 'Rollup bloğu'/);
-    assert.match(blocks, /filter\(\(record\) => record\.id !== 'rollup'\)/);
+    assert.match(blocks, /PISI_BLOCK_TYPES\.filter\(\(record\) => record\.id !== 'rollup'/);
     assert.match(blocks, /\{\{pisi-rollup:/);
     assert.match(blocks, /block\.dataset\.pisiRollupRelation/);
     assert.match(blocks, /block\.dataset\.pisiRollupTarget/);

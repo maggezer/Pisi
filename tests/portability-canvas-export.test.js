@@ -27,6 +27,8 @@ const exportFunctions = [
     'pisiPropertiesFrontmatter',
     'pisiTransformPaintCanvases',
     'pisiEmbedPaintImagesForExport',
+    'pisiTransformImageBlocks',
+    'pisiEmbedImageBlocksForExport',
     'pisiLinkPaintImagesForMarkdown',
     'pisiDocxPaintImageParagraph',
     'pisiCrc32',
@@ -80,6 +82,7 @@ function createExportHarness(format, content, sidecarPath, outputPath) {
             return {
                 ok: true,
                 metadata: { title: 'Paint note' },
+                sidecarPath,
                 data: {
                     content: options?.hydrateEditorAssets === true ? editorAssets.hydratePisiEditorAssets(content, { sidecarPath }) : content
                 }
@@ -113,6 +116,7 @@ function createProjectExportHarness(projectRoot, outputFolder, content, sidecarP
             return {
                 ok: true,
                 metadata: { type: 'node', title: 'Paint note' },
+                sidecarPath,
                 data: {
                     pisi: { type: 'node', title: 'Paint note' },
                     properties: {},
@@ -135,6 +139,7 @@ function createProjectExportHarness(projectRoot, outputFolder, content, sidecarP
         'pisiTransformSheetTablesForExport',
         'pisiPropertiesFrontmatter',
         'pisiTransformPaintCanvases',
+        'pisiTransformImageBlocks',
         'pisiLinkPaintImagesForMarkdown',
         'pisiSafeTimestamp',
         'walkPisiFiles',
@@ -441,4 +446,54 @@ test('node export rejects Sheet blocks without a hydrated, verified sidecar mode
 test('plain-text history conversion does not require a hydrated Sheet export model', () => {
     const harness = createExportHarness('html', '', '', '');
     assert.equal(harness.toPlainText('<table data-pisi-sheet="1" data-pisi-sheet-asset="sheet/missing.json"></table>'), '');
+});
+
+const GIF_1X1 = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+
+test('image blocks export from the note sidecar to HTML, PDF, Markdown and DOCX', async () => {
+    const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-image-export-'));
+    const sidecarPath = path.join(temporaryRoot, 'Paint note.pisi-node');
+    fs.mkdirSync(sidecarPath, { recursive: true });
+
+    try {
+        const png = makePng(30, 12);
+        const storedPng = editorAssets.writePisiImageAsset(sidecarPath, png);
+        const storedGif = editorAssets.writePisiImageAsset(sidecarPath, GIF_1X1);
+        const block = (reference, alt, width = '') =>
+            `<div class="pisi-editor-block pisi-image-block" data-pisi-block-type="image" data-pisi-image-block="1" data-pisi-image-align="center" contenteditable="false"><img data-pisi-image-asset="${reference}" alt="${alt}"${width ? ` data-pisi-image-width="${width}"` : ''}></div>`;
+        const missing = `image/${'0'.repeat(64)}.png`;
+        const content = block(storedPng.reference, 'Grafik', '240') + block(storedGif.reference, 'Nokta') + block(missing, 'Kayıp görsel');
+
+        for (const format of ['html', 'pdf']) {
+            const outputPath = path.join(temporaryRoot, `Paint note.${format}`);
+            const harness = createExportHarness(format, content, sidecarPath, outputPath);
+            assert.equal((await harness.run()).ok, true);
+            const html = format === 'html' ? fs.readFileSync(outputPath, 'utf8') : harness.getLoadedHtml();
+            assert.match(html, /<img src="data:image\/png;base64,[^"]+" alt="Grafik" width="240">/);
+            assert.match(html, /<img src="data:image\/gif;base64,[^"]+" alt="Nokta">/);
+            assert.match(html, /<span>Kayıp görsel<\/span>/);
+            assert.doesNotMatch(html, /data-pisi-image-asset/);
+        }
+
+        const markdownPath = path.join(temporaryRoot, 'Paint note.md');
+        assert.equal((await createExportHarness('markdown', content, sidecarPath, markdownPath).run()).ok, true);
+        const markdown = fs.readFileSync(markdownPath, 'utf8');
+        assert.match(markdown, /!\[Grafik\]\(Paint%20note\.assets\/image-[a-f0-9]{64}\.png\)/);
+        assert.match(markdown, /!\[Nokta\]\(Paint%20note\.assets\/image-[a-f0-9]{64}\.gif\)/);
+        const assetDirectory = path.join(temporaryRoot, 'Paint note.assets');
+        const exportedPng = fs.readdirSync(assetDirectory).find((name) => name.endsWith('.png'));
+        assert.deepEqual(fs.readFileSync(path.join(assetDirectory, exportedPng)), png);
+
+        const docxPath = path.join(temporaryRoot, 'Paint note.docx');
+        assert.equal((await createExportHarness('docx', content, sidecarPath, docxPath).run()).ok, true);
+        const entries = readStoredZipEntries(fs.readFileSync(docxPath));
+        assert.deepEqual(entries.get('word/media/image-1.png'), png);
+        assert.deepEqual(entries.get('word/media/image-2.gif'), GIF_1X1);
+        assert.match(entries.get('word/_rels/document.xml.rels').toString('utf8'), /Target="media\/image-2\.gif"/);
+        const contentTypes = entries.get('[Content_Types].xml').toString('utf8');
+        assert.match(contentTypes, /Extension="png" ContentType="image\/png"/);
+        assert.match(contentTypes, /Extension="gif" ContentType="image\/gif"/);
+    } finally {
+        fs.rmSync(temporaryRoot, { recursive: true, force: true });
+    }
 });

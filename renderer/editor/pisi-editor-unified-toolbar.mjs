@@ -147,6 +147,7 @@ function buildPisiUnifiedToolbarMarkup() {
                 <div class="pisi-sheet-main-stack">
                     <button type="button" class="pisi-ribbon-btn pisi-toolbar-data-btn" data-pisi-table-trigger title="5 × 5 tablo ekle">${pisiToolbarIcon('table')}<span>Table</span></button>
                     <button type="button" class="pisi-ribbon-btn pisi-toolbar-data-btn" data-pisi-rollup-trigger title="Rollup ekle">${pisiToolbarIcon('rollup')}<span>Roll</span></button>
+                    <button type="button" class="pisi-ribbon-btn pisi-toolbar-data-btn" data-pisi-image-trigger title="Görsel ekle">${pisiToolbarIcon('image')}<span>Image</span></button>
                 </div>
             </section>
 
@@ -387,6 +388,12 @@ function bindPisiUnifiedToolbarEvents(toolbar) {
                     }
                 })
             );
+            return;
+        }
+
+        const imageTrigger = event.target.closest('[data-pisi-image-trigger]');
+        if (imageTrigger) {
+            document.dispatchEvent(new CustomEvent('pisi:image-insert-request', { detail: { editorTarget: toolbar.dataset.editorTarget || null } }));
             return;
         }
 
