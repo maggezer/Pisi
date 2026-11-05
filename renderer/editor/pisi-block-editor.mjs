@@ -5,6 +5,7 @@ import { getPisiBlockKeyboardContext, pisiBeforeInputAsKey, insertPisiKeyboardLi
 import { handlePisiBlockBoundaryKey } from './pisi-block-keyboard-boundaries.mjs';
 import { registerModule } from '../core/module-registry.mjs';
 import { registerPisiCommand } from '../core/pisi-command-registry.mjs';
+import { makePisiImageBlockHtml, parsePisiImageMarkdownLine, serializePisiImageMarkdown } from './pisi-editor-image-policy.mjs';
 const PISI_BLOCK_TYPES = Object.freeze([
     Object.freeze({ id: 'paragraph', label: 'Paragraf', tag: 'div' }),
     Object.freeze({ id: 'heading1', label: 'Başlık 1', tag: 'h1' }),
@@ -17,17 +18,19 @@ const PISI_BLOCK_TYPES = Object.freeze([
     Object.freeze({ id: 'bullet', label: 'Madde işareti', tag: 'div' }),
     Object.freeze({ id: 'number', label: 'Numaralı madde', tag: 'div' }),
     Object.freeze({ id: 'task', label: 'Görev bloğu', tag: 'div' }),
-    Object.freeze({ id: 'rollup', label: 'Rollup bloğu', tag: 'div' })
+    Object.freeze({ id: 'rollup', label: 'Rollup bloğu', tag: 'div' }),
+    Object.freeze({ id: 'image', label: 'Görsel', tag: 'div' })
 ]);
 const PISI_BLOCK_SLASH_COMMANDS = Object.freeze([
-    ...PISI_BLOCK_TYPES.filter((record) => record.id !== 'rollup').map((record) =>
+    ...PISI_BLOCK_TYPES.filter((record) => record.id !== 'rollup' && record.id !== 'image').map((record) =>
         Object.freeze({
             ...record,
             slash: record.id === 'task' ? 'todo' : record.id,
             action: record.id === 'task' ? 'todo' : 'block'
         })
     ),
-    Object.freeze({ id: 'done', label: 'Tamamlanmış görev', slash: 'done', action: 'done' })
+    Object.freeze({ id: 'done', label: 'Tamamlanmış görev', slash: 'done', action: 'done' }),
+    Object.freeze({ id: 'image', label: 'Görsel ekle', slash: 'image', action: 'image', aliases: Object.freeze(['gorsel', 'görsel', 'resim']) })
 ]);
 const { splitPisiTaskBlockOnEnter, handlePisiTaskBlockBackspace, removePisiTaskMetadataAndMarkerFromBlock, placeCaretAtEndOfPisiBlock } =
     createPisiTaskBlockKeyboard({
@@ -195,6 +198,11 @@ function pisiBlockMarkdownToHtml(markdown = '') {
             output.push(makePisiBlockHtml('paragraph', '<hr>', 0, meta));
             continue;
         }
+        const image = parsePisiImageMarkdownLine(line);
+        if (image) {
+            output.push(makePisiImageBlockHtml({ ...image, blockId: meta?.id, extra: buildExtraBlockAttrs(meta) }));
+            continue;
+        }
         const rollup = line.match(/^\{\{pisi-rollup:([^:]*):([^:]*):(count|sum|average|min|max|unique|join)\}\}/);
         const heading = line.match(/^(#{1,5})\s+(.+)$/);
         const task = line.match(/^[-*]\s+\[([ xX])\]\s*(.*)$/);
@@ -292,6 +300,17 @@ function pisiBlockHtmlToMarkdown(editor) {
             const type = getPisiBlockType(block);
             const meta = extractPisiBlockMeta(block);
             const metaStr = meta ? ` <!-- pisi:meta ${JSON.stringify(meta)} -->` : '';
+            if (type === 'image') {
+                const img = block.querySelector('img[data-pisi-image-asset]');
+                const reference = img?.getAttribute('data-pisi-image-asset');
+                const markdown = serializePisiImageMarkdown({
+                    reference,
+                    align: block.dataset.pisiImageAlign,
+                    width: img?.dataset.pisiImageWidth,
+                    alt: img?.alt
+                });
+                return markdown ? `${markdown}${metaStr}` : '';
+            }
             if (type === 'rollup') {
                 const relation = encodePisiRollupMarkdownValue(block.dataset.pisiRollupRelation || '');
                 const target = encodePisiRollupMarkdownValue(block.dataset.pisiRollupTarget || '');
@@ -670,6 +689,8 @@ function applyPisiMarkdownBlockShortcut(event, block) {
 }
 function placeCaretAtStartOfPisiBlock(selection, block) {
     if (!selection || !block || typeof document.createRange !== 'function') return;
+    // Non-editable blocks (image, rollup) are never reset into an empty text line.
+    if (block.getAttribute?.('contenteditable') === 'false') return;
     if (!block.textContent && !block.querySelector?.('br')) block.innerHTML = '<br>';
     const caret = document.createRange();
     if (block.firstChild && block.firstChild.nodeType === Node.TEXT_NODE && block.firstChild.nodeValue?.length) {

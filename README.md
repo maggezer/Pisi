@@ -12,6 +12,9 @@ takvim işlevlerini tek bir proje klasöründe birleştirir.
 - Hiyerarşi, süreç ve denk bağlam bağlantıları
 - Sekmeli center editor ve map içi node modalı
 - Zengin metin, Paint ve Excel-benzeri tablo/formül araçları
+- Notlara görsel ekleme: panodan yapıştırma (ekran görüntüsü dahil), sürükle-bırak,
+  araç çubuğu ve `/image` komutu; PNG, JPEG, GIF, WebP (SVG PNG'ye çevrilir),
+  hizalama, alt metin, yeniden boyutlandırma ve büyük önizleme
 - Kalıcı kimlikli WYSIWYG Markdown blokları, `/` menüsü, sürükleme, blok türü
   ve Markdown kaynak görünümü
 - Kullanıcı etiketleri, proje görev indeksi ve görev başına tamamlanma durumu

@@ -134,7 +134,18 @@ modal, harita ve imleç senkron yüzünden kapanmamalı ya da yeniden
 `reloadPisiWorkspaceAfterExternalChange` akışındaki gibi yalnız o belge ele
 alınır ve kaydedilmemiş değişiklik varsa kullanıcıya sorulur.
 
-## 6. Güncel doğrulama snapshot’ı
+## 6. Editörde fareyle blok sürükle-bırak çalışmıyor
+
+**[Düşük · editor · doğrulandı, çözülmedi]** `renderer/editor/pisi-block-editor.mjs`
+içindeki `handlePisiBlockDrop`, sürüklenen bloğu
+`pisiBlocksEditorState.draggedBlockId` üzerinden bulur. Ancak bu alan kaynakta
+hiçbir yerde atanmıyor (yalnız `null` yapılıyor) ve bloklar için bir `dragstart`
+işleyicisi yok. Bu yüzden hiçbir blok türü fareyle sürüklenerek taşınamıyor.
+Bloklar `Alt+Shift+↑/↓` komutlarıyla taşınabiliyor; görsel blokları da bu
+komutlarla taşınıyor (`scripts/electron-image-blocks-e2e.mjs`). Fareyle
+sürükleme ayrı bir işte ele alınmalı.
+
+## 7. Güncel doğrulama snapshot’ı
 
 6 Ekim 2026 current `main` kontrolü:
 
@@ -158,7 +169,7 @@ alınır ve kaydedilmemiş değişiklik varsa kullanıcıya sorulur.
 
 Bu metriklerin güncel sayıları CI her çalıştığında yeniden üretilir; audit politikası artık yeni veya kapsamı genişleyen bulguları fail-closed biçimde engeller.
 
-## 7. Tamamlanmış olup açık sayılmaması gereken maddeler
+## 8. Tamamlanmış olup açık sayılmaması gereken maddeler
 
 Aşağıdakiler artık `pisi-error.md` için açık değildir:
 

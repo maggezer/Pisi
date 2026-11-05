@@ -1,5 +1,33 @@
 # PISI Güncelleme Takip Dosyası
 
+## 05-11-2026 — Notlara görsel ekleme
+
+- Yeni varlık türü `image/<sha256>.<png|jpg|gif|webp>` node sidecar içinde,
+  içerik adresli ve tekilleştirilmiş olarak saklanır. Tür, dosya imzasından ve
+  gerçek boyutlardan doğrulanır; sınır 20 MB, SVG PNG'ye çevrilir.
+- Kayıtlı HTML yalnız referansı taşır; görsel oturum boyunca `blob:` URL ile
+  gösterilir. Geri al/yinele geçmişi ve autosave görsel verisi taşımaz.
+- Ekleme: panodan yapıştırma (ekran görüntüsü dahil), dosya sürükle-bırak,
+  araç çubuğu `Image` düğmesi ve `/image` slash komutu.
+- Görsel bloğu: sol/orta/sağ hizalama, alt metin, tutamaçla genişlik,
+  tıklayınca büyük önizleme, Delete/Backspace ile silme, kopyala/kes/yapıştır
+  ve Markdown kaynak görünümü (`{{pisi-image:…}}`).
+- Notlar arası kopyalanan görsel hedef notun sidecar'ına yeniden yazılır.
+- Referanssız görseller sürüm geçmişi korumasına ek olarak 24 saat bekleme
+  süresinden sonra temizlenir.
+- Project Integrity eksik görselleri raporlar; Trash ve geri yükleme
+  görselleri notla birlikte taşır.
+- Dışa aktarma: HTML/PDF gömülü, Markdown `<not>.assets/` klasörüne göreli
+  yolla, DOCX gömülü medya.
+- Metni olmayan düzenlenemez bloklarda imleç yerleştirme artık bloğu boş
+  satıra çevirmez.
+- Seçili görsel `Alt+Shift+↑/↓` ile taşınır; görsel seçiliyken yazmaya
+  başlamak görseli silmez, metin görselin altındaki bloğa yazılır.
+- Pisi'den Pisi'ye yapıştırma görsel bloğunu bütün blok olarak aktarır.
+- Testler: `tests/editor-image-assets.test.mjs`,
+  `tests/editor-image-policy.test.mjs`, dışa aktarma testi ve
+  `scripts/electron-image-blocks-e2e.mjs`.
+
 ## 05-11-2026 — Klasör tabanlı sync kapatıldı; yeniden yüklemede kayıtlar önce yazılıyor
 
 - `PISI_LEGACY_SYNC_ENABLED = false`: Pisi Sync ayarlar bölümü, otomatik

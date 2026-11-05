@@ -42,6 +42,7 @@ function setup(t) {
         'pisiExportSheetTableToMarkdown',
         'pisiTransformSheetTablesForExport',
         'pisiTransformPaintCanvases',
+        'pisiTransformImageBlocks',
         'pisiLinkPaintImagesForMarkdown',
         'exportPisiProjectMarkdown'
     ];

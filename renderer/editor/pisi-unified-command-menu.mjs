@@ -174,16 +174,23 @@ function makePisiUnifiedBlockItems(command) {
     return records
         .map((record) => {
             const id = String(record.slash || record.id || '');
-            const kind = record.action === 'todo' ? 'todo-start' : record.action === 'done' ? 'todo-done' : 'block';
+            const kind = record.action === 'todo' ? 'todo-start' : record.action === 'done' ? 'todo-done' : record.action === 'image' ? 'image' : 'block';
             return {
                 kind,
                 id,
                 label: String(record.label || id),
-                description: kind === 'block' ? 'Blok türünü değiştir' : kind === 'todo-start' ? 'Görev oluştur' : 'Görevi tamamla',
+                description:
+                    kind === 'block'
+                        ? 'Blok türünü değiştir'
+                        : kind === 'image'
+                          ? 'Görsel dosyası seç'
+                          : kind === 'todo-start'
+                            ? 'Görev oluştur'
+                            : 'Görevi tamamla',
                 category: kind.startsWith('todo-') ? 'Tasks' : 'Blocks',
                 typedToken: `${command.trigger}${id}`,
                 blockType: record.id,
-                aliases: []
+                aliases: Array.isArray(record.aliases) ? [...record.aliases] : []
             };
         })
         .filter((item) => matchesPisiUnifiedItem(item, command?.body));
@@ -305,6 +312,13 @@ async function runPisiUnifiedCommandItem(editor, command, item) {
 
     if (item.kind === 'block') {
         return applyPisiUnifiedBlock(editor, command, item);
+    }
+
+    if (item.kind === 'image') {
+        makePisiCommandRange(command)?.deleteContents();
+        closePisiUnifiedCommandMenu();
+        document.dispatchEvent(new CustomEvent('pisi:image-insert-request', { detail: { editor } }));
+        return true;
     }
 
     return false;

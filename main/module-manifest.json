@@ -292,5 +292,10 @@
             "PISI_SYNC_DISABLED_CODE",
             "isPisiLegacySyncEnabled"
         ]
+    },
+    {
+        "module": "main.editorAssetDomain",
+        "path": "main/functions/editor-asset-domain.js",
+        "bindings": ["storePisiEditorImageAsset", "readPisiEditorImageAsset", "installPisiEditorAssetDomainContracts"]
     }
 ]

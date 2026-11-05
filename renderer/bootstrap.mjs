@@ -52,6 +52,7 @@ import './tags/pisi-tag-editor.mjs';
 import './editor/pisi-block-editor.mjs';
 import './editor/pisi-unified-command-menu.mjs';
 import './editor/pisi-unified-command-formatting.mjs';
+import './editor/pisi-editor-image-block.mjs';
 import './editor/pisi-editor-word-behavior.mjs';
 import './editor/pisi-editor-command-authority.mjs';
 import './editor/pisi-editor-command-routing.mjs';

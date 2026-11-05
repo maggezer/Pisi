@@ -1,3 +1,5 @@
+import { isPisiImageBlockAttributeAllowed, isPisiImageElementAttributeAllowed, isPisiImageReference } from '../editor/pisi-editor-image-policy.mjs';
+
 const pasteTags = new Set(
     'A B BLOCKQUOTE BR CODE DIV EM FONT H1 H2 H3 H4 H5 H6 HR I IMG LI OL P PRE S SPAN STRONG SUB SUP TABLE TBODY TD TH THEAD TFOOT TR U UL SECTION ARTICLE MAIN HEADER FOOTER ASIDE DD DT DL FIGCAPTION'.split(
         ' '
@@ -30,7 +32,13 @@ export function sanitizePisiPasteHtml(html = '', internal = false) {
             element.replaceWith(...element.childNodes);
             continue;
         }
-        if (element.tagName === 'IMG' && !/^(?:data:image\/(?:png|jpeg|gif|webp);base64,|\.{0,2}\/?assets\/)/i.test(element.getAttribute('src') || '')) {
+        // Pisi image blocks keep their sidecar reference; their blob: src is runtime only.
+        const pisiImage = internal && element.tagName === 'IMG' && isPisiImageReference(element.getAttribute('data-pisi-image-asset'));
+        if (
+            element.tagName === 'IMG' &&
+            !pisiImage &&
+            !/^(?:data:image\/(?:png|jpeg|gif|webp);base64,|\.{0,2}\/?assets\/)/i.test(element.getAttribute('src') || '')
+        ) {
             element.replaceWith(document.createTextNode(element.getAttribute('alt') || ''));
             continue;
         }
@@ -67,7 +75,12 @@ export function sanitizePisiPasteHtml(html = '', internal = false) {
         for (const [name, value] of attrs) {
             if (name === 'title') element.setAttribute(name, value);
             if (element.tagName === 'A' && name === 'href' && safePisiPasteHref(value)) element.setAttribute('href', safePisiPasteHref(value));
-            if (element.tagName === 'IMG' && ['src', 'alt', 'width', 'height'].includes(name)) element.setAttribute(name, value);
+            if (
+                element.tagName === 'IMG' &&
+                (pisiImage ? isPisiImageElementAttributeAllowed(name, value, true) : ['src', 'alt', 'width', 'height'].includes(name))
+            )
+                element.setAttribute(name, value);
+            if (internal && element.tagName === 'DIV' && isPisiImageBlockAttributeAllowed(name, value)) element.setAttribute(name, value);
             if (['TD', 'TH'].includes(element.tagName) && ['rowspan', 'colspan'].includes(name) && /^\d{1,3}$/.test(value) && Number(value) > 0)
                 element.setAttribute(name, value);
             if (internal && internalData.test(name)) element.setAttribute(name, value);
@@ -78,7 +91,7 @@ export function sanitizePisiPasteHtml(html = '', internal = false) {
                     .join(' ');
         }
         if (style.cssText) element.setAttribute('style', style.cssText);
-        if (internal && element.matches('.pisi-block-task-marker, .pisi-task-metadata')) element.setAttribute('contenteditable', 'false');
+        if (internal && element.matches('.pisi-block-task-marker, .pisi-task-metadata, .pisi-image-block')) element.setAttribute('contenteditable', 'false');
     }
     const walker = document.createTreeWalker(template.content, NodeFilter.SHOW_TEXT);
     while (walker.nextNode()) {
