@@ -1,5 +1,13 @@
 # PISI Güncelleme Takip Dosyası
 
+## 05-11-2026 — Diary görev düzenleyicisinde kullanılmayan tarih parametresi kaldırıldı
+
+- `organizeDiaryManualTasks` imzası `(content, options)` oldu. `fileDate`
+  yalnız eski `Görevler · <tarih>` başlığı için kullanılıyordu; başlık 1beb0df
+  ile tarihsiz hale geldiğinden parametrenin işlevi kalmamıştı.
+- Mevcut başlıktaki tarihin silinmesi korunur ve diary entegrasyon testinde
+  açıkça doğrulanır.
+
 ## 05-11-2026 — Audit istisnası kaldırıldı ve CI yeniden yeşile döndü
 
 - Kilitli bağımlılıklar semver aralıkları içinde güncellendi; `electron` 43.8.x
