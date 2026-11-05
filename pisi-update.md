@@ -1,5 +1,22 @@
 # PISI Güncelleme Takip Dosyası
 
+## 05-11-2026 — Dış bağlantılar güvenle açılıyor; bağlantı ekleme/düzenleme
+
+- Main süreçte tek "dış bağlantıyı aç" yolu (`main/functions/external-links.js`):
+  URL `new URL()` ile ayrıştırılır; yalnız `http:`, `https:`, `mailto:` kabul
+  edilir; kullanıcı adı/parola, boşluk veya kontrol karakteri içeren URL'ler
+  reddedilir; `shell.openExternal` ile açılır.
+- `setWindowOpenHandler` ve `will-navigate` bu yolu kullanır; uygulama penceresi
+  hiçbir zaman dış sayfaya gitmez. Önceden bağlantılar hiç açılmıyordu.
+- Preload: `window.pisiShell.openExternal(url)`.
+- Editörde Ctrl+tık (macOS'ta Cmd+tık) açar, düz tık imleci koyar; üzerine
+  gelince hedef URL ve ipucu görünür. Salt okunur yüzeylerde düz tık açar.
+- Bağlantı ekleme/düzenleme/kaldırma: `Mod+Shift+K`, araç çubuğu düğmesi ve
+  `/link`. Şemasız girdiye `https://`, e-posta adresine `mailto:` eklenir.
+- Testler: `tests/external-url-policy.test.mjs` (main ve renderer aynı
+  vektörlerle), `scripts/electron-external-links-e2e.mjs`
+  (`PISI_TEST_CAPTURE_EXTERNAL=1` ile `shell.openExternal` yakalanır).
+
 ## 05-11-2026 — Notlara görsel ekleme
 
 - Yeni varlık türü `image/<sha256>.<png|jpg|gif|webp>` node sidecar içinde,

@@ -12,6 +12,8 @@ takvim işlevlerini tek bir proje klasöründe birleştirir.
 - Hiyerarşi, süreç ve denk bağlam bağlantıları
 - Sekmeli center editor ve map içi node modalı
 - Zengin metin, Paint ve Excel-benzeri tablo/formül araçları
+- Web bağlantıları: `Mod+Shift+K`, araç çubuğu veya `/link` ile ekleme/düzenleme;
+  Ctrl/Cmd+tık varsayılan tarayıcıda açar (yalnız http, https, mailto)
 - Notlara görsel ekleme: panodan yapıştırma (ekran görüntüsü dahil), sürükle-bırak,
   araç çubuğu ve `/image` komutu; PNG, JPEG, GIF, WebP (SVG PNG'ye çevrilir),
   hizalama, alt metin, yeniden boyutlandırma ve büyük önizleme

@@ -30,3 +30,14 @@ In a paragraph containing only `---`, Enter or Space replaces the marker with a
 horizontal rule and puts the caret in a new paragraph below it. Shift+Enter
 continues to insert a soft line. Code and task blocks do not use this shortcut.
 Horizontal rules survive saving, pasting and Markdown source round-trips.
+
+## Links
+
+`Mod+Shift+K` (also the toolbar link button and `/link`) opens the link editor
+for the selected text, or for the link under the caret. `Mod+K` stays with the
+command palette. The URL field accepts only `http`, `https` and `mailto`; a bare
+host such as `ornek.com` becomes `https://ornek.com/`, a bare e-mail address
+becomes `mailto:`. In an editable note a plain click on a link only places the
+caret and `Ctrl+click` (`Cmd+click` on macOS) opens it in the default browser.
+In read-only surfaces a plain click opens it. The application window never
+navigates: every open goes through the main-process external link guard.

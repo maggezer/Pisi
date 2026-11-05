@@ -169,24 +169,34 @@ function makePisiUnifiedLatexItems(command) {
     }));
 }
 
+// Slash items that hand off to another module instead of changing the block type.
+const PISI_UNIFIED_REQUEST_EVENTS = Object.freeze({ image: 'pisi:image-insert-request', link: 'pisi:link-edit-request' });
+const PISI_UNIFIED_BLOCK_DESCRIPTIONS = Object.freeze({
+    block: 'Blok türünü değiştir',
+    image: 'Görsel dosyası seç',
+    link: 'Web bağlantısı ekle',
+    'todo-start': 'Görev oluştur',
+    'todo-done': 'Görevi tamamla'
+});
+
 function makePisiUnifiedBlockItems(command) {
     const records = Array.isArray(window.PISI_BLOCK_SLASH_COMMANDS) ? window.PISI_BLOCK_SLASH_COMMANDS : [];
     return records
         .map((record) => {
             const id = String(record.slash || record.id || '');
-            const kind = record.action === 'todo' ? 'todo-start' : record.action === 'done' ? 'todo-done' : record.action === 'image' ? 'image' : 'block';
+            const kind =
+                record.action === 'todo'
+                    ? 'todo-start'
+                    : record.action === 'done'
+                      ? 'todo-done'
+                      : PISI_UNIFIED_REQUEST_EVENTS[record.action]
+                        ? record.action
+                        : 'block';
             return {
                 kind,
                 id,
                 label: String(record.label || id),
-                description:
-                    kind === 'block'
-                        ? 'Blok türünü değiştir'
-                        : kind === 'image'
-                          ? 'Görsel dosyası seç'
-                          : kind === 'todo-start'
-                            ? 'Görev oluştur'
-                            : 'Görevi tamamla',
+                description: PISI_UNIFIED_BLOCK_DESCRIPTIONS[kind] || PISI_UNIFIED_BLOCK_DESCRIPTIONS.block,
                 category: kind.startsWith('todo-') ? 'Tasks' : 'Blocks',
                 typedToken: `${command.trigger}${id}`,
                 blockType: record.id,
@@ -314,10 +324,11 @@ async function runPisiUnifiedCommandItem(editor, command, item) {
         return applyPisiUnifiedBlock(editor, command, item);
     }
 
-    if (item.kind === 'image') {
+    if (PISI_UNIFIED_REQUEST_EVENTS[item.kind]) {
         makePisiCommandRange(command)?.deleteContents();
         closePisiUnifiedCommandMenu();
-        document.dispatchEvent(new CustomEvent('pisi:image-insert-request', { detail: { editor } }));
+        editor.focus({ preventScroll: true });
+        document.dispatchEvent(new CustomEvent(PISI_UNIFIED_REQUEST_EVENTS[item.kind], { detail: { editor } }));
         return true;
     }
 
