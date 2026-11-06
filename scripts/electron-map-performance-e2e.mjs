@@ -202,7 +202,7 @@ try {
     await cdp.evaluate("localStorage.setItem('pisi.tutorial.v1.completed', '1')");
     const baseline = await metrics(cdp);
     for (const map of fixture.maps) {
-        const frameCount = 90;
+        const frameCount = Number(process.env.PISI_PERF_FRAMES) || 90;
         const measured = await cdp.evaluate(`(${measureInRenderer})(${JSON.stringify(map.mapPath)}, ${frameCount})`);
         const memory = await metrics(cdp);
         results.push({ size: map.size, edges: map.edges, ...measured, heapMb: memory.heapMb - baseline.heapMb, domNodeCount: memory.domNodeCount });
