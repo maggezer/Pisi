@@ -255,7 +255,7 @@ function bindGlobalFocusMenuHandlers() {
     document.addEventListener(
         'keydown',
         (event) => {
-            if (event.key !== 'Escape' || focusMenuState.menu?.hidden) return;
+            if (event.key !== 'Escape' || !focusMenuState.menu || focusMenuState.menu.hidden) return;
             event.preventDefault();
             closeFocusMenu();
             focusMenuState.button?.focus();

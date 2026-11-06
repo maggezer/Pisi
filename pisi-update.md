@@ -1,5 +1,32 @@
 # PISI Güncelleme Takip Dosyası
 
+## 06-11-2026 — Kimlikli not bağlantıları ve yeniden adlandırmada bağlantı güncelleme
+
+- Editörde `[[` yazınca arama indeksiyle bulanık eşleşen not önerileri açılır;
+  ok tuşları, Enter/Tab ve Esc paylaşılan menünün klavye sahipliğiyle çalışır,
+  IME bileşimi sırasında açılmaz. `[[Not#` o notun bloklarını listeler; tam
+  eşleşme yoksa "Yeni not oluştur" seçeneği notu kaynak notun klasörüne açar.
+- Seçilen bağlantı hedef notun kalıcı kimliğini taşır
+  (`data-pisi-node-id`, `data-pisi-link-block`); görünen metin başlıktır.
+  Hedef silinmişse "kırık bağlantı" stili gösterilir.
+- Ctrl/Cmd+tık notu (ve `#blok` varsa bloğu) açar; salt okunur yüzeylerde düz
+  tık açar. Kimliksiz eski `[[Başlık]]` metinleri vurgulanır ve başlığa göre
+  çözülür; birden fazla not eşleşirse seçim listesi açılır.
+- Komut paletinde "Bağlantıları onar": tek bir notla eşleşen eski bağlantılara
+  kimlik ekler, önce etki özetini gösterir, atomik çalışır.
+- Not yeniden adlandırılınca (`project.item.rename.v1`, aynı atomik işlem)
+  kimlikli bağlantıların başlığı ve eski `[[Eski Ad]]` metinleri tüm projede
+  güncellenir; eski ad başka bir notta da varsa eski metinlere dokunulmaz.
+  Etkilenecek not varsa işlemden önce sayısı sorulur (ağaç, sekme, harita ve
+  modal yeniden adlandırma yolları). Açık editörler de güncellenir.
+- Arama indeksi ve backlink paneli kimlikli bağlantıları kimlik üzerinden okur.
+- Düzeltme: Harita odak menüsü, ilişki menüsü, çalışma merkezi ve Bases
+  penceresindeki Esc işleyicileri, öğeleri hiç oluşturulmamışken de her Esc'i
+  iptal ediyordu; bu yüzden editör menüleri Esc ile kapanmıyordu.
+- Testler: `tests/wiki-link-core.test.mjs`, `tests/wiki-link-store.test.mjs`
+  (yarıda kesilen yeniden adlandırmanın atomik geri dönüşü dahil),
+  `scripts/electron-wiki-links-e2e.mjs`.
+
 ## 05-11-2026 — Dış bağlantılar güvenle açılıyor; bağlantı ekleme/düzenleme
 
 - Main süreçte tek "dış bağlantıyı aç" yolu (`main/functions/external-links.js`):

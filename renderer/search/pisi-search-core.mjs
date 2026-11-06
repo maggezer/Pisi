@@ -288,14 +288,16 @@ export function buildPisiRelationshipModel(index, targetPath) {
     }
 
     const targetTitleKey = normalizePisiSearchText(targetDocument.title);
+    const targetId = targetDocument.metadata?.id || null;
 
     for (const [documentKey, documentRecord] of documents) {
         if (documentKey === targetKey) continue;
         const directTitles = new Set((documentRecord.directTitles || []).map(normalizePisiSearchText));
         const directPaths = new Set((documentRecord.directPaths || []).map(pisiSearchPathKey));
+        const linksById = Boolean(targetId) && (documentRecord.directIds || []).includes(targetId);
         const membership = documentRecord.memberships?.[0] || null;
 
-        if (directTitles.has(targetTitleKey) || directPaths.has(targetKey)) {
+        if (linksById || directTitles.has(targetTitleKey) || directPaths.has(targetKey)) {
             addRelationship(inbound, documentKey, makeNodeRelationship(documentRecord, membership, ['text']));
         } else if (containsPisiTitleMention(documentRecord.unlinkedText || documentRecord.plainText, targetDocument.title)) {
             addRelationship(unlinked, documentKey, makeNodeRelationship(documentRecord, membership, ['mention']));
@@ -315,6 +317,21 @@ export function buildPisiRelationshipModel(index, targetPath) {
         if (!linkedDocument || linkedDocument.path === targetDocument.path) continue;
         const linkedKey = pisiSearchPathKey(linkedDocument.path);
         addRelationship(outbound, linkedKey, makeNodeRelationship(linkedDocument, linkedDocument.memberships?.[0], ['text']));
+    }
+
+    const documentById = new Map();
+    for (const documentRecord of documents.values()) {
+        const id = documentRecord.metadata?.id;
+        if (id && !documentById.has(id)) documentById.set(id, documentRecord);
+    }
+    for (const directId of targetDocument.directIds || []) {
+        const linkedDocument = documentById.get(directId);
+        if (!linkedDocument || linkedDocument.path === targetDocument.path) continue;
+        addRelationship(
+            outbound,
+            pisiSearchPathKey(linkedDocument.path),
+            makeNodeRelationship(linkedDocument, linkedDocument.memberships?.[0] || null, ['text'])
+        );
     }
 
     for (const directPath of targetDocument.directPaths || []) {

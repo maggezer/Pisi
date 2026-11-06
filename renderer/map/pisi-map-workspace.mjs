@@ -597,7 +597,7 @@ async function startMapNodeTitleEdit(box, node) {
 
             suppressNextFileSystemRefresh(3000);
 
-            const result = await window.pisiProject?.renamePisiFile?.(oldPath, newTitle);
+            const result = await renamePisiItemWithLinkReview(oldPath, newTitle);
 
             if (!result || !result.ok) {
                 alert(result?.error || 'Node adı değiştirilemedi.');

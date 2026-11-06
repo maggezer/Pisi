@@ -392,6 +392,11 @@ function applyPisiTagMenuItem(editor, item) {
     if (!item) return;
     const command = pisiTagMenuState.command;
 
+    if (String(item.kind).startsWith('wiki-')) {
+        window.applyPisiWikiMenuItem?.(editor, item, command);
+        return;
+    }
+
     if (item.kind === 'todo-start') {
         openPisiTodoPriorityMenu(editor, command);
         return;

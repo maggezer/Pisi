@@ -693,7 +693,7 @@ async function renamePisiOpenTabTitle(tab, newTitle) {
         suppressNextFileSystemRefresh(3000);
 
         const oldPath = tab.path;
-        const result = await window.pisiProject?.renamePisiFile?.(oldPath, cleanTitle);
+        const result = await renamePisiItemWithLinkReview(oldPath, cleanTitle);
 
         if (!result || !result.ok) {
             alert(result?.error || 'Sekme başlığı değiştirilemedi.');

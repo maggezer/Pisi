@@ -94,11 +94,18 @@ function extractPisiDirectTitles(container, plainText) {
     }
 
     container.querySelectorAll('a').forEach((anchor) => {
+        // Id links are resolved by id (extractPisiDirectIds); their title may be stale.
+        if (anchor.dataset?.pisiNodeId) return;
         const title = cleanPisiSearchText(anchor.dataset?.pisiNodeTitle || anchor.textContent || '');
         if (title) titles.push(title);
     });
 
     return Array.from(new Set(titles));
+}
+
+function extractPisiDirectIds(container) {
+    const ids = Array.from(container.querySelectorAll('a[data-pisi-node-id]')).map((anchor) => anchor.dataset.pisiNodeId);
+    return Array.from(new Set(ids.filter((id) => /^node_[A-Za-z0-9_-]{1,96}$/.test(id))));
 }
 
 function extractPisiUnlinkedText(container, plainText) {
@@ -252,6 +259,7 @@ function createPisiSearchDocumentRecord(rawNode, projectFolder) {
         plainText,
         unlinkedText: extractPisiUnlinkedText(container, plainText),
         directTitles: extractPisiDirectTitles(container, plainText),
+        directIds: extractPisiDirectIds(container),
         contentBlocks: extractPisiSearchContentBlocks(container),
         tables: extractPisiSearchTables(container),
         tags: tags.map(({ value, blockId }) => ({ value, blockId })),

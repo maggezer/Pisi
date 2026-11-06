@@ -319,7 +319,7 @@ function initializePisiCommandCenter() {
     }
 
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && !pisiCommandCenterState.overlay?.hidden) {
+        if (event.key === 'Escape' && pisiCommandCenterState.overlay && !pisiCommandCenterState.overlay.hidden) {
             event.preventDefault();
             closePisiCommandCenter();
         }

@@ -107,7 +107,7 @@ export function startRenameTreeFile(item, row) {
             const renameSourcePath = item.fullPath || oldPath;
             suppressNextFileSystemRefresh(1500);
 
-            const result = await window.pisiProject?.renamePisiFile?.(renameSourcePath, newBaseName);
+            const result = await renamePisiItemWithLinkReview(renameSourcePath, newBaseName);
 
             if (!result || !result.ok) {
                 alert(result?.error || 'İsim değiştirilemedi.');
