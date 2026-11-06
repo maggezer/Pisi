@@ -23,6 +23,11 @@
 - Düzeltme: Harita odak menüsü, ilişki menüsü, çalışma merkezi ve Bases
   penceresindeki Esc işleyicileri, öğeleri hiç oluşturulmamışken de her Esc'i
   iptal ediyordu; bu yüzden editör menüleri Esc ile kapanmıyordu.
+- Düzeltme: İlk açılış rehberi proje yüklendikten ~1 sn sonra kendiliğinden
+  açılıp kendi düğmesine odak veriyordu; kullanıcı o sırada yazıyorsa tuşlar
+  (ör. Enter) rehbere gidiyordu. CI'daki aralıklı "Enter kaybı"nın
+  (`pisi-error.md` eski madde 4) kök nedeni buydu. Rehber artık odak bir
+  yazma alanındayken başlamaz ve açık olsa da yazma alanından odak çalmaz.
 - Testler: `tests/wiki-link-core.test.mjs`, `tests/wiki-link-store.test.mjs`
   (yarıda kesilen yeniden adlandırmanın atomik geri dönüşü dahil),
   `scripts/electron-wiki-links-e2e.mjs`.
