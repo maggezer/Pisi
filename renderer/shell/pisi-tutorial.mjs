@@ -254,7 +254,7 @@ function renderTutorialStep() {
 
     const target = findTutorialTarget(step);
     positionTutorialCard(target);
-    next.focus({ preventScroll: true });
+    if (!isPisiTutorialTypingTarget()) next.focus({ preventScroll: true });
 }
 
 function nextPisiTutorialStep() {
@@ -373,6 +373,13 @@ function registerPisiTutorialPage() {
     });
 }
 
+// The tutorial focuses its own buttons. Starting it while the user types would
+// send the next keystrokes (Enter included) to the tutorial instead of the note,
+// so the automatic first-run start waits until focus leaves editable fields.
+function isPisiTutorialTypingTarget(element = document.activeElement) {
+    return Boolean((element instanceof HTMLElement && element.isContentEditable) || element?.matches?.('input, textarea, select'));
+}
+
 function scheduleFirstRunTutorial() {
     if (isTutorialCompleted() || tutorialState.firstRunTimer) return;
     tutorialState.firstRunTimer = window.setInterval(() => {
@@ -381,16 +388,19 @@ function scheduleFirstRunTutorial() {
             tutorialState.firstRunTimer = null;
             return;
         }
-        if (!window.currentProjectFolder) return;
+        if (!window.currentProjectFolder || isPisiTutorialTypingTarget()) return;
         const projectModal = document.getElementById('project-modal');
         if (projectModal && getComputedStyle(projectModal).display !== 'none') return;
 
         window.clearInterval(tutorialState.firstRunTimer);
         tutorialState.firstRunTimer = null;
         window.setTimeout(() => {
-            if (!isTutorialCompleted() && !tutorialState.active) {
-                startPisiTutorial();
+            if (isTutorialCompleted() || tutorialState.active) return;
+            if (isPisiTutorialTypingTarget()) {
+                scheduleFirstRunTutorial();
+                return;
             }
+            startPisiTutorial();
         }, 500);
     }, 500);
 }

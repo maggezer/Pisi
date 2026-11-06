@@ -33,6 +33,7 @@ import './main/functions/property-schema-operation-hooks.js';
 import './main/functions/domain-command-query.js';
 import './main/functions/trash-domain.js';
 import './main/functions/editor-asset-domain.js';
+import './main/functions/wiki-link-domain.js';
 import './main/functions/project-integrity-domain.js';
 import './main/functions/atomic-domain-hardening.js';
 import './main/functions/storage-project-fs-bridge.js';

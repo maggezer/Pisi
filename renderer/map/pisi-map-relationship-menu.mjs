@@ -200,7 +200,7 @@ function bindRelationshipMenuHandlers() {
     document.addEventListener(
         'keydown',
         (event) => {
-            if (event.key !== 'Escape' || relationshipMenuState.menu?.hidden) return;
+            if (event.key !== 'Escape' || !relationshipMenuState.menu || relationshipMenuState.menu.hidden) return;
             event.preventDefault();
             closeRelationshipMenu();
             relationshipMenuState.button?.focus();

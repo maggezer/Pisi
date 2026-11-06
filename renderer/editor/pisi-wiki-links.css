@@ -1,0 +1,90 @@
+.pisi-rich-editor a.pisi-wiki-link {
+    padding: 0 2px;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--accent-color, #f39c12) 14%, transparent);
+    color: var(--accent-color, #f39c12);
+    text-decoration: none;
+    cursor: text;
+    user-select: all;
+}
+
+.pisi-rich-editor[contenteditable='false'] a.pisi-wiki-link {
+    cursor: pointer;
+}
+
+.pisi-rich-editor a.pisi-wiki-link::before {
+    content: '↗ ';
+    opacity: 0.6;
+    font-size: 0.85em;
+}
+
+.pisi-rich-editor a.pisi-wiki-link[data-pisi-link-state='broken'] {
+    background: color-mix(in srgb, #e5534b 14%, transparent);
+    color: #e5534b;
+    text-decoration: line-through dotted;
+}
+
+.pisi-rich-editor a.pisi-wiki-link[data-pisi-link-state='broken']::before {
+    content: '⚠ ';
+}
+
+::highlight(pisi-legacy-wiki-link) {
+    color: var(--accent-color, #f39c12);
+    text-decoration: underline dotted;
+}
+
+.pisi-wiki-link-target {
+    outline: 2px solid var(--accent-color, #f39c12);
+    outline-offset: 3px;
+    border-radius: 4px;
+    transition: outline-color 1.2s ease;
+}
+
+.pisi-wiki-chooser {
+    position: fixed;
+    z-index: 960;
+    display: grid;
+    gap: 2px;
+    min-width: 240px;
+    max-width: min(420px, calc(100vw - 16px));
+    padding: 6px;
+    border: 1px solid #3a414d;
+    border-radius: 8px;
+    background: #20252e;
+    color: #f2f4f7;
+    box-shadow: 0 10px 28px rgb(0 0 0 / 32%);
+}
+
+.pisi-wiki-chooser-heading {
+    padding: 4px 6px 6px;
+    font-size: 12px;
+    opacity: 0.75;
+}
+
+.pisi-wiki-chooser button {
+    display: grid;
+    gap: 2px;
+    padding: 6px 8px;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.pisi-wiki-chooser button:hover,
+.pisi-wiki-chooser button:focus-visible {
+    background: color-mix(in srgb, var(--accent-color, #f39c12) 25%, transparent);
+}
+
+.pisi-wiki-chooser button span {
+    font-size: 11px;
+    opacity: 0.7;
+}
+
+:root[data-pisi-theme='light'] .pisi-wiki-chooser {
+    border-color: #c9ced6;
+    background: #ffffff;
+    color: #30343a;
+}

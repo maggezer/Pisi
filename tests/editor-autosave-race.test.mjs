@@ -66,6 +66,8 @@ function setup() {
             throw new Error(message);
         }
     };
+    // The renderer rename path; link review is covered by the wiki link tests.
+    c.renamePisiItemWithLinkReview = (oldPath, title) => c.window.pisiProject.renamePisiFile(oldPath, title);
     vm.createContext(c);
     const names = [
         'saveCurrentCenterNodeEditor',

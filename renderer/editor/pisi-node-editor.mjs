@@ -1,5 +1,6 @@
 import { safePisiPasteHref } from '../tags/pisi-paste-sanitize.mjs';
 import { isPisiImageBlockAttributeAllowed, isPisiImageElementAttributeAllowed } from './pisi-editor-image-policy.mjs';
+import { isPisiWikiLinkAttributeAllowed } from './pisi-wiki-link-core.mjs';
 import {
     getPisiNodeRecoveryWarning,
     applyPisiEditorRecoveryState,
@@ -183,6 +184,7 @@ function sanitizePisiEditorHtml(html = '') {
                 return;
             }
 
+            if (element.tagName === 'A' && ['data-pisi-node-id', 'data-pisi-link-block'].includes(name)) allowed = isPisiWikiLinkAttributeAllowed(name, value);
             if (element.tagName === 'A' && name === 'href') {
                 allowed = Boolean(safePisiPasteHref(value));
             }
@@ -478,7 +480,7 @@ async function performNodeModalCloseAndSave(node) {
         if (title && title !== oldTitle) {
             suppressNextFileSystemRefresh(1500);
 
-            const renameResult = await window.pisiProject?.renamePisiFile?.(nodePath, title);
+            const renameResult = await renamePisiItemWithLinkReview(nodePath, title, titleInput);
 
             if (renameResult && renameResult.ok) {
                 nodePath = renameResult.fullPath;
@@ -782,7 +784,7 @@ async function performCurrentCenterNodeEditorSave(node, options = {}) {
         if (title && title !== oldTitle) {
             suppressNextFileSystemRefresh(3000);
 
-            const renameResult = await window.pisiProject?.renamePisiFile?.(nodePath, title);
+            const renameResult = await renamePisiItemWithLinkReview(nodePath, title, titleInput);
 
             if (!renameResult || !renameResult.ok) {
                 alert(renameResult?.error || 'Node başlığı değiştirilemedi.');

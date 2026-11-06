@@ -77,29 +77,7 @@ Bunlar bug değil, dağıtım kanalına göre kasıtlı sınırlardır:
 - Portable build self-update yapmaz.
 - Development ve diğer distribution modlarında direct updater devre dışıdır.
 
-## 4. Editör klavye E2E’sinde aralıklı Enter kaybı
-
-**[Orta · editor/test · kök neden bulunamadı]** `scripts/electron-editor-keyboard-e2e.mjs`
-CI’da (GitHub `ubuntu-latest` + `xvfb-run`) aralıklı olarak kırılıyor. İki
-farklı adımda görüldü; her ikisinde de CDP ile gönderilen Enter editörde hiçbir
-blok değişikliği üretmedi:
-
-- 05-11-2026, PR #131: `<pre>` code bloğunda ikinci Enter bloktan çıkmadı
-  (`code: second Enter exits block`, 1 blok kaldı).
-- 05-11-2026, PR #132: görev metninin başında Enter görevi bölmedi
-  (beklenen `task ''` + `paragraph 'abcdef'`, gelen tek `task 'abcdef'`).
-
-İki PR da editör koduna dokunmuyor. Hata yerelde Electron 43.8.7 ile
-yeniden üretilemedi: normal koşuda 6/6, tek çekirdek + CPU yükü altında 6/6
-başarılı. İki Enter arasına 1,5 sn bekleme eklendiğinde de imleç doğru yerde
-kaldı. Olası neden, `setup()` ile tuş arasında çalışan eşzamansız bir işin
-(ör. kayıt sonrası görev/etiket projeksiyonu) bloğu yeniden çizip seçimi
-düşürmesi; doğrulanmadı. Gerçek kullanıcıda da tuş kaybına yol açabileceği
-için yalnız test kararsızlığı sayılmamalıdır. Sonraki adım: tuştan hemen önce
-seçimin editör içinde olduğunu doğrulayan teşhis assertion’ı ve hata anında
-blok kimliği/seçim kaydı.
-
-## 5. Pisi Sync proje yeniden yüklemesiyle açık notu kapatıyor ve metin kaybettiriyordu
+## 4. Pisi Sync proje yeniden yüklemesiyle açık notu kapatıyor ve metin kaybettiriyordu
 
 **[Yüksek · sync/editor · çözüldü, özellik kapalı]** Sync yapılandırılmışken
 `renderer/sync/pisi-sync-settings.mjs` her senkrondan sonra
@@ -134,7 +112,7 @@ modal, harita ve imleç senkron yüzünden kapanmamalı ya da yeniden
 `reloadPisiWorkspaceAfterExternalChange` akışındaki gibi yalnız o belge ele
 alınır ve kaydedilmemiş değişiklik varsa kullanıcıya sorulur.
 
-## 6. Editörde fareyle blok sürükle-bırak çalışmıyor
+## 5. Editörde fareyle blok sürükle-bırak çalışmıyor
 
 **[Düşük · editor · doğrulandı, çözülmedi]** `renderer/editor/pisi-block-editor.mjs`
 içindeki `handlePisiBlockDrop`, sürüklenen bloğu
@@ -145,7 +123,7 @@ Bloklar `Alt+Shift+↑/↓` komutlarıyla taşınabiliyor; görsel blokları da 
 komutlarla taşınıyor (`scripts/electron-image-blocks-e2e.mjs`). Fareyle
 sürükleme ayrı bir işte ele alınmalı.
 
-## 7. Güncel doğrulama snapshot’ı
+## 6. Güncel doğrulama snapshot’ı
 
 6 Ekim 2026 current `main` kontrolü:
 
@@ -169,7 +147,7 @@ sürükleme ayrı bir işte ele alınmalı.
 
 Bu metriklerin güncel sayıları CI her çalıştığında yeniden üretilir; audit politikası artık yeni veya kapsamı genişleyen bulguları fail-closed biçimde engeller.
 
-## 8. Tamamlanmış olup açık sayılmaması gereken maddeler
+## 7. Tamamlanmış olup açık sayılmaması gereken maddeler
 
 Aşağıdakiler artık `pisi-error.md` için açık değildir:
 

@@ -41,3 +41,16 @@ becomes `mailto:`. In an editable note a plain click on a link only places the
 caret and `Ctrl+click` (`Cmd+click` on macOS) opens it in the default browser.
 In read-only surfaces a plain click opens it. The application window never
 navigates: every open goes through the main-process external link guard.
+
+## Note links
+
+Typing `[[` opens a suggestion list of notes ranked by the search index. The
+shared tag menu owns the keys while it is open: ArrowUp/ArrowDown move, Enter or
+Tab pick, Escape closes; IME composition never opens or drives it. `[[Not#`
+lists that note's blocks. When no note has exactly the typed title, the list
+offers "Yeni not oluştur", which creates the note next to the current one.
+Typing a complete `[[Başlık]]` turns it into an id link when exactly one note
+has that title. As with web links, Ctrl+click (Cmd+click on macOS) follows a
+note link in an editable note and a plain click follows it in read-only
+surfaces; legacy `[[Başlık]]` text is followed by title, with a chooser when
+several notes share it.

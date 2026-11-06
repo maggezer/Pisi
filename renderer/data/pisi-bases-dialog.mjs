@@ -199,7 +199,7 @@ function initializePisiBasesDialog() {
         syncPisiBasesMapTrigger();
     });
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && !pisiBasesDialogState.overlay?.hidden) {
+        if (event.key === 'Escape' && pisiBasesDialogState.overlay && !pisiBasesDialogState.overlay.hidden) {
             event.preventDefault();
             closePisiBasesDialog();
         }

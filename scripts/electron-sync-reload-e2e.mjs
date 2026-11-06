@@ -236,6 +236,9 @@ try {
     await typeAtEnd(cdp, idleMarker);
     await sleep(10000);
     const afterIdle = await cdp.evaluate(editorStateExpression);
+    // The first-run tutorial must not start while the user is typing and steal focus.
+    const focusAfterIdle = await cdp.evaluate('document.activeElement?.id || null');
+    assert(focusAfterIdle === 'center-node-editor-content', 'Typing focus must stay in the note', focusAfterIdle);
     assert(
         afterIdle.visible && afterIdle.activeTabPath === secondNode && afterIdle.centerPath === secondNode,
         'Editor must stay open 10s after typing',

@@ -6,6 +6,7 @@ import { handlePisiBlockBoundaryKey } from './pisi-block-keyboard-boundaries.mjs
 import { registerModule } from '../core/module-registry.mjs';
 import { registerPisiCommand } from '../core/pisi-command-registry.mjs';
 import { makePisiImageBlockHtml, parsePisiImageMarkdownLine, serializePisiImageMarkdown } from './pisi-editor-image-policy.mjs';
+import { replacePisiWikiLinkMarkdown, serializePisiWikiLinkMarkdown } from './pisi-wiki-link-core.mjs';
 const PISI_BLOCK_TYPES = Object.freeze([
     Object.freeze({ id: 'paragraph', label: 'Paragraf', tag: 'div' }),
     Object.freeze({ id: 'heading1', label: 'Başlık 1', tag: 'h1' }),
@@ -63,7 +64,7 @@ function sanitizePisiBlockUrl(value = '') {
     return /^(?:https?:|mailto:|#|\/|\.)/i.test(url) ? url : '';
 }
 function pisiInlineMarkdownToHtml(value = '') {
-    let html = escapePisiBlockHtml(value);
+    let html = replacePisiWikiLinkMarkdown(escapePisiBlockHtml(value));
     html = html.replace(/`([^`\n]+)`/g, '<code>$1</code>');
     html = html.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/~~([^~\n]+)~~/g, '<s>$1</s>');
@@ -272,6 +273,13 @@ function pisiInlineHtmlToMarkdown(element) {
         if (['EM', 'I'].includes(node.tagName)) return `*${body}*`;
         if (node.tagName === 'S') return `~~${body}~~`;
         if (node.tagName === 'CODE') return `\`${body}\``;
+        if (node.tagName === 'A' && node.dataset.pisiNodeId) {
+            return serializePisiWikiLinkMarkdown({
+                nodeId: node.dataset.pisiNodeId,
+                title: node.dataset.pisiNodeTitle || body,
+                blockId: node.dataset.pisiLinkBlock
+            });
+        }
         if (node.tagName === 'A') {
             const href = sanitizePisiBlockUrl(node.getAttribute('href'));
             return href ? `[${body}](${href})` : body;

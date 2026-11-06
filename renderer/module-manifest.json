@@ -874,6 +874,20 @@
         "bindings": ["pisiLinkState", "openPisiExternalLink", "openPisiLinkDialog", "closePisiLinkDialog", "initializePisiEditorLinks"]
     },
     {
+        "module": "editor.wikiLinks",
+        "path": "renderer/editor/pisi-wiki-links.mjs",
+        "bindings": [
+            "pisiWikiState",
+            "applyPisiWikiMenuItem",
+            "renamePisiItemWithLinkReview",
+            "openPisiWikiTarget",
+            "applyPisiWikiRenameToOpenEditors",
+            "repairPisiWikiLinksInProject",
+            "refreshPisiWikiDecorations",
+            "initializePisiWikiLinks"
+        ]
+    },
+    {
         "module": "data.nodePropertiesUi",
         "path": "renderer/data/pisi-node-properties-ui.mjs",
         "bindings": [
