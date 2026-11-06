@@ -667,6 +667,11 @@
     transform: translateY(-1px);
 }
 
+#map-zoom-controls .pisi-map-history-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
 #pisi-bases-map-control {
     position: absolute;
     top: 18px;

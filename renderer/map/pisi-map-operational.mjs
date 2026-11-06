@@ -469,6 +469,8 @@ async function createPisiOperationalLinkedNode() {
         targetRole: 'up-hub'
     });
     if (!linked?.ok) return alert(linked?.error || t('createFailed'));
+    // Undo sends the new node to Trash, which also archives its new relationship.
+    window.recordPisiMapStep?.({ kind: 'node-create', mapPath, nodeId: created.node.id, nodePath: created.node.fullPath, trashId: null });
     await window.openMapInWorkspace?.(getPisiOperationalMapItem());
 }
 

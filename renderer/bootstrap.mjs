@@ -106,6 +106,7 @@ import './map/pisi-map-toolbar-layout-fix.mjs';
 import './map/pisi-map-filter-simplification.mjs';
 import './map/pisi-map-property-badge-portal.mjs';
 import './map/pisi-map-export.mjs';
+import './map/pisi-map-history.mjs';
 import './shell/pisi-tutorial.mjs';
 import './shell/pisi-interaction-regressions.mjs';
 import './runtime.mjs';

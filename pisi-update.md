@@ -1,5 +1,30 @@
 # PISI Güncelleme Takip Dosyası
 
+## 06-11-2026 — Haritada geri al / yinele
+
+- Harita için komut geçmişi eklendi: düğüm oluşturma, silme (Trash), haritadan
+  referans kaldırma, taşıma (bir sürükleme ve çoklu seçim taşıma tek adım),
+  boyutlandırma, bağlantı ekleme/silme/tür değiştirme, hub daraltma/açma ve
+  başlık düzenleme. Kamera hareketi (zoom/pan) geçmişe girmez.
+- Her adım, işlemin kullandığı domain komutlarıyla geri alınır ve yinelenir
+  (`map.relationship.upsert.v1`, `map.layout.save.v1`, `project.item.rename.v1`
+  vb.); `relationships.json` ve `.map` aynı yoldan yazılır. Bağlantılar ve
+  düğümler kimliklerini korur.
+- Silmeyi geri alma Trash'ten geri yüklemedir (görev ve ilişki referansları
+  dahil). Oluşturmayı geri alma düğümü Trash'e gönderir; yinele aynı düğümü
+  geri yükler.
+- Yeni domain komutu `map.reference.attach.v1`: haritadan kaldırılan bir
+  referansı eski yerleşimiyle geri ekler (`map.reference.detach.v1`'in tersi).
+- Kısayollar: harita odaktayken Mod+Z geri al, Mod+Shift+Z ve Mod+Y yinele.
+  Not editörü, modal, Sheet veya bir giriş alanı odaktayken onların kendi
+  geçmişi çalışır (`docs/editor-keyboard-rules.md`). Kısayollar komut kayıt
+  sistemindedir ve Ayarlar'dan değiştirilebilir, çakışma denetimine tabidir.
+- Harita zoom denetimlerinde geri al / yinele düğmeleri; yapılacak adım yoksa
+  pasif, üzerinde sıradaki adımın adı ve kısayolu görünür.
+- Geçmiş en çok 200 adım tutar; başka harita açılınca, proje kapanınca veya
+  harita dosyası Pisi dışında değişince temizlenir.
+- Testler: `tests/map-history-core.test.mjs`, `scripts/electron-map-history-e2e.mjs`.
+
 ## 06-11-2026 — Hatırlatmalar main süreçte, yerel bildirimlerle
 
 - Tek model: canonical görevde `reminderAt` kesin andır. "Bitiş günü / 1 gün /

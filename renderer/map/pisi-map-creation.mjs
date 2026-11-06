@@ -60,6 +60,7 @@ async function createMapNodeBoxAtClientPoint(clientX, clientY) {
 
     appendMapNodeBox(node);
     await saveCurrentMapLayout();
+    window.recordPisiMapStep?.({ kind: 'node-create', mapPath: activeMapPath, nodeId: node.id, nodePath: node.fullPath, trashId: null });
 
     if (typeof refreshActiveMapTreeBranch === 'function') {
         await refreshActiveMapTreeBranch();

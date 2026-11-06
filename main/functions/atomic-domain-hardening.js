@@ -15,6 +15,7 @@ const PISI_PERSISTENT_DOMAIN_MUTATIONS = [
     'map.operational.mutate.v1',
     'map.camera.save.v1',
     'map.reference.detach.v1',
+    'map.reference.attach.v1',
     'map.node.create.v1',
     'project.item.rename.v1',
     'project.item.move.v1',

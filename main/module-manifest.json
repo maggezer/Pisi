@@ -179,7 +179,8 @@
             "createPisiPropertyMap",
             "resolvePisiMapReference",
             "collectPisiMapReferenceNodes",
-            "detachPisiMapReference"
+            "detachPisiMapReference",
+            "attachPisiMapReference"
         ]
     },
     {
