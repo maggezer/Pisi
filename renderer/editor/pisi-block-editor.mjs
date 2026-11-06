@@ -6,6 +6,7 @@ import { handlePisiBlockBoundaryKey } from './pisi-block-keyboard-boundaries.mjs
 import { registerModule } from '../core/module-registry.mjs';
 import { registerPisiCommand } from '../core/pisi-command-registry.mjs';
 import { makePisiImageBlockHtml, parsePisiImageMarkdownLine, serializePisiImageMarkdown } from './pisi-editor-image-policy.mjs';
+import { makePisiFileBlockHtml, parsePisiFileMarkdownLine, serializePisiFileMarkdown } from './pisi-editor-file-policy.mjs';
 import { replacePisiWikiLinkMarkdown, serializePisiWikiLinkMarkdown } from './pisi-wiki-link-core.mjs';
 const PISI_BLOCK_TYPES = Object.freeze([
     Object.freeze({ id: 'paragraph', label: 'Paragraf', tag: 'div' }),
@@ -20,10 +21,11 @@ const PISI_BLOCK_TYPES = Object.freeze([
     Object.freeze({ id: 'number', label: 'Numaralı madde', tag: 'div' }),
     Object.freeze({ id: 'task', label: 'Görev bloğu', tag: 'div' }),
     Object.freeze({ id: 'rollup', label: 'Rollup bloğu', tag: 'div' }),
-    Object.freeze({ id: 'image', label: 'Görsel', tag: 'div' })
+    Object.freeze({ id: 'image', label: 'Görsel', tag: 'div' }),
+    Object.freeze({ id: 'file', label: 'Dosya eki', tag: 'div' })
 ]);
 const PISI_BLOCK_SLASH_COMMANDS = Object.freeze([
-    ...PISI_BLOCK_TYPES.filter((record) => record.id !== 'rollup' && record.id !== 'image').map((record) =>
+    ...PISI_BLOCK_TYPES.filter((record) => record.id !== 'rollup' && record.id !== 'image' && record.id !== 'file').map((record) =>
         Object.freeze({
             ...record,
             slash: record.id === 'task' ? 'todo' : record.id,
@@ -32,6 +34,7 @@ const PISI_BLOCK_SLASH_COMMANDS = Object.freeze([
     ),
     Object.freeze({ id: 'done', label: 'Tamamlanmış görev', slash: 'done', action: 'done' }),
     Object.freeze({ id: 'image', label: 'Görsel ekle', slash: 'image', action: 'image', aliases: Object.freeze(['gorsel', 'görsel', 'resim']) }),
+    Object.freeze({ id: 'file', label: 'Dosya ekle', slash: 'file', action: 'file', aliases: Object.freeze(['dosya', 'ek', 'attachment']) }),
     Object.freeze({ id: 'link', label: 'Bağlantı ekle', slash: 'link', action: 'link', aliases: Object.freeze(['baglanti', 'bağlantı', 'url']) })
 ]);
 const { splitPisiTaskBlockOnEnter, handlePisiTaskBlockBackspace, removePisiTaskMetadataAndMarkerFromBlock, placeCaretAtEndOfPisiBlock } =
@@ -205,6 +208,11 @@ function pisiBlockMarkdownToHtml(markdown = '') {
             output.push(makePisiImageBlockHtml({ ...image, blockId: meta?.id, extra: buildExtraBlockAttrs(meta) }));
             continue;
         }
+        const attachment = parsePisiFileMarkdownLine(line);
+        if (attachment) {
+            output.push(makePisiFileBlockHtml({ ...attachment, blockId: meta?.id }));
+            continue;
+        }
         const rollup = line.match(/^\{\{pisi-rollup:([^:]*):([^:]*):(count|sum|average|min|max|unique|join)\}\}/);
         const heading = line.match(/^(#{1,5})\s+(.+)$/);
         const task = line.match(/^[-*]\s+\[([ xX])\]\s*(.*)$/);
@@ -318,6 +326,11 @@ function pisiBlockHtmlToMarkdown(editor) {
                     width: img?.dataset.pisiImageWidth,
                     alt: img?.alt
                 });
+                return markdown ? `${markdown}${metaStr}` : '';
+            }
+            if (type === 'file') {
+                const { pisiFileAsset: reference, pisiFileName: name, pisiFileSize: size } = block.dataset;
+                const markdown = serializePisiFileMarkdown({ reference, name, size });
                 return markdown ? `${markdown}${metaStr}` : '';
             }
             if (type === 'rollup') {

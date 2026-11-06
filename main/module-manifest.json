@@ -296,7 +296,15 @@
     {
         "module": "main.editorAssetDomain",
         "path": "main/functions/editor-asset-domain.js",
-        "bindings": ["storePisiEditorImageAsset", "readPisiEditorImageAsset", "installPisiEditorAssetDomainContracts"]
+        "bindings": [
+            "storePisiEditorImageAsset",
+            "readPisiEditorImageAsset",
+            "storePisiEditorFileAsset",
+            "statPisiEditorFileAsset",
+            "copyPisiEditorFileAsset",
+            "openPisiEditorFileAsset",
+            "installPisiEditorAssetDomainContracts"
+        ]
     },
     {
         "module": "main.externalLinks",

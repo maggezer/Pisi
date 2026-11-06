@@ -1,5 +1,6 @@
 import { safePisiPasteHref } from '../tags/pisi-paste-sanitize.mjs';
 import { isPisiImageBlockAttributeAllowed, isPisiImageElementAttributeAllowed } from './pisi-editor-image-policy.mjs';
+import { isPisiFileBlockAttributeAllowed } from './pisi-editor-file-policy.mjs';
 import { isPisiWikiLinkAttributeAllowed } from './pisi-wiki-link-core.mjs';
 import {
     getPisiNodeRecoveryWarning,
@@ -200,7 +201,7 @@ function sanitizePisiEditorHtml(html = '') {
             }
 
             if (element.tagName === 'DIV') {
-                const imageBlockAttribute = isPisiImageBlockAttributeAllowed(name, value);
+                const imageBlockAttribute = isPisiImageBlockAttributeAllowed(name, value) ?? isPisiFileBlockAttributeAllowed(name, value);
                 if (imageBlockAttribute !== null) allowed = imageBlockAttribute;
                 else if (name === 'data-pisi-canvas-block') {
                     allowed = value === '1';

@@ -149,6 +149,7 @@ function buildPisiUnifiedToolbarMarkup() {
                     <button type="button" class="pisi-ribbon-btn pisi-toolbar-data-btn" data-pisi-table-trigger title="5 × 5 tablo ekle">${pisiToolbarIcon('table')}<span>Table</span></button>
                     <button type="button" class="pisi-ribbon-btn pisi-toolbar-data-btn" data-pisi-rollup-trigger title="Rollup ekle">${pisiToolbarIcon('rollup')}<span>Roll</span></button>
                     <button type="button" class="pisi-ribbon-btn pisi-toolbar-data-btn" data-pisi-image-trigger title="Görsel ekle">${pisiToolbarIcon('image')}<span>Image</span></button>
+                    <button type="button" class="pisi-ribbon-btn pisi-toolbar-data-btn" data-pisi-file-trigger title="Dosya ekle">${pisiToolbarIcon('attachment')}<span>File</span></button>
                 </div>
             </section>
 
@@ -398,9 +399,10 @@ function bindPisiUnifiedToolbarEvents(toolbar) {
             return;
         }
 
-        const imageTrigger = event.target.closest('[data-pisi-image-trigger]');
+        const imageTrigger = event.target.closest('[data-pisi-image-trigger], [data-pisi-file-trigger]');
         if (imageTrigger) {
-            document.dispatchEvent(new CustomEvent('pisi:image-insert-request', { detail: { editorTarget: toolbar.dataset.editorTarget || null } }));
+            const eventName = imageTrigger.hasAttribute('data-pisi-file-trigger') ? 'pisi:file-insert-request' : 'pisi:image-insert-request';
+            document.dispatchEvent(new CustomEvent(eventName, { detail: { editorTarget: toolbar.dataset.editorTarget || null } }));
             return;
         }
 

@@ -1,5 +1,29 @@
 # PISI Güncelleme Takip Dosyası
 
+## 06-11-2026 — Notlara dosya ekleri
+
+- Görsel olmayan dosyalar "ek" bloğu olarak eklenir: dosya sürükle-bırak,
+  panodan dosya yapıştırma, araç çubuğundaki "Dosya ekle" ve `/file` (`/dosya`)
+  slash komutu. Görsellerle birlikte bırakılan dosyalarda görseller görsel
+  bloğu, diğerleri ek bloğu olur.
+- Saklama: not yan klasöründe `file/<sha256>.<uzantı>`; aynı içerik tek dosya.
+  20 MB sınırı aşılınca anlaşılır mesaj gösterilir, dosya yazılmaz.
+- Blok dosya adını, boyutunu ve türüne göre bir simge gösterir. Tık veya Enter
+  dosyayı varsayılan uygulamada açar (`shell.openPath`); yol main'de not ve
+  referanstan çözülür, proje dışı yol ve symlink reddedilir, hash doğrulanır.
+  Çalıştırılabilir dosyalar (exe, msi, bat, sh, app, dmg, jar …) açılmaz,
+  "Klasörde göster" yapılır. Alt+tık her ek için klasörde gösterir.
+- Blok seçme, Delete/Backspace ile silme, geri al/yinele, blok taşıma ve
+  kopyala-yapıştır çalışır; başka nota yapıştırılan ek o notun yan klasörüne
+  kopyalanır.
+- Project Integrity, sürüm geçmişi, yedek koruması, Trash ve 24 saat
+  ertelemeli orphan temizliği `file/` varlıklarını tanır.
+- Dışa aktarma: Markdown ve HTML eki `<ad>.assets/` klasörüne kopyalayıp
+  bağlantı verir; PDF ve DOCX ad ve boyutu yazar.
+- Testler: `tests/editor-file-assets.test.mjs`, `tests/editor-file-policy.test.mjs`,
+  `tests/portability-canvas-export.test.js` (ek dışa aktarımı),
+  `scripts/electron-file-attachments-e2e.mjs`.
+
 ## 06-11-2026 — Kimlikli not bağlantıları ve yeniden adlandırmada bağlantı güncelleme
 
 - Editörde `[[` yazınca arama indeksiyle bulanık eşleşen not önerileri açılır;

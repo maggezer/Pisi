@@ -25,6 +25,7 @@ kaynağın yerine geçmez.
 - Paint/Sheet ağır editor verisi: canonical otorite node sidecar içindeki content-addressed asset dosyalarıdır; renderer'daki `data-image` ve `data-pisi-sheet-model` transient hydration verisidir.
 - Notlar arası bağlantılar: `<a class="pisi-wiki-link" data-pisi-node-id="node_…" data-pisi-node-title="Başlık" [data-pisi-link-block="blk_…"]>Başlık</a>`. Hedef, kalıcı not kimliğiyle bulunur; görünen başlık yeniden adlandırmada tüm projede atomik olarak güncellenir. Kimliksiz eski `[[Başlık]]` metni geçerli kalır ve başlığa göre çözülür; "Bağlantıları onar" komutu tek bir notla eşleşenlere kimlik ekler. Markdown kaynak görünümü: `[[Başlık#blk_…|node_…]]`.
 - Not görselleri: canonical otorite node sidecar içindeki `image/<sha256>.<png|jpg|gif|webp>` dosyalarıdır. `.node` HTML'i yalnız `<img data-pisi-image-asset="image/…">` referansını, `alt` ve `data-pisi-image-width` değerlerini taşır; görüntülenen `blob:` URL'si oturuma özgü projection'dır ve kaydedilmez. Aynı görsel tek dosyadır, sınır 20 MB'tır, SVG PNG'ye çevrilerek saklanır. Referanssız görseller ancak 24 saat sonra temizlenir.
+- Not dosya ekleri: canonical otorite node sidecar içindeki `file/<sha256>.<uzantı>` dosyalarıdır (uzantı özgün addan küçük harfle alınır, `[a-z0-9]{1,16}` dışında `bin`). `.node` HTML'i `<div class="pisi-editor-block pisi-file-block" data-pisi-block-type="file" data-pisi-file-block="1" data-pisi-file-asset="file/…" data-pisi-file-name="…" data-pisi-file-size="…" data-pisi-file-kind="…" contenteditable="false">` bloğunu taşır; içindeki ad/boyut `span`'ları özniteliklerden yeniden üretilir. Aynı içerik tek dosyadır, sınır 20 MB'tır. Tıklama dosyayı main üzerinden (`editor.file.open.v1`, proje içi yol doğrulaması) varsayılan uygulamada açar; çalıştırılabilir uzantılar yalnız klasörde gösterilir. Referanssız ekler görsellerle aynı 24 saatlik süreden sonra temizlenir. Bu blok biçimini tanımayan eski Pisi sürümleri bloğu sanitize ederken düşürebilir; dosyanın kendisi yan klasörde kalır.
 - Arama indeksi: kalıcı canonical otoritesi yoktur; bellek içi trigram/search index yeniden üretilebilir projection'dır.
 - Version History: `.pisi-history/` recovery verisidir; canonical canlı uygulama durumu değildir.
 - Reversible Trash: `.pisi/trash/items/` recovery verisidir; canonical canlı uygulama durumu değildir.
@@ -396,6 +397,11 @@ Node açılırken renderer için transient hydration yapılır:
 
 - Paint: `data-image="data:image/png;base64,..."`
 - Sheet: `data-pisi-sheet-model="..."`
+
+Dosya ekleri dışa aktarımda: Markdown ve HTML dosyayı `<ad>.assets/` klasörüne
+özgün adıyla (çakışmada `-2`, `-3`) kopyalar ve bağıl bağlantı yazar; PDF ve
+DOCX yalnız "📎 ad (boyut)" metnini içerir. Eksik ek dışa aktarımı durdurmaz,
+yalnız etiket olarak yazılır.
 
 Node HTML veya PDF olarak dışa aktarılırken Paint sidecar'ı hash, PNG imzası
 ve boyut sınırına göre doğrulanır; geçerli canvas'lar gömülü PNG `img`

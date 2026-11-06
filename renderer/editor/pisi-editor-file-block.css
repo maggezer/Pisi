@@ -1,0 +1,107 @@
+.pisi-block-system > .pisi-file-block {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 520px;
+    margin: 8px 0;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color, rgba(127, 127, 127, 0.35));
+    border-radius: 8px;
+    background: var(--panel-bg, rgba(127, 127, 127, 0.08));
+    line-height: 1.3;
+    cursor: pointer;
+    user-select: none;
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+}
+
+.pisi-block-system > .pisi-file-block:hover {
+    border-color: var(--accent-color, #f39c12);
+}
+
+.pisi-block-system > .pisi-file-block.pisi-block-active {
+    outline-color: var(--accent-color, #f39c12);
+}
+
+.pisi-block-system > .pisi-file-block[data-pisi-file-state='missing'] {
+    border-style: dashed;
+    opacity: 0.6;
+}
+
+.pisi-file-block > .pisi-file-icon {
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    background: var(--pisi-file-kind-color, #7f8c8d);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 30px;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.pisi-file-block > .pisi-file-icon::before {
+    content: var(--pisi-file-kind-label, 'FILE');
+}
+
+.pisi-file-block > .pisi-file-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pisi-file-block > .pisi-file-size {
+    flex: 0 0 auto;
+    opacity: 0.7;
+    font-size: 0.85em;
+}
+
+.pisi-file-block[data-pisi-file-kind='pdf'] {
+    --pisi-file-kind-color: #c0392b;
+    --pisi-file-kind-label: 'PDF';
+}
+
+.pisi-file-block[data-pisi-file-kind='doc'] {
+    --pisi-file-kind-color: #2e6fd1;
+    --pisi-file-kind-label: 'DOC';
+}
+
+.pisi-file-block[data-pisi-file-kind='sheet'] {
+    --pisi-file-kind-color: #1e8449;
+    --pisi-file-kind-label: 'XLS';
+}
+
+.pisi-file-block[data-pisi-file-kind='slides'] {
+    --pisi-file-kind-color: #d35400;
+    --pisi-file-kind-label: 'PPT';
+}
+
+.pisi-file-block[data-pisi-file-kind='archive'] {
+    --pisi-file-kind-color: #7d6608;
+    --pisi-file-kind-label: 'ZIP';
+}
+
+.pisi-file-block[data-pisi-file-kind='audio'] {
+    --pisi-file-kind-color: #8e44ad;
+    --pisi-file-kind-label: '♪';
+}
+
+.pisi-file-block[data-pisi-file-kind='video'] {
+    --pisi-file-kind-color: #6c3483;
+    --pisi-file-kind-label: '▶';
+}
+
+.pisi-file-block[data-pisi-file-kind='image'] {
+    --pisi-file-kind-color: #148f77;
+    --pisi-file-kind-label: 'IMG';
+}
+
+.pisi-file-block[data-pisi-file-kind='executable'] {
+    --pisi-file-kind-color: #566573;
+    --pisi-file-kind-label: 'APP';
+}

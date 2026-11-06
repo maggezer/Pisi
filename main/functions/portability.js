@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { registerMainModule } from '../module-registry.js';
 import * as editorAssets from './editor-asset-store.js';
+import * as fileAssets from './editor-file-asset-store.js';
 import {
     snapshotPisiNodeVersionBounded as snapshotPisiNodeVersion,
     saveNodeContentWithBoundedHistory as saveNodeContentWithHistory,
@@ -320,10 +321,40 @@ function pisiEmbedImageBlocksForExport(content = '', sidecarPath) {
     }).content;
 }
 
+function formatPisiPortableFileSize(bytes) {
+    const value = Number(bytes) || 0;
+    if (value >= 1024 * 1024) return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+    if (value >= 1024) return `${Math.round(value / 1024)} KB`;
+    return `${value} B`;
+}
+
+// Attachment blocks become a paragraph. With a target folder the file is copied
+// next to the export under its original name and linked; otherwise (PDF, DOCX)
+// the paragraph names the file and its size.
+function pisiTransformFileBlocks(content = '', sidecarPath = null, assetDirectory = null) {
+    const usedNames = new Set();
+    return String(content || '').replace(/<div\b[^>]*\sdata-pisi-file-asset\s*=\s*"([^"]*)"[^>]*>[\s\S]*?<\/div>/gi, (blockHtml, reference) => {
+        const attribute = (name) => blockHtml.match(new RegExp(`\\s${name}\\s*=\\s*"([^"]*)"`, 'i'))?.[1] || '';
+        const name = fileAssets.normalizePisiFileName(decodePisiHtmlEntities(attribute('data-pisi-file-name')));
+        const label = `📎 ${escapePisiPortableHtml(name)} (${formatPisiPortableFileSize(attribute('data-pisi-file-size'))})`;
+        const stat = sidecarPath ? fileAssets.statPisiFileAsset(sidecarPath, reference) : null;
+        if (!assetDirectory || !stat?.ok) return `<p>${label}</p>`;
+        const dot = name.lastIndexOf('.');
+        const stem = dot > 0 ? name.slice(0, dot) : name;
+        const ext = dot > 0 ? name.slice(dot) : '';
+        let fileName = name;
+        for (let index = 2; usedNames.has(fileName.toLowerCase()); index += 1) fileName = `${stem}-${index}${ext}`;
+        usedNames.add(fileName.toLowerCase());
+        fs.mkdirSync(assetDirectory, { recursive: true });
+        fs.copyFileSync(stat.assetPath, path.join(assetDirectory, fileName));
+        return `<p><a href="${encodeURIComponent(path.basename(assetDirectory))}/${encodeURIComponent(fileName)}">${label}</a></p>`;
+    });
+}
+
 function pisiLinkPaintImagesForMarkdown(content = '', markdownPath, sidecarPath = null) {
     const directoryName = `${path.basename(markdownPath, path.extname(markdownPath))}.assets`;
     const assetDirectory = path.join(path.dirname(markdownPath), directoryName);
-    const imageContent = pisiTransformImageBlocks(content, sidecarPath, ({ buffer, ext, alt }) => {
+    const imageContent = pisiTransformImageBlocks(pisiTransformFileBlocks(content, sidecarPath, assetDirectory), sidecarPath, ({ buffer, ext, alt }) => {
         const { hash } = editorAssets.getPisiImageAssetReference(buffer, ext);
         const assetName = `image-${hash}.${ext}`;
         fs.mkdirSync(assetDirectory, { recursive: true });
@@ -360,10 +391,11 @@ function pisiDocxPaintImageParagraph(image, index) {
     };
 }
 
-function pisiExportHtmlDocument(info) {
+function pisiExportHtmlDocument(info, attachmentDirectory = null) {
     const title = escapePisiPortableHtml(info.metadata.title || 'Pisi');
+    const withFiles = pisiTransformFileBlocks(info.data.content || '', info.sidecarPath, attachmentDirectory);
     const content = pisiEmbedImageBlocksForExport(
-        pisiEmbedPaintImagesForExport(stripPisiTaskMetadataHtml(stripPisiUnsafeExportHtml(pisiTransformSheetTablesForExport(info.data.content || '')))),
+        pisiEmbedPaintImagesForExport(stripPisiTaskMetadataHtml(stripPisiUnsafeExportHtml(pisiTransformSheetTablesForExport(withFiles)))),
         info.sidecarPath
     );
     return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>${title}</title><style>body{font:16px/1.6 system-ui;max-width:900px;margin:40px auto;padding:0 24px;color:#202124}table{border-collapse:collapse}td,th{border:1px solid #bbb;padding:6px}img,canvas{max-width:100%}blockquote{border-left:3px solid #888;padding-left:16px;color:#555}</style></head><body><h1>${title}</h1>${content}</body></html>`;
@@ -427,7 +459,7 @@ function makePisiStoredZip(entries) {
 }
 
 function makePisiDocxBuffer(info) {
-    const content = pisiTransformSheetTablesForExport(info.data.content || '');
+    const content = pisiTransformSheetTablesForExport(pisiTransformFileBlocks(info.data.content || '', info.sidecarPath));
     const paintImages = [...pisiTransformPaintCanvases(content, () => '').images, ...pisiTransformImageBlocks(content, info.sidecarPath, () => '').images];
     const text = pisiHtmlToPlainText(content);
     const paragraphs = [info.metadata.title || 'Pisi', ...text.split('\n')]
@@ -481,7 +513,8 @@ async function exportPisiNodeDocument(nodePath, format) {
         const content = pisiLinkPaintImagesForMarkdown(info.data.content, result.filePath, info.sidecarPath);
         fs.writeFileSync(result.filePath, pisiPropertiesFrontmatter(info.data.properties) + pisiHtmlToMarkdown(content), 'utf8');
     } else if (extension === 'html') {
-        fs.writeFileSync(result.filePath, pisiExportHtmlDocument(info), 'utf8');
+        const attachmentDirectory = path.join(path.dirname(result.filePath), `${path.basename(result.filePath, path.extname(result.filePath))}.assets`);
+        fs.writeFileSync(result.filePath, pisiExportHtmlDocument(info, attachmentDirectory), 'utf8');
     } else if (extension === 'docx') {
         fs.writeFileSync(result.filePath, makePisiDocxBuffer(info));
     } else {

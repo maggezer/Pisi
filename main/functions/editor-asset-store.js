@@ -14,6 +14,8 @@ const PISI_IMAGE_MAX_DIMENSION = 32768;
 // bring a deleted image back. Unreferenced images are therefore only pruned
 // once they are older than this grace period.
 const PISI_IMAGE_ORPHAN_GRACE_MS = 24 * 60 * 60 * 1000;
+// Attachments: any extension the store accepts (see editor-file-asset-store.js).
+const PISI_FILE_ASSET_PATTERN = /^file\/([a-f0-9]{64})\.([a-z0-9]{1,16})$/;
 const PISI_IMAGE_MIME_TYPES = Object.freeze({ png: 'image/png', jpg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp' });
 
 function escapePisiEditorAssetRegExp(value) {
@@ -609,6 +611,16 @@ function collectPisiEditorImageReferences(content = '') {
     return Array.from(references);
 }
 
+function collectPisiEditorFileReferences(content = '') {
+    const references = new Set();
+    String(content || '').replace(/<div\b[^>]*>/gi, (divTag) => {
+        const reference = getPisiHtmlAttribute(divTag, 'data-pisi-file-asset');
+        if (PISI_FILE_ASSET_PATTERN.test(String(reference || ''))) references.add(String(reference));
+        return divTag;
+    });
+    return Array.from(references);
+}
+
 function collectPisiEditorAssetReferences(content = '') {
     const references = new Set();
 
@@ -637,6 +649,7 @@ function collectPisiEditorAssetReferences(content = '') {
     });
 
     for (const reference of collectPisiEditorImageReferences(content)) references.add(reference);
+    for (const reference of collectPisiEditorFileReferences(content)) references.add(reference);
 
     return Array.from(references).sort();
 }
@@ -661,7 +674,13 @@ function prunePisiEditorAssetStore(sidecarPath, referencedAssets = [], options =
     const references = new Set(
         rawReferences
             .map((value) => String(value || ''))
-            .filter((value) => PISI_PAINT_ASSET_PATTERN.test(value) || PISI_SHEET_ASSET_PATTERN.test(value) || PISI_IMAGE_ASSET_PATTERN.test(value))
+            .filter(
+                (value) =>
+                    PISI_PAINT_ASSET_PATTERN.test(value) ||
+                    PISI_SHEET_ASSET_PATTERN.test(value) ||
+                    PISI_IMAGE_ASSET_PATTERN.test(value) ||
+                    PISI_FILE_ASSET_PATTERN.test(value)
+            )
     );
     const kept = [];
     const removed = [];
@@ -688,6 +707,14 @@ function prunePisiEditorAssetStore(sidecarPath, referencedAssets = [], options =
             graceMs: PISI_IMAGE_ORPHAN_GRACE_MS,
             relativePath(name) {
                 return `image/${name}`;
+            }
+        },
+        {
+            directoryName: 'file',
+            filePattern: /^[a-f0-9]{64}\.[a-z0-9]{1,16}$/,
+            graceMs: PISI_IMAGE_ORPHAN_GRACE_MS,
+            relativePath(name) {
+                return `file/${name}`;
             }
         }
     ];
@@ -761,6 +788,9 @@ function hydratePisiEditorAssets(content = '', options = {}) {
 }
 
 export {
+    PISI_FILE_ASSET_PATTERN,
+    writePisiContentAddressedAsset,
+    collectPisiEditorFileReferences,
     PISI_IMAGE_ASSET_PATTERN,
     PISI_IMAGE_MAX_BYTES,
     PISI_IMAGE_MIME_TYPES,

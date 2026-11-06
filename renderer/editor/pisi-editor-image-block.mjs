@@ -250,8 +250,11 @@ function openPisiImagePicker(editor) {
     return true;
 }
 
+// A transfer that also carries non-image files belongs to the attachment module
+// (pisi-editor-file-block.mjs), which inserts its images through insertPisiImageFiles.
 function getPisiImageFiles(dataTransfer) {
-    return Array.from(dataTransfer?.files || []).filter((file) => isPisiImageFileTypeAccepted(file.type));
+    const files = Array.from(dataTransfer?.files || []);
+    return files.every((file) => isPisiImageFileTypeAccepted(file.type)) ? files : [];
 }
 
 function handlePisiImagePaste(event) {

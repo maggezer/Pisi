@@ -170,10 +170,11 @@ function makePisiUnifiedLatexItems(command) {
 }
 
 // Slash items that hand off to another module instead of changing the block type.
-const PISI_UNIFIED_REQUEST_EVENTS = Object.freeze({ image: 'pisi:image-insert-request', link: 'pisi:link-edit-request' });
+const PISI_UNIFIED_REQUEST_EVENTS = Object.freeze({ image: 'pisi:image-insert-request', file: 'pisi:file-insert-request', link: 'pisi:link-edit-request' });
 const PISI_UNIFIED_BLOCK_DESCRIPTIONS = Object.freeze({
     block: 'Blok türünü değiştir',
     image: 'Görsel dosyası seç',
+    file: 'Nota dosya ekle',
     link: 'Web bağlantısı ekle',
     'todo-start': 'Görev oluştur',
     'todo-done': 'Görevi tamamla'
