@@ -1,5 +1,5 @@
 import { getPisiTodayIsoDate, matchesPisiTodoFilter } from './pisi-todo-utils.mjs';
-import { getPisiTodoThirdStorageKey, parsePisiMissionDependenciesThirdRelease, parsePisiMissionReminderThirdRelease } from './pisi-todo-third-model.mjs';
+import { parsePisiMissionDependenciesThirdRelease, parsePisiMissionReminderThirdRelease } from './pisi-todo-third-model.mjs';
 
 function getPisiMissionTitleThirdRelease(mission) {
     const text = window.getPisiMissionDisplayTextFirstRelease?.(mission);
@@ -70,19 +70,6 @@ function wouldCreatePisiDependencyCycleThirdRelease(missionId, dependencyId, mis
     return reachesMission(dependencyId);
 }
 
-function getPisiReminderTimestampThirdRelease(mission) {
-    if (!mission?.finishDate || mission.reminder === 'none') return null;
-    const date = new Date(mission.finishDate);
-    date.setHours(9, 0, 0, 0);
-    if (mission.reminder === 'day-before') date.setDate(date.getDate() - 1);
-    if (mission.reminder === 'three-days-before') date.setDate(date.getDate() - 3);
-    return date.getTime();
-}
-
-function getPisiReminderSeenKeyThirdRelease(mission) {
-    return getPisiTodoThirdStorageKey(`reminded:${encodeURIComponent(mission.missionId)}:${mission.reminder}:${getPisiMissionDateKeyThirdRelease(mission)}`);
-}
-
 function sortPisiThirdMissionsByFinishDate(missions = []) {
     return [...missions].sort((a, b) => String(a.finishDate).localeCompare(String(b.finishDate)));
 }
@@ -95,7 +82,5 @@ export {
     getPisiThirdVisibleMissions,
     getPisiThirdMissionMap,
     wouldCreatePisiDependencyCycleThirdRelease,
-    sortPisiThirdMissionsByFinishDate,
-    getPisiReminderTimestampThirdRelease,
-    getPisiReminderSeenKeyThirdRelease
+    sortPisiThirdMissionsByFinishDate
 };

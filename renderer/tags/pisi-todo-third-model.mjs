@@ -8,9 +8,10 @@ const PISI_TODO_THIRD_VIEWS = Object.freeze([
 
 const PISI_TODO_REMINDER_OPTIONS = Object.freeze([
     Object.freeze({ value: 'none', label: 'Hatırlatma yok' }),
-    Object.freeze({ value: 'due-morning', label: 'Bitiş günü 09:00' }),
-    Object.freeze({ value: 'day-before', label: '1 gün önce 09:00' }),
-    Object.freeze({ value: 'three-days-before', label: '3 gün önce 09:00' })
+    // The time of day comes from Settings → Reminders (default 09:00).
+    Object.freeze({ value: 'due-morning', label: 'Bitiş günü' }),
+    Object.freeze({ value: 'day-before', label: '1 gün önce' }),
+    Object.freeze({ value: 'three-days-before', label: '3 gün önce' })
 ]);
 
 const pisiTodoThirdReleaseState = {
@@ -19,8 +20,7 @@ const pisiTodoThirdReleaseState = {
     applying: false,
     queued: false,
     view: 'list',
-    calendarCursor: null,
-    reminderTimer: null
+    calendarCursor: null
 };
 
 function pisiTodoThirdTranslate(value) {
@@ -164,12 +164,8 @@ async function setPisiMissionReminderThirdRelease(mission, reminderValue) {
         return true;
     });
 
-    if (result?.ok) {
-        if (reminder !== 'none' && 'Notification' in window && Notification.permission === 'default') {
-            Notification.requestPermission().catch(() => {});
-        }
-        window.refreshPisiTagsPanelSoon?.();
-    }
+    // Notifications are scheduled by the main-process reminder service from tasks.json.
+    if (result?.ok) window.refreshPisiTagsPanelSoon?.();
     return result;
 }
 

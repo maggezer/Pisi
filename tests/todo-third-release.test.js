@@ -59,18 +59,8 @@ test('kanban, takvim, zaman çizelgesi ve istatistik görünümü sağlanır', (
     assert.match(css, /pisi-third-stat-cards/);
 });
 
-test('hatırlatmalar görev etiketi sınıfında saklanır ve tek seferlik bildirilir', () => {
-    const source = readTodoThirdSource();
-
-    assert.match(source, /pisi-todo-reminder-/);
-    assert.match(source, /due-morning/);
-    assert.match(source, /day-before/);
-    assert.match(source, /three-days-before/);
-    assert.match(source, /Notification\.requestPermission/);
-    assert.match(source, /new Notification/);
-    assert.match(source, /localStorage\.setItem\(seenKey, '1'\)/);
-    assert.match(source, /pisi-third-reminder-banner/);
-});
+// Hatırlatma zamanlaması main süreçte: tests/reminder-schedule-core.test.mjs ve
+// tests/reminder-service.test.mjs davranışı doğrudan test eder.
 
 test('yeniden çizim koruması alternatif görünümde mutation döngüsünü engeller', () => {
     const guard = read('renderer/tags/pisi-todo-third-release-guard.mjs');

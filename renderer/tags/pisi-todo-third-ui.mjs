@@ -545,41 +545,6 @@ function renderPisiTodoThirdAlternativeView(list, visibleMissions, allMissions, 
     return true;
 }
 
-function showPisiReminderBannerThirdRelease(mission) {
-    const panel = document.getElementById('pisi-missions-panel');
-    if (!panel) return;
-    const existing = panel.querySelector(`.pisi-third-reminder-banner[data-mission-id="${CSS.escape(mission.missionId)}"]`);
-    if (existing) return;
-
-    const banner = document.createElement('div');
-    banner.className = 'pisi-third-reminder-banner';
-    banner.dataset.missionId = mission.missionId;
-    const text = document.createElement('button');
-    text.type = 'button';
-    text.textContent = `${pisiTodoThirdTranslate('Hatırlatma')}: ${getPisiMissionTitleThirdRelease(mission)}`;
-    text.addEventListener('click', () => window.openPisiTagBlockResult?.(mission));
-    const close = makePisiThirdButton('×', 'pisi-third-reminder-close');
-    close.addEventListener('click', () => banner.remove());
-    banner.append(text, close);
-    panel.prepend(banner);
-}
-
-function notifyPisiMissionThirdRelease(mission) {
-    const title = pisiTodoThirdTranslate('Pisi görev hatırlatması');
-    const body = `${getPisiMissionTitleThirdRelease(mission)} · ${getPisiMissionDateKeyThirdRelease(mission)}`;
-
-    if ('Notification' in window && Notification.permission === 'granted') {
-        const notification = new Notification(title, { body });
-        notification.addEventListener('click', () => {
-            window.focus();
-            window.openPisiTagBlockResult?.(mission);
-            notification.close();
-        });
-    } else {
-        showPisiReminderBannerThirdRelease(mission);
-    }
-}
-
 export {
     appendPisiTodoThirdViewSwitcher,
     enhancePisiTodoThirdListCards,
@@ -587,6 +552,5 @@ export {
     renderPisiTodoThirdCalendar,
     renderPisiTodoThirdTimeline,
     renderPisiTodoThirdStats,
-    renderPisiTodoThirdAlternativeView,
-    notifyPisiMissionThirdRelease
+    renderPisiTodoThirdAlternativeView
 };

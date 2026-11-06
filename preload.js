@@ -101,6 +101,19 @@ function invokePisiTaskOperation(projectFolder, payload = {}) {
     });
 }
 
+// Reminder events from the main-process reminder service (open, complete,
+// pending list changes). Commands go through pisiDomain (reminder.*.v1).
+contextBridge.exposeInMainWorld('pisiReminders', {
+    onEvent: (callback) => {
+        if (typeof callback !== 'function') return () => {};
+        const listener = (_event, payload) => {
+            if (payload && typeof payload === 'object' && typeof payload.type === 'string') callback(payload);
+        };
+        ipcRenderer.on('pisi:reminder', listener);
+        return () => ipcRenderer.removeListener('pisi:reminder', listener);
+    }
+});
+
 contextBridge.exposeInMainWorld('pisiDomain', {
     query: (name, payload) => invokePisiDomainQuery(name, payload),
     command: (name, payload) => invokePisiDomainCommand(name, payload)

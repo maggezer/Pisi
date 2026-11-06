@@ -92,6 +92,8 @@ function writePisiTaskStore(projectFolder, store) {
     if (!written.ok) {
         throw new Error(written.error || 'Görev deposu yazılamadı.');
     }
+    // Reminders are planned from tasks.json; a write re-plans them.
+    modules['main.reminderService']?.handlePisiReminderTasksChanged?.();
     return data;
 }
 

@@ -11,8 +11,6 @@ import {
 } from './pisi-todo-third-model.mjs';
 import {
     enhancePisiMissionsThirdRelease,
-    getPisiReminderSeenKeyThirdRelease,
-    getPisiReminderTimestampThirdRelease,
     getPisiThirdAllMissions,
     getPisiThirdVisibleMissions,
     wouldCreatePisiDependencyCycleThirdRelease
@@ -20,7 +18,6 @@ import {
 import {
     appendPisiTodoThirdViewSwitcher,
     enhancePisiTodoThirdListCards,
-    notifyPisiMissionThirdRelease,
     renderPisiTodoThirdAlternativeView,
     renderPisiTodoThirdCalendar as renderPisiTodoThirdCalendarView,
     renderPisiTodoThirdKanban as renderPisiTodoThirdKanbanView,
@@ -44,24 +41,6 @@ function renderPisiTodoThirdStats(list, missions) {
     return renderPisiTodoThirdStatsView(list, missions);
 }
 
-function checkPisiTodoRemindersThirdRelease() {
-    const now = Date.now();
-    const oldest = now - 36 * 60 * 60 * 1000;
-    for (const mission of getPisiThirdAllMissions()) {
-        if (mission.completed) continue;
-        const timestamp = getPisiReminderTimestampThirdRelease(mission);
-        if (!timestamp || timestamp > now || timestamp < oldest) continue;
-        const seenKey = getPisiReminderSeenKeyThirdRelease(mission);
-        try {
-            if (localStorage.getItem(seenKey) === '1') continue;
-            localStorage.setItem(seenKey, '1');
-        } catch {
-            // Bildirim yine de gösterilebilir.
-        }
-        notifyPisiMissionThirdRelease(mission);
-    }
-}
-
 function applyPisiTodoThirdRelease() {
     if (pisiTodoThirdReleaseState.applying) return;
     const panel = document.getElementById('pisi-missions-panel');
@@ -78,7 +57,6 @@ function applyPisiTodoThirdRelease() {
             delete list.dataset.pisiThirdView;
             enhancePisiTodoThirdListCards(list, allMissions);
         }
-        checkPisiTodoRemindersThirdRelease();
     } finally {
         pisiTodoThirdReleaseState.applying = false;
     }
@@ -121,9 +99,6 @@ function initializePisiTodoThirdRelease() {
             if (bindPisiTodoThirdRelease()) clearInterval(timer);
         }, 250);
     }
-    if (!pisiTodoThirdReleaseState.reminderTimer) {
-        pisiTodoThirdReleaseState.reminderTimer = setInterval(checkPisiTodoRemindersThirdRelease, 60000);
-    }
 }
 
 const moduleApi = {
@@ -140,7 +115,6 @@ const moduleApi = {
     renderPisiTodoThirdCalendar,
     renderPisiTodoThirdTimeline,
     renderPisiTodoThirdStats,
-    checkPisiTodoRemindersThirdRelease,
     applyPisiTodoThirdRelease,
     initializePisiTodoThirdRelease
 };
@@ -162,7 +136,6 @@ export {
     renderPisiTodoThirdCalendar,
     renderPisiTodoThirdTimeline,
     renderPisiTodoThirdStats,
-    checkPisiTodoRemindersThirdRelease,
     applyPisiTodoThirdRelease,
     initializePisiTodoThirdRelease
 };

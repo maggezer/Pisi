@@ -364,6 +364,16 @@ Quick Add / editor projection'ında aşağıdaki alanlar tutulabilir:
 Calendar, diary, progress/statistics ve task search kayıtları
 `.pisi/tasks.json` üzerinden türetilir. Bunlar görev otoritesi değildir.
 
+Hatırlatmalar: canonical görevde `reminderAt` (`YYYY-MM-DDTHH:MM`, yerel saat)
+kesin hatırlatma anıdır ve önceliklidir. Yoksa `reminderMode`
+(`due-morning`, `day-before`, `three-days-before`) `dueDate`'ten Ayarlar'daki
+varsayılan saatle (ön tanım 09:00) her planlamada türetilir; türetilen an
+`tasks.json`'a yazılmaz. Zamanlama main süreçteki hatırlatma servisindedir
+(`main/functions/reminder-service*.js`). `.pisi/reminder-state.json`
+(`shown`, `pending`, `snoozed`) yalnız sunum durumudur, görev otoritesi değildir;
+bozuksa üzerine yazılmaz. Uygulama kapalıyken zamanı geçen hatırlatmalar
+açılışta tek bir özet bildirim ve "kaçırılanlar" listesi olarak gösterilir.
+
 ### Diary
 
 PISI diary klasörü proje kökündeki `diary/` klasörüdür ve `.pisi-diary`

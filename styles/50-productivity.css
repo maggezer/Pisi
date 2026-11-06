@@ -1315,36 +1315,6 @@ body.pisi-calendar-is-dragging .pisi-calendar-dock-zone:hover::after {
     font-size: 10px;
 }
 
-.pisi-third-reminder-banner {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    margin-bottom: 6px;
-    padding: 6px;
-    border: 1px solid color-mix(in srgb, var(--accent-color) 55%, var(--border-color));
-    border-radius: 8px;
-    background: color-mix(in srgb, var(--accent-color) 14%, var(--panel-bg));
-}
-
-.pisi-third-reminder-banner > button:first-child {
-    flex: 1;
-    border: 0;
-    background: transparent;
-    color: var(--text-color);
-    cursor: pointer;
-    text-align: left;
-}
-
-.pisi-third-reminder-close {
-    width: 24px;
-    height: 24px;
-    border: 0;
-    border-radius: 50%;
-    background: transparent;
-    color: var(--text-color);
-    cursor: pointer;
-}
-
 @media (max-width: 900px) {
     .pisi-third-stat-distributions {
         grid-template-columns: 1fr;
