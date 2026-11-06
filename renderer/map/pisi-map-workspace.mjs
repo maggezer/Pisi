@@ -191,10 +191,10 @@ function createMapNodeBox(node) {
     box.innerHTML = `
         <button class="map-node-btn map-node-delete" title="Node sil">×</button>
         <button class="map-node-btn map-node-open" title="Node düzenle">↗</button>
-        <div class="map-port top" data-port="top" role="button" tabindex="0" aria-label="Üst bağlantı portu"></div>
-        <div class="map-port right" data-port="right" role="button" tabindex="0" aria-label="Sağ bağlantı portu"></div>
-        <div class="map-port bottom" data-port="bottom" role="button" tabindex="0" aria-label="Alt bağlantı portu"></div>
-        <div class="map-port left" data-port="left" role="button" tabindex="0" aria-label="Sol bağlantı portu"></div>
+        <div class="map-port top" data-port="top" role="button" tabindex="-1" aria-label="Üst bağlantı portu"></div>
+        <div class="map-port right" data-port="right" role="button" tabindex="-1" aria-label="Sağ bağlantı portu"></div>
+        <div class="map-port bottom" data-port="bottom" role="button" tabindex="-1" aria-label="Alt bağlantı portu"></div>
+        <div class="map-port left" data-port="left" role="button" tabindex="-1" aria-label="Sol bağlantı portu"></div>
         <div class="map-node-title" title="${escapeHtml(title)}"><span class="map-node-title-text">${escapeHtml(title)}</span></div>
         <div class="map-node-preview">${escapeHtml(preview)}</div>
         <div class="map-node-resize"></div>
@@ -251,7 +251,7 @@ function bindMapNodeBoxEvents(box, node) {
     box.addEventListener('keydown', (event) => {
         if (event.target !== box) return;
 
-        if (event.key === 'Enter') {
+        if (event.key === 'Enter' && !event.ctrlKey && !event.metaKey) {
             event.preventDefault();
             openNodeModalFromBox(box);
         } else if (event.key === 'F2') {
@@ -429,8 +429,10 @@ function bindMapNodeDrag(box) {
         const dragBefore = draggedBoxes.map((item) => readPisiMapBoxLayout(item.box));
 
         const onMouseMove = (moveEvent) => {
-            const dx = (moveEvent.clientX - startX) / dragZoom;
-            const dy = (moveEvent.clientY - startY) / dragZoom;
+            const rawDx = (moveEvent.clientX - startX) / dragZoom;
+            const rawDy = (moveEvent.clientY - startY) / dragZoom;
+            // Snap guides or the grid (pisi-map-editing.mjs); Alt turns them off.
+            const { dx, dy } = window.snapPisiMapDrag?.(draggedBoxes, rawDx, rawDy, moveEvent) || { dx: rawDx, dy: rawDy };
 
             if (Math.abs(moveEvent.clientX - startX) + Math.abs(moveEvent.clientY - startY) > 4) {
                 hasDragged = true;

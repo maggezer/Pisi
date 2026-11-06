@@ -175,3 +175,33 @@ test('a removed map reference is re-attached with its layout', () => {
     assert.equal(makePisiMapReferenceStep(mapPath, { reference: { id: 'node_r' } }), null);
     assert.equal(getPisiMapStepLabel(step), 'Referansı kaldırma');
 });
+
+test('a batch undoes its steps last to first and redoes them first to last as one entry', async () => {
+    const { makePisiMapBatchStep, getPisiMapBatchOrder } = await import('../renderer/map/pisi-map-history-core.mjs');
+    const first = makePisiMapNodeStep(mapPath, 'node-create', { nodeId: 'node_1', nodePath: '/p/1.node' });
+    const second = makePisiMapEdgeStep(mapPath, 'edge-add', null, edge);
+    const batch = makePisiMapBatchStep(mapPath, [first, null, second, { kind: 'layout', mapPath: '/other.map' }], 'paste');
+    assert.equal(batch.kind, 'batch');
+    assert.equal(batch.steps.length, 2, 'empty and foreign steps are dropped');
+    assert.equal(getPisiMapStepLabel(batch), 'Yapıştırma');
+    assert.deepEqual(getPisiMapBatchOrder(batch, 'undo'), [1, 0]);
+    assert.deepEqual(getPisiMapBatchOrder(batch, 'redo'), [0, 1]);
+    const history = createPisiMapHistory();
+    history.push(batch);
+    assert.deepEqual(history.size(), { undo: 1, redo: 0 });
+    const single = makePisiMapBatchStep(mapPath, [second], 'align');
+    assert.equal(single.kind, 'edge-add');
+    assert.equal(getPisiMapStepLabel(single), 'Hizalama');
+    assert.equal(makePisiMapBatchStep(mapPath, [null]), null);
+});
+
+test('a pasted reference undoes by detaching and redoes by attaching', () => {
+    const step = makePisiMapReferenceStep(mapPath, {
+        kind: 'reference-attach',
+        reference: { id: 'node_r', path: 'R.node' },
+        layout: { id: 'node_r', x: 1, y: 2 }
+    });
+    assert.equal(step.kind, 'reference-attach');
+    assert.deepEqual(getPisiMapStepCommands(step, 'undo'), [{ name: 'map.reference.detach.v1', payload: { mapPath, nodeId: 'node_r' } }]);
+    assert.equal(getPisiMapStepCommands(step, 'redo')[0].name, 'map.reference.attach.v1');
+});

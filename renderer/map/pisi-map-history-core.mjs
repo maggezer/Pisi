@@ -15,6 +15,14 @@ export const PISI_MAP_STEP_LABELS = Object.freeze({
     'node-create': 'Düğüm oluşturma',
     'node-delete': 'Düğüm silme',
     'reference-detach': 'Referansı kaldırma',
+    'reference-attach': 'Referans ekleme',
+    batch: 'Toplu düzenleme',
+    paste: 'Yapıştırma',
+    duplicate: 'Çoğaltma',
+    align: 'Hizalama',
+    distribute: 'Dağıtma',
+    'auto-layout': 'Otomatik yerleşim',
+    nudge: 'Kaydırma',
     'edge-add': 'Bağlantı ekleme',
     'edge-delete': 'Bağlantı silme',
     'edge-change': 'Bağlantı türünü değiştirme',
@@ -168,9 +176,35 @@ export function makePisiMapNodeStep(mapPath, kind, { nodeId, nodePath, trashId =
  * @param {string} mapPath
  * @param {any} [details]
  */
-export function makePisiMapReferenceStep(mapPath, { reference, layout = null } = {}) {
+export function makePisiMapReferenceStep(mapPath, { reference, layout = null, kind = 'reference-detach' } = {}) {
     if (!reference?.id || !reference.path) return null;
-    return { kind: 'reference-detach', mapPath, reference: clonePisiMapValue(reference), layout: clonePisiMapValue(layout) };
+    return {
+        kind: kind === 'reference-attach' ? 'reference-attach' : 'reference-detach',
+        mapPath,
+        reference: clonePisiMapValue(reference),
+        layout: clonePisiMapValue(layout)
+    };
+}
+
+/**
+ * Several steps that undo and redo together. Undo runs them last to first,
+ * redo first to last. `label` names the user action (paste, align …).
+ * One step is returned unchanged with its label; no steps means no step.
+ * @param {string} mapPath
+ * @param {any[]} steps
+ * @param {string} [label]
+ */
+export function makePisiMapBatchStep(mapPath, steps = [], label = 'batch') {
+    const list = steps.filter((step) => step?.kind && step.mapPath === mapPath);
+    if (!list.length) return null;
+    if (list.length === 1) return { ...clonePisiMapValue(list[0]), label };
+    return { kind: 'batch', mapPath, label, steps: clonePisiMapValue(list) };
+}
+
+/** Sub-step indices of a batch in the order the given direction runs them. */
+export function getPisiMapBatchOrder(step, direction) {
+    const indices = (step?.steps || []).map((_item, index) => index);
+    return direction === 'undo' ? indices.reverse() : indices;
 }
 
 /**
@@ -221,6 +255,15 @@ export function getPisiMapStepCommands(step, direction, context = {}) {
             return undo
                 ? [{ name: 'trash.restore.v1', payload: { projectFolder: context.projectFolder, trashId: step.trashId } }]
                 : [{ name: 'project.item.delete.v1', payload: { targetPath: step.nodePath } }];
+        case 'reference-attach':
+            return undo
+                ? [{ name: 'map.reference.detach.v1', payload: { mapPath, nodeId: step.reference.id } }]
+                : [
+                      {
+                          name: 'map.reference.attach.v1',
+                          payload: { mapPath, reference: clonePisiMapValue(step.reference), layout: clonePisiMapValue(step.layout) }
+                      }
+                  ];
         case 'reference-detach':
             return undo
                 ? [
@@ -248,9 +291,10 @@ export function applyPisiMapStepResults(step, direction, results = []) {
     if (step.kind === 'node-delete') next.trashId = undo ? null : result.trashId || next.trashId;
     if ((step.kind === 'node-create' || step.kind === 'node-delete') && result.restoredPath) next.nodePath = result.restoredPath;
     if (step.kind === 'reference-detach' && !undo && result.layout) next.layout = clonePisiMapValue(result.layout);
+    if (step.kind === 'reference-attach' && undo && result.layout) next.layout = clonePisiMapValue(result.layout);
     return next;
 }
 
 export function getPisiMapStepLabel(step) {
-    return PISI_MAP_STEP_LABELS[step?.kind] || '';
+    return PISI_MAP_STEP_LABELS[step?.label] || PISI_MAP_STEP_LABELS[step?.kind] || '';
 }

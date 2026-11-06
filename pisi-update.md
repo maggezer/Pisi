@@ -1,5 +1,31 @@
 # PISI Güncelleme Takip Dosyası
 
+## 06-11-2026 — Harita düzenleme araçları
+
+- Kopyala / yapıştır / çoğalt: Mod+C seçili düğümleri ve aralarındaki
+  bağlantıları kopyalar. Mod+V not kopyalamaz; notları hedef haritaya referans
+  olarak ekler ve bağlantıları aynı kimlikle gösterir (haritada zaten bulunan
+  notlar atlanır). Mod+Alt+V ve Mod+D kopya not oluşturur (yeni kimlik,
+  "(kopya)" başlığı, içerik, özellikler ve yan klasör varlıkları kopyalanır,
+  görev kimlikleri kaldırılır) ve seçimdeki bağlantıları kopyalar arasında
+  yeniden kurar. Yeni domain komutu `map.nodes.duplicate.v1` (atomik).
+- Hizalama ve dağıtma: çoklu seçimde sola/ortaya/sağa, üste/ortaya/alta hizala;
+  yatay/dikey eşit dağıt (düğüm bağlam menüsü ve komut paleti). Sürüklerken
+  diğer düğümlere hizalama kılavuzları; isteğe bağlı "Izgaraya yapış" (20 px).
+  Alt sürükleme sırasında yapışmayı kapatır.
+- Otomatik yerleşim: seçili hub veya tüm harita için hiyerarşi bağlantılarına
+  göre ağaç yerleşimi; 50'den fazla düğüm etkilenecekse onay sorulur.
+- Klavye: ok tuşları en yakın komşu düğüme geçer, Shift+ok bir ızgara adımı
+  kaydırır, Tab/Shift+Tab bağlı düğümler arasında gezer, Mod+Enter klavyeyle
+  bağlantı kurar, Esc seçimi temizler. Odak halkası görünür; ekran okuyucu
+  başlığı ve bağlantı sayısını duyurur. Bağlantı portları Tab sırasından çıktı.
+- Dokunmatik: iki parmakla yakınlaştırma ve kaydırma; uzun basma bağlam
+  menüsünü açar.
+- Her işlem harita geçmişinde tek adımdır (yeni "toplu" adım türü).
+- Testler: `tests/map-align-core.test.mjs`, `tests/map-auto-layout-core.test.mjs`,
+  `tests/map-node-copy-core.test.mjs`, `tests/map-history-core.test.mjs`,
+  `scripts/electron-map-editing-e2e.mjs`.
+
 ## 06-11-2026 — Haritada geri al / yinele
 
 - Harita için komut geçmişi eklendi: düğüm oluşturma, silme (Trash), haritadan

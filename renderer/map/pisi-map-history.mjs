@@ -3,6 +3,7 @@ import { registerPisiCommand } from '../core/pisi-command-registry.mjs';
 import {
     applyPisiMapStepResults,
     createPisiMapHistory,
+    getPisiMapBatchOrder,
     getPisiMapStepCommands,
     getPisiMapStepLabel,
     makePisiMapCollapseStep,
@@ -65,7 +66,7 @@ function clearPisiMapHistory() {
 function normalizePisiMapStep(step) {
     if (step?.kind === 'node-create' || step?.kind === 'node-delete') return makePisiMapNodeStep(step.mapPath, step.kind, step);
     if (step?.kind === 'rename') return makePisiMapRenameStep(step.mapPath, step);
-    if (step?.kind === 'reference-detach') return makePisiMapReferenceStep(step.mapPath, step);
+    if (step?.kind === 'reference-detach' || step?.kind === 'reference-attach') return makePisiMapReferenceStep(step.mapPath, step);
     return step || null;
 }
 
@@ -114,6 +115,33 @@ async function reloadPisiActiveMap() {
     window.refreshPisiTagsPanelSoon?.();
 }
 
+/** Runs one step's commands (a batch runs its sub-steps in order) and folds results back in. */
+async function runPisiMapStepCommands(step, direction) {
+    if (step.kind === 'batch') {
+        const steps = [...step.steps];
+        const results = [];
+        for (const index of getPisiMapBatchOrder(step, direction)) {
+            const run = await runPisiMapStepCommands(steps[index], direction);
+            results.push(...run.results);
+            if (!run.ok) return { ok: false, result: run.result, results };
+            steps[index] = run.step;
+        }
+        return { ok: true, step: { ...step, steps }, results };
+    }
+    const commands = getPisiMapStepCommands(step, direction, {
+        projectFolder: window.currentProjectFolder,
+        camera: { ...(window.activeMapCamera || { x: 0, y: 0, zoom: 1 }) }
+    });
+    const results = [];
+    for (const command of commands) {
+        window.suppressNextFileSystemRefresh?.(4000);
+        const result = await window.pisiDomain?.command?.(command.name, command.payload);
+        results.push(result);
+        if (!result?.ok) return { ok: false, result, results };
+    }
+    return { ok: true, step: applyPisiMapStepResults(step, direction, results), results };
+}
+
 async function runPisiMapHistory(direction) {
     if (pisiMapHistoryState.running) return { ok: false, code: 'BUSY' };
     syncPisiMapHistoryOwner();
@@ -127,32 +155,22 @@ async function runPisiMapHistory(direction) {
             window.alert(pisiMapHistoryTranslate('Harita kaydedilemediği için geri alınamadı.'));
             return { ok: false, code: 'SAVE_FAILED' };
         }
-        const commands = getPisiMapStepCommands(step, direction, {
-            projectFolder: window.currentProjectFolder,
-            camera: { ...(window.activeMapCamera || { x: 0, y: 0, zoom: 1 }) }
-        });
-        const results = [];
-        for (const command of commands) {
-            window.suppressNextFileSystemRefresh?.(4000);
-            const result = await window.pisiDomain?.command?.(command.name, command.payload);
-            results.push(result);
-            if (!result?.ok) {
-                // The step stays where it is; the map shows what is on disk.
-                window.alert(
-                    `${pisiMapHistoryTranslate(direction === 'undo' ? 'Geri alınamadı' : 'Yinelenemedi')}: ${pisiMapHistoryTranslate(getPisiMapStepLabel(step))}` +
-                        (result?.error ? `\n${result.error}` : '')
-                );
-                await reloadPisiActiveMap();
-                return { ok: false, code: 'COMMAND_FAILED', result };
-            }
+        const run = await runPisiMapStepCommands(step, direction);
+        if (!run.ok) {
+            // The step stays where it is; the map shows what is on disk.
+            window.alert(
+                `${pisiMapHistoryTranslate(direction === 'undo' ? 'Geri alınamadı' : 'Yinelenemedi')}: ${pisiMapHistoryTranslate(getPisiMapStepLabel(step))}` +
+                    (run.result?.error ? `\n${run.result.error}` : '')
+            );
+            await reloadPisiActiveMap();
+            return { ok: false, code: 'COMMAND_FAILED', result: run.result };
         }
-        const updated = applyPisiMapStepResults(step, direction, results);
-        if (direction === 'undo') history.commitUndo(updated);
-        else history.commitRedo(updated);
-        const removedPath = results.find((result) => result?.movedToTrash)?.deletedPath;
-        if (removedPath) await window.removePisiOpenTabsForDeletedPaths?.([removedPath]);
+        if (direction === 'undo') history.commitUndo(run.step);
+        else history.commitRedo(run.step);
+        const removedPaths = run.results.filter((result) => result?.movedToTrash).map((result) => result.deletedPath);
+        if (removedPaths.length) await window.removePisiOpenTabsForDeletedPaths?.(removedPaths);
         await reloadPisiActiveMap();
-        return { ok: true, step: updated };
+        return { ok: true, step: run.step };
     } finally {
         pisiMapHistoryState.running = false;
         updatePisiMapHistoryButtons();
@@ -262,6 +280,7 @@ function initializePisiMapHistory() {
 
 const moduleApi = {
     pisiMapHistoryState,
+    isPisiMapHistoryContext,
     recordPisiMapStep,
     recordPisiMapHistoryLayout,
     recordPisiMapHistoryEdge,
