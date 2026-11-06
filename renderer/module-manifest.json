@@ -882,6 +882,18 @@
         ]
     },
     {
+        "module": "tags.reminders",
+        "path": "renderer/tags/pisi-reminder-panel.mjs",
+        "bindings": [
+            "pisiReminderState",
+            "refreshPisiReminderEntries",
+            "renderPisiReminderPanel",
+            "completePisiReminderTask",
+            "renderPisiReminderSettings",
+            "initializePisiReminderPanel"
+        ]
+    },
+    {
         "module": "editor.links",
         "path": "renderer/editor/pisi-editor-links.mjs",
         "bindings": ["pisiLinkState", "openPisiExternalLink", "openPisiLinkDialog", "closePisiLinkDialog", "initializePisiEditorLinks"]

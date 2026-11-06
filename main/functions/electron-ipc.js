@@ -3,7 +3,7 @@ import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { registerMainModule } from '../module-registry.js';
+import { modules, registerMainModule } from '../module-registry.js';
 import { guardPisiWindowNavigation } from './external-links.js';
 import { getWindowsAppIdentity, ensureWindowsDevShortcut } from './windows-app-identity.js';
 
@@ -400,6 +400,7 @@ function tryLockProjectFolder(folderPath) {
         }
 
         console.log('[PISI] Proje klasörü kilitlendi:', realFolderPath);
+        modules['main.reminderService']?.handlePisiReminderProjectChanged?.();
         return {
             ok: true,
             folderPath: realFolderPath
@@ -435,6 +436,7 @@ function unlockProjectFolder() {
 
     activeProjectFolder = null;
     activeProjectLockPath = null;
+    modules['main.reminderService']?.handlePisiReminderProjectChanged?.();
 }
 
 function createWindow() {
@@ -531,6 +533,13 @@ function createWindow() {
         saveWindowState();
 
         if (allowWindowClose) return;
+
+        // Optional tray mode: the window hides and reminders keep running.
+        if (modules['main.reminderService']?.shouldPisiHideWindowOnClose?.()) {
+            event.preventDefault();
+            mainWindow.hide();
+            return;
+        }
 
         event.preventDefault();
         if (closeRequestInFlight) return;

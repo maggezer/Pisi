@@ -1,5 +1,39 @@
 # PISI Güncelleme Takip Dosyası
 
+## 06-11-2026 — Hatırlatmalar main süreçte, yerel bildirimlerle
+
+- Tek model: canonical görevde `reminderAt` kesin andır. "Bitiş günü / 1 gün /
+  3 gün önce" seçenekleri bitiş tarihinden Ayarlar → Hatırlatmalar'daki
+  varsayılan saatle (ön tanım 09:00) hesaplanır; an dosyaya yazılmaz, bitiş
+  tarihi ya da saat değişince hatırlatma kendiliğinden kayar. Quick Add ile
+  yazılan saatli hatırlatmalar (ör. "yarın 14:00") artık tetikleniyor.
+  Mevcut `tasks.json` kayıtları değişmeden okunur.
+- Zamanlayıcı renderer'dan main sürece taşındı: `tasks.json`'dan sıradaki
+  hatırlatmayı hesaplayan tek bir `setTimeout` (en çok 15 dk bekler). Görev
+  yazımı, proje açma/kapama, ayar değişikliği, uykudan uyanma ve ekran kilidi
+  açılınca yeniden planlanır.
+- Bildirim Electron'un main süreç `Notification` API'siyle gösterilir. Tıklanınca
+  pencere öne gelir ve görevin kaynak notu açılır. Renderer izin politikası
+  değişmedi; diğer izinler reddedilmeye devam ediyor.
+- macOS'ta bildirimde "10 dk ertele" ve "Tamamlandı" eylemleri var. Tüm
+  platformlarda sağ alttaki hatırlatma listesinde Aç, 10 dk ertele, Tamamlandı
+  ve Kapat düğmeleri bulunur.
+- Kaçırılanlar sessizce atlanmıyor: uygulama kapalıyken zamanı geçen
+  hatırlatmalar açılışta tek bir özet bildirim ve listede "kaçırıldı" olarak
+  gösterilir. Eski localStorage kayıtları taşınmadığı için geçmişteki
+  tamamlanmamış hatırlatmalar ilk açılışta bir kez listede görünür.
+- "Gösterildi" kaydı localStorage yerine `.pisi/reminder-state.json` içinde
+  atomik yazımla tutulur.
+- İsteğe bağlı ayar: "Pencereyi kapatınca sistem tepsisinde çalışmaya devam et"
+  (ön tanım kapalı). Açıkken pencere gizlenir; tepsi menüsünde "Pisi'yi aç" ve
+  "Çık" vardır, "Çık" bekleyen kayıtları doğrulayan normal kapanışı çalıştırır.
+- `renderer/tags/pisi-todo-third-*` içindeki eski `setInterval` zamanlayıcısı,
+  localStorage kaydı ve renderer `Notification` kullanımı kaldırıldı; bunları
+  regex ile okuyan test davranış testleriyle değiştirildi.
+- Testler: `tests/reminder-schedule-core.test.mjs` (saat dilimi ve yaz saati
+  dahil), `tests/reminder-service.test.mjs` (Electron stub'lı),
+  `scripts/electron-reminders-e2e.mjs`.
+
 ## 06-11-2026 — Notlara dosya ekleri
 
 - Görsel olmayan dosyalar "ek" bloğu olarak eklenir: dosya sürükle-bırak,

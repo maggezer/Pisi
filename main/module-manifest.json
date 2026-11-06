@@ -312,6 +312,19 @@
         "bindings": ["openPisiExternalUrl", "guardPisiWindowNavigation", "installPisiExternalLinkIpc"]
     },
     {
+        "module": "main.reminderService",
+        "path": "main/functions/reminder-service.js",
+        "bindings": [
+            "getPisiReminderSettings",
+            "updatePisiReminderSettings",
+            "handlePisiReminderTasksChanged",
+            "handlePisiReminderProjectChanged",
+            "shouldPisiHideWindowOnClose",
+            "startPisiReminderService",
+            "installPisiReminderDomainContracts"
+        ]
+    },
+    {
         "module": "main.wikiLinkDomain",
         "path": "main/functions/wiki-link-domain.js",
         "bindings": ["getPisiWikiRenameImpactForPayload", "wrapPisiRenameWithWikiLinks", "repairPisiWikiLinksForPayload", "installPisiWikiLinkDomainContracts"]
