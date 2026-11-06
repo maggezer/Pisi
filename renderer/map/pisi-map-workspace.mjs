@@ -340,6 +340,12 @@ function bindMapNodeBoxEvents(box, node) {
             return;
         }
 
+        window.recordPisiMapStep?.(
+            isReference
+                ? { kind: 'reference-detach', mapPath: activeMapPath, reference: result.reference, layout: result.layout }
+                : { kind: 'node-delete', mapPath: activeMapPath, nodeId: node.id, nodePath: node.fullPath, trashId: result.trashId }
+        );
+
         if (!isReference && typeof removePisiOpenTabsForDeletedPaths === 'function') {
             await removePisiOpenTabsForDeletedPaths([node.fullPath]);
         }
@@ -376,6 +382,16 @@ function bindMapNodeBoxEvents(box, node) {
     });
 }
 
+function readPisiMapBoxLayout(box) {
+    return {
+        id: box.dataset.nodeId,
+        x: parseFloat(box.style.left || '0'),
+        y: parseFloat(box.style.top || '0'),
+        width: box.offsetWidth || parseFloat(box.style.width || '220'),
+        height: box.offsetHeight || parseFloat(box.style.height || '92')
+    };
+}
+
 function bindMapNodeDrag(box) {
     box.addEventListener('mousedown', (event) => {
         if (event.button !== 0) return;
@@ -409,6 +425,8 @@ function bindMapNodeDrag(box) {
                 y: parseFloat(selectedBox.style.top || '0')
             };
         });
+        const dragMapPath = activeMapPath;
+        const dragBefore = draggedBoxes.map((item) => readPisiMapBoxLayout(item.box));
 
         const onMouseMove = (moveEvent) => {
             const dx = (moveEvent.clientX - startX) / dragZoom;
@@ -442,6 +460,13 @@ function bindMapNodeDrag(box) {
 
             if (moved) {
                 clearSelectedMapNodes();
+                // One drag of one or many nodes is one history step.
+                window.recordPisiMapHistoryLayout?.(
+                    dragMapPath,
+                    dragBefore,
+                    draggedBoxes.map((item) => readPisiMapBoxLayout(item.box)),
+                    'layout'
+                );
             }
 
             scheduleMapLayoutSave();
@@ -462,6 +487,8 @@ function bindMapNodeResize(box, handle) {
         const startW = box.offsetWidth;
         const startH = box.offsetHeight;
         const resizeZoom = activeMapCamera?.zoom || 1;
+        const resizeMapPath = activeMapPath;
+        const resizeBefore = readPisiMapBoxLayout(box);
 
         const onMouseMove = (moveEvent) => {
             const dx = (moveEvent.clientX - startX) / resizeZoom;
@@ -483,6 +510,7 @@ function bindMapNodeResize(box, handle) {
         const onMouseUp = () => {
             window.removeEventListener('mousemove', onMouseMove);
             window.removeEventListener('mouseup', onMouseUp);
+            window.recordPisiMapHistoryLayout?.(resizeMapPath, [resizeBefore], [readPisiMapBoxLayout(box)], 'resize');
             scheduleMapLayoutSave();
         };
 
@@ -614,6 +642,15 @@ async function startMapNodeTitleEdit(box, node) {
             box.dataset.nodePath = result.fullPath;
 
             const cleanTitle = result.metadata?.title || result.fileName.replace(/\.node$/i, '');
+            window.recordPisiMapStep?.({
+                kind: 'rename',
+                mapPath: activeMapPath,
+                nodeId: node.id,
+                beforePath: oldPath,
+                afterPath: result.fullPath,
+                beforeTitle: oldTitle,
+                afterTitle: cleanTitle
+            });
 
             restoreTitle(cleanTitle);
 

@@ -2,6 +2,8 @@ import { registerModule } from '../core/module-registry.mjs';
 
 async function persistPisiMapConnection(edgePayload) {
     suppressNextFileSystemRefresh(1500);
+    const historyMapPath = activeMapPath;
+    const previousEdges = Array.isArray(activeMapEdges) ? activeMapEdges.map((edge) => ({ ...edge })) : [];
 
     let result = await window.pisiProject?.upsertMapConnection?.(activeMapPath, edgePayload);
 
@@ -31,6 +33,11 @@ async function persistPisiMapConnection(edgePayload) {
     if (!result?.ok) return result;
 
     activeMapEdges = result.edges || activeMapEdges;
+    const previousEdge = edgePayload?.id ? previousEdges.find((edge) => edge.id === edgePayload.id) : null;
+    const savedEdge = previousEdge
+        ? activeMapEdges.find((edge) => edge.id === previousEdge.id)
+        : activeMapEdges.find((edge) => !previousEdges.some((old) => old.id === edge.id));
+    window.recordPisiMapHistoryEdge?.(historyMapPath, previousEdge ? 'edge-change' : 'edge-add', previousEdge, savedEdge);
     drawMapConnections();
     await refreshActiveMapTreeBranch();
     return result;
@@ -428,12 +435,15 @@ async function deleteMapEdge(edgeId) {
     try {
         suppressNextFileSystemRefresh(8000);
 
+        const deletedEdge = Array.isArray(activeMapEdges) ? activeMapEdges.find((edge) => edge.id === edgeId) : null;
         const result = await window.pisiProject?.deleteMapConnection?.(activeMapPath, edgeId);
 
         if (!result || !result.ok) {
             alert(result?.error || 'Bağlantı silinemedi.');
             return;
         }
+
+        window.recordPisiMapHistoryEdge?.(activeMapPath, 'edge-delete', deletedEdge ? { ...deletedEdge } : null, null);
 
         activeMapEdges =
             result.edges ||

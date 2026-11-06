@@ -1043,6 +1043,22 @@
         ]
     },
     {
+        "module": "map.history",
+        "path": "renderer/map/pisi-map-history.mjs",
+        "bindings": [
+            "pisiMapHistoryState",
+            "recordPisiMapStep",
+            "recordPisiMapHistoryLayout",
+            "recordPisiMapHistoryEdge",
+            "recordPisiMapHistoryCollapse",
+            "clearPisiMapHistory",
+            "undoPisiMapStep",
+            "redoPisiMapStep",
+            "updatePisiMapHistoryButtons",
+            "initializePisiMapHistory"
+        ]
+    },
+    {
         "module": "map.export",
         "path": "renderer/map/pisi-map-export.mjs",
         "bindings": [

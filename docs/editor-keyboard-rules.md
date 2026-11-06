@@ -54,3 +54,28 @@ has that title. As with web links, Ctrl+click (Cmd+click on macOS) follows a
 note link in an editable note and a plain click follows it in read-only
 surfaces; legacy `[[Başlık]]` text is followed by title, with a chooser when
 several notes share it.
+
+## Keyboard ownership: undo and redo
+
+Mod+Z, Mod+Shift+Z and Mod+Y belong to exactly one history at a time, chosen by
+where the keyboard focus is. Histories never mix: a map step is never undone
+from a note editor and a text edit is never undone from the map.
+
+| Focus                                                    | History used                                                        |
+| -------------------------------------------------------- | ------------------------------------------------------------------- |
+| Center or modal note editor (any block, including Sheet) | Note editor history (`pisi-editor-history.mjs`)                     |
+| Sheet cell editor, input, textarea, map title input      | The control's own native or Sheet history                           |
+| Map canvas (no editable element focused, no modal open)  | Map history (`pisi.map.undo`, `pisi.map.redo`, `pisi.map.redo-alt`) |
+
+The map commands are registered in the command registry with
+`allowInInput: false`, so the registry never runs them for an editable target,
+and their `when` check requires a visible map with no modal or dialog open.
+They can be rebound in Settings → Keyboard shortcuts; the registry's conflict
+check applies to them like any other command.
+
+The map history records node create/delete (Trash), reference removal, one step
+per drag (including multi-selection drags), resize, connection add/delete/type
+change, hub collapse/expand and title edits. Camera movement is not recorded.
+Each step is replayed with the same domain commands the action used. The
+history holds up to 200 steps and is cleared when another map opens, the
+project closes or the map file is changed outside Pisi.

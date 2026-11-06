@@ -380,15 +380,55 @@ function detachPisiMapReference(mapPath, nodeId) {
         const mapInfo = ensurePisiFileMetadata(mapPath);
         if (!mapInfo.ok) return mapInfo;
         const id = normalizePisiId(nodeId, '.node');
-        const before = Array.isArray(mapInfo.data.map?.references) ? mapInfo.data.map.references.length : 0;
-        mapInfo.data.map.references = (mapInfo.data.map.references || []).filter((item) => item.id !== id);
-        if (before === mapInfo.data.map.references.length) {
+        const references = Array.isArray(mapInfo.data.map?.references) ? mapInfo.data.map.references : [];
+        const reference = references.find((item) => item.id === id) || null;
+        if (!reference) {
             return { ok: false, error: 'Map referansı bulunamadı.' };
         }
+        const layout = (mapInfo.data.map.nodes || []).find((item) => item.id === id) || null;
+        mapInfo.data.map.references = references.filter((item) => item.id !== id);
         mapInfo.data.map.nodes = (mapInfo.data.map.nodes || []).filter((item) => item.id !== id);
         mapInfo.data.pisi.updatedAt = new Date().toISOString();
         writePisiDocument(mapPath, mapInfo.data);
-        return { ok: true, detached: true, nodeId: id };
+        // The removed reference and layout let map undo re-attach it unchanged.
+        return { ok: true, detached: true, nodeId: id, reference: { ...reference }, layout: layout ? JSON.parse(JSON.stringify(layout)) : null };
+    } catch (error) {
+        return { ok: false, error: error.message };
+    }
+}
+
+/**
+ * Inverse of detachPisiMapReference: puts a standalone node back into a map as
+ * a reference with its previous layout. The node must still exist inside the
+ * project with the same id. Semantic relationships live in relationships.json
+ * and were never removed, so the map projects them again.
+ */
+function attachPisiMapReference(mapPath, reference = {}, layout = null) {
+    try {
+        const projectFolder = globalThis.activeProjectFolder;
+        const mapInfo = ensurePisiFileMetadata(mapPath);
+        if (!mapInfo.ok) return mapInfo;
+        const id = normalizePisiId(reference?.id, '.node');
+        const nodePath = projectFolder ? resolvePisiMapReference(projectFolder, { id, path: reference?.path }) : null;
+        if (!id || !nodePath) return { ok: false, code: 'MAP_REFERENCE_TARGET_MISSING', error: 'Referans verilen node bulunamadı.' };
+        const nodeInfo = ensurePisiFileMetadata(nodePath, { ensureSidecar: false });
+        if (!nodeInfo.ok || nodeInfo.metadata.id !== id) return { ok: false, code: 'MAP_REFERENCE_TARGET_MISSING', error: 'Referans verilen node bulunamadı.' };
+        const map = mapInfo.data.map;
+        map.references = Array.isArray(map.references) ? map.references : [];
+        map.nodes = Array.isArray(map.nodes) ? map.nodes : [];
+        if (map.references.some((item) => item.id === id) || map.nodes.some((item) => item.id === id)) {
+            return { ok: false, code: 'MAP_REFERENCE_EXISTS', error: 'Node bu map içinde zaten var.' };
+        }
+        map.references.push({ id, path: makePisiRelativeReference(projectFolder, nodePath) });
+        const fallback = getDefaultNodeLayout(map.nodes.length);
+        map.nodes.push({
+            ...normalizePisiNodeLayout(layout || fallback, fallback),
+            ...(layout?.customization ? { customization: layout.customization } : {}),
+            id
+        });
+        mapInfo.data.pisi.updatedAt = new Date().toISOString();
+        writePisiDocument(mapPath, mapInfo.data);
+        return { ok: true, attached: true, nodeId: id };
     } catch (error) {
         return { ok: false, error: error.message };
     }
@@ -411,7 +451,8 @@ const moduleApi = {
     createPisiPropertyMap,
     resolvePisiMapReference,
     collectPisiMapReferenceNodes,
-    detachPisiMapReference
+    detachPisiMapReference,
+    attachPisiMapReference
 };
 
 registerMainModule('main.structuredNodes', moduleApi);

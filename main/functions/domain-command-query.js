@@ -39,6 +39,7 @@ const PISI_BATCH_MUTATION_COMMANDS = new Set([
     'map.layout.save.v1',
     'map.operational.mutate.v1',
     'map.reference.detach.v1',
+    'map.reference.attach.v1',
     'map.node.create.v1',
     'project.item.rename.v1',
     'project.item.move.v1',
@@ -311,6 +312,14 @@ function installPisiDomainContracts() {
             ...detached,
             edges: refreshed.ok ? refreshed.edges : []
         };
+    });
+
+    registerPisiDomainCommand('map.reference.attach.v1', (payload) => {
+        const safeMapPath = assertPisiDomainMapPath(payload.mapPath);
+        const attached = structuredNodes.attachPisiMapReference(safeMapPath, payload.reference || {}, payload.layout || null);
+        if (!attached.ok) return attached;
+        const refreshed = mapSemanticOperations.getPisiMapSemanticProjection(safeMapPath);
+        return { ...attached, edges: refreshed.ok ? refreshed.edges : [] };
     });
 
     registerPisiDomainCommand('map.node.create.v1', (payload) => {

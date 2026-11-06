@@ -99,6 +99,7 @@ export function toggleHubConnectionsFromPort(nodeId, port) {
 
     const set = getCollapsedHubPortSet();
     const key = makeCollapsedHubPortKey(nodeId, port);
+    const before = Array.from(set);
 
     if (set.has(key)) {
         set.delete(key);
@@ -109,5 +110,6 @@ export function toggleHubConnectionsFromPort(nodeId, port) {
     drawMapConnections();
     syncHubPortCollapseVisuals();
     saveActiveMapCameraSoon();
+    window.recordPisiMapHistoryCollapse?.(activeMapPath, before, Array.from(set));
     return true;
 }

@@ -15,6 +15,7 @@ const PISI_MAIN_DOMAIN_COMMANDS = new Set([
     'map.layout.save.v1',
     'map.camera.save.v1',
     'map.reference.detach.v1',
+    'map.reference.attach.v1',
     'map.node.create.v1'
 ]);
 
