@@ -9,6 +9,7 @@ const zlib = require('node:zlib');
 const test = require('node:test');
 const { extractFunction } = require('./source-helper');
 const editorAssets = require('../main/functions/editor-asset-store');
+const fileAssets = require('../main/functions/editor-file-asset-store');
 
 const root = path.resolve(__dirname, '..');
 const source = fs.readFileSync(path.join(root, 'main/functions/portability.js'), 'utf8');
@@ -29,6 +30,8 @@ const exportFunctions = [
     'pisiEmbedPaintImagesForExport',
     'pisiTransformImageBlocks',
     'pisiEmbedImageBlocksForExport',
+    'formatPisiPortableFileSize',
+    'pisiTransformFileBlocks',
     'pisiLinkPaintImagesForMarkdown',
     'pisiDocxPaintImageParagraph',
     'pisiCrc32',
@@ -74,6 +77,7 @@ function createExportHarness(format, content, sidecarPath, outputPath) {
             showOpenDialog: async () => ({ canceled: false, filePaths: [outputPath] })
         },
         editorAssets,
+        fileAssets,
         fs,
         pisiCrcTable: null,
         path,
@@ -109,6 +113,7 @@ function createProjectExportHarness(projectRoot, outputFolder, content, sidecarP
             showOpenDialog: async () => ({ canceled: false, filePaths: [outputFolder] })
         },
         editorAssets,
+        fileAssets,
         fs,
         path,
         getPisiDocument: (_nodePath, options) => {
@@ -140,6 +145,8 @@ function createProjectExportHarness(projectRoot, outputFolder, content, sidecarP
         'pisiPropertiesFrontmatter',
         'pisiTransformPaintCanvases',
         'pisiTransformImageBlocks',
+        'formatPisiPortableFileSize',
+        'pisiTransformFileBlocks',
         'pisiLinkPaintImagesForMarkdown',
         'pisiSafeTimestamp',
         'walkPisiFiles',
@@ -493,6 +500,52 @@ test('image blocks export from the note sidecar to HTML, PDF, Markdown and DOCX'
         const contentTypes = entries.get('[Content_Types].xml').toString('utf8');
         assert.match(contentTypes, /Extension="png" ContentType="image\/png"/);
         assert.match(contentTypes, /Extension="gif" ContentType="image\/gif"/);
+    } finally {
+        fs.rmSync(temporaryRoot, { recursive: true, force: true });
+    }
+});
+
+test('attachment blocks export as linked copies in Markdown and HTML and as labels in PDF and DOCX', async () => {
+    const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-file-export-'));
+    const sidecarPath = path.join(temporaryRoot, 'Paint note.pisi-node');
+    fs.mkdirSync(sidecarPath, { recursive: true });
+
+    try {
+        const report = Buffer.from('%PDF-1.4 rapor');
+        const notes = Buffer.from('notlar');
+        const storedReport = fileAssets.writePisiFileAsset(sidecarPath, report, 'Rapor & Özet.pdf');
+        const storedNotes = fileAssets.writePisiFileAsset(sidecarPath, notes, 'Rapor & Özet.pdf');
+        const block = (reference, name, size) =>
+            `<div class="pisi-editor-block pisi-file-block" data-pisi-block-type="file" data-pisi-file-block="1" data-pisi-file-asset="${reference}" data-pisi-file-name="${name}" data-pisi-file-size="${size}" contenteditable="false"><span class="pisi-file-name">${name}</span></div>`;
+        const content =
+            block(storedReport.reference, 'Rapor &amp; Özet.pdf', report.length) +
+            block(storedNotes.reference, 'Rapor &amp; Özet.pdf', notes.length) +
+            block(`file/${'0'.repeat(64)}.zip`, 'Kayıp.zip', 2048);
+
+        const markdownPath = path.join(temporaryRoot, 'Paint note.md');
+        assert.equal((await createExportHarness('markdown', content, sidecarPath, markdownPath).run()).ok, true);
+        const markdown = fs.readFileSync(markdownPath, 'utf8');
+        assert.match(markdown, /\[📎 Rapor & Özet\.pdf \(14 B\)\]\(Paint%20note\.assets\/Rapor%20%26%20%C3%96zet\.pdf\)/);
+        assert.match(markdown, /\(Paint%20note\.assets\/Rapor%20%26%20%C3%96zet-2\.pdf\)/);
+        assert.match(markdown, /📎 Kayıp\.zip \(2 KB\)/);
+        const assetDirectory = path.join(temporaryRoot, 'Paint note.assets');
+        assert.deepEqual(fs.readFileSync(path.join(assetDirectory, 'Rapor & Özet.pdf')), report);
+        assert.deepEqual(fs.readFileSync(path.join(assetDirectory, 'Rapor & Özet-2.pdf')), notes);
+
+        const htmlPath = path.join(temporaryRoot, 'Paint note.html');
+        assert.equal((await createExportHarness('html', content, sidecarPath, htmlPath).run()).ok, true);
+        const html = fs.readFileSync(htmlPath, 'utf8');
+        assert.match(html, /<a href="Paint%20note\.assets\/Rapor%20%26%20%C3%96zet\.pdf">📎 Rapor &amp; Özet\.pdf \(14 B\)<\/a>/);
+        assert.doesNotMatch(html, /data-pisi-file-asset/);
+
+        const pdfHarness = createExportHarness('pdf', content, sidecarPath, path.join(temporaryRoot, 'Paint note.pdf'));
+        assert.equal((await pdfHarness.run()).ok, true);
+        assert.match(pdfHarness.getLoadedHtml(), /<p>📎 Rapor &amp; Özet\.pdf \(14 B\)<\/p>/);
+        assert.doesNotMatch(pdfHarness.getLoadedHtml(), /<a href=/);
+
+        const docxPath = path.join(temporaryRoot, 'Paint note.docx');
+        assert.equal((await createExportHarness('docx', content, sidecarPath, docxPath).run()).ok, true);
+        assert.match(readStoredZipEntries(fs.readFileSync(docxPath)).get('word/document.xml').toString('utf8'), /📎 Rapor &amp; Özet\.pdf \(14 B\)/);
     } finally {
         fs.rmSync(temporaryRoot, { recursive: true, force: true });
     }

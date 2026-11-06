@@ -66,7 +66,7 @@ export function extractPisiPasteBlocks(html = '', plain = '') {
                 continue;
             }
             flush();
-            if (internal && child.matches('.pisi-sheet-block, .pisi-canvas-block, [data-pisi-rollup-relation], .pisi-image-block')) {
+            if (internal && child.matches('.pisi-sheet-block, .pisi-canvas-block, [data-pisi-rollup-relation], .pisi-image-block, .pisi-file-block')) {
                 blocks.push({ ...base, composite: true, html: child.outerHTML });
                 continue;
             }

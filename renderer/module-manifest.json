@@ -869,6 +869,19 @@
         ]
     },
     {
+        "module": "editor.fileBlocks",
+        "path": "renderer/editor/pisi-editor-file-block.mjs",
+        "bindings": [
+            "pisiFileState",
+            "hydratePisiFilesIn",
+            "insertPisiAttachmentFiles",
+            "insertPisiDroppedFiles",
+            "openPisiFilePicker",
+            "openPisiFileBlock",
+            "initializePisiFileBlocks"
+        ]
+    },
+    {
         "module": "editor.links",
         "path": "renderer/editor/pisi-editor-links.mjs",
         "bindings": ["pisiLinkState", "openPisiExternalLink", "openPisiLinkDialog", "closePisiLinkDialog", "initializePisiEditorLinks"]
