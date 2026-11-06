@@ -1047,6 +1047,7 @@
         "path": "renderer/map/pisi-map-history.mjs",
         "bindings": [
             "pisiMapHistoryState",
+            "isPisiMapHistoryContext",
             "recordPisiMapStep",
             "recordPisiMapHistoryLayout",
             "recordPisiMapHistoryEdge",
@@ -1057,6 +1058,39 @@
             "updatePisiMapHistoryButtons",
             "initializePisiMapHistory"
         ]
+    },
+    {
+        "module": "map.editing",
+        "path": "renderer/map/pisi-map-editing.mjs",
+        "bindings": [
+            "pisiMapEditingState",
+            "PISI_MAP_GRID_STEP",
+            "readPisiMapBoxRect",
+            "applyPisiMapLayoutChange",
+            "alignSelectedPisiMapNodes",
+            "distributeSelectedPisiMapNodes",
+            "autoLayoutPisiMap",
+            "togglePisiMapSnapToGrid",
+            "snapPisiMapDrag",
+            "clearPisiMapSnapGuides",
+            "showPisiMapNodeContextMenu",
+            "initializePisiMapEditing"
+        ]
+    },
+    {
+        "module": "map.clipboard",
+        "path": "renderer/map/pisi-map-clipboard.mjs",
+        "bindings": ["pisiMapClipboardState", "copyPisiMapSelection", "pastePisiMapClipboard", "duplicatePisiMapSelection", "initializePisiMapClipboard"]
+    },
+    {
+        "module": "map.keyboard",
+        "path": "renderer/map/pisi-map-keyboard.mjs",
+        "bindings": ["pisiMapKeyboardState", "announcePisiMap", "focusPisiMapBox", "flushPisiMapNudge", "initializePisiMapKeyboard"]
+    },
+    {
+        "module": "map.touch",
+        "path": "renderer/map/pisi-map-touch.mjs",
+        "bindings": ["pisiMapTouchState", "initializePisiMapTouch"]
     },
     {
         "module": "map.export",

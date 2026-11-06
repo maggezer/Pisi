@@ -96,6 +96,8 @@ function showPisiMapContextMenu(clientX, clientY) {
     });
 
     menu.appendChild(createBtn);
+    // Editing actions (paste, auto layout, grid) join the menu (pisi-map-editing.mjs).
+    document.dispatchEvent(new CustomEvent('pisi:map-context-menu', { detail: { menu, clientX, clientY } }));
     document.body.appendChild(menu);
 
     const rect = menu.getBoundingClientRect();

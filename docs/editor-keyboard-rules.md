@@ -79,3 +79,29 @@ change, hub collapse/expand and title edits. Camera movement is not recorded.
 Each step is replayed with the same domain commands the action used. The
 history holds up to 200 steps and is cleared when another map opens, the
 project closes or the map file is changed outside Pisi.
+
+## Map editing keys
+
+These keys belong to the map only while a map node or the map canvas has the
+focus (same ownership rule as undo and redo above); in editors and inputs they
+keep their usual meaning.
+
+| Keys                    | Action                                                                                  |
+| ----------------------- | --------------------------------------------------------------------------------------- |
+| Mod+C                   | Copy the selected nodes and the connections among them                                  |
+| Mod+V                   | Paste as map references; no note is copied. Notes already on the map are skipped        |
+| Mod+Alt+V               | Paste as copied notes (new notes, "(kopya)" title, connections recreated)               |
+| Mod+D                   | Duplicate the selection as copied notes, offset by 40 px                                |
+| Arrow keys (on a node)  | Move focus and selection to the nearest node in that direction                          |
+| Shift+arrow (on a node) | Move the selection by one grid step (20 px); presses within 700 ms are one history step |
+| Tab / Shift+Tab         | Cycle through the node where Tab started and the nodes connected to it                  |
+| Mod+Enter (on a node)   | Start a connection; Mod+Enter on another node finishes it                               |
+| Enter / F2 / Delete     | Open the note in the modal / edit the title / delete or remove the node                 |
+| Escape                  | Clear the selection                                                                     |
+
+Connection ports are no longer in the Tab order. A focused node announces its
+title (`aria-label`) and its connection count (`aria-description`); actions are
+announced through a polite live region. Alignment, distribution and auto layout
+are in the node context menu (long press on touch screens) and the command
+palette. While dragging, guides snap to other nodes' edges and centres; with
+"Snap to grid" on, positions snap to 20 px. Alt turns snapping off during a drag.

@@ -326,6 +326,11 @@
         ]
     },
     {
+        "module": "main.mapNodeCopy",
+        "path": "main/functions/map-node-copy.js",
+        "bindings": ["duplicatePisiMapNodes", "installPisiMapNodeCopyContracts"]
+    },
+    {
         "module": "main.wikiLinkDomain",
         "path": "main/functions/wiki-link-domain.js",
         "bindings": ["getPisiWikiRenameImpactForPayload", "wrapPisiRenameWithWikiLinks", "repairPisiWikiLinksForPayload", "installPisiWikiLinkDomainContracts"]

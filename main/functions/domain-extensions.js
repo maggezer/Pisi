@@ -4,3 +4,4 @@
 import './editor-asset-domain.js';
 import './wiki-link-domain.js';
 import './reminder-service.js';
+import './map-node-copy.js';
