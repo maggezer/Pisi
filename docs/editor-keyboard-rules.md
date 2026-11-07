@@ -127,3 +127,33 @@ Only editable text is searched and replaced: task markers and metadata, tags,
 `contenteditable="false"` are skipped, and attributes such as block and task ids
 are never touched. Highlights use the CSS Custom Highlight API, so the saved
 HTML never contains find markers. "Replace all" is one undo step.
+
+## Interface zoom, print and the context menu
+
+| Keys                              | Everywhere, also while a map is focused       |
+| --------------------------------- | --------------------------------------------- |
+| Mod+= (also Mod++, Ctrl+Numpad +) | Zooms the interface in by 10 %, up to 200 %   |
+| Mod+- (also Ctrl+Numpad −)        | Zooms the interface out by 10 %, down to 80 % |
+| Mod+0 (also Ctrl+Numpad 0)        | Resets the interface zoom to 100 %            |
+| Mod+Alt+P                         | Prints the open note (system print dialog)    |
+| Mod+P                             | Project search (unchanged)                    |
+
+Rule: Mod+= / Mod+- / Mod+0 always zoom the interface, never the map. Map zoom
+uses the wheel, pinch and the map's own +/− buttons; there is no keyboard map
+zoom to collide with. The zoom keys and Print are commands in the command
+registry, so the shortcut editor reports conflicts with them like any other
+command. The alternative keys (Mod++, numpad) only apply while the zoom
+shortcuts are the defaults; on a Turkish Q keyboard "=" is Shift+0 and works as
+Mod+Shift+0. The zoom level is stored in the app settings and can also be
+chosen in Settings → View.
+
+Print uses the same HTML template as the PDF export and the system print
+dialog; it is also in the command palette and in the note's Export panel.
+
+The right-click menu comes from the main process (Electron `context-menu`):
+cut, copy, paste, paste without formatting and select all in editable fields;
+open and copy for links the external URL policy allows; up to five spelling
+suggestions and "Add to dictionary" on a misspelled word. Spell checking uses
+Turkish and US English (interface language first) and can be turned off in
+Settings. Surfaces with their own menu (map, Sheet, task priority menu) call
+`preventDefault` on `contextmenu`, and then no native menu appears.

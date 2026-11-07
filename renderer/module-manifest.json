@@ -894,6 +894,19 @@
         ]
     },
     {
+        "module": "shell.windowShell",
+        "path": "renderer/shell/pisi-window-shell.mjs",
+        "bindings": [
+            "pisiWindowShellState",
+            "stepPisiInterfaceZoom",
+            "updatePisiWindowShellSettings",
+            "refreshPisiWindowShellSettings",
+            "printPisiNote",
+            "renderPisiWindowShellSettings",
+            "initializePisiWindowShell"
+        ]
+    },
+    {
         "module": "editor.findReplace",
         "path": "renderer/editor/pisi-find-replace.mjs",
         "bindings": [

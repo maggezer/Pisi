@@ -242,6 +242,7 @@
             "restorePisiNodeHistoryVersion",
             "makePisiDocxBuffer",
             "exportPisiNodeDocument",
+            "buildPisiNodePrintHtml",
             "exportPisiMapGraphic",
             "exportPisiProjectMarkdown",
             "importPisiMarkdownFolder",
@@ -311,6 +312,18 @@
         "module": "main.externalLinks",
         "path": "main/functions/external-links.js",
         "bindings": ["openPisiExternalUrl", "guardPisiWindowNavigation", "installPisiExternalLinkIpc"]
+    },
+    {
+        "module": "main.windowShell",
+        "path": "main/functions/window-shell.js",
+        "bindings": [
+            "getPisiShellSettings",
+            "updatePisiShellSettings",
+            "applyPisiSpellChecker",
+            "attachPisiWindowShell",
+            "printPisiNode",
+            "installPisiWindowShellContracts"
+        ]
     },
     {
         "module": "main.reminderService",

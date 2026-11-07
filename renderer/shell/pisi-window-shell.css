@@ -1,0 +1,7 @@
+/* Settings → Görünüm (interface zoom, spell checking). Lazy-loaded by renderer/shell/pisi-window-shell.mjs. */
+.pisi-window-shell-settings .pisi-window-shell-setting {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+}

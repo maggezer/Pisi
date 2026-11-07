@@ -203,6 +203,18 @@ function renderPisiExportActions(section, nodePath) {
         });
         nodeActions.appendChild(button);
     }
+    const print = makePisiPortableButton('Yazdır');
+    print.dataset.pisiPrintNote = '1';
+    print.disabled = !nodePath;
+    print.addEventListener('click', async () => {
+        print.disabled = true;
+        try {
+            await printPisiNote(nodePath);
+        } finally {
+            print.disabled = !nodePath;
+        }
+    });
+    nodeActions.appendChild(print);
     section.append(projectActions, nodeActions);
 }
 

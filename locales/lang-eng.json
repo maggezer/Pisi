@@ -1014,6 +1014,25 @@
         "Sheet altına satır ekle": "Add line below Sheet",
         "Sheet'i seç": "Select Sheet",
         "Canvas'ı kopyala": "Copy Canvas",
-        "Canvas altına satır ekle": "Add line below Canvas"
+        "Canvas altına satır ekle": "Add line below Canvas",
+        "Kes": "Cut",
+        "Tümünü seç": "Select all",
+        "Biçimsiz yapıştır": "Paste without formatting",
+        "Bağlantıyı aç": "Open link",
+        "Bağlantıyı kopyala": "Copy link",
+        "Sözlüğe ekle": "Add to dictionary",
+        "Öneri yok": "No suggestions",
+        "Görünüm": "View",
+        "Arayüz yakınlaştırma": "Interface zoom",
+        "Yazım denetimi (Türkçe ve İngilizce)": "Spell checking (Turkish and English)",
+        "Arayüzü yakınlaştır": "Zoom in interface",
+        "Arayüzü uzaklaştır": "Zoom out interface",
+        "Arayüz yakınlaştırmasını sıfırla": "Reset interface zoom",
+        "Haritada da arayüzü yakınlaştırır; harita yakınlaştırması tekerlek ve harita düğmeleriyle yapılır.": "Zooms the interface, also on a map; map zoom uses the wheel and the map buttons.",
+        "Yazdır": "Print",
+        "Açık notu sistem yazdırma penceresiyle yazdırır.": "Prints the open note with the system print dialog.",
+        "Not": "Note",
+        "Yazdırılacak açık not yok.": "There is no open note to print.",
+        "Yazdırılamadı.": "Could not print."
     }
 }

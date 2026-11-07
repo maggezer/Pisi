@@ -3,7 +3,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { URL } from 'node:url';
 const supplementalTranslations = JSON.parse(fs.readFileSync(new URL('../../locales/ui-translations.json', import.meta.url), 'utf8'));
-import { registerMainModule } from '../module-registry.js';
+import { modules, registerMainModule } from '../module-registry.js';
 
 const PISI_DEFAULT_LANGUAGE = 'tr';
 const PISI_SUPPORTED_LANGUAGES = new Set(['tr', 'eng']);
@@ -30,6 +30,8 @@ function setPisiLanguage(language) {
     settings.language = normalized;
     delete settings.locale;
     writeSettings(settings);
+    // Spell checker languages follow the interface language.
+    modules['main.windowShell']?.applyPisiSpellChecker();
     return normalized;
 }
 

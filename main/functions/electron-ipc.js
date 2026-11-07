@@ -490,9 +490,12 @@ function createWindow() {
         });
     }
 
+    // No application menu: context menu, spell checker, zoom and print come
+    // from main/functions/window-shell.js.
     Menu.setApplicationMenu(null);
 
     guardPisiWindowNavigation(mainWindow.webContents);
+    modules['main.windowShell']?.attachPisiWindowShell(mainWindow);
 
     mainWindow.webContents.session.setPermissionCheckHandler(() => false);
     mainWindow.webContents.session.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));

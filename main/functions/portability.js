@@ -497,6 +497,13 @@ function makePisiDocxBuffer(info) {
     ]);
 }
 
+/** The print/PDF document of a note: the same HTML template as the PDF export. */
+function buildPisiNodePrintHtml(nodePath) {
+    const info = getPisiDocument(nodePath, { hydrateEditorAssets: true });
+    if (!info.ok) return info;
+    return { ok: true, title: info.metadata.title || 'Pisi', html: pisiExportHtmlDocument(info) };
+}
+
 async function exportPisiNodeDocument(nodePath, format) {
     const normalized = String(format || '').toLowerCase();
     const extension = { markdown: 'md', md: 'md', html: 'html', pdf: 'pdf', docx: 'docx' }[normalized];
@@ -769,6 +776,7 @@ const moduleApi = {
     restorePisiNodeHistoryVersion,
     makePisiDocxBuffer,
     exportPisiNodeDocument,
+    buildPisiNodePrintHtml,
     exportPisiMapGraphic,
     exportPisiProjectMarkdown,
     importPisiMarkdownFolder,
