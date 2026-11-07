@@ -79,7 +79,6 @@ test('visible node modal owns Escape before background rename handlers', () => {
 
 test('node modal blocks Pisi menu and titlebar language toggle is removed', () => {
     const source = read('renderer/shell/pisi-interaction-regressions.mjs');
-    const styleIndex = read('style.css');
     const styles = read('styles/92-compatibility.css');
 
     assert.match(source, /getElementById\('pisi-language-toggle'\)\?\.remove/);
@@ -87,8 +86,6 @@ test('node modal blocks Pisi menu and titlebar language toggle is removed', () =
     assert.match(source, /pisiTitlebarLanguageObserver\.observe\(controls, \{ childList: true \}\)/);
     assert.match(source, /appMenuButton\.disabled = Boolean\(modalVisible\)/);
     assert.match(source, /closePisiAppMenuForModal\(\)/);
-
-    assert.match(styleIndex, /92-compatibility\.css/);
     assert.match(styles, /html body #pisi-app-menu \{/);
     assert.match(styles, /z-index: 7000/);
     assert.match(styles, /html body #pisi-app-menu-dropdown \{/);

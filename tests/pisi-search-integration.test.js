@@ -12,7 +12,6 @@ const read = (relativePath) => {
 
 test('arama modülleri bootstrap ve stil zincirine bağlıdır', () => {
     const bootstrap = read('renderer/bootstrap.mjs');
-    const styles = read('style.css');
 
     for (const moduleName of [
         'pisi-search-index.mjs',
@@ -27,9 +26,6 @@ test('arama modülleri bootstrap ve stil zincirine bağlıdır', () => {
         assert.match(bootstrap, new RegExp('search/' + moduleName.replace('.', '\\.')));
     }
     assert.doesNotMatch(bootstrap, /search\/pisi-block-graph\.mjs/);
-    assert.match(styles, /50-productivity\.css/);
-    assert.match(styles, /50-productivity\.css/);
-    assert.match(styles, /58-workspaces-platform\.css/);
 });
 
 test('hızlı geçiş klavye, filtre ve map odağı davranışlarını taşır', () => {

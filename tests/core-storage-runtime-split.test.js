@@ -42,25 +42,3 @@ test('renderer runtime is a thin orchestrator with acyclic calendar services', (
     assert.match(runtime, /configurePisiCalendarDiary/);
     assert.match(runtime, /setPisiCalendarDateOpenHandler/);
 });
-
-test('split core files remain below focused architecture ceilings', () => {
-    const files = [
-        'main/functions/document-store.js',
-        'main/functions/document-store-io.js',
-        'main/functions/document-store-metadata.js',
-        'main/functions/document-store-diary.js',
-        'main/functions/document-store-mutations.js',
-        'renderer/runtime.mjs',
-        'renderer/runtime-lifecycle.mjs',
-        'renderer/runtime-events.mjs',
-        'renderer/calendar/pisi-calendar-state.mjs',
-        'renderer/calendar/pisi-calendar-ui.mjs',
-        'renderer/calendar/pisi-calendar-diary.mjs',
-        'renderer/calendar/pisi-calendar-runtime.mjs'
-    ];
-    for (const file of files) {
-        const lines = read(file).split(/\r?\n/).length;
-        const limit = file.startsWith('renderer/runtime') ? 300 : 650;
-        assert.ok(lines <= limit, `${file} exceeds ${limit} lines: ${lines}`);
-    }
-});

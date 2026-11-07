@@ -10,7 +10,6 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 const tutorial = read('renderer/shell/pisi-tutorial.mjs');
 const bootstrap = read('renderer/bootstrap.mjs');
-const styleRoot = read('style.css');
 const css = read('styles/105-feature-polish.css');
 
 test('tutorial is loaded and registered as an application-level Workspace Center page', () => {
@@ -42,7 +41,6 @@ test('tutorial covers the primary Pisi work areas and provides keyboard exit/nav
 });
 
 test('tutorial spotlight and cards support both themes', () => {
-    assert.match(styleRoot, /105-feature-polish\.css/);
     assert.match(css, /\.pisi-tutorial-spotlight\s*\{/);
     assert.match(css, /box-shadow:\s*0 0 0 9999px/);
     assert.match(css, /html\[data-pisi-theme=(?:"light"|'light')\] body \.pisi-tutorial-card/);

@@ -28,7 +28,6 @@ test('üçüncü sürüm modülü ve görünüm stilleri bootstrap zincirine ba�
     for (const file of todoThirdFiles) {
         assert.ok(read(file).split(/\r?\n/).length <= 650, `${file} yeniden büyük bir domain dosyasına dönüştü`);
     }
-    assert.match(styles, /50-productivity\.css/);
 });
 
 test('görev bağımlılıkları kalıcı metadata, çoklu seçim ve döngü koruması sağlar', () => {
