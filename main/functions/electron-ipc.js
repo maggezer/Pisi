@@ -422,6 +422,8 @@ function lockProjectFolder(folderPath) {
 }
 
 function unlockProjectFolder() {
+    // Keep the latest state of stores changed since their last snapshot.
+    modules['main.storeHistory']?.flushPisiStoreHistory('close');
     stopProjectWatcher();
 
     if (activeProjectLockPath && fs.existsSync(activeProjectLockPath)) {

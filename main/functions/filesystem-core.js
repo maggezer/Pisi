@@ -308,8 +308,25 @@ function resolvePisiAtomicBackupPath(targetPath, options = {}) {
     return `${targetPath}${backupStorage.PISI_BACKUP_SUFFIX}`;
 }
 
+// Listeners told right before a file is atomically overwritten (store history
+// snapshots the previous state there). A failing listener never blocks a write.
+const pisiAtomicWriteListeners = new Set();
+
+function addPisiAtomicWriteListener(listener) {
+    if (typeof listener !== 'function') return () => {};
+    pisiAtomicWriteListeners.add(listener);
+    return () => pisiAtomicWriteListeners.delete(listener);
+}
+
 function writeFileAtomic(filePath, content, options = {}) {
     const targetPath = path.resolve(filePath);
+    for (const listener of pisiAtomicWriteListeners) {
+        try {
+            listener(targetPath);
+        } catch (error) {
+            console.warn('[PISI] Yazım dinleyicisi hata verdi:', error?.message || error);
+        }
+    }
     const directoryPath = path.dirname(targetPath);
     const baseName = path.basename(targetPath);
     const tempPath = path.join(directoryPath, `.${baseName}.${process.pid}.${crypto.randomUUID()}.tmp`);
@@ -574,6 +591,12 @@ Object.defineProperties(moduleApi, {
         enumerable: true,
         get() {
             return writeFileAtomic;
+        }
+    },
+    addPisiAtomicWriteListener: {
+        enumerable: true,
+        get() {
+            return addPisiAtomicWriteListener;
         }
     },
     writePisiDocument: {

@@ -60,6 +60,7 @@
             "readJsonFileSafe",
             "fsyncDirectoryBestEffort",
             "writeFileAtomic",
+            "addPisiAtomicWriteListener",
             "writePisiDocument",
             "writePisiDocumentsTransaction",
             "backupCorruptPisiFile",
@@ -317,6 +318,17 @@
         "module": "main.projectRead",
         "path": "main/functions/project-read-client.js",
         "bindings": ["runPisiProjectRead", "readPisiJsonFilesBatched", "sendPisiProgress", "isPisiReadWorkerActive", "stopPisiReadWorker"]
+    },
+    {
+        "module": "main.storeHistory",
+        "path": "main/functions/store-history.js",
+        "bindings": [
+            "handlePisiStoreHistoryWrite",
+            "flushPisiStoreHistory",
+            "restorePisiStoreHistoryForPayload",
+            "restorePisiTaskProjections",
+            "installPisiStoreHistory"
+        ]
     },
     {
         "module": "main.perfProbe",
