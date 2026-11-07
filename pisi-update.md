@@ -1,5 +1,35 @@
 # PISI Güncelleme Takip Dosyası
 
+## 07-11-2026 — Yerel hata kaydı ve çökme yönetimi
+
+- Yerel log: `userData/logs/pisi-YYYY-MM-DD.log`, satır başına bir JSON
+  (zaman, seviye, modül, mesaj, hata yığını). Dosya 2 MB'ı geçince
+  `pisi-DATE.1.log` … açılır (günde en çok 5 parça); 14 günden eski dosyalar
+  silinir (`main/functions/logger-core.js`, `main/functions/logger.js`).
+- Gizlilik: proje içi yollar göreli yazılır, uygulama klasörü `app:`, ev
+  dizinindeki yollar `<home>/…/dosya`, diğer mutlak yollar `<path>/dosya` olur.
+  `content`, `html`, `text` gibi içerik taşıyabilecek alanlar loglanmaz.
+  Hiçbir veri dışarı gönderilmez (telemetri yok).
+- Main'deki `console.warn` / `console.error` çağrıları da loga gider. Renderer
+  `error` ve `unhandledrejection` olayları `window.pisiDiagnostics.report`
+  üzerinden main'e iletilir (dakikada en çok 20 kayıt; fazlası özetlenir).
+- Çökme ve donma (`main/functions/crash-handling.js`): renderer süreci
+  kapanınca olay loglanır ve "Pencere beklenmedik şekilde kapandı" penceresi
+  "Yeniden yükle" / "Kapat" sunar. Pencere yanıt vermeyince "Bekle" /
+  "Yeniden yükle" sorulur; yeniden yanıt verirse soru kendiliğinden kapanır.
+  `uncaughtException` eşzamanlı loglanır ve "Yeniden başlat" / "Devam et"
+  sunulur; logger yalnız kendi klasörüne yazdığı için yarım kalan bir kayıt
+  mevcut atomik mutation kurtarmasıyla proje açılışında tamamlanır ya da geri
+  alınır. `unhandledRejection` ve GPU gibi yardımcı süreç çökmeleri loglanır.
+- Ayarlar → Tanılama: "Log klasörünü aç" ve "Tanılama paketi oluştur" (son 3
+  günün logları + uygulama, Electron, Chrome, Node ve işletim sistemi
+  sürümleri; not içeriği yok) ZIP olarak kaydedilir.
+- Testler: `tests/logger-core.test.mjs` (döndürme, saklama, gizlilik filtresi,
+  hız sınırı), `tests/logger-process.test.mjs`, `tests/crash-handling.test.mjs`
+  (Electron stub'lı; `render-process-gone` işleyicisi kuruluyor ve loglanıyor),
+  `scripts/electron-diagnostics-e2e.mjs` (gerçek renderer çökmesi ve tanılama
+  paketi).
+
 ## 07-11-2026 — Tarayıcı uyarıları yerine uygulama içi bildirimler
 
 - Renderer'daki 107 `alert()` ve 12 `confirm()` çağrısı kaldırıldı.

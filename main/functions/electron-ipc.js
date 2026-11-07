@@ -496,6 +496,7 @@ function createWindow() {
 
     guardPisiWindowNavigation(mainWindow.webContents);
     modules['main.windowShell']?.attachPisiWindowShell(mainWindow);
+    modules['main.crashHandling']?.attachPisiCrashHandling(mainWindow);
 
     mainWindow.webContents.session.setPermissionCheckHandler(() => false);
     mainWindow.webContents.session.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));

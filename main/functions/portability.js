@@ -775,6 +775,7 @@ const moduleApi = {
     getPisiNodeHistoryVersion,
     restorePisiNodeHistoryVersion,
     makePisiDocxBuffer,
+    makePisiStoredZip,
     exportPisiNodeDocument,
     buildPisiNodePrintHtml,
     exportPisiMapGraphic,

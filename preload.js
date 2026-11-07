@@ -193,6 +193,23 @@ contextBridge.exposeInMainWorld('pisiSync', {
     disconnect: () => ipcRenderer.invoke('pisi-sync:disconnect')
 });
 
+// Renderer errors for the local log only (main validates, clips and rate-limits).
+contextBridge.exposeInMainWorld('pisiDiagnostics', {
+    report: (report = {}) => {
+        /** @type {Record<string, unknown>} */
+        const value = report && typeof report === 'object' ? /** @type {Record<string, unknown>} */ (report) : {};
+        const text = (field, limit) => (typeof value[field] === 'string' ? value[field].slice(0, limit) : '');
+        ipcRenderer.send('pisi:diagnostics-report', {
+            kind: value.kind === 'unhandledrejection' ? 'unhandledrejection' : 'error',
+            message: text('message', 2000),
+            stack: text('stack', 8000),
+            source: text('source', 300),
+            line: Number(value.line) || 0,
+            column: Number(value.column) || 0
+        });
+    }
+});
+
 contextBridge.exposeInMainWorld('pisiShell', {
     // Main validates the URL again; only http, https and mailto are ever opened.
     openExternal: (url) => ipcRenderer.invoke('shell:open-external', typeof url === 'string' ? url : '')
