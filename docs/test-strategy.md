@@ -231,4 +231,5 @@ Windows'a özgü kurallar:
 - **Satır sonları:** `.gitattributes` her checkout'ta LF tutar.
 - **Geçici klasörler:** `fs.realpath` ile çözülür, çünkü `os.tmpdir()` 8.3 kısa ad döndürebilir (`RUNNER~1`).
 - **Dosya kilitleri (EBUSY/EPERM):** silmeler `maxRetries` ile yapılır.
+- **Yerleşim:** yerleşime bağlı E2E betikleri görünüm alanını CDP ile 1400×900'e sabitler (`Emulation.setDeviceMetricsOverride`) ve odak öykünmesini açar, çünkü Windows runner'ı pencereyi küçük ekrana sığdırır ve arka planda tutar.
 - **Yollar:** `path.join` ile kurulur. Karşılaştırmadan önce `/` biçimine çevrilir.

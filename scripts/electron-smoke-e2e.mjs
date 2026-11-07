@@ -131,6 +131,11 @@ try {
     cdp = new CdpClient(page.webSocketDebuggerUrl);
     await cdp.open();
     await cdp.request('Runtime.enable');
+    // Same layout on every OS: a fixed 1400×900 viewport (the default window size) and a
+    // focused page, even where the OS shrinks the window to a small screen or keeps it
+    // in the background (Windows CI runners).
+    await cdp.request('Emulation.setDeviceMetricsOverride', { width: 1400, height: 900, deviceScaleFactor: 1, mobile: false });
+    await cdp.request('Emulation.setFocusEmulationEnabled', { enabled: true });
 
     const startup = await waitForRendererState(cdp);
     const expectedProject = path.resolve(projectPath);
