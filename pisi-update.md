@@ -1,5 +1,13 @@
 # PISI Güncelleme Takip Dosyası
 
+## 07-11-2026 — 0.11.2 Beta yayını
+
+- Sürüm `0.11.2` oldu; sürüm notu `docs/releases/v0.11.2.md`.
+- `v0.11.1` etiketinde paketler derlenmiş ama yayın adımı, o etiket için
+  önceden elle açılmış release nedeniyle düşmüştü (sonradan düzeltildi).
+  `0.11.2`, `v0.11.0`'dan bu yana gelen değişiklikleri son kullanıcı denemesi
+  için paketli olarak yayınlar.
+
 ## 07-11-2026 — Windows E2E, kapsam raporu ve kaynak okuyan testlerin ayıklanması
 
 - Electron E2E artık bir matris olarak koşuyor:
