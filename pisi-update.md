@@ -1,5 +1,26 @@
 # PISI Güncelleme Takip Dosyası
 
+## 07-11-2026 — Sağ tık menüsü, arayüz yakınlaştırma ve yazdırma
+
+- Uygulama menüsü kaldırıldığı için eksik kalanlar main süreçten geliyor
+  (`main/functions/window-shell.js`).
+- Sağ tık menüsü: düzenlenebilir alanlarda Kes, Kopyala, Yapıştır, Biçimsiz
+  yapıştır, Tümünü seç; bağlantı üzerinde "Bağlantıyı aç" ve "Bağlantıyı
+  kopyala" (yalnız dış URL politikasının izin verdiği adreslerde); yazım hatalı
+  kelimede en çok 5 öneri ve "Sözlüğe ekle". Harita, Sheet ve görev önceliği
+  menüleri kendi menülerini gösterir; orada yerel menü çıkmaz.
+- Yazım denetimi Türkçe ve İngilizce (arayüz dili önce); Ayarlar → Görünüm'den
+  kapatılabilir. macOS sistem denetleyicisini kullanır.
+- Arayüz yakınlaştırma: Mod+= / Mod+- / Mod+0, %80–%200, %10 adım. Seviye
+  kalıcıdır ve Ayarlar → Görünüm'den seçilebilir. Kural: bu tuşlar haritada da
+  arayüzü yakınlaştırır; harita zoom'u tekerlek, pinch ve harita düğmeleriyle
+  yapılır. Komutlar kısayol çakışma denetimine dahildir.
+- Yazdır: komut paletinde, notun Dışa aktar panelinde ve Mod+Alt+P ile. PDF
+  dışa aktarma şablonu sistem yazdırma penceresine gönderilir. Mod+P proje
+  araması olarak kaldı.
+- Testler: `tests/window-shell-core.test.mjs`, `scripts/electron-shell-e2e.mjs`
+  (menü ve yazdırma test modunda yakalanır; zoom yeniden başlatmada korunur).
+
 ## 07-11-2026 — Notta bul ve değiştir
 
 - Orta editörde ve modal editörde Mod+F bul çubuğunu açar. Eşleşmeler yazarken
