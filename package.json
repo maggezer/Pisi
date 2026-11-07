@@ -37,7 +37,8 @@
         "asar": true,
         "asarUnpack": [
             "main/functions/project-read-worker.js",
-            "main/functions/project-read-core.js"
+            "main/functions/project-read-core.js",
+            "main/functions/external-backup-core.js"
         ],
         "directories": {
             "output": "dist"

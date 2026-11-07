@@ -90,6 +90,7 @@ import './data/pisi-rollup-blocks.mjs';
 import './data/pisi-node-properties-ui.mjs';
 import './portability/pisi-store-history-panel.mjs';
 import './portability/pisi-portability-panel.mjs';
+import './portability/pisi-backup-settings.mjs';
 import './portability/pisi-project-integrity.mjs';
 import './editor/pisi-node-preview.mjs';
 import './map/pisi-map-interactions.mjs';

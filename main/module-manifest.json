@@ -331,6 +331,18 @@
         ]
     },
     {
+        "module": "main.externalBackup",
+        "path": "main/functions/external-backup.js",
+        "bindings": [
+            "getPisiBackupStatus",
+            "choosePisiBackupFolder",
+            "runPisiProjectBackup",
+            "restorePisiProjectBackup",
+            "handlePisiBackupProjectOpened",
+            "installPisiExternalBackup"
+        ]
+    },
+    {
         "module": "main.perfProbe",
         "path": "main/functions/perf-probe.js",
         "bindings": ["readPisiPerfProbe", "installPisiPerfProbe"]

@@ -403,6 +403,7 @@ function tryLockProjectFolder(folderPath) {
 
         console.log('[PISI] Proje klasörü kilitlendi:', realFolderPath);
         modules['main.reminderService']?.handlePisiReminderProjectChanged?.();
+        modules['main.externalBackup']?.handlePisiBackupProjectOpened?.();
         return {
             ok: true,
             folderPath: realFolderPath
