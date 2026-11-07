@@ -159,8 +159,8 @@ async function measure(cdp, label, expression) {
     // A blocked loop is recorded when its delayed timer finally runs: wait for it.
     await new Promise((resolve) => setTimeout(resolve, 150));
     const delay = await loop(cdp, true);
-    console.log(`[perf] ${label}: ${wallMs} ms, loop max ${delay.maxMs} ms, p99 ${delay.p99Ms} ms`);
-    return { label, wallMs, loopMaxMs: delay.maxMs, loopP99Ms: delay.p99Ms, watchers: delay.watchers, value };
+    console.log(`[perf] ${label}: ${wallMs} ms, loop max ${delay.maxMs} ms, gap ${delay.maxGapMs} ms, p99 ${delay.p99Ms} ms`);
+    return { label, wallMs, loopMaxMs: delay.maxMs, gapMs: delay.maxGapMs, loopP99Ms: delay.p99Ms, watchers: delay.watchers, value };
 }
 
 async function runSize(size, index) {

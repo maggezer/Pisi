@@ -7,7 +7,7 @@ import { modules, registerMainModule } from '../module-registry.js';
 // Used by scripts/electron-project-performance.mjs; not registered otherwise.
 
 const PISI_PERF_RESOLUTION_MS = 10;
-const probe = { histogram: null };
+const probe = { histogram: null, last: 0, maxGap: 0 };
 
 function isPisiPerfProbeEnabled() {
     return !app.isPackaged && process.env.PISI_TEST_PERF === '1';
@@ -21,9 +21,15 @@ function readPisiPerfProbe(reset = false) {
         maxMs: toMs(histogram?.max),
         p99Ms: toMs(histogram?.percentile(99)),
         meanMs: toMs(histogram?.mean),
+        // A plain 10 ms heartbeat: the longest gap between two beats, as a cross-check.
+        maxGapMs: Math.max(0, probe.maxGap - PISI_PERF_RESOLUTION_MS),
         watchers: modules['main.runtime']?.projectWatchers?.size ?? null
     };
-    if (reset) histogram?.reset();
+    if (reset) {
+        histogram?.reset();
+        probe.maxGap = 0;
+        probe.last = Date.now();
+    }
     return result;
 }
 
@@ -31,6 +37,13 @@ function installPisiPerfProbe() {
     if (!isPisiPerfProbeEnabled()) return false;
     probe.histogram = monitorEventLoopDelay({ resolution: PISI_PERF_RESOLUTION_MS });
     probe.histogram.enable();
+    probe.last = Date.now();
+    const beat = setInterval(() => {
+        const now = Date.now();
+        probe.maxGap = Math.max(probe.maxGap, now - probe.last);
+        probe.last = now;
+    }, PISI_PERF_RESOLUTION_MS);
+    beat.unref?.();
     modules['main.domainCommandQuery'].registerPisiDomainQuery('perf.test.loop.v1', (payload = {}) => readPisiPerfProbe(payload.reset === true));
     return true;
 }
