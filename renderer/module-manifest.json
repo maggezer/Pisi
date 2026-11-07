@@ -973,6 +973,11 @@
         ]
     },
     {
+        "module": "portability.storeHistory",
+        "path": "renderer/portability/pisi-store-history-panel.mjs",
+        "bindings": ["formatPisiStoreHistoryDiff", "restorePisiStoreHistoryVersion", "renderPisiHistoryTabs"]
+    },
+    {
         "module": "portability.panel",
         "path": "renderer/portability/pisi-portability-panel.mjs",
         "bindings": [

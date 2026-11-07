@@ -154,16 +154,33 @@ function escapePisiTaskText(value) {
     return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 }
 
-/** A task block in the quick-capture format, with the task's own block id and tag (so its id stays the same). */
+/** A task block in the same markup as the renderer's makePisiTaskSyntheticHtml, with the task's own id, block id and tag. */
 function makePisiRestoredTaskBlock(task) {
-    const tag = escapePisiTaskText(String(task.todoTag || `todo.${task.priority || 3}.none`).toLowerCase());
-    const status = task.status === 'done' ? 'done' : 'todo';
-    const done = status === 'done' ? ' <span class="pisi-user-tag pisi-task-metadata" data-pisi-tag="done" contenteditable="false">done</span>' : '';
-    return (
-        `<div class="pisi-editor-block" data-pisi-block-id="${escapePisiTaskText(task.source.blockId)}">` +
-        `<span class="pisi-todo-source" data-pisi-todo-for="${tag}">${escapePisiTaskText(task.title)}</span> ` +
-        `<span class="pisi-user-tag" data-pisi-tag="${tag}" data-pisi-todo-status="${status}" contenteditable="false">${tag}</span>${done}</div>`
-    );
+    const e = escapePisiTaskText;
+    const tag = e(String(task.todoTag || `todo.${task.priority || 3}.none`).toLowerCase());
+    const dependencies = Array.isArray(task.dependencies) ? task.dependencies : [];
+    const parent = dependencies.length ? `dep:${dependencies.map((id) => encodeURIComponent(id)).join('|')}` : '';
+    const attrs = [
+        `data-pisi-tag="${tag}"`,
+        `data-pisi-task-id="${e(task.id)}"`,
+        `data-pisi-todo-status="${e(task.status === 'done' ? 'todo' : task.status || 'todo')}"`,
+        `data-pisi-todo-repeat="${e(task.repeat || 'none')}"`,
+        `data-pisi-todo-order="${Number(task.manualOrder) || 0}"`
+    ];
+    if (parent) attrs.push(`data-pisi-todo-parent="${e(parent)}"`);
+    if (task.scheduledAt) attrs.push(`data-pisi-todo-scheduled-at="${e(task.scheduledAt)}"`);
+    if (task.deadline) attrs.push(`data-pisi-todo-deadline="${e(task.deadline)}"`);
+    if (task.reminderAt) attrs.push(`data-pisi-todo-reminder-at="${e(task.reminderAt)}"`);
+    if (Number(task.durationMinutes) > 0) attrs.push(`data-pisi-todo-duration-minutes="${Number(task.durationMinutes)}"`);
+    if (Number(task.actualMinutes) > 0) attrs.push(`data-pisi-todo-actual-minutes="${Number(task.actualMinutes)}"`);
+    if (Number(task.completionOffsetDays) > 0) attrs.push(`data-pisi-todo-completion-offset-days="${Number(task.completionOffsetDays)}"`);
+    const done = task.status === 'done' ? '<span class="pisi-user-tag pisi-task-metadata" data-pisi-tag="done">done</span>' : '';
+    return [
+        `<div class="pisi-editor-block" data-pisi-block-id="${e(task.source.blockId)}" data-pisi-task-id="${e(task.id)}">`,
+        `<span class="pisi-todo-source" data-pisi-todo-for="${tag}">${e(task.title)}</span> `,
+        `<span class="pisi-user-tag pisi-task-metadata" ${attrs.join(' ')}>${tag}</span>${done}`,
+        '</div>'
+    ].join('');
 }
 
 /**
