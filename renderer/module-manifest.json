@@ -894,6 +894,20 @@
         ]
     },
     {
+        "module": "editor.findReplace",
+        "path": "renderer/editor/pisi-find-replace.mjs",
+        "bindings": [
+            "pisiFindState",
+            "openPisiFind",
+            "closePisiFind",
+            "refreshPisiFind",
+            "stepPisiFind",
+            "replacePisiFindCurrent",
+            "replacePisiFindAll",
+            "initializePisiFindReplace"
+        ]
+    },
+    {
         "module": "editor.links",
         "path": "renderer/editor/pisi-editor-links.mjs",
         "bindings": ["pisiLinkState", "openPisiExternalLink", "openPisiLinkDialog", "closePisiLinkDialog", "initializePisiEditorLinks"]

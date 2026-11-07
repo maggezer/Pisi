@@ -105,3 +105,25 @@ announced through a polite live region. Alignment, distribution and auto layout
 are in the node context menu (long press on touch screens) and the command
 palette. While dragging, guides snap to other nodes' edges and centres; with
 "Snap to grid" on, positions snap to 20 px. Alt turns snapping off during a drag.
+
+## Find and replace
+
+| Focus                                        | Mod+F                                 | Replace (Mod+H; Cmd+Alt+F on macOS) |
+| -------------------------------------------- | ------------------------------------- | ----------------------------------- |
+| Center or modal note editor, or the find bar | Opens the note's find bar             | Opens it with the replace row       |
+| Sheet cell or a control inside a Sheet       | Focuses that Sheet's own search field | No effect                           |
+| Map, tree or anything else                   | No effect                             | No effect                           |
+
+In the find bar Enter and Shift+Enter (or F3 / Shift+F3) go to the next and
+previous match and Esc closes the bar, leaving the current match selected in the
+note. In the replace field Enter replaces the current match and Mod+Enter
+replaces all. Matching folds case with Turkish rules (İ↔i, I↔ı) unless "Match
+case" is on; "Whole word" treats Unicode letters, digits and `_` as word
+characters. A match may span formatted text inside one block but never two
+blocks.
+
+Only editable text is searched and replaced: task markers and metadata, tags,
+`[[links]]`, Paint, Sheet, rollup, image and file blocks and anything
+`contenteditable="false"` are skipped, and attributes such as block and task ids
+are never touched. Highlights use the CSS Custom Highlight API, so the saved
+HTML never contains find markers. "Replace all" is one undo step.

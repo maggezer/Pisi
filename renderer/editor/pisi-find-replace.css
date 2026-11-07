@@ -1,0 +1,81 @@
+/* Find and replace bar (pisi-find-replace.mjs). It sits above the editor, outside it. */
+.pisi-find-bar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0 0 8px auto;
+    padding: 6px 8px;
+    width: min(560px, 100%);
+    border: 1px solid var(--border-color, rgba(127, 127, 127, 0.35));
+    border-radius: 8px;
+    background: var(--panel-bg, #1f2125);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.pisi-find-bar[hidden],
+.pisi-find-replace-row[hidden] {
+    display: none;
+}
+
+.pisi-find-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.pisi-find-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 4px 8px;
+    border: 1px solid var(--border-color, rgba(127, 127, 127, 0.35));
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+}
+
+.pisi-find-bar.pisi-find-empty [data-pisi-find-input] {
+    border-color: #c0392b;
+}
+
+.pisi-find-counter {
+    min-width: 3.5em;
+    text-align: center;
+    opacity: 0.75;
+    font-size: 0.85em;
+    font-variant-numeric: tabular-nums;
+}
+
+.pisi-find-button {
+    padding: 3px 7px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.85em;
+}
+
+.pisi-find-button:hover,
+.pisi-find-button:focus-visible,
+.pisi-find-button[aria-pressed='true'] {
+    border-color: var(--accent-color, #f39c12);
+}
+
+.pisi-find-button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+::highlight(pisi-find-match) {
+    background-color: color-mix(in srgb, #f1c40f 45%, transparent);
+}
+
+::highlight(pisi-find-current) {
+    background-color: #f39c12;
+    color: #1b1b1b;
+}
