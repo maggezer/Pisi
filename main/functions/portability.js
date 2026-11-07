@@ -668,26 +668,31 @@ async function exportPisiProjectMarkdown(projectFolder) {
           })
         : walkPisiFiles(projectFolder, (_filePath, name) => /\.(?:node|map)$/i.test(name));
     let exported = 0;
-    for (const [index, filePath] of files.entries()) {
-        // One short synchronous read per document; writes are async and the
-        // loop yields every few files, so the main process stays responsive.
-        if (index % 20 === 0) {
-            await new Promise((resolve) => globalThis.setImmediate(resolve));
-            reader?.sendPisiProgress('export', index, files.length);
+    const createdFolders = new Set();
+    // Documents in groups of 20: one short synchronous read each, then the
+    // group's writes run in parallel (fs/promises) before the next group.
+    for (let offset = 0; offset < files.length; offset += 20) {
+        reader?.sendPisiProgress('export', offset, files.length);
+        const writes = [];
+        for (const filePath of files.slice(offset, offset + 20)) {
+            const info = getPisiDocument(filePath, { hydrateEditorAssets: true });
+            if (!info.ok) continue;
+            const isNode = info.metadata.type === 'node';
+            const relative = getPisiPortableRelativePath(projectFolder, filePath, isNode ? 'md' : 'map.json');
+            const target = path.join(destination, relative);
+            const folder = path.dirname(target);
+            if (!createdFolders.has(folder)) {
+                fs.mkdirSync(folder, { recursive: true });
+                createdFolders.add(folder);
+            }
+            const text = isNode
+                ? pisiPropertiesFrontmatter(info.data.properties) +
+                  pisiHtmlToMarkdown(pisiLinkPaintImagesForMarkdown(info.data.content, target, info.sidecarPath))
+                : JSON.stringify(info.data.map || {}, null, 2);
+            writes.push(fsPromises.writeFile(target, text, 'utf8'));
+            exported += 1;
         }
-        const info = getPisiDocument(filePath, { hydrateEditorAssets: true });
-        if (!info.ok) continue;
-        const isNode = info.metadata.type === 'node';
-        const relative = getPisiPortableRelativePath(projectFolder, filePath, isNode ? 'md' : 'map.json');
-        const target = path.join(destination, relative);
-        await fsPromises.mkdir(path.dirname(target), { recursive: true });
-        if (isNode) {
-            const content = pisiLinkPaintImagesForMarkdown(info.data.content, target, info.sidecarPath);
-            await fsPromises.writeFile(target, pisiPropertiesFrontmatter(info.data.properties) + pisiHtmlToMarkdown(content), 'utf8');
-        } else {
-            await fsPromises.writeFile(target, JSON.stringify(info.data.map || {}, null, 2), 'utf8');
-        }
-        exported += 1;
+        await Promise.all(writes);
     }
     reader?.sendPisiProgress('export', files.length, files.length);
     return { ok: true, destination, exported };

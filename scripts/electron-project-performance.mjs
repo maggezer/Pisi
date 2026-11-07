@@ -26,6 +26,12 @@ const sizes = String(process.env.PISI_PERF_SIZES || '1000,10000')
 const outputFolder = path.resolve(process.env.PISI_PERF_OUTPUT || os.tmpdir());
 const PISI_PERF_TIMEOUT = 20 * 60 * 1000;
 const RENAMES = 50;
+// PISI_PERF_STEPS=search,integrity,export,rename runs only those steps after the open.
+const wantedSteps = new Set(
+    String(process.env.PISI_PERF_STEPS || 'search,integrity,export,rename')
+        .split(',')
+        .map((step) => step.trim())
+);
 let child = null;
 let logs = '';
 
@@ -188,35 +194,40 @@ async function runSize(size, index) {
         console.log(`[perf] ${size} open: watchers ${openDelay.watchers}, loop max ${openDelay.maxMs} ms, gap ${openDelay.maxGapMs} ms`);
         if (process.env.PISI_PERF_OPEN_ONLY === '1') return { size, fixture: { notes: fixture.notes }, steps };
 
-        steps.push(
-            await measure(
-                cdp,
-                'Arama indeksi (ilk kurulum)',
-                '(async () => { const index = await window.ensurePisiSearchIndex({ force: true }); return index?.records?.length ?? null; })()'
-            )
-        );
-        steps.push(
-            await measure(
-                cdp,
-                'Project Integrity taraması',
-                `(async () => { const r = await window.pisiDomain.query('integrity.audit.v1', { projectFolder: ${JSON.stringify(projectPath)} }); return r?.ok ?? r; })()`
-            )
-        );
-        steps.push(
-            await measure(
-                cdp,
-                'Markdown dışa aktarma',
-                `(async () => { const r = await window.pisiProject.exportProjectMarkdown(${JSON.stringify(projectPath)}); return r?.exported ?? r; })()`
-            )
-        );
-        const renamePaths = fixture.notePaths.slice(1, 1 + RENAMES);
-        steps.push(
-            await measure(
-                cdp,
-                `Toplu yeniden adlandırma (${RENAMES} not)`,
-                `(async () => { let ok = 0; for (const p of ${JSON.stringify(renamePaths)}) { const r = await window.pisiProject.renamePisiFile(p, 'Yeni ' + p.split(/[\\\\/]/).pop().replace(/\\.node$/, '')); if (r?.ok) ok += 1; } return ok; })()`
-            )
-        );
+        if (wantedSteps.has('search'))
+            steps.push(
+                await measure(
+                    cdp,
+                    'Arama indeksi (ilk kurulum)',
+                    '(async () => { const index = await window.ensurePisiSearchIndex({ force: true }); return index?.records?.length ?? null; })()'
+                )
+            );
+        if (wantedSteps.has('integrity'))
+            steps.push(
+                await measure(
+                    cdp,
+                    'Project Integrity taraması',
+                    `(async () => { const r = await window.pisiDomain.query('integrity.audit.v1', { projectFolder: ${JSON.stringify(projectPath)} }); return r?.ok ?? r; })()`
+                )
+            );
+        if (wantedSteps.has('export'))
+            steps.push(
+                await measure(
+                    cdp,
+                    'Markdown dışa aktarma',
+                    `(async () => { const r = await window.pisiProject.exportProjectMarkdown(${JSON.stringify(projectPath)}); return r?.exported ?? r; })()`
+                )
+            );
+        if (wantedSteps.has('rename')) {
+            const renamePaths = fixture.notePaths.slice(1, 1 + RENAMES);
+            steps.push(
+                await measure(
+                    cdp,
+                    `Toplu yeniden adlandırma (${RENAMES} not)`,
+                    `(async () => { let ok = 0; for (const p of ${JSON.stringify(renamePaths)}) { const r = await window.pisiProject.renamePisiFile(p, 'Yeni ' + p.split(/[\\\\/]/).pop().replace(/\\.node$/, '')); if (r?.ok) ok += 1; } return ok; })()`
+                )
+            );
+        }
         await new Promise((resolve) => setTimeout(resolve, 1500));
         const after = await loop(cdp, false);
         steps.push({

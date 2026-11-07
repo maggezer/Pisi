@@ -69,7 +69,7 @@ export async function walkPisiProjectFiles(root, options = {}) {
 /**
  * Reads and parses JSON files: { path, ok, data, raw?, missing?, error? } per path, in order.
  * @param {string[]} paths
- * @param {{ raw?: boolean, concurrency?: number }} [options]
+ * @param {{ raw?: boolean, sidecars?: boolean, concurrency?: number }} [options]
  */
 export async function readPisiJsonFiles(paths, options = {}) {
     const results = new Array(paths.length);
@@ -81,7 +81,21 @@ export async function readPisiJsonFiles(paths, options = {}) {
             const filePath = paths[index];
             try {
                 const raw = await fs.readFile(filePath, 'utf8');
-                results[index] = { path: filePath, ok: true, data: JSON.parse(raw), ...(options.raw ? { raw } : {}) };
+                const data = JSON.parse(raw);
+                /** @type {{ path: string, ok: boolean, data: any, raw?: string, sidecarName?: string, sidecarIsDirectory?: boolean }} */
+                const result = { path: filePath, ok: true, data, ...(options.raw ? { raw } : {}) };
+                if (options.sidecars) {
+                    // Whether the document's managed sidecar folder exists (Project Integrity checks it).
+                    const sidecarName = String(data?.pisi?.sidecar || '');
+                    if (sidecarName) {
+                        result.sidecarName = sidecarName;
+                        result.sidecarIsDirectory = await fs.stat(path.join(path.dirname(filePath), sidecarName)).then(
+                            (stat) => stat.isDirectory(),
+                            () => false
+                        );
+                    }
+                }
+                results[index] = result;
             } catch (error) {
                 results[index] =
                     error?.code === 'ENOENT'

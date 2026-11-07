@@ -85,7 +85,11 @@ async function readPisiJsonFilesBatched(paths, options = {}) {
     const batchSize = Number(options.batchSize) || PISI_READ_BATCH;
     for (let offset = 0; offset < paths.length; offset += batchSize) {
         const batch = paths.slice(offset, offset + batchSize);
-        for (const result of await runPisiProjectRead('readJson', { paths: batch, options: { raw: options.raw === true } })) results.set(result.path, result);
+        for (const result of await runPisiProjectRead('readJson', {
+            paths: batch,
+            options: { raw: options.raw === true, sidecars: options.sidecars === true }
+        }))
+            results.set(result.path, result);
         options.onProgress?.(Math.min(paths.length, offset + batch.length), paths.length);
     }
     return results;
