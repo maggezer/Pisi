@@ -625,10 +625,18 @@ jobs:
 
                   mapfile -t assets < <(find final-release -maxdepth 1 -type f -print | sort)
 
-                  gh release create "v$version" "${assets[@]}" \
+                  tag="v$version"
+
+                  # The release may already exist (for example, when created manually
+                  # before the build finishes). Reuse it instead of failing on create.
+                  if ! gh release view "$tag" >/dev/null 2>&1; then
+                    gh release create "$tag" --verify-tag --draft
+                  fi
+
+                  gh release upload "$tag" "${assets[@]}" --clobber
+                  gh release edit "$tag" \
                     --title "Pisi $version Beta" \
-                    --notes-file "docs/releases/v$version.md" \
-                    --verify-tag \
+                    --notes-file "docs/releases/$tag.md" \
                     --prerelease
 
             - name: Clean up temporary release workflow artifacts
