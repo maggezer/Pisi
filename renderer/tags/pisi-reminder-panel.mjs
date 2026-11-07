@@ -216,7 +216,7 @@ function renderPisiReminderSettings(container) {
     const save = async (patch) => {
         const result = await pisiReminderCommand('reminder.settings.update.v1', patch);
         if (result?.ok) apply(result.settings);
-        else if (result?.error) window.alert(pisiReminderTranslate(result.error));
+        else if (result?.error) pisiNotifyError(pisiReminderTranslate(result.error));
     };
     time.addEventListener('change', () => time.value && save({ defaultTime: time.value }));
     tray.addEventListener('change', () => save({ keepRunningInTray: tray.checked }));

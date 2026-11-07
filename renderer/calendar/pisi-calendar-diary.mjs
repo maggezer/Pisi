@@ -142,7 +142,7 @@ async function openDiaryNodeForDate(isoDate) {
     const result = await window.pisiProject?.getOrCreateDiaryNode?.(window.currentProjectFolder, isoDate);
 
     if (!result?.ok) {
-        alert(result?.error || 'Diary node oluşturulamadı.');
+        pisiNotifyError(result?.error || 'Günlük notu oluşturulamadı.');
         return;
     }
 

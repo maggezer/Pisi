@@ -407,7 +407,7 @@ async function exportCurrentPisiMap(format) {
                 ? await window.withAllPisiMapNodesMounted(() => buildPisiMapExportSvg())
                 : buildPisiMapExportSvg();
         if (!snapshot.ok) {
-            alert(snapshot.error || 'Harita dışa aktarılamadı.');
+            pisiNotifyError(snapshot.error || 'Harita dışa aktarılamadı.');
             return;
         }
         const payload = {
@@ -422,11 +422,11 @@ async function exportCurrentPisiMap(format) {
 
         const result = await window.pisiProject?.exportMap?.(mapPath, payload);
         if (!result?.ok && !result?.canceled) {
-            alert(result?.error || 'Harita dışa aktarılamadı.');
+            pisiNotifyError(result?.error || 'Harita dışa aktarılamadı.');
         }
     } catch (error) {
         console.error('[Pisi] Map export failed:', error);
-        alert(error?.message || 'Harita dışa aktarılamadı.');
+        pisiNotifyError(error?.message || 'Harita dışa aktarılamadı.');
     } finally {
         if (trigger) {
             trigger.removeAttribute('aria-busy');

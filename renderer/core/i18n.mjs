@@ -1,5 +1,3 @@
-const nativeAlert = window.alert.bind(window);
-const nativeConfirm = window.confirm.bind(window);
 const nativePrompt = window.prompt.bind(window);
 
 const PISI_SUPPLEMENTAL_ATTRIBUTES = ['title', 'aria-label', 'alt', 'placeholder'];
@@ -156,8 +154,7 @@ async function initializePisiSupplementalTranslations() {
 }
 
 window.pisiT = translatePisiUiText;
-window.alert = (message) => nativeAlert(translatePisiUiText(message));
-window.confirm = (message) => nativeConfirm(translatePisiUiText(message));
+// alert() and confirm() are not used: see pisiNotify and pisiConfirm.
 window.prompt = (message, defaultValue = '') => {
     return nativePrompt(translatePisiUiText(message), defaultValue);
 };

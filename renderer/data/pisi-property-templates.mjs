@@ -77,7 +77,14 @@ async function renderPisiPropertyTemplateList(host, status) {
         remove.title = pisiPropertyTemplatesTranslate('Şablonu sil');
         remove.setAttribute('aria-label', `${pisiPropertyTemplatesTranslate('Şablonu sil')}: ${template.name}`);
         remove.addEventListener('click', async () => {
-            if (!confirm(pisiPropertyTemplatesTranslate('Bu property şablonu silinsin mi?'))) return;
+            if (
+                !(await pisiConfirm(pisiPropertyTemplatesTranslate('Bu özellik şablonu silinsin mi?'), {
+                    title: pisiPropertyTemplatesTranslate('Şablonu sil'),
+                    confirmText: pisiPropertyTemplatesTranslate('Sil'),
+                    danger: true
+                }))
+            )
+                return;
             remove.disabled = true;
             status.textContent = pisiPropertyTemplatesTranslate('Şablon siliniyor…');
             const deleteResult = await window.pisiProject?.deleteDatabaseTemplate?.(window.currentProjectFolder, template.id);

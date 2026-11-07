@@ -39,9 +39,9 @@ const operationalText = {
         reset: 'Reset',
         layoutName: 'Layout adı',
         cancel: 'İptal',
-        noSelection: 'Bir node seç.',
-        createFailed: 'Bağlı node oluşturulamadı.',
-        saveFailed: 'Operational map kaydedilemedi.',
+        noSelection: 'Bir not kartı seç.',
+        createFailed: 'Bağlı not oluşturulamadı.',
+        saveFailed: 'Operasyonel harita kaydedilemedi.',
         visible: 'görünür',
         blockedShort: 'blocked',
         overdueShort: 'geciken'
@@ -69,8 +69,8 @@ const operationalText = {
         reset: 'Reset',
         layoutName: 'Layout name',
         cancel: 'Cancel',
-        noSelection: 'Select a node.',
-        createFailed: 'Linked node could not be created.',
+        noSelection: 'Select a note card.',
+        createFailed: 'Linked note could not be created.',
         saveFailed: 'Operational map could not be saved.',
         visible: 'visible',
         blockedShort: 'blocked',
@@ -416,7 +416,7 @@ function bindPisiOperationalControls() {
 
     document.getElementById('pisi-map-operational-focus')?.addEventListener('click', () => {
         const selected = getSelectedOperationalNodeBox();
-        if (!selected) return alert(t('noSelection'));
+        if (!selected) return void pisiNotifyWarning(t('noSelection'));
         operationalState.scope.focusRootNodeId = selected.dataset.nodeId;
         operationalState.scope.focusDepth = Number(depth?.value) || 1;
         operationalState.scope.mode = 'neighbors';
@@ -441,12 +441,12 @@ function togglePisiOperationalDisplay(key) {
 
 async function createPisiOperationalLinkedNode() {
     const sourceBox = getSelectedOperationalNodeBox();
-    if (!sourceBox || !window.activeMapPath) return alert(t('noSelection'));
+    if (!sourceBox || !window.activeMapPath) return void pisiNotifyWarning(t('noSelection'));
     const mapPath = window.activeMapPath;
     const sourceId = sourceBox.dataset.nodeId;
     const created = await window.pisiProject?.createNodeUnderMap?.(mapPath);
     if (!created?.ok || !created.node?.id) {
-        return alert(created?.error || t('createFailed'));
+        return void pisiNotifyError(created?.error || t('createFailed'));
     }
     const x = parseFloat(sourceBox.style.left || '0') + sourceBox.offsetWidth + 120;
     const y = parseFloat(sourceBox.style.top || '0');
@@ -468,7 +468,7 @@ async function createPisiOperationalLinkedNode() {
         sourceRole: 'down-hub',
         targetRole: 'up-hub'
     });
-    if (!linked?.ok) return alert(linked?.error || t('createFailed'));
+    if (!linked?.ok) return void pisiNotifyError(linked?.error || t('createFailed'));
     // Undo sends the new node to Trash, which also archives its new relationship.
     window.recordPisiMapStep?.({ kind: 'node-create', mapPath, nodeId: created.node.id, nodePath: created.node.fullPath, trashId: null });
     await window.openMapInWorkspace?.(getPisiOperationalMapItem());
@@ -496,7 +496,7 @@ async function savePisiOperationalLayout() {
             display: operationalState.display
         }
     });
-    if (!result?.ok) return alert(result?.error || t('saveFailed'));
+    if (!result?.ok) return void pisiNotifyError(result?.error || t('saveFailed'));
     renderPisiOperationalLayoutOptions();
     const select = document.getElementById('pisi-map-operational-layout');
     if (select && result.operational?.savedLayouts?.length) {
@@ -517,7 +517,7 @@ async function restorePisiOperationalLayout() {
         collapsedHubs: Array.isArray(layout.camera?.collapsedHubs) ? layout.camera.collapsedHubs : [],
         operationalPayload: getOperationalPayload('update')
     });
-    if (!result?.ok) return alert(result?.error || t('saveFailed'));
+    if (!result?.ok) return void pisiNotifyError(result?.error || t('saveFailed'));
     await window.openMapInWorkspace?.(getPisiOperationalMapItem());
 }
 
@@ -528,7 +528,7 @@ async function deletePisiOperationalLayout() {
         op: 'delete-layout',
         layoutId: select.value
     });
-    if (!result?.ok) return alert(result?.error || t('saveFailed'));
+    if (!result?.ok) return void pisiNotifyError(result?.error || t('saveFailed'));
     renderPisiOperationalLayoutOptions();
 }
 

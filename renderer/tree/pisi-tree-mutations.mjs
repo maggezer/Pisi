@@ -227,7 +227,7 @@ export async function createNodeUnderMapFromTree(mapItem, mapNodeEl) {
     const result = await window.pisiProject?.createNodeUnderMap?.(mapItem.fullPath);
 
     if (!result || !result.ok) {
-        alert(result?.error || 'Map altında node oluşturulamadı.');
+        pisiNotifyError(result?.error || 'Harita altında not oluşturulamadı.');
         return;
     }
 

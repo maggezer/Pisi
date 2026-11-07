@@ -17,7 +17,7 @@ const text = {
         remove: 'Sil',
         dim: 'Filtrelenenleri soldur',
         scopeName: 'Scope adı',
-        noVisible: 'Dondurulacak görünür node yok.',
+        noVisible: 'Dondurulacak görünür not yok.',
         saveFailed: 'Scope kaydedilemedi.',
         contains: 'içerir',
         equals: 'eşittir',
@@ -44,7 +44,7 @@ const text = {
         remove: 'Delete',
         dim: 'Dim filtered',
         scopeName: 'Scope name',
-        noVisible: 'There are no visible nodes to freeze.',
+        noVisible: 'There are no visible notes to freeze.',
         saveFailed: 'Scope could not be saved.',
         contains: 'contains',
         equals: 'equals',
@@ -235,10 +235,10 @@ async function capturePisiScopeSnapshot() {
     const current = state();
     const visible = current?.lastRender?.visibleNodeIds;
     const ids = visible instanceof Set ? [...visible] : [];
-    if (!ids.length) return alert(t('noVisible'));
+    if (!ids.length) return void pisiNotifyWarning(t('noVisible'));
     current.scope = normalizePisiOperationalScope({ ...current.scope, strategy: 'snapshot', includedNodeIds: ids });
     const result = await persist({ op: 'update', scope: current.scope, display: current.display });
-    if (!result?.ok) alert(result?.error || t('saveFailed'));
+    if (!result?.ok) pisiNotifyError(result?.error || t('saveFailed'));
 }
 
 function refreshPisiScopeSnapshot() {
@@ -281,7 +281,7 @@ async function savePisiCurrentScope() {
     });
     if (!name) return;
     const result = await persist({ op: 'save-scope', savedScope: { name, scope: current.scope } });
-    if (!result?.ok) return alert(result?.error || t('saveFailed'));
+    if (!result?.ok) return void pisiNotifyError(result?.error || t('saveFailed'));
     const select = document.getElementById('pisi-map-saved-scope');
     if (select && result.operational?.savedScopes?.length) select.value = result.operational.savedScopes.at(-1).id;
     renderSavedScopes();
@@ -294,7 +294,7 @@ async function applyPisiSavedScope() {
     if (!current || !saved) return;
     current.scope = normalizePisiOperationalScope(saved.scope);
     const result = await persist({ op: 'update', scope: current.scope, display: current.display });
-    if (!result?.ok) return alert(result?.error || t('saveFailed'));
+    if (!result?.ok) return void pisiNotifyError(result?.error || t('saveFailed'));
     void operational()?.loadPisiOperationalMapState?.(true);
 }
 
@@ -302,7 +302,7 @@ async function deletePisiSavedScope() {
     const id = document.getElementById('pisi-map-saved-scope')?.value;
     if (!id) return;
     const result = await persist({ op: 'delete-scope', scopeId: id });
-    if (!result?.ok) return alert(result?.error || t('saveFailed'));
+    if (!result?.ok) return void pisiNotifyError(result?.error || t('saveFailed'));
     renderSavedScopes();
 }
 

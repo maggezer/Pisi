@@ -53,7 +53,7 @@ function getPisiImageEditorFromRequest(detail = {}) {
 }
 
 function reportPisiImageError(code, fallback) {
-    window.alert(pisiImageTranslate(getPisiImageErrorMessage(code, fallback)));
+    pisiNotifyError(pisiImageTranslate(getPisiImageErrorMessage(code, fallback)));
 }
 
 function cachePisiImageBlob(reference, blob) {

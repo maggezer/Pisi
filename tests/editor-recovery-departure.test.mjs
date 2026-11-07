@@ -218,7 +218,8 @@ test('failed center reload does not block saving another modal document during e
     h.c.suppressNextFileSystemRefresh = () => {};
     h.c.animateMapBox = () => {};
     h.c.refreshPisiTagsPanelSoon = () => {};
-    h.c.alert = (message) => assert.fail(message);
+    h.c.pisiNotifyError = (message) => assert.fail(message);
+    h.c.pisiNotifyNoteSaveError = (message) => assert.fail(message);
     h.c.console = console;
     assert.equal(await h.c.flushPisiPendingSaves(), true);
     assert.equal(h.c.activeModalNode, null);

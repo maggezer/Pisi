@@ -110,7 +110,7 @@ export function startRenameTreeFile(item, row) {
             const result = await renamePisiItemWithLinkReview(renameSourcePath, newBaseName);
 
             if (!result || !result.ok) {
-                alert(result?.error || 'İsim değiştirilemedi.');
+                pisiNotifyError(result?.error || 'İsim değiştirilemedi.');
                 restoreName(oldName);
                 return;
             }
@@ -140,7 +140,7 @@ export function startRenameTreeFile(item, row) {
             animateTreeRow(row);
         } catch (error) {
             console.error('[PISI] Rename sırasında hata:', error);
-            alert('İsim değiştirilemedi: ' + error.message);
+            pisiNotifyError('İsim değiştirilemedi.', { detail: error?.message });
             restoreName(oldName);
         } finally {
             row.dataset.renaming = '0';

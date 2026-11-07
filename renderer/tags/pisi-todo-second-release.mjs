@@ -245,7 +245,7 @@ async function mutatePisiMissionDocumentSecondRelease(mission, mutate) {
             editor.dispatchEvent(new Event('input', { bubbles: true }));
             return {
                 ok: false,
-                error: result?.error || pisiTodoSecondTranslate('Node kaydedilemedi.')
+                error: result?.error || pisiTodoSecondTranslate('Not kaydedilemedi.')
             };
         }
         return { ok: true };
@@ -258,7 +258,7 @@ async function mutatePisiMissionDocumentSecondRelease(mission, mutate) {
                 const ok = await window.saveCurrentCenterNodeEditor();
                 return {
                     ok,
-                    error: ok ? '' : pisiTodoSecondTranslate('Node kaydedilemedi.')
+                    error: ok ? '' : pisiTodoSecondTranslate('Not kaydedilemedi.')
                 };
             }
             return window.pisiProject?.saveNodeContent?.(
@@ -300,7 +300,7 @@ async function mutatePisiMissionDocumentSecondRelease(mission, mutate) {
         ? { ok: true }
         : {
               ok: false,
-              error: result?.error || pisiTodoSecondTranslate('Node kaydedilemedi.')
+              error: result?.error || pisiTodoSecondTranslate('Not kaydedilemedi.')
           };
 }
 
@@ -479,7 +479,7 @@ function bindPisiMissionDragSecondRelease({ card, mission, list }) {
             .filter(Boolean);
         const result = await persistPisiMissionManualOrderSecondRelease(ordered);
         if (!result?.ok) {
-            alert(result?.error || pisiTodoSecondTranslate('Görev sırası kaydedilemedi.'));
+            pisiNotifyError(result?.error || pisiTodoSecondTranslate('Görev sırası kaydedilemedi.'));
         }
     });
 }
@@ -503,7 +503,7 @@ function enhancePisiMissionCardSecondRelease({ card, mission, list }) {
         const result = await setPisiMissionRepeatSecondRelease(mission, repeat.value);
         if (!result?.ok) {
             repeat.value = mission.repeat;
-            alert(result?.error || pisiTodoSecondTranslate('Tekrar ayarı kaydedilemedi.'));
+            pisiNotifyError(result?.error || pisiTodoSecondTranslate('Tekrar ayarı kaydedilemedi.'));
         }
         window.refreshPisiTagsPanelSoon?.();
     });

@@ -62,7 +62,10 @@ function setup() {
         updatePisiOpenTabAfterRename() {},
         clearTimeout,
         console,
-        alert: (message) => {
+        pisiNotifyError: (message) => {
+            throw new Error(message);
+        },
+        pisiNotifyNoteSaveError: (message) => {
             throw new Error(message);
         }
     };
@@ -155,8 +158,10 @@ test('failed modal content save after rename cannot recreate the old path throug
         h.writes.push(path);
         return { ok: false, error: 'write failed' };
     };
-    h.c.alert = () => {};
+    const saveErrors = [];
+    h.c.pisiNotifyNoteSaveError = (message, nodePath) => saveErrors.push({ message, nodePath });
     assert.equal(await h.c.closeNodeModalAndSave(), false);
+    assert.deepEqual(saveErrors, [{ message: 'write failed', nodePath: 'renamed.node' }], 'The save error links to the renamed note');
     assert.equal(h.center.path, 'renamed.node');
     assert.equal(h.c.activeModalNode.path, 'renamed.node');
     await h.c.saveCurrentCenterNodeEditor();

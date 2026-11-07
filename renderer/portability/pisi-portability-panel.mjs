@@ -92,7 +92,7 @@ async function renderPisiHistory(section, nodePath) {
         const preview = makePisiPortableButton('Önizle / karşılaştır');
         preview.addEventListener('click', async () => {
             const result = await window.pisiProject?.getNodeHistoryVersion?.(nodePath, version.historyId);
-            if (!result?.ok) return alert(result?.error || pisiPortableTranslate('Sürüm okunamadı.'));
+            if (!result?.ok) return void pisiNotifyError(result?.error || pisiPortableTranslate('Sürüm okunamadı.'));
             const existing = row.querySelector('.pisi-history-preview');
             if (existing) existing.remove();
             else row.appendChild(showPisiHistoryPreview(result, currentDocument));
@@ -106,7 +106,7 @@ async function renderPisiHistory(section, nodePath) {
             });
             if (!confirmed) return;
             const result = await restorePisiEditorDocument(nodePath, () => window.pisiProject?.restoreNodeHistory?.(nodePath, version.historyId));
-            if (!result?.ok) return alert(result?.error || pisiPortableTranslate('Sürüm geri yüklenemedi.'));
+            if (!result?.ok) return void pisiNotifyError(result?.error || pisiPortableTranslate('Sürüm geri yüklenemedi.'));
             invalidatePisiSearchIndex();
             await openPisiHistoryDialog();
         });
@@ -122,23 +122,23 @@ async function renderPisiHistory(section, nodePath) {
 
 async function runPisiImportAction(trigger = null) {
     if (!window.currentProjectFolder) {
-        alert(pisiPortableTranslate('Önce bir proje açın.'));
+        pisiNotifyWarning(pisiPortableTranslate('Önce bir proje açın.'));
         return false;
     }
     if (trigger) trigger.disabled = true;
     try {
         const result = await window.pisiProject?.importMarkdownFolder?.(window.currentProjectFolder);
         if (!result?.ok) {
-            alert(result?.error || pisiPortableTranslate('İçe aktarma başarısız.'));
+            pisiNotifyError(result?.error || pisiPortableTranslate('İçe aktarma başarısız.'));
             return false;
         }
         if (result.canceled) return false;
         invalidatePisiSearchIndex();
         await window.refreshCurrentProjectTree?.();
-        alert(`${pisiPortableTranslate('İçe aktarılan node')}: ${result.imported}`);
+        pisiNotifySuccess(`${pisiPortableTranslate('İçe aktarılan not')}: ${result.imported}`);
         return true;
     } catch (error) {
-        alert(error?.message || pisiPortableTranslate('İçe aktarma başarısız.'));
+        pisiNotifyError(error?.message || pisiPortableTranslate('İçe aktarma başarısız.'));
         return false;
     } finally {
         if (trigger) trigger.disabled = false;
@@ -147,22 +147,22 @@ async function runPisiImportAction(trigger = null) {
 
 async function runPisiProjectMarkdownExport(trigger = null) {
     if (!window.currentProjectFolder) {
-        alert(pisiPortableTranslate('Önce bir proje açın.'));
+        pisiNotifyWarning(pisiPortableTranslate('Önce bir proje açın.'));
         return false;
     }
     if (trigger) trigger.disabled = true;
     try {
         const result = await window.pisiProject?.exportProjectMarkdown?.(window.currentProjectFolder);
         if (!result?.ok) {
-            alert(result?.error || pisiPortableTranslate('Dışa aktarma başarısız.'));
+            pisiNotifyError(result?.error || pisiPortableTranslate('Dışa aktarma başarısız.'));
             return false;
         }
         if (!result.canceled) {
-            alert(`${pisiPortableTranslate('Dışa aktarılan belge')}: ${result.exported}`);
+            pisiNotifySuccess(`${pisiPortableTranslate('Dışa aktarılan belge')}: ${result.exported}`);
         }
         return !result.canceled;
     } catch (error) {
-        alert(error?.message || pisiPortableTranslate('Dışa aktarma başarısız.'));
+        pisiNotifyError(error?.message || pisiPortableTranslate('Dışa aktarma başarısız.'));
         return false;
     } finally {
         if (trigger) trigger.disabled = false;
@@ -193,10 +193,10 @@ function renderPisiExportActions(section, nodePath) {
             try {
                 const result = await window.pisiProject?.exportNode?.(nodePath, format[1]);
                 if (!result?.ok) {
-                    alert(result?.error || pisiPortableTranslate('Dışa aktarma başarısız.'));
+                    pisiNotifyError(result?.error || pisiPortableTranslate('Dışa aktarma başarısız.'));
                 }
             } catch (error) {
-                alert(error?.message || pisiPortableTranslate('Dışa aktarma başarısız.'));
+                pisiNotifyError(error?.message || pisiPortableTranslate('Dışa aktarma başarısız.'));
             } finally {
                 button.disabled = !nodePath;
             }
@@ -276,12 +276,13 @@ async function renderPisiBackups(section, nodePath) {
             const confirmed = await window.pisiConfirm?.(pisiPortableTranslate('Atomik yedek geri yüklensin mi?'), {
                 title: pisiPortableTranslate('Yedekten geri yükle'),
                 confirmText: pisiPortableTranslate('Geri yükle'),
-                cancelText: pisiPortableTranslate('Vazgeç')
+                cancelText: pisiPortableTranslate('Vazgeç'),
+                danger: true
             });
             if (!confirmed) return;
             const projectFolder = window.currentProjectFolder;
             const restored = await restorePisiEditorDocument(backup.targetPath, () => window.pisiProject?.restoreBackup?.(projectFolder, backup.backupId));
-            if (!restored?.ok) return alert(restored?.error || pisiPortableTranslate('Yedek geri yüklenemedi.'));
+            if (!restored?.ok) return void pisiNotifyError(restored?.error || pisiPortableTranslate('Yedek geri yüklenemedi.'));
             invalidatePisiSearchIndex();
             await openPisiHistoryDialog();
         });
@@ -380,12 +381,12 @@ async function openPisiPortabilityDialog(titleText, render, opener = null) {
     return true;
 }
 
-async function openPisiHistoryDialog(opener = null) {
+/** Version history and backups of `nodePath` (default: the open note). */
+async function openPisiHistoryDialog(opener = null, nodePath = getPisiSearchCurrentNodePath()) {
     if (!window.currentProjectFolder) {
-        alert(pisiPortableTranslate('Önce bir proje açın.'));
+        pisiNotifyWarning(pisiPortableTranslate('Önce bir proje açın.'));
         return false;
     }
-    const nodePath = getPisiSearchCurrentNodePath();
     return openPisiPortabilityDialog(
         'Yerel sürüm geçmişi',
         async (body) => {
@@ -400,7 +401,7 @@ async function openPisiHistoryDialog(opener = null) {
 
 async function openPisiExportDialog(opener = null) {
     if (!window.currentProjectFolder) {
-        alert(pisiPortableTranslate('Önce bir proje açın.'));
+        pisiNotifyWarning(pisiPortableTranslate('Önce bir proje açın.'));
         return false;
     }
     const nodePath = getPisiSearchCurrentNodePath();

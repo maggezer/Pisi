@@ -39,7 +39,7 @@ function getPisiExternalAnchor(target) {
 
 async function openPisiExternalLink(href) {
     const result = await window.pisiShell?.openExternal?.(href);
-    if (!result?.ok) window.alert(pisiLinkTranslate(result?.error || 'Bağlantı açılamadı.'));
+    if (!result?.ok) pisiNotifyError(pisiLinkTranslate(result?.error || 'Bağlantı açılamadı.'));
     return result;
 }
 
@@ -187,7 +187,7 @@ function openPisiLinkDialog(editor, range = null) {
     const anchor = getPisiAnchorAtRange(editor, targetRange);
     const startBlock = getPisiRangeBlock(editor, targetRange.startContainer);
     if (!anchor && startBlock !== getPisiRangeBlock(editor, targetRange.endContainer)) {
-        window.alert(pisiLinkTranslate('Bağlantı tek bir blok içindeki metne eklenebilir.'));
+        pisiNotifyWarning(pisiLinkTranslate('Bağlantı tek bir blok içindeki metne eklenebilir.'));
         return false;
     }
     const popover = ensurePisiLinkDialog();

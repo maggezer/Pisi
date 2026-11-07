@@ -38,14 +38,14 @@ async function createMapNodeBoxAtClientPoint(clientX, clientY) {
     const result = await window.pisiProject?.createNodeUnderMap?.(activeMapPath);
 
     if (!result || !result.ok) {
-        alert(result?.error || 'Node box oluşturulamadı.');
+        pisiNotifyError(result?.error || 'Not kartı oluşturulamadı.');
         return;
     }
 
     const node = result.node;
 
     if (!node) {
-        alert('Node oluşturuldu ama map içine eklenemedi. Map’i yeniden açmayı dene.');
+        pisiNotifyWarning('Not oluşturuldu ama haritaya eklenemedi. Haritayı yeniden açmayı deneyin.');
         return;
     }
 

@@ -188,7 +188,14 @@ function makePisiTrashItemCard(item, rerender) {
         await rerender();
     });
     const permanent = makePisiTrashActionButton(pisiTrashText('deletePermanently'), 'pisi-trash-btn danger', async () => {
-        if (!window.confirm(pisiTrashText('confirmDelete'))) return;
+        if (
+            !(await pisiConfirm(pisiTrashText('confirmDelete'), {
+                title: pisiTrashText('deletePermanently'),
+                confirmText: pisiTrashText('deletePermanently'),
+                danger: true
+            }))
+        )
+            return;
         restore.disabled = true;
         permanent.disabled = true;
         const result = await commandPisiDomain('trash.delete-permanently.v1', {
@@ -227,7 +234,7 @@ async function renderPisiTrashPage(container) {
     headerActions.className = 'pisi-trash-header-actions';
     const refresh = makePisiTrashActionButton(pisiTrashText('refresh'), 'pisi-trash-btn', () => renderPisiTrashPage(container));
     const empty = makePisiTrashActionButton(pisiTrashText('empty'), 'pisi-trash-btn danger', async () => {
-        if (!window.confirm(pisiTrashText('confirmEmpty'))) return;
+        if (!(await pisiConfirm(pisiTrashText('confirmEmpty'), { title: pisiTrashText('empty'), confirmText: pisiTrashText('empty'), danger: true }))) return;
         empty.disabled = true;
         const result = await commandPisiDomain('trash.empty.v1', { projectFolder });
         if (!result?.ok) {

@@ -123,6 +123,17 @@ Bloklar `Alt+Shift+↑/↓` komutlarıyla taşınabiliyor; görsel blokları da 
 komutlarla taşınıyor (`scripts/electron-image-blocks-e2e.mjs`). Fareyle
 sürükleme ayrı bir işte ele alınmalı.
 
+## 5a. Türkçe arayüzde "node" ve "map" terimleri hâlâ karışık
+
+**[Düşük · i18n · doğrulandı, çözülmedi]** Bildirim ve onay metinleri
+"not" ve "harita" terimlerine geçirildi (ENG arayüz zaten "note" ve "map"
+kullanıyor). Düğme etiketleri, araç ipuçları ve menüler hâlâ "node"/"map"
+diyor (ör. "Yeni Node", "Node sil", "Map referansını kaldır"); yeni dosyaların
+varsayılan adı da "Yeni Node". Main süreçten gelen bazı hata metinleri de
+"node" içeriyor. Bu etiketler ve varsayılan dosya adı ayrı bir terim
+geçişinde ele alınmalı; dosya adı değişikliği mevcut projeleri etkilemez,
+yalnız yeni dosyaların adını değiştirir.
+
 ## 6. Güncel doğrulama snapshot’ı
 
 6 Ekim 2026 current `main` kontrolü:

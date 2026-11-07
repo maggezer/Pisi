@@ -151,7 +151,7 @@ async function reparentMapNodeFromTreeDrop(childItem, parentItem, mapItem) {
     const result = await window.pisiProject?.reparentMapNode?.(mapItem.fullPath, childId, parentId);
 
     if (!result?.ok) {
-        alert(result?.error || 'Node taşınamadı.');
+        pisiNotifyError(result?.error || 'Not taşınamadı.');
         return;
     }
 
@@ -177,7 +177,7 @@ async function moveTreeItemToFolder(sourceItem, destinationFolderPath, options =
     const result = await window.pisiProject?.movePisiItem?.(sourceItem.fullPath, destinationFolderPath, options);
 
     if (!result?.ok) {
-        alert(result?.error || 'Öğe taşınamadı.');
+        pisiNotifyError(result?.error || 'Öğe taşınamadı.');
         return false;
     }
 
@@ -627,17 +627,13 @@ async function deleteTreePisiItem(item, treeNode) {
     }
 
     const confirmationMessage = isMapFile
-        ? `"${visibleName}" map'i ve içindeki ${childNodeCount} node Çöp Kutusu'na taşınsın mı?`
-        : `"${visibleName}" node'u Çöp Kutusu'na taşınsın mı?`;
-    const ok =
-        typeof pisiConfirm === 'function'
-            ? await pisiConfirm(confirmationMessage, {
-                  title: isMapFile ? 'Map sil' : 'Node sil',
-                  confirmText: 'Çöp Kutusu’na taşı',
-                  cancelText: 'Vazgeç',
-                  danger: true
-              })
-            : confirm(confirmationMessage);
+        ? `"${visibleName}" haritası ve içindeki ${childNodeCount} not Çöp Kutusu'na taşınsın mı?`
+        : `"${visibleName}" notu Çöp Kutusu'na taşınsın mı?`;
+    const ok = await pisiConfirm(confirmationMessage, {
+        title: isMapFile ? 'Haritayı sil' : 'Notu sil',
+        confirmText: 'Çöp Kutusu’na taşı',
+        danger: true
+    });
 
     if (!ok) return;
 
@@ -684,7 +680,7 @@ async function deleteTreePisiItem(item, treeNode) {
         const result = await window.pisiProject?.deletePisiFile?.(item.fullPath);
 
         if (!result || !result.ok) {
-            alert(result?.error || 'Dosya silinemedi.');
+            pisiNotifyError(result?.error || 'Dosya silinemedi.');
             return;
         }
 
@@ -698,7 +694,7 @@ async function deleteTreePisiItem(item, treeNode) {
         }
     } catch (error) {
         console.error('[PISI] Sol ağaç silme hatası:', error);
-        alert('Silme sırasında hata oluştu: ' + error.message);
+        pisiNotifyError('Silme sırasında hata oluştu.', { detail: error?.message });
     }
 }
 

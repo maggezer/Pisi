@@ -118,7 +118,7 @@ window.addEventListener('mouseup', async (event) => {
 
     if (!result || !result.ok) {
         if (!result?.cancelled) {
-            alert(result?.error || 'Bağlantı kaydedilemedi.');
+            pisiNotifyError(result?.error || 'Bağlantı kaydedilemedi.');
         }
         currentConnectionDrag = null;
         clearTempEdgePath();

@@ -237,9 +237,7 @@ async function key(cdp, keyName, code, keyCode, modifiers = 0) {
 let cdp = null;
 try {
     cdp = await launch();
-    await cdp.evaluate(
-        "localStorage.setItem('pisi.tutorial.v1.completed', '1'); window.__pisiAlerts = []; window.alert = (message) => window.__pisiAlerts.push(String(message));"
-    );
+    await cdp.evaluate("localStorage.setItem('pisi.tutorial.v1.completed', '1')");
 
     // 1. A PDF dropped together with a PNG: an attachment block and an image block.
     const firstNode = await createNode(cdp);
@@ -280,7 +278,11 @@ try {
         await dropFiles(cdp, "async () => [new File([new Uint8Array(20 * 1024 * 1024 + 1)], 'buyuk.zip', { type: 'application/zip' })]"),
         'Large drop must be handled'
     );
-    await waitUntil('size limit message', () => cdp.evaluate('window.__pisiAlerts.some((message) => /20 MB/.test(message))'));
+    await waitUntil('size limit message', () =>
+        cdp.evaluate(
+            'Array.from(document.querySelectorAll(\'[data-pisi-notification="error"] .pisi-notification-message\')).some((el) => /20 MB/.test(el.textContent))'
+        )
+    );
     assert((await cdp.evaluate(fileState)).length === 3, 'Oversized file must not create a block');
 
     // 3. Delete the selected attachment with the keyboard, then undo.

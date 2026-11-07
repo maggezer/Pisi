@@ -196,7 +196,7 @@ async function createPisiFileInCurrentProject(ext) {
     const result = await window.pisiProject?.createPisiFile?.(window.currentProjectFolder, ext);
 
     if (!result || !result.ok) {
-        alert(result?.error || 'Dosya oluşturulamadı.');
+        pisiNotifyError(result?.error || 'Dosya oluşturulamadı.');
         return;
     }
 

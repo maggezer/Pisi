@@ -1,5 +1,13 @@
 import { registerModule } from '../core/module-registry.mjs';
 
+/**
+ * Keyboard-friendly confirmation: Tab cycles the two buttons, Esc cancels and
+ * Enter activates the focused button. `danger` marks a destructive action:
+ * the confirm button turns red and focus starts on "İptal".
+ * @param {string} message
+ * @param {{ title?: string, confirmText?: string, cancelText?: string, danger?: boolean }} [options]
+ * @returns {Promise<boolean>}
+ */
 function pisiConfirm(message, options = {}) {
     return new Promise((resolve) => {
         document.getElementById('pisi-confirm-overlay')?.remove();
@@ -8,10 +16,11 @@ function pisiConfirm(message, options = {}) {
         const overlay = document.createElement('div');
         overlay.id = 'pisi-confirm-overlay';
 
-        const title = escapePisiConfirmText(options.title || 'Onay');
-        const text = escapePisiConfirmText(message || '');
-        const confirmText = escapePisiConfirmText(options.confirmText || 'Tamam');
-        const cancelText = escapePisiConfirmText(options.cancelText || 'Vazgeç');
+        const translate = (value) => window.pisiT?.(value) ?? String(value ?? '');
+        const title = escapePisiConfirmText(translate(options.title || 'Onay'));
+        const text = escapePisiConfirmText(translate(message || ''));
+        const confirmText = escapePisiConfirmText(translate(options.confirmText || 'Tamam'));
+        const cancelText = escapePisiConfirmText(translate(options.cancelText || 'İptal'));
 
         overlay.innerHTML = `
             <div
@@ -119,8 +128,9 @@ function pisiConfirm(message, options = {}) {
 
         document.addEventListener('keydown', onKeyDown, true);
 
+        // Destructive actions start on "İptal", so Enter never destroys by accident.
         setTimeout(() => {
-            cancelBtn?.focus({ preventScroll: true });
+            (options.danger ? cancelBtn : okBtn)?.focus({ preventScroll: true });
         }, 0);
     });
 }

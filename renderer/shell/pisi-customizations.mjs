@@ -534,7 +534,7 @@ async function persistPisiMapEdgeCustomization(edgeId, fallbackCustomization) {
             if (window.activeMapPath === mapPath) {
                 window.drawMapConnections?.();
             }
-            alert(result?.error || pisiCustomizeTranslate('Bağlantı rengi kaydedilemedi.'));
+            pisiNotifyError(result?.error || pisiCustomizeTranslate('Bağlantı rengi kaydedilemedi.'));
             if (window.activeMapPath === mapPath) {
                 renderPisiMapCustomizationPanel();
             }
@@ -555,7 +555,7 @@ async function persistPisiMapEdgeCustomization(edgeId, fallbackCustomization) {
             window.drawMapConnections?.();
         }
         console.error('[PISI] Bağlantı rengi kaydedilemedi:', error);
-        alert(pisiCustomizeTranslate('Bağlantı rengi kaydedilemedi.'));
+        pisiNotifyError(pisiCustomizeTranslate('Bağlantı rengi kaydedilemedi.'));
         if (window.activeMapPath === mapPath) {
             renderPisiMapCustomizationPanel();
         }

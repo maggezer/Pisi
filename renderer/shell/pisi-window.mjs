@@ -234,7 +234,7 @@ function setupWindowControls() {
 
                 const saved = await flushPisiPendingSaves();
                 if (!saved) {
-                    alert('PISI kapatılmadı: bekleyen değişikliklerden en az biri kaydedilemedi.');
+                    pisiNotifyError('Pisi kapatılmadı: bekleyen değişikliklerden en az biri kaydedilemedi.');
                 }
                 return saved;
             }) || null;

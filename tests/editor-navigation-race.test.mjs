@@ -86,7 +86,10 @@ function setup() {
         suppressNextFileSystemRefresh() {},
         clearTimeout() {},
         console,
-        alert: (message) => {
+        pisiNotifyError: (message) => {
+            throw new Error(message);
+        },
+        pisiNotifyNoteSaveError: (message) => {
             throw new Error(message);
         }
     };

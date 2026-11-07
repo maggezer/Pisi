@@ -72,8 +72,6 @@ test('renderer and native Electron dialogs use the localization layer', () => {
     const mainBootstrap = read('main.mjs');
 
     assert.match(bootstrap, /^import\s+['"]\.\/core\/i18n\.mjs['"];/);
-    assert.match(rendererI18n, /window\.alert =/);
-    assert.match(rendererI18n, /window\.confirm =/);
     assert.match(rendererI18n, /window\.prompt =/);
     assert.match(mainBootstrap, /main\/functions\/i18n/);
     assert.match(runtime, /translatePisiMain\('PISI proje klasörü seç'\)/);

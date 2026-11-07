@@ -146,7 +146,7 @@ async function savePisiFilterPreset() {
         savedScope: { name, scope: filterScope }
     });
     if (!result?.ok) {
-        alert(result?.error || t('saveFailed'));
+        pisiNotifyError(result?.error || t('saveFailed'));
         return;
     }
 
@@ -172,7 +172,7 @@ async function applyPisiFilterPreset() {
         scope: current.scope,
         display: current.display
     });
-    if (!result?.ok) alert(result?.error || t('saveFailed'));
+    if (!result?.ok) pisiNotifyError(result?.error || t('saveFailed'));
 }
 
 function replaceActionButton(id, handler) {

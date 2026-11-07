@@ -77,7 +77,7 @@ function appendPisiDependencyChipThirdRelease(container, mission, dependency, _a
             mission,
             mission.dependencies.filter((id) => id !== dependencyId)
         );
-        if (!result?.ok) alert(result?.error || 'Bağımlılık kaldırılamadı.');
+        if (!result?.ok) pisiNotifyError(result?.error || 'Bağımlılık kaldırılamadı.');
     });
     chip.dataset.dependencyId = dependency?.missionId || '';
     chip.appendChild(remove);
@@ -140,14 +140,14 @@ function appendPisiMissionPlanningControlsThirdRelease(card, mission, allMission
         if (!dependencyId) return;
         if (wouldCreatePisiDependencyCycleThirdRelease(mission.missionId, dependencyId, allMissions)) {
             addDependency.value = '';
-            alert(pisiTodoThirdTranslate('Bu bağımlılık döngü oluşturur.'));
+            pisiNotifyWarning(pisiTodoThirdTranslate('Bu bağımlılık döngü oluşturur.'));
             return;
         }
         addDependency.disabled = true;
         const result = await setPisiMissionDependenciesThirdRelease(mission, [...mission.dependencies, dependencyId]);
         if (!result?.ok) {
             addDependency.disabled = false;
-            alert(result?.error || 'Bağımlılık kaydedilemedi.');
+            pisiNotifyError(result?.error || 'Bağımlılık kaydedilemedi.');
         }
     });
     dependencyRow.appendChild(addDependency);
@@ -173,7 +173,7 @@ function appendPisiMissionPlanningControlsThirdRelease(card, mission, allMission
         if (!result?.ok) {
             reminderSelect.value = mission.reminder;
             reminderSelect.disabled = false;
-            alert(result?.error || 'Hatırlatma kaydedilemedi.');
+            pisiNotifyError(result?.error || 'Hatırlatma kaydedilemedi.');
         }
     });
     reminderRow.append(reminderLabel, reminderSelect);
@@ -259,7 +259,7 @@ function renderPisiTodoThirdKanban(list, missions) {
             const mission = missions.find((item) => item.missionId === missionId);
             if (!mission || mission.status === status.value) return;
             const result = await window.setPisiMissionStatusFirstRelease?.(mission, status.value);
-            if (!result?.ok) alert(result?.error || 'Görev durumu değiştirilemedi.');
+            if (!result?.ok) pisiNotifyError(result?.error || 'Görev durumu değiştirilemedi.');
             window.refreshPisiTagsPanelSoon?.();
         });
 
