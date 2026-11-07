@@ -1,6 +1,6 @@
 import { registerMainModule } from '../module-registry.js';
 import { app, BrowserWindow, dialog, ipcMain, net } from '../electron-bridge.js';
-import { spawn } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
@@ -8,6 +8,7 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { URL } from 'node:url';
 import { clearInterval, clearTimeout, setInterval, setTimeout } from 'node:timers';
+import { PISI_UPDATE_SIGNATURE_FILE, evaluatePisiAuthenticodeResult, parsePisiUpdatePublicKeys, verifyPisiUpdateManifest } from './update-signature-core.js';
 
 const PISI_UPDATE_SCHEMA_VERSION = 1;
 const PISI_UPDATE_MANIFEST = 'latest.json';
@@ -152,13 +153,21 @@ function resolvePisiUpdateConfiguration() {
     }
 
     const feed = normalizeFeedBaseUrl(process.env.PISI_UPDATE_FEED_URL || metadata.pisiUpdateFeedUrl);
+    // Public keys that may sign latest.json (several during a key rotation) and
+    // the expected Authenticode publisher; both are set at build time.
+    const publicKeys = parsePisiUpdatePublicKeys(metadata.pisiUpdatePublicKeys);
+    const expectedPublisher = String(metadata.pisiUpdatePublisher || '').trim();
+    // Without a trusted key a feed is never used: an unsigned manifest could run any installer.
+    const mode = !feed ? 'direct-unconfigured' : publicKeys.length ? 'direct' : 'direct-unsigned';
 
     return {
-        mode: feed ? 'direct' : 'direct-unconfigured',
-        managedBy: feed ? 'pisi' : null,
+        mode,
+        managedBy: mode === 'direct' ? 'pisi' : null,
         currentVersion,
         channel: String(metadata.pisiUpdateChannel || 'beta').trim() || 'beta',
-        feed
+        feed,
+        publicKeys,
+        expectedPublisher
     };
 }
 
@@ -252,6 +261,28 @@ function normalizeManifestFile(manifest, arch, feed) {
     };
 }
 
+/** latest.json.sig from the feed, with the same HTTPS rules as the manifest; null when it is not there. */
+async function fetchPisiUpdateManifestSignature(configuration) {
+    const signatureUrl = new URL(PISI_UPDATE_SIGNATURE_FILE, configuration.feed);
+    const response = await net.fetch(signatureUrl.href, {
+        method: 'GET',
+        redirect: 'follow',
+        cache: 'no-store',
+        headers: {
+            Accept: 'application/json'
+        }
+    });
+    if (response.status === 404) return null;
+    if (!response.ok) {
+        throw new Error('Update feed signature returned HTTP ' + response.status + '.');
+    }
+    const finalUrl = new URL(response.url);
+    if (finalUrl.protocol !== 'https:') {
+        throw new Error('Update feed signature redirected to a non-HTTPS URL.');
+    }
+    return response.text();
+}
+
 async function fetchPisiUpdateManifest(configuration) {
     const manifestUrl = new URL(PISI_UPDATE_MANIFEST, configuration.feed);
     const response = await net.fetch(manifestUrl.href, {
@@ -275,6 +306,14 @@ async function fetchPisiUpdateManifest(configuration) {
     const text = await response.text();
     if (Buffer.byteLength(text, 'utf8') > PISI_UPDATE_MANIFEST_MAX_BYTES) {
         throw new Error('Update feed manifest is unexpectedly large.');
+    }
+
+    // The manifest names the installer and its SHA-256, so it must be signed by a built-in key.
+    const signature = await fetchPisiUpdateManifestSignature(configuration);
+    const verified = verifyPisiUpdateManifest(Buffer.from(text, 'utf8'), signature, configuration.publicKeys);
+    if (!verified.ok) {
+        console.warn('[PISI] Update manifest rejected:', verified.code, verified.error);
+        throw new Error(verified.error);
     }
 
     let manifest;
@@ -517,6 +556,44 @@ async function checkPisiForUpdates(options = {}) {
     }
 }
 
+/** Get-AuthenticodeSignature for one file, as JSON { Status, Subject }. The path goes in through the environment, never the command text. */
+function runPisiAuthenticodeQuery(filePath) {
+    const command =
+        '$s = Get-AuthenticodeSignature -LiteralPath $env:PISI_UPDATE_INSTALLER; ' +
+        '[pscustomobject]@{ Status = [string]$s.Status; Subject = [string]$s.SignerCertificate.Subject } | ConvertTo-Json -Compress';
+    return new Promise((resolve, reject) => {
+        execFile(
+            'powershell.exe',
+            ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', command],
+            { env: { ...process.env, PISI_UPDATE_INSTALLER: filePath }, windowsHide: true, timeout: 30 * 1000 },
+            (error, stdout) => (error ? reject(error) : resolve(String(stdout || '')))
+        );
+    });
+}
+
+/**
+ * With a configured publisher, the installer must carry a valid Authenticode
+ * signature from that publisher. Without one the check is skipped and logged.
+ */
+async function verifyPisiInstallerPublisher(filePath, expectedPublisher, options = {}) {
+    if (!String(expectedPublisher || '').trim()) {
+        console.warn('[PISI] Authenticode check skipped: no signing identity is configured for this build.');
+        return { ok: true, skipped: true };
+    }
+    if ((options.platform || process.platform) !== 'win32')
+        return { ok: false, code: 'AUTHENTICODE_UNAVAILABLE', error: 'The installer signature can only be checked on Windows.' };
+    let output = '';
+    try {
+        output = await (options.runQuery || runPisiAuthenticodeQuery)(filePath);
+    } catch (error) {
+        console.warn('[PISI] Authenticode check failed:', error?.message || error);
+        return { ok: false, code: 'AUTHENTICODE_UNREADABLE', error: 'The installer signature could not be checked.' };
+    }
+    const result = evaluatePisiAuthenticodeResult(output, expectedPublisher);
+    if (!result.ok) console.warn('[PISI] Update installer rejected:', result.code, result.error);
+    return result;
+}
+
 async function installPendingPisiUpdate() {
     const installer = pendingInstaller;
     if (!installer) {
@@ -543,6 +620,17 @@ async function installPendingPisiUpdate() {
             downloadedVersion: null,
             error: 'Downloaded update failed final SHA-256 verification.'
         });
+        return {
+            ok: false,
+            error: 'Downloaded Pisi update failed verification.'
+        };
+    }
+
+    const publisher = await verifyPisiInstallerPublisher(installer.path, resolvePisiUpdateConfiguration().expectedPublisher);
+    if (!publisher.ok) {
+        pendingInstaller = null;
+        await fs.promises.rm(installer.path, { force: true }).catch(() => {});
+        patchUpdateState({ downloadedVersion: null, error: publisher.error });
         return {
             ok: false,
             error: 'Downloaded Pisi update failed verification.'
@@ -622,6 +710,8 @@ function initializePisiAutoUpdate() {
     if (configuration.mode === 'direct') {
         console.log('[PISI] Direct auto-update feed enabled:', configuration.feed.origin);
         schedulePisiUpdateChecks();
+    } else if (configuration.mode === 'direct-unsigned') {
+        console.warn('[PISI] Direct auto-update disabled: the feed is configured but no update signing key is built in.');
     } else {
         console.log('[PISI] Direct auto-update disabled for distribution mode:', configuration.mode);
     }
@@ -634,7 +724,9 @@ ipcMain.handle('app:check-for-updates', () => checkPisiForUpdates({ prompt: true
 ipcMain.handle('app:install-update', () => installPendingPisiUpdate());
 
 const moduleApi = {
-    initializePisiAutoUpdate
+    initializePisiAutoUpdate,
+    checkPisiForUpdates,
+    verifyPisiInstallerPublisher
 };
 
 registerMainModule('main.autoUpdate', moduleApi);

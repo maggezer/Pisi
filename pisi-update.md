@@ -1,5 +1,25 @@
 # PISI Güncelleme Takip Dosyası
 
+## 07-11-2026 — İmzalı güncelleme manifesti
+
+- Doğrudan dağıtılan NSIS sürümünün güncelleyicisi artık `latest.json`'u
+  yalnız Ed25519 imzası (`latest.json.sig`) uygulamaya gömülü bir açık anahtarla
+  doğrulanırsa kabul ediyor. İmza yoksa, bozuksa, bilinmeyen bir anahtarla
+  atılmışsa ya da manifest değiştirilmişse güncelleme reddediliyor ve
+  loglanıyor. Anahtar döndürme için birden fazla açık anahtar kabul ediliyor.
+  Feed'i olup açık anahtarı olmayan bir derleme hiç güncellenmiyor.
+- Windows imza kimliği ve beklenen yayıncı adı (`PISI_WINDOWS_PUBLISHER_NAME`)
+  yapılandırılmışsa, yükleyici çalıştırılmadan önce Authenticode imzasının
+  geçerli olduğu ve yayıncının bu ad olduğu `Get-AuthenticodeSignature` ile
+  doğrulanıyor; kimlik yoksa bu adım atlanıp loglanıyor.
+- `release.yml` manifesti `PISI_UPDATE_SIGNING_KEY` secret'ıyla imzalıyor ve
+  imzayı gömülecek açık anahtarlarla (`PISI_UPDATE_PUBLIC_KEYS`) doğruluyor.
+  Anahtar üretme, secret ekleme ve döndürme: `docs/auto-update.md`.
+- HTTPS, yönlendirme, boyut ve SHA-256 kontrolleri değişmedi.
+- Testler: `tests/update-signature-core.test.mjs`, `tests/auto-update-signed-feed.test.mjs`
+  (sahte HTTPS feed: imzasız, yanlış anahtarlı ve değiştirilmiş manifestler
+  reddedildi, geçerli manifest kabul edildi).
+
 ## 07-11-2026 — Görev, bağlantı ve harita geçmişi; proje dışına otomatik yedek
 
 - Sürüm geçmişi artık yalnız notlar için değil: `.pisi/tasks.json`,
