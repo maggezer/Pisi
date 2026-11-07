@@ -252,7 +252,25 @@ try {
     await key(cdp, 'Enter', 'Enter', 13);
     await waitUntil('normal confirm accepted', () => cdp.evaluate('window.__confirmResult === true'));
 
-    // 5. Success strips are polite and close by themselves.
+    // 5. A long operation reports progress in one strip that closes when done.
+    await cdp.evaluate(`(() => {
+        window.__progressTexts = [];
+        new MutationObserver(() => {
+            const strip = document.querySelector('[data-pisi-progress="integrity"] .pisi-notification-message');
+            if (strip && !window.__progressTexts.includes(strip.textContent)) window.__progressTexts.push(strip.textContent);
+        }).observe(document.body, { subtree: true, childList: true, characterData: true });
+    })()`);
+    const audit = await cdp.evaluate(`window.pisiDomain.query('integrity.audit.v1', { projectFolder: ${JSON.stringify(projectPath)} })`);
+    assert(audit?.ok !== false && Array.isArray(audit?.issues), 'The integrity scan still returns its report', audit);
+    const progressTexts = await waitUntil('integrity progress strip', () => cdp.evaluate('window.__progressTexts.length ? window.__progressTexts : null'));
+    assert(
+        progressTexts.some((text) => /^Bütünlük taraması: \d[\d.]* \/ \d[\d.]*$/.test(text)),
+        'Progress reads "Bütünlük taraması: done / total"',
+        progressTexts
+    );
+    await waitUntil('progress strip closed', () => cdp.evaluate("!document.querySelector('[data-pisi-progress]')"), 5000);
+
+    // 6. Success strips are polite and close by themselves.
     await cdp.evaluate("pisiNotifySuccess('Dışa aktarıldı', { duration: 600 })");
     const success = await waitUntil('success strip', () => cdp.evaluate(strips).then((list) => list.find((strip) => strip.type === 'success') || null));
     assert(success.role === 'status' && success.live === 'polite', 'Success is a polite status', success);
@@ -262,7 +280,7 @@ try {
     assert(Array.isArray(native) && native.length === 0, 'No native alert() or confirm() was called', native);
 
     console.log(
-        '[E2E] Notifications passed: failed save shows an alert strip with version history link and no dialog, repeat merges ×2, errors stay, details, recovery dialog, danger confirm defaults to İptal, Tab/Enter, success auto-close, no native dialogs.'
+        '[E2E] Notifications passed: failed save shows an alert strip with version history link and no dialog, repeat merges ×2, errors stay, details, recovery dialog, danger confirm defaults to İptal, Tab/Enter, integrity progress strip, success auto-close, no native dialogs.'
     );
 } finally {
     await stop(cdp);
