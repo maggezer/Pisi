@@ -443,11 +443,8 @@ function bindMapNodeDrag(box) {
                 item.box.style.top = `${item.y + dy}px`;
             }
 
-            if (typeof scheduleDrawMapConnections === 'function') {
-                scheduleDrawMapConnections();
-            } else {
-                drawMapConnections();
-            }
+            // Only connections touching the dragged nodes move.
+            scheduleDrawPisiMapConnectionsForNodes(draggedBoxes.map((item) => item.box.dataset.nodeId));
         };
 
         const onMouseUp = (upEvent) => {
@@ -502,11 +499,7 @@ function bindMapNodeResize(box, handle) {
             box.style.width = `${newW}px`;
             box.style.height = `${newH}px`;
 
-            if (typeof scheduleDrawMapConnections === 'function') {
-                scheduleDrawMapConnections();
-            } else {
-                drawMapConnections();
-            }
+            scheduleDrawPisiMapConnectionsForNodes([box.dataset.nodeId]);
         };
 
         const onMouseUp = () => {

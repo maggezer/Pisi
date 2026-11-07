@@ -7,14 +7,19 @@ export function applyMapCamera() {
 
     if (!board) return;
 
-    board.style.transform = `translate(${activeMapCamera.x}px, ${activeMapCamera.y}px) scale(${activeMapCamera.zoom})`;
+    const transform = `translate(${activeMapCamera.x}px, ${activeMapCamera.y}px) scale(${activeMapCamera.zoom})`;
+    board.style.transform = transform;
+    // Connections are in world coordinates and move with the board: no redraw on pan or zoom.
+    const edgeLayer = document.getElementById('map-edge-layer');
+    if (edgeLayer) edgeLayer.style.transform = transform;
 
     if (canvas) {
         canvas.style.backgroundPosition = `${activeMapCamera.x}px ${activeMapCamera.y}px`;
     }
 
     syncMapConnectionZoomStyles();
-    scheduleDrawMapConnections();
+    // Nodes entering or leaving the viewport are synced once per frame (pisi-map-viewport.mjs).
+    window.schedulePisiMapViewportSync?.();
 }
 
 export function clampMapZoom(zoom) {

@@ -988,6 +988,7 @@
             "targetAlreadyHasUpHub",
             "enforceSingleParentForTarget",
             "getConnectionClass",
+            "getPisiMapBoxWorldRect",
             "getPortPoint",
             "getMousePointInCanvas",
             "getPortDirection",
@@ -1039,7 +1040,9 @@
             "applyPisiMapEdgeCustomization",
             "bindPisiMapEdgeSelection",
             "scheduleDrawMapConnections",
-            "drawMapConnections"
+            "drawMapConnections",
+            "drawPisiMapConnectionsForNodes",
+            "scheduleDrawPisiMapConnectionsForNodes"
         ]
     },
     {

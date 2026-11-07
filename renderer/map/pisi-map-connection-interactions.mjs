@@ -1,15 +1,27 @@
 import { getPisiMapConnectionMetrics } from './pisi-map-zoom-core.mjs';
 import { getPortDirection, offsetPoint, getDistance } from './pisi-map-interaction-helpers.mjs';
 
-export function getPortPoint(box, port) {
-    const canvas = document.getElementById('map-canvas');
-    const boxRect = box.getBoundingClientRect();
-    const canvasRect = canvas.getBoundingClientRect();
+// Connections live in map (world) coordinates inside #map-edge-layer, which
+// moves with the camera like #map-board. Geometry therefore comes from the
+// layout numbers on the box style (or the model for boxes that are not in the
+// DOM), never from getBoundingClientRect: reading layout per edge forced a
+// reflow per edge on every frame.
+export function getPisiMapBoxWorldRect(box) {
+    return {
+        x: parseFloat(box.style.left) || 0,
+        y: parseFloat(box.style.top) || 0,
+        width: parseFloat(box.style.width) || box.offsetWidth || 220,
+        height: parseFloat(box.style.height) || box.offsetHeight || 92
+    };
+}
 
-    const x = boxRect.left - canvasRect.left;
-    const y = boxRect.top - canvasRect.top;
-    const w = boxRect.width;
-    const h = boxRect.height;
+/** Port point in world coordinates; accepts a node box or a { x, y, width, height } rect. */
+export function getPortPoint(boxOrRect, port) {
+    const rect = boxOrRect?.nodeType === 1 ? getPisiMapBoxWorldRect(boxOrRect) : boxOrRect || { x: 0, y: 0, width: 0, height: 0 };
+    const x = rect.x;
+    const y = rect.y;
+    const w = rect.width;
+    const h = rect.height;
 
     if (port === 'top') return { x: x + w / 2, y };
     if (port === 'right') return { x: x + w, y: y + h / 2 };
@@ -17,18 +29,22 @@ export function getPortPoint(box, port) {
     return { x, y: y + h / 2 };
 }
 
+/** Pointer position in world coordinates (the connection layer's space). */
 export function getMousePointInCanvas(event) {
     const canvas = document.getElementById('map-canvas');
     const rect = canvas.getBoundingClientRect();
+    const zoom = activeMapCamera?.zoom || 1;
 
     return {
-        x: event.clientX - rect.left,
-        y: event.clientY - rect.top
+        x: (event.clientX - rect.left - (activeMapCamera?.x || 0)) / zoom,
+        y: (event.clientY - rect.top - (activeMapCamera?.y || 0)) / zoom
     };
 }
 
+// World-space geometry: the layer's transform scales strokes, gaps and arrows
+// with the zoom exactly as the former per-zoom screen metrics did.
 export function getMapConnectionVisualMetrics() {
-    return getPisiMapConnectionMetrics(activeMapCamera?.zoom);
+    return getPisiMapConnectionMetrics(1);
 }
 
 export function syncMapConnectionZoomStyles(svg = document.getElementById('map-connections')) {

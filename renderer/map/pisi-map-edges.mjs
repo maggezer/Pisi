@@ -620,73 +620,163 @@ function scheduleDrawMapConnections() {
     });
 }
 
+// Connections are drawn in world coordinates inside #map-edge-layer, which
+// carries the same transform as #map-board, so panning and zooming never
+// recompute them. The SVG covers the bounds of all nodes so every path stays
+// hit-testable. Paths come from layout numbers (box style, or the model for
+// nodes that are not in the DOM), never from DOM measurement.
+const PISI_MAP_EDGE_LAYER_PAD = 600;
+const pisiMapEdgeIndex = { edges: null, byNode: new Map() };
+const pisiMapPartialDraw = { ids: new Set(), frame: null };
+
+function ensurePisiMapEdgeLayer() {
+    const svg = document.getElementById('map-connections');
+    if (!svg) return null;
+    let layer = document.getElementById('map-edge-layer');
+    if (!layer) {
+        layer = document.createElement('div');
+        layer.id = 'map-edge-layer';
+        svg.parentNode.insertBefore(layer, svg);
+        layer.appendChild(svg);
+    }
+    return svg;
+}
+
+function getPisiMapEdgesByNode() {
+    const edges = Array.isArray(activeMapEdges) ? activeMapEdges : [];
+    if (pisiMapEdgeIndex.edges !== edges) {
+        pisiMapEdgeIndex.edges = edges;
+        pisiMapEdgeIndex.byNode = new Map();
+        for (const edge of edges) {
+            for (const id of [edge.sourceId, edge.targetId]) {
+                if (!pisiMapEdgeIndex.byNode.has(id)) pisiMapEdgeIndex.byNode.set(id, []);
+                pisiMapEdgeIndex.byNode.get(id).push(edge);
+            }
+        }
+    }
+    return pisiMapEdgeIndex.byNode;
+}
+
+/** World rects of every node: mounted boxes win over the model's saved layout. */
+function getPisiMapNodeRectLookup() {
+    const boxes = new Map();
+    document.querySelectorAll('#map-board .map-node-box[data-node-id]').forEach((box) => boxes.set(box.dataset.nodeId, box));
+    const layouts = new Map((Array.isArray(activeMapNodes) ? activeMapNodes : []).map((node) => [node.id, node.layout]));
+    return {
+        boxes,
+        rect(id) {
+            const box = boxes.get(id);
+            if (box) return getPisiMapBoxWorldRect(box);
+            const layout = layouts.get(id);
+            return layout
+                ? { x: Number(layout.x) || 0, y: Number(layout.y) || 0, width: Number(layout.width) || 220, height: Number(layout.height) || 92 }
+                : null;
+        }
+    };
+}
+
+function syncPisiMapEdgeLayerBounds(svg, lookup) {
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const node of Array.isArray(activeMapNodes) ? activeMapNodes : []) {
+        const rect = lookup.rect(node.id);
+        if (!rect) continue;
+        minX = Math.min(minX, rect.x);
+        minY = Math.min(minY, rect.y);
+        maxX = Math.max(maxX, rect.x + rect.width);
+        maxY = Math.max(maxY, rect.y + rect.height);
+    }
+    if (!Number.isFinite(minX)) {
+        minX = 0;
+        minY = 0;
+        maxX = 1;
+        maxY = 1;
+    }
+    const left = Math.floor(minX - PISI_MAP_EDGE_LAYER_PAD);
+    const top = Math.floor(minY - PISI_MAP_EDGE_LAYER_PAD);
+    const width = Math.ceil(maxX - minX + PISI_MAP_EDGE_LAYER_PAD * 2);
+    const height = Math.ceil(maxY - minY + PISI_MAP_EDGE_LAYER_PAD * 2);
+    const viewBox = `${left} ${top} ${width} ${height}`;
+    if (svg.getAttribute('viewBox') === viewBox) return;
+    svg.setAttribute('viewBox', viewBox);
+    svg.style.left = `${left}px`;
+    svg.style.top = `${top}px`;
+    svg.style.width = `${width}px`;
+    svg.style.height = `${height}px`;
+}
+
+function isPisiMapEdgeDrawable(edge, hiddenNodeIds) {
+    if (isHubEdgeCollapsed(edge, hiddenNodeIds)) return false;
+    const filter = window.isPisiMapEdgeInViewport;
+    return typeof filter === 'function' ? filter(edge) : true;
+}
+
+function drawPisiMapEdge(svg, edge, lookup, liveMarkerIds, groups = null) {
+    const sourceRect = lookup.rect(edge.sourceId);
+    const targetRect = lookup.rect(edge.targetId);
+    if (!sourceRect || !targetRect) return false;
+    const pathData = makeConnectionPathFromBoxes(sourceRect, edge.sourcePort || 'right', targetRect, edge.targetPort || 'left', edge.type);
+    let groupEl = groups ? groups.get(edge.id) || null : svg.querySelector(`.map-edge-group[data-edge-id="${CSS.escape(edge.id)}"]`);
+    let hitPathEl = groupEl?.querySelector('.map-edge-hit') || null;
+    let pathEl = groupEl?.querySelector('.map-edge') || null;
+    let menuTriggerEl = groupEl?.querySelector('.map-edge-menu-trigger') || null;
+
+    if (!groupEl) {
+        groupEl = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        groupEl.classList.add('map-edge-group');
+        groupEl.dataset.edgeId = edge.id;
+
+        hitPathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        hitPathEl.classList.add('map-edge-hit');
+        hitPathEl.dataset.edgeId = edge.id;
+
+        pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        pathEl.dataset.edgeId = edge.id;
+
+        menuTriggerEl = createMapEdgeDeleteButton(edge, pathData);
+
+        groupEl.appendChild(hitPathEl);
+        groupEl.appendChild(pathEl);
+
+        if (menuTriggerEl) {
+            groupEl.appendChild(menuTriggerEl);
+        }
+
+        svg.appendChild(groupEl);
+    }
+
+    bindPisiMapEdgeSelection(groupEl, hitPathEl);
+
+    if (hitPathEl.getAttribute('d') !== pathData) {
+        hitPathEl.setAttribute('d', pathData);
+        pathEl.setAttribute('d', pathData);
+        if (menuTriggerEl) updateMapEdgeDeleteButtonPosition(menuTriggerEl, pathData);
+    }
+    const className = `map-edge ${getConnectionClass(edge)}`;
+    if (pathEl.getAttribute('class') !== className) pathEl.setAttribute('class', className);
+    applyPisiMapEdgeCustomization(svg, pathEl, edge, liveMarkerIds);
+    groupEl.classList.toggle('selected', edge.id === selectedMapEdgeId);
+    return true;
+}
+
 function drawMapConnections() {
     const hiddenNodeIds = syncCollapsedHubNodeVisibility();
-    const svg = document.getElementById('map-connections');
+    const svg = ensurePisiMapEdgeLayer();
 
     if (!svg) return;
 
     syncMapConnectionZoomStyles(svg);
+    const lookup = getPisiMapNodeRectLookup();
+    syncPisiMapEdgeLayerBounds(svg, lookup);
     const liveEdgeIds = new Set();
     const liveMarkerIds = new Set();
+    const groups = new Map(Array.from(svg.querySelectorAll('.map-edge-group')).map((group) => [group.dataset.edgeId, group]));
 
     for (const edge of activeMapEdges) {
-        if (isHubEdgeCollapsed(edge, hiddenNodeIds)) {
-            continue;
-        }
-
-        const sourceBox = document.querySelector(`.map-node-box[data-node-id="${CSS.escape(edge.sourceId)}"]`);
-
-        const targetBox = document.querySelector(`.map-node-box[data-node-id="${CSS.escape(edge.targetId)}"]`);
-
-        if (!sourceBox || !targetBox) continue;
-
-        const sourcePort = edge.sourcePort || 'right';
-        const targetPort = edge.targetPort || 'left';
-
-        const pathData = makeConnectionPathFromBoxes(sourceBox, sourcePort, targetBox, targetPort, edge.type);
-
-        liveEdgeIds.add(edge.id);
-        let groupEl = svg.querySelector(`.map-edge-group[data-edge-id="${CSS.escape(edge.id)}"]`);
-        let hitPathEl = groupEl?.querySelector('.map-edge-hit') || null;
-        let pathEl = groupEl?.querySelector('.map-edge') || null;
-        let menuTriggerEl = groupEl?.querySelector('.map-edge-menu-trigger') || null;
-
-        if (!groupEl) {
-            groupEl = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-            groupEl.classList.add('map-edge-group');
-            groupEl.dataset.edgeId = edge.id;
-
-            hitPathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            hitPathEl.classList.add('map-edge-hit');
-            hitPathEl.dataset.edgeId = edge.id;
-
-            pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            pathEl.dataset.edgeId = edge.id;
-
-            menuTriggerEl = createMapEdgeDeleteButton(edge, pathData);
-
-            groupEl.appendChild(hitPathEl);
-            groupEl.appendChild(pathEl);
-
-            if (menuTriggerEl) {
-                groupEl.appendChild(menuTriggerEl);
-            }
-
-            svg.appendChild(groupEl);
-        }
-
-        bindPisiMapEdgeSelection(groupEl, hitPathEl);
-
-        hitPathEl.setAttribute('d', pathData);
-        pathEl.setAttribute('class', `map-edge ${getConnectionClass(edge)}`);
-        pathEl.setAttribute('d', pathData);
-        applyPisiMapEdgeCustomization(svg, pathEl, edge, liveMarkerIds);
-        groupEl.classList.toggle('selected', edge.id === selectedMapEdgeId);
-
-        if (menuTriggerEl) {
-            updateMapEdgeDeleteButtonPosition(menuTriggerEl, pathData);
-        }
+        if (!isPisiMapEdgeDrawable(edge, hiddenNodeIds)) continue;
+        if (drawPisiMapEdge(svg, edge, lookup, liveMarkerIds, groups)) liveEdgeIds.add(edge.id);
     }
 
     svg.querySelectorAll('.map-edge-group').forEach((group) => {
@@ -706,6 +796,35 @@ function drawMapConnections() {
         selectedMapEdgeId = null;
         notifyPisiMapCustomizationContextChanged();
     }
+}
+
+/** Redraws only the connections touching these nodes (one drag or resize frame). */
+function drawPisiMapConnectionsForNodes(nodeIds = []) {
+    const svg = ensurePisiMapEdgeLayer();
+    if (!svg) return;
+    const byNode = getPisiMapEdgesByNode();
+    const lookup = getPisiMapNodeRectLookup();
+    const hiddenNodeIds = collectCollapsedHubNodeIds();
+    const markers = new Set(Array.from(svg.querySelectorAll('marker[data-pisi-edge-marker="true"]')).map((marker) => marker.id));
+    const done = new Set();
+    for (const id of nodeIds) {
+        for (const edge of byNode.get(id) || []) {
+            if (done.has(edge.id)) continue;
+            done.add(edge.id);
+            if (isPisiMapEdgeDrawable(edge, hiddenNodeIds)) drawPisiMapEdge(svg, edge, lookup, markers);
+        }
+    }
+}
+
+function scheduleDrawPisiMapConnectionsForNodes(nodeIds = []) {
+    for (const id of nodeIds) pisiMapPartialDraw.ids.add(id);
+    if (pisiMapPartialDraw.frame !== null) return;
+    pisiMapPartialDraw.frame = requestAnimationFrame(() => {
+        pisiMapPartialDraw.frame = null;
+        const ids = Array.from(pisiMapPartialDraw.ids);
+        pisiMapPartialDraw.ids.clear();
+        drawPisiMapConnectionsForNodes(ids);
+    });
 }
 
 const moduleApi = {};
@@ -816,6 +935,18 @@ Object.defineProperties(moduleApi, {
         enumerable: true,
         get() {
             return drawMapConnections;
+        }
+    },
+    drawPisiMapConnectionsForNodes: {
+        enumerable: true,
+        get() {
+            return drawPisiMapConnectionsForNodes;
+        }
+    },
+    scheduleDrawPisiMapConnectionsForNodes: {
+        enumerable: true,
+        get() {
+            return scheduleDrawPisiMapConnectionsForNodes;
         }
     }
 });

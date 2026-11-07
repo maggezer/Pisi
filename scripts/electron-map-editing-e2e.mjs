@@ -328,6 +328,10 @@ try {
         cdp.evaluate('window.activeMapCamera.zoom').then((zoom) => (zoom > zoomBefore * 1.3 ? zoom : null))
     );
     assert((await cdp.evaluate(historySize)).undo === 1, 'Camera moves are not history steps', zoomAfter);
+    const layers = await cdp.evaluate(
+        "({ board: document.getElementById('map-board').style.transform, edges: document.getElementById('map-edge-layer')?.style.transform })"
+    );
+    assert(layers.edges && layers.edges === layers.board, 'Connections follow the zoom with the board', layers);
 
     await cdp.request('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [touch(3, canvasRect.x + 200, canvasRect.y + 150)] });
     await sleep(800);

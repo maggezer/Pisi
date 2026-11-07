@@ -372,6 +372,7 @@ function listNodesForMap(mapPath) {
 
         let changed = false;
         const seenNodeIds = new Set();
+        const layoutById = new Map(mapInfo.data.map.nodes.filter((item) => item?.id).map((item) => [item.id, item]));
 
         const nodes = nodeFiles
             .map((nodePath, index) => {
@@ -389,7 +390,7 @@ function listNodesForMap(mapPath) {
 
                 seenNodeIds.add(nodeId);
 
-                let layout = mapInfo.data.map.nodes.find((item) => item.id === nodeId);
+                let layout = layoutById.get(nodeId);
 
                 if (!layout) {
                     layout = {
@@ -398,6 +399,7 @@ function listNodesForMap(mapPath) {
                     };
 
                     mapInfo.data.map.nodes.push(layout);
+                    layoutById.set(nodeId, layout);
                     changed = true;
                 }
 
