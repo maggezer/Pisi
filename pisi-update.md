@@ -1,5 +1,25 @@
 # PISI Güncelleme Takip Dosyası
 
+## 07-11-2026 — Notta bul ve değiştir
+
+- Orta editörde ve modal editörde Mod+F bul çubuğunu açar. Eşleşmeler yazarken
+  vurgulanır ve "3/12" sayacı gösterilir. Enter sonrakine, Shift+Enter
+  öncekine gider (F3 / Shift+F3 da çalışır). Esc çubuğu kapatır; imleç son
+  eşleşmede seçili kalır.
+- Seçenekler: büyük/küçük harf duyarlı ve tam kelime. Büyük/küçük harf
+  eşleştirmesi Türkçe kurallarla yapılır: İ↔i, I↔ı, "i" "I" ile eşleşmez.
+  Tam kelimede harf, rakam ve alt çizgi kelime karakteri sayılır.
+- Mod+H (macOS'ta Cmd+Alt+F) değiştir satırını açar: "Değiştir" ve "Tümünü
+  değiştir". Tümünü değiştirme tek bir geri alma adımıdır.
+- Yalnız metin düğümleri değişir. Görev işaretleri, blok kimlikleri,
+  Paint/Sheet blokları, [[bağlantı]] ve etiketler aranmaz ve dokunulmaz.
+  Biçimlendirmeyle bölünmüş metin (ör. `<b>Ra</b>por`) tek eşleşme sayılır.
+- Vurgular CSS Custom Highlight API ile çizilir; kaydedilen HTML'e işaret
+  girmez.
+- Sheet hücresinde Mod+F Sheet aramasına gider
+  (`docs/editor-keyboard-rules.md`).
+- Testler: `tests/find-core.test.mjs`, `scripts/electron-editor-find-e2e.mjs`.
+
 ## 07-11-2026 — Büyük haritalarda performans
 
 - Harita açılışı O(N²) idi: her düğüm için harita klasörü baştan listeleniyordu
