@@ -539,14 +539,48 @@
     text-align: center;
 }
 
-#map-connections {
+/* Zoom tiers (pisi-map-viewport-core.mjs): from 0.6 down to 0.3, or with
+   "titles only", cards keep only their title; below 0.3 the far layer canvas
+   draws the map (pisi-map-far-layer.mjs). */
+#map-far-layer {
     position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    overflow: visible;
+    left: 0;
+    top: 0;
+    z-index: 0;
+    --pisi-map-far-node: color-mix(in srgb, var(--accent-color, #f39c12) 35%, var(--panel-bg, #2a2b2f));
+}
+
+#map-far-layer[hidden] {
+    display: none;
+}
+
+#map-canvas[data-zoom-tier='title'] .map-node-box .map-node-preview,
+#map-canvas[data-zoom-tier='title'] .map-node-box .map-node-btn,
+#map-canvas[data-zoom-tier='title'] .map-node-box:not(:focus-within) .map-port {
+    display: none;
+}
+
+/* Connections are in world coordinates: the layer carries the camera transform
+   and the SVG is sized to the bounds of all nodes (pisi-map-edges.mjs). */
+#map-edge-layer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+    transform-origin: 0 0;
     pointer-events: none;
     z-index: 1;
+}
+
+#map-connections {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1px;
+    height: 1px;
+    overflow: visible;
+    pointer-events: none;
 }
 
 .map-edge {

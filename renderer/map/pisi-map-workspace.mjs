@@ -109,12 +109,13 @@ async function openMapInWorkspace(mapItem, request = beginPisiWorkspaceNavigatio
     activeMapNodes = result.nodes || [];
     activeMapEdges = result.edges || [];
 
-    for (const node of activeMapNodes) {
-        const box = createMapNodeBox(node);
-        board.appendChild(box);
+    // Only nodes in the camera's view are mounted (pisi-map-viewport.mjs); it also draws the connections.
+    if (typeof window.mountPisiMapViewport === 'function') {
+        window.mountPisiMapViewport();
+    } else {
+        for (const node of activeMapNodes) board.appendChild(createMapNodeBox(node));
+        drawMapConnections();
     }
-
-    drawMapConnections();
     if (typeof syncHubPortCollapseVisuals === 'function') {
         syncHubPortCollapseVisuals();
     }
@@ -185,23 +186,26 @@ function createMapNodeBox(node) {
     }
     const title = node.metadata?.title || node.fileName.replace(/\.node$/i, '');
     const preview = node.preview || '';
+    // Labels are translated here, so the localization observer can skip the box (preload.js).
+    const t = (value) => window.pisiT?.(value) ?? value;
+    box.dataset.pisiLocalized = '1';
     box.tabIndex = 0;
     box.setAttribute('role', 'group');
     box.setAttribute('aria-label', `${title} node`);
     box.innerHTML = `
-        <button class="map-node-btn map-node-delete" title="Node sil">×</button>
-        <button class="map-node-btn map-node-open" title="Node düzenle">↗</button>
-        <div class="map-port top" data-port="top" role="button" tabindex="-1" aria-label="Üst bağlantı portu"></div>
-        <div class="map-port right" data-port="right" role="button" tabindex="-1" aria-label="Sağ bağlantı portu"></div>
-        <div class="map-port bottom" data-port="bottom" role="button" tabindex="-1" aria-label="Alt bağlantı portu"></div>
-        <div class="map-port left" data-port="left" role="button" tabindex="-1" aria-label="Sol bağlantı portu"></div>
+        <button class="map-node-btn map-node-delete" title="${escapeHtml(t('Node sil'))}">×</button>
+        <button class="map-node-btn map-node-open" title="${escapeHtml(t('Node düzenle'))}">↗</button>
+        <div class="map-port top" data-port="top" role="button" tabindex="-1" aria-label="${escapeHtml(t('Üst bağlantı portu'))}"></div>
+        <div class="map-port right" data-port="right" role="button" tabindex="-1" aria-label="${escapeHtml(t('Sağ bağlantı portu'))}"></div>
+        <div class="map-port bottom" data-port="bottom" role="button" tabindex="-1" aria-label="${escapeHtml(t('Alt bağlantı portu'))}"></div>
+        <div class="map-port left" data-port="left" role="button" tabindex="-1" aria-label="${escapeHtml(t('Sol bağlantı portu'))}"></div>
         <div class="map-node-title" title="${escapeHtml(title)}"><span class="map-node-title-text">${escapeHtml(title)}</span></div>
         <div class="map-node-preview">${escapeHtml(preview)}</div>
         <div class="map-node-resize"></div>
     `;
     if (node.isReference) {
         const deleteButton = box.querySelector('.map-node-delete');
-        if (deleteButton) deleteButton.title = 'Map referansını kaldır';
+        if (deleteButton) deleteButton.title = t('Map referansını kaldır');
         box.querySelectorAll('.map-port').forEach((port) => {
             port.hidden = true;
             port.tabIndex = -1;
@@ -443,11 +447,8 @@ function bindMapNodeDrag(box) {
                 item.box.style.top = `${item.y + dy}px`;
             }
 
-            if (typeof scheduleDrawMapConnections === 'function') {
-                scheduleDrawMapConnections();
-            } else {
-                drawMapConnections();
-            }
+            // Only connections touching the dragged nodes move.
+            scheduleDrawPisiMapConnectionsForNodes(draggedBoxes.map((item) => item.box.dataset.nodeId));
         };
 
         const onMouseUp = (upEvent) => {
@@ -502,11 +503,7 @@ function bindMapNodeResize(box, handle) {
             box.style.width = `${newW}px`;
             box.style.height = `${newH}px`;
 
-            if (typeof scheduleDrawMapConnections === 'function') {
-                scheduleDrawMapConnections();
-            } else {
-                drawMapConnections();
-            }
+            scheduleDrawPisiMapConnectionsForNodes([box.dataset.nodeId]);
         };
 
         const onMouseUp = () => {

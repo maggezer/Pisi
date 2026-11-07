@@ -244,7 +244,9 @@ test('map ok uçları ve çizgileri node zoom oranını izler', () => {
     const interactionStyles = read('styles/10-shell-map-panels.css');
     const html = read('index.html');
 
-    assert.match(connectionInteractions, /getPisiMapConnectionMetrics\(activeMapCamera\?\.zoom\)/);
+    // Connections are drawn in world coordinates and follow the zoom through the
+    // edge layer transform; scripts/electron-map-editing-e2e.mjs checks it.
+    assert.match(connectionInteractions, /getPisiMapConnectionMetrics\(1\)/);
     assert.match(cameraInteractions, /syncMapConnectionZoomStyles\(\)/);
     assert.match(edges, /syncMapConnectionZoomStyles\(svg\)/);
     assert.match(mapStyles, /stroke-width: var\(--pisi-map-edge-stroke-width, 2\.5px\)/);

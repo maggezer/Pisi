@@ -64,6 +64,7 @@ function getVisiblePisiMapBoxes() {
 
 function focusPisiMapBox(box, options = {}) {
     if (!box) return false;
+    window.ensurePisiMapNodeMounted?.(box.dataset.nodeId);
     if (!options.keepSelection) {
         window.clearSelectedMapNodes?.();
         box.classList.add('selected');
@@ -74,24 +75,34 @@ function focusPisiMapBox(box, options = {}) {
     return true;
 }
 
+// Navigation sees every node of the map, also those outside the viewport:
+// the target is mounted and the camera follows it.
+function getPisiMapNavigationRects() {
+    const hidden = window.collectCollapsedHubNodeIds?.() || new Set();
+    const rects = window.getPisiMapAllNodeRects?.() || getVisiblePisiMapBoxes().map(readRect);
+    return rects.filter((rect) => !hidden.has(rect.id));
+}
+
+function focusPisiMapNodeById(id) {
+    if (!id) return false;
+    const box = window.revealPisiMapNode?.(id) || getVisiblePisiMapBoxes().find((item) => item.dataset.nodeId === id);
+    return focusPisiMapBox(box);
+}
+
 function moveFocusToNeighbour(box, direction) {
-    const boxes = getVisiblePisiMapBoxes();
-    const targetId = findPisiNearestMapRect(readRect(box), boxes.map(readRect), direction);
+    const targetId = findPisiNearestMapRect(readRect(box), getPisiMapNavigationRects(), direction);
     if (!targetId) return false;
     pisiMapKeyboardState.tabAnchor = null;
-    return focusPisiMapBox(boxes.find((item) => item.dataset.nodeId === targetId));
+    return focusPisiMapNodeById(targetId);
 }
 
 function moveFocusAlongConnections(box, backwards) {
-    const boxes = getVisiblePisiMapBoxes();
-    const anchor =
-        pisiMapKeyboardState.tabAnchor && boxes.some((item) => item.dataset.nodeId === pisiMapKeyboardState.tabAnchor)
-            ? pisiMapKeyboardState.tabAnchor
-            : box.dataset.nodeId;
+    const rects = getPisiMapNavigationRects();
+    const remembered = pisiMapKeyboardState.tabAnchor;
+    const anchor = remembered && rects.some((rect) => rect.id === remembered) ? remembered : box.dataset.nodeId;
     pisiMapKeyboardState.tabAnchor = anchor;
     const edges = Array.isArray(window.activeMapEdges) ? window.activeMapEdges : [];
-    const targetId = getPisiMapTabTarget(anchor, box.dataset.nodeId, boxes.map(readRect), edges, backwards);
-    return focusPisiMapBox(boxes.find((item) => item.dataset.nodeId === targetId));
+    return focusPisiMapNodeById(getPisiMapTabTarget(anchor, box.dataset.nodeId, rects, edges, backwards));
 }
 
 function flushPisiMapNudge() {
@@ -126,7 +137,8 @@ function nudgePisiMapSelection(box, direction) {
         item.style.left = `${parseFloat(item.style.left || '0') + delta[0] * PISI_MAP_GRID_STEP}px`;
         item.style.top = `${parseFloat(item.style.top || '0') + delta[1] * PISI_MAP_GRID_STEP}px`;
     }
-    window.drawMapConnections?.();
+    window.scheduleDrawPisiMapConnectionsForNodes?.(boxes.map((item) => item.dataset.nodeId));
+    window.markPisiMapViewportDirty?.();
     clearTimeout(nudge.timer);
     nudge.timer = window.setTimeout(flushPisiMapNudge, PISI_MAP_NUDGE_MERGE_MS);
     return true;

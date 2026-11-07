@@ -11,6 +11,11 @@ function ensurePisiSidecar(filePath, metadata) {
     if (!desiredName) return null;
     const desiredPath = path.join(dir, desiredName);
 
+    // The common case: the sidecar already has its current name. Nothing would
+    // be renamed below, so skip listing the parent folder; that listing made
+    // opening a map O(N²) because every node of a map shares one folder.
+    if (fs.existsSync(desiredPath) && fs.statSync(desiredPath).isDirectory()) return desiredPath;
+
     const existingById = findExistingSidecarById(dir, ext, safeId);
 
     if (existingById && normalizePathForCompare(existingById) !== normalizePathForCompare(desiredPath)) {

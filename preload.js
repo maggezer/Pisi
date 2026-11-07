@@ -502,7 +502,12 @@ function pisiInstallObserver() {
                 pisiTranslateAttributes(mutation.target);
                 continue;
             }
-            for (const node of mutation.addedNodes) pisiApplyToRoot(node);
+            for (const node of mutation.addedNodes) {
+                // Map node boxes translate their own labels when created; viewport culling mounts
+                // many per frame. Language changes still translate them through the full document pass.
+                if (node.nodeType === Node.ELEMENT_NODE && /** @type {Element} */ (node).hasAttribute('data-pisi-localized')) continue;
+                pisiApplyToRoot(node);
+            }
         }
     });
     pisiLocalizationObserver.observe(document.body, {

@@ -12,7 +12,7 @@ permissions:
 jobs:
     electron-smoke-e2e:
         runs-on: ubuntu-latest
-        timeout-minutes: 8
+        timeout-minutes: 15
 
         steps:
             - name: Checkout
@@ -29,3 +29,26 @@ jobs:
 
             - name: Run Electron E2E suite
               run: xvfb-run -a npm run test:e2e
+
+            # Report only: map performance numbers never fail the build.
+            - name: Map performance report
+              if: always()
+              continue-on-error: true
+              env:
+                  PISI_PERF_REPORT_ONLY: '1'
+                  PISI_PERF_FRAMES: '30'
+                  PISI_PERF_OUTPUT: map-performance
+              run: |
+                  xvfb-run -a node scripts/electron-map-performance-e2e.mjs
+                  if [ -f map-performance/pisi-map-performance.md ]; then
+                      { echo '## Map performance (report only)'; cat map-performance/pisi-map-performance.md; } >> "$GITHUB_STEP_SUMMARY"
+                  fi
+
+            - name: Upload map performance report
+              if: always()
+              continue-on-error: true
+              uses: actions/upload-artifact@v4
+              with:
+                  name: map-performance
+                  path: map-performance/
+                  if-no-files-found: ignore

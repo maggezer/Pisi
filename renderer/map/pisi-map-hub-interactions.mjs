@@ -65,7 +65,8 @@ export function syncCollapsedHubNodeVisibility() {
 }
 
 export function isHubEdgeCollapsed(edge, hiddenNodeIds = collectCollapsedHubNodeIds()) {
-    return isPisiMapEdgeHiddenByCollapsedHub(edge, Array.from(hiddenNodeIds || []), Array.from(getCollapsedHubPortSet()));
+    // Sets are passed as they are; converting them per edge made drawing O(edges × hubs).
+    return isPisiMapEdgeHiddenByCollapsedHub(edge, hiddenNodeIds instanceof Set ? hiddenNodeIds : new Set(hiddenNodeIds || []), getCollapsedHubPortSet());
 }
 
 export function syncHubPortCollapseVisuals() {

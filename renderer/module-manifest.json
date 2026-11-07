@@ -988,6 +988,7 @@
             "targetAlreadyHasUpHub",
             "enforceSingleParentForTarget",
             "getConnectionClass",
+            "getPisiMapBoxWorldRect",
             "getPortPoint",
             "getMousePointInCanvas",
             "getPortDirection",
@@ -1039,8 +1040,35 @@
             "applyPisiMapEdgeCustomization",
             "bindPisiMapEdgeSelection",
             "scheduleDrawMapConnections",
-            "drawMapConnections"
+            "drawMapConnections",
+            "drawPisiMapConnectionsForNodes",
+            "scheduleDrawPisiMapConnectionsForNodes"
         ]
+    },
+    {
+        "module": "map.viewport",
+        "path": "renderer/map/pisi-map-viewport.mjs",
+        "bindings": [
+            "pisiMapViewportState",
+            "getPisiMapNodeRect",
+            "getPisiMapAllNodeRects",
+            "markPisiMapViewportDirty",
+            "syncPisiMapViewport",
+            "schedulePisiMapViewportSync",
+            "mountPisiMapViewport",
+            "isPisiMapEdgeInViewport",
+            "ensurePisiMapNodeMounted",
+            "ensurePisiMapNodeMountedByPath",
+            "revealPisiMapNode",
+            "withAllPisiMapNodesMounted",
+            "getPisiMapViewportStats",
+            "initializePisiMapViewport"
+        ]
+    },
+    {
+        "module": "map.farLayer",
+        "path": "renderer/map/pisi-map-far-layer.mjs",
+        "bindings": ["pisiMapFarLayerState", "drawPisiMapFarLayer"]
     },
     {
         "module": "map.history",

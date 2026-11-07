@@ -22,6 +22,7 @@ import {
     toggleHubConnectionsFromPort
 } from './pisi-map-hub-interactions.mjs';
 import {
+    getPisiMapBoxWorldRect,
     getPortPoint,
     getMousePointInCanvas,
     getMapConnectionVisualMetrics,
@@ -187,6 +188,12 @@ Object.defineProperties(moduleApi, {
         enumerable: true,
         get() {
             return getConnectionClass;
+        }
+    },
+    getPisiMapBoxWorldRect: {
+        enumerable: true,
+        get() {
+            return getPisiMapBoxWorldRect;
         }
     },
     getPortPoint: {

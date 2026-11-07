@@ -75,6 +75,11 @@ function collectPisiCollapsedHubCounts(edges = [], collapsedHubPortKeys = []) {
     return counts;
 }
 
+/**
+ * @param {any} edge
+ * @param {Set<string> | string[]} [hiddenNodeIds]
+ * @param {Set<string> | string[]} [collapsedHubPortKeys]
+ */
 function isPisiMapEdgeHiddenByCollapsedHub(edge, hiddenNodeIds = [], collapsedHubPortKeys = []) {
     const hiddenIds = hiddenNodeIds instanceof Set ? hiddenNodeIds : new Set(Array.isArray(hiddenNodeIds) ? hiddenNodeIds : []);
 
