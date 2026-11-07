@@ -1,5 +1,29 @@
 # PISI Güncelleme Takip Dosyası
 
+## 07-11-2026 — Görev, bağlantı ve harita geçmişi; proje dışına otomatik yedek
+
+- Sürüm geçmişi artık yalnız notlar için değil: `.pisi/tasks.json`,
+  `.pisi/relationships.json`, `.pisi/properties.json`, `.pisi-views.json`,
+  `.pisi-templates.json` ve her `.map` için gzip anlık görüntüler
+  (`.pisi-history/stores/`). Bir depo yazılmadan hemen önce, son 5 dakikada
+  anlık görüntüsü yoksa önceki hâli saklanır; proje kapanırken ve uygulamadan
+  çıkarken son hâller de saklanır. Bütçeler `docs/version-history-cost.md`.
+- Sürüm geçmişi ekranında "Not", "Görevler", "Bağlantılar" ve "Haritalar"
+  sekmeleri: her sürüm için karşılaştırma ("1 görev geri gelir, 2 görev
+  kaldırılır") ve geri yükleme. Geri yükleme atomik mutation ile yapılır, önce
+  mevcut durumun "geri yüklemeden önce" anlık görüntüsü alınır; görevlerde
+  silinmiş görev blokları notlara geri yazılır; ardından Project Integrity
+  çalışır ve sonucu gösterilir.
+- Ayarlar → Yedekleme: proje dışındaki bir klasöre günde bir kez ve kapanışta
+  tek ZIP (`Pisi-<proje>-YYYY-MM-DD-HHmm.zip`; geçmiş ve geçici dosyalar hariç).
+  Son 14 gün + son 8 haftanın haftalık yedekleri saklanır. Klasör projenin
+  içinde ya da projeyi içeren bir klasör olamaz. Son başarılı yedek zamanı
+  görünür; 3 günden uzun süredir yedek yoksa uyarı çıkar. "Yedekten geri
+  yükle" ZIP'i yeni bir klasöre açıp proje olarak açar; mevcut proje ezilmez.
+- Testler: `tests/store-history-core.test.mjs`, `tests/store-history-diff-core.test.mjs`,
+  `tests/external-backup-core.test.mjs` (ZIP içeriği ve bire bir geri yükleme
+  dahil), `scripts/electron-store-history-e2e.mjs`, `scripts/electron-backup-e2e.mjs`.
+
 ## 07-11-2026 — Büyük projelerde ana süreç donmaları
 
 - Ölçüm: `scripts/generate-project-fixture.mjs` (yan klasörlü sentetik proje) ve

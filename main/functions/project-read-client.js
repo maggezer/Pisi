@@ -3,6 +3,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Worker } from 'node:worker_threads';
 import { registerMainModule } from '../module-registry.js';
 import { readPisiJsonFiles, scanPisiWikiRenameCandidates, walkPisiProjectFiles } from './project-read-core.js';
+import { extractPisiBackupZip, writePisiProjectBackupZip } from './external-backup-core.js';
 
 // Main-process side of the project read worker. Long read-only scans (Project
 // Integrity inventory, export file lists, link rename candidates, bulk reads)
@@ -15,7 +16,9 @@ const readState = { worker: null, failed: false, nextId: 1, pending: new Map() }
 const inProcess = {
     walk: (args) => walkPisiProjectFiles(args.root, args.options),
     readJson: (args) => readPisiJsonFiles(args.paths, args.options),
-    wikiRenameCandidates: (args) => scanPisiWikiRenameCandidates(args.root, args.options)
+    wikiRenameCandidates: (args) => scanPisiWikiRenameCandidates(args.root, args.options),
+    backupZip: (args) => writePisiProjectBackupZip(args.root, args.outputPath),
+    extractZip: (args) => extractPisiBackupZip(args.zipPath, args.target)
 };
 
 function getPisiReadWorkerUrl() {

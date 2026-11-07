@@ -69,3 +69,59 @@ Version History remains recovery data only:
 - `.pisi/relationships.json` remains semantic relationship authority;
 - `.pisi/properties.json` remains property-schema authority;
 - `.pisi-history` is never used to reconstruct those authorities merely to make current state appear valid.
+
+## Canonical store history
+
+The project stores that are not notes get the same snapshot format
+(`.json.gz` plus `index.json`) under `.pisi-history/stores/<key>/`:
+
+| Store                      | Key             | Max versions | Max bytes |
+| -------------------------- | --------------- | -----------: | --------: |
+| `.pisi/tasks.json`         | `tasks`         |           50 |    24 MiB |
+| `.pisi/relationships.json` | `relationships` |           50 |    24 MiB |
+| `.pisi/properties.json`    | `properties`    |           50 |    24 MiB |
+| `.pisi-views.json`         | `views`         |           30 |     4 MiB |
+| `.pisi-templates.json`     | `templates`     |           30 |     4 MiB |
+| each `.map`                | `map-<mapId>`   |           30 |     8 MiB |
+
+The same newest-first rule applies: the newest version is always kept, older
+ones while both the count and the byte budget allow. A map is keyed by its Pisi
+id, so a renamed or moved map keeps one history.
+
+Each snapshot stores the file's exact text, so a restore writes back exactly
+what was there (maps keep their current identity, title and sidecar, like note
+restores).
+
+**When snapshots are taken.** The atomic write path (`writeFileAtomic`) tells
+store history right before one of these files is overwritten. If the store has
+no snapshot from the last five minutes, its current text is kept first, so the
+state before a change can be restored. When the project closes or the app
+quits, the latest state of every store changed since its last snapshot is kept
+as well. Identical content is never stored twice. This means at most one
+automatic snapshot per store per five minutes; changes made and undone within
+the same five minutes may not have a version of their own.
+
+**Worst case.** With the budgets above, store history for a project is bounded
+by `3 × 24 MiB + 2 × 4 MiB + maps × 8 MiB` of compressed data (80 MiB plus
+8 MiB per map); typical task and relationship stores compress to a few kilobytes
+per version.
+
+**Restore.** `history.store.restore.v1` runs inside the project atomic mutation.
+It first keeps a `before-restore` snapshot of the current state, then writes the
+version. For tasks, a task whose block is missing from its source note gets the
+block back (appended to the note, with the task's own id, block id and tag, so
+the task keeps its identity). Afterwards the renderer runs Project Integrity and
+shows the result.
+
+## External backups
+
+Backups outside the project are separate from Version History: one ZIP of the
+whole project per run (`Pisi-<proje>-YYYY-MM-DD-HHmm.zip`), once a day while the
+app is open and when it quits (at most one minute on quit). `.pisi-history`,
+`.pisi/mutations`, `.pisi/backups`, `*.pisi-backup`, the lock file and temporary
+files are left out. Retention: every backup of the last 14 days plus the newest
+of each of the last 8 weeks; only files named as this project's backups are ever
+removed. The backup folder must be outside the project and must not contain it.
+"Yedekten geri yükle" opens a ZIP into a new folder and switches to it; an
+existing folder or the open project is never overwritten, and ZIP entries that
+would leave the target are refused before anything is written.

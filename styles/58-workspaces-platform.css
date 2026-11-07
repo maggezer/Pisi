@@ -1108,6 +1108,58 @@
     gap: 8px;
 }
 
+.pisi-history-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgb(255 255 255 / 10%);
+}
+
+.pisi-history-tab {
+    padding: 6px 12px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.pisi-history-tab[aria-selected='true'] {
+    border-bottom-color: var(--pisi-theme-accent, #f39c12);
+}
+
+.pisi-history-tab-panel {
+    display: grid;
+    gap: 12px;
+}
+
+.pisi-store-history-current,
+.pisi-store-history-map-picker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.pisi-store-history-items {
+    display: grid;
+    gap: 2px;
+    max-height: 220px;
+    margin: 6px 0 0;
+    padding-left: 6px;
+    overflow: auto;
+    font-size: 12px;
+}
+
+.pisi-store-history-items [data-change='restored'] {
+    color: #2ecc71;
+}
+
+.pisi-store-history-items [data-change='removed'] {
+    color: #e74c3c;
+}
+
 .pisi-history-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;

@@ -87,7 +87,8 @@ function makePisiVersionHistoryEntry(directory, historyId, snapshot) {
         capturedAt: String(snapshot?.capturedAt || ''),
         reason: String(snapshot?.reason || 'save').slice(0, 80),
         hash: String(snapshot?.hash || '').slice(0, 64),
-        preview: pisiVersionHistoryPreview(snapshot),
+        // Store snapshots carry their own summary; note snapshots preview their text.
+        preview: typeof snapshot?.summary === 'string' ? snapshot.summary.slice(0, 500) : pisiVersionHistoryPreview(snapshot),
         size: stat.size,
         compressed: historyId.endsWith('.json.gz')
     };
@@ -119,7 +120,7 @@ function rebuildPisiVersionHistoryEntries(directory) {
     const entries = [];
     for (const historyId of pisiVersionHistorySnapshotNames(directory)) {
         const result = readPisiVersionHistorySnapshotFile(path.join(directory, historyId));
-        if (!result.ok || !result.data?.data?.pisi) continue;
+        if (!result.ok || !(result.data?.data?.pisi || result.data?.kind === 'store')) continue;
         entries.push(makePisiVersionHistoryEntry(directory, historyId, result.data));
     }
     return entries.sort(comparePisiVersionHistoryEntries);
@@ -223,6 +224,29 @@ function prunePisiVersionHistoryEditorAssets(context, retainedEntries = [], prot
     return editorAssets.prunePisiEditorAssetStore(sidecarPath, references);
 }
 
+/**
+ * Writes one gzip snapshot into `directory` and applies the retention budget.
+ * Shared by note history and canonical store history.
+ * @returns {{ historyId: string, snapshotPath: string, entry: object, retention: ReturnType<typeof selectPisiVersionHistoryRetention>, rawBytes: number }}
+ */
+function writePisiVersionHistorySnapshot(directory, snapshot, options = {}) {
+    fs.mkdirSync(directory, { recursive: true });
+    const existingEntries = options.existingEntries || getPisiVersionHistoryEntries(directory);
+    const historyId = `${Date.now()}-${String(snapshot.capturedAt).replace(/[:.]/g, '-')}-${snapshot.hash}.json.gz`;
+    const encoded = Buffer.from(JSON.stringify(snapshot), 'utf8');
+    const compressed = zlib.gzipSync(encoded, { level: 6 });
+    const snapshotPath = path.join(directory, historyId);
+    const writeAtomic = options.writeFileAtomic || globalThis.writeFileAtomic;
+    if (typeof writeAtomic === 'function') {
+        writeAtomic(snapshotPath, compressed, { backup: false });
+    } else {
+        fs.writeFileSync(snapshotPath, compressed);
+    }
+    const entry = makePisiVersionHistoryEntry(directory, historyId, snapshot);
+    const retention = prunePisiVersionHistory(directory, [entry, ...existingEntries], options);
+    return { historyId, snapshotPath, entry, retention, rawBytes: encoded.length };
+}
+
 function snapshotPisiNodeVersionBounded(nodePath, reason = 'save', options = {}) {
     try {
         if (!fs.existsSync(nodePath)) return { ok: true, skipped: true };
@@ -244,7 +268,6 @@ function snapshotPisiNodeVersionBounded(nodePath, reason = 'save', options = {})
         }
 
         const capturedAt = new Date().toISOString();
-        const historyId = `${Date.now()}-${capturedAt.replace(/[:.]/g, '-')}-${hash}.json.gz`;
         const snapshot = {
             version: PISI_VERSION_HISTORY_FORMAT_VERSION,
             reason: String(reason || 'save').slice(0, 80),
@@ -253,25 +276,14 @@ function snapshotPisiNodeVersionBounded(nodePath, reason = 'save', options = {})
             hash,
             data: info.data
         };
-        const encoded = Buffer.from(JSON.stringify(snapshot), 'utf8');
-        const compressed = zlib.gzipSync(encoded, { level: 6 });
-        const snapshotPath = path.join(directory, historyId);
-        const writeAtomic = options.writeFileAtomic || globalThis.writeFileAtomic;
-        if (typeof writeAtomic === 'function') {
-            writeAtomic(snapshotPath, compressed, { backup: false });
-        } else {
-            fs.writeFileSync(snapshotPath, compressed);
-        }
-
-        const entry = makePisiVersionHistoryEntry(directory, historyId, snapshot);
-        const retention = prunePisiVersionHistory(directory, [entry, ...existingEntries], options);
+        const { historyId, snapshotPath, entry, retention, rawBytes } = writePisiVersionHistorySnapshot(directory, snapshot, { ...options, existingEntries });
         const assetGc = prunePisiVersionHistoryEditorAssets(context, retention.keep, options.protectedEditorAssetReferences);
         return {
             ok: true,
             historyId,
             snapshotPath,
             compressed: true,
-            rawBytes: encoded.length,
+            rawBytes,
             storedBytes: entry.size,
             storageBytes: retention.bytes,
             storageBudgetBytes: retention.maxBytes,
@@ -408,5 +420,6 @@ export {
     restorePisiNodeHistoryVersionBounded,
     saveNodeContentWithBoundedHistory,
     selectPisiVersionHistoryRetention,
-    snapshotPisiNodeVersionBounded
+    snapshotPisiNodeVersionBounded,
+    writePisiVersionHistorySnapshot
 };

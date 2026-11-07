@@ -1,5 +1,6 @@
 import { restorePisiEditorDocument } from '../editor/pisi-editor-restore.mjs';
 import { registerModule } from '../core/module-registry.mjs';
+import { renderPisiHistoryTabs } from './pisi-store-history-panel.mjs';
 import { getPisiSearchCurrentNodePath, invalidatePisiSearchIndex } from '../search/pisi-search-index.mjs';
 
 function pisiPortableTranslate(value) {
@@ -381,20 +382,28 @@ async function openPisiPortabilityDialog(titleText, render, opener = null) {
     return true;
 }
 
-/** Version history and backups of `nodePath` (default: the open note). */
-async function openPisiHistoryDialog(opener = null, nodePath = getPisiSearchCurrentNodePath()) {
+/**
+ * Version history: the "Not" tab (history and backups of `nodePath`, default
+ * the open note) and the Görevler / Bağlantılar / Haritalar store tabs.
+ */
+async function openPisiHistoryDialog(opener = null, nodePath = getPisiSearchCurrentNodePath(), tab = nodePath ? 'note' : 'tasks') {
     if (!window.currentProjectFolder) {
         pisiNotifyWarning(pisiPortableTranslate('Önce bir proje açın.'));
         return false;
     }
     return openPisiPortabilityDialog(
         'Yerel sürüm geçmişi',
-        async (body) => {
-            const history = makePisiPortableSection('Yerel sürüm geçmişi');
-            const backups = makePisiPortableSection('Yedekten geri yükleme');
-            body.append(history, backups);
-            await Promise.all([renderPisiHistory(history, nodePath), renderPisiBackups(backups, nodePath)]);
-        },
+        (body) =>
+            renderPisiHistoryTabs(
+                body,
+                async (panel) => {
+                    const history = makePisiPortableSection('Yerel sürüm geçmişi');
+                    const backups = makePisiPortableSection('Yedekten geri yükleme');
+                    panel.append(history, backups);
+                    await Promise.all([renderPisiHistory(history, nodePath), renderPisiBackups(backups, nodePath)]);
+                },
+                tab
+            ),
         opener
     );
 }

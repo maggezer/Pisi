@@ -7,4 +7,6 @@ import './reminder-service.js';
 import './map-node-copy.js';
 import './window-shell.js';
 import './crash-handling.js';
+import './store-history.js';
+import './external-backup.js';
 import './perf-probe.js';

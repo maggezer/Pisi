@@ -297,6 +297,7 @@ async function loadProject(folderPath) {
         await restorePisiProjectWorkspace(workspaceSnapshot);
     }
 
+    document.dispatchEvent(new CustomEvent('pisi:project-loaded', { detail: { folderPath, reloaded: reloadingSameProject } }));
     return true;
 }
 

@@ -973,6 +973,23 @@
         ]
     },
     {
+        "module": "portability.storeHistory",
+        "path": "renderer/portability/pisi-store-history-panel.mjs",
+        "bindings": ["formatPisiStoreHistoryDiff", "restorePisiStoreHistoryVersion", "renderPisiHistoryTabs"]
+    },
+    {
+        "module": "portability.backupSettings",
+        "path": "renderer/portability/pisi-backup-settings.mjs",
+        "bindings": [
+            "pisiBackupSettingsState",
+            "runPisiBackupNow",
+            "restorePisiProjectFromBackup",
+            "renderPisiBackupSettings",
+            "checkPisiBackupWarning",
+            "initializePisiBackupSettings"
+        ]
+    },
+    {
         "module": "portability.panel",
         "path": "renderer/portability/pisi-portability-panel.mjs",
         "bindings": [
