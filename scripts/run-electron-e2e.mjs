@@ -11,9 +11,12 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-/** The script paths of the "test:e2e" chain, in order. */
+/**
+ * The script paths of the "test:e2e" chain, in order.
+ * @returns {string[]}
+ */
 export function listPisiElectronE2eScripts(packageJson) {
-    return String(packageJson?.scripts?.['test:e2e'] || '').match(/scripts\/[\w.-]+\.mjs/g) || [];
+    return Array.from(String(packageJson?.scripts?.['test:e2e'] || '').match(/scripts\/[\w.-]+\.mjs/g) || []);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

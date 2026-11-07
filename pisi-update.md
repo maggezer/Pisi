@@ -1,5 +1,34 @@
 # PISI Güncelleme Takip Dosyası
 
+## 07-11-2026 — Windows E2E, kapsam raporu ve kaynak okuyan testlerin ayıklanması
+
+- Electron E2E artık bir matris olarak koşuyor:
+    - `ubuntu-latest` (xvfb) ve `windows-latest` (xvfb olmadan).
+    - macOS, Actions'ta "Run workflow" ile `macos` girdisi açılınca ekleniyor.
+- Windows ayağı `scripts/run-electron-e2e.mjs` ile koşuyor. Bu çalıştırıcı
+  ilk hatada durmuyor ve her betiğin sonucunu job summary'ye yazıyor.
+  "Proje yeniden yüklenirken bekleyen kayıt korunur" senaryosu
+  (`electron-sync-reload-e2e.mjs`) Windows'ta da koşuyor.
+- Windows düzeltmeleri:
+    - `.gitattributes` her checkout'ta LF satır sonu tutuyor.
+    - E2E geçici klasörleri `realpath` ile çözülüyor, çünkü Windows'ta
+      `os.tmpdir()` 8.3 kısa ad (`RUNNER~1`) döndürüyordu.
+- `npm run test:coverage`:
+    - birim testlerini Node'un yerleşik kapsam ölçümüyle koşuyor;
+    - `coverage/lcov.info` ve `coverage/summary.md` üretiyor;
+    - Coverage iş akışı özeti PR'a tek bir yorum olarak yazıyor ve her push'ta güncelliyor;
+    - eşik yok.
+- `docs/test-strategy.md`, kaynak okuyan 129 test dosyasını üç gruba ayırıyor:
+  (a) korunacak mimari kurallar, (b) davranış testine çevrilecekler,
+  (c) silinebilecek tekrarlar. Liste `scripts/list-source-tests.mjs` ile
+  yeniden üretilebiliyor.
+- (c) grubu silindi:
+    - `check:architecture`, `check:i18n` ve `check:types` ile birebir aynı 4 test;
+    - `css-consolidation` import listesini tekrarlayan 24 doğrulama satırı.
+- (b) grubundan kayıt, görev ve silme/geri yükleme ile ilgili 5 test,
+  `tests/critical-store-behavior.test.js`'te gerçek store'larla geçici bir
+  projede çalışan davranış testlerine çevrildi (`tests/main-store-harness.cjs`).
+
 ## 07-11-2026 — İmzalı güncelleme manifesti
 
 - Doğrudan dağıtılan NSIS sürümünün güncelleyicisi artık `latest.json`'u
