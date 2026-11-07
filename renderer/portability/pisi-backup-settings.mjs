@@ -31,8 +31,14 @@ async function runPisiBackupNow(button = null) {
 
 /** Opens a backup ZIP into a new folder and switches to it; the open project is not changed. */
 async function restorePisiProjectFromBackup(payload = {}) {
+    // Everything of the open project is written first; after the switch its paths are outside the active project.
     if (typeof window.flushPisiPendingSaves === 'function' && !(await window.flushPisiPendingSaves())) return { ok: false };
     const result = await window.pisiDomain?.command?.('backup.restore.v1', payload);
+    if (result?.ok && !result.canceled) {
+        // The old project's editors must not try to save into the new one.
+        window.clearCenterNodeEditor?.();
+        window.closeNodeModalWithoutSaving?.();
+    }
     if (!result?.ok || result.canceled) {
         if (!result?.ok) pisiNotifyError(result?.error || 'Yedek açılamadı.');
         return result;
