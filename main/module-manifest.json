@@ -254,7 +254,7 @@
     {
         "module": "main.autoUpdate",
         "path": "main/functions/auto-update.js",
-        "bindings": ["initializePisiAutoUpdate"]
+        "bindings": ["initializePisiAutoUpdate", "checkPisiForUpdates", "verifyPisiInstallerPublisher"]
     },
     {
         "module": "main.electronIpc",

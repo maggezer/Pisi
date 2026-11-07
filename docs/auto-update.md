@@ -47,9 +47,82 @@ The updater:
 5. downloads only the installer for the current architecture;
 6. requires HTTPS;
 7. requires the installer URL to originate from the configured feed;
-8. verifies SHA-256 before accepting the download;
-9. verifies SHA-256 again immediately before launching the installer;
-10. asks the user before closing Pisi and starting the installer.
+8. verifies the Ed25519 signature of `latest.json` (`latest.json.sig`) with a
+   public key built into the app, and rejects the update if it is missing,
+   malformed, made with an unknown key or does not match;
+9. verifies SHA-256 before accepting the download;
+10. verifies SHA-256 again immediately before launching the installer;
+11. when the build has a Windows signing identity, checks that the installer's
+    Authenticode signature is valid and that its publisher is the expected name
+    (otherwise the check is skipped and logged);
+12. asks the user before closing Pisi and starting the installer.
+
+A build with a feed but without a public key never updates
+(`direct-unsigned` mode): an unsigned manifest could point the updater at any
+installer.
+
+## Update manifest signing
+
+`latest.json` names the installer and its SHA-256, so whoever controls the feed
+controls what runs. The release workflow therefore signs the manifest's exact
+bytes with Ed25519 and publishes `latest.json.sig` next to it:
+
+```json
+{ "keyId": "3f2a9c0d1e4b5a67", "signature": "<base64>" }
+```
+
+`keyId` is the first 16 hex characters of SHA-256 over the public key (SPKI
+DER). The app trusts every key in its built-in list, so the signing key can be
+rotated without breaking installed copies.
+
+### Create a signing key (once, on a trusted machine)
+
+```bash
+openssl genpkey -algorithm ed25519 -out pisi-update-signing.pem
+```
+
+```bash
+node scripts/sign-update-manifest.mjs --public-key pisi-update-signing.pem
+```
+
+The second command prints the public key as one base64 line (and its key id).
+Keep `pisi-update-signing.pem` offline (a password manager or hardware-backed
+vault). Never commit it.
+
+### Add it to GitHub
+
+1. Repository → Settings → Secrets and variables → Actions → **Secrets** →
+   New repository secret `PISI_UPDATE_SIGNING_KEY`: paste the whole content of
+   `pisi-update-signing.pem` (including the `BEGIN`/`END` lines).
+2. **Variables** → New repository variable `PISI_UPDATE_PUBLIC_KEYS`: the
+   base64 public key line. Several keys are separated by commas.
+3. Optional, with Windows code signing: variable `PISI_WINDOWS_PUBLISHER_NAME`
+   with the certificate's subject common name (CN), for example `Pisi Ltd`.
+
+When `PISI_UPDATE_FEED_URL` is set, the release fails if the public keys or the
+signing secret are missing, and `scripts/sign-update-manifest.mjs` verifies the
+new signature against `PISI_UPDATE_PUBLIC_KEYS` before anything is published.
+
+### Rotate the key
+
+1. Create the new key and add its public key to `PISI_UPDATE_PUBLIC_KEYS`
+   (`old,new`), still signing with the old secret. Release once, so installed
+   copies learn the new key.
+2. Replace the `PISI_UPDATE_SIGNING_KEY` secret with the new private key and
+   release.
+3. After users have updated, remove the old public key from the list.
+
+If the private key leaks, publish a release signed with a fresh key that is
+already trusted (step 1 ahead of time), then remove the leaked key from the list.
+
+### Installer publisher check
+
+With `PISI_WINDOWS_PUBLISHER_NAME` and a code-signing identity, the build stores
+the expected publisher. Before launching a downloaded installer the app runs
+`Get-AuthenticodeSignature` (PowerShell, the file path passed through an
+environment variable) and requires `Status = Valid` and a signer certificate
+whose CN equals that name. Builds without a signing identity skip the check and
+log `Authenticode check skipped`.
 
 No GitHub access token is embedded in the application.
 
