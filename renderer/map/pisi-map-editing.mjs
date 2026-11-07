@@ -50,20 +50,24 @@ function getPisiMapBoxById(id) {
 async function applyPisiMapLayoutChange(nextRects, label) {
     const mapPath = window.activeMapPath;
     if (!mapPath || !nextRects.length) return false;
-    const before = nextRects
-        .map((rect) => getPisiMapBoxById(rect.id))
-        .filter(Boolean)
-        .map(readPisiMapBoxRect);
-    for (const rect of nextRects) {
-        const box = getPisiMapBoxById(rect.id);
-        if (!box) continue;
-        box.style.left = `${Math.round(rect.x)}px`;
-        box.style.top = `${Math.round(rect.y)}px`;
-    }
+    // Nodes outside the viewport are not in the DOM: their layout lives in the model.
+    const currentRects = new Map((window.getPisiMapAllNodeRects?.() || getPisiMapBoxes().map(readPisiMapBoxRect)).map((rect) => [rect.id, rect]));
+    const before = nextRects.map((rect) => currentRects.get(rect.id)).filter(Boolean);
     const step = makePisiMapLayoutStep(mapPath, before, nextRects);
     if (!step) return false;
+    const nodes = new Map((Array.isArray(window.activeMapNodes) ? window.activeMapNodes : []).map((node) => [node.id, node]));
+    for (const rect of step.after) {
+        const box = getPisiMapBoxById(rect.id);
+        if (box) {
+            box.style.left = `${Math.round(rect.x)}px`;
+            box.style.top = `${Math.round(rect.y)}px`;
+        }
+        const node = nodes.get(rect.id);
+        if (node) node.layout = { ...(node.layout || {}), x: rect.x, y: rect.y };
+    }
+    window.markPisiMapViewportDirty?.();
     window.drawMapConnections?.();
-    await window.saveCurrentMapLayout?.();
+    await window.pisiProject?.saveMapLayout?.(mapPath, step.after);
     window.recordPisiMapStep?.({ ...step, label });
     window.announcePisiMap?.(pisiMapEditingTranslate('{count} düğüm taşındı').replace('{count}', String(step.after.length)));
     return true;
@@ -86,7 +90,7 @@ function distributeSelectedPisiMapNodes(axis) {
 }
 
 async function autoLayoutPisiMap(scope = 'hub') {
-    const rects = getPisiMapBoxes().map(readPisiMapBoxRect);
+    const rects = window.getPisiMapAllNodeRects?.() || getPisiMapBoxes().map(readPisiMapBoxRect);
     const edges = Array.isArray(window.activeMapEdges) ? window.activeMapEdges : [];
     let next = [];
     if (scope === 'hub') {

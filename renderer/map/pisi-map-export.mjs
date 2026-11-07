@@ -401,7 +401,11 @@ async function exportCurrentPisiMap(format) {
     }
 
     try {
-        const snapshot = buildPisiMapExportSvg();
+        // Export draws every node, not only those in the viewport.
+        const snapshot =
+            typeof window.withAllPisiMapNodesMounted === 'function'
+                ? await window.withAllPisiMapNodesMounted(() => buildPisiMapExportSvg())
+                : buildPisiMapExportSvg();
         if (!snapshot.ok) {
             alert(snapshot.error || 'Harita dışa aktarılamadı.');
             return;

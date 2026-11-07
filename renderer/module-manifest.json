@@ -1046,6 +1046,26 @@
         ]
     },
     {
+        "module": "map.viewport",
+        "path": "renderer/map/pisi-map-viewport.mjs",
+        "bindings": [
+            "pisiMapViewportState",
+            "getPisiMapNodeRect",
+            "getPisiMapAllNodeRects",
+            "markPisiMapViewportDirty",
+            "syncPisiMapViewport",
+            "schedulePisiMapViewportSync",
+            "mountPisiMapViewport",
+            "isPisiMapEdgeInViewport",
+            "ensurePisiMapNodeMounted",
+            "ensurePisiMapNodeMountedByPath",
+            "revealPisiMapNode",
+            "withAllPisiMapNodesMounted",
+            "getPisiMapViewportStats",
+            "initializePisiMapViewport"
+        ]
+    },
+    {
         "module": "map.history",
         "path": "renderer/map/pisi-map-history.mjs",
         "bindings": [

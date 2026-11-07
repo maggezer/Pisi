@@ -74,6 +74,8 @@ function getPisiSearchNodeItem(result) {
 async function waitForPisiSearchMapBox(nodePath) {
     const key = pisiSearchPathKey(nodePath);
     for (let attempt = 0; attempt < 30; attempt += 1) {
+        // The node may be outside the viewport and not in the DOM yet.
+        window.ensurePisiMapNodeMountedByPath?.(nodePath);
         const box = Array.from(document.querySelectorAll('.map-node-box[data-node-path]')).find(
             (candidate) => pisiSearchPathKey(candidate.dataset.nodePath) === key
         );

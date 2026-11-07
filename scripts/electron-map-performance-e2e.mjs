@@ -17,7 +17,7 @@ import { generatePisiMapFixture } from './generate-map-fixture.mjs';
 const require = createRequire(import.meta.url);
 const electronPath = /** @type {string} */ (require('electron'));
 const repoRoot = path.resolve(import.meta.dirname, '..');
-const port = 9234;
+const port = Number(process.env.PISI_PERF_PORT) || 9234;
 const tempRoot = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'pisi-electron-map-perf-')));
 const userDataPath = path.join(tempRoot, 'user-data');
 const projectPath = path.join(tempRoot, 'project');

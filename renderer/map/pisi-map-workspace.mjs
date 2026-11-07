@@ -109,12 +109,13 @@ async function openMapInWorkspace(mapItem, request = beginPisiWorkspaceNavigatio
     activeMapNodes = result.nodes || [];
     activeMapEdges = result.edges || [];
 
-    for (const node of activeMapNodes) {
-        const box = createMapNodeBox(node);
-        board.appendChild(box);
+    // Only nodes in the camera's view are mounted (pisi-map-viewport.mjs); it also draws the connections.
+    if (typeof window.mountPisiMapViewport === 'function') {
+        window.mountPisiMapViewport();
+    } else {
+        for (const node of activeMapNodes) board.appendChild(createMapNodeBox(node));
+        drawMapConnections();
     }
-
-    drawMapConnections();
     if (typeof syncHubPortCollapseVisuals === 'function') {
         syncHubPortCollapseVisuals();
     }
