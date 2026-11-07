@@ -1,4 +1,4 @@
-import { BrowserWindow, dialog } from '../electron-bridge.js';
+import { app, BrowserWindow, dialog } from '../electron-bridge.js';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { registerMainModule } from '../module-registry.js';
@@ -642,10 +642,14 @@ function getPisiPortableRelativePath(projectFolder, filePath, extension) {
 }
 
 async function exportPisiProjectMarkdown(projectFolder) {
-    const result = await dialog.showOpenDialog(globalThis.mainWindow, {
-        title: 'Markdown dışa aktarma klasörü',
-        properties: ['openDirectory', 'createDirectory']
-    });
+    // Test-only: performance runs export into a fixed folder instead of asking.
+    const testFolder = !app.isPackaged ? String(process.env.PISI_TEST_EXPORT_DIR || '') : '';
+    const result = testFolder
+        ? { canceled: false, filePaths: [testFolder] }
+        : await dialog.showOpenDialog(globalThis.mainWindow, {
+              title: 'Markdown dışa aktarma klasörü',
+              properties: ['openDirectory', 'createDirectory']
+          });
     if (result.canceled || !result.filePaths?.[0]) return { ok: true, canceled: true };
     const destination = path.join(result.filePaths[0], `Pisi-Export-${pisiSafeTimestamp()}`);
     fs.mkdirSync(destination, { recursive: true });
