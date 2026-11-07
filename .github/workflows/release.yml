@@ -68,6 +68,11 @@ jobs:
             PISI_WINDOWS_CERT_SHA1: ${{ secrets.PISI_WINDOWS_CERT_SHA1 }}
             PISI_UPDATE_FEED_URL: ${{ vars.PISI_UPDATE_FEED_URL }}
             PISI_UPDATE_CHANNEL: ${{ vars.PISI_UPDATE_CHANNEL || 'beta' }}
+            # Ed25519 manifest signing (docs/auto-update.md). The private key is a secret;
+            # the public keys (base64 SPKI, comma separated) are built into the app.
+            PISI_UPDATE_SIGNING_KEY: ${{ secrets.PISI_UPDATE_SIGNING_KEY }}
+            PISI_UPDATE_PUBLIC_KEYS: ${{ vars.PISI_UPDATE_PUBLIC_KEYS }}
+            PISI_WINDOWS_PUBLISHER_NAME: ${{ vars.PISI_WINDOWS_PUBLISHER_NAME }}
 
         steps:
             - name: Checkout
@@ -141,6 +146,15 @@ jobs:
 
                   if (-not [string]::IsNullOrWhiteSpace($env:PISI_UPDATE_FEED_URL)) {
                     $arguments += "--config.extraMetadata.pisiUpdateFeedUrl=$env:PISI_UPDATE_FEED_URL"
+                    if ([string]::IsNullOrWhiteSpace($env:PISI_UPDATE_PUBLIC_KEYS)) {
+                      throw "PISI_UPDATE_FEED_URL is set but PISI_UPDATE_PUBLIC_KEYS is empty: the app would refuse every update."
+                    }
+                    $arguments += "--config.extraMetadata.pisiUpdatePublicKeys=$env:PISI_UPDATE_PUBLIC_KEYS"
+                  }
+
+                  if ($env:PISI_SIGNING_ENABLED -eq 'true' -and -not [string]::IsNullOrWhiteSpace($env:PISI_WINDOWS_PUBLISHER_NAME)) {
+                    # The updater checks the installer's Authenticode publisher against this name.
+                    $arguments += "--config.extraMetadata.pisiUpdatePublisher=$env:PISI_WINDOWS_PUBLISHER_NAME"
                   }
 
                   if ($env:PISI_SIGNING_ENABLED -eq 'true') {
@@ -270,6 +284,19 @@ jobs:
 
                   $manifest | ConvertTo-Json -Depth 6 | Set-Content -Encoding utf8NoBOM release/latest.json
 
+            - name: Sign direct auto-update feed manifest
+              shell: pwsh
+              run: |
+                  if ([string]::IsNullOrWhiteSpace($env:PISI_UPDATE_FEED_URL)) {
+                    Write-Host "No update feed configured; latest.json is not signed."
+                    exit 0
+                  }
+                  if ([string]::IsNullOrWhiteSpace($env:PISI_UPDATE_SIGNING_KEY)) {
+                    throw "PISI_UPDATE_FEED_URL is set but the PISI_UPDATE_SIGNING_KEY secret is missing."
+                  }
+                  # Writes release/latest.json.sig and verifies it against the built-in public keys.
+                  node scripts/sign-update-manifest.mjs release/latest.json
+
             - name: Verify Windows Authenticode signatures
               if: env.PISI_SIGNING_ENABLED == 'true'
               shell: pwsh
@@ -301,7 +328,7 @@ jobs:
                       release/Pisi-*-Portable-x64.exe
                       release/Pisi-*-Portable-arm64.exe
                       release/SHA256SUMS.txt
-                      release/latest.json
+                      release/latest.json*
                   if-no-files-found: error
                   retention-days: 1
 
@@ -589,6 +616,8 @@ jobs:
 
             - name: Verify release payload
               shell: bash
+              env:
+                  PISI_UPDATE_FEED_URL: ${{ vars.PISI_UPDATE_FEED_URL }}
               run: |
                   set -euo pipefail
 
@@ -604,6 +633,10 @@ jobs:
                     "SHA256SUMS-macOS.txt"
                     "SHA256SUMS-Linux.txt"
                   )
+
+                  if [[ -n "${PISI_UPDATE_FEED_URL:-}" ]]; then
+                    required+=("latest.json.sig")
+                  fi
 
                   for file in "${required[@]}"; do
                     [[ -f "final-release/$file" ]] || {
