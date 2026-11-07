@@ -429,6 +429,11 @@
         ]
     },
     {
+        "module": "shell.diagnostics",
+        "path": "renderer/shell/pisi-diagnostics.mjs",
+        "bindings": ["reportPisiRendererError", "reportPisiRendererRejection", "renderPisiDiagnosticsSettings", "initializePisiDiagnostics"]
+    },
+    {
         "module": "shell.dialogs",
         "path": "renderer/shell/pisi-dialogs.mjs",
         "bindings": ["pisiConfirm"]

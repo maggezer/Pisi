@@ -1,4 +1,5 @@
 import './main/functions/path-security.js';
+import './main/functions/logger.js';
 import './main/functions/i18n.js';
 import './main/functions/filesystem-core.js';
 import './main/functions/storage.js';

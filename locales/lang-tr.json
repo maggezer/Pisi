@@ -1055,6 +1055,22 @@
         "Bağlantıyı sil": "Bağlantıyı sil",
         "Operasyonel harita kaydedilemedi.": "Operasyonel harita kaydedilemedi.",
         "Harita referansını kaldır": "Harita referansını kaldır",
-        "Açık notu kaydet": "Açık notu kaydet"
+        "Açık notu kaydet": "Açık notu kaydet",
+        "Tanılama": "Tanılama",
+        "Pisi hata kayıtlarını yalnızca bu bilgisayarda tutar ve hiçbir veriyi dışarı göndermez. Kayıtlarda not içeriği ve tam dosya yolları bulunmaz.": "Pisi hata kayıtlarını yalnızca bu bilgisayarda tutar ve hiçbir veriyi dışarı göndermez. Kayıtlarda not içeriği ve tam dosya yolları bulunmaz.",
+        "Log klasörünü aç": "Log klasörünü aç",
+        "Tanılama paketi oluştur": "Tanılama paketi oluştur",
+        "Tanılama paketi kaydedildi": "Tanılama paketi kaydedildi",
+        "İşlem tamamlanamadı.": "İşlem tamamlanamadı.",
+        "Tanılama paketini kaydet": "Tanılama paketini kaydet",
+        "Pencere beklenmedik şekilde kapandı.": "Pencere beklenmedik şekilde kapandı.",
+        "Diske yazılmış notlarınız güvende. Pencereyi yeniden yükleyebilirsiniz.": "Diske yazılmış notlarınız güvende. Pencereyi yeniden yükleyebilirsiniz.",
+        "Yeniden yükle": "Yeniden yükle",
+        "Pisi yanıt vermiyor.": "Pisi yanıt vermiyor.",
+        "Bir süre bekleyebilir ya da pencereyi yeniden yükleyebilirsiniz. Yeniden yükleme kaydedilmemiş değişiklikleri kaybettirebilir.": "Bir süre bekleyebilir ya da pencereyi yeniden yükleyebilirsiniz. Yeniden yükleme kaydedilmemiş değişiklikleri kaybettirebilir.",
+        "Bekle": "Bekle",
+        "Beklenmeyen bir hata oluştu.": "Beklenmeyen bir hata oluştu.",
+        "Yeniden başlat": "Yeniden başlat",
+        "Devam et": "Devam et"
     }
 }

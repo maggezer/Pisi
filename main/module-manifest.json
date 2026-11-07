@@ -241,6 +241,7 @@
             "getPisiNodeHistoryVersion",
             "restorePisiNodeHistoryVersion",
             "makePisiDocxBuffer",
+            "makePisiStoredZip",
             "exportPisiNodeDocument",
             "buildPisiNodePrintHtml",
             "exportPisiMapGraphic",
@@ -312,6 +313,16 @@
         "module": "main.externalLinks",
         "path": "main/functions/external-links.js",
         "bindings": ["openPisiExternalUrl", "guardPisiWindowNavigation", "installPisiExternalLinkIpc"]
+    },
+    {
+        "module": "main.logger",
+        "path": "main/functions/logger.js",
+        "bindings": ["logPisiEvent", "getPisiLogDirectory", "handlePisiRendererReport", "installPisiLogger"]
+    },
+    {
+        "module": "main.crashHandling",
+        "path": "main/functions/crash-handling.js",
+        "bindings": ["attachPisiCrashHandling", "handlePisiFatalError", "createPisiDiagnosticsBundle", "openPisiLogFolder", "installPisiDiagnosticsContracts"]
     },
     {
         "module": "main.windowShell",

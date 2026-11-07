@@ -1055,6 +1055,22 @@
         "Bağlantıyı sil": "Delete connection",
         "Operasyonel harita kaydedilemedi.": "Operational map could not be saved.",
         "Harita referansını kaldır": "Remove map reference",
-        "Açık notu kaydet": "Save the open note"
+        "Açık notu kaydet": "Save the open note",
+        "Tanılama": "Diagnostics",
+        "Pisi hata kayıtlarını yalnızca bu bilgisayarda tutar ve hiçbir veriyi dışarı göndermez. Kayıtlarda not içeriği ve tam dosya yolları bulunmaz.": "Pisi keeps error logs only on this computer and never sends any data out. Logs contain no note content and no full file paths.",
+        "Log klasörünü aç": "Open log folder",
+        "Tanılama paketi oluştur": "Create diagnostics package",
+        "Tanılama paketi kaydedildi": "Diagnostics package saved",
+        "İşlem tamamlanamadı.": "The action could not be completed.",
+        "Tanılama paketini kaydet": "Save diagnostics package",
+        "Pencere beklenmedik şekilde kapandı.": "The window closed unexpectedly.",
+        "Diske yazılmış notlarınız güvende. Pencereyi yeniden yükleyebilirsiniz.": "Notes already written to disk are safe. You can reload the window.",
+        "Yeniden yükle": "Reload",
+        "Pisi yanıt vermiyor.": "Pisi is not responding.",
+        "Bir süre bekleyebilir ya da pencereyi yeniden yükleyebilirsiniz. Yeniden yükleme kaydedilmemiş değişiklikleri kaybettirebilir.": "You can wait a little or reload the window. Reloading may lose unsaved changes.",
+        "Bekle": "Wait",
+        "Beklenmeyen bir hata oluştu.": "An unexpected error occurred.",
+        "Yeniden başlat": "Restart",
+        "Devam et": "Continue"
     }
 }

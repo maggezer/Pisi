@@ -6,3 +6,4 @@ import './wiki-link-domain.js';
 import './reminder-service.js';
 import './map-node-copy.js';
 import './window-shell.js';
+import './crash-handling.js';
