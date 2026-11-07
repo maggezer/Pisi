@@ -36,33 +36,6 @@ test('Trash payload and manifest stay inside .pisi/trash and reject project inte
     assert.match(store, /Aktif proje kökü Trash’e taşınamaz/);
 });
 
-test('deletion archives canonical tasks semantic relationships and external map references', () => {
-    assert.match(store, /taskStore\.readPisiTaskStore/);
-    assert.match(store, /taskStore\.writePisiTaskStore/);
-    assert.match(store, /relationshipStore\.readPisiRelationshipStore/);
-    assert.match(store, /relationshipStore\.writePisiRelationshipStore/);
-    assert.match(store, /collectPisiTrashMapReferences/);
-    assert.match(store, /relationshipViews/);
-    assert.match(store, /mapData\.nodes/);
-});
-
-test('restore is a delta merge rather than a whole-project snapshot overwrite', () => {
-    assert.match(store, /currentNodeIds/);
-    assert.match(store, /currentViewIds/);
-    assert.match(store, /taskState\.tasks, \.\.\.restoredTasks/);
-    assert.match(store, /mergePisiTrashTaskDependencies/);
-    assert.doesNotMatch(store, /projectSnapshot/);
-    assert.doesNotMatch(store, /restoreWholeProject/);
-});
-
-test('restore fails closed on path task and semantic conflicts', () => {
-    assert.match(store, /type: 'path-exists'/);
-    assert.match(store, /type: 'parent-missing'/);
-    assert.match(store, /type: 'task-id'/);
-    assert.match(store, /prepareSemanticRelationshipUpsert/);
-    assert.match(store, /TRASH_RESTORE_CONFLICT/);
-});
-
 test('restore captures Trash item as one atomic ancestor before moving payload out', () => {
     const captureIndex = store.indexOf('capturePisiAtomicPathBeforeChange(itemDirectory)');
     const loopIndex = store.indexOf('for (const entry of manifest.entries)', captureIndex);

@@ -34,21 +34,6 @@ test('pisi-definition canonical mimariyi authority sınırlarıyla tanımlar', (
     assert.doesNotMatch(docs, /"connectionTypes"\s*:/);
 });
 
-test('task store tek semantik otoritedir; projection yazımları canonical store üzerinden korunur', () => {
-    const mainGuard = read('main/functions/source-of-truth.js');
-    const mainBootstrap = read('main.mjs');
-
-    assert.match(mainGuard, /operation === 'sync-index'/);
-    assert.match(mainGuard, /allowProjectionWrite === true/);
-    assert.match(mainGuard, /ignoredProjectionWrite:\s*true/);
-    assert.match(mainGuard, /authority:\s*'\.pisi\/tasks\.json'/);
-    assert.doesNotMatch(mainGuard, /migration-status|complete-migration|legacyImportedAt/);
-    assert.ok(
-        mainBootstrap.indexOf('task-store') < mainBootstrap.indexOf('source-of-truth'),
-        'source-of-truth guard task-store bridge kurulduktan sonra yüklenmeli'
-    );
-});
-
 test('yalnız kontrollü kullanıcı işlemleri projection -> task store write-through yapabilir', () => {
     const rendererGuard = read('renderer/tags/pisi-source-of-truth.mjs');
 

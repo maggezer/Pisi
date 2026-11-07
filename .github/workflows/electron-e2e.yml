@@ -47,9 +47,10 @@ jobs:
               if: runner.os == 'Linux'
               run: xvfb-run -a npm run test:e2e
 
+            # Same scripts as npm run test:e2e, without xvfb; every script runs even after a failure.
             - name: Run Electron E2E suite
               if: runner.os != 'Linux'
-              run: npm run test:e2e
+              run: node scripts/run-electron-e2e.mjs
 
             # Report only: map performance numbers never fail the build.
             - name: Map performance report
