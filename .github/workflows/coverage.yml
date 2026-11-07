@@ -1,0 +1,64 @@
+name: Coverage
+
+on:
+    push:
+        branches:
+            - main
+    pull_request:
+
+permissions:
+    contents: read
+    pull-requests: write
+
+jobs:
+    coverage:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v5
+
+            - name: Setup Node
+              uses: actions/setup-node@v5
+              with:
+                  node-version: 24
+                  cache: npm
+
+            - name: Install dependencies without Electron binary
+              run: npm ci --ignore-scripts
+
+            # Report only: no threshold. A failing unit test is reported by the CI workflow.
+            - name: Unit test coverage
+              continue-on-error: true
+              run: npm run test:coverage
+
+            - name: Coverage summary
+              if: always()
+              run: |
+                  if [ -f coverage/summary.md ]; then cat coverage/summary.md >> "$GITHUB_STEP_SUMMARY"; fi
+
+            # One comment per PR, updated on every push. Fork PRs get a read-only token, so this may be skipped.
+            - name: Coverage comment on the PR
+              if: always() && github.event_name == 'pull_request' && hashFiles('coverage/summary.md') != ''
+              continue-on-error: true
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  PR_NUMBER: ${{ github.event.pull_request.number }}
+              run: |
+                  { echo '<!-- pisi-coverage -->'; cat coverage/summary.md; } > coverage/comment.md
+                  existing=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --paginate --jq '.[] | select(.body | startswith("<!-- pisi-coverage -->")) | .id' | head -n 1)
+                  if [ -n "$existing" ]; then
+                      gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing" -F body=@coverage/comment.md > /dev/null
+                  else
+                      gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file coverage/comment.md
+                  fi
+
+            - name: Upload coverage report
+              if: always()
+              continue-on-error: true
+              uses: actions/upload-artifact@v4
+              with:
+                  name: coverage
+                  path: coverage/
+                  if-no-files-found: ignore

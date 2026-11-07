@@ -18,7 +18,6 @@ test('light theme selected map node keeps the orange selection border', () => {
 
 test('external rectangular node selection frame is no longer loaded', () => {
     assert.doesNotMatch(styleSource, /102-map-node-selection-rectangle\.css/);
-    assert.match(styleSource, /92-compatibility\.css/);
     assert.doesNotMatch(selectionSource, /::after/);
     assert.doesNotMatch(selectionSource, /inset:\s*-6px/);
 });

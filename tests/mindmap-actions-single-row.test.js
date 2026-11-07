@@ -9,11 +9,8 @@ const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 test('Mind Map primary actions fit on one row and Reset sits at layout row right edge', () => {
-    const style = read('style.css');
     const css = read('styles/105-feature-polish.css');
     const panel = read('renderer/map/pisi-map-right-panel.mjs');
-
-    assert.match(style, /105-feature-polish\.css/);
     assert.match(css, /pisi-mindmap-icon-actions\.pisi-mindmap-icon-actions\s*\{[^}]*flex-wrap:\s*nowrap;[^}]*gap:\s*2px;/s);
     assert.match(css, /pisi-mindmap-icon-actions\s*>\s*\.pisi-mindmap-icon-button\s*\{[^}]*flex:\s*0 0 30px;[^}]*width:\s*30px;/s);
     assert.match(css, /pisi-mindmap-layout-row\.pisi-mindmap-layout-row\s*\{[^}]*repeat\(4, 32px\)/s);

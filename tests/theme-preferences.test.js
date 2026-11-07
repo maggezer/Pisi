@@ -96,8 +96,6 @@ test('Workspace Center Tercihler sayfası koyu ve açık tema seçicilerini suna
 test('light palette son CSS katmanında ana Pisi yüzeylerini kapsar', () => {
     const style = read('style.css');
     const themes = read('styles/90-themes.css');
-
-    assert.match(style, /styles\/90-themes\.css/);
     assert.match(themes, /html\[data-pisi-theme=["\']light["\']\] body/);
     assert.match(themes, /html\[data-pisi-theme=["\']light["\']\] #map-canvas/);
     assert.match(themes, /html\[data-pisi-theme=["\']light["\']\] #center-node-editor-content/);

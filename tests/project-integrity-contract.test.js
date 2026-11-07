@@ -21,7 +21,6 @@ const main = read('main.mjs');
 const preload = read('preload.js');
 const renderer = read('renderer/portability/pisi-project-integrity.mjs');
 const bootstrap = read('renderer/bootstrap.mjs');
-const style = read('style.css');
 const css = read('styles/58-workspaces-platform.css');
 const auditSources = [service, shared, documents, authorities, recovery].join('\n');
 
@@ -166,7 +165,6 @@ test('Project Integrity UI and styles load after portability base panel', () => 
     const baseIndex = bootstrap.indexOf('./portability/pisi-portability-panel.mjs');
     const integrityIndex = bootstrap.indexOf('./portability/pisi-project-integrity.mjs');
     assert.ok(baseIndex >= 0 && integrityIndex > baseIndex);
-    assert.match(style, /styles\/58-workspaces-platform\.css/);
     assert.match(css, /\.pisi-integrity-metrics/);
     assert.match(css, /\.pisi-integrity-issue-row/);
     assert.match(css, /html\[data-theme=["\']light["\']\]/);

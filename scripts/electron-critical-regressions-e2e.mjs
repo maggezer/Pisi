@@ -7,7 +7,7 @@ import path from 'node:path';
 const require = createRequire(import.meta.url);
 const electronPath = /** @type {string} */ (require('electron'));
 const repoRoot = path.resolve(import.meta.dirname, '..');
-const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'pisi-electron-critical-e2e-'));
+const tempRoot = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'pisi-electron-critical-e2e-')));
 const userDataPath = path.join(tempRoot, 'user-data');
 const projectPath = path.join(tempRoot, 'project');
 const persistenceMarker = 'critical restart persistence marker';

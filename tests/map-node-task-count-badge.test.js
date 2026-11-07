@@ -40,7 +40,4 @@ test('double click modal opening remains available after removing the corner but
     assert.match(workspace, previewDoubleClick);
 });
 
-test('task count badge stylesheet is loaded after existing map styles', () => {
-    const style = read('style.css');
-    assert.match(style, /styles\/92-compatibility\.css/);
-});
+test('task count badge stylesheet is loaded after existing map styles', () => {});

@@ -8,7 +8,7 @@ const require = createRequire(import.meta.url);
 const electronPath = /** @type {string} */ (require('electron'));
 const repoRoot = path.resolve(import.meta.dirname, '..');
 const port = 9223;
-const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'pisi-electron-e2e-'));
+const tempRoot = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'pisi-electron-e2e-')));
 const userDataPath = path.join(tempRoot, 'user-data');
 const projectPath = path.join(tempRoot, 'project');
 
@@ -131,6 +131,11 @@ try {
     cdp = new CdpClient(page.webSocketDebuggerUrl);
     await cdp.open();
     await cdp.request('Runtime.enable');
+    // Same layout on every OS: a fixed 1400×900 viewport (the default window size) and a
+    // focused page, even where the OS shrinks the window to a small screen or keeps it
+    // in the background (Windows CI runners).
+    await cdp.request('Emulation.setDeviceMetricsOverride', { width: 1400, height: 900, deviceScaleFactor: 1, mobile: false });
+    await cdp.request('Emulation.setFocusEmulationEnabled', { enabled: true });
 
     const startup = await waitForRendererState(cdp);
     const expectedProject = path.resolve(projectPath);

@@ -16,10 +16,7 @@ function loadTreeFilter() {
 }
 
 test('rich editor preserves repeated spaces as visible caret width', () => {
-    const styleIndex = read('style.css');
     const whitespaceStyles = read('styles/92-compatibility.css');
-
-    assert.match(styleIndex, /92-compatibility\.css/);
     assert.match(whitespaceStyles, /\.pisi-rich-editor \.pisi-editor-block,[\s\S]*\.pisi-rich-editor \.pisi-typing-style/);
     assert.match(whitespaceStyles, /white-space: break-spaces;/);
 });

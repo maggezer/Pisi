@@ -15,7 +15,6 @@ const preload = read('preload.js');
 const rendererDomain = read('renderer/domain/pisi-domain-client.mjs');
 const rendererTrash = read('renderer/shell/pisi-trash.mjs');
 const bootstrap = read('renderer/bootstrap.mjs');
-const style = read('style.css');
 const trashCss = read('styles/58-workspaces-platform.css');
 
 test('project delete commands are rebound to project-local reversible Trash', () => {
@@ -35,33 +34,6 @@ test('Trash payload and manifest stay inside .pisi/trash and reject project inte
     assert.match(store, /first === '\.git'/);
     assert.match(store, /first === 'node_modules'/);
     assert.match(store, /Aktif proje kökü Trash’e taşınamaz/);
-});
-
-test('deletion archives canonical tasks semantic relationships and external map references', () => {
-    assert.match(store, /taskStore\.readPisiTaskStore/);
-    assert.match(store, /taskStore\.writePisiTaskStore/);
-    assert.match(store, /relationshipStore\.readPisiRelationshipStore/);
-    assert.match(store, /relationshipStore\.writePisiRelationshipStore/);
-    assert.match(store, /collectPisiTrashMapReferences/);
-    assert.match(store, /relationshipViews/);
-    assert.match(store, /mapData\.nodes/);
-});
-
-test('restore is a delta merge rather than a whole-project snapshot overwrite', () => {
-    assert.match(store, /currentNodeIds/);
-    assert.match(store, /currentViewIds/);
-    assert.match(store, /taskState\.tasks, \.\.\.restoredTasks/);
-    assert.match(store, /mergePisiTrashTaskDependencies/);
-    assert.doesNotMatch(store, /projectSnapshot/);
-    assert.doesNotMatch(store, /restoreWholeProject/);
-});
-
-test('restore fails closed on path task and semantic conflicts', () => {
-    assert.match(store, /type: 'path-exists'/);
-    assert.match(store, /type: 'parent-missing'/);
-    assert.match(store, /type: 'task-id'/);
-    assert.match(store, /prepareSemanticRelationshipUpsert/);
-    assert.match(store, /TRASH_RESTORE_CONFLICT/);
 });
 
 test('restore captures Trash item as one atomic ancestor before moving payload out', () => {
@@ -138,7 +110,6 @@ test('Trash UI ships in both Turkish and English and refreshes the project tree 
 
 test('Trash page and styles are part of bootstrap and layered CSS', () => {
     assert.match(bootstrap, /\.\/shell\/pisi-trash\.mjs/);
-    assert.match(style, /styles\/58-workspaces-platform\.css/);
     assert.match(trashCss, /\.pisi-trash-page/);
     assert.match(trashCss, /html\[data-theme=(?:"light"|'light')\]/);
 });

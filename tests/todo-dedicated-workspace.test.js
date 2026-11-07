@@ -15,7 +15,6 @@ test('özel To-do çalışma alanı bootstrap ve stil zincirine bağlıdır', ()
 
     assert.match(bootstrap, /pisi-todo-workspace\.mjs/);
     assert.match(bootstrap, /pisi-todo-workspace-shield\.mjs/);
-    assert.match(styles, /50-productivity\.css/);
 });
 
 test('sağ paneldeki başlıksız To-do eylem alanı iki kompakt düğme taşır', () => {

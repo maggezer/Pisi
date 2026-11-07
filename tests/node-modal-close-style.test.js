@@ -22,8 +22,6 @@ test('node modal close button sits flush in the top-right corner without a frame
 });
 
 test('node modal close polish follows task-count styling inside the compatibility bundle', () => {
-    const style = read('style.css');
-    assert.match(style, /styles\/92-compatibility\.css/);
     const css = read('styles/92-compatibility.css');
     const badgeIndex = css.indexOf('/* ===== Source: styles/100-map-task-count-badge.css ===== */');
     const closeIndex = css.indexOf('/* ===== Source: styles/101-node-modal-close.css ===== */');

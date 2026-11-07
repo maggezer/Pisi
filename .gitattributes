@@ -1,0 +1,12 @@
+# Line endings are LF in the working tree on every OS (Windows checkouts included),
+# so source files, fixtures and tests read the same bytes everywhere.
+* text=auto eol=lf
+*.png binary
+*.ico binary
+*.icns binary
+*.jpg binary
+*.gif binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.zip binary

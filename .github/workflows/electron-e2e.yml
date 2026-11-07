@@ -5,14 +5,30 @@ on:
         branches:
             - main
     pull_request:
+    workflow_dispatch:
+        inputs:
+            macos:
+                description: 'macOS (macos-latest) üzerinde de koş'
+                type: boolean
+                default: false
 
 permissions:
     contents: read
 
 jobs:
     electron-smoke-e2e:
-        runs-on: ubuntu-latest
-        timeout-minutes: 15
+        name: electron-smoke-e2e (${{ matrix.os }})
+        strategy:
+            fail-fast: false
+            matrix:
+                # ubuntu-latest runs under xvfb; windows-latest runs with its own desktop session.
+                # macOS is optional: only a manual run with the "macos" input adds it.
+                os: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.macos && '["ubuntu-latest","windows-latest","macos-latest"]' || '["ubuntu-latest","windows-latest"]') }}
+        runs-on: ${{ matrix.os }}
+        timeout-minutes: 25
+        defaults:
+            run:
+                shell: bash
 
         steps:
             - name: Checkout
@@ -27,12 +43,18 @@ jobs:
             - name: Install full Electron dependencies
               run: npm ci
 
-            - name: Run Electron E2E suite
+            - name: Run Electron E2E suite (xvfb)
+              if: runner.os == 'Linux'
               run: xvfb-run -a npm run test:e2e
+
+            # Same scripts as npm run test:e2e, without xvfb; every script runs even after a failure.
+            - name: Run Electron E2E suite
+              if: runner.os != 'Linux'
+              run: node scripts/run-electron-e2e.mjs
 
             # Report only: map performance numbers never fail the build.
             - name: Map performance report
-              if: always()
+              if: always() && runner.os == 'Linux'
               continue-on-error: true
               env:
                   PISI_PERF_REPORT_ONLY: '1'
@@ -45,7 +67,7 @@ jobs:
                   fi
 
             - name: Upload map performance report
-              if: always()
+              if: always() && runner.os == 'Linux'
               continue-on-error: true
               uses: actions/upload-artifact@v4
               with:
