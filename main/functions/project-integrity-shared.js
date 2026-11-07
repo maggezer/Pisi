@@ -109,6 +109,7 @@ function makeRepairPlan(issues = []) {
 }
 
 export {
+    PISI_INTEGRITY_SKIP_DIRS,
     integrityCore,
     relativePath,
     absolutePath,

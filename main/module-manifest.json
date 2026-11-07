@@ -141,8 +141,6 @@
             "safeListFolder",
             "stopProjectWatcher",
             "notifyProjectChanged",
-            "shouldWatchProjectDirectory",
-            "collectProjectDirectories",
             "syncProjectWatchers"
         ]
     },
@@ -222,6 +220,7 @@
             "extractLocalAttachmentCandidates",
             "collectPisiDocumentInventory",
             "auditPisiProjectIntegrity",
+            "auditPisiProjectIntegrityAsync",
             "repairPisiProjectIntegrity",
             "rebuildPisiDerivedIntegrityState",
             "makeRepairPlan"
@@ -313,6 +312,11 @@
         "module": "main.externalLinks",
         "path": "main/functions/external-links.js",
         "bindings": ["openPisiExternalUrl", "guardPisiWindowNavigation", "installPisiExternalLinkIpc"]
+    },
+    {
+        "module": "main.projectRead",
+        "path": "main/functions/project-read-client.js",
+        "bindings": ["runPisiProjectRead", "readPisiJsonFilesBatched", "sendPisiProgress", "isPisiReadWorkerActive", "stopPisiReadWorker"]
     },
     {
         "module": "main.perfProbe",

@@ -528,14 +528,15 @@ async function hydratePisiStandaloneNodes(rawNodes, context) {
         }
     }
 
-    for (let offset = 0; offset < pending.length; offset += 12) {
+    // 100 documents per IPC call (document.read-batch.v1); one call per note as a fallback.
+    for (let offset = 0; offset < pending.length; offset += 100) {
         if (context.generation !== pisiSearchIndexGeneration) return;
-        const batch = pending.slice(offset, offset + 12);
-        const results = await Promise.all(
-            batch.map((node) => {
-                return window.pisiProject?.getPisiDocument?.(node.path);
-            })
-        );
+        const batch = pending.slice(offset, offset + 100);
+        const bulk = await window.pisiDomain?.query?.('document.read-batch.v1', { filePaths: batch.map((node) => node.path) });
+        const results =
+            bulk?.ok && Array.isArray(bulk.results) && bulk.results.length === batch.length
+                ? bulk.results
+                : await Promise.all(batch.map((node) => window.pisiProject?.getPisiDocument?.(node.path)));
 
         results.forEach((result, index) => {
             const node = batch[index];

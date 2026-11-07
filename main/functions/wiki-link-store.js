@@ -48,16 +48,23 @@ function readPisiWikiNodes(projectFolder) {
     return listPisiWikiNodeFiles(projectFolder).map(readPisiWikiNode).filter(Boolean);
 }
 
+/** Notes from a prepared candidate list, re-read now (inside the mutation). */
+function readPisiWikiCandidateNodes(candidates) {
+    return [...new Set(candidates)].sort().map(readPisiWikiNode).filter(Boolean);
+}
+
 function countOtherPisiWikiTitleOwners(nodes, nodeId, title) {
     const key = normalizePisiWikiTitle(title);
     return key ? nodes.filter((node) => node.id !== nodeId && normalizePisiWikiTitle(node.title) === key).length : 0;
 }
 
-function planPisiWikiRename(nodes, { nodeId, oldTitle, newTitle }) {
+function planPisiWikiRename(nodes, { nodeId, oldTitle, newTitle }, titleNodes = nodes) {
     // Legacy [[Old]] text only follows the rename when no other note is called
     // Old. The renamed note itself is excluded, so the answer is the same before
     // the rename (impact preview) and after it (rewrite inside the transaction).
-    const rewriteLegacy = countOtherPisiWikiTitleOwners(nodes, nodeId, oldTitle) === 0;
+    // `titleNodes` (every note's id and title) may come from a prepared scan
+    // while `nodes` holds only the notes that can contain a link.
+    const rewriteLegacy = countOtherPisiWikiTitleOwners(titleNodes, nodeId, oldTitle) === 0;
     const changes = [];
     let links = 0;
     for (const node of nodes) {
@@ -80,9 +87,33 @@ function getPisiWikiRenameImpact(projectFolder, nodePath, newTitle) {
     return { ok: true, notes: plan.changes.length, links: plan.links, legacyIncluded: plan.rewriteLegacy };
 }
 
-function applyPisiWikiRename(projectFolder, { nodeId, oldTitle, newTitle }, { writeDocument }) {
+/**
+ * The same impact as getPisiWikiRenameImpact, with the project read done by
+ * `scan` (async, off the main thread): every note's title plus the notes that
+ * may contain a link. Notes with neither the id nor [[…]] text cannot change.
+ */
+async function getPisiWikiRenameImpactAsync(projectFolder, nodePath, newTitle, { scan, readCandidates }) {
+    const target = readPisiWikiNode(nodePath);
+    if (!target || !isPisiWikiNodeId(target.id)) return { ok: true, notes: 0, links: 0 };
+    if (normalizePisiWikiTitle(target.title) === normalizePisiWikiTitle(newTitle) && target.title === String(newTitle || '').trim()) {
+        return { ok: true, notes: 0, links: 0 };
+    }
+    const prepared = await scan(target.id);
+    const nodes = await readCandidates(prepared.candidates);
+    const plan = planPisiWikiRename(nodes, { nodeId: target.id, oldTitle: target.title, newTitle }, prepared.titles);
+    return { ok: true, notes: plan.changes.length, links: plan.links, legacyIncluded: plan.rewriteLegacy };
+}
+
+/**
+ * Rewrites links to a renamed note. With `prepared` ({ titles, candidates }
+ * from an async scan before the mutation) only the candidate notes are read
+ * here; without it every live note is read, as before.
+ */
+function applyPisiWikiRename(projectFolder, { nodeId, oldTitle, newTitle }, { writeDocument, prepared = null }) {
     if (!isPisiWikiNodeId(nodeId) || !String(newTitle || '').trim() || oldTitle === newTitle) return { ok: true, notes: 0, links: 0 };
-    const plan = planPisiWikiRename(readPisiWikiNodes(projectFolder), { nodeId, oldTitle, newTitle });
+    const plan = prepared
+        ? planPisiWikiRename(readPisiWikiCandidateNodes(prepared.candidates), { nodeId, oldTitle, newTitle }, prepared.titles)
+        : planPisiWikiRename(readPisiWikiNodes(projectFolder), { nodeId, oldTitle, newTitle });
     for (const change of plan.changes) {
         writeDocument(change.node.filePath, { ...change.node.data, content: change.content });
     }
@@ -141,4 +172,13 @@ function applyPisiWikiRepair(projectFolder, { writeDocument }) {
     return { ok: true, ...plan.totals, updatedPaths: plan.changes.map((change) => change.node.filePath) };
 }
 
-export { applyPisiWikiRename, applyPisiWikiRepair, getPisiWikiRenameImpact, listPisiWikiNodeFiles, previewPisiWikiRepair, readPisiWikiNode, readPisiWikiNodes };
+export {
+    applyPisiWikiRename,
+    applyPisiWikiRepair,
+    getPisiWikiRenameImpact,
+    getPisiWikiRenameImpactAsync,
+    listPisiWikiNodeFiles,
+    previewPisiWikiRepair,
+    readPisiWikiNode,
+    readPisiWikiNodes
+};

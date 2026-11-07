@@ -38,7 +38,7 @@ function installPisiPerfProbe() {
     probe.histogram = monitorEventLoopDelay({ resolution: PISI_PERF_RESOLUTION_MS });
     probe.histogram.enable();
     probe.last = Date.now();
-    const beat = setInterval(() => {
+    const beat = globalThis.setInterval(() => {
         const now = Date.now();
         probe.maxGap = Math.max(probe.maxGap, now - probe.last);
         probe.last = now;

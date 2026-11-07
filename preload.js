@@ -193,6 +193,16 @@ contextBridge.exposeInMainWorld('pisiSync', {
     disconnect: () => ipcRenderer.invoke('pisi-sync:disconnect')
 });
 
+// Progress of long main-process operations ({ operation, done, total }).
+contextBridge.exposeInMainWorld('pisiProgress', {
+    onProgress: (callback) => {
+        if (typeof callback !== 'function') return () => {};
+        const listener = (_event, payload) => callback(payload);
+        ipcRenderer.on('pisi:progress', listener);
+        return () => ipcRenderer.removeListener('pisi:progress', listener);
+    }
+});
+
 // Renderer errors for the local log only (main validates, clips and rate-limits).
 contextBridge.exposeInMainWorld('pisiDiagnostics', {
     report: (report = {}) => {

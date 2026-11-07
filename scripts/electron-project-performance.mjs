@@ -35,7 +35,6 @@ function assert(condition, message, detail) {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-
 async function waitUntil(label, probe, timeoutMs = 15000) {
     // Probes run while main may be busy; a slow answer is not a failure.
     const started = Date.now();
@@ -137,7 +136,6 @@ async function launch(projectPath, userDataPath, port) {
     return cdp;
 }
 
-
 async function stop(cdp) {
     cdp?.close();
     if (child && child.exitCode === null) {
@@ -183,10 +181,12 @@ async function runSize(size, index) {
             label: 'Proje açma',
             wallMs: Math.round(performance.now() - started),
             loopMaxMs: openDelay.maxMs,
+            gapMs: openDelay.maxGapMs,
             loopP99Ms: openDelay.p99Ms,
             watchers: openDelay.watchers
         });
-        console.log(`[perf] ${size} open: watchers ${openDelay.watchers}, loop max ${openDelay.maxMs} ms`);
+        console.log(`[perf] ${size} open: watchers ${openDelay.watchers}, loop max ${openDelay.maxMs} ms, gap ${openDelay.maxGapMs} ms`);
+        if (process.env.PISI_PERF_OPEN_ONLY === '1') return { size, fixture: { notes: fixture.notes }, steps };
 
         steps.push(
             await measure(
@@ -219,7 +219,14 @@ async function runSize(size, index) {
         );
         await new Promise((resolve) => setTimeout(resolve, 1500));
         const after = await loop(cdp, false);
-        steps.push({ label: 'İzleyici sayısı (sonra)', wallMs: null, loopMaxMs: after.maxMs, loopP99Ms: after.p99Ms, watchers: after.watchers });
+        steps.push({
+            label: 'İzleyici sayısı (sonra)',
+            wallMs: null,
+            loopMaxMs: after.maxMs,
+            gapMs: after.maxGapMs,
+            loopP99Ms: after.p99Ms,
+            watchers: after.watchers
+        });
         return { size, fixture: { notes: fixture.notes, maps: fixture.maps, directories: fixture.directories, files: fixture.files }, steps };
     } finally {
         await stop(cdp);
@@ -228,11 +235,11 @@ async function runSize(size, index) {
 }
 
 function toMarkdown(results) {
-    const lines = ['| Notlar | İşlem | Süre (ms) | Event loop max (ms) | p99 (ms) | İzleyici |', '| ---: | --- | ---: | ---: | ---: | ---: |'];
+    const lines = ['| Notlar | İşlem | Süre (ms) | Main en uzun blokaj (ms) | Histogram max (ms) | İzleyici |', '| ---: | --- | ---: | ---: | ---: | ---: |'];
     for (const result of results) {
         for (const step of result.steps) {
             lines.push(
-                `| ${result.size.toLocaleString('tr-TR')} | ${step.label} | ${step.wallMs ?? '—'} | ${step.loopMaxMs} | ${step.loopP99Ms} | ${step.watchers ?? '—'} |`
+                `| ${result.size.toLocaleString('tr-TR')} | ${step.label} | ${step.wallMs ?? '—'} | ${step.gapMs ?? '—'} | ${step.loopMaxMs} | ${step.watchers ?? '—'} |`
             );
         }
     }

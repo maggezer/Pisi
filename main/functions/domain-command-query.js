@@ -89,7 +89,11 @@ function executePisiDomainQuery(name, payload = {}) {
     }
     try {
         recoverPisiDomainProjectIfNeeded();
-        return handler(payload || {});
+        const result = handler(payload || {});
+        if (result && typeof result.then === 'function') {
+            return result.catch((error) => ({ ok: false, code: 'DOMAIN_QUERY_FAILED', error: error?.message || String(error) }));
+        }
+        return result;
     } catch (error) {
         return {
             ok: false,
@@ -115,6 +119,21 @@ function normalizePisiDomainCommandFailure(error) {
     };
 }
 
+// Optional asynchronous preparation before a command's (synchronous) atomic
+// mutation: long read-only work such as finding the notes a rename must touch.
+// The handler reads the prepared value with getPisiDomainCommandPrepared(payload).
+const pisiDomainCommandPreparers = new Map();
+const pisiDomainPrepared = new WeakMap();
+
+function registerPisiDomainCommandPreparer(name, preparer) {
+    if (!pisiDomainCommands.has(name) || typeof preparer !== 'function') throw new Error('Geçersiz domain command hazırlığı.');
+    pisiDomainCommandPreparers.set(name, preparer);
+}
+
+function getPisiDomainCommandPrepared(payload) {
+    return payload && typeof payload === 'object' ? pisiDomainPrepared.get(payload) || null : null;
+}
+
 function executePisiDomainCommand(name, payload = {}) {
     const commandName = String(name || '');
     const handler = pisiDomainCommands.get(commandName);
@@ -124,6 +143,20 @@ function executePisiDomainCommand(name, payload = {}) {
             code: 'DOMAIN_COMMAND_NOT_FOUND',
             error: `Bilinmeyen domain command: ${commandName}`
         };
+    }
+    const preparer = pisiDomainCommandPreparers.get(commandName);
+    if (preparer && payload && typeof payload === 'object' && !pisiDomainPrepared.has(payload)) {
+        return Promise.resolve()
+            .then(() => preparer(payload))
+            .catch((error) => {
+                // A failed preparation is not fatal: the command does its full synchronous work.
+                console.warn('[PISI] Domain command hazırlığı başarısız:', commandName, error?.message || error);
+                return null;
+            })
+            .then((prepared) => {
+                pisiDomainPrepared.set(payload, prepared);
+                return executePisiDomainCommand(commandName, payload);
+            });
     }
     try {
         const invoke = () => handler(payload || {});
@@ -213,6 +246,23 @@ function installPisiDomainContracts() {
 
     registerPisiDomainQuery('document.read.v1', (payload) => {
         return mapStore.getPisiDocument(assertPisiDomainDocumentPath(payload.filePath), { hydrateEditorAssets: true });
+    });
+
+    // Bulk read for the search index: up to 100 documents per call, the same
+    // result per document as document.read.v1. The loop yields every few
+    // documents so other IPC keeps flowing while a large project is indexed.
+    registerPisiDomainQuery('document.read-batch.v1', async (payload) => {
+        const paths = Array.isArray(payload.filePaths) ? payload.filePaths.slice(0, 100) : [];
+        const results = [];
+        for (const [index, filePath] of paths.entries()) {
+            if (index && index % 20 === 0) await new Promise((resolve) => globalThis.setImmediate(resolve));
+            try {
+                results.push(mapStore.getPisiDocument(assertPisiDomainDocumentPath(filePath), { hydrateEditorAssets: true }));
+            } catch (error) {
+                results.push({ ok: false, error: error.message });
+            }
+        }
+        return { ok: true, results };
     });
 
     registerPisiDomainQuery('map.projection.v1', (payload) => {
@@ -437,6 +487,8 @@ const moduleApi = {
     pisiDomainCommands,
     registerPisiDomainQuery,
     registerPisiDomainCommand,
+    registerPisiDomainCommandPreparer,
+    getPisiDomainCommandPrepared,
     executePisiDomainQuery,
     executePisiDomainCommand
 };

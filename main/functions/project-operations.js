@@ -1,7 +1,9 @@
 import { shell } from '../electron-bridge.js';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
+import * as fsPromises from 'node:fs/promises';
 import { modules, registerMainModule } from '../module-registry.js';
+import { createPisiProjectWatcher, shouldUsePisiRecursiveWatch } from './project-watcher-core.js';
 
 function findParentMapPathForNode(nodePath, nodeInfo = null) {
     const nodeDir = path.dirname(nodePath);
@@ -465,7 +467,11 @@ function safeListFolder(folderPath) {
     }
 }
 
+let activePisiProjectWatcher = null;
+
 function stopProjectWatcher() {
+    activePisiProjectWatcher?.close();
+    activePisiProjectWatcher = null;
     for (const watcher of projectWatchers.values()) {
         try {
             watcher.close();
@@ -501,84 +507,35 @@ function notifyProjectChanged(reason = 'changed', changedPath = null) {
     }, 250);
 }
 
-function shouldWatchProjectDirectory(directoryPath) {
-    const name = path.basename(directoryPath).toLowerCase();
-    return !['.git', '.pisi-history', 'node_modules', 'dist', 'coverage'].includes(name);
+function handlePisiProjectWatchEvent(eventType, changedPath, directoryPath) {
+    // Pisi's own writes are marked by path-security; only outside changes reach the renderer.
+    const isInternalChange =
+        changedPath !== directoryPath
+            ? isRecentInternalFileChange(changedPath) || hasRecentInternalDirectoryChange(directoryPath)
+            : hasRecentInternalDirectoryChange(directoryPath) || hasRecentInternalFileChangeInside(directoryPath);
+    if (!isInternalChange) notifyProjectChanged(eventType || 'filesystem', changedPath);
 }
 
-function collectProjectDirectories(rootPath) {
-    const directories = [];
-    const queue = [rootPath];
-
-    while (queue.length) {
-        const directoryPath = queue.shift();
-        if (!shouldWatchProjectDirectory(directoryPath)) continue;
-        directories.push(directoryPath);
-
-        let entries = [];
-        try {
-            entries = fs.readdirSync(directoryPath, { withFileTypes: true });
-        } catch {
-            continue;
-        }
-
-        for (const entry of entries) {
-            if (!entry.isDirectory() || entry.isSymbolicLink()) continue;
-            queue.push(path.join(directoryPath, entry.name));
-        }
-    }
-
-    return directories;
-}
-
-function syncProjectWatchers(folderPath) {
-    if (!folderPath || !fs.existsSync(folderPath)) return;
-
-    const wantedDirectories = new Set(collectProjectDirectories(folderPath).map(normalizePathForCompare));
-
-    for (const [directoryKey, watcher] of projectWatchers) {
-        if (!wantedDirectories.has(directoryKey)) {
-            try {
-                watcher.close();
-            } catch {}
-            projectWatchers.delete(directoryKey);
-        }
-    }
-
-    for (const directoryPath of collectProjectDirectories(folderPath)) {
-        const directoryKey = normalizePathForCompare(directoryPath);
-        if (projectWatchers.has(directoryKey)) continue;
-
-        try {
-            const watcher = fs.watch(directoryPath, { recursive: false }, (eventType, fileName) => {
-                const changedPath = fileName ? path.join(directoryPath, String(fileName)) : directoryPath;
-                const isInternalChange = fileName
-                    ? isRecentInternalFileChange(changedPath) || hasRecentInternalDirectoryChange(directoryPath)
-                    : hasRecentInternalDirectoryChange(directoryPath) || hasRecentInternalFileChangeInside(directoryPath);
-
-                if (!isInternalChange) {
-                    notifyProjectChanged(eventType || 'filesystem', changedPath);
-                }
-
-                if (eventType === 'rename' || !fileName) {
-                    clearTimeout(projectWatcherRescanTimer);
-                    projectWatcherRescanTimer = setTimeout(() => {
-                        if (activeProjectFolder) {
-                            syncProjectWatchers(activeProjectFolder);
-                        }
-                    }, 450);
-                }
-            });
-
-            watcher.on('error', (error) => {
-                console.warn(`[PISI] Watcher hatası (${directoryPath}):`, error.message);
-            });
-
-            projectWatchers.set(directoryKey, watcher);
-        } catch (error) {
-            console.warn(`[PISI] Klasör izlenemedi (${directoryPath}):`, error.message);
-        }
-    }
+/**
+ * Starts watching the project: one recursive watcher on macOS and Windows, one
+ * per directory on Linux (set up asynchronously; rescans limited to the
+ * affected directory). See project-watcher-core.js for why.
+ */
+async function syncProjectWatchers(folderPath) {
+    if (!folderPath || !fs.existsSync(folderPath)) return null;
+    activePisiProjectWatcher?.close();
+    const watcher = createPisiProjectWatcher({
+        root: folderPath,
+        watch: (target, options, listener) => fs.watch(target, options, listener),
+        readdir: (directory) => fsPromises.readdir(directory, { withFileTypes: true }),
+        recursive: shouldUsePisiRecursiveWatch(),
+        watchers: projectWatchers,
+        onChange: handlePisiProjectWatchEvent,
+        onError: (error, directoryPath) => console.warn(`[PISI] Watcher hatası (${directoryPath}):`, error.message)
+    });
+    activePisiProjectWatcher = watcher;
+    const result = await watcher.start();
+    return result;
 }
 
 const moduleApi = {};
@@ -659,18 +616,6 @@ Object.defineProperties(moduleApi, {
         enumerable: true,
         get() {
             return notifyProjectChanged;
-        }
-    },
-    shouldWatchProjectDirectory: {
-        enumerable: true,
-        get() {
-            return shouldWatchProjectDirectory;
-        }
-    },
-    collectProjectDirectories: {
-        enumerable: true,
-        get() {
-            return collectProjectDirectories;
         }
     },
     syncProjectWatchers: {

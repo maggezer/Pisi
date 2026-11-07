@@ -17,7 +17,10 @@ function assertIntegrityProjectRoot(projectFolder) {
 
 function installPisiIntegrityDomainContracts() {
     domain.registerPisiDomainQuery('integrity.audit.v1', (payload) => {
-        return projectIntegrity.auditPisiProjectIntegrity(assertIntegrityProjectRoot(payload.projectFolder));
+        // Documents are read off the main thread; progress goes to the renderer.
+        return projectIntegrity.auditPisiProjectIntegrityAsync(assertIntegrityProjectRoot(payload.projectFolder), {
+            onProgress: (done, total) => modules['main.projectRead']?.sendPisiProgress('integrity', done, total)
+        });
     });
 
     domain.registerPisiDomainCommand('integrity.repair.v1', (payload) => {

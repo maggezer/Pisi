@@ -175,8 +175,7 @@ test('proje ancak dosya ağacı başarıyla yüklendikten sonra açılmış say�
 test('dosya izleyici Pisi iç yazılarını coalesce eder ve gereksiz tam refresh yapmaz', () => {
     assert.match(pathSecuritySource, /PISI_INTERNAL_DIRECTORY_GRACE_MS = 1200/);
     assert.match(pathSecuritySource, /function hasRecentInternalDirectoryChange\(/);
-    assert.match(projectOperationsSource, /isRecentInternalFileChange\(changedPath\)[\s\S]*hasRecentInternalDirectoryChange\(directoryPath\)/);
-    assert.match(projectOperationsSource, /eventType === 'rename'[\s\S]*syncProjectWatchers\(activeProjectFolder\)/);
+    // Watcher filtering and rename rescans are behaviour-tested in tests/project-watcher-core.test.mjs.
 
     const handler = tabsSource.match(/function handlePisiExternalFileSystemChange\(payload = \{\}\) \{[\s\S]*?\n\}/)?.[0] || '';
 

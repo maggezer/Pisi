@@ -418,6 +418,7 @@
         "path": "renderer/shell/pisi-notifications.mjs",
         "bindings": [
             "pisiNotificationState",
+            "pisiNotifyProgress",
             "pisiNotify",
             "pisiNotifyInfo",
             "pisiNotifySuccess",

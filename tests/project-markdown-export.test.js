@@ -5,6 +5,14 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const vm = require('node:vm');
+
+// The export lists files through the project read worker; here its in-process functions answer.
+const projectReadCore = require('../main/functions/project-read-core.js');
+const pisiTestProjectRead = {
+    runPisiProjectRead: (op, args) =>
+        op === 'walk' ? projectReadCore.walkPisiProjectFiles(args.root, args.options) : projectReadCore.readPisiJsonFiles(args.paths, args.options),
+    sendPisiProgress: () => true
+};
 const { extractFunction } = require('./source-helper');
 const source = fs.readFileSync(path.join(__dirname, '../main/functions/portability.js'), 'utf8');
 
@@ -16,6 +24,10 @@ function setup(t) {
     fs.mkdirSync(output);
     const opened = [];
     const context = {
+        app: { isPackaged: true },
+        fsPromises: require('node:fs/promises'),
+        setImmediate: globalThis.setImmediate,
+        modules: { 'main.projectRead': pisiTestProjectRead },
         fs,
         path,
         dialog: { showOpenDialog: async () => ({ canceled: false, filePaths: [output] }) },

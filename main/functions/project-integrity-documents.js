@@ -9,8 +9,14 @@ const mapOperationalStore = modules['main.mapOperationalStore'];
 
 const PROPERTY_TYPES = new Set(['text', 'number', 'multiselect', 'relation', 'rollup', 'date', 'select', 'node', 'checkbox']);
 
-function collectDocumentInventory(projectFolder, context) {
-    const files = shared.walkProjectDocuments(projectFolder);
+/**
+ * @param {string} projectFolder
+ * @param {object} context
+ * @param {{ files: string[], documents: Map<string, { ok: boolean, data?: any, missing?: boolean, error?: string }> } | null} [prefetched]
+ *   files and parsed documents read beforehand (asynchronously, off the main thread); same results as reading here.
+ */
+function collectDocumentInventory(projectFolder, context, prefetched = null) {
+    const files = prefetched ? prefetched.files : shared.walkProjectDocuments(projectFolder);
     const docs = [];
     const nodeById = new Map();
     const mapById = new Map();
@@ -19,7 +25,7 @@ function collectDocumentInventory(projectFolder, context) {
     for (const filePath of files) {
         const storedPath = shared.relativePath(projectFolder, filePath);
         const type = path.extname(filePath).toLowerCase() === '.node' ? 'node' : 'map';
-        const read = shared.readJson(filePath);
+        const read = prefetched?.documents.get(filePath) || shared.readJson(filePath);
         if (!read.ok || !read.data || typeof read.data !== 'object' || Array.isArray(read.data)) {
             shared.issue(
                 context,
