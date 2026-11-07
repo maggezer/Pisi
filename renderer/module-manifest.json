@@ -1066,6 +1066,11 @@
         ]
     },
     {
+        "module": "map.farLayer",
+        "path": "renderer/map/pisi-map-far-layer.mjs",
+        "bindings": ["pisiMapFarLayerState", "drawPisiMapFarLayer"]
+    },
+    {
         "module": "map.history",
         "path": "renderer/map/pisi-map-history.mjs",
         "bindings": [

@@ -21,6 +21,11 @@ import {
 // on a canvas (pisi-map-far-layer.mjs) instead of the DOM.
 
 const PISI_MAP_PIN_MS = 4000;
+// At most this many boxes are created per frame; the rest follow on the next
+// frames, so zooming out never stalls on one huge mount.
+const PISI_MAP_MOUNT_BUDGET = 120;
+// The title tier shows many more nodes per screen: a smaller margin keeps it light.
+const PISI_MAP_TITLE_MARGIN = 0.1;
 const pisiMapViewportState = {
     index: null,
     indexNodes: null,
@@ -151,7 +156,7 @@ function syncPisiMapViewport() {
     pisiMapViewportState.tier = tier;
     document.getElementById('map-canvas')?.setAttribute('data-zoom-tier', tier);
     const size = getPisiMapCanvasSize();
-    const bounds = getPisiMapViewportBounds(camera, size.width, size.height);
+    const bounds = getPisiMapViewportBounds(camera, size.width, size.height, tier === 'title' ? PISI_MAP_TITLE_MARGIN : undefined);
     pisiMapViewportState.bounds = bounds;
     const index = ensurePisiMapIndex();
     const mounted = getMountedPisiMapBoxes();
@@ -169,6 +174,9 @@ function syncPisiMapViewport() {
     pisiMapViewportState.wanted = wanted;
     const diff = diffPisiMapMounted(new Set(mounted.keys()), wanted);
     for (const id of diff.remove) unmountPisiMapBox(mounted.get(id));
+    const budget = all ? Infinity : PISI_MAP_MOUNT_BUDGET;
+    const deferred = diff.add.length > budget;
+    if (deferred) diff.add = diff.add.slice(0, budget);
     const added = mountPisiMapNodes(diff.add, board);
     const changed = diff.add.length > 0 || diff.remove.length > 0;
     if (changed || all || boundsMovedFar(pisiMapViewportState.lastEdgeBounds, bounds)) {
@@ -180,6 +188,7 @@ function syncPisiMapViewport() {
         document.dispatchEvent(new CustomEvent('pisi:map-nodes-mounted', { detail: { added, removed: diff.remove } }));
     }
     window.drawPisiMapFarLayer?.();
+    if (deferred) schedulePisiMapViewportSync();
     pisiMapViewportState.lastSync = { tier, mounted: wanted.size, total: index.byId.size, added: diff.add.length, removed: diff.remove.length };
     return diff;
 }

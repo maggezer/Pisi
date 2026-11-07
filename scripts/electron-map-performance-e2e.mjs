@@ -177,7 +177,19 @@ const measureInRenderer = `async (mapPath, frameCount) => {
     });
     const canvas = document.getElementById('map-canvas').getBoundingClientRect();
     const zoom = await run((index) => window.zoomMapAtClientPoint(canvas.left + canvas.width / 2, canvas.top + canvas.height / 2, index < frameCount / 2 ? -1 : 1));
-    return { projectionMs, openMs, domNodes, domEdges, pan, zoom };
+    // Overview: the whole map on screen at a far zoom, then pan.
+    window.activeMapCamera.zoom = 0.12;
+    window.activeMapCamera.x = 20;
+    window.activeMapCamera.y = 20;
+    window.applyMapCamera();
+    await frame();
+    await frame();
+    const overview = await run(() => {
+        window.activeMapCamera.x -= 6;
+        window.applyMapCamera();
+    });
+    const overviewBoxes = document.querySelectorAll('#map-board .map-node-box').length;
+    return { projectionMs, openMs, domNodes, domEdges, pan, zoom, overview, overviewBoxes };
 }`;
 
 async function metrics(cdp) {
@@ -189,7 +201,7 @@ async function metrics(cdp) {
 
 function formatRow(result) {
     const f = (value, digits = 0) => Number(value).toFixed(digits);
-    return `| ${result.size} | ${result.edges} | ${f(result.projectionMs)} | ${f(result.openMs)} | ${f(result.pan.avg, 1)} / ${f(result.pan.p95, 1)} (${f(result.pan.fps)} fps) | ${f(result.zoom.avg, 1)} / ${f(result.zoom.p95, 1)} (${f(result.zoom.fps)} fps) | ${f(result.heapMb, 1)} | ${result.domNodeCount} | ${result.domNodes} |`;
+    return `| ${result.size} | ${result.edges} | ${f(result.projectionMs)} | ${f(result.openMs)} | ${f(result.pan.avg, 1)} / ${f(result.pan.p95, 1)} (${f(result.pan.fps)} fps) | ${f(result.zoom.avg, 1)} / ${f(result.zoom.p95, 1)} (${f(result.zoom.fps)} fps) | ${result.overview ? `${f(result.overview.avg, 1)} (${f(result.overview.fps)} fps)` : '—'} | ${f(result.heapMb, 1)} | ${result.domNodeCount} | ${result.domNodes} |`;
 }
 
 let cdp = null;
@@ -217,8 +229,8 @@ try {
 }
 
 const table = [
-    '| Düğüm | Bağlantı | Projection (ms) | Açılış (ms) | Pan ort/p95 ms (fps) | Zoom ort/p95 ms (fps) | JS heap artışı (MB) | DOM düğümü | Çizilen kutu |',
-    '| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
+    '| Düğüm | Bağlantı | Projection (ms) | Açılış (ms) | Pan ort/p95 ms (fps) | Zoom ort/p95 ms (fps) | Uzak görünüm pan ms (fps) | JS heap artışı (MB) | DOM düğümü | Çizilen kutu |',
+    '| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
     ...results.map(formatRow)
 ].join('\n');
 const report = {

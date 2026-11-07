@@ -1,5 +1,28 @@
 # PISI Güncelleme Takip Dosyası
 
+## 07-11-2026 — Büyük haritalarda performans
+
+- Harita açılışı O(N²) idi: her düğüm için harita klasörü baştan listeleniyordu
+  (`ensurePisiSidecar` → `findExistingSidecarById`). Yan klasör zaten doğru
+  adıyla varsa artık klasör taranmıyor; 1.000 düğümde main tarafı 16 sn'den
+  0,25 sn'ye, 5.000 düğümde 373 sn'den 1,2 sn'ye indi.
+- Bağlantılar dünya koordinatında, kamerayla birlikte dönüşen
+  `#map-edge-layer` içinde çiziliyor; pan ve zoom bağlantıları yeniden
+  hesaplamıyor. Yol geometrisi DOM ölçümünden (`getBoundingClientRect`, her
+  bağlantıda zorunlu yeniden düzen) değil yerleşim değerlerinden geliyor.
+  Sürüklemede yalnız taşınan düğümlerin bağlantıları güncelleniyor.
+- Görünür alan ayıklama: yalnız kameranın gördüğü alan (+%25 pay) içindeki
+  düğümler DOM'da; pan/zoom sırasında requestAnimationFrame ile güncelleniyor.
+  Seçili, odaktaki, sürüklenen ve yeniden adlandırılan düğümler DOM'da kalıyor.
+  Aramadan odaklama, klavye gezintisi, hizalama, otomatik yerleşim ve dışa
+  aktarma tüm düğümleri görüyor.
+- Zoom kademeleri: 0,6 ve üstü tam kart; 0,3–0,6 (veya "yalnız başlık") başlık
+  kartı; 0,3 altında harita tek bir canvas üzerinde çiziliyor, tıklama o noktaya
+  yakınlaşıyor.
+- Ölçüm: `scripts/generate-map-fixture.mjs`, `npm run test:perf`
+  (`scripts/electron-map-performance-e2e.mjs`); CI'da yalnız rapor üretir.
+- Testler: `tests/map-viewport-core.test.mjs`, `scripts/electron-map-viewport-e2e.mjs`.
+
 ## 06-11-2026 — Harita düzenleme araçları
 
 - Kopyala / yapıştır / çoğalt: Mod+C seçili düğümleri ve aralarındaki

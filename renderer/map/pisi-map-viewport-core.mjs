@@ -76,8 +76,8 @@ export function getPisiMapViewportBounds(camera, width, height, margin = PISI_MA
     const zoom = Number(camera?.zoom) > 0 ? Number(camera.zoom) : 1;
     const worldWidth = Math.max(0, width) / zoom;
     const worldHeight = Math.max(0, height) / zoom;
-    const x = -(Number(camera?.x) || 0) / zoom;
-    const y = -(Number(camera?.y) || 0) / zoom;
+    const x = 0 - (Number(camera?.x) || 0) / zoom;
+    const y = 0 - (Number(camera?.y) || 0) / zoom;
     return { x: x - worldWidth * margin, y: y - worldHeight * margin, width: worldWidth * (1 + 2 * margin), height: worldHeight * (1 + 2 * margin) };
 }
 
