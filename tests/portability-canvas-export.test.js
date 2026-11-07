@@ -5,6 +5,14 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const vm = require('node:vm');
+
+// The export lists files through the project read worker; here its in-process functions answer.
+const projectReadCore = require('../main/functions/project-read-core.js');
+const pisiTestProjectRead = {
+    runPisiProjectRead: (op, args) =>
+        op === 'walk' ? projectReadCore.walkPisiProjectFiles(args.root, args.options) : projectReadCore.readPisiJsonFiles(args.paths, args.options),
+    sendPisiProgress: () => true
+};
 const zlib = require('node:zlib');
 const test = require('node:test');
 const { extractFunction } = require('./source-helper');
@@ -70,6 +78,10 @@ function createExportHarness(format, content, sidecarPath, outputPath) {
     }
 
     const context = vm.createContext({
+        app: { isPackaged: true },
+        fsPromises: require('node:fs/promises'),
+        setImmediate: globalThis.setImmediate,
+        modules: { 'main.projectRead': pisiTestProjectRead },
         Buffer,
         BrowserWindow: FakeBrowserWindow,
         dialog: {
@@ -108,6 +120,10 @@ function createExportHarness(format, content, sidecarPath, outputPath) {
 function createProjectExportHarness(projectRoot, outputFolder, content, sidecarPath) {
     const documentOptions = [];
     const context = vm.createContext({
+        app: { isPackaged: true },
+        fsPromises: require('node:fs/promises'),
+        setImmediate: globalThis.setImmediate,
+        modules: { 'main.projectRead': pisiTestProjectRead },
         Buffer,
         dialog: {
             showOpenDialog: async () => ({ canceled: false, filePaths: [outputFolder] })

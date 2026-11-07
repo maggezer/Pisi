@@ -563,11 +563,13 @@ ipcMain.handle('project:restore-node-history', (_event, nodePath, historyId) => 
 });
 
 ipcMain.handle('project:audit-integrity', (_event, projectFolder) => {
-    return projectOperation(() => {
+    return asyncProjectOperation(async () => {
         const safeProjectFolder = assertProjectPath(projectFolder, {
             type: 'directory'
         });
-        return auditPisiProjectIntegrity(safeProjectFolder);
+        return auditPisiProjectIntegrityAsync(safeProjectFolder, {
+            onProgress: (done, total) => sendPisiProgress('integrity', done, total)
+        });
     });
 });
 

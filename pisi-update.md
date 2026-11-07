@@ -1,5 +1,28 @@
 # PISI Güncelleme Takip Dosyası
 
+## 07-11-2026 — Büyük projelerde ana süreç donmaları
+
+- Ölçüm: `scripts/generate-project-fixture.mjs` (yan klasörlü sentetik proje) ve
+  `scripts/electron-project-performance.mjs` (proje açma, arama indeksi,
+  Project Integrity, Markdown dışa aktarma, 50 not yeniden adlandırma; ana
+  süreç blokajı ve izleyici sayısı). Önce/sonra sonuçları PR'da.
+- İzleyici: macOS ve Windows'ta proje köküne tek bir recursive `fs.watch`.
+  Linux'ta Node'un recursive izleyicisi açılışta tüm ağacı senkron taradığı için
+  (10.000 notta 1,27 sn) klasör başına izleyiciler async ve parça parça kuruluyor.
+  `.git`, `.pisi-history`, `.pisi/trash`, `.pisi/mutations`, `.pisi-sync` ve
+  geçici dosyalar olay üretmiyor; rename'de tüm ağaç yerine yalnız etkilenen
+  klasör taranıyor.
+- Uzun okumalar ana süreçten çıktı: Project Integrity belgeleri ve dışa
+  aktarma dosya listesi `worker_threads` işçisinde okunuyor; yeniden
+  adlandırmada bağlantı adayları mutation'dan önce işçide bulunuyor ve mutation
+  içinde yalnız onlar okunuyor; arama indeksi 100'lük toplu okuma kullanıyor.
+  Neyin neden senkron kaldığı `docs/storage-abstraction.md` içinde.
+- Uzun işlemlerde ilerleme şeridi: "Bütünlük taraması: 2.300 / 10.000".
+- Testler: `tests/project-watcher-core.test.mjs`, `tests/project-read-core.test.mjs`,
+  `tests/project-read-equivalence.test.js` (async bütünlük raporu ve hazırlıklı
+  yeniden adlandırma eski senkron sonuçla aynı), bildirim E2E'sine ilerleme
+  şeridi kontrolü.
+
 ## 07-11-2026 — Yerel hata kaydı ve çökme yönetimi
 
 - Yerel log: `userData/logs/pisi-YYYY-MM-DD.log`, satır başına bir JSON

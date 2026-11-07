@@ -1071,6 +1071,8 @@
         "Bekle": "Wait",
         "Beklenmeyen bir hata oluştu.": "An unexpected error occurred.",
         "Yeniden başlat": "Restart",
-        "Devam et": "Continue"
+        "Devam et": "Continue",
+        "Bütünlük taraması": "Integrity scan",
+        "Markdown dışa aktarma": "Markdown export"
     }
 }

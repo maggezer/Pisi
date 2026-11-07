@@ -1,25 +1,39 @@
 import * as path from 'node:path';
-import { registerMainModule } from '../module-registry.js';
+import { modules, registerMainModule } from '../module-registry.js';
 import * as shared from './project-integrity-shared.js';
 import * as documents from './project-integrity-documents.js';
 import * as authorities from './project-integrity-authorities.js';
 import * as properties from './project-integrity-properties.js';
 import * as recovery from './project-integrity-recovery.js';
 import * as repairs from './project-integrity-repairs.js';
+import './project-read-client.js';
 
-function auditPisiProjectIntegrity(projectFolder) {
+/**
+ * The audit as a sequence of steps. Each `yield` marks a point where the async
+ * variant gives the event loop a turn; the synchronous variant runs straight
+ * through. Both produce the same report.
+ */
+function* runPisiIntegrityAudit(projectFolder, prefetched = null) {
     const projectRoot = path.resolve(projectFolder);
     const context = { issues: [] };
-    const inventory = documents.collectDocumentInventory(projectRoot, context);
+    const inventory = documents.collectDocumentInventory(projectRoot, context, prefetched);
+    yield;
     const tasks = authorities.auditTasks(projectRoot, context);
     const relationships = authorities.auditRelationships(projectRoot, context, inventory);
     const propertySchema = properties.auditPisiPropertySchema(projectRoot, context, inventory);
+    yield;
 
-    for (const doc of inventory.docs) {
+    for (const [index, doc] of inventory.docs.entries()) {
         documents.auditNodeProperties(context, doc);
         documents.auditAttachments(projectRoot, context, doc);
+        if (index % 500 === 499) yield;
     }
-    documents.auditMaps(projectRoot, context, inventory, relationships.byId);
+    // Maps one at a time (same order as auditMaps over the whole inventory).
+    for (const doc of inventory.docs) {
+        if (doc.type !== 'map') continue;
+        documents.auditMaps(projectRoot, context, { ...inventory, docs: [doc] }, relationships.byId);
+        yield;
+    }
     documents.auditNodeParentMap(context, inventory);
 
     const trashItems = recovery.auditTrash(projectRoot, context);
@@ -45,6 +59,38 @@ function auditPisiProjectIntegrity(projectFolder) {
         mutations: '.pisi/mutations'
     };
     return report;
+}
+
+function auditPisiProjectIntegrity(projectFolder, prefetched = null) {
+    const steps = runPisiIntegrityAudit(projectFolder, prefetched);
+    let step = steps.next();
+    while (!step.done) step = steps.next();
+    return step.value;
+}
+
+/**
+ * The same report as auditPisiProjectIntegrity, with the document walk and the
+ * reading/parsing of every note and map done by the project read worker first,
+ * and the checks giving the event loop a turn between steps.
+ * `onProgress(done, total)` reports the documents read.
+ */
+async function auditPisiProjectIntegrityAsync(projectFolder, options = {}) {
+    const projectRoot = path.resolve(projectFolder);
+    const reader = modules['main.projectRead'];
+    if (!reader) return auditPisiProjectIntegrity(projectRoot);
+    const files = await reader.runPisiProjectRead('walk', {
+        root: projectRoot,
+        options: { order: 'bfs', skipDirs: [...shared.PISI_INTEGRITY_SKIP_DIRS], limit: 50000 }
+    });
+    options.onProgress?.(0, files.length);
+    const read = await reader.readPisiJsonFilesBatched(files, { onProgress: options.onProgress, sidecars: true });
+    const steps = runPisiIntegrityAudit(projectRoot, { files, documents: read });
+    let step = steps.next();
+    while (!step.done) {
+        await new Promise((resolve) => globalThis.setImmediate(resolve));
+        step = steps.next();
+    }
+    return step.value;
 }
 
 function repairPisiProjectIntegrity(projectFolder, repairIds = []) {
@@ -101,6 +147,7 @@ const moduleApi = {
     extractLocalAttachmentCandidates: shared.extractLocalAttachmentCandidates,
     collectPisiDocumentInventory: documents.collectDocumentInventory,
     auditPisiProjectIntegrity,
+    auditPisiProjectIntegrityAsync,
     repairPisiProjectIntegrity,
     rebuildPisiDerivedIntegrityState,
     makeRepairPlan: shared.makeRepairPlan

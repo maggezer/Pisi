@@ -1,7 +1,8 @@
-import { BrowserWindow, dialog } from '../electron-bridge.js';
+import { app, BrowserWindow, dialog } from '../electron-bridge.js';
 import * as path from 'node:path';
 import * as fs from 'node:fs';
-import { registerMainModule } from '../module-registry.js';
+import * as fsPromises from 'node:fs/promises';
+import { modules, registerMainModule } from '../module-registry.js';
 import * as editorAssets from './editor-asset-store.js';
 import * as fileAssets from './editor-file-asset-store.js';
 import {
@@ -642,30 +643,58 @@ function getPisiPortableRelativePath(projectFolder, filePath, extension) {
 }
 
 async function exportPisiProjectMarkdown(projectFolder) {
-    const result = await dialog.showOpenDialog(globalThis.mainWindow, {
-        title: 'Markdown dışa aktarma klasörü',
-        properties: ['openDirectory', 'createDirectory']
-    });
+    // Test-only: performance runs export into a fixed folder instead of asking.
+    const testFolder = !app.isPackaged ? String(process.env.PISI_TEST_EXPORT_DIR || '') : '';
+    const result = testFolder
+        ? { canceled: false, filePaths: [testFolder] }
+        : await dialog.showOpenDialog(globalThis.mainWindow, {
+              title: 'Markdown dışa aktarma klasörü',
+              properties: ['openDirectory', 'createDirectory']
+          });
     if (result.canceled || !result.filePaths?.[0]) return { ok: true, canceled: true };
     const destination = path.join(result.filePaths[0], `Pisi-Export-${pisiSafeTimestamp()}`);
-    fs.mkdirSync(destination, { recursive: true });
-    const files = walkPisiFiles(projectFolder, (_filePath, name) => /\.(?:node|map)$/i.test(name));
+    await fsPromises.mkdir(destination, { recursive: true });
+    // The file list comes from the project read worker (same rules as walkPisiFiles).
+    const reader = modules['main.projectRead'];
+    const files = reader
+        ? await reader.runPisiProjectRead('walk', {
+              root: projectFolder,
+              options: {
+                  order: 'dfs',
+                  skipDirs: ['.pisi', '.pisi-history', '.git', 'node_modules'],
+                  skipDirPrefixes: ['.pisi-delete-', '.pisi-transaction-'],
+                  caseInsensitive: true
+              }
+          })
+        : walkPisiFiles(projectFolder, (_filePath, name) => /\.(?:node|map)$/i.test(name));
     let exported = 0;
-    for (const filePath of files) {
-        const info = getPisiDocument(filePath, { hydrateEditorAssets: true });
-        if (!info.ok) continue;
-        const isNode = info.metadata.type === 'node';
-        const relative = getPisiPortableRelativePath(projectFolder, filePath, isNode ? 'md' : 'map.json');
-        const target = path.join(destination, relative);
-        fs.mkdirSync(path.dirname(target), { recursive: true });
-        if (isNode) {
-            const content = pisiLinkPaintImagesForMarkdown(info.data.content, target, info.sidecarPath);
-            fs.writeFileSync(target, pisiPropertiesFrontmatter(info.data.properties) + pisiHtmlToMarkdown(content), 'utf8');
-        } else {
-            fs.writeFileSync(target, JSON.stringify(info.data.map || {}, null, 2), 'utf8');
+    const createdFolders = new Set();
+    // Documents in groups of 20: one short synchronous read each, then the
+    // group's writes run in parallel (fs/promises) before the next group.
+    for (let offset = 0; offset < files.length; offset += 20) {
+        reader?.sendPisiProgress('export', offset, files.length);
+        const writes = [];
+        for (const filePath of files.slice(offset, offset + 20)) {
+            const info = getPisiDocument(filePath, { hydrateEditorAssets: true });
+            if (!info.ok) continue;
+            const isNode = info.metadata.type === 'node';
+            const relative = getPisiPortableRelativePath(projectFolder, filePath, isNode ? 'md' : 'map.json');
+            const target = path.join(destination, relative);
+            const folder = path.dirname(target);
+            if (!createdFolders.has(folder)) {
+                fs.mkdirSync(folder, { recursive: true });
+                createdFolders.add(folder);
+            }
+            const text = isNode
+                ? pisiPropertiesFrontmatter(info.data.properties) +
+                  pisiHtmlToMarkdown(pisiLinkPaintImagesForMarkdown(info.data.content, target, info.sidecarPath))
+                : JSON.stringify(info.data.map || {}, null, 2);
+            writes.push(fsPromises.writeFile(target, text, 'utf8'));
+            exported += 1;
         }
-        exported += 1;
+        await Promise.all(writes);
     }
+    reader?.sendPisiProgress('export', files.length, files.length);
     return { ok: true, destination, exported };
 }
 

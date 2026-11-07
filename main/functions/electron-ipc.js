@@ -16,8 +16,10 @@ function startProjectWatcher(folderPath) {
         return;
     }
 
-    syncProjectWatchers(folderPath);
-    console.log('[PISI] Proje klasörü izleniyor:', folderPath);
+    // Watchers are set up asynchronously; opening the project does not wait for them.
+    void syncProjectWatchers(folderPath)
+        .then((result) => console.log('[PISI] Proje klasörü izleniyor:', folderPath, result?.mode || '', result?.watchers ?? ''))
+        .catch((error) => console.warn('[PISI] Proje izlenemedi:', error?.message || error));
 }
 
 function folderExistsAndIsDirectory(folderPath) {

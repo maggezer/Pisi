@@ -196,8 +196,49 @@ function pisiNotifyNoteSaveError(message, nodePath, detail = '') {
     });
 }
 
+const PISI_PROGRESS_LABELS = Object.freeze({ integrity: 'Bütünlük taraması', export: 'Markdown dışa aktarma' });
+const pisiProgressStrips = new Map();
+
+function formatPisiProgressNumber(value) {
+    const locale = window.pisiI18n?.getLanguage?.() === 'eng' ? 'en-US' : 'tr-TR';
+    return Number(value || 0).toLocaleString(locale);
+}
+
+/**
+ * One info strip per long operation, updated in place ("Bütünlük taraması: 2.300 / 10.000").
+ * It closes shortly after the last step.
+ */
+function pisiNotifyProgress(operation, done, total) {
+    const label = pisiNotifyTranslate(PISI_PROGRESS_LABELS[operation] || operation);
+    const text = `${label}: ${formatPisiProgressNumber(done)} / ${formatPisiProgressNumber(total)}`;
+    let id = pisiProgressStrips.get(operation);
+    if (id && !pisiNotifyElements.has(id)) id = null;
+    if (!id) {
+        id = pisiNotify({ type: 'info', message: text, duration: 10 * 60 * 1000 });
+        if (!id) return null;
+        pisiProgressStrips.set(operation, id);
+        pisiNotifyElements.get(id)?.setAttribute('data-pisi-progress', operation);
+    } else {
+        const strip = pisiNotifyElements.get(id);
+        const message = strip?.querySelector('.pisi-notification-message');
+        if (message) message.textContent = text;
+    }
+    if (Number(done) >= Number(total)) {
+        pisiProgressStrips.delete(operation);
+        const finished = id;
+        setTimeout(() => dismissPisiNotification(finished), 1500);
+    }
+    return id;
+}
+
+window.pisiProgress?.onProgress?.((payload = {}) => {
+    if (typeof payload.operation !== 'string') return;
+    pisiNotifyProgress(payload.operation, Number(payload.done) || 0, Number(payload.total) || 0);
+});
+
 const moduleApi = {
     pisiNotificationState,
+    pisiNotifyProgress,
     pisiNotify,
     pisiNotifyInfo,
     pisiNotifySuccess,

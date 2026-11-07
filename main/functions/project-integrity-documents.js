@@ -9,8 +9,14 @@ const mapOperationalStore = modules['main.mapOperationalStore'];
 
 const PROPERTY_TYPES = new Set(['text', 'number', 'multiselect', 'relation', 'rollup', 'date', 'select', 'node', 'checkbox']);
 
-function collectDocumentInventory(projectFolder, context) {
-    const files = shared.walkProjectDocuments(projectFolder);
+/**
+ * @param {string} projectFolder
+ * @param {object} context
+ * @param {{ files: string[], documents: Map<string, { ok: boolean, data?: any, missing?: boolean, error?: string, sidecarName?: string, sidecarIsDirectory?: boolean }> } | null} [prefetched]
+ *   files and parsed documents read beforehand (asynchronously, off the main thread); same results as reading here.
+ */
+function collectDocumentInventory(projectFolder, context, prefetched = null) {
+    const files = prefetched ? prefetched.files : shared.walkProjectDocuments(projectFolder);
     const docs = [];
     const nodeById = new Map();
     const mapById = new Map();
@@ -19,7 +25,7 @@ function collectDocumentInventory(projectFolder, context) {
     for (const filePath of files) {
         const storedPath = shared.relativePath(projectFolder, filePath);
         const type = path.extname(filePath).toLowerCase() === '.node' ? 'node' : 'map';
-        const read = shared.readJson(filePath);
+        const read = prefetched?.documents.get(filePath) || shared.readJson(filePath);
         if (!read.ok || !read.data || typeof read.data !== 'object' || Array.isArray(read.data)) {
             shared.issue(
                 context,
@@ -128,7 +134,11 @@ function collectDocumentInventory(projectFolder, context) {
 
         const sidecarName = String(metadata.sidecar || '');
         const sidecarPath = sidecarName ? path.join(path.dirname(filePath), sidecarName) : null;
-        const sidecarExists = sidecarPath && fs.existsSync(sidecarPath) && fs.statSync(sidecarPath).isDirectory();
+        const prefetchedSidecar = prefetched?.documents.get(filePath);
+        const sidecarExists =
+            prefetchedSidecar && prefetchedSidecar.sidecarName === sidecarName && sidecarPath
+                ? prefetchedSidecar.sidecarIsDirectory === true
+                : sidecarPath && fs.existsSync(sidecarPath) && fs.statSync(sidecarPath).isDirectory();
         if (sidecarExists) {
             sidecarOwnerByDirectory.set(shared.integrityCore.normalizePisiIntegrityComparePath(sidecarPath), { type, id, filePath, storedPath });
         } else if (idValid) {
@@ -171,7 +181,7 @@ function collectDocumentInventory(projectFolder, context) {
         }
         docs.push({ filePath, storedPath, type, data, metadata, sidecarPath: sidecarExists ? sidecarPath : null });
     }
-    return { files, docs, nodeById, mapById, sidecarOwnerByDirectory };
+    return { files, docs, nodeById, mapById, sidecarOwnerByDirectory, prefetched };
 }
 
 function auditNodeProperties(context, doc) {
@@ -273,13 +283,14 @@ function resolveMapReference(projectFolder, reference) {
     return { path: target, id: read.data.pisi.id };
 }
 
-function collectMapMemberIds(projectFolder, doc, context) {
+function collectMapMemberIds(projectFolder, doc, context, prefetched = null) {
     const mapData = doc.data?.map || {};
     const known = new Set();
     if (doc.sidecarPath && fs.existsSync(doc.sidecarPath)) {
         for (const entry of fs.readdirSync(doc.sidecarPath, { withFileTypes: true })) {
             if (!entry.isFile() || !entry.name.toLowerCase().endsWith('.node')) continue;
-            const read = shared.readJson(path.join(doc.sidecarPath, entry.name));
+            const memberPath = path.join(doc.sidecarPath, entry.name);
+            const read = prefetched?.documents.get(memberPath) || shared.readJson(memberPath);
             if (read.ok && read.data?.pisi?.id) known.add(read.data.pisi.id);
         }
     }
@@ -477,7 +488,7 @@ function auditMapViews(context, doc, known, relationshipsById) {
 function auditMaps(projectFolder, context, inventory, relationshipsById) {
     for (const doc of inventory.docs.filter((item) => item.type === 'map')) {
         if (!doc.data?.map || typeof doc.data.map !== 'object' || Array.isArray(doc.data.map)) continue;
-        const known = collectMapMemberIds(projectFolder, doc, context);
+        const known = collectMapMemberIds(projectFolder, doc, context, inventory.prefetched);
         auditMapLayout(context, doc, known);
         auditMapViews(context, doc, known, relationshipsById);
         const mapData = doc.data.map;

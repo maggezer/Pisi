@@ -188,7 +188,7 @@ test('Pisi geçmişi gizlenir ve yeniden adlandırma alanları klavyeyi korur', 
     const focusHelper = startup.match(/function focusPisiTextInput\(input, shouldSelect = true\) \{[\s\S]*?\n\}/)?.[0] || '';
 
     assert.match(operations, /entry\.name\.toLowerCase\(\) === '\.pisi-history'/);
-    assert.match(operations, /'\.pisi-history',[\s\S]*'node_modules'/);
+    // The watcher's ignored folders are behaviour-tested in tests/project-watcher-core.test.mjs.
     assert.match(startup, /center-tab-rename-input pisi-rename-input/);
     assert.match(tree, /tree-rename-input pisi-rename-input/);
     assert.match(tree, /focusPisiTextInput\(input, true\)/);
