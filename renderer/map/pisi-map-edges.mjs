@@ -8,14 +8,10 @@ async function persistPisiMapConnection(edgePayload) {
     let result = await window.pisiProject?.upsertMapConnection?.(activeMapPath, edgePayload);
 
     if (result?.code === 'SECOND_PARENT_CONFIRM_REQUIRED') {
-        const confirmed =
-            typeof pisiConfirm === 'function'
-                ? await pisiConfirm('Bu node zaten bir parent’a sahip. Bağlantı hiyerarşi yerine stream ilişkisi olarak kaydedilsin mi?', {
-                      title: 'İkinci parent',
-                      confirmText: 'Stream olarak ekle',
-                      cancelText: 'Vazgeç'
-                  })
-                : confirm('Bu node zaten bir parent’a sahip. Bağlantı stream ilişkisi olarak kaydedilsin mi?');
+        const confirmed = await pisiConfirm('Bu notun zaten bir üst notu var. Bağlantı hiyerarşi yerine stream ilişkisi olarak kaydedilsin mi?', {
+            title: 'İkinci üst not',
+            confirmText: 'Stream olarak ekle'
+        });
 
         if (!confirmed) {
             return {
@@ -165,7 +161,7 @@ async function changePisiMapEdgeType(edgeId, nextType) {
 
     if (!result?.ok) {
         if (!result?.cancelled) {
-            alert(result?.error || 'Bağlantı tipi değiştirilemedi.');
+            pisiNotifyError(result?.error || 'Bağlantı tipi değiştirilemedi.');
         }
         return result;
     }
@@ -402,7 +398,7 @@ function bindMapPortEvents(box) {
             });
 
             if (!result?.ok && !result?.cancelled) {
-                alert(result?.error || 'Bağlantı kaydedilemedi.');
+                pisiNotifyError(result?.error || 'Bağlantı kaydedilemedi.');
             }
         });
     });
@@ -417,15 +413,11 @@ async function deleteMapEdge(edgeId) {
     // taşımıyoruz. Confirm diyaloğu kendi focus yaşam döngüsünü yönetiyor.
     resetPisiMapConnectionInteractions();
 
-    const ok =
-        typeof pisiConfirm === 'function'
-            ? await pisiConfirm('Bu bağlantı silinsin mi?', {
-                  title: 'Bağlantıyı sil',
-                  confirmText: 'Sil',
-                  cancelText: 'Vazgeç',
-                  danger: true
-              })
-            : confirm('Bu bağlantı silinsin mi?');
+    const ok = await pisiConfirm('Bu bağlantı silinsin mi?', {
+        title: 'Bağlantıyı sil',
+        confirmText: 'Sil',
+        danger: true
+    });
 
     if (!ok) {
         resetPisiMapConnectionInteractions();
@@ -439,7 +431,7 @@ async function deleteMapEdge(edgeId) {
         const result = await window.pisiProject?.deleteMapConnection?.(activeMapPath, edgeId);
 
         if (!result || !result.ok) {
-            alert(result?.error || 'Bağlantı silinemedi.');
+            pisiNotifyError(result?.error || 'Bağlantı silinemedi.');
             return;
         }
 
@@ -459,7 +451,7 @@ async function deleteMapEdge(edgeId) {
         }
     } catch (error) {
         console.error('[PISI] Bağlantı silme hatası:', error);
-        alert('Bağlantı silinirken hata oluştu: ' + error.message);
+        pisiNotifyError('Bağlantı silinirken hata oluştu.', { detail: error?.message });
     } finally {
         // Burada yalnızca map bağlantı etkileşim durumunu temizliyoruz.
         // Gecikmeli refocus, yeni açılan rename input/editor odağını çalıyordu.

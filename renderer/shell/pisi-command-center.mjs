@@ -158,11 +158,11 @@ async function renderPisiCommandCenterPage() {
 async function openPisiCommandCenter(pageId = null) {
     const requestedPage = pageId ? pisiCommandCenterState.pages.get(pageId) : null;
     if (!window.currentProjectFolder && requestedPage?.requiresProject !== false) {
-        alert(pisiCommandTranslate('Önce bir proje açın.'));
+        pisiNotifyWarning(pisiCommandTranslate('Önce bir proje açın.'));
         return false;
     }
     if (!window.currentProjectFolder && !requestedPage) {
-        alert(pisiCommandTranslate('Önce bir proje açın.'));
+        pisiNotifyWarning(pisiCommandTranslate('Önce bir proje açın.'));
         return false;
     }
     ensurePisiCommandCenter();

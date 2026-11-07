@@ -414,6 +414,21 @@
         ]
     },
     {
+        "module": "shell.notifications",
+        "path": "renderer/shell/pisi-notifications.mjs",
+        "bindings": [
+            "pisiNotificationState",
+            "pisiNotify",
+            "pisiNotifyInfo",
+            "pisiNotifySuccess",
+            "pisiNotifyWarning",
+            "pisiNotifyError",
+            "pisiNotifyNoteSaveError",
+            "dismissPisiNotification",
+            "clearPisiNotifications"
+        ]
+    },
+    {
         "module": "shell.dialogs",
         "path": "renderer/shell/pisi-dialogs.mjs",
         "bindings": ["pisiConfirm"]

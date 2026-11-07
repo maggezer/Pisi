@@ -95,7 +95,7 @@ export async function restorePisiEditorDocument(nodePath, restore) {
             node.restoreReloadRequired = true;
         });
         const documentResult = await window.pisiProject.getPisiDocument(nodePath);
-        if (!documentResult?.ok) throw new Error(documentResult?.error || 'Node açılamadı.');
+        if (!documentResult?.ok) throw new Error(documentResult?.error || 'Not açılamadı.');
         const content = documentResult.data?.content || '';
         for (const target of targets) {
             const active = target.modal ? window.activeModalNode : window.activeCenterNode;

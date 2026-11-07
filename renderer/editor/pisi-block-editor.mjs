@@ -818,7 +818,7 @@ function ensurePisiMarkdownSourceDialog() {
         const editor = pisiBlocksEditorState.sourceEditor;
         if (!editor) return closePisiMarkdownSource();
         if (editor.querySelector?.('.pisi-sheet-block, .pisi-canvas-block, table[data-pisi-sheet]')) {
-            window.alert?.(
+            pisiNotifyWarning(
                 pisiBlockTranslate(
                     'Sheet veya Canvas içeren notlarda Markdown kaynağı uygulanamaz. Veri kaybını önlemek için bu blokları ayrı bir nota taşıyın.'
                 )

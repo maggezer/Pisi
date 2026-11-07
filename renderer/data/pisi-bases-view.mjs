@@ -231,7 +231,7 @@ function renderPisiBasesSavedViewControls(host, queryInput, rerenderAll) {
             layout: normalizePisiBaseLayout(pisiBasesViewState.layout)
         });
         if (!result?.ok) {
-            alert(result?.error || pisiBasesViewTranslate('Görünüm kaydedilemedi.'));
+            pisiNotifyError(result?.error || pisiBasesViewTranslate('Görünüm kaydedilemedi.'));
             return;
         }
         await loadPisiBasesSavedViews();
@@ -243,7 +243,7 @@ function renderPisiBasesSavedViewControls(host, queryInput, rerenderAll) {
         if (!select.value) return;
         const result = await window.pisiProject?.deleteView?.(window.currentProjectFolder, select.value);
         if (!result?.ok) {
-            alert(result?.error || pisiBasesViewTranslate('Görünüm silinemedi.'));
+            pisiNotifyError(result?.error || pisiBasesViewTranslate('Görünüm silinemedi.'));
             return;
         }
         await loadPisiBasesSavedViews();
@@ -329,12 +329,12 @@ async function renderPisiBasesView(container, options = {}) {
             nodePaths: currentProjection.documents.map((item) => item.path)
         });
         if (!result?.ok) {
-            alert(result?.error || pisiBasesViewTranslate('Map oluşturulamadı.'));
+            pisiNotifyError(result?.error || pisiBasesViewTranslate('Harita oluşturulamadı.'));
             createMap.disabled = false;
             return;
         }
         await window.refreshCurrentProjectTree?.();
-        alert(`${pisiBasesViewTranslate('Map oluşturuldu')}: ${result.fileName}`);
+        pisiNotifySuccess(`${pisiBasesViewTranslate('Harita oluşturuldu')}: ${result.fileName}`);
         createMap.disabled = false;
     });
 

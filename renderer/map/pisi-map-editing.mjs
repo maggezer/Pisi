@@ -102,10 +102,7 @@ async function autoLayoutPisiMap(scope = 'hub') {
     }
     if (next.length > PISI_MAP_AUTO_LAYOUT_CONFIRM) {
         const message = pisiMapEditingTranslate('{count} düğümün yeri değişecek. Devam edilsin mi?').replace('{count}', String(next.length));
-        const ok =
-            typeof window.pisiConfirm === 'function'
-                ? await window.pisiConfirm(message, { confirmText: pisiMapEditingTranslate('Düzenle') })
-                : window.confirm(message);
+        const ok = await pisiConfirm(message, { confirmText: pisiMapEditingTranslate('Düzenle') });
         if (!ok) return false;
     }
     return applyPisiMapLayoutChange(next, 'auto-layout');

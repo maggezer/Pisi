@@ -149,7 +149,7 @@ function normalizePisiProjectSelection(selection) {
 function reportPisiProjectLoadError(error) {
     const message = String(error || 'Proje klasörü yüklenemedi.');
     console.error('[PISI] Proje yüklenemedi:', message);
-    alert(message);
+    pisiNotifyError(message);
 }
 
 async function chooseAndLoadProject() {

@@ -3,6 +3,7 @@ import { sealRendererModuleRegistry } from './core/module-registry.mjs';
 import './core/state.mjs';
 import './core/pisi-command-registry.mjs';
 import './domain/pisi-domain-client.mjs';
+import './shell/pisi-notifications.mjs';
 import './editor/pisi-editor-sheet-database.mjs';
 import './editor/pisi-editor-sheet-field-types-ui.mjs';
 import './editor/pisi-editor-sheet-view-query.mjs';

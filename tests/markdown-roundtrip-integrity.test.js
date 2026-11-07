@@ -655,9 +655,12 @@ test('E3: Markdown source cannot overwrite Sheet or Canvas data', async () => {
 
     const applyBtn = pisiBlocksEditorState.sourceOverlay.querySelector('.pisi-apply-md');
     pisiBlocksEditorState.sourceTextarea.value = 'Yeni Markdown Metni';
-    globalThis.window.confirm = () => true;
+    const warnings = [];
+    globalThis.pisiNotifyWarning = (message) => warnings.push(message);
     applyBtn.dispatchEvent(new globalThis.Event('click'));
     assert.strictEqual(editorWithSheet.innerHTML, '', 'Special blocks must never be overwritten by Markdown');
+    assert.equal(warnings.length, 1, 'The refusal is shown as an in-app warning');
+    delete globalThis.pisiNotifyWarning;
     closePisiMarkdownSource();
 });
 

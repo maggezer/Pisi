@@ -374,7 +374,7 @@ async function openNodeModalFromBox(box) {
         return false;
 
     if (!result || !result.ok) {
-        alert(result?.error || 'Node açılamadı.');
+        pisiNotifyError(result?.error || 'Not açılamadı.');
         return false;
     }
 
@@ -504,7 +504,7 @@ async function performNodeModalCloseAndSave(node) {
                     await refreshActiveMapTreeBranch();
                 }
             } else {
-                alert(renameResult?.error || 'Node başlığı değiştirilemedi.');
+                pisiNotifyError(renameResult?.error || 'Not başlığı değiştirilemedi.');
 
                 // Rename başarısızsa modal kapanmasın; kullanıcı düzeltebilsin.
                 titleInput?.focus();
@@ -516,7 +516,7 @@ async function performNodeModalCloseAndSave(node) {
         const saveResult = await window.pisiProject?.saveNodeContent?.(nodePath, content);
 
         if (!saveResult || !saveResult.ok) {
-            alert(saveResult?.error || 'Node kaydedilemedi.');
+            pisiNotifyNoteSaveError(saveResult?.error || 'Not kaydedilemedi.', nodePath);
             return false;
         }
 
@@ -557,7 +557,7 @@ async function performNodeModalCloseAndSave(node) {
         return true;
     } catch (error) {
         console.error('[PISI] Modal kaydetme/kapatma hatası:', error);
-        alert('Modal kapatılırken hata oluştu: ' + error.message);
+        pisiNotifyNoteSaveError('Not penceresi kapatılırken hata oluştu.', node?.path, error?.message);
         return false;
     }
 }
@@ -684,7 +684,7 @@ async function openCenterNodeEditor(nodeItem, request = beginPisiWorkspaceNaviga
     if (!isPisiWorkspaceNavigationCurrent(request) || isPisiEditorRestorePending() || restoreGeneration !== getPisiEditorRestoreGeneration()) return false;
 
     if (!result || !result.ok) {
-        alert(result?.error || 'Node açılamadı.');
+        pisiNotifyError(result?.error || 'Not açılamadı.');
         return false;
     }
 
@@ -788,7 +788,7 @@ async function performCurrentCenterNodeEditorSave(node, options = {}) {
             const renameResult = await renamePisiItemWithLinkReview(nodePath, title, titleInput);
 
             if (!renameResult || !renameResult.ok) {
-                alert(renameResult?.error || 'Node başlığı değiştirilemedi.');
+                pisiNotifyError(renameResult?.error || 'Not başlığı değiştirilemedi.');
                 titleInput?.focus();
                 return false;
             }
@@ -821,7 +821,7 @@ async function performCurrentCenterNodeEditorSave(node, options = {}) {
         const saveResult = await window.pisiProject?.saveNodeContent?.(nodePath, content);
 
         if (!saveResult || !saveResult.ok) {
-            alert(saveResult?.error || 'Node kaydedilemedi.');
+            pisiNotifyNoteSaveError(saveResult?.error || 'Not kaydedilemedi.', nodePath);
             return false;
         }
 
@@ -839,7 +839,7 @@ async function performCurrentCenterNodeEditorSave(node, options = {}) {
         return activeCenterNode !== node || Number(node.revision || 0) === saveRevision;
     } catch (error) {
         console.error('[PISI] Center node editor kaydetme hatası:', error);
-        alert('Node kaydedilirken hata oluştu: ' + error.message);
+        pisiNotifyNoteSaveError('Not kaydedilirken hata oluştu.', node?.path, error?.message);
         return false;
     } finally {
         saveBtn?.classList.remove('saving');

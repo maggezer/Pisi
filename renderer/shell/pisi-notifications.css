@@ -1,0 +1,149 @@
+/* In-app notification strips (renderer/shell/pisi-notifications.mjs). Lazy-loaded. */
+.pisi-notifications {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 13000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    max-width: min(420px, calc(100vw - 32px));
+    pointer-events: none;
+}
+
+.pisi-notification {
+    --pisi-notification-tone: var(--pisi-theme-accent, #f39c12);
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 6px 8px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px 10px 14px;
+    border: 1px solid var(--pisi-theme-border, #444);
+    border-left: 4px solid var(--pisi-notification-tone);
+    border-radius: 10px;
+    background: var(--pisi-theme-surface, #252526);
+    color: var(--pisi-theme-text, #d4d4d4);
+    box-shadow: 0 12px 32px var(--pisi-theme-shadow, rgb(0 0 0 / 45%));
+    font-size: 13px;
+    line-height: 1.4;
+    pointer-events: auto;
+    animation: pisi-notification-in 160ms ease-out;
+}
+
+.pisi-notification:focus-visible {
+    outline: 2px solid var(--pisi-notification-tone);
+    outline-offset: 2px;
+}
+
+.pisi-notification-info {
+    --pisi-notification-tone: #5dade2;
+}
+
+.pisi-notification-success {
+    --pisi-notification-tone: #2ecc71;
+}
+
+.pisi-notification-warning {
+    --pisi-notification-tone: #f39c12;
+}
+
+.pisi-notification-error {
+    --pisi-notification-tone: #e74c3c;
+}
+
+.pisi-notification-body {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.pisi-notification-count {
+    flex: none;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--pisi-theme-surface-alt, #2d2d30);
+    color: var(--pisi-theme-muted, #a0a0a0);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.pisi-notification-close {
+    align-self: start;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--pisi-theme-muted, #a0a0a0);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.pisi-notification-close:hover {
+    background: var(--pisi-theme-hover, #333);
+    color: var(--pisi-theme-text, #d4d4d4);
+}
+
+.pisi-notification-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.pisi-notification-actions:empty {
+    display: none;
+}
+
+.pisi-notification-actions button {
+    height: 26px;
+    padding: 0 10px;
+    border: 1px solid var(--pisi-theme-border-strong, #555);
+    border-radius: 7px;
+    background: var(--pisi-theme-surface-alt, #2d2d30);
+    color: var(--pisi-theme-text, #d4d4d4);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.pisi-notification-actions .pisi-notification-action {
+    border-color: var(--pisi-notification-tone);
+}
+
+.pisi-notification-actions button:hover {
+    border-color: var(--pisi-notification-tone);
+}
+
+.pisi-notification-detail {
+    grid-column: 1 / -1;
+    max-height: 180px;
+    margin: 0;
+    padding: 8px;
+    overflow: auto;
+    border-radius: 6px;
+    background: var(--pisi-theme-surface-alt, #1e1e1e);
+    font-size: 11px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+@keyframes pisi-notification-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pisi-notification {
+        animation: none;
+    }
+}

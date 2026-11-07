@@ -1,5 +1,31 @@
 # PISI Güncelleme Takip Dosyası
 
+## 07-11-2026 — Tarayıcı uyarıları yerine uygulama içi bildirimler
+
+- Renderer'daki 107 `alert()` ve 12 `confirm()` çağrısı kaldırıldı.
+- Yeni bildirim şeritleri (`renderer/shell/pisi-notifications.mjs`): sağ altta,
+  temaya uyan bilgi, başarı, uyarı ve hata şeritleri. Bilgi ve başarı 4 sn,
+  uyarı 6 sn sonra kapanır; hata kapanmaz ve "Ayrıntıyı göster" / "Kopyala"
+  sunar. Aynı mesaj üst üste gelirse tek şeritte birleşir (×2, ×3). Hata ve
+  uyarılar `role="alert"`, diğerleri `role="status"` ile duyurulur.
+- Kayıt hatasında (not kaydedilemedi, not penceresi kapatılamadı) şerit
+  "Sürüm geçmişini aç" bağlantısı verir; ilgili notun sürüm geçmişi ve yedek
+  ekranı açılır. Not penceresinde Mod+S ile kayıt başarısız olduğunda artık
+  sessizce geçilmiyor.
+- Onaylar `pisiConfirm` ile: yıkıcı işlemlerde (kalıcı silme, Çöp Kutusu'nu
+  boşaltma, ekrandaki değişikliklerden vazgeçme, yedekten geri yükleme) odak ve
+  Enter "İptal"de başlar; diğerlerinde onay düğmesinde. Pencere temaya uyar.
+- `renderer/core/i18n.mjs` içindeki `window.alert` / `window.confirm`
+  sarmalayıcıları kaldırıldı. ESLint (`no-restricted-globals`,
+  `no-restricted-properties`) renderer'da yeni `alert`/`confirm` kullanımını
+  engelliyor.
+- Terimler: bildirim ve onay metinlerinde Türkçe arayüzde "node" yerine "not",
+  "map" yerine "harita" (ör. "Node açılamadı." → "Not açılamadı."). Düğme
+  etiketleri ayrı bir işe bırakıldı (`pisi-error.md` 5a).
+- Testler: `tests/notify-core.test.mjs`, `scripts/electron-notifications-e2e.mjs`
+  (gerçek bir kayıt hatası: hata şeridi göründü, engelleyici pencere açılmadı,
+  hiç yerel `alert`/`confirm` çağrılmadı).
+
 ## 07-11-2026 — Sağ tık menüsü, arayüz yakınlaştırma ve yazdırma
 
 - Uygulama menüsü kaldırıldığı için eksik kalanlar main süreçten geliyor

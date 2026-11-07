@@ -60,7 +60,7 @@ async function openMapInWorkspace(mapItem, request = beginPisiWorkspaceNavigatio
     if (!isPisiWorkspaceNavigationCurrent(request) || isPisiEditorRestorePending() || restoreGeneration !== getPisiEditorRestoreGeneration()) return false;
 
     if (!result || !result.ok) {
-        alert(result?.error || 'Map yüklenemedi.');
+        pisiNotifyError(result?.error || 'Harita yüklenemedi.');
         return false;
     }
 
@@ -322,8 +322,8 @@ function bindMapNodeBoxEvents(box, node) {
         resetPisiKeyboardAndPointerState();
 
         const isReference = node.isReference === true;
-        const ok = await pisiConfirm(isReference ? 'Bu node yalnızca map görünümünden kaldırılsın mı?' : 'Bu node dosyası silinsin mi?', {
-            title: isReference ? 'Map referansını kaldır' : 'Node sil',
+        const ok = await pisiConfirm(isReference ? 'Bu not yalnızca harita görünümünden kaldırılsın mı?' : 'Bu not silinsin mi?', {
+            title: isReference ? 'Harita referansını kaldır' : 'Notu sil',
             confirmText: isReference ? 'Kaldır' : 'Sil',
             cancelText: 'Vazgeç',
             danger: !isReference
@@ -340,7 +340,7 @@ function bindMapNodeBoxEvents(box, node) {
             : await window.pisiProject?.deleteNodeFromMap?.(node.fullPath);
 
         if (!result || !result.ok) {
-            alert(result?.error || 'Node silinemedi.');
+            pisiNotifyError(result?.error || 'Not silinemedi.');
             return;
         }
 
@@ -627,7 +627,7 @@ async function startMapNodeTitleEdit(box, node) {
             const result = await renamePisiItemWithLinkReview(oldPath, newTitle);
 
             if (!result || !result.ok) {
-                alert(result?.error || 'Node adı değiştirilemedi.');
+                pisiNotifyError(result?.error || 'Not adı değiştirilemedi.');
 
                 // Kritik: hata alsak bile edit modundan temiz çık.
                 restoreTitle(oldTitle);
@@ -667,7 +667,7 @@ async function startMapNodeTitleEdit(box, node) {
             }
         } catch (error) {
             console.error('[PISI] Map node rename hatası:', error);
-            alert('Node adı değiştirilemedi: ' + error.message);
+            pisiNotifyError('Not adı değiştirilemedi.', { detail: error?.message });
 
             restoreTitle(oldTitle);
         } finally {

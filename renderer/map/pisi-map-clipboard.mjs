@@ -106,7 +106,7 @@ function pastePisiMapReferences(clip, origin) {
             pasted.push(node.id);
         }
         if (skipped) {
-            window.alert(
+            pisiNotifyInfo(
                 pisiMapClipboardTranslate('{count} not zaten bu haritada; kopya için Alt+Mod+V kullanın.')
                     .replace('{count}', String(skipped))
                     .replace('Mod', /Mac/i.test(navigator.platform) ? '⌘' : 'Ctrl')
@@ -124,7 +124,7 @@ function pastePisiMapReferences(clip, origin) {
         }
         const result = await window.pisiDomain?.command?.('project.batch.v1', { projectFolder: window.currentProjectFolder, operations });
         if (!result?.ok) {
-            window.alert(result?.error || pisiMapClipboardTranslate('Yapıştırılamadı.'));
+            pisiNotifyError(result?.error || pisiMapClipboardTranslate('Yapıştırılamadı.'));
             return result || { ok: false };
         }
         window.recordPisiMapStep?.(makePisiMapBatchStep(mapPath, steps, 'paste'));
@@ -153,7 +153,7 @@ function pastePisiMapCopies(clip, origin, label = 'paste') {
         }));
         const result = await window.pisiDomain?.command?.('map.nodes.duplicate.v1', { mapPath, nodes, edges });
         if (!result?.ok) {
-            window.alert(result?.error || pisiMapClipboardTranslate('Kopya oluşturulamadı.'));
+            pisiNotifyError(result?.error || pisiMapClipboardTranslate('Kopya oluşturulamadı.'));
             return result || { ok: false };
         }
         // Node steps first, edges last: undo deletes the edges, then sends the copies to Trash.

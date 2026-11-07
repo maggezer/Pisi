@@ -215,7 +215,7 @@ function applyPisiWikiMenuItem(editor, item) {
     if (item.kind === 'wiki-create') {
         void createPisiWikiTargetNote(editor, item.title)
             .then((link) => insertPisiWikiLink(editor, offsets.block, offsets.start, offsets.end, link))
-            .catch((error) => window.alert(error.message));
+            .catch((error) => pisiNotifyError(error.message));
         return true;
     }
     return insertPisiWikiLink(editor, offsets.block, offsets.start, offsets.end, { nodeId: item.nodeId, title: item.title, blockId: item.blockId });
@@ -225,7 +225,7 @@ async function openPisiWikiTarget(nodeId, blockId = '') {
     const documents = getPisiWikiDocuments(await getPisiWikiIndex());
     const target = documents.find((document) => document.id === nodeId);
     if (!target) {
-        window.alert(pisiWikiTranslate('Bağlantının hedef notu bulunamadı.'));
+        pisiNotifyWarning(pisiWikiTranslate('Bağlantının hedef notu bulunamadı.'));
         return false;
     }
     return openPisiWikiDocument(target, blockId);
@@ -293,7 +293,7 @@ async function followPisiLegacyWikiLink(event) {
     event.stopImmediatePropagation();
     const documents = getPisiWikiDocuments(await getPisiWikiIndex());
     const owners = resolvePisiLegacyWikiTitle(documents, legacy.title);
-    if (!owners.length) window.alert(pisiWikiTranslate('Bu başlıkta bir not bulunamadı.'));
+    if (!owners.length) pisiNotifyWarning(pisiWikiTranslate('Bu başlıkta bir not bulunamadı.'));
     else if (owners.length === 1) await openPisiWikiDocument(owners[0], isPisiWikiBlockId(legacy.block) ? legacy.block : '');
     else showPisiWikiChooser(owners, event.clientX, event.clientY);
     return true;
@@ -395,7 +395,7 @@ async function renamePisiItemWithLinkReview(oldPath, newTitle, titleInput = null
                 `${pisiWikiTranslate('Güncellenecek bağlantı')}: ${impact.links}`,
                 pisiWikiTranslate('Devam edilsin mi?')
             ].join('\n');
-            if (!window.confirm(message)) {
+            if (!(await pisiConfirm(message, { title: pisiWikiTranslate('Bağlantıları güncelle'), confirmText: pisiWikiTranslate('Yeniden adlandır') }))) {
                 const current = await window.pisiProject?.getPisiDocument?.(oldPath);
                 const title = current?.metadata?.title || '';
                 if (titleInput && title) titleInput.value = title;
@@ -417,7 +417,7 @@ async function repairPisiWikiLinksInProject() {
     if (typeof window.flushPisiPendingSaves === 'function' && !(await window.flushPisiPendingSaves())) return false;
     const preview = await window.pisiDomain?.query?.('links.repair-preview.v1', { projectFolder });
     if (!preview?.ok) {
-        window.alert(preview?.error || pisiWikiTranslate('Bağlantılar incelenemedi.'));
+        pisiNotifyError(preview?.error || pisiWikiTranslate('Bağlantılar incelenemedi.'));
         return false;
     }
     const skipped = [
@@ -426,7 +426,7 @@ async function repairPisiWikiLinksInProject() {
         `${pisiWikiTranslate('Desteklenmeyen blok biçimi')}: ${preview.unsupported}`
     ];
     if (!preview.converted) {
-        window.alert([pisiWikiTranslate('Onarılacak bağlantı yok.'), ...skipped].join('\n'));
+        pisiNotifyInfo(pisiWikiTranslate('Onarılacak bağlantı yok.'), { detail: skipped.join('\n'), duration: 8000 });
         return false;
     }
     const summary = [
@@ -435,10 +435,10 @@ async function repairPisiWikiLinksInProject() {
         ...skipped,
         pisiWikiTranslate('Devam edilsin mi?')
     ];
-    if (!window.confirm(summary.join('\n'))) return false;
+    if (!(await pisiConfirm(summary.join('\n'), { title: pisiWikiTranslate('Bağlantıları onar'), confirmText: pisiWikiTranslate('Onar') }))) return false;
     const repaired = await window.pisiDomain?.command?.('links.repair.v1', { projectFolder });
     if (!repaired?.ok) {
-        window.alert(repaired?.error || pisiWikiTranslate('Bağlantılar onarılamadı.'));
+        pisiNotifyError(repaired?.error || pisiWikiTranslate('Bağlantılar onarılamadı.'));
         return false;
     }
     window.invalidatePisiSearchIndex?.('wiki-link-repair');

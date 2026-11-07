@@ -50,7 +50,7 @@ function getPisiFileEditorFromRequest(detail = {}) {
 }
 
 function reportPisiFileError(code, fallback) {
-    window.alert(pisiFileTranslate(getPisiFileErrorMessage(code, fallback)));
+    pisiNotifyError(pisiFileTranslate(getPisiFileErrorMessage(code, fallback)));
 }
 
 function renderPisiFileBlock(block) {

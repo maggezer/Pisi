@@ -107,6 +107,14 @@ class CdpClient {
 const CTRL = 2;
 let cdp;
 
+/** Accepts the in-app confirmation (pisiConfirm) and keeps its text for assertions. */
+async function acceptInAppConfirm(label) {
+    const message = await waitUntil(label + ' confirmation', () => cdp.evaluate("document.getElementById('pisi-confirm-message')?.textContent || null"));
+    dialogs.push({ type: 'confirm', message });
+    await cdp.evaluate("document.getElementById('pisi-confirm-ok').click()");
+    return message;
+}
+
 async function key(name, code, keyCode, modifiers = 0) {
     await cdp.request('Input.dispatchKeyEvent', { type: 'keyDown', key: name, code, windowsVirtualKeyCode: keyCode, modifiers });
     await cdp.request('Input.dispatchKeyEvent', { type: 'keyUp', key: name, code, windowsVirtualKeyCode: keyCode, modifiers });
@@ -220,6 +228,7 @@ try {
     );
     await cdp.request('Input.insertText', { text: 'Yeni Hedef' });
     await key('Enter', 'Enter', 13);
+    await acceptInAppConfirm('rename impact');
     const renamedPath = await waitUntil('target renamed', async () => {
         const name = (await fs.readdir(projectPath)).find((entry) => entry.startsWith('Yeni Hedef') && entry.endsWith('.node'));
         return name ? path.join(projectPath, name) : null;
@@ -256,8 +265,9 @@ try {
     await waitUntil('legacy link followed', () => cdp.evaluate('window.activeCenterNode?.path === ' + JSON.stringify(renamedPath)));
 
     // 6. "Bağlantıları onar" turns the legacy text into an id link.
-    const repaired = await cdp.evaluate("window.runPisiCommand?.('links.repair')");
-    assert(repaired?.ok !== false, 'Repair command must run', repaired);
+    // The command waits for the in-app confirmation, so it is not awaited here.
+    await cdp.evaluate("void window.runPisiCommand?.('links.repair')");
+    await acceptInAppConfirm('repair preview');
     await waitUntil('legacy text repaired on disk', async () => {
         const content = await readContent(source.path);
         return content.includes(`data-pisi-node-id="${target.id}"`) && !content.includes('[[yeni hedef]]');

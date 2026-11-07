@@ -530,15 +530,12 @@ function isExternalChangeRelevantToActiveMap(changedPaths) {
 }
 
 async function confirmPisiExternalReload(message) {
-    if (typeof pisiConfirm === 'function') {
-        return pisiConfirm(message, {
-            title: 'Dış değişiklik algılandı',
-            confirmText: 'Diskten yeniden yükle',
-            cancelText: 'Ekrandaki sürümü koru'
-        });
-    }
-
-    return confirm(message);
+    return pisiConfirm(message, {
+        title: 'Dış değişiklik algılandı',
+        confirmText: 'Diskten yeniden yükle',
+        cancelText: 'Ekrandaki sürümü koru',
+        danger: true
+    });
 }
 
 async function reloadPisiWorkspaceAfterExternalChange(changedPaths) {
@@ -684,7 +681,7 @@ async function renamePisiOpenTabTitle(tab, newTitle) {
         if (typeof saveCurrentMapLayout === 'function' && typeof activeMapPath !== 'undefined' && activeMapPath && pisiSameTabPath(activeMapPath, tab.path)) {
             const layoutSaved = await saveCurrentMapLayout();
             if (!layoutSaved) {
-                alert('Map yerleşimi kaydedilemedi; başlık değiştirilmedi.');
+                pisiNotifyError('Harita yerleşimi kaydedilemedi; başlık değiştirilmedi.');
                 renderPisiOpenTabs();
                 return false;
             }
@@ -696,7 +693,7 @@ async function renamePisiOpenTabTitle(tab, newTitle) {
         const result = await renamePisiItemWithLinkReview(oldPath, cleanTitle);
 
         if (!result || !result.ok) {
-            alert(result?.error || 'Sekme başlığı değiştirilemedi.');
+            pisiNotifyError(result?.error || 'Sekme başlığı değiştirilemedi.');
             renderPisiOpenTabs();
             return false;
         }
@@ -737,7 +734,7 @@ async function renamePisiOpenTabTitle(tab, newTitle) {
         return true;
     } catch (error) {
         console.error('[PISI] Sekme başlığı değiştirme hatası:', error);
-        alert('Sekme başlığı değiştirilirken hata oluştu: ' + error.message);
+        pisiNotifyError('Sekme başlığı değiştirilirken hata oluştu.', { detail: error?.message });
         renderPisiOpenTabs();
         return false;
     }

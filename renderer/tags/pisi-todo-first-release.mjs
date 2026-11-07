@@ -370,7 +370,7 @@ function renderPisiMissionsPanelFirstRelease() {
             if (!result?.ok) {
                 checkbox.checked = mission.completed === true;
                 checkbox.disabled = false;
-                alert(result?.error || (mission.completed ? 'Görev yeniden açılamadı.' : 'Görev tamamlandı olarak işaretlenemedi.'));
+                pisiNotifyError(result?.error || (mission.completed ? 'Görev yeniden açılamadı.' : 'Görev tamamlandı olarak işaretlenemedi.'));
                 return;
             }
             await refreshPisiMissionsFirstRelease('completion-change');
@@ -385,7 +385,7 @@ function renderPisiMissionsPanelFirstRelease() {
             if (!result?.ok) {
                 statusSelect.value = previous;
                 statusSelect.disabled = false;
-                alert(result?.error || 'Görev durumu değiştirilemedi.');
+                pisiNotifyError(result?.error || 'Görev durumu değiştirilemedi.');
                 return;
             }
             await refreshPisiMissionsFirstRelease('status-change');
@@ -495,7 +495,7 @@ async function savePisiMissionMutationFirstRelease(mission, mutateBlock) {
         if (!result?.ok) {
             rollbackPisiMissionBlock(block, change.previousHtml);
             await refreshPisiMissionsFirstRelease('mutation-rollback');
-            return { ok: false, error: result?.error || 'Node kaydedilemedi.' };
+            return { ok: false, error: result?.error || 'Not kaydedilemedi.' };
         }
         return { ok: true };
     };
@@ -505,7 +505,7 @@ async function savePisiMissionMutationFirstRelease(mission, mutateBlock) {
         return applyEditor(editor, async () => {
             if (typeof saveCurrentCenterNodeEditor === 'function') {
                 const ok = await saveCurrentCenterNodeEditor();
-                return { ok, error: ok ? '' : 'Node kaydedilemedi.' };
+                return { ok, error: ok ? '' : 'Not kaydedilemedi.' };
             }
             return window.pisiProject?.saveNodeContent?.(mission.nodePath, getPisiEditorContent(editor));
         });
@@ -529,7 +529,7 @@ async function savePisiMissionMutationFirstRelease(mission, mutateBlock) {
     if (change.missing) return { ok: false, error: 'Görev etiketi bulunamadı.' };
     if (!change.changed) return { ok: true, unchanged: true };
     const result = await window.pisiProject?.saveNodeContent?.(mission.nodePath, template.innerHTML);
-    return result?.ok ? { ok: true } : { ok: false, error: result?.error || 'Node kaydedilemedi.' };
+    return result?.ok ? { ok: true } : { ok: false, error: result?.error || 'Not kaydedilemedi.' };
 }
 
 async function setPisiMissionStatusFirstRelease(mission, status) {

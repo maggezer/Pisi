@@ -33,7 +33,7 @@ async function stepPisiInterfaceZoom(direction) {
 async function updatePisiWindowShellSettings(patch) {
     const result = await window.pisiDomain?.command?.('shell.settings.update.v1', patch);
     if (result?.ok) applyPisiWindowShellSettings(result.settings);
-    else if (result?.error) window.alert(pisiWindowShellTranslate(result.error));
+    else if (result?.error) pisiNotifyError(pisiWindowShellTranslate(result.error));
     return result;
 }
 
@@ -46,7 +46,7 @@ async function printPisiNote(nodePath = getPisiActiveNotePath()) {
     if (!nodePath) return { ok: false, error: 'Yazdırılacak açık not yok.' };
     await flushPisiPendingSaves();
     const result = await window.pisiDomain?.command?.('note.print.v1', { nodePath });
-    if (!result?.ok) window.alert(pisiWindowShellTranslate(result?.error || 'Yazdırılamadı.'));
+    if (!result?.ok) pisiNotifyError(pisiWindowShellTranslate(result?.error || 'Yazdırılamadı.'));
     return result;
 }
 

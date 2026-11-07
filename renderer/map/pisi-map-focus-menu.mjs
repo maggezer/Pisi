@@ -16,7 +16,7 @@ const focusMenuText = {
         second: '2nd degree',
         third: '3rd degree',
         all: 'All',
-        noSelection: 'Bir node seç.'
+        noSelection: 'Bir not kartı seç.'
     },
     eng: {
         focus: 'Focus neighbors',
@@ -24,7 +24,7 @@ const focusMenuText = {
         second: '2nd degree',
         third: '3rd degree',
         all: 'All',
-        noSelection: 'Select a node.'
+        noSelection: 'Select a note card.'
     }
 };
 
@@ -167,7 +167,7 @@ async function persistOperationalScope() {
 async function applyFocusDegree(degree) {
     const selected = getSelectedMapNodeBox();
     if (!selected) {
-        alert(t('noSelection'));
+        pisiNotifyWarning(t('noSelection'));
         closeFocusMenu();
         return;
     }

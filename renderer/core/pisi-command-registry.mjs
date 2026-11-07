@@ -344,7 +344,7 @@ function renderPisiShortcutSettings(container) {
             key.classList.add('capturing');
             key.focus();
         });
-        key.addEventListener('keydown', (event) => {
+        key.addEventListener('keydown', async (event) => {
             if (!key.classList.contains('capturing')) return;
             event.preventDefault();
             event.stopImmediatePropagation();
@@ -357,9 +357,10 @@ function renderPisiShortcutSettings(container) {
             if (!shortcut || ['Mod', 'Alt', 'Shift'].includes(shortcut)) return;
             const result = setPisiCommandShortcut(command.id, shortcut);
             if (!result.ok) {
-                const replace = confirm(
-                    `${window.pisiT?.('Kısayol çakışması') || 'Kısayol çakışması'}: ${result.conflict.label}. ` +
-                        `${window.pisiT?.('Mevcut atamayı değiştir?') || 'Mevcut atamayı değiştir?'}`
+                const replace = await pisiConfirm(
+                    `${window.pisiT?.('Kısayol çakışması') || 'Kısayol çakışması'}: ${window.pisiT?.(result.conflict.label) || result.conflict.label}. ` +
+                        `${window.pisiT?.('Mevcut atamayı değiştir?') || 'Mevcut atamayı değiştir?'}`,
+                    { title: 'Kısayol çakışması', confirmText: 'Değiştir' }
                 );
                 if (replace) setPisiCommandShortcut(command.id, shortcut, { replace: true });
             }
@@ -402,7 +403,7 @@ function initializePisiCommandRegistry() {
     });
     registerPisiCommand({
         id: 'pisi.save',
-        label: 'Açık node’u kaydet',
+        label: 'Açık notu kaydet',
         description: 'Aktif editördeki değişiklikleri sürüm geçmişiyle kaydeder.',
         category: 'Düzenleme',
         defaultShortcut: 'Mod+S',
@@ -418,7 +419,10 @@ function initializePisiCommandRegistry() {
                 if (protectPisiEditorRecovery(modal, editor, document.getElementById('node-modal-title'), content)) return false;
                 const revision = Number(modal.revision || 0);
                 const result = await runPisiEditorWrite(() => window.pisiProject?.saveNodeContent?.(modal.path, content), modal);
-                if (!result?.ok) throw new Error(result?.error || 'Node kaydedilemedi.');
+                if (!result?.ok) {
+                    pisiNotifyNoteSaveError(result?.error || 'Not kaydedilemedi.', modal.path);
+                    return false;
+                }
                 if (window.activeModalNode === modal && Number(modal.revision || 0) === revision) modal.dirty = false;
                 return result;
             }

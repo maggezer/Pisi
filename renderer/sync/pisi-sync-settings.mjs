@@ -140,7 +140,7 @@ function renderPisiSyncSettings(container) {
                 await window.loadProject(window.currentProjectFolder);
             }
         } catch (error) {
-            window.alert(error?.message || pisiSyncTranslate('Sync klasörü seçilemedi.'));
+            pisiNotifyError(error?.message || pisiSyncTranslate('Sync klasörü seçilemedi.'));
         } finally {
             pisiSyncBusy = false;
             await refreshPisiSyncSettings(section);
@@ -148,11 +148,16 @@ function renderPisiSyncSettings(container) {
     });
     run.addEventListener('click', () =>
         runPisiRendererSync('manual', section).catch((error) => {
-            window.alert(error?.message || pisiSyncTranslate('Senkronizasyon başarısız.'));
+            pisiNotifyError(error?.message || pisiSyncTranslate('Senkronizasyon başarısız.'));
         })
     );
     disconnect.addEventListener('click', async () => {
-        if (!window.confirm(pisiSyncTranslate('Sync bağlantısı kesilsin mi? Yerel proje dosyaları korunur.'))) return;
+        if (
+            !(await pisiConfirm(pisiSyncTranslate('Sync bağlantısı kesilsin mi? Yerel proje dosyaları korunur.'), {
+                confirmText: pisiSyncTranslate('Bağlantıyı kes')
+            }))
+        )
+            return;
         await window.pisiSync?.disconnect?.();
         await refreshPisiSyncSettings(section);
     });

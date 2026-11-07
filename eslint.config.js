@@ -128,6 +128,22 @@ module.exports = [
     {
         files: ['renderer/**/*.mjs'],
         languageOptions: { ecmaVersion: 'latest', sourceType: 'module' },
-        rules: { ...correctnessRules, ...unusedRules }
+        rules: {
+            ...correctnessRules,
+            ...unusedRules,
+            // Native dialogs block the app and ignore the theme: use pisiNotify* and pisiConfirm.
+            'no-restricted-globals': [
+                'error',
+                { name: 'alert', message: 'Use pisiNotify / pisiNotifyError (renderer/shell/pisi-notifications.mjs).' },
+                { name: 'confirm', message: 'Use await pisiConfirm(...) (renderer/shell/pisi-dialogs.mjs).' }
+            ],
+            'no-restricted-properties': [
+                'error',
+                { object: 'window', property: 'alert', message: 'Use pisiNotify / pisiNotifyError.' },
+                { object: 'window', property: 'confirm', message: 'Use await pisiConfirm(...).' },
+                { object: 'globalThis', property: 'alert', message: 'Use pisiNotify / pisiNotifyError.' },
+                { object: 'globalThis', property: 'confirm', message: 'Use await pisiConfirm(...).' }
+            ]
+        }
     }
 ];

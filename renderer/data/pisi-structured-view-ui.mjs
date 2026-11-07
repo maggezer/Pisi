@@ -102,14 +102,14 @@ function renderPisiSavedViewControls(host, rerender) {
         const name = prompt(pisiStructuredTranslate('Görünüm adı'));
         if (!name) return;
         const result = await savePisiSavedView(name);
-        if (!result?.ok) return alert(result?.error || pisiStructuredTranslate('Görünüm kaydedilemedi.'));
+        if (!result?.ok) return void pisiNotifyError(result?.error || pisiStructuredTranslate('Görünüm kaydedilemedi.'));
         rerender();
     });
     const remove = makePisiStructuredButton('Filtreyi sil', 'pisi-secondary-button');
     remove.addEventListener('click', async () => {
         if (!select.value) return;
         const result = await deletePisiSavedView(select.value);
-        if (!result?.ok) return alert(result?.error || pisiStructuredTranslate('Görünüm silinemedi.'));
+        if (!result?.ok) return void pisiNotifyError(result?.error || pisiStructuredTranslate('Görünüm silinemedi.'));
         rerender();
     });
     host.append(select, save, remove);
@@ -172,12 +172,12 @@ async function renderPisiBases(container, options = {}) {
             nodePaths: documents.map((item) => item.path)
         });
         if (!result?.ok) {
-            alert(result?.error || pisiStructuredTranslate('Map oluşturulamadı.'));
+            pisiNotifyError(result?.error || pisiStructuredTranslate('Harita oluşturulamadı.'));
             createMap.disabled = false;
             return;
         }
         await window.refreshCurrentProjectTree?.();
-        alert(`${pisiStructuredTranslate('Map oluşturuldu')}: ${result.fileName}`);
+        pisiNotifySuccess(`${pisiStructuredTranslate('Harita oluşturuldu')}: ${result.fileName}`);
         createMap.disabled = false;
     });
     toolbar.append(query, tableButton, cardsButton);

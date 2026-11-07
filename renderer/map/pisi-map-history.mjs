@@ -152,13 +152,13 @@ async function runPisiMapHistory(direction) {
     updatePisiMapHistoryButtons();
     try {
         if (!(await flushPisiMapPendingSaves())) {
-            window.alert(pisiMapHistoryTranslate('Harita kaydedilemediği için geri alınamadı.'));
+            pisiNotifyError(pisiMapHistoryTranslate('Harita kaydedilemediği için geri alınamadı.'));
             return { ok: false, code: 'SAVE_FAILED' };
         }
         const run = await runPisiMapStepCommands(step, direction);
         if (!run.ok) {
             // The step stays where it is; the map shows what is on disk.
-            window.alert(
+            pisiNotifyError(
                 `${pisiMapHistoryTranslate(direction === 'undo' ? 'Geri alınamadı' : 'Yinelenemedi')}: ${pisiMapHistoryTranslate(getPisiMapStepLabel(step))}` +
                     (run.result?.error ? `\n${run.result.error}` : '')
             );

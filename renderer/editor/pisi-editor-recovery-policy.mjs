@@ -71,7 +71,8 @@ export async function allowPisiRecoveryDeparture(node, allowDiscard = false) {
     const confirmed = await window.pisiConfirm?.(t('Bu not güvenle kaydedilemiyor. Kaydedilmemiş değişikliklerden vazgeçip devam edilsin mi?'), {
         title: t('Kaydedilmemiş değişiklikler'),
         confirmText: t('Değişikliklerden vazgeç'),
-        cancelText: t('Notta kal')
+        cancelText: t('Notta kal'),
+        danger: true
     });
     if (!confirmed || Number(node.revision || 0) !== revision || (window.activeCenterNode !== node && window.activeModalNode !== node)) return false;
     node.dirty = false;
