@@ -172,9 +172,16 @@ try {
     cdp = await launch();
     await cdp.evaluate("(localStorage.setItem('pisi.tutorial.v1.completed', '1'), window.finishPisiTutorial?.(true))");
     const map = fixture.maps[0];
-    await cdp.evaluate(
-        `window.openMapInWorkspace({ fullPath: ${JSON.stringify(map.mapPath)}, name: 'Perf 1000.map', fileName: 'Perf 1000.map', isDirectory: false })`
-    );
+    // Opening is not awaited through CDP: a navigation that a later one supersedes is
+    // abandoned without settling, and CDP then reports "Promise was collected".
+    // Ask again until the map is the active one and its nodes are loaded.
+    const openMapExpression = `void window.openMapInWorkspace({ fullPath: ${JSON.stringify(map.mapPath)}, name: 'Perf 1000.map', fileName: 'Perf 1000.map', isDirectory: false })`;
+    const mapIsOpen = `window.activeMapPath === ${JSON.stringify(map.mapPath)} && (window.activeMapNodes || []).length === 1000`;
+    for (let attempt = 0; attempt < 3 && !(await cdp.evaluate(mapIsOpen)); attempt += 1) {
+        await cdp.evaluate(openMapExpression);
+        await waitUntil('map opened', () => cdp.evaluate(mapIsOpen), 20000).catch(() => null);
+    }
+    assert(await cdp.evaluate(mapIsOpen), 'The 1,000-node map opens');
     await setCamera(cdp, { x: 0, y: 0, zoom: 1 });
     const opened = await cdp.evaluate(state);
     assert(opened.total === 1000 && opened.mounted > 0 && opened.mounted < 120, 'Only nodes in view are mounted', { ...opened, ids: undefined });
