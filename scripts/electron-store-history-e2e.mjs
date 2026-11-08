@@ -183,7 +183,7 @@ const storeTasks = async () => ((await readJson(tasksPath, { tasks: [] })).tasks
 let cdp = null;
 try {
     cdp = await launch();
-    await cdp.evaluate("localStorage.setItem('pisi.tutorial.v1.completed', '1')");
+    await cdp.evaluate("(localStorage.setItem('pisi.tutorial.v1.completed', '1'), window.finishPisiTutorial?.(true))");
     const nodePath = await createNode(cdp);
 
     // 1. A task in the note (quick add writes the block and the task store).

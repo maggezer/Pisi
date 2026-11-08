@@ -225,7 +225,7 @@ try {
     cdp = await launch();
     await cdp.request('Performance.enable');
     await cdp.request('HeapProfiler.enable');
-    await cdp.evaluate("localStorage.setItem('pisi.tutorial.v1.completed', '1')");
+    await cdp.evaluate("(localStorage.setItem('pisi.tutorial.v1.completed', '1'), window.finishPisiTutorial?.(true))");
     const baseline = await metrics(cdp);
     for (const map of fixture.maps) {
         const frameCount = Number(process.env.PISI_PERF_FRAMES) || 90;

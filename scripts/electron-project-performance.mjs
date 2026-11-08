@@ -193,7 +193,7 @@ async function runSize(size, index) {
     try {
         const started = performance.now();
         cdp = await launch(projectPath, userDataPath, basePort + index);
-        await cdp.evaluate("localStorage.setItem('pisi.tutorial.v1.completed', '1')");
+        await cdp.evaluate("(localStorage.setItem('pisi.tutorial.v1.completed', '1'), window.finishPisiTutorial?.(true))");
         // Let the open settle (watchers, recovery, background reads) before reading the delay.
         await new Promise((resolve) => setTimeout(resolve, 2000));
         const openDelay = await loop(cdp, true);

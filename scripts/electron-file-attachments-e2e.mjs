@@ -251,7 +251,7 @@ async function key(cdp, keyName, code, keyCode, modifiers = 0) {
 let cdp = null;
 try {
     cdp = await launch();
-    await cdp.evaluate("localStorage.setItem('pisi.tutorial.v1.completed', '1')");
+    await cdp.evaluate("(localStorage.setItem('pisi.tutorial.v1.completed', '1'), window.finishPisiTutorial?.(true))");
 
     // 1. A PDF dropped together with a PNG: an attachment block and an image block.
     const firstNode = await createNode(cdp);

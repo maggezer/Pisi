@@ -170,7 +170,7 @@ let cdp = null;
 let lastNeighbourState = null;
 try {
     cdp = await launch();
-    await cdp.evaluate("localStorage.setItem('pisi.tutorial.v1.completed', '1')");
+    await cdp.evaluate("(localStorage.setItem('pisi.tutorial.v1.completed', '1'), window.finishPisiTutorial?.(true))");
     const map = fixture.maps[0];
     await cdp.evaluate(
         `window.openMapInWorkspace({ fullPath: ${JSON.stringify(map.mapPath)}, name: 'Perf 1000.map', fileName: 'Perf 1000.map', isDirectory: false })`

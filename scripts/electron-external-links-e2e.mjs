@@ -165,7 +165,7 @@ try {
     await cdp.open();
     await cdp.request('Runtime.enable');
     // Real mouse clicks are used below; the first-run tutorial overlay would intercept them.
-    await cdp.evaluate("localStorage.setItem('pisi.tutorial.v1.completed', '1')");
+    await cdp.evaluate("(localStorage.setItem('pisi.tutorial.v1.completed', '1'), window.finishPisiTutorial?.(true))");
     await waitUntil('project restored', () =>
         cdp.evaluate("document.readyState === 'complete' && window.currentProjectFolder === " + JSON.stringify(projectPath))
     );

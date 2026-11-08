@@ -244,12 +244,27 @@ try {
     // 1. Configured legacy sync must not close the note or lose text after typing.
     const firstNode = await createNode(cdp);
     const secondNode = await createNode(cdp);
+    // Trace every change of the active tab and center note, so a failure shows when and after what the note changed.
+    await cdp.evaluate(`(() => {
+        const started = performance.now();
+        const trace = (window.__e2eTabTrace = []);
+        window.__e2eMark = (mark) => trace.push({ t: Math.round(performance.now() - started), mark });
+        let last = '';
+        window.setInterval(() => {
+            const now = [window.Pisi?.state?.activeTabPath || '', window.activeCenterNode?.path || '', Boolean(window.tutorialState?.active)].join(' | ');
+            if (now !== last) trace.push({ t: Math.round(performance.now() - started), state: now });
+            last = now;
+        }, 20);
+    })()`);
     await openNode(cdp, firstNode);
+    await cdp.evaluate("window.__e2eMark('first opened')");
     await openNode(cdp, secondNode);
+    await cdp.evaluate("window.__e2eMark('second opened')");
     const idleMarker = 'P1.2 idle sync guard';
     await typeAtEnd(cdp, idleMarker);
+    await cdp.evaluate("window.__e2eMark('typed')");
     await sleep(10000);
-    const afterIdle = await cdp.evaluate(editorStateExpression);
+    const afterIdle = { ...(await cdp.evaluate(editorStateExpression)), trace: await cdp.evaluate('window.__e2eTabTrace') };
     // The first-run tutorial must not start while the user is typing and steal focus.
     const focusAfterIdle = await cdp.evaluate('document.activeElement?.id || null');
     assert(focusAfterIdle === 'center-node-editor-content', 'Typing focus must stay in the note', focusAfterIdle);

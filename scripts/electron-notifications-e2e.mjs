@@ -191,6 +191,7 @@ try {
     cdp = await launch();
     await cdp.evaluate(`(() => {
         localStorage.setItem('pisi.tutorial.v1.completed', '1');
+        window.finishPisiTutorial?.(true);
         window.__nativeDialogs = [];
         window.alert = (message) => window.__nativeDialogs.push(['alert', String(message)]);
         window.confirm = (message) => { window.__nativeDialogs.push(['confirm', String(message)]); return false; };

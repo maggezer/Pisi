@@ -236,7 +236,7 @@ const redoAltKey = (cdp) => shortcut(cdp, 'y', 'KeyY', 89, CTRL);
 let cdp = null;
 try {
     cdp = await launch();
-    await cdp.evaluate("localStorage.setItem('pisi.tutorial.v1.completed', '1')");
+    await cdp.evaluate("(localStorage.setItem('pisi.tutorial.v1.completed', '1'), window.finishPisiTutorial?.(true))");
     const mapPath = await createMap(cdp);
     const nodeA = await dblclickCanvas(cdp, 160, 140);
     await sleep(500);
