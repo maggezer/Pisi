@@ -167,6 +167,7 @@ async function setCamera(cdp, camera) {
 }
 
 let cdp = null;
+let lastNeighbourState = null;
 try {
     cdp = await launch();
     await cdp.evaluate("localStorage.setItem('pisi.tutorial.v1.completed', '1')");
@@ -236,10 +237,23 @@ try {
     // activeMapNodes follows file names; pick the nodes by position.
     const n0 = await cdp.evaluate('window.activeMapNodes.find((node) => node.layout.x === 0 && node.layout.y === 0).id');
     const n1 = await cdp.evaluate('window.activeMapNodes.find((node) => node.layout.x === 260 && node.layout.y === 0).id');
+    // Record what the key reached, so a failure says whether the key, the focus or the neighbour lookup went wrong.
+    await cdp.evaluate(
+        `(() => { window.__e2eKeys = []; document.addEventListener('keydown', (event) => window.__e2eKeys.push({ key: event.key, target: event.target?.dataset?.nodeId || event.target?.tagName, prevented: event.defaultPrevented }), { capture: true }); })()`
+    );
     await cdp.evaluate(`document.querySelector('.map-node-box[data-node-id="${n0}"]').focus()`);
-    await cdp.request('Input.dispatchKeyEvent', { type: 'keyDown', key: 'ArrowRight', code: 'ArrowRight', windowsVirtualKeyCode: 39 });
+    await waitUntil('focus on the start node', () => cdp.evaluate(`document.activeElement?.dataset?.nodeId === ${JSON.stringify(n0)}`));
+    await cdp.request('Input.dispatchKeyEvent', { type: 'rawKeyDown', key: 'ArrowRight', code: 'ArrowRight', windowsVirtualKeyCode: 39 });
     await cdp.request('Input.dispatchKeyEvent', { type: 'keyUp', key: 'ArrowRight', code: 'ArrowRight', windowsVirtualKeyCode: 39 });
-    await waitUntil('focus on the right neighbour', () => cdp.evaluate(`document.activeElement?.dataset?.nodeId === ${JSON.stringify(n1)}`));
+    await waitUntil('focus on the right neighbour', () =>
+        cdp
+            .evaluate(
+                `document.activeElement?.dataset?.nodeId === ${JSON.stringify(n1)} || { active: document.activeElement?.dataset?.nodeId || document.activeElement?.tagName, hasFocus: document.hasFocus(), keys: window.__e2eKeys, start: ${JSON.stringify(n0)}, expected: ${JSON.stringify(n1)}, mounted: Boolean(document.querySelector('.map-node-box[data-node-id="${n1}"]')), camera: window.activeMapCamera }`
+            )
+            .then((value) => (value === true ? true : ((lastNeighbourState = value), false)))
+    ).catch((error) => {
+        throw new Error(error.message.split('\n')[0] + ' State: ' + JSON.stringify(lastNeighbourState));
+    });
 
     console.log(
         '[E2E] Map viewport passed: only visible nodes and edges mounted, selection kept off-screen, layout kept on unmount, reveal/search mount, export sees all, title and far tiers, overview click zoom, arrow navigation.'
