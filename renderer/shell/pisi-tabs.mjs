@@ -538,6 +538,15 @@ async function confirmPisiExternalReload(message) {
     });
 }
 
+// The user has already chosen another tab and its document is still loading:
+// the shown note or map is on its way out, and the incoming one is read from disk
+// anyway. Reloading the outgoing one would start a newer navigation, cancel the
+// user's and leave the old note in the editor under the new tab.
+function isPisiTabSwitchPendingFrom(shownPath) {
+    const activeTabPath = getPisiOpenTabsState().activeTabPath;
+    return Boolean(activeTabPath && shownPath && !pisiSameTabPath(activeTabPath, shownPath));
+}
+
 async function reloadPisiWorkspaceAfterExternalChange(changedPaths) {
     if (!Array.isArray(changedPaths) || !changedPaths.length) return;
 
@@ -547,11 +556,15 @@ async function reloadPisiWorkspaceAfterExternalChange(changedPaths) {
             return pisiClientPathsOverlap(changedPath, activeCenterNode.path);
         })
     ) {
+        if (isPisiTabSwitchPendingFrom(activeCenterNode.path)) return;
+        const shownNode = activeCenterNode;
         if (activeCenterNode.dirty) {
             const reload = await confirmPisiExternalReload(
                 'Açık node hem PISI içinde değiştirilmiş hem de diskten güncellenmiş. Diskteki sürüm yüklensin mi? Ekrandaki kaydedilmemiş değişiklikler korunmayacak.'
             );
             if (!reload) return;
+            // The user may have moved on while the question was open.
+            if (activeCenterNode !== shownNode || isPisiTabSwitchPendingFrom(shownNode.path)) return;
         }
 
         const item = {
@@ -569,6 +582,7 @@ async function reloadPisiWorkspaceAfterExternalChange(changedPaths) {
 
     const mapItem = getActiveMapTabItemForReload();
     if (!mapItem || typeof openMapInWorkspace !== 'function') return;
+    if (isPisiTabSwitchPendingFrom(activeMapPath)) return;
 
     const modalPath = activeModalNode?.path || null;
     const modalWasAffected =
@@ -584,6 +598,7 @@ async function reloadPisiWorkspaceAfterExternalChange(changedPaths) {
             'Açık map veya node dışarıdan değiştirildi. Diskteki sürüm yüklensin mi? Henüz diske yazılmamış ekrandaki değişiklikler korunmayacak.'
         );
         if (!reload) return;
+        if (isPisiTabSwitchPendingFrom(activeMapPath)) return;
     }
 
     clearTimeout(mapSaveTimer);
