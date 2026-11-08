@@ -1,5 +1,11 @@
 # PISI Güncelleme Takip Dosyası
 
+## 08-11-2026 — 0.11.3 Beta yayını
+
+- Sürüm `0.11.3` oldu; sürüm notu `docs/releases/v0.11.3.md`.
+- `0.11.2` paketleri not değiştirirken metnin yanlış nota gitmesi düzeltmesinden
+  önce derlendiği için yayımlanmadı. `0.11.3` bu düzeltmeyi içerir.
+
 ## 08-11-2026 — Not değiştirirken dış değişiklik yeniden yüklemesi eski notu geri getiriyordu
 
 - **Belirti:** A notu açıkken B'ye geçilirken, B'nin içeriği yüklenmeden A için
