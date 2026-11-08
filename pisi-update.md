@@ -2,13 +2,22 @@
 
 ## 08-11-2026 — Kararsız harita E2E testleri
 
-- `main` üzerinde map-editing (uzun basma menüsü) ve map-viewport (ok tuşuyla
-  komşuya odak; Linux'ta "Promise was collected") testleri ara ara düşüyordu.
-  Ortak neden: arka planda veya örtülü kalan test penceresinde Chromium,
-  zamanlayıcıları, `requestAnimationFrame`'i ve görünür alana göre düğüm
-  yerleştirmeyi yavaşlatıyor ya da durduruyordu.
-- Tüm Electron E2E betikleri artık Electron'u arka plan yavaşlatmasını kapatan
-  Chromium bayraklarıyla açıyor. Uygulama koduna dokunulmadı.
+`main` üzerinde map-editing ve map-viewport E2E testleri ara ara düşüyordu.
+Bulunan nedenler (uygulama kodu değişmedi):
+
+- **İlk açılış rehberi:** Betikler rehberi kapatan anahtarı uygulama yüklendikten
+  sonra yazıyordu. Yavaş runner'da rehber o arada açılıp odağı ("İleri" düğmesi)
+  ve sağ ok tuşunu alıyordu. Betikler artık açılmış rehberi de kapatıyor.
+- **Arka plan yavaşlatması:** Arka planda veya örtülü kalan test penceresinde
+  Chromium zamanlayıcıları ve kareleri yavaşlatıyordu. E2E betikleri Electron'u
+  bunu kapatan Chromium bayraklarıyla açıyor.
+- **Uzun basma:** Test parmağı sabit 800 ms tutuyordu. Artık menü görünene kadar
+  basılı tutuyor.
+- **Harita açma:** Başka bir gezinmenin geçersiz kıldığı açılış sözü hiç
+  çözülmüyor, CDP de "Promise was collected" veriyordu. Test artık haritanın
+  açılmasını bekliyor.
+- **İz kaydı:** sync-reload testi, Windows'ta bir kez görülen not değişimini
+  açıklamak için etkin sekme değişimlerini kaydediyor.
 
 ## 07-11-2026 — 0.11.2 Beta yayını
 
