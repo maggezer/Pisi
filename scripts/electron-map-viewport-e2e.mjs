@@ -248,7 +248,7 @@ try {
     await waitUntil('focus on the right neighbour', () =>
         cdp
             .evaluate(
-                `document.activeElement?.dataset?.nodeId === ${JSON.stringify(n1)} || { active: document.activeElement?.dataset?.nodeId || document.activeElement?.tagName, hasFocus: document.hasFocus(), keys: window.__e2eKeys, start: ${JSON.stringify(n0)}, expected: ${JSON.stringify(n1)}, mounted: Boolean(document.querySelector('.map-node-box[data-node-id="${n1}"]')), camera: window.activeMapCamera }`
+                `document.activeElement?.dataset?.nodeId === ${JSON.stringify(n1)} || { active: document.activeElement?.dataset?.nodeId || document.activeElement?.tagName, activeHtml: document.activeElement?.outerHTML?.slice(0, 300), activeParent: document.activeElement?.parentElement?.className || document.activeElement?.parentElement?.id, activeAncestor: document.activeElement?.closest?.('[id]')?.id, hasFocus: document.hasFocus(), keys: window.__e2eKeys, start: ${JSON.stringify(n0)}, expected: ${JSON.stringify(n1)}, mounted: Boolean(document.querySelector('.map-node-box[data-node-id="${n1}"]')), camera: window.activeMapCamera }`
             )
             .then((value) => (value === true ? true : ((lastNeighbourState = value), false)))
     ).catch((error) => {
