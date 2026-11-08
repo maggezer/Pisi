@@ -4,6 +4,15 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
+// A background or occluded test window must still run timers, animation frames and
+// layout at full speed (Windows CI runners keep the window behind other desktops).
+const PISI_E2E_CHROMIUM_FLAGS = [
+    '--disable-background-timer-throttling',
+    '--disable-renderer-backgrounding',
+    '--disable-backgrounding-occluded-windows',
+    '--disable-features=CalculateNativeWinOcclusion'
+];
+
 // Find and replace in a note end to end: Mod+F counts matches (also one split
 // across formatting, not inside a [[link]]), Turkish case rules, Enter steps,
 // Esc keeps the match selected, whole word, Mod+H → Replace all writes the note
@@ -90,7 +99,12 @@ class CdpClient {
 }
 
 async function launch() {
-    const args = ['--remote-debugging-port=' + port, ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []), repoRoot];
+    const args = [
+        '--remote-debugging-port=' + port,
+        ...PISI_E2E_CHROMIUM_FLAGS,
+        ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []),
+        repoRoot
+    ];
     child = spawn(electronPath, args, {
         cwd: repoRoot,
         env: { ...process.env, ELECTRON_ENABLE_LOGGING: '1', PISI_TEST_USER_DATA: userDataPath },
@@ -189,7 +203,7 @@ const SHIFT = 8;
 let cdp = null;
 try {
     cdp = await launch();
-    await cdp.evaluate("localStorage.setItem('pisi.tutorial.v1.completed', '1')");
+    await cdp.evaluate("(localStorage.setItem('pisi.tutorial.v1.completed', '1'), window.finishPisiTutorial?.(true))");
     const nodePath = await createNode(cdp);
     await openNode(cdp, nodePath);
     await cdp.evaluate(`(() => {

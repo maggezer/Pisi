@@ -4,6 +4,15 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
+// A background or occluded test window must still run timers, animation frames and
+// layout at full speed (Windows CI runners keep the window behind other desktops).
+const PISI_E2E_CHROMIUM_FLAGS = [
+    '--disable-background-timer-throttling',
+    '--disable-renderer-backgrounding',
+    '--disable-backgrounding-occluded-windows',
+    '--disable-features=CalculateNativeWinOcclusion'
+];
+
 // External links end to end. shell.openExternal is captured in test mode
 // (PISI_TEST_CAPTURE_EXTERNAL=1) into the test user-data folder, so the test
 // sees exactly which URLs main would hand to the operating system.
@@ -28,11 +37,15 @@ function assert(condition, message, detail) {
     if (!condition) throw new Error(message + (detail === undefined ? '' : ': ' + JSON.stringify(detail)));
 }
 
-const child = spawn(electronPath, ['--remote-debugging-port=' + port, ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []), repoRoot], {
-    cwd: repoRoot,
-    env: { ...process.env, ELECTRON_ENABLE_LOGGING: '1', PISI_TEST_USER_DATA: userDataPath, PISI_TEST_CAPTURE_EXTERNAL: '1' },
-    stdio: ['ignore', 'pipe', 'pipe']
-});
+const child = spawn(
+    electronPath,
+    ['--remote-debugging-port=' + port, ...PISI_E2E_CHROMIUM_FLAGS, ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []), repoRoot],
+    {
+        cwd: repoRoot,
+        env: { ...process.env, ELECTRON_ENABLE_LOGGING: '1', PISI_TEST_USER_DATA: userDataPath, PISI_TEST_CAPTURE_EXTERNAL: '1' },
+        stdio: ['ignore', 'pipe', 'pipe']
+    }
+);
 const collect = (chunk) => {
     const text = String(chunk || '');
     logs += text;
@@ -152,7 +165,7 @@ try {
     await cdp.open();
     await cdp.request('Runtime.enable');
     // Real mouse clicks are used below; the first-run tutorial overlay would intercept them.
-    await cdp.evaluate("localStorage.setItem('pisi.tutorial.v1.completed', '1')");
+    await cdp.evaluate("(localStorage.setItem('pisi.tutorial.v1.completed', '1'), window.finishPisiTutorial?.(true))");
     await waitUntil('project restored', () =>
         cdp.evaluate("document.readyState === 'complete' && window.currentProjectFolder === " + JSON.stringify(projectPath))
     );

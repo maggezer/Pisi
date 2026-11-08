@@ -5,6 +5,15 @@ import os from 'node:os';
 import path from 'node:path';
 import { generatePisiMapFixture } from './generate-map-fixture.mjs';
 
+// A background or occluded test window must still run timers, animation frames and
+// layout at full speed (Windows CI runners keep the window behind other desktops).
+const PISI_E2E_CHROMIUM_FLAGS = [
+    '--disable-background-timer-throttling',
+    '--disable-renderer-backgrounding',
+    '--disable-backgrounding-occluded-windows',
+    '--disable-features=CalculateNativeWinOcclusion'
+];
+
 // Map performance report. Generates synthetic maps (scripts/generate-map-fixture.mjs)
 // with 200, 1,000 and 5,000 nodes, opens each in Electron and measures:
 // - open time (map.projection.v1 in main, and the whole openMapInWorkspace until two frames later),
@@ -102,7 +111,12 @@ class CdpClient {
 }
 
 async function launch() {
-    const args = ['--remote-debugging-port=' + port, ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []), repoRoot];
+    const args = [
+        '--remote-debugging-port=' + port,
+        ...PISI_E2E_CHROMIUM_FLAGS,
+        ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []),
+        repoRoot
+    ];
     child = spawn(electronPath, args, {
         cwd: repoRoot,
         env: { ...process.env, ELECTRON_ENABLE_LOGGING: '1', PISI_TEST_USER_DATA: userDataPath },
@@ -211,7 +225,7 @@ try {
     cdp = await launch();
     await cdp.request('Performance.enable');
     await cdp.request('HeapProfiler.enable');
-    await cdp.evaluate("localStorage.setItem('pisi.tutorial.v1.completed', '1')");
+    await cdp.evaluate("(localStorage.setItem('pisi.tutorial.v1.completed', '1'), window.finishPisiTutorial?.(true))");
     const baseline = await metrics(cdp);
     for (const map of fixture.maps) {
         const frameCount = Number(process.env.PISI_PERF_FRAMES) || 90;

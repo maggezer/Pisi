@@ -11,6 +11,15 @@ import { testEditorNormalization } from './electron-editor-normalization-e2e.mjs
 import { testEditorAutosave } from './electron-editor-autosave-e2e.mjs';
 import { testEditorInputOwnership } from './electron-editor-input-ownership-e2e.mjs';
 
+// A background or occluded test window must still run timers, animation frames and
+// layout at full speed (Windows CI runners keep the window behind other desktops).
+const PISI_E2E_CHROMIUM_FLAGS = [
+    '--disable-background-timer-throttling',
+    '--disable-renderer-backgrounding',
+    '--disable-backgrounding-occluded-windows',
+    '--disable-features=CalculateNativeWinOcclusion'
+];
+
 const require = createRequire(import.meta.url);
 const electronPath = /** @type {string} */ (require('electron'));
 const repoRoot = path.resolve(import.meta.dirname, '..');
@@ -24,7 +33,12 @@ await fs.mkdir(userDataPath, { recursive: true });
 await fs.mkdir(projectPath, { recursive: true });
 await fs.writeFile(path.join(userDataPath, 'pisi-settings.json'), JSON.stringify({ lastProjectFolder: projectPath }, null, 2), 'utf8');
 
-const args = ['--remote-debugging-port=' + port, ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []), repoRoot];
+const args = [
+    '--remote-debugging-port=' + port,
+    ...PISI_E2E_CHROMIUM_FLAGS,
+    ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []),
+    repoRoot
+];
 const child = spawn(electronPath, args, {
     cwd: repoRoot,
     env: {

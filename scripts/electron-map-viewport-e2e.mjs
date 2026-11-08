@@ -5,6 +5,15 @@ import os from 'node:os';
 import path from 'node:path';
 import { generatePisiMapFixture } from './generate-map-fixture.mjs';
 
+// A background or occluded test window must still run timers, animation frames and
+// layout at full speed (Windows CI runners keep the window behind other desktops).
+const PISI_E2E_CHROMIUM_FLAGS = [
+    '--disable-background-timer-throttling',
+    '--disable-renderer-backgrounding',
+    '--disable-backgrounding-occluded-windows',
+    '--disable-features=CalculateNativeWinOcclusion'
+];
+
 // Viewport culling end to end on a generated 1,000-node map: only nodes in
 // view are in the DOM; a selected node stays mounted when it scrolls away; a
 // node that leaves the DOM keeps its moved position; reveal and search mount
@@ -92,7 +101,12 @@ class CdpClient {
 }
 
 async function launch() {
-    const args = ['--remote-debugging-port=' + port, ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []), repoRoot];
+    const args = [
+        '--remote-debugging-port=' + port,
+        ...PISI_E2E_CHROMIUM_FLAGS,
+        ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []),
+        repoRoot
+    ];
     child = spawn(electronPath, args, {
         cwd: repoRoot,
         env: { ...process.env, ELECTRON_ENABLE_LOGGING: '1', PISI_TEST_USER_DATA: userDataPath },
@@ -153,13 +167,21 @@ async function setCamera(cdp, camera) {
 }
 
 let cdp = null;
+let lastNeighbourState = null;
 try {
     cdp = await launch();
-    await cdp.evaluate("localStorage.setItem('pisi.tutorial.v1.completed', '1')");
+    await cdp.evaluate("(localStorage.setItem('pisi.tutorial.v1.completed', '1'), window.finishPisiTutorial?.(true))");
     const map = fixture.maps[0];
-    await cdp.evaluate(
-        `window.openMapInWorkspace({ fullPath: ${JSON.stringify(map.mapPath)}, name: 'Perf 1000.map', fileName: 'Perf 1000.map', isDirectory: false })`
-    );
+    // Opening is not awaited through CDP: a navigation that a later one supersedes is
+    // abandoned without settling, and CDP then reports "Promise was collected".
+    // Ask again until the map is the active one and its nodes are loaded.
+    const openMapExpression = `void window.openMapInWorkspace({ fullPath: ${JSON.stringify(map.mapPath)}, name: 'Perf 1000.map', fileName: 'Perf 1000.map', isDirectory: false })`;
+    const mapIsOpen = `window.activeMapPath === ${JSON.stringify(map.mapPath)} && (window.activeMapNodes || []).length === 1000`;
+    for (let attempt = 0; attempt < 3 && !(await cdp.evaluate(mapIsOpen)); attempt += 1) {
+        await cdp.evaluate(openMapExpression);
+        await waitUntil('map opened', () => cdp.evaluate(mapIsOpen), 20000).catch(() => null);
+    }
+    assert(await cdp.evaluate(mapIsOpen), 'The 1,000-node map opens');
     await setCamera(cdp, { x: 0, y: 0, zoom: 1 });
     const opened = await cdp.evaluate(state);
     assert(opened.total === 1000 && opened.mounted > 0 && opened.mounted < 120, 'Only nodes in view are mounted', { ...opened, ids: undefined });
@@ -222,10 +244,23 @@ try {
     // activeMapNodes follows file names; pick the nodes by position.
     const n0 = await cdp.evaluate('window.activeMapNodes.find((node) => node.layout.x === 0 && node.layout.y === 0).id');
     const n1 = await cdp.evaluate('window.activeMapNodes.find((node) => node.layout.x === 260 && node.layout.y === 0).id');
+    // Record what the key reached, so a failure says whether the key, the focus or the neighbour lookup went wrong.
+    await cdp.evaluate(
+        `(() => { window.__e2eKeys = []; document.addEventListener('keydown', (event) => window.__e2eKeys.push({ key: event.key, target: event.target?.dataset?.nodeId || event.target?.tagName, prevented: event.defaultPrevented }), { capture: true }); })()`
+    );
     await cdp.evaluate(`document.querySelector('.map-node-box[data-node-id="${n0}"]').focus()`);
-    await cdp.request('Input.dispatchKeyEvent', { type: 'keyDown', key: 'ArrowRight', code: 'ArrowRight', windowsVirtualKeyCode: 39 });
+    await waitUntil('focus on the start node', () => cdp.evaluate(`document.activeElement?.dataset?.nodeId === ${JSON.stringify(n0)}`));
+    await cdp.request('Input.dispatchKeyEvent', { type: 'rawKeyDown', key: 'ArrowRight', code: 'ArrowRight', windowsVirtualKeyCode: 39 });
     await cdp.request('Input.dispatchKeyEvent', { type: 'keyUp', key: 'ArrowRight', code: 'ArrowRight', windowsVirtualKeyCode: 39 });
-    await waitUntil('focus on the right neighbour', () => cdp.evaluate(`document.activeElement?.dataset?.nodeId === ${JSON.stringify(n1)}`));
+    await waitUntil('focus on the right neighbour', () =>
+        cdp
+            .evaluate(
+                `document.activeElement?.dataset?.nodeId === ${JSON.stringify(n1)} || { active: document.activeElement?.dataset?.nodeId || document.activeElement?.tagName, activeHtml: document.activeElement?.outerHTML?.slice(0, 300), activeParent: document.activeElement?.parentElement?.className || document.activeElement?.parentElement?.id, activeAncestor: document.activeElement?.closest?.('[id]')?.id, hasFocus: document.hasFocus(), keys: window.__e2eKeys, start: ${JSON.stringify(n0)}, expected: ${JSON.stringify(n1)}, mounted: Boolean(document.querySelector('.map-node-box[data-node-id="${n1}"]')), camera: window.activeMapCamera }`
+            )
+            .then((value) => (value === true ? true : ((lastNeighbourState = value), false)))
+    ).catch((error) => {
+        throw new Error(error.message.split('\n')[0] + ' State: ' + JSON.stringify(lastNeighbourState));
+    });
 
     console.log(
         '[E2E] Map viewport passed: only visible nodes and edges mounted, selection kept off-screen, layout kept on unmount, reveal/search mount, export sees all, title and far tiers, overview click zoom, arrow navigation.'

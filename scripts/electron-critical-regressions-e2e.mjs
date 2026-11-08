@@ -4,6 +4,15 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
+// A background or occluded test window must still run timers, animation frames and
+// layout at full speed (Windows CI runners keep the window behind other desktops).
+const PISI_E2E_CHROMIUM_FLAGS = [
+    '--disable-background-timer-throttling',
+    '--disable-renderer-backgrounding',
+    '--disable-backgrounding-occluded-windows',
+    '--disable-features=CalculateNativeWinOcclusion'
+];
+
 const require = createRequire(import.meta.url);
 const electronPath = /** @type {string} */ (require('electron'));
 const repoRoot = path.resolve(import.meta.dirname, '..');
@@ -78,7 +87,12 @@ class CdpClient {
 }
 
 function makeElectronArgs(port) {
-    return ['--remote-debugging-port=' + port, ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []), repoRoot];
+    return [
+        '--remote-debugging-port=' + port,
+        ...PISI_E2E_CHROMIUM_FLAGS,
+        ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []),
+        repoRoot
+    ];
 }
 
 async function waitUntil(app, label, probe, timeoutMs = 15000) {

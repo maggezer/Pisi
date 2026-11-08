@@ -4,6 +4,15 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
+// A background or occluded test window must still run timers, animation frames and
+// layout at full speed (Windows CI runners keep the window behind other desktops).
+const PISI_E2E_CHROMIUM_FLAGS = [
+    '--disable-background-timer-throttling',
+    '--disable-renderer-backgrounding',
+    '--disable-backgrounding-occluded-windows',
+    '--disable-features=CalculateNativeWinOcclusion'
+];
+
 // Map editing end to end: align two selected nodes from the context menu and
 // check the positions survive reopening the map (and undo in one step); connect
 // them with Mod+Enter; arrow keys move focus to the neighbour with a spoken
@@ -91,7 +100,12 @@ class CdpClient {
 }
 
 async function launch() {
-    const args = ['--remote-debugging-port=' + port, ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []), repoRoot];
+    const args = [
+        '--remote-debugging-port=' + port,
+        ...PISI_E2E_CHROMIUM_FLAGS,
+        ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []),
+        repoRoot
+    ];
     child = spawn(electronPath, args, {
         cwd: repoRoot,
         env: { ...process.env, ELECTRON_ENABLE_LOGGING: '1', PISI_TEST_USER_DATA: userDataPath },
@@ -210,7 +224,7 @@ const SHIFT = 8;
 let cdp = null;
 try {
     cdp = await launch();
-    await cdp.evaluate("localStorage.setItem('pisi.tutorial.v1.completed', '1')");
+    await cdp.evaluate("(localStorage.setItem('pisi.tutorial.v1.completed', '1'), window.finishPisiTutorial?.(true))");
     const firstMap = await createMap(cdp);
     const nodeA = await dblclickCanvas(cdp, 160, 140);
     const nodeB = await dblclickCanvas(cdp, 520, 330);
@@ -339,9 +353,10 @@ try {
     assert(layers.edges && layers.edges === layers.board, 'Connections follow the zoom with the board', layers);
 
     await cdp.request('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [touch(3, canvasRect.x + 200, canvasRect.y + 150)] });
-    await sleep(800);
-    await cdp.request('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    // Hold the finger down until the menu appears, as a person does; a fixed hold can end
+    // before the 500 ms timer fires when the runner is slow to deliver pointerdown.
     await waitUntil('long press menu', () => cdp.evaluate("Boolean(document.getElementById('pisi-map-context-menu'))"));
+    await cdp.request('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     void secondMap;
 
     console.log(

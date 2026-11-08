@@ -232,4 +232,5 @@ Windows'a özgü kurallar:
 - **Geçici klasörler:** `fs.realpath` ile çözülür, çünkü `os.tmpdir()` 8.3 kısa ad döndürebilir (`RUNNER~1`).
 - **Dosya kilitleri (EBUSY/EPERM):** silmeler `maxRetries` ile yapılır.
 - **Yerleşim:** yerleşime bağlı E2E betikleri görünüm alanını CDP ile 1400×900'e sabitler (`Emulation.setDeviceMetricsOverride`) ve odak öykünmesini açar, çünkü Windows runner'ı pencereyi küçük ekrana sığdırır ve arka planda tutar.
+- **Arka plan yavaşlatması:** E2E betikleri Electron'u `--disable-background-timer-throttling`, `--disable-renderer-backgrounding`, `--disable-backgrounding-occluded-windows` ve `--disable-features=CalculateNativeWinOcclusion` ile açar. Arka planda ya da örtülü kalan test penceresinde zamanlayıcılar, kareler ve görünür alana göre yerleştirme durmaz; aksi hâlde uzun basma, ok tuşuyla gezinme ve kamera beklemeleri rastgele düşer.
 - **Yollar:** `path.join` ile kurulur. Karşılaştırmadan önce `/` biçimine çevrilir.

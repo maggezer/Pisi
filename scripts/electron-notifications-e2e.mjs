@@ -4,6 +4,15 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
+// A background or occluded test window must still run timers, animation frames and
+// layout at full speed (Windows CI runners keep the window behind other desktops).
+const PISI_E2E_CHROMIUM_FLAGS = [
+    '--disable-background-timer-throttling',
+    '--disable-renderer-backgrounding',
+    '--disable-backgrounding-occluded-windows',
+    '--disable-features=CalculateNativeWinOcclusion'
+];
+
 // In-app notifications end to end: a real failed save (the note file is
 // replaced by a folder, so the atomic rename fails) shows an error strip with
 // role="alert" instead of a blocking dialog; a repeat merges (×2); "Show
@@ -92,7 +101,12 @@ class CdpClient {
 }
 
 async function launch() {
-    const args = ['--remote-debugging-port=' + port, ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []), repoRoot];
+    const args = [
+        '--remote-debugging-port=' + port,
+        ...PISI_E2E_CHROMIUM_FLAGS,
+        ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []),
+        repoRoot
+    ];
     child = spawn(electronPath, args, {
         cwd: repoRoot,
         env: { ...process.env, ELECTRON_ENABLE_LOGGING: '1', PISI_TEST_USER_DATA: userDataPath },
@@ -177,6 +191,7 @@ try {
     cdp = await launch();
     await cdp.evaluate(`(() => {
         localStorage.setItem('pisi.tutorial.v1.completed', '1');
+        window.finishPisiTutorial?.(true);
         window.__nativeDialogs = [];
         window.alert = (message) => window.__nativeDialogs.push(['alert', String(message)]);
         window.confirm = (message) => { window.__nativeDialogs.push(['confirm', String(message)]); return false; };

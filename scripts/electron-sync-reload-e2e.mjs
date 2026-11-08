@@ -5,6 +5,15 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
+// A background or occluded test window must still run timers, animation frames and
+// layout at full speed (Windows CI runners keep the window behind other desktops).
+const PISI_E2E_CHROMIUM_FLAGS = [
+    '--disable-background-timer-throttling',
+    '--disable-renderer-backgrounding',
+    '--disable-backgrounding-occluded-windows',
+    '--disable-features=CalculateNativeWinOcclusion'
+];
+
 // Legacy sync is configured in settings but disabled by its feature flag, so it
 // must never reload the project behind the user. An explicit reload of the same
 // project must first write pending saves and then keep tabs, note and caret.
@@ -41,7 +50,12 @@ await fs.writeFile(
     'utf8'
 );
 
-const args = ['--remote-debugging-port=' + port, ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []), repoRoot];
+const args = [
+    '--remote-debugging-port=' + port,
+    ...PISI_E2E_CHROMIUM_FLAGS,
+    ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []),
+    repoRoot
+];
 const child = spawn(electronPath, args, {
     cwd: repoRoot,
     env: { ...process.env, ELECTRON_ENABLE_LOGGING: '1', PISI_TEST_USER_DATA: userDataPath },
@@ -230,12 +244,27 @@ try {
     // 1. Configured legacy sync must not close the note or lose text after typing.
     const firstNode = await createNode(cdp);
     const secondNode = await createNode(cdp);
+    // Trace every change of the active tab and center note, so a failure shows when and after what the note changed.
+    await cdp.evaluate(`(() => {
+        const started = performance.now();
+        const trace = (window.__e2eTabTrace = []);
+        window.__e2eMark = (mark) => trace.push({ t: Math.round(performance.now() - started), mark });
+        let last = '';
+        window.setInterval(() => {
+            const now = [window.Pisi?.state?.activeTabPath || '', window.activeCenterNode?.path || '', Boolean(window.tutorialState?.active)].join(' | ');
+            if (now !== last) trace.push({ t: Math.round(performance.now() - started), state: now });
+            last = now;
+        }, 20);
+    })()`);
     await openNode(cdp, firstNode);
+    await cdp.evaluate("window.__e2eMark('first opened')");
     await openNode(cdp, secondNode);
+    await cdp.evaluate("window.__e2eMark('second opened')");
     const idleMarker = 'P1.2 idle sync guard';
     await typeAtEnd(cdp, idleMarker);
+    await cdp.evaluate("window.__e2eMark('typed')");
     await sleep(10000);
-    const afterIdle = await cdp.evaluate(editorStateExpression);
+    const afterIdle = { ...(await cdp.evaluate(editorStateExpression)), trace: await cdp.evaluate('window.__e2eTabTrace') };
     // The first-run tutorial must not start while the user is typing and steal focus.
     const focusAfterIdle = await cdp.evaluate('document.activeElement?.id || null');
     assert(focusAfterIdle === 'center-node-editor-content', 'Typing focus must stay in the note', focusAfterIdle);
