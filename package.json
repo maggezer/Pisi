@@ -1,6 +1,6 @@
 {
     "name": "pisi",
-    "version": "0.11.2",
+    "version": "0.11.3",
     "description": "Pisi desktop knowledge mapping app",
     "main": "main.mjs",
     "author": "Mumin Biyiklioglu",
