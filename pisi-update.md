@@ -1,5 +1,15 @@
 # PISI Güncelleme Takip Dosyası
 
+## 08-11-2026 — Kararsız harita E2E testleri
+
+- `main` üzerinde map-editing (uzun basma menüsü) ve map-viewport (ok tuşuyla
+  komşuya odak; Linux'ta "Promise was collected") testleri ara ara düşüyordu.
+  Ortak neden: arka planda veya örtülü kalan test penceresinde Chromium,
+  zamanlayıcıları, `requestAnimationFrame`'i ve görünür alana göre düğüm
+  yerleştirmeyi yavaşlatıyor ya da durduruyordu.
+- Tüm Electron E2E betikleri artık Electron'u arka plan yavaşlatmasını kapatan
+  Chromium bayraklarıyla açıyor. Uygulama koduna dokunulmadı.
+
 ## 07-11-2026 — 0.11.2 Beta yayını
 
 - Sürüm `0.11.2` oldu; sürüm notu `docs/releases/v0.11.2.md`.

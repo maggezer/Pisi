@@ -4,6 +4,15 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
+// A background or occluded test window must still run timers, animation frames and
+// layout at full speed (Windows CI runners keep the window behind other desktops).
+const PISI_E2E_CHROMIUM_FLAGS = [
+    '--disable-background-timer-throttling',
+    '--disable-renderer-backgrounding',
+    '--disable-backgrounding-occluded-windows',
+    '--disable-features=CalculateNativeWinOcclusion'
+];
+
 // Note-to-note links end to end: type [[, pick a note from the suggestion list
 // with the keyboard, Ctrl+click it, rename the target from its title field
 // (confirming the impact prompt), and see the new title in the source note.
@@ -30,11 +39,15 @@ function assert(condition, message, detail) {
     if (!condition) throw new Error(message + (detail === undefined ? '' : ': ' + JSON.stringify(detail)));
 }
 
-const child = spawn(electronPath, ['--remote-debugging-port=' + port, ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []), repoRoot], {
-    cwd: repoRoot,
-    env: { ...process.env, ELECTRON_ENABLE_LOGGING: '1', PISI_TEST_USER_DATA: userDataPath },
-    stdio: ['ignore', 'pipe', 'pipe']
-});
+const child = spawn(
+    electronPath,
+    ['--remote-debugging-port=' + port, ...PISI_E2E_CHROMIUM_FLAGS, ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []), repoRoot],
+    {
+        cwd: repoRoot,
+        env: { ...process.env, ELECTRON_ENABLE_LOGGING: '1', PISI_TEST_USER_DATA: userDataPath },
+        stdio: ['ignore', 'pipe', 'pipe']
+    }
+);
 const collect = (chunk) => {
     const text = String(chunk || '');
     logs += text;

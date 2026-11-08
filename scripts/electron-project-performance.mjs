@@ -5,6 +5,15 @@ import os from 'node:os';
 import path from 'node:path';
 import { generatePisiProjectFixture } from './generate-project-fixture.mjs';
 
+// A background or occluded test window must still run timers, animation frames and
+// layout at full speed (Windows CI runners keep the window behind other desktops).
+const PISI_E2E_CHROMIUM_FLAGS = [
+    '--disable-background-timer-throttling',
+    '--disable-renderer-backgrounding',
+    '--disable-backgrounding-occluded-windows',
+    '--disable-features=CalculateNativeWinOcclusion'
+];
+
 // Main-process performance report for large projects. For each size it writes
 // a synthetic project (scripts/generate-project-fixture.mjs), starts Electron
 // with the test-only perf probe (PISI_TEST_PERF=1) and measures, one after the
@@ -102,7 +111,12 @@ class CdpClient {
 }
 
 async function launch(projectPath, userDataPath, port) {
-    const args = ['--remote-debugging-port=' + port, ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []), repoRoot];
+    const args = [
+        '--remote-debugging-port=' + port,
+        ...PISI_E2E_CHROMIUM_FLAGS,
+        ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []),
+        repoRoot
+    ];
     child = spawn(electronPath, args, {
         cwd: repoRoot,
         env: {

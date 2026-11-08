@@ -5,6 +5,15 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
+// A background or occluded test window must still run timers, animation frames and
+// layout at full speed (Windows CI runners keep the window behind other desktops).
+const PISI_E2E_CHROMIUM_FLAGS = [
+    '--disable-background-timer-throttling',
+    '--disable-renderer-backgrounding',
+    '--disable-backgrounding-occluded-windows',
+    '--disable-features=CalculateNativeWinOcclusion'
+];
+
 // Legacy sync is configured in settings but disabled by its feature flag, so it
 // must never reload the project behind the user. An explicit reload of the same
 // project must first write pending saves and then keep tabs, note and caret.
@@ -41,7 +50,12 @@ await fs.writeFile(
     'utf8'
 );
 
-const args = ['--remote-debugging-port=' + port, ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []), repoRoot];
+const args = [
+    '--remote-debugging-port=' + port,
+    ...PISI_E2E_CHROMIUM_FLAGS,
+    ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []),
+    repoRoot
+];
 const child = spawn(electronPath, args, {
     cwd: repoRoot,
     env: { ...process.env, ELECTRON_ENABLE_LOGGING: '1', PISI_TEST_USER_DATA: userDataPath },
