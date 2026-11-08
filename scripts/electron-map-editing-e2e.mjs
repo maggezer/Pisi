@@ -353,9 +353,10 @@ try {
     assert(layers.edges && layers.edges === layers.board, 'Connections follow the zoom with the board', layers);
 
     await cdp.request('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [touch(3, canvasRect.x + 200, canvasRect.y + 150)] });
-    await sleep(800);
-    await cdp.request('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    // Hold the finger down until the menu appears, as a person does; a fixed hold can end
+    // before the 500 ms timer fires when the runner is slow to deliver pointerdown.
     await waitUntil('long press menu', () => cdp.evaluate("Boolean(document.getElementById('pisi-map-context-menu'))"));
+    await cdp.request('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     void secondMap;
 
     console.log(
