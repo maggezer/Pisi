@@ -260,6 +260,28 @@ try {
     await cdp.evaluate("window.__e2eMark('first opened')");
     await openNode(cdp, secondNode);
     await cdp.evaluate("window.__e2eMark('second opened')");
+    // 1a. An external-change reload of the note being left must not win over the user's
+    // switch to another tab while that tab's document is still loading (seen on Windows,
+    // where watcher events arrive late): the tab and the editor must both show the new note.
+    await openNode(cdp, firstNode);
+    const switchRace = await cdp.evaluate(`(async () => {
+        const first = ${JSON.stringify(firstNode)};
+        const second = ${JSON.stringify(secondNode)};
+        const node = Array.from(document.querySelectorAll('.tree-node[data-path]')).find((candidate) => candidate.dataset.path === second);
+        node.querySelector(':scope > .tree-row').dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0, detail: 1 }));
+        const started = performance.now();
+        while (window.Pisi.state.activeTabPath !== second && performance.now() - started < 5000) await new Promise((resolve) => setTimeout(resolve, 0));
+        const centerWasStillFirst = window.activeCenterNode?.path === first;
+        await reloadPisiWorkspaceAfterExternalChange([first]);
+        const settle = performance.now();
+        while (window.activeCenterNode?.path !== second && performance.now() - settle < 5000) await new Promise((resolve) => setTimeout(resolve, 20));
+        return { centerWasStillFirst, activeTabPath: window.Pisi.state.activeTabPath, centerPath: window.activeCenterNode?.path || null };
+    })()`);
+    assert(
+        switchRace.activeTabPath === secondNode && switchRace.centerPath === secondNode,
+        'An external reload of the previous note must not take the editor back from the new tab',
+        switchRace
+    );
     const idleMarker = 'P1.2 idle sync guard';
     await typeAtEnd(cdp, idleMarker);
     await cdp.evaluate("window.__e2eMark('typed')");

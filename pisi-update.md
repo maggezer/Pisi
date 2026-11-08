@@ -1,5 +1,23 @@
 # PISI Güncelleme Takip Dosyası
 
+## 08-11-2026 — Not değiştirirken dış değişiklik yeniden yüklemesi eski notu geri getiriyordu
+
+- **Belirti:** A notu açıkken B'ye geçilirken, B'nin içeriği yüklenmeden A için
+  "diskte değişti" bildirimi gelirse sekme çubuğu B'yi gösterirken editör A'ya
+  dönüyordu. Yazılan metin A'ya gidiyordu. Windows'ta dosya izleyici olayları geç
+  geldiği için E2E'de görüldü; Linux'ta bilinçli tetiklemeyle yeniden üretildi.
+- **Neden:** Sekme etkinleştirilince `activeTabPath` hemen değişiyor, ama
+  `activeCenterNode` yeni belge okunana kadar eski notta kalıyor. Dış değişiklik
+  yeniden yüklemesi eski notu açan daha yeni bir gezinme başlatıyor ve
+  kullanıcının gezinmesini iptal ediyordu.
+- **Düzeltme:** Sekme geçişi sürerken dış değişiklik yeniden yüklemesi gösterilen
+  (çıkılan) notu ya da haritayı yeniden açmıyor; gelen belge zaten diskten
+  okunuyor. Onay penceresi açıkken kullanıcı başka nota geçmişse de yeniden
+  yükleme yapılmıyor.
+- **Test:** `electron-sync-reload-e2e.mjs`, B'ye geçiş yüklenirken A için yeniden
+  yüklemeyi tetikleyip sekmenin ve editörün B'de kaldığını doğruluyor. Bu adım
+  düzeltme olmadan düşüyor.
+
 ## 08-11-2026 — Kararsız harita E2E testleri
 
 `main` üzerinde map-editing ve map-viewport E2E testleri ara ara düşüyordu.
