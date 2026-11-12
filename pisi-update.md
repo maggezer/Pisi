@@ -1,5 +1,14 @@
 # PISI Güncelleme Takip Dosyası
 
+## 12-11-2026 — Pisi Mobil planı repoya eklendi (M0, mobil iş)
+
+- Bu bir mobil iştir. Yalnız belge eklendi; uygulama kodu ve masaüstü davranışı
+  değişmedi.
+- `docs/mobile-plan.md`: Android için Pisi Mobil MVP'sinin iş tanımı. Çalışma
+  biçimi, değişmez veri kuralları, hedef mimari (`shared/` ve `mobile/`),
+  M0–M10 fazları ve görsel iyileştirme listesi bu belgededir.
+- `CLAUDE.md`'ye "Mobile" bölümü eklendi: mobil işlerde önce bu belge okunur.
+
 ## 08-11-2026 — 0.11.3 Beta yayını
 
 - Sürüm `0.11.3` oldu; sürüm notu `docs/releases/v0.11.3.md`.

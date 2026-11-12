@@ -49,6 +49,10 @@ Bir iş ancak aşağıdakilerin hepsi sağlandığında bitmiş sayılır:
 6. Yapılan değişiklik `pisi-update.md` dosyasına tarihli bir girişle yazılır. Doğrulanan ama bu PR'da çözülmeyen yeni bir hata `pisi-error.md` dosyasına eklenir.
 7. Kullanıcı verisini etkileyen değişikliklerde (dosya biçimi, kayıt, silme) mevcut projelerle geriye uyumluluk korunur ya da açık bir geçiş adımı yazılır.
 
+## Mobile
+
+Pisi Mobil (önce Android) [`docs/mobile-plan.md`](docs/mobile-plan.md) belgesindeki fazlarla (M0–M10) geliştirilir. **Mobil işlerde önce bu belgeyi oku.** Çalışma biçimi (§0), değişmez veri kuralları (§2), hedef mimari (§3) ve mobil PR'lar için ek "bitti" koşulları (§3.6) o belgededir. Yukarıdaki çalışma kuralları mobil işler için de geçerlidir.
+
 ## Architecture
 
 ### Processes and boundaries
