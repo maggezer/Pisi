@@ -45,8 +45,8 @@ function getPisiDiaryNodeKey(isoDate) {
 /** The day a diary file name stands for (`2026-11-12.node`), or null. */
 function getPisiDiaryDateFromFileName(fileName) {
     const name = String(fileName || '');
-    const base = name.length > '.node'.length && name.endsWith('.node') ? name.slice(0, -'.node'.length) : name;
-    return normalizePisiDiaryIsoDate(base);
+    if (name.length <= '.node'.length || !name.endsWith('.node')) return null;
+    return normalizePisiDiaryIsoDate(name.slice(0, -'.node'.length));
 }
 
 /**
