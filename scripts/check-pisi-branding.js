@@ -24,7 +24,7 @@ function isProductionFile(file) {
         file === 'style.css' ||
         file === 'package.json' ||
         file === 'package-lock.json' ||
-        /^(?:main|renderer|styles|locales)\//.test(file)
+        /^(?:main|renderer|shared|styles|locales)\//.test(file)
     );
 }
 

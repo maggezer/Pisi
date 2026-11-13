@@ -3,6 +3,7 @@
 // Keeps module ownership, file-size limits and CSS cascade rules enforceable in CI.
 const fs = require('fs');
 const path = require('path');
+const { auditSharedModule } = require('./shared-purity.js');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
@@ -396,6 +397,21 @@ for (const file of [...walk('main/functions', '.js'), 'main/runtime.js', 'main/m
     }
 }
 
+// shared/ holds the pure rules that desktop and mobile both import (docs/mobile-plan.md §3.1).
+// It is a flat folder of .mjs modules that pass scripts/shared-purity.js, and it must be packaged.
+const sharedModules = [];
+for (const entry of fs.readdirSync(path.join(root, 'shared'), { withFileTypes: true })) {
+    const file = path.posix.join('shared', entry.name);
+    if (entry.isFile() && entry.name.endsWith('.mjs')) sharedModules.push(file);
+    else errors.push('shared/ is a flat folder of .mjs modules, found: ' + file);
+}
+for (const file of sharedModules) {
+    errors.push(...auditSharedModule(read(file), file, { exists: (name) => sharedModules.includes(path.posix.join('shared', name)) }));
+}
+if (!rootPackage.build.files.includes('shared/**/*')) {
+    errors.push("package.json build.files must include 'shared/**/*': main and renderer import shared/ at startup.");
+}
+
 const selectorOwners = new Map();
 for (const file of walk('styles', '.css')) {
     const css = read(file);
@@ -417,5 +433,7 @@ console.log(
         ownershipAudit.modules +
         ' modules / ' +
         ownershipAudit.bindings +
-        ' bindings), CSS cascade and module sizes are valid.'
+        ' bindings), shared purity (' +
+        sharedModules.length +
+        ' modules), CSS cascade and module sizes are valid.'
 );

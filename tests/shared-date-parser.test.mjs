@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getPisiPostponePreset, parsePisiTurkishDateExpression } from '../renderer/productivity/pisi-date-parser.mjs';
+import { getPisiPostponePreset, parsePisiTurkishDateExpression } from '../shared/date-parser.mjs';
 
 const NOW = new Date(2026, 7, 6, 10, 30, 0, 0);
 

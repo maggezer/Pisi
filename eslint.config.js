@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const espree = require('espree');
+const { SHARED_LINT_RULES } = require('./scripts/shared-purity.js');
 
 const correctnessRules = {
     'no-constant-binary-expression': 'error',
@@ -124,6 +125,12 @@ module.exports = [
             }
         },
         rules: { ...correctnessRules, ...unusedRules, 'no-undef': 'error' }
+    },
+    {
+        // Pure rules shared with the mobile app: language built-ins only (see scripts/shared-purity.js).
+        files: ['shared/**/*.mjs'],
+        languageOptions: { ecmaVersion: 'latest', sourceType: 'module' },
+        rules: { ...correctnessRules, ...unusedRules, ...SHARED_LINT_RULES }
     },
     {
         files: ['renderer/**/*.mjs'],
