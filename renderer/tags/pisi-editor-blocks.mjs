@@ -2,13 +2,14 @@ import { canHandlePisiEditorTextEvent } from '../editor/pisi-editor-input-policy
 import { extractPisiPasteBlocks as parsePisiPasteBlocks } from './pisi-paste-blocks.mjs';
 import { rekeyPisiPastedBlocks } from './pisi-paste-identities.mjs';
 import { registerModule } from '../core/module-registry.mjs';
+import { formatPisiBlockId } from '../../shared/ids.mjs';
 
 function makePisiBlockId() {
     if (window.crypto?.randomUUID) {
-        return `blk_${window.crypto.randomUUID()}`;
+        return formatPisiBlockId(window.crypto.randomUUID());
     }
 
-    return `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    return formatPisiBlockId(`${Date.now()}_${Math.random().toString(16).slice(2)}`);
 }
 
 function isPisiEditorBlockElement(element) {

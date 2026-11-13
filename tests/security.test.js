@@ -1,60 +1,32 @@
 'use strict';
 
+// Security boundaries, checked on the real main-process modules
+// (tests/main-store-harness.cjs): id and file-name validation as the registry
+// exposes them (the rules themselves live in shared/ids.mjs and
+// shared/document-naming.mjs) and the active-project path guard.
+
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
-const vm = require('node:vm');
-const { extractFunction } = require('./source-helper');
+const { loadPisiMainStores } = require('./main-store-harness.cjs');
 
-const { readMainSource } = require('./source-bundle');
-const mainSource = readMainSource();
-
-function loadValidationApi(projectFolder) {
-    const functionNames = [
-        'getPisiFileExt',
-        'sanitizePisiBaseName',
-        'normalizePisiId',
-        'normalizePathForCompare',
-        'isSameOrInsidePath',
-        'assertNoSymbolicLinksBetween',
-        'assertProjectPath'
-    ];
-    const source = `
-        let activeProjectFolder = ${JSON.stringify(projectFolder)};
-        ${functionNames.map((name) => extractFunction(mainSource, name)).join('\n')}
-        globalThis.pisiValidationApi = {
-            sanitizePisiBaseName,
-            normalizePisiId,
-            assertProjectPath
-        };
-    `;
-    const context = {
-        fs,
-        path,
-        process
-    };
-    vm.createContext(context);
-    vm.runInContext(source, context);
-    return context.pisiValidationApi;
-}
+const modules = loadPisiMainStores();
+const pathSecurity = modules['main.pathSecurity'];
+const electronIpc = modules['main.electronIpc'];
 
 test('PISI kimlikleri yol parçaları ve yanlış tür öneklerini reddeder', () => {
-    const api = loadValidationApi(process.cwd());
-
-    assert.equal(api.normalizePisiId('node_safe-123', '.node'), 'node_safe-123');
-    assert.equal(api.normalizePisiId('../outside', '.node'), null);
-    assert.equal(api.normalizePisiId('node_..\\outside', '.node'), null);
-    assert.equal(api.normalizePisiId('map_safe', '.node'), null);
+    assert.equal(pathSecurity.normalizePisiId('node_safe-123', '.node'), 'node_safe-123');
+    assert.equal(pathSecurity.normalizePisiId('../outside', '.node'), null);
+    assert.equal(pathSecurity.normalizePisiId('node_..\\outside', '.node'), null);
+    assert.equal(pathSecurity.normalizePisiId('map_safe', '.node'), null);
 });
 
 test('Windows reserved adları güvenli dosya adına dönüştürülür', () => {
-    const api = loadValidationApi(process.cwd());
-
-    assert.equal(api.sanitizePisiBaseName('CON'), '_CON');
-    assert.equal(api.sanitizePisiBaseName('LPT1.txt'), '_LPT1.txt');
-    assert.equal(api.sanitizePisiBaseName('../not:allowed'), '.._not_allowed');
+    assert.equal(pathSecurity.sanitizePisiBaseName('CON'), '_CON');
+    assert.equal(pathSecurity.sanitizePisiBaseName('LPT1.txt'), '_LPT1.txt');
+    assert.equal(pathSecurity.sanitizePisiBaseName('../not:allowed'), '.._not_allowed');
 });
 
 test('proje yolu sınırı dış erişimi ve symlink kaçışını engeller', (t) => {
@@ -63,23 +35,25 @@ test('proje yolu sınırı dış erişimi ve symlink kaçışını engeller', (t
     const projectRoot = fs.realpathSync.native(root);
     const outsideRoot = fs.realpathSync.native(outside);
 
+    // runtime.js owns activeProjectFolder in the app; the harness provides it as a plain global.
+    globalThis.activeProjectFolder = projectRoot;
     t.after(() => {
+        globalThis.activeProjectFolder = null;
         fs.rmSync(root, { recursive: true, force: true });
         fs.rmSync(outside, { recursive: true, force: true });
     });
 
     const nodePath = path.join(projectRoot, 'safe.node');
     fs.writeFileSync(nodePath, '{}', 'utf8');
-    const api = loadValidationApi(projectRoot);
 
     assert.equal(
-        api.assertProjectPath(nodePath, {
+        electronIpc.assertProjectPath(nodePath, {
             type: 'file',
             extensions: ['.node']
         }),
         path.resolve(nodePath)
     );
-    assert.throws(() => api.assertProjectPath(path.join(outsideRoot, 'escape.node')), /dışında|bulunamadı/);
+    assert.throws(() => electronIpc.assertProjectPath(path.join(outsideRoot, 'escape.node')), /dışında|bulunamadı/);
 
     const linkPath = path.join(projectRoot, 'outside-link');
     try {
@@ -91,7 +65,7 @@ test('proje yolu sınırı dış erişimi ve symlink kaçışını engeller', (t
 
     assert.throws(
         () =>
-            api.assertProjectPath(path.join(linkPath, 'escape.node'), {
+            electronIpc.assertProjectPath(path.join(linkPath, 'escape.node'), {
                 mustExist: false
             }),
         /symlink|bağlantı/

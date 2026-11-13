@@ -10,7 +10,13 @@ const vm = require('node:vm');
 const { extractFunction } = require('./source-helper');
 
 const { readMainSource } = require('./source-bundle');
+const { loadPisiMainStores } = require('./main-store-harness.cjs');
 const mainSource = readMainSource();
+// Edge repair and diary creation run on the real main modules; their id, naming
+// and diary rules come from shared/, so they cannot be copied out of main source.
+const mainModules = loadPisiMainStores();
+const filesystemCore = mainModules['main.filesystemCore'];
+const documentStore = mainModules['main.documentStore'];
 
 function loadMainHelpers(functionNames, exports) {
     const source = `
@@ -45,21 +51,7 @@ function plain(value) {
 }
 
 test('edge onarımı self-loop, tekrar, ikinci parent ve döngüyü güvenli temizler', () => {
-    const api = loadMainHelpers(
-        [
-            'normalizePisiId',
-            'normalizeConnectionRole',
-            'normalizePisiCustomizationColor',
-            'normalizePisiMapEdgeCustomization',
-            'normalizeMapEdge',
-            'isHierarchyEdge',
-            'convertEdgeToStream',
-            'getPisiEdgeSemanticKey',
-            'wouldCreatePisiHierarchyCycle',
-            'normalizePisiMapEdges'
-        ],
-        ['normalizeMapEdge', 'normalizePisiMapEdges']
-    );
+    const api = filesystemCore;
     const hierarchy = (id, sourceId, targetId) => ({
         id,
         sourceId,
@@ -234,10 +226,7 @@ test('normal kullanıcı diary klasörü marker eklenmeden korunur', (t) => {
         fs.rmSync(projectFolder, { recursive: true, force: true });
     });
 
-    const api = loadMainHelpers(
-        ['normalizePisiDiaryIsoDate', 'readJsonFileResult', 'isPisiManagedDiaryFolder', 'ensurePisiDiaryFolder'],
-        ['ensurePisiDiaryFolder']
-    );
+    const api = documentStore;
     const result = api.ensurePisiDiaryFolder(projectFolder);
 
     assert.equal(result.ok, false);
@@ -251,10 +240,7 @@ test('boş diary klasörü güvenle Pisi yönetimine alınır', (t) => {
         fs.rmSync(projectFolder, { recursive: true, force: true });
     });
 
-    const api = loadMainHelpers(
-        ['normalizePisiDiaryIsoDate', 'readJsonFileResult', 'isPisiManagedDiaryFolder', 'ensurePisiDiaryFolder'],
-        ['ensurePisiDiaryFolder']
-    );
+    const api = documentStore;
 
     const diaryFolder = path.join(projectFolder, 'diary');
     fs.mkdirSync(diaryFolder);
@@ -271,35 +257,7 @@ test('yeni oluşturulan diary notu içerik içinde tarih başlığı oluşturmaz
         fs.rmSync(projectFolder, { recursive: true, force: true });
     });
 
-    const api = loadMainHelpers(
-        [
-            'normalizePathForCompare',
-            'renamePathInternal',
-            'getPisiFileExt',
-            'getPisiTypeFromExt',
-            'getPisiSidecarPrefix',
-            'normalizePisiId',
-            'generatePisiId',
-            'sanitizePisiBaseName',
-            'sanitizeForSidecarName',
-            'getPisiSidecarName',
-            'findExistingSidecarById',
-            'ensurePisiSidecar',
-            'createPisiDocumentData',
-            'readJsonFileResult',
-            'writePisiDocument',
-            'getVisibleTitleFromFilePath',
-            'ensurePisiFileMetadata',
-            'normalizePisiDiaryIsoDate',
-            'makePisiDiaryNodeTitle',
-            'isPisiManagedDiaryFolder',
-            'ensurePisiDiaryFolder',
-            'getPisiDiaryNodePath',
-            'escapeHtmlForPisiDiary',
-            'getOrCreateDiaryNode'
-        ],
-        ['getOrCreateDiaryNode']
-    );
+    const api = documentStore;
 
     const result = api.getOrCreateDiaryNode(projectFolder, '2026-10-21');
     assert.equal(result.ok, true);

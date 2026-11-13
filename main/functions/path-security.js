@@ -3,6 +3,19 @@ import * as path from 'node:path';
 import * as fs from 'node:fs';
 import * as crypto from 'node:crypto';
 import { registerMainModule } from '../module-registry.js';
+import { formatPisiDocumentId, normalizePisiId } from '../../shared/ids.mjs';
+import {
+    getPisiFileExt,
+    getPisiPhysicalFileName,
+    getPisiSidecarPrefix,
+    getPisiTypeFromExt,
+    getPisiVisibleTitleFromBaseName,
+    isPisiManagedSidecarFolder,
+    isPisiVisibleFile,
+    sanitizeForSidecarName,
+    sanitizePisiBaseName,
+    stripPisiIdSuffix
+} from '../../shared/document-naming.mjs';
 
 const pisiTestUserDataPath = String(process.env.PISI_TEST_USER_DATA || '').trim();
 
@@ -353,117 +366,26 @@ function scheduleWindowStateSave() {
     }, 350);
 }
 
-function isPisiVisibleFile(fileName) {
-    const lower = fileName.toLowerCase();
-    return lower.endsWith('.map') || lower.endsWith('.node');
-}
-
-function isPisiManagedSidecarFolder(folderName) {
-    if (!folderName) return false;
-
-    return folderName === '.pisi.lock' || /^(?:inv|nd)_.+__(?:node|map)_[A-Za-z0-9_-]{1,96}$/.test(folderName);
-}
-
-function getPisiFileExt(fileNameOrPath) {
-    const lower = fileNameOrPath.toLowerCase();
-
-    if (lower.endsWith('.node')) return '.node';
-    if (lower.endsWith('.map')) return '.map';
-
-    return '';
-}
-
-function getPisiTypeFromExt(ext) {
-    if (ext === '.node') return 'node';
-    if (ext === '.map') return 'map';
-    return '';
-}
-
-function getPisiSidecarPrefix(ext) {
-    if (ext === '.node') return 'inv_';
-    if (ext === '.map') return 'nd_';
-    return '';
-}
-
-function sanitizePisiBaseName(name) {
-    let cleaned = String(name || '')
-        .trim()
-        .replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')
-        .replace(/\s+/g, ' ')
-        .replace(/[. ]+$/g, '')
-        .slice(0, 120);
-
-    const windowsStem = cleaned.split('.')[0].toUpperCase();
-    if (/^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/.test(windowsStem)) {
-        cleaned = `_${cleaned}`;
-    }
-
-    return cleaned || 'Yeni Dosya';
-}
-
-function stripPisiIdSuffix(baseName, id) {
-    if (!baseName || !id) return baseName;
-
-    const suffix = `__${id}`;
-
-    if (baseName.endsWith(suffix)) {
-        return baseName.slice(0, -suffix.length);
-    }
-
-    return baseName;
-}
+// File, sidecar and id naming rules live in shared/document-naming.mjs and
+// shared/ids.mjs (also used by the mobile app); they are registered below under
+// their existing names. What touches the disk or creates randomness stays here.
 
 function getVisibleTitleFromFilePath(filePath, ext, id = '') {
-    const rawBaseName = path.basename(filePath, ext);
-    return sanitizePisiBaseName(stripPisiIdSuffix(rawBaseName, id));
+    return getPisiVisibleTitleFromBaseName(path.basename(filePath, ext), id);
 }
 
 function getUniquePisiPhysicalPath(dir, wantedTitle, ext, id, currentPath = null) {
-    const cleanTitle = sanitizePisiBaseName(wantedTitle);
+    for (let attempt = 0; ; attempt += 1) {
+        const candidatePath = path.join(dir, getPisiPhysicalFileName(wantedTitle, ext, id, attempt));
 
-    const plainPath = path.join(dir, cleanTitle + ext);
-
-    if (!fs.existsSync(plainPath) || (currentPath && normalizePathForCompare(plainPath) === normalizePathForCompare(currentPath))) {
-        return plainPath;
-    }
-
-    const hybridPath = path.join(dir, `${cleanTitle}__${id}${ext}`);
-
-    if (!fs.existsSync(hybridPath) || (currentPath && normalizePathForCompare(hybridPath) === normalizePathForCompare(currentPath))) {
-        return hybridPath;
-    }
-
-    let counter = 1;
-
-    while (true) {
-        const fallbackPath = path.join(dir, `${cleanTitle}__${id}_${counter}${ext}`);
-
-        if (!fs.existsSync(fallbackPath) || (currentPath && normalizePathForCompare(fallbackPath) === normalizePathForCompare(currentPath))) {
-            return fallbackPath;
+        if (!fs.existsSync(candidatePath) || (currentPath && normalizePathForCompare(candidatePath) === normalizePathForCompare(currentPath))) {
+            return candidatePath;
         }
-
-        counter++;
     }
-}
-
-function sanitizeForSidecarName(name) {
-    return sanitizePisiBaseName(name).replace(/\s+/g, ' ').slice(0, 80);
 }
 
 function generatePisiId(ext) {
-    const prefix = ext === '.map' ? 'map' : 'node';
-    return `${prefix}_${crypto.randomUUID()}`;
-}
-
-function normalizePisiId(value, ext = '') {
-    const id = String(value || '').trim();
-    const expectedPrefix = ext === '.map' ? 'map_' : ext === '.node' ? 'node_' : '';
-
-    if (!id || id.length > 101 || !/^(?:map|node)_[A-Za-z0-9_-]+$/.test(id) || (expectedPrefix && !id.startsWith(expectedPrefix))) {
-        return null;
-    }
-
-    return id;
+    return formatPisiDocumentId(ext, crypto.randomUUID());
 }
 
 function getDefaultNodeConnectionTypes() {

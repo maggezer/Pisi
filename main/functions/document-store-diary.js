@@ -3,6 +3,15 @@ import * as fs from 'node:fs';
 import * as crypto from 'node:crypto';
 import { ensurePisiSidecar } from './document-store-io.js';
 import { ensurePisiFileMetadata, makePisiDiaryNodeTitle, normalizePisiDiaryIsoDate } from './document-store-metadata.js';
+import {
+    PISI_DIARY_FOLDER,
+    PISI_DIARY_MARKER_FILE,
+    PISI_DIARY_MARKER_TEXT,
+    PISI_DIARY_PARENT_MAP,
+    getPisiDiaryDateFromFileName,
+    getPisiDiaryNodeFileName,
+    makePisiDiaryDocumentData
+} from '../../shared/diary-rules.mjs';
 
 const PISI_DIARY_MANAGED_START =
     typeof globalThis.PISI_DIARY_MANAGED_START === 'string' ? globalThis.PISI_DIARY_MANAGED_START : '<!--PISI_DIARY_MANAGED_START-->';
@@ -25,8 +34,8 @@ function ensurePisiDiaryFolder(projectFolder) {
         };
     }
 
-    const diaryFolder = path.join(projectFolder, 'diary');
-    const markerPath = path.join(diaryFolder, '.pisi-diary');
+    const diaryFolder = path.join(projectFolder, PISI_DIARY_FOLDER);
+    const markerPath = path.join(diaryFolder, PISI_DIARY_MARKER_FILE);
 
     if (fs.existsSync(diaryFolder)) {
         const diaryStat = fs.statSync(diaryFolder);
@@ -53,7 +62,7 @@ function ensurePisiDiaryFolder(projectFolder) {
     sealInternalFileChange(diaryFolder);
 
     if (!fs.existsSync(markerPath)) {
-        writeFileAtomic(markerPath, 'Bu klasör PISI diary özelliği tarafından yönetilir.\n', { backup: false });
+        writeFileAtomic(markerPath, PISI_DIARY_MARKER_TEXT, { backup: false });
     }
 
     return {
@@ -63,7 +72,7 @@ function ensurePisiDiaryFolder(projectFolder) {
 }
 
 function getPisiDiaryNodePath(projectFolder, isoDate) {
-    return path.join(projectFolder, 'diary', `${isoDate}.node`);
+    return path.join(projectFolder, PISI_DIARY_FOLDER, getPisiDiaryNodeFileName(isoDate));
 }
 
 function getOrCreateDiaryNode(projectFolder, isoDate) {
@@ -84,18 +93,11 @@ function getOrCreateDiaryNode(projectFolder, isoDate) {
         const nodePath = getPisiDiaryNodePath(projectFolder, normalizedDate);
 
         if (!fs.existsSync(nodePath)) {
-            const id = generatePisiId('.node');
-            const title = makePisiDiaryNodeTitle(normalizedDate);
-
-            const data = createPisiDocumentData({
-                ext: '.node',
-                title,
-                id,
-                parentMap: 'diary'
+            const data = makePisiDiaryDocumentData({
+                isoDate: normalizedDate,
+                id: generatePisiId('.node'),
+                now: new Date().toISOString()
             });
-
-            data.pisi.diaryDate = normalizedDate;
-            data.content = '<div><br></div>';
 
             writePisiDocument(nodePath, data);
             ensurePisiSidecar(nodePath, data.pisi);
@@ -108,11 +110,11 @@ function getOrCreateDiaryNode(projectFolder, isoDate) {
         if (
             ensured.data?.pisi &&
             (ensured.data.pisi.diaryDate !== normalizedDate ||
-                ensured.data.pisi.parentMap !== 'diary' ||
+                ensured.data.pisi.parentMap !== PISI_DIARY_PARENT_MAP ||
                 ensured.data.pisi.title !== makePisiDiaryNodeTitle(normalizedDate))
         ) {
             ensured.data.pisi.diaryDate = normalizedDate;
-            ensured.data.pisi.parentMap = 'diary';
+            ensured.data.pisi.parentMap = PISI_DIARY_PARENT_MAP;
             ensured.data.pisi.title = makePisiDiaryNodeTitle(normalizedDate);
             ensured.data.pisi.updatedAt = new Date().toISOString();
             const repairedSidecarPath = ensurePisiSidecar(nodePath, ensured.data.pisi);
@@ -391,7 +393,7 @@ function buildPisiDiaryManagedSection(isoDate, entries = [], options = {}) {
 }
 
 function listPisiDiaryNodePaths(projectFolder) {
-    const diaryFolder = path.join(projectFolder, 'diary');
+    const diaryFolder = path.join(projectFolder, PISI_DIARY_FOLDER);
 
     if (!fs.existsSync(diaryFolder)) return [];
 
@@ -411,7 +413,7 @@ function listPisiDiaryDates(projectFolder) {
             };
         }
 
-        const diaryFolder = path.join(projectFolder, 'diary');
+        const diaryFolder = path.join(projectFolder, PISI_DIARY_FOLDER);
 
         if (!fs.existsSync(diaryFolder) || !isPisiManagedDiaryFolder(diaryFolder)) {
             return {
@@ -423,7 +425,7 @@ function listPisiDiaryDates(projectFolder) {
         const dates = new Set();
 
         for (const nodePath of listPisiDiaryNodePaths(projectFolder)) {
-            let date = normalizePisiDiaryIsoDate(path.basename(nodePath, '.node'));
+            let date = getPisiDiaryDateFromFileName(path.basename(nodePath));
 
             if (!date) {
                 const ensured = ensurePisiFileMetadata(nodePath);
@@ -468,7 +470,7 @@ function syncDiaryMissions(projectFolder, payload = {}) {
             };
         }
 
-        const diaryFolderPath = path.join(projectFolder, 'diary');
+        const diaryFolderPath = path.join(projectFolder, PISI_DIARY_FOLDER);
         const entriesInput = rawEntries;
 
         if (entriesInput.length > 50000) {
@@ -539,7 +541,7 @@ function syncDiaryMissions(projectFolder, payload = {}) {
 
             if (!ensured.ok || ensured.metadata?.type !== 'node') continue;
 
-            const fileDate = normalizePisiDiaryIsoDate(ensured.data?.pisi?.diaryDate) || normalizePisiDiaryIsoDate(path.basename(nodePath, '.node'));
+            const fileDate = normalizePisiDiaryIsoDate(ensured.data?.pisi?.diaryDate) || getPisiDiaryDateFromFileName(path.basename(nodePath));
 
             if (!fileDate) continue;
 
@@ -557,7 +559,7 @@ function syncDiaryMissions(projectFolder, payload = {}) {
 
             if (nextContent !== String(ensured.data.content || '')) {
                 ensured.data.content = nextContent;
-                ensured.data.pisi.parentMap = 'diary';
+                ensured.data.pisi.parentMap = PISI_DIARY_PARENT_MAP;
                 ensured.data.pisi.diaryDate = fileDate;
                 ensured.data.pisi.updatedAt = new Date().toISOString();
                 diaryChanges.push({

@@ -48,6 +48,8 @@ function loadPisiMainStores() {
     defineRuntimeGlobal('PISI_DIARY_MANAGED_END', '<!--PISI_DIARY_MANAGED_END-->');
     defineRuntimeGlobal('projectWatchers', new Map());
     defineRuntimeGlobal('pendingProjectChangedPaths', new Set());
+    // The path guard (assertProjectPath) reads the active project; tests assign it.
+    defineRuntimeGlobal('activeProjectFolder', null);
 
     const electronStub = {
         app: {
