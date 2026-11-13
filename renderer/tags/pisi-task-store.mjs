@@ -1,5 +1,6 @@
 import { registerModule } from '../core/module-registry.mjs';
 import { getPisiTodoRepeatOption, parsePisiTodoTagValue } from './pisi-todo-utils.mjs';
+import { getPisiTaskTodoTag } from '../../shared/task-views.mjs';
 
 const PISI_TASK_STORE_SYNC_DELAY = 40;
 const PISI_TASK_EDITOR_SYNC_DELAY = 320;
@@ -238,7 +239,7 @@ function makePisiTaskSyntheticHtml(task, todoTag) {
 }
 
 function taskToPisiMissionBlock(task) {
-    const todoTag = String(task?.todoTag || `todo.${task?.priority || 3}.none`);
+    const todoTag = getPisiTaskTodoTag(task);
     const completed = task?.status === 'done';
     const dependencies = Array.isArray(task?.dependencies) ? task.dependencies : [];
     const parent = dependencies.length ? `dep:${dependencies.map((id) => encodeURIComponent(id)).join('|')}` : '';

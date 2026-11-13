@@ -9,6 +9,7 @@ import {
     toIsoDate,
     translatePisiCalendarText
 } from './pisi-calendar-state.mjs';
+import { getPisiTaskCalendarIsoDate } from '../../shared/task-views.mjs';
 
 let pisiCalendarDateOpenHandler = null;
 
@@ -336,16 +337,7 @@ function getCalendarTaskSummaryByDate() {
 
     if (Array.isArray(firstClassTasks) && firstClassTasks.length > 0) {
         for (const task of firstClassTasks) {
-            const scheduled = String(task.scheduledAt || '').slice(0, 10);
-            const due = String(task.dueDate || '').slice(0, 10);
-            const deadline = String(task.deadline || '').slice(0, 10);
-            const isoDate = /^\d{4}-\d{2}-\d{2}$/.test(scheduled)
-                ? scheduled
-                : /^\d{4}-\d{2}-\d{2}$/.test(due)
-                  ? due
-                  : /^\d{4}-\d{2}-\d{2}$/.test(deadline)
-                    ? deadline
-                    : null;
+            const isoDate = getPisiTaskCalendarIsoDate(task);
 
             if (isoDate) {
                 recordTask(isoDate, String(task.status || 'todo').toLowerCase());

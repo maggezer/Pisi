@@ -2,13 +2,13 @@ import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 import * as storageLayer from './storage.js';
 import { modules, registerMainModule } from '../module-registry.js';
+import { formatPisiSourceTaskId, formatPisiTaskId, normalizePisiTaskId, normalizePisiTaskIdentityPath } from '../../shared/ids.mjs';
+import { normalizePisiFirstClassTaskIso, normalizePisiTaskRecord, parsePisiTaskDueDateFromTag, parsePisiTaskPriority } from '../../shared/task-model.mjs';
 
 const PISI_TASK_STORE_VERSION = 1;
 const PISI_TASK_STORE_DIR = '.pisi';
 const PISI_TASK_STORE_FILE = 'tasks.json';
 const PISI_TASK_STORE_KEY = `${PISI_TASK_STORE_DIR}/${PISI_TASK_STORE_FILE}`;
-const PISI_TASK_STATUSES = new Set(['todo', 'doing', 'waiting', 'blocked', 'done']);
-const PISI_TASK_REPEATS = new Set(['none', 'daily', 'weekdays', 'weekly', 'biweekly', 'monthly', 'after-completion']);
 
 function getPisiTaskStorage(projectFolder) {
     return storageLayer.getPisiProjectStorage(projectFolder);
@@ -97,104 +97,20 @@ function writePisiTaskStore(projectFolder, store) {
     return data;
 }
 
+// The task record rules (ids, dates, status, repeat, dependencies, field order)
+// live in shared/task-model.mjs and shared/ids.mjs, which the mobile app uses
+// as well. Randomness, the clock and path resolution stay here.
+
 function normalizePisiFirstClassTaskId(value) {
-    const raw = String(value || '').trim();
-    if (/^task_[A-Za-z0-9._:-]{4,180}$/.test(raw)) return raw;
-    return `task_${crypto.randomUUID()}`;
-}
-
-function normalizePisiFirstClassTaskIso(value, allowTime = true) {
-    const raw = String(value || '').trim();
-    const expression = allowTime ? /^(\d{4})-(\d{2})-(\d{2})(?:T([01]\d|2[0-3]):([0-5]\d))?$/ : /^(\d{4})-(\d{2})-(\d{2})$/;
-    const match = raw.match(expression);
-    if (!match) return null;
-    const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]), Number(match[4] || 0), Number(match[5] || 0));
-    if (date.getFullYear() !== Number(match[1]) || date.getMonth() !== Number(match[2]) - 1 || date.getDate() !== Number(match[3])) return null;
-    return raw;
-}
-
-function normalizePisiFirstClassTaskStatus(value, completed = false) {
-    if (completed === true) return 'done';
-    const status = String(value || 'todo')
-        .trim()
-        .toLowerCase();
-    return PISI_TASK_STATUSES.has(status) ? status : 'todo';
-}
-
-function normalizePisiFirstClassTaskRepeat(value) {
-    const repeat = String(value || 'none')
-        .trim()
-        .toLowerCase();
-    return PISI_TASK_REPEATS.has(repeat) ? repeat : 'none';
-}
-
-function normalizePisiFirstClassDependencies(value, taskId) {
-    return Array.from(
-        new Set((Array.isArray(value) ? value : []).map((item) => String(item || '').trim()).filter((item) => /^task_[A-Za-z0-9._:-]{4,180}$/.test(item)))
-    ).filter((item) => item !== taskId);
-}
-
-function normalizePisiFirstClassSource(projectFolder, source = {}, fallback = {}) {
-    const nodePath = source.nodePath || fallback.nodePath || null;
-    const mapPath = source.mapPath || fallback.mapPath || null;
-    return {
-        nodePath: normalizePisiTaskStoredPath(projectFolder, nodePath),
-        blockId: String(source.blockId || fallback.blockId || '').trim() || null,
-        mapPath: normalizePisiTaskStoredPath(projectFolder, mapPath),
-        nodeTitle: String(source.nodeTitle || fallback.nodeTitle || '').trim(),
-        mapTitle: String(source.mapTitle || fallback.mapTitle || '').trim()
-    };
+    return normalizePisiTaskId(value) || formatPisiTaskId(crypto.randomUUID());
 }
 
 function normalizePisiFirstClassTask(projectFolder, payload = {}, existing = null) {
-    const now = new Date().toISOString();
-    const id = existing?.id || normalizePisiFirstClassTaskId(payload.id);
-    const priority = Math.max(1, Math.min(5, Number(payload.priority ?? existing?.priority ?? 3) || 3));
-    const status = normalizePisiFirstClassTaskStatus(payload.status ?? existing?.status ?? 'todo', payload.completed === true);
-    const dueDate = normalizePisiFirstClassTaskIso(payload.dueDate ?? existing?.dueDate ?? '', false);
-    const scheduledAt = normalizePisiFirstClassTaskIso(payload.scheduledAt ?? existing?.scheduledAt ?? '');
-    const deadline = normalizePisiFirstClassTaskIso(payload.deadline ?? existing?.deadline ?? '');
-    const reminderAt = normalizePisiFirstClassTaskIso(payload.reminderAt ?? existing?.reminderAt ?? '');
-    const title = String(payload.title ?? payload.text ?? existing?.title ?? '')
-        .replace(/\s+/g, ' ')
-        .trim();
-    const repeat = normalizePisiFirstClassTaskRepeat(payload.repeat ?? existing?.repeat ?? 'none');
-    const durationMinutes = Math.max(0, Math.min(1440, Number(payload.durationMinutes ?? existing?.durationMinutes ?? 0) || 0));
-    const actualMinutes = Math.max(0, Math.min(100000, Number(payload.actualMinutes ?? existing?.actualMinutes ?? 0) || 0));
-    const completionOffsetDays = Math.max(0, Math.min(3650, Number(payload.completionOffsetDays ?? existing?.completionOffsetDays ?? 0) || 0));
-    const rawOrder = Number(payload.manualOrder ?? existing?.manualOrder ?? Date.now());
-    const manualOrder = Number.isFinite(rawOrder) ? rawOrder : Date.now();
-    const todoTag = String(payload.todoTag ?? existing?.todoTag ?? `todo.${priority}.none`)
-        .trim()
-        .toLowerCase();
-    const reminderMode =
-        String(payload.reminderMode ?? existing?.reminderMode ?? 'none')
-            .trim()
-            .toLowerCase() || 'none';
-    const source = normalizePisiFirstClassSource(projectFolder, payload.source || {}, existing?.source || {});
-
-    return {
-        id,
-        title,
-        status,
-        priority,
-        dueDate,
-        scheduledAt,
-        deadline,
-        reminderAt,
-        reminderMode,
-        durationMinutes,
-        actualMinutes,
-        repeat,
-        completionOffsetDays: completionOffsetDays || null,
-        dependencies: normalizePisiFirstClassDependencies(payload.dependencies ?? existing?.dependencies ?? [], id),
-        manualOrder,
-        todoTag,
-        source,
-        createdAt: existing?.createdAt || payload.createdAt || now,
-        updatedAt: now,
-        completedAt: status === 'done' ? payload.completedAt || existing?.completedAt || now : null
-    };
+    return normalizePisiTaskRecord(payload, existing, {
+        now: new Date(),
+        makeUuid: () => crypto.randomUUID(),
+        normalizeStoredPath: (targetPath) => normalizePisiTaskStoredPath(projectFolder, targetPath)
+    });
 }
 
 function hydratePisiFirstClassTask(projectFolder, task) {
@@ -291,38 +207,8 @@ function syncPisiFirstClassTaskIndex(projectFolder, payload = {}) {
     };
 }
 
-function normalizePisiTaskIdentityPath(value) {
-    const normalized = String(value || '').replace(/[\\/]+/g, '/');
-    return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
-}
-
-function hashPisiTaskIdentity(value) {
-    const input = String(value || '');
-    let hashA = 0x811c9dc5;
-    let hashB = 0x9e3779b9;
-    for (let index = 0; index < input.length; index += 1) {
-        const code = input.charCodeAt(index);
-        hashA ^= code;
-        hashA = Math.imul(hashA, 0x01000193) >>> 0;
-        hashB ^= (code + index) >>> 0;
-        hashB = Math.imul(hashB, 0x85ebca6b) >>> 0;
-    }
-    return `${hashA.toString(16).padStart(8, '0')}${hashB.toString(16).padStart(8, '0')}`;
-}
-
 function getPisiTaskIdForSource(nodePath, blockId, todoTag) {
-    const key = [normalizePisiTaskIdentityPath(nodePath), String(blockId || ''), String(todoTag || '')].map(encodeURIComponent).join('::');
-    return `task_source_${hashPisiTaskIdentity(key)}`;
-}
-
-function parsePisiTaskPriority(todoTag, fallback = 3) {
-    const match = String(todoTag || '').match(/^todo\.([1-5])\./i);
-    return match ? Number(match[1]) : Math.max(1, Math.min(5, Number(fallback) || 3));
-}
-
-function parsePisiTaskDueDateFromTag(todoTag) {
-    const match = String(todoTag || '').match(/^todo\.[1-5]\.(\d{2})-(\d{2})-(\d{4})$/i);
-    return match ? `${match[3]}-${match[2]}-${match[1]}` : null;
+    return formatPisiSourceTaskId(normalizePisiTaskIdentityPath(nodePath, process.platform === 'win32'), blockId, todoTag);
 }
 
 function registerQuickCapturedTask(projectFolder, payload, result) {
