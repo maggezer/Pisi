@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import * as rendererCore from '../renderer/editor/pisi-wiki-link-core.mjs';
-import * as mainCore from '../main/functions/wiki-link-core.js';
+import * as wikiLinkCore from '../shared/wiki-link-core.mjs';
 import { buildPisiRelationshipModel, pisiSearchPathKey } from '../renderer/search/pisi-search-core.mjs';
 
 const {
@@ -10,10 +9,11 @@ const {
     getPisiWikiTrigger,
     isPisiWikiLinkAttributeAllowed,
     makePisiWikiLinkHtml,
+    normalizePisiWikiTitle,
     replacePisiWikiLinkMarkdown,
     resolvePisiLegacyWikiTitle,
     serializePisiWikiLinkMarkdown
-} = rendererCore;
+} = wikiLinkCore;
 
 const notes = [
     { id: 'node_a1', title: 'Proje Planı', relativePath: 'Proje Planı.node' },
@@ -92,15 +92,17 @@ test('legacy [[Başlık]] resolves case-insensitively and reports ambiguity', ()
     assert.equal(findPisiLegacyWikiLinkAt('önce [[İstanbul]] sonra', 2), null);
 });
 
-test('renderer and main build identical link markup and the sanitizer accepts only valid ids', () => {
+test('link markup escapes the title, title identity ignores case and spacing, and the sanitizer accepts only valid ids', () => {
     const link = { nodeId: 'node_a1', title: 'A & "B" <C>', blockId: 'blk_7' };
-    assert.equal(makePisiWikiLinkHtml(link), mainCore.makePisiWikiLinkHtml(link));
     assert.equal(
         makePisiWikiLinkHtml(link),
         '<a class="pisi-wiki-link" data-pisi-node-id="node_a1" data-pisi-node-title="A &amp; &quot;B&quot; &lt;C&gt;" data-pisi-link-block="blk_7" contenteditable="false">A &amp; &quot;B&quot; &lt;C&gt;</a>'
     );
     assert.equal(makePisiWikiLinkHtml({ nodeId: 'javascript:alert(1)', title: 'x' }), '');
-    for (const title of ['  İstanbul  ', 'A &amp; B', 'Ilık']) assert.equal(rendererCore.normalizePisiWikiTitle(title), mainCore.normalizePisiWikiTitle(title));
+    assert.equal(normalizePisiWikiTitle('  İstanbul  '), 'istanbul');
+    assert.equal(normalizePisiWikiTitle('A &amp; B'), 'a & b');
+    assert.equal(normalizePisiWikiTitle('Ilık'), 'ılık');
+    assert.equal(normalizePisiWikiTitle('PROJE   Planı'), 'proje planı');
     assert.equal(isPisiWikiLinkAttributeAllowed('data-pisi-node-id', 'node_a1'), true);
     assert.equal(isPisiWikiLinkAttributeAllowed('data-pisi-node-id', 'node_a1" onclick="x'), false);
     assert.equal(isPisiWikiLinkAttributeAllowed('data-pisi-link-block', 'blk_1'), true);
