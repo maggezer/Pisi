@@ -13,6 +13,7 @@ const correctness = {
 const browserGlobals = {
     console: 'readonly',
     document: 'readonly',
+    getComputedStyle: 'readonly',
     navigator: 'readonly',
     window: 'readonly',
     Intl: 'readonly',
