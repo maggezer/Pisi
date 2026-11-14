@@ -25,6 +25,7 @@
         "preload.js",
         "main/**/*.js",
         "renderer/**/*.mjs",
+        "shared/**/*.mjs",
         "scripts/**/*.js",
         "scripts/**/*.mjs"
     ],

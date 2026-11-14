@@ -51,6 +51,7 @@
             "index.html",
             "style.css",
             "renderer/**/*",
+            "shared/**/*",
             "assets/**/*",
             "locales/**/*",
             "package.json",

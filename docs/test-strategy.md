@@ -6,7 +6,7 @@ Bu belge testlerin nasıl yazılacağını ve kaynak kodu okuyan eski testlerin 
 
 | Katman               | Nerede                                             | Ne zaman                                                                                     |
 | -------------------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Birim / saf modül    | `tests/*.test.mjs`, modülü doğrudan import eder    | `*-core.js`, `renderer/**/pisi-*-core.mjs` gibi Electron'suz modüller                        |
+| Birim / saf modül    | `tests/*.test.mjs`, modülü doğrudan import eder    | `shared/*.mjs`, `*-core.js`, `renderer/**/pisi-*-core.mjs` gibi Electron'suz modüller        |
 | Main store davranışı | `tests/*.test.js` + `tests/main-store-harness.cjs` | Kayıt, görev, ilişki, map ve Trash store'ları gerçek dosyalarla, geçici bir proje klasöründe |
 | Electron E2E         | `scripts/electron-*-e2e.mjs` (CDP)                 | Kullanıcı akışları; Linux (xvfb) ve Windows'ta CI'da, macOS isteğe bağlı                     |
 | Mimari kurallar      | `npm run check:*` ve aşağıdaki (a) grubu           | Kodun şekli gerçekten kural olduğunda                                                        |
@@ -37,9 +37,9 @@ Bir test dosyası şu durumlarda kaynak okuyan sayılır:
 - `readMainSource`, `readRendererSource`, `readCssSection` veya `extractFunction` kullanıyorsa;
 - ya da depodaki bir kaynak dosyasını (`main/`, `renderer/`, `styles/`, `preload.js`, `index.html`, …) doğrudan okuyorsa.
 
-2026-11-07 itibarıyla 208 test dosyasının 129'u kaynak okuyor (619 test, yaklaşık 2.870 regex doğrulaması). Bu sayılar envanter komutuyla yeniden üretilebilir.
+2026-11-13 itibarıyla 216 test dosyasının 128'i kaynak okuyor (616 test, yaklaşık 2.870 regex doğrulaması). Bu sayılar envanter komutuyla yeniden üretilebilir.
 
-### (a) Korunacak mimari kurallar (35 dosya)
+### (a) Korunacak mimari kurallar (34 dosya)
 
 Kodun şekli burada sözleşmenin kendisidir: güvenlik sınırları, sürüm ve paketleme yapılandırması, sözleşme kayıtları, yükleme sırası. Bu testler regex ile kalabilir. Yeni bir kural uygunsa `check:architecture`'a taşınır.
 
@@ -66,7 +66,6 @@ Kodun şekli burada sözleşmenin kendisidir: güvenlik sınırları, sürüm ve
 | `project-integrity-contract.test.js`          |   14 |    56 | —                                  | bütünlük sözleşmesi                                     |
 | `rebuildable-index-architecture.test.js`      |    3 |    17 | —                                  | yeniden kurulabilir indeks mimarisi                     |
 | `search-document-delta-architecture.test.js`  |    4 |    19 | —                                  | arama delta mimarisi                                    |
-| `security.test.js`                            |    3 |     0 | readMainSource, extractFunction    | Electron güvenlik sınırları                             |
 | `source-invariants.test.js`                   |   11 |    43 | readMainSource, readRendererSource | güvenlik ve tekillik değişmezleri                       |
 | `source-of-truth.test.js`                     |   10 |    74 | —                                  | tek kaynak mimarisi ve dokümanları                      |
 | `storage-abstraction.test.js`                 |    4 |    12 | —                                  | depolama katmanı sınırı                                 |
@@ -158,7 +157,7 @@ Bu testler arayüz veya iş mantığını kodun yazılış biçimi üzerinden do
 | `property-map-context.test.js`              |    2 |    31 | —                               | 3                                                                            |
 | `property-schema-stability.test.js`         |    7 |    29 | —                               | 3                                                                            |
 | `property-templates-workspace.test.js`      |    3 |    27 | —                               | 3                                                                            |
-| `property-types-simplification.test.js`     |    3 |    26 | —                               | 3                                                                            |
+| `property-types-simplification.test.js`     |    3 |    25 | —                               | 3                                                                            |
 | `quick-add-repeat-policy.test.js`           |    1 |    16 | —                               | 3                                                                            |
 | `right-panel-headings.test.js`              |    1 |     2 | —                               | 3                                                                            |
 | `right-panel-icons.test.js`                 |    4 |    22 | —                               | 3                                                                            |
@@ -217,6 +216,18 @@ Yeni testlerin gerçekten hata yakaladığı kasıtlı bozmayla doğrulandı:
 
 - `writePisiDocument` connectionTypes'ı silmeyince 1. test düşüyor.
 - Trash geri yüklemesi mevcut görevleri atınca 3. ve 4. testler düşüyor.
+
+### `shared/` taşımasında çevrilenler
+
+Saf kurallar `shared/` klasörüne taşınınca, onları main kaynağından `extractFunction` ile kopyalayan ya da regex ile arayan testler bozuldu. Bunlar gerçek modülleri çağıracak şekilde çevrildi:
+
+| Test                                                                                      | Önce                                | Şimdi                                                                                     |
+| ----------------------------------------------------------------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------- |
+| `security.test.js` (3 test)                                                               | `extractFunction` + `vm`            | `main-store-harness` ile `main.pathSecurity` ve `main.electronIpc`; artık kaynak okumuyor |
+| `data-integrity.test.js` › edge onarımı, diary klasörü koruması (2 test), yeni diary notu | `extractFunction` + `vm`            | `main-store-harness` ile `main.filesystemCore` ve `main.documentStore`                    |
+| `property-types-simplification.test.js` › sistem metadata (1 doğrulama)                   | `filesystem-core.js` üzerinde regex | `shared/document-model.mjs` çağrısı                                                       |
+
+`shared/` modüllerinin testleri `tests/shared-*.test.mjs` dosyalarındadır ve modülü doğrudan import eder. `tests/shared-desktop-wrappers.test.mjs` masaüstünün aynı fonksiyonları kullandığını doğrular.
 
 ## Platformlar
 

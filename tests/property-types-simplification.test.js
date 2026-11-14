@@ -56,13 +56,17 @@ test('Rollup yalnız ana toolbardan node bloğu olarak eklenir ve property menü
 });
 
 test('sistem metadata ve Relation sağ Properties panelinde gösterilmez', () => {
-    const filesystem = read('main/functions/filesystem-core.js');
+    const { makePisiDocumentData } = require('../shared/document-model.mjs');
+    const created = makePisiDocumentData({ ext: '.node', title: 'Not', id: 'node_abc', now: '2026-11-13T09:00:00.000Z' });
     const documentStore = readDocumentStore();
     const propertiesUi = read('renderer/data/pisi-node-properties-ui.mjs');
     const tr = JSON.parse(read('locales/lang-tr.json')).strings;
     const eng = JSON.parse(read('locales/lang-eng.json')).strings;
 
-    assert.match(filesystem, /createdAt: now,[\s\S]*updatedAt: now/);
+    // System metadata is written under `pisi`, never as a node property.
+    assert.equal(created.pisi.createdAt, '2026-11-13T09:00:00.000Z');
+    assert.equal(created.pisi.updatedAt, created.pisi.createdAt);
+    assert.equal(Object.hasOwn(created, 'properties'), false);
     assert.match(documentStore, /if \(!data\.pisi\.createdAt\)/);
     assert.match(documentStore, /data\.pisi\.updatedAt = data\.pisi\.createdAt/);
     assert.match(propertiesUi, /function getPisiNodeSystemProperties/);

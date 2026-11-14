@@ -2,6 +2,8 @@ import * as path from 'node:path';
 import * as fs from 'node:fs';
 import * as crypto from 'node:crypto';
 import { registerMainModule } from '../module-registry.js';
+import { formatPisiBlockId } from '../../shared/ids.mjs';
+import { PISI_TASK_REPEATS } from '../../shared/task-model.mjs';
 
 function escapePisiTaskHtml(value = '') {
     return String(value || '')
@@ -71,7 +73,7 @@ function getOrCreatePisiInboxNode(projectFolder) {
 
 function normalizePisiCaptureRepeat(value) {
     const repeat = String(value || '').toLowerCase();
-    return ['none', 'daily', 'weekdays', 'weekly', 'biweekly', 'monthly', 'after-completion'].includes(repeat) ? repeat : 'none';
+    return PISI_TASK_REPEATS.has(repeat) ? repeat : 'none';
 }
 
 function makePisiTaskCaptureBlock(payload = {}) {
@@ -96,7 +98,7 @@ function makePisiTaskCaptureBlock(payload = {}) {
     if (completionOffset) {
         attrs.push(`data-pisi-todo-completion-offset-days="${completionOffset}"`);
     }
-    const blockId = `blk_${crypto.randomUUID()}`;
+    const blockId = formatPisiBlockId(crypto.randomUUID());
     const html = [
         `<div class="pisi-editor-block" data-pisi-block-id="${blockId}">`,
         `<span class="pisi-todo-source" data-pisi-todo-for="${tag}">${escapePisiTaskHtml(text)}</span> `,

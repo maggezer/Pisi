@@ -3,6 +3,8 @@ import * as fs from 'node:fs';
 import * as crypto from 'node:crypto';
 import { registerMainModule } from '../module-registry.js';
 import * as backupStorage from './backup-storage.js';
+import { makePisiDocumentData } from '../../shared/document-model.mjs';
+import { getPisiSidecarName } from '../../shared/document-naming.mjs';
 
 function normalizePisiCustomizationColor(value) {
     const color = String(value || '').trim();
@@ -195,55 +197,10 @@ function normalizePisiMapEdges(rawEdges = [], validNodeIds = null) {
     };
 }
 
-function getPisiSidecarName(title, ext, id) {
-    const prefix = getPisiSidecarPrefix(ext);
-    const safeId = normalizePisiId(id, ext);
-    if (!prefix || !safeId) return null;
-
-    const safeTitle = sanitizeForSidecarName(title);
-    return `${prefix}${safeTitle}__${safeId}`;
-}
-
+// The document skeleton and the sidecar name rule live in shared/ (also used by
+// the mobile app). Reading the clock stays here.
 function createPisiDocumentData({ ext, title, id, parentMap = 'none' }) {
-    const now = new Date().toISOString();
-    const type = getPisiTypeFromExt(ext);
-    const sidecar = getPisiSidecarName(title, ext, id);
-
-    const base = {
-        pisi: {
-            version: 1,
-            type,
-            id,
-            title,
-            sidecar,
-            createdAt: now,
-            updatedAt: now
-        }
-    };
-
-    if (ext === '.node') {
-        base.pisi.parentMap = parentMap || 'none';
-
-        return {
-            ...base,
-            content: ''
-        };
-    }
-
-    if (ext === '.map') {
-        return {
-            ...base,
-            map: {
-                nodes: [],
-                relationshipViews: [],
-                relationshipViewVersion: 1,
-                collapsedHubs: [],
-                camera: { x: 0, y: 0, zoom: 1 }
-            }
-        };
-    }
-
-    return base;
+    return makePisiDocumentData({ ext, title, id, parentMap, now: new Date().toISOString() });
 }
 
 function readJsonFileResult(filePath) {

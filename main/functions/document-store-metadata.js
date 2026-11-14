@@ -1,6 +1,7 @@
 import * as path from 'node:path';
 import * as fs from 'node:fs';
 import { ensurePisiSidecar } from './document-store-io.js';
+import { makePisiDiaryNodeTitle, normalizePisiDiaryIsoDate } from '../../shared/diary-rules.mjs';
 
 function ensurePisiFileMetadata(filePath, options = {}) {
     const persist = options.persist !== false;
@@ -150,27 +151,5 @@ function ensurePisiFileMetadata(filePath, options = {}) {
     };
 }
 
-function normalizePisiDiaryIsoDate(value) {
-    const raw = String(value || '').trim();
-    const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-
-    if (!match) return null;
-
-    const year = Number(match[1]);
-    const month = Number(match[2]);
-    const day = Number(match[3]);
-    const date = new Date(year, month - 1, day);
-
-    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
-        return null;
-    }
-
-    return raw;
-}
-
-function makePisiDiaryNodeTitle(isoDate) {
-    const [year, month, day] = String(isoDate).split('-');
-    return `${day}-${month}-${year}`;
-}
-
+// The diary date and title rules live in shared/diary-rules.mjs; they are re-exported for document-store.js.
 export { ensurePisiFileMetadata, makePisiDiaryNodeTitle, normalizePisiDiaryIsoDate };
