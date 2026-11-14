@@ -1,0 +1,22 @@
+{
+    "app.name": "Pisi",
+    "tab.pisi": "Pisi",
+    "tab.tasks": "Tasks",
+    "tab.notes": "Notes",
+    "tab.calendar": "Calendar",
+    "tab.maps": "Maps",
+    "nav.label": "Main menu",
+    "screen.settings": "Settings",
+    "action.openSettings": "Open settings",
+    "action.back": "Back",
+    "action.close": "Close",
+    "placeholder.note": "This screen arrives in a later phase.",
+    "pisi.today": "Today",
+    "settings.theme": "Theme",
+    "settings.language": "Language",
+    "theme.system": "System",
+    "theme.light": "Light",
+    "theme.dark": "Dark",
+    "language.tr": "Türkçe",
+    "language.eng": "English"
+}
