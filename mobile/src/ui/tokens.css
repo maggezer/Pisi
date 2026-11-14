@@ -1,0 +1,120 @@
+/*
+ * Design tokens for Pisi Mobil (docs/mobile-plan.md M3).
+ * The warm palette comes from the earlier mobile prototype; the text tones
+ * are darkened where it failed WCAG AA. tests/contrast.test.mjs checks every
+ * pair listed in token-pairs.mjs for both themes, so change colours here and
+ * run the tests. Colours are plain hex so that the test can read them.
+ * Sizes are in rem: Android's font scale then applies to the whole layout.
+ */
+
+:root {
+    color-scheme: light;
+
+    /* Surfaces, from the page background up to the most raised layer. */
+    --pisi-bg: #fbf7f1;
+    --pisi-surface: #ffffff;
+    --pisi-surface-2: #f2eae0;
+    --pisi-surface-3: #e9ddcf;
+
+    /* Text. */
+    --pisi-text: #2b211b;
+    --pisi-muted: #6b5d52;
+
+    /* Lines: `line` only separates; `border` outlines a control and reaches 3:1. */
+    --pisi-line: #dccfc0;
+    --pisi-border: #8f7d6b;
+
+    /* Accent: `accent` is a fill, `accent-text` is for text, icons and state marks. */
+    --pisi-accent: #d9801f;
+    --pisi-on-accent: #2b1a08;
+    --pisi-accent-text: #9a5208;
+    --pisi-accent-soft: #f8e9d6;
+
+    --pisi-danger: #b83a30;
+    --pisi-on-danger: #ffffff;
+    --pisi-danger-text: #ad342b;
+    --pisi-success-text: #2f7344;
+
+    /* Snackbar: the opposite theme's surface. */
+    --pisi-inverse-surface: #2b211b;
+    --pisi-inverse-text: #f5ede4;
+    --pisi-inverse-accent: #f3a83b;
+
+    --pisi-scrim: rgba(43, 33, 27, 0.45);
+    --pisi-shadow-1: 0 1px 3px rgba(79, 52, 30, 0.12);
+    --pisi-shadow-2: 0 8px 24px rgba(79, 52, 30, 0.18);
+
+    /* Spacing: 4/8 based. */
+    --pisi-space-1: 0.25rem;
+    --pisi-space-2: 0.5rem;
+    --pisi-space-3: 0.75rem;
+    --pisi-space-4: 1rem;
+    --pisi-space-5: 1.5rem;
+    --pisi-space-6: 2rem;
+    --pisi-space-7: 3rem;
+
+    --pisi-radius-sm: 0.5rem;
+    --pisi-radius-md: 0.75rem;
+    --pisi-radius-lg: 1.25rem;
+    --pisi-radius-full: 999px;
+
+    /* Type scale: 12 / 14 / 16 / 20 / 24 / 32. Helper text never goes below 14. */
+    --pisi-text-xs: 0.75rem;
+    --pisi-text-sm: 0.875rem;
+    --pisi-text-md: 1rem;
+    --pisi-text-lg: 1.25rem;
+    --pisi-text-xl: 1.5rem;
+    --pisi-text-2xl: 2rem;
+    --pisi-leading-tight: 1.25;
+    --pisi-leading: 1.45;
+
+    /* One family for the interface and the editor (G9): the system sans, Roboto on Android. */
+    --pisi-font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
+
+    --pisi-motion-fast: 120ms;
+    --pisi-motion: 200ms;
+    --pisi-ease: cubic-bezier(0.2, 0, 0, 1);
+
+    /* Smallest touch target: 48 dp. */
+    --pisi-touch: 3rem;
+    --pisi-icon: 1.5rem;
+
+    /* Capacitor injects --safe-area-inset-* on Android; env() covers browsers. */
+    --pisi-safe-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+    --pisi-safe-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
+    --pisi-safe-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+    --pisi-safe-left: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
+}
+
+:root[data-theme='dark'] {
+    color-scheme: dark;
+
+    --pisi-bg: #171310;
+    --pisi-surface: #211b17;
+    --pisi-surface-2: #2b231d;
+    --pisi-surface-3: #372d25;
+
+    --pisi-text: #f5ede4;
+    --pisi-muted: #b8a99c;
+
+    --pisi-line: #4a3e34;
+    --pisi-border: #8d7b6a;
+
+    --pisi-accent: #f3a83b;
+    --pisi-on-accent: #2b1a08;
+    --pisi-accent-text: #f3a83b;
+    --pisi-accent-soft: #3a2a14;
+
+    --pisi-danger: #e66f61;
+    --pisi-on-danger: #2a0f0b;
+    --pisi-danger-text: #f08a7d;
+    --pisi-success-text: #80bd8d;
+
+    --pisi-inverse-surface: #f5ede4;
+    --pisi-inverse-text: #2b211b;
+    --pisi-inverse-accent: #9a5208;
+
+    --pisi-scrim: rgba(0, 0, 0, 0.6);
+    --pisi-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.4);
+    --pisi-shadow-2: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
