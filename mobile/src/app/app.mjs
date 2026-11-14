@@ -10,7 +10,7 @@ import { renderNotesScreen } from '../screens/notes/index.mjs';
 import { renderPisiScreen } from '../screens/pisi/index.mjs';
 import { renderSettingsScreen } from '../screens/settings/index.mjs';
 import { renderTasksScreen } from '../screens/tasks/index.mjs';
-import { renderChoiceSheet } from '../ui/sheet.mjs';
+import { renderChoiceSheet } from '../ui/overlay.mjs';
 import { renderShell } from '../ui/shell.mjs';
 import { createLifecycle } from './lifecycle.mjs';
 import { PISI_THEME_PREFERENCES, createPreferences } from './preferences.mjs';
@@ -118,7 +118,7 @@ export function createApp({ root, platform, storage, deviceLanguage, systemTheme
             renderShell({
                 t: i18n.t,
                 title: subScreen === 'settings' ? i18n.t('screen.settings') : i18n.t(`tab.${state.tab}`),
-                tabs: PISI_TABS.map((id) => ({ id, label: i18n.t(`tab.${id}`) })),
+                tabs: PISI_TABS.map((id) => ({ id, icon: id, label: i18n.t(`tab.${id}`) })),
                 activeTab: state.tab,
                 inSubScreen: Boolean(subScreen),
                 body,

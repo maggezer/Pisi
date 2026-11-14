@@ -9,7 +9,7 @@ export function h(tag, props = {}, ...children) {
         else if (name === 'dataset') Object.assign(element.dataset, value);
         else element.setAttribute(name, value === true ? '' : String(value));
     }
-    for (const child of children.flat()) {
+    for (const child of children.flat(Infinity)) {
         if (child === null || child === undefined || child === false) continue;
         element.append(child instanceof Node ? child : document.createTextNode(String(child)));
     }

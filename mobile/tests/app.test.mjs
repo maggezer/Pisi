@@ -112,7 +112,7 @@ describe('uygulama kabuğu', () => {
         expect(document.documentElement.dataset.theme).toBe('dark');
         expect(storage.values.get('pisi.mobile.theme')).toBe('dark');
         expect(root.querySelector('[role="dialog"]')).toBe(null);
-        expect(root.querySelector('[data-setting="theme"] .pisi-setting-value').textContent).toBe('Koyu');
+        expect(root.querySelector('[data-setting="theme"] .pisi-row-value').textContent).toBe('Koyu');
         expect(platform.calls.systemBars.at(-1).dark).toBe(true);
 
         // A forced theme no longer follows the system.

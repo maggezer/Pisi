@@ -1,0 +1,127 @@
+/* Layout of the development-only component gallery (?gallery). */
+
+.gallery {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pisi-space-5);
+    padding: calc(var(--pisi-space-4) + var(--pisi-safe-top)) var(--pisi-space-4) var(--pisi-space-7);
+}
+
+.gallery-title {
+    margin: 0;
+    font-size: var(--pisi-text-xl);
+    line-height: var(--pisi-leading-tight);
+}
+
+.gallery-section,
+.gallery-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pisi-space-3);
+}
+
+.gallery-heading {
+    margin: 0;
+    padding-bottom: var(--pisi-space-1);
+    border-bottom: 1px solid var(--pisi-line);
+    color: var(--pisi-muted);
+    font-size: var(--pisi-text-sm);
+    font-weight: 600;
+}
+
+.gallery-cluster {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--pisi-space-3);
+}
+
+.gallery-frame {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px dashed var(--pisi-border);
+    border-radius: var(--pisi-radius-md);
+}
+
+.gallery-swatches,
+.gallery-pairs,
+.gallery-icons {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--pisi-space-2);
+}
+
+.gallery-icons {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.gallery-swatch,
+.gallery-icon {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    font-size: var(--pisi-text-xs);
+    overflow-wrap: anywhere;
+}
+
+.gallery-icon {
+    align-items: center;
+    padding: var(--pisi-space-2) 0;
+}
+
+.gallery-swatch-chip {
+    height: 2.5rem;
+    border: 1px solid var(--pisi-border);
+    border-radius: var(--pisi-radius-sm);
+}
+
+.gallery-pair {
+    display: flex;
+    align-items: center;
+    gap: var(--pisi-space-2);
+    padding: var(--pisi-space-2);
+    border: 1px solid var(--pisi-line);
+    border-radius: var(--pisi-radius-sm);
+    font-size: var(--pisi-text-xs);
+}
+
+.gallery-pair-sample {
+    font-size: var(--pisi-text-md);
+    font-weight: 600;
+}
+
+.gallery-pair-name {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.gallery-type {
+    margin: 0;
+    line-height: var(--pisi-leading-tight);
+}
+
+.gallery-space {
+    background: var(--pisi-accent-text);
+}
+
+.gallery-radius {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 4.5rem;
+    height: 3rem;
+    border: 1px solid var(--pisi-border);
+    background: var(--pisi-surface);
+    font-size: var(--pisi-text-xs);
+}
+
+.gallery-floating {
+    position: fixed;
+    right: var(--pisi-space-4);
+    bottom: calc(var(--pisi-space-4) + var(--pisi-safe-bottom));
+    left: var(--pisi-space-4);
+    z-index: 5;
+    display: flex;
+}

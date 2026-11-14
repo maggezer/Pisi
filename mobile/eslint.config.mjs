@@ -17,7 +17,8 @@ const browserGlobals = {
     navigator: 'readonly',
     window: 'readonly',
     Intl: 'readonly',
-    Node: 'readonly'
+    Node: 'readonly',
+    URLSearchParams: 'readonly'
 };
 
 const nodeGlobals = { console: 'readonly', process: 'readonly' };
