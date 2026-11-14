@@ -1,5 +1,35 @@
 # PISI Güncelleme Takip Dosyası
 
+## 14-11-2026 — Pisi Mobil iskeleti, CI ve test APK'sı (M2, mobil iş)
+
+- Bu bir mobil iştir (`docs/mobile-plan.md` M2). Masaüstü uygulamasının
+  davranışı değişmedi.
+- `mobile/`: kendi `package.json`'ı olan Vite + Capacitor 8 paketi.
+    - Yönlendirici ve altı yer tutucu ekran: Pisi, Görevler, Notlar, Takvim,
+      Haritalar, Ayarlar.
+    - Soğuk açılışta Pisi ekranı bugünün tarihiyle gelir.
+    - Android geri tuşu sırasıyla açık pencereyi, alt ekranı kapatır, Pisi
+      sekmesine döner ve Pisi sekmesinde uygulamayı arka plana alır.
+    - Tema (sistem/açık/koyu) ve dil (TR/ENG) Ayarlar'dan seçilir.
+    - Metinler `mobile/locales/tr.json` ve `eng.json` dosyalarındadır; anahtar
+      eşitliğini `check:i18n` denetler.
+- `mobile/android/`: `npx cap add android` ile temiz oluşturuldu.
+  `applicationId` `com.mumin.pisi`. İkonlar, splash ekranları ve klavye ayarı
+  `mobile5` dalından alındı; DriveSync ve klasör senkronu eklentisi alınmadı.
+- `.github/workflows/mobile.yml`: validate, E2E (ekran görüntüleri
+  `pisi-mobile-screens`) ve test APK'sı (`Pisi-mobile-apk`, 14 gün). Sürüm kodu
+  çalıştırma numarasıdır; sabit test anahtarı secret'ları tanımlıysa APK
+  öncekinin üzerine kurulur, değilse özet uyarı verir.
+- Kök araçlar:
+    - `npm test` artık yalnız `tests/` klasörünü çalıştırıyor. Önceden bütün
+      depoyu tarıyordu: mobil testleri de bulacaktı, ayrıca adı kalıba uyduğu
+      için `scripts/test-coverage.mjs` dosyasını bir test gibi çalıştırıp
+      bütün testleri ikinci kez koşuyordu.
+    - Prettier, ESLint ve `check:syntax` mobil derleme çıktılarını ve native
+      projeyi atlıyor.
+- `docs/mobile-qa.md`: test APK'sının kurulumu, sabit test anahtarı ve cihaz
+  kabul listesi. `CLAUDE.md` "Mobile" bölümüne komutlar ve klasör yapısı eklendi.
+
 ## 13-11-2026 — Ortak çekirdek: `shared/` (M1, mobil iş)
 
 - Bu bir mobil iştir (`docs/mobile-plan.md` M1). Masaüstünde görünür bir

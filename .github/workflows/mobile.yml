@@ -1,0 +1,190 @@
+name: Mobile
+
+# Pisi Mobil (docs/mobile-plan.md): validation, phone-view E2E with screenshots,
+# and a test APK that installs over the previous one.
+on:
+    push:
+        branches:
+            - main
+        paths:
+            - 'mobile/**'
+            - 'shared/**'
+            - '.github/workflows/mobile.yml'
+    pull_request:
+        paths:
+            - 'mobile/**'
+            - 'shared/**'
+            - '.github/workflows/mobile.yml'
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: mobile-${{ github.ref }}
+    cancel-in-progress: true
+
+defaults:
+    run:
+        working-directory: mobile
+
+jobs:
+    validate:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v5
+
+            - name: Setup Node
+              uses: actions/setup-node@v5
+              with:
+                  node-version: 24
+                  cache: npm
+                  cache-dependency-path: mobile/package-lock.json
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Enforce dependency audit policy
+              run: npm run audit
+
+            - name: Validate (format, lint, i18n, structure, tests, build)
+              run: npm run validate
+
+    e2e:
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v5
+
+            - name: Setup Node
+              uses: actions/setup-node@v5
+              with:
+                  node-version: 24
+                  cache: npm
+                  cache-dependency-path: mobile/package-lock.json
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Install the browser for Playwright
+              run: npx playwright install --with-deps chromium
+
+            - name: Run phone-view E2E (Pixel 7, light and dark)
+              run: npm run e2e
+
+            - name: Upload screenshots
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: pisi-mobile-screens
+                  path: mobile/e2e/screenshots
+                  if-no-files-found: error
+                  retention-days: 14
+
+    android:
+        runs-on: ubuntu-latest
+        timeout-minutes: 25
+        env:
+            # Each run gets a higher version code, so the APK installs over the previous one.
+            PISI_ANDROID_VERSION_CODE: ${{ github.run_number }}
+            PISI_ANDROID_TEST_KEYSTORE_BASE64: ${{ secrets.PISI_ANDROID_TEST_KEYSTORE_BASE64 }}
+            PISI_ANDROID_TEST_KEYSTORE_PASSWORD: ${{ secrets.PISI_ANDROID_TEST_KEYSTORE_PASSWORD }}
+            PISI_ANDROID_TEST_KEY_ALIAS: ${{ secrets.PISI_ANDROID_TEST_KEY_ALIAS }}
+            PISI_ANDROID_TEST_KEY_PASSWORD: ${{ secrets.PISI_ANDROID_TEST_KEY_PASSWORD }}
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v5
+
+            - name: Setup Node
+              uses: actions/setup-node@v5
+              with:
+                  node-version: 24
+                  cache: npm
+                  cache-dependency-path: mobile/package-lock.json
+
+            - name: Setup Java
+              uses: actions/setup-java@v4
+              with:
+                  distribution: temurin
+                  java-version: 21
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Build the web app and sync it into the Android project
+              run: npm run android:sync
+
+            - name: Prepare the fixed test signing key
+              id: signing
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  if [[ -n "${PISI_ANDROID_TEST_KEYSTORE_BASE64}" && -n "${PISI_ANDROID_TEST_KEYSTORE_PASSWORD}" && -n "${PISI_ANDROID_TEST_KEY_ALIAS}" && -n "${PISI_ANDROID_TEST_KEY_PASSWORD}" ]]; then
+                    keystore="${RUNNER_TEMP}/pisi-test.keystore"
+                    printf '%s' "${PISI_ANDROID_TEST_KEYSTORE_BASE64}" | base64 --decode > "${keystore}"
+                    echo "PISI_ANDROID_TEST_KEYSTORE_FILE=${keystore}" >> "${GITHUB_ENV}"
+                    echo "fixed=true" >> "${GITHUB_OUTPUT}"
+                  else
+                    echo "fixed=false" >> "${GITHUB_OUTPUT}"
+                  fi
+
+            - name: Setup Gradle
+              uses: gradle/actions/setup-gradle@v4
+
+            - name: Assemble the test APK
+              working-directory: mobile/android
+              run: ./gradlew assembleDebug
+
+            - name: Verify the APK signature and identity
+              working-directory: mobile/android
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  apk=app/build/outputs/apk/debug/app-debug.apk
+                  apksigner="$(ls -1 "${ANDROID_HOME}"/build-tools/*/apksigner | sort -V | tail -1)"
+                  aapt2="$(ls -1 "${ANDROID_HOME}"/build-tools/*/aapt2 | sort -V | tail -1)"
+                  version_name="$(node -p "require('../package.json').version")"
+
+                  "${apksigner}" verify --verbose --print-certs "${apk}" | tee "${RUNNER_TEMP}/apk-signature.txt"
+                  "${aapt2}" dump badging "${apk}" > "${RUNNER_TEMP}/apk-badging.txt"
+                  grep -F "package: name='com.mumin.pisi' versionCode='${PISI_ANDROID_VERSION_CODE}' versionName='${version_name}'" "${RUNNER_TEMP}/apk-badging.txt"
+
+                  if [[ "${{ steps.signing.outputs.fixed }}" == "true" ]]; then
+                    expected="$(keytool -list -v -keystore "${PISI_ANDROID_TEST_KEYSTORE_FILE}" -storepass "${PISI_ANDROID_TEST_KEYSTORE_PASSWORD}" -alias "${PISI_ANDROID_TEST_KEY_ALIAS}" | sed -n 's/^\s*SHA256: //p' | tr -d ':' | tr 'A-F' 'a-f')"
+                    actual="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "${RUNNER_TEMP}/apk-signature.txt")"
+                    if [[ -z "${expected}" || "${expected}" != "${actual}" ]]; then
+                      echo "The APK is not signed with the fixed test key." >&2
+                      exit 1
+                    fi
+                  fi
+
+                  cp "${apk}" "${RUNNER_TEMP}/Pisi-mobile-${version_name}-${PISI_ANDROID_VERSION_CODE}.apk"
+
+            - name: Summarize
+              if: always()
+              shell: bash
+              run: |
+                  {
+                    echo "### Pisi Mobil test APK"
+                    echo
+                    echo "- Sürüm kodu: \`${PISI_ANDROID_VERSION_CODE}\`"
+                    if [[ "${{ steps.signing.outputs.fixed }}" == "true" ]]; then
+                      echo "- İmza: sabit test anahtarı. Bu APK telefondaki önceki test sürümünün üzerine kurulur."
+                    else
+                      echo "- **Bu APK güncelleme olarak kurulamaz.** Sabit test anahtarı secret'ları tanımlı değil; APK bu çalıştırmaya özgü bir debug anahtarıyla imzalandı. Kurmak için telefondaki Pisi'yi kaldırmak gerekir (verisi silinir). Secret'lar için \`docs/mobile-qa.md\` dosyasına bakın."
+                    fi
+                  } >> "${GITHUB_STEP_SUMMARY}"
+
+            - name: Upload the test APK
+              uses: actions/upload-artifact@v4
+              with:
+                  name: Pisi-mobile-apk
+                  path: ${{ runner.temp }}/Pisi-mobile-*.apk
+                  if-no-files-found: error
+                  retention-days: 14

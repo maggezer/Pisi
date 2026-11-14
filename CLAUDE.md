@@ -53,6 +53,29 @@ Bir iş ancak aşağıdakilerin hepsi sağlandığında bitmiş sayılır:
 
 Pisi Mobil (önce Android) [`docs/mobile-plan.md`](docs/mobile-plan.md) belgesindeki fazlarla (M0–M10) geliştirilir. **Mobil işlerde önce bu belgeyi oku.** Çalışma biçimi (§0), değişmez veri kuralları (§2), hedef mimari (§3) ve mobil PR'lar için ek "bitti" koşulları (§3.6) o belgededir. Yukarıdaki çalışma kuralları mobil işler için de geçerlidir.
 
+`mobile/` kendi `package.json`'ı olan ayrı bir pakettir (Vite + Capacitor 8, düz ESM). Komutlar depo kökünden çalışır:
+
+```bash
+npm --prefix mobile ci
+npm --prefix mobile run dev            # vite; aynı Wi-Fi'deki telefondan açılabilir
+npm --prefix mobile run validate       # format:check + lint + i18n + yapı + vitest + build
+npm --prefix mobile run e2e            # Playwright: Pixel 7 görünümü, açık/koyu tema, ekran görüntüleri
+npm --prefix mobile run audit
+npm --prefix mobile run android:sync   # build + cap sync android
+npm --prefix mobile run android:open
+```
+
+Klasör yapısı:
+
+- `mobile/src/app/`: açılış, yönlendirme durumu (`router.mjs`, tek yer), geri tuşu kuralları, yaşam döngüsü, tema ve tercihler.
+- `mobile/src/platform/`: Capacitor köprüsü. `@capacitor/*` yalnız burada import edilir; uygulamanın geri kalanı platformu parametre olarak alır.
+- `mobile/src/ui/`, `mobile/src/screens/<ad>/`, `mobile/src/i18n/`: ortak arayüz parçaları, ekranlar ve dil.
+- `mobile/locales/tr.json`, `mobile/locales/eng.json`: kullanıcıya görünen bütün metinler; anahtarlar aynı olmalıdır (`check:i18n`).
+- `mobile/tests/` (vitest + happy-dom), `mobile/e2e/` (Playwright), `mobile/android/` (Capacitor native proje kaynağı; commit'lenir).
+- Saf iş kuralları `shared/` klasöründen import edilir.
+
+Kurallar: `mobile/src` içinde `.mjs` ≤ 600, CSS ≤ 800 satır (`check:structure`). Kökteki `npm test` yalnız `tests/` klasörünü çalıştırır; kök `prettier` mobil kaynakları da denetler, ESLint mobil dosyalar için `mobile/eslint.config.mjs` kullanır. CI: `.github/workflows/mobile.yml` (validate, e2e, test APK'sı). Test APK'sı, sabit test anahtarı ve cihaz kabul listesi: `docs/mobile-qa.md`.
+
 ## Architecture
 
 ### Processes and boundaries

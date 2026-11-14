@@ -1,0 +1,22 @@
+{
+    "app.name": "Pisi",
+    "tab.pisi": "Pisi",
+    "tab.tasks": "Görevler",
+    "tab.notes": "Notlar",
+    "tab.calendar": "Takvim",
+    "tab.maps": "Haritalar",
+    "nav.label": "Ana menü",
+    "screen.settings": "Ayarlar",
+    "action.openSettings": "Ayarları aç",
+    "action.back": "Geri",
+    "action.close": "Kapat",
+    "placeholder.note": "Bu ekran sonraki fazlarda gelecek.",
+    "pisi.today": "Bugün",
+    "settings.theme": "Tema",
+    "settings.language": "Dil",
+    "theme.system": "Sistem",
+    "theme.light": "Açık",
+    "theme.dark": "Koyu",
+    "language.tr": "Türkçe",
+    "language.eng": "English"
+}

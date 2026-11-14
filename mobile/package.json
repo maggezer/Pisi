@@ -1,0 +1,45 @@
+{
+    "name": "pisi-mobile",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "description": "Pisi Mobil (Android)",
+    "license": "ISC",
+    "engines": {
+        "node": ">=24"
+    },
+    "scripts": {
+        "dev": "vite --host",
+        "build": "vite build",
+        "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
+        "format": "prettier . --write --ignore-unknown",
+        "format:check": "prettier . --check --ignore-unknown",
+        "lint": "eslint .",
+        "check:i18n": "node scripts/check-i18n.mjs",
+        "check:structure": "node scripts/check-structure.mjs",
+        "test": "vitest run",
+        "validate": "npm run format:check && npm run lint && npm run check:i18n && npm run check:structure && npm run test && npm run build",
+        "e2e": "playwright test",
+        "audit": "npm audit --audit-level=moderate",
+        "android:sync": "npm run build && cap sync android",
+        "android:open": "cap open android"
+    },
+    "dependencies": {
+        "@capacitor/android": "8.6.2",
+        "@capacitor/app": "8.1.2",
+        "@capacitor/core": "8.6.2",
+        "@capacitor/filesystem": "8.1.5",
+        "@capacitor/haptics": "8.0.2",
+        "@capacitor/keyboard": "8.0.6",
+        "@capacitor/status-bar": "8.0.4"
+    },
+    "devDependencies": {
+        "@capacitor/cli": "8.6.2",
+        "@playwright/test": "1.63.0",
+        "eslint": "10.15.0",
+        "happy-dom": "21.0.4",
+        "prettier": "3.9.9",
+        "vite": "8.3.8",
+        "vitest": "5.1.0"
+    }
+}

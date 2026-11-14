@@ -1,0 +1,19 @@
+{
+    "appId": "com.mumin.pisi",
+    "appName": "Pisi",
+    "webDir": "dist",
+    "backgroundColor": "#171310",
+    "plugins": {
+        "Keyboard": {
+            "resize": "native",
+            "resizeOnFullScreen": true
+        },
+        "SystemBars": {
+            "insetsHandling": "css"
+        }
+    },
+    "android": {
+        "allowMixedContent": false,
+        "captureInput": true
+    }
+}

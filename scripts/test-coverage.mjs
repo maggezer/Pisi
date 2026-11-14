@@ -23,7 +23,10 @@ const run = spawnSync(
         '--test-reporter=spec',
         '--test-reporter-destination=stdout',
         '--test-reporter=lcov',
-        `--test-reporter-destination=${lcov}`
+        `--test-reporter-destination=${lcov}`,
+        // The desktop tests only: mobile/ has its own runner (vitest).
+        'tests/**/*.test.js',
+        'tests/**/*.test.mjs'
     ],
     { cwd: root, stdio: 'inherit' }
 );

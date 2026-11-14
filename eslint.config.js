@@ -102,7 +102,18 @@ const preloadBrowserGlobals = {
 
 module.exports = [
     {
-        ignores: ['dist/**', 'node_modules/**', 'android/**/build/**', 'android/.gradle/**', '.gradle/**']
+        // mobile/ lints its own sources (mobile/eslint.config.mjs); the native project and its output are skipped here.
+        ignores: [
+            'dist/**',
+            'node_modules/**',
+            'android/**/build/**',
+            'android/.gradle/**',
+            '.gradle/**',
+            'mobile/dist/**',
+            'mobile/android/**',
+            'mobile/test-results/**',
+            'mobile/playwright-report/**'
+        ]
     },
     {
         files: ['eslint.config.js', 'preload.js', 'scripts/**/*.js', 'tests/**/*.js'],
