@@ -10,6 +10,12 @@ store-release/
 coverage/
 .pisi-types/
 
+# Mobile package: native project and generated output (mobile/ formats its own sources)
+mobile/android/
+mobile/test-results/
+mobile/playwright-report/
+mobile/e2e/screenshots/
+
 # Platform/generated caches
 android/.gradle/
 android/**/build/
