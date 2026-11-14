@@ -75,6 +75,12 @@ Every exported binding must also be listed in `main/module-manifest.json` or `re
 
 File-size limits are enforced by `check:architecture`: renderer `.mjs` ≤ 1000 lines (≤ 650 for `tags/pisi-todo-third-*`, `data/pisi-structured-view*` and `calendar/pisi-calendar-*`; ≤ 300 for `renderer/runtime*`), `main/functions` ≤ 1100 (≤ 650 for `document-store*`). Split modules instead of growing them.
 
+### Shared core (`shared/`)
+
+`shared/*.mjs` holds the pure rules that the desktop (main and renderer) and the mobile app both import (`docs/mobile-plan.md` §3.1): `date-parser`, `wiki-link-core`, `task-model`, `task-views`, `diary-rules`, `document-naming`, `document-model` and `ids`. The desktop files that used to own this code keep their paths, export names and registry bindings and import from `shared/`: `renderer/productivity/pisi-date-parser.mjs`, `renderer/tags/pisi-todo-utils.mjs`, both wiki-link cores, and parts of `path-security.js`, `filesystem-core.js`, `document-store-*.js` and `task-store.js`. Change a rule in `shared/`, not in the wrapper.
+
+`check:architecture` runs `scripts/shared-purity.js` on every shared module: it may import only other shared modules (`./name.mjs`), use only the language built-ins (no DOM, Node, Electron, Capacitor or registry bindings) and run nothing at import time. The caller passes in the clock, randomness and paths. `shared/**/*` is listed in `build.files`; the tests are `tests/shared-*.test.mjs`.
+
 ### Domain command/query layer
 
 Semantic reads and mutations go through one versioned IPC boundary (`docs/domain-command-query.md`):
@@ -109,7 +115,7 @@ UI strings live in `locales/lang-tr.json`, `locales/lang-eng.json` and `locales/
 
 ### Branding
 
-`check:branding` fails if the old project name `Kedi` (case-insensitive) appears in any production file (`main/`, `renderer/`, `styles/`, `locales/`, `main.mjs`, `preload.js`, `index.html`, `style.css`, `package*.json`), other than the GitHub repo URL. It also pins `package.json` `name: pisi`, `appId: com.mumin.pisi`, `productName: Pisi` and the icons.
+`check:branding` fails if the old project name `Kedi` (case-insensitive) appears in any production file (`main/`, `renderer/`, `shared/`, `styles/`, `locales/`, `main.mjs`, `preload.js`, `index.html`, `style.css`, `package*.json`), other than the GitHub repo URL. It also pins `package.json` `name: pisi`, `appId: com.mumin.pisi`, `productName: Pisi` and the icons.
 
 ## Tests
 

@@ -134,6 +134,26 @@ varsayılan adı da "Yeni Node". Main süreçten gelen bazı hata metinleri de
 geçişinde ele alınmalı; dosya adı değişikliği mevcut projeleri etkilemez,
 yalnız yeni dosyaların adını değiştirir.
 
+## 5b. Türkçe tarih ayrıştırıcısı bazı yaygın ifadeleri tanımıyor ya da yanlış okuyor
+
+**[Düşük · productivity · doğrulandı, çözülmedi]** `shared/date-parser.mjs`
+içindeki `parsePisiTurkishDateExpression` (Quick Add'in tarih ifadesi alanı)
+şu ifadelerde beklenenden farklı sonuç veriyor. Örnekler 6 Ağustos 2026
+Perşembe günü için:
+
+- **Noktalı tarih saat olarak da okunuyor:** `12.11` → `2026-11-12T12:11`.
+  Saat deseni hem `:` hem `.` kabul ettiği için gün ve ay ayrıca saat sayılıyor.
+  `12/11`, `12-11` ve `12 kasım` doğru okunuyor.
+- **"bugün" tanınmıyor:** `bugün 18:00` hiçbir alan üretmiyor. Tek başına
+  `bu akşam` da tarih üretmiyor (yalnız erteleme ön ayarı olarak çalışıyor).
+- **"gelecek" gün adını ertelemiyor:** `gelecek cuma`, `cuma` ile aynı sonucu
+  veriyor (en yakın cuma, `2026-08-07`).
+
+Masaüstünde tarih ifadesi ayrı bir alanda yazıldığı ve önizlemesi gösterildiği
+için etkisi düşük. Mobilde tek satırlık görev ekleme bu ayrıştırıcıyı
+kullanacağı için (`docs/mobile-plan.md` M5, M6) o fazlardan önce ele alınmalı.
+Düzeltme `shared/` içinde yapılır ve masaüstünü de değiştirir.
+
 ## 6. Güncel doğrulama snapshot’ı
 
 6 Ekim 2026 current `main` kontrolü:

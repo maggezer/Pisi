@@ -1,5 +1,41 @@
 # PISI Güncelleme Takip Dosyası
 
+## 13-11-2026 — Ortak çekirdek: `shared/` (M1, mobil iş)
+
+- Bu bir mobil iştir (`docs/mobile-plan.md` M1). Masaüstünde görünür bir
+  değişiklik yok; saf iş kuralları masaüstü ile mobilin birlikte kullanacağı
+  `shared/` klasörüne taşındı.
+- `shared/` modülleri: `date-parser`, `wiki-link-core`, `task-model`,
+  `task-views`, `diary-rules`, `document-naming`, `document-model`, `ids`.
+  Kod masaüstünden olduğu gibi taşındı. Masaüstü dosyaları aynı adları, global
+  adları ve manifest kayıtlarını koruyarak `shared/`'dan import ediyor.
+- Wiki-link çekirdeğinin main ve renderer kopyaları tek dosyada birleşti. Ortak
+  yedi fonksiyonun altısı harfi harfine aynıydı; `parsePisiWikiTarget` farklı
+  yazılmıştı ama aynı sonucu veriyordu.
+- `shared/` saat okumaz, rastgele kimlik üretmez, diske ve yola dokunmaz;
+  bunları çağıran verir. `document-model` plandaki yedi modüle ek olarak
+  eklendi (yeni `.node`/`.map` belgesinin JSON iskeleti).
+- `check:architecture` her `shared/` modülünü denetliyor
+  (`scripts/shared-purity.js`):
+    - yalnız `shared/` içinden import;
+    - yalnız dilin yerleşikleri (DOM, Node, Electron, Capacitor ve registry yok);
+    - import anında çalışan kod yok.
+- ESLint, `check:types` ve `check:branding` `shared/`'ı kapsıyor;
+  `build.files` listesine `shared/**/*` eklendi.
+- Testler:
+    - her modül için `tests/shared-*.test.mjs`;
+    - masaüstünün `shared/` fonksiyonlarının kendisini kullandığını doğrulayan
+      `tests/shared-desktop-wrappers.test.mjs`;
+    - taşınan fonksiyonları kaynak metninden çeken testler gerçek modülleri
+      çağıracak şekilde çevrildi: `security.test.js`,
+      `data-integrity.test.js` içinde dört test ve
+      `property-types-simplification.test.js` içinde bir doğrulama.
+- Taşıma öncesi ve sonrası kod aynı 42.007 girdide çalıştırıldı (yazılan
+  `tasks.json`, günlük notu ve hızlı ekleme dosyaları dahil); çıktılar bayt
+  bayt aynı.
+- Tarih ayrıştırıcısında doğrulanan üç sınır `pisi-error.md` §5b'ye yazıldı;
+  davranış bu işte değiştirilmedi.
+
 ## 12-11-2026 — Pisi Mobil planı repoya eklendi (M0, mobil iş)
 
 - Bu bir mobil iştir. Yalnız belge eklendi; uygulama kodu ve masaüstü davranışı
