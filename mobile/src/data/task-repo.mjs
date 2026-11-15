@@ -105,6 +105,14 @@ export function createTaskRepo({ driver, writer, now, makeUuid }) {
             });
         },
 
+        /** Changes fields of an existing task. Unknown ids change nothing; an unchanged task is not written (V4). */
+        update(taskId, patch = {}) {
+            return mutate((tasks) => {
+                if (!tasks.some((task) => task && task.id === taskId)) return { ok: false, notFound: true, skip: true };
+                return upsertInto(tasks, { ...patch, id: taskId });
+            });
+        },
+
         /**
          * Completes a task. A repeating task is marked done and its next
          * occurrence is added as a new task without a source note, with the

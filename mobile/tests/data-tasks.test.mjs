@@ -233,6 +233,45 @@ describe('TaskRepo', () => {
         }
     });
 
+    it('update: alanları değiştirir, tarihi kaldırır ve todo etiketini tarihle öncelikten yeniden kurar', async () => {
+        const task = storedTask({ source: { nodePath: null, blockId: null, mapPath: null, nodeTitle: '', mapTitle: '' }, mobilde: 'bilinmez' });
+        const other = storedTask({ id: 'task_22222222-2222-4222-8222-222222222222', title: 'Öteki' });
+        const { project, driver } = createMemoryProject({ [KEY]: store([task, other], { ek: true }) });
+
+        const moved = await project.tasks.update(task.id, { dueDate: '2026-11-20', scheduledAt: '2026-11-20T10:00', priority: 5, reminderMode: 'day-before' });
+        expect(moved).toMatchObject({ ok: true, created: false, changed: true });
+        expect(read(driver).tasks[0]).toMatchObject({
+            dueDate: '2026-11-20',
+            scheduledAt: '2026-11-20T10:00',
+            priority: 5,
+            reminderMode: 'day-before',
+            todoTag: 'todo.5.20-11-2026',
+            title: 'Raporu gönder',
+            mobilde: 'bilinmez',
+            createdAt: '2026-11-01T08:00:00.000Z'
+        });
+
+        await project.tasks.update(task.id, { dueDate: '', scheduledAt: '', deadline: '' });
+        expect(read(driver).tasks[0]).toMatchObject({ dueDate: null, scheduledAt: null, deadline: null, todoTag: 'todo.5.none' });
+        expect(read(driver).tasks[1]).toEqual(other);
+        expect(read(driver).ek).toBe(true);
+    });
+
+    it('update: değişiklik yoksa ya da görev yoksa dosyayı yazmaz, yeni görev oluşturmaz (V4)', async () => {
+        const { project, driver } = createMemoryProject({ [KEY]: store([storedTask()]) });
+        const text = driver.snapshot()[KEY];
+        expect(await project.tasks.update(storedTask().id, { priority: 2, title: 'Raporu gönder' })).toMatchObject({ ok: true, changed: false });
+        expect(await project.tasks.update('task_99999999-9999-4999-8999-999999999999', { title: 'Yok' })).toMatchObject({ ok: false, notFound: true });
+        expect(driver.snapshot()[KEY]).toBe(text);
+        expect(driver.count('writeText')).toBe(0);
+    });
+
+    it('update: not bloğundan gelen görevin todo etiketi bloktaki haliyle kalır', async () => {
+        const { project, driver } = createMemoryProject({ [KEY]: store([storedTask()]) });
+        await project.tasks.update(storedTask().id, { status: 'waiting' });
+        expect(read(driver).tasks[0]).toMatchObject({ status: 'waiting', todoTag: 'todo.2.14-11-2026', priority: 2 });
+    });
+
     it('kaynak yolu proje dışına çıkan görevi reddeder', async () => {
         const { project, driver } = createMemoryProject();
         await expect(project.tasks.upsert({ title: 'Kaçak', source: { nodePath: '../dışarı.node' } })).rejects.toMatchObject({ code: 'INVALID_KEY' });

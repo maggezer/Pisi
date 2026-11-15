@@ -11,9 +11,26 @@ export function renderChip({ label, selected = false, count = null, dataset = nu
     );
 }
 
-/** A horizontally scrolling row of chips. */
+/**
+ * Marks which edges of a chip row have more chips beyond them (`data-fade`:
+ * none, start, end or both); the stylesheet fades those edges (G14).
+ */
+export function syncChipRowFade(row) {
+    const hidden = row.scrollWidth - row.clientWidth;
+    const atStart = row.scrollLeft <= 1;
+    const atEnd = row.scrollLeft >= hidden - 1;
+    row.dataset.fade = hidden <= 1 ? 'none' : atStart ? 'end' : atEnd ? 'start' : 'both';
+}
+
+/** A horizontally scrolling row of chips. An edge that hides more chips fades out. */
 export function renderChipRow({ label, chips }) {
-    return h('div', { class: 'pisi-chip-row', role: 'group', 'aria-label': label }, chips);
+    const row = h('div', { class: 'pisi-chip-row', role: 'group', 'aria-label': label, dataset: { fade: 'none' } }, chips);
+    const sync = () => syncChipRowFade(row);
+    row.addEventListener('scroll', sync, { passive: true });
+    // The row has no size until it is in the document, and its size changes with the window and the text size.
+    const Observer = globalThis.ResizeObserver;
+    if (Observer) new Observer(sync).observe(row);
+    return row;
 }
 
 export function renderSegmented({ label, options, selected, onSelect }) {

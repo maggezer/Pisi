@@ -87,11 +87,16 @@ function parsePisiTurkishNumber(value) {
     return PISI_TURKISH_NUMBERS[normalized] || null;
 }
 
-function getPisiNextWeekday(now, weekday, forceNextWeek = false) {
+/**
+ * The next `weekday` after `now` (today's own name means a week later). With
+ * `nextWeek` it is that day of the week after this one, weeks starting on
+ * Monday: on a Thursday, "gelecek cuma" is not tomorrow but the Friday after.
+ */
+function getPisiNextWeekday(now, weekday, nextWeek = false) {
     const date = makePisiLocalDate(now);
     let offset = (weekday - date.getDay() + 7) % 7;
     if (offset === 0) offset += 7;
-    if (forceNextWeek && offset < 1) offset += 7;
+    if (nextWeek) offset = ((8 - date.getDay()) % 7 || 7) + ((weekday + 6) % 7);
     date.setDate(date.getDate() + offset);
     return date;
 }
@@ -127,14 +132,19 @@ function parsePisiTime(expression) {
     return null;
 }
 
+/**
+ * A date written out in the expression: `{ date, matched }`, or null.
+ * `matched` is the text the date was read from. A dotted pair after "saat"
+ * ("saat 10.30") is a time of day, not a date.
+ */
 function parsePisiExplicitDate(expression, now) {
-    const numeric = expression.match(/\b(\d{1,2})[./-](\d{1,2})(?:[./-](\d{2,4}))?\b/);
+    const numeric = expression.match(/(?<!\bsaat )\b(\d{1,2})[./-](\d{1,2})(?:[./-](\d{2,4}))?\b/);
     if (numeric) {
         let year = numeric[3] ? Number(numeric[3]) : now.getFullYear();
         if (year < 100) year += 2000;
         const result = new Date(year, Number(numeric[2]) - 1, Number(numeric[1]));
         if (!numeric[3] && result < makePisiLocalDate(now)) result.setFullYear(year + 1);
-        if (result.getDate() === Number(numeric[1]) && result.getMonth() === Number(numeric[2]) - 1) return result;
+        if (result.getDate() === Number(numeric[1]) && result.getMonth() === Number(numeric[2]) - 1) return { date: result, matched: numeric[0] };
     }
 
     const names = Object.keys(PISI_TURKISH_MONTHS).join('|');
@@ -143,7 +153,7 @@ function parsePisiExplicitDate(expression, now) {
     const year = Number(named[3]) || now.getFullYear();
     const result = new Date(year, PISI_TURKISH_MONTHS[named[2]], Number(named[1]));
     if (!named[3] && result < makePisiLocalDate(now)) result.setFullYear(year + 1);
-    return result;
+    return { date: result, matched: named[0] };
 }
 
 function getPisiPostponePreset(value, now = new Date()) {
@@ -187,8 +197,9 @@ function parsePisiTurkishDateExpression(value, nowValue = new Date()) {
     };
     if (!expression) return result;
 
-    const time = parsePisiTime(expression);
     let target = null;
+    // The text of a written-out date, so that "12.11" is not read a second time as 12:11.
+    let dateText = null;
 
     if (/\bayin son is gunu\b/.test(expression)) {
         target = getPisiLastBusinessDay(now);
@@ -197,13 +208,21 @@ function parsePisiTurkishDateExpression(value, nowValue = new Date()) {
         target = makePisiLocalDate(now);
         target.setDate(target.getDate() + 1);
         result.matched.push('tomorrow');
+    } else if (/\bbugun\b|\bbu aksam\b/.test(expression)) {
+        target = makePisiLocalDate(now);
+        result.matched.push('today');
     } else if (/\bgelecek hafta\b/.test(expression)) {
         target = getPisiNextWeekday(now, 1, true);
         result.matched.push('next-week');
     } else {
-        target = parsePisiExplicitDate(expression, now);
-        if (target) result.matched.push('explicit-date');
+        const explicit = parsePisiExplicitDate(expression, now);
+        if (explicit) {
+            target = explicit.date;
+            dateText = explicit.matched;
+            result.matched.push('explicit-date');
+        }
     }
+    const time = parsePisiTime(dateText ? expression.replace(dateText, ' ') : expression);
 
     const weekdayName = Object.keys(PISI_TURKISH_WEEKDAYS).find((name) => {
         return new RegExp(`\\b${name}\\b`).test(expression);

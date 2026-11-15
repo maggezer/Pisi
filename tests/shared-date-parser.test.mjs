@@ -107,3 +107,37 @@ test('yerel ISO tarih ve sabit tablolar', () => {
     assert.deepEqual(PISI_TURKISH_WEEKDAYS, { pazar: 0, pazartesi: 1, sali: 2, carsamba: 3, persembe: 4, cuma: 5, cumartesi: 6 });
     assert.equal(Object.isFrozen(PISI_TURKISH_MONTHS), true);
 });
+
+test('noktalı tarih ayrıca saat olarak okunmaz; saat ayrı yazılırsa okunur', () => {
+    assert.equal(parsePisiTurkishDateExpression('12.11', NOW).scheduledAt, '2026-11-12');
+    assert.equal(parsePisiTurkishDateExpression('12.11.2026', NOW).scheduledAt, '2026-11-12');
+    assert.equal(parsePisiTurkishDateExpression('12.11 14.30', NOW).scheduledAt, '2026-11-12T14:30');
+    assert.equal(parsePisiTurkishDateExpression('12 kasım 9.15', NOW).scheduledAt, '2026-11-12T09:15');
+    // Tarih başka bir sözcükten geliyorsa noktalı çift saattir.
+    assert.equal(parsePisiTurkishDateExpression('yarın 10.11', NOW).scheduledAt, '2026-08-07T10:11');
+    assert.equal(parsePisiTurkishDateExpression('yarın saat 10.11', NOW).scheduledAt, '2026-08-07T10:11');
+    // "saat"ten sonra gelen ya da tarih olamayan çift tarih üretmez.
+    assert.equal(parsePisiTurkishDateExpression('saat 10.11', NOW).scheduledAt, null);
+    assert.equal(parsePisiTurkishDateExpression('14.30 toplantı', NOW).scheduledAt, null);
+});
+
+test('"bugün" ve "bu akşam" bugünü verir', () => {
+    assert.equal(parsePisiTurkishDateExpression('bugün', NOW).scheduledAt, '2026-08-06');
+    assert.equal(parsePisiTurkishDateExpression('Bugün 18:00 rapor', NOW).scheduledAt, '2026-08-06T18:00');
+    assert.equal(parsePisiTurkishDateExpression('bu akşam', NOW).scheduledAt, '2026-08-06T19:00');
+    assert.equal(parsePisiTurkishDateExpression('bugüne kadar', NOW).scheduledAt, null);
+    assert.deepEqual(parsePisiTurkishDateExpression('bugün', NOW).matched, ['today']);
+});
+
+test('"gelecek" gün adını gelecek haftaya taşır (hafta pazartesi başlar)', () => {
+    // NOW is Thursday 6 August 2026.
+    assert.equal(parsePisiTurkishDateExpression('cuma', NOW).scheduledAt, '2026-08-07');
+    assert.equal(parsePisiTurkishDateExpression('gelecek cuma', NOW).scheduledAt, '2026-08-14');
+    assert.equal(parsePisiTurkishDateExpression('gelecek pazartesi', NOW).scheduledAt, '2026-08-10');
+    assert.equal(parsePisiTurkishDateExpression('gelecek perşembe', NOW).scheduledAt, '2026-08-13');
+    assert.equal(parsePisiTurkishDateExpression('gelecek pazar', NOW).scheduledAt, '2026-08-16');
+    const sunday = new Date(2026, 7, 9, 10, 0);
+    assert.equal(parsePisiTurkishDateExpression('gelecek pazartesi', sunday).scheduledAt, '2026-08-10');
+    assert.equal(parsePisiTurkishDateExpression('gelecek pazar', sunday).scheduledAt, '2026-08-16');
+    assert.equal(getPisiPostponePreset('next-monday', new Date(2026, 7, 10, 9, 0)), '2026-08-17');
+});

@@ -134,26 +134,6 @@ varsayılan adı da "Yeni Node". Main süreçten gelen bazı hata metinleri de
 geçişinde ele alınmalı; dosya adı değişikliği mevcut projeleri etkilemez,
 yalnız yeni dosyaların adını değiştirir.
 
-## 5b. Türkçe tarih ayrıştırıcısı bazı yaygın ifadeleri tanımıyor ya da yanlış okuyor
-
-**[Düşük · productivity · doğrulandı, çözülmedi]** `shared/date-parser.mjs`
-içindeki `parsePisiTurkishDateExpression` (Quick Add'in tarih ifadesi alanı)
-şu ifadelerde beklenenden farklı sonuç veriyor. Örnekler 6 Ağustos 2026
-Perşembe günü için:
-
-- **Noktalı tarih saat olarak da okunuyor:** `12.11` → `2026-11-12T12:11`.
-  Saat deseni hem `:` hem `.` kabul ettiği için gün ve ay ayrıca saat sayılıyor.
-  `12/11`, `12-11` ve `12 kasım` doğru okunuyor.
-- **"bugün" tanınmıyor:** `bugün 18:00` hiçbir alan üretmiyor. Tek başına
-  `bu akşam` da tarih üretmiyor (yalnız erteleme ön ayarı olarak çalışıyor).
-- **"gelecek" gün adını ertelemiyor:** `gelecek cuma`, `cuma` ile aynı sonucu
-  veriyor (en yakın cuma, `2026-08-07`).
-
-Masaüstünde tarih ifadesi ayrı bir alanda yazıldığı ve önizlemesi gösterildiği
-için etkisi düşük. Mobilde tek satırlık görev ekleme bu ayrıştırıcıyı
-kullanacağı için (`docs/mobile-plan.md` M5, M6) o fazlardan önce ele alınmalı.
-Düzeltme `shared/` içinde yapılır ve masaüstünü de değiştirir.
-
 ## 5c. Quick Add'in açtığı Inbox notu Project Integrity'de kritik bulgu üretiyor
 
 **[Orta · masaüstü · doğrulandı]** Boş bir projede ilk Quick Add, `Inbox.node`
@@ -186,9 +166,32 @@ işareti eski durumunda kalır.
   olarak ekler; masaüstü ise nottaki bloğu kopyalar. Aynı görev iki cihazda da
   tamamlanırsa sonraki tekrar iki kez oluşabilir.
 
+Bu yüzden Görevler sekmesinin görev detayı (M6) kaynağı not bloğu olan
+görevlerde yalnız durumu değiştirir; başlık, öncelik, tarih, saat, tekrar ve
+hatırlatma salt okunurdur ("Masaüstünde nottan düzenlenir"). Kaynağı olmayan
+görevlerde bütün alanlar düzenlenir. Durum değişikliği için yukarıdaki risk
+sürer.
+
 Kalıcı çözüm mobilin görev bloğu işaretini güvenle güncelleyebilmesini ya da
 masaüstünün canonical durumu nota geri yansıtmasını gerektirir; aktarım planıyla
 birlikte ele alınmalıdır.
+
+## 5e. Türkçe tarih ayrıştırıcısı başlıktaki sayıları tarih sayabiliyor
+
+**[Düşük · productivity + mobil · doğrulandı, çözülmedi]**
+`parsePisiTurkishDateExpression` (`shared/date-parser.mjs`) `a.b`, `a/b` ve
+`a-b` biçimindeki her sayı çiftini, geçerli bir gün-ay ise tarih olarak okur.
+Masaüstünde tarih ifadesi ayrı alanda yazıldığı için sorun olmaz. Mobilde
+görev başlığı ve tarih aynı satırda yazılır: "v1.2 sürüm notları" 1 Şubat'a,
+"3-4 sayfa özet" 3 Nisan'a tarihlenir. Okunan tarih kaydetmeden önce çip olarak
+göründüğü için kullanıcı fark edebilir, ama satırı değiştirmeden düzeltemez;
+görev detayından tarihi kaldırması gerekir.
+
+Ayrıca ayrıştırıcının tekrar ifadeleri sınırlıdır: `her gün`, `her pazartesi`,
+`iki haftada bir` ve `görev tamamlandıktan N gün sonra` tanınır; `her hafta`,
+`her ay`, `hafta içi` ve pazartesi dışındaki `her <gün>` tanınmaz (mobilde
+tekrar görev detayından seçilebilir). Düzeltme `shared/` içinde yapılır ve
+masaüstünü de değiştirir.
 
 ## 6. Güncel doğrulama snapshot’ı
 

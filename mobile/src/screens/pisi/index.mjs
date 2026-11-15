@@ -3,9 +3,9 @@
 //
 // Unlike the other screens it is built once and then updated in place: the
 // diary is typed into directly and the wheel is scrolled, and neither would
-// survive being drawn again from scratch. Tasks come straight from
-// `.pisi/tasks.json` and the diary from the day's own file, so the screen
-// fills before the project index has been built.
+// survive being drawn again from scratch. Tasks come from the shared task
+// controller, which reads `.pisi/tasks.json` directly, and the diary from the
+// day's own file, so the screen fills before the project index has been built.
 
 import { PisiReadOnlyError } from '../../data/json-file.mjs';
 import { renderButton } from '../../ui/button.mjs';
@@ -17,24 +17,27 @@ import { createDateWheel } from './date-wheel.mjs';
 import { getDayMarks, groupDayTasks, parseTaskDraft } from './day-model.mjs';
 import { createDiaryAutosave } from './diary-autosave.mjs';
 import { createDiarySection } from './diary-section.mjs';
-import { renderMenuSheet, renderTaskDetailSheet } from './sheets.mjs';
-import { createTaskAddRow, renderTaskGroups } from './task-section.mjs';
+import { createTaskAddRow } from '../../ui/task-add.mjs';
+import { renderMenuSheet } from './sheets.mjs';
+import { renderTaskGroups } from './task-section.mjs';
 
 export const PISI_OVERLAY_DATE = 'pisi-date';
 export const PISI_OVERLAY_MENU = 'pisi-menu';
-const TASK_OVERLAY_PREFIX = 'pisi-task:';
 // A sideways swipe on the content changes the day when it is long and clearly horizontal.
 const SWIPE_MIN_PX = 72;
 const SWIPE_RATIO = 2.5;
 
 /**
- * `project` is the data layer (null in a bare shell); `snackbar` the app's
- * snackbar controller. The app owns navigation: the screen asks for a day
- * (`onSelectDate`), a sheet (`onOpenOverlay` / `onCloseOverlay`), another
- * screen (`onMenu`) or a redraw of the open sheet (`onChange`).
+ * `project` is the data layer (null in a bare shell); `tasks` the task
+ * controller shared with the Tasks tab; `snackbar` the app's snackbar
+ * controller. The app owns navigation: the screen asks for a day
+ * (`onSelectDate`), a sheet (`onOpenOverlay` / `onCloseOverlay`), a task's
+ * detail (`onOpenTask`), another screen (`onMenu`) or a redraw of the open
+ * sheet (`onChange`).
  */
 export function createPisiScreen({
     project = null,
+    tasks,
     platform,
     snackbar,
     now,
@@ -44,15 +47,13 @@ export function createPisiScreen({
     onSelectDate,
     onOpenOverlay,
     onCloseOverlay,
+    onOpenTask,
     onMenu,
     onChange = () => {}
 }) {
     const element = h('section', { class: 'pisi-home', dataset: { screen: 'pisi' } });
     const state = {
         opened: !project,
-        tasks: [],
-        tasksLoaded: !project,
-        tasksReadOnly: false,
         diaryDates: [],
         completedOpen: false,
         pickerMonth: null,
@@ -63,6 +64,8 @@ export function createPisiScreen({
     let loadToken = 0;
     let destroyed = false;
     let swipe = null;
+    // The tasks changed while the tab was off screen; they are drawn when it comes back.
+    let tasksDirty = false;
 
     const autosave = createDiaryAutosave({
         save: (date, text) => (project ? project.diary.setText(date, text) : { ok: true, changed: false }),
@@ -85,7 +88,7 @@ export function createPisiScreen({
         }
     });
 
-    const marks = () => getDayMarks(state.tasks, state.diaryDates);
+    const marks = () => getDayMarks(tasks.getTasks(), state.diaryDates);
     const dayLabels = () => ({
         close: context.t('action.close'),
         previousMonth: context.t('date.previousMonth'),
@@ -97,7 +100,6 @@ export function createPisiScreen({
         legendTasks: context.t('date.legendTasks'),
         legendDiary: context.t('date.legendDiary')
     });
-    const findTask = (id) => state.tasks.find((task) => task.id === id) ?? null;
 
     function selectDate(isoDate, direction = null) {
         if (isoDate === context.selectedDate) return;
@@ -123,14 +125,14 @@ export function createPisiScreen({
             renderTaskGroups({
                 t,
                 locale,
-                groups: groupDayTasks(state.tasks, { selectedDate, today }),
+                groups: groupDayTasks(tasks.getTasks(), { selectedDate, today }),
                 selectedDate,
                 today,
-                loaded: state.tasksLoaded,
-                readOnly: state.tasksReadOnly,
+                loaded: tasks.isLoaded(),
+                readOnly: tasks.isReadOnly(),
                 completedOpen: state.completedOpen,
-                onToggle: (id) => void toggleTask(id),
-                onOpen: (id) => onOpenOverlay(`${TASK_OVERLAY_PREFIX}${id}`),
+                onToggle: (id) => void tasks.toggle(id),
+                onOpen: onOpenTask,
                 onToggleCompleted() {
                     state.completedOpen = !state.completedOpen;
                     drawTasks();
@@ -138,7 +140,7 @@ export function createPisiScreen({
                 }
             })
         );
-        parts.addRow.setReadOnly(state.tasksReadOnly || !state.tasksLoaded);
+        parts.addRow.setReadOnly(tasks.isReadOnly() || !tasks.isLoaded());
     }
 
     function drawWheel() {
@@ -289,21 +291,6 @@ export function createPisiScreen({
         if (state.opened) void readDay(context.selectedDate);
     }
 
-    async function reloadTasks() {
-        if (!project) return;
-        try {
-            const listed = await project.tasks.list();
-            state.tasks = listed.tasks;
-            state.tasksReadOnly = Boolean(listed.readOnly);
-        } catch (error) {
-            onError(error);
-        }
-        state.tasksLoaded = true;
-        if (destroyed) return;
-        drawTasks();
-        drawWheel();
-    }
-
     async function reloadDiaryDates() {
         if (!project) return;
         try {
@@ -314,53 +301,25 @@ export function createPisiScreen({
         if (!destroyed) drawWheel();
     }
 
-    function taskFailed(error) {
-        onError(error);
-        if (!destroyed) snackbar.show({ message: context.t('pisi.taskSaveFailed') });
-        return reloadTasks();
-    }
-
-    async function toggleTask(id) {
-        const task = findTask(id);
-        if (!task || !project || state.tasksReadOnly) return;
-        try {
-            if (task.status === 'done') {
-                await project.tasks.setStatus(id, 'todo');
-                await reloadTasks();
-                return;
-            }
-            const previous = task.status;
-            // The row moves at once; the file follows.
-            state.tasks = state.tasks.map((item) => (item.id === id ? { ...item, status: 'done', completedAt: now().toISOString() } : item));
-            drawTasks();
-            platform.haptic();
-            const result = await project.tasks.complete(id);
-            await reloadTasks();
-            if (destroyed || !result.ok) return;
-            snackbar.show({
-                message: context.t('pisi.taskCompleted'),
-                actionLabel: context.t('action.undo'),
-                onUndo: () => void project.tasks.undoComplete(id, { status: previous, next: result.next }).then(reloadTasks, taskFailed)
-            });
-        } catch (error) {
-            await taskFailed(error);
-        }
-    }
-
     async function addTask(text) {
         const draft = parseTaskDraft(text, { selectedDate: context.selectedDate, now: now() });
-        if (!draft || !project) return;
-        try {
-            const result = await project.tasks.upsert(draft.payload);
-            await reloadTasks();
-            if (destroyed || !result.ok) return;
-            if (draft.day !== context.selectedDate) {
-                snackbar.show({ message: context.t('pisi.taskAddedOn', { date: formatShortDay(draft.day, context.locale, context.today) }) });
-            }
-        } catch (error) {
-            await taskFailed(error);
+        if (!draft) return;
+        const result = await tasks.add(draft.payload);
+        if (destroyed || !result?.ok) return;
+        if (draft.day !== context.selectedDate) {
+            snackbar.show({ message: context.t('pisi.taskAddedOn', { date: formatShortDay(draft.day, context.locale, context.today) }) });
         }
     }
+
+    const stopTasks = tasks.subscribe(() => {
+        if (destroyed) return;
+        if (!context || !element.isConnected) {
+            tasksDirty = true;
+            return;
+        }
+        drawTasks();
+        drawWheel();
+    });
 
     return {
         element,
@@ -374,22 +333,23 @@ export function createPisiScreen({
             if (rebuilt) build();
             if (dayChanged) showDay();
             else if (rebuilt) parts.diary.show({ ...state.day, text: autosave.getPending(state.day.date) ?? state.day.text });
-            if (!rebuilt && !dayChanged && !todayChanged) return;
+            if (!rebuilt && !dayChanged && !todayChanged && !tasksDirty) return;
+            tasksDirty = false;
             drawHeader();
             drawTasks();
             drawWheel();
         },
 
-        /** After the project has been opened: reads the tasks, the diary days and the selected day. */
+        /** After the project has been opened: reads the diary days and the selected day. The task controller reads the tasks. */
         async load() {
             state.opened = true;
-            await Promise.all([reloadTasks(), reloadDiaryDates(), context ? readDay(context.selectedDate) : null]);
+            await Promise.all([reloadDiaryDates(), context ? readDay(context.selectedDate) : null]);
         },
 
         /** After files changed outside this screen (the sample project). Text being typed is kept. */
         async reload() {
             const typing = context && autosave.getPending(context.selectedDate) !== null;
-            await Promise.all([reloadTasks(), reloadDiaryDates(), context && !typing ? readDay(context.selectedDate) : null]);
+            await Promise.all([reloadDiaryDates(), context && !typing ? readDay(context.selectedDate) : null]);
         },
 
         /** The screen is in the document again (the tab was opened): the wheel and the diary height need its layout. */
@@ -428,10 +388,6 @@ export function createPisiScreen({
                     }
                 });
             }
-            if (String(id).startsWith(TASK_OVERLAY_PREFIX)) {
-                const task = findTask(id.slice(TASK_OVERLAY_PREFIX.length));
-                return task ? renderTaskDetailSheet({ t, locale, today, task, onClose: onCloseOverlay }) : null;
-            }
             return null;
         },
 
@@ -439,12 +395,12 @@ export function createPisiScreen({
         getOverlayOpener(id) {
             if (id === PISI_OVERLAY_MENU) return '[data-action="launcher"]';
             if (id === PISI_OVERLAY_DATE) return '[data-action="pick-date"]';
-            if (String(id).startsWith(TASK_OVERLAY_PREFIX)) return `[data-task-open="${id.slice(TASK_OVERLAY_PREFIX.length)}"]`;
             return null;
         },
 
         destroy() {
             destroyed = true;
+            stopTasks();
             autosave.cancel();
             parts?.wheel.destroy();
         }

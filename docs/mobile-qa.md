@@ -115,9 +115,26 @@ Her adımda uygulama kapanmamalı ve ekran boş kalmamalıdır.
 - [ ] Onay kutusuna dokununca görev tamamlanır, telefon kısa titrer ve 5 saniye "Geri al" görünür. "Geri al" görevi geri getirir. Tekrar eden görevde ("Sabah yürüyüşü") geri alınca yarına eklenen tekrar da kalkar.
 - [ ] "Tamamlanan (n)" kapalı gelir; dokununca açılır.
 - [ ] **Görev ekle:** "yarın 14:00 rapor yaz" yazınca altında "15 Kas" ve "14:00" çipleri görünür; kaydedince görev yarına eklenir. Tarihsiz yazılan görev seçili güne eklenir.
-- [ ] Görev satırına dokununca salt okunur görev detayı açılır; geri tuşu kapatır.
+- [ ] Görev satırına dokununca görev detayı açılır (Görevler sekmesindekiyle aynı); geri tuşu kapatır.
 - [ ] Koyu temada ve Android yazı boyutu %130'da düzen bozulmaz.
 - [ ] "Animasyonları kaldır" açıkken gün değişimi animasyonsuzdur.
+
+### Görevler sekmesi (M6)
+
+Önce Ayarlar → "Örnek proje yükle" ile örnek veriyi yükleyin.
+
+- [ ] Görevler sekmesi "Bugün" görünümüyle açılır; bugünün görevleri listelenir.
+- [ ] Çiplerde görünüm adı ve sayı yazar: Bugün, Yaklaşan, Gecikmiş, Gelen kutusu, Tamamlanan. Satır parmakla yatay kayar; ekrandan taşan kenar solar, kesik çip görünmez.
+- [ ] "Yaklaşan" görünümünde "7 gün içinde" ve (varsa) "Daha sonra" grupları görünür; satırlarda tarih yazar.
+- [ ] **Hızlı ekle:** "yarın 14:00 rapor" yazınca "Yarın", "14:00" ve "Öncelik 3" çipleri görünür. "Öncelik 3" çipine dokunup başka bir öncelik seçin: yazdığınız metin silinmez, klavye açıkken çipler görünür kalır.
+- [ ] Tarihsiz yazılan görev Gelen kutusu'na düşer ve snackbar bunu söyler. "her pazartesi toplantı" yazınca "Her hafta" çipi görünür.
+- [ ] Onay kutusu görevi tamamlar, telefon kısa titrer, 5 saniye "Geri al" görünür; çiplerdeki sayılar hemen değişir.
+- [ ] **Görev detayı:** satıra dokununca açılır. Durum, öncelik, tarih, tekrar ve hatırlatma satırları kendi seçim ekranını açar; geri tuşu önce onu, sonra detayı kapatır.
+- [ ] Başlığı değiştirip klavyede "Bitti"ye basın: listedeki satır güncellenir. Saat alanı Android saat seçicisini açar; seçilen saat satırda görünür.
+- [ ] Tarihi başka bir güne alınca görev öteki görünüme geçer ve saati korunur. "Tarihi kaldır" görevi Gelen kutusu'na gönderir; tarihsiz görevde saat alanı pasiftir.
+- [ ] Durumu "Tamamlandı" yapınca tekrar eden görevin ("Sabah yürüyüşü") yarınki tekrarı oluşur.
+- [ ] Uygulamayı tamamen kapatıp açın: yapılan bütün değişiklikler durur.
+- [ ] Koyu temada ve Android yazı boyutu %130'da düzen bozulmaz.
 
 ### Örnek proje (aktarım gelene kadar)
 
