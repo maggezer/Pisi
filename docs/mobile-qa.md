@@ -15,6 +15,8 @@ npm --prefix mobile run audit
 
 E2E ekran görüntülerini `mobile/e2e/screenshots/` altına yazar. CI aynı görüntüleri `pisi-mobile-screens` adıyla saklar.
 
+Bileşen galerisi yalnız geliştirme sunucusunda açılır: `npm --prefix mobile run dev` çalışırken adresin sonuna `?gallery` ekleyin. Galerinin açık ve koyu görüntüleri de aynı artifact'tadır (`20-gallery.png`).
+
 ## 2. Test APK'sı
 
 **Mobile** iş akışı (`.github/workflows/mobile.yml`), `mobile/` ya da `shared/` klasörüne dokunan her PR'da bir test APK'sı üretir ve `Pisi-mobile-apk` adıyla 14 gün saklar.

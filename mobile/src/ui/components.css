@@ -1,0 +1,455 @@
+/*
+ * Components that live inside a screen: buttons, chips, segments, list rows,
+ * cards, the empty state, text fields and the checkbox. Every control is at
+ * least 48 dp (--pisi-touch) high; where the drawn shape is smaller (chip,
+ * checkbox) the button around it keeps the 48 dp touch area.
+ */
+
+/* ===== Buttons ===== */
+
+.pisi-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--pisi-space-2);
+    min-width: 4rem;
+    min-height: var(--pisi-touch);
+    padding: var(--pisi-space-2) var(--pisi-space-5);
+    border: 1px solid transparent;
+    border-radius: var(--pisi-radius-md);
+    background: transparent;
+    font-size: var(--pisi-text-md);
+    font-weight: 600;
+    line-height: var(--pisi-leading-tight);
+    transition: filter var(--pisi-motion-fast) var(--pisi-ease);
+}
+
+.pisi-button:active {
+    filter: brightness(0.94);
+}
+
+.pisi-button:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.pisi-button-block {
+    width: 100%;
+}
+
+/* The darker edge keeps the filled button distinguishable at 3:1 on light surfaces. */
+.pisi-button-primary {
+    border-color: var(--pisi-accent-text);
+    background: var(--pisi-accent);
+    color: var(--pisi-on-accent);
+}
+
+.pisi-button-secondary {
+    border-color: var(--pisi-border);
+    background: var(--pisi-surface);
+}
+
+.pisi-button-text {
+    padding-inline: var(--pisi-space-3);
+    color: var(--pisi-accent-text);
+}
+
+.pisi-button-danger {
+    border-color: var(--pisi-danger);
+    background: var(--pisi-danger);
+    color: var(--pisi-on-danger);
+}
+
+.pisi-icon-button {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--pisi-touch);
+    height: var(--pisi-touch);
+    padding: 0;
+    border: 0;
+    border-radius: var(--pisi-radius-full);
+    background: transparent;
+    transition: background-color var(--pisi-motion-fast) var(--pisi-ease);
+}
+
+.pisi-icon-button:active {
+    background: var(--pisi-surface-3);
+}
+
+.pisi-icon-button:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.pisi-fab {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    gap: var(--pisi-space-2);
+    min-width: 3.5rem;
+    min-height: 3.5rem;
+    padding: 0 var(--pisi-space-4);
+    border: 1px solid var(--pisi-accent-text);
+    border-radius: var(--pisi-radius-lg);
+    background: var(--pisi-accent);
+    color: var(--pisi-on-accent);
+    box-shadow: var(--pisi-shadow-2);
+    font-weight: 600;
+}
+
+.pisi-fab:active {
+    filter: brightness(0.94);
+}
+
+/* ===== Chips and segments ===== */
+
+.pisi-chip-row {
+    display: flex;
+    gap: var(--pisi-space-2);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.pisi-chip {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: var(--pisi-space-2);
+    min-width: var(--pisi-touch);
+    min-height: var(--pisi-touch);
+    padding: 0 var(--pisi-space-4);
+    border: 0;
+    background: transparent;
+    font-size: var(--pisi-text-sm);
+    font-weight: 500;
+    isolation: isolate;
+}
+
+/* The drawn pill is 36 px high inside the 48 dp button. */
+.pisi-chip::before {
+    content: '';
+    position: absolute;
+    inset: 0.375rem 0;
+    z-index: -1;
+    border: 1px solid var(--pisi-border);
+    border-radius: var(--pisi-radius-full);
+    background: var(--pisi-surface);
+}
+
+.pisi-chip[aria-pressed='true'] {
+    color: var(--pisi-accent-text);
+    font-weight: 700;
+}
+
+.pisi-chip[aria-pressed='true']::before {
+    border-width: 0.125rem;
+    border-color: var(--pisi-accent-text);
+    background: var(--pisi-accent-soft);
+}
+
+.pisi-chip-count {
+    color: var(--pisi-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.pisi-chip[aria-pressed='true'] .pisi-chip-count {
+    color: inherit;
+}
+
+.pisi-segmented {
+    display: grid;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    overflow: hidden;
+    border: 1px solid var(--pisi-border);
+    border-radius: var(--pisi-radius-md);
+    background: var(--pisi-surface);
+}
+
+.pisi-segment {
+    min-height: var(--pisi-touch);
+    padding: var(--pisi-space-1) var(--pisi-space-2);
+    border: 0;
+    border-inline-start: 1px solid var(--pisi-line);
+    background: transparent;
+    font-size: var(--pisi-text-sm);
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+.pisi-segment:first-child {
+    border-inline-start: 0;
+}
+
+.pisi-segment:focus-visible {
+    outline-offset: -0.1875rem;
+}
+
+.pisi-segment[aria-checked='true'] {
+    background: var(--pisi-accent-soft);
+    box-shadow: inset 0 -0.1875rem 0 var(--pisi-accent-text);
+    color: var(--pisi-accent-text);
+    font-weight: 700;
+}
+
+/* ===== List rows, cards, empty state ===== */
+
+.pisi-list {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--pisi-line);
+    border-radius: var(--pisi-radius-md);
+    background: var(--pisi-surface);
+    list-style: none;
+}
+
+.pisi-list-item + .pisi-list-item {
+    border-top: 1px solid var(--pisi-line);
+}
+
+.pisi-row {
+    display: flex;
+    align-items: center;
+    gap: var(--pisi-space-3);
+    width: 100%;
+    min-height: 3.5rem;
+    padding: var(--pisi-space-2) var(--pisi-space-4);
+    border: 0;
+    background: transparent;
+    text-align: start;
+}
+
+.pisi-row-action:active {
+    background: var(--pisi-surface-2);
+}
+
+.pisi-row-action:focus-visible {
+    outline-offset: -0.1875rem;
+}
+
+.pisi-row-leading,
+.pisi-row-trailing {
+    display: flex;
+    flex: none;
+    align-items: center;
+}
+
+/* A checkbox at the start of a row lines its box up with the row padding. */
+.pisi-row-leading > .pisi-checkbox {
+    margin-inline: calc(var(--pisi-space-3) * -1) calc(var(--pisi-space-2) * -1);
+}
+
+.pisi-row-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+}
+
+.pisi-row-title {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow-wrap: anywhere;
+}
+
+.pisi-row-meta,
+.pisi-row-value {
+    color: var(--pisi-muted);
+    font-size: var(--pisi-text-sm);
+}
+
+.pisi-row-value {
+    flex: none;
+    max-width: 50%;
+    text-align: end;
+    overflow-wrap: anywhere;
+}
+
+.pisi-row > .pisi-icon {
+    color: var(--pisi-muted);
+}
+
+.pisi-card {
+    display: block;
+    width: 100%;
+    padding: var(--pisi-space-4);
+    border: 1px solid var(--pisi-line);
+    border-radius: var(--pisi-radius-md);
+    background: var(--pisi-surface);
+    box-shadow: var(--pisi-shadow-1);
+    text-align: start;
+}
+
+.pisi-card-action:active {
+    background: var(--pisi-surface-2);
+}
+
+.pisi-card-title {
+    margin: 0 0 var(--pisi-space-1);
+    font-size: var(--pisi-text-md);
+    font-weight: 600;
+    line-height: var(--pisi-leading-tight);
+}
+
+.pisi-card p {
+    margin: 0;
+    color: var(--pisi-muted);
+    font-size: var(--pisi-text-sm);
+}
+
+.pisi-empty {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--pisi-space-2);
+    padding: var(--pisi-space-6) var(--pisi-space-4);
+    text-align: center;
+}
+
+.pisi-empty-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 4rem;
+    height: 4rem;
+    margin-bottom: var(--pisi-space-2);
+    border-radius: var(--pisi-radius-full);
+    background: var(--pisi-surface-2);
+    color: var(--pisi-muted);
+}
+
+.pisi-empty-icon .pisi-icon {
+    width: 2rem;
+    height: 2rem;
+}
+
+.pisi-empty-title {
+    margin: 0;
+    font-size: var(--pisi-text-lg);
+    font-weight: 600;
+    line-height: var(--pisi-leading-tight);
+}
+
+.pisi-empty-note {
+    max-width: 20rem;
+    margin: 0;
+    color: var(--pisi-muted);
+    font-size: var(--pisi-text-sm);
+}
+
+.pisi-empty > .pisi-button {
+    margin-top: var(--pisi-space-3);
+}
+
+/* ===== Text field and checkbox ===== */
+
+.pisi-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pisi-space-1);
+}
+
+.pisi-field-label {
+    font-size: var(--pisi-text-sm);
+    font-weight: 600;
+}
+
+.pisi-field-input {
+    width: 100%;
+    min-height: var(--pisi-touch);
+    padding: var(--pisi-space-3);
+    border: 1px solid var(--pisi-border);
+    border-radius: var(--pisi-radius-md);
+    background: var(--pisi-surface);
+    line-height: var(--pisi-leading);
+}
+
+textarea.pisi-field-input {
+    display: block;
+    resize: none;
+}
+
+.pisi-field-input::placeholder {
+    color: var(--pisi-muted);
+    opacity: 1;
+}
+
+.pisi-field-input:focus-visible {
+    outline-offset: -1px;
+}
+
+.pisi-field-invalid .pisi-field-input {
+    border-width: 0.125rem;
+    border-color: var(--pisi-danger);
+}
+
+.pisi-field-hint,
+.pisi-field-error {
+    margin: 0;
+    color: var(--pisi-muted);
+    font-size: var(--pisi-text-sm);
+}
+
+.pisi-field-error {
+    color: var(--pisi-danger-text);
+}
+
+.pisi-checkbox {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--pisi-space-1);
+    min-width: var(--pisi-touch);
+    min-height: var(--pisi-touch);
+    padding: 0;
+    border: 0;
+    border-radius: var(--pisi-radius-sm);
+    background: transparent;
+    text-align: start;
+}
+
+/* The visible box is 24 px; the margin centres it in the 48 dp button. */
+.pisi-checkbox-box {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin: 0 var(--pisi-space-3);
+    border: 0.125rem solid var(--pisi-border);
+    border-radius: 0.375rem;
+    background: var(--pisi-surface);
+    transition: background-color var(--pisi-motion-fast) var(--pisi-ease);
+}
+
+.pisi-checkbox-box .pisi-icon {
+    width: 1.125rem;
+    height: 1.125rem;
+    stroke-width: 3;
+}
+
+.pisi-checkbox[aria-checked='true'] .pisi-checkbox-box {
+    border-color: var(--pisi-accent-text);
+    background: var(--pisi-accent-text);
+    color: var(--pisi-surface);
+}
+
+.pisi-checkbox-text {
+    padding-inline-end: var(--pisi-space-3);
+}
+
+.pisi-checkbox:disabled {
+    opacity: 0.45;
+    cursor: default;
+}

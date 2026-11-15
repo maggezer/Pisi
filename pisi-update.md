@@ -1,5 +1,34 @@
 # PISI Güncelleme Takip Dosyası
 
+## 14-11-2026 — Pisi Mobil tasarım temeli ve bileşen galerisi (M3, mobil iş)
+
+- Bu bir mobil iştir (`docs/mobile-plan.md` M3; G1, G9, G11). Masaüstü
+  uygulamasına dokunulmadı.
+- `mobile/src/ui/tokens.css`: açık ve koyu tema renkleri, 4/8 tabanlı boşluk
+  ölçeği, köşe, gölge, hareket süreleri ve 12/14/16/20/24/32 yazı ölçeği.
+    - Turuncu vurgu dolgu olarak kaldı (`--pisi-accent`); metin, ikon ve durum
+      işaretleri için daha koyu `--pisi-accent-text` eklendi (G11).
+    - Arayüz ve editör için tek yazı ailesi: sistem sans (`--pisi-font`, G9).
+    - Renkler ve yazı ailesi yalnız bu dosyada tanımlanır; `check:structure`
+      başka CSS dosyasındaki sabit rengi ve yazı ailesini reddeder.
+- Kontrast testi (`mobile/tests/contrast.test.mjs`): `token-pairs.mjs`
+  listesindeki her çift iki temada sınanır; metin ≥ 4.5:1, arayüz öğesi ≥ 3:1.
+- İkonlar: Lucide'den yalnız kullanılan 14 ikon satır içi SVG olarak eklendi
+  (`mobile/src/ui/icons.mjs`); lisans notu `mobile/THIRD-PARTY-LICENSES.md`.
+- Bileşenler (`mobile/src/ui/`): düğme (birincil, ikincil, metin, tehlike),
+  ikon düğme, FAB, çip, segment, liste satırı, kart, boş durum, metin alanı,
+  onay kutusu (24 px kutu, 48 dp dokunma alanı), bottom sheet, seçim sheet'i,
+  diyalog, geri al düğmeli snackbar, üst başlık ve etiketli alt menü.
+- Kabuk (G1): alt menüde beş sekmenin her biri SVG ikon ve etiketle gelir,
+  etkin sekme belirgindir. Başlıkta Ayarlar dişli ikonuyla, Geri ok ikonuyla
+  açılır. Yer tutucu ekranlar boş durum bileşenini kullanır.
+- Bileşen galerisi: geliştirme sunucusunda `?gallery` ile açılır
+  (`npm --prefix mobile run dev`), üretim derlemesine girmez. E2E galerinin
+  açık ve koyu görüntülerini `pisi-mobile-screens` artifact'ına ekler.
+- `docs/mobile-screens/m3-before/`: `mobile5` dalının altı sekmesinin açık ve
+  koyu "önce" görüntüleri.
+- Yeni kullanıcı metni eklenmedi; locale dosyaları değişmedi.
+
 ## 14-11-2026 — Pisi Mobil iskeleti, CI ve test APK'sı (M2, mobil iş)
 
 - Bu bir mobil iştir (`docs/mobile-plan.md` M2). Masaüstü uygulamasının

@@ -1,0 +1,190 @@
+/* Layers above the screen: bottom sheet, dialog and snackbar. */
+
+.pisi-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    background: var(--pisi-scrim);
+    animation: pisi-fade-in var(--pisi-motion) var(--pisi-ease);
+}
+
+.pisi-backdrop-sheet {
+    align-items: flex-end;
+}
+
+.pisi-backdrop-dialog {
+    align-items: center;
+    justify-content: center;
+    padding: var(--pisi-space-5);
+}
+
+/* ===== Bottom sheet ===== */
+
+.pisi-sheet {
+    width: 100%;
+    max-height: 85%;
+    overflow-y: auto;
+    padding: var(--pisi-space-2) var(--pisi-space-4) calc(var(--pisi-space-4) + var(--pisi-safe-bottom));
+    border-radius: var(--pisi-radius-lg) var(--pisi-radius-lg) 0 0;
+    background: var(--pisi-surface);
+    box-shadow: var(--pisi-shadow-2);
+    animation: pisi-sheet-in var(--pisi-motion) var(--pisi-ease);
+}
+
+.pisi-sheet-grip {
+    display: block;
+    width: 2rem;
+    height: 0.25rem;
+    margin: 0 auto var(--pisi-space-1);
+    border-radius: var(--pisi-radius-full);
+    background: var(--pisi-border);
+}
+
+.pisi-sheet-header {
+    display: flex;
+    align-items: center;
+    gap: var(--pisi-space-2);
+    margin-inline-end: calc(var(--pisi-space-3) * -1);
+}
+
+.pisi-sheet-title {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: var(--pisi-text-lg);
+    font-weight: 600;
+    line-height: var(--pisi-leading-tight);
+}
+
+.pisi-sheet-options {
+    display: grid;
+    margin: var(--pisi-space-1) calc(var(--pisi-space-4) * -1) 0;
+}
+
+.pisi-sheet-option {
+    display: flex;
+    align-items: center;
+    gap: var(--pisi-space-4);
+    min-height: 3.5rem;
+    padding: var(--pisi-space-2) var(--pisi-space-4);
+    border: 0;
+    background: transparent;
+    text-align: start;
+}
+
+.pisi-sheet-option:active {
+    background: var(--pisi-surface-2);
+}
+
+.pisi-sheet-option:focus-visible {
+    outline-offset: -0.1875rem;
+}
+
+.pisi-sheet-option-mark {
+    flex: none;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 0.125rem solid var(--pisi-border);
+    border-radius: var(--pisi-radius-full);
+}
+
+.pisi-sheet-option[aria-checked='true'] {
+    font-weight: 700;
+}
+
+.pisi-sheet-option[aria-checked='true'] .pisi-sheet-option-mark {
+    border-color: var(--pisi-accent-text);
+    background: radial-gradient(circle, var(--pisi-accent-text) 0 40%, transparent 46%);
+}
+
+/* ===== Dialog ===== */
+
+.pisi-dialog {
+    width: 100%;
+    max-width: 22rem;
+    max-height: 100%;
+    overflow-y: auto;
+    padding: var(--pisi-space-5) var(--pisi-space-5) var(--pisi-space-3);
+    border-radius: var(--pisi-radius-lg);
+    background: var(--pisi-surface);
+    box-shadow: var(--pisi-shadow-2);
+}
+
+.pisi-dialog-title {
+    margin: 0 0 var(--pisi-space-2);
+    font-size: var(--pisi-text-lg);
+    font-weight: 600;
+    line-height: var(--pisi-leading-tight);
+}
+
+.pisi-dialog-message {
+    margin: 0;
+    color: var(--pisi-muted);
+}
+
+.pisi-dialog-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--pisi-space-2);
+    margin-top: var(--pisi-space-5);
+}
+
+/* ===== Snackbar ===== */
+
+.pisi-snackbar {
+    display: flex;
+    align-items: center;
+    align-self: stretch;
+    gap: var(--pisi-space-2);
+    min-height: var(--pisi-touch);
+    padding: 0 var(--pisi-space-1) 0 var(--pisi-space-4);
+    border-radius: var(--pisi-radius-md);
+    background: var(--pisi-inverse-surface);
+    box-shadow: var(--pisi-shadow-2);
+    color: var(--pisi-inverse-text);
+    font-size: var(--pisi-text-sm);
+}
+
+.pisi-snackbar-message {
+    flex: 1;
+    min-width: 0;
+    padding: var(--pisi-space-3) 0;
+}
+
+.pisi-snackbar-action {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: var(--pisi-space-1);
+    min-width: var(--pisi-touch);
+    min-height: var(--pisi-touch);
+    padding: 0 var(--pisi-space-3);
+    border: 0;
+    border-radius: var(--pisi-radius-sm);
+    background: transparent;
+    color: var(--pisi-inverse-accent);
+    font-weight: 700;
+}
+
+.pisi-snackbar-action .pisi-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.pisi-snackbar-action:focus-visible {
+    outline-color: var(--pisi-inverse-accent);
+}
+
+@keyframes pisi-fade-in {
+    from {
+        opacity: 0;
+    }
+}
+
+@keyframes pisi-sheet-in {
+    from {
+        transform: translateY(1.5rem);
+    }
+}

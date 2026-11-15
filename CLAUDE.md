@@ -70,6 +70,8 @@ Klasör yapısı:
 - `mobile/src/app/`: açılış, yönlendirme durumu (`router.mjs`, tek yer), geri tuşu kuralları, yaşam döngüsü, tema ve tercihler.
 - `mobile/src/platform/`: Capacitor köprüsü. `@capacitor/*` yalnız burada import edilir; uygulamanın geri kalanı platformu parametre olarak alır.
 - `mobile/src/ui/`, `mobile/src/screens/<ad>/`, `mobile/src/i18n/`: ortak arayüz parçaları, ekranlar ve dil.
+- Tasarım temeli (M3): renk, boşluk, yazı ve hareket token'ları yalnız `mobile/src/ui/tokens.css` dosyasındadır; başka CSS dosyasına sabit renk ya da yazı ailesi yazılmaz (`check:structure`). Birlikte kullanılan her renk çifti `ui/token-pairs.mjs` listesine eklenir ve `tests/contrast.test.mjs` ile sınanır. İkonlar `ui/icons.mjs` içindeki Lucide setinden gelir; yeni ikon eklenince `mobile/THIRD-PARTY-LICENSES.md` güncellenir.
+- `mobile/src/gallery/`: yalnız geliştirme sunucusunda `?gallery` ile açılan bileşen galerisi. Yeni ortak bileşen galeriye de eklenir; `e2e/gallery.spec.mjs` görüntüsünü alır.
 - `mobile/locales/tr.json`, `mobile/locales/eng.json`: kullanıcıya görünen bütün metinler; anahtarlar aynı olmalıdır (`check:i18n`).
 - `mobile/tests/` (vitest + happy-dom), `mobile/e2e/` (Playwright), `mobile/android/` (Capacitor native proje kaynağı; commit'lenir).
 - Saf iş kuralları `shared/` klasöründen import edilir.

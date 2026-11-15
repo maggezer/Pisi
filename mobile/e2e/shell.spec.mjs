@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import { expect, test } from '@playwright/test';
 
 // Saturday 14 November 2026, 09:30 in Istanbul.
@@ -17,7 +18,7 @@ async function open(page) {
 }
 
 async function shot(page, name) {
-    await page.screenshot({ path: `e2e/screenshots/${test.info().project.name}/${name}.png` });
+    await page.screenshot({ path: `e2e/screenshots/${test.info().project.name}/${name}.png`, animations: 'disabled' });
 }
 
 const screen = (page) => page.locator('[data-screen]');
@@ -149,4 +150,17 @@ test('dokunma hedefleri en az 48 px; yazı %130 büyüyünce yatay taşma olmaz'
     );
     expect(clipped).toEqual([]);
     await shot(page, '10-pisi-font-130');
+});
+
+test('üretim derlemesinde bileşen galerisi yoktur', async ({ page }) => {
+    await page.goto('/?gallery');
+    await expect(screen(page)).toHaveAttribute('data-screen', 'pisi');
+    await expect(page.locator('[data-gallery]')).toHaveCount(0);
+    // Playwright runs from the package root (mobile/), next to the build it serves.
+    const bundle = fs
+        .readdirSync('dist/assets')
+        .map((file) => fs.readFileSync(`dist/assets/${file}`, 'utf8'))
+        .join('\n');
+    expect(bundle).toContain('pisi-tab');
+    expect(bundle).not.toContain('gallery');
 });
