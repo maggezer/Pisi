@@ -453,3 +453,20 @@ textarea.pisi-field-input {
     opacity: 0.45;
     cursor: default;
 }
+
+/* ===== Section title and notice (Settings) ===== */
+
+.pisi-section-title {
+    margin: var(--pisi-space-5) var(--pisi-space-1) var(--pisi-space-2);
+    color: var(--pisi-muted);
+    font-size: var(--pisi-text-sm);
+    font-weight: 700;
+    line-height: var(--pisi-leading-tight);
+}
+
+.pisi-notice {
+    margin: var(--pisi-space-4) var(--pisi-space-1) var(--pisi-space-2);
+    color: var(--pisi-danger-text);
+    font-size: var(--pisi-text-sm);
+    line-height: var(--pisi-leading);
+}

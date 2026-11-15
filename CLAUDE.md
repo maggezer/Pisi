@@ -68,6 +68,7 @@ npm --prefix mobile run android:open
 Klasör yapısı:
 
 - `mobile/src/app/`: açılış, yönlendirme durumu (`router.mjs`, tek yer), geri tuşu kuralları, yaşam döngüsü, tema ve tercihler.
+- `mobile/src/data/`: veri katmanı (M4). `createProject({ driver })` (`project-repo.mjs`) yazıcıyı, indeksi ve depoları kurar: `tasks`, `notes`, `diary`, `maps`, `search`. Bütün yazmalar `ProjectWriter`'dan geçer (tek kuyruk, değişmeyen dosya yazılmaz, atomik yazma, `fileChanged` olayı); depolar sürücüyü doğrudan yazmak için kullanmaz. Not içeriği `note-blocks.mjs` ile konumla bloklara ayrılır ve yalnız yamalanan blok değişir. Bu klasör `@capacitor/*` import etmez; sürücü dışarıdan verilir (`drivers/memory-driver.mjs`, `drivers/node-fs-driver.mjs`, `platform/capacitor-fs-driver.mjs`).
 - `mobile/src/platform/`: Capacitor köprüsü. `@capacitor/*` yalnız burada import edilir; uygulamanın geri kalanı platformu parametre olarak alır.
 - `mobile/src/ui/`, `mobile/src/screens/<ad>/`, `mobile/src/i18n/`: ortak arayüz parçaları, ekranlar ve dil.
 - Tasarım temeli (M3): renk, boşluk, yazı ve hareket token'ları yalnız `mobile/src/ui/tokens.css` dosyasındadır; başka CSS dosyasına sabit renk ya da yazı ailesi yazılmaz (`check:structure`). Birlikte kullanılan her renk çifti `ui/token-pairs.mjs` listesine eklenir ve `tests/contrast.test.mjs` ile sınanır. İkonlar `ui/icons.mjs` içindeki Lucide setinden gelir; yeni ikon eklenince `mobile/THIRD-PARTY-LICENSES.md` güncellenir.
@@ -75,6 +76,8 @@ Klasör yapısı:
 - `mobile/locales/tr.json`, `mobile/locales/eng.json`: kullanıcıya görünen bütün metinler; anahtarlar aynı olmalıdır (`check:i18n`).
 - `mobile/tests/` (vitest + happy-dom), `mobile/e2e/` (Playwright), `mobile/android/` (Capacitor native proje kaynağı; commit'lenir).
 - Saf iş kuralları `shared/` klasöründen import edilir.
+- Masaüstü uyumluluğu: kökteki `tests/mobile-desktop-compat.test.mjs`, mobil depoları masaüstünün oluşturduğu `tests/fixtures/desktop-project/` projesinde çalıştırır ve sonucu masaüstünün Project Integrity denetimiyle sınar. Veri katmanına dokunan her değişiklikte `npm test` ile çalıştır. Fixture elle düzenlenmez; `tests/fixtures/README.md` nasıl yenileneceğini anlatır.
+- Geliştirici menüsü (Ayarlar → "Örnek proje yükle") yalnız debug derlemelerinde görünür: `import.meta.env.DEV` ya da `VITE_PISI_DEVELOPER=1` (CI test APK'sı ve Playwright derlemesi).
 
 Kurallar: `mobile/src` içinde `.mjs` ≤ 600, CSS ≤ 800 satır (`check:structure`). Kökteki `npm test` yalnız `tests/` klasörünü çalıştırır; kök `prettier` mobil kaynakları da denetler, ESLint mobil dosyalar için `mobile/eslint.config.mjs` kullanır. CI: `.github/workflows/mobile.yml` (validate, e2e, test APK'sı). Test APK'sı, sabit test anahtarı ve cihaz kabul listesi: `docs/mobile-qa.md`.
 
@@ -102,7 +105,7 @@ File-size limits are enforced by `check:architecture`: renderer `.mjs` ≤ 1000 
 
 ### Shared core (`shared/`)
 
-`shared/*.mjs` holds the pure rules that the desktop (main and renderer) and the mobile app both import (`docs/mobile-plan.md` §3.1): `date-parser`, `wiki-link-core`, `task-model`, `task-views`, `diary-rules`, `document-naming`, `document-model` and `ids`. The desktop files that used to own this code keep their paths, export names and registry bindings and import from `shared/`: `renderer/productivity/pisi-date-parser.mjs`, `renderer/tags/pisi-todo-utils.mjs`, both wiki-link cores, and parts of `path-security.js`, `filesystem-core.js`, `document-store-*.js` and `task-store.js`. Change a rule in `shared/`, not in the wrapper.
+`shared/*.mjs` holds the pure rules that the desktop (main and renderer) and the mobile app both import (`docs/mobile-plan.md` §3.1): `date-parser`, `wiki-link-core`, `task-model`, `task-views`, `diary-rules`, `document-naming`, `document-model`, `ids` and `search-text`. The desktop files that used to own this code keep their paths, export names and registry bindings and import from `shared/`: `renderer/productivity/pisi-date-parser.mjs`, `renderer/tags/pisi-todo-utils.mjs`, `renderer/search/pisi-search-core.mjs` (text folding), both wiki-link cores, and parts of `path-security.js`, `filesystem-core.js`, `document-store-*.js` and `task-store.js`. Change a rule in `shared/`, not in the wrapper.
 
 `check:architecture` runs `scripts/shared-purity.js` on every shared module: it may import only other shared modules (`./name.mjs`), use only the language built-ins (no DOM, Node, Electron, Capacitor or registry bindings) and run nothing at import time. The caller passes in the clock, randomness and paths. `shared/**/*` is listed in `build.files`; the tests are `tests/shared-*.test.mjs`.
 

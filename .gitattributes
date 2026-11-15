@@ -10,3 +10,6 @@
 *.woff2 binary
 *.ttf binary
 *.zip binary
+
+# A project written by the desktop app; tests compare its bytes.
+tests/fixtures/desktop-project/** -text

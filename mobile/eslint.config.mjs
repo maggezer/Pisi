@@ -21,7 +21,7 @@ const browserGlobals = {
     URLSearchParams: 'readonly'
 };
 
-const nodeGlobals = { console: 'readonly', process: 'readonly' };
+const nodeGlobals = { console: 'readonly', process: 'readonly', setTimeout: 'readonly', indexedDB: 'readonly' };
 
 export default [
     { ignores: ['node_modules/**', 'dist/**', 'android/**', 'test-results/**', 'playwright-report/**', 'e2e/screenshots/**'] },

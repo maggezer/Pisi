@@ -18,5 +18,20 @@
     "theme.light": "Light",
     "theme.dark": "Dark",
     "language.tr": "Türkçe",
-    "language.eng": "English"
+    "language.eng": "English",
+    "settings.project": "Project",
+    "settings.developer": "Developer",
+    "project.defaultName": "My Pisi Project",
+    "project.tasks": "Tasks",
+    "project.notes": "Notes",
+    "project.maps": "Maps",
+    "project.readOnly": "Read-only",
+    "project.readOnlyFiles": "Unreadable files",
+    "project.readOnlyNotice": "{count} file(s) could not be read. They will not be changed; review them with Project Integrity on the desktop.",
+    "project.openFailed": "The project could not be opened.",
+    "developer.loadSample": "Load sample project",
+    "developer.loadSampleNote": "Adds sample tasks, notes and a diary entry for testing.",
+    "developer.sampleLoaded": "Sample project loaded: {tasks} tasks and {notes} notes added.",
+    "developer.sampleFailed": "The sample project could not be loaded.",
+    "project.name": "Project name"
 }

@@ -1,0 +1,43 @@
+{
+  "pisi": {
+    "version": 1,
+    "type": "map",
+    "id": "map_798038dc-e145-4515-851f-a61bc68372ff",
+    "title": "Yol Haritası",
+    "sidecar": "nd_Yol Haritası__map_798038dc-e145-4515-851f-a61bc68372ff",
+    "createdAt": "2026-11-15T05:06:33.000Z",
+    "updatedAt": "2026-11-15T05:06:33.521Z"
+  },
+  "map": {
+    "nodes": [
+      {
+        "id": "node_94d59c76-29a7-4794-9085-69b230dd7d66",
+        "x": 80,
+        "y": 80,
+        "width": 220,
+        "height": 92
+      },
+      {
+        "id": "node_a4d37a3e-d135-4d77-91f5-e6902b138888",
+        "x": 80,
+        "y": 80,
+        "width": 220,
+        "height": 92
+      }
+    ],
+    "relationshipViews": [
+      {
+        "relationshipId": "edge_7919ec6b-91c6-42aa-b23d-c0bf97f27c21",
+        "sourcePort": "bottom",
+        "targetPort": "top"
+      }
+    ],
+    "relationshipViewVersion": 1,
+    "collapsedHubs": [],
+    "camera": {
+      "x": 0,
+      "y": 0,
+      "zoom": 1
+    }
+  }
+}

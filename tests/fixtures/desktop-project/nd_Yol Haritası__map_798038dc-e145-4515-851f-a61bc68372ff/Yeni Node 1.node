@@ -1,0 +1,13 @@
+{
+  "pisi": {
+    "version": 1,
+    "type": "node",
+    "id": "node_a4d37a3e-d135-4d77-91f5-e6902b138888",
+    "title": "Yeni Node 1",
+    "sidecar": "inv_Yeni Node 1__node_a4d37a3e-d135-4d77-91f5-e6902b138888",
+    "createdAt": "2026-11-15T05:06:33.497Z",
+    "updatedAt": "2026-11-15T05:06:33.497Z",
+    "parentMap": "map_798038dc-e145-4515-851f-a61bc68372ff"
+  },
+  "content": ""
+}

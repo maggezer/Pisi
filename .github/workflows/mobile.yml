@@ -92,6 +92,8 @@ jobs:
         env:
             # Each run gets a higher version code, so the APK installs over the previous one.
             PISI_ANDROID_VERSION_CODE: ${{ github.run_number }}
+            # The test APK is a debug build: Settings shows the developer section ("Örnek proje yükle").
+            VITE_PISI_DEVELOPER: '1'
             PISI_ANDROID_TEST_KEYSTORE_BASE64: ${{ secrets.PISI_ANDROID_TEST_KEYSTORE_BASE64 }}
             PISI_ANDROID_TEST_KEYSTORE_PASSWORD: ${{ secrets.PISI_ANDROID_TEST_KEYSTORE_PASSWORD }}
             PISI_ANDROID_TEST_KEY_ALIAS: ${{ secrets.PISI_ANDROID_TEST_KEY_ALIAS }}

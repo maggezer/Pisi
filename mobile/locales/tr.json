@@ -18,5 +18,20 @@
     "theme.light": "Açık",
     "theme.dark": "Koyu",
     "language.tr": "Türkçe",
-    "language.eng": "English"
+    "language.eng": "English",
+    "settings.project": "Proje",
+    "settings.developer": "Geliştirici",
+    "project.defaultName": "Pisi Projem",
+    "project.tasks": "Görevler",
+    "project.notes": "Notlar",
+    "project.maps": "Haritalar",
+    "project.readOnly": "Salt okunur",
+    "project.readOnlyFiles": "Okunamayan dosyalar",
+    "project.readOnlyNotice": "{count} dosya okunamadı. Bu dosyalar değiştirilmeyecek; masaüstünde Proje Bütünlüğü ile inceleyin.",
+    "project.openFailed": "Proje açılamadı.",
+    "developer.loadSample": "Örnek proje yükle",
+    "developer.loadSampleNote": "Deneme için örnek görev, not ve günlük ekler.",
+    "developer.sampleLoaded": "Örnek proje yüklendi: {tasks} görev, {notes} not eklendi.",
+    "developer.sampleFailed": "Örnek proje yüklenemedi.",
+    "project.name": "Proje adı"
 }

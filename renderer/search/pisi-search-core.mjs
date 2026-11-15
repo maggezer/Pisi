@@ -1,3 +1,5 @@
+import { normalizePisiSearchText, tokenizePisiSearchQuery } from '../../shared/search-text.mjs';
+
 const PISI_SEARCH_FIELD_WEIGHTS = Object.freeze({
     title: 120,
     task: 105,
@@ -10,23 +12,8 @@ const PISI_SEARCH_FIELD_WEIGHTS = Object.freeze({
 
 const pisiPreparedSearchFields = new WeakMap();
 
-function replaceTurkishSearchCharacters(value) {
-    return value.replace(/[ıİ]/g, 'i').replace(/[şŞ]/g, 's').replace(/[ğĞ]/g, 'g').replace(/[üÜ]/g, 'u').replace(/[öÖ]/g, 'o').replace(/[çÇ]/g, 'c');
-}
-
-export function normalizePisiSearchText(value = '') {
-    return replaceTurkishSearchCharacters(String(value || ''))
-        .normalize('NFKD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLocaleLowerCase('tr-TR')
-        .replace(/[^a-z0-9]+/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-}
-
-export function tokenizePisiSearchQuery(query = '') {
-    return normalizePisiSearchText(query).split(' ').filter(Boolean);
-}
+// The folding rule lives in shared/ (the mobile app searches with it too).
+export { normalizePisiSearchText, tokenizePisiSearchQuery };
 
 function getRecordFields(record) {
     if (record && typeof record === 'object' && pisiPreparedSearchFields.has(record)) {

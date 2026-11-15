@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "updatedAt": "2026-11-15T05:06:36.232Z",
+  "entries": [
+    {
+      "historyId": "1794719196229-2026-11-15T05-06-36-229Z-90c1c95e30a26d03.json.gz",
+      "capturedAt": "2026-11-15T05:06:36.229Z",
+      "reason": "quit",
+      "hash": "90c1c95e30a26d03",
+      "preview": "6 görev",
+      "size": 1029,
+      "compressed": true
+    },
+    {
+      "historyId": "1794719192178-2026-11-15T05-06-32-176Z-20121bcbf1dec4cc.json.gz",
+      "capturedAt": "2026-11-15T05:06:32.176Z",
+      "reason": "auto",
+      "hash": "20121bcbf1dec4cc",
+      "preview": "1 görev",
+      "size": 548,
+      "compressed": true
+    }
+  ]
+}
