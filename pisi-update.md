@@ -1,5 +1,68 @@
 # PISI Güncelleme Takip Dosyası
 
+## 15-11-2026 — Pisi Mobil veri katmanı ve masaüstü uyumluluğu (M4, mobil iş)
+
+- Bu bir mobil iştir (`docs/mobile-plan.md` M4). Masaüstünde tek değişiklik
+  aramadaki metin katlama kuralının `shared/`'a taşınması ve büyük `I`
+  düzeltmesidir (aşağıda).
+- `mobile/src/data/`: mobilin veri katmanı. Gerçek veri proje dosyalarıdır;
+  bellekteki indeks silinip yeniden kurulabilen önbellektir (V1).
+    - Sürücüler: `MemoryDriver` (birim testleri), `NodeFsDriver` (uyumluluk
+      testi) ve `platform/capacitor-fs-driver.mjs` (`Directory.Data/projects/default/`).
+      Sürücü sözleşmesi: `readText`, `writeText`, `rename`, `list`, `stat`,
+      `mkdir`, `exists` ve yalnız mobilin kendi geçici dosyaları için `remove`.
+    - `ProjectWriter`: bütün yazmalar tek kuyruktan geçer. İçeriği değişmeyen
+      dosya yazılmaz (V4). Yazma geçici dosya → yeniden adlandırma → geri okuyup
+      doğrulama sırasıyla yapılır; açılışta yarım kalmış geçici dosyalar
+      toparlanır (V6). Her yazmadan sonra `fileChanged(yol)` olayı yayınlanır.
+      Diske senkron metadata'sı yazılmaz.
+    - `TaskRepo`: `list`, `upsert`, `setStatus`, `complete`. Her değişiklikte
+      `tasks.json` yeniden okunur ve yalnız ilgili kayıt değişir (V5). Kayıttaki
+      ve dosyanın üst düzeyindeki bilinmeyen alanlar korunur (V3). Kurallar
+      `shared/task-model.mjs`'ten gelir.
+    - Tekrar eden görev tamamlanınca eski kayıt `done` olur; sonraki tarih
+      masaüstüyle aynı kuralla (`getNextPisiTodoDate`) hesaplanır ve kaynak not
+      bloğu olmayan yeni bir görev eklenir.
+    - `NoteRepo`: hafif indeks (kimlik, başlık, yol, `updatedAt`, bloklar arası
+      satır sonlu önizleme), `read`, `create` ve blok düzeyinde yama yapan
+      `updateContent`. Not HTML'i DOM kurulmadan konumla bloklara ayrılır;
+      yamanın dokunmadığı her blok diske aynı karakterlerle döner (V8). Sheet,
+      Paint, görsel, dosya, rollup, günlük görev bölümü, görev ve bilinmeyen
+      bloklar korumalıdır; M4'te yalnız düz paragraflar düzenlenir.
+    - `DiaryRepo`: `diary/YYYY-MM-DD.node` okur ve yazar. Dosya ilk karakter
+      yazıldığında oluşur; boş günlük dosyası yaratılmaz. Masaüstünün yönettiği
+      görev bölümü aynen kalır.
+    - `MapRepo` (salt okunur): `.map`, `.pisi/relationships.json` ve
+      `relationshipViews`. `map.edges` okunmaz.
+    - Arama indeksi: bellekte, `fileChanged` olaylarıyla artımlı güncellenir.
+    - Bozuk JSON dosyası ezilmez: salt okunur işaretlenir, yazma reddedilir ve
+      kullanıcıya bildirilir (V7).
+- Yeni proje iskeleti: boş klasörde `.pisi/properties.json` (boş şema) ile
+  `diary/.pisi-diary` yazılır. `tasks.json` ve `relationships.json` masaüstündeki
+  gibi ilk kayıtla oluşur. Masaüstünde "yeni proje" adımı olmadığı için iskelet
+  masaüstü kodunun yazdıklarına göre belirlendi.
+- Uyumluluk testi (`tests/mobile-desktop-compat.test.mjs`, kök `npm test` ile
+  çalışır): mobil depolar, masaüstünün oluşturduğu bir projenin kopyası üzerinde
+  çalıştırılır; ardından masaüstünün kendi Project Integrity denetimi ve
+  `task-store`'u sonucu denetler. Yeni bulgu çıkmaz, dokunulmayan dosyalar bayt
+  bayt aynı kalır, düzenlenen notta yalnız ilgili blok değişir, bozuk
+  `tasks.json` ezilmez.
+- Örnek proje (`tests/fixtures/desktop-project/`): gerçek masaüstü uygulaması
+  CDP ile sürülerek üretildi (`scripts/electron-mobile-fixture-e2e.mjs`). Sheet,
+  Paint, görsel ve dosya bloklu not, Quick Add görevleri, harita, ilişki ve
+  günlükler içerir. Betik `npm run test:e2e` zincirine eklendi; nasıl
+  yenileneceği `tests/fixtures/README.md` dosyasında.
+- Ayarlar: proje özeti (ad, görev, not ve harita sayısı, okunamayan dosyalar).
+  Debug derlemelerinde (geliştirme sunucusu ve `VITE_PISI_DEVELOPER=1` ile
+  derlenen test APK'sı) "Geliştirici → Örnek proje yükle" seçeneği vardır.
+  Yeni metinler `mobile/locales/tr.json` ve `eng.json` dosyalarına eklendi.
+- Masaüstü: aramanın metin katlama kuralı `shared/search-text.mjs` dosyasına
+  taşındı; `renderer/search/pisi-search-core.mjs` aynı adlarla oradan dışa
+  verir. Büyük `I` artık `i` ile eşleşiyor. Önceden Türkçe küçük harfe çevirme
+  `I`'yı `ı` yapıyor, sonraki adım da bunu harf saymayıp siliyordu: "INBOX"
+  "nbox", "IŞIK" "s k" olarak indeksleniyor ve "inbox" araması "INBOX"
+  başlığını bulamıyordu.
+
 ## 14-11-2026 — Pisi Mobil tasarım temeli ve bileşen galerisi (M3, mobil iş)
 
 - Bu bir mobil iştir (`docs/mobile-plan.md` M3; G1, G9, G11). Masaüstü

@@ -154,6 +154,42 @@ için etkisi düşük. Mobilde tek satırlık görev ekleme bu ayrıştırıcıy
 kullanacağı için (`docs/mobile-plan.md` M5, M6) o fazlardan önce ele alınmalı.
 Düzeltme `shared/` içinde yapılır ve masaüstünü de değiştirir.
 
+## 5c. Quick Add'in açtığı Inbox notu Project Integrity'de kritik bulgu üretiyor
+
+**[Orta · masaüstü · doğrulandı]** Boş bir projede ilk Quick Add, `Inbox.node`
+dosyasını `properties.systemRole` değeriyle oluşturur. `.pisi/properties.json`
+ise yalnız şema gerektiğinde (ör. veritabanı şablonları listelenince) yazılır.
+Arada kalan projede Project Integrity `property-schema-authority-missing`
+(critical) bulgusu verir: "Node property verisi var ancak canonical
+project-level property schema bulunmuyor."
+
+Yeniden üretme: `scripts/electron-mobile-fixture-e2e.mjs` çıktısındaki denetim
+raporu; aynı bulgu `tests/fixtures/desktop-project/` için
+`tests/mobile-desktop-compat.test.mjs` içinde taban çizgisi olarak kayıtlıdır.
+Düzeltilince o testteki taban çizgisi boş listeye çekilmelidir.
+
+## 5d. Mobilde değişen görev, kaynağı olan not bloğuna yansımıyor
+
+**[Orta · mobil · bilinçli sınır]** Pisi Mobil görev durumunu yalnız
+`.pisi/tasks.json` içinde değiştirir; mobilin düzenleyemediği not bloklarına
+dokunmaz (`docs/mobile-plan.md` V8). Kaynağı bir not bloğu olan görev (Quick Add
+ile Inbox'a ya da bir nota yazılmış görev) mobilde tamamlanınca nottaki görev
+işareti eski durumunda kalır.
+
+- Kesin olan: masaüstünde not açıldığında blok hâlâ "todo" görünür.
+- Kod incelemesiyle görülen, uçtan uca denenmemiş risk: masaüstünde kullanıcı
+  görev panelinde bir değişiklik yaptığında çalışan projection eşitlemesi
+  (`renderer/tags/pisi-source-of-truth.mjs`, `sync-index`) görevi nottaki
+  işaretten yeniden normalize eder ve mobilde verilen "tamamlandı" durumunu
+  geri alabilir.
+- Tekrar eden görevde mobil sonraki tekrarı kaynak bloğu olmayan yeni bir kayıt
+  olarak ekler; masaüstü ise nottaki bloğu kopyalar. Aynı görev iki cihazda da
+  tamamlanırsa sonraki tekrar iki kez oluşabilir.
+
+Kalıcı çözüm mobilin görev bloğu işaretini güvenle güncelleyebilmesini ya da
+masaüstünün canonical durumu nota geri yansıtmasını gerektirir; aktarım planıyla
+birlikte ele alınmalıdır.
+
 ## 6. Güncel doğrulama snapshot’ı
 
 6 Ekim 2026 current `main` kontrolü:

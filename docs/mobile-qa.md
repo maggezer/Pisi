@@ -99,6 +99,18 @@ Her adımda uygulama kapanmamalı ve ekran boş kalmamalıdır.
     - Android yazı boyutunu en büyüğe alın: sekme etiketleri kesilmemeli, yatay kaydırma oluşmamalı.
     - Telefonu yatay çevirip geri alın: düzen bozulmamalı.
 
+### Örnek proje (aktarım gelene kadar)
+
+Gerçek proje telefona henüz aktarılamıyor. Test APK'sında **Ayarlar →
+Geliştirici → Örnek proje yükle** örnek görev, not ve günlük ekler; ikinci kez
+dokunmak kopya oluşturmaz. Ayarlar'daki **Proje** bölümü görev, not ve harita
+sayısını gösterir.
+
+- [ ] İlk açılışta Proje bölümünde sayılar 0 görünür.
+- [ ] "Örnek proje yükle" sonrası 6 görev ve 4 not görünür.
+- [ ] Uygulama tamamen kapatılıp açıldığında sayılar aynıdır.
+- [ ] Uygulama güncelleme APK'sıyla üzerine kurulduğunda veriler durur.
+
 ## 5. Sorun kaydı alma
 
 USB hata ayıklama açıkken:
