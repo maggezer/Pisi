@@ -1,13 +1,13 @@
 // The one place that holds navigation state (docs/mobile-plan.md §3.4):
-// the active tab, the sub-screens stacked on it, the open sheets or dialogs
-// and the day the Pisi tab shows.
+// the active tab, the sub-screens stacked on it, the open sheets or dialogs,
+// the day the Pisi tab shows and the note the note screen shows.
 
 export const PISI_HOME_TAB = 'pisi';
 export const PISI_TABS = Object.freeze(['pisi', 'tasks', 'notes', 'calendar', 'maps']);
-export const PISI_SUB_SCREENS = Object.freeze(['settings']);
+export const PISI_SUB_SCREENS = Object.freeze(['settings', 'note']);
 
 export function createRouter({ today }) {
-    let state = Object.freeze({ tab: PISI_HOME_TAB, stack: Object.freeze([]), overlays: Object.freeze([]), selectedDate: today });
+    let state = Object.freeze({ tab: PISI_HOME_TAB, stack: Object.freeze([]), overlays: Object.freeze([]), selectedDate: today, note: null });
     const listeners = new Set();
 
     function update(patch) {
@@ -31,10 +31,19 @@ export function createRouter({ today }) {
             return update({ tab, stack: Object.freeze([]), overlays: Object.freeze([]) });
         },
 
-        /** Opens a sub-screen over the current tab. */
+        /** Opens a sub-screen over the current tab. The note screen is opened with `openNote`. */
         push(screen) {
-            if (!PISI_SUB_SCREENS.includes(screen) || state.stack.at(-1) === screen) return state;
+            if (screen === 'note' || !PISI_SUB_SCREENS.includes(screen) || state.stack.at(-1) === screen) return state;
             return update({ stack: Object.freeze([...state.stack, screen]), overlays: Object.freeze([]) });
+        },
+
+        /** Opens the note screen for `{ path, title }` (the note's project-relative path). Open sheets are closed. */
+        openNote(note) {
+            const title = String(note?.title ?? '').trim();
+            const path = String(note?.path ?? '').trim() || null;
+            if (!title && !path) return state;
+            const stack = state.stack.filter((screen) => screen !== 'note');
+            return update({ stack: Object.freeze([...stack, 'note']), overlays: Object.freeze([]), note: Object.freeze({ path, title }) });
         },
 
         /** The day the Pisi tab shows (YYYY-MM-DD). Sheets stay as they are; whoever picked the day closes its own. */

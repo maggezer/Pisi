@@ -1,5 +1,65 @@
 # PISI Güncelleme Takip Dosyası
 
+## 15-11-2026 — Pisi Mobil: Görevler sekmesi ve hızlı ekle (M6, mobil iş)
+
+- Bu bir mobil iştir (`docs/mobile-plan.md` M6; G6, G14). Masaüstünde yalnız
+  `shared/date-parser.mjs` değişti (aşağıda "Masaüstüne etkisi").
+- **Görevler sekmesi** yer tutucu olmaktan çıktı (`mobile/src/screens/tasks/`).
+  Pisi sekmesi gibi bir kez kurulur ve yerinde güncellenir; hızlı ekle
+  satırına yazılan metin çevredeki yeniden çizimlerden etkilenmez.
+    - **Görünümler:** Bugün (varsayılan, G6), Yaklaşan, Gecikmiş, Gelen kutusu
+      (tarihsiz) ve Tamamlanan. Sayılar çiplerde yazar. Çipler ekrana
+      sığmayınca yatay kayar ve daha çip olan kenar solar (G14). Kovalar
+      masaüstünün `getPisiTodoDateBucket` kuralıyla bulunur
+      (`shared/task-views.mjs`); görevin günü Pisi sekmesiyle aynıdır
+      (`getPisiTaskCalendarIsoDate`).
+    - **Yaklaşan** iki grup gösterir: "7 gün içinde" masaüstünün "Yaklaşan"
+      listesiyle aynıdır; "Daha sonra" masaüstünde yalnız "Tümü" altında
+      görünen görevlerdir. Mobilde "Tümü" olmadığı için bu görevler burada
+      listelenir.
+    - Uzun listeler 100'er satır çizilir; "Daha fazla göster" kalanını getirir.
+    - **Hızlı ekle:** üstteki tek satır masaüstünün Türkçe tarih
+      ayrıştırıcısıyla okunur. Okunan gün, saat ve tekrar kaydetmeden önce çip
+      olarak görünür; öncelik yazılmaz, "Öncelik 3" çipine dokunup seçilir.
+      Tarih yazılmazsa görev Gelen kutusu'na düşer; yalnız saat yazılırsa
+      bugüne. Görev bakılan görünümden başka bir görünüme gittiyse snackbar
+      nereye eklendiğini söyler.
+- **Görev detayı** artık düzenlenebilir ve iki sekmede aynı sheet'tir
+  (`task-detail.mjs`, `task-sheets.mjs`): başlık, durum (5), öncelik (1–5),
+  tarih, saat, tekrar, hatırlatma (`reminderMode`) ve hatırlatma zamanı
+  (`reminderAt`). "Kaydet" düğmesi yoktur: alan değişince yazılır, değişmeyen
+  alan yazılmaz (V4). Hatırlatma değerleri yalnız saklanır; mobilde bildirim
+  yoktur. Durum "Tamamlandı" seçilince tekrar eden görevin sonraki tekrarı
+  masaüstü kuralıyla eklenir. Kaynak nota dokununca not ekranı açılır; bu ekran
+  M7'ye kadar yalnız notun adını gösteren bir yer tutucudur.
+- **Kaynağı not bloğu olan görevlerde yalnız durum değişir**; öteki alanlar
+  salt okunurdur. Bu görevlerin başlığı, önceliği ve tarihi nottaki todo
+  işaretinden gelir ve mobil o bloğu düzenleyemez (V8, `pisi-error.md` §5d).
+- Görev listesi ve tamamlama/geri alma akışı Pisi ekranından ortak bir
+  denetleyiciye taşındı (`task-controller.mjs`); iki sekme aynı listeyi
+  kullanır. `TaskRepo.update(id, patch)` eklendi: dosyayı yeniden okur, yalnız
+  o kaydı değiştirir, olmayan kimlik için kayıt oluşturmaz. Dosya biçimi
+  değişmedi.
+- Görev sheet'i açıkken katman yeniden çizilse de sheet yerinde kalır
+  (`ui/shell.mjs`), böylece yazılan başlık ve açık saat seçici kaybolmaz.
+- **Masaüstüne etkisi (`shared/date-parser.mjs`, `pisi-error.md` eski §5b):**
+  Quick Add'in tarih ifadesi alanı da bu ayrıştırıcıyı kullanır.
+    - `12.11` artık yalnız tarihtir; eskiden ayrıca 12:11 saati de okunuyordu.
+      Saat ayrı yazılırsa okunur (`12.11 14.30`). `saat 10.30` ve tarih
+      olamayan `14.30` saat olarak kalır.
+    - `bugün` ve tek başına `bu akşam` bugünü verir.
+    - `gelecek cuma` artık gelecek haftanın cumasıdır (hafta pazartesi
+      başlar); eskiden en yakın cumayı veriyordu. `gelecek pazartesi` ve
+      `gelecek hafta` değişmedi.
+- Testler: `mobile/tests/tasks-model.test.mjs` (masaüstü projesinde ve sınır
+  günlerinde masaüstü filtreleriyle aynı listeler, düzenleme kuralları),
+  `tasks-screen.test.mjs`, `e2e/tasks.spec.mjs` (açık ve koyu tema ekran
+  görüntüleri), kökte `tests/mobile-desktop-compat.test.mjs` (hızlı eklenen ve
+  düzenlenen görevler Project Integrity'de yeni bulgu üretmez, masaüstü
+  `task-store` aynı kaydı okur) ve `tests/shared-date-parser.test.mjs`.
+- Yeni bilinen sınır: `pisi-error.md` §5e (başlıktaki sayı çiftleri tarih
+  sayılabiliyor; tekrar ifadeleri sınırlı).
+
 ## 15-11-2026 — Pisi Mobil: Pisi sekmesi başlangıç ekranı (M5, mobil iş)
 
 - Bu bir mobil iştir (`docs/mobile-plan.md` M5; G2, G3, G4, G5, G15, G16).

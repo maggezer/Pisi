@@ -5,7 +5,7 @@ const start = () => createRouter({ today: '2026-11-14' });
 
 describe('router', () => {
     it('soğuk açılışta Pisi sekmesi ve bugünün tarihi gelir', () => {
-        expect(start().getState()).toEqual({ tab: 'pisi', stack: [], overlays: [], selectedDate: '2026-11-14' });
+        expect(start().getState()).toEqual({ tab: 'pisi', stack: [], overlays: [], selectedDate: '2026-11-14', note: null });
         expect(PISI_TABS).toEqual(['pisi', 'tasks', 'notes', 'calendar', 'maps']);
     });
 
@@ -34,6 +34,23 @@ describe('router', () => {
         expect(router.back()).toBe('minimize');
         expect(router.back()).toBe('minimize');
         expect(router.getState()).toMatchObject({ tab: 'pisi', stack: [], overlays: [] });
+    });
+
+    it("not ekranı bir notla açılır, açık sheet'leri kapatır; geri tuşu sekmeye döner", () => {
+        const router = start();
+        router.selectTab('tasks');
+        router.openOverlay('task:1');
+        router.openNote({ path: 'Ev.node', title: 'Ev' });
+        expect(router.getState()).toMatchObject({ tab: 'tasks', stack: ['note'], overlays: [], note: { path: 'Ev.node', title: 'Ev' } });
+        router.openNote({ path: 'Rapor.node', title: 'Rapor' });
+        expect(router.getState()).toMatchObject({ stack: ['note'], note: { path: 'Rapor.node', title: 'Rapor' } });
+        expect(router.back()).toBe('screen-closed');
+        expect(router.getState()).toMatchObject({ tab: 'tasks', stack: [] });
+
+        // Notu olmayan çağrı ve push('note') bir şey açmaz.
+        router.openNote({ path: '', title: '' });
+        router.push('note');
+        expect(router.getState().stack).toEqual([]);
     });
 
     it('Pisi sekmesindeki alt ekrandan geri, Pisi sekmesine döner', () => {

@@ -1,0 +1,67 @@
+/*
+ * The Tasks tab and the task detail sheet (docs/mobile-plan.md M6). Colours,
+ * sizes and motion come from ui/tokens.css; the task row, the group titles
+ * and the add line are shared with the Pisi tab (ui/components.css, pisi.css).
+ */
+
+/* ===== Tasks tab ===== */
+
+.pisi-tasks {
+    gap: 0;
+}
+
+/* Quick add and the view chips stay in reach while the list scrolls under them. */
+.pisi-tasks-top {
+    position: sticky;
+    top: calc(-1 * var(--pisi-space-4));
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--pisi-space-2);
+    margin: calc(-1 * var(--pisi-space-4)) calc(-1 * var(--pisi-space-4)) 0;
+    padding: var(--pisi-space-4) var(--pisi-space-4) var(--pisi-space-2);
+    background: var(--pisi-bg);
+}
+
+/* The chip row runs to the screen edges, so chips slide out under the fade instead of being cut by the padding. */
+.pisi-tasks-top .pisi-chip-row {
+    margin: 0 calc(-1 * var(--pisi-space-4));
+    padding: 0 var(--pisi-space-4);
+    scroll-padding: 0 var(--pisi-space-4);
+}
+
+.pisi-tasks-list {
+    padding-top: var(--pisi-space-2);
+}
+
+.pisi-tasks-list .pisi-task-group-title {
+    margin-top: var(--pisi-space-2);
+}
+
+/* ===== Task detail ===== */
+
+.pisi-task-detail-title {
+    margin: var(--pisi-space-2) 0 var(--pisi-space-4);
+    font-size: var(--pisi-text-lg);
+    font-weight: 600;
+    line-height: var(--pisi-leading-tight);
+    overflow-wrap: anywhere;
+}
+
+.pisi-task-detail-input {
+    display: block;
+    width: 100%;
+    min-height: var(--pisi-touch);
+    padding: var(--pisi-space-2) var(--pisi-space-3);
+    border: 1px solid var(--pisi-border);
+    border-radius: var(--pisi-radius-md);
+    background: var(--pisi-surface);
+    color: var(--pisi-text);
+    resize: none;
+}
+
+.pisi-task-detail-note {
+    margin: var(--pisi-space-3) var(--pisi-space-1) 0;
+    color: var(--pisi-muted);
+    font-size: var(--pisi-text-sm);
+}

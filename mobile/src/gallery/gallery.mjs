@@ -18,8 +18,28 @@ import { renderCard, renderEmptyState, renderList, renderListRow } from '../ui/l
 import { renderChoiceSheet, renderDialog, renderSheet } from '../ui/overlay.mjs';
 import { renderBottomNav, renderHeader } from '../ui/shell.mjs';
 import { createSnackbarController, renderSnackbar } from '../ui/snackbar.mjs';
+import { createTaskAddRow } from '../ui/task-add.mjs';
 import { renderTaskRow } from '../ui/task-row.mjs';
 import { PISI_TOKEN_PAIRS } from '../ui/token-pairs.mjs';
+
+// The add line with a line typed in: read-only chips and the priority chip, which is a button.
+function taskAddSample() {
+    const labels = { 'pisi.addTask': 'Görev ekle', 'pisi.addTaskSubmit': 'Görevi kaydet' };
+    const row = createTaskAddRow({
+        t: (key) => labels[key],
+        id: 'gallery-task-add',
+        describe: () => [
+            { kind: 'date', icon: 'calendar', text: 'Yarın' },
+            { kind: 'time', icon: 'clock', text: '14:00' },
+            { kind: 'priority', text: 'Öncelik 4', label: 'Öncelik 4, Yüksek. Değiştir', onClick: () => {} },
+            { kind: 'repeat', icon: 'repeat', text: 'Her hafta' }
+        ],
+        onSubmit: () => {}
+    });
+    row.input.value = 'yarın 14:00 haftalık rapor';
+    row.refresh();
+    return row.element;
+}
 
 const SURFACE_TOKENS = [
     '--pisi-bg',
@@ -354,6 +374,7 @@ export function mountGallery({ root, systemTheme }) {
                             fullTaskRow('row-3', 'Kedi maması al', [{ kind: 'priority', level: 2, text: PRIORITIES[1] }])
                         ].map((row) => h('li', { class: 'pisi-task-item' }, row))
                     ),
+                    taskAddSample(),
                     cluster(
                         PRIORITIES.map((text, index) =>
                             h(

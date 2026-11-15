@@ -34,8 +34,9 @@ export function describeDay(isoDate, { locale, today, marks, labels }) {
 /**
  * `month` is `YYYY-MM`. `labels`: `close`, `previousMonth`, `nextMonth`,
  * `today`, `goToday`, `hasTasks`, `hasDiary`, `legendTasks`, `legendDiary`.
+ * `actions` are extra buttons shown next to "go to today" (e.g. "remove the date").
  */
-export function renderDatePicker({ id, title, month, selected, today, locale, marks = null, labels, onSelect, onMonth, onClose }) {
+export function renderDatePicker({ id, title, month, selected, today, locale, marks = null, labels, actions = null, onSelect, onMonth, onClose }) {
     const weekdays = getWeekdayNames(locale);
     const grid = h(
         'div',
@@ -89,7 +90,8 @@ export function renderDatePicker({ id, title, month, selected, today, locale, ma
             h(
                 'div',
                 { class: 'pisi-date-actions' },
-                renderButton({ label: labels.goToday, variant: 'text', icon: 'calendar', dataset: { action: 'pick-today' }, onClick: () => onSelect(today) })
+                renderButton({ label: labels.goToday, variant: 'text', icon: 'calendar', dataset: { action: 'pick-today' }, onClick: () => onSelect(today) }),
+                actions
             )
         ]
     });

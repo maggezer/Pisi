@@ -258,6 +258,7 @@
 .pisi-task-add-chips {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: var(--pisi-space-2);
     margin: var(--pisi-space-2) 0 0;
 }
@@ -282,6 +283,23 @@
 .pisi-parse-chip .pisi-icon {
     width: 1rem;
     height: 1rem;
+}
+
+/* A chip that is a button (the priority of the quick add): the pill is the drawn shape, the button the 48 dp touch area. */
+.pisi-parse-action {
+    display: inline-flex;
+    align-items: center;
+    min-width: var(--pisi-touch);
+    min-height: var(--pisi-touch);
+    margin: -0.625rem 0;
+    padding: 0;
+    border: 0;
+    border-radius: var(--pisi-radius-full);
+    background: transparent;
+}
+
+.pisi-parse-action .pisi-parse-chip {
+    border: 1px solid var(--pisi-accent-text);
 }
 
 /* ===== Menu button ===== */
@@ -343,26 +361,6 @@
     border-radius: var(--pisi-radius-full);
     background: var(--pisi-accent-soft);
     color: var(--pisi-accent-text);
-}
-
-/* ===== Task detail ===== */
-
-.pisi-task-detail-title {
-    margin: var(--pisi-space-2) 0 var(--pisi-space-4);
-    font-size: var(--pisi-text-lg);
-    font-weight: 600;
-    line-height: var(--pisi-leading-tight);
-    overflow-wrap: anywhere;
-}
-
-.pisi-task-detail-title:focus-visible {
-    outline: 0;
-}
-
-.pisi-task-detail-note {
-    margin: var(--pisi-space-3) var(--pisi-space-1) 0;
-    color: var(--pisi-muted);
-    font-size: var(--pisi-text-sm);
 }
 
 /*

@@ -14,7 +14,12 @@ import test from 'node:test';
 import { createNodeFsDriver } from '../mobile/src/data/drivers/node-fs-driver.mjs';
 import { splitNoteBlocks } from '../mobile/src/data/note-blocks.mjs';
 import { createProject } from '../mobile/src/data/project-repo.mjs';
+import { parseTaskDraft } from '../mobile/src/screens/pisi/day-model.mjs';
+import { getTaskChoicePatch, getTaskDatePatch, getTaskReminderPatch, getTaskTimePatch, limitTaskPatch } from '../mobile/src/screens/tasks/task-edit.mjs';
+import { buildTaskLists } from '../mobile/src/screens/tasks/view-model.mjs';
+import { matchesPisiTodoFilter, parsePisiTodoTagValue } from '../renderer/tags/pisi-todo-utils.mjs';
 import { normalizePisiTaskRecord } from '../shared/task-model.mjs';
+import { getPisiTaskTodoTag } from '../shared/task-views.mjs';
 
 const require = createRequire(import.meta.url);
 const originalLoad = Module._load;
@@ -306,6 +311,106 @@ test('mobilin yazdığı proje masaüstü denetiminden yeni bulgu almaz ve yaln�
     await project.diary.setText(TODAY, 'Bugün mobilden yazdım.');
     await project.flush();
     assert.deepEqual(changedFiles(settled, snapshot(root)), []);
+});
+
+test('Görevler sekmesi (M6): hızlı eklenen ve detayda düzenlenen görevler masaüstüyle uyumludur, listeler masaüstüyle aynıdır', async (t) => {
+    const root = copyFixture(t);
+    addUnknownTaskFields(root);
+    const baseline = issueKeys(desktopAudit(root));
+    const before = snapshot(root);
+    const storeBefore = readJson(root, '.pisi/tasks.json');
+    const project = openMobile(root);
+    await project.open();
+    const stored = async (id) => (await project.tasks.list()).tasks.find((task) => task.id === id);
+    const edit = async (id, patchOf) => {
+        const task = await stored(id);
+        const patch = limitTaskPatch(task, patchOf(task));
+        return patch ? project.tasks.update(id, patch) : { ok: true, changed: false };
+    };
+
+    // Hızlı ekle: masaüstüyle aynı ayrıştırıcı; öncelik çipten gelir.
+    const quick = async (text, priority) => project.tasks.upsert({ ...parseTaskDraft(text, { now: NOW }).payload, priority });
+    const weekly = await quick('her pazartesi 14:00 haftalık rapor', 4);
+    const tomorrow = await quick('yarın 9.30 diş hekimi', 3);
+    const inbox = await quick('Kitap listesi', 5);
+    const far = await quick('25.12 yıl sonu raporu', 2);
+    // Detay: tarih, saat, öncelik, tekrar ve hatırlatma alanları tek tek değişir.
+    await edit(tomorrow.task.id, (task) => getTaskDatePatch(task, '2026-11-18'));
+    await edit(tomorrow.task.id, (task) => getTaskTimePatch(task, '16:45'));
+    await edit(tomorrow.task.id, (task) => getTaskChoicePatch(task, 'priority', '1'));
+    await edit(tomorrow.task.id, (task) => getTaskChoicePatch(task, 'repeat', 'monthly'));
+    await edit(tomorrow.task.id, (task) => getTaskChoicePatch(task, 'reminderMode', 'day-before'));
+    await edit(tomorrow.task.id, (task) => getTaskReminderPatch(task, '2026-11-17T09:00'));
+    await edit(far.task.id, (task) => getTaskDatePatch(task, null));
+    await edit(inbox.task.id, (task) => getTaskDatePatch(task, TODAY));
+    // Kaynağı not bloğu olan görevde yalnız durum değişir; öteki alanlar yazılmaz.
+    const noteTask = storeBefore.tasks.find((task) => task.title === 'Sunucu faturasını öde');
+    const ignored = await edit(noteTask.id, () => ({ title: 'Değişmemeli', priority: 1, dueDate: '2026-12-01' }));
+    await edit(noteTask.id, () => ({ status: 'waiting', priority: 1 }));
+    await project.flush();
+
+    assert.equal(ignored.changed, false);
+    assert.deepEqual(changedFiles(before, snapshot(root)), ['.pisi/tasks.json']);
+    assert.deepEqual(
+        issueKeys(desktopAudit(root)).filter((key) => !baseline.includes(key)),
+        []
+    );
+
+    const storeAfter = readJson(root, '.pisi/tasks.json');
+    const find = (id) => storeAfter.tasks.find((task) => task.id === id);
+    assert.deepEqual(
+        [weekly, tomorrow, inbox, far].map(({ task }) => {
+            const { title, priority, dueDate, scheduledAt, repeat, reminderMode, reminderAt, todoTag } = find(task.id);
+            return [title, priority, dueDate, scheduledAt, repeat, reminderMode, reminderAt, todoTag];
+        }),
+        [
+            ['her pazartesi 14:00 haftalık rapor', 4, '2026-11-16', '2026-11-16T14:00', 'weekly', 'none', null, 'todo.4.16-11-2026'],
+            ['yarın 9.30 diş hekimi', 1, '2026-11-18', '2026-11-18T16:45', 'monthly', 'day-before', '2026-11-17T09:00', 'todo.1.18-11-2026'],
+            ['Kitap listesi', 5, TODAY, null, 'none', 'none', null, 'todo.5.14-11-2026'],
+            ['25.12 yıl sonu raporu', 2, null, null, 'none', 'none', null, 'todo.2.none']
+        ]
+    );
+    // Nottan gelen görev: durum dışında her alan (todo etiketi dahil) eskisi gibi.
+    assert.deepEqual({ ...find(noteTask.id), status: 'todo', updatedAt: '' }, { ...noteTask, updatedAt: '' });
+    assert.equal(find(noteTask.id).status, 'waiting');
+    for (const task of storeBefore.tasks) if (task.id !== noteTask.id) assert.deepEqual(find(task.id), task);
+    assert.deepEqual(storeAfter.futureSetting, { keep: ['me', 1] });
+
+    // Masaüstü task-store aynı kayıtları okur; kayıtlar masaüstü normalizasyonuna göre zaten kanoniktir.
+    const desktopList = desktopTasks.listPisiFirstClassTasks(root);
+    assert.equal(desktopList.tasks.length, storeAfter.tasks.length);
+    for (const { task } of [weekly, tomorrow, inbox, far]) {
+        const record = find(task.id);
+        const canonical = normalizePisiTaskRecord(record, record, { now: NOW, makeUuid: () => 'unused', normalizeStoredPath: (value) => value || null });
+        assert.deepEqual(JSON.stringify(record), JSON.stringify({ ...canonical, updatedAt: record.updatedAt }));
+        assert.deepEqual(
+            desktopList.tasks.find((item) => item.id === task.id),
+            record
+        );
+    }
+
+    // Mobilin görünümleri, masaüstü görev panelinin tarih filtreleriyle aynı görevleri listeler:
+    // panel bitmiş görevleri gizler ve kalanları todo etiketinin tarihine göre süzer.
+    const lists = buildTaskLists(storeAfter.tasks, { today: TODAY });
+    const desktopView = (filter) =>
+        storeAfter.tasks
+            .filter((task) => task.status !== 'done')
+            .filter((task) => matchesPisiTodoFilter({ finishDate: parsePisiTodoTagValue(getPisiTaskTodoTag(task), NOW)?.finishDate ?? null }, filter, NOW))
+            .map((task) => task.title)
+            .sort();
+    const mobileView = (...names) =>
+        names
+            .flatMap((name) => lists[name])
+            .map((entry) => entry.task.title)
+            .sort();
+    assert.deepEqual(mobileView('today'), desktopView('today'));
+    assert.deepEqual(mobileView('week'), desktopView('upcoming'));
+    assert.deepEqual(mobileView('overdue'), desktopView('overdue'));
+    assert.deepEqual(mobileView('inbox'), desktopView('undated'));
+    assert.deepEqual(mobileView('today', 'week', 'later', 'overdue', 'inbox'), desktopView('all'));
+    assert.deepEqual(mobileView('today'), ['Egzersiz', 'Kitap listesi', 'Raporu gönder']);
+    assert.deepEqual(mobileView('week'), ['Sunucu faturasını öde', 'her pazartesi 14:00 haftalık rapor', 'yarın 9.30 diş hekimi']);
+    assert.deepEqual(mobileView('inbox'), ['25.12 yıl sonu raporu', 'Okuma listesini düzenle']);
 });
 
 test('(f) bozuk tasks.json ezilmez: mobil dosyayı salt okunur sayar ve yazmayı reddeder', async (t) => {

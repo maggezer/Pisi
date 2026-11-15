@@ -1,6 +1,6 @@
-// The task part of the Pisi tab: the groups of the selected day and the
-// "add task" line. The groups are drawn again whenever the tasks change; the
-// add line is built once, so what is being typed survives those redraws.
+// The task part of the Pisi tab: the groups of the selected day. They are
+// drawn again whenever the tasks change; the "add task" line under them
+// (ui/task-add.mjs) is built once, so what is being typed survives.
 
 import { formatShortDay } from '../../ui/dates.mjs';
 import { h } from '../../ui/dom.mjs';
@@ -77,64 +77,4 @@ export function renderTaskGroups({ t, locale, groups, selectedDate, today, loade
         );
     }
     return h('div', { class: 'pisi-task-groups', 'aria-busy': loaded ? 'false' : 'true' }, parts);
-}
-
-/**
- * The "add task" line. `describe(text)` returns the chips to show for what
- * has been typed (the day and time the parser read, a repeat), or [].
- */
-export function createTaskAddRow({ t, describe, onSubmit }) {
-    const input = h('input', {
-        type: 'text',
-        id: 'pisi-task-add',
-        class: 'pisi-task-add-input',
-        placeholder: t('pisi.addTask'),
-        'aria-label': t('pisi.addTask'),
-        'aria-describedby': 'pisi-task-add-chips',
-        autocomplete: 'off',
-        autocapitalize: 'sentences',
-        enterkeyhint: 'done',
-        dataset: { action: 'add-task-input' }
-    });
-    const submit = h(
-        'button',
-        { type: 'submit', class: 'pisi-task-add-submit', 'aria-label': t('pisi.addTaskSubmit'), disabled: true, dataset: { action: 'add-task' } },
-        icon('check')
-    );
-    const chips = h('p', { class: 'pisi-task-add-chips', id: 'pisi-task-add-chips', 'aria-live': 'polite', hidden: true });
-    const form = h(
-        'form',
-        { class: 'pisi-task-add', novalidate: true },
-        h('div', { class: 'pisi-task-add-line' }, h('span', { class: 'pisi-task-add-icon' }, icon('plus')), input, submit),
-        chips
-    );
-
-    function refresh() {
-        const items = input.value.trim() ? describe(input.value) : [];
-        submit.disabled = !input.value.trim() || input.readOnly;
-        chips.replaceChildren(
-            ...items.map((item) => h('span', { class: 'pisi-parse-chip', dataset: { chip: item.kind } }, item.icon ? icon(item.icon) : null, item.text))
-        );
-        chips.hidden = !items.length;
-    }
-
-    input.addEventListener('input', refresh);
-    form.addEventListener('submit', (event) => {
-        event.preventDefault();
-        const text = input.value.trim();
-        if (!text || input.readOnly) return;
-        input.value = '';
-        refresh();
-        onSubmit(text);
-    });
-
-    return {
-        element: form,
-        input,
-        refresh,
-        setReadOnly(readOnly) {
-            input.readOnly = readOnly;
-            refresh();
-        }
-    };
 }

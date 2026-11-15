@@ -114,10 +114,10 @@ test('görevler: gruplar, iki satıra saran başlık, saat ve öncelik; tamamlam
     await page.getByRole('status').getByRole('button', { name: 'Geri al' }).tap();
     await expect.poll(async () => (await storedTasks(page)).length).toBe(6);
 
-    // The row opens the read-only detail.
+    // The row opens the task detail, the same sheet the Tasks tab opens.
     await page.locator('.pisi-task-body', { hasText: 'Sabah yürüyüşü' }).tap();
     const detail = page.getByRole('dialog', { name: 'Görev' });
-    await expect(detail.locator('[data-task-field="time"] .pisi-row-value')).toHaveText('07:30');
+    await expect(detail.locator('[data-task-input="time"]')).toHaveValue('07:30');
     await expect(detail.locator('[data-task-field="repeat"] .pisi-row-value')).toHaveText('Her gün');
     await shot(page, '15-pisi-task-detail');
     await back(page);

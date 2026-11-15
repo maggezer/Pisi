@@ -113,6 +113,19 @@
     scrollbar-width: none;
 }
 
+/* An edge that hides more chips fades out, so the row reads as scrollable (G14). ui/chip.mjs sets data-fade. */
+.pisi-chip-row[data-fade='end'] {
+    mask-image: linear-gradient(to right, black calc(100% - 3rem), transparent);
+}
+
+.pisi-chip-row[data-fade='start'] {
+    mask-image: linear-gradient(to left, black calc(100% - 3rem), transparent);
+}
+
+.pisi-chip-row[data-fade='both'] {
+    mask-image: linear-gradient(to right, transparent, black 3rem, black calc(100% - 3rem), transparent);
+}
+
 .pisi-chip {
     position: relative;
     display: inline-flex;
@@ -272,6 +285,25 @@
     max-width: 50%;
     text-align: end;
     overflow-wrap: anywhere;
+}
+
+/* A row whose value is a native input (time, date and time). The whole row is its label. */
+.pisi-row-input {
+    flex: none;
+    max-width: 60%;
+    min-height: var(--pisi-touch);
+    padding: 0 var(--pisi-space-3);
+    border: 1px solid var(--pisi-border);
+    border-radius: var(--pisi-radius-sm);
+    background: var(--pisi-surface);
+    color: var(--pisi-text);
+    font-size: var(--pisi-text-sm);
+    font-variant-numeric: tabular-nums;
+}
+
+.pisi-row-input:disabled,
+.pisi-row-action:disabled {
+    opacity: 0.5;
 }
 
 .pisi-row > .pisi-icon {

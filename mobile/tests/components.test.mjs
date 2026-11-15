@@ -1,12 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderButton, renderFab, renderIconButton } from '../src/ui/button.mjs';
-import { renderChip, renderChipRow, renderSegmented } from '../src/ui/chip.mjs';
+import { renderChip, renderChipRow, renderSegmented, syncChipRowFade } from '../src/ui/chip.mjs';
 import { renderCheckbox, renderTextField } from '../src/ui/field.mjs';
 import { PISI_ICON_NAMES, icon } from '../src/ui/icons.mjs';
 import { renderCard, renderEmptyState, renderList, renderListRow } from '../src/ui/list.mjs';
 import { renderChoiceSheet, renderDialog, renderSheet } from '../src/ui/overlay.mjs';
-import { renderBottomNav, renderHeader, renderShell } from '../src/ui/shell.mjs';
+import { createShell, renderBottomNav, renderHeader, renderShell } from '../src/ui/shell.mjs';
 import { createSnackbarController, renderSnackbar } from '../src/ui/snackbar.mjs';
+import { createTaskAddRow } from '../src/ui/task-add.mjs';
 
 const name = (element) => (element.getAttribute('aria-label') || element.textContent).trim();
 
@@ -70,6 +71,28 @@ describe('çip ve segment', () => {
         expect(upcoming.querySelector('.pisi-chip-count')).toBe(null);
         upcoming.click();
         expect(onClick).toHaveBeenCalledTimes(1);
+    });
+
+    it('çip satırı: daha çip olan kenar solar, kaydırdıkça öteki kenar (G14)', () => {
+        const row = renderChipRow({ label: 'Görünümler', chips: [renderChip({ label: 'Bugün', onClick: () => {} })] });
+        expect(row.dataset.fade).toBe('none');
+        const layout = (scrollLeft) => {
+            Object.defineProperty(row, 'scrollWidth', { value: 600, configurable: true });
+            Object.defineProperty(row, 'clientWidth', { value: 380, configurable: true });
+            Object.defineProperty(row, 'scrollLeft', { value: scrollLeft, configurable: true });
+        };
+        layout(0);
+        syncChipRowFade(row);
+        expect(row.dataset.fade).toBe('end');
+        layout(100);
+        row.dispatchEvent(new Event('scroll'));
+        expect(row.dataset.fade).toBe('both');
+        layout(220);
+        row.dispatchEvent(new Event('scroll'));
+        expect(row.dataset.fade).toBe('start');
+        Object.defineProperty(row, 'scrollWidth', { value: 380, configurable: true });
+        syncChipRowFade(row);
+        expect(row.dataset.fade).toBe('none');
     });
 
     it('segment tek seçimlidir; seçili olana yeniden dokunmak bir şey yapmaz', () => {
@@ -326,7 +349,7 @@ describe('üst başlık ve alt menü', () => {
         expect(renderShell(base).querySelector('.pisi-floating')).toBe(null);
 
         const shell = renderShell({ ...base, fab: renderFab({ label: 'Hızlı ekle' }), snackbar: renderSnackbar({ message: 'Kaydedildi' }) });
-        const floating = shell.querySelector('.pisi-body > .pisi-floating');
+        const floating = shell.querySelector('.pisi-body .pisi-floating');
         expect(floating.querySelector('.pisi-fab')).not.toBe(null);
         expect(floating.querySelector('[role="status"]')).not.toBe(null);
         expect(shell.querySelector('.pisi-tabs').contains(floating)).toBe(false);
@@ -335,5 +358,69 @@ describe('üst başlık ve alt menü', () => {
         const sub = renderShell({ ...base, inSubScreen: true });
         expect(sub.querySelector('.pisi-tabs')).toBe(null);
         expect(sub.querySelector('[data-action="back"]').getAttribute('aria-label')).toBe('action.back');
+    });
+
+    it('kalıcı kabuk: aynı sheet yeniden verildiğinde yerinden oynamaz, odak içinde kalır', () => {
+        const t = (key) => key;
+        const shell = createShell({ t, title: 'Görevler', tabs: items, activeTab: 'tasks', inSubScreen: false, body: document.createElement('section') });
+        document.body.append(shell.element);
+        const input = document.createElement('input');
+        const sheet = renderSheet({ id: 'task', title: 'Görev', closeLabel: 'Kapat', onClose: () => {}, children: input });
+        shell.setLayer({ sheet });
+        input.focus();
+        shell.setLayer({ sheet, snackbar: renderSnackbar({ message: 'Kaydedildi' }) });
+        shell.setLayer({ sheet });
+        expect(document.activeElement).toBe(input);
+        expect(shell.element.querySelector('.pisi-floating')).toBe(null);
+        expect(shell.element.querySelectorAll('[data-sheet]').length).toBe(1);
+
+        shell.setLayer({ sheet: renderSheet({ id: 'other', title: 'Başka', closeLabel: 'Kapat', onClose: () => {}, children: [] }) });
+        expect([...shell.element.querySelectorAll('[data-sheet]')].map((element) => element.dataset.sheet)).toEqual(['other']);
+        shell.setLayer({});
+        expect(shell.element.querySelector('[data-sheet]')).toBe(null);
+        shell.element.remove();
+    });
+});
+
+describe('görev ekleme satırı', () => {
+    it('çipler yazılanın nasıl okunduğunu gösterir; düğme olan çip tıklamayı iletir', () => {
+        const t = (key) => key;
+        const onPick = vi.fn();
+        const onSubmit = vi.fn();
+        const row = createTaskAddRow({
+            t,
+            id: 'quick',
+            describe: (text) => [
+                { kind: 'date', icon: 'calendar', text: `gün:${text}` },
+                { kind: 'priority', text: 'Öncelik 3', label: 'Önceliği değiştir', onClick: onPick }
+            ],
+            onSubmit
+        });
+        const chips = row.element.querySelector('.pisi-task-add-chips');
+        expect([row.input.id, row.input.getAttribute('aria-describedby'), chips.id, chips.hidden]).toEqual(['quick', 'quick-chips', 'quick-chips', true]);
+
+        row.input.value = 'rapor';
+        row.input.dispatchEvent(new Event('input'));
+        expect(chips.hidden).toBe(false);
+        const [date, priority] = chips.children;
+        expect([date.tagName, date.dataset.chip, date.textContent]).toEqual(['SPAN', 'date', 'gün:rapor']);
+        expect([priority.tagName, priority.dataset.chip, priority.getAttribute('aria-label'), priority.textContent]).toEqual([
+            'BUTTON',
+            'priority',
+            'Önceliği değiştir',
+            'Öncelik 3'
+        ]);
+        expect(priority.type).toBe('button');
+        priority.click();
+        expect(onPick).toHaveBeenCalledTimes(1);
+        expect(onSubmit).not.toHaveBeenCalled();
+
+        row.setReadOnly(true);
+        row.element.dispatchEvent(new Event('submit', { cancelable: true }));
+        expect(onSubmit).not.toHaveBeenCalled();
+        row.setReadOnly(false);
+        row.element.dispatchEvent(new Event('submit', { cancelable: true }));
+        expect(onSubmit).toHaveBeenCalledWith('rapor');
+        expect([row.input.value, chips.hidden]).toEqual(['', true]);
     });
 });

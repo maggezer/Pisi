@@ -37,7 +37,7 @@ function getCompletedDay(task) {
 }
 
 // Planned times first, in order; then the higher priority (5 is the highest); then the user's own order.
-function byTimeThenPriority(a, b) {
+export function byTimeThenPriority(a, b) {
     const timeA = getTaskTime(a.task);
     const timeB = getTaskTime(b.task);
     if (timeA !== timeB) {
@@ -95,20 +95,24 @@ export function getWheelDays(anchor, radius = PISI_WHEEL_RADIUS) {
  * desktop, where the date expression is not cut out of the text either. When
  * the line names no day, the selected day is used: the same parser reads the
  * line again with that day written out, so a time in the line ("10:00") and
- * a repeat ("her gün") still apply.
- * Returns null for an empty line, else `{ payload, day, time, deadline, repeat }`.
+ * a repeat ("her gün") still apply. Without a selected day (the Tasks tab) a
+ * line that names no day stays undated, unless it gives a time of day: that
+ * is today.
+ * Returns null for an empty line, else `{ payload, day, time, deadline, repeat }`;
+ * `day` is null for an undated task.
  */
-export function parseTaskDraft(text, { selectedDate, now }) {
+export function parseTaskDraft(text, { selectedDate = null, now }) {
     const title = String(text ?? '')
         .replace(/\s+/g, ' ')
         .trim();
     if (!title) return null;
     let parsed = parsePisiTurkishDateExpression(title, now);
     if (!parsed.scheduledAt && !parsed.deadline) {
-        const day = isoToDate(selectedDate);
-        parsed = parsePisiTurkishDateExpression(`${title} ${day.getDate()} ${MONTH_NAMES[day.getMonth()]} ${day.getFullYear()}`, now);
+        const day = selectedDate ? isoToDate(selectedDate) : new Date(now);
+        const dated = parsePisiTurkishDateExpression(`${title} ${day.getDate()} ${MONTH_NAMES[day.getMonth()]} ${day.getFullYear()}`, now);
+        if (selectedDate || String(dated.scheduledAt || dated.deadline || '').length > 10) parsed = dated;
     }
-    const stamp = parsed.scheduledAt || parsed.deadline || selectedDate;
+    const stamp = parsed.scheduledAt || parsed.deadline || selectedDate || null;
     return {
         payload: {
             title,
@@ -118,8 +122,8 @@ export function parseTaskDraft(text, { selectedDate, now }) {
             repeat: parsed.repeat,
             completionOffsetDays: parsed.completionOffsetDays
         },
-        day: stamp.slice(0, 10),
-        time: stamp.length > 10 ? stamp.slice(11, 16) : null,
+        day: stamp ? stamp.slice(0, 10) : null,
+        time: stamp && stamp.length > 10 ? stamp.slice(11, 16) : null,
         deadline: !parsed.scheduledAt && Boolean(parsed.deadline),
         repeat: parsed.repeat
     };

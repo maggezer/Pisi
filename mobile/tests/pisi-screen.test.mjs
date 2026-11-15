@@ -317,24 +317,30 @@ describe('Pisi sekmesi: görevler', () => {
         expect(storedTasks(driver)[1]).toMatchObject({ title: 'yarın 14:00 rapor yaz', scheduledAt: '2026-11-15T14:00', dueDate: '2026-11-15' });
     });
 
-    it('satıra dokununca salt okunur görev detayı açılır; geri tuşu kapatır', async () => {
+    it('satıra dokununca görev detayı açılır; geri tuşu kapatır ve odak satıra döner', async () => {
         const { platform } = await start({ files: { '.pisi/tasks.json': tasksFile() } });
         tap(`[data-task-open="${TASKS[0].id}"]`);
-        expect($('.pisi-task-detail-title').textContent).toBe('Sabah yürüyüşü');
+        expect($('[role="dialog"] .pisi-task-detail-title').value).toBe('Sabah yürüyüşü');
         const field = (id) => $(`[data-task-field="${id}"] .pisi-row-value`)?.textContent ?? null;
-        expect(['status', 'priority', 'date', 'time', 'repeat', 'source'].map(field)).toEqual([
-            'Yapılacak',
-            'Orta',
-            'Cumartesi, 14 Kasım',
-            '07:30',
-            'Her gün',
-            null
-        ]);
-        expect($('[role="dialog"]').querySelectorAll('input, textarea, [role="checkbox"]').length).toBe(0);
+        expect(['status', 'priority', 'date', 'repeat'].map(field)).toEqual(['Yapılacak', 'Orta', 'Cumartesi, 14 Kasım', 'Her gün']);
+        expect($('[data-task-input="time"]').value).toBe('07:30');
+        expect(document.activeElement.dataset.taskField).toBe('status');
 
         platform.pressBack();
         expect($('[role="dialog"]')).toBe(null);
         expect(document.activeElement.dataset.taskOpen).toBe(TASKS[0].id);
+    });
+
+    it('detayda yapılan değişiklik Pisi sekmesindeki satıra yansır', async () => {
+        const { driver } = await start({ files: { '.pisi/tasks.json': tasksFile() } });
+        tap(`[data-task-open="${TASKS[1].id}"]`);
+        tap('[data-task-field="priority"]');
+        tap('.pisi-sheet-option[data-value="2"]');
+        await settle();
+        expect($('[data-task-field="priority"] .pisi-row-value').textContent).toBe('Düşük');
+        expect(document.activeElement.dataset.taskField).toBe('priority');
+        expect($(`[data-task="${TASKS[1].id}"] .pisi-task-meta-priority`).textContent).toBe('Düşük');
+        expect(storedTasks(driver)[1]).toMatchObject({ priority: 2, todoTag: 'todo.2.14-11-2026', deneme: 'korunur' });
     });
 
     it('bozuk tasks.json ezilmez: görevler kilitlenir ve kullanıcıya söylenir (V7)', async () => {
