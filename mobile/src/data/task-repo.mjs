@@ -143,6 +143,29 @@ export function createTaskRepo({ driver, writer, now, makeUuid }) {
                 tasks.push(next);
                 return { ...done, next };
             });
+        },
+
+        /**
+         * Takes back a `complete()` the user has just undone: the task returns
+         * to `status`, and the occurrence that completing a repeating task
+         * added (`next`, as `complete()` returned it) is taken out again while
+         * it is still exactly that record. A record changed since then stays.
+         */
+        undoComplete(taskId, { status = 'todo', next = null } = {}) {
+            return mutate((tasks) => {
+                if (!tasks.some((task) => task && task.id === taskId)) return { ok: false, notFound: true, skip: true };
+                const restored = upsertInto(tasks, { id: taskId, status: status === 'done' ? 'todo' : status });
+                const nextIndex = next?.id ? tasks.findIndex((task) => task && task.id === next.id) : -1;
+                const removed = nextIndex >= 0 && JSON.stringify(tasks[nextIndex]) === JSON.stringify(next);
+                if (removed) tasks.splice(nextIndex, 1);
+                return {
+                    ok: true,
+                    changed: Boolean(restored.changed) || removed,
+                    task: restored.task,
+                    removedNext: removed,
+                    skip: !restored.changed && !removed
+                };
+            });
         }
     };
 }

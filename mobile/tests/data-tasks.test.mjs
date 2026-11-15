@@ -179,6 +179,48 @@ describe('TaskRepo', () => {
         expect(next.id).not.toBe(recurring.id);
     });
 
+    it('undoComplete: görevi eski durumuna döndürür; başka kayda dokunmaz', async () => {
+        const other = storedTask({ id: 'task_22222222-2222-4222-8222-222222222222', title: 'Başka görev' });
+        const doing = storedTask({ status: 'doing' });
+        const { project, driver } = createMemoryProject({ [KEY]: store([doing, other], { extra: 'korunur' }) });
+        await project.tasks.complete(doing.id);
+
+        const undone = await project.tasks.undoComplete(doing.id, { status: 'doing' });
+        expect(undone).toMatchObject({ ok: true, changed: true, removedNext: false });
+        const stored = read(driver);
+        expect(stored.tasks[0]).toMatchObject({ ...doing, updatedAt: NOW.toISOString(), completedAt: null });
+        expect(stored.tasks[1]).toEqual(other);
+        expect(stored.extra).toBe('korunur');
+
+        // Nothing to undo: nothing is written (V4).
+        const writes = driver.count('writeText');
+        expect(await project.tasks.undoComplete(doing.id, { status: 'doing' })).toMatchObject({ ok: true, changed: false });
+        expect(await project.tasks.undoComplete('task_yok')).toMatchObject({ ok: false, notFound: true });
+        expect(driver.count('writeText')).toBe(writes);
+    });
+
+    it('undoComplete: tekrar eden görevin az önce eklenen tekrarını geri alır; değişmiş tekrarı bırakır', async () => {
+        const recurring = storedTask({ repeat: 'daily', todoTag: 'todo.2.14-11-2026' });
+        const first = createMemoryProject({ [KEY]: store([recurring]) });
+        const done = await first.project.tasks.complete(recurring.id);
+        expect(read(first.driver).tasks).toHaveLength(2);
+        expect(await first.project.tasks.undoComplete(recurring.id, { status: 'todo', next: done.next })).toMatchObject({ changed: true, removedNext: true });
+        expect(read(first.driver).tasks.map((task) => [task.id, task.status])).toEqual([[recurring.id, 'todo']]);
+
+        // The next occurrence was edited in the meantime (here: on the desktop). It is someone's data now and stays.
+        const second = createMemoryProject({ [KEY]: store([recurring]) });
+        const again = await second.project.tasks.complete(recurring.id);
+        await second.project.tasks.upsert({ id: again.next.id, title: 'Değişti' });
+        expect(await second.project.tasks.undoComplete(recurring.id, { status: 'todo', next: again.next })).toMatchObject({
+            changed: true,
+            removedNext: false
+        });
+        expect(read(second.driver).tasks.map((task) => [task.title, task.status])).toEqual([
+            ['Raporu gönder', 'todo'],
+            ['Değişti', 'todo']
+        ]);
+    });
+
     it('bozuk tasks.json ezilmez, salt okunur sayılır (V7)', async () => {
         for (const broken of ['{ "tasks": [', '', '[]', '{"version":1,"tasks":{}}']) {
             const { project, driver } = createMemoryProject({ [KEY]: broken });

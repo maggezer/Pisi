@@ -43,3 +43,23 @@ export function renderShell({ t, title, tabs, activeTab, inSubScreen, body, shee
     const floating = fab || snackbar ? h('div', { class: 'pisi-floating' }, fab, snackbar) : null;
     return h('div', { class: 'pisi-shell' }, header, h('div', { class: 'pisi-body' }, h('main', { class: 'pisi-main' }, body), floating), nav, sheet);
 }
+
+/**
+ * Chrome of the Pisi tab: no header and no bottom navigation, the screen
+ * fills the window. The screen element stays in place between redraws; only
+ * the layer above it (sheet, snackbar) is replaced with `setLayer`.
+ */
+export function renderHomeShell({ body }) {
+    const layer = h('div', { class: 'pisi-layer' });
+    const element = h(
+        'div',
+        { class: 'pisi-shell pisi-shell-home' },
+        h('div', { class: 'pisi-body' }, h('main', { class: 'pisi-main pisi-main-home' }, body), layer)
+    );
+    return {
+        element,
+        setLayer({ sheet = null, snackbar = null }) {
+            layer.replaceChildren(...[snackbar ? h('div', { class: 'pisi-floating' }, snackbar) : null, sheet].filter(Boolean));
+        }
+    };
+}

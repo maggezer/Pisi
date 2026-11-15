@@ -470,3 +470,150 @@ textarea.pisi-field-input {
     font-size: var(--pisi-text-sm);
     line-height: var(--pisi-leading);
 }
+
+/* ===== Task row ===== */
+
+.pisi-task-list {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--pisi-line);
+    border-radius: var(--pisi-radius-md);
+    background: var(--pisi-surface);
+    list-style: none;
+}
+
+.pisi-task-item + .pisi-task-item {
+    border-top: 1px solid var(--pisi-line);
+}
+
+.pisi-task {
+    display: flex;
+    align-items: flex-start;
+}
+
+.pisi-task > .pisi-checkbox {
+    flex: none;
+    margin-top: 0.125rem;
+}
+
+.pisi-task-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--pisi-space-1);
+    min-width: 0;
+    min-height: 3.25rem;
+    padding: var(--pisi-space-3) var(--pisi-space-4) var(--pisi-space-3) 0;
+    border: 0;
+    background: transparent;
+    text-align: start;
+}
+
+.pisi-task-body:active {
+    background: var(--pisi-surface-2);
+}
+
+.pisi-task-body:focus-visible {
+    outline-offset: -0.1875rem;
+}
+
+/* The title wraps onto a second line; it is never cut to one. */
+.pisi-task-title {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    line-height: var(--pisi-leading-tight);
+    overflow-wrap: anywhere;
+}
+
+.pisi-task-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--pisi-space-1) var(--pisi-space-3);
+    color: var(--pisi-muted);
+    font-size: var(--pisi-text-sm);
+    line-height: var(--pisi-leading-tight);
+}
+
+.pisi-task-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--pisi-space-1);
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.pisi-task-meta-item .pisi-icon {
+    width: 0.875rem;
+    height: 0.875rem;
+}
+
+.pisi-task-meta-time {
+    color: var(--pisi-text);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+.pisi-task-meta-date {
+    color: var(--pisi-danger-text);
+    font-weight: 600;
+}
+
+.pisi-task-priority-mark {
+    flex: none;
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: var(--pisi-radius-full);
+    background: var(--pisi-priority-3);
+}
+
+.pisi-task-meta-priority[data-priority='1'] .pisi-task-priority-mark {
+    background: var(--pisi-priority-1);
+}
+
+.pisi-task-meta-priority[data-priority='2'] .pisi-task-priority-mark {
+    background: var(--pisi-priority-2);
+}
+
+.pisi-task-meta-priority[data-priority='4'] .pisi-task-priority-mark {
+    background: var(--pisi-priority-4);
+}
+
+.pisi-task-meta-priority[data-priority='5'] .pisi-task-priority-mark {
+    background: var(--pisi-priority-5);
+}
+
+.pisi-task-done .pisi-task-title {
+    color: var(--pisi-muted);
+    text-decoration: line-through;
+}
+
+/* ===== Day dots (date wheel and date picker) ===== */
+
+.pisi-day-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.1875rem;
+    height: 0.375rem;
+}
+
+.pisi-day-dot {
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: var(--pisi-radius-full);
+}
+
+/* Tasks: a filled dot. Diary: a ring. The two differ in shape, not only in colour. */
+.pisi-day-dot-tasks {
+    background: var(--pisi-accent-text);
+}
+
+.pisi-day-dot-diary {
+    border: 0.09375rem solid var(--pisi-muted);
+}

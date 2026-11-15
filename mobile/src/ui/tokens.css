@@ -35,6 +35,13 @@
     --pisi-danger-text: #ad342b;
     --pisi-success-text: #2f7344;
 
+    /* Task priority marks, 1 (very low) to 5 (very high). Each reaches 3:1 on every surface. */
+    --pisi-priority-1: #8f7d6b;
+    --pisi-priority-2: #3f7d8c;
+    --pisi-priority-3: #8a7400;
+    --pisi-priority-4: #b85c00;
+    --pisi-priority-5: #b83a30;
+
     /* Snackbar: the opposite theme's surface. */
     --pisi-inverse-surface: #2b211b;
     --pisi-inverse-text: #f5ede4;
@@ -109,6 +116,12 @@
     --pisi-on-danger: #2a0f0b;
     --pisi-danger-text: #f08a7d;
     --pisi-success-text: #80bd8d;
+
+    --pisi-priority-1: #8d7b6a;
+    --pisi-priority-2: #7fb8c9;
+    --pisi-priority-3: #d9c65a;
+    --pisi-priority-4: #f3a83b;
+    --pisi-priority-5: #e66f61;
 
     --pisi-inverse-surface: #f5ede4;
     --pisi-inverse-text: #2b211b;

@@ -37,6 +37,12 @@ export function createRouter({ today }) {
             return update({ stack: Object.freeze([...state.stack, screen]), overlays: Object.freeze([]) });
         },
 
+        /** The day the Pisi tab shows (YYYY-MM-DD). Sheets stay as they are; whoever picked the day closes its own. */
+        setSelectedDate(isoDate) {
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(String(isoDate)) || isoDate === state.selectedDate) return state;
+            return update({ selectedDate: isoDate });
+        },
+
         openOverlay(overlay) {
             if (!overlay || state.overlays.at(-1) === overlay) return state;
             return update({ overlays: Object.freeze([...state.overlays, overlay]) });

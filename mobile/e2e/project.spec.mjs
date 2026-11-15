@@ -1,38 +1,12 @@
 import { expect, test } from '@playwright/test';
-
-// Saturday 14 November 2026, 09:30 in Istanbul.
-const NOW = new Date('2026-11-14T09:30:00+03:00');
+import { open, openFromMenu, projectFiles, shot } from './helpers.mjs';
 
 async function openSettings(page) {
-    await page.clock.setFixedTime(NOW);
-    await page.goto('/');
-    await expect(page.locator('[data-screen]')).toBeVisible();
-    await page.getByRole('button', { name: 'Ayarları aç' }).tap();
-    await expect(page.locator('[data-screen]')).toHaveAttribute('data-screen', 'settings');
+    await open(page);
+    await openFromMenu(page, 'settings');
 }
 
 const count = (page, id) => page.locator(`[data-project="${id}"] .pisi-row-value`);
-const shot = (page, name) => page.screenshot({ path: `e2e/screenshots/${test.info().project.name}/${name}.png`, animations: 'disabled' });
-
-/** The project files as the storage driver sees them: the Filesystem plugin's web store (IndexedDB). */
-const projectFiles = (page) =>
-    page.evaluate(
-        () =>
-            new Promise((resolve, reject) => {
-                const open = indexedDB.open('Disc');
-                open.onerror = () => reject(open.error);
-                open.onsuccess = () => {
-                    const request = open.result.transaction('FileStorage').objectStore('FileStorage').getAll();
-                    request.onerror = () => reject(request.error);
-                    request.onsuccess = () =>
-                        resolve(
-                            request.result
-                                .filter((entry) => entry.type === 'file')
-                                .map((entry) => ({ path: entry.path.replace(/^\/DATA\/projects\/default\//, ''), content: entry.content }))
-                        );
-                };
-            })
-    );
 
 test('ilk açılışta boş proje kurulur; örnek proje yüklenir ve yeniden başlatınca veriler durur', async ({ page }) => {
     await openSettings(page);
@@ -49,7 +23,7 @@ test('ilk açılışta boş proje kurulur; örnek proje yüklenir ve yeniden ba�
 
     // Reloading is a cold start: everything shown now is read back from storage.
     await page.reload();
-    await page.getByRole('button', { name: 'Ayarları aç' }).tap();
+    await openFromMenu(page, 'settings');
     await expect(count(page, 'tasks')).toHaveText('6');
     await expect(count(page, 'notes')).toHaveText('4');
     await expect(count(page, 'maps')).toHaveText('0');

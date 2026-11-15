@@ -7,19 +7,18 @@ import { PISI_LANGUAGES, createI18n, detectLanguage } from '../i18n/index.mjs';
 import { renderCalendarScreen } from '../screens/calendar/index.mjs';
 import { renderMapsScreen } from '../screens/maps/index.mjs';
 import { renderNotesScreen } from '../screens/notes/index.mjs';
-import { renderPisiScreen } from '../screens/pisi/index.mjs';
+import { createPisiScreen } from '../screens/pisi/index.mjs';
 import { renderSettingsScreen } from '../screens/settings/index.mjs';
 import { renderTasksScreen } from '../screens/tasks/index.mjs';
 import { renderChoiceSheet } from '../ui/overlay.mjs';
-import { renderShell } from '../ui/shell.mjs';
+import { renderHomeShell, renderShell } from '../ui/shell.mjs';
 import { createSnackbarController, renderSnackbar } from '../ui/snackbar.mjs';
 import { createLifecycle } from './lifecycle.mjs';
 import { PISI_THEME_PREFERENCES, createPreferences } from './preferences.mjs';
-import { PISI_TABS, createRouter } from './router.mjs';
+import { PISI_HOME_TAB, PISI_TABS, createRouter } from './router.mjs';
 import { PISI_THEME_BACKGROUNDS, resolveTheme } from './theme.mjs';
 
 const TAB_SCREENS = Object.freeze({
-    pisi: renderPisiScreen,
     tasks: renderTasksScreen,
     notes: renderNotesScreen,
     calendar: renderCalendarScreen,
@@ -45,11 +44,14 @@ export function createApp({
     const documentRoot = root.ownerDocument.documentElement;
     const preferences = createPreferences(storage, PISI_LANGUAGES);
     const lifecycle = createLifecycle({ onError });
-    const today = getPisiTodayIsoDate(now());
+    let today = getPisiTodayIsoDate(now());
     const router = createRouter({ today });
     let i18n = createI18n(preferences.getLanguage() ?? detectLanguage(deviceLanguage));
     let focusAfterRender = null;
+    let focusedOverlay = null;
     let destroyed = false;
+    // The Pisi tab's chrome while that tab is on screen; it is kept between redraws.
+    let home = null;
     // What Settings shows about the project; `counts` is null until the files have been read.
     const projectState = { counts: null, readOnlyFiles: [] };
     const view = root.ownerDocument.defaultView;
@@ -58,6 +60,23 @@ export function createApp({
         setTimer: (callback, delay) => view.setTimeout(callback, delay),
         clearTimer: (timer) => view.clearTimeout(timer)
     });
+
+    // The start screen is built once and updated in place (screens/pisi/index.mjs).
+    const pisi = createPisiScreen({
+        project,
+        platform,
+        snackbar,
+        now,
+        setTimer: (callback, delay) => view.setTimeout(callback, delay),
+        clearTimer: (timer) => view.clearTimeout(timer),
+        onError,
+        onSelectDate: (isoDate) => router.setSelectedDate(isoDate),
+        onOpenOverlay: (overlay) => router.openOverlay(overlay),
+        onCloseOverlay: () => closeOverlay(),
+        onMenu: (screen) => navigate(() => (screen === 'settings' ? router.push('settings') : router.selectTab(screen))),
+        onChange: () => !destroyed && render()
+    });
+    const openerOf = (overlay) => pisi.getOverlayOpener(overlay) ?? `[data-setting="${overlay}"]`;
 
     async function refreshProject() {
         await project.index.build();
@@ -70,6 +89,8 @@ export function createApp({
     async function openProject() {
         try {
             await project.open();
+            // The start screen reads its own two files and shows them before the whole project has been walked (M5).
+            await pisi.load();
             await refreshProject();
             // A file that cannot be read is never overwritten; the user is told (rule V7).
             if (projectState.readOnlyFiles.length) snackbar.show({ message: i18n.t('project.readOnlyNotice', { count: projectState.readOnlyFiles.length }) });
@@ -82,7 +103,7 @@ export function createApp({
     async function handleLoadSample() {
         try {
             const added = await loadSample(project, { now });
-            await refreshProject();
+            await Promise.all([refreshProject(), pisi.reload()]);
             snackbar.show({ message: i18n.t('developer.sampleLoaded', added) });
         } catch (error) {
             onError(error);
@@ -114,14 +135,14 @@ export function createApp({
         void lifecycle.flush();
         const closing = router.getState().overlays.at(-1);
         const result = router.back();
-        if (result === 'overlay-closed') focusAfterRender = `[data-setting="${closing}"]`;
+        if (result === 'overlay-closed') focusAfterRender = openerOf(closing);
         if (result === 'minimize') platform.minimizeApp();
         if (result !== 'minimize') render();
         return result;
     }
 
     function closeOverlay() {
-        focusAfterRender = `[data-setting="${router.getState().overlays.at(-1)}"]`;
+        focusAfterRender = openerOf(router.getState().overlays.at(-1));
         router.closeOverlay();
     }
 
@@ -158,13 +179,29 @@ export function createApp({
                 }
             });
         }
-        return null;
+        return pisi.renderOverlay(overlay);
     }
 
     function render() {
         const state = router.getState();
         const subScreen = state.stack.at(-1);
         const context = { t: i18n.t, locale: i18n.locale, selectedDate: state.selectedDate, today };
+        const sheet = renderSheet(state);
+        const snack = snackbar.getCurrent() ? renderSnackbar(snackbar.getCurrent()) : null;
+
+        if (state.tab === PISI_HOME_TAB && !subScreen) {
+            pisi.update(context);
+            if (!home) {
+                home = renderHomeShell({ body: pisi.element });
+                root.replaceChildren(home.element);
+                pisi.attach();
+            }
+            home.setLayer({ sheet, snackbar: snack });
+            focusAfterDraw(state);
+            return;
+        }
+        home = null;
+
         const body =
             subScreen === 'settings'
                 ? renderSettingsScreen({
@@ -186,17 +223,34 @@ export function createApp({
                 activeTab: state.tab,
                 inSubScreen: Boolean(subScreen),
                 body,
-                sheet: renderSheet(state),
-                snackbar: snackbar.getCurrent() ? renderSnackbar(snackbar.getCurrent()) : null,
+                sheet,
+                snackbar: snack,
                 onSelectTab: (tab) => navigate(() => router.selectTab(tab)),
                 onOpenSettings: () => navigate(() => router.push('settings')),
                 onBack: handleBack
             })
         );
 
-        const focusTarget = state.overlays.length ? '.pisi-sheet-option[aria-checked="true"]' : focusAfterRender;
-        if (!state.overlays.length) focusAfterRender = null;
-        if (focusTarget) root.querySelector(focusTarget)?.focus();
+        focusAfterDraw(state);
+    }
+
+    // A sheet that has just opened takes the focus; when it closes, the focus returns to what opened it.
+    function focusAfterDraw(state) {
+        const overlay = state.overlays.at(-1) ?? null;
+        const opened = overlay && overlay !== focusedOverlay;
+        focusedOverlay = overlay;
+        const target = opened ? '.pisi-sheet-option[aria-checked="true"], [data-sheet] [data-autofocus]' : overlay ? null : focusAfterRender;
+        if (!overlay) focusAfterRender = null;
+        if (target) root.querySelector(target)?.focus();
+    }
+
+    function handleResume() {
+        applyTheme();
+        // Midnight may have passed in the background. The selected day stays; what counts as today moves on.
+        const current = getPisiTodayIsoDate(now());
+        if (current === today) return;
+        today = current;
+        render();
     }
 
     const stops = [
@@ -204,9 +258,13 @@ export function createApp({
         systemTheme.subscribe(applyTheme),
         platform.onBackButton(handleBack),
         platform.onPause(() => lifecycle.flush()),
-        platform.onResume(applyTheme),
-        // Writes still in the queue are finished when the app pauses, the screen changes or back is pressed (§3.3).
-        project ? lifecycle.registerFlush(() => project.flush()) : null
+        platform.onResume(handleResume),
+        // Diary text still waiting and writes still in the queue are finished when the app pauses,
+        // the screen changes or back is pressed (§3.3). The diary goes first so that its write is in the queue.
+        lifecycle.registerFlush(async () => {
+            await pisi.flush();
+            await project?.flush();
+        })
     ];
 
     applyLanguage();
@@ -223,6 +281,7 @@ export function createApp({
         destroy() {
             destroyed = true;
             snackbar.dismiss();
+            pisi.destroy();
             for (const stop of stops) stop?.();
             root.replaceChildren();
         }

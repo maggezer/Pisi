@@ -1,8 +1,7 @@
 import fs from 'node:fs';
 import { expect, test } from '@playwright/test';
+import { back, open, openFromMenu, overflowsSideways, screen, shot, smallTargets } from './helpers.mjs';
 
-// Saturday 14 November 2026, 09:30 in Istanbul.
-const NOW = new Date('2026-11-14T09:30:00+03:00');
 const TABS = [
     ['pisi', 'Pisi'],
     ['tasks', 'Görevler'],
@@ -11,46 +10,38 @@ const TABS = [
     ['maps', 'Haritalar']
 ];
 
-async function open(page) {
-    await page.clock.setFixedTime(NOW);
-    await page.goto('/');
-    await expect(page.locator('[data-screen]')).toBeVisible();
-}
-
-async function shot(page, name) {
-    await page.screenshot({ path: `e2e/screenshots/${test.info().project.name}/${name}.png`, animations: 'disabled' });
-}
-
-const screen = (page) => page.locator('[data-screen]');
-// In a browser Escape stands in for the Android back button.
-const back = (page) => page.keyboard.press('Escape');
-
 test('soğuk açılışta Pisi ekranı bugünün tarihiyle gelir', async ({ page }) => {
     await open(page);
     await expect(screen(page)).toHaveAttribute('data-screen', 'pisi');
-    await expect(page.locator('time')).toHaveAttribute('datetime', '2026-11-14');
-    await expect(page.locator('time')).toContainText('14 Kasım 2026');
+    await expect(page.locator('h1 time')).toHaveAttribute('datetime', '2026-11-14');
+    await expect(page.locator('h1 time')).toHaveText('Cumartesi, 14 Kasım');
     await expect(page.locator('.pisi-day-today')).toHaveText('Bugün');
     await shot(page, '01-pisi');
 
     // Reloading is a cold start: it returns to the Pisi tab from anywhere.
-    await page.locator('[data-tab="notes"]').tap();
-    await expect(screen(page)).toHaveAttribute('data-screen', 'notes');
+    await openFromMenu(page, 'notes');
     await page.reload();
     await expect(screen(page)).toHaveAttribute('data-screen', 'pisi');
 });
 
 test('beş sekme ve Ayarlar yer tutucu ekranlarını açar', async ({ page }) => {
     await open(page);
+    // The Pisi tab has no bottom navigation; every other tab has it, with Pisi as the way back.
+    await openFromMenu(page, 'tasks');
     await expect(page.locator('.pisi-tab')).toHaveText(TABS.map(([, label]) => label));
 
     for (const [index, [tab, label]] of TABS.entries()) {
+        if (index === 0) continue;
         await page.locator(`[data-tab="${tab}"]`).tap();
         await expect(screen(page)).toHaveAttribute('data-screen', tab);
         await expect(page.getByRole('heading', { level: 1 })).toHaveText(label);
         await expect(page.locator('[aria-current="page"]')).toHaveText(label);
-        if (index > 0) await shot(page, `0${index + 1}-${tab}`);
+        await shot(page, `0${index + 1}-${tab}`);
     }
+    await page.locator('[data-tab="pisi"]').tap();
+    await expect(screen(page)).toHaveAttribute('data-screen', 'pisi');
+    await expect(page.locator('.pisi-tabs')).toHaveCount(0);
+    await openFromMenu(page, 'maps');
 
     await page.getByRole('button', { name: 'Ayarları aç' }).tap();
     await expect(screen(page)).toHaveAttribute('data-screen', 'settings');
@@ -60,7 +51,7 @@ test('beş sekme ve Ayarlar yer tutucu ekranlarını açar', async ({ page }) =>
 
 test('geri tuşu: sheet, alt ekran, Pisi sekmesi sırasıyla kapanır', async ({ page }) => {
     await open(page);
-    await page.locator('[data-tab="tasks"]').tap();
+    await openFromMenu(page, 'tasks');
     await page.getByRole('button', { name: 'Ayarları aç' }).tap();
     await page.locator('[data-setting="theme"]').tap();
     await expect(page.getByRole('dialog', { name: 'Tema' })).toBeVisible();
@@ -98,7 +89,7 @@ test('tema sistemi izler; seçilen tema saklanır ve çubuk rengi arka planla ay
     expect(await theme()).toBe(system);
     expect(await barMatchesBackground()).toBe(true);
 
-    await page.getByRole('button', { name: 'Ayarları aç' }).tap();
+    await openFromMenu(page, 'settings');
     await page.locator('[data-setting="theme"]').tap();
     await expect(page.getByRole('radio', { name: 'Sistem' })).toHaveAttribute('aria-checked', 'true');
     await page.getByRole('radio', { name: other === 'dark' ? 'Koyu' : 'Açık' }).tap();
@@ -112,44 +103,43 @@ test('tema sistemi izler; seçilen tema saklanır ve çubuk rengi arka planla ay
 
 test('dil İngilizce yapılınca metinler değişir ve seçim saklanır', async ({ page }) => {
     await open(page);
-    await page.getByRole('button', { name: 'Ayarları aç' }).tap();
+    await openFromMenu(page, 'settings');
     await page.locator('[data-setting="language"]').tap();
     await page.getByRole('radio', { name: 'English' }).tap();
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Settings');
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
 
     await page.reload();
-    await expect(page.locator('.pisi-tab')).toHaveText(['Pisi', 'Tasks', 'Notes', 'Calendar', 'Maps']);
     await expect(page.locator('.pisi-day-today')).toHaveText('Today');
+    await page.locator('[data-action="launcher"]').tap();
+    await expect(page.locator('[data-menu]')).toHaveText(['Tasks', 'Notes', 'Calendar', 'Maps', 'Settings']);
+    await page.locator('[data-menu="tasks"]').tap();
+    await expect(page.locator('.pisi-tab')).toHaveText(['Pisi', 'Tasks', 'Notes', 'Calendar', 'Maps']);
+    await page.locator('[data-tab="pisi"]').tap();
     await shot(page, '09-pisi-english');
 });
 
 test('dokunma hedefleri en az 48 px; yazı %130 büyüyünce yatay taşma olmaz', async ({ page }) => {
     await open(page);
-    const smallTargets = () =>
-        page.evaluate(() =>
-            [...document.querySelectorAll('button')]
-                .map((button) => ({ name: button.textContent.trim(), box: button.getBoundingClientRect() }))
-                .filter(({ box }) => box.width < 48 || box.height < 48)
-                .map(({ name, box }) => `${name} ${Math.round(box.width)}x${Math.round(box.height)}`)
-        );
-    const overflows = () => page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
-
-    expect(await smallTargets()).toEqual([]);
-    await page.getByRole('button', { name: 'Ayarları aç' }).tap();
+    expect(await smallTargets(page)).toEqual([]);
+    await openFromMenu(page, 'settings');
     await page.locator('[data-setting="language"]').tap();
-    expect(await smallTargets()).toEqual([]);
+    expect(await smallTargets(page)).toEqual([]);
     await back(page);
     await back(page);
 
     await page.evaluate(() => (document.documentElement.style.fontSize = '130%'));
-    expect(await overflows()).toBe(false);
-    expect(await smallTargets()).toEqual([]);
+    expect(await overflowsSideways(page)).toBe(false);
+    expect(await smallTargets(page)).toEqual([]);
+    await shot(page, '10-pisi-font-130');
+
+    await openFromMenu(page, 'tasks');
+    expect(await overflowsSideways(page)).toBe(false);
+    expect(await smallTargets(page)).toEqual([]);
     const clipped = await page.evaluate(() =>
         [...document.querySelectorAll('.pisi-tab')].filter((tab) => tab.scrollWidth > tab.clientWidth).map((tab) => tab.textContent)
     );
     expect(clipped).toEqual([]);
-    await shot(page, '10-pisi-font-130');
 });
 
 test('üretim derlemesinde bileşen galerisi yoktur', async ({ page }) => {
@@ -162,5 +152,6 @@ test('üretim derlemesinde bileşen galerisi yoktur', async ({ page }) => {
         .map((file) => fs.readFileSync(`dist/assets/${file}`, 'utf8'))
         .join('\n');
     expect(bundle).toContain('pisi-tab');
+    expect(bundle).toContain('pisi-wheel');
     expect(bundle).not.toContain('gallery');
 });

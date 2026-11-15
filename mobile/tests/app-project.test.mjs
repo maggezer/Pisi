@@ -25,7 +25,10 @@ function start({ files = {}, developer = false } = {}) {
     return { ...memory, platform, errors };
 }
 
-const openSettings = () => root.querySelector('[data-action="settings"]').click();
+const openSettings = () => {
+    root.querySelector('[data-action="launcher"]').click();
+    root.querySelector('[data-menu="settings"]').click();
+};
 const count = (id) => root.querySelector(`[data-project="${id}"] .pisi-row-value`).textContent;
 const snackbar = () => root.querySelector('.pisi-snackbar-message')?.textContent ?? null;
 
@@ -90,9 +93,11 @@ describe('uygulama ve proje', () => {
         await app.lifecycle.flush();
         expect(JSON.parse(driver.snapshot()['.pisi/tasks.json']).tasks.map((task) => task.title)).toEqual(['Duraklamadan önce']);
 
-        root.querySelector('[data-tab="notes"]').click();
+        root.querySelector('[data-action="launcher"]').click();
+        root.querySelector('[data-menu="notes"]').click();
         platform.pressBack();
-        expect(flushed).toBeGreaterThanOrEqual(4);
+        // The diary is written first, then the queue is flushed; both are asynchronous.
+        await expect.poll(() => flushed).toBeGreaterThanOrEqual(4);
     });
 
     it('proje açılamazsa uygulama çalışmaya devam eder ve bunu söyler', async () => {

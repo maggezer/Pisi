@@ -3,7 +3,7 @@
 
 export function createFakePlatform() {
     const handlers = { back: null, pause: null, resume: null };
-    const calls = { minimize: 0, systemBars: [] };
+    const calls = { minimize: 0, systemBars: [], haptics: 0 };
     return {
         calls,
         isNative: false,
@@ -21,6 +21,9 @@ export function createFakePlatform() {
         },
         minimizeApp() {
             calls.minimize += 1;
+        },
+        haptic() {
+            calls.haptics += 1;
         },
         setSystemBars(options) {
             calls.systemBars.push(options);
