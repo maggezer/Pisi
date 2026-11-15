@@ -1,4 +1,7 @@
 import { createApp } from './app/app.mjs';
+import { createProject } from './data/project-repo.mjs';
+import { loadSampleProject } from './data/sample-project.mjs';
+import { createCapacitorFsDriver } from './platform/capacitor-fs-driver.mjs';
 import { createCapacitorPlatform } from './platform/capacitor-platform.mjs';
 
 const darkScheme = window.matchMedia('(prefers-color-scheme: dark)');
@@ -25,12 +28,17 @@ const root = document.getElementById('app');
 if (import.meta.env.DEV && new URLSearchParams(window.location.search).has('gallery')) {
     void import('./gallery/gallery.mjs').then(({ mountGallery }) => mountGallery({ root, systemTheme }));
 } else {
+    const onError = (error) => console.error('[Pisi]', error);
+    // Debug builds (the dev server and the test APK, which CI builds with VITE_PISI_DEVELOPER=1) get the developer menu.
+    const developer = import.meta.env.DEV || import.meta.env.VITE_PISI_DEVELOPER === '1';
     createApp({
         root,
         platform: createCapacitorPlatform(),
+        project: createProject({ driver: createCapacitorFsDriver(), makeUuid: () => window.crypto.randomUUID(), onError }),
+        loadSample: developer ? loadSampleProject : null,
         storage: readStorage(),
         deviceLanguage: navigator.language,
         systemTheme,
-        onError: (error) => console.error('[Pisi]', error)
+        onError
     });
 }

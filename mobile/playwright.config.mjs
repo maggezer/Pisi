@@ -23,6 +23,8 @@ export default defineConfig({
     webServer: [
         {
             command: 'npm run build && npm run preview',
+            // A debug build, like the test APK: Settings has the developer section (project.spec.mjs loads the sample project).
+            env: { VITE_PISI_DEVELOPER: '1' },
             url: 'http://127.0.0.1:4173',
             reuseExistingServer: !process.env.CI,
             timeout: 120_000
