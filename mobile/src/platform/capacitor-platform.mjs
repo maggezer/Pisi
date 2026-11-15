@@ -4,6 +4,7 @@
 
 import { App } from '@capacitor/app';
 import { Capacitor, SystemBars, SystemBarsStyle } from '@capacitor/core';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { StatusBar } from '@capacitor/status-bar';
 
 const ignore = () => {};
@@ -45,6 +46,11 @@ export function createCapacitorPlatform({ target = window } = {}) {
         /** Sends the app to the background; Android keeps it running. */
         minimizeApp() {
             if (isNative) App.minimizeApp().catch(ignore);
+        },
+
+        /** A short, light vibration: a task ticked off, the date wheel moving a day. Nothing happens in a browser. */
+        haptic() {
+            if (isNative) Haptics.impact({ style: ImpactStyle.Light }).catch(ignore);
         },
 
         /** Matches the system bar icons to the theme; paints the bar itself where Android still allows it (below 15). */

@@ -25,6 +25,14 @@ const screen = () => root.querySelector('[data-screen]')?.dataset.screen;
 const title = () => root.querySelector('.pisi-header-title').textContent;
 const tap = (selector) => root.querySelector(selector).click();
 const tabLabels = () => [...root.querySelectorAll('.pisi-tab')].map((tab) => tab.textContent);
+// The Pisi tab has no bottom navigation: other screens open from its menu.
+function openTab(tab) {
+    if (root.querySelector('[data-action="launcher"]')) {
+        tap('[data-action="launcher"]');
+        tap(`[data-menu="${tab}"]`);
+    } else tap(`[data-tab="${tab}"]`);
+}
+const openSettings = () => (root.querySelector('[data-action="launcher"]') ? openTab('settings') : tap('[data-action="settings"]'));
 
 beforeEach(() => {
     document.documentElement.removeAttribute('data-theme');
@@ -39,16 +47,23 @@ describe('uygulama kabuğu', () => {
     it('soğuk açılışta Pisi ekranı bugünün tarihiyle gelir', () => {
         start();
         expect(screen()).toBe('pisi');
-        expect(title()).toBe('Pisi');
-        expect(root.querySelector('time').getAttribute('datetime')).toBe('2026-11-14');
-        expect(root.querySelector('time').textContent).toContain('14 Kasım 2026');
-        expect(root.querySelector('time').textContent).toContain('Cumartesi');
+        expect(root.querySelector('h1 time').getAttribute('datetime')).toBe('2026-11-14');
+        expect(root.querySelector('h1 time').textContent).toBe('Cumartesi, 14 Kasım');
         expect(root.querySelector('.pisi-day-today').textContent).toBe('Bugün');
-        expect(root.querySelector('[data-tab="pisi"]').getAttribute('aria-current')).toBe('page');
+        expect(root.querySelector('.pisi-day-today').hidden).toBe(false);
+        // The Pisi tab draws its own header and hides the bottom navigation.
+        expect(root.querySelector('.pisi-tabs')).toBe(null);
+        expect(root.querySelector('.pisi-header')).toBe(null);
     });
 
-    it('alt menüde beş etiketli sekme vardır; Ayarlar başlıktan açılır', () => {
+    it('Pisi menüsü her ekranı iki dokunuşla açar; öteki sekmelerde alt menüde beş etiketli sekme vardır', () => {
         start();
+        tap('[data-action="launcher"]');
+        expect([...root.querySelectorAll('[data-menu]')].map((item) => item.textContent)).toEqual(['Görevler', 'Notlar', 'Takvim', 'Haritalar', 'Ayarlar']);
+        expect(root.querySelectorAll('[data-menu] svg').length).toBe(5);
+        tap('[data-menu="tasks"]');
+        expect(screen()).toBe('tasks');
+        expect(root.querySelector('[role="dialog"]')).toBe(null);
         expect(tabLabels()).toEqual(['Pisi', 'Görevler', 'Notlar', 'Takvim', 'Haritalar']);
         for (const tab of ['tasks', 'notes', 'calendar', 'maps']) {
             tap(`[data-tab="${tab}"]`);
@@ -65,7 +80,7 @@ describe('uygulama kabuğu', () => {
 
     it('Android geri tuşu: sheet, alt ekran, Pisi sekmesi, sonra arka plan', () => {
         const { platform } = start();
-        tap('[data-tab="tasks"]');
+        openTab('tasks');
         tap('[data-action="settings"]');
         tap('[data-setting="theme"]');
         expect(root.querySelector('[role="dialog"]')).not.toBe(null);
@@ -88,7 +103,7 @@ describe('uygulama kabuğu', () => {
 
     it('başlıktaki Geri düğmesi alt ekranı kapatır', () => {
         start();
-        tap('[data-tab="notes"]');
+        openTab('notes');
         tap('[data-action="settings"]');
         tap('[data-action="back"]');
         expect(screen()).toBe('notes');
@@ -103,7 +118,7 @@ describe('uygulama kabuğu', () => {
         systemTheme.set(false);
         expect(document.documentElement.dataset.theme).toBe('light');
 
-        tap('[data-action="settings"]');
+        openSettings();
         tap('[data-setting="theme"]');
         expect(root.querySelector('[role="radio"][aria-checked="true"]').dataset.value).toBe('system');
         expect(document.activeElement.dataset.value).toBe('system');
@@ -122,11 +137,13 @@ describe('uygulama kabuğu', () => {
 
     it('dil: cihaz dilinden gelir, değiştirilince bütün metinler ve html lang değişir', () => {
         const { storage } = start({ deviceLanguage: 'en-US' });
-        expect(tabLabels()).toEqual(['Pisi', 'Tasks', 'Notes', 'Calendar', 'Maps']);
         expect(document.documentElement.lang).toBe('en');
         expect(root.querySelector('.pisi-day-today').textContent).toBe('Today');
+        expect(root.querySelector('h1 time').textContent).toBe('Saturday, 14 November');
+        expect([...root.querySelectorAll('.pisi-home-heading')].map((heading) => heading.textContent)).toEqual(['Diary', 'Tasks']);
+        expect(root.querySelector('.pisi-wheel-month').textContent).toBe('Nov');
 
-        tap('[data-action="settings"]');
+        openSettings();
         tap('[data-setting="language"]');
         tap('[role="radio"][data-value="tr"]');
         expect(title()).toBe('Ayarlar');
@@ -136,7 +153,8 @@ describe('uygulama kabuğu', () => {
         // The stored choice wins over the device language on the next start.
         app.destroy();
         start({ deviceLanguage: 'en-US', storage });
-        expect(tabLabels()).toEqual(['Pisi', 'Görevler', 'Notlar', 'Takvim', 'Haritalar']);
+        expect([...root.querySelectorAll('.pisi-home-heading')].map((heading) => heading.textContent)).toEqual(['Günlük', 'Görevler']);
+        expect(root.querySelector('.pisi-wheel-month').textContent).toBe('Kas');
     });
 
     it('bekleyen kayıtlar duraklatmada, ekran değişiminde ve geri tuşunda yazılır', async () => {
@@ -145,7 +163,7 @@ describe('uygulama kabuğu', () => {
         app.lifecycle.registerFlush(() => void (flushed += 1));
 
         platform.pause();
-        tap('[data-tab="tasks"]');
+        openTab('tasks');
         platform.pressBack();
         await Promise.resolve();
         expect(flushed).toBe(3);
@@ -153,7 +171,10 @@ describe('uygulama kabuğu', () => {
 
     it('her düğmenin erişilebilir bir adı vardır', () => {
         start();
-        tap('[data-action="settings"]');
+        for (const button of root.querySelectorAll('button')) {
+            expect((button.getAttribute('aria-label') || button.textContent).trim()).not.toBe('');
+        }
+        openSettings();
         tap('[data-setting="language"]');
         for (const button of root.querySelectorAll('button')) {
             expect((button.getAttribute('aria-label') || button.textContent).trim()).not.toBe('');

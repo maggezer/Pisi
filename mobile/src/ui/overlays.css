@@ -188,3 +188,103 @@
         transform: translateY(1.5rem);
     }
 }
+
+/* ===== Date picker ===== */
+
+.pisi-date-month {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-inline: calc(var(--pisi-space-3) * -1);
+}
+
+.pisi-date-month-title {
+    margin: 0;
+    font-weight: 700;
+    text-align: center;
+}
+
+.pisi-date-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    justify-items: center;
+    margin-inline: calc(var(--pisi-space-2) * -1);
+}
+
+.pisi-date-weekday {
+    padding: var(--pisi-space-1) 0;
+    color: var(--pisi-muted);
+    font-size: var(--pisi-text-sm);
+}
+
+.pisi-date-cell {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 3.25rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--pisi-radius-md);
+    background: transparent;
+    font-variant-numeric: tabular-nums;
+}
+
+.pisi-date-cell:focus-visible {
+    outline-offset: -0.1875rem;
+}
+
+.pisi-date-number {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 0.125rem solid transparent;
+    border-radius: var(--pisi-radius-full);
+}
+
+.pisi-date-cell[aria-current='date'] .pisi-date-number {
+    border-color: var(--pisi-accent-text);
+    font-weight: 700;
+}
+
+.pisi-date-cell[aria-pressed='true'] .pisi-date-number {
+    background: var(--pisi-accent);
+    color: var(--pisi-on-accent);
+    font-weight: 700;
+}
+
+.pisi-date-cell .pisi-day-dots {
+    position: absolute;
+    bottom: 0;
+}
+
+.pisi-date-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--pisi-space-1) var(--pisi-space-4);
+    margin: var(--pisi-space-3) 0 0;
+    color: var(--pisi-muted);
+    font-size: var(--pisi-text-sm);
+}
+
+.pisi-date-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--pisi-space-2);
+}
+
+.pisi-date-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: var(--pisi-space-2);
+}
+
+/* These animations are set on classes, so the page-wide rule in base.css does not reach them. */
+@media (prefers-reduced-motion: reduce) {
+    .pisi-backdrop,
+    .pisi-sheet {
+        animation: none;
+    }
+}

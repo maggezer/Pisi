@@ -9,6 +9,8 @@ import { resolveTheme } from '../app/theme.mjs';
 import { renderButton, renderFab, renderIconButton } from '../ui/button.mjs';
 import { renderChip, renderChipRow, renderSegmented } from '../ui/chip.mjs';
 import { contrastRatio } from '../ui/contrast.mjs';
+import { renderDatePicker } from '../ui/date-picker.mjs';
+import { shiftMonth } from '../ui/dates.mjs';
 import { h } from '../ui/dom.mjs';
 import { renderCheckbox, renderTextField } from '../ui/field.mjs';
 import { PISI_ICON_NAMES, icon } from '../ui/icons.mjs';
@@ -16,6 +18,7 @@ import { renderCard, renderEmptyState, renderList, renderListRow } from '../ui/l
 import { renderChoiceSheet, renderDialog, renderSheet } from '../ui/overlay.mjs';
 import { renderBottomNav, renderHeader } from '../ui/shell.mjs';
 import { createSnackbarController, renderSnackbar } from '../ui/snackbar.mjs';
+import { renderTaskRow } from '../ui/task-row.mjs';
 import { PISI_TOKEN_PAIRS } from '../ui/token-pairs.mjs';
 
 const SURFACE_TOKENS = [
@@ -51,6 +54,19 @@ const FILTERS = [
     ['inbox', 'Gelen kutusu', 4],
     ['done', 'Tamamlanan', 27]
 ];
+const DATE_LABELS = {
+    close: 'Kapat',
+    previousMonth: 'Önceki ay',
+    nextMonth: 'Sonraki ay',
+    today: 'Bugün',
+    goToday: 'Bugüne dön',
+    hasTasks: 'görev var',
+    hasDiary: 'günlük var',
+    legendTasks: 'Görev',
+    legendDiary: 'Günlük'
+};
+const DATE_MARKS = { tasks: new Set(['2026-11-12', '2026-11-14', '2026-11-17']), diary: new Set(['2026-11-10', '2026-11-14']) };
+const PRIORITIES = ['Çok düşük', 'Düşük', 'Orta', 'Yüksek', 'Çok yüksek'];
 const THEMES = [
     { value: 'system', label: 'Sistem' },
     { value: 'light', label: 'Açık' },
@@ -66,7 +82,17 @@ const cluster = (...children) => h('div', { class: 'gallery-cluster' }, children
 export function mountGallery({ root, systemTheme }) {
     const view = root.ownerDocument.defaultView;
     const documentRoot = root.ownerDocument.documentElement;
-    const state = { theme: 'system', tab: 'pisi', filter: 'today', done: new Set(['b']), agreed: true, overlay: null, sheetChoice: 'light' };
+    const state = {
+        theme: 'system',
+        tab: 'pisi',
+        filter: 'today',
+        done: new Set(['b', 'row-3']),
+        agreed: true,
+        overlay: null,
+        sheetChoice: 'light',
+        month: '2026-11',
+        date: '2026-11-12'
+    };
     const snackbar = createSnackbarController({
         onChange: () => render(),
         setTimer: (run, ms) => view.setTimeout(run, ms),
@@ -126,8 +152,28 @@ export function mountGallery({ root, systemTheme }) {
         return renderListRow({ title, meta, leading: renderCheckbox({ checked, label: `Tamamla: ${title}`, dataset: { task: id }, onChange: toggle }) });
     }
 
+    function fullTaskRow(id, title, meta) {
+        const done = state.done.has(id);
+        return renderTaskRow({ id, title, done, meta, checkLabel: `Tamamla: ${title}`, onToggle: () => setDone(id, !done), onOpen: () => {} });
+    }
+
     function overlay() {
         const close = () => update({ overlay: null });
+        if (state.overlay === 'date') {
+            return renderDatePicker({
+                id: 'gallery-date',
+                title: 'Tarih seç',
+                month: state.month,
+                selected: state.date,
+                today: '2026-11-14',
+                locale: 'tr-TR',
+                marks: DATE_MARKS,
+                labels: DATE_LABELS,
+                onClose: close,
+                onMonth: (delta) => update({ month: shiftMonth(state.month, delta) }),
+                onSelect: (date) => update({ date, month: date.slice(0, 7), overlay: null })
+            });
+        }
         if (state.overlay === 'sheet') {
             return renderSheet({
                 id: 'gallery-sheet',
@@ -289,6 +335,37 @@ export function mountGallery({ root, systemTheme }) {
                     )
                 ),
                 section(
+                    'tasks',
+                    'Görev satırı',
+                    h(
+                        'ul',
+                        { class: 'pisi-task-list' },
+                        [
+                            fullTaskRow('row-1', 'TÜBİTAK raporunun yöntem bölümünü gözden geçir ve danışmana gönder', [
+                                { kind: 'time', text: '10:00' },
+                                { kind: 'priority', level: 5, text: PRIORITIES[4] },
+                                { kind: 'source', text: 'Rapor planı' }
+                            ]),
+                            fullTaskRow('row-2', 'Kira ödemesi', [
+                                { kind: 'date', text: '12 Kas' },
+                                { kind: 'priority', level: 4, text: PRIORITIES[3] },
+                                { kind: 'repeat', text: 'Her ay' }
+                            ]),
+                            fullTaskRow('row-3', 'Kedi maması al', [{ kind: 'priority', level: 2, text: PRIORITIES[1] }])
+                        ].map((row) => h('li', { class: 'pisi-task-item' }, row))
+                    ),
+                    cluster(
+                        PRIORITIES.map((text, index) =>
+                            h(
+                                'span',
+                                { class: 'pisi-task-meta-item pisi-task-meta-priority', dataset: { priority: String(index + 1) } },
+                                h('span', { class: 'pisi-task-priority-mark', 'aria-hidden': 'true' }),
+                                text
+                            )
+                        )
+                    )
+                ),
+                section(
                     'fields',
                     'Metin alanı ve onay kutusu',
                     renderTextField({ id: 'gallery-title', label: 'Başlık', value: 'Haftalık plan' }),
@@ -313,6 +390,7 @@ export function mountGallery({ root, systemTheme }) {
                         renderButton({ label: 'Sheet aç', dataset: { open: 'sheet' }, onClick: () => update({ overlay: 'sheet' }) }),
                         renderButton({ label: 'Seçim sheet’i', dataset: { open: 'choice' }, onClick: () => update({ overlay: 'choice' }) }),
                         renderButton({ label: 'Diyalog aç', dataset: { open: 'dialog' }, onClick: () => update({ overlay: 'dialog' }) }),
+                        renderButton({ label: 'Tarih seç', icon: 'calendar', dataset: { open: 'date' }, onClick: () => update({ overlay: 'date' }) }),
                         renderButton({
                             label: 'Snackbar göster',
                             dataset: { open: 'snackbar' },

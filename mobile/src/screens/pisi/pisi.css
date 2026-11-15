@@ -1,0 +1,507 @@
+/*
+ * The Pisi tab (docs/mobile-plan.md M5): its own date header, the diary, the
+ * accent line, the tasks, the diagonal date wheel in the bottom right corner
+ * and the menu button in the bottom left. Colours and sizes come from
+ * ui/tokens.css; the task row, the day dots and the date picker are shared
+ * components (ui/components.css, ui/overlays.css).
+ */
+
+.pisi-home {
+    position: relative;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* ===== Header: the selected day ===== */
+
+.pisi-home-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 var(--pisi-space-2);
+    min-height: 3.5rem;
+    padding: var(--pisi-space-1) var(--pisi-space-2) var(--pisi-space-1) var(--pisi-space-4);
+}
+
+.pisi-home-title {
+    min-width: 0;
+    margin: 0;
+    font-size: var(--pisi-text-lg);
+    line-height: var(--pisi-leading-tight);
+}
+
+.pisi-home-date {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--pisi-space-1);
+    min-height: var(--pisi-touch);
+    padding: 0 var(--pisi-space-1) 0 0;
+    border: 0;
+    border-radius: var(--pisi-radius-sm);
+    background: transparent;
+    font-size: var(--pisi-text-lg);
+    font-weight: 700;
+    line-height: var(--pisi-leading-tight);
+    text-align: start;
+}
+
+.pisi-home-date .pisi-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--pisi-muted);
+}
+
+.pisi-home-header > .pisi-button {
+    margin-inline-start: auto;
+}
+
+/* ===== Content ===== */
+
+/* The bottom padding lets the last row scroll clear of the wheel and the menu button. */
+.pisi-home-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: var(--pisi-space-2) var(--pisi-space-4) calc(15rem + var(--pisi-safe-bottom));
+}
+
+.pisi-home-scroll[data-enter] > * {
+    animation: pisi-day-in var(--pisi-motion) var(--pisi-ease);
+}
+
+.pisi-home-scroll[data-enter='next'] {
+    --pisi-day-shift: 1.5rem;
+}
+
+.pisi-home-scroll[data-enter='previous'] {
+    --pisi-day-shift: -1.5rem;
+}
+
+@keyframes pisi-day-in {
+    from {
+        opacity: 0;
+        transform: translateX(var(--pisi-day-shift, 0));
+    }
+}
+
+.pisi-home-heading {
+    margin: 0 0 var(--pisi-space-2);
+    color: var(--pisi-accent-text);
+    font-size: var(--pisi-text-md);
+    font-weight: 700;
+    line-height: var(--pisi-leading-tight);
+}
+
+/* The accent line between the diary and the tasks. */
+.pisi-home-divider {
+    height: 0.125rem;
+    margin: var(--pisi-space-5) 0 var(--pisi-space-4);
+    border: 0;
+    border-radius: var(--pisi-radius-full);
+    background: linear-gradient(to right, var(--pisi-accent-text), transparent);
+}
+
+.pisi-home-empty,
+.pisi-home-notice {
+    margin: 0 0 var(--pisi-space-3);
+    color: var(--pisi-muted);
+}
+
+.pisi-home-notice {
+    color: var(--pisi-danger-text);
+    font-size: var(--pisi-text-sm);
+}
+
+/* ===== Diary ===== */
+
+.pisi-diary-text {
+    display: block;
+    width: 100%;
+    /* Three lines when empty; it grows with the text. */
+    min-height: calc(3em * var(--pisi-leading) + var(--pisi-space-3) * 2 + 2px);
+    padding: var(--pisi-space-3);
+    overflow: hidden;
+    border: 1px solid var(--pisi-line);
+    border-radius: var(--pisi-radius-md);
+    background: var(--pisi-surface);
+    line-height: var(--pisi-leading);
+    resize: none;
+}
+
+.pisi-diary-text::placeholder {
+    color: var(--pisi-muted);
+    opacity: 1;
+}
+
+.pisi-diary-note {
+    margin: var(--pisi-space-2) var(--pisi-space-1) 0;
+    color: var(--pisi-muted);
+    font-size: var(--pisi-text-sm);
+}
+
+.pisi-diary-note-error {
+    color: var(--pisi-danger-text);
+}
+
+/* ===== Task groups ===== */
+
+.pisi-task-group {
+    margin-bottom: var(--pisi-space-4);
+}
+
+.pisi-task-group-title {
+    display: flex;
+    align-items: center;
+    gap: var(--pisi-space-2);
+    margin: 0 var(--pisi-space-1) var(--pisi-space-2);
+    color: var(--pisi-muted);
+    font-size: var(--pisi-text-sm);
+    font-weight: 700;
+    line-height: var(--pisi-leading-tight);
+}
+
+.pisi-task-group-overdue .pisi-task-group-title {
+    color: var(--pisi-danger-text);
+}
+
+.pisi-task-group-count {
+    min-width: 1.5rem;
+    padding: 0.0625rem var(--pisi-space-2);
+    border-radius: var(--pisi-radius-full);
+    background: var(--pisi-surface-2);
+    color: var(--pisi-text);
+    text-align: center;
+}
+
+.pisi-task-group-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--pisi-space-1);
+    min-height: var(--pisi-touch);
+    padding: 0 var(--pisi-space-3) 0 0;
+    border: 0;
+    border-radius: var(--pisi-radius-sm);
+    background: transparent;
+    color: var(--pisi-muted);
+    font-size: var(--pisi-text-sm);
+    font-weight: 700;
+}
+
+.pisi-task-group-toggle .pisi-icon {
+    transition: transform var(--pisi-motion-fast) var(--pisi-ease);
+}
+
+.pisi-task-group-toggle[aria-expanded='false'] .pisi-icon {
+    transform: rotate(-90deg);
+}
+
+/* ===== Add task ===== */
+
+.pisi-task-add-line {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--pisi-border);
+    border-radius: var(--pisi-radius-md);
+    background: var(--pisi-surface);
+}
+
+.pisi-task-add-icon {
+    display: flex;
+    flex: none;
+    padding-inline-start: var(--pisi-space-3);
+    color: var(--pisi-accent-text);
+}
+
+.pisi-task-add-input {
+    flex: 1;
+    min-width: 0;
+    min-height: 3.25rem;
+    padding: 0 var(--pisi-space-3);
+    border: 0;
+    border-radius: var(--pisi-radius-md);
+    background: transparent;
+}
+
+.pisi-task-add-input::placeholder {
+    color: var(--pisi-muted);
+    opacity: 1;
+}
+
+.pisi-task-add-input:focus-visible {
+    outline-offset: -0.1875rem;
+}
+
+.pisi-task-add-submit {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--pisi-touch);
+    height: var(--pisi-touch);
+    margin-inline-end: 0.125rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--pisi-radius-full);
+    background: transparent;
+    color: var(--pisi-accent-text);
+}
+
+.pisi-task-add-submit:disabled {
+    visibility: hidden;
+}
+
+.pisi-task-add-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--pisi-space-2);
+    margin: var(--pisi-space-2) 0 0;
+}
+
+.pisi-task-add-chips[hidden] {
+    display: none;
+}
+
+.pisi-parse-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--pisi-space-1);
+    padding: var(--pisi-space-1) var(--pisi-space-3);
+    border-radius: var(--pisi-radius-full);
+    background: var(--pisi-accent-soft);
+    color: var(--pisi-accent-text);
+    font-size: var(--pisi-text-sm);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.pisi-parse-chip .pisi-icon {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* ===== Menu button ===== */
+
+.pisi-launcher {
+    position: absolute;
+    bottom: calc(var(--pisi-space-4) + var(--pisi-safe-bottom));
+    left: var(--pisi-space-4);
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    padding: 0;
+    border: 1px solid var(--pisi-accent-text);
+    border-radius: var(--pisi-radius-lg);
+    background: var(--pisi-accent);
+    box-shadow: var(--pisi-shadow-2);
+    color: var(--pisi-on-accent);
+}
+
+.pisi-launcher:active {
+    filter: brightness(0.94);
+}
+
+.pisi-menu {
+    display: grid;
+    margin: var(--pisi-space-1) calc(var(--pisi-space-4) * -1) 0;
+}
+
+.pisi-menu-item {
+    display: flex;
+    align-items: center;
+    gap: var(--pisi-space-4);
+    min-height: 3.5rem;
+    padding: var(--pisi-space-2) var(--pisi-space-4);
+    border: 0;
+    background: transparent;
+    font-weight: 600;
+    text-align: start;
+}
+
+.pisi-menu-item:active {
+    background: var(--pisi-surface-2);
+}
+
+.pisi-menu-item:focus-visible {
+    outline-offset: -0.1875rem;
+}
+
+.pisi-menu-icon {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--pisi-radius-full);
+    background: var(--pisi-accent-soft);
+    color: var(--pisi-accent-text);
+}
+
+/* ===== Task detail ===== */
+
+.pisi-task-detail-title {
+    margin: var(--pisi-space-2) 0 var(--pisi-space-4);
+    font-size: var(--pisi-text-lg);
+    font-weight: 600;
+    line-height: var(--pisi-leading-tight);
+    overflow-wrap: anywhere;
+}
+
+.pisi-task-detail-title:focus-visible {
+    outline: 0;
+}
+
+.pisi-task-detail-note {
+    margin: var(--pisi-space-3) var(--pisi-space-1) 0;
+    color: var(--pisi-muted);
+    font-size: var(--pisi-text-sm);
+}
+
+/*
+ * ===== Date wheel =====
+ * A corner triangle 14rem high; its long side leans 60 degrees. The strip of
+ * days is a horizontal scroller as long as that side, turned around its right
+ * end, which sits on the top right corner of the triangle. Each day is turned
+ * back so that its number stands upright.
+ */
+
+.pisi-wheel {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    width: 8.1rem;
+    height: 14rem;
+    pointer-events: none;
+}
+
+.pisi-wheel-corner {
+    position: absolute;
+    inset: 0;
+    background: var(--pisi-surface-2);
+    clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+
+.pisi-wheel-track {
+    position: absolute;
+    top: -1.5rem;
+    right: 0;
+    display: flex;
+    align-items: center;
+    width: 16.2rem;
+    height: 3rem;
+    padding: 0 6.6rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    touch-action: pan-x;
+    pointer-events: auto;
+    /* The accent line the days sit on. */
+    background: linear-gradient(transparent calc(50% - 1px), var(--pisi-accent-text) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px));
+    transform: rotate(-60deg);
+    transform-origin: right center;
+}
+
+.pisi-wheel-track::-webkit-scrollbar {
+    display: none;
+}
+
+.pisi-wheel-day {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--pisi-radius-full);
+    background: transparent;
+    color: var(--pisi-muted);
+    scroll-snap-align: center;
+}
+
+.pisi-wheel-face {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 0.125rem solid transparent;
+    border-radius: var(--pisi-radius-md);
+    background: var(--pisi-surface);
+    box-shadow: var(--pisi-shadow-1);
+    font-size: var(--pisi-text-sm);
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    transform: rotate(60deg);
+    transition:
+        background-color var(--pisi-motion-fast) var(--pisi-ease),
+        transform var(--pisi-motion-fast) var(--pisi-ease);
+}
+
+.pisi-wheel-face .pisi-day-dots {
+    position: absolute;
+    bottom: 0.0625rem;
+}
+
+.pisi-wheel-face .pisi-day-dot {
+    width: 0.25rem;
+    height: 0.25rem;
+}
+
+/* Today: a ring. The selected day: filled and larger. Today when selected has both. */
+.pisi-wheel-day[aria-current='date'] .pisi-wheel-face {
+    border-color: var(--pisi-accent-text);
+    color: var(--pisi-text);
+}
+
+.pisi-wheel-day-centred .pisi-wheel-face {
+    color: var(--pisi-text);
+    transform: rotate(60deg) scale(1.1);
+}
+
+.pisi-wheel-day[aria-pressed='true'] .pisi-wheel-face {
+    background: var(--pisi-accent);
+    box-shadow: var(--pisi-shadow-2);
+    color: var(--pisi-on-accent);
+    transform: rotate(60deg) scale(1.2);
+}
+
+.pisi-wheel-day[aria-pressed='true'] .pisi-day-dot-tasks {
+    background: var(--pisi-on-accent);
+}
+
+.pisi-wheel-day[aria-pressed='true'] .pisi-day-dot-diary {
+    border-color: var(--pisi-on-accent);
+}
+
+.pisi-wheel-month {
+    position: absolute;
+    right: var(--pisi-space-3);
+    bottom: calc(var(--pisi-space-3) + var(--pisi-safe-bottom));
+    color: var(--pisi-accent-text);
+    font-size: var(--pisi-text-xl);
+    font-weight: 800;
+    line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pisi-home-scroll[data-enter] > * {
+        animation: none;
+    }
+
+    .pisi-wheel-face,
+    .pisi-task-group-toggle .pisi-icon {
+        transition: none;
+    }
+}

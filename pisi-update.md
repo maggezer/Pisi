@@ -1,5 +1,57 @@
 # PISI Güncelleme Takip Dosyası
 
+## 15-11-2026 — Pisi Mobil: Pisi sekmesi başlangıç ekranı (M5, mobil iş)
+
+- Bu bir mobil iştir (`docs/mobile-plan.md` M5; G2, G3, G4, G5, G15, G16).
+  Masaüstü koduna ve `shared/` klasörüne dokunulmadı.
+- Pisi sekmesi yer tutucu olmaktan çıktı (`mobile/src/screens/pisi/`). Ekran
+  bir kez kurulur ve yerinde güncellenir; böylece günlük yazarken imleç,
+  çarkta kaydırma konumu korunur. Bu sekmede genel başlık ve alt menü
+  görünmez.
+    - **Başlık:** seçili gün "Cumartesi, 14 Kasım" biçiminde, bugünse "Bugün"
+      etiketiyle. Dokununca tarih seçici açılır; başka gündeyken "Bugüne dön"
+      görünür.
+    - **Günlük:** yerinde düzenlenen düz metin alanı, boşken en az üç satır ve
+      "Bugün neler oldu?" ipucu. Yazma durduktan 600 ms sonra kaydedilir;
+      duraklatmada, gün ve ekran değişiminde, geri tuşunda hemen yazılır.
+      Dosya ilk karakterle oluşur; boş metin dosya oluşturmaz. Masaüstüne ait
+      bloklar değişmez ve sayıları alanın altında yazar.
+    - **Görevler:** "Gecikmiş" (yalnız bugünde), "Bu gün" ve kapalı gelen
+      "Tamamlanan (n)". Görevin günü `getPisiTaskCalendarIsoDate`, gecikme
+      `getPisiTodoDateBucket` ile bulunur (`shared/task-views.mjs`). Satır tam
+      genişliktedir, başlık iki satıra sarılır; meta satırında saat, öncelik
+      (renk + ad), tekrar ve kaynak not yazar. Onay kutusu görevi tamamlar,
+      kısa titreşim verir ve 5 saniyelik "Geri al" gösterir. Satıra dokununca
+      salt okunur görev detayı açılır.
+    - **Görev ekle:** masaüstünün Türkçe tarih ayrıştırıcısını kullanır
+      (`shared/date-parser.mjs`). Ayrıştırılan gün, saat ve tekrar kaydetmeden
+      önce çip olarak görünür. Tarih yazılmazsa seçili gün kullanılır. Yazılan
+      metin, masaüstünde olduğu gibi, başlık olarak aynen kalır.
+    - **Tarih çarkı:** sağ alt köşede çapraz şerit; dokunma ya da kaydırmayla
+      gün seçilir. Günler 48 dp, bugün çerçeveli, seçili gün dolu; görev için
+      dolu, günlük için halka nokta. Ay etiketi yerelleştirilir ("Kas"/"Nov").
+      İçerikte sağa/sola kaydırma da günü değiştirir.
+    - **Menü:** sol alttaki düğme Görevler, Notlar, Takvim, Haritalar ve
+      Ayarlar'ı ikon ve adlarıyla listeler; her ekran iki dokunuşta açılır.
+    - **Açılış:** ekran `tasks.json` ve günün günlük dosyasını doğrudan okur;
+      proje indeksi beklenmez.
+- `TaskRepo.undoComplete`: "Geri al" için. Görev eski durumuna döner;
+  tekrar eden görevde tamamlamanın eklediği sonraki tekrar, kayıt hâlâ aynen
+  duruyorsa `tasks.json`'dan çıkarılır. Arada değişmiş bir kayıt bırakılır.
+  Bu, kullanıcıya açık bir görev silme değildir (V9 sürüyor).
+- Yeni ortak bileşenler: `ui/task-row.mjs`, `ui/date-picker.mjs`,
+  `ui/dates.mjs`; galeriye eklendi. Öncelik işaretleri için beş renk token'ı
+  kontrast testine alındı. Platform köprüsüne `haptic()` eklendi.
+- Düzeltme: `prefers-reduced-motion` açıkken sheet ve perde animasyonu
+  kapanmıyordu (sınıf kuralı sayfa geneli kuralı eziyordu); artık kapanıyor.
+  `hidden` özniteliği `display` veren bileşen sınıflarında da gizliyor.
+- Testler: `mobile/tests/pisi-*.test.mjs` (gün modeli, bileşenler, ekran
+  akışları), `data-tasks` (geri alma), `mobile/e2e/pisi.spec.mjs` (açılış,
+  görev ekleme/tamamlama ve dosya içeriği, günlük kalıcılığı, üç yolla gün
+  değiştirme, %130 yazı, hareket azaltma, 2.000 not + 5.000 görevle açılış
+  süresi). Açılış süresi `pisi-mobile-screens` artifact'ındaki
+  `startup-timing.json` dosyasına yazılır.
+
 ## 15-11-2026 — Pisi Mobil veri katmanı ve masaüstü uyumluluğu (M4, mobil iş)
 
 - Bu bir mobil iştir (`docs/mobile-plan.md` M4). Masaüstünde tek değişiklik

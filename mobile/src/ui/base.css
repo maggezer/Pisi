@@ -50,6 +50,11 @@ button {
     height: 100%;
 }
 
+/* `hidden` wins over the display value a component class sets. */
+:root [hidden] {
+    display: none;
+}
+
 .pisi-icon {
     flex: none;
     width: var(--pisi-icon);
@@ -170,6 +175,27 @@ button {
     font-weight: 700;
 }
 
+/*
+ * The Pisi tab has no header and no bottom navigation: the screen fills the
+ * window and draws its own. The layer holds the sheet and the snackbar.
+ */
+.pisi-main-home {
+    display: flex;
+    overflow: hidden;
+    padding: 0;
+}
+
+.pisi-layer {
+    display: contents;
+}
+
+/* The snackbar stays clear of the menu button and the date wheel. */
+.pisi-shell-home .pisi-floating {
+    right: 8.75rem;
+    bottom: calc(5rem + var(--pisi-safe-bottom));
+    align-items: stretch;
+}
+
 /* ===== Screens ===== */
 
 .pisi-screen {
@@ -177,17 +203,6 @@ button {
     flex-direction: column;
     gap: var(--pisi-space-4);
     min-height: 100%;
-}
-
-.pisi-day {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--pisi-space-2);
-    margin: 0;
-    font-size: var(--pisi-text-lg);
-    font-weight: 600;
-    line-height: var(--pisi-leading-tight);
 }
 
 .pisi-day-today {

@@ -82,8 +82,9 @@ Her adımda uygulama kapanmamalı ve ekran boş kalmamalıdır.
     - Uygulamayı son uygulamalardan kapatıp yeniden açın: Pisi ekranı bugünün tarihiyle gelmeli.
     - Başka bir sekmedeyken ana ekrana çıkıp uygulamaya dönün: kaldığınız sekme açık olmalı.
 2. **Sekmeler ve Ayarlar**
-    - Alt menüde Pisi, Görevler, Notlar, Takvim ve Haritalar tek satırda, etiketleriyle görünmeli.
-    - Başlıktaki **Ayarlar** düğmesi Ayarlar ekranını açmalı.
+    - Pisi sekmesinde alt menü görünmemeli; sol alttaki menü düğmesi Görevler, Notlar, Takvim, Haritalar ve Ayarlar'ı ikon ve adlarıyla listelemeli. Her ekran iki dokunuşla açılmalı.
+    - Öteki sekmelerde alt menüde Pisi, Görevler, Notlar, Takvim ve Haritalar tek satırda, etiketleriyle görünmeli.
+    - Bu sekmelerde başlıktaki **Ayarlar** düğmesi Ayarlar ekranını açmalı.
 3. **Android geri tuşu** (hareketle geri dahil)
     - Ayarlar → Tema penceresi açıkken geri: yalnız pencere kapanmalı.
     - Ayarlar ekranında geri: önceki sekmeye dönülmeli.
@@ -98,6 +99,25 @@ Her adımda uygulama kapanmamalı ve ekran boş kalmamalıdır.
 6. **Yazı boyutu ve yön**
     - Android yazı boyutunu en büyüğe alın: sekme etiketleri kesilmemeli, yatay kaydırma oluşmamalı.
     - Telefonu yatay çevirip geri alın: düzen bozulmamalı.
+
+### Pisi sekmesi (M5)
+
+Önce Ayarlar → Geliştirici → "Örnek proje yükle" ile örnek veriyi yükleyin.
+
+- [ ] Başlıkta seçili gün "Cumartesi, 14 Kasım" biçiminde yazar; bugünse yanında "Bugün" etiketi vardır.
+- [ ] **Tarih çarkı** (sağ alt köşe): parmakla kaydırınca günler akar ve hafif titreşim hissedilir; ortada duran gün seçilir. Bir güne dokunmak da onu seçer.
+- [ ] Çarkta bugün çerçeveli, seçili gün dolu görünür; görevi olan günlerde dolu, günlüğü olan günlerde halka nokta vardır. Ay etiketi Türkçede "Kas", İngilizcede "Nov" yazar.
+- [ ] İçerik alanında sağa/sola kaydırmak günü değiştirir; yukarı/aşağı kaydırmak yalnız sayfayı kaydırır. Günlük alanına yazarken kaydırma günü değiştirmez.
+- [ ] Başlığa dokununca tarih seçici açılır; başka bir gün seçilince kapanır. Başka gündeyken "Bugüne dön" görünür ve bugüne getirir.
+- [ ] **Günlük:** boşken "Bugün neler oldu?" ipucu görünür. Yazıp bir saniye bekleyin, uygulamayı tamamen kapatıp açın: metin durur. Yazar yazmaz ana ekrana çıkıp uygulamayı kapatın: metin yine durur.
+- [ ] Klavye açıkken yazılan satır klavyenin altında kalmaz.
+- [ ] **Görevler:** bugünde "Gecikmiş" ve "Bu gün" grupları görünür; uzun başlık iki satıra sarılır, kırpılmaz. Saatli görevde saat, her görevde öncelik rengi ve adı yazar.
+- [ ] Onay kutusuna dokununca görev tamamlanır, telefon kısa titrer ve 5 saniye "Geri al" görünür. "Geri al" görevi geri getirir. Tekrar eden görevde ("Sabah yürüyüşü") geri alınca yarına eklenen tekrar da kalkar.
+- [ ] "Tamamlanan (n)" kapalı gelir; dokununca açılır.
+- [ ] **Görev ekle:** "yarın 14:00 rapor yaz" yazınca altında "15 Kas" ve "14:00" çipleri görünür; kaydedince görev yarına eklenir. Tarihsiz yazılan görev seçili güne eklenir.
+- [ ] Görev satırına dokununca salt okunur görev detayı açılır; geri tuşu kapatır.
+- [ ] Koyu temada ve Android yazı boyutu %130'da düzen bozulmaz.
+- [ ] "Animasyonları kaldır" açıkken gün değişimi animasyonsuzdur.
 
 ### Örnek proje (aktarım gelene kadar)
 

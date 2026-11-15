@@ -23,5 +23,8 @@ export const PISI_TOKEN_PAIRS = Object.freeze([
     ...on('--pisi-border', SURFACES, 'ui'),
     ...on('--pisi-accent-text', SURFACES, 'ui'),
     ...on('--pisi-danger', SURFACES, 'ui'),
-    ...on('--pisi-inverse-surface', ['--pisi-bg', '--pisi-surface'], 'ui')
+    ...on('--pisi-inverse-surface', ['--pisi-bg', '--pisi-surface'], 'ui'),
+    // Marks on the selected day of the date wheel, and the task priority marks.
+    ...on('--pisi-on-accent', ['--pisi-accent'], 'ui'),
+    ...[1, 2, 3, 4, 5].flatMap((level) => on(`--pisi-priority-${level}`, SURFACES, 'ui'))
 ]);

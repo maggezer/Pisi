@@ -13,6 +13,9 @@ const correctness = {
 const browserGlobals = {
     console: 'readonly',
     document: 'readonly',
+    Event: 'readonly',
+    MutationObserver: 'readonly',
+    performance: 'readonly',
     getComputedStyle: 'readonly',
     navigator: 'readonly',
     window: 'readonly',
@@ -21,7 +24,7 @@ const browserGlobals = {
     URLSearchParams: 'readonly'
 };
 
-const nodeGlobals = { console: 'readonly', process: 'readonly', setTimeout: 'readonly', indexedDB: 'readonly' };
+const nodeGlobals = { console: 'readonly', process: 'readonly', setTimeout: 'readonly', clearTimeout: 'readonly', indexedDB: 'readonly' };
 
 export default [
     { ignores: ['node_modules/**', 'dist/**', 'android/**', 'test-results/**', 'playwright-report/**', 'e2e/screenshots/**'] },

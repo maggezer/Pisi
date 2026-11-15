@@ -96,6 +96,28 @@ const SHAPES = Object.freeze({
         ['path', { d: 'M9 14 4 9l5-5' }],
         ['path', { d: 'M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11' }]
     ],
+    // lucide: menu
+    menu: [
+        ['path', { d: 'M4 5h16' }],
+        ['path', { d: 'M4 12h16' }],
+        ['path', { d: 'M4 19h16' }]
+    ],
+    // lucide: chevron-down
+    'chevron-down': [['path', { d: 'm6 9 6 6 6-6' }]],
+    // lucide: chevron-left
+    'chevron-left': [['path', { d: 'm15 18-6-6 6-6' }]],
+    // lucide: repeat
+    repeat: [
+        ['path', { d: 'm17 2 4 4-4 4' }],
+        ['path', { d: 'M3 11v-1a4 4 0 0 1 4-4h14' }],
+        ['path', { d: 'm7 22-4-4 4-4' }],
+        ['path', { d: 'M21 13v1a4 4 0 0 1-4 4H3' }]
+    ],
+    // lucide: clock
+    clock: [
+        ['circle', { cx: '12', cy: '12', r: '10' }],
+        ['path', { d: 'M12 6v6l4 2' }]
+    ],
     // lucide: inbox
     inbox: [
         ['polyline', { points: '22 12 16 12 14 15 10 15 8 12 2 12' }],

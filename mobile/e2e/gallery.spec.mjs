@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 // The component gallery is served by the development server (see playwright.config.mjs).
 const GALLERY_URL = 'http://127.0.0.1:4174/?gallery';
-const SECTIONS = ['colours', 'type', 'space', 'icons', 'buttons', 'chips', 'lists', 'fields', 'overlays', 'chrome'];
+const SECTIONS = ['colours', 'type', 'space', 'icons', 'buttons', 'chips', 'lists', 'tasks', 'fields', 'overlays', 'chrome'];
 
 async function open(page) {
     await page.goto(GALLERY_URL);
@@ -94,6 +94,31 @@ test('sheet ve diyalog açılır, geri tuşu ve perde ile kapanır', async ({ pa
     await page.locator('[data-open="dialog"]').tap();
     await page.locator('[data-dialog]').tap({ position: { x: 8, y: 8 } });
     await expect(page.getByRole('alertdialog')).toHaveCount(0);
+});
+
+test('görev satırı: başlık iki satıra sarılır, kırpılmaz; tarih seçici gün seçer', async ({ page }) => {
+    await open(page);
+    const row = page.locator('[data-task="row-1"]');
+    const title = row.locator('.pisi-task-title');
+    const lines = await title.evaluate((element) =>
+        Math.round(element.getBoundingClientRect().height / Number.parseFloat(getComputedStyle(element).lineHeight))
+    );
+    expect(lines).toBe(2);
+    expect(await title.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+    await expect(row.locator('.pisi-task-meta-item')).toHaveText(['10:00', 'Çok yüksek', 'Rapor planı']);
+    const box = await row.boundingBox();
+    const list = await page.locator('[data-gallery="tasks"] .pisi-task-list').boundingBox();
+    expect(Math.round(box.width)).toBeGreaterThanOrEqual(Math.round(list.width) - 2);
+
+    await page.locator('[data-open="date"]').tap();
+    const dialog = page.getByRole('dialog', { name: 'Tarih seç' });
+    await expect(dialog.locator('.pisi-date-month-title')).toHaveText('Kasım 2026');
+    expect(await smallTargets(page)).toEqual([]);
+    await shot(page, '25-gallery-date-picker');
+    await dialog.getByRole('button', { name: 'Sonraki ay' }).tap();
+    await expect(dialog.locator('.pisi-date-month-title')).toHaveText('Aralık 2026');
+    await dialog.locator('[data-date="2026-12-03"]').tap();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
 test('çip, segment ve alt menü seçimi değiştirir; segment temayı değiştirir', async ({ page }) => {
