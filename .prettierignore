@@ -41,3 +41,6 @@ yarn-debug.log*
 yarn-error.log*
 .release-*
 .actions-probe-*
+
+# Desktop-written project used by tests: its bytes are the test data
+tests/fixtures/

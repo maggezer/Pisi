@@ -1,0 +1,13 @@
+{
+  "pisi": {
+    "version": 1,
+    "type": "node",
+    "id": "node_4de6c78f-3cef-4ae8-ba3a-bd9aa8960318",
+    "title": "Proje Planı",
+    "sidecar": "inv_Proje Planı__node_4de6c78f-3cef-4ae8-ba3a-bd9aa8960318",
+    "createdAt": "2026-11-15T05:06:31.237Z",
+    "updatedAt": "2026-11-15T05:06:31.971Z",
+    "parentMap": "none"
+  },
+  "content": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_13f821b1-2822-467d-b16d-119ab2b66a42\" data-pisi-block-type=\"paragraph\" data-pisi-section-level=\"0\">Proje planının ilk paragrafı.</div><div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_1fa3ae25-3620-4deb-b787-293ef06bbc51\" data-pisi-block-type=\"paragraph\" data-pisi-section-level=\"0\">İkinci paragraf: takvim ve kapsam.</div><div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_8d7d5300-aba6-4b12-adb5-d8038173ecd9\" data-pisi-block-type=\"paragraph\" data-pisi-section-level=\"0\">Üçüncü paragraf: riskler.</div>"
+}

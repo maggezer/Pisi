@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "updatedAt": "2026-11-15T05:06:33.034Z",
+  "entries": [
+    {
+      "historyId": "1794719193032-2026-11-15T05-06-33-032Z-448aea7024948a4b.json.gz",
+      "capturedAt": "2026-11-15T05:06:33.032Z",
+      "reason": "editor-save",
+      "hash": "448aea7024948a4b",
+      "preview": "Görevler ☐ Egzersiz · Task · Her gün ☐ Raporu gönder · Inbox",
+      "size": 898,
+      "compressed": true
+    },
+    {
+      "historyId": "1794719192599-2026-11-15T05-06-32-598Z-c9e9f6226c8d5f2c.json.gz",
+      "capturedAt": "2026-11-15T05:06:32.598Z",
+      "reason": "editor-save",
+      "hash": "c9e9f6226c8d5f2c",
+      "preview": "Görevler ☐ Raporu gönder · Inbox",
+      "size": 784,
+      "compressed": true
+    },
+    {
+      "historyId": "1794719192352-2026-11-15T05-06-32-352Z-8fde9dbe254449fc.json.gz",
+      "capturedAt": "2026-11-15T05:06:32.352Z",
+      "reason": "editor-save",
+      "hash": "8fde9dbe254449fc",
+      "preview": "Görevler ☐ Raporu gönder · Inbox",
+      "size": 722,
+      "compressed": true
+    }
+  ]
+}
