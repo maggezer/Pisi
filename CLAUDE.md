@@ -87,7 +87,19 @@ Klasör yapısı:
 - Masaüstü uyumluluğu: kökteki `tests/mobile-desktop-compat.test.mjs`, mobil depoları masaüstünün oluşturduğu `tests/fixtures/desktop-project/` projesinde çalıştırır ve sonucu masaüstünün Project Integrity denetimiyle sınar. Veri katmanına dokunan her değişiklikte `npm test` ile çalıştır. Fixture elle düzenlenmez; `tests/fixtures/README.md` nasıl yenileneceğini anlatır.
 - Geliştirici menüsü (Ayarlar → "Örnek proje yükle") yalnız debug derlemelerinde görünür: `import.meta.env.DEV` ya da `VITE_PISI_DEVELOPER=1` (CI test APK'sı ve Playwright derlemesi).
 
+MVP (M0–M10) 16-11-2026'da cihazda kabul edildi (`docs/mobile-qa.md` §4).
+
 Kurallar: `mobile/src` içinde `.mjs` ≤ 600, CSS ≤ 800 satır (`check:structure`). Kökteki `npm test` yalnız `tests/` klasörünü çalıştırır; kök `prettier` mobil kaynakları da denetler, ESLint mobil dosyalar için `mobile/eslint.config.mjs` kullanır. CI: `.github/workflows/mobile.yml` (validate, e2e, test APK'sı). Test APK'sı, sabit test anahtarı ve cihaz kabul listesi: `docs/mobile-qa.md`.
+
+## Sync
+
+Pisi'nin kendi eşleştirme ve senkron sistemi [`docs/sync-plan.md`](docs/sync-plan.md) belgesindeki fazlarla (S0–S8) geliştirilir; tel biçimi (uç noktalar, JSON'lar, hata kodları, şifreleme, sürümleme, tehdit modeli) [`docs/sync-protocol.md`](docs/sync-protocol.md)'dedir. **Senkron işlerinde önce bu iki belgeyi oku.** Çalışma biçimi (§0), değişmez veri kuralları (§2, SV1–SV13) ve senkron PR'ları için ek "bitti" koşulları (§3.10) plandadır. Mobil fazlarda `docs/mobile-plan.md` kuralları da geçerlidir.
+
+- Sunucu: kullanıcının cPanel hosting'i (PHP 8.4, MariaDB 10.11, sürekli süreç yok), kodu `server/` altında, framework yok; veri ve blob'lar `public_html` dışında. Sunucu artan `seq`'li bir değişiklik günlüğü ve şifreli blob'lar tutar; cihazlar yoklar.
+- Uçtan uca şifreleme: sunucu içerik, dosya yolu ve ad görmez. Proje anahtarı eşleştirmede (QR ya da kısa kod + doğrulama numarası) cihazdan cihaza geçer.
+- Saf kurallar `shared/sync-*.mjs` içindedir (yol, şifreleme, birleştirme, karar motoru). Senkron proje klasörüne metadata yazmaz, projeyi baştan yüklemez ve kaydedilmemiş değişikliğin üzerine yazmaz.
+- Gerçek sunucu adresi, kurulum anahtarı, token ya da anahtar repoya, test çıktısına veya PR'a yazılmaz.
+- Eski klasör tabanlı senkron (`main/functions/sync-core.js`, `sync-domain.js`, `sync-project-adapter.js`, `renderer/sync/pisi-sync-settings.mjs`) kapalıdır (`PISI_LEGACY_SYNC_ENABLED = false`) ve S7'de kaldırılır. Yollarını (`.pisi-sync/`, `.pisi/sync-state.json`) yeni sistem senkron etmez.
 
 ## Architecture
 
