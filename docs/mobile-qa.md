@@ -149,6 +149,19 @@ Her adımda uygulama kapanmamalı ve ekran boş kalmamalıdır.
 - [ ] TalkBack bir güne gelince tarihi ve "görev var", "görevlerin hepsi tamamlandı", "günlük var" bilgilerini okur.
 - [ ] Koyu temada ve Android yazı boyutu %130'da düzen bozulmaz, gün hücreleri parmakla rahat seçilir.
 
+### Haritalar (M9)
+
+Önce Ayarlar → Geliştirici → "Örnek harita yükle" ile altı notlu örnek haritayı ekleyin.
+
+- [ ] Haritalar sekmesinde "Örnek Harita" ve "6 not" görünür; ikinci kez yüklemek kopya oluşturmaz ("Örnek harita zaten var").
+- [ ] Harita ekrana sığmış açılır. Hiyerarşi bağlantıları turuncu, akış (stream) yeşil, denk (co-level) bağlantı iki uçlu mavi oktur.
+- [ ] Tek parmakla harita kayar, iki parmakla yakınlaşır/uzaklaşır; hareket akıcıdır. Sağ alttaki +, − ve "Ekrana sığdır" düğmeleri çalışır.
+- [ ] Bir nota dokununca not açılır; geri tuşu haritaya, harita da kaldığı yakınlıkta ve konumda durur; bir kez daha geri listeye döner.
+- [ ] Bir notu sürükleyerek başlayan hareket notu açmaz. Hızlı bir kaydırmadan hemen sonra düğmeye dokunun: ilk dokunuş yutuluyorsa not edin (tarayıcıda böyle; cihazda da öyleyse kayda değer).
+- [ ] Telefonu yatay çevirin: kaydırılmamış harita yeni ekrana yeniden sığar.
+- [ ] TalkBack not kartlarını başlıklarıyla okur; altında daraltılmış not olan kart "…, altında 1 gizli not" diye okunur.
+- [ ] Koyu temada ve Android yazı boyutu %130'da düzen bozulmaz.
+
 ### Örnek proje (aktarım gelene kadar)
 
 Gerçek proje telefona henüz aktarılamıyor. Test APK'sında **Ayarlar →

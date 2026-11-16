@@ -44,6 +44,8 @@ export function createProject({ driver, now = () => new Date(), makeUuid, onErro
         driver,
         writer,
         index,
+        // The id source the repos use; the developer menu's sample data takes its ids from it too.
+        makeUuid,
         tasks,
         notes,
         diary,

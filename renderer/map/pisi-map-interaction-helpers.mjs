@@ -1,3 +1,6 @@
+// Port direction, offset and distance come from shared/map-view.mjs (the mobile map viewer uses them too).
+export { getDistance, getPortDirection, offsetPoint } from '../../shared/map-view.mjs';
+
 export function getConnectionDataFromEvent(event) {
     // Ctrl / Cmd: denk bağlam
     if (event.ctrlKey || event.metaKey) {
@@ -41,29 +44,6 @@ export function getConnectionClass(edgeOrType) {
     if (type === 'stream' || type === 'upstream' || type === 'downstream') return 'stream';
 
     return 'down-hub';
-}
-
-export function getPortDirection(port) {
-    if (port === 'top') return { x: 0, y: -1 };
-    if (port === 'right') return { x: 1, y: 0 };
-    if (port === 'bottom') return { x: 0, y: 1 };
-    if (port === 'left') return { x: -1, y: 0 };
-
-    return { x: 1, y: 0 };
-}
-
-export function offsetPoint(point, direction, distance) {
-    return {
-        x: point.x + direction.x * distance,
-        y: point.y + direction.y * distance
-    };
-}
-
-export function getDistance(a, b) {
-    const dx = b.x - a.x;
-    const dy = b.y - a.y;
-
-    return Math.sqrt(dx * dx + dy * dy);
 }
 
 export function getClientSelectionRect(startX, startY, currentX, currentY) {

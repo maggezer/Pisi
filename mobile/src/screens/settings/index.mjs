@@ -4,7 +4,16 @@
 import { h } from '../../ui/dom.mjs';
 import { renderList, renderListRow } from '../../ui/list.mjs';
 
-export function renderSettingsScreen({ t, themePreference, language, openOverlay, project = null, developer = false, onLoadSample = null }) {
+export function renderSettingsScreen({
+    t,
+    themePreference,
+    language,
+    openOverlay,
+    project = null,
+    developer = false,
+    onLoadSample = null,
+    onLoadSampleMap = null
+}) {
     const row = (id, value) => renderListRow({ title: t(`settings.${id}`), value, chevron: true, dataset: { setting: id }, onClick: () => openOverlay(id) });
     const heading = (key) => h('h2', { class: 'pisi-section-title' }, t(key));
     const sections = [
@@ -37,13 +46,23 @@ export function renderSettingsScreen({ t, themePreference, language, openOverlay
             renderList({
                 label: t('settings.developer'),
                 rows: [
-                    renderListRow({
-                        title: t('developer.loadSample'),
-                        meta: t('developer.loadSampleNote'),
-                        dataset: { developer: 'load-sample' },
-                        onClick: onLoadSample
-                    })
-                ]
+                    onLoadSample
+                        ? renderListRow({
+                              title: t('developer.loadSample'),
+                              meta: t('developer.loadSampleNote'),
+                              dataset: { developer: 'load-sample' },
+                              onClick: onLoadSample
+                          })
+                        : null,
+                    onLoadSampleMap
+                        ? renderListRow({
+                              title: t('developer.loadSampleMap'),
+                              meta: t('developer.loadSampleMapNote'),
+                              dataset: { developer: 'load-sample-map' },
+                              onClick: onLoadSampleMap
+                          })
+                        : null
+                ].filter(Boolean)
             })
         );
     }

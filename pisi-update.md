@@ -1,5 +1,55 @@
 # PISI Güncelleme Takip Dosyası
 
+## 16-11-2026 — Pisi Mobil: Haritalar, yalnız görüntüleme (M9, mobil iş)
+
+- Bu bir mobil iştir (`docs/mobile-plan.md` M9). Dosya biçimi değişmedi;
+  mobil haritaları yalnız okur, hiçbir harita ya da ilişki dosyası yazmaz
+  (geliştirici menüsündeki örnek harita dışında).
+- **Masaüstüne etkisi (davranış değişmedi):** haritanın çizim kuralları
+  `shared/map-view.mjs`'e taşındı: daraltılmış hub kuralları
+  (`renderer/map/pisi-map-collapse-core.mjs` artık oradan dışa aktarır), port
+  yönü/ofset/uzaklık (`pisi-map-interaction-helpers.mjs`) ve port noktası ile
+  bağlantı eğrisi (`pisi-map-connection-interactions.mjs`
+  `getPortPoint`/`makeConnectionPathFromBoxes`, aynı ölçülerle). Global adlar ve
+  manifest kayıtları aynı. `scripts/generate-project-fixture.mjs`'e isteğe bağlı
+  `relationships` seçeneği eklendi (varsayılan kapalı; her haritanın notları
+  bir hiyerarşi kurar, her ilişkinin haritada görünümü olur).
+- **Haritalar sekmesi** yer tutucu olmaktan çıktı (`mobile/src/screens/maps/`).
+    - Liste başlığa göre sıralanır; her harita masaüstünün saydığı not sayısını
+      gösterir.
+    - Görüntüleyici haritayı ekrana sığmış açar (dosyadaki kamera masaüstü
+      penceresine aittir, kullanılmaz). Tek parmakla kaydırma, iki parmakla
+      yakınlaştırma, +/−/sığdır düğmeleri (48 dp), klavyede ok, +, −, 0.
+      Yakınlık masaüstünün aralığındadır (0,1–3).
+    - Notlar `map.nodes` yerleşiminde kart olarak (başlık ve iki satır metin)
+      çizilir; harita kart rengi verdiyse kartın solunda şerit olur.
+      Bağlantılar masaüstünün eğrisi ve okuyla, türüne göre renkli çizilir
+      (yeni renk token'ları kontrast testinde); bağlantıya özel renk korunur.
+    - Daraltılmış hub'ın altındaki notlar ve bağlantıları çizilmez; hub kartı
+      gizlediği not sayısını gösterir ve okur.
+    - Bir nota dokununca not açılır; geri tuşu haritaya döner, harita kaldığı
+      yerde durur. Sürükleme notu açmaz.
+- **Okuma kuralı masaüstüyledir** (`mobile/src/data/map-model.mjs`,
+  `map-repo.mjs`): üyeler haritanın `nd_…` klasöründeki notlar (dosya adına
+  göre) + geçerli `map.references`; yerleşimi olmayan not masaüstünün varsayılan
+  ızgara yerini bellekte alır; ilişki deposu masaüstünün koleksiyon kurallarıyla
+  okunur (ikinci üst ve döngü stream sayılır); yalnız haritada görünümü olan ve
+  iki ucu da haritada olan ilişkiler çizilir. `map.edges` okunmaz. Bozuk harita
+  ve bozuk `relationships.json` salt okunur sayılır.
+- **Geliştirici menüsü:** "Örnek harita yükle" altı notlu bir haritayı masaüstü
+  biçiminde yazar; ilişkileri `relationships.json`'a, dosya yazmadan hemen önce
+  okunarak eklenir (V5), bozuk depoya yazılmaz.
+- Testler: `tests/shared-map-view.test.mjs`, kökte
+  `tests/mobile-desktop-compat.test.mjs` (fixture haritası masaüstünün kendi
+  işlemleriyle zenginleştirilir: yeni notlar, referans, üç bağlantı türü, renk,
+  ikinci üst, görünümsüz ilişki, harita dışı uç, daraltılmış hub, yerleşimsiz
+  notlar; mobilin notları, yerleşimleri, bağlantıları ve gizlenenleri masaüstü
+  projeksiyonuyla birebir aynı, hiçbir dosya değişmez), `mobile/tests/
+data-repos.test.mjs`, `maps-screen.test.mjs`, `router.test.mjs` ve
+  `e2e/maps.spec.mjs` (masaüstü fixture'ı, örnek harita, iki parmak ve
+  kaydırma, 500 notluk harita ile kare süresi ölçümü, açık/koyu ekran
+  görüntüleri).
+
 ## 16-11-2026 — Pisi Mobil: Takvim (M8, mobil iş)
 
 - Bu bir mobil iştir (`docs/mobile-plan.md` M8; G12). Masaüstü koduna ve

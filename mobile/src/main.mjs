@@ -1,5 +1,6 @@
 import { createApp } from './app/app.mjs';
 import { createProject } from './data/project-repo.mjs';
+import { addSampleMap } from './data/sample-map.mjs';
 import { loadSampleProject } from './data/sample-project.mjs';
 import { createCapacitorFsDriver } from './platform/capacitor-fs-driver.mjs';
 import { createCapacitorPlatform } from './platform/capacitor-platform.mjs';
@@ -36,6 +37,7 @@ if (import.meta.env.DEV && new URLSearchParams(window.location.search).has('gall
         platform: createCapacitorPlatform(),
         project: createProject({ driver: createCapacitorFsDriver(), makeUuid: () => window.crypto.randomUUID(), onError }),
         loadSample: developer ? loadSampleProject : null,
+        loadSampleMap: developer ? addSampleMap : null,
         storage: readStorage(),
         deviceLanguage: navigator.language,
         systemTheme,

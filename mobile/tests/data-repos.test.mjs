@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { addSampleMap } from '../src/data/sample-map.mjs';
 import { loadSampleProject } from '../src/data/sample-project.mjs';
 import { NOW, TODAY, createMemoryProject, json, noteFile, paragraph, storeJson } from './data-helpers.mjs';
 
@@ -98,7 +99,7 @@ describe('NoteRepo ve proje indeksi', () => {
                 parentMap: 'diary'
             }
         ]);
-        expect(project.maps.list()).toEqual([{ id: 'map_m', title: 'Harita', key: 'Harita.map', updatedAt: '2026-11-01T08:00:00.000Z', nodeCount: 1 }]);
+        expect(await project.maps.list()).toEqual([{ id: 'map_m', title: 'Harita', key: 'Harita.map', updatedAt: '2026-11-01T08:00:00.000Z', nodeCount: 1 }]);
         expect(project.getIntegrity().readOnlyFiles).toEqual(['Bozuk.node']);
     });
 
@@ -270,55 +271,112 @@ describe('DiaryRepo', () => {
     });
 });
 
-describe('MapRepo', () => {
+describe('MapRepo (masaüstünün harita okuma kuralları, yazmadan)', () => {
+    const view = (relationshipId, sourcePort = 'bottom', targetPort = 'top', extra = {}) => ({ relationshipId, sourcePort, targetPort, ...extra });
     const map = {
-        pisi: { version: 1, type: 'map', id: 'map_m', title: 'Harita' },
+        pisi: { version: 1, type: 'map', id: 'map_m', title: 'Harita', sidecar: 'nd_Harita__map_m' },
         map: {
+            // node_b has no layout: it gets the desktop's default slot for its place in the order.
             nodes: [
-                { id: 'node_a', x: 80, y: 80, width: 220, height: 92 },
-                { id: 'node_b', x: 400, y: 80, width: 220, height: 92 }
+                { id: 'node_a', x: 80, y: 80, width: 220, height: 92, customization: { cardColor: '#AABBCC', other: 1 } },
+                { id: 'node_c', x: 400, y: 'yok', width: 10, height: 92 },
+                { id: 'node_r', x: 700, y: 300, width: 220, height: 92 },
+                { id: 'node_eski', x: 0, y: 0, width: 220, height: 92 }
             ],
-            references: [{ id: 'node_r', path: 'Notlar/Bağımsız.node' }],
-            relationshipViews: [{ relationshipId: 'edge_1', sourcePort: 'bottom', targetPort: 'top' }],
+            references: [
+                { id: 'node_r', path: 'Notlar/Bağımsız.node' },
+                { id: 'node_yanlis', path: 'Notlar/Bağımsız.node' },
+                { id: 'node_disari', path: '../Dışarı.node' },
+                { id: 'node_a', path: 'nd_Harita__map_m/A.node' }
+            ],
+            relationshipViews: [
+                view('edge_1'),
+                view('edge_2', 'right', 'left', { customization: { color: '#FF0000' } }),
+                view('edge_3'),
+                view('edge_4'),
+                view('edge_5')
+            ],
             // Not part of the format: never read.
-            edges: [{ id: 'edge_eski', sourceId: 'node_a', targetId: 'node_b' }],
+            edges: [{ id: 'edge_eski', sourceId: 'node_a', targetId: 'node_b', type: 'down-hub' }],
             camera: { x: 10, y: 20, zoom: 1.5 },
-            collapsedHubs: ['node_a']
+            collapsedHubs: ['node_b::bottom']
         }
     };
     const relationships = [
         { id: 'edge_1', sourceId: 'node_a', targetId: 'node_b', type: 'down-hub' },
         { id: 'edge_2', sourceId: 'node_b', targetId: 'node_r', type: 'co-level' },
-        { id: 'edge_3', sourceId: 'node_a', targetId: 'node_başka', type: 'stream' }
+        // A second hierarchy parent of node_b is read as a stream relationship.
+        { id: 'edge_3', sourceId: 'node_c', targetId: 'node_b', type: 'down-hub' },
+        { id: 'edge_4', sourceId: 'node_b', targetId: 'node_c', type: 'down-hub', futureField: true },
+        // The other end is not on this map.
+        { id: 'edge_5', sourceId: 'node_a', targetId: 'node_başka', type: 'stream' },
+        // No view on this map: not drawn.
+        { id: 'edge_6', sourceId: 'node_a', targetId: 'node_c', type: 'stream' },
+        // Invalid: self-loop, unknown type, repeated id.
+        { id: 'edge_7', sourceId: 'node_a', targetId: 'node_a', type: 'stream' },
+        { id: 'edge_8', sourceId: 'node_a', targetId: 'node_c', type: 'tuhaf' },
+        { id: 'edge_1', sourceId: 'node_c', targetId: 'node_r', type: 'stream' }
     ];
-
-    it('haritayı, relationships.json ilişkilerini ve relationshipViews görünümünü okur; hiçbir şey yazmaz', async () => {
-        const { project, driver } = createMemoryProject({
-            'Harita.map': json(map),
-            '.pisi/relationships.json': json({ version: 1, relationships }),
-            'nd_Harita__map_m/A.node': noteFile({ id: 'node_a', title: 'A' })
-        });
-        await project.index.build();
-        const result = await project.maps.read('Harita.map');
-
-        expect(result.nodes).toEqual([
-            { id: 'node_a', layout: map.map.nodes[0], title: 'A', key: 'nd_Harita__map_m/A.node' },
-            { id: 'node_b', layout: map.map.nodes[1], title: '', key: null }
-        ]);
-        expect(result.relationships.map((item) => [item.id, item.view?.sourcePort ?? null])).toEqual([
-            ['edge_1', 'bottom'],
-            ['edge_2', null]
-        ]);
-        expect([result.camera, result.collapsedHubs, result.relationshipsReadable]).toEqual([{ x: 10, y: 20, zoom: 1.5 }, ['node_a'], true]);
-        expect(driver.count('writeText') + driver.count('rename') + driver.count('mkdir')).toBe(0);
+    const files = () => ({
+        'Harita.map': json(map),
+        '.pisi/relationships.json': json({ version: 1, relationships }),
+        // File-name order decides the default slot: A, B, C.
+        'nd_Harita__map_m/C.node': noteFile({ id: 'node_c', title: 'C' }),
+        'nd_Harita__map_m/A.node': noteFile({ id: 'node_a', title: 'A', content: paragraph('blk_1', 'Kök not') }),
+        'nd_Harita__map_m/B.node': noteFile({ id: 'node_b', title: 'B' }),
+        'Notlar/Bağımsız.node': noteFile({ id: 'node_r', title: 'Bağımsız' })
     });
 
-    it('bozuk harita ve bozuk ilişki deposu salt okunur sayılır', async () => {
-        const { project } = createMemoryProject({ 'Harita.map': json(map), 'Bozuk.map': '{', '.pisi/relationships.json': '{"relationships":5}' });
+    it('üyeler yan klasördeki notlar ve geçerli referanslardır; yerleşim, ilişkiler ve görünümler masaüstü kuralıyla okunur; hiçbir şey yazılmaz', async () => {
+        const { project, driver } = createMemoryProject(files());
+        await project.index.build();
+        const before = driver.snapshot();
+        const result = await project.maps.read('Harita.map');
+
+        expect(result.nodes.map((node) => [node.id, node.key, node.isReference, node.layout])).toEqual([
+            ['node_a', 'nd_Harita__map_m/A.node', false, { x: 80, y: 80, width: 220, height: 92 }],
+            ['node_b', 'nd_Harita__map_m/B.node', false, { x: 320, y: 80, width: 220, height: 92 }],
+            ['node_c', 'nd_Harita__map_m/C.node', false, { x: 400, y: 80, width: 150, height: 92 }],
+            ['node_r', 'Notlar/Bağımsız.node', true, { x: 700, y: 300, width: 220, height: 92 }]
+        ]);
+        expect([result.nodes[0].title, result.nodes[0].preview, result.nodes[0].customization]).toEqual(['A', 'Kök not', { cardColor: '#aabbcc' }]);
+        expect(result.edges.map((edge) => [edge.id, edge.type, edge.sourcePort, edge.targetPort, edge.customization?.color ?? null])).toEqual([
+            ['edge_1', 'down-hub', 'bottom', 'top', null],
+            ['edge_2', 'co-level', 'right', 'left', '#ff0000'],
+            ['edge_3', 'stream', 'bottom', 'top', null],
+            ['edge_4', 'down-hub', 'bottom', 'top', null]
+        ]);
+        // node_b's bottom port is collapsed: its hierarchy child node_c is hidden, with every connection touching it.
+        expect(result.nodes.filter((node) => node.hidden).map((node) => node.id)).toEqual(['node_c']);
+        expect(result.edges.filter((edge) => edge.hidden).map((edge) => edge.id)).toEqual(['edge_3', 'edge_4']);
+        expect([...result.hubCounts]).toEqual([['node_b', 1]]);
+        expect([result.title, result.relationshipsReadable]).toEqual(['Harita', true]);
+        expect(driver.snapshot()).toEqual(before);
+        expect(driver.count('writeText') + driver.count('rename') + driver.count('mkdir')).toBe(0);
+        expect(await project.maps.list()).toEqual([{ id: 'map_m', title: 'Harita', key: 'Harita.map', updatedAt: '', nodeCount: 4 }]);
+    });
+
+    it('yan klasör başka adla durursa kimliğinden bulunur; harita başlığı dosya adından gelir', async () => {
+        const moved = files();
+        moved['Yeni Ad.map'] = moved['Harita.map'];
+        delete moved['Harita.map'];
+        const { project } = createMemoryProject(moved);
+        const result = await project.maps.read('Yeni Ad.map');
+        expect([result.title, result.nodes.length]).toEqual(['Yeni Ad', 4]);
+    });
+
+    it('bozuk harita, bozuk ilişki deposu ve aynı kimlikli iki not salt okunur ya da okunamaz sayılır', async () => {
+        const duplicated = files();
+        duplicated['nd_Harita__map_m/A kopya.node'] = noteFile({ id: 'node_a', title: 'A kopya' });
+        const { project } = createMemoryProject({ ...duplicated, 'Bozuk.map': '{', '.pisi/relationships.json': '{"relationships":5}' });
         expect(await project.maps.read('Bozuk.map')).toMatchObject({ ok: false, corrupt: true });
         expect(await project.maps.read('Yok.map')).toMatchObject({ ok: false, missing: true });
-        expect(await project.maps.read('Harita.map')).toMatchObject({ ok: true, relationships: [], relationshipsReadable: false });
-        expect(project.getIntegrity().readOnlyFiles).toEqual(['.pisi/relationships.json', 'Bozuk.map']);
+        expect(await project.maps.read('Harita.map')).toMatchObject({ ok: false, corrupt: true });
+        expect(project.getIntegrity().readOnlyFiles).toEqual(['Bozuk.map']);
+
+        const unreadable = createMemoryProject({ ...files(), '.pisi/relationships.json': '{"relationships":5}' }).project;
+        expect(await unreadable.maps.read('Harita.map')).toMatchObject({ ok: true, edges: [], relationshipsReadable: false });
+        expect(unreadable.getIntegrity().readOnlyFiles).toEqual(['.pisi/relationships.json']);
     });
 });
 
@@ -335,5 +393,43 @@ describe('örnek proje', () => {
         expect(driver.snapshot()).toEqual(files);
         expect((await project.tasks.list()).tasks.map((task) => task.dueDate)).toEqual([TODAY, TODAY, TODAY, '2026-11-12', '2026-11-17', null]);
         expect((await project.diary.read(TODAY)).text).toBe('Örnek proje yüklendi.');
+    });
+
+    it('örnek harita masaüstü biçiminde yazılır: altı not yan klasöründe, altı ilişki, her birinin haritada görünümü var; ikinci kez eklenmez', async () => {
+        const { project, driver } = createMemoryProject();
+        await project.open();
+        const add = () => addSampleMap(project, { now: () => new Date(NOW), makeUuid: project.makeUuid });
+        expect(await add()).toBe(true);
+        const files = driver.snapshot();
+        expect(await add()).toBe(false);
+        expect(driver.snapshot()).toEqual(files);
+
+        const [listed] = await project.maps.list();
+        expect(listed).toMatchObject({ title: 'Örnek Harita', key: 'Örnek Harita.map', nodeCount: 6 });
+        const map = await project.maps.read(listed.key);
+        expect([map.nodes.length, map.edges.length, map.edges.map((edge) => edge.type).sort()]).toEqual([
+            6,
+            6,
+            ['co-level', 'down-hub', 'down-hub', 'down-hub', 'down-hub', 'stream']
+        ]);
+        const mapData = parse(driver, listed.key);
+        expect(map.nodes.every((node) => node.key.startsWith(`${mapData.pisi.sidecar}/`))).toBe(true);
+        expect(map.nodes.every((node) => parse(driver, node.key).pisi.parentMap === mapData.pisi.id)).toBe(true);
+        expect(parse(driver, '.pisi/relationships.json').relationships).toHaveLength(6);
+    });
+
+    it('örnek harita ilişki deposundaki kayıtlara dokunmaz, bozuk depoya yazmaz', async () => {
+        const kept = { id: 'edge_eski', sourceId: 'node_x', targetId: 'node_y', type: 'stream', futureField: [1] };
+        const { project, driver } = createMemoryProject({ '.pisi/relationships.json': json({ version: 1, futureTop: true, relationships: [kept] }) });
+        await project.open();
+        await addSampleMap(project, { now: () => new Date(NOW), makeUuid: project.makeUuid });
+        const store = parse(driver, '.pisi/relationships.json');
+        expect([store.futureTop, store.relationships[0], store.relationships.length]).toEqual([true, kept, 7]);
+
+        const broken = createMemoryProject({ '.pisi/relationships.json': '{' });
+        await broken.project.open();
+        await expect(addSampleMap(broken.project, { now: () => new Date(NOW), makeUuid: broken.project.makeUuid })).rejects.toThrow();
+        expect(broken.driver.snapshot()['.pisi/relationships.json']).toBe('{');
+        expect(Object.keys(broken.driver.snapshot()).some((key) => key.endsWith('.map'))).toBe(false);
     });
 });

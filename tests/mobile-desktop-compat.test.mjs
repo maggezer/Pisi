@@ -22,6 +22,7 @@ import { getTaskChoicePatch, getTaskDatePatch, getTaskReminderPatch, getTaskTime
 import { buildTaskLists } from '../mobile/src/screens/tasks/view-model.mjs';
 import { getCalendarTaskSummaryByDate } from '../renderer/calendar/pisi-calendar-ui.mjs';
 import { matchesPisiTodoFilter, parsePisiTodoTagValue } from '../renderer/tags/pisi-todo-utils.mjs';
+import { collectPisiCollapsedHubNodeIds, isPisiMapEdgeHiddenByCollapsedHub } from '../shared/map-view.mjs';
 import { normalizePisiTaskRecord } from '../shared/task-model.mjs';
 import { getPisiTaskTodoTag } from '../shared/task-views.mjs';
 
@@ -52,6 +53,8 @@ const electronStub = {
         }
     },
     ipcMain: quiet(),
+    Menu: quiet(),
+    nativeImage: quiet(),
     dialog: quiet(),
     shell: quiet(),
     net: { fetch: async () => ({ ok: false, status: 500 }) }
@@ -83,7 +86,10 @@ for (const name of [
     'structured-nodes',
     'property-schema-store',
     'property-schema-mutations',
-    'project-integrity'
+    'project-integrity',
+    // The map operations (connections, views) the M9 test builds a map with, and the IPC module they bind to.
+    'electron-ipc',
+    'map-semantic-operation-hooks'
 ]) {
     require(`../main/functions/${name}.js`);
 }
@@ -94,6 +100,10 @@ const { modules } = require('../main/module-registry.js');
 const desktopAudit = modules['main.projectIntegrity'].auditPisiProjectIntegrity;
 const desktopTasks = modules['main.taskStore'];
 const desktopDocuments = modules['main.documentStore'];
+const desktopMaps = modules['main.mapStore'];
+const desktopMapSemantics = modules['main.mapSemanticOperationHooks'];
+const desktopRelationships = modules['main.relationshipStore'];
+const desktopStructuredNodes = modules['main.structuredNodes'];
 
 const fixture = path.join(import.meta.dirname, 'fixtures', 'desktop-project');
 // Saturday 14 November 2026, 09:30 local time: the fixture's tasks are dated around it.
@@ -152,7 +162,7 @@ test('mobil, masaüstünün oluşturduğu projeyi yalnız okuyunca hiçbir dosya
     const listed = await project.tasks.list();
     const meeting = await project.notes.read('Toplantı Notları.node');
     const diary = await project.diary.read('2026-11-12');
-    const [mapEntry] = project.maps.list();
+    const [mapEntry] = await project.maps.list();
     const map = await project.maps.read(mapEntry.key);
     await project.flush();
 
@@ -172,7 +182,7 @@ test('mobil, masaüstünün oluşturduğu projeyi yalnız okuyunca hiçbir dosya
         ]
     );
     assert.equal(diary.text, 'Plan belgesini okudum.');
-    assert.deepEqual([map.nodes.length, map.relationships.length, map.relationships[0].view.sourcePort], [2, 1, 'bottom']);
+    assert.deepEqual([mapEntry.nodeCount, map.nodes.length, map.edges.length, map.edges[0].sourcePort], [2, 2, 1, 'bottom']);
     assert.deepEqual(project.search.query('zebra kararlar').length, 0);
     assert.deepEqual(
         project.search.query('KARARLAR').map((note) => note.title),
@@ -620,6 +630,100 @@ test('Takvim (M8): mobil takvimin noktaları masaüstü takviminin gün özetiyl
     assert.deepEqual(after, desktopCalendarMarks(root));
     assert.deepEqual(after.tasksDone, ['2026-11-12', '2026-11-20']);
     assert.ok(after.tasks.includes('2026-11-21') && after.diary.includes('2026-11-21'));
+});
+
+/**
+ * Builds a richer map on the fixture's "Yol Haritası" with the desktop's own map operations:
+ * more notes in its sidecar folder, a standalone reference, every connection kind (one with a
+ * colour, a second hierarchy parent the desktop stores as a stream), a relationship without a
+ * view on the map, a view whose other end is not on the map, a collapsed hub, and two notes
+ * added last that have no stored layout yet.
+ */
+function buildDesktopMap(root) {
+    globalThis.activeProjectFolder = root;
+    const mapPath = path.join(root, 'Yol Haritası.map');
+    const mapData = () => readJson(root, 'Yol Haritası.map');
+    const sidecar = path.join(root, mapData().pisi.sidecar);
+    const mapId = mapData().pisi.id;
+    const [hub, child] = mapData().map.nodes.map((node) => node.id);
+    const newNote = () => desktopDocuments.createUniquePisiFile(sidecar, '.node', { parentMap: mapId }).metadata.id;
+    const third = newNote();
+    const fourth = newNote();
+    const planId = readJson(root, 'Proje Planı.node').pisi.id;
+    const inboxId = readJson(root, 'Inbox.node').pisi.id;
+    assert.equal(
+        desktopStructuredNodes.attachPisiMapReference(mapPath, { id: planId, path: 'Proje Planı.node' }, { x: 900, y: 420, width: 220, height: 92 }).ok,
+        true
+    );
+    const connect = (edge) => assert.equal(desktopMapSemantics.upsertPisiMapSemanticConnection(mapPath, edge).ok, true, JSON.stringify(edge));
+    connect({ sourceId: child, targetId: third, type: 'down-hub', sourcePort: 'bottom', targetPort: 'top' });
+    connect({ sourceId: hub, targetId: fourth, type: 'stream', sourcePort: 'right', targetPort: 'left', customization: { color: '#FF0000' } });
+    connect({ sourceId: fourth, targetId: planId, type: 'co-level', sourcePort: 'bottom', targetPort: 'top' });
+    connect({ sourceId: planId, targetId: third, type: 'down-hub', sourcePort: 'left', targetPort: 'right', confirmSecondParentAsStream: true });
+    assert.equal(desktopRelationships.upsertPisiSemanticRelationship(root, { sourceId: hub, targetId: planId, type: 'co-level' }).ok, true);
+    const outside = desktopRelationships.upsertPisiSemanticRelationship(root, { sourceId: hub, targetId: inboxId, type: 'stream' });
+    assert.equal(desktopMapSemantics.persistPisiRelationshipView(mapPath, outside.relationship, { sourcePort: 'top', targetPort: 'bottom' }).ok, true);
+    assert.equal(desktopMaps.saveMapCamera(mapPath, { x: 12, y: 34, zoom: 0.8, collapsedHubs: [`${child}::bottom`] }).ok, true);
+    newNote();
+    newNote();
+    return { mapPath, ids: { hub, child, third, fourth, planId } };
+}
+
+test('Haritalar (M9): mobil harita masaüstünün çizdiği notları, yerleşimleri ve bağlantıları birebir okur; hiçbir dosyayı değiştirmez', async (t) => {
+    const root = copyFixture(t);
+    const { ids } = buildDesktopMap(root);
+    // The desktop writes default layouts the first time it opens the map, so it reads a twin of the project.
+    const twin = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-mobile-compat-map-'));
+    t.after(() => fs.rmSync(twin, { recursive: true, force: true }));
+    fs.cpSync(root, twin, { recursive: true });
+    t.after(() => (globalThis.activeProjectFolder = null));
+
+    const before = snapshot(root);
+    const project = openMobile(root);
+    await project.open();
+    await project.index.build();
+    const [entry] = await project.maps.list();
+    const mobile = await project.maps.read(entry.key);
+    await project.flush();
+    assert.deepEqual(changedFiles(before, snapshot(root)), []);
+
+    globalThis.activeProjectFolder = twin;
+    const desktop = desktopMapSemantics.getPisiMapSemanticProjection(path.join(twin, 'Yol Haritası.map'));
+    assert.equal(desktop.ok, true, desktop.error);
+    const rel = (fullPath) => path.relative(twin, fullPath).split(path.sep).join('/');
+
+    // Notes: the same members in the same order, with the same layout (default slots included) and reference flag.
+    assert.deepEqual(
+        mobile.nodes.map((node) => [node.id, node.key, node.layout, node.isReference]),
+        desktop.nodes.map((node) => [node.id, rel(node.fullPath), node.layout, node.isReference])
+    );
+    assert.equal(entry.nodeCount, desktop.nodes.length);
+    assert.equal(mobile.nodes.length, 7);
+    // Connections: the desktop's projection of relationships.json through the map's views.
+    const shape = (edge) => [edge.id, edge.sourceId, edge.targetId, edge.type, edge.sourcePort, edge.targetPort, edge.customization?.color ?? null];
+    assert.deepEqual(mobile.edges.map(shape), desktop.edges.map(shape));
+    assert.deepEqual(
+        mobile.edges.map((edge) => [edge.sourceId, edge.targetId, edge.type]),
+        [
+            [ids.hub, ids.child, 'down-hub'],
+            [ids.child, ids.third, 'down-hub'],
+            [ids.hub, ids.fourth, 'stream'],
+            [ids.fourth, ids.planId, 'co-level'],
+            [ids.planId, ids.third, 'stream']
+        ]
+    );
+    // Collapsed hub: what the desktop map hides (its shared rule over its own edges) is what mobile hides.
+    const collapsed = desktop.map.data.map.collapsedHubs;
+    const hidden = collectPisiCollapsedHubNodeIds(desktop.edges, collapsed);
+    assert.deepEqual(
+        mobile.nodes.filter((node) => node.hidden).map((node) => node.id),
+        desktop.nodes.filter((node) => hidden.has(node.id)).map((node) => node.id)
+    );
+    assert.deepEqual(
+        mobile.edges.filter((edge) => edge.hidden).map((edge) => edge.id),
+        desktop.edges.filter((edge) => isPisiMapEdgeHiddenByCollapsedHub(edge, hidden, collapsed)).map((edge) => edge.id)
+    );
+    assert.deepEqual([...hidden], [ids.third]);
 });
 
 test('(f) bozuk tasks.json ezilmez: mobil dosyayı salt okunur sayar ve yazmayı reddeder', async (t) => {

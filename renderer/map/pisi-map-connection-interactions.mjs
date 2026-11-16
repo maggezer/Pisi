@@ -1,4 +1,5 @@
 import { getPisiMapConnectionMetrics } from './pisi-map-zoom-core.mjs';
+import { getPisiMapRectPortPoint, makePisiMapConnectionPath } from '../../shared/map-view.mjs';
 import { getPortDirection, offsetPoint, getDistance } from './pisi-map-interaction-helpers.mjs';
 
 // Connections live in map (world) coordinates inside #map-edge-layer, which
@@ -18,15 +19,7 @@ export function getPisiMapBoxWorldRect(box) {
 /** Port point in world coordinates; accepts a node box or a { x, y, width, height } rect. */
 export function getPortPoint(boxOrRect, port) {
     const rect = boxOrRect?.nodeType === 1 ? getPisiMapBoxWorldRect(boxOrRect) : boxOrRect || { x: 0, y: 0, width: 0, height: 0 };
-    const x = rect.x;
-    const y = rect.y;
-    const w = rect.width;
-    const h = rect.height;
-
-    if (port === 'top') return { x: x + w / 2, y };
-    if (port === 'right') return { x: x + w, y: y + h / 2 };
-    if (port === 'bottom') return { x: x + w / 2, y: y + h };
-    return { x, y: y + h / 2 };
+    return getPisiMapRectPortPoint(rect, port);
 }
 
 /** Pointer position in world coordinates (the connection layer's space). */
@@ -58,42 +51,10 @@ export function syncMapConnectionZoomStyles(svg = document.getElementById('map-c
     return metrics;
 }
 
+// The curve itself is the shared rule (shared/map-view.mjs), so the mobile map draws the same connections.
 export function makeConnectionPathFromBoxes(sourceBox, sourcePort, targetBox, targetPort, edgeType = 'down-hub') {
-    const hasStartArrow = edgeType === 'co-level';
-    const hasEndArrow = true;
-    const metrics = getMapConnectionVisualMetrics();
-
-    // Ok olmayan çıkış tarafı kutuya yakın başlasın.
-    // Ok olan taraflarda çizgi ok tabanında bitsin, ok kutuya doğru uzasın.
-    const plainLineGap = metrics.plainLineGap;
-    const arrowGap = metrics.arrowGap;
-
-    const sourceOffset = hasStartArrow ? arrowGap : plainLineGap;
-    const targetOffset = hasEndArrow ? arrowGap : plainLineGap;
-
-    const sourceBase = getPortPoint(sourceBox, sourcePort);
-    const targetBase = getPortPoint(targetBox, targetPort);
-
-    const sourceDir = getPortDirection(sourcePort);
-    const targetDir = getPortDirection(targetPort);
-
-    const start = offsetPoint(sourceBase, sourceDir, sourceOffset);
-    const end = offsetPoint(targetBase, targetDir, targetOffset);
-
-    const distance = getDistance(start, end);
-    const control = Math.max(metrics.connectionControlMin, Math.min(metrics.connectionControlMax, distance * 0.38));
-
-    const c1 = {
-        x: start.x + sourceDir.x * control,
-        y: start.y + sourceDir.y * control
-    };
-
-    const c2 = {
-        x: end.x + targetDir.x * control,
-        y: end.y + targetDir.y * control
-    };
-
-    return `M ${start.x} ${start.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${end.x} ${end.y}`;
+    const toRect = (boxOrRect) => (boxOrRect?.nodeType === 1 ? getPisiMapBoxWorldRect(boxOrRect) : boxOrRect || { x: 0, y: 0, width: 0, height: 0 });
+    return makePisiMapConnectionPath(toRect(sourceBox), sourcePort, toRect(targetBox), targetPort, edgeType, getMapConnectionVisualMetrics());
 }
 
 export function makeTempConnectionPath(sourceBox, sourcePort, mousePoint) {
