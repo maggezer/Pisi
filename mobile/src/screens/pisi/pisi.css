@@ -326,6 +326,12 @@
     filter: brightness(0.94);
 }
 
+/* While the keyboard is open the corner controls would ride on it and cover the field being typed in (ui/keyboard.mjs). */
+[data-keyboard='open'] .pisi-launcher,
+[data-keyboard='open'] .pisi-wheel {
+    display: none;
+}
+
 .pisi-menu {
     display: grid;
     margin: var(--pisi-space-1) calc(var(--pisi-space-4) * -1) 0;

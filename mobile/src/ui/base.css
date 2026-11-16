@@ -129,6 +129,11 @@ button {
     background: var(--pisi-surface);
 }
 
+/* The tab bar steps aside while the keyboard is open (ui/keyboard.mjs), so the field being typed in has the room. */
+[data-keyboard='open'] .pisi-tabs {
+    display: none;
+}
+
 .pisi-tab {
     display: flex;
     flex-direction: column;

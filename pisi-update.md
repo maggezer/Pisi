@@ -1,5 +1,44 @@
 # PISI Güncelleme Takip Dosyası
 
+## 16-11-2026 — Pisi Mobil: Ayarlar, cila ve cihaz kabulü (M10, mobil iş)
+
+- Bu bir mobil iştir (`docs/mobile-plan.md` M10; G13). Dosya biçimi değişmedi;
+  mobil yeni bir dosya yazmaz.
+- **Ayarlar** tamamlandı (`mobile/src/screens/settings/`): tema ve dil; proje
+  bölümünde proje adı, görev, not, **günlük** (artık notlardan ayrı sayılır) ve
+  harita sayıları ile **Bütünlük** satırı ("Sorun yok" ya da "n dosya salt
+  okunur"; okunamayan dosyalar uyarı ve listeyle); **Hakkında** bölümünde
+  uygulama sürümü (`mobile/package.json` sürümü, CI'da APK sürüm koduyla:
+  `0.1.0 (57)`) ve "Cihazlar arası aktarım: Yakında" notu; debug derlemelerinde
+  geliştirici bölümü. DriveSync/Two-way metni yoktur ve bir test bunu sabitler
+  (G13).
+- **Klavye:** yazılan alan klavyenin altında kalmaz (`mobile/src/ui/keyboard.mjs`).
+  Pencere kısalınca ya da bir alan odak alınca, alanın kaydırma kabı yalnız
+  gerektiği kadar kaydırılır (notta imleç esas alınır); klavye açıkken Pisi
+  sekmesinin menü düğmesi ve tarih çarkı ile alt menü gizlenir (önceden "Görev
+  ekle" alanı klavye açıkken bu düğmelerin altında kalıyordu).
+- **Hareket azaltma:** hareket token'ları (`--pisi-motion*`) azaltılmış
+  harekette 0 ms olur; düğme ve onay kutusu geçişleri sınıf kuralıyla
+  tanımlandığı için sayfa çapındaki kurala takılmıyordu.
+- **Genel tarama** E2E'si (`mobile/e2e/sweep.spec.mjs`): her ekranda (Pisi,
+  Görevler, Notlar, not, Takvim, Haritalar, harita, Ayarlar) geri tuşu zinciri,
+  klavye, yatay ekran, %130 yazı ve 48 px hedefler, Chrome'un erişilebilirlik
+  ağacından (TalkBack'e giden ağaç) adsız kontrol olmaması, tek ana bölge ve
+  başlık, hareket azaltmada animasyon/geçiş kalmaması.
+- **Büyük proje testi** (`mobile/e2e/large-project.spec.mjs`): 2.000 not, 5.000
+  görev, 60 günlük; Pisi ekranının ilk görünmesi, not listesi kaydırılırken kare
+  süreleri ve arama yanıt süresi ölçülür, `large-project-timing.json` olarak
+  artifact'a yazılır. M5'teki elle tohumlanan açılış ölçümü buraya taşındı.
+- **Masaüstüne etkisi (davranış değişmedi):** `scripts/generate-project-fixture.mjs`
+  isteğe bağlı `tasks`, `diaryDays` ve `today` seçenekleri aldı (varsayılan
+  kapalı; kayıtlar `shared/task-model.mjs` ve `shared/diary-rules.mjs` ile
+  üretilir). Yeni kök test: `tests/project-fixture-generator.test.mjs`.
+- `docs/mobile-qa.md` cihaz kabul listesi MVP'nin tamamına göre yeniden düzenlendi
+  (eksik Notlar bölümü, Ayarlar, genel tarama, büyük proje; her madde işaretlenir).
+- Testler: `mobile/tests/settings-screen.test.mjs`, `keyboard.test.mjs`,
+  `app-project.test.mjs`; `mobile/e2e/sweep.spec.mjs`, `large-project.spec.mjs`;
+  kökte `tests/project-fixture-generator.test.mjs`.
+
 ## 16-11-2026 — Pisi Mobil: Haritalar, yalnız görüntüleme (M9, mobil iş)
 
 - Bu bir mobil iştir (`docs/mobile-plan.md` M9). Dosya biçimi değişmedi;

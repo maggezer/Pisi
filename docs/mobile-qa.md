@@ -1,6 +1,6 @@
 # Pisi Mobil — test APK'sı ve cihazda doğrulama
 
-Bu belge Pisi Mobil'in (Android) nasıl derlendiğini, test APK'sının telefona nasıl kurulduğunu ve cihazda neyin denetlendiğini anlatır. Fazlar ilerledikçe §4'teki liste genişler (`docs/mobile-plan.md` M10).
+Bu belge Pisi Mobil'in (Android) nasıl derlendiğini, test APK'sının telefona nasıl kurulduğunu ve cihazda neyin denetlendiğini anlatır. §4'teki liste MVP'nin (M0–M10) cihaz kabul listesidir: bütün maddeler telefonda işaretlenince MVP kabul edilmiş olur (`docs/mobile-plan.md` M10).
 
 ## 1. Otomatik kontroller
 
@@ -14,6 +14,9 @@ npm --prefix mobile run audit
 ```
 
 E2E ekran görüntülerini `mobile/e2e/screenshots/` altına yazar. CI aynı görüntüleri `pisi-mobile-screens` adıyla saklar.
+
+- `e2e/sweep.spec.mjs` (genel tarama) her ekranı geri tuşu, klavye, yatay ekran, %130 yazı, ekran okuyucu adları ve hareket azaltma için dener; görüntüleri `90-…`–`93-…` adlarıyladır.
+- `e2e/large-project.spec.mjs` masaüstünün proje üreticisiyle (`scripts/generate-project-fixture.mjs`) 2.000 not, 5.000 görev ve 60 günlüklük bir proje kurar; Pisi ekranının ilk görünmesini, not listesi kaydırılırken kare sürelerini ve arama yanıt süresini ölçer. Sonuç `large-project-timing.json` dosyasındadır (aynı artifact, tema klasörü başına bir dosya).
 
 Bileşen galerisi yalnız geliştirme sunucusunda açılır: `npm --prefix mobile run dev` çalışırken adresin sonuna `?gallery` ekleyin. Galerinin açık ve koyu görüntüleri de aynı artifact'tadır (`20-gallery.png`).
 
@@ -76,29 +79,42 @@ Android Studio ile açmak için: `npm --prefix mobile run android:open`.
 
 ## 4. Cihazda kabul listesi
 
-Her adımda uygulama kapanmamalı ve ekran boş kalmamalıdır.
+Her adımda uygulama kapanmamalı ve ekran boş kalmamalıdır. Önce **Ayarlar → Geliştirici → Örnek proje yükle** ve **Örnek harita yükle** ile örnek veriyi yükleyin (gerçek proje aktarım gelene kadar telefona getirilemiyor).
 
-1. **Açılış**
-    - Uygulamayı son uygulamalardan kapatıp yeniden açın: Pisi ekranı bugünün tarihiyle gelmeli.
-    - Başka bir sekmedeyken ana ekrana çıkıp uygulamaya dönün: kaldığınız sekme açık olmalı.
-2. **Sekmeler ve Ayarlar**
-    - Pisi sekmesinde alt menü görünmemeli; sol alttaki menü düğmesi Görevler, Notlar, Takvim, Haritalar ve Ayarlar'ı ikon ve adlarıyla listelemeli. Her ekran iki dokunuşla açılmalı.
-    - Öteki sekmelerde alt menüde Pisi, Görevler, Notlar, Takvim ve Haritalar tek satırda, etiketleriyle görünmeli.
-    - Bu sekmelerde başlıktaki **Ayarlar** düğmesi Ayarlar ekranını açmalı.
-3. **Android geri tuşu** (hareketle geri dahil)
-    - Ayarlar → Tema penceresi açıkken geri: yalnız pencere kapanmalı.
-    - Ayarlar ekranında geri: önceki sekmeye dönülmeli.
-    - Pisi dışındaki bir sekmede geri: Pisi sekmesine gidilmeli.
-    - Pisi sekmesinde geri: uygulama arka plana alınmalı, kapanmamalı. Yeniden açınca soğuk açılış ekranı (splash) görünmemeli.
-4. **Tema ve sistem çubukları**
-    - Ayarlar → Tema: Sistem, Açık ve Koyu seçenekleri hemen uygulanmalı ve uygulama yeniden açılınca korunmalı.
-    - "Sistem" seçiliyken telefonun koyu modunu değiştirin: uygulama izlemeli.
-    - Durum çubuğundaki saat ve simgeler her temada okunmalı; başlık çentiğin ya da durum çubuğunun altında kalmamalı, alt menü hareket çubuğuyla çakışmamalı.
-5. **Dil**
-    - Ayarlar → Dil: English seçilince bütün metinler değişmeli, Türkçe'ye dönülebilmeli.
-6. **Yazı boyutu ve yön**
-    - Android yazı boyutunu en büyüğe alın: sekme etiketleri kesilmemeli, yatay kaydırma oluşmamalı.
-    - Telefonu yatay çevirip geri alın: düzen bozulmamalı.
+Cihaz: \_\_\_\_ · Android sürümü: \_\_\_\_ · APK sürüm kodu (Ayarlar → Hakkında → Uygulama sürümü, parantez içindeki sayı): \_\_\_\_ · Tarih: \_\_\_\_
+
+### Açılış ve sekmeler
+
+- [ ] Uygulamayı son uygulamalardan kapatıp yeniden açın: Pisi ekranı bugünün tarihiyle gelir.
+- [ ] Başka bir sekmedeyken ana ekrana çıkıp uygulamaya dönün: kaldığınız sekme açıktır.
+- [ ] Pisi sekmesinde alt menü yoktur; sol alttaki menü düğmesi Görevler, Notlar, Takvim, Haritalar ve Ayarlar'ı ikon ve adlarıyla listeler. Her ekran iki dokunuşla açılır.
+- [ ] Öteki sekmelerde alt menüde Pisi, Görevler, Notlar, Takvim ve Haritalar tek satırda, etiketleriyle görünür; başlıktaki **Ayarlar** düğmesi Ayarlar'ı açar.
+
+### Ayarlar (M10)
+
+- [ ] **Tema:** Sistem, Açık ve Koyu hemen uygulanır ve uygulama yeniden açılınca korunur. "Sistem" seçiliyken telefonun koyu modunu değiştirin: uygulama izler.
+- [ ] Durum çubuğundaki saat ve simgeler her temada okunur; başlık çentiğin ya da durum çubuğunun altında kalmaz, alt menü hareket çubuğuyla çakışmaz.
+- [ ] **Dil:** English seçilince bütün metinler değişir; Türkçe'ye dönülebilir.
+- [ ] **Proje** bölümü proje adını ("Pisi Projem"), görev, not, günlük ve harita sayılarını gösterir. Örnek proje ve örnek haritadan sonra: 6 görev, 9 not, 1 günlük, 1 harita.
+- [ ] **Bütünlük** satırı "Sorun yok" yazar. (Okunamayan bir dosya olsaydı "n dosya salt okunur" yazar, altında uyarı ve dosya listesi görünürdü; bu durum otomatik testlerde denenir.)
+- [ ] **Hakkında** bölümünde uygulama sürümü APK'nın sürümüyle aynıdır (ör. `0.1.0 (57)`; parantez içi sayı CI'daki sürüm kodudur).
+- [ ] "Cihazlar arası aktarım: Yakında" satırı ve açıklaması görünür. DriveSync, Google Drive ya da "Two-way" geçen bir metin yoktur (G13).
+- [ ] Geliştirici bölümü test APK'sında görünür ("Örnek proje yükle", "Örnek harita yükle"); ikinci kez dokunmak kopya oluşturmaz.
+- [ ] Uygulama tamamen kapatılıp açıldığında ve güncelleme APK'sı üzerine kurulduğunda sayılar ve veriler aynıdır.
+
+### Genel tarama (M10)
+
+- [ ] **Geri tuşu** (hareketle geri dahil): açık pencere (sheet) varsa yalnız o kapanır; iç içe pencerede (görev detayı → öncelik) önce üstteki kapanır.
+- [ ] Alt ekranda (not, harita, Ayarlar) geri bir üst ekrana döner: haritadan açılan not → harita → harita listesi → Pisi.
+- [ ] Pisi dışındaki bir sekmede geri Pisi sekmesine götürür; Pisi sekmesinde geri uygulamayı arka plana alır, kapatmaz (yeniden açınca splash görünmez).
+- [ ] **Klavye:** Pisi sekmesinde "Görev ekle" alanına dokunun: alan klavyenin üstünde görünür; menü düğmesi ve tarih çarkı klavye açıkken gizlenir, klavye kapanınca geri gelir.
+- [ ] Günlük alanına uzun bir metin yazın: yazılan satır klavyenin altında kalmaz.
+- [ ] Uzun bir notun sonuna yazın: imleç biçim çubuğunun ve klavyenin üstünde kalır; biçim çubuğu klavyenin hemen üstündedir.
+- [ ] Görevler sekmesinde hızlı ekle, Notlar'da arama alanı ve görev detayında başlık alanı yazılırken alt menü gizlenir, alan görünür kalır.
+- [ ] **Yatay ekran:** her sekmede, notta, haritada ve Ayarlar'da telefonu yatay çevirip geri alın: yatay kaydırma oluşmaz, içerik kesilmez, kaydırılabilir.
+- [ ] **Yazı boyutu:** Android yazı boyutunu %130'a (ya da en büyüğe) alın: hiçbir ekranda yatay kaydırma oluşmaz, sekme etiketleri ve düğmeler kesilmez, düğmeler parmakla rahat seçilir.
+- [ ] **TalkBack** açıkken temel akışlar: Pisi sekmesinde gün başlığı, günlük alanı, görev onay kutusu ("… tamamla") ve "Görev ekle" okunur; menüden Notlar açılır, bir not açılıp okunur; Takvim'de bir gün tarihiyle ve işaretleriyle okunur; Ayarlar'da tema değiştirilir. Adı okunmayan ("düğme" diye geçen) bir kontrol yoktur.
+- [ ] **Hareket azaltma:** Ayarlar → Erişilebilirlik → "Animasyonları kaldır" açıkken gün değişimi, pencere (sheet) açılıp kapanması ve onay kutuları animasyonsuzdur.
 
 ### Pisi sekmesi (M5)
 
@@ -136,6 +152,19 @@ Her adımda uygulama kapanmamalı ve ekran boş kalmamalıdır.
 - [ ] Uygulamayı tamamen kapatıp açın: yapılan bütün değişiklikler durur.
 - [ ] Koyu temada ve Android yazı boyutu %130'da düzen bozulmaz.
 
+### Notlar (M7)
+
+- [ ] Notlar sekmesi son değişene göre sıralı açılır; kartlarda başlık, bloklar arası boşluklu bir satır önizleme ve gün görünür; köşe süsü ya da sabitleme simgesi yoktur (G7, G8).
+- [ ] Arama başlıkta ve metinde arar; "ışık" yazınca "Işık ve ısı" bulunur, "istanbul" yazınca "İstanbul" geçen not bulunur. Tümü / Notlar / Günlükler filtresi listeyi değiştirir.
+- [ ] Bir notu açın, bir paragrafın sonuna yazın: klavyenin hemen üstünde kalın, italik, başlık, madde ve numaralı liste düğmeleri vardır (48 dp, SVG ikon). Enter yeni blok açar; başlık düğmesi bloğu başlık yapar.
+- [ ] Geri tuşu notu kaydeder; uygulamayı tamamen kapatıp açın: yazdığınız durur.
+- [ ] Sağ alttaki düğmeyle yeni not: önce başlık sorulur; boş başlıkla oluşturulamaz. Mevcut notun başlığı değiştirilemez.
+- [ ] Örnek projedeki "Toplantı Notları"nın her paragrafı ayrı bir düzenlenebilir alandır.
+
+- [ ] Not metni arayüzle aynı yazı ailesindedir (G9). Koyu temada ve %130 yazıda düzen bozulmaz.
+
+Masaüstü blokları (Sheet, Paint, görsel, dosya: "Masaüstünde düzenlenir" kartı), görev blokları ve wiki-link'ler örnek projede yoktur; aktarım gelene kadar masaüstü fixture'ıyla otomatik testlerde denenir (`mobile/e2e/notes.spec.mjs`, `tests/mobile-desktop-compat.test.mjs`).
+
 ### Takvim (M8)
 
 Önce Ayarlar → "Örnek proje yükle" ile örnek veriyi yükleyin.
@@ -162,17 +191,12 @@ Her adımda uygulama kapanmamalı ve ekran boş kalmamalıdır.
 - [ ] TalkBack not kartlarını başlıklarıyla okur; altında daraltılmış not olan kart "…, altında 1 gizli not" diye okunur.
 - [ ] Koyu temada ve Android yazı boyutu %130'da düzen bozulmaz.
 
-### Örnek proje (aktarım gelene kadar)
+### Büyük proje (M10)
 
-Gerçek proje telefona henüz aktarılamıyor. Test APK'sında **Ayarlar →
-Geliştirici → Örnek proje yükle** örnek görev, not ve günlük ekler; ikinci kez
-dokunmak kopya oluşturmaz. Ayarlar'daki **Proje** bölümü görev, not ve harita
-sayısını gösterir.
+Telefonda büyük proje yüklemenin yolu aktarım gelene kadar yoktur; süreler her PR'da E2E ile ölçülür (`large-project-timing.json`, §1). Cihazdaki genel his için:
 
-- [ ] İlk açılışta Proje bölümünde sayılar 0 görünür.
-- [ ] "Örnek proje yükle" sonrası 6 görev ve 4 not görünür.
-- [ ] Uygulama tamamen kapatılıp açıldığında sayılar aynıdır.
-- [ ] Uygulama güncelleme APK'sıyla üzerine kurulduğunda veriler durur.
+- [ ] Örnek proje yüklüyken Notlar listesi hızlı kaydırmada takılmaz, arama her harfte hemen güncellenir.
+- [ ] Pisi ekranı soğuk açılışta bir saniye içinde görünür.
 
 ## 5. Sorun kaydı alma
 

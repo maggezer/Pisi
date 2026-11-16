@@ -50,7 +50,14 @@ describe('uygulama ve proje', () => {
         await app.ready;
 
         expect(Object.keys(driver.snapshot())).toEqual(['.pisi/properties.json', 'diary/.pisi-diary']);
-        expect([count('name'), count('tasks'), count('notes'), count('maps')]).toEqual(['Pisi Projem', '0', '0', '0']);
+        expect([count('name'), count('tasks'), count('notes'), count('diary'), count('maps'), count('integrity')]).toEqual([
+            'Pisi Projem',
+            '0',
+            '0',
+            '0',
+            '0',
+            'Sorun yok'
+        ]);
         expect(root.querySelector('[data-developer]')).toBeNull();
         expect([snackbar(), errors]).toEqual([null, []]);
     });
@@ -62,7 +69,8 @@ describe('uygulama ve proje', () => {
         root.querySelector('[data-developer="load-sample"]').click();
         await expect.poll(snackbar).toBe('Örnek proje yüklendi: 6 görev, 3 not eklendi.');
 
-        expect([count('tasks'), count('notes')]).toEqual(['6', '4']);
+        // Three notes and one diary day; the diary is counted on its own line.
+        expect([count('tasks'), count('notes'), count('diary')]).toEqual(['6', '3', '1']);
         expect(JSON.parse(driver.snapshot()['.pisi/tasks.json']).tasks).toHaveLength(6);
     });
 
@@ -75,6 +83,8 @@ describe('uygulama ve proje', () => {
         expect(root.querySelector('[data-project="read-only"]').textContent).toMatch(/^1 dosya okunamadı\./);
         expect(root.textContent).toContain('.pisi/tasks.json');
         expect([count('tasks'), count('notes')]).toEqual(['0', '1']);
+        expect(count('integrity')).toBe('1 dosya salt okunur');
+        expect(root.querySelector('[data-project="integrity"]').dataset.state).toBe('read-only');
         expect(driver.snapshot()).toEqual({ '.pisi/tasks.json': '{bozuk', 'Not.node': noteFile({}) });
     });
 

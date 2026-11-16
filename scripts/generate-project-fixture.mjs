@@ -2,6 +2,9 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { PISI_DIARY_MARKER_FILE, PISI_DIARY_MARKER_TEXT, getPisiDiaryNodeKey, makePisiDiaryDocumentData } from '../shared/diary-rules.mjs';
+import { formatPisiDocumentId, formatPisiTaskId } from '../shared/ids.mjs';
+import { formatPisiTodoTag, normalizePisiTaskRecord } from '../shared/task-model.mjs';
 
 // Writes a synthetic Pisi project for main-process performance measurements:
 // `notes` notes spread over maps of `perMap` notes. Every map owns a sidecar
@@ -14,8 +17,15 @@ import { pathToFileURL } from 'node:url';
 // (each note under the one `floor((i - 1) / 4)` places before it on its map)
 // stored in .pisi/relationships.json, with a view of each relationship on the
 // map; the mobile map viewer's performance test draws such a map.
+// With `tasks: n` the project also has n tasks in .pisi/tasks.json around the
+// day `today` (default 2026-11-14): twelve on that day, the rest spread over
+// the two years around it, every fifth done and every third with a time. With
+// `diaryDays: n` it has a diary entry for each of the n days up to `today`.
+// Task and diary records are made by the shared rules the desktop and the
+// mobile app write them with (shared/task-model.mjs, shared/diary-rules.mjs);
+// the mobile large-project test (mobile/e2e/large-project.spec.mjs) uses them.
 //
-// CLI: node scripts/generate-project-fixture.mjs <projectFolder> [notes=1000] [perMap=250] [relationships=0]
+// CLI: node scripts/generate-project-fixture.mjs <projectFolder> [notes=1000] [perMap=250] [relationships=0] [tasks=0] [diaryDays=0]
 
 function uuid(seed) {
     // Deterministic ids keep runs comparable.
@@ -43,10 +53,52 @@ function noteContent(index, nextId, nextTitle) {
     return blocks.join('');
 }
 
+/** `YYYY-MM-DD` `offset` days from `isoDate`, counted on the calendar (no time zone involved). */
+function shiftDay(isoDate, offset) {
+    const [year, month, day] = isoDate.split('-').map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day + offset));
+    return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+}
+
+function makeTasks(count, today) {
+    const now = new Date(STAMP);
+    return Array.from({ length: count }, (_value, index) => {
+        const dueDate = index < 12 ? today : shiftDay(today, (index % 700) - 350 || 1);
+        const priority = (index % 5) + 1;
+        const done = index >= 12 && index % 5 === 4;
+        return normalizePisiTaskRecord(
+            {
+                id: formatPisiTaskId(uuid(`project-task-${index}`)),
+                title: `Görev ${index + 1}`,
+                status: done ? 'done' : 'todo',
+                priority,
+                dueDate,
+                scheduledAt: index % 3 === 0 ? `${dueDate}T${String(8 + (index % 10)).padStart(2, '0')}:00` : dueDate,
+                manualOrder: index,
+                todoTag: formatPisiTodoTag(priority, dueDate),
+                completedAt: done ? STAMP : null
+            },
+            null,
+            { now, makeUuid: () => uuid(`project-task-fallback-${index}`), normalizeStoredPath: (value) => value }
+        );
+    });
+}
+
+async function writeDiary(projectFolder, days, today) {
+    await fs.mkdir(path.join(projectFolder, 'diary'), { recursive: true });
+    await fs.writeFile(path.join(projectFolder, 'diary', PISI_DIARY_MARKER_FILE), PISI_DIARY_MARKER_TEXT, 'utf8');
+    for (let offset = 0; offset < days; offset += 1) {
+        const isoDate = shiftDay(today, -offset);
+        const data = makePisiDiaryDocumentData({ isoDate, id: formatPisiDocumentId('.node', uuid(`project-diary-${isoDate}`)), now: STAMP });
+        data.content = `<div class="pisi-editor-block" data-pisi-block-id="blk_diary_${offset}" data-pisi-block-type="paragraph">${isoDate} günlüğü: yürüyüş, okuma ve toplantı.</div>`;
+        await writeJson(path.join(projectFolder, ...getPisiDiaryNodeKey(isoDate).split('/')), data);
+    }
+}
+
 /**
  * @param {string} projectFolder
- * @param {{ notes?: number, perMap?: number, relationships?: boolean }} [options]
- * @returns {Promise<{ notes: number, maps: number, relationships: number, directories: number, files: number, notePaths: string[] }>}
+ * @param {{ notes?: number, perMap?: number, relationships?: boolean, tasks?: number, diaryDays?: number, today?: string }} [options]
+ * @returns {Promise<{ notes: number, maps: number, relationships: number, tasks: number, diaryDays: number, directories: number, files: number, notePaths: string[] }>}
  */
 export async function generatePisiProjectFixture(projectFolder, options = {}) {
     const total = Math.max(1, Number(options.notes) || 1000);
@@ -121,7 +173,19 @@ export async function generatePisiProjectFixture(projectFolder, options = {}) {
         files += 1;
     }
     await writeJson(path.join(projectFolder, '.pisi', 'relationships.json'), { version: 1, relationships });
-    return { notes: total, maps: mapCount, relationships: relationships.length, directories, files, notePaths };
+    const today = options.today || '2026-11-14';
+    const taskCount = Math.max(0, Number(options.tasks) || 0);
+    if (taskCount) {
+        await writeJson(path.join(projectFolder, '.pisi', 'tasks.json'), { version: 1, updatedAt: STAMP, tasks: makeTasks(taskCount, today) });
+        files += 1;
+    }
+    const diaryDays = Math.max(0, Number(options.diaryDays) || 0);
+    if (diaryDays) {
+        await writeDiary(projectFolder, diaryDays, today);
+        files += diaryDays + 1;
+        directories += 1;
+    }
+    return { notes: total, maps: mapCount, relationships: relationships.length, tasks: taskCount, diaryDays, directories, files, notePaths };
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {
@@ -129,7 +193,9 @@ if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {
     const result = await generatePisiProjectFixture(projectFolder, {
         notes: Number(process.argv[3]) || 1000,
         perMap: Number(process.argv[4]) || 250,
-        relationships: process.argv[5] === '1'
+        relationships: process.argv[5] === '1',
+        tasks: Number(process.argv[6]) || 0,
+        diaryDays: Number(process.argv[7]) || 0
     });
     console.log(JSON.stringify({ ...result, notePaths: undefined }, null, 2));
 }

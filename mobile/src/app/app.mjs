@@ -14,6 +14,7 @@ import { renderSettingsScreen } from '../screens/settings/index.mjs';
 import { createTasksScreen } from '../screens/tasks/index.mjs';
 import { createTaskController } from '../screens/tasks/task-controller.mjs';
 import { createTaskSheets } from '../screens/tasks/task-sheets.mjs';
+import { watchKeyboard } from '../ui/keyboard.mjs';
 import { renderChoiceSheet } from '../ui/overlay.mjs';
 import { createShell, renderHomeShell, renderShell } from '../ui/shell.mjs';
 import { createSnackbarController, renderSnackbar } from '../ui/snackbar.mjs';
@@ -26,7 +27,8 @@ import { PISI_THEME_BACKGROUNDS, resolveTheme } from './theme.mjs';
  * `project` is the data layer (data/project-repo.mjs) over whatever storage the
  * platform gives; `loadSample` fills it with sample data and `loadSampleMap`
  * adds a sample map. Both are passed only in debug builds, where they show up
- * as the developer section of Settings.
+ * as the developer section of Settings. `version` is `{ name, build }`: the
+ * app's version and the APK's version code, shown in Settings.
  */
 export function createApp({
     root,
@@ -37,6 +39,7 @@ export function createApp({
     project = null,
     loadSample = null,
     loadSampleMap = null,
+    version = null,
     now = () => new Date(),
     onError = () => {}
 }) {
@@ -134,7 +137,9 @@ export function createApp({
     async function refreshProject() {
         await project.index.build();
         const listed = await project.tasks.list();
-        projectState.counts = { tasks: listed.tasks.length, notes: project.notes.list().length, maps: project.index.getMaps().length };
+        const documents = project.notes.list();
+        const diary = documents.filter((note) => note.kind === 'diary').length;
+        projectState.counts = { tasks: listed.tasks.length, notes: documents.length - diary, diary, maps: project.index.getMaps().length };
         projectState.readOnlyFiles = project.getIntegrity().readOnlyFiles;
         if (!destroyed) render();
     }
@@ -313,6 +318,7 @@ export function createApp({
             themePreference: preferences.getTheme(),
             language: i18n.language,
             openOverlay: router.openOverlay,
+            version,
             project: project ? projectState : null,
             developer: Boolean(loadSample || loadSampleMap),
             onLoadSample: loadSample ? handleLoadSample : null,
@@ -353,6 +359,8 @@ export function createApp({
         platform.onBackButton(handleBack),
         platform.onPause(() => lifecycle.flush()),
         platform.onResume(handleResume),
+        // The field being typed in stays above the keyboard; what is pinned to the bottom steps aside (M10).
+        watchKeyboard(view),
         // Diary and note text still waiting and writes still in the queue are finished when the app pauses,
         // the screen changes or back is pressed (§3.3). The text goes first so that its write is in the queue.
         lifecycle.registerFlush(async () => {
