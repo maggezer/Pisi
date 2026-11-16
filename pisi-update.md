@@ -1,5 +1,27 @@
 # PISI Güncelleme Takip Dosyası
 
+## 16-11-2026 — Senkron planı ve protokolü (S0); Pisi Mobil M10 kabul edildi
+
+Senkron işi (yalnız belge; kod değişmedi):
+
+- `docs/sync-plan.md`: Pisi'nin kendi eşleştirme ve senkron sistemi için iş
+  tanımı. İçinde çalışma biçimi, verilmiş kararlar, değişmez veri kuralları
+  (SV1–SV13), hedef mimari, S0–S8 fazları, kapsam dışı ve oturum başlatma
+  metinleri var. Sunucu cPanel üzerinde PHP 8.4 + MariaDB 10.11 ile çalışır,
+  model değişiklik günlüğü + şifreli blob'dur, şifreleme uçtan uca yapılır.
+- `docs/sync-protocol.md`: tel biçimi. Uç noktalar, istek/yanıt JSON'ları,
+  zarf ve anahtar türetme, eşleştirme (QR ya da kısa kod + doğrulama
+  numarası), hata kodları, budama, sürümleme ve tehdit modeli.
+- `CLAUDE.md`'ye "Sync" bölümü eklendi. `docs/mobile-plan.md` §8 artık bu
+  plana bağlanıyor.
+
+Mobil işi:
+
+- Kullanıcı `docs/mobile-qa.md` §4 cihaz kabul listesini 16-11-2026'da
+  telefonunda uyguladı ve bütün maddeler geçti. Liste işaretlendi; M10 ve
+  MVP (M0–M10) kabul edildi (`docs/mobile-plan.md` M10 "Durum").
+- Test: `npm run validate`.
+
 ## 16-11-2026 — Quick Add Inbox'ı açarken property şemasını da yazar (P4, pisi-error.md §5c)
 
 - Boş bir projede ilk Quick Add, `systemRole` özelliği taşıyan `Inbox.node`
@@ -21,6 +43,7 @@
 - Test: `tests/quick-add-inbox-schema.test.js` (boş proje, şemasız eski proje,
   bozuk şema; gerçek main store'ları ve Project Integrity ile),
   `xvfb-run -a node scripts/electron-mobile-fixture-e2e.mjs`, `npm test`.
+
 ## 16-11-2026 — Kararsız E2E: "Promise was collected" (P2, eksik 2)
 
 `main` üzerinde Electron E2E ara ara `Error: Promise was collected` ile

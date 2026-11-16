@@ -524,6 +524,8 @@ Her faz: amaç → yapılacaklar → kabul kriterleri. Madde kimlikleri PR'larda
 
 **Kabul:** kontrol listesindeki tüm maddeler işaretli olur. §5'te açık madde kalmaz.
 
+**Durum:** kabul edildi (16-11-2026). Kullanıcı `docs/mobile-qa.md` §4 cihaz kabul listesini telefonunda uyguladı; bütün maddeler geçti ve işaretlendi. Böylece MVP (M0–M10) tamamlandı.
+
 ---
 
 ## 5. Görsel iyileştirme listesi
@@ -598,7 +600,7 @@ Sıradaki faz: M<numara>. Belgenin §0'daki çalışma kurallarına uy. Bu faz b
 
 ## 8. Sonraki plan: aktarım
 
-Bu belge tamamlandıktan sonra ayrı bir "aktarım planı" yazılacak. Bu planın şimdiden bilinen sınırları:
+Aktarım planı [`docs/sync-plan.md`](sync-plan.md) olarak yazıldı (fazlar S0–S8); tel biçimi [`docs/sync-protocol.md`](sync-protocol.md)'dedir. Bu belgede baştan konan sınırlar o planda korunur:
 
 - Pisi kendi eşleştirme sistemini kullanacak. Google Drive gibi ikinci bir uygulamaya dayanmayacak.
 - Senkron sonrasında proje baştan yeniden yüklenmeyecek. Yalnız değişen dosyalar güncellenecek, açık not ve imleç korunacak (`pisi-error.md` §4, "Yeni eşleştirme sistemi için kural").
