@@ -3,6 +3,7 @@ import { createRequire } from 'node:module';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { keepPagePromise } from './e2e-cdp.mjs';
 
 // A background or occluded test window must still run timers, animation frames and
 // layout at full speed (Windows CI runners keep the window behind other desktops).
@@ -109,7 +110,7 @@ class CdpClient {
 
     async evaluate(expression) {
         const response = await this.request('Runtime.evaluate', {
-            expression,
+            expression: keepPagePromise(expression),
             awaitPromise: true,
             returnByValue: true
         });
