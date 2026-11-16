@@ -13,19 +13,30 @@ test('ilk açılışta boş proje kurulur; örnek proje yüklenir ve yeniden ba�
     await expect(count(page, 'name')).toHaveText('Pisi Projem');
     await expect(count(page, 'tasks')).toHaveText('0');
     await expect(count(page, 'notes')).toHaveText('0');
+    await expect(count(page, 'integrity')).toHaveText('Sorun yok');
+    // About: the version of the build (package.json; the APK's version code only in CI) and the transfer note (G13).
+    await expect(page.locator('[data-about="version"] .pisi-row-value')).toHaveText(/^\d+\.\d+\.\d+( \(\d+\))?$/);
+    await expect(page.locator('[data-about="transfer"] .pisi-row-value')).toHaveText('Yakında');
+    await expect(page.locator('[data-screen="settings"]')).not.toContainText(/drive|two-way|iki yönlü/i);
     expect((await projectFiles(page)).map((file) => file.path).sort()).toEqual(['.pisi/properties.json', 'diary/.pisi-diary']);
 
     await page.locator('[data-developer="load-sample"]').tap();
     await expect(page.getByRole('status')).toContainText('Örnek proje yüklendi: 6 görev, 3 not eklendi.');
     await expect(count(page, 'tasks')).toHaveText('6');
-    await expect(count(page, 'notes')).toHaveText('4');
+    // Three notes and the day's diary, counted on its own line.
+    await expect(count(page, 'notes')).toHaveText('3');
+    await expect(count(page, 'diary')).toHaveText('1');
     await shot(page, '08-settings-project');
+    await page.getByRole('status').waitFor({ state: 'detached', timeout: 10_000 });
+    await page.locator('[data-about="transfer"]').scrollIntoViewIfNeeded();
+    await shot(page, '08b-settings-about');
 
     // Reloading is a cold start: everything shown now is read back from storage.
     await page.reload();
     await openFromMenu(page, 'settings');
     await expect(count(page, 'tasks')).toHaveText('6');
-    await expect(count(page, 'notes')).toHaveText('4');
+    await expect(count(page, 'notes')).toHaveText('3');
+    await expect(count(page, 'diary')).toHaveText('1');
     await expect(count(page, 'maps')).toHaveText('0');
 
     const files = await projectFiles(page);

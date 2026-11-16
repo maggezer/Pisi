@@ -38,6 +38,8 @@ if (import.meta.env.DEV && new URLSearchParams(window.location.search).has('gall
         project: createProject({ driver: createCapacitorFsDriver(), makeUuid: () => window.crypto.randomUUID(), onError }),
         loadSample: developer ? loadSampleProject : null,
         loadSampleMap: developer ? addSampleMap : null,
+        // Both come from the build (vite.config.mjs): package.json's version and, in CI, the APK's version code.
+        version: { name: import.meta.env.PISI_APP_VERSION, build: import.meta.env.PISI_BUILD_NUMBER },
         storage: readStorage(),
         deviceLanguage: navigator.language,
         systemTheme,

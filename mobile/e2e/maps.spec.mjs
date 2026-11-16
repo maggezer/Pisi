@@ -3,25 +3,11 @@ import os from 'node:os';
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
 import { generatePisiProjectFixture } from '../../scripts/generate-project-fixture.mjs';
-import { back, open, openFromMenu, overflowsSideways, screen, seedProjectFiles, shot } from './helpers.mjs';
+import { back, drag, measureFrames, open, openFromMenu, overflowsSideways, readProjectFolder, screen, seedProjectFiles, shot, touch } from './helpers.mjs';
 
 const fixture = path.resolve(import.meta.dirname, '../../tests/fixtures/desktop-project');
 const viewport = (page) => page.locator('[data-map="viewport"]');
 const rows = (page) => page.locator('[data-maps="list"] [data-map]');
-
-/** Every `.node`/`.map`/JSON file of a project folder (no binary assets) as `[key, text]`. */
-function readProjectFolder(folder) {
-    const files = [];
-    const walk = (current) => {
-        for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
-            const full = path.join(current, entry.name);
-            if (entry.isDirectory()) walk(full);
-            else if (/\.(node|map|json)$/.test(entry.name)) files.push([path.relative(folder, full).split(path.sep).join('/'), fs.readFileSync(full, 'utf8')]);
-        }
-    };
-    walk(folder);
-    return files;
-}
 
 /**
  * What a map's files call for, worked out here from the files themselves: its notes are the `.node`
@@ -160,28 +146,8 @@ test('performans: 500 notluk harita açılır, kaydırma ve yakınlaştırma sı
     }
 });
 
-// ----- touch input through the browser's own pipeline (CDP) -----
+// ----- two fingers -----
 
-async function touch(page, steps) {
-    const session = await page.context().newCDPSession(page);
-    const points = (list) => list.map((point, id) => ({ x: Math.round(point.x), y: Math.round(point.y), id }));
-    const [first, ...rest] = steps;
-    await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: points(first) });
-    for (const step of rest) await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: points(step) });
-    await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-    await session.detach();
-}
-
-const lerp = (a, b, k) => ({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k });
-
-function drag(page, from, to, count = 10) {
-    return touch(
-        page,
-        Array.from({ length: count + 1 }, (_value, step) => [lerp(from, to, step / count)])
-    );
-}
-
-/** Two fingers on a horizontal line through `centre`, from `fromGap` to `toGap` pixels from it. */
 function pinch(page, centre, fromGap, toGap, count = 10) {
     return touch(
         page,
@@ -193,28 +159,4 @@ function pinch(page, centre, fromGap, toGap, count = 10) {
             ];
         })
     );
-}
-
-/** Frame intervals (requestAnimationFrame) while `action` runs. */
-async function measureFrames(page, action) {
-    await page.evaluate(() => {
-        const state = { stamps: [], running: true };
-        window.__pisiFrames = state;
-        const tick = (time) => {
-            state.stamps.push(time);
-            if (state.running) window.requestAnimationFrame(tick);
-        };
-        window.requestAnimationFrame(tick);
-    });
-    await action();
-    const stamps = await page.evaluate(() => {
-        window.__pisiFrames.running = false;
-        return window.__pisiFrames.stamps;
-    });
-    const intervals = stamps
-        .slice(1)
-        .map((stamp, index) => stamp - stamps[index])
-        .sort((a, b) => a - b);
-    const at = (fraction) => intervals[Math.min(intervals.length - 1, Math.floor(intervals.length * fraction))] ?? 0;
-    return { count: intervals.length, median: at(0.5), p95: at(0.95), max: intervals.at(-1) ?? 0 };
 }

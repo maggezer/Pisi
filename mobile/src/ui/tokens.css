@@ -140,3 +140,14 @@
     --pisi-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.4);
     --pisi-shadow-2: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
+
+/*
+ * Reduced motion: every transition timed with these tokens becomes instant, wherever it is declared.
+ * The page-wide rule in base.css cannot reach a transition set on a class, which comes later in the cascade.
+ */
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --pisi-motion-fast: 0ms;
+        --pisi-motion: 0ms;
+    }
+}
