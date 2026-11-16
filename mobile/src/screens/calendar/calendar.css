@@ -1,0 +1,77 @@
+/*
+ * Calendar tab (docs/mobile-plan.md M8): the month row, the grid, the legend
+ * and the "back to this month" button. The grid itself (.pisi-date-*) is
+ * styled in ui/overlays.css with the date picker; this file only makes it
+ * larger, since here it is the whole screen.
+ */
+
+.pisi-calendar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pisi-space-2);
+}
+
+.pisi-calendar-month {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--pisi-space-2);
+}
+
+.pisi-calendar-month-title {
+    margin: 0;
+    font-size: var(--pisi-text-lg);
+    font-weight: 700;
+    text-align: center;
+}
+
+.pisi-calendar-grid .pisi-date-grid {
+    margin-inline: 0;
+    row-gap: var(--pisi-space-1);
+}
+
+.pisi-calendar-grid .pisi-date-weekday {
+    padding-block: var(--pisi-space-2);
+    font-weight: 600;
+}
+
+.pisi-calendar-grid .pisi-date-cell {
+    min-height: 3.5rem;
+}
+
+.pisi-calendar-grid .pisi-date-number {
+    width: 2.5rem;
+    height: 2.5rem;
+}
+
+.pisi-calendar-grid .pisi-day-dots {
+    gap: 0.25rem;
+    height: 0.5rem;
+}
+
+.pisi-calendar-grid .pisi-day-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+}
+
+.pisi-calendar-legend .pisi-date-legend {
+    justify-content: center;
+    margin-top: var(--pisi-space-2);
+}
+
+.pisi-calendar-legend .pisi-day-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+}
+
+.pisi-calendar-hint {
+    margin: 0;
+    color: var(--pisi-muted);
+    font-size: var(--pisi-text-sm);
+    text-align: center;
+}
+
+.pisi-calendar-actions {
+    display: flex;
+    justify-content: center;
+}

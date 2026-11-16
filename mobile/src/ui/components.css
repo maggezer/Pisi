@@ -625,7 +625,7 @@ textarea.pisi-field-input {
     text-decoration: line-through;
 }
 
-/* ===== Day dots (date wheel and date picker) ===== */
+/* ===== Day dots (date wheel, date picker and Calendar tab) ===== */
 
 .pisi-day-dots {
     display: flex;
@@ -648,6 +648,11 @@ textarea.pisi-field-input {
 
 .pisi-day-dot-diary {
     border: 0.09375rem solid var(--pisi-muted);
+}
+
+/* Calendar tab: a day whose tasks are all done. The legend and the day's name say it in words too. */
+.pisi-day-dot-done {
+    background: var(--pisi-success-text);
 }
 
 /* ===== Search field ===== */

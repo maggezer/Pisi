@@ -16,9 +16,11 @@ import { splitNoteBlocks } from '../mobile/src/data/note-blocks.mjs';
 import { inlineToHtml, parseInlineHtml } from '../mobile/src/data/note-inline.mjs';
 import { makeBlockHtml } from '../mobile/src/data/note-patch.mjs';
 import { createProject } from '../mobile/src/data/project-repo.mjs';
+import { getCalendarMarks } from '../mobile/src/screens/calendar/calendar-model.mjs';
 import { parseTaskDraft } from '../mobile/src/screens/pisi/day-model.mjs';
 import { getTaskChoicePatch, getTaskDatePatch, getTaskReminderPatch, getTaskTimePatch, limitTaskPatch } from '../mobile/src/screens/tasks/task-edit.mjs';
 import { buildTaskLists } from '../mobile/src/screens/tasks/view-model.mjs';
+import { getCalendarTaskSummaryByDate } from '../renderer/calendar/pisi-calendar-ui.mjs';
 import { matchesPisiTodoFilter, parsePisiTodoTagValue } from '../renderer/tags/pisi-todo-utils.mjs';
 import { normalizePisiTaskRecord } from '../shared/task-model.mjs';
 import { getPisiTaskTodoTag } from '../shared/task-views.mjs';
@@ -91,6 +93,7 @@ Module._load = originalLoad;
 const { modules } = require('../main/module-registry.js');
 const desktopAudit = modules['main.projectIntegrity'].auditPisiProjectIntegrity;
 const desktopTasks = modules['main.taskStore'];
+const desktopDocuments = modules['main.documentStore'];
 
 const fixture = path.join(import.meta.dirname, 'fixtures', 'desktop-project');
 // Saturday 14 November 2026, 09:30 local time: the fixture's tasks are dated around it.
@@ -560,6 +563,63 @@ test('Notlar (M7): editörün yamaları yalnız dokunulan blokları değiştirir
     });
     await project.flush();
     assert.equal(readJson(root, 'Toplantı Notları.node').content, meetingAfter.content);
+});
+
+/**
+ * The marks of the desktop calendar for a project folder: its own task summary
+ * (renderer/calendar/pisi-calendar-ui.mjs, over the tasks the desktop task
+ * store reads) and its own diary day list, in the shape of the mobile marks.
+ */
+function desktopCalendarMarks(root) {
+    const previousWindow = globalThis.window;
+    globalThis.window = { pisiFirstClassTaskState: { tasks: desktopTasks.listPisiFirstClassTasks(root).tasks } };
+    try {
+        const summary = getCalendarTaskSummaryByDate();
+        const days = (keep) =>
+            [...summary]
+                .filter(([, entry]) => keep(entry))
+                .map(([day]) => day)
+                .sort();
+        return {
+            tasks: days((entry) => entry.open > 0),
+            tasksDone: days((entry) => entry.total > 0 && entry.open === 0),
+            diary: [...desktopDocuments.listPisiDiaryDates(root).dates].sort()
+        };
+    } finally {
+        globalThis.window = previousWindow;
+    }
+}
+
+const sortedMarks = (marks) => ({ tasks: [...marks.tasks].sort(), tasksDone: [...marks.tasksDone].sort(), diary: [...marks.diary].sort() });
+
+test('Takvim (M8): mobil takvimin noktaları masaüstü takviminin gün özetiyle birebir aynıdır, mobil yazdıktan sonra da', async (t) => {
+    const root = copyFixture(t);
+    const before = snapshot(root);
+    const project = openMobile(root);
+    await project.open();
+    const mobileMarks = async () => sortedMarks(getCalendarMarks((await project.tasks.list()).tasks, await project.diary.listDates()));
+
+    // Masaüstünün oluşturduğu proje: açık görevli günler, hepsi biten gün ve günlük günleri.
+    assert.deepEqual(await mobileMarks(), desktopCalendarMarks(root));
+    assert.deepEqual(await mobileMarks(), {
+        tasks: ['2026-11-13', '2026-11-14', '2026-11-20'],
+        tasksDone: ['2026-11-12'],
+        diary: ['2026-11-12', '2026-11-13', '2026-11-14', '2026-11-20']
+    });
+    // Takvimi çizmek için okumak hiçbir dosyayı değiştirmez.
+    assert.deepEqual(changedFiles(before, snapshot(root)), []);
+
+    // Pisi sekmesinde yapılanlar: 20 Kasım'ın tek görevi tamamlanır, 21 Kasım'a günlük ve saatli görev yazılır.
+    const store = readJson(root, '.pisi/tasks.json');
+    await project.tasks.complete(store.tasks.find((task) => task.title === 'Sunucu faturasını öde').id);
+    await project.diary.setText('2026-11-21', 'Takvimden açılan gün.');
+    await project.tasks.upsert({ title: 'Cumartesi işi', dueDate: '2026-11-21', scheduledAt: '2026-11-21T09:00' });
+    await project.flush();
+
+    const after = await mobileMarks();
+    assert.deepEqual(after, desktopCalendarMarks(root));
+    assert.deepEqual(after.tasksDone, ['2026-11-12', '2026-11-20']);
+    assert.ok(after.tasks.includes('2026-11-21') && after.diary.includes('2026-11-21'));
 });
 
 test('(f) bozuk tasks.json ezilmez: mobil dosyayı salt okunur sayar ve yazmayı reddeder', async (t) => {

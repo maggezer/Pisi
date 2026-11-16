@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 // The component gallery is served by the development server (see playwright.config.mjs).
 const GALLERY_URL = 'http://127.0.0.1:4174/?gallery';
-const SECTIONS = ['colours', 'type', 'space', 'icons', 'buttons', 'chips', 'lists', 'tasks', 'fields', 'overlays', 'chrome'];
+const SECTIONS = ['colours', 'type', 'space', 'icons', 'buttons', 'chips', 'lists', 'tasks', 'fields', 'overlays', 'month', 'chrome'];
 
 async function open(page) {
     await page.goto(GALLERY_URL);
@@ -119,6 +119,18 @@ test('görev satırı: başlık iki satıra sarılır, kırpılmaz; tarih seçic
     await expect(dialog.locator('.pisi-date-month-title')).toHaveText('Aralık 2026');
     await dialog.locator('[data-date="2026-12-03"]').tap();
     await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
+test('ay ızgarası (Takvim): pazartesiyle başlar, üç tür işaret ve açıklama satırı', async ({ page }) => {
+    await open(page);
+    const month = page.locator('[data-gallery="month"]');
+    await expect(month.locator('.pisi-date-weekday')).toHaveText(['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz']);
+    await expect(month.locator('[data-date="2026-11-14"]')).toHaveAttribute('aria-current', 'date');
+    await expect(month.locator('[data-date="2026-11-09"] .pisi-day-dot-done')).toHaveCount(1);
+    await expect(month.locator('[data-date="2026-11-10"]')).toHaveAttribute('aria-label', 'Salı, 10 Kasım, görevlerin hepsi tamamlandı, günlük var');
+    await expect(month.locator('.pisi-date-legend-item')).toHaveText(['Açık görev', 'Görevler tamamlandı', 'Günlük']);
+    await month.scrollIntoViewIfNeeded();
+    await month.screenshot({ path: `e2e/screenshots/${test.info().project.name}/26-gallery-month.png`, animations: 'disabled' });
 });
 
 test('çip, segment ve alt menü seçimi değiştirir; segment temayı değiştirir', async ({ page }) => {

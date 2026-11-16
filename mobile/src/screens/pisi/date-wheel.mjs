@@ -3,7 +3,7 @@
 // is picked by tapping it or by scrolling: the day that comes to rest in the
 // middle becomes the selected day.
 
-import { renderDayDots, describeDay } from '../../ui/date-picker.mjs';
+import { describeDay, renderDayDots } from '../../ui/month-grid.mjs';
 import { diffIsoDays, formatMonthShort } from '../../ui/dates.mjs';
 import { h } from '../../ui/dom.mjs';
 import { PISI_WHEEL_RADIUS, getWheelDays } from './day-model.mjs';
