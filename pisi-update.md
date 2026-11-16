@@ -1,5 +1,26 @@
 # PISI Güncelleme Takip Dosyası
 
+## 16-11-2026 — Quick Add Inbox'ı açarken property şemasını da yazar (P4, pisi-error.md §5c)
+
+- Boş bir projede ilk Quick Add, `systemRole` özelliği taşıyan `Inbox.node`
+  dosyasını oluşturuyor ama `.pisi/properties.json` yazılmıyordu; Project
+  Integrity bu projede `property-schema-authority-missing` (critical) bulgusu
+  veriyordu.
+- Quick Add artık Inbox'ı oluşturmadan önce `systemRole` tanımını
+  (`Sistem rolü`, `text`, `system: true`) proje şemasına ekler. Şema yoksa
+  oluşturulur; varsa mevcut tanımlar korunur ve yalnız eksik tanım eklenir.
+  Yeni dışa açık işlev: `registerPisiSystemPropertyDefinitions`
+  (`main/module-manifest.json`).
+- Geriye uyumluluk: Inbox'ı şemasız kalmış eski projeler bir sonraki Quick Add
+  ile onarılır; ayrı bir geçiş adımı gerekmez. Okunamayan bir şema dosyası
+  ezilmez; Quick Add bu durumda Inbox oluşturmadan hata döner.
+- `tests/fixtures/desktop-project/` masaüstü betiğiyle yeniden üretildi
+  (`.pisi/properties.json` eklendi); uyumluluk testinin bütünlük taban çizgisi
+  boş listeye çekildi ve `scripts/electron-mobile-fixture-e2e.mjs` artık hiçbir
+  bulgu kalmamasını sınar.
+- Test: `tests/quick-add-inbox-schema.test.js` (boş proje, şemasız eski proje,
+  bozuk şema; gerçek main store'ları ve Project Integrity ile),
+  `xvfb-run -a node scripts/electron-mobile-fixture-e2e.mjs`, `npm test`.
 ## 16-11-2026 — Kararsız E2E: "Promise was collected" (P2, eksik 2)
 
 `main` üzerinde Electron E2E ara ara `Error: Promise was collected` ile

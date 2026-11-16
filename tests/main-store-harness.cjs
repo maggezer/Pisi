@@ -28,6 +28,8 @@ const STORE_CHAIN = [
     'task-store',
     'trash-store',
     'source-of-truth',
+    // Quick Add registers the Inbox systemRole definition here.
+    'property-schema-store',
     // normalizePathForCompare and the project-root helpers live here.
     'electron-ipc'
 ];

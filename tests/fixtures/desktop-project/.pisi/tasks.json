@@ -1,9 +1,9 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-15T05:06:33.060Z",
+  "updatedAt": "2026-11-16T10:12:51.447Z",
   "tasks": [
     {
-      "id": "task_source_e71f6ebc5b1e0400",
+      "id": "task_source_1b8e7567d628e6cb",
       "title": "Raporu gönder",
       "status": "todo",
       "priority": 2,
@@ -17,21 +17,21 @@
       "repeat": "none",
       "completionOffsetDays": null,
       "dependencies": [],
-      "manualOrder": 1794719192013,
+      "manualOrder": 1794823969232,
       "todoTag": "todo.2.14-11-2026",
       "source": {
         "nodePath": "Inbox.node",
-        "blockId": "blk_84b422a4-fff4-46ff-bbc7-a2b63b6f1ff2",
+        "blockId": "blk_30da5864-141a-49c3-bcdd-3726b4cf4ac4",
         "mapPath": null,
         "nodeTitle": "Inbox",
         "mapTitle": ""
       },
-      "createdAt": "2026-11-15T05:06:32.013Z",
-      "updatedAt": "2026-11-15T05:06:33.060Z",
+      "createdAt": "2026-11-16T10:12:49.232Z",
+      "updatedAt": "2026-11-16T10:12:51.447Z",
       "completedAt": null
     },
     {
-      "id": "task_source_599fdeb47debb7e4",
+      "id": "task_source_2a8e29877846d7a3",
       "title": "Haftalık özet yaz",
       "status": "todo",
       "priority": 3,
@@ -45,21 +45,21 @@
       "repeat": "weekly",
       "completionOffsetDays": null,
       "dependencies": [],
-      "manualOrder": 1794719192176,
+      "manualOrder": 1794823969341,
       "todoTag": "todo.3.13-11-2026",
       "source": {
         "nodePath": "Inbox.node",
-        "blockId": "blk_e3e59c19-a1ee-44b3-be9b-735b09128dbf",
+        "blockId": "blk_c6c5ecc0-1fbc-461b-8a5b-ae6938d28f26",
         "mapPath": null,
         "nodeTitle": "Inbox",
         "mapTitle": ""
       },
-      "createdAt": "2026-11-15T05:06:32.176Z",
-      "updatedAt": "2026-11-15T05:06:33.060Z",
+      "createdAt": "2026-11-16T10:12:49.341Z",
+      "updatedAt": "2026-11-16T10:12:51.447Z",
       "completedAt": null
     },
     {
-      "id": "task_source_b9c5395ba866fd57",
+      "id": "task_source_3a396a5b3d141dbb",
       "title": "Sunucu faturasını öde",
       "status": "todo",
       "priority": 4,
@@ -73,21 +73,21 @@
       "repeat": "none",
       "completionOffsetDays": null,
       "dependencies": [],
-      "manualOrder": 1794719192432,
+      "manualOrder": 1794823969486,
       "todoTag": "todo.4.20-11-2026",
       "source": {
         "nodePath": "Inbox.node",
-        "blockId": "blk_023b4b52-96e5-4bf8-a320-f72c1f57cbf3",
+        "blockId": "blk_260d9a1c-f063-4d1e-9680-67391093049c",
         "mapPath": null,
         "nodeTitle": "Inbox",
         "mapTitle": ""
       },
-      "createdAt": "2026-11-15T05:06:32.432Z",
-      "updatedAt": "2026-11-15T05:06:33.060Z",
+      "createdAt": "2026-11-16T10:12:49.486Z",
+      "updatedAt": "2026-11-16T10:12:51.447Z",
       "completedAt": null
     },
     {
-      "id": "task_source_59439a9a529cfa83",
+      "id": "task_source_5a85eb38dff93155",
       "title": "Okuma listesini düzenle",
       "status": "todo",
       "priority": 5,
@@ -101,21 +101,21 @@
       "repeat": "none",
       "completionOffsetDays": null,
       "dependencies": [],
-      "manualOrder": 1794719192672,
+      "manualOrder": 1794823969686,
       "todoTag": "todo.5.none",
       "source": {
         "nodePath": "Inbox.node",
-        "blockId": "blk_60653c64-ff1f-4886-8b40-c4f64b3f8051",
+        "blockId": "blk_48e411c6-d6bf-4ffd-b4e2-b0457b48801f",
         "mapPath": null,
         "nodeTitle": "Inbox",
         "mapTitle": ""
       },
-      "createdAt": "2026-11-15T05:06:32.673Z",
-      "updatedAt": "2026-11-15T05:06:33.060Z",
+      "createdAt": "2026-11-16T10:12:49.686Z",
+      "updatedAt": "2026-11-16T10:12:51.447Z",
       "completedAt": null
     },
     {
-      "id": "task_b2d36d3d-550d-45ba-b6f4-60017a87d65a",
+      "id": "task_7e630131-49a3-496d-89c4-3b41623037bd",
       "title": "Egzersiz",
       "status": "todo",
       "priority": 3,
@@ -129,21 +129,21 @@
       "repeat": "daily",
       "completionOffsetDays": null,
       "dependencies": [],
-      "manualOrder": 1794719192905,
+      "manualOrder": 1794823969782,
       "todoTag": "todo.3.14-11-2026",
       "source": {
         "nodePath": null,
-        "blockId": "task-block-task_b2d36d3d-550d-45ba-b6f4-60017a87d65a",
+        "blockId": "task-block-task_7e630131-49a3-496d-89c4-3b41623037bd",
         "mapPath": null,
         "nodeTitle": "Task",
         "mapTitle": ""
       },
-      "createdAt": "2026-11-15T05:06:32.905Z",
-      "updatedAt": "2026-11-15T05:06:33.060Z",
+      "createdAt": "2026-11-16T10:12:49.782Z",
+      "updatedAt": "2026-11-16T10:12:51.447Z",
       "completedAt": null
     },
     {
-      "id": "task_2d32b75e-66cc-49eb-b920-8fb7f1a3e979",
+      "id": "task_ef21fd4b-218f-4aae-b1ae-e9b63215eeec",
       "title": "Toplantı odasını ayır",
       "status": "done",
       "priority": 3,
@@ -157,18 +157,18 @@
       "repeat": "none",
       "completionOffsetDays": null,
       "dependencies": [],
-      "manualOrder": 1794719192977,
+      "manualOrder": 1794823969790,
       "todoTag": "todo.3.12-11-2026",
       "source": {
         "nodePath": null,
-        "blockId": null,
+        "blockId": "task-block-task_ef21fd4b-218f-4aae-b1ae-e9b63215eeec",
         "mapPath": null,
-        "nodeTitle": "",
+        "nodeTitle": "Task",
         "mapTitle": ""
       },
-      "createdAt": "2026-11-15T05:06:32.977Z",
-      "updatedAt": "2026-11-15T05:06:32.977Z",
-      "completedAt": "2026-11-15T05:06:32.977Z"
+      "createdAt": "2026-11-16T10:12:49.790Z",
+      "updatedAt": "2026-11-16T10:12:51.447Z",
+      "completedAt": "2026-11-16T10:12:49.790Z"
     }
   ]
 }
