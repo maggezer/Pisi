@@ -159,9 +159,10 @@ jobs:
 
                   if [[ "${{ steps.signing.outputs.fixed }}" == "true" ]]; then
                     expected="$(keytool -list -v -keystore "${PISI_ANDROID_TEST_KEYSTORE_FILE}" -storepass "${PISI_ANDROID_TEST_KEYSTORE_PASSWORD}" -alias "${PISI_ANDROID_TEST_KEY_ALIAS}" | sed -n 's/^\s*SHA256: //p' | tr -d ':' | tr 'A-F' 'a-f')"
-                    actual="$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "${RUNNER_TEMP}/apk-signature.txt")"
+                    # apksigner names the signer "Signer #1" when v1 (JAR) signing is on and "V2 Signer:" (or V3…) when it is off.
+                    actual="$(sed -n -E 's/^(Signer #1|V[0-9.]+ Signer:) certificate SHA-256 digest: //p' "${RUNNER_TEMP}/apk-signature.txt" | sort -u)"
                     if [[ -z "${expected}" || "${expected}" != "${actual}" ]]; then
-                      echo "The APK is not signed with the fixed test key." >&2
+                      echo "The APK is not signed with the fixed test key (expected: ${expected:-none}, APK: ${actual:-none})." >&2
                       exit 1
                     fi
                   fi
