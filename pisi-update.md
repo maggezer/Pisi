@@ -1,5 +1,17 @@
 # PISI Güncelleme Takip Dosyası
 
+## 16-11-2026 — Mobile CI: sabit test anahtarı doğrulaması düzeltildi (mobil iş)
+
+- Bu bir mobil CI işidir; uygulama ve dosya biçimi değişmedi.
+- Sabit test anahtarı secret'ları tanımlanınca `.github/workflows/mobile.yml`
+  içindeki imza doğrulaması doğru imzalı APK'yı da reddediyordu: betik
+  apksigner çıktısında yalnız `Signer #1` satırını arıyordu, oysa v1 (JAR)
+  imzası kapalıyken apksigner `V2 Signer:` yazar. Doğrulama artık iki biçimi de
+  okur ve hata mesajında beklenen ile bulunan parmak izini gösterir.
+- Test: düzeltilmiş komutlar, CI günlüğündeki apksigner çıktısı ve gerçek test
+  anahtarıyla yerelde çalıştırıldı (eşleşti); asıl doğrulama bu PR'ın Mobile
+  çalıştırmasındaki android işidir.
+
 ## 16-11-2026 — Pisi Mobil: Ayarlar, cila ve cihaz kabulü (M10, mobil iş)
 
 - Bu bir mobil iştir (`docs/mobile-plan.md` M10; G13). Dosya biçimi değişmedi;
