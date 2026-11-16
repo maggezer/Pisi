@@ -10,6 +10,7 @@ import { renderButton, renderFab, renderIconButton } from '../ui/button.mjs';
 import { renderChip, renderChipRow, renderSegmented } from '../ui/chip.mjs';
 import { contrastRatio } from '../ui/contrast.mjs';
 import { renderDatePicker } from '../ui/date-picker.mjs';
+import { renderDayLegend, renderMonthGrid } from '../ui/month-grid.mjs';
 import { shiftMonth } from '../ui/dates.mjs';
 import { h } from '../ui/dom.mjs';
 import { renderCheckbox, renderSearchField, renderTextField } from '../ui/field.mjs';
@@ -86,6 +87,8 @@ const DATE_LABELS = {
     legendDiary: 'Günlük'
 };
 const DATE_MARKS = { tasks: new Set(['2026-11-12', '2026-11-14', '2026-11-17']), diary: new Set(['2026-11-10', '2026-11-14']) };
+// The Calendar tab's marks also tell apart a day whose tasks are all done.
+const CALENDAR_MARKS = { ...DATE_MARKS, tasksDone: new Set(['2026-11-09', '2026-11-10']) };
 const PRIORITIES = ['Çok düşük', 'Düşük', 'Orta', 'Yüksek', 'Çok yüksek'];
 const THEMES = [
     { value: 'system', label: 'Sistem' },
@@ -427,6 +430,32 @@ export function mountGallery({ root, systemTheme }) {
                         })
                     ),
                     frame(renderSnackbar({ message: 'Not kaydedildi' }))
+                ),
+                section(
+                    'month',
+                    'Ay ızgarası (Takvim)',
+                    h(
+                        'div',
+                        { class: 'pisi-calendar-grid', dataset: { calendar: 'grid' } },
+                        renderMonthGrid({
+                            month: '2026-11',
+                            selected: state.date,
+                            today: '2026-11-14',
+                            locale: 'tr-TR',
+                            marks: CALENDAR_MARKS,
+                            labels: { ...DATE_LABELS, allTasksDone: 'görevlerin hepsi tamamlandı' },
+                            onSelect: (date) => update({ date })
+                        })
+                    ),
+                    h(
+                        'div',
+                        { class: 'pisi-calendar-legend' },
+                        renderDayLegend([
+                            { kind: 'tasks', label: 'Açık görev' },
+                            { kind: 'done', label: 'Görevler tamamlandı' },
+                            { kind: 'diary', label: 'Günlük' }
+                        ])
+                    )
                 ),
                 section(
                     'chrome',

@@ -1,35 +1,13 @@
 // Date picker: a bottom sheet with one month, Monday first. Like the other
 // overlays it only renders; the owner keeps the month that is shown and
-// closes the sheet. Days with a task or a diary entry carry a dot.
+// closes the sheet. Days with a task or a diary entry carry a dot; the grid
+// itself is ui/month-grid.mjs, shared with the Calendar tab.
 
 import { renderButton, renderIconButton } from './button.mjs';
-import { formatDayTitle, formatMonthTitle, getMonthWeeks, getWeekdayNames } from './dates.mjs';
+import { formatMonthTitle } from './dates.mjs';
 import { h } from './dom.mjs';
+import { renderDayLegend, renderMonthGrid } from './month-grid.mjs';
 import { renderSheet } from './overlay.mjs';
-
-/** The two dots under a day number: tasks first, then the diary. */
-export function renderDayDots(isoDate, marks) {
-    const hasTasks = marks?.tasks?.has(isoDate);
-    const hasDiary = marks?.diary?.has(isoDate);
-    return h(
-        'span',
-        { class: 'pisi-day-dots', 'aria-hidden': 'true' },
-        hasTasks ? h('span', { class: 'pisi-day-dot pisi-day-dot-tasks' }) : null,
-        hasDiary ? h('span', { class: 'pisi-day-dot pisi-day-dot-diary' }) : null
-    );
-}
-
-/** Accessible name of a day: the date, then what marks it. `labels` has `today`, `hasTasks` and `hasDiary`. */
-export function describeDay(isoDate, { locale, today, marks, labels }) {
-    return [
-        formatDayTitle(isoDate, locale, today),
-        isoDate === today ? labels.today : null,
-        marks?.tasks?.has(isoDate) ? labels.hasTasks : null,
-        marks?.diary?.has(isoDate) ? labels.hasDiary : null
-    ]
-        .filter(Boolean)
-        .join(', ');
-}
 
 /**
  * `month` is `YYYY-MM`. `labels`: `close`, `previousMonth`, `nextMonth`,
@@ -37,40 +15,12 @@ export function describeDay(isoDate, { locale, today, marks, labels }) {
  * `actions` are extra buttons shown next to "go to today" (e.g. "remove the date").
  */
 export function renderDatePicker({ id, title, month, selected, today, locale, marks = null, labels, actions = null, onSelect, onMonth, onClose }) {
-    const weekdays = getWeekdayNames(locale);
-    const grid = h(
-        'div',
-        { class: 'pisi-date-grid', role: 'group', 'aria-label': formatMonthTitle(month, locale) },
-        weekdays.map((name) => h('span', { class: 'pisi-date-weekday', 'aria-hidden': 'true' }, name)),
-        getMonthWeeks(month)
-            .flat()
-            .map((day) =>
-                day
-                    ? h(
-                          'button',
-                          {
-                              type: 'button',
-                              class: 'pisi-date-cell',
-                              'aria-label': describeDay(day, { locale, today, marks, labels }),
-                              'aria-pressed': day === selected ? 'true' : 'false',
-                              'aria-current': day === today ? 'date' : null,
-                              'data-autofocus': day === selected ? '' : null,
-                              dataset: { date: day },
-                              onClick: () => onSelect(day)
-                          },
-                          h('span', { class: 'pisi-date-number' }, Number(day.slice(8, 10))),
-                          renderDayDots(day, marks)
-                      )
-                    : h('span', { class: 'pisi-date-cell pisi-date-cell-empty', 'aria-hidden': 'true' })
-            )
-    );
+    const grid = renderMonthGrid({ month, selected, today, locale, marks, labels, autofocus: true, onSelect });
     const legend = marks
-        ? h(
-              'p',
-              { class: 'pisi-date-legend' },
-              h('span', { class: 'pisi-date-legend-item' }, h('span', { class: 'pisi-day-dot pisi-day-dot-tasks', 'aria-hidden': 'true' }), labels.legendTasks),
-              h('span', { class: 'pisi-date-legend-item' }, h('span', { class: 'pisi-day-dot pisi-day-dot-diary', 'aria-hidden': 'true' }), labels.legendDiary)
-          )
+        ? renderDayLegend([
+              { kind: 'tasks', label: labels.legendTasks },
+              { kind: 'diary', label: labels.legendDiary }
+          ])
         : null;
     return renderSheet({
         id,

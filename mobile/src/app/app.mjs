@@ -4,7 +4,7 @@
 
 import { getPisiTodayIsoDate } from '../../../shared/task-model.mjs';
 import { PISI_LANGUAGES, createI18n, detectLanguage } from '../i18n/index.mjs';
-import { renderCalendarScreen } from '../screens/calendar/index.mjs';
+import { createCalendarScreen } from '../screens/calendar/index.mjs';
 import { renderMapsScreen } from '../screens/maps/index.mjs';
 import { createNotesScreen } from '../screens/notes/index.mjs';
 import { createNoteScreen } from '../screens/notes/note.mjs';
@@ -22,7 +22,6 @@ import { PISI_HOME_TAB, PISI_TABS, createRouter } from './router.mjs';
 import { PISI_THEME_BACKGROUNDS, resolveTheme } from './theme.mjs';
 
 const TAB_SCREENS = Object.freeze({
-    calendar: renderCalendarScreen,
     maps: renderMapsScreen
 });
 
@@ -52,7 +51,7 @@ export function createApp({
     let focusedOverlay = null;
     let focusedDepth = 0;
     let destroyed = false;
-    // The chrome of the Pisi tab, and of a screen that is built once (Tasks, Notes, a note), while it is on
+    // The chrome of the Pisi tab, and of a screen that is built once (Tasks, Notes, Calendar, a note), while it is on
     // screen; it is kept between redraws so that what is being typed keeps its focus.
     let home = null;
     let kept = null;
@@ -100,6 +99,8 @@ export function createApp({
         onOpenOverlay: (overlay) => router.openOverlay(overlay),
         onCloseOverlay: () => closeOverlay()
     });
+    // A day tapped on the Calendar is shown on the Pisi tab, the one place a day is shown (M8).
+    const calendarScreen = createCalendarScreen({ project, tasks, platform, onOpenDay: (isoDate) => navigate(() => router.openDay(isoDate)), onError });
     const openNote = (note) => navigate(() => router.openNote(note));
     const notesScreen = createNotesScreen({
         project,
@@ -140,7 +141,7 @@ export function createApp({
         try {
             await project.open();
             // The start screen reads its own two files and shows them before the whole project has been walked (M5).
-            await Promise.all([tasks.reload(), pisi.load()]);
+            await Promise.all([tasks.reload(), pisi.load(), calendarScreen.reload()]);
             await refreshProject();
             // A file that cannot be read is never overwritten; the user is told (rule V7).
             if (projectState.readOnlyFiles.length) snackbar.show({ message: i18n.t('project.readOnlyNotice', { count: projectState.readOnlyFiles.length }) });
@@ -153,7 +154,7 @@ export function createApp({
     async function handleLoadSample() {
         try {
             const added = await loadSample(project, { now });
-            await Promise.all([refreshProject(), tasks.reload(), pisi.reload()]);
+            await Promise.all([refreshProject(), tasks.reload(), pisi.reload(), calendarScreen.reload()]);
             snackbar.show({ message: i18n.t('developer.sampleLoaded', added) });
         } catch (error) {
             onError(error);
@@ -282,6 +283,7 @@ export function createApp({
             return keep(`note:${state.note.path ?? ''}:${title}`, title, noteScreen, { sheet, snackbar: snack });
         }
         if (state.tab === 'tasks' && !subScreen) return keep('tasks', i18n.t('tab.tasks'), tasksScreen, { sheet, snackbar: snack });
+        if (state.tab === 'calendar' && !subScreen) return keep('calendar', i18n.t('tab.calendar'), calendarScreen, { sheet, snackbar: snack });
         if (state.tab === 'notes' && !subScreen) {
             return keep('notes', i18n.t('tab.notes'), notesScreen, () => ({ sheet, snackbar: snack, fab: sheet ? null : notesScreen.renderFab() }));
         }
@@ -360,6 +362,7 @@ export function createApp({
             snackbar.dismiss();
             pisi.destroy();
             tasksScreen.destroy();
+            calendarScreen.destroy();
             notesScreen.destroy();
             noteScreen.destroy();
             tasks.destroy();

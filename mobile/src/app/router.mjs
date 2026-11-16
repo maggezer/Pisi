@@ -52,6 +52,15 @@ export function createRouter({ today }) {
             return update({ selectedDate: isoDate });
         },
 
+        /**
+         * Opens the Pisi tab on `isoDate` in one step, from another tab (the Calendar).
+         * Sub-screens and sheets of the tab being left are closed.
+         */
+        openDay(isoDate) {
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(String(isoDate))) return state;
+            return update({ tab: PISI_HOME_TAB, stack: Object.freeze([]), overlays: Object.freeze([]), selectedDate: isoDate });
+        },
+
         openOverlay(overlay) {
             if (!overlay || state.overlays.at(-1) === overlay) return state;
             return update({ overlays: Object.freeze([...state.overlays, overlay]) });

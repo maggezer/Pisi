@@ -136,6 +136,19 @@ Her adımda uygulama kapanmamalı ve ekran boş kalmamalıdır.
 - [ ] Uygulamayı tamamen kapatıp açın: yapılan bütün değişiklikler durur.
 - [ ] Koyu temada ve Android yazı boyutu %130'da düzen bozulmaz.
 
+### Takvim (M8)
+
+Önce Ayarlar → "Örnek proje yükle" ile örnek veriyi yükleyin.
+
+- [ ] Takvim bugünün ayıyla açılır; hafta pazartesi başlar, gün adları Türkçedir (Pzt … Paz). Bugün çerçeveyle işaretlidir.
+- [ ] Miladi/Hicri/Çin takvim seçicisi yoktur.
+- [ ] Görevi olan günlerde dolu nokta, günlüğü olan günlerde halka vardır; görevlerin hepsi biten günde nokta yeşildir. Izgaranın altındaki açıklama satırı üçünü de yazar.
+- [ ] Bir güne dokununca Pisi sekmesi o günle açılır; başlıkta o günün tarihi yazar.
+- [ ] O gün bir görevi tamamlayıp günlük yazın, Takvim'e dönün: noktalar hemen değişir.
+- [ ] Oklarla ve ızgarayı sağa/sola kaydırarak ay değişir (kısa titreşim). "Bu aya dön" bugünün ayına getirir. Başka sekmeye gidip dönünce takvim kalınan ayda durur.
+- [ ] TalkBack bir güne gelince tarihi ve "görev var", "görevlerin hepsi tamamlandı", "günlük var" bilgilerini okur.
+- [ ] Koyu temada ve Android yazı boyutu %130'da düzen bozulmaz, gün hücreleri parmakla rahat seçilir.
+
 ### Örnek proje (aktarım gelene kadar)
 
 Gerçek proje telefona henüz aktarılamıyor. Test APK'sında **Ayarlar →

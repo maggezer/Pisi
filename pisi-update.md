@@ -1,5 +1,44 @@
 # PISI Güncelleme Takip Dosyası
 
+## 16-11-2026 — Pisi Mobil: Takvim (M8, mobil iş)
+
+- Bu bir mobil iştir (`docs/mobile-plan.md` M8; G12). Masaüstü koduna ve
+  `shared/` klasörüne dokunulmadı; kökte yalnız
+  `tests/mobile-desktop-compat.test.mjs` genişledi. Dosya biçimi değişmedi,
+  Takvim hiçbir dosya yazmaz.
+- **Takvim sekmesi** yer tutucu olmaktan çıktı (`mobile/src/screens/calendar/`).
+  Bir kez kurulur ve yerinde güncellenir; gösterilen ay sekmeler arasında
+  korunur.
+    - Ay ızgarası pazartesiyle başlar; gün ve ay adları uygulamanın dilinde
+      `Intl` ile yazılır. Bugün çerçeveyle, Pisi sekmesinde seçili olan gün
+      dolgu ile işaretlenir.
+    - Noktalar masaüstü takviminin kuralıyla bulunur
+      (`getCalendarTaskSummaryByDate`): `scheduledAt`, yoksa `dueDate`, yoksa
+      `deadline` günü olan **her** görev o günü işaretler. Açık görevi olan
+      gün dolu turuncu nokta, görevlerinin hepsi bitmiş gün yeşil nokta
+      alır; günlük dosyası olan gün halka alır. Izgaranın altındaki açıklama
+      satırı üçünü de yazar; günün erişilebilir adı da söyler.
+    - Önceki/sonraki ay düğmeleri, ızgarada yatay kaydırma (kısa titreşimle)
+      ve bugünün ayında değilken "Bu aya dön" düğmesi vardır.
+    - Bir güne dokununca Pisi sekmesi o günle açılır (`router.openDay`); gün
+      görünümü tek yerde, Pisi sekmesindedir. Günlük günleri sekme her
+      açıldığında yeniden listelenir, görev değişiklikleri hemen yansır.
+    - Miladi/Hicri/Çin takvim seçicisi yoktur (G12).
+- **Ortak bileşen:** ay ızgarası, gün noktaları, günün erişilebilir adı ve
+  açıklama satırı `ui/date-picker.mjs`'ten `ui/month-grid.mjs`'e ayrıldı.
+  Tarih seçici ve tarih çarkı onu kullanır; görünümleri değişmedi. Bileşen
+  galerisine "Ay ızgarası (Takvim)" bölümü eklendi. Yeni renk çifti
+  (`--pisi-success-text` arayüz öğesi olarak) kontrast testindedir.
+- Testler: `mobile/tests/calendar-screen.test.mjs` (nokta kuralı, ekran, ay
+  değişimi, Pisi sekmesine geçiş, İngilizce), `tests/router.test.mjs`
+  (`openDay`), `e2e/calendar.spec.mjs` (noktalar proje dosyalarından
+  hesaplananla birebir; takvimden Pisi sekmesine geçiş; orada tamamlanan görev
+  ve yazılan günlüğün takvime yansıması; ay kaydırma; %130 yazı; açık/koyu
+  ekran görüntüleri), `e2e/gallery.spec.mjs` ve kökte
+  `tests/mobile-desktop-compat.test.mjs` (mobil takvimin noktaları,
+  masaüstünün kendi takvim özeti ve günlük listesiyle fixture projede ve
+  mobil yazdıktan sonra birebir aynı).
+
 ## 16-11-2026 — Pisi Mobil: Notlar (M7, mobil iş)
 
 - Bu bir mobil iştir (`docs/mobile-plan.md` M7; G7, G8, G9, G10). Masaüstü

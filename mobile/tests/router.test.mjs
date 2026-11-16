@@ -36,6 +36,20 @@ describe('router', () => {
         expect(router.getState()).toMatchObject({ tab: 'pisi', stack: [], overlays: [] });
     });
 
+    it('openDay Pisi sekmesini o günle tek adımda açar; alt ekran ve sheet kapanır, geçersiz gün yok sayılır', () => {
+        const router = start();
+        const seen = [];
+        router.subscribe((state) => seen.push(state.tab));
+        router.selectTab('calendar');
+        router.openOverlay('theme');
+        router.openDay('2026-12-02');
+        expect(router.getState()).toMatchObject({ tab: 'pisi', stack: [], overlays: [], selectedDate: '2026-12-02' });
+        expect(seen).toEqual(['calendar', 'calendar', 'pisi']);
+        router.openDay('2 Aralık');
+        expect(router.getState().selectedDate).toBe('2026-12-02');
+        expect(router.back()).toBe('minimize');
+    });
+
     it("not ekranı bir notla açılır, açık sheet'leri kapatır; geri tuşu sekmeye döner", () => {
         const router = start();
         router.selectTab('tasks');
