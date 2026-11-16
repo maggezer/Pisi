@@ -5,7 +5,7 @@
 The icons in `src/ui/icons.mjs` are copied from [Lucide](https://lucide.dev) (`lucide-static` 1.73.0):
 `cat`, `list-todo`, `file-text`, `calendar-days`, `waypoints`, `settings`, `arrow-left`, `x`, `plus`, `check`,
 `chevron-right`, `search`, `undo-2`, `inbox`, `menu`, `chevron-down`, `chevron-left`, `repeat`, `clock`, `bold`, `italic`,
-`heading`, `list`, `list-ordered` and `monitor`.
+`heading`, `list`, `list-ordered`, `monitor`, `minus` and `scan`.
 
 ```text
 ISC License
@@ -25,7 +25,7 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ```
 
-Of these, `arrow-left`, `bold`, `check`, `chevron-down`, `chevron-left`, `chevron-right`, `clock`, `italic`, `list`, `menu`, `monitor`, `plus`,
+Of these, `arrow-left`, `bold`, `check`, `chevron-down`, `chevron-left`, `chevron-right`, `clock`, `italic`, `list`, `menu`, `minus`, `monitor`, `plus`,
 `repeat`, `search` and `x` are derived from the Feather project:
 
 ```text

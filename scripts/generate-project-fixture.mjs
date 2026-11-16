@@ -10,8 +10,12 @@ import { pathToFileURL } from 'node:url';
 // project also has the .pisi folders a used project has (trash, mutations,
 // history), so the watcher sees a realistic tree. Files follow
 // pisi-definition.md, so the app opens them without migrating anything.
+// With `relationships: true` the notes of every map also form a hierarchy
+// (each note under the one `floor((i - 1) / 4)` places before it on its map)
+// stored in .pisi/relationships.json, with a view of each relationship on the
+// map; the mobile map viewer's performance test draws such a map.
 //
-// CLI: node scripts/generate-project-fixture.mjs <projectFolder> [notes=1000] [perMap=250]
+// CLI: node scripts/generate-project-fixture.mjs <projectFolder> [notes=1000] [perMap=250] [relationships=0]
 
 function uuid(seed) {
     // Deterministic ids keep runs comparable.
@@ -41,8 +45,8 @@ function noteContent(index, nextId, nextTitle) {
 
 /**
  * @param {string} projectFolder
- * @param {{ notes?: number, perMap?: number }} [options]
- * @returns {Promise<{ notes: number, maps: number, directories: number, files: number, notePaths: string[] }>}
+ * @param {{ notes?: number, perMap?: number, relationships?: boolean }} [options]
+ * @returns {Promise<{ notes: number, maps: number, relationships: number, directories: number, files: number, notePaths: string[] }>}
  */
 export async function generatePisiProjectFixture(projectFolder, options = {}) {
     const total = Math.max(1, Number(options.notes) || 1000);
@@ -51,6 +55,7 @@ export async function generatePisiProjectFixture(projectFolder, options = {}) {
     let directories = 0;
     let files = 0;
     const notePaths = [];
+    const relationships = [];
     for (const folder of ['.pisi/trash/items', '.pisi/mutations', '.pisi-history']) {
         await fs.mkdir(path.join(projectFolder, folder), { recursive: true });
         directories += 1;
@@ -65,6 +70,7 @@ export async function generatePisiProjectFixture(projectFolder, options = {}) {
         await fs.mkdir(mapFolder, { recursive: true });
         directories += 1;
         const nodes = [];
+        const relationshipViews = [];
         const start = mapIndex * perMap;
         const end = Math.min(total, start + perMap);
         for (let index = start; index < end; index += 1) {
@@ -91,19 +97,39 @@ export async function generatePisiProjectFixture(projectFolder, options = {}) {
             directories += 1;
             const local = index - start;
             nodes.push({ id: ids[index], x: (local % 25) * 260, y: Math.floor(local / 25) * 150, width: 220, height: 92 });
+            if (options.relationships && local > 0) {
+                const id = `edge_${uuid(`project-edge-${index}`)}`;
+                const sourceId = ids[start + Math.floor((local - 1) / 4)];
+                relationships.push({
+                    id,
+                    sourceId,
+                    targetId: ids[index],
+                    type: 'down-hub',
+                    sourceRole: 'down-hub',
+                    targetRole: 'up-hub',
+                    direction: 'directed',
+                    createdAt: STAMP,
+                    updatedAt: STAMP
+                });
+                relationshipViews.push({ relationshipId: id, sourcePort: 'bottom', targetPort: 'top' });
+            }
         }
         await writeJson(path.join(projectFolder, `${mapTitle}.map`), {
             pisi: { version: 1, type: 'map', id: mapId, title: mapTitle, sidecar: mapSidecar, createdAt: STAMP, updatedAt: STAMP },
-            map: { nodes, references: [], relationshipViews: [], relationshipViewVersion: 1, camera: { x: 0, y: 0, zoom: 1 }, collapsedHubs: [] }
+            map: { nodes, references: [], relationshipViews, relationshipViewVersion: 1, camera: { x: 0, y: 0, zoom: 1 }, collapsedHubs: [] }
         });
         files += 1;
     }
-    await writeJson(path.join(projectFolder, '.pisi', 'relationships.json'), { version: 1, relationships: [] });
-    return { notes: total, maps: mapCount, directories, files, notePaths };
+    await writeJson(path.join(projectFolder, '.pisi', 'relationships.json'), { version: 1, relationships });
+    return { notes: total, maps: mapCount, relationships: relationships.length, directories, files, notePaths };
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {
     const projectFolder = path.resolve(process.argv[2] || 'pisi-project-fixture');
-    const result = await generatePisiProjectFixture(projectFolder, { notes: Number(process.argv[3]) || 1000, perMap: Number(process.argv[4]) || 250 });
+    const result = await generatePisiProjectFixture(projectFolder, {
+        notes: Number(process.argv[3]) || 1000,
+        perMap: Number(process.argv[4]) || 250,
+        relationships: process.argv[5] === '1'
+    });
     console.log(JSON.stringify({ ...result, notePaths: undefined }, null, 2));
 }

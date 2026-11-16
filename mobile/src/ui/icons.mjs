@@ -155,6 +155,15 @@ const SHAPES = Object.freeze({
         ['path', { d: 'M4 9h2' }],
         ['path', { d: 'M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02' }]
     ],
+    // lucide: minus
+    minus: [['path', { d: 'M5 12h14' }]],
+    // lucide: scan (fit to screen)
+    fit: [
+        ['path', { d: 'M3 7V5a2 2 0 0 1 2-2h2' }],
+        ['path', { d: 'M17 3h2a2 2 0 0 1 2 2v2' }],
+        ['path', { d: 'M21 17v2a2 2 0 0 1-2 2h-2' }],
+        ['path', { d: 'M7 21H5a2 2 0 0 1-2-2v-2' }]
+    ],
     // lucide: monitor
     desktop: [
         ['rect', { width: '20', height: '14', x: '2', y: '3', rx: '2' }],

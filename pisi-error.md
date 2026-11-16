@@ -213,6 +213,20 @@ hücreleri gösterilmez. Çözüm için önce bu biçimlerin güvenli okunup yaz
 `mobile/src/data/note-blocks.mjs` ve `note-inline.mjs` içinde genişletilmeli,
 uyumluluk testi (`tests/mobile-desktop-compat.test.mjs`) buna göre büyütülmelidir.
 
+## 5g. Masaüstü modüllerini yükleyen bir test dosyası import sırasında çökerse `node --test` onu geçti sayıyor
+
+**[Orta · test altyapısı · doğrulandı, çözülmedi]**
+`main/functions/logger.js` yüklenince süreç düzeyinde `uncaughtException` ve
+`unhandledRejection` yakalayıcıları kurar. Masaüstü main modüllerini gerçekten
+yükleyen bir test dosyası (ör. `tests/mobile-desktop-compat.test.mjs`) daha
+testleri tanımlamadan import sırasında hata verirse hata bu yakalayıcıda
+kalır, süreç 0 ile çıkar ve `node --test` dosyayı tek bir geçen test olarak
+raporlar; içindeki testler hiç çalışmamış olur. M9 sırasında, eksik bir
+bağımlılıkla yüklenen `map-semantic-operation-hooks.js` bunu gösterdi (hata
+düzeltildi; davranış duruyor). Çözüm önerisi: testlerde logger'ın süreç
+yakalayıcılarını kurmaması (ör. bir ortam bayrağı) ya da bu dosyaların test
+sayısını denetleyen bir koruma.
+
 ## 6. Güncel doğrulama snapshot’ı
 
 6 Ekim 2026 current `main` kontrolü:

@@ -7,6 +7,7 @@ import { getPisiDiaryDateFromFileName, PISI_DIARY_FOLDER } from '../../../shared
 import { getPisiFileExt, isPisiManagedSidecarFolder } from '../../../shared/document-naming.mjs';
 import { baseName, joinKey, parentKey } from './drivers/keys.mjs';
 import { readJsonFile } from './json-file.mjs';
+import { readMapReferences } from './map-model.mjs';
 import { getNotePlainText } from './note-blocks.mjs';
 
 // Folders that hold no notes: authorities and recovery data, and note sidecars (assets only).
@@ -36,7 +37,8 @@ function makeMapEntry(key, data) {
         title: String(data.pisi.title || ''),
         key,
         updatedAt: String(data.pisi.updatedAt || ''),
-        nodeCount: Array.isArray(data.map?.nodes) ? data.map.nodes.length : 0
+        // The standalone notes the map points to; its own notes are the ones in its sidecar folder (map-repo.mjs).
+        references: readMapReferences(data.map)
     };
 }
 

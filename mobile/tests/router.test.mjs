@@ -5,8 +5,27 @@ const start = () => createRouter({ today: '2026-11-14' });
 
 describe('router', () => {
     it('soğuk açılışta Pisi sekmesi ve bugünün tarihi gelir', () => {
-        expect(start().getState()).toEqual({ tab: 'pisi', stack: [], overlays: [], selectedDate: '2026-11-14', note: null });
+        expect(start().getState()).toEqual({ tab: 'pisi', stack: [], overlays: [], selectedDate: '2026-11-14', note: null, map: null });
         expect(PISI_TABS).toEqual(['pisi', 'tasks', 'notes', 'calendar', 'maps']);
+    });
+
+    it('harita görüntüleyici Haritalar sekmesinin üstünde açılır; haritadan açılan not onun üstüne gelir ve geri haritaya döner', () => {
+        const router = start();
+        router.selectTab('maps');
+        router.openMap({ key: 'Yol Haritası.map', title: 'Yol Haritası' });
+        expect(router.getState()).toMatchObject({ tab: 'maps', stack: ['map'], map: { key: 'Yol Haritası.map', title: 'Yol Haritası' } });
+        router.openNote({ path: 'nd_Yol/Not.node', title: 'Not' });
+        expect(router.getState().stack).toEqual(['map', 'note']);
+        expect(router.back()).toBe('screen-closed');
+        expect(router.getState()).toMatchObject({ stack: ['map'], map: { key: 'Yol Haritası.map' } });
+        expect(router.back()).toBe('screen-closed');
+        expect(router.getState().stack).toEqual([]);
+        // Opening another map replaces the one on screen; a map without a key and push('map') are ignored.
+        router.openMap({ key: 'A.map', title: 'A' });
+        router.openMap({ key: 'B.map', title: 'B' });
+        router.push('map');
+        router.openMap({ title: 'Yok' });
+        expect(router.getState()).toMatchObject({ stack: ['map'], map: { key: 'B.map' } });
     });
 
     it("sekme değiştirmek alt ekranı ve açık sheet'i kapatır; bilinmeyen sekme yok sayılır", () => {

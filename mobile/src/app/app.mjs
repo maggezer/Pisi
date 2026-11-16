@@ -5,7 +5,8 @@
 import { getPisiTodayIsoDate } from '../../../shared/task-model.mjs';
 import { PISI_LANGUAGES, createI18n, detectLanguage } from '../i18n/index.mjs';
 import { createCalendarScreen } from '../screens/calendar/index.mjs';
-import { renderMapsScreen } from '../screens/maps/index.mjs';
+import { createMapsScreen } from '../screens/maps/index.mjs';
+import { createMapViewer } from '../screens/maps/map-viewer.mjs';
 import { createNotesScreen } from '../screens/notes/index.mjs';
 import { createNoteScreen } from '../screens/notes/note.mjs';
 import { createPisiScreen } from '../screens/pisi/index.mjs';
@@ -21,14 +22,11 @@ import { PISI_THEME_PREFERENCES, createPreferences } from './preferences.mjs';
 import { PISI_HOME_TAB, PISI_TABS, createRouter } from './router.mjs';
 import { PISI_THEME_BACKGROUNDS, resolveTheme } from './theme.mjs';
 
-const TAB_SCREENS = Object.freeze({
-    maps: renderMapsScreen
-});
-
 /**
  * `project` is the data layer (data/project-repo.mjs) over whatever storage the
- * platform gives; `loadSample` fills it with sample data and is passed only in
- * debug builds, where it shows up as the developer section of Settings.
+ * platform gives; `loadSample` fills it with sample data and `loadSampleMap`
+ * adds a sample map. Both are passed only in debug builds, where they show up
+ * as the developer section of Settings.
  */
 export function createApp({
     root,
@@ -38,6 +36,7 @@ export function createApp({
     systemTheme,
     project = null,
     loadSample = null,
+    loadSampleMap = null,
     now = () => new Date(),
     onError = () => {}
 }) {
@@ -51,7 +50,7 @@ export function createApp({
     let focusedOverlay = null;
     let focusedDepth = 0;
     let destroyed = false;
-    // The chrome of the Pisi tab, and of a screen that is built once (Tasks, Notes, Calendar, a note), while it is on
+    // The chrome of the Pisi tab, and of a screen that is built once (Tasks, Notes, Calendar, Maps, a map, a note), while it is on
     // screen; it is kept between redraws so that what is being typed keeps its focus.
     let home = null;
     let kept = null;
@@ -122,6 +121,9 @@ export function createApp({
         onSaved: (key) => key.startsWith('diary/') && void pisi.reload(),
         onError
     });
+    // Maps are only viewed (M9): the list, and the viewer a note on the map is opened from.
+    const mapsScreen = createMapsScreen({ project, onOpenMap: (map) => navigate(() => router.openMap(map)), onError });
+    const mapViewer = createMapViewer({ project, onOpenNote: openNote, onError });
     const openerOf = (overlay) =>
         taskSheets.getOverlayOpener(overlay) ??
         tasksScreen.getOverlayOpener(overlay) ??
@@ -132,7 +134,7 @@ export function createApp({
     async function refreshProject() {
         await project.index.build();
         const listed = await project.tasks.list();
-        projectState.counts = { tasks: listed.tasks.length, notes: project.notes.list().length, maps: project.maps.list().length };
+        projectState.counts = { tasks: listed.tasks.length, notes: project.notes.list().length, maps: project.index.getMaps().length };
         projectState.readOnlyFiles = project.getIntegrity().readOnlyFiles;
         if (!destroyed) render();
     }
@@ -159,6 +161,17 @@ export function createApp({
         } catch (error) {
             onError(error);
             snackbar.show({ message: i18n.t('developer.sampleFailed') });
+        }
+    }
+
+    async function handleLoadSampleMap() {
+        try {
+            const added = await loadSampleMap(project, { now, makeUuid: project.makeUuid });
+            await refreshProject();
+            snackbar.show({ message: added ? i18n.t('developer.sampleMapLoaded') : i18n.t('developer.sampleMapExists') });
+        } catch (error) {
+            onError(error);
+            snackbar.show({ message: i18n.t('developer.sampleMapFailed') });
         }
     }
 
@@ -284,26 +297,28 @@ export function createApp({
         }
         if (state.tab === 'tasks' && !subScreen) return keep('tasks', i18n.t('tab.tasks'), tasksScreen, { sheet, snackbar: snack });
         if (state.tab === 'calendar' && !subScreen) return keep('calendar', i18n.t('tab.calendar'), calendarScreen, { sheet, snackbar: snack });
+        if (state.tab === 'maps' && !subScreen) return keep('maps', i18n.t('tab.maps'), mapsScreen, { sheet, snackbar: snack });
+        if (subScreen === 'map') {
+            context.map = state.map;
+            return keep(`map:${state.map.key}`, state.map.title || i18n.t('tab.maps'), mapViewer, { sheet, snackbar: snack });
+        }
         if (state.tab === 'notes' && !subScreen) {
             return keep('notes', i18n.t('tab.notes'), notesScreen, () => ({ sheet, snackbar: snack, fab: sheet ? null : notesScreen.renderFab() }));
         }
         kept = null;
 
-        const body =
-            subScreen === 'settings'
-                ? renderSettingsScreen({
-                      ...context,
-                      themePreference: preferences.getTheme(),
-                      language: i18n.language,
-                      openOverlay: router.openOverlay,
-                      project: project ? projectState : null,
-                      developer: Boolean(loadSample),
-                      onLoadSample: handleLoadSample
-                  })
-                : TAB_SCREENS[state.tab](context);
-
-        const title = subScreen === 'settings' ? i18n.t('screen.settings') : i18n.t(`tab.${state.tab}`);
-        root.replaceChildren(renderShell({ ...chrome, title, inSubScreen: Boolean(subScreen), body, sheet, snackbar: snack }));
+        // Settings: the one screen that is drawn again from scratch.
+        const body = renderSettingsScreen({
+            ...context,
+            themePreference: preferences.getTheme(),
+            language: i18n.language,
+            openOverlay: router.openOverlay,
+            project: project ? projectState : null,
+            developer: Boolean(loadSample || loadSampleMap),
+            onLoadSample: loadSample ? handleLoadSample : null,
+            onLoadSampleMap: loadSampleMap ? handleLoadSampleMap : null
+        });
+        root.replaceChildren(renderShell({ ...chrome, title: i18n.t('screen.settings'), inSubScreen: true, body, sheet, snackbar: snack }));
 
         focusAfterDraw(state);
     }
@@ -365,6 +380,8 @@ export function createApp({
             calendarScreen.destroy();
             notesScreen.destroy();
             noteScreen.destroy();
+            mapsScreen.destroy();
+            mapViewer.destroy();
             tasks.destroy();
             for (const stop of stops) stop?.();
             root.replaceChildren();

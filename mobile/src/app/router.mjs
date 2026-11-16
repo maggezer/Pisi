@@ -1,13 +1,13 @@
 // The one place that holds navigation state (docs/mobile-plan.md §3.4):
 // the active tab, the sub-screens stacked on it, the open sheets or dialogs,
-// the day the Pisi tab shows and the note the note screen shows.
+// the day the Pisi tab shows, the note the note screen shows and the map the map viewer shows.
 
 export const PISI_HOME_TAB = 'pisi';
 export const PISI_TABS = Object.freeze(['pisi', 'tasks', 'notes', 'calendar', 'maps']);
-export const PISI_SUB_SCREENS = Object.freeze(['settings', 'note']);
+export const PISI_SUB_SCREENS = Object.freeze(['settings', 'map', 'note']);
 
 export function createRouter({ today }) {
-    let state = Object.freeze({ tab: PISI_HOME_TAB, stack: Object.freeze([]), overlays: Object.freeze([]), selectedDate: today, note: null });
+    let state = Object.freeze({ tab: PISI_HOME_TAB, stack: Object.freeze([]), overlays: Object.freeze([]), selectedDate: today, note: null, map: null });
     const listeners = new Set();
 
     function update(patch) {
@@ -31,9 +31,9 @@ export function createRouter({ today }) {
             return update({ tab, stack: Object.freeze([]), overlays: Object.freeze([]) });
         },
 
-        /** Opens a sub-screen over the current tab. The note screen is opened with `openNote`. */
+        /** Opens a sub-screen over the current tab. The note screen and the map viewer are opened with `openNote` and `openMap`. */
         push(screen) {
-            if (screen === 'note' || !PISI_SUB_SCREENS.includes(screen) || state.stack.at(-1) === screen) return state;
+            if (screen === 'note' || screen === 'map' || !PISI_SUB_SCREENS.includes(screen) || state.stack.at(-1) === screen) return state;
             return update({ stack: Object.freeze([...state.stack, screen]), overlays: Object.freeze([]) });
         },
 
@@ -44,6 +44,18 @@ export function createRouter({ today }) {
             if (!title && !path) return state;
             const stack = state.stack.filter((screen) => screen !== 'note');
             return update({ stack: Object.freeze([...stack, 'note']), overlays: Object.freeze([]), note: Object.freeze({ path, title }) });
+        },
+
+        /**
+         * Opens the map viewer for `{ key, title }` (the map's project-relative key).
+         * A note opened from the map goes on top of it, so back returns to the map.
+         */
+        openMap(map) {
+            const key = String(map?.key ?? '').trim();
+            if (!key) return state;
+            const title = String(map?.title ?? '').trim();
+            const stack = state.stack.filter((screen) => screen !== 'map' && screen !== 'note');
+            return update({ stack: Object.freeze([...stack, 'map']), overlays: Object.freeze([]), map: Object.freeze({ key, title }) });
         },
 
         /** The day the Pisi tab shows (YYYY-MM-DD). Sheets stay as they are; whoever picked the day closes its own. */

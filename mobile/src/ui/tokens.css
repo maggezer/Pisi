@@ -42,6 +42,11 @@
     --pisi-priority-4: #b85c00;
     --pisi-priority-5: #b83a30;
 
+    /* Map connections by kind, as on the desktop: hierarchy orange, stream green, co-level blue. Each reaches 3:1 on every surface. */
+    --pisi-map-hub: #b85c00;
+    --pisi-map-stream: #2f7344;
+    --pisi-map-peer: #2c6a96;
+
     /* Snackbar: the opposite theme's surface. */
     --pisi-inverse-surface: #2b211b;
     --pisi-inverse-text: #f5ede4;
@@ -122,6 +127,10 @@
     --pisi-priority-3: #d9c65a;
     --pisi-priority-4: #f3a83b;
     --pisi-priority-5: #e66f61;
+
+    --pisi-map-hub: #f3a83b;
+    --pisi-map-stream: #80bd8d;
+    --pisi-map-peer: #6fb4e6;
 
     --pisi-inverse-surface: #f5ede4;
     --pisi-inverse-text: #2b211b;

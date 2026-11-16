@@ -53,6 +53,38 @@ export const projectFiles = (page) =>
             })
     );
 
+/**
+ * Test data only: writes `[key, content]` files straight into the Filesystem plugin's web store, in the shape
+ * the plugin itself writes, with an entry for every folder on the way so that listing a folder finds them.
+ * Content is text, or base64 for a file the app reads as bytes. Reload the page afterwards to open the project again.
+ */
+export const seedProjectFiles = (page, files) =>
+    page.evaluate(
+        (entries) =>
+            new Promise((resolve, reject) => {
+                const root = '/DATA/projects/default';
+                const stamp = Date.now();
+                const parent = (path) => path.replace(/\/[^/]+$/, '');
+                const records = new Map();
+                for (const [key, content] of entries) {
+                    const path = `${root}/${key}`;
+                    records.set(path, { path, folder: parent(path), type: 'file', size: content.length, ctime: stamp, mtime: stamp, content });
+                    for (let folder = parent(path); folder.length > root.length && !records.has(folder); folder = parent(folder)) {
+                        records.set(folder, { path: folder, folder: parent(folder), type: 'directory', size: 0, ctime: stamp, mtime: stamp });
+                    }
+                }
+                const request = indexedDB.open('Disc');
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    const transaction = request.result.transaction('FileStorage', 'readwrite');
+                    for (const record of records.values()) transaction.objectStore('FileStorage').put(record);
+                    transaction.oncomplete = () => resolve();
+                    transaction.onerror = () => reject(transaction.error);
+                };
+            }),
+        files
+    );
+
 export async function readProjectJson(page, path) {
     const file = (await projectFiles(page)).find((entry) => entry.path === path);
     return file ? JSON.parse(file.content) : null;
