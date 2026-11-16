@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { NOW, TODAY, createMemoryProject, storeJson } from './data-helpers.mjs';
+import { formatPisiRecurrenceTaskId } from '../../shared/ids.mjs';
 
 const KEY = '.pisi/tasks.json';
 
@@ -175,8 +176,25 @@ describe('TaskRepo', () => {
             // The next occurrence is not tied to a note block (mobile does not create task blocks).
             source: { nodePath: null, blockId: null, mapPath: null, nodeTitle: '', mapTitle: '' }
         });
-        expect(next.id).toMatch(/^task_[0-9a-f-]{36}$/);
+        // Derived from the completed task and the next date: another device completing it creates the same id.
+        expect(next.id).toBe(formatPisiRecurrenceTaskId(recurring.id, nextIso));
         expect(next.id).not.toBe(recurring.id);
+    });
+
+    it('aynı tekrar iki cihazda tamamlanınca sonraki tekrar aynı kimliği alır; kimlik doluysa yenisi verilir', async () => {
+        const recurring = storedTask({ repeat: 'daily', todoTag: 'todo.2.14-11-2026' });
+        const phone = createMemoryProject({ [KEY]: store([recurring]) });
+        const tablet = createMemoryProject({ [KEY]: store([recurring]) });
+        const fromPhone = await phone.project.tasks.complete(recurring.id);
+        const fromTablet = await tablet.project.tasks.complete(recurring.id);
+        expect(fromPhone.next.id).toBe(fromTablet.next.id);
+        expect(fromPhone.next.id).toMatch(/^task_r_[0-9a-f]{16}$/);
+
+        // Reopened and completed again while the derived record is still there: the new record gets a fresh id.
+        await phone.project.tasks.setStatus(recurring.id, 'todo');
+        const again = await phone.project.tasks.complete(recurring.id);
+        expect(again.next.id).toMatch(/^task_[0-9a-f-]{36}$/);
+        expect(new Set(read(phone.driver).tasks.map((task) => task.id)).size).toBe(3);
     });
 
     it('undoComplete: görevi eski durumuna döndürür; başka kayda dokunmaz', async () => {

@@ -73,8 +73,20 @@ function formatPisiSourceTaskId(identityPath, blockId, todoTag) {
     return `task_source_${hashPisiTaskIdentity(key)}`;
 }
 
+/**
+ * Id of the next occurrence of a repeating task, derived from the completed
+ * task's id and the next date (YYYY-MM-DD). Two devices that complete the same
+ * occurrence before they sync create the same next task, so merging
+ * tasks.json by id keeps one (docs/sync-plan.md S1.6, pisi-error.md §5d).
+ */
+function formatPisiRecurrenceTaskId(previousTaskId, nextIsoDate) {
+    const key = ['recurrence', String(previousTaskId || ''), String(nextIsoDate || '')].map(encodeURIComponent).join('::');
+    return `task_r_${hashPisiTaskIdentity(key)}`;
+}
+
 export {
     formatPisiBlockId,
+    formatPisiRecurrenceTaskId,
     formatPisiDocumentId,
     formatPisiSourceTaskId,
     formatPisiTaskId,

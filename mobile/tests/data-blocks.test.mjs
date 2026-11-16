@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { parseTagAttributes } from '../src/data/html-tokens.mjs';
-import { getNotePlainText, splitNoteBlocks } from '../src/data/note-blocks.mjs';
+import { parseTagAttributes } from '../../shared/html-tokens.mjs';
+import { getNotePlainText, splitNoteBlocks } from '../../shared/note-blocks.mjs';
 import { inlineToHtml, inlineToText, parseInlineHtml } from '../src/data/note-inline.mjs';
 import { applyBlockPatch, makeBlockHtml, makeParagraphBlockHtml, retypeOpenTag, textToBlockHtml } from '../src/data/note-patch.mjs';
 import { paragraph } from './data-helpers.mjs';

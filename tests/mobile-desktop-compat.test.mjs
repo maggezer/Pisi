@@ -12,7 +12,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { createNodeFsDriver } from '../mobile/src/data/drivers/node-fs-driver.mjs';
-import { splitNoteBlocks } from '../mobile/src/data/note-blocks.mjs';
+import { splitNoteBlocks } from '../shared/note-blocks.mjs';
 import { inlineToHtml, parseInlineHtml } from '../mobile/src/data/note-inline.mjs';
 import { makeBlockHtml } from '../mobile/src/data/note-patch.mjs';
 import { createProject } from '../mobile/src/data/project-repo.mjs';

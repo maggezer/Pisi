@@ -166,6 +166,13 @@ işareti eski durumunda kalır.
 - Tekrar eden görevde mobil sonraki tekrarı kaynak bloğu olmayan yeni bir kayıt
   olarak ekler; masaüstü ise nottaki bloğu kopyalar. Aynı görev iki cihazda da
   tamamlanırsa sonraki tekrar iki kez oluşabilir.
+    - 16-11-2026 (S1): mobil artık sonraki tekrarın kimliğini önceki görev
+      kimliği ve yeni tarihten türetir (`formatPisiRecurrenceTaskId`,
+      `shared/ids.mjs`); iki telefon ya da telefon + ileride aynı kuralı
+      kullanan bir istemci aynı kaydı üretir ve senkron birleştirmesi tek kayıt
+      bırakır. Masaüstünün blok kopyası hâlâ rastgele blok kimliği alır ve görev
+      kimliği o bloktan türer; masaüstü tarafı S3'te (Electron E2E ile) bu kurala
+      bağlanacak. O zamana kadar masaüstü + telefon çiftinde risk sürer.
 
 Bu yüzden Görevler sekmesinin görev detayı (M6) kaynağı not bloğu olan
 görevlerde yalnız durumu değiştirir; başlık, öncelik, tarih, saat, tekrar ve
@@ -211,7 +218,7 @@ kapalı (`pisi-bullet-collapsed`) maddeler ve tanınmayan HTML varlıkları
 Mobilde ayrıca madde girintisi değiştirilemez (Tab yok; mevcut girinti
 korunur), web bağlantıları açılmaz (wiki-link'ler açılır) ve Sheet bloğunun
 hücreleri gösterilmez. Çözüm için önce bu biçimlerin güvenli okunup yazılması
-`mobile/src/data/note-blocks.mjs` ve `note-inline.mjs` içinde genişletilmeli,
+`shared/note-blocks.mjs` ve `mobile/src/data/note-inline.mjs` içinde genişletilmeli,
 uyumluluk testi (`tests/mobile-desktop-compat.test.mjs`) buna göre büyütülmelidir.
 
 ## 5g. Masaüstü modüllerini yükleyen bir test dosyası import sırasında çökerse `node --test` onu geçti sayıyor

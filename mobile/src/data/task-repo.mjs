@@ -4,6 +4,7 @@
 // shared/task-model.mjs, the same code the desktop task store runs.
 
 import { formatPisiTodoTag, getNextPisiTodoDate, getPisiTodayIsoDate, getPisiTodoRepeatOption, normalizePisiTaskRecord } from '../../../shared/task-model.mjs';
+import { formatPisiRecurrenceTaskId } from '../../../shared/ids.mjs';
 import { getPisiTaskCalendarIsoDate, getPisiTaskTodoTag, parsePisiTodoTagValue } from '../../../shared/task-views.mjs';
 import { normalizeKey } from './drivers/keys.mjs';
 import { PisiReadOnlyError, parseJsonText, readTextOrNull, serializeStore } from './json-file.mjs';
@@ -132,8 +133,11 @@ export function createTaskRepo({ driver, writer, now, makeUuid }) {
                 const nextIso = nextDate ? getPisiTodayIsoDate(nextDate) : null;
                 const todoTag = nextIso ? formatPisiTodoTag(done.task.priority, nextIso) : null;
                 if (!todoTag) return { ...done, next: null };
+                // The same id on every device for the same occurrence (shared/ids.mjs); a fresh one if it is taken here.
+                const recurrenceId = formatPisiRecurrenceTaskId(current.id, nextIso);
                 const next = normalize(
                     {
+                        id: tasks.some((task) => task && task.id === recurrenceId) ? undefined : recurrenceId,
                         title: current.title,
                         status: 'todo',
                         priority: done.task.priority,

@@ -1,5 +1,5 @@
 // The body of an open note (docs/mobile-plan.md M7). The note's content is a
-// row of segments (data/note-blocks.mjs). Each editable block (paragraph,
+// row of segments (shared/note-blocks.mjs). Each editable block (paragraph,
 // heading 1–3, list item) is its own small editing field; every other block
 // is drawn by `renderProtected` and cannot be typed in, removed or moved.
 //
@@ -8,7 +8,7 @@
 // changed, added or removed (rules V2, V4, V8). `takePatch()` builds that
 // list, `rebase()` takes the content the write left on disk.
 
-import { PISI_EDITABLE_BLOCK_TYPES, splitNoteBlocks } from '../../data/note-blocks.mjs';
+import { PISI_EDITABLE_BLOCK_TYPES, splitNoteBlocks } from '../../../../shared/note-blocks.mjs';
 import { inlineToHtml, parseInlineHtml } from '../../data/note-inline.mjs';
 import { makeBlockHtml } from '../../data/note-patch.mjs';
 import { h } from '../../ui/dom.mjs';

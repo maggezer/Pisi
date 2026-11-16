@@ -8,7 +8,7 @@ import { getPisiFileExt, isPisiManagedSidecarFolder } from '../../../shared/docu
 import { baseName, joinKey, parentKey } from './drivers/keys.mjs';
 import { readJsonFile } from './json-file.mjs';
 import { readMapReferences } from './map-model.mjs';
-import { getNotePlainText } from './note-blocks.mjs';
+import { getNotePlainText } from '../../../shared/note-blocks.mjs';
 
 // Folders that hold no notes: authorities and recovery data, and note sidecars (assets only).
 const SKIPPED_FOLDERS = new Set(['.pisi', '.pisi-history', '.git', 'node_modules']);

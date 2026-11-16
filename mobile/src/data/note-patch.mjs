@@ -4,7 +4,7 @@
 // editor writes them (makePisiBlockHtml), so nothing mobile-specific reaches
 // the file (V2).
 
-import { PISI_EDITABLE_BLOCK_TYPES, getBlockTag, splitNoteBlocks } from './note-blocks.mjs';
+import { PISI_EDITABLE_BLOCK_TYPES, getBlockTag, splitNoteBlocks } from '../../../shared/note-blocks.mjs';
 
 export function escapeNoteText(text) {
     return String(text ?? '')
