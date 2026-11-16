@@ -12,7 +12,7 @@ import { contrastRatio } from '../ui/contrast.mjs';
 import { renderDatePicker } from '../ui/date-picker.mjs';
 import { shiftMonth } from '../ui/dates.mjs';
 import { h } from '../ui/dom.mjs';
-import { renderCheckbox, renderTextField } from '../ui/field.mjs';
+import { renderCheckbox, renderSearchField, renderTextField } from '../ui/field.mjs';
 import { PISI_ICON_NAMES, icon } from '../ui/icons.mjs';
 import { renderCard, renderEmptyState, renderList, renderListRow } from '../ui/list.mjs';
 import { renderChoiceSheet, renderDialog, renderSheet } from '../ui/overlay.mjs';
@@ -388,7 +388,15 @@ export function mountGallery({ root, systemTheme }) {
                 ),
                 section(
                     'fields',
-                    'Metin alanı ve onay kutusu',
+                    'Metin alanı, arama ve onay kutusu',
+                    renderSearchField({
+                        id: 'gallery-search',
+                        label: 'Notlarda ara',
+                        placeholder: 'Notlarda ara',
+                        value: 'ışık',
+                        clearLabel: 'Aramayı temizle',
+                        onInput: () => {}
+                    }),
                     renderTextField({ id: 'gallery-title', label: 'Başlık', value: 'Haftalık plan' }),
                     renderTextField({ id: 'gallery-date', label: 'Tarih', placeholder: 'ör. yarın 14:00', hint: 'Türkçe tarih ve saat ifadelerini anlar.' }),
                     renderTextField({ id: 'gallery-error', label: 'Not adı', value: 'a/b', error: 'Ad “/” içeremez.' }),

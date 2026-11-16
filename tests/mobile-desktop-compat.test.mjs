@@ -13,6 +13,8 @@ import path from 'node:path';
 import test from 'node:test';
 import { createNodeFsDriver } from '../mobile/src/data/drivers/node-fs-driver.mjs';
 import { splitNoteBlocks } from '../mobile/src/data/note-blocks.mjs';
+import { inlineToHtml, parseInlineHtml } from '../mobile/src/data/note-inline.mjs';
+import { makeBlockHtml } from '../mobile/src/data/note-patch.mjs';
 import { createProject } from '../mobile/src/data/project-repo.mjs';
 import { parseTaskDraft } from '../mobile/src/screens/pisi/day-model.mjs';
 import { getTaskChoicePatch, getTaskDatePatch, getTaskReminderPatch, getTaskTimePatch, limitTaskPatch } from '../mobile/src/screens/tasks/task-edit.mjs';
@@ -411,6 +413,153 @@ test('Görevler sekmesi (M6): hızlı eklenen ve detayda düzenlenen görevler m
     assert.deepEqual(mobileView('today'), ['Egzersiz', 'Kitap listesi', 'Raporu gönder']);
     assert.deepEqual(mobileView('week'), ['Sunucu faturasını öde', 'her pazartesi 14:00 haftalık rapor', 'yarın 9.30 diş hekimi']);
     assert.deepEqual(mobileView('inbox'), ['25.12 yıl sonu raporu', 'Okuma listesini düzenle']);
+});
+
+test('Notlar (M7): editörün yamaları yalnız dokunulan blokları değiştirir; bilinmeyen bloklar ve değişmeyen notlar bayt bayt kalır', async (t) => {
+    const root = copyFixture(t);
+    // Masaüstünün ileride yazabileceği, mobilin tanımadığı bir blok ve bir link (bilinmeyeni koru, V3/V8).
+    const planKey = 'Proje Planı.node';
+    const planFile = path.join(root, planKey);
+    const plan = JSON.parse(fs.readFileSync(planFile, 'utf8'));
+    const future =
+        '<div class="pisi-editor-block pisi-callout" data-pisi-block-id="blk_future" data-pisi-block-type="callout" data-pisi-callout="warn">Gelecek</div>';
+    const link = '<a class="pisi-wiki-link" data-pisi-node-id="node_x" data-pisi-node-title="Toplantı Notları" contenteditable="false">Toplantı Notları</a>';
+    const planBlocks = splitNoteBlocks(plan.content);
+    plan.content =
+        planBlocks[0].html +
+        future +
+        planBlocks[1].html.replace(/>([^<]*)<\/div>$/, `>$1 ${link}</div>`) +
+        planBlocks
+            .slice(2)
+            .map((block) => block.html)
+            .join('');
+    fs.writeFileSync(planFile, JSON.stringify(plan, null, 2));
+    const baseline = issueKeys(desktopAudit(root));
+    const before = snapshot(root);
+    const meetingBefore = readJson(root, 'Toplantı Notları.node');
+    const planBefore = readJson(root, planKey);
+
+    const project = openMobile(root);
+    await project.open();
+    await project.index.build();
+    // Değişmeyen bir notu açıp kapatmak hiçbir şey yazmaz.
+    const inbox = await project.notes.read('Inbox.node');
+    assert.equal(inbox.blocks.filter((block) => block.editable).length, 0, 'görev blokları salt okunurdur');
+    const noop = await project.notes.updateContent('Inbox.node', [], { expectedContent: inbox.data.content });
+    assert.equal(noop.changed, false);
+
+    // Toplantı Notları: ilk paragraf başlık 2 olur ve kalın yazı alır; Sheet'ten hemen sonra (kimliği yok) bir madde,
+    // görselden sonra numaralı bir madde eklenir. Bunlar editörün takePatch() ile ürettiği işlemlerdir.
+    const meeting = await project.notes.read('Toplantı Notları.node');
+    const sheetAt = meeting.blocks.findIndex((block) => block.blockType === 'sheet');
+    const imageAt = meeting.blocks.findIndex((block) => block.blockType === 'image');
+    const bullet = makeBlockHtml('bullet', 'blk_11111111-1111-4111-8111-111111111111', 'Tablodan sonraki madde');
+    const number = makeBlockHtml('number', 'blk_22222222-2222-4222-8222-222222222222', 'Görselden sonra');
+    const edited = await project.notes.updateContent(
+        'Toplantı Notları.node',
+        [
+            {
+                op: 'replace',
+                index: 0,
+                blockId: meeting.blocks[0].blockId,
+                type: 'heading2',
+                html: inlineToHtml(parseInlineHtml('Gündem: <b>mobil</b> veri katmanı'))
+            },
+            { op: 'insert', afterIndex: sheetAt, html: bullet },
+            { op: 'insert', afterIndex: imageAt, html: number }
+        ],
+        { expectedContent: meeting.data.content }
+    );
+    // Proje Planı: linkli paragrafta yalnız metin değişir, link karakter karakter kalır.
+    const planNote = await project.notes.read(planKey);
+    const linked = planNote.blocks.find((block) => block.inner?.includes('pisi-wiki-link'));
+    assert.equal(linked.editable, true);
+    const futureBlock = planNote.blocks.find((block) => block.blockId === 'blk_future');
+    assert.deepEqual([futureBlock.blockType, futureBlock.editable], ['unknown', false]);
+    const nodes = parseInlineHtml(linked.inner);
+    nodes[0] = { type: 'text', text: `Mobilde: ${nodes[0].text}` };
+    await project.notes.updateContent(
+        planKey,
+        [{ op: 'replace', index: planNote.blocks.indexOf(linked), blockId: linked.blockId, html: inlineToHtml(nodes) }],
+        {
+            expectedContent: planNote.data.content
+        }
+    );
+    // Başlığı ve biçimli blokları olan yeni not.
+    const created = await project.notes.create({
+        title: 'Mobil Liste',
+        blocks: [
+            { type: 'heading1', text: 'Alışveriş' },
+            { type: 'bullet', text: 'Süt' },
+            { type: 'number', text: 'Ekmek' },
+            { type: 'paragraph', text: 'Not: <ucuz> olanı al' }
+        ]
+    });
+    await project.flush();
+    assert.ok(edited.changed && created.ok);
+
+    // Masaüstü denetimi yeni bulgu bulmuyor; yalnız düzenlenen ve oluşturulan notlar değişti.
+    assert.deepEqual(
+        issueKeys(desktopAudit(root)).filter((key) => !baseline.includes(key)),
+        []
+    );
+    assert.deepEqual(changedFiles(before, snapshot(root)), ['Mobil Liste.node', planKey, 'Toplantı Notları.node']);
+
+    // Toplantı Notları: yalnız ilk blok değişti, iki blok eklendi; Sheet, Paint, görsel ve dosya aynı.
+    const meetingAfter = readJson(root, 'Toplantı Notları.node');
+    assert.deepEqual(
+        { ...meetingAfter, content: '', pisi: { ...meetingAfter.pisi, updatedAt: '' } },
+        { ...meetingBefore, content: '', pisi: { ...meetingBefore.pisi, updatedAt: '' } }
+    );
+    const beforeHtml = splitNoteBlocks(meetingBefore.content).map((block) => block.html);
+    const expected = [...beforeHtml];
+    expected[0] = beforeHtml[0]
+        .replace('<div class="pisi-editor-block"', '<h2 class="pisi-editor-block"')
+        .replace('data-pisi-block-type="paragraph"', 'data-pisi-block-type="heading2"')
+        .replace('Gündem: mobil veri katmanı</div>', 'Gündem: <b>mobil</b> veri katmanı</h2>');
+    expected.splice(imageAt + 1, 0, number);
+    expected.splice(sheetAt + 1, 0, bullet);
+    assert.deepEqual(
+        splitNoteBlocks(meetingAfter.content).map((block) => block.html),
+        expected
+    );
+    // Yeni bloklar masaüstü editörünün makePisiBlockHtml biçimindedir ve mobil tarafından düzenlenebilir okunur.
+    assert.deepEqual(
+        splitNoteBlocks(meetingAfter.content)
+            .filter((block) => block.editable)
+            .map((block) => block.blockType),
+        ['heading2', 'paragraph', 'bullet', 'number', 'paragraph']
+    );
+
+    // Proje Planı: bilinmeyen blok ve link aynen; yalnız linkli paragrafın metni değişti.
+    const planAfter = readJson(root, planKey);
+    assert.ok(planAfter.content.includes(future));
+    assert.ok(planAfter.content.includes(` ${link}</div>`));
+    assert.equal(
+        planAfter.content,
+        planBefore.content.replace(linked.html, linked.html.replace(`>${nodes[0].text.slice('Mobilde: '.length)}`, `>${nodes[0].text}`))
+    );
+
+    // Yeni not: başlık, liste ve kaçışlı metin masaüstü biçiminde.
+    const list = readJson(root, 'Mobil Liste.node');
+    assert.deepEqual(
+        splitNoteBlocks(list.content).map((block) => [block.tag, block.blockType, block.editable, block.inner]),
+        [
+            ['h1', 'heading1', true, 'Alışveriş'],
+            ['div', 'bullet', true, 'Süt'],
+            ['div', 'number', true, 'Ekmek'],
+            ['div', 'paragraph', true, 'Not: &lt;ucuz&gt; olanı al']
+        ]
+    );
+    assert.doesNotMatch(list.content + meetingAfter.content + planAfter.content, /data-block-id|pisi-note-|blob:|data-type=/);
+
+    // Dosya editör açıkken başka yerden değiştiyse yama uygulanmaz.
+    const stale = meeting.data.content;
+    await assert.rejects(project.notes.updateContent('Toplantı Notları.node', [{ op: 'remove', index: 1 }], { expectedContent: stale }), {
+        code: 'NOTE_CHANGED'
+    });
+    await project.flush();
+    assert.equal(readJson(root, 'Toplantı Notları.node').content, meetingAfter.content);
 });
 
 test('(f) bozuk tasks.json ezilmez: mobil dosyayı salt okunur sayar ve yazmayı reddeder', async (t) => {

@@ -288,3 +288,11 @@
         animation: none;
     }
 }
+
+/* A sheet that asks for something: a field and the button that confirms it. */
+.pisi-sheet-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pisi-space-4);
+    padding-top: var(--pisi-space-2);
+}

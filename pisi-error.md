@@ -193,6 +193,26 @@ Ayrıca ayrıştırıcının tekrar ifadeleri sınırlıdır: `her gün`, `her p
 tekrar görev detayından seçilebilir). Düzeltme `shared/` içinde yapılır ve
 masaüstünü de değiştirir.
 
+## 5f. Mobilde bazı masaüstü paragrafları salt okunur kart olarak görünüyor
+
+**[Düşük · mobil · doğrulandı, çözülmedi]**
+Mobil not editörü (M7) bir metin bloğunu ancak içindeki her şeyi aynen geri
+yazabildiğinde düzenler: düz metin, satır sonu, `b/strong/i/em/u/s` etiketleri
+(özniteliksiz) ve linkler. Masaüstü editörü kalın, italik, renk gibi biçimleri
+bazen `<span class="pisi-inline-command-style" style="…">` olarak yazar
+(`renderer/editor/pisi-editor-command-authority.mjs`). Böyle bir span içeren
+paragraf, başlık ya da madde mobilde "Masaüstünde düzenlenir" kartı olarak
+gösterilir; metni okunur ama değiştirilemez. Veri kaybı yoktur: blok bayt bayt
+korunur (V8). Aynı durum başlık 4–5, alıntı, kod, girintili alt maddeleri
+kapalı (`pisi-bullet-collapsed`) maddeler ve tanınmayan HTML varlıkları
+(`&eacute;` gibi) için de geçerlidir.
+
+Mobilde ayrıca madde girintisi değiştirilemez (Tab yok; mevcut girinti
+korunur), web bağlantıları açılmaz (wiki-link'ler açılır) ve Sheet bloğunun
+hücreleri gösterilmez. Çözüm için önce bu biçimlerin güvenli okunup yazılması
+`mobile/src/data/note-blocks.mjs` ve `note-inline.mjs` içinde genişletilmeli,
+uyumluluk testi (`tests/mobile-desktop-compat.test.mjs`) buna göre büyütülmelidir.
+
 ## 6. Güncel doğrulama snapshot’ı
 
 6 Ekim 2026 current `main` kontrolü:

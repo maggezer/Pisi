@@ -6,8 +6,8 @@ import { getPisiTodayIsoDate } from '../../../shared/task-model.mjs';
 import { PISI_LANGUAGES, createI18n, detectLanguage } from '../i18n/index.mjs';
 import { renderCalendarScreen } from '../screens/calendar/index.mjs';
 import { renderMapsScreen } from '../screens/maps/index.mjs';
-import { renderNotesScreen } from '../screens/notes/index.mjs';
-import { renderNoteScreen } from '../screens/notes/note.mjs';
+import { createNotesScreen } from '../screens/notes/index.mjs';
+import { createNoteScreen } from '../screens/notes/note.mjs';
 import { createPisiScreen } from '../screens/pisi/index.mjs';
 import { renderSettingsScreen } from '../screens/settings/index.mjs';
 import { createTasksScreen } from '../screens/tasks/index.mjs';
@@ -22,7 +22,6 @@ import { PISI_HOME_TAB, PISI_TABS, createRouter } from './router.mjs';
 import { PISI_THEME_BACKGROUNDS, resolveTheme } from './theme.mjs';
 
 const TAB_SCREENS = Object.freeze({
-    notes: renderNotesScreen,
     calendar: renderCalendarScreen,
     maps: renderMapsScreen
 });
@@ -53,9 +52,10 @@ export function createApp({
     let focusedOverlay = null;
     let focusedDepth = 0;
     let destroyed = false;
-    // The chrome of the Pisi tab and of the Tasks tab while that tab is on screen; it is kept between redraws.
+    // The chrome of the Pisi tab, and of a screen that is built once (Tasks, Notes, a note), while it is on
+    // screen; it is kept between redraws so that what is being typed keeps its focus.
     let home = null;
-    let tasksShell = null;
+    let kept = null;
     // What Settings shows about the project; `counts` is null until the files have been read.
     const projectState = { counts: null, readOnlyFiles: [] };
     const view = root.ownerDocument.defaultView;
@@ -72,7 +72,7 @@ export function createApp({
         getContext: () => ({ t: i18n.t, locale: i18n.locale, today }),
         onOpenOverlay: (overlay) => router.openOverlay(overlay),
         onCloseOverlay: () => closeOverlay(),
-        onOpenNote: (note) => navigate(() => router.openNote(note))
+        onOpenNote: (note) => openNote(note)
     });
 
     // The start screen and the Tasks tab are built once and updated in place.
@@ -100,8 +100,33 @@ export function createApp({
         onOpenOverlay: (overlay) => router.openOverlay(overlay),
         onCloseOverlay: () => closeOverlay()
     });
+    const openNote = (note) => navigate(() => router.openNote(note));
+    const notesScreen = createNotesScreen({
+        project,
+        snackbar,
+        onOpenNote: openNote,
+        onOpenOverlay: (overlay) => router.openOverlay(overlay),
+        onCloseOverlay: () => closeOverlay(),
+        onError
+    });
+    const noteScreen = createNoteScreen({
+        project,
+        tasks,
+        snackbar,
+        setTimer: (callback, delay) => view.setTimeout(callback, delay),
+        clearTimer: (timer) => view.clearTimeout(timer),
+        onOpenTask: taskSheets.open,
+        onOpenNote: openNote,
+        // A diary day edited as a note is the same file the Pisi tab shows.
+        onSaved: (key) => key.startsWith('diary/') && void pisi.reload(),
+        onError
+    });
     const openerOf = (overlay) =>
-        taskSheets.getOverlayOpener(overlay) ?? tasksScreen.getOverlayOpener(overlay) ?? pisi.getOverlayOpener(overlay) ?? `[data-setting="${overlay}"]`;
+        taskSheets.getOverlayOpener(overlay) ??
+        tasksScreen.getOverlayOpener(overlay) ??
+        notesScreen.getOverlayOpener(overlay) ??
+        pisi.getOverlayOpener(overlay) ??
+        `[data-setting="${overlay}"]`;
 
     async function refreshProject() {
         await project.index.build();
@@ -204,7 +229,9 @@ export function createApp({
                 }
             });
         }
-        return taskSheets.renderOverlay(overlay, state.overlays, render) ?? tasksScreen.renderOverlay(overlay) ?? pisi.renderOverlay(overlay);
+        // The Notes tab is always asked, so that it lets go of its sheet once that has closed.
+        const notesSheet = notesScreen.renderOverlay(overlay);
+        return taskSheets.renderOverlay(overlay, state.overlays, render) ?? tasksScreen.renderOverlay(overlay) ?? notesSheet ?? pisi.renderOverlay(overlay);
     }
 
     function render() {
@@ -223,8 +250,20 @@ export function createApp({
             onBack: handleBack
         };
 
+        // A screen that is built once: its shell is made when it comes on screen and only its layer is replaced after that.
+        const keep = (key, title, screen, layer) => {
+            screen.update(context);
+            if (kept?.key !== key || kept.t !== i18n.t) {
+                kept = { key, t: i18n.t, ...createShell({ ...chrome, title, inSubScreen: Boolean(subScreen), body: screen.element }) };
+                root.replaceChildren(kept.element);
+                screen.attach?.(kept.element.querySelector('.pisi-main'));
+            }
+            kept.setLayer(typeof layer === 'function' ? layer() : layer);
+            focusAfterDraw(state);
+        };
+
         if (state.tab === PISI_HOME_TAB && !subScreen) {
-            tasksShell = null;
+            kept = null;
             pisi.update(context);
             if (!home) {
                 home = renderHomeShell({ body: pisi.element });
@@ -237,35 +276,31 @@ export function createApp({
         }
         home = null;
 
-        if (state.tab === 'tasks' && !subScreen) {
-            tasksScreen.update(context);
-            if (tasksShell?.t !== i18n.t) {
-                tasksShell = { t: i18n.t, ...createShell({ ...chrome, title: i18n.t('tab.tasks'), inSubScreen: false, body: tasksScreen.element }) };
-                root.replaceChildren(tasksShell.element);
-                tasksScreen.attach();
-            }
-            tasksShell.setLayer({ sheet, snackbar: snack });
-            focusAfterDraw(state);
-            return;
+        if (subScreen === 'note') {
+            const title = state.note.title || i18n.t('screen.note');
+            context.note = state.note;
+            return keep(`note:${state.note.path ?? ''}:${title}`, title, noteScreen, { sheet, snackbar: snack });
         }
-        tasksShell = null;
+        if (state.tab === 'tasks' && !subScreen) return keep('tasks', i18n.t('tab.tasks'), tasksScreen, { sheet, snackbar: snack });
+        if (state.tab === 'notes' && !subScreen) {
+            return keep('notes', i18n.t('tab.notes'), notesScreen, () => ({ sheet, snackbar: snack, fab: sheet ? null : notesScreen.renderFab() }));
+        }
+        kept = null;
 
         const body =
-            subScreen === 'note'
-                ? renderNoteScreen({ ...context, note: state.note })
-                : subScreen === 'settings'
-                  ? renderSettingsScreen({
-                        ...context,
-                        themePreference: preferences.getTheme(),
-                        language: i18n.language,
-                        openOverlay: router.openOverlay,
-                        project: project ? projectState : null,
-                        developer: Boolean(loadSample),
-                        onLoadSample: handleLoadSample
-                    })
-                  : TAB_SCREENS[state.tab](context);
+            subScreen === 'settings'
+                ? renderSettingsScreen({
+                      ...context,
+                      themePreference: preferences.getTheme(),
+                      language: i18n.language,
+                      openOverlay: router.openOverlay,
+                      project: project ? projectState : null,
+                      developer: Boolean(loadSample),
+                      onLoadSample: handleLoadSample
+                  })
+                : TAB_SCREENS[state.tab](context);
 
-        const title = subScreen === 'note' ? i18n.t('screen.note') : subScreen === 'settings' ? i18n.t('screen.settings') : i18n.t(`tab.${state.tab}`);
+        const title = subScreen === 'settings' ? i18n.t('screen.settings') : i18n.t(`tab.${state.tab}`);
         root.replaceChildren(renderShell({ ...chrome, title, inSubScreen: Boolean(subScreen), body, sheet, snackbar: snack }));
 
         focusAfterDraw(state);
@@ -301,10 +336,10 @@ export function createApp({
         platform.onBackButton(handleBack),
         platform.onPause(() => lifecycle.flush()),
         platform.onResume(handleResume),
-        // Diary text still waiting and writes still in the queue are finished when the app pauses,
-        // the screen changes or back is pressed (§3.3). The diary goes first so that its write is in the queue.
+        // Diary and note text still waiting and writes still in the queue are finished when the app pauses,
+        // the screen changes or back is pressed (§3.3). The text goes first so that its write is in the queue.
         lifecycle.registerFlush(async () => {
-            await pisi.flush();
+            await Promise.all([pisi.flush(), noteScreen.flush()]);
             await project?.flush();
         })
     ];
@@ -325,6 +360,8 @@ export function createApp({
             snackbar.dismiss();
             pisi.destroy();
             tasksScreen.destroy();
+            notesScreen.destroy();
+            noteScreen.destroy();
             tasks.destroy();
             for (const stop of stops) stop?.();
             root.replaceChildren();

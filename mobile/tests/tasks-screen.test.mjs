@@ -454,8 +454,8 @@ describe('Görev detayı', () => {
         tap('[data-task-field="source"]');
         expect($('[role="dialog"]')).toBe(null);
         expect(app.router.getState()).toMatchObject({ tab: 'tasks', stack: ['note'], note: { path: 'Ev.node', title: 'Ev' } });
-        expect($('[data-screen="note"] .pisi-empty-title').textContent).toBe('Ev');
-        expect($('.pisi-header-title').textContent).toBe('Not');
+        expect($('[data-screen="note"]')).not.toBe(null);
+        expect($('.pisi-header-title').textContent).toBe('Ev');
         platform.pressBack();
         expect($('[data-screen="tasks"]')).not.toBe(null);
         expect($('[data-view="overdue"]').getAttribute('aria-pressed')).toBe('true');

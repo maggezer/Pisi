@@ -14,6 +14,7 @@ const browserGlobals = {
     console: 'readonly',
     document: 'readonly',
     Event: 'readonly',
+    InputEvent: 'readonly',
     MutationObserver: 'readonly',
     performance: 'readonly',
     getComputedStyle: 'readonly',
@@ -21,7 +22,9 @@ const browserGlobals = {
     window: 'readonly',
     Intl: 'readonly',
     Node: 'readonly',
-    URLSearchParams: 'readonly'
+    URLSearchParams: 'readonly',
+    TextEncoder: 'readonly',
+    btoa: 'readonly'
 };
 
 const nodeGlobals = { console: 'readonly', process: 'readonly', setTimeout: 'readonly', clearTimeout: 'readonly', indexedDB: 'readonly' };

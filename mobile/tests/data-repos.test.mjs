@@ -140,7 +140,7 @@ describe('NoteRepo ve proje indeksi', () => {
         const before = JSON.parse(original);
         const after = parse(driver, 'Toplantı.node');
 
-        expect(result).toEqual({ ok: true, changed: true, key: 'Toplantı.node' });
+        expect(result).toEqual({ ok: true, changed: true, key: 'Toplantı.node', content: paragraph('blk_a', 'Yeni gündem') + SHEET });
         expect(Object.keys(after)).toEqual(Object.keys(before));
         expect(after).toEqual({ ...before, pisi: { ...before.pisi, updatedAt: NOW.toISOString() }, content: paragraph('blk_a', 'Yeni gündem') + SHEET });
         expect(driver.snapshot()['Toplantı.node']).toBe(json(after));

@@ -27,6 +27,13 @@ export function createMemoryDriver(initialFiles = {}) {
             return file.text;
         },
 
+        /** A file's bytes as base64. Files here are text unless a test stored bytes with `putBase64`. */
+        async readBase64(key) {
+            const file = files.get(normalizeKey(key));
+            if (!file) throw notFound(key);
+            return file.base64 ?? btoa(String.fromCharCode(...new TextEncoder().encode(file.text)));
+        },
+
         async writeText(key, text) {
             const clean = normalizeKey(key);
             if (!clean || directories.has(clean)) throw new PisiStorageError('NOT_A_FILE', `Not a file: ${key}`, key);
@@ -78,6 +85,13 @@ export function createMemoryDriver(initialFiles = {}) {
         /** Removes one file. Missing files are fine; directories are never removed. */
         async remove(key) {
             files.delete(normalizeKey(key));
+        },
+
+        /** Test helper: stores a binary file (an image in a sidecar folder) from its base64. */
+        putBase64(key, base64) {
+            const clean = normalizeKey(key);
+            put(clean, '');
+            files.get(clean).base64 = String(base64);
         },
 
         /** Test helper: every file as `{ key: text }`. */

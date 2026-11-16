@@ -18,7 +18,7 @@ export function spyDriver(driver) {
     const calls = [];
     const failures = new Map();
     const wrapped = {};
-    for (const name of ['readText', 'writeText', 'rename', 'list', 'stat', 'mkdir', 'exists', 'remove']) {
+    for (const name of ['readText', 'readBase64', 'writeText', 'rename', 'list', 'stat', 'mkdir', 'exists', 'remove']) {
         wrapped[name] = async (...args) => {
             calls.push([name, ...args.slice(0, name === 'writeText' ? 1 : 2)]);
             if (failures.has(name)) throw failures.get(name);
@@ -30,6 +30,7 @@ export function spyDriver(driver) {
         count: (name) => calls.filter(([call]) => call === name).length,
         failOn: (name, error = new Error(`${name} failed`)) => failures.set(name, error),
         heal: () => failures.clear(),
+        putBase64: (key, base64) => driver.putBase64(key, base64),
         snapshot: () => driver.snapshot()
     });
 }

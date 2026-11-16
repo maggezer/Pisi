@@ -22,6 +22,7 @@ export function createNodeFsDriver(rootFolder) {
 
     return {
         readText: (key) => guard(key, () => fs.readFile(resolve(key), 'utf8')),
+        readBase64: (key) => guard(key, async () => (await fs.readFile(resolve(key))).toString('base64')),
         writeText: (key, text) => guard(key, () => fs.writeFile(resolve(key), String(text), 'utf8')),
         rename: (from, to) => guard(from, () => fs.rename(resolve(from), resolve(to))),
 
