@@ -1,5 +1,70 @@
 # PISI Güncelleme Takip Dosyası
 
+## 16-11-2026 — Pisi Mobil: Notlar (M7, mobil iş)
+
+- Bu bir mobil iştir (`docs/mobile-plan.md` M7; G7, G8, G9, G10). Masaüstü
+  koduna ve `shared/` klasörüne dokunulmadı; kökte yalnız
+  `tests/mobile-desktop-compat.test.mjs` genişledi. Dosya biçimi değişmedi.
+- **Notlar sekmesi** yer tutucu olmaktan çıktı (`mobile/src/screens/notes/`).
+  Bir kez kurulur ve yerinde güncellenir.
+    - Arama başlıkta ve düz metinde, masaüstünün katlama kuralıyla
+      (`shared/search-text.mjs`) yapılır; başlık eşleşmeleri önce gelir.
+    - Filtre: Tümü, Notlar, Günlükler. Sıralama son değişikliğe göredir.
+    - Liste yalnız ekrana yakın satırları çizer (`ui/virtual-list.mjs`); 2.000
+      notta da birkaç düzine kart vardır. Satır yüksekliği rem ile verildiği
+      için yazı boyutu %130 olduğunda da hizalı kalır.
+    - Kart sadedir: başlık, iki satır önizleme, değiştiği gün ve günlükse
+      "Günlük" etiketi. Önizlemede bloklar boşlukla ayrılır (G7); sabitleme ve
+      süs yoktur (G8).
+    - "Yeni not" düğmesi başlık sorar; boş başlıkla not oluşmaz. Not masaüstü
+      kurallarıyla (`shared/document-naming`, `ids`) oluşur ve açılır.
+- **Not ekranı** (`note.mjs`, `note-editor.mjs`): paragraf, başlık 1–3, madde
+  ve numaralı madde blokları yerinde düzenlenir. Her blok ayrı bir düzenleme
+  alanıdır; Enter bloğu böler, boş maddede Enter listeyi bitirir, satır
+  başında silme başlığı/maddeyi paragrafa çevirir ya da paragrafı üstteki
+  düzenlenebilir blokla birleştirir. Korunan bir blok asla silinmez veya
+  birleştirilmez. Yapıştırılan metin düz metin olarak girer.
+    - Diğer bütün bloklar (Sheet, Paint, görsel, dosya, alıntı, kod, rollup,
+      bilinmeyen) "Masaüstünde düzenlenir" kartıdır; HTML'leri bayt bayt kalır
+      (V8). Görsel ve Paint çizimi notun sidecar klasöründen okunup `data:`
+      adresiyle gösterilir; bu adres hiçbir yere yazılmaz.
+    - Görev blokları görev satırıdır: durum `tasks.json`'dan gelir, kutu ve
+      detay `TaskRepo` üzerinden değiştirir; not dosyası değişmez.
+    - Wiki-link'e dokununca hedef not açılır. Link HTML'i düzenlenen
+      paragrafta da karakter karakter korunur.
+    - Günlük notunda masaüstünün görev bölümü ve "Görevler" başlığı
+      düzenlenmez. Not olarak düzenlenen günlük, Pisi sekmesindeki günlükle
+      aynı dosyadır ve o sekme yeniden okunur.
+    - Kayıt yazma durduktan 600 ms sonra; duraklatmada, geri tuşunda ve ekran
+      değişiminde hemen yapılır. Kayıt blok düzeyinde bir yamadır: yalnız
+      değişen, eklenen ve silinen bloklar yazılır, hiçbir şey değişmediyse
+      dosya yazılmaz (V4). Ekranın kendi sınıf ve öznitelikleri dosyaya
+      geçmez (V2). Yeni bloklar masaüstü editörünün `makePisiBlockHtml`
+      biçimindedir. Dosya editör açıkken başka yerden değiştiyse yama
+      uygulanmaz, not yeniden yüklenir.
+    - Mevcut notun başlığı salt okunurdur (V9).
+- **Araç çubuğu** (G10): kalın, italik, başlık (H1→H2→H3→paragraf), madde ve
+  numaralı liste. SVG ikonlar (Lucide `bold`, `italic`, `heading`, `list`,
+  `list-ordered`; kartlarda `monitor`), 48 dp dokunma alanı. Ekranın altında,
+  klavyenin hemen üstünde durur ve yalnız bir blok odaktayken görünür.
+- **Yazı ailesi** (G9): editör arayüzle aynı `--pisi-font` ailesini kullanır.
+- **Veri katmanı:** `note-blocks.mjs` başlık 1–3, madde, numaralı madde ve
+  link içeren paragrafları düzenlenebilir sayar; görsel, dosya, ayırıcı ve
+  günlük görev bölümünü kendi türüyle tanır. HTML okuma `html-tokens.mjs`'e,
+  yama `note-patch.mjs`'e (konumla hedefleme, tür değiştirme), satır içi
+  içerik `note-inline.mjs`'e ayrıldı. `NoteRepo.updateContent` artık
+  `expectedContent` alır ve diskteki içeriği döndürür; `readAsset` sidecar
+  görselini okur; `create` başlık/liste blokları alabilir. Sürücülere
+  `readBase64` eklendi.
+- Testler: `mobile/tests/data-blocks.test.mjs`, `note-screen.test.mjs`,
+  `notes-list.test.mjs`, `e2e/notes.spec.mjs` (not aç, düzenle, yeniden
+  başlat; masaüstünün fixture notu ve görseliyle korunan bloklar; açık ve koyu
+  tema ekran görüntüleri) ve kökte `tests/mobile-desktop-compat.test.mjs`
+  (değişmeyen not bayt bayt aynı, yalnız düzenlenen bloklar değişir,
+  bilinmeyen blok ve link korunur, Project Integrity yeni bulgu üretmez).
+- Yeni bilinen sınır: `pisi-error.md` §5f (masaüstünün span'li biçimleri olan
+  bloklar mobilde salt okunur; girinti değişmez; web linkleri açılmaz).
+
 ## 15-11-2026 — Pisi Mobil: Görevler sekmesi ve hızlı ekle (M6, mobil iş)
 
 - Bu bir mobil iştir (`docs/mobile-plan.md` M6; G6, G14). Masaüstünde yalnız

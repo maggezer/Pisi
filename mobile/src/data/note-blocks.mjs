@@ -4,91 +4,82 @@
 // replaces the slices of the blocks it names and copies every other slice.
 //
 // A segment is one top-level element, one comment or one run of text between
-// them. Editable segments are plain text blocks (paragraphs for now; M7 adds
-// headings and lists). Everything else is protected: Sheet, Paint/canvas,
-// image, file, rollup, diary-managed, task and unknown blocks.
+// them. Editable segments are plain text blocks: paragraphs, headings 1–3 and
+// the items of bulleted and numbered lists. Everything else is protected:
+// Sheet, Paint/canvas, image, file, rollup, diary-managed, task, quote, code
+// and unknown blocks. Patching is in note-patch.mjs.
+
+import { decodeEntities, hasOnlyKnownEntities, parseTagAttributes, walkTags } from './html-tokens.mjs';
 
 const VOID_TAGS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
-const INLINE_TAGS = new Set(['a', 'b', 'br', 'em', 'i', 's', 'strong', 'u']);
-const EDITABLE_TYPES = new Set(['paragraph']);
-const TAG_NAME = /^<\/?([A-Za-z][A-Za-z0-9-]*)/;
-
-/** End index (exclusive) of the tag that starts at `start`, honouring quoted attribute values; -1 when unterminated. */
-function findTagEnd(html, start) {
-    let quote = '';
-    for (let index = start + 1; index < html.length; index += 1) {
-        const char = html[index];
-        if (quote) {
-            if (char === quote) quote = '';
-        } else if (char === '"' || char === "'") {
-            quote = char;
-        } else if (char === '>') {
-            return index + 1;
-        }
-    }
-    return -1;
-}
-
-export function decodeEntities(value) {
-    return value
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;|&apos;/g, "'")
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&nbsp;/g, ' ')
-        .replace(/&amp;/g, '&');
-}
-
-/** Attributes of an opening tag as a plain object (values entity-decoded; valueless attributes are ''). */
-export function parseTagAttributes(openTag) {
-    const attributes = {};
-    const body = openTag.replace(/^<[A-Za-z][A-Za-z0-9-]*/, '').replace(/\/?>$/, '');
-    const pattern = /([^\s"'=<>/]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g;
-    for (let match = pattern.exec(body); match; match = pattern.exec(body)) {
-        const name = match[1].toLowerCase();
-        if (!(name in attributes)) attributes[name] = decodeEntities(match[2] ?? match[3] ?? match[4] ?? '');
-    }
-    return attributes;
-}
-
-/**
- * Walks the tags of `html` from `from`. Calls `onTag({ start, end, name, closing, selfClosing })`
- * for every tag and returns false when the markup cannot be followed (an
- * unterminated tag or comment).
- */
-function walkTags(html, onTag) {
-    let index = 0;
-    while (index < html.length) {
-        const open = html.indexOf('<', index);
-        if (open < 0) return true;
-        if (html.startsWith('<!--', open)) {
-            const close = html.indexOf('-->', open + 4);
-            if (close < 0) return false;
-            onTag({ start: open, end: close + 3, comment: true });
-            index = close + 3;
-            continue;
-        }
-        const name = TAG_NAME.exec(html.slice(open, open + 64));
-        if (!name) {
-            // A lone `<` in text.
-            index = open + 1;
-            continue;
-        }
-        const end = findTagEnd(html, open);
-        if (end < 0) return false;
-        onTag({ start: open, end, name: name[1].toLowerCase(), closing: html[open + 1] === '/', selfClosing: html[end - 2] === '/' });
-        index = end;
-    }
-    return true;
-}
-
-function htmlToText(html) {
+const FORMAT_TAGS = new Set(['b', 'em', 'i', 's', 'strong', 'u']);
+// The block types of the desktop editor (PISI_BLOCK_TYPES) and the tag each one is written with.
+const BLOCK_TAGS = Object.freeze({
+    paragraph: 'div',
+    heading1: 'h1',
+    heading2: 'h2',
+    heading3: 'h3',
+    heading4: 'h4',
+    heading5: 'h5',
+    quote: 'blockquote',
+    code: 'pre',
+    bullet: 'div',
+    number: 'div',
+    task: 'div',
+    rollup: 'div',
+    image: 'div',
+    file: 'div'
+});
+export const PISI_EDITABLE_BLOCK_TYPES = Object.freeze(['paragraph', 'heading1', 'heading2', 'heading3', 'bullet', 'number']);
+// State classes the desktop keeps on a list item; they do not stop mobile from editing its text.
+const LIST_STATE_CLASSES = new Set(['pisi-bullet-has-children']);
+const MANAGED_START = 'PISI_DIARY_MANAGED_START';
+const MANAGED_END = 'PISI_DIARY_MANAGED_END';
+export function htmlToText(html) {
     return decodeEntities(
         html
             .replace(/<!--[\s\S]*?-->/g, '')
             .replace(/<br\s*\/?>/gi, '\n')
             .replace(/<[^>]*>/g, '')
     );
+}
+
+/** The tag a block of `type` is written with by the desktop editor, or null for a type it does not have. */
+export const getBlockTag = (type) => BLOCK_TAGS[type] ?? null;
+
+/** The type the desktop editor gives a block: the named one, else what its tag says (getPisiBlockType). */
+function readBlockType(tag, attributes) {
+    const explicit = attributes['data-pisi-block-type'];
+    if (explicit) return explicit in BLOCK_TAGS ? explicit : 'unknown';
+    if (/^h[1-5]$/.test(tag)) return `heading${tag.slice(1)}`;
+    if (tag === 'blockquote') return 'quote';
+    if (tag === 'pre') return 'code';
+    return 'paragraph';
+}
+
+/**
+ * Whether the inside of a text block is something mobile can edit and write
+ * back: text, line breaks, bold/italic/underline/strike tags without
+ * attributes, and links. A link (`<a>`, a wiki link or a web link) is kept as
+ * it is, so it may carry any attribute but only text inside. A task tag, a
+ * styled span or anything else the desktop manages keeps the block protected.
+ */
+function isPlainInline(inner) {
+    if (!hasOnlyKnownEntities(inner)) return false;
+    let plain = true;
+    let inLink = false;
+    const followed = walkTags(inner, (token) => {
+        if (!plain) return;
+        if (token.comment) plain = false;
+        else if (token.name === 'a') {
+            if (token.closing !== inLink || token.selfClosing) plain = false;
+            inLink = !token.closing;
+        } else if (inLink) plain = false;
+        else if (token.name === 'br') plain = !token.closing;
+        else if (!FORMAT_TAGS.has(token.name)) plain = false;
+        else if (!token.closing && token.end - token.start !== token.name.length + 2) plain = false;
+    });
+    return plain && followed && !inLink;
 }
 
 function classify(segment) {
@@ -98,27 +89,51 @@ function classify(segment) {
             .split(/\s+/)
             .filter(Boolean)
     );
-    const type = attributes['data-pisi-block-type'] || (/^h[1-5]$/.test(tag) ? `heading${tag.slice(1)}` : 'paragraph');
+    const isBlock = classes.has('pisi-editor-block');
     segment.blockId = attributes['data-pisi-block-id'] || null;
-    segment.blockType = classes.has('pisi-editor-block') ? type : 'unknown';
+    segment.blockType = isBlock ? readBlockType(tag, attributes) : 'unknown';
 
     if (classes.has('pisi-sheet-block')) segment.blockType = 'sheet';
     else if (classes.has('pisi-canvas-block')) segment.blockType = 'canvas';
     else if (classes.has('pisi-diary-managed-block')) segment.blockType = 'diary-managed';
+    else if (classes.has('pisi-image-block')) segment.blockType = 'image';
+    else if (classes.has('pisi-file-block')) segment.blockType = 'file';
+    else if (isBlock && (classes.has('pisi-section-break') || /^\s*<hr\s*\/?>\s*$/i.test(inner))) segment.blockType = 'divider';
+    else if (isBlock && /pisi-todo-source|data-pisi-todo-status|pisi-block-task-marker/.test(inner)) segment.blockType = 'task';
 
-    let plain = tag === 'div' && classes.has('pisi-editor-block') && classes.size === 1 && Boolean(segment.blockId);
-    plain &&= EDITABLE_TYPES.has(segment.blockType) && !('contenteditable' in attributes);
-    if (plain) {
-        // Inside an editable block only simple inline formatting may appear. A
-        // task tag, a wiki link or anything else the desktop manages keeps the block protected.
-        const followed = walkTags(inner, (token) => {
-            if (token.comment || !INLINE_TAGS.has(token.name)) plain = false;
-            else if (!token.closing && /\s(?:data-|contenteditable|class|style|id)/i.test(inner.slice(token.start, token.end))) plain = false;
-        });
-        plain &&= followed;
+    if (segment.blockType === 'image') segment.asset = /\sdata-pisi-image-asset="([^"]+)"/.exec(inner)?.[1] ?? null;
+    if (segment.blockType === 'canvas') segment.asset = /\sdata-pisi-asset="([^"]+)"/.exec(inner)?.[1] ?? null;
+    if (segment.blockType === 'diary-managed') segment.taskId = attributes['data-pisi-task-id'] || null;
+
+    const ownClasses = [...classes].filter((name) => name !== 'pisi-editor-block' && !(segment.blockType === 'bullet' && LIST_STATE_CLASSES.has(name)));
+    segment.editable =
+        isBlock &&
+        Boolean(segment.blockId) &&
+        ownClasses.length === 0 &&
+        PISI_EDITABLE_BLOCK_TYPES.includes(segment.blockType) &&
+        tag === BLOCK_TAGS[segment.blockType] &&
+        !('contenteditable' in attributes) &&
+        isPlainInline(inner);
+}
+
+/**
+ * In a diary note the desktop keeps a task section between two comments, and
+ * the heading right above it belongs to that section. Nothing from that
+ * heading to the closing comment is edited on mobile.
+ */
+function protectDiarySection(segments) {
+    const start = segments.findIndex((segment) => segment.kind === 'comment' && segment.html.includes(MANAGED_START));
+    if (start < 0) return;
+    const closing = segments.findIndex((segment, index) => index > start && segment.kind === 'comment' && segment.html.includes(MANAGED_END));
+    const end = closing < 0 ? segments.length : closing;
+    for (let index = start; index < end; index += 1) segments[index].editable = false;
+    let before = start - 1;
+    while (before >= 0 && segments[before].kind === 'text' && !segments[before].html.trim()) before -= 1;
+    const heading = segments[before];
+    if (heading?.kind === 'element' && /^h[1-5]$/.test(heading.tag)) {
+        heading.editable = false;
+        heading.blockType = 'diary-heading';
     }
-    if (!plain && segment.blockType === 'paragraph' && /pisi-user-tag|pisi-todo-source/.test(inner)) segment.blockType = 'task';
-    segment.editable = plain;
 }
 
 /**
@@ -128,7 +143,7 @@ function classify(segment) {
  *
  * @returns {Array<{ kind: 'element'|'comment'|'text', html: string, start: number, end: number, tag?: string,
  *   attributes?: Record<string, string>, openTag?: string, closeTag?: string, inner?: string, blockId?: string|null,
- *   blockType?: string, editable: boolean }>}
+ *   blockType?: string, asset?: string|null, taskId?: string|null, editable: boolean }>}
  */
 export function splitNoteBlocks(html) {
     const content = String(html ?? '');
@@ -196,81 +211,8 @@ export function splitNoteBlocks(html) {
             : [];
     }
     pushText(content.length);
+    protectDiarySection(segments);
     return segments;
-}
-
-export function escapeNoteText(text) {
-    return String(text ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-}
-
-/** Inner HTML of a text block for plain text: escaped, with line breaks as `<br>`; an empty block holds one `<br>`. */
-export function textToBlockHtml(text) {
-    const html = escapeNoteText(String(text ?? '').replace(/\r\n?/g, '\n')).replace(/\n/g, '<br>');
-    return html || '<br>';
-}
-
-/** A new paragraph block as the desktop writes it. `blockId` comes from shared/ids.mjs (`blk_<uuid>`). */
-export function makeParagraphBlockHtml(blockId, innerHtml) {
-    return `<div class="pisi-editor-block" data-pisi-block-id="${blockId}" data-pisi-block-type="paragraph">${innerHtml}</div>`;
-}
-
-export class PisiBlockPatchError extends Error {
-    constructor(code, message) {
-        super(message);
-        this.name = 'PisiBlockPatchError';
-        this.code = code;
-    }
-}
-
-/**
- * Applies block operations to note HTML and returns the new HTML.
- * - `{ op: 'replace', blockId, html }`: new inner HTML for an editable block; its tag and attributes stay.
- * - `{ op: 'insert', afterBlockId, html }`: a complete new block after the named block (null: at the end).
- * - `{ op: 'remove', blockId }`: removes an editable block.
- * Naming a protected or missing block throws; nothing is applied partially.
- */
-export function applyBlockPatch(html, operations) {
-    const content = String(html ?? '');
-    const segments = splitNoteBlocks(content);
-    const byId = new Map();
-    for (const segment of segments) {
-        if (segment.kind === 'element' && segment.blockId && !byId.has(segment.blockId)) byId.set(segment.blockId, segment);
-    }
-    const replaced = new Map();
-    const after = new Map();
-    const appended = [];
-
-    const find = (blockId, mustBeEditable) => {
-        const segment = byId.get(blockId);
-        if (!segment) throw new PisiBlockPatchError('BLOCK_NOT_FOUND', `Block not found: ${blockId}`);
-        if (mustBeEditable && !segment.editable) throw new PisiBlockPatchError('BLOCK_PROTECTED', `Block is not editable on mobile: ${blockId}`);
-        return segment;
-    };
-
-    for (const operation of operations || []) {
-        if (operation.op === 'replace') {
-            const segment = find(operation.blockId, true);
-            replaced.set(segment, segment.openTag + String(operation.html) + segment.closeTag);
-        } else if (operation.op === 'remove') {
-            replaced.set(find(operation.blockId, true), '');
-        } else if (operation.op === 'insert') {
-            if (operation.afterBlockId === null || operation.afterBlockId === undefined) appended.push(String(operation.html));
-            else {
-                const anchor = find(operation.afterBlockId, false);
-                after.set(anchor, [...(after.get(anchor) || []), String(operation.html)]);
-            }
-        } else {
-            throw new PisiBlockPatchError('UNKNOWN_OPERATION', `Unknown block operation: ${operation.op}`);
-        }
-    }
-
-    return (
-        segments.map((segment) => (replaced.has(segment) ? replaced.get(segment) : segment.html) + (after.get(segment) || []).join('')).join('') +
-        appended.join('')
-    );
 }
 
 /**
@@ -283,8 +225,8 @@ export function getNotePlainText(html) {
     let managed = false;
     for (const segment of splitNoteBlocks(html)) {
         if (segment.kind === 'comment') {
-            if (segment.html.includes('PISI_DIARY_MANAGED_START')) managed = true;
-            else if (segment.html.includes('PISI_DIARY_MANAGED_END')) managed = false;
+            if (segment.html.includes(MANAGED_START)) managed = true;
+            else if (segment.html.includes(MANAGED_END)) managed = false;
             continue;
         }
         if (managed) continue;

@@ -122,6 +122,44 @@ const SHAPES = Object.freeze({
     inbox: [
         ['polyline', { points: '22 12 16 12 14 15 10 15 8 12 2 12' }],
         ['path', { d: 'M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z' }]
+    ],
+    // lucide: bold
+    bold: [['path', { d: 'M6 12h9a4 4 0 010 8H7a1 1 0 01-1-1V5a1 1 0 011-1h7a4 4 0 010 8' }]],
+    // lucide: italic
+    italic: [
+        ['line', { x1: '19', x2: '10', y1: '4', y2: '4' }],
+        ['line', { x1: '14', x2: '5', y1: '20', y2: '20' }],
+        ['line', { x1: '15', x2: '9', y1: '4', y2: '20' }]
+    ],
+    // lucide: heading
+    heading: [
+        ['path', { d: 'M18 20V4' }],
+        ['path', { d: 'M6 12H18' }],
+        ['path', { d: 'M6 20V4' }]
+    ],
+    // lucide: list
+    'list-bullet': [
+        ['path', { d: 'M3 5h.01' }],
+        ['path', { d: 'M3 12h.01' }],
+        ['path', { d: 'M3 19h.01' }],
+        ['path', { d: 'M8 5h13' }],
+        ['path', { d: 'M8 12h13' }],
+        ['path', { d: 'M8 19h13' }]
+    ],
+    // lucide: list-ordered
+    'list-number': [
+        ['path', { d: 'M11 5h10' }],
+        ['path', { d: 'M11 12h10' }],
+        ['path', { d: 'M11 19h10' }],
+        ['path', { d: 'M4 4h1v5' }],
+        ['path', { d: 'M4 9h2' }],
+        ['path', { d: 'M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02' }]
+    ],
+    // lucide: monitor
+    desktop: [
+        ['rect', { width: '20', height: '14', x: '2', y: '3', rx: '2' }],
+        ['line', { x1: '8', x2: '16', y1: '21', y2: '21' }],
+        ['line', { x1: '12', x2: '12', y1: '17', y2: '21' }]
     ]
 });
 

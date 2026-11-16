@@ -649,3 +649,80 @@ textarea.pisi-field-input {
 .pisi-day-dot-diary {
     border: 0.09375rem solid var(--pisi-muted);
 }
+
+/* ===== Search field ===== */
+
+.pisi-search {
+    display: flex;
+    align-items: center;
+    gap: var(--pisi-space-2);
+    min-height: var(--pisi-touch);
+    padding-inline-start: var(--pisi-space-3);
+    border: 1px solid var(--pisi-border);
+    border-radius: var(--pisi-radius-md);
+    background: var(--pisi-surface);
+}
+
+.pisi-search:focus-within {
+    outline: 0.1875rem solid var(--pisi-accent-text);
+    outline-offset: -1px;
+}
+
+.pisi-search > .pisi-icon {
+    color: var(--pisi-muted);
+}
+
+.pisi-search-input {
+    flex: 1;
+    min-width: 0;
+    min-height: var(--pisi-touch);
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    appearance: none;
+}
+
+.pisi-search-input::placeholder {
+    color: var(--pisi-muted);
+    opacity: 1;
+}
+
+.pisi-search-input::-webkit-search-cancel-button {
+    appearance: none;
+}
+
+.pisi-search-clear {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: var(--pisi-touch);
+    height: var(--pisi-touch);
+    border: 0;
+    border-radius: var(--pisi-radius-md);
+    background: transparent;
+    color: var(--pisi-muted);
+}
+
+/* ===== Virtual list: every row is --pisi-virtual-row tall; only the rows near the screen exist ===== */
+
+.pisi-virtual {
+    position: relative;
+    height: calc(var(--pisi-virtual-count, 0) * var(--pisi-virtual-row));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pisi-virtual-row {
+    position: absolute;
+    top: calc(var(--pisi-virtual-index, 0) * var(--pisi-virtual-row));
+    right: 0;
+    left: 0;
+    height: var(--pisi-virtual-row);
+}
+
+.pisi-virtual-probe {
+    visibility: hidden;
+}

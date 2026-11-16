@@ -40,6 +40,18 @@ export function createCapacitorFsDriver({ root = PISI_PROJECT_ROOT, filesystem =
     return {
         readText: (key) => guard(key, async () => String((await filesystem.readFile({ ...at(key), encoding: Encoding.UTF8 })).data)),
 
+        /** A file's bytes as base64 (the plugin's own form for a file read without an encoding). */
+        readBase64: (key) =>
+            guard(key, async () => {
+                const { data } = await filesystem.readFile(at(key));
+                if (typeof data === 'string') return data;
+                // In a browser the plugin may hand back a Blob.
+                const bytes = new Uint8Array(await data.arrayBuffer());
+                let binary = '';
+                for (let index = 0; index < bytes.length; index += 0x8000) binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
+                return btoa(binary);
+            }),
+
         async writeText(key, text) {
             try {
                 await filesystem.writeFile({ ...at(key), data: String(text), encoding: Encoding.UTF8 });

@@ -16,15 +16,17 @@ import {
 import { formatPisiBlockId, formatPisiDocumentId } from '../../../shared/ids.mjs';
 import { joinKey } from './drivers/keys.mjs';
 import { PisiReadOnlyError, parseJsonText, readJsonFile, serializeDocument } from './json-file.mjs';
-import { applyBlockPatch, decodeEntities, makeParagraphBlockHtml, splitNoteBlocks, textToBlockHtml } from './note-blocks.mjs';
+import { decodeEntities } from './html-tokens.mjs';
+import { splitNoteBlocks } from './note-blocks.mjs';
+import { applyBlockPatch, makeParagraphBlockHtml, textToBlockHtml } from './note-patch.mjs';
 import { textToParagraphs } from './note-repo.mjs';
 
 const MARKER_KEY = joinKey(PISI_DIARY_FOLDER, PISI_DIARY_MARKER_FILE);
 const MANAGED_START = 'PISI_DIARY_MANAGED_START';
 
-/** Text of a block that holds only text and line breaks, or null when it holds anything else. */
+/** Text of a paragraph that holds only text and line breaks, or null when the block is anything else. */
 function plainBlockText(segment) {
-    if (!segment.editable || /<(?!br\s*\/?>)/i.test(segment.inner)) return null;
+    if (!segment.editable || segment.blockType !== 'paragraph' || /<(?!br\s*\/?>)/i.test(segment.inner)) return null;
     return decodeEntities(segment.inner.replace(/<br\s*\/?>/gi, '\n')).replace(/\n+$/, '');
 }
 

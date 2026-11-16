@@ -4,7 +4,8 @@
 
 The icons in `src/ui/icons.mjs` are copied from [Lucide](https://lucide.dev) (`lucide-static` 1.73.0):
 `cat`, `list-todo`, `file-text`, `calendar-days`, `waypoints`, `settings`, `arrow-left`, `x`, `plus`, `check`,
-`chevron-right`, `search`, `undo-2`, `inbox`, `menu`, `chevron-down`, `chevron-left`, `repeat` and `clock`.
+`chevron-right`, `search`, `undo-2`, `inbox`, `menu`, `chevron-down`, `chevron-left`, `repeat`, `clock`, `bold`, `italic`,
+`heading`, `list`, `list-ordered` and `monitor`.
 
 ```text
 ISC License
@@ -24,7 +25,8 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ```
 
-Of these, `arrow-left`, `check`, `chevron-down`, `chevron-left`, `chevron-right`, `clock`, `menu`, `plus`, `repeat`, `search` and `x` are derived from the Feather project:
+Of these, `arrow-left`, `bold`, `check`, `chevron-down`, `chevron-left`, `chevron-right`, `clock`, `italic`, `list`, `menu`, `monitor`, `plus`,
+`repeat`, `search` and `x` are derived from the Feather project:
 
 ```text
 The MIT License (MIT)

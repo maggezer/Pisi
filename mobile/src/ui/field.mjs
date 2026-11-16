@@ -1,4 +1,4 @@
-// Form controls: text field and checkbox.
+// Form controls: text field, search field and checkbox.
 
 import { h } from './dom.mjs';
 import { icon } from './icons.mjs';
@@ -25,6 +25,39 @@ export function renderTextField({ id, label, value = '', placeholder = null, hin
         control,
         noteId ? h('p', { class: error ? 'pisi-field-error' : 'pisi-field-hint', id: noteId }, error || hint) : null
     );
+}
+
+/**
+ * A search line: a magnifier, the input and, while there is text, a button
+ * that clears it. `label` names the input for screen readers.
+ */
+export function renderSearchField({ id, label, placeholder = null, value = '', clearLabel, onInput }) {
+    const input = h('input', {
+        id,
+        class: 'pisi-search-input',
+        type: 'search',
+        'aria-label': label,
+        placeholder,
+        value,
+        enterkeyhint: 'search',
+        autocomplete: 'off'
+    });
+    const clear = h(
+        'button',
+        { type: 'button', class: 'pisi-search-clear', 'aria-label': clearLabel, hidden: !value, dataset: { action: 'clear-search' } },
+        icon('close')
+    );
+    const changed = () => {
+        clear.hidden = !input.value;
+        onInput(input.value);
+    };
+    input.addEventListener('input', changed);
+    clear.addEventListener('click', () => {
+        input.value = '';
+        changed();
+        input.focus();
+    });
+    return h('div', { class: 'pisi-search' }, icon('search'), input, clear);
 }
 
 /**
