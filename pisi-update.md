@@ -1,5 +1,26 @@
 # PISI Güncelleme Takip Dosyası
 
+## 16-11-2026 — Kararsız E2E: "Promise was collected" (P2, eksik 2)
+
+`main` üzerinde Electron E2E ara ara `Error: Promise was collected` ile
+düşüyordu; son örnek `electron-mobile-fixture-e2e.mjs`. Uygulama kodu
+değişmedi.
+
+- **Neden:** Betikler CDP `Runtime.evaluate` çağrısını `awaitPromise: true`
+  ile yapıyor. V8 denetçisi dönen sözü yalnız zayıf referansla tutar. Renderer
+  fonksiyonu IPC (contextBridge sözü) beklerken araya bir GC girerse söz
+  toplanıyor, CDP de fonksiyon sonradan başarıyla bitse bile hata veriyordu.
+  Yerelde yeniden üretildi: ikinci günlük gününü açan `openCenterNodeEditor`
+  çağrısı `true` döndürdüğü hâlde 10 çalışmanın 2–3'ünde düştü.
+- **Düzeltme:** `scripts/e2e-cdp.mjs` içindeki `keepPagePromise`, ifadenin
+  döndürdüğü sözü çözülene kadar sayfada bir kümede tutuyor. `awaitPromise`
+  kullanan 21 E2E/performans betiğinin CDP istemcisi bunu kullanıyor. Deyim
+  listesi (`a; b`) gönderen çağrılar değişmeden gider.
+- **Test:** `tests/e2e-cdp-keep-promise.test.mjs` yardımcıyı doğrudan sınıyor.
+  `electron-mobile-fixture-e2e.mjs` düzeltmeyle art arda 40 kez geçti
+  (öncesinde 10'da 2–3 düşüş). `xvfb-run -a npm run test:e2e` ve
+  `electron-map-performance-e2e.mjs` geçti.
+
 ## 16-11-2026 — Mobile CI: sabit test anahtarı doğrulaması düzeltildi (mobil iş)
 
 - Bu bir mobil CI işidir; uygulama ve dosya biçimi değişmedi.

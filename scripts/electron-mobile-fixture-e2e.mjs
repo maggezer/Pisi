@@ -3,6 +3,7 @@ import { createRequire } from 'node:module';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { keepPagePromise } from './e2e-cdp.mjs';
 
 // Builds the small desktop project the mobile compatibility test starts from
 // (tests/mobile-desktop-compat.test.mjs, docs/mobile-plan.md M4). Everything in
@@ -92,7 +93,7 @@ class CdpClient {
     }
 
     async evaluate(expression) {
-        const response = await this.request('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
+        const response = await this.request('Runtime.evaluate', { expression: keepPagePromise(expression), awaitPromise: true, returnByValue: true });
         if (response.exceptionDetails) {
             throw new Error(response.exceptionDetails.exception?.description || response.exceptionDetails.text || 'Renderer evaluation failed');
         }

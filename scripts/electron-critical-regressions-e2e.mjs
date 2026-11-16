@@ -3,6 +3,7 @@ import { createRequire } from 'node:module';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { keepPagePromise } from './e2e-cdp.mjs';
 
 // A background or occluded test window must still run timers, animation frames and
 // layout at full speed (Windows CI runners keep the window behind other desktops).
@@ -67,7 +68,7 @@ class CdpClient {
         let timer;
         try {
             const response = await Promise.race([
-                this.request('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true }),
+                this.request('Runtime.evaluate', { expression: keepPagePromise(expression), awaitPromise: true, returnByValue: true }),
                 new Promise((_, reject) => {
                     timer = setTimeout(() => reject(new Error('Renderer evaluation timed out: ' + expression.slice(0, 120))), 30000);
                 })

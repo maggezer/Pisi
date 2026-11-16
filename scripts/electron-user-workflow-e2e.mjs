@@ -10,6 +10,7 @@ import { testEditorSelection } from './electron-editor-selection-e2e.mjs';
 import { testEditorNormalization } from './electron-editor-normalization-e2e.mjs';
 import { testEditorAutosave } from './electron-editor-autosave-e2e.mjs';
 import { testEditorInputOwnership } from './electron-editor-input-ownership-e2e.mjs';
+import { keepPagePromise } from './e2e-cdp.mjs';
 
 // A background or occluded test window must still run timers, animation frames and
 // layout at full speed (Windows CI runners keep the window behind other desktops).
@@ -134,7 +135,7 @@ class CdpClient {
 
     async evaluate(expression) {
         const response = await this.request('Runtime.evaluate', {
-            expression,
+            expression: keepPagePromise(expression),
             awaitPromise: true,
             returnByValue: true
         });
