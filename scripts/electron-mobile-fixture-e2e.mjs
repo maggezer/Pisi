@@ -403,6 +403,8 @@ try {
     const audit = await cdp.evaluate(`window.pisiProject.auditIntegrity(${project})`);
     const issues = audit?.report?.issues ?? audit?.issues ?? null;
     assert(Array.isArray(issues), 'integrity audit', audit);
+    // pisi-error.md §5c: Quick Add's Inbox must not leave a property without its schema.
+    assert(issues.length === 0, 'integrity issues', issues);
     const store = await readJson(path.join(projectPath, '.pisi', 'tasks.json'));
     const relationships = await readJson(path.join(projectPath, '.pisi', 'relationships.json'));
     assert(store.tasks.length === 6 && relationships.relationships.length === 1, 'authorities', {

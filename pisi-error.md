@@ -136,17 +136,18 @@ yalnız yeni dosyaların adını değiştirir.
 
 ## 5c. Quick Add'in açtığı Inbox notu Project Integrity'de kritik bulgu üretiyor
 
-**[Orta · masaüstü · doğrulandı]** Boş bir projede ilk Quick Add, `Inbox.node`
-dosyasını `properties.systemRole` değeriyle oluşturur. `.pisi/properties.json`
-ise yalnız şema gerektiğinde (ör. veritabanı şablonları listelenince) yazılır.
-Arada kalan projede Project Integrity `property-schema-authority-missing`
-(critical) bulgusu verir: "Node property verisi var ancak canonical
-project-level property schema bulunmuyor."
+**[Orta · masaüstü · çözüldü]** Boş bir projede ilk Quick Add, `Inbox.node`
+dosyasını `properties.systemRole` değeriyle oluşturuyor, `.pisi/properties.json`
+ise yalnız şema gerektiğinde yazılıyordu. Arada kalan projede Project Integrity
+`property-schema-authority-missing` (critical) bulgusu veriyordu.
 
-Yeniden üretme: `scripts/electron-mobile-fixture-e2e.mjs` çıktısındaki denetim
-raporu; aynı bulgu `tests/fixtures/desktop-project/` için
-`tests/mobile-desktop-compat.test.mjs` içinde taban çizgisi olarak kayıtlıdır.
-Düzeltilince o testteki taban çizgisi boş listeye çekilmelidir.
+Çözüm (16-11-2026): Quick Add, Inbox'ı oluşturmadan önce `systemRole` tanımını
+proje şemasına yazar (`registerPisiSystemPropertyDefinitions`,
+`main/functions/property-schema-store.js`). Bu durumda kalmış eski projeler bir
+sonraki Quick Add ile onarılır; okunamayan bir şema ezilmez, Quick Add hata
+döner. Testler: `tests/quick-add-inbox-schema.test.js`,
+`scripts/electron-mobile-fixture-e2e.mjs` (denetim bulgusu kalmamalı) ve
+`tests/mobile-desktop-compat.test.mjs` (taban çizgisi artık boş).
 
 ## 5d. Mobilde değişen görev, kaynağı olan not bloğuna yansımıyor
 

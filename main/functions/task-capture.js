@@ -45,9 +45,31 @@ function findPisiInboxNode(projectFolder) {
     return null;
 }
 
+const PISI_INBOX_ROLE_PROPERTY = Object.freeze({ id: 'systemRole', name: 'Sistem rolü', type: 'text' });
+
+// The Inbox node carries a `systemRole` property; its definition must be in the
+// project schema (.pisi/properties.json) too, or Project Integrity reports
+// `property-schema-authority-missing`. Older projects whose Inbox was created
+// without it get the definition on their next Quick Add.
+function ensurePisiInboxRoleDefinition(projectFolder) {
+    return registerPisiSystemPropertyDefinitions(projectFolder, [PISI_INBOX_ROLE_PROPERTY]);
+}
+
 function getOrCreatePisiInboxNode(projectFolder) {
     const existing = findPisiInboxNode(projectFolder);
-    if (existing?.ok) return existing;
+    if (existing?.ok) {
+        const role = existing.data?.properties?.systemRole;
+        if (role && typeof role === 'object') {
+            const registered = ensurePisiInboxRoleDefinition(projectFolder);
+            if (!registered?.ok) return registered;
+        }
+        return existing;
+    }
+
+    // Schema first: an interrupted capture leaves at most an unused definition,
+    // never a node property without a schema.
+    const registered = ensurePisiInboxRoleDefinition(projectFolder);
+    if (!registered?.ok) return registered;
 
     const created = createUniquePisiFile(projectFolder, '.node');
     if (!created.ok) return created;
@@ -59,9 +81,7 @@ function getOrCreatePisiInboxNode(projectFolder) {
     inbox.data.properties = {
         ...(inbox.data.properties || {}),
         systemRole: {
-            id: 'systemRole',
-            name: 'Sistem rolü',
-            type: 'text',
+            ...PISI_INBOX_ROLE_PROPERTY,
             value: 'inbox',
             system: true
         }

@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "updatedAt": "2026-11-16T10:12:50.253Z",
+  "entries": [
+    {
+      "historyId": "1794823970251-2026-11-16T10-12-50-251Z-aa67f151fdedf350.json.gz",
+      "capturedAt": "2026-11-16T10:12:50.251Z",
+      "reason": "editor-save",
+      "hash": "aa67f151fdedf350",
+      "preview": "Görevler ☐ Sunucu faturasını öde · Inbox",
+      "size": 799,
+      "compressed": true
+    },
+    {
+      "historyId": "1794823969641-2026-11-16T10-12-49-641Z-ba036619df7254fa.json.gz",
+      "capturedAt": "2026-11-16T10:12:49.641Z",
+      "reason": "editor-save",
+      "hash": "ba036619df7254fa",
+      "preview": "Görevler ☐ Sunucu faturasını öde · Inbox",
+      "size": 733,
+      "compressed": true
+    }
+  ]
+}

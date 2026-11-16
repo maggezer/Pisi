@@ -195,8 +195,8 @@ test('mobilin yazdığı proje masaüstü denetiminden yeni bulgu almaz ve yaln�
     const root = copyFixture(t);
     addUnknownTaskFields(root);
     const baseline = issueKeys(desktopAudit(root));
-    // What the desktop reports for its own untouched project (see pisi-error.md: Inbox property without a schema).
-    assert.deepEqual(baseline, ['property-schema-authority-missing | .pisi/properties.json | ']);
+    // The desktop reports nothing for its own untouched project (pisi-error.md §5c is fixed: Quick Add writes the schema).
+    assert.deepEqual(baseline, []);
     const before = snapshot(root);
     const storeBefore = readJson(root, '.pisi/tasks.json');
     const meetingBefore = readJson(root, 'Toplantı Notları.node');

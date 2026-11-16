@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "definitions": [
+    {
+      "id": "systemRole",
+      "name": "Sistem rolü",
+      "type": "text",
+      "system": true
+    }
+  ],
+  "conflicts": [],
+  "updatedAt": "2026-11-16T10:12:49.210Z"
+}

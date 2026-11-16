@@ -2,13 +2,13 @@
   "pisi": {
     "version": 1,
     "type": "node",
-    "id": "node_7fa5700a-a4c6-4bd7-86cd-3a73f3be2733",
+    "id": "node_1825f5b2-aa77-4c70-9ec2-085a71236acd",
     "title": "12-11-2026",
-    "sidecar": "inv_12-11-2026__node_7fa5700a-a4c6-4bd7-86cd-3a73f3be2733",
-    "createdAt": "2026-11-15T05:06:33.541Z",
-    "updatedAt": "2026-11-15T05:06:33.589Z",
+    "sidecar": "inv_12-11-2026__node_1825f5b2-aa77-4c70-9ec2-085a71236acd",
+    "createdAt": "2026-11-16T10:12:50.218Z",
+    "updatedAt": "2026-11-16T10:12:50.319Z",
     "parentMap": "diary",
     "diaryDate": "2026-11-12"
   },
-  "content": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_3fba4711-037a-4fed-a956-106412440cb9\" data-pisi-block-type=\"paragraph\" data-pisi-section-level=\"0\">Plan belgesini okudum.</div>"
+  "content": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_91126e30-a3a7-4d6b-ad7c-7f12e4794ddd\" data-pisi-block-type=\"paragraph\" data-pisi-section-level=\"0\">Plan belgesini okudum.</div>"
 }

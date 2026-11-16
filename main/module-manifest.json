@@ -194,6 +194,7 @@
             "readPisiPropertySchema",
             "ensurePisiPropertySchema",
             "getPisiPropertySchemaDefinitions",
+            "registerPisiSystemPropertyDefinitions",
             "collectPisiPropertyCarriers",
             "savePisiNodePropertiesStable",
             "savePisiDatabaseTemplateStable",

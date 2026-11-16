@@ -200,6 +200,33 @@ function ensurePisiPropertySchema(projectFolder) {
     });
 }
 
+// Adds definitions the app itself writes onto nodes (e.g. the Inbox `systemRole`)
+// to the project schema, so a node property never exists without its canonical
+// definition. Synchronous and without its own atomic mutation: the caller's active
+// mutation (task.capture.v1) covers the write. A definition whose id is already in
+// the schema is left as is; one whose name is taken by another id is skipped.
+// An unreadable schema is never replaced.
+function registerPisiSystemPropertyDefinitions(projectFolder, definitions = []) {
+    const read = readPisiPropertySchema(projectFolder);
+    if (!read.ok) return read;
+    const schema = read.exists ? JSON.parse(JSON.stringify(read.schema)) : { definitions: [], conflicts: [] };
+    const indexes = getPisiPropertyDefinitionIndexes(schema);
+    const added = [];
+    for (const raw of Array.isArray(definitions) ? definitions : []) {
+        const definition = contract.normalizePropertyDefinition({ ...raw, system: true });
+        if (!definition || indexes.byId.has(definition.id)) continue;
+        const nameKey = contract.normalizePropertyNameKey(definition.name);
+        if (indexes.byName.has(nameKey)) continue;
+        schema.definitions.push(definition);
+        indexes.byId.set(definition.id, definition);
+        indexes.byName.set(nameKey, definition);
+        added.push(definition.id);
+    }
+    if (read.exists && !added.length) return { ok: true, created: false, added };
+    const written = writePisiPropertySchema(projectFolder, schema);
+    return { ok: true, created: !read.exists, added, schema: written };
+}
+
 function getPisiPropertyDefinitionIndexes(schema) {
     const byId = new Map();
     const byName = new Map();
@@ -512,6 +539,7 @@ const moduleApi = {
     readPisiPropertySchema,
     ensurePisiPropertySchema,
     getPisiPropertySchemaDefinitions,
+    registerPisiSystemPropertyDefinitions,
     collectPisiPropertyCarriers,
     savePisiNodePropertiesStable,
     savePisiDatabaseTemplateStable,
@@ -527,6 +555,7 @@ export {
     readPisiPropertySchema,
     ensurePisiPropertySchema,
     getPisiPropertySchemaDefinitions,
+    registerPisiSystemPropertyDefinitions,
     collectPisiPropertyCarriers,
     savePisiNodePropertiesStable,
     savePisiDatabaseTemplateStable,

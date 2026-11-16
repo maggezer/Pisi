@@ -16,7 +16,8 @@ kopyası üzerinde çalıştırır ve sonucu masaüstünün kendi koduyla denetl
 - `Yol Haritası.map`: iki alt not ve aralarında bir `down-hub` ilişkisi.
 - `diary/`: editörde yazılmış iki gün ve masaüstünün görev bölümü eklediği iki gün.
 - `.pisi/tasks.json` (altı görev; ikisi tekrar eden, biri tamamlanmış),
-  `.pisi/relationships.json` ve `.pisi-history/`.
+  `.pisi/relationships.json`, Inbox'ın `systemRole` tanımını taşıyan
+  `.pisi/properties.json` ve `.pisi-history/`.
 
 **Elle düzenlenmez.** Dosyaların baytları test verisidir; bu yüzden klasör
 `.prettierignore` içindedir. Hiçbir HTML ya da JSON elle yazılmadı: hepsini
@@ -39,6 +40,5 @@ her çalıştırmada yenidir, bu yüzden `--write` bütün fixture'ı değiştir
 `--write` olmadan betik yalnız üretip denetler; `npm run test:e2e` onu böyle
 çalıştırır.
 
-Masaüstünün bu proje için verdiği tek bütünlük bulgusu
-(`property-schema-authority-missing`) uyumluluk testinde taban çizgisi olarak
-kayıtlıdır; ayrıntı `pisi-error.md` §5c'de.
+Masaüstünün Project Integrity denetimi bu proje için hiçbir bulgu vermez;
+uyumluluk testi taban çizgisinin boş olduğunu da sınar.
