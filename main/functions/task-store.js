@@ -182,7 +182,12 @@ function syncPisiFirstClassTaskIndex(projectFolder, payload = {}) {
         if (!item || typeof item !== 'object') continue;
         const id = normalizePisiFirstClassTaskId(item.id);
         const existing = byId.get(id) || null;
-        const task = normalizePisiFirstClassTask(projectFolder, { ...item, id }, existing);
+        // A status a sync turn brought in is not taken back by a stale note block (rule SV13, sync-client-desktop.js).
+        const status = existing
+            ? (modules['main.syncClient']?.filterPisiSyncProjectedTaskStatus?.(projectFolder, id, item.status, existing.status) ?? item.status)
+            : item.status;
+        const projected = status === item.status ? item : { ...item, status, completedAt: existing.completedAt };
+        const task = normalizePisiFirstClassTask(projectFolder, { ...projected, id }, existing);
         byId.set(id, task);
         seen.add(id);
         if (existing) updated += 1;

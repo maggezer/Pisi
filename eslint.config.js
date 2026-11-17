@@ -76,7 +76,14 @@ function loadRuntimeGlobals(relativePath) {
 }
 
 const nodeGlobals = {
+    AbortController: 'readonly',
+    Blob: 'readonly',
     Buffer: 'readonly',
+    CompressionStream: 'readonly',
+    DecompressionStream: 'readonly',
+    Response: 'readonly',
+    clearInterval: 'readonly',
+    setInterval: 'readonly',
     __dirname: 'readonly',
     clearTimeout: 'readonly',
     console: 'readonly',

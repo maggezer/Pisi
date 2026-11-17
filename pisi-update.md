@@ -1,5 +1,38 @@
 # PISI Güncelleme Takip Dosyası
 
+## 17-11-2026 — Masaüstü senkron istemcisi (S3)
+
+Senkron işi (`docs/sync-plan.md` S3; SV2, SV4, SV5, SV6, SV9, SV10, SV11, SV13). Masaüstü artık
+Pisi'nin kendi sunucusuyla alan açar, cihaz eşleştirir ve senkron turlarını proje yeniden
+yüklenmeden çalıştırır.
+
+- `main/functions/sync-client-*.js`: HTTP istemcisi (yalnız HTTPS, zaman aşımı, 5xx/429'da geri
+  çekilme, `Retry-After`), proje dışında cihaz durumu (`safeStorage` ile mühürlü token ve
+  anahtar, imleç, indeks, temel kopyalar), tur motoru (çek → tara → karar → uygula → gönder,
+  `STALE_BASE`'te en çok 3 tur, `commitId` ile idempotent gönderim, geri sarma ve yeniden
+  oynatma denetimleri), dosya uygulayıcısı (bir turun yazmaları tek atomic mutation) ve
+  eşleştirme akışları. Domain sözleşmeleri `sync.*.v1`; preload'da `window.pisiSyncClient`.
+- Ayarlar → Senkron: alan açma, boş bir projeyle başka masaüstünün projesine katılma (kod ve
+  doğrulama numarası), durum, "Şimdi eşitle", cihazlar ve iptal, çakışma günlüğü, senkron
+  edilmeyen dosyalar. Eşleştirme penceresi: QR (repo içi kodlayıcı), kısa kod, geri sayım,
+  bağlanan cihazın adı, "Aynı / Farklı". Pencere kapanınca eşleştirme iptal edilir.
+- Açık not uzaktan gelen değişiklikte yeniden açılmaz: yalnız değişen bloklar yerinde
+  değişir, imleç, kaydırma ve sekmeler korunur. Tur başlamadan bekleyen kayıtlar yazılır;
+  kaydedilmemiş değişikliği olan belge o turda ertelenir.
+- Sunucudan inen not ve harita için boş yönetilen yan klasör oluşturulur; uzaktan silinen
+  notun boş yan klasörü kalkar (Integrity yeni bulgu vermez).
+- `shared/sync-paths.mjs`: `.pisi/backups/` (atomik yazma ve bozuk dosya yedekleri) ve eski
+  senkronun `.pisi/sync-trash/` klasörü de senkron dışıdır.
+- §5d / SV13: Quick Add'in görev kimliği taşımayan bloğu editörde düzenlenince görev artık yeni
+  rastgele kimlik almıyor; canonical görev kaynağından (not, blok, etiket) bulunuyor. Bir turun
+  getirdiği görev durumu, nottaki eski işaretten yapılan yansıtma yazmasıyla geri dönmüyor.
+- Masaüstünde tamamlanan tekrar eden görevin sonraki tekrarı, mobil ile aynı kuralla
+  (`formatPisiRecurrenceTaskId`) belirlenimci kimlik alıyor.
+- Testler: `tests/sync-client-http.test.mjs`, `tests/sync-client-apply.test.mjs`,
+  `tests/sync-qr.test.mjs` (`jsqr` yalnız geliştirme bağımlılığı), PHP sunucusuna karşı
+  `tests/sync-server-contract-desktop.test.mjs` ve gerçek Electron ile
+  `scripts/electron-sync-client-e2e.mjs` (`npm run test:sync-server`, CI'da `sync-server.yml`).
+
 ## 17-11-2026 — Senkron sunucusu cPanel'de kabul edildi (S2)
 
 Senkron işi (`docs/sync-plan.md` S2). Kurulum rehberi kullanıcının paylaşımlı cPanel hesabında

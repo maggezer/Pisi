@@ -19,7 +19,8 @@ const MAX_PATH_BYTES = 1024;
 const EXCLUDED_ANYWHERE = new Set(['.git', 'node_modules', '.pisi.lock']);
 // Folders and files that are never synced at the project root (docs/sync-plan.md §3.3).
 const EXCLUDED_ROOT_FOLDERS = new Set(['.pisi-sync', '.pisi-history']);
-const EXCLUDED_PISI_ENTRIES = new Set(['mutations', 'trash', 'sync-state.json', 'reminder-state.json']);
+// `backups` (atomic write and corrupt-file backups) and `sync-trash` (the closed legacy sync) are device-local recovery data.
+const EXCLUDED_PISI_ENTRIES = new Set(['mutations', 'trash', 'backups', 'sync-trash', 'sync-state.json', 'reminder-state.json']);
 const EXCLUDED_FILE_NAMES = new Set(['.ds_store', 'thumbs.db', 'desktop.ini']);
 const EXCLUDED_FILE_PATTERNS = Object.freeze([/\.tmp$/i, /^\..*\.mobile-.*\.tmp$/i, /\.pisi-backup$/i, /^~\$/]);
 const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/;

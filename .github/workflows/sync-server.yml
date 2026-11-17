@@ -1,7 +1,8 @@
 name: Sync server
 
 # Pisi senkron sunucusu (server/, docs/sync-plan.md S2): PHP 8.4 + MariaDB 10.11 üzerinde
-# php -l, göç ve protokol sözleşme testleri (npm run test:sync-server).
+# php -l, göç ve protokol sözleşme testleri (npm run test:sync-server). S3'ten beri aynı
+# sunucuya karşı masaüstü istemcisi: motorun sözleşme testleri ve gerçek Electron E2E'si.
 on:
     push:
         branches:
@@ -13,6 +14,14 @@ on:
             - 'scripts/start-sync-test-server.mjs'
             - 'scripts/run-sync-server-tests.mjs'
             - 'tests/sync-server-*'
+            - 'tests/sync-client-*'
+            - 'main/functions/sync-client-*'
+            - 'main/functions/task-store.js'
+            - 'renderer/sync/**'
+            - 'renderer/tags/pisi-task-store.mjs'
+            - 'renderer/tags/pisi-todo-second-release.mjs'
+            - 'scripts/electron-sync-client-e2e.mjs'
+            - 'preload.js'
             - '.cpanel.yml'
             - '.github/workflows/sync-server.yml'
     pull_request:
@@ -23,6 +32,14 @@ on:
             - 'scripts/start-sync-test-server.mjs'
             - 'scripts/run-sync-server-tests.mjs'
             - 'tests/sync-server-*'
+            - 'tests/sync-client-*'
+            - 'main/functions/sync-client-*'
+            - 'main/functions/task-store.js'
+            - 'renderer/sync/**'
+            - 'renderer/tags/pisi-task-store.mjs'
+            - 'renderer/tags/pisi-todo-second-release.mjs'
+            - 'scripts/electron-sync-client-e2e.mjs'
+            - 'preload.js'
             - '.cpanel.yml'
             - '.github/workflows/sync-server.yml'
     workflow_dispatch:
@@ -37,7 +54,7 @@ concurrency:
 jobs:
     contract:
         runs-on: ubuntu-latest
-        timeout-minutes: 15
+        timeout-minutes: 25
 
         services:
             mariadb:
@@ -80,11 +97,15 @@ jobs:
                   php -m | grep -i -E '^(pdo_mysql|json|hash)$'
                   /usr/sbin/apache2 -v
 
-            # Kök bağımlılıklar gerekmez: çalıştırıcı ve testler yalnız Node yerleşikleri ve shared/ kullanır.
-            - name: Contract tests (php -l, migrations, every endpoint and error code)
-              run: npm run test:sync-server
+            # Masaüstü E2E'si (scripts/electron-sync-client-e2e.mjs) Electron ikilisini ister.
+            - name: Install dependencies with Electron
+              run: npm ci
+
+            - name: Contract tests (php -l, migrations, every endpoint and error code) and desktop E2E
+              run: xvfb-run -a npm run test:sync-server
               env:
                   PISI_SYNC_TEST_DB_HOST: 127.0.0.1
                   PISI_SYNC_TEST_DB_PORT: '3306'
                   PISI_SYNC_TEST_DB_USER: root
                   PISI_SYNC_TEST_DB_PASSWORD: ''
+                  PISI_SYNC_ELECTRON_E2E: '1'

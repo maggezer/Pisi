@@ -10,3 +10,4 @@ import './crash-handling.js';
 import './store-history.js';
 import './external-backup.js';
 import './perf-probe.js';
+import './sync-client-desktop.js';

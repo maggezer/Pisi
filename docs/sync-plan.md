@@ -153,6 +153,7 @@ Proje kökünden itibaren her dosya, aşağıdakiler **dışında**, senkron edi
 | `.pisi-sync/`, `.pisi/sync-state.json`                                         | kapalı eski senkronun dosyaları                                                 |
 | `.pisi-history/`                                                               | sürüm geçmişi; cihaza özel kurtarma verisi                                      |
 | `.pisi/mutations/`                                                             | atomik mutation günlüğü; geçici                                                 |
+| `.pisi/backups/`, `.pisi/sync-trash/`                                          | atomik yazma ve bozuk dosya yedekleri, eski senkronun çöpü; cihaza özel (S3)    |
 | `.pisi/trash/`                                                                 | çöp kutusu; cihaza özel kurtarma verisi (geri yükleme yalnız silen masaüstünde) |
 | `.pisi/reminder-state.json`                                                    | hatırlatma sunum durumu; cihaza özel                                            |
 | `*.tmp`, `.*.mobile-*.tmp`, `*.pisi-backup`, `.pisi.lock`                      | geçici dosyalar, atomik yazma artıkları, kilit                                  |
@@ -371,6 +372,12 @@ Her faz: amaç → okunacaklar → yapılacaklar → kabul kriterleri. Madde kim
 - Bir tur kesilirse (hata enjeksiyonu: uygulamanın ortasında) proje turun öncesi ya da sonrası olur.
 - Sunucuya giden her istek gövdesinde dosya yolu, başlık ya da düz içerik bulunmaz (test isteği dinler ve tarar).
 - §5d E2E'si geçer.
+- **Uygulandı (17-11-2026):**
+    - Modüller: `main/functions/sync-client-{http,state,engine,actions,files,pairing,desktop}.js`, `renderer/sync/pisi-sync-{live,panel,pairing,qr}.mjs`, preload `window.pisiSyncClient`.
+    - Testler: `tests/sync-client-http.test.mjs`, `tests/sync-client-apply.test.mjs`, `tests/sync-qr.test.mjs` (kök `npm test`); `tests/sync-server-contract-desktop.test.mjs` ve `scripts/electron-sync-client-e2e.mjs` (`npm run test:sync-server`; Electron E2E `PISI_SYNC_ELECTRON_E2E=1` ile, CI'da xvfb altında).
+    - Verilen kararlar: QR kodlayıcı repo içinde, doğrulaması yalnız geliştirme bağımlılığı `jsqr` ile; ikinci masaüstü kod yoluyla katılır ve masaüstü platformlu cihaz `admin` rolü alır; Linux'ta anahtarlık yoksa `safeStorage` düz metin yedeğiyle çalışılır ve Ayarlar uyarır; test sunucusu için loopback HTTP yalnız paketlenmemiş uygulamada `PISI_SYNC_ALLOW_LOOPBACK_HTTP=1` ile; masaüstünün tekrar eden görevi de belirlenimci kimlik alır (S1 adım 6).
+    - Belgeyle kod arasındaki farklar: `.pisi/backups/` ve `.pisi/sync-trash/` senkron dışı listeye eklendi (§3.3); klasörler senkron edilmediği için inen not ve haritanın boş yönetilen yan klasörünü istemci oluşturur (SV6). Var olan bir blob'un şifreli boyutu bilinmiyorsa `Range: bytes=0-0` ile öğrenilir (protokol değişmedi).
+    - Tetikleyiciler: proje açılışı, pencere odağı (10 sn'de bir), uygulamanın son yazmasından 3 sn sonra, odaktayken 60 sn ve arka planda 5 dk, elle. Dosya silme gibi atomik yazma olmayan değişiklikler en geç aralıklı turda gider.
 
 ### S4 · Mobil veri katmanının dış değişikliği alması
 

@@ -193,6 +193,71 @@ contextBridge.exposeInMainWorld('pisiSync', {
     disconnect: () => ipcRenderer.invoke('pisi-sync:disconnect')
 });
 
+// Pisi Sync (docs/sync-plan.md S3): a facade over the sync.*.v1 domain
+// contracts. The token and the project key stay in main; only statuses,
+// device names, pairing codes and changed paths reach the renderer.
+function pisiSyncText(value, max = 512) {
+    return String(value ?? '').slice(0, max);
+}
+
+function onPisiSyncEvent(channel, callback) {
+    if (typeof callback !== 'function') return () => {};
+    const listener = (_event, payload) => callback(payload && typeof payload === 'object' ? payload : {});
+    ipcRenderer.on(channel, listener);
+    return () => ipcRenderer.removeListener(channel, listener);
+}
+
+contextBridge.exposeInMainWorld('pisiSyncClient', {
+    status: () => invokePisiDomainQuery('sync.status.v1'),
+    conflicts: () => invokePisiDomainQuery('sync.conflicts.list.v1'),
+    unsynced: () => invokePisiDomainQuery('sync.unsynced.list.v1'),
+    devices: () => invokePisiDomainQuery('sync.devices.list.v1'),
+    createSpace: (options = {}) =>
+        invokePisiDomainCommand('sync.space.create.v1', {
+            serverUrl: pisiSyncText(options.serverUrl),
+            setupKey: pisiSyncText(options.setupKey),
+            deviceName: pisiSyncText(options.deviceName, 120)
+        }),
+    joinSpace: (options = {}) =>
+        invokePisiDomainCommand('sync.space.join.v1', {
+            serverUrl: pisiSyncText(options.serverUrl),
+            code: pisiSyncText(options.code, 16),
+            deviceName: pisiSyncText(options.deviceName, 120)
+        }),
+    joinStatus: (joinId) => invokePisiDomainCommand('sync.space.join-status.v1', { joinId: pisiSyncText(joinId, 64) }),
+    startPairing: () => invokePisiDomainCommand('sync.pairing.start.v1', {}),
+    pairingStatus: (pairingId) => invokePisiDomainCommand('sync.pairing.status.v1', { pairingId: pisiSyncText(pairingId, 64) }),
+    confirmPairing: (pairingId, accept) =>
+        invokePisiDomainCommand('sync.pairing.confirm.v1', { pairingId: pisiSyncText(pairingId, 64), accept: accept === true }),
+    cancelPairing: (pairingId) => invokePisiDomainCommand('sync.pairing.cancel.v1', { pairingId: pisiSyncText(pairingId, 64) }),
+    revokeDevice: (deviceId) => invokePisiDomainCommand('sync.device.revoke.v1', { deviceId: pisiSyncText(deviceId, 64) }),
+    keepConflictCopy: (filePath) => invokePisiDomainCommand('sync.note.keep-disk-copy.v1', { filePath: pisiSyncText(filePath, 4096) }),
+    run: (reason = 'manual') => invokePisiDomainCommand('sync.run.v1', { reason: pisiSyncText(reason, 32) }),
+    disconnect: () => invokePisiDomainCommand('sync.disconnect.v1', {}),
+    onApplied: (callback) => onPisiSyncEvent('pisi:sync-applied', callback),
+    onStatus: (callback) => onPisiSyncEvent('pisi:sync-status', callback),
+    // `handler()` writes pending saves and resolves { ok, dirtyPaths } (rule SV4).
+    onFlushRequest: (handler) => {
+        if (typeof handler !== 'function') return () => {};
+        const listener = async (_event, payload) => {
+            const requestId = pisiSyncText(payload?.requestId, 64);
+            let result;
+            try {
+                result = await handler();
+            } catch {
+                result = { ok: false, dirtyPaths: [] };
+            }
+            const dirtyPaths = Array.isArray(result?.dirtyPaths) ? result.dirtyPaths.map((value) => pisiSyncText(value, 4096)) : [];
+            ipcRenderer.send('pisi:sync-flush-response', { requestId, ok: result?.ok !== false, dirtyPaths });
+        };
+        ipcRenderer.on('pisi:sync-flush-request', listener);
+        return () => ipcRenderer.removeListener('pisi:sync-flush-request', listener);
+    },
+    reportDirty: (paths = []) => {
+        ipcRenderer.send('pisi:sync-dirty', { paths: (Array.isArray(paths) ? paths : []).slice(0, 64).map((value) => pisiSyncText(value, 4096)) });
+    }
+});
+
 // Progress of long main-process operations ({ operation, done, total }).
 contextBridge.exposeInMainWorld('pisiProgress', {
     onProgress: (callback) => {
