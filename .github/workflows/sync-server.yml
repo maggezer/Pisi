@@ -70,10 +70,15 @@ jobs:
                   coverage: none
                   tools: none
 
+            # .htaccess davranış testi gerçek Apache 2.4 ister (tests/sync-server-contract-htaccess.test.mjs).
+            - name: Apache
+              run: test -x /usr/sbin/apache2 || (sudo apt-get update && sudo apt-get install -y apache2)
+
             - name: Versions
               run: |
                   php -v
                   php -m | grep -i -E '^(pdo_mysql|json|hash)$'
+                  /usr/sbin/apache2 -v
 
             # Kök bağımlılıklar gerekmez: çalıştırıcı ve testler yalnız Node yerleşikleri ve shared/ kullanır.
             - name: Contract tests (php -l, migrations, every endpoint and error code)

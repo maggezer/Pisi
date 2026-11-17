@@ -1,5 +1,20 @@
 # PISI Güncelleme Takip Dosyası
 
+## 17-11-2026 — Senkron sunucusu: sertifika doğrulaması için `.htaccess` istisnası (S2)
+
+Senkron işi (`docs/sync-plan.md` S2). İlk gerçek cPanel kurulumunda Let's Encrypt sertifikası
+alınamadı; barındırma firması kurulu kopyadaki `.htaccess`'e elle istisna ekledi.
+
+- `server/public/.htaccess`: `/.well-known/acme-challenge/` ve `/.well-known/pki-validation/`
+  ön denetleyiciye gitmez; doğrulama dosyaları olduğu gibi sunulur. İstisna artık repoda olduğu
+  için dağıtım onu silmez ve sertifika yenilemesi kesilmez.
+- Davranış gerçek Apache 2.4 ile sınanır (`tests/sync-server-contract-htaccess.test.mjs`):
+  belge kökünde ve alt klasör kurulumunda doğrulama dosyaları sunulur, geri kalan her yol
+  `index.php`'ye gider, `.htaccess` 403 döner, Apache yapılandırma hatası yazmaz. CI'da
+  `sync-server.yml` Apache'yi kurar.
+- `docs/sync-server-cpanel.md` §9: AutoSSL, Let's Encrypt™ SSL aracı ya da barındırma
+  desteğiyle ücretsiz sertifika; ücretli sertifika gerekmez.
+
 ## 17-11-2026 — cPanel dağıtımı: PHP yolu, `error_log` ve rehber düzeltmeleri (S2)
 
 Senkron işi (`docs/sync-plan.md` S2). İlk gerçek cPanel kurulumunda görülen sorunlar.
