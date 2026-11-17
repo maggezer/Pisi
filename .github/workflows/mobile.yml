@@ -139,6 +139,10 @@ jobs:
             - name: Setup Gradle
               uses: gradle/actions/setup-gradle@v4
 
+            - name: Run the Android unit tests (Keystore secrets wrapper, S5)
+              working-directory: mobile/android
+              run: ./gradlew testDebugUnitTest
+
             - name: Assemble the test APK
               working-directory: mobile/android
               run: ./gradlew assembleDebug
@@ -156,6 +160,9 @@ jobs:
                   "${apksigner}" verify --verbose --print-certs "${apk}" | tee "${RUNNER_TEMP}/apk-signature.txt"
                   "${aapt2}" dump badging "${apk}" > "${RUNNER_TEMP}/apk-badging.txt"
                   grep -F "package: name='com.mumin.pisi' versionCode='${PISI_ANDROID_VERSION_CODE}' versionName='${version_name}'" "${RUNNER_TEMP}/apk-badging.txt"
+                  # The QR scanner needs Android 8.0 (S5); the camera is asked for only when a QR is scanned.
+                  grep -F "minSdkVersion:'26'" "${RUNNER_TEMP}/apk-badging.txt"
+                  grep -F "uses-permission: name='android.permission.CAMERA'" "${RUNNER_TEMP}/apk-badging.txt"
 
                   if [[ "${{ steps.signing.outputs.fixed }}" == "true" ]]; then
                     expected="$(keytool -list -v -keystore "${PISI_ANDROID_TEST_KEYSTORE_FILE}" -storepass "${PISI_ANDROID_TEST_KEYSTORE_PASSWORD}" -alias "${PISI_ANDROID_TEST_KEY_ALIAS}" | sed -n 's/^\s*SHA256: //p' | tr -d ':' | tr 'A-F' 'a-f')"

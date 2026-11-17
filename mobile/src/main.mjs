@@ -4,6 +4,10 @@ import { addSampleMap } from './data/sample-map.mjs';
 import { loadSampleProject } from './data/sample-project.mjs';
 import { createCapacitorFsDriver } from './platform/capacitor-fs-driver.mjs';
 import { createCapacitorPlatform } from './platform/capacitor-platform.mjs';
+import { createQrScanner } from './platform/qr-scanner.mjs';
+import { createSecrets } from './platform/secrets.mjs';
+import { createSyncCodec } from './sync/codec.mjs';
+import { createSyncService } from './sync/sync-service.mjs';
 
 const darkScheme = window.matchMedia('(prefers-color-scheme: dark)');
 
@@ -39,9 +43,31 @@ if (import.meta.env.DEV && new URLSearchParams(window.location.search).has('gall
             window.pisiDeveloper = Object.freeze({ external: createExternalSource(project) });
         });
     }
-    createApp({
+    const platform = createCapacitorPlatform();
+    let app = null;
+    // Pisi Sync (docs/sync-plan.md S5): device state in Directory.Data/sync/, outside the project (SV2);
+    // token and key in the Keystore plugin. Before a turn the screens write what they hold (SV4).
+    const sync = createSyncService({
+        project,
+        stateDriver: createCapacitorFsDriver({ root: 'sync' }),
+        secrets: createSecrets(),
+        subtle: window.crypto.subtle,
+        random: (length) => window.crypto.getRandomValues(new Uint8Array(length)),
+        uuid: () => window.crypto.randomUUID(),
+        fetchImpl: (url, init) => window.fetch(url, init),
+        setTimer: (callback, delay) => window.setTimeout(callback, delay),
+        clearTimer: (timer) => window.clearTimeout(timer),
+        AbortControllerImpl: window.AbortController,
+        codec: createSyncCodec({ CompressionStreamImpl: window.CompressionStream, DecompressionStreamImpl: window.DecompressionStream }),
+        flushPending: () => app?.lifecycle.flush(),
+        platformName: platform.isNative ? 'android' : 'web',
+        onError
+    });
+    app = createApp({
         root,
-        platform: createCapacitorPlatform(),
+        platform,
+        sync,
+        qrScanner: createQrScanner(),
         project,
         loadSample: developer ? loadSampleProject : null,
         loadSampleMap: developer ? addSampleMap : null,

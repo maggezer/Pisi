@@ -14,9 +14,10 @@ test('ilk açılışta boş proje kurulur; örnek proje yüklenir ve yeniden ba�
     await expect(count(page, 'tasks')).toHaveText('0');
     await expect(count(page, 'notes')).toHaveText('0');
     await expect(count(page, 'integrity')).toHaveText('Sorun yok');
-    // About: the version of the build (package.json; the APK's version code only in CI) and the transfer note (G13).
+    // About: the version of the build (package.json; the APK's version code only in CI). Sync has its own section (S5).
     await expect(page.locator('[data-about="version"] .pisi-row-value')).toHaveText(/^\d+\.\d+\.\d+( \(\d+\))?$/);
-    await expect(page.locator('[data-about="transfer"] .pisi-row-value')).toHaveText('Yakında');
+    await expect(page.locator('[data-about="transfer"]')).toHaveCount(0);
+    await expect(page.locator('[data-sync="pair"]')).toBeVisible();
     await expect(page.locator('[data-screen="settings"]')).not.toContainText(/drive|two-way|iki yönlü/i);
     expect((await projectFiles(page)).map((file) => file.path).sort()).toEqual(['.pisi/properties.json', 'diary/.pisi-diary']);
 
@@ -28,7 +29,7 @@ test('ilk açılışta boş proje kurulur; örnek proje yüklenir ve yeniden ba�
     await expect(count(page, 'diary')).toHaveText('1');
     await shot(page, '08-settings-project');
     await page.getByRole('status').waitFor({ state: 'detached', timeout: 10_000 });
-    await page.locator('[data-about="transfer"]').scrollIntoViewIfNeeded();
+    await page.locator('[data-about="version"]').scrollIntoViewIfNeeded();
     await shot(page, '08b-settings-about');
 
     // Reloading is a cold start: everything shown now is read back from storage.

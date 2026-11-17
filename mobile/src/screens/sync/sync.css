@@ -1,0 +1,48 @@
+/*
+ * Settings → Sync → "Pair with desktop" (docs/sync-plan.md S5): the steps of
+ * a pairing and the verification number, large enough to compare with the
+ * desktop's at a glance. The conflict log sheet's empty line is here too.
+ */
+
+.pisi-pair-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pisi-space-4);
+    padding-top: var(--pisi-space-2);
+}
+
+.pisi-pair-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pisi-space-4);
+}
+
+.pisi-pair-text,
+.pisi-pair-wait,
+.pisi-sheet-note {
+    margin: 0;
+    line-height: var(--pisi-leading);
+}
+
+.pisi-pair-wait,
+.pisi-sheet-note {
+    color: var(--pisi-muted);
+    font-size: var(--pisi-text-sm);
+}
+
+.pisi-sheet-note {
+    padding-block: var(--pisi-space-4);
+}
+
+.pisi-pair-sas {
+    margin: 0;
+    padding: var(--pisi-space-4);
+    border-radius: var(--pisi-radius-lg);
+    background: var(--pisi-surface);
+    color: var(--pisi-text);
+    font-size: var(--pisi-text-2xl);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.08em;
+    text-align: center;
+}

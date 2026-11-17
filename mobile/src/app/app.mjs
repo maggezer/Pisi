@@ -11,11 +11,13 @@ import { createNotesScreen } from '../screens/notes/index.mjs';
 import { createNoteScreen } from '../screens/notes/note.mjs';
 import { createPisiScreen } from '../screens/pisi/index.mjs';
 import { renderSettingsScreen } from '../screens/settings/index.mjs';
+import { renderConflictRows } from '../screens/settings/sync-section.mjs';
+import { createSyncPairScreen } from '../screens/sync/pair.mjs';
 import { createTasksScreen } from '../screens/tasks/index.mjs';
 import { createTaskController } from '../screens/tasks/task-controller.mjs';
 import { createTaskSheets } from '../screens/tasks/task-sheets.mjs';
 import { watchKeyboard } from '../ui/keyboard.mjs';
-import { renderChoiceSheet } from '../ui/overlay.mjs';
+import { renderChoiceSheet, renderDialog, renderSheet as renderBottomSheet } from '../ui/overlay.mjs';
 import { createShell, renderHomeShell, renderShell } from '../ui/shell.mjs';
 import { createSnackbarController, renderSnackbar } from '../ui/snackbar.mjs';
 import { watchExternalChanges } from './external-changes.mjs';
@@ -29,7 +31,9 @@ import { PISI_THEME_BACKGROUNDS, resolveTheme } from './theme.mjs';
  * platform gives; `loadSample` fills it with sample data and `loadSampleMap`
  * adds a sample map. Both are passed only in debug builds, where they show up
  * as the developer section of Settings. `version` is `{ name, build }`: the
- * app's version and the APK's version code, shown in Settings.
+ * app's version and the APK's version code, shown in Settings. `sync` is the
+ * sync service (sync/sync-service.mjs) and `qrScanner` the camera's QR reader
+ * (null in a browser); without `sync` Settings has no sync section.
  */
 export function createApp({
     root,
@@ -41,6 +45,8 @@ export function createApp({
     loadSample = null,
     loadSampleMap = null,
     version = null,
+    sync = null,
+    qrScanner = null,
     now = () => new Date(),
     onError = () => {}
 }) {
@@ -130,6 +136,8 @@ export function createApp({
     // Maps are only viewed (M9): the list, and the viewer a note on the map is opened from.
     const mapsScreen = createMapsScreen({ project, onOpenMap: (map) => navigate(() => router.openMap(map)), onError });
     const mapViewer = createMapViewer({ project, onOpenNote: openNote, onError });
+    // Pairing with the desktop (S5): a screen of its own under Settings, built once.
+    const pairScreen = sync ? createSyncPairScreen({ service: sync, scanner: qrScanner, onDone: () => navigate(() => router.back()), onError }) : null;
     const openerOf = (overlay) =>
         taskSheets.getOverlayOpener(overlay) ??
         tasksScreen.getOverlayOpener(overlay) ??
@@ -159,10 +167,30 @@ export function createApp({
             await refreshProject();
             // A file that cannot be read is never overwritten; the user is told (rule V7).
             if (projectState.readOnlyFiles.length) snackbar.show({ message: i18n.t('project.readOnlyNotice', { count: projectState.readOnlyFiles.length }) });
+            // The first sync turn runs once the Pisi tab shows its day (§3.6).
+            if (sync) {
+                await sync.init();
+                void sync.sync('open');
+            }
         } catch (error) {
             onError(error);
             if (!destroyed) snackbar.show({ message: i18n.t('project.openFailed') });
         }
+    }
+
+    async function handleUnpair() {
+        closeOverlay();
+        const { remote } = await sync.unpair();
+        snackbar.show({ message: remote === 'ok' ? i18n.t('sync.unpaired') : i18n.t('sync.unpairedOffline') });
+    }
+
+    // What the sync service reports: Settings is drawn again; events the user must know of become a snackbar.
+    function handleSyncEvent(event) {
+        if (destroyed) return;
+        if (event.type === 'revoked') snackbar.show({ message: i18n.t('sync.revokedNotice') });
+        else if (event.type === 'conflict-copy') snackbar.show({ message: i18n.t('sync.conflictCopy', { count: event.count }) });
+        else if (event.type === 'rollback') snackbar.show({ message: i18n.t('sync.stoppedNotice') });
+        else if (event.type === 'status' && settingsShown()) render();
     }
 
     async function handleLoadSample() {
@@ -239,6 +267,27 @@ export function createApp({
                 }
             });
         }
+        if (sync && overlay === 'sync-conflicts') {
+            return renderBottomSheet({
+                id: 'sync-conflicts',
+                title: i18n.t('sync.conflicts'),
+                closeLabel: i18n.t('action.close'),
+                onClose: closeOverlay,
+                children: renderConflictRows({ t: i18n.t, locale: i18n.locale, conflicts: sync.getStatus().conflicts })
+            });
+        }
+        if (sync && overlay === 'sync-unpair') {
+            return renderDialog({
+                id: 'sync-unpair',
+                title: i18n.t('sync.unpairTitle'),
+                message: i18n.t('sync.unpairMessage'),
+                confirmLabel: i18n.t('sync.unpairConfirm'),
+                cancelLabel: i18n.t('action.cancel'),
+                danger: true,
+                onConfirm: () => void handleUnpair().catch(onError),
+                onCancel: closeOverlay
+            });
+        }
         if (overlay === 'language') {
             return renderChoiceSheet({
                 id: 'language',
@@ -302,6 +351,10 @@ export function createApp({
         }
         home = null;
 
+        if (subScreen === 'sync-pair' && pairScreen) {
+            context.serverUrl = sync.getStatus().serverUrl;
+            return keep('sync-pair', i18n.t('screen.syncPair'), pairScreen, { sheet, snackbar: snack });
+        }
         if (subScreen === 'note') {
             const title = state.note.title || i18n.t('screen.note');
             context.note = state.note;
@@ -329,7 +382,16 @@ export function createApp({
             project: project ? projectState : null,
             developer: Boolean(loadSample || loadSampleMap),
             onLoadSample: loadSample ? handleLoadSample : null,
-            onLoadSampleMap: loadSampleMap ? handleLoadSampleMap : null
+            onLoadSampleMap: loadSampleMap ? handleLoadSampleMap : null,
+            sync: sync
+                ? {
+                      status: sync.getStatus(),
+                      onPair: () => navigate(() => router.push('sync-pair')),
+                      onSyncNow: () => void sync.sync('manual'),
+                      onOpenConflicts: () => router.openOverlay('sync-conflicts'),
+                      onUnpair: () => router.openOverlay('sync-unpair')
+                  }
+                : null
         });
         root.replaceChildren(renderShell({ ...chrome, title: i18n.t('screen.settings'), inSubScreen: true, body, sheet, snackbar: snack }));
 
@@ -351,6 +413,7 @@ export function createApp({
 
     function handleResume() {
         applyTheme();
+        sync?.handleResume();
         // Midnight may have passed in the background. The selected day stays; what counts as today moves on.
         const current = getPisiTodayIsoDate(now());
         if (current === today) return;
@@ -382,6 +445,9 @@ export function createApp({
         platform.onBackButton(handleBack),
         platform.onPause(() => lifecycle.flush()),
         platform.onResume(handleResume),
+        sync?.subscribe(handleSyncEvent),
+        // Leaving the pairing screen gives the pairing up on this phone.
+        pairScreen ? router.subscribe((state) => !state.stack.includes('sync-pair') && pairScreen.leave()) : null,
         // The field being typed in stays above the keyboard; what is pinned to the bottom steps aside (M10).
         watchKeyboard(view),
         // Diary and note text still waiting and writes still in the queue are finished when the app pauses,
@@ -415,6 +481,7 @@ export function createApp({
             noteScreen.destroy();
             mapsScreen.destroy();
             mapViewer.destroy();
+            pairScreen?.destroy();
             tasks.destroy();
             for (const stop of stops) stop?.();
             root.replaceChildren();

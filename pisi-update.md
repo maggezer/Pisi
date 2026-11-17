@@ -1,5 +1,33 @@
 # PISI Güncelleme Takip Dosyası
 
+## 17-11-2026 — Telefon masaüstüyle eşleşiyor ve senkron ediyor (S5)
+
+Mobil ve senkron işi (`docs/sync-plan.md` S5; SV2, SV4, SV8, SV9, SV11, SV12). Pisi Mobil artık
+masaüstüyle eşleşip Pisi'nin kendi sunucusu üzerinden iki yönlü, uçtan uca şifreli senkron
+yapıyor.
+
+- **Eşleştirme:** Ayarlar → Senkron → "Masaüstüyle eşleştir". QR kodu kamerayla okutulur
+  (resmî `@capacitor/barcode-scanner`) ya da sunucu adresi ve kısa kodla bağlanılır; kod
+  yolunda iki ekranda aynı 6 haneli doğrulama numarası görünür. Yanlış kod, süre dolması, ret
+  ve vazgeçme kullanıcıya söylenir.
+- **Senkron:** masaüstüyle aynı motor (`shared/sync-engine.mjs`). Turlar açılışta, uygulamaya
+  dönünce, son yazmadan 3 sn sonra ve "Şimdi eşitle" ile çalışır. Kaydedilmemiş düzenlemesi
+  olan açık not ve günlük ertelenir. Telefon hiçbir zaman silme göndermez. Ekler ve diğer
+  dosyalar henüz telefona inmez (S6).
+- **Ayarlar → Senkron:** bağlı proje, durum (eşit, eşitleniyor, çevrimdışı, hata), son senkron,
+  çakışma günlüğü ve "Bu cihazın bağlantısını kaldır". Masaüstünden iptal edilen telefon
+  durur, gizli bilgileri silinir, proje dosyaları kalır. "Cihazlar arası aktarım: Yakında"
+  satırı kalktı.
+- **Gizli bilgiler:** cihaz token'ı ve proje anahtarı repo içindeki Keystore eklentisiyle
+  (`PisiSecretsPlugin`) sarılı olarak `Directory.Data/sync/secrets/` altında durur; cihaz
+  durumu `Directory.Data/sync/` altında, proje klasörünün dışındadır.
+- **Android:** en düşük sürüm Android 8.0 (`minSdkVersion` 26; QR okuyucu bunu istiyor).
+  Kamera izni yalnız QR okutulurken istenir; kamerasız cihaz kodla eşleşir.
+- **Masaüstüne etkisi:** motor, HTTP istemcisi ve eşleştirmenin katılan tarafı `shared/`'a
+  taşındı; masaüstü dosyaları sarmalayıcı olarak kaldı, davranış değişmedi.
+- Testler: `mobile/tests/sync-*.test.mjs` (protokol uyumlu bellek içi sunucu), `mobile/e2e/sync.spec.mjs`,
+  `tests/sync-server-contract-mobile.test.mjs` (gerçek PHP test sunucusu) ve Android JUnit `SecretBoxTest`.
+
 ## 17-11-2026 — Mobil veri katmanı dış değişikliği alıyor (S4)
 
 Mobil ve senkron işi (`docs/sync-plan.md` S4; SV3, SV4, SV5, SV6, SV10, V4, V7, V9). Sunucu henüz

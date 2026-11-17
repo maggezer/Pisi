@@ -447,6 +447,13 @@ Her faz: amaç → okunacaklar → yapılacaklar → kabul kriterleri. Madde kim
 - Telefonun ürettiği hiçbir commit `delete` içermez (test).
 - Gizli bilgiler `Directory.Data` altında düz metin olarak bulunmaz (test, web sahtesinde değil eklentinin birim testinde ya da cihaz kabulünde, S8).
 - Uygulama kapatılıp açılınca eşleşme ve imleç korunur; yarım kalan tur yeniden oynatıldığında aynı sonucu verir.
+- **Uygulandı (17-11-2026):**
+    - Ortak çekirdek: masaüstünün motoru `shared/sync-engine.mjs` ve `shared/sync-actions.mjs`'e, HTTP istemcisi `shared/sync-http.mjs`'e, eşleştirmenin katılan tarafı (kod ve yeni QR yolu) `shared/sync-pairing-claim.mjs`'e taşındı. `main/functions/sync-client-{engine,actions,http,pairing}.js` yollarını ve export adlarını koruyan sarmalayıcılardır; masaüstü davranışı değişmedi.
+    - Motora iki ek (masaüstünde kapalı): `lazy(path)` ile telefonda ekler ve `other` dosyalar taranmaz ve indirilmez, uzak başlıkları `state.remoteOnly`'de durur (S6 açılınca indirir); telefonda oluşan çakışma kopyasının ekleri bayt indirilmeden sunucudaki blob kimliğiyle gönderilir (§3.4, SV6).
+    - Mobil: `mobile/src/sync/{sync-service,project-files,state-store,pairing,codec}.mjs`, `platform/{secrets,qr-scanner}.mjs`, `screens/sync/pair.mjs`, `screens/settings/sync-section.mjs`. Android: `PisiSecretsPlugin.java` + `SecretBox.java` (Keystore AES-256-GCM, ad AAD'ye bağlı) ve JUnit `SecretBoxTest` (CI'da `testDebugUnitTest`).
+    - Testler: `mobile/tests/sync-{engine,pairing,merge-phone,pair-screen}.test.mjs` (bellek içi sahte sunucu `mobile/tests/helpers/fake-sync-server.mjs`), `mobile/e2e/sync.spec.mjs`, kökte `tests/sync-server-contract-mobile.test.mjs`.
+    - Verilen kararlar (onaylı): QR okuyucu resmî `@capacitor/barcode-scanner` 3.1.3 ve bunun için `minSdkVersion` 24 → 26; durum yalnız Ayarlar → Senkron'da, önemli olaylar (iptal, sunucu geri sarıldı, çakışma kopyası) snackbar ile; telefonda veri varken ilk eşleşme S6'ya kadar "ekle" gibi çalışır (boş temelle birleştirme); bağlantı çevrimdışıyken de yerelde kaldırılır ve kullanıcıya masaüstünden iptal etmesi söylenir; cihaz adı formda düzenlenir, varsayılanı "Android telefon".
+    - Telefonun tetikleyicileri: açılış (Pisi ekranı çizildikten sonra), `resume`, son yerel `fileChanged`'den 3 sn sonra, açık belge temizlenince (`documents.onClean`) ve elle. Tur öncesi ekranlar bekleyen kayıtlarını yazar (SV4); kirli dosya ertelenir ve Ayarlar'da "n dosya bekliyor" görünür.
 
 ### S6 · İlk aktarım ve ekler
 

@@ -4,7 +4,7 @@
 // Pairing (admin side) keeps the ECDH private key and the QR secret in memory
 // only; a claim is shown to the user only after the QR proof checks out, and
 // nothing is granted without the user's confirmation. A second desktop joins
-// with the code path (claim side, `joinPisiSyncSpaceWithCode`).
+// with the code path; the claim side is shared with the phone (shared/sync-pairing-claim.mjs).
 
 import {
     computePisiSyncPairingProof,
@@ -22,15 +22,7 @@ import {
     sealPisiSyncJson,
     verifyPisiSyncPairingProof
 } from '../../shared/sync-crypto.mjs';
-import {
-    formatPisiSyncPairingCode,
-    formatPisiSyncPairingUri,
-    makePisiSyncKeyPackage,
-    makePisiSyncLabel,
-    normalizePisiSyncPairingCode,
-    parsePisiSyncKeyPackage,
-    parsePisiSyncLabel
-} from '../../shared/sync-meta.mjs';
+import { formatPisiSyncPairingCode, formatPisiSyncPairingUri, makePisiSyncKeyPackage, makePisiSyncLabel, parsePisiSyncLabel } from '../../shared/sync-meta.mjs';
 
 export const PISI_SYNC_DESKTOP_PLATFORMS = Object.freeze(['windows', 'macos', 'linux']);
 
@@ -198,71 +190,6 @@ export async function cancelPisiSyncPairing({ http, session }) {
     return { state: 'cancelled' };
 }
 
-/**
- * Claim side for a second desktop (code path): looks the code up, claims with
- * a new token and shows the verification number. `waitPisiSyncJoinResult`
- * then polls the result and opens the key package.
- */
-export async function claimPisiSyncPairingWithCode({ subtle, http, code, deviceName, platform, random }) {
-    const normalized = normalizePisiSyncPairingCode(code);
-    if (!normalized) throw Object.assign(new Error('Kod geçersiz.'), { code: 'PAIRING_CODE_INVALID' });
-    const { data: found } = await http.post('/v1/pairings/lookup', { code: formatPisiSyncPairingCode(normalized) }, { auth: false });
-    const ecdh = await generatePisiSyncEcdhKeyPair(subtle);
-    const deviceKey = await exportPisiSyncEcdhPublicKey(subtle, ecdh.publicKey);
-    const z = await derivePisiSyncSharedSecret(subtle, ecdh.privateKey, await importPisiSyncEcdhPublicKey(subtle, found.desktopKey));
-    const kek = await derivePisiSyncPairingKek(subtle, z, found.pairingId, found.desktopKey, deviceKey);
-    const token = formatPisiSyncRandomId('pst_', random(32));
-    await http.post(
-        `/v1/pairings/${found.pairingId}/claim`,
-        {
-            method: 'code',
-            proof: null,
-            code: formatPisiSyncPairingCode(normalized),
-            deviceKey,
-            label: await sealLabel(subtle, kek, found.spaceId, 'pair-label', found.pairingId, makePisiSyncLabel({ name: deviceName, platform }), random),
-            tokenHash: await hashPisiSyncToken(subtle, token)
-        },
-        { auth: false }
-    );
-    const sas = formatPisiSyncSas(await computePisiSyncSas(subtle, z, found.pairingId, found.desktopKey, deviceKey));
-    return {
-        session: { pairingId: found.pairingId, spaceId: found.spaceId, desktopKey: found.desktopKey, kek, token },
-        view: { sas, expiresAt: found.expiresAt }
-    };
-}
-
-/**
- * One poll of the result: `{ state: 'claimed' }` while waiting, or the joined space with its key.
- * @returns {Promise<any>}
- */
-export async function pollPisiSyncJoinResult({ http, subtle, session }) {
-    const response = await http.request('GET', `/v1/pairings/${session.pairingId}/result`, { token: session.token });
-    if (response.status === 202) return { state: 'claimed' };
-    const data = response.data;
-    if (data.desktopKey !== session.desktopKey) throw Object.assign(new Error('Masaüstü anahtarı değişti.'), { code: 'PAIRING_KEY_MISMATCH' });
-    const keyPackage = parsePisiSyncKeyPackage(
-        await openPisiSyncJson({
-            subtle,
-            key: session.kek,
-            spaceId: session.spaceId,
-            purpose: 'pair-key',
-            binding: session.pairingId,
-            envelope: data.wrappedKey
-        }),
-        { spaceId: data.spaceId, deviceId: data.deviceId }
-    );
-    if (!keyPackage) throw Object.assign(new Error('Anahtar paketi geçersiz.'), { code: 'DECRYPT_FAILED' });
-    return {
-        state: 'granted',
-        spaceId: data.spaceId,
-        deviceId: data.deviceId,
-        role: data.role,
-        token: session.token,
-        key: keyPackage.key,
-        spaceName: keyPackage.spaceName
-    };
-}
-
 /** Opens a space's name from `GET /v1/spaces/{space}`. */
 export async function openPisiSyncSpaceName({ subtle, keys, envelope }) {
     try {
@@ -277,3 +204,4 @@ export async function openPisiSyncSpaceName({ subtle, keys, envelope }) {
 }
 
 export { computePisiSyncPairingProof };
+export { claimPisiSyncPairingWithCode, pollPisiSyncJoinResult } from '../../shared/sync-pairing-claim.mjs';

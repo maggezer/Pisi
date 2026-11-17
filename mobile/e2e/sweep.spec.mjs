@@ -31,6 +31,15 @@ async function eachScreen(page, check) {
     for (const tab of ['tasks', 'calendar', 'settings']) {
         await openFromMenu(page, tab);
         await check(tab);
+        if (tab === 'settings') {
+            // Pairing with the desktop (S5), at its form: the step with the most on screen.
+            await page.locator('[data-sync="pair"]').tap();
+            await page.locator('[data-action="use-code"]').tap();
+            await expect(page.locator('#pair-server')).toBeVisible();
+            await check('sync-pair');
+            await back(page);
+            await expect(screen(page)).toHaveAttribute('data-screen', 'settings');
+        }
         await back(page);
     }
     await openFromMenu(page, 'notes');

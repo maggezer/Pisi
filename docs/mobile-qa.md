@@ -100,9 +100,20 @@ Cihaz: bildirilmedi · Android sürümü: bildirilmedi · APK sürüm kodu (Ayar
 - [x] **Proje** bölümü proje adını ("Pisi Projem"), görev, not, günlük ve harita sayılarını gösterir. Örnek proje ve örnek haritadan sonra: 6 görev, 9 not, 1 günlük, 1 harita.
 - [x] **Bütünlük** satırı "Sorun yok" yazar. (Okunamayan bir dosya olsaydı "n dosya salt okunur" yazar, altında uyarı ve dosya listesi görünürdü; bu durum otomatik testlerde denenir.)
 - [x] **Hakkında** bölümünde uygulama sürümü APK'nın sürümüyle aynıdır (ör. `0.1.0 (57)`; parantez içi sayı CI'daki sürüm kodudur).
-- [x] "Cihazlar arası aktarım: Yakında" satırı ve açıklaması görünür. DriveSync, Google Drive ya da "Two-way" geçen bir metin yoktur (G13).
+- [x] DriveSync, Google Drive ya da "Two-way" geçen bir metin yoktur (G13). ("Cihazlar arası aktarım: Yakında" satırı S5'te kalktı; yerine **Senkron** bölümü geldi.)
 - [x] Geliştirici bölümü test APK'sında görünür ("Örnek proje yükle", "Örnek harita yükle"); ikinci kez dokunmak kopya oluşturmaz.
 - [x] Uygulama tamamen kapatılıp açıldığında ve güncelleme APK'sı üzerine kurulduğunda sayılar ve veriler aynıdır.
+
+### Senkron ve eşleştirme (S5)
+
+Test APK'sı Android 8.0 ve üstüne kurulur (QR okuyucu için `minSdkVersion` 26). Sunucu kurulu ve masaüstü bir alana bağlı olmalıdır (`docs/sync-server-cpanel.md`, masaüstünde Ayarlar → Senkron). Tam senkron kabul listesi S8'de `docs/sync-qa.md` olarak gelecek; bu adımlar APK'nın eşleştirmesini denemek içindir.
+
+- [ ] Ayarlar → **Senkron** → "Masaüstüyle eşleştir" → **QR kodu okut**: kamera izni istenir, masaüstündeki QR okununca "Masaüstünde bu telefonun bağlanmasını onaylayın." görünür; masaüstünde onaylayınca "Bağlandı".
+- [ ] **Kodla bağlan**: sunucu adresi, kısa kod ve cihaz adı girilir; iki ekranda aynı 6 haneli doğrulama numarası görünür. Masaüstünde "Farklı" denirse telefonda "Masaüstünde reddedildi." yazar.
+- [ ] Bağlandıktan sonra Ayarlar'da proje adı, "Eşit" durumu ve son senkron saati görünür; masaüstündeki notlar Notlar sekmesine gelir.
+- [ ] Telefonda bir görev ve günlük yazın; birkaç saniye sonra (ya da "Şimdi eşitle" ile) masaüstünde bir sonraki turda görünür.
+- [ ] Uygulamayı tamamen kapatıp açın: eşleşme durur, yeniden eşleştirme istenmez.
+- [ ] Masaüstünde cihaz listesinden telefonu iptal edin: telefonda "bağlantısı masaüstünden kaldırıldı" uyarısı çıkar, notlar ve görevler telefonda kalır.
 
 ### Genel tarama (M10)
 
