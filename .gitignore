@@ -50,3 +50,6 @@ release/
 /*.appxbundle
 /*.appxupload
 map-performance/
+
+# PHP çalışma klasörüne günlük yazabilir (cPanel); depoda kalırsa Git dağıtımını kilitler
+error_log

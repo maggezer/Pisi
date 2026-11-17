@@ -5,14 +5,14 @@ Sürüm: 1 · 17-11-2026 · Plan: [`docs/sync-plan.md`](sync-plan.md) S2 · Prot
 Bu rehber, Pisi'nin senkron sunucusunu (`server/`) paylaşımlı bir cPanel hesabına kurar. Sunucu PHP 8.4 ve MariaDB 10.11 ile çalışır; framework, Composer ya da sürekli çalışan bir süreç gerekmez.
 Sunucu dosya içeriğini, dosya yollarını ve adları hiç görmez; yalnız şifreli blob'ları ve sıra numaralı bir değişiklik günlüğünü saklar (protokol §11).
 
-Rehberdeki `KULLANICI` cPanel kullanıcı adınızdır, `sync.ornek.com` sunucuya vereceğiniz alt alan adıdır. **Gerçek adresinizi, veritabanı parolanızı ve kurulum anahtarınızı repoya, bir issue'ya ya da PR'a yazmayın.**
+Rehberdeki `KULLANICI` cPanel kullanıcı adınızdır, `sync.ornek.com` sunucuya vereceğiniz alt alan adıdır, `PHP_YOLU` ise §3'te bulacağınız PHP 8.4 komut yoludur. `~` ve `$HOME` ev klasörünüzü gösterir; bu her barındırmada `/home/KULLANICI` olmayabilir (ör. `/home2/KULLANICI`). Gerçek yolu cPanel ana sayfasında **General Information → Home Directory** satırında görürsünüz. **Gerçek adresinizi, veritabanı parolanızı ve kurulum anahtarınızı repoya, bir issue'ya ya da PR'a yazmayın.**
 
 ---
 
 ## 1. Kurulacak düzen
 
 ```text
-/home/KULLANICI/
+~/                        ev klasörünüz
   pisi-sync/
     app/                  web kökünün DIŞINDA: kod, ayar, veri
       src/  schema/  bin/
@@ -44,7 +44,25 @@ Alt alan adı yerine `https://ornek.com/pisi` gibi bir alt klasör kullanacaksan
     - `memory_limit`: `128M` ya da üstü.
 3. Eklentiler: `pdo_mysql`, `json`, `hash`, `mbstring`, `openssl` açık olmalıdır. EA4'te genelde açıktır; değilse **Select PHP Version → Extensions** (CloudLinux) ya da barındırma desteğinden isteyin.
 
-Komut satırında PHP 8.4'ün yolu genelde `/opt/cpanel/ea-php84/root/usr/bin/php`'dir. Bu rehberdeki komutlarda `php` yerine bunu kullanın; `php -v` farklı bir sürüm gösterebilir.
+### 3.1 PHP 8.4'ün komut yolu (`PHP_YOLU`)
+
+Göç, kurulum anahtarı ve temizlik komutları PHP'yi komut satırından çalıştırır. Yalnız `php` yazmak başka bir sürümü çalıştırabilir; tam yolu kullanın. Yol, barındırmanın PHP paketine göre değişir:
+
+| MultiPHP Manager'daki ad | `PHP_YOLU`                              |
+| ------------------------ | --------------------------------------- |
+| `ea-php84`               | `/opt/cpanel/ea-php84/root/usr/bin/php` |
+| `alt-php84` (CloudLinux) | `/opt/alt/php84/usr/bin/php`            |
+
+Emin olmak için Terminal'de (yoksa §7'deki gibi tek seferlik bir cron işiyle çıktıyı bir dosyaya yazarak):
+
+```bash
+ls -d /opt/cpanel/ea-php*/root/usr/bin/php /opt/alt/php*/usr/bin/php 2>/dev/null
+```
+
+Listede `php84` içeren satır sizin `PHP_YOLU`'nuzdur. Rehberin geri kalanında `PHP_YOLU` gördüğünüz yere bunu yazın. Listede 8.4 yoksa barındırma firmanızdan PHP 8.4'ü isteyin.
+
+- PHP komutlarını **ev klasörünüzden** çalıştırın (önce `cd ~`). Bazı barındırmalar PHP uyarılarını çalıştırılan klasöre `error_log` adlı bir dosyaya yazar.
+- `PHP Deprecated: … session.sid_length …` ve `… session.sid_bits_per_character …` uyarıları barındırmanın genel PHP ayarlarından gelir ve zararsızdır; PHP 8.4'ün çalıştığını da gösterir. Kaynağını `PHP_YOLU --ini` gösterir; kendi `php.ini`/`.user.ini` dosyanızdaysa o iki satırı silebilirsiniz.
 
 ## 4. Dosyaların yüklenmesi
 
@@ -56,26 +74,32 @@ Komut satırında PHP 8.4'ün yolu genelde `/opt/cpanel/ea-php84/root/usr/bin/ph
     - **Clone URL**: Pisi reposunun adresi (`https://github.com/maggezer/Pisi.git`).
     - **Repository Path**: `repositories/Pisi`.
     - **Repository Name**: `Pisi`.
-2. cPanel → **File Manager** → sağ üstte **Settings** → **Show Hidden Files** işaretli olsun. Ev klasörünüzde (`/home/KULLANICI`) `.pisi-sync-deploy` adlı bir dosya oluşturun:
+2. cPanel → **File Manager** → sağ üstte **Settings** → **Show Hidden Files** işaretli olsun. Ev klasörünüzde (depo klasöründe **değil**) `.pisi-sync-deploy` adlı bir dosya oluşturun. Dosyayı File Manager'ın editöründe yazın; dosya bash olarak okunduğu için `$HOME` kullanılabilir ve kullanıcı adı yazmanız gerekmez:
 
     ```text
-    APP_DIR=/home/KULLANICI/pisi-sync/app
-    PUBLIC_DIR=/home/KULLANICI/pisi-sync/public
-    PHP_BIN=/opt/cpanel/ea-php84/root/usr/bin/php
+    APP_DIR=$HOME/pisi-sync/app
+    PUBLIC_DIR=$HOME/pisi-sync/public
+    PHP_BIN=PHP_YOLU
     RUN_MIGRATE=1
     ```
 
+    - `PUBLIC_DIR`, §2'de verdiğiniz belge kökü olmalıdır (cPanel → **Domains** → **Document Root** sütunu).
+    - `PHP_BIN` boş bırakılırsa betik sırayla `ea-php84`, `alt-php84` ve `php`'yi arar. `PHP_YOLU` yerine §3.1'de bulduğunuz yolu yazın.
+    - `config.php` henüz hazır değilse ya da göçü elle yapmak istiyorsanız `RUN_MIGRATE=0` yazın.
+
 3. **Git Version Control** → `Pisi` → **Manage** → **Pull or Deploy** → **Deploy HEAD Commit**.
     - Repodaki `.cpanel.yml`, `server/deploy/cpanel-deploy.sh`'i çalıştırır: `app/` (kod, şema, `bin/`) ve `public/` (`index.php`, `.htaccess`) hedeflere kopyalanır, `index.php`'deki yol `APP_DIR`'e ayarlanır.
-    - `config.php` ve `data/` **hiç değiştirilmez**. `config.php` varsa göç (§8) da kendiliğinden çalışır.
-    - Betik, `APP_DIR` web kökünün ya da `public_html`'in içindeyse durur.
+    - `config.php` ve `data/` **hiç değiştirilmez**. `config.php` varsa ve `RUN_MIGRATE=1` ise göç (§8) da kendiliğinden, `app/` klasöründe çalışır.
+    - Betik, `APP_DIR` web kökünün ya da `public_html`'in içindeyse durur. Göç gerekiyor ama PHP bulunamıyorsa hiçbir dosyaya dokunmadan durur.
+    - Sonuç **Last Deployment Information**'da görünür. Görünmüyorsa günlüğe bakın: `~/.cpanel/logs/` içinde en yeni `vc_…_git_deploy.log`.
+4. `~/repositories/Pisi` klasöründeki dosyaları **düzenlemeyin** ve oraya dosya koymayın. cPanel, commit edilmemiş değişiklik olan depoyu dağıtmaz ("The system cannot deploy"). Ayarlarınız yalnız `~/.pisi-sync-deploy` ve `~/pisi-sync/app/config.php` dosyalarındadır.
 
 ### 4.2 File Manager ile
 
 1. GitHub'dan reponun ZIP'ini indirip bilgisayarınızda açın; yalnız `server/` klasörü gerekir.
 2. File Manager → **Settings** → **Show Hidden Files**.
-3. `/home/KULLANICI/pisi-sync/app` klasörünü oluşturun; `server/app/` içindekileri (`src/`, `schema/`, `bin/`, `config.sample.php`, `.htaccess`) buraya yükleyin. (Klasörü ZIP olarak yükleyip **Extract** ile açmak en kolayıdır.)
-4. `server/public/index.php` ve `server/public/.htaccess` dosyalarını `/home/KULLANICI/pisi-sync/public/` içine yükleyin.
+3. `~/pisi-sync/app` klasörünü oluşturun; `server/app/` içindekileri (`src/`, `schema/`, `bin/`, `config.sample.php`, `.htaccess`) buraya yükleyin. (Klasörü ZIP olarak yükleyip **Extract** ile açmak en kolayıdır.)
+4. `server/public/index.php` ve `server/public/.htaccess` dosyalarını `~/pisi-sync/public/` içine yükleyin.
 5. `pisi-sync/app` klasörünün izinlerini **0700** yapın (File Manager → **Permissions**).
 
 ## 5. Veritabanı
@@ -113,7 +137,7 @@ Kurulum anahtarı, masaüstünün sunucuda yeni bir proje alanı açabilmesi iç
 **Terminal varsa** (cPanel → **Terminal**):
 
 ```bash
-/opt/cpanel/ea-php84/root/usr/bin/php ~/pisi-sync/app/bin/setup-key.php
+cd ~ && PHP_YOLU ~/pisi-sync/app/bin/setup-key.php
 ```
 
 Komut `psk_…` ile başlayan anahtarı **bir kez** ekrana basar ve özetini `app/data/setup-key.hash` dosyasına yazar. Anahtarı parola yöneticinize kaydedin; Pisi masaüstünde alan açarken sorulur.
@@ -123,7 +147,7 @@ Komut `psk_…` ile başlayan anahtarı **bir kez** ekrana basar ve özetini `ap
 1. cPanel → **Cron Jobs** → **Add New Cron Job** → **Once Per Minute** → komut:
 
     ```text
-    /opt/cpanel/ea-php84/root/usr/bin/php /home/KULLANICI/pisi-sync/app/bin/setup-key.php --key-file >/dev/null 2>&1
+    cd $HOME && PHP_YOLU $HOME/pisi-sync/app/bin/setup-key.php --key-file >/dev/null 2>&1
     ```
 
 2. Bir dakika bekleyin, sonra cron işini **silin** (yoksa her dakika yeni anahtar üretir).
@@ -136,15 +160,15 @@ Anahtarı değiştirmek için komutu yeniden çalıştırın; eski anahtar artı
 Sunucu, şema güncel değilken `/v1/info` dışındaki her isteğe `503 MAINTENANCE` döner. Şemayı yalnız şu komut kurar ve günceller:
 
 ```bash
-/opt/cpanel/ea-php84/root/usr/bin/php ~/pisi-sync/app/bin/migrate.php
+cd ~ && PHP_YOLU ~/pisi-sync/app/bin/migrate.php
 ```
 
-Terminal yoksa §7'deki gibi tek seferlik bir cron işi kullanın (komut: `… /home/KULLANICI/pisi-sync/app/bin/migrate.php`), bir dakika sonra silin. Git ile dağıtımda (`RUN_MIGRATE=1`) her dağıtımda kendiliğinden çalışır.
+Terminal yoksa §7'deki gibi tek seferlik bir cron işi kullanın (komut: `cd $HOME && PHP_YOLU $HOME/pisi-sync/app/bin/migrate.php >/dev/null 2>&1`), bir dakika sonra silin. Git ile dağıtımda (`RUN_MIGRATE=1`) her dağıtımda kendiliğinden çalışır.
 
 Ardından kurulumu denetleyin:
 
 ```bash
-/opt/cpanel/ea-php84/root/usr/bin/php ~/pisi-sync/app/bin/check.php
+cd ~ && PHP_YOLU ~/pisi-sync/app/bin/check.php
 ```
 
 `check.php` PHP sürümünü ve eklentileri, ayar dosyasını, veri klasörünü, veritabanı bağlantısını, şema sürümünü, kurulum anahtarını ve parça boyutunu denetler; gizli değer basmaz. `[HATA]` satırı kalmamalıdır.
@@ -162,7 +186,7 @@ Eski günlük kayıtları, kullanılmayan blob'lar, süresi dolan eşleştirmele
 cPanel → **Cron Jobs** → **Once Per Hour** (`0 * * * *`) → komut:
 
 ```text
-/opt/cpanel/ea-php84/root/usr/bin/php /home/KULLANICI/pisi-sync/app/bin/gc.php >/dev/null 2>&1
+cd $HOME && PHP_YOLU $HOME/pisi-sync/app/bin/gc.php >/dev/null 2>&1
 ```
 
 Cron kurulmazsa sunucu, saatte en çok bir kez, bir isteğin yanıtından sonra en çok 2 saniye süren kısa bir temizlik yapar. Büyük projelerde cron önerilir.
@@ -231,14 +255,18 @@ Göç sürerken ya da yeni kod eski şemayla karşılaşırsa sunucu kısa süre
 
 ## 14. Sorun giderme
 
-| Belirti                                       | Bakılacak yer                                                                                        |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Her istek 500, HTML sayfa                     | `index.php`'deki `PISI_SYNC_APP_DIR` yolu; PHP sürümü (§3); cPanel → **Errors**                      |
-| `.htaccess` yüzünden 500                      | barındırma `CGIPassAuth`'a izin vermiyorsa `<IfModule mod_version.c>` bloğunu silin                  |
-| `INTERNAL`                                    | cPanel → **Errors** ya da `pisi-sync/public/error_log`; sunucu yanıtta ayrıntı vermez                |
-| Büyük ekler yüklenmiyor (`PAYLOAD_TOO_LARGE`) | `post_max_size` (§3) ve `limits.maxBlobBytes`                                                        |
-| `RATE_LIMITED` alan açarken                   | yanlış kurulum anahtarı IP'yi bir saat kilitler; bekleyin ve doğru anahtarı girin                    |
-| Dosya izni hataları                           | `app/` ve `data/` sizin kullanıcınıza ait olmalı; PHP sizin kullanıcınızla çalışmalı (PHP-FPM/LSAPI) |
+| Belirti                                                       | Bakılacak yer                                                                                                                                                                           |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Her istek 500, HTML sayfa                                     | `index.php`'deki `PISI_SYNC_APP_DIR` yolu; PHP sürümü (§3); cPanel → **Errors**                                                                                                         |
+| `.htaccess` yüzünden 500                                      | barındırma `CGIPassAuth`'a izin vermiyorsa `<IfModule mod_version.c>` bloğunu silin                                                                                                     |
+| `INTERNAL`                                                    | cPanel → **Errors** ya da `pisi-sync/public/error_log`; sunucu yanıtta ayrıntı vermez                                                                                                   |
+| Büyük ekler yüklenmiyor (`PAYLOAD_TOO_LARGE`)                 | `post_max_size` (§3) ve `limits.maxBlobBytes`                                                                                                                                           |
+| `RATE_LIMITED` alan açarken                                   | yanlış kurulum anahtarı IP'yi bir saat kilitler; bekleyin ve doğru anahtarı girin                                                                                                       |
+| Dosya izni hataları                                           | `app/` ve `data/` sizin kullanıcınıza ait olmalı; PHP sizin kullanıcınızla çalışmalı (PHP-FPM/LSAPI)                                                                                    |
+| Git: "The system cannot deploy"                               | depo klasöründe commit edilmemiş değişiklik var: `git -C ~/repositories/Pisi status --short`. Oradaki dosyayı (sık görülen: `error_log`) silin ya da doğru yerine taşıyın (§4.1 adım 4) |
+| Dağıtım günlüğünde `mkdir: cannot create directory '/home/…'` | `.pisi-sync-deploy`'daki yol gerçek ev klasörünüz değil; `$HOME` kullanın (§4.1)                                                                                                        |
+| Dağıtım günlüğünde `PHP bulunamadı`                           | `.pisi-sync-deploy`'daki `PHP_BIN` yanlış (§3.1) ya da `RUN_MIGRATE=0` yapıp göçü elle çalıştırın (§8)                                                                                  |
+| `PHP Deprecated: … session.sid_length …`                      | zararsız; barındırmanın PHP ayarından gelir (§3.1)                                                                                                                                      |
 
 ## 15. Güvenlik notları
 

@@ -93,4 +93,48 @@ describe('senkron sunucusu: cPanel dağıtımı', { skip }, () => {
         const space = await createSpace(server);
         assert.equal((await call(server, 'GET', `/v1/spaces/${space.spaceId}/head`, { token: space.token })).status, 200);
     });
+
+    test('ayar dosyası $HOME kullanabilir; göç app/ klasöründe çalışır, depo klasöründe değil', () => {
+        const home = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-deploy-home-'));
+        cleanup.push(() => fs.rmSync(home, { recursive: true, force: true }));
+        // Barındırmanın PHP'si gibi çalışma klasörüne günlük bırakan sahte bir PHP.
+        const fakePhp = path.join(home, 'fake-php');
+        fs.writeFileSync(fakePhp, '#!/bin/bash\npwd > "$HOME/php-cwd"\necho "$@" > "$HOME/php-args"\necho "PHP Deprecated: test" >> error_log\n', {
+            mode: 0o755
+        });
+        const appDir = path.join(home, 'pisi-sync', 'app');
+        fs.mkdirSync(appDir, { recursive: true });
+        fs.writeFileSync(path.join(appDir, 'config.php'), '<?php return [];\n');
+
+        const result = deploy(home, { APP_DIR: '$HOME/pisi-sync/app', PUBLIC_DIR: '$HOME/pisi-sync/public', PHP_BIN: fakePhp, RUN_MIGRATE: 1 });
+        assert.equal(result.status, 0, result.stderr);
+        assert.ok(fs.existsSync(path.join(home, 'pisi-sync', 'public', 'index.php')), '$HOME genişletildi');
+        assert.equal(fs.readFileSync(path.join(home, 'php-cwd'), 'utf8').trim(), fs.realpathSync(appDir));
+        assert.equal(fs.readFileSync(path.join(home, 'php-args'), 'utf8').trim(), 'bin/migrate.php');
+        assert.ok(fs.existsSync(path.join(appDir, 'error_log')), 'PHP günlüğü app/ klasörüne düştü');
+        assert.equal(fs.existsSync(path.join(root, 'error_log')), false, 'depo klasörü kirlenmedi');
+        // Depoda yine de bir error_log oluşursa git onu görmez; cPanel dağıtımı kilitlenmez.
+        for (const file of ['error_log', 'server/error_log']) assert.equal(spawnSync('git', ['check-ignore', '-q', file], { cwd: root }).status, 0, file);
+    });
+
+    test('göç gerekiyor ama PHP bulunamıyorsa hiçbir dosyaya dokunmadan anlaşılır hata verir', () => {
+        const home = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-deploy-home-'));
+        cleanup.push(() => fs.rmSync(home, { recursive: true, force: true }));
+        const appDir = path.join(home, 'pisi-sync', 'app');
+        fs.mkdirSync(appDir, { recursive: true });
+        fs.writeFileSync(path.join(appDir, 'config.php'), '<?php return [];\n');
+        const result = deploy(home, { APP_DIR: appDir, PUBLIC_DIR: path.join(home, 'pisi-sync', 'public'), PHP_BIN: '/opt/yok/php84/bin/php', RUN_MIGRATE: 1 });
+        assert.notEqual(result.status, 0);
+        assert.match(result.stderr, /PHP bulunamadı: '\/opt\/yok\/php84\/bin\/php'.*PHP_BIN.*RUN_MIGRATE=0/);
+        assert.deepEqual(fs.readdirSync(appDir), ['config.php'], 'hiçbir dosya kopyalanmadı');
+        assert.equal(fs.existsSync(path.join(home, 'pisi-sync', 'public', 'index.php')), false);
+
+        const skipped = deploy(home, {
+            APP_DIR: appDir,
+            PUBLIC_DIR: path.join(home, 'pisi-sync', 'public'),
+            PHP_BIN: '/opt/yok/php84/bin/php',
+            RUN_MIGRATE: 0
+        });
+        assert.equal(skipped.status, 0, 'RUN_MIGRATE=0 iken PHP aranmaz');
+    });
 });

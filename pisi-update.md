@@ -1,5 +1,19 @@
 # PISI Güncelleme Takip Dosyası
 
+## 17-11-2026 — cPanel dağıtımı: PHP yolu, `error_log` ve rehber düzeltmeleri (S2)
+
+Senkron işi (`docs/sync-plan.md` S2). İlk gerçek cPanel kurulumunda görülen sorunlar.
+
+- `server/deploy/cpanel-deploy.sh`: PHP yolu `ea-php84`, CloudLinux `alt-php84` ve `php`
+  sırasıyla aranır; göç gerekiyor ama PHP bulunamıyorsa hiçbir dosya kopyalanmadan anlaşılır
+  bir hata verilir. Göç depo klasöründe değil `app/` klasöründe çalışır; barındırmanın PHP
+  günlüğü (`error_log`) depoyu kirletip sonraki Git dağıtımını kilitlemez.
+- Kökteki `.gitignore`: `error_log` yok sayılır.
+- `docs/sync-server-cpanel.md`: `.pisi-sync-deploy` ve cron komutları `$HOME` ile yazılır
+  (ev klasörü `/home2/…` gibi olabilir); PHP 8.4 komut yolunun bulunması (§3.1); depo
+  klasöründe dosya düzenlenmemesi; PHP 8.4'ün `session.sid_length` uyarısının zararsız
+  olduğu; dağıtım günlüğüne göre sorun giderme.
+
 ## 17-11-2026 — Senkron sunucusu ve cPanel kurulum rehberi (S2)
 
 Senkron işi (`docs/sync-plan.md` S2). Masaüstü ve mobil uygulama değişmedi; istemciler
