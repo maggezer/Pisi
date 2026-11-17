@@ -27,7 +27,16 @@ const browserGlobals = {
     btoa: 'readonly'
 };
 
-const nodeGlobals = { console: 'readonly', process: 'readonly', setTimeout: 'readonly', clearTimeout: 'readonly', indexedDB: 'readonly' };
+const nodeGlobals = {
+    console: 'readonly',
+    process: 'readonly',
+    setTimeout: 'readonly',
+    clearTimeout: 'readonly',
+    indexedDB: 'readonly',
+    URL: 'readonly',
+    structuredClone: 'readonly',
+    AbortController: 'readonly'
+};
 
 export default [
     { ignores: ['node_modules/**', 'dist/**', 'android/**', 'test-results/**', 'playwright-report/**', 'e2e/screenshots/**'] },

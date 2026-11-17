@@ -30,8 +30,8 @@ describe('Ayarlar (M10)', () => {
         ]);
         expect(screen.querySelector('[data-project="integrity"]').dataset.state).toBe('healthy');
         expect(value(screen, '[data-about="version"]')).toBe('0.1.0 (42)');
-        expect(value(screen, '[data-about="transfer"]')).toBe('Yakında');
-        expect(screen.querySelector('[data-about="transfer"] .pisi-row-meta').textContent).toMatch(/^Projeyi masaüstüyle/);
+        // The "transfer comes later" line is gone since sync exists (S5).
+        expect(screen.querySelector('[data-about="transfer"]')).toBeNull();
         expect(screen.querySelector('[data-developer]')).toBeNull();
 
         const debug = draw({ project: project(counts), developer: true, onLoadSample: () => {}, onLoadSampleMap: () => {} });
@@ -63,17 +63,72 @@ describe('Ayarlar (M10)', () => {
             language: 'eng',
             openOverlay: () => {},
             version: { name: '0.1.0' },
-            project: project({ tasks: 1, notes: 2, diary: 3, maps: 4 })
+            project: project({ tasks: 1, notes: 2, diary: 3, maps: 4 }),
+            sync: { status: { state: 'unpaired', code: null, conflicts: [], issues: [] }, onPair: () => {} }
         });
-        expect(screen.textContent).toContain('Transfer between devices');
+        expect(screen.textContent).toContain('Pair with desktop');
         expect(value(screen, '[data-project="integrity"]')).toBe('No problems');
         expect(value(screen, '[data-project="diary"]')).toBe('3');
     });
 
-    it('DriveSync ve iki yönlü eşitleme metni yoktur (G13)', () => {
+    it('eski DriveSync ve "iki yönlü eşitleme" metni yoktur (G13; senkron S5 ile kendi sunucusundan gelir)', () => {
         for (const catalog of [tr, eng]) {
             const texts = Object.entries(catalog).map(([key, text]) => `${key} ${text}`);
-            expect(texts.filter((text) => /drive|two-way|iki yönlü|sync|senkron/i.test(text))).toEqual([]);
+            expect(texts.filter((text) => /drive|two-way|iki yönlü/i.test(text))).toEqual([]);
         }
+    });
+
+    describe('Senkron bölümü (S5)', () => {
+        const status = (change = {}) => ({
+            state: 'idle',
+            code: null,
+            spaceName: 'Pisi Projem',
+            serverUrl: 'https://sync.ornek.com',
+            lastRun: { at: '2026-11-17T10:42:00.000Z', ok: true },
+            conflicts: [],
+            issues: [],
+            running: false,
+            ...change
+        });
+        const handlers = () => {
+            const calls = [];
+            const record = (name) => () => calls.push(name);
+            return { calls, onPair: record('pair'), onSyncNow: record('sync'), onOpenConflicts: record('conflicts'), onUnpair: record('unpair') };
+        };
+
+        it('bağlı değilken yalnız "Masaüstüyle eşleştir" görünür; iptal edildiyse söylenir', () => {
+            const actions = handlers();
+            const screen = draw({ sync: { status: status({ state: 'unpaired', spaceName: '' }), ...actions } });
+            expect([...screen.querySelectorAll('[data-sync]')].map((row) => row.dataset.sync)).toEqual(['pair']);
+            screen.querySelector('[data-sync="pair"]').click();
+            expect(actions.calls).toEqual(['pair']);
+            const revoked = draw({ sync: { status: status({ state: 'unpaired', code: 'DEVICE_REVOKED' }), ...actions } });
+            expect(revoked.querySelector('[data-sync="revoked"]').textContent).toMatch(/masaüstünden kaldırıldı/);
+        });
+
+        it('bağlıyken proje, durum, son senkron, şimdi eşitle, çakışmalar ve bağlantıyı kaldır', () => {
+            const actions = handlers();
+            const screen = draw({
+                locale: 'tr-TR',
+                sync: { status: status({ conflicts: [{ kind: 'copy', path: 'A.node' }], issues: [{ code: 'DEFERRED_DIRTY', path: 'A.node' }] }), ...actions }
+            });
+            expect([...screen.querySelectorAll('.pisi-section-title')].map((title) => title.textContent)).toEqual(['Senkron', 'Hakkında']);
+            expect(value(screen, '[data-sync="space"]')).toBe('Pisi Projem');
+            expect(value(screen, '[data-sync="status"]')).toBe('Eşit');
+            expect(screen.querySelector('[data-sync="status"] .pisi-row-meta').textContent).toBe('1 dosya açık düzenleme yüzünden bekliyor');
+            expect(value(screen, '[data-sync="last-run"]')).toMatch(/17 Kas/);
+            expect(value(screen, '[data-sync="conflicts"]')).toBe('1');
+            for (const id of ['sync-now', 'conflicts', 'unpair']) screen.querySelector(`[data-sync="${id}"]`).click();
+            expect(actions.calls).toEqual(['sync', 'conflicts', 'unpair']);
+        });
+
+        it('çevrimdışı, hata ve durmuş durumlar', () => {
+            expect(value(draw({ sync: { status: status({ state: 'offline' }) } }), '[data-sync="status"]')).toBe('Çevrimdışı');
+            expect(value(draw({ sync: { status: status({ state: 'error', code: 'QUOTA_EXCEEDED' }) } }), '[data-sync="status"]')).toBe('Hata (QUOTA_EXCEEDED)');
+            expect(value(draw({ sync: { status: status({ running: true }) } }), '[data-sync="status"]')).toBe('Eşitleniyor…');
+            const stopped = draw({ sync: { status: status({ state: 'stopped', code: 'SERVER_ROLLBACK' }) } });
+            expect(stopped.querySelector('[data-sync="stopped"]').getAttribute('role')).toBe('alert');
+            expect(stopped.querySelector('[data-sync="sync-now"]')).toBeNull();
+        });
     });
 });

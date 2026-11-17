@@ -40,4 +40,7 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- The pairing QR is read with the camera (S5); pairing with the code works without one. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 </manifest>

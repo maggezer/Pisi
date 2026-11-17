@@ -4,7 +4,7 @@
 
 export const PISI_HOME_TAB = 'pisi';
 export const PISI_TABS = Object.freeze(['pisi', 'tasks', 'notes', 'calendar', 'maps']);
-export const PISI_SUB_SCREENS = Object.freeze(['settings', 'map', 'note']);
+export const PISI_SUB_SCREENS = Object.freeze(['settings', 'sync-pair', 'map', 'note']);
 
 export function createRouter({ today }) {
     let state = Object.freeze({ tab: PISI_HOME_TAB, stack: Object.freeze([]), overlays: Object.freeze([]), selectedDate: today, note: null, map: null });
