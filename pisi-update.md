@@ -1,5 +1,43 @@
 # PISI Güncelleme Takip Dosyası
 
+## 16-11-2026 — Saf senkron çekirdeği: `shared/sync-*.mjs` (S1)
+
+Senkron işi (`docs/sync-plan.md` S1). Arayüz değişmedi; sunucu ve istemci
+bağlantısı sonraki fazlardadır.
+
+- Yeni saf modüller (`scripts/shared-purity.js` kuralıyla; Web Crypto `subtle`,
+  saat, rastgelelik ve gzip çağırandan gelir):
+    - `shared/sync-paths.mjs`: yol güvenliği, NFC ve büyük-küçük harf katlaması
+      (fid girdisi), senkron dışı yolların tek listesi (SV7), dosya sınıfları.
+    - `shared/sync-crypto.mjs`: HKDF alt anahtarları, zarf (AES-256-GCM, AAD
+      bağı, gzip ve Padmé dolgusu), fid ve blob kimliği, eşleştirme (ECDH, KEK,
+      proof, doğrulama numarası).
+    - `shared/sync-meta.mjs`: değişiklik metadata şeması ve doğrulaması (SV9),
+      etiket ve anahtar paketi, kimlik biçimleri, kısa kod, eşleştirme QR adresi.
+    - `shared/sync-merge-json.mjs` (`.map` ve genel JSON),
+      `shared/sync-merge-authority.mjs` (`tasks`/`relationships`/`properties`;
+      ilişki kuralları masaüstüyle aynı), `shared/sync-merge-node.mjs` (blok
+      kimliğine göre üç yollu birleştirme), `shared/sync-conflict.mjs`
+      (çakışma kopyası), `shared/sync-reconcile.mjs` (karar motoru).
+- `mobile/src/data/note-blocks.mjs` ve `html-tokens.mjs` değiştirilmeden
+  `shared/` klasörüne taşındı; mobil oradan import eder.
+- `stableStringify` `shared/sync-merge-json.mjs`'e taşındı; kapalı eski
+  `main/functions/sync-core.js` aynı adla dışa vermeye devam eder.
+- Tekrar eden görev: mobil, sonraki tekrarın kimliğini önceki görev kimliği ve
+  tarihten türetir (`task_r_…`, `formatPisiRecurrenceTaskId`). Masaüstü bağlantısı
+  S3'tedir (`pisi-error.md` §5d).
+- Test vektörleri: `tests/fixtures/sync-vectors.json`
+  (`node scripts/generate-sync-vectors.mjs --write`). Node testi değerleri
+  `node:crypto` ile ayrıca doğrular; mobil vitest aynı dosyayı okur.
+- Testler: `tests/shared-sync-vectors.test.mjs`,
+  `tests/shared-sync-paths-meta.test.mjs`, `tests/shared-sync-merge.test.mjs`,
+  `tests/shared-sync-merge-random.test.mjs` (1.000 rastgele `.node` ve 1.000
+  `tasks.json` düzenleme çifti), `tests/shared-sync-reconcile.test.mjs`,
+  `tests/sync-merge-integrity.test.mjs` (birleşik dosyalar ve çakışma
+  kopyaları fixture'da masaüstü Integrity'den sıfır yeni bulgu alır),
+  `mobile/tests/sync-vectors.test.mjs`.
+- Kullanıcı verisi: proje dosya biçimi değişmedi; geçiş adımı gerekmez.
+
 ## 16-11-2026 — Senkron planı ve protokolü (S0); Pisi Mobil M10 kabul edildi
 
 Senkron işi (yalnız belge; kod değişmedi):

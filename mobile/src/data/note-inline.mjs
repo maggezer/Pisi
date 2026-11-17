@@ -4,7 +4,7 @@
 // underline, strike) and links. A link keeps the exact HTML it was read with:
 // mobile shows it and moves it around but never rewrites it.
 
-import { parseTagAttributes, walkTags } from './html-tokens.mjs';
+import { parseTagAttributes, walkTags } from '../../../shared/html-tokens.mjs';
 
 export const PISI_INLINE_FORMAT_TAGS = Object.freeze(['b', 'em', 'i', 's', 'strong', 'u']);
 const NAMED = Object.freeze({ amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' });
@@ -28,7 +28,7 @@ export function escapeInlineText(text) {
  * `{ type: 'text', text }`, `{ type: 'br' }`, `{ type: 'format', tag, children }` and
  * `{ type: 'link', html, text, attributes }`.
  * Tags it does not know are dropped and what they hold is kept, so the text of
- * any block can be shown; only blocks note-blocks.mjs calls editable are written back.
+ * any block can be shown; only blocks shared/note-blocks.mjs calls editable are written back.
  */
 export function parseInlineHtml(html) {
     const source = String(html ?? '');

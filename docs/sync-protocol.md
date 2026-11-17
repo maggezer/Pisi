@@ -125,6 +125,9 @@ Bağ, sunucunun bir şifreli parçayı başka bir dosyaya, blob'a ya da cihaza t
 Padmé(L): E = floor(log2 L); S = floor(log2 E) + 1; z = E - S; m = 2^z - 1; sonuç = (L + m) & ~m
 ```
 
+- Sürüm 1 istemcileri **her** amacın zarfını dolgular (bit1 = 1). Okuyan taraf bayrağa bakar; dolgusuz zarfı da açar.
+- Sürüm 1'de `keyEpoch` 1 değilse zarf açılmaz (`DECRYPT_FAILED`).
+
 ### 4.5 Yol normalizasyonu ve fid
 
 **Yol (`path`):**
@@ -471,6 +474,8 @@ Masaüstü (admin)                         Sunucu                               
                                                                        5 KEK ile anahtar paketini çözer,
                                                                          K ve t'yi Keystore'a yazar
 ```
+
+**QR alanları:** `u` sunucu temel adresi (`https://`, sondaki `/` olmadan, URL kodlamalı), `s` alan, `p` eşleştirme, `k` masaüstü ECDH açık anahtarı (87 karakter), `x` 32 baytlık eşleştirme sırrı (43 karakter base64url), `c` kısa kod (`XXXX-XXXX`). Alan sırası sabittir; bir alan iki kez gelirse ya da biri eksikse QR reddedilir. Etiketteki `platform` değerleri: `windows`, `macos`, `linux`, `android`, `ios`, `web`.
 
 **Kod yolu:** telefon 3. adımdan önce `POST /v1/pairings/lookup {"code": "7K3M-Q9WX"}` ile `pairingId`, `spaceId` ve `desktopKey`'i alır ve claim'de `method: "code"`, `code` gönderir (`proof` yok). Ardından iki taraf **doğrulama numarasını** hesaplayıp gösterir. Masaüstü, kullanıcı "Aynı" demeden `grant` göndermez; "Farklı" derse `reject` gönderir.
 

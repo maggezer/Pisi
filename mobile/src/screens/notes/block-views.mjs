@@ -4,7 +4,7 @@
 // name. A task block is a task row whose state comes from tasks.json. None of
 // this is ever written back; the block's HTML stays as it was read.
 
-import { htmlToText } from '../../data/note-blocks.mjs';
+import { htmlToText } from '../../../../shared/note-blocks.mjs';
 import { parseInlineHtml } from '../../data/note-inline.mjs';
 import { h } from '../../ui/dom.mjs';
 import { icon } from '../../ui/icons.mjs';

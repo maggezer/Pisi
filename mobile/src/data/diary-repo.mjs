@@ -16,8 +16,8 @@ import {
 import { formatPisiBlockId, formatPisiDocumentId } from '../../../shared/ids.mjs';
 import { joinKey } from './drivers/keys.mjs';
 import { PisiReadOnlyError, parseJsonText, readJsonFile, serializeDocument } from './json-file.mjs';
-import { decodeEntities } from './html-tokens.mjs';
-import { splitNoteBlocks } from './note-blocks.mjs';
+import { decodeEntities } from '../../../shared/html-tokens.mjs';
+import { splitNoteBlocks } from '../../../shared/note-blocks.mjs';
 import { applyBlockPatch, makeParagraphBlockHtml, textToBlockHtml } from './note-patch.mjs';
 import { textToParagraphs } from './note-repo.mjs';
 

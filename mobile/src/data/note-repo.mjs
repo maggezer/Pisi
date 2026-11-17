@@ -9,7 +9,7 @@ import { getPisiPhysicalFileName, sanitizePisiBaseName } from '../../../shared/d
 import { formatPisiBlockId, formatPisiDocumentId } from '../../../shared/ids.mjs';
 import { joinKey, normalizeKey, parentKey } from './drivers/keys.mjs';
 import { PisiReadOnlyError, parseJsonText, readJsonFile, serializeDocument } from './json-file.mjs';
-import { splitNoteBlocks } from './note-blocks.mjs';
+import { splitNoteBlocks } from '../../../shared/note-blocks.mjs';
 import { applyBlockPatch, makeBlockHtml, textToBlockHtml } from './note-patch.mjs';
 
 // Sidecar assets mobile shows: images and Paint drawings, by the content-addressed name the desktop gave them.

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
     formatPisiBlockId,
     formatPisiDocumentId,
+    formatPisiRecurrenceTaskId,
     formatPisiSourceTaskId,
     formatPisiTaskId,
     hashPisiTaskIdentity,
@@ -88,4 +89,14 @@ test('kimlik yolu: ayırıcılar tek eğik çizgiye iner, harf büyüklüğü ya
         formatPisiSourceTaskId(normalizePisiTaskIdentityPath('notes\\a.node'), 'blk_1', 'todo.3.none'),
         formatPisiSourceTaskId(normalizePisiTaskIdentityPath('notes/a.node'), 'blk_1', 'todo.3.none')
     );
+});
+
+test('tekrar eden görevin sonraki kimliği önceki kimlik ve tarihten belirlenimci türetilir', () => {
+    const next = formatPisiRecurrenceTaskId('task_source_1b8e7567d628e6cb', '2026-11-15');
+    assert.equal(next, formatPisiRecurrenceTaskId('task_source_1b8e7567d628e6cb', '2026-11-15'));
+    assert.equal(next, `task_r_${hashPisiTaskIdentity('recurrence::task_source_1b8e7567d628e6cb::2026-11-15')}`);
+    assert.notEqual(next, formatPisiRecurrenceTaskId('task_source_1b8e7567d628e6cb', '2026-11-16'));
+    assert.notEqual(next, formatPisiRecurrenceTaskId('task_source_2a8e29877846d7a3', '2026-11-15'));
+    assert.equal(isPisiTaskId(next), true);
+    assert.equal(normalizePisiTaskId(next), next);
 });

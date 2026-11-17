@@ -1,3 +1,6 @@
+// stableStringify now lives in shared/sync-merge-json.mjs (docs/sync-plan.md S1.7); it is re-exported here unchanged.
+import { stableStringify } from '../../shared/sync-merge-json.mjs';
+
 const PISI_SYNC_PROTOCOL = 'pisi-sync';
 const PISI_SYNC_VERSION = 1;
 const PISI_SYNC_DEVICE_SNAPSHOT = 'pisi-sync-device-snapshot';
@@ -12,17 +15,6 @@ function assertSafeToken(value, label) {
         throw new TypeError(String(label || 'Kimlik') + ' geçersiz.');
     }
     return token;
-}
-
-function stableStringify(value) {
-    if (value === null || typeof value !== 'object') return JSON.stringify(value);
-    if (Array.isArray(value)) {
-        return '[' + value.map((item) => stableStringify(item)).join(',') + ']';
-    }
-    const keys = Object.keys(value)
-        .filter((key) => value[key] !== undefined)
-        .sort();
-    return '{' + keys.map((key) => JSON.stringify(key) + ':' + stableStringify(value[key])).join(',') + '}';
 }
 
 function hashString(value) {
