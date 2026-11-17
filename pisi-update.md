@@ -1,5 +1,35 @@
 # PISI Güncelleme Takip Dosyası
 
+## 17-11-2026 — Senkron sunucusu ve cPanel kurulum rehberi (S2)
+
+Senkron işi (`docs/sync-plan.md` S2). Masaüstü ve mobil uygulama değişmedi; istemciler
+S3 ve S5'te bağlanır.
+
+- `server/`: PHP 8.4, framework ve Composer olmadan protokolün bütün uç noktaları
+  (`docs/sync-protocol.md` §6): alan açma (kurulum anahtarı), değişiklik günlüğü,
+  karşılaştır-ve-değiştir commit (`STALE_BASE` hiçbir kaydı yazmaz), `commitId` ile
+  idempotens, parçalı blob yükleme, `Range` ile indirme, cihazlar ve iptal, QR ve kod
+  yoluyla eşleştirme, hız sınırları, kota ve bakım. Sunucu yalnız şifreli zarfları ve
+  token özetlerini saklar; yol, ad ya da içerik görmez.
+- Web köküne yalnız `server/public/index.php` ve `.htaccess` gider (`Authorization`
+  geçirmeyen barındırmalar için `CGIPassAuth` ve `X-Pisi-Token` yedeği). Kod, ayar ve veri
+  `server/app/` altında, `public_html` dışında durur.
+- Şema `server/app/schema/001-initial.sql`; göç yalnız `php app/bin/migrate.php` ile
+  çalışır, beklenirken sunucu `503 MAINTENANCE` döner. Temizlik `bin/gc.php` (cron yoksa
+  istekler arasında kısa fırsatçı temizlik), kurulum anahtarı `bin/setup-key.php`,
+  kurulum denetimi `bin/check.php`.
+- `docs/sync-server-cpanel.md`: Türkçe cPanel kurulum rehberi (alt alan adı, MultiPHP,
+  veritabanı, Git ile ya da File Manager ile dağıtım, kurulum anahtarı, göç, AutoSSL,
+  Cron Jobs, `curl` ile deneme ve `Authorization` teşhisi, yedekleme, güncelleme ve geri
+  alma). Kökteki `.cpanel.yml` → `server/deploy/cpanel-deploy.sh`.
+- `npm run test:sync-server` ve `.github/workflows/sync-server.yml` (PHP 8.4 + MariaDB
+  10.11): `php -l`, göç ve 51 sözleşme testi; protokoldeki 26 uç noktanın ve 42 hata
+  kodunun her biri en az bir testte görülmezse komut düşer. Test sunucusu
+  `scripts/start-sync-test-server.mjs` (S3–S7 de kullanır).
+- `docs/sync-protocol.md`: sunucuyu yazarken netleşen ayrıntılar eklendi (eksik protokol
+  başlığı, büyük JSON gövdesi, parça hataları ve `received`, commit denetim sırası,
+  eşleştirme durum geçişleri, §12 veri modeli). Protokol sürümü 1 kaldı.
+
 ## 16-11-2026 — Saf senkron çekirdeği: `shared/sync-*.mjs` (S1)
 
 Senkron işi (`docs/sync-plan.md` S1). Arayüz değişmedi; sunucu ve istemci

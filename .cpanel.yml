@@ -1,0 +1,6 @@
+# cPanel Git Version Control dağıtımı: yalnız Pisi senkron sunucusu (server/) kopyalanır.
+# Hedef klasörler ~/.pisi-sync-deploy dosyasındadır (docs/sync-server-cpanel.md §4).
+---
+deployment:
+    tasks:
+        - /bin/bash server/deploy/cpanel-deploy.sh

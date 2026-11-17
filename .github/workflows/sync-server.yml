@@ -1,0 +1,85 @@
+name: Sync server
+
+# Pisi senkron sunucusu (server/, docs/sync-plan.md S2): PHP 8.4 + MariaDB 10.11 üzerinde
+# php -l, göç ve protokol sözleşme testleri (npm run test:sync-server).
+on:
+    push:
+        branches:
+            - main
+        paths:
+            - 'server/**'
+            - 'shared/sync-*'
+            - 'docs/sync-protocol.md'
+            - 'scripts/start-sync-test-server.mjs'
+            - 'scripts/run-sync-server-tests.mjs'
+            - 'tests/sync-server-*'
+            - '.cpanel.yml'
+            - '.github/workflows/sync-server.yml'
+    pull_request:
+        paths:
+            - 'server/**'
+            - 'shared/sync-*'
+            - 'docs/sync-protocol.md'
+            - 'scripts/start-sync-test-server.mjs'
+            - 'scripts/run-sync-server-tests.mjs'
+            - 'tests/sync-server-*'
+            - '.cpanel.yml'
+            - '.github/workflows/sync-server.yml'
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: sync-server-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    contract:
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+
+        services:
+            mariadb:
+                image: mariadb:10.11
+                env:
+                    # Yalnız bu iş için açılan, dışarıya kapalı test veritabanı.
+                    MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: 'yes'
+                ports:
+                    - 3306:3306
+                options: >-
+                    --health-cmd="healthcheck.sh --connect --innodb_initialized"
+                    --health-interval=5s
+                    --health-timeout=5s
+                    --health-retries=20
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v5
+
+            - name: Setup Node
+              uses: actions/setup-node@v5
+              with:
+                  node-version: 24
+
+            - name: Setup PHP 8.4
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.4'
+                  extensions: pdo_mysql, json, mbstring, hash
+                  coverage: none
+                  tools: none
+
+            - name: Versions
+              run: |
+                  php -v
+                  php -m | grep -i -E '^(pdo_mysql|json|hash)$'
+
+            # Kök bağımlılıklar gerekmez: çalıştırıcı ve testler yalnız Node yerleşikleri ve shared/ kullanır.
+            - name: Contract tests (php -l, migrations, every endpoint and error code)
+              run: npm run test:sync-server
+              env:
+                  PISI_SYNC_TEST_DB_HOST: 127.0.0.1
+                  PISI_SYNC_TEST_DB_PORT: '3306'
+                  PISI_SYNC_TEST_DB_USER: root
+                  PISI_SYNC_TEST_DB_PASSWORD: ''

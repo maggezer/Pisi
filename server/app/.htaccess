@@ -1,0 +1,3 @@
+# app/ web kökünün DIŞINDA durur (docs/sync-server-cpanel.md). Yanlışlıkla web
+# köküne konursa hiçbir dosyası sunulmaz.
+Require all denied
