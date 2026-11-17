@@ -5,7 +5,7 @@ Sürüm: 1 · 17-11-2026 · Plan: [`docs/sync-plan.md`](sync-plan.md) S2 · Prot
 Bu rehber, Pisi'nin senkron sunucusunu (`server/`) paylaşımlı bir cPanel hesabına kurar. Sunucu PHP 8.4 ve MariaDB 10.11 ile çalışır; framework, Composer ya da sürekli çalışan bir süreç gerekmez.
 Sunucu dosya içeriğini, dosya yollarını ve adları hiç görmez; yalnız şifreli blob'ları ve sıra numaralı bir değişiklik günlüğünü saklar (protokol §11).
 
-Rehberdeki `KULLANICI` cPanel kullanıcı adınızdır, `sync.ornek.com` sunucuya vereceğiniz alt alan adıdır, `PHP_YOLU` ise §3'te bulacağınız PHP 8.4 komut yoludur. `~` ve `$HOME` ev klasörünüzü gösterir; bu her barındırmada `/home/KULLANICI` olmayabilir (ör. `/home2/KULLANICI`). Gerçek yolu cPanel ana sayfasında **General Information → Home Directory** satırında görürsünüz. **Gerçek adresinizi, veritabanı parolanızı ve kurulum anahtarınızı repoya, bir issue'ya ya da PR'a yazmayın.**
+Rehberdeki `KULLANICI` cPanel kullanıcı adınızdır, `sync.ornek.com` sunucuya vereceğiniz alt alan adıdır, komutlardaki `/opt/alt/php84/usr/bin/php` ise PHP 8.4'ün komut yoludur (CloudLinux barındırmalarda; sizinki farklıysa §3.1). `~` ve `$HOME` ev klasörünüzü gösterir; bu her barındırmada `/home/KULLANICI` olmayabilir (ör. `/home2/KULLANICI`). Gerçek yolu cPanel ana sayfasında **General Information → Home Directory** satırında görürsünüz. **Gerçek adresinizi, veritabanı parolanızı ve kurulum anahtarınızı repoya, bir issue'ya ya da PR'a yazmayın.**
 
 ---
 
@@ -44,14 +44,14 @@ Alt alan adı yerine `https://ornek.com/pisi` gibi bir alt klasör kullanacaksan
     - `memory_limit`: `128M` ya da üstü.
 3. Eklentiler: `pdo_mysql`, `json`, `hash`, `mbstring`, `openssl` açık olmalıdır. EA4'te genelde açıktır; değilse **Select PHP Version → Extensions** (CloudLinux) ya da barındırma desteğinden isteyin.
 
-### 3.1 PHP 8.4'ün komut yolu (`PHP_YOLU`)
+### 3.1 PHP 8.4'ün komut yolu
 
 Göç, kurulum anahtarı ve temizlik komutları PHP'yi komut satırından çalıştırır. Yalnız `php` yazmak başka bir sürümü çalıştırabilir; tam yolu kullanın. Yol, barındırmanın PHP paketine göre değişir:
 
-| MultiPHP Manager'daki ad | `PHP_YOLU`                              |
+| MultiPHP Manager'daki ad | Komut yolu                              |
 | ------------------------ | --------------------------------------- |
-| `ea-php84`               | `/opt/cpanel/ea-php84/root/usr/bin/php` |
 | `alt-php84` (CloudLinux) | `/opt/alt/php84/usr/bin/php`            |
+| `ea-php84`               | `/opt/cpanel/ea-php84/root/usr/bin/php` |
 
 Emin olmak için Terminal'de (yoksa §7'deki gibi tek seferlik bir cron işiyle çıktıyı bir dosyaya yazarak):
 
@@ -59,10 +59,10 @@ Emin olmak için Terminal'de (yoksa §7'deki gibi tek seferlik bir cron işiyle 
 ls -d /opt/cpanel/ea-php*/root/usr/bin/php /opt/alt/php*/usr/bin/php 2>/dev/null
 ```
 
-Listede `php84` içeren satır sizin `PHP_YOLU`'nuzdur. Rehberin geri kalanında `PHP_YOLU` gördüğünüz yere bunu yazın. Listede 8.4 yoksa barındırma firmanızdan PHP 8.4'ü isteyin.
+Rehberdeki komutlar CloudLinux yolunu (`/opt/alt/php84/usr/bin/php`) kullanır. Listedeki `php84` satırı farklıysa (ör. `ea-php84`) komutlarda onu yazın. Listede 8.4 yoksa barındırma firmanızdan PHP 8.4'ü isteyin.
 
 - PHP komutlarını **ev klasörünüzden** çalıştırın (önce `cd ~`). Bazı barındırmalar PHP uyarılarını çalıştırılan klasöre `error_log` adlı bir dosyaya yazar.
-- `PHP Deprecated: … session.sid_length …` ve `… session.sid_bits_per_character …` uyarıları barındırmanın genel PHP ayarlarından gelir ve zararsızdır; PHP 8.4'ün çalıştığını da gösterir. Kaynağını `PHP_YOLU --ini` gösterir; kendi `php.ini`/`.user.ini` dosyanızdaysa o iki satırı silebilirsiniz.
+- `PHP Deprecated: … session.sid_length …` ve `… session.sid_bits_per_character …` uyarıları barındırmanın genel PHP ayarlarından gelir ve zararsızdır; PHP 8.4'ün çalıştığını da gösterir. Kaynağını `/opt/alt/php84/usr/bin/php --ini` gösterir; kendi `php.ini`/`.user.ini` dosyanızdaysa o iki satırı silebilirsiniz.
 
 ## 4. Dosyaların yüklenmesi
 
@@ -79,12 +79,12 @@ Listede `php84` içeren satır sizin `PHP_YOLU`'nuzdur. Rehberin geri kalanında
     ```text
     APP_DIR=$HOME/pisi-sync/app
     PUBLIC_DIR=$HOME/pisi-sync/public
-    PHP_BIN=PHP_YOLU
+    PHP_BIN=/opt/alt/php84/usr/bin/php
     RUN_MIGRATE=1
     ```
 
     - `PUBLIC_DIR`, §2'de verdiğiniz belge kökü olmalıdır (cPanel → **Domains** → **Document Root** sütunu).
-    - `PHP_BIN` boş bırakılırsa betik sırayla `ea-php84`, `alt-php84` ve `php`'yi arar. `PHP_YOLU` yerine §3.1'de bulduğunuz yolu yazın.
+    - `PHP_BIN` boş bırakılırsa betik sırayla `ea-php84`, `alt-php84` ve `php`'yi arar. Yolunuz farklıysa §3.1'deki yolu yazın.
     - `config.php` henüz hazır değilse ya da göçü elle yapmak istiyorsanız `RUN_MIGRATE=0` yazın.
 
 3. **Git Version Control** → `Pisi` → **Manage** → **Pull or Deploy** → **Deploy HEAD Commit**.
@@ -137,7 +137,7 @@ Kurulum anahtarı, masaüstünün sunucuda yeni bir proje alanı açabilmesi iç
 **Terminal varsa** (cPanel → **Terminal**):
 
 ```bash
-cd ~ && PHP_YOLU ~/pisi-sync/app/bin/setup-key.php
+cd ~ && /opt/alt/php84/usr/bin/php ~/pisi-sync/app/bin/setup-key.php
 ```
 
 Komut `psk_…` ile başlayan anahtarı **bir kez** ekrana basar ve özetini `app/data/setup-key.hash` dosyasına yazar. Anahtarı parola yöneticinize kaydedin; Pisi masaüstünde alan açarken sorulur.
@@ -147,7 +147,7 @@ Komut `psk_…` ile başlayan anahtarı **bir kez** ekrana basar ve özetini `ap
 1. cPanel → **Cron Jobs** → **Add New Cron Job** → **Once Per Minute** → komut:
 
     ```text
-    cd $HOME && PHP_YOLU $HOME/pisi-sync/app/bin/setup-key.php --key-file >/dev/null 2>&1
+    cd $HOME && /opt/alt/php84/usr/bin/php $HOME/pisi-sync/app/bin/setup-key.php --key-file >/dev/null 2>&1
     ```
 
 2. Bir dakika bekleyin, sonra cron işini **silin** (yoksa her dakika yeni anahtar üretir).
@@ -160,15 +160,15 @@ Anahtarı değiştirmek için komutu yeniden çalıştırın; eski anahtar artı
 Sunucu, şema güncel değilken `/v1/info` dışındaki her isteğe `503 MAINTENANCE` döner. Şemayı yalnız şu komut kurar ve günceller:
 
 ```bash
-cd ~ && PHP_YOLU ~/pisi-sync/app/bin/migrate.php
+cd ~ && /opt/alt/php84/usr/bin/php ~/pisi-sync/app/bin/migrate.php
 ```
 
-Terminal yoksa §7'deki gibi tek seferlik bir cron işi kullanın (komut: `cd $HOME && PHP_YOLU $HOME/pisi-sync/app/bin/migrate.php >/dev/null 2>&1`), bir dakika sonra silin. Git ile dağıtımda (`RUN_MIGRATE=1`) her dağıtımda kendiliğinden çalışır.
+Terminal yoksa §7'deki gibi tek seferlik bir cron işi kullanın (komut: `cd $HOME && /opt/alt/php84/usr/bin/php $HOME/pisi-sync/app/bin/migrate.php >/dev/null 2>&1`), bir dakika sonra silin. Git ile dağıtımda (`RUN_MIGRATE=1`) her dağıtımda kendiliğinden çalışır.
 
 Ardından kurulumu denetleyin:
 
 ```bash
-cd ~ && PHP_YOLU ~/pisi-sync/app/bin/check.php
+cd ~ && /opt/alt/php84/usr/bin/php ~/pisi-sync/app/bin/check.php
 ```
 
 `check.php` PHP sürümünü ve eklentileri, ayar dosyasını, veri klasörünü, veritabanı bağlantısını, şema sürümünü, kurulum anahtarını ve parça boyutunu denetler; gizli değer basmaz. `[HATA]` satırı kalmamalıdır.
@@ -191,14 +191,14 @@ Eski günlük kayıtları, kullanılmayan blob'lar, süresi dolan eşleştirmele
 cPanel → **Cron Jobs** → **Once Per Hour** (`0 * * * *`) → komut:
 
 ```text
-cd $HOME && PHP_YOLU $HOME/pisi-sync/app/bin/gc.php >/dev/null 2>&1
+cd $HOME && /opt/alt/php84/usr/bin/php $HOME/pisi-sync/app/bin/gc.php >/dev/null 2>&1
 ```
 
 Cron kurulmazsa sunucu, saatte en çok bir kez, bir isteğin yanıtından sonra en çok 2 saniye süren kısa bir temizlik yapar. Büyük projelerde cron önerilir.
 
 ## 11. Deneme
 
-Kendi bilgisayarınızda:
+Kendi bilgisayarınızda (komutlar Windows `cmd`, PowerShell'de `curl.exe`, macOS ve Linux'ta aynıdır; tek tırnak kullanmayın, Windows `cmd` onu tırnak saymaz):
 
 ```bash
 curl -s https://sync.ornek.com/v1/info
@@ -209,7 +209,7 @@ Beklenen yanıt `{"service":"pisi-sync","protocol":{"min":1,"max":1,"revision":1
 Veritabanı ve şemayı da denemek için (token olmadan):
 
 ```bash
-curl -s -H 'Pisi-Sync-Protocol: 1' https://sync.ornek.com/v1/spaces/sp_AAAAAAAAAAAAAAAAAAAAAA/head
+curl -s -H "Pisi-Sync-Protocol: 1" https://sync.ornek.com/v1/spaces/sp_AAAAAAAAAAAAAAAAAAAAAA/head
 ```
 
 | Yanıt                            | Anlamı                                                                   |
@@ -225,11 +225,11 @@ curl -s -H 'Pisi-Sync-Protocol: 1' https://sync.ornek.com/v1/spaces/sp_AAAAAAAAA
 Bazı barındırmalar `Authorization` başlığını PHP'ye geçirmez. Biçimi doğru ama geçersiz bir token'la deneyin:
 
 ```bash
-curl -s -H 'Pisi-Sync-Protocol: 1' -H 'Authorization: Bearer pst_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA' https://sync.ornek.com/v1/spaces/sp_AAAAAAAAAAAAAAAAAAAAAA/head
+curl -s -H "Pisi-Sync-Protocol: 1" -H "Authorization: Bearer pst_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" https://sync.ornek.com/v1/spaces/sp_AAAAAAAAAAAAAAAAAAAAAA/head
 ```
 
 - `TOKEN_INVALID`: başlık geçiyor.
-- `AUTH_REQUIRED`: başlık PHP'ye ulaşmıyor. `.htaccess`'teki `CGIPassAuth On` ve `RewriteRule … E=HTTP_AUTHORIZATION` satırları yerinde mi bakın. Yine olmuyorsa sorun değil: Pisi istemcileri token'ı ayrıca `X-Pisi-Token` başlığıyla da gönderebilir. Aynı denemeyi `-H 'X-Pisi-Token: pst_AAAA…'` ile yapın; `TOKEN_INVALID` dönmelidir.
+- `AUTH_REQUIRED`: başlık PHP'ye ulaşmıyor. `.htaccess`'teki `CGIPassAuth On` ve `RewriteRule … E=HTTP_AUTHORIZATION` satırları yerinde mi bakın. Yine olmuyorsa sorun değil: Pisi istemcileri token'ı ayrıca `X-Pisi-Token` başlığıyla da gönderebilir. Aynı denemeyi `Authorization` yerine `-H "X-Pisi-Token: pst_AAAA…"` ile yapın; `TOKEN_INVALID` dönmelidir.
 
 ## 12. Yedekleme
 
