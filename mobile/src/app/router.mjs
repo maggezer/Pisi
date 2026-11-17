@@ -58,6 +58,15 @@ export function createRouter({ today }) {
             return update({ stack: Object.freeze([...stack, 'map']), overlays: Object.freeze([]), map: Object.freeze({ key, title }) });
         },
 
+        /**
+         * Takes the note screen off the stack (its note was deleted elsewhere):
+         * the screen under it comes back, with the sheets of the note closed.
+         */
+        closeNote() {
+            if (!state.stack.includes('note')) return state;
+            return update({ stack: Object.freeze(state.stack.filter((screen) => screen !== 'note')), overlays: Object.freeze([]), note: null });
+        },
+
         /** The day the Pisi tab shows (YYYY-MM-DD). Sheets stay as they are; whoever picked the day closes its own. */
         setSelectedDate(isoDate) {
             if (!/^\d{4}-\d{2}-\d{2}$/.test(String(isoDate)) || isoDate === state.selectedDate) return state;

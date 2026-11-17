@@ -52,6 +52,18 @@ export function createNodeFsDriver(rootFolder) {
         },
 
         /** Removes one file. Missing files are fine; directories are never removed. */
-        remove: (key) => guard(key, () => fs.rm(resolve(key), { force: true }))
+        remove: (key) => guard(key, () => fs.rm(resolve(key), { force: true })),
+
+        /** Removes an empty directory; a directory with anything in it (or the root) stays. Resolves true when it was removed. */
+        async removeDirectory(key) {
+            if (!normalizeKey(key)) return false;
+            try {
+                await fs.rmdir(resolve(key));
+                return true;
+            } catch (error) {
+                if (['ENOENT', 'ENOTEMPTY', 'EEXIST', 'ENOTDIR'].includes(error?.code)) return false;
+                throw new PisiStorageError('IO_ERROR', error?.message || String(error), String(key));
+            }
+        }
     };
 }

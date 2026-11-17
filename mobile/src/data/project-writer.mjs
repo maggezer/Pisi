@@ -3,8 +3,13 @@
 // - V4: a file whose content would not change is not written.
 // - V6: write a temporary file, rename it over the target, read the target back.
 // - V7: a file marked read-only (corrupt JSON) is never written.
-// - After each write `fileChanged(key)` is emitted. No sync metadata is stored.
+// - After each write `fileChanged(key, { source })` is emitted. No sync metadata is stored.
+// - Changes from outside (sync, docs/sync-plan.md S4) come in through
+//   `applyExternal` and `removeExternal`: the same queue and rules, never over
+//   a file a screen holds unsaved edits of (SV4), and their events say
+//   `source: 'sync'` so that nothing sends them back.
 
+import { isPisiManagedSidecarFolder } from '../../../shared/document-naming.mjs';
 import { baseName, joinKey, normalizeKey, parentKey } from './drivers/keys.mjs';
 import { PisiReadOnlyError, parseJsonText, readTextOrNull } from './json-file.mjs';
 
@@ -13,8 +18,21 @@ import { PisiReadOnlyError, parseJsonText, readTextOrNull } from './json-file.mj
 const TEMP_NAME = /^\.(.+)\.mobile-[A-Za-z0-9-]+\.tmp$/;
 
 const isJsonTarget = (name) => /\.(json|node|map)$/i.test(name);
+const isDocument = (name) => /\.(node|map)$/i.test(name);
 
-export function createProjectWriter({ driver, makeToken, onError = () => {} }) {
+/** The managed sidecar folder (`inv_…`, `nd_…`) a note or map document names, next to it, or null. */
+function sidecarOf(key, text) {
+    if (!isDocument(key) || text === null) return null;
+    const parsed = parseJsonText(text);
+    const sidecar = parsed.status === 'ok' ? parsed.data.pisi?.sidecar : null;
+    return typeof sidecar === 'string' && !/[\\/]/.test(sidecar) && isPisiManagedSidecarFolder(sidecar) ? joinKey(parentKey(key), sidecar) : null;
+}
+
+/**
+ * `documents` (data/open-documents.mjs) says which files a screen holds
+ * unsaved edits of; outside changes to those are refused and listed as deferred.
+ */
+export function createProjectWriter({ driver, makeToken, documents = null, onError = () => {} }) {
     const listeners = new Set();
     const readOnly = new Map();
     let tail = Promise.resolve();
@@ -25,17 +43,17 @@ export function createProjectWriter({ driver, makeToken, onError = () => {} }) {
         return run;
     }
 
-    function emit(key) {
+    function emit(key, info = { source: 'local' }) {
         for (const listener of listeners) {
             try {
-                listener(key);
+                listener(key, info);
             } catch (error) {
                 onError(error);
             }
         }
     }
 
-    async function writeNow(key, text, current) {
+    async function writeNow(key, text, current, info) {
         if (readOnly.has(key)) throw new PisiReadOnlyError(key, readOnly.get(key));
         if (current === text) return { written: false, key };
         const parent = parentKey(key);
@@ -49,15 +67,73 @@ export function createProjectWriter({ driver, makeToken, onError = () => {} }) {
             throw error;
         }
         if ((await driver.readText(key)) !== text) throw new Error(`Write could not be verified: ${key}`);
-        emit(key);
+        emit(key, info);
         return { written: true, key };
+    }
+
+    /**
+     * Why an outside change of `key` may not be applied now, or null. `current`
+     * is the file's text (null when missing); `expected`, when given, is the
+     * text the caller merged against.
+     */
+    function refusal(key, current, expected) {
+        if (readOnly.has(key)) return 'read-only';
+        if (documents?.isDirty(key)) return 'dirty';
+        if (expected !== undefined && current !== expected) return 'changed';
+        return null;
+    }
+
+    function refuse(key, reason) {
+        // A file that waits for the user (unsaved edits) or for a new merge is tried again later.
+        if (reason === 'dirty' || reason === 'changed') documents?.markDeferred(key, reason);
+        return { written: false, key, reason };
+    }
+
+    /**
+     * Removes `folder` when nothing but empty folders is left in it. Resolves
+     * true when it is gone. Files are never removed here.
+     */
+    async function removeEmptyTree(folder) {
+        const entries = await driver.list(folder).catch(() => null);
+        if (!entries) return false;
+        for (const entry of entries) {
+            if (entry.type !== 'directory' || !(await removeEmptyTree(joinKey(folder, entry.name)))) return false;
+        }
+        return driver.removeDirectory(folder);
+    }
+
+    /** True when a note or map next to `folder` names it as its sidecar: then the folder stays, even empty (SV6). */
+    async function isOwned(folder) {
+        const parent = parentKey(folder);
+        const entries = await driver.list(parent).catch(() => []);
+        for (const entry of entries) {
+            if (entry.type !== 'file' || !isDocument(entry.name)) continue;
+            const key = joinKey(parent, entry.name);
+            if (sidecarOf(key, await readTextOrNull(driver, key)) === folder) return true;
+        }
+        return false;
+    }
+
+    const removeIfOrphaned = async (folder) => !(await isOwned(folder)) && removeEmptyTree(folder);
+
+    /**
+     * After a remote delete: the document's own sidecar folder and the managed
+     * sidecar folders the file was in go once they are empty and no document
+     * names them any more.
+     */
+    async function tidyAfterRemove(key, sidecar) {
+        if (sidecar) await removeIfOrphaned(sidecar);
+        for (let folder = parentKey(key); folder; folder = parentKey(folder)) {
+            if (!isPisiManagedSidecarFolder(baseName(folder))) continue;
+            if (!(await removeIfOrphaned(folder))) break;
+        }
     }
 
     return {
         /** Writes `text` to `key` unless the file already holds exactly that text. */
         writeText(key, text) {
             const clean = normalizeKey(key);
-            return enqueue(async () => writeNow(clean, String(text), await readTextOrNull(driver, clean)));
+            return enqueue(async () => writeNow(clean, String(text), await readTextOrNull(driver, clean), { source: 'local' }));
         },
 
         /**
@@ -73,7 +149,58 @@ export function createProjectWriter({ driver, makeToken, onError = () => {} }) {
                 const current = await readTextOrNull(driver, clean);
                 const next = await change(current);
                 if (next === null || next === undefined) return { written: false, key: clean };
-                return writeNow(clean, String(next), current);
+                return writeNow(clean, String(next), current, { source: 'local' });
+            });
+        },
+
+        /**
+         * A file's new content from outside the app (sync). Written like any
+         * other file (queue, atomic, verified), but only when the file is not
+         * held dirty by a screen, is not read-only and, with `expected`, still
+         * holds the text the caller merged against. Text that is not a JSON
+         * object is never written to a `.node`, `.map` or `.json` file (SV10).
+         * A note or map gets its empty managed sidecar folder, since folders
+         * themselves are not synced (SV6). Resolves with `{ written, key, reason? }`;
+         * `reason` is 'unchanged', 'dirty', 'changed', 'read-only' or 'invalid'.
+         */
+        applyExternal(key, text, { expected } = {}) {
+            const clean = normalizeKey(key);
+            const body = String(text);
+            return enqueue(async () => {
+                if (isJsonTarget(baseName(clean)) && parseJsonText(body).status !== 'ok') return refuse(clean, 'invalid');
+                const current = await readTextOrNull(driver, clean);
+                const reason = refusal(clean, current, expected);
+                if (reason) return refuse(clean, reason);
+                documents?.clearDeferred(clean);
+                if (current === body) return { written: false, key: clean, reason: 'unchanged' };
+                const sidecar = sidecarOf(clean, body);
+                if (sidecar && !(await driver.exists(sidecar))) await driver.mkdir(sidecar);
+                return writeNow(clean, body, current, { source: 'sync' });
+            });
+        },
+
+        /**
+         * A file deleted outside the app (on the desktop). The same conditions as
+         * applyExternal; a missing file is 'unchanged'. Afterwards the managed
+         * sidecar folders left empty are removed, the document's own included.
+         * Only this path removes folders: mobile itself never deletes (V9).
+         */
+        removeExternal(key, { expected } = {}) {
+            const clean = normalizeKey(key);
+            return enqueue(async () => {
+                const stat = await driver.stat(clean);
+                if (stat?.type === 'directory' || !clean) return refuse(clean, 'invalid');
+                const textual = isDocument(clean) || expected !== undefined;
+                const current = stat && textual ? await readTextOrNull(driver, clean) : null;
+                const reason = refusal(clean, current, expected === undefined || !stat ? undefined : expected);
+                if (reason) return refuse(clean, reason);
+                documents?.clearDeferred(clean);
+                if (!stat) return { written: false, key: clean, reason: 'unchanged' };
+                await driver.remove(clean);
+                if (await driver.exists(clean)) throw new Error(`Remove could not be verified: ${clean}`);
+                emit(clean, { source: 'sync', removed: true });
+                await tidyAfterRemove(clean, sidecarOf(clean, current));
+                return { written: true, key: clean, removed: true };
             });
         },
 
@@ -91,7 +218,7 @@ export function createProjectWriter({ driver, makeToken, onError = () => {} }) {
                     mkdir: (key) => driver.mkdir(normalizeKey(key)),
                     write: async (key, text) => {
                         const clean = normalizeKey(key);
-                        return writeNow(clean, String(text), await readTextOrNull(driver, clean));
+                        return writeNow(clean, String(text), await readTextOrNull(driver, clean), { source: 'local' });
                     }
                 })
             );
@@ -102,6 +229,7 @@ export function createProjectWriter({ driver, makeToken, onError = () => {} }) {
             return tail;
         },
 
+        /** `listener(key, { source: 'local' | 'sync', removed? })` runs after a file was written or removed. */
         onFileChanged(listener) {
             listeners.add(listener);
             return () => listeners.delete(listener);
@@ -136,7 +264,7 @@ export function createProjectWriter({ driver, makeToken, onError = () => {} }) {
                     if (complete) {
                         await driver.rename(temp, target);
                         names.add(match[1]);
-                        emit(target);
+                        emit(target, { source: 'local' });
                     } else {
                         await driver.remove(temp);
                     }

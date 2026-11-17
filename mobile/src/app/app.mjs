@@ -18,6 +18,7 @@ import { watchKeyboard } from '../ui/keyboard.mjs';
 import { renderChoiceSheet } from '../ui/overlay.mjs';
 import { createShell, renderHomeShell, renderShell } from '../ui/shell.mjs';
 import { createSnackbarController, renderSnackbar } from '../ui/snackbar.mjs';
+import { watchExternalChanges } from './external-changes.mjs';
 import { createLifecycle } from './lifecycle.mjs';
 import { PISI_THEME_PREFERENCES, createPreferences } from './preferences.mjs';
 import { PISI_HOME_TAB, PISI_TABS, createRouter } from './router.mjs';
@@ -122,6 +123,8 @@ export function createApp({
         onOpenNote: openNote,
         // A diary day edited as a note is the same file the Pisi tab shows.
         onSaved: (key) => key.startsWith('diary/') && void pisi.reload(),
+        // The note was deleted on the desktop: the screen it was opened from comes back (S4).
+        onDeleted: () => router.closeNote(),
         onError
     });
     // Maps are only viewed (M9): the list, and the viewer a note on the map is opened from.
@@ -134,15 +137,19 @@ export function createApp({
         pisi.getOverlayOpener(overlay) ??
         `[data-setting="${overlay}"]`;
 
-    async function refreshProject() {
+    async function refreshProject({ redraw = true } = {}) {
         await project.index.build();
         const listed = await project.tasks.list();
         const documents = project.notes.list();
         const diary = documents.filter((note) => note.kind === 'diary').length;
         projectState.counts = { tasks: listed.tasks.length, notes: documents.length - diary, diary, maps: project.index.getMaps().length };
         projectState.readOnlyFiles = project.getIntegrity().readOnlyFiles;
-        if (!destroyed) render();
+        if (!destroyed && redraw) render();
     }
+
+    // After a change from outside the counts in Settings are taken again; only Settings is drawn again for it.
+    const settingsShown = () => router.getState().stack.at(-1) === 'settings' && !router.getState().overlays.length;
+    const recount = () => refreshProject({ redraw: settingsShown() }).catch(onError);
 
     async function openProject() {
         try {
@@ -351,7 +358,23 @@ export function createApp({
         render();
     }
 
+    // Files changed outside the app (sync) are shown where they are on screen, without opening the project again (SV5).
+    const external = project
+        ? watchExternalChanges({
+              project,
+              tasks,
+              handlers: [
+                  (key) => pisi.handleExternal(key),
+                  (key) => calendarScreen.handleExternal(key),
+                  (key, info) => noteScreen.handleExternal(key, info),
+                  (key, info) => mapViewer.handleExternal(key, info),
+                  () => recount()
+              ],
+              onError
+          })
+        : null;
     const stops = [
+        external,
         router.subscribe(render),
         // The task sheets show a task as it is stored; they are drawn again when the tasks change.
         tasks.subscribe(() => !destroyed && render()),
@@ -380,6 +403,8 @@ export function createApp({
         handleBack,
         /** Resolves when the project has been opened and counted (or opening failed). */
         ready,
+        /** Resolves when every change from outside seen so far is on screen. */
+        whenExternalSettled: () => external?.settled() ?? Promise.resolve(),
         destroy() {
             destroyed = true;
             snackbar.dismiss();

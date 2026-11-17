@@ -406,6 +406,17 @@ Her faz: amaç → okunacaklar → yapılacaklar → kabul kriterleri. Madde kim
 - E2E: not A açıkken ve 3. blok yazılırken 5. blok dışarıdan değişir → 5. blok güncellenir, imleç 3. blokta aynı konumda kalır, yazılan metin durur. Kirli 3. bloğa dış değişiklik gelirse uygulanmaz ve ertelenmiş görünür.
 - E2E: not B dışarıdan değişince açık not A'nın DOM'u yeniden kurulmaz.
 - Dışarıdan silinen açık not kullanıcıya bildirilir; uygulama çökmez, veri yazılmaz.
+- **Uygulandı (17-11-2026):**
+    - Veri katmanı: `ProjectWriter.applyExternal(key, text, { expected })` / `removeExternal(key, { expected })`. Hiçbir zaman fırlatmayan bir sonuç döner: `{ written, reason }`; neden `unchanged`, `dirty`, `changed`, `read-only` ya da `invalid` olur. Açık belge kiralaması `project.documents` (`data/open-documents.mjs`): `hold`, `flush`, `onClean`, ertelenenler. Sürücülere `removeDirectory` eklendi (yalnız boş klasör). İndeks değişen dosyayı sırayla yeniden okur (`index.settled()`); arama katlamayı not kaydına göre önbelleğe alır.
+    - Ekranlara dağıtım `app/external-changes.mjs` üzerinden yapılır. Açık not blokları `screens/notes/note-rebase.mjs` ile kimliğe göre eşler; `NoteEditor.applyContent`. Günlük `diary.setText(…, { expectedText })` ve `mergeDiaryText` kullanır.
+    - Test yardımcısı: `data/external-source.mjs`. Debug derlemesinde `window.pisiDeveloper.external` köprüsünden çağrılır.
+    - Verilen kararlar (onaylı):
+        - `applyExternal`/`removeExternal` için isteğe bağlı `expected` (karşılaştır-ve-değiştir).
+        - Kirli dosya korumasını yazıcı da uygular.
+        - Yazma ile ekranın onu işlemesi arasında aynı blok yazılırsa yerel metin uzak sürümün altında ayrı bir blok olarak kalır.
+        - `NOTE_CHANGED`'de yazılan metin atılmaz, disktekiyle birleşir.
+        - Silinen açık not ekranı kapanır, açıldığı yere dönülür.
+        - Gelen not ve harita boş yönetilen yan klasörüyle oluşur (S3 ile aynı). Uzak silmeden sonra yalnız hiçbir belgenin sahiplenmediği boş yönetilen klasörler kalkar.
 
 ### S5 · Mobil eşleştirme ve senkron motoru
 

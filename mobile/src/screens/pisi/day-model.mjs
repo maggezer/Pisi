@@ -128,3 +128,24 @@ export function parseTaskDraft(text, { selectedDate = null, now }) {
         repeat: parsed.repeat
     };
 }
+
+const paragraphsOf = (text) =>
+    String(text ?? '')
+        .split(/\n{2,}/)
+        .map((paragraph) => paragraph.replace(/^\n+|\n+$/g, ''))
+        .filter((paragraph) => paragraph.trim());
+
+/**
+ * The day's text when it changed on disk (another device) while text typed
+ * here was not saved yet. `base` is the text both started from. Nothing is
+ * lost (SV3): when only one side changed, that side is the result; otherwise
+ * the text on disk comes first and every paragraph typed here that is in
+ * neither the base nor the disk follows it.
+ */
+export function mergeDiaryText({ base, local, remote }) {
+    if (local === base || local === remote) return remote;
+    if (remote === base) return local;
+    const known = new Set([...paragraphsOf(base), ...paragraphsOf(remote)]);
+    const added = paragraphsOf(local).filter((paragraph) => !known.has(paragraph));
+    return [...paragraphsOf(remote), ...added].join('\n\n');
+}

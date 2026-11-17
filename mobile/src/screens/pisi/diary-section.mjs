@@ -40,18 +40,29 @@ export function createDiarySection({ t, onInput }) {
         element,
         textarea,
         fit,
-        /** Shows a day. Until it has been read (`loaded`) and when its file cannot be written the text is locked. */
-        show({ text, loaded, readOnly, otherBlocks }) {
-            if (textarea.value !== text) textarea.value = text;
+        /**
+         * Shows a day. Until it has been read (`loaded`) and when its file cannot be written the text is locked.
+         * `deferred`: a change from another device waits until the text typed here is saved.
+         */
+        show({ text, loaded, readOnly, otherBlocks, deferred = false }) {
+            if (textarea.value !== text) {
+                // A day changed from outside while the field has the focus: the caret stays where it was, as far as the text allows.
+                const focused = textarea.ownerDocument.activeElement === textarea;
+                const { selectionStart, selectionEnd } = textarea;
+                textarea.value = text;
+                if (focused) textarea.setSelectionRange(Math.min(selectionStart, text.length), Math.min(selectionEnd, text.length));
+            }
             textarea.readOnly = !loaded || readOnly;
             textarea.setAttribute('aria-busy', loaded ? 'false' : 'true');
             const message = readOnly
                 ? t('pisi.diaryReadOnly')
-                : otherBlocks
-                  ? otherBlocks === 1
-                      ? t('pisi.diaryOtherBlock', { count: otherBlocks })
-                      : t('pisi.diaryOtherBlocks', { count: otherBlocks })
-                  : '';
+                : deferred
+                  ? t('pisi.diaryExternalDeferred')
+                  : otherBlocks
+                    ? otherBlocks === 1
+                        ? t('pisi.diaryOtherBlock', { count: otherBlocks })
+                        : t('pisi.diaryOtherBlocks', { count: otherBlocks })
+                    : '';
             note.textContent = message;
             note.hidden = !message;
             note.classList.toggle('pisi-diary-note-error', Boolean(readOnly));

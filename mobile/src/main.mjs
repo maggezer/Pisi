@@ -32,10 +32,17 @@ if (import.meta.env.DEV && new URLSearchParams(window.location.search).has('gall
     const onError = (error) => console.error('[Pisi]', error);
     // Debug builds (the dev server and the test APK, which CI builds with VITE_PISI_DEVELOPER=1) get the developer menu.
     const developer = import.meta.env.DEV || import.meta.env.VITE_PISI_DEVELOPER === '1';
+    const project = createProject({ driver: createCapacitorFsDriver(), makeUuid: () => window.crypto.randomUUID(), onError });
+    // Debug builds only: a stand-in for another device, so tests can change files "from outside" (docs/sync-plan.md S4).
+    if (developer) {
+        void import('./data/external-source.mjs').then(({ createExternalSource }) => {
+            window.pisiDeveloper = Object.freeze({ external: createExternalSource(project) });
+        });
+    }
     createApp({
         root,
         platform: createCapacitorPlatform(),
-        project: createProject({ driver: createCapacitorFsDriver(), makeUuid: () => window.crypto.randomUUID(), onError }),
+        project,
         loadSample: developer ? loadSampleProject : null,
         loadSampleMap: developer ? addSampleMap : null,
         // Both come from the build (vite.config.mjs): package.json's version and, in CI, the APK's version code.

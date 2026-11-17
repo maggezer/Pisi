@@ -18,7 +18,7 @@ export function spyDriver(driver) {
     const calls = [];
     const failures = new Map();
     const wrapped = {};
-    for (const name of ['readText', 'readBase64', 'writeText', 'rename', 'list', 'stat', 'mkdir', 'exists', 'remove']) {
+    for (const name of ['readText', 'readBase64', 'writeText', 'rename', 'list', 'stat', 'mkdir', 'exists', 'remove', 'removeDirectory']) {
         wrapped[name] = async (...args) => {
             calls.push([name, ...args.slice(0, name === 'writeText' ? 1 : 2)]);
             if (failures.has(name)) throw failures.get(name);

@@ -19,7 +19,7 @@ import { PisiReadOnlyError, parseJsonText, readJsonFile, serializeDocument } fro
 import { decodeEntities } from '../../../shared/html-tokens.mjs';
 import { splitNoteBlocks } from '../../../shared/note-blocks.mjs';
 import { applyBlockPatch, makeParagraphBlockHtml, textToBlockHtml } from './note-patch.mjs';
-import { textToParagraphs } from './note-repo.mjs';
+import { PisiNoteChangedError, textToParagraphs } from './note-repo.mjs';
 
 const MARKER_KEY = joinKey(PISI_DIARY_FOLDER, PISI_DIARY_MARKER_FILE);
 const MANAGED_START = 'PISI_DIARY_MANAGED_START';
@@ -42,6 +42,14 @@ function readTextBlocks(content) {
     return { blocks, otherBlocks: other };
 }
 
+/** The day's text as the diary field shows it: its text blocks, a blank line between them. */
+function joinTextBlocks(blocks) {
+    return blocks
+        .map((block) => block.text)
+        .join('\n\n')
+        .replace(/^\n+|\n+$/g, '');
+}
+
 export function createDiaryRepo({ driver, writer, now, makeUuid }) {
     const newParagraph = (text) => makeParagraphBlockHtml(formatPisiBlockId(makeUuid()), textToBlockHtml(text));
 
@@ -62,10 +70,7 @@ export function createDiaryRepo({ driver, writer, now, makeUuid }) {
                 return { ok: false, corrupt: true, readOnly: true, exists: true, key, isoDate: day, text: '', otherBlocks: 0, error: result.error };
             }
             const { blocks, otherBlocks } = readTextBlocks(result.data.content);
-            const text = blocks
-                .map((block) => block.text)
-                .join('\n\n')
-                .replace(/^\n+|\n+$/g, '');
+            const text = joinTextBlocks(blocks);
             return { ok: true, exists: true, key, isoDate: day, data: result.data, text, otherBlocks, readOnly: false };
         },
 
@@ -84,13 +89,18 @@ export function createDiaryRepo({ driver, writer, now, makeUuid }) {
         /**
          * Sets the day's text. Paragraphs are separated by a blank line. Writing
          * the text the day already has changes nothing; empty text for a day
-         * without a file creates nothing.
+         * without a file creates nothing. With `expectedText` the text is
+         * written only while the day still holds that text (a missing day holds
+         * ''); otherwise PisiNoteChangedError is thrown and nothing is written,
+         * so a change from another device is never overwritten unseen (SV3).
+         * The result's `text` is the day's text on disk afterwards.
          */
-        async setText(isoDate, text) {
+        async setText(isoDate, text, { expectedText } = {}) {
             const day = normalizePisiDiaryIsoDate(isoDate);
             if (!day) throw invalidDate(isoDate);
             const key = getPisiDiaryNodeKey(day);
             const paragraphs = textToParagraphs(text);
+            const written = paragraphs.join('\n\n');
 
             return writer.run(async (tx) => {
                 const parsed = parseJsonText(await tx.read(key));
@@ -99,8 +109,11 @@ export function createDiaryRepo({ driver, writer, now, makeUuid }) {
                     throw new PisiReadOnlyError(key, parsed.error || 'not a note');
                 }
 
+                const onDisk = parsed.status === 'missing' ? '' : joinTextBlocks(readTextBlocks(String(parsed.data.content ?? '')).blocks);
+                if (expectedText !== undefined && onDisk !== expectedText) throw new PisiNoteChangedError(key);
+
                 if (parsed.status === 'missing') {
-                    if (!paragraphs.length) return { ok: true, changed: false, created: false, key };
+                    if (!paragraphs.length) return { ok: true, changed: false, created: false, key, text: '' };
                     await tx.mkdir(PISI_DIARY_FOLDER);
                     if (!(await tx.exists(MARKER_KEY))) await tx.write(MARKER_KEY, PISI_DIARY_MARKER_TEXT);
                     const stamp = now().toISOString();
@@ -108,7 +121,7 @@ export function createDiaryRepo({ driver, writer, now, makeUuid }) {
                     data.content = paragraphs.map(newParagraph).join('');
                     await tx.write(key, serializeDocument(data));
                     await tx.mkdir(joinKey(PISI_DIARY_FOLDER, data.pisi.sidecar));
-                    return { ok: true, changed: true, created: true, key };
+                    return { ok: true, changed: true, created: true, key, text: written };
                 }
 
                 const content = String(parsed.data.content ?? '');
@@ -128,9 +141,9 @@ export function createDiaryRepo({ driver, writer, now, makeUuid }) {
                     const at = anchor ? anchor.end : 0;
                     next = next.slice(0, at) + added + next.slice(at);
                 }
-                if (next === content) return { ok: true, changed: false, created: false, key };
+                if (next === content) return { ok: true, changed: false, created: false, key, text: written };
                 await tx.write(key, serializeDocument({ ...parsed.data, pisi: { ...parsed.data.pisi, updatedAt: now().toISOString() }, content: next }));
-                return { ok: true, changed: true, created: false, key };
+                return { ok: true, changed: true, created: false, key, text: written };
             });
         }
     };

@@ -12,6 +12,8 @@
 import { renderButton, renderIconButton } from '../../ui/button.mjs';
 import { formatMonthTitle, shiftMonth } from '../../ui/dates.mjs';
 import { h } from '../../ui/dom.mjs';
+import { PISI_DIARY_FOLDER } from '../../../../shared/diary-rules.mjs';
+import { parentKey } from '../../data/drivers/keys.mjs';
 import { renderDayLegend, renderMonthGrid } from '../../ui/month-grid.mjs';
 import { getCalendarMarks, monthOf } from './calendar-model.mjs';
 
@@ -170,6 +172,9 @@ export function createCalendarScreen({ project = null, tasks, platform, onOpenDa
 
         /** Reads the diary days again (after the sample project has been loaded). */
         reload: () => listDiaryDates(),
+
+        /** A file changed outside the app: a diary day added or removed moves the rings. Tasks come through the controller. */
+        handleExternal: (key) => (parentKey(key) === PISI_DIARY_FOLDER ? listDiaryDates() : Promise.resolve()),
 
         /** The month on screen, `YYYY-MM`. */
         getMonth: () => state.month,

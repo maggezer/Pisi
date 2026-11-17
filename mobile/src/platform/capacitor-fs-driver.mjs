@@ -117,6 +117,22 @@ export function createCapacitorFsDriver({ root = PISI_PROJECT_ROOT, filesystem =
             } catch (error) {
                 throw ioError(error, key);
             }
+        },
+
+        /** Removes an empty directory; a directory with anything in it (or the root) stays. Resolves true when it was removed. */
+        async removeDirectory(key) {
+            if (!normalizeKey(key) || (await stat(key))?.type !== 'directory') return false;
+            const { files } = await filesystem.readdir(at(key)).catch((error) => {
+                throw ioError(error, key);
+            });
+            if (files.length) return false;
+            try {
+                await filesystem.rmdir({ ...at(key), recursive: false });
+                return true;
+            } catch (error) {
+                if (!(await stat(key))) return true;
+                throw ioError(error, key);
+            }
         }
     };
 }

@@ -6,7 +6,14 @@
 // survive being drawn again from scratch. Tasks come from the shared task
 // controller, which reads `.pisi/tasks.json` directly, and the diary from the
 // day's own file, so the screen fills before the project index has been built.
+//
+// The diary field holds a lease on the day's file (data/open-documents.mjs),
+// dirty while typed text is not on disk, so a change from outside waits for
+// it (SV4). A day changed from outside is read again when nothing is waiting;
+// a save that finds the day changed under it keeps both texts (SV3).
 
+import { getPisiDiaryDateFromFileName, getPisiDiaryNodeKey, PISI_DIARY_FOLDER } from '../../../../shared/diary-rules.mjs';
+import { baseName, parentKey } from '../../data/drivers/keys.mjs';
 import { PisiReadOnlyError } from '../../data/json-file.mjs';
 import { renderButton } from '../../ui/button.mjs';
 import { renderDatePicker } from '../../ui/date-picker.mjs';
@@ -14,7 +21,7 @@ import { formatDayTitle, formatShortDay, shiftIsoDate, shiftMonth } from '../../
 import { h } from '../../ui/dom.mjs';
 import { icon } from '../../ui/icons.mjs';
 import { createDateWheel } from './date-wheel.mjs';
-import { getDayMarks, groupDayTasks, parseTaskDraft } from './day-model.mjs';
+import { getDayMarks, groupDayTasks, mergeDiaryText, parseTaskDraft } from './day-model.mjs';
 import { createDiaryAutosave } from './diary-autosave.mjs';
 import { createDiarySection } from './diary-section.mjs';
 import { createTaskAddRow } from '../../ui/task-add.mjs';
@@ -66,12 +73,17 @@ export function createPisiScreen({
     let swipe = null;
     // The tasks changed while the tab was off screen; they are drawn when it comes back.
     let tasksDirty = false;
+    // The lease on the selected day's file, and each day's text as it is on disk (what a save starts from).
+    let lease = null;
+    const onDisk = new Map();
 
     const autosave = createDiaryAutosave({
-        save: (date, text) => (project ? project.diary.setText(date, text) : { ok: true, changed: false }),
+        save: (date, text) => (project ? project.diary.setText(date, text, { expectedText: onDisk.get(date) }) : { ok: true, changed: false }),
         setTimer,
         clearTimer,
+        onBusy: (busy) => lease?.setDirty(busy),
         onSaved(job, result) {
+            if (typeof result?.text === 'string') onDisk.set(job.date, result.text);
             if (result?.created && !state.diaryDates.includes(job.date)) {
                 state.diaryDates = [...state.diaryDates, job.date];
                 if (!destroyed) drawWheel();
@@ -80,9 +92,10 @@ export function createPisiScreen({
         onError(error, job) {
             onError(error);
             if (destroyed) return;
+            if (error?.code === 'NOTE_CHANGED') return void mergeChangedDay(job);
             if (job.date === state.day.date && error instanceof PisiReadOnlyError) {
                 state.day = { ...state.day, readOnly: true };
-                parts.diary.show(state.day);
+                showDiary();
             }
             snackbar.show({ message: context.t('pisi.diarySaveFailed') });
         }
@@ -274,19 +287,59 @@ export function createPisiScreen({
             await autosave.flush();
             const result = project ? await project.diary.read(date) : { text: '', readOnly: false, otherBlocks: 0 };
             if (destroyed || token !== loadToken) return;
+            if (result.ok) onDisk.set(date, result.text);
+            else onDisk.delete(date);
             state.day = { date, text: result.text, loaded: true, readOnly: Boolean(result.readOnly), otherBlocks: result.otherBlocks ?? 0 };
         } catch (error) {
             onError(error);
             if (destroyed || token !== loadToken) return;
             state.day = { date, text: '', loaded: true, readOnly: true, otherBlocks: 0 };
         }
-        parts.diary.show(state.day);
+        showDiary();
+    }
+
+    /** The diary field for the shown day, with a note when a change from outside waits for the text typed here. */
+    function showDiary(day = state.day) {
+        const deferred = Boolean(day.date && project?.documents.isDeferred(getPisiDiaryNodeKey(day.date)));
+        parts.diary.show({ ...day, deferred });
+    }
+
+    /**
+     * A save found the day changed on disk since it was read (another device).
+     * The day is read again and the text typed here is laid over it without
+     * losing either side (mergeDiaryText); the result is saved again.
+     */
+    async function mergeChangedDay(job) {
+        try {
+            const result = await project.diary.read(job.date);
+            if (destroyed || !result.ok) return;
+            const local = autosave.getPending(job.date) ?? job.text;
+            const merged = mergeDiaryText({ base: onDisk.get(job.date) ?? '', local, remote: result.text });
+            onDisk.set(job.date, result.text);
+            if (job.date === state.day.date) {
+                state.day = { ...state.day, text: merged, otherBlocks: result.otherBlocks ?? 0 };
+                showDiary();
+            }
+            if (merged !== result.text || autosave.getPending(job.date) !== null) autosave.edit(job.date, merged);
+            snackbar.show({ message: context.t('pisi.diaryChangedElsewhere') });
+        } catch (error) {
+            onError(error);
+        }
+    }
+
+    function holdDay(date) {
+        const key = project ? getPisiDiaryNodeKey(date) : null;
+        if (lease?.key === key) return;
+        lease?.release();
+        lease = key ? project.documents.hold(key, { flush: () => autosave.flush() }) : null;
+        lease?.setDirty(autosave.isBusy());
     }
 
     function showDay() {
         state.day = { date: context.selectedDate, text: '', loaded: false, readOnly: false, otherBlocks: 0 };
         state.completedOpen = false;
-        parts.diary.show(state.day);
+        holdDay(context.selectedDate);
+        showDiary();
         parts.scroll.scrollTop = 0;
         if (state.opened) void readDay(context.selectedDate);
     }
@@ -311,6 +364,11 @@ export function createPisiScreen({
         }
     }
 
+    const stopDeferred = project?.documents.subscribeDeferred((key) => {
+        if (!destroyed && parts && state.day.date && key === getPisiDiaryNodeKey(state.day.date)) {
+            showDiary({ ...state.day, text: autosave.getPending(state.day.date) ?? state.day.text });
+        }
+    });
     const stopTasks = tasks.subscribe(() => {
         if (destroyed) return;
         if (!context || !element.isConnected) {
@@ -332,7 +390,7 @@ export function createPisiScreen({
             context = next;
             if (rebuilt) build();
             if (dayChanged) showDay();
-            else if (rebuilt) parts.diary.show({ ...state.day, text: autosave.getPending(state.day.date) ?? state.day.text });
+            else if (rebuilt) showDiary({ ...state.day, text: autosave.getPending(state.day.date) ?? state.day.text });
             if (!rebuilt && !dayChanged && !todayChanged && !tasksDirty) return;
             tasksDirty = false;
             drawHeader();
@@ -350,6 +408,19 @@ export function createPisiScreen({
         async reload() {
             const typing = context && autosave.getPending(context.selectedDate) !== null;
             await Promise.all([reloadDiaryDates(), context && !typing ? readDay(context.selectedDate) : null]);
+        },
+
+        /**
+         * A file changed outside the app (sync; `info.removed` when deleted). A
+         * diary day: the days with a diary are listed again, and the shown day
+         * is read again unless text typed here is waiting (the change then waits
+         * for it, SV4). Resolves when done.
+         */
+        async handleExternal(key) {
+            if (parentKey(key) !== PISI_DIARY_FOLDER || !getPisiDiaryDateFromFileName(baseName(key))) return;
+            const date = getPisiDiaryDateFromFileName(baseName(key));
+            const shown = context && state.opened && date === context.selectedDate && !autosave.isBusy();
+            await Promise.all([reloadDiaryDates(), shown ? readDay(date) : null]);
         },
 
         /** The screen is in the document again (the tab was opened): the wheel and the diary height need its layout. */
@@ -401,7 +472,9 @@ export function createPisiScreen({
         destroy() {
             destroyed = true;
             stopTasks();
+            stopDeferred?.();
             autosave.cancel();
+            lease?.release();
             parts?.wheel.destroy();
         }
     };
