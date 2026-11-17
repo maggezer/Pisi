@@ -15,6 +15,10 @@ DirectoryIndex index.php
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
+    # Sertifika doğrulaması (Let's Encrypt, cPanel AutoSSL): bu iki klasördeki dosyalar
+    # ön denetleyiciye gitmeden olduğu gibi sunulur. Yoksa sertifika alınamaz ve yenilenmez.
+    RewriteRule ^\.well-known/(acme-challenge|pki-validation)/ - [L]
+
     # index.php dışındaki her yol (nokta ile başlayan dosyalar dâhil) ön denetleyiciye gider.
     RewriteCond %{REQUEST_URI} !(^|/)index\.php$
     RewriteRule ^ index.php [L]

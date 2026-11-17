@@ -173,11 +173,16 @@ cd ~ && PHP_YOLU ~/pisi-sync/app/bin/check.php
 
 `check.php` PHP sürümünü ve eklentileri, ayar dosyasını, veri klasörünü, veritabanı bağlantısını, şema sürümünü, kurulum anahtarını ve parça boyutunu denetler; gizli değer basmaz. `[HATA]` satırı kalmamalıdır.
 
-## 9. HTTPS (AutoSSL)
+## 9. HTTPS (sertifika)
 
-1. cPanel → **SSL/TLS Status** → `sync.ornek.com` ve `www.sync.ornek.com` için sertifika durumu **AutoSSL Domain Validated** olmalı. Değilse **Run AutoSSL**.
-2. Sertifika olmadan senkron çalışmaz; istemciler sertifika doğrulamasını hiçbir koşulda kapatmaz.
-3. İsterseniz `config.php`'de `'https' => ['hsts' => true]` ile `Strict-Transport-Security` başlığını açın (yalnız sertifika düzgün çalıştıktan sonra).
+1. cPanel → **SSL/TLS Status** → `sync.ornek.com` ve `www.sync.ornek.com` satırlarında yeşil kilit olmalı. **Self-signed** yazıyorsa gerçek sertifika yoktur; Pisi istemcileri bunu kabul etmez.
+2. Sertifika almanın yolu barındırmaya göre değişir:
+    - Sayfanın üstünde **Run AutoSSL** varsa basın.
+    - Yoksa cPanel'in **Security** bölümünde **Let's Encrypt™ SSL** aracına bakın; alt alan adı için **+Issue** deyin.
+    - İkisi de yoksa barındırma firmanızdan alt alan adı için ücretsiz sertifika (Let's Encrypt/AutoSSL) isteyin. Ücretli sertifika gerekmez.
+3. Doğrulama, belge köküne `.well-known/acme-challenge/` ya da `.well-known/pki-validation/` altında konan dosyayı HTTP ile okur. Repodaki `.htaccess` bu iki klasörü ön denetleyiciden muaf tutar; `.htaccess`'i elle değiştirmeniz gerekmez ve dağıtım bu istisnayı korur.
+4. Sertifika olmadan senkron çalışmaz; istemciler sertifika doğrulamasını hiçbir koşulda kapatmaz.
+5. İsterseniz `config.php`'de `'https' => ['hsts' => true]` ile `Strict-Transport-Security` başlığını açın (yalnız sertifika düzgün çalıştıktan sonra).
 
 ## 10. Temizlik (Cron Jobs)
 
