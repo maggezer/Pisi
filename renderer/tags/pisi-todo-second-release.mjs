@@ -11,6 +11,7 @@ import {
     getPisiTodoStatusFilterOption,
     parsePisiTodoTagValue
 } from './pisi-todo-utils.mjs';
+import { formatPisiRecurrenceTaskId } from '../../shared/ids.mjs';
 
 const pisiTodoSecondReleaseState = {
     projectKey: null,
@@ -364,10 +365,18 @@ async function createNextPisiRecurringMissionSecondRelease(mission) {
         };
     }
 
+    // The next occurrence's id comes from the completed task and the new date, the same
+    // rule as Pisi Mobil (shared/ids.mjs): two devices completing the same occurrence
+    // before they sync create one next task, not two (pisi-error.md §5d).
+    const previousTaskId = String(mission.taskId || '').trim();
+    const nextTaskId = previousTaskId ? formatPisiRecurrenceTaskId(previousTaskId, getPisiTodayIsoDate(nextDate)) : null;
+
     return mutatePisiMissionDocumentSecondRelease(mission, (block) => {
         const clone = block.cloneNode(true);
         clone.dataset.pisiBlockId =
             typeof window.makePisiBlockId === 'function' ? window.makePisiBlockId() : `blk_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+        if (nextTaskId) clone.dataset.pisiTaskId = nextTaskId;
+        else delete clone.dataset.pisiTaskId;
         clone.classList.remove('pisi-block-highlight');
         clone.querySelectorAll('.pisi-user-tag[data-pisi-tag]').forEach((tag) => {
             const value = String(tag.dataset.pisiTag || tag.textContent || '')
@@ -384,6 +393,8 @@ async function createNextPisiRecurringMissionSecondRelease(mission) {
                 tag.dataset.pisiTodoScheduledAt = getPisiTodayIsoDate(nextDate);
                 tag.dataset.pisiTodoOrder = String(Number.isFinite(mission.manualOrder) ? mission.manualOrder + 1 : Date.now());
                 delete tag.dataset.pisiTodoParent;
+                if (nextTaskId) tag.dataset.pisiTaskId = nextTaskId;
+                else delete tag.dataset.pisiTaskId;
                 tag.textContent = nextTag;
             }
         });

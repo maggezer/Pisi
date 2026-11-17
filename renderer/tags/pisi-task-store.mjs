@@ -401,6 +401,23 @@ function extractCleanPisiTaskTitleFromBlock(block, source, todoTag) {
         .trim();
 }
 
+function samePisiFirstClassPath(left, right) {
+    const a = normalizePisiFirstClassPath(left);
+    const b = normalizePisiFirstClassPath(right);
+    return Boolean(a) && (window.pisiEnvironment?.platform === 'linux' ? a === b : a.toLowerCase() === b.toLowerCase());
+}
+
+/** The canonical task whose source is this block and todo tag, by the cached canonical store. */
+function findPisiCanonicalTaskIdForBlock(nodePath, blockId, todoTag) {
+    if (!nodePath || !blockId) return null;
+    for (const task of pisiFirstClassTaskState.tasks) {
+        if (task?.source?.blockId !== blockId || !samePisiFirstClassPath(task.source.nodePath, nodePath)) continue;
+        if (task.todoTag && todoTag && normalizePisiFirstClassTag(task.todoTag) !== todoTag) continue;
+        return task.id;
+    }
+    return null;
+}
+
 function buildPisiTaskFromEditorBlock(block, context, seenTaskIds = null) {
     const tags = Array.from(block?.querySelectorAll?.('.pisi-user-tag[data-pisi-tag]') || []);
     const tagElement = tags.find((tag) => parsePisiTodoTagValue(normalizePisiFirstClassTag(tag.dataset.pisiTag || tag.textContent || '')));
@@ -414,6 +431,9 @@ function buildPisiTaskFromEditorBlock(block, context, seenTaskIds = null) {
     const todo = parsePisiTodoTagValue(todoTag);
     if (!todo) return null;
     let taskId = String(block.dataset.pisiTaskId || tagElement.dataset.pisiTaskId || '').trim();
+    // A block Quick Add wrote carries no task id; its canonical task is found by its source (note, block, tag).
+    // A new random id here would replace the canonical task and lose its state (pisi-error.md §5d, rule SV13).
+    if (!taskId) taskId = findPisiCanonicalTaskIdForBlock(context.nodePath, block.dataset.pisiBlockId, todoTag) || '';
     if (!taskId || (seenTaskIds && seenTaskIds.has(taskId))) {
         taskId = makePisiFirstClassTaskId();
     }

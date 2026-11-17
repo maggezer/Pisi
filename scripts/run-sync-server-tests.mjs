@@ -5,6 +5,8 @@
 //      (her dosya scripts/start-sync-test-server.mjs ile kendi sunucusunu kurar).
 //   3. Protokoldeki her uç nokta (§6) ve her sunucu hata kodu (§9.2) en az bir testte
 //      görülmüş olmalıdır; eksik kalan varsa komut başarısız olur.
+//   4. PISI_SYNC_ELECTRON_E2E=1 ise masaüstü senaryoları gerçek Electron ile çalışır
+//      (scripts/electron-sync-client-e2e.mjs, S3; Electron ikilisi ve Linux'ta xvfb-run gerekir).
 // Kök `npm test` bu dosyaları atlar (PISI_SYNC_SERVER_TESTS yok).
 
 import { spawnSync } from 'node:child_process';
@@ -88,3 +90,8 @@ if (missingEndpoints.length || missingCodes.length) {
     process.exit(1);
 }
 console.log(`Kapsam: protokoldeki ${readProtocolEndpoints().length} uç noktanın ve ${readProtocolErrorCodes().length} hata kodunun hepsi sınandı.`);
+
+if (process.env.PISI_SYNC_ELECTRON_E2E === '1') {
+    const e2e = spawnSync(process.execPath, [path.join('scripts', 'electron-sync-client-e2e.mjs')], { cwd: root, stdio: 'inherit', env: process.env });
+    if (e2e.status !== 0) process.exit(e2e.status || 1);
+}

@@ -105,6 +105,12 @@ yazmanın ilk 800 ms’ine denk gelirse metin diske yazılmadan kayboluyordu.
 - Testler: `tests/sync-domain-disabled.test.js`,
   `scripts/electron-sync-reload-e2e.mjs`.
 
+**Yeni eşleştirme sistemi (S3, 17-11-2026):** masaüstü istemcisi bu kurala uyar ve
+Electron E2E ile sınanır (`scripts/electron-sync-client-e2e.mjs`): senkron turunda
+`loadProject` çağrılmaz, açık notta yalnız değişen bloklar yerinde değişir, imleç, kaydırma
+ve sekmeler korunur; kaydedilmemiş değişikliği olan belge o turda ertelenir. Eski klasör
+tabanlı kod S7'de kaldırılır.
+
 **Yeni eşleştirme sistemi için kural:** Senkron sonrasında proje bütünüyle
 yeniden yüklenmez; yalnız değişen dosyalar güncellenir. Açık not, sekmeler,
 modal, harita ve imleç senkron yüzünden kapanmamalı ya da yeniden
@@ -173,6 +179,21 @@ işareti eski durumunda kalır.
       bırakır. Masaüstünün blok kopyası hâlâ rastgele blok kimliği alır ve görev
       kimliği o bloktan türer; masaüstü tarafı S3'te (Electron E2E ile) bu kurala
       bağlanacak. O zamana kadar masaüstü + telefon çiftinde risk sürer.
+    - 17-11-2026 (S3): masaüstü de sonraki tekrarın kimliğini aynı kuralla verir
+      (`renderer/tags/pisi-todo-second-release.mjs`; Electron E2E
+      `scripts/electron-sync-client-e2e.mjs`). Tekrarın iki kez oluşma riski kapandı.
+- 17-11-2026 (S3), SV13: E2E iki geri dönüş yolu buldu ve ikisi de düzeltildi.
+    - Quick Add'in yazdığı görev bloğu `data-pisi-task-id` taşımıyordu; not masaüstünde
+      düzenlenince editör ona yeni rastgele kimlik veriyor, yansıtma eski canonical görevi
+      siliyor ve uzaktan gelen durum kayboluyordu. Editör artık canonical görevi kaynağından
+      (not, blok, etiket) bulur (`renderer/tags/pisi-task-store.mjs`).
+    - Bir senkron turu `tasks.json`'daki durumu değiştirince masaüstü bunu cihaz durumunda bir
+      koruma olarak tutar; nottaki eski işaretten gelen yansıtma yazması canonical durumu geri
+      çevirmez (`main/functions/sync-client-desktop.js`, `task-store.js`). Görev paneli açılıp
+      kapanınca ve kaynak not düzenlenip kaydedilince durum korunur.
+    - Kalan bilinçli sınır: nottaki işaret eski durumda görünmeye devam eder (masaüstü
+      canonical durumu nota geri yazmaz). Koruma sürerken eski duruma notun işaretinden dönmek
+      için işaret iki kez değiştirilmeli ya da görev panelinden değiştirilmelidir.
 
 Bu yüzden Görevler sekmesinin görev detayı (M6) kaynağı not bloğu olan
 görevlerde yalnız durumu değiştirir; başlık, öncelik, tarih, saat, tekrar ve

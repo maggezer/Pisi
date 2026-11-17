@@ -1,0 +1,177 @@
+/* Pisi Sync: Settings → Senkron and the pairing window (renderer/sync/). Lazy-loaded. */
+.pisi-sync-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.pisi-sync-body h3 {
+    margin: 12px 0 4px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.pisi-sync-muted {
+    margin: 0;
+    color: var(--pisi-theme-text-muted, #9a9a9a);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.pisi-sync-summary {
+    margin: 0;
+    font-size: 13px;
+}
+
+.pisi-sync-warning {
+    margin: 0;
+    color: #e67e22;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.pisi-sync-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--pisi-theme-border, #444);
+    border-radius: 8px;
+}
+
+.pisi-sync-form > .pisi-secondary-button {
+    align-self: flex-start;
+}
+
+.pisi-sync-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+}
+
+.pisi-sync-field input {
+    padding: 6px 8px;
+    border: 1px solid var(--pisi-theme-border, #444);
+    border-radius: 6px;
+    background: var(--pisi-theme-surface-alt, #1e1e1e);
+    color: var(--pisi-theme-text, #d4d4d4);
+    font: inherit;
+}
+
+.pisi-sync-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 12px;
+}
+
+.pisi-sync-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    overflow-wrap: anywhere;
+}
+
+.pisi-sync-sas {
+    margin: 0;
+    font-size: 13px;
+}
+
+.pisi-sync-sas strong {
+    font-size: 22px;
+    letter-spacing: 0.08em;
+    font-variant-numeric: tabular-nums;
+}
+
+.pisi-sync-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 12500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgb(0 0 0 / 45%);
+}
+
+.pisi-sync-dialog {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: min(420px, calc(100vw - 32px));
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+    box-sizing: border-box;
+    padding: 20px;
+    border: 1px solid var(--pisi-theme-border, #444);
+    border-radius: 12px;
+    background: var(--pisi-theme-surface, #252526);
+    color: var(--pisi-theme-text, #d4d4d4);
+    box-shadow: 0 16px 40px var(--pisi-theme-shadow, rgb(0 0 0 / 45%));
+    text-align: center;
+}
+
+.pisi-sync-dialog h2 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.pisi-sync-dialog-close {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.pisi-sync-qr {
+    width: 240px;
+    height: 240px;
+}
+
+.pisi-sync-qr svg {
+    width: 100%;
+    height: 100%;
+    border-radius: 6px;
+}
+
+.pisi-sync-pairing[data-stage='claimed'] .pisi-sync-qr,
+.pisi-sync-pairing[data-stage='granted'] .pisi-sync-qr,
+.pisi-sync-pairing[data-stage='rejected'] .pisi-sync-qr,
+.pisi-sync-pairing[data-stage='expired'] .pisi-sync-qr {
+    opacity: 0.25;
+}
+
+.pisi-sync-code {
+    margin: 0;
+    font-family: var(--pisi-font-mono, monospace);
+    font-size: 24px;
+    letter-spacing: 0.12em;
+}
+
+.pisi-sync-claim {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.pisi-sync-claim-device {
+    margin: 0;
+    font-weight: 600;
+}
+
+.pisi-sync-message {
+    min-height: 1.4em;
+    margin: 0;
+    font-size: 13px;
+}
