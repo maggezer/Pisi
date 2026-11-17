@@ -1,6 +1,6 @@
 # Pisi Sync protokolü — sürüm 1
 
-Sürüm: 1 (taslak, S0) · 16-11-2026 · Plan: [`docs/sync-plan.md`](sync-plan.md)
+Sürüm: 1 (S2: sunucuyla sınandı) · 17-11-2026 · Plan: [`docs/sync-plan.md`](sync-plan.md)
 
 Bu belge Pisi istemcileri (masaüstü, mobil) ile Pisi senkron sunucusu (`server/`, PHP 8.4 + MariaDB 10.11) arasındaki tel biçimini tanımlar: uç noktalar, istek/yanıt JSON'ları, şifreleme, hata kodları, sürümleme ve tehdit modeli.
 Sunucu ve istemci bu belgeye göre yazılır; belge ile kod çelişirse kod yanlıştır. Protokolü değiştiren her PR bu belgeyi de değiştirir (`docs/sync-plan.md` §3.10).
@@ -31,14 +31,14 @@ Sunucu ve istemci bu belgeye göre yazılır; belge ile kod çelişirse kod yanl
 - **Yalnız HTTPS.** Sunucu düz HTTP isteğini `400 HTTPS_REQUIRED` ile reddeder (yönlendirme yapmaz, çünkü yönlendirme token'ı açıkta göndermiş olur). İstemciler sertifika doğrulamasını hiçbir koşulda kapatmaz.
 - **Temel adres:** kullanıcının girdiği adres, ör. `https://sync.ornek.com` ya da `https://ornek.com/pisi`. Bütün yollar bunun altında `/v1/…` biçimindedir. Sondaki `/` yok sayılır.
 - **İstek başlıkları:**
-    - `Pisi-Sync-Protocol: 1`: `GET /v1/info` dışında ZORUNLU.
+    - `Pisi-Sync-Protocol: 1`: `GET /v1/info` dışında ZORUNLU. Eksik ya da desteklenmeyen değer `426 PROTOCOL_UNSUPPORTED` döner (`details.min`, `details.max`).
     - `Authorization: Bearer <token>`: cihaz isteklerinde ZORUNLU. `Authorization`'ı PHP'ye geçirmeyen barındırmalar için aynı değer `X-Pisi-Token: <token>` olarak da gönderilebilir; ikisi birden gelirse aynı olmalıdır, değilse `TOKEN_INVALID`.
     - `Pisi-Setup-Key: <kurulum anahtarı>`: yalnız `POST /v1/spaces`.
     - `User-Agent: Pisi-Sync/1`: istemci sürümü, işletim sistemi ya da cihaz modeli GÖNDERİLMEZ.
     - `Content-Type: application/json` (JSON gövdeler) ya da `application/octet-stream` (blob parçaları).
 - **Yanıt başlıkları:** `Content-Type: application/json; charset=utf-8` (blob indirme dışında), `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`. Çerez YAZILMAZ. Sunucu ayarıyla `Strict-Transport-Security` eklenebilir.
 - **CORS:** mobil uygulama WebView'den (`https://localhost`) istek yapar. Sunucu yalnız ayardaki kaynaklara (varsayılan `https://localhost`) `Access-Control-Allow-Origin` döner, `OPTIONS` ön isteğini yanıtlar ve `Access-Control-Allow-Credentials` göndermez. Kimlik doğrulama çerezle değil token'la yapıldığı için CORS bir yetki sınırı değildir.
-- **JSON:** UTF-8, gövde en çok `limits.maxRequestJsonBytes` (varsayılan 1 MiB). Bilinmeyen alanlar her iki tarafta yok sayılır (§10). Zamanlar ISO 8601 UTC (`2026-11-16T10:00:00.000Z`). İkili değerler JSON içinde dolgusuz base64url'dir (RFC 4648 §5).
+- **JSON:** UTF-8, gövde bir JSON nesnesidir ve en çok `limits.maxRequestJsonBytes` (varsayılan 1 MiB) olur; aşan gövde `413 PAYLOAD_TOO_LARGE` döner. Bilinmeyen alanlar her iki tarafta yok sayılır (§10). Zamanlar ISO 8601 UTC (`2026-11-16T10:00:00.000Z`). İkili değerler JSON içinde dolgusuz base64url'dir (RFC 4648 §5).
 - **Zaman aşımı:** istemci JSON isteklerinde 20 sn, blob parçalarında 120 sn bekler. Paylaşımlı barındırmada PHP'nin `max_execution_time` sınırı nedeniyle sunucu tek bir istekte uzun iş yapmaz; yükleme ve listeleme parçalıdır.
 
 ---
@@ -262,6 +262,8 @@ Bir cihazın yetkisi her istekte veritabanından okunur. Başka bir alanın kayn
 
 `maxBlobBytes` şifreli boyuttur. İstemci, dosyanın şifrelenmiş ve dolgulanmış boyutu bunu aşacaksa dosyayı göndermez ve "senkron edilmeyen dosyalar"da gösterir. `partBytes`, sunucunun `post_max_size` değerinin altında seçilir.
 
+`/v1/info` veritabanına dokunmaz: şema göçü beklenirken ya da veritabanı yokken de `200` döner. `MAINTENANCE` ve `DB_UNAVAILABLE` yalnız öteki uç noktalarda görülür.
+
 ### 6.2 Alanlar
 
 **`POST /v1/spaces`** (başlık `Pisi-Setup-Key`):
@@ -299,7 +301,7 @@ Bir cihazın yetkisi her istekte veritabanından okunur. Başka bir alanın kayn
 }
 ```
 
-**`DELETE /v1/spaces/{space}`** (A), gövde `{"confirm": "sp_…"}` (yol ile aynı olmalı) → `204`. Bütün kayıtlar ve blob'lar silinir. Geri alınamaz.
+**`DELETE /v1/spaces/{space}`** (A), gövde `{"confirm": "sp_…"}` (yol ile aynı olmalı) → `204`. Bütün kayıtlar, cihazlar ve blob'lar silinir; alanın token'ları bundan sonra `TOKEN_INVALID` alır. Geri alınamaz.
 
 ### 6.3 Değişiklikler
 
@@ -363,10 +365,12 @@ Bir cihazın yetkisi her istekte veritabanından okunur. Başka bir alanın kayn
 { "commitId": "cm_V2c8Qm1Zp0Lx7Nk3Tb5Rw9", "seqs": [1302, 1303, 1304], "head": 1304 }
 ```
 
-- 1 ile `maxCommitChanges` arası değişiklik; aynı fid bir commit'te bir kez (`422 DUPLICATE_FID`).
+- 1 ile `maxCommitChanges` arası değişiklik (boş liste `INVALID_FIELD`, fazlası `422 BATCH_TOO_LARGE`); aynı fid bir commit'te bir kez (`422 DUPLICATE_FID`).
+- `delete` değişikliğinde `blob` gönderilmez ya da `null`'dır; `size` gönderilmez ya da `0`'dır. `meta` her iki işlemde ZORUNLU'dur.
 - `put`'un `blob`'u alanda var olmalı ve `size` blob'un şifreli boyutuna eşit olmalıdır (`422 BLOB_MISSING`, `422 SIZE_MISMATCH`).
 - Bütün commit tek veritabanı işleminde yazılır: ya hepsi ya hiçbiri.
-- Aynı `commitId` ile tekrar gelen istek, ilk sonucu aynen döner ve yeni kayıt yazmaz (§7.3). Aynı `commitId` farklı gövdeyle gelirse `409 COMMIT_ID_REUSED`.
+- Aynı `commitId` ile tekrar gelen istek, ilk sonucu aynen döner ve yeni kayıt yazmaz (§7.3). Aynı `commitId` farklı gövdeyle ya da başka bir cihazdan gelirse `409 COMMIT_ID_REUSED`.
+- Denetim sırası: alan biçimleri → `DELETE_NOT_ALLOWED` → idempotens (`commitId`) → `STALE_BASE` → `INVALID_CHANGE` → `BLOB_MISSING` / `SIZE_MISMATCH`.
 - `409 STALE_BASE`:
 
 ```json
@@ -400,12 +404,15 @@ Bir cihazın yetkisi her istekte veritabanından okunur. Başka bir alanın kayn
 - Gövde ham baytlardır (`application/octet-stream`); başlık `Pisi-Part-Sha256: <hex>`.
 - Son parça dışında her parça tam `partBytes`'tır.
 - Aynı parça yeniden gönderilebilir (son gelen geçerlidir).
-- `200 {"part": 1, "received": 18688}`. Hatalar: `HASH_MISMATCH` (parça özeti), `PAYLOAD_TOO_LARGE`, `UPLOAD_NOT_FOUND`, `UPLOAD_EXPIRED`.
+- `200 {"part": 1, "received": 18688}`; `received` şimdiye kadar alınan parçaların toplam baytıdır.
+- Hatalar: `HASH_MISMATCH` (parça özeti), `PAYLOAD_TOO_LARGE` (parça beklenenden büyük), `BAD_REQUEST` (parça numarası `1…parts` dışında, parça beklenenden küçük ya da `Pisi-Part-Sha256` yok), `UNSUPPORTED_MEDIA_TYPE`, `UPLOAD_NOT_FOUND`, `UPLOAD_EXPIRED`.
+- Yükleme 24 saat geçerlidir (`expiresAt`).
 
 **`POST /v1/spaces/{space}/uploads/{upload}/complete`**: gövde `{}` → `201 {"blob": "b_…", "size": 18688}`.
 
 - Sunucu parçaları birleştirir, toplam boyutu ve SHA-256'yı doğrular, dosyayı `public_html` dışındaki blob klasörüne atomik olarak (geçici dosya + `rename`) taşır.
-- Hatalar: `UPLOAD_INCOMPLETE` (eksik parça; `details.missing`), `HASH_MISMATCH` (yükleme silinir).
+- Hatalar: `UPLOAD_INCOMPLETE` (eksik parça; `details.missing`), `HASH_MISMATCH` (yükleme silinir), `QUOTA_EXCEEDED`.
+- `blobs/check`'te var görünen ya da `exists: true` dönen blob, commit'e kadar temizlikten korunur (§8).
 - Aynı blob o arada başka bir cihazdan tamamlandıysa `200 {"blob": "b_…", "size": …, "exists": true}`.
 
 **`DELETE /v1/spaces/{space}/uploads/{upload}`** → `204`.
@@ -436,13 +443,13 @@ Bir cihazın yetkisi her istekte veritabanından okunur. Başka bir alanın kayn
 }
 ```
 
-`lastSeenAt` dakika hassasiyetinde tutulur.
+`lastSeenAt` dakika hassasiyetinde tutulur. Eşleştirilen cihazda ilk değer, telefonun sonucu aldığı (`result`) andır.
 
 **`GET /v1/spaces/{space}/devices/me`** → aynı biçimde tek cihaz.
 
 **`PATCH /v1/spaces/{space}/devices/me`**: `{"label": "<zarf>"}` → `200` cihaz.
 
-**`DELETE /v1/spaces/{space}/devices/{device}`** (A; ya da `{device}` = `me`) → `204`.
+**`DELETE /v1/spaces/{space}/devices/{device}`** (A; ya da `{device}` = `me`) → `204`. Zaten iptal edilmiş cihaz için de `204`.
 
 - Cihaz `revokedAt` ile işaretlenir; satırı ve geçmişteki değişiklikleri kalır.
 - İptal edilen token'la gelen her istek `403 DEVICE_REVOKED` döner.
@@ -506,8 +513,8 @@ sas    = uint32_be( HKDF(Z, salt = UTF8("pisi-sync/1|sas|" + pairingId),
 
 **`POST /v1/pairings/lookup`** (—): `{"code": "7K3M-Q9WX"}` → `200 {"pairingId": "pr_…", "spaceId": "sp_…", "desktopKey": "…", "expiresAt": "…"}`.
 
-- Yanlış ya da süresi dolmuş kod: `404 PAIRING_NOT_FOUND`. Her yanlış deneme IP sayacını artırır (§9.4).
-- Bir eşleştirmede 5 yanlış kod denemesi olursa eşleştirme kapanır (`PAIRING_EXPIRED`).
+- Yalnız `open` durumundaki eşleştirme bulunur. Yanlış ya da süresi dolmuş kod: `404 PAIRING_NOT_FOUND`. Her deneme IP sayacını artırır (§9.4).
+- Bir eşleştirmede 5 yanlış kodlu claim olursa (her biri `403 PAIRING_CODE_INVALID`) eşleştirme kapanır; sonraki claim `410 PAIRING_EXPIRED` alır.
 
 **`POST /v1/pairings/{pairing}/claim`** (—):
 
@@ -523,7 +530,8 @@ sas    = uint32_be( HKDF(Z, salt = UTF8("pisi-sync/1|sas|" + pairingId),
 ```
 
 - `202 {"state": "claimed", "expiresAt": "…"}`.
-- Eşleştirme `open` değilse `409 PAIRING_STATE`; süresi dolduysa `410 PAIRING_EXPIRED`.
+- Eşleştirme `open` değilse `409 PAIRING_STATE` (`details.state`); süresi dolduysa `410 PAIRING_EXPIRED`. `tokenHash` başka bir cihazınkiyle aynıysa `409 ID_TAKEN`.
+- Başarılı claim'den sonra kısa kod geçersizdir.
 - `method: "code"` iken `code` eşleştirmeninkine eşit olmalıdır (`403 PAIRING_CODE_INVALID`).
 - Sunucu `proof`'u doğrulayamaz; yalnız saklar ve masaüstüne verir.
 
@@ -549,11 +557,11 @@ sas    = uint32_be( HKDF(Z, salt = UTF8("pisi-sync/1|sas|" + pairingId),
 { "role": "member", "wrappedKey": "<zarf: pair-key>", "label": "<zarf: device-label, K_label ile>" }
 ```
 
-`200 {"state": "granted", "deviceId": "dv_…"}`. Cihaz satırı `tokenHash` ile bu anda etkinleşir.
+`200 {"state": "granted", "deviceId": "dv_…"}`. Cihaz satırı `tokenHash` ile bu anda etkinleşir. Yalnız `claimed` durumda kabul edilir; telefonun sonucu alma süresi onay anından yeniden başlar (`pairingTtlSeconds`).
 
-**`POST /v1/spaces/{space}/pairings/{pairing}/reject`** (A) → `200 {"state": "rejected"}`.
+**`POST /v1/spaces/{space}/pairings/{pairing}/reject`** (A) → `200 {"state": "rejected"}`. Yalnız `open` ya da `claimed` durumda.
 
-**`DELETE /v1/spaces/{space}/pairings/{pairing}`** (A) → `204` (`cancelled`).
+**`DELETE /v1/spaces/{space}/pairings/{pairing}`** (A) → `204` (`cancelled`). `open`/`claimed` iptal edilir; zaten `cancelled` ya da `expired` ise yine `204`; öteki durumlarda `409 PAIRING_STATE`.
 
 **`GET /v1/pairings/{pairing}/result`**:
 
@@ -565,7 +573,8 @@ sas    = uint32_be( HKDF(Z, salt = UTF8("pisi-sync/1|sas|" + pairingId),
 ```
 
 - İlk başarılı okumadan sonra `wrappedKey` sunucudan silinir ve durum `collected` olur.
-- Henüz onaylanmadıysa `202 {"state": "claimed"}`; reddedildiyse `403 PAIRING_REJECTED`; süresi dolduysa `410 PAIRING_EXPIRED`.
+- Henüz onaylanmadıysa `202 {"state": "claimed"}`; reddedildiyse `403 PAIRING_REJECTED`; süresi dolduysa `410 PAIRING_EXPIRED`; sonuç alınmışsa ya da iptal edildiyse `409 PAIRING_STATE` (`details.state`).
+- Token yoksa `401 AUTH_REQUIRED`; özeti tutmuyorsa `401 TOKEN_INVALID`.
 - İstemci 2 sn aralıkla yoklar.
 
 **İstemci denetimleri (ZORUNLU):**
@@ -604,7 +613,7 @@ Commit'teki her değişiklik için sunucu, alan satırını kilitleyerek (`SELEC
 
 ## 8. Budama ve temizlik
 
-`app/bin/gc.php` (cPanel Cron Jobs, önerilen saatte bir). Cron yoksa isteklerin sonunda en çok 2 sn süren fırsatçı temizlik yapılır.
+`app/bin/gc.php` (cPanel Cron Jobs, önerilen saatte bir). Cron yoksa saatte en çok bir kez, bir isteğin yanıtı gönderildikten sonra en çok 2 sn süren fırsatçı temizlik yapılır.
 
 - **Günlük budama:** başlık olmayan ve `retainDays`'ten (varsayılan 90) eski değişiklikler silinebilir. `prunedThrough`, altındaki her şeyin eksik olabileceği en büyük `seq`'tir. Başlıklar (silme başlıkları dâhil) hiç budanmaz.
 - **Blob temizliği:** hiçbir başlığın ve saklanan hiçbir değişikliğin başvurmadığı, 48 saatten eski blob'lar silinir. 48 saat, yüklenip henüz commit'lenmemiş blob'ları korur.
@@ -635,7 +644,7 @@ Başarısız her JSON yanıtı:
 | ---- | ------------------------ | ------------------------------------------------------------------ | ---------------------------- |
 | 400  | `HTTPS_REQUIRED`         | istek HTTPS değil                                                  | hayır                        |
 | 400  | `BAD_REQUEST`            | yol, sorgu ya da başlık geçersiz                                   | hayır                        |
-| 400  | `INVALID_JSON`           | gövde JSON değil ya da çok büyük                                   | hayır                        |
+| 400  | `INVALID_JSON`           | gövde bir JSON nesnesi değil                                       | hayır                        |
 | 400  | `INVALID_FIELD`          | alan eksik ya da biçimi yanlış (`details.field`)                   | hayır                        |
 | 401  | `AUTH_REQUIRED`          | token yok                                                          | hayır                        |
 | 401  | `TOKEN_INVALID`          | token tanınmıyor                                                   | hayır                        |
@@ -652,7 +661,7 @@ Başarısız her JSON yanıtı:
 | 405  | `METHOD_NOT_ALLOWED`     | yöntem desteklenmiyor                                              | hayır                        |
 | 409  | `STALE_BASE`             | `baseSeq` başlıkla tutmuyor                                        | evet: çek, birleştir, gönder |
 | 409  | `ID_TAKEN`               | istemcinin ürettiği kimlik kullanılıyor                            | evet: yeni kimlikle          |
-| 409  | `COMMIT_ID_REUSED`       | aynı `commitId` farklı gövdeyle                                    | hayır                        |
+| 409  | `COMMIT_ID_REUSED`       | aynı `commitId` farklı gövdeyle ya da başka cihazdan               | hayır                        |
 | 409  | `PAIRING_STATE`          | eşleştirme bu işlem için uygun durumda değil                       | hayır                        |
 | 409  | `PAIRING_LIMIT`          | açık eşleştirme sayısı sınırda                                     | hayır                        |
 | 409  | `LAST_ADMIN`             | son admin kendini iptal etmek istedi                               | hayır                        |
@@ -779,27 +788,30 @@ Sunucudan gelmez; senkron durumunda ve çakışma günlüğünde gösterilir.
 
 ```text
 spaces        space_id PK, name_enc BLOB, key_epoch INT, head BIGINT, pruned_through BIGINT,
-              usage_bytes BIGINT, quota_bytes BIGINT NULL, created_at, deleted_at NULL
+              usage_bytes BIGINT, quota_bytes BIGINT NULL, created_at
 devices       device_id PK, space_id FK, role ENUM('admin','member'), token_hash CHAR(64) UNIQUE NULL,
-              label_enc BLOB NULL, created_at, last_seen_at, last_protocol INT, revoked_at NULL
-pairings      pairing_id PK, space_id FK, device_id, created_by FK devices, desktop_key VARCHAR(100),
-              code_hash CHAR(64) UNIQUE, state ENUM(...), method ENUM('qr','code') NULL,
+              label_enc BLOB NULL, created_at, last_seen_at NULL, last_protocol INT NULL, revoked_at NULL
+pairings      pairing_id PK, space_id FK, device_id UNIQUE, created_by, desktop_key VARCHAR(100),
+              code_hash CHAR(64) UNIQUE NULL, state ENUM(...), method ENUM('qr','code') NULL,
               device_key VARCHAR(100) NULL, proof VARCHAR(64) NULL, label_enc BLOB NULL,
               token_hash CHAR(64) NULL, wrapped_key BLOB NULL, role ENUM NULL, failed_attempts INT,
               expires_at, created_at
-heads         (space_id, fid) PK, seq BIGINT, op ENUM('put','delete'), blob_id CHAR(45) NULL,
-              size BIGINT, device_id, at, meta_enc BLOB
+heads         (space_id, fid) PK, seq BIGINT UNIQUE(space_id, seq), op ENUM('put','delete'),
+              blob_id CHAR(45) NULL, size BIGINT, device_id, at, meta_enc BLOB, INDEX(space_id, blob_id)
 changes       (space_id, seq) PK, fid, op, blob_id NULL, size, device_id, commit_id, at, meta_enc BLOB,
-              INDEX(space_id, fid)
+              INDEX(space_id, fid), INDEX(space_id, blob_id), INDEX(space_id, at)
 blobs         (space_id, blob_id) PK, size BIGINT, sha256 CHAR(64), created_at, last_ref_at
 uploads       upload_id PK, space_id, blob_id, size, sha256, part_bytes, parts_received JSON,
               created_at, expires_at
 commits       (space_id, commit_id) PK, body_sha256 CHAR(64), seqs JSON, created_at
-rate_limits   (bucket, window_start) PK, count INT
+rate_limits   (bucket, window_start) PK, count INT, expires_at BIGINT
 schema_migrations  version PK, applied_at
 ```
 
-- `code_hash` = `SHA-256(normalize(kod))`. Kod düz metin olarak yalnız `POST pairings` yanıtında bir kez döner.
+- Şema `server/app/schema/NNN-*.sql` dosyalarındadır; bu bölüm onun özetidir.
+- Alanın alt tabloları `spaces`'e `ON DELETE CASCADE` ile bağlıdır; alan silinince satırı da silinir.
+- `code_hash` = `SHA-256(normalize(kod))`. Kod düz metin olarak yalnız `POST pairings` yanıtında bir kez döner. Eşleştirme `open` durumundan çıkınca `code_hash` `NULL` olur.
+- `rate_limits` kovaları IP adresini yalnız özetiyle taşır; `expires_at` (Unix saniyesi) geçen satırları temizlik siler.
 - Dosya sistemi düzeni: `app/data/blobs/<space>/<blob[2..3]>/<blob[4..5]>/<blob>`, yüklemeler `app/data/tmp/<upload>/<n>`. Klasör izinleri `0700`, dosyalar `0600`.
 
 ---

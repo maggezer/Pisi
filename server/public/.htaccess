@@ -1,0 +1,25 @@
+# Pisi senkron sunucusu (docs/sync-server-cpanel.md)
+
+Options -Indexes -MultiViews
+DirectoryIndex index.php
+
+# Bazı barındırmalar Authorization başlığını PHP'ye geçirmez (protokol §2).
+<IfModule mod_version.c>
+    <IfVersion >= 2.4.13>
+        CGIPassAuth On
+    </IfVersion>
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # index.php dışındaki her yol (nokta ile başlayan dosyalar dâhil) ön denetleyiciye gider.
+    RewriteCond %{REQUEST_URI} !(^|/)index\.php$
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
