@@ -4,6 +4,11 @@
 // saved a moment after the user stops typing and at once when the app asks
 // (pause, leaving the screen, back). A save is a block patch through the note
 // repo; a note nothing was changed in is never written (rule V4).
+//
+// The screen holds a lease on the open file (data/open-documents.mjs) that is
+// dirty while an edit is not on disk, so a change from outside waits for it
+// (SV4). A change from outside that did get written is taken in place, block
+// by block (`handleExternal`); a note deleted on the desktop closes the screen.
 
 import { normalizeKey } from '../../data/drivers/keys.mjs';
 import { h } from '../../ui/dom.mjs';
@@ -22,7 +27,18 @@ export const PISI_NOTE_SAVE_DELAY_MS = 600;
  * opens a task's sheet, `onOpenNote({ path, title })` another note.
  * `onSaved(key)` runs after a note was written.
  */
-export function createNoteScreen({ project = null, tasks, snackbar, setTimer, clearTimer, onOpenTask, onOpenNote, onSaved = () => {}, onError = () => {} }) {
+export function createNoteScreen({
+    project = null,
+    tasks,
+    snackbar,
+    setTimer,
+    clearTimer,
+    onOpenTask,
+    onOpenNote,
+    onSaved = () => {},
+    onDeleted = () => {},
+    onError = () => {}
+}) {
     const element = h('section', { class: 'pisi-screen pisi-note', dataset: { screen: 'note' } });
     const document = element.ownerDocument;
     let context = null;
@@ -32,6 +48,8 @@ export function createNoteScreen({ project = null, tasks, snackbar, setTimer, cl
     let editor = null;
     let toolbar = null;
     let taskBlocks = [];
+    let lease = null;
+    let deferredNotice = null;
     let timer = null;
     let chain = Promise.resolve();
     let opening = Promise.resolve();
@@ -40,9 +58,30 @@ export function createNoteScreen({ project = null, tasks, snackbar, setTimer, cl
 
     const say = (message) => !destroyed && snackbar.show({ message });
 
+    /** The open note becomes `next` (or none): the lease on the file moves with it. */
+    function setSession(next) {
+        if (lease && lease.key !== next?.key) {
+            lease.release();
+            lease = null;
+        }
+        session = next;
+        if (next && !lease && project) lease = project.documents.hold(next.key, { flush: () => save() });
+    }
+
+    /** The lease is dirty while a save waits or runs, or the editor holds something not saved yet. */
+    function settle() {
+        lease?.setDirty(timer !== null || Boolean(editor?.hasPending()));
+    }
+
+    function drawDeferred() {
+        if (!deferredNotice) return;
+        deferredNotice.hidden = !(session && project?.documents.isDeferred(session.key));
+    }
+
     function drawState(status) {
         const { t } = context;
         editor = null;
+        deferredNotice = null;
         taskBlocks = [];
         element.dataset.state = status;
         const title = { loading: t('note.loading'), missing: t('note.missing'), corrupt: t('note.unreadable') }[status];
@@ -117,6 +156,7 @@ export function createNoteScreen({ project = null, tasks, snackbar, setTimer, cl
             onLink: openLink
         });
         toolbar = createNoteToolbar({ t, onCommand: runTool });
+        deferredNotice = h('p', { class: 'pisi-notice', role: 'status', dataset: { note: 'external-deferred' }, hidden: true }, t('note.externalDeferred'));
         const tail = h('button', {
             type: 'button',
             class: 'pisi-note-tail',
@@ -129,18 +169,20 @@ export function createNoteScreen({ project = null, tasks, snackbar, setTimer, cl
                 'div',
                 { class: 'pisi-note-scroll' },
                 current.readOnly ? h('p', { class: 'pisi-notice', role: 'alert', dataset: { note: 'read-only' } }, t('note.readOnly')) : null,
+                deferredNotice,
                 editor.element,
                 current.readOnly ? null : tail
             ),
             toolbar.element
         );
+        drawDeferred();
     }
 
     const focusInside = () => Boolean(editor && (editor.element.contains(document.activeElement) || toolbar?.element.contains(document.activeElement)));
 
     async function load(note) {
         const mine = (ticket += 1);
-        session = null;
+        setSession(null);
         drawState('loading');
         if (!project) return drawState('missing');
         try {
@@ -153,7 +195,7 @@ export function createNoteScreen({ project = null, tasks, snackbar, setTimer, cl
             const result = key ? await project.notes.read(key) : { ok: false, missing: true };
             if (mine !== ticket || destroyed) return undefined;
             if (!result.ok) return drawState(result.corrupt ? 'corrupt' : 'missing');
-            session = { key: result.key, data: result.data, content: String(result.data.content ?? ''), readOnly: Boolean(result.readOnly) };
+            setSession({ key: result.key, data: result.data, content: String(result.data.content ?? ''), readOnly: Boolean(result.readOnly) });
             return drawNote();
         } catch (error) {
             onError(error);
@@ -177,8 +219,8 @@ export function createNoteScreen({ project = null, tasks, snackbar, setTimer, cl
             ed.restore(patch);
             onError(error);
             if (error?.code === 'NOTE_CHANGED') {
-                say(context.t('note.changedElsewhere'));
-                if (session === current) await load(shown);
+                // The file changed under the edit: what it holds now is taken in, and the edit is kept and saved again.
+                if (session === current && editor === ed) await absorb(current, ed);
             } else if (error?.name === 'PisiReadOnlyError') {
                 current.readOnly = true;
                 say(context.t('note.readOnly'));
@@ -192,15 +234,71 @@ export function createNoteScreen({ project = null, tasks, snackbar, setTimer, cl
         timer = null;
         const ed = editor;
         const current = session;
-        chain = chain.then(() => write(ed, current));
+        chain = chain.then(() => write(ed, current)).finally(settle);
         return chain;
     }
 
     function schedule() {
         if (timer !== null) clearTimer(timer);
         timer = setTimer(save, PISI_NOTE_SAVE_DELAY_MS);
+        lease?.setDirty(true);
     }
 
+    function closeDeleted(current) {
+        if (session !== current) return;
+        if (timer !== null) clearTimer(timer);
+        timer = null;
+        setSession(null);
+        drawState('missing');
+        say(context.t('note.deletedElsewhere'));
+        onDeleted(current.key);
+    }
+
+    /**
+     * The open note's file was changed by someone else: what it holds now is
+     * shown in place. Runs in the save chain, so no save of this note is under way.
+     */
+    async function absorb(current, ed) {
+        let result;
+        try {
+            result = await project.notes.read(current.key);
+        } catch (error) {
+            onError(error);
+            return;
+        }
+        if (session !== current || editor !== ed) return;
+        if (!result.ok) {
+            if (result.missing) return closeDeleted(current);
+            setSession(null);
+            drawState('corrupt');
+            return;
+        }
+        const content = String(result.data.content ?? '');
+        if (content === current.content) return;
+        const { conflicts } = ed.applyContent(content);
+        current.content = content;
+        current.data = result.data;
+        taskBlocks = taskBlocks.filter((entry) => entry.host.isConnected);
+        if (conflicts) say(context.t('note.changedElsewhere'));
+        // An edit kept through the change (a save that failed on it, a block typed in meanwhile) is saved again.
+        if (ed.hasPending()) schedule();
+    }
+
+    function handleExternal(key, info = {}) {
+        const current = session;
+        if (!current || current.key !== key) return chain;
+        chain = chain
+            .then(() => {
+                if (session !== current) return undefined;
+                if (info.removed) return closeDeleted(current);
+                return editor ? absorb(current, editor) : undefined;
+            })
+            .catch(onError)
+            .finally(settle);
+        return chain;
+    }
+
+    const stopDeferred = project?.documents.subscribeDeferred((key) => session?.key === key && drawDeferred());
     const stopTasks = tasks.subscribe(() => {
         if (!session || !editor) return;
         for (const entry of taskBlocks) drawTask(entry);
@@ -227,13 +325,19 @@ export function createNoteScreen({ project = null, tasks, snackbar, setTimer, cl
             shown = next.note;
             const note = shown;
             const pending = save();
-            session = null;
+            setSession(null);
             drawState('loading');
             opening = pending.then(() => (shown === note && !destroyed ? load(note) : undefined));
         },
 
         /** Writes what is waiting now. Resolves when every save so far has finished. */
         flush: () => save(),
+
+        /**
+         * A file changed outside the app (`info.removed` when it was deleted).
+         * Only the open note's file matters here. Resolves when it has been taken in.
+         */
+        handleExternal,
 
         /** Resolves when the note being opened has been read and drawn. */
         async whenReady() {
@@ -247,6 +351,9 @@ export function createNoteScreen({ project = null, tasks, snackbar, setTimer, cl
         destroy() {
             destroyed = true;
             if (timer !== null) clearTimer(timer);
+            timer = null;
+            setSession(null);
+            stopDeferred?.();
             stopTasks();
             document.removeEventListener('selectionchange', onSelection);
         }

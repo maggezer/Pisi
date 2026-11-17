@@ -1,5 +1,33 @@
 # PISI Güncelleme Takip Dosyası
 
+## 17-11-2026 — Mobil veri katmanı dış değişikliği alıyor (S4)
+
+Mobil ve senkron işi (`docs/sync-plan.md` S4; SV3, SV4, SV5, SV6, SV10, V4, V7, V9). Sunucu henüz
+bağlı değil; telefondaki veri katmanı ve ekranlar, başka bir cihazdan gelecek dosya değişikliğini
+yerinde, yazma döngüsü yaratmadan ve metin kaybettirmeden alabiliyor. Bunu S5'in senkron motoru
+kullanacak.
+
+- `ProjectWriter.applyExternal(key, text, { expected })` ve `removeExternal(key, { expected })`:
+  aynı kuyruk, atomik yazma, değişmeyen içerik yazılmaz. Ekranın kaydedilmemiş düzenlemesini
+  tuttuğu dosyaya, bozuk (salt okunur) yerel dosyaya ve `expected` artık tutmuyorsa uygulanmaz.
+  JSON olmayan içerik `.node/.map/.json` dosyasına yazılmaz. `fileChanged` olayı artık
+  `{ source: 'local' | 'sync', removed }` bilgisini de taşıyor.
+- Gelen not ve harita boş yönetilen yan klasörüyle oluşur. Dışarıdan silinen dosyadan sonra,
+  hiçbir belgenin sahiplenmediği boş yan klasörler kalkar. Mobil kendisi yine silmez.
+- Açık belge kiralaması (`project.documents`): not editörü ve günlük alanı açık oldukları
+  dosyayı "kirli/temiz" bildirir; ertelenen değişiklik notta ve günlükte bir uyarıyla görünür.
+- Ekranlar yerinde güncellenir: Pisi sekmesi (günlük ve görevler), Görevler, Takvim
+  (noktalar), Notlar listesi ve arama (artımlı), açık not (yalnız değişen bloklar; imleç ve
+  yazılan metin yerinde), harita görüntüleyici (kullanıcının oynattığı kamera korunur) ve
+  Ayarlar'daki sayılar. Masaüstünde silinen açık not için "Bu not masaüstünde silindi" denir
+  ve not ekranı kapanır.
+- Metin kaybı düzeltmesi: not diskte başka yerden değiştiyse henüz kaydedilmemiş yazı artık
+  atılmıyor. Not disktekiyle birleşiyor, aynı blok iki tarafta değiştiyse yazılan metin ayrı
+  bir blok olarak kalıyor. Günlükte de aynı durumda iki metin korunuyor.
+- Testler: `mobile/tests/data-external.test.mjs`, `note-rebase.test.mjs`,
+  `external-screens.test.mjs`; Playwright `mobile/e2e/external.spec.mjs` (debug derlemesinde
+  `window.pisiDeveloper.external` köprüsüyle).
+
 ## 17-11-2026 — Masaüstü senkron istemcisi (S3)
 
 Senkron işi (`docs/sync-plan.md` S3; SV2, SV4, SV5, SV6, SV9, SV10, SV11, SV13). Masaüstü artık

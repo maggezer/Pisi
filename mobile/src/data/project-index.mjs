@@ -1,5 +1,6 @@
 // What is in the project: a light list of notes and maps, rebuilt from the
-// files and kept current from the writer's `fileChanged` events. It is a cache
+// files and kept current from the writer's `fileChanged` events (local writes
+// and changes from outside alike; a removed file leaves the list). It is a cache
 // (rule V1): it can be thrown away and rebuilt, and nothing in it is ever
 // written back to a file.
 
@@ -47,6 +48,8 @@ export function createProjectIndex({ driver, writer, onError = () => {} }) {
     const maps = new Map();
     const listeners = new Set();
     let built = null;
+    // Files re-read after a change, one after another; `settled()` waits for them.
+    let updates = Promise.resolve();
 
     function notify() {
         for (const listener of listeners) {
@@ -88,18 +91,26 @@ export function createProjectIndex({ driver, writer, onError = () => {} }) {
 
     writer.onFileChanged((key) => {
         if (!built || !getPisiFileExt(key)) return;
-        void built
+        const pass = built;
+        updates = updates
+            .then(() => pass)
             .then(() => load(key))
             .then(notify)
             .catch(onError);
     });
 
     return {
-        /** Reads the whole project once; later calls return the same pass. `rebuild()` starts over. */
+        /**
+         * Reads the whole project once; later calls return the same pass, done
+         * once the files changed since are read again too. `rebuild()` starts over.
+         */
         build() {
             built ??= walk('').then(notify);
-            return built;
+            return built.then(() => updates);
         },
+
+        /** Resolves when every change seen so far is in the lists (and the build, once it was started). */
+        settled: () => Promise.all([built, updates]).then(() => undefined),
 
         rebuild() {
             notes.clear();

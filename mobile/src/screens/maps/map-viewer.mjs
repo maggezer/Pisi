@@ -5,8 +5,10 @@
 // desktop window and is not used.
 //
 // Built once and updated in place: the map and its camera stay as they were
-// when the user comes back from a note opened on it.
+// when the user comes back from a note opened on it, and when the map, one of
+// its notes or the relationships change from outside (sync).
 
+import { PISI_RELATIONSHIP_STORE_KEY } from '../../data/map-repo.mjs';
 import { renderIconButton } from '../../ui/button.mjs';
 import { h } from '../../ui/dom.mjs';
 import { renderEmptyState } from '../../ui/list.mjs';
@@ -166,6 +168,22 @@ export function createMapViewer({ project = null, onOpenNote, onError = () => {}
         draw();
     }
 
+    /** The same map read again; a camera the user moved stays where it is, an untouched one fits the map again. */
+    async function refresh() {
+        const token = (loadToken += 1);
+        const key = state.key;
+        try {
+            const result = await project.maps.read(key);
+            if (destroyed || token !== loadToken || key !== state.key) return;
+            if (result.ok) Object.assign(state, { status: 'ready', map: result });
+            else Object.assign(state, { status: result.missing ? 'missing' : 'corrupt', map: null });
+        } catch (error) {
+            onError(error);
+            return;
+        }
+        if (context) draw();
+    }
+
     // ----- gestures -----
 
     const local = (event) => {
@@ -250,6 +268,22 @@ export function createMapViewer({ project = null, onOpenNote, onError = () => {}
         /** The viewer is on screen: until the user moves it, the map is fitted to the size it now has. */
         attach() {
             if (state.world && !state.moved) fit();
+        },
+
+        /**
+         * A file changed outside the app (`info.removed` when deleted). The open
+         * map is read again when it, a note or the relationships changed; a
+         * removed map shows as missing. Resolves when it has been drawn.
+         */
+        async handleExternal(key, info = {}) {
+            if (!project || !state.key || state.status === 'idle') return;
+            if (key === state.key && info.removed) {
+                loadToken += 1;
+                Object.assign(state, { status: 'missing', map: null });
+                if (context) draw();
+                return;
+            }
+            if (key === state.key || key === PISI_RELATIONSHIP_STORE_KEY || key.toLowerCase().endsWith('.node')) await refresh();
         },
 
         fit,

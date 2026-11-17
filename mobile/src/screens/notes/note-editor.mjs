@@ -6,13 +6,16 @@
 // Nothing here writes HTML of its own making to the note: a save is a list of
 // block operations (data/note-patch.mjs) that names only the blocks the user
 // changed, added or removed (rules V2, V4, V8). `takePatch()` builds that
-// list, `rebase()` takes the content the write left on disk.
+// list, `rebase()` takes the content the write left on disk, and
+// `applyContent()` takes content that came from outside (sync) in place,
+// block by block (note-rebase.mjs).
 
 import { PISI_EDITABLE_BLOCK_TYPES, splitNoteBlocks } from '../../../../shared/note-blocks.mjs';
 import { inlineToHtml, parseInlineHtml } from '../../data/note-inline.mjs';
 import { makeBlockHtml } from '../../data/note-patch.mjs';
 import { h } from '../../ui/dom.mjs';
 import { buildInlineDom, getLinkNode, readInlineDom } from './inline-dom.mjs';
+import { planNoteRebase } from './note-rebase.mjs';
 
 const HEADING_CYCLE = Object.freeze(['heading1', 'heading2', 'heading3']);
 const isList = (type) => type === 'bullet' || type === 'number';
@@ -344,6 +347,42 @@ export function createNoteEditor({
 
     const active = () => caret()?.item ?? (current && items.includes(current) ? current : null);
 
+    /** The block a segment from outside now shows: the same field with new text, or a new element when it changed kind. */
+    function refresh(item, segment, index) {
+        if (!isField(item) || segment.kind !== 'element' || !segment.editable) return fromSegment(segment, index);
+        const nodes = parseInlineHtml(segment.inner);
+        item.el.replaceChildren(buildInlineDom(nodes, document));
+        if (!item.el.firstChild) item.el.append(document.createElement('br'));
+        Object.assign(item, { segment, index, type: segment.blockType, dirty: false, baseHtml: inlineToHtml(nodes) });
+        item.indent = segment.blockType === 'bullet' ? Number(segment.attributes['data-pisi-bullet-indent']) || 0 : 0;
+        applyType(item);
+        return item;
+    }
+
+    /** Where the caret is, as nodes and offsets, so that it can be put back if its block had to move. */
+    function saveCaret() {
+        const at = caret();
+        if (!at) return null;
+        const { startContainer, startOffset, endContainer, endOffset } = at.range;
+        return { item: at.item, startContainer, startOffset, endContainer, endOffset };
+    }
+
+    function restoreCaret(saved) {
+        if (!saved?.item.el.isConnected || !saved.item.el.contains(saved.startContainer) || !saved.item.el.contains(saved.endContainer)) return;
+        if (document.activeElement !== saved.item.el) saved.item.el.focus();
+        const selection = document.getSelection?.();
+        if (!selection) return;
+        const range = document.createRange();
+        try {
+            range.setStart(saved.startContainer, saved.startOffset);
+            range.setEnd(saved.endContainer, saved.endOffset);
+        } catch {
+            return;
+        }
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+
     return {
         element,
 
@@ -445,6 +484,51 @@ export function createNoteEditor({
             });
             removed = removed.filter((item) => !patch.gone.includes(item));
             return true;
+        },
+
+        /** True while something typed, added or removed is not on disk yet. */
+        hasPending: () => items.some((item) => item.dirty || item.saving) || removed.some((item) => item.segment),
+
+        /**
+         * The note's file now holds `nextContent`, written by someone else. The
+         * blocks it did not change keep their elements (and the caret); changed
+         * blocks show the new text; new ones appear in the file's order; blocks
+         * it removed go. An edit that is not saved yet is never overwritten: when
+         * the file changed that block too, the edit stays as a block of its own
+         * after the file's version, to be saved as new. Returns `{ conflicts }`,
+         * the number of edits kept that way.
+         */
+        applyContent(nextContent) {
+            const saved = saveCaret();
+            const plan = planNoteRebase({
+                items,
+                removed: removed.filter((item) => item.segment),
+                segments: splitNoteBlocks(nextContent),
+                isDirty: (item) => item.dirty || item.saving
+            });
+            items = plan.order.map((entry) => {
+                if (entry.kind === 'local') return entry.item;
+                if (entry.kind === 'new') return fromSegment(entry.segment, entry.index);
+                if (entry.kind === 'update') return refresh(entry.item, entry.segment, entry.index);
+                return Object.assign(entry.item, { segment: entry.segment, index: entry.index });
+            });
+            for (const item of plan.detached) Object.assign(item, { segment: null, index: -1, id: newBlockId(), dirty: true, saving: false, blank: false });
+            for (const entry of plan.removed) Object.assign(entry.item, { segment: entry.segment, index: entry.index });
+            removed = plan.removed.map((entry) => entry.item);
+
+            // Elements that stay are not moved unless the order changed, so a focused block keeps its caret.
+            const wanted = items.map((item) => item.el).filter(Boolean);
+            const keep = new Set(wanted);
+            for (const child of [...element.childNodes]) if (!keep.has(child)) child.remove();
+            let cursor = element.firstChild;
+            for (const el of wanted) {
+                if (el === cursor) cursor = cursor.nextSibling;
+                else element.insertBefore(el, cursor);
+            }
+            if (current && !items.includes(current)) current = null;
+            if (saved && caret()?.item !== saved.item) restoreCaret(saved);
+            onState();
+            return { conflicts: plan.detached.length };
         },
 
         /** The patch was not written: what it held is still to be saved. */

@@ -9,6 +9,7 @@ import { joinKey } from './drivers/keys.mjs';
 import { readJsonFile, serializeDocument } from './json-file.mjs';
 import { createMapRepo, PISI_RELATIONSHIP_STORE_KEY } from './map-repo.mjs';
 import { createNoteRepo } from './note-repo.mjs';
+import { createOpenDocuments } from './open-documents.mjs';
 import { createProjectIndex } from './project-index.mjs';
 import { createProjectWriter } from './project-writer.mjs';
 import { createSearchIndex } from './search-index.mjs';
@@ -20,7 +21,9 @@ const AUTHORITY_KEYS = [PISI_TASK_STORE_KEY, PISI_RELATIONSHIP_STORE_KEY, PISI_P
 const RECOVERY_FOLDERS = ['', '.pisi', PISI_DIARY_FOLDER];
 
 export function createProject({ driver, now = () => new Date(), makeUuid, onError = () => {} }) {
-    const writer = createProjectWriter({ driver, makeToken: makeUuid, onError });
+    // The files screens have open with unsaved edits; outside changes wait for them (SV4).
+    const documents = createOpenDocuments({ onError });
+    const writer = createProjectWriter({ driver, makeToken: makeUuid, documents, onError });
     const index = createProjectIndex({ driver, writer, onError });
     const tasks = createTaskRepo({ driver, writer, now, makeUuid });
     const notes = createNoteRepo({ driver, writer, index, now, makeUuid });
@@ -43,6 +46,7 @@ export function createProject({ driver, now = () => new Date(), makeUuid, onErro
     return {
         driver,
         writer,
+        documents,
         index,
         // The id source the repos use; the developer menu's sample data takes its ids from it too.
         makeUuid,

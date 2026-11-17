@@ -87,6 +87,16 @@ export function createMemoryDriver(initialFiles = {}) {
             files.delete(normalizeKey(key));
         },
 
+        /** Removes an empty directory; a directory with anything in it (or the root) stays. Resolves true when it was removed. */
+        async removeDirectory(key) {
+            const clean = normalizeKey(key);
+            if (!clean || !directories.has(clean)) return false;
+            const inside = (other) => other.startsWith(`${clean}/`);
+            if ([...files.keys()].some(inside) || [...directories].some(inside)) return false;
+            directories.delete(clean);
+            return true;
+        },
+
         /** Test helper: stores a binary file (an image in a sidecar folder) from its base64. */
         putBase64(key, base64) {
             const clean = normalizeKey(key);

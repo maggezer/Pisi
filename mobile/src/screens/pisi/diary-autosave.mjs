@@ -8,11 +8,21 @@ export const PISI_DIARY_SAVE_DELAY_MS = 600;
 /**
  * `save(isoDate, text)` writes one day; `onSaved(job, result)` and
  * `onError(error, job)` report how it went, `job` being `{ date, text }`.
+ * `onBusy(busy)` says when text starts waiting and when everything is written.
  */
-export function createDiaryAutosave({ save, setTimer, clearTimer, delay = PISI_DIARY_SAVE_DELAY_MS, onSaved = () => {}, onError = () => {} }) {
+export function createDiaryAutosave({
+    save,
+    setTimer,
+    clearTimer,
+    delay = PISI_DIARY_SAVE_DELAY_MS,
+    onSaved = () => {},
+    onError = () => {},
+    onBusy = () => {}
+}) {
     let pending = null;
     let timer = null;
     let chain = Promise.resolve();
+    let running = 0;
 
     function write() {
         if (timer !== null) clearTimer(timer);
@@ -20,12 +30,17 @@ export function createDiaryAutosave({ save, setTimer, clearTimer, delay = PISI_D
         if (!pending) return chain;
         const job = pending;
         pending = null;
+        running += 1;
         chain = chain
             .then(() => save(job.date, job.text))
             .then(
                 (result) => onSaved(job, result),
                 (error) => onError(error, job)
-            );
+            )
+            .finally(() => {
+                running -= 1;
+                if (!running && !pending) onBusy(false);
+            });
         return chain;
     }
 
@@ -36,6 +51,7 @@ export function createDiaryAutosave({ save, setTimer, clearTimer, delay = PISI_D
             pending = { date, text };
             if (timer !== null) clearTimer(timer);
             timer = setTimer(write, delay);
+            onBusy(true);
         },
 
         /** Writes what is waiting now. Resolves when every save so far has finished. */
@@ -44,10 +60,14 @@ export function createDiaryAutosave({ save, setTimer, clearTimer, delay = PISI_D
         /** Text typed for `date` that is not on disk yet, or null. */
         getPending: (date) => (pending?.date === date ? pending.text : null),
 
+        /** True while text waits or is being written. */
+        isBusy: () => Boolean(pending) || running > 0,
+
         cancel() {
             if (timer !== null) clearTimer(timer);
             timer = null;
             pending = null;
+            if (!running) onBusy(false);
         }
     };
 }

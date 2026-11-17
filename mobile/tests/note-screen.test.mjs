@@ -402,15 +402,32 @@ describe('Not ekranı: düzenleme ve kayıt', () => {
         expect(blockTexts()[0]).toBe('paragraph:Geri dönmeden önce');
     });
 
-    it('not ekran açıkken diskte değiştiyse yama uygulanmaz, not yeniden yüklenir', async () => {
+    it('not ekran açıkken diskte değiştiyse eski yama uygulanmaz; disktekiyle birleşir, yazılan korunur ve yeniden kaydedilir (S4)', async () => {
         const { driver, project } = await start();
         await project.notes.updateContent('Toplantı.node', [{ op: 'replace', blockId: 'blk_a', html: 'Başka yerden' }]);
-        type(blocks()[3], 'Madde 2');
+        const item = blocks()[3];
+        type(item, 'Madde 2');
         await afterSave();
-        expect(snackbar()).toBe('Not başka bir yerde değişti; yeniden yüklendi.');
+        await afterSave();
         expect(stored(driver).content).toContain(paragraph('blk_a', 'Başka yerden'));
-        expect(stored(driver).content).toContain(BULLET);
+        expect(stored(driver).content).toContain(BULLET.replace('Madde', 'Madde 2'));
         expect(blockTexts()[0]).toBe('paragraph:Başka yerden');
+        // The field typed in is the same element: nothing was drawn again around it.
+        expect(blocks()[3]).toBe(item);
+        expect(snackbar()).toBeNull();
+    });
+
+    it('aynı blok diskte de değiştiyse iki metin de kalır: diskteki blok, altında yazılan yeni blok (SV3)', async () => {
+        const { driver, project } = await start();
+        await project.notes.updateContent('Toplantı.node', [{ op: 'replace', blockId: 'blk_a', html: 'Başka yerden' }]);
+        type(blocks()[0], 'Burada yazılan');
+        await afterSave();
+        await afterSave();
+        expect(snackbar()).toBe('Not başka bir cihazda da değişti; yazdıkların ayrı blok olarak korundu.');
+        const content = stored(driver).content;
+        expect(content).toContain(paragraph('blk_a', 'Başka yerden'));
+        expect(content.indexOf('Burada yazılan')).toBeGreaterThan(content.indexOf('Başka yerden'));
+        expect(blockTexts().slice(0, 2)).toEqual(['paragraph:Başka yerden', 'paragraph:Burada yazılan']);
     });
 
     it('kayıt başarısız olursa bildirilir ve sonraki denemede yazılır', async () => {
