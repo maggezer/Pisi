@@ -1,5 +1,14 @@
 # PISI Güncelleme Takip Dosyası
 
+## 17-11-2026 — Senkron sunucusu cPanel'de kabul edildi (S2)
+
+Senkron işi (`docs/sync-plan.md` S2). Kurulum rehberi kullanıcının paylaşımlı cPanel hesabında
+uygulandı: PHP 8.4, MariaDB 10.11, Let's Encrypt; `/v1/info`, kimlik doğrulama denemeleri ve
+`bin/check.php` beklendiği gibi. Kabul `docs/sync-plan.md` S2'ye yazıldı (sunucu adresi olmadan).
+
+- `docs/sync-server-cpanel.md`: komutlarda CloudLinux PHP yolu (`/opt/alt/php84/usr/bin/php`;
+  `ea-php84` tabloda kalır) ve Windows `cmd`'de de çalışan çift tırnaklı `curl` örnekleri.
+
 ## 17-11-2026 — Senkron sunucusu: sertifika doğrulaması için `.htaccess` istisnası (S2)
 
 Senkron işi (`docs/sync-plan.md` S2). İlk gerçek cPanel kurulumunda Let's Encrypt sertifikası

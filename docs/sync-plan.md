@@ -337,6 +337,10 @@ Her faz: amaç → okunacaklar → yapılacaklar → kabul kriterleri. Madde kim
 - `server/public/` yalnız `index.php` ve `.htaccess` içerir. Blob ve ayar dosyalarına web kökünden erişilemez (test).
 - `member` rolünden gelen `delete` reddedilir. İptal edilen cihazın her isteği `DEVICE_REVOKED` döner.
 - Rehber, temiz bir cPanel hesabında kullanıcı tarafından uygulanır ve `GET /v1/info` yanıt verir. Sonuç PR'a ya da S7'ye yazılır; sunucu adresi yazılmaz.
+- **Kabul (17-11-2026):** rehber kullanıcının paylaşımlı cPanel hesabında uygulandı (Git Version Control ile dağıtım; CloudLinux `alt-php84`, PHP 8.4.27; MariaDB 10.11.19; Let's Encrypt sertifikası).
+    - `GET /v1/info` yanıt verdi. Token'sız `head` `AUTH_REQUIRED`, sahte token'lı `head` `TOKEN_INVALID` döndü; yani `Authorization` başlığı PHP'ye ulaşıyor.
+    - `bin/check.php`'nin bütün satırları `[ OK ]` (şema 1/1, kurulum anahtarı, veri klasörü web kökü dışında, cron ile temizlik).
+    - Kurulumda çıkan sorunlar düzeltildi: ev klasörü yolu ve PHP komut yolu, depoda kalan `error_log` yüzünden kilitlenen Git dağıtımı ([maggezer/Pisi#171](https://github.com/maggezer/Pisi/pull/171)); sertifika doğrulamasını engelleyen `.htaccess` ([maggezer/Pisi#172](https://github.com/maggezer/Pisi/pull/172)); rehberde Windows'ta çalışmayan tek tırnaklı `curl` örnekleri (bu kabulle aynı PR).
 
 ### S3 · Masaüstü istemcisi
 
