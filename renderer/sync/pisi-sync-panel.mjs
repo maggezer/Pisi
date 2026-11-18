@@ -6,8 +6,11 @@ import { registerModule } from '../core/module-registry.mjs';
 // error), "Şimdi eşitle", pairing, devices and revoking them, the conflict log
 // and the files that are not synced. While a large turn runs (the first upload,
 // S6) a progress line shows files and bytes, and "Durdur" stops the turn and
-// pauses automatic syncing until "Sürdür" (or "Şimdi eşitle"). Everything goes through window.pisiSyncClient;
-// the renderer never sees the token or the project key.
+// pauses automatic syncing until "Sürdür" (or "Şimdi eşitle"). After SERVER_ROLLBACK
+// "Sunucuyla yeniden eşleş" starts over from the server's heads. Remote changes that
+// failed verification (SV9) are listed with the files that are not synced. The last
+// desktop leaving a space is asked whether to delete it (the phones on it stop).
+// Everything goes through window.pisiSyncClient; the renderer never sees the token or the project key.
 
 const pisiSyncPanelState = { initialized: false, joinTimer: null, section: null };
 
@@ -19,7 +22,9 @@ const PISI_SYNC_CODE_MESSAGES = Object.freeze({
     RATE_LIMITED: 'Çok fazla istek; biraz sonra yeniden deneyin.',
     DEVICE_REVOKED: 'Bu cihazın bağlantısı iptal edildi. Proje dosyaları yerinde duruyor; yeniden eşleşebilirsiniz.',
     TOKEN_INVALID: 'Sunucu bu cihazı tanımıyor. Bağlantıyı kaldırıp yeniden eşleşin.',
-    SERVER_ROLLBACK: 'Sunucu daha eski bir duruma dönmüş görünüyor; senkron durduruldu ve hiçbir şey yazılmadı.',
+    SERVER_ROLLBACK:
+        'Sunucu daha eski bir duruma dönmüş görünüyor; senkron durduruldu ve hiçbir şey yazılmadı. "Sunucuyla yeniden eşleş" ile devam edebilirsiniz.',
+    NOT_STOPPED: 'Senkron durmamış; yeniden eşleşmeye gerek yok.',
     STATE_UNREADABLE: 'Senkron durumu okunamadı; bağlantıyı kaldırıp yeniden eşleşin.',
     SECRETS_UNREADABLE: 'Senkron anahtarı açılamadı; bağlantıyı kaldırıp yeniden eşleşin.',
     SECRET_STORAGE_UNAVAILABLE: 'Bu sistemde güvenli anahtar deposu yok; senkron kurulamaz.',
@@ -58,7 +63,14 @@ const PISI_SYNC_ISSUE_LABELS = Object.freeze({
     PATH_UNSAFE: 'adı ya da yeri senkron edilemez',
     PATH_COLLISION: 'yalnız büyük-küçük harfle ayrılan başka bir dosya var',
     LOCAL_CORRUPT: 'JSON bozuk; ne gönderildi ne değiştirildi',
-    DEFERRED_DIRTY: 'kaydedilmemiş değişiklik var; sonra eşitlenecek'
+    DEFERRED_DIRTY: 'kaydedilmemiş değişiklik var; sonra eşitlenecek',
+    // Remote changes that were not applied (SV9).
+    DECRYPT_FAILED: 'sunucudaki sürüm çözülemedi; uygulanmadı',
+    HASH_MISMATCH_LOCAL: 'sunucudaki sürüm özetiyle tutmuyor; uygulanmadı',
+    META_INVALID: 'sunucudaki kayıt geçersiz; uygulanmadı',
+    PROTOCOL_UNSUPPORTED: 'daha yeni bir Pisi sürümü gerekiyor; uygulanmadı',
+    SERVER_REPLAY: 'sunucu eski bir değişikliği yeniden gönderdi; uygulanmadı',
+    BLOB_NOT_FOUND: 'sunucuda içeriği bulunamadı; uygulanmadı'
 });
 
 function formatPisiSyncClientTime(value) {
@@ -254,7 +266,10 @@ async function renderPisiSyncLogs(conflictList, unsyncedList) {
     if (!conflictList.children.length) conflictList.append(element('li', 'pisi-sync-muted', 'Çakışma yok.'));
     unsyncedList.replaceChildren();
     for (const entry of unsynced?.files || []) {
-        unsyncedList.append(element('li', 'pisi-sync-row', `${entry.path} · ${pisiSyncPanelTranslate(PISI_SYNC_ISSUE_LABELS[entry.code] || entry.code)}`));
+        const name = entry.path || pisiSyncPanelTranslate('Adı okunamayan dosya');
+        const row = element('li', 'pisi-sync-row', `${name} · ${pisiSyncPanelTranslate(PISI_SYNC_ISSUE_LABELS[entry.code] || entry.code)}`);
+        if (entry.unapplied) row.dataset.pisiSyncUnapplied = entry.code;
+        unsyncedList.append(row);
     }
     if (!unsyncedList.children.length) unsyncedList.append(element('li', 'pisi-sync-muted', 'Bütün dosyalar eşitleniyor.'));
 }
@@ -277,9 +292,16 @@ function renderPisiSyncBound(body, status) {
     const stop = button('Durdur', 'cancel');
     stop.hidden = !status.running;
     actions.append(run, stop);
+    if (status.stopped === 'SERVER_ROLLBACK') actions.append(button('Sunucuyla yeniden eşleş', 'rejoin'));
     if (status.role === 'admin') actions.append(button('Cihaz eşleştir', 'pair'));
     actions.append(button('Bu cihazın bağlantısını kaldır', 'disconnect'));
     body.append(summary, state, progress, bar, actions);
+    if (status.unapplied) {
+        const notice = element('p', 'pisi-sync-warning');
+        notice.dataset.pisiSyncUnappliedNotice = String(status.unapplied);
+        notice.textContent = `${pisiSyncPanelTranslate('Sunucudan gelen ve doğrulanamayan değişiklikler uygulanmadı')}: ${status.unapplied}. ${pisiSyncPanelTranslate('Senkron bunları yeniden dener; "Şimdi eşitle" hemen dener.')}`;
+        body.append(notice);
+    }
     updatePisiSyncProgress(status);
     if (status.weakSecrets) body.append(element('p', 'pisi-sync-warning', 'Bu sistemde anahtarlık yok; senkron anahtarı yalnız zayıf biçimde korunabilir.'));
 
@@ -304,6 +326,7 @@ function renderPisiSyncBound(body, status) {
         void refreshPisiSyncPanel();
     });
     actions.querySelector('[data-pisi-sync-action="pair"]')?.addEventListener('click', () => void window.openPisiSyncPairingDialog?.());
+    actions.querySelector('[data-pisi-sync-action="rejoin"]')?.addEventListener('click', () => void rejoinPisiSyncFromPanel());
     actions.querySelector('[data-pisi-sync-action="disconnect"]').addEventListener('click', async () => {
         const confirmed = await pisiConfirm(pisiSyncPanelTranslate('Bu proje senkrondan ayrılsın mı? Proje dosyaları yerinde kalır.'), {
             title: pisiSyncPanelTranslate('Bağlantıyı kaldır'),
@@ -311,9 +334,60 @@ function renderPisiSyncBound(body, status) {
             danger: true
         });
         if (!confirmed) return;
-        await window.pisiSyncClient.disconnect();
+        await disconnectPisiSyncFromPanel();
         void refreshPisiSyncPanel();
     });
+}
+
+/** "Sunucuyla yeniden eşleş" after SERVER_ROLLBACK, once the user agreed to what it does. */
+async function rejoinPisiSyncFromPanel() {
+    const confirmed = await pisiConfirm(
+        pisiSyncPanelTranslate(
+            'Bu proje sunucudaki bütün dosyalarla yeniden karşılaştırılır. Buradaki değişiklikler kaybolmaz; iki tarafta farklı değişen notlar çakışma kopyası olur. Sunucunun döndüğü yedekten sonra silinen dosyalar geri gelebilir. Öbür cihazlarda da "Sunucuyla yeniden eşleş" seçilmelidir.'
+        ),
+        { title: pisiSyncPanelTranslate('Sunucuyla yeniden eşleş'), confirmText: pisiSyncPanelTranslate('Yeniden eşleş') }
+    );
+    if (!confirmed) return;
+    const result = await window.pisiSyncClient.rejoin();
+    if (!result?.ok) pisiNotifyError(describePisiSyncCode(result?.code), { detail: result?.code || '' });
+    else pisiNotifySuccess(pisiSyncPanelTranslate('Senkron sunucuyla yeniden eşleşti.'));
+    void refreshPisiSyncPanel();
+}
+
+/**
+ * Leaves sync. The last desktop of the space is asked again: leaving deletes the
+ * space on the server and the phones on it stop syncing. When the server cannot
+ * be reached, the binding is removed here only if the user says so.
+ */
+async function disconnectPisiSyncFromPanel() {
+    let result = await window.pisiSyncClient.disconnect();
+    if (result?.code === 'LAST_ADMIN') {
+        const remove = await pisiConfirm(
+            pisiSyncPanelTranslate(
+                'Bu bilgisayar bu projenin senkron alanındaki son masaüstü. Ayrılırsa sunucudaki alan ve şifreli kopyası silinir; bağlı telefonlar senkronu bırakır ve bunu kullanıcıya söyler. Proje dosyaları bütün cihazlarda kalır.'
+            ),
+            {
+                title: pisiSyncPanelTranslate('Senkron alanı silinsin mi?'),
+                confirmText: pisiSyncPanelTranslate('Alanı sil ve ayrıl'),
+                danger: true
+            }
+        );
+        if (!remove) return;
+        result = await window.pisiSyncClient.disconnect({ deleteSpace: true });
+    }
+    if (result && !result.ok) {
+        const force = await pisiConfirm(
+            `${describePisiSyncCode(result.code)} ${pisiSyncPanelTranslate('Bağlantı yalnız bu bilgisayarda kaldırılsın mı? Sunucudaki alan ve bağlı cihazlar olduğu gibi kalır.')}`,
+            {
+                title: pisiSyncPanelTranslate('Bağlantıyı kaldır'),
+                confirmText: pisiSyncPanelTranslate('Yalnız burada kaldır'),
+                danger: true
+            }
+        );
+        if (!force) return;
+        result = await window.pisiSyncClient.disconnect({ force: true });
+    }
+    if (result?.spaceDeleted) pisiNotifySuccess(pisiSyncPanelTranslate('Senkron alanı sunucudan silindi.'));
 }
 
 async function refreshPisiSyncPanel() {
@@ -362,6 +436,8 @@ const moduleApi = {
     describePisiSyncCode,
     formatPisiSyncProgress,
     refreshPisiSyncPanel,
+    rejoinPisiSyncFromPanel,
+    disconnectPisiSyncFromPanel,
     renderPisiSyncPanel,
     initializePisiSyncPanel
 };

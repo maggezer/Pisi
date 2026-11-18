@@ -276,7 +276,8 @@ export function createPisiSyncPusher(ctx) {
                     blob: item.blob,
                     sha256: item.sha256,
                     size: item.size,
-                    docId: item.docId
+                    docId: item.docId,
+                    dev: state.deviceId
                 });
                 const base = await store.readBase(pendingKey);
                 if (base) await store.writeBase(item.fid, base);

@@ -529,6 +529,14 @@ Her faz: amaç → okunacaklar → yapılacaklar → kabul kriterleri. Madde kim
     - Verilen kararlar (onaylı): `electron-sync-reload-e2e.mjs`'in elle yeniden yükleme kısmı `scripts/electron-project-reload-e2e.mjs` olarak kaldı; matris Playwright'ı mobil paketten alır (yeni bağımlılık yok); matris her PR'da `sync-server.yml` içinde çalışır.
     - Belgede olmayan kararlar: iki cihazın bir senaryodan sonra "aynı proje"ye varması için masaüstünün yansıtma yazmaları beklenir ve en çok 4 değiş-tokuş turu kabul edilir (bir turda durulma şart koşulmadı, §4b); telefonun "uygulamaya dönüş" tetikleyicisi web derlemesinde `visibilitychange` olayıyla verilir; 3. senaryodaki görev tarihsizdir, çünkü bugüne tarihli görev masaüstünde bugünün günlüğünü oluşturur ve 4. senaryonun "iki tarafta da yeni günlük" koşulunu bozar.
 
+- **Kapanış (18-11-2026):** S8 öncesi incelemede bulunan eksikler tamamlandı.
+    - "Sunucuyla yeniden eşleş" (protokol §7.4; `shared/sync-recovery.mjs`, masaüstü `sync.rejoin.v1`, telefonda Ayarlar → Senkron): geri sarmadan sonra eşleşme ve dosyalar kalır, cihaz bütün başlıklardan eski indeksine göre birleşir; metin kaybı yok. İndeks girdisi sürümü yazan cihazı (`dev`) tutar. Başlıklar geri gitmediği için her tam karşılaştırma ve günlük denetim imlecin gösteremediği geri sarmayı da yakalar (kalan sınır `pisi-error.md` §4c).
+    - Son masaüstü ayrılırken `LAST_ADMIN` yutulmuyor: kullanıcıya alan silme soruluyor (`DELETE /v1/spaces`), telefon `TOKEN_INVALID`'de alanın silinmiş olabileceğini söylüyor. Sahipsiz alanlar için sunucuda `app/bin/spaces.php` (`docs/sync-server-cpanel.md` §16).
+    - Doğrulanamayan uzak değişiklikler (SV9) `state.unapplied`'da kalıyor, iki Ayarlar ekranında görünüyor ve bütün başlıklarla yeniden deneniyor.
+    - Masaüstü `RATE_LIMITED`'da `Retry-After` kadar sonra kendisi yeniden deniyor.
+    - Matris: 12. senaryo iki cihazın arayüzden yeniden eşleşmesiyle bitiyor; yeni 16. (hız sınırı, iletenin `limit` kuralı) ve 17. (son masaüstü ayrılır, alan silinir, telefon bırakır) senaryolar. Matris artık 16 senaryo çalıştırır.
+    - Belgede olmayan kararlar: "yeniden eşleş" yalnız `SERVER_ROLLBACK`'le durmuş cihazda görünür; yeniden eşleşmede silmeler tahmin edilmez (yedekten sonra silinen dosya geri gelebilir); sunucuya ulaşılamazken masaüstünün bağı yalnız "yalnız burada kaldır" onayıyla bırakılır; uygulanmayan değişiklikler "Şimdi eşitle"de hemen, yoksa 15 dakikada bir denenir, `SERVER_REPLAY` ve `PATH_UNSAFE` denenmez.
+
 ### S8 · Cihazda kabul
 
 **Amaç:** gerçek telefon, gerçek masaüstü ve kullanıcının sunucusuyla elle kabul.

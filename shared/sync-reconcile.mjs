@@ -250,7 +250,11 @@ export function checkPisiSyncRemoteOrder({ cursor = 0, head, changes = [], lastD
     return { ok: true, code: null, accepted, rejected, lastDseq: seen };
 }
 
-/** Index entry after a file was applied or pushed with `seq`. */
-export function makePisiSyncIndexEntry({ path, seq, blob, sha256, size, docId = null }) {
-    return { path, pathKey: getPisiSyncPathKey(path), seq, blob, sha256, size, docId };
+/**
+ * Index entry after a file was applied or pushed with `seq`. `dev` is the device
+ * that wrote this version (this device for its own push); "Sunucuyla yeniden
+ * eşleş" uses it (sync-recovery.mjs). Entries of older states have none.
+ */
+export function makePisiSyncIndexEntry({ path, seq, blob, sha256, size, docId = null, dev = null }) {
+    return { path, pathKey: getPisiSyncPathKey(path), seq, blob, sha256, size, docId, dev };
 }

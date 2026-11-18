@@ -10,7 +10,14 @@
 //   3 s after the last local write, a file becoming clean, and by hand.
 // - The phone is a `member`: it never sends a delete (SV12).
 // - DEVICE_REVOKED or TOKEN_INVALID: the engine stops, the secrets and the
-//   state are removed, the project files stay and the user is told.
+//   state are removed, the project files stay and the user is told. TOKEN_INVALID
+//   also means the desktop deleted the space when it left it (it was the last
+//   desktop), so its notice says so.
+// - SERVER_ROLLBACK: nothing is written until the user chooses "Sunucuyla yeniden
+//   eşleş" (`rejoin()`): the next turn starts over from the server's heads
+//   without losing the phone's files (shared/sync-recovery.mjs).
+// - Remote changes that failed verification (SV9) are listed in the status
+//   (`unapplied`) and tried again by the engine.
 // - First pairing (S6 step 3): a phone with only a project skeleton takes the
 //   server's project; otherwise the user chose `merge` (add the phone's files)
 //   or `aside` (sync/initial-transfer.mjs) on the pairing screen.
@@ -74,6 +81,7 @@ export function createSyncService({
         lastRun: null,
         conflicts: [],
         issues: [],
+        unapplied: [],
         running: false,
         progress: null,
         aside: []
@@ -115,7 +123,8 @@ export function createSyncService({
             deviceName: state.deviceName,
             lastRun: state.lastRun,
             conflicts: [...state.conflicts].reverse(),
-            issues: state.issues
+            issues: state.issues,
+            unapplied: Object.values(state.unapplied || {}).sort((left, right) => left.seq - right.seq)
         };
     }
 
@@ -146,13 +155,14 @@ export function createSyncService({
         });
     }
 
+    /** `revoked` is the server's code (DEVICE_REVOKED, TOKEN_INVALID) when the server ended the pairing, else null. */
     async function forget({ revoked }) {
         engine = null;
         http = null;
         files.reset();
         await store.destroy();
-        setStatus({ state: 'unpaired', code: revoked ? 'DEVICE_REVOKED' : null, spaceName: '', serverUrl: '', lastRun: null, conflicts: [], issues: [] });
-        if (revoked) emit({ type: 'revoked' });
+        setStatus({ state: 'unpaired', code: revoked || null, spaceName: '', serverUrl: '', lastRun: null, conflicts: [], issues: [], unapplied: [] });
+        if (revoked) emit({ type: 'revoked', code: revoked });
     }
 
     async function turn(reason) {
@@ -162,7 +172,7 @@ export function createSyncService({
             summary = await engine.runTurn({ reason });
         } catch (error) {
             const code = typeof error?.code === 'string' ? error.code : 'INTERNAL';
-            if (REVOKED.has(code)) return forget({ revoked: true });
+            if (REVOKED.has(code)) return forget({ revoked: code });
             if (code === 'RATE_LIMITED' && error.retryAfter) schedule('retry', Math.min(error.retryAfter, MAX_RETRY_AFTER_SECONDS) * 1000);
             if (code !== 'OFFLINE') onError(error);
             setStatus({ state: code === 'OFFLINE' ? 'offline' : 'error', code });
@@ -311,7 +321,7 @@ export function createSyncService({
             const job = engine
                 .fetchLazy(path)
                 .then((result) => {
-                    if (REVOKED.has(result.code)) void forget({ revoked: true });
+                    if (REVOKED.has(result.code)) void forget({ revoked: result.code });
                     else if (result.ok) emit({ type: 'attachment', path });
                     return result;
                 })
@@ -400,8 +410,24 @@ export function createSyncService({
                 const code = error?.code;
                 remote = code === 'OFFLINE' ? 'offline' : REVOKED.has(code) ? 'ok' : 'failed';
             }
-            await forget({ revoked: false });
+            await forget({ revoked: null });
             return { remote };
+        },
+
+        /**
+         * "Sunucuyla yeniden eşleş" after SERVER_ROLLBACK (docs/sync-protocol.md §7.4):
+         * the phone keeps its files and the pairing; the turn that follows takes every
+         * head and merges without losing either side. Resolves the turn's summary, or
+         * `{ ok: false, code }` (NOT_PAIRED, NOT_STOPPED).
+         */
+        async rejoin() {
+            if (destroyed || !engine) return { ok: false, code: 'NOT_PAIRED' };
+            if (running) await running;
+            const started = await engine.rejoin();
+            if (!started.ok) return started;
+            const state = await store.load();
+            if (state) setStatus(statusOf(state));
+            return (await sync('manual')) ?? { ok: false, code: status.code || 'INTERNAL' };
         },
 
         destroy() {

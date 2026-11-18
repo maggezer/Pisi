@@ -130,5 +130,38 @@ describe('Ayarlar (M10)', () => {
             expect(stopped.querySelector('[data-sync="stopped"]').getAttribute('role')).toBe('alert');
             expect(stopped.querySelector('[data-sync="sync-now"]')).toBeNull();
         });
+
+        it('sunucu geri sarılınca "Sunucuyla yeniden eşleş" satırı; alan silinince ayrı uyarı', () => {
+            const calls = [];
+            const stopped = draw({ sync: { status: status({ state: 'stopped', code: 'SERVER_ROLLBACK' }), onRejoin: () => calls.push('rejoin') } });
+            expect(stopped.querySelector('[data-sync="stopped"]').textContent).toMatch(/Sunucuyla yeniden eşleş/);
+            const rejoin = stopped.querySelector('[data-sync="rejoin"]');
+            expect(rejoin.querySelector('.pisi-row-title').textContent).toBe('Sunucuyla yeniden eşleş');
+            rejoin.click();
+            expect(calls).toEqual(['rejoin']);
+
+            const gone = draw({ sync: { status: status({ state: 'unpaired', code: 'TOKEN_INVALID' }) } });
+            expect(gone.querySelector('[data-sync="token-invalid"]').textContent).toMatch(/senkron alanını silmiş/);
+            expect(gone.querySelector('[data-sync="revoked"]')).toBeNull();
+        });
+
+        it('uygulanmayan uzak değişiklikler dosya ve nedeniyle listelenir', () => {
+            const screen = draw({
+                sync: {
+                    status: status({
+                        unapplied: [
+                            { fid: 'f_a', path: 'Bozuk.node', seq: 5, code: 'DECRYPT_FAILED' },
+                            { fid: 'f_b', path: null, seq: 6, code: 'META_INVALID' }
+                        ]
+                    })
+                }
+            });
+            expect(screen.querySelector('[data-sync="unapplied-notice"]').textContent).toMatch(/2 değişiklik/);
+            const rows = [...screen.querySelectorAll('[data-sync="unapplied"]')];
+            expect(rows.map((row) => row.dataset.code)).toEqual(['DECRYPT_FAILED', 'META_INVALID']);
+            expect(rows.map((row) => row.querySelector('.pisi-row-title').textContent)).toEqual(['Bozuk.node', 'Adı okunamayan dosya']);
+            expect(rows[0].querySelector('.pisi-row-meta').textContent).toBe('Sunucudaki sürüm çözülemedi');
+            expect(draw({ sync: { status: status() } }).querySelector('[data-sync="unapplied"]')).toBeNull();
+        });
     });
 });

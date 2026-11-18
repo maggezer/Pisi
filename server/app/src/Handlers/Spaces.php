@@ -9,6 +9,7 @@ use PisiSync\Clock;
 use PisiSync\Context;
 use PisiSync\RateLimiter;
 use PisiSync\Response;
+use PisiSync\SpaceAdmin;
 use PisiSync\Validate;
 
 /** Alanlar (protokol §6.2). */
@@ -88,13 +89,7 @@ final class Spaces
         if (($body['confirm'] ?? null) !== $spaceId) {
             throw ApiError::field('confirm');
         }
-        $db = $context->db();
-        $db->transaction(static function () use ($db, $spaceId): void {
-            $db->run('SELECT head FROM spaces WHERE space_id = ? FOR UPDATE', [$spaceId]);
-            // Alt tablolar ON DELETE CASCADE ile silinir.
-            $db->run('DELETE FROM spaces WHERE space_id = ?', [$spaceId]);
-        });
-        $context->store->discardSpace($spaceId);
+        (new SpaceAdmin($context->db(), $context->store))->delete($spaceId);
         return Response::empty(204);
     }
 

@@ -118,6 +118,8 @@ export async function createDesktop(server, { name = 'Masaüstü', spaceName = '
         paths: () => [...files.keys()].sort(),
         sync: (options = {}) => engine.runTurn({ reason: 'test', ...options }),
         cancel: () => engine.cancel(),
+        /** "Sunucuyla yeniden eşleş" after SERVER_ROLLBACK; the next `sync()` starts over from the heads. */
+        rejoin: () => engine.rejoin(),
         /** A new engine over the same state and files: the app started again after it was stopped. */
         restart() {
             engine = makeEngine();

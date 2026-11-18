@@ -655,6 +655,31 @@ try {
     });
 
     // ── 11. The desktop revokes the phone: it stops, keeps its files, pairs again. ───────
+    // ── 16. The server's rate limit answers with a Retry-After longer than the client waits inline. ──
+    await scenario(16, 'sunucu hız sınırı: masaüstü Retry-After sonrası kendiliğinden yeniden dener', async () => {
+        const retryAfter = 31;
+        const mark = proxy.log.length;
+        proxy.limit({ client: 'desktop', method: 'GET', path: /\/head$/, retryAfter });
+        const limitedAt = Date.now();
+        const result = await desktop.sync();
+        assert(result?.ok === false && result.code === 'RATE_LIMITED' && result.retryAfter === retryAfter, '16: masaüstü RATE_LIMITED', result);
+        // The next turn comes after Retry-After, not at the next 60 s interval.
+        const retried = await desktop.waitUntil(
+            '16: yeniden deneme',
+            () => {
+                const next = proxy.since(mark, 'desktop').find((entry) => entry.fault === null && /\/head$/.test(entry.path));
+                return next || null;
+            },
+            (retryAfter + 20) * 1000
+        );
+        const waited = (retried.at - limitedAt) / 1000;
+        assert(waited >= retryAfter - 1 && waited < retryAfter + 20, '16: Retry-After kadar beklendi', { waited });
+        await desktop.waitUntil('16: tur bitti', async () => {
+            const status = await desktop.status();
+            return (!status.running && status.lastResult?.ok === true) || null;
+        });
+    });
+
     await scenario(11, 'masaüstü telefonu iptal eder', async () => {
         const filesBefore = (await phone.files()).map((entry) => entry.path).sort();
         await desktop.openSettings();
@@ -715,6 +740,7 @@ try {
         await phone.syncNow('12: telefon');
         const desktopBefore = await desktop.files(isSynced);
         const phoneBefore = JSON.stringify(await phone.files());
+        const copiesBefore = [...desktopBefore.keys()].filter((key) => /çakışma/i.test(key));
         restoreSpace(server, spaceId);
         const result = await desktop.sync();
         assert(result?.ok === false && result.code === 'SERVER_ROLLBACK', '12: masaüstü SERVER_ROLLBACK', result);
@@ -728,11 +754,83 @@ try {
         await phone.until('12: telefon durur', async () => (await phone.statusRow().getAttribute('data-state')) === 'stopped');
         assert((await phone.page.locator('[data-sync="stopped"]').count()) === 1, '12: telefonda uyarı');
         assert(JSON.stringify(await phone.files()) === phoneBefore, '12: telefonda hiçbir şey yazılmaz');
+
+        // "Sunucuyla yeniden eşleş" on both devices (protocol §7.4): what was written after the backup stays.
+        await desktop.openSettings();
+        const rejoin = await desktop.waitUntil('12: yeniden eşleş düğmesi', () =>
+            desktop.evaluate(`(() => {
+                const button = document.querySelector('#pisi-e2e-settings [data-pisi-sync-action="rejoin"]');
+                if (!button) return null;
+                button.click();
+                return true;
+            })()`)
+        );
+        assert(rejoin, '12: masaüstünde "Sunucuyla yeniden eşleş"');
+        await desktop.waitUntil('12: onay', () =>
+            desktop.evaluate(`(() => { const ok = document.getElementById('pisi-confirm-ok'); if (!ok) return false; ok.click(); return true; })()`)
+        );
+        await desktop.waitUntil('12: masaüstü sürer', async () => {
+            const status = await desktop.status();
+            return (!status.stopped && !status.running && status.lastResult?.ok === true) || null;
+        });
+        await phone.openSettings();
+        await phone.tap(phone.page.locator('[data-sync="rejoin"]'));
+        await phone.tap(phone.page.locator('[data-dialog="sync-rejoin"] [data-action="confirm"]'));
+        await phone.until('12: telefon sürer', async () => (await phone.statusRow().getAttribute('data-state')) === 'idle', 120000);
+        await exchange('12: yeniden eşleşme');
+        const rejoined = await desktop.files(isSynced);
+        assert(rejoined.get(NOTES.shared.key)?.toString('utf8').includes('MASAUSTU-S12'), '12: yedekten sonra yazılan metin masaüstünde');
+        assert((await phone.read(NOTES.shared.key))?.includes('MASAUSTU-S12'), '12: yedekten sonra yazılan metin telefonda');
+        const copies = [...rejoined.keys()].filter((key) => /çakışma/i.test(key) && !copiesBefore.includes(key));
+        assert(copies.length === 0, '12: yeniden eşleşme yeni çakışma kopyası üretmez', copies);
+        await assertSameProject('12');
+    });
+
+    // ── 17. The last desktop leaves: the space is deleted, the phone stops and keeps its files. ──
+    await scenario(17, 'son masaüstü ayrılır: alan silinir, telefon senkronu bırakır', async () => {
+        const spaceId = onlySpaceId(server);
+        const desktopBefore = await desktop.files(isSynced);
+        const phoneBefore = JSON.stringify(await phone.files());
+        await desktop.openSettings();
+        const clicked = await desktop.waitUntil('17: bağlantıyı kaldır', () =>
+            desktop.evaluate(`(() => {
+                const button = document.querySelector('#pisi-e2e-settings [data-pisi-sync-action="disconnect"]');
+                if (!button) return null;
+                button.click();
+                return true;
+            })()`)
+        );
+        assert(clicked, '17: "Bu cihazın bağlantısını kaldır"');
+        // Clicks "OK" of the confirm dialog whose text matches `pattern`; resolves the text.
+        const confirm = (pattern) => () =>
+            desktop.evaluate(`(() => {
+                const card = document.getElementById('pisi-confirm-card');
+                const ok = document.getElementById('pisi-confirm-ok');
+                if (!card || !ok || !${pattern}.test(card.textContent)) return null;
+                ok.click();
+                return card.textContent;
+            })()`);
+        await desktop.waitUntil('17: ilk onay', confirm(/senkrondan ayrılsın mı/));
+        // The server answers LAST_ADMIN: the desktop asks again, about deleting the space.
+        await desktop.waitUntil('17: alanı silme onayı', confirm(/son masaüstü/));
+        await desktop.waitUntil('17: bağ kalktı', async () => (await desktop.status())?.configured === false || null);
+        assert(Number(server.sql('SELECT COUNT(*) AS n FROM spaces WHERE space_id = ?', [spaceId]).rows[0].n) === 0, '17: alan sunucudan silindi');
+
+        await phone.openSettings();
+        await phone.tap(phone.page.locator('[data-sync="sync-now"]'));
+        await phone.until('17: telefon alanın gittiğini söyler', async () => (await phone.page.locator('[data-sync="token-invalid"]').count()) > 0, 60000);
+        assert((await phone.syncState()) === null, '17: telefonun gizli bilgisi ve durumu silinir');
+        assert(JSON.stringify(await phone.files()) === phoneBefore, '17: telefonun dosyaları kalır');
+        const desktopAfter = await desktop.files(isSynced);
+        assert(
+            desktopAfter.size === desktopBefore.size && [...desktopBefore].every(([key, bytes]) => desktopAfter.get(key)?.equals(bytes)),
+            '17: masaüstünün dosyaları kalır'
+        );
     });
 
     console.log(`[matris] geçti: ${passed.map((item) => `${item.number} (${Math.round(item.ms / 1000)} sn)`).join(', ')}`);
     console.log(`[matris] 15. her senaryodan sonra iki cihazda Project Integrity yeni bulgu vermedi (${passed.length} denetim)`);
-    if (!only.length) assert(passed.length === 14, 'Matristeki 14 senaryonun hepsi çalıştı', passed);
+    if (!only.length) assert(passed.length === 16, 'Matristeki 16 senaryonun hepsi çalıştı', passed);
     if (process.env.PISI_SYNC_MATRIX_REPORT) {
         await fs.mkdir(path.dirname(path.resolve(process.env.PISI_SYNC_MATRIX_REPORT)), { recursive: true });
         await fs.writeFile(

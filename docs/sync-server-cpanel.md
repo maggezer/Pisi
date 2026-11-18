@@ -231,6 +231,18 @@ curl -s -H "Pisi-Sync-Protocol: 1" -H "Authorization: Bearer pst_AAAAAAAAAAAAAAA
 - `TOKEN_INVALID`: başlık geçiyor.
 - `AUTH_REQUIRED`: başlık PHP'ye ulaşmıyor. `.htaccess`'teki `CGIPassAuth On` ve `RewriteRule … E=HTTP_AUTHORIZATION` satırları yerinde mi bakın. Yine olmuyorsa sorun değil: Pisi istemcileri token'ı ayrıca `X-Pisi-Token` başlığıyla da gönderebilir. Aynı denemeyi `Authorization` yerine `-H "X-Pisi-Token: pst_AAAA…"` ile yapın; `TOKEN_INVALID` dönmelidir.
 
+### 11.2 Duman testi (isteğe bağlı)
+
+Sunucunun uçtan uca çalıştığını kendi bilgisayarınızdan sınar: geçici bir alan açar, bir masaüstü ve bir telefonu (uygulamanın kendi senkron motorlarıyla, geçici klasörlerde) kodla eşleştirir, birkaç senaryoyu çalıştırır ve alanı yeniden siler. Çıktıda sunucu adresi ve anahtar yazmaz.
+
+Depoyu bilgisayarınıza alın, Node.js 24 kurun ve depo klasöründe bir kez `npm ci --ignore-scripts` çalıştırın. Sonra:
+
+- **Windows PowerShell:** `$env:PISI_SYNC_SETUP_KEY="KURULUM_ANAHTARI"; npm run sync:smoke -- --server https://sync.ornek.com`
+- **Windows cmd:** `set "PISI_SYNC_SETUP_KEY=KURULUM_ANAHTARI" && npm run sync:smoke -- --server https://sync.ornek.com`
+- **macOS, Linux:** `PISI_SYNC_SETUP_KEY=KURULUM_ANAHTARI npm run sync:smoke -- --server https://sync.ornek.com`
+
+Bütün adımlar geçerse komut 0 ile biter. Testin açtığı alan, adımlardan biri düşse bile silinir; silinemezse §16'daki `spaces.php list` ile görünür.
+
 ## 12. Yedekleme
 
 Yedek iki parçadır ve **birlikte** alınmalıdır:
@@ -240,7 +252,16 @@ Yedek iki parçadır ve **birlikte** alınmalıdır:
 
 İçerik zaten uçtan uca şifrelidir; yedek de şifreli kalır. Proje anahtarı yalnız cihazlardadır.
 
-Eski bir yedeğe dönmek cihazlara göre **geri sarma**dır: cihazlar `SERVER_ROLLBACK` gösterir ve hiçbir şey yazmaz (protokol §7.4). Kullanıcı bilerek "sunucuyla yeniden eşleş" der. Bu yüzden yedeğe yalnız sunucu kaybolduysa dönün.
+Eski bir yedeğe dönmek cihazlara göre **geri sarma**dır: cihazlar `SERVER_ROLLBACK` gösterir ve hiçbir şey yazmaz (protokol §7.4). Bu yüzden yedeğe yalnız sunucu kaybolduysa dönün.
+
+### 12.1 Yedeğe döndükten sonra
+
+1. Önce **bütün cihazlarda** uygulamayı açın ve Ayarlar → Senkron → **Şimdi eşitle** deyin. Yedekten sonra eşitlemiş olan cihazlar "Sunucu daha eski bir duruma dönmüş" uyarısıyla durur ve hiçbir şey yazmaz.
+2. Sonra **masaüstünde** Ayarlar → Senkron → **Sunucuyla yeniden eşleş**'i seçin. Masaüstü sunucudaki bütün dosyaları yeniden karşılaştırır; yedekten sonra yazdıklarını yeniden gönderir.
+3. En son **telefonda** Ayarlar → Senkron → **Sunucuyla yeniden eşleş**. Telefonun dosyaları kalır, sunucudakilerle birleşir.
+4. Uyarı göstermeyen cihaz (yedekten sonra hiç eşitlememiş) olağan turla devam eder. Birinci adımda açamadığınız bir cihaz geri sarmayı en geç bir gün içinde kendisi fark eder ve aynı uyarıyı gösterir (`pisi-error.md` §4c).
+
+Hiçbir cihazda metin kaybolmaz; iki tarafta farklı değişen bir not çakışma kopyası olabilir. Yedekten sonra masaüstünde silinen dosyalar geri gelebilir; onları yeniden silin. Yedekte hiç bulunmayan bir cihaz (yedekten sonra eşleşmiş) `TOKEN_INVALID` alır: bağlantısını kaldırıp yeniden eşleştirin. Yedekte hiç bulunmayan bir alanın masaüstünde de aynısı geçerlidir: bağlantıyı "yalnız burada" kaldırıp yeni alan açın.
 
 ## 13. Güncelleme ve geri alma
 
@@ -256,7 +277,7 @@ Göç sürerken ya da yeni kod eski şemayla karşılaşırsa sunucu kısa süre
 **Geri alma:**
 
 - Şemayı değiştirmeyen bir sürümde: önceki sürümü dağıtın. Terminal varsa `cd ~/repositories/Pisi && git checkout <önceki-commit-ya-da-etiket> && bash server/deploy/cpanel-deploy.sh`; yoksa önceki sürümün `server/` klasörünü §4.2'deki gibi yükleyin.
-- Şemayı değiştiren bir sürümde: eski kod yeni şemayla çalışmayabilir. Güncelleme öncesi aldığınız veritabanı yedeğini ve `data/` klasörünü birlikte geri yükleyin ve eski kodu dağıtın. Bu bir geri sarmadır (§12); cihazlar yeniden eşleşmeyi isteyebilir.
+- Şemayı değiştiren bir sürümde: eski kod yeni şemayla çalışmayabilir. Güncelleme öncesi aldığınız veritabanı yedeğini ve `data/` klasörünü birlikte geri yükleyin ve eski kodu dağıtın. Bu bir geri sarmadır: cihazlarda §12.1'deki adımları uygulayın.
 
 ## 14. Sorun giderme
 
@@ -279,3 +300,24 @@ Göç sürerken ya da yeni kod eski şemayla karşılaşırsa sunucu kısa süre
 - Sunucu token'ları yalnız SHA-256 özetleriyle, kurulum anahtarını `password_hash` özetiyle saklar; veritabanında dosya yolu, ad ya da içerik yoktur (protokol §11.2).
 - `app/` ve `data/` web kökünün dışındadır; `app/.htaccess` yanlışlıkla web köküne konulursa bile hiçbir dosyayı sunmaz.
 - `config.php`'deki `testing` ayarlarını değiştirmeyin; yalnız otomatik testler içindir.
+
+## 16. Alanların bakımı (`bin/spaces.php`)
+
+Bir alan, bağlı masaüstüleri kaybolursa (bilgisayar değişti, proje klasörü taşındı, kullanıcı veri klasörü silindi) sunucuda sahipsiz kalabilir. Masaüstü "Bu cihazın bağlantısını kaldır" dediğinde son masaüstüyse alanı kendisi siler; bunu yapamadıysa (sunucuya ulaşılamadı, bağlantı "yalnız burada" kaldırıldı) alan sunucuda durur ve bağlı telefonlar ona senkron etmeye devam eder.
+
+Terminal'de (ya da Cron Jobs'ta tek seferlik; `php` yerine §3.1'de bulduğunuz komut yolunu yazın, ör. `/opt/alt/php84/usr/bin/php`):
+
+```bash
+cd ~/pisi-sync/app
+php bin/spaces.php list
+```
+
+Her satır alan kimliği, açılış ve son görülme zamanı, kaplanan alan (MiB), `head` ve etkin masaüstü/telefon sayısıdır. Alan adları şifreli olduğundan sunucu onları gösteremez; alanı açılış ve son görülme zamanından tanıyın. Masaüstü sayısı 0 olan satırlar `(masaüstü yok)` diye işaretlenir.
+
+Silmek için alan kimliğini iki kez yazın (geri alınamaz):
+
+```bash
+php bin/spaces.php delete sp_… --confirm=sp_…
+```
+
+Alanın kayıtları, cihazları ve şifreli dosyaları silinir. Bağlı cihazlar bir sonraki turda `TOKEN_INVALID` alır; telefon senkronu bırakır ve kullanıcıya söyler, proje dosyaları her cihazda kalır. `--json` ile liste JSON olarak basılır. Komut gizli değer basmaz.

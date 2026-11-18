@@ -1,5 +1,48 @@
 # PISI Güncelleme Takip Dosyası
 
+## 18-11-2026 — Senkronun kurtarılması: geri sarılan sunucu, son masaüstü, uygulanmayan değişiklikler (S7 kapanışı)
+
+Senkron işi (`docs/sync-plan.md` S7; SV1, SV3, SV9, SV12). S8 öncesi incelemede bulunan eksikler.
+
+- **"Sunucuyla yeniden eşleş":** sunucu bir yedeğe dönünce cihazlar `SERVER_ROLLBACK` ile duruyor ama devam
+  etmenin yolu yoktu; masaüstüne tek çıkış bağlantıyı kaldırıp kurulum anahtarıyla yeni alan açmaktı. Artık
+  masaüstünde Ayarlar → Senkron'da ve telefonda Ayarlar → Senkron'da "Sunucuyla yeniden eşleş" var
+  (`sync.rejoin.v1`, `engine.rejoin()`). Eşleşme ve dosyalar kalır; sonraki tur bütün başlıkları alır ve
+  cihazın eski indeksine göre her dosyaya karar verir (`shared/sync-recovery.mjs`, protokol §7.4): aynı
+  içerik eşit sayılır, cihazın daha önce gördüğü eski sürüme karşı cihazın sürümü yeniden gönderilir,
+  sürümü yazan cihazdan gelen yeni sürüm üç yollu birleşir, gerisi boş temelle birleşir (metin kaybı yok).
+  Bunun için indeks girdisi sürümü yazan cihazı (`dev`) tutuyor. Silmeler tahmin edilmiyor: yedekten sonra
+  silinen dosyalar geri gelebilir.
+- **İmlecin gösteremediği geri sarma:** yedekten sonra eşitleyip kapalı kalan cihazın imlecini öbür cihazların
+  gönderdikleri yeniden geçebiliyor. Başlıklar hiç geri gitmediği için cihaz artık her tam karşılaştırmada
+  eşitlediği dosyaların başlıklarını indeksiyle karşılaştırıyor ve en geç günde bir tam karşılaştırma yapıyor;
+  geri giden başlık `SERVER_ROLLBACK`. Kalan sınır `pisi-error.md` §4c'de.
+- **Son masaüstü alandan ayrılınca:** sunucu `LAST_ADMIN` döndüğü hâlde masaüstü bağı sessizce
+  bırakıyordu; alan ve ona bağlı telefon sahipsiz kalıyor, telefon kimsenin okumadığı alana yazmaya devam
+  ediyordu. Artık masaüstü "Senkron alanı silinsin mi?" diye soruyor ve onaylanırsa alanı siliyor; sunucuya
+  ulaşılamazsa bağ yalnız onayla "yalnız burada" kaldırılıyor. Telefon `TOKEN_INVALID` alınca alanın
+  silinmiş olabileceğini söylüyor (önceden "masaüstünden kaldırıldı" diyordu).
+- **Sunucuda alan bakımı:** `server/app/bin/spaces.php list | delete` sahipsiz kalan alanları gösteriyor ve
+  siliyor (`PisiSync\SpaceAdmin`; `DELETE /v1/spaces` aynı silme yolunu kullanıyor).
+  `docs/sync-server-cpanel.md` §12.1 (yedeğe döndükten sonra), §16 (alanların bakımı).
+- **Uygulanmayan uzak değişiklikler (SV9):** doğrulanamayan bir değişiklik yazılmıyor ama imleç ilerliyor,
+  sorun bir sonraki turda listeden düşüyordu ve iki Ayarlar ekranı da bu kodları göstermiyordu; dosya
+  karşı cihazda sessizce eksik kalıyordu. Artık değişiklik cihaz durumunda tutuluyor (`state.unapplied`),
+  masaüstünde "Senkron edilmeyen dosyalar" listesinde, telefonda Ayarlar → Senkron'da görünüyor ve bütün
+  başlıklarla yeniden deneniyor ("Şimdi eşitle"de hemen, yoksa 15 dakikada bir). Yeniden oynatma
+  (`SERVER_REPLAY`) tam karşılaştırmada da reddediliyor.
+- **Hız sınırı:** sunucunun `Retry-After`'ı istemcinin istek içinde beklediği 30 sn'yi aşınca masaüstü
+  turu `RATE_LIMITED` ile bitiyor ve bir sonraki aralıklı turu bekliyordu (telefon zaten yeniden
+  deniyordu). Masaüstü artık `Retry-After` kadar sonra kendisi yeniden deniyor.
+- **Duman testi:** Windows PowerShell ve cmd örnekleri (`scripts/sync-smoke.mjs`, rehber §11.2).
+- **Testler:** `tests/shared-sync-recovery.test.mjs`; `mobile/tests/sync-recovery.test.mjs` (iki cihazın yeniden
+  eşleşmesi, aynı blok, uygulanmayan değişiklik, silinen alan), `mobile/tests/settings-screen.test.mjs`;
+  gerçek PHP sunucusuna karşı `tests/sync-server-contract-desktop.test.mjs` (iki masaüstü yeniden eşleşir,
+  onarılan blob) ve `tests/sync-server-contract-ops.test.mjs` (`spaces.php`); matriste 12. senaryo yeniden
+  eşleşmeyle bitiyor, yeni 16. (hız sınırı) ve 17. (son masaüstü ayrılır) senaryolar. Sahte sunucu
+  (`mobile/tests/helpers/fake-sync-server.mjs`) protokoldeki `LAST_ADMIN` ve alan silmeyi uyguluyor.
+- Protokolün tel biçimi değişmedi (sürüm 1); §7.4, §9.2 notu ve §9.3 istemci davranışıyla güncellendi.
+
 ## 18-11-2026 — Mobil harita performans testinin süresi
 
 - `mobile/e2e/maps.spec.mjs` 500 notluk harita testi `test.slow()` ile çalışıyor (büyük proje testi gibi). Adımları zaten

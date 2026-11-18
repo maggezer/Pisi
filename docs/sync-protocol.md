@@ -606,9 +606,18 @@ Commit'teki her değişiklik için sunucu, alan satırını kilitleyerek (`SELEC
 
 - **Geri sarma:** `head` ya da gelen bir `seq` cihazın imlecinden küçükse istemci senkronu durdurur, `SERVER_ROLLBACK` gösterir ve hiçbir şey yazmaz. Kullanıcı ancak bilerek "sunucuyla yeniden eşleş" diyerek devam eder.
     - İmleç yalnız çekmeyle ilerler. Bu yüzden cihaz, kendi commit'leri için sunucudan aldığı en büyük `seq`'i de saklar (`knownSeq`; cihaz durumunda, sunucuya gitmez). `head` bundan küçükse de geri sarma sayılır. Böylece cihazın gönderdiği ama sunucunun eski yedeğinde olmayan bir değişiklik sessizce kaybolmaz (S7'de senaryo matrisiyle bulundu; tel biçimi değişmedi).
+    - **"Sunucuyla yeniden eşleş"** (`shared/sync-recovery.mjs`): eşleşme, token ve proje dosyaları kalır; imleç, `knownSeq`, görülen `dseq`'ler ve bekleyen commit sıfırlanır, sonraki tur bütün başlıkları (`GET heads`) alır. Cihazın eski indeksi her dosya için şöyle kullanılır:
+        - sunucu aynı içeriği tutuyorsa (aynı blob) dosya eşit sayılır;
+        - sunucunun sürümü cihazın daha önce gördüğü bir sürümse (kendi değişikliği ya da `dseq`'i o cihazdan görülen en büyük değeri aşmayan bir değişiklik) sunucunun sürümü cihazınkinden eskidir; cihazın sürümü yeniden gönderilir (birleştirme yok);
+        - sunucunun sürümü yeni ve cihazın son eşitlediği sürümü yazan cihazdan geliyorsa (ör. önce yeniden eşleşen masaüstü) o sürüm gerçek bir temeldir ve olağan üç yollu birleştirme yapılır. Bunun için indeks girdisi sürümü yazan cihazı (`dev`) tutar;
+        - geri kalan her durumda (sürümü başka bir cihaz yazdı, çekilip uygulanmamış bir değişiklik, silme, doğrulanamayan kayıt) yerel ve uzak boş temelle birleşir (`docs/sync-plan.md` §3.4): iki taraftan da metin kaybolmaz, gerekirse çakışma kopyası oluşur.
+        - Silmeler tahmin edilmez: sunucunun döndüğü yedekten sonra silinen dosyalar geri gelebilir. Telefon yeniden eşleşirken de silme göndermez (SV12).
+    - **Başlıklar geri gitmez:** bütün başlıklarla yapılan her karşılaştırmada (ilk indirme hariç) cihaz, eşitlediği her dosyanın başlığını indeksiyle karşılaştırır. Başlık indeksteki `seq`'in altındaysa, aynı `seq`'te başka bir blob'u gösteriyorsa ya da hiç yoksa sunucu geri gitmiştir: `SERVER_ROLLBACK`. Cihaz, imlecin gösteremediği geri sarmayı görmek için en geç günde bir böyle bir karşılaştırma yapar. İmleç bunu her zaman gösteremez: yedekten sonra eşitleyip kapalı kalan cihazın imlecini, öbür cihazların yeniden eşleşip gönderdikleri yeniden geçebilir (`pisi-error.md` §4c).
 - **Yeniden oynatma:** her cihaz için görülen en büyük `dseq` saklanır. Aynı cihazdan gelen `dseq` öncekinden büyük değilse ya da `meta.dev` değişikliğin `device` alanıyla tutmuyorsa değişiklik uygulanmaz ve `SERVER_REPLAY` gösterilir.
+- **Uygulanmayan değişiklikler:** doğrulanamayan bir uzak değişiklik (`DECRYPT_FAILED`, `HASH_MISMATCH_LOCAL`, `META_INVALID`, `PATH_UNSAFE`, `PROTOCOL_UNSUPPORTED`, `SERVER_REPLAY`, `BLOB_NOT_FOUND`) yazılmaz ve imleç ilerler; değişiklik cihaz durumunda dosya kimliğiyle tutulur ve Ayarlar'da listelenir. Aynı dosyanın daha yeni ve geçerli bir değişikliği gelince liste kaydı kalkar. `SERVER_REPLAY` ve `PATH_UNSAFE` dışındakiler bütün başlıklarla (`GET heads`) yeniden denenir: "Şimdi eşitle"de hemen, yoksa en çok 15 dakikada bir. Tam karşılaştırma `dseq` denetlemediği için daha önce reddedilen yeniden oynatma aynı `seq`'te yine reddedilir.
 - **Bağ:** `meta` zarfı fid, op ve blob'a bağlıdır (§4.2). Sunucu bir blob'u ya da meta'yı başka bir dosyaya taşıyamaz.
 - **Uygulama sırası:** bir commit'in değişiklikleri birlikte uygulanır. Önce ekler, sonra belgeler, sonra otorite dosyaları (`docs/sync-plan.md` §3.6).
+- **Son masaüstü:** alandaki son etkin `admin` `DELETE devices/me` ile `LAST_ADMIN` alır. İstemci bu durumda bağı sessizce bırakmaz; kullanıcı onaylarsa alanı `DELETE /v1/spaces/{space}` ile siler. Silinen alanın cihazları `TOKEN_INVALID` alır; telefon senkronu bırakır, dosyaları kalır ve kullanıcıya alanın silinmiş olabileceğini söyler. Sahipsiz kalmış alanları hosting sahibi `app/bin/spaces.php` ile görür ve siler (`docs/sync-server-cpanel.md` §16).
 
 ---
 
@@ -686,7 +695,7 @@ Başarısız her JSON yanıtı:
 | 503  | `DB_UNAVAILABLE`         | veritabanına bağlanılamıyor                                        | evet: geri çekilerek         |
 | 507  | `QUOTA_EXCEEDED`         | alan kotası ya da sunucu sınırı doldu                              | hayır                        |
 
-İstemci tanımadığı kodu HTTP durumuna göre ele alır: 5xx ve 429 geri çekilerek yeniden denenir (1, 2, 4 … en çok 300 sn); diğerleri tur hatası olarak gösterilir.
+İstemci tanımadığı kodu HTTP durumuna göre ele alır: 5xx ve 429 geri çekilerek yeniden denenir (1, 2, 4 … en çok 300 sn); diğerleri tur hatası olarak gösterilir. `Retry-After` istemcinin istek içinde beklediği süreyi (30 sn) aşarsa tur `RATE_LIMITED` ile biter ve istemci bir sonraki turu `Retry-After` kadar sonra (en çok 300 sn) kendisi başlatır.
 
 ### 9.3 İstemcide üretilen kodlar
 
@@ -705,6 +714,7 @@ Sunucudan gelmez; senkron durumunda ve çakışma günlüğünde gösterilir.
 | `DEFERRED_DIRTY`      | açık belgede kaydedilmemiş değişiklik var; dosya bu turda ertelendi |
 | `FILE_TOO_LARGE`      | dosya `maxBlobBytes`'ı aşıyor; senkron edilmiyor                    |
 | `PATH_COLLISION`      | iki yerel dosya aynı fid'e düşüyor (§4.5)                           |
+| `NOT_STOPPED`         | "sunucuyla yeniden eşleş" istendi ama senkron geri sarmayla durmadı |
 
 ### 9.4 Hız sınırları ve kotalar (varsayılan; sunucu ayarından değişir)
 
