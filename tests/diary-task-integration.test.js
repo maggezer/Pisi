@@ -193,3 +193,21 @@ test('old dated headings are reused and disappearing external tasks leave no aut
     assert.doesNotMatch(removed, /pisi-diary-task-divider|External task/);
     assert.match(removed, /Notes/);
 });
+
+test('a projection that changes nothing keeps the separators the editor gave ids to, so the diary is not written again (S7)', async () => {
+    const { composePisiDiaryTaskContent } = await import('../main/functions/document-store-diary.js');
+    const external = [{ nodePath: '/project/other.node', blockId: 'blk_external', sourceKey: 'other', text: 'External task', tag: 'todo.1.28-10-2026' }];
+    const first = composePisiDiaryTaskContent('<div>My notes</div>', '2026-10-28', external);
+    // The editor gives every block an id when it saves the diary.
+    let next = 0;
+    const saved = first.replace(
+        /(pisi-diary-task-divider[^>]*?)(>)/g,
+        (_match, start, end) => `${start} data-pisi-block-id="blk_divider_${(next += 1)}"${end}`
+    );
+    assert.equal(next, 2);
+    const again = composePisiDiaryTaskContent(saved, '2026-10-28', external);
+    assert.equal(again, saved, 'the same content, the same separator ids');
+    // When the external task goes away the closing separator moves out of the managed section and keeps its id.
+    const local = composePisiDiaryTaskContent(`${saved}<div data-pisi-block-type="task">Local task</div>`, '2026-10-28', []);
+    assert.match(local, /data-pisi-block-id="blk_divider_1"[\s\S]*Görevler[\s\S]*Local task[\s\S]*data-pisi-block-id="blk_divider_2"/);
+});

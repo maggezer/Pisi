@@ -143,7 +143,9 @@ export function createPisiSyncEngine({
     async function pull(state, keys) {
         const limits = limitsOf(state);
         const { data: headData } = await http.get(`/v1/spaces/${state.spaceId}/head`);
-        if (headData.head < state.cursor) return { ok: false, code: 'SERVER_ROLLBACK' };
+        // Below the cursor, or below a seq the server gave this device's own commit (§7.4).
+        const known = Math.max(state.cursor, Number.isSafeInteger(state.knownSeq) ? state.knownSeq : 0);
+        if (headData.head < known) return { ok: false, code: 'SERVER_ROLLBACK' };
         if (headData.head === state.cursor) return { ok: true, remote: [], cursor: state.cursor, lastDseq: state.lastDseq };
         let full = null;
         let later = null;

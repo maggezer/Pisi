@@ -400,6 +400,23 @@ export function createFakeSyncServer({ setupKey = 'kurulum-anahtari', now = () =
         },
         /** Every commit body the server accepted or refused, parsed. */
         commits: () => requests.filter((request) => request.method === 'POST' && /\/commit$/.test(request.path)).map((request) => JSON.parse(request.body)),
+        /**
+         * A database backup of every space as it is now. Calling the returned function puts the
+         * server back to it: head, log, heads and commit records (docs/sync-plan.md S7 scenario 12).
+         */
+        snapshot() {
+            const saved = [...spaces.values()].map((space) => ({
+                space,
+                head: space.head,
+                prunedThrough: space.prunedThrough,
+                changes: [...space.changes],
+                heads: new Map(space.heads),
+                commits: new Map(space.commits)
+            }));
+            return () => {
+                for (const { space, ...state } of saved) Object.assign(space, state);
+            };
+        },
         /** Revokes a device directly, as the desktop's device list would. */
         revoke(deviceId) {
             for (const space of spaces.values()) {

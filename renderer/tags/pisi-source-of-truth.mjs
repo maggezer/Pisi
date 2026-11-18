@@ -174,6 +174,11 @@ async function syncPisiDiaryFromCanonicalTasks(_index, options = {}) {
     if (!window.currentProjectFolder || !window.pisiProject?.syncDiaryMissions) {
         return null;
     }
+    // Before tasks.json is read the canonical list is empty: syncing then would take every task
+    // section out of the diaries and put it back a moment later (two writes per diary at start).
+    if (window.pisiFirstClassTaskState && window.pisiFirstClassTaskState.loadedProjectFolder !== window.currentProjectFolder) {
+        return { ok: false, incomplete: true, error: 'Görev deposu henüz okunmadı.' };
+    }
 
     const projectKey = getPisiSourceProjectKey();
     const entries = getPisiCanonicalDiaryEntries();

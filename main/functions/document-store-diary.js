@@ -237,8 +237,16 @@ function splitHtmlBlocks(html = '') {
 // Only remove separators owned by diary task synchronization, never user rules.
 const PISI_DIARY_TASK_DIVIDER =
     '<div class="pisi-editor-block pisi-diary-task-divider pisi-section-break" data-pisi-block-type="paragraph" data-pisi-section-break="true" data-pisi-section-exit="1"><hr></div>';
+const PISI_DIARY_TASK_DIVIDER_PATTERN = /<div\b[^>]*class=["'][^"']*\bpisi-diary-task-divider\b[^"']*["'][^>]*>\s*<hr\b[^>]*>\s*<\/div>/gi;
 function stripPisiDiaryTaskDividers(content = '') {
-    return String(content || '').replace(/<div\b[^>]*class=["'][^"']*\bpisi-diary-task-divider\b[^"']*["'][^>]*>\s*<hr\b[^>]*>\s*<\/div>/gi, '');
+    return String(content || '').replace(PISI_DIARY_TASK_DIVIDER_PATTERN, '');
+}
+
+// The separators already in a diary, in order. They are put back as they were (with the
+// block id the editor gave them), so a projection that changes nothing writes the same
+// content and does not give the separators new ids every time (docs/sync-plan.md S7).
+function readPisiDiaryTaskDividers(content = '') {
+    return String(content || '').match(PISI_DIARY_TASK_DIVIDER_PATTERN) || [];
 }
 
 function organizeDiaryManualTasks(content = '', options = {}) {
@@ -250,19 +258,21 @@ function organizeDiaryManualTasks(content = '', options = {}) {
     // Keep the heading's block identity and formatting while removing the date.
     const heading = existingHeading ? existingHeading.replace(/(<h[1-6]\b[^>]*>)[\s\S]*?(<\/h[1-6]>)/i, '$1Görevler$2') : '<h3>Görevler</h3>';
     const notes = allBlocks.filter((block) => !isTaskBlock(block) && !isGorevlerHeading(block));
+    const dividers = options.dividers || [];
     return [
         notes.length ? notes.join('\n') : '<div><br></div>',
-        PISI_DIARY_TASK_DIVIDER,
+        dividers[0] || PISI_DIARY_TASK_DIVIDER,
         heading,
         ...taskBlocks,
-        ...(options.closeSection === false ? [] : [PISI_DIARY_TASK_DIVIDER])
+        ...(options.closeSection === false ? [] : [dividers[1] || PISI_DIARY_TASK_DIVIDER])
     ].join('\n');
 }
 
-function composePisiDiaryTaskContent(content = '', fileDate = '', externalEntries = []) {
+/** `dividers`: the separators of the diary as it is on disk (by default those of `content`). */
+function composePisiDiaryTaskContent(content = '', fileDate = '', externalEntries = [], dividers = readPisiDiaryTaskDividers(content)) {
     const manual = stripPisiDiaryTaskDividers(stripPisiDiaryManagedSection(content)).trim();
-    const organized = organizeDiaryManualTasks(manual, { closeSection: !externalEntries.length, forceSection: Boolean(externalEntries.length) });
-    const managed = buildPisiDiaryManagedSection(fileDate, externalEntries, { includeHeading: false });
+    const organized = organizeDiaryManualTasks(manual, { closeSection: !externalEntries.length, forceSection: Boolean(externalEntries.length), dividers });
+    const managed = buildPisiDiaryManagedSection(fileDate, externalEntries, { includeHeading: false, closingDivider: dividers[1] });
     return managed ? `${organized || '<div><br></div>'}\n${managed}` : organized || '<div><br></div>';
 }
 
@@ -389,7 +399,7 @@ function buildPisiDiaryManagedSection(isoDate, entries = [], options = {}) {
     const includeHeading = options.includeHeading !== false;
     const headingHtml = includeHeading ? `${PISI_DIARY_TASK_DIVIDER}\n<h3>Görevler</h3>\n` : '';
 
-    return `${PISI_DIARY_MANAGED_START}\n${headingHtml}${blocks}\n${PISI_DIARY_TASK_DIVIDER}\n${PISI_DIARY_MANAGED_END}`;
+    return `${PISI_DIARY_MANAGED_START}\n${headingHtml}${blocks}\n${options.closingDivider || PISI_DIARY_TASK_DIVIDER}\n${PISI_DIARY_MANAGED_END}`;
 }
 
 function listPisiDiaryNodePaths(projectFolder) {
@@ -555,7 +565,7 @@ function syncDiaryMissions(projectFolder, payload = {}) {
                 }
             }
 
-            const nextContent = composePisiDiaryTaskContent(manualContent, fileDate, externalEntries);
+            const nextContent = composePisiDiaryTaskContent(manualContent, fileDate, externalEntries, readPisiDiaryTaskDividers(ensured.data.content));
 
             if (nextContent !== String(ensured.data.content || '')) {
                 ensured.data.content = nextContent;
