@@ -4,7 +4,9 @@ import { registerModule } from '../core/module-registry.mjs';
 // with the server address and setup key, or join another desktop's project with
 // a pairing code (an empty project only). Bound: status (last sync, offline,
 // error), "Şimdi eşitle", pairing, devices and revoking them, the conflict log
-// and the files that are not synced. Everything goes through window.pisiSyncClient;
+// and the files that are not synced. While a large turn runs (the first upload,
+// S6) a progress line shows files and bytes, and "Durdur" stops the turn and
+// pauses automatic syncing until "Sürdür" (or "Şimdi eşitle"). Everything goes through window.pisiSyncClient;
 // the renderer never sees the token or the project key.
 
 const pisiSyncPanelState = { initialized: false, joinTimer: null, section: null };
@@ -37,6 +39,8 @@ const PISI_SYNC_CODE_MESSAGES = Object.freeze({
     FLUSH_TIMEOUT: 'Açık belgeler kaydedilemedi; tur ertelendi.',
     FLUSH_FAILED: 'Açık belgeler kaydedilemedi; tur ertelendi.',
     LAST_ADMIN: 'Son masaüstü kendini iptal edemez.',
+    CANCELLED: 'Senkron durduruldu; "Sürdür" ile kaldığı yerden devam eder.',
+    PAUSED: 'Senkron duraklatıldı; "Sürdür" ile devam eder.',
     NOT_CONFIGURED: 'Proje senkrona bağlı değil.'
 });
 
@@ -164,8 +168,40 @@ function pollPisiSyncJoin(joinId, trigger) {
     }, 2000);
 }
 
+/** "1.234 / 2.400 dosya · 85,2 / 210,0 MB" for a turn's progress (S6). */
+function formatPisiSyncProgress(progress) {
+    const locale = window.pisiI18n?.getLanguage?.() === 'eng' ? 'en-US' : 'tr-TR';
+    const number = (value) => new Intl.NumberFormat(locale).format(value);
+    const megabytes = (value) => new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(value / (1024 * 1024));
+    const phase = pisiSyncPanelTranslate(progress.phase === 'upload' ? 'Yükleniyor' : 'İniyor');
+    const files = `${number(progress.files.done)} / ${number(progress.files.total)} ${pisiSyncPanelTranslate('dosya')}`;
+    const bytes = progress.bytes.total ? ` · ${megabytes(progress.bytes.done)} / ${megabytes(progress.bytes.total)} MB` : '';
+    return `${phase}: ${files}${bytes}`;
+}
+
+/** The progress line and "Durdur" follow the running turn without drawing the panel again. */
+function updatePisiSyncProgress(payload) {
+    const section = pisiSyncPanelState.section;
+    const line = section?.querySelector('[data-pisi-sync-progress]');
+    const stop = section?.querySelector('[data-pisi-sync-action="cancel"]');
+    if (!line) return;
+    const progress = payload.running ? payload.progress : null;
+    line.hidden = !progress;
+    if (progress) {
+        line.textContent = formatPisiSyncProgress(progress);
+        const bar = section.querySelector('[data-pisi-sync-progress-bar]');
+        if (bar) {
+            bar.hidden = false;
+            bar.max = progress.files.total || 1;
+            bar.value = progress.files.done;
+        }
+    }
+    if (stop) stop.hidden = !payload.running;
+}
+
 function describePisiSyncState(status) {
     if (status.stopped) return describePisiSyncCode(status.stopped);
+    if (status.paused && !status.running) return describePisiSyncCode('PAUSED');
     if (status.running) return pisiSyncPanelTranslate('Eşitleniyor…');
     const last = status.lastResult;
     if (last && !last.ok) return last.code === 'OFFLINE' ? pisiSyncPanelTranslate('Çevrimdışı') : describePisiSyncCode(last.code);
@@ -229,13 +265,22 @@ function renderPisiSyncBound(body, status) {
     const state = element('p', status.stopped || status.lastResult?.ok === false ? 'pisi-sync-warning' : 'pisi-sync-muted');
     state.dataset.pisiSyncState = '';
     state.textContent = describePisiSyncState(status);
+    const progress = element('p', 'pisi-sync-muted');
+    progress.dataset.pisiSyncProgress = '';
+    progress.hidden = true;
+    const bar = element('progress', 'pisi-sync-progress');
+    bar.dataset.pisiSyncProgressBar = '';
+    bar.hidden = true;
     const actions = element('div', 'pisi-portable-actions');
-    const run = button('Şimdi eşitle', 'run');
+    const run = button(status.paused ? 'Sürdür' : 'Şimdi eşitle', status.paused ? 'resume' : 'run');
     run.disabled = Boolean(status.stopped);
-    actions.append(run);
+    const stop = button('Durdur', 'cancel');
+    stop.hidden = !status.running;
+    actions.append(run, stop);
     if (status.role === 'admin') actions.append(button('Cihaz eşleştir', 'pair'));
     actions.append(button('Bu cihazın bağlantısını kaldır', 'disconnect'));
-    body.append(summary, state, actions);
+    body.append(summary, state, progress, bar, actions);
+    updatePisiSyncProgress(status);
     if (status.weakSecrets) body.append(element('p', 'pisi-sync-warning', 'Bu sistemde anahtarlık yok; senkron anahtarı yalnız zayıf biçimde korunabilir.'));
 
     const devices = element('ul', 'pisi-sync-list');
@@ -246,11 +291,16 @@ function renderPisiSyncBound(body, status) {
     if (status.role === 'admin') void renderPisiSyncDevices(devices);
     void renderPisiSyncLogs(conflicts, unsynced);
 
+    stop.addEventListener('click', async () => {
+        stop.disabled = true;
+        await window.pisiSyncClient.cancel();
+        void refreshPisiSyncPanel();
+    });
     run.addEventListener('click', async () => {
         run.disabled = true;
-        const result = await window.pisiSyncClient.run('manual');
+        const result = await (status.paused ? window.pisiSyncClient.resume() : window.pisiSyncClient.run('manual'));
         run.disabled = false;
-        if (!result?.ok) pisiNotifyError(describePisiSyncCode(result?.code), { detail: result?.code || '' });
+        if (!result?.ok && result?.code !== 'CANCELLED') pisiNotifyError(describePisiSyncCode(result?.code), { detail: result?.code || '' });
         void refreshPisiSyncPanel();
     });
     actions.querySelector('[data-pisi-sync-action="pair"]')?.addEventListener('click', () => void window.openPisiSyncPairingDialog?.());
@@ -301,6 +351,7 @@ function initializePisiSyncPanel() {
     window.pisiSyncClient.onStatus((payload) => {
         const state = pisiSyncPanelState.section?.querySelector('[data-pisi-sync-state]');
         if (state && payload.running) state.textContent = pisiSyncPanelTranslate('Eşitleniyor…');
+        updatePisiSyncProgress(payload);
         if (!payload.running) void refreshPisiSyncPanel();
     });
     return true;
@@ -309,6 +360,7 @@ function initializePisiSyncPanel() {
 const moduleApi = {
     pisiSyncPanelState,
     describePisiSyncCode,
+    formatPisiSyncProgress,
     refreshPisiSyncPanel,
     renderPisiSyncPanel,
     initializePisiSyncPanel

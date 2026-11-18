@@ -98,7 +98,8 @@ export async function createDesktop(server, { name = 'Masaüstü', spaceName = '
             return { skipped: [] };
         }
     };
-    const engine = createPisiSyncEngine({ subtle, http, store, files: adapter, random, uuid: randomUUID, gzip: codec.gzip, gunzip: codec.gunzip });
+    const makeEngine = () => createPisiSyncEngine({ subtle, http, store, files: adapter, random, uuid: randomUUID, gzip: codec.gzip, gunzip: codec.gunzip });
+    let engine = makeEngine();
     return {
         ...created,
         http,
@@ -107,11 +108,20 @@ export async function createDesktop(server, { name = 'Masaüstü', spaceName = '
         write(path, value) {
             files.set(path, { bytes: utf8Encode(typeof value === 'string' ? value : JSON.stringify(value, null, 2)), version: (version += 1) });
         },
+        writeBytes(path, bytes) {
+            files.set(path, { bytes, version: (version += 1) });
+        },
+        readBytes: (path) => files.get(path)?.bytes ?? null,
         read: (path) => (files.has(path) ? utf8Decode(files.get(path).bytes) : null),
         readJson: (path) => (files.has(path) ? JSON.parse(utf8Decode(files.get(path).bytes)) : null),
         remove: (path) => files.delete(path),
         paths: () => [...files.keys()].sort(),
-        sync: () => engine.runTurn({ reason: 'test' }),
+        sync: (options = {}) => engine.runTurn({ reason: 'test', ...options }),
+        cancel: () => engine.cancel(),
+        /** A new engine over the same state and files: the app started again after it was stopped. */
+        restart() {
+            engine = makeEngine();
+        },
         async startPairing() {
             return startPisiSyncPairing({ subtle, http, serverUrl: SERVER_URL, spaceId: created.spaceId, random });
         },
@@ -141,6 +151,7 @@ export function createPhone(
     {
         driver = createMemoryDriver(),
         stateDriver = createMemoryDriver(),
+        projectsDriver = createMemoryDriver(),
         secrets = createMemorySecrets(),
         fetchImpl = (url, init) => server.fetch(url, init),
         flushPending = async () => {},
@@ -153,6 +164,7 @@ export function createPhone(
     const service = createSyncService({
         project,
         stateDriver,
+        projectsDriver,
         secrets,
         subtle,
         random,
@@ -166,13 +178,13 @@ export function createPhone(
         platformName: 'android',
         allowLoopbackHttp
     });
-    return { project, service, driver, stateDriver, secrets };
+    return { project, service, driver, stateDriver, projectsDriver, secrets };
 }
 
 /** Pairs `phone` with `desktop` on the code path; resolves when the phone is bound. */
-export async function pairWithCode(desktop, phone, { deviceName = 'Pixel 7' } = {}) {
+export async function pairWithCode(desktop, phone, { deviceName = 'Pixel 7', initial = 'merge' } = {}) {
     const started = await desktop.startPairing();
-    const claimed = await phone.service.startPairing({ method: 'code', serverUrl: SERVER_URL, code: started.view.code, deviceName });
+    const claimed = await phone.service.startPairing({ method: 'code', serverUrl: SERVER_URL, code: started.view.code, deviceName, initial });
     const [view] = await Promise.all([desktop.answerPairing(started), claimed.wait()]);
     return { started, claimed, view };
 }

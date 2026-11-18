@@ -46,3 +46,12 @@
     letter-spacing: 0.08em;
     text-align: center;
 }
+
+/* Settings → Sync while a large turn runs (S6): a thin bar next to "Downloading: n / m files". */
+.pisi-sync-progress {
+    display: block;
+    inline-size: 4.5rem;
+    block-size: 0.375rem;
+    border-radius: var(--pisi-radius-full);
+    background: linear-gradient(to right, var(--pisi-accent) var(--pisi-progress, 0%), var(--pisi-surface-3) var(--pisi-progress, 0%));
+}

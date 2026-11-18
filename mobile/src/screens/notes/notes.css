@@ -337,3 +337,42 @@
     font-weight: 700;
     line-height: 1;
 }
+
+/* An attachment the phone does not hold yet (docs/sync-plan.md S6): the image's place while it waits or comes down. */
+.pisi-note-image[data-attachment='waiting'],
+.pisi-note-image[data-attachment='loading'] {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--pisi-space-2);
+    min-block-size: 6rem;
+    padding: var(--pisi-space-3);
+    border: 1px dashed var(--pisi-line);
+    border-radius: var(--pisi-radius-md);
+}
+
+.pisi-note-file {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--pisi-space-2);
+}
+
+.pisi-note-file-name {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.pisi-note-file-size,
+.pisi-note-file-status {
+    color: var(--pisi-muted);
+}
+
+.pisi-note-file-status {
+    margin: 0;
+    font-size: var(--pisi-text-sm);
+}
+
+.pisi-note-file-status:empty {
+    display: none;
+}

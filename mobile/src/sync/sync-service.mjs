@@ -11,6 +11,13 @@
 // - The phone is a `member`: it never sends a delete (SV12).
 // - DEVICE_REVOKED or TOKEN_INVALID: the engine stops, the secrets and the
 //   state are removed, the project files stay and the user is told.
+// - First pairing (S6 step 3): a phone with only a project skeleton takes the
+//   server's project; otherwise the user chose `merge` (add the phone's files)
+//   or `aside` (sync/initial-transfer.mjs) on the pairing screen.
+// - The first download (S6 step 2) takes every head and writes in batches, the
+//   authorities and today's diary first; `status.progress` tells how far it is.
+// - Attachments (S6 step 4) are downloaded when a note shows them:
+//   `fetchAttachment(path)`; one download per file at a time.
 // - Nothing here imports Capacitor: storage, secrets, fetch and crypto come in.
 
 import { createPisiSyncEngine } from '../../../shared/sync-engine.mjs';
@@ -19,11 +26,15 @@ import { openPisiSyncSpaceKeys } from '../../../shared/sync-crypto.mjs';
 import { claimPairing, getPairingServerUrl, PisiPairingError, waitForGrant } from './pairing.mjs';
 import { createSyncProjectFiles, isLazySyncPath } from './project-files.mjs';
 import { createSyncStateStore, makeMobileSyncState } from './state-store.mjs';
+import { clearSkeleton, isSkeletonProject, listAsideProjects, setProjectAside } from './initial-transfer.mjs';
+import { PISI_SYNC_APPLY_BATCH } from '../../../shared/sync-initial.mjs';
 
 export const PISI_SYNC_WRITE_DELAY_MS = 3000;
 const CLEAN_DELAY_MS = 1000;
 const MAX_RETRY_AFTER_SECONDS = 300;
 const REVOKED = new Set(['DEVICE_REVOKED', 'TOKEN_INVALID']);
+const PROGRESS_MIN_FILES = 10;
+const PROGRESS_INTERVAL_MS = 250;
 
 /**
  * Status values: 'unpaired', 'idle' (paired, last turn fine), 'running',
@@ -34,6 +45,7 @@ const REVOKED = new Set(['DEVICE_REVOKED', 'TOKEN_INVALID']);
 export function createSyncService({
     project,
     stateDriver,
+    projectsDriver = null,
     secrets,
     subtle,
     random,
@@ -53,7 +65,19 @@ export function createSyncService({
     const store = createSyncStateStore({ driver: stateDriver, secrets, makeToken: uuid });
     const files = createSyncProjectFiles({ project, lazy: isLazySyncPath });
     const listeners = new Set();
-    let status = { state: 'unpaired', code: null, spaceName: '', serverUrl: '', deviceName: '', lastRun: null, conflicts: [], issues: [], running: false };
+    let status = {
+        state: 'unpaired',
+        code: null,
+        spaceName: '',
+        serverUrl: '',
+        deviceName: '',
+        lastRun: null,
+        conflicts: [],
+        issues: [],
+        running: false,
+        progress: null,
+        aside: []
+    };
     let engine = null;
     let http = null;
     let running = null;
@@ -61,6 +85,9 @@ export function createSyncService({
     let timer = null;
     let destroyed = false;
     let pairing = null;
+    let progressShownAt = 0;
+    // Attachment downloads under way: path → promise of the result.
+    const fetching = new Map();
 
     const emit = (event) => {
         for (const listener of listeners) {
@@ -105,7 +132,17 @@ export function createSyncService({
             uuid,
             now,
             gzip: codec.gzip,
-            gunzip: codec.gunzip
+            gunzip: codec.gunzip,
+            applyBatch: PISI_SYNC_APPLY_BATCH,
+            // Only transfers worth following are shown: a turn that downloads or sends a few files is over before it could be read.
+            onProgress: (value) => {
+                if (value.files.total < PROGRESS_MIN_FILES) return;
+                // Settings is drawn again for every status: a few times a second is enough to follow.
+                const at = now().getTime();
+                if (value.files.done < value.files.total && value.files.done > 0 && at - progressShownAt < PROGRESS_INTERVAL_MS) return;
+                progressShownAt = at;
+                setStatus({ progress: value });
+            }
         });
     }
 
@@ -167,7 +204,7 @@ export function createSyncService({
             })
             .finally(() => {
                 running = null;
-                if (!destroyed) setStatus({ running: false });
+                if (!destroyed) setStatus({ running: false, progress: null });
             });
         return running;
     }
@@ -188,7 +225,30 @@ export function createSyncService({
         project.documents.onClean(() => schedule('clean', CLEAN_DELAY_MS))
     ];
 
-    async function bindPairing({ result, serverUrl, deviceName }) {
+    /** Asks the server to forget a device that was granted but could not be bound here. */
+    async function leaveSpace(result, serverUrl) {
+        try {
+            const leaveHttp = makeHttp(serverUrl);
+            leaveHttp.setToken(result.token);
+            await leaveHttp.request('DELETE', `/v1/spaces/${result.spaceId}/devices/me`);
+        } catch {
+            // The desktop can still revoke it.
+        }
+    }
+
+    async function bindPairing({ result, serverUrl, deviceName, initial }) {
+        // A skeleton holds nothing of the user: its files give way to the server's, byte for byte.
+        if (initial === 'replace') await clearSkeleton(project, files);
+        if (initial === 'aside') {
+            try {
+                const aside = await setProjectAside({ project, projectsDriver, now: now() });
+                status = { ...status, aside: await listAsideProjects(projectsDriver) };
+                emit({ type: 'set-aside', name: aside.name, left: aside.left.length });
+            } catch (error) {
+                await leaveSpace(result, serverUrl);
+                throw new PisiPairingError(error?.code || 'SET_ASIDE_FAILED');
+            }
+        }
         const state = makeMobileSyncState({
             serverUrl,
             spaceId: result.spaceId,
@@ -211,6 +271,7 @@ export function createSyncService({
 
         /** Reads the binding. Resolves with the status; never throws. */
         async init() {
+            status = { ...status, aside: await listAsideProjects(projectsDriver).catch(() => []) };
             try {
                 const state = await store.load();
                 if (state && (await store.readSecrets())) {
@@ -224,6 +285,49 @@ export function createSyncService({
         },
 
         getStatus: () => status,
+
+        /**
+         * What the first pairing has to ask: `{ skeleton }` is true when the
+         * project is only its skeleton, so the server's project comes down
+         * without a question (S6 step 3).
+         */
+        async inspectProject() {
+            await flushPending();
+            try {
+                return { skeleton: await isSkeletonProject(files) };
+            } finally {
+                files.reset();
+            }
+        },
+
+        /**
+         * Downloads an attachment the phone holds only as a remote head. Resolves
+         * `{ ok, code }`; `code` is NOT_PAIRED, NOT_FOUND (the server has no such
+         * file), OFFLINE or a verification code (SV9). Two calls for one file share the download.
+         */
+        fetchAttachment(path) {
+            if (destroyed || !engine) return Promise.resolve({ ok: false, code: 'NOT_PAIRED' });
+            if (fetching.has(path)) return fetching.get(path);
+            const job = engine
+                .fetchLazy(path)
+                .then((result) => {
+                    if (REVOKED.has(result.code)) void forget({ revoked: true });
+                    else if (result.ok) emit({ type: 'attachment', path });
+                    return result;
+                })
+                .catch((error) => {
+                    onError(error);
+                    return { ok: false, code: 'INTERNAL' };
+                })
+                .finally(() => fetching.delete(path));
+            fetching.set(path, job);
+            return job;
+        },
+
+        /** True when the server holds `path` for this phone to download (an attachment not downloaded yet). */
+        async hasRemoteAttachment(path) {
+            return Boolean(engine && (await engine.getRemoteOnly(path)));
+        },
         isPaired: () => Boolean(engine),
         subscribe(listener) {
             listeners.add(listener);
@@ -240,8 +344,9 @@ export function createSyncService({
          * `wait()` resolves once the desktop granted the device and the phone is bound.
          * Rejects with a PisiPairingError (`code`).
          */
-        async startPairing({ method, uri = '', serverUrl = '', code = '', deviceName }) {
+        async startPairing({ method, uri = '', serverUrl = '', code = '', deviceName, initial = 'merge' }) {
             this.cancelPairing();
+            if (initial === 'aside' && !projectsDriver) throw new PisiPairingError('SET_ASIDE_FAILED');
             const base = getPairingServerUrl({ method, uri, serverUrl });
             if (!base) throw new PisiPairingError(method === 'qr' ? 'PAIRING_QR_INVALID' : 'BAD_SERVER_URL');
             const own = { cancelled: false };
@@ -263,7 +368,7 @@ export function createSyncService({
                     if (own.cancelled) throw new PisiPairingError('PAIRING_CANCELLED');
                     // The space's keys must open before the phone is bound to it.
                     await openPisiSyncSpaceKeys(subtle, result.key, result.spaceId);
-                    await bindPairing({ result, serverUrl: base, deviceName });
+                    await bindPairing({ result, serverUrl: base, deviceName, initial });
                     if (pairing === own) pairing = null;
                     return status;
                 }

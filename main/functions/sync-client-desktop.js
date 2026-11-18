@@ -13,7 +13,12 @@
 // sync.space.join.v1, sync.space.join-status.v1, sync.pairing.start.v1,
 // sync.pairing.status.v1, sync.pairing.confirm.v1, sync.pairing.cancel.v1,
 // sync.device.revoke.v1, sync.note.keep-disk-copy.v1, sync.run.v1,
-// sync.disconnect.v1 (commands).
+// sync.cancel.v1, sync.resume.v1, sync.disconnect.v1 (commands).
+// A large turn (the first upload, S6) reports its progress with `pisi:sync-status`
+// (`progress: { phase, files, bytes }`, at most every 250 ms). "Durdur"
+// (sync.cancel.v1) stops the running turn at its next file and pauses the
+// automatic triggers until "Şimdi eşitle" / sync.resume.v1 or the next start of
+// the app; the next turn goes on where the last one stopped.
 
 import crypto from 'node:crypto';
 import fs from 'node:fs';
@@ -54,6 +59,9 @@ const FOCUSED_INTERVAL_MS = 60000;
 const BACKGROUND_INTERVAL_MS = 5 * 60000;
 const FOCUS_THROTTLE_MS = 10000;
 const STOPPING_CODES = new Set(['DEVICE_REVOKED', 'TOKEN_INVALID', 'SERVER_ROLLBACK', 'STATE_UNREADABLE', 'SECRETS_UNREADABLE']);
+const PROGRESS_INTERVAL_MS = 250;
+// Reasons of the turns the user starts: they run even while sync is paused.
+const USER_REASONS = new Set(['manual', 'setup', 'resume']);
 const UNSYNCED_CODES = new Set(['FILE_TOO_LARGE', 'PATH_UNSAFE', 'PATH_COLLISION', 'LOCAL_CORRUPT']);
 
 const runtime = {
@@ -72,7 +80,11 @@ const runtime = {
     dirty: new Set(),
     flushWaiters: new Map(),
     pairings: new Map(),
-    joins: new Map()
+    joins: new Map(),
+    // "Durdur": automatic turns wait until the user syncs again (S6); not kept across restarts.
+    paused: false,
+    progress: null,
+    progressSentAt: 0
 };
 
 function isPisiSyncTestBuild() {
@@ -253,10 +265,21 @@ async function ensurePisiSyncEngine(context) {
             isDirty: (relative) => isPisiSyncPathDirty(context.projectRoot, relative),
             random,
             uuid: () => crypto.randomUUID(),
-            onApplied: (change) => notifyPisiSyncApplied(context, change)
+            onApplied: (change) => notifyPisiSyncApplied(context, change),
+            onProgress: reportPisiSyncProgress
         });
     }
     return state;
+}
+
+/** Tells the renderer how far a turn's uploads or downloads are; the last step of a phase always goes. */
+function reportPisiSyncProgress(progress) {
+    runtime.progress = progress;
+    const now = Date.now();
+    const last = progress.files.done >= progress.files.total;
+    if (!last && now - runtime.progressSentAt < PROGRESS_INTERVAL_MS) return;
+    runtime.progressSentAt = now;
+    sendPisiSyncEvent('pisi:sync-status', { running: true, progress });
 }
 
 function notifyPisiSyncApplied(context, { changed, added, removed }) {
@@ -335,6 +358,7 @@ async function stopPisiSync(context, code) {
 }
 
 function finishPisiSyncTurn(result) {
+    runtime.progress = null;
     runtime.lastResult = { ...result, at: new Date().toISOString() };
     sendPisiSyncEvent('pisi:sync-status', { running: false, result: summarizePisiSyncResult(result) });
     return summarizePisiSyncResult(result);
@@ -356,6 +380,9 @@ function summarizePisiSyncResult(result) {
 
 /** Runs a turn now, or once more after the running one (triggers coalesce, §3.6). */
 function requestPisiSyncClientTurn(reason = 'manual') {
+    // While paused only the user starts a turn; doing so ends the pause.
+    if (runtime.paused && !USER_REASONS.has(reason)) return Promise.resolve({ ok: false, code: 'PAUSED' });
+    if (USER_REASONS.has(reason)) runtime.paused = false;
     if (runtime.running) {
         runtime.queued = runtime.queued || reason;
         return runtime.running;
@@ -432,6 +459,8 @@ async function getPisiSyncClientStatus() {
         lastRun: state.lastRun,
         lastResult: runtime.lastResult ? summarizePisiSyncResult(runtime.lastResult) : null,
         running: Boolean(runtime.running),
+        paused: runtime.paused,
+        progress: runtime.running ? runtime.progress : null,
         stopped: state.stopped || null,
         conflicts: state.conflicts.length,
         unsynced: state.issues.filter((issue) => UNSYNCED_CODES.has(issue.code)).length,
@@ -613,6 +642,7 @@ async function disconnectPisiSync() {
     }
     await context.store.destroy();
     context.engine = null;
+    runtime.paused = false;
     return { ok: true, left };
 }
 
@@ -663,6 +693,21 @@ async function keepPisiSyncDiskCopy(payload = {}) {
     return { ok: true, copyPath: path.join(context.projectRoot, ...copy.path.split('/')) };
 }
 
+/** "Durdur": the running turn stops at its next file; automatic turns wait until the user syncs again. */
+async function cancelPisiSyncTurn() {
+    runtime.paused = true;
+    runtime.queued = null;
+    getPisiSyncContext()?.engine?.cancel();
+    sendPisiSyncEvent('pisi:sync-status', { running: Boolean(runtime.running), paused: true });
+    return { ok: true, paused: true };
+}
+
+/** "Sürdür": ends the pause and runs a turn, which goes on where the stopped one ended. */
+async function resumePisiSyncTurns() {
+    if (!(await isPisiSyncClientBound())) return { ok: false, code: 'NOT_CONFIGURED' };
+    return requestPisiSyncClientTurn('resume');
+}
+
 async function listPisiSyncConflicts() {
     const context = getPisiSyncContext();
     const state = context ? await context.store.load().catch(() => null) : null;
@@ -708,6 +753,8 @@ function installPisiSyncClientContracts() {
             if (!(await isPisiSyncClientBound())) return { ok: false, code: 'NOT_CONFIGURED' };
             return requestPisiSyncClientTurn(String(payload.reason || 'manual'));
         },
+        'sync.cancel.v1': cancelPisiSyncTurn,
+        'sync.resume.v1': resumePisiSyncTurns,
         'sync.disconnect.v1': disconnectPisiSync
     };
     for (const [name, handler] of Object.entries(queries)) domain.registerPisiDomainQuery(name, wrapPisiSyncOperation(handler));

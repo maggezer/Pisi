@@ -15,6 +15,7 @@ import { h } from '../../ui/dom.mjs';
 import { renderEmptyState } from '../../ui/list.mjs';
 import { renderTaskRow } from '../../ui/task-row.mjs';
 import { getTaskRowMeta } from '../pisi/task-section.mjs';
+import { whenVisible } from './attachment-views.mjs';
 import { getBlockLabel, renderProtectedBlock } from './block-views.mjs';
 import { createNoteEditor } from './note-editor.mjs';
 import { createNoteToolbar } from './note-toolbar.mjs';
@@ -25,10 +26,13 @@ export const PISI_NOTE_SAVE_DELAY_MS = 600;
  * `project` is the data layer; `tasks` the task controller (task blocks show
  * and change tasks through it). The app owns navigation: `onOpenTask(id)`
  * opens a task's sheet, `onOpenNote({ path, title })` another note.
- * `onSaved(key)` runs after a note was written.
+ * `onSaved(key)` runs after a note was written. `attachments`
+ * (sync/attachments.mjs) downloads and opens the images and files the phone
+ * does not hold yet (docs/sync-plan.md S6).
  */
 export function createNoteScreen({
     project = null,
+    attachments = null,
     tasks,
     snackbar,
     setTimer,
@@ -55,6 +59,11 @@ export function createNoteScreen({
     let opening = Promise.resolve();
     let ticket = 0;
     let destroyed = false;
+    // Image downloads that wait for the connection; they run again after the next good sync turn.
+    const waiting = new Set();
+    const stopReconnect = attachments?.onReconnect(() => {
+        for (const retry of [...waiting]) void retry();
+    });
 
     const say = (message) => !destroyed && snackbar.show({ message });
 
@@ -128,10 +137,21 @@ export function createNoteScreen({
     }
 
     function drawNote() {
-        const { t } = context;
+        const { t, locale } = context;
         taskBlocks = [];
+        waiting.clear();
         element.dataset.state = 'ready';
         const current = session;
+        const assets = attachments
+            ? {
+                  keyOf: (reference) => project.notes.attachmentKey(current.key, current.data, reference),
+                  status: attachments.status,
+                  fetch: attachments.fetch,
+                  open: attachments.open,
+                  whenVisible,
+                  waiting
+              }
+            : null;
         editor = createNoteEditor({
             document,
             content: current.content,
@@ -142,7 +162,9 @@ export function createNoteScreen({
             renderProtected: (segment) =>
                 renderProtectedBlock(segment, {
                     t,
+                    locale,
                     document,
+                    assets,
                     loadAsset: (reference) => project.notes.readAsset(current.key, current.data, reference),
                     addTask(host, block) {
                         const entry = { host, segment: block };
@@ -354,6 +376,8 @@ export function createNoteScreen({
             timer = null;
             setSession(null);
             stopDeferred?.();
+            stopReconnect?.();
+            waiting.clear();
             stopTasks();
             document.removeEventListener('selectionchange', onSelection);
         }

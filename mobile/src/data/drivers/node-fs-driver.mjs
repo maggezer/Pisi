@@ -3,6 +3,7 @@
 // bundle never does.
 
 import fs from 'node:fs/promises';
+import { Buffer } from 'node:buffer';
 import path from 'node:path';
 import { PisiStorageError, normalizeKey, notFound } from './keys.mjs';
 
@@ -24,6 +25,7 @@ export function createNodeFsDriver(rootFolder) {
         readText: (key) => guard(key, () => fs.readFile(resolve(key), 'utf8')),
         readBase64: (key) => guard(key, async () => (await fs.readFile(resolve(key))).toString('base64')),
         writeText: (key, text) => guard(key, () => fs.writeFile(resolve(key), String(text), 'utf8')),
+        writeBase64: (key, base64) => guard(key, () => fs.writeFile(resolve(key), Buffer.from(String(base64), 'base64'))),
         rename: (from, to) => guard(from, () => fs.rename(resolve(from), resolve(to))),
 
         list: (key) =>

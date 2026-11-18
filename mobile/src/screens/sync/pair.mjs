@@ -1,7 +1,11 @@
 // Settings → Sync → "Pair with desktop" (docs/sync-plan.md S5 step 3). The
 // screen is built once and updated in place, so the fields keep their focus
 // and text while the pairing moves on. Steps:
+//   checking  the phone's project is looked at (a moment)
 //   choose    scan the QR (only in the app) or pair with the code
+//   initial   the phone already holds a project (S6 step 3): add it to the
+//             desktop's project, or set it aside; asked once the project was
+//             looked at, and only when it is more than its skeleton
 //   code      server address, short code and this device's name
 //   claiming  the claim is on its way
 //   confirm   code path: the verification number both screens show, waiting for the desktop
@@ -24,7 +28,8 @@ const KNOWN_ERRORS = new Set([
     'PAIRING_KEY_MISMATCH',
     'BAD_SERVER_URL',
     'OFFLINE',
-    'RATE_LIMITED'
+    'RATE_LIMITED',
+    'SET_ASIDE_FAILED'
 ]);
 
 /** The message for a pairing error code. */
@@ -42,12 +47,31 @@ export function createSyncPairScreen({ service, scanner = null, onDone, onError 
     element.append(live);
     let t = (key) => key;
     let drawnWith = null;
-    let step = 'choose';
+    let step = 'checking';
     let sas = null;
     let errorCode = null;
     let spaceName = '';
     const form = { serverUrl: '', code: '', deviceName: '' };
     let generation = 0;
+    // What the first sync does with the phone's own project: 'replace' (only a skeleton), 'merge' or 'aside'.
+    let initial = null;
+    let inspection = null;
+
+    /** Looks at the project once per visit; a project with the user's data asks before pairing. */
+    function inspect() {
+        if (inspection) return inspection;
+        inspection = Promise.resolve(service.inspectProject ? service.inspectProject() : { skeleton: true })
+            .catch((error) => {
+                onError(error);
+                return { skeleton: false };
+            })
+            .then(({ skeleton }) => {
+                if (skeleton) initial = 'replace';
+                if (step === 'checking') go(skeleton || initial ? 'choose' : 'initial');
+                return skeleton;
+            });
+        return inspection;
+    }
 
     function go(next) {
         step = next;
@@ -59,8 +83,11 @@ export function createSyncPairScreen({ service, scanner = null, onDone, onError 
         errorCode = null;
         go('claiming');
         try {
+            await inspect();
+            if (own !== generation) return;
+            if (!initial) return go('initial');
             const deviceName = form.deviceName.trim() || t('pair.defaultDeviceName');
-            const claimed = await service.startPairing({ method, uri, serverUrl: form.serverUrl, code: form.code, deviceName });
+            const claimed = await service.startPairing({ method, uri, serverUrl: form.serverUrl, code: form.code, deviceName, initial });
             if (own !== generation) return;
             sas = claimed.sas;
             go(method === 'qr' ? 'waiting' : 'confirm');
@@ -89,7 +116,22 @@ export function createSyncPairScreen({ service, scanner = null, onDone, onError 
                 service.cancelPairing();
                 go('choose');
             });
+        const choose = (value) => {
+            initial = value;
+            go('choose');
+        };
         switch (step) {
+            case 'checking':
+                return [h('p', { class: 'pisi-pair-wait', role: 'status', dataset: { pair: 'checking' } }, t('pair.checking'))];
+            case 'initial':
+                return [
+                    h('h2', { class: 'pisi-section-title', dataset: { pair: 'initial' } }, t('pair.initialTitle')),
+                    h('p', { class: 'pisi-pair-text' }, t('pair.initialText')),
+                    action(t('pair.initialMerge'), 'primary', 'initial-merge', () => choose('merge')),
+                    h('p', { class: 'pisi-pair-wait' }, t('pair.initialMergeNote')),
+                    action(t('pair.initialAside'), 'secondary', 'initial-aside', () => choose('aside')),
+                    h('p', { class: 'pisi-pair-wait' }, t('pair.initialAsideNote'))
+                ];
             case 'choose':
                 return [
                     h('p', { class: 'pisi-pair-text' }, t('pair.intro')),
@@ -166,6 +208,7 @@ export function createSyncPairScreen({ service, scanner = null, onDone, onError 
                 return [
                     h('h2', { class: 'pisi-section-title', dataset: { pair: 'done' } }, t('pair.done')),
                     h('p', { class: 'pisi-pair-text' }, t('pair.doneNote', { name: spaceName || t('project.defaultName') })),
+                    initial === 'aside' ? h('p', { class: 'pisi-pair-text', dataset: { pair: 'aside' } }, t('pair.doneAside')) : null,
                     action(t('pair.back'), 'primary', 'pair-done', () => onDone())
                 ];
             default:
@@ -190,18 +233,21 @@ export function createSyncPairScreen({ service, scanner = null, onDone, onError 
         getStep: () => step,
         update(context) {
             t = context.t;
+            void inspect();
             if (!form.serverUrl && context.serverUrl) form.serverUrl = context.serverUrl;
             if (drawnWith?.t !== t || drawnWith?.step !== step) draw();
         },
         /** The screen was left: the pairing is given up on this phone and the screen starts over next time. */
         leave() {
-            if (step === 'choose' && !drawnWith) return;
+            if (step === 'checking' && !drawnWith && !inspection) return;
             generation += 1;
             service.cancelPairing();
-            step = 'choose';
+            step = 'checking';
             errorCode = null;
             sas = null;
             drawnWith = null;
+            initial = null;
+            inspection = null;
         },
         destroy() {
             generation += 1;

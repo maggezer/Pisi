@@ -450,7 +450,87 @@ try {
     const nextIso = String(nextTask.scheduledAt || nextTask.dueDate).slice(0, 10);
     assert(nextTask.id === formatPisiRecurrenceTaskId(repeatingId, nextIso), 'The next occurrence must get the shared recurrence id', nextTask);
 
-    console.log('[E2E] Sync client passed: space + pairing, open note kept while typing, conflict copy without Integrity findings, SV13, recurrence id.');
+    // 6. A large upload (S6): Settings shows its progress; "Durdur" stops the turn and pauses
+    //    syncing, "Sürdür" goes on where it stopped and every file is sent once.
+    const headsBefore = Number(server.sql('SELECT COUNT(*) AS n FROM heads').rows[0].n);
+    const seqBefore = Number(server.sql('SELECT COALESCE(MAX(seq), 0) AS n FROM changes').rows[0].n);
+    const BULK = 300;
+    for (let index = 0; index < BULK; index += 1) {
+        const id = `node_b0000000-0000-4000-8000-${String(index).padStart(12, '0')}`;
+        const title = `Toplu ${index}`;
+        await fs.writeFile(
+            path.join(projectPath, `${title}.node`),
+            JSON.stringify(
+                {
+                    pisi: {
+                        version: 1,
+                        type: 'node',
+                        id,
+                        title,
+                        sidecar: `inv_${title}__${id}`,
+                        parentMap: 'none',
+                        createdAt: '2026-11-18T08:00:00.000Z',
+                        updatedAt: '2026-11-18T08:00:00.000Z'
+                    },
+                    content: `<div class="pisi-editor-block" data-pisi-block-id="blk_${index}" data-pisi-block-type="paragraph">${'toplu metin '.repeat(200)}</div>`
+                },
+                null,
+                2
+            )
+        );
+        await fs.mkdir(path.join(projectPath, `inv_${title}__${id}`), { recursive: true });
+    }
+    await waitUntil('previous turn finished', async () => !(await cdp.evaluate('window.pisiSyncClient.status()'))?.running || null);
+    await cdp.evaluate(`(() => { window.__pisiE2EBulk = window.pisiSyncClient.run('manual'); return true; })()`);
+    const shownProgress = await waitUntil(
+        'upload progress in Settings',
+        () =>
+            cdp.evaluate(`(() => {
+                const line = document.querySelector('#pisi-e2e-settings [data-pisi-sync-progress]');
+                const stop = document.querySelector('#pisi-e2e-settings [data-pisi-sync-action="cancel"]');
+                return line && !line.hidden && /^Yükleniyor: /.test(line.textContent) && stop && !stop.hidden ? line.textContent : null;
+            })()`),
+        30000
+    );
+    assert(/^Yükleniyor: [\d.]+ \/ [\d.]+ dosya · /.test(shownProgress), 'Progress counts files and bytes', shownProgress);
+    await cdp.evaluate(`document.querySelector('#pisi-e2e-settings [data-pisi-sync-action="cancel"]').click()`);
+    const cancelled = await cdp.evaluate('window.__pisiE2EBulk');
+    assert(cancelled?.ok === false && cancelled.code === 'CANCELLED', 'The stopped turn ends with CANCELLED', cancelled);
+    const paused = await waitUntil('paused status', async () => {
+        const status = await cdp.evaluate('window.pisiSyncClient.status()');
+        return status?.paused && !status.running ? status : null;
+    });
+    const headsAfterStop = Number(server.sql('SELECT COUNT(*) AS n FROM heads').rows[0].n);
+    assert(headsAfterStop < headsBefore + BULK, 'The stop came before every file was sent', { headsBefore, headsAfterStop });
+    // Automatic turns wait while paused.
+    const automatic = await cdp.evaluate(`window.pisiDomain.command('sync.run.v1', { reason: 'interval' })`);
+    assert(automatic?.code === 'PAUSED', 'An automatic turn waits while paused', automatic);
+    assert(paused.lastResult?.code === 'CANCELLED', 'Settings knows the turn was stopped', paused);
+    const resumeLabel = await waitUntil('Sürdür button', () =>
+        cdp.evaluate(`document.querySelector('#pisi-e2e-settings [data-pisi-sync-action="resume"]')?.textContent || null`)
+    );
+    assert(resumeLabel === 'Sürdür', 'Paused sync offers "Sürdür"', resumeLabel);
+    await cdp.evaluate(`document.querySelector('#pisi-e2e-settings [data-pisi-sync-action="resume"]').click()`);
+    await waitUntil(
+        'resumed upload finished',
+        async () => {
+            const status = await cdp.evaluate('window.pisiSyncClient.status()');
+            return !status.running &&
+                !status.paused &&
+                status.lastResult?.ok &&
+                Number(server.sql('SELECT COUNT(*) AS n FROM heads').rows[0].n) >= headsBefore + BULK
+                ? status
+                : null;
+        },
+        60000
+    );
+    // Each file went up once: no fid has two changes since the upload began (the app's own small writes may add others).
+    const twice = server.sql('SELECT fid, COUNT(*) AS n FROM changes WHERE seq > ? GROUP BY fid HAVING COUNT(*) > 1', [seqBefore]).rows;
+    assert(twice.length === 0, 'No file was committed twice', twice);
+
+    console.log(
+        '[E2E] Sync client passed: space + pairing, open note kept while typing, conflict copy without Integrity findings, SV13, recurrence id, progress and stop/resume of a large upload.'
+    );
 } catch (error) {
     console.error(logs.slice(-6000));
     throw error;

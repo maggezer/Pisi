@@ -32,8 +32,11 @@ async function eachScreen(page, check) {
         await openFromMenu(page, tab);
         await check(tab);
         if (tab === 'settings') {
-            // Pairing with the desktop (S5), at its form: the step with the most on screen.
+            // Pairing with the desktop (S5): a phone with a project is asked first what happens to it (S6), then the form.
             await page.locator('[data-sync="pair"]').tap();
+            await expect(page.locator('[data-pair="initial"]')).toBeVisible();
+            await check('sync-pair-initial');
+            await page.locator('[data-action="initial-merge"]').tap();
             await page.locator('[data-action="use-code"]').tap();
             await expect(page.locator('#pair-server')).toBeVisible();
             await check('sync-pair');

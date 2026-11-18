@@ -13,10 +13,13 @@ export function createMemoryDriver(initialFiles = {}) {
         for (let current = key; current && !directories.has(current); current = parentKey(current)) directories.add(current);
     }
 
-    function put(key, text) {
+    function put(key, text, base64 = undefined) {
         addDirectory(parentKey(key));
-        files.set(key, { text, mtime: (clock += 1) });
+        files.set(key, base64 === undefined ? { text, mtime: (clock += 1) } : { text, base64, mtime: (clock += 1) });
     }
+
+    // The byte length of a binary file stored as base64.
+    const base64Bytes = (base64) => Math.floor((base64.length * 3) / 4) - (base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0);
 
     for (const [key, text] of Object.entries(initialFiles)) put(normalizeKey(key), String(text));
 
@@ -41,6 +44,14 @@ export function createMemoryDriver(initialFiles = {}) {
             put(clean, String(text));
         },
 
+        /** Writes a binary file from its base64 (a downloaded attachment, S6). */
+        async writeBase64(key, base64) {
+            const clean = normalizeKey(key);
+            if (!clean || directories.has(clean)) throw new PisiStorageError('NOT_A_FILE', `Not a file: ${key}`, key);
+            if (!directories.has(parentKey(clean))) throw notFound(parentKey(clean));
+            put(clean, '', String(base64));
+        },
+
         async rename(from, to) {
             const source = normalizeKey(from);
             const target = normalizeKey(to);
@@ -48,7 +59,7 @@ export function createMemoryDriver(initialFiles = {}) {
             if (!file) throw notFound(from);
             if (!directories.has(parentKey(target))) throw notFound(parentKey(target));
             files.delete(source);
-            put(target, file.text);
+            put(target, file.text, file.base64);
         },
 
         async list(key) {
@@ -68,7 +79,7 @@ export function createMemoryDriver(initialFiles = {}) {
             const clean = normalizeKey(key);
             if (directories.has(clean)) return { type: 'directory', size: 0, mtime: 0 };
             const file = files.get(clean);
-            return file ? { type: 'file', size: file.text.length, mtime: file.mtime } : null;
+            return file ? { type: 'file', size: file.base64 === undefined ? file.text.length : base64Bytes(file.base64), mtime: file.mtime } : null;
         },
 
         async mkdir(key) {
@@ -100,8 +111,7 @@ export function createMemoryDriver(initialFiles = {}) {
         /** Test helper: stores a binary file (an image in a sidecar folder) from its base64. */
         putBase64(key, base64) {
             const clean = normalizeKey(key);
-            put(clean, '');
-            files.get(clean).base64 = String(base64);
+            put(clean, '', String(base64));
         },
 
         /** Test helper: every file as `{ key: text }`. */

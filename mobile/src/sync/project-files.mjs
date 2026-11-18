@@ -6,7 +6,9 @@
 // never over a file that changed after the engine read it. Such a file is
 // reported as skipped and its remote change waits for the next turn.
 // Attachments and other binary files are "lazy" (fetched when opened, S6):
-// they are not listed here and never written by a turn.
+// they are not listed here and never written by a turn. An attachment the
+// user opens is written with `writeLazy`; one deleted on the desktop goes with
+// `removeLazy`.
 
 import { checkPisiSyncPath, getPisiSyncFileClass, isPisiSyncExcludedPath } from '../../../shared/sync-paths.mjs';
 import { utf8Decode, utf8Encode } from '../../../shared/sync-crypto.mjs';
@@ -18,6 +20,13 @@ export const isLazySyncPath = (path) => {
     const fileClass = getPisiSyncFileClass(path);
     return fileClass === 'asset' || fileClass === 'other';
 };
+
+/** Standard base64 of bytes, in slices so a large attachment does not overflow the call stack. */
+export function bytesToBase64(bytes) {
+    let binary = '';
+    for (let at = 0; at < bytes.length; at += 0x8000) binary += String.fromCharCode(...bytes.subarray(at, at + 0x8000));
+    return btoa(binary);
+}
 
 export function createSyncProjectFiles({ project, lazy = isLazySyncPath }) {
     const { driver, writer } = project;
@@ -116,6 +125,25 @@ export function createSyncProjectFiles({ project, lazy = isLazySyncPath }) {
                 else seen.set(path, write.op === 'remove' ? null : utf8Decode(write.bytes));
             }
             return { skipped };
+        },
+
+        /** Writes a downloaded attachment (bytes already checked against its blob id and digest). */
+        async writeLazy(path, bytes) {
+            let text = null;
+            try {
+                text = utf8Decode(bytes);
+            } catch {
+                text = null;
+            }
+            const result = await writer.applyExternalBytes(path, bytesToBase64(bytes), { text });
+            return result.written || result.reason === 'unchanged';
+        },
+
+        /** Removes an attachment the desktop deleted, when the phone had downloaded it. Resolves true when it was removed. */
+        async removeLazy(path) {
+            if (!lazy(path) || !(await driver.exists(path))) return false;
+            const result = await writer.removeExternal(path);
+            return Boolean(result.written);
         },
 
         /** Forgets the walk, so the next list() reads the tree again (a new binding). */

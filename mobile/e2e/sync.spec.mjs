@@ -4,38 +4,11 @@
 // the desktop is the shared engine with the desktop's own pairing code.
 // Screenshots: the code form, the verification number and Settings once paired.
 
-import { Buffer } from 'node:buffer';
 import { expect, test } from '@playwright/test';
 import { createFakeSyncServer } from '../tests/helpers/fake-sync-server.mjs';
 import { createDesktop, nodeDoc } from '../tests/helpers/sync-devices.mjs';
 import { back, open, openFromMenu, projectFiles, screen, shot } from './helpers.mjs';
-
-const SERVER = 'https://sync.test';
-const CORS = {
-    'access-control-allow-origin': '*',
-    'access-control-allow-headers': 'authorization, content-type, pisi-sync-protocol, pisi-part-sha256, range, x-pisi-token',
-    'access-control-allow-methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-    'access-control-expose-headers': 'content-range, retry-after, pisi-blob-sha256'
-};
-
-/** Sends the page's requests to `https://sync.test` to the in-memory server. */
-async function routeServer(page, server) {
-    await page.route(`${SERVER}/**`, async (route) => {
-        const request = route.request();
-        if (request.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
-        const headers = request.headers();
-        const raw = request.postDataBuffer();
-        const body = raw ? ((headers['content-type'] || '').includes('json') ? raw.toString('utf8') : new Uint8Array(raw)) : null;
-        const response = await server.handle({ method: request.method(), url: request.url(), headers, body });
-        const out = new Uint8Array(await response.arrayBuffer());
-        const extra = {};
-        for (const name of ['content-type', 'content-range', 'pisi-blob-sha256', 'retry-after']) {
-            const value = response.headers.get(name);
-            if (value) extra[name] = value;
-        }
-        await route.fulfill({ status: response.status, headers: { ...CORS, ...extra }, body: Buffer.from(out) });
-    });
-}
+import { routeServer } from './sync-helpers.mjs';
 
 const NOTE_ID = 'node_cccccccc-0000-4000-8000-000000000001';
 

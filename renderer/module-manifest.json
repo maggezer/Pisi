@@ -489,7 +489,14 @@
     {
         "module": "sync.panel",
         "path": "renderer/sync/pisi-sync-panel.mjs",
-        "bindings": ["pisiSyncPanelState", "describePisiSyncCode", "refreshPisiSyncPanel", "renderPisiSyncPanel", "initializePisiSyncPanel"]
+        "bindings": [
+            "pisiSyncPanelState",
+            "describePisiSyncCode",
+            "formatPisiSyncProgress",
+            "refreshPisiSyncPanel",
+            "renderPisiSyncPanel",
+            "initializePisiSyncPanel"
+        ]
     },
     {
         "module": "shell.customizations",
