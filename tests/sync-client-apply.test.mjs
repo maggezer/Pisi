@@ -72,7 +72,6 @@ for (const name of [
     'structured-nodes',
     'property-schema-store',
     'property-schema-mutations',
-    'sync-project-adapter',
     'project-integrity',
     'portability',
     'auto-update',

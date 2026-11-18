@@ -186,13 +186,6 @@ contextBridge.exposeInMainWorld('pisiProject', {
     }
 });
 
-contextBridge.exposeInMainWorld('pisiSync', {
-    getStatus: () => ipcRenderer.invoke('pisi-sync:status'),
-    selectFolder: () => ipcRenderer.invoke('pisi-sync:select-folder'),
-    run: (options = {}) => ipcRenderer.invoke('pisi-sync:run', options),
-    disconnect: () => ipcRenderer.invoke('pisi-sync:disconnect')
-});
-
 // Pisi Sync (docs/sync-plan.md S3): a facade over the sync.*.v1 domain
 // contracts. The token and the project key stay in main; only statuses,
 // device names, pairing codes and changed paths reach the renderer.

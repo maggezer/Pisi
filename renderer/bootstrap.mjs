@@ -34,7 +34,6 @@ import './shell/pisi-center-tab-divider.mjs';
 import './shell/pisi-startup.mjs';
 import './shell/pisi-dialogs.mjs';
 import './shell/pisi-command-center.mjs';
-import './sync/pisi-sync-settings.mjs';
 import './sync/pisi-sync-pairing.mjs';
 import './sync/pisi-sync-panel.mjs';
 import './sync/pisi-sync-live.mjs';

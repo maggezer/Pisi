@@ -111,7 +111,6 @@ test('node connectionTypes semantic store üzerinden yalnız query-time projecti
     const domainCommands = read('main/functions/domain-command-query.js');
     const filesystemCore = read('main/functions/filesystem-core.js');
     const documentMetadata = read('main/functions/document-store-metadata.js');
-    const syncAdapter = read('main/functions/sync-project-adapter.js');
     const pathSecurity = read('main/functions/path-security.js');
 
     assert.match(mapCore, /derivePisiConnectionTypesFromRelationships/);
@@ -128,7 +127,6 @@ test('node connectionTypes semantic store üzerinden yalnız query-time projecti
     assert.doesNotMatch(filesystemCore, /base\.pisi\.connectionTypes|resetNodeConnectionTypes/);
     assert.match(filesystemCore, /delete serializableData\.pisi\.connectionTypes/);
     assert.match(documentMetadata, /delete data\.pisi\.connectionTypes/);
-    assert.match(syncAdapter, /delete data\.pisi\.connectionTypes/);
     assert.doesNotMatch(pathSecurity, /normalizeNodeConnectionTypes/);
 });
 
