@@ -79,44 +79,59 @@ Bunlar bug değil, dağıtım kanalına göre kasıtlı sınırlardır:
 
 ## 4. Pisi Sync proje yeniden yüklemesiyle açık notu kapatıyor ve metin kaybettiriyordu
 
-**[Yüksek · sync/editor · çözüldü, özellik kapalı]** Sync yapılandırılmışken
-`renderer/sync/pisi-sync-settings.mjs` her senkrondan sonra
-`window.loadProject()` çağırıyordu. Tetikleyiciler açılış, pencere odağı,
-60 sn’lik zamanlayıcı ve yazmayı bıraktıktan 5 sn sonrasıydı.
-`loadProject` bekleyen 800 ms’lik autosave zamanlayıcısını iptal edip açık
-notu, sekmeleri, modalı (kaydetmeden) ve haritayı kapatıyordu. Sonuç: not,
-yazım bittikten ~7 sn sonra kendiliğinden kapanıyordu; 60 sn’lik tetikleyici
-yazmanın ilk 800 ms’ine denk gelirse metin diske yazılmadan kayboluyordu.
+**[Yüksek · sync/editor · çözüldü; eski kod kaldırıldı (S7, 18-11-2026)]** Eski klasör
+tabanlı senkron (`renderer/sync/pisi-sync-settings.mjs`) her senkrondan sonra
+`window.loadProject()` çağırıyordu. `loadProject` bekleyen 800 ms'lik autosave
+zamanlayıcısını iptal edip açık notu, sekmeleri, modalı ve haritayı kapatıyordu: not
+yazımdan ~7 sn sonra kapanıyor, 60 sn'lik tetikleyici yazmanın ilk 800 ms'ine denk gelirse
+metin kayboluyordu.
 
-**Çözüm (05-11-2026):**
+**Çözüm:**
 
-- Klasör tabanlı sync tek bir bayrakla kapatıldı:
-  `PISI_LEGACY_SYNC_ENABLED = false` (`main/functions/sync-domain.js`).
-  Sync IPC çağrıları `PISI_SYNC_DISABLED` döner; ayarları, `.pisi-sync`’i ve
-  `.pisi/sync-state.json`’u okumaz ve yazmaz. Renderer ne Ayarlar bölümünü
-  çizer ne de otomatik tetikleyicileri kurar. Kod ve mevcut dosyalar korunur.
-- `loadProject`, zamanlayıcıları iptal etmeden ve yüzeyleri kapatmadan önce
-  `flushPisiPendingSaves()` ile bekleyen kayıtları yazar. Kayıt başarısız
-  olursa yükleme durur ve hata gösterilir. Bu tüm çağıranları kapsar
-  (proje değiştirme, açılış).
-- Aynı proje yeniden yüklenirken açık sekmeler, aktif not ve imleç korunur
-  (`renderer/tree/pisi-project-reload.mjs`). Açık modal kaydedilip kapanır ve
-  yeniden açılmaz.
-- Testler: `tests/sync-domain-disabled.test.js`,
-  `scripts/electron-sync-reload-e2e.mjs`.
+- 05-11-2026: eski senkron `PISI_LEGACY_SYNC_ENABLED = false` ile kapatıldı. `loadProject`,
+  yüzeyleri kapatmadan önce `flushPisiPendingSaves()` ile bekleyen kayıtları yazar; aynı proje
+  yeniden yüklenirken sekmeler, aktif not ve imleç korunur (`renderer/tree/pisi-project-reload.mjs`).
+  Bu davranışın E2E'si artık `scripts/electron-project-reload-e2e.mjs`'tir.
+- 17-11-2026 (S3): yeni eşleştirme sistemi senkron turunda `loadProject` çağırmaz; açık notta
+  yalnız değişen bloklar yerinde değişir, imleç, kaydırma ve sekmeler korunur, kaydedilmemiş
+  değişikliği olan belge o turda ertelenir (`scripts/electron-sync-client-e2e.mjs`).
+- 18-11-2026 (S7): eski kod (`sync-core.js`, `sync-domain.js`, `sync-project-adapter.js`,
+  `pisi-sync-settings.mjs`, `window.pisiSync`, `pisi-sync:*` IPC) kaldırıldı. Aynı kural iki
+  cihazla da sınanır: senaryo matrisinin 14. senaryosunda telefonun değişikliği gelirken
+  masaüstünde yazılan metin, imleç, kaydırma ve sekmeler yerinde kalır, `loadProject` sayısı
+  0'dır (`scripts/sync-e2e-matrix.mjs`). Eski projelerdeki `.pisi-sync/` ve
+  `.pisi/sync-state.json` silinmez ve senkron edilmez (SV7).
 
-**Yeni eşleştirme sistemi (S3, 17-11-2026):** masaüstü istemcisi bu kurala uyar ve
-Electron E2E ile sınanır (`scripts/electron-sync-client-e2e.mjs`): senkron turunda
-`loadProject` çağrılmaz, açık notta yalnız değişen bloklar yerinde değişir, imleç, kaydırma
-ve sekmeler korunur; kaydedilmemiş değişikliği olan belge o turda ertelenir. Eski klasör
-tabanlı kod S7'de kaldırılır.
+## 4a. Günlükteki görev ayracının içine yazılan metni yansıtma siliyor
 
-**Yeni eşleştirme sistemi için kural:** Senkron sonrasında proje bütünüyle
-yeniden yüklenmez; yalnız değişen dosyalar güncellenir. Açık not, sekmeler,
-modal, harita ve imleç senkron yüzünden kapanmamalı ya da yeniden
-çizilmemelidir. Açık bir belge dışarıdan değiştiyse mevcut
-`reloadPisiWorkspaceAfterExternalChange` akışındaki gibi yalnız o belge ele
-alınır ve kaydedilmemiş değişiklik varsa kullanıcıya sorulur.
+**[Orta · diary/tasks · doğrulandı, çözülmedi]** Masaüstünün günlük görev yansıtması
+(`main/functions/document-store-diary.js`, `syncDiaryMissions`) yönetilen bölümü
+(`PISI_DIARY_MANAGED_START`…`END`) her seferinde baştan kurar. Kullanıcı, bölümü kapatan
+ayraç bloğunun (`pisi-diary-task-divider`) içine yazarsa metin bu bölümde kalır ve bir
+sonraki yansıtmada silinir. Masaüstü fixture'ında (`tests/fixtures/desktop-project/diary/2026-11-13.node`)
+böyle bir metin vardır ("Veri katmanı için notlar aldım."); uygulama açılınca kaybolur.
+S7'deki senaryo matrisi sırasında görüldü. Çözüm önerisi: ayraç bloğu düzenlenemez olsun ya da
+yönetilen bölümün dışındaki/ayraç içindeki kullanıcı metni bölüm yeniden kurulurken
+korunsun. Aynı bölüm `data-pisi-diary-node-path` içinde masaüstünün mutlak dosya yolunu
+taşır; senkronla telefona da gider (sunucuya şifreli). Telefon bu bölümü salt okunur kart
+olarak gösterir ve yolu kullanmaz.
+
+## 4b. Masaüstü bir dosyayı yazınca görev ve günlük yansıtmaları ikinci bir yazma yapabiliyor
+
+**[Düşük · sync/tasks · kısmen çözüldü (S7)]** Senkronla gelen `tasks.json` uygulanınca masaüstü
+günlüklerin görev bölümünü yeniden yazar. Bu yazma, telefonun bir sonraki turunda iner;
+iki cihaz bir ya da iki ek turda durulur (matris her senaryoda en çok 4 turda durulmayı
+şart koşar). S7'de yapılanlar:
+
+- Değişiklik getirmeyen görev yansıtması (`sync-index`) `tasks.json`'u artık yeniden yazmaz
+  (`main/functions/task-store.js`; `tests/task-store-projection-unchanged.test.mjs`).
+- Görev ayraçları, düzenleyicinin verdiği blok kimliğini korur; her yansıtmada yeni kimlik
+  almaz (`tests/diary-task-integration.test.js`).
+- Görev deposu okunmadan günlük eşitlenmez; açılışta görev bölümleri önce silinip sonra
+  geri yazılmaz (`renderer/tags/pisi-source-of-truth.mjs`; `tests/task-projection-write-through.test.js`).
+
+Kalan: ayraç bloğunun kimliği hâlâ renderer'da ilk kayıtta verilir; ana süreçte yazılan yeni
+bir günlüğün ayraçları kimliği ilk açılışta alır ve bu bir kez daha yazılır.
 
 ## 5. Editörde fareyle blok sürükle-bırak çalışmıyor
 

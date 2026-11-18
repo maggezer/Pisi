@@ -1,5 +1,40 @@
 # PISI Güncelleme Takip Dosyası
 
+## 18-11-2026 — İki cihaz ve gerçek sunucuyla uçtan uca test; eski senkronun kaldırılması (S7)
+
+Senkron işi (`docs/sync-plan.md` S7; SV3, SV5, SV6, SV7, SV9, SV11, SV12).
+
+- **Senaryo matrisi** (`scripts/sync-e2e-matrix.mjs`, yardımcıları `scripts/sync-e2e/`): gerçek PHP test
+  sunucusu (önünde hata enjeksiyonlu bir ileten), Electron'da gerçek masaüstü ve Playwright'ta Pixel 7
+  olarak mobil derleme. İki cihaz kendi ekranlarından kodla ve doğrulama numarasıyla eşleşiyor, sonra
+  matrisin 14 senaryosu sırayla çalışıyor ve her birinden sonra iki tarafta Project Integrity yeni bulgu
+  vermiyor (15. senaryo). Sunucunun geri sarılması gerçek bir veritabanı yedeğine dönüşle, günlerce
+  çevrimdışılık değişikliklerin yaşlandırılıp gerçek `gc.php` ile budanmasıyla, bağlantı kopması iletende
+  istek ya da yanıt düşürülerek sınanıyor. `PISI_SYNC_MATRIX_E2E=1 npm run test:sync-server`; CI'da
+  `sync-server.yml` (rapor: `sync-e2e-matrix` artifact'ı).
+- **Gerçek sunucu duman testi:** `PISI_SYNC_SETUP_KEY=… npm run sync:smoke -- --server https://…`
+  geçici bir alan açıyor, masaüstü ve telefon motorlarıyla senaryo 1, 2, 5 ve 8'i çalıştırıyor, iki
+  kopyayı Integrity ile denetliyor ve alanı siliyor. Çıktıda sunucu adresi, anahtar ya da token yok
+  (`tests/sync-server-contract-smoke.test.mjs` bunu da sınıyor).
+- **Matrisin bulduğu ve düzeltilen hatalar:**
+    - Sunucu, bir cihazın kendi gönderdiği değişikliğin öncesindeki bir yedeğe dönerse cihaz bunu fark
+      etmiyor ve senkrona devam ediyordu; gönderilen değişiklik sunucuda sessizce kayboluyordu. İmleç
+      yalnız çekmeyle ilerlediği için cihaz artık kendi commit'lerine verilen en büyük `seq`'i de
+      saklıyor (`knownSeq`) ve `head` bunun altındaysa `SERVER_ROLLBACK` ile duruyor. Masaüstü ve telefon
+      aynı motoru kullanıyor (`shared/sync-engine.mjs`); protokol §7.4 açıklandı, tel biçimi değişmedi.
+    - Masaüstünün görev yansıtması, hiçbir görev değişmese de `tasks.json`'u yeni `updatedAt`'le yeniden
+      yazıyordu; her not kaydında senkron yeni bir sürüm gönderiyordu. Artık değişmeyen kayıt ve dosya
+      yazılmıyor.
+    - Masaüstü açılışta görev deposunu okumadan günlükleri eşitliyor, görev bölümlerini silip hemen geri
+      yazıyordu; bölüm ayraçları da her seferinde yeni blok kimliği alıyordu. Artık depo okunmadan
+      günlük eşitlenmiyor ve ayraçlar kimliklerini koruyor.
+- **Eski senkron kaldırıldı:** `main/functions/sync-core.js`, `sync-domain.js`, `sync-project-adapter.js`,
+  `renderer/sync/pisi-sync-settings.mjs`, `window.pisiSync` ve `pisi-sync:*` IPC kanalları, manifest
+  kayıtları, eski Ayarlar bölümünün CSS'i ve yalnız onun kullandığı TR/ENG metinleri,
+  `docs/pisi-sync-guide-tr.md` ve eski testler. Elle yeniden yüklemenin bekleyen kaydı yazıp sekmeleri ve
+  imleci koruduğunu sınayan E2E `scripts/electron-project-reload-e2e.mjs` adıyla kaldı. Kullanıcı
+  projelerindeki `.pisi-sync/` ve `.pisi/sync-state.json` silinmiyor ve senkron edilmiyor.
+
 ## 18-11-2026 — İlk aktarım ve ekler (S6)
 
 Mobil ve senkron işi (`docs/sync-plan.md` S6; SV1, SV4, SV5, SV9, SV10, SV11, SV12). Gerçek bir

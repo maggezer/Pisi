@@ -7,6 +7,8 @@
 //      görülmüş olmalıdır; eksik kalan varsa komut başarısız olur.
 //   4. PISI_SYNC_ELECTRON_E2E=1 ise masaüstü senaryoları gerçek Electron ile çalışır
 //      (scripts/electron-sync-client-e2e.mjs, S3; Electron ikilisi ve Linux'ta xvfb-run gerekir).
+//   5. PISI_SYNC_MATRIX_E2E=1 ise iki cihazlı senaryo matrisi çalışır (scripts/sync-e2e-matrix.mjs, S7;
+//      ayrıca mobil paket ve Playwright Chromium gerekir: npm --prefix mobile ci).
 // Kök `npm test` bu dosyaları atlar (PISI_SYNC_SERVER_TESTS yok).
 
 import { spawnSync } from 'node:child_process';
@@ -94,4 +96,9 @@ console.log(`Kapsam: protokoldeki ${readProtocolEndpoints().length} uç noktanı
 if (process.env.PISI_SYNC_ELECTRON_E2E === '1') {
     const e2e = spawnSync(process.execPath, [path.join('scripts', 'electron-sync-client-e2e.mjs')], { cwd: root, stdio: 'inherit', env: process.env });
     if (e2e.status !== 0) process.exit(e2e.status || 1);
+}
+
+if (process.env.PISI_SYNC_MATRIX_E2E === '1') {
+    const matrix = spawnSync(process.execPath, [path.join('scripts', 'sync-e2e-matrix.mjs')], { cwd: root, stdio: 'inherit', env: process.env });
+    if (matrix.status !== 0) process.exit(matrix.status || 1);
 }
