@@ -259,7 +259,7 @@ Eski bir yedeğe dönmek cihazlara göre **geri sarma**dır: cihazlar `SERVER_RO
 1. Önce **bütün cihazlarda** uygulamayı açın ve Ayarlar → Senkron → **Şimdi eşitle** deyin. Yedekten sonra eşitlemiş olan cihazlar "Sunucu daha eski bir duruma dönmüş" uyarısıyla durur ve hiçbir şey yazmaz.
 2. Sonra **masaüstünde** Ayarlar → Senkron → **Sunucuyla yeniden eşleş**'i seçin. Masaüstü sunucudaki bütün dosyaları yeniden karşılaştırır; yedekten sonra yazdıklarını yeniden gönderir.
 3. En son **telefonda** Ayarlar → Senkron → **Sunucuyla yeniden eşleş**. Telefonun dosyaları kalır, sunucudakilerle birleşir.
-4. Uyarı göstermeyen cihaz (yedekten sonra hiç eşitlememiş) olağan turla devam eder. Birinci adımda açamadığınız bir cihaz geri sarmayı en geç bir gün içinde kendisi fark eder ve aynı uyarıyı gösterir (`pisi-error.md` §4c).
+4. Uyarı göstermeyen cihaz (yedekten sonra hiç eşitlememiş) olağan turla devam eder. Birinci adımda açamadığınız bir cihaz geri sarmayı açıldığı ilk turda kendisi fark eder ve aynı uyarıyı gösterir; o zaman onda da "Sunucuyla yeniden eşleş" deyin.
 
 Hiçbir cihazda metin kaybolmaz; iki tarafta farklı değişen bir not çakışma kopyası olabilir. Yedekten sonra masaüstünde silinen dosyalar geri gelebilir; onları yeniden silin. Yedekte hiç bulunmayan bir cihaz (yedekten sonra eşleşmiş) `TOKEN_INVALID` alır: bağlantısını kaldırıp yeniden eşleştirin. Yedekte hiç bulunmayan bir alanın masaüstünde de aynısı geçerlidir: bağlantıyı "yalnız burada" kaldırıp yeni alan açın.
 

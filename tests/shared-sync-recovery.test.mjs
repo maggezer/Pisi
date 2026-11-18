@@ -5,7 +5,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+    getPisiSyncCursorMark,
+    isPisiSyncCursorMarkHeld,
     isPisiSyncRollbackInHeads,
+    makePisiSyncCursorMark,
     markPisiSyncKnownReplays,
     PISI_SYNC_FULL_CHECK_MS,
     PISI_SYNC_UNAPPLIED_RETRY_MS,
@@ -205,4 +208,27 @@ test('tam denetim günde bir; hiç eşitlemeyen cihaz yapmaz', () => {
     assert.equal(shouldMakePisiSyncFullCheck({ cursor: 5, checkedAt: null, now }), true);
     assert.equal(shouldMakePisiSyncFullCheck({ cursor: 5, checkedAt: new Date(now.getTime() - 1000).toISOString(), now }), false);
     assert.equal(shouldMakePisiSyncFullCheck({ cursor: 5, checkedAt: new Date(now.getTime() - PISI_SYNC_FULL_CHECK_MS).toISOString(), now }), true);
+});
+
+test("imleç işareti: son çekilen değişiklik; aynı seq'te başka commit geri sarmadır", () => {
+    const rows = [
+        { seq: 7, fid: fid('a'), commit: 'cm_1' },
+        { seq: 8, fid: fid('b'), commit: 'cm_2' }
+    ];
+    const mark = makePisiSyncCursorMark(rows, 8);
+    assert.deepEqual(mark, { seq: 8, fid: fid('b'), commit: 'cm_2' });
+    // Only the change at the cursor is a mark; nothing pulled, nothing to mark.
+    assert.equal(makePisiSyncCursorMark(rows, 9), null);
+    assert.equal(makePisiSyncCursorMark([], 8), null);
+    assert.equal(makePisiSyncCursorMark([{ seq: 8, fid: fid('b') }], 8), null);
+
+    assert.deepEqual(getPisiSyncCursorMark({ cursor: 8, cursorMark: mark }), mark);
+    assert.equal(getPisiSyncCursorMark({ cursor: 9, cursorMark: mark }), null, 'imleç işaretten ileride');
+    assert.equal(getPisiSyncCursorMark({ cursor: 8 }), null, 'eski durum');
+
+    assert.equal(isPisiSyncCursorMarkHeld(mark, { seq: 8, fid: fid('b'), commit: 'cm_2', op: 'put' }), true);
+    assert.equal(isPisiSyncCursorMarkHeld(mark, { seq: 8, fid: fid('b'), commit: 'cm_baska' }), false, 'seq yeniden verildi');
+    assert.equal(isPisiSyncCursorMarkHeld(mark, { seq: 8, fid: fid('c'), commit: 'cm_2' }), false);
+    assert.equal(isPisiSyncCursorMarkHeld(mark, { seq: 9, fid: fid('b'), commit: 'cm_2' }), false, 'imleçteki satır yok');
+    assert.equal(isPisiSyncCursorMarkHeld(mark, undefined), false);
 });

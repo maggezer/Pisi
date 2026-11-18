@@ -133,25 +133,6 @@ iki cihaz bir ya da iki ek turda durulur (matris her senaryoda en çok 4 turda d
 Kalan: ayraç bloğunun kimliği hâlâ renderer'da ilk kayıtta verilir; ana süreçte yazılan yeni
 bir günlüğün ayraçları kimliği ilk açılışta alır ve bu bir kez daha yazılır.
 
-## 4c. Geri sarmayı imleci göstermeyen cihaz onu en geç bir gün sonra fark eder
-
-**[Düşük · sync · bilinçli sınır]** Sunucu bir yedeğe dönünce geri sarmayı imleci ya da kendi commit'inin
-`seq`'i (`knownSeq`) yedeğin üstünde olan cihaz ilk turda fark eder (`SERVER_ROLLBACK`). Yedekten sonra eşitleyip
-sonra kapalı kalan bir cihaz ise, öbür cihazlar o arada sunucunun `head`'ini yeniden onun imlecinin üstüne
-çıkaracak kadar değişiklik gönderdiyse geri sarmayı ilk turda göremez: aradaki `seq`'ler yeniden verildiği için
-bazı değişiklikleri çekmez ve sunucuda kaybolan kendi değişikliğini yeniden göndermez.
-
-- Cihaz en geç günde bir bütün başlıkları karşılaştırır (`shared/sync-recovery.mjs`): eksik kalan dosyaları
-  indirir; kendi eşitlediği bir dosyanın başlığı geri gittiyse `SERVER_ROLLBACK` ile durur ve "Sunucuyla
-  yeniden eşleş" kaybolan değişikliği yeniden gönderir (`mobile/tests/sync-recovery.test.mjs`).
-- O denetime kadar, kaybolan değişikliğin dosyası başka bir cihazda yeniden değişip gelirse üç yollu birleşme
-  kaybolan değişikliği geri alabilir (yalnız o dosyada ve yalnız bu sıralamada).
-- Önlem: yedeğe döndükten sonra yeniden eşleşmeden önce bütün cihazlarda uygulamayı açıp bir tur eşitlemek
-  (`docs/sync-server-cpanel.md` §12.1).
-- Kesin tespit için değişikliğin şifreli metadata'sına gönderenin gördüğü `baseSeq` eklenebilir (protokolde
-  geriye uyumlu bir revizyon): istemci, `baseSeq`'i kendi indeksindeki `seq`'ten küçük bir değişiklikte geri
-  sarmayı anlar. S7 kapanışında (18-11-2026) belgelendi.
-
 ## 5. Editörde fareyle blok sürükle-bırak çalışmıyor
 
 **[Düşük · editor · doğrulandı, çözülmedi]** `renderer/editor/pisi-block-editor.mjs`
@@ -289,25 +270,6 @@ bağımlılıkla yüklenen `map-semantic-operation-hooks.js` bunu gösterdi (hat
 düzeltildi; davranış duruyor). Çözüm önerisi: testlerde logger'ın süreç
 yakalayıcılarını kurmaması (ör. bir ortam bayrağı) ya da bu dosyaların test
 sayısını denetleyen bir koruma.
-
-## 5h. `picomatch` ReDoS açığı geliştirme bağımlılıklarında; yamalı sürüm yok, audit kapısı kırmızı
-
-**[Yüksek (bildirim) · bağımlılık / CI · doğrulandı, çözülmedi; yama bekleniyor]**
-GHSA-fc5q-39xc-vjpf (19-10-2026): `picomatch` `<=4.0.7` tek dallı, tekrarlanan extglob kalıplarında
-(`+(*)` gibi) üstel geri izleme yapıyor. npm'deki en yeni sürüm 4.0.7 ve bildirimde yamalı sürüm yok,
-bu yüzden `overrides` ile düzeltilemiyor.
-
-- Kökte yalnız tam ağaçta: electron-builder → app-builder-lib → `@electron/rebuild` → node-gyp →
-  tinyglobby/fdir → picomatch. Çalışma zamanı denetimi temiz. `npm run audit` tam ağaç adımında düşüyor;
-  CI'ın `validate` işi bu adımda duruyor.
-- Mobilde vite/vitest → tinyglobby → picomatch; `npm --prefix mobile run audit` düşüyor (Mobile
-  `validate` işi #177'den beri kırmızı).
-- Risk: yalnız derleme ve test araçları; kalıplar depodan gelir, kullanıcıdan gelmez. Uygulama paketine
-  girmez.
-- `npm audit fix --force`'un önerisi sürüm düşürmek (electron-builder 26.0.20, vite 6.2.7); yapılmadı.
-- Karar (18-11-2026): istisna eklenmez, `picomatch` yaması beklenir. Yama çıkınca kökte ve mobilde
-  kapsamlı bir `overrides` (ör. `"picomatch@<=4.0.7": "^4.0.8"`) ya da doğrudan güncelleme ile kapatılır ve
-  bu madde silinir.
 
 ## 6. Güncel doğrulama snapshot’ı
 
