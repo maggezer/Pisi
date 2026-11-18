@@ -1,6 +1,5 @@
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
-import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -15,35 +14,27 @@ const PISI_E2E_CHROMIUM_FLAGS = [
     '--disable-features=CalculateNativeWinOcclusion'
 ];
 
-// Legacy sync is configured in settings but disabled by its feature flag, so it
-// must never reload the project behind the user. An explicit reload of the same
-// project must first write pending saves and then keep tabs, note and caret.
+// The open note must stay open while the user types (no background reload, no
+// tutorial stealing focus, a late external reload of the previous tab must not win).
+// An explicit reload of the same project must first write pending saves and then
+// keep tabs, note and caret. Pisi Sync's own turns never reload the project; that is
+// covered by scripts/electron-sync-client-e2e.mjs and scripts/sync-e2e-matrix.mjs.
 
 const require = createRequire(import.meta.url);
 const electronPath = /** @type {string} */ (require('electron'));
 const repoRoot = path.resolve(import.meta.dirname, '..');
 const port = 9226;
-const tempRoot = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'pisi-electron-sync-reload-')));
+const tempRoot = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'pisi-electron-project-reload-')));
 const userDataPath = path.join(tempRoot, 'user-data');
 const projectPath = path.join(tempRoot, 'project');
-const sharedPath = path.join(tempRoot, 'shared');
-
-// Mirrors projectKey() in main/functions/sync-domain.js.
-const projectKey = crypto.createHash('sha256').update(path.resolve(projectPath).toLowerCase()).digest('hex').slice(0, 24);
 
 await fs.mkdir(userDataPath, { recursive: true });
 await fs.mkdir(projectPath, { recursive: true });
-await fs.mkdir(sharedPath, { recursive: true });
 await fs.writeFile(
     path.join(userDataPath, 'pisi-settings.json'),
     JSON.stringify(
         {
-            lastProjectFolder: projectPath,
-            pisiSync: {
-                deviceId: 'device_e2e_sync_reload',
-                deviceName: 'E2E',
-                projects: { [projectKey]: { projectPath, folderPath: sharedPath } }
-            }
+            lastProjectFolder: projectPath
         },
         null,
         2
@@ -234,15 +225,11 @@ try {
         cdp.evaluate("document.readyState === 'complete' && window.currentProjectFolder === " + JSON.stringify(projectPath))
     );
 
-    const status = await cdp.evaluate('window.pisiSync.getStatus()');
-    assert(status?.enabled === false && status.configured === false, 'Legacy sync must report disabled even when configured', status);
+    // The removed folder-based sync (docs/sync-plan.md S7) left no renderer facade behind.
+    const legacyFacade = await cdp.evaluate('typeof window.pisiSync');
+    assert(legacyFacade === 'undefined', 'The legacy window.pisiSync facade must be gone', legacyFacade);
 
-    const settingsRendered = await cdp.evaluate(
-        "(() => { const container = document.createElement('div'); document.dispatchEvent(new CustomEvent('pisi:render-settings-sections', { detail: { container } })); return Boolean(container.querySelector('.pisi-sync-settings')); })()"
-    );
-    assert(settingsRendered === false, 'Disabled sync must not render its settings section');
-
-    // 1. Configured legacy sync must not close the note or lose text after typing.
+    // 1. Nothing in the background may close the note or lose text after typing.
     const firstNode = await createNode(cdp);
     const secondNode = await createNode(cdp);
     // Trace every change of the active tab and center note, so a failure shows when and after what the note changed.
@@ -283,7 +270,7 @@ try {
         'An external reload of the previous note must not take the editor back from the new tab',
         switchRace
     );
-    const idleMarker = 'P1.2 idle sync guard';
+    const idleMarker = 'P1.2 idle typing guard';
     await typeAtEnd(cdp, idleMarker);
     await cdp.evaluate("window.__e2eMark('typed')");
     await sleep(10000);
@@ -298,8 +285,8 @@ try {
     );
     assert(afterIdle.text.includes(idleMarker), 'Typed text must remain in the editor', afterIdle);
     assert((await readNodeContent(secondNode)).includes(idleMarker), 'Autosave must persist the typed text');
-    assert(!(await exists(path.join(sharedPath, '.pisi-sync'))), 'Disabled sync must not create .pisi-sync');
-    assert(!(await exists(path.join(projectPath, '.pisi', 'sync-state.json'))), 'Disabled sync must not create sync-state.json');
+    assert(!(await exists(path.join(projectPath, '.pisi-sync'))), 'Nothing may create the legacy .pisi-sync folder');
+    assert(!(await exists(path.join(projectPath, '.pisi', 'sync-state.json'))), 'Nothing may create the legacy sync-state.json');
 
     // 2. Reloading the same project before the 800 ms autosave fires flushes first
     //    and keeps the open tabs, the active note and the caret.
@@ -317,7 +304,7 @@ try {
     assert(afterReload.text.includes(idleMarker + reloadMarker), 'Reloaded editor must show the saved text', afterReload);
     assert(afterReload.caretCollapsed && afterReload.textBeforeCaret?.endsWith(reloadMarker), 'Caret must return to where typing stopped', afterReload);
 
-    console.log('[E2E] Sync reload passed: configured legacy sync stays disabled, pending saves flush before reload, tabs and caret survive.');
+    console.log('[E2E] Project reload passed: the open note survives idle typing, pending saves flush before reload, tabs and caret survive.');
 } finally {
     cdp?.close();
     if (child.exitCode === null) {

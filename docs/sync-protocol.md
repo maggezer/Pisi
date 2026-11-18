@@ -605,6 +605,7 @@ Commit'teki her değişiklik için sunucu, alan satırını kilitleyerek (`SELEC
 ### 7.4 İstemcinin sunucuya karşı denetimleri
 
 - **Geri sarma:** `head` ya da gelen bir `seq` cihazın imlecinden küçükse istemci senkronu durdurur, `SERVER_ROLLBACK` gösterir ve hiçbir şey yazmaz. Kullanıcı ancak bilerek "sunucuyla yeniden eşleş" diyerek devam eder.
+    - İmleç yalnız çekmeyle ilerler. Bu yüzden cihaz, kendi commit'leri için sunucudan aldığı en büyük `seq`'i de saklar (`knownSeq`; cihaz durumunda, sunucuya gitmez). `head` bundan küçükse de geri sarma sayılır. Böylece cihazın gönderdiği ama sunucunun eski yedeğinde olmayan bir değişiklik sessizce kaybolmaz (S7'de senaryo matrisiyle bulundu; tel biçimi değişmedi).
 - **Yeniden oynatma:** her cihaz için görülen en büyük `dseq` saklanır. Aynı cihazdan gelen `dseq` öncekinden büyük değilse ya da `meta.dev` değişikliğin `device` alanıyla tutmuyorsa değişiklik uygulanmaz ve `SERVER_REPLAY` gösterilir.
 - **Bağ:** `meta` zarfı fid, op ve blob'a bağlıdır (§4.2). Sunucu bir blob'u ya da meta'yı başka bir dosyaya taşıyamaz.
 - **Uygulama sırası:** bir commit'in değişiklikleri birlikte uygulanır. Önce ekler, sonra belgeler, sonra otorite dosyaları (`docs/sync-plan.md` §3.6).

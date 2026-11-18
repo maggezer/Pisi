@@ -195,6 +195,21 @@ describe('mobil senkron motoru', () => {
         expect(second.phone.secrets.values.size).toBe(0);
     });
 
+    it("sunucu, telefonun kendi commit'inin altına geri sarılırsa SERVER_ROLLBACK: tur durur, gönderilen değişiklik kaybolmaz (S7)", async () => {
+        const { server, phone } = await pairedPair();
+        const backup = server.snapshot();
+        await phone.project.tasks.upsert({ id: 'task_phone_rollback', title: 'Geri sarmadan önce', status: 'todo' });
+        expect((await phone.service.sync('test')).ok).toBe(true);
+        // The cursor has not passed the phone's own commit: only the seq the server gave it can tell.
+        backup();
+        const before = await phone.driver.readText(TASKS);
+        const summary = await phone.service.sync('test');
+        expect(summary).toMatchObject({ ok: false, code: 'SERVER_ROLLBACK' });
+        expect(phone.service.getStatus()).toMatchObject({ state: 'stopped', code: 'SERVER_ROLLBACK' });
+        expect(await phone.driver.readText(TASKS)).toBe(before);
+        expect(server.commits().filter((body) => body.changes.some((change) => change.op === 'put')).length).toBeGreaterThan(0);
+    });
+
     it('ağ yokken tur "çevrimdışı" durumuna geçer ve yazmaz', async () => {
         const { server, phone } = await pairedPair();
         server.offline = true;

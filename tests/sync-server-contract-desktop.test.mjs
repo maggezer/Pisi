@@ -8,6 +8,7 @@ import { after, before, describe, test } from 'node:test';
 import { startSyncTestServer } from '../scripts/start-sync-test-server.mjs';
 import { SYNC_SERVER_SKIP } from './sync-server-client.mjs';
 import { createSpaceFor, createTestDevice, joinWithCode, nodeDoc } from './sync-client-device.mjs';
+import { restoreSpace, snapshotSpace } from '../scripts/sync-e2e/server-tools.mjs';
 
 const NOTE = 'Toplantı Notları.node';
 const NOTE_ID = 'node_11111111-2222-4333-8444-555555555555';
@@ -228,6 +229,23 @@ describe('masaüstü senkron istemcisi', { skip: SYNC_SERVER_SKIP }, () => {
         assert.deepEqual(b.list(), files);
         assert.equal((await b.store.load()).stopped, 'SERVER_ROLLBACK');
         assert.equal((await b.sync()).code, 'SERVER_ROLLBACK', 'durdurulan senkron kendiliğinden sürmez');
+    });
+
+    test("veritabanı cihazın kendi commit'inden önceki yedeğe dönerse SERVER_ROLLBACK; gönderilen değişiklik sessizce kaybolmaz (S7)", async () => {
+        const { a } = await pairOfDesktops(server);
+        snapshotSpace(server, a.spaceId);
+        const doc = a.readJson(NOTE);
+        doc.content = doc.content.replace('İkinci paragraf', 'İkinci paragraf, yedekten sonra');
+        a.write(NOTE, doc);
+        assert.equal((await a.sync()).ok, true);
+        // The cursor is still at the head before this device's own commit; only the seq the server gave it can tell.
+        restoreSpace(server, a.spaceId);
+        const files = a.list();
+        const result = await a.sync();
+        assert.equal(result.ok, false);
+        assert.equal(result.code, 'SERVER_ROLLBACK');
+        assert.deepEqual(a.list(), files);
+        assert.equal((await a.store.load()).stopped, 'SERVER_ROLLBACK');
     });
 
     test('budanmış imleç (CURSOR_EXPIRED) tam karşılaştırmayla toparlanır', async () => {

@@ -3,6 +3,8 @@ name: Sync server
 # Pisi senkron sunucusu (server/, docs/sync-plan.md S2): PHP 8.4 + MariaDB 10.11 üzerinde
 # php -l, göç ve protokol sözleşme testleri (npm run test:sync-server). S3'ten beri aynı
 # sunucuya karşı masaüstü istemcisi: motorun sözleşme testleri ve gerçek Electron E2E'si.
+# S7'den beri iki cihazlı senaryo matrisi (scripts/sync-e2e-matrix.mjs): gerçek Electron
+# masaüstü, Playwright'ta mobil derleme ve aynı PHP sunucusu.
 on:
     push:
         branches:
@@ -18,13 +20,18 @@ on:
             - 'main/functions/sync-client-*'
             - 'main/functions/task-store.js'
             - 'renderer/sync/**'
-            - 'mobile/src/sync/**'
-            - 'mobile/src/data/**'
+            - 'mobile/src/**'
+            - 'mobile/package-lock.json'
             - 'mobile/tests/helpers/**'
             - 'scripts/generate-project-fixture.mjs'
             - 'renderer/tags/pisi-task-store.mjs'
             - 'renderer/tags/pisi-todo-second-release.mjs'
+            - 'renderer/tags/pisi-source-of-truth.mjs'
+            - 'main/functions/document-store-diary.js'
             - 'scripts/electron-sync-client-e2e.mjs'
+            - 'scripts/sync-e2e-matrix.mjs'
+            - 'scripts/sync-e2e/**'
+            - 'scripts/sync-smoke.mjs'
             - 'preload.js'
             - '.cpanel.yml'
             - '.github/workflows/sync-server.yml'
@@ -40,13 +47,18 @@ on:
             - 'main/functions/sync-client-*'
             - 'main/functions/task-store.js'
             - 'renderer/sync/**'
-            - 'mobile/src/sync/**'
-            - 'mobile/src/data/**'
+            - 'mobile/src/**'
+            - 'mobile/package-lock.json'
             - 'mobile/tests/helpers/**'
             - 'scripts/generate-project-fixture.mjs'
             - 'renderer/tags/pisi-task-store.mjs'
             - 'renderer/tags/pisi-todo-second-release.mjs'
+            - 'renderer/tags/pisi-source-of-truth.mjs'
+            - 'main/functions/document-store-diary.js'
             - 'scripts/electron-sync-client-e2e.mjs'
+            - 'scripts/sync-e2e-matrix.mjs'
+            - 'scripts/sync-e2e/**'
+            - 'scripts/sync-smoke.mjs'
             - 'preload.js'
             - '.cpanel.yml'
             - '.github/workflows/sync-server.yml'
@@ -62,7 +74,7 @@ concurrency:
 jobs:
     contract:
         runs-on: ubuntu-latest
-        timeout-minutes: 40
+        timeout-minutes: 55
 
         services:
             mariadb:
@@ -109,9 +121,17 @@ jobs:
             - name: Install dependencies with Electron
               run: npm ci
 
+            # S7: the matrix's phone is the mobile build in Playwright's Chromium.
+            - name: Install the mobile package
+              run: npm --prefix mobile ci
+
+            - name: Playwright Chromium for the matrix's phone
+              working-directory: mobile
+              run: npx playwright install --with-deps chromium
+
             # S6: tests/sync-server-contract-transfer.test.mjs measures the first upload and download of a
             # generated project at full size (2,000 notes, 5,000 tasks, 60 diary days, ~200 MB of images).
-            - name: Contract tests (php -l, migrations, every endpoint and error code), first-transfer measurement and desktop E2E
+            - name: Contract tests (php -l, migrations, every endpoint and error code), first-transfer measurement, desktop E2E and the two-device matrix
               run: xvfb-run -a npm run test:sync-server
               env:
                   PISI_SYNC_TEST_DB_HOST: 127.0.0.1
@@ -121,6 +141,8 @@ jobs:
                   PISI_SYNC_ELECTRON_E2E: '1'
                   PISI_SYNC_TRANSFER_FULL: '1'
                   PISI_SYNC_TRANSFER_REPORT: test-results/sync-initial-transfer.json
+                  PISI_SYNC_MATRIX_E2E: '1'
+                  PISI_SYNC_MATRIX_REPORT: test-results/sync-e2e-matrix.json
 
             - name: Upload the first-transfer measurement
               if: always()
@@ -128,4 +150,12 @@ jobs:
               with:
                   name: sync-initial-transfer
                   path: test-results/sync-initial-transfer.json
+                  if-no-files-found: warn
+
+            - name: Upload the scenario matrix report
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: sync-e2e-matrix
+                  path: test-results/sync-e2e-matrix.json
                   if-no-files-found: warn

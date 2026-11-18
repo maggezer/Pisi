@@ -250,6 +250,10 @@ export function createPisiSyncPusher(ctx) {
             throw error;
         }
         const seqs = response.data.seqs;
+        // The highest seq this device knows the server gave out: a head below it later means the
+        // server went back to an older state, even when the cursor has not passed the device's own
+        // commit yet (docs/sync-protocol.md §7.4).
+        state.knownSeq = Math.max(Number.isSafeInteger(state.knownSeq) ? state.knownSeq : 0, ...seqs.filter(Number.isSafeInteger));
         for (const [at, item] of pending.items.entries()) {
             const pendingKey = `pending:${item.fid}`;
             if (item.op === 'delete') {

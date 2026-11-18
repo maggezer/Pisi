@@ -177,6 +177,7 @@ function syncPisiFirstClassTaskIndex(projectFolder, payload = {}) {
     const seen = new Set();
     let created = 0;
     let updated = 0;
+    let changed = 0;
 
     for (const item of incoming) {
         if (!item || typeof item !== 'object') continue;
@@ -188,8 +189,13 @@ function syncPisiFirstClassTaskIndex(projectFolder, payload = {}) {
             : item.status;
         const projected = status === item.status ? item : { ...item, status, completedAt: existing.completedAt };
         const task = normalizePisiFirstClassTask(projectFolder, { ...projected, id }, existing);
-        byId.set(id, task);
+        // A projection that changes nothing keeps the record as it was, `updatedAt` included:
+        // every note save or panel refresh would otherwise rewrite tasks.json and send it to
+        // the other devices again (docs/sync-plan.md S7).
+        const same = existing && JSON.stringify({ ...task, updatedAt: null }) === JSON.stringify({ ...existing, updatedAt: null });
+        byId.set(id, same ? existing : task);
         seen.add(id);
+        if (!same) changed += 1;
         if (existing) updated += 1;
         else created += 1;
     }
@@ -198,12 +204,13 @@ function syncPisiFirstClassTaskIndex(projectFolder, payload = {}) {
         for (const [id, task] of byId) {
             if (!seen.has(id) && task.source?.nodePath && task.source?.blockId) {
                 byId.delete(id);
+                changed += 1;
             }
         }
     }
 
     store.tasks = Array.from(byId.values());
-    writePisiTaskStore(projectFolder, store);
+    if (changed > 0) writePisiTaskStore(projectFolder, store);
     return {
         ok: true,
         created,

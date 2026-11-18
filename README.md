@@ -151,20 +151,26 @@ kullanıcı verileri harici bir uygulama veritabanına taşınmaz.
 
 ## Cihazlar arası senkronizasyon
 
-> **Şu an kapalı.** Klasör tabanlı Pisi Sync, Pisi'nin kendi eşleştirme sistemi
-> yazılana kadar devre dışıdır (`PISI_LEGACY_SYNC_ENABLED = false`,
-> `main/functions/sync-domain.js`). Ayarlar'daki bölüm görünmez, otomatik
-> senkron çalışmaz ve sync çağrıları dosya yazmaz. Mevcut `.pisi-sync` ve
-> `.pisi/sync-state.json` dosyalarına dokunulmaz. Aşağıdaki açıklama eski
-> sistemi anlatır.
+Pisi Sync, projeyi kendi sunucunuz üzerinden telefonunuz (Pisi Mobil) ve öteki
+bilgisayarlarınızla eşitler. İçerik uçtan uca şifrelenir: sunucu dosya içeriğini,
+yolları ve adları görmez. Sunucu kurulumu [`docs/sync-server-cpanel.md`](docs/sync-server-cpanel.md),
+tasarım ve fazlar [`docs/sync-plan.md`](docs/sync-plan.md), tel biçimi
+[`docs/sync-protocol.md`](docs/sync-protocol.md) belgelerindedir.
 
-Workspace Center → Ayarlar bölümündeki Pisi Sync; masaüstünde açık olan gerçek
-proje kökünü Android sürümüyle çift yönlü eşitler. Google Drive, OneDrive veya
-iki cihazda aynı klasörü gösteren başka bir sağlayıcı kullanılabilir. Okunabilir
-`.node/.map` proje dosyaları kaynak olmaya devam eder; `.pisi-sync` yalnız sürüm
-ve çakışma metadatasıdır. Silmeler kurtarılabilir, eşzamanlı düzenlemeler
-çakışma kopyasıyla korunur. Kurulum ve kabul testi için
-[`docs/pisi-sync-guide-tr.md`](docs/pisi-sync-guide-tr.md) dosyasına bakın.
+- Masaüstünde Ayarlar → **Senkron**: sunucu adresi ve kurulum anahtarıyla alan açılır,
+  "Cihaz eşleştir" ile telefon QR'la ya da kısa kod ve doğrulama numarasıyla bağlanır.
+- Senkron projeyi baştan yüklemez; açık not, sekmeler ve imleç yerinde kalır. Uzlaşmayan
+  değişiklik çakışma kopyası olur, metin kaybolmaz.
+- Kendi sunucunuzda duman testi (geçici bir alan açar, dört senaryoyu çalıştırır ve alanı siler;
+  çıktıda adres ve anahtar yazılmaz):
+
+```bash
+PISI_SYNC_SETUP_KEY=<kurulum anahtarı> npm run sync:smoke -- --server https://<sunucu>/<yol>
+```
+
+Eski klasör tabanlı senkron (Google Drive/OneDrive ortak klasörü) kaldırıldı. Eski
+projelerdeki `.pisi-sync/` ve `.pisi/sync-state.json` dosyalarına dokunulmaz; yeni
+senkron bu yolları da göndermez.
 
 ## Paketleme ve dağıtım
 

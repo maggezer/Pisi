@@ -14,7 +14,9 @@ const pisiFirstClassTaskState = {
     refreshTimer: null,
     editorTimer: null,
     patchedMissionIdentity: false,
-    fileSystemUnsubscribe: null
+    fileSystemUnsubscribe: null,
+    // The project whose tasks.json is in `tasks`: until it is read, an empty list means "not loaded", not "no tasks".
+    loadedProjectFolder: null
 };
 
 function normalizePisiFirstClassPath(value) {
@@ -332,6 +334,7 @@ async function refreshPisiFirstClassTaskStore() {
             return { ok: false, stale: true, tasks: [] };
         }
         setPisiFirstClassTaskCache(result.tasks || []);
+        pisiFirstClassTaskState.loadedProjectFolder = projectFolder;
         installPisiFirstClassMissionIndex(pisiFirstClassTaskState.tasks);
         return { ok: true, tasks: pisiFirstClassTaskState.tasks };
     } catch (error) {

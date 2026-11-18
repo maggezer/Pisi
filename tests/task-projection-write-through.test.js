@@ -92,3 +92,23 @@ test('project switch while write is pending does not refresh tasks in the new pr
     await pending;
     assert.equal(refreshes.length, 0);
 });
+
+test('the diary is not synced from the canonical tasks before tasks.json has been read for the open project (S7)', async () => {
+    const { window, emit } = setup();
+    const diaryCalls = [];
+    window.pisiProject.syncDiaryMissions = async (_project, payload) => {
+        diaryCalls.push(payload);
+        return { ok: true };
+    };
+    // Not read yet: an empty list would take every task section out of the diaries.
+    window.pisiFirstClassTaskState = { tasks: [], loadedProjectFolder: null };
+    emit('pisi:task-store-updated');
+    await new Promise(setImmediate);
+    assert.equal(diaryCalls.length, 0);
+
+    window.pisiFirstClassTaskState = { tasks: [{ id: 'task_1', title: 'Rapor', status: 'todo', dueDate: '2026-11-14' }], loadedProjectFolder: '/project' };
+    emit('pisi:task-store-updated');
+    await new Promise(setImmediate);
+    assert.equal(diaryCalls.length, 1);
+    assert.equal(diaryCalls[0].complete, true);
+});
