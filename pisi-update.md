@@ -1,5 +1,30 @@
 # PISI Güncelleme Takip Dosyası
 
+## 18-11-2026 — Geri sarmanın ilk turda kesin yakalanması; mobil E2E'nin depo yardımcısı; picomatch
+
+Senkron işi (`docs/sync-plan.md` S7 kapanışının devamı; SV3, SV9).
+
+- **İmlecin gösteremediği geri sarma artık ilk turda yakalanıyor** (önceki `pisi-error.md` §4c kapandı).
+  Yedekten sonra eşitleyip kapalı kalan bir cihazın imlecini, öbür cihazların o arada gönderdikleri yeniden
+  geçebiliyordu. Cihaz bunu ancak günlük başlık denetiminde görüyordu; o güne kadar bazı değişiklikleri
+  çekmeyebiliyor, sunucuda kaybolan kendi değişikliğini göndermiyordu.
+    - Cihaz artık çektiği son değişikliğin `seq`, `fid` ve `commit` kimliğini saklıyor (`state.cursorMark`)
+      ve bir satır geriden çekiyor. `seq` bir kez verildiği için geri sarmada imleçteki satır başka bir commit
+      olur ve cihaz hiçbir şey uygulamadan ve göndermeden `SERVER_ROLLBACK` ile duruyor. Yalnız gönderen tur
+      da göndermeden önce aynı satırı denetliyor.
+    - Tel biçimi değişmedi (protokol §7.4). Günlük başlık denetimi, işareti olmayan eski durumlar ve
+      budanmış satırlar için kaldı.
+    - Testler: `tests/shared-sync-recovery.test.mjs`, `mobile/tests/sync-recovery.test.mjs` (ilk turda durma,
+      yalnız gönderen tur, işaretsiz durumda günlük denetim) ve gerçek PHP sunucusuna karşı
+      `tests/sync-server-contract-desktop.test.mjs`.
+- **Mobil E2E (`mobile/e2e/helpers.mjs`):** #180'de `external.spec.mjs` bir kez, proje dosyalarını
+  tarayıcı deposuna yazarken 30 sn'de zaman aşımına uğradı (`main`'de yeniden çalışınca geçti; yerelde
+  80 tekrarda görülmedi). Yardımcı, depo (`Disc`) henüz yoksa onu mağazasız oluşturabiliyor ve
+  `onsuccess` içindeki hatayı yutup sonsuza dek bekleyebiliyordu. Artık veritabanını hiç oluşturmuyor,
+  uygulamanın deposunu kısa süre bekliyor, hatayı test hatası olarak veriyor ve bağlantıyı kapatıyor.
+- **picomatch (önceki `pisi-error.md` §5h kapandı):** `npm audit` kökte ve mobilde yeniden temiz;
+  `main`'de `CI` ve `Mobile` audit adımları geçiyor. Bağımlılık değişmedi.
+
 ## 18-11-2026 — Senkronun kurtarılması: geri sarılan sunucu, son masaüstü, uygulanmayan değişiklikler (S7 kapanışı)
 
 Senkron işi (`docs/sync-plan.md` S7; SV1, SV3, SV9, SV12). S8 öncesi incelemede bulunan eksikler.

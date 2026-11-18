@@ -293,6 +293,30 @@ describe('masaüstü senkron istemcisi', { skip: SYNC_SERVER_SKIP }, () => {
         for (const file of a.list()) assert.equal(c.read(file), a.read(file), file);
     });
 
+    test('imlecin gösteremediği geri sarma: imleçteki değişiklik başka bir commit olunca SERVER_ROLLBACK; yeniden eşleşince kaybolan not geri gider', async () => {
+        const { a, b } = await pairOfDesktops(server);
+        snapshotSpace(server, a.spaceId);
+        b.write('Kaybolan.node', nodeDoc('node_cdcdcdcd-2222-4333-8444-555555555555', 'Kaybolan', [['k', 'yedekten sonra B']]));
+        assert.equal((await b.sync()).ok, true);
+        assert.equal((await b.sync()).ok, true);
+        const bCursor = (await b.store.load()).cursor;
+        restoreSpace(server, a.spaceId);
+        // A's cursor is at the backup: it sees nothing and sends two notes, which lift the head over B's cursor.
+        for (const name of ['Bir', 'İki']) a.write(`${name}.node`, nodeDoc(`node_cdcdcdcd-2222-4333-8444-55555555555${name.length}`, name, [['x', name]]));
+        assert.equal((await a.sync()).ok, true);
+        assert.ok(Number(server.sql('SELECT head FROM spaces WHERE space_id = ?', [a.spaceId]).rows[0].head) > bCursor);
+
+        const files = b.list();
+        const result = await b.sync();
+        assert.equal(result.code, 'SERVER_ROLLBACK', JSON.stringify(result));
+        assert.deepEqual(b.list(), files, 'hiçbir şey yazılmadı');
+        assert.deepEqual(await b.engine.rejoin(), { ok: true, code: null });
+        assert.equal((await b.sync()).ok, true);
+        assert.equal((await a.sync()).ok, true);
+        assert.match(a.read('Kaybolan.node'), /yedekten sonra B/);
+        assert.deepEqual(b.list(), a.list());
+    });
+
     test('doğrulanamayan değişiklik listede kalır ve "Şimdi eşitle" onarılan blob ile uygular', async () => {
         const { a, b } = await pairOfDesktops(server);
         a.write('Bozuk.node', nodeDoc('node_abababab-2222-4333-8444-555555555555', 'Bozuk', [['k', 'onarılacak metin']]));

@@ -28,11 +28,16 @@
 //   Files deleted after the backup the server went back to come back; deletes are
 //   not guessed.
 // - A rollback the cursor cannot show (the device last synced above the backup, and
-//   other devices sent enough after rejoining to lift the head over its cursor again)
-//   shows in every head: a head never goes back, so a head below the seq this device
-//   synced for that file, the same seq with another blob, or no head at all for a file
-//   it synced, is SERVER_ROLLBACK. Every full compare checks this, and a device makes
-//   one at least once a day.
+//   other devices sent enough after rejoining to lift the head over its cursor again):
+//     - the cursor mark: the device keeps the last change it pulled (`seq`, fid, commit
+//       id) and pulls from one row before its cursor. A seq is given once, so the row at
+//       the cursor must still be that change; a rollback gives the seq again, to another
+//       commit (random id), and the device stops with SERVER_ROLLBACK before it applies
+//       or sends anything. A turn that only sends checks the mark first.
+//     - every head: a head never goes back, so a head below the seq this device synced
+//       for that file, the same seq with another blob, or no head at all for a file it
+//       synced, is SERVER_ROLLBACK. Every full compare checks this, and a device makes
+//       one at least once a day.
 
 /** Codes of remote changes that were not applied and are kept in `state.unapplied`. */
 export const PISI_SYNC_UNAPPLIED_CODES = Object.freeze([
@@ -105,6 +110,24 @@ export function shouldRetryPisiSyncUnapplied({ unapplied = {}, triedAt = null, n
     return !Number.isFinite(last) || now.getTime() - last >= PISI_SYNC_UNAPPLIED_RETRY_MS;
 }
 
+/** The mark of the last pulled change, when it is the one at `cursor` (raw change rows); otherwise null. */
+export function makePisiSyncCursorMark(rows, cursor) {
+    const last = (rows || []).at(-1);
+    if (!last || last.seq !== cursor || typeof last.commit !== 'string' || !last.commit) return null;
+    return { seq: last.seq, fid: last.fid, commit: last.commit };
+}
+
+/** The mark a pull can check: the one of the change at the cursor. */
+export function getPisiSyncCursorMark(state) {
+    const mark = state?.cursorMark;
+    return mark && state.cursor > 0 && mark.seq === state.cursor && typeof mark.commit === 'string' ? mark : null;
+}
+
+/** Whether `row` (the server's change at the mark's seq, or nothing) is still the change the mark names. */
+export function isPisiSyncCursorMarkHeld(mark, row) {
+    return Boolean(row) && row.seq === mark.seq && row.fid === mark.fid && row.commit === mark.commit;
+}
+
 /** Whether this turn makes its daily full compare (`checkedAt` ISO: the last one). A device that synced nothing yet does not need it. */
 export function shouldMakePisiSyncFullCheck({ cursor = 0, checkedAt = null, now }) {
     if (!(cursor > 0)) return false;
@@ -163,6 +186,7 @@ export function preparePisiSyncRejoin(state, { at }) {
             remoteOnly: {},
             unapplied: {},
             unappliedTriedAt: null,
+            cursorMark: null,
             issues: [],
             rejoin: { at, index: state.index || {}, lastDseq: state.lastDseq || {}, dseq: state.dseq || 0, unsettled: [...unsettled].sort() }
         }

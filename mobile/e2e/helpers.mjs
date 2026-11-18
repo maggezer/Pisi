@@ -37,23 +37,41 @@ export async function loadSampleProject(page) {
 
 /** The project files as the storage driver sees them: the Filesystem plugin's web store (IndexedDB). */
 export const projectFiles = (page) =>
-    page.evaluate(
-        () =>
+    page.evaluate(() => {
+        const openDisc = () =>
             new Promise((resolve, reject) => {
-                const request = indexedDB.open('Disc');
-                request.onerror = () => reject(request.error);
-                request.onsuccess = () => {
-                    const all = request.result.transaction('FileStorage').objectStore('FileStorage').getAll();
+                // Never creates the database: a new name would get version 1 without the plugin's FileStorage store,
+                // and the plugin (same version) would never add it. A store not there yet is waited for, briefly.
+                const attempt = (left) => {
+                    const request = indexedDB.open('Disc');
+                    request.onupgradeneeded = () => request.transaction.abort();
+                    const again = (error) => (left > 0 ? setTimeout(() => attempt(left - 1), 100) : reject(error));
+                    request.onerror = () => again(request.error || new Error('Disc açılamadı'));
+                    request.onsuccess = () => {
+                        const db = request.result;
+                        if (db.objectStoreNames.contains('FileStorage')) return resolve(db);
+                        db.close();
+                        again(new Error('FileStorage yok'));
+                    };
+                };
+                attempt(100);
+            });
+        return openDisc().then(
+            (db) =>
+                new Promise((resolve, reject) => {
+                    const all = db.transaction('FileStorage').objectStore('FileStorage').getAll();
                     all.onerror = () => reject(all.error);
-                    all.onsuccess = () =>
+                    all.onsuccess = () => {
+                        db.close();
                         resolve(
                             all.result
                                 .filter((entry) => entry.type === 'file')
                                 .map((entry) => ({ path: entry.path.replace(/^\/DATA\/projects\/default\//, ''), content: entry.content }))
                         );
-                };
-            })
-    );
+                    };
+                })
+        );
+    });
 
 /**
  * Test data only: writes `[key, content]` files straight into the Filesystem plugin's web store, in the shape
@@ -75,14 +93,35 @@ export const seedProjectFiles = (page, files) =>
                         records.set(folder, { path: folder, folder: parent(folder), type: 'directory', size: 0, ctime: stamp, mtime: stamp });
                     }
                 }
-                const request = indexedDB.open('Disc');
-                request.onerror = () => reject(request.error);
-                request.onsuccess = () => {
-                    const transaction = request.result.transaction('FileStorage', 'readwrite');
-                    for (const record of records.values()) transaction.objectStore('FileStorage').put(record);
-                    transaction.oncomplete = () => resolve();
-                    transaction.onerror = () => reject(transaction.error);
-                };
+                const openDisc = () =>
+                    new Promise((resolve, reject) => {
+                        // Never creates the database: a new name would get version 1 without the plugin's FileStorage store,
+                        // and the plugin (same version) would never add it. A store not there yet is waited for, briefly.
+                        const attempt = (left) => {
+                            const request = indexedDB.open('Disc');
+                            request.onupgradeneeded = () => request.transaction.abort();
+                            const again = (error) => (left > 0 ? setTimeout(() => attempt(left - 1), 100) : reject(error));
+                            request.onerror = () => again(request.error || new Error('Disc açılamadı'));
+                            request.onsuccess = () => {
+                                const db = request.result;
+                                if (db.objectStoreNames.contains('FileStorage')) return resolve(db);
+                                db.close();
+                                again(new Error('FileStorage yok'));
+                            };
+                        };
+                        attempt(100);
+                    });
+                openDisc()
+                    .then((db) => {
+                        const transaction = db.transaction('FileStorage', 'readwrite');
+                        for (const record of records.values()) transaction.objectStore('FileStorage').put(record);
+                        transaction.oncomplete = () => {
+                            db.close();
+                            resolve();
+                        };
+                        transaction.onerror = () => reject(transaction.error);
+                    })
+                    .catch(reject);
             }),
         files
     );

@@ -104,32 +104,67 @@ describe('senkronun kurtarılması', () => {
         expect(all).toContain('İki (telefon)');
     });
 
-    it('imleci geri sarmayı göstermeyen telefon, başlıkların günlük denetiminde SERVER_ROLLBACK ile durur ve kaybolan görevini yeniden gönderir', async () => {
+    /**
+     * The server goes back to a backup taken before the phone's last task; the desktop, whose cursor is at the
+     * backup, sees nothing and sends `notes` new notes. The phone's cursor is above the backup, so it cannot see
+     * the rollback; its own task is lost on the server.
+     */
+    async function hiddenRollback(notes) {
         const { server, desktop, phone } = await pairedPair();
         const backup = server.snapshot();
-        // After the backup only the phone writes; the desktop does not pull it before the server goes back.
         await phone.project.tasks.upsert({ id: 'task_lost', title: 'Geri sarmada kaybolan görev', status: 'todo' });
         expect((await phone.service.sync('test')).ok).toBe(true);
         expect((await phone.service.sync('test')).ok).toBe(true);
+        const phoneCursor = (await phone.service.store.load()).cursor;
         backup();
-        // The desktop's cursor is at the backup: it sees nothing and sends three new notes, which lift the head over the phone's cursor.
-        for (const name of ['Bir', 'İki', 'Üç'])
-            desktop.write(`${name}.node`, nodeDoc(`node_dddddddd-0000-4000-8000-00000000000${name.length}`, name, [['x', name]]));
+        const names = ['Bir', 'İki', 'Üç'].slice(0, notes);
+        for (const name of names) desktop.write(`${name}.node`, nodeDoc(`node_dddddddd-0000-4000-8000-00000000000${name.length}`, name, [['x', name]]));
         expect((await desktop.sync()).ok).toBe(true);
-        expect(server.spaces.get(desktop.spaceId).head).toBeGreaterThan((await phone.service.store.load()).cursor);
+        return { server, desktop, phone, names, phoneCursor };
+    }
 
-        // The cursor cannot show it: an ordinary turn goes on (the documented limit, pisi-error.md §4c).
-        expect((await phone.service.sync('test')).ok).toBe(true);
-        // The daily full compare finds the task file's head below what the phone synced.
-        const state = await phone.service.store.load();
-        state.fullCheckAt = new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString();
-        await phone.service.store.save(state);
-        expect(await phone.service.sync('test')).toMatchObject({ ok: false, code: 'SERVER_ROLLBACK' });
-
+    async function rejoinAndCheck({ desktop, phone, names }) {
         expect((await phone.service.rejoin()).ok).toBe(true);
         expect((await desktop.sync()).ok).toBe(true);
         expect(desktop.readJson(TASKS).tasks.map((task) => task.title)).toContain('Geri sarmada kaybolan görev');
-        for (const name of ['Bir', 'İki', 'Üç']) expect(await phone.driver.readText(`${name}.node`)).toContain(name);
+        for (const name of names) expect(await phone.driver.readText(`${name}.node`)).toContain(name);
+    }
+
+    it('imlecin gösteremediği geri sarma: imleçteki değişiklik başka bir commit olmuş, telefon ilk turda durur', async () => {
+        const run = await hiddenRollback(3);
+        expect(run.server.spaces.get(run.desktop.spaceId).head).toBeGreaterThan(run.phoneCursor);
+        const before = await run.phone.driver.readText(TASKS);
+        expect(await run.phone.service.sync('test')).toMatchObject({ ok: false, code: 'SERVER_ROLLBACK' });
+        // Nothing was applied or sent.
+        expect(await run.phone.driver.exists('Üç.node')).toBe(false);
+        expect(await run.phone.driver.readText(TASKS)).toBe(before);
+        await rejoinAndCheck(run);
+    });
+
+    it('yalnız gönderen tur: head imlece eşit olsa da imleçteki değişiklik denetlenir', async () => {
+        // The desktop sends exactly as many changes as the phone's cursor was above the backup: the head is the cursor again.
+        const run = await hiddenRollback(1);
+        expect(run.server.spaces.get(run.desktop.spaceId).head).toBe(run.phoneCursor);
+        await run.phone.project.tasks.upsert({ id: 'task_after', title: 'Geri sarmadan sonra', status: 'todo' });
+        const commits = run.server.commits().length;
+        expect(await run.phone.service.sync('test')).toMatchObject({ ok: false, code: 'SERVER_ROLLBACK' });
+        expect(run.server.commits().length).toBe(commits);
+        await rejoinAndCheck(run);
+        expect(run.desktop.readJson(TASKS).tasks.map((task) => task.title)).toContain('Geri sarmadan sonra');
+    });
+
+    it('imleç işareti yoksa günlük başlık denetimi geri sarmayı bulur', async () => {
+        const run = await hiddenRollback(3);
+        // A state from before the mark existed.
+        const state = await run.phone.service.store.load();
+        delete state.cursorMark;
+        await run.phone.service.store.save(state);
+        expect((await run.phone.service.sync('test')).ok).toBe(true);
+        const later = await run.phone.service.store.load();
+        later.fullCheckAt = new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString();
+        await run.phone.service.store.save(later);
+        expect(await run.phone.service.sync('test')).toMatchObject({ ok: false, code: 'SERVER_ROLLBACK' });
+        await rejoinAndCheck(run);
     });
 
     it('doğrulanamayan uzak değişiklik yazılmaz, Ayarlar listesinde görünür ve "Şimdi eşitle" ile yeniden denenince iner', async () => {

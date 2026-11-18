@@ -27,7 +27,10 @@ import { checkPisiSyncRemoteOrder, reconcilePisiSyncTurn } from './sync-reconcil
 import { parsePisiSyncJsonBytes, preparePisiSyncActions } from './sync-actions.mjs';
 import { createPisiSyncPusher, PisiSyncCancelledError } from './sync-engine-push.mjs';
 import {
+    getPisiSyncCursorMark,
+    isPisiSyncCursorMarkHeld,
     isPisiSyncRollbackInHeads,
+    makePisiSyncCursorMark,
     markPisiSyncKnownReplays,
     preparePisiSyncRejoin,
     settlePisiSyncRejoin,
@@ -157,16 +160,23 @@ export function createPisiSyncEngine({
         // Below the cursor, or below a seq the server gave this device's own commit (§7.4).
         const known = Math.max(state.cursor, Number.isSafeInteger(state.knownSeq) ? state.knownSeq : 0);
         if (headData.head < known) return { ok: false, code: 'SERVER_ROLLBACK' };
-        if (headData.head === state.cursor && !wantFull) return { ok: true, remote: [], cursor: state.cursor, lastDseq: state.lastDseq, full: false };
+        if (headData.head === state.cursor && !wantFull)
+            return { ok: true, remote: [], cursor: state.cursor, lastDseq: state.lastDseq, full: false, verified: false, mark: state.cursorMark ?? null };
         let full = null;
         let later = null;
         if (state.cursor === 0 || wantFull) full = await pageHeads(state.spaceId, limits.maxHeadsPage);
         else {
+            // From one row before the cursor: the change at the cursor must still be the one this device pulled (sync-recovery.mjs).
+            const mark = getPisiSyncCursorMark(state);
             try {
-                later = await pageChanges(state.spaceId, state.cursor, limits.maxChangesPage);
+                later = await pageChanges(state.spaceId, mark ? state.cursor - 1 : state.cursor, limits.maxChangesPage);
             } catch (error) {
                 if (error?.code !== 'CURSOR_EXPIRED') throw error;
                 full = await pageHeads(state.spaceId, limits.maxHeadsPage);
+            }
+            if (later && mark) {
+                if (!isPisiSyncCursorMarkHeld(mark, later.rows[0])) return { ok: false, code: 'SERVER_ROLLBACK' };
+                later = { ...later, rows: later.rows.slice(1) };
             }
         }
         let heads = [];
@@ -192,8 +202,27 @@ export function createPisiSyncEngine({
             remote: full ? markPisiSyncKnownReplays(remote, state.unapplied) : remote,
             cursor: later.head,
             lastDseq: order.lastDseq,
-            full: Boolean(full)
+            full: Boolean(full),
+            verified: true,
+            mark: makePisiSyncCursorMark(later.rows, later.head)
         };
+    }
+
+    /**
+     * A turn that pulled nothing but sends changes checks first that the change at
+     * its cursor is still the one it pulled (a rollback can give the same head again).
+     */
+    async function cursorStillHolds(state) {
+        const mark = getPisiSyncCursorMark(state);
+        if (!mark) return true;
+        try {
+            const { data } = await http.get(`/v1/spaces/${state.spaceId}/changes?after=${state.cursor - 1}&limit=1`);
+            return isPisiSyncCursorMarkHeld(mark, data.changes?.[0]);
+        } catch (error) {
+            // The row was pruned: nothing to compare with; the daily check of every head still looks.
+            if (error?.code === 'CURSOR_EXPIRED') return true;
+            throw error;
+        }
     }
 
     /** Scan of the project with the hash cache of the state. */
@@ -491,6 +520,7 @@ export function createPisiSyncEngine({
                 // The first automatic retry waits its interval too.
                 if (!hadUnapplied && Object.keys(state.unapplied).length) state.unappliedTriedAt = now().toISOString();
                 state.cursor = pulled.cursor;
+                state.cursorMark = pulled.mark;
                 state.lastDseq = pulled.lastDseq;
                 await store.save(state);
 
@@ -502,6 +532,11 @@ export function createPisiSyncEngine({
                     puts.length,
                     puts.reduce((total, item) => total + (item.bytes?.length ?? sizes.get(item.path) ?? 0), 0)
                 );
+                if (pushes.length && !pulled.verified && !(await cursorStillHolds(state))) {
+                    state.stopped = 'SERVER_ROLLBACK';
+                    await store.save(state);
+                    return { ...summary, ok: false, code: 'SERVER_ROLLBACK' };
+                }
                 const result = await pusher.push(state, keys, pushes, { checkpoint, progress: (_item, bytes) => progress.step('upload', bytes) });
                 summary.pushed += result.pushed || 0;
                 if (result.stale) continue;
