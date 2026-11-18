@@ -52,7 +52,8 @@ function indexEntryFor(path, change) {
         blob: change.blob,
         sha256: change.meta.sha256,
         size: change.size,
-        docId: change.meta.docId ?? null
+        docId: change.meta.docId ?? null,
+        dev: change.device ?? change.meta.dev ?? null
     });
 }
 

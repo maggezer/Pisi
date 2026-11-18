@@ -13,7 +13,12 @@
 // sync.space.join.v1, sync.space.join-status.v1, sync.pairing.start.v1,
 // sync.pairing.status.v1, sync.pairing.confirm.v1, sync.pairing.cancel.v1,
 // sync.device.revoke.v1, sync.note.keep-disk-copy.v1, sync.run.v1,
-// sync.cancel.v1, sync.resume.v1, sync.disconnect.v1 (commands).
+// sync.cancel.v1, sync.resume.v1, sync.rejoin.v1, sync.disconnect.v1 (commands).
+// sync.rejoin.v1 is "Sunucuyla yeniden eşleş" after SERVER_ROLLBACK (protocol §7.4).
+// sync.disconnect.v1 of the last desktop (the server answers LAST_ADMIN) does not
+// leave the space behind with phones still on it: it returns LAST_ADMIN until the
+// user agrees to delete the space (`deleteSpace`); a server that cannot be reached
+// leaves the binding in place unless the user says `force`.
 // A large turn (the first upload, S6) reports its progress with `pisi:sync-status`
 // (`progress: { phase, files, bytes }`, at most every 250 ms). "Durdur"
 // (sync.cancel.v1) stops the running turn at its next file and pauses the
@@ -63,6 +68,10 @@ const PROGRESS_INTERVAL_MS = 250;
 // Reasons of the turns the user starts: they run even while sync is paused.
 const USER_REASONS = new Set(['manual', 'setup', 'resume']);
 const UNSYNCED_CODES = new Set(['FILE_TOO_LARGE', 'PATH_UNSAFE', 'PATH_COLLISION', 'LOCAL_CORRUPT']);
+// RATE_LIMITED with a longer Retry-After than the HTTP client waits inline: the turn runs again after it.
+const MAX_RETRY_AFTER_SECONDS = 300;
+// Codes after which this device cannot (or need not) tell the server it leaves.
+const LOCAL_ONLY_DISCONNECT_CODES = new Set(['DEVICE_REVOKED', 'TOKEN_INVALID', 'STATE_UNREADABLE', 'SECRETS_UNREADABLE', 'SECRET_STORAGE_UNAVAILABLE']);
 
 const runtime = {
     context: null,
@@ -75,6 +84,7 @@ const runtime = {
     lastFocusAt: 0,
     lastResult: null,
     writeTimer: null,
+    retryTimer: null,
     intervalTimer: null,
     applying: false,
     dirty: new Set(),
@@ -359,6 +369,7 @@ async function stopPisiSync(context, code) {
 
 function finishPisiSyncTurn(result) {
     runtime.progress = null;
+    if (result.code === 'RATE_LIMITED' && Number(result.retryAfter) > 0) schedulePisiSyncRetry(Number(result.retryAfter));
     runtime.lastResult = { ...result, at: new Date().toISOString() };
     sendPisiSyncEvent('pisi:sync-status', { running: false, result: summarizePisiSyncResult(result) });
     return summarizePisiSyncResult(result);
@@ -376,6 +387,19 @@ function summarizePisiSyncResult(result) {
         issues: result.issues?.length || 0,
         retryAfter: result.retryAfter ?? null
     };
+}
+
+/** The server asked to wait (`Retry-After`): one more turn after that, instead of the next interval. */
+function schedulePisiSyncRetry(seconds) {
+    clearTimeout(runtime.retryTimer);
+    runtime.retryTimer = setTimeout(
+        () => {
+            runtime.retryTimer = null;
+            void isPisiSyncClientBound().then((bound) => bound && requestPisiSyncClientTurn('retry'));
+        },
+        Math.min(seconds, MAX_RETRY_AFTER_SECONDS) * 1000
+    );
+    runtime.retryTimer.unref?.();
 }
 
 /** Runs a turn now, or once more after the running one (triggers coalesce, §3.6). */
@@ -464,6 +488,7 @@ async function getPisiSyncClientStatus() {
         stopped: state.stopped || null,
         conflicts: state.conflicts.length,
         unsynced: state.issues.filter((issue) => UNSYNCED_CODES.has(issue.code)).length,
+        unapplied: Object.keys(state.unapplied || {}).length,
         deferred: state.issues.filter((issue) => issue.code === 'DEFERRED_DIRTY').length,
         weakSecrets
     };
@@ -626,24 +651,59 @@ async function revokePisiSyncDevice(payload = {}) {
     return { ok: true };
 }
 
-async function disconnectPisiSync() {
+/**
+ * "Bu cihazın bağlantısını kaldır". The server is told first (`DELETE devices/me`).
+ * The last desktop of a space gets LAST_ADMIN: leaving would orphan the space and
+ * the phones still syncing into it, so it only goes with `deleteSpace: true`
+ * (`DELETE /v1/spaces/{space}`; the phones then get TOKEN_INVALID and say the space
+ * is gone). A server that cannot be reached keeps the binding unless `force: true`.
+ * Resolves `{ ok, left, spaceDeleted }`, or `{ ok: false, code }` (LAST_ADMIN, OFFLINE …).
+ */
+async function disconnectPisiSync(payload = {}) {
     const context = getPisiSyncContext();
-    if (!context) return { ok: true };
+    if (!context) return { ok: true, left: false, spaceDeleted: false };
     let left = false;
+    let spaceDeleted = false;
     try {
-        const { state } = await requireBoundPisiSync();
-        if (!state.stopped) {
-            await context.http.request('DELETE', `/v1/spaces/${state.spaceId}/devices/me`);
+        const bound = await requireBoundPisiSync();
+        if (LOCAL_ONLY_DISCONNECT_CODES.has(bound.state.stopped)) throw Object.assign(new Error('Sunucu bu cihazı tanımıyor.'), { code: bound.state.stopped });
+        try {
+            await bound.context.http.request('DELETE', `/v1/spaces/${bound.state.spaceId}/devices/me`);
             left = true;
+        } catch (error) {
+            if (error?.code !== 'LAST_ADMIN') throw error;
+            if (payload.deleteSpace !== true) return { ok: false, code: 'LAST_ADMIN' };
+            await bound.context.http.request('DELETE', `/v1/spaces/${bound.state.spaceId}`, { json: { confirm: bound.state.spaceId } });
+            left = true;
+            spaceDeleted = true;
         }
     } catch (error) {
-        // LAST_ADMIN, an unreachable server or a revoked device: forget the binding here anyway.
-        left = error?.code === 'DEVICE_REVOKED';
+        const code = describePisiSyncError(error).code;
+        // Revoked, unknown or unreadable here: there is nothing to tell the server.
+        if (LOCAL_ONLY_DISCONNECT_CODES.has(code) || code === 'NOT_CONFIGURED') left = code === 'DEVICE_REVOKED' || code === 'TOKEN_INVALID';
+        else if (payload.force !== true) return { ok: false, code };
     }
+    clearTimeout(runtime.retryTimer);
     await context.store.destroy();
     context.engine = null;
     runtime.paused = false;
-    return { ok: true, left };
+    return { ok: true, left, spaceDeleted };
+}
+
+/**
+ * "Sunucuyla yeniden eşleş" (docs/sync-protocol.md §7.4): a project stopped by
+ * SERVER_ROLLBACK starts over from the server's heads and keeps its files
+ * (shared/sync-recovery.mjs). Resolves the turn that follows.
+ */
+async function rejoinPisiSyncServer() {
+    const context = getPisiSyncContext();
+    if (!context) throw Object.assign(new Error('Açık proje yok.'), { code: 'NO_PROJECT' });
+    const state = await ensurePisiSyncEngine(context);
+    if (!state) return { ok: false, code: 'NOT_CONFIGURED' };
+    if (runtime.running) await runtime.running.catch(() => null);
+    const started = await context.engine.rejoin();
+    if (!started.ok) return { ok: false, code: started.code };
+    return requestPisiSyncClientTurn('manual');
 }
 
 /**
@@ -717,7 +777,10 @@ async function listPisiSyncConflicts() {
 async function listPisiSyncUnsynced() {
     const context = getPisiSyncContext();
     const state = context ? await context.store.load().catch(() => null) : null;
-    return { ok: true, files: state ? state.issues.filter((issue) => UNSYNCED_CODES.has(issue.code) || issue.code === 'DEFERRED_DIRTY') : [] };
+    if (!state) return { ok: true, files: [] };
+    // Remote changes that failed verification (SV9) stay listed until they are applied or superseded.
+    const unapplied = Object.values(state.unapplied || {}).map((entry) => ({ path: entry.path || null, code: entry.code, unapplied: true, at: entry.at }));
+    return { ok: true, files: [...state.issues.filter((issue) => UNSYNCED_CODES.has(issue.code) || issue.code === 'DEFERRED_DIRTY'), ...unapplied] };
 }
 
 // ---- Contracts and IPC --------------------------------------------------------
@@ -755,6 +818,7 @@ function installPisiSyncClientContracts() {
         },
         'sync.cancel.v1': cancelPisiSyncTurn,
         'sync.resume.v1': resumePisiSyncTurns,
+        'sync.rejoin.v1': rejoinPisiSyncServer,
         'sync.disconnect.v1': disconnectPisiSync
     };
     for (const [name, handler] of Object.entries(queries)) domain.registerPisiDomainQuery(name, wrapPisiSyncOperation(handler));

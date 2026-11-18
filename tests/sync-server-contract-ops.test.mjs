@@ -155,6 +155,47 @@ describe('senkron sunucusu: işletim ve güvenlik', { skip: SYNC_SERVER_SKIP }, 
         assert.deepEqual(expectError(assert, response, 'QUOTA_EXCEEDED').details, { scope: 'spaces' });
     });
 
+    test("bin/spaces.php alanları listeler ve sahipsiz alanı siler; silinen alanın token'ları TOKEN_INVALID alır", async () => {
+        const server = await startServer();
+        const kept = await createSpace(server);
+        const orphan = await createSpace(server);
+        const phone = await pairDevice(server, orphan);
+        await uploadBlob(server, orphan, crypto.randomBytes(500));
+        // The last desktop leaves: the server keeps the space while a phone is still on it.
+        expectError(assert, await call(server, 'DELETE', `/v1/spaces/${orphan.spaceId}/devices/me`, { token: orphan.token }), 'LAST_ADMIN');
+
+        const listed = server.runBin('spaces.php', ['list', '--json']);
+        assert.equal(listed.status, 0, listed.stderr);
+        const spaces = JSON.parse(listed.stdout).spaces;
+        assert.deepEqual(spaces.map((space) => space.spaceId).sort(), [kept.spaceId, orphan.spaceId].sort());
+        const row = spaces.find((space) => space.spaceId === orphan.spaceId);
+        assert.equal(row.admins, 1);
+        assert.equal(row.members, 1);
+        assert.ok(row.usageBytes >= 500);
+        assert.match(row.createdAt, /^\d{4}-\d{2}-\d{2}T/);
+        // The table holds no name: the server cannot read it.
+        const table = server.runBin('spaces.php', ['list']);
+        assert.equal(table.status, 0);
+        assert.ok(table.stdout.includes(orphan.spaceId) && !table.stdout.includes('Pisi Projem'));
+
+        assert.equal(server.runBin('spaces.php', ['delete', orphan.spaceId]).status, 2, 'onaysız silmez');
+        assert.equal(server.runBin('spaces.php', ['delete', orphan.spaceId, `--confirm=${kept.spaceId}`]).status, 2, 'yanlış onayla silmez');
+        assert.equal(server.runBin('spaces.php', ['delete', 'sp_kisa', '--confirm=sp_kisa']).status, 2);
+        assert.equal(server.runBin('spaces.php', ['frobnicate']).status, 2);
+        const deleted = server.runBin('spaces.php', ['delete', orphan.spaceId, `--confirm=${orphan.spaceId}`]);
+        assert.equal(deleted.status, 0, deleted.stderr);
+        assert.equal(server.runBin('spaces.php', ['delete', orphan.spaceId, `--confirm=${orphan.spaceId}`]).status, 3, 'olmayan alan');
+
+        for (const device of [orphan, phone]) expectError(assert, await call(server, 'GET', head(orphan), { token: device.token }), 'TOKEN_INVALID');
+        assert.equal((await call(server, 'GET', head(kept), { token: kept.token })).status, 200);
+        assert.equal(Number(server.sql('SELECT COUNT(*) AS n FROM devices WHERE space_id = ?', [orphan.spaceId]).rows[0].n), 0);
+        assert.ok(!fs.existsSync(path.join(server.dataDir, 'blobs', orphan.spaceId)), 'blob klasörü kaldırıldı');
+        assert.deepEqual(
+            JSON.parse(server.runBin('spaces.php', ['list', '--json']).stdout).spaces.map((space) => space.spaceId),
+            [kept.spaceId]
+        );
+    });
+
     test('server/public yalnız index.php ve .htaccess içerir; ayar, veri ve kod web kökünden okunamaz', async () => {
         assert.deepEqual(fs.readdirSync(path.join(root, 'server', 'public')).sort(), ['.htaccess', 'index.php']);
         const htaccess = fs.readFileSync(path.join(root, 'server', 'public', '.htaccess'), 'utf8');

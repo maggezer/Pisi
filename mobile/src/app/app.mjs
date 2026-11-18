@@ -189,10 +189,16 @@ export function createApp({
         snackbar.show({ message: remote === 'ok' ? i18n.t('sync.unpaired') : i18n.t('sync.unpairedOffline') });
     }
 
+    async function handleRejoin() {
+        closeOverlay();
+        const result = await sync.rejoin();
+        if (result?.ok) snackbar.show({ message: i18n.t('sync.rejoined') });
+    }
+
     // What the sync service reports: Settings is drawn again; events the user must know of become a snackbar.
     function handleSyncEvent(event) {
         if (destroyed) return;
-        if (event.type === 'revoked') snackbar.show({ message: i18n.t('sync.revokedNotice') });
+        if (event.type === 'revoked') snackbar.show({ message: i18n.t(event.code === 'TOKEN_INVALID' ? 'sync.tokenInvalidNotice' : 'sync.revokedNotice') });
         else if (event.type === 'conflict-copy') snackbar.show({ message: i18n.t('sync.conflictCopy', { count: event.count }) });
         else if (event.type === 'rollback') snackbar.show({ message: i18n.t('sync.stoppedNotice') });
         else if (event.type === 'set-aside') snackbar.show({ message: i18n.t('sync.setAside', { name: event.name }) });
@@ -280,6 +286,17 @@ export function createApp({
                 closeLabel: i18n.t('action.close'),
                 onClose: closeOverlay,
                 children: renderConflictRows({ t: i18n.t, locale: i18n.locale, conflicts: sync.getStatus().conflicts })
+            });
+        }
+        if (sync && overlay === 'sync-rejoin') {
+            return renderDialog({
+                id: 'sync-rejoin',
+                title: i18n.t('sync.rejoinTitle'),
+                message: i18n.t('sync.rejoinMessage'),
+                confirmLabel: i18n.t('sync.rejoinConfirm'),
+                cancelLabel: i18n.t('action.cancel'),
+                onConfirm: () => void handleRejoin().catch(onError),
+                onCancel: closeOverlay
             });
         }
         if (sync && overlay === 'sync-unpair') {
@@ -395,7 +412,8 @@ export function createApp({
                       onPair: () => navigate(() => router.push('sync-pair')),
                       onSyncNow: () => void sync.sync('manual'),
                       onOpenConflicts: () => router.openOverlay('sync-conflicts'),
-                      onUnpair: () => router.openOverlay('sync-unpair')
+                      onUnpair: () => router.openOverlay('sync-unpair'),
+                      onRejoin: () => router.openOverlay('sync-rejoin')
                   }
                 : null
         });

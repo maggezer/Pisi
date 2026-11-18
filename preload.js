@@ -229,7 +229,10 @@ contextBridge.exposeInMainWorld('pisiSyncClient', {
     // "Durdur" / "Sürdür" of a large turn (docs/sync-plan.md S6).
     cancel: () => invokePisiDomainCommand('sync.cancel.v1', {}),
     resume: () => invokePisiDomainCommand('sync.resume.v1', {}),
-    disconnect: () => invokePisiDomainCommand('sync.disconnect.v1', {}),
+    // The last desktop leaves only with `deleteSpace`; an unreachable server only with `force`.
+    disconnect: (options = {}) => invokePisiDomainCommand('sync.disconnect.v1', { deleteSpace: options?.deleteSpace === true, force: options?.force === true }),
+    // "Sunucuyla yeniden eşleş" after SERVER_ROLLBACK (docs/sync-protocol.md §7.4).
+    rejoin: () => invokePisiDomainCommand('sync.rejoin.v1', {}),
     onApplied: (callback) => onPisiSyncEvent('pisi:sync-applied', callback),
     onStatus: (callback) => onPisiSyncEvent('pisi:sync-status', callback),
     // `handler()` writes pending saves and resolves { ok, dirtyPaths } (rule SV4).

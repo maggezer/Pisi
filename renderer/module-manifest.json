@@ -478,6 +478,8 @@
             "describePisiSyncCode",
             "formatPisiSyncProgress",
             "refreshPisiSyncPanel",
+            "rejoinPisiSyncFromPanel",
+            "disconnectPisiSyncFromPanel",
             "renderPisiSyncPanel",
             "initializePisiSyncPanel"
         ]

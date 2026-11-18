@@ -1,7 +1,12 @@
 #!/usr/bin/env node
 // Pisi Sync: a smoke test against a real hosting (docs/sync-plan.md S7 step 2).
 //
-//   PISI_SYNC_SETUP_KEY=… npm run sync:smoke -- --server https://sunucu.ornek/pisi
+//   macOS / Linux:       PISI_SYNC_SETUP_KEY=… npm run sync:smoke -- --server https://sunucu.ornek/pisi
+//   Windows PowerShell:  $env:PISI_SYNC_SETUP_KEY="…"; npm run sync:smoke -- --server https://sunucu.ornek/pisi
+//   Windows cmd:         set "PISI_SYNC_SETUP_KEY=…" && npm run sync:smoke -- --server https://sunucu.ornek/pisi
+//
+// From a checkout of the repository after `npm ci --ignore-scripts` (Node 24); the
+// Electron binary and the mobile package are not needed. docs/sync-server-cpanel.md §11.2.
 //
 // Run on your own computer. It opens a temporary space with the setup key, pairs a
 // desktop (the desktop app's sync engine) and a phone (Pisi Mobil's data layer and
@@ -52,7 +57,9 @@ function redact(text) {
 const say = (line) => console.log(redact(line));
 
 if (!serverUrl || !setupKey) {
-    say('Kullanım: PISI_SYNC_SETUP_KEY=<kurulum anahtarı> npm run sync:smoke -- --server https://<sunucu>/<yol>');
+    say('Kullanım (macOS, Linux):    PISI_SYNC_SETUP_KEY=<kurulum anahtarı> npm run sync:smoke -- --server https://<sunucu>/<yol>');
+    say('Kullanım (Windows PowerShell): $env:PISI_SYNC_SETUP_KEY="<kurulum anahtarı>"; npm run sync:smoke -- --server https://<sunucu>/<yol>');
+    say('Kullanım (Windows cmd):     set "PISI_SYNC_SETUP_KEY=<kurulum anahtarı>" && npm run sync:smoke -- --server https://<sunucu>/<yol>');
     say('Kurulum anahtarı yalnız ortam değişkeninden okunur; hiçbir yere yazılmaz.');
     process.exit(2);
 }

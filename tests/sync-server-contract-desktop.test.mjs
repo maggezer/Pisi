@@ -8,7 +8,7 @@ import { after, before, describe, test } from 'node:test';
 import { startSyncTestServer } from '../scripts/start-sync-test-server.mjs';
 import { SYNC_SERVER_SKIP } from './sync-server-client.mjs';
 import { createSpaceFor, createTestDevice, joinWithCode, nodeDoc } from './sync-client-device.mjs';
-import { restoreSpace, snapshotSpace } from '../scripts/sync-e2e/server-tools.mjs';
+import { corruptBlob, restoreSpace, snapshotSpace } from '../scripts/sync-e2e/server-tools.mjs';
 
 const NOTE = 'Toplantı Notları.node';
 const NOTE_ID = 'node_11111111-2222-4333-8444-555555555555';
@@ -246,6 +246,71 @@ describe('masaüstü senkron istemcisi', { skip: SYNC_SERVER_SKIP }, () => {
         assert.equal(result.code, 'SERVER_ROLLBACK');
         assert.deepEqual(a.list(), files);
         assert.equal((await a.store.load()).stopped, 'SERVER_ROLLBACK');
+    });
+
+    test('"Sunucuyla yeniden eşleş": iki masaüstü yedeğe dönen sunucuya yedekten sonraki değişikliklerini kaybetmeden döner', async () => {
+        const { a, b } = await pairOfDesktops(server);
+        snapshotSpace(server, a.spaceId);
+        // After the backup: A changes a block and adds a note, B pulls them and changes another block.
+        const docA = a.readJson(NOTE);
+        docA.content = docA.content.replace('Birinci gizli paragraf', 'Birinci, yedekten sonra A');
+        a.write(NOTE, docA);
+        a.write('Sonra.node', nodeDoc('node_ffffffff-2222-4333-8444-555555555555', 'Sonra', [['s', 'yedekten sonra açıldı']]));
+        assert.equal((await a.sync()).ok, true);
+        assert.equal((await b.sync()).ok, true);
+        const docB = b.readJson(NOTE);
+        docB.content = docB.content.replace('Üçüncü paragraf', 'Üçüncü, yedekten sonra B');
+        b.write(NOTE, docB);
+        assert.equal((await b.sync()).ok, true);
+        assert.equal((await a.sync()).ok, true);
+
+        restoreSpace(server, a.spaceId);
+        assert.equal((await a.sync()).code, 'SERVER_ROLLBACK');
+        assert.equal((await b.sync()).code, 'SERVER_ROLLBACK');
+        // Only a stopped device rejoins.
+        assert.deepEqual(await createTestDevice(server).engine.rejoin(), { ok: false, code: 'NOT_CONFIGURED' });
+
+        assert.deepEqual(await a.engine.rejoin(), { ok: true, code: null });
+        const rejoined = await a.sync();
+        assert.equal(rejoined.ok, true, JSON.stringify(rejoined));
+        assert.equal((await a.store.load()).stopped, null);
+        assert.deepEqual(await b.engine.rejoin(), { ok: true, code: null });
+        assert.equal((await b.sync()).ok, true);
+        assert.equal((await a.sync()).ok, true);
+
+        for (const device of [a, b]) {
+            assert.match(device.read(NOTE), /Birinci, yedekten sonra A/);
+            assert.match(device.read(NOTE), /Üçüncü, yedekten sonra B/);
+            assert.match(device.read('Sonra.node'), /yedekten sonra açıldı/);
+            assert.ok(!device.list().some((file) => /çakışma/i.test(file)), 'çakışma kopyası yok');
+        }
+        assert.deepEqual(b.list(), a.list());
+        for (const file of a.list()) assert.equal(b.read(file), a.read(file), file);
+        // The server holds the rejoined project again: a fresh device gets the same files.
+        const c = createTestDevice(server, { name: 'Masaüstü C' });
+        await joinWithCode(server, a, c);
+        assert.equal((await c.sync()).ok, true);
+        for (const file of a.list()) assert.equal(c.read(file), a.read(file), file);
+    });
+
+    test('doğrulanamayan değişiklik listede kalır ve "Şimdi eşitle" onarılan blob ile uygular', async () => {
+        const { a, b } = await pairOfDesktops(server);
+        a.write('Bozuk.node', nodeDoc('node_abababab-2222-4333-8444-555555555555', 'Bozuk', [['k', 'onarılacak metin']]));
+        assert.equal((await a.sync()).ok, true);
+        const [head] = server.sql('SELECT blob_id FROM heads WHERE space_id = ? ORDER BY seq DESC LIMIT 1', [a.spaceId]).rows;
+        const repair = corruptBlob(server, a.spaceId, String(head.blob_id));
+        const pulled = await b.sync();
+        assert.equal(pulled.ok, true, JSON.stringify(pulled));
+        assert.equal(b.read('Bozuk.node'), null);
+        const [entry] = Object.values((await b.store.load()).unapplied);
+        assert.equal(entry.path, 'Bozuk.node');
+        assert.ok(['DECRYPT_FAILED', 'HASH_MISMATCH_LOCAL'].includes(entry.code), entry.code);
+        repair();
+        assert.equal((await b.sync('interval')).ok, true);
+        assert.equal(b.read('Bozuk.node'), null, 'otomatik tur hemen yeniden denemez');
+        assert.equal((await b.sync('manual')).ok, true);
+        assert.match(b.read('Bozuk.node'), /onarılacak metin/);
+        assert.deepEqual((await b.store.load()).unapplied, {});
     });
 
     test('budanmış imleç (CURSOR_EXPIRED) tam karşılaştırmayla toparlanır', async () => {

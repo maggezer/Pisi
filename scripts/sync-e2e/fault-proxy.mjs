@@ -1,7 +1,9 @@
 // A forwarding proxy between the sync clients of scripts/sync-e2e-matrix.mjs and the
 // PHP test server (docs/sync-plan.md S7). Every request is logged; a rule can drop a
 // request before it reaches the server ("the connection broke while sending") or
-// after the server has answered ("the answer was lost"), for one client or both.
+// after the server has answered ("the answer was lost"), or answer it in the server's
+// place with an error of the protocol (`limit`: 429 RATE_LIMITED with Retry-After),
+// for one client or both.
 // The phone's requests carry `x-pisi-e2e-client: phone` (added by its Playwright
 // route); the header is removed before the request goes on to the server.
 
@@ -14,7 +16,7 @@ const RESPONSE_SKIP = new Set(['connection', 'content-length', 'content-encoding
  * @param {string} targetBaseUrl the test server, e.g. `http://127.0.0.1:1234`
  */
 export async function startFaultProxy(targetBaseUrl) {
-    /** @type {{ client?: string, method?: string, path: RegExp, when: 'before' | 'after', skip: number, times: number, hits: number }[]} */
+    /** @type {{ client?: string, method?: string, path: RegExp, when: 'before' | 'after' | 'respond', skip: number, times: number, hits: number, status?: number, code?: string, retryAfter?: number }[]} */
     const rules = [];
     /** @type {{ client: string, method: string, path: string, status: number | null, fault: string | null, at: number }[]} */
     const log = [];
@@ -39,6 +41,23 @@ export async function startFaultProxy(targetBaseUrl) {
         if (rule && rule.skip > 0) {
             rule.skip -= 1;
             rule = undefined;
+        }
+        if (rule?.when === 'respond') {
+            // The server's own error shape (docs/sync-protocol.md §9.1), without asking it.
+            rule.times -= 1;
+            rule.hits += 1;
+            entry.fault = 'respond';
+            entry.status = rule.status;
+            const payload = Buffer.from(
+                JSON.stringify({ error: { code: rule.code, message: rule.code, retryable: true, details: { retryAfter: rule.retryAfter } } })
+            );
+            res.writeHead(rule.status, {
+                'content-type': 'application/json',
+                'retry-after': String(rule.retryAfter),
+                'content-length': String(payload.length)
+            });
+            res.end(payload);
+            return;
         }
         if (rule?.when === 'before') {
             rule.times -= 1;
@@ -103,6 +122,27 @@ export async function startFaultProxy(targetBaseUrl) {
          */
         fail({ client = undefined, method = undefined, path, when = 'before', times = 1, skip = 0 }) {
             const rule = { client, method, path, when, skip, times, hits: 0 };
+            rules.push(rule);
+            return rule;
+        },
+        /**
+         * Answers matching requests `times` times with 429 RATE_LIMITED and `Retry-After: retryAfter`
+         * instead of passing them on (the server's per-device limit, protocol §9.4).
+         * @param {{ client?: string, method?: string, path: RegExp, retryAfter: number, times?: number }} rule
+         */
+        limit({ client = undefined, method = undefined, path, retryAfter, times = 1 }) {
+            const rule = {
+                client,
+                method,
+                path,
+                when: /** @type {const} */ ('respond'),
+                skip: 0,
+                times,
+                hits: 0,
+                status: 429,
+                code: 'RATE_LIMITED',
+                retryAfter
+            };
             rules.push(rule);
             return rule;
         },

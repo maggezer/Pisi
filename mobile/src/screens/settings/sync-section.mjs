@@ -1,6 +1,8 @@
 // Settings → Sync (docs/sync-plan.md S5 step 4): pairing when the phone is not
 // bound; otherwise the project it is bound to, the state of the last turn,
-// "Sync now", the conflict log and "Remove this device". The status comes from
+// "Sync now", the conflict log and "Remove this device". After SERVER_ROLLBACK
+// "Sync now" gives way to "Sunucuyla yeniden eşleş"; remote changes that failed
+// verification (SV9) are listed under the rows. The status comes from
 // sync/sync-service.mjs; this file only draws it.
 
 import { h } from '../../ui/dom.mjs';
@@ -37,15 +39,34 @@ function renderProgressRow({ t, locale, progress }) {
 
 const deferredCount = (status) => (status.issues || []).filter((issue) => issue.code === 'DEFERRED_DIRTY').length;
 
-export function renderSyncSection({ t, locale, status, onPair, onSyncNow, onOpenConflicts, onUnpair }) {
+/** The rows of remote changes that were not applied (SV9): the file, or "unknown file", and why. */
+function renderUnappliedList({ t, unapplied }) {
+    return renderList({
+        label: t('sync.unapplied'),
+        rows: unapplied.map((entry) =>
+            renderListRow({
+                title: entry.path || t('sync.unappliedUnknown'),
+                meta: t(`sync.unappliedCode.${entry.code}`),
+                dataset: { sync: 'unapplied', code: entry.code }
+            })
+        )
+    });
+}
+
+/** The notice of a phone the server no longer knows: revoked by the desktop, or its space deleted. */
+function unboundNotice(t, code) {
+    if (code === 'DEVICE_REVOKED') return h('p', { class: 'pisi-notice', role: 'status', dataset: { sync: 'revoked' } }, t('sync.revokedNotice'));
+    if (code === 'TOKEN_INVALID') return h('p', { class: 'pisi-notice', role: 'status', dataset: { sync: 'token-invalid' } }, t('sync.tokenInvalidNotice'));
+    return null;
+}
+
+export function renderSyncSection({ t, locale, status, onPair, onSyncNow, onOpenConflicts, onUnpair, onRejoin = null }) {
     const title = h('h2', { class: 'pisi-section-title' }, t('settings.sync'));
     if (status.state === 'unpaired' || status.state === 'unreadable') {
         const notice =
             status.state === 'unreadable'
                 ? h('p', { class: 'pisi-notice', role: 'alert', dataset: { sync: 'unreadable' } }, t('sync.unreadable'))
-                : status.code === 'DEVICE_REVOKED'
-                  ? h('p', { class: 'pisi-notice', role: 'status', dataset: { sync: 'revoked' } }, t('sync.revokedNotice'))
-                  : null;
+                : unboundNotice(t, status.code);
         const rows = [
             status.state === 'unreadable'
                 ? renderListRow({ title: t('sync.unpair'), dataset: { sync: 'unpair' }, onClick: onUnpair })
@@ -55,6 +76,8 @@ export function renderSyncSection({ t, locale, status, onPair, onSyncNow, onOpen
     }
 
     const waiting = deferredCount(status);
+    const rolledBack = status.state === 'stopped' && status.code === 'SERVER_ROLLBACK';
+    const unapplied = status.unapplied || [];
     const rows = [
         renderListRow({ title: t('sync.space'), value: status.spaceName || t('project.defaultName'), dataset: { sync: 'space' } }),
         renderListRow({
@@ -69,9 +92,11 @@ export function renderSyncSection({ t, locale, status, onPair, onSyncNow, onOpen
             value: status.lastRun ? formatSyncTime(status.lastRun.at, locale) : t('sync.never'),
             dataset: { sync: 'last-run' }
         }),
-        status.state === 'stopped'
-            ? null
-            : renderListRow({ title: t('sync.syncNow'), dataset: { sync: 'sync-now' }, onClick: status.running ? null : onSyncNow }),
+        rolledBack
+            ? renderListRow({ title: t('sync.rejoin'), meta: t('sync.rejoinNote'), dataset: { sync: 'rejoin', setting: 'sync-rejoin' }, onClick: onRejoin })
+            : status.state === 'stopped'
+              ? null
+              : renderListRow({ title: t('sync.syncNow'), dataset: { sync: 'sync-now' }, onClick: status.running ? null : onSyncNow }),
         renderListRow({
             title: t('sync.conflicts'),
             value: String(status.conflicts.length),
@@ -82,7 +107,16 @@ export function renderSyncSection({ t, locale, status, onPair, onSyncNow, onOpen
         renderListRow({ title: t('sync.unpair'), dataset: { sync: 'unpair', setting: 'sync-unpair' }, onClick: onUnpair })
     ].filter(Boolean);
     const notice = status.state === 'stopped' ? h('p', { class: 'pisi-notice', role: 'alert', dataset: { sync: 'stopped' } }, t('sync.stoppedNotice')) : null;
-    return [title, notice, renderList({ label: t('settings.sync'), rows })].filter(Boolean);
+    const unappliedNotice = unapplied.length
+        ? h('p', { class: 'pisi-notice', role: 'status', dataset: { sync: 'unapplied-notice' } }, t('sync.unappliedNotice', { count: unapplied.length }))
+        : null;
+    return [
+        title,
+        notice,
+        renderList({ label: t('settings.sync'), rows }),
+        unappliedNotice,
+        unapplied.length ? renderUnappliedList({ t, unapplied }) : null
+    ].filter(Boolean);
 }
 
 /** The rows of the conflict log sheet, newest first. */

@@ -303,7 +303,18 @@ export function createFakeSyncServer({ setupKey = 'kurulum-anahtari', now = () =
             const target = match[1] === 'me' ? device : space.devices.get(match[1]);
             if (!target) throw new HttpError(404, 'NOT_FOUND');
             if (target !== device) requireAdmin(device);
+            // The last active admin cannot leave (protocol §6.5).
+            const admins = [...space.devices.values()].filter((other) => other.role === 'admin' && !other.revokedAt);
+            if (!target.revokedAt && target.role === 'admin' && admins.length === 1) throw new HttpError(409, 'LAST_ADMIN');
             target.revokedAt = target.revokedAt || iso();
+            return [204, null];
+        }
+        if (method === 'DELETE' && rest === '') {
+            // Deleting the whole space (§6.2): its tokens get TOKEN_INVALID from now on.
+            requireAdmin(device);
+            if (body.confirm !== space.spaceId) throw new HttpError(400, 'INVALID_FIELD', { field: 'confirm' });
+            for (const member of space.devices.values()) devicesByToken.delete(member.tokenHash);
+            spaces.delete(space.spaceId);
             return [204, null];
         }
         if (method === 'POST' && rest === '/pairings') {

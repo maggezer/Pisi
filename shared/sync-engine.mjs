@@ -16,7 +16,9 @@
 //
 // The engine never writes a file whose remote change failed verification (SV9),
 // never sends or overwrites a corrupt local JSON file (SV10) and only advances
-// the cursor after the turn's remote changes were applied or set aside.
+// the cursor after the turn's remote changes were applied or set aside. A change
+// that failed verification is kept in `state.unapplied` and tried again with a
+// full compare; `rejoin()` starts over after SERVER_ROLLBACK (sync-recovery.mjs).
 
 import { computePisiSyncFid, openPisiSyncEnvelope, openPisiSyncSpaceKeys, sha256Hex, getPisiSyncSealedSize } from './sync-crypto.mjs';
 import { readPisiSyncChangeMeta, verifyPisiSyncBlobContent } from './sync-meta.mjs';
@@ -24,6 +26,15 @@ import { checkPisiSyncPath, getPisiSyncFileClass, getPisiSyncPathKey, isPisiSync
 import { checkPisiSyncRemoteOrder, reconcilePisiSyncTurn } from './sync-reconcile.mjs';
 import { parsePisiSyncJsonBytes, preparePisiSyncActions } from './sync-actions.mjs';
 import { createPisiSyncPusher, PisiSyncCancelledError } from './sync-engine-push.mjs';
+import {
+    isPisiSyncRollbackInHeads,
+    markPisiSyncKnownReplays,
+    preparePisiSyncRejoin,
+    settlePisiSyncRejoin,
+    shouldMakePisiSyncFullCheck,
+    shouldRetryPisiSyncUnapplied,
+    updatePisiSyncUnapplied
+} from './sync-recovery.mjs';
 import {
     getPisiSyncActionDownloadSize,
     getPisiSyncLocalDate,
@@ -140,16 +151,16 @@ export function createPisiSyncEngine({
      * nothing yet (cursor 0) and one whose cursor was pruned (CURSOR_EXPIRED)
      * take every head instead, then the changes after the heads' `asOfSeq`.
      */
-    async function pull(state, keys) {
+    async function pull(state, keys, { full: wantFull = false } = {}) {
         const limits = limitsOf(state);
         const { data: headData } = await http.get(`/v1/spaces/${state.spaceId}/head`);
         // Below the cursor, or below a seq the server gave this device's own commit (§7.4).
         const known = Math.max(state.cursor, Number.isSafeInteger(state.knownSeq) ? state.knownSeq : 0);
         if (headData.head < known) return { ok: false, code: 'SERVER_ROLLBACK' };
-        if (headData.head === state.cursor) return { ok: true, remote: [], cursor: state.cursor, lastDseq: state.lastDseq };
+        if (headData.head === state.cursor && !wantFull) return { ok: true, remote: [], cursor: state.cursor, lastDseq: state.lastDseq, full: false };
         let full = null;
         let later = null;
-        if (state.cursor === 0) full = await pageHeads(state.spaceId, limits.maxHeadsPage);
+        if (state.cursor === 0 || wantFull) full = await pageHeads(state.spaceId, limits.maxHeadsPage);
         else {
             try {
                 later = await pageChanges(state.spaceId, state.cursor, limits.maxChangesPage);
@@ -161,6 +172,8 @@ export function createPisiSyncEngine({
         let heads = [];
         let lastDseq = state.lastDseq;
         if (full) {
+            // A head below what this device synced: the server went back further than the cursor shows (§7.4).
+            if (isPisiSyncRollbackInHeads({ index: state.index, heads: full.rows })) return { ok: false, code: 'SERVER_ROLLBACK' };
             heads = await openRows(full.rows, keys);
             const headCheck = checkPisiSyncRemoteOrder({ cursor: state.cursor, head: full.asOfSeq, changes: heads, heads: true });
             if (!headCheck.ok) return { ok: false, code: headCheck.code };
@@ -173,7 +186,14 @@ export function createPisiSyncEngine({
         const rejected = new Set(order.rejected.map((entry) => entry.seq));
         const remote = changes.map((change) => (rejected.has(change.seq) ? { ...change, invalid: 'SERVER_REPLAY' } : change));
         remote.unshift(...heads);
-        return { ok: true, remote, cursor: later.head, lastDseq: order.lastDseq, full: Boolean(full) };
+        // A full compare does not check dseq: replays refused before stay refused.
+        return {
+            ok: true,
+            remote: full ? markPisiSyncKnownReplays(remote, state.unapplied) : remote,
+            cursor: later.head,
+            lastDseq: order.lastDseq,
+            full: Boolean(full)
+        };
     }
 
     /** Scan of the project with the hash cache of the state. */
@@ -319,6 +339,10 @@ export function createPisiSyncEngine({
             if (cancelled || options.signal?.aborted) throw new PisiSyncCancelledError();
         };
         const progress = makeProgress(options.reason || 'manual', options.onProgress);
+        // Unapplied changes (SV9) are looked for again in every head, now and then.
+        let retryUnapplied = shouldRetryPisiSyncUnapplied({ unapplied: state.unapplied, triedAt: state.unappliedTriedAt, now: now(), reason: options.reason });
+        // …and every head is compared with the index at least once a day (sync-recovery.mjs).
+        let fullCheck = shouldMakePisiSyncFullCheck({ cursor: state.cursor, checkedAt: state.fullCheckAt, now: now() });
         try {
             const resent = await pusher.sendPendingCommit(state);
             if (!resent.ok && !resent.stale) return { ...summary, ok: false, code: resent.code };
@@ -327,11 +351,26 @@ export function createPisiSyncEngine({
                 summary.rounds = round + 1;
                 checkpoint();
                 const firstDownload = state.cursor === 0 && !Object.keys(state.index).length;
-                const pulled = await pull(state, keys);
+                const pulled = await pull(state, keys, { full: retryUnapplied || fullCheck });
                 if (!pulled.ok) {
                     state.stopped = pulled.code;
                     await store.save(state);
                     return { ...summary, ok: false, code: pulled.code };
+                }
+                if (retryUnapplied) {
+                    state.unappliedTriedAt = now().toISOString();
+                    retryUnapplied = false;
+                }
+                if (pulled.full) {
+                    state.fullCheckAt = now().toISOString();
+                    fullCheck = false;
+                }
+                // "Sunucuyla yeniden eşleş": what the device synced before is settled against the heads (sync-recovery.mjs).
+                if (state.rejoin && pulled.full) {
+                    const settled = settlePisiSyncRejoin({ rejoin: state.rejoin, deviceId: state.deviceId, remote: pulled.remote });
+                    for (const fid of settled.dropBases) await store.removeBase(fid);
+                    state.index = settled.index;
+                    delete state.rejoin;
                 }
                 const pending = await openRows(state.pendingRemote || [], keys);
                 const combined = combineRemote(pending, pulled.remote);
@@ -371,6 +410,7 @@ export function createPisiSyncEngine({
                 const takenKeys = new Set(localPaths.keys());
                 const deferred = [];
                 const pushes = [];
+                const roundIssues = [];
                 for (const batch of batches) {
                     checkpoint();
                     const plainCache = new Map();
@@ -429,6 +469,7 @@ export function createPisiSyncEngine({
                         }
                     }
                     summary.issues.push(...prepared.issues);
+                    roundIssues.push(...prepared.issues);
                     summary.conflicts.push(...prepared.conflicts);
                     state.conflicts.push(...prepared.conflicts);
                     // What a batch wrote is in the index before the next one, so an interrupted turn does not fetch it again.
@@ -439,6 +480,16 @@ export function createPisiSyncEngine({
                 }
                 state.hashCache = scanned.cache;
                 state.pendingRemote = deferred.filter((row) => row && !UNVERIFIABLE.has(row.invalid)).map((row) => row.raw || row);
+                const hadUnapplied = Object.keys(state.unapplied || {}).length > 0;
+                state.unapplied = updatePisiSyncUnapplied({
+                    previous: state.unapplied,
+                    full: pulled.full,
+                    remote,
+                    issues: roundIssues,
+                    at: now().toISOString()
+                });
+                // The first automatic retry waits its interval too.
+                if (!hadUnapplied && Object.keys(state.unapplied).length) state.unappliedTriedAt = now().toISOString();
                 state.cursor = pulled.cursor;
                 state.lastDseq = pulled.lastDseq;
                 await store.save(state);
@@ -498,7 +549,25 @@ export function createPisiSyncEngine({
         }
     }
 
+    /**
+     * "Sunucuyla yeniden eşleş" (docs/sync-protocol.md §7.4): a state stopped by
+     * SERVER_ROLLBACK starts over from the server's heads on its next turn; what
+     * the device synced before decides how each file merges (sync-recovery.mjs).
+     * Resolves `{ ok, code }`; NOT_CONFIGURED or NOT_STOPPED (no rollback to recover from).
+     */
+    async function rejoin() {
+        if (running) await running.catch(() => null);
+        const state = await store.load();
+        if (!state) return { ok: false, code: 'NOT_CONFIGURED' };
+        if (state.stopped !== 'SERVER_ROLLBACK') return { ok: false, code: 'NOT_STOPPED' };
+        const prepared = preparePisiSyncRejoin(state, { at: now().toISOString() });
+        for (const key of prepared.pendingBases) await store.removeBase(key);
+        await store.save(prepared.state);
+        return { ok: true, code: null };
+    }
+
     return {
+        rejoin,
         /** Runs one turn; concurrent calls share the running turn. `options`: `{ reason, signal, onProgress }`. */
         runTurn(options) {
             if (!running) {
