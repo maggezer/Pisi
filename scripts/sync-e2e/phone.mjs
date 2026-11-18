@@ -75,6 +75,10 @@ export async function startPhone({ proxy, timezoneId }) {
     const browser = await chromium.launch();
     const context = await browser.newContext({ ...devices['Pixel 7'], locale: 'tr-TR', timezoneId, baseURL: preview.url });
     const page = await context.newPage();
+    // PISI_SYNC_MATRIX_PHONE_SLOWDOWN=4 runs the phone's page four times slower (CDP CPU throttling),
+    // to bring out timing races locally that a slow CI machine shows.
+    const slowdown = Number(process.env.PISI_SYNC_MATRIX_PHONE_SLOWDOWN || 0);
+    if (slowdown > 1) await (await context.newCDPSession(page)).send('Emulation.setCPUThrottlingRate', { rate: slowdown });
     const errors = [];
     page.on('pageerror', (error) => errors.push(String(error?.stack || error)));
     let inFlight = 0;
@@ -205,9 +209,7 @@ export async function startPhone({ proxy, timezoneId }) {
         },
         async openNote(key) {
             await phone.openFromMenu('notes');
-            const row = page.locator(`[data-note="${key.replace(/"/g, '\\"')}"]`);
-            await row.scrollIntoViewIfNeeded();
-            await row.tap();
+            await phone.tap(page.locator(`[data-note="${key.replace(/"/g, '\\"')}"]`));
             await until('not ekranı', async () => (await screenName()) === 'note');
             await page.locator('.pisi-note-editor > .pisi-note-block').first().waitFor();
         },
@@ -218,6 +220,20 @@ export async function startPhone({ proxy, timezoneId }) {
             await page.keyboard.press('End');
             await page.keyboard.type(text);
         },
+        /**
+         * Taps a row of a list that a sync change can draw again at any moment (notes, tasks): the
+         * tap scrolls to it and finds it again; if it went away under the tap, it is tried again.
+         */
+        async tap(locator) {
+            for (let attempt = 1; ; attempt += 1) {
+                try {
+                    return await locator.tap({ timeout: 5000 });
+                } catch (error) {
+                    if (attempt >= 5) throw error;
+                    await sleep(200);
+                }
+            }
+        },
         statusRow: () => page.locator('[data-sync="status"]'),
         async openSettings() {
             if ((await screenName()) !== 'settings') await phone.openFromMenu('settings');
@@ -225,13 +241,22 @@ export async function startPhone({ proxy, timezoneId }) {
         /** Settings → "Şimdi eşitle"; waits until the turn has talked to the server and ended. Resolves with the status row. */
         async syncNow(label = 'tur') {
             await phone.openSettings();
-            // "Şimdi eşitle" does nothing while a turn runs: wait for the running one first.
-            await until(`${label}: süren tur`, async () => inFlight === 0 && (await phone.statusRow().getAttribute('data-state')) !== 'running', 120000);
-            const mark = proxy.log.length;
             const syncNow = page.locator('[data-sync="sync-now"]');
-            await syncNow.scrollIntoViewIfNeeded();
-            await syncNow.tap();
-            return phone.settle(label, mark);
+            // Settings is drawn again on every status change, so an automatic turn (the phone's own
+            // "3 s after the last write" trigger) can replace the row while it is being tapped. "Şimdi
+            // eşitle" also does nothing while a turn runs. So: wait for the running turn, tap (the tap
+            // scrolls and finds the row again), and try again if the row went away under the tap.
+            for (let attempt = 1; ; attempt += 1) {
+                await until(`${label}: süren tur`, async () => inFlight === 0 && (await phone.statusRow().getAttribute('data-state')) !== 'running', 120000);
+                const mark = proxy.log.length;
+                try {
+                    await syncNow.tap({ timeout: 5000 });
+                } catch (error) {
+                    if (attempt >= 5) throw error;
+                    continue;
+                }
+                return phone.settle(label, mark);
+            }
         },
         /** Waits for the phone's turn that started after proxy log index `mark` to end. */
         async settle(label, mark) {

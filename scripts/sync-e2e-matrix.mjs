@@ -299,8 +299,7 @@ try {
         await phone.openFromMenu('tasks');
         await phone.page.locator('[data-view="inbox"]').tap();
         const box = phone.page.getByRole('checkbox', { name: 'Tamamla: Matris görevi' });
-        await box.scrollIntoViewIfNeeded();
-        await box.tap();
+        await phone.tap(box);
         await phone.until(
             '3: telefonda tamamlandı',
             async () => (await phone.readJson('.pisi/tasks.json')).tasks.find((task) => task.id === id)?.status === 'done'
