@@ -7,8 +7,9 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        // The repo's own plugin (Pisi Sync secrets in the Android Keystore) is registered before the bridge starts.
+        // The repo's own plugins (Pisi Sync secrets in the Android Keystore, opening attachments) are registered before the bridge starts.
         registerPlugin(PisiSecretsPlugin.class);
+        registerPlugin(PisiFilesPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

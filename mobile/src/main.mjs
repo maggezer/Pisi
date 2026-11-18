@@ -4,6 +4,7 @@ import { addSampleMap } from './data/sample-map.mjs';
 import { loadSampleProject } from './data/sample-project.mjs';
 import { createCapacitorFsDriver } from './platform/capacitor-fs-driver.mjs';
 import { createCapacitorPlatform } from './platform/capacitor-platform.mjs';
+import { createFileOpener } from './platform/file-opener.mjs';
 import { createQrScanner } from './platform/qr-scanner.mjs';
 import { createSecrets } from './platform/secrets.mjs';
 import { createSyncCodec } from './sync/codec.mjs';
@@ -38,9 +39,11 @@ if (import.meta.env.DEV && new URLSearchParams(window.location.search).has('gall
     const developer = import.meta.env.DEV || import.meta.env.VITE_PISI_DEVELOPER === '1';
     const project = createProject({ driver: createCapacitorFsDriver(), makeUuid: () => window.crypto.randomUUID(), onError });
     // Debug builds only: a stand-in for another device, so tests can change files "from outside" (docs/sync-plan.md S4).
+    const fileOpener = createFileOpener();
     if (developer) {
         void import('./data/external-source.mjs').then(({ createExternalSource }) => {
-            window.pisiDeveloper = Object.freeze({ external: createExternalSource(project) });
+            // `openedFiles()`: the attachments a browser build was asked to open (nothing opens there, S6).
+            window.pisiDeveloper = Object.freeze({ external: createExternalSource(project), openedFiles: () => [...(fileOpener.opened ?? [])] });
         });
     }
     const platform = createCapacitorPlatform();
@@ -50,6 +53,8 @@ if (import.meta.env.DEV && new URLSearchParams(window.location.search).has('gall
     const sync = createSyncService({
         project,
         stateDriver: createCapacitorFsDriver({ root: 'sync' }),
+        // The folder of the project folders: a project set aside at the first pairing goes next to it (S6).
+        projectsDriver: createCapacitorFsDriver({ root: 'projects' }),
         secrets: createSecrets(),
         subtle: window.crypto.subtle,
         random: (length) => window.crypto.getRandomValues(new Uint8Array(length)),
@@ -68,6 +73,7 @@ if (import.meta.env.DEV && new URLSearchParams(window.location.search).has('gall
         platform,
         sync,
         qrScanner: createQrScanner(),
+        fileOpener,
         project,
         loadSample: developer ? loadSampleProject : null,
         loadSampleMap: developer ? addSampleMap : null,

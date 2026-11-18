@@ -175,3 +175,14 @@
     margin: 0;
     font-size: 13px;
 }
+
+/* A large turn's progress (the first upload, S6). */
+.pisi-sync-progress {
+    width: 100%;
+    height: 6px;
+    accent-color: var(--pisi-theme-accent, #e67e22);
+}
+
+.pisi-sync-progress[hidden] {
+    display: none;
+}

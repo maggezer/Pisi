@@ -17,6 +17,9 @@ import { PisiReadOnlyError, parseJsonText, readTextOrNull } from './json-file.mj
 // `mobile-` part keeps recovery away from temporary files it did not create.
 const TEMP_NAME = /^\.(.+)\.mobile-[A-Za-z0-9-]+\.tmp$/;
 
+// Sidecar folders of attachments (image/, file/, paint/): their files are binary.
+const BINARY_FOLDERS = new Set(['image', 'file', 'paint']);
+
 const isJsonTarget = (name) => /\.(json|node|map)$/i.test(name);
 const isDocument = (name) => /\.(node|map)$/i.test(name);
 
@@ -180,6 +183,43 @@ export function createProjectWriter({ driver, makeToken, documents = null, onErr
         },
 
         /**
+         * A binary file from outside the app: an attachment downloaded when it
+         * was opened (docs/sync-plan.md S6 step 4). `base64` is its bytes. The
+         * same queue, temporary file and rename as text; the bytes are read back
+         * and compared afterwards. A JSON attachment (a Sheet's model) comes with
+         * its `text` too, which must parse. Only a file that is missing is written (an attachment's
+         * name is its content's digest, so one that exists is already right).
+         * Resolves with `{ written, key, reason? }`.
+         */
+        applyExternalBytes(key, base64, { text = null } = {}) {
+            const clean = normalizeKey(key);
+            return enqueue(async () => {
+                if (!clean || typeof driver.writeBase64 !== 'function') return refuse(clean, 'invalid');
+                // A Sheet's model (`sheet/<hash>.json`) is JSON: its `text` must read as JSON like any other file (SV10).
+                if (isJsonTarget(baseName(clean)) && (text === null || parseJsonText(String(text)).status !== 'ok')) return refuse(clean, 'invalid');
+                if (readOnly.has(clean)) return refuse(clean, 'read-only');
+                if (await driver.exists(clean)) return { written: false, key: clean, reason: 'unchanged' };
+                const parent = parentKey(clean);
+                if (parent) await driver.mkdir(parent);
+                const temp = joinKey(parent, `.${baseName(clean)}.mobile-${makeToken()}.tmp`);
+                try {
+                    await driver.writeBase64(temp, String(base64));
+                    await driver.rename(temp, clean);
+                } catch (error) {
+                    await driver.remove(temp).catch(() => {});
+                    throw error;
+                }
+                // Read back as base64: the browser's store reports the size of the base64 text, not of the bytes.
+                if ((await driver.readBase64(clean).catch(() => null)) !== String(base64)) {
+                    await driver.remove(clean).catch(() => {});
+                    throw new Error(`Write could not be verified: ${clean}`);
+                }
+                emit(clean, { source: 'sync' });
+                return { written: true, key: clean };
+            });
+        },
+
+        /**
          * A file deleted outside the app (on the desktop). The same conditions as
          * applyExternal; a missing file is 'unchanged'. Afterwards the managed
          * sidecar folders left empty are removed, the document's own included.
@@ -259,7 +299,9 @@ export function createProjectWriter({ driver, makeToken, documents = null, onErr
                     if (!match) continue;
                     const temp = joinKey(directory, entry.name);
                     const target = joinKey(directory, match[1]);
-                    const text = names.has(match[1]) ? null : await readTextOrNull(driver, temp);
+                    // A downloaded attachment that was cut off is fetched again; it is never finished from its temporary file.
+                    const binary = BINARY_FOLDERS.has(baseName(directory));
+                    const text = names.has(match[1]) || binary ? null : await readTextOrNull(driver, temp);
                     const complete = text !== null && (!isJsonTarget(match[1]) || parseJsonText(text).status === 'ok');
                     if (complete) {
                         await driver.rename(temp, target);

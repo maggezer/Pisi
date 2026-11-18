@@ -9,6 +9,7 @@ import { createMapsScreen } from '../screens/maps/index.mjs';
 import { createMapViewer } from '../screens/maps/map-viewer.mjs';
 import { createNotesScreen } from '../screens/notes/index.mjs';
 import { createNoteScreen } from '../screens/notes/note.mjs';
+import { createAttachments } from '../sync/attachments.mjs';
 import { createPisiScreen } from '../screens/pisi/index.mjs';
 import { renderSettingsScreen } from '../screens/settings/index.mjs';
 import { renderConflictRows } from '../screens/settings/sync-section.mjs';
@@ -34,6 +35,7 @@ import { PISI_THEME_BACKGROUNDS, resolveTheme } from './theme.mjs';
  * app's version and the APK's version code, shown in Settings. `sync` is the
  * sync service (sync/sync-service.mjs) and `qrScanner` the camera's QR reader
  * (null in a browser); without `sync` Settings has no sync section.
+ * `fileOpener` (platform/file-opener.mjs) opens a note's file attachment in another app.
  */
 export function createApp({
     root,
@@ -47,6 +49,7 @@ export function createApp({
     version = null,
     sync = null,
     qrScanner = null,
+    fileOpener = null,
     now = () => new Date(),
     onError = () => {}
 }) {
@@ -121,6 +124,8 @@ export function createApp({
     });
     const noteScreen = createNoteScreen({
         project,
+        // Images and files of a note that are not on the phone yet come down through sync (S6).
+        attachments: project ? createAttachments({ project, sync, opener: fileOpener }) : null,
         tasks,
         snackbar,
         setTimer: (callback, delay) => view.setTimeout(callback, delay),
@@ -190,6 +195,7 @@ export function createApp({
         if (event.type === 'revoked') snackbar.show({ message: i18n.t('sync.revokedNotice') });
         else if (event.type === 'conflict-copy') snackbar.show({ message: i18n.t('sync.conflictCopy', { count: event.count }) });
         else if (event.type === 'rollback') snackbar.show({ message: i18n.t('sync.stoppedNotice') });
+        else if (event.type === 'set-aside') snackbar.show({ message: i18n.t('sync.setAside', { name: event.name }) });
         else if (event.type === 'status' && settingsShown()) render();
     }
 
@@ -379,7 +385,7 @@ export function createApp({
             language: i18n.language,
             openOverlay: router.openOverlay,
             version,
-            project: project ? projectState : null,
+            project: project ? { ...projectState, aside: sync?.getStatus().aside ?? [] } : null,
             developer: Boolean(loadSample || loadSampleMap),
             onLoadSample: loadSample ? handleLoadSample : null,
             onLoadSampleMap: loadSampleMap ? handleLoadSampleMap : null,

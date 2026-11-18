@@ -14,6 +14,8 @@ import { applyBlockPatch, makeBlockHtml, textToBlockHtml } from './note-patch.mj
 
 // Sidecar assets mobile shows: images and Paint drawings, by the content-addressed name the desktop gave them.
 const ASSET_REFERENCE = /^(?:image|paint)\/[A-Za-z0-9._-]+\.(png|jpe?g|gif|webp|bmp)$/i;
+// Every attachment a block can name in its sidecar: images, drawings and files (pisi-definition.md).
+const ATTACHMENT_REFERENCE = /^(?:image|paint|file)\/[A-Za-z0-9._-]+$/;
 const ASSET_TYPES = Object.freeze({ png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', bmp: 'image/bmp' });
 
 /** The note on disk is not the one the editor read: its patch is not applied. */
@@ -58,6 +60,17 @@ export function createNoteRepo({ driver, writer, index, now, makeUuid }) {
 
         newParagraph,
         newBlockId,
+
+        /**
+         * The project key of an attachment a note's block names (`image/<hash>.png`,
+         * `file/<hash>.pdf`): inside the note's own sidecar folder, or null when
+         * the reference or the sidecar is not one a note may name.
+         */
+        attachmentKey(key, data, reference) {
+            const sidecar = String(data?.pisi?.sidecar ?? '');
+            if (!ATTACHMENT_REFERENCE.test(String(reference ?? '')) || !sidecar || /[\\/]/.test(sidecar) || sidecar.startsWith('.')) return null;
+            return joinKey(joinKey(parentKey(normalizeKey(key)), sidecar), reference);
+        },
 
         /**
          * An image or Paint drawing from the note's sidecar folder as a `data:`

@@ -103,17 +103,21 @@ export function createTestDevice(
             return out.sort();
         }
     };
-    device.engine = createPisiSyncEngine({
-        subtle,
-        http,
-        store,
-        files,
-        isDirty: (relative) => device.dirty.has(relative) || isDirty(relative),
-        random,
-        uuid: () => crypto.randomUUID(),
-        onApplied: (change) => applied.push(change)
-    });
-    device.sync = (reason = 'test') => device.engine.runTurn({ reason });
+    const makeEngine = () =>
+        createPisiSyncEngine({
+            subtle,
+            http,
+            store,
+            files,
+            isDirty: (relative) => device.dirty.has(relative) || isDirty(relative),
+            random,
+            uuid: () => crypto.randomUUID(),
+            onApplied: (change) => applied.push(change)
+        });
+    device.engine = makeEngine();
+    device.sync = (reason = 'test', options = {}) => device.engine.runTurn({ reason, ...options });
+    /** A new engine over the same state and files: the app started again after it was killed. */
+    device.restart = () => (device.engine = makeEngine());
     return device;
 }
 

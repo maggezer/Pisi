@@ -13,6 +13,7 @@ coverage/
 # Mobile package: native project and generated output (mobile/ formats its own sources)
 mobile/android/
 mobile/test-results/
+test-results/
 mobile/playwright-report/
 mobile/e2e/screenshots/
 

@@ -18,21 +18,21 @@
 // never sends or overwrites a corrupt local JSON file (SV10) and only advances
 // the cursor after the turn's remote changes were applied or set aside.
 
-import {
-    computePisiSyncBlobId,
-    computePisiSyncFid,
-    formatPisiSyncRandomId,
-    openPisiSyncEnvelope,
-    openPisiSyncSpaceKeys,
-    sealPisiSyncEnvelope,
-    sha256Hex,
-    getPisiSyncSealedSize
-} from './sync-crypto.mjs';
-import { makePisiSyncChangeMeta, readPisiSyncChangeMeta, sealPisiSyncChangeMeta, verifyPisiSyncBlobContent } from './sync-meta.mjs';
-import { checkPisiSyncPath, getPisiSyncFileClass, getPisiSyncPathKey, isPisiSyncCompressedClass, isPisiSyncMergeableClass } from './sync-paths.mjs';
-import { checkPisiSyncRemoteOrder, makePisiSyncIndexEntry, planPisiSyncCommits, reconcilePisiSyncTurn } from './sync-reconcile.mjs';
-import { PisiSyncHttpError } from './sync-http.mjs';
+import { computePisiSyncFid, openPisiSyncEnvelope, openPisiSyncSpaceKeys, sha256Hex, getPisiSyncSealedSize } from './sync-crypto.mjs';
+import { readPisiSyncChangeMeta, verifyPisiSyncBlobContent } from './sync-meta.mjs';
+import { checkPisiSyncPath, getPisiSyncFileClass, getPisiSyncPathKey, isPisiSyncMergeableClass } from './sync-paths.mjs';
+import { checkPisiSyncRemoteOrder, reconcilePisiSyncTurn } from './sync-reconcile.mjs';
 import { parsePisiSyncJsonBytes, preparePisiSyncActions } from './sync-actions.mjs';
+import { createPisiSyncPusher, PisiSyncCancelledError } from './sync-engine-push.mjs';
+import {
+    getPisiSyncActionDownloadSize,
+    getPisiSyncLocalDate,
+    isPisiSyncFetchingAction,
+    isPisiSyncFirstPriorityPath,
+    splitPisiSyncApplyBatches
+} from './sync-initial.mjs';
+
+export { PisiSyncCancelledError } from './sync-engine-push.mjs';
 
 export const PISI_SYNC_MAX_STALE_ROUNDS = 3;
 const DEFAULT_LIMITS = Object.freeze({
@@ -47,13 +47,6 @@ const DEFAULT_LIMITS = Object.freeze({
 const RACY_MTIME_MS = 2000;
 const UNVERIFIABLE = new Set(['DECRYPT_FAILED', 'HASH_MISMATCH_LOCAL', 'META_INVALID', 'PATH_UNSAFE', 'PROTOCOL_UNSUPPORTED', 'SERVER_REPLAY']);
 
-const docIdOf = (path, bytes) => {
-    const fileClass = getPisiSyncFileClass(path);
-    if (fileClass !== 'node' && fileClass !== 'map') return null;
-    const id = parsePisiSyncJsonBytes(bytes)?.pisi?.id;
-    return typeof id === 'string' ? id : null;
-};
-
 /** The entry `state.remoteOnly` keeps for a lazy file: what a later download or a reuse of its blob needs. */
 function remoteOnlyEntry(change) {
     return { path: change.meta.path, seq: change.seq, blob: change.blob, size: change.size, sha256: change.meta.sha256, plainSize: change.meta.size };
@@ -62,7 +55,15 @@ function remoteOnlyEntry(change) {
 /**
  * Creates the engine of one bound project. `random(n)` gives n random bytes,
  * `uuid()` a v4 uuid, `now()` a Date. `onApplied({ changed, added, removed })`
- * is called after a turn wrote files.
+ * is called after a turn wrote files, once per written batch.
+ * `onProgress({ phase, files, bytes, reason })` tells how far a turn's
+ * downloads (`phase: 'download'`) and uploads (`'upload'`) are; `files` and
+ * `bytes` are `{ done, total }`.
+ * `applyBatch` (the phone) writes a turn's downloads in batches of at most
+ * `{ files, bytes }`, the first download of a project starting with the
+ * files of `isPisiSyncFirstPriorityPath` (S6 step 2); the cursor still moves
+ * only once the whole turn is written (SV11). Without it (the desktop) a turn
+ * is written in one `files.apply` call, one atomic mutation.
  */
 export function createPisiSyncEngine({
     subtle,
@@ -76,10 +77,15 @@ export function createPisiSyncEngine({
     now = () => new Date(),
     gzip,
     gunzip,
-    onApplied = null
+    onApplied = null,
+    onProgress = null,
+    applyBatch = null
 }) {
     const isLazy = (path) => Boolean(lazy && path && lazy(path));
+    const limitsOf = (state) => state.limits || DEFAULT_LIMITS;
+    const pusher = createPisiSyncPusher({ subtle, http, store, files, random, now, gzip, isLazy, limitsOf });
     let running = null;
+    let cancelled = false;
 
     async function pageChanges(spaceId, after, limit) {
         const rows = [];
@@ -118,38 +124,59 @@ export function createPisiSyncEngine({
         return opened;
     }
 
-    /** Pull: the changes after the cursor, or every head on CURSOR_EXPIRED (§6.3). */
+    /** The largest dseq of every device among heads: a later change of that device must be above it (§7.4). */
+    function headDseqs(heads, lastDseq) {
+        const seen = { ...lastDseq };
+        for (const row of heads) {
+            const dseq = row.meta?.dseq;
+            if (row.invalid || !Number.isSafeInteger(dseq) || row.meta.dev !== row.device) continue;
+            if (dseq > (seen[row.device] ?? 0)) seen[row.device] = dseq;
+        }
+        return seen;
+    }
+
+    /**
+     * Pull: the changes after the cursor (§6.3). A device that has applied
+     * nothing yet (cursor 0) and one whose cursor was pruned (CURSOR_EXPIRED)
+     * take every head instead, then the changes after the heads' `asOfSeq`.
+     */
     async function pull(state, keys) {
-        const limits = state.limits || DEFAULT_LIMITS;
+        const limits = limitsOf(state);
         const { data: headData } = await http.get(`/v1/spaces/${state.spaceId}/head`);
         if (headData.head < state.cursor) return { ok: false, code: 'SERVER_ROLLBACK' };
         if (headData.head === state.cursor) return { ok: true, remote: [], cursor: state.cursor, lastDseq: state.lastDseq };
         let full = null;
-        let later;
-        try {
-            later = await pageChanges(state.spaceId, state.cursor, limits.maxChangesPage);
-        } catch (error) {
-            if (error?.code !== 'CURSOR_EXPIRED') throw error;
-            full = await pageHeads(state.spaceId, limits.maxHeadsPage);
+        let later = null;
+        if (state.cursor === 0) full = await pageHeads(state.spaceId, limits.maxHeadsPage);
+        else {
+            try {
+                later = await pageChanges(state.spaceId, state.cursor, limits.maxChangesPage);
+            } catch (error) {
+                if (error?.code !== 'CURSOR_EXPIRED') throw error;
+                full = await pageHeads(state.spaceId, limits.maxHeadsPage);
+            }
+        }
+        let heads = [];
+        let lastDseq = state.lastDseq;
+        if (full) {
+            heads = await openRows(full.rows, keys);
+            const headCheck = checkPisiSyncRemoteOrder({ cursor: state.cursor, head: full.asOfSeq, changes: heads, heads: true });
+            if (!headCheck.ok) return { ok: false, code: headCheck.code };
+            lastDseq = headDseqs(heads, lastDseq);
             later = await pageChanges(state.spaceId, full.asOfSeq, limits.maxChangesPage);
         }
         const changes = await openRows(later.rows, keys);
-        const order = checkPisiSyncRemoteOrder({ cursor: full ? full.asOfSeq : state.cursor, head: later.head, changes, lastDseq: state.lastDseq });
+        const order = checkPisiSyncRemoteOrder({ cursor: full ? full.asOfSeq : state.cursor, head: later.head, changes, lastDseq });
         if (!order.ok) return { ok: false, code: order.code };
         const rejected = new Set(order.rejected.map((entry) => entry.seq));
         const remote = changes.map((change) => (rejected.has(change.seq) ? { ...change, invalid: 'SERVER_REPLAY' } : change));
-        if (full) {
-            const heads = await openRows(full.rows, keys);
-            const headCheck = checkPisiSyncRemoteOrder({ cursor: state.cursor, head: full.asOfSeq, changes: heads, heads: true });
-            if (!headCheck.ok) return { ok: false, code: headCheck.code };
-            remote.unshift(...heads);
-        }
+        remote.unshift(...heads);
         return { ok: true, remote, cursor: later.head, lastDseq: order.lastDseq, full: Boolean(full) };
     }
 
     /** Scan of the project with the hash cache of the state. */
     async function scan(state, keys) {
-        const limits = state.limits || DEFAULT_LIMITS;
+        const limits = limitsOf(state);
         const listed = await files.list();
         const cache = {};
         const entries = [];
@@ -237,219 +264,6 @@ export function createPisiSyncEngine({
         return plain;
     }
 
-    async function sizeOfExistingBlob(state, blob, known) {
-        if (known.has(blob)) return known.get(blob);
-        const response = await http.request('GET', `/v1/spaces/${state.spaceId}/blobs/${blob}`, { expect: 'bytes', headers: { Range: 'bytes=0-0' } });
-        const total = Number(String(response.headers.get('Content-Range') || '').split('/')[1]);
-        if (!Number.isSafeInteger(total)) throw new PisiSyncHttpError('SIZE_MISMATCH', { message: 'Blob boyutu öğrenilemedi.' });
-        return total;
-    }
-
-    async function uploadBlob(state, blob, sealed) {
-        const digest = await sha256Hex(subtle, sealed);
-        const started = await http.post(`/v1/spaces/${state.spaceId}/blobs/${blob}/uploads`, { size: sealed.length, sha256: digest });
-        if (started.status === 200 && started.data?.exists) return;
-        const { uploadId, partBytes, parts } = started.data;
-        for (let part = 1; part <= parts; part += 1) {
-            const chunk = sealed.subarray((part - 1) * partBytes, part * partBytes);
-            await http.request('PUT', `/v1/spaces/${state.spaceId}/uploads/${uploadId}/parts/${part}`, {
-                bytes: chunk,
-                idempotent: true,
-                headers: { 'Pisi-Part-Sha256': await sha256Hex(subtle, chunk) }
-            });
-        }
-        await http.post(`/v1/spaces/${state.spaceId}/uploads/${uploadId}/complete`, {}, { idempotent: true });
-    }
-
-    /** Seals, uploads and commits the pushes. Returns `{ ok, stale, code, pushed }`. */
-    async function push(state, keys, pushes) {
-        if (!pushes.length) return { ok: true, pushed: 0 };
-        const limits = state.limits || DEFAULT_LIMITS;
-        const known = new Map();
-        for (const entry of Object.values(state.index)) if (entry.blob) known.set(entry.blob, entry.size);
-        const items = [];
-        for (const item of pushes) {
-            const fid = item.fid || (await computePisiSyncFid(subtle, keys.fid, item.path));
-            if (item.op === 'delete') {
-                items.push({ ...item, fid, blob: null, size: 0 });
-                continue;
-            }
-            // A file this device knows only from the server travels as the blob that is already there.
-            if (item.reuse) {
-                known.set(item.reuse.blob, item.reuse.size);
-                items.push({
-                    ...item,
-                    fid,
-                    blob: item.reuse.blob,
-                    sealed: null,
-                    bytes: null,
-                    sha256: item.reuse.sha256,
-                    plainSize: item.reuse.plainSize,
-                    docId: null
-                });
-                continue;
-            }
-            const bytes = item.bytes || (await files.read(item.path));
-            if (!bytes) continue;
-            const fileClass = getPisiSyncFileClass(item.path);
-            if (isPisiSyncMergeableClass(fileClass) && !parsePisiSyncJsonBytes(bytes)) continue;
-            const blob = await computePisiSyncBlobId(subtle, keys.blob, bytes);
-            const sealed = await sealPisiSyncEnvelope({
-                subtle,
-                key: keys.content,
-                spaceId: state.spaceId,
-                purpose: 'blob',
-                binding: blob,
-                plaintext: bytes,
-                nonce: random(12),
-                gzip: isPisiSyncCompressedClass(fileClass) ? gzip : null
-            });
-            if (sealed.length > limits.maxBlobBytes) continue;
-            items.push({
-                ...item,
-                fid,
-                blob,
-                sealed,
-                bytes,
-                sha256: await sha256Hex(subtle, bytes),
-                plainSize: bytes.length,
-                docId: item.docId || docIdOf(item.path, bytes)
-            });
-        }
-        // Missing blobs are uploaded; an existing one keeps the size the server stored.
-        let puts = items.filter((item) => item.op === 'put');
-        const blobs = [...new Set(puts.map((item) => item.blob))];
-        const missing = new Set();
-        for (let at = 0; at < blobs.length; at += limits.maxCheckBlobs) {
-            const { data } = await http.post(
-                `/v1/spaces/${state.spaceId}/blobs/check`,
-                { blobs: blobs.slice(at, at + limits.maxCheckBlobs) },
-                { idempotent: true }
-            );
-            data.missing.forEach((blob) => missing.add(blob));
-        }
-        // A reused blob the server no longer has cannot be sent without its bytes.
-        const unsendable = new Set(puts.filter((item) => item.reuse && missing.has(item.blob)).map((item) => item.fid));
-        if (unsendable.size) {
-            puts = puts.filter((item) => !unsendable.has(item.fid));
-            items.splice(0, items.length, ...items.filter((item) => !unsendable.has(item.fid)));
-        }
-        const uploaded = new Set();
-        for (const item of puts) {
-            if (missing.has(item.blob) && !uploaded.has(item.blob)) {
-                await uploadBlob(state, item.blob, item.sealed);
-                uploaded.add(item.blob);
-                known.set(item.blob, item.sealed.length);
-            }
-            item.size = uploaded.has(item.blob) ? known.get(item.blob) : await sizeOfExistingBlob(state, item.blob, known);
-            known.set(item.blob, item.size);
-        }
-
-        let pushed = 0;
-        const plans = planPisiSyncCommits(
-            items.map((item) => ({ ...item, type: item.op === 'put' ? 'push-put' : 'push-delete' })),
-            Math.min(limits.maxCommitChanges, 200)
-        );
-        for (const group of plans) {
-            const changes = [];
-            for (const item of group) {
-                state.dseq += 1;
-                const meta = makePisiSyncChangeMeta({
-                    path: item.path,
-                    op: item.op,
-                    size: item.op === 'put' ? item.plainSize : null,
-                    sha256: item.op === 'put' ? item.sha256 : null,
-                    docId: item.op === 'put' ? item.docId : (state.index[item.fid]?.docId ?? null),
-                    device: state.deviceId,
-                    dseq: state.dseq,
-                    at: now().toISOString(),
-                    renamedFrom: item.renamedFrom || null,
-                    conflictOf: item.conflictOf || null
-                });
-                const sealedMeta = await sealPisiSyncChangeMeta({ subtle, keys, fid: item.fid, blob: item.blob, meta, nonce: random(12) });
-                changes.push(
-                    item.op === 'put'
-                        ? { fid: item.fid, op: 'put', blob: item.blob, size: item.size, baseSeq: item.baseSeq, meta: sealedMeta }
-                        : { fid: item.fid, op: 'delete', baseSeq: item.baseSeq, meta: sealedMeta }
-                );
-            }
-            const commitId = formatPisiSyncRandomId('cm_', random(16));
-            state.pendingCommit = {
-                commitId,
-                body: { commitId, changes },
-                items: group.map((item) => ({
-                    fid: item.fid,
-                    path: item.path,
-                    op: item.op,
-                    blob: item.blob,
-                    size: item.size,
-                    sha256: item.sha256 ?? null,
-                    docId: item.docId ?? null,
-                    plainSize: item.plainSize ?? null,
-                    reused: Boolean(item.reuse)
-                }))
-            };
-            for (const item of group)
-                if (item.op === 'put' && isPisiSyncMergeableClass(getPisiSyncFileClass(item.path))) await store.writeBase(`pending:${item.fid}`, item.bytes);
-            await store.save(state);
-            const result = await sendPendingCommit(state);
-            if (!result.ok) return result;
-            pushed += group.length;
-        }
-        return { ok: true, pushed };
-    }
-
-    /** Sends (or resends, with the same commitId and body) the commit saved in the state (§7.3). */
-    async function sendPendingCommit(state) {
-        const pending = state.pendingCommit;
-        if (!pending) return { ok: true };
-        let response;
-        try {
-            response = await http.post(`/v1/spaces/${state.spaceId}/commit`, pending.body, { idempotent: true });
-        } catch (error) {
-            if (error?.code === 'OFFLINE') return { ok: false, code: 'OFFLINE' };
-            state.pendingCommit = null;
-            for (const item of pending.items) await store.removeBase(`pending:${item.fid}`);
-            await store.save(state);
-            if (error?.code === 'STALE_BASE') return { ok: false, stale: true, code: 'STALE_BASE' };
-            throw error;
-        }
-        const seqs = response.data.seqs;
-        for (const [at, item] of pending.items.entries()) {
-            const pendingKey = `pending:${item.fid}`;
-            if (item.op === 'delete') {
-                delete state.index[item.fid];
-                await store.removeBase(item.fid);
-            } else if (item.reused || isLazy(item.path)) {
-                state.remoteOnly = state.remoteOnly || {};
-                state.remoteOnly[item.fid] = {
-                    path: item.path,
-                    seq: seqs[at],
-                    blob: item.blob,
-                    size: item.size,
-                    sha256: item.sha256,
-                    plainSize: item.plainSize
-                };
-            } else {
-                state.index[item.fid] = makePisiSyncIndexEntry({
-                    path: item.path,
-                    seq: seqs[at],
-                    blob: item.blob,
-                    sha256: item.sha256,
-                    size: item.size,
-                    docId: item.docId
-                });
-                const base = await store.readBase(pendingKey);
-                if (base) await store.writeBase(item.fid, base);
-                else await store.removeBase(item.fid);
-            }
-            await store.removeBase(pendingKey);
-        }
-        state.pendingCommit = null;
-        await store.save(state);
-        return { ok: true };
-    }
-
     function combineRemote(pending, pulled) {
         const byFid = new Map();
         for (const row of [...pending, ...pulled]) {
@@ -457,6 +271,36 @@ export function createPisiSyncEngine({
             if (!previous || row.seq > previous.seq) byFid.set(row.fid, row);
         }
         return [...byFid.values()].sort((left, right) => left.seq - right.seq);
+    }
+
+    /** The progress of a turn, told to `onProgress` and to the caller's `runTurn({ onProgress })`. */
+    function makeProgress(reason, listener) {
+        const phases = {
+            download: { files: { done: 0, total: 0 }, bytes: { done: 0, total: 0 } },
+            upload: { files: { done: 0, total: 0 }, bytes: { done: 0, total: 0 } }
+        };
+        const tell = (phase) => {
+            const value = { phase, reason, files: { ...phases[phase].files }, bytes: { ...phases[phase].bytes } };
+            for (const target of [onProgress, listener]) {
+                try {
+                    target?.(value);
+                } catch {
+                    // A listener's error must not stop the turn.
+                }
+            }
+        };
+        return {
+            plan(phase, files, bytes) {
+                phases[phase] = { files: { done: 0, total: files }, bytes: { done: 0, total: bytes } };
+                if (files) tell(phase);
+            },
+            step(phase, bytes) {
+                const current = phases[phase];
+                current.files.done = Math.min(current.files.total, current.files.done + 1);
+                current.bytes.done = Math.min(current.bytes.total, current.bytes.done + (bytes || 0));
+                tell(phase);
+            }
+        };
     }
 
     async function turn(options = {}) {
@@ -469,98 +313,153 @@ export function createPisiSyncEngine({
         if (!state.limits) state.limits = { ...DEFAULT_LIMITS, ...((await http.get('/v1/info')).data?.limits || {}) };
 
         const summary = { ok: true, code: null, changed: [], added: [], removed: [], pushed: 0, issues: [], conflicts: [], rounds: 0 };
-        const resent = await sendPendingCommit(state);
-        if (!resent.ok && !resent.stale) return { ...summary, ok: false, code: resent.code };
+        const checkpoint = () => {
+            if (cancelled || options.signal?.aborted) throw new PisiSyncCancelledError();
+        };
+        const progress = makeProgress(options.reason || 'manual', options.onProgress);
+        try {
+            const resent = await pusher.sendPendingCommit(state);
+            if (!resent.ok && !resent.stale) return { ...summary, ok: false, code: resent.code };
 
-        for (let round = 0; round < PISI_SYNC_MAX_STALE_ROUNDS; round += 1) {
-            summary.rounds = round + 1;
-            const pulled = await pull(state, keys);
-            if (!pulled.ok) {
-                state.stopped = pulled.code;
+            for (let round = 0; round < PISI_SYNC_MAX_STALE_ROUNDS; round += 1) {
+                summary.rounds = round + 1;
+                checkpoint();
+                const firstDownload = state.cursor === 0 && !Object.keys(state.index).length;
+                const pulled = await pull(state, keys);
+                if (!pulled.ok) {
+                    state.stopped = pulled.code;
+                    await store.save(state);
+                    return { ...summary, ok: false, code: pulled.code };
+                }
+                const pending = await openRows(state.pendingRemote || [], keys);
+                const combined = combineRemote(pending, pulled.remote);
+                // Lazy files (the phone's attachments) are not downloaded here: their latest head is kept for later.
+                const remote = [];
+                const lazyRemoved = [];
+                for (const row of combined) {
+                    if (!row.invalid && row.meta && isLazy(row.meta.path)) {
+                        state.remoteOnly = state.remoteOnly || {};
+                        if (row.op === 'put') state.remoteOnly[row.fid] = remoteOnlyEntry(row);
+                        else {
+                            delete state.remoteOnly[row.fid];
+                            lazyRemoved.push(row.meta.path);
+                        }
+                        continue;
+                    }
+                    remote.push(row);
+                }
+                // A deleted attachment the phone had downloaded goes too.
+                for (const path of lazyRemoved) if (files.removeLazy && (await files.removeLazy(path))) summary.removed.push(path);
+
+                const remoteByFid = new Map(remote.map((row) => [row.fid, row]));
+                const scanned = await scan(state, keys);
+                const { actions } = reconcilePisiSyncTurn({ role: state.role, index: state.index, local: scanned.entries, remote });
+
+                const localPaths = new Map(scanned.entries.map((entry) => [getPisiSyncPathKey(entry.path), entry.path]));
+                const fetching = actions.filter(isPisiSyncFetchingAction);
+                progress.plan(
+                    'download',
+                    fetching.length,
+                    fetching.reduce((total, action) => total + getPisiSyncActionDownloadSize(action), 0)
+                );
+                const today = getPisiSyncLocalDate(now());
+                const batches = applyBatch
+                    ? splitPisiSyncApplyBatches(actions, { ...applyBatch, priority: firstDownload ? (path) => isPisiSyncFirstPriorityPath(path, today) : null })
+                    : [actions];
+                const takenKeys = new Set(localPaths.keys());
+                const deferred = [];
+                const pushes = [];
+                for (const batch of batches) {
+                    checkpoint();
+                    const plainCache = new Map();
+                    const prepared = await preparePisiSyncActions(batch, {
+                        state,
+                        store,
+                        deviceName: state.deviceName,
+                        now,
+                        uuid,
+                        takenKeys,
+                        remoteRow: (fid) => remoteByFid.get(fid)?.raw || null,
+                        remoteBytes: async (change) => {
+                            if (!plainCache.has(change.blob)) {
+                                checkpoint();
+                                const plain = await fetchPlain(state, keys, change);
+                                plainCache.set(change.blob, plain);
+                                progress.step('download', plain.length);
+                            }
+                            return plainCache.get(change.blob);
+                        },
+                        localBytes: (path) => files.read(path),
+                        localExists: async (path) => localPaths.has(getPisiSyncPathKey(path)),
+                        baseBytes: (fid) => store.readBase(fid),
+                        knownBlob: (path) => {
+                            const wanted = getPisiSyncPathKey(path);
+                            return Object.values(state.remoteOnly || {}).find((entry) => getPisiSyncPathKey(entry.path) === wanted) || null;
+                        }
+                    });
+                    // A batch cancelled while it was prepared is not written.
+                    checkpoint();
+
+                    // Units are written together; a unit with a file that became dirty meanwhile is dropped (SV4).
+                    const writes = prepared.units.flatMap((unit) => unit.writes);
+                    let skipped = new Set();
+                    if (writes.length) {
+                        const applied = await files.apply(writes, { isDirty });
+                        skipped = new Set((applied?.skipped || []).map((path) => getPisiSyncPathKey(path)));
+                    }
+                    const batchChanged = { changed: [], added: [], removed: [] };
+                    deferred.push(...prepared.deferred);
+                    for (const unit of prepared.units) {
+                        if (unit.writes.some((write) => skipped.has(getPisiSyncPathKey(write.path)))) {
+                            if (unit.row) deferred.push(unit.row.raw || unit.row);
+                            summary.issues.push(...unit.writes.map((write) => ({ path: write.path, code: 'DEFERRED_DIRTY' })));
+                            continue;
+                        }
+                        if (unit.commit) await unit.commit();
+                        pushes.push(...unit.pushes);
+                        for (const write of unit.writes) {
+                            const list = write.op === 'remove' ? 'removed' : write.added ? 'added' : 'changed';
+                            summary[list].push(write.path);
+                            batchChanged[list].push(write.path);
+                            // A later batch sees what this one wrote.
+                            if (write.op === 'remove') localPaths.delete(getPisiSyncPathKey(write.path));
+                            else localPaths.set(getPisiSyncPathKey(write.path), write.path);
+                        }
+                    }
+                    summary.issues.push(...prepared.issues);
+                    summary.conflicts.push(...prepared.conflicts);
+                    state.conflicts.push(...prepared.conflicts);
+                    // What a batch wrote is in the index before the next one, so an interrupted turn does not fetch it again.
+                    if (batches.length > 1) await store.save(state);
+                    if (writes.length && onApplied && (batchChanged.changed.length || batchChanged.added.length || batchChanged.removed.length)) {
+                        onApplied(batchChanged);
+                    }
+                }
+                state.hashCache = scanned.cache;
+                state.pendingRemote = deferred.filter((row) => row && !UNVERIFIABLE.has(row.invalid)).map((row) => row.raw || row);
+                state.cursor = pulled.cursor;
+                state.lastDseq = pulled.lastDseq;
                 await store.save(state);
-                return { ...summary, ok: false, code: pulled.code };
-            }
-            const pending = await openRows(state.pendingRemote || [], keys);
-            const combined = combineRemote(pending, pulled.remote);
-            // Lazy files (the phone's attachments) are not downloaded here: their latest head is kept for later.
-            const remote = [];
-            for (const row of combined) {
-                if (!row.invalid && row.meta && isLazy(row.meta.path)) {
-                    state.remoteOnly = state.remoteOnly || {};
-                    if (row.op === 'put') state.remoteOnly[row.fid] = remoteOnlyEntry(row);
-                    else delete state.remoteOnly[row.fid];
-                    continue;
-                }
-                remote.push(row);
-            }
-            const remoteByFid = new Map(remote.map((row) => [row.fid, row]));
-            const scanned = await scan(state, keys);
-            const { actions } = reconcilePisiSyncTurn({ role: state.role, index: state.index, local: scanned.entries, remote });
 
-            const localPaths = new Map(scanned.entries.map((entry) => [getPisiSyncPathKey(entry.path), entry.path]));
-            const plainCache = new Map();
-            const prepared = await preparePisiSyncActions(actions, {
-                state,
-                store,
-                deviceName: state.deviceName,
-                now,
-                uuid,
-                takenKeys: new Set(localPaths.keys()),
-                remoteRow: (fid) => remoteByFid.get(fid)?.raw || null,
-                remoteBytes: async (change) => {
-                    if (!plainCache.has(change.blob)) plainCache.set(change.blob, await fetchPlain(state, keys, change));
-                    return plainCache.get(change.blob);
-                },
-                localBytes: (path) => files.read(path),
-                localExists: async (path) => localPaths.has(getPisiSyncPathKey(path)),
-                baseBytes: (fid) => store.readBase(fid),
-                knownBlob: (path) => {
-                    const wanted = getPisiSyncPathKey(path);
-                    return Object.values(state.remoteOnly || {}).find((entry) => getPisiSyncPathKey(entry.path) === wanted) || null;
-                }
-            });
-
-            // Units are written together; a unit with a file that became dirty meanwhile is dropped (SV4).
-            const writes = prepared.units.flatMap((unit) => unit.writes);
-            let skipped = new Set();
-            if (writes.length) {
-                const applied = await files.apply(writes, { isDirty });
-                skipped = new Set((applied?.skipped || []).map((path) => getPisiSyncPathKey(path)));
+                // Written files changed on disk: their pushes read the bytes the plan wrote.
+                const sizes = new Map(scanned.entries.map((entry) => [entry.path, entry.size]));
+                const puts = pushes.filter((item) => item.op === 'put' && !item.reuse);
+                progress.plan(
+                    'upload',
+                    puts.length,
+                    puts.reduce((total, item) => total + (item.bytes?.length ?? sizes.get(item.path) ?? 0), 0)
+                );
+                const result = await pusher.push(state, keys, pushes, { checkpoint, progress: (_item, bytes) => progress.step('upload', bytes) });
+                summary.pushed += result.pushed || 0;
+                if (result.stale) continue;
+                if (!result.ok) return { ...summary, ok: false, code: result.code };
+                break;
             }
-            const deferred = [...prepared.deferred];
-            const pushes = [];
-            for (const unit of prepared.units) {
-                if (unit.writes.some((write) => skipped.has(getPisiSyncPathKey(write.path)))) {
-                    if (unit.row) deferred.push(unit.row.raw || unit.row);
-                    summary.issues.push(...unit.writes.map((write) => ({ path: write.path, code: 'DEFERRED_DIRTY' })));
-                    continue;
-                }
-                if (unit.commit) await unit.commit();
-                pushes.push(...unit.pushes);
-                for (const write of unit.writes) {
-                    if (write.op === 'remove') summary.removed.push(write.path);
-                    else if (write.added) summary.added.push(write.path);
-                    else summary.changed.push(write.path);
-                }
-            }
-            summary.issues.push(...prepared.issues);
-            summary.conflicts.push(...prepared.conflicts);
-            state.conflicts.push(...prepared.conflicts);
-            state.hashCache = scanned.cache;
-            state.pendingRemote = deferred.filter((row) => row && !UNVERIFIABLE.has(row.invalid)).map((row) => row.raw || row);
-            state.cursor = pulled.cursor;
-            state.lastDseq = pulled.lastDseq;
+        } catch (error) {
+            if (error?.code !== 'CANCELLED') throw error;
+            state.issues = summary.issues;
             await store.save(state);
-            if (writes.length && onApplied && (summary.changed.length || summary.added.length || summary.removed.length)) {
-                onApplied({ changed: [...summary.changed], added: [...summary.added], removed: [...summary.removed] });
-            }
-
-            // Written files changed on disk: their pushes read the bytes the plan wrote.
-            const result = await push(state, keys, pushes);
-            if (result.stale) continue;
-            if (!result.ok) return { ...summary, ok: false, code: result.code };
-            summary.pushed += result.pushed;
-            break;
+            return { ...summary, ok: false, code: 'CANCELLED' };
         }
         state.issues = summary.issues;
         state.lastRun = { at: now().toISOString(), ok: true, reason: options.reason || 'manual' };
@@ -568,13 +467,56 @@ export function createPisiSyncEngine({
         return summary;
     }
 
+    /**
+     * Downloads a lazy file the device holds only as a remote head (an
+     * attachment opened on the phone, S6 step 4), checks it against its blob id
+     * and its name's digest (SV9) and writes it with `files.writeLazy(path, bytes)`.
+     * Resolves `{ ok, code }`: NOT_CONFIGURED, NOT_FOUND (no such head), OFFLINE,
+     * DECRYPT_FAILED, HASH_MISMATCH_LOCAL, BLOB_NOT_FOUND, WRITE_FAILED or the server's code.
+     */
+    async function fetchLazy(path) {
+        const state = await store.load();
+        if (!state) return { ok: false, code: 'NOT_CONFIGURED' };
+        if (state.stopped) return { ok: false, code: state.stopped };
+        const wanted = getPisiSyncPathKey(path);
+        const found = Object.entries(state.remoteOnly || {}).find(([, entry]) => getPisiSyncPathKey(entry.path) === wanted);
+        if (!found) return { ok: false, code: 'NOT_FOUND' };
+        const [fid, entry] = found;
+        try {
+            const secrets = await store.readSecrets();
+            http.setToken(secrets.token);
+            const keys = await openPisiSyncSpaceKeys(subtle, secrets.key, state.spaceId);
+            if ((await computePisiSyncFid(subtle, keys.fid, entry.path)) !== fid) return { ok: false, code: 'META_INVALID' };
+            const meta = { path: entry.path, class: getPisiSyncFileClass(entry.path), size: entry.plainSize, sha256: entry.sha256 };
+            const plain = await fetchPlain(state, keys, { blob: entry.blob, meta });
+            if (!(await files.writeLazy(entry.path, plain))) return { ok: false, code: 'WRITE_FAILED' };
+            return { ok: true, code: null, path: entry.path, size: plain.length };
+        } catch (error) {
+            return { ok: false, code: typeof error?.code === 'string' ? error.code : 'INTERNAL' };
+        }
+    }
+
     return {
-        /** Runs one turn; concurrent calls share the running turn. */
+        /** Runs one turn; concurrent calls share the running turn. `options`: `{ reason, signal, onProgress }`. */
         runTurn(options) {
-            if (!running) running = turn(options).finally(() => (running = null));
+            if (!running) {
+                cancelled = false;
+                running = turn(options).finally(() => (running = null));
+            }
             return running;
         },
+        /** Stops the running turn at its next checkpoint (between files and upload parts); it resolves with CANCELLED. */
+        cancel() {
+            if (running) cancelled = true;
+        },
         isRunning: () => Boolean(running),
-        internals: { pull, scan, push, fetchPlain }
+        fetchLazy,
+        /** The remote head of a lazy file, or null: `{ path, blob, size, sha256, plainSize }`. */
+        async getRemoteOnly(path) {
+            const state = await store.load().catch(() => null);
+            const wanted = getPisiSyncPathKey(path);
+            return Object.values(state?.remoteOnly || {}).find((entry) => getPisiSyncPathKey(entry.path) === wanted) || null;
+        },
+        internals: { pull, scan, push: pusher.push, fetchPlain }
     };
 }

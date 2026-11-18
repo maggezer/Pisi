@@ -26,9 +26,11 @@ function renderProjectSection({ t, project }) {
         value: !counted ? '…' : unreadable ? t('project.readOnlyCount', { count: unreadable }) : t('project.healthy'),
         dataset: { project: 'integrity', state: !counted ? 'checking' : unreadable ? 'read-only' : 'healthy' }
     });
+    // Projects set aside at the first pairing (docs/sync-plan.md S6 step 3); they are kept, never opened again here.
+    const aside = (project.aside || []).map((folder) => renderListRow({ title: t('project.aside'), value: folder, dataset: { project: 'aside' } }));
     const sections = [
         h('h2', { class: 'pisi-section-title' }, t('settings.project')),
-        renderList({ label: t('settings.project'), rows: [name, count('tasks'), count('notes'), count('diary'), count('maps'), integrity] })
+        renderList({ label: t('settings.project'), rows: [name, count('tasks'), count('notes'), count('diary'), count('maps'), integrity, ...aside] })
     ];
     if (unreadable) {
         sections.push(

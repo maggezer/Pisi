@@ -17,17 +17,20 @@ const until = async (check) => {
     throw new Error('beklenen durum gelmedi');
 };
 
-async function setup(scanned) {
+async function setup(scanned, { fill = null } = {}) {
     const server = createFakeSyncServer();
     const desktop = await createDesktop(server);
     const phone = createPhone(server);
     await phone.project.open();
+    if (fill) await fill(phone.project);
     await phone.service.init();
     const done = [];
     const scanner = { scan: async () => scanned(desktop) };
     const screen = createSyncPairScreen({ service: phone.service, scanner, onDone: () => done.push(true) });
     document.body.replaceChildren(screen.element);
     screen.update({ t });
+    // The project is looked at first; an empty one goes straight to the choice of QR or code.
+    await until(() => screen.getStep() !== 'checking');
     return { desktop, phone, screen, done };
 }
 
@@ -81,7 +84,37 @@ describe('eşleştirme ekranı', () => {
         await new Promise((resolve) => setTimeout(resolve, 30));
         expect(phone.service.isPaired()).toBe(false);
         screen.update({ t });
+        await until(() => screen.getStep() === 'choose');
+    });
+
+    it('telefonda veri varsa önce "ekle / kenara koy" sorulur; seçim eşleştirmeyle birlikte uygulanır (S6)', async () => {
+        let started;
+        const { desktop, phone, screen } = await setup(
+            async (desktopSide) => {
+                started = await desktopSide.startPairing();
+                return started.view.uri;
+            },
+            { fill: (project) => project.tasks.upsert({ id: 'task_phone_1', title: 'Telefon görevi', status: 'todo' }) }
+        );
+        await until(() => screen.getStep() === 'initial');
+        expect(screen.element.querySelector('[data-action="initial-merge"]').textContent).toBe(t('pair.initialMerge'));
+        tap(screen, 'initial-aside');
         expect(screen.getStep()).toBe('choose');
+        tap(screen, 'scan-qr');
+        await until(() => screen.getStep() === 'waiting');
+        await desktop.answerPairing(started);
+        await until(() => screen.getStep() === 'done');
+        expect(screen.element.querySelector('[data-pair="aside"]').textContent).toBe(t('pair.doneAside'));
+        expect(phone.service.getStatus().aside).toHaveLength(1);
+        expect(await phone.projectsDriver.readText(`${phone.service.getStatus().aside[0]}/.pisi/tasks.json`)).toContain('Telefon görevi');
+        expect(await phone.driver.exists('.pisi/tasks.json')).toBe(false);
+    });
+
+    it('yalnız iskelet olan projede soru sorulmaz', async () => {
+        const { screen } = await setup(async () => '');
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        expect(screen.getStep()).toBe('choose');
+        expect(screen.element.querySelector('[data-pair="initial"]')).toBeNull();
     });
 
     it('hata kodları kullanıcı metnine çevrilir', () => {

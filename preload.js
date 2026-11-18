@@ -233,6 +233,9 @@ contextBridge.exposeInMainWorld('pisiSyncClient', {
     revokeDevice: (deviceId) => invokePisiDomainCommand('sync.device.revoke.v1', { deviceId: pisiSyncText(deviceId, 64) }),
     keepConflictCopy: (filePath) => invokePisiDomainCommand('sync.note.keep-disk-copy.v1', { filePath: pisiSyncText(filePath, 4096) }),
     run: (reason = 'manual') => invokePisiDomainCommand('sync.run.v1', { reason: pisiSyncText(reason, 32) }),
+    // "Durdur" / "Sürdür" of a large turn (docs/sync-plan.md S6).
+    cancel: () => invokePisiDomainCommand('sync.cancel.v1', {}),
+    resume: () => invokePisiDomainCommand('sync.resume.v1', {}),
     disconnect: () => invokePisiDomainCommand('sync.disconnect.v1', {}),
     onApplied: (callback) => onPisiSyncEvent('pisi:sync-applied', callback),
     onStatus: (callback) => onPisiSyncEvent('pisi:sync-status', callback),

@@ -1,5 +1,44 @@
 # PISI Güncelleme Takip Dosyası
 
+## 18-11-2026 — İlk aktarım ve ekler (S6)
+
+Mobil ve senkron işi (`docs/sync-plan.md` S6; SV1, SV4, SV5, SV9, SV10, SV11, SV12). Gerçek bir
+proje masaüstünden sunucuya, oradan telefona ilk kez taşınabiliyor. Görseller ve dosya ekleri
+telefona ancak açılınca iniyor.
+
+- **Masaüstünde ilk yükleme:** dosyalar artık tek tek şifrelenip yükleniyor; bellekte aynı anda
+  tek dosya tutuluyor. Ayarlar → Senkron büyük bir turda "Yükleniyor: n / m dosya · x / y MB"
+  satırını ve ilerleme çubuğunu gösteriyor. **Durdur** turu bir sonraki dosyada durduruyor ve
+  otomatik senkronu "Sürdür"e (ya da "Şimdi eşitle"ye, uygulamanın yeniden açılmasına) kadar
+  duraklatıyor. Kesilen yükleme kaldığı yerden sürüyor: gönderilmiş dosyalar indekste, yüklenmiş
+  blob'lar `blobs/check` ile atlanıyor; hiçbir dosya iki kez commit'lenmiyor.
+- **Telefonda ilk indirme:** hiç dosya uygulamamış cihaz bütün başlıkları tek listede (`GET heads`)
+  alıyor. Telefon dosyaları 50'lik partilerle yazıyor; ilk parti görevler, ilişkiler, özellikler,
+  günlük işareti ve bugünün günlüğü. Pisi ekranı notlar inmeden doluyor. Ayarlar → Senkron'da
+  "İniyor: n / m dosya". Kesilen indirme yazdıklarını yeniden indirmiyor; imleç tur bitmeden
+  ilerlemiyor.
+- **Telefonda proje varken ilk eşleşme:** yalnız iskelet olan proje soru sormuyor ve sunucudaki
+  proje bayt bayt iniyor. Görev, günlük ya da not varsa eşleştirme ekranı önce soruyor:
+  "Telefondakileri projeye ekle" (görevler kimliğe göre eklenir, aynı günün günlüğü birleşir) ya
+  da "Telefondakileri kenara koy" (proje silinmeden `projects/default-oncesi-<tarih>/`
+  klasörüne kopyalanıp doğrulanıyor, sonra projeden kaldırılıyor ve sunucudaki proje iniyor;
+  kenara konan proje Ayarlar → Proje'de adıyla görünüyor). Uygulama yeniden yüklenmiyor.
+- **Ekler:** sunucuda olup telefonda olmayan görsel "Görsel bağlantı gelince iner." yer
+  tutucusuyla görünüyor, ekrana gelince iniyor. Çevrimdışıysa "Yeniden dene" çıkıyor ve bir
+  sonraki başarılı senkron turunda yeniden deneniyor. Dosya bloğu adı ve boyutuyla görünüyor;
+  "Aç" dosyayı gerekiyorsa indirip telefonun varsayılan uygulamasında açıyor (repo içi
+  `PisiFilesPlugin`, dosya özgün adıyla önbelleğe kopyalanıp FileProvider ile veriliyor).
+  Çalıştırılabilir türler (masaüstündeki listeyle aynı) açılmıyor. İnen ek, blob kimliği ve
+  adındaki SHA-256 doğrulandıktan sonra proje dosyası olarak yazılıyor ve kalıyor; masaüstünde
+  silinen ek telefondan da kalkıyor.
+- **Masaüstüne etkisi:** `sync.cancel.v1`, `sync.resume.v1` sözleşmeleri ve preload'da
+  `pisiSyncClient.cancel/resume`; Ayarlar → Senkron'da ilerleme satırı ve Durdur/Sürdür.
+- Büyük proje ölçümü (2.000 not, 5.000 görev, 60 günlük, ~200 MB 300 görsel) CI'da
+  `sync-initial-transfer` artifact'ı olarak raporlanıyor.
+- Testler: `mobile/tests/sync-initial.test.mjs`, `note-attachments.test.mjs`, `mobile/e2e/sync-initial.spec.mjs`,
+  `tests/sync-initial-transfer.test.mjs`, `tests/shared-sync-initial.test.mjs`, `tests/mobile-attachment-policy.test.mjs`,
+  `tests/sync-server-contract-transfer.test.mjs`, `scripts/electron-sync-client-e2e.mjs` (Durdur/Sürdür) ve Android JUnit `OpenFileTest`.
+
 ## 17-11-2026 — Telefon masaüstüyle eşleşiyor ve senkron ediyor (S5)
 
 Mobil ve senkron işi (`docs/sync-plan.md` S5; SV2, SV4, SV8, SV9, SV11, SV12). Pisi Mobil artık

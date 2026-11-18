@@ -8,6 +8,7 @@ import { htmlToText } from '../../../../shared/note-blocks.mjs';
 import { parseInlineHtml } from '../../data/note-inline.mjs';
 import { h } from '../../ui/dom.mjs';
 import { icon } from '../../ui/icons.mjs';
+import { mountImage, renderFileBody } from './attachment-views.mjs';
 import { buildInlineDom } from './inline-dom.mjs';
 
 // Block types that have a name of their own on the card; the rest are "block".
@@ -39,9 +40,10 @@ function renderText(segment, document) {
  * space and comments between blocks).
  * - `loadAsset(reference)` resolves with a URL for an image of the note's sidecar, or null;
  * - `addTask(host, segment)` registers a task block: the screen fills `host` with the task's row
- *   and returns false when tasks.json has no such task.
+ *   and returns false when tasks.json has no such task;
+ * - `assets` (attachment-views.mjs) downloads an image or file the phone does not hold yet (S6).
  */
-export function renderProtectedBlock(segment, { t, document, loadAsset, addTask }) {
+export function renderProtectedBlock(segment, { t, locale = 'tr-TR', document, loadAsset, addTask, assets = null }) {
     if (segment.kind === 'comment') return null;
     if (segment.kind === 'text') return segment.html.trim() ? renderCard({ t, type: 'unknown', body: renderText(segment, document) }) : null;
 
@@ -62,15 +64,15 @@ export function renderProtectedBlock(segment, { t, document, loadAsset, addTask 
     if (type === 'image' || type === 'canvas') {
         const frame = h('div', { class: 'pisi-note-image' });
         const alt = /\salt="([^"]*)"/.exec(segment.inner)?.[1] || getBlockLabel(t, type);
-        void Promise.resolve(segment.asset ? loadAsset(segment.asset) : null).then((url) => {
-            if (url) frame.replaceChildren(h('img', { src: url, alt, loading: 'lazy', decoding: 'async' }));
-            else frame.replaceChildren(h('p', { class: 'pisi-note-protected-text' }, t('note.imageMissing')));
-        });
+        mountImage(frame, { t, alt, reference: segment.asset, loadAsset, assets });
         return renderCard({ t, type, body: frame });
     }
     if (type === 'file') {
-        const name = segment.attributes['data-pisi-file-name'] || htmlToText(segment.inner).trim();
-        return renderCard({ t, type, body: name ? h('p', { class: 'pisi-note-protected-text' }, name) : null });
+        if (!segment.attributes['data-pisi-file-name'] && !segment.attributes['data-pisi-file-asset']) {
+            const text = htmlToText(segment.inner).trim();
+            return renderCard({ t, type, body: text ? h('p', { class: 'pisi-note-protected-text' }, text) : null });
+        }
+        return renderCard({ t, type, body: renderFileBody({ t, locale, segment, assets }) });
     }
     if (type === 'sheet') return renderCard({ t, type });
     return renderCard({ t, type, body: renderText(segment, document) });

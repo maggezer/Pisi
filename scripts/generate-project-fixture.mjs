@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+import zlib from 'node:zlib';
 import { PISI_DIARY_MARKER_FILE, PISI_DIARY_MARKER_TEXT, getPisiDiaryNodeKey, makePisiDiaryDocumentData } from '../shared/diary-rules.mjs';
 import { formatPisiDocumentId, formatPisiTaskId } from '../shared/ids.mjs';
 import { formatPisiTodoTag, normalizePisiTaskRecord } from '../shared/task-model.mjs';
@@ -24,8 +25,13 @@ import { formatPisiTodoTag, normalizePisiTaskRecord } from '../shared/task-model
 // Task and diary records are made by the shared rules the desktop and the
 // mobile app write them with (shared/task-model.mjs, shared/diary-rules.mjs);
 // the mobile large-project test (mobile/e2e/large-project.spec.mjs) uses them.
+// With `images: n` (and `imageBytes`, about 700 KB by default) n notes, spread
+// over the project, carry an image block whose PNG lies in the note's sidecar
+// under its content's SHA-256 (pisi-definition.md); the pixels are noise, so the
+// PNG does not compress and the project has the size the sync measurement of
+// docs/sync-plan.md S6 asks for (tests/sync-server-contract-transfer.test.mjs).
 //
-// CLI: node scripts/generate-project-fixture.mjs <projectFolder> [notes=1000] [perMap=250] [relationships=0] [tasks=0] [diaryDays=0]
+// CLI: node scripts/generate-project-fixture.mjs <projectFolder> [notes=1000] [perMap=250] [relationships=0] [tasks=0] [diaryDays=0] [images=0]
 
 function uuid(seed) {
     // Deterministic ids keep runs comparable.
@@ -84,6 +90,55 @@ function makeTasks(count, today) {
     });
 }
 
+/** A PNG of about `bytes` bytes: noise pixels (seeded, so runs repeat), stored without compression. */
+function makeNoisePng(seed, bytes) {
+    const width = 512;
+    const height = Math.max(1, Math.ceil(bytes / (width * 3 + 1)));
+    const raw = Buffer.alloc(height * (width * 3 + 1));
+    let state = (seed * 2654435761) >>> 0 || 1;
+    for (let row = 0; row < height; row += 1) {
+        const start = row * (width * 3 + 1);
+        raw[start] = 0;
+        for (let at = start + 1; at < start + width * 3 + 1; at += 1) {
+            state ^= state << 13;
+            state ^= state >>> 17;
+            state ^= state << 5;
+            raw[at] = state & 0xff;
+        }
+    }
+    const chunk = (type, data) => {
+        const head = Buffer.alloc(4);
+        head.writeUInt32BE(data.length);
+        const body = Buffer.concat([Buffer.from(type, 'ascii'), data]);
+        const crc = Buffer.alloc(4);
+        crc.writeUInt32BE(zlib.crc32(body) >>> 0);
+        return Buffer.concat([head, body, crc]);
+    };
+    const header = Buffer.alloc(13);
+    header.writeUInt32BE(width, 0);
+    header.writeUInt32BE(height, 4);
+    header[8] = 8;
+    header[9] = 2;
+    return Buffer.concat([
+        Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+        chunk('IHDR', header),
+        chunk('IDAT', zlib.deflateSync(raw, { level: 0 })),
+        chunk('IEND', Buffer.alloc(0))
+    ]);
+}
+
+/** Writes the image of note `index` into its sidecar; returns the image block for its content. */
+async function writeNoteImage(sidecarFolder, index, bytes) {
+    const png = makeNoisePng(index + 1, bytes);
+    const reference = `image/${crypto.createHash('sha256').update(png).digest('hex')}.png`;
+    await fs.mkdir(path.join(sidecarFolder, 'image'), { recursive: true });
+    await fs.writeFile(path.join(sidecarFolder, ...reference.split('/')), png);
+    return {
+        size: png.length,
+        html: `<div class="pisi-editor-block pisi-image-block" data-pisi-block-id="blk_${index}_img" data-pisi-block-type="image" contenteditable="false"><img data-pisi-image-asset="${reference}" alt="Görsel ${index + 1}"></div>`
+    };
+}
+
 async function writeDiary(projectFolder, days, today) {
     await fs.mkdir(path.join(projectFolder, 'diary'), { recursive: true });
     await fs.writeFile(path.join(projectFolder, 'diary', PISI_DIARY_MARKER_FILE), PISI_DIARY_MARKER_TEXT, 'utf8');
@@ -97,8 +152,8 @@ async function writeDiary(projectFolder, days, today) {
 
 /**
  * @param {string} projectFolder
- * @param {{ notes?: number, perMap?: number, relationships?: boolean, tasks?: number, diaryDays?: number, today?: string }} [options]
- * @returns {Promise<{ notes: number, maps: number, relationships: number, tasks: number, diaryDays: number, directories: number, files: number, notePaths: string[] }>}
+ * @param {{ notes?: number, perMap?: number, relationships?: boolean, tasks?: number, diaryDays?: number, today?: string, images?: number, imageBytes?: number }} [options]
+ * @returns {Promise<{ notes: number, maps: number, relationships: number, tasks: number, diaryDays: number, images: number, imageBytes: number, directories: number, files: number, notePaths: string[] }>}
  */
 export async function generatePisiProjectFixture(projectFolder, options = {}) {
     const total = Math.max(1, Number(options.notes) || 1000);
@@ -108,6 +163,11 @@ export async function generatePisiProjectFixture(projectFolder, options = {}) {
     let files = 0;
     const notePaths = [];
     const relationships = [];
+    const imageCount = Math.min(total, Math.max(0, Number(options.images) || 0));
+    const imageStep = imageCount ? Math.floor(total / imageCount) : 0;
+    const imageSize = Math.max(1024, Number(options.imageBytes) || 700 * 1024);
+    let images = 0;
+    let imageBytes = 0;
     for (const folder of ['.pisi/trash/items', '.pisi/mutations', '.pisi-history']) {
         await fs.mkdir(path.join(projectFolder, folder), { recursive: true });
         directories += 1;
@@ -129,6 +189,14 @@ export async function generatePisiProjectFixture(projectFolder, options = {}) {
             const nodeSidecar = `inv_${titles[index]}__${ids[index]}`;
             const notePath = path.join(mapFolder, `${titles[index]}.node`);
             const linked = index % 10 === 0 && index + 1 < total;
+            let content = noteContent(index, linked ? ids[index + 1] : '', linked ? titles[index + 1] : '');
+            if (imageStep && index % imageStep === 0 && images < imageCount) {
+                const image = await writeNoteImage(path.join(mapFolder, nodeSidecar), index, imageSize);
+                content += image.html;
+                images += 1;
+                imageBytes += image.size;
+                files += 1;
+            }
             await writeJson(notePath, {
                 pisi: {
                     version: 1,
@@ -141,7 +209,7 @@ export async function generatePisiProjectFixture(projectFolder, options = {}) {
                     parentMap: mapId
                 },
                 properties: {},
-                content: noteContent(index, linked ? ids[index + 1] : '', linked ? titles[index + 1] : '')
+                content
             });
             await fs.mkdir(path.join(mapFolder, nodeSidecar), { recursive: true });
             notePaths.push(notePath);
@@ -185,7 +253,18 @@ export async function generatePisiProjectFixture(projectFolder, options = {}) {
         files += diaryDays + 1;
         directories += 1;
     }
-    return { notes: total, maps: mapCount, relationships: relationships.length, tasks: taskCount, diaryDays, directories, files, notePaths };
+    return {
+        notes: total,
+        maps: mapCount,
+        relationships: relationships.length,
+        tasks: taskCount,
+        diaryDays,
+        images,
+        imageBytes,
+        directories,
+        files,
+        notePaths
+    };
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {
@@ -195,7 +274,8 @@ if (import.meta.url === pathToFileURL(process.argv[1] || '').href) {
         perMap: Number(process.argv[4]) || 250,
         relationships: process.argv[5] === '1',
         tasks: Number(process.argv[6]) || 0,
-        diaryDays: Number(process.argv[7]) || 0
+        diaryDays: Number(process.argv[7]) || 0,
+        images: Number(process.argv[8]) || 0
     });
     console.log(JSON.stringify({ ...result, notePaths: undefined }, null, 2));
 }

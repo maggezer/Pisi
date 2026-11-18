@@ -193,7 +193,8 @@ test('masaüstü blokları salt okunur kart; görsel sidecar’dan gösterilir; 
     await expect(image).toHaveAttribute('src', /^data:image\/png;base64,/);
     expect(await image.evaluate((element) => element.naturalWidth)).toBeGreaterThan(0);
     await expect(page.locator('[data-protected="canvas"] img')).toHaveAttribute('src', /^data:image\/png;base64,/);
-    await expect(page.locator('[data-protected="file"] .pisi-note-protected-text')).toHaveText('Rapor Özet.pdf');
+    // The file block shows its name and size; without sync the phone cannot open a file it does not hold (S6).
+    await expect(page.locator('[data-protected="file"] .pisi-note-file-name')).toHaveText('Rapor Özet.pdf');
     await shot(page, '36-note-protected', { fullPage: true });
 
     await blocks(page).nth(1).tap();

@@ -60,6 +60,15 @@ export function createCapacitorFsDriver({ root = PISI_PROJECT_ROOT, filesystem =
             }
         },
 
+        /** Writes a binary file from its base64: the plugin's form for a file written without an encoding. */
+        async writeBase64(key, base64) {
+            try {
+                await filesystem.writeFile({ ...at(key), data: String(base64) });
+            } catch (error) {
+                throw ioError(error, key);
+            }
+        },
+
         async rename(from, to) {
             const source = at(from);
             const target = at(to);

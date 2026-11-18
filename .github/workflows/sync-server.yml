@@ -21,6 +21,7 @@ on:
             - 'mobile/src/sync/**'
             - 'mobile/src/data/**'
             - 'mobile/tests/helpers/**'
+            - 'scripts/generate-project-fixture.mjs'
             - 'renderer/tags/pisi-task-store.mjs'
             - 'renderer/tags/pisi-todo-second-release.mjs'
             - 'scripts/electron-sync-client-e2e.mjs'
@@ -42,6 +43,7 @@ on:
             - 'mobile/src/sync/**'
             - 'mobile/src/data/**'
             - 'mobile/tests/helpers/**'
+            - 'scripts/generate-project-fixture.mjs'
             - 'renderer/tags/pisi-task-store.mjs'
             - 'renderer/tags/pisi-todo-second-release.mjs'
             - 'scripts/electron-sync-client-e2e.mjs'
@@ -60,7 +62,7 @@ concurrency:
 jobs:
     contract:
         runs-on: ubuntu-latest
-        timeout-minutes: 25
+        timeout-minutes: 40
 
         services:
             mariadb:
@@ -107,7 +109,9 @@ jobs:
             - name: Install dependencies with Electron
               run: npm ci
 
-            - name: Contract tests (php -l, migrations, every endpoint and error code) and desktop E2E
+            # S6: tests/sync-server-contract-transfer.test.mjs measures the first upload and download of a
+            # generated project at full size (2,000 notes, 5,000 tasks, 60 diary days, ~200 MB of images).
+            - name: Contract tests (php -l, migrations, every endpoint and error code), first-transfer measurement and desktop E2E
               run: xvfb-run -a npm run test:sync-server
               env:
                   PISI_SYNC_TEST_DB_HOST: 127.0.0.1
@@ -115,3 +119,13 @@ jobs:
                   PISI_SYNC_TEST_DB_USER: root
                   PISI_SYNC_TEST_DB_PASSWORD: ''
                   PISI_SYNC_ELECTRON_E2E: '1'
+                  PISI_SYNC_TRANSFER_FULL: '1'
+                  PISI_SYNC_TRANSFER_REPORT: test-results/sync-initial-transfer.json
+
+            - name: Upload the first-transfer measurement
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: sync-initial-transfer
+                  path: test-results/sync-initial-transfer.json
+                  if-no-files-found: warn

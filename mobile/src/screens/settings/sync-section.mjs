@@ -4,6 +4,7 @@
 // sync/sync-service.mjs; this file only draws it.
 
 import { h } from '../../ui/dom.mjs';
+import { formatByteSize } from '../../ui/byte-size.mjs';
 import { renderList, renderListRow } from '../../ui/list.mjs';
 
 /** "17 Kas 10:42" in the app's language; an em dash when unknown. */
@@ -18,6 +19,20 @@ export function describeSyncState(t, status) {
     if (status.running) return t('sync.state.running');
     if (status.state === 'error') return t('sync.state.errorCode', { code: status.code || 'INTERNAL' });
     return t(`sync.state.${status.state}`);
+}
+
+/** "Downloading: 120 / 2,000 files" with the bytes under it, while a large turn runs (S6). */
+function renderProgressRow({ t, locale, progress }) {
+    const { files, bytes } = progress;
+    const percent = files.total ? Math.round((files.done / files.total) * 100) : 0;
+    const bar = h('span', { class: 'pisi-sync-progress', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(percent) });
+    bar.style.setProperty('--pisi-progress', `${percent}%`);
+    return renderListRow({
+        title: t(`sync.progress.${progress.phase}`, { done: files.done, total: files.total }),
+        meta: bytes.total ? t('sync.progress.bytes', { done: formatByteSize(bytes.done, locale), total: formatByteSize(bytes.total, locale) }) : null,
+        trailing: bar,
+        dataset: { sync: 'progress', phase: progress.phase }
+    });
 }
 
 const deferredCount = (status) => (status.issues || []).filter((issue) => issue.code === 'DEFERRED_DIRTY').length;
@@ -48,6 +63,7 @@ export function renderSyncSection({ t, locale, status, onPair, onSyncNow, onOpen
             meta: waiting ? t('sync.pending', { count: waiting }) : null,
             dataset: { sync: 'status', state: status.running ? 'running' : status.state }
         }),
+        status.running && status.progress ? renderProgressRow({ t, locale, progress: status.progress }) : null,
         renderListRow({
             title: t('sync.lastRun'),
             value: status.lastRun ? formatSyncTime(status.lastRun.at, locale) : t('sync.never'),
