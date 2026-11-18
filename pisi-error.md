@@ -271,6 +271,25 @@ düzeltildi; davranış duruyor). Çözüm önerisi: testlerde logger'ın süre�
 yakalayıcılarını kurmaması (ör. bir ortam bayrağı) ya da bu dosyaların test
 sayısını denetleyen bir koruma.
 
+## 5h. `picomatch` ReDoS açığı geliştirme bağımlılıklarında; yamalı sürüm yok, audit kapısı kırmızı
+
+**[Yüksek (bildirim) · bağımlılık / CI · doğrulandı, çözülmedi; yama bekleniyor]**
+GHSA-fc5q-39xc-vjpf (19-10-2026): `picomatch` `<=4.0.7` tek dallı, tekrarlanan extglob kalıplarında
+(`+(*)` gibi) üstel geri izleme yapıyor. npm'deki en yeni sürüm 4.0.7 ve bildirimde yamalı sürüm yok,
+bu yüzden `overrides` ile düzeltilemiyor.
+
+- Kökte yalnız tam ağaçta: electron-builder → app-builder-lib → `@electron/rebuild` → node-gyp →
+  tinyglobby/fdir → picomatch. Çalışma zamanı denetimi temiz. `npm run audit` tam ağaç adımında düşüyor;
+  CI'ın `validate` işi bu adımda duruyor.
+- Mobilde vite/vitest → tinyglobby → picomatch; `npm --prefix mobile run audit` düşüyor (Mobile
+  `validate` işi #177'den beri kırmızı).
+- Risk: yalnız derleme ve test araçları; kalıplar depodan gelir, kullanıcıdan gelmez. Uygulama paketine
+  girmez.
+- `npm audit fix --force`'un önerisi sürüm düşürmek (electron-builder 26.0.20, vite 6.2.7); yapılmadı.
+- Karar (18-11-2026): istisna eklenmez, `picomatch` yaması beklenir. Yama çıkınca kökte ve mobilde
+  kapsamlı bir `overrides` (ör. `"picomatch@<=4.0.7": "^4.0.8"`) ya da doğrudan güncelleme ile kapatılır ve
+  bu madde silinir.
+
 ## 6. Güncel doğrulama snapshot’ı
 
 6 Ekim 2026 current `main` kontrolü:
