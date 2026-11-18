@@ -108,6 +108,9 @@ test('geliştirici menüsündeki örnek harita: üç bağlantı türü, iki parm
 });
 
 test('performans: 500 notluk harita açılır, kaydırma ve yakınlaştırma sırasında kareler ölçülür', async ({ page }, info) => {
+    // Writing 500 notes into the browser's store and opening them takes a while on a shared CI machine; the steps
+    // below already wait up to 30 s each, so the whole test gets three times the default (like large-project.spec.mjs).
+    test.slow();
     const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-mobile-map-500-'));
     try {
         // The desktop's own project generator: one map of 500 notes in a hierarchy, every relationship with a view.

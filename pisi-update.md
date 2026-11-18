@@ -1,5 +1,11 @@
 # PISI Güncelleme Takip Dosyası
 
+## 18-11-2026 — Mobil harita performans testinin süresi
+
+- `mobile/e2e/maps.spec.mjs` 500 notluk harita testi `test.slow()` ile çalışıyor (büyük proje testi gibi). Adımları zaten
+  30'ar sn bekliyordu, ama testin toplam süresi de 30 sn'ydi; yoğun CI makinesinde 500 notu tarayıcı deposuna yazmak bu
+  süreyi doldurup testi düşürdü. Uygulama davranışı değişmedi.
+
 ## 18-11-2026 — İki cihaz ve gerçek sunucuyla uçtan uca test; eski senkronun kaldırılması (S7)
 
 Senkron işi (`docs/sync-plan.md` S7; SV3, SV5, SV6, SV7, SV9, SV11, SV12).
