@@ -1,5 +1,18 @@
 # PISI Güncelleme Takip Dosyası
 
+## 20-11-2026 — Gerçek sunucu duman testi geçti (S7 kabulü)
+
+Senkron işi (`docs/sync-plan.md` S7 kabulünün son maddesi).
+
+- `scripts/sync-smoke.mjs` kullanıcının cPanel sunucusuna karşı kendi bilgisayarından (Windows x64, Node v26.13.1)
+  çalıştırıldı: `/v1/info`, geçici alan açma ve ilk yükleme, telefonun kodla eşleşmesi (iki tarafta aynı doğrulama
+  numarası) ve ilk indirme, senaryo 1 (farklı bloklar), 2 (aynı blok, tek çakışma kopyası), 5 (silme) ve 8 (görselin
+  açılınca inmesi) geçti; iki kopyada Integrity yeni bulgu vermedi, geçici alan silindi, çıkış kodu 0. S7'nin kabul
+  listesi böylece tamamlandı.
+- `docs/sync-server-cpanel.md` §11.2: betiğin `npm run` olmadan `node scripts/sync-smoke.mjs` ile çalıştırılması,
+  `--json` ve sunucunun en az 18-11-2026 sürümünde olması gerektiği (alan silme ucu) eklendi.
+- Kod değişmedi.
+
 ## 18-11-2026 — Geri sarmanın ilk turda kesin yakalanması; mobil E2E'nin depo yardımcısı; picomatch
 
 Senkron işi (`docs/sync-plan.md` S7 kapanışının devamı; SV3, SV9).
