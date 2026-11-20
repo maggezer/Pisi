@@ -106,7 +106,14 @@ Cihaz: bildirilmedi · Android sürümü: bildirilmedi · APK sürüm kodu (Ayar
 
 ### Senkron ve eşleştirme (S5)
 
-Test APK'sı Android 8.0 ve üstüne kurulur (QR okuyucu için `minSdkVersion` 26). Sunucu kurulu ve masaüstü bir alana bağlı olmalıdır (`docs/sync-server-cpanel.md`, masaüstünde Ayarlar → Senkron). Tam senkron kabul listesi S8'de `docs/sync-qa.md` olarak gelecek; bu adımlar APK'nın eşleştirmesini denemek içindir.
+Test APK'sı Android 8.0 ve üstüne kurulur (QR okuyucu için `minSdkVersion` 26). Sunucu kurulu ve masaüstü bir alana bağlı olmalıdır (`docs/sync-server-cpanel.md`, masaüstünde Ayarlar → Senkron). Bu adımlar APK'nın eşleştirmesini kısaca denemek içindir; senkronun tam cihaz kabul listesi `docs/sync-qa.md`'dedir (S8) ve aşağıdaki maddelerin hepsi orada da vardır.
+
+**Senkronlu test APK'sı (S8):**
+
+- §2'deki `Pisi-mobile-apk` senkronu içerir; ayrı bir "senkronlu" APK yoktur. Senkron kabulünde `main` dalının son **Mobile** çalıştırmasının APK'sı kullanılır; 14 günden yeni bir çalıştırma yoksa **Actions → Mobile → Run workflow** (`main`) ile yenisi üretilir.
+- Test APK'sı debug derlemesidir: Ayarlar'da Geliştirici bölümü görünür ve WebView `chrome://inspect` ile incelenebilir. Gerçek sunucuya yalnız `https://` ile bağlanır; sunucunun `config.php` dosyasındaki CORS kaynağı (`https://localhost`) değiştirilmemelidir (`docs/sync-server-cpanel.md` §6).
+- Eşleşme, token ve şifreleme anahtarı uygulamanın kendi alanında, Android Keystore ile sarılı durur. APK aynı sabit anahtarla imzalandıysa yeni APK eskisinin üzerine kurulunca eşleşme ve veriler kalır. Anahtarı farklı bir APK için uygulama kaldırılırsa eşleşme de silinir: telefon masaüstünden iptal edilip yeniden eşleştirilir.
+- Geliştirici bölümündeki "Örnek proje yükle", senkron kabulünde yalnız "kenara koy" adımı için kullanılır (`docs/sync-qa.md` §4); eşleşmiş bir telefonda yüklenirse örnek notlar masaüstüne de gider.
 
 - [ ] Ayarlar → **Senkron** → "Masaüstüyle eşleştir" → **QR kodu okut**: kamera izni istenir, masaüstündeki QR okununca "Masaüstünde bu telefonun bağlanmasını onaylayın." görünür; masaüstünde onaylayınca "Bağlandı".
 - [ ] **Kodla bağlan**: sunucu adresi, kısa kod ve cihaz adı girilir; iki ekranda aynı 6 haneli doğrulama numarası görünür. Masaüstünde "Farklı" denirse telefonda "Masaüstünde reddedildi." yazar.
