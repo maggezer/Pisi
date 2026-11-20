@@ -56,7 +56,7 @@ Sonra listeye devam edin; bir sorun öteki maddeleri genelde engellemez. Çıkan
 Sunucu en az 18-11-2026 sürümünde olmalıdır (alan silme ve hız sınırı davranışı bu sürümle geldi).
 
 1. cPanel → **Git Version Control** → depo → **Manage** → **Pull or Deploy** → önce **Update from Remote**, sonra **Deploy HEAD Commit** (`docs/sync-server-cpanel.md` §13).
-2. cPanel **Terminal**'inde (yoksa Cron Jobs'ta tek seferlik) `php app/bin/check.php` çalıştırın: bütün satırlar `[ OK ]` olmalıdır (§8 ve §14).
+2. cPanel **Terminal**'inde (yoksa Cron Jobs'ta tek seferlik) `cd ~ && /opt/alt/php84/usr/bin/php ~/pisi-sync/app/bin/check.php` çalıştırın: bütün satırlar `[ OK ]` olmalıdır (§8 ve §14). PHP yolu ve `pisi-sync` klasör adı kurulumda seçtiğinizdir; rehberde yazdığınız komutun aynısını kullanın. Kısa `php app/bin/check.php` biçimi yalnız `pisi-sync` klasörünün içindeyken çalışır.
 
 ### 1.2 Masaüstü uygulaması
 
@@ -120,7 +120,7 @@ Cihaz: · Android sürümü: · APK sürüm kodu: · Masaüstü işletim sistemi
 
 - [ ] Bilgisayarda `curl -s https://<sunucu adresiniz>/v1/info` yanıtı `{"service":"pisi-sync","protocol":{"min":1,"max":1,…` ile başlar (`docs/sync-server-cpanel.md` §11).
 - [ ] Aynı sayfa telefonun tarayıcısında (Chrome) açılınca da aynı yanıt görünür; tarayıcı sertifika uyarısı vermez.
-- [ ] `php app/bin/check.php` bütün satırlarda `[ OK ]` yazar (§1.1).
+- [ ] `check.php` (§1.1'deki tam komutla) bütün satırlarda `[ OK ]` yazar.
 
 ## 3. Masaüstünde alan açma ve ilk yükleme
 
