@@ -118,69 +118,72 @@ Cihaz: · Android sürümü: · APK sürüm kodu: · Masaüstü işletim sistemi
 
 ## 2. Sunucu
 
-- [ ] Bilgisayarda `curl -s https://<sunucu adresiniz>/v1/info` yanıtı `{"service":"pisi-sync","protocol":{"min":1,"max":1,…` ile başlar (`docs/sync-server-cpanel.md` §11).
-- [ ] Aynı sayfa telefonun tarayıcısında (Chrome) açılınca da aynı yanıt görünür; tarayıcı sertifika uyarısı vermez.
-- [ ] `php app/bin/check.php` bütün satırlarda `[ OK ]` yazar (§1.1).
+- [x] Bilgisayarda `curl -s https://<sunucu adresiniz>/v1/info` yanıtı `{"service":"pisi-sync","protocol":{"min":1,"max":1,…` ile başlar (`docs/sync-server-cpanel.md` §11).
+- [x] Aynı sayfa telefonun tarayıcısında (Chrome) açılınca da aynı yanıt görünür; tarayıcı sertifika uyarısı vermez.
+- [x] `cd ~ && /opt/alt/php84/usr/bin/php ~/pisi-sync/app/bin/check.php` bütün satırlarda `[ OK ]` yazar (§1.1).
 
 ## 3. Masaüstünde alan açma ve ilk yükleme
 
-- [ ] Ayarlar → **Senkron** bölümünde açıklama metni ("Projeyi kendi Pisi senkron sunucunuz üzerinden …") ve **Yeni senkron alanı aç** görünür.
+- [x] Ayarlar → **Senkron** bölümünde açıklama metni ("Projeyi kendi Pisi senkron sunucunuz üzerinden …") ve **Yeni senkron alanı aç** görünür.
 - [ ] Sunucu adresi `http://` ile girilince "Sunucu adresi https:// ile başlamalı." uyarısı çıkar, alan açılmaz.
+    Hata çıkıyor ama alt katmanda kaldığı için gözükmüyor.
 - Yanlış kurulum anahtarını **bilerek denemeyin**: sunucu yanlış denemeden sonra o internet bağlantısından alan açmayı bir saat kilitler (bu davranış otomatik testlerde sınanır). Yanlışlıkla yanlış girerseniz "Kurulum anahtarı yanlış." görünür; bir saat sonra doğru anahtarla yeniden deneyin.
-- [ ] Doğru adres ve anahtarla **Alan aç ve projeyi yükle**: "Senkron alanı açıldı; proje yükleniyor." görünür, ilerleme satırı "Yükleniyor … dosya" diye sayar.
-- [ ] Yükleme sürerken **Durdur**: "Senkron durduruldu; "Sürdür" ile kaldığı yerden devam eder." yazar. **Sürdür** ile kaldığı yerden devam eder ve biter. (Proje küçükse yükleme bir iki saniyede biter ve Durdur görünmeyebilir; o zaman bu maddenin yanına "proje küçük, denenemedi" yazın.)
-- [ ] Yükleme bitince durum satırında "Son senkron: <saat>" yazar.
-- [ ] **Senkron edilmeyen dosyalar** listesi boştur ya da yalnız beklediğiniz dosyaları gösterir (ör. 64 MB'tan büyük bir dosya). Listede bir not ya da görsel varsa adını yazın.
-- [ ] **Cihazlar** listesinde yalnız bu bilgisayar görünür: "<ad> · masaüstü · bu cihaz".
-- [ ] Pisi'yi kapatıp `npm start` ile yeniden açın, aynı projeyi açın: Ayarlar → Senkron'da **Bağlı alan** görünür, yeniden alan açmak istenmez.
-- [ ] Yükleme ve tur sırasında açık not kapanmaz, sekmeler yerinde kalır, ağaç (Gezgin) baştan yüklenmez.
+- [x] Doğru adres ve anahtarla **Alan aç ve projeyi yükle**: "Senkron alanı açıldı; proje yükleniyor." görünür, ilerleme satırı "Yükleniyor … dosya" diye sayar.
+- [x] Yükleme sürerken **Durdur**: "Senkron durduruldu; "Sürdür" ile kaldığı yerden devam eder." yazar. **Sürdür** ile kaldığı yerden devam eder ve biter. (Proje küçükse yükleme bir iki saniyede biter ve Durdur görünmeyebilir; o zaman bu maddenin yanına "proje küçük, denenemedi" yazın.)
+- [x] Yükleme bitince durum satırında "Son senkron: <saat>" yazar.
+- [x] **Senkron edilmeyen dosyalar** listesi boştur ya da yalnız beklediğiniz dosyaları gösterir (ör. 64 MB'tan büyük bir dosya). Listede bir not ya da görsel varsa adını yazın.
+- [x] **Cihazlar** listesinde yalnız bu bilgisayar görünür: "<ad> · masaüstü · bu cihaz".
+- [x] Pisi'yi kapatıp `npm start` ile yeniden açın, aynı projeyi açın: Ayarlar → Senkron'da **Bağlı alan** görünür, yeniden alan açmak istenmez.
+- [x] Yükleme ve tur sırasında açık not kapanmaz, sekmeler yerinde kalır, ağaç (Gezgin) baştan yüklenmez.
 
 ## 4. QR ile eşleştirme ve "kenara koy"
 
 Telefonda bir proje varken eşleşmeyi dener. Telefonda veri yoksa önce Ayarlar → Geliştirici → **Örnek proje yükle**'ye basın; Pisi sekmesinde bugünün günlüğüne "telefondaki eski günlük" yazın.
 
 - [ ] Masaüstünde Ayarlar → Senkron → **Cihaz eşleştir**: pencerede QR kodu, `XXXX-XXXX` biçiminde kısa kod, geri sayan "Kalan süre" ve "Telefon bekleniyor…" görünür.
-- [ ] Pencereyi **×** ile kapatın, sonra telefonda bu kısa kodla bağlanmayı deneyin (Ayarlar → Senkron → **Masaüstüyle eşleştir** → **Kodla bağlan**): "Kod bulunamadı ya da süresi doldu. …" yazar. Kapanan pencerenin kodu kullanılamaz.
-- [ ] Masaüstünde yeniden **Cihaz eşleştir**. Telefonda **Masaüstüyle eşleştir**; "Bu cihazın adı" alanına telefonunuza bir ad verin (ör. "Pixel").
-- [ ] **QR kodu okut**: telefon kamera izni ister. İzin verince "Masaüstündeki QR kodunu çerçeveye alın" ekranı açılır ve QR okunur.
-- [ ] Telefon "Telefonda bir proje var" diye sorar: **Telefondakileri projeye ekle** ve **Telefondakileri kenara koy** seçenekleri açıklamalarıyla görünür. **Telefondakileri kenara koy**'u seçin.
-- [ ] Telefonda "Masaüstünde bu telefonun bağlanmasını onaylayın." görünür. Masaüstünde "<telefonun adı> bağlanmak istiyor", "Rol: Telefon (silme yapamaz)" ve "Bu cihazı tanıyorsanız onaylayın." yazar; doğrulama numarası **görünmez** (QR yolu kendini doğrular).
-- [ ] Masaüstünde **Onayla**: masaüstünde "Cihaz eşleştirildi.", telefonda "Bağlandı" ve "Bu telefon "<proje adı>" projesine bağlandı. İlk senkron başladı." görünür.
-- [ ] Telefonda "Telefondaki proje kenara kondu; Ayarlar → Proje'de görünür." yazar. Ayarlar → Proje'de **Kenara konan proje** satırı `default-oncesi-<tarih>` adıyla görünür.
-- [ ] Masaüstündeki **Cihazlar** listesinde telefon "<ad> · telefon · son görülme <saat>" olarak görünür.
+- Eşleşme tamamlandı ancak pencere ayarlar penceresinin altında çıkıyor.
+- [x] Pencereyi **×** ile kapatın, sonra telefonda bu kısa kodla bağlanmayı deneyin (Ayarlar → Senkron → **Masaüstüyle eşleştir** → **Kodla bağlan**): "Kod bulunamadı ya da süresi doldu. …" yazar. Kapanan pencerenin kodu kullanılamaz.
+- [x] Masaüstünde yeniden **Cihaz eşleştir**. Telefonda **Masaüstüyle eşleştir**; "Bu cihazın adı" alanına telefonunuza bir ad verin (ör. "Pixel").
+- [x] **QR kodu okut**: telefon kamera izni ister. İzin verince "Masaüstündeki QR kodunu çerçeveye alın" ekranı açılır ve QR okunur.
+- [x] Telefon "Telefonda bir proje var" diye sorar: **Telefondakileri projeye ekle** ve **Telefondakileri kenara koy** seçenekleri açıklamalarıyla görünür. **Telefondakileri kenara koy**'u seçin.
+- [x] Telefonda "Masaüstünde bu telefonun bağlanmasını onaylayın." görünür. Masaüstünde "<telefonun adı> bağlanmak istiyor", "Rol: Telefon (silme yapamaz)" ve "Bu cihazı tanıyorsanız onaylayın." yazar; doğrulama numarası **görünmez** (QR yolu kendini doğrular).
+- [x] Masaüstünde **Onayla**: masaüstünde "Cihaz eşleştirildi.", telefonda "Bağlandı" ve "Bu telefon "<proje adı>" projesine bağlandı. İlk senkron başladı." görünür.
+- [x] Telefonda "Telefondaki proje kenara kondu; Ayarlar → Proje'de görünür." yazar. Ayarlar → Proje'de **Kenara konan proje** satırı `default-oncesi-<tarih>` adıyla görünür.
+- [x] Masaüstündeki **Cihazlar** listesinde telefon "<ad> · telefon · son görülme <saat>" olarak görünür.
 
 ## 5. Telefonda ilk indirme
 
-- [ ] Proje büyükse telefonda Ayarlar → Senkron'da "İniyor: n / m dosya" ilerlemesi görünür (10 dosyadan az inen turda ilerleme gösterilmez).
-- [ ] İndirme sürerken Pisi sekmesi açılır ve bugünün görevleri ve günlüğü, notlar inmeden önce görünür.
-- [ ] İndirme bitince Ayarlar → Senkron'da proje adı (masaüstündeki proje adı), **Durum: Eşit** ve **Son senkron** saati yazar.
-- [ ] Ayarlar → Proje'deki görev, not, günlük ve harita sayıları masaüstündekiyle aynıdır. Bütünlük satırı "Sorun yok" yazar.
-- [ ] Örnek projenin notları ve "telefondaki eski günlük" telefondaki projede **yoktur** (kenara kondu), masaüstündeki projede de **yoktur**.
-- [ ] Notlar sekmesinde masaüstünün notları, Haritalar sekmesinde masaüstünün haritası görünür; bir not açılınca metni masaüstündekiyle aynıdır.
-- [ ] Görselli bir not açılınca önce "Görsel iniyor…" görünür, sonra görsel gelir.
-- [ ] Uygulamayı son uygulamalardan kapatıp yeniden açın: eşleşme durur, yeniden eşleştirme istenmez, notlar yeniden inmez.
+- [x] Proje büyükse telefonda Ayarlar → Senkron'da "İniyor: n / m dosya" ilerlemesi görünür (10 dosyadan az inen turda ilerleme gösterilmez).
+- [x] İndirme sürerken Pisi sekmesi açılır ve bugünün görevleri ve günlüğü, notlar inmeden önce görünür.
+- [x] İndirme bitince Ayarlar → Senkron'da proje adı (masaüstündeki proje adı), **Durum: Eşit** ve **Son senkron** saati yazar.
+- [x] Ayarlar → Proje'deki görev, not, günlük ve harita sayıları masaüstündekiyle aynıdır. Bütünlük satırı "Sorun yok" yazar.
+- [x] Örnek projenin notları ve "telefondaki eski günlük" telefondaki projede **yoktur** (kenara kondu), masaüstündeki projede de **yoktur**.
+- [x] Notlar sekmesinde masaüstünün notları, Haritalar sekmesinde masaüstünün haritası görünür; bir not açılınca metni masaüstündekiyle aynıdır.
+- [x] Görselli bir not açılınca önce "Görsel iniyor…" görünür, sonra görsel gelir.
+- [x] Uygulamayı son uygulamalardan kapatıp yeniden açın: eşleşme durur, yeniden eşleştirme istenmez, notlar yeniden inmez.
 
 ## 6. Telefondan masaüstüne değişiklik
 
 Telefonda yapın, sonra masaüstünde en çok bir dakika bekleyin.
 
-- [ ] Pisi sekmesinde "yarın 10:00 telefon görevi" ekleyin: masaüstünün görev panelinde yarına, 10:00'a tarihli görünür.
-- [ ] Bugünün günlüğüne "telefondan günlük satırı" yazın: masaüstünde bugünün günlüğünde görünür.
-- [ ] Bir notun bir paragrafını değiştirin ve geri tuşuyla çıkın: masaüstünde aynı paragraf değişir, notun başka hiçbir yeri değişmez.
-- [ ] Notlar sekmesinde yeni bir not oluşturun (sağ alttaki düğme), içine bir satır yazın: masaüstünün Gezgin'inde görünür ve açılır.
-- [ ] Masaüstünde açılmış bir görevi telefonda tamamlayın: masaüstünde tamamlanmış görünür.
+- [x] Pisi sekmesinde "yarın 10:00 telefon görevi" ekleyin: masaüstünün görev panelinde yarına, 10:00'a tarihli görünür.
+- [x] Bugünün günlüğüne "telefondan günlük satırı" yazın: masaüstünde bugünün günlüğünde görünür.
+- [x] Bir notun bir paragrafını değiştirin ve geri tuşuyla çıkın: masaüstünde aynı paragraf değişir, notun başka hiçbir yeri değişmez.
+- [x] Notlar sekmesinde yeni bir not oluşturun (sağ alttaki düğme), içine bir satır yazın: masaüstünün Gezgin'inde görünür ve açılır.
+- [x] Masaüstünde açılmış bir görevi telefonda tamamlayın: masaüstünde tamamlanmış görünür.
 - [ ] Quick Add ile yazılmış (kaynağı bir not olan) bir görevi telefonda tamamlayın. Masaüstünde görev panelini açıp kapatın, görevin kaynak notunu açıp bir harf yazıp silin ve kaydedin: görev panelinde görev **tamamlanmış kalır**. (Notun içindeki görev işaretinin eski durumda görünmesi bilinen bir sınırdır, `pisi-error.md` §5d; madde yalnız görev panelindeki durumu sorar.)
+      Bu biraz sıkıntılı görev içinde yazma değişikliği aktarılmıyor.
 - [ ] Her gün tekrar eden bir görevi telefonda tamamlayın: masaüstünde yarınki tekrarı **bir kez** görünür.
 
 ## 7. Masaüstünden telefona değişiklik
 
 Masaüstünde yapın, sonra telefonda uygulamaya dönün ya da **Şimdi eşitle**'ye basın.
 
-- [ ] Yeni bir not oluşturun ve bir satır yazın: telefonun Notlar listesinde görünür.
-- [ ] Var olan bir notun bir paragrafını değiştirin: telefonda aynı paragraf değişir.
-- [ ] Yeni bir görev ekleyin (bugüne tarihli): telefonda Pisi sekmesinde ve Görevler sekmesinde görünür.
+- [x] Yeni bir not oluşturun ve bir satır yazın: telefonun Notlar listesinde görünür.
+- [x] Var olan bir notun bir paragrafını değiştirin: telefonda aynı paragraf değişir.
+- [x] Yeni bir görev ekleyin (bugüne tarihli): telefonda Pisi sekmesinde ve Görevler sekmesinde görünür.
 - [ ] Bir görevi tamamlayın: telefonda tamamlanmış görünür; Takvim'de o günün noktası güncellenir.
-- [ ] Bugünün günlüğüne "masaüstünden günlük satırı" yazın: telefonda Pisi sekmesinin günlük alanında görünür.
+- [x] Bugünün günlüğüne "masaüstünden günlük satırı" yazın: telefonda Pisi sekmesinin günlük alanında görünür.
 - [ ] Haritada bir notun yerini değiştirin: telefonda harita açıkken **Şimdi eşitle** sonrası harita kamerayı koruyarak güncellenir.
 
 ## 8. Açık not ve imleç korunur
