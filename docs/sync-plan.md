@@ -560,6 +560,10 @@ Her faz: amaç → okunacaklar → yapılacaklar → kabul kriterleri. Madde kim
 
 **Kabul:** `docs/sync-qa.md`'deki bütün maddeler işaretlidir; `pisi-error.md`'de senkron için "yüksek" önemde açık madde yoktur.
 
+- **Liste yazıldı (20-11-2026):** `docs/sync-qa.md` (adım 1) ve `docs/mobile-qa.md` §4'teki senkronlu test APK'sı notu (adım 2). Kullanıcının listeyi uygulaması (adım 3) bekleniyor.
+    - Liste, plandaki başlıkların hepsini arayüzdeki gerçek metinlerle adım adım verir ve bir deneme projesiyle (gerçek projenin kopyası) yukarıdan aşağı uygulanacak sırayla dizilir. Telefonun ne zaman eşitlediği (§3.6, arka planda yok) listenin başında anlatılır.
+    - Belgede olmayan kararlar: yanlış kurulum anahtarı elle denenmez, çünkü sunucu o bağlantıdan alan açmayı bir saat kilitler (sözleşme testlerinde sınanır); sunucunun geri sarılması, bozuk blob, kopan yükleme, budanan günlük, hız sınırı ve son masaüstünün ayrılması elle denenmez, senaryo matrisinde kalır (`docs/sync-qa.md` §16); masaüstü, senkron bir sürüm paketinde yer alana kadar depodan `npm start` ile çalıştırılır.
+
 ---
 
 ## 5. Kapsam dışı

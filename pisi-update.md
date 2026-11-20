@@ -1,5 +1,21 @@
 # PISI Güncelleme Takip Dosyası
 
+## 20-11-2026 — Senkronun cihazda kabul listesi (S8)
+
+Senkron işi (`docs/sync-plan.md` S8, adım 1 ve 2).
+
+- `docs/sync-qa.md`: Pisi Sync'in gerçek telefon, gerçek masaüstü ve kullanıcının cPanel sunucusuyla elle kabul listesi.
+  Sunucu (`/v1/info`, `check.php`), masaüstünde alan açma ve ilk yükleme (Durdur/Sürdür), QR ile eşleşme ve "kenara koy",
+  telefonda ilk indirme, iki yönde not, görev ve günlük değişikliği, açık not ve imlecin korunması, çakışma kopyası (aynı
+  paragraf, farklı paragraflar, aynı görev, aynı günün yeni günlüğü, tekrar eden görev), masaüstünde silme ve yeniden
+  adlandırma (telefon çevrimdışıyken de), görsel ve dosya ekinin açılınca inmesi ve uçak modunda yer tutucu, arka plana alma ve
+  dönme, cihaz iptali ve kodla yeniden eşleşme (doğrulama numarası, "Farklı", "ekle"), kapanış bütünlük denetimi ve bir günlük
+  pil ve veri gözlemi. Maddeler arayüzdeki gerçek metinlerle yazıldı; başta terimler, telefonun ne zaman eşitlediği ve
+  paylaşılmaması gerekenler (sunucu adresi, kurulum anahtarı, kod) anlatılır.
+- `docs/mobile-qa.md` §4: senkronlu test APK'sı notu (hangi APK, debug derlemesi, Keystore'daki eşleşmenin güncellemede
+  korunması, CORS).
+- `docs/sync-plan.md` S8 ve `CLAUDE.md`: listenin yeri. Kod değişmedi. Kabul, kullanıcı listeyi uygulayınca tamamlanır.
+
 ## 20-11-2026 — Gerçek sunucu duman testi geçti (S7 kabulü)
 
 Senkron işi (`docs/sync-plan.md` S7 kabulünün son maddesi).
