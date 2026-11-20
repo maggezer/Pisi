@@ -520,6 +520,7 @@ Her faz: amaç → okunacaklar → yapılacaklar → kabul kriterleri. Madde kim
 
 - Matristeki 15 senaryo CI'da (`sync-server.yml`) geçer.
 - Duman testi kullanıcının cPanel sunucusunda geçer; çıktı (adres olmadan) PR'a eklenir.
+    - **Geçti (20-11-2026):** kullanıcının cPanel sunucusunda, Windows x64, Node v26.13.1, `node scripts/sync-smoke.mjs --server <gizli> --json`: bütün adımlar (`/v1/info`, alan açma, kodla eşleşme, senaryo 1, 2, 5, 8, alanın silinmesi) geçti, Integrity yeni bulgu vermedi, çıkış kodu 0. Çıktı PR'da.
 - Eski kod kaldırıldıktan sonra `npm run validate`, `xvfb-run -a npm run test:e2e` ve mobil doğrulamalar geçer. `check:architecture` kaldırılan bağlamaları manifestte bulmaz.
 - **Uygulandı (18-11-2026):**
     - Matris: `scripts/sync-e2e-matrix.mjs` ve `scripts/sync-e2e/{desktop,phone,fault-proxy,server-tools,desktop-audit}.mjs`. Masaüstü gerçek Electron (CDP), telefon mobil derlemenin Playwright'ta Pixel 7 görünümü; telefonun `https://sync.test` istekleri Playwright route'uyla, masaüstünün istekleri doğrudan aynı hata enjeksiyonlu iletene, oradan PHP test sunucusuna gider. İki cihaz kendi ekranlarından kodla eşleşir; 14 senaryo sırayla aynı alanda çalışır (iptal ve geri sarma en sonda), her birinden sonra iki tarafta Integrity denetlenir (15). Yardımcıların hiçbiri uygulamaya kod eklemez.

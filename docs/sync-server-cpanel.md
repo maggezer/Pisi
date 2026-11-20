@@ -241,6 +241,8 @@ Depoyu bilgisayarınıza alın, Node.js 24 kurun ve depo klasöründe bir kez `n
 - **Windows cmd:** `set "PISI_SYNC_SETUP_KEY=KURULUM_ANAHTARI" && npm run sync:smoke -- --server https://sync.ornek.com`
 - **macOS, Linux:** `PISI_SYNC_SETUP_KEY=KURULUM_ANAHTARI npm run sync:smoke -- --server https://sync.ornek.com`
 
+`npm run` kullanmadan aynı betik `node scripts/sync-smoke.mjs --server https://sync.ornek.com` ile de çalışır (Windows PowerShell'de `--` sorunu yaşarsanız bu biçimi kullanın); sona `--json` eklenirse sonuç JSON olarak da basılır. Test, alanı sonunda `DELETE /v1/spaces/…` ile siler; bu uç 18-11-2026 sürümüyle geldi, sunucu daha eskiyse önce §13'teki gibi güncelleyin.
+
 Bütün adımlar geçerse komut 0 ile biter. Testin açtığı alan, adımlardan biri düşse bile silinir; silinemezse §16'daki `spaces.php list` ile görünür.
 
 ## 12. Yedekleme
