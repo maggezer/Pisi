@@ -10,7 +10,8 @@
 //   3. Both sides change the same block: one conflict copy appears in the tree and Project
 //      Integrity reports no new finding.
 //   4. §5d / SV13: a task the phone completed stays completed after the task panel is opened
-//      and closed and after its source note is edited and saved.
+//      and closed and after its note is edited and saved (notes carry task ids only, G2).
+//   5. A repeating task completed on the desktop stays one record and moves on (§3.2.3).
 // Needs MariaDB (PISI_SYNC_TEST_DB_*) and PHP; CI runs it from npm run test:sync-server under xvfb.
 
 import { spawn } from 'node:child_process';
@@ -21,7 +22,6 @@ import path from 'node:path';
 import { keepPagePromise } from './e2e-cdp.mjs';
 import { startSyncTestServer } from './start-sync-test-server.mjs';
 import { claimWithCode, createTestDevice, serverUrlOf } from '../tests/sync-client-device.mjs';
-import { formatPisiRecurrenceTaskId } from '../shared/ids.mjs';
 
 const PISI_E2E_CHROMIUM_FLAGS = [
     '--disable-background-timer-throttling',
@@ -39,7 +39,6 @@ const userDataPath = path.join(tempRoot, 'user-data');
 const projectPath = path.join(tempRoot, 'project');
 const NOTE = 'Senkron Notu.node';
 const NOTE_ID = 'node_5e4c7a10-1b2c-4d3e-8f90-a1b2c3d4e5f6';
-const TASK_ID = 'task_source_1b8e7567d628e6cb';
 const blockId = (index) => `blk_e2e00000-0000-4000-8000-${String(index).padStart(12, '0')}`;
 
 await fs.cp(path.join(repoRoot, 'tests', 'fixtures', 'desktop-project'), projectPath, {
@@ -382,7 +381,8 @@ try {
     // 4. SV13: the phone completes a task whose source is a note block.
     assert((await phone.sync()).ok, 'Phone pull before the task change');
     const tasks = phone.readJson('.pisi/tasks.json');
-    const task = tasks.tasks.find((item) => item.id === TASK_ID);
+    const task = tasks.tasks.find((item) => item.title === 'Raporu gönder');
+    const TASK_ID = task?.id;
     assert(task && task.status === 'todo', 'Fixture task', task);
     task.status = 'done';
     task.completedAt = '2026-11-17T09:00:00.000Z';
@@ -403,9 +403,9 @@ try {
     })()`);
     await sleep(1500);
     assert((await statusOnDisk()) === 'done', 'SV13: opening and closing the task panel must not take the remote completion back', await statusOnDisk());
-    const inbox = path.join(projectPath, 'Inbox.node');
+    const sourceNote = path.join(projectPath, 'Proje Planı.node');
     await cdp.evaluate(`(async () => {
-        await openPisiFileTab({ fullPath: ${JSON.stringify(inbox)}, name: 'Inbox.node', fileName: 'Inbox.node', isFile: true, type: 'file' });
+        await openPisiFileTab({ fullPath: ${JSON.stringify(sourceNote)}, name: 'Proje Planı.node', fileName: 'Proje Planı.node', isFile: true, type: 'file' });
         const editor = document.getElementById('center-node-editor-content');
         editor.focus();
         const range = document.createRange();
@@ -429,26 +429,17 @@ try {
     assert(phone.readJson('.pisi/tasks.json').tasks.find((item) => item.id === TASK_ID)?.status === 'done', 'The phone must still see the task completed');
     assert((await cdp.evaluate('window.__pisiE2ELoadCount || 0')) === 0, 'loadProject must not run during sync');
 
-    // 5. A repeating task completed on the desktop: the next occurrence's id follows the shared rule
-    //    (formatPisiRecurrenceTaskId), the same one the phone uses, so both devices make one next task.
-    const repeatingId = 'task_source_2a8e29877846d7a3';
-    const completed = await cdp.evaluate(`(async () => {
-        await window.refreshPisiFirstClassTaskStore?.();
-        window.renderPisiMissionsPanel?.();
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        const mission = (window.pisiTodoSecondReleaseState?.currentMissions || []).find((item) => item.taskId === ${JSON.stringify(repeatingId)});
-        if (!mission) return { ok: false, reason: 'mission missing', count: (window.pisiTodoSecondReleaseState?.currentMissions || []).length };
-        return window.togglePisiMissionCompletionSecondRelease(mission, true);
-    })()`);
-    assert(completed?.ok !== false, 'Completing the repeating task', completed);
-    const nextTask = await waitUntil('next occurrence in tasks.json', async () => {
-        const store = await readJson('.pisi/tasks.json');
-        const previous = store.tasks.find((item) => item.id === repeatingId);
-        const next = store.tasks.find((item) => item.id !== repeatingId && item.title === 'Haftalık özet yaz' && item.status === 'todo');
-        return previous?.status === 'done' && next ? next : null;
-    });
-    const nextIso = String(nextTask.scheduledAt || nextTask.dueDate).slice(0, 10);
-    assert(nextTask.id === formatPisiRecurrenceTaskId(repeatingId, nextIso), 'The next occurrence must get the shared recurrence id', nextTask);
+    // 5. A repeating task completed on the desktop stays one record: one completion, the next due day (§3.2.3).
+    const repeating = (await readJson('.pisi/tasks.json')).tasks.find((item) => item.title === 'Haftalık özet yaz');
+    const completed = await cdp.evaluate(`window.runPisiTaskCommand('task.complete.v1', { taskId: ${JSON.stringify(repeating.id)} })`);
+    assert(completed?.ok, 'Completing the repeating task', completed);
+    const moved = (await readJson('.pisi/tasks.json')).tasks.filter((item) => item.title === 'Haftalık özet yaz');
+    assert(moved.length === 1 && moved[0].id === repeating.id, 'A repeating task stays one record', moved);
+    assert(moved[0].completions.length === 1 && moved[0].dueDate > repeating.dueDate && moved[0].status === 'todo', 'It moves to its next day', moved[0]);
+    await runAppTurn(cdp);
+    assert((await phone.sync()).ok, 'Phone pull of the completion');
+    const onPhone = phone.readJson('.pisi/tasks.json').tasks.find((item) => item.id === repeating.id);
+    assert(onPhone?.completions?.length === 1 && onPhone.dueDate === moved[0].dueDate, 'The phone gets the same record', onPhone);
 
     // 6. A large upload (S6): Settings shows its progress; "Durdur" stops the turn and pauses
     //    syncing, "Sürdür" goes on where it stopped and every file is sent once.
@@ -529,7 +520,7 @@ try {
     assert(twice.length === 0, 'No file was committed twice', twice);
 
     console.log(
-        '[E2E] Sync client passed: space + pairing, open note kept while typing, conflict copy without Integrity findings, SV13, recurrence id, progress and stop/resume of a large upload.'
+        '[E2E] Sync client passed: space + pairing, open note kept while typing, conflict copy without Integrity findings, SV13, a repeating task stays one record, progress and stop/resume of a large upload.'
     );
 } catch (error) {
     console.error(logs.slice(-6000));

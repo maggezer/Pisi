@@ -45,7 +45,7 @@ Atomic journal paths and generated temporary `.tmp` sources are excluded from re
 
 Every persistent v1 domain mutation joins the project atomic queue, including:
 
-- task capture/upsert/update/delete/index projection sync;
+- task create/update/complete/reopen/move/delete/batch (`task-domain.js`) and the note save that sends removed task blocks to the Trash;
 - semantic relationship upsert/delete/reparent;
 - map layout, operational state, camera, reference detach and node creation;
 - project item rename/move/delete and path delete;
@@ -55,7 +55,7 @@ This means a nominally single-file mutation cannot interleave with a destructive
 
 ## Rename and move integrity
 
-Rename and move still update canonical task source paths. If that reference rewrite fails, the domain command now returns failure. The enclosing atomic transaction restores the file/sidecar movement and every captured metadata write instead of committing a renamed item with stale task references.
+Tasks keep the id of their note (`noteId`), so a rename or move writes no task. A task command writes `tasks.json`, a closed note's block and the diary sections of the task's days in one transaction: a failure part way (tested with a fault injected before a diary write) leaves the state before the command.
 
 ## Bulk mutation
 

@@ -49,6 +49,14 @@ function writeNoteContent(filePath, content) {
     globalThis.writePisiDocument(filePath, { ...info.data, content });
 }
 
+test('a section that leaves out a task is not a finding until the phone writes sections (G8)', (t) => {
+    const { project } = makeProject(t);
+    taskService.createPisiTask(project, { task: { title: 'Günlükte' }, target: { diaryDate: '2026-11-21' } });
+    const diaryPath = documentStore.getPisiDiaryNodePath(project, '2026-11-21');
+    writeNoteContent(diaryPath, '<div>Günün notu</div>');
+    assert.deepEqual(taskCodes(project), []);
+});
+
 test('a project the task service wrote has no task finding', (t) => {
     const { project, note } = makeProject(t);
     const created = taskService.createPisiTask(project, {
@@ -78,8 +86,9 @@ test('orphan block, homeless task, missing note, double reference and broken sec
         ...state.tasks,
         { ...state.tasks.find((task) => task.id === diaryTask.id), id: 'task_nonote0001', noteId: 'node_gone', diaryDate: null }
     ]);
+    // A diary whose task section is not its last block.
     const diaryPath = documentStore.getPisiDiaryNodePath(project, '2026-11-21');
-    writeNoteContent(diaryPath, '<div>Günün notu</div>');
+    writeNoteContent(diaryPath, `${documentStore.ensurePisiFileMetadata(diaryPath).data.content}<div>Bölümden sonra yazılmış</div>`);
 
     assert.deepEqual(taskCodes(project), [
         'diary-task-section-mismatch',

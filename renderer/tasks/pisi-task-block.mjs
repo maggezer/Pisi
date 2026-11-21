@@ -230,7 +230,7 @@ function handlePisiTaskCheckClick(event) {
 }
 
 function handlePisiTaskCheckKeydown(event) {
-    if (event.key !== 'Enter' && event.key !== ' ') return;
+    if ((event.key !== 'Enter' && event.key !== ' ') || event.isComposing) return;
     const box = event.target?.closest?.('[data-pisi-task-check]');
     if (!box || document.activeElement !== box) return;
     handlePisiTaskCheckClick(event);
@@ -252,7 +252,7 @@ function initializePisiTaskBlocks() {
     document.addEventListener('pisi:task-store-updated', (event) => {
         refreshPisiOpenTaskDrawings();
         // A sync turn left open diaries to the editor: the section is drawn again and saved.
-        for (const day of event.detail?.deferredDiaryDays || []) window.applyPisiTaskDeferred?.({ notes: [], diaryDays: [day] });
+        for (const day of event.detail?.deferredDiaryDays || []) void window.applyPisiTaskDeferred?.({ notes: [], diaryDays: [day] });
     });
     document.addEventListener('pisi:active-node-changed', () => queueMicrotask(refreshPisiOpenTaskDrawings));
 }

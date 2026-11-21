@@ -17,11 +17,13 @@ The `.pisi`, `.git`, and `node_modules` project-internal roots cannot be trashed
 `project.item.delete.v1` and `project.path.delete.v1` are rebound to the Trash domain. The mutation:
 
 1. discovers the node/map identities under the target;
-2. archives canonical tasks whose source belongs to the target;
+2. archives the canonical tasks whose place is a deleted note (`noteId`) or a deleted diary (`diaryDate`), detaches the dependencies other tasks had on them and rewrites the diary task sections of the other days they were on (a deleted diary is not created again);
 3. removes and archives semantic relationships that touch deleted nodes;
 4. removes and archives references from live maps outside the deleted target;
 5. moves the target and its managed sidecar payload into `.pisi/trash`;
 6. persists the Trash manifest.
+
+A task deleted on its own (`task.delete.v1`, or a note save that took its block out of the note, `docs/task-plan.md` §3.3) becomes a Trash item of kind `task` without files: it holds the record, the dependencies other tasks had on it and where its block was (`taskBlocks`: note, block id, the block before it). Restoring it puts the record back, puts the block back into its closed note at that place and rewrites the diary sections. A note save that brings the task's id back takes the task out of the item instead.
 
 All of those writes run inside the existing atomic project mutation boundary. A failure returns the complete pre-delete state rather than a partial Trash operation.
 

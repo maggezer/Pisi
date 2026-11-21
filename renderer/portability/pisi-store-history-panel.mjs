@@ -93,7 +93,7 @@ async function restorePisiStoreHistoryVersion(payload) {
         pisiNotifyError(result?.error || 'Sürüm geri yüklenemedi.');
         return result;
     }
-    window.applyPisiTaskDeferred?.(result.deferred);
+    await window.applyPisiTaskDeferred?.(result.deferred);
     invalidatePisiSearchIndex('project');
     document.dispatchEvent(new CustomEvent('pisi:store-history-restored', { detail: { store: payload.store, result } }));
     const audit = await window.pisiDomain?.query?.('integrity.audit.v1', { projectFolder: window.currentProjectFolder });

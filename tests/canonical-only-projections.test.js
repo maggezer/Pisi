@@ -8,40 +8,6 @@ const test = require('node:test');
 const { extractFunction } = require('./source-helper');
 const read = (file) => fs.readFileSync(path.join(__dirname, '..', file), 'utf8').replace(/\r\n/g, '\n');
 
-function loadTaskStore() {
-    const calls = [];
-    const listeners = new Map();
-    const window = {};
-    const document = {
-        addEventListener: (name, callback) => listeners.set(name, callback),
-        dispatchEvent() {},
-        createElement: () => ({ content: { querySelector: () => null, querySelectorAll: () => [] } })
-    };
-    const context = vm.createContext({
-        window,
-        document,
-        console,
-        CustomEvent: class {},
-        registerModule: (_name, api) => Object.assign(window, api),
-        parsePisiTodoTagValue: (tag) => (tag.startsWith('todo.') ? { priority: 3 } : null),
-        getPisiTodoRepeatOption: (value) => ({ value: value || 'none' })
-    });
-    vm.runInContext(
-        read('renderer/tags/pisi-task-store.mjs')
-            .replace(/^import .*;\n/gm, '')
-            .replace(/export \{[\s\S]*?\};/, ''),
-        context
-    );
-    window.currentProjectFolder = '/project';
-    window.pisiProject = {
-        quickAddTask: async (_project, payload) => {
-            calls.push(payload);
-            return { ok: true, tasks: [] };
-        }
-    };
-    return { window, calls, context, listeners };
-}
-
 test('sheet hydration reads its stored model and never reconstructs absent or corrupt models from DOM', () => {
     const writes = [];
     const context = vm.createContext({

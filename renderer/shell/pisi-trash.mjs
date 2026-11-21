@@ -187,7 +187,7 @@ function makePisiTrashItemCard(item, rerender) {
             renderPisiTrashError(card, result);
             return;
         }
-        window.applyPisiTaskDeferred?.(result.deferred);
+        await window.applyPisiTaskDeferred?.(result.deferred);
         await refreshPisiTrashProjectTree();
         await rerender();
     });

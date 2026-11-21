@@ -114,8 +114,13 @@ function removePisiTaskBlockFromEditor(editor, change) {
     return blocks.length > 0;
 }
 
-/** Makes in the open editors what the service left to them, then lets the editor save. */
-function applyPisiTaskDeferred(deferred) {
+/**
+ * Makes in the open editors what the service left to them and saves them at
+ * once through the editor's save path: the note on disk has the block before
+ * the user can delete it again (a block the file never had would leave its
+ * task without a place in a note).
+ */
+async function applyPisiTaskDeferred(deferred) {
     if (!deferred) return;
     const touched = new Set();
     for (const change of Array.isArray(deferred.notes) ? deferred.notes : []) {
@@ -131,6 +136,7 @@ function applyPisiTaskDeferred(deferred) {
         }
     }
     for (const editor of touched) notifyPisiEditorOfTaskChange(editor);
+    if (touched.size) await window.flushPisiPendingSaves?.();
 }
 
 // ---- Commands ----------------------------------------------------------------------
@@ -149,7 +155,7 @@ async function runPisiTaskCommand(name, payload = {}, { quiet = false } = {}) {
         if (!quiet) window.pisiNotifyError?.(describePisiTaskError(result));
         return result || { ok: false };
     }
-    applyPisiTaskDeferred(result.deferred);
+    await applyPisiTaskDeferred(result.deferred);
     return result;
 }
 

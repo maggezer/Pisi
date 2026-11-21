@@ -8,8 +8,8 @@ import { keepPagePromise } from './e2e-cdp.mjs';
 // Builds the small desktop project the mobile compatibility test starts from
 // (tests/mobile-desktop-compat.test.mjs, docs/mobile-plan.md M4). Everything in
 // it is created by the real desktop app, driven over CDP: the editor writes the
-// Sheet, Paint, image and file blocks, Quick Add writes the task blocks, and
-// the domain commands write the tasks, the relationship, the map and the diary.
+// Sheet, Paint, image and file blocks, the task service writes the tasks and
+// their blocks, and the domain commands write the relationship, the map and the diary.
 // Nothing is hand-written HTML or JSON.
 //
 //   xvfb-run -a node scripts/electron-mobile-fixture-e2e.mjs            # build and check only
@@ -30,6 +30,10 @@ const electronPath = /** @type {string} */ (require('electron'));
 const repoRoot = path.resolve(import.meta.dirname, '..');
 const fixtureTarget = path.join(repoRoot, 'tests', 'fixtures', 'desktop-project');
 const port = 9241;
+const inspectPort = 9242;
+// The fixture's "today" (tests/mobile-desktop-compat.test.mjs NOW): the task service runs on this
+// clock, so the fixture's completion days do not depend on the day the script runs.
+const FIXTURE_NOW = 'new Date(2026, 10, 14, 9, 30)';
 const tempRoot = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'pisi-electron-mobile-fixture-')));
 const userDataPath = path.join(tempRoot, 'user-data');
 const projectPath = path.join(tempRoot, 'project');
@@ -108,6 +112,7 @@ class CdpClient {
 async function launch() {
     const args = [
         '--remote-debugging-port=' + port,
+        '--inspect=' + inspectPort,
         ...PISI_E2E_CHROMIUM_FLAGS,
         ...(process.platform === 'linux' ? ['--no-sandbox', '--disable-gpu'] : []),
         repoRoot
@@ -133,6 +138,16 @@ async function launch() {
     await waitUntil('project restored', () =>
         cdp.evaluate("document.readyState === 'complete' && window.currentProjectFolder === " + JSON.stringify(projectPath))
     );
+    const target = await waitUntil('main inspector', async () => {
+        const response = await fetch('http://127.0.0.1:' + inspectPort + '/json/list');
+        const targets = response.ok ? await response.json() : [];
+        return targets[0] || null;
+    });
+    const main = new CdpClient(target.webSocketDebuggerUrl);
+    await main.open();
+    const clock = await main.request('Runtime.evaluate', { expression: `(setPisiTaskServiceClock(() => ${FIXTURE_NOW}), true)`, returnByValue: true });
+    assert(clock?.result?.value === true, 'task service clock', clock);
+    main.close();
     return cdp;
 }
 
@@ -339,32 +354,30 @@ try {
     const planBlocks = (await readJson(planPath)).content.match(/data-pisi-block-type="paragraph"/g) || [];
     assert(planBlocks.length === 3, 'each typed paragraph must be its own block', planBlocks.length);
 
-    // 3. Tasks. Quick Add writes task blocks into the inbox note; one task has no source note.
-    const captures = [
-        { text: 'Raporu gönder', priority: 2, scheduledAt: '2026-11-14T10:00' },
-        { text: 'Haftalık özet yaz', priority: 3, scheduledAt: '2026-11-13', repeat: 'weekly' },
-        { text: 'Sunucu faturasını öde', priority: 4, scheduledAt: '2026-11-20', reminderAt: '2026-11-19T09:00' },
-        { text: 'Okuma listesini düzenle', priority: 5 }
+    // 3. Tasks, with task.create.v1 (docs/task-plan.md G2): in a note (the open one too: the editor adds
+    // the block and saves it), in the fixture's "today" diary (14-11-2026), dated later, repeating and done.
+    const noteIdOf = async (filePath) => (await readJson(filePath)).pisi.id;
+    const target = async (filePath) => ({ noteId: await noteIdOf(filePath), notePath: filePath });
+    const creates = [
+        [{ title: 'Raporu gönder', priority: 2, dueDate: '2026-11-14', dueTime: '10:00' }, await target(planPath)],
+        [{ title: 'Haftalık özet yaz', priority: 3, dueDate: '2026-11-13', repeat: 'weekly' }, await target(planPath)],
+        [{ title: 'Sunucu faturasını öde', priority: 4, dueDate: '2026-11-20', reminderAt: '2026-11-19T09:00' }, await target(meetingPath)],
+        [{ title: 'Okuma listesini düzenle', priority: 5, dueDate: null }, { diaryDate: '2026-11-14' }],
+        [{ title: 'Egzersiz', priority: 3, repeat: 'daily' }, { diaryDate: '2026-11-14' }],
+        [{ title: 'Toplantı odasını ayır', priority: 3, dueDate: '2026-11-12' }, { diaryDate: '2026-11-12' }]
     ];
-    for (const capture of captures) {
-        // The same steps as the Quick Add form (renderer/productivity/pisi-quick-capture.mjs).
-        const added = await cdp.evaluate(`(async () => {
-            const result = await window.Pisi.modules['domain.client'].command('task.capture.v1', { projectFolder: ${project}, task: ${JSON.stringify(capture)} });
-            invalidatePisiSearchIndex();
-            await ensurePisiSearchIndex({ force: true });
-            await window.refreshPisiMissionIndex?.({ force: true, reason: 'quick-add' });
-            return result;
-        })()`);
-        assert(added?.ok && added.task?.taskId, 'quick add ' + capture.text, added);
+    const created = [];
+    for (const [task, place] of creates) {
+        const result = await cdp.evaluate(`window.runPisiTaskCommand('task.create.v1', { task: ${JSON.stringify(task)}, target: ${JSON.stringify(place)} })`);
+        assert(result?.ok && result.task?.id, 'task ' + task.title, result);
+        created.push(result.task);
     }
-    const sourceless = await cdp.evaluate(
-        `window.pisiProject.quickAddTask(${project}, { op: 'upsert', task: { title: 'Egzersiz', priority: 3, dueDate: '2026-11-14', todoTag: 'todo.3.14-11-2026', repeat: 'daily' } })`
-    );
-    assert(sourceless?.ok, 'sourceless task', sourceless);
-    const finished = await cdp.evaluate(
-        `window.pisiProject.quickAddTask(${project}, { op: 'upsert', task: { title: 'Toplantı odasını ayır', priority: 3, dueDate: '2026-11-12', todoTag: 'todo.3.12-11-2026', status: 'done' } })`
-    );
-    assert(finished?.ok, 'done task', finished);
+    const done = await cdp.evaluate(`window.runPisiTaskCommand('task.complete.v1', { taskId: ${JSON.stringify(created[5].id)} })`);
+    assert(done?.ok && done.task?.status === 'done', 'done task', done);
+    assert(await cdp.evaluate('flushPisiPendingSaves()'), 'the open note keeps its new task block');
+    const planNote = await readJson(planPath);
+    for (const task of created.slice(0, 2))
+        assert(planNote.content.includes(`data-pisi-task-id="${task.id}"`), 'task block in the note ' + task.title, planNote.content);
 
     // 4. A map with two child notes and one relationship between them.
     const mapPath = await createDocument(cdp, 'add-map-btn', '.map', 'Yol Haritası');
@@ -404,7 +417,6 @@ try {
     const audit = await cdp.evaluate(`window.pisiProject.auditIntegrity(${project})`);
     const issues = audit?.report?.issues ?? audit?.issues ?? null;
     assert(Array.isArray(issues), 'integrity audit', audit);
-    // pisi-error.md §5c: Quick Add's Inbox must not leave a property without its schema.
     assert(issues.length === 0, 'integrity issues', issues);
     const store = await readJson(path.join(projectPath, '.pisi', 'tasks.json'));
     const relationships = await readJson(path.join(projectPath, '.pisi', 'relationships.json'));

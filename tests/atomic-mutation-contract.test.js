@@ -107,5 +107,5 @@ test('destructive commands are exposed only through canonical domain IPC after o
         assert.equal(domain.includes(channel), false, channel);
     }
     const main = read('main.mjs');
-    assert.ok(main.indexOf('./main/functions/domain-command-query') > main.indexOf('./main/functions/task-reference-operation-hooks'));
+    assert.ok(main.indexOf('./main/functions/task-domain') > main.indexOf('./main/functions/domain-command-query'));
 });

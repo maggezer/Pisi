@@ -187,28 +187,29 @@ try {
     await cdp.evaluate("(localStorage.setItem('pisi.tutorial.v1.completed', '1'), window.finishPisiTutorial?.(true))");
     const nodePath = await createNode(cdp);
 
-    // 1. A task in the note (quick add writes the block and the task store).
+    // 1. A task in the note (task.create.v1 writes the record and the note's block, docs/task-plan.md G2).
+    const noteId = JSON.parse(await fs.readFile(nodePath, 'utf8')).pisi.id;
     const added = await cdp.evaluate(
-        `window.pisiProject.quickAddTask(${JSON.stringify(projectPath)}, { text: ${JSON.stringify(TASK)}, nodePath: ${JSON.stringify(nodePath)} })`
+        `window.runPisiTaskCommand('task.create.v1', { task: { title: ${JSON.stringify(TASK)} }, target: { noteId: ${JSON.stringify(noteId)}, notePath: ${JSON.stringify(nodePath)} } })`
     );
-    assert(added?.ok, 'Quick add works', added);
+    assert(added?.ok, 'Task creation works', added);
     const [task] = await waitUntil('task in the store', () => storeTasks().then((list) => (list.length ? list : null)));
-    assert(task.source?.blockId, 'The task has a source block', task);
+    assert(task.noteId === noteId, 'The task lives in the note', task);
     await openNode(cdp, nodePath);
-    await waitUntil('task block in the editor', () =>
+    await waitUntil('task block drawn in the editor', () =>
         cdp.evaluate(`document.getElementById('center-node-editor-content').innerText.includes(${JSON.stringify(TASK)})`)
     );
 
-    // 2. Delete it: remove the block in the editor and save.
+    // 2. Delete it: remove the block in the editor and save; the task goes to the Trash (§3.3).
     await cdp.evaluate(`(() => {
         const editor = document.getElementById('center-node-editor-content');
-        editor.querySelector('[data-pisi-block-id=${JSON.stringify(task.source.blockId)}]').remove();
+        editor.querySelector('[data-pisi-task-id=${JSON.stringify(task.id)}]').remove();
         editor.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'deleteContentBackward' }));
         editor.focus();
     })()`);
     await key(cdp, 's', 'KeyS', 83, CTRL);
     await waitUntil('task gone from the store', () => storeTasks().then((list) => list.length === 0));
-    await waitUntil('block gone from the note', async () => !(await fs.readFile(nodePath, 'utf8')).includes(task.source.blockId));
+    await waitUntil('block gone from the note', async () => !(await fs.readFile(nodePath, 'utf8')).includes(task.id));
 
     // 3. Version History → Görevler: the version before the delete brings 1 task back.
     await cdp.evaluate('window.openPisiHistoryDialog(null, undefined, "tasks")');
@@ -234,19 +235,16 @@ try {
     await cdp.evaluate("document.getElementById('pisi-confirm-ok').click()");
     const [restored] = await waitUntil('task back in the store', () => storeTasks().then((list) => (list.length ? list : null)));
     assert(restored.id === task.id, 'The same task id comes back', { restored: restored.id, task: task.id });
-    const note = await waitUntil('block back in the note', async () => {
-        const html = JSON.parse(await fs.readFile(nodePath, 'utf8')).content || '';
-        return html.includes(`data-pisi-block-id="${task.source.blockId}"`) ? html : null;
-    });
-    assert(note.includes(TASK) && note.includes(`data-pisi-task-id="${task.id}"`), 'The note shows the task again', note);
-    await waitUntil('task back in the editor', () =>
-        cdp.evaluate(`document.getElementById('center-node-editor-content').innerText.includes(${JSON.stringify(TASK)})`)
-    );
-    await waitUntil('integrity is clean', () =>
-        cdp.evaluate('Array.from(document.querySelectorAll(\'[data-pisi-notification="success"]\')).some((strip) => /bütünlüğü temiz/.test(strip.textContent))')
-    );
+    // A tasks.json restore writes no note (§3.3): the record is back, its block is not. Integrity
+    // reports exactly that task as homeless; the note offers to add it back from G3 on.
+    const html = JSON.parse(await fs.readFile(nodePath, 'utf8')).content || '';
+    assert(!html.includes(task.id), 'The restore does not write the note', html);
     const audit = await cdp.evaluate(`window.pisiDomain.query('integrity.audit.v1', { projectFolder: ${JSON.stringify(projectPath)} })`);
-    assert(Array.isArray(audit?.issues) && audit.issues.length === 0, 'Project Integrity has no findings', audit?.issues);
+    assert(
+        Array.isArray(audit?.issues) && audit.issues.length === 1 && audit.issues[0].code === 'task-homeless' && audit.issues[0].entityId === task.id,
+        'Project Integrity reports only the homeless task',
+        audit?.issues
+    );
 
     // 5. The restore kept a before-restore snapshot; the task survives the next save of the note.
     const history = await cdp.evaluate("window.pisiDomain.query('history.store.list.v1', { store: 'tasks' })");
@@ -261,7 +259,7 @@ try {
     assert((await storeTasks()).length === 1, 'Saving the note keeps the restored task');
 
     console.log(
-        '[E2E] Store history passed: task deleted, Görevler tab shows 1 görev geri gelir with the task listed, restore brings the same task id back to tasks.json and its block to the note and editor, integrity clean, before-restore snapshot kept.'
+        '[E2E] Store history passed: task deleted with its block, Görevler tab shows 1 görev geri gelir with the task listed, restore brings the same task id back to tasks.json without writing the note, Integrity names the homeless task, before-restore snapshot kept.'
     );
 } finally {
     await stop(cdp);

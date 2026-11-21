@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "shown": {
+    "task_b07895fb-e865-4e50-a55b-085e0be07d74@2026-11-19T09:00:00.000Z": "2026-11-21T09:30:47.395Z"
+  },
+  "pending": {
+    "task_b07895fb-e865-4e50-a55b-085e0be07d74@2026-11-19T09:00:00.000Z": {
+      "key": "task_b07895fb-e865-4e50-a55b-085e0be07d74@2026-11-19T09:00:00.000Z",
+      "taskId": "task_b07895fb-e865-4e50-a55b-085e0be07d74",
+      "time": 1795078800000,
+      "title": "Sunucu faturasını öde",
+      "noteId": "node_4617583b-d3e6-4968-81d1-20873eed098a",
+      "diaryDate": null,
+      "missed": true
+    }
+  },
+  "snoozed": {},
+  "updatedAt": "2026-11-21T09:30:47.397Z"
+}

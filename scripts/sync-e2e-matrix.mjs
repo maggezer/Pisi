@@ -290,7 +290,7 @@ try {
     await scenario(3, 'telefon görevi tamamlar, masaüstü başlığını değiştirir', async () => {
         const id = 'task_matrix_s3_0001';
         const created = await desktop.evaluate(
-            `window.pisiDomain.command('task.upsert.v1', { projectFolder: window.currentProjectFolder, task: { id: '${id}', title: 'Matris görevi', status: 'todo' } })`
+            `window.pisiDomain.command('task.create.v1', { projectFolder: window.currentProjectFolder, task: { id: '${id}', title: 'Matris görevi', status: 'todo', dueDate: null }, target: { diaryDate: '2026-11-14' } })`
         );
         assert(created?.ok, '3: görev oluşturulur', created);
         await desktop.syncOk('3');

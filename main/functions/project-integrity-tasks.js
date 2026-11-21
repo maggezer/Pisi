@@ -4,7 +4,7 @@ import { modules } from '../module-registry.js';
 import * as shared from './project-integrity-shared.js';
 import { findPisiTaskDependencyCycle, getPisiTaskLocation, readPisiTask, readPisiTaskStore } from '../../shared/task-model.mjs';
 import { listPisiTaskBlocks } from '../../shared/task-blocks.mjs';
-import { listPisiDiaryTaskIds, readPisiDiaryTaskSection } from '../../shared/task-diary.mjs';
+import { readPisiDiaryTaskSection } from '../../shared/task-diary.mjs';
 import { getPisiDiaryNodeFileName, normalizePisiDiaryIsoDate, PISI_DIARY_FOLDER } from '../../shared/diary-rules.mjs';
 
 // Project Integrity for tasks (docs/task-plan.md G2 step 5, GV14). The audit
@@ -151,13 +151,14 @@ function auditTaskBlocks(context, inventory, byId) {
 }
 
 /**
- * A diary's task section must be the one the rule gives (GV15): one section,
- * the last block, the ids of the day in order. A task without a place (version
- * 1, §3.1) may be listed or not: the phone does not write sections until G8.
+ * A diary's task section (GV15): one section, the diary's last block, with
+ * the block id of its day and only ids of tasks that exist. Until the phone
+ * writes sections too (G8), a section is not checked against the full day
+ * rule: the phone (task records version 1) completes and moves tasks without
+ * rewriting sections, and the desktop brings a section back to the rule the
+ * next time a task of that day changes or the diary is saved.
  */
 function auditDiarySections(projectFolder, context, inventory, byId) {
-    const tasks = [...byId.values()];
-    const located = (id) => Boolean(getPisiTaskLocation(byId.get(id)));
     for (const doc of inventory.docs) {
         if (doc.type !== 'node' || !doc.metadata) continue;
         const day = getDiaryDateOfDoc(projectFolder, doc);
@@ -167,15 +168,11 @@ function auditDiarySections(projectFolder, context, inventory, byId) {
             taskIssue(context, 'diary-task-section-mismatch', 'warning', 'Günlüğün içeriği izlenemiyor; görev bölümü denetlenemedi.', { path: doc.storedPath });
             continue;
         }
-        const expected = listPisiDiaryTaskIds(day, tasks);
-        const listed = section.taskIds;
-        const wanted = expected.filter(located);
-        const shown = listed.filter((id) => !byId.has(id) || located(id));
-        const structure = expected.length ? section.count <= 1 && (section.count === 0 || section.last) : section.count === 0 || !listed.length;
-        const extra = listed.filter((id) => !expected.includes(id));
-        const fits = structure && !extra.length && sameValue(shown, wanted) && (!section.count || section.blockId === `blk_diary-tasks-${day}`);
+        if (!section.count) continue;
+        const unknown = section.taskIds.filter((id) => !byId.has(id));
+        const fits = section.count === 1 && section.last && section.blockId === `blk_diary-tasks-${day}` && !unknown.length;
         if (!fits) {
-            taskIssue(context, 'diary-task-section-mismatch', 'warning', 'Günlüğün görev bölümü görev kayıtlarıyla uyuşmuyor.', { path: doc.storedPath });
+            taskIssue(context, 'diary-task-section-mismatch', 'warning', 'Günlüğün görev bölümü kurala uymuyor.', { path: doc.storedPath });
         }
     }
 }

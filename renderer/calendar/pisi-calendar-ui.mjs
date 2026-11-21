@@ -9,7 +9,7 @@ import {
     toIsoDate,
     translatePisiCalendarText
 } from './pisi-calendar-state.mjs';
-import { getPisiTaskCalendarSummary } from '../../shared/task-diary.mjs';
+import { getPisiTaskCalendarIsoDate } from '../../shared/task-views.mjs';
 
 let pisiCalendarDateOpenHandler = null;
 
@@ -315,10 +315,22 @@ function changeCalendarMonth(delta) {
     renderCalendar();
 }
 
-// The day rule of the diary section (docs/task-plan.md §3.2.2): the same days the
-// diaries list, from the task store (tasks.json). Rebuilt in full in G5.
+// The task marks, from the task store (tasks.json): a task counts on its day
+// (getPisiTaskCalendarIsoDate, the rule the phone's calendar uses too). The
+// calendar moves to the diary section's day rule with the phone in G5/G8
+// (docs/task-plan.md §3.2.2).
 function getCalendarTaskSummaryByDate() {
-    return getPisiTaskCalendarSummary(window.getPisiTasks?.() || []);
+    const tasksByDate = new Map();
+    for (const task of window.getPisiTasks?.() || []) {
+        const isoDate = getPisiTaskCalendarIsoDate(task);
+        if (!isoDate || !/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) continue;
+        const entry = tasksByDate.get(isoDate) || { total: 0, open: 0, completed: 0 };
+        entry.total += 1;
+        if (String(task.status || 'todo').toLowerCase() === 'done') entry.completed += 1;
+        else entry.open += 1;
+        tasksByDate.set(isoDate, entry);
+    }
+    return tasksByDate;
 }
 
 function renderCalendar() {

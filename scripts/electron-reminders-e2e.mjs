@@ -194,13 +194,15 @@ async function readJson(filePath) {
 const tasksPath = path.join(projectPath, '.pisi', 'tasks.json');
 const statePath = path.join(projectPath, '.pisi', 'reminder-state.json');
 
+// A task with a reminder in the note at `nodePath` (task.create.v1, docs/task-plan.md G2).
 async function captureTask(cdp, nodePath, text, reminderAt) {
+    const noteId = JSON.parse(await fs.readFile(nodePath, 'utf8')).pisi.id;
     const result = await cdp.evaluate(
-        `window.pisiDomain.command('task.capture.v1', { projectFolder: window.currentProjectFolder, task: { text: ${JSON.stringify(text)}, priority: 3, nodePath: ${JSON.stringify(
-            nodePath
-        )}, reminderAt: ${JSON.stringify(reminderAt)} } })`
+        `window.runPisiTaskCommand('task.create.v1', { task: { title: ${JSON.stringify(text)}, priority: 3, reminderAt: ${JSON.stringify(
+            reminderAt
+        )} }, target: { noteId: ${JSON.stringify(noteId)}, notePath: ${JSON.stringify(nodePath)} } })`
     );
-    assert(result?.ok, 'Quick Add capture must succeed', result);
+    assert(result?.ok, 'Task creation must succeed', result);
     return result;
 }
 

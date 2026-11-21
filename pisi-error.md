@@ -102,44 +102,6 @@ metin kayboluyordu.
   0'dır (`scripts/sync-e2e-matrix.mjs`). Eski projelerdeki `.pisi-sync/` ve
   `.pisi/sync-state.json` silinmez ve senkron edilmez (SV7).
 
-## 4a. Günlükteki görev ayracının içine yazılan metni yansıtma siliyor
-
-**[Orta · diary/tasks · doğrulandı, çözülmedi]** Masaüstünün günlük görev yansıtması
-(`main/functions/document-store-diary.js`, `syncDiaryMissions`) yönetilen bölümü
-(`PISI_DIARY_MANAGED_START`…`END`) her seferinde baştan kurar. Kullanıcı, bölümü kapatan
-ayraç bloğunun (`pisi-diary-task-divider`) içine yazarsa metin bu bölümde kalır ve bir
-sonraki yansıtmada silinir. Masaüstü fixture'ında (`tests/fixtures/desktop-project/diary/2026-11-13.node`)
-böyle bir metin vardır ("Veri katmanı için notlar aldım."); uygulama açılınca kaybolur.
-S7'deki senaryo matrisi sırasında görüldü. Çözüm önerisi: ayraç bloğu düzenlenemez olsun ya da
-yönetilen bölümün dışındaki/ayraç içindeki kullanıcı metni bölüm yeniden kurulurken
-korunsun. Aynı bölüm `data-pisi-diary-node-path` içinde masaüstünün mutlak dosya yolunu
-taşır; senkronla telefona da gider (sunucuya şifreli). Telefon bu bölümü salt okunur kart
-olarak gösterir ve yolu kullanmaz.
-
-Kalıcı çözüm: `docs/task-plan.md` G2. Günlüğün görev bölümü yalnız görev kimliklerini taşıyan,
-düzenlenemeyen tek bir blok olur; ayraç kalkar ve bölüm mutlak yol taşımaz.
-
-## 4b. Masaüstü bir dosyayı yazınca görev ve günlük yansıtmaları ikinci bir yazma yapabiliyor
-
-**[Düşük · sync/tasks · kısmen çözüldü (S7)]** Senkronla gelen `tasks.json` uygulanınca masaüstü
-günlüklerin görev bölümünü yeniden yazar. Bu yazma, telefonun bir sonraki turunda iner;
-iki cihaz bir ya da iki ek turda durulur (matris her senaryoda en çok 4 turda durulmayı
-şart koşar). S7'de yapılanlar:
-
-- Değişiklik getirmeyen görev yansıtması (`sync-index`) `tasks.json`'u artık yeniden yazmaz
-  (`main/functions/task-store.js`; `tests/task-store-projection-unchanged.test.mjs`).
-- Görev ayraçları, düzenleyicinin verdiği blok kimliğini korur; her yansıtmada yeni kimlik
-  almaz (`tests/diary-task-integration.test.js`).
-- Görev deposu okunmadan günlük eşitlenmez; açılışta görev bölümleri önce silinip sonra
-  geri yazılmaz (`renderer/tags/pisi-source-of-truth.mjs`; `tests/task-projection-write-through.test.js`).
-
-Kalan: ayraç bloğunun kimliği hâlâ renderer'da ilk kayıtta verilir; ana süreçte yazılan yeni
-bir günlüğün ayraçları kimliği ilk açılışta alır ve bu bir kez daha yazılır.
-
-Kalıcı çözüm: `docs/task-plan.md` G2 ve G9. Görevin başlığı ya da durumu değişince hiçbir not
-yazılmaz; yalnız görevin günleri değişince ilgili günlüklerin bölümü yazılır ve iki cihaz aynı
-`tasks.json`'dan aynı baytları üretir.
-
 ## 5. Editörde fareyle blok sürükle-bırak çalışmıyor
 
 **[Düşük · editor · doğrulandı, çözülmedi]** `renderer/editor/pisi-block-editor.mjs`
@@ -162,22 +124,11 @@ varsayılan adı da "Yeni Node". Main süreçten gelen bazı hata metinleri de
 geçişinde ele alınmalı; dosya adı değişikliği mevcut projeleri etkilemez,
 yalnız yeni dosyaların adını değiştirir.
 
-## 5c. Quick Add'in açtığı Inbox notu Project Integrity'de kritik bulgu üretiyor
-
-**[Orta · masaüstü · çözüldü]** Boş bir projede ilk Quick Add, `Inbox.node`
-dosyasını `properties.systemRole` değeriyle oluşturuyor, `.pisi/properties.json`
-ise yalnız şema gerektiğinde yazılıyordu. Arada kalan projede Project Integrity
-`property-schema-authority-missing` (critical) bulgusu veriyordu.
-
-Çözüm (16-11-2026): Quick Add, Inbox'ı oluşturmadan önce `systemRole` tanımını
-proje şemasına yazar (`registerPisiSystemPropertyDefinitions`,
-`main/functions/property-schema-store.js`). Bu durumda kalmış eski projeler bir
-sonraki Quick Add ile onarılır; okunamayan bir şema ezilmez, Quick Add hata
-döner. Testler: `tests/quick-add-inbox-schema.test.js`,
-`scripts/electron-mobile-fixture-e2e.mjs` (denetim bulgusu kalmamalı) ve
-`tests/mobile-desktop-compat.test.mjs` (taban çizgisi artık boş).
-
 ## 5d. Mobilde değişen görev, kaynağı olan not bloğuna yansımıyor
+
+G2'den (21-11-2026) beri not görev bilgisi taşımaz; masaüstü görev bloğunu `tasks.json`'dan
+çizer, bu yüzden telefonun değişikliği masaüstünde görünür. Kalan kısım (telefonda not görevinin
+bütün alanlarıyla düzenlenmesi) `docs/task-plan.md` G8'dedir. Aşağıdaki metin G2 öncesini anlatır.
 
 **[Orta · mobil · bilinçli sınır]** Pisi Mobil görev durumunu yalnız
 `.pisi/tasks.json` içinde değiştirir; mobilin düzenleyemediği not bloklarına
@@ -279,60 +230,34 @@ testleri tanımlamadan import sırasında hata verirse hata bu yakalayıcıda
 kalır, süreç 0 ile çıkar ve `node --test` dosyayı tek bir geçen test olarak
 raporlar; içindeki testler hiç çalışmamış olur. M9 sırasında, eksik bir
 bağımlılıkla yüklenen `map-semantic-operation-hooks.js` bunu gösterdi (hata
-düzeltildi; davranış duruyor). Çözüm önerisi: testlerde logger'ın süreç
+düzeltildi; davranış duruyor). G2'de silinen görev modüllerini (`task-capture.js`,
+`source-of-truth.js`, `task-reference-integrity.js`) yükleyen `mobile-desktop-compat`,
+`sync-client-apply`, `sync-merge-integrity` ve `sync-initial-transfer` testleri de böyle
+sessizce geçti; modül listeleri düzeltildi ve testlerin gerçekten çalıştığı test sayısıyla
+denetlendi. Çözüm önerisi: testlerde logger'ın süreç
 yakalayıcılarını kurmaması (ör. bir ortam bayrağı) ya da bu dosyaların test
 sayısını denetleyen bir koruma.
 
-## 5h. Görev sistemi: not işareti ile `tasks.json` ayrışıyor, görev işlemleri projeyi tarıyor
+## 5h. Görev sistemi: kalan bulgular (G3–G8)
 
-**[Yüksek · tasks · doğrulandı, çözülmedi]** 21-11-2026 incelemesinde masaüstü uygulaması
-Electron ve CDP ile sürülerek aşağıdaki hatalar doğrulandı. Ortak neden: bir görev dört yerde
-(not HTML'i, `tasks.json`, renderer'daki `missionIndex`, günlük yönetilen bölümü) dört ayrı
-biçimde duruyor ve panel değişiklikleri nottan, bütün projenin taranmasıyla `tasks.json`'a
-yansıtılıyor (`renderer/tags/pisi-source-of-truth.mjs`, `buildPisiTasksFromProjection`).
-Kimliği olmayan tek bir Quick Add bloğu (`main/functions/task-capture.js`) bu yansıtmayı hata
-verip durduruyor; kullanıcıya bir şey gösterilmiyor.
+**[Orta · tasks · kısmen çözüldü (G2)]** 21-11-2026 incelemesinin bulguları
+[`docs/task-plan.md`](docs/task-plan.md) Ek A'dadır. G2'de (`tasks.json` sürüm 2, görev servisi)
+GB1–GB9, GB12, GK4, GK5, GK11, GK12 ve GK14 kapandı; not ve günlük artık yalnız görev kimliğini
+taşır, bütün görev yazmaları ana süreçteki görev servisinden geçer ve hiçbir görev işlemi projeyi
+taramaz. Kalanlar (parantez içi kapatacak faz):
 
-Çözüm tek tek yamayla değil, görev modelinin değiştirilmesiyle yapılacak:
-[`docs/task-plan.md`](docs/task-plan.md). Görevin bütün bilgisi `tasks.json`'da durur, not ve
-günlük yalnız görev kimliğini taşır. Aşağıdaki kimlikler planın Ek A'sıyla aynıdır; parantez
-içi, bulguyu kapatacak fazdır. Kodda görülüp çalıştırılmayan bulgular (GK1–GK15) yalnız planda
-listelidir. İncelemede doğrulanan iki davranış istenen davranıştır ve hata sayılmaz (plan
-§1.3): görevin bitiş gününde günlüğün oluşması (GB10) ve günlükteki görevlerin notun altındaki
-bölümde toplanması (GB13).
-
-- **GB1:** Kapalı nottaki (Inbox dahil) Quick Add görevi panelden tamamlanınca nota "done"
-  yazılıyor, `tasks.json` "todo" kalıyor; panel işareti geri alıyor. (G2, G4)
-- **GB2:** Kapalı nottaki tekrar eden görev tamamlanınca notta sonraki tekrarın bloğu oluşuyor;
-  `tasks.json`'da ne tamamlama ne sonraki tekrar var. (G2)
-- **GB3:** Kapalı nottaki görevin panelden değişen durumu `tasks.json`'a ancak not açılıp
-  düzenlenince geçiyor. (G2)
-- **GB4:** Notu olmayan (mobilde oluşturulan) görev masaüstü panelinden tamamlanamıyor:
-  "Görev node yolu bulunamadı." (G2, G4)
-- **GB5:** Başka bir panel işleminden sonra notu olmayan göreve sahte kaynak yazılıyor
-  (`blockId: task-block-…`, `nodeTitle: "Task"`). Mobil `source.blockId`'ye bakıp onu not
-  görevi sayıyor ve alanlarını salt okunur yapıyor; görev iki cihazda da düzenlenemiyor.
-  `tests/fixtures/desktop-project/.pisi/tasks.json`'daki iki görev ("Egzersiz", "Toplantı
-  odasını ayır") bu durumda. (G2, G8)
-- **GB6:** Hatırlatma panelinden tamamlanan görev, not sonradan düzenlenince yeniden "todo"
-  oluyor: `setPisiMissionStatusFirstRelease` `'done'` durumunu reddediyor, panel yalnız
-  `tasks.json`'u değiştiriyor ve nottaki eski işaret bir sonraki editör yansıtmasında geri
-  yazılıyor. (G2)
-- **GB7:** Projede kimliksiz bir Quick Add bloğu varken notta silinen görev bloğu
-  `tasks.json`'da ve panelde kalıyor. (G2)
-- **GB8:** Açık olan nota Quick Add yapılınca editör yeni bloğu göstermiyor; kullanıcı notta
-  yazıp kaydedince blok dosyadan siliniyor ve görev kaynaksız kalıyor (not içeriği kaybı). (G2)
-- **GB9:** Her panel işlemi ve not kaydı bütün notları yeniden okuyor; 1.000 notluk projede
-  tarama ~1,5 sn sürüyor. (G2)
-- **GB11:** Notu olmayan görevler masaüstü aramasında görünmüyor
-  (`makePisiCanonicalTaskSearchRecord`, `source.nodePath` yoksa kayıt üretmiyor). (G5)
-- **GB12:** Günlükteki onay kutusuyla tamamlanan tekrar eden görevin sonraki tekrarı
-  oluşmuyor; görev tekrar etmeyi bırakıyor. (G2)
-- **GB14:** Editörde `[ ]` kısayolu ve blok türünü "Görev bloğu" yapma işlemi, girdi
-  hattındaki `cleanupOrphanPisiTodoBlock` yüzünden hemen paragrafa dönüyor; görev oluşmuyor. (G3)
-
-§7'deki "canonical task authority ayrımı" maddesi masaüstünün yazma yolu için geçerli değil;
-bu bölüm kapanana kadar açık sayılır.
+- **GB5 (mobil tarafı):** Telefon sürüm 1 kurallarıyla çalışıyor: `tasks.json`'u `version: 1` diye
+  yazıyor, değiştirdiği kayda eski alanları (`todoTag`, `scheduledAt`) ekliyor, tekrar eden görevi
+  tamamlayınca yeni kayıt açıyor ve günlüğün görev bölümünü yazmıyor. Masaüstü bunları okur ve
+  korur; Project Integrity günlük bölümünü G8'e kadar yalnız yapı ve bilinmeyen kimlik için
+  denetler. (G8)
+- **GB11:** Notu olmayan görevler aramada görünüyor ama sonuçtan görev ayrıntısına gidilemiyor;
+  arama G5'te tek kayıt üreticisine geçer. (G5)
+- **GB14:** Editörde görev oluşturma (`[ ]`, `/todo`, blok türü) G2'de kapatıldı; araç çubuğundaki
+  "Görev" düğmesi Quick Add'i açar. Editörden görev oluşturma ve başlığı blokta düzenleme G3'tedir. (G3)
+- Takvim, harita rozetleri ve arama G5'e kadar görev deposuna en küçük değişiklikle bağlıdır:
+  takvim görevi bitiş gününde sayar (günlük bölümünün gün kuralı G5/G8'de iki platformda birlikte
+  gelir). (G5)
 
 ## 6. Güncel doğrulama snapshot’ı
 

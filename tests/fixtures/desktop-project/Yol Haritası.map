@@ -2,23 +2,23 @@
   "pisi": {
     "version": 1,
     "type": "map",
-    "id": "map_b3ec2889-a557-40c1-9c86-24d9eb25318d",
+    "id": "map_6bef9916-2e00-4789-87fe-345d184c4f3b",
     "title": "Yol Haritası",
-    "sidecar": "nd_Yol Haritası__map_b3ec2889-a557-40c1-9c86-24d9eb25318d",
-    "createdAt": "2026-11-16T10:12:49.852Z",
-    "updatedAt": "2026-11-16T10:12:50.207Z"
+    "sidecar": "nd_Yol Haritası__map_6bef9916-2e00-4789-87fe-345d184c4f3b",
+    "createdAt": "2026-11-21T09:30:47.187Z",
+    "updatedAt": "2026-11-21T09:30:47.536Z"
   },
   "map": {
     "nodes": [
       {
-        "id": "node_d6bf8c21-2f48-429d-b4f0-6989946bacf6",
+        "id": "node_59d6c805-1281-45df-9325-0adf485b6d88",
         "x": 80,
         "y": 80,
         "width": 220,
         "height": 92
       },
       {
-        "id": "node_7cc42bcf-7c16-4e37-92c3-0bf1ae7d15ce",
+        "id": "node_2b7e9715-fa78-4a8a-8c06-9ecd13cb9a07",
         "x": 80,
         "y": 80,
         "width": 220,
@@ -27,7 +27,7 @@
     ],
     "relationshipViews": [
       {
-        "relationshipId": "edge_4b5ea065-1069-4f08-981f-a23e685ebc28",
+        "relationshipId": "edge_cd2921ae-f011-45c2-b4ed-4ced1300efb3",
         "sourcePort": "bottom",
         "targetPort": "top"
       }
