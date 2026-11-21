@@ -105,7 +105,9 @@ Bu sorunlar tek tek düzeltilmek yerine görev modeli değiştirilerek kapatıla
 | Başlık       | Düz metin, tek satır. Etiketler ve not bağlantıları G6'da kayıt üzerinden geri gelir.                                                                                                                                                                                      |
 | Enter        | Görev bloğunda Enter alta yeni bir görev açar; boş görevde Enter görevi kaldırır ve satırı paragraf yapar (madde listesiyle aynı kural).                                                                                                                                   |
 
-### 1.4 Bu planda verilen ek kararlar (PR incelemesinde değiştirilebilir)
+### 1.4 Planla birlikte onaylanan ek kararlar (21-11-2026)
+
+Bu kararlar planı yazarken verildi ve kullanıcı tarafından 21-11-2026'da onaylandı; §1.3'teki kararlar kadar bağlayıcıdır.
 
 | Konu                     | Karar                                                                                                                                                                                                                           | Neden                                                                                                                                |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
