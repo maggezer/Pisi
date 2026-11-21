@@ -6,10 +6,16 @@
 // A segment is one top-level element, one comment or one run of text between
 // them. Editable segments are plain text blocks: paragraphs, headings 1–3 and
 // the items of bulleted and numbered lists. Everything else is protected:
-// Sheet, Paint/canvas, image, file, rollup, diary-managed, task, quote, code
-// and unknown blocks. Patching is in note-patch.mjs.
+// Sheet, Paint/canvas, image, file, rollup, diary-managed, task, diary-tasks,
+// quote, code and unknown blocks. Patching is in note-patch.mjs.
+//
+// A version 2 task block (shared/task-blocks.mjs) is a `task` segment with its
+// `taskId`; the diary's task section (shared/task-diary.mjs) is a
+// `diary-tasks` segment with its `taskIds` (docs/task-plan.md §3.2).
 
 import { decodeEntities, hasOnlyKnownEntities, parseTagAttributes, walkTags } from './html-tokens.mjs';
+import { isPisiTaskId } from './ids.mjs';
+import { PISI_DIARY_TASKS_BLOCK_TYPE, PISI_DIARY_TASKS_CLASS, PISI_TASK_BLOCK_CLASS } from './task-blocks.mjs';
 
 const VOID_TAGS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'source', 'track', 'wbr']);
 const FORMAT_TAGS = new Set(['b', 'em', 'i', 's', 'strong', 'u']);
@@ -96,6 +102,7 @@ function classify(segment) {
     if (classes.has('pisi-sheet-block')) segment.blockType = 'sheet';
     else if (classes.has('pisi-canvas-block')) segment.blockType = 'canvas';
     else if (classes.has('pisi-diary-managed-block')) segment.blockType = 'diary-managed';
+    else if (classes.has(PISI_DIARY_TASKS_CLASS) && attributes['data-pisi-block-type'] === PISI_DIARY_TASKS_BLOCK_TYPE) segment.blockType = 'diary-tasks';
     else if (classes.has('pisi-image-block')) segment.blockType = 'image';
     else if (classes.has('pisi-file-block')) segment.blockType = 'file';
     else if (isBlock && (classes.has('pisi-section-break') || /^\s*<hr\s*\/?>\s*$/i.test(inner))) segment.blockType = 'divider';
@@ -104,6 +111,13 @@ function classify(segment) {
     if (segment.blockType === 'image') segment.asset = /\sdata-pisi-image-asset="([^"]+)"/.exec(inner)?.[1] ?? null;
     if (segment.blockType === 'canvas') segment.asset = /\sdata-pisi-asset="([^"]+)"/.exec(inner)?.[1] ?? null;
     if (segment.blockType === 'diary-managed') segment.taskId = attributes['data-pisi-task-id'] || null;
+    if (segment.blockType === 'task' && classes.has(PISI_TASK_BLOCK_CLASS) && isPisiTaskId(attributes['data-pisi-task-id'])) {
+        segment.taskId = attributes['data-pisi-task-id'];
+    }
+    if (segment.blockType === 'diary-tasks') {
+        const refs = [...inner.matchAll(/\sdata-pisi-task-ref="([^"]*)"/g)].map((match) => match[1]).filter((id) => isPisiTaskId(id));
+        segment.taskIds = Array.from(new Set(refs));
+    }
 
     const ownClasses = [...classes].filter((name) => name !== 'pisi-editor-block' && !(segment.blockType === 'bullet' && LIST_STATE_CLASSES.has(name)));
     segment.editable =
@@ -143,7 +157,7 @@ function protectDiarySection(segments) {
  *
  * @returns {Array<{ kind: 'element'|'comment'|'text', html: string, start: number, end: number, tag?: string,
  *   attributes?: Record<string, string>, openTag?: string, closeTag?: string, inner?: string, blockId?: string|null,
- *   blockType?: string, asset?: string|null, taskId?: string|null, editable: boolean }>}
+ *   blockType?: string, asset?: string|null, taskId?: string|null, taskIds?: string[], editable: boolean }>}
  */
 export function splitNoteBlocks(html) {
     const content = String(html ?? '');
@@ -217,8 +231,9 @@ export function splitNoteBlocks(html) {
 
 /**
  * Plain text of a note for previews and search: one line per block (G7). The
- * task section the desktop keeps in a diary note is a projection of
- * tasks.json, not note text, so it is left out.
+ * task section of a diary note (the old managed one and the version 2
+ * `diary-tasks` block) is derived from tasks.json, not note text, so it is
+ * left out.
  */
 export function getNotePlainText(html) {
     const lines = [];
@@ -229,7 +244,7 @@ export function getNotePlainText(html) {
             else if (segment.html.includes(MANAGED_END)) managed = false;
             continue;
         }
-        if (managed) continue;
+        if (managed || segment.blockType === 'diary-tasks') continue;
         const text = htmlToText(segment.html)
             .replace(/[ \t]+/g, ' ')
             .trim();

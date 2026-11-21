@@ -1,5 +1,27 @@
 # PISI Güncelleme Takip Dosyası
 
+## 21-11-2026 — Saf görev çekirdeği: `shared/task-*.mjs` (G1)
+
+Görev işi (`docs/task-plan.md` G1). Uygulamanın davranışı değişmedi; yeni kuralları henüz hiçbir yüzey kullanmıyor.
+
+- `shared/task-model.mjs`: `tasks.json` sürüm 2 kayıt kuralları (`normalizePisiTask`; istenen geçersiz değer hata verir,
+  diskteki değer hoşgörüyle okunur, bilinmeyen ve sürüm 1 alanları korunur), görevin yeri (`noteId` ya da `diaryDate`),
+  sürüm 1 ve 2 dosya okuma, tamamlama ve geri açma (`completePisiTask`, `reopenPisiTask`; tekrar eden görev yerinde
+  ilerler, `completions`'a yazılır, yalnız en son tamamlama geri alınır), sonraki bitiş günü ve bağımlılık döngüsü.
+  Gün hesabı takvim günüyle yapılır; yaz saati günü kaydırmaz.
+- Yeni alan `completedOn`: tekrarsız görevin tamamlandığı yerel gün. Günlük bölümü saat diliminden bağımsız olarak
+  aynı baytlarla üretilsin diye eklendi (`docs/task-plan.md` §3.1).
+- `shared/task-views.mjs`: görevin günü yalnız `dueDate`'tir; kovalar, öncelik sırası (bugünkü iş sırası), sıralama
+  ve süzgeçler, bağımlılık durumu, ilerleme sayıları ve takvim özeti.
+- `shared/task-blocks.mjs` (yeni): görev bloğu HTML'i, nottaki görev kimlikleri, üyelik farkı, blok ekleme, kaldırma ve
+  çakışma kopyası için temizleme. Okunamayan not `null` verir; görev silinmiş sayılmaz.
+- `shared/task-diary.mjs` (yeni): günün görevleri, bir görevin o gündeki durumu ve kilidi, bugünün gecikenleri, günlük
+  görev bölümünün HTML'i, okunması ve yazılması, bir görev değişikliğinin etkilediği günler.
+- `shared/note-blocks.mjs`: yeni görev bloğu `task` parçası olarak görev kimliğini, günlük görev bölümü `diary-tasks`
+  parçası olarak kimlik listesini taşır; bölüm not metnine girmez.
+- Testler: `tests/shared-task-model-v2`, `-views-v2`, `-blocks`, `-diary`, `-random` (tohumlu 1.000 durum) ve
+  `shared-note-blocks-tasks`; mobilde `data-blocks.test.mjs`'e bir durum.
+
 ## 21-11-2026 — Görev sistemi incelemesi ve yeniden tasarım planı (G0)
 
 Görev işi (`docs/task-plan.md` G0).
