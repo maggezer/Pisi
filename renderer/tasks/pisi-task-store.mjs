@@ -102,6 +102,19 @@ function applyPisiTasksChanged(payload = {}) {
     });
 }
 
+/**
+ * Takes the records a task command returned at once, before its
+ * `pisi:tasks-changed` event arrives, so that the editor that ran the command
+ * reads the result in the same turn (a diary section, the undo history). No
+ * update event is sent: the surfaces redraw once, on the main process's event,
+ * which brings the same records.
+ */
+function rememberPisiTaskRecords({ tasks = [], removedIds = [] } = {}) {
+    if (!pisiTaskStoreState.loaded) return;
+    for (const task of Array.isArray(tasks) ? tasks : []) if (task?.id) pisiTaskStoreState.byId.set(task.id, task);
+    for (const id of Array.isArray(removedIds) ? removedIds : []) pisiTaskStoreState.byId.delete(id);
+}
+
 function initializePisiTaskStore() {
     if (pisiTaskStoreState.unsubscribe || !window.pisiTasks?.onChanged) return;
     pisiTaskStoreState.unsubscribe = window.pisiTasks.onChanged(applyPisiTasksChanged);
@@ -121,9 +134,10 @@ const moduleApi = {
     isPisiTaskStoreReadOnly,
     isPisiTaskStoreLoaded,
     loadPisiTaskStore,
-    applyPisiTasksChanged
+    applyPisiTasksChanged,
+    rememberPisiTaskRecords
 };
 
 registerModule('tasks.store', moduleApi);
 
-export { getPisiTasks, getPisiTask, isPisiTaskStoreReadOnly, isPisiTaskStoreLoaded, loadPisiTaskStore, applyPisiTasksChanged };
+export { getPisiTasks, getPisiTask, isPisiTaskStoreReadOnly, isPisiTaskStoreLoaded, loadPisiTaskStore, applyPisiTasksChanged, rememberPisiTaskRecords };

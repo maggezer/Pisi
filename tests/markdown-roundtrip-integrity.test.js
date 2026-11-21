@@ -431,9 +431,7 @@ async function getBlockEditor() {
         }
     };
     let blockCounter = 1;
-    let taskCounter = 1;
     globalThis.makePisiBlockId = () => `blk_gen_${blockCounter++}`;
-    globalThis.makePisiFirstClassTaskId = () => `task_gen_${taskCounter++}`;
 
     loadedEditor = await import('../renderer/editor/pisi-block-editor.mjs');
     return loadedEditor;
@@ -460,45 +458,23 @@ test('Acceptance test B2: lossless round-trip of heading, task, rollup, bullet a
     paragraph.dataset.pisiHeadingParent = 'blk_h1';
     paragraph.textContent = 'Proje detayları burada yer almaktadır.';
 
-    // 3. Task 1: pending with user tag
+    // 3–4. Task blocks (docs/task-plan.md §3.2.1): ids only; title and state come from the task store
     const task1 = createMockElement('div');
-    task1.className = 'pisi-editor-block';
+    task1.className = 'pisi-editor-block pisi-task-block';
     task1.dataset.pisiBlockId = 'blk_t1';
     task1.dataset.pisiBlockType = 'task';
     task1.dataset.pisiTaskId = 'task_1';
-    task1.dataset.pisiHeadingParent = 'blk_h1';
 
-    const marker1 = createMockElement('span');
-    marker1.className = 'pisi-block-task-marker';
-    marker1.textContent = '☐';
-    task1.appendChild(marker1);
-
-    const tag1 = createMockElement('span');
-    tag1.className = 'pisi-user-tag';
-    tag1.dataset.pisiTag = 'todo.1.none';
-    tag1.dataset.pisiTaskId = 'task_1';
-    task1.appendChild(tag1);
-
-    const task1Text = createMockElement('span');
-    task1Text.textContent = 'İlk görev';
-    task1.appendChild(task1Text);
-
-    // 4. Task 2: completed with dependencies
     const task2 = createMockElement('div');
-    task2.className = 'pisi-editor-block';
+    task2.className = 'pisi-editor-block pisi-task-block';
     task2.dataset.pisiBlockId = 'blk_t2';
     task2.dataset.pisiBlockType = 'task';
     task2.dataset.pisiTaskId = 'task_2';
-    task2.dataset.pisiTodoParent = 'dep:task_1|ext_99';
-
-    const marker2 = createMockElement('span');
-    marker2.className = 'pisi-block-task-marker';
-    marker2.textContent = '☑';
-    task2.appendChild(marker2);
-
-    const task2Text = createMockElement('span');
-    task2Text.textContent = 'İkinci görev (tamamlandı)';
-    task2.appendChild(task2Text);
+    const records = {
+        task_1: { id: 'task_1', title: 'İlk görev', status: 'todo' },
+        task_2: { id: 'task_2', title: 'İkinci görev (tamamlandı)', status: 'done' }
+    };
+    globalThis.getPisiTask = (id) => records[id] || null;
 
     // 5. Rollup block
     const rollup = createMockElement('div');
@@ -552,11 +528,8 @@ test('Acceptance test B2: lossless round-trip of heading, task, rollup, bullet a
     // Verify metadata serialized in markdown comments
     assert.match(markdown, /# Proje Planı <!-- pisi:meta \{.*"id":"blk_h1".*\} -->/);
     assert.match(markdown, /<!-- pisi:meta \{.*"id":"blk_p1".*"headingParent":"blk_h1".*\} -->/);
-    assert.match(markdown, /- \[ \] İlk görev <!-- pisi:meta \{.*"id":"blk_t1".*"taskId":"task_1".*"tag":"todo.1.none".*\} -->/);
-    assert.match(
-        markdown,
-        /- \[x\] İkinci görev \(tamamlandı\) <!-- pisi:meta \{.*"id":"blk_t2".*"taskId":"task_2".*"todoParent":"dep:task_1\|ext_99".*\} -->/
-    );
+    assert.match(markdown, /- \[ \] İlk görev <!-- pisi:meta \{.*"id":"blk_t1".*"taskId":"task_1".*\} -->/);
+    assert.match(markdown, /- \[x\] İkinci görev \(tamamlandı\) <!-- pisi:meta \{.*"id":"blk_t2".*"taskId":"task_2".*\} -->/);
     assert.match(markdown, /\{\{pisi-rollup:rel_tasks:blk_t1:count\}\} <!-- pisi:meta \{.*"id":"blk_r1".*"headingParent":"blk_h1".*\} -->/);
     assert.match(markdown, /- İç içe madde <!-- pisi:meta \{.*"id":"blk_b1".*"indent":2.*"collapsed":true.*\} -->/);
     assert.match(markdown, /\[Başlığa git\]\(#blk_h1\)/, 'Anchor link must be preserved in markdown');
@@ -580,22 +553,28 @@ test('Acceptance test B2: lossless round-trip of heading, task, rollup, bullet a
     assert.ok(restoredParagraph, 'Paragraph block ID blk_p1 must be preserved');
     assert.strictEqual(restoredParagraph.dataset.pisiHeadingParent, 'blk_h1', 'Heading parent must be preserved');
 
-    const restoredTask1 = restoredEditor.querySelector('[data-pisi-block-id="blk_t1"]');
-    assert.ok(restoredTask1, 'Task 1 block ID blk_t1 must be preserved');
-    assert.strictEqual(restoredTask1.dataset.pisiTaskId, 'task_1', 'Task ID task_1 must be preserved');
-    assert.strictEqual(restoredTask1.dataset.pisiHeadingParent, 'blk_h1', 'Heading parent must be preserved');
-    const restoredTag1 = restoredTask1.querySelector('.pisi-user-tag');
-    assert.ok(restoredTag1, 'Task 1 user tag must be preserved');
-    assert.strictEqual(restoredTag1.dataset.pisiTag, 'todo.1.none');
-    assert.strictEqual(restoredTag1.dataset.pisiTaskId, 'task_1');
-
-    const restoredTask2 = restoredEditor.querySelector('[data-pisi-block-id="blk_t2"]');
-    assert.ok(restoredTask2, 'Task 2 block ID blk_t2 must be preserved');
-    assert.strictEqual(restoredTask2.dataset.pisiTaskId, 'task_2', 'Task ID task_2 must be preserved');
-    assert.strictEqual(restoredTask2.dataset.pisiTodoParent, 'dep:task_1|ext_99', 'Task todoParent dependency must be preserved');
-    const restoredMarker2 = restoredTask2.querySelector('.pisi-block-task-marker');
-    assert.ok(restoredMarker2);
-    assert.strictEqual(restoredMarker2.textContent, '☑', 'Checked task marker state must be preserved');
+    // A task line with its id comes back as the bare task block; the title travels as a hint
+    // (renderer/tasks/pisi-task-clipboard.mjs writes a changed title to tasks.json).
+    for (const [blockId, taskId, title] of [
+        ['blk_t1', 'task_1', 'İlk görev'],
+        ['blk_t2', 'task_2', 'İkinci görev (tamamlandı)']
+    ]) {
+        const restoredTask = restoredEditor.querySelector(`[data-pisi-block-id="${blockId}"]`);
+        assert.ok(restoredTask, `Task block ${blockId} must be preserved`);
+        assert.strictEqual(restoredTask.dataset.pisiBlockType, 'task');
+        assert.strictEqual(restoredTask.dataset.pisiTaskId, taskId, `Task ID ${taskId} must be preserved`);
+        assert.strictEqual(restoredTask.dataset.pisiTaskTitleHint, title);
+        assert.strictEqual(restoredTask.textContent, '', 'the block holds no title');
+    }
+    // A new task line has no id: it becomes a task when the editor settles it.
+    const fresh = createMockElement('div');
+    fresh.innerHTML = pisiBlockMarkdownToHtml('- [x] Yeni görev');
+    const freshBlock = fresh.querySelector('.pisi-task-block');
+    assert.ok(freshBlock);
+    assert.strictEqual(freshBlock.dataset.pisiTaskId, undefined);
+    assert.strictEqual(freshBlock.dataset.pisiTaskNewTitle, 'Yeni görev');
+    assert.strictEqual(freshBlock.dataset.pisiTaskNewDone, 'true');
+    delete globalThis.getPisiTask;
 
     const restoredRollup = restoredEditor.querySelector('[data-pisi-block-id="blk_r1"]');
     assert.ok(restoredRollup, 'Rollup block ID blk_r1 must be preserved');
@@ -677,11 +656,11 @@ test('E3: code fence metadata and section break block identities survive Markdow
     assert.match(html, /data-pisi-block-id="blk_section_1"/);
 });
 
-test('horizontal rules preserve diary ownership and section boundaries through Markdown', async () => {
+test('horizontal rules preserve section boundaries through Markdown', async () => {
     const { pisiBlockHtmlToMarkdown, pisiBlockMarkdownToHtml } = await getBlockEditor();
     const editor = createMockElement('div');
     const divider = createMockElement('div');
-    divider.className = 'pisi-editor-block pisi-diary-task-divider';
+    divider.className = 'pisi-editor-block';
     divider.dataset.pisiBlockId = 'divider';
     divider.dataset.pisiBlockType = 'paragraph';
     divider.dataset.pisiSectionBreak = 'true';
@@ -692,7 +671,6 @@ test('horizontal rules preserve diary ownership and section boundaries through M
     assert.ok(markdown.startsWith('---'));
     const html = pisiBlockMarkdownToHtml(markdown);
     assert.match(html, /<hr>/);
-    assert.match(html, /pisi-diary-task-divider/);
     assert.match(html, /data-pisi-block-id="divider"/);
     assert.match(html, /data-pisi-section-break="true"/);
     assert.match(html, /data-pisi-section-exit="1"/);

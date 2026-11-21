@@ -312,11 +312,22 @@ function insertPisiToolbarSymbol(toolbar, symbol) {
     notifyPisiEditorChanged(editor);
 }
 
-/** Until the editor makes tasks itself (docs/task-plan.md G3), the task button opens Quick Add for the open note. */
+/** The task button turns the block with the caret into a task (its text is the title), or adds an empty task (docs/task-plan.md G3.3). */
 function openPisiToolbarTodo(toolbar) {
     const editor = getPisiToolbarEditor(toolbar);
     if (!editor) return false;
-    void window.openPisiQuickAddModal?.();
+    const block = window.getPisiSelectionBlock?.(editor);
+    if (block && block.parentElement === editor && !block.matches('.pisi-task-block, .pisi-diary-tasks') && block.getAttribute('contenteditable') !== 'false') {
+        void window.convertPisiBlockToTask?.(block);
+        return true;
+    }
+    const anchor =
+        block?.closest?.('.pisi-task-block') ||
+        Array.from(editor.children)
+            .filter((child) => !child.matches('.pisi-diary-tasks'))
+            .at(-1) ||
+        null;
+    void window.createPisiTaskInEditor?.(editor, { anchor });
     return true;
 }
 

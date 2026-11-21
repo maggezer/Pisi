@@ -1265,6 +1265,20 @@
         "Görevi tamamla": "Görevi tamamla",
         "Bu bağımlılık bir döngü oluşturur.": "Bu bağımlılık bir döngü oluşturur.",
         "Görev bulunamadı.": "Görev bulunamadı.",
-        "Görev değişikliği kaydedilemedi.": "Görev değişikliği kaydedilemedi."
+        "Görev değişikliği kaydedilemedi.": "Görev değişikliği kaydedilemedi.",
+        "Bu nota ait {count} görev notta görünmüyor.": "Bu nota ait {count} görev notta görünmüyor.",
+        "Sona ekle": "Sona ekle",
+        "Görev menüsü": "Görev menüsü",
+        "Notu aç": "Notu aç",
+        "Tarihi değiştir": "Tarihi değiştir",
+        "Bu günden kaldır": "Bu günden kaldır",
+        "Görevi sil": "Görevi sil",
+        "Saat": "Saat",
+        "Belirli bir an": "Belirli bir an",
+        "Görev başlığı": "Görev başlığı",
+        "Bitiş günü sabahı": "Bitiş günü sabahı",
+        "Bir gün önce": "Bir gün önce",
+        "Üç gün önce": "Üç gün önce",
+        "Görev oluştur": "Görev oluştur"
     }
 }

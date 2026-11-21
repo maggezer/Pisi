@@ -366,6 +366,34 @@ test('a diary save keeps the task section the rule gives (GV15, pisi-error.md §
     assert.equal(readPisiDiaryTaskSection(content).count, 1);
 });
 
+test('a cut task pasted into a diary comes back from the Trash and lives in that diary (G3, §1.4)', (t) => {
+    const { project, note } = makeProject(t);
+    const task = create(project, { title: 'Taşınan', dueDate: '2026-11-25' }, { noteId: note.id, notePath: note.path });
+    const block = readNote(note.path).content;
+    // Cut: the note is saved without the block; the task goes to the Trash.
+    assert.equal(taskService.savePisiNoteWithTasks(project, note.path, '<div>Not</div>').ok, true);
+    assert.equal(storedTask(project, task.id), undefined);
+    // Paste into the diary of 21-11: the diary is saved with the block.
+    create(project, { title: 'Günlüğün kendi görevi' }, { diaryDate: '2026-11-21' });
+    const filePath = diaryPath(project, '2026-11-21');
+    const before = readNote(filePath).content;
+    const saved = taskService.savePisiNoteWithTasks(
+        project,
+        filePath,
+        `<div>Yazdığım</div>${block}${before.slice(before.indexOf('<div class="pisi-editor-block pisi-diary-tasks"'))}`
+    );
+    assert.equal(saved.ok, true, saved.error);
+    assert.deepEqual(saved.tasks.restored, [task.id]);
+    const restored = storedTask(project, task.id);
+    assert.equal(restored.diaryDate, '2026-11-21');
+    assert.equal(restored.noteId, null);
+    assert.equal(restored.dueDate, '2026-11-25', 'the due day stays');
+    const content = readNote(filePath).content;
+    assert.deepEqual(listPisiNoteTaskIds(content), [], 'the diary keeps no task block: the task is a row of its section');
+    assert.ok(readPisiDiaryTaskSection(content).taskIds.includes(task.id));
+    assert.deepEqual(diaryIds(project, '2026-11-25'), [task.id], 'the due day still lists it');
+});
+
 test('trashing a note takes its tasks along by place and restoring brings them back (S17)', (t) => {
     const { project, note } = makeProject(t);
     const task = create(project, { title: 'Notla gider', dueDate: '2026-11-27' }, { noteId: note.id, notePath: note.path });

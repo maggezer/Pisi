@@ -4,15 +4,15 @@ function isTextBlock(editor, block) {
     return (
         block?.parentElement === editor &&
         block.matches('.pisi-editor-block') &&
-        /^(paragraph|heading[1-5]|quote|code|bullet|number|task)$/.test(block.dataset.pisiBlockType) &&
+        /^(paragraph|heading[1-5]|quote|code|bullet|number)$/.test(block.dataset.pisiBlockType) &&
         !block.querySelector('hr, table, canvas, img, video, audio, iframe, object, [data-pisi-rollup-relation]')
     );
 }
 
-export function mergePisiKeyboardBlocks(editor, left, right, removeTaskMetadata) {
+// Task blocks are not text blocks: their title is a field of its own (renderer/tasks/pisi-task-editing.mjs).
+export function mergePisiKeyboardBlocks(editor, left, right) {
     if (!isTextBlock(editor, left) || !isTextBlock(editor, right) || left.nextElementSibling !== right) return false;
-    if (right.dataset.pisiBlockType === 'task') removeTaskMetadata(right);
-    const target = left.querySelector('.pisi-todo-source') || left;
+    const target = left;
     if (!target.textContent && target.childNodes.length === 1 && target.firstChild.nodeName === 'BR') target.firstChild.remove();
     const join = target.childNodes.length;
     while (right.firstChild) target.appendChild(right.firstChild);
@@ -23,14 +23,13 @@ export function mergePisiKeyboardBlocks(editor, left, right, removeTaskMetadata)
     const selection = window.getSelection();
     selection.removeAllRanges();
     selection.addRange(range);
-    window.syncPisiTodoBlockMarkers?.(left);
     window.syncPisiWordHeadingCollapse?.(editor);
     window.selectPisiBlock?.(editor, left);
     editor.dispatchEvent(new Event('input', { bubbles: true }));
     return true;
 }
 
-export function handlePisiBlockBoundaryKey(editor, event, removeTaskMetadata) {
+export function handlePisiBlockBoundaryKey(editor, event) {
     if (!['Backspace', 'Delete'].includes(event.key) || event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return false;
     const context = getPisiBlockKeyboardContext(editor, event);
     if (!context?.range.collapsed) return false;
@@ -53,5 +52,5 @@ export function handlePisiBlockBoundaryKey(editor, event, removeTaskMetadata) {
     }
     event.preventDefault();
     event.stopImmediatePropagation();
-    return mergePisiKeyboardBlocks(editor, left, right, removeTaskMetadata);
+    return mergePisiKeyboardBlocks(editor, left, right);
 }

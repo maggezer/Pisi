@@ -63,6 +63,8 @@ function rememberPisiSyncFlushedContent() {
 async function handlePisiSyncFlushRequest() {
     let ok = true;
     if (typeof window.flushPisiPendingSaves === 'function') ok = (await window.flushPisiPendingSaves()) !== false;
+    // Task titles typed but not written yet go to tasks.json before the turn (SV4).
+    await window.flushPisiTaskTitles?.();
     rememberPisiSyncFlushedContent();
     const dirtyPaths = collectPisiSyncDirtyPaths();
     pisiSyncLiveState.reportedDirty = dirtyPaths.join('\n');
@@ -71,11 +73,16 @@ async function handlePisiSyncFlushRequest() {
 
 // ---- The open note, block by block ------------------------------------------------
 
+// The diary's task section is drawn from tasks.json by its rule (GV15) and is
+// never merged: it is left out here and drawn again after the update.
+const isPisiSyncTaskSection = (html) => /^<[^>]*data-pisi-block-type="diary-tasks"/.test(String(html || ''));
+
 function splitPisiSyncLiveUnits(html) {
     const units = new Map();
     const order = [];
     for (const segment of splitNoteBlocks(html)) {
         if (segment.kind === 'text' && !segment.html.trim()) continue;
+        if (segment.kind === 'element' && isPisiSyncTaskSection(segment.html)) continue;
         if (segment.kind !== 'element' || !segment.blockId || units.has(segment.blockId)) return null;
         units.set(segment.blockId, segment.html);
         order.push(segment.blockId);
@@ -105,6 +112,8 @@ function applyPisiSyncRemoteNoteBlocks(editor, base, local, remote) {
     const elements = new Map();
     for (const child of editor.children) {
         const id = child.dataset?.pisiBlockId;
+        // A task block being made is not on disk yet; the diary section is not merged.
+        if (child.matches?.('.pisi-diary-tasks, .pisi-task-pending')) continue;
         if (id) elements.set(id, child);
     }
     if (elements.size !== localUnits.order.length) return { ok: false, replaced: [], conflicts: [] };

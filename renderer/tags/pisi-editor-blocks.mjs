@@ -426,6 +426,8 @@ function handlePisiEditorPaste(editor, event) {
     let currentBlock = topBlock(range.startContainer);
     if (!currentBlock?.matches('.pisi-editor-block')) return false;
 
+    // Task lines are blocks of their own, like composite blocks: no text joins them.
+    blocks = blocks.map((item) => (item.type === 'task' && !item.composite ? { ...item, composite: true, newTask: true } : item));
     if (currentBlock?.dataset.pisiBlockType === 'code') {
         const text = plain || blocks.map((item) => item.text ?? createPisiInertHtmlTemplate(item.html || '').content.textContent).join('\n');
         blocks = [{ tag: 'div', type: 'paragraph', text }];
@@ -448,6 +450,20 @@ function handlePisiEditorPaste(editor, event) {
     };
 
     const buildBlockElement = (item, fallbackType = 'paragraph', fallbackIndent = 0) => {
+        // A `- [ ]` line becomes a new task: renderer/tasks/pisi-task-clipboard.mjs makes it.
+        if (item.newTask) {
+            const taskBlock = document.createElement('div');
+            taskBlock.className = 'pisi-editor-block pisi-task-block';
+            taskBlock.dataset.pisiBlockId = makePisiBlockId();
+            taskBlock.dataset.pisiBlockType = 'task';
+            taskBlock.dataset.pisiTaskNewTitle = String(item.text ?? createPisiInertHtmlTemplate(item.html || '').content.textContent ?? '')
+                .replace(/\s+/g, ' ')
+                .trim();
+            if (item.checked) taskBlock.dataset.pisiTaskNewDone = 'true';
+            taskBlock.setAttribute('contenteditable', 'false');
+            inserted.push(taskBlock);
+            return taskBlock;
+        }
         if (item.composite) {
             const block = createPisiInertHtmlTemplate(item.html).content.firstElementChild;
             inserted.push(block);
@@ -468,26 +484,7 @@ function handlePisiEditorPaste(editor, event) {
             block.style.setProperty('--pisi-bullet-indent', String(resolvedIndent));
         }
         block.appendChild(itemToFragment(item));
-        if (!block.textContent && !block.querySelector('br, img, table, canvas, .pisi-block-task-marker')) block.appendChild(document.createElement('br'));
-        if (resolvedType === 'task' && !block.querySelector('.pisi-user-tag[data-pisi-tag]')) {
-            const source = document.createElement('span');
-            source.className = 'pisi-todo-source';
-            source.dataset.pisiTodoFor = 'todo.1.none';
-            source.append(...block.childNodes);
-            const metadata = document.createElement('span');
-            metadata.className = 'pisi-user-tag pisi-task-metadata';
-            metadata.dataset.pisiTag = 'todo.1.none';
-            metadata.contentEditable = 'false';
-            metadata.textContent = metadata.dataset.pisiTag;
-            block.replaceChildren(metadata, source);
-            if (item.checked) {
-                const done = /** @type {HTMLElement} */ (metadata.cloneNode(true));
-                done.dataset.pisiTag = 'done';
-                done.dataset.pisiDoneFor = 'todo.1.none';
-                done.textContent = done.dataset.pisiTag;
-                block.prepend(done);
-            }
-        }
+        if (!block.textContent && !block.querySelector('br, img, table, canvas')) block.appendChild(document.createElement('br'));
         inserted.push(block);
         return block;
     };
@@ -552,7 +549,6 @@ function handlePisiEditorPaste(editor, event) {
 
     rekeyPisiPastedBlocks(inserted, makePisiBlockId);
     window.initializePisiAdvancedEditorContent?.(editor);
-    window.syncPisiTodoBlockMarkers?.(editor);
     if (caretMarker.isConnected && selection) {
         const nextRange = document.createRange();
         nextRange.setStartBefore(caretMarker);
@@ -568,6 +564,9 @@ function handlePisiEditorPaste(editor, event) {
     window.decoratePisiBlockTypes?.(editor);
     window.syncPisiWordHeadingCollapse?.(editor);
     editor.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertFromPaste' }));
+    // Pasted task blocks: copied, brought back from the Trash or made (docs/task-plan.md §3.3).
+    const taskBlocks = inserted.filter((block) => block.isConnected && block.matches('.pisi-task-block'));
+    if (taskBlocks.length) void window.settlePisiPastedTasks?.(editor, taskBlocks, clipboardData.getData?.('application/x-pisi-tasks') || null);
     return true;
 }
 

@@ -5,20 +5,50 @@ touch-keyboard beforeinput events share the same dispatcher. Composition,
 already-cancelled events, nested controls, Sheet/Canvas editing and selections
 spanning multiple blocks are excluded from single-block mutations.
 
-| Block        | Enter                                                                    | Shift+Enter                                | Backspace at start / empty block                                                |
-| ------------ | ------------------------------------------------------------------------ | ------------------------------------------ | ------------------------------------------------------------------------------- |
-| Paragraph    | Insert a soft line; Enter on an empty line exits into a new paragraph    | Soft line in the same block                | Join adjacent text blocks, retaining the left block identity                    |
-| Heading 1–5  | Split into a paragraph; an empty heading becomes a paragraph             | Soft line in the heading                   | Empty heading becomes a paragraph; otherwise join adjacent text blocks          |
-| Quote / code | Keep the existing two-Enter exit rule                                    | Soft line in the same block                | Empty block becomes a paragraph; otherwise join adjacent text blocks            |
-| Bullet       | Split into a bullet; empty item outdents or becomes a paragraph          | Soft line in the item                      | Outdent; a top-level item becomes a paragraph                                   |
-| Number       | Split into a numbered item; empty item becomes a paragraph               | Soft line in the item                      | Become a paragraph                                                              |
-| Task         | Split the trailing text into a paragraph; empty task becomes a paragraph | Soft line without duplicating the checkbox | After the checkbox, become a paragraph; before it, join the previous text block |
+| Block        | Enter                                                                                 | Shift+Enter                   | Backspace at start / empty block                                                                       |
+| ------------ | ------------------------------------------------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Paragraph    | Insert a soft line; Enter on an empty line exits into a new paragraph                 | Soft line in the same block   | Join adjacent text blocks, retaining the left block identity                                           |
+| Heading 1–5  | Split into a paragraph; an empty heading becomes a paragraph                          | Soft line in the heading      | Empty heading becomes a paragraph; otherwise join adjacent text blocks                                 |
+| Quote / code | Keep the existing two-Enter exit rule                                                 | Soft line in the same block   | Empty block becomes a paragraph; otherwise join adjacent text blocks                                   |
+| Bullet       | Split into a bullet; empty item outdents or becomes a paragraph                       | Soft line in the item         | Outdent; a top-level item becomes a paragraph                                                          |
+| Number       | Split into a numbered item; empty item becomes a paragraph                            | Soft line in the item         | Become a paragraph                                                                                     |
+| Task title   | New task below; the text after the caret is its title; empty task becomes a paragraph | Nothing (a title is one line) | Empty task becomes a paragraph; otherwise, at the start, the caret goes to the end of the block before |
 
 Delete at the end of a text block joins the following text block. The left
-identity survives; task metadata from the consumed right block is removed.
-Text joins never absorb Sheet, Canvas, rollup or media blocks. Spaces and soft
-line breaks are deleted normally before attempting a block join. Selecting all
-task text and pressing Backspace or Delete removes the text and task marker.
+identity survives. Text joins never absorb Sheet, Canvas, rollup, media or task
+blocks, nor the diary's task section. Spaces and soft line breaks are deleted
+normally before attempting a block join.
+
+## Task blocks and diary rows
+
+A task block (docs/task-plan.md §3.2.1) is not a text block: its title is a
+field of its own, one line of plain text, drawn from `.pisi/tasks.json`. The
+note file holds only the block and task ids; the title is written to the task
+a moment after typing and at once when the field loses focus, never during an
+IME composition. A task is made with `/todo` (also `/görev`), `[ ]` or `[]`
+followed by a space at the start of a block, the "task" block type and the
+toolbar's task button; the block's text becomes the title.
+
+| Key in a title            | Note task block                                           | Diary row                                                                       |
+| ------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Enter                     | New task below, same note                                 | New task of the same day; in the "add a task" field, makes the task             |
+| Enter on an empty title   | The task block becomes an empty paragraph                 | A task that lives in this diary goes to the Trash; a row of another note: no-op |
+| Backspace / Delete, empty | As Enter on an empty title                                | As Enter on an empty title                                                      |
+| Backspace at the start    | Caret to the end of the block before; nothing is joined   | Caret to the end of the row before                                              |
+| Delete at the end         | Nothing                                                   | Nothing                                                                         |
+| ArrowUp / ArrowDown       | The block before / after                                  | The row before / after; from the first row, the block above the section         |
+| ArrowLeft / ArrowRight    | At the start / end of the title, the block before / after | The same, row by row                                                            |
+| Shift+Enter               | Nothing                                                   | Nothing                                                                         |
+| Escape                    | Leaves the title (the title is written)                   | The same                                                                        |
+
+In a paragraph right after a task block, Backspace at the start moves the
+caret to the end of the task title (an empty paragraph is removed); Delete at
+the end of a paragraph before a task block does nothing. A task that leaves a
+note through the keyboard goes to the Trash with the note's save; undo brings
+it back. A row whose task lives in another note is never deleted from the
+keyboard: its "…" menu opens the note, changes the date or takes the task off
+that day. A completion that is not the latest is locked (☑ without a
+keyboard action, docs/task-plan.md §3.2.3).
 
 The existing double-Enter behavior is intentional and is not replaced with
 single-Enter paragraph splitting. Electron regression tests exercise both
@@ -64,8 +94,17 @@ from a note editor and a text edit is never undone from the map.
 | Focus                                                    | History used                                                        |
 | -------------------------------------------------------- | ------------------------------------------------------------------- |
 | Center or modal note editor (any block, including Sheet) | Note editor history (`pisi-editor-history.mjs`)                     |
+| A task title in a note or diary                          | The note editor history (the title and the task's fields)           |
 | Sheet cell editor, input, textarea, map title input      | The control's own native or Sheet history                           |
 | Map canvas (no editable element focused, no modal open)  | Map history (`pisi.map.undo`, `pisi.map.redo`, `pisi.map.redo-alt`) |
+
+A note's history step also keeps the fields of the tasks the note shows. Undo
+and redo bring them back with task commands: field changes in one
+`task.batch.v1`, a completion with `task.reopen.v1` / `task.complete.v1`, a
+diary task this editor sent to the Trash with `trash.restore.v1`; a task block
+that comes back into a note brings its task back from the Trash with the save.
+Changes made elsewhere (the panel, sync, the other window) join every step, so
+undo never takes them back.
 
 The map commands are registered in the command registry with
 `allowInInput: false`, so the registry never runs them for an editable target,
@@ -122,10 +161,11 @@ case" is on; "Whole word" treats Unicode letters, digits and `_` as word
 characters. A match may span formatted text inside one block but never two
 blocks.
 
-Only editable text is searched and replaced: task markers and metadata, tags,
+Only editable text is searched and replaced: task checkboxes and chips, tags,
 `[[links]]`, Paint, Sheet, rollup, image and file blocks and anything
 `contenteditable="false"` are skipped, and attributes such as block and task ids
-are never touched. Highlights use the CSS Custom Highlight API, so the saved
+are never touched. Task titles are searched (each title is a match group of its
+own); a replaced title is written to `tasks.json` with one `task.batch.v1`. Highlights use the CSS Custom Highlight API, so the saved
 HTML never contains find markers. "Replace all" is one undo step.
 
 ## Interface zoom, print and the context menu

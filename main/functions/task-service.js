@@ -717,9 +717,11 @@ function savePisiNoteWithTasks(projectFolder, nodePath, content, options = {}) {
 
         const fromTrash = modules['main.trashStore'].takePisiTasksFromTrash(projectFolder, comingBack);
         const now = new Date();
+        // A task that comes back into a diary lives in that day's diary: its block becomes a row of the section (§1.4).
+        const place = diaryDate ? { diaryDate, noteId: null } : { noteId, diaryDate: null };
         const restored = fromTrash.tasks.map((task) => {
-            const placed = normalizePisiTask({ noteId }, task, { now, makeUuid: () => '' });
-            return placed.ok ? placed.task : { ...task, noteId, diaryDate: null };
+            const placed = normalizePisiTask(place, task, { now, makeUuid: () => '' });
+            return placed.ok ? placed.task : { ...task, ...place };
         });
         const out = takePisiTasksOut(tasks, removedIds);
         let nextTasks = [...out.remaining, ...restored];
@@ -755,7 +757,9 @@ function savePisiNoteWithTasks(projectFolder, nodePath, content, options = {}) {
         }
         if (out.removed.length || restored.length || fromTrash.dependencyRefs.length) taskStore.writePisiTaskStore(projectFolder, fresh, nextTasks, { now });
 
-        const saved = saveNoteContent(nodePath, normalizeSection(next, nextTasks));
+        let content = next;
+        if (diaryDate) for (const task of restored) content = removePisiTaskBlock(content, task.id) ?? content;
+        const saved = saveNoteContent(nodePath, normalizeSection(content, nextTasks));
         if (!saved?.ok) return saved;
         const openPaths = [nodePath, ...(Array.isArray(options.openPaths) ? options.openPaths : [])];
         const rewritten = rewritePisiDiarySectionsForTaskChange(projectFolder, tasks, nextTasks, { openPaths });

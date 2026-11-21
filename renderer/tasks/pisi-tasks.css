@@ -1,5 +1,5 @@
-/* Tasks drawn from tasks.json (docs/task-plan.md G2): the note's task block, the diary's task section and the
-   interim right-panel list. Loaded by renderer/tasks/pisi-task-block.mjs. */
+/* Tasks drawn from tasks.json (docs/task-plan.md G2, G3): the note's task block, the diary's task section, the
+   chip windows and the interim right-panel list. Loaded by renderer/tasks/pisi-task-block.mjs. */
 
 .pisi-task-block,
 .pisi-diary-task-row,
@@ -36,11 +36,177 @@
 
 .pisi-task-title {
     flex: 1 1 auto;
-    min-width: 0;
+    min-width: 4ch;
     overflow-wrap: anywhere;
+    outline: none;
+    cursor: text;
+    user-select: text;
+    white-space: pre-wrap;
+}
+
+.pisi-task-title:empty::before {
+    content: attr(data-placeholder);
+    color: var(--muted-text-color, #aaa);
+    pointer-events: none;
+}
+
+.pisi-task-title[contenteditable='false'] {
+    cursor: default;
+}
+
+.pisi-task-pending > .pisi-task-check,
+.pisi-diary-task-pending > .pisi-task-check {
+    opacity: 0.45;
+}
+
+.pisi-task-chips {
+    display: inline-flex;
+    flex: 0 0 auto;
+    gap: 4px;
+    align-items: baseline;
+}
+
+.pisi-task-chips .pisi-task-chip {
+    border: 0;
+    font: inherit;
+    font-size: 0.82em;
+    cursor: pointer;
+}
+
+.pisi-task-chips .pisi-task-chip:disabled {
+    cursor: default;
+}
+
+.pisi-task-chip-empty {
+    display: none;
+}
+
+.pisi-task-block:hover .pisi-task-chip-empty,
+.pisi-task-block:focus-within .pisi-task-chip-empty,
+.pisi-diary-task-row:hover .pisi-task-chip-empty,
+.pisi-diary-task-row:focus-within .pisi-task-chip-empty {
+    display: inline;
+    opacity: 0.6;
+}
+
+.pisi-diary-task-info {
+    flex: 0 0 auto;
+    font-size: 0.82em;
+    color: var(--muted-text-color, #aaa);
+}
+
+.pisi-diary-task-menu {
+    flex: 0 0 auto;
+    padding: 0 6px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted-text-color, #aaa);
+    cursor: pointer;
+    opacity: 0;
+}
+
+.pisi-diary-task-row:hover .pisi-diary-task-menu,
+.pisi-diary-task-row:focus-within .pisi-diary-task-menu {
+    opacity: 1;
+}
+
+.pisi-diary-task-add {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-height: 1.6em;
+    color: var(--muted-text-color, #aaa);
+}
+
+.pisi-diary-task-add-icon {
+    flex: 0 0 auto;
+    width: 1.05em;
+    text-align: center;
+}
+
+.pisi-task-homeless {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--accent-color, #f39c12) 15%, transparent);
+}
+
+.pisi-task-homeless-add,
+.pisi-task-popover-option {
+    padding: 2px 8px;
+    border: 1px solid var(--border-color, #555);
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.pisi-task-popover {
+    position: fixed;
+    z-index: 10000;
+    min-width: 200px;
+    max-width: 320px;
+    padding: 8px;
+    border: 1px solid var(--border-color, #555);
+    border-radius: 8px;
+    background: var(--panel-background, var(--background-color, #222));
+    color: var(--text-color, inherit);
+    box-shadow: 0 6px 20px rgb(0 0 0 / 30%);
+}
+
+.pisi-task-popover-body,
+.pisi-task-popover-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.pisi-task-popover-row,
+.pisi-task-popover-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.pisi-task-popover-actions {
+    justify-content: flex-end;
+}
+
+.pisi-task-popover-option {
+    text-align: left;
+}
+
+.pisi-task-popover-option[aria-pressed='true'],
+.pisi-task-popover-primary {
+    border-color: var(--accent-color, #f39c12);
+}
+
+.pisi-task-popover-danger {
+    color: #e74c3c;
+}
+
+.pisi-task-popover-input {
+    min-width: 0;
+    padding: 2px 4px;
+    border: 1px solid var(--border-color, #555);
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+}
+
+.pisi-task-popover-hint {
+    font-size: 0.82em;
+    color: var(--muted-text-color, #aaa);
 }
 
 .pisi-task-done > .pisi-task-title,
+.pisi-task-done > .pisi-task-title:focus,
 .pisi-task-done .pisi-task-panel-title {
     text-decoration: line-through;
     opacity: 0.65;

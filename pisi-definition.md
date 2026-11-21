@@ -390,6 +390,17 @@ değişikliği hiçbir `.node` dosyasını okumaz ya da yazmaz. Notun editörde
 kaydı, kayıttan önceki ve sonraki içerikteki görev kimliklerini karşılaştırır:
 yeri bu not olan ve bloğu nottan çıkan görev çöp kutusuna gider; çöp kutusundaki
 bir kimlik nota gelirse görev geri döner. Senkron bu karşılaştırmayı çalıştırmaz.
+Bir günlüğe gelen (yapıştırılan) ve çöp kutusundan dönen görevin yeri o günün
+günlüğü olur (`diaryDate`); bloğu kayıttan çıkar ve görev günlüğün görev
+bölümünde görünür.
+
+Editörde (`docs/task-plan.md` G3) görev `/todo`, satır başında `[ ]` ya da `[]`
+ve boşluk, "görev" blok türü ve araç çubuğundaki görev düğmesiyle oluşturulur;
+önce `task.create.v1` çalışır, sonra blok nota girer. Başlık tek satır düz
+metindir ve yalnız `tasks.json`'a yazılır. Kopyalanan görev bloğu yeni kimlikli
+bir kopya görevdir; kesilip yapıştırılan blok kimliğini korur (taşıma). Klavye
+ve yapıştırma kuralları `docs/editor-keyboard-rules.md` ve
+`docs/editor-paste-rules.md`'dedir.
 
 Hatırlatmalar: `reminderAt` (`YYYY-MM-DDTHH:MM`, yerel saat) kesin hatırlatma
 anıdır ve önceliklidir. Yoksa `reminderMode` (`due-morning`, `day-before`,
@@ -424,7 +435,11 @@ yazılmaz, editör çizer. Bölüm yalnız görevin günleri değişince yazıl�
 görevin girdiği günün günlüğü yoksa oluşturulur, silinen bir günlük o güne yeni
 bir görev girene kadar yeniden oluşturulmaz. Başlık, durum, öncelik, saat ya da
 hatırlatma değişikliği bölümü değiştirmez. Günlük kaydedilince bölüm kuraldan
-yeniden üretilir. Eski günlüklerdeki `PISI_DIARY_MANAGED_START…END` bölümleri
+yeniden üretilir. Günlükte oluşturulan görevin yeri o günlüktür ve bitiş günü
+varsayılan olarak o gündür. Editör bölümü başlık, satırlar (her satırın başlığı
+düzenlenir), bugünün günlüğünde geciken açık görevler ve sonda bir "Görev ekle"
+alanıyla çizer; bunların hiçbiri dosyaya yazılmaz. Eski günlüklerdeki
+`PISI_DIARY_MANAGED_START…END` bölümleri
 dönüştürülmez; sıradan içerik olarak kalır.
 
 ## Paint ve Sheet sidecar asset modeli

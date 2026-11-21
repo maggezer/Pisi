@@ -14,8 +14,21 @@ documents and application metadata are not imported from external HTML.
   External paragraph margins and padding are removed.
 - Web, mail and local anchor links survive. Script, data-document and local file
   link destinations are removed. Unsupported remote images retain their alt text.
-- Pisi copies get new block and task identities, with copied internal references
-  remapped together. Native composite clipboard payloads keep their existing path.
+- Pisi copies get new block identities, with copied internal references remapped
+  together. Native composite clipboard payloads keep their existing path.
+- Task blocks (docs/task-plan.md §3.3): copying or cutting a selection with task
+  blocks puts their records on the clipboard (`application/x-pisi-tasks`), the
+  bare blocks in the HTML and `- [ ] Title` lines in the plain text. Cutting
+  saves the note at once, so the task is in the Trash. A pasted task block keeps
+  its id when it was cut in this project (the note save brings the task back,
+  in its new place: a move); otherwise it is a copy with a new id and the copied
+  fields (open, without its completed days). Pasting into another project always
+  copies. A block whose task exists nowhere is not pasted. Duplicating a block
+  copies its tasks. In a diary pasted tasks become tasks of that day's diary and
+  show in its task section, not as blocks.
+- `- [ ]` and `- [x]` lines (plain text, Markdown, the Markdown source view)
+  become new tasks; `[x]` is completed. A task line of the Markdown source that
+  carries its task id stays that task, and a changed title is written to it.
 - Partial and cross-block replacements retain unselected prefix/suffix text.
   A pasted heading or code block does not absorb the trailing paragraph text.
 - Table cell spans and anchor links remain present in saved editor content.

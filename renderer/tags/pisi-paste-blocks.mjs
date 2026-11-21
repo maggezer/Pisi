@@ -2,7 +2,7 @@ import { sanitizePisiPasteHtml } from './pisi-paste-sanitize.mjs';
 import { parsePisiPlainPaste } from './pisi-paste-plain.mjs';
 
 const blockTags = new Set('DIV P SECTION ARTICLE MAIN HEADER FOOTER ASIDE BLOCKQUOTE PRE UL OL LI H1 H2 H3 H4 H5 H6 DD DT DL FIGCAPTION TABLE'.split(' '));
-const internalTypes = /^(?:paragraph|heading[1-5]|quote|code|bullet|number|task)$/;
+const internalTypes = /^(?:paragraph|heading[1-5]|quote|code|bullet|number)$/;
 
 export function isPisiInternalPaste(html = '') {
     const template = document.createElement('template');
@@ -66,6 +66,12 @@ export function extractPisiPasteBlocks(html = '', plain = '') {
                 continue;
             }
             flush();
+            // A Pisi task block is pasted as it is; its task is copied or brought back afterwards (docs/editor-paste-rules.md).
+            if (internal && child.matches('.pisi-task-block[data-pisi-task-id]')) {
+                blocks.push({ ...base, composite: true, task: true, html: child.outerHTML });
+                continue;
+            }
+            if (internal && child.matches('.pisi-diary-tasks, .pisi-task-block')) continue;
             if (internal && child.matches('.pisi-sheet-block, .pisi-canvas-block, [data-pisi-rollup-relation], .pisi-image-block, .pisi-file-block')) {
                 blocks.push({ ...base, composite: true, html: child.outerHTML });
                 continue;

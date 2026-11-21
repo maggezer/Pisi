@@ -5,10 +5,12 @@ import { applyPisiReplacements, findPisiTextMatches, locatePisiFindOffset } from
 // Find and replace in the open note (center or modal editor). Matches are
 // shown with the CSS Custom Highlight API, so the editor DOM and the saved HTML
 // never change while searching. Only editable text nodes are searched and
-// replaced: task markers and metadata, tags, [[links]], Paint, Sheet, rollup,
+// replaced: task checkboxes and chips, tags, [[links]], Paint, Sheet, rollup,
 // image and file blocks and anything contenteditable="false" are skipped, and
-// element attributes (block ids, task ids) are never touched. "Replace all" is
-// one input event and therefore one undo step.
+// element attributes (block ids, task ids) are never touched. Task titles are
+// searched too; a replaced title is written to tasks.json (task.batch.v1,
+// docs/task-plan.md G3.8). "Replace all" is one input event and therefore one
+// undo step.
 //
 // Keyboard ownership (docs/editor-keyboard-rules.md): in a Sheet cell Mod+F
 // goes to that Sheet's own search.
@@ -16,6 +18,8 @@ import { applyPisiReplacements, findPisiTextMatches, locatePisiFindOffset } from
 const PISI_FIND_SKIP =
     '[contenteditable="false"], .pisi-block-task-marker, .pisi-task-metadata, .pisi-user-tag, .pisi-wiki-link, .pisi-sheet-block, ' +
     '.pisi-canvas-block, table[data-pisi-sheet], canvas, .pisi-image-block, .pisi-file-block, [data-pisi-rollup-relation], script, style';
+// An editable task title (renderer/tasks/pisi-task-view.mjs) is searched although its block is not editable.
+const PISI_FIND_TASK_TITLE = '[data-pisi-task-title][contenteditable="plaintext-only"]';
 const PISI_FIND_REFRESH_MS = 120;
 const pisiFindState = {
     bar: null,
@@ -66,13 +70,15 @@ function collectPisiFindGroups(editor) {
     const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT, {
         acceptNode(node) {
             const parent = node.parentElement;
+            if (parent?.closest(PISI_FIND_TASK_TITLE)?.dataset.pisiTaskTitle) return NodeFilter.FILTER_ACCEPT;
             if (!parent || parent.closest(PISI_FIND_SKIP)) return NodeFilter.FILTER_REJECT;
             return NodeFilter.FILTER_ACCEPT;
         }
     });
     while (walker.nextNode()) {
         const node = /** @type {Text} */ (walker.currentNode);
-        const block = node.parentElement.closest('.pisi-editor-block') || editor;
+        // A task title is a group of its own: a match never spans two titles or a title and its block.
+        const block = node.parentElement.closest(PISI_FIND_TASK_TITLE) || node.parentElement.closest('.pisi-editor-block') || editor;
         if (block !== currentBlock) {
             currentBlock = block;
             groups.push([]);
@@ -167,15 +173,20 @@ function stepPisiFind(delta) {
 function commitPisiFindChange(editor, newGroups) {
     const { nodes, groups } = pisiFindState.collected;
     let changed = 0;
+    const titles = new Set();
+    window.rebasePisiEditorHistory?.(editor);
     newGroups.forEach((texts, group) => {
         texts.forEach((text, index) => {
             if (text !== groups[group][index]) {
                 nodes[group][index].data = text;
+                const title = nodes[group][index].parentElement?.closest(PISI_FIND_TASK_TITLE);
+                if (title) titles.add(title);
                 changed += 1;
             }
         });
     });
     if (!changed) return false;
+    if (titles.size) void window.replacePisiTaskTitlesFromEditor?.(editor, [...titles]);
     pisiFindState.replacing = true;
     try {
         // One input event: one undo step, saved through the normal autosave path.

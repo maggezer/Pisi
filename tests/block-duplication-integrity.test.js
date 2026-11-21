@@ -346,15 +346,13 @@ async function getBlockEditor() {
         }
     };
     let blockCounter = 1;
-    let taskCounter = 1;
     globalThis.makePisiBlockId = () => `blk_gen_${blockCounter++}`;
-    globalThis.makePisiFirstClassTaskId = () => `task_gen_${taskCounter++}`;
 
     loadedModule = await import('../renderer/editor/pisi-block-editor.mjs');
     return loadedModule;
 }
 
-test('Acceptance test B1: duplicating section with nested blocks and tasks regenerates all IDs with zero collision', async () => {
+test('Acceptance test B1: duplicating a section regenerates block ids and hands its task blocks to the task service as copies', async () => {
     const { duplicatePisiBlock } = await getBlockEditor();
 
     const editor = createMockElement('div');
@@ -375,39 +373,19 @@ test('Acceptance test B1: duplicating section with nested blocks and tasks regen
     paragraph.dataset.pisiHeadingParent = 'blk_orig_h2';
     paragraph.textContent = 'Paragraf metni';
 
-    // 3. Child task block 1
+    // 3–4. Task blocks (docs/task-plan.md §3.2.1): only ids in the block
     const task1 = createMockElement('div');
-    task1.className = 'pisi-editor-block';
+    task1.className = 'pisi-editor-block pisi-task-block';
     task1.dataset.pisiBlockId = 'blk_orig_t1';
     task1.dataset.pisiBlockType = 'task';
     task1.dataset.pisiTaskId = 'task_orig_1';
     task1.dataset.pisiHeadingParent = 'blk_orig_h2';
 
-    const marker1 = createMockElement('span');
-    marker1.className = 'pisi-block-task-marker';
-    marker1.textContent = '☐';
-    marker1.setAttribute('aria-checked', 'false');
-    task1.appendChild(marker1);
-
-    const tag1 = createMockElement('span');
-    tag1.className = 'pisi-user-tag';
-    tag1.dataset.pisiTag = 'todo.1.none';
-    tag1.dataset.pisiTaskId = 'task_orig_1';
-    task1.appendChild(tag1);
-
-    // 4. Child task block 2 (depends on task 1 + external task)
     const task2 = createMockElement('div');
-    task2.className = 'pisi-editor-block';
+    task2.className = 'pisi-editor-block pisi-task-block';
     task2.dataset.pisiBlockId = 'blk_orig_t2';
     task2.dataset.pisiBlockType = 'task';
     task2.dataset.pisiTaskId = 'task_orig_2';
-    task2.dataset.pisiTodoParent = 'dep:task_orig_1|task_external_999';
-
-    const marker2 = createMockElement('span');
-    marker2.className = 'pisi-block-task-marker';
-    marker2.textContent = '☑';
-    marker2.setAttribute('aria-checked', 'true');
-    task2.appendChild(marker2);
 
     // 5. Rollup block targeting task 1
     const rollup = createMockElement('div');
@@ -447,7 +425,11 @@ test('Acceptance test B1: duplicating section with nested blocks and tasks regen
 
     // Original IDs for intersection checking
     const originalBlockIds = new Set(['blk_orig_h2', 'blk_orig_p1', 'blk_orig_t1', 'blk_orig_t2', 'blk_orig_rollup', 'blk_orig_ref']);
-    const originalTaskIds = new Set(['task_orig_1', 'task_orig_2']);
+    const settled = [];
+    globalThis.settlePisiPastedTasks = (target, blocks, clipboard) => {
+        settled.push({ target, blocks, clipboard });
+        return Promise.resolve();
+    };
 
     // Execute duplicate
     const clonedHeading = duplicatePisiBlock(heading);
@@ -474,32 +456,25 @@ test('Acceptance test B1: duplicating section with nested blocks and tasks regen
         clonedRefBlock.dataset.pisiBlockId
     ]);
 
-    const clonedTaskIds = new Set([clonedTask1.dataset.pisiTaskId, clonedTask2.dataset.pisiTaskId]);
-
     // 1. Acceptance requirement: ZERO overlapping block IDs
     for (const id of clonedBlockIds) {
         assert.ok(!originalBlockIds.has(id), `Cloned block ID ${id} must not collide with original block IDs`);
     }
     assert.strictEqual(clonedBlockIds.size, 6, 'All cloned blocks must have distinct unique IDs');
 
-    // 2. Acceptance requirement: ZERO overlapping task IDs
-    for (const taskId of clonedTaskIds) {
-        assert.ok(!originalTaskIds.has(taskId), `Cloned task ID ${taskId} must not collide with original task IDs`);
-    }
-    assert.strictEqual(clonedTaskIds.size, 2, 'All cloned tasks must have distinct unique task IDs');
-
-    // 3. Child user tag shares the new task ID
-    const clonedTag1 = clonedTask1.querySelector('.pisi-user-tag');
-    assert.ok(clonedTag1);
-    assert.strictEqual(clonedTag1.dataset.pisiTaskId, clonedTask1.dataset.pisiTaskId);
+    // 2. A copied task block has no task id of its own yet: the task service copies the task (GV7)
+    assert.strictEqual(clonedTask1.dataset.pisiTaskId, undefined);
+    assert.strictEqual(clonedTask2.dataset.pisiTaskId, undefined);
+    assert.strictEqual(clonedTask1.dataset.pisiTaskCopyOf, 'task_orig_1');
+    assert.strictEqual(clonedTask2.dataset.pisiTaskCopyOf, 'task_orig_2');
+    assert.strictEqual(settled.length, 1, 'the copies are settled once');
+    assert.strictEqual(settled[0].target, editor);
+    assert.strictEqual(settled[0].clipboard, null);
+    assert.ok(settled[0].blocks.includes(clonedTask1) && settled[0].blocks.includes(clonedTask2));
 
     // 4. Heading parent remapped to new cloned heading ID
     assert.strictEqual(clonedParagraph.dataset.pisiHeadingParent, clonedHeading.dataset.pisiBlockId);
     assert.strictEqual(clonedTask1.dataset.pisiHeadingParent, clonedHeading.dataset.pisiBlockId);
-
-    // 5. Task dependency remapped internally, external preserved
-    const expectedDependency = `dep:${clonedTask1.dataset.pisiTaskId}|task_external_999`;
-    assert.strictEqual(clonedTask2.dataset.pisiTodoParent, expectedDependency);
 
     // 6. Rollup target remapped to new cloned task 1 block ID
     assert.strictEqual(clonedRollup.dataset.pisiRollupTarget, clonedTask1.dataset.pisiBlockId);
@@ -516,21 +491,15 @@ test('Acceptance test B1: duplicating section with nested blocks and tasks regen
     assert.ok(clonedExternalLink);
     assert.strictEqual(clonedExternalLink.getAttribute('href'), '/notes/outside.node#blk_outside_xyz');
 
-    // 9. Task markers hydrated and interactive
-    const clonedMarker1 = clonedTask1.querySelector('.pisi-block-task-marker');
-    assert.ok(clonedMarker1);
-    clonedMarker1.dispatchEvent(new globalThis.Event('click'));
-    assert.strictEqual(clonedMarker1.getAttribute('aria-checked'), 'true');
-    assert.strictEqual(clonedMarker1.textContent, '☑');
-
     // 10. Original section blocks remained completely unmodified
     assert.strictEqual(heading.dataset.pisiBlockId, 'blk_orig_h2');
     assert.strictEqual(task1.dataset.pisiTaskId, 'task_orig_1');
-    assert.strictEqual(task2.dataset.pisiTodoParent, 'dep:task_orig_1|task_external_999');
+    assert.strictEqual(task2.dataset.pisiTaskId, 'task_orig_2');
     assert.strictEqual(rollup.dataset.pisiRollupTarget, 'blk_orig_t1');
+    delete globalThis.settlePisiPastedTasks;
 });
 
-test('Acceptance test B1: duplicating container with deeply nested blocks and tasks regenerates nested IDs and remaps rollup targets', async () => {
+test('Acceptance test B1: duplicating a container regenerates nested block ids, remaps rollup targets and marks nested task blocks as copies', async () => {
     const { duplicatePisiBlock } = await getBlockEditor();
 
     const editor = createMockElement('div');
@@ -550,7 +519,6 @@ test('Acceptance test B1: duplicating container with deeply nested blocks and ta
     child2.className = 'pisi-editor-block pisi-rollup-block';
     child2.dataset.pisiBlockId = 'blk_child_nested_2';
     child2.dataset.pisiRollupTarget = 'blk_child_nested_1';
-    child2.dataset.pisiTodoParent = 'dep:task_nested_orig_1';
 
     container.append(child1, child2);
     editor.append(container);
@@ -571,14 +539,12 @@ test('Acceptance test B1: duplicating container with deeply nested blocks and ta
     assert.notStrictEqual(clonedChild1.dataset.pisiBlockId, child1.dataset.pisiBlockId);
     assert.notStrictEqual(clonedChild2.dataset.pisiBlockId, child2.dataset.pisiBlockId);
 
-    // Distinct task IDs
-    assert.notStrictEqual(clonedChild1.dataset.pisiTaskId, child1.dataset.pisiTaskId);
+    // The nested task block is a copy: no task id until the task service gives one
+    assert.strictEqual(clonedChild1.dataset.pisiTaskId, undefined);
+    assert.strictEqual(clonedChild1.dataset.pisiTaskCopyOf, 'task_nested_orig_1');
 
     // Rollup target remapped to new child 1 ID
     assert.strictEqual(clonedChild2.dataset.pisiRollupTarget, clonedChild1.dataset.pisiBlockId);
-
-    // Task parent dependency remapped to new task ID
-    assert.strictEqual(clonedChild2.dataset.pisiTodoParent, `dep:${clonedChild1.dataset.pisiTaskId}`);
 });
 
 test('Acceptance test B1: duplicating single paragraph block works smoothly without children or section', async () => {

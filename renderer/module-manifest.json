@@ -850,7 +850,8 @@
             "isPisiTaskStoreReadOnly",
             "isPisiTaskStoreLoaded",
             "loadPisiTaskStore",
-            "applyPisiTasksChanged"
+            "applyPisiTasksChanged",
+            "rememberPisiTaskRecords"
         ]
     },
     {
@@ -871,7 +872,48 @@
     {
         "module": "tasks.block",
         "path": "renderer/tasks/pisi-task-block.mjs",
-        "bindings": ["renderPisiTaskBlocksIn", "syncPisiDiaryTaskSectionIn", "cleanPisiTaskDrawingsForSave", "refreshPisiOpenTaskDrawings"]
+        "bindings": [
+            "drawPisiTaskBlock",
+            "makePisiPendingTaskBlock",
+            "settlePisiPendingTaskBlock",
+            "renderPisiTaskBlocksIn",
+            "cleanPisiTaskDrawingsForSave",
+            "refreshPisiOpenTaskDrawings",
+            "updatePisiTaskHomelessNotice"
+        ]
+    },
+    {
+        "module": "tasks.diary",
+        "path": "renderer/tasks/pisi-task-diary.mjs",
+        "bindings": ["syncPisiDiaryTaskSectionIn", "makePisiPendingDiaryRow"]
+    },
+    {
+        "module": "tasks.editing",
+        "path": "renderer/tasks/pisi-task-editing.mjs",
+        "bindings": [
+            "commitPisiTaskTitle",
+            "flushPisiTaskTitles",
+            "updatePisiTaskFromEditor",
+            "deletePisiTaskFromEditor",
+            "replacePisiTaskTitlesFromEditor",
+            "getPisiTaskTrashId",
+            "rememberPisiTaskTrashId",
+            "forgetPisiTaskTrashId",
+            "wasPisiTaskCreatedInEditor",
+            "createPisiTaskInEditor",
+            "convertPisiBlockToTask",
+            "handlePisiTaskBoundaryKey"
+        ]
+    },
+    {
+        "module": "tasks.history",
+        "path": "renderer/tasks/pisi-task-history.mjs",
+        "bindings": ["capturePisiTaskHistoryState", "restorePisiTaskHistoryState", "makePisiTaskHistoryKey"]
+    },
+    {
+        "module": "tasks.clipboard",
+        "path": "renderer/tasks/pisi-task-clipboard.mjs",
+        "bindings": ["settlePisiPastedTasks"]
     },
     {
         "module": "tasks.panel",
@@ -1200,7 +1242,6 @@
             "getPisiBlockType",
             "getPisiActiveBlocksEditor",
             "getPisiActiveBlock",
-            "hydratePisiBlockTaskMarker",
             "decoratePisiBlockTypes",
             "applyPisiBlockType",
             "movePisiBlock",
@@ -1212,7 +1253,10 @@
             "openPisiMarkdownSource",
             "closePisiMarkdownSource",
             "addPisiBlockBelow",
-            "initializePisiBlocksEditor"
+            "initializePisiBlocksEditor",
+            "rebasePisiEditorHistory",
+            "recordPisiEditorHistory",
+            "stepPisiEditorHistory"
         ]
     }
 ]

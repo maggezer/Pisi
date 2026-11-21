@@ -2,6 +2,7 @@ import { registerModule } from '../core/module-registry.mjs';
 import { makePisiTaskBlockHtml } from '../../shared/task-blocks.mjs';
 import { getPisiTaskStateOnDay } from '../../shared/task-diary.mjs';
 import { getPisiTaskLatestCompletion, getPisiTodayIsoDate } from '../../shared/task-model.mjs';
+import { dispatchPisiTaskChangeInput } from './pisi-task-view.mjs';
 
 // Task commands from the renderer (docs/task-plan.md §3.4, GV9). Every change
 // goes to the main-process task service (task.*.v1). The open note and the
@@ -91,7 +92,7 @@ async function resolvePisiNotePath(noteId) {
 // ---- Deferred changes of open documents (GV9) -------------------------------------
 
 function notifyPisiEditorOfTaskChange(editor) {
-    editor.dispatchEvent(new Event('input', { bubbles: true }));
+    dispatchPisiTaskChangeInput(editor);
 }
 
 function insertPisiTaskBlockIntoEditor(editor, change) {
@@ -104,7 +105,7 @@ function insertPisiTaskBlockIntoEditor(editor, change) {
     if (anchor) anchor.after(block);
     else if (section) section.before(block);
     else editor.appendChild(block);
-    window.renderPisiTaskBlocksIn?.(editor);
+    window.drawPisiTaskBlock?.(block);
     return true;
 }
 
@@ -120,7 +121,7 @@ function removePisiTaskBlockFromEditor(editor, change) {
  * the user can delete it again (a block the file never had would leave its
  * task without a place in a note).
  */
-async function applyPisiTaskDeferred(deferred) {
+async function applyPisiTaskDeferred(deferred, { save = true } = {}) {
     if (!deferred) return;
     const touched = new Set();
     for (const change of Array.isArray(deferred.notes) ? deferred.notes : []) {
@@ -136,13 +137,19 @@ async function applyPisiTaskDeferred(deferred) {
         }
     }
     for (const editor of touched) notifyPisiEditorOfTaskChange(editor);
-    if (touched.size) await window.flushPisiPendingSaves?.();
+    // A note save hands its changes of the other open documents back here; they are saved by their own autosave then.
+    if (touched.size && save) await window.flushPisiPendingSaves?.();
 }
 
 // ---- Commands ----------------------------------------------------------------------
 
-/** Runs a task command for the open project; reports a failure to the user. */
-async function runPisiTaskCommand(name, payload = {}, { quiet = false } = {}) {
+/**
+ * Runs a task command for the open project; reports a failure to the user.
+ * The returned records go into the task store at once. `beforeDeferred(result)`
+ * runs before the changes left to the open editors are made (an editor that
+ * drew a block for the new task names it there first).
+ */
+async function runPisiTaskCommand(name, payload = {}, { quiet = false, beforeDeferred = null } = {}) {
     const projectFolder = window.currentProjectFolder;
     if (!projectFolder) return { ok: false, code: 'NO_PROJECT', error: pisiTaskTranslate('Açık proje yok.') };
     let result;
@@ -155,6 +162,9 @@ async function runPisiTaskCommand(name, payload = {}, { quiet = false } = {}) {
         if (!quiet) window.pisiNotifyError?.(describePisiTaskError(result));
         return result || { ok: false };
     }
+    const records = [result.task, ...(Array.isArray(result.tasks) ? result.tasks : [])].filter((task) => task?.id);
+    window.rememberPisiTaskRecords?.({ tasks: records, removedIds: result.deleted && result.taskId ? [result.taskId] : [] });
+    if (typeof beforeDeferred === 'function') beforeDeferred(result);
     await applyPisiTaskDeferred(result.deferred);
     return result;
 }

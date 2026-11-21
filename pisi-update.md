@@ -1,5 +1,38 @@
 # PISI Güncelleme Takip Dosyası
 
+## 21-11-2026 — Editörde görev bloğu ve günlük bölümü (G3)
+
+Görev işi (`docs/task-plan.md` G3). Kapanan bulgular: GB14, GK2.
+
+- Görev editörden oluşturulur: `/todo` (`/görev`), satır başında `[ ]` ya da `[]` ve boşluk, "görev" blok türü,
+  araç çubuğundaki görev düğmesi (Quick Add yerine satırı göreve çevirir) ve görev başlığında Enter. Önce
+  `task.create.v1` çalışır, sonra blok nota girer; blok komut dönene kadar "bekleyen" olarak çizilir, yazılan metin
+  kaybolmaz. Günlükte oluşturulan görev günlüğün görev bölümüne girer ve bitiş günü o gündür.
+- Görev bloğu ve günlük satırı kayıttan çizilir: onay kutusu, tek satırlık başlık alanı ve çipler (tarih/saat, öncelik,
+  tekrar, hatırlatma; çipe tıklayınca seçici açılır). Başlık yalnız `tasks.json`'a yazılır (yazdıktan kısa süre sonra
+  ya da odak çıkınca; IME bileşimi sırasında yazılmaz); not dosyası başlık için değişmez. Görev deposu değişince yalnız
+  değişen bloklar ve satırlar yerinde çizilir, imleç yerinde kalır.
+- Günlük bölümü: "Görevler" başlığı, satırın o güne göre durumu, bugünün günlüğünde "Gecikenler" grubu, sonda
+  "Görev ekle" alanı; geçmiş tamamlamalar kilitli, en son tamamlama geri alınır. Başka nottan gelen satır klavyeyle
+  silinmez; "…" menüsü notu açar, tarihi değiştirir ya da görevi o günden kaldırır.
+- Klavye: başlıkta Enter alta yeni görev açar (imlecin sağındaki metin onun başlığıdır), boş görevde Enter ya da
+  Backspace görevi kaldırıp satırı paragraf yapar; paragraf görev bloğunu yutmaz; oklar bloktan bloğa geçer
+  (`docs/editor-keyboard-rules.md`).
+- Geri al ve yinele: not geçmişi nottaki görevlerin alanlarını da saklar; tamamlama, başlık, çip değişikliği ve silme
+  geri alınır (`task.batch.v1`, `task.reopen/complete.v1`, çöp kutusundan geri yükleme). Başka yüzeyde yapılan görev
+  değişikliği geri alınmaz.
+- Kopyala, kes, yapıştır ve çoğalt: pano görev kayıtlarını taşır (`application/x-pisi-tasks`). Kesilip yapıştırılan
+  görev kimliğini korur (taşıma), kopya yeni kimlik alır, kaydı hiçbir yerde olmayan blok yapıştırılmaz; günlüğe
+  yapıştırılan görev o günlüğün görevi olur (`docs/editor-paste-rules.md`). `- [ ]` satırları görev olur.
+- Bul ve değiştir görev başlıklarında çalışır; değiştirme tek `task.batch.v1` ve tek geri alma adımıdır.
+- Not açılınca, yeri bu not olup notta bloğu olmayan görevler için "Bu nota ait N görev notta görünmüyor" uyarısı ve
+  "Sona ekle" çıkar. Senkronla gelen not değişikliği günlüğün görev bölümünü birleştirmez, kuraldan çizer.
+- Not kaydının döndürdüğü günlük değişiklikleri (`deferred`) artık açık günlüğe uygulanır.
+- Kalkan eski kod: editördeki eski görev işareti (`pisi-block-task-marker`, `todo.*` etiketi, `pisi-todo-source`) ve
+  `renderer/editor/pisi-task-block-keyboard.mjs`.
+- Testler: `tests/task-edit-core.test.mjs`, `scripts/electron-tasks-editor-e2e.mjs` (S12–S15, S18); klavye, yapıştırma,
+  çoğaltma ve Markdown testleri yeni kurallara çevrildi.
+
 ## 21-11-2026 — Görev servisi ve `tasks.json` sürüm 2 (G2)
 
 Görev işi (`docs/task-plan.md` G2). Kapanan bulgular: GB1–GB9, GB12, GK4, GK5, GK11, GK12, GK14 ve

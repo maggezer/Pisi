@@ -1265,6 +1265,20 @@
         "Görevi tamamla": "Complete task",
         "Bu bağımlılık bir döngü oluşturur.": "This dependency would create a loop.",
         "Görev bulunamadı.": "Task not found.",
-        "Görev değişikliği kaydedilemedi.": "The task change could not be saved."
+        "Görev değişikliği kaydedilemedi.": "The task change could not be saved.",
+        "Bu nota ait {count} görev notta görünmüyor.": "{count} tasks that belong to this note are not shown in it.",
+        "Sona ekle": "Add at the end",
+        "Görev menüsü": "Task menu",
+        "Notu aç": "Open note",
+        "Tarihi değiştir": "Change date",
+        "Bu günden kaldır": "Remove from this day",
+        "Görevi sil": "Delete task",
+        "Saat": "Time",
+        "Belirli bir an": "A specific time",
+        "Görev başlığı": "Task title",
+        "Bitiş günü sabahı": "Morning of the due day",
+        "Bir gün önce": "One day before",
+        "Üç gün önce": "Three days before",
+        "Görev oluştur": "Create a task"
     }
 }
