@@ -18,7 +18,7 @@ import { diffPisiStoreVersion } from './store-history-diff-core.js';
 // atomic write path (before a store file is overwritten, at most once per
 // five minutes per store) and when the project closes or the app quits.
 // Restores run inside an atomic mutation, keep a before-restore snapshot and,
-// for tasks, write missing task blocks back into their notes.
+// for tasks, write the diary task sections of the days that changed.
 
 const domain = modules['main.domainCommandQuery'];
 const electronIpc = modules['main.electronIpc'];
@@ -150,66 +150,24 @@ function previewPisiStoreHistoryForPayload(payload = {}) {
     };
 }
 
-function escapePisiTaskText(value) {
-    return String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
-}
-
-/** A task block in the same markup as the renderer's makePisiTaskSyntheticHtml, with the task's own id, block id and tag. */
-function makePisiRestoredTaskBlock(task) {
-    const e = escapePisiTaskText;
-    const tag = e(String(task.todoTag || `todo.${task.priority || 3}.none`).toLowerCase());
-    const dependencies = Array.isArray(task.dependencies) ? task.dependencies : [];
-    const parent = dependencies.length ? `dep:${dependencies.map((id) => encodeURIComponent(id)).join('|')}` : '';
-    const attrs = [
-        `data-pisi-tag="${tag}"`,
-        `data-pisi-task-id="${e(task.id)}"`,
-        `data-pisi-todo-status="${e(task.status === 'done' ? 'todo' : task.status || 'todo')}"`,
-        `data-pisi-todo-repeat="${e(task.repeat || 'none')}"`,
-        `data-pisi-todo-order="${Number(task.manualOrder) || 0}"`
-    ];
-    if (parent) attrs.push(`data-pisi-todo-parent="${e(parent)}"`);
-    if (task.scheduledAt) attrs.push(`data-pisi-todo-scheduled-at="${e(task.scheduledAt)}"`);
-    if (task.deadline) attrs.push(`data-pisi-todo-deadline="${e(task.deadline)}"`);
-    if (task.reminderAt) attrs.push(`data-pisi-todo-reminder-at="${e(task.reminderAt)}"`);
-    if (Number(task.durationMinutes) > 0) attrs.push(`data-pisi-todo-duration-minutes="${Number(task.durationMinutes)}"`);
-    if (Number(task.actualMinutes) > 0) attrs.push(`data-pisi-todo-actual-minutes="${Number(task.actualMinutes)}"`);
-    if (Number(task.completionOffsetDays) > 0) attrs.push(`data-pisi-todo-completion-offset-days="${Number(task.completionOffsetDays)}"`);
-    const done = task.status === 'done' ? '<span class="pisi-user-tag pisi-task-metadata" data-pisi-tag="done">done</span>' : '';
-    return [
-        `<div class="pisi-editor-block" data-pisi-block-id="${e(task.source.blockId)}" data-pisi-task-id="${e(task.id)}">`,
-        `<span class="pisi-todo-source" data-pisi-todo-for="${tag}">${e(task.title)}</span> `,
-        `<span class="pisi-user-tag pisi-task-metadata" ${attrs.join(' ')}>${tag}</span>${done}`,
-        '</div>'
-    ].join('');
-}
-
 /**
- * After tasks.json is restored: a task whose block is missing from its source
- * note gets the block back (appended to the note). Notes that no longer exist
- * are left alone; Project Integrity reports their tasks.
+ * After tasks.json is restored: the diary sections of the days whose tasks
+ * changed are written from the restored records (§3.3, GV15). Notes are not
+ * written: a note task whose block is missing shows up in Integrity and, when
+ * the note is opened, as a task that is not in the note.
  */
-function restorePisiTaskProjections(root, data) {
-    const byNote = new Map();
-    for (const task of Array.isArray(data?.tasks) ? data.tasks : []) {
-        const stored = task?.source?.nodePath;
-        if (!stored || !task.source.blockId) continue;
-        const nodePath = path.isAbsolute(stored) ? stored : path.resolve(root, stored);
-        if (!byNote.has(nodePath)) byNote.set(nodePath, []);
-        byNote.get(nodePath).push(task);
-    }
-    const restoredBlocks = [];
-    for (const [nodePath, tasks] of byNote) {
-        if (!fs.existsSync(nodePath)) continue;
-        const document = modules['main.mapStore'].getPisiDocument(nodePath);
-        if (!document?.ok) continue;
-        let content = String(document.data.content || '');
-        const added = tasks.filter((task) => !content.includes(`data-pisi-block-id="${task.source.blockId}"`));
-        if (!added.length) continue;
-        content = [content.trim(), ...added.map(makePisiRestoredTaskBlock)].filter(Boolean).join('\n');
-        filesystemCore.writePisiDocument(nodePath, { ...document.data, content });
-        restoredBlocks.push(...added.map((task) => ({ taskId: task.id, nodePath })));
-    }
-    return restoredBlocks;
+function restorePisiTaskDiarySections(root, beforeData, afterData, payload = {}) {
+    const read = (data) => (Array.isArray(data?.tasks) ? data.tasks.filter((task) => task && typeof task === 'object') : []);
+    const before = read(beforeData);
+    const after = read(afterData);
+    const service = modules['main.taskService'];
+    const rewritten = service.rewritePisiDiarySectionsForTaskChange(root, before, after, { openPaths: payload.openPaths });
+    const afterIds = new Set(after.map((task) => task.id));
+    service.emitPisiTasksChanged(root, {
+        changed: after,
+        removedIds: before.map((task) => task.id).filter((id) => !afterIds.has(id))
+    });
+    return rewritten;
 }
 
 /** history.store.restore.v1 — runs inside the project atomic mutation. */
@@ -230,11 +188,16 @@ function restorePisiStoreHistoryForPayload(payload = {}) {
             if (current?.pisi?.id && current.pisi.id !== version.data?.pisi?.id) return { ok: false, error: 'Sürüm başka bir haritaya ait.' };
             text = JSON.stringify({ ...version.data, pisi: { ...(current?.pisi || version.data.pisi), updatedAt: new Date().toISOString() } }, null, 2) + '\n';
         }
+        const previous = target.kind === 'tasks' ? readPisiCurrentStore(target) : null;
         fs.mkdirSync(path.dirname(target.filePath), { recursive: true });
         filesystemCore.writeFileAtomic(target.filePath, text, { backup: true });
-        const restoredBlocks = target.kind === 'tasks' ? restorePisiTaskProjections(root, version.data) : [];
-        if (target.kind === 'tasks') modules['main.reminderService']?.handlePisiReminderTasksChanged?.();
-        return { ok: true, key: target.key, restoredHistoryId: version.historyId, beforeRestoreHistoryId: before.historyId || null, restoredBlocks };
+        let deferred = { notes: [], diaryDays: [] };
+        if (target.kind === 'tasks') {
+            modules['main.taskStore'].forgetPisiTaskStoreCache(root);
+            deferred = restorePisiTaskDiarySections(root, previous, version.data, payload).context.deferred;
+            modules['main.reminderService']?.handlePisiReminderTasksChanged?.();
+        }
+        return { ok: true, key: target.key, restoredHistoryId: version.historyId, beforeRestoreHistoryId: before.historyId || null, deferred };
     } finally {
         historyState.busy = false;
     }
@@ -283,7 +246,7 @@ const moduleApi = {
     handlePisiStoreHistoryWrite,
     flushPisiStoreHistory,
     restorePisiStoreHistoryForPayload,
-    restorePisiTaskProjections,
+    restorePisiTaskDiarySections,
     installPisiStoreHistory
 };
 

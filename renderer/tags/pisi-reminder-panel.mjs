@@ -117,43 +117,18 @@ async function refreshPisiReminderEntries(options = {}) {
     return result;
 }
 
-/**
- * Opens the task's note at its block. A task captured moments ago may not be in
- * the renderer task cache yet, so the cache is refreshed first; if navigation
- * still fails the note itself is opened.
- */
+/** Opens the task's place (its note or its day's diary) by the task id (docs/task-plan.md G2). */
 async function openPisiReminderTask(target = {}) {
-    if (!target.taskId && !target.nodePath) return null;
-    const taskStore = window.Pisi?.modules?.['tags.taskStore'];
-    if (target.taskId && !taskStore?.getPisiFirstClassTask?.(target.taskId)) {
-        await window.refreshPisiMissionIndex?.({ force: true, reason: 'reminder' });
-    }
-    const result = await window.openPisiTagBlockResult?.({
-        taskId: target.taskId,
-        missionId: target.taskId,
-        nodePath: target.nodePath,
-        blockId: target.blockId
-    });
-    if (result?.ok === false && target.nodePath) {
-        return window.openPisiFileTab?.({ fullPath: target.nodePath, name: target.nodePath.split(/[\\/]/).pop(), isDirectory: false });
-    }
-    return result;
+    if (!target.taskId) return null;
+    if (!window.getPisiTask?.(target.taskId)) await window.loadPisiTaskStore?.({ force: true });
+    if (window.getPisiTask?.(target.taskId)) return window.openPisiTaskLocation?.(target.taskId);
+    if (target.diaryDate) return window.openPisiDiaryForDate?.(target.diaryDate);
+    return null;
 }
 
-/** Completes through the mission path so the note's task markup follows tasks.json. */
+/** Completes the task through the task service; no note is written (GV5). */
 async function completePisiReminderTask(taskId) {
-    const missions = window.pisiTagsPanelState?.missionIndex || [];
-    const mission = missions.find((item) => item?.taskId === taskId || item?.missionId === taskId);
-    if (mission?.nodePath && typeof window.setPisiMissionStatusFirstRelease === 'function') {
-        const result = await window.setPisiMissionStatusFirstRelease(mission, 'done');
-        if (result?.ok) {
-            window.refreshPisiTagsPanelSoon?.();
-            return result;
-        }
-    }
-    const result = await pisiReminderCommand('task.update.v1', { projectFolder: window.currentProjectFolder, taskId, patch: { status: 'done' } });
-    window.refreshPisiTagsPanelSoon?.();
-    return result;
+    return window.runPisiTaskCommand?.('task.complete.v1', { taskId });
 }
 
 async function handlePisiReminderAction(action, key) {
@@ -176,7 +151,6 @@ function handlePisiReminderEvent(payload = {}) {
     if (payload.type === 'pending') setPisiReminderEntries(payload.entries);
     else if (payload.type === 'show-pending') void refreshPisiReminderEntries({ focus: true });
     else if (payload.type === 'open') void openPisiReminderTask(payload);
-    else if (payload.type === 'complete') void completePisiReminderTask(payload.taskId);
 }
 
 function renderPisiReminderSettings(container) {

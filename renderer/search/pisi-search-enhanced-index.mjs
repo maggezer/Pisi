@@ -52,26 +52,28 @@ function makePisiSearchPropertyFields(properties = {}) {
         .filter((field) => field.value);
 }
 
+/**
+ * Tasks for search from the task store (tasks.json). A note task carries its
+ * note's path (found by `noteId` in the index); a diary task is searched with
+ * its day. Every task has a record (GB11 fully in G5).
+ */
 function getPisiCanonicalSearchTasks() {
-    const state = window.Pisi?.modules?.['tags.taskStore']?.pisiFirstClassTaskState;
-    return Array.isArray(state?.tasks) ? state.tasks : [];
+    return window.getPisiTasks?.() || [];
 }
 
 async function ensurePisiCanonicalSearchTasks(projectFolder) {
     const projectKey = pisiSearchPathKey(projectFolder);
-    const taskModule = window.Pisi?.modules?.['tags.taskStore'];
-    const state = taskModule?.pisiFirstClassTaskState;
-    const stateProjectKey = pisiSearchPathKey(state?.projectKey || '');
-    if (pisiSearchTaskLoadedProjectKey === projectKey && stateProjectKey === projectKey) {
-        return getPisiCanonicalSearchTasks();
-    }
-    if (typeof taskModule?.refreshPisiFirstClassTaskStore === 'function') {
-        const result = await taskModule.refreshPisiFirstClassTaskStore();
-        if (result?.ok || Array.isArray(result?.tasks)) {
-            pisiSearchTaskLoadedProjectKey = projectKey;
-        }
+    if (pisiSearchTaskLoadedProjectKey !== projectKey || !window.isPisiTaskStoreLoaded?.()) {
+        await window.loadPisiTaskStore?.();
+        pisiSearchTaskLoadedProjectKey = projectKey;
     }
     return getPisiCanonicalSearchTasks();
+}
+
+function findPisiTaskNoteDocument(index, task) {
+    if (!(index?.documents instanceof Map) || !task?.noteId) return null;
+    for (const record of index.documents.values()) if (record?.metadata?.id === task.noteId) return record;
+    return null;
 }
 
 function getPisiDocumentForRecord(index, record) {
@@ -119,34 +121,21 @@ function enhancePisiBaseSearchRecord(index, record) {
     };
 }
 
-function getPisiTaskSourceDocument(index, task) {
-    const nodePath = task?.source?.nodePath;
-    if (!nodePath || !(index?.documents instanceof Map)) return null;
-    return index.documents.get(pisiSearchPathKey(nodePath)) || null;
-}
-
 function selectPisiTaskMembership(documentRecord, task) {
     const memberships = Array.isArray(documentRecord?.memberships) ? documentRecord.memberships : [];
-    const sourceMapKey = pisiSearchPathKey(task?.source?.mapPath || '');
-    return (
-        memberships.find((membership) => {
-            return sourceMapKey && pisiSearchPathKey(membership?.mapPath) === sourceMapKey;
-        }) ||
-        memberships[0] ||
-        null
-    );
+    return task ? memberships[0] || null : null;
 }
 
 function makePisiCanonicalTaskSearchRecord(index, task) {
-    if (!task?.id || !task?.source?.nodePath) return null;
-    const documentRecord = getPisiTaskSourceDocument(index, task);
+    if (!task?.id) return null;
+    const documentRecord = findPisiTaskNoteDocument(index, task);
     const membership = selectPisiTaskMembership(documentRecord, task);
-    const nodePath = task.source.nodePath;
-    const nodeTitle = task.source.nodeTitle || documentRecord?.title || 'Node';
-    const mapPath = task.source.mapPath || membership?.mapPath || null;
-    const mapTitle = task.source.mapTitle || membership?.mapTitle || '';
-    const relativePath = documentRecord?.relativePath || nodePath;
-    const deadline = task.deadline || task.dueDate || task.scheduledAt || '';
+    const nodePath = documentRecord?.path || null;
+    const nodeTitle = documentRecord?.title || (task.diaryDate ? `Günlük · ${task.diaryDate}` : '');
+    const mapPath = membership?.mapPath || null;
+    const mapTitle = membership?.mapTitle || '';
+    const relativePath = documentRecord?.relativePath || '';
+    const deadline = task.dueDate || '';
     const previewParts = [nodeTitle, mapTitle, deadline].filter(Boolean);
     const memberships = Array.isArray(documentRecord?.memberships)
         ? documentRecord.memberships
@@ -162,26 +151,27 @@ function makePisiCanonicalTaskSearchRecord(index, task) {
             nodeTitle,
             nodePath,
             nodeItem: documentRecord?.nodeItem || null,
-            blockId: task.source.blockId || null,
+            blockId: null,
+            noteId: task.noteId || null,
+            diaryDate: task.diaryDate || null,
             mapPath,
             mapTitle,
             mapItem: membership?.mapItem || null,
             relativePath,
-            todoTag: task.todoTag || '',
-            tag: task.todoTag || '',
-            tags: task.todoTag ? [task.todoTag] : [],
+            todoTag: '',
+            tag: '',
+            tags: [],
             status: task.status || 'todo',
             priority: Number(task.priority) || 3,
             dueDate: task.dueDate || null,
-            scheduledAt: task.scheduledAt || null,
-            deadline: task.deadline || null,
+            scheduledAt: null,
+            deadline: null,
             sourceText: task.title || '',
             preview: previewParts.join(' · '),
             canonical: true,
             searchFields: [
                 { kind: 'task', value: task.title || '', weight: 125 },
                 { kind: 'title', value: task.title || '', weight: 132 },
-                { kind: 'tag', value: task.todoTag || '', weight: 105 },
                 { kind: 'title', value: nodeTitle, weight: 88 },
                 { kind: 'map', value: mapTitle, weight: 66 },
                 { kind: 'path', value: relativePath, weight: 48 },

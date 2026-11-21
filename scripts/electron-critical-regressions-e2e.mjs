@@ -166,7 +166,7 @@ async function launchElectron(port) {
         'interactive renderer',
         async () => {
             const state = await app.cdp.evaluate(
-                '(() => ({ readyState: document.readyState, project: window.currentProjectFolder || null, taskStore: typeof window.refreshPisiFirstClassTaskStore === "function" }))()'
+                '(() => ({ readyState: document.readyState, project: window.currentProjectFolder || null, taskStore: typeof window.loadPisiTaskStore === "function" }))()'
             );
             return state?.readyState === 'complete' && state.project && state.taskStore ? state : null;
         },
@@ -290,100 +290,40 @@ async function typeAndSaveNode(app, nodePath, marker) {
     });
 }
 
-async function testTaskProjectionWriteThrough(app) {
-    const taskId = 'task_e2e_projection_critical';
-
+// A status change and a completion from the task panel go straight to tasks.json
+// through the task service (docs/task-plan.md G2): no projection, no note write.
+async function testTaskStatusWriteThrough(app) {
     const created = await app.cdp.evaluate(`(async () => {
-        const project = window.currentProjectFolder;
-        const taskId = ${JSON.stringify(taskId)};
-        const upsert = await window.pisiProject?.quickAddTask?.(project, {
-            op: 'upsert',
-            task: {
-                id: taskId,
-                title: 'Critical projection task',
-                status: 'todo',
-                priority: 2,
-                todoTag: 'todo.2.none',
-                manualOrder: 1
-            }
-        });
-        return upsert;
+        await window.loadPisiTaskStore?.({ force: true });
+        return window.runPisiTaskCommand('task.create.v1', { task: { title: 'Critical task', priority: 2 }, target: { diaryDate: window.getPisiTaskToday() } });
     })()`);
-    if (!created?.ok) throw new Error('Task projection E2E could not create task: ' + JSON.stringify(created));
-    const seeded = await waitUntil(app, 'task projection ready for status update', () =>
-        app.cdp.evaluate(`(async () => {
-        const taskId = ${JSON.stringify(taskId)};
-        const refreshed = await window.refreshPisiFirstClassTaskStore?.();
-        const block = window.pisiTagsPanelState?.missionIndex?.find((item) => item?.taskId === taskId);
-        const tag = block?.todoTag || Object.keys(block?.todoStates || {})[0] || '';
-        if (!refreshed?.ok || !block || !tag) {
+    if (!created?.ok) throw new Error('Task E2E could not create task: ' + JSON.stringify(created));
+    const taskId = created.task.id;
+    const tasksPath = path.join(projectPath, '.pisi', 'tasks.json');
+    const readStatus = async () => {
+        try {
+            return JSON.parse(await fs.readFile(tasksPath, 'utf8')).tasks?.find((task) => task.id === taskId)?.status || null;
+        } catch {
             return null;
         }
-        block.todoStates[tag] = 'doing';
-        block.doneFor = [];
-        document.dispatchEvent(new CustomEvent('pisi:mission-index-updated', {
-            detail: { complete: true, reason: 'status-change' }
-        }));
-        return { ok: true, tag };
-    })()`)
-    );
-
-    if (!seeded?.ok) {
-        throw new Error('Task projection E2E could not seed status update: ' + JSON.stringify(seeded));
-    }
-
-    await waitUntil(app, 'task projection status write-through', async () => {
-        const result = await app.cdp.evaluate(`(async () => {
-            const listed = await window.pisiProject?.quickAddTask?.(window.currentProjectFolder, { op: 'list' });
-            const task = listed?.tasks?.find((item) => item?.id === ${JSON.stringify(taskId)});
-            return task?.status === 'doing';
-        })()`);
-        return result === true;
-    });
-
-    const tasksPath = path.join(projectPath, '.pisi', 'tasks.json');
-    await waitUntil(app, 'task projection status persisted to disk', async () => {
-        try {
-            const store = JSON.parse(await fs.readFile(tasksPath, 'utf8'));
-            return store.tasks?.find((task) => task.id === taskId)?.status === 'doing';
-        } catch {
-            return false;
-        }
-    });
-
-    const completionDispatched = await app.cdp.evaluate(`(() => {
-        const taskId = ${JSON.stringify(taskId)};
-        const block = window.pisiTagsPanelState?.missionIndex?.find((item) => item?.taskId === taskId);
-        const tag = block?.todoTag || Object.keys(block?.todoStates || {})[0] || '';
-        if (!block || !tag) return false;
-        block.doneFor = [tag];
-        document.dispatchEvent(new CustomEvent('pisi:mission-index-updated', {
-            detail: { complete: true, reason: 'completion-change' }
-        }));
-        return true;
+    };
+    const updated = await app.cdp.evaluate(`window.runPisiTaskCommand('task.update.v1', { taskId: ${JSON.stringify(taskId)}, patch: { status: 'doing' } })`);
+    if (!updated?.ok) throw new Error('Task E2E could not update status: ' + JSON.stringify(updated));
+    await waitUntil(app, 'task status persisted to disk', async () => (await readStatus()) === 'doing');
+    await app.cdp.evaluate(`(async () => {
+        document.querySelector('.right-panel-tab[data-right-tab="missions"]')?.click();
+        await new Promise((resolve) => setTimeout(resolve, 100));
     })()`);
-
-    if (!completionDispatched) {
-        throw new Error('Task projection E2E could not dispatch completion update.');
-    }
-
-    await waitUntil(app, 'task projection completion write-through', async () => {
-        const result = await app.cdp.evaluate(`(async () => {
-            const listed = await window.pisiProject?.quickAddTask?.(window.currentProjectFolder, { op: 'list' });
-            const task = listed?.tasks?.find((item) => item?.id === ${JSON.stringify(taskId)});
-            return task?.status === 'done';
-        })()`);
-        return result === true;
-    });
-
-    await waitUntil(app, 'task projection completion persisted to disk', async () => {
-        try {
-            const store = JSON.parse(await fs.readFile(tasksPath, 'utf8'));
-            return store.tasks?.find((task) => task.id === taskId)?.status === 'done';
-        } catch {
-            return false;
-        }
-    });
+    const ticked = await waitUntil(app, 'task panel checkbox', () =>
+        app.cdp.evaluate(`(() => {
+            const box = document.querySelector('.pisi-task-panel-row[data-pisi-task-id=${JSON.stringify(taskId)}] .pisi-task-panel-check');
+            if (!box) return null;
+            box.click();
+            return true;
+        })()`)
+    );
+    if (!ticked) throw new Error('Task E2E could not tick the panel checkbox.');
+    await waitUntil(app, 'task completion persisted to disk', async () => (await readStatus()) === 'done');
 }
 
 async function testCompositeDeleteThenTreeDelete(app, kind) {
@@ -685,7 +625,7 @@ let secondApp = null;
 try {
     firstApp = await launchElectron(9225);
 
-    await testTaskProjectionWriteThrough(firstApp);
+    await testTaskStatusWriteThrough(firstApp);
     await testSortedSheetSelection(firstApp);
     await testLargeSheetClear(firstApp);
     await testRapidNodeNavigation(firstApp);
@@ -720,7 +660,7 @@ try {
     await testRecoveryDepartureAndClose(secondApp);
     assertNoFatalRendererLog(secondApp);
     console.log(
-        '[E2E] Critical regressions passed: recovery navigation and normal close, history/backup restore refresh, task projection write-through, Sheet/Canvas delete-to-tree-delete race, and full restart persistence.'
+        '[E2E] Critical regressions passed: recovery navigation and normal close, history/backup restore refresh, task status write-through, Sheet/Canvas delete-to-tree-delete race, and full restart persistence.'
     );
 } finally {
     await stopElectron(firstApp);

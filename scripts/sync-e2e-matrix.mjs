@@ -286,11 +286,35 @@ try {
         await assertSameProject('2');
     });
 
+    // ── 4. The same day's diary is new on both devices: one diary, both texts. ───────────
+    // It runs before 3: completing a task today puts it in today's diary (docs/task-plan.md §3.2.2),
+    // and this scenario needs a day without a diary on either device.
+    await scenario(4, 'aynı gün iki cihaz günlük yazar', async () => {
+        assert(!(await desktop.exists(DIARY)) && (await phone.read(DIARY)) === null, '4: günün günlüğü iki cihazda da yok');
+        phone.offline = true;
+        await phone.home();
+        await phone.page.locator('[data-diary="text"]').fill('Telefonun günlüğü S4');
+        await phone.page.locator('[data-diary="text"]').blur();
+        await phone.until('4: telefonda günlük', async () => (await phone.read(DIARY))?.includes('Telefonun günlüğü S4'));
+        await desktop.evaluate(`window.pisiProject.getOrCreateDiaryNode(window.currentProjectFolder, '${today}')`);
+        await desktop.openNote(DIARY);
+        await desktop.typeAtEditorEnd('Masaüstünün günlüğü S4');
+        await desktop.flush();
+        await desktop.syncOk('4');
+        phone.offline = false;
+        await exchange('4');
+        const diary = await desktop.read(DIARY);
+        assert(diary.includes('Telefonun günlüğü S4') && diary.includes('Masaüstünün günlüğü S4'), '4: tek günlükte iki metin');
+        const stray = [...(await desktop.files((key) => /Günlük çakışması/.test(key))).keys()];
+        assert(stray.length === 0, '4: günlük çakışma kopyası oluşmaz', stray);
+        await assertSameProject('4');
+    });
+
     // ── 3. The phone completes a task while the desktop renames it: both fields stay. ─────
     await scenario(3, 'telefon görevi tamamlar, masaüstü başlığını değiştirir', async () => {
         const id = 'task_matrix_s3_0001';
         const created = await desktop.evaluate(
-            `window.pisiDomain.command('task.upsert.v1', { projectFolder: window.currentProjectFolder, task: { id: '${id}', title: 'Matris görevi', status: 'todo' } })`
+            `window.pisiDomain.command('task.create.v1', { projectFolder: window.currentProjectFolder, task: { id: '${id}', title: 'Matris görevi', status: 'todo', dueDate: null }, target: { diaryDate: '2026-11-14' } })`
         );
         assert(created?.ok, '3: görev oluşturulur', created);
         await desktop.syncOk('3');
@@ -320,28 +344,6 @@ try {
         }
         await phone.home();
         await assertSameProject('3');
-    });
-
-    // ── 4. The same day's diary is new on both devices: one diary, both texts. ───────────
-    await scenario(4, 'aynı gün iki cihaz günlük yazar', async () => {
-        assert(!(await desktop.exists(DIARY)) && (await phone.read(DIARY)) === null, '4: günün günlüğü iki cihazda da yok');
-        phone.offline = true;
-        await phone.home();
-        await phone.page.locator('[data-diary="text"]').fill('Telefonun günlüğü S4');
-        await phone.page.locator('[data-diary="text"]').blur();
-        await phone.until('4: telefonda günlük', async () => (await phone.read(DIARY))?.includes('Telefonun günlüğü S4'));
-        await desktop.evaluate(`window.pisiProject.getOrCreateDiaryNode(window.currentProjectFolder, '${today}')`);
-        await desktop.openNote(DIARY);
-        await desktop.typeAtEditorEnd('Masaüstünün günlüğü S4');
-        await desktop.flush();
-        await desktop.syncOk('4');
-        phone.offline = false;
-        await exchange('4');
-        const diary = await desktop.read(DIARY);
-        assert(diary.includes('Telefonun günlüğü S4') && diary.includes('Masaüstünün günlüğü S4'), '4: tek günlükte iki metin');
-        const stray = [...(await desktop.files((key) => /Günlük çakışması/.test(key))).keys()];
-        assert(stray.length === 0, '4: günlük çakışma kopyası oluşmaz', stray);
-        await assertSameProject('4');
     });
 
     // ── 5. The desktop deletes a note that is open on the phone. ─────────────────────────

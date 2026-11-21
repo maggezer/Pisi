@@ -209,7 +209,18 @@ export async function startPhone({ proxy, timezoneId }) {
         },
         async openNote(key) {
             await phone.openFromMenu('notes');
-            await phone.tap(page.locator(`[data-note="${key.replace(/"/g, '\\"')}"]`));
+            const row = page.locator(`[data-note="${key.replace(/"/g, '\\"')}"]`);
+            // The list is newest first and draws only the rows near the screen: a note no
+            // scenario touched lately is further down, so the list is scrolled until it is drawn.
+            for (let step = 0; step < 40 && (await row.count()) === 0; step += 1) {
+                await page.evaluate(() => {
+                    let scroller = document.querySelector('.pisi-virtual')?.parentElement;
+                    while (scroller && scroller.scrollHeight <= scroller.clientHeight) scroller = scroller.parentElement;
+                    (scroller || document.scrollingElement).scrollBy(0, Math.max(200, (scroller || document.scrollingElement).clientHeight / 2));
+                });
+                await sleep(100);
+            }
+            await phone.tap(row);
             await until('not ekranı', async () => (await screenName()) === 'note');
             await page.locator('.pisi-note-editor > .pisi-note-block').first().waitFor();
         },

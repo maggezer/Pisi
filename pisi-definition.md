@@ -18,7 +18,7 @@ kaynağın yerine geçmez.
 ## Canonical otorite matrisi
 
 - Node içeriği ve node property değerleri: canonical otorite `.node`; Editor DOM ve arama kayıtları projection'dır.
-- Görevler: canonical otorite `.pisi/tasks.json`; Node Todo markup'ı, diary, Todo/Calendar görünümü ve task search records projection'dır.
+- Görevler: canonical otorite `.pisi/tasks.json` (sürüm 2); notta ve günlükte yalnız görev kimliği durur (görev bloğu, günlüğün görev bölümü). Panel, takvim, harita, arama ve hatırlatma görevi bu kayıttan çizer.
 - Semantik node ilişkileri: canonical otorite `.pisi/relationships.json`; map edge görünümü ve node `connectionTypes` projection'dır.
 - Property tanımı, kimliği ve türü: canonical otorite `.pisi/properties.json`; node içindeki okunabilir `name` / `type` kopyaları otorite değildir.
 - Map üyeliği, yerleşim, kamera ve presentation: canonical otorite `.map`; renderer map state'i projection'dır.
@@ -308,71 +308,99 @@ semantic authority değildir.
 
 ## Görevler ve Calendar / Diary
 
+Görev sistemi `docs/task-plan.md` belgesindeki fazlarla yeniden kurulur (G0–G10).
+Bu bölüm G2'den sonraki biçimi anlatır.
+
 Canonical görev otoritesi:
 
 ```text
 .pisi/tasks.json
 ```
 
-Bir task; stabil `task_...` kimliği, başlık, durum, priority, tarih alanları,
-repeat bilgisi, dependencies, order ve source referanslarını taşır.
+Görevin bütün bilgisi burada durur: kimlik (`task_<uuid>`), başlık (düz metin,
+tek satır, en çok 500 karakter), durum, öncelik (**1-5**), bitiş günü
+(`dueDate`, `YYYY-MM-DD`) ve saati (`dueTime`, `HH:MM`), tekrar
+(`repeat`, `completionOffsetDays`), hatırlatma (`reminderMode`, `reminderAt`),
+bağımlılıklar, elle sıra (`manualOrder`), yer (`noteId` ya da `diaryDate`),
+süreler, tekrar eden görevin tamamlanan günleri (`completions`) ve zaman
+damgaları (`createdAt`, `updatedAt`, `completedAt`, `completedOn`).
 
-Canonical priority aralığı **1-5**'tir.
-
-Canonical durumlar:
-
-- `todo`
-- `doing`
-- `waiting`
-- `blocked`
-- `done`
-
-Repeat değerleri:
-
-- `none`
-- `daily`
-- `weekdays`
-- `weekly`
-- `biweekly`
-- `monthly`
-- `after-completion`
-
-Node editöründeki Todo markup'ı canonical task'ın düzenlenebilir
-projection/reference katmanıdır. Bir görev projection'ı canonical task kimliği
-taşımadan background scan ile yeni canonical göreve dönüştürülmez.
-
-Current Todo etiketi temel olarak:
-
-```text
-todo.<1-5>.<DD-MM-YYYY>
-todo.<1-5>.none
+```json
+{
+    "version": 2,
+    "updatedAt": "…",
+    "tasks": [
+        {
+            "id": "task_…",
+            "title": "Spor",
+            "status": "todo",
+            "priority": 3,
+            "dueDate": "2026-11-22",
+            "dueTime": null,
+            "repeat": "daily",
+            "completionOffsetDays": null,
+            "reminderMode": "none",
+            "reminderAt": null,
+            "dependencies": [],
+            "manualOrder": 1732179600000,
+            "noteId": "node_…",
+            "diaryDate": null,
+            "durationMinutes": 0,
+            "actualMinutes": 0,
+            "completions": [{ "date": "2026-11-21", "dueDate": "2026-11-21", "at": "…" }],
+            "createdAt": "…",
+            "updatedAt": "…",
+            "completedAt": null,
+            "completedOn": null
+        }
+    ]
+}
 ```
 
-biçimindedir. UI içinde `..todo...`, `/todo...` veya `#todo...` gibi gösterim
-önekleri normalize edilebilir; semantic priority yine 1-5'tir.
+Alan kuralları `shared/task-model.mjs`'tedir (masaüstü ve mobil aynı kodu
+çalıştırır). Masaüstü sürüm 1 ve 2'yi okur, 2 yazar; bilinmeyen alanlar ve üst
+düzey anahtarlar korunur. Sürüm 1'den kalan alanlar (`source`, `todoTag`,
+`scheduledAt`, `deadline`) okunmaz ve silinmez; böyle bir kaydın yeri yoktur ve
+G8'e kadar bulgu sayılmaz. Okunamayan `tasks.json` ezilmez; görevler salt
+okunurdur.
 
-Quick Add / editor projection'ında aşağıdaki alanlar tutulabilir:
+Canonical priority aralığı **1-5**'tir. Canonical durumlar: `todo`, `doing`, `waiting`, `blocked`, `done`. Tekrar
+değerleri: `none`, `daily`, `weekdays`, `weekly`, `biweekly`, `monthly`,
+`after-completion`. Tekrar eden görev tamamlanınca yeni kayıt açılmaz:
+tamamlama `completions`'a yazılır ve görev, bitiş gününden ve bugünden sonraki
+ilk tekrara ilerler (`docs/task-plan.md` §3.2.3).
 
-- scheduled time
-- deadline
-- reminder
-- estimated duration
-- actual duration
-- repeat / completion offset
-- dependency / subtask bilgisi
+### Görevin yeri ve notta görev bloğu
 
-Calendar, diary, progress/statistics ve task search kayıtları
-`.pisi/tasks.json` üzerinden türetilir. Bunlar görev otoritesi değildir.
+Her görevin bir yeri vardır: normal bir not (`noteId`) ya da bir günün günlüğü
+(`diaryDate`). Notta görev tek bir boş bloktur:
 
-Hatırlatmalar: canonical görevde `reminderAt` (`YYYY-MM-DDTHH:MM`, yerel saat)
-kesin hatırlatma anıdır ve önceliklidir. Yoksa `reminderMode`
-(`due-morning`, `day-before`, `three-days-before`) `dueDate`'ten Ayarlar'daki
-varsayılan saatle (ön tanım 09:00) her planlamada türetilir; türetilen an
-`tasks.json`'a yazılmaz. Zamanlama main süreçteki hatırlatma servisindedir
-(`main/functions/reminder-service*.js`). `.pisi/reminder-state.json`
-(`shown`, `pending`, `snoozed`) yalnız sunum durumudur, görev otoritesi değildir;
-bozuksa üzerine yazılmaz. Uygulama kapalıyken zamanı geçen hatırlatmalar
-açılışta tek bir özet bildirim ve "kaçırılanlar" listesi olarak gösterilir.
+```html
+<div class="pisi-editor-block pisi-task-block" data-pisi-block-id="blk_…" data-pisi-block-type="task" data-pisi-task-id="task_…" contenteditable="false"></div>
+```
+
+Bloğun içi dosyaya yazılmaz; editör onu görev kaydından çizer ve kayıtta
+yeniden boşaltır. Blok HTML'ini yalnız `shared/task-blocks.mjs` üretir. Eski
+`todo.<öncelik>.<tarih>` etiketi ve `data-pisi-todo-*` öznitelikleri görev
+değildir; eski notlarda sıradan etiket ve metin olarak kalır (geçiş adımı yoktur).
+
+Görev değişikliklerini masaüstünde yalnız ana süreçteki görev servisi yazar
+(`main/functions/task-service.js`, `task.*.v1` komutları). Görev alanı
+değişikliği hiçbir `.node` dosyasını okumaz ya da yazmaz. Notun editörde
+kaydı, kayıttan önceki ve sonraki içerikteki görev kimliklerini karşılaştırır:
+yeri bu not olan ve bloğu nottan çıkan görev çöp kutusuna gider; çöp kutusundaki
+bir kimlik nota gelirse görev geri döner. Senkron bu karşılaştırmayı çalıştırmaz.
+
+Hatırlatmalar: `reminderAt` (`YYYY-MM-DDTHH:MM`, yerel saat) kesin hatırlatma
+anıdır ve önceliklidir. Yoksa `reminderMode` (`due-morning`, `day-before`,
+`three-days-before`) `dueDate`'ten Ayarlar'daki varsayılan saatle (ön tanım
+09:00) her planlamada türetilir; türetilen an `tasks.json`'a yazılmaz.
+Zamanlama main süreçteki hatırlatma servisindedir
+(`main/functions/reminder-service*.js`); bildirimden "Tamamlandı" görev
+servisinin `task.complete.v1` komutudur. `.pisi/reminder-state.json` (`shown`,
+`pending`, `snoozed`) yalnız sunum durumudur, görev otoritesi değildir; bozuksa
+üzerine yazılmaz. Uygulama kapalıyken zamanı geçen hatırlatmalar açılışta tek
+bir özet bildirim ve "kaçırılanlar" listesi olarak gösterilir.
 
 ### Diary
 
@@ -380,9 +408,24 @@ PISI diary klasörü proje kökündeki `diary/` klasörüdür ve `.pisi-diary`
 marker'ı ile yönetilir. Tarihli node dosya adı `YYYY-MM-DD.node`, görünen
 başlık `DD-MM-YYYY` biçimindedir.
 
-Diary içindeki managed task görünümü canonical task store'un projection'ıdır.
-Diary veya project-wide tarama canonical task store'u yeniden kurmak için
-kullanılmaz.
+Bir günün görevleri (`shared/task-diary.mjs`): yeri o günün günlüğü olan, bitiş
+günü o gün olan ve o gün tamamlanmış görevler. Günlüğün son bloğu bu görevlerin
+kimliklerini taşıyan görev bölümüdür:
+
+```html
+<div class="pisi-editor-block pisi-diary-tasks" data-pisi-block-id="blk_diary-tasks-2026-11-21" data-pisi-block-type="diary-tasks" contenteditable="false">
+    <div data-pisi-task-ref="task_…"></div>
+</div>
+```
+
+Bölüm `tasks.json`'dan belirlenimci olarak üretilir (aynı kayıtlardan her cihaz
+aynı baytları üretir); okunup göreve çevrilmez. "Görevler" başlığı dosyaya
+yazılmaz, editör çizer. Bölüm yalnız görevin günleri değişince yazılır; bir
+görevin girdiği günün günlüğü yoksa oluşturulur, silinen bir günlük o güne yeni
+bir görev girene kadar yeniden oluşturulmaz. Başlık, durum, öncelik, saat ya da
+hatırlatma değişikliği bölümü değiştirmez. Günlük kaydedilince bölüm kuraldan
+yeniden üretilir. Eski günlüklerdeki `PISI_DIARY_MANAGED_START…END` bölümleri
+dönüştürülmez; sıradan içerik olarak kalır.
 
 ## Paint ve Sheet sidecar asset modeli
 
@@ -561,7 +604,11 @@ Trash kullanır:
 
 Trash manifest; restore için gereken canonical task kayıtlarını, semantic
 relationships'leri, dependency/reference bilgilerini ve map presentation
-referanslarını arşivleyebilir.
+referanslarını arşivleyebilir. Görevler yere göre arşivlenir: silinen notun
+(`noteId`) ve günlüğün (`diaryDate`) görevleri aynı öğeye girer. Tek başına
+silinen görev (panelden ya da bloğu nottan çıkarılarak) dosya taşımayan `task`
+türü bir öğedir; bloğun nottaki yerini de saklar ve geri yüklemede blok oraya
+döner.
 
 Delete/restore domain operasyonları atomic mutation altında yürütülür.
 Restore full-project rollback değildir; archived payload/state current projeye
@@ -598,7 +645,10 @@ Project Integrity canonical sınırları denetler. Örnek kontroller:
 
 - geçersiz/duplicate node ve map ID,
 - eksik managed sidecar,
-- canonical task store sorunları,
+- canonical task store sorunları: okunamayan dosya, geçersiz ya da çift kimlik,
+  geçersiz alan, bağımlılık döngüsü, kaydı olmayan görev bloğu (yetim), notunda
+  bloğu olmayan görev (evsiz), olmayan not, birden çok notta blok (çift
+  referans) ve kurala uymayan günlük görev bölümü,
 - canonical relationship endpoint/graph sorunları,
 - property schema/value drift,
 - bozuk map references/layout/relationshipViews,
@@ -622,7 +672,7 @@ akışları tutulmaz.
 
 - `map.edges` semantic authority'ye otomatik migrate edilmez;
 - persisted node `connectionTypes` semantic authority değildir;
-- task index/mission scan canonical task store'a background import yapmaz;
+- eski not görev işareti (`todo.*` etiketi, `data-pisi-todo-*`) göreve dönüştürülmez;
 - Sheet modeli DOM'dan reconstruct edilmez;
 - missing property schema node'lardan otomatik türetilmez;
 - Trash restore current contract dışı legacy map edge'lerini canlandırmaz.

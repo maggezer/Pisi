@@ -263,15 +263,9 @@ async function activatePisiRightPanelTab(button) {
     if (rightPanelContent) rightPanelContent.scrollTop = 0;
     if (activePage) activePage.scrollTop = 0;
 
+    // The task list draws from the task store (renderer/tasks/), which tasks.json events keep current.
     if (target === 'missions') {
-        if (typeof window.refreshPisiMissionIndex === 'function') {
-            await window.refreshPisiMissionIndex({
-                force: true,
-                reason: 'right-panel-open'
-            });
-        } else if (typeof window.refreshPisiTagsPanel === 'function') {
-            await window.refreshPisiTagsPanel();
-        }
+        window.renderPisiTaskPanel?.();
     } else if (target === 'tags' && typeof window.refreshPisiTagsPanel === 'function') {
         await window.refreshPisiTagsPanel();
     }

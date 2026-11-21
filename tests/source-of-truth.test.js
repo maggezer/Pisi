@@ -34,49 +34,6 @@ test('pisi-definition canonical mimariyi authority sınırlarıyla tanımlar', (
     assert.doesNotMatch(docs, /"connectionTypes"\s*:/);
 });
 
-test('yalnız kontrollü kullanıcı işlemleri projection -> task store write-through yapabilir', () => {
-    const rendererGuard = read('renderer/tags/pisi-source-of-truth.mjs');
-
-    assert.match(rendererGuard, /allowProjectionWrite:\s*true/);
-    assert.match(rendererGuard, /status-change/);
-    assert.match(rendererGuard, /completion-change/);
-    assert.match(rendererGuard, /hasPisiTaskProjectionWriteIntent/);
-    assert.match(rendererGuard, /#center-node-editor-content, #node-modal-content/);
-});
-
-test('persisted search task kayıtları canonical task store projectionından üretilir', () => {
-    const rendererGuard = read('renderer/tags/pisi-source-of-truth.mjs');
-
-    assert.match(rendererGuard, /pisiFirstClassTaskState/);
-    assert.match(rendererGuard, /record\?\.kind !== 'task'/);
-    assert.match(rendererGuard, /makePisiCanonicalTaskSearchRecord/);
-    assert.match(rendererGuard, /buildPisiSearchAccelerator\(records\)/);
-    assert.match(rendererGuard, /taskAuthority = '\.pisi\/tasks\.json'/);
-});
-
-test('diary canonical tasklardan üretilen read-only projectiondır ve task HTML kopyalamaz', () => {
-    const rendererGuard = read('renderer/tags/pisi-source-of-truth.mjs');
-    const bootstrap = read('renderer/bootstrap.mjs');
-
-    assert.match(rendererGuard, /getPisiCanonicalDiaryEntries/);
-    assert.match(rendererGuard, /blockId:\s*task\.id/);
-    assert.match(rendererGuard, /text:\s*task\.title/);
-    assert.doesNotMatch(rendererGuard, /html:\s*block\.html/);
-    assert.match(rendererGuard, /syncPisiDiaryFromMissionIndex = syncPisiDiaryFromCanonicalTasks/);
-    assert.ok(
-        bootstrap.indexOf('./runtime.mjs') < bootstrap.indexOf('./tags/pisi-source-of-truth.mjs'),
-        'canonical diary override runtime calendar kurulduktan sonra yüklenmeli'
-    );
-});
-
-test('progress canonical task projectionundan türetilir', () => {
-    const todo = [read('renderer/tags/pisi-todo-third-release.mjs'), read('renderer/tags/pisi-todo-third-ui.mjs')].join('\n');
-
-    assert.match(todo, /getPisiThirdAllMissions\(\)/);
-    assert.match(todo, /completed\s*=\s*missions\.filter/);
-    assert.match(todo, /rate\s*=\s*total/);
-});
-
 test('semantic relationship otoritesi proje storeudur; map yalnız presentation state taşır', () => {
     const relationshipStore = read('main/functions/relationship-store.js');
     const mapCore = read('main/functions/map-semantic-core.js');

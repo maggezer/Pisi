@@ -5,6 +5,7 @@ import { modules, registerMainModule } from '../module-registry.js';
 import * as storageLayer from './storage.js';
 import { PISI_REMINDER_DEFAULT_TIME, normalizePisiReminderTimeOfDay } from './reminder-schedule-core.js';
 import { createPisiReminderService } from './reminder-service-core.js';
+import { readPisiTask } from '../../shared/task-model.mjs';
 
 // Wires the reminder service to Electron: native notifications, power events,
 // the project's .pisi/reminder-state.json, app settings and the optional tray.
@@ -78,7 +79,12 @@ function createPisiReminderRuntimeService() {
         powerMonitor,
         platform: process.platform,
         getProjectFolder: () => modules['main.runtime']?.activeProjectFolder || null,
-        readTasks: (projectFolder) => taskStore.listPisiFirstClassTasks(projectFolder).tasks,
+        readTasks: (projectFolder) => {
+            const state = taskStore.readPisiTaskStoreState(projectFolder);
+            if (state.readOnly) throw new Error(state.error);
+            return state.tasks.map(readPisiTask).filter(Boolean);
+        },
+        completeTask: (projectFolder, taskId) => domain.executePisiDomainCommand('task.complete.v1', { projectFolder, taskId }),
         readState: readPisiReminderState,
         writeState: writePisiReminderState,
         getSettings: getPisiReminderSettings,

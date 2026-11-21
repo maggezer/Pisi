@@ -2,13 +2,13 @@
   "pisi": {
     "version": 1,
     "type": "node",
-    "id": "node_89e63bc2-4977-4ef8-8ce0-554c308771fb",
+    "id": "node_75b69b68-d593-4109-86b5-7767b01657e1",
     "title": "20-11-2026",
-    "sidecar": "inv_20-11-2026__node_89e63bc2-4977-4ef8-8ce0-554c308771fb",
-    "createdAt": "2026-11-16T10:12:49.497Z",
-    "updatedAt": "2026-11-16T10:12:50.255Z",
+    "sidecar": "inv_20-11-2026__node_75b69b68-d593-4109-86b5-7767b01657e1",
+    "createdAt": "2026-11-21T09:30:47.000Z",
+    "updatedAt": "2026-11-14T09:30:00.000Z",
     "parentMap": "diary",
     "diaryDate": "2026-11-20"
   },
-  "content": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_99518960-e4f3-449f-8d77-4422df028d20\"><br></div>\n<div class=\"pisi-editor-block pisi-diary-task-divider pisi-section-break\" data-pisi-block-type=\"paragraph\" data-pisi-section-break=\"true\" data-pisi-section-exit=\"1\" data-pisi-block-id=\"blk_e27ee0f8-ed36-4729-a175-847a70f657cc\"><hr></div>\n<h3 class=\"pisi-editor-block\" data-pisi-block-id=\"blk_f5f591f5-84d6-4785-81cb-7d860a2e6b7b\">Görevler</h3>\n<!--PISI_DIARY_MANAGED_START-->\n<div class=\"pisi-diary-managed-block\" data-pisi-diary-source=\"/tmp/pisi-electron-mobile-fixture-gpopag/project/Inbox.node::task_source_3a396a5b3d141dbb::todo.4.20-11-2026\" data-pisi-diary-node-path=\"/tmp/pisi-electron-mobile-fixture-gpopag/project/Inbox.node\" data-pisi-diary-block-id=\"task_source_3a396a5b3d141dbb\" data-pisi-diary-status=\"todo\" data-pisi-diary-parent=\"\" data-pisi-task-id=\"task_source_3a396a5b3d141dbb\" title=\"Nota git: Inbox\">\n    <span class=\"pisi-block-task-marker pisi-diary-task-marker\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"false\" aria-label=\"Görevi tamamla\" data-pisi-task-id=\"task_source_3a396a5b3d141dbb\" data-pisi-todo-checkbox=\"todo.4.20-11-2026\" tabindex=\"0\">☐</span>\n    <span class=\"pisi-diary-task-text\">Sunucu faturasını öde</span>\n    <span class=\"pisi-diary-managed-meta\" contenteditable=\"false\" title=\"Nota git: Inbox\">· Inbox</span>\n</div>\n<div class=\"pisi-editor-block pisi-diary-task-divider pisi-section-break\" data-pisi-block-type=\"paragraph\" data-pisi-section-break=\"true\" data-pisi-section-exit=\"1\" data-pisi-block-id=\"blk_b129b9ae-8bdb-423d-a067-989207e66874\"><hr></div>\n<!--PISI_DIARY_MANAGED_END-->"
+  "content": "<div><br></div><div class=\"pisi-editor-block pisi-diary-tasks\" data-pisi-block-id=\"blk_diary-tasks-2026-11-20\" data-pisi-block-type=\"diary-tasks\" contenteditable=\"false\">\n    <div data-pisi-task-ref=\"task_b07895fb-e865-4e50-a55b-085e0be07d74\"></div>\n</div>"
 }

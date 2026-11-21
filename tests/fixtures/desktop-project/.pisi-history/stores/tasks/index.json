@@ -1,23 +1,23 @@
 {
   "version": 1,
-  "updatedAt": "2026-11-16T10:12:52.961Z",
+  "updatedAt": "2026-11-21T09:30:50.202Z",
   "entries": [
     {
-      "historyId": "1794823972960-2026-11-16T10-12-52-960Z-0d66bd4d8efefa4d.json.gz",
-      "capturedAt": "2026-11-16T10:12:52.960Z",
+      "historyId": "1795253450199-2026-11-21T09-30-50-199Z-cb4e4ab1749a22bf.json.gz",
+      "capturedAt": "2026-11-21T09:30:50.199Z",
       "reason": "quit",
-      "hash": "0d66bd4d8efefa4d",
+      "hash": "cb4e4ab1749a22bf",
       "preview": "6 görev",
-      "size": 1022,
+      "size": 884,
       "compressed": true
     },
     {
-      "historyId": "1794823969342-2026-11-16T10-12-49-341Z-ef9ab90aae1a3efb.json.gz",
-      "capturedAt": "2026-11-16T10:12:49.341Z",
+      "historyId": "1795253446914-2026-11-21T09-30-46-913Z-9b7777fa984a8617.json.gz",
+      "capturedAt": "2026-11-21T09:30:46.913Z",
       "reason": "auto",
-      "hash": "ef9ab90aae1a3efb",
+      "hash": "9b7777fa984a8617",
       "preview": "1 görev",
-      "size": 543,
+      "size": 497,
       "compressed": true
     }
   ]

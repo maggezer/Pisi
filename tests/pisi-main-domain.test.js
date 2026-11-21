@@ -16,7 +16,6 @@ Module._load = function pisiTestElectronStub(request, parent, isMain) {
     return originalLoad.call(this, request, parent, isMain);
 };
 
-require('../main/functions/task-capture');
 require('../main/functions/structured-nodes');
 require('../main/functions/project-integrity');
 require('../main/functions/portability');
@@ -46,7 +45,6 @@ test('portability helpers emit Markdown and a real ZIP-based DOCX', () => {
 
 test('main roadmap domains register unique public bindings', () => {
     const { modules } = require('../main/module-registry');
-    assert.ok(modules['main.taskCapture'].quickAddPisiTask);
     assert.ok(modules['main.structuredNodes'].createPisiPropertyMap);
     assert.ok(modules['main.projectIntegrity'].auditPisiProjectIntegrity);
     assert.equal(Object.hasOwn(modules['main.portability'], 'auditPisiProjectIntegrity'), false);

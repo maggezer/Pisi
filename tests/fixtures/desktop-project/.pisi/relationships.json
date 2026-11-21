@@ -2,15 +2,15 @@
   "version": 1,
   "relationships": [
     {
-      "id": "edge_4b5ea065-1069-4f08-981f-a23e685ebc28",
-      "sourceId": "node_d6bf8c21-2f48-429d-b4f0-6989946bacf6",
-      "targetId": "node_7cc42bcf-7c16-4e37-92c3-0bf1ae7d15ce",
+      "id": "edge_cd2921ae-f011-45c2-b4ed-4ced1300efb3",
+      "sourceId": "node_59d6c805-1281-45df-9325-0adf485b6d88",
+      "targetId": "node_2b7e9715-fa78-4a8a-8c06-9ecd13cb9a07",
       "type": "down-hub",
       "sourceRole": "down-hub",
       "targetRole": "up-hub",
       "direction": "directed",
-      "createdAt": "2026-11-16T10:12:50.205Z",
-      "updatedAt": "2026-11-16T10:12:50.205Z"
+      "createdAt": "2026-11-21T09:30:47.533Z",
+      "updatedAt": "2026-11-21T09:30:47.533Z"
     }
   ]
 }

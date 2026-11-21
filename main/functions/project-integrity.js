@@ -3,6 +3,7 @@ import { modules, registerMainModule } from '../module-registry.js';
 import * as shared from './project-integrity-shared.js';
 import * as documents from './project-integrity-documents.js';
 import * as authorities from './project-integrity-authorities.js';
+import * as taskAudit from './project-integrity-tasks.js';
 import * as properties from './project-integrity-properties.js';
 import * as recovery from './project-integrity-recovery.js';
 import * as repairs from './project-integrity-repairs.js';
@@ -18,7 +19,7 @@ function* runPisiIntegrityAudit(projectFolder, prefetched = null) {
     const context = { issues: [] };
     const inventory = documents.collectDocumentInventory(projectRoot, context, prefetched);
     yield;
-    const tasks = authorities.auditTasks(projectRoot, context);
+    const tasks = taskAudit.auditPisiTasks(projectRoot, context, inventory);
     const relationships = authorities.auditRelationships(projectRoot, context, inventory);
     const propertySchema = properties.auditPisiPropertySchema(projectRoot, context, inventory);
     yield;

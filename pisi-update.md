@@ -1,5 +1,42 @@
 # PISI Güncelleme Takip Dosyası
 
+## 21-11-2026 — Görev servisi ve `tasks.json` sürüm 2 (G2)
+
+Görev işi (`docs/task-plan.md` G2). Kapanan bulgular: GB1–GB9, GB12, GK4, GK5, GK11, GK12, GK14 ve
+`pisi-error.md` §4a, §4b, §5c.
+
+- `.pisi/tasks.json` sürüm 2: görevin bütün bilgisi kayıttadır (`shared/task-model.mjs`). Masaüstü sürüm 1 ve 2'yi
+  okur, 2 yazar; bilinmeyen alanlar ve sürüm 1 alanları korunur. Okunamayan dosya ezilmez, görevler salt okunurdur.
+- Görev servisi (`main/functions/task-service.js`, sözleşmeler `task-domain.js`): `task.list`, `create`, `update`,
+  `complete`, `reopen`, `move`, `delete`, `batch` (hepsi `.v1`). Her komut tek atomik mutation'dır. Alan değişikliği
+  hiçbir `.node` okumaz ya da yazmaz; görevin günleri değişince yalnız o günlerin günlük bölümü yazılır, görevin girdiği
+  günün günlüğü yoksa oluşturulur. Tekrar eden görev tamamlanınca yeni kayıt açılmaz, `completions`'a yazılıp ilerler.
+  Açık not ve günlük yazılmaz; değişiklik editöre döner ve editör kaydeder. Her yazmadan sonra `pisi:tasks-changed`.
+- Not artık yalnız görev kimliğini taşıyan boş bir blok tutar; günlüğün son bloğu, yalnız kimlik taşıyan görev
+  bölümüdür. Not kaydı görev bloklarını karşılaştırır: nottan çıkan görev çöp kutusuna gider, geri gelen kimlik döner.
+- Çöp kutusu: tek başına silinen görev için `task` öğesi (bloğun yerini saklar); not ve günlük silinince görevler yere
+  göre (`noteId`, `diaryDate`) arşivlenir.
+- Project Integrity görev denetimi baştan yazıldı: yetim blok, evsiz görev, olmayan not, çift referans, bağımlılık
+  döngüsü, geçersiz alan ve kurala uymayan günlük bölümü (G8'e kadar yalnız yapı ve bilinmeyen kimlik).
+- Hatırlatma servisi görevin gününü yalnız `dueDate`'ten alır; bildirimden "Tamamlandı" `task.complete.v1`'dir.
+- `tasks.json` sürüm geçmişinden geri yükleme notlara blok yazmaz; değişen günlerin bölümünü kuraldan üretir.
+- Senkron: SV13 görev durumu koruması kalktı (yansıtma yoktur); bir tur `tasks.json`'u değiştirince değişen günlerin
+  bölümü aynı mutation'da üretilir.
+- Kalkanlar: Inbox ve `task-capture.js`, `source-of-truth.js`, `task-reference-*`, `task.capture/upsert/sync-projection.v1`,
+  `project:quick-add-task`, `project:sync-diary-missions`, `window.pisiProject.quickAddTask`, eski günlük yönetilen
+  bölümü; renderer'da `tags/pisi-todo-*` modüllerinin çoğu, `tags/pisi-task-store.mjs`, `tags/pisi-source-of-truth.mjs`,
+  `productivity/pisi-quick-add-repeat-policy.mjs`. Editörün `/todo`, `/done` ve `[ ]` komutları G3'e kadar kapalı.
+- Renderer: `renderer/tasks/` (görev deposu, açık/kapalı belge işlemleri, not bloğunun ve günlük bölümünün geçici
+  çizimi, sağ panelde öncelik sırasıyla sade liste). Quick Add `task.create.v1`'e bağlandı: hedef son açık not, yoksa
+  bugünün günlüğü; Türkçe tarih alanı gün ve saati verir. Takvim, harita rozetleri ve arama görev deposundan okur.
+- Masaüstü fixture'ı yeniden üretildi (görevler görev servisiyle). `mobile-desktop-compat` ve üç senkron testi
+  silinen modülleri yüklediği için sessizce çalışmıyordu (`pisi-error.md` §5g); düzeltildi.
+- Mobil: sürüm 2 görev bloğu notta salt okunur "Görev" kartıdır (G8'e kadar); mobil testleri yeni fixture'a göre
+  güncellendi. Senaryo matrisinde telefon yardımcısı not listesinde ekran dışındaki notu kaydırarak bulur.
+- Testler: `tests/task-service.test.mjs`, `tests/project-integrity-tasks.test.mjs`, Electron E2E
+  `scripts/electron-tasks-service-e2e.mjs` (Ek B S1–S9, S11, S17, S19, S21; ana süreçte `.node` okuma/yazma sayımı;
+  her senaryodan sonra Integrity). Eski görev modelinin regex testleri kaldırıldı.
+
 ## 21-11-2026 — Saf görev çekirdeği: `shared/task-*.mjs` (G1)
 
 Görev işi (`docs/task-plan.md` G1). Uygulamanın davranışı değişmedi; yeni kuralları henüz hiçbir yüzey kullanmıyor.

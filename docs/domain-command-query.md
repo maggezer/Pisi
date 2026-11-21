@@ -35,13 +35,17 @@ Additional domains register their own contracts. Project Integrity, for example,
 
 ### Tasks
 
-- `task.capture.v1`
-- `task.upsert.v1`
-- `task.update.v1`
-- `task.delete.v1`
-- `task.sync-projection.v1`
+Registered by `main/functions/task-domain.js`; the work is done by the task service (`main/functions/task-service.js`, `docs/task-plan.md` §3.4). Each command is one atomic mutation.
 
-Task commands use the task capture/store services. The dispatcher does not interpret `.pisi/tasks.json` records itself.
+- `task.list.v1` (query): every task, the file version and `readOnly` (an unreadable `tasks.json` is never written).
+- `task.create.v1`: `{ task, target }`, target `{ noteId, notePath, afterBlockId }` or `{ diaryDate }`. Adds the block to a closed note, writes the diary sections of the task's days and creates a diary a task joins.
+- `task.update.v1`: field changes (not the place). A change of the due day rewrites the two days' sections; removing a "completed day" is a `completions` change here.
+- `task.complete.v1` / `task.reopen.v1`: the §3.2.3 rule; `complete` returns the `completion` that `reopen` takes back. An earlier completion is `TASK_COMPLETION_LOCKED`.
+- `task.move.v1`: `{ target, fromNotePath }`; moves the block between closed notes and the sections.
+- `task.delete.v1`: sends the task to the Trash (a `task` item), removes its block from a closed note and its section rows.
+- `task.batch.v1`: `{ updates: [{ taskId, patch }] }`, one `tasks.json` write.
+
+Every task command takes `openPaths`, the documents open in the editor. The service does not write them (GV9); it returns them in `deferred: { notes, diaryDays }` and the renderer changes them in the editor and saves them through the editor. After each write the main process sends `pisi:tasks-changed` (`{ version, changedIds, removedIds, source, tasks }`, `source` `local` or `sync`). The old `task.capture.v1`, `task.upsert.v1` and `task.sync-projection.v1` are gone, as are `project:quick-add-task` and `project:sync-diary-missions`.
 
 ### Maps and relationships
 
@@ -64,7 +68,7 @@ Semantic relationship commands go through the semantic relationship services. Th
 - `project.path.delete.v1`
 - `project.batch.v1`
 
-Rename/move/delete commands keep task references and related semantic state inside the same domain mutation boundary. Batch mutation accepts only an allowlisted set of versioned commands and stops on the first failed operation.
+Rename/move/delete commands keep related semantic state inside the same domain mutation boundary; tasks follow notes by `noteId`, so a rename or move does not touch them. Deleting a note or a diary sends its tasks to the same Trash item. Batch mutation accepts only an allowlisted set of versioned commands and stops on the first failed operation.
 
 ## Renderer domain client
 
@@ -80,9 +84,11 @@ Feature code should use semantic contracts instead of selecting an authority fil
 Example:
 
 ```js
-await domain.command('task.capture.v1', {
+await domain.command('task.create.v1', {
     projectFolder,
-    task
+    task: { title: 'Rapor', dueDate: '2026-11-25' },
+    target: { diaryDate: '2026-11-21' },
+    openPaths: []
 });
 ```
 

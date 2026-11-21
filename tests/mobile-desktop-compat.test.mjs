@@ -23,8 +23,8 @@ import { buildTaskLists } from '../mobile/src/screens/tasks/view-model.mjs';
 import { getCalendarTaskSummaryByDate } from '../renderer/calendar/pisi-calendar-ui.mjs';
 import { matchesPisiTodoFilter, parsePisiTodoTagValue } from '../renderer/tags/pisi-todo-utils.mjs';
 import { collectPisiCollapsedHubNodeIds, isPisiMapEdgeHiddenByCollapsedHub } from '../shared/map-view.mjs';
-import { normalizePisiTaskRecord } from '../shared/task-model.mjs';
-import { getPisiTaskTodoTag } from '../shared/task-views.mjs';
+import { normalizePisiTaskRecord, readPisiTask } from '../shared/task-model.mjs';
+import { filterPisiTasks, getPisiTaskTodoTag } from '../shared/task-views.mjs';
 
 const require = createRequire(import.meta.url);
 const originalLoad = Module._load;
@@ -78,11 +78,9 @@ for (const name of [
     'relationship-store',
     'map-semantic-core',
     'map-operational-store',
-    'task-capture',
     'task-store',
     'trash-store',
-    'task-reference-integrity',
-    'source-of-truth',
+    'task-service',
     'structured-nodes',
     'property-schema-store',
     'property-schema-mutations',
@@ -98,7 +96,7 @@ require('../main/runtime.js');
 Module._load = originalLoad;
 const { modules } = require('../main/module-registry.js');
 const desktopAudit = modules['main.projectIntegrity'].auditPisiProjectIntegrity;
-const desktopTasks = modules['main.taskStore'];
+const desktopTasks = modules['main.taskService'];
 const desktopDocuments = modules['main.documentStore'];
 const desktopMaps = modules['main.mapStore'];
 const desktopMapSemantics = modules['main.mapSemanticOperationHooks'];
@@ -178,7 +176,9 @@ test('mobil, masaüstünün oluşturduğu projeyi yalnız okuyunca hiçbir dosya
             ['canvas', false],
             ['image', false],
             ['file', false],
-            ['paragraph', true]
+            ['paragraph', true],
+            // The task block (docs/task-plan.md §3.2.1): a protected block that only carries the task id.
+            ['task', false]
         ]
     );
     assert.equal(diary.text, 'Plan belgesini okudum.');
@@ -195,7 +195,7 @@ test('mobilin yazdığı proje masaüstü denetiminden yeni bulgu almaz ve yaln�
     const root = copyFixture(t);
     addUnknownTaskFields(root);
     const baseline = issueKeys(desktopAudit(root));
-    // The desktop reports nothing for its own untouched project (pisi-error.md §5c is fixed: Quick Add writes the schema).
+    // The desktop reports nothing for its own untouched project.
     assert.deepEqual(baseline, []);
     const before = snapshot(root);
     const storeBefore = readJson(root, '.pisi/tasks.json');
@@ -262,11 +262,12 @@ test('mobilin yazdığı proje masaüstü denetiminden yeni bulgu almaz ve yaln�
     for (const marker of ['data-pisi-sheet-asset', 'data-pisi-asset="paint/', 'data-pisi-image-asset', 'data-pisi-file-asset']) {
         assert.ok(blocksAfter.some((html) => html.includes(marker)));
     }
-    // Günlükte masaüstünün yönettiği görev bölümü aynen duruyor.
+    // Günlüğün görev bölümü (yalnız kimlikler, docs/task-plan.md §3.2.2) aynen duruyor.
     const diaryAfter = readJson(root, `diary/${TODAY}.node`);
-    const managed = (content) => content.slice(content.indexOf('<!--PISI_DIARY_MANAGED_START-->'));
-    assert.equal(managed(diaryAfter.content), managed(diaryBefore.content));
-    assert.match(diaryAfter.content, /^<div class="pisi-editor-block" data-pisi-block-id="blk_[^"]+">Bugün mobilden yazdım\.<\/div>\n/);
+    const section = (content) => content.slice(content.indexOf('<div class="pisi-editor-block pisi-diary-tasks"'));
+    assert.ok(section(diaryBefore.content).includes('data-pisi-task-ref='));
+    assert.equal(section(diaryAfter.content), section(diaryBefore.content));
+    assert.match(diaryAfter.content, /^<div class="pisi-editor-block" data-pisi-block-id="blk_[^"]+"[^>]*>Bugün mobilden yazdım\.<\/div>/);
 
     // (d) tasks.json içindeki bilinmeyen alanlar ve diğer kayıtlar korunmuş.
     const storeAfter = readJson(root, '.pisi/tasks.json');
@@ -288,11 +289,13 @@ test('mobilin yazdığı proje masaüstü denetiminden yeni bulgu almaz ve yaln�
     );
     // Tekrar eden görevler: eskisi tamamlandı, sonraki tarihle kaynaksız yeni kayıt eklendi.
     assert.deepEqual([daily.next.dueDate, daily.next.todoTag, daily.next.repeat, daily.next.status], ['2026-11-15', 'todo.3.15-11-2026', 'daily', 'todo']);
-    assert.deepEqual([weekly.next.dueDate, weekly.next.todoTag, weekly.next.source.nodePath], ['2026-11-20', 'todo.3.20-11-2026', null]);
+    // The phone still runs the version 1 repeat rule on a version 2 record (no todo tag: it counts from today);
+    // G8 moves it to the shared §3.2.3 rule, which keeps one record and moves it to 2026-11-20.
+    assert.deepEqual([weekly.next.dueDate, weekly.next.todoTag, weekly.next.source.nodePath], ['2026-11-21', 'todo.3.21-11-2026', null]);
     assert.equal(completed.next, null);
 
-    // (e) Masaüstü task-store mobilin yazdığı görevleri aynı biçimde okuyor.
-    const desktopList = desktopTasks.listPisiFirstClassTasks(root);
+    // (e) Masaüstü görev servisi mobilin yazdığı görevleri okuyor: sürüm 2 alanları kaydın kendisidir.
+    const desktopList = desktopTasks.listPisiTasks(root);
     assert.equal(desktopList.tasks.length, storeAfter.tasks.length);
     const mobileWritten = [added.task, completed.task, daily.task, daily.next, weekly.task, weekly.next];
     for (const written of mobileWritten) {
@@ -302,8 +305,8 @@ test('mobilin yazdığı proje masaüstü denetiminden yeni bulgu almaz ve yaln�
         // The record is already canonical for the desktop normalizer: same fields, same order, same values.
         const known = Object.fromEntries(Object.keys(canonical).map((key) => [key, stored[key]]));
         assert.deepEqual(JSON.stringify(known), JSON.stringify({ ...canonical, updatedAt: stored.updatedAt }));
-        assert.deepEqual({ ...read, source: null }, { ...stored, source: null });
-        assert.equal(read.source.nodePath, stored.source.nodePath ? path.join(root, stored.source.nodePath) : null);
+        assert.deepEqual(read, readPisiTask(stored));
+        assert.deepEqual(read.source, stored.source, 'sürüm 1 alanları korunur (GV12)');
     }
     assert.deepEqual(
         [added.task.title, added.task.todoTag, added.task.status, added.task.source.nodePath, /^task_[0-9a-f-]{36}$/.test(added.task.id)],
@@ -315,7 +318,7 @@ test('mobilin yazdığı proje masaüstü denetiminden yeni bulgu almaz ve yaln�
     const tamperedStore = readJson(tampered, '.pisi/tasks.json');
     tamperedStore.tasks[0].priority = 9;
     fs.writeFileSync(path.join(tampered, '.pisi', 'tasks.json'), JSON.stringify(tamperedStore));
-    assert.ok(issueKeys(desktopAudit(tampered)).some((key) => key.startsWith('task-priority-invalid')));
+    assert.ok(issueKeys(desktopAudit(tampered)).some((key) => key.startsWith('task-field-invalid')));
 
     // Aynı işlemleri yinelemek dosyaları yeniden yazmaz (V4).
     const settled = snapshot(root);
@@ -358,13 +361,13 @@ test('Görevler sekmesi (M6): hızlı eklenen ve detayda düzenlenen görevler m
     await edit(tomorrow.task.id, (task) => getTaskReminderPatch(task, '2026-11-17T09:00'));
     await edit(far.task.id, (task) => getTaskDatePatch(task, null));
     await edit(inbox.task.id, (task) => getTaskDatePatch(task, TODAY));
-    // Kaynağı not bloğu olan görevde yalnız durum değişir; öteki alanlar yazılmaz.
+    // Sürüm 2'de not görevi bütün alanlarıyla kayıttadır (docs/task-plan.md G2): telefon onu da düzenler; yeri (noteId) korunur.
     const noteTask = storeBefore.tasks.find((task) => task.title === 'Sunucu faturasını öde');
-    const ignored = await edit(noteTask.id, () => ({ title: 'Değişmemeli', priority: 1, dueDate: '2026-12-01' }));
-    await edit(noteTask.id, () => ({ status: 'waiting', priority: 1 }));
+    const noteEdit = await edit(noteTask.id, () => ({ title: 'Telefonda düzenlendi', priority: 1, dueDate: '2026-12-01' }));
+    await edit(noteTask.id, () => ({ status: 'waiting' }));
     await project.flush();
 
-    assert.equal(ignored.changed, false);
+    assert.equal(noteEdit.changed, true);
     assert.deepEqual(changedFiles(before, snapshot(root)), ['.pisi/tasks.json']);
     assert.deepEqual(
         issueKeys(desktopAudit(root)).filter((key) => !baseline.includes(key)),
@@ -385,32 +388,33 @@ test('Görevler sekmesi (M6): hızlı eklenen ve detayda düzenlenen görevler m
             ['25.12 yıl sonu raporu', 2, null, null, 'none', 'none', null, 'todo.2.none']
         ]
     );
-    // Nottan gelen görev: durum dışında her alan (todo etiketi dahil) eskisi gibi.
-    assert.deepEqual({ ...find(noteTask.id), status: 'todo', updatedAt: '' }, { ...noteTask, updatedAt: '' });
-    assert.equal(find(noteTask.id).status, 'waiting');
+    // Nottaki görev: alanlar değişti, yeri ve kimliği aynı.
+    assert.deepEqual(
+        [find(noteTask.id).title, find(noteTask.id).priority, find(noteTask.id).dueDate, find(noteTask.id).status, find(noteTask.id).noteId],
+        ['Telefonda düzenlendi', 1, '2026-12-01', 'waiting', noteTask.noteId]
+    );
     for (const task of storeBefore.tasks) if (task.id !== noteTask.id) assert.deepEqual(find(task.id), task);
     assert.deepEqual(storeAfter.futureSetting, { keep: ['me', 1] });
 
-    // Masaüstü task-store aynı kayıtları okur; kayıtlar masaüstü normalizasyonuna göre zaten kanoniktir.
-    const desktopList = desktopTasks.listPisiFirstClassTasks(root);
+    // Masaüstü görev servisi aynı kayıtları okur; kayıtlar telefonun sürüm 1 normalizasyonuna göre kanoniktir.
+    const desktopList = desktopTasks.listPisiTasks(root);
     assert.equal(desktopList.tasks.length, storeAfter.tasks.length);
     for (const { task } of [weekly, tomorrow, inbox, far]) {
         const record = find(task.id);
         const canonical = normalizePisiTaskRecord(record, record, { now: NOW, makeUuid: () => 'unused', normalizeStoredPath: (value) => value || null });
         assert.deepEqual(JSON.stringify(record), JSON.stringify({ ...canonical, updatedAt: record.updatedAt }));
+        // The desktop reads a phone record (version 1 fields) with every version 2 field filled in, the rest kept.
         assert.deepEqual(
             desktopList.tasks.find((item) => item.id === task.id),
-            record
+            readPisiTask(record)
         );
     }
 
-    // Mobilin görünümleri, masaüstü görev panelinin tarih filtreleriyle aynı görevleri listeler:
-    // panel bitmiş görevleri gizler ve kalanları todo etiketinin tarihine göre süzer.
+    // Mobilin görünümleri, masaüstü görev panelinin tarih süzgeçleriyle aynı görevleri listeler:
+    // panel bitmiş görevleri gizler ve kalanları görevin gününe (dueDate) göre süzer (shared/task-views.mjs).
     const lists = buildTaskLists(storeAfter.tasks, { today: TODAY });
     const desktopView = (filter) =>
-        storeAfter.tasks
-            .filter((task) => task.status !== 'done')
-            .filter((task) => matchesPisiTodoFilter({ finishDate: parsePisiTodoTagValue(getPisiTaskTodoTag(task), NOW)?.finishDate ?? null }, filter, NOW))
+        filterPisiTasks(storeAfter.tasks.map(readPisiTask), { dateFilter: filter, today: TODAY })
             .map((task) => task.title)
             .sort();
     const mobileView = (...names) =>
@@ -424,7 +428,8 @@ test('Görevler sekmesi (M6): hızlı eklenen ve detayda düzenlenen görevler m
     assert.deepEqual(mobileView('inbox'), desktopView('undated'));
     assert.deepEqual(mobileView('today', 'week', 'later', 'overdue', 'inbox'), desktopView('all'));
     assert.deepEqual(mobileView('today'), ['Egzersiz', 'Kitap listesi', 'Raporu gönder']);
-    assert.deepEqual(mobileView('week'), ['Sunucu faturasını öde', 'her pazartesi 14:00 haftalık rapor', 'yarın 9.30 diş hekimi']);
+    // The note task moved to 2026-12-01 above, so it is later, not this week.
+    assert.deepEqual(mobileView('week'), ['her pazartesi 14:00 haftalık rapor', 'yarın 9.30 diş hekimi']);
     assert.deepEqual(mobileView('inbox'), ['25.12 yıl sonu raporu', 'Okuma listesini düzenle']);
 });
 
@@ -456,9 +461,13 @@ test('Notlar (M7): editörün yamaları yalnız dokunulan blokları değiştirir
     await project.open();
     await project.index.build();
     // Değişmeyen bir notu açıp kapatmak hiçbir şey yazmaz.
-    const inbox = await project.notes.read('Inbox.node');
-    assert.equal(inbox.blocks.filter((block) => block.editable).length, 0, 'görev blokları salt okunurdur');
-    const noop = await project.notes.updateContent('Inbox.node', [], { expectedContent: inbox.data.content });
+    const diaryKey = 'diary/2026-11-20.node';
+    const diaryNote = await project.notes.read(diaryKey);
+    assert.ok(
+        diaryNote.blocks.some((block) => block.blockType === 'diary-tasks' && !block.editable),
+        'günlüğün görev bölümü salt okunurdur'
+    );
+    const noop = await project.notes.updateContent(diaryKey, [], { expectedContent: diaryNote.data.content });
     assert.equal(noop.changed, false);
 
     // Toplantı Notları: ilk paragraf başlık 2 olur ve kalın yazı alır; Sheet'ten hemen sonra (kimliği yok) bir madde,
@@ -582,7 +591,8 @@ test('Notlar (M7): editörün yamaları yalnız dokunulan blokları değiştirir
  */
 function desktopCalendarMarks(root) {
     const previousWindow = globalThis.window;
-    globalThis.window = { pisiFirstClassTaskState: { tasks: desktopTasks.listPisiFirstClassTasks(root).tasks } };
+    const tasks = desktopTasks.listPisiTasks(root).tasks;
+    globalThis.window = { getPisiTasks: () => tasks };
     try {
         const summary = getCalendarTaskSummaryByDate();
         const days = (keep) =>
@@ -650,7 +660,7 @@ function buildDesktopMap(root) {
     const third = newNote();
     const fourth = newNote();
     const planId = readJson(root, 'Proje Planı.node').pisi.id;
-    const inboxId = readJson(root, 'Inbox.node').pisi.id;
+    const outsideId = readJson(root, 'Toplantı Notları.node').pisi.id;
     assert.equal(
         desktopStructuredNodes.attachPisiMapReference(mapPath, { id: planId, path: 'Proje Planı.node' }, { x: 900, y: 420, width: 220, height: 92 }).ok,
         true
@@ -661,7 +671,7 @@ function buildDesktopMap(root) {
     connect({ sourceId: fourth, targetId: planId, type: 'co-level', sourcePort: 'bottom', targetPort: 'top' });
     connect({ sourceId: planId, targetId: third, type: 'down-hub', sourcePort: 'left', targetPort: 'right', confirmSecondParentAsStream: true });
     assert.equal(desktopRelationships.upsertPisiSemanticRelationship(root, { sourceId: hub, targetId: planId, type: 'co-level' }).ok, true);
-    const outside = desktopRelationships.upsertPisiSemanticRelationship(root, { sourceId: hub, targetId: inboxId, type: 'stream' });
+    const outside = desktopRelationships.upsertPisiSemanticRelationship(root, { sourceId: hub, targetId: outsideId, type: 'stream' });
     assert.equal(desktopMapSemantics.persistPisiRelationshipView(mapPath, outside.relationship, { sourcePort: 'top', targetPort: 'bottom' }).ok, true);
     assert.equal(desktopMaps.saveMapCamera(mapPath, { x: 12, y: 34, zoom: 0.8, collapsedHubs: [`${child}::bottom`] }).ok, true);
     newNote();
@@ -763,7 +773,7 @@ test('boş klasörde mobilin kurduğu yeni proje masaüstü denetiminden temiz �
     assert.deepEqual(fs.readdirSync(root).sort(), ['.pisi', 'diary', 'inv_İlk not__' + readJson(root, 'İlk not.node').pisi.id, 'İlk not.node'].sort());
     assert.equal(fs.readFileSync(path.join(root, 'diary', '.pisi-diary'), 'utf8'), 'Bu klasör PISI diary özelliği tarafından yönetilir.\n');
     assert.deepEqual(issueKeys(desktopAudit(root)), []);
-    assert.equal(desktopTasks.listPisiFirstClassTasks(root).tasks[0].title, 'İlk görev');
+    assert.equal(desktopTasks.listPisiTasks(root).tasks[0].title, 'İlk görev');
     // İkinci açılış var olan projeye dokunmaz.
     const settled = snapshot(root);
     assert.equal((await openMobile(root).open()).created, false);

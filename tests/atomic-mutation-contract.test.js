@@ -68,11 +68,6 @@ test('bulk mutation is bounded and recursive batch command is not allowed', () =
 
 test('all persistent domain mutations join the atomic project queue', () => {
     for (const command of [
-        'task.capture.v1',
-        'task.upsert.v1',
-        'task.update.v1',
-        'task.delete.v1',
-        'task.sync-projection.v1',
         'map.relationship.upsert.v1',
         'map.relationship.delete.v1',
         'map.relationship.reparent.v1',
@@ -112,5 +107,5 @@ test('destructive commands are exposed only through canonical domain IPC after o
         assert.equal(domain.includes(channel), false, channel);
     }
     const main = read('main.mjs');
-    assert.ok(main.indexOf('./main/functions/domain-command-query') > main.indexOf('./main/functions/task-reference-operation-hooks'));
+    assert.ok(main.indexOf('./main/functions/task-domain') > main.indexOf('./main/functions/domain-command-query'));
 });

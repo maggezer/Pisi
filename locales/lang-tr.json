@@ -1244,6 +1244,27 @@
         "Bu cihaz": "Bu cihaz",
         "alan": "alan",
         "masaüstü": "masaüstü",
-        "telefon": "telefon"
+        "telefon": "telefon",
+        "Son açık nota ya da bugünün günlüğüne hızlı görev ekler.": "Son açık nota ya da bugünün günlüğüne hızlı görev ekler.",
+        "Gün": "Gün",
+        "Görev metni boş olamaz.": "Görev metni boş olamaz.",
+        "Açık not": "Açık not",
+        "Bugünün günlüğü": "Bugünün günlüğü",
+        "Hedef": "Hedef",
+        "Görevin notu bulunamadı.": "Görevin notu bulunamadı.",
+        "Bu tamamlama kilitli: görev daha sonra yeniden tamamlandı.": "Bu tamamlama kilitli: görev daha sonra yeniden tamamlandı.",
+        "Görevler okunamadı": "Görevler okunamadı",
+        "Görevler okunamadı; görev deposu salt okunur.": "Görevler okunamadı; görev deposu salt okunur.",
+        "Görev bulunamadı": "Görev bulunamadı",
+        "Başlıksız görev": "Başlıksız görev",
+        "Gecikenler": "Gecikenler",
+        "Görevin yerini aç": "Görevin yerini aç",
+        "Tamamlananları göster": "Tamamlananları göster",
+        "Görevleri görmek için bir proje aç.": "Görevleri görmek için bir proje aç.",
+        "Açık görev yok.": "Açık görev yok.",
+        "Görevi tamamla": "Görevi tamamla",
+        "Bu bağımlılık bir döngü oluşturur.": "Bu bağımlılık bir döngü oluşturur.",
+        "Görev bulunamadı.": "Görev bulunamadı.",
+        "Görev değişikliği kaydedilemedi.": "Görev değişikliği kaydedilemedi."
     }
 }

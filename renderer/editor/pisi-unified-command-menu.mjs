@@ -175,9 +175,7 @@ const PISI_UNIFIED_BLOCK_DESCRIPTIONS = Object.freeze({
     block: 'Blok türünü değiştir',
     image: 'Görsel dosyası seç',
     file: 'Nota dosya ekle',
-    link: 'Web bağlantısı ekle',
-    'todo-start': 'Görev oluştur',
-    'todo-done': 'Görevi tamamla'
+    link: 'Web bağlantısı ekle'
 });
 
 function makePisiUnifiedBlockItems(command) {
@@ -185,14 +183,7 @@ function makePisiUnifiedBlockItems(command) {
     return records
         .map((record) => {
             const id = String(record.slash || record.id || '');
-            const kind =
-                record.action === 'todo'
-                    ? 'todo-start'
-                    : record.action === 'done'
-                      ? 'todo-done'
-                      : PISI_UNIFIED_REQUEST_EVENTS[record.action]
-                        ? record.action
-                        : 'block';
+            const kind = PISI_UNIFIED_REQUEST_EVENTS[record.action] ? record.action : 'block';
             return {
                 kind,
                 id,
@@ -308,17 +299,6 @@ async function runPisiUnifiedCommandItem(editor, command, item) {
             return false;
         }
         return insertPisiLatexTemplate(editor, command, item.template);
-    }
-
-    if (item.kind === 'todo-start') {
-        closePisiUnifiedCommandMenu();
-        window.openPisiTodoPriorityMenu?.(editor, command);
-        return true;
-    }
-
-    if (item.kind === 'todo-done') {
-        closePisiUnifiedCommandMenu();
-        return Boolean(window.applyPisiDoneCommandToEditor?.(editor, command));
     }
 
     if (item.kind === 'block') {

@@ -2,13 +2,13 @@
   "pisi": {
     "version": 1,
     "type": "node",
-    "id": "node_c4af03e9-6a03-4976-a756-7b487021270a",
+    "id": "node_03463558-dc9f-4723-8f16-4a0758f8926e",
     "title": "13-11-2026",
-    "sidecar": "inv_13-11-2026__node_c4af03e9-6a03-4976-a756-7b487021270a",
-    "createdAt": "2026-11-16T10:12:49.358Z",
-    "updatedAt": "2026-11-16T10:12:50.415Z",
+    "sidecar": "inv_13-11-2026__node_03463558-dc9f-4723-8f16-4a0758f8926e",
+    "createdAt": "2026-11-21T09:30:46.922Z",
+    "updatedAt": "2026-11-21T09:30:47.660Z",
     "parentMap": "diary",
     "diaryDate": "2026-11-13"
   },
-  "content": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_4755da74-1df2-4d5e-9303-3ab54c978672\" data-pisi-block-type=\"paragraph\" data-pisi-section-level=\"0\"><br></div><div class=\"pisi-editor-block pisi-diary-task-divider pisi-section-break\" data-pisi-block-type=\"paragraph\" data-pisi-section-break=\"true\" data-pisi-section-exit=\"1\" data-pisi-block-id=\"blk_3d74222b-b019-4496-b915-5f8d4eaa3ead\" data-pisi-section-level=\"0\"><hr></div><h3 class=\"pisi-editor-block\" data-pisi-block-id=\"blk_ebe1acd7-88ca-45a7-8bb0-1d902e936317\" data-pisi-block-type=\"heading3\" data-pisi-section-level=\"3\">Görevler</h3><!--PISI_DIARY_MANAGED_START--><div class=\"pisi-diary-managed-block\" data-pisi-diary-source=\"/tmp/pisi-electron-mobile-fixture-gpopag/project/Inbox.node::task_source_2a8e29877846d7a3::todo.3.13-11-2026\" data-pisi-diary-node-path=\"/tmp/pisi-electron-mobile-fixture-gpopag/project/Inbox.node\" data-pisi-diary-block-id=\"task_source_2a8e29877846d7a3\" data-pisi-diary-status=\"todo\" data-pisi-diary-parent=\"\" data-pisi-task-id=\"task_source_2a8e29877846d7a3\" title=\"Nota git: Inbox\" data-pisi-heading-parent=\"blk_ebe1acd7-88ca-45a7-8bb0-1d902e936317\" data-pisi-section-level=\"3\">\n    <span class=\"pisi-block-task-marker pisi-diary-task-marker\" contenteditable=\"false\" role=\"checkbox\" aria-checked=\"false\" aria-label=\"Görevi tamamla\" data-pisi-task-id=\"task_source_2a8e29877846d7a3\" data-pisi-todo-checkbox=\"todo.3.13-11-2026\" tabindex=\"0\">☐</span>\n    <span class=\"pisi-diary-task-text\">Haftalık özet yaz</span>\n    <span class=\"pisi-diary-managed-meta\" contenteditable=\"false\" title=\"Nota git: Inbox\">· Inbox · Her hafta</span>\n</div><div class=\"pisi-editor-block pisi-diary-task-divider pisi-section-break\" data-pisi-block-type=\"paragraph\" data-pisi-section-break=\"true\" data-pisi-section-exit=\"1\" data-pisi-block-id=\"blk_f7fdd382-ce9e-4c45-b19e-3725545075c6\" data-pisi-section-level=\"0\"><hr>Veri katmanı için notlar aldım.</div><!--PISI_DIARY_MANAGED_END-->"
+  "content": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_d5dd940d-378c-4cf0-9474-e779d35efce0\" data-pisi-block-type=\"paragraph\" data-pisi-section-level=\"0\">Veri katmanı için notlar aldım.</div><div class=\"pisi-editor-block pisi-diary-tasks\" data-pisi-block-id=\"blk_diary-tasks-2026-11-13\" data-pisi-block-type=\"diary-tasks\" contenteditable=\"false\">\n    <div data-pisi-task-ref=\"task_5762773f-2c06-4854-a706-b97163ca8322\"></div>\n</div>"
 }

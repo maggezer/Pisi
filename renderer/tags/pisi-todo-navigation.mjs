@@ -1,10 +1,5 @@
 import { registerModule } from '../core/module-registry.mjs';
-import {
-    getPisiTaskNavigationTaskId,
-    normalizePisiNavigationText,
-    selectPisiTaskNavigationCandidate,
-    shouldRejectMissingPisiCanonicalTask
-} from '../navigation/pisi-navigation-core.mjs';
+import { getPisiTaskNavigationTaskId, normalizePisiNavigationText, selectPisiTaskNavigationCandidate } from '../navigation/pisi-navigation-core.mjs';
 
 let pisiMissionHighlightAnimation = null;
 let pisiMissionHighlightRequest = 0;
@@ -190,30 +185,24 @@ async function highlightPisiEditorBlock(mission) {
     return false;
 }
 
-function getPisiCanonicalTaskForNavigation(input = {}) {
-    const taskId = getPisiTaskNavigationTaskId(input);
-    if (!taskId) return null;
-    const taskStore = window.Pisi?.modules?.['tags.taskStore'];
-    return taskStore?.getPisiFirstClassTask?.(taskId) || null;
-}
-
+// Opens the note of a tag or search result and highlights its block. The
+// target is exact (note path and block id); nothing is guessed across the
+// project and nothing is written (docs/task-plan.md GK3). Tasks open their
+// place through renderer/tasks/pisi-task-actions.mjs.
 function makePisiCanonicalNavigationTarget(input = {}) {
-    const task = getPisiCanonicalTaskForNavigation(input);
-    const source = task?.source || {};
-    const taskId = task?.id || getPisiTaskNavigationTaskId(input);
-
+    const taskId = getPisiTaskNavigationTaskId(input);
     return {
         ...input,
         taskId,
         missionId: taskId || input.missionId,
-        nodePath: source.nodePath || input.nodePath || null,
-        blockId: source.blockId || input.blockId || null,
-        mapPath: source.mapPath || input.mapPath || null,
-        mapTitle: source.mapTitle || input.mapTitle || '',
-        nodeTitle: source.nodeTitle || input.nodeTitle || task?.title || 'Node',
-        todoTag: task?.todoTag || input.todoTag || '',
-        sourceText: task?.title || input.sourceText || input.text || '',
-        title: task?.title || input.title || input.sourceText || input.text || ''
+        nodePath: input.nodePath || null,
+        blockId: input.blockId || null,
+        mapPath: input.mapPath || null,
+        mapTitle: input.mapTitle || '',
+        nodeTitle: input.nodeTitle || 'Node',
+        todoTag: input.todoTag || '',
+        sourceText: input.sourceText || input.text || '',
+        title: input.title || input.sourceText || input.text || ''
     };
 }
 
@@ -241,94 +230,13 @@ async function readPisiNavigationNode(nodePath) {
     return result?.ok ? result : null;
 }
 
-async function recoverPisiTaskNavigationSource(target) {
-    const index = await window.ensurePisiSearchIndex?.();
-    if (!(index?.documents instanceof Map)) return null;
-
-    const candidates = [];
-    for (const documentRecord of index.documents.values()) {
-        const nodePath = documentRecord?.path;
-        if (!nodePath) continue;
-        for (const candidate of getPisiNavigationCandidatesFromHtml(documentRecord.html, nodePath)) {
-            candidates.push({
-                ...candidate,
-                nodeTitle: documentRecord.title || 'Node',
-                nodeItem: documentRecord.nodeItem || null,
-                mapPath: documentRecord.memberships?.[0]?.mapPath || null,
-                mapTitle: documentRecord.memberships?.[0]?.mapTitle || ''
-            });
-        }
-    }
-
-    return (
-        selectPisiTaskNavigationCandidate(candidates, target, {
-            caseInsensitive: window.pisiEnvironment?.platform === 'win32',
-            scope: 'recovery'
-        })?.candidate || null
-    );
-}
-
 async function resolvePisiTaskNavigationSource(input = {}) {
     const target = makePisiCanonicalNavigationTarget(input);
-    let documentResult = await readPisiNavigationNode(target.nodePath);
-    let exact = documentResult ? findPisiExactNavigationCandidateInHtml(documentResult.data?.content || '', target.nodePath, target) : null;
+    const documentResult = await readPisiNavigationNode(target.nodePath);
+    const exact = documentResult ? findPisiExactNavigationCandidateInHtml(documentResult.data?.content || '', target.nodePath, target) : null;
 
-    if (documentResult && exact) {
-        return {
-            ...target,
-            blockId: exact.blockId || target.blockId,
-            documentResult,
-            recovered: false
-        };
-    }
-
-    const recovered = await recoverPisiTaskNavigationSource(target);
-    if (!recovered?.nodePath) {
-        return documentResult ? { ...target, documentResult, recovered: false, exactMissing: true } : null;
-    }
-
-    documentResult = await readPisiNavigationNode(recovered.nodePath);
     if (!documentResult) return null;
-
-    return {
-        ...target,
-        nodePath: recovered.nodePath,
-        blockId: recovered.blockId || target.blockId,
-        mapPath: recovered.mapPath || target.mapPath,
-        mapTitle: recovered.mapTitle || target.mapTitle,
-        nodeTitle: recovered.nodeTitle || target.nodeTitle,
-        nodeItem: recovered.nodeItem || null,
-        documentResult,
-        recovered: true
-    };
-}
-
-async function repairPisiCanonicalTaskSource(target) {
-    const taskId = getPisiTaskNavigationTaskId(target);
-    const task = getPisiCanonicalTaskForNavigation(target);
-    if (!taskId || !task || !window.currentProjectFolder) return;
-
-    const current = task.source || {};
-    const changed =
-        !samePisiPathForTags(current.nodePath, target.nodePath) ||
-        String(current.blockId || '') !== String(target.blockId || '') ||
-        (Boolean(target.mapPath) && !samePisiPathForTags(current.mapPath, target.mapPath));
-    if (!changed) return;
-
-    await window.pisiProject?.quickAddTask?.(window.currentProjectFolder, {
-        op: 'update',
-        taskId,
-        patch: {
-            source: {
-                ...current,
-                nodePath: target.nodePath,
-                blockId: target.blockId || current.blockId || null,
-                mapPath: target.mapPath || current.mapPath || null,
-                nodeTitle: target.nodeTitle || current.nodeTitle || '',
-                mapTitle: target.mapTitle || current.mapTitle || ''
-            }
-        }
-    });
+    return exact ? { ...target, blockId: exact.blockId || target.blockId, documentResult } : { ...target, documentResult, exactMissing: true };
 }
 
 function makePisiNavigationNodeItem(target) {
@@ -372,15 +280,6 @@ function dispatchPisiTaskNavigationComplete(result) {
 async function navigatePisiTaskToSource(input = {}) {
     clearPisiMissionHighlight();
 
-    const canonicalTask = getPisiCanonicalTaskForNavigation(input);
-    if (shouldRejectMissingPisiCanonicalTask(input, canonicalTask)) {
-        return dispatchPisiTaskNavigationComplete({
-            ok: false,
-            code: 'TASK_NOT_FOUND',
-            taskId: getPisiTaskNavigationTaskId(input) || null
-        });
-    }
-
     const target = await resolvePisiTaskNavigationSource(input);
 
     if (!target?.nodePath) {
@@ -422,15 +321,11 @@ async function navigatePisiTaskToSource(input = {}) {
     }
 
     const highlighted = await highlightPisiEditorBlock(target);
-    if (target.recovered) {
-        void repairPisiCanonicalTaskSource(target);
-    }
 
     return dispatchPisiTaskNavigationComplete({
         ok: highlighted,
         exact: highlighted,
         nodeOpened: true,
-        recovered: target.recovered === true,
         code: highlighted ? 'OK' : 'BLOCK_NOT_FOUND',
         taskId: getPisiTaskNavigationTaskId(target) || null,
         nodePath: target.nodePath,

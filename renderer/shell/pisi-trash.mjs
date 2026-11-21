@@ -17,6 +17,7 @@ const PISI_TRASH_TEXT = {
         map: 'Map',
         folder: 'Klasör',
         file: 'Dosya',
+        task: 'Görev',
         references: 'Bağlı kayıtlar',
         confirmDelete: 'Bu öğe kalıcı olarak silinsin mi? Bu işlem geri alınamaz.',
         confirmEmpty: 'Çöp kutusundaki tüm öğeler kalıcı olarak silinsin mi? Bu işlem geri alınamaz.',
@@ -46,6 +47,7 @@ const PISI_TRASH_TEXT = {
         map: 'Map',
         folder: 'Folder',
         file: 'File',
+        task: 'Task',
         references: 'Linked records',
         confirmDelete: 'Delete this item permanently? This action cannot be undone.',
         confirmEmpty: 'Permanently delete every item in Trash? This action cannot be undone.',
@@ -176,7 +178,8 @@ function makePisiTrashItemCard(item, rerender) {
         permanent.disabled = true;
         const result = await commandPisiDomain('trash.restore.v1', {
             projectFolder: window.currentProjectFolder,
-            trashId: item.id
+            trashId: item.id,
+            openPaths: window.getPisiOpenDocumentPaths?.() || []
         });
         if (!result?.ok) {
             restore.disabled = false;
@@ -184,6 +187,7 @@ function makePisiTrashItemCard(item, rerender) {
             renderPisiTrashError(card, result);
             return;
         }
+        await window.applyPisiTaskDeferred?.(result.deferred);
         await refreshPisiTrashProjectTree();
         await rerender();
     });

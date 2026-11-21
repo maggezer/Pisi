@@ -101,6 +101,7 @@ function sanitizePisiEditorHtml(html = '') {
         'data-pisi-block-id',
         'data-pisi-block-type',
         'data-pisi-task-id',
+        'data-pisi-task-ref',
         'data-pisi-todo-checkbox',
         'data-pisi-tag',
         'data-pisi-done-for',
@@ -513,7 +514,7 @@ async function performNodeModalCloseAndSave(node) {
         }
 
         suppressNextFileSystemRefresh(3000);
-        const saveResult = await window.pisiProject?.saveNodeContent?.(nodePath, content);
+        const saveResult = await window.pisiProject?.saveNodeContent?.(nodePath, content, { openPaths: window.getPisiOpenDocumentPaths?.() || [] });
 
         if (!saveResult || !saveResult.ok) {
             pisiNotifyNoteSaveError(saveResult?.error || 'Not kaydedilemedi.', nodePath);
@@ -818,7 +819,7 @@ async function performCurrentCenterNodeEditorSave(node, options = {}) {
         }
 
         suppressNextFileSystemRefresh(3000);
-        const saveResult = await window.pisiProject?.saveNodeContent?.(nodePath, content);
+        const saveResult = await window.pisiProject?.saveNodeContent?.(nodePath, content, { openPaths: window.getPisiOpenDocumentPaths?.() || [] });
 
         if (!saveResult || !saveResult.ok) {
             pisiNotifyNoteSaveError(saveResult?.error || 'Not kaydedilemedi.', nodePath);

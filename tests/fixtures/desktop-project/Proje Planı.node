@@ -2,12 +2,12 @@
   "pisi": {
     "version": 1,
     "type": "node",
-    "id": "node_beceeb5f-9b56-4f9c-b722-cf73876d54c3",
+    "id": "node_96396783-2c65-4fe3-acc1-86e55649274b",
     "title": "Proje Planı",
-    "sidecar": "inv_Proje Planı__node_beceeb5f-9b56-4f9c-b722-cf73876d54c3",
-    "createdAt": "2026-11-16T10:12:48.493Z",
-    "updatedAt": "2026-11-16T10:12:49.201Z",
+    "sidecar": "inv_Proje Planı__node_96396783-2c65-4fe3-acc1-86e55649274b",
+    "createdAt": "2026-11-21T09:30:45.962Z",
+    "updatedAt": "2026-11-21T09:30:46.955Z",
     "parentMap": "none"
   },
-  "content": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_1003b6f0-043b-411c-84df-d9592fc8cd87\" data-pisi-block-type=\"paragraph\" data-pisi-section-level=\"0\">Proje planının ilk paragrafı.</div><div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_ab201cc2-286c-48d4-a61b-abd0bb94d791\" data-pisi-block-type=\"paragraph\" data-pisi-section-level=\"0\">İkinci paragraf: takvim ve kapsam.</div><div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_afb5b30e-dab9-4f66-bd9d-02a925b7210f\" data-pisi-block-type=\"paragraph\" data-pisi-section-level=\"0\">Üçüncü paragraf: riskler.</div>"
+  "content": "<div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_016e658d-93cd-444e-ae51-819c703bd876\" data-pisi-block-type=\"paragraph\" data-pisi-section-level=\"0\">Proje planının ilk paragrafı.</div><div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_b0ec5113-77c6-4366-889a-e4db71f47c2e\" data-pisi-block-type=\"paragraph\" data-pisi-section-level=\"0\">İkinci paragraf: takvim ve kapsam.</div><div class=\"pisi-editor-block\" data-pisi-block-id=\"blk_227d2d39-afb2-4bd2-a7ea-a7d91763fded\" data-pisi-block-type=\"paragraph\" data-pisi-section-level=\"0\">Üçüncü paragraf: riskler.</div><div class=\"pisi-editor-block pisi-task-block\" data-pisi-block-id=\"blk_b68a1d19-7152-49cb-99d9-dd2eed455071\" data-pisi-block-type=\"task\" data-pisi-task-id=\"task_777d976c-fdcd-4244-8744-5886c284291c\" contenteditable=\"false\"></div><div class=\"pisi-editor-block pisi-task-block\" data-pisi-block-id=\"blk_997aaac1-e70a-466f-af90-8eef6e0d57d7\" data-pisi-block-type=\"task\" data-pisi-task-id=\"task_5762773f-2c06-4854-a706-b97163ca8322\" contenteditable=\"false\"></div>"
 }

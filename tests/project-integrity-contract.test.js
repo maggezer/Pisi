@@ -14,6 +14,7 @@ const mainManifest = JSON.parse(read('main/module-manifest.json'));
 const shared = read('main/functions/project-integrity-shared.js');
 const documents = read('main/functions/project-integrity-documents.js');
 const authorities = read('main/functions/project-integrity-authorities.js');
+const tasks = read('main/functions/project-integrity-tasks.js');
 const recovery = read('main/functions/project-integrity-recovery.js');
 const repairs = read('main/functions/project-integrity-repairs.js');
 const domain = read('main/functions/project-integrity-domain.js');
@@ -22,7 +23,7 @@ const preload = read('preload.js');
 const renderer = read('renderer/portability/pisi-project-integrity.mjs');
 const bootstrap = read('renderer/bootstrap.mjs');
 const css = read('styles/58-workspaces-platform.css');
-const auditSources = [service, shared, documents, authorities, recovery].join('\n');
+const auditSources = [service, shared, documents, authorities, tasks, recovery].join('\n');
 
 test('Project Integrity exclusively owns the public audit binding', () => {
     const owners = mainManifest.filter((entry) => entry.bindings.includes('auditPisiProjectIntegrity')).map((entry) => entry.module);
@@ -33,7 +34,7 @@ test('Project Integrity exclusively owns the public audit binding', () => {
 });
 
 test('Project Integrity audits every canonical and recovery authority', () => {
-    assert.match(authorities, /taskStore\.getPisiTaskStorePath/);
+    assert.match(tasks, /getPisiTaskStorePath/);
     assert.match(authorities, /relationshipStore\.getPisiRelationshipStorePath/);
     assert.match(documents, /auditMaps/);
     assert.match(recovery, /auditTrash/);
@@ -47,8 +48,13 @@ test('Project Integrity detects identity reference task and hierarchy corruption
     assert.match(documents, /code: `\$\{type\}-duplicate-id`/);
     for (const code of [
         'task-duplicate-id',
-        'task-source-node-missing',
+        'task-note-missing',
+        'task-block-orphan',
+        'task-homeless',
+        'task-duplicate-reference',
         'task-dependency-missing',
+        'task-dependency-cycle',
+        'diary-task-section-mismatch',
         'relationship-duplicate-id',
         'relationship-endpoint-missing',
         'relationship-semantic-duplicate',
@@ -69,9 +75,7 @@ test('Project Integrity detects identity reference task and hierarchy corruption
 test('ambiguous identity and semantic repairs are never classified as safe', () => {
     for (const action of [
         'resolve-duplicate-id',
-        'recover-task-id',
-        'resolve-duplicate-task-id',
-        'repair-task-source',
+        'recover-task-store',
         'recover-relationship-id',
         'merge-semantic-duplicates',
         'resolve-second-parent',

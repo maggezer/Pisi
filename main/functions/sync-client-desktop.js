@@ -75,9 +75,8 @@ const LOCAL_ONLY_DISCONNECT_CODES = new Set(['DEVICE_REVOKED', 'TOKEN_INVALID', 
 
 const runtime = {
     context: null,
-    // SV13: per project root, tasks whose status a turn changed: { [taskId]: { stale, status } }.
-    taskGuards: new Map(),
-    taskGuardsSaveTimer: null,
+    // tasks.json as it was before the running turn wrote it (null when the turn does not write it).
+    tasksBeforeApply: null,
     running: null,
     queued: null,
     lastTurnAt: 0,
@@ -169,89 +168,63 @@ function getPisiSyncContext() {
     const files = createPisiSyncProjectFiles(projectRoot, {
         run: (operation) => {
             runtime.applying = true;
+            runtime.tasksBeforeApply = null;
             try {
-                return atomicMutation.runPisiAtomicMutation(projectRoot, 'sync.apply.v1', operation);
+                return atomicMutation.runPisiAtomicMutation(projectRoot, 'sync.apply.v1', () => {
+                    const result = operation();
+                    rewritePisiSyncedTaskDiarySections(projectRoot);
+                    return result;
+                });
             } finally {
                 runtime.applying = false;
+                runtime.tasksBeforeApply = null;
             }
         },
         writeFile: (absolute, bytes) => {
-            if (path.relative(projectRoot, absolute).split(path.sep).join('/') === '.pisi/tasks.json') recordPisiSyncTaskGuards(projectRoot, absolute, bytes);
+            if (path.relative(projectRoot, absolute).split(path.sep).join('/') === '.pisi/tasks.json' && runtime.tasksBeforeApply === null) {
+                runtime.tasksBeforeApply = readPisiSyncTaskRecords(absolute);
+            }
             filesystemCore.writeFileAtomic(absolute, bytes, { backup: false });
         },
         beforeWrite: makePisiSyncFaultHook()
     });
     const context = { projectRoot, store, files, http: null, engine: null, serverUrl: null };
     runtime.context = context;
-    void store
-        .readTaskGuards()
-        .then((guards) => {
-            if (!runtime.taskGuards.has(projectRoot)) runtime.taskGuards.set(projectRoot, guards);
-        })
-        .catch(() => undefined);
     return context;
 }
 
-// ---- SV13: the note projection must not take a remote task status back ----------
-// The desktop keeps a task's state in its source note block too (a projection). A
-// turn that brings a new status in tasks.json — the phone completed the task —
-// leaves the block's marker as it was, and the editor or the task panel would
-// later write that old status back. While a guard is set and the canonical
-// status is still the one the turn brought, a projection reporting the old
-// (`stale`) status keeps the canonical one. A third status from the note, or a
-// canonical change made here (task panel), clears the guard. Guards live with
-// the device state (outside the project) and survive restarts.
+// ---- Tasks a turn brought (docs/task-plan.md §3.3, SV13) ------------------------
+// Notes carry task ids only, so there is no projection that could take a remote
+// task change back. When a turn writes tasks.json, the diary sections of the
+// days whose tasks changed are written from the merged records in the same
+// atomic mutation (GV15); a diary with unsaved edits is left to the editor.
 
-function readPisiSyncTaskStatuses(bytes) {
+function readPisiSyncTaskRecords(absolute) {
     try {
-        const tasks = JSON.parse(Buffer.from(bytes).toString('utf8'))?.tasks;
-        return new Map((Array.isArray(tasks) ? tasks : []).filter((task) => task?.id).map((task) => [task.id, task]));
+        const tasks = JSON.parse(fs.readFileSync(absolute, 'utf8'))?.tasks;
+        return Array.isArray(tasks) ? tasks.filter((task) => task && typeof task === 'object') : [];
     } catch {
-        return new Map();
+        return [];
     }
 }
 
-function recordPisiSyncTaskGuards(projectRoot, absolute, bytes) {
-    let previous;
-    try {
-        previous = readPisiSyncTaskStatuses(fs.readFileSync(absolute));
-    } catch {
-        previous = new Map();
-    }
-    const next = readPisiSyncTaskStatuses(bytes);
-    const guards = { ...(runtime.taskGuards.get(projectRoot) || {}) };
-    for (const [id, task] of next) {
-        const before = previous.get(id);
-        if (!before || before.status === task.status || !task.source?.blockId) continue;
-        guards[id] = { stale: guards[id]?.stale ?? before.status, status: task.status };
-    }
-    for (const id of Object.keys(guards)) if (!next.has(id)) delete guards[id];
-    runtime.taskGuards.set(projectRoot, guards);
-    schedulePisiSyncTaskGuardsSave(projectRoot);
-}
-
-function schedulePisiSyncTaskGuardsSave(projectRoot) {
-    clearTimeout(runtime.taskGuardsSaveTimer);
-    runtime.taskGuardsSaveTimer = setTimeout(() => {
-        const context = runtime.context;
-        if (context?.projectRoot !== projectRoot) return;
-        void context.store.writeTaskGuards(runtime.taskGuards.get(projectRoot) || {}).catch(() => undefined);
-    }, 200);
-}
-
-/**
- * The status a task projection write may set (task-store.js, sync-index): the
- * canonical one while the note still shows the status a turn replaced.
- */
-function filterPisiSyncProjectedTaskStatus(projectFolder, taskId, incoming, canonical) {
-    const projectRoot = path.resolve(String(projectFolder || ''));
-    const guards = runtime.taskGuards.get(projectRoot);
-    const guard = guards?.[taskId];
-    if (!guard) return incoming;
-    if (canonical === guard.status && (incoming === guard.stale || incoming === guard.status)) return canonical;
-    delete guards[taskId];
-    schedulePisiSyncTaskGuardsSave(projectRoot);
-    return incoming;
+function rewritePisiSyncedTaskDiarySections(projectRoot) {
+    const before = runtime.tasksBeforeApply;
+    if (before === null) return;
+    const taskStore = modules['main.taskStore'];
+    taskStore.forgetPisiTaskStoreCache(projectRoot);
+    const state = taskStore.readPisiTaskStoreState(projectRoot, { fresh: true });
+    if (state.readOnly) return;
+    const service = modules['main.taskService'];
+    const rewritten = service.rewritePisiDiarySectionsForTaskChange(projectRoot, before, state.tasks, { openPaths: [...runtime.dirty] });
+    const beforeById = new Map(before.map((task) => [task.id, JSON.stringify(task)]));
+    const afterIds = new Set(state.tasks.map((task) => task.id));
+    service.emitPisiTasksChanged(projectRoot, {
+        source: 'sync',
+        changed: state.tasks.filter((task) => beforeById.get(task.id) !== JSON.stringify(task)),
+        removedIds: before.map((task) => task.id).filter((id) => !afterIds.has(id)),
+        deferredDiaryDays: rewritten.context.deferred.diaryDays
+    });
 }
 
 /** Secrets resolved on first use, so a missing safeStorage only fails the sync calls. */
@@ -842,7 +815,6 @@ bindPisiSyncClientIpc();
 startPisiSyncTriggers();
 
 const moduleApi = {
-    filterPisiSyncProjectedTaskStatus,
     getPisiSyncClientStatus,
     requestPisiSyncClientTurn,
     isPisiSyncClientBound

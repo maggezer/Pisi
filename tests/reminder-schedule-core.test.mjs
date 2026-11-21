@@ -18,7 +18,7 @@ import {
 } from '../main/functions/reminder-schedule-core.js';
 
 const local = (y, m, d, h = 0, min = 0) => new Date(y, m - 1, d, h, min).getTime();
-const task = (patch = {}) => ({ id: 'task_abcd1', title: 'Rapor', status: 'todo', source: { nodePath: '/p/Not.node', blockId: 'blk_1' }, ...patch });
+const task = (patch = {}) => ({ id: 'task_abcd1', title: 'Rapor', status: 'todo', noteId: 'node_abc', diaryDate: null, ...patch });
 
 test('explicit reminderAt wins over the relative mode', () => {
     const value = task({ reminderAt: '2026-11-07T14:00', reminderMode: 'day-before', dueDate: '2026-11-20' });
@@ -32,8 +32,8 @@ test('relative modes derive from the due date at the default time', () => {
     assert.equal(getPisiTaskReminderTime(task({ ...base, reminderMode: 'three-days-before' }), { defaultTime: '07:05' }), local(2026, 11, 17, 7, 5));
     // Month boundary.
     assert.equal(getPisiTaskReminderTime(task({ dueDate: '2026-12-01', reminderMode: 'three-days-before' })), local(2026, 11, 28, 9, 0));
-    // A deadline with a time still uses its date.
-    assert.equal(getPisiTaskReminderTime(task({ deadline: '2026-11-20T17:00', reminderMode: 'day-before' })), local(2026, 11, 19, 9, 0));
+    // The task's day is `dueDate` only; an old version 1 `deadline` is not read (docs/task-plan.md GK1).
+    assert.equal(getPisiTaskReminderTime(task({ deadline: '2026-11-20T17:00', reminderMode: 'day-before' })), null);
 });
 
 test('no reminder without a usable time, for finished tasks or for unknown modes', () => {
@@ -87,8 +87,8 @@ test('plan returns past unseen reminders as due, flags missed ones and finds the
             ['task_past1', false]
         ]
     );
-    assert.equal(plan.due[1].nodePath, '/p/Not.node');
-    assert.equal(plan.due[1].blockId, 'blk_1');
+    assert.equal(plan.due[1].noteId, 'node_abc');
+    assert.equal(plan.due[1].diaryDate, null);
     assert.equal(plan.nextAt, local(2026, 11, 6, 13, 0));
 
     // No reminder is skipped for being old.

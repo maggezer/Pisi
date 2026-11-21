@@ -1244,6 +1244,27 @@
         "Bu cihaz": "This device",
         "alan": "field",
         "masaüstü": "desktop",
-        "telefon": "phone"
+        "telefon": "phone",
+        "Son açık nota ya da bugünün günlüğüne hızlı görev ekler.": "Quickly adds a task to the last open note or to today's diary.",
+        "Gün": "Day",
+        "Görev metni boş olamaz.": "The task text cannot be empty.",
+        "Açık not": "Open note",
+        "Bugünün günlüğü": "Today's diary",
+        "Hedef": "Target",
+        "Görevin notu bulunamadı.": "The task's note could not be found.",
+        "Bu tamamlama kilitli: görev daha sonra yeniden tamamlandı.": "This completion is locked: the task was completed again later.",
+        "Görevler okunamadı": "Tasks could not be read",
+        "Görevler okunamadı; görev deposu salt okunur.": "Tasks could not be read; the task store is read-only.",
+        "Görev bulunamadı": "Task not found",
+        "Başlıksız görev": "Untitled task",
+        "Gecikenler": "Overdue",
+        "Görevin yerini aç": "Open the task's place",
+        "Tamamlananları göster": "Show completed",
+        "Görevleri görmek için bir proje aç.": "Open a project to see its tasks.",
+        "Açık görev yok.": "No open tasks.",
+        "Görevi tamamla": "Complete task",
+        "Bu bağımlılık bir döngü oluşturur.": "This dependency would create a loop.",
+        "Görev bulunamadı.": "Task not found.",
+        "Görev değişikliği kaydedilemedi.": "The task change could not be saved."
     }
 }

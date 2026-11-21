@@ -680,42 +680,15 @@
             "getPisiTagsActiveMapNodes",
             "collectPisiDiaryTagNodeItems",
             "extractPisiTagBlocksForNodeItem",
-            "isPisiMissionNodeFileName",
-            "isPisiMissionMapFileName",
-            "makePisiMissionNodeItem",
-            "collectPisiMissionNodeItemsFromFolder",
-            "buildPisiMissionBlockIndex",
             "buildPisiTagBlockIndex",
             "extractPisiTagBlocksFromHtmlDetailed",
-            "extractPisiTagBlocksFromHtml",
-            "persistPisiAssignedBlockIds",
-            "refreshPisiMissionIndex",
-            "bindPisiMissionIndexInvalidation"
+            "extractPisiTagBlocksFromHtml"
         ]
     },
     {
         "module": "tags.panels",
         "path": "renderer/tags/pisi-tag-panels.mjs",
-        "bindings": [
-            "ensurePisiTagsPanelDom",
-            "renderPisiTagsPanel",
-            "parsePisiTodoTag",
-            "formatPisiMissionDate",
-            "getPisiMissionsFromIndex",
-            "escapePisiMissionRegExp",
-            "getPisiMissionDisplayText",
-            "renderPisiMissionsPanel",
-            "normalizePisiBlockText",
-            "createPisiDoneTagElement",
-            "blockHasPisiDoneTag",
-            "blockHasPisiTag",
-            "appendPisiDoneTagToBlock",
-            "removePisiDoneTagFromBlock",
-            "findPisiMissionBlockInContainer",
-            "setPisiMissionCompletionInBlock",
-            "rollbackPisiMissionBlock",
-            "setPisiMissionCompletion"
-        ]
+        "bindings": ["ensurePisiTagsPanelDom", "renderPisiTagsPanel"]
     },
     {
         "module": "tags.todoNavigation",
@@ -726,13 +699,6 @@
         "module": "tags.editor",
         "path": "renderer/tags/pisi-tag-editor.mjs",
         "bindings": [
-            "markPisiMissionDone",
-            "reopenPisiMission",
-            "isPisiTodoCommand",
-            "isPisiDoneCommand",
-            "buildPisiTodoPriorityItems",
-            "openPisiTodoPriorityMenu",
-            "openPisiTodoDateMenu",
             "bindPisiTagControls",
             "bindPisiTagControlsForEditor",
             "collectPisiUserTagsFromEditor",
@@ -751,62 +717,6 @@
             "getSelectionClientRect",
             "pisiEscapeHtml",
             "escapeHtml"
-        ]
-    },
-    {
-        "module": "tags.todoSecondRelease",
-        "path": "renderer/tags/pisi-todo-second-release.mjs",
-        "bindings": [
-            "pisiTodoSecondReleaseState",
-            "makePisiMissionIdSecondRelease",
-            "enhancePisiMissionSecondRelease",
-            "sortPisiMissionsSecondRelease",
-            "matchesPisiMissionStatusFilterSecondRelease",
-            "appendPisiMissionSecondReleaseToolbar",
-            "enhancePisiMissionCardSecondRelease",
-            "setPisiMissionRepeatSecondRelease",
-            "setPisiMissionOrderSecondRelease",
-            "createNextPisiRecurringMissionSecondRelease",
-            "togglePisiMissionCompletionSecondRelease",
-            "persistPisiMissionManualOrderSecondRelease"
-        ]
-    },
-    {
-        "module": "tags.todoFirstRelease",
-        "path": "renderer/tags/pisi-todo-first-release.mjs",
-        "bindings": [
-            "pisiTodoTranslateFirstRelease",
-            "formatPisiMissionDateFirstRelease",
-            "getPisiMissionsFromIndexFirstRelease",
-            "getPisiMissionDisplayTextFirstRelease",
-            "getPisiMissionFilterCountsFirstRelease",
-            "removePisiMissionBadgesFirstRelease",
-            "syncPisiMissionBadgesFirstRelease",
-            "renderPisiMissionsPanelFirstRelease",
-            "createPisiUserTagElement",
-            "getPisiSelectionTextOffset",
-            "capturePisiTodoSelection",
-            "applyPisiTodoSelectionToEditor",
-            "findPisiMissionTodoTagElementFirstRelease",
-            "setPisiMissionStatusInBlockFirstRelease",
-            "savePisiMissionMutationFirstRelease",
-            "setPisiMissionStatusFirstRelease"
-        ]
-    },
-    {
-        "module": "tags.todoBlocks",
-        "path": "renderer/tags/pisi-todo-blocks.mjs",
-        "bindings": [
-            "normalizePisiTodoBlockTag",
-            "getPisiTodoTagFromBlock",
-            "isPisiTodoBlockCompleted",
-            "ensurePisiTodoBlockMarker",
-            "syncPisiTodoBlockMarkers",
-            "setPisiTodoBlockCompletion",
-            "applyPisiTodoTagToEditor",
-            "createPisiTodoBlockCommand",
-            "openPisiTodoPickerForEditor",
-            "applyPisiDoneCommandToEditor"
         ]
     },
     {
@@ -929,6 +839,44 @@
             "renderPisiReminderSettings",
             "initializePisiReminderPanel"
         ]
+    },
+    {
+        "module": "tasks.store",
+        "path": "renderer/tasks/pisi-task-store.mjs",
+        "bindings": [
+            "pisiTaskStoreState",
+            "getPisiTasks",
+            "getPisiTask",
+            "isPisiTaskStoreReadOnly",
+            "isPisiTaskStoreLoaded",
+            "loadPisiTaskStore",
+            "applyPisiTasksChanged"
+        ]
+    },
+    {
+        "module": "tasks.actions",
+        "path": "renderer/tasks/pisi-task-actions.mjs",
+        "bindings": [
+            "getPisiOpenDocumentPaths",
+            "getPisiLastFocusedNote",
+            "resolvePisiNotePath",
+            "applyPisiTaskDeferred",
+            "runPisiTaskCommand",
+            "togglePisiTaskCompletion",
+            "createPisiTaskInTarget",
+            "openPisiTaskLocation",
+            "getPisiTaskToday"
+        ]
+    },
+    {
+        "module": "tasks.block",
+        "path": "renderer/tasks/pisi-task-block.mjs",
+        "bindings": ["renderPisiTaskBlocksIn", "syncPisiDiaryTaskSectionIn", "cleanPisiTaskDrawingsForSave", "refreshPisiOpenTaskDrawings"]
+    },
+    {
+        "module": "tasks.panel",
+        "path": "renderer/tasks/pisi-task-panel.mjs",
+        "bindings": ["pisiTaskPanelState", "renderPisiTaskPanel"]
     },
     {
         "module": "shell.windowShell",

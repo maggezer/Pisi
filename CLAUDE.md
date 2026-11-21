@@ -117,7 +117,7 @@ Görev sistemi [`docs/task-plan.md`](docs/task-plan.md) belgesindeki fazlarla (G
 
 - Hedef: görevin bütün bilgisi `.pisi/tasks.json`'da (sürüm 2) durur. Not yalnız görev kimliğini taşıyan bir blok tutar (`data-pisi-task-id`); her görev bir notta ya da bir günün günlüğünde durur (Inbox yok) ve bitiş gününün günlüğünde (yoksa oluşturulur) altındaki görev bölümünde de görünür. Bu bölüm yalnız kimlik taşır ve görevin günleri değişince yazılır; başlık ya da durum değişikliği hiçbir not dosyasını yazmaz. Panel, takvim, harita, arama, hatırlatma ve mobil görevi bu kayıttan çizer.
 - Geçiş adımı yoktur: eski not işareti (`todo.<öncelik>.<tarih>` etiketi, `data-pisi-todo-*`) ve eski kayıt alanları dönüştürülmez.
-- Plan tamamlanana kadar bu dosyanın başka bölümlerinde anlatılan görev davranışı (yansıtma, `missionIndex`, günlük yönetilen bölümü, not görevinin mobilde salt okunur olması) bugünkü koddur; fazlar ilerledikçe güncellenir. 21-11-2026 incelemesinin bulguları: `docs/task-plan.md` Ek A ve `pisi-error.md` §5h.
+- G2'den beri masaüstünde (`docs/task-plan.md` G2): bütün görev yazmaları ana süreçteki görev servisinden geçer (`main/functions/task-service.js`, sözleşmeler `task-domain.js`: `task.create/update/complete/reopen/move/delete/batch.v1`, sorgu `task.list.v1`). Her komut tek atomik mutation'dır; alan değişikliği hiçbir `.node` okumaz ya da yazmaz; görevin günleri değişince yalnız o günlerin günlük bölümü yazılır (`shared/task-diary.mjs`). Açık not ve günlük (`openPaths`) yazılmaz, `deferred` ile renderer'a döner ve editör kaydeder. Not kaydı (`project:save-node-content`) görev bloklarını karşılaştırır: nottan çıkan görev çöp kutusuna (`task` öğesi) gider, geri gelen kimlik döner. Her yazmadan sonra `pisi:tasks-changed` olayı gelir; renderer deposu `renderer/tasks/pisi-task-store.mjs`'tir (çizim `pisi-task-block.mjs`, işlemler `pisi-task-actions.mjs`, geçici sağ panel listesi `pisi-task-panel.mjs`). Quick Add `task.create.v1`'dir; hedef son açık not, yoksa bugünün günlüğü. Inbox, yansıtma (`missionIndex`, `sync-projection`), eski günlük yönetilen bölümü ve SV13 görev koruması kalktı. Editörden görev oluşturma G3'te, tam panel G4'te, takvim/harita/arama/gezinmenin yeni kurala geçişi G5'te, mobil G8'dedir. Kalan bulgular: `pisi-error.md` §5h.
 
 ## Architecture
 
@@ -153,11 +153,11 @@ Semantic reads and mutations go through one versioned IPC boundary (`docs/domain
 
 `UI → renderer/domain/pisi-domain-client.mjs or preload facade → 'pisi:domain-query' / 'pisi:domain-command' → main/functions/domain-command-query.js dispatcher → domain service → authority store → project storage`
 
-Contracts are named `*.v1` (e.g. `task.upsert.v1`, `map.relationship.upsert.v1`) and unknown names fail closed. Extension domains (trash, integrity, sync, etc.) register their own contracts from their `*-domain.js` / `*-operation-hooks.js` modules. Many `window.pisiProject.*` methods in `preload.js` are convenience facades over the same channels. Do not add parallel storage-shaped IPC paths for semantic data. The remaining direct `ipcMain.handle` channels are mostly in `main/runtime.js`.
+Contracts are named `*.v1` (e.g. `task.create.v1`, `map.relationship.upsert.v1`) and unknown names fail closed. Extension domains (trash, integrity, sync, etc.) register their own contracts from their `*-domain.js` / `*-operation-hooks.js` modules. Many `window.pisiProject.*` methods in `preload.js` are convenience facades over the same channels. Do not add parallel storage-shaped IPC paths for semantic data. The remaining direct `ipcMain.handle` channels are mostly in `main/runtime.js`.
 
 ### Single source of truth (`docs/single-source-of-truth.md`)
 
-- Tasks: `.pisi/tasks.json` is authoritative (`task-store.js`). Task markup inside nodes, diary/calendar views, progress stats and search records are **projections** and must never overwrite canonical state. Full project scans are read-only with respect to authorities.
+- Tasks: `.pisi/tasks.json` (version 2) holds every task field (`task-store.js`, written only by `task-service.js`). A note holds only a task block with the task id; a diary's last block is its task section (ids only), generated from `tasks.json` by `shared/task-diary.mjs` and never read back. Panel, calendar, search and reminders read the records. No task operation scans the project.
 - Relationships: `.pisi/relationships.json` is authoritative project-wide. A `.map` stores only membership, `nodes[].layout` (authoritative per-map x/y/size), camera/collapse state and `relationshipViews` (ports and visual customization only). Legacy `map.edges` is not part of the contract.
 - Node properties/schema: `property-schema-*` modules. Saved views go in `.pisi-views.json`.
 
@@ -169,7 +169,7 @@ Other project-local sidecars: `.pisi-history/<node-id>/` (gzip snapshots, max 50
 
 ### Renderer layout
 
-Feature folders under `renderer/`: `core` (registry, i18n, `window.Pisi.state` shared state, command registry), `shell` (window, tabs, dialogs, command center), `tree` (Explorer), `map`, `editor` (block editor, Sheet/formula, Paint/ink, toolbar, history), `tags` (blocks, tags, todo/task system), `search`, `data` (properties, Bases, structured views, rollups), `calendar`, `productivity` (Quick Add, Turkish natural-date parsing), `portability`, `sync`. Editor behavior specs: `docs/editor-keyboard-rules.md` and `docs/editor-paste-rules.md`.
+Feature folders under `renderer/`: `core` (registry, i18n, `window.Pisi.state` shared state, command registry), `shell` (window, tabs, dialogs, command center), `tree` (Explorer), `map`, `editor` (block editor, Sheet/formula, Paint/ink, toolbar, history), `tags` (blocks, tags; `pisi-todo-navigation.mjs` and `pisi-todo-utils.mjs` remain until G5/G8), `tasks` (task store, editor drawing, actions, interim panel), `search`, `data` (properties, Bases, structured views, rollups), `calendar`, `productivity` (Quick Add, Turkish natural-date parsing), `portability`, `sync`. Editor behavior specs: `docs/editor-keyboard-rules.md` and `docs/editor-paste-rules.md`.
 
 ### CSS
 

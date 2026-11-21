@@ -63,43 +63,18 @@ function invokePisiDomainCommand(name, payload = {}) {
     return ipcRenderer.invoke('pisi:domain-command', name, payload || {});
 }
 
-function invokePisiTaskOperation(projectFolder, payload = {}) {
-    const operation = String(payload?.op || 'add').toLowerCase();
-    if (operation === 'list') {
-        return invokePisiDomainQuery('task.list.v1', { projectFolder });
+// Task changes written by the task service (docs/task-plan.md §3.4, §3.5). Commands
+// and the task list go through pisiDomain (task.*.v1); this only carries the event.
+contextBridge.exposeInMainWorld('pisiTasks', {
+    onChanged: (callback) => {
+        if (typeof callback !== 'function') return () => {};
+        const listener = (_event, payload) => {
+            if (payload && typeof payload === 'object' && Array.isArray(payload.changedIds)) callback(payload);
+        };
+        ipcRenderer.on('pisi:tasks-changed', listener);
+        return () => ipcRenderer.removeListener('pisi:tasks-changed', listener);
     }
-    if (operation === 'upsert') {
-        return invokePisiDomainCommand('task.upsert.v1', {
-            projectFolder,
-            task: payload.task || payload
-        });
-    }
-    if (operation === 'update') {
-        return invokePisiDomainCommand('task.update.v1', {
-            projectFolder,
-            taskId: payload.taskId || payload.id,
-            patch: payload.patch || payload.task || {}
-        });
-    }
-    if (operation === 'delete') {
-        return invokePisiDomainCommand('task.delete.v1', {
-            projectFolder,
-            taskId: payload.taskId || payload.id
-        });
-    }
-    if (operation === 'sync-index') {
-        return invokePisiDomainCommand('task.sync-projection.v1', {
-            projectFolder,
-            complete: payload.complete,
-            pruneMissing: payload.pruneMissing,
-            tasks: payload.tasks
-        });
-    }
-    return invokePisiDomainCommand('task.capture.v1', {
-        projectFolder,
-        task: payload
-    });
-}
+});
 
 // Reminder events from the main-process reminder service (open, complete,
 // pending list changes). Commands go through pisiDomain (reminder.*.v1).
@@ -134,13 +109,11 @@ contextBridge.exposeInMainWorld('pisiProject', {
     createNodeUnderMap: (mapPath) => invokePisiDomainCommand('map.node.create.v1', { mapPath }),
     getOrCreateDiaryNode: (projectFolder, isoDate) => ipcRenderer.invoke('project:get-or-create-diary-node', projectFolder, isoDate),
     listDiaryDates: (projectFolder) => ipcRenderer.invoke('project:list-diary-dates', projectFolder),
-    syncDiaryMissions: (projectFolder, entries) => ipcRenderer.invoke('project:sync-diary-missions', projectFolder, entries),
 
     listMapNodes: (mapPath) => invokePisiDomainQuery('map.projection.v1', { mapPath }),
     getNodePropertyContext: (nodePath, preferredMapPath) => ipcRenderer.invoke('project:get-node-property-context', nodePath, preferredMapPath || null),
     saveMapLayout: (mapPath, nodeLayouts) => invokePisiDomainCommand('map.layout.save.v1', { mapPath, nodes: nodeLayouts }),
-    saveNodeContent: (nodePath, content) => ipcRenderer.invoke('project:save-node-content', nodePath, content),
-    quickAddTask: (projectFolder, payload) => invokePisiTaskOperation(projectFolder, payload),
+    saveNodeContent: (nodePath, content, options) => ipcRenderer.invoke('project:save-node-content', nodePath, content, options || {}),
     saveNodeProperties: (nodePath, properties) => ipcRenderer.invoke('project:save-node-properties', nodePath, properties),
     listSavedViews: (projectFolder) => ipcRenderer.invoke('project:list-saved-views', projectFolder),
     saveView: (projectFolder, view) => ipcRenderer.invoke('project:save-view', projectFolder, view),

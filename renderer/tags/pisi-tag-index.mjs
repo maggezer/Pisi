@@ -1,10 +1,9 @@
 import { registerModule } from '../core/module-registry.mjs';
-import { extractPisiTodoMetadataFromBlock } from './pisi-todo-utils.mjs';
 
-let pisiMissionIndexRefreshSequence = 0;
-let pisiMissionIndexRefreshPromise = null;
-let pisiMissionIndexFileSystemUnsubscribe = null;
-let pisiMissionIndexInvalidationTimer = null;
+// The Tags panel index: blocks with user tags in the active map, the open note
+// and the diaries. Tasks are not read from notes any more (docs/task-plan.md
+// G2): they come from tasks.json through renderer/tasks/pisi-task-store.mjs.
+// The index only reads; it never writes a note (GK4).
 
 function bindPisiBlockIndexControls() {
     const editors = [document.getElementById('node-modal-content'), document.getElementById('center-node-editor-content')].filter(Boolean);
@@ -19,7 +18,6 @@ function bindPisiBlockIndexControls() {
     if (typeof bindPisiTagPickerOutsideClose === 'function') {
         bindPisiTagPickerOutsideClose();
     }
-    bindPisiMissionIndexInvalidation();
     refreshPisiTagsPanelSoon();
 }
 
@@ -57,10 +55,6 @@ function refreshPisiTagsPanelSoon() {
 function resetPisiTagsForProject() {
     clearTimeout(pisiTagsPanelRefreshTimer);
     pisiTagsPanelRefreshTimer = null;
-    pisiMissionIndexRefreshSequence += 1;
-    pisiMissionIndexRefreshPromise = null;
-    clearTimeout(pisiMissionIndexInvalidationTimer);
-    pisiMissionIndexInvalidationTimer = null;
 
     if (PISI_USER_TAG_CACHE instanceof Set) {
         PISI_USER_TAG_CACHE.clear();
@@ -69,17 +63,7 @@ function resetPisiTagsForProject() {
     pisiTagsPanelState = {
         selectedTag: null,
         dropdownOpen: false,
-        index: [],
-        missionIndex: [],
-        missionIndexComplete: false,
-        missionLoading: false,
-        missionError: null,
-        missionLastSyncedAt: null,
-        showCompletedMissions: false,
-        missionFilter: 'all',
-        missionFilterOpen: false,
-        missionStatusFilter: 'all',
-        missionSort: 'smart'
+        index: []
     };
 
     if (typeof closePisiTagMenu === 'function') {
@@ -87,124 +71,6 @@ function resetPisiTagsForProject() {
     }
 
     renderPisiTagsPanel();
-    renderPisiMissionsPanel();
-    if (window.currentProjectFolder) {
-        void refreshPisiMissionIndex({
-            force: true,
-            reason: 'project-change'
-        });
-    }
-}
-
-function dispatchPisiMissionIndexUpdated(detail = {}) {
-    document.dispatchEvent(
-        new CustomEvent('pisi:mission-index-updated', {
-            detail: {
-                count: Array.isArray(pisiTagsPanelState.missionIndex) ? pisiTagsPanelState.missionIndex.length : 0,
-                complete: pisiTagsPanelState.missionIndexComplete === true,
-                loading: pisiTagsPanelState.missionLoading === true,
-                error: pisiTagsPanelState.missionError || null,
-                syncedAt: pisiTagsPanelState.missionLastSyncedAt || null,
-                ...detail
-            }
-        })
-    );
-}
-
-async function refreshPisiMissionIndex(options = {}) {
-    const projectFolder = window.currentProjectFolder;
-
-    if (!projectFolder) {
-        pisiMissionIndexRefreshSequence += 1;
-        pisiTagsPanelState.missionIndex = [];
-        pisiTagsPanelState.missionIndexComplete = false;
-        pisiTagsPanelState.missionLoading = false;
-        pisiTagsPanelState.missionError = null;
-        pisiTagsPanelState.missionLastSyncedAt = null;
-        window.renderPisiMissionsPanel?.();
-        dispatchPisiMissionIndexUpdated({ reason: options.reason || 'no-project' });
-        return { blocks: [], complete: false, errors: ['Aktif proje klasörü yok.'] };
-    }
-
-    if (pisiMissionIndexRefreshPromise && options.force !== true) {
-        return pisiMissionIndexRefreshPromise;
-    }
-
-    const requestId = ++pisiMissionIndexRefreshSequence;
-
-    pisiTagsPanelState.missionLoading = true;
-    pisiTagsPanelState.missionError = null;
-    window.renderPisiMissionsPanel?.();
-    dispatchPisiMissionIndexUpdated({ reason: options.reason || 'refresh-start' });
-
-    const refreshPromise = (async () => {
-        try {
-            const result = await buildPisiMissionBlockIndex();
-            const stale = requestId !== pisiMissionIndexRefreshSequence || projectFolder !== window.currentProjectFolder;
-            if (stale) return { ...result, stale: true };
-
-            pisiTagsPanelState.missionIndex = Array.isArray(result?.blocks) ? result.blocks : [];
-            pisiTagsPanelState.missionIndexComplete = result?.complete === true;
-            pisiTagsPanelState.missionLoading = false;
-            pisiTagsPanelState.missionError =
-                result?.complete === false ? (result?.errors || []).filter(Boolean).join('\n') || 'Görevlerin bir bölümü okunamadı.' : null;
-            pisiTagsPanelState.missionLastSyncedAt = Date.now();
-
-            if (options.syncDiary !== false && pisiTagsPanelState.missionIndexComplete && typeof syncPisiDiaryFromMissionIndex === 'function') {
-                await syncPisiDiaryFromMissionIndex(pisiTagsPanelState.missionIndex, { complete: true });
-            }
-
-            window.renderPisiMissionsPanel?.();
-            dispatchPisiMissionIndexUpdated({
-                reason: options.reason || 'refresh-complete'
-            });
-            return result;
-        } catch (error) {
-            if (requestId !== pisiMissionIndexRefreshSequence || projectFolder !== window.currentProjectFolder) {
-                return { blocks: [], complete: false, stale: true, errors: [] };
-            }
-
-            pisiTagsPanelState.missionLoading = false;
-            pisiTagsPanelState.missionError = error?.message || 'Görevler eşitlenemedi.';
-            window.renderPisiMissionsPanel?.();
-            dispatchPisiMissionIndexUpdated({
-                reason: options.reason || 'refresh-error'
-            });
-            console.error('[PISI] Görev indeksi yenilenemedi:', error);
-            return {
-                blocks: Array.isArray(pisiTagsPanelState.missionIndex) ? pisiTagsPanelState.missionIndex : [],
-                complete: false,
-                errors: [pisiTagsPanelState.missionError]
-            };
-        } finally {
-            if (pisiMissionIndexRefreshPromise === refreshPromise) {
-                pisiMissionIndexRefreshPromise = null;
-            }
-        }
-    })();
-
-    pisiMissionIndexRefreshPromise = refreshPromise;
-    return refreshPromise;
-}
-
-function bindPisiMissionIndexInvalidation() {
-    if (pisiMissionIndexFileSystemUnsubscribe) return;
-    pisiMissionIndexFileSystemUnsubscribe =
-        window.pisiProject?.onFileSystemChanged?.((payload = {}) => {
-            const changedPaths = Array.isArray(payload.changedPaths) ? payload.changedPaths : [];
-            const relevant = changedPaths.some((changedPath) => {
-                return /\.(?:node|map)$/i.test(String(changedPath || ''));
-            });
-            if (changedPaths.length && !relevant) return;
-            clearTimeout(pisiMissionIndexInvalidationTimer);
-            pisiMissionIndexInvalidationTimer = setTimeout(() => {
-                pisiMissionIndexInvalidationTimer = null;
-                void refreshPisiMissionIndex({
-                    force: true,
-                    reason: 'filesystem'
-                });
-            }, 180);
-        }) || null;
 }
 
 async function refreshPisiTagsPanel() {
@@ -212,23 +78,9 @@ async function refreshPisiTagsPanel() {
         const index = await buildPisiTagBlockIndex();
 
         pisiTagsPanelState.index = Array.isArray(index) ? index : [];
-
-        const missionsPageIsActive = document.getElementById('right-tab-missions')?.classList.contains('active');
-
-        if (missionsPageIsActive || !Array.isArray(pisiTagsPanelState.missionIndex)) {
-            await refreshPisiMissionIndex({
-                force: true,
-                reason: 'panel-refresh'
-            });
-        }
-
         renderPisiTagsPanel();
-
-        if (typeof renderPisiMissionsPanel === 'function') {
-            renderPisiMissionsPanel();
-        }
     } catch (error) {
-        console.error('[PISI] Tags/Missions refresh hatası:', error);
+        console.error('[PISI] Etiket paneli yenilenemedi:', error);
     }
 }
 
@@ -371,228 +223,11 @@ async function extractPisiTagBlocksForNodeItem(node) {
         nodeTitle: node.isDiaryNode ? `Günlük · ${nodeTitle}` : nodeTitle
     });
 
-    if (!samePisiPathForTags(activeCenterNode?.path, nodePath) && !samePisiPathForTags(activeModalNode?.path, nodePath)) {
-        await persistPisiAssignedBlockIds({
-            nodePath,
-            detailed,
-            originalHtml: html
-        });
-    }
-
     return detailed.blocks.map((block) => ({
         ...block,
         fileName: node.fileName || node.name || '',
         isDiaryNode: Boolean(node.isDiaryNode)
     }));
-}
-
-function isPisiMissionNodeFileName(fileName = '') {
-    return String(fileName || '')
-        .toLowerCase()
-        .endsWith('.node');
-}
-
-function isPisiMissionMapFileName(fileName = '') {
-    return String(fileName || '')
-        .toLowerCase()
-        .endsWith('.map');
-}
-
-function makePisiMissionNodeItem(item, context = {}) {
-    if (!item?.fullPath) return null;
-
-    return {
-        name: item.name || item.fileName || '',
-        fileName: item.fileName || item.name || '',
-        fullPath: item.fullPath,
-        type: 'file',
-        isDirectory: false,
-        isFile: true,
-        metadata: item.metadata || null,
-        mapPath: context.mapPath || item.mapPath || null,
-        mapTitle: context.mapTitle || item.mapTitle || '',
-        displayName: item.displayName || item.metadata?.title || String(item.fileName || item.name || '').replace(/\.node$/i, '') || 'Node'
-    };
-}
-
-async function collectPisiMissionNodeItemsFromFolder(folderPath, seenPaths = new Set(), scanState = { complete: true, errors: [] }) {
-    const nodes = [];
-
-    if (!folderPath) return nodes;
-
-    const result = await window.pisiProject?.listFolder?.(folderPath);
-
-    if (!result?.ok || !Array.isArray(result.items)) {
-        scanState.complete = false;
-        scanState.errors.push(result?.error || `Klasör listelenemedi: ${folderPath}`);
-        return nodes;
-    }
-
-    for (const item of result.items) {
-        if (item?.isDirectory) {
-            nodes.push(...(await collectPisiMissionNodeItemsFromFolder(item.fullPath, seenPaths, scanState)));
-            continue;
-        }
-
-        if (!item?.isFile || !item.fullPath) continue;
-
-        if (isPisiMissionNodeFileName(item.name || item.fileName)) {
-            const nodeItem = makePisiMissionNodeItem(item);
-            const normalizedNodePath = normalizeClientPathForTags(nodeItem?.fullPath);
-
-            if (nodeItem && !seenPaths.has(normalizedNodePath)) {
-                seenPaths.add(normalizedNodePath);
-                nodes.push(nodeItem);
-            }
-
-            continue;
-        }
-
-        if (isPisiMissionMapFileName(item.name || item.fileName)) {
-            const mapNodesResult = await window.pisiProject?.listMapNodes?.(item.fullPath);
-
-            const mapNodes = Array.isArray(mapNodesResult?.nodes) ? mapNodesResult.nodes : [];
-
-            if (!mapNodesResult?.ok) {
-                scanState.complete = false;
-                scanState.errors.push(mapNodesResult?.error || `Map node listesi okunamadı: ${item.fullPath}`);
-            }
-
-            const mapTitle = item.metadata?.title || item.displayName || String(item.fileName || item.name || '').replace(/\.map$/i, '') || 'Map';
-
-            for (const mapNode of mapNodes) {
-                const nodeItem = makePisiMissionNodeItem(mapNode, {
-                    mapPath: item.fullPath,
-                    mapTitle
-                });
-                const normalizedNodePath = normalizeClientPathForTags(nodeItem?.fullPath);
-
-                if (nodeItem && !seenPaths.has(normalizedNodePath)) {
-                    seenPaths.add(normalizedNodePath);
-                    nodes.push(nodeItem);
-                } else if (nodeItem) {
-                    const existing = nodes.find((candidate) => {
-                        return normalizeClientPathForTags(candidate?.fullPath) === normalizedNodePath;
-                    });
-                    if (existing) {
-                        existing.mapPath = nodeItem.mapPath;
-                        existing.mapTitle = nodeItem.mapTitle;
-                    }
-                }
-            }
-        }
-    }
-
-    return nodes;
-}
-
-async function buildPisiMissionBlockIndex() {
-    const results = [];
-    const projectFolder = window.currentProjectFolder;
-    const scanState = {
-        complete: true,
-        errors: []
-    };
-
-    if (!projectFolder) {
-        return {
-            blocks: results,
-            complete: false,
-            errors: ['Aktif proje klasörü yok.']
-        };
-    }
-
-    const seenPaths = new Set();
-    const nodeItems = await collectPisiMissionNodeItemsFromFolder(projectFolder, seenPaths, scanState);
-    const diaryNodeItems = await collectPisiDiaryTagNodeItems(scanState);
-
-    for (const diaryNode of diaryNodeItems) {
-        const normalizedDiaryPath = normalizeClientPathForTags(diaryNode?.fullPath);
-
-        if (!normalizedDiaryPath || seenPaths.has(normalizedDiaryPath)) {
-            continue;
-        }
-
-        seenPaths.add(normalizedDiaryPath);
-        nodeItems.push(diaryNode);
-    }
-
-    for (const node of nodeItems) {
-        const nodePath = node.fullPath;
-
-        if (!nodePath) continue;
-
-        if (samePisiPathForTags(activeCenterNode?.path, nodePath)) {
-            const editor = document.getElementById('center-node-editor-content');
-
-            ensurePisiEditorBlocks(editor);
-
-            results.push(
-                ...extractPisiTagBlocksFromHtml({
-                    html: editor?.innerHTML || '',
-                    nodePath,
-                    mapPath: node.mapPath || null,
-                    mapTitle: node.mapTitle || '',
-                    nodeTitle: activeCenterNode.metadata?.title || node.metadata?.title || node.displayName || node.fileName || node.name || 'Node'
-                })
-            );
-
-            continue;
-        }
-
-        if (samePisiPathForTags(activeModalNode?.path, nodePath)) {
-            const editor = document.getElementById('node-modal-content');
-
-            ensurePisiEditorBlocks(editor);
-
-            results.push(
-                ...extractPisiTagBlocksFromHtml({
-                    html: editor?.innerHTML || '',
-                    nodePath,
-                    mapPath: node.mapPath || null,
-                    mapTitle: node.mapTitle || '',
-                    nodeTitle: activeModalNode.metadata?.title || node.metadata?.title || node.displayName || node.fileName || node.name || 'Node'
-                })
-            );
-
-            continue;
-        }
-
-        const doc = await window.pisiProject?.getPisiDocument?.(nodePath);
-
-        if (!doc?.ok) {
-            scanState.complete = false;
-            scanState.errors.push(doc?.error || `Node okunamadı: ${nodePath}`);
-            continue;
-        }
-
-        const originalHtml = doc.data?.content || '';
-        const detailed = extractPisiTagBlocksFromHtmlDetailed({
-            html: originalHtml,
-            nodePath,
-            mapPath: node.mapPath || null,
-            mapTitle: node.mapTitle || '',
-            nodeTitle: doc.metadata?.title || node.metadata?.title || node.displayName || node.fileName || node.name || 'Node'
-        });
-
-        results.push(...detailed.blocks);
-        const idsPersisted = await persistPisiAssignedBlockIds({
-            nodePath,
-            detailed,
-            originalHtml
-        });
-
-        if (!idsPersisted) {
-            scanState.complete = false;
-            scanState.errors.push(`Block kimlikleri kaydedilemedi: ${nodePath}`);
-        }
-    }
-
-    return {
-        blocks: results,
-        complete: scanState.complete,
-        errors: scanState.errors
-    };
 }
 
 async function buildPisiTagBlockIndex() {
@@ -657,22 +292,7 @@ function extractPisiTagBlocksFromHtmlDetailed({ html, nodePath, nodeTitle, mapPa
 
         decoratePisiEditorBlock(block);
 
-        const tagElements = Array.from(block.querySelectorAll('.pisi-user-tag[data-pisi-tag]'));
         const tags = Array.from(new Set(extractPisiTagsFromBlock(block)));
-        const doneTagElements = tagElements;
-        const { todoStates, todoSources, todoParents, todoRepeats, todoOrders, todoCompletionOffsets } = extractPisiTodoMetadataFromBlock(
-            block,
-            normalizePisiUserTag
-        );
-        const doneFor = doneTagElements
-            .filter((tagEl) => {
-                return normalizePisiUserTag(tagEl.dataset.pisiTag || tagEl.textContent || '') === 'done' && Boolean(tagEl.dataset.pisiDoneFor);
-            })
-            .map((tagEl) => {
-                return normalizePisiUserTag(tagEl.dataset.pisiDoneFor || '');
-            })
-            .filter(Boolean);
-
         if (!tags.length) continue;
 
         const text = block.textContent.replace(/\s+/g, ' ').trim();
@@ -684,13 +304,6 @@ function extractPisiTagBlocksFromHtmlDetailed({ html, nodePath, nodeTitle, mapPa
             mapPath,
             mapTitle,
             tags,
-            todoStates,
-            todoSources,
-            todoParents,
-            todoRepeats,
-            todoOrders,
-            todoCompletionOffsets,
-            doneFor: Array.from(new Set(doneFor)),
             text,
             html: sanitizePisiEditorHtml(block.outerHTML)
         });
@@ -705,30 +318,6 @@ function extractPisiTagBlocksFromHtmlDetailed({ html, nodePath, nodeTitle, mapPa
 
 function extractPisiTagBlocksFromHtml(options) {
     return extractPisiTagBlocksFromHtmlDetailed(options).blocks;
-}
-
-async function persistPisiAssignedBlockIds({ nodePath, detailed, originalHtml }) {
-    if (!detailed?.assignedMissingBlockId || !nodePath) {
-        return true;
-    }
-
-    if (samePisiPathForTags(activeCenterNode?.path, nodePath) || samePisiPathForTags(activeModalNode?.path, nodePath)) {
-        return true;
-    }
-
-    const normalizedOriginal = String(originalHtml || '');
-    if (detailed.html === normalizedOriginal) {
-        return true;
-    }
-
-    const result = await window.pisiProject?.saveNodeContent?.(nodePath, detailed.html);
-
-    if (!result?.ok) {
-        console.warn(`[PISI] Block kimlikleri kalıcılaştırılamadı (${nodePath}):`, result?.error || 'Bilinmeyen kayıt hatası');
-        return false;
-    }
-
-    return true;
 }
 
 const moduleApi = {};
@@ -769,18 +358,6 @@ Object.defineProperties(moduleApi, {
             return refreshPisiTagsPanel;
         }
     },
-    refreshPisiMissionIndex: {
-        enumerable: true,
-        get() {
-            return refreshPisiMissionIndex;
-        }
-    },
-    bindPisiMissionIndexInvalidation: {
-        enumerable: true,
-        get() {
-            return bindPisiMissionIndexInvalidation;
-        }
-    },
     normalizeClientPathForTags: {
         enumerable: true,
         get() {
@@ -817,36 +394,6 @@ Object.defineProperties(moduleApi, {
             return extractPisiTagBlocksForNodeItem;
         }
     },
-    isPisiMissionNodeFileName: {
-        enumerable: true,
-        get() {
-            return isPisiMissionNodeFileName;
-        }
-    },
-    isPisiMissionMapFileName: {
-        enumerable: true,
-        get() {
-            return isPisiMissionMapFileName;
-        }
-    },
-    makePisiMissionNodeItem: {
-        enumerable: true,
-        get() {
-            return makePisiMissionNodeItem;
-        }
-    },
-    collectPisiMissionNodeItemsFromFolder: {
-        enumerable: true,
-        get() {
-            return collectPisiMissionNodeItemsFromFolder;
-        }
-    },
-    buildPisiMissionBlockIndex: {
-        enumerable: true,
-        get() {
-            return buildPisiMissionBlockIndex;
-        }
-    },
     buildPisiTagBlockIndex: {
         enumerable: true,
         get() {
@@ -863,12 +410,6 @@ Object.defineProperties(moduleApi, {
         enumerable: true,
         get() {
             return extractPisiTagBlocksFromHtml;
-        }
-    },
-    persistPisiAssignedBlockIds: {
-        enumerable: true,
-        get() {
-            return persistPisiAssignedBlockIds;
         }
     }
 });

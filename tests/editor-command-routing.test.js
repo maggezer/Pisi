@@ -101,9 +101,7 @@ global.window = {
         { id: 'paragraph', label: 'Paragraf', slash: 'paragraph', action: 'block' },
         { id: 'heading1', label: 'Başlık 1', slash: 'heading1', action: 'block' },
         { id: 'bullet', label: 'Madde', slash: 'bullet', action: 'block' },
-        { id: 'number', label: 'Numara', slash: 'number', action: 'block' },
-        { id: 'task', label: 'Görev', slash: 'todo', action: 'todo' },
-        { id: 'done', label: 'Tamamlandı', slash: 'done', action: 'done' }
+        { id: 'number', label: 'Numara', slash: 'number', action: 'block' }
     ]
 };
 global.document = {
@@ -226,7 +224,7 @@ test('hash-tag menu creates tags only from # tokens', async () => {
     assert.deepEqual(routing.buildPisiHashTagItems({ trigger: '..', body: 'project' }), []);
 });
 
-test('/ and .. build one command menu with formatting, lists, todo/done and LaTeX but no tags', async () => {
+test('/ and .. build one command menu with formatting, lists and LaTeX but no tags or task commands', async () => {
     const { preferences, routing } = await loadModules();
     localStorage.clear();
     preferences.setPisiDoubleDotCommandsPreference(true);
@@ -239,8 +237,8 @@ test('/ and .. build one command menu with formatting, lists, todo/done and LaTe
 
         assert.ok(kinds.includes('format'));
         assert.ok(kinds.includes('block'));
-        assert.ok(kinds.includes('todo-start'));
-        assert.ok(kinds.includes('todo-done'));
+        assert.ok(!kinds.includes('todo-start'));
+        assert.ok(!kinds.includes('todo-done'));
         assert.ok(kinds.includes('latex'));
         assert.ok(!kinds.includes('user'));
         assert.ok(!kinds.includes('new-user'));
@@ -249,8 +247,8 @@ test('/ and .. build one command menu with formatting, lists, todo/done and LaTe
         assert.ok(ids.has('italic'));
         assert.ok(ids.has('bullet'));
         assert.ok(ids.has('number'));
-        assert.ok(ids.has('todo'));
-        assert.ok(ids.has('done'));
+        assert.ok(!ids.has('todo'));
+        assert.ok(!ids.has('done'));
         assert.ok(ids.has('frac'));
 
         assert.equal(items.find((item) => item.id === 'bullet')?.category, 'Formatting · Lists');

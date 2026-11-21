@@ -187,36 +187,6 @@ test('layout ve kamera sayıları güvenli aralıklara sıkıştırılır', () =
     );
 });
 
-test('diary temizleyicisi çalıştırılabilir HTML özelliklerini kaldırır', () => {
-    const api = loadMainHelpers(['sanitizePisiDiaryBlockHtml'], ['sanitizePisiDiaryBlockHtml']);
-    const sanitized = api.sanitizePisiDiaryBlockHtml(`
-        <div onclick="steal()" style="color:red">
-            güvenli
-            <a href="javascript:steal()">bağlantı</a>
-            <img src="data:image/png;base64,AAAA" onerror=steal()>
-            <script>steal()</script>
-            <iframe src="https://example.com">içerik</iframe>
-        </div>
-    `);
-
-    assert.doesNotMatch(sanitized, /onclick|onerror|javascript:|script|iframe/i);
-    assert.match(sanitized, /güvenli/);
-    assert.match(sanitized, /data:image\/png;base64,AAAA/);
-});
-
-test('diary managed alanı çıkarılırken manuel boşluklar korunur', () => {
-    const api = loadMainHelpers(['stripPisiDiaryManagedSection'], ['stripPisiDiaryManagedSection']);
-    const content = [
-        '  manuel başlangıç\n',
-        '<!--PISI_DIARY_MANAGED_START-->',
-        '<div>otomatik görev</div>',
-        '<!--PISI_DIARY_MANAGED_END-->',
-        '\nmanuel son  '
-    ].join('');
-
-    assert.equal(api.stripPisiDiaryManagedSection(content), '  manuel başlangıç\n\nmanuel son  ');
-});
-
 test('normal kullanıcı diary klasörü marker eklenmeden korunur', (t) => {
     const projectFolder = fs.mkdtempSync(path.join(os.tmpdir(), 'pisi-diary-guard-'));
     const diaryFolder = path.join(projectFolder, 'diary');

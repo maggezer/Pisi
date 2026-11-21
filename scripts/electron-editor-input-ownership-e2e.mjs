@@ -108,25 +108,15 @@ export async function testEditorInputOwnership(cdp) {
     await key('z', 2);
     assert.equal(await text(), 'prefix', 'one undo must remove the committed IME text');
 
+    // Old task markup (a `todo.*` tag in a paragraph) is not a task any more (docs/task-plan.md §3.2.1):
+    // the editor draws no checkbox for it. Task blocks come from the task store (G2, G3).
     await setup(
         '<div data-pisi-block-type="task"><span class="pisi-user-tag pisi-task-metadata" data-pisi-tag="todo.1.none" contenteditable="false">todo.1.none</span><span class="pisi-todo-source" data-pisi-todo-for="todo.1.none">task</span></div>'
     );
-    const toggle = await cdp.evaluate(`(() => {
+    const oldMarkup = await cdp.evaluate(`(() => {
         const editor = document.getElementById('center-node-editor-content');
-        const marker = editor.querySelector('.pisi-block-task-marker');
-        if (!marker) return { marker: false };
-        let inputs = 0; const count = () => inputs++; editor.addEventListener('input', count);
-        const checked = marker.getAttribute('aria-checked');
-        marker.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', isComposing: true, bubbles: true, cancelable: true }));
-        const compositionIgnored = checked === marker.getAttribute('aria-checked') && inputs === 0;
-        marker.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
-        editor.removeEventListener('input', count);
-        return { marker: true, compositionIgnored, toggled: checked !== marker.getAttribute('aria-checked'), inputs, blocks: editor.children.length };
+        return { marker: Boolean(editor.querySelector('.pisi-block-task-marker, [data-pisi-task-check]')), text: editor.textContent.includes('task') };
     })()`);
-    assert.deepEqual(
-        toggle,
-        { marker: true, compositionIgnored: true, toggled: true, inputs: 1, blocks: 1 },
-        'task toggle must run once and must not split the task'
-    );
-    console.log('EDITOR_INPUT_OWNERSHIP_E2E_OK: menu/list/plain Tab, cancellation, nested controls, IME and task toggle');
+    assert.deepEqual(oldMarkup, { marker: false, text: true }, 'old task markup stays plain content');
+    console.log('EDITOR_INPUT_OWNERSHIP_E2E_OK: menu/list/plain Tab, cancellation, nested controls, IME and old task markup');
 }

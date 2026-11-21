@@ -27,6 +27,7 @@ function makeHarness({ tasks = [], platform = 'linux', start = new Date(2026, 10
     const files = { state: stateFile, writes: 0 };
     const sent = [];
     const windowCalls = [];
+    const completed = [];
     const powerMonitor = new EventEmitter();
     const deps = {
         Notification: FakeNotification,
@@ -43,6 +44,11 @@ function makeHarness({ tasks = [], platform = 'linux', start = new Date(2026, 10
         },
         getProjectFolder: () => '/project',
         readTasks: () => tasks,
+        // The task service completes (task.complete.v1); no note is written.
+        completeTask: (projectFolder, taskId) => {
+            completed.push({ projectFolder, taskId });
+            return { ok: true };
+        },
         readState: () => {
             if (files.state === undefined) return { ok: false, missing: true };
             if (files.state === 'corrupt') return { ok: false, error: 'Unexpected token' };
@@ -69,7 +75,7 @@ function makeHarness({ tasks = [], platform = 'linux', start = new Date(2026, 10
             }
         }
     };
-    return { service, shown, clock, files, sent, windowCalls, powerMonitor, advance, tasks };
+    return { service, shown, clock, files, sent, windowCalls, completed, powerMonitor, advance, tasks };
 }
 
 const at = (h, m, d = 6) => `2026-11-${String(d).padStart(2, '0')}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
@@ -78,7 +84,8 @@ const task = (id, reminderAt, extra = {}) => ({
     title: `Görev ${id}`,
     status: 'todo',
     reminderAt,
-    source: { nodePath: `/project/${id}.node`, blockId: `blk_${id}` },
+    noteId: `node_${id}`,
+    diaryDate: null,
     ...extra
 });
 
@@ -108,10 +115,7 @@ test('clicking the notification brings the window forward and opens the task sou
     assert.equal(h.shown.length, 1);
     h.shown[0].emit('click');
     assert.deepEqual(h.windowCalls, ['show']);
-    assert.deepEqual(
-        { ...h.sent.at(-1), key: undefined },
-        { type: 'open', key: undefined, taskId: 'task_two02', nodePath: '/project/task_two02.node', blockId: 'blk_task_two02' }
-    );
+    assert.deepEqual({ ...h.sent.at(-1), key: undefined }, { type: 'open', key: undefined, taskId: 'task_two02', noteId: 'node_task_two02', diaryDate: null });
 });
 
 test('task changes re-plan the single timer', () => {
@@ -163,7 +167,7 @@ test('reminders missed while Pisi was closed produce one summary notification an
     assert.equal(fresh.shown[0].options.body, 'Görev task_new01');
 });
 
-test('snooze from a macOS notification action fires again ten minutes later; complete goes to the renderer', () => {
+test('snooze from a macOS notification action fires again ten minutes later; complete runs the task service', async () => {
     const h = makeHarness({
         platform: 'darwin',
         start: new Date(2026, 10, 6, 11, 50).getTime(),
@@ -190,7 +194,8 @@ test('snooze from a macOS notification action fires again ten minutes later; com
 
     const seven = h.shown.find((item) => item.options.body === 'Görev task_sev07');
     seven.emit('action', {}, 1);
-    assert.ok(h.sent.some((payload) => payload.type === 'complete' && payload.taskId === 'task_sev07'));
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.deepEqual(h.completed, [{ projectFolder: '/project', taskId: 'task_sev07' }]);
     assert.equal(
         h.service.listPending().entries.some((entry) => entry.taskId === 'task_sev07'),
         false

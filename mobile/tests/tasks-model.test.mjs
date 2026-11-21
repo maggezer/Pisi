@@ -1,7 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { getPisiTaskTodoTag, matchesPisiTodoFilter, parsePisiTodoTagValue } from '../../shared/task-views.mjs';
+import { readPisiTask } from '../../shared/task-model.mjs';
+import { filterPisiTasks } from '../../shared/task-views.mjs';
 import { parseTaskDraft } from '../src/screens/pisi/day-model.mjs';
 import {
     getEditableTaskFields,
@@ -19,13 +20,11 @@ const titles = (entries) => entries.map((entry) => entry.task.title);
 
 /**
  * The desktop's lists for the same tasks: the task panel hides finished tasks
- * and filters the rest with matchesPisiTodoFilter on the date of the todo tag
- * (renderer/tags/pisi-todo-third-query.mjs, getPisiThirdVisibleMissions).
+ * and puts the rest in buckets by their due day (shared/task-views.mjs,
+ * filterPisiTasks over the version 2 records the task service reads).
  */
-function desktopList(tasks, filter, now) {
-    return tasks
-        .filter((task) => task.status !== 'done')
-        .filter((task) => matchesPisiTodoFilter({ finishDate: parsePisiTodoTagValue(getPisiTaskTodoTag(task), now)?.finishDate ?? null }, filter, now))
+function desktopList(tasks, filter) {
+    return filterPisiTasks(tasks.map(readPisiTask), { dateFilter: filter, today: TODAY })
         .map((task) => task.title)
         .sort();
 }
@@ -37,12 +36,13 @@ describe('Görevler: görünüm modeli', () => {
         const lists = buildTaskLists(tasks, { today: TODAY });
         const sorted = (entries) => titles(entries).sort();
 
-        expect(sorted(lists.today)).toEqual(desktopList(tasks, 'today', NOW));
-        expect(sorted(lists.week)).toEqual(desktopList(tasks, 'upcoming', NOW));
-        expect(sorted(lists.overdue)).toEqual(desktopList(tasks, 'overdue', NOW));
-        expect(sorted(lists.inbox)).toEqual(desktopList(tasks, 'undated', NOW));
+        expect(sorted(lists.today)).toEqual(desktopList(tasks, 'today'));
+        expect(sorted(lists.week)).toEqual(desktopList(tasks, 'upcoming'));
+        expect(sorted(lists.overdue)).toEqual(desktopList(tasks, 'overdue'));
+        expect(sorted(lists.inbox)).toEqual(desktopList(tasks, 'undated'));
         // Listeler boş değil: karşılaştırma gerçekten bir şey sınıyor.
-        expect(titles(lists.today)).toEqual(['Raporu gönder', 'Egzersiz']);
+        // Sürüm 2 görevin saati yok (§3.1): bugün listesi önceliğe göre sıralanır.
+        expect(titles(lists.today)).toEqual(['Egzersiz', 'Raporu gönder']);
         expect(titles(lists.week)).toEqual(['Sunucu faturasını öde']);
         expect(titles(lists.overdue)).toEqual(['Haftalık özet yaz']);
         expect(titles(lists.inbox)).toEqual(['Okuma listesini düzenle']);
@@ -87,11 +87,11 @@ describe('Görevler: görünüm modeli', () => {
             ['overdue', 'overdue'],
             ['inbox', 'undated']
         ]) {
-            expect(sorted(lists[list]), filter).toEqual(desktopList(tasks, filter, NOW));
+            expect(sorted(lists[list]), filter).toEqual(desktopList(tasks, filter));
         }
         // "Tümü" masaüstünde açık görevlerin hepsidir; mobilde açık görevler beş listeye eksiksiz dağılır.
         expect([...lists.today, ...lists.week, ...lists.later, ...lists.overdue, ...lists.inbox].map((entry) => entry.task.title).sort()).toEqual(
-            desktopList(tasks, 'all', NOW)
+            desktopList(tasks, 'all')
         );
     });
 

@@ -2,22 +2,18 @@ import { ipcMain } from '../electron-bridge.js';
 import { modules, registerMainModule } from '../module-registry.js';
 
 const electronIpc = modules['main.electronIpc'];
-const taskCapture = modules['main.taskCapture'];
-const taskStore = modules['main.taskStore'];
 const mapStore = modules['main.mapStore'];
 const documentStore = modules['main.documentStore'];
 const structuredNodes = modules['main.structuredNodes'];
 const mapOperationalStore = modules['main.mapOperationalStore'];
 const mapSemanticOperations = modules['main.mapSemanticOperationHooks'];
 const projectOperations = modules['main.projectOperations'];
-const taskReferenceHooks = modules['main.taskReferenceOperationHooks'];
 const atomicMutation = modules['main.atomicMutation'];
 
 const PISI_DOMAIN_CONTRACT_VERSION = 1;
 const pisiDomainQueries = new Map();
 const pisiDomainCommands = new Map();
 const PISI_ATOMIC_DOMAIN_COMMANDS = new Set([
-    'task.capture.v1',
     'map.relationship.upsert.v1',
     'map.relationship.delete.v1',
     'map.relationship.reparent.v1',
@@ -29,9 +25,11 @@ const PISI_ATOMIC_DOMAIN_COMMANDS = new Set([
     'project.batch.v1'
 ]);
 const PISI_BATCH_MUTATION_COMMANDS = new Set([
-    'task.capture.v1',
-    'task.upsert.v1',
+    'task.create.v1',
     'task.update.v1',
+    'task.complete.v1',
+    'task.reopen.v1',
+    'task.move.v1',
     'task.delete.v1',
     'map.relationship.upsert.v1',
     'map.relationship.delete.v1',
@@ -199,51 +197,7 @@ function assertPisiDomainDocumentPath(filePath) {
     });
 }
 
-function assertPisiDomainNodePath(nodePath) {
-    return electronIpc.assertProjectPath(nodePath, {
-        type: 'file',
-        extensions: ['.node']
-    });
-}
-
-function normalizePisiDomainTaskPayload(payload = {}) {
-    const safeProjectFolder = assertPisiDomainProjectRoot(payload.projectFolder);
-    const task = { ...(payload.task || payload.payload || {}) };
-    if (task.nodePath) task.nodePath = assertPisiDomainNodePath(task.nodePath);
-    if (task.source?.nodePath) {
-        task.source = {
-            ...task.source,
-            nodePath: assertPisiDomainNodePath(task.source.nodePath)
-        };
-    }
-    if (task.mapPath) task.mapPath = assertPisiDomainMapPath(task.mapPath);
-    if (task.source?.mapPath) {
-        task.source = {
-            ...task.source,
-            mapPath: assertPisiDomainMapPath(task.source.mapPath)
-        };
-    }
-    return { safeProjectFolder, task };
-}
-
-function attachRequiredPisiTaskReferenceRewrite(result) {
-    const withReferences = taskReferenceHooks.attachPisiTaskReferenceRewrite(result);
-    if (withReferences?.ok && withReferences.taskReferences?.ok === false) {
-        return {
-            ...withReferences,
-            ok: false,
-            code: 'TASK_REFERENCE_REWRITE_FAILED',
-            error: withReferences.taskReferences.error || 'Task source referansları güncellenemedi.'
-        };
-    }
-    return withReferences;
-}
-
 function installPisiDomainContracts() {
-    registerPisiDomainQuery('task.list.v1', (payload) => {
-        return taskStore.listPisiFirstClassTasks(assertPisiDomainProjectRoot(payload.projectFolder));
-    });
-
     registerPisiDomainQuery('document.read.v1', (payload) => {
         return mapStore.getPisiDocument(assertPisiDomainDocumentPath(payload.filePath), { hydrateEditorAssets: true });
     });
@@ -279,34 +233,6 @@ function installPisiDomainContracts() {
             type: 'directory'
         });
         return projectOperations.safeListFolder(safeFolderPath);
-    });
-
-    registerPisiDomainCommand('task.capture.v1', (payload) => {
-        const { safeProjectFolder, task } = normalizePisiDomainTaskPayload(payload);
-        return taskCapture.quickAddPisiTask(safeProjectFolder, task);
-    });
-
-    registerPisiDomainCommand('task.upsert.v1', (payload) => {
-        const { safeProjectFolder, task } = normalizePisiDomainTaskPayload(payload);
-        return taskStore.upsertPisiFirstClassTask(safeProjectFolder, task);
-    });
-
-    registerPisiDomainCommand('task.update.v1', (payload) => {
-        const safeProjectFolder = assertPisiDomainProjectRoot(payload.projectFolder);
-        return taskStore.updatePisiFirstClassTask(safeProjectFolder, String(payload.taskId || ''), payload.patch || {});
-    });
-
-    registerPisiDomainCommand('task.delete.v1', (payload) => {
-        return taskStore.deletePisiFirstClassTask(assertPisiDomainProjectRoot(payload.projectFolder), String(payload.taskId || ''));
-    });
-
-    registerPisiDomainCommand('task.sync-projection.v1', (payload) => {
-        const safeProjectFolder = assertPisiDomainProjectRoot(payload.projectFolder);
-        return taskStore.syncPisiFirstClassTaskIndex(safeProjectFolder, {
-            complete: payload.complete === true,
-            pruneMissing: payload.pruneMissing !== false,
-            tasks: Array.isArray(payload.tasks) ? payload.tasks : []
-        });
     });
 
     registerPisiDomainCommand('map.relationship.upsert.v1', (payload) => {
@@ -381,7 +307,7 @@ function installPisiDomainContracts() {
             type: 'file',
             extensions: ['.map', '.node']
         });
-        return attachRequiredPisiTaskReferenceRewrite(documentStore.renamePisiFile(safeOldPath, payload.newBaseName));
+        return documentStore.renamePisiFile(safeOldPath, payload.newBaseName);
     });
 
     registerPisiDomainCommand('project.item.move.v1', (payload) => {
@@ -394,7 +320,7 @@ function installPisiDomainContracts() {
         if (safeOptions.parentMapPath) {
             safeOptions.parentMapPath = assertPisiDomainMapPath(safeOptions.parentMapPath);
         }
-        return attachRequiredPisiTaskReferenceRewrite(mapStore.movePisiItem(safeSourcePath, safeDestinationPath, safeOptions));
+        return mapStore.movePisiItem(safeSourcePath, safeDestinationPath, safeOptions);
     });
 
     registerPisiDomainCommand('project.item.delete.v1', async (payload) => {

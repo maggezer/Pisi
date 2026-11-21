@@ -24,15 +24,16 @@ const PISI_BLOCK_TYPES = Object.freeze([
     Object.freeze({ id: 'image', label: 'Görsel', tag: 'div' }),
     Object.freeze({ id: 'file', label: 'Dosya eki', tag: 'div' })
 ]);
+// The task block is created from the task store, not by turning a paragraph into it: until G3
+// (docs/task-plan.md) the editor has no command that makes a task; Quick Add does.
 const PISI_BLOCK_SLASH_COMMANDS = Object.freeze([
-    ...PISI_BLOCK_TYPES.filter((record) => record.id !== 'rollup' && record.id !== 'image' && record.id !== 'file').map((record) =>
+    ...PISI_BLOCK_TYPES.filter((record) => !['rollup', 'image', 'file', 'task'].includes(record.id)).map((record) =>
         Object.freeze({
             ...record,
-            slash: record.id === 'task' ? 'todo' : record.id,
-            action: record.id === 'task' ? 'todo' : 'block'
+            slash: record.id,
+            action: 'block'
         })
     ),
-    Object.freeze({ id: 'done', label: 'Tamamlanmış görev', slash: 'done', action: 'done' }),
     Object.freeze({ id: 'image', label: 'Görsel ekle', slash: 'image', action: 'image', aliases: Object.freeze(['gorsel', 'görsel', 'resim']) }),
     Object.freeze({ id: 'file', label: 'Dosya ekle', slash: 'file', action: 'file', aliases: Object.freeze(['dosya', 'ek', 'attachment']) }),
     Object.freeze({ id: 'link', label: 'Bağlantı ekle', slash: 'link', action: 'link', aliases: Object.freeze(['baglanti', 'bağlantı', 'url']) })
@@ -693,9 +694,7 @@ function applyPisiMarkdownBlockShortcut(event, block) {
         '>': 'quote',
         '-': 'bullet',
         '*': 'bullet',
-        '1.': 'number',
-        '[]': 'task',
-        '[ ]': 'task'
+        '1.': 'number'
     }[marker];
     if (!type) return false;
     event.preventDefault();

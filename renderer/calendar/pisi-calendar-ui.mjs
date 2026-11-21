@@ -315,62 +315,21 @@ function changeCalendarMonth(delta) {
     renderCalendar();
 }
 
+// The task marks, from the task store (tasks.json): a task counts on its day
+// (getPisiTaskCalendarIsoDate, the rule the phone's calendar uses too). The
+// calendar moves to the diary section's day rule with the phone in G5/G8
+// (docs/task-plan.md §3.2.2).
 function getCalendarTaskSummaryByDate() {
     const tasksByDate = new Map();
-
-    const recordTask = (isoDate, status) => {
-        if (!isoDate || !/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return;
-        let entry = tasksByDate.get(isoDate);
-        if (!entry) {
-            entry = { total: 0, open: 0, completed: 0 };
-            tasksByDate.set(isoDate, entry);
-        }
+    for (const task of window.getPisiTasks?.() || []) {
+        const isoDate = getPisiTaskCalendarIsoDate(task);
+        if (!isoDate || !/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) continue;
+        const entry = tasksByDate.get(isoDate) || { total: 0, open: 0, completed: 0 };
         entry.total += 1;
-        if (status === 'done') {
-            entry.completed += 1;
-        } else {
-            entry.open += 1;
-        }
-    };
-
-    const firstClassTasks = window.Pisi?.modules?.['tags.taskStore']?.pisiFirstClassTaskState?.tasks || window.pisiFirstClassTaskState?.tasks || [];
-
-    if (Array.isArray(firstClassTasks) && firstClassTasks.length > 0) {
-        for (const task of firstClassTasks) {
-            const isoDate = getPisiTaskCalendarIsoDate(task);
-
-            if (isoDate) {
-                recordTask(isoDate, String(task.status || 'todo').toLowerCase());
-            }
-        }
-    } else {
-        const missionIndex = Array.isArray(window.pisiTagsPanelState?.missionIndex) ? window.pisiTagsPanelState.missionIndex : [];
-
-        for (const block of missionIndex) {
-            const tags = Array.isArray(block?.tags) ? block.tags : [];
-            const doneFor = new Set(Array.isArray(block?.doneFor) ? block.doneFor.map((t) => String(t || '').toLowerCase()) : []);
-
-            for (const tag of tags) {
-                const normTag = String(tag || '').toLowerCase();
-                let todo = null;
-                if (typeof window.parsePisiTodoTag === 'function') {
-                    todo = window.parsePisiTodoTag(tag);
-                }
-                const dateObj = todo?.finishDate;
-                let isoDate = null;
-                if (dateObj instanceof Date && !Number.isNaN(dateObj.getTime())) {
-                    isoDate = toIsoDate(dateObj);
-                } else if (todo?.finishDate && typeof todo.finishDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(todo.finishDate)) {
-                    isoDate = todo.finishDate;
-                }
-                if (isoDate) {
-                    const isCompleted = doneFor.has(normTag) || String(block?.todoStates?.[tag] || '').toLowerCase() === 'done';
-                    recordTask(isoDate, isCompleted ? 'done' : 'todo');
-                }
-            }
-        }
+        if (String(task.status || 'todo').toLowerCase() === 'done') entry.completed += 1;
+        else entry.open += 1;
+        tasksByDate.set(isoDate, entry);
     }
-
     return tasksByDate;
 }
 

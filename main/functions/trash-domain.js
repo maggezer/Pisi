@@ -37,7 +37,7 @@ function installPisiTrashDomainContracts() {
     });
 
     domain.registerPisiDomainCommand('trash.restore.v1', (payload) => {
-        return trashStore.restorePisiTrashItem(assertTrashProjectRoot(payload.projectFolder), String(payload.trashId || ''));
+        return trashStore.restorePisiTrashItem(assertTrashProjectRoot(payload.projectFolder), String(payload.trashId || ''), { openPaths: payload.openPaths });
     });
 
     domain.registerPisiDomainCommand('trash.delete-permanently.v1', (payload) => {

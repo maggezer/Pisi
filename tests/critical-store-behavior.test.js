@@ -16,7 +16,7 @@ const modules = loadPisiMainStores();
 const documentStore = modules['main.documentStore'];
 const filesystemCore = modules['main.filesystemCore'];
 const taskStore = modules['main.taskStore'];
-const taskCapture = modules['main.taskCapture'];
+const taskService = modules['main.taskService'];
 const relationshipStore = modules['main.relationshipStore'];
 const trashStore = modules['main.trashStore'];
 
@@ -54,9 +54,12 @@ function relationshipIds(project) {
         .sort();
 }
 
-function addTask(project, title, nodePath) {
-    const result = taskStore.upsertPisiFirstClassTask(project, { title, source: nodePath ? { nodePath } : {} });
-    assert.equal(result.ok, true);
+// A task lives in a note (by its id) or in a day's diary (docs/task-plan.md §3.1).
+function addTask(project, title, note = null, extra = {}) {
+    globalThis.activeProjectFolder = project;
+    const target = note ? { noteId: note.id, notePath: note.path } : { diaryDate: '2026-11-21' };
+    const result = taskService.createPisiTask(project, { task: { title, ...extra }, target });
+    assert.equal(result.ok, true, result.error);
     return result.task;
 }
 
@@ -87,27 +90,11 @@ test('kayıt: not yazıldığında connectionTypes projeksiyonu diske girmez, be
 });
 
 // Replaces source-of-truth.test.js › "task store tek semantik otoritedir; projection yazımları canonical store üzerinden korunur".
-test('görev: projeksiyondan gelen sync-index yazımı açık izin olmadan .pisi/tasks.json dosyasını değiştirmez', (t) => {
-    const { project, first } = makeProject(t);
-    addTask(project, 'Gerçek görev', first.path);
-    const before = fs.readFileSync(taskStore.getPisiTaskStorePath(project), 'utf8');
-
-    const ignored = taskCapture.quickAddPisiTask(project, { op: 'sync-index', complete: true, tasks: [{ title: 'Projeksiyon kopyası' }] });
-    assert.equal(ignored.ok, true);
-    assert.equal(ignored.ignoredProjectionWrite, true);
-    assert.equal(ignored.authority, '.pisi/tasks.json');
-    assert.equal(fs.readFileSync(taskStore.getPisiTaskStorePath(project), 'utf8'), before, 'the canonical store is untouched');
-
-    const allowed = taskCapture.quickAddPisiTask(project, { op: 'sync-index', allowProjectionWrite: true, tasks: [{ title: 'Kullanıcı işlemi' }] });
-    assert.equal(allowed.ok, true);
-    assert.notEqual(allowed.ignoredProjectionWrite, true);
-    assert.deepEqual(taskTitles(project), ['Gerçek görev', 'Kullanıcı işlemi']);
-});
 
 // Replaces trash-reversible.test.js › "deletion archives canonical tasks semantic relationships and external map references".
 test('silme/geri yükleme: Trash notun görevlerini, ilişkilerini ve map üyeliğini arşivler, geri yükleme hepsini döndürür', (t) => {
     const { project, mapPath, first, second } = makeProject(t);
-    addTask(project, 'Nota bağlı görev', first.path);
+    addTask(project, 'Nota bağlı görev', first);
     addTask(project, 'Bağımsız görev');
     const relationship = relate(project, first.id, second.id);
 
@@ -136,13 +123,13 @@ test('silme/geri yükleme: Trash notun görevlerini, ilişkilerini ve map üyeli
 // Replaces trash-reversible.test.js › "restore is a delta merge rather than a whole-project snapshot overwrite".
 test('silme/geri yükleme: geri yükleme silmeden sonra yapılan değişiklikleri ezmez', (t) => {
     const { project, mapPath, first, second } = makeProject(t);
-    addTask(project, 'Nota bağlı görev', first.path);
+    addTask(project, 'Nota bağlı görev', first);
     const third = documentStore.createNodeUnderMap(mapPath);
     const moved = trashStore.movePisiPathToTrash(project, first.path);
     assert.equal(moved.ok, true, moved.error);
 
     // Work done while the note sits in Trash.
-    addTask(project, 'Sonradan eklenen görev', second.path);
+    addTask(project, 'Sonradan eklenen görev', second);
     const later = relate(project, second.id, third.metadata.id);
     const secondData = documentStore.ensurePisiFileMetadata(second.path).data;
     filesystemCore.writePisiDocument(second.path, { ...secondData, content: '<p>Sonradan düzenlendi</p>' });
@@ -158,13 +145,13 @@ test('silme/geri yükleme: geri yükleme silmeden sonra yapılan değişiklikler
 // Replaces trash-reversible.test.js › "restore fails closed on path task and semantic conflicts".
 test('silme/geri yükleme: çakışmada geri yükleme hiçbir şeyi değiştirmeden reddedilir', (t) => {
     const { project, mapPath, first } = makeProject(t);
-    const task = addTask(project, 'Nota bağlı görev', first.path);
+    const task = addTask(project, 'Nota bağlı görev', first);
     const moved = trashStore.movePisiPathToTrash(project, first.path);
     assert.equal(moved.ok, true, moved.error);
 
     // Another file now sits at the original path, and the archived task id is live again.
     fs.writeFileSync(first.path, 'başka bir dosya', 'utf8');
-    taskStore.upsertPisiFirstClassTask(project, { id: task.id, title: 'Aynı kimlikli görev' });
+    addTask(project, 'Aynı kimlikli görev', null, { id: task.id });
     const tasksBefore = fs.readFileSync(taskStore.getPisiTaskStorePath(project), 'utf8');
     const mapBefore = fs.readFileSync(mapPath, 'utf8');
 
@@ -179,7 +166,12 @@ test('silme/geri yükleme: çakışmada geri yükleme hiçbir şeyi değiştirme
 
     // Without the parent map a node cannot come back either.
     fs.rmSync(first.path);
-    taskStore.deletePisiFirstClassTask(project, task.id);
+    const state = taskStore.readPisiTaskStore(project);
+    taskStore.writePisiTaskStore(
+        project,
+        state,
+        state.tasks.filter((item) => item.id !== task.id)
+    );
     fs.rmSync(mapPath);
     const orphan = trashStore.restorePisiTrashItem(project, moved.trashId);
     assert.equal(orphan.code, 'TRASH_RESTORE_CONFLICT');

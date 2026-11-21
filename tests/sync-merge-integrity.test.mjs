@@ -10,6 +10,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { splitNoteBlocks } from '../shared/note-blocks.mjs';
+import { replacePisiDiaryTaskSection } from '../shared/task-diary.mjs';
 import { makePisiSyncConflictCopy } from '../shared/sync-conflict.mjs';
 import { mergePisiSyncAuthority } from '../shared/sync-merge-authority.mjs';
 import { mergePisiSyncMap, serializePisiSyncJson } from '../shared/sync-merge-json.mjs';
@@ -66,11 +67,9 @@ for (const name of [
     'relationship-store',
     'map-semantic-core',
     'map-operational-store',
-    'task-capture',
     'task-store',
     'trash-store',
-    'task-reference-integrity',
-    'source-of-truth',
+    'task-service',
     'structured-nodes',
     'property-schema-store',
     'property-schema-mutations',
@@ -157,9 +156,9 @@ test('birleşik dosyalar ve çakışma kopyaları masaüstü denetiminde yeni bu
     assert.equal(meetingCopy.assets.length, 4);
     assert.match(meetingCopy.path, /^Toplantı Notları \(çakışma 16-11-2026 13\.05 Pixel 7\)\.node$/);
 
-    // 3. Inbox (task blocks): its conflict copy keeps the text, not the tasks.
-    const inboxCopy = writeConflictCopy(root, 'Inbox.node', withBlockText(readJson(root, 'Inbox.node'), 0, 'Raporu gönder (telefon)'));
-    assert.doesNotMatch(inboxCopy.document.content, /pisi-todo-source|data-pisi-todo-status|pisi-user-tag/);
+    // 3. A note with task blocks: its conflict copy keeps the text, not the tasks.
+    const planCopy = writeConflictCopy(root, 'Proje Planı.node', withBlockText(readJson(root, 'Proje Planı.node'), 0, 'Plan (telefon)'));
+    assert.doesNotMatch(planCopy.document.content, /pisi-todo-source|data-pisi-todo-status|pisi-user-tag/);
 
     // 4. A diary day with the desktop's task section: its copy is a normal note at the root.
     const diaryKey = 'diary/2026-11-14.node';
@@ -180,6 +179,8 @@ test('birleşik dosyalar ve çakışma kopyaları masaüstü denetiminde yeni bu
             updatedAt: later(minute)
         };
         document.content = document.content.replace(/data-pisi-block-id="[^"]+"/, `data-pisi-block-id="blk_${id.slice(5)}"`);
+        // A day without tasks has no task section (the template's is 12 November's, §3.2.2).
+        document.content = replacePisiDiaryTaskSection(document.content, '2026-11-15', []);
         return document;
     };
     const dayMerge = mergePisiSyncNode({
@@ -208,7 +209,7 @@ test('birleşik dosyalar ve çakışma kopyaları masaüstü denetiminde yeni bu
     // 7. relationships.json: a second parent from the local side is dropped; a stream link and a label stay.
     const relationships = readJson(root, '.pisi/relationships.json');
     const [edge] = relationships.relationships;
-    const inboxId = readJson(root, 'Inbox.node').pisi.id;
+    const inboxId = readJson(root, 'Toplantı Notları.node').pisi.id;
     const relationshipsLocal = structuredClone(relationships);
     relationshipsLocal.relationships.push(
         { ...edge, id: 'edge_0f1e2d3c-0000-4000-8000-000000000001', sourceId: inboxId, createdAt: later(3), updatedAt: later(3) },
@@ -235,7 +236,10 @@ test('birleşik dosyalar ve çakışma kopyaları masaüstü denetiminde yeni bu
     writeJson(root, '.pisi/relationships.json', relationshipsMerge.value);
 
     // 8. properties.json and the map.
-    const properties = readJson(root, '.pisi/properties.json');
+    // The fixture has no property schema since G2 (no Inbox `systemRole`); start from an empty one.
+    const properties = fs.existsSync(path.join(root, '.pisi/properties.json'))
+        ? readJson(root, '.pisi/properties.json')
+        : { version: 1, definitions: [], conflicts: [], updatedAt: '2026-11-14T09:30:00.000Z' };
     const propertiesLocal = structuredClone(properties);
     propertiesLocal.definitions.push({ id: 'durum', name: 'Durum', type: 'text' });
     writeJson(root, '.pisi/properties.json', mergePisiSyncAuthority('.pisi/properties.json', properties, propertiesLocal, properties).value);
