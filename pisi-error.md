@@ -248,7 +248,8 @@ taramaz. Kalanlar (parantez içi kapatacak faz):
 
 - **GB5 (mobil tarafı):** Telefon sürüm 1 kurallarıyla çalışıyor: `tasks.json`'u `version: 1` diye
   yazıyor, değiştirdiği kayda eski alanları (`todoTag`, `scheduledAt`) ekliyor, tekrar eden görevi
-  tamamlayınca yeni kayıt açıyor ve günlüğün görev bölümünü yazmıyor. Masaüstü bunları okur ve
+  tamamlayınca yeni kayıt açıyor ve günlüğün görev bölümünü yazmıyor. Notta sürüm 2 görev bloğu
+  salt okunur "Görev · Masaüstünde düzenlenir" kartı olarak görünür. Masaüstü bunları okur ve
   korur; Project Integrity günlük bölümünü G8'e kadar yalnız yapı ve bilinmeyen kimlik için
   denetler. (G8)
 - **GB11:** Notu olmayan görevler aramada görünüyor ama sonuçtan görev ayrıntısına gidilemiyor;

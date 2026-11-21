@@ -31,6 +31,8 @@ Görev işi (`docs/task-plan.md` G2). Kapanan bulgular: GB1–GB9, GB12, GK4, GK
   bugünün günlüğü; Türkçe tarih alanı gün ve saati verir. Takvim, harita rozetleri ve arama görev deposundan okur.
 - Masaüstü fixture'ı yeniden üretildi (görevler görev servisiyle). `mobile-desktop-compat` ve üç senkron testi
   silinen modülleri yüklediği için sessizce çalışmıyordu (`pisi-error.md` §5g); düzeltildi.
+- Mobil: sürüm 2 görev bloğu notta salt okunur "Görev" kartıdır (G8'e kadar); mobil testleri yeni fixture'a göre
+  güncellendi. Senaryo matrisinde telefon yardımcısı not listesinde ekran dışındaki notu kaydırarak bulur.
 - Testler: `tests/task-service.test.mjs`, `tests/project-integrity-tasks.test.mjs`, Electron E2E
   `scripts/electron-tasks-service-e2e.mjs` (Ek B S1–S9, S11, S17, S19, S21; ana süreçte `.node` okuma/yazma sayımı;
   her senaryodan sonra Integrity). Eski görev modelinin regex testleri kaldırıldı.

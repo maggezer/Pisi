@@ -187,7 +187,9 @@ test('masaüstü blokları salt okunur kart; görsel sidecar’dan gösterilir; 
         'Tablo · Masaüstünde düzenlenir',
         'Çizim · Masaüstünde düzenlenir',
         'Görsel · Masaüstünde düzenlenir',
-        'Dosya · Masaüstünde düzenlenir'
+        'Dosya · Masaüstünde düzenlenir',
+        // A version 2 task block holds only the task id; the phone draws it from tasks.json in G8.
+        'Görev · Masaüstünde düzenlenir'
     ]);
     const image = page.locator('[data-protected="image"] img');
     await expect(image).toHaveAttribute('src', /^data:image\/png;base64,/);
