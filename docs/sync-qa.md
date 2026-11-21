@@ -126,7 +126,7 @@ Cihaz: · Android sürümü: · APK sürüm kodu: · Masaüstü işletim sistemi
 
 - [x] Ayarlar → **Senkron** bölümünde açıklama metni ("Projeyi kendi Pisi senkron sunucunuz üzerinden …") ve **Yeni senkron alanı aç** görünür.
 - [ ] Sunucu adresi `http://` ile girilince "Sunucu adresi https:// ile başlamalı." uyarısı çıkar, alan açılmaz.
-    Hata çıkıyor ama alt katmanda kaldığı için gözükmüyor.
+      Hata çıkıyor ama alt katmanda kaldığı için gözükmüyor.
 - Yanlış kurulum anahtarını **bilerek denemeyin**: sunucu yanlış denemeden sonra o internet bağlantısından alan açmayı bir saat kilitler (bu davranış otomatik testlerde sınanır). Yanlışlıkla yanlış girerseniz "Kurulum anahtarı yanlış." görünür; bir saat sonra doğru anahtarla yeniden deneyin.
 - [x] Doğru adres ve anahtarla **Alan aç ve projeyi yükle**: "Senkron alanı açıldı; proje yükleniyor." görünür, ilerleme satırı "Yükleniyor … dosya" diye sayar.
 - [x] Yükleme sürerken **Durdur**: "Senkron durduruldu; "Sürdür" ile kaldığı yerden devam eder." yazar. **Sürdür** ile kaldığı yerden devam eder ve biter. (Proje küçükse yükleme bir iki saniyede biter ve Durdur görünmeyebilir; o zaman bu maddenin yanına "proje küçük, denenemedi" yazın.)

@@ -111,6 +111,14 @@ Pisi'nin kendi eşleştirme ve senkron sistemi [`docs/sync-plan.md`](docs/sync-p
 - Cihazda kabul (S8): `docs/sync-qa.md` (gerçek telefon, masaüstü ve kullanıcının sunucusuyla elle uygulanan liste); senkronlu test APK'sı notu `docs/mobile-qa.md` §4'tedir. Arayüz metni değişirse listedeki aynı metin de güncellenir.
 - Eski klasör tabanlı senkron S7'de kaldırıldı. Yolları (`.pisi-sync/`, `.pisi/sync-state.json`) senkron dışı listede kalır; kullanıcı projelerindeki bu dosyalar silinmez.
 
+## Görevler
+
+Görev sistemi [`docs/task-plan.md`](docs/task-plan.md) belgesindeki fazlarla (G0–G10) yeniden kuruluyor. **Görev işlerinde önce bu belgeyi oku.** Çalışma biçimi (§0), verilen kararlar (§1.3), değişmez kurallar (§2, GV1–GV14), hedef biçim (§3) ve görev PR'ları için ek "bitti" koşulları (§3.8) oradadır. Mobil fazında `docs/mobile-plan.md`, senkron fazında `docs/sync-plan.md` kuralları da geçerlidir.
+
+- Hedef: görevin bütün bilgisi `.pisi/tasks.json`'da (sürüm 2) durur; not yalnız görev kimliğini taşıyan bir blok tutar (`data-pisi-task-id`); panel, takvim, günlük, harita, arama, hatırlatma ve mobil görevi bu kayıttan çizer ve hiçbir görünüm dosya yazmaz.
+- Geçiş adımı yoktur: eski not işareti (`todo.<öncelik>.<tarih>` etiketi, `data-pisi-todo-*`) ve eski kayıt alanları dönüştürülmez.
+- Plan tamamlanana kadar bu dosyanın başka bölümlerinde anlatılan görev davranışı (yansıtma, `missionIndex`, günlük yönetilen bölümü, not görevinin mobilde salt okunur olması) bugünkü koddur; fazlar ilerledikçe güncellenir. 21-11-2026 incelemesinin bulguları: `docs/task-plan.md` Ek A ve `pisi-error.md` §5h.
+
 ## Architecture
 
 ### Processes and boundaries

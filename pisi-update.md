@@ -1,5 +1,24 @@
 # PISI Güncelleme Takip Dosyası
 
+## 21-11-2026 — Görev sistemi incelemesi ve yeniden tasarım planı (G0)
+
+Görev işi (`docs/task-plan.md` G0).
+
+- Görev sistemi iki kez incelendi. Masaüstü uygulaması Electron ve CDP ile sürüldü: Quick Add, panelden
+  tamamlama ve durum değişikliği, tekrar eden görev, notu olmayan görev, hatırlatmadan tamamlama, görev bloğu
+  silme, açık nota Quick Add, 1.000 notluk projede tarama süresi, günlük eşitlemesi, arama ve editörde görev
+  bloğu oluşturma denendi.
+- Uygulamada 14 hata doğrulandı, kodda 15 sorun daha görüldü. Doğrulananlar `pisi-error.md` §5h'ye, hepsi
+  `docs/task-plan.md` Ek A'ya yazıldı. Öne çıkanlar: panelden yapılan değişikliğin `tasks.json`'a ulaşmaması ya da
+  geri alınması, açık nota Quick Add'de not içeriği kaybı, her görev işleminde bütün projenin taranması,
+  görevlerin günlük dosyası oluşturması, notu olmayan görevlerin masaüstünde tamamlanamaması ve aranamaması.
+- `docs/task-plan.md`: görev sisteminin yeniden kurulma planı (G0–G10). Verilen karar: görevin bütün bilgisi
+  `.pisi/tasks.json`'da durur, not yalnız görev kimliğini taşıyan bir blok tutar, görev her yerde bu kayıttan
+  gösterilir; geçiş adımı yoktur. Değişmez kurallar GV1–GV14, hedef dosya biçimi (`tasks.json` sürüm 2), not
+  bloğu, not ile görev ilişkisi, komutlar ve fazların kabul kriterleri belgededir.
+- `CLAUDE.md`: "Görevler" bölümü. `pisi-error.md` §4a, §4b, §5d ve §5e plandaki fazlara bağlandı.
+- Kod değişmedi.
+
 ## 20-11-2026 — Senkronun cihazda kabul listesi (S8)
 
 Senkron işi (`docs/sync-plan.md` S8, adım 1 ve 2).
