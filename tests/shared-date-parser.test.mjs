@@ -141,3 +141,29 @@ test('"gelecek" gün adını gelecek haftaya taşır (hafta pazartesi başlar)',
     assert.equal(parsePisiTurkishDateExpression('gelecek pazar', sunday).scheduledAt, '2026-08-16');
     assert.equal(getPisiPostponePreset('next-monday', new Date(2026, 7, 10, 9, 0)), '2026-08-17');
 });
+
+test('başlıktaki sayılar tarih sayılmaz (pisi-error §5e): yılsız tarih iki haneli ay ve nokta ya da eğik çizgi ister', () => {
+    for (const text of ['3-4 sayfa özet', '1.5 kg un', '2/3 bitir', 'v1.2 sürüm notları', '1.2.3.4', 'bölüm 4.1 okuma']) {
+        const parsed = parsePisiTurkishDateExpression(text, NOW);
+        assert.equal(parsed.scheduledAt, null, text);
+        assert.deepEqual(parsed.matched, [], text);
+    }
+    assert.equal(parsePisiTurkishDateExpression('5.03 toplantı', NOW).scheduledAt, '2027-03-05');
+    assert.equal(parsePisiTurkishDateExpression('rapor 12/11', NOW).scheduledAt, '2026-11-12');
+    // A dash makes a date only with a year.
+    assert.equal(parsePisiTurkishDateExpression('3-4-2027 teslim', NOW).scheduledAt, '2027-04-03');
+    assert.equal(parsePisiTurkishDateExpression('3-11 arası', NOW).scheduledAt, null);
+});
+
+test('tekrar ifadeleri: her hafta, her ay, hafta içi ve her <gün>', () => {
+    assert.deepEqual([parsePisiTurkishDateExpression('her hafta', NOW).repeat, parsePisiTurkishDateExpression('her hafta', NOW).scheduledAt], ['weekly', null]);
+    assert.equal(parsePisiTurkishDateExpression('her ay fatura', NOW).repeat, 'monthly');
+    assert.equal(parsePisiTurkishDateExpression('hafta içi spor', NOW).repeat, 'weekdays');
+    assert.equal(parsePisiTurkishDateExpression('her hafta içi', NOW).repeat, 'weekdays');
+    // NOW is Thursday 6 August 2026.
+    const friday = parsePisiTurkishDateExpression('her cuma 18:00', NOW);
+    assert.deepEqual([friday.repeat, friday.scheduledAt], ['weekly', '2026-08-07T18:00']);
+    const sunday = parsePisiTurkishDateExpression('her pazar', NOW);
+    assert.deepEqual([sunday.repeat, sunday.scheduledAt], ['weekly', '2026-08-09']);
+    assert.equal(parsePisiTurkishDateExpression('her pazartesi saat 9', NOW).scheduledAt, '2026-08-10T09:00');
+});

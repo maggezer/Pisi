@@ -23,7 +23,7 @@ test('çekirdek platform modülleri bootstrap ve preload köprüsünde kayıtlı
     const preload = read('preload.js');
     const runtime = read('main/runtime.js');
     for (const marker of [
-        'productivity/pisi-quick-capture.mjs',
+        'tasks/pisi-task-quick-add.mjs',
         'data/pisi-structured-views.mjs',
         'portability/pisi-portability-panel.mjs',
         'editor/pisi-block-editor.mjs'

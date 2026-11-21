@@ -86,6 +86,8 @@ function renderPisiOpenTabs() {
     tabsEl.innerHTML = '';
 
     if (!state.openTabs.length) {
+        // The task workspace has a tab of its own while it is open (renderer/tasks/pisi-task-workspace.mjs).
+        if (window.renderPisiTaskWorkspaceTab?.(tabsEl)) return;
         const empty = document.createElement('div');
         empty.className = 'center-tabs-empty';
         empty.textContent = 'Açık dosya yok';
@@ -140,6 +142,7 @@ function renderPisiOpenTabs() {
         tabsEl.appendChild(tabEl);
     }
 
+    window.renderPisiTaskWorkspaceTab?.(tabsEl);
     tabsEl.querySelector('.center-tab.active')?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
 }
 

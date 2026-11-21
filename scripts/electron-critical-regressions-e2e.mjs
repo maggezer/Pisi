@@ -316,7 +316,7 @@ async function testTaskStatusWriteThrough(app) {
     })()`);
     const ticked = await waitUntil(app, 'task panel checkbox', () =>
         app.cdp.evaluate(`(() => {
-            const box = document.querySelector('.pisi-task-panel-row[data-pisi-task-id=${JSON.stringify(taskId)}] .pisi-task-panel-check');
+            const box = document.querySelector('[data-pisi-task-card=${JSON.stringify(taskId)}] .pisi-task-card-check');
             if (!box) return null;
             box.click();
             return true;

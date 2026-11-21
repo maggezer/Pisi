@@ -1,0 +1,596 @@
+/* The task panel, the task workspace and its views, and the task detail window (docs/task-plan.md G4).
+   Loaded by renderer/tasks/pisi-task-panel-dom.mjs. */
+
+.pisi-task-toolbar {
+    display: grid;
+    gap: 6px;
+    padding: 6px 4px;
+}
+
+.pisi-task-toolbar[hidden] {
+    display: none;
+}
+
+.pisi-task-toolbar-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.pisi-task-filter,
+.pisi-task-card-status,
+.pisi-task-toolbar-button,
+.pisi-task-toolbar-toggle,
+.pisi-task-view-button,
+.pisi-task-more,
+.pisi-task-card-open,
+.pisi-task-calendar-step,
+.pisi-task-calendar-today {
+    min-height: 26px;
+    padding: 2px 8px;
+    border: 1px solid var(--border-color, #555);
+    border-radius: 6px;
+    background: var(--button-bg, transparent);
+    color: var(--text-color, inherit);
+    font: inherit;
+    font-size: 0.86em;
+    cursor: pointer;
+}
+
+.pisi-task-filter {
+    flex: 1 1 90px;
+    min-width: 0;
+}
+
+.pisi-task-toolbar-primary {
+    border-color: var(--accent-color, #f39c12);
+    color: var(--accent-color, #f39c12);
+}
+
+.pisi-task-toolbar-toggle[aria-pressed='true'],
+.pisi-task-view-button[aria-pressed='true'] {
+    border-color: var(--accent-color, #f39c12);
+    background: color-mix(in srgb, var(--accent-color, #f39c12) 16%, transparent);
+}
+
+.pisi-task-view-switch {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.pisi-task-panel-body {
+    display: grid;
+    gap: 4px;
+}
+
+.pisi-task-list {
+    display: grid;
+}
+
+.pisi-task-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 7px 4px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border-color, #555) 50%, transparent);
+    border-left: 3px solid transparent;
+}
+
+.pisi-task-card[data-priority='5'] {
+    border-left-color: #e74c3c;
+}
+
+.pisi-task-card[data-priority='4'] {
+    border-left-color: #f39c12;
+}
+
+.pisi-task-card.drag-over {
+    box-shadow: inset 0 2px 0 var(--accent-color, #f39c12);
+}
+
+.pisi-task-card.dragging,
+.pisi-task-card-pending {
+    opacity: 0.55;
+}
+
+.pisi-task-card-check {
+    flex: 0 0 auto;
+    margin-top: 3px;
+    accent-color: var(--accent-color, #f39c12);
+    cursor: pointer;
+}
+
+.pisi-task-card-handle {
+    flex: 0 0 auto;
+    padding: 0 2px;
+    border: 0;
+    background: transparent;
+    color: var(--muted-text-color, #aaa);
+    cursor: grab;
+}
+
+.pisi-task-card-body {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+}
+
+.pisi-task-card-title {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text-color, inherit);
+    font: inherit;
+    text-align: left;
+    overflow-wrap: anywhere;
+    cursor: pointer;
+}
+
+.pisi-task-done .pisi-task-card-title {
+    text-decoration: line-through;
+    opacity: 0.65;
+}
+
+.pisi-task-card-meta,
+.pisi-task-card-place {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 0.8em;
+    color: var(--muted-text-color, #aaa);
+}
+
+.pisi-task-card-place {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.pisi-task-card-day.late {
+    color: #e74c3c;
+    font-weight: 600;
+}
+
+.pisi-task-card-blocked {
+    color: #c0392b;
+}
+
+.pisi-task-card-side {
+    flex: 0 0 auto;
+    display: grid;
+    gap: 4px;
+    justify-items: end;
+}
+
+.pisi-task-card-status {
+    max-width: 120px;
+}
+
+.pisi-task-card :focus-visible,
+.pisi-task-toolbar :focus-visible,
+.pisi-task-workspace :focus-visible,
+.pisi-task-detail-dialog :focus-visible {
+    outline: 2px solid var(--accent-color, #f39c12);
+    outline-offset: 2px;
+}
+
+.pisi-task-more[hidden],
+.pisi-task-panel-message[hidden] {
+    display: none;
+}
+
+.pisi-task-more {
+    justify-self: center;
+    margin: 6px 0;
+}
+
+/* ---- Workspace ---- */
+
+#workspace.pisi-task-workspace-open {
+    position: relative;
+}
+
+.pisi-task-workspace {
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+    gap: 8px;
+    padding: 14px 18px;
+    overflow: auto;
+    background: var(--panel-bg, #1e2126);
+    color: var(--text-color, inherit);
+}
+
+.pisi-task-workspace[hidden] {
+    display: none;
+}
+
+.pisi-task-workspace-header h2 {
+    margin: 0;
+    font-size: 1.2em;
+}
+
+.pisi-task-workspace .pisi-task-toolbar {
+    grid-template-columns: auto 1fr;
+    align-items: center;
+}
+
+.pisi-task-workspace .pisi-task-toolbar-row {
+    justify-content: flex-end;
+}
+
+.pisi-task-workspace-content {
+    min-height: 0;
+}
+
+.pisi-task-view-rest {
+    font-size: 0.8em;
+    color: var(--muted-text-color, #aaa);
+}
+
+/* ---- Kanban ---- */
+
+.pisi-task-kanban {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(160px, 1fr));
+    gap: 10px;
+    align-items: start;
+}
+
+.pisi-task-kanban-column {
+    display: grid;
+    gap: 6px;
+    padding: 8px;
+    border: 1px solid var(--border-color, #555);
+    border-radius: 8px;
+}
+
+.pisi-task-kanban-column.drag-over {
+    border-color: var(--accent-color, #f39c12);
+}
+
+.pisi-task-kanban-header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: 600;
+}
+
+.pisi-task-kanban-cards {
+    display: grid;
+    gap: 6px;
+}
+
+.pisi-task-kanban-card,
+.pisi-task-calendar-task,
+.pisi-task-undated-task,
+.pisi-task-timeline-label {
+    display: grid;
+    gap: 2px;
+    padding: 5px 7px;
+    border: 1px solid color-mix(in srgb, var(--border-color, #555) 70%, transparent);
+    border-radius: 6px;
+    background: var(--button-bg, transparent);
+    color: var(--text-color, inherit);
+    font: inherit;
+    font-size: 0.86em;
+    text-align: left;
+    cursor: pointer;
+    overflow-wrap: anywhere;
+}
+
+.pisi-task-kanban-card small {
+    color: var(--muted-text-color, #aaa);
+}
+
+.dependency-blocked {
+    border-style: dashed;
+}
+
+/* ---- Calendar ---- */
+
+.pisi-task-calendar {
+    display: grid;
+    gap: 8px;
+}
+
+.pisi-task-calendar-nav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pisi-task-calendar-title {
+    flex: 1 1 auto;
+    text-align: center;
+    text-transform: capitalize;
+}
+
+.pisi-task-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+}
+
+.pisi-task-calendar-weekday {
+    font-size: 0.8em;
+    text-align: center;
+    color: var(--muted-text-color, #aaa);
+}
+
+.pisi-task-calendar-day {
+    display: grid;
+    align-content: start;
+    gap: 3px;
+    min-height: 84px;
+    padding: 4px;
+    border: 1px solid color-mix(in srgb, var(--border-color, #555) 60%, transparent);
+    border-radius: 6px;
+}
+
+.pisi-task-calendar-day.outside {
+    opacity: 0.5;
+}
+
+.pisi-task-calendar-day.today {
+    border-color: var(--accent-color, #f39c12);
+}
+
+.pisi-task-calendar-day-number,
+.pisi-task-calendar-more {
+    justify-self: start;
+    padding: 0 4px;
+    border: 0;
+    background: transparent;
+    color: var(--muted-text-color, #aaa);
+    font: inherit;
+    font-size: 0.8em;
+    cursor: pointer;
+}
+
+.pisi-task-calendar-task {
+    padding: 2px 5px;
+    font-size: 0.78em;
+}
+
+.pisi-task-calendar-task[data-status='done'],
+.pisi-task-undated-task[data-status='done'] {
+    text-decoration: line-through;
+    opacity: 0.65;
+}
+
+.pisi-task-undated-tray {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border-color, #555);
+}
+
+/* ---- Timeline ---- */
+
+.pisi-task-timeline {
+    display: grid;
+    gap: 6px;
+}
+
+.pisi-task-timeline-header {
+    display: flex;
+    justify-content: space-between;
+}
+
+.pisi-task-timeline-row {
+    display: grid;
+    grid-template-columns: minmax(140px, 1fr) 2fr auto;
+    align-items: center;
+    gap: 8px;
+}
+
+.pisi-task-timeline-track {
+    position: relative;
+    height: 4px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--border-color, #555) 60%, transparent);
+}
+
+.pisi-task-timeline-marker {
+    position: absolute;
+    top: -4px;
+    width: 12px;
+    height: 12px;
+    margin-left: -6px;
+    border-radius: 50%;
+    background: var(--accent-color, #f39c12);
+}
+
+.pisi-task-timeline-row.overdue .pisi-task-timeline-marker {
+    background: #e74c3c;
+}
+
+.pisi-task-timeline-row time {
+    font-size: 0.8em;
+    color: var(--muted-text-color, #aaa);
+}
+
+/* ---- Progress ---- */
+
+.pisi-task-stats {
+    display: grid;
+    gap: 14px;
+}
+
+.pisi-task-stat-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+}
+
+.pisi-task-stat-card {
+    display: grid;
+    gap: 2px;
+    padding: 10px;
+    border: 1px solid var(--border-color, #555);
+    border-radius: 8px;
+}
+
+.pisi-task-stat-card strong {
+    font-size: 1.5em;
+}
+
+.pisi-task-stat-card span,
+.pisi-task-stat-card small {
+    color: var(--muted-text-color, #aaa);
+}
+
+.pisi-task-completion header,
+.pisi-task-progress-label {
+    display: flex;
+    justify-content: space-between;
+}
+
+.pisi-task-progress-track {
+    height: 6px;
+    margin-top: 4px;
+    border-radius: 3px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--border-color, #555) 60%, transparent);
+}
+
+.pisi-task-progress-track > span {
+    display: block;
+    height: 100%;
+    background: var(--accent-color, #f39c12);
+}
+
+.pisi-task-stat-distributions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.pisi-task-stat-distributions section {
+    display: grid;
+    gap: 6px;
+}
+
+/* ---- Detail window (the Quick Add dialog frame, styles/50-productivity.css) ---- */
+
+.pisi-task-detail-dialog {
+    width: min(680px, calc(100vw - 32px));
+    max-height: calc(100vh - 48px);
+    overflow: auto;
+}
+
+.pisi-task-detail-header h2 {
+    margin: 0;
+}
+
+.pisi-task-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 14px;
+}
+
+.pisi-task-detail-field {
+    display: grid;
+    gap: 4px;
+}
+
+.pisi-task-detail-field[hidden] {
+    display: none;
+}
+
+.pisi-task-detail-wide {
+    grid-column: 1 / -1;
+}
+
+.pisi-task-detail-label {
+    font-size: 0.82em;
+    color: var(--muted-text-color, #aaa);
+}
+
+.pisi-task-detail-field input,
+.pisi-task-detail-field select {
+    min-height: 28px;
+    padding: 3px 6px;
+    border: 1px solid var(--border-color, #555);
+    border-radius: 6px;
+    background: var(--panel-bg, transparent);
+    color: var(--text-color, inherit);
+    font: inherit;
+}
+
+.pisi-task-detail-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.pisi-task-detail-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 4px 1px 8px;
+    border: 1px solid var(--border-color, #555);
+    border-radius: 10px;
+    font-size: 0.86em;
+}
+
+.pisi-task-detail-chip-remove,
+.pisi-task-detail-completion-remove {
+    border: 0;
+    background: transparent;
+    color: var(--muted-text-color, #aaa);
+    font: inherit;
+    cursor: pointer;
+}
+
+.pisi-task-detail-completions {
+    display: grid;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pisi-task-detail-completion {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.pisi-task-detail-hint {
+    font-size: 0.82em;
+    color: var(--muted-text-color, #aaa);
+}
+
+.pisi-task-detail-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.pisi-task-detail-status {
+    flex: 1 1 auto;
+    font-size: 0.86em;
+}
+
+.pisi-task-detail-delete {
+    color: #e74c3c;
+}
+
+@media (max-width: 720px) {
+    .pisi-task-kanban {
+        grid-template-columns: repeat(2, minmax(140px, 1fr));
+    }
+
+    .pisi-task-detail-grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -181,25 +181,6 @@ birlikte ele alınmalıdır.
 Plan: `docs/task-plan.md` G2 ve G8. Not görev bilgisi taşımayacağı için yansıtılacak
 bir işaret kalmaz; mobil not görevlerinin bütün alanlarını düzenler.
 
-## 5e. Türkçe tarih ayrıştırıcısı başlıktaki sayıları tarih sayabiliyor
-
-**[Düşük · productivity + mobil · doğrulandı, çözülmedi]**
-`parsePisiTurkishDateExpression` (`shared/date-parser.mjs`) `a.b`, `a/b` ve
-`a-b` biçimindeki her sayı çiftini, geçerli bir gün-ay ise tarih olarak okur.
-Masaüstünde tarih ifadesi ayrı alanda yazıldığı için sorun olmaz. Mobilde
-görev başlığı ve tarih aynı satırda yazılır: "v1.2 sürüm notları" 1 Şubat'a,
-"3-4 sayfa özet" 3 Nisan'a tarihlenir. Okunan tarih kaydetmeden önce çip olarak
-göründüğü için kullanıcı fark edebilir, ama satırı değiştirmeden düzeltemez;
-görev detayından tarihi kaldırması gerekir.
-
-Ayrıca ayrıştırıcının tekrar ifadeleri sınırlıdır: `her gün`, `her pazartesi`,
-`iki haftada bir` ve `görev tamamlandıktan N gün sonra` tanınır; `her hafta`,
-`her ay`, `hafta içi` ve pazartesi dışındaki `her <gün>` tanınmaz (mobilde
-tekrar görev detayından seçilebilir). Düzeltme `shared/` içinde yapılır ve
-masaüstünü de değiştirir.
-
-Plan: `docs/task-plan.md` G4 (Quick Add) ve G8 (mobil hızlı ekle).
-
 ## 5f. Mobilde bazı masaüstü paragrafları salt okunur kart olarak görünüyor
 
 **[Düşük · mobil · doğrulandı, çözülmedi]**
@@ -240,9 +221,10 @@ sayısını denetleyen bir koruma.
 
 ## 5h. Görev sistemi: kalan bulgular (G3–G8)
 
-**[Orta · tasks · kısmen çözüldü (G2, G3)]** 21-11-2026 incelemesinin bulguları
+**[Orta · tasks · kısmen çözüldü (G2, G3, G4)]** 21-11-2026 incelemesinin bulguları
 [`docs/task-plan.md`](docs/task-plan.md) Ek A'dadır. G2'de (`tasks.json` sürüm 2, görev servisi)
-GB1–GB9, GB12, GK4, GK5, GK11, GK12 ve GK14, G3'te (editörde görev bloğu) GB14 ve GK2 kapandı; not ve günlük artık yalnız görev kimliğini
+GB1–GB9, GB12, GK4, GK5, GK11, GK12 ve GK14, G3'te (editörde görev bloğu) GB14 ve GK2, G4'te (görev paneli, çalışma
+alanı, Quick Add) GK6, GK7 ve GK8 kapandı; not ve günlük artık yalnız görev kimliğini
 taşır, bütün görev yazmaları ana süreçteki görev servisinden geçer ve hiçbir görev işlemi projeyi
 taramaz. Kalanlar (parantez içi kapatacak faz):
 
@@ -257,6 +239,13 @@ taramaz. Kalanlar (parantez içi kapatacak faz):
 - Takvim, harita rozetleri ve arama G5'e kadar görev deposuna en küçük değişiklikle bağlıdır:
   takvim görevi bitiş gününde sayar (günlük bölümünün gün kuralı G5/G8'de iki platformda birlikte
   gelir). (G5)
+- Arama dizini, kurulduktan sonra "Yeni not" düğmesiyle oluşan notu görmüyor (dosya sistemi
+  yenilemesi bastırıldığı için dizine delta gelmiyor; G4 E2E'sinde doğrulandı). Görev paneli ve
+  ayrıntı penceresi bu yüzden notun yolunu ve başlığını Explorer ağacından da okur; Quick Add'in
+  not listesi de ağacı kullanır. Arama tarafı G5'te tek kayıt üreticisiyle ele alınır. (G5)
+- 5.000 görevli projede bir tamamlama komutunun ana süreçteki yolu (tasks.json okuma, atomik
+  mutation, yazma) panelden tıklamadan ekrana ~0,5 sn sürüyor; renderer çizimi bunun ~30 ms'si.
+  Ölçüm `scripts/electron-tasks-panel-e2e.mjs`'te; büyük proje ölçümü G7'dedir. (G7)
 
 ## 6. Güncel doğrulama snapshot’ı
 

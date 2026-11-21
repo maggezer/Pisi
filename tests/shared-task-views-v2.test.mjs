@@ -120,3 +120,53 @@ test('bağımlılık durumu ve ilerleme sayıları', () => {
 test('takvim özeti günlük bölümüyle aynı gün kuralını kullanır', () => {
     assert.equal(getPisiTaskCalendarSummary, diarySummary);
 });
+
+test('elle sıra: sıralı komşular arasında yalnız taşınan görev değer alır (G4.4, GK8)', async () => {
+    const { getPisiTaskManualOrderUpdates, movePisiTaskInOrder, PISI_TASK_MANUAL_ORDER_STEP } = await import('../shared/task-views.mjs');
+    const a = task('a', { manualOrder: 100 });
+    const b = task('b', { manualOrder: 200 });
+    const c = task('c', { manualOrder: 300 });
+    assert.deepEqual(getPisiTaskManualOrderUpdates([a, b, c], 'task_b'), [], 'already in order: nothing to write');
+    assert.deepEqual(getPisiTaskManualOrderUpdates([c, a, b], 'task_c'), [{ taskId: 'task_c', patch: { manualOrder: 100 - PISI_TASK_MANUAL_ORDER_STEP } }]);
+    assert.deepEqual(getPisiTaskManualOrderUpdates([a, c, b], 'task_c'), [{ taskId: 'task_c', patch: { manualOrder: 150 } }]);
+    assert.deepEqual(getPisiTaskManualOrderUpdates([b, c, a], 'task_a'), [{ taskId: 'task_a', patch: { manualOrder: 300 + PISI_TASK_MANUAL_ORDER_STEP } }]);
+    assert.deepEqual(
+        movePisiTaskInOrder([a, b, c], 'task_c', -1).map((item) => item.id),
+        ['task_a', 'task_c', 'task_b']
+    );
+    assert.equal(movePisiTaskInOrder([a, b, c], 'task_a', -1), null);
+});
+
+test('elle sıra: eşit ya da eksik değerlerde liste yeniden numaralanır, yalnız değişen değerler döner', async () => {
+    const { getPisiTaskManualOrderUpdates, PISI_TASK_MANUAL_ORDER_STEP: step } = await import('../shared/task-views.mjs');
+    const a = task('a', { manualOrder: step });
+    const b = task('b', { manualOrder: 5 });
+    const c = task('c', { manualOrder: 5 });
+    const updates = getPisiTaskManualOrderUpdates([a, c, b], 'task_c');
+    assert.deepEqual(updates, [
+        { taskId: 'task_c', patch: { manualOrder: 2 * step } },
+        { taskId: 'task_b', patch: { manualOrder: 3 * step } }
+    ]);
+    // The result always leaves the list strictly rising.
+    const after = [a, c, b].map((item) => ({ ...item, ...(updates.find((update) => update.taskId === item.id)?.patch || {}) }));
+    assert.deepEqual(getPisiTaskManualOrderUpdates(after, 'task_c'), []);
+});
+
+test('elle sıra: rastgele 500 taşımada sonuç her zaman sıralı ve tek görevlik yazma çoğunluktadır', async () => {
+    const { getPisiTaskManualOrderUpdates, movePisiTaskInOrder } = await import('../shared/task-views.mjs');
+    let seed = 7;
+    const random = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+    let list = Array.from({ length: 30 }, (_, index) => task(`t${index}`, { manualOrder: (index + 1) * 1000 }));
+    let single = 0;
+    for (let round = 0; round < 500; round += 1) {
+        const moved = list[Math.floor(random() * list.length)];
+        const by = Math.floor(random() * 7) - 3 || 1;
+        const next = movePisiTaskInOrder(list, moved.id, by);
+        if (!next) continue;
+        const updates = getPisiTaskManualOrderUpdates(next, moved.id);
+        if (updates.length === 1) single += 1;
+        list = next.map((item) => ({ ...item, ...(updates.find((update) => update.taskId === item.id)?.patch || {}) }));
+        for (let index = 1; index < list.length; index += 1) assert.ok(list[index].manualOrder > list[index - 1].manualOrder, `round ${round}`);
+    }
+    assert.ok(single > 400, `single-task writes: ${single}`);
+});

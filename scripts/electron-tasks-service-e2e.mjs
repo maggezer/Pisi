@@ -325,11 +325,11 @@ try {
         assert(io.reads.length === 0 && io.writes.length === 0, 'S1: completing on the due day touches no .node', io);
         assert((await storedTask(projectPath, noteTask.id)).status === 'done', 'S1: done in tasks.json');
         await app.cdp.evaluate(`document.querySelector('.right-panel-tab[data-right-tab="missions"]')?.click()`);
-        await app.cdp.evaluate(`(() => { const b = document.querySelector('.pisi-task-panel-toggle input'); if (b && !b.checked) b.click(); return true; })()`);
+        await app.cdp.evaluate(
+            `(() => { const b = document.querySelector('[data-pisi-task-toggle-completed]'); if (b && b.getAttribute('aria-pressed') !== 'true') b.click(); return true; })()`
+        );
         await waitUntil('S1: the panel shows the task ticked', () =>
-            app.cdp.evaluate(
-                `document.querySelector('.pisi-task-panel-row[data-pisi-task-id=${JSON.stringify(noteTask.id)}] .pisi-task-panel-check')?.checked === true`
-            )
+            app.cdp.evaluate(`document.querySelector('[data-pisi-task-card=${JSON.stringify(noteTask.id)}] .pisi-task-card-check')?.checked === true`)
         );
     }
     await assertClean(app, projectPath, 'S1');

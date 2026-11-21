@@ -143,12 +143,13 @@ export function createPisiTasksE2E({ tempRoot, port, inspectPort }) {
             `(() => {
                 const fs = process.getBuiltinModule('node:fs');
                 const { syncBuiltinESMExports } = process.getBuiltinModule('node:module');
-                const counts = (globalThis.__pisiNodeIo = { reads: [], writes: [] });
+                const counts = (globalThis.__pisiNodeIo = { reads: [], writes: [], taskStoreWrites: [] });
                 const wrap = (name, kind) => {
                     const original = fs[name];
                     fs[name] = function countingPisiFs(target, ...rest) {
                         const value = String(name === 'renameSync' ? rest[0] : target);
                         if (/\\.node$/i.test(value)) counts[kind].push(value);
+                        if (kind === 'writes' && /[\\\\/]\\.pisi[\\\\/]tasks\\.json$/i.test(value)) counts.taskStoreWrites.push(value);
                         return original.call(this, target, ...rest);
                     };
                 };
@@ -189,11 +190,19 @@ export const storedTasks = async (project) => {
 };
 export const storedTask = async (project, id) => (await storedTasks(project)).find((task) => task.id === id) || null;
 
-/** Runs `run` and returns its result with the main process's .node reads and writes during it. */
+/**
+ * Runs `run` and returns its result with the main process's .node reads and
+ * writes during it, and the writes of .pisi/tasks.json (`taskStoreWrites`).
+ */
 export async function countNodeIo(app, run) {
-    await app.main.evaluate('(globalThis.__pisiNodeIo.reads = [], globalThis.__pisiNodeIo.writes = [], true)', { page: false });
+    await app.main.evaluate('(globalThis.__pisiNodeIo.reads = [], globalThis.__pisiNodeIo.writes = [], globalThis.__pisiNodeIo.taskStoreWrites = [], true)', {
+        page: false
+    });
     const result = await run();
-    const io = await app.main.evaluate('({ reads: globalThis.__pisiNodeIo.reads.slice(), writes: globalThis.__pisiNodeIo.writes.slice() })', { page: false });
+    const io = await app.main.evaluate(
+        '({ reads: globalThis.__pisiNodeIo.reads.slice(), writes: globalThis.__pisiNodeIo.writes.slice(), taskStoreWrites: globalThis.__pisiNodeIo.taskStoreWrites.slice() })',
+        { page: false }
+    );
     return { result, io };
 }
 

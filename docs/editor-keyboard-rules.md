@@ -197,3 +197,19 @@ suggestions and "Add to dictionary" on a misspelled word. Spell checking uses
 Turkish and US English (interface language first) and can be turned off in
 Settings. Surfaces with their own menu (map, Sheet, task priority menu) call
 `preventDefault` on `contextmenu`, and then no native menu appears.
+
+## Task panel and task workspace
+
+The task list (the right panel's Tasks tab and the workspace's list,
+`renderer/tasks/pisi-task-panel.mjs`, `docs/task-plan.md` G4):
+
+| Key           | In a card                     | Result                                                                       |
+| ------------- | ----------------------------- | ---------------------------------------------------------------------------- |
+| ↑ / ↓         | any control                   | The same control (checkbox, title, status, Open) of the card above or below. |
+| Enter         | title                         | Opens the task's detail window.                                              |
+| Space         | title                         | Completes the task, or reopens it (the checkbox's own Space does the same).  |
+| Alt+↑ / Alt+↓ | any control, "Elle sıra" only | Moves the card one place; one `task.batch.v1` write.                         |
+
+In the kanban, Alt+← / Alt+→ on a card moves it to the column on that side (one
+`task.update.v1`, the status). The detail window and Quick Add keep the focus
+inside while they are open (Tab and Shift+Tab cycle), and Escape closes them.

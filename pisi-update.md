@@ -1,5 +1,40 @@
 # PISI Güncelleme Takip Dosyası
 
+## 21-11-2026 — Görev paneli, çalışma alanı ve Quick Add (G4)
+
+Görev işi (`docs/task-plan.md` G4). Kapanan bulgular: GK6, GK7, GK8 ve `pisi-error.md` §5e.
+
+- Sağ paneldeki Görevler sekmesi ve görev çalışma alanı aynı bileşendir (`renderer/tasks/pisi-task-panel.mjs`).
+  Varsayılan görünüm "Öncelikli": açık görevler iş sırasıyla, gecikenler önce. Süzgeçler: tarih (Tümü, Bugün, Yaklaşan,
+  Geciken, Tarihsiz; her birinde görev sayısı), durum, sıralama (Öncelikli, öncelik, tarih, durum, elle sıra) ve
+  "Tamamlananları göster". Kartta onay kutusu, başlık (ayrıntıyı açar), gün ve saat, öncelik, tekrar, bağımlılık
+  rozeti, görevin yeri, durum seçimi ve "Aç" vardır. Her işlem tek `task.*.v1` komutudur. Görev deposu değişince
+  yalnız çizilen değeri değişen kartlar yeniden çizilir; `MutationObserver` ile sonradan süsleme yoktur. Kartlar
+  200'lük sayfalarla çizilir ("Daha fazla göster").
+- Görev çalışma alanı (sağ paneldeki "Çalışma alanı", `pisi-task-workspace.mjs`) ortada kendi sekmesiyle açılır:
+  liste, kanban (sürükle-bırak ya da Alt+←/→ durumu değiştirir), takvim (bitiş gününe göre ay; gün numarası günlüğü
+  açar), zaman çizelgesi (önümüzdeki 30 gün) ve ilerleme (tamamlanan tekrarlar dahil). Bir not, harita ya da başka bir
+  sekme açılınca kapanır.
+- Görev ayrıntısı penceresi (`pisi-task-detail.mjs`): bütün alanlar, bağımlılıklar (döngü kaydetmeden önce
+  engellenir), yer (`task.move.v1`), tekrar eden görevde "Tamamlanan günler" listesi ve görevi silme. "Kaydet" tek
+  `task.update.v1` yazar. Günlük satırının "…" menüsünde "Ayrıntılar…" vardır.
+- Elle sırada sürükle-bırak ya da tutamakta Alt+↑/↓ tek `task.batch.v1` yazmasıdır; çoğu zaman yalnız taşınan görev
+  yeni değer alır (`getPisiTaskManualOrderUpdates`, `shared/task-views.mjs`).
+- Quick Add `renderer/tasks/pisi-task-quick-add.mjs`'e taşındı (`renderer/productivity/pisi-quick-capture.mjs`
+  kalktı): başlık, Türkçe tarih ve önizlemesi, öncelik, hedef, tekrar (ifadeden dolar, elle seçilince ifade ezmez) ve
+  hatırlatma. Tahmini ve gerçek süre ayrıntı penceresine taşındı.
+- Türkçe tarih ayrıştırıcısı (`shared/date-parser.mjs`, mobil de kullanır): yılsız sayısal tarih yalnız nokta ya da
+  eğik çizgiyle ve iki haneli ayla okunur (`12.11`, `5.03`); `3-4 sayfa`, `1.5 kg`, `2/3` tarih değildir; tire yalnız
+  yılla tarihtir. Yeni tekrar ifadeleri: `her hafta`, `her ay`, `hafta içi`, `her <gün adı>`.
+- Görevin notunun yolu ve başlığı açık belgelerden, Explorer ağacından ve arama dizininden bulunur; arama dizini
+  sonradan oluşan notu görmese de görev taşınabilir.
+- Başarım: sıralama karşılaştırıcısı görevin gününü ve iş sırasını bir kez hesaplar. 5.000 görevde panelin ilk çizimi
+  58 ms, bir tamamlamanın ekrana yansıması olaydan sonra 56 ms (E2E ölçümü).
+- Testler: `tests/task-panel-core.test.mjs`, `tests/shared-task-views-v2.test.mjs` (elle sıra),
+  `tests/shared-date-parser.test.mjs` (§5e), `scripts/electron-tasks-panel-e2e.mjs` (S1–S4 ve S19 arayüzden, kanban,
+  döngü engeli, elle sıra, 5.000 görev ölçümü). `tests/todo-quick-add-modal.test.js`'teki kaynak okuyan Quick Add
+  denetimleri kaldırıldı.
+
 ## 21-11-2026 — Editörde görev bloğu ve günlük bölümü (G3)
 
 Görev işi (`docs/task-plan.md` G3). Kapanan bulgular: GB14, GK2.

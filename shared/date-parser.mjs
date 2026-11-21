@@ -133,19 +133,36 @@ function parsePisiTime(expression) {
 }
 
 /**
+ * A numeric date: day, month and year (`5/9/27`, `12.11.2026`, `3-4-2027`), or
+ * without a year day and a two-digit month after a dot or a slash (`12.11`,
+ * `5.03`). Numbers in a title are not dates (pisi-error.md §5e): `3-4 sayfa`,
+ * `1.5 kg` and `2/3` are left alone. A pair after "saat" is a time of day.
+ */
+const PISI_NUMERIC_DATE_WITH_YEAR = /(?<![\d.,/-])(?<!\bsaat )\b(\d{1,2})([./-])(\d{1,2})\2(\d{4}|\d{2})(?![\d.,/-]*\d)/;
+const PISI_NUMERIC_DATE_WITHOUT_YEAR = /(?<![\d.,/-])(?<!\bsaat )\b(\d{1,2})[./](\d{2})(?![\d.,/-]*\d)/;
+
+function readPisiNumericDate(expression, now) {
+    const full = expression.match(PISI_NUMERIC_DATE_WITH_YEAR);
+    const short = full ? null : expression.match(PISI_NUMERIC_DATE_WITHOUT_YEAR);
+    const match = full || short;
+    if (!match) return null;
+    const day = Number(match[1]);
+    const month = Number(full ? match[3] : match[2]);
+    let year = full ? Number(match[4]) : now.getFullYear();
+    if (year < 100) year += 2000;
+    const result = new Date(year, month - 1, day);
+    if (result.getDate() !== day || result.getMonth() !== month - 1) return null;
+    if (!full && result < makePisiLocalDate(now)) result.setFullYear(year + 1);
+    return { date: result, matched: match[0] };
+}
+
+/**
  * A date written out in the expression: `{ date, matched }`, or null.
- * `matched` is the text the date was read from. A dotted pair after "saat"
- * ("saat 10.30") is a time of day, not a date.
+ * `matched` is the text the date was read from.
  */
 function parsePisiExplicitDate(expression, now) {
-    const numeric = expression.match(/(?<!\bsaat )\b(\d{1,2})[./-](\d{1,2})(?:[./-](\d{2,4}))?\b/);
-    if (numeric) {
-        let year = numeric[3] ? Number(numeric[3]) : now.getFullYear();
-        if (year < 100) year += 2000;
-        const result = new Date(year, Number(numeric[2]) - 1, Number(numeric[1]));
-        if (!numeric[3] && result < makePisiLocalDate(now)) result.setFullYear(year + 1);
-        if (result.getDate() === Number(numeric[1]) && result.getMonth() === Number(numeric[2]) - 1) return { date: result, matched: numeric[0] };
-    }
+    const numeric = readPisiNumericDate(expression, now);
+    if (numeric) return numeric;
 
     const names = Object.keys(PISI_TURKISH_MONTHS).join('|');
     const named = expression.match(new RegExp(`\\b(\\d{1,2})\\s+(${names})(?:a|e)?(?:\\s+(\\d{4}))?\\b`));
@@ -242,14 +259,24 @@ function parsePisiTurkishDateExpression(value, nowValue = new Date()) {
         }
     }
 
-    if (/\bher\s+pazartesi\b/.test(expression)) {
+    const everyWeekday = Object.keys(PISI_TURKISH_WEEKDAYS).find((name) => new RegExp(`\\bher\\s+${name}\\b`).test(expression));
+    if (/\b(?:her\s+)?hafta\s*ici\b/.test(expression)) {
+        result.repeat = 'weekdays';
+        result.matched.push('weekdays');
+    } else if (everyWeekday) {
         result.repeat = 'weekly';
         if (!result.scheduledAt) {
-            const monday = getPisiNextWeekday(now, 1);
-            if (time) monday.setHours(time.hour, time.minute, 0, 0);
-            result.scheduledAt = pisiLocalIsoDateTime(monday, Boolean(time));
+            const day = getPisiNextWeekday(now, PISI_TURKISH_WEEKDAYS[everyWeekday]);
+            if (time) day.setHours(time.hour, time.minute, 0, 0);
+            result.scheduledAt = pisiLocalIsoDateTime(day, Boolean(time));
         }
         result.matched.push('weekly');
+    } else if (/\bher\s+hafta\b/.test(expression)) {
+        result.repeat = 'weekly';
+        result.matched.push('weekly');
+    } else if (/\bher\s+ay\b/.test(expression)) {
+        result.repeat = 'monthly';
+        result.matched.push('monthly');
     } else if (/\biki haftada bir\b/.test(expression)) {
         result.repeat = 'biweekly';
         if (!result.scheduledAt) {

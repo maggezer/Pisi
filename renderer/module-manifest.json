@@ -751,9 +751,9 @@
         "bindings": ["installPisiLinksPanel", "refreshPisiLinksPanel", "schedulePisiLinksPanelRefresh"]
     },
     {
-        "module": "productivity.quickCapture",
-        "path": "renderer/productivity/pisi-quick-capture.mjs",
-        "bindings": ["pisiQuickCaptureState", "formatPisiTaskMinutes", "initializePisiQuickCapture", "openPisiQuickAddModal", "closePisiQuickAddModal"]
+        "module": "tasks.quickAdd",
+        "path": "renderer/tasks/pisi-task-quick-add.mjs",
+        "bindings": ["pisiQuickAddState", "openPisiQuickAddModal", "closePisiQuickAddModal"]
     },
     {
         "module": "data.structuredViews",
@@ -918,7 +918,17 @@
     {
         "module": "tasks.panel",
         "path": "renderer/tasks/pisi-task-panel.mjs",
-        "bindings": ["pisiTaskPanelState", "renderPisiTaskPanel"]
+        "bindings": ["pisiTaskPanelState", "renderPisiTaskPanel", "mountPisiTaskPanel", "renderPisiTaskSurface", "getPisiTaskPanelSurface", "dropPisiTaskCard"]
+    },
+    {
+        "module": "tasks.workspace",
+        "path": "renderer/tasks/pisi-task-workspace.mjs",
+        "bindings": ["pisiTaskWorkspaceState", "openPisiTaskWorkspace", "closePisiTaskWorkspace", "isPisiTaskWorkspaceOpen", "renderPisiTaskWorkspaceTab"]
+    },
+    {
+        "module": "tasks.detail",
+        "path": "renderer/tasks/pisi-task-detail.mjs",
+        "bindings": ["pisiTaskDetailState", "openPisiTaskDetail", "closePisiTaskDetail"]
     },
     {
         "module": "shell.windowShell",
