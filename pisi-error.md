@@ -116,6 +116,9 @@ korunsun. Aynı bölüm `data-pisi-diary-node-path` içinde masaüstünün mutla
 taşır; senkronla telefona da gider (sunucuya şifreli). Telefon bu bölümü salt okunur kart
 olarak gösterir ve yolu kullanmaz.
 
+Kalıcı çözüm: `docs/task-plan.md` G2. Günlüğün görev bölümü yalnız görev kimliklerini taşıyan,
+düzenlenemeyen tek bir blok olur; ayraç kalkar ve bölüm mutlak yol taşımaz.
+
 ## 4b. Masaüstü bir dosyayı yazınca görev ve günlük yansıtmaları ikinci bir yazma yapabiliyor
 
 **[Düşük · sync/tasks · kısmen çözüldü (S7)]** Senkronla gelen `tasks.json` uygulanınca masaüstü
@@ -132,6 +135,10 @@ iki cihaz bir ya da iki ek turda durulur (matris her senaryoda en çok 4 turda d
 
 Kalan: ayraç bloğunun kimliği hâlâ renderer'da ilk kayıtta verilir; ana süreçte yazılan yeni
 bir günlüğün ayraçları kimliği ilk açılışta alır ve bu bir kez daha yazılır.
+
+Kalıcı çözüm: `docs/task-plan.md` G2 ve G9. Görevin başlığı ya da durumu değişince hiçbir not
+yazılmaz; yalnız görevin günleri değişince ilgili günlüklerin bölümü yazılır ve iki cihaz aynı
+`tasks.json`'dan aynı baytları üretir.
 
 ## 5. Editörde fareyle blok sürükle-bırak çalışmıyor
 
@@ -220,6 +227,9 @@ Kalıcı çözüm mobilin görev bloğu işaretini güvenle güncelleyebilmesini
 masaüstünün canonical durumu nota geri yansıtmasını gerektirir; aktarım planıyla
 birlikte ele alınmalıdır.
 
+Plan: `docs/task-plan.md` G2 ve G8. Not görev bilgisi taşımayacağı için yansıtılacak
+bir işaret kalmaz; mobil not görevlerinin bütün alanlarını düzenler.
+
 ## 5e. Türkçe tarih ayrıştırıcısı başlıktaki sayıları tarih sayabiliyor
 
 **[Düşük · productivity + mobil · doğrulandı, çözülmedi]**
@@ -236,6 +246,8 @@ Ayrıca ayrıştırıcının tekrar ifadeleri sınırlıdır: `her gün`, `her p
 `her ay`, `hafta içi` ve pazartesi dışındaki `her <gün>` tanınmaz (mobilde
 tekrar görev detayından seçilebilir). Düzeltme `shared/` içinde yapılır ve
 masaüstünü de değiştirir.
+
+Plan: `docs/task-plan.md` G4 (Quick Add) ve G8 (mobil hızlı ekle).
 
 ## 5f. Mobilde bazı masaüstü paragrafları salt okunur kart olarak görünüyor
 
@@ -271,6 +283,57 @@ düzeltildi; davranış duruyor). Çözüm önerisi: testlerde logger'ın süre�
 yakalayıcılarını kurmaması (ör. bir ortam bayrağı) ya da bu dosyaların test
 sayısını denetleyen bir koruma.
 
+## 5h. Görev sistemi: not işareti ile `tasks.json` ayrışıyor, görev işlemleri projeyi tarıyor
+
+**[Yüksek · tasks · doğrulandı, çözülmedi]** 21-11-2026 incelemesinde masaüstü uygulaması
+Electron ve CDP ile sürülerek aşağıdaki hatalar doğrulandı. Ortak neden: bir görev dört yerde
+(not HTML'i, `tasks.json`, renderer'daki `missionIndex`, günlük yönetilen bölümü) dört ayrı
+biçimde duruyor ve panel değişiklikleri nottan, bütün projenin taranmasıyla `tasks.json`'a
+yansıtılıyor (`renderer/tags/pisi-source-of-truth.mjs`, `buildPisiTasksFromProjection`).
+Kimliği olmayan tek bir Quick Add bloğu (`main/functions/task-capture.js`) bu yansıtmayı hata
+verip durduruyor; kullanıcıya bir şey gösterilmiyor.
+
+Çözüm tek tek yamayla değil, görev modelinin değiştirilmesiyle yapılacak:
+[`docs/task-plan.md`](docs/task-plan.md). Görevin bütün bilgisi `tasks.json`'da durur, not ve
+günlük yalnız görev kimliğini taşır. Aşağıdaki kimlikler planın Ek A'sıyla aynıdır; parantez
+içi, bulguyu kapatacak fazdır. Kodda görülüp çalıştırılmayan bulgular (GK1–GK15) yalnız planda
+listelidir. İncelemede doğrulanan iki davranış istenen davranıştır ve hata sayılmaz (plan
+§1.3): görevin bitiş gününde günlüğün oluşması (GB10) ve günlükteki görevlerin notun altındaki
+bölümde toplanması (GB13).
+
+- **GB1:** Kapalı nottaki (Inbox dahil) Quick Add görevi panelden tamamlanınca nota "done"
+  yazılıyor, `tasks.json` "todo" kalıyor; panel işareti geri alıyor. (G2, G4)
+- **GB2:** Kapalı nottaki tekrar eden görev tamamlanınca notta sonraki tekrarın bloğu oluşuyor;
+  `tasks.json`'da ne tamamlama ne sonraki tekrar var. (G2)
+- **GB3:** Kapalı nottaki görevin panelden değişen durumu `tasks.json`'a ancak not açılıp
+  düzenlenince geçiyor. (G2)
+- **GB4:** Notu olmayan (mobilde oluşturulan) görev masaüstü panelinden tamamlanamıyor:
+  "Görev node yolu bulunamadı." (G2, G4)
+- **GB5:** Başka bir panel işleminden sonra notu olmayan göreve sahte kaynak yazılıyor
+  (`blockId: task-block-…`, `nodeTitle: "Task"`). Mobil `source.blockId`'ye bakıp onu not
+  görevi sayıyor ve alanlarını salt okunur yapıyor; görev iki cihazda da düzenlenemiyor.
+  `tests/fixtures/desktop-project/.pisi/tasks.json`'daki iki görev ("Egzersiz", "Toplantı
+  odasını ayır") bu durumda. (G2, G8)
+- **GB6:** Hatırlatma panelinden tamamlanan görev, not sonradan düzenlenince yeniden "todo"
+  oluyor: `setPisiMissionStatusFirstRelease` `'done'` durumunu reddediyor, panel yalnız
+  `tasks.json`'u değiştiriyor ve nottaki eski işaret bir sonraki editör yansıtmasında geri
+  yazılıyor. (G2)
+- **GB7:** Projede kimliksiz bir Quick Add bloğu varken notta silinen görev bloğu
+  `tasks.json`'da ve panelde kalıyor. (G2)
+- **GB8:** Açık olan nota Quick Add yapılınca editör yeni bloğu göstermiyor; kullanıcı notta
+  yazıp kaydedince blok dosyadan siliniyor ve görev kaynaksız kalıyor (not içeriği kaybı). (G2)
+- **GB9:** Her panel işlemi ve not kaydı bütün notları yeniden okuyor; 1.000 notluk projede
+  tarama ~1,5 sn sürüyor. (G2)
+- **GB11:** Notu olmayan görevler masaüstü aramasında görünmüyor
+  (`makePisiCanonicalTaskSearchRecord`, `source.nodePath` yoksa kayıt üretmiyor). (G5)
+- **GB12:** Günlükteki onay kutusuyla tamamlanan tekrar eden görevin sonraki tekrarı
+  oluşmuyor; görev tekrar etmeyi bırakıyor. (G2)
+- **GB14:** Editörde `[ ]` kısayolu ve blok türünü "Görev bloğu" yapma işlemi, girdi
+  hattındaki `cleanupOrphanPisiTodoBlock` yüzünden hemen paragrafa dönüyor; görev oluşmuyor. (G3)
+
+§7'deki "canonical task authority ayrımı" maddesi masaüstünün yazma yolu için geçerli değil;
+bu bölüm kapanana kadar açık sayılır.
+
 ## 6. Güncel doğrulama snapshot’ı
 
 6 Ekim 2026 current `main` kontrolü:
@@ -300,7 +363,7 @@ Bu metriklerin güncel sayıları CI her çalıştığında yeniden üretilir; a
 Aşağıdakiler artık `pisi-error.md` için açık değildir:
 
 - migration/legacy compatibility temizliği,
-- canonical task / relationship / property authority ayrımı,
+- canonical relationship / property authority ayrımı (görevler için bkz. §5h),
 - generated Android/Capacitor ağacının desktop `main` içinden kaldırılması,
 - repository-wide Prettier ve zorunlu CI format gate,
 - CI/release dependency audit gate’in zorunlu hale getirilmesi,
