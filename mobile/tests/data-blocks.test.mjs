@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { parseTagAttributes } from '../../shared/html-tokens.mjs';
 import { getNotePlainText, splitNoteBlocks } from '../../shared/note-blocks.mjs';
+import { makePisiTaskBlockHtml } from '../../shared/task-blocks.mjs';
+import { makePisiDiaryTaskSectionHtml } from '../../shared/task-diary.mjs';
 import { inlineToHtml, inlineToText, parseInlineHtml } from '../src/data/note-inline.mjs';
 import { applyBlockPatch, makeBlockHtml, makeParagraphBlockHtml, retypeOpenTag, textToBlockHtml } from '../src/data/note-patch.mjs';
 import { paragraph } from './data-helpers.mjs';
@@ -116,6 +118,19 @@ describe('not blokları', () => {
             ['diary-managed', false]
         ]);
         expect(elements[3].taskId).toBe('task_1');
+    });
+
+    it('sürüm 2 görev bloğu ve günlük görev bölümü korumalıdır ve görev kimliklerini taşır (G1)', () => {
+        const block = makePisiTaskBlockHtml({ blockId: 'blk_t', taskId: 'task_aaaa' });
+        const section = makePisiDiaryTaskSectionHtml('2026-11-21', ['task_aaaa', 'task_bbbb']);
+        const html = paragraph('blk_a', 'Sabah') + block + section;
+        const elements = splitNoteBlocks(html).filter((segment) => segment.kind === 'element');
+        expect(elements.map((segment) => [segment.blockType, segment.editable, segment.taskId ?? null, segment.taskIds ?? null])).toEqual([
+            ['paragraph', true, null, null],
+            ['task', false, 'task_aaaa', null],
+            ['diary-tasks', false, null, ['task_aaaa', 'task_bbbb']]
+        ]);
+        expect(getNotePlainText(html)).toBe('Sabah');
     });
 
     it('izlenemeyen HTML tek korumalı parça olur, hiçbir yaması uygulanmaz', () => {

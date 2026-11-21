@@ -191,7 +191,8 @@ Bu kurallar her fazda geçerlidir. Bir PR bunlardan birini çiğniyorsa bitmiş 
             "completions": [{ "date": "2026-11-21", "dueDate": "2026-11-21", "at": "2026-11-21T06:52:11.000Z" }],
             "createdAt": "2026-11-10T08:00:00.000Z",
             "updatedAt": "2026-11-21T06:52:11.000Z",
-            "completedAt": null
+            "completedAt": null,
+            "completedOn": null
         }
     ]
 }
@@ -212,6 +213,7 @@ Bu kurallar her fazda geçerlidir. Bir PR bunlardan birini çiğniyorsa bitmiş 
 | `noteId`, `diaryDate`                   | Görevin yeri: normal notun `node_…` kimliği ya da günlüğün günü (`YYYY-MM-DD`). İkisinden tam biri doludur.                                                                                                                              |
 | `durationMinutes`, `actualMinutes`      | Tahmini ve gerçek süre (0 = yok).                                                                                                                                                                                                        |
 | `createdAt`, `updatedAt`, `completedAt` | ISO zaman damgaları; `completedAt` yalnız tekrarsız ve `done` görevde doludur.                                                                                                                                                           |
+| `completedOn`                           | Tekrarsız ve `done` görevin tamamlandığı yerel gün (`YYYY-MM-DD`); tamamlayan cihaz yazar. Bölüm bu günden üretilir, saat dilimine bakılmaz (GV15; G1'de eklendi).                                                                       |
 
 Ana süreç ve mobil `version` 1 ve 2'yi okur, 2 yazar. Sürüm 1 kaydındaki eski alanlar (`source`, `todoTag`, `scheduledAt`, `deadline`) okunmaz
 ve korunur (GV12). Böyle bir kaydın yeri yoktur: G8'e kadar (mobilin eski sürümü yersiz görev yazdığı için) bitiş gününün günlüğünde ve panelde
@@ -242,7 +244,7 @@ görünür ve Integrity bulgusu sayılmaz; G8'den sonra Integrity onu "yeri olma
 ```
 
 - Günün görevleri (`shared/task-diary.mjs`): yeri bu günlük olan görevler (`diaryDate`), bitiş günü bu gün olan görevler ve bu gün tamamlanmış
-  görevler (tekrarsızda `completedAt`, tekrar edende `completions[].date`).
+  görevler (tekrarsızda `completedOn`, tekrar edende `completions[].date`).
 - Bölüm günlüğün son bloğudur ve tektir; günün görev listesi boşsa bölüm yoktur. Kimlikler `createdAt`, eşitlikte kimlik sırasıyla dizilir;
   blok kimliği günden türer. Böylece aynı `tasks.json`'dan her cihaz aynı baytları üretir (GV15).
 - Bölüm görevin günleri değişince yazılır (GV5): görev oluşturulunca, yeri ya da bitiş günü değişince, silinince ya da geri gelince ve
