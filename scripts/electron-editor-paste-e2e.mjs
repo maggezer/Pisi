@@ -95,15 +95,28 @@ export async function testEditorPaste(cdp) {
         'copied block IDs must be new'
     );
     assert.equal(await cdp.evaluate(`document.getElementById('center-node-editor-content').children[1].dataset.pisiHeadingParent`), result.blocks[0].id);
-    result = await paste(
-        '<div class="pisi-editor-block" data-pisi-block-id="blk_source_task" data-pisi-block-type="task" data-pisi-task-id="task_source"><span class="pisi-user-tag pisi-task-metadata" data-pisi-tag="todo.1.none" data-pisi-task-id="task_source" contenteditable="false">todo.1.none</span><span class="pisi-todo-source" data-pisi-todo-for="todo.1.none">Copied task</span></div>'
+    // A Pisi task block whose task exists nowhere (no record on the clipboard, none in the project) is not pasted (docs/editor-paste-rules.md).
+    await paste(
+        '<div class="pisi-editor-block pisi-task-block" data-pisi-block-id="blk_source_task" data-pisi-block-type="task" data-pisi-task-id="task_00000000-0000-4000-8000-00000000dead" contenteditable="false"></div><div class="pisi-editor-block" data-pisi-block-id="blk_after" data-pisi-block-type="paragraph">after</div>'
     );
-    assert.equal(result.blocks[0].type, 'task');
-    assert.notEqual(await cdp.evaluate(`document.getElementById('center-node-editor-content').firstElementChild.dataset.pisiTaskId`), 'task_source');
+    const waitForEditor = async (label, probe) => {
+        for (let attempt = 0; attempt < 100; attempt += 1) {
+            if (await cdp.evaluate(probe)) return;
+            await new Promise((resolve) => setTimeout(resolve, 50));
+        }
+        throw new Error('Timed out: ' + label);
+    };
+    await waitForEditor('the unknown task block is dropped', `!document.getElementById('center-node-editor-content').querySelector('.pisi-task-block')`);
     result = await paste('', '# Markdown\n\n- one\n  - nested\n1. numbered\n> quote\n- [x] done');
     assert.deepEqual(
         result.blocks.map((b) => b.type),
-        ['heading1', 'paragraph', 'bullet', 'bullet', 'number', 'quote', 'task']
+        ['heading1', 'paragraph', 'bullet', 'bullet', 'number', 'quote', 'task', 'paragraph'],
+        'a task line is a block of its own; the caret goes to a paragraph after it'
+    );
+    // The `- [x]` line becomes a real, completed task (task.create.v1, then task.complete.v1).
+    await waitForEditor(
+        'the pasted task line is a task',
+        `(() => { const block = document.getElementById('center-node-editor-content').querySelector('.pisi-task-block[data-pisi-task-id]'); const task = block && window.getPisiTask(block.dataset.pisiTaskId); return task?.title === 'done' && task.status === 'done'; })()`
     );
     result = await paste('<p><a href="#anchor">anchor</a></p><table><tr><td colspan="2">merged</td></tr></table>');
     const persisted = await cdp.evaluate(`window.getPisiEditorContent(document.getElementById('center-node-editor-content'))`);

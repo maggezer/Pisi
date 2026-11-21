@@ -188,8 +188,8 @@ function makePisiUnifiedBlockItems(command) {
                 kind,
                 id,
                 label: String(record.label || id),
-                description: PISI_UNIFIED_BLOCK_DESCRIPTIONS[kind] || PISI_UNIFIED_BLOCK_DESCRIPTIONS.block,
-                category: kind.startsWith('todo-') ? 'Tasks' : 'Blocks',
+                description: record.id === 'task' ? 'Görev oluştur' : PISI_UNIFIED_BLOCK_DESCRIPTIONS[kind] || PISI_UNIFIED_BLOCK_DESCRIPTIONS.block,
+                category: record.id === 'task' ? 'Tasks' : 'Blocks',
                 typedToken: `${command.trigger}${id}`,
                 blockType: record.id,
                 aliases: Array.isArray(record.aliases) ? [...record.aliases] : []
@@ -273,8 +273,14 @@ function applyPisiUnifiedBlock(editor, command, item) {
     const range = makePisiCommandRange(command);
     if (!range) return false;
     range.deleteContents();
+    if (item.blockType === 'task') {
+        // The block becomes a task; what is left of its text is the title (renderer/tasks/pisi-task-editing.mjs).
+        closePisiUnifiedCommandMenu();
+        void window.convertPisiBlockToTask?.(command.block);
+        return true;
+    }
     if (command.block && !command.block.textContent && !command.block.querySelector?.('br')) {
-        command.block.innerHTML = item.blockType === 'task' ? '' : '<br>';
+        command.block.innerHTML = '<br>';
     }
     const next = window.applyPisiBlockType?.(command.block, item.blockType);
     closePisiUnifiedCommandMenu();

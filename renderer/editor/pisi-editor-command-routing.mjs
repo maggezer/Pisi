@@ -136,8 +136,9 @@ function normalizePisiBlockCommandItem(item) {
     return item;
 }
 
+// Making a task is always offered, whatever the command preferences (docs/task-plan.md G3.3).
 function isPisiEssentialCommandItem(item) {
-    return item?.kind === 'todo-start' || item?.kind === 'todo-done';
+    return item?.kind === 'block' && item.blockType === 'task';
 }
 
 function isPisiRoutedCommandAllowed(command, item) {

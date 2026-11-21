@@ -1,144 +1,178 @@
 import { registerModule } from '../core/module-registry.mjs';
-import { PISI_DIARY_TASKS_CLASS, PISI_TASK_BLOCK_CLASS } from '../../shared/task-blocks.mjs';
-import { getPisiTaskStateOnDay, listPisiDiaryTaskIds, makePisiDiaryTaskSectionHtml } from '../../shared/task-diary.mjs';
+import { PISI_DIARY_TASKS_CLASS, PISI_TASK_BLOCK_CLASS, makePisiTaskBlockHtml } from '../../shared/task-blocks.mjs';
+import { makePisiDiaryTaskSectionHtml } from '../../shared/task-diary.mjs';
+import {
+    ensurePisiTaskChips,
+    ensurePisiTaskTitleField,
+    getPisiNoteOfEditor,
+    getPisiEditorOfTaskElement,
+    getPisiTaskStoreProblem,
+    getPisiTaskTitleText,
+    makePisiTaskCheckbox,
+    makePisiTaskView,
+    pisiTaskTitleDrafts,
+    pisiTaskViewTranslate,
+    updatePisiTaskCheckbox
+} from './pisi-task-view.mjs';
+import { openPisiTaskPopover } from './pisi-task-popover.mjs';
 
-// The editor's drawing of a task block (§3.2.1) and of a diary's task section
-// (§3.2.2), G2's interim form: a checkbox and the title. Both come from the
-// task store; the file holds only ids. The drawing is temporary like a file
-// block's: cleanPisiTaskDrawingsForSave takes it out of the copy the editor
-// saves (GV2). Editing the title and the chips come in G3.
+// The editor's task block (docs/task-plan.md §3.2.1, G3): a checkbox, the
+// title field and the chips, drawn from the task store. The file holds only
+// the ids; cleanPisiTaskDrawingsForSave takes the drawing out of the copy the
+// editor saves (GV2). A store change redraws only the blocks of the changed
+// tasks, in place, so the caret in a title stays where it is (§3.5). A block
+// that is being created (`data-pisi-task-pending`) has a title field but no id
+// yet and is never saved. The diary's section is drawn by pisi-task-diary.mjs.
 
-const VIEW = 'data-pisi-task-view';
+const PENDING = 'pisiTaskPending';
 
 function pisiTaskBlockTranslate(value) {
-    return window.pisiT?.(value) ?? String(value ?? '');
+    return pisiTaskViewTranslate(value);
 }
 
-function formatPisiTaskDay(day) {
-    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(day || ''));
-    return match ? `${match[3]}.${match[2]}.${match[1]}` : '';
+function isPisiPendingTaskBlock(block) {
+    return Boolean(block?.dataset?.[PENDING]);
 }
 
-function formatPisiTaskTime(iso) {
-    const date = new Date(String(iso || ''));
-    return Number.isNaN(date.getTime()) ? '' : `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-}
-
-function makePisiTaskView(tag, className, text = '') {
-    const element = document.createElement(tag);
-    element.className = className;
-    element.setAttribute(VIEW, '1');
-    if (text) element.textContent = text;
-    return element;
-}
-
-function makePisiTaskCheckbox(taskId, checked, { day = null, locked = false } = {}) {
-    const box = makePisiTaskView('span', 'pisi-task-check');
-    box.setAttribute('role', 'checkbox');
-    box.setAttribute('aria-checked', checked ? 'true' : 'false');
-    box.setAttribute('tabindex', locked ? '-1' : '0');
-    box.setAttribute('aria-label', pisiTaskBlockTranslate(checked ? 'Görevi yeniden aç' : 'Görevi tamamla'));
-    if (locked) {
-        box.setAttribute('aria-disabled', 'true');
-        box.title = pisiTaskBlockTranslate('Bu tamamlama kilitli: görev daha sonra yeniden tamamlandı.');
-    }
-    box.dataset.pisiTaskCheck = taskId;
-    if (day) box.dataset.pisiTaskDay = day;
-    box.textContent = checked ? '☑' : '☐';
-    return box;
-}
-
-function getPisiTaskStoreProblem() {
-    if (window.isPisiTaskStoreReadOnly?.()) return pisiTaskBlockTranslate('Görevler okunamadı');
-    return null;
-}
-
-/** Draws one task block from its record. */
+/** Draws one task block from its record, reusing what is already drawn. */
 function drawPisiTaskBlock(block) {
+    if (!block?.isConnected && !block?.parentNode) return;
+    block.setAttribute('contenteditable', 'false');
+    if (isPisiPendingTaskBlock(block)) {
+        if (!block.querySelector(':scope > .pisi-task-check')) block.prepend(makePisiTaskCheckbox());
+        updatePisiTaskCheckbox(block.querySelector(':scope > .pisi-task-check'), '', false, { disabled: true });
+        ensurePisiTaskTitleField(block, null, { text: block.querySelector(':scope > .pisi-task-title')?.textContent || '' });
+        return;
+    }
     const taskId = block.dataset.pisiTaskId;
     const task = window.getPisiTask?.(taskId);
-    block.replaceChildren();
-    block.setAttribute('contenteditable', 'false');
     const problem = getPisiTaskStoreProblem();
     if (problem || !task) {
         block.classList.add('pisi-task-block-missing');
-        block.appendChild(makePisiTaskView('span', 'pisi-task-missing', problem || pisiTaskBlockTranslate('Görev bulunamadı')));
+        block.classList.remove('pisi-task-done');
+        block.replaceChildren(makePisiTaskView('span', 'pisi-task-missing', problem || pisiTaskBlockTranslate('Görev bulunamadı')));
         return;
     }
-    block.classList.remove('pisi-task-block-missing');
-    block.classList.toggle('pisi-task-done', task.status === 'done');
-    block.appendChild(makePisiTaskCheckbox(task.id, task.status === 'done'));
-    block.appendChild(makePisiTaskView('span', 'pisi-task-title', task.title || pisiTaskBlockTranslate('Başlıksız görev')));
-    if (task.dueDate) {
-        const chip = [formatPisiTaskDay(task.dueDate), task.dueTime || ''].filter(Boolean).join(' ');
-        block.appendChild(makePisiTaskView('span', 'pisi-task-chip', chip));
+    if (block.classList.contains('pisi-task-block-missing')) {
+        block.classList.remove('pisi-task-block-missing');
+        block.replaceChildren();
     }
+    for (const child of Array.from(block.childNodes)) {
+        if (child.nodeType !== Node.ELEMENT_NODE || !child.hasAttribute('data-pisi-task-view')) child.remove();
+    }
+    const done = task.status === 'done';
+    block.classList.toggle('pisi-task-done', done);
+    let box = block.querySelector(':scope > .pisi-task-check');
+    if (!box) {
+        box = makePisiTaskCheckbox();
+        block.prepend(box);
+    }
+    updatePisiTaskCheckbox(box, task.id, done);
+    ensurePisiTaskTitleField(block, task.id, { text: getPisiTaskTitleText(task) });
+    ensurePisiTaskChips(block, task);
 }
 
-function makePisiDiaryTaskRow(task, day) {
-    const state = getPisiTaskStateOnDay(task, day) || { state: 'open', status: task.status };
-    const done = state.state === 'done' || (state.state === 'dated' && state.status === 'done');
-    const row = makePisiTaskView('div', 'pisi-diary-task-row');
-    row.dataset.pisiTaskRow = task.id;
-    row.classList.toggle('pisi-task-done', done);
-    row.appendChild(makePisiTaskCheckbox(task.id, done, { day, locked: state.state === 'done' && state.locked }));
-    row.appendChild(makePisiTaskView('span', 'pisi-task-title', task.title || pisiTaskBlockTranslate('Başlıksız görev')));
-    if (state.state === 'done' && state.at) row.appendChild(makePisiTaskView('span', 'pisi-task-chip', formatPisiTaskTime(state.at)));
-    else if (state.state === 'dated' && state.dueDate) row.appendChild(makePisiTaskView('span', 'pisi-task-chip', formatPisiTaskDay(state.dueDate)));
-    else if (task.dueTime) row.appendChild(makePisiTaskView('span', 'pisi-task-chip', task.dueTime));
-    return { row, done };
+/** A block for a task that is being created: drawn at once, saved only when the task has its id. */
+function makePisiPendingTaskBlock(title = '') {
+    const block = document.createElement('div');
+    block.className = `pisi-editor-block ${PISI_TASK_BLOCK_CLASS} pisi-task-pending`;
+    block.dataset.pisiBlockId = window.makePisiBlockId?.() || `blk_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+    block.dataset.pisiBlockType = 'task';
+    block.dataset[PENDING] = '1';
+    block.setAttribute('contenteditable', 'false');
+    const field = ensurePisiTaskTitleField(block, null, { text: title });
+    field.textContent = title;
+    drawPisiTaskBlock(block);
+    return block;
 }
 
-/** Screen order (not written): open first, then time and priority. */
-function sortPisiDiaryRows(entries) {
-    return entries.sort((a, b) => {
-        if (a.done !== b.done) return a.done ? 1 : -1;
-        const timeA = a.task.dueTime || '99:99';
-        const timeB = b.task.dueTime || '99:99';
-        if (timeA !== timeB) return timeA < timeB ? -1 : 1;
-        return (b.task.priority || 3) - (a.task.priority || 3);
-    });
+/** Gives a pending block the id of its new task and draws it. */
+function settlePisiPendingTaskBlock(block, { taskId, blockId }) {
+    if (!block) return null;
+    delete block.dataset[PENDING];
+    block.classList.remove('pisi-task-pending');
+    block.dataset.pisiTaskId = taskId;
+    if (blockId) block.dataset.pisiBlockId = blockId;
+    drawPisiTaskBlock(block);
+    return block;
+}
+
+// ---- Tasks of this note that have no block (§3.3) -----------------------------------
+
+function getPisiTaskHomelessIds(editor) {
+    const note = getPisiNoteOfEditor(editor);
+    if (!note?.noteId || note.diaryDate || getPisiTaskStoreProblem()) return [];
+    const present = new Set(Array.from(editor.querySelectorAll(`.${PISI_TASK_BLOCK_CLASS}[data-pisi-task-id]`)).map((block) => block.dataset.pisiTaskId));
+    return (window.getPisiTasks?.() || []).filter((task) => task.noteId === note.noteId && !present.has(task.id)).map((task) => task.id);
 }
 
 /**
- * Brings the task section of an open diary to the rule (§3.2.2): one section,
- * the last block, the day's tasks; none when the day has none. Returns true
- * when the section's ids changed (the diary should be saved). The overdue
- * group of today's diary comes with the full diary drawing in G3.
+ * The notice above the editor: "N tasks of this note are not in it" with
+ * "Add at the end". `allowShow` is false for store updates while editing: the
+ * notice then only shrinks (a block that is being saved is not reported).
  */
-function syncPisiDiaryTaskSectionIn(editor, day) {
-    if (!editor || !/^\d{4}-\d{2}-\d{2}$/.test(String(day || ''))) return false;
-    const tasks = window.getPisiTasks?.() || [];
-    const readOnly = Boolean(getPisiTaskStoreProblem());
-    const sections = Array.from(editor.querySelectorAll(`:scope > .${PISI_DIARY_TASKS_CLASS}`));
-    const before = sections.map((section) => section.dataset.pisiTaskIds || readPisiSectionRefs(section).join(',')).join('|');
-    const ids = readOnly ? (sections[0] ? readPisiSectionRefs(sections[0]) : []) : listPisiDiaryTaskIds(day, tasks);
-    sections.slice(1).forEach((section) => section.remove());
-    let section = sections[0] || null;
-    if (!ids.length && !readOnly) {
-        section?.remove();
-        return before !== '';
+function updatePisiTaskHomelessNotice(editor, { allowShow = false } = {}) {
+    const host = editor?.parentElement;
+    if (!host) return;
+    let notice = host.querySelector(':scope > .pisi-task-homeless');
+    const ids = getPisiTaskHomelessIds(editor);
+    const shown = notice ? (notice.dataset.pisiTaskIds || '').split(',').filter(Boolean) : [];
+    const list = allowShow ? ids : shown.filter((id) => ids.includes(id));
+    if (!list.length) {
+        notice?.remove();
+        return;
     }
-    if (!section) {
-        section = document.createElement('div');
-        section.className = `pisi-editor-block ${PISI_DIARY_TASKS_CLASS}`;
-        section.dataset.pisiBlockId = `blk_diary-tasks-${day}`;
-        section.dataset.pisiBlockType = 'diary-tasks';
+    if (!notice) {
+        notice = document.createElement('div');
+        notice.className = 'pisi-task-homeless';
+        notice.setAttribute('role', 'status');
+        host.insertBefore(notice, editor);
     }
-    editor.appendChild(section);
-    section.setAttribute('contenteditable', 'false');
-    section.dataset.pisiTaskIds = ids.join(',');
-    section.dataset.pisiDiaryDate = day;
-    section.replaceChildren();
-    section.appendChild(makePisiTaskView('div', 'pisi-diary-tasks-heading', pisiTaskBlockTranslate('Görevler')));
-    if (readOnly) section.appendChild(makePisiTaskView('div', 'pisi-task-missing', pisiTaskBlockTranslate('Görevler okunamadı')));
-    const byId = new Map(tasks.map((task) => [task.id, task]));
-    const entries = ids
-        .map((id) => byId.get(id))
-        .filter(Boolean)
-        .map((task) => ({ task, ...makePisiDiaryTaskRow(task, day) }));
-    for (const entry of sortPisiDiaryRows(entries)) section.appendChild(entry.row);
-    return before !== ids.join(',');
+    notice.dataset.pisiTaskIds = list.join(',');
+    notice.dataset.pisiTaskHost = editor.id;
+    const text = document.createElement('span');
+    text.textContent = pisiTaskBlockTranslate('Bu nota ait {count} görev notta görünmüyor.').replace('{count}', String(list.length));
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'pisi-task-homeless-add';
+    button.textContent = pisiTaskBlockTranslate('Sona ekle');
+    notice.replaceChildren(text, button);
+}
+
+async function appendPisiHomelessTasks(editor) {
+    const host = editor?.parentElement;
+    const notice = host?.querySelector(':scope > .pisi-task-homeless');
+    const ids = (notice?.dataset.pisiTaskIds || '').split(',').filter(Boolean);
+    notice?.remove();
+    const present = new Set(Array.from(editor.querySelectorAll(`.${PISI_TASK_BLOCK_CLASS}[data-pisi-task-id]`)).map((block) => block.dataset.pisiTaskId));
+    let added = 0;
+    for (const taskId of ids) {
+        if (present.has(taskId) || !window.getPisiTask?.(taskId)) continue;
+        const template = document.createElement('template');
+        template.innerHTML = makePisiTaskBlockHtml({ blockId: window.makePisiBlockId?.() || `blk_${Date.now().toString(36)}${added}`, taskId });
+        const block = template.content.firstElementChild;
+        const section = editor.querySelector(`:scope > .${PISI_DIARY_TASKS_CLASS}`);
+        if (section) section.before(block);
+        else editor.appendChild(block);
+        drawPisiTaskBlock(block);
+        added += 1;
+    }
+    if (!added) return;
+    editor.dispatchEvent(new Event('input', { bubbles: true }));
+    await window.flushPisiPendingSaves?.();
+}
+
+// ---- Drawing, cleaning, updates -------------------------------------------------------
+
+/** Draws every task block and the diary section of an editor. */
+function renderPisiTaskBlocksIn(editor) {
+    if (!editor) return;
+    editor.querySelectorAll(`.${PISI_TASK_BLOCK_CLASS}`).forEach((block) => {
+        if (block.dataset.pisiTaskId || isPisiPendingTaskBlock(block)) drawPisiTaskBlock(block);
+    });
+    const day = getPisiNoteOfEditor(editor)?.diaryDate;
+    if (day) window.syncPisiDiaryTaskSectionIn?.(editor, day);
+    updatePisiTaskHomelessNotice(editor);
 }
 
 function readPisiSectionRefs(section) {
@@ -148,33 +182,25 @@ function readPisiSectionRefs(section) {
         .filter(Boolean);
 }
 
-/** The diary day of an open editor, from the open note's metadata. */
-function getPisiEditorDiaryDate(editor) {
-    const centerEditor = document.getElementById('center-node-editor-content');
-    const node = editor === centerEditor ? window.activeCenterNode : editor?.id === 'node-modal-content' ? window.activeModalNode : null;
-    const date = node?.metadata?.diaryDate || node?.item?.metadata?.diaryDate || null;
-    return /^\d{4}-\d{2}-\d{2}$/.test(String(date || '')) ? date : null;
-}
-
-/** Draws every task block and the diary section of an editor. */
-function renderPisiTaskBlocksIn(editor) {
-    if (!editor) return;
-    editor.querySelectorAll(`.${PISI_TASK_BLOCK_CLASS}[data-pisi-task-id]`).forEach(drawPisiTaskBlock);
-    const day = getPisiEditorDiaryDate(editor);
-    if (day) syncPisiDiaryTaskSectionIn(editor, day);
-}
-
 /**
- * The saved form (GV2): task blocks empty, the diary section as its ids. Runs
- * on the copy getPisiEditorContent saves; the main process brings the section
- * to the rule again when the diary is saved.
+ * The saved form (GV2): task blocks empty, blocks being created left out, the
+ * diary section as its ids. Runs on the copy getPisiEditorContent saves; the
+ * main process brings the section to the rule again when the diary is saved.
  */
 function cleanPisiTaskDrawingsForSave(root) {
     if (!root) return;
     root.querySelectorAll(`.${PISI_TASK_BLOCK_CLASS}`).forEach((block) => {
+        if (isPisiPendingTaskBlock(block) || !block.dataset.pisiTaskId) {
+            block.remove();
+            return;
+        }
         block.replaceChildren();
-        block.classList.remove('pisi-task-done', 'pisi-task-block-missing', 'pisi-block-active', 'pisi-task-block-flash');
-        if (!block.getAttribute('class')?.includes('pisi-editor-block')) block.classList.add('pisi-editor-block');
+        block.classList.remove('pisi-task-done', 'pisi-task-block-missing', 'pisi-block-active', 'pisi-task-block-flash', 'pisi-task-pending');
+        if (!block.classList.contains('pisi-editor-block')) block.classList.add('pisi-editor-block');
+        for (const attribute of Array.from(block.attributes)) {
+            if (!['class', 'data-pisi-block-id', 'data-pisi-block-type', 'data-pisi-task-id', 'contenteditable'].includes(attribute.name))
+                block.removeAttribute(attribute.name);
+        }
     });
     root.querySelectorAll(`.${PISI_DIARY_TASKS_CLASS}`).forEach((section) => {
         const day = section.dataset.pisiDiaryDate || /blk_diary-tasks-(\d{4}-\d{2}-\d{2})/.exec(section.dataset.pisiBlockId || '')?.[1];
@@ -189,30 +215,92 @@ function cleanPisiTaskDrawingsForSave(root) {
     });
 }
 
+function getPisiOpenEditorsWithTasks() {
+    return ['center-node-editor-content', 'node-modal-content'].map((id) => document.getElementById(id)).filter((editor) => editor?.isConnected);
+}
+
 function refreshPisiOpenTaskDrawings() {
-    for (const id of ['center-node-editor-content', 'node-modal-content']) {
-        const editor = document.getElementById(id);
-        if (editor?.isConnected) renderPisiTaskBlocksIn(editor);
+    for (const editor of getPisiOpenEditorsWithTasks()) renderPisiTaskBlocksIn(editor);
+}
+
+/** A store change: only the blocks of the changed tasks are drawn again (§3.5). */
+function applyPisiTaskStoreUpdate(detail = {}) {
+    const ids = new Set([...(detail.changedIds || []), ...(detail.removedIds || [])]);
+    for (const id of detail.removedIds || []) pisiTaskTitleDrafts.delete(id);
+    for (const editor of getPisiOpenEditorsWithTasks()) {
+        if (detail.reset) {
+            renderPisiTaskBlocksIn(editor);
+            updatePisiTaskHomelessNotice(editor, { allowShow: true });
+            continue;
+        }
+        editor.querySelectorAll(`.${PISI_TASK_BLOCK_CLASS}[data-pisi-task-id]`).forEach((block) => {
+            if (ids.has(block.dataset.pisiTaskId)) drawPisiTaskBlock(block);
+        });
+        const day = getPisiNoteOfEditor(editor)?.diaryDate;
+        if (day) window.syncPisiDiaryTaskSectionIn?.(editor, day);
+        updatePisiTaskHomelessNotice(editor);
     }
 }
 
-function handlePisiTaskCheckClick(event) {
-    const box = event.target?.closest?.('[data-pisi-task-check]');
-    if (!box) return;
-    event.preventDefault();
-    event.stopPropagation();
+// ---- Checkbox and chips ---------------------------------------------------------------
+
+async function handlePisiTaskCheckActivate(box) {
     if (box.getAttribute('aria-disabled') === 'true') {
-        window.pisiNotifyWarning?.(pisiTaskBlockTranslate('Bu tamamlama kilitli: görev daha sonra yeniden tamamlandı.'));
+        if (box.dataset.pisiTaskLocked === 'true')
+            window.pisiNotifyWarning?.(pisiTaskBlockTranslate('Bu tamamlama kilitli: görev daha sonra yeniden tamamlandı.'));
         return;
     }
-    void window.togglePisiTaskCompletion?.(box.dataset.pisiTaskCheck, box.dataset.pisiTaskDay || null);
+    const editor = getPisiEditorOfTaskElement(box);
+    if (editor) window.rebasePisiEditorHistory?.(editor);
+    const result = await window.togglePisiTaskCompletion?.(box.dataset.pisiTaskCheck, box.dataset.pisiTaskDay || null);
+    if (editor && result?.ok) window.recordPisiEditorHistory?.(editor);
+}
+
+function handlePisiTaskChipActivate(chip) {
+    const task = window.getPisiTask?.(chip.dataset.pisiTaskChipFor);
+    if (!task || chip.disabled) return;
+    const editor = getPisiEditorOfTaskElement(chip);
+    openPisiTaskPopover(chip, {
+        kind: chip.dataset.pisiTaskChip,
+        task,
+        onPatch: (patch) => void window.updatePisiTaskFromEditor?.(editor, task.id, patch),
+        onClose: ({ restoreFocus }) => {
+            if (!restoreFocus) return;
+            const field = chip.closest('[data-pisi-task-row], .pisi-task-block')?.querySelector('[data-pisi-task-title]');
+            field?.focus?.({ preventScroll: true });
+        }
+    });
+}
+
+function handlePisiTaskBlockClick(event) {
+    const box = event.target?.closest?.('[data-pisi-task-check]');
+    if (box) {
+        event.preventDefault();
+        event.stopPropagation();
+        void handlePisiTaskCheckActivate(box);
+        return;
+    }
+    const chip = event.target?.closest?.('[data-pisi-task-chip]');
+    if (chip) {
+        event.preventDefault();
+        event.stopPropagation();
+        handlePisiTaskChipActivate(chip);
+        return;
+    }
+    const add = event.target?.closest?.('.pisi-task-homeless-add');
+    if (add) {
+        const editor = document.getElementById(add.closest('.pisi-task-homeless')?.dataset.pisiTaskHost || '');
+        void appendPisiHomelessTasks(editor);
+    }
 }
 
 function handlePisiTaskCheckKeydown(event) {
     if ((event.key !== 'Enter' && event.key !== ' ') || event.isComposing) return;
     const box = event.target?.closest?.('[data-pisi-task-check]');
     if (!box || document.activeElement !== box) return;
-    handlePisiTaskCheckClick(event);
+    event.preventDefault();
+    event.stopPropagation();
+    void handlePisiTaskCheckActivate(box);
 }
 
 function ensurePisiTaskBlockStyle() {
@@ -226,25 +314,43 @@ function ensurePisiTaskBlockStyle() {
 
 function initializePisiTaskBlocks() {
     ensurePisiTaskBlockStyle();
-    document.addEventListener('click', handlePisiTaskCheckClick, true);
+    document.addEventListener('click', handlePisiTaskBlockClick, true);
     document.addEventListener('keydown', handlePisiTaskCheckKeydown, true);
+    // A checkbox or chip click must not move the caret into the block.
+    document.addEventListener(
+        'mousedown',
+        (event) => {
+            if (event.target?.closest?.('[data-pisi-task-check], [data-pisi-task-chip]')) event.preventDefault();
+        },
+        true
+    );
     document.addEventListener('pisi:task-store-updated', (event) => {
-        refreshPisiOpenTaskDrawings();
+        applyPisiTaskStoreUpdate(event.detail || {});
         // A sync turn left open diaries to the editor: the section is drawn again and saved.
         for (const day of event.detail?.deferredDiaryDays || []) void window.applyPisiTaskDeferred?.({ notes: [], diaryDays: [day] });
     });
-    document.addEventListener('pisi:active-node-changed', () => queueMicrotask(refreshPisiOpenTaskDrawings));
+    document.addEventListener('pisi:active-node-changed', () =>
+        queueMicrotask(() => {
+            for (const editor of getPisiOpenEditorsWithTasks()) {
+                renderPisiTaskBlocksIn(editor);
+                updatePisiTaskHomelessNotice(editor, { allowShow: true });
+            }
+        })
+    );
 }
 
 initializePisiTaskBlocks();
 
 const moduleApi = {
+    drawPisiTaskBlock,
+    makePisiPendingTaskBlock,
+    settlePisiPendingTaskBlock,
     renderPisiTaskBlocksIn,
-    syncPisiDiaryTaskSectionIn,
     cleanPisiTaskDrawingsForSave,
-    refreshPisiOpenTaskDrawings
+    refreshPisiOpenTaskDrawings,
+    updatePisiTaskHomelessNotice
 };
 
 registerModule('tasks.block', moduleApi);
 
-export { renderPisiTaskBlocksIn, syncPisiDiaryTaskSectionIn, cleanPisiTaskDrawingsForSave };
+export { drawPisiTaskBlock, makePisiPendingTaskBlock, settlePisiPendingTaskBlock, renderPisiTaskBlocksIn, cleanPisiTaskDrawingsForSave };

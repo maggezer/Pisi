@@ -1,22 +1,16 @@
+// Block ids are always new. Task ids are not changed here: a pasted task block
+// is copied or brought back by renderer/tasks/pisi-task-clipboard.mjs (§3.3).
 export function rekeyPisiPastedBlocks(blocks, makeId) {
     const blockIds = new Map();
-    const taskIds = new Map();
     const nodes = blocks.flatMap((block) => [block, ...block.querySelectorAll('*')]);
     for (const node of nodes) {
         const id = node.dataset.pisiBlockId;
         if (id && !blockIds.has(id)) blockIds.set(id, makeId());
-        const taskId = node.dataset.pisiTaskId;
-        if (taskId && !taskIds.has(taskId)) taskIds.set(taskId, 'task_' + makeId());
     }
     for (const node of nodes) {
         if (node.dataset.pisiBlockId) node.dataset.pisiBlockId = blockIds.get(node.dataset.pisiBlockId);
-        if (node.dataset.pisiTaskId) node.dataset.pisiTaskId = taskIds.get(node.dataset.pisiTaskId);
-        for (const key of ['pisiHeadingParent', 'pisiTodoParent']) {
-            let value = node.dataset[key];
-            if (!value) continue;
-            for (const [oldId, newId] of [...blockIds, ...taskIds]) value = value.split(oldId).join(newId);
-            node.dataset[key] = value;
-        }
+        const parent = node.dataset.pisiHeadingParent;
+        if (parent && blockIds.has(parent)) node.dataset.pisiHeadingParent = blockIds.get(parent);
         if (node.tagName === 'A' && node.getAttribute('href')?.startsWith('#')) {
             const target = node.getAttribute('href').slice(1);
             if (blockIds.has(target)) node.setAttribute('href', '#' + blockIds.get(target));

@@ -102,6 +102,24 @@ function applyPisiTasksChanged(payload = {}) {
     });
 }
 
+/**
+ * Takes the records a task command returned at once, before its
+ * `pisi:tasks-changed` event arrives, so that the editor that ran the command
+ * draws the result in the same turn. The event then brings the same records.
+ */
+function rememberPisiTaskRecords({ tasks = [], removedIds = [] } = {}) {
+    if (!pisiTaskStoreState.loaded) return;
+    const changed = [];
+    for (const task of Array.isArray(tasks) ? tasks : []) {
+        if (!task?.id) continue;
+        if (JSON.stringify(pisiTaskStoreState.byId.get(task.id)) === JSON.stringify(task)) continue;
+        pisiTaskStoreState.byId.set(task.id, task);
+        changed.push(task.id);
+    }
+    const removed = (Array.isArray(removedIds) ? removedIds : []).filter((id) => pisiTaskStoreState.byId.delete(id));
+    if (changed.length || removed.length) dispatchPisiTaskStoreUpdated({ changedIds: changed, removedIds: removed, source: 'local' });
+}
+
 function initializePisiTaskStore() {
     if (pisiTaskStoreState.unsubscribe || !window.pisiTasks?.onChanged) return;
     pisiTaskStoreState.unsubscribe = window.pisiTasks.onChanged(applyPisiTasksChanged);
@@ -121,9 +139,10 @@ const moduleApi = {
     isPisiTaskStoreReadOnly,
     isPisiTaskStoreLoaded,
     loadPisiTaskStore,
-    applyPisiTasksChanged
+    applyPisiTasksChanged,
+    rememberPisiTaskRecords
 };
 
 registerModule('tasks.store', moduleApi);
 
-export { getPisiTasks, getPisiTask, isPisiTaskStoreReadOnly, isPisiTaskStoreLoaded, loadPisiTaskStore, applyPisiTasksChanged };
+export { getPisiTasks, getPisiTask, isPisiTaskStoreReadOnly, isPisiTaskStoreLoaded, loadPisiTaskStore, applyPisiTasksChanged, rememberPisiTaskRecords };

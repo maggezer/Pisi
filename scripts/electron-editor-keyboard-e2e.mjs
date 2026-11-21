@@ -2,10 +2,6 @@ import assert from 'node:assert/strict';
 
 export async function testEditorKeyboard(cdp) {
     const run = (expression) => cdp.evaluate(expression);
-    const task = (text) =>
-        '<div data-pisi-block-type="task"><span class="pisi-block-task-marker" data-pisi-todo-checkbox="todo.1.none" contenteditable="false">☐</span><span class="pisi-user-tag pisi-task-metadata" data-pisi-tag="todo.1.none" contenteditable="false">todo.1.none</span><span class="pisi-todo-source" data-pisi-todo-for="todo.1.none">' +
-        text +
-        '</span></div>';
 
     const setup = async (html, offset = 0) =>
         run(`(() => {
@@ -15,7 +11,6 @@ export async function testEditorKeyboard(cdp) {
         const block = editor.firstElementChild;
         const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
         let text = walker.nextNode();
-        while (text && text.parentElement.closest('.pisi-block-task-marker, .pisi-task-metadata')) text = walker.nextNode();
         const range = document.createRange();
         range.setStart(text || block, Math.min(${offset}, text ? text.length : block.childNodes.length));
         range.collapse(true);
@@ -30,7 +25,7 @@ export async function testEditorKeyboard(cdp) {
     };
     const blocks = () =>
         run(
-            `Array.from(document.getElementById('center-node-editor-content').children).map(block => ({ type: block.dataset.pisiBlockType, text: (() => { const clone = block.cloneNode(true); clone.querySelectorAll('.pisi-task-metadata, .pisi-block-task-marker').forEach(el => el.remove()); return clone.textContent.trim(); })(), id: block.dataset.pisiBlockId }))`
+            `Array.from(document.getElementById('center-node-editor-content').children).map(block => ({ type: block.dataset.pisiBlockType, text: (block.matches('.pisi-task-block') ? block.querySelector('[data-pisi-task-title]')?.textContent ?? '' : block.textContent).trim(), id: block.dataset.pisiBlockId }))`
         );
     const beforeInput = (inputType, isComposing = false) =>
         run(`(() => {
@@ -43,8 +38,7 @@ export async function testEditorKeyboard(cdp) {
         const editor = document.getElementById('center-node-editor-content');
         const block = editor.children[${index}];
         const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
-        let text = walker.nextNode();
-        while (text && text.parentElement.closest('.pisi-block-task-marker, .pisi-task-metadata')) text = walker.nextNode();
+        const text = walker.nextNode();
         const range = document.createRange();
         range.setStart(text || block, ${start});
         range.setEnd(text || block, ${end});
@@ -81,9 +75,9 @@ export async function testEditorKeyboard(cdp) {
             ]
         );
     }
-    for (const type of ['paragraph', 'heading2', 'quote', 'code', 'bullet', 'number', 'task']) {
+    for (const type of ['paragraph', 'heading2', 'quote', 'code', 'bullet', 'number']) {
         const tag = type === 'heading2' ? 'h2' : type === 'quote' ? 'blockquote' : type === 'code' ? 'pre' : 'div';
-        await setup(type === 'task' ? task('abcdef') : '<' + tag + ' data-pisi-block-type="' + type + '">abcdef</' + tag + '>', 3);
+        await setup('<' + tag + ' data-pisi-block-type="' + type + '">abcdef</' + tag + '>', 3);
         await key('Enter', true);
         const result = await blocks();
         assert.equal(result.length, 1, type + ': Shift+Enter stays in block');
@@ -127,35 +121,67 @@ export async function testEditorKeyboard(cdp) {
         await key('Backspace');
         assert.deepEqual(await blocks(), [{ type: 'paragraph', text: 'abcdef', id: original }]);
     }
-    await setup(task('abcdef'), 3);
+    // Task blocks (docs/task-plan.md G3): made with `[ ]`, the title is a field of its own.
+    const waitFor = async (label, probe) => {
+        for (let attempt = 0; attempt < 100; attempt += 1) {
+            if (await run(probe)) return;
+            await new Promise((resolve) => setTimeout(resolve, 50));
+        }
+        throw new Error('Timed out: ' + label);
+    };
+    const settled = `(() => { const e = document.getElementById('center-node-editor-content'); return !e.querySelector('.pisi-task-pending') && Boolean(e.querySelector('.pisi-task-block[data-pisi-task-id]')); })()`;
+    const titleCaret = (index, offset) =>
+        run(`(() => {
+        const field = document.getElementById('center-node-editor-content').children[${index}].querySelector('[data-pisi-task-title]');
+        field.focus();
+        const range = document.createRange();
+        range.setStart(field.firstChild || field, ${offset});
+        range.collapse(true);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        return document.activeElement === field;
+    })()`);
+    await setup('<div>[ ]</div>', 3);
+    await cdp.request('Input.dispatchKeyEvent', { type: 'keyDown', key: ' ', code: 'Space', windowsVirtualKeyCode: 32, text: ' ' });
+    await cdp.request('Input.dispatchKeyEvent', { type: 'keyUp', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
+    await cdp.request('Input.insertText', { text: 'abcdef' });
+    await waitFor('`[ ]` makes a task', settled);
+    assert.deepEqual(
+        (await blocks()).map(({ type, text }) => ({ type, text })),
+        [{ type: 'task', text: 'abcdef' }],
+        '`[ ]` and a space make a task'
+    );
+    await titleCaret(0, 3);
+    await key('Enter', true);
+    assert.equal((await blocks()).length, 1, 'task: Shift+Enter adds no line');
+    await key('Enter');
+    await waitFor(
+        'Enter splits a task',
+        `document.getElementById('center-node-editor-content').querySelectorAll('.pisi-task-block[data-pisi-task-id]').length === 2`
+    );
+    assert.deepEqual(
+        (await blocks()).map(({ type, text }) => ({ type, text })),
+        [
+            { type: 'task', text: 'abc' },
+            { type: 'task', text: 'def' }
+        ],
+        'task: Enter splits the title into a new task'
+    );
+    await titleCaret(1, 0);
+    await run(`(() => { const f = document.activeElement; f.textContent = ''; f.dispatchEvent(new InputEvent('input', { bubbles: true })); return true; })()`);
     await key('Enter');
     assert.deepEqual(
         (await blocks()).map(({ type, text }) => ({ type, text })),
         [
             { type: 'task', text: 'abc' },
-            { type: 'paragraph', text: 'def' }
-        ]
+            { type: 'paragraph', text: '' }
+        ],
+        'task: Enter on an empty task makes a paragraph'
     );
-    await setup(task('abcdef'));
-    await key('Enter');
-    assert.deepEqual(
-        (await blocks()).map(({ type, text }) => ({ type, text })),
-        [
-            { type: 'task', text: '' },
-            { type: 'paragraph', text: 'abcdef' }
-        ]
-    );
-    await setup(task(''));
-    await key('Enter');
-    assert.equal((await blocks()).length, 1);
-    assert.equal((await blocks())[0].type, 'paragraph');
-    for (const deletion of ['Backspace', 'Delete']) {
-        await setup(task('abcdef'));
-        await selectText(0, 0, 6);
-        await key(deletion);
-        assert.equal((await blocks())[0].text, '', deletion + ': selected task text must actually be deleted');
-        assert.equal((await blocks())[0].type, 'paragraph');
-    }
+    const caretBlock = `(() => { const node = window.getSelection().anchorNode; const element = node?.nodeType === 1 ? node : node?.parentElement; return element?.closest('.pisi-editor-block')?.dataset.pisiBlockType ?? null; })()`;
+    await key('Backspace');
+    assert.equal((await blocks()).length, 1, 'Backspace in the empty paragraph after a task removes the paragraph, not the task');
+    assert.equal(await run(`document.activeElement?.dataset?.pisiTaskTitle ? 'title' : ${caretBlock}`), 'title', 'the caret goes to the end of the task title');
     for (const tag of ['h2', 'blockquote', 'pre']) {
         await setup('<' + tag + '><br></' + tag + '>');
         const id = (await blocks())[0].id;

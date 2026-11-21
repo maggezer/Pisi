@@ -522,6 +522,7 @@ async function performNodeModalCloseAndSave(node) {
         }
 
         node.metadata = saveResult.metadata || node.metadata;
+        void window.applyPisiTaskDeferred?.(saveResult.deferred, { save: false });
         if (centerNode && activeCenterNode === centerNode && Number(centerNode.revision || 0) === centerRevision && !centerNode.dirty) {
             const elements = getCenterNodeEditorElements();
             setPisiEditorContent(elements.contentEditor, content);
@@ -830,6 +831,7 @@ async function performCurrentCenterNodeEditorSave(node, options = {}) {
         if (Number(node.revision || 0) === saveRevision) {
             node.dirty = false;
         }
+        void window.applyPisiTaskDeferred?.(saveResult.deferred, { save: false }); // diary sections (task-plan §3.3, GV9)
         if (activeCenterNode === node) dispatchPisiActiveNodeChanged('center-save');
 
         if (typeof refreshActiveMapTreeBranch === 'function') {

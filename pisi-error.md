@@ -240,9 +240,9 @@ sayısını denetleyen bir koruma.
 
 ## 5h. Görev sistemi: kalan bulgular (G3–G8)
 
-**[Orta · tasks · kısmen çözüldü (G2)]** 21-11-2026 incelemesinin bulguları
+**[Orta · tasks · kısmen çözüldü (G2, G3)]** 21-11-2026 incelemesinin bulguları
 [`docs/task-plan.md`](docs/task-plan.md) Ek A'dadır. G2'de (`tasks.json` sürüm 2, görev servisi)
-GB1–GB9, GB12, GK4, GK5, GK11, GK12 ve GK14 kapandı; not ve günlük artık yalnız görev kimliğini
+GB1–GB9, GB12, GK4, GK5, GK11, GK12 ve GK14, G3'te (editörde görev bloğu) GB14 ve GK2 kapandı; not ve günlük artık yalnız görev kimliğini
 taşır, bütün görev yazmaları ana süreçteki görev servisinden geçer ve hiçbir görev işlemi projeyi
 taramaz. Kalanlar (parantez içi kapatacak faz):
 
@@ -254,8 +254,6 @@ taramaz. Kalanlar (parantez içi kapatacak faz):
   denetler. (G8)
 - **GB11:** Notu olmayan görevler aramada görünüyor ama sonuçtan görev ayrıntısına gidilemiyor;
   arama G5'te tek kayıt üreticisine geçer. (G5)
-- **GB14:** Editörde görev oluşturma (`[ ]`, `/todo`, blok türü) G2'de kapatıldı; araç çubuğundaki
-  "Görev" düğmesi Quick Add'i açar. Editörden görev oluşturma ve başlığı blokta düzenleme G3'tedir. (G3)
 - Takvim, harita rozetleri ve arama G5'e kadar görev deposuna en küçük değişiklikle bağlıdır:
   takvim görevi bitiş gününde sayar (günlük bölümünün gün kuralı G5/G8'de iki platformda birlikte
   gelir). (G5)
