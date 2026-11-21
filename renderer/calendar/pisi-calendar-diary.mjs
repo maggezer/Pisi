@@ -1,10 +1,4 @@
-import {
-    getCalendarState,
-    getCurrentCalendarProjectKey,
-    parseIsoDate,
-    pisiCalendarRuntimeState,
-    saveCalendarStateToStorage,
-} from './pisi-calendar-state.mjs';
+import { getCalendarState, getCurrentCalendarProjectKey, parseIsoDate, pisiCalendarRuntimeState, saveCalendarStateToStorage } from './pisi-calendar-state.mjs';
 
 let renderPisiCalendarCallback = null;
 

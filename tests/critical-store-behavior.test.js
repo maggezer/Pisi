@@ -167,7 +167,11 @@ test('silme/geri yükleme: çakışmada geri yükleme hiçbir şeyi değiştirme
     // Without the parent map a node cannot come back either.
     fs.rmSync(first.path);
     const state = taskStore.readPisiTaskStore(project);
-    taskStore.writePisiTaskStore(project, state, state.tasks.filter((item) => item.id !== task.id));
+    taskStore.writePisiTaskStore(
+        project,
+        state,
+        state.tasks.filter((item) => item.id !== task.id)
+    );
     fs.rmSync(mapPath);
     const orphan = trashStore.restorePisiTrashItem(project, moved.trashId);
     assert.equal(orphan.code, 'TRASH_RESTORE_CONFLICT');

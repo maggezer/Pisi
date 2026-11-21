@@ -1,9 +1,5 @@
 import { registerModule } from '../core/module-registry.mjs';
-import {
-    getPisiTaskNavigationTaskId,
-    normalizePisiNavigationText,
-    selectPisiTaskNavigationCandidate
-} from '../navigation/pisi-navigation-core.mjs';
+import { getPisiTaskNavigationTaskId, normalizePisiNavigationText, selectPisiTaskNavigationCandidate } from '../navigation/pisi-navigation-core.mjs';
 
 let pisiMissionHighlightAnimation = null;
 let pisiMissionHighlightRequest = 0;

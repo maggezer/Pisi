@@ -71,4 +71,3 @@ document.addEventListener('pisi:task-store-updated', () => {
         renderCalendar();
     }
 });
-

@@ -115,10 +115,7 @@ test('clicking the notification brings the window forward and opens the task sou
     assert.equal(h.shown.length, 1);
     h.shown[0].emit('click');
     assert.deepEqual(h.windowCalls, ['show']);
-    assert.deepEqual(
-        { ...h.sent.at(-1), key: undefined },
-        { type: 'open', key: undefined, taskId: 'task_two02', noteId: 'node_task_two02', diaryDate: null }
-    );
+    assert.deepEqual({ ...h.sent.at(-1), key: undefined }, { type: 'open', key: undefined, taskId: 'task_two02', noteId: 'node_task_two02', diaryDate: null });
 });
 
 test('task changes re-plan the single timer', () => {

@@ -150,7 +150,10 @@ function syncPisiDiaryTaskSectionIn(editor, day) {
         section.appendChild(group);
     }
     const byId = new Map(tasks.map((task) => [task.id, task]));
-    const entries = ids.map((id) => byId.get(id)).filter(Boolean).map((task) => ({ task, ...makePisiDiaryTaskRow(task, day) }));
+    const entries = ids
+        .map((id) => byId.get(id))
+        .filter(Boolean)
+        .map((task) => ({ task, ...makePisiDiaryTaskRow(task, day) }));
     for (const entry of sortPisiDiaryRows(entries)) section.appendChild(entry.row);
     return before !== ids.join(',');
 }
@@ -207,7 +210,7 @@ function cleanPisiTaskDrawingsForSave(root) {
     });
 }
 
-function rerenderPisiOpenTaskEditors() {
+function refreshPisiOpenTaskDrawings() {
     for (const id of ['center-node-editor-content', 'node-modal-content']) {
         const editor = document.getElementById(id);
         if (editor?.isConnected) renderPisiTaskBlocksIn(editor);
@@ -247,11 +250,11 @@ function initializePisiTaskBlocks() {
     document.addEventListener('click', handlePisiTaskCheckClick, true);
     document.addEventListener('keydown', handlePisiTaskCheckKeydown, true);
     document.addEventListener('pisi:task-store-updated', (event) => {
-        rerenderPisiOpenTaskEditors();
+        refreshPisiOpenTaskDrawings();
         // A sync turn left open diaries to the editor: the section is drawn again and saved.
         for (const day of event.detail?.deferredDiaryDays || []) window.applyPisiTaskDeferred?.({ notes: [], diaryDays: [day] });
     });
-    document.addEventListener('pisi:active-node-changed', () => queueMicrotask(rerenderPisiOpenTaskEditors));
+    document.addEventListener('pisi:active-node-changed', () => queueMicrotask(refreshPisiOpenTaskDrawings));
 }
 
 initializePisiTaskBlocks();
@@ -260,7 +263,7 @@ const moduleApi = {
     renderPisiTaskBlocksIn,
     syncPisiDiaryTaskSectionIn,
     cleanPisiTaskDrawingsForSave,
-    rerenderPisiOpenTaskEditors
+    refreshPisiOpenTaskDrawings
 };
 
 registerModule('tasks.block', moduleApi);

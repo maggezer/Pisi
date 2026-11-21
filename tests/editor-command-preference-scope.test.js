@@ -24,7 +24,7 @@ global.localStorage = {
 global.window = {
     PISI_BLOCK_SLASH_COMMANDS: [
         { id: 'paragraph', label: 'Paragraph', slash: 'paragraph', action: 'block' },
-        { id: 'bullet', label: 'Bullet', slash: 'bullet', action: 'block' },
+        { id: 'bullet', label: 'Bullet', slash: 'bullet', action: 'block' }
     ]
 };
 

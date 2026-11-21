@@ -90,7 +90,7 @@ async function resolvePisiNotePath(noteId) {
 
 // ---- Deferred changes of open documents (GV9) -------------------------------------
 
-function notifyPisiTaskEditorChanged(editor) {
+function notifyPisiEditorOfTaskChange(editor) {
     editor.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
@@ -130,7 +130,7 @@ function applyPisiTaskDeferred(deferred) {
             if (window.syncPisiDiaryTaskSectionIn?.(open.editor, day)) touched.add(open.editor);
         }
     }
-    for (const editor of touched) notifyPisiTaskEditorChanged(editor);
+    for (const editor of touched) notifyPisiEditorOfTaskChange(editor);
 }
 
 // ---- Commands ----------------------------------------------------------------------

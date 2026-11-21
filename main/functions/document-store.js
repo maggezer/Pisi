@@ -1,13 +1,7 @@
 import { registerMainModule } from '../module-registry.js';
 import { createUniquePisiFile, ensurePisiSidecar } from './document-store-io.js';
 import { ensurePisiFileMetadata, makePisiDiaryNodeTitle, normalizePisiDiaryIsoDate } from './document-store-metadata.js';
-import {
-    ensurePisiDiaryFolder,
-    getOrCreateDiaryNode,
-    getPisiDiaryNodePath,
-    listPisiDiaryDates,
-    listPisiDiaryNodePaths
-} from './document-store-diary.js';
+import { ensurePisiDiaryFolder, getOrCreateDiaryNode, getPisiDiaryNodePath, listPisiDiaryDates, listPisiDiaryNodePaths } from './document-store-diary.js';
 import { createNodeUnderMap, renamePisiFile } from './document-store-mutations.js';
 
 const moduleApi = {};

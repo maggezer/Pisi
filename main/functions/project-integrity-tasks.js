@@ -28,7 +28,13 @@ function readTaskRecords(projectFolder, context) {
     if (!store.ok) {
         shared.issue(
             context,
-            { severity: 'critical', code: 'task-store-invalid', domain: 'tasks', path: STORE_PATH, message: `Görev deposu okunamıyor: ${store.error || 'geçersiz'}` },
+            {
+                severity: 'critical',
+                code: 'task-store-invalid',
+                domain: 'tasks',
+                path: STORE_PATH,
+                message: `Görev deposu okunamıyor: ${store.error || 'geçersiz'}`
+            },
             {
                 safety: 'manual',
                 action: 'recover-task-store',
@@ -73,7 +79,8 @@ function auditTaskDependencies(context, byId) {
     for (const task of tasks) {
         const raw = Array.isArray(task.dependencies) ? task.dependencies : [];
         for (const dependencyId of raw) {
-            if (!byId.has(dependencyId)) taskIssue(context, 'task-dependency-missing', 'error', `Bağımlı olunan görev yok: ${dependencyId}`, { entityId: task.id });
+            if (!byId.has(dependencyId))
+                taskIssue(context, 'task-dependency-missing', 'error', `Bağımlı olunan görev yok: ${dependencyId}`, { entityId: task.id });
         }
         const cycle = findPisiTaskDependencyCycle(tasks, task.id, raw);
         if (cycle) {
@@ -109,7 +116,10 @@ function auditTaskBlocks(context, inventory, byId) {
         const task = byId.get(taskId);
         if (!task) {
             for (const doc of docs) {
-                taskIssue(context, 'task-block-orphan', 'warning', `Notta kaydı olmayan bir görev bloğu var: ${taskId}`, { path: doc.storedPath, entityId: taskId });
+                taskIssue(context, 'task-block-orphan', 'warning', `Notta kaydı olmayan bir görev bloğu var: ${taskId}`, {
+                    path: doc.storedPath,
+                    entityId: taskId
+                });
             }
             continue;
         }
@@ -120,8 +130,11 @@ function auditTaskBlocks(context, inventory, byId) {
             continue;
         }
         const location = getPisiTaskLocation(task);
-        if (location && (location.kind !== 'note' || docs[0].metadata.id !== location.noteId)) {
-            taskIssue(context, 'task-block-misplaced', 'warning', 'Görevin bloğu görevin yeri olmayan bir notta.', { path: docs[0].storedPath, entityId: taskId });
+        if (location && (location.kind !== 'note' || docs[0].metadata?.id !== location.noteId)) {
+            taskIssue(context, 'task-block-misplaced', 'warning', 'Görevin bloğu görevin yeri olmayan bir notta.', {
+                path: docs[0].storedPath,
+                entityId: taskId
+            });
         }
     }
     for (const task of byId.values()) {
@@ -131,7 +144,7 @@ function auditTaskBlocks(context, inventory, byId) {
             taskIssue(context, 'task-note-missing', 'error', `Görevin notu yok: ${task.noteId}`, { entityId: task.id });
             continue;
         }
-        if (!(occurrences.get(task.id) || []).includes(note)) {
+        if (!(occurrences.get(task.id) || []).some((doc) => doc.filePath === note.filePath)) {
             taskIssue(context, 'task-homeless', 'warning', 'Görevin notunda görev bloğu yok.', { path: note.storedPath, entityId: task.id });
         }
     }

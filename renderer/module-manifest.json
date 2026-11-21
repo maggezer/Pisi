@@ -871,7 +871,7 @@
     {
         "module": "tasks.block",
         "path": "renderer/tasks/pisi-task-block.mjs",
-        "bindings": ["renderPisiTaskBlocksIn", "syncPisiDiaryTaskSectionIn", "cleanPisiTaskDrawingsForSave", "rerenderPisiOpenTaskEditors"]
+        "bindings": ["renderPisiTaskBlocksIn", "syncPisiDiaryTaskSectionIn", "cleanPisiTaskDrawingsForSave", "refreshPisiOpenTaskDrawings"]
     },
     {
         "module": "tasks.panel",

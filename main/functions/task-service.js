@@ -3,15 +3,8 @@ import * as path from 'node:path';
 import * as crypto from 'node:crypto';
 import { modules, registerMainModule } from '../module-registry.js';
 import { formatPisiBlockId, isPisiTaskId } from '../../shared/ids.mjs';
-import {
-    completePisiTask,
-    findPisiTaskDependencyCycle,
-    isSamePisiTask,
-    normalizePisiTask,
-    readPisiTask,
-    reopenPisiTask
-} from '../../shared/task-model.mjs';
-import { insertPisiTaskBlock, listPisiTaskBlocks, makePisiTaskBlockHtml, removePisiTaskBlock } from '../../shared/task-blocks.mjs';
+import { completePisiTask, findPisiTaskDependencyCycle, isSamePisiTask, normalizePisiTask, readPisiTask, reopenPisiTask } from '../../shared/task-model.mjs';
+import { diffPisiTaskMembership, insertPisiTaskBlock, listPisiTaskBlocks, makePisiTaskBlockHtml, removePisiTaskBlock } from '../../shared/task-blocks.mjs';
 import { getPisiTaskDayChanges, listPisiDiaryTaskIds, replacePisiDiaryTaskSection } from '../../shared/task-diary.mjs';
 import { normalizePisiDiaryIsoDate } from '../../shared/diary-rules.mjs';
 
@@ -471,7 +464,12 @@ function completePisiTaskCommand(projectFolder, payload = {}) {
     taskStore.writePisiTaskStore(projectFolder, read.state, tasks, { now });
     reachPisiTaskServicePoint('after-store-write');
     writePisiDiarySectionsForChanges(projectFolder, tasks, [{ before, after: result.task }], context);
-    return finishPisiTaskCommand(projectFolder, context, { changed: true, task: readPisiTask(result.task), completion: result.completion }, { changed: [result.task] });
+    return finishPisiTaskCommand(
+        projectFolder,
+        context,
+        { changed: true, task: readPisiTask(result.task), completion: result.completion },
+        { changed: [result.task] }
+    );
 }
 
 function reopenPisiTaskCommand(projectFolder, payload = {}) {
@@ -676,6 +674,125 @@ function canonicalizePisiTaskBlocks(content) {
     return result;
 }
 
+// ---- Note save (§3.3) ------------------------------------------------------------
+
+function saveNoteContent(nodePath, content) {
+    const saver = globalThis.saveNodeContentWithHistory || globalThis.saveNodeContent;
+    return saver(nodePath, content, { reason: 'editor-save' });
+}
+
+/**
+ * The editor's save of a note. Task blocks are stored in their bare form
+ * (GV2) and a diary's task section is the one the rule gives (GV15). When the
+ * save takes task blocks out of the note or brings ids back, the tasks follow
+ * in the same atomic mutation: a task whose place is this note and whose block
+ * is gone goes to the Trash (one item for the save); an id that is in the
+ * Trash comes back and lives in this note. A live task of another note is left
+ * alone (Integrity reports it). Sync never runs this (it writes notes itself).
+ */
+function savePisiNoteWithTasks(projectFolder, nodePath, content, options = {}) {
+    const current = documentStore.ensurePisiFileMetadata(nodePath);
+    if (!current.ok) return current;
+    const before = String(current.data?.content || '');
+    const next = canonicalizePisiTaskBlocks(String(content ?? ''));
+    const diaryDate = getPisiNoteDiaryDate(projectFolder, nodePath, current.data);
+    const state = taskStore.readPisiTaskStoreState(projectFolder);
+    const diff = state.readOnly ? null : diffPisiTaskMembership(before, next);
+    const changesTasks = Boolean(diff && (diff.added.length || diff.removed.length));
+
+    const normalizeSection = (html, tasks) => {
+        if (!diaryDate || state.readOnly) return html;
+        const ids = listPisiDiaryTaskIds(diaryDate, tasks.map(readPisiTask).filter(Boolean));
+        return replacePisiDiaryTaskSection(html, diaryDate, ids) ?? html;
+    };
+    if (!changesTasks) return saveNoteContent(nodePath, normalizeSection(next, state.tasks));
+
+    return modules['main.atomicMutation'].runPisiAtomicMutation(projectFolder, 'note.save-tasks', () => {
+        const fresh = taskStore.readPisiTaskStore(projectFolder);
+        const tasks = fresh.tasks.slice();
+        const noteId = current.metadata?.id;
+        const byId = new Map(tasks.map((task) => [task?.id, task]));
+        const removedIds = diff.removed.filter((id) => byId.get(id)?.noteId === noteId);
+        const comingBack = diff.added.filter((id) => !byId.has(id));
+
+        const fromTrash = modules['main.trashStore'].takePisiTasksFromTrash(projectFolder, comingBack);
+        const now = new Date();
+        const restored = fromTrash.tasks.map((task) => {
+            const placed = normalizePisiTask({ noteId }, task, { now, makeUuid: () => '' });
+            return placed.ok ? placed.task : { ...task, noteId, diaryDate: null };
+        });
+        const out = takePisiTasksOut(tasks, removedIds);
+        let nextTasks = [...out.remaining, ...restored];
+        if (fromTrash.dependencyRefs.length) {
+            const refs = new Map(fromTrash.dependencyRefs.map((ref) => [ref.taskId, ref.dependencies]));
+            nextTasks = nextTasks.map((task) =>
+                refs.has(task.id) ? { ...task, dependencies: Array.from(new Set([...(task.dependencies || []), ...refs.get(task.id)])) } : task
+            );
+        }
+
+        let trashId = null;
+        if (out.removed.length) {
+            const oldBlocks = listPisiTaskBlocks(before) || [];
+            const relative = nodePath
+                .slice(projectFolder.length)
+                .replace(/^[\\/]+/, '')
+                .split(/[\\/]+/)
+                .join('/');
+            const taskBlocks = out.removed.map((task) => {
+                const block = oldBlocks.find((item) => item.taskId === task.id);
+                const previous = block ? [...before.slice(0, block.start).matchAll(/data-pisi-block-id="([^"]+)"/g)].at(-1) : null;
+                return { taskId: task.id, noteId, notePath: relative, blockId: block?.blockId || null, afterBlockId: previous ? previous[1] : null };
+            });
+            const label = out.removed.length === 1 ? readPisiTask(out.removed[0])?.title || out.removed[0].id : `${out.removed.length}`;
+            const trash = modules['main.trashStore'].createPisiTaskTrashItem(projectFolder, {
+                tasks: out.removed,
+                taskDependencyRefs: out.dependencyRefs,
+                taskBlocks,
+                label
+            });
+            if (!trash.ok) return trash;
+            trashId = trash.trashId;
+        }
+        if (out.removed.length || restored.length || fromTrash.dependencyRefs.length) taskStore.writePisiTaskStore(projectFolder, fresh, nextTasks, { now });
+
+        const saved = saveNoteContent(nodePath, normalizeSection(next, nextTasks));
+        if (!saved?.ok) return saved;
+        const openPaths = [nodePath, ...(Array.isArray(options.openPaths) ? options.openPaths : [])];
+        const rewritten = rewritePisiDiarySectionsForTaskChange(projectFolder, tasks, nextTasks, { openPaths });
+        const touched = new Set([
+            ...restored.map((task) => task.id),
+            ...out.dependencyRefs.map((ref) => ref.taskId),
+            ...fromTrash.dependencyRefs.map((ref) => ref.taskId)
+        ]);
+        emitPisiTasksChanged(projectFolder, {
+            changed: nextTasks.filter((task) => touched.has(task.id)),
+            removedIds: out.removed.map((task) => task.id)
+        });
+        return {
+            ...saved,
+            tasks: { removed: out.removed.map((task) => task.id), restored: restored.map((task) => task.id), trashId },
+            deferred: rewritten.context.deferred
+        };
+    });
+}
+
+/**
+ * A diary opened (and so created) from the calendar gets the task section of
+ * its day at once: the section belongs to the diary from its first byte (GV15).
+ */
+function getOrCreatePisiDiaryWithTasks(projectFolder, isoDate) {
+    const day = String(isoDate || '');
+    const diaryPath = /^\d{4}-\d{2}-\d{2}$/.test(day) ? documentStore.getPisiDiaryNodePath(projectFolder, day) : null;
+    const existed = diaryPath ? fs.existsSync(diaryPath) : true;
+    const created = documentStore.getOrCreateDiaryNode(projectFolder, isoDate);
+    if (!created.ok || existed) return created;
+    const state = taskStore.readPisiTaskStoreState(projectFolder);
+    if (state.readOnly) return created;
+    const context = makePisiTaskCommandContext({});
+    writePisiDiarySections(projectFolder, state.tasks.map(readPisiTask).filter(Boolean), [day], context, { create: [day] });
+    return context.writtenDiaries.length ? documentStore.getOrCreateDiaryNode(projectFolder, isoDate) : created;
+}
+
 const moduleApi = {
     setPisiTaskServiceClock,
     setPisiTaskServiceFaultHook,
@@ -695,7 +812,9 @@ const moduleApi = {
     writePisiDiarySections,
     restorePisiTaskBlocks,
     canonicalizePisiTaskBlocks,
-    makePisiTaskCommandContext
+    makePisiTaskCommandContext,
+    savePisiNoteWithTasks,
+    getOrCreatePisiDiaryWithTasks
 };
 
 registerMainModule('main.taskService', moduleApi);

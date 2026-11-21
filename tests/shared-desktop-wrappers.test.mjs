@@ -193,4 +193,3 @@ test('görev servisi shared sürüm 2 kaydını yazar; saat ve UUID masaüstünd
     assert.equal(invalid.ok, false);
     assert.equal(invalid.code, 'TASK_INVALID');
 });
-

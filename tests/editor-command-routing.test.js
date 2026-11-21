@@ -101,7 +101,7 @@ global.window = {
         { id: 'paragraph', label: 'Paragraf', slash: 'paragraph', action: 'block' },
         { id: 'heading1', label: 'Başlık 1', slash: 'heading1', action: 'block' },
         { id: 'bullet', label: 'Madde', slash: 'bullet', action: 'block' },
-        { id: 'number', label: 'Numara', slash: 'number', action: 'block' },
+        { id: 'number', label: 'Numara', slash: 'number', action: 'block' }
     ]
 };
 global.document = {
