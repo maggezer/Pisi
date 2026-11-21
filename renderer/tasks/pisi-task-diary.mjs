@@ -77,6 +77,7 @@ function drawPisiDiaryTaskRow(previous, task, day, { readOnly, overdue = false, 
     let text = '';
     if (state.state === 'done' && state.at) text = formatPisiTaskTime(state.at);
     else if (overdue || (state.state === 'dated' && state.dueDate)) text = formatPisiTaskDay(task.dueDate);
+    else if (task.dueTime) text = task.dueTime;
     if (info.textContent !== text) info.textContent = text;
     info.hidden = !text;
     ensurePisiTaskChips(row, task, { kinds: ['priority', 'repeat'], readOnly: readOnly || lockedDone });
