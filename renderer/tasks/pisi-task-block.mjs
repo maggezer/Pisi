@@ -1,7 +1,6 @@
 import { registerModule } from '../core/module-registry.mjs';
 import { PISI_DIARY_TASKS_CLASS, PISI_TASK_BLOCK_CLASS } from '../../shared/task-blocks.mjs';
-import { getPisiTaskStateOnDay, listPisiDiaryTaskIds, listPisiOverdueTasks, makePisiDiaryTaskSectionHtml } from '../../shared/task-diary.mjs';
-import { getPisiTodayIsoDate } from '../../shared/task-model.mjs';
+import { getPisiTaskStateOnDay, listPisiDiaryTaskIds, makePisiDiaryTaskSectionHtml } from '../../shared/task-diary.mjs';
 
 // The editor's drawing of a task block (§3.2.1) and of a diary's task section
 // (§3.2.2), G2's interim form: a checkbox and the title. Both come from the
@@ -103,9 +102,9 @@ function sortPisiDiaryRows(entries) {
 
 /**
  * Brings the task section of an open diary to the rule (§3.2.2): one section,
- * the last block, the day's tasks; none when the day has none. Today's diary
- * also shows the overdue open tasks (never written). Returns true when the
- * section's ids changed (the diary should be saved).
+ * the last block, the day's tasks; none when the day has none. Returns true
+ * when the section's ids changed (the diary should be saved). The overdue
+ * group of today's diary comes with the full diary drawing in G3.
  */
 function syncPisiDiaryTaskSectionIn(editor, day) {
     if (!editor || !/^\d{4}-\d{2}-\d{2}$/.test(String(day || ''))) return false;
@@ -114,11 +113,9 @@ function syncPisiDiaryTaskSectionIn(editor, day) {
     const sections = Array.from(editor.querySelectorAll(`:scope > .${PISI_DIARY_TASKS_CLASS}`));
     const before = sections.map((section) => section.dataset.pisiTaskIds || readPisiSectionRefs(section).join(',')).join('|');
     const ids = readOnly ? (sections[0] ? readPisiSectionRefs(sections[0]) : []) : listPisiDiaryTaskIds(day, tasks);
-    const today = getPisiTodayIsoDate(new Date());
-    const overdue = !readOnly && day === today ? listPisiOverdueTasks(tasks, today) : [];
     sections.slice(1).forEach((section) => section.remove());
     let section = sections[0] || null;
-    if (!ids.length && !overdue.length && !readOnly) {
+    if (!ids.length && !readOnly) {
         section?.remove();
         return before !== '';
     }
@@ -132,23 +129,9 @@ function syncPisiDiaryTaskSectionIn(editor, day) {
     section.setAttribute('contenteditable', 'false');
     section.dataset.pisiTaskIds = ids.join(',');
     section.dataset.pisiDiaryDate = day;
-    if (!ids.length) section.dataset.pisiTaskViewOnly = '1';
-    else delete section.dataset.pisiTaskViewOnly;
     section.replaceChildren();
     section.appendChild(makePisiTaskView('div', 'pisi-diary-tasks-heading', pisiTaskBlockTranslate('Görevler')));
     if (readOnly) section.appendChild(makePisiTaskView('div', 'pisi-task-missing', pisiTaskBlockTranslate('Görevler okunamadı')));
-    if (overdue.length) {
-        const group = makePisiTaskView('div', 'pisi-diary-overdue');
-        group.appendChild(makePisiTaskView('div', 'pisi-diary-overdue-heading', pisiTaskBlockTranslate('Gecikenler')));
-        for (const task of overdue) {
-            const row = makePisiTaskView('div', 'pisi-diary-task-row pisi-diary-overdue-row');
-            row.appendChild(makePisiTaskCheckbox(task.id, false));
-            row.appendChild(makePisiTaskView('span', 'pisi-task-title', task.title || pisiTaskBlockTranslate('Başlıksız görev')));
-            row.appendChild(makePisiTaskView('span', 'pisi-task-chip', formatPisiTaskDay(task.dueDate)));
-            group.appendChild(row);
-        }
-        section.appendChild(group);
-    }
     const byId = new Map(tasks.map((task) => [task.id, task]));
     const entries = ids
         .map((id) => byId.get(id))
@@ -194,10 +177,6 @@ function cleanPisiTaskDrawingsForSave(root) {
         if (!block.getAttribute('class')?.includes('pisi-editor-block')) block.classList.add('pisi-editor-block');
     });
     root.querySelectorAll(`.${PISI_DIARY_TASKS_CLASS}`).forEach((section) => {
-        if (section.dataset.pisiTaskViewOnly === '1') {
-            section.remove();
-            return;
-        }
         const day = section.dataset.pisiDiaryDate || /blk_diary-tasks-(\d{4}-\d{2}-\d{2})/.exec(section.dataset.pisiBlockId || '')?.[1];
         const html = day ? makePisiDiaryTaskSectionHtml(day, readPisiSectionRefs(section)) : '';
         if (!html) {
