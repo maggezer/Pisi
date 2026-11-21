@@ -105,19 +105,14 @@ function applyPisiTasksChanged(payload = {}) {
 /**
  * Takes the records a task command returned at once, before its
  * `pisi:tasks-changed` event arrives, so that the editor that ran the command
- * draws the result in the same turn. The event then brings the same records.
+ * reads the result in the same turn (a diary section, the undo history). No
+ * update event is sent: the surfaces redraw once, on the main process's event,
+ * which brings the same records.
  */
 function rememberPisiTaskRecords({ tasks = [], removedIds = [] } = {}) {
     if (!pisiTaskStoreState.loaded) return;
-    const changed = [];
-    for (const task of Array.isArray(tasks) ? tasks : []) {
-        if (!task?.id) continue;
-        if (JSON.stringify(pisiTaskStoreState.byId.get(task.id)) === JSON.stringify(task)) continue;
-        pisiTaskStoreState.byId.set(task.id, task);
-        changed.push(task.id);
-    }
-    const removed = (Array.isArray(removedIds) ? removedIds : []).filter((id) => pisiTaskStoreState.byId.delete(id));
-    if (changed.length || removed.length) dispatchPisiTaskStoreUpdated({ changedIds: changed, removedIds: removed, source: 'local' });
+    for (const task of Array.isArray(tasks) ? tasks : []) if (task?.id) pisiTaskStoreState.byId.set(task.id, task);
+    for (const id of Array.isArray(removedIds) ? removedIds : []) pisiTaskStoreState.byId.delete(id);
 }
 
 function initializePisiTaskStore() {

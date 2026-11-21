@@ -155,6 +155,18 @@ export function ensurePisiTaskChips(container, task, { kinds = ['date', 'priorit
     return chips;
 }
 
+/**
+ * The input event a task change sends to its editor (autosave, undo history).
+ * It is marked so the history takes the step as this editor's own task change
+ * (renderer/editor/pisi-editor-history.mjs).
+ */
+export function dispatchPisiTaskChangeInput(editor) {
+    if (!editor) return;
+    const event = new Event('input', { bubbles: true });
+    Object.defineProperty(event, 'pisiTaskChange', { value: true });
+    editor.dispatchEvent(event);
+}
+
 /** The editor (center or note window) an element is in, else null. */
 export function getPisiEditorOfTaskElement(element) {
     return element?.closest?.('#center-node-editor-content, #node-modal-content') || null;

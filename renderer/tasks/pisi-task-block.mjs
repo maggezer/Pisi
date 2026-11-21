@@ -2,6 +2,7 @@ import { registerModule } from '../core/module-registry.mjs';
 import { PISI_DIARY_TASKS_CLASS, PISI_TASK_BLOCK_CLASS, makePisiTaskBlockHtml } from '../../shared/task-blocks.mjs';
 import { makePisiDiaryTaskSectionHtml } from '../../shared/task-diary.mjs';
 import {
+    dispatchPisiTaskChangeInput,
     ensurePisiTaskChips,
     ensurePisiTaskTitleField,
     getPisiNoteOfEditor,
@@ -158,7 +159,7 @@ async function appendPisiHomelessTasks(editor) {
         added += 1;
     }
     if (!added) return;
-    editor.dispatchEvent(new Event('input', { bubbles: true }));
+    dispatchPisiTaskChangeInput(editor);
     await window.flushPisiPendingSaves?.();
 }
 

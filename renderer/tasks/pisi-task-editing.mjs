@@ -2,6 +2,7 @@ import { registerModule } from '../core/module-registry.mjs';
 import { PISI_DIARY_TASKS_CLASS, PISI_TASK_BLOCK_CLASS } from '../../shared/task-blocks.mjs';
 import { cleanPisiTaskTitle, normalizePisiTaskTitleDraft, splitPisiTaskTitle } from './pisi-task-edit-core.mjs';
 import {
+    dispatchPisiTaskChangeInput,
     PISI_TASK_TITLE_SELECTOR,
     focusPisiTaskTitleField,
     getPisiNoteOfEditor,
@@ -50,7 +51,7 @@ function makePisiParagraph(html = '<br>') {
 }
 
 function notifyPisiEditorTaskChange(editor) {
-    editor?.dispatchEvent(new Event('input', { bubbles: true }));
+    dispatchPisiTaskChangeInput(editor);
 }
 
 // ---- Titles -----------------------------------------------------------------------------
@@ -408,7 +409,11 @@ function handlePisiDiaryTaskKey(event, editor, field, row, caret) {
             if (empty) return true;
             const title = field.textContent;
             field.textContent = '';
-            void createPisiTaskInEditor(editor, { title, focus: false }).then(() => focusPisiTaskTitleField(field));
+            void createPisiTaskInEditor(editor, { title, focus: false }).then(() => {
+                // Back to the add field for the next task, unless the user went elsewhere meanwhile.
+                const active = document.activeElement;
+                if (!active || active === document.body || active === field || !field.isConnected) focusPisiTaskTitleField(field);
+            });
             return true;
         }
         if (!task) return true;

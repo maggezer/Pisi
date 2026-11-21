@@ -2,6 +2,7 @@ import { registerModule } from '../core/module-registry.mjs';
 import { makePisiTaskBlockHtml } from '../../shared/task-blocks.mjs';
 import { getPisiTaskStateOnDay } from '../../shared/task-diary.mjs';
 import { getPisiTaskLatestCompletion, getPisiTodayIsoDate } from '../../shared/task-model.mjs';
+import { dispatchPisiTaskChangeInput } from './pisi-task-view.mjs';
 
 // Task commands from the renderer (docs/task-plan.md §3.4, GV9). Every change
 // goes to the main-process task service (task.*.v1). The open note and the
@@ -91,7 +92,7 @@ async function resolvePisiNotePath(noteId) {
 // ---- Deferred changes of open documents (GV9) -------------------------------------
 
 function notifyPisiEditorOfTaskChange(editor) {
-    editor.dispatchEvent(new Event('input', { bubbles: true }));
+    dispatchPisiTaskChangeInput(editor);
 }
 
 function insertPisiTaskBlockIntoEditor(editor, change) {

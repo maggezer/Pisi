@@ -138,6 +138,8 @@ export function bindPisiEditorHistory(editor) {
         const state = histories.get(editor);
         if (!state || state.restoring) return;
         state.kind = ['insertText', 'insertCompositionText'].includes(event.inputType) ? 'typing' : '';
+        // A task change of this editor (renderer/tasks/): its step is the editor's own, nothing to adopt.
+        if (event.pisiTaskChange) state.ownTasks = true;
         if (state.pending) return;
         state.pending = true;
         // All input normalization and metadata listeners finish before capture.

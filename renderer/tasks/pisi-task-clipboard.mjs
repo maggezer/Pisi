@@ -9,7 +9,13 @@ import {
     makePisiTaskCopyFields,
     readPisiTaskClipboardPayload
 } from './pisi-task-edit-core.mjs';
-import { PISI_TASK_TITLE_SELECTOR, getPisiNoteOfEditor, getPisiEditorOfTaskElement, getPisiTaskTitleText } from './pisi-task-view.mjs';
+import {
+    PISI_TASK_TITLE_SELECTOR,
+    dispatchPisiTaskChangeInput,
+    getPisiNoteOfEditor,
+    getPisiEditorOfTaskElement,
+    getPisiTaskTitleText
+} from './pisi-task-view.mjs';
 
 // Copy, cut, paste and duplicate of task blocks (docs/task-plan.md §3.3, G3.7;
 // docs/editor-paste-rules.md). The clipboard carries the task records
@@ -185,14 +191,14 @@ async function settlePisiPastedTasks(editor, blocks, clipboard = null) {
         changed = true;
     }
     if (changed) {
-        editor.dispatchEvent(new Event('input', { bubbles: true }));
+        dispatchPisiTaskChangeInput(editor);
         await window.flushPisiPendingSaves?.();
     }
     if (keptInDiary.length) {
         // The saved diary has no such block any more: its task is a row of the section now.
         keptInDiary.forEach((block) => block.remove());
         if (note?.diaryDate) window.syncPisiDiaryTaskSectionIn?.(editor, note.diaryDate);
-        editor.dispatchEvent(new Event('input', { bubbles: true }));
+        dispatchPisiTaskChangeInput(editor);
     }
 }
 
