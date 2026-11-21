@@ -43,21 +43,6 @@ test('hızlı geçiş klavye, filtre ve map odağı davranışlarını taşır',
     assert.match(commands, /event\.stopImmediatePropagation\(\)/);
 });
 
-test('task search results use canonical taskId and exact task navigation', () => {
-    const enhanced = read('renderer/search/pisi-search-enhanced-index.mjs');
-    const navigation = read('renderer/search/pisi-search-navigation.mjs');
-
-    assert.match(enhanced, /getPisiCanonicalSearchTasks/);
-    assert.match(enhanced, /kind: 'task'/);
-    assert.match(enhanced, /taskId: task\.id/);
-    assert.match(enhanced, /id: `task:\$\{task\.id\}`/);
-    assert.match(enhanced, /\.filter\(\(record\) => record\?\.kind !== 'task'\)/);
-    assert.match(navigation, /result\?\.kind === 'task'/);
-    assert.match(navigation, /result\?\.taskId/);
-    assert.match(navigation, /openPisiTagBlockResult/);
-    assert.match(navigation, /missionId: result\.taskId/);
-});
-
 test('indeks içerik türlerini korur ve node property değerlerini projection olarak ekler', () => {
     const source = read('renderer/search/pisi-search-index.mjs');
     const enhanced = read('renderer/search/pisi-search-enhanced-index.mjs');

@@ -139,18 +139,6 @@ test('task navigation exact identity has deterministic priority', async () => {
     }
 });
 
-test('todo navigation resolves canonical task then opens node and exact block context', () => {
-    const navigation = read('renderer/tags/pisi-todo-navigation.mjs');
-
-    assert.match(navigation, /getPisiCanonicalTaskForNavigation/);
-    assert.match(navigation, /resolvePisiTaskNavigationSource/);
-    assert.match(navigation, /recoverPisiTaskNavigationSource/);
-    assert.match(navigation, /pisiTaskId/);
-    assert.match(navigation, /openPisiFileTab/);
-    assert.match(navigation, /highlightPisiEditorBlock/);
-    assert.match(navigation, /pisi:task-navigation-complete/);
-});
-
 test('task clicks no longer stop at the currently visible map node box', () => {
     const navigation = read('renderer/tags/pisi-todo-navigation.mjs');
     const start = navigation.indexOf('async function openPisiTagBlockResult');

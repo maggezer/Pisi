@@ -42,56 +42,6 @@ function loadTaskStore() {
     return { window, calls, context, listeners };
 }
 
-test('task refresh reads canonical tasks without importing or rewriting indexed notes', async () => {
-    const { window, calls } = loadTaskStore();
-    window.pisiTagsPanelState = { missionIndexComplete: true, missionIndex: [{ tags: ['todo.3.none'], text: 'old task' }] };
-    const result = await window.refreshPisiFirstClassTaskStore();
-    assert.equal(result.ok, true);
-    assert.deepEqual(
-        calls.map((payload) => payload.op),
-        ['list']
-    );
-    assert.equal(window.pisiFirstClassTaskState.tasks.length, 0);
-});
-
-test('task projections require existing canonical identities and preserve task dependencies', () => {
-    const { window } = loadTaskStore();
-    const block = {
-        taskId: 'task_a',
-        tags: ['todo.3.none'],
-        todoSources: { 'todo.3.none': 'Updated' },
-        doneFor: ['todo.3.none'],
-        todoParents: { 'todo.3.none': 'dep:task_b|old-mission-id' }
-    };
-    window.pisiFirstClassTaskState.byId.set('task_a', { id: 'task_a' });
-    const [task] = window.buildPisiTasksFromProjection([block]);
-    assert.equal(task.id, 'task_a');
-    assert.equal(task.title, 'Updated');
-    assert.equal(task.status, 'done');
-    assert.deepEqual(Array.from(task.dependencies), ['task_b']);
-    assert.throws(() => window.buildPisiTasksFromProjection([{ ...block, taskId: '' }]), /canonical/);
-    assert.throws(() => window.buildPisiTasksFromProjection([{ ...block, taskId: 'task_unknown' }]), /canonical/);
-    assert.throws(() => window.buildPisiTasksFromProjection([block, block]), /yinelenen/);
-});
-
-test('new editor tasks receive stable IDs without deterministic legacy import', () => {
-    const { context } = loadTaskStore();
-    const tag = { dataset: { pisiTag: 'todo.3.none' }, classList: [] };
-    const block = {
-        dataset: { pisiBlockId: 'block_a' },
-        textContent: 'New task',
-        querySelectorAll: () => [tag],
-        querySelector: () => ({ textContent: 'New task' })
-    };
-    context.block = block;
-    const first = vm.runInContext("buildPisiTaskFromEditorBlock(block, {nodePath: '/project/a.node'})", context);
-    const second = vm.runInContext("buildPisiTaskFromEditorBlock(block, {nodePath: '/project/a.node'})", context);
-    assert.match(first.id, /^task_/);
-    assert.doesNotMatch(first.id, /legacy/);
-    assert.equal(first.id, second.id);
-    assert.equal(block.dataset.pisiTaskId, tag.dataset.pisiTaskId);
-});
-
 test('sheet hydration reads its stored model and never reconstructs absent or corrupt models from DOM', () => {
     const writes = [];
     const context = vm.createContext({

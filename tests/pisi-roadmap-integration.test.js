@@ -30,7 +30,7 @@ test('çekirdek platform modülleri bootstrap ve preload köprüsünde kayıtlı
     ])
         assert.ok(bootstrap.includes(marker), marker);
     for (const marker of [
-        'quickAddTask',
+        'pisiTasks',
         'saveNodeProperties',
         'getNodePropertyContext',
         'createPropertyMap',
@@ -43,7 +43,6 @@ test('çekirdek platform modülleri bootstrap ve preload köprüsünde kayıtlı
     ])
         assert.ok(preload.includes(marker), marker);
     for (const channel of [
-        'project:quick-add-task',
         'project:save-node-properties',
         'project:get-node-property-context',
         'project:create-property-map',
@@ -96,20 +95,6 @@ test('görev süreleri ve blok türleri sanitizer tarafından korunur', () => {
         'data-pisi-block-type'
     ])
         assert.ok(editor.includes(attribute), attribute);
-});
-
-test('alt görev hiyerarşisi kaldırılmış, görev bağımlılıkları korunmuştur', () => {
-    const secondRelease = read('renderer/tags/pisi-todo-second-release.mjs');
-    const utils = read('renderer/tags/pisi-todo-utils.mjs');
-    const thirdRelease = [read('renderer/tags/pisi-todo-third-release.mjs'), read('renderer/tags/pisi-todo-third-model.mjs')].join('\n');
-
-    assert.doesNotMatch(secondRelease, /subtask:/);
-    assert.doesNotMatch(secondRelease, /pisi-mission-add-child/);
-    assert.doesNotMatch(secondRelease, /completedChildren|mission\.depth|block\.todoParents/);
-    assert.doesNotMatch(secondRelease, /getPisiSubtaskParentIdSecondRelease|addPisiSubtaskSecondRelease/);
-    assert.match(utils, /todoParents/);
-    assert.match(thirdRelease, /startsWith\('dep:'\)/);
-    assert.match(thirdRelease, /pisiTodoParent/);
 });
 
 test('blok ve kısayol API yüzeyleri sürümlüdür', () => {

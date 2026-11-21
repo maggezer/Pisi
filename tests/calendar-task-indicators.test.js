@@ -31,7 +31,6 @@ test('takvim göstergesi görev durumlarına göre nötr, kırmızı ve yeşil r
 
     // 3. Runtime dinleyicileri
     assert.match(calendarRuntime, /pisi:task-store-updated/);
-    assert.match(calendarRuntime, /pisi:mission-index-updated/);
 });
 
 test('takvim görev ve günlük not çeviri anahtarları catalog içinde yer alır', () => {

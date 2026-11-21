@@ -30,7 +30,7 @@ const pathSecurity = modules['main.pathSecurity'];
 const filesystemCore = modules['main.filesystemCore'];
 const documentStore = modules['main.documentStore'];
 const taskStore = modules['main.taskStore'];
-const taskCapture = modules['main.taskCapture'];
+const taskService = modules['main.taskService'];
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -167,69 +167,30 @@ test('günlük notu shared kurallarıyla oluşturulur: yol, işaretçi ve belge 
     assert.deepEqual(documentStore.listPisiDiaryDates(project), { ok: true, dates: [isoDate] });
 });
 
-test('görev deposu shared kaydını yazar; saat, UUID ve yol çözümü masaüstünden gelir', (t) => {
+test('görev servisi shared sürüm 2 kaydını yazar; saat ve UUID masaüstünden gelir', (t) => {
     const project = makeProject(t);
-    t.mock.timers.enable({ apis: ['Date'], now: Date.UTC(2026, 10, 13, 6, 30, 15, 123) });
-    const payload = {
-        id: 'task_wrapper1',
-        title: '  Raporu   yaz ',
-        priority: 4,
-        dueDate: '2026-11-20',
-        repeat: 'Weekly',
-        source: { nodePath: path.join(project, 'notlar', 'a.node'), blockId: ' blk_1 ' }
-    };
+    globalThis.activeProjectFolder = project;
+    const clock = new Date(Date.UTC(2026, 10, 13, 6, 30, 15, 123));
+    taskService.setPisiTaskServiceClock(() => clock);
+    t.after(() => taskService.setPisiTaskServiceClock(null));
+    const fields = { title: '  Raporu   yaz ', priority: 4, dueDate: '2026-11-20', repeat: 'weekly' };
 
-    const result = taskStore.upsertPisiFirstClassTask(project, structuredClone(payload));
-    assert.equal(result.ok, true);
+    const result = taskService.createPisiTask(project, { task: structuredClone(fields), target: { diaryDate: '2026-11-20' } });
+    assert.equal(result.ok, true, result.error);
+    assert.match(result.task.id.slice('task_'.length), UUID);
 
-    const expected = sharedTaskModel.normalizePisiTaskRecord(payload, null, {
-        now: new Date(),
-        makeUuid: () => assert.fail('a valid id must not be replaced'),
-        normalizeStoredPath: (value) => (value ? path.relative(project, value).split(path.sep).join('/') : null)
+    const expected = sharedTaskModel.normalizePisiTask({ ...fields, id: result.task.id, diaryDate: '2026-11-20' }, null, {
+        now: clock,
+        makeUuid: () => assert.fail('the id is given')
     });
-    assert.equal(expected.source.nodePath, 'notlar/a.node');
+    assert.equal(expected.ok, true);
     const stored = JSON.parse(fs.readFileSync(path.join(project, '.pisi', 'tasks.json'), 'utf8'));
-    assert.deepEqual(stored.tasks, [expected]);
-    assert.equal(JSON.stringify(stored.tasks[0]), JSON.stringify(expected));
-    // The API hands back absolute paths; the file keeps project-relative ones.
-    assert.equal(result.task.source.nodePath, path.join(project, 'notlar', 'a.node'));
+    assert.equal(stored.version, 2);
+    assert.equal(JSON.stringify(stored.tasks), JSON.stringify([expected.task]));
+    assert.equal(stored.tasks[0].title, 'Raporu yaz');
 
-    const generated = taskStore.upsertPisiFirstClassTask(project, { title: 'Kimliksiz', id: 'geçersiz' });
-    assert.match(generated.task.id, /^task_/);
-    assert.match(generated.task.id.slice('task_'.length), UUID);
-    assert.throws(
-        () => taskStore.upsertPisiFirstClassTask(project, { title: 'Dışarıda', source: { nodePath: path.join(project, '..', 'x.node') } }),
-        /proje klasörünün dışında/
-    );
+    const invalid = taskService.createPisiTask(project, { task: { title: 'Kimliksiz', id: 'geçersiz' }, target: { diaryDate: '2026-11-20' } });
+    assert.equal(invalid.ok, false);
+    assert.equal(invalid.code, 'TASK_INVALID');
 });
 
-test('kaynak görev kimliği ve hızlı ekleme shared biçimlerini kullanır', (t) => {
-    assert.equal(taskStore.getPisiTaskIdForSource('notes\\a.node', 'blk_1', 'todo.3.none'), 'task_source_640e449a1418dc29');
-    assert.equal(
-        taskStore.getPisiTaskIdForSource('notes/a.node', 'blk_1', 'todo.3.none'),
-        sharedIds.formatPisiSourceTaskId('notes/a.node', 'blk_1', 'todo.3.none')
-    );
-
-    const project = makeProject(t);
-    const captured = taskCapture.quickAddPisiTask(project, { text: 'Hızlı görev', repeat: 'BIWEEKLY', priority: 2 });
-    assert.equal(captured.ok, true, captured.error);
-    assert.match(captured.task.blockId, /^blk_/);
-    assert.match(captured.task.blockId.slice('blk_'.length), UUID);
-    assert.equal(captured.task.blockId, sharedIds.formatPisiBlockId(captured.task.blockId.slice('blk_'.length)));
-
-    const note = JSON.parse(fs.readFileSync(captured.task.nodePath, 'utf8'));
-    assert.ok(note.content.includes(`data-pisi-block-id="${captured.task.blockId}"`));
-    assert.ok(note.content.includes('data-pisi-todo-repeat="biweekly"'));
-    assert.equal(
-        captured.task.taskId,
-        sharedIds.formatPisiSourceTaskId(
-            sharedIds.normalizePisiTaskIdentityPath(captured.task.nodePath, process.platform === 'win32'),
-            captured.task.blockId,
-            captured.task.todoTag
-        )
-    );
-
-    const unknownRepeat = taskCapture.quickAddPisiTask(project, { text: 'Bilinmeyen tekrar', repeat: 'yearly' });
-    const refreshed = JSON.parse(fs.readFileSync(unknownRepeat.task.nodePath, 'utf8'));
-    assert.equal(refreshed.content.split('data-pisi-todo-repeat="none"').length - 1, 1);
-});

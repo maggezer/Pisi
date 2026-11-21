@@ -13,7 +13,7 @@ test('sağ panel sekme içerikleri yinelenen turuncu adları göstermez', () => 
         'index.html',
         'renderer/search/pisi-links-panel.mjs',
         'renderer/search/pisi-search-panel.mjs',
-        'renderer/tags/pisi-todo-workspace.mjs',
+        'renderer/tasks/pisi-task-panel.mjs',
         'styles/10-shell-map-panels.css',
         'styles/90-themes.css'
     ];

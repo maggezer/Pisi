@@ -170,7 +170,6 @@ test('domain layer routes destructive and bulk operations through atomic mutatio
     const runtime = fs.readFileSync(path.join(__dirname, '..', 'main/functions/atomic-mutation.js'), 'utf8');
 
     for (const command of [
-        'task.capture.v1',
         'map.relationship.upsert.v1',
         'map.relationship.delete.v1',
         'map.relationship.reparent.v1',
@@ -187,14 +186,6 @@ test('domain layer routes destructive and bulk operations through atomic mutatio
     assert.match(runtime, /fs\.renameSync = function pisiAtomicRenameSync/);
     assert.match(runtime, /fs\.mkdirSync = function pisiAtomicMkdirSync/);
     assert.match(runtime, /fs\.writeFileSync = function pisiAtomicWriteFileSync/);
-});
-
-test('rename and move task-reference failure is an atomic failure rather than partial success', () => {
-    const domain = fs.readFileSync(path.join(__dirname, '..', 'main/functions/domain-command-query.js'), 'utf8');
-    assert.match(domain, /TASK_REFERENCE_REWRITE_FAILED/);
-    assert.match(domain, /attachRequiredPisiTaskReferenceRewrite/);
-    assert.match(domain, /project\.item\.rename\.v1/);
-    assert.match(domain, /project\.item\.move\.v1/);
 });
 
 test('startup project listing gates visible state behind atomic recovery', () => {

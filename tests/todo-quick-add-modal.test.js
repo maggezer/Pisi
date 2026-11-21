@@ -8,26 +8,6 @@ const test = require('node:test');
 const root = path.resolve(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('sağ To-do başlığı eşit kare, sağa yaslı ve yalnız ikonlu eylemleri taşır', () => {
-    const workspace = read('renderer/tags/pisi-todo-workspace.mjs');
-    const css = read('styles/50-productivity.css');
-
-    assert.match(workspace, /pisi-todo-panel-actions/);
-    assert.match(workspace, /id = 'pisi-todo-quick-add'/);
-    assert.match(workspace, /'pisi:quick-add-requested'/);
-    assert.match(workspace, /aria-keyshortcuts', 'Control\+M'/);
-    assert.doesNotMatch(workspace, /pisi-todo-panel-action-label/);
-    assert.match(workspace, /workspaceButton\.appendChild\(icon\)/);
-    assert.match(workspace, /quickAddButton\.appendChild\(icon\)/);
-    assert.match(css, /\.pisi-todo-panel-actions \{[\s\S]*justify-content: flex-end/);
-    assert.match(css, /\.pisi-todo-panel-action \{[\s\S]*width: 38px;[\s\S]*height: 38px/);
-    assert.doesNotMatch(css, /\.pisi-todo-panel-action-label/);
-    assert.match(css, /assets\/todo\/workspace\.svg/);
-    assert.match(css, /assets\/todo\/add-task\.svg/);
-    assert.ok(read('assets/todo/workspace.svg').includes('<svg'));
-    assert.ok(read('assets/todo/add-task.svg').includes('<svg'));
-});
-
 test('Tasks sekmesi çalışma merkezinden tamamen kaldırılır ve Quick Add modalda kalır', () => {
     const capture = read('renderer/productivity/pisi-quick-capture.mjs');
     const commandCenter = read('renderer/shell/pisi-command-center.mjs');

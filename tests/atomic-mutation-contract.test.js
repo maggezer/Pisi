@@ -68,11 +68,6 @@ test('bulk mutation is bounded and recursive batch command is not allowed', () =
 
 test('all persistent domain mutations join the atomic project queue', () => {
     for (const command of [
-        'task.capture.v1',
-        'task.upsert.v1',
-        'task.update.v1',
-        'task.delete.v1',
-        'task.sync-projection.v1',
         'map.relationship.upsert.v1',
         'map.relationship.delete.v1',
         'map.relationship.reparent.v1',

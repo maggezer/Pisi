@@ -19,31 +19,25 @@ test('trash relative path normalization rejects traversal', () => {
     assert.equal(trash.normalizePisiTrashRelativePath('/Folder/map.map'), 'Folder/map.map');
 });
 
-test('tasks sourced from deleted roots are archived and surviving dependencies are detached', () => {
+test('tasks go to the Trash with their place (noteId or diaryDate) and surviving dependencies are detached', () => {
     const tasks = [
-        {
-            id: 'task_deleted',
-            source: { nodePath: 'Folder/A.node', mapPath: null },
-            dependencies: []
-        },
-        {
-            id: 'task_live',
-            source: { nodePath: 'Elsewhere/B.node', mapPath: null },
-            dependencies: ['task_deleted', 'task_other']
-        }
+        { id: 'task_deleted', noteId: 'node_a', diaryDate: null, dependencies: [] },
+        { id: 'task_diary', noteId: null, diaryDate: '2026-11-21', dependencies: [] },
+        // A version 1 record: its old source path is not read (GV12).
+        { id: 'task_old', source: { nodePath: 'Folder/A.node' }, dependencies: [] },
+        { id: 'task_live', noteId: 'node_b', diaryDate: null, dependencies: ['task_deleted', 'task_other'] }
     ];
-    const split = trash.splitPisiTrashTaskStore(tasks, ['Folder']);
+    const split = trash.splitPisiTrashTaskStore(tasks, { nodeIds: new Set(['node_a']), diaryDates: new Set(['2026-11-21']) });
     assert.deepEqual(
         split.archived.map((task) => task.id),
-        ['task_deleted']
+        ['task_deleted', 'task_diary']
     );
-    assert.deepEqual(split.remaining[0].dependencies, ['task_other']);
-    assert.deepEqual(split.dependencyRefs, [
-        {
-            taskId: 'task_live',
-            dependencies: ['task_deleted']
-        }
-    ]);
+    assert.deepEqual(
+        split.remaining.map((task) => task.id),
+        ['task_old', 'task_live']
+    );
+    assert.deepEqual(split.remaining[1].dependencies, ['task_other']);
+    assert.deepEqual(split.dependencyRefs, [{ taskId: 'task_live', dependencies: ['task_deleted'] }]);
 });
 
 test('restoring tasks merges only archived dependency edges and keeps later dependencies', () => {

@@ -25,8 +25,6 @@ global.window = {
     PISI_BLOCK_SLASH_COMMANDS: [
         { id: 'paragraph', label: 'Paragraph', slash: 'paragraph', action: 'block' },
         { id: 'bullet', label: 'Bullet', slash: 'bullet', action: 'block' },
-        { id: 'task', label: 'Todo', slash: 'todo', action: 'todo' },
-        { id: 'done', label: 'Done', slash: 'done', action: 'done' }
     ]
 };
 
@@ -72,29 +70,24 @@ test('LaTeX support on exposes the full / and .. command sets', async () => {
         assert.ok(commandIds.has('paragraph'));
         assert.ok(commandIds.has('bullet'));
         assert.ok(commandIds.has('frac'));
-        assert.ok(commandIds.has('todo'));
-        assert.ok(commandIds.has('done'));
+        assert.ok(!commandIds.has('todo'));
+        assert.ok(!commandIds.has('done'));
     }
 });
 
-test('LaTeX support off leaves only todo and done for / and ..', async () => {
+// The task commands (/todo, /done) are closed until the editor makes tasks from the task store
+// (docs/task-plan.md G2, G3): with LaTeX off, / and .. offer nothing.
+test('LaTeX support off leaves no / and .. commands while the task commands are closed (G2)', async () => {
     const { preferences, routing } = await loadModules();
     localStorage.clear();
     preferences.setPisiDoubleDotCommandsPreference(true);
     preferences.setPisiLatexCommandsPreference(false);
 
     for (const trigger of ['/', '..']) {
-        const items = routing.buildPisiFinalCommandItems({ trigger, body: '' });
-        assert.equal(items.length, 2);
-        assert.deepEqual(ids(items), new Set(['todo', 'done']));
-        assert.ok(items.every((item) => ['todo-start', 'todo-done'].includes(item.kind)));
-
+        assert.deepEqual(routing.buildPisiFinalCommandItems({ trigger, body: '' }), []);
+        assert.deepEqual(routing.buildPisiFinalCommandItems({ trigger, body: 'todo' }), []);
+        assert.deepEqual(routing.buildPisiFinalCommandItems({ trigger, body: 'done' }), []);
         assert.deepEqual(routing.buildPisiFinalCommandItems({ trigger, body: 'bold' }), []);
-        assert.deepEqual(routing.buildPisiFinalCommandItems({ trigger, body: 'italic' }), []);
-        assert.deepEqual(routing.buildPisiFinalCommandItems({ trigger, body: 'paragraph' }), []);
-        assert.deepEqual(routing.buildPisiFinalCommandItems({ trigger, body: 'frac' }), []);
-        assert.equal(routing.buildPisiFinalCommandItems({ trigger, body: 'todo' }).length, 1);
-        assert.equal(routing.buildPisiFinalCommandItems({ trigger, body: 'done' }).length, 1);
     }
 });
 
