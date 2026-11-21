@@ -113,9 +113,9 @@ Pisi'nin kendi eşleştirme ve senkron sistemi [`docs/sync-plan.md`](docs/sync-p
 
 ## Görevler
 
-Görev sistemi [`docs/task-plan.md`](docs/task-plan.md) belgesindeki fazlarla (G0–G10) yeniden kuruluyor. **Görev işlerinde önce bu belgeyi oku.** Çalışma biçimi (§0), verilen kararlar (§1.3), değişmez kurallar (§2, GV1–GV14), hedef biçim (§3) ve görev PR'ları için ek "bitti" koşulları (§3.8) oradadır. Mobil fazında `docs/mobile-plan.md`, senkron fazında `docs/sync-plan.md` kuralları da geçerlidir.
+Görev sistemi [`docs/task-plan.md`](docs/task-plan.md) belgesindeki fazlarla (G0–G10) yeniden kuruluyor. **Görev işlerinde önce bu belgeyi oku.** Çalışma biçimi (§0), verilen kararlar (§1.3), değişmez kurallar (§2, GV1–GV15), hedef biçim (§3) ve görev PR'ları için ek "bitti" koşulları (§3.8) oradadır. Mobil fazında `docs/mobile-plan.md`, senkron fazında `docs/sync-plan.md` kuralları da geçerlidir.
 
-- Hedef: görevin bütün bilgisi `.pisi/tasks.json`'da (sürüm 2) durur; not yalnız görev kimliğini taşıyan bir blok tutar (`data-pisi-task-id`); panel, takvim, günlük, harita, arama, hatırlatma ve mobil görevi bu kayıttan çizer ve hiçbir görünüm dosya yazmaz.
+- Hedef: görevin bütün bilgisi `.pisi/tasks.json`'da (sürüm 2) durur. Not yalnız görev kimliğini taşıyan bir blok tutar (`data-pisi-task-id`); her görev bir notta ya da bir günün günlüğünde durur (Inbox yok) ve bitiş gününün günlüğünde (yoksa oluşturulur) altındaki görev bölümünde de görünür. Bu bölüm yalnız kimlik taşır ve görevin günleri değişince yazılır; başlık ya da durum değişikliği hiçbir not dosyasını yazmaz. Panel, takvim, harita, arama, hatırlatma ve mobil görevi bu kayıttan çizer.
 - Geçiş adımı yoktur: eski not işareti (`todo.<öncelik>.<tarih>` etiketi, `data-pisi-todo-*`) ve eski kayıt alanları dönüştürülmez.
 - Plan tamamlanana kadar bu dosyanın başka bölümlerinde anlatılan görev davranışı (yansıtma, `missionIndex`, günlük yönetilen bölümü, not görevinin mobilde salt okunur olması) bugünkü koddur; fazlar ilerledikçe güncellenir. 21-11-2026 incelemesinin bulguları: `docs/task-plan.md` Ek A ve `pisi-error.md` §5h.
 

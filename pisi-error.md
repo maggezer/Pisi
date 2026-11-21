@@ -116,8 +116,8 @@ korunsun. Aynı bölüm `data-pisi-diary-node-path` içinde masaüstünün mutla
 taşır; senkronla telefona da gider (sunucuya şifreli). Telefon bu bölümü salt okunur kart
 olarak gösterir ve yolu kullanmaz.
 
-Kalıcı çözüm: `docs/task-plan.md` G2 (günlük yönetilen bölümü kalkar) ve G5 (günün görevleri
-notun dışında gösterilir).
+Kalıcı çözüm: `docs/task-plan.md` G2. Günlüğün görev bölümü yalnız görev kimliklerini taşıyan,
+düzenlenemeyen tek bir blok olur; ayraç kalkar ve bölüm mutlak yol taşımaz.
 
 ## 4b. Masaüstü bir dosyayı yazınca görev ve günlük yansıtmaları ikinci bir yazma yapabiliyor
 
@@ -136,7 +136,9 @@ iki cihaz bir ya da iki ek turda durulur (matris her senaryoda en çok 4 turda d
 Kalan: ayraç bloğunun kimliği hâlâ renderer'da ilk kayıtta verilir; ana süreçte yazılan yeni
 bir günlüğün ayraçları kimliği ilk açılışta alır ve bu bir kez daha yazılır.
 
-Kalıcı çözüm: `docs/task-plan.md` G2 (görev değişikliği hiçbir notu yazmaz).
+Kalıcı çözüm: `docs/task-plan.md` G2 ve G9. Görevin başlığı ya da durumu değişince hiçbir not
+yazılmaz; yalnız görevin günleri değişince ilgili günlüklerin bölümü yazılır ve iki cihaz aynı
+`tasks.json`'dan aynı baytları üretir.
 
 ## 5. Editörde fareyle blok sürükle-bırak çalışmıyor
 
@@ -292,10 +294,12 @@ Kimliği olmayan tek bir Quick Add bloğu (`main/functions/task-capture.js`) bu 
 verip durduruyor; kullanıcıya bir şey gösterilmiyor.
 
 Çözüm tek tek yamayla değil, görev modelinin değiştirilmesiyle yapılacak:
-[`docs/task-plan.md`](docs/task-plan.md). Görevin bütün bilgisi `tasks.json`'da durur, not
-yalnız görev kimliğini taşır. Aşağıdaki kimlikler planın Ek A'sıyla aynıdır; parantez içi,
-bulguyu kapatacak fazdır. Kodda görülüp çalıştırılmayan bulgular (GK1–GK15) yalnız planda
-listelidir.
+[`docs/task-plan.md`](docs/task-plan.md). Görevin bütün bilgisi `tasks.json`'da durur, not ve
+günlük yalnız görev kimliğini taşır. Aşağıdaki kimlikler planın Ek A'sıyla aynıdır; parantez
+içi, bulguyu kapatacak fazdır. Kodda görülüp çalıştırılmayan bulgular (GK1–GK15) yalnız planda
+listelidir. İncelemede doğrulanan iki davranış istenen davranıştır ve hata sayılmaz (plan
+§1.3): görevin bitiş gününde günlüğün oluşması (GB10) ve günlükteki görevlerin notun altındaki
+bölümde toplanması (GB13).
 
 - **GB1:** Kapalı nottaki (Inbox dahil) Quick Add görevi panelden tamamlanınca nota "done"
   yazılıyor, `tasks.json` "todo" kalıyor; panel işareti geri alıyor. (G2, G4)
@@ -317,20 +321,13 @@ listelidir.
 - **GB7:** Projede kimliksiz bir Quick Add bloğu varken notta silinen görev bloğu
   `tasks.json`'da ve panelde kalıyor. (G2)
 - **GB8:** Açık olan nota Quick Add yapılınca editör yeni bloğu göstermiyor; kullanıcı notta
-  yazıp kaydedince blok dosyadan siliniyor ve görev kaynaksız kalıyor (not içeriği kaybı). (G3)
+  yazıp kaydedince blok dosyadan siliniyor ve görev kaynaksız kalıyor (not içeriği kaybı). (G2)
 - **GB9:** Her panel işlemi ve not kaydı bütün notları yeniden okuyor; 1.000 notluk projede
   tarama ~1,5 sn sürüyor. (G2)
-- **GB10:** Tarihi olan her görev o gün için bir günlük dosyası oluşturuyor
-  (`syncDiaryMissions` → `getOrCreateDiaryNode`). 2027 ve 2028 tarihli iki görev
-  `diary/2027-03-15.node` ve `diary/2028-01-02.node` dosyalarını oluşturdu; fixture'daki
-  `diary/2026-11-20.node` da böyle oluşmuş. (G2, G5)
 - **GB11:** Notu olmayan görevler masaüstü aramasında görünmüyor
   (`makePisiCanonicalTaskSearchRecord`, `source.nodePath` yoksa kayıt üretmiyor). (G5)
 - **GB12:** Günlükteki onay kutusuyla tamamlanan tekrar eden görevin sonraki tekrarı
-  oluşmuyor; görev tekrar etmeyi bırakıyor. (G2, G5)
-- **GB13:** Günlük eşitlemesi (`organizeDiaryManualTasks`) günlük notunun ortasındaki kullanıcı
-  görev bloğunu yerinden alıp dosyaya yazdığı sabit Türkçe "Görevler" başlığının altına
-  taşıyor. (G2, G5)
+  oluşmuyor; görev tekrar etmeyi bırakıyor. (G2)
 - **GB14:** Editörde `[ ]` kısayolu ve blok türünü "Görev bloğu" yapma işlemi, girdi
   hattındaki `cleanupOrphanPisiTodoBlock` yüzünden hemen paragrafa dönüyor; görev oluşmuyor. (G3)
 

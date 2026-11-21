@@ -8,14 +8,19 @@ Görev işi (`docs/task-plan.md` G0).
   tamamlama ve durum değişikliği, tekrar eden görev, notu olmayan görev, hatırlatmadan tamamlama, görev bloğu
   silme, açık nota Quick Add, 1.000 notluk projede tarama süresi, günlük eşitlemesi, arama ve editörde görev
   bloğu oluşturma denendi.
-- Uygulamada 14 hata doğrulandı, kodda 15 sorun daha görüldü. Doğrulananlar `pisi-error.md` §5h'ye, hepsi
-  `docs/task-plan.md` Ek A'ya yazıldı. Öne çıkanlar: panelden yapılan değişikliğin `tasks.json`'a ulaşmaması ya da
-  geri alınması, açık nota Quick Add'de not içeriği kaybı, her görev işleminde bütün projenin taranması,
-  görevlerin günlük dosyası oluşturması, notu olmayan görevlerin masaüstünde tamamlanamaması ve aranamaması.
-- `docs/task-plan.md`: görev sisteminin yeniden kurulma planı (G0–G10). Verilen karar: görevin bütün bilgisi
-  `.pisi/tasks.json`'da durur, not yalnız görev kimliğini taşıyan bir blok tutar, görev her yerde bu kayıttan
-  gösterilir; geçiş adımı yoktur. Değişmez kurallar GV1–GV14, hedef dosya biçimi (`tasks.json` sürüm 2), not
-  bloğu, not ile görev ilişkisi, komutlar ve fazların kabul kriterleri belgededir.
+- Uygulamada 14 davranış doğrulandı, kodda 15 sorun daha görüldü. Doğrulananlardan 12'si hatadır ve
+  `pisi-error.md` §5h'ye yazıldı; hepsi `docs/task-plan.md` Ek A'dadır. Öne çıkanlar: panelden yapılan değişikliğin
+  `tasks.json`'a ulaşmaması ya da geri alınması, açık nota Quick Add'de not içeriği kaybı, her görev işleminde
+  bütün projenin taranması, notu olmayan görevlerin masaüstünde tamamlanamaması ve aranamaması. Görevin bitiş
+  gününde günlüğün oluşması ve günlükteki görevlerin notun altındaki bölümde toplanması istenen davranıştır.
+- `docs/task-plan.md`: görev sisteminin yeniden kurulma planı (G0–G10). Verilen kararlar: görevin bütün bilgisi
+  `.pisi/tasks.json`'da durur, not ve günlük yalnız görev kimliğini taşır, görev her yerde bu kayıttan
+  gösterilir; geçiş adımı yoktur. Inbox yoktur; Quick Add'in hedefi son açık not, yoksa bugünün günlüğüdür.
+  Görevin bitiş günündeki günlük yoksa oluşturulur ve görev günlüğün altındaki görev bölümünde görünür. Panelin
+  birinci amacı öncelikli görevleri göstermektir; telefon açılınca o günle ilgili her şeyi gösterir. Tekrar eden
+  görev yerinde ilerler ve tamamlanan günleri tutar; tamamlandığı günün günlüğünde tamamlanmış görünür.
+- Belgede değişmez kurallar GV1–GV15, hedef dosya biçimi (`tasks.json` sürüm 2), görev bloğu, günlük görev
+  bölümü, tamamlama ve günlük kuralı, görevin yeri, komutlar ve fazların kabul kriterleri vardır.
 - `CLAUDE.md`: "Görevler" bölümü. `pisi-error.md` §4a, §4b, §5d ve §5e plandaki fazlara bağlandı.
 - Kod değişmedi.
 

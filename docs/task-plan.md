@@ -1,10 +1,11 @@
 # Pisi Görevler — Claude Code iş tanımı
 
-Sürüm: 1 · 21-11-2026 · Repo: `maggezer/Pisi` · Hedef: görevin bütün bilgisinin tek dosyada (`.pisi/tasks.json`) durması, notların yalnız görev kimliği taşıması ve görevin her yerde bu kayıttan gösterilmesi
+Sürüm: 1 · 21-11-2026 · Repo: `maggezer/Pisi` · Hedef: görevin bütün bilgisinin tek dosyada (`.pisi/tasks.json`) durması, notların ve günlüklerin yalnız görev kimliği taşıması ve görevin her yerde bu kayıttan gösterilmesi
 
 Bu belge repoda `docs/task-plan.md` olarak durur. Görev sisteminin yeniden kurulmasını faz faz tanımlar (G0–G10).
 Mobil fazında [`docs/mobile-plan.md`](mobile-plan.md), senkron fazında [`docs/sync-plan.md`](sync-plan.md) kuralları da geçerlidir.
-Plan, 21-11-2026'da yapılan iki incelemeye dayanır. Bulgular Ek A'da, uygulamada çalıştırılan senaryolar Ek B'dedir.
+Plan, 21-11-2026'da yapılan iki incelemeye ve kullanıcının aynı gün verdiği kararlara dayanır. Bulgular Ek A'da, uygulamada çalıştırılan ve
+fazlarda E2E'ye çevrilecek senaryolar Ek B'dedir.
 
 ---
 
@@ -51,8 +52,8 @@ Bir görev bugün dört yerde, dört ayrı biçimde durur:
    sınıfıdır (`pisi-todo-reminder-…`).
 2. **`.pisi/tasks.json`:** aynı alanların bir kopyası ve kaynak bilgisi (`source.nodePath`, `blockId`, `mapPath`, `nodeTitle`, `mapTitle`).
 3. **Renderer'daki `missionIndex`:** görev kayıtlarından üretilen sahte "bloklar" (`taskToPisiMissionBlock`). Panel bunları çizer.
-4. **Günlük notlarının yönetilen bölümü** (`PISI_DIARY_MANAGED_START…END`): o günün görevlerinin bir kopyası. Her görev değişikliğinde bütün
-   günlük dosyalarına yeniden yazılır.
+4. **Günlük notlarının yönetilen bölümü** (`PISI_DIARY_MANAGED_START…END`): o günün görevlerinin başlık ve durumuyla bir kopyası. Bir görev
+   değişince bütün günlük dosyaları okunur, bölümü değişen her günlük yeniden yazılır.
 
 `tasks.json`'a yazan yollar: Quick Add (`task.capture.v1`), editör girdisi (`task.sync-projection.v1`, budamasız), panel işlemlerinden sonra
 bütün notların taranmasıyla yapılan yansıtma (`task.sync-projection.v1`, budamalı), görev komutları (günlük onay kutusu, hatırlatma paneli,
@@ -70,12 +71,15 @@ Aynı bilgi birden çok yerde duruyor ve birbirinin üzerine yazan birden çok y
 
 ### 1.2 İncelemenin sonucu
 
-İki incelemede 14 hata uygulamada (Electron, CDP) doğrulandı, 15 sorun kodda görüldü (Ek A). Öne çıkanlar:
+İki incelemede uygulamada (Electron, CDP) 14 davranış doğrulandı ve kodda 15 sorun görüldü (Ek A). Doğrulananlardan ikisi kullanıcı
+kararıyla istenen davranıştır: görevin bitiş gününde günlüğün oluşması (GB10) ve günlükteki görevlerin notun altındaki bölümde toplanması
+(GB13). Kalan 12'si hatadır. Öne çıkanlar:
 
 - Panelden ya da günlükten yapılan değişiklik çoğu durumda `tasks.json`'a ulaşmıyor ya da sonradan geri alınıyor; kullanıcıya hata
   gösterilmiyor (GB1–GB7, GB12).
 - Açık olan nota Quick Add yapılınca not içeriği kayboluyor (GB8).
-- Görev işlemleri bütün projeyi tarıyor; günlük dosyaları kendiliğinden oluşuyor ve yeniden düzenleniyor (GB9, GB10, GB13).
+- Görev işlemleri bütün projeyi tarıyor. Görevin başlığı ve durumu günlük dosyalarına da yazıldığı için başlık ya da durum değişikliği
+  günlükleri de yeniden yazıyor (GB9, §1.1).
 - Notu olmayan görevler masaüstünde tamamlanamıyor ve aranamıyor; sahte kaynak yüzünden iki cihazda da düzenlenemez hâle geliyor
   (GB4, GB5, GB11).
 - Editördeki "Görev bloğu" ve `[ ]` kısayolu hiç görev oluşturmuyor (GB14).
@@ -84,27 +88,37 @@ Bu sorunlar tek tek düzeltilmek yerine görev modeli değiştirilerek kapatıla
 
 ### 1.3 Verilmiş kararlar (21-11-2026)
 
-| Konu     | Karar                                                                                                                                                                                                   |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Otorite  | Görevin bütün bilgisi `.pisi/tasks.json`'dadır: kimlik, başlık, durum, öncelik, bitiş tarihi, tekrar, hatırlatma, bağımlılık, sıra, bulunduğu not ve zaman damgaları. Bütün görevler bu tek dosyadadır. |
-| Not      | Not, görevin yalnız kimliğini taşıyan bir blok tutar. Başlık, durum, tarih ve öncelik notta yazılmaz.                                                                                                   |
-| Gösterim | Görev her yerde (not, panel, çalışma alanı, takvim, günlük, harita, arama, hatırlatma, mobil) bu kayıttan çizilir.                                                                                      |
-| Blok     | Her görev notta ayrı bir bloktur ve kolay düzenlenmesi için blok üzerinden düzenlenir.                                                                                                                  |
-| Geçiş    | Yok. Uygulamayı aktif kullanan yok; eski not işareti ve eski kayıt alanları için dönüştürücü yazılmaz.                                                                                                  |
+| Konu         | Karar                                                                                                                                                                                                                                                                      |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Otorite      | Görevin bütün bilgisi `.pisi/tasks.json`'dadır: kimlik, başlık, durum, öncelik, bitiş tarihi, tekrar, hatırlatma, bağımlılık, sıra, bulunduğu yer ve zaman damgaları. Bütün görevler bu tek dosyadadır.                                                                    |
+| Not          | Not ve günlük, görevin yalnız kimliğini taşır. Başlık, durum, tarih ve öncelik notta yazılmaz.                                                                                                                                                                             |
+| Gösterim     | Görev her yerde (not, günlük, panel, çalışma alanı, takvim, harita, arama, hatırlatma, mobil) bu kayıttan çizilir.                                                                                                                                                         |
+| Blok         | Her görev notta ayrı bir bloktur ve kolay düzenlenmesi için blok üzerinden düzenlenir.                                                                                                                                                                                     |
+| Geçiş        | Yok. Uygulamayı aktif kullanan yok; eski not işareti ve eski kayıt alanları için dönüştürücü yazılmaz.                                                                                                                                                                     |
+| Görevin yeri | Inbox ya da benzeri bir kova yoktur; her görev bir notta ya da bir günün günlüğünde durur. Quick Add açılınca hedef son açık nottur; açık not yoksa bugünün günlüğüdür.                                                                                                    |
+| Günlük       | Görevin bitiş günündeki günlük yoksa oluşturulur ve görev o günlüğün altındaki görev bölümünde görünür. Günlükte yazılan görevler de bu bölümde toplanır; günlük kompakt kalır. Takvimdeki belirteçten günlük açılarak takip edilir. GB10 ve GB13 bu yüzden hata sayılmaz. |
+| Görev paneli | Masaüstünde sağdaki Görevler sekmesinin birinci amacı öncelikli görevleri göstermektir. Bugünün görevleri süzgeçle de görülür.                                                                                                                                             |
+| Telefon      | Amaç en az sürtünmedir: uygulama açılınca, ek bir dokunuş gerekmeden, o günle ilgili her şey (günlük, günün görevleri, gecikenler) görünür. Görev listesi telefonda ikincildir.                                                                                            |
+| Tarih        | Görevin tek bir günü vardır: `dueDate` (bitiş tarihi, `YYYY-MM-DD`) ve isteğe bağlı saat `dueTime` (`HH:MM`). `scheduledAt`, `deadline` ve `todoTag` kalkar.                                                                                                               |
+| Tekrar       | Tekrar eden görev tamamlanınca yeni kayıt açılmaz. Aynı görev bir sonraki tarihe ilerler; tamamlanan günler `completions` listesinde tutulur. Tamamlandığı günün günlüğünde görev tamamlanmış olarak kalır (§3.2.3).                                                       |
+| Silme        | Silinen görev (bloğu silinince ya da panelden) çöp kutusuna gider ve geri yüklenebilir. Nottaki geri alma da görevi geri getirir.                                                                                                                                          |
+| Başlık       | Düz metin, tek satır. Etiketler ve not bağlantıları G6'da kayıt üzerinden geri gelir.                                                                                                                                                                                      |
+| Enter        | Görev bloğunda Enter alta yeni bir görev açar; boş görevde Enter görevi kaldırır ve satırı paragraf yapar (madde listesiyle aynı kural).                                                                                                                                   |
 
-### 1.4 Bu planda önerilen kararlar (PR incelemesinde değiştirilebilir)
+### 1.4 Bu planda verilen ek kararlar (PR incelemesinde değiştirilebilir)
 
-| Konu         | Öneri                                                                                                                                                                                                        | Neden                                                                                                                               |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Tarih        | Görevin tek bir günü vardır: `dueDate` (bitiş tarihi, `YYYY-MM-DD`) ve isteğe bağlı saat `dueTime` (`HH:MM`). `scheduledAt`, `deadline` ve `todoTag` kalkar.                                                 | Bugün aynı görevin günü dört yerde dört kuralla belirleniyor (GK1). Masaüstü Quick Add arayüzü de zaten tek tarih alanı gösteriyor. |
-| Tekrar       | Tekrar eden görev tamamlanınca yeni kayıt açılmaz. Aynı görev bir sonraki tarihe ilerler, tamamlanan gün `completions` listesine yazılır.                                                                    | Notta yeni blok gerekmez; iki cihaz aynı tekrarı tamamlarsa aynı sonuç çıkar; tekrara özel kimlik kuralı kalkar.                    |
-| Notsuz görev | Görevin bir notu olmak zorunda değildir (`noteId: null`). Inbox notu artık oluşturulmaz; panelde "Notsuz" süzgeci olur.                                                                                      | Inbox yalnız her görevin bir notta durması gerektiği için vardı.                                                                    |
-| Not bağı     | Görev notunu yoluyla değil, `node_…` kimliğiyle tutar.                                                                                                                                                       | Yeniden adlandırma ve taşıma görevlere dokunmaz; yol yeniden yazma kodu kalkar.                                                     |
-| Kimlik       | Yeni görev `task_<uuid>` alır. Yoldan türeyen `task_source_…` ve tekrardan türeyen kimlikler kalkar.                                                                                                         | Tek kimlik kuralı (GK12).                                                                                                           |
-| Silme        | Silinen görev (bloğu silinince ya da panelden) çöp kutusuna gider ve geri yüklenebilir. Nottaki geri alma da görevi geri getirir.                                                                            | Projenin geri alınabilir silme kuralı (`docs/reversible-trash.md`).                                                                 |
-| Başlık       | Düz metin, tek satır. Etiketler ve not bağlantıları G6'da kayıt üzerinden geri gelir.                                                                                                                        | Biçim notta değil kayıtta durduğu için.                                                                                             |
-| Enter        | Görev bloğunda Enter alta yeni bir görev açar; boş görevde Enter görevi kaldırır ve satırı paragraf yapar.                                                                                                   | Madde ve numaralı listeyle aynı kural (`docs/editor-keyboard-rules.md`).                                                            |
-| Günlük       | Günlük notuna görev bölümü yazılmaz. O günün görevleri günlük açıkken notun dışında bir görünüm olarak gösterilir. Günlük dosyası görevin tarihi yüzünden oluşmaz; kullanıcı o günü açınca oluşur (bugünkü). | GB10, GB13, `pisi-error.md` §4a ve §4b.                                                                                             |
+| Konu                     | Karar                                                                                                                                                                                                                           | Neden                                                                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Yerin tutulması          | Normal nottaki görev notunu `noteId` (`node_…`) ile, günlükteki görev günlüğünü günüyle (`diaryDate`) tutar.                                                                                                                    | Günlük notunun kimliği rastgeledir; aynı günün günlüğü iki cihazda ayrı oluşsa da bağ kopmaz. Yeniden adlandırma görevlere dokunmaz. |
+| Kimlik                   | Yeni görev `task_<uuid>` alır. Yoldan ve tekrardan türeyen kimlikler kalkar.                                                                                                                                                    | Tek kimlik kuralı (GK12).                                                                                                            |
+| Günün görevleri          | D gününün görev bölümü: yeri D günlüğü olan, bitiş günü D olan ve D'de tamamlanmış görevler. Bugünün görünümünde ayrıca geciken açık görevler gösterilir; bunlar dosyaya yazılmaz.                                              | Kural tek yerdedir; günlük, takvim ve telefon aynı listeyi gösterir.                                                                 |
+| Bölümün biçimi           | Görev bölümü günlüğün son bloğudur; düzenlenemez ve yalnız görev kimliklerini taşır. "Görevler" başlığı dosyaya yazılmaz, editör TR ya da ENG çizer. İçerik belirlenimcidir.                                                    | Başlık ya da durum değişikliği günlüğü yazmaz; iki cihaz aynı baytları üretir; `pisi-error.md` §4a kapanır.                          |
+| Tamamlama günü           | Görev, tamamlandığı günün günlüğünde ☑ görünür. Tekrar eden görevde tamamlama o günle `completions`'a yazılır ve görev bitiş gününden ve bugünden sonraki ilk tekrara ilerler; geciken tekrarlar atlanır, tamamlanmış sayılmaz. | Kullanıcı bugünün günlüğünde yaptığını görür; geciken bir günlük görev tek tıkla güne gelir.                                         |
+| Geçmiş işaretler         | Günlükte en son tamamlama geri alınabilir; görev tamamlamadan önceki bitiş gününe döner. Daha eski tamamlamalar günlükte kilitlidir; görev ayrıntısındaki "Tamamlanan günler" listesinden silinir.                              | Görev ilerledikten sonra geçmiş günlükler değişmez; bir işareti kaldırmak görevi beklenmedik bir yere götürmez.                      |
+| Günlükte görev yazma     | Günlükte oluşturulan görev günlüğün görev bölümüne girer; bitiş günü varsayılan olarak o günlüğün günüdür; imleç yeni satırın başlığına geçer.                                                                                  | Bölüm kompakt kalır; görev sonradan yer değiştirmez.                                                                                 |
+| Başka nottan gelen satır | Günlükte, yeri başka bir not olan görevin satırı klavyeyle silinmez; satır menüsünden tarihi değiştirilir ya da kaldırılır.                                                                                                     | Satırı silmek görevi silmemeli.                                                                                                      |
+| Quick Add tarihi         | Quick Add'de tarih yazılmazsa görevin tarihi olmaz; görev hedef notta ya da bugünün günlüğünde durur.                                                                                                                           | Tarihsiz bir not almak da mümkün kalır.                                                                                              |
+| Son açık not             | Quick Add'in hedefi en son odaklanan açık nottur (ortadaki editör ya da not penceresi). Form hedefi gösterir ve değiştirmeye izin verir.                                                                                        | Kararın uygulamadaki karşılığı.                                                                                                      |
 
 ---
 
@@ -115,31 +129,36 @@ Bu kurallar her fazda geçerlidir. Bir PR bunlardan birini çiğniyorsa bitmiş 
 
 - **GV1 · Tek kaynak:** Bir görev alanı yalnız `tasks.json`'a yazılır. Not, günlük, harita ya da başka bir dosya görev alanı taşımaz. Bellekteki
   görev listeleri yalnız önbellektir ve dosyaya geri yazılmaz (V1).
-- **GV2 · Not bloğu yalnız kimliktir:** Görev bloğu, blok kimliği ve `data-pisi-task-id` dışında görev bilgisi taşımaz (§3.2). Editörün blok
-  içine çizdiği görünüm kayıtta temizlenir.
-- **GV3 · Görünümler yazmaz:** Panel, çalışma alanı, takvim, günlük, harita, arama, hatırlatma ve mobil ekranlar okurken ve gezinirken hiçbir
-  dosyaya yazmaz.
+- **GV2 · Notta yalnız kimlik:** Nottaki görev bloğu ve günlüğün görev bölümü, blok kimliği ve görev kimlikleri dışında görev bilgisi taşımaz
+  (§3.2). Editörün çizdiği görünüm kayıtta temizlenir.
+- **GV3 · Görünümler yazmaz:** Panel, çalışma alanı, takvim, harita, arama, hatırlatma ve mobil ekranlar okurken ve gezinirken hiçbir dosyaya
+  yazmaz. Günlüğün görev bölümü bir görünüm değil, görevin günlükteki yeridir; yalnız GV5'teki durumda yazılır.
 - **GV4 · Tek yazma yolu:** Masaüstünde görev değişikliği yalnız ana süreçteki görev servisinin `task.*.v1` komutlarıyla yazılır; mobilde
   `TaskRepo` ve `ProjectWriter` ile. Her yazmadan hemen önce dosya yeniden okunur ve yalnız ilgili kayıtlar değişir (V5). Değişmeyen kayıt ve
   dosya yazılmaz (V4).
-- **GV5 · Proje taraması yok:** Hiçbir görev işlemi bütün notları okumaz. Bir notun görev bloklarıyla ilgili iş yalnız o notta yapılır. Görev
-  alanı değişikliği (başlık, durum, tarih…) hiçbir `.node` dosyasını okumaz ya da yazmaz. Project Integrity denetimi bu kuralın dışındadır
-  (kullanıcının başlattığı, salt okunur bir işlem).
-- **GV6 · Not ile görev:** Görevin notu `noteId`'dir; nottaki blok görevin o nottaki yeridir. Bir görevin en çok bir bloğu olur ve o blok
-  `noteId`'deki nottadır. Ayrıntılı kurallar §3.3'tedir.
-- **GV7 · Kimlik:** Kopyalama yeni kimlik verir; taşıma (kes ve yapıştır, not değiştirme) kimliği korur. Aynı kimlik iki blokta bulunmaz.
-- **GV8 · Atomiklik:** Bir komutun yazdığı dosyalar (`tasks.json`, gerekiyorsa bir ya da iki not, çöp kutusu) tek atomik mutation içinde
-  yazılır (`docs/atomic-mutations.md`).
-- **GV9 · Açık not:** Açık bir nottaki blok değişikliği (ekleme, kaldırma, taşıma) editör üzerinden yapılır ve editörün kayıt yoluyla yazılır;
-  ana süreç açık notu yazmaz. Görev alanı değişikliği notu hiç değiştirmez (SV4 ile uyumlu).
+- **GV5 · Proje taraması yok:** Hiçbir görev işlemi bütün notları okumaz. Görev alanı değişikliği (başlık, durum, öncelik, saat, hatırlatma…)
+  hiçbir `.node` dosyasını okumaz ya da yazmaz. Görevin günleri (yeri, bitiş günü, tamamlandığı günler) değişince yalnız o günlerin günlükleri
+  yazılır ve gerekiyorsa o günün günlüğü oluşturulur. Project Integrity denetimi bu kuralın dışındadır (kullanıcının başlattığı, salt okunur bir
+  işlem).
+- **GV6 · Görevin yeri:** Her görevin bir yeri vardır: bir not (`noteId`) ya da bir günün günlüğü (`diaryDate`). Notta yerin karşılığı tek bir
+  görev bloğudur; günlükte görev, günlüğün görev bölümündedir. Görev ayrıca bitiş gününün ve tamamlandığı günlerin günlüklerinde bölüm satırı
+  olarak görünür. Ayrıntılar §3.3'tedir.
+- **GV7 · Kimlik:** Kopyalama yeni kimlik verir; taşıma (kes ve yapıştır, yer değiştirme) kimliği korur. Bir görevin notlarda en çok bir bloğu
+  olur; bir günlüğün görev bölümünde bir kimlik en çok bir kez bulunur.
+- **GV8 · Atomiklik:** Bir komutun yazdığı dosyalar (`tasks.json`, notlar, günlükler, çöp kutusu) tek atomik mutation içinde yazılır
+  (`docs/atomic-mutations.md`).
+- **GV9 · Açık belge:** Açık bir not ya da günlükte blok ya da görev bölümü değişikliği editör üzerinden yapılır ve editörün kayıt yoluyla
+  yazılır; ana süreç açık belgeyi yazmaz. Görev alanı değişikliği notu hiç değiştirmez (SV4 ile uyumlu).
 - **GV10 · Silme geri alınabilir:** Görev silme çöp kutusuna gider. Telefon görev silmez (V9).
-- **GV11 · Bozuk dosya:** Okunamayan `tasks.json` ezilmez. Görevler salt okunur gösterilir, not bloklarında "Görevler okunamadı" yazar ve
-  bloklar korunur (V7, SV10).
+- **GV11 · Bozuk dosya:** Okunamayan `tasks.json` ezilmez. Görevler salt okunur gösterilir, not bloklarında ve günlük bölümlerinde "Görevler
+  okunamadı" yazar; bloklar ve bölümler korunur, yeniden üretilmez (V7, SV10).
 - **GV12 · Bilinmeyeni koru:** Tanınmayan kayıt alanları ve üst düzey anahtarlar aynen geri yazılır (V3). Eski sürümden kalan alanlar
   (ör. `source`, `todoTag`, `scheduledAt`) okunmaz ama silinmez.
-- **GV13 · Tek kural, iki platform:** Görevin günü, kovası, tekrar sonrası tarihi, bağımlılık döngüsü ve süzgeçler `shared/task-*.mjs`'ten gelir.
-  Masaüstü ve mobil aynı kodu çalıştırır.
+- **GV13 · Tek kural, iki platform:** Görevin günü, günün görevleri, görev bölümünün baytları, öncelik sırası, tekrar sonrası tarih, bağımlılık
+  döngüsü ve süzgeçler `shared/task-*.mjs`'ten gelir. Masaüstü ve mobil aynı kodu çalıştırır.
 - **GV14 · Bütünlük:** Bir görev işleminden sonra Project Integrity yeni bulgu vermez; mobilin yazdığı proje de vermez (V10).
+- **GV15 · Türetilmiş bölüm:** Günlüğün görev bölümü `tasks.json`'dan belirlenimci olarak üretilir. Okunup göreve çevrilmez, otorite sayılmaz;
+  eski ya da bozuk bölüm kuraldan yeniden üretilir. Aynı `tasks.json`'dan masaüstü ve mobil aynı baytları üretir.
 
 ---
 
@@ -154,23 +173,24 @@ Bu kurallar her fazda geçerlidir. Bir PR bunlardan birini çiğniyorsa bitmiş 
     "tasks": [
         {
             "id": "task_6f1c2a0e-1b7d-4c55-9a1e-2f9d6c0b8a11",
-            "title": "Raporu gönder",
+            "title": "Spor",
             "status": "todo",
             "priority": 3,
-            "dueDate": "2026-11-24",
-            "dueTime": "14:00",
-            "repeat": "weekly",
+            "dueDate": "2026-11-22",
+            "dueTime": "07:30",
+            "repeat": "daily",
             "completionOffsetDays": null,
             "reminderMode": "none",
             "reminderAt": null,
             "dependencies": [],
             "manualOrder": 1732179600000,
             "noteId": "node_0b6a3c1e-7d2f-4a8b-9c5e-1f2a3b4c5d6e",
+            "diaryDate": null,
             "durationMinutes": 0,
             "actualMinutes": 0,
-            "completions": [{ "date": "2026-11-17", "at": "2026-11-17T16:02:11.000Z" }],
+            "completions": [{ "date": "2026-11-21", "dueDate": "2026-11-21", "at": "2026-11-21T06:52:11.000Z" }],
             "createdAt": "2026-11-10T08:00:00.000Z",
-            "updatedAt": "2026-11-17T16:02:11.000Z",
+            "updatedAt": "2026-11-21T06:52:11.000Z",
             "completedAt": null
         }
     ]
@@ -184,19 +204,22 @@ Bu kurallar her fazda geçerlidir. Bir PR bunlardan birini çiğniyorsa bitmiş 
 | `status`                                | `todo`, `doing`, `waiting`, `blocked`, `done`.                                                                                                                                                                                           |
 | `priority`                              | 1–5.                                                                                                                                                                                                                                     |
 | `dueDate`, `dueTime`                    | `YYYY-MM-DD` ve `HH:MM` ya da `null`. Saat yalnız tarih varken anlamlıdır. Görevin günü her yerde `dueDate`'tir.                                                                                                                         |
-| `repeat`, `completionOffsetDays`        | `none`, `daily`, `weekdays`, `weekly`, `biweekly`, `monthly`, `after-completion`; sonuncusu için gün sayısı. Sonraki tarih bugünkü `getNextPisiTodoDate` kuralıyla `dueDate`'ten hesaplanır.                                             |
-| `completions`                           | Yalnız tekrar eden görevde: tamamlanan her tekrarın günü (`date`) ve anı (`at`). Tekrarsız görevde boş liste.                                                                                                                            |
+| `repeat`, `completionOffsetDays`        | `none`, `daily`, `weekdays`, `weekly`, `biweekly`, `monthly`, `after-completion`; sonuncusu için gün sayısı. Sonraki tarih §3.2.3'teki kuralla bulunur.                                                                                  |
+| `completions`                           | Yalnız tekrar eden görevde, tamamlanan her tekrar için: tamamlandığı gün (`date`), tamamlanan tekrarın bitiş günü (`dueDate`) ve an (`at`). Tekrarsız görevde boş liste.                                                                 |
 | `reminderMode`, `reminderAt`            | Bugünkü kural: `reminderAt` (yerel `YYYY-MM-DDTHH:MM`) önceliklidir; yoksa `due-morning`, `day-before`, `three-days-before` `dueDate`'ten Ayarlar'daki saatle türetilir. Tekrar ilerleyince `reminderAt` de aynı gün sayısı kadar kayar. |
 | `dependencies`                          | Başka görevlerin kimlikleri; görevin kendisi ve döngü kabul edilmez.                                                                                                                                                                     |
 | `manualOrder`                           | Elle sıralama değeri.                                                                                                                                                                                                                    |
-| `noteId`                                | Görevin bulunduğu notun `node_…` kimliği ya da `null`.                                                                                                                                                                                   |
+| `noteId`, `diaryDate`                   | Görevin yeri: normal notun `node_…` kimliği ya da günlüğün günü (`YYYY-MM-DD`). İkisinden tam biri doludur.                                                                                                                              |
 | `durationMinutes`, `actualMinutes`      | Tahmini ve gerçek süre (0 = yok).                                                                                                                                                                                                        |
 | `createdAt`, `updatedAt`, `completedAt` | ISO zaman damgaları; `completedAt` yalnız tekrarsız ve `done` görevde doludur.                                                                                                                                                           |
 
 Ana süreç ve mobil `version` 1 ve 2'yi okur, 2 yazar. Sürüm 1 kaydındaki eski alanlar (`source`, `todoTag`, `scheduledAt`, `deadline`) okunmaz
-ve korunur (GV12); böyle bir kayıt notsuz bir görev olarak görünür.
+ve korunur (GV12). Böyle bir kaydın yeri yoktur: G8'e kadar (mobilin eski sürümü yersiz görev yazdığı için) bitiş gününün günlüğünde ve panelde
+görünür ve Integrity bulgusu sayılmaz; G8'den sonra Integrity onu "yeri olmayan görev" olarak gösterir ve bugünün günlüğüne bağlamayı önerir.
 
-### 3.2 Not içindeki görev bloğu
+### 3.2 Notta ve günlükte görev
+
+#### 3.2.1 Görev bloğu (normal not)
 
 ```html
 <div class="pisi-editor-block pisi-task-block" data-pisi-block-id="blk_…" data-pisi-block-type="task" data-pisi-task-id="task_…" contenteditable="false"></div>
@@ -209,41 +232,90 @@ ve korunur (GV12); böyle bir kayıt notsuz bir görev olarak görünür.
   gösterir (GV11).
 - Eski `todo.*` etiketi ve `data-pisi-todo-*` öznitelikleri görev olarak tanınmaz; eski bir notta sıradan etiket ve metin olarak görünür (§1.3).
 
-### 3.3 Not ile görev ilişkisi
+#### 3.2.2 Günlüğün görev bölümü
 
-| Olay                                                                              | Ne olur                                                                                                                                                                              |
-| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Notta yeni görev (slash komutu, `[ ]`, blok türü, Enter, Quick Add'de not seçmek) | Önce `task.create.v1` (`noteId` = not), sonra blok nota girer. Not açıksa bloğu editör ekler ve kaydeder; kapalıysa ana süreç aynı komutta yazar.                                    |
-| Görev bloğu silinir (Backspace, seçip silme, kesme)                               | Not kaydında ana süreç kayıttan önceki ve sonraki içerikteki görev kimliklerini karşılaştırır. Nottan çıkan ve `noteId`'si bu not olan görev aynı mutation'da çöp kutusuna gider.    |
-| Kes ve başka nota yapıştır                                                        | Yapıştırılan kimlik çöp kutusundaysa geri gelir ve `noteId` yeni not olur. Kimlik korunur.                                                                                           |
-| Kopyala ve yapıştır, blok çoğaltma                                                | Pano görev kaydını da taşır. Yapıştırılan kimlik canlıysa yeni kimlikle bir kopya görev açılır (bugünkü yapıştırma kimlik kuralı, `docs/editor-paste-rules.md`).                     |
-| Not içinde blok taşıma                                                            | Görev değişmez.                                                                                                                                                                      |
-| Panelden "Nota taşı" ya da "Nottan çıkar"                                         | `task.move.v1`: iki notun bloğu ve kaydın `noteId`'si birlikte değişir.                                                                                                              |
-| Not çöp kutusuna gider                                                            | `noteId`'si o not olan görevler notla aynı çöp kutusu öğesine arşivlenir ve geri yüklemede birlikte döner (bugünkü davranış; yola göre değil kimliğe göre).                          |
-| Not yeniden adlandırılır ya da taşınır                                            | Görev değişmez.                                                                                                                                                                      |
-| Not kopyalanır (haritada kopya)                                                   | Kopyadaki her görev yeni kimlikle kopyalanır; aynı mutation.                                                                                                                         |
-| Senkron çakışma kopyası                                                           | Kopyaya görev blokları girmez; görevler asıl notta kalır. Bloklarda metin olmadığı için metin kaybı olmaz (SV3).                                                                     |
-| Not sürüm geçmişinden geri yükleme                                                | Geri gelen bloğun görevi canlıysa ve başka bir notta değilse blok olduğu gibi kalır; çöp kutusundaysa görev geri gelir; hiçbir yerde yoksa blok "Görev bulunamadı" gösterir.         |
-| `tasks.json` geçmişinden geri yükleme                                             | Kayıtlar geri gelir, notlara yazılmaz. Notunda bloğu olmayan görev için not açılınca "Bu nota ait N görev notta görünmüyor" uyarısı ve "Sona ekle" / "Notsuz yap" seçenekleri çıkar. |
-| Aynı kimlik başka bir notta da varsa (yapıştırma kuralını atlayan bir yol)        | Kayıt reddedilmez, görev taşınmaz; Integrity "çift referans" bulgusu verir ve onarım önerir.                                                                                         |
+```html
+<div class="pisi-editor-block pisi-diary-tasks" data-pisi-block-id="blk_diary-tasks-2026-11-21" data-pisi-block-type="diary-tasks" contenteditable="false">
+    <div data-pisi-task-ref="task_…"></div>
+    <div data-pisi-task-ref="task_…"></div>
+</div>
+```
 
-Uzlaştırma yalnız kullanıcının not kaydında (editör kaydı) çalışır. Senkronla gelen not değişikliğinde çalışmaz; görev değişikliği o turda
-`tasks.json` ile zaten gelir.
+- Günün görevleri (`shared/task-diary.mjs`): yeri bu günlük olan görevler (`diaryDate`), bitiş günü bu gün olan görevler ve bu gün tamamlanmış
+  görevler (tekrarsızda `completedAt`, tekrar edende `completions[].date`).
+- Bölüm günlüğün son bloğudur ve tektir; günün görev listesi boşsa bölüm yoktur. Kimlikler `createdAt`, eşitlikte kimlik sırasıyla dizilir;
+  blok kimliği günden türer. Böylece aynı `tasks.json`'dan her cihaz aynı baytları üretir (GV15).
+- Bölüm görevin günleri değişince yazılır (GV5): görev oluşturulunca, yeri ya da bitiş günü değişince, silinince ya da geri gelince ve
+  tamamlanınca ya da geri açılınca. Tamamlamada tekrar eden görev ilerlediği için sonraki günün bölümü her zaman değişir; tekrarsız görevde
+  bölüm yalnız görev bitiş gününden başka bir gün tamamlanınca değişir. O gün için günlük yoksa oluşturulur. Başlık, durum, öncelik, saat ya
+  da hatırlatma değişikliği bölümü değiştirmez.
+- Editör bölümü "Görevler" başlığıyla (TR ve ENG) çizer. Satırın durumu o güne göredir: o gün tamamlanan görev ☑ ve tamamlanma saatiyle;
+  bitiş günü bu gün olan görev kendi durumuyla; yeri bu günlük olup başka güne tarihli görev kendi tarih çipiyle. Ekrandaki sıra (açıklar önce,
+  sonra saat ve öncelik) dosyaya yazılmaz.
+- Bugünün günlüğünde bölümün üstünde geciken açık görevler ayrı bir grup olarak çizilir; dosyaya yazılmaz.
+- Bölümün içine yazılamaz; günlükte oluşturulan görev bölüme girer (§1.4). `pisi-error.md` §4a'daki ayraç sorunu böylece kalkar.
+
+#### 3.2.3 Tamamlama ve günlük
+
+Tekrarsız görev tamamlanınca `done` olur ve bitiş gününün günlüğünde ☑ görünür. Geç tamamlanırsa tamamlandığı günün günlüğünde de ☑ görünür.
+
+Tekrar eden görev için örnek: her gün tekrar eden "Spor", bitiş günü 21-11.
+
+1. 21-11'de tamamlanır: `completions`'a `{ "date": "2026-11-21", "dueDate": "2026-11-21", "at": "…" }` yazılır; görev 22-11'e ilerler, durumu
+   `todo` kalır.
+2. 21-11 günlüğünde satır kalır ve tamamlanma saatiyle ☑ görünür. 22-11 günlüğü yoksa oluşturulur; satır orada ☐ görünür. Takvimde 21-11
+   tamamlanmış, 22-11 açık gün sayılır.
+3. 21-11 günlüğünde ☑ kaldırılırsa (en son tamamlama olduğu için) tamamlama geri alınır: kayıt `completions`'tan çıkar, görev kaydın
+   `dueDate`'ine (21-11) döner, 22-11 günlüğündeki satır kalkar. Oluşan günlük dosyası silinmez.
+4. Görev 22-11'de de tamamlanmışsa 21-11'deki ☑ kilitlidir. Düzeltme görev ayrıntısındaki "Tamamlanan günler" listesinden yapılır.
+5. 22-11'deki tekrar yapılmadan 24-11 gelirse görev bugünün görünümünde gecikenlerdedir. 24-11'de tamamlanınca kayıt
+   `{ "date": "2026-11-24", "dueDate": "2026-11-22" }` olur; 22-11 ve 23-11 atlanır ve görev 25-11'e ilerler. Satır 24-11 günlüğünde ☑ görünür
+   ve 22-11 günlüğünden kalkar (o gün yapılmadı).
+
+Kural (`completePisiTask`): tamamlama günü bugündür; sonraki bitiş günü, tekrar kuralının bitiş gününden ve bugünden sonraki ilk tarihidir
+(`after-completion`'da bugün + gün sayısı). Geri alma, kayıttaki `dueDate`'i geri koyar.
+
+### 3.3 Görevin yeri ve notlar
+
+| Olay                                                                   | Ne olur                                                                                                                                                                                                                               |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Normal notta yeni görev (slash komutu, `[ ]`, blok türü, Enter)        | Önce `task.create.v1` (yer: `noteId`), sonra blok nota girer. Not açıksa bloğu editör ekler ve kaydeder; kapalıysa ana süreç aynı komutta yazar. Bitiş günü varsa o günün günlüğüne satır eklenir.                                    |
+| Günlükte yeni görev                                                    | Yer: o günün günlüğü (`diaryDate`); bitiş günü varsayılan olarak o gün. Görev günlüğün görev bölümüne girer (§1.4).                                                                                                                   |
+| Quick Add                                                              | Hedef son açık not; açık not yoksa bugünün günlüğü (§1.3). Form hedefi gösterir ve değiştirmeye izin verir.                                                                                                                           |
+| Bitiş günü değişir                                                     | Görev eski günün bölümünden çıkar (o güne başka bir kuralla bağlı değilse) ve yeni günün bölümüne girer; o günün günlüğü yoksa oluşturulur.                                                                                           |
+| Görev tamamlanır ya da geri açılır                                     | §3.2.3.                                                                                                                                                                                                                               |
+| Görev bloğu silinir (Backspace, seçip silme, kesme)                    | Not kaydında ana süreç kayıttan önceki ve sonraki içerikteki görev kimliklerini karşılaştırır. Nottan çıkan ve yeri bu not olan görev aynı mutation'da çöp kutusuna gider ve bütün günlük bölümlerinden çıkar.                        |
+| Günlükte satır silinir                                                 | Yeri bu günlük olan görev çöp kutusuna gider. Yeri başka bir not olan görevin satırı klavyeyle silinmez (§1.4).                                                                                                                       |
+| Kes ve başka nota yapıştır                                             | Yapıştırılan kimlik çöp kutusundaysa geri gelir ve yeri yeni not olur. Kimlik korunur.                                                                                                                                                |
+| Kopyala ve yapıştır, blok çoğaltma                                     | Pano görev kaydını da taşır. Yapıştırılan kimlik canlıysa yeni kimlikle bir kopya görev açılır (bugünkü yapıştırma kimlik kuralı, `docs/editor-paste-rules.md`).                                                                      |
+| Not içinde blok taşıma                                                 | Görev değişmez.                                                                                                                                                                                                                       |
+| Panelden "Nota taşı"                                                   | `task.move.v1`: eski ve yeni yerin bloğu ya da bölümü ve kaydın yeri birlikte değişir.                                                                                                                                                |
+| Not ya da günlük çöp kutusuna gider                                    | Yeri o not ya da günlük olan görevler aynı çöp kutusu öğesine arşivlenir ve geri yüklemede birlikte döner (bugünkü davranış; yola göre değil yere göre). Silinen günlük, o güne yeni bir görev girene kadar yeniden oluşturulmaz.     |
+| Not yeniden adlandırılır ya da taşınır                                 | Görev değişmez.                                                                                                                                                                                                                       |
+| Not kopyalanır (haritada kopya)                                        | Kopyadaki her görev yeni kimlikle kopyalanır; aynı mutation.                                                                                                                                                                          |
+| Senkron çakışma kopyası                                                | Kopyaya görev blokları ve görev bölümü girmez; görevler asıl notta kalır. Bloklarda metin olmadığı için metin kaybı olmaz (SV3).                                                                                                      |
+| Not sürüm geçmişinden geri yükleme                                     | Geri gelen bloğun görevi canlıysa ve başka bir notta değilse blok olduğu gibi kalır; çöp kutusundaysa görev geri gelir; hiçbir yerde yoksa blok "Görev bulunamadı" gösterir. Günlüğün görev bölümü geri yüklenmez, kuraldan üretilir. |
+| `tasks.json` geçmişinden geri yükleme                                  | Kayıtlar geri gelir ve günlük bölümleri kuraldan üretilir. Notunda bloğu olmayan görev için not açılınca "Bu nota ait N görev notta görünmüyor" uyarısı ve "Sona ekle" seçeneği çıkar.                                                |
+| Aynı kimlik başka bir notta da varsa (yapıştırma kuralını atlayan yol) | Kayıt reddedilmez, görev taşınmaz; Integrity "çift referans" bulgusu verir ve onarım önerir.                                                                                                                                          |
+
+Not kaydındaki karşılaştırma yalnız kullanıcının kaydında (editör kaydı) çalışır; senkronla gelen not değişikliğinde çalışmaz, çünkü görev
+değişikliği o turda `tasks.json` ile gelir. Senkronla `tasks.json` değişince masaüstü etkilenen günlerin bölümünü kuraldan üretir; dosya zaten
+doğruysa yazmaz (V4).
 
 ### 3.4 Görev komutları
 
-| Sözleşme                              | Tür     | Ne yapar                                                                                                         |
-| ------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------- |
-| `task.list.v1`                        | query   | Bütün görevler, dosya sürümü ve `readOnly` bilgisi.                                                              |
-| `task.create.v1`                      | command | Yeni görev. `noteId` ile `notePath` ve `afterBlockId` verilirse ve not kapalıysa blok da eklenir. Kimliği döner. |
-| `task.update.v1`                      | command | Alan değişikliği (`noteId` dışında).                                                                             |
-| `task.complete.v1` / `task.reopen.v1` | command | Tekrar kuralıyla tamamlar ya da geri açar; geri alma bilgisi döner.                                              |
-| `task.move.v1`                        | command | Notunu değiştirir ya da notsuz yapar; kapalı notlarda blokları taşır.                                            |
-| `task.delete.v1`                      | command | Görevi çöp kutusuna taşır; not kapalıysa bloğu kaldırır.                                                         |
-| `task.batch.v1`                       | command | Birden çok alan değişikliği tek yazmada (sıralama, geri alma).                                                   |
+| Sözleşme                              | Tür     | Ne yapar                                                                                                                                                                      |
+| ------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `task.list.v1`                        | query   | Bütün görevler, dosya sürümü ve `readOnly` bilgisi.                                                                                                                           |
+| `task.create.v1`                      | command | Yeni görev. Hedef `{ noteId, notePath, afterBlockId }` ya da `{ diaryDate }`. Kapalı nota blok ekler, günlük bölümlerini günceller, gereken günlüğü oluşturur. Kimliği döner. |
+| `task.update.v1`                      | command | Alan değişikliği (yer dışında). Bitiş günü değişince günlük bölümleri güncellenir. "Tamamlanan günler"den kayıt silme de buradadır.                                           |
+| `task.complete.v1` / `task.reopen.v1` | command | §3.2.3 kuralıyla tamamlar ya da geri açar; geri alma bilgisi döner.                                                                                                           |
+| `task.move.v1`                        | command | Yeri değiştirir (not ya da günlük); kapalı notlarda bloğu taşır.                                                                                                              |
+| `task.delete.v1`                      | command | Görevi çöp kutusuna taşır; kapalı nottan bloğu ve günlüklerden satırları kaldırır.                                                                                            |
+| `task.batch.v1`                       | command | Birden çok alan değişikliği tek yazmada (sıralama, geri alma).                                                                                                                |
 
 Notu değiştiren komutlar notun yolunu ve kimliğini birlikte alır; ana süreç dosyadaki `pisi.id` ile doğrular (`path-security.js` kuralları
-geçerlidir).
+geçerlidir). Günlüğün yolu günden bellidir (`shared/diary-rules.mjs`).
 
 Ana süreç her yazmadan sonra renderer'a `pisi:tasks-changed` olayını yollar: `{ version, changedIds, removedIds, source }`. `source` değeri
 `local`, `sync` ya da `external` olur.
@@ -256,40 +328,42 @@ Kalkanlar: `task.capture.v1`, `task.upsert.v1`, `task.sync-projection.v1`, `wind
 - Ana süreç `tasks.json`'u okur ve bellekte tutar. Kendi yazmasında ve izleyicinin bildirdiği dış değişiklikte (senkron dahil) yeniler.
 - Renderer görev deposu (`renderer/tasks/pisi-task-store.mjs`) açılışta bir kez listeler. Sonra yalnız `pisi:tasks-changed` olayındaki kayıtları
   günceller ve `pisi:task-store-updated` olayını `{ changedIds }` ile yayar.
-- Yüzeyler yalnız etkilenen öğeleri yeniden çizer: açık nottaki ilgili bloklar, paneldeki ilgili kartlar, takvimin ilgili günleri.
+- Yüzeyler yalnız etkilenen öğeleri yeniden çizer: açık nottaki ilgili bloklar ve satırlar, paneldeki ilgili kartlar, takvimin ilgili günleri.
 - Not kimliğinden yola ve başlığa çeviri renderer'da belge dizininden (ağaç ve arama dizini) gelir. Ana süreç bunun için ayrı bir dizin tutmaz;
   notu değiştiren komutlar yolu ve kimliği birlikte alır.
 
 ### 3.6 Yüzeyler
 
-| Yüzey                                                                            | Okur                                                                                          | Yazar                                                                              |
-| -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Not editörü                                                                      | Görev bloğunu kayıttan çizer                                                                  | Başlık, durum, çipler: `task.update` / `task.complete`; blok ekleme ve silme: §3.3 |
-| Görev paneli ve çalışma alanı (liste, kanban, takvim, zaman çizelgesi, ilerleme) | `shared/task-views.mjs`                                                                       | `task.*` komutları                                                                 |
-| Görev ayrıntısı (pencere)                                                        | Bütün alanlar                                                                                 | `task.update`, `task.move`, `task.delete`                                          |
-| Quick Add                                                                        | —                                                                                             | `task.create` (notsuz ya da seçilen not)                                           |
-| Takvim                                                                           | Ortak gün kuralı; geçmiş günlerde `completions` de sayılır                                    | —                                                                                  |
-| Günlük                                                                           | O günün görevleri, notun dışında bir görünüm                                                  | Onay kutusu: `task.complete`                                                       |
-| Harita                                                                           | Not başına açık, geciken ve engelli görev sayısı ve bağımlılık katmanı (`noteId`)             | —                                                                                  |
-| Arama                                                                            | Notsuz olanlar dahil her görev, tek kayıt üreticisinden                                       | —                                                                                  |
-| Hatırlatma (ana süreç ve panel)                                                  | `reminderAt`, `reminderMode`, `dueDate`                                                       | Tamamla: `task.complete`                                                           |
-| Dışa aktarma                                                                     | Görev bloğu kayıttan yazılır (Markdown'da `- [ ] Başlık`, HTML/PDF/DOCX'te onay kutulu satır) | İçe aktarmada `- [ ]` satırları görev olur                                         |
-| Bul ve değiştir                                                                  | Nottaki görev başlıkları da bulunur                                                           | Değiştirme `task.update` ile; tek geri alma adımı                                  |
-| Mobil                                                                            | Aynı kayıtlar; not görünümünde blok kimlikle bulunur                                          | `TaskRepo`                                                                         |
-| Senkron                                                                          | `tasks.json` alan alan birleşir                                                               | `completions` tamamlanan güne göre birleşir (G9)                                   |
+| Yüzey                                                                            | Okur                                                                                                                                                                                           | Yazar                                                                              |
+| -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Not editörü                                                                      | Görev bloğunu kayıttan çizer                                                                                                                                                                   | Başlık, durum, çipler: `task.update` / `task.complete`; blok ekleme ve silme: §3.3 |
+| Günlük                                                                           | Görev bölümü (§3.2.2); bugünde gecikenler                                                                                                                                                      | Satırda onay kutusu `task.complete`, başlık `task.update`                          |
+| Görev paneli ve çalışma alanı (liste, kanban, takvim, zaman çizelgesi, ilerleme) | `shared/task-views.mjs`. Varsayılan görünüm "Öncelikli": açık görevler öncelik sırasıyla (gecikenler önce; kalan gün ve öncelik). Süzgeçler: bugün, yaklaşan, geciken, tarihsiz, tamamlananlar | `task.*` komutları                                                                 |
+| Görev ayrıntısı (pencere)                                                        | Bütün alanlar ve "Tamamlanan günler"                                                                                                                                                           | `task.update`, `task.move`, `task.delete`                                          |
+| Quick Add                                                                        | Hedef: son açık not, yoksa bugünün günlüğü                                                                                                                                                     | `task.create`                                                                      |
+| Takvim                                                                           | Gün kuralı (§3.2.2): açık ve tamamlanmış görevler; güne tıklayınca o günün günlüğü açılır (yoksa oluşur, bugünkü davranış)                                                                     | —                                                                                  |
+| Harita                                                                           | Not başına açık, geciken ve engelli görev sayısı ve bağımlılık katmanı (`noteId`)                                                                                                              | —                                                                                  |
+| Arama                                                                            | Her görev, tek kayıt üreticisinden                                                                                                                                                             | —                                                                                  |
+| Hatırlatma (ana süreç ve panel)                                                  | `reminderAt`, `reminderMode`, `dueDate`                                                                                                                                                        | Tamamla: `task.complete`                                                           |
+| Dışa aktarma                                                                     | Görev bloğu ve günlük bölümü kayıttan yazılır (Markdown'da `- [ ] Başlık`, HTML/PDF/DOCX'te onay kutulu satır)                                                                                 | İçe aktarmada `- [ ]` satırları görev olur                                         |
+| Bul ve değiştir                                                                  | Nottaki görev başlıkları da bulunur                                                                                                                                                            | Değiştirme `task.update` ile; tek geri alma adımı                                  |
+| Mobil açılış ekranı (Pisi sekmesi)                                               | Seçili günün günlüğü, görev bölümü (aynı kural) ve bugünse gecikenler                                                                                                                          | `TaskRepo`; ekleme satırı o günün günlüğüne                                        |
+| Mobil Görevler sekmesi                                                           | Aynı kayıtlar ve süzgeçler (ikincil)                                                                                                                                                           | `TaskRepo`; ekleme bugünün günlüğüne                                               |
+| Senkron                                                                          | `tasks.json` alan alan birleşir                                                                                                                                                                | `completions` tekrara göre birleşir; günlük bölümü yeniden üretilir (G9)           |
 
 ### 3.7 Modüller
 
 Yeni:
 
-- `shared/task-model.mjs` (sürüm 2: kayıt kuralları, tamamlama ve geri açma, bağımlılık döngüsü, alan doğrulama), `shared/task-views.mjs`
-  (görev günü, kovalar, süzgeç ve sıralama, takvim özeti, ilerleme), `shared/task-blocks.mjs` (blok HTML'i, nottaki görev kimlikleri, üyelik
-  farkı, blok ekleme ve kaldırma; DOM'suz, `shared/html-tokens.mjs` üstünde).
+- `shared/task-model.mjs` (sürüm 2: kayıt kuralları, yer doğrulama, tamamlama ve geri açma, bağımlılık döngüsü, alan doğrulama),
+  `shared/task-views.mjs` (görevin günü, öncelik sırası, kovalar, süzgeç ve sıralama, takvim özeti, ilerleme), `shared/task-blocks.mjs` (görev
+  bloğu HTML'i, nottaki görev kimlikleri, üyelik farkı, blok ekleme ve kaldırma), `shared/task-diary.mjs` (günün görevleri, görev bölümünün
+  HTML'i ve okunması, bir görevin o gündeki durumu). Hepsi DOM'suz, `shared/html-tokens.mjs` üstünde.
 - `main/functions/task-store.js` (sürüm 2 dosya okuma ve yazma) ve `main/functions/task-service.js` (komutlar, atomik yazma, olaylar, not
-  kaydında uzlaştırma, çöp kutusu).
-- `renderer/tasks/`: `pisi-task-store.mjs`, `pisi-task-actions.mjs` (açık ve kapalı not ayrımı, GV9), `pisi-task-block.mjs` (editör bloğu ve
-  klavye kuralları), `pisi-task-panel.mjs`, `pisi-task-views.mjs` (kanban, takvim, zaman çizelgesi, ilerleme), `pisi-task-detail.mjs`,
-  `pisi-task-quick-add.mjs`, `pisi-task-diary.mjs`.
+  kaydında karşılaştırma, günlük bölümlerinin yazılması ve günlük oluşturma, çöp kutusu).
+- `renderer/tasks/`: `pisi-task-store.mjs`, `pisi-task-actions.mjs` (açık ve kapalı belge ayrımı, GV9), `pisi-task-block.mjs` (editör bloğu ve
+  klavye kuralları), `pisi-task-diary.mjs` (günlük bölümünün çizimi ve satırları), `pisi-task-panel.mjs`, `pisi-task-views.mjs` (kanban, takvim,
+  zaman çizelgesi, ilerleme), `pisi-task-detail.mjs`, `pisi-task-quick-add.mjs`.
 
 Kalkacaklar (G2–G7):
 
@@ -297,9 +371,10 @@ Kalkacaklar (G2–G7):
   `pisi-tag-index.mjs`, `pisi-tag-editor.mjs` ve `pisi-editor-blocks.mjs` içindeki görev kodu.
 - `renderer/productivity/pisi-quick-add-repeat-policy.mjs`; `pisi-quick-capture.mjs`'teki görev formu `renderer/tasks/`'a taşınır.
 - `renderer/calendar/pisi-calendar-diary.mjs`'teki yönetilen bölüm tıklamaları; `pisi-calendar-ui.mjs`'teki `missionIndex` yolu.
-- `main/functions/task-capture.js`, `source-of-truth.js`, `task-reference-integrity.js`, `task-reference-operation-hooks.js`;
-  `document-store-diary.js`'teki yönetilen bölüm (`syncDiaryMissions`); `store-history.js`'teki görev bloğu üretimi; `map-node-copy-core.js`'teki
-  kimlik silme; `sync-client-desktop.js`'teki görev durumu koruması (SV13).
+- `main/functions/task-capture.js` (Inbox dahil), `source-of-truth.js`, `task-reference-integrity.js`, `task-reference-operation-hooks.js`;
+  `document-store-diary.js`'teki eski yönetilen bölüm (`syncDiaryMissions`, `organizeDiaryManualTasks`, ayraçlar; günlük oluşturma kalır);
+  `store-history.js`'teki görev bloğu üretimi; `map-node-copy-core.js`'teki kimlik silme; `sync-client-desktop.js`'teki görev durumu koruması
+  (SV13).
 - Görev işaretini regex ile okuyan testler (`tests/todo-*.test.js` ve benzerleri); yerlerine davranış testleri gelir.
 
 ### 3.8 Görev PR'ları için ek "bitti" koşulları
@@ -309,8 +384,10 @@ Kalkacaklar (G2–G7):
   de) geçer.
 - Her faz kendi Electron E2E'sini `scripts/electron-tasks-<konu>-e2e.mjs` olarak yazar ve `package.json` `test:e2e` listesine ekler. Fazın
   kapattığı Ek B senaryoları bu E2E'dedir.
-- E2E, bir görev alanı değişikliği sırasında `.node` okuma ve yazma sayısını sayar; sayı 0 olmalıdır (GV5).
+- E2E, bir görev alanı değişikliği sırasında `.node` okuma ve yazma sayısını sayar; sayı 0 olmalıdır (GV5). Görevin günleri değişince yalnız
+  ilgili günlükler yazılır; E2E bunu da sayar.
 - E2E her senaryodan sonra Project Integrity'nin yeni bulgu vermediğini denetler (GV14).
+- Günlük bölümünü değiştiren PR'da ortak bir test, masaüstünün ve mobilin aynı `tasks.json`'dan aynı baytları ürettiğini doğrular (GV15).
 - Dokunulan dosyayı kapsayan regex testleri davranış testine çevrilir ya da silinir (CLAUDE.md kural 3).
 - Dosya biçimi değişen fazda `pisi-definition.md` ve `docs/single-source-of-truth.md` aynı PR'da güncellenir. Masaüstü fixture'ı
   (`tests/fixtures/desktop-project/`) README'deki yolla yeniden üretilir; elle düzenlenmez.
@@ -326,7 +403,7 @@ Her faz: amaç → okunacaklar → yapılacaklar → kabul kriterleri. Madde kim
 
 ### G0 · Planı repoya ekle
 
-- `docs/task-plan.md` (bu belge) eklenir. `CLAUDE.md`'ye kısa bir "Görevler" bölümü, `pisi-error.md`'ye incelemenin doğrulanan bulguları (§5h),
+- `docs/task-plan.md` (bu belge) eklenir. `CLAUDE.md`'ye kısa bir "Görevler" bölümü, `pisi-error.md`'ye incelemenin doğrulanan hataları (§5h),
   `pisi-update.md`'ye tarihli bir giriş yazılır.
 - **Kabul:** yalnız belge değişikliği olur; `npm run validate` geçer.
 
@@ -334,74 +411,86 @@ Her faz: amaç → okunacaklar → yapılacaklar → kabul kriterleri. Madde kim
 
 **Amaç:** iki platformun kullanacağı sürüm 2 kurallarını, G/Ç olmadan ve test edilmiş olarak kurmak.
 
-**Oku:** `shared/task-model.mjs`, `shared/task-views.mjs`, `shared/ids.mjs`, `shared/note-blocks.mjs`, `shared/html-tokens.mjs`,
-`shared/date-parser.mjs`, `scripts/shared-purity.js`, `mobile/src/data/task-repo.mjs`, `mobile/src/screens/notes/note.mjs` (`drawTask`).
+**Oku:** `shared/task-model.mjs`, `shared/task-views.mjs`, `shared/ids.mjs`, `shared/diary-rules.mjs`, `shared/note-blocks.mjs`,
+`shared/html-tokens.mjs`, `shared/date-parser.mjs`, `scripts/shared-purity.js`, `mobile/src/data/task-repo.mjs`, `mobile/src/screens/pisi/day-model.mjs`,
+`mobile/src/screens/notes/note.mjs` (`drawTask`).
 
 **Önce plan yaz, onay bekle.**
 
-1. `task-model.mjs`: §3.1'deki kayıt kuralları (`normalizePisiTask(payload, existing, { now, makeUuid })`); bilinmeyen alanlar korunur.
-2. `completePisiTask(task, { now })` ve `reopenPisiTask(task, undo)`: tekrarsız görev `done` olur; tekrar eden görev `completions`'a yazılır,
-   `dueDate` sonraki tarihe ilerler, `reminderAt` kayar ve durum `todo` kalır. Dönüş geri alma bilgisini içerir.
+1. `task-model.mjs`: §3.1'deki kayıt kuralları (`normalizePisiTask(payload, existing, { now, makeUuid })`); yer doğrulama (`noteId` ya da
+   `diaryDate`); bilinmeyen alanlar korunur.
+2. `completePisiTask(task, { now })` ve `reopenPisiTask(task, completion)`: §3.2.3'teki kural; geri alma, kayıttaki `dueDate`'i geri koyar.
 3. `findPisiTaskDependencyCycle(tasks, taskId, dependencyIds)`.
-4. `task-views.mjs`: görevin günü (`dueDate`), kovalar (geciken, bugün, yaklaşan, sonra, tarihsiz), süzgeçler (bunlar ve notsuz, tamamlanan),
-   sıralamalar (iş sırası, öncelik, elle sıra), takvim özeti (`completions` dahil) ve ilerleme sayıları.
+4. `task-views.mjs`: görevin günü (`dueDate`), öncelik sırası (gecikenler önce, kalan gün ve öncelik; bugünkü iş sırası), kovalar (geciken, bugün,
+   yaklaşan, sonra, tarihsiz), süzgeçler, sıralamalar (öncelik sırası, öncelik, elle sıra), takvim özeti ve ilerleme sayıları.
 5. `task-blocks.mjs`: `makePisiTaskBlockHtml`, `listPisiTaskBlocks(html)`, `diffPisiTaskMembership(before, after)`,
    `insertPisiTaskBlock(html, block, { afterBlockId })`, `removePisiTaskBlock(html, taskId)`, `stripPisiTaskBlocks(html)` (çakışma kopyası için).
-6. `note-blocks.mjs`: §3.2'deki blok korumalı bir `task` segmentidir ve `segment.taskId` taşır. Mobilin not görünümü görevi bu kimlikle bulur.
-7. Eski dışa açık fonksiyonlar (görev etiketi dilbilgisi vb.) bu fazda silinmez; kullanan kod G2 ve G8'de kalkınca silinir.
+6. `task-diary.mjs`: `listPisiDiaryTaskIds(date, tasks)` (günün görevleri), `getPisiTaskStateOnDay(task, date)` (☑, ☐ ya da tarih çipi; kilit
+   bilgisiyle), `makePisiDiaryTaskSectionHtml(date, ids)`, `readPisiDiaryTaskSection(html)`, `replacePisiDiaryTaskSection(html, date, ids)` ve bir
+   görev değişikliğinin hangi günleri etkilediğini veren `getPisiTaskDayChanges(before, after)`.
+7. `note-blocks.mjs`: görev bloğu (§3.2.1) ve günlük bölümü (§3.2.2) korumalı segmentlerdir ve görev kimliklerini taşır. Mobilin not görünümü
+   görevi bu kimlikle bulur.
+8. Eski dışa açık fonksiyonlar (görev etiketi dilbilgisi vb.) bu fazda silinmez; kullanan kod G2 ve G8'de kalkınca silinir.
 
 **Kabul:**
 
 - `npm run validate` ve `npm --prefix mobile run validate` geçer; `check:architecture` shared saflığını onaylar.
-- Her kural örnekli testle sınanır (`tests/shared-task-*.test.mjs`). Tohumlu rastgele 1.000 durumda: tamamla ve geri aç kaydı aynen geri verir;
-  `diffPisiTaskMembership` ile `insertPisiTaskBlock` / `removePisiTaskBlock` birbirini tutar; blok dışındaki baytlar değişmez.
+- Her kural örnekli testle sınanır (`tests/shared-task-*.test.mjs`). §3.2.3'teki beş adım tablo güdümlü bir testtir. Tohumlu rastgele 1.000
+  durumda: tamamla ve geri al kaydı aynen geri verir; `diffPisiTaskMembership` ile `insertPisiTaskBlock` / `removePisiTaskBlock` birbirini tutar;
+  bölüm baytları aynı girdiden aynı çıkar; blok ve bölüm dışındaki baytlar değişmez.
 - `tests/mobile-desktop-compat.test.mjs` değişmeden geçer.
 
 ### G2 · Görev servisi ve `tasks.json` sürüm 2
 
-**Amaç:** bütün görev yazmalarının tek servisten, atomik ve doğru geçmesi; yansıtma yollarının, Inbox'ın ve günlük yönetilen bölümünün kalkması.
+**Amaç:** bütün görev yazmalarının tek servisten, atomik ve doğru geçmesi; yansıtma yollarının ve Inbox'ın kalkması; günlük bölümünün yalnız
+kimlik taşıyan yeni biçime geçmesi.
 
 **Oku:** `main/functions/task-store.js`, `task-capture.js`, `source-of-truth.js`, `domain-command-query.js`, `atomic-mutation*.js`,
 `atomic-domain-hardening.js`, `trash-store.js`, `project-integrity-authorities.js`, `reminder-*.js`, `store-history*.js`,
 `document-store-diary.js`, not kaydı yolu (`document-store*.js`), `sync-client-desktop.js` (görev koruması), `preload.js`,
-`renderer/domain/pisi-domain-client.mjs`, `renderer/productivity/pisi-quick-capture.mjs`, `scripts/electron-mobile-fixture-e2e.mjs`,
-`tests/fixtures/README.md`.
+`renderer/domain/pisi-domain-client.mjs`, `renderer/productivity/pisi-quick-capture.mjs`, `renderer/calendar/pisi-calendar-diary.mjs`,
+`scripts/electron-mobile-fixture-e2e.mjs`, `tests/fixtures/README.md`.
 
 **Önce plan yaz, onay bekle.** Bu planın en büyük fazıdır.
 
 1. `task-store.js`: sürüm 1 ve 2 okunur, 2 yazılır; bozuk dosya salt okunur (GV11).
-2. `task-service.js`: §3.4 komutları; her biri tek atomik mutation (GV8); `pisi:tasks-changed` olayı; kapalı nota blok ekleme ve kaldırma
-   `shared/task-blocks.mjs` ile.
-3. Not kaydında üyelik uzlaştırması (§3.3): nottan çıkan görev çöp kutusuna gider, çöp kutusundaki bir kimlik nota gelirse görev geri döner.
-   Senkron uygulamasında çalışmaz.
-4. Çöp kutusu: tek görevlik öğe türü; not silmede `noteId`'ye göre arşiv; geri yükleme.
-5. Project Integrity görev bulguları: kaydı olmayan blok (yetim), bloğu olmayan görev (evsiz), olmayan not, çift referans, bağımlılık döngüsü,
-   geçersiz alan. Onarım arayüzü G7'dedir.
-6. Hatırlatma servisi sürüm 2 alanlarıyla çalışır; hatırlatma girdisi `nodePath` ve `blockId` yerine `noteId` taşır.
-7. `tasks.json` sürüm geçmişi sürüm 2 kayıtlarla çalışır; geri yükleme notlara blok yazmaz (§3.3).
-8. Günlük yönetilen bölümü kalkar (`syncDiaryMissions`, `project:sync-diary-missions`, bölüm üreticisi). Eski günlüklerdeki bölümlere dokunulmaz.
-9. Inbox oluşturma ve `task-capture.js` kalkar. Quick Add formu `task.create.v1`'e bağlanır; `pisi-quick-add-repeat-policy.mjs` kalkar ve formun
-   Türkçe tarih alanı geri gelir (ayrıştırılan gün `dueDate`, saat `dueTime` olur). Açık bir not seçilirse görev G3'e kadar notsuz oluşturulur
-   ve kullanıcıya söylenir (GV9).
-10. Kalkanlar (§3.4, §3.7): eski komutlar, `quickAddTask` ve `op` seçicisi, `source-of-truth.js`, yol yeniden yazma kancaları,
+2. `task-service.js`: §3.4 komutları; her biri tek atomik mutation (GV8); `pisi:tasks-changed` olayı; kapalı nota blok ekleme ve kaldırma; görev
+   değişikliğinin etkilediği günlerin bölümünü yazma ve gereken günlüğü oluşturma (`shared/task-diary.mjs`).
+3. Not kaydında karşılaştırma (§3.3): nottan çıkan görev çöp kutusuna gider; çöp kutusundaki bir kimlik nota gelirse görev geri döner.
+   Senkron uygulamasında çalışmaz. Senkronla gelen `tasks.json` değişikliğinde etkilenen günlerin bölümü kuraldan üretilir; değişmiyorsa yazılmaz.
+4. Çöp kutusu: tek görevlik öğe türü; not ya da günlük silmede yere göre arşiv; geri yükleme.
+5. Project Integrity görev bulguları: kaydı olmayan blok (yetim), notunda bloğu olmayan görev (evsiz), olmayan not, çift referans, bağımlılık
+   döngüsü, geçersiz alan, kurala uymayan günlük bölümü. "Yeri olmayan görev" G8'e kadar bulgu sayılmaz (§3.1). Onarım arayüzü G7'dedir.
+6. Hatırlatma servisi sürüm 2 alanlarıyla çalışır; hatırlatma girdisi `nodePath` ve `blockId` yerine görevin yerini taşır.
+7. `tasks.json` sürüm geçmişi sürüm 2 kayıtlarla çalışır; geri yükleme notlara blok yazmaz, günlük bölümlerini kuraldan üretir (§3.3).
+8. Eski günlük yönetilen bölümü (`syncDiaryMissions`, `organizeDiaryManualTasks`, ayraçlar, `project:sync-diary-missions`) kalkar; yerine §3.2.2
+   bölümü gelir ve onu yalnız görev servisi yazar. Görevin bitiş gününde günlük oluşturma korunur.
+9. Inbox ve `task-capture.js` kalkar. Quick Add `task.create.v1`'e bağlanır; hedef son açık not, yoksa bugünün günlüğüdür (§1.3, §1.4).
+   `pisi-quick-add-repeat-policy.mjs` kalkar ve formun Türkçe tarih alanı geri gelir (ayrıştırılan gün `dueDate`, saat `dueTime` olur).
+10. Açık not ya da günlük için blok ve bölüm değişikliği editör yolundan yapılır (GV9, `pisi-task-actions.mjs`): editör bloğu ya da bölümü yerinde
+    günceller ve kendi kayıt yoluyla yazar.
+11. Kalkanlar (§3.4, §3.7): eski komutlar, `quickAddTask` ve `op` seçicisi, `source-of-truth.js`, yol yeniden yazma kancaları,
     `sync-client-desktop.js` görev durumu koruması. `docs/sync-plan.md` SV13 "yansıtma yazması yoktur" diye yeniden yazılır.
-11. Renderer: eski görev modülleri bootstrap'tan çıkarılır ve silinir. Yerine `renderer/tasks/pisi-task-store.mjs` gelir; sağ panelde geçici,
-    sade bir liste (başlık, gün, onay kutusu, notu aç) ve not editöründe görev bloğunun salt okunur geçici çizimi (onay kutusu ve başlık) olur.
-    Tam panel G4'te, düzenlenebilir blok G3'tedir. Editörün eski görev komutları (`todo` etiketi seçicisi, `done` komutu) kapatılır.
-12. `pisi-definition.md` görev bölümü, `docs/single-source-of-truth.md` ve `docs/domain-command-query.md` güncellenir. Masaüstü fixture'ı
-    yeniden üretilir; görevler `task.create.v1` ile oluşturulur (notta, notsuz, tekrar eden, tamamlanmış).
+12. Renderer: eski görev modülleri bootstrap'tan çıkarılır ve silinir. Yerine `renderer/tasks/pisi-task-store.mjs` gelir. Sağ panelde geçici,
+    sade bir liste (öncelik sırasıyla başlık, gün, onay kutusu, notu aç); not editöründe görev bloğunun ve günlük bölümünün geçici çizimi (onay
+    kutusu ve başlık; onay kutusu `task.complete` çalıştırır). Tam panel G4'te, düzenlenebilir blok ve satırlar G3'tedir. Editörün eski görev
+    komutları (`todo` etiketi seçicisi, `done` komutu) kapatılır.
+13. `pisi-definition.md` görev ve günlük bölümleri, `docs/single-source-of-truth.md` ve `docs/domain-command-query.md` güncellenir. Masaüstü
+    fixture'ı yeniden üretilir; görevler `task.create.v1` ile oluşturulur (notta, bugünün günlüğünde, ileri tarihli, tekrar eden, tamamlanmış).
 
 **Kabul:**
 
-- `scripts/electron-tasks-service-e2e.mjs`: Ek B'deki S1–S6, S9 ve S17 komut düzeyinde geçer.
-- Görev alanı değişikliğinde `.node` okuma ve yazma sayısı 0'dır; 1.000 notluk projede tamamlama tam tarama yapmaz (S8).
+- `scripts/electron-tasks-service-e2e.mjs`: Ek B'deki S1–S9, S11, S17, S19 ve S21 komut düzeyinde geçer.
+- Görev alanı değişikliğinde `.node` okuma ve yazma sayısı 0'dır; görevin günü değişince yalnız ilgili günlükler yazılır; 1.000 notluk projede
+  tamamlama tam tarama yapmaz (S8).
 - Ortasında hata enjekte edilen bir komut projeyi komut öncesi ya da sonrası durumda bırakır.
 - `tests/mobile-desktop-compat.test.mjs` yeni fixture'la geçer; mobilin sürüm 1 yazdığı dosya Integrity'de yeni bulgu vermez.
-- Kapanan bulgular: GB1–GB7, GB9, GB10, GB13, GK4, GK5, GK11, GK12, GK14; `pisi-error.md` §4a ve §4b.
+- Kapanan bulgular: GB1–GB9, GB12, GK4, GK5, GK11, GK12, GK14; `pisi-error.md` §4a ve §4b.
 
-### G3 · Editörde görev bloğu
+### G3 · Editörde görev bloğu ve günlük bölümü
 
-**Amaç:** görevin notta tek bir blok olarak oluşturulması, düzenlenmesi ve silinmesi; not dosyasına yalnız kimliğin yazılması.
+**Amaç:** görevin notta tek bir blok, günlükte bölümün bir satırı olarak oluşturulması, düzenlenmesi ve silinmesi; dosyaya yalnız kimliğin
+yazılması.
 
 **Oku:** `renderer/editor/pisi-block-editor.mjs`, `pisi-task-block-keyboard.mjs`, `pisi-block-keyboard-*.mjs`, `pisi-editor-history*.mjs`,
 `pisi-editor-input-policy.mjs`, `pisi-find-replace.mjs`, `renderer/tags/pisi-paste-*.mjs`, `renderer/editor/pisi-editor-file-block.mjs`
@@ -412,56 +501,60 @@ Her faz: amaç → okunacaklar → yapılacaklar → kabul kriterleri. Madde kim
 
 1. `renderer/tasks/pisi-task-block.mjs`: blok çizimi (onay kutusu, başlık alanı, çipler), kayıtta temizleme ve `pisi:task-store-updated` ile
    yerinde güncelleme. Çipe tıklayınca tarih, öncelik, tekrar ya da hatırlatma seçicisi açılır.
-2. Oluşturma: `/görev` (`todo`) komutu, `[ ]` ve `[]` kısayolu, blok türü menüsü, araç çubuğu ve paragrafı göreve çevirme (metin başlık olur).
-3. Başlık: tek satır; yazdıkça gecikmeli, odak çıkınca hemen `task.update.v1`; Türkçe ve IME bileşim kuralları (`pisi-editor-input-policy.mjs`).
-4. Klavye: §1.4'teki Enter kararı; Backspace, Delete ve oklar blok sınırında. `docs/editor-keyboard-rules.md`'deki görev satırı yeniden yazılır.
-5. Geri al ve yinele: not geçmişi o nottaki görevlerin alanlarını da saklar. Bir adım geri alınınca o adımda değişen alanlar `task.batch.v1` ile
+2. `renderer/tasks/pisi-task-diary.mjs`: günlük bölümü (§3.2.2): "Görevler" başlığı, satırlar ve o güne göre durumları, bugünde geciken grubu,
+   bölümün sonunda görev ekleme satırı, geçmiş tamamlamaların kilidi (§3.2.3), başka nottan gelen satırın menüsü (§1.4).
+3. Oluşturma: `/görev` (`todo`) komutu, `[ ]` ve `[]` kısayolu, blok türü menüsü, araç çubuğu ve paragrafı göreve çevirme (metin başlık olur).
+   Günlükte oluşturulan görev bölüme girer.
+4. Başlık: tek satır; yazdıkça gecikmeli, odak çıkınca hemen `task.update.v1`; Türkçe ve IME bileşim kuralları (`pisi-editor-input-policy.mjs`).
+5. Klavye: §1.3'teki Enter kararı (günlük satırında Enter aynı güne yeni görev açar); Backspace, Delete ve oklar blok sınırında.
+   `docs/editor-keyboard-rules.md`'deki görev satırı yeniden yazılır.
+6. Geri al ve yinele: not geçmişi o nottaki görevlerin alanlarını da saklar. Bir adım geri alınınca o adımda değişen alanlar `task.batch.v1` ile
    geri yazılır; silinen blok geri gelince görev çöp kutusundan döner.
-6. Kopyala, kes, yapıştır ve blok çoğaltma (§3.3). Pano görev kaydını taşır (`application/x-pisi-tasks`); başka projeye yapıştırmada yeni kimlik
+7. Kopyala, kes, yapıştır ve blok çoğaltma (§3.3). Pano görev kaydını taşır (`application/x-pisi-tasks`); başka projeye yapıştırmada yeni kimlik
    verilir. `docs/editor-paste-rules.md` güncellenir.
-7. Bul ve değiştir görev başlıklarında çalışır (§3.6).
-8. Açık nota dışarıdan gelen blok değişikliği (`task.create`, `task.move`, `task.delete`, Quick Add) editör yolundan yapılır (GV9). Senkronla gelen
-   not değişikliği (`pisi-sync-live.mjs`) görev bloklarını korur.
-9. Not açılınca evsiz görev uyarısı (§3.3); "Görev bulunamadı" ve "Görevler okunamadı" görünümleri.
+8. Bul ve değiştir görev başlıklarında çalışır (§3.6).
+9. Açık belgeye dışarıdan gelen değişiklik (başka yüzeyden `task.create`, `task.move`, `task.delete`, günlük bölümünün değişmesi) yerinde
+   uygulanır (GV9). Senkronla gelen not değişikliği (`pisi-sync-live.mjs`) görev bloklarını ve bölümünü korur.
+10. Not açılınca evsiz görev uyarısı (§3.3); "Görev bulunamadı" ve "Görevler okunamadı" görünümleri.
 
 **Kabul:**
 
-- `scripts/electron-tasks-editor-e2e.mjs`: S7, S13–S15. Başlık yazılıp kaydedilince not dosyasında yalnız §3.2 biçimi, `tasks.json`'da başlık
-  bulunur; geri al tamamlamayı ve silmeyi geri getirir.
+- `scripts/electron-tasks-editor-e2e.mjs`: S12–S15 ve S18. Başlık yazılıp kaydedilince not dosyasında yalnız §3.2.1 biçimi, `tasks.json`'da
+  başlık bulunur; geri al tamamlamayı ve silmeyi geri getirir; günlükte geçmiş tamamlama kilitlidir, en son tamamlama geri alınır.
 - `scripts/electron-editor-keyboard-e2e.mjs` ve `scripts/electron-editor-paste-e2e.mjs` yeni kurallarla geçer.
-- Kapanan bulgular: GB8, GB14, GK2.
+- Kapanan bulgular: GB14, GK2.
 
 ### G4 · Görev paneli, çalışma alanı ve Quick Add
 
-**Amaç:** görevlerin bütün görünümlerde kayıttan çizilmesi ve her işlemin tek komutla yazılması.
+**Amaç:** panelin öncelikli görevleri göstermesi; görevlerin bütün görünümlerde kayıttan çizilmesi ve her işlemin tek komutla yazılması.
 
 **Oku:** G2'de silinen `renderer/tags/pisi-todo-*.mjs` modüllerinin davranışı (git geçmişi), `renderer/productivity/pisi-quick-capture.mjs`,
 `shared/date-parser.mjs`, `styles/50-productivity.css` (görev stilleri), `pisi-error.md` §5e.
 
 **Önce plan yaz, onay bekle.**
 
-1. `pisi-task-panel.mjs`: sağ panel ve görev çalışma alanı aynı bileşendir. Süzgeçler (bugün, yaklaşan, geciken, tarihsiz, notsuz,
-   tamamlananları göster), sıralama, durum seçimi, onay kutusu ve notu açma. Yalnız değişen kartlar yeniden çizilir; `MutationObserver` ile
-   sonradan süsleme yoktur.
+1. `pisi-task-panel.mjs`: sağ panel ve görev çalışma alanı aynı bileşendir. Varsayılan görünüm "Öncelikli" (§3.6). Süzgeçler (bugün, yaklaşan,
+   geciken, tarihsiz, tamamlananları göster), sıralama, durum seçimi, onay kutusu ve görevin yerini açma. Yalnız değişen kartlar yeniden çizilir;
+   `MutationObserver` ile sonradan süsleme yoktur.
 2. `pisi-task-views.mjs`: kanban (sütun değişince `task.update`), takvim, zaman çizelgesi ve ilerleme (`completions` dahil).
-3. `pisi-task-detail.mjs`: bütün alanlar; bağımlılıkta döngü engeli; not seçimi (`task.move`); silme.
+3. `pisi-task-detail.mjs`: bütün alanlar; bağımlılıkta döngü engeli; yer seçimi (`task.move`); "Tamamlanan günler" listesi ve kayıt silme; silme.
 4. Sürükle ve bırakla sıralama tek bir `task.batch.v1` yazmasıdır.
-5. Quick Add tek formdur: başlık, Türkçe tarih ifadesi ve önizlemesi, öncelik, not (isteğe bağlı), tekrar, hatırlatma. Gözlemci ya da
-   `domain.command` sarmalayıcısı yoktur. Tarih ayrıştırıcı başlıktaki sayıları tarih saymaz (`pisi-error.md` §5e; düzeltme
-   `shared/date-parser.mjs`'tedir, mobil de kullanır).
+5. Quick Add tek formdur: başlık, Türkçe tarih ifadesi ve önizlemesi, öncelik, hedef (son açık not ya da bugünün günlüğü; değiştirilebilir),
+   tekrar, hatırlatma. Gözlemci ya da `domain.command` sarmalayıcısı yoktur. Tarih ayrıştırıcı başlıktaki sayıları tarih saymaz
+   (`pisi-error.md` §5e; düzeltme `shared/date-parser.mjs`'tedir, mobil de kullanır).
 6. Erişilebilirlik: onay kutularının adları, klavyeyle gezinme; TR ve ENG metinler.
 
 **Kabul:**
 
-- `scripts/electron-tasks-panel-e2e.mjs`: S1–S4 arayüzden; kanbanda sütun değiştirme; ayrıntıda bağımlılık döngüsünün engellenmesi;
-  sürükleyip sıralamada tek `tasks.json` yazması.
+- `scripts/electron-tasks-panel-e2e.mjs`: S1–S4 ve S19 arayüzden; panel açılınca öncelik sırası; kanbanda sütun değiştirme; ayrıntıda bağımlılık
+  döngüsünün engellenmesi; sürükleyip sıralamada tek `tasks.json` yazması.
 - 5.000 görevlik projede panelin ilk çizimi ve bir tamamlamanın ekrana yansıması ölçülür ve PR'a yazılır. Hedef: ilk çizim ≤ 300 ms,
   tamamlama ≤ 150 ms.
 - Kapanan bulgular: GK6, GK7, GK8; `pisi-error.md` §5e.
 
 ### G5 · Görevleri gösteren diğer yüzeyler
 
-**Amaç:** günlük, takvim, harita, arama, hatırlatma, gezinme, dışa aktarma ve kopyalamanın aynı kaydı kullanması.
+**Amaç:** takvim, harita, arama, hatırlatma, gezinme, dışa aktarma ve kopyalamanın aynı kaydı ve aynı gün kuralını kullanması.
 
 **Oku:** `renderer/calendar/*`, `renderer/map/pisi-map-operational-render.mjs`, `renderer/search/pisi-search-enhanced-index.mjs`,
 `renderer/search/pisi-search-index.mjs`, `renderer/tags/pisi-reminder-panel.mjs`, gezinme modülü (`pisi-todo-navigation.mjs`'in yerine
@@ -470,23 +563,21 @@ gelen), `main/functions/portability.js`, `main/functions/map-node-copy*.js`, `ma
 
 **Önce plan yaz, onay bekle.**
 
-1. `pisi-task-diary.mjs`: günlük açıkken o günün görevleri notun dışında gösterilir; onay kutusu `task.complete`. Günlük dosyası görev yüzünden
-   oluşmaz ya da değişmez.
-2. Takvim ortak özetten çizilir; `missionIndex` yolu kalkar.
-3. Harita rozetleri ve bağımlılık katmanı `noteId`'ye göre çalışır; rozet metni TR ve ENG.
-4. Arama: tek görev kaydı üreticisi; notsuz görevler dahil. Sonuçtan görev ayrıntısına ya da nottaki bloğa gidilir.
-5. Hatırlatma paneli: "Tamamla" `task.complete`; açma `noteId` ve görev kimliğiyle.
-6. Gezinme `noteId` ve `data-pisi-task-id` ile kesindir; tahmin ve yazma yoktur.
-7. Dışa aktarma ve içe aktarma (§3.6).
-8. Not kopyalama görevleri yeni kimlikle kopyalar.
-9. Not sürüm geçmişinden geri yükleme §3.3'e uyar.
+1. Takvim belirteçleri gün kuralından (§3.2.2) çizilir; güne tıklayınca o günün günlüğü açılır. `missionIndex` yolu kalkar.
+2. Harita rozetleri ve bağımlılık katmanı `noteId`'ye göre çalışır; rozet metni TR ve ENG.
+3. Arama: tek görev kaydı üreticisi; mobilde oluşturulan ve günlükteki görevler dahil. Sonuçtan görev ayrıntısına ya da görevin yerine gidilir.
+4. Hatırlatma paneli: "Tamamla" `task.complete`; açma görevin yeri ve kimliğiyle.
+5. Gezinme yer ve görev kimliğiyle kesindir; tahmin ve yazma yoktur.
+6. Dışa aktarma ve içe aktarma (§3.6).
+7. Not kopyalama görevleri yeni kimlikle kopyalar.
+8. Not sürüm geçmişinden geri yükleme §3.3'e uyar.
 
 **Kabul:**
 
-- `scripts/electron-tasks-surfaces-e2e.mjs`: S9–S12 ve S16; günlükten tamamlanan tekrar eden görev ilerler; arama notsuz görevi bulur; dışa
-  aktarılan Markdown görev satırlarını içerir ve geri içe aktarılınca görev olur.
+- `scripts/electron-tasks-surfaces-e2e.mjs`: S10 ve S16; takvim belirteçleri günlük bölümüyle aynı günleri gösterir; arama mobilde
+  oluşturulan görevi bulur; dışa aktarılan Markdown görev satırlarını içerir ve geri içe aktarılınca görev olur.
 - `scripts/electron-reminders-e2e.mjs` ve `scripts/electron-store-history-e2e.mjs` yeni modelle geçer.
-- Kapanan bulgular: GB10–GB13 (arayüz düzeyinde), GK3, GK9, GK10.
+- Kapanan bulgular: GB11, GK3, GK9, GK10.
 
 ### G6 · Görevlerde etiket ve not bağlantısı
 
@@ -494,8 +585,8 @@ gelen), `main/functions/portability.js`, `main/functions/map-node-copy*.js`, `ma
 
 **Önce plan yaz, onay bekle.**
 
-1. `tags` alanı (ör. `["proje", "acil"]`): görev bloğunda ve ayrıntıda çip olarak düzenlenir. Etiketler paneli etiketli görevleri de listeler
-   (`tasks.json`'dan; tarama yok).
+1. `tags` alanı (ör. `["proje", "acil"]`): görev bloğunda, günlük satırında ve ayrıntıda çip olarak düzenlenir. Etiketler paneli etiketli görevleri
+   de listeler (`tasks.json`'dan; tarama yok).
 2. Başlıkta `[[Not]]` yazımı bağlantı olarak gösterilir. Bağlantılar paneli ve geri bağlantılar görevleri de sayar. Not yeniden adlandırılınca
    görev başlığındaki bağlantı da güncellenir (`shared/wiki-link-core.mjs`).
 
@@ -505,59 +596,68 @@ gelen), `main/functions/portability.js`, `main/functions/map-node-copy*.js`, `ma
 
 **Önce plan yaz, onay bekle.**
 
-1. Integrity arayüzünde görev bulgularının onarımları: yetim blok (çöp kutusundan geri getir ya da bloğu kaldır), evsiz görev (sona ekle ya da
-   notsuz yap), olmayan not (notsuz yap), çift referans (kopyayı yeni göreve çevir), döngü (bağımlılığı kaldır).
-2. Büyük proje ölçümü (`scripts/generate-project-fixture.mjs`'e notlarda görev bloğu seçeneği eklenir): 2.000 not ve 5.000 görevle proje açılışı,
-   panel, 200 görev bloklu bir notun açılışı, tamamlama ve `completions` ile `tasks.json` boyutu. Sonuçlar bir zamanlama dosyasına yazılır.
+1. Integrity arayüzünde görev bulgularının onarımları: yetim blok (çöp kutusundan geri getir ya da bloğu kaldır), evsiz görev (sona ekle),
+   olmayan not (bugünün günlüğüne bağla), çift referans (kopyayı yeni göreve çevir), döngü (bağımlılığı kaldır), kurala uymayan günlük bölümü
+   (yeniden üret).
+2. Büyük proje ölçümü (`scripts/generate-project-fixture.mjs`'e notlarda görev bloğu ve günlük bölümü seçeneği eklenir): 2.000 not ve 5.000 görevle
+   proje açılışı, panel, 200 görev bloklu bir notun açılışı, tamamlama, oluşan günlük sayısı ve `completions` ile `tasks.json` boyutu. Sonuçlar
+   bir zamanlama dosyasına yazılır.
 3. Kalan eski kod, kullanılmayan CSS ve regex testleri kaldırılır; `module-manifest.json` dosyaları temizlenir.
 
 **Kabul:** onarım E2E'si; ölçüm sonuçları PR'da; `check:architecture` ve `check:types` eski bağlamaları göstermez. Kapanan bulgular: GK1, GK13,
 GK15.
 
-### G8 · Mobil: sürüm 2 görevler
+### G8 · Mobil: sürüm 2 görevler ve açılışta gün
 
-**Amaç:** mobilin aynı kayıt kurallarıyla çalışması ve not görevlerinde tam düzenleme.
+**Amaç:** mobilin aynı kurallarla çalışması, açılışta o günle ilgili her şeyi göstermesi ve not görevlerinde tam düzenleme.
 
-**Oku:** `docs/mobile-plan.md` §0, §2, §3.6; `mobile/src/data/task-repo.mjs`, `mobile/src/screens/tasks/*`, `mobile/src/screens/pisi/*`,
-`mobile/src/screens/notes/note.mjs`, `mobile/src/ui/task-add.mjs`, `mobile/src/screens/calendar/calendar-model.mjs`.
+**Oku:** `docs/mobile-plan.md` §0, §2, §3.6; `mobile/src/data/task-repo.mjs`, `mobile/src/data/diary-repo.mjs`, `mobile/src/screens/pisi/*`,
+`mobile/src/screens/tasks/*`, `mobile/src/screens/notes/note.mjs`, `mobile/src/ui/task-add.mjs`, `mobile/src/screens/calendar/calendar-model.mjs`.
 
 **Önce plan yaz, onay bekle.**
 
-1. `TaskRepo` sürüm 2: kayıt kuralları ve tamamlama `shared/task-model.mjs`'ten gelir; tekrar eden görev yerinde ilerler; geri alma aynı bilgiyle
-   yapılır; dosya `version: 2` yazılır.
-2. Not görevlerinde bütün alanlar düzenlenir; `isNoteTask` kısıtı ve "Masaüstünde nottan düzenlenir" metni kalkar. `pisi-error.md` §5d kapanır.
-3. Not görünümü görev bloğunu kimlikle çizer (G1). Not editöründe görev bloğu ekleme: önce `tasks.json`, sonra blok; öbür bloklar bayt bayt aynı
-   kalır (V8).
-4. Hızlı ekle G4'teki ayrıştırıcı düzeltmesiyle çalışır.
-5. Günlük yönetilen bölümüyle ilgili artık gereksiz kod kalkar.
+1. `TaskRepo` sürüm 2: kayıt kuralları ve tamamlama `shared/task-model.mjs`'ten gelir (§3.2.3); geri alma aynı bilgiyle yapılır; dosya
+   `version: 2` yazılır.
+2. Her görevin yeri olur: Pisi sekmesindeki ekleme satırı seçili günün günlüğüne, Görevler sekmesindeki ekleme bugünün günlüğüne yazar. Görevin
+   günleri değişince mobil de günlük bölümünü ve gereken günlüğü aynı ortak kodla yazar (GV15; öbür bloklar bayt bayt aynı kalır, V8).
+3. Açılış ekranı (Pisi sekmesi): bugünün günlüğü, günün görev bölümü (aynı kural) ve gecikenler ek dokunuş olmadan görünür. Geçmiş günde
+   tamamlama kilidi §3.2.3'e uyar. Görevler sekmesi ikincil kalır.
+4. Not görevlerinde bütün alanlar düzenlenir; `isNoteTask` kısıtı ve "Masaüstünde nottan düzenlenir" metni kalkar. `pisi-error.md` §5d kapanır.
+5. Not görünümü görev bloğunu kimlikle çizer (G1). Not editöründe görev bloğu ekleme: önce `tasks.json`, sonra blok.
+6. Hızlı ekle G4'teki ayrıştırıcı düzeltmesiyle çalışır. Günlük yönetilen bölümüyle ilgili eski kod kalkar.
+7. Integrity "yeri olmayan görev" denetimini açar; onarımı görevi bugünün günlüğüne bağlar (§3.1).
 
-**Kabul:** `npm --prefix mobile run validate` ve `npm --prefix mobile run e2e` geçer; `tests/mobile-desktop-compat.test.mjs` geçer ve mobilin
-yazdığı proje masaüstü Integrity'de yeni bulgu vermez; telefon görev silmez (V9). Kapanan bulgular: GB5 (mobil tarafı).
+**Kabul:** `npm --prefix mobile run validate` ve `npm --prefix mobile run e2e` (S20 dahil) geçer; `tests/mobile-desktop-compat.test.mjs` geçer ve
+mobilin yazdığı proje masaüstü Integrity'de yeni bulgu vermez; masaüstü ve mobil aynı `tasks.json`'dan aynı günlük bölümünü üretir; telefon görev
+silmez (V9). Kapanan bulgular: GB5 (mobil tarafı).
 
 ### G9 · Senkron
 
 **Amaç:** yeni modelin iki cihazda metin ve görev kaybettirmeden birleşmesi.
 
-**Oku:** `docs/sync-plan.md` §0, §2, §3.4, §3.10; `shared/sync-merge-authority.mjs`, `shared/sync-conflict.mjs`, `scripts/sync-e2e-matrix.mjs`,
-`scripts/generate-sync-vectors.mjs`.
+**Oku:** `docs/sync-plan.md` §0, §2, §3.4, §3.10; `shared/sync-merge-authority.mjs`, `shared/sync-merge-node.mjs`, `shared/sync-conflict.mjs`,
+`scripts/sync-e2e-matrix.mjs`, `scripts/generate-sync-vectors.mjs`.
 
 **Önce plan yaz, onay bekle.**
 
-1. `completions` birleşimi: iki tarafın listesi tamamlanan güne göre birleşir; aynı günün iki tamamlaması çakışma sayılmaz. Test vektörleri
-   yenilenir.
-2. Çakışma kopyası görev bloklarını almaz (`stripPisiTaskBlocks`, §3.3).
-3. Matris senaryoları: telefon tekrar eden görevi tamamlar ve masaüstü başlığını değiştirir; iki cihaz aynı tekrarı tamamlar (tek ilerleme);
-   masaüstü görev bloğunu siler ve telefon aynı görevi düzenler (silme kazanır, kaybeden değer çakışma günlüğüne yazılır); telefon nota görev
-   ekler; ileri tarihli görev iki cihazda da günlük dosyası oluşturmaz.
-4. `docs/sync-plan.md` §3.4 güncellenir. Birleştirme kuralı istemcidedir; protokol sürümü değişmez.
+1. `completions` birleşimi: kayıtlar tamamlanan tekrarın bitiş gününe (`dueDate`) göre birleşir; aynı tekrar iki tarafta tamamlanmışsa önce
+   tamamlanan kalır, öbürü çakışma günlüğüne yazılır. Test vektörleri yenilenir.
+2. Günlük görev bölümü birleştirilmez: iki taraf farklıysa çakışma kopyası açılmaz, bölüm birleşik `tasks.json`'dan yeniden üretilir (GV15).
+   Aynı gün için iki cihazda ayrı oluşan günlük (matris senaryosu 4) tek günlük ve tek bölüm bırakır; günlükteki görevlerin yeri (`diaryDate`)
+   korunur.
+3. Çakışma kopyası görev bloklarını ve görev bölümünü almaz (`stripPisiTaskBlocks`, §3.3).
+4. Matris senaryoları: telefon tekrar eden görevi tamamlar ve masaüstü başlığını değiştirir; iki cihaz aynı tekrarı tamamlar (tek ilerleme);
+   masaüstü görev bloğunu siler ve telefon aynı görevi düzenler (silme kazanır, kaybeden değer çakışma günlüğüne yazılır); iki cihaz aynı güne
+   çevrimdışı görev ekler (tek günlük, iki satır); telefonda ileri tarihli görev o günün günlüğünü iki cihazda aynı baytlarla oluşturur.
+5. `docs/sync-plan.md` §3.4 güncellenir. Birleştirme kuralı istemcidedir; protokol sürümü değişmez.
 
 **Kabul:** `npm run test:sync-server` ve `PISI_SYNC_MATRIX_E2E=1 npm run test:sync-server` geçer; iki cihaz en çok 4 turda durulur; her
 senaryodan sonra iki tarafta Integrity yeni bulgu vermez.
 
 ### G10 · Cihazda kabul
 
-- `docs/task-qa.md`: gerçek masaüstü, gerçek telefon ve kullanıcının sunucusuyla elle uygulanan kabul listesi (oluşturma yolları, tamamlama,
-  tekrar, silme ve geri alma, kes ve yapıştır, günlük, takvim, arama, hatırlatma, iki cihaz).
+- `docs/task-qa.md`: gerçek masaüstü, gerçek telefon ve kullanıcının sunucusuyla elle uygulanan kabul listesi (oluşturma yolları, Quick Add hedefi,
+  tamamlama, tekrar ve geçmiş günlükler, silme ve geri alma, kes ve yapıştır, günlük ve takvim, telefonda açılış, arama, hatırlatma, iki cihaz).
 - **Kabul:** kullanıcı listeyi uygular; bulunan hata `pisi-error.md`'ye yazılır.
 
 ---
@@ -565,7 +665,7 @@ senaryodan sonra iki tarafta Integrity yeni bulgu vermez.
 ## 5. Kapsam dışı
 
 - Eski görev işaretini ve eski `tasks.json` alanlarını dönüştüren geçiş adımı (§1.3).
-- Bir görevi birden çok notta blok olarak gösterme (yansıma bloğu). Görevin tek bir bloğu vardır; notun dışındaki yerlerde görünümler gösterir.
+- Bir görevi günlükler dışında birden çok notta blok olarak gösterme (yansıma bloğu).
 - Alt görev hiyerarşisi (girintiyle iç içe görev); bağımlılık listesi yeterlidir.
 - Bases, özellikler ve rollup'larda görev sorgusu.
 - Görev başlığında zengin metin (kalın, italik).
@@ -611,12 +711,12 @@ Bu faz senkron işidir: docs/sync-plan.md §0, §2 ve §3.10'u da oku ve uy.
 | GB5    | Başka bir panel işleminden sonra notu olmayan göreve sahte kaynak yazılıyor (`blockId: task-block-…`, `nodeTitle: Task`). Mobil bunu not görevi sayıp salt okunur yapıyor; görev iki cihazda da düzenlenemiyor. Masaüstü fixture'ındaki iki görev bu durumda.                                                                                        | G2, G8      |
 | GB6    | Hatırlatmadan tamamlanan görev, not sonradan düzenlenince yeniden "todo" oluyor (`'done'` panelin durum listesinde yok; nottaki işaret eski kalıyor).                                                                                                                                                                                                | G2          |
 | GB7    | Projede kimliksiz bir Quick Add bloğu varken notta silinen görev bloğu `tasks.json`'da ve panelde kalıyor (yetim görev).                                                                                                                                                                                                                             | G2          |
-| GB8    | Açık olan nota Quick Add: editör bloğu göstermiyor; kullanıcı yazıp kaydedince blok dosyadan siliniyor ve görev yetim kalıyor (not içeriği kaybı).                                                                                                                                                                                                   | G3          |
+| GB8    | Açık olan nota Quick Add: editör bloğu göstermiyor; kullanıcı yazıp kaydedince blok dosyadan siliniyor ve görev yetim kalıyor (not içeriği kaybı).                                                                                                                                                                                                   | G2          |
 | GB9    | Her panel işlemi ve not kaydı bütün notları yeniden okuyor; 1.000 notta tarama ~1,5 sn sürüyor.                                                                                                                                                                                                                                                      | G2          |
-| GB10   | Tarihi olan her görev o gün için bir günlük dosyası oluşturuyor (2027 ve 2028 tarihli görevler için `diary/2027-03-15.node` ve `diary/2028-01-02.node`).                                                                                                                                                                                             | G2, G5      |
+| GB10   | Tarihi olan her görev o gün için bir günlük dosyası oluşturuyor (2027 ve 2028 tarihli görevler için `diary/2027-03-15.node` ve `diary/2028-01-02.node`). **İstenen davranış; hata değil** (§1.3). Yeni modelde korunur.                                                                                                                              | —           |
 | GB11   | Notu olmayan görevler masaüstü aramasında görünmüyor.                                                                                                                                                                                                                                                                                                | G5          |
-| GB12   | Günlükteki onay kutusuyla tamamlanan tekrar eden görevin sonraki tekrarı oluşmuyor; görev tekrar etmeyi bırakıyor.                                                                                                                                                                                                                                   | G2, G5      |
-| GB13   | Günlük eşitlemesi, günlük notundaki kullanıcı görev bloğunu yerinden alıp dosyaya yazdığı sabit Türkçe "Görevler" başlığının altına taşıyor.                                                                                                                                                                                                         | G2, G5      |
+| GB12   | Günlükteki onay kutusuyla tamamlanan tekrar eden görevin sonraki tekrarı oluşmuyor; görev tekrar etmeyi bırakıyor.                                                                                                                                                                                                                                   | G2          |
+| GB13   | Günlük eşitlemesi, günlük notundaki kullanıcı görev bloğunu notun altındaki görev bölümüne taşıyor. **İstenen davranış; hata değil** (§1.3). Yeni modelde görev oluşturulurken doğrudan bölüme girer; dosyaya yazılan sabit Türkçe "Görevler" başlığı kalkar (§3.2.2).                                                                               | —           |
 | GB14   | `[ ]` kısayolu ve blok türünü "Görev bloğu" yapma, girdi hattında (`cleanupOrphanPisiTodoBlock`) hemen paragrafa dönüyor; görev oluşmuyor.                                                                                                                                                                                                           | G3          |
 | GK1    | Görevin günü dört kuralla belirleniyor: panel etiket tarihi; takvim, günlük ve mobil `scheduledAt → dueDate → deadline`; hatırlatma `dueDate → deadline`; arama `deadline → dueDate → scheduledAt`. Editörde etiket tarihi değişince `scheduledAt` eski kalıyor. `scheduledAt` bazen yalnız tarih, bazen tarih ve saat.                              | G1, G2, G7  |
 | GK2    | Not içinde blok bulunamazsa `findPisiMissionBlockInContainer` aynı etiketli başka bir bloğu seçiyor; başka bir görev işaretlenebiliyor.                                                                                                                                                                                                              | G3          |
@@ -636,25 +736,29 @@ Bu faz senkron işidir: docs/sync-plan.md §0, §2 ve §3.10'u da oku ve uy.
 
 ## Ek B. Doğrulama senaryoları
 
-İncelemede bu senaryolar geçici CDP betikleriyle uygulamada çalıştırıldı (21-11-2026). Fazlar bunları kalıcı E2E'ye çevirir. Her senaryonun
-sonunda Integrity yeni bulgu vermemelidir.
+S1–S14 ve S16 incelemede geçici CDP betikleriyle uygulamada çalıştırıldı (21-11-2026); öbürleri yeni modelin senaryolarıdır. Fazlar bunları
+kalıcı E2E'ye çevirir. Her senaryonun sonunda Integrity yeni bulgu vermemelidir.
 
-| Kimlik | Senaryo                                                  | Beklenen (yeni model)                                                  | 21-11-2026 sonucu |
-| ------ | -------------------------------------------------------- | ---------------------------------------------------------------------- | ----------------- |
-| S1     | Notta ve notsuz iki görev; panelden biri tamamlanır      | `tasks.json`'da `done`; panel işaretli; hiçbir `.node` yazılmaz        | GB1               |
-| S2     | Tekrar eden görev tamamlanır                             | Aynı görev sonraki güne ilerler; `completions` bir artar; not değişmez | GB2               |
-| S3     | Paneldeki durum değiştirilir                             | `tasks.json` hemen değişir                                             | GB3               |
-| S4     | Notsuz görev masaüstünde tamamlanır ve düzenlenir        | Olur; kayda kaynak eklenmez; mobilde düzenlenebilir kalır              | GB4, GB5          |
-| S5     | Hatırlatmadan tamamlanır, sonra not düzenlenir           | `done` kalır                                                           | GB6               |
-| S6     | Görev bloğu silinir ve not kaydedilir; sonra geri alınır | Görev çöp kutusuna gider; geri alınca döner                            | GB7               |
-| S7     | Açık nota Quick Add                                      | Blok editörde hemen görünür; kayıttan sonra dosyada kalır              | GB8               |
-| S8     | 1.000 not ve 5.000 görev; tamamlama                      | Tarama yok; `.node` okuma ve yazma 0; süre PR'a yazılır                | GB9               |
-| S9     | İleri tarihli görev oluşturulur                          | Günlük dosyası oluşmaz                                                 | GB10              |
-| S10    | Notsuz görev aranır                                      | Bulunur                                                                | GB11              |
-| S11    | Günlükte tekrar eden görev tamamlanır                    | İlerler                                                                | GB12              |
-| S12    | Günlük notunun ortasındaki görev bloğu                   | Yerinde kalır; dosyaya başlık yazılmaz                                 | GB13              |
-| S13    | `[ ]`, slash komutu ve blok türüyle görev oluşturma      | Üçü de görev oluşturur                                                 | GB14              |
-| S14    | Başlık editörde yazılır ve kaydedilir                    | Not dosyasında yalnız §3.2 biçimi; başlık `tasks.json`'da              | —                 |
-| S15    | Kes ve başka nota yapıştır; kopyala ve yapıştır          | Kesmede kimlik aynı kalır, `noteId` değişir; kopyada yeni kimlik       | —                 |
-| S16    | Haritada not kopyalanır                                  | Görevler yeni kimlikle kopyalanır                                      | GK9               |
-| S17    | Not çöp kutusuna gider ve geri yüklenir                  | Görevleri birlikte gider ve döner                                      | —                 |
+| Kimlik | Senaryo                                                           | Beklenen (yeni model)                                                          | 21-11-2026 sonucu                    |
+| ------ | ----------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------ |
+| S1     | Notta ve günlükte birer görev; panelden biri zamanında tamamlanır | `tasks.json`'da `done`; panel işaretli; hiçbir `.node` yazılmaz                | GB1                                  |
+| S2     | Tekrar eden görev tamamlanır                                      | §3.2.3 adım 1–2: görev ilerler, `completions` bir artar; o gün ☑, ertesi gün ☐ | GB2                                  |
+| S3     | Paneldeki durum değiştirilir                                      | `tasks.json` hemen değişir; dosya yazılmaz                                     | GB3                                  |
+| S4     | Mobilde oluşturulan görev masaüstünde tamamlanır ve düzenlenir    | Olur; kayda sahte kaynak eklenmez; mobilde düzenlenebilir kalır                | GB4, GB5                             |
+| S5     | Hatırlatmadan tamamlanır, sonra not düzenlenir                    | `done` kalır                                                                   | GB6                                  |
+| S6     | Görev bloğu silinir ve not kaydedilir; sonra geri alınır          | Görev çöp kutusuna gider ve günlüklerden çıkar; geri alınca döner              | GB7                                  |
+| S7     | Açık nota Quick Add                                               | Blok editörde hemen görünür; kayıttan sonra dosyada kalır                      | GB8                                  |
+| S8     | 1.000 not ve 5.000 görev; tamamlama                               | Tarama yok; `.node` okuma ve yazma 0; süre PR'a yazılır                        | GB9                                  |
+| S9     | İleri tarihli görev oluşturulur                                   | O günün günlüğü yoksa oluşur; görev bölümünde görünür; takvimde belirteç çıkar | Günlük oluşuyor (istenen, GB10)      |
+| S10    | Mobilde oluşturulan görev aranır                                  | Bulunur                                                                        | GB11                                 |
+| S11    | Günlükte tekrar eden görev tamamlanır                             | §3.2.3 adım 1–2                                                                | GB12                                 |
+| S12    | Günlükte `[ ]` ile görev yazılır                                  | Görev hemen bölüme girer; bitiş günü o gün; dosyaya başlık yazılmaz            | Eşitlemede taşınıyor (istenen, GB13) |
+| S13    | Normal notta `[ ]`, slash komutu ve blok türüyle görev oluşturma  | Üçü de görev oluşturur                                                         | GB14                                 |
+| S14    | Başlık editörde yazılır ve kaydedilir                             | Not dosyasında yalnız §3.2.1 biçimi; başlık `tasks.json`'da                    | —                                    |
+| S15    | Kes ve başka nota yapıştır; kopyala ve yapıştır                   | Kesmede kimlik aynı kalır, yer değişir; kopyada yeni kimlik                    | —                                    |
+| S16    | Haritada not kopyalanır                                           | Görevler yeni kimlikle kopyalanır                                              | GK9                                  |
+| S17    | Not ve günlük çöp kutusuna gider ve geri yüklenir                 | Yeri orası olan görevler birlikte gider ve döner                               | —                                    |
+| S18    | Geçmiş günlükte tamamlanmış tekrarın işareti kaldırılmak istenir  | §3.2.3 adım 3–4: en son tamamlama geri alınır, daha eskisi kilitli             | —                                    |
+| S19    | Quick Add açılır                                                  | Açık not varken hedef o not; açık not yokken bugünün günlüğü; Inbox oluşmaz    | Inbox'a yazıyor                      |
+| S20    | Telefonda uygulama açılır (G8, Playwright)                        | Bugünün günlüğü, günün görevleri ve gecikenler ek dokunuş olmadan görünür      | —                                    |
+| S21    | Geciken tekrar tamamlanır                                         | §3.2.3 adım 5: tamamlama bugün; görev bugünden sonraki ilk tekrara ilerler     | —                                    |
