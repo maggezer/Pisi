@@ -418,7 +418,7 @@ function initializePisiCommandRegistry() {
                 const content = window.getPisiEditorContent?.(editor) || editor?.innerHTML || '';
                 if (protectPisiEditorRecovery(modal, editor, document.getElementById('node-modal-title'), content)) return false;
                 const revision = Number(modal.revision || 0);
-                const result = await runPisiEditorWrite(() => window.pisiProject?.saveNodeContent?.(modal.path, content), modal);
+                const result = await runPisiEditorWrite(() => window.pisiProject?.saveNodeContent?.(modal.path, content, { openPaths: window.getPisiOpenDocumentPaths?.() || [] }), modal);
                 if (!result?.ok) {
                     pisiNotifyNoteSaveError(result?.error || 'Not kaydedilemedi.', modal.path);
                     return false;

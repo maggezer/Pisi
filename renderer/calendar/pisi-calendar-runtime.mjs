@@ -1,5 +1,5 @@
 import { activateCalendarProjectState, pisiCalendarRuntimeState } from './pisi-calendar-state.mjs';
-import { configurePisiCalendarDiary, openDiaryNodeForDate, refreshPisiCalendarDates, syncPisiDiaryFromMissionIndex } from './pisi-calendar-diary.mjs';
+import { configurePisiCalendarDiary, openDiaryNodeForDate, refreshPisiCalendarDates } from './pisi-calendar-diary.mjs';
 import {
     bindGlobalCalendarDragEvents,
     ensureCalendarDockZones,
@@ -39,7 +39,7 @@ function refreshPisiCalendar() {
 window.setupPisiCalendar = setupPisiCalendar;
 window.refreshPisiCalendar = refreshPisiCalendar;
 window.refreshPisiCalendarDates = refreshPisiCalendarDates;
-window.syncPisiDiaryFromMissionIndex = syncPisiDiaryFromMissionIndex;
+window.openPisiDiaryForDate = openDiaryNodeForDate;
 window.setPisiCalendarDock = setCalendarDock;
 window.resetPisiCalendarForProject = resetPisiCalendarForProject;
 
@@ -51,7 +51,7 @@ window.Pisi.calendar = {
     setup: setupPisiCalendar,
     refresh: refreshPisiCalendar,
     refreshDates: refreshPisiCalendarDates,
-    syncFromMissionIndex: syncPisiDiaryFromMissionIndex,
+    openDiary: openDiaryNodeForDate,
     setDock: setCalendarDock,
     resetForProject: resetPisiCalendarForProject
 };
@@ -72,8 +72,3 @@ document.addEventListener('pisi:task-store-updated', () => {
     }
 });
 
-document.addEventListener('pisi:mission-index-updated', () => {
-    if (document.getElementById('pisi-calendar')) {
-        renderCalendar();
-    }
-});

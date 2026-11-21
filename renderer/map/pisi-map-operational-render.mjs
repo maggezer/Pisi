@@ -29,9 +29,16 @@ function setPisiRelationshipLabelsPreference(enabled) {
     return normalized;
 }
 
+/**
+ * The tasks of the map's notes from the task store (tasks.json). A task lives in a
+ * note by `noteId` (docs/task-plan.md §3.1); the operational core still matches
+ * notes by path, so each task carries its note's path here. G5 moves the core to ids.
+ */
 function getPisiOperationalTasks() {
-    const state = window.Pisi?.modules?.['tags.taskStore']?.pisiFirstClassTaskState;
-    return Array.isArray(state?.tasks) ? state.tasks : [];
+    const tasks = window.getPisiTasks?.() || [];
+    const nodes = Array.isArray(window.activeMapNodes) ? window.activeMapNodes : [];
+    const pathById = new Map(nodes.map((node) => [node?.metadata?.id || node?.id, node?.fullPath]));
+    return tasks.map((task) => ({ ...task, source: { nodePath: (task.noteId && pathById.get(task.noteId)) || null } }));
 }
 
 function clearPisiOperationalBadges(box) {

@@ -4,9 +4,6 @@ const WEEKDAY_NAMES = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 const pisiCalendarRuntimeState = {
     calendarDragState: null,
     calendarStateProjectKey: null,
-    lastDiarySyncSignatureByProject: new Map(),
-    diarySyncInProgress: false,
-    pendingDiarySyncRequest: null,
     diaryDatesRefreshRequestId: 0
 };
 
@@ -44,7 +41,6 @@ function activateCalendarProjectState(folderPath = window.currentProjectFolder) 
 
     pisiCalendarRuntimeState.calendarStateProjectKey = nextProjectKey;
     pisiCalendarRuntimeState.diaryDatesRefreshRequestId += 1;
-    pisiCalendarRuntimeState.pendingDiarySyncRequest = null;
 
     if (!window.Pisi) {
         window.Pisi = { state: {}, calendar: {} };

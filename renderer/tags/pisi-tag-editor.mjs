@@ -1,216 +1,15 @@
-import { canHandlePisiEditorTextEvent, isPisiEditorComposing } from '../editor/pisi-editor-input-policy.mjs';
+import { canHandlePisiEditorTextEvent } from '../editor/pisi-editor-input-policy.mjs';
 import { registerModule } from '../core/module-registry.mjs';
-import { PISI_TODO_PRIORITY_OPTIONS, formatPisiTodoTag, getPisiTodoPriorityOption, getPisiTodayIsoDate } from './pisi-todo-utils.mjs';
 
-async function markPisiMissionDone(mission) {
-    return setPisiMissionCompletion(mission, true);
-}
-
-async function reopenPisiMission(mission) {
-    return setPisiMissionCompletion(mission, false);
-}
-
-function isPisiTodoCommand(command) {
-    return (
-        String(command?.body || '')
-            .trim()
-            .toLowerCase() === 'todo'
-    );
-}
-
-function isPisiDoneCommand(command) {
-    return (
-        String(command?.body || '')
-            .trim()
-            .toLowerCase() === 'done'
-    );
-}
-
-function buildPisiTodoPriorityItems() {
-    return PISI_TODO_PRIORITY_OPTIONS.map((option) => ({
-        kind: 'todo-priority',
-        id: `todo-priority-${option.value}`,
-        label: String(option.value),
-        typedToken: String(option.value),
-        description: option.label,
-        priority: option.value
-    }));
-}
-
-function openPisiTodoPriorityMenu(editor, commandOverride = null) {
-    const command = commandOverride || pisiTagMenuState.command;
-    if (!command) return false;
-
-    openPisiTagMenuForEditor(editor, {
-        ...command,
-        mode: 'todo-priority',
-        items: buildPisiTodoPriorityItems()
-    });
-    editor?.focus?.({ preventScroll: true });
-    return true;
-}
-
-function openPisiTodoDateMenu(editor, priorityValue, commandOverride = null) {
-    const menu = document.getElementById('pisi-tag-menu');
-    const priority = getPisiTodoPriorityOption(priorityValue);
-    const command = commandOverride || pisiTagMenuState.command;
-
-    if (!menu || !priority || !command) return false;
-
-    pisiTagMenuState = {
-        active: true,
-        mode: 'todo-date',
-        editor,
-        command,
-        selectedIndex: 0,
-        items: [],
-        todoPriority: priority.value
-    };
-
-    menu.classList.remove('pisi-unified-command-menu');
-    menu.innerHTML = `
-        <div class="pisi-todo-picker">
-            <div class="pisi-todo-picker-title">Finish date</div>
-            <div class="pisi-todo-priority-summary">
-                ${priority.value} — ${pisiEscapeHtml(priority.label)}
-            </div>
-            <input
-                class="pisi-todo-date-input"
-                type="date"
-                value="${getPisiTodayIsoDate()}"
-                aria-label="Todo finish date"
-            >
-            <div class="pisi-todo-picker-actions">
-                <button class="pisi-todo-back" type="button">Back</button>
-                <button class="pisi-todo-undated" type="button">Tarihsiz</button>
-                <button class="pisi-todo-apply" type="button">Add</button>
-            </div>
-        </div>
-    `;
-
-    const dateInput = /** @type {HTMLInputElement | null} */ (menu.querySelector('.pisi-todo-date-input'));
-    const backButton = menu.querySelector('.pisi-todo-back');
-    const undatedButton = menu.querySelector('.pisi-todo-undated');
-    const applyButton = menu.querySelector('.pisi-todo-apply');
-    const focusableControls = [dateInput, backButton, undatedButton, applyButton].filter(Boolean);
-
-    let committed = false;
-    let lastDateKeydownAt = 0;
-
-    const commitTodo = (dateValue = dateInput?.value) => {
-        if (committed) return;
-        const todoTag = formatPisiTodoTag(priority.value, dateValue);
-
-        if (!todoTag) {
-            dateInput?.setCustomValidity('Choose a valid date.');
-            dateInput?.reportValidity();
-            return;
-        }
-
-        committed = true;
-        dateInput?.setCustomValidity('');
-
-        const applied = window.applyPisiTodoTagToEditor?.(editor, todoTag, command);
-        if (!applied && command.sourceSelection === true) {
-            applyPisiTodoSelectionToEditor(editor, todoTag, command);
-        } else if (!applied) {
-            applyPisiUserTagToEditor(editor, todoTag, command);
-        }
-    };
-
-    const goBackToPriority = (event) => {
-        event?.preventDefault?.();
-        event?.stopPropagation?.();
-        openPisiTodoPriorityMenu(editor, command);
-    };
-
-    const applyUndated = (event) => {
-        event?.preventDefault?.();
-        event?.stopPropagation?.();
-        commitTodo('none');
-    };
-
-    const applySelectedDate = (event) => {
-        event?.preventDefault?.();
-        event?.stopPropagation?.();
-        commitTodo();
-    };
-
-    dateInput?.addEventListener('mousedown', (event) => {
-        event.stopPropagation();
-    });
-    dateInput?.addEventListener('change', () => {
-        if (Date.now() - lastDateKeydownAt > 150) {
-            commitTodo();
-        }
-    });
-    dateInput?.addEventListener('keydown', (event) => {
-        if (event.defaultPrevented || isPisiEditorComposing(editor, event)) return;
-        lastDateKeydownAt = Date.now();
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            event.stopPropagation();
-            commitTodo();
-        } else if (event.key === 'Escape') {
-            event.preventDefault();
-            event.stopPropagation();
-            closePisiTagMenu();
-            editor?.focus?.({ preventScroll: true });
-        }
-    });
-
-    backButton?.addEventListener('mousedown', goBackToPriority);
-    backButton?.addEventListener('click', goBackToPriority);
-
-    undatedButton?.addEventListener('mousedown', applyUndated);
-    undatedButton?.addEventListener('click', applyUndated);
-
-    applyButton?.addEventListener('mousedown', applySelectedDate);
-    applyButton?.addEventListener('click', applySelectedDate);
-
-    menu.querySelector('.pisi-todo-picker')?.addEventListener('keydown', (event) => {
-        if (event.defaultPrevented || isPisiEditorComposing(editor, event)) return;
-        if (event.key === 'Escape') {
-            event.preventDefault();
-            event.stopPropagation();
-            closePisiTagMenu();
-            editor?.focus?.({ preventScroll: true });
-            return;
-        }
-        if (event.key === 'Tab' && focusableControls.length > 1) {
-            const currentIndex = focusableControls.indexOf(document.activeElement);
-            if (currentIndex !== -1) {
-                event.preventDefault();
-                event.stopPropagation();
-                const delta = event.shiftKey ? -1 : 1;
-                const nextIndex = (currentIndex + delta + focusableControls.length) % focusableControls.length;
-                focusableControls[nextIndex]?.focus?.({ preventScroll: true });
-            }
-            return;
-        }
-        if ((event.key === 'ArrowRight' || event.key === 'ArrowLeft') && document.activeElement !== dateInput) {
-            const actionButtons = [backButton, undatedButton, applyButton].filter(Boolean);
-            const buttonIndex = actionButtons.indexOf(document.activeElement);
-            if (buttonIndex !== -1) {
-                event.preventDefault();
-                event.stopPropagation();
-                const delta = event.key === 'ArrowRight' ? 1 : -1;
-                const nextIndex = (buttonIndex + delta + actionButtons.length) % actionButtons.length;
-                actionButtons[nextIndex]?.focus?.({ preventScroll: true });
-            }
-        }
-    });
-
-    menu.hidden = false;
-    positionPisiTagMenuAtSelection();
-
-    dateInput?.focus?.({ preventScroll: true });
-    try {
-        dateInput?.showPicker?.();
-    } catch {
-        // Native picker may require a direct user gesture; the input remains usable.
-    }
-    return true;
+/** A user tag chip; old `todo.*` tags are ordinary tags now (docs/task-plan.md §3.2.1). */
+function createPisiUserTagElement(rawTag) {
+    const tag = normalizePisiUserTag(rawTag);
+    const element = document.createElement('span');
+    element.className = 'pisi-user-tag';
+    element.dataset.pisiTag = tag;
+    element.contentEditable = 'false';
+    element.textContent = tag;
+    return element;
 }
 
 function bindPisiTagControls() {
@@ -252,34 +51,6 @@ function bindPisiTagControlsForEditor(editor) {
         'keydown',
         (event) => {
             if (!canHandlePisiEditorTextEvent(editor, event) || !pisiTagMenuState.active || pisiTagMenuState.editor !== editor) return;
-            if (pisiTagMenuState.mode === 'todo-date') {
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    event.stopImmediatePropagation();
-                    document.querySelector('#pisi-tag-menu .pisi-todo-apply')?.click?.();
-                    return;
-                }
-                if (event.key === 'Escape') {
-                    event.preventDefault();
-                    event.stopImmediatePropagation();
-                    closePisiTagMenu();
-                    return;
-                }
-                return;
-            }
-
-            if (pisiTagMenuState.mode === 'todo-priority' && /^[1-5]$/.test(event.key)) {
-                const index = Number(event.key) - 1;
-                const item = pisiTagMenuState.items[index];
-                if (item) {
-                    event.preventDefault();
-                    event.stopImmediatePropagation();
-                    pisiTagMenuState.selectedIndex = index;
-                    applyPisiTagMenuItem(editor, item);
-                    return;
-                }
-            }
-
             if (event.key === 'ArrowDown') {
                 event.preventDefault();
                 event.stopImmediatePropagation();
@@ -310,15 +81,6 @@ function bindPisiTagControlsForEditor(editor) {
         },
         true
     );
-
-    editor.addEventListener('contextmenu', (event) => {
-        const command = capturePisiTodoSelection(editor);
-        if (!command) return;
-
-        event.preventDefault();
-        event.stopPropagation();
-        openPisiTodoPriorityMenu(editor, command);
-    });
 }
 
 function collectPisiUserTagsFromEditor(editor) {
@@ -347,19 +109,11 @@ function openPisiTagMenuForEditor(editor, command) {
         editor,
         command,
         selectedIndex: 0,
-        items: command.items,
-        todoPriority: null
+        items: command.items
     };
 
     menu.classList.remove('pisi-unified-command-menu');
     menu.innerHTML = '';
-
-    if (command.sourceSelection === true) {
-        const heading = document.createElement('div');
-        heading.className = 'pisi-todo-selection-heading';
-        heading.textContent = 'Seçili metni göreve dönüştür';
-        menu.appendChild(heading);
-    }
 
     command.items.forEach((item, index) => {
         const option = document.createElement('button');
@@ -397,21 +151,6 @@ function applyPisiTagMenuItem(editor, item) {
         return;
     }
 
-    if (item.kind === 'todo-start') {
-        openPisiTodoPriorityMenu(editor, command);
-        return;
-    }
-
-    if (item.kind === 'todo-priority') {
-        openPisiTodoDateMenu(editor, item.priority, command);
-        return;
-    }
-
-    if (item.kind === 'todo-done') {
-        window.applyPisiDoneCommandToEditor?.(editor, command);
-        return;
-    }
-
     if (item.kind === 'user' || item.kind === 'new-user') {
         applyPisiUserTagToEditor(editor, item.label, command);
     }
@@ -431,8 +170,7 @@ function closePisiTagMenu() {
         editor: null,
         command: null,
         selectedIndex: 0,
-        items: [],
-        todoPriority: null
+        items: []
     };
 }
 
@@ -594,48 +332,6 @@ function escapeHtml(value) {
 
 const moduleApi = {};
 Object.defineProperties(moduleApi, {
-    markPisiMissionDone: {
-        enumerable: true,
-        get() {
-            return markPisiMissionDone;
-        }
-    },
-    reopenPisiMission: {
-        enumerable: true,
-        get() {
-            return reopenPisiMission;
-        }
-    },
-    isPisiTodoCommand: {
-        enumerable: true,
-        get() {
-            return isPisiTodoCommand;
-        }
-    },
-    isPisiDoneCommand: {
-        enumerable: true,
-        get() {
-            return isPisiDoneCommand;
-        }
-    },
-    buildPisiTodoPriorityItems: {
-        enumerable: true,
-        get() {
-            return buildPisiTodoPriorityItems;
-        }
-    },
-    openPisiTodoPriorityMenu: {
-        enumerable: true,
-        get() {
-            return openPisiTodoPriorityMenu;
-        }
-    },
-    openPisiTodoDateMenu: {
-        enumerable: true,
-        get() {
-            return openPisiTodoDateMenu;
-        }
-    },
     bindPisiTagControls: {
         enumerable: true,
         get() {

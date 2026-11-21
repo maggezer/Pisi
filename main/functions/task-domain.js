@@ -1,3 +1,4 @@
+import * as fs from 'node:fs';
 import { ipcMain } from '../electron-bridge.js';
 import { modules, registerMainModule } from '../module-registry.js';
 import { normalizePisiTask, readPisiTask } from '../../shared/task-model.mjs';
@@ -220,7 +221,30 @@ function savePisiNoteWithTasks(projectFolder, nodePath, content, options = {}) {
     });
 }
 
+/**
+ * A diary opened (and so created) from the calendar gets the task section of
+ * its day at once: the section belongs to the diary from its first byte (GV15).
+ */
+function getOrCreatePisiDiaryWithTasks(projectFolder, isoDate) {
+    const documentStore = modules['main.documentStore'];
+    const day = String(isoDate || '');
+    const diaryPath = /^\d{4}-\d{2}-\d{2}$/.test(day) ? documentStore.getPisiDiaryNodePath(projectFolder, day) : null;
+    const existed = diaryPath ? fs.existsSync(diaryPath) : true;
+    const created = documentStore.getOrCreateDiaryNode(projectFolder, isoDate);
+    if (!created.ok || existed) return created;
+    const state = taskStore.readPisiTaskStoreState(projectFolder);
+    if (state.readOnly) return created;
+    const context = taskService.makePisiTaskCommandContext({});
+    taskService.writePisiDiarySections(projectFolder, state.tasks.map(readPisiTask).filter(Boolean), [day], context, { create: [day] });
+    return context.writtenDiaries.length ? documentStore.getOrCreateDiaryNode(projectFolder, isoDate) : created;
+}
+
 function bindPisiTaskIpc() {
+    ipcMain.removeHandler('project:get-or-create-diary-node');
+    ipcMain.handle('project:get-or-create-diary-node', (_event, projectFolder, isoDate) => {
+        return electronIpc.projectOperation(() => getOrCreatePisiDiaryWithTasks(assertPisiTaskProjectRoot(projectFolder), isoDate));
+    });
+
     ipcMain.removeHandler('project:save-node-content');
     ipcMain.handle('project:save-node-content', (_event, nodePath, content, options) => {
         return electronIpc.asyncProjectOperation(() => {
@@ -239,6 +263,7 @@ const moduleApi = {
     PISI_TASK_COMMANDS,
     installPisiTaskDomainContracts,
     savePisiNoteWithTasks,
+    getOrCreatePisiDiaryWithTasks,
     bindPisiTaskIpc
 };
 

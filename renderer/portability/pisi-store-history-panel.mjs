@@ -1,5 +1,4 @@
 import { registerModule } from '../core/module-registry.mjs';
-import { restorePisiEditorDocument } from '../editor/pisi-editor-restore.mjs';
 import { invalidatePisiSearchIndex } from '../search/pisi-search-index.mjs';
 
 // Version history tabs for canonical stores: "Görevler" (.pisi/tasks.json),
@@ -86,16 +85,16 @@ function renderPisiStoreHistoryPreview(kind, preview) {
 
 /** Restores a version (atomic, in main), reloads an open note and reports Project Integrity. */
 async function restorePisiStoreHistoryVersion(payload) {
-    const nodePath = window.activeModalNode?.path || window.activeCenterNode?.path || null;
-    const run = () => window.pisiDomain?.command?.('history.store.restore.v1', payload);
-    // An open note may receive restored task blocks: let the editor save first and reload after.
-    const result = nodePath ? await restorePisiEditorDocument(nodePath, run) : await run();
+    // Restoring tasks.json writes no note; the diary sections of the changed days are
+    // written by main, except open diaries, which come back in `deferred` (GV9).
+    const run = () => window.pisiDomain?.command?.('history.store.restore.v1', { ...payload, openPaths: window.getPisiOpenDocumentPaths?.() || [] });
+    const result = await run();
     if (!result?.ok) {
         pisiNotifyError(result?.error || 'Sürüm geri yüklenemedi.');
         return result;
     }
+    window.applyPisiTaskDeferred?.(result.deferred);
     invalidatePisiSearchIndex('project');
-    window.refreshPisiFirstClassTaskStore?.();
     document.dispatchEvent(new CustomEvent('pisi:store-history-restored', { detail: { store: payload.store, result } }));
     const audit = await window.pisiDomain?.query?.('integrity.audit.v1', { projectFolder: window.currentProjectFolder });
     const issues = Array.isArray(audit?.issues) ? audit.issues.length : null;

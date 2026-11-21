@@ -585,20 +585,6 @@ ipcMain.handle('project:create-node-under-map', (_event, mapPath) => {
     });
 });
 
-ipcMain.handle('project:get-or-create-diary-node', (_event, projectFolder, isoDate) => {
-    return projectOperation(() => {
-        const safeProjectFolder = assertProjectPath(projectFolder, {
-            type: 'directory'
-        });
-
-        if (normalizePathForCompare(safeProjectFolder) !== normalizePathForCompare(activeProjectFolder)) {
-            throw new Error('Diary yalnızca aktif proje kökünde kullanılabilir.');
-        }
-
-        return getOrCreateDiaryNode(safeProjectFolder, isoDate);
-    });
-});
-
 ipcMain.handle('project:list-diary-dates', (_event, projectFolder) => {
     return projectOperation(() => {
         const safeProjectFolder = assertProjectPath(projectFolder, {

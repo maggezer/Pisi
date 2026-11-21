@@ -164,12 +164,9 @@ function highlightPisiSearchEditorTarget(result) {
 }
 
 async function openPisiSearchSource(result) {
-    if (result?.kind === 'task' && result?.taskId && typeof window.openPisiTagBlockResult === 'function') {
-        const navigation = await window.openPisiTagBlockResult({
-            ...result,
-            missionId: result.taskId
-        });
-        return navigation?.ok === true || navigation === true;
+    // A task opens its place (note or diary) by its id (renderer/tasks/pisi-task-actions.mjs).
+    if (result?.kind === 'task' && result?.taskId && typeof window.openPisiTaskLocation === 'function') {
+        return (await window.openPisiTaskLocation(result.taskId)) === true;
     }
     const nodeItem = getPisiSearchNodeItem(result);
     if (!nodeItem) return false;

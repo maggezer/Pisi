@@ -9,8 +9,8 @@ import { capturePisiSelectionBookmark, rebasePisiSelectionBookmark, restorePisiS
 // - After a turn main sends the changed paths. Only those surfaces update: the
 //   open note in place, block by block, with the caret and scroll kept; the
 //   open map through the existing external-change path; the tree only when
-//   files were added or removed; the task store when tasks.json changed. A
-//   removed open document closes and the user is told; a rename keeps its tab.
+//   files were added or removed. The task store follows the main process's
+//   task events (pisi:tasks-changed, source 'sync'). A removed open document closes and the user is told; a rename keeps its tab.
 // The project is never reloaded.
 
 const pisiSyncLiveState = {
@@ -196,6 +196,7 @@ async function updatePisiCenterNoteFromDisk(node) {
         window.syncPisiWordHeadingCollapse?.(editor);
         window.initializePisiAdvancedEditorContent?.(editor);
     }
+    window.renderPisiTaskBlocksIn?.(editor);
     if (bookmark && outcome.replaced.length) {
         const caretBlockKept = bookmark.anchor?.block?.isConnected && bookmark.focus?.block?.isConnected;
         if (!caretBlockKept || outcome.replaced[0] === '*') {
@@ -283,7 +284,6 @@ async function handlePisiSyncApplied(payload = {}) {
         if (authorities.some((relative) => /relationships\.json$|properties\.json$/i.test(relative))) mapPaths.push(window.activeMapPath);
         if (mapPaths.length) await window.reloadPisiWorkspaceAfterExternalChange?.(mapPaths);
     }
-    if (authorities.some((relative) => /tasks\.json$/i.test(relative))) window.schedulePisiFirstClassTaskRefresh?.();
     document.dispatchEvent(new CustomEvent('pisi:sync-applied', { detail: { changed, added, removed, authorities } }));
 }
 

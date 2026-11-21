@@ -1,11 +1,15 @@
 import { registerModule } from '../core/module-registry.mjs';
 import { registerPisiCommand } from '../core/pisi-command-registry.mjs';
-import { ensurePisiSearchIndex, invalidatePisiSearchIndex } from '../search/pisi-search-index.mjs';
+import { ensurePisiSearchIndex } from '../search/pisi-search-index.mjs';
 import { parsePisiTurkishDateExpression } from './pisi-date-parser.mjs';
 
+// Quick Add (docs/task-plan.md §1.3, §1.4, G2 step 9): one task.create.v1. The
+// target is the open note the user worked in last, else today's diary; the
+// form shows it and lets the user pick another note. There is no Inbox. The
+// Turkish date field gives the task's day (`dueDate`) and time (`dueTime`);
+// without a date the task has none.
+
 const pisiQuickCaptureState = {
-    observer: null,
-    applyingEnhancements: false,
     modal: null,
     modalOpenSequence: 0,
     modalReturnFocus: null
@@ -42,11 +46,26 @@ function makePisiQuickInput(type, name, placeholder = '') {
     return input;
 }
 
+/** The task fields a Turkish date expression gives: `{ dueDate, dueTime, repeat, completionOffsetDays, reminderAt }`. */
+function readPisiQuickAddDate(parsed) {
+    const iso = String(parsed?.scheduledAt || parsed?.deadline || '');
+    const dueDate = /^\d{4}-\d{2}-\d{2}/.test(iso) ? iso.slice(0, 10) : null;
+    const dueTime = dueDate && /T\d{2}:\d{2}/.test(iso) ? iso.slice(11, 16) : null;
+    const repeat = parsed?.repeat && parsed.repeat !== 'none' ? parsed.repeat : 'none';
+    return {
+        dueDate,
+        dueTime,
+        repeat,
+        completionOffsetDays: repeat === 'after-completion' ? Number(parsed.completionOffsetDays) || 1 : null,
+        reminderAt: parsed?.reminderAt && /T/.test(parsed.reminderAt) ? parsed.reminderAt : null
+    };
+}
+
 function renderPisiDateParsePreview(container, expression) {
     const parsed = parsePisiTurkishDateExpression(expression);
+    const fields = readPisiQuickAddDate(parsed);
     const parts = [];
-    if (parsed.scheduledAt) parts.push(`${pisiQuickTranslate('Plan')}: ${parsed.scheduledAt}`);
-    if (parsed.deadline) parts.push(`${pisiQuickTranslate('Deadline')}: ${parsed.deadline}`);
+    if (fields.dueDate) parts.push(`${pisiQuickTranslate('Gün')}: ${[fields.dueDate, fields.dueTime].filter(Boolean).join(' ')}`);
     if (parsed.repeat !== 'none') parts.push(`${pisiQuickTranslate('Tekrar')}: ${parsed.repeat}`);
     if (parsed.reminderAt) parts.push(`${pisiQuickTranslate('Hatırlatma')}: ${parsed.reminderAt}`);
     container.textContent = parts.join(' · ') || pisiQuickTranslate('Tarih ifadesi algılanmadı.');
@@ -54,34 +73,38 @@ function renderPisiDateParsePreview(container, expression) {
     return parsed;
 }
 
-async function submitPisiQuickAdd(form, parsePreview) {
+/** The place the form names: the last open note, today's diary or another note (`note:<id>:<path>`). */
+function readPisiQuickAddTarget(value, lastNote) {
+    if (value === 'today') return { diaryDate: window.getPisiTaskToday?.() };
+    if (value === 'last' && lastNote) return lastNote.diaryDate ? { diaryDate: lastNote.diaryDate } : { noteId: lastNote.noteId, notePath: lastNote.path };
+    const match = /^note:([^:]+):(.+)$/.exec(String(value || ''));
+    if (match) return { noteId: match[1], notePath: match[2] };
+    return { diaryDate: window.getPisiTaskToday?.() };
+}
+
+async function submitPisiQuickAdd(form, parsePreview, lastNote) {
     const data = new FormData(form);
     const parsed = renderPisiDateParsePreview(parsePreview, data.get('dateExpression'));
-    const domain = window.Pisi?.modules?.['domain.client'];
-    if (!domain?.command) throw new Error('Domain command API hazır değil.');
-    const result = await domain.command('task.capture.v1', {
-        projectFolder: window.currentProjectFolder,
-        task: {
-            text: data.get('text'),
-            priority: Number(data.get('priority')),
-            nodePath: data.get('nodePath') || null,
-            scheduledAt: parsed.scheduledAt,
-            deadline: parsed.deadline,
-            reminderAt: parsed.reminderAt,
-            repeat: parsed.repeat,
-            completionOffsetDays: parsed.completionOffsetDays,
-            durationMinutes: Number(data.get('durationMinutes')) || 0,
-            actualMinutes: Number(data.get('actualMinutes')) || 0
-        }
-    });
+    const title = String(data.get('text') || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    if (!title) throw new Error(pisiQuickTranslate('Görev metni boş olamaz.'));
+    const date = readPisiQuickAddDate(parsed);
+    const task = {
+        title,
+        priority: Number(data.get('priority')) || 3,
+        dueDate: date.dueDate,
+        dueTime: date.dueTime,
+        repeat: date.repeat,
+        completionOffsetDays: date.completionOffsetDays,
+        reminderAt: date.reminderAt,
+        durationMinutes: Number(data.get('durationMinutes')) || 0,
+        actualMinutes: Number(data.get('actualMinutes')) || 0
+    };
+    const result = await window.createPisiTaskInTarget?.(task, readPisiQuickAddTarget(data.get('target'), lastNote));
     if (!result?.ok) throw new Error(result?.error || pisiQuickTranslate('Görev eklenemedi.'));
-    invalidatePisiSearchIndex();
-    await ensurePisiSearchIndex({ force: true });
-    await window.refreshPisiMissionIndex?.({
-        force: true,
-        reason: 'quick-add'
-    });
     form.reset();
+    return result;
 }
 
 function buildPisiQuickAddForm(container, index, options = {}) {
@@ -106,18 +129,24 @@ function buildPisiQuickAddForm(container, index, options = {}) {
         option.selected = value === 3;
         priority.appendChild(option);
     }
+    const lastNote = options.lastNote || null;
     const node = document.createElement('select');
-    node.name = 'nodePath';
-    const inbox = document.createElement('option');
-    inbox.value = '';
-    inbox.textContent = pisiQuickTranslate('Node seçilmezse Inbox');
-    node.appendChild(inbox);
-    for (const documentRecord of index?.documents?.values?.() || []) {
+    node.name = 'target';
+    const addOption = (value, text) => {
         const option = document.createElement('option');
-        option.value = documentRecord.path;
-        option.textContent = `${documentRecord.title} · ${documentRecord.relativePath}`;
+        option.value = value;
+        option.textContent = text;
         node.appendChild(option);
+        return option;
+    };
+    if (lastNote) addOption('last', `${pisiQuickTranslate('Açık not')}: ${lastNote.title || lastNote.path.split(/[\\/]/).pop()}`);
+    addOption('today', pisiQuickTranslate('Bugünün günlüğü'));
+    for (const documentRecord of index?.documents?.values?.() || []) {
+        const id = documentRecord.metadata?.id;
+        if (!id || documentRecord.metadata?.diaryDate || (lastNote && id === lastNote.noteId)) continue;
+        addOption(`note:${id}:${documentRecord.path}`, `${documentRecord.title} · ${documentRecord.relativePath}`);
     }
+    node.value = lastNote ? 'last' : 'today';
     const duration = makePisiQuickInput('number', 'durationMinutes');
     duration.min = '0';
     duration.max = '1440';
@@ -133,7 +162,7 @@ function buildPisiQuickAddForm(container, index, options = {}) {
         makePisiQuickField('Görev', text),
         makePisiQuickField('Türkçe tarih', dateExpression),
         makePisiQuickField('Öncelik', priority),
-        makePisiQuickField('Node', node),
+        makePisiQuickField('Hedef', node),
         makePisiQuickField('Tahmini süre (dk)', duration),
         makePisiQuickField('Gerçek süre (dk)', actual)
     );
@@ -158,7 +187,7 @@ function buildPisiQuickAddForm(container, index, options = {}) {
         submit.disabled = true;
         status.textContent = pisiQuickTranslate('Kaydediliyor…');
         try {
-            await submitPisiQuickAdd(form, parsePreview);
+            await submitPisiQuickAdd(form, parsePreview, lastNote);
             options.onSuccess?.();
         } catch (error) {
             status.textContent = error.message;
@@ -242,7 +271,7 @@ function ensurePisiQuickAddModal() {
     title.id = 'pisi-quick-add-title';
     title.textContent = pisiQuickTranslate('Görev ekle');
     const description = document.createElement('p');
-    description.textContent = pisiQuickTranslate('Inbox’a veya seçili node’a hızlı görev ekler.');
+    description.textContent = pisiQuickTranslate('Son açık nota ya da bugünün günlüğüne hızlı görev ekler.');
     copy.append(title, description);
     heading.append(icon, copy);
 
@@ -277,6 +306,8 @@ async function openPisiQuickAddModal() {
     }
     const requestId = ++pisiQuickCaptureState.modalOpenSequence;
     pisiQuickCaptureState.modalReturnFocus = document.activeElement;
+    // Read before the dialog takes the focus: the note the user was working in.
+    const lastNote = window.getPisiLastFocusedNote?.() || null;
     state.overlay.hidden = false;
     state.body.setAttribute('aria-busy', 'true');
     state.body.replaceChildren();
@@ -303,6 +334,7 @@ async function openPisiQuickAddModal() {
         }
         state.body.replaceChildren();
         buildPisiQuickAddForm(state.body, index, {
+            lastNote,
             onCancel: closePisiQuickAddModal,
             onSuccess: closePisiQuickAddModal
         });
@@ -320,48 +352,17 @@ async function openPisiQuickAddModal() {
     }
 }
 
-function enhancePisiExistingMissionCards() {
-    if (pisiQuickCaptureState.applyingEnhancements) return;
-    pisiQuickCaptureState.applyingEnhancements = true;
-    try {
-        const missions = window.getPisiMissionsFromIndexFirstRelease?.({ includeCompleted: true }) || [];
-        const byId = new Map(missions.map((mission) => [mission.missionId, mission]));
-        document.querySelectorAll('.pisi-mission-card[data-mission-id]').forEach((card) => {
-            if (card.querySelector('.pisi-task-duration-badge')) return;
-            const mission = byId.get(card.dataset.missionId);
-            if (!mission?.html) return;
-            const template = document.createElement('template');
-            template.innerHTML = mission.html;
-            const tag = template.content.querySelector('.pisi-user-tag[data-pisi-todo-duration-minutes]');
-            const duration = Number(tag?.dataset.pisiTodoDurationMinutes) || 0;
-            if (!duration) return;
-            const badge = document.createElement('span');
-            badge.className = 'pisi-task-duration-badge';
-            badge.textContent = formatPisiTaskMinutes(duration);
-            card.querySelector('.pisi-mission-meta')?.appendChild(badge);
-        });
-    } finally {
-        pisiQuickCaptureState.applyingEnhancements = false;
-    }
-}
-
 function initializePisiQuickCapture() {
     document.addEventListener('pisi:quick-add-requested', openPisiQuickAddModal);
     registerPisiCommand({
         id: 'pisi.quick-add',
         label: 'Görev ekle',
-        description: 'Inbox’a veya seçili node’a hızlı görev ekler.',
+        description: 'Son açık nota ya da bugünün günlüğüne hızlı görev ekler.',
         category: 'Görevler',
         defaultShortcut: 'Mod+M',
         allowInInput: true,
         handler: openPisiQuickAddModal
     });
-    const panel = document.getElementById('pisi-missions-panel');
-    if (panel) {
-        pisiQuickCaptureState.observer = new MutationObserver(enhancePisiExistingMissionCards);
-        pisiQuickCaptureState.observer.observe(panel, { childList: true, subtree: true });
-        enhancePisiExistingMissionCards();
-    }
 }
 
 const moduleApi = {

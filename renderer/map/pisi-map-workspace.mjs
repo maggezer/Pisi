@@ -708,6 +708,8 @@ function setPisiEditorContent(editor, content = '') {
         if (typeof initializePisiAdvancedEditorContent === 'function') {
             initializePisiAdvancedEditorContent(editor);
         }
+        // Task blocks and the diary section are drawn from the task store (renderer/tasks/).
+        window.renderPisiTaskBlocksIn?.(editor);
         resetPisiEditorHistory(editor);
         return;
     }
@@ -749,6 +751,8 @@ function getPisiEditorContent(editor) {
     normalizedEditor.querySelectorAll('.pisi-block-active').forEach((block) => {
         block.classList.remove('pisi-block-active');
     });
+    // The drawing of task blocks and of the diary section is not saved: only the ids are (GV2).
+    window.cleanPisiTaskDrawingsForSave?.(normalizedEditor);
     ensurePisiEditorBlocks(normalizedEditor, {
         preserveSelection: false
     });

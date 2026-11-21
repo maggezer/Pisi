@@ -38,7 +38,12 @@
     {
         "module": "main.i18n",
         "path": "main/functions/i18n.js",
-        "bindings": ["normalizePisiLanguage", "getPisiLanguage", "setPisiLanguage", "translatePisiMain"]
+        "bindings": [
+            "normalizePisiLanguage",
+            "getPisiLanguage",
+            "setPisiLanguage",
+            "translatePisiMain"
+        ]
     },
     {
         "module": "main.filesystemCore",
@@ -211,7 +216,11 @@
     {
         "module": "main.propertySchemaMutations",
         "path": "main/functions/property-schema-mutations.js",
-        "bindings": ["savePisiNodePropertiesBySchema", "preparePisiPropertyDefinitionRewrite", "resolveSubmittedPisiPropertyDefinition"]
+        "bindings": [
+            "savePisiNodePropertiesBySchema",
+            "preparePisiPropertyDefinitionRewrite",
+            "resolveSubmittedPisiPropertyDefinition"
+        ]
     },
     {
         "module": "main.projectIntegrity",
@@ -255,7 +264,11 @@
     {
         "module": "main.autoUpdate",
         "path": "main/functions/auto-update.js",
-        "bindings": ["initializePisiAutoUpdate", "checkPisiForUpdates", "verifyPisiInstallerPublisher"]
+        "bindings": [
+            "initializePisiAutoUpdate",
+            "checkPisiForUpdates",
+            "verifyPisiInstallerPublisher"
+        ]
     },
     {
         "module": "main.electronIpc",
@@ -281,7 +294,13 @@
     {
         "module": "main.taskDomain",
         "path": "main/functions/task-domain.js",
-        "bindings": ["PISI_TASK_COMMANDS", "installPisiTaskDomainContracts", "savePisiNoteWithTasks", "bindPisiTaskIpc"]
+        "bindings": [
+            "PISI_TASK_COMMANDS",
+            "installPisiTaskDomainContracts",
+            "savePisiNoteWithTasks",
+            "bindPisiTaskIpc",
+            "getOrCreatePisiDiaryWithTasks"
+        ]
     },
     {
         "module": "main.editorAssetDomain",
@@ -299,12 +318,22 @@
     {
         "module": "main.externalLinks",
         "path": "main/functions/external-links.js",
-        "bindings": ["openPisiExternalUrl", "guardPisiWindowNavigation", "installPisiExternalLinkIpc"]
+        "bindings": [
+            "openPisiExternalUrl",
+            "guardPisiWindowNavigation",
+            "installPisiExternalLinkIpc"
+        ]
     },
     {
         "module": "main.projectRead",
         "path": "main/functions/project-read-client.js",
-        "bindings": ["runPisiProjectRead", "readPisiJsonFilesBatched", "sendPisiProgress", "isPisiReadWorkerActive", "stopPisiReadWorker"]
+        "bindings": [
+            "runPisiProjectRead",
+            "readPisiJsonFilesBatched",
+            "sendPisiProgress",
+            "isPisiReadWorkerActive",
+            "stopPisiReadWorker"
+        ]
     },
     {
         "module": "main.storeHistory",
@@ -332,17 +361,31 @@
     {
         "module": "main.perfProbe",
         "path": "main/functions/perf-probe.js",
-        "bindings": ["readPisiPerfProbe", "installPisiPerfProbe"]
+        "bindings": [
+            "readPisiPerfProbe",
+            "installPisiPerfProbe"
+        ]
     },
     {
         "module": "main.logger",
         "path": "main/functions/logger.js",
-        "bindings": ["logPisiEvent", "getPisiLogDirectory", "handlePisiRendererReport", "installPisiLogger"]
+        "bindings": [
+            "logPisiEvent",
+            "getPisiLogDirectory",
+            "handlePisiRendererReport",
+            "installPisiLogger"
+        ]
     },
     {
         "module": "main.crashHandling",
         "path": "main/functions/crash-handling.js",
-        "bindings": ["attachPisiCrashHandling", "handlePisiFatalError", "createPisiDiagnosticsBundle", "openPisiLogFolder", "installPisiDiagnosticsContracts"]
+        "bindings": [
+            "attachPisiCrashHandling",
+            "handlePisiFatalError",
+            "createPisiDiagnosticsBundle",
+            "openPisiLogFolder",
+            "installPisiDiagnosticsContracts"
+        ]
     },
     {
         "module": "main.windowShell",
@@ -372,16 +415,28 @@
     {
         "module": "main.mapNodeCopy",
         "path": "main/functions/map-node-copy.js",
-        "bindings": ["duplicatePisiMapNodes", "installPisiMapNodeCopyContracts"]
+        "bindings": [
+            "duplicatePisiMapNodes",
+            "installPisiMapNodeCopyContracts"
+        ]
     },
     {
         "module": "main.wikiLinkDomain",
         "path": "main/functions/wiki-link-domain.js",
-        "bindings": ["getPisiWikiRenameImpactForPayload", "wrapPisiRenameWithWikiLinks", "repairPisiWikiLinksForPayload", "installPisiWikiLinkDomainContracts"]
+        "bindings": [
+            "getPisiWikiRenameImpactForPayload",
+            "wrapPisiRenameWithWikiLinks",
+            "repairPisiWikiLinksForPayload",
+            "installPisiWikiLinkDomainContracts"
+        ]
     },
     {
         "module": "main.syncClient",
         "path": "main/functions/sync-client-desktop.js",
-        "bindings": ["getPisiSyncClientStatus", "requestPisiSyncClientTurn", "isPisiSyncClientBound"]
+        "bindings": [
+            "getPisiSyncClientStatus",
+            "requestPisiSyncClientTurn",
+            "isPisiSyncClientBound"
+        ]
     }
 ]

@@ -312,10 +312,12 @@ function insertPisiToolbarSymbol(toolbar, symbol) {
     notifyPisiEditorChanged(editor);
 }
 
+/** Until the editor makes tasks itself (docs/task-plan.md G3), the task button opens Quick Add for the open note. */
 function openPisiToolbarTodo(toolbar) {
     const editor = getPisiToolbarEditor(toolbar);
     if (!editor) return false;
-    return window.openPisiTodoPickerForEditor?.(editor) || false;
+    void window.openPisiQuickAddModal?.();
+    return true;
 }
 
 function syncPisiUnifiedToolbarContext(toolbar) {

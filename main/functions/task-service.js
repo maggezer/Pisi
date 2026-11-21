@@ -64,6 +64,7 @@ function reachPisiTaskServicePoint(name) {
     pisiTaskServiceFaultHook?.(name);
 }
 
+/** @returns {any} */
 function makePisiTaskServiceError(code, message, extra = {}) {
     return { ok: false, code, error: message, ...extra };
 }
@@ -132,7 +133,10 @@ function getPisiNoteDiaryDate(projectFolder, filePath, data) {
     return day && isPisiDiaryNotePath(projectFolder, filePath, day) ? day : null;
 }
 
-/** A closed note the command may change: the file at `notePath` whose `pisi.id` is `noteId`. */
+/**
+ * A closed note the command may change: the file at `notePath` whose `pisi.id` is `noteId`.
+ * @returns {any}
+ */
 function readPisiTaskNote(projectFolder, notePath, noteId) {
     if (!notePath) return makePisiTaskServiceError('TASK_NOTE_PATH_REQUIRED', 'Görevin notunun yolu verilmedi.');
     const resolved = path.resolve(String(notePath));
@@ -157,6 +161,7 @@ function writePisiTaskNoteContent(notePath, content, reason) {
  * Inserts or removes a task block in a note. An open note is left alone and
  * reported in `deferred.notes`; a closed one is written (with a history
  * snapshot, it is user content). Returns `{ ok, blockId?, afterBlockId? }`.
+ * @returns {any}
  */
 function applyPisiTaskNoteChange(projectFolder, change, context) {
     const { notePath, noteId } = change;
@@ -300,7 +305,7 @@ function emitPisiTasksChanged(projectFolder, { changed = [], removedIds = [], so
         }
     };
     // Inside a larger mutation (a batch, a note save) the event waits for it to end.
-    if (modules['main.atomicMutation']?.getActivePisiAtomicMutation?.()) setImmediate(send);
+    if (modules['main.atomicMutation']?.getActivePisiAtomicMutation?.()) globalThis.setImmediate(send);
     else send();
 }
 

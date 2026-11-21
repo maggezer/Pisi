@@ -1,5 +1,4 @@
 import * as fs from 'node:fs';
-import * as path from 'node:path';
 import { modules } from '../module-registry.js';
 import * as shared from './project-integrity-shared.js';
 
